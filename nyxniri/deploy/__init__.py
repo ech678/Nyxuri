@@ -22,6 +22,7 @@ from nyxniri.deploy.assets import (
 )
 from nyxniri.deploy.hardware import _phase_hardware_patches
 from nyxniri.deploy.preset import (
+    InvalidActivePresetError,
     PresetInfo,
     read_active_preset,
     write_active_preset,
@@ -47,7 +48,7 @@ __all__ = [
     "atomic_replace_item", "discover_config_items", "deploy_selected_configs",
     "deploy_wallpapers", "wallpapers_pack_present", "render_completion_screen",
     "test_deploy",
-    "read_active_preset", "write_active_preset", "resolve_preset_src",
+    "read_active_preset", "write_active_preset", "InvalidActivePresetError", "resolve_preset_src",
     "apply_preset", "collect_presets", "list_presets", "save_preset",
     "delete_preset", "edit_preset", "get_preset_info", "PresetInfo",
     "load_manifest", "load_manifest_for", "discover_manifest_apps",

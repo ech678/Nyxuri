@@ -25,7 +25,12 @@ from nyxniri.deploy.atomic import (
 from nyxniri.deploy.assets import WallpaperDeployResult, deploy_wallpapers, wallpapers_pack_present
 from nyxniri.deploy.hardware import _phase_hardware_patches
 from nyxniri.deploy.manifest import discover_deployable_apps, load_manifest
-from nyxniri.deploy.preset import read_active_preset, resolve_preset_src, write_active_preset
+from nyxniri.deploy.preset import (
+    InvalidActivePresetError,
+    read_active_preset,
+    resolve_preset_src,
+    write_active_preset,
+)
 from nyxniri.deploy.templates import _phase_render_templates
 
 _CONFIG_ITEMS_CACHE: List[str] = []
@@ -63,7 +68,12 @@ def _phase_atomic_deployment(
 
         # Resolve which source tree to deploy: default config, an official
         # preset, or a user preset — based on the app's active state file.
-        active = read_active_preset(item)
+        try:
+            active = read_active_preset(item)
+        except InvalidActivePresetError:
+            print(msg("preset_warn_invalid_active", item))
+            log_msg("WARN", f"Invalid active preset state for {item}; dest frozen, skipped")
+            continue
         result = resolve_preset_src(item, active, dest)
         for w in result.warnings:
             print(w)

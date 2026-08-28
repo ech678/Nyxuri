@@ -8,9 +8,9 @@
 `~/.config/NyxNiri/presets/<app>.active`——一行，内容是预设名或 `default`。不占配置槽
 （这是扔掉 include 间接层、扔掉 `__preset__` 保留名的关键简化：一个概念减两份复杂度）。
 
-- `read_active_preset(app)` → 内容或 `"default"`（文件不存在 / 读失败 / 空白都回 default）。
+- `read_active_preset(app)` → 文件不存在时返回 `"default"`，空白、读失败或非法内容会抛出 `InvalidActivePresetError` 并冻结部署
 - `write_active_preset(app, name)` → **原子写**（temp + `os.replace`）。半写空文件会被
-  `read` 当 default 静默切回——原子写堵死这条故障路径。
+  拒绝并冻结部署——原子写堵死这条故障路径
 
 ## src 四分支（`resolve_preset_src(app, active, dest)`）
 

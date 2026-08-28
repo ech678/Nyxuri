@@ -1605,6 +1605,10 @@ Commands:
         "zh": f"{Colors.BOLD_YELLOW}[!] {{0}}: 活动预设 '{{1}}' 已不在仓库中，当前 ~/.config/{{0}} 内容保持冻结，未重新部署{Colors.RESET}\n    {Colors.BOLD_CYAN}运行 `{Colors.RESET}nyxniri preset {{0}} list{Colors.BOLD_CYAN}` 选新预设{Colors.RESET}",
         "en": f"{Colors.BOLD_YELLOW}[!] {{0}}: active preset '{{1}}' is no longer in the repo; ~/.config/{{0}} is frozen, not redeployed{Colors.RESET}\n    {Colors.BOLD_CYAN}Run `{Colors.RESET}nyxniri preset {{0}} list{Colors.BOLD_CYAN}` to pick a new preset{Colors.RESET}",
     },
+    "preset_warn_invalid_active": {
+        "zh": f"{Colors.BOLD_YELLOW}[!] {{0}}: 活动预设状态无效，当前 ~/.config/{{0}} 内容保持冻结，未重新部署{Colors.RESET}",
+        "en": f"{Colors.BOLD_YELLOW}[!] {{0}}: active preset state is invalid; ~/.config/{{0}} is frozen, not redeployed{Colors.RESET}",
+    },
     "preset_switcher_title": {
         "zh": "预设管理",
         "en": "Preset Management",

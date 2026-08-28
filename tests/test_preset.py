@@ -15,6 +15,7 @@ from unittest.mock import patch
 import nyxniri.deploy.preset as preset
 from nyxniri.deploy.atomic import atomic_replace_item
 from nyxniri.tui import PresetSwitcher
+from nyxniri.i18n import msg
 from tests.utils import TempEnv
 
 
@@ -39,12 +40,20 @@ class TestActiveStateFile(unittest.TestCase):
         preset.write_active_preset("kitty", "compact")
         self.assertTrue(self._ctx.env.presets_dir.is_dir())
 
-    def test_read_empty_file_treated_as_default(self):
-        # An empty (e.g. half-written) active file must not silently switch —
-        # read() treats empty/whitespace as "default".
+    def test_read_empty_file_freezes_instead_of_default(self):
         self._ctx.env.presets_dir.mkdir(parents=True, exist_ok=True)
         (self._ctx.env.presets_dir / "kitty.active").write_text("   \n")
-        self.assertEqual(preset.read_active_preset("kitty"), "default")
+        with self.assertRaises(preset.InvalidActivePresetError):
+            preset.read_active_preset("kitty")
+
+    def test_read_rejects_active_name_with_outer_whitespace(self):
+        self._ctx.env.presets_dir.mkdir(parents=True, exist_ok=True)
+        active = self._ctx.env.presets_dir / "kitty.active"
+        for value in (" transparent", "transparent ", "transparent\n"):
+            with self.subTest(value=value):
+                active.write_text(value)
+                with self.assertRaises(preset.InvalidActivePresetError):
+                    preset.read_active_preset("kitty")
 
 
 class TestResolvePresetSrc(unittest.TestCase):
@@ -287,6 +296,28 @@ class TestPresetOperations(unittest.TestCase):
         self.assertFalse(preset.delete_preset("kitty", "default"))
         self.assertFalse(preset.delete_preset("kitty", "transparent"))
 
+    def test_save_presets_open_failure_closes_source_fd(self):
+        dest = self.env.config_dir / "kitty"
+        dest.mkdir(parents=True)
+        (dest / "kitty.conf").write_text("# conf")
+        real_open = os.open
+        source_fd = None
+
+        def track_source_open(path, flags, *args, **kwargs):
+            nonlocal source_fd
+            fd = real_open(path, flags, *args, **kwargs)
+            if path == dest:
+                source_fd = fd
+            return fd
+
+        with patch.object(preset.os, "open", side_effect=track_source_open), \
+             patch.object(preset, "_open_presets_dir", side_effect=OSError), \
+             patch.object(preset.os, "close", wraps=os.close) as close:
+            self.assertFalse(preset.save_preset("kitty", "mine"))
+
+        self.assertIsNotNone(source_fd)
+        self.assertTrue(any(call.args == (source_fd,) for call in close.call_args_list))
+
 
 class TestApplyNarrowPath(unittest.TestCase):
     """§9 / §14 U1: apply runs only atomic_replace + render — no hw patches, no services."""
@@ -344,6 +375,179 @@ class TestPresetSwitchPreservesManifestFiles(unittest.TestCase):
     def test_monitor_kdl_survives_preset_switch(self):
         self.assertTrue(preset.apply_preset("niri", "default"))
         self.assertIn("# USER-MARKER", self.monitor.read_text())
+
+
+class TestPresetPathBoundary(unittest.TestCase):
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+        self.env = self._ctx.env
+
+    def tearDown(self):
+        self._ctx.__exit__()
+
+    def test_traversal_is_rejected_before_delete_or_active_write(self):
+        victim = self.env.presets_dir / "victim"
+        victim.mkdir(parents=True)
+        sentinel = victim / "sentinel"
+        sentinel.write_text("keep")
+        escaped_active = self.env.config_dir / "escaped.active"
+        escaped_active.write_text("keep")
+
+        self.assertFalse(preset.delete_preset("kitty", "../victim"))
+        with self.assertRaises(ValueError):
+            preset.write_active_preset("../../escaped", "mine")
+
+        self.assertEqual(sentinel.read_text(), "keep")
+        self.assertEqual(escaped_active.read_text(), "keep")
+
+    def test_every_operation_rejects_absolute_and_dot_components(self):
+        absolute = str(self._ctx.home / "outside")
+        for name in ("../victim", absolute, ".", ".."):
+            with self.subTest(name=name), \
+                 patch("nyxniri.deploy.atomic.atomic_replace_item") as replace, \
+                 patch.object(preset.subprocess, "run") as run:
+                self.assertFalse(preset.apply_preset("kitty", name))
+                self.assertFalse(preset.save_preset("kitty", name))
+                self.assertFalse(preset.delete_preset("kitty", name))
+                self.assertFalse(preset.edit_preset("kitty", name))
+                with self.assertRaises(ValueError):
+                    preset.write_active_preset("kitty", name)
+                replace.assert_not_called()
+                run.assert_not_called()
+
+        self.assertFalse(preset.apply_preset("../outside", "default"))
+        with self.assertRaises(ValueError):
+            preset.write_active_preset("../outside", "mine")
+
+    def test_symlinked_user_preset_never_starts_editor(self):
+        outside = self._ctx.home / "outside"
+        outside.mkdir()
+        user_root = self.env.presets_dir / "kitty"
+        user_root.mkdir(parents=True)
+        (user_root / "mine").symlink_to(outside, target_is_directory=True)
+
+        with patch("sys.stdin.isatty", return_value=True), \
+             patch.object(preset.subprocess, "run") as run:
+            self.assertFalse(preset.edit_preset("kitty", "mine"))
+
+        run.assert_not_called()
+
+    def test_symlinked_user_preset_is_never_applied_or_deleted(self):
+        outside = self._ctx.home / "outside"
+        outside.mkdir()
+        sentinel = outside / "sentinel"
+        sentinel.write_text("keep")
+        user_root = self.env.presets_dir / "kitty"
+        user_root.mkdir(parents=True)
+        (user_root / "mine").symlink_to(outside, target_is_directory=True)
+
+        with patch("nyxniri.deploy.atomic.atomic_replace_item") as replace:
+            self.assertFalse(preset.apply_preset("kitty", "mine"))
+        self.assertFalse(preset.delete_preset("kitty", "mine"))
+
+        replace.assert_not_called()
+        self.assertEqual(sentinel.read_text(), "keep")
+
+    def test_symlinked_config_target_is_rejected_before_apply(self):
+        outside = self._ctx.home / "outside"
+        outside.mkdir()
+        (outside / "sentinel").write_text("keep")
+        (self.env.config_dir / "kitty").symlink_to(outside, target_is_directory=True)
+
+        with patch("nyxniri.deploy.atomic.atomic_replace_item") as replace:
+            self.assertFalse(preset.apply_preset("kitty", "default"))
+
+        replace.assert_not_called()
+        self.assertEqual((outside / "sentinel").read_text(), "keep")
+
+    def test_symlinked_config_target_is_rejected_before_save(self):
+        outside = self._ctx.home / "outside"
+        outside.mkdir()
+        sentinel = outside / "sentinel"
+        sentinel.write_text("keep")
+        (self.env.config_dir / "kitty").symlink_to(outside, target_is_directory=True)
+
+        self.assertFalse(preset.save_preset("kitty", "mine"))
+
+        self.assertEqual(sentinel.read_text(), "keep")
+
+    def test_active_rejects_absolute_traversal_and_symlink(self):
+        active = self.env.presets_dir / "kitty.active"
+        active.parent.mkdir(parents=True, exist_ok=True)
+        for name in ("../victim", str(self._ctx.home / "outside")):
+            with self.subTest(name=name):
+                active.write_text(name)
+                with self.assertRaises(preset.InvalidActivePresetError):
+                    preset.read_active_preset("kitty")
+        outside = self._ctx.home / "outside-active"
+        outside.write_text("transparent")
+        active.unlink()
+        active.symlink_to(outside)
+        with self.assertRaises(preset.InvalidActivePresetError):
+            preset.read_active_preset("kitty")
+        with self.assertRaises(OSError):
+            preset.write_active_preset("kitty", "default")
+        self.assertEqual(outside.read_text(), "transparent")
+
+    def test_invalid_active_state_freezes_deploy(self):
+        active = self.env.presets_dir / "kitty.active"
+        active.parent.mkdir(parents=True, exist_ok=True)
+        active.write_text("../victim")
+
+        with patch("nyxniri.deploy.deploy.atomic_replace_item") as replace, \
+             patch("sys.stdout", new_callable=StringIO) as output:
+            from nyxniri.deploy.deploy import _phase_atomic_deployment
+            _phase_atomic_deployment(["kitty"])
+
+        replace.assert_not_called()
+        self.assertIn(msg("preset_warn_invalid_active", "kitty"), output.getvalue())
+
+    def test_invalid_active_state_is_visible_when_collecting(self):
+        active = self.env.presets_dir / "kitty.active"
+        active.parent.mkdir(parents=True, exist_ok=True)
+        active.write_text("../victim")
+
+        with patch("sys.stdout", new_callable=StringIO) as output:
+            self.assertEqual(preset.collect_presets("kitty"), [])
+
+        self.assertIn(msg("preset_warn_invalid_active", "kitty"), output.getvalue())
+
+    def test_unicode_leaf_name_remains_usable(self):
+        dest = self.env.config_dir / "kitty"
+        dest.mkdir(parents=True)
+        (dest / "kitty.conf").write_text("current")
+        name = "主题 浅色"
+
+        self.assertTrue(preset.save_preset("kitty", name))
+        self.assertTrue(preset.apply_preset("kitty", name))
+        self.assertTrue(preset.delete_preset("kitty", name))
+
+    def test_delete_rejects_directory_swap_after_lookup(self):
+        user_root = self.env.presets_dir / "kitty"
+        mine = user_root / "mine"
+        mine.mkdir(parents=True)
+        outside = self._ctx.home / "outside"
+        outside.mkdir()
+        sentinel = outside / "sentinel"
+        sentinel.write_text("keep")
+        stash = user_root / "mine-stash"
+        real_open = os.open
+        swapped = False
+
+        def open_then_swap(path, flags, *args, **kwargs):
+            nonlocal swapped
+            if path == "mine" and not swapped:
+                mine.rename(stash)
+                outside.rename(mine)
+                swapped = True
+            return real_open(path, flags, *args, **kwargs)
+
+        with patch("nyxniri.deploy.preset.os.open", side_effect=open_then_swap):
+            self.assertFalse(preset.delete_preset("kitty", "mine"))
+
+        self.assertTrue(swapped)
+        self.assertEqual((mine / "sentinel").read_text(), "keep")
 
 
 class TestPresetSwitcher(unittest.TestCase):
@@ -480,7 +684,23 @@ class TestEditPreset(unittest.TestCase):
              patch.dict("os.environ", {"EDITOR": "myed"}), \
              patch.object(preset.subprocess, "run") as mock_run:
             self.assertTrue(preset.edit_preset("kitty", "mine"))
-        mock_run.assert_called_once_with(["myed", str(target)], check=False)
+        mock_run.assert_called_once()
+        args, kwargs = mock_run.call_args
+        self.assertEqual(args[0][0], "myed")
+        self.assertTrue(args[0][1].startswith("/proc/self/fd/"))
+        self.assertEqual(kwargs["pass_fds"], (int(args[0][1].rsplit("/", 1)[1]),))
+        self.assertFalse(kwargs["check"])
+
+    def test_open_failure_closes_already_open_preset_dir(self):
+        self.env.presets_dir.mkdir(parents=True, exist_ok=True)
+        presets_fd = os.open(self.env.presets_dir, os.O_RDONLY | os.O_DIRECTORY)
+        real_close = os.close
+        with patch.object(preset, "_open_presets_dir", return_value=presets_fd), \
+             patch.object(preset, "_open_child_dir", side_effect=OSError), \
+             patch.object(preset.os, "close", wraps=real_close) as close:
+            self.assertFalse(preset.edit_preset("kitty", "mine"))
+
+        self.assertIn(((presets_fd,), {}), close.call_args_list)
 
 
 class TestPresetStudioInspection(unittest.TestCase):
@@ -524,6 +744,15 @@ class TestPresetStudioInspection(unittest.TestCase):
         self.assertTrue(info.is_editable)
         self.assertTrue(info.is_deletable)
         self.assertIn("kitty.conf", info.files)
+
+    def test_invalid_info_never_loads_a_manifest(self):
+        for app, name in (("../../outside", "default"), ("kitty", "../outside")):
+            with self.subTest(app=app, name=name), \
+                 patch("nyxniri.deploy.manifest.load_manifest_for") as load_manifest:
+                info = preset.get_preset_info(app, name)
+
+            self.assertEqual(info.path, "(invalid)")
+            load_manifest.assert_not_called()
 
 
 class TestPresetStudioActions(unittest.TestCase):
