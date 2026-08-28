@@ -193,5 +193,55 @@ class TestAurBootstrapFailsClosed(unittest.TestCase):
         self.assertFalse(any(cmd[0] in ("git", "makepkg") for cmd in commands))
 
 
+class TestAurHelperCacheInvalidation(unittest.TestCase):
+    """装完 paru 后必须重新探测：首查缓存的「不可用」不得盖住新装的结果。"""
+
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+        import nyxniri.deps as deps_mod
+        deps_mod._AUR_HELPER_CACHE = None
+
+    def tearDown(self):
+        import nyxniri.deps as deps_mod
+        deps_mod._AUR_HELPER_CACHE = None
+        self._ctx.__exit__()
+
+    def test_freshly_installed_paru_is_rediscovered_not_uninstalled(self):
+        import nyxniri.deps as deps_mod
+        from nyxniri.deps import ensure_aur_helper
+
+        state = {"installed": False}
+        removed = []
+
+        def fake_which(name):
+            if name == "pacman":
+                return "/usr/bin/pacman"
+            if name == "paru":
+                return "/usr/bin/paru" if state["installed"] else None
+            return None
+
+        def fake_run(cmd, **kwargs):
+            result = MagicMock(returncode=1, stdout="")
+            if cmd == ["pacman", "-Si", "paru"]:
+                result.returncode = 0
+            elif cmd[:3] == ["sudo", "pacman", "-S"]:
+                state["installed"] = True
+                result.returncode = 0
+            elif len(cmd) == 2 and cmd[1] == "--version":
+                result.returncode = 0
+            elif cmd[:3] == ["sudo", "pacman", "-Rdd"]:
+                removed.append(cmd)
+            return result
+
+        with patch("shutil.which", side_effect=fake_which), \
+             patch("nyxniri.deps.subprocess.run", side_effect=fake_run), \
+             patch("nyxniri.deps.prompt_confirm", return_value=True), \
+             patch("builtins.print"):
+            self.assertEqual(ensure_aur_helper(), "paru")
+
+        self.assertEqual(removed, [], "freshly installed paru must not be removed")
+
+
 if __name__ == "__main__":
     unittest.main()

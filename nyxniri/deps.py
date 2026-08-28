@@ -16,6 +16,7 @@ from nyxniri.tui import CheckboxEntry, CheckboxList, pad_display, prompt_confirm
 
 _PACMAN_INSTALLED_CACHE: Optional[set] = None
 _FC_LIST_CACHE: Optional[str] = None
+_GI_CACHE: Optional[dict] = None
 
 def _get_pacman_installed() -> set:
     global _PACMAN_INSTALLED_CACHE
@@ -43,17 +44,26 @@ def _get_fc_list() -> str:
     _FC_LIST_CACHE = res.stdout.lower() if res is not None and res.returncode == 0 else ""
     return _FC_LIST_CACHE
 
+def _check_gi(version: str) -> bool:
+    global _GI_CACHE
+    if _GI_CACHE is None:
+        _GI_CACHE = {}
+    if version in _GI_CACHE:
+        return _GI_CACHE[version]
+    code = "import gi" if version == "gi" else f"import gi; gi.require_version('{version}', '0.1')"
+    res = timed_run([sys.executable, "-c", code], 10, capture_output=True, check=False)
+    _GI_CACHE[version] = res is not None and res.returncode == 0
+    return _GI_CACHE[version]
+
 def is_dep_installed(cmd: str) -> bool:
     if cmd in _get_pacman_installed():
         return True
     if cmd == "inotify-tools":
         return shutil.which("inotifywait") is not None
     elif cmd == "python-gobject":
-        res = timed_run([sys.executable, "-c", "import gi"], 10, capture_output=True, check=False)
-        return res is not None and res.returncode == 0
+        return _check_gi("gi")
     elif cmd == "gtk-layer-shell":
-        res = timed_run([sys.executable, "-c", "import gi; gi.require_version('GtkLayerShell', '0.1')"], 10, capture_output=True, check=False)
-        return res is not None and res.returncode == 0
+        return _check_gi("GtkLayerShell")
     elif cmd == "ttf-jetbrains-mono":
         return "jetbrains mono" in _get_fc_list()
     elif cmd == "ttf-jetbrains-mono-nerd":
@@ -75,16 +85,22 @@ def get_missing_deps() -> List[str]:
     _MISSING_DEPS_CACHE = [dep for dep, installed in status_map.items() if not installed]
     return _MISSING_DEPS_CACHE
 
+_AUR_HELPER_CACHE: Optional[str] = None
+
 def aur_helper_usable() -> Optional[str]:
-    """Return name of a functioning AUR helper (paru or yay) after verifying binary execution."""
+    global _AUR_HELPER_CACHE
+    if _AUR_HELPER_CACHE is not None:
+        return _AUR_HELPER_CACHE if _AUR_HELPER_CACHE else None
     for helper in ("paru", "yay"):
         if shutil.which(helper):
             try:
-                res = subprocess.run([helper, "--version"], capture_output=True, check=False)
+                res = subprocess.run([helper, "--version"], capture_output=True, check=False, timeout=10)
                 if res.returncode == 0:
+                    _AUR_HELPER_CACHE = helper
                     return helper
             except Exception:
                 pass
+    _AUR_HELPER_CACHE = ""
     return None
 
 def get_preferred_pkg_manager() -> List[str]:
@@ -122,6 +138,10 @@ def ensure_aur_helper() -> Optional[str]:
     if res_si.returncode == 0:
         print(msg("aur_bootstrap_repo"))
         subprocess.run(["sudo", "pacman", "-S", "--needed", "--noconfirm", "paru"], check=False)
+        # The first probe of this call may have cached "unusable"; the fresh
+        # install must be re-detected, not read from the stale cache.
+        global _AUR_HELPER_CACHE
+        _AUR_HELPER_CACHE = None
         helper = aur_helper_usable()
         if helper:
             print(msg("aur_bootstrap_ok"))
@@ -225,6 +245,7 @@ def install_selected_deps(selected_deps: List[str]) -> bool:
 
     _MISSING_DEPS_CACHE = None
     _PACMAN_INSTALLED_CACHE = None
+    _AUR_HELPER_CACHE = None
     return True
 
 def run_dep_menu_loop() -> None:

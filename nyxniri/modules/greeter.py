@@ -20,7 +20,7 @@ from nyxniri.constants import (
     MAIN_WM,
     THEME_ENGINE,
 )
-from nyxniri.core import log_msg
+from nyxniri.core import log_msg, timed_run
 from nyxniri.i18n import msg, text
 
 CONFLICT_DMS = ["sddm", "lightdm", "gdm", "ly"]
@@ -238,11 +238,15 @@ def greeter_installed() -> bool:
     """Check if noctalia-greeter session binary exists in PATH."""
     return _greeter_session_path() is not None
 
-def greeter_status_label() -> str:
-    """Return compact status label for menus."""
-    if not greeter_installed():
-        return msg("status_not_installed")
+_GREETER_STATUS_CACHE: Optional[str] = None
 
+def greeter_status_label() -> str:
+    global _GREETER_STATUS_CACHE
+    if _GREETER_STATUS_CACHE is not None:
+        return _GREETER_STATUS_CACHE
+    if not greeter_installed():
+        _GREETER_STATUS_CACHE = msg("status_not_installed")
+        return _GREETER_STATUS_CACHE
     cfg_ok = False
     if GREETER_ETC_CFG.is_file():
         try:
@@ -251,15 +255,17 @@ def greeter_status_label() -> str:
                 cfg_ok = True
         except Exception:
             pass
-
     enabled = False
     if shutil.which("systemctl"):
-        res = subprocess.run(["systemctl", "is-enabled", "greetd"], capture_output=True, check=False)
-        enabled = res.returncode == 0
-
+        # timed_run degrades a stalled probe to None instead of crashing the
+        # menu render; an unavailable status reads as "not enabled" — safe.
+        res = timed_run(["systemctl", "is-enabled", "greetd"], 10, capture_output=True, check=False)
+        enabled = res is not None and res.returncode == 0
     if enabled and cfg_ok:
-        return msg("status_installed_enabled")
-    return msg("status_installed")
+        _GREETER_STATUS_CACHE = msg("status_installed_enabled")
+    else:
+        _GREETER_STATUS_CACHE = msg("status_installed")
+    return _GREETER_STATUS_CACHE
 
 def _greeter_session_arg() -> str:
     """Check if niri session is discoverable by noctalia-greeter."""
@@ -405,6 +411,7 @@ def greeter_install() -> bool:
         print(msg("greeter_enabled_skip"))
         print(msg("greeter_reboot_hint"))
         log_msg("INFO", "Configured Noctalia Greeter")
+        _GREETER_STATUS_CACHE = None
         return True
 
     previous_dm = _enabled_conflicting_dm()
@@ -425,6 +432,7 @@ def greeter_install() -> bool:
 
     print(msg("greeter_reboot_hint"))
     log_msg("INFO", "Configured Noctalia Greeter")
+    _GREETER_STATUS_CACHE = None
     return True
 
 def greeter_status() -> None:
@@ -538,4 +546,5 @@ def greeter_uninstall() -> bool:
 
     print(msg("greeter_uninstall_done"))
     log_msg("INFO", "Uninstalled Noctalia Greeter configuration")
+    _GREETER_STATUS_CACHE = None
     return True

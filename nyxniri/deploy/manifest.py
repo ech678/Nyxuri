@@ -32,7 +32,7 @@ This module is pure stdlib (``tomllib``, 3.11+). No hardcoded project app names.
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from nyxniri.core import get_env
 
@@ -173,7 +173,12 @@ def _is_configs_metadata(name: str) -> bool:
     )
 
 
+_MANIFEST_CACHE: Optional[List[Tuple[str, "ModuleManifest"]]] = None
+
 def discover_manifest_apps() -> List[Tuple[str, ModuleManifest]]:
+    global _MANIFEST_CACHE
+    if _MANIFEST_CACHE is not None:
+        return _MANIFEST_CACHE
     """Scan all apps under configs/ + read .optional-apps.toml; merge.
 
     Returns ``(name, manifest)`` for every app — both deployable (has a config
@@ -208,6 +213,7 @@ def discover_manifest_apps() -> List[Tuple[str, ModuleManifest]]:
         apps.append((name, _manifest_from_optional(name, entry)))
 
     apps.sort(key=lambda x: x[0])
+    _MANIFEST_CACHE = apps
     return apps
 
 
