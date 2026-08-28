@@ -5,15 +5,13 @@ import re
 import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from nyxniri.constants import AUR_DEPS, CORE_DEPS
-from nyxniri.core import log_msg, register_temp_path, timed_run
+from nyxniri.core import timed_run
 from nyxniri.i18n import msg
 from nyxniri.deploy.manifest import discover_manifest_apps, discover_optional_apps
-from nyxniri.network import git_clone_timeout
 from nyxniri.tui import CheckboxEntry, CheckboxList, pad_display, prompt_confirm
 
 _PACMAN_INSTALLED_CACHE: Optional[set] = None
@@ -97,7 +95,7 @@ def get_preferred_pkg_manager() -> List[str]:
     return ["sudo", "pacman"]
 
 def ensure_aur_helper() -> Optional[str]:
-    """Bootstrap an AUR helper (paru) if none is available, compiling from source if needed."""
+    """Bootstrap an AUR helper from official repositories only."""
     helper = aur_helper_usable()
     if helper:
         return helper
@@ -128,29 +126,8 @@ def ensure_aur_helper() -> Optional[str]:
         if helper:
             print(msg("aur_bootstrap_ok"))
             return helper
-        # Repo paru installed but not usable — remove before source build to avoid conflicts
+        # Repo paru installed but not usable — remove the failed install.
         subprocess.run(["sudo", "pacman", "-Rdd", "--noconfirm", "paru"], check=False)
-
-    # 2. Source build from AUR
-    res_base = subprocess.run(["sudo", "pacman", "-S", "--needed", "--noconfirm", "base-devel", "git"], check=False)
-    if res_base.returncode != 0:
-        print(msg("aur_bootstrap_failed"))
-        return None
-    print(msg("aur_bootstrap_source"))
-
-    build_dir = Path(tempfile.mkdtemp())
-    register_temp_path(build_dir)
-    clone_ok = git_clone_timeout(
-        "https://aur.archlinux.org/paru.git",
-        build_dir / "paru",
-        cancellable=sys.stdin.isatty(),
-    )
-    if clone_ok:
-        makepkg_res = subprocess.run(["makepkg", "-si", "--noconfirm"], cwd=build_dir / "paru", check=False)
-        helper = aur_helper_usable()
-        if makepkg_res.returncode == 0 and helper:
-            print(msg("aur_bootstrap_ok"))
-            return helper
 
     print(msg("aur_bootstrap_failed"))
     return None

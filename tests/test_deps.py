@@ -156,5 +156,42 @@ class TestMpvpaperDetection(unittest.TestCase):
                          "Should not check regular mpvpaper when git version is installed")
 
 
+class TestAurBootstrapFailsClosed(unittest.TestCase):
+    """AUR bootstrap must not execute mutable source builds."""
+
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+
+    def tearDown(self):
+        self._ctx.__exit__()
+
+    def test_missing_repo_package_never_builds_from_aur(self):
+        from nyxniri.deps import ensure_aur_helper
+
+        commands = []
+
+        def fake_run(cmd, **kwargs):
+            commands.append(cmd)
+            result = MagicMock(returncode=0, stdout="")
+            if cmd[:2] == ["pacman", "-Qq"] or cmd == ["pacman", "-Si", "paru"]:
+                result.returncode = 1
+            return result
+
+        with patch("subprocess.run", side_effect=fake_run), \
+             patch("nyxniri.deps.aur_helper_usable", return_value=None), \
+             patch("nyxniri.deps.prompt_confirm", return_value=True), \
+             patch("shutil.which", side_effect=lambda name: "/usr/bin/pacman" if name == "pacman" else None), \
+             patch("builtins.print"):
+            self.assertIsNone(ensure_aur_helper())
+
+        self.assertEqual(commands, [
+            ["pacman", "-Qq", "paru-bin"],
+            ["pacman", "-Qq", "paru-bin-debug"],
+            ["pacman", "-Si", "paru"],
+        ])
+        self.assertFalse(any(cmd[0] in ("git", "makepkg") for cmd in commands))
+
+
 if __name__ == "__main__":
     unittest.main()
