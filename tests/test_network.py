@@ -30,6 +30,40 @@ class TestGitExistenceCheck(unittest.TestCase):
         self.assertFalse(result, "Should return False when git is missing")
 
 
+class TestRawFetchDigest(unittest.TestCase):
+    """A reviewed raw asset must match its digest before it is handed to Fish."""
+
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+
+    def tearDown(self):
+        self._ctx.__exit__()
+
+    def test_digest_mismatch_never_moves_downloaded_file(self):
+        from nyxniri.network import _ProcessAttempt, fetch_raw_with_fallback
+
+        target = self._ctx.home / "bootstrap.fish"
+        url = "https://example.invalid/org/repo/commit/file.fish"
+
+        def fake_process(command, **kwargs):
+            tmp_path = Path(command[9])
+            self.assertEqual(
+                command,
+                ["curl", "-sfL", "--connect-timeout", "3", "-m", "10", "-w", "%{http_code}",
+                 "-o", str(tmp_path), url],
+            )
+            tmp_path.write_text("unexpected", encoding="utf-8")
+            return _ProcessAttempt(0, "200")
+
+        with patch("nyxniri.network.RAW_MIRROR_TEMPLATES", [("test", url)]), \
+             patch("nyxniri.network._run_cancellable_process", side_effect=fake_process), \
+             redirect_stdout(io.StringIO()):
+            self.assertFalse(fetch_raw_with_fallback("org/repo", "commit", "file.fish", target, "0" * 64))
+
+        self.assertFalse(target.exists())
+
+
 class TestDirtyTreeReturnValue(unittest.TestCase):
     """Non-interactive dirty tree must return False (not None), so exit code is non-zero."""
 

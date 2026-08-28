@@ -36,38 +36,6 @@ class TestTimedRun(unittest.TestCase):
         self.assertEqual(r.returncode, 0)
 
 
-class TestFisherTimeout(unittest.TestCase):
-
-    def setUp(self):
-        self._ctx = TempEnv()
-        self._ctx.__enter__()
-
-    def tearDown(self):
-        self._ctx.__exit__()
-
-    def test_probe_timeout_skips_step(self):
-        from nyxniri.modules.fisher import fisher_install
-
-        with patch("nyxniri.modules.fisher.timed_run", return_value=None), \
-             patch("builtins.print"):
-            self.assertFalse(fisher_install())
-
-    def test_update_timeout_still_reports_installed(self):
-        from nyxniri.modules.fisher import fisher_install
-
-        with patch("nyxniri.modules.fisher.timed_run", side_effect=[_cp(0, "0\n"), None]), \
-             patch("builtins.print"):
-            self.assertTrue(fisher_install())
-
-    def test_bootstrap_timeout_reports_failure(self):
-        from nyxniri.modules.fisher import fisher_install
-
-        with patch("nyxniri.modules.fisher.timed_run", side_effect=[_cp(1), None]), \
-             patch("nyxniri.modules.fisher.fetch_raw_with_fallback", return_value=True), \
-             patch("builtins.print"):
-            self.assertFalse(fisher_install())
-
-
 class TestPostInstallHooksIndependence(unittest.TestCase):
     """A timed-out hook (theme-sync) must not abort the remaining hooks (fisher)."""
 

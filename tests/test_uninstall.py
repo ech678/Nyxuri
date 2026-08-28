@@ -6,6 +6,10 @@ fisher uninstall incl. fish-absent degrade (gap #3); quickphrase.conf restore
 (gap #5); greeter /var/lib removal (gap #2).
 """
 
+import json
+import os
+import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
@@ -118,8 +122,8 @@ class TestUninstallArchiveGlob(unittest.TestCase):
         self.assertTrue((new_archives[0] / "niri" / "config.kdl").exists())
 
 
-class TestFisherUninstall(unittest.TestCase):
-    """Gap #3: fisher_uninstall removes fisher.fish + plugins, incl. fish-absent degrade (D1)."""
+class TestFisherOwnership(unittest.TestCase):
+    """Fisher cleanup is limited to the files recorded by NyxNiri."""
 
     def setUp(self):
         self._ctx = TempEnv()
@@ -128,44 +132,351 @@ class TestFisherUninstall(unittest.TestCase):
         self.fish_dir = self.env.config_dir / "fish"
         (self.fish_dir / "functions").mkdir(parents=True)
         (self.fish_dir / "conf.d").mkdir(parents=True)
-        (self.fish_dir / "functions" / "fisher.fish").write_text("# fisher")
-        (self.fish_dir / "conf.d" / "plugin.fish").write_text("# plugin")
 
     def tearDown(self):
         self._ctx.__exit__()
 
-    def test_fish_absent_degrades_to_direct_rm(self):
+    def _write_lockfile(self, content=None):
+        from nyxniri.modules.fisher import FISHER_PLUGINS
+
+        (self.fish_dir / "fish_plugins").write_text(
+            content if content is not None else "\n".join(FISHER_PLUGINS) + "\n",
+            encoding="utf-8",
+        )
+
+    def test_uninstall_without_ownership_preserves_existing_fisher(self):
         from nyxniri.modules.fisher import fisher_uninstall
+
+        fisher_file = self.fish_dir / "functions" / "fisher.fish"
+        unrelated = self.fish_dir / "conf.d" / "user-plugin.fish"
+        fisher_file.write_text("user fisher", encoding="utf-8")
+        unrelated.write_text("user plugin", encoding="utf-8")
 
         with patch("nyxniri.modules.fisher.shutil.which", return_value=None):
-            fisher_uninstall()
+            self.assertFalse(fisher_uninstall())
 
-        # fish absent → conf.d/ nuked, fisher.fish removed.
-        self.assertFalse((self.fish_dir / "functions" / "fisher.fish").exists())
-        self.assertFalse((self.fish_dir / "conf.d").exists())
+        self.assertEqual(fisher_file.read_text(encoding="utf-8"), "user fisher")
+        self.assertEqual(unrelated.read_text(encoding="utf-8"), "user plugin")
 
-    def test_fish_present_fisher_installed_calls_remove_all(self):
-        from nyxniri.modules.fisher import fisher_uninstall
+    def test_fish_absent_removes_only_recorded_files(self):
+        from nyxniri.modules.fisher import _ownership_path, fisher_uninstall
 
+        owned = self.fish_dir / "conf.d" / "autopair.fish"
+        unrelated = self.fish_dir / "conf.d" / "user-plugin.fish"
+        owned.write_text("managed", encoding="utf-8")
+        unrelated.write_text("user plugin", encoding="utf-8")
+        _ownership_path().write_text(
+            json.dumps({"files": ["conf.d/autopair.fish"], "complete": True, "fisher_preexisting": False}),
+            encoding="utf-8",
+        )
+
+        with patch("nyxniri.modules.fisher.shutil.which", return_value=None):
+            self.assertTrue(fisher_uninstall())
+
+        self.assertFalse(owned.exists())
+        self.assertEqual(unrelated.read_text(encoding="utf-8"), "user plugin")
+        self.assertTrue((self.fish_dir / "conf.d").is_dir())
+
+    def test_install_rejects_mutable_lock_before_running_fish(self):
+        from nyxniri.modules.fisher import fisher_install
+
+        self._write_lockfile("jorgebucaran/fisher@main\n")
+        with patch("nyxniri.modules.fisher.shutil.which", return_value="/usr/bin/fish"), \
+             patch("nyxniri.modules.fisher.fetch_raw_with_fallback") as fetch, \
+             patch("nyxniri.modules.fisher.subprocess.run") as run, \
+             patch("builtins.print"):
+            self.assertFalse(fisher_install())
+
+        fetch.assert_not_called()
+        run.assert_not_called()
+
+    def test_install_passes_only_pinned_sources_and_records_new_files(self):
+        from nyxniri.modules.fisher import (
+            FISHER_BOOTSTRAP_COMMIT,
+            FISHER_BOOTSTRAP_SHA256,
+            FISHER_PLUGINS,
+            _ownership_path,
+            fisher_install,
+        )
+
+        self._write_lockfile()
         calls = []
 
-        def fake_run(cmd, *a, **k):
+        def fake_run(cmd, *args, **kwargs):
             calls.append(cmd)
-            r = MagicMock()
-            if "functions -q fisher" in " ".join(cmd):
-                r.stdout = "0"  # fisher installed
-                r.returncode = 0
-            else:
-                r.returncode = 0
-            return r
+            (self.fish_dir / "functions" / "fisher.fish").write_text("managed", encoding="utf-8")
+            return MagicMock(returncode=0)
 
         with patch("nyxniri.modules.fisher.shutil.which", return_value="/usr/bin/fish"), \
-             patch("nyxniri.modules.fisher.subprocess.run", side_effect=fake_run):
-            fisher_uninstall()
+             patch("nyxniri.modules.fisher.fetch_raw_with_fallback", return_value=True) as fetch, \
+             patch("nyxniri.modules.fisher.subprocess.run", side_effect=fake_run), \
+             patch("builtins.print"):
+            self.assertTrue(fisher_install())
 
-        # `fisher remove --all` was invoked, and the loader file removed.
-        self.assertTrue(any("fisher remove --all" in " ".join(c) for c in calls))
-        self.assertFalse((self.fish_dir / "functions" / "fisher.fish").exists())
+        bootstrap = fetch.call_args.args[3]
+        fetch.assert_called_once_with(
+            "jorgebucaran/fisher",
+            FISHER_BOOTSTRAP_COMMIT,
+            "functions/fisher.fish",
+            bootstrap,
+            FISHER_BOOTSTRAP_SHA256,
+        )
+        self.assertEqual(
+            calls,
+            [["fish", "-c", "set --global fisher_path $argv[2]; source -- $argv[1]; fisher install $argv[3..-1]",
+              "--", str(bootstrap), str(self.fish_dir), *FISHER_PLUGINS]],
+        )
+        state = json.loads(_ownership_path().read_text(encoding="utf-8"))
+        self.assertTrue(state["complete"])
+        self.assertEqual(state["files"], ["functions/fisher.fish"])
+        self.assertFalse(state["fisher_preexisting"])
+        self.assertEqual(state["plugins"], list(FISHER_PLUGINS))
+
+    def test_partial_install_is_owned_and_retryable(self):
+        from nyxniri.modules.fisher import _ownership_path, fisher_install
+
+        self._write_lockfile()
+        autopair_file = self.fish_dir / "conf.d" / "autopair.fish"
+
+        def failed_run(*args, **kwargs):
+            autopair_file.write_text("managed", encoding="utf-8")
+            return MagicMock(returncode=1)
+
+        with patch("nyxniri.modules.fisher.shutil.which", return_value="/usr/bin/fish"), \
+             patch("nyxniri.modules.fisher.fetch_raw_with_fallback", return_value=True), \
+             patch("nyxniri.modules.fisher.subprocess.run", side_effect=failed_run), \
+             patch("builtins.print"):
+            self.assertFalse(fisher_install())
+
+        state = json.loads(_ownership_path().read_text(encoding="utf-8"))
+        self.assertFalse(state["complete"])
+        self.assertEqual(state["files"], ["conf.d/autopair.fish"])
+
+        fzf_file = self.fish_dir / "conf.d" / "fzf.fish"
+
+        def completed_run(*args, **kwargs):
+            fzf_file.write_text("managed", encoding="utf-8")
+            return MagicMock(returncode=0)
+
+        with patch("nyxniri.modules.fisher.shutil.which", return_value="/usr/bin/fish"), \
+             patch("nyxniri.modules.fisher.fetch_raw_with_fallback", return_value=True), \
+             patch("nyxniri.modules.fisher.subprocess.run", side_effect=completed_run), \
+             patch("builtins.print"):
+            self.assertTrue(fisher_install())
+
+        state = json.loads(_ownership_path().read_text(encoding="utf-8"))
+        self.assertTrue(state["complete"])
+        self.assertEqual(state["files"], ["conf.d/autopair.fish", "conf.d/fzf.fish"])
+
+    def test_timeout_records_only_files_created_before_timeout(self):
+        from nyxniri.modules.fisher import _ownership_path, fisher_install
+
+        self._write_lockfile()
+        autopair_file = self.fish_dir / "conf.d" / "autopair.fish"
+
+        def timeout_run(*args, **kwargs):
+            autopair_file.write_text("managed", encoding="utf-8")
+            raise subprocess.TimeoutExpired(args[0], kwargs["timeout"])
+
+        with patch("nyxniri.modules.fisher.shutil.which", return_value="/usr/bin/fish"), \
+             patch("nyxniri.modules.fisher.fetch_raw_with_fallback", return_value=True), \
+             patch("nyxniri.modules.fisher.subprocess.run", side_effect=timeout_run), \
+             patch("builtins.print"):
+            self.assertFalse(fisher_install())
+
+        state = json.loads(_ownership_path().read_text(encoding="utf-8"))
+        self.assertFalse(state["complete"])
+        self.assertEqual(state["files"], ["conf.d/autopair.fish"])
+
+    def test_preexisting_fisher_skips_install_without_ownership_state(self):
+        from nyxniri.modules.fisher import _ownership_path, fisher_install
+
+        fisher_file = self.fish_dir / "functions" / "fisher.fish"
+        autopair_file = self.fish_dir / "conf.d" / "autopair.fish"
+        fisher_file.write_text("user fisher", encoding="utf-8")
+        autopair_file.write_text("user autopair", encoding="utf-8")
+        self._write_lockfile()
+
+        with patch("nyxniri.modules.fisher.shutil.which", return_value="/usr/bin/fish"), \
+             patch("nyxniri.modules.fisher.fetch_raw_with_fallback") as fetch, \
+             patch("nyxniri.modules.fisher.subprocess.run") as run:
+            self.assertFalse(fisher_install())
+
+        fetch.assert_not_called()
+        run.assert_not_called()
+        self.assertFalse(_ownership_path().exists())
+        self.assertEqual(fisher_file.read_text(encoding="utf-8"), "user fisher")
+        self.assertEqual(autopair_file.read_text(encoding="utf-8"), "user autopair")
+
+    def test_legacy_preexisting_ownership_state_skips_install(self):
+        from nyxniri.modules.fisher import _ownership_path, fisher_install
+
+        fisher_file = self.fish_dir / "functions" / "fisher.fish"
+        autopair_file = self.fish_dir / "conf.d" / "autopair.fish"
+        fisher_file.write_bytes(b"user fisher\x00")
+        autopair_file.write_bytes(b"user autopair\x00")
+        _ownership_path().write_text(
+            json.dumps({
+                "files": ["conf.d/autopair.fish"],
+                "complete": False,
+                "fisher_preexisting": True,
+            }),
+            encoding="utf-8",
+        )
+        self._write_lockfile()
+
+        with patch("nyxniri.modules.fisher.shutil.which", return_value="/usr/bin/fish"), \
+             patch("nyxniri.modules.fisher.fetch_raw_with_fallback") as fetch, \
+             patch("nyxniri.modules.fisher.subprocess.run") as run:
+            self.assertFalse(fisher_install())
+
+        fetch.assert_not_called()
+        run.assert_not_called()
+        self.assertEqual(fisher_file.read_bytes(), b"user fisher\x00")
+        self.assertEqual(autopair_file.read_bytes(), b"user autopair\x00")
+
+    def test_complete_current_install_is_idempotent(self):
+        from nyxniri.modules.fisher import FISHER_PLUGINS, _ownership_path, fisher_install
+
+        self._write_lockfile()
+        (self.fish_dir / "conf.d" / "autopair.fish").write_text("managed", encoding="utf-8")
+        _ownership_path().write_text(
+            json.dumps({
+                "files": ["conf.d/autopair.fish"],
+                "complete": True,
+                "fisher_preexisting": False,
+                "plugins": list(FISHER_PLUGINS),
+            }),
+            encoding="utf-8",
+        )
+        with patch("nyxniri.modules.fisher.shutil.which", return_value="/usr/bin/fish"), \
+             patch("nyxniri.modules.fisher.fetch_raw_with_fallback") as fetch, \
+             patch("nyxniri.modules.fisher.subprocess.run") as run:
+            self.assertTrue(fisher_install())
+
+        fetch.assert_not_called()
+        run.assert_not_called()
+
+    def test_old_lock_fingerprint_runs_current_pinned_command(self):
+        from nyxniri.modules.fisher import FISHER_PLUGINS, _ownership_path, fisher_install
+
+        self._write_lockfile()
+        (self.fish_dir / "conf.d" / "autopair.fish").write_text("managed", encoding="utf-8")
+        _ownership_path().write_text(
+            json.dumps({
+                "files": ["conf.d/autopair.fish"],
+                "complete": True,
+                "fisher_preexisting": False,
+                "plugins": ["old-lock"],
+            }),
+            encoding="utf-8",
+        )
+        calls = []
+
+        def fake_run(command, **kwargs):
+            calls.append(command)
+            return MagicMock(returncode=0)
+
+        with patch("nyxniri.modules.fisher.shutil.which", return_value="/usr/bin/fish"), \
+             patch("nyxniri.modules.fisher.fetch_raw_with_fallback", return_value=True), \
+             patch("nyxniri.modules.fisher.subprocess.run", side_effect=fake_run), \
+             patch("builtins.print"):
+            self.assertTrue(fisher_install())
+
+        self.assertEqual(calls[0][6:], list(FISHER_PLUGINS))
+        self.assertEqual(json.loads(_ownership_path().read_text(encoding="utf-8"))["plugins"], list(FISHER_PLUGINS))
+
+    def test_missing_owned_file_runs_repair(self):
+        from nyxniri.modules.fisher import FISHER_PLUGINS, _ownership_path, fisher_install
+
+        self._write_lockfile()
+        missing = self.fish_dir / "conf.d" / "autopair.fish"
+        _ownership_path().write_text(
+            json.dumps({
+                "files": ["conf.d/autopair.fish"],
+                "complete": True,
+                "fisher_preexisting": False,
+                "plugins": list(FISHER_PLUGINS),
+            }),
+            encoding="utf-8",
+        )
+        def repaired_run(*args, **kwargs):
+            missing.write_text("managed", encoding="utf-8")
+            return MagicMock(returncode=0)
+
+        run = MagicMock(side_effect=repaired_run)
+
+        with patch("nyxniri.modules.fisher.shutil.which", return_value="/usr/bin/fish"), \
+             patch("nyxniri.modules.fisher.fetch_raw_with_fallback", return_value=True), \
+             patch("nyxniri.modules.fisher.subprocess.run", run), \
+             patch("builtins.print"):
+            self.assertTrue(fisher_install())
+
+        run.assert_called_once()
+        self.assertTrue(missing.is_file())
+
+    def test_failed_repair_stays_incomplete_after_creating_missing_file(self):
+        from nyxniri.modules.fisher import FISHER_PLUGINS, _ownership_path, fisher_install
+
+        self._write_lockfile()
+        missing = self.fish_dir / "conf.d" / "autopair.fish"
+        _ownership_path().write_text(
+            json.dumps({
+                "files": ["conf.d/autopair.fish"],
+                "complete": True,
+                "fisher_preexisting": False,
+                "plugins": list(FISHER_PLUGINS),
+            }),
+            encoding="utf-8",
+        )
+
+        def failed_run(*args, **kwargs):
+            missing.write_text("managed", encoding="utf-8")
+            return MagicMock(returncode=1)
+
+        fetch = MagicMock(return_value=True)
+        run = MagicMock(side_effect=failed_run)
+        with patch("nyxniri.modules.fisher.shutil.which", return_value="/usr/bin/fish"), \
+             patch("nyxniri.modules.fisher.fetch_raw_with_fallback", fetch), \
+             patch("nyxniri.modules.fisher.subprocess.run", run), \
+             patch("builtins.print"):
+            self.assertFalse(fisher_install())
+            self.assertFalse(fisher_install())
+
+        self.assertFalse(json.loads(_ownership_path().read_text(encoding="utf-8"))["complete"])
+        self.assertEqual(fetch.call_count, 2)
+        self.assertEqual(run.call_count, 2)
+
+    def test_bootstrap_path_is_an_argv_value_not_fish_code(self):
+        from nyxniri.modules.fisher import FISHER_PLUGINS, fisher_install
+
+        self._write_lockfile()
+        special_tmp = self.env.home / "tmp dir; injected"
+        special_tmp.mkdir()
+        calls = []
+
+        def failed_run(command, **kwargs):
+            calls.append(command)
+            return MagicMock(returncode=1)
+
+        old_tempdir = tempfile.tempdir
+        tempfile.tempdir = None
+        try:
+            with patch.dict(os.environ, {"TMPDIR": str(special_tmp)}), \
+                 patch("nyxniri.modules.fisher.shutil.which", return_value="/usr/bin/fish"), \
+                 patch("nyxniri.modules.fisher.fetch_raw_with_fallback", return_value=True), \
+                 patch("nyxniri.modules.fisher.subprocess.run", side_effect=failed_run), \
+                 patch("builtins.print"):
+                self.assertFalse(fisher_install())
+        finally:
+            tempfile.tempdir = old_tempdir
+
+        self.assertEqual(
+            calls,
+            [["fish", "-c", "set --global fisher_path $argv[2]; source -- $argv[1]; fisher install $argv[3..-1]",
+              "--", calls[0][4], str(self.fish_dir), *FISHER_PLUGINS]],
+        )
+        self.assertTrue(str(calls[0][4]).startswith(str(special_tmp)))
 
 
 class TestQuickphraseRestore(unittest.TestCase):
@@ -230,7 +541,7 @@ class TestGreeterStateDirRemoval(unittest.TestCase):
 
 
 class TestFisherInstallDetect(unittest.TestCase):
-    """fisher module: install early-returns when fish absent; detection by loader file."""
+    """Fisher needs both the host and NyxNiri's ownership record."""
 
     def setUp(self):
         self._ctx = TempEnv()
@@ -240,11 +551,13 @@ class TestFisherInstallDetect(unittest.TestCase):
     def tearDown(self):
         self._ctx.__exit__()
 
-    def test_installed_detects_loader_file(self):
-        from nyxniri.modules.fisher import fisher_installed
+    def test_installed_requires_ownership_record(self):
+        from nyxniri.modules.fisher import _ownership_path, fisher_installed
         fish_dir = self.env.config_dir / "fish" / "functions"
         fish_dir.mkdir(parents=True)
         (fish_dir / "fisher.fish").write_text("# fisher")
+        self.assertFalse(fisher_installed())
+        _ownership_path().write_text(json.dumps({"files": ["functions/fisher.fish"], "fisher_preexisting": False}), encoding="utf-8")
         self.assertTrue(fisher_installed())
 
     def test_install_noop_when_fish_absent(self):

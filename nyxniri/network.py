@@ -1,5 +1,6 @@
 """Network operations: multi-mirror Git cloning, CDN downloads, and repo self-updates."""
 
+import hashlib
 import os
 import select
 import shutil
@@ -195,7 +196,7 @@ def clone_repo_with_fallback(target_dir: Path, mirrors: Optional[List[Tuple[str,
     return False
 
 
-def fetch_raw_with_fallback(user_repo: str, branch: str, file_path: str, output_file: Path) -> bool:
+def fetch_raw_with_fallback(user_repo: str, branch: str, file_path: str, output_file: Path, expected_sha256: Optional[str] = None) -> bool:
     """Download a raw asset via 3-tier mirror fallback (Official -> jsDelivr CDN -> gh-proxy)."""
     log_msg("INFO", f"Fetching raw file: {user_repo}/{file_path} ({branch})")
     sys.stdout.write(msg("net_download_asset", user_repo, file_path) + "\n")
@@ -247,13 +248,16 @@ def fetch_raw_with_fallback(user_repo: str, branch: str, file_path: str, output_
             if http_code == "200" and tmp_path.stat().st_size > 0:
                 # Check for HTML 404 block page
                 first_lines = tmp_path.read_text(encoding="utf-8", errors="ignore")[:200].lower()
-                if "<html" not in first_lines:
+                digest_ok = expected_sha256 is None or hashlib.sha256(tmp_path.read_bytes()).hexdigest() == expected_sha256
+                if "<html" not in first_lines and digest_ok:
                     sys.stdout.write(msg("net_download_ok", duration_ms) + "\n")
                     log_msg("INFO", f"Downloaded raw file via [{tag}] ({url}) - {duration_ms}ms")
                     output_file.parent.mkdir(parents=True, exist_ok=True)
                     shutil.move(str(tmp_path), str(output_file))
                     sys.stdout.write(msg("net_download_node_ok", tag))
                     return True
+                if not digest_ok:
+                    log_msg("WARN", f"Raw file digest mismatch via [{tag}] ({url})")
             sys.stdout.write(msg("net_download_fail", http_code) + "\n")
         except Exception as e:
             sys.stdout.write(f"{Colors.BOLD_RED}[✗] {e}{Colors.RESET}\n")
