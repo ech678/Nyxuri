@@ -57,10 +57,10 @@ class WallpaperScanner:
         self.on_thumb_ready_cb = on_thumb_ready_cb
         self.items = []
         self.categories = ["All", "Static", "Live"]
-        self.category_items = {"All": [], "Static": [], "Live": []}
         self.executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="wp_thumb")
         os.makedirs(CACHE_DIR, exist_ok=True)
-        self._lazy_loaded = False
+        self._thumb_queue = []
+        self._thumb_queue_pos = 0
 
     def scan(self) -> list:
         """Scan all resolved search roots and subdirectories."""
@@ -107,16 +107,6 @@ class WallpaperScanner:
         # Build categories list: primary tabs + actual custom user subfolders
         sorted_subfolders = sorted(list(custom_subfolders), key=lambda x: x.lower())
         self.categories = ["All", "Static", "Live"] + sorted_subfolders
-        self.category_items = {cat: [] for cat in self.categories}
-
-        for item in self.items:
-            self.category_items["All"].append(item)
-            if item.is_video:
-                self.category_items["Live"].append(item)
-            else:
-                self.category_items["Static"].append(item)
-            if item.category in self.category_items and item.category not in ("All", "Static", "Live"):
-                self.category_items[item.category].append(item)
 
         for it in self.items[:6]:
             if os.path.isfile(it.thumb_path):
@@ -126,35 +116,20 @@ class WallpaperScanner:
 
         return self.items
 
-    def load_thumbnails_async(self):
-        """Fire callback for already-cached thumbs, submit background jobs for the rest."""
-        for item in self.items[:24]:
-            if os.path.isfile(item.thumb_path):
-                self._thumb_ready(item)
-            else:
-                self.executor.submit(self._generate_thumbnail_worker, item)
+    def set_thumb_queue(self, items: list):
+        """Set the display-order queue that drives incremental thumbnail loading."""
+        self._thumb_queue = list(items)
+        self._thumb_queue_pos = 0
 
-    def load_visible_thumbnails(self, items_slice: list):
-        for item in items_slice:
-            if os.path.isfile(item.thumb_path):
-                self._thumb_ready(item)
-            elif not item.is_loading:
-                self.executor.submit(self._generate_thumbnail_worker, item)
-
-    def load_category_thumbnails(self, cat_name: str):
-        items = self.category_items.get(cat_name, [])
-        for item in items:
+    def load_next_thumb_batch(self, count: int = 24):
+        """Load the next queue batch: cached thumbs notify now, the rest get jobs."""
+        batch = self._thumb_queue[self._thumb_queue_pos:self._thumb_queue_pos + count]
+        self._thumb_queue_pos += len(batch)
+        for item in batch:
             if os.path.isfile(item.thumb_path):
                 self._thumb_ready(item)
             elif not item.is_loading:
                 self.executor.submit(self._generate_thumbnail_worker, item)
-
-    def _ensure_thumbnail(self, item: WallpaperItem):
-        """Ensure a thumbnail file exists for an item (synchronous, used for pre-warm)."""
-        if os.path.isfile(item.thumb_path):
-            self._thumb_ready(item)
-        else:
-            self._generate_thumbnail_worker(item)
 
     def _thumb_ready(self, item: WallpaperItem):
         """Notify the UI (on main thread) that a thumbnail file is available."""
