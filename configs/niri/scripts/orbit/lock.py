@@ -22,10 +22,12 @@ def _is_orbit_process(pid: int) -> bool:
         if os.stat(proc).st_uid != os.getuid():
             return False
         with open(f"{proc}/cmdline", "rb") as cf:
-            argv0 = cf.read().split(b"\0")[0].decode("utf-8", "replace")
-    except (OSError, IndexError):
+            argv = [a.decode("utf-8", "replace") for a in cf.read().split(b"\0") if a]
+    except OSError:
         return False
-    return os.path.basename(argv0) in _ORBIT_ENTRY_NAMES
+    # argv[0] is the interpreter for shebang-launched scripts; the entry script
+    # shows up anywhere in argv (direct spawn, wrapper execv, extra flags).
+    return any(os.path.basename(arg) in _ORBIT_ENTRY_NAMES for arg in argv)
 
 
 def acquire_instance_lock(lock_path: str, pid_path: str) -> int:

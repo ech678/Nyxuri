@@ -25,8 +25,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from nyxniri.constants import Colors
-from nyxniri.core import get_env
+from nyxniri.constants import PROJECT_NAME, Colors
+from nyxniri.core import get_env, log_msg
 from nyxniri.i18n import msg
 
 
@@ -109,7 +109,7 @@ def _open_child_dir(parent_fd: int, name: str, *, create: bool = False) -> int:
 def _open_presets_dir(*, create: bool = False) -> int:
     config_fd = _open_dir(get_env().config_dir, create=create)
     try:
-        nyx_fd = _open_child_dir(config_fd, "NyxNiri", create=create)
+        nyx_fd = _open_child_dir(config_fd, PROJECT_NAME, create=create)
     finally:
         os.close(config_fd)
     try:
@@ -360,7 +360,7 @@ def get_preset_info(app: str, name: str) -> PresetInfo:
             source = "user"
             is_editable = True
             is_deletable = True
-            rel_path = f"~/.config/NyxNiri/presets/{app}/{name}"
+            rel_path = f"~/.config/{PROJECT_NAME}/presets/{app}/{name}"
     else:
         rel_path = f"configs/{app}/presets/{name} (not found)"
 
@@ -496,7 +496,14 @@ def apply_preset(app: str, name: str) -> bool:
     _phase_render_templates(only_app=app)
     # deploy-then-write: a crash mid-flow must not leave active pointing at a
     # preset whose deploy didn't complete (would skip re-deploy next run). §3.2
-    write_active_preset(app, name)
+    try:
+        write_active_preset(app, name)
+    except OSError as e:
+        # Deploy landed but the choice was not recorded — say so loudly instead
+        # of a bare traceback; next update would otherwise redeploy defaults.
+        print(msg("preset_apply_failed", app, name))
+        log_msg("ERROR", f"Deployed preset '{name}' to {app} but recording active state failed: {e}")
+        return False
     _render_preset_result(app, name, preserved_log)
     return True
 

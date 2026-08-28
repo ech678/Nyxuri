@@ -36,7 +36,8 @@ deploy 时根据 active 选源目录，四条分支 + 一条冻结：
 "显示新预设、实际旧配置"的错乱态。
 
 - **apply 流程**（`apply_preset`）：`atomic_replace` → `_phase_render_templates(only_app=app)`
-  → `write_active_preset`。deploy-then-write。
+  → `write_active_preset`。deploy-then-write。write 失败（磁盘满/权限）会报错返回
+  False——deploy 已落地、active 未记录，下次 update 按 default 重新部署。
 - **dest-missing reset** 是 sanctioned write-before-deploy：dest 已空，reset 后下次自愈。
 - **update 流程**（`_phase_atomic_deployment`）：active 本就正确，只在 dest-missing 时重置
   写 active；其余分支不重写 active。

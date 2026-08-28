@@ -176,16 +176,17 @@ def _is_configs_metadata(name: str) -> bool:
 _MANIFEST_CACHE: Optional[List[Tuple[str, "ModuleManifest"]]] = None
 
 def discover_manifest_apps() -> List[Tuple[str, ModuleManifest]]:
-    global _MANIFEST_CACHE
-    if _MANIFEST_CACHE is not None:
-        return _MANIFEST_CACHE
     """Scan all apps under configs/ + read .optional-apps.toml; merge.
 
     Returns ``(name, manifest)`` for every app — both deployable (has a config
     dir) and optional (in the toml). An app in BOTH appears once with
     ``is_deployable=True`` AND ``is_optional=True`` (optional + config). Sorted
-    by name for deterministic output.
+    by name for deterministic output. Result is cached per process (manifest
+    files cannot change under a running engine).
     """
+    global _MANIFEST_CACHE
+    if _MANIFEST_CACHE is not None:
+        return _MANIFEST_CACHE
     env = get_env()
     if not env.configs_src.is_dir():
         return []

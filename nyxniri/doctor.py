@@ -45,8 +45,8 @@ def _check_noctalia(env) -> None:
         print(msg("doctor_err", text(f"{THEME_ENGINE}: 未在 PATH 中找到", f"{THEME_ENGINE}: not found in PATH")))
     else:
         try:
-            res = subprocess.run([THEME_ENGINE, "msg", "status"], capture_output=True, check=False, timeout=10)
-            if res.returncode == 0:
+            res = timed_run([THEME_ENGINE, "msg", "status"], 10, capture_output=True, check=False)
+            if res is not None and res.returncode == 0:
                 print(msg("doctor_ok", text(f"{THEME_ENGINE}: 守护进程响应正常", f"{THEME_ENGINE}: daemon is responding")))
             else:
                 print(msg("doctor_err", text(f"{THEME_ENGINE}: 守护进程未运行", f"{THEME_ENGINE}: daemon is not running")))
@@ -110,11 +110,11 @@ def _check_scratchpad(env) -> None:
 
 def _check_orbit(env) -> None:
     try:
-        res = subprocess.run(
+        res = timed_run(
             [sys.executable, "-c", "import gi; gi.require_version('Gtk', '3.0'); gi.require_version('GtkLayerShell', '0.1')"],
-            capture_output=True, check=False, timeout=10,
+            10, capture_output=True, check=False,
         )
-        if res.returncode == 0:
+        if res is not None and res.returncode == 0:
             print(msg("doctor_ok", text("Orbit: GtkLayerShell Python 运行环境可用", "Orbit: GtkLayerShell Python runtime is available")))
         else:
             print(msg("doctor_warn", text(
