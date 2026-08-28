@@ -184,6 +184,7 @@ def get_version(target_dir: Path) -> str:
 # --- Single-Instance Lock (fcntl.flock — auto-releases on process death) ---
 _LOCK_FILE: Optional[Path] = None
 _LOCK_FD: Optional[int] = None
+_LOCK_ACQUIRED = False
 
 def acquire_lock() -> None:
     """Acquire single-instance lock via fcntl.flock.
@@ -192,14 +193,22 @@ def acquire_lock() -> None:
     SIGKILL), so there is no stale-lock healing to do and no check-then-write
     race. A PID is still written to the file for diagnostics only.
     """
-    global _LOCK_FILE, _LOCK_FD
+    global _LOCK_FILE, _LOCK_FD, _LOCK_ACQUIRED
     env = get_env()
     env.state_dir.mkdir(parents=True, exist_ok=True)
     _LOCK_FILE = env.state_dir / f"{CLI_CMD}.lock"
+    lock_fd: Optional[int] = None
     try:
-        _LOCK_FD = os.open(_LOCK_FILE, os.O_CREAT | os.O_RDWR, 0o644)
-        fcntl.flock(_LOCK_FD, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        lock_fd = os.open(_LOCK_FILE, os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except (BlockingIOError, OSError):
+        if lock_fd is not None:
+            try:
+                os.close(lock_fd)
+            except OSError:
+                pass
+        _LOCK_FD = None
+        _LOCK_ACQUIRED = False
         # Another instance holds the lock — surface its PID if we can read it
         pid = "unknown"
         try:
@@ -211,6 +220,8 @@ def acquire_lock() -> None:
         from nyxniri.i18n import msg
         print(msg("err_already_running", pid), file=sys.stderr)
         sys.exit(1)
+    _LOCK_FD = lock_fd
+    _LOCK_ACQUIRED = True
     # Best-effort PID write for diagnostics (the lock itself is the source of truth)
     try:
         os.ftruncate(_LOCK_FD, 0)
@@ -219,20 +230,20 @@ def acquire_lock() -> None:
         pass
 
 def release_lock() -> None:
-    """Release the single-instance lock and remove the lock file."""
-    global _LOCK_FD, _LOCK_FILE
-    if _LOCK_FD is not None:
+    """Release the lock held by this process; keep the stable lock path."""
+    global _LOCK_FD, _LOCK_ACQUIRED
+    if _LOCK_ACQUIRED and _LOCK_FD is not None:
         try:
             fcntl.flock(_LOCK_FD, fcntl.LOCK_UN)
-            os.close(_LOCK_FD)
         except Exception:
             pass
-        _LOCK_FD = None
-    if _LOCK_FILE:
-        try:
-            _LOCK_FILE.unlink(missing_ok=True)
-        except Exception:
-            pass
+        finally:
+            try:
+                os.close(_LOCK_FD)
+            except Exception:
+                pass
+            _LOCK_FD = None
+            _LOCK_ACQUIRED = False
 
 atexit.register(release_lock)
 
