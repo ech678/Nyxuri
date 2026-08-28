@@ -106,6 +106,123 @@ class TestEnsureSymlinkSystemMode(unittest.TestCase):
         self.assertFalse(target.exists(), "system mode must not create a user-territory link")
 
 
+class TestCliLinkOwnership(unittest.TestCase):
+    """The CLI only replaces and removes its own expected symlink."""
+
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+        self.env = self._ctx.env
+        self.target = self.env.home / ".local/bin" / "nyxniri"
+
+    def tearDown(self):
+        self._ctx.__exit__()
+
+    def _uninstall_cli(self):
+        from nyxniri.state.uninstall import uninstall_nyxniri
+
+        with patch("nyxniri.modules.fcitx.fcitx5_installed", return_value=False), \
+             patch("nyxniri.modules.gtktheme.gtktheme_registered", return_value=False), \
+             patch("nyxniri.modules.greeter.greeter_installed", return_value=False), \
+             patch("nyxniri.modules.fisher.fisher_installed", return_value=False), \
+             patch("builtins.print"):
+            self.assertTrue(uninstall_nyxniri("all"))
+
+    def test_regular_file_survives_cli_start_and_uninstall(self):
+        self.target.write_text("my launcher")
+        core.ensure_nyxniri_symlink()
+        self.assertEqual(self.target.read_text(), "my launcher")
+        self._uninstall_cli()
+        self.assertEqual(self.target.read_text(), "my launcher")
+
+    def test_directory_survives_cli_start_and_uninstall(self):
+        self.target.mkdir()
+        core.ensure_nyxniri_symlink()
+        self.assertTrue(self.target.is_dir())
+        self._uninstall_cli()
+        self.assertTrue(self.target.is_dir())
+
+    def test_foreign_and_dangling_foreign_links_survive(self):
+        for name, destination in (
+            ("foreign", self.env.home / "other-launcher"),
+            ("dangling", self.env.home / "missing-launcher"),
+        ):
+            with self.subTest(name=name):
+                self.target.symlink_to(destination)
+                core.ensure_nyxniri_symlink()
+                self.assertTrue(self.target.is_symlink())
+                self.assertEqual(self.target.resolve(strict=False), destination.resolve(strict=False))
+                self._uninstall_cli()
+                self.assertTrue(self.target.is_symlink())
+                self.assertEqual(self.target.resolve(strict=False), destination.resolve(strict=False))
+                self.target.unlink()
+
+    def test_created_link_is_kept_then_removed(self):
+        marker = self.env.state_dir / "nyxniri.link"
+        core.ensure_nyxniri_symlink()
+        before = self.target.lstat().st_ino
+        core.ensure_nyxniri_symlink()
+        self.assertEqual(self.target.lstat().st_ino, before)
+        self.assertTrue(marker.is_file())
+        self._uninstall_cli()
+        self.assertFalse(self.target.is_symlink())
+        self.assertFalse(marker.exists())
+
+    def test_cli_start_and_uninstall_keep_unrecorded_expected_link(self):
+        self.target.symlink_to(self.env.repo_dir / "install.sh")
+        core.ensure_nyxniri_symlink()
+        self._uninstall_cli()
+        self.assertTrue(self.target.is_symlink())
+
+    def test_dangling_expected_link_is_removed(self):
+        source = self.env.home / "old-nyxniri"
+        source.mkdir()
+        installer = source / "install.sh"
+        installer.write_text("#!/bin/sh\n")
+        self.env.repo_dir = source
+        core.ensure_nyxniri_symlink()
+        installer.unlink()
+        self.assertTrue(self.target.is_symlink())
+        self._uninstall_cli()
+        self.assertFalse(self.target.is_symlink())
+
+    def test_forged_marker_does_not_claim_foreign_link(self):
+        foreign = self.env.home / "another-launcher"
+        marker = self.env.state_dir / "nyxniri.link"
+        self.target.symlink_to(foreign)
+        marker.write_text(f"{foreign}\n0:0\n")
+        core.ensure_nyxniri_symlink()
+        self._uninstall_cli()
+        self.assertTrue(self.target.is_symlink())
+
+    def test_stale_marker_does_not_claim_replaced_link(self):
+        marker = self.env.state_dir / "nyxniri.link"
+        core.ensure_nyxniri_symlink()
+        self.target.unlink()
+        self.target.symlink_to(self.env.home / "another-launcher")
+        core.ensure_nyxniri_symlink()
+        self.assertTrue(marker.is_file())
+        self._uninstall_cli()
+        self.assertTrue(self.target.is_symlink())
+
+    def test_owned_link_updates_to_new_installer(self):
+        old_source = self.env.home / "old-nyxniri"
+        new_source = self.env.home / "new-nyxniri"
+        old_source.mkdir()
+        new_source.mkdir()
+        old_installer = old_source / "install.sh"
+        new_installer = new_source / "install.sh"
+        old_installer.write_text("#!/bin/sh\n")
+        new_installer.write_text("#!/bin/sh\n")
+        self.env.repo_dir = old_source
+        core.ensure_nyxniri_symlink()
+        self.env.repo_dir = new_source
+        core.ensure_nyxniri_symlink()
+        self.assertEqual(self.target.resolve(strict=False), new_installer.resolve(strict=False))
+        self._uninstall_cli()
+        self.assertFalse(self.target.is_symlink())
+
+
 class TestSafeGitPullSystemBranch(unittest.TestCase):
     """§5.6: system mode refuses git pull, hints pacman."""
 

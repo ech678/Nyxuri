@@ -302,6 +302,58 @@ def timed_run(cmd: list, timeout: float, **kw) -> Optional[subprocess.CompletedP
         return None
 
 # --- CLI Binary Symlink ---
+def _cli_link_marker() -> Path:
+    return get_env().state_dir / f"{CLI_CMD}.link"
+
+
+def _cli_link_record(path: Path) -> Optional[str]:
+    """Return the exact target and inode proof for a CLI symlink."""
+    if not path.is_symlink():
+        return None
+    try:
+        st = path.lstat()
+        return f"{path.resolve(strict=False)}\n{st.st_dev}:{st.st_ino}\n"
+    except (OSError, RuntimeError):
+        return None
+
+
+def _record_nyxniri_cli_symlink(path: Path) -> bool:
+    """Persist ownership of one exact CLI symlink."""
+    record = _cli_link_record(path)
+    marker = _cli_link_marker()
+    if record is None or marker.is_symlink() or (marker.exists() and not marker.is_file()):
+        return False
+    try:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(record, encoding="utf-8")
+        marker.chmod(0o600)
+        return True
+    except OSError:
+        return False
+
+
+def is_nyxniri_cli_symlink(path: Path) -> bool:
+    """Whether path matches NyxNiri's recorded CLI symlink exactly."""
+    record = _cli_link_record(path)
+    marker = _cli_link_marker()
+    if record is None or marker.is_symlink() or not marker.is_file():
+        return False
+    try:
+        return marker.read_text(encoding="utf-8") == record
+    except OSError:
+        return False
+
+
+def clear_nyxniri_cli_symlink_marker() -> None:
+    """Forget a CLI link only after its recorded link has been removed."""
+    marker = _cli_link_marker()
+    if marker.is_file() and not marker.is_symlink():
+        try:
+            marker.unlink()
+        except OSError:
+            pass
+
+
 def ensure_nyxniri_symlink() -> None:
     """Ensure ~/.local/bin/nyxniri points to install.sh.
 
@@ -326,10 +378,20 @@ def ensure_nyxniri_symlink() -> None:
             return
 
     try:
-        if not target_bin.is_symlink() or target_bin.resolve() != root_installer.resolve():
+        if target_bin.is_symlink():
+            if not is_nyxniri_cli_symlink(target_bin):
+                return
+            if target_bin.resolve(strict=False) == root_installer.resolve(strict=False):
+                root_installer.chmod(0o755)
+                return
             target_bin.unlink(missing_ok=True)
-            target_bin.symlink_to(root_installer)
-        root_installer.chmod(0o755)
+        elif target_bin.exists():
+            return
+        target_bin.symlink_to(root_installer)
+        if _record_nyxniri_cli_symlink(target_bin):
+            root_installer.chmod(0o755)
+        else:
+            target_bin.unlink(missing_ok=True)
     except Exception:
         pass
 

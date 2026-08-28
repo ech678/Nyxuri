@@ -229,6 +229,49 @@ class TestUpdateReexecHandoff(unittest.TestCase):
         mock_exec.assert_not_called()
         self.assertEqual(ctx.exception.code, 1)
 
+    def test_update_keeps_foreign_cli_link(self):
+        from nyxniri.cli import main
+
+        target = self._ctx.env.home / ".local/bin" / "nyxniri"
+        target.symlink_to(self._ctx.env.home / "another-launcher")
+        with patch("sys.argv", ["nyxniri", "update"]), \
+             patch("nyxniri.cli.acquire_lock"), \
+             patch("nyxniri.cli.init_logger"), \
+             patch("nyxniri.cli.safe_git_pull", return_value=None), \
+             patch("builtins.print"):
+            with self.assertRaises(SystemExit) as ctx:
+                main()
+
+        self.assertEqual(ctx.exception.code, 0)
+        self.assertTrue(target.is_symlink())
+        self.assertEqual(target.resolve(strict=False), (self._ctx.env.home / "another-launcher").resolve(strict=False))
+
+
+class TestCliLinkOwnershipCallChains(unittest.TestCase):
+    """Install and update retain an entry NyxNiri does not own."""
+
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+
+    def tearDown(self):
+        self._ctx.__exit__()
+
+    def test_install_keeps_foreign_cli_file(self):
+        from nyxniri.cli import main
+
+        target = self._ctx.env.home / ".local/bin" / "nyxniri"
+        target.write_text("my launcher")
+        with patch("sys.argv", ["nyxniri", "install", "config"]), \
+             patch("nyxniri.cli.acquire_lock"), \
+             patch("nyxniri.cli.init_logger"), \
+             patch("nyxniri.cli.install_configs_workflow", return_value=True):
+            with self.assertRaises(SystemExit) as ctx:
+                main()
+
+        self.assertEqual(ctx.exception.code, 0)
+        self.assertEqual(target.read_text(), "my launcher")
+
 
 class TestCheckNewDepsPostUpdate(unittest.TestCase):
     """check_new_deps_post_update should detect and offer to install missing deps."""

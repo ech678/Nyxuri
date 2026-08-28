@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 from nyxniri.constants import CLI_CMD, PROJECT_NAME
-from nyxniri.core import get_env, get_pics_dir, log_msg, copy_path, remove_path
+from nyxniri.core import get_env, get_pics_dir, log_msg, copy_path, remove_path, is_nyxniri_cli_symlink, clear_nyxniri_cli_symlink_marker
 from nyxniri.i18n import msg
 from nyxniri.tui import CheckboxEntry, CheckboxList, drain_stdin, prompt_confirm
 from nyxniri.state.backup import get_all_backups, rollback_configs
@@ -180,8 +180,9 @@ def uninstall_nyxniri(mode: str = "") -> bool:
     # 6. CLI entry.
     if "cli" in selected:
         target_bin = env.home / ".local/bin" / CLI_CMD
-        if target_bin.is_symlink() or target_bin.exists():
+        if is_nyxniri_cli_symlink(target_bin):
             target_bin.unlink(missing_ok=True)
+            clear_nyxniri_cli_symlink_marker()
             print(msg("uninstall_removed", str(target_bin)))
         else:
             print(msg("uninstall_skipped", str(target_bin)))
