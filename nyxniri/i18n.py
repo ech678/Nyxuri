@@ -1303,6 +1303,10 @@ Commands:
         "zh": f"{Colors.BOLD_RED}[✗] 所有镜像节点均拉取失败。请检查网络。{Colors.RESET}\n",
         "en": f"{Colors.BOLD_RED}[✗] All mirror nodes failed. Please check network.{Colors.RESET}\n",
     },
+    "net_custom_repo_invalid": {
+        "zh": f"{Colors.BOLD_RED}[✗] NYXNIRI_REPO 指定的地址不受支持: {{0}}{Colors.RESET}\n  仅接受 https:// 、 git@ 、 ssh:// 开头的仓库地址，已按要求停止安装。\n",
+        "en": f"{Colors.BOLD_RED}[✗] Unsupported NYXNIRI_REPO address: {{0}}{Colors.RESET}\n  Only https:// , git@ , ssh:// addresses are accepted; aborting as configured.\n",
+    },
     "net_download_asset": {
         "zh": f"{Colors.BOLD_BLUE}:: 下载资源 ({{0}}/{{1}})…{Colors.RESET}",
         "en": f"{Colors.BOLD_BLUE}:: Downloading asset ({{0}}/{{1}})…{Colors.RESET}",

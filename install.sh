@@ -26,7 +26,18 @@ GIT_MIRROR_REGISTRY=(
 
 # NYXNIRI_REPO: 指定后单源直连(不回退官方),服务 fork 与内网镜像场景
 if [ -n "${NYXNIRI_REPO:-}" ]; then
-    GIT_MIRROR_REGISTRY=("Custom|${NYXNIRI_REPO}")
+    case "$NYXNIRI_REPO" in
+        https://*|git@*|ssh://*)
+            GIT_MIRROR_REGISTRY=("Custom|${NYXNIRI_REPO}")
+            ;;
+        *)
+            printf '%s[✗] %s%s\n' "$RED" \
+                "$(say "NYXNIRI_REPO 指定的地址不受支持: ${NYXNIRI_REPO}" "Unsupported NYXNIRI_REPO address: ${NYXNIRI_REPO}")" \
+                "$OFF" >&2
+            printf '  %s\n' "$(say "仅接受 https:// 、 git@ 、 ssh:// 开头的仓库地址。" "Only https:// , git@ , ssh:// addresses are accepted.")" >&2
+            exit 1
+            ;;
+    esac
 fi
 
 git_clone_timeout() {

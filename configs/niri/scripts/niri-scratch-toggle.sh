@@ -126,7 +126,9 @@ case "$TARGET_APP" in
         elif [ -x "$TARGET_APP" ] || command -v "$TARGET_APP" >/dev/null 2>&1; then
             niri msg action spawn -- "$TARGET_APP"
         else
-            niri msg action spawn -- bash -c "$TARGET_APP"
+            # No shell-string execution: menu cmds are data, not commands to
+            # interpret. Wrap anything fancier in a script and point cmd at it.
+            printf 'niri-scratch-toggle: refusing to run "%s" as a shell command\n' "$TARGET_APP" >&2
         fi
         ;;
 esac

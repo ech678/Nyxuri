@@ -28,7 +28,9 @@ t() {
     local zh="$1" en="$2"
     if $IS_ZH; then echo -e "$zh"; else echo -e "$en"; fi
 }
-_mc_dryrun=0
+# Inherits across the auto-mode re-exec; never reset unconditionally here or
+# a dry-run would silently degrade into a real clean.
+: "${_mc_dryrun:=0}"
 
 _nyxniri_banner() {
     local MAGENTA='\033[0;35m'
@@ -304,13 +306,16 @@ _mc_sudo_wrap() {
 
     if [[ $_mc_dryrun -eq 1 ]]; then
         case "$1" in
-            "rm"|"docker"|"flatpak"|"journalctl"|"pacman"|"pkcon"|"snap"|"pip"|"npm"|"yarn"|"bun"|"go"|"ccache"|"shelly")
-                printf "[Dry-Run] Would execute sudo: %s\n" "$*" >&2
+            "-k"|"-p"|"-v")
+                printf "[Dry-Run] Would prompt for sudo credentials\n" >&2
+                return 0 ;;
+            "rm"|"docker"|"flatpak"|"journalctl"|"pacman"|"pkcon"|"snap"|"pip"|"npm"|"yarn"|"bun"|"go"|"ccache"|"shelly"|"cargo"|"gem"|"paccache"|"systemctl")
+                printf "[Dry-Run] Would execute: %s\n" "$*" >&2
                 return 0 ;;
         esac
     fi
     case "$1" in
-        "-k"|"-p"|"-v"|"rm"|"docker"|"du"|"find"|"flatpak"|"journalctl"|"pacman"|"pkcon"|"snap") ;;
+        "-k"|"-p"|"-v"|"rm"|"docker"|"du"|"find"|"flatpak"|"journalctl"|"pacman"|"pkcon"|"snap"|"cargo"|"gem"|"paccache"|"systemctl") ;;
         *) printf 'Invalid command: %s\n' "$1" >&2 ; return 1 ;;
     esac
     if [[ -n "${_mc_sudo_path:-}" && -x "$_mc_sudo_path" ]]; then
@@ -443,9 +448,9 @@ _mc_rm_safer() {
 _mc_confirm() {
     local _msg="${1:-Continue?}"
     local _reply
+    [[ ${_mc_auto:-0} -eq 1 ]] && return 0
     [[ -r /dev/tty ]] || return 1
     printf '\n%s (y/N)? ' "$_msg" >/dev/tty
-    [[ ${_mc_auto:-0} -eq 1 ]] && return 0
     IFS= read -r _reply </dev/tty || return 1
     [[ "$_reply" == [yY]* ]] || return 1
 }
@@ -773,7 +778,7 @@ _mc_snapdata() {
             _mc_sudo_wrap -v || return 0
             if ! systemctl is-active --quiet snapd.service && ! systemctl is-active --quiet snapd.socket; then
                 if _mc_confirm "Start snapd.socket to list and remove SNAPs"; then
-                    systemctl start snapd.socket
+                    _mc_sudo_wrap systemctl start snapd.socket
                 else
                     printf "Skipped\n"
                 fi
@@ -822,7 +827,7 @@ _mc_flatdata() {
                 if _mc_confirm "Clean user flatpaks"; then
                     local _tmp _pid
                     _tmp=$(mktemp) || return 1
-                    { flatpak uninstall --unused --user ; flatpak repair --user ; } >"$_tmp" 2>&1 & _pid="$!"
+                    { _mc_sudo_wrap flatpak uninstall --unused --user ; _mc_sudo_wrap flatpak repair --user ; } >"$_tmp" 2>&1 & _pid="$!"
                     _mc_loading "Working.." "$_pid" || return 1
                     cat "$_tmp" ; rm -f "$_tmp"
                 else
@@ -833,7 +838,7 @@ _mc_flatdata() {
                 if _mc_confirm "Clean system flatpaks"; then
                     local _tmp _pid
                     _tmp=$(mktemp) || return 1
-                    { flatpak uninstall --unused ; _mc_sudo_wrap flatpak repair ; } >"$_tmp" 2>&1 & _pid="$!"
+                    { _mc_sudo_wrap flatpak uninstall --unused ; _mc_sudo_wrap flatpak repair ; } >"$_tmp" 2>&1 & _pid="$!"
                     _mc_loading "Working.." "$_pid" || return 1
                     cat "$_tmp" ; rm -f "$_tmp"
                 else
@@ -844,7 +849,7 @@ _mc_flatdata() {
                 if _mc_confirm "Clear flatpak application data"; then
                     local _tmp _pid
                     _tmp=$(mktemp) || return 1
-                    flatpak uninstall --delete-data >"$_tmp" 2>&1 & _pid="$!"
+                    _mc_sudo_wrap flatpak uninstall --delete-data >"$_tmp" 2>&1 & _pid="$!"
                     _mc_loading "Working.." "$_pid" || return 1
                     cat "$_tmp" ; rm -f "$_tmp"
                 else
@@ -899,7 +904,7 @@ _mc_docker() {
                 _mc_sudo_wrap -v || return 0
                 if ! systemctl is-active --quiet docker.service && ! systemctl is-active --quiet docker.socket; then
                     if _mc_confirm "Start docker.socket to list and remove docker images and data"; then
-                        systemctl start docker.socket
+                        _mc_sudo_wrap systemctl start docker.socket
                     else
                         printf "Skipped\n"
                     fi
@@ -945,12 +950,12 @@ _mc_gocache() {
             _mc_calcsiz _mc_quicksums "$HOME/.cache/go-build" "$HOME/go/pkg"
             if [[ -d "$HOME/go/pkg" && -n "$(find "$HOME/go/pkg" -mindepth 1)" ]]; then
                 if _mc_confirm "Clean ALL module download cache as well"; then
-                    go clean -modcache
+                    _mc_sudo_wrap go clean -modcache
                 else
                     printf "Skipped\n"
                 fi
             fi
-            go clean -cache & _pid="$!"
+            _mc_sudo_wrap go clean -cache & _pid="$!"
             _mc_loading "Working.." "$_pid" || return 1
             _mc_calcsiz _mc_quicksums2 "$HOME/.cache/go-build" "$HOME/go/pkg"
             printf "Done\n"
@@ -1029,12 +1034,12 @@ _mc_npmcache() {
             local _mc_quicksums=0 _mc_quicksums2=0 _mc_diff=0 _pid _tmp
             _mc_calcsiz _mc_quicksums "$HOME/.npm"
             if _mc_confirm "Clean ALL data from npm cache as well"; then
-                npm cache clean --force >/dev/null 2>&1
+                _mc_sudo_wrap npm cache clean --force >/dev/null 2>&1
             else
                 printf "Skipped\n"
             fi
             _tmp=$(mktemp) || return 1
-            npm cache verify >"$_tmp" 2>&1 & _pid="$!"
+            _mc_sudo_wrap npm cache verify >"$_tmp" 2>&1 & _pid="$!"
             _mc_loading "Working.." "$_pid" || { rm -f "$_tmp"; return 1; }
             cat "$_tmp"; rm -f "$_tmp"
             _mc_calcsiz _mc_quicksums2 "$HOME/.npm"
@@ -1065,7 +1070,7 @@ _mc_yarncache() {
         if _mc_confirm "Clean the yarn cache"; then
             local _mc_quicksums=0 _mc_quicksums2=0 _mc_diff=0 _pid
             _mc_calcsiz _mc_quicksums "$HOME/.cache/yarn" "$HOME/.local/share/yarn" "$HOME/.yarncache"
-            yarn cache clean --mirror & _pid="$!"
+            _mc_sudo_wrap yarn cache clean --mirror & _pid="$!"
             _mc_loading "Working.." "$_pid" || return 1
             _mc_calcsiz _mc_quicksums2 "$HOME/.cache/yarn" "$HOME/.local/share/yarn" "$HOME/.yarncache"
             printf "Done\n"
@@ -1126,7 +1131,7 @@ _mc_rustcargo() {
             local _mc_quicksums=0 _mc_quicksums2=0 _mc_diff=0 _pid
             _mc_calcsiz _mc_quicksums "$HOME/.cargo"
             { if cargo help -Z gc >/dev/null 2>&1; then
-                cargo -Z gc clean gc >/dev/null 2>&1
+                _mc_sudo_wrap cargo -Z gc clean gc >/dev/null 2>&1
             else
                 _mc_rm_safer "$HOME/.cargo/registry/"{cache,src}
             fi ; } & _pid="$!"
@@ -1178,12 +1183,12 @@ _mc_rubygems() {
             local _mc_quicksums=0 _mc_quicksums2=0 _mc_diff=0 _pid _tmp
             _mc_calcsiz _mc_quicksums "$HOME/.local/share/gem"
             if _mc_confirm "Clean sources data from gem cache as well"; then
-                gem sources -c
+                _mc_sudo_wrap gem sources -c
             else
                 printf "Skipped\n"
             fi
             _tmp=$(mktemp) || return 1
-            gem cleanup >"$_tmp" 2>&1 & _pid="$!"
+            _mc_sudo_wrap gem cleanup >"$_tmp" 2>&1 & _pid="$!"
             _mc_loading "Working.." "$_pid" || { rm -f "$_tmp"; return 1; }
             cat "$_tmp"; rm -f "$_tmp"
             _mc_calcsiz _mc_quicksums2 "$HOME/.local/share/gem"
@@ -1214,7 +1219,7 @@ _mc_pipcache() {
         if _mc_confirm "Clean ALL items from the pip cache"; then
             local _mc_quicksums=0 _mc_quicksums2=0 _mc_diff=0 _pid
             _mc_calcsiz _mc_quicksums "$HOME/.cache/pip"
-            pip cache purge & _pid="$!"
+            _mc_sudo_wrap pip cache purge & _pid="$!"
             _mc_loading "Working.." "$_pid" || return 1
             _mc_calcsiz _mc_quicksums2 "$HOME/.cache/pip"
             printf "Done\n"
@@ -1370,7 +1375,7 @@ _mc_pacmancache() {
             local _mc_quicksums=0 _mc_quicksums2=0 _mc_diff=0 _pid
             _mc_calcsiz _mc_quicksums /var/cache/pacman/pkg
             _mc_sudo_wrap -v || return 0
-            paccache -rvk2 & _pid="$!"
+            _mc_sudo_wrap paccache -rvk2 & _pid="$!"
             _mc_loading "Working.." "$_pid" || return 1
             _mc_calcsiz _mc_quicksums2 /var/cache/pacman/pkg
             printf "Done\n"
@@ -1570,6 +1575,12 @@ fi
 while getopts ":abcdjpvh" option; do
     case "$option" in
         a) # automatic mode
+            if [[ $_mc_dryrun -eq 1 ]]; then
+                # Dry-run is a plan preview: no sudo prompt, no final warning,
+                # and the state must survive the re-exec (it used to reset to 0
+                # and march straight into real deletion).
+                _mc_auto=1 _mc_dryrun=1 exec -- "$_mc_scr_path" -bcdp
+            fi
             _mc_sudo_wrap -k
             printf "\nPerforming all cleanings automatically.\n"
             printf "\nThis is the final warning.\n\n"
@@ -1631,6 +1642,7 @@ _mc_calcttl
 ## Exit Script ##
 
 printf "\nPress any key to exit. "
-read -r -t60 -s -n1
+# EOF (scripted/CI calls) must not turn into a nonzero exit code.
+read -r -t60 -s -n1 || true
 printf "\n\n"
 exit 0

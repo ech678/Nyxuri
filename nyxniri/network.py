@@ -16,6 +16,8 @@ from typing import Any, List, Optional, Tuple
 
 from nyxniri.constants import (
     Colors,
+    CUSTOM_REPO_URL,
+    CUSTOM_REPO_URL_VALID,
     GIT_MIRROR_REGISTRY,
     RAW_MIRROR_TEMPLATES,
 )
@@ -172,6 +174,12 @@ def git_clone_timeout(url: str, target_dir: Path, cancellable: bool = False) -> 
 def clone_repo_with_fallback(target_dir: Path, mirrors: Optional[List[Tuple[str, str]]] = None) -> bool:
     """Clone repository attempting each configured mirror in order."""
     if mirrors is None:
+        if CUSTOM_REPO_URL and not CUSTOM_REPO_URL_VALID:
+            # Single-source override means no official fallback by contract;
+            # a bogus address fails loudly instead of silently switching source.
+            sys.stderr.write(msg("net_custom_repo_invalid", CUSTOM_REPO_URL))
+            log_msg("ERROR", f"NYXNIRI_REPO rejected: {CUSTOM_REPO_URL}")
+            return False
         mirrors = GIT_MIRROR_REGISTRY
 
     log_msg("INFO", "Starting Git clone with fallback mirrors")
@@ -310,7 +318,7 @@ def safe_git_pull(target_dir: Path) -> Optional[bool]:
             print(msg("update_cancelled_dirty"))
             log_msg("WARN", f"Skipped update for dirty cache (non-interactive): {target_dir}")
             return False
-        if not prompt_confirm("dirty_tree_confirm", "n"):
+        if not prompt_confirm("dirty_tree_confirm", "n", destructive=True):
             print(msg("update_cancelled_dirty"))
             return None
         # Best-effort cleanup: a stalled reset must not crash the update flow.

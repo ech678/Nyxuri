@@ -39,6 +39,11 @@ else:
         ("gh-proxy.org", "https://gh-proxy.org/https://github.com/ech678/NyxNiri.git"),
     ]
 
+# Single-source override is user-configured, never silently replaced: an
+# address that isn't a git remote is refused loudly at the point of cloning.
+CUSTOM_REPO_URL = os.environ.get("NYXNIRI_REPO", "")
+CUSTOM_REPO_URL_VALID = CUSTOM_REPO_URL.startswith(("https://", "git@", "ssh://"))
+
 RAW_MIRROR_TEMPLATES = [
     ("Official", "https://raw.githubusercontent.com/{USER_REPO}/{BRANCH}/{FILE_PATH}"),
     ("jsDelivr-CDN", "https://fastly.jsdelivr.net/gh/{USER_REPO}@{BRANCH}/{FILE_PATH}"),

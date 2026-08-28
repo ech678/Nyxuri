@@ -99,7 +99,7 @@ def uninstall_nyxniri(mode: str = "") -> bool:
         archive_configs = False  # purge = delete, no archive
         if sys.stdin.isatty():
             print(msg("purge_warning"))
-            if not prompt_confirm("purge_prompt", "n"):
+            if not prompt_confirm("purge_prompt", "n", destructive=True):
                 print(msg("purge_cancelled"))
                 return False
             print(msg("purge_start"))

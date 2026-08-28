@@ -292,7 +292,7 @@ def delete_backup(target_arg: str = "") -> bool:
         print(msg("delete_confirm_many", len(selected)))
         for backup in selected:
             print(f"    {backup.name}")
-    if not prompt_confirm("delete_prompt", "n"):
+    if not prompt_confirm("delete_prompt", "n", destructive=True):
         print(msg("delete_cancelled"))
         return False
 
