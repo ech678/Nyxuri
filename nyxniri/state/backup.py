@@ -32,7 +32,7 @@ def get_backup_base_dir() -> Path:
 MAX_SNAPSHOTS = 30
 
 
-def _prune_old_snapshots(base_dir: Path) -> None:
+def _prune_old_snapshots(base_dir: Path, protected_snapshot: Optional[Path] = None) -> None:
     """Keep at most MAX_SNAPSHOTS managed snapshots; drop oldest beyond that."""
     if not base_dir.is_dir():
         return
@@ -42,13 +42,21 @@ def _prune_old_snapshots(base_dir: Path) -> None:
     ]
     if len(snapshots) <= MAX_SNAPSHOTS:
         return
-    snapshots.sort(key=lambda p: p.name, reverse=True)
-    for old in snapshots[MAX_SNAPSHOTS:]:
+    snapshots.sort(key=lambda p: p.name)
+    excess = len(snapshots) - MAX_SNAPSHOTS
+    for old in snapshots:
+        if old == protected_snapshot:
+            continue
         shutil.rmtree(old, ignore_errors=True)
         log_msg("INFO", f"Pruned old snapshot {old.name}")
+        excess -= 1
+        if not excess:
+            break
 
 
-def backup_configs(note: str = "", interactive: bool = True) -> Optional[Path]:
+def backup_configs(
+    note: str = "", interactive: bool = True, protected_snapshot: Optional[Path] = None
+) -> Optional[Path]:
     """Create a complete snapshot of all active dotfiles configurations."""
     from nyxniri.deploy.deploy import discover_config_items
 
@@ -80,7 +88,7 @@ def backup_configs(note: str = "", interactive: bool = True) -> Optional[Path]:
         (tmp_dir / "note.txt").write_text(note.strip(), encoding="utf-8")
 
     tmp_dir.rename(backup_dir)
-    _prune_old_snapshots(base_dir)
+    _prune_old_snapshots(base_dir, protected_snapshot)
     if interactive:
         print(msg("backup_done", str(backup_dir)))
     log_msg("INFO", f"Created configuration snapshot at {backup_dir}")
@@ -194,24 +202,50 @@ def rollback_configs(target_arg: str = "") -> bool:
             return False
         chosen_backup = backups[choice]
 
+    if not chosen_backup.is_dir() or chosen_backup.is_symlink():
+        print(msg("rollback_source_missing", chosen_backup.name), file=sys.stderr)
+        log_msg("ERROR", f"Selected rollback snapshot disappeared: {chosen_backup}")
+        return False
+
+    env = get_env()
+    expected_items = [
+        item for item in discover_config_items()
+        if (chosen_backup / item).exists() or (chosen_backup / item).is_symlink()
+    ]
+    if not expected_items:
+        print(msg("rollback_no_items"), file=sys.stderr)
+        log_msg("ERROR", f"Selected rollback snapshot has no restorable configuration: {chosen_backup}")
+        return False
+
     print(msg("rolling_back", chosen_backup.name))
 
     # Auto pre-rollback snapshot
-    pre_snap = backup_configs(note="pre-rollback safety snapshot", interactive=False)
+    pre_snap = backup_configs(
+        note="pre-rollback safety snapshot", interactive=False, protected_snapshot=chosen_backup
+    )
     if pre_snap:
         print(msg("pre_rollback_backup", str(pre_snap)))
 
-    env = get_env()
-    items = discover_config_items()
-    for item in items:
+    if not chosen_backup.is_dir() or chosen_backup.is_symlink():
+        print(msg("rollback_source_missing", chosen_backup.name), file=sys.stderr)
+        log_msg("ERROR", f"Selected rollback snapshot disappeared: {chosen_backup}")
+        return False
+
+    for item in expected_items:
+        snap_item = chosen_backup / item
+        if not snap_item.exists() and not snap_item.is_symlink():
+            print(msg("log_deploy_config_failed", item), file=sys.stderr)
+            log_msg("ERROR", f"Selected rollback snapshot item disappeared: {snap_item}")
+            return False
+
+    for item in expected_items:
         snap_item = chosen_backup / item
         dest_item = env.config_dir / item
-        if snap_item.exists() or snap_item.is_symlink():
-            if not atomic_replace_item(snap_item, dest_item):
-                print(msg("log_deploy_config_failed", item), file=sys.stderr)
-                log_msg("ERROR", f"Failed to restore snapshot item {snap_item}")
-                return False
-            print(msg("log_restore_item", item))
+        if not atomic_replace_item(snap_item, dest_item, preserve_custom=False):
+            print(msg("log_deploy_config_failed", item), file=sys.stderr)
+            log_msg("ERROR", f"Failed to restore snapshot item {snap_item}")
+            return False
+        print(msg("log_restore_item", item))
 
     print(msg("rollback_done", chosen_backup.name))
     log_msg("INFO", f"Rolled back dotfiles from snapshot {chosen_backup}")

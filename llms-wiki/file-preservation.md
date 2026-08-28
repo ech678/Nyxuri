@@ -8,6 +8,7 @@
 `atomic_replace_item` 在 swap 前扫描 **dest** 里所有名字含 `__custom__` 的文件和目录
 （任意深度），把它们的当前内容继承进新部署的 tmp 目录。与 src 是哪个预设**无关**——
 不管切到 transparent 还是 default，dest 里的 `__custom__` 都原样保留。
+`preserve_custom=False` 是回滚的精确恢复模式，不继承当前配置的自定义内容
 
 两步走（`atomic.py`）：
 1. **Custom 文件**：`os.walk(dest)`，prune `__custom__` 目录不递归进文件搜索，逐个 `copy2`

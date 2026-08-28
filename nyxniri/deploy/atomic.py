@@ -33,7 +33,11 @@ def _deploy_ignore_factory(root_src: Path):
     return _ignore
 
 
-def atomic_replace_item(src: Path, dest: Path, preserved_log: Optional[List[str]] = None, test_mode: bool = False, preserve: Optional[List[str]] = None) -> bool:
+def atomic_replace_item(
+    src: Path, dest: Path, preserved_log: Optional[List[str]] = None,
+    test_mode: bool = False, preserve: Optional[List[str]] = None,
+    preserve_custom: bool = True,
+) -> bool:
     """Atomic swap deployment via sibling temp directories with Dunder Protocol preservation.
 
     ``preserve`` injects manifest-declared files (e.g. monitor.kdl) into tmp_new
@@ -79,7 +83,7 @@ def atomic_replace_item(src: Path, dest: Path, preserved_log: Optional[List[str]
         shutil.copytree(src, tmp_new, symlinks=True, ignore=_deploy_ignore_factory(src))
 
         # Dunder Protocol: Scan and inherit *__custom__* files and directories
-        if dest.is_dir():
+        if preserve_custom and dest.is_dir():
             # 1. Custom files
             for root, dirs, files in os.walk(dest):
                 # Prune custom directories from file search to handle them in step 2
