@@ -185,7 +185,7 @@ NyxNiri
 
 **壁纸和动态视频包：** 高清壁纸和动态视频（约 100MB）在独立仓库 [wallpaper-collection](https://github.com/ech678/wallpaper-collection)。`install` 时可选拉取，或随时用 `nyxniri wallpapers` 下载。
 
-**Noctalia Greeter：** 和 Noctalia 主题一致的 greetd 登录界面。`nyxniri greeter install` 装 `greetd` + `noctalia-greeter`（AUR），备份现有配置并写入 Polkit 规则；不禁用已有显示管理器。
+**Noctalia Greeter：** 和 Noctalia 主题一致的 greetd 登录界面，`nyxniri greeter install` 装 `greetd` + `noctalia-greeter`（AUR），备份现有配置并写入 Polkit 规则，随后切换下次启动使用 greetd，不会中断当前图形会话，切换失败或运行 `nyxniri greeter uninstall` 会恢复原显示管理器
 
 ## 工具
 

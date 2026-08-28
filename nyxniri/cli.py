@@ -274,7 +274,8 @@ def install_configs_workflow(mode: str = "full") -> bool:
     if do_greeter:
         cur_step += 1
         print(msg("install_step_greeter", f"{cur_step}/{steps}"))
-        greeter_install()
+        if not greeter_install():
+            return False
 
     # Completion
     render_completion_screen(
@@ -299,9 +300,11 @@ def offer_overwrite_upgrade(flag: str = "") -> bool:
         if fcitx_enabled():
             fcitx_install()
         try:
-            greeter_install()
+            if not greeter_install():
+                return False
         except Exception as e:
             log_msg("WARN", f"Greeter install skipped during --force update: {e}")
+            return False
         render_completion_screen("update", wallpaper_result=wallpaper_result)
         return True
     elif flag == "--no-deploy":
@@ -345,7 +348,8 @@ def offer_overwrite_upgrade(flag: str = "") -> bool:
             if chosen["fcitx"]:
                 fcitx_install()
             if chosen["greeter"]:
-                greeter_install()
+                if not greeter_install():
+                    return False
             render_completion_screen(
                 "update",
                 chosen_items=chosen["configs"],

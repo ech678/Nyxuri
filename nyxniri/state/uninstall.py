@@ -138,11 +138,15 @@ def uninstall_nyxniri(mode: str = "") -> bool:
     ):
         if key in selected:
             try:
-                fn()
+                if not fn():
+                    log_msg("WARN", f"{label} uninstall reported failure")
+                    print(msg("uninstall_failed", label))
+                    return False
                 print(msg("uninstall_module_done", label))
             except Exception as e:
                 log_msg("WARN", f"{label} uninstall failed: {e}")
                 print(msg("uninstall_failed", label))
+                return False
 
     # 2. Configs — archive-then-delete (interactive), or delete-only (purge).
     if "configs" in selected:

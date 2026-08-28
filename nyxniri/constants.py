@@ -11,6 +11,7 @@ THEME_ENGINE = "noctalia"
 GREETER_PKG = "noctalia-greeter"
 GREETER_SESSION_BIN = "noctalia-greeter-session"
 GREETER_ETC_CFG = Path("/etc/greetd/config.toml")
+GREETER_DM_STATE = GREETER_ETC_CFG.parent / "nyxniri-display-manager"
 GREETER_POLKIT_RULE = Path(f"/etc/polkit-1/rules.d/50-{GREETER_PKG}.rules")
 GREETER_STATE_DIR = Path("/var/lib") / GREETER_PKG
 FCITX_THEME = "nyxmellow"

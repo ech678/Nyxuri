@@ -52,6 +52,21 @@ class TestUninstallModuleVisibility(unittest.TestCase):
         greeter_u.assert_not_called()
         fisher_u.assert_not_called()  # fisher.fish absent → not shown → not called
 
+    def test_greeter_uninstall_failure_propagates(self):
+        from nyxniri.state.uninstall import uninstall_nyxniri
+
+        with patch("sys.stdin.isatty", return_value=False), patch("builtins.print"), \
+             patch("nyxniri.state.uninstall.copy_path"), patch("nyxniri.state.uninstall.remove_path"), \
+             patch("nyxniri.state.uninstall.get_pics_dir", return_value=self._ctx.env.home / "Pictures"), \
+             patch("nyxniri.modules.fcitx.fcitx5_installed", return_value=False), \
+             patch("nyxniri.modules.gtktheme.gtktheme_registered", return_value=False), \
+             patch("nyxniri.modules.greeter.greeter_installed", return_value=True), \
+             patch("nyxniri.modules.greeter.greeter_uninstall", return_value=False), \
+             patch("nyxniri.modules.fisher.fisher_installed", return_value=False):
+            result = uninstall_nyxniri("")
+
+        self.assertFalse(result)
+
 
 class TestUninstallExecutionOrder(unittest.TestCase):
     """§14 B3: module uninstallers run BEFORE nyx_dir/state_dir deletion."""
@@ -525,18 +540,40 @@ class TestQuickphraseRestore(unittest.TestCase):
 class TestGreeterStateDirRemoval(unittest.TestCase):
     """Gap #2: greeter_uninstall removes /var/lib/noctalia-greeter."""
 
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+
+    def tearDown(self):
+        self._ctx.__exit__()
+
     def test_var_lib_state_dir_removed(self):
         from nyxniri.modules.greeter import greeter_uninstall
-        from nyxniri.constants import GREETER_STATE_DIR
 
+        config = self._ctx.env.home / "greetd" / "config.toml"
+        polkit = self._ctx.env.home / "polkit.rules"
+        state_dir = self._ctx.env.home / "state-dir"
+        dm_state = self._ctx.env.home / "display-manager"
         calls = []
-        with patch("nyxniri.modules.greeter.subprocess.run", side_effect=lambda *a, **k: calls.append(a[0])):
+        def fake_run(command, **kwargs):
+            calls.append(command)
+            result = MagicMock()
+            result.returncode = 1 if command == ["systemctl", "is-enabled", "greetd"] else 0
+            result.stdout = ""
+            return result
+
+        with patch("nyxniri.modules.greeter.GREETER_ETC_CFG", config), \
+             patch("nyxniri.modules.greeter.GREETER_POLKIT_RULE", polkit), \
+             patch("nyxniri.modules.greeter.GREETER_STATE_DIR", state_dir), \
+             patch("nyxniri.modules.greeter.GREETER_DM_STATE", dm_state), \
+             patch("nyxniri.modules.greeter.shutil.which", return_value="/usr/bin/systemctl"), \
+             patch("nyxniri.modules.greeter.subprocess.run", side_effect=fake_run):
             greeter_uninstall()
 
         # A `sudo rm -rf <state_dir>` command was issued.
         self.assertTrue(
-            any("rm" in c and "-rf" in c and str(GREETER_STATE_DIR) in " ".join(c) for c in calls),
-            f"Expected sudo rm -rf {GREETER_STATE_DIR}, got: {calls}",
+            any("rm" in c and "-rf" in c and str(state_dir) in " ".join(c) for c in calls),
+            f"Expected sudo rm -rf {state_dir}, got: {calls}",
         )
 
 
