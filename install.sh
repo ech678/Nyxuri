@@ -70,11 +70,16 @@ exec_python_engine() {
     local target_dir="$1"
     shift
 
+    cd -- "$target_dir" || return 1
+    # -I -S blocks PYTHON* and sitecustomize startup injection; the fixed
+    # launcher receives the validated tree and user arguments separately.
+    local python_launcher='import sys; target = sys.argv.pop(1); sys.path.insert(0, target); sys.argv[0] = "nyxniri"; from nyxniri.cli import main; main()'
+
     # Only reconnect to /dev/tty if stdin is piped (e.g. curl | bash) AND no subcommand args are given
     if [ "$#" -eq 0 ] && [ ! -t 0 ] && [ -t 1 ] && [ -r /dev/tty ]; then
-        PYTHONPATH="$target_dir${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m nyxniri "$@" < /dev/tty
+        exec python3 -I -S -c "$python_launcher" "$target_dir" "$@" < /dev/tty
     else
-        PYTHONPATH="$target_dir${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m nyxniri "$@"
+        exec python3 -I -S -c "$python_launcher" "$target_dir" "$@"
     fi
 }
 
@@ -157,7 +162,7 @@ main() {
         exit 1
     fi
     local python_version py_major py_minor
-    python_version="$(python3 -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")')" || {
+    python_version="$(python3 -I -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")')" || {
         printf '%s[✗] %s%s\n' "$RED" \
             "$(say "无法确定 Python 版本，请安装 Python 3.11+。" "Could not determine the Python version. Please install Python 3.11+.")" \
             "$OFF" >&2
