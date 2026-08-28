@@ -125,7 +125,10 @@ class TestGitTimeout(unittest.TestCase):
     def setUp(self):
         self._ctx = TempEnv()
         self._ctx.__enter__()
-        (self._ctx.env.repo_dir / ".git").mkdir(exist_ok=True)
+        # TempEnv defaults repo_dir to the real repo root — redirect into the
+        # temp HOME so we never mkdir inside the actual repository tree.
+        self._ctx.env.repo_dir = self._ctx.home / "repo"
+        (self._ctx.env.repo_dir / ".git").mkdir(parents=True)
 
     def tearDown(self):
         self._ctx.__exit__()

@@ -7,13 +7,20 @@
 **所有测试必须用 `tests/utils.py:TempEnv`，禁止碰真实 `~/.config` / `~/.local` / `~/.cache`。**
 
 TempEnv 把 HOME 指向 tmpdir、建目录骨架、override `XDG_*` 环境变量、reset `core._ENV` 和
-模块级缓存（`_PICS_DIR_CACHE`、`deploy.deploy._CONFIG_ITEMS_CACHE`、`deploy.hardware._IS_NVIDIA`）
+模块级缓存（core 的 `_PICS_DIR_CACHE`、deploy 的 `_CONFIG_ITEMS_CACHE`/`_IS_NVIDIA`、
+manifest 的 `_MANIFEST_CACHE`、deps 的 pacman/fc-list/GI/AUR 助手缓存、greeter 状态缓存）
 防止跨测试泄漏。反例：早期测试把实仓库 `configs/niri/config.kdl` 写成桩文件——已修。
 
 ## mock 层级（紧贴被测代码）
 
 mock 打得太高会绕过命令构造逻辑。反例：测 `safe_git_pull` 时 mock `_run_git_transfer` 跳过了
 `_with_git_progress` 的参数变形。
+
+**更隐蔽的反例**：`test_orbit_lock` 曾 mock `_is_orbit_process` 本身——被测函数读 `/proc` 的
+argv[0]（shebang 直启下是解释器名，不是脚本名），验证恒假、orbit toggle 失灵，mock 把回归
+盖得严严实实。修正：真实子进程 + 真实 `/proc` 验证匹配逻辑，**验证函数本身永不 mock**。
+（附带发现：`Popen` 返回后立即读 `/proc/<pid>/cmdline` 大概率还是空的，argv 发布与 exec
+有竞态——测试需轮询等 cmdline 落地，真实运行场景不受影响。）
 
 正确做法：被测代码**懒加载**（函数内 `from nyxniri.deploy.atomic import X`），测试
 `patch("nyxniri.deploy.atomic.X")` 直接打**源模块**——运行时懒加载读到 patched 属性。

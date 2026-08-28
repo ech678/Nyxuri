@@ -330,7 +330,9 @@ class TestApplyNarrowPath(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_apply_skips_hardware_patches_and_post_install_services(self):
-        with patch("nyxniri.deploy.hardware._phase_hardware_patches") as hw, \
+        # Patch the deploy namespace: deploy.py holds its own from-import of
+        # _phase_hardware_patches, so patching the hardware module would miss.
+        with patch("nyxniri.deploy.deploy._phase_hardware_patches") as hw, \
              patch("nyxniri.deploy.deploy._phase_post_install_services") as svc:
             ok = preset.apply_preset("kitty", "transparent")
         self.assertTrue(ok)

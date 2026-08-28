@@ -32,9 +32,11 @@ class TestAutoYesBoundaries(unittest.TestCase):
     def test_destructive_prompt_still_asked_under_auto_yes(self):
         from nyxniri.tui import prompt_confirm
 
-        # Non-tty fallback answers with the default ("n"), i.e. it did NOT
-        # blindly consent — the ask still happened.
-        with patch("nyxniri.tui.sys.stdout"):
+        # Force the non-tty fallback (answers with the default "n", i.e. it did
+        # NOT blindly consent — the ask still happened). Without this the tty
+        # path enters raw mode and blocks the suite waiting for a keypress.
+        with patch("nyxniri.tui.sys.stdout"), \
+             patch("nyxniri.tui.sys.stdin.isatty", return_value=False):
             self.assertFalse(prompt_confirm("purge_prompt", "n", destructive=True))
             self.assertFalse(prompt_confirm("delete_prompt", "n", destructive=True))
             self.assertFalse(prompt_confirm("dirty_tree_confirm", "n", destructive=True))
