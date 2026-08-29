@@ -222,7 +222,7 @@ NyxNiri
 | :--- | :--- |
 | `nyxniri doctor` | 依赖与系统健康检查 |
 | `nyxniri deps` | 打开依赖检查与安装菜单 |
-| `nyxniri apps` | 常用软件安装菜单（Nautilus、Mission Center、Fcitx5 Rime） |
+| `nyxniri apps` | 常用软件安装菜单（按用途分组：浏览器、社交通讯、游戏等） |
 | `nyxniri wallpapers` | 从外部仓库下载全套壁纸和动态视频包 |
 | `nyxniri theme [toggle\|dark\|light\|sync\|status]` | 切换或同步系统深浅主题 |
 | `nyxniri bug` / `nyxniri report` | 生成诊断报告 |

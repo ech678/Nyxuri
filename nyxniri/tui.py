@@ -705,6 +705,224 @@ class CheckboxList:
                 elif key == "ENTER":
                     return [e.key for e in self.entries if not e.is_separator and e.checked]
 
+# --- Component: Category Accordion Checklist ---
+@dataclass
+class CategoryAppEntry:
+    """One selectable app row inside a CategoryCheckboxList group."""
+    key: str
+    label: str
+    checked: bool = False
+    installed: bool = False
+    source_tag: str = ""
+
+
+@dataclass
+class CategoryGroup:
+    """A collapsible category branch for CategoryCheckboxList."""
+    key: str
+    label: str
+    entries: List[CategoryAppEntry]
+
+
+class CategoryCheckboxList:
+    """Accordion checklist — PresetSwitcher's tree applied to multi-select.
+
+    Category rows collapse/expand (`▸`/`▾`) with a picked/total counter;
+    app rows underneath carry `[✓]/[ ]` checkboxes plus right-aligned
+    status/source tags. Space toggles whatever the cursor sits on (branch or
+    checkbox), Enter confirms the selection from anywhere, ←/→ fold/unfold.
+
+    Actions:
+      [↑/↓/j/k] Move   [←/→] Fold/Unfold   [Space] Toggle
+      [a] All  [n] None  [Enter] Confirm  [0/q/Esc] Back
+    """
+
+    def __init__(self, title_key: str, groups: List[CategoryGroup], hint_key: str = "opt_apps_menu_hint", compact: bool = False):
+        self.title_key = title_key
+        self.groups = groups
+        self.hint_key = hint_key
+        self.compact = compact
+
+    def _selected_keys(self) -> List[str]:
+        return [e.key for g in self.groups for e in g.entries if e.checked]
+
+    def run(self, accept_defaults: bool = False) -> Optional[List[str]]:
+        """Run accordion selection loop. Returns selected keys, or None if cancelled."""
+        if not any(g.entries for g in self.groups):
+            return []
+        if not sys.stdin.isatty():
+            if accept_defaults:
+                return self._selected_keys()
+            return None
+
+        expanded: Set[str] = {g.key for g in self.groups}
+        focus = 0
+        env = get_env()
+
+        def build_flat_list() -> List[Dict[str, Any]]:
+            items: List[Dict[str, Any]] = []
+            for g in self.groups:
+                is_exp = g.key in expanded
+                items.append({"type": "cat", "group": g, "is_expanded": is_exp})
+                if is_exp:
+                    for e in g.entries:
+                        items.append({"type": "app", "group": g, "entry": e})
+            return items
+
+        flat_items = build_flat_list()
+
+        with interactive_screen(mouse=True):
+            while True:
+                cols, terminal_lines = shutil.get_terminal_size((80, 24))
+                sys.stdout.write("\033[?25l\033[H")
+                if self.compact:
+                    cur_row = show_header(msg(self.title_key).strip("\n"), env) + 1
+                else:
+                    logo_rows = show_logo(env)
+                    write_cleared(f"{msg(self.title_key).strip(chr(10))}\n\n")
+                    cur_row = logo_rows + 3
+
+                focus = max(0, min(focus, len(flat_items) - 1))
+                reserved = 6 if self.compact else RESERVED_ROWS
+                visible = max(4, terminal_lines - reserved)
+                start = max(0, min(focus - visible // 2, len(flat_items) - visible))
+                end = min(len(flat_items), start + visible)
+
+                hit_map: List[Tuple[int, int]] = []
+                if start > 0:
+                    write_cleared(f"    {Colors.DARK_GRAY}...{Colors.RESET}\n")
+                    cur_row += 1
+
+                for i in range(start, end):
+                    item = flat_items[i]
+                    if item["type"] == "cat":
+                        g = item["group"]
+                        arrow = "▾" if item["is_expanded"] else "▸"
+                        total = len(g.entries)
+                        picked = sum(1 for e in g.entries if e.checked)
+                        count_tag = f"  {Colors.DARK_GRAY}{picked}/{total}{Colors.RESET}"
+                        if i == focus:
+                            prefix = f"  {Colors.BOLD_CYAN}❯ {arrow}{Colors.RESET} "
+                            label_display = f"{Colors.BOLD_WHITE}{pad_display(g.label, 26)}{Colors.RESET}"
+                        else:
+                            prefix = f"    {Colors.DARK_GRAY}{arrow}{Colors.RESET} "
+                            label_display = f"{Colors.WHITE}{pad_display(g.label, 26)}{Colors.RESET}"
+                        line = f"{prefix}{label_display}{count_tag}"
+                    else:
+                        e = item["entry"]
+                        check_str = (
+                            f"{Colors.BOLD_GREEN}[✓]{Colors.RESET}"
+                            if e.checked
+                            else f"{Colors.DARK_GRAY}[ ]{Colors.RESET}"
+                        )
+                        status = msg("installed") if e.installed else msg("missing")
+                        status_color = Colors.DARK_GRAY if e.installed else Colors.RESET
+                        tags = f"{status_color}{status}{Colors.RESET}"
+                        if e.source_tag:
+                            tags += f"  {Colors.DARK_GRAY}{e.source_tag}{Colors.RESET}"
+                        if i == focus:
+                            prefix = f"      {Colors.BOLD_CYAN}❯{Colors.RESET} {check_str} "
+                            label_display = f"{Colors.BOLD_WHITE}{pad_display(e.label, 28)}{Colors.RESET}"
+                        else:
+                            prefix = f"        {check_str} "
+                            label_display = f"{Colors.WHITE}{pad_display(e.label, 28)}{Colors.RESET}"
+                        line = f"{prefix}{label_display}  {tags}"
+
+                    write_cleared(f"{line}\033[K\n")
+                    hit_map.append((cur_row, i))
+                    cur_row += 1
+
+                if end < len(flat_items):
+                    write_cleared(f"    {Colors.DARK_GRAY}...{Colors.RESET}\n")
+                    cur_row += 1
+
+                hint = responsive_hint(self.hint_key).strip("\n")
+                write_cleared(f"\n{hint}\033[K\n")
+                sys.stdout.write("\033[J")
+                sys.stdout.flush()
+
+                key = read_key()
+
+                if isinstance(key, MouseEvent):
+                    if key.kind in ("WHEEL_UP", "WHEEL_DOWN"):
+                        delta = -1 if key.kind == "WHEEL_UP" else 1
+                        focus = (focus + delta) % len(flat_items)
+                    elif key.kind == "PRESS":
+                        hit_i = next((i for (r, i) in hit_map if r == key.row), None)
+                        if hit_i is not None and 0 <= hit_i < len(flat_items):
+                            focus = hit_i
+                            hit_item = flat_items[hit_i]
+                            if hit_item["type"] == "cat":
+                                g_key = hit_item["group"].key
+                                if g_key in expanded:
+                                    expanded.remove(g_key)
+                                else:
+                                    expanded.add(g_key)
+                                flat_items = build_flat_list()
+                            else:
+                                hit_item["entry"].checked = not hit_item["entry"].checked
+                    continue
+
+                curr_item = flat_items[focus] if flat_items else None
+
+                if key in ("UP", "k", "K"):
+                    focus = (focus - 1) % len(flat_items)
+                elif key in ("DOWN", "j", "J"):
+                    focus = (focus + 1) % len(flat_items)
+                elif key in ("PAGEUP",):
+                    focus = max(0, focus - visible)
+                elif key in ("PAGEDOWN",):
+                    focus = min(len(flat_items) - 1, focus + visible)
+                elif key in ("HOME", "g"):
+                    focus = 0
+                elif key in ("END", "G"):
+                    focus = len(flat_items) - 1
+                elif key in ("RIGHT", "l", "L"):
+                    if curr_item and curr_item["type"] == "cat":
+                        g_key = curr_item["group"].key
+                        if g_key not in expanded:
+                            expanded.add(g_key)
+                            flat_items = build_flat_list()
+                        target = None
+                        for i_f, it in enumerate(flat_items):
+                            if it["type"] == "app" and it["group"].key == g_key:
+                                target = i_f
+                                break
+                        if target is not None:
+                            focus = target
+                elif key in ("LEFT", "h", "H"):
+                    if curr_item:
+                        if curr_item["type"] == "app":
+                            for i_f, it in enumerate(flat_items):
+                                if it["type"] == "cat" and it["group"].key == curr_item["group"].key:
+                                    focus = i_f
+                                    break
+                        elif curr_item["group"].key in expanded:
+                            expanded.remove(curr_item["group"].key)
+                            flat_items = build_flat_list()
+                elif key == "SPACE" and curr_item:
+                    if curr_item["type"] == "cat":
+                        g_key = curr_item["group"].key
+                        if g_key in expanded:
+                            expanded.remove(g_key)
+                        else:
+                            expanded.add(g_key)
+                        flat_items = build_flat_list()
+                    else:
+                        curr_item["entry"].checked = not curr_item["entry"].checked
+                elif key in ("a", "A"):
+                    for g in self.groups:
+                        for e in g.entries:
+                            e.checked = True
+                elif key in ("n", "N"):
+                    for g in self.groups:
+                        for e in g.entries:
+                            e.checked = False
+                elif key == "ENTER":
+                    return self._selected_keys()
+                elif key in ("0", "q", "Q", "ESC", "EXIT"):
+                    return None
+
 # --- Component: Dual-Pane Preset Switcher (§9) ---
 def show_header(title: str, env: Optional[Environment] = None) -> int:
     """Render a clean, modern subpage header with subtle brand tagline."""

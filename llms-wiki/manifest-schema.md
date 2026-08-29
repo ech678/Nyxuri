@@ -54,31 +54,51 @@ kitty / fastfetch / zed **不写 manifest**（目录名 = 包名 = 二进制名 
 | 字段 | 默认 | 作用 |
 |---|---|---|
 | `name` | （必填） | app 标识 |
-| `repo` | `[<name>]` | pacman 包名 |
+| `repo` | `[<name>]` | pacman 包名（Flatpak-only app 必须显式 `repo = []`，防名字泄进 pacman） |
 | `aur` | `[]` | AUR 包名 |
-| `label` | `<name>` | 菜单显示名 |
-| `detect` | `<name>` | 检测安装的命令名 |
+| `flatpak` | `[]` | Flathub app id——走 `flatpak install`，永不进 pacman/AUR/PKGBUILD |
+| `label` | `<name>` | PKGBUILD optdepends 展示名（菜单显示名走 i18n `app_*` 键） |
+| `category` | `""` | 菜单分组键，显示名走 i18n `apps_cat_<key>`；分类顺序 = 块首次出现顺序 |
+| `detect` | `<name>` | 检测安装的命令名（Flatpak app 额外用 app id 探测 `flatpak list`） |
 
-### 实际 ship 的
+块顺序即菜单顺序。菜单显示名必须配 i18n `app_<name>`（zh/en 成对，`-` 换 `_`）。
+
+### 实际 ship 的（节选）
 
 ```toml
 [[app]]
-name = "nautilus"
-repo = ["nautilus"]
+name = "brave-origin"
+label = "Brave Origin"
+category = "browser"
+repo = []                       # AUR-only → repo 显式置空
+aur = ["brave-origin-bin"]
+detect = "brave-origin"
+
+[[app]]
+name = "qq"                     # 闭源，走 Flathub
+label = "QQ"
+category = "social"
+repo = []
+flatpak = ["com.qq.QQ"]
 
 [[app]]
 name = "missioncenter"            # 目录名 missioncenter，包名 mission-center（连字符）
+label = "Mission Center"
+category = "system"
 repo = ["mission-center"]
 detect = "mission-center"
 
 [[app]]
 name = "fcitx5-rime"
+label = "Fcitx5 Rime"
+category = "system"
 repo = ["fcitx5", "fcitx5-gtk", "fcitx5-qt", "fcitx5-configtool", "fcitx5-rime"]
 aur = ["rime-ice-git"]
 ```
 
-这三个 app **无配置目录**（住 configs/ 只为 deps 菜单 + PKGBUILD optdepends 知道它们存在，
-解决"git 不跟踪空目录"）。详见 [two-axis-config](two-axis-config.md)。
+这些 app **无配置目录**（住 configs/ 只为 apps 菜单 + PKGBUILD optdepends 知道它们存在，
+解决"git 不跟踪空目录"）。例外是 **zed**：既有配置目录又登记可选（§2 双轴共存），
+可选轴字段（category 等）以 toml 为准、包不进硬依赖。详见 [two-axis-config](two-axis-config.md)。
 
 ## 两个 manifest 的分工
 

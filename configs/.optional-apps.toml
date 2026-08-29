@@ -1,22 +1,153 @@
 # Optional installable apps — no NyxNiri config shipped, just package metadata
-# for the deps menu + AUR optdepends. Single source of truth (§3.1 spirit:
+# for the apps menu + AUR optdepends. Single source of truth (§3.1 spirit:
 # data-driven, no hardcoded dict). Independent of config dirs (§2 the two-axis
 # design): an app here stays "optional" even if a configs/<app>/ dir is later
 # added — then it's optional AND has config, both true at once.
 #
 # Field defaults mirror .module.toml: repo defaults to [name], aur/label/detect
 # default to [] / name / name. Add an [[app]] block per optional app.
+# Extra menu fields:
+#   category = "<key>"  grouping key; display name resolved from i18n
+#                       "apps_cat_<key>" (zh/en pair required)
+#   flatpak  = ["id"]   Flathub application IDs — installed and detected via
+#                       flatpak, never pacman/AUR. Flatpak-only apps must
+#                       declare repo = [] explicitly.
+# Block order = menu order within categories; categories follow first appearance.
+
+[[app]]
+name = "brave-origin"
+label = "Brave Origin"
+category = "browser"
+repo = []
+aur = ["brave-origin-bin"]
+detect = "brave-origin"
+
+[[app]]
+name = "libreoffice"
+label = "LibreOffice"
+category = "office"
+repo = ["libreoffice-fresh"]
+detect = "libreoffice"
+
+[[app]]
+name = "vscode"
+label = "Visual Studio Code"
+category = "dev"
+repo = []
+aur = ["visual-studio-code-bin"]
+detect = "code"
+
+[[app]]
+name = "zed"
+label = "Zed"
+category = "dev"
+repo = ["zed"]
+detect = "zed"
+
+[[app]]
+name = "wechat"
+label = "微信 (WeChat)"
+category = "social"
+repo = []
+flatpak = ["com.tencent.WeChat"]
+
+[[app]]
+name = "qq"
+label = "QQ"
+category = "social"
+repo = []
+flatpak = ["com.qq.QQ"]
+
+[[app]]
+name = "telegram"
+label = "Telegram"
+category = "social"
+repo = ["telegram-desktop"]
+detect = "telegram-desktop"
+
+[[app]]
+name = "spotify"
+label = "Spotify"
+category = "media"
+repo = []
+flatpak = ["com.spotify.Client"]
+
+[[app]]
+name = "steam"
+label = "Steam"
+category = "game"
+repo = ["steam"]
+detect = "steam"
+
+[[app]]
+name = "lutris"
+label = "Lutris"
+category = "game"
+repo = ["lutris"]
+detect = "lutris"
+
+[[app]]
+name = "protonplus"
+label = "ProtonPlus"
+category = "game"
+repo = []
+aur = ["protonplus"]
+detect = "protonplus"
+
+[[app]]
+name = "kdenlive"
+label = "Kdenlive"
+category = "video"
+repo = ["kdenlive"]
+detect = "kdenlive"
+
+[[app]]
+name = "obs"
+label = "OBS Studio"
+category = "video"
+repo = ["obs-studio"]
+detect = "obs"
+
+[[app]]
+name = "motrix"
+label = "Motrix"
+category = "download"
+repo = []
+aur = ["motrix"]
+detect = "motrix"
+
+[[app]]
+name = "flclash"
+label = "FlClash"
+category = "proxy"
+repo = []
+aur = ["flclash-bin"]
+detect = "flclash"
+
+[[app]]
+name = "shelly"
+label = "Shelly"
+category = "terminal"
+repo = []
+aur = ["shelly-bin"]
+detect = "shelly"
 
 [[app]]
 name = "nautilus"
+label = "Nautilus"
+category = "system"
 repo = ["nautilus"]
 
 [[app]]
 name = "missioncenter"
+label = "Mission Center"
+category = "system"
 repo = ["mission-center"]
 detect = "mission-center"
 
 [[app]]
 name = "fcitx5-rime"
+label = "Fcitx5 Rime"
+category = "system"
 repo = ["fcitx5", "fcitx5-gtk", "fcitx5-qt", "fcitx5-configtool", "fcitx5-rime"]
 aur = ["rime-ice-git"]

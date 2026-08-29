@@ -31,7 +31,7 @@ class TestGenDeps(unittest.TestCase):
     def test_depends_includes_deployable_app_packages_and_base(self):
         depends, _opt = self.gendeps.compute_depends(self.repo_root)
         # Deployable app packages (from manifests / defaults).
-        for app_pkg in ("kitty", "niri", "fish", "fastfetch", "starship", "noctalia", "zed", "xdg-desktop-portal"):
+        for app_pkg in ("kitty", "niri", "fish", "fastfetch", "starship", "noctalia", "xdg-desktop-portal"):
             self.assertIn(app_pkg, depends)
         # Base system deps not tied to an app (from CORE_DEPS).
         for base in ("wlsunset", "eza", "jq", "tmux", "inotify-tools", "fzf", "python-gobject",
@@ -50,6 +50,26 @@ class TestGenDeps(unittest.TestCase):
         self.assertIn("mission-center", opt_pkg_names)
         self.assertIn("rime-ice-git", opt_pkg_names)
 
+    def test_dual_axis_app_stays_optional_not_graduated(self):
+        # zed ships config AND registers in .optional-apps.toml (§2 coexistence):
+        # axis B wins for packaging — it must NOT re-enter hard depends.
+        depends, optdepends = self.gendeps.compute_depends(self.repo_root)
+        self.assertNotIn("zed", depends)
+        self.assertIn("zed", [p for p, _ in optdepends])
+
+    def test_flatpak_ids_stay_out_of_pkgbuild(self):
+        # Flathub app IDs are not pacman packages — they must never appear in
+        # depends/optdepends; only the flatpak runtime itself may be declared.
+        depends, optdepends = self.gendeps.compute_depends(self.repo_root)
+        opt_pkg_names = [p for p, _ in optdepends]
+        for flatpak_id in ("com.qq.QQ", "com.tencent.WeChat", "com.spotify.Client"):
+            self.assertNotIn(flatpak_id, depends)
+            self.assertNotIn(flatpak_id, opt_pkg_names)
+        # Flatpak-only apps must not leak their raw names either.
+        for leaked in ("qq", "wechat", "spotify"):
+            self.assertNotIn(leaked, depends)
+            self.assertNotIn(leaked, opt_pkg_names)
+
     def test_depends_is_sorted_deduplicated_list(self):
         depends, _ = self.gendeps.compute_depends(self.repo_root)
         self.assertEqual(depends, sorted(set(depends)))
@@ -60,7 +80,7 @@ class TestGenDeps(unittest.TestCase):
         self.assertIn("depends=(", rendered)
         self.assertIn("optdepends=(", rendered)
         self.assertIn("'kitty'", rendered)
-        self.assertIn("'nautilus: nautilus'", rendered)
+        self.assertIn("'nautilus: Nautilus'", rendered)
         # Note: update_pkgbuild() rewrites the real PKGBUILD on disk — it's a
         # manual maintainer script (gen-deps --update), not test-covered. Tests
         # only assert _render() output (pure function, no filesystem side effects).

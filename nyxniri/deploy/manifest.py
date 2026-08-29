@@ -11,9 +11,11 @@ Schema (all fields live under one ``[packages]`` table; all optional)::
     [packages]
     repo     = ["kitty"]            # default = [<app name>]
     aur      = []                    # default = []
+    flatpak  = []                    # default = []  (Flathub app IDs)
     preserve = ["monitor.kdl"]       # default = []  (files kept across deploys)
     chmod    = ["scripts/*.sh"]      # default = []  (globs, relative to app dir)
     label    = "XDG Portals"         # default = <app name> (menu display name)
+    category = "browser"             # default = ""  (apps menu grouping key)
     detect   = "mission-center"      # default = <app name> (pkg/binary to detect)
 
 File-type apps (``starship.toml``) use a sidecar manifest named
@@ -47,9 +49,11 @@ class ModuleManifest:
     name: str
     packages_repo: List[str]
     packages_aur: List[str]
+    packages_flatpak: List[str]
     preserve: List[str]
     chmod: List[str]
     label: str
+    category: str
     detect: str
     is_deployable: bool
     is_optional: bool = False  # True iff listed in .optional-apps.toml (§2 axis B)
@@ -102,9 +106,11 @@ def load_manifest(app_src: Path, is_optional: bool = False) -> ModuleManifest:
         name=name,
         packages_repo=list(pkg_repo),
         packages_aur=list(packages.get("aur", [])),
+        packages_flatpak=list(packages.get("flatpak", [])),
         preserve=list(packages.get("preserve", [])),
         chmod=list(packages.get("chmod", [])),
         label=packages.get("label", name),
+        category=packages.get("category", ""),
         detect=packages.get("detect", name),
         is_deployable=_is_deployable(app_src),
         is_optional=is_optional,
@@ -140,11 +146,35 @@ def _manifest_from_optional(name: str, entry: dict) -> ModuleManifest:
         name=name,
         packages_repo=list(entry.get("repo", [name])),
         packages_aur=list(entry.get("aur", [])),
+        packages_flatpak=list(entry.get("flatpak", [])),
         preserve=[],
         chmod=[],
         label=entry.get("label", name),
+        category=entry.get("category", ""),
         detect=entry.get("detect", name),
         is_deployable=False,
+        is_optional=True,
+    )
+
+
+def _merge_optional_entry(m: ModuleManifest, entry: dict) -> ModuleManifest:
+    """Overlay the axis-B toml entry onto a dual app (config dir + optional).
+
+    Division of labor: .optional-apps.toml owns the optional axis (packages,
+    label, category, detect); the .module.toml keeps config-axis fields
+    (preserve, chmod) untouched.
+    """
+    return ModuleManifest(
+        name=m.name,
+        packages_repo=list(entry.get("repo", m.packages_repo)),
+        packages_aur=list(entry.get("aur", m.packages_aur)),
+        packages_flatpak=list(entry.get("flatpak", m.packages_flatpak)),
+        preserve=m.preserve,
+        chmod=m.chmod,
+        label=entry.get("label", m.label),
+        category=entry.get("category", m.category),
+        detect=entry.get("detect", m.detect),
+        is_deployable=m.is_deployable,
         is_optional=True,
     )
 
@@ -180,9 +210,10 @@ def discover_manifest_apps() -> List[Tuple[str, ModuleManifest]]:
 
     Returns ``(name, manifest)`` for every app — both deployable (has a config
     dir) and optional (in the toml). An app in BOTH appears once with
-    ``is_deployable=True`` AND ``is_optional=True`` (optional + config). Sorted
-    by name for deterministic output. Result is cached per process (manifest
-    files cannot change under a running engine).
+    ``is_deployable=True`` AND ``is_optional=True``; its optional-axis fields
+    (packages/label/category/detect) come from the toml. Sorted by name for
+    deterministic output. Result is cached per process (manifest files cannot
+    change under a running engine).
     """
     global _MANIFEST_CACHE
     if _MANIFEST_CACHE is not None:
@@ -201,6 +232,8 @@ def discover_manifest_apps() -> List[Tuple[str, ModuleManifest]]:
             continue
         try:
             m = load_manifest(p, is_optional=(p.name in optional))
+            if p.name in optional:
+                m = _merge_optional_entry(m, optional[p.name])
         except Exception:
             # A malformed manifest must not break discovery of other apps.
             continue

@@ -74,6 +74,7 @@ def _collect_prompt_confirm_calls() -> set:
 # Must point at the construction site when adding a new prefix.
 DYNAMIC_KEY_PREFIXES = (
     "app_",         # nyxniri/deps.py: msg(f"app_{app.replace('-', '_')}")
+    "apps_cat_",    # nyxniri/deps.py: msg(f"apps_cat_{cat}")
     "preset_src_",  # nyxniri/deploy/preset.py: msg(f"preset_src_{source}")
 )
 

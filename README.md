@@ -222,7 +222,7 @@ Official presets update with `nyxniri update`; private ones live in `~/.config/N
 | :--- | :--- |
 | `nyxniri doctor` | Dependency + system health check |
 | `nyxniri deps` | Open dependency check & install menu |
-| `nyxniri apps` | Open recommended apps installer (Nautilus, Mission Center, Fcitx5 Rime) |
+| `nyxniri apps` | Category-grouped recommended apps installer (Brave, Steam, WeChat, ...) |
 | `nyxniri wallpapers` | Download the full wallpaper & video pack from the external repo |
 | `nyxniri theme [toggle\|dark\|light\|sync\|status]` | Switch or sync system dark/light theme |
 | `nyxniri bug` / `nyxniri report` | Generate diagnostic bug report |

@@ -802,8 +802,120 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "en": f"\n  {Colors.BOLD_CYAN}── Recommended Apps ──{Colors.RESET}\n",
     },
     "opt_apps_menu_hint": {
-        "zh": f"  {Colors.DARK_GRAY}[↑/↓/j/k] 移动  [Space] 切换  [a] 全选  [n] 清空  [Enter] 安装  [0/q] 返回{Colors.RESET}",
-        "en": f"  {Colors.DARK_GRAY}[↑/↓/j/k] Move  [Space] Toggle  [a] All  [n] None  [Enter] Install  [0/q] Back{Colors.RESET}",
+        "zh": f"  {Colors.DARK_GRAY}[↑/↓/j/k] 移动  [←/→] 折叠  [Space] 选择  [a] 全选  [n] 清空  [Enter] 安装  [0/q] 返回{Colors.RESET}",
+        "en": f"  {Colors.DARK_GRAY}[↑/↓/j/k] Move  [←/→] Fold  [Space] Select  [a] All  [n] None  [Enter] Install  [0/q] Back{Colors.RESET}",
+    },
+    "installing_flatpak_apps": {
+        "zh": f"\n{Colors.BOLD_BLUE}:: 安装 Flatpak 应用: {{0}}…{Colors.RESET}",
+        "en": f"\n{Colors.BOLD_BLUE}:: Installing Flatpak apps: {{0}}…{Colors.RESET}",
+    },
+    "apps_cat_browser": {
+        "zh": "浏览器",
+        "en": "Browser",
+    },
+    "apps_cat_office": {
+        "zh": "办公 / 生产力",
+        "en": "Office & Productivity",
+    },
+    "apps_cat_dev": {
+        "zh": "开发",
+        "en": "Development",
+    },
+    "apps_cat_social": {
+        "zh": "社交通讯",
+        "en": "Social & Messaging",
+    },
+    "apps_cat_media": {
+        "zh": "多媒体 / 娱乐",
+        "en": "Multimedia & Entertainment",
+    },
+    "apps_cat_game": {
+        "zh": "游戏",
+        "en": "Gaming",
+    },
+    "apps_cat_video": {
+        "zh": "视频创作 / 录制",
+        "en": "Video & Recording",
+    },
+    "apps_cat_download": {
+        "zh": "下载工具",
+        "en": "Downloads",
+    },
+    "apps_cat_proxy": {
+        "zh": "网络代理",
+        "en": "Network Proxy",
+    },
+    "apps_cat_terminal": {
+        "zh": "终端 / Shell",
+        "en": "Terminal & Shell",
+    },
+    "apps_cat_system": {
+        "zh": "系统工具",
+        "en": "System Tools",
+    },
+    "app_brave_origin": {
+        "zh": "Brave Origin",
+        "en": "Brave Origin",
+    },
+    "app_libreoffice": {
+        "zh": "LibreOffice",
+        "en": "LibreOffice",
+    },
+    "app_vscode": {
+        "zh": "Visual Studio Code",
+        "en": "Visual Studio Code",
+    },
+    "app_zed": {
+        "zh": "Zed",
+        "en": "Zed",
+    },
+    "app_wechat": {
+        "zh": "微信 (WeChat)",
+        "en": "WeChat (微信)",
+    },
+    "app_qq": {
+        "zh": "QQ",
+        "en": "QQ",
+    },
+    "app_telegram": {
+        "zh": "Telegram",
+        "en": "Telegram",
+    },
+    "app_spotify": {
+        "zh": "Spotify",
+        "en": "Spotify",
+    },
+    "app_steam": {
+        "zh": "Steam",
+        "en": "Steam",
+    },
+    "app_lutris": {
+        "zh": "Lutris",
+        "en": "Lutris",
+    },
+    "app_protonplus": {
+        "zh": "ProtonPlus",
+        "en": "ProtonPlus",
+    },
+    "app_kdenlive": {
+        "zh": "Kdenlive",
+        "en": "Kdenlive",
+    },
+    "app_obs": {
+        "zh": "OBS Studio",
+        "en": "OBS Studio",
+    },
+    "app_motrix": {
+        "zh": "Motrix",
+        "en": "Motrix",
+    },
+    "app_flclash": {
+        "zh": "FlClash",
+        "en": "FlClash",
+    },
+    "app_shelly": {
+        "zh": "Shelly (包管理)",
+        "en": "Shelly (Pkg Manager)",
     },
     "app_nautilus": {
         "zh": "Nautilus (文件管理器)",

@@ -106,7 +106,7 @@ function nyxhelp --description "NyxNiri Cheatsheet速查手册"
             set_color -o yellow; echo -n "    nyxniri install config   "; set_color green; echo "-> 只部署配置，不安装依赖或壁纸"; set_color normal
             set_color -o yellow; echo -n "    nyxniri update           "; set_color green; echo "-> 更新源码并选择是否部署配置"; set_color normal
             set_color -o yellow; echo -n "    nyxniri doctor           "; set_color green; echo "-> 检查依赖、组件和桌面状态"; set_color normal
-            set_color -o yellow; echo -n "    nyxniri apps             "; set_color green; echo "-> 管理 Nautilus、Mission Center、Fcitx5 Rime"; set_color normal
+            set_color -o yellow; echo -n "    nyxniri apps             "; set_color green; echo "-> 常用软件按类安装：Brave、Steam、微信、QQ 等"; set_color normal
             set_color -o yellow; echo -n "    nyxniri snapshot [备注]  "; set_color green; echo "-> 创建配置快照"; set_color normal
             set_color -o yellow; echo -n "    nyxniri snapshot delete  "; set_color green; echo "-> 选择并删除一个或多个快照"; set_color normal
             set_color -o yellow; echo -n "    nyxniri rollback [序号]  "; set_color green; echo "-> 恢复历史配置快照"; set_color normal

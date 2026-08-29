@@ -14,7 +14,7 @@
 - **可选（axis B）**：列在 `configs/.optional-apps.toml` → 进 deps 菜单、AUR `optdepends`
 
 一个 app 可以是：可选+无配置（nautilus 现状）、必装+有配置（niri/kitty）、**可选+有配置**
-（给可选软件挂配置，仍保持可选、不毕业）、或都不沾（不存在）。
+（zed 现状——既有配置又登进可选菜单）、或都不沾（不存在）。
 
 ## 两个 discover 函数（独立查询）
 
@@ -25,7 +25,8 @@
 
 `discover_manifest_apps()` 合并两源（目录扫描 + toml 读取），返回 `(name, ModuleManifest)`
 列表。一个 app 在两边都出现 → 合并后一条、`is_deployable=True` AND `is_optional=True`
-（可选+有配置）。
+（可选+有配置）；其**可选轴字段**（repo/aur/flatpak/label/category/detect）以 toml 为准，
+配置轴字段（preserve/chmod）留在 `.module.toml`。
 
 ## gen-deps 的判别（axis B 优先）
 
@@ -64,8 +65,9 @@ mkdir configs/nautilus/ && 放配置文件
 - `.optional-apps.toml`（configs/ 根一个）→ 描述**哪些 app 是可选软件**（包名，无配置）。
   解决"git 不跟踪空目录"——可选软件无配置目录，需要 toml 作为登记载体。
 
-无配置的可选软件（nautilus/missioncenter/fcitx5-rime）住 configs/ 只为让 deps 菜单和
-PKGBUILD optdepends 知道"有这么个可选软件、包名叫啥"——单一扫描路径，不加第二处。
+无配置的可选软件（nautilus/missioncenter/fcitx5-rime 及常用软件目录里的大部分）住
+configs/ 只为让 apps 菜单和 PKGBUILD optdepends 知道"有这么个可选软件、包名叫啥"——
+单一扫描路径，不加第二处。
 
 ## 替代了什么
 

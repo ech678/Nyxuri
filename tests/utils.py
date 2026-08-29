@@ -57,6 +57,7 @@ class TempEnv:
         _deploy_manifest._MANIFEST_CACHE = None
         _deps._AUR_HELPER_CACHE = None
         _deps._PACMAN_INSTALLED_CACHE = None
+        _deps._FLATPAK_LIST_CACHE = None
         _deps._FC_LIST_CACHE = None
         _deps._MISSING_DEPS_CACHE = None
         _deps._GI_CACHE = None

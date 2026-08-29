@@ -11,12 +11,27 @@ from typing import Dict, List, Optional, Tuple
 from nyxniri.constants import AUR_DEPS, CORE_DEPS
 from nyxniri.core import timed_run
 from nyxniri.i18n import msg
-from nyxniri.deploy.manifest import discover_manifest_apps, discover_optional_apps
-from nyxniri.tui import CheckboxEntry, CheckboxList, pad_display, prompt_confirm
+from nyxniri.deploy.manifest import (
+    discover_manifest_apps,
+    discover_optional_apps,
+    load_optional_apps,
+)
+from nyxniri.tui import (
+    CategoryAppEntry,
+    CategoryCheckboxList,
+    CategoryGroup,
+    CheckboxEntry,
+    CheckboxList,
+    pad_display,
+    prompt_confirm,
+)
 
 _PACMAN_INSTALLED_CACHE: Optional[set] = None
+_FLATPAK_LIST_CACHE: Optional[set] = None
 _FC_LIST_CACHE: Optional[str] = None
 _GI_CACHE: Optional[dict] = None
+
+FLATHUB_REMOTE_URL = "https://dl.flathub.org/repo/flathub.remote"
 
 def _get_pacman_installed() -> set:
     global _PACMAN_INSTALLED_CACHE
@@ -43,6 +58,24 @@ def _get_fc_list() -> str:
     res = timed_run(["fc-list", ":", "family"], 15, capture_output=True, text=True, check=False, env=env)
     _FC_LIST_CACHE = res.stdout.lower() if res is not None and res.returncode == 0 else ""
     return _FC_LIST_CACHE
+
+def _get_flatpak_apps() -> set:
+    global _FLATPAK_LIST_CACHE
+    if _FLATPAK_LIST_CACHE is not None:
+        return _FLATPAK_LIST_CACHE
+    if not shutil.which("flatpak"):
+        _FLATPAK_LIST_CACHE = set()
+        return _FLATPAK_LIST_CACHE
+    env = {**os.environ, "LC_ALL": "C"}
+    res = timed_run(
+        ["flatpak", "list", "--system", "--app", "--columns=application"],
+        15, capture_output=True, text=True, check=False, env=env,
+    )
+    _FLATPAK_LIST_CACHE = set(res.stdout.split()) if res is not None and res.returncode == 0 else set()
+    return _FLATPAK_LIST_CACHE
+
+def is_flatpak_installed(app_id: str) -> bool:
+    return app_id in _get_flatpak_apps()
 
 def _check_gi(version: str) -> bool:
     global _GI_CACHE
@@ -273,6 +306,7 @@ def install_optional_apps(selected_apps: List[str]) -> None:
     manifests = dict(discover_manifest_apps())
     repo_pkgs: List[str] = []
     aur_pkgs: List[str] = []
+    flatpak_ids: List[str] = []
     has_fcitx = False
     for app in selected_apps:
         manifest = manifests.get(app)
@@ -280,15 +314,20 @@ def install_optional_apps(selected_apps: List[str]) -> None:
             continue
         repo_pkgs.extend(manifest.packages_repo)
         aur_pkgs.extend(manifest.packages_aur)
+        flatpak_ids.extend(manifest.packages_flatpak)
         if app == "fcitx5-rime":
             has_fcitx = True
 
-    if not repo_pkgs and not aur_pkgs:
+    if not repo_pkgs and not aur_pkgs and not flatpak_ids:
         print(msg("opt_apps_none_selected"))
         return
 
     print(msg("installing_selected_apps"))
     pkg_mgr = get_preferred_pkg_manager()
+
+    # Flatpak apps need the flatpak runtime itself; add it to the repo batch.
+    if flatpak_ids and "flatpak" not in repo_pkgs:
+        repo_pkgs.append("flatpak")
 
     if repo_pkgs:
         subprocess.run([*pkg_mgr, "-S", "--needed", "--noconfirm", *repo_pkgs], check=False)
@@ -300,6 +339,11 @@ def install_optional_apps(selected_apps: List[str]) -> None:
         if helper:
             subprocess.run([helper, "-S", "--needed", "--noconfirm", *aur_pkgs], check=False)
 
+    if flatpak_ids and shutil.which("flatpak"):
+        subprocess.run(["flatpak", "remote-add", "--if-not-exists", "flathub", FLATHUB_REMOTE_URL], check=False)
+        print(msg("installing_flatpak_apps", " ".join(flatpak_ids)))
+        subprocess.run(["flatpak", "install", "--system", "--noninteractive", *flatpak_ids], check=False)
+
     if has_fcitx and shutil.which("fcitx5"):
         try:
             from nyxniri.modules.fcitx import fcitx_install
@@ -307,28 +351,61 @@ def install_optional_apps(selected_apps: List[str]) -> None:
         except Exception:
             pass
 
+    # Fresh detection on the next menu visit: installs just performed must
+    # not be masked by the probe caches built before them.
+    global _MISSING_DEPS_CACHE, _PACMAN_INSTALLED_CACHE, _FLATPAK_LIST_CACHE
+    _MISSING_DEPS_CACHE = None
+    _PACMAN_INSTALLED_CACHE = None
+    _FLATPAK_LIST_CACHE = None
+
     print(msg("opt_apps_install_done"))
 
 
 def run_optional_apps_menu_loop() -> None:
-    """Open interactive checkbox list for recommended applications."""
+    """Open the category accordion checklist for recommended applications."""
     if not sys.stdin.isatty():
         print(msg("interactive_terminal_required"), file=sys.stderr)
         return
 
     manifests = dict(discover_manifest_apps())
-    entries = []
+    grouped: Dict[str, List[CategoryAppEntry]] = {}
+    order = {name: i for i, name in enumerate(load_optional_apps())}
     for app in discover_optional_apps():
         manifest = manifests.get(app)
         if manifest is None:
             continue
         is_inst = is_dep_installed(manifest.detect)
-        status_tag = msg("installed") if is_inst else msg("missing")
-        app_label = msg(f"app_{app.replace('-', '_')}")
-        label = f"{pad_display(app_label, 32)} {status_tag}"
-        entries.append(CheckboxEntry(key=app, label=label, checked=not is_inst))
+        if not is_inst and manifest.packages_flatpak:
+            is_inst = all(is_flatpak_installed(fid) for fid in manifest.packages_flatpak)
+        entry = CategoryAppEntry(
+            key=app,
+            label=msg(f"app_{app.replace('-', '_')}"),
+            checked=False,
+            installed=is_inst,
+            source_tag="Flatpak" if manifest.packages_flatpak else "",
+        )
+        grouped.setdefault(manifest.category or "other", []).append(entry)
 
-    chk = CheckboxList("opt_apps_menu_title", entries, hint_key="opt_apps_menu_hint")
+    # Discovery is name-sorted; restore the toml's registration order for both
+    # categories (first appearance) and the apps inside each group.
+    cat_order: List[str] = []
+    for name in load_optional_apps():
+        m = manifests.get(name)
+        cat = (m.category if m else "") or "other"
+        if cat not in cat_order:
+            cat_order.append(cat)
+    for cat in grouped:
+        if cat not in cat_order:
+            cat_order.append(cat)
+    for entries in grouped.values():
+        entries.sort(key=lambda e: order.get(e.key, len(order)))
+
+    cat_groups = [
+        CategoryGroup(key=cat, label=msg(f"apps_cat_{cat}"), entries=grouped[cat])
+        for cat in cat_order
+    ]
+
+    chk = CategoryCheckboxList("opt_apps_menu_title", cat_groups, hint_key="opt_apps_menu_hint")
     chosen = chk.run()
     if chosen:
         install_optional_apps(chosen)
