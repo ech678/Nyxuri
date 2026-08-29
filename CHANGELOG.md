@@ -17,6 +17,7 @@
 - fish 终端里 nyxniri 的 Tab 补全覆盖全部命令与别名,预设和快照序号也能动态补出
 
 ### Changed
+- Noctalia 顶栏左侧新增 CPU 与内存胶囊指示，右侧精简图标排列，调整日期格式
 - se/un 的 fzf 界面去掉 emoji
 - zed 不再随系统预装，改在常用软件菜单里按需安装
 - fish 里 Ctrl+V 改为粘贴系统剪贴板（原先被 fzf 变量搜索占用），kitty 与 zed 的粘贴体验从此一致

@@ -27,16 +27,29 @@ scale = 1.1
 shadow = false
 end = [
     "media",
-    "tray",
-    "wallpaper",
-    "mpvpaper",
     "volume",
+    "tray",
     "notifications",
     "session",
 ]
 center = ["clock"]
-start = ["launcher", "workspaces", "active_window"]
+start = ["launcher", "workspaces", "active_window", "group:g1"]
 thickness = 36
+
+[[bar.bar.capsule_group]]
+accordion = false
+accordion_direction = "end"
+border = "outline"
+enabled = true
+fill = "surface_variant"
+foreground = "secondary"
+id = "g1"
+members = ["sysmon", "ram"]
+opacity = 0.79
+padding = 10.0
+radius = 80.0
+widget_spacing = 12
+
 
 [battery.device."/org/freedesktop/UPower/devices/battery_hidpp_battery_0"]
 warning_threshold = 30
@@ -249,6 +262,14 @@ drawer = true
 
 [widget."ray/echolyrics:echolyrics"]
 capsule = false
+
+[widget.ram]
+show_glyph = false
+visualization = "none"
+
+[widget.sysmon]
+glyph = "cpu"
+visualization = "none"
 
 [widget.mpvpaper]
 type = "noctalia/mpvpaper:mpvpaper"
