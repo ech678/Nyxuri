@@ -70,16 +70,30 @@ def _collect_prompt_confirm_calls() -> set:
     return keys
 
 
+# Key prefixes built at runtime via f-strings (AST scan cannot see them).
+# Must point at the construction site when adding a new prefix.
+DYNAMIC_KEY_PREFIXES = (
+    "app_",         # nyxniri/deps.py: msg(f"app_{app.replace('-', '_')}")
+    "preset_src_",  # nyxniri/deploy/preset.py: msg(f"preset_src_{source}")
+)
+
+
 def _collect_all_referenced_keys() -> set:
     """Find all string constants in .py files that match i18n key naming and exist in TRANSLATIONS.
 
     This catches direct msg("key") calls, indirect title_key/hint_key passed to TUI components,
     and any other string literal that happens to be an i18n key.
+
+    i18n.py itself is excluded: the TRANSLATIONS dict literal contains every key
+    as a string constant, so scanning it makes every key self-referencing and the
+    orphan check vacuous.
     """
     import re
     key_pattern = re.compile(r"^[a-z][a-z0-9_]*$")
     candidates = set()
     for py_file in ENGINE_DIR.rglob("*.py"):
+        if py_file.name == "i18n.py":
+            continue
         try:
             tree = ast.parse(py_file.read_text(encoding="utf-8"), filename=str(py_file))
         except SyntaxError:
@@ -114,9 +128,14 @@ class TestI18nKeyIntegrity(unittest.TestCase):
 
         Orphan keys indicate a feature was removed but its i18n entries were not cleaned up.
         References can be direct msg("key") calls or indirect (title_key/hint_key passed
-        to TUI components that call msg() internally).
+        to TUI components that call msg() internally). Keys whose prefix is listed in
+        DYNAMIC_KEY_PREFIXES are constructed at runtime and exempt from this check.
         """
-        orphans = self.translation_keys - self.all_referenced
+        def _is_dynamic(key: str) -> bool:
+            return any(key.startswith(p) for p in DYNAMIC_KEY_PREFIXES)
+
+        orphans = {k for k in (self.translation_keys - self.all_referenced)
+                   if not _is_dynamic(k)}
 
         self.assertEqual(orphans, set(),
                          f"Orphan i18n keys (defined in TRANSLATIONS but never referenced): {sorted(orphans)}")

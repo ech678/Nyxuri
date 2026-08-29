@@ -293,10 +293,6 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
     },
 
     # Install Flow
-    "fcitx_skipped_not_installed": {
-        "zh": f"{Colors.BOLD_YELLOW}[!] 未检测到 fcitx5，已跳过皮肤激活。安装后运行: nyxniri fcitx install{Colors.RESET}",
-        "en": f"{Colors.BOLD_YELLOW}[!] fcitx5 not detected; skin activation skipped. Run: nyxniri fcitx install{Colors.RESET}",
-    },
     "install_cancelled": {
         "zh": f"{Colors.BOLD_BLUE}已取消，未写入配置{Colors.RESET}",
         "en": f"{Colors.BOLD_BLUE}Cancelled; no configs were written{Colors.RESET}",
@@ -639,10 +635,6 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "zh": f"{Colors.BOLD_GREEN}[✓] NyxNiri 卸载完成{Colors.RESET}",
         "en": f"{Colors.BOLD_GREEN}[✓] Uninstall complete{Colors.RESET}",
     },
-    "purge_done": {
-        "zh": f"{Colors.BOLD_GREEN}[✓] 深度清理完成{Colors.RESET}",
-        "en": f"{Colors.BOLD_GREEN}[✓] Deep clean complete{Colors.RESET}",
-    },
     "purge_warning": {
         "zh": f"\n{Colors.BOLD_RED}[!] 将清空配置、快照、缓存与壁纸。不可撤销。{Colors.RESET}",
         "en": f"\n{Colors.BOLD_RED}[!] This clears configs, snapshots, cache, and wallpapers. It cannot be undone.{Colors.RESET}",
@@ -672,10 +664,6 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
     "available_backups": {
         "zh": f"\n{Colors.BOLD_CYAN}:: 可用快照列表{Colors.RESET}",
         "en": f"\n{Colors.BOLD_CYAN}:: Available NyxNiri Snapshots{Colors.RESET}",
-    },
-    "select_rollback_target": {
-        "zh": "▸ 请选择要恢复的快照序号 (Ctrl+C 取消): ",
-        "en": "▸ Select snapshot to restore (Ctrl+C to cancel): ",
     },
     "rollback_select_title": {
         "zh": f"\n  {Colors.BOLD_CYAN}── 选择要恢复的快照 ──{Colors.RESET}\n",
@@ -857,17 +845,9 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "zh": f"{Colors.BOLD_YELLOW}[!] noctalia-greeter (AUR) 需要 paru 或 yay。请先安装 AUR helper。{Colors.RESET}",
         "en": f"{Colors.BOLD_YELLOW}[!] noctalia-greeter (AUR) requires paru/yay. Install an AUR helper first.{Colors.RESET}",
     },
-    "greeter_pkg_failed": {
-        "zh": f"{Colors.BOLD_RED}[!] 软件包 {{0}} 安装失败，继续后续步骤…{Colors.RESET}",
-        "en": f"{Colors.BOLD_RED}[!] Failed to install {{0}}; continuing…{Colors.RESET}",
-    },
     "greeter_install_failed": {
         "zh": f"{Colors.BOLD_RED}[!] noctalia-greeter 安装失败。稍后运行 nyxniri greeter install 重试。{Colors.RESET}",
         "en": f"{Colors.BOLD_RED}[!] Install failed. Retry later with: nyxniri greeter install{Colors.RESET}",
-    },
-    "greeter_install_skipped": {
-        "zh": f"{Colors.BOLD_YELLOW}[!] 已跳过 Noctalia Greeter 配置{Colors.RESET}",
-        "en": f"{Colors.BOLD_YELLOW}[!] Noctalia Greeter setup skipped{Colors.RESET}",
     },
     "greeter_dm_conflict": {
         "zh": f"{Colors.BOLD_YELLOW}[!] 检测到已启用的显示管理器 ({{0}})，现在切换到 greetd{Colors.RESET}",
@@ -913,10 +893,6 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "zh": f"{Colors.BOLD_RED}[!] 特权命令执行失败: {{0}} (需要 sudo 权限){Colors.RESET}",
         "en": f"{Colors.BOLD_RED}[!] Privileged command failed: {{0}} (requires sudo){Colors.RESET}",
     },
-    "greeter_polkit_skip": {
-        "zh": f"{Colors.BOLD_GREEN}[✓] polkit 规则已存在，跳过{Colors.RESET}",
-        "en": f"{Colors.BOLD_GREEN}[✓] polkit rule already present; skipped{Colors.RESET}",
-    },
     "greeter_polkit_written": {
         "zh": f"{Colors.BOLD_GREEN}[✓] 已写入 polkit 免密规则: {{0}}{Colors.RESET}",
         "en": f"{Colors.BOLD_GREEN}[✓] polkit rule written: {{0}}{Colors.RESET}",
@@ -948,14 +924,6 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
     "fisher_status_title": {
         "zh": f"\n{Colors.BOLD_CYAN}:: fisher 插件管理器状态{Colors.RESET}",
         "en": f"\n{Colors.BOLD_CYAN}:: fisher plugin manager status{Colors.RESET}",
-    },
-    "greeter_status_ok": {
-        "zh": f"{Colors.BOLD_GREEN}[✓] 登录界面已就绪{Colors.RESET}",
-        "en": f"{Colors.BOLD_GREEN}[✓] Login screen ready{Colors.RESET}",
-    },
-    "greeter_status_hint": {
-        "zh": f"{Colors.BOLD_CYAN}运行 nyxniri greeter install 完成配置{Colors.RESET}",
-        "en": f"{Colors.BOLD_CYAN}Run nyxniri greeter install to set up{Colors.RESET}",
     },
     "greeter_uninstall_title": {
         "zh": f"\n{Colors.BOLD_YELLOW}:: 卸载 Noctalia Greeter{Colors.RESET}",
@@ -1159,10 +1127,6 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "zh": f"\n{Colors.BOLD_RED}[✗] 未找到 sudo。请先安装 sudo，再重新运行。{Colors.RESET}",
         "en": f"\n{Colors.BOLD_RED}[✗] sudo is not installed. Install it, then retry.{Colors.RESET}",
     },
-    "err_aborted_code": {
-        "zh": f"\n{Colors.BOLD_RED}[✗] 异常终止 (退出码: {{0}}){Colors.RESET}",
-        "en": f"\n{Colors.BOLD_RED}[✗] Aborted with exit code: {{0}}{Colors.RESET}",
-    },
     "err_already_running": {
         "zh": f"\n{Colors.BOLD_YELLOW}[!] 进程已在运行 (PID: {{0}}){Colors.RESET}",
         "en": f"\n{Colors.BOLD_YELLOW}[!] Process already running (PID: {{0}}){Colors.RESET}",
@@ -1273,10 +1237,6 @@ Commands:
         "zh": f"  {Colors.BOLD_CYAN}- 快照:{Colors.RESET} 写入前保存当前配置",
         "en": f"  {Colors.BOLD_CYAN}- Snapshot:{Colors.RESET} Save current configs before writing",
     },
-    "preflight_custom_config_kept": {
-        "zh": f"{Colors.BOLD_CYAN}[ 保留的自定义配置 ]{Colors.RESET}",
-        "en": f"{Colors.BOLD_CYAN}[ Preserved custom configs ]{Colors.RESET}",
-    },
     "preflight_sudo_prompt": {
         "zh": f"\n{Colors.BOLD_BLUE}:: 以下步骤需要 sudo，验证一次：{Colors.RESET}",
         "en": f"\n{Colors.BOLD_BLUE}:: These steps need sudo. Authenticate once:{Colors.RESET}",
@@ -1377,14 +1337,6 @@ Commands:
         "zh": f"{Colors.BOLD_BLUE}:: 检查 Fisher…{Colors.RESET}",
         "en": f"{Colors.BOLD_BLUE}:: Checking Fisher…{Colors.RESET}",
     },
-    "log_install_fish_plugins": {
-        "zh": ":: 安装 fish_plugins 插件…",
-        "en": ":: Installing fish_plugins…",
-    },
-    "log_fisher_update_skipped": {
-        "zh": f"{Colors.BOLD_RED}[!]{Colors.RESET} Fisher 更新跳过 (网络受限)",
-        "en": f"{Colors.BOLD_RED}[!]{Colors.RESET} Fisher update skipped (network restricted)",
-    },
     "log_fisher_install_skipped": {
         "zh": f"{Colors.BOLD_RED}[!]{Colors.RESET} Fisher 安装跳过 (网络受限)",
         "en": f"{Colors.BOLD_RED}[!]{Colors.RESET} Fisher install skipped (network restricted)",
@@ -1467,10 +1419,6 @@ Commands:
         "zh": f"{Colors.BOLD_BLUE}:: 从官方源安装 paru…{Colors.RESET}",
         "en": f"{Colors.BOLD_BLUE}:: Installing paru from official repos…{Colors.RESET}",
     },
-    "aur_bootstrap_source": {
-        "zh": f"{Colors.BOLD_BLUE}:: 源码构建 paru (约 1-3 分钟)…{Colors.RESET}",
-        "en": f"{Colors.BOLD_BLUE}:: Building paru from source (~1-3 min)…{Colors.RESET}",
-    },
     "aur_bootstrap_ok": {
         "zh": f"{Colors.BOLD_GREEN}[✓] paru 安装成功{Colors.RESET}",
         "en": f"{Colors.BOLD_GREEN}[✓] paru installed successfully{Colors.RESET}",
@@ -1514,10 +1462,6 @@ Commands:
     "git_required": {
         "zh": f"{Colors.BOLD_RED}[✗] 未找到 git。请先安装。{Colors.RESET}",
         "en": f"{Colors.BOLD_RED}[✗] git is missing. Please install it first.{Colors.RESET}",
-    },
-    "cloning_repo": {
-        "zh": f"\n{Colors.BOLD_BLUE}:: 拉取仓库至缓存 ({{0}})…{Colors.RESET}",
-        "en": f"\n{Colors.BOLD_BLUE}:: Pulling repository to cache ({{0}})…{Colors.RESET}",
     },
     "checking_updates": {
         "zh": f"\n{Colors.BOLD_BLUE}:: 检查更新…{Colors.RESET}",
@@ -1692,14 +1636,6 @@ Commands:
     "preset_info_none": {
         "zh": "(无)",
         "en": "(none)",
-    },
-    "preset_switcher_col_app": {
-        "zh": "应用",
-        "en": "App",
-    },
-    "preset_switcher_col_preset": {
-        "zh": f"预设 ({{0}})",
-        "en": f"Presets ({{0}})",
     },
 }
 
