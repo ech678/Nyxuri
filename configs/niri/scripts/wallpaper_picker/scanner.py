@@ -121,6 +121,10 @@ class WallpaperScanner:
         self._thumb_queue = list(items)
         self._thumb_queue_pos = 0
 
+    def has_pending_thumbs(self) -> bool:
+        """True while the display-order queue still has unloaded items."""
+        return self._thumb_queue_pos < len(self._thumb_queue)
+
     def load_next_thumb_batch(self, count: int = 24):
         """Load the next queue batch: cached thumbs notify now, the rest get jobs."""
         batch = self._thumb_queue[self._thumb_queue_pos:self._thumb_queue_pos + count]

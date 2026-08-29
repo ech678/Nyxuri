@@ -2,15 +2,15 @@
 NyxNiri Wallpaper Picker — Material 3 layer-shell UI.
 
 Wayland overlay dialog assembled from M3 components: scrim, top app bar,
-search bar, filter chips, image cards and a FAB. All styling is compiled
-from theme.py tokens. Thumbnails stream in as CSS background-images on
-demand, so off-screen cards hold no decoded pixbufs and scrolling away
-releases them.
+search bar, filter chips and image cards. All styling is compiled from
+theme.py tokens. Thumbnails stream in as CSS background-images on demand,
+so off-screen cards hold no decoded pixbufs and scrolling away releases
+them.
 """
 
+import math
 import os
 import sys
-import random
 import threading
 import gi
 
@@ -39,10 +39,9 @@ GAP_V = 8
 GRID_GAP = 8
 APPBAR_H = 64
 SEARCH_H = 56
-CHIP_ROW_H = 32
-FAB_H = 56
-FAB_MARGIN = 16
-GRID_BOTTOM_PAD = FAB_H + 2 * FAB_MARGIN
+# 48dp hit target (the 32dp chip face rides inside it); also the CSS
+# min-height via the geometry dict — single source.
+CHIP_ROW_H = 48
 SCROLLBAR_RESERVE = 14
 
 
@@ -56,6 +55,115 @@ def _symbolic_icon(name, pixel_size):
     except Exception:
         pass
     return None
+
+
+class FixedDialog(Gtk.Box):
+    """Vertical dialog whose measured size is a constant.
+
+    set_size_request only floors the requisition: dynamic child
+    measurements — IME preedit inside the search entry, the entry's
+    clear-button icon, the scrollbar appearing — would still push the
+    dialog wider or narrower by tens of pixels mid-session. Overriding
+    the four preferred-size vfuncs pins the dialog so no content
+    re-measure can ever move it.
+    """
+
+    def __init__(self, width, height, spacing=0):
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=spacing)
+        self._fixed_w = width
+        self._fixed_h = height
+
+    def do_get_preferred_width(self):
+        return self._fixed_w, self._fixed_w
+
+    def do_get_preferred_width_for_height(self, height):
+        return self._fixed_w, self._fixed_w
+
+    def do_get_preferred_height(self):
+        return self._fixed_h, self._fixed_h
+
+    def do_get_preferred_height_for_width(self, width):
+        return self._fixed_h, self._fixed_h
+
+
+class SmoothScroll(Gtk.ScrolledWindow):
+    """ScrolledWindow with critically-damped wheel / touchpad gliding.
+
+    GTK3 jumps a fixed step per wheel notch and never animates pointer
+    input. Scroll events here accumulate a target position that a
+    frame-clock tick approaches exponentially — no overshoot,
+    effects-spring semantics (see theme.py; scroll motion has no
+    published M3 tokens, so TAU and the step are design decisions).
+    Scrollbar grabs and programmatic resets abort the glide.
+    """
+
+    TAU_MS = 70.0
+    WHEEL_STEP_PX = 120.0
+    SNAP_PX = 0.5
+
+    def __init__(self):
+        super().__init__()
+        self._target = None
+        self._tick_id = None
+        self._last_us = 0
+        self._self_write = False
+        self.get_vadjustment().connect("value-changed", self._on_value_changed)
+
+    def do_scroll_event(self, event):
+        adj = self.get_vadjustment()
+        if adj is None:
+            return False
+        if event.direction == Gdk.ScrollDirection.SMOOTH:
+            step = event.delta_y * self.WHEEL_STEP_PX
+        elif event.direction == Gdk.ScrollDirection.DOWN:
+            step = self.WHEEL_STEP_PX
+        elif event.direction == Gdk.ScrollDirection.UP:
+            step = -self.WHEEL_STEP_PX
+        else:
+            return False
+        if self._target is None:
+            self._target = adj.get_value()
+        self._target = min(max(self._target + step, adj.get_lower()),
+                           adj.get_upper() - adj.get_page_size())
+        if self._tick_id is None:
+            self._last_us = self.get_frame_clock().get_frame_time()
+            self._tick_id = self.add_tick_callback(self._tick)
+        return True
+
+    def _tick(self, widget, clock):
+        adj = self.get_vadjustment()
+        now = clock.get_frame_time()
+        dt = max((now - self._last_us) / 1000.0, 1.0)
+        self._last_us = now
+        bounds = adj.get_upper() - adj.get_page_size()
+        target = min(max(self._target, adj.get_lower()), bounds)
+        value = adj.get_value()
+        value += (target - value) * (1.0 - math.exp(-dt / self.TAU_MS))
+        if abs(target - value) <= self.SNAP_PX:
+            value = target
+            self._stop()
+        self._self_write = True
+        adj.set_value(value)
+        self._self_write = False
+        return GLib.SOURCE_CONTINUE if self._tick_id is not None else GLib.SOURCE_REMOVE
+
+    def _on_value_changed(self, adj):
+        # A change we did not write — scrollbar drag, programmatic reset —
+        # makes the glide target stale; drop it instead of fighting back.
+        if not self._self_write:
+            self._target = adj.get_value()
+            self._stop()
+
+    def _stop(self):
+        if self._tick_id is not None:
+            self.remove_tick_callback(self._tick_id)
+            self._tick_id = None
+
+    def snap_to(self, value):
+        """Abort any glide and jump immediately (used on filter resets)."""
+        self._stop()
+        self._target = None
+        self.get_vadjustment().set_value(value)
 
 
 class WallpaperPickerWindow(Gtk.Window):
@@ -89,6 +197,8 @@ class WallpaperPickerWindow(Gtk.Window):
         self._dismiss_timer = None
         self.thumb_widgets = {}
         self._applied_thumbs = set()
+        self._fading = []
+        self._fade_tick_id = None
         self.flowbox = None
         self.chip_buttons = []
         self.chip_revealers = []
@@ -117,8 +227,7 @@ class WallpaperPickerWindow(Gtk.Window):
             provider.load_from_data(
                 theme.build_css(self.tokens, {
                     "card_w": self.card_w, "thumb_h": self.thumb_h,
-                    "search_h": SEARCH_H, "fab_h": FAB_H,
-                    "grid_bottom_pad": GRID_BOTTOM_PAD,
+                    "search_h": SEARCH_H, "chip_h": CHIP_ROW_H,
                 }).encode()
             )
             Gtk.StyleContext.add_provider_for_screen(
@@ -153,11 +262,10 @@ class WallpaperPickerWindow(Gtk.Window):
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL,
                         halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER)
 
-        # Overlay hosts the dialog plus the FAB, which floats above content
-        # per the M3 scaffold pattern.
+        # Overlay hosts the dialog. No floating actions: the grid itself is
+        # the primary action surface (M3: no FAB when images are the action).
         self.overlay = Gtk.Overlay()
-        dialog = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=GAP_V)
-        dialog.set_size_request(self.dialog_w, self.dialog_h)
+        dialog = FixedDialog(self.dialog_w, self.dialog_h, spacing=GAP_V)
         dialog.get_style_context().add_class("picker-dialog")
         self.dialog = dialog
 
@@ -173,7 +281,7 @@ class WallpaperPickerWindow(Gtk.Window):
         self.search_entry.connect("key-press-event", self.on_search_key_press)
         self.search_entry.connect("activate", self.on_search_activate)
 
-        self.scroll = Gtk.ScrolledWindow()
+        self.scroll = SmoothScroll()
         self.scroll.get_style_context().add_class("grid-scroll")
         self.scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         self.scroll.set_min_content_height(self.grid_viewport_h)
@@ -186,7 +294,6 @@ class WallpaperPickerWindow(Gtk.Window):
             dialog.pack_start(self._build_empty_state(), True, True, 0)
 
         self.overlay.add(dialog)
-        self.overlay.add_overlay(self._build_fab())
         outer.add(self.overlay)
 
         # Scrim behind the dialog (modal dim layer); clicks bubble up to the
@@ -340,27 +447,6 @@ class WallpaperPickerWindow(Gtk.Window):
         child.add(inner)
         return child
 
-    def _build_fab(self):
-        fab = Gtk.Button()
-        fab.set_halign(Gtk.Align.END)
-        fab.set_valign(Gtk.Align.END)
-        fab.set_margin_end(FAB_MARGIN)
-        fab.set_margin_bottom(FAB_MARGIN)
-        fab.set_focus_on_click(False)
-        fab.set_tooltip_text("Shuffle (Ctrl+R)")
-        fab.get_style_context().add_class("fab")
-
-        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        icon = _symbolic_icon("media-playlist-shuffle-symbolic", 24)
-        if icon is not None:
-            row.pack_start(icon, False, False, 0)
-        label = Gtk.Label(label="Shuffle")
-        row.pack_start(label, False, False, 0)
-        fab.add(row)
-
-        fab.connect("clicked", lambda b: self._apply_random())
-        return fab
-
     def _build_empty_state(self):
         empty = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         empty.set_valign(Gtk.Align.CENTER)
@@ -398,7 +484,8 @@ class WallpaperPickerWindow(Gtk.Window):
 
     def _fade_in(self, widget, total_ms=None):
         """M3 new-content entrance: fade the widget in. GTK3 cannot
-        transition background-image, so widget opacity carries the reveal."""
+        transition background-image, so widget opacity carries the reveal.
+        All running fades share one ticker instead of one timer apiece."""
         if not widget.get_visible():
             # Off-screen / filtered-out cards appear instantly when shown
             widget.set_opacity(1.0)
@@ -406,21 +493,29 @@ class WallpaperPickerWindow(Gtk.Window):
         if total_ms is None:
             total_ms = theme.DUR_FAST_MS
         widget.set_opacity(0.0)
-        steps = max(1, total_ms // 16)
-        delta = 1.0 / steps
-        elapsed = [0]
+        self._fading.append([widget, 0.0, float(total_ms)])
+        if self._fade_tick_id is None:
+            self._fade_tick_id = GLib.timeout_add(16, self._fade_tick)
 
-        def tick():
-            if not widget.get_visible():
-                return GLib.SOURCE_REMOVE
-            elapsed[0] += 16
-            if elapsed[0] >= total_ms:
+    def _fade_tick(self):
+        still = []
+        for widget, elapsed, total in self._fading:
+            if not widget.get_mapped():
+                # Hidden mid-fade (filter/scroll): snap full so it never
+                # resurfaces stuck at partial opacity
                 widget.set_opacity(1.0)
-                return GLib.SOURCE_REMOVE
-            widget.set_opacity(min(1.0, widget.get_opacity() + delta))
-            return GLib.SOURCE_CONTINUE
-
-        GLib.timeout_add(16, tick)
+                continue
+            elapsed += 16
+            if elapsed >= total:
+                widget.set_opacity(1.0)
+            else:
+                widget.set_opacity(min(1.0, widget.get_opacity() + 16.0 / total))
+                still.append([widget, elapsed, total])
+        self._fading = still
+        if not self._fading:
+            self._fade_tick_id = None
+            return GLib.SOURCE_REMOVE
+        return GLib.SOURCE_CONTINUE
 
     # ── Filtering ────────────────────────────────────────────────────────────
     def _filter_func(self, child):
@@ -440,11 +535,13 @@ class WallpaperPickerWindow(Gtk.Window):
     def _visible_children(self):
         return [c for c in self.flowbox.get_children() if self._filter_func(c)]
 
-    def _refresh_count(self):
+    def _refresh_count(self, visible=None):
         if self.flowbox is None:
             self.count_label.set_text("0")
             return
-        self.count_label.set_text(str(len(self._visible_children())))
+        if visible is None:
+            visible = self._visible_children()
+        self.count_label.set_text(str(len(visible)))
 
     # ── Signal handlers ──────────────────────────────────────────────────────
     def on_search_changed(self, entry):
@@ -487,10 +584,11 @@ class WallpaperPickerWindow(Gtk.Window):
 
     def _update_filter(self):
         """Apply the active filter and restart incremental thumb loading."""
+        visible = self._visible_children()
         self.flowbox.invalidate_filter()
-        self._refresh_count()
-        self.scroll.get_vadjustment().set_value(0)
-        self.scanner.set_thumb_queue([c.item for c in self._visible_children()])
+        self._refresh_count(visible)
+        self.scroll.snap_to(0)
+        self.scanner.set_thumb_queue([c.item for c in visible])
         self.scanner.load_next_thumb_batch()
 
     def on_child_activated(self, box, child):
@@ -536,12 +634,6 @@ class WallpaperPickerWindow(Gtk.Window):
         if self.is_dismissing:
             return True
         keyval = event.keyval
-        ctrl = bool(event.state & Gdk.ModifierType.CONTROL_MASK)
-
-        # Ctrl+R → apply a random wallpaper from the visible set
-        if ctrl and keyval in (Gdk.KEY_r, Gdk.KEY_R):
-            self._apply_random()
-            return True
 
         # Esc outside the search bar → clear search, or dismiss if already empty
         if keyval == Gdk.KEY_Escape:
@@ -559,16 +651,11 @@ class WallpaperPickerWindow(Gtk.Window):
         self.dismiss_window()
         threading.Thread(target=apply_wallpaper, args=(item,), daemon=False).start()
 
-    def _apply_random(self):
-        if self.flowbox is None:
-            return
-        items = [c.item for c in self._visible_children()]
-        if items:
-            self.select_and_apply(random.choice(items))
-
     # ── Thumbnail callback & lazy loading ─────────────────────────────────────
     def _on_scroll(self, adj):
         if self.is_dismissing:
+            return
+        if not self.scanner.has_pending_thumbs():
             return
         # Near the bottom → load the next batch from the display-order queue
         if adj.get_value() + adj.get_page_size() >= adj.get_upper() - 400:

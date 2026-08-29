@@ -7,7 +7,6 @@ import os
 import sys
 import json
 import time
-import random
 import subprocess
 
 STATE_DIR = os.path.expanduser("~/.local/state/noctalia/mpvpaper")
@@ -103,12 +102,3 @@ def apply_wallpaper(item) -> bool:
         return apply_dynamic_wallpaper(item.path, item.thumb_path)
     else:
         return apply_static_wallpaper(item.path)
-
-
-def apply_random_wallpaper(items: list):
-    """Pick and apply a random wallpaper from the provided item collection."""
-    if not items:
-        return None
-    target = random.choice(items)
-    apply_wallpaper(target)
-    return target

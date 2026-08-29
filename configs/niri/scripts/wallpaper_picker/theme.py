@@ -36,6 +36,11 @@ Design decisions (not in M3, or adapted for GTK3):
   published in the references consulted.
 - GtkRevealer animates on its built-in ease (GTK3 cannot take the token
   bezier); durations still come from the motion tokens.
+- Overscroll: M3 publishes no over/underscroll treatment, so the toolkit's
+  Adwaita edge glow is suppressed — scrolling stops at content bounds.
+- Scroll glide (window.py) rides a critically-damped exponential approach
+  (no overshoot, effects-spring semantics); scroll motion has no published
+  M3 tokens, so the time constant is a design decision.
 """
 
 import os
@@ -294,8 +299,7 @@ def build_css(t, geometry):
     card_w = int(geometry["card_w"])
     thumb_h = int(geometry["thumb_h"])
     search_h = int(geometry["search_h"])
-    fab_h = int(geometry["fab_h"])
-    grid_bottom_pad = int(geometry["grid_bottom_pad"])
+    chip_h = int(geometry["chip_h"])
 
     surface = t["surface"]
     on_surface = t["on_surface"]
@@ -311,7 +315,6 @@ def build_css(t, geometry):
     full = SHAPE["full"]
     xl = SHAPE["xl"]
     m = SHAPE["m"]
-    l = SHAPE["l"]
     s = SHAPE["s"]
 
     tl_e = TYPE["title-large-emph"]
@@ -399,7 +402,7 @@ window.background {{ background-color: transparent; }}
    8dp corner unselected, morphing to full when selected — spatial spring,
    the signature move. Pressing morphs to the published CornerSmall shape. */
 .chip {{
-    min-height: 48px; padding: 0 8px;
+    min-height: {chip_h}px; padding: 0 8px;
     background-color: transparent;
     border: none;
 }}
@@ -421,7 +424,7 @@ window.background {{ background-color: transparent; }}
     background-color: {_sl(sch, on_surface, STATE_PRESSED)};
 }}
 .chip:checked > .chip-face {{
-    border-radius: {l}px;
+    border-radius: {full}px;
     background-color: {_rgb(sc)};
     border-color: {_rgb(sc)};
     color: {_rgb(osc)};
@@ -479,8 +482,11 @@ window.background {{ background-color: transparent; }}
     color: {_rgb(t['on_primary'])};
 }}
 
-.grid {{ background-color: transparent; padding-bottom: {grid_bottom_pad}px; }}
+.grid {{ background-color: transparent; }}
 .grid-scroll {{ background-color: transparent; border: none; }}
+/* Overscroll: M3 has no over/underscroll treatment — the toolkit's edge
+   glow is foreign chrome here; scrolling stops hard at content bounds. */
+.grid-scroll undershoot, .grid-scroll overshoot {{ background: none; }}
 .grid-scroll scrollbar {{ background-color: transparent; }}
 .grid-scroll trough {{ background-color: transparent; }}
 .grid-scroll slider {{
@@ -489,25 +495,6 @@ window.background {{ background-color: transparent; }}
     min-width: 6px;
     min-height: 32px;
 }}
-
-/* M3 Expressive extended FAB (56dp, CornerLarge 16dp, Primary Container, Elevation 3) */
-.fab {{
-    min-width: {fab_h}px; min-height: {fab_h}px; padding: 0 16px;
-    border-radius: {l}px;
-    background-color: {_rgb(pc)};
-    color: {_rgb(opc)};
-    border: none;
-    box-shadow: {ELEVATION[3]};
-    font-size: {ll_e[0]}px;
-    font-weight: {ll_e[1]};
-    transition: background-color {DUR_STATE_MS}ms {EASE_EXPRESSIVE_FAST_EFFECTS},
-                box-shadow {DUR_FAST_MS}ms {EASE_EXPRESSIVE_FAST_EFFECTS};
-}}
-.fab:hover {{
-    background-color: {_sl(pc, opc, STATE_HOVER)};
-    box-shadow: {ELEVATION[4]};
-}}
-.fab:active {{ background-color: {_sl(pc, opc, STATE_PRESSED)}; }}
 
 /* Empty state */
 .empty-title {{
@@ -523,7 +510,7 @@ window.background {{ background-color: transparent; }}
 
 /* Focus indicators (2px primary ring, outside — thickness is a design
    decision, M3 publishes no focus-indicator width) */
-.chip:focus, .card:focus, .icon-btn:focus, .fab:focus, .search:focus {{
+.chip:focus, .card:focus, .icon-btn:focus, .search:focus {{
     outline-width: 2px;
     outline-style: solid;
     outline-color: {_rgb(t['primary'])};

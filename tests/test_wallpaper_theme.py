@@ -5,8 +5,8 @@ tests pin the tonal derivations (container-tier monotonicity, on-color
 contrast, text-contrast contract, starship palette mapping, error role),
 10-step shape scale, 30-style type scale, spatial/effects motion spring
 curves, and the CSS compilation contract — including the chip corner-morph
-(spatial spring), pressed shape, 48dp hit targets, search-bar tiering and
-scrim/reveal transitions.
+(spatial spring), pressed shape, 48dp hit targets, search-bar tiering,
+overscroll suppression and scrim/reveal transitions.
 """
 
 import importlib.util
@@ -200,7 +200,7 @@ class TestCssContract(unittest.TestCase):
         self.t = self.theme.build_tokens(raw=_DARK_RAW)
         self.css = self.theme.build_css(self.t, {
             "card_w": 328, "thumb_h": 184,
-            "search_h": 56, "fab_h": 56, "grid_bottom_pad": 88,
+            "search_h": 56, "chip_h": 48,
         })
 
     def _block(self, selector):
@@ -210,8 +210,13 @@ class TestCssContract(unittest.TestCase):
     def test_component_selectors_present(self):
         for sel in (".picker-dialog", ".appbar-title", ".count-label", ".icon-btn", ".search",
                     ".chip", ".chip-face", ".icon-btn-face", ".card", ".thumb", ".live",
-                    ".badge", ".fab", ".scrim", ".grid-scroll", ".empty-title"):
+                    ".badge", ".scrim", ".grid-scroll", ".empty-title"):
             self.assertIn(sel, self.css)
+
+    def test_no_fab(self):
+        # The grid itself is the primary action surface; M3 says no FAB when
+        # images represent the actions, so the stylesheet must not carry one.
+        self.assertNotIn(".fab", self.css)
 
     def test_reveal_transitions_present(self):
         # Entry/exit: dialog + scrim fade in via the .revealed class
@@ -229,11 +234,11 @@ class TestCssContract(unittest.TestCase):
         self.assertIn(self.theme._rgb(self.t["primary_container"]), self.css)
 
     def test_m3_spec_values(self):
-        # Shape scale: dialog extra-large 28, card medium 12, FAB large 16,
-        # chip face small 8 (also the pressed shape). Component geometry:
-        # search bar 56dp, chip face 32dp, live tag 16dp, hit targets 48dp.
+        # Shape scale: dialog extra-large 28, card medium 12, chip face
+        # small 8 (also the pressed shape), selected chip morphs to full.
+        # Component geometry: search bar 56dp, chip face 32dp, live tag
+        # 16dp, hit targets 48dp.
         self.assertIn("border-radius: 28px", self.css)
-        self.assertIn("border-radius: 16px", self.css)
         self.assertIn("border-radius: 12px", self.css)
         self.assertIn("border-radius: 8px", self.css)
         self.assertIn("min-height: 56px", self.css)
@@ -263,9 +268,26 @@ class TestCssContract(unittest.TestCase):
     def test_live_tag_full_pill(self):
         self.assertIn("border-radius: 9999px", self._block(".live"))
 
+    def test_overscroll_suppressed(self):
+        # M3 publishes no over/underscroll treatment; the toolkit's Adwaita
+        # edge glow is foreign chrome and must not reach the grid viewport.
+        self.assertIn(
+            "background: none",
+            self._block(".grid-scroll undershoot, .grid-scroll overshoot"))
+
     def test_chip_pressed_morph(self):
         # M3E pressed shape (CornerSmall): the face snaps back to 8dp on press
         self.assertIn("border-radius: 8px", self._block(".chip:active > .chip-face"))
+
+    def test_chip_selected_shape_full(self):
+        # M3E Chips v37.2.1: SelectedShape = CornerFull — selection morphs
+        # to the pill, not a mid-scale corner.
+        self.assertIn("border-radius: 9999px", self._block(".chip:checked > .chip-face"))
+
+    def test_chip_hit_target_single_source(self):
+        # The 48dp hit-target height flows from the geometry dict into the
+        # CSS (window.py CHIP_ROW_H), not a magic number here.
+        self.assertIn("min-height: 48px", self._block(".chip"))
 
     def test_hit_targets_48dp(self):
         # Visual faces (32/40dp) live inside 48dp hit-target buttons
