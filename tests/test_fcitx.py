@@ -2,6 +2,7 @@
 
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch, mock_open
 
 from tests.utils import TempEnv
@@ -63,6 +64,38 @@ class TestFcitxTemplateDetection(unittest.TestCase):
             mock_paths.return_value = (None, None, None, None, Path("/fake/config.toml"), None, None, None)
             with patch("pathlib.Path.is_file", return_value=False):
                 self.assertFalse(fcitx_templates_registered())
+
+
+class TestFcitxStartup(unittest.TestCase):
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+        self.env = self._ctx.env
+
+    def tearDown(self):
+        self._ctx.__exit__()
+
+    def test_niri_starts_fcitx_when_installed(self):
+        config = (self.env.configs_src / "niri" / "config.kdl").read_text(encoding="utf-8")
+        self.assertIn(
+            'spawn-at-startup "sh" "-c" "command -v fcitx5 >/dev/null 2>&1 && exec fcitx5 -d"',
+            config,
+        )
+
+    def test_restart_starts_daemon_when_not_already_running(self):
+        from nyxniri.modules.fcitx import fcitx_restart
+
+        with patch("nyxniri.modules.fcitx.fcitx5_installed", return_value=True), \
+             patch("nyxniri.modules.fcitx.timed_run", return_value=SimpleNamespace(returncode=1)) as run, \
+             patch("nyxniri.modules.fcitx.subprocess.Popen") as popen:
+            fcitx_restart()
+
+        run.assert_called_once_with(
+            ["pgrep", "-x", "fcitx5"], 5, capture_output=True, check=False,
+        )
+        popen.assert_called_once_with(
+            ["fcitx5", "-d"], stdout=-3, stderr=-3,
+        )
 
 
 if __name__ == "__main__":
