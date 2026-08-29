@@ -212,12 +212,42 @@ function _nyxniri_se_search --argument-names query helper
     switch "$cmd"
         case aur
             if test -n "$kw"
+                # AUR 在线搜索: paru/yay 直接搜, shelly 走 JSON; 失败时透传 helper 原话, 不再静默空
+                set -l aur_helper
                 if test "$helper" = "paru" -o "$helper" = "yay"
-                    $helper -Ssq --aur "$kw" 2>/dev/null | awk '{print "[AUR] "$0}' || true
-                else if command -v paru &>/dev/null
-                    paru -Ssq --aur "$kw" 2>/dev/null | awk '{print "[AUR] "$0}' || true
-                else if command -v yay &>/dev/null
-                    yay -Ssq --aur "$kw" 2>/dev/null | awk '{print "[AUR] "$0}' || true
+                    set aur_helper "$helper"
+                else if command -v shelly &>/dev/null
+                    set aur_helper shelly
+                end
+
+                if test -z "$aur_helper"
+                    echo "[!] AUR search requires paru/yay/shelly" >&2
+                    return 1
+                end
+
+                set -l results
+                if test "$aur_helper" = shelly
+                    set results (shelly search aur -j "$kw" 2>/dev/null \
+                        | string match -a -r '"Name":"[^"]+"' | awk -F'"' '{print "[AUR] "$4}')
+                else
+                    set results ("$aur_helper" -Ssq --aur "$kw" 2>/dev/null | awk '{print "[AUR] "$0}')
+                end
+                set -l search_st $pipestatus[1]
+
+                if test -n "$results"
+                    printf '%s\n' $results
+                else if test $search_st -ne 0
+                    # 无匹配同样退出非零, 只有拿到 helper 原话才算真失败 (paru 报错在 stderr, shelly 在 stdout)
+                    set -l why
+                    if test "$aur_helper" = shelly
+                        set why (shelly search aur -j "$kw" 2>/dev/null | head -1)
+                    else
+                        set why ("$aur_helper" -Ssq --aur "$kw" 2>&1 >/dev/null | head -1)
+                    end
+                    if test -n "$why"
+                        echo "[!] $why" >&2
+                        return 1
+                    end
                 end
             end
         case pac repo
@@ -353,12 +383,12 @@ if status is-interactive
     alias clean='~/.config/fish/clean-cache'      # 运行一键缓存清理脚本
 
     # se：模糊搜索软件包 (支持 aur <kw> / pac <kw> 前缀) 并用 fzf 交互安装 (无 fzf 时自动降级)
-    function se --description "模糊搜索并安装软件包 (支持 aur <kw> / pac <kw> 前缀)"
+    function se --description "Fuzzy search & install packages (aur/pac prefix)"
         set -l helper (_nyxniri_pkg_helper)
 
         # 无 fzf 时的降级处理
         if not command -v fzf &>/dev/null
-            set_color yellow; echo "[!] 未检测到 fzf，切换至标准 CLI 搜索..."; set_color normal
+            set_color yellow; echo "[!] fzf not found, falling back to plain search"; set_color normal
             switch "$helper"
                 case paru
                     paru -Ss $argv
@@ -385,9 +415,9 @@ if status is-interactive
             set preview_cmd "yay -Si {2} 2>/dev/null || pacman -Si {2}"
         end
 
-        set -l header_str "💡 搜索提示: 输入 'aur 关键字' 搜 AUR | 'pac 关键字' 搜官方源 | [Tab] 多选"
+        set -l header_str "aur <kw> → AUR | pac <kw> → repo | [Tab] multi-select"
 
-        set -l pkgs (_nyxniri_se_search "$fzf_query" "$helper" | fzf --multi --prompt='📦 包搜索 > ' \
+        set -l pkgs (_nyxniri_se_search "$fzf_query" "$helper" | fzf --multi --prompt='search > ' \
             --header="$header_str" \
             --query="$fzf_query" \
             --bind 'change:reload(fish -c "_nyxniri_se_search {q} '$helper'")' \
@@ -405,11 +435,11 @@ if status is-interactive
     end
 
     # un：模糊搜索已安装的包并用 fzf 交互卸载 (无 fzf 时自动降级)
-    function un --description "模糊搜索并卸载已安装软件包"
+    function un --description "Fuzzy search & remove installed packages"
         set -l helper (_nyxniri_pkg_helper)
 
         if not command -v fzf &>/dev/null
-            set_color yellow; echo "[!] 未检测到 fzf，切换至标准已安装查询..."; set_color normal
+            set_color yellow; echo "[!] fzf not found, falling back to installed list"; set_color normal
             pacman -Qs $argv
             return
         end
@@ -419,8 +449,8 @@ if status is-interactive
             set fzf_query "$argv"
         end
 
-        set -l pkgs (pacman -Qq | fzf --multi --prompt='🗑  卸载 > ' \
-            --header='[Tab] 多选 | [Enter] 确认卸载 | [Esc] 取消' \
+        set -l pkgs (pacman -Qq | fzf --multi --prompt='remove > ' \
+            --header='[Tab] multi-select | [Enter] remove | [Esc] cancel' \
             --query="$fzf_query" \
             --preview 'pacman -Qi {1}' --preview-window 'right:60%:wrap')
 
