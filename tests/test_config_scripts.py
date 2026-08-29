@@ -4,7 +4,10 @@ These scripts run inside the user session; their behavior boundaries are
 pinned here because the project has no bash test framework.
 """
 
+import os
+import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,7 +16,7 @@ from tests.utils import TempEnv
 
 _REPO = Path(__file__).resolve().parent.parent
 _TOGGLE = _REPO / "configs" / "niri" / "scripts" / "niri-scratch-toggle.sh"
-_CLEAN_CACHE = _REPO / "configs" / "fish" / "clean-cache"
+_CLEAN_CACHE = _REPO / "configs" / "fish" / "clean-cache.py"
 _START_NOCTALIA = _REPO / "configs" / "niri" / "scripts" / "start-noctalia.sh"
 
 
@@ -92,56 +95,216 @@ class TestScratchToggle(unittest.TestCase):
             self.assertFalse(marker.exists())
 
 
-class TestCleanCacheDryRun(unittest.TestCase):
-    """clean-cache --dry-run 必须是纯计划预览：不 sudo、不删、不动服务。(#45)"""
+class TestCleanCache(unittest.TestCase):
+    """clean-cache v4 契约：围栏删除、干跑纯预览、--only 选择执行、sudo 参数形状。"""
 
-    def test_dry_run_state_survives_reexec(self):
-        """-n 翻译成 auto 后 re-exec 必须透传 dry-run 状态，且初始化不得无条件重置。"""
-        src = _CLEAN_CACHE.read_text(encoding="utf-8")
-        self.assertIn(": \"${_mc_dryrun:=0}\"", src)
-        self.assertIn("_mc_auto=1 _mc_dryrun=1 exec --", src)
-        self.assertNotIn("_mc_dryrun=0\n", src)
+    def setUp(self):
+        self._td = tempfile.TemporaryDirectory()
+        self.home = Path(self._td.name)
+        self.bin = self.home / "bin"
+        self.bin.mkdir()
+        self.calls = self.home / "calls"
+        self._stubs()
+        self._seed()
 
-    def test_all_mutation_commands_are_guarded(self):
-        """变更型工具命令必须走 _mc_sudo_wrap 收口或自带 _mc_dryrun 守卫。"""
-        import re
+    def tearDown(self):
+        self._td.cleanup()
 
-        src = _CLEAN_CACHE.read_text(encoding="utf-8")
-        offenders = []
-        for lineno, line in enumerate(src.splitlines(), 1):
-            if line.lstrip().startswith("#"):
-                continue
-            if re.search(r'^\s*(flatpak|npm|pip|go|cargo|gem|paccache|yarn|bun|ccache|snap|docker|journalctl|pkcon|pacman)\s', line) \
-                    or "systemctl start" in line:
-                if "_mc_sudo_wrap" not in line and "_mc_dryrun" not in line:
-                    offenders.append(f"{lineno}: {line.strip()}")
-        self.assertEqual(offenders, [])
+    def _stubs(self):
+        log = "printf '%s\\n' \"$*\" >>\"$CALLS\"\n"
+        # sudo 模拟器：-v 成功；-Scc 记录 stdin 形状；其余记参数后成功
+        self._stub("sudo", (
+            log
+            + 'if [ "$1" = "-v" ]; then exit 0; fi\n'
+            + 'if [ "$1" = "pacman" ] && [ "$2" = "-Scc" ]; then\n'
+            + '  cat >>"$CALLS.stdin"\n'
+            + '  exit 0\n'
+            + 'fi\n'
+            + "exit 0\n"
+        ))
+        self._stub("pacman", log + 'if [ "$1" = "-Qdtq" ]; then printf "foo\\nbar\\n"; fi\n')
+        self._stub("flatpak", log)
+        # 只会被 sudo stub 拦下、自身从不真正执行的探测项
+        self._stub("journalctl")
+        self._stub("fstrim")
+        self._stub("pacdiff")
+
+    def _stub(self, name, body="exit 0"):
+        script = self.bin / name
+        script.write_text(f"#!/bin/sh\n{body}\n", encoding="utf-8")
+        script.chmod(0o755)
+
+    def _seed(self):
+        self.markers = []
+        for rel in (
+            ".cache", ".npm", ".thumbnails",
+            ".cargo/registry/cache", ".cargo/git/db",
+            ".local/share/Trash/files",
+            ".local/share/Steam/steamapps/shadercache",
+            ".var/app/org.test.App/cache",
+        ):
+            d = self.home / rel
+            d.mkdir(parents=True, exist_ok=True)
+            (d / "marker").write_text("x", encoding="utf-8")
+            self.markers.append(d / "marker")
+        (self.home / ".local/share/flatpak").mkdir(parents=True, exist_ok=True)
+
+    def _env(self):
+        return {
+            "PATH": f"{self.bin}:/usr/bin:/bin",
+            "HOME": str(self.home),
+            "LANG": "C", "LC_ALL": "C",
+            "CALLS": str(self.calls),
+        }
+
+    def _run(self, *args):
+        return subprocess.run(
+            [sys.executable, str(_CLEAN_CACHE), *args],
+            capture_output=True, text=True, timeout=120,
+            env=self._env(), stdin=subprocess.DEVNULL,
+        )
+
+    def _calls_text(self):
+        return self.calls.read_text(encoding="utf-8") if self.calls.exists() else ""
 
     def test_dry_run_is_pure_preview(self):
-        import subprocess
+        """-n 只读预览：不删文件、不提权、不发变更命令。(#45 延续)"""
+        proc = self._run("-n")
 
-        with tempfile.TemporaryDirectory() as td:
-            home = Path(td)
-            marker = home / ".cache" / "keep-me-marker"
-            marker.parent.mkdir()
-            marker.write_text("survive")
-            env = {"PATH": "/usr/bin:/bin", "HOME": str(home), "XDG_RUNTIME_DIR": td,
-                   "LANG": "C", "USER": "nobody"}
-            proc = subprocess.run(
-                ["/bin/bash", str(_CLEAN_CACHE), "-n"],
-                capture_output=True, text=True, timeout=60, env=env,
-                stdin=subprocess.DEVNULL,
-            )
-            self.assertEqual(proc.returncode, 0, proc.stderr[-400:])
-            self.assertIn("Would", proc.stdout + proc.stderr)
-            self.assertNotIn("sudo: ", proc.stderr)
-            self.assertTrue(marker.exists(), "dry-run deleted a user file")
+        self.assertEqual(proc.returncode, 0, proc.stderr[-400:])
+        out = proc.stdout + proc.stderr
+        self.assertIn("would", out)
+        self.assertIn("dry-run", out.lower())
+        for marker in self.markers:
+            self.assertTrue(marker.exists(), f"dry-run deleted {marker}")
+        lines = self._calls_text().splitlines()
+        self.assertIn("-Qdtq", lines)
+        self.assertNotIn("-v", lines)
+        self.assertNotIn("pacman -Scc --noconfirm", lines)
+        self.assertNotIn("fstrim -av", lines)
 
-    def test_auto_mode_still_demands_confirmation_state(self):
-        """非 dry-run 的 auto 路径保留 sudo 提示与最终警告，不被 dry-run 修复波及。"""
+    def test_default_mode_requires_confirmation(self):
+        """无 --only 且非交互 stdin：拒绝执行，零改动。"""
+        proc = self._run()
+
+        self.assertEqual(proc.returncode, 1)
+        for marker in self.markers:
+            self.assertTrue(marker.exists(), f"unconfirmed run deleted {marker}")
+        self.assertNotIn("pacman -Scc --noconfirm", self._calls_text())
+
+    def test_only_all_runs_and_command_shapes(self):
+        """--only all 执行全部：围栏内真删、目录壳保留、sudo 参数形状逐条对得上。"""
+        proc = self._run("--only", "all")
+
+        self.assertEqual(proc.returncode, 0, proc.stderr[-400:])
+        for marker in self.markers:
+            self.assertFalse(marker.exists(), f"should be cleaned: {marker}")
+        for shell in (".cache", ".npm", ".thumbnails", ".cargo/registry",
+                      ".local/share/Trash", ".var/app/org.test.App"):
+            self.assertTrue((self.home / shell).is_dir(), f"root dir lost: {shell}")
+
+        lines = self._calls_text().splitlines()
+        self.assertIn("-v", lines)
+        self.assertIn("-Qdtq", lines)
+        self.assertIn("pacman -Scc", lines)
+        self.assertNotIn("pacman -Scc --noconfirm", lines)
+        # -Scc 两问的 stdin 形状：必须喂 y，--noconfirm 会按默认值答 N
+        stdin_log = self.home / "calls.stdin"
+        self.assertIn("y\ny\n", stdin_log.read_text(encoding="utf-8"))
+        self.assertIn("pacman -Rns --noconfirm foo bar", lines)
+        self.assertIn("journalctl --vacuum-time=3d --vacuum-size=100M --rotate", lines)
+        self.assertIn("tee /proc/sys/vm/drop_caches", lines)
+        self.assertIn("fstrim -av", lines)
+        self.assertIn("uninstall --unused --delete-data -y --user", lines)
+        self.assertIn("find /var/tmp -mindepth 1 -maxdepth 1 -mtime +7 -exec rm -rf -- {} +", lines)
+        if Path("/var/lib/flatpak").is_dir():
+            self.assertIn("flatpak uninstall --unused --delete-data -y --system", lines)
+        if Path("/var/lib/systemd/coredump").is_dir():
+            self.assertIn(
+                "find /var/lib/systemd/coredump -mindepth 1 -maxdepth 1 "
+                "-exec rm -rf -- {} +", lines)
+        # tee 静默契约：drop_caches 的 "3" 不得回显到终端
+        for line in _CLEAN_CACHE.read_text(encoding="utf-8").splitlines():
+            if '"tee", "/proc/sys/vm/drop_caches"' in line:
+                self.assertIn("quiet=True", line)
+
+    def test_only_selective_skips_unselected(self):
+        """--only 只执行命名任务：未选中的系统/用户任务零动作。"""
+        proc = self._run("--only", "scc,journal")
+
+        self.assertEqual(proc.returncode, 0, proc.stderr[-400:])
+        for marker in self.markers:
+            self.assertTrue(marker.exists(), f"unselected task deleted {marker}")
+
+        lines = self._calls_text().splitlines()
+        self.assertIn("-v", lines)
+        self.assertIn("pacman -Scc", lines)
+        self.assertIn("journalctl --vacuum-time=3d --vacuum-size=100M --rotate", lines)
+        self.assertNotIn("pacman -Rns --noconfirm foo bar", lines)
+        self.assertNotIn("tee /proc/sys/vm/drop_caches", lines)
+        self.assertNotIn("fstrim -av", lines)
+        self.assertNotIn("uninstall --unused --delete-data -y --user", lines)
+
+    def test_only_rejects_unknown_key(self):
+        """--only 非法 key：报错并列出合法值，零动作。"""
+        proc = self._run("--only", "cache,bogus")
+
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("bogus", proc.stderr)
+        self.assertIn("cache", proc.stderr)
+        for marker in self.markers:
+            self.assertTrue(marker.exists(), f"invalid run deleted {marker}")
+
+    def test_removed_yes_flag_is_rejected(self):
+        """-y 已被移除：报未知参数，零动作。"""
+        proc = self._run("-y")
+
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("unknown", proc.stderr)
+        for marker in self.markers:
+            self.assertTrue(marker.exists(), f"-y run deleted {marker}")
+
+    def test_default_off_excludes_trim(self):
+        """勾选默认态：TRIM 默认不勾，其余默认勾。"""
         src = _CLEAN_CACHE.read_text(encoding="utf-8")
-        self.assertIn("_mc_sudo_wrap -k", src)
-        self.assertIn("final warning", src.lower())
+        self.assertIn('DEFAULT_OFF = ("trim",)', src)
+        self.assertIn('"trim"', src)
+
+    def test_failed_task_marks_warning_not_success(self):
+        """act 非零退出：任务标 ! 不标 ✓，退出码可读。"""
+        self._stub("flatpak", "printf 'flatpak %s\\n' \"$*\" >>\"$CALLS\"\nexit 3\n")
+
+        proc = self._run("--only", "flatpak")
+
+        self.assertEqual(proc.returncode, 0, proc.stderr[-400:])
+        self.assertIn("exit 3", proc.stderr)
+        self.assertNotIn("✓ Remove unused Flatpak", proc.stdout)
+        self.assertIn("! Remove unused Flatpak", proc.stdout)
+
+    def test_interrupted_child_reports_signal(self):
+        """子进程被信号杀掉：报告信号名而不是裸负数。"""
+        self._stub("flatpak", "kill -INT $$\n")
+
+        proc = self._run("--only", "flatpak")
+
+        self.assertEqual(proc.returncode, 0, proc.stderr[-400:])
+        self.assertIn("SIGINT", proc.stderr)
+
+    def test_symlinked_cache_is_refused(self):
+        """围栏：~/.cache 是指向外部的 symlink 时不追、不删、不摘链。"""
+        outside = self.home / "outside"
+        outside.mkdir()
+        (outside / "precious").write_text("keep", encoding="utf-8")
+        shutil.rmtree(self.home / ".cache")
+        os.symlink(outside, self.home / ".cache")
+
+        proc = self._run("--only", "all")
+
+        self.assertEqual(proc.returncode, 0, proc.stderr[-400:])
+        self.assertTrue((outside / "precious").exists(), "fence leaked through symlink")
+        self.assertTrue((self.home / ".cache").is_symlink(), "symlink was removed")
+        self.assertFalse((self.home / ".npm/marker").exists(), "other fences still work")
+        self.assertIn("symlink", proc.stderr)
 
 
 if __name__ == "__main__":

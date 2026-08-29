@@ -26,9 +26,9 @@
 preserve = ["monitor.kdl"]
 chmod = ["scripts/*.sh"]
 
-# configs/fish/.module.toml — clean-cache 不是 .sh，需声明 chmod
+# configs/fish/.module.toml — clean-cache.py 不是 .sh，需声明 chmod
 [packages]
-chmod = ["clean-cache"]
+chmod = ["clean-cache.py"]
 
 # configs/noctalia/.module.toml — 三个主题脚本
 [packages]

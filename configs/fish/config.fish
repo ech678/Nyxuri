@@ -380,7 +380,7 @@ if status is-interactive
         end
     end
 
-    alias clean='~/.config/fish/clean-cache'      # 运行一键缓存清理脚本
+    alias clean='~/.config/fish/clean-cache.py'      # 运行一键缓存清理脚本
 
     # se：模糊搜索软件包 (支持 aur <kw> / pac <kw> 前缀) 并用 fzf 交互安装 (无 fzf 时自动降级)
     function se --description "Fuzzy search & install packages (aur/pac prefix)"

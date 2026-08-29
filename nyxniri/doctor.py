@@ -76,7 +76,7 @@ def _check_scripts(env) -> None:
         (f"{THEME_ENGINE}/theme-sync.sh", "theme-sync.sh"),
         (f"{THEME_ENGINE}/wallpaper-hook.sh", "wallpaper-hook.sh"),
         (f"{THEME_ENGINE}/mpvpaper-sync.sh", "mpvpaper-sync.sh"),
-        ("fish/clean-cache", "clean-cache"),
+        ("fish/clean-cache.py", "clean-cache.py"),
         (f"{MAIN_WM}/scripts/toggle-eyecare.sh", "toggle-eyecare.sh"),
         (f"{MAIN_WM}/scripts/niri-scratch-toggle.sh", "niri-scratch-toggle.sh"),
         (f"{MAIN_WM}/scripts/orbit-launcher.py", "orbit-launcher.py"),
@@ -93,8 +93,8 @@ def _check_scripts(env) -> None:
             else:
                 print(msg("doctor_warn", text(f"脚本缺少执行权限，正在修复: {name}", f"Script was not executable; fixing: {name}")))
                 full_path.chmod(0o755)
-        elif name == "clean-cache":
-            print(msg("doctor_err", text("脚本缺失: ~/.config/fish/clean-cache", "Script missing: ~/.config/fish/clean-cache")))
+        elif name == "clean-cache.py":
+            print(msg("doctor_err", text("脚本缺失: ~/.config/fish/clean-cache.py", "Script missing: ~/.config/fish/clean-cache.py")))
 
 def _check_eyecare(env) -> None:
     if shutil.which("wlsunset"):
