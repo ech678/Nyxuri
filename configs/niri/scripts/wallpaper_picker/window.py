@@ -3,9 +3,9 @@ NyxNiri Wallpaper Picker — Material 3 layer-shell UI.
 
 Wayland overlay dialog assembled from M3 components: scrim, top app bar,
 search bar, filter chips and image cards. All styling is compiled from
-theme.py tokens. Thumbnails stream in as CSS background-images on demand,
-so off-screen cards hold no decoded pixbufs and scrolling away releases
-them.
+theme.py tokens. Thumbnails stream in as CSS background-images on demand;
+GTK3 caches each painted bitmap until exit, so memory tracks the thumbs
+actually viewed (see scanner.py), not the library size.
 """
 
 import math
@@ -26,12 +26,13 @@ from .scanner import WallpaperScanner
 from .backend import apply_wallpaper
 
 # ── M3 layout constants. The dialog sits centered with a 56dp margin to
-# every screen edge (dialog placement rule); its nominal 1080×640 is clamped
-# to the actual screen at startup. 8dp is the global rhythm: card gutters,
-# dialog section spacing, icon-label gaps. Component heights feed both the
-# viewport arithmetic here and the compiled CSS — single source. ──
+# every screen edge (dialog placement rule); its nominal 1080×720 is clamped
+# to the actual screen at startup — 720 lets the viewport show exactly two
+# card rows. 8dp is the global rhythm: card gutters, dialog section spacing,
+# icon-label gaps. Component heights feed both the viewport arithmetic here
+# and the compiled CSS — single source. ──
 DIALOG_W_MAX = 1080
-DIALOG_H_MAX = 640
+DIALOG_H_MAX = 720
 DIALOG_MIN_W = 360
 SCREEN_MARGIN = 56
 DIALOG_PAD = 24
@@ -43,6 +44,10 @@ SEARCH_H = 56
 # min-height via the geometry dict — single source.
 CHIP_ROW_H = 48
 SCROLLBAR_RESERVE = 14
+BORDER_W = 3
+# Search input coalescing: keystrokes restart this timer, only the last
+# one runs the full filter pass (two O(n) sweeps per apply).
+SEARCH_DEBOUNCE_MS = 150
 
 
 def _symbolic_icon(name, pixel_size):
@@ -185,7 +190,8 @@ class WallpaperPickerWindow(Gtk.Window):
         self.grid_cols = 3 if self.dialog_w >= 720 else 2
         self.card_w = (self.dialog_w - 2 * DIALOG_PAD - (self.grid_cols - 1) * GRID_GAP
                        - SCROLLBAR_RESERVE) // self.grid_cols
-        self.thumb_h = self.card_w * 9 // 16
+        self.thumb_w = self.card_w - 2 * BORDER_W
+        self.thumb_h = self.thumb_w * 9 // 16
         self.grid_viewport_h = (self.dialog_h - 2 * DIALOG_PAD - APPBAR_H
                                 - SEARCH_H - CHIP_ROW_H - 3 * GAP_V)
 
@@ -195,6 +201,7 @@ class WallpaperPickerWindow(Gtk.Window):
         self.active_cat_idx = 0
         self.is_dismissing = False
         self._dismiss_timer = None
+        self._search_debounce_id = None
         self.thumb_widgets = {}
         self._applied_thumbs = set()
         self._fading = []
@@ -226,8 +233,9 @@ class WallpaperPickerWindow(Gtk.Window):
             provider = Gtk.CssProvider()
             provider.load_from_data(
                 theme.build_css(self.tokens, {
-                    "card_w": self.card_w, "thumb_h": self.thumb_h,
-                    "search_h": SEARCH_H, "chip_h": CHIP_ROW_H,
+                    "card_w": self.card_w, "thumb_w": self.thumb_w,
+                    "thumb_h": self.thumb_h, "search_h": SEARCH_H,
+                    "chip_h": CHIP_ROW_H,
                 }).encode()
             )
             Gtk.StyleContext.add_provider_for_screen(
@@ -416,20 +424,11 @@ class WallpaperPickerWindow(Gtk.Window):
         thumb.get_style_context().add_class("thumb")
         self.thumb_widgets[item.hash_id] = thumb
 
-        thumb_host = Gtk.Overlay()
-        thumb_host.add(thumb)
+        # Enabled/selected state rides the card outline itself
+        # (.card.current / .card:selected in theme.py); no corner badge.
         if is_current:
-            badge = _symbolic_icon("object-select-symbolic", 20)
-            if badge is None:
-                badge = Gtk.Label(label="\u2713")
-                badge.set_xalign(0.5)
-            badge.set_halign(Gtk.Align.END)
-            badge.set_valign(Gtk.Align.START)
-            badge.set_margin_end(8)
-            badge.set_margin_top(8)
-            badge.get_style_context().add_class("badge")
-            thumb_host.add_overlay(badge)
-        inner.pack_start(thumb_host, False, False, 0)
+            child.get_style_context().add_class("current")
+        inner.pack_start(thumb, False, False, 0)
 
         info = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         info.get_style_context().add_class("card-info")
@@ -522,7 +521,7 @@ class WallpaperPickerWindow(Gtk.Window):
         item = child.item
         q = self.search_query.strip().lower()
         if q:
-            return q in item.title.lower() or q in item.filename.lower()
+            return q in item.search_key
         if self.active_cat_idx == 0:
             return True
         cat = self.scanner.categories[self.active_cat_idx]
@@ -546,7 +545,16 @@ class WallpaperPickerWindow(Gtk.Window):
     # ── Signal handlers ──────────────────────────────────────────────────────
     def on_search_changed(self, entry):
         self.search_query = entry.get_text()
+        if self._search_debounce_id is not None:
+            GLib.source_remove(self._search_debounce_id)
+        self._search_debounce_id = GLib.timeout_add(SEARCH_DEBOUNCE_MS, self._apply_search_debounced)
+
+    def _apply_search_debounced(self):
+        self._search_debounce_id = None
+        if self.is_dismissing:
+            return GLib.SOURCE_REMOVE
         self._update_filter()
+        return GLib.SOURCE_REMOVE
 
     def on_stop_search(self, entry):
         # SearchEntry emits stop-search on Esc-with-empty-text
@@ -557,7 +565,11 @@ class WallpaperPickerWindow(Gtk.Window):
         if event.keyval == Gdk.KEY_Down:
             children = self._visible_children()
             if children:
-                self.flowbox.grab_focus()
+                # Focus the card itself, not the FlowBox container: the
+                # child grab is what sets the FlowBox's internal focus
+                # anchor, so subsequent arrow keys move from a known place
+                # instead of resetting to the first item.
+                children[0].grab_focus()
                 self.flowbox.select_child(children[0])
             return True
         return False
@@ -634,6 +646,7 @@ class WallpaperPickerWindow(Gtk.Window):
         if self.is_dismissing:
             return True
         keyval = event.keyval
+        mods = event.state & Gtk.accelerator_get_default_mod_mask()
 
         # Esc outside the search bar → clear search, or dismiss if already empty
         if keyval == Gdk.KEY_Escape:
@@ -643,6 +656,39 @@ class WallpaperPickerWindow(Gtk.Window):
             else:
                 self.dismiss_window()
             return True
+
+        # Ctrl+F → hand focus back to the search bar from anywhere
+        if keyval == Gdk.KEY_f and mods & Gdk.ModifierType.CONTROL_MASK:
+            self.search_entry.grab_focus()
+            return True
+
+        # Alt+1..9 → clear the search and jump straight to the n-th category
+        if mods & Gdk.ModifierType.MOD1_MASK and Gdk.KEY_1 <= keyval <= Gdk.KEY_9:
+            idx = keyval - Gdk.KEY_1
+            if idx < len(self.chip_buttons):
+                if self.search_query:
+                    self.search_entry.set_text("")
+                self.chip_buttons[idx].set_active(True)
+            return True
+
+        # ←/→/Home/End while a chip holds focus → move within the chip row
+        # only (GTK's default Home/End would jump the whole focus chain)
+        if keyval in (Gdk.KEY_Left, Gdk.KEY_Right, Gdk.KEY_Home, Gdk.KEY_End):
+            focus = self.get_focus()
+            last = len(self.chip_buttons) - 1
+            for i, btn in enumerate(self.chip_buttons):
+                if focus is btn:
+                    if keyval == Gdk.KEY_Left and i > 0:
+                        self.chip_buttons[i - 1].grab_focus()
+                    elif keyval == Gdk.KEY_Right and i < last:
+                        self.chip_buttons[i + 1].grab_focus()
+                    elif keyval == Gdk.KEY_Home:
+                        self.chip_buttons[0].grab_focus()
+                    elif keyval == Gdk.KEY_End:
+                        self.chip_buttons[last].grab_focus()
+                    else:
+                        return True
+                    return True
 
         return False
 
@@ -674,6 +720,9 @@ class WallpaperPickerWindow(Gtk.Window):
         if self.is_dismissing:
             return
         self.is_dismissing = True
+        if self._search_debounce_id is not None:
+            GLib.source_remove(self._search_debounce_id)
+            self._search_debounce_id = None
         self.dialog.get_style_context().remove_class("revealed")
         self.scrim.get_style_context().remove_class("revealed")
         self._dismiss_timer = GLib.timeout_add(theme.DUR_EXIT_MS, self._finish_dismiss)

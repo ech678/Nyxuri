@@ -28,8 +28,11 @@ Design decisions (not in M3, or adapted for GTK3):
 - The result count is neutral text: M3 reserves error for alerts and the
   badge component for notifications.
 - Scrim opacity 0.32 follows the Compose dialog scrim constant.
-- Selected-tile indicator geometry (32dp circle, 20dp check) — M3 publishes
-  no tile-selection overlay measurements.
+- Enabled/selected tiles recolor a resident 3px primary border (M3 photo
+  picker's 3dp outline, shared by .card.current and .card:selected); the
+  footprint is always reserved, so selection never shifts content. Focus
+  takes the M3 state layer, not a second ring — M3 publishes no
+  tile-selection treatment.
 - Thumbnails fade in via widget opacity (GTK3 cannot transition
   background-image); M3's new-content fade-through at the 150ms effects pace.
 - Focus ring is a 2px primary outline — no focus-indicator thickness is
@@ -296,8 +299,9 @@ def build_tokens(raw=None):
 
 def build_css(t, geometry):
     """Compile the M3 Expressive picker stylesheet from tokens and geometry (px)."""
-    card_w = int(geometry["card_w"])
-    thumb_h = int(geometry["thumb_h"])
+    card_w = int(geometry.get("card_w", 334))
+    thumb_w = int(geometry.get("thumb_w", card_w - 6))
+    thumb_h = int(geometry.get("thumb_h", thumb_w * 9 // 16))
     search_h = int(geometry["search_h"])
     chip_h = int(geometry["chip_h"])
 
@@ -434,12 +438,28 @@ window.background {{ background-color: transparent; }}
 .chip > .chip-face image {{ color: {_rgb(t['on_surface_variant'])}; }}
 .chip:checked > .chip-face image {{ color: {_rgb(osc)}; }}
 
-/* M3 elevated image cards (CornerMedium 12dp, surface-container-low, Elevation 1) */
+/* GtkFlowBoxChild reset: eliminate Adwaita default padding and focus outline */
+flowboxchild {{
+    padding: 0;
+    margin: 0;
+    outline: none;
+}}
+
+/* M3 elevated image cards (CornerMedium 12dp, surface-container-low, Elevation 1).
+   A 3px transparent border is resident on every card — it is the selection
+   indicator's footprint (M3 photo picker's 3dp outline), so toggling
+   selection only recolors it: content never shifts, and nothing extends
+   past the card edge to get clipped. */
 .card {{
     border-radius: {m}px;
     background-color: {_rgb(scl)};
+    border: 3px solid transparent;
+    padding: 0;
+    margin: 0;
+    outline: none;
     box-shadow: {ELEVATION[1]};
     transition: background-color {DUR_STATE_MS}ms {EASE_EXPRESSIVE_FAST_EFFECTS},
+                border-color {DUR_STATE_MS}ms {EASE_EXPRESSIVE_FAST_EFFECTS},
                 box-shadow {DUR_FAST_MS}ms {EASE_EXPRESSIVE_FAST_EFFECTS};
 }}
 .card:hover {{
@@ -448,14 +468,21 @@ window.background {{ background-color: transparent; }}
 }}
 .card:active {{ background-color: {_sl(scl, on_surface, STATE_PRESSED)}; }}
 
+/* Enabled (current), keyboard-selected and focused cards recolor the resident
+   border. Design decision — M3 photo picker's 3dp primary outline. */
+.card.current, .card:selected, .card:focus {{
+    border-color: {_rgb(t['primary'])};
+}}
+
+/* M3 nested radii rule: inner = outer - padding/border (12 - 3 = 9dp) */
 .thumb {{
-    border-radius: {m}px {m}px 0 0;
+    border-radius: {m - 3}px {m - 3}px 0 0;
     background-color: {_rgb(t['surface_container_highest'])};
-    min-width: {card_w}px;
+    min-width: {thumb_w}px;
     min-height: {thumb_h}px;
 }}
 .card-inner {{ background-color: transparent; }}
-.card-info {{ padding: 12px 16px; }}
+.card-info {{ padding: 10px 16px; }}
 .card-title {{
     color: {_rgb(on_surface)};
     font-size: {bm[0]}px;
@@ -471,15 +498,6 @@ window.background {{ background-color: transparent; }}
     border-radius: {full}px;
     min-height: 16px;
     padding: 0 4px;
-}}
-
-/* Selected-tile indicator (primary circle, 20dp check) — design decision,
-   M3 publishes no tile-selection overlay measurements */
-.badge {{
-    min-width: 32px; min-height: 32px;
-    border-radius: {full}px;
-    background-color: {_rgb(t['primary'])};
-    color: {_rgb(t['on_primary'])};
 }}
 
 .grid {{ background-color: transparent; }}
@@ -509,11 +527,14 @@ window.background {{ background-color: transparent; }}
 .empty image {{ color: {_rgb(t['on_surface_variant'])}; }}
 
 /* Focus indicators (2px primary ring, outside — thickness is a design
-   decision, M3 publishes no focus-indicator width) */
-.chip:focus, .card:focus, .icon-btn:focus, .search:focus {{
+   decision, M3 publishes no focus-indicator width). Cards take the M3
+   focus state layer instead of a ring: keyboard navigation rides the
+   selection border, and a second outline would only fight it. */
+.chip:focus, .icon-btn:focus, .search:focus {{
     outline-width: 2px;
     outline-style: solid;
     outline-color: {_rgb(t['primary'])};
     outline-offset: 2px;
 }}
+.card:focus {{ background-color: {_sl(scl, on_surface, STATE_FOCUSED)}; }}
 """

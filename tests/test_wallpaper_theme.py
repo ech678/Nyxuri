@@ -199,7 +199,7 @@ class TestCssContract(unittest.TestCase):
         self.theme = _load_theme()
         self.t = self.theme.build_tokens(raw=_DARK_RAW)
         self.css = self.theme.build_css(self.t, {
-            "card_w": 328, "thumb_h": 184,
+            "card_w": 334, "thumb_w": 328, "thumb_h": 184,
             "search_h": 56, "chip_h": 48,
         })
 
@@ -210,7 +210,7 @@ class TestCssContract(unittest.TestCase):
     def test_component_selectors_present(self):
         for sel in (".picker-dialog", ".appbar-title", ".count-label", ".icon-btn", ".search",
                     ".chip", ".chip-face", ".icon-btn-face", ".card", ".thumb", ".live",
-                    ".badge", ".scrim", ".grid-scroll", ".empty-title"):
+                    ".scrim", ".grid-scroll", ".empty-title"):
             self.assertIn(sel, self.css)
 
     def test_no_fab(self):
@@ -309,6 +309,49 @@ class TestCssContract(unittest.TestCase):
             self.t["surface_container_low"], self.t["on_surface"], 0.08))
         self.assertIn(hover_chip, self.css)
         self.assertIn(hover_card, self.css)
+
+    def test_no_corner_badge(self):
+        # Enabled/selected state rides the card outline itself; the old
+        # corner disc is gone and must never come back silently.
+        self.assertNotIn(".badge", self.css)
+
+    def test_cards_reserve_border_footprint(self):
+        # The selection border's footprint is resident on every card, so
+        # toggling selection only recolors it and never shifts content.
+        card = self._block(".card")
+        self.assertIn("border: 3px solid transparent", card)
+        self.assertIn("border-color", card)  # animated like the other states
+
+    def test_current_and_selected_share_border(self):
+        # M3 photo picker: selection is a 3dp primary outline, shared by
+        # .card.current, .card:selected, and .card:focus.
+        self.assertIn(".card.current, .card:selected, .card:focus {", self.css)
+        block = self._block(".card.current, .card:selected, .card:focus")
+        self.assertIn(f"border-color: {self.theme._rgb(self.t['primary'])}", block)
+        self.assertNotIn("outline", block)
+
+    def test_card_focus_is_state_layer_not_ring(self):
+        # Keyboard navigation rides the selection border; focus must not
+        # paint a second (outer, clip-prone) ring on cards.
+        card_focus = self._block("\n.card:focus")
+        expected = self.theme._rgb(self.theme._mix(
+            self.t["surface_container_low"], self.t["on_surface"],
+            self.theme.STATE_FOCUSED))
+        self.assertIn(expected, card_focus)
+        self.assertNotIn("outline-style", card_focus)
+
+    def test_nested_radii_optical_roundness(self):
+        # M3 Expressive nested radii rule: inner = outer - padding/border.
+        # Outer card is 12px with 3px border, so inner thumb top radius is 9px.
+        thumb = self._block(".thumb")
+        self.assertIn("border-radius: 9px 9px 0 0", thumb)
+
+    def test_flowboxchild_padding_zero(self):
+        # Reset GtkFlowBoxChild Adwaita default padding to avoid horizontal overflow
+        flowboxchild = self._block("flowboxchild")
+        self.assertIn("padding: 0", flowboxchild)
+        self.assertIn("margin: 0", flowboxchild)
+        self.assertIn("outline: none", flowboxchild)
 
 
 class TestTextContrastContract(unittest.TestCase):

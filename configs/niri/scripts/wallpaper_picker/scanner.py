@@ -2,9 +2,11 @@
 NyxNiri Wallpaper Picker Scanner Engine
 Recursive directory traversal, asynchronous thumbnail generation, and active wallpaper detection.
 
-Thumbnails are kept on disk only; no pixbuf/cairo surface is held in memory.
-The UI reads thumb_path lazily via CSS background-image, so off-screen cards
-cost nothing and releasing happens automatically when the card scrolls away.
+Thumbnails live on disk; the UI mounts each one lazily as a CSS
+background-image (window.py). Note GTK3 keeps the decoded bitmap of every
+painted background cached until process exit — scrolling away does NOT
+release it — so runtime memory grows with the thumbs actually viewed,
+not with library size.
 """
 
 import os
@@ -34,6 +36,8 @@ class WallpaperItem:
         self.is_video = self.ext in VIDEO_EXTENSIONS
         self.title = os.path.splitext(self.filename)[0].replace("_", " ").replace("-", " ").strip()
         self.category = category
+        # Lowercase once; the filter runs against every item per keystroke
+        self.search_key = f"{self.title}\n{self.filename}".lower()
 
         try:
             stat = os.stat(self.path)
@@ -112,7 +116,7 @@ class WallpaperScanner:
             if os.path.isfile(it.thumb_path):
                 self._thumb_ready(it)
             else:
-                self.executor.submit(self._generate_thumbnail_worker, it)
+                self._submit_thumb_job(it)
 
         return self.items
 
@@ -133,7 +137,19 @@ class WallpaperScanner:
             if os.path.isfile(item.thumb_path):
                 self._thumb_ready(item)
             elif not item.is_loading:
-                self.executor.submit(self._generate_thumbnail_worker, item)
+                self._submit_thumb_job(item)
+
+    def _submit_thumb_job(self, item: WallpaperItem):
+        """Queue thumbnail generation, marking in-flight at submit time.
+
+        The guard must live here, not inside the worker: between submit and
+        worker pickup there is a window where is_loading would still read
+        False, letting the pre-warm in scan() and the first queue batch
+        double-submit the same item (two threads racing savev onto one
+        file, ffmpeg running twice).
+        """
+        item.is_loading = True
+        self.executor.submit(self._generate_thumbnail_worker, item)
 
     def _thumb_ready(self, item: WallpaperItem):
         """Notify the UI (on main thread) that a thumbnail file is available."""
@@ -141,29 +157,28 @@ class WallpaperScanner:
             self.on_thumb_ready_cb(item)
 
     def _generate_thumbnail_worker(self, item: WallpaperItem):
-        item.is_loading = True
         try:
-            if item.is_video:
-                tmp_thumb = f"{item.thumb_path}.tmp.{os.getpid()}.{uuid.uuid4().hex[:6]}.jpg"
-                cmd = [
-                    "ffmpeg", "-y", "-ss", "00:00:01", "-i", item.path,
-                    "-vframes", "1", "-vf", "scale=480:-2", tmp_thumb
-                ]
-                res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=4)
-                if res.returncode != 0 or not os.path.isfile(tmp_thumb):
-                    # Fallback for very short videos
+            if not os.path.isfile(item.thumb_path):
+                if item.is_video:
+                    tmp_thumb = f"{item.thumb_path}.tmp.{os.getpid()}.{uuid.uuid4().hex[:6]}.jpg"
                     cmd = [
-                        "ffmpeg", "-y", "-ss", "00:00:00.1", "-i", item.path,
+                        "ffmpeg", "-y", "-ss", "00:00:01", "-i", item.path,
                         "-vframes", "1", "-vf", "scale=480:-2", tmp_thumb
                     ]
                     res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=4)
+                    if res.returncode != 0 or not os.path.isfile(tmp_thumb):
+                        # Fallback for very short videos
+                        cmd = [
+                            "ffmpeg", "-y", "-ss", "00:00:00.1", "-i", item.path,
+                            "-vframes", "1", "-vf", "scale=480:-2", tmp_thumb
+                        ]
+                        res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=4)
 
-                if res.returncode == 0 and os.path.isfile(tmp_thumb):
-                    os.replace(tmp_thumb, item.thumb_path)
-                elif os.path.isfile(tmp_thumb):
-                    os.remove(tmp_thumb)
-            else:
-                if not os.path.isfile(item.thumb_path):
+                    if res.returncode == 0 and os.path.isfile(tmp_thumb):
+                        os.replace(tmp_thumb, item.thumb_path)
+                    elif os.path.isfile(tmp_thumb):
+                        os.remove(tmp_thumb)
+                else:
                     try:
                         pix = GdkPixbuf.Pixbuf.new_from_file_at_scale(item.path, 480, 270, True)
                         pix.savev(item.thumb_path, "jpeg", ["quality"], ["85"])
