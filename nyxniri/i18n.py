@@ -420,6 +420,20 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "en": "Control Panel : Run nyxniri",
     },
 
+    # Non-Arch interception (install full / deps menu)
+    "distro_unsupported": {
+        "zh": "[!] 未检测到 pacman，当前系统不是 Arch 系发行版",
+        "en": "[!] pacman not found: this does not look like an Arch-based distribution",
+    },
+    "distro_unsupported_hint": {
+        "zh": "依赖安装通过 pacman 与 AUR 完成，在别的发行版上无法自动进行。配置文件仍可手动取用：仓库 configs/ 目录下的内容按普通 dotfiles 复制到 ~/.config 即可，壁纸在 assets/wallpapers。欢迎来仓库 Issue 说说你的发行版，人多了会考虑支持。",
+        "en": "NyxNiri installs its dependencies through pacman and the AUR, which is not available here. You can still take the configs manually: copy whatever you need from the repository configs/ directory into ~/.config like ordinary dotfiles, wallpapers live in assets/wallpapers. Feel free to open an Issue and tell us your distro, support may come if there is demand.",
+    },
+    "deps_menu_unsupported": {
+        "zh": "[!] 未检测到 pacman，依赖菜单仅适用于 Arch 系发行版。配置可以手动从仓库 configs/ 复制到 ~/.config 使用。",
+        "en": "[!] pacman not found: the dependency menus only apply to Arch-based systems. You can still copy configs manually from the repository configs/ directory into ~/.config.",
+    },
+
     # Summary action card
     "summary_action_title": {
         "zh": f"\n  {Colors.BOLD_CYAN}── 下一步 ──{Colors.RESET}\n",

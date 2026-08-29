@@ -433,5 +433,53 @@ class TestPendingUpgradeBranch(unittest.TestCase):
         self.assertIsNone(ctx)
 
 
+class TestDistroGuard(unittest.TestCase):
+    """Non-Arch systems must get a clear message instead of a wall of pacman errors."""
+
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+
+    def tearDown(self):
+        self._ctx.__exit__()
+
+    def test_install_full_blocked_without_pacman(self):
+        from nyxniri.cli import install_configs_workflow
+
+        with patch("nyxniri.cli.shutil.which", return_value=None), \
+             patch("nyxniri.cli.run_master_component_menu") as menu, \
+             patch("builtins.print") as prn:
+            result = install_configs_workflow("full")
+
+        self.assertFalse(result)
+        menu.assert_not_called()
+        printed = " ".join(str(c.args[0]) for c in prn.call_args_list)
+        self.assertIn("pacman", printed)
+
+    def test_install_config_mode_not_blocked(self):
+        from nyxniri.cli import install_configs_workflow
+
+        with patch("nyxniri.cli.shutil.which", return_value=None), \
+             patch("sys.stdin.isatty", return_value=True), \
+             patch("nyxniri.cli.run_master_component_menu", return_value=None), \
+             patch("builtins.print"):
+            result = install_configs_workflow("config")
+
+        self.assertTrue(result)  # cancelled-by-user path, not the distro guard
+
+    def test_deps_menu_blocked_without_pacman(self):
+        from nyxniri.cli import deps_menu_loop
+
+        with patch("sys.stdin.isatty", return_value=True), \
+             patch("nyxniri.cli.shutil.which", return_value=None), \
+             patch("nyxniri.cli.Menu") as menu, \
+             patch("builtins.print") as prn:
+            deps_menu_loop()
+
+        menu.assert_not_called()
+        printed = " ".join(str(c.args[0]) for c in prn.call_args_list)
+        self.assertIn("pacman", printed)
+
+
 if __name__ == "__main__":
     unittest.main()

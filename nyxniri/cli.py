@@ -201,6 +201,10 @@ def _phase_preflight_check(
 
 def install_configs_workflow(mode: str = "full") -> bool:
     """Full execution pipeline for dotfiles, dependencies, wallpapers, and optional modules."""
+    if mode == "full" and not shutil.which("pacman"):
+        print(msg("distro_unsupported"))
+        print(msg("distro_unsupported_hint"))
+        return False
     if sys.stdin.isatty():
         chosen_dict = run_master_component_menu(is_update=False, mode=mode)
         if not chosen_dict:
@@ -492,6 +496,9 @@ def deps_menu_loop() -> None:
     """Dependencies & Recommended apps submenu."""
     if not sys.stdin.isatty():
         print(msg("interactive_terminal_required"), file=sys.stderr)
+        return
+    if not shutil.which("pacman"):
+        print(msg("deps_menu_unsupported"))
         return
 
     while True:
