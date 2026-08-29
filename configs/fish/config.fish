@@ -253,6 +253,10 @@ if status is-interactive
     function fish_user_key_bindings
         # 绑定 Tab 键
         bind \t custom_tab_complete
+        # Ctrl+V 粘贴系统剪贴板（fzf.fish 默认把 Ctrl+V 占用为变量搜索，此处覆盖回粘贴；
+        # fish_user_key_bindings 在插件绑定之后执行，覆盖是时序保证的）
+        bind \cv fish_clipboard_paste
+        bind -M insert \cv fish_clipboard_paste
     end
 
     # Use starship prompt (Disable in pure TTY to avoid Nerd Font square boxes)
