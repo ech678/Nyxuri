@@ -181,6 +181,15 @@ class WallpaperScanner:
                 else:
                     try:
                         pix = GdkPixbuf.Pixbuf.new_from_file_at_scale(item.path, 480, 270, True)
+                        # JPEG 不支持 alpha 通道（glycin 编码器会拒绝 Rgba8），
+                        # 带透明的图先合成到不透明黑底上再存
+                        if pix.get_has_alpha():
+                            flat = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, False, 8,
+                                                        pix.get_width(), pix.get_height())
+                            flat.fill(0x000000)
+                            pix.composite(flat, 0, 0, flat.get_width(), flat.get_height(),
+                                          0, 0, 1, 1, GdkPixbuf.InterpType.BILINEAR, 255)
+                            pix = flat
                         pix.savev(item.thumb_path, "jpeg", ["quality"], ["85"])
                     except Exception as e:
                         print(f"Thumbnail generation error on {item.filename}: {e}", file=sys.stderr)
