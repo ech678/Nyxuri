@@ -121,7 +121,8 @@ class TestCliLinkOwnership(unittest.TestCase):
     def _uninstall_cli(self):
         from nyxniri.state.uninstall import uninstall_nyxniri
 
-        with patch("nyxniri.modules.fcitx.fcitx5_installed", return_value=False), \
+        with patch("sys.stdin.isatty", return_value=False), \
+             patch("nyxniri.modules.fcitx.fcitx5_installed", return_value=False), \
              patch("nyxniri.modules.gtktheme.gtktheme_registered", return_value=False), \
              patch("nyxniri.modules.greeter.greeter_installed", return_value=False), \
              patch("nyxniri.modules.fisher.fisher_installed", return_value=False), \

@@ -40,6 +40,8 @@ class TempEnv:
             self._old_env[key] = os.environ.get(key)
         os.environ["HOME"] = str(home)
         os.environ["XDG_STATE_HOME"] = str(home / ".local" / "state")
+        os.environ["XDG_CONFIG_HOME"] = str(home / ".config")
+        os.environ["XDG_CACHE_HOME"] = str(home / ".cache")
 
         # Reset cached Environment so next get_env() picks up new HOME
         core._ENV = None

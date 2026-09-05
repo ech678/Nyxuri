@@ -11,7 +11,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from tests.utils import TempEnv
 
@@ -115,6 +115,38 @@ class TestThumbSubmitContract(unittest.TestCase):
         item = scanner_mod.WallpaperItem(str(self.root / "Aurora_Nights.jpg"))
         self.assertEqual(item.search_key, f"{item.title}\n{item.filename}".lower())
         self.assertEqual(item.search_key, item.search_key.lower())
+
+    def test_worker_flattens_alpha_image_before_jpeg_save(self):
+        scn = self._scanner()
+        (self.root / "alpha.png").write_bytes(b"")
+        item = scanner_mod.WallpaperItem(str(self.root / "alpha.png"))
+
+        mock_pix = MagicMock()
+        mock_pix.get_has_alpha.return_value = True
+        mock_pix.get_width.return_value = 480
+        mock_pix.get_height.return_value = 270
+
+        mock_flat = MagicMock()
+        mock_flat.get_width.return_value = 480
+        mock_flat.get_height.return_value = 270
+
+        with patch.object(scanner_mod.GdkPixbuf.Pixbuf, "new_from_file_at_scale", return_value=mock_pix), \
+             patch.object(scanner_mod.GdkPixbuf.Pixbuf, "new", return_value=mock_flat) as mock_new, \
+             patch.object(scanner_mod.GLib, "idle_add"):
+            scn._generate_thumbnail_worker(item)
+
+        mock_new.assert_called_once_with(
+            scanner_mod.GdkPixbuf.Colorspace.RGB, False, 8, 480, 270
+        )
+        mock_flat.fill.assert_called_once_with(0x000000)
+        mock_pix.composite.assert_called_once_with(
+            mock_flat, 0, 0, 480, 270, 0, 0, 1, 1,
+            scanner_mod.GdkPixbuf.InterpType.BILINEAR, 255
+        )
+        mock_flat.savev.assert_called_once_with(
+            item.thumb_path, "jpeg", ["quality"], ["85"]
+        )
+        mock_pix.savev.assert_not_called()
 
 
 if __name__ == "__main__":

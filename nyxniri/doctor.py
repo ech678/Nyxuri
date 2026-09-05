@@ -82,6 +82,7 @@ def _check_scripts(env) -> None:
         (f"{MAIN_WM}/scripts/orbit-launcher.py", "orbit-launcher.py"),
         (f"{MAIN_WM}/scripts/niri-scratch-menu.py", "niri-scratch-menu.py"),
         (f"{MAIN_WM}/scripts/wallpaper-picker.py", "wallpaper-picker.py"),
+        (f"{MAIN_WM}/scripts/niri-brightness.sh", "niri-brightness.sh"),
     ]
     for rel_path, name in scripts_info:
         full_path = config_dir / rel_path
