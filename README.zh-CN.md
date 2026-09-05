@@ -270,6 +270,15 @@ enable_ddcutil = false
 </details>
 
 <details>
+<summary><b>浏览器视频叠画、黑块或整窗变透明</b> — 核显 + NVIDIA 独显的机器曾被强制走 NVIDIA 视频驱动。</summary>
+
+旧版只要 `lspci` 里出现 NVIDIA，就会打开 `GBM_BACKEND=nvidia-drm` 和 `LIBVA_DRIVER_NAME=nvidia`。混合显卡笔记本的桌面仍在核显上合成，Chromium/Brave 却可能在独显硬解，再交回核显显示——少数视频就会把窗口画花。
+
+更新并重新部署 NyxNiri。现在只有 NVIDIA 真正负责显示时才会打开这些变量。若你就是要用 NVIDIA 当合成器，在 `~/.config/niri/__custom__.kdl` 里自行解开即可。
+
+</details>
+
+<details>
 <summary><b>插件仓库损坏</b> — Noctalia 拉取插件卡住。</summary>
 
 重置插件仓库：

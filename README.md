@@ -270,6 +270,15 @@ Brightness keys still work: internal panels go through Noctalia backlight, exter
 </details>
 
 <details>
+<summary><b>Browser video looks stacked, black, or see-through</b> — hybrid GPU (AMD/Intel iGPU + NVIDIA dGPU) used to force NVIDIA video decode for every app.</summary>
+
+NyxNiri used to uncomment `GBM_BACKEND=nvidia-drm` and `LIBVA_DRIVER_NAME=nvidia` whenever `lspci` mentioned NVIDIA. On hybrid laptops the compositor stays on the iGPU, so Chromium/Brave can decode on NVIDIA and present on AMD/Intel — a few videos then corrupt the window.
+
+Update and redeploy NyxNiri. Those env vars now stay off unless NVIDIA is actually the display GPU. If you *want* NVIDIA as the compositor GPU, uncomment them in `~/.config/niri/__custom__.kdl`.
+
+</details>
+
+<details>
 <summary><b>Plugin repo corrupted</b> — Noctalia hangs while checking out plugins.</summary>
 
 Run the following commands to reset the plugin repos:

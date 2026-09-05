@@ -1447,6 +1447,10 @@ Commands:
         "zh": ":: 检测到 NVIDIA 显卡，已启用相应环境变量",
         "en": ":: NVIDIA GPU detected (env enabled)",
     },
+    "log_nvidia_gpu_hybrid": {
+        "zh": ":: 检测到 NVIDIA 独显，显示由核显负责，保持 NVIDIA 环境变量关闭",
+        "en": ":: NVIDIA dGPU found; display is on the iGPU (env kept off)",
+    },
     "log_nvidia_gpu_not_detected": {
         "zh": ":: 未发现 NVIDIA GPU (保持默认)",
         "en": ":: No NVIDIA GPU detected (kept default env)",

@@ -91,7 +91,7 @@ HOME=$(mktemp -d) ./install.sh test
 | 文件/目录名含 `__custom__` | 更新时自动保留，不需手动处理 |
 | 脚本以 `id -u == 0` 运行 | `install.sh`/`nyxniri` 直接拒绝；系统级维护脚本（如 `clean-cache`）例外，允许要求 root |
 | `configs/` 模板里的 `/home/user` | 占位符，由部署引擎替换为目标 `$HOME`，勿改为硬编码 |
-| NVIDIA env 变量 | 默认注释，仅 `lspci` 检测后由部署引擎自动解注释，绝不能默认开启 |
+| NVIDIA env 变量 | 默认注释，仅 `lspci` 确认 NVIDIA 为显示 GPU 后由部署引擎自动解注释；混合显卡（核显负责显示）保持关闭，绝不能默认开启 |
 | 网络命令（curl 等） | 必须带 `--connect-timeout`，非关键调用加容错 |
 | 引擎代码（`nyxniri/`） | 避免硬编码特定项目名，用 `constants.py` 常量；TUI 文案可适当灵活 |
 | 改动涉及 wiki 描述的行为 | 同步更新 `llms-wiki/` 对应页，改完手验一遍 |

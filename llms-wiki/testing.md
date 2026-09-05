@@ -7,7 +7,7 @@
 **所有测试必须用 `tests/utils.py:TempEnv`，禁止碰真实 `~/.config` / `~/.local` / `~/.cache`。**
 
 TempEnv 把 HOME 指向 tmpdir、建目录骨架、override `XDG_*` 环境变量、reset `core._ENV` 和
-模块级缓存（core 的 `_PICS_DIR_CACHE`、deploy 的 `_CONFIG_ITEMS_CACHE`/`_IS_NVIDIA`、
+模块级缓存（core 的 `_PICS_DIR_CACHE`、deploy 的 `_CONFIG_ITEMS_CACHE`/`_NVIDIA_ROLE`、
 manifest 的 `_MANIFEST_CACHE`、deps 的 pacman/fc-list/GI/AUR 助手缓存、greeter 状态缓存）
 防止跨测试泄漏。反例：早期测试把实仓库 `configs/niri/config.kdl` 写成桩文件——已修。
 
@@ -40,6 +40,7 @@ argv[0]（shebang 直启下是解释器名，不是脚本名），验证恒假�
 | doctor preset drift | active 指向已删预设 → 警告 | `test_doctor.py` |
 | 双栏菜单 | ←/→ 跳栏不丢光标、↑/↓ 循环、Enter 调 apply、apply 走窄 deploy 不调 fisher | `test_preset.py` |
 | atomic replace | 文件/目录回滚、断链 symlink、no-clobber 壁纸 | `test_deploy.py` |
+| NVIDIA 硬件 patch | lspci 参数形状；primary / hybrid / none 解析；解注释与重新注释 | `test_hardware.py` |
 | i18n 完整性 | ast 扫所有 `msg()`/`prompt_confirm()` 调用 vs TRANSLATIONS——无孤儿、无缺失 | `test_i18n.py` |
 
 ## 必跑命令

@@ -29,7 +29,8 @@ environment {
     QT_QPA_PLATFORMTHEME "gtk3"
     QT_WAYLAND_DISABLE_WINDOWDECORATION "1"
 
-    // NVIDIA environment variables (uncommented automatically by install.sh if NVIDIA GPU is detected)
+    // NVIDIA env: deploy enables these only when NVIDIA is the display GPU
+    // (not when it is only a 3D controller next to an AMD/Intel iGPU)
     // GBM_BACKEND "nvidia-drm"
     // __GLX_VENDOR_LIBRARY_NAME "nvidia"
     // LIBVA_DRIVER_NAME "nvidia"
