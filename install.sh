@@ -19,6 +19,17 @@ say() { if _lang_is_zh; then printf '%s' "$1"; else printf '%s' "${2:-$1}"; fi; 
 CACHE_DIR="$HOME/.cache/NyxNiri"
 BOOTSTRAP_URL="https://raw.githubusercontent.com/ech678/NyxNiri/main/install.sh"
 
+# Normalize XDG variables to prevent sandboxes (e.g. HOME=$(mktemp -d)) from leaking into the host
+if [ -n "${XDG_STATE_HOME:-}" ] && [[ "$XDG_STATE_HOME" != "$HOME/"* ]]; then
+    export XDG_STATE_HOME="$HOME/.local/state"
+fi
+if [ -n "${XDG_CONFIG_HOME:-}" ] && [[ "$XDG_CONFIG_HOME" != "$HOME/"* ]]; then
+    export XDG_CONFIG_HOME="$HOME/.config"
+fi
+if [ -n "${XDG_CACHE_HOME:-}" ] && [[ "$XDG_CACHE_HOME" != "$HOME/"* ]]; then
+    export XDG_CACHE_HOME="$HOME/.cache"
+fi
+
 GIT_MIRROR_REGISTRY=(
     "Official|https://github.com/ech678/NyxNiri.git"
     "gh-proxy.org|https://gh-proxy.org/https://github.com/ech678/NyxNiri.git"

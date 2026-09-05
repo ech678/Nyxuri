@@ -84,7 +84,18 @@ def _detect_run_mode(root_dir: Path, cache_dir: Path):
 class Environment:
     def __init__(self):
         self.home = Path(os.environ.get("HOME", str(Path.home())))
-        self.state_dir = Path(os.environ.get("XDG_STATE_HOME", str(self.home / ".local/state"))) / PROJECT_NAME
+        raw_state = os.environ.get("XDG_STATE_HOME")
+        if raw_state:
+            state_path = Path(raw_state)
+            try:
+                if state_path.is_relative_to(self.home):
+                    self.state_dir = state_path / PROJECT_NAME
+                else:
+                    self.state_dir = self.home / ".local/state" / PROJECT_NAME
+            except (ValueError, AttributeError):
+                self.state_dir = self.home / ".local/state" / PROJECT_NAME
+        else:
+            self.state_dir = self.home / ".local/state" / PROJECT_NAME
         self.cache_dir = self.home / ".cache" / PROJECT_NAME
         self.config_dir = self.home / ".config"
 
@@ -333,15 +344,39 @@ def _record_nyxniri_cli_symlink(path: Path) -> bool:
 
 
 def is_nyxniri_cli_symlink(path: Path) -> bool:
-    """Whether path matches NyxNiri's recorded CLI symlink exactly."""
+    """Whether path matches NyxNiri's recorded CLI symlink or points to a NyxNiri installer."""
+    if not path.is_symlink():
+        return False
     record = _cli_link_record(path)
     marker = _cli_link_marker()
-    if record is None or marker.is_symlink() or not marker.is_file():
-        return False
+    if record is not None and not marker.is_symlink() and marker.is_file():
+        try:
+            if marker.read_text(encoding="utf-8") == record:
+                return True
+        except OSError:
+            pass
     try:
-        return marker.read_text(encoding="utf-8") == record
-    except OSError:
-        return False
+        raw_target = os.readlink(path)
+        target_path = Path(raw_target)
+        if target_path.name == "install.sh":
+            resolved_str = str(path.resolve(strict=False))
+            raw_str = str(target_path)
+            if (
+                "NyxNiri" in raw_str
+                or "nyxniri" in raw_str
+                or "NyxNiri" in resolved_str
+                or "nyxniri" in resolved_str
+            ):
+                return True
+            env = get_env()
+            if (
+                target_path == env.repo_dir / "install.sh"
+                or target_path == env.cache_dir / "install.sh"
+            ):
+                return True
+    except (OSError, RuntimeError):
+        pass
+    return False
 
 
 def clear_nyxniri_cli_symlink_marker() -> None:
@@ -382,6 +417,7 @@ def ensure_nyxniri_symlink() -> None:
             if not is_nyxniri_cli_symlink(target_bin):
                 return
             if target_bin.resolve(strict=False) == root_installer.resolve(strict=False):
+                _record_nyxniri_cli_symlink(target_bin)
                 root_installer.chmod(0o755)
                 return
             target_bin.unlink(missing_ok=True)

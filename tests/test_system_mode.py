@@ -169,11 +169,27 @@ class TestCliLinkOwnership(unittest.TestCase):
         self.assertFalse(self.target.is_symlink())
         self.assertFalse(marker.exists())
 
-    def test_cli_start_and_uninstall_keep_unrecorded_expected_link(self):
+    def test_cli_start_adopts_unrecorded_expected_link_and_records_marker(self):
         self.target.symlink_to(self.env.repo_dir / "install.sh")
         core.ensure_nyxniri_symlink()
+        marker = self.env.state_dir / "nyxniri.link"
+        self.assertTrue(marker.is_file(), "adopted link must have marker recorded")
         self._uninstall_cli()
-        self.assertTrue(self.target.is_symlink())
+        self.assertFalse(self.target.is_symlink(), "adopted link is cleanly removed on uninstall")
+
+    def test_dangling_nyxniri_cache_link_is_healed(self):
+        # User previously ran remote cache script, but cache was cleared or missing
+        dangling_target = self.env.cache_dir / "install.sh"
+        self.target.symlink_to(dangling_target)
+        self.assertFalse(self.target.exists(), "must be a dangling link initially")
+        core.ensure_nyxniri_symlink()
+        self.assertEqual(
+            self.target.resolve(strict=False),
+            (self.env.repo_dir / "install.sh").resolve(strict=False),
+            "dangling NyxNiri link must be healed to current installer",
+        )
+        marker = self.env.state_dir / "nyxniri.link"
+        self.assertTrue(marker.is_file())
 
     def test_dangling_expected_link_is_removed(self):
         source = self.env.home / "old-nyxniri"
@@ -222,6 +238,17 @@ class TestCliLinkOwnership(unittest.TestCase):
         self.assertEqual(self.target.resolve(strict=False), new_installer.resolve(strict=False))
         self._uninstall_cli()
         self.assertFalse(self.target.is_symlink())
+
+    def test_xdg_state_home_outside_home_is_isolated(self):
+        import os
+        from nyxniri.core import Environment
+        with patch.dict(os.environ, {"XDG_STATE_HOME": "/some/foreign/home/.local/state"}):
+            env = Environment()
+            self.assertEqual(
+                env.state_dir,
+                env.home / ".local/state" / "NyxNiri",
+                "XDG_STATE_HOME outside home must not be used",
+            )
 
 
 class TestSafeGitPullSystemBranch(unittest.TestCase):
