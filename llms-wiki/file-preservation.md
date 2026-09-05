@@ -21,12 +21,15 @@ test_mode 下跳过 `scratchpad-items__custom__.toml` 和 `orbit-items__custom__
 
 ## 机制 2：manifest preserve（按声明注入）
 
-`.module.toml` 的 `preserve = ["monitor.kdl"]` 声明要保留的文件（按**名**，不是魔法文件名）。
+`.module.toml` 的 `preserve = ["monitor.kdl", "effects.kdl"]` 声明要保留的文件（按**名**，不是魔法文件名）。
 `atomic_replace_item` 接收 `preserve` 参数，在 copytree + Dunder walk 完成、**rename 之前**
 把这些文件从 dest 复制进 tmp_new——swap 完成后 dest 即最终态，没有事后恢复窗口。
+如果是符号链接（如 `effects.kdl` → `effects_normal.kdl`/`effects_eyecare.kdl` 编码的 EyeCare 开关状态），
+会保留链接本身而不解引用，跨部署与跨预设切换完整继承。
 
-为什么 niri 的 monitor.kdl 走这套而不走 Dunder：它被 `config.kdl` 的 `include "monitor.kdl"`
-**按名引用**，不能改名成 `monitor__custom__.kdl` 走 dunder。例外靠 manifest 声明，不散落代码。
+为什么 niri 的 monitor.kdl / effects.kdl 走这套而不走 Dunder：monitor.kdl 被 `config.kdl` 的
+`include "monitor.kdl"` **按名引用**，不能改名成 `monitor__custom__.kdl` 走 dunder；
+effects.kdl 是脚本动态管理的软链接，同样需要固定文件名。例外靠 manifest 声明，不散落代码。
 
 > **竞态消除**：旧实现先 rename 整目录、再事后拷回 monitor.kdl，Niri 的 inotify 会在恢复前
 > 读到仓库默认的空 monitor.kdl 导致闪屏。现在注入在 rename 前完成，inotify 看到的就是最终态。

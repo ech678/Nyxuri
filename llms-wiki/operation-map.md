@@ -17,7 +17,7 @@
 | `deps [core\|apps]` | 装软件包 |
 | `apps`（alias `recommended`） | 装可选软件 |
 | `wallpapers`（alias `wp`） | 装壁纸包 |
-| `<module> [install\|status\|uninstall]` | fcitx / fisher / greeter / gtk 四件套模块（动态 import `nyxniri.modules.<name>`） |
+| `<module> [install\|status\|uninstall]` | fcitx / fisher / greeter / gtk 四件套模块（动态 import `nyxniri.modules.<name>`，其中 `gtk` 映射至 `gtktheme`） |
 | `theme [toggle\|dark\|light\|sync\|status]` | 切换/同步深浅主题 |
 
 ## 管"状态"的

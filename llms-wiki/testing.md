@@ -38,7 +38,7 @@ argv[0]（shebang 直启下是解释器名，不是脚本名），验证恒假�
 | [gap] 清理 | archive glob / greeter /var/lib / fisher 降级（fish 不在）/ quickphrase 恢复——逐条 | `test_uninstall.py` |
 | system marker 检测 | .system-install → system；configs+assets → repo；都不在 → standalone；PATH 遮蔽警告 | `test_system_mode.py` |
 | doctor preset drift | active 指向已删预设 → 警告 | `test_doctor.py` |
-| 双栏菜单 | ←/→ 跳栏不丢光标、↑/↓ 循环、Enter 调 apply、apply 走窄 deploy 不调 fisher | `test_preset.py` |
+| PresetSwitcher 树状工作台 | 展开/折叠、←/→ 穿梭不丢光标、↑/↓ 循环、Enter 调 apply、apply 走窄 deploy 不调 fisher | `test_preset.py` |
 | atomic replace | 文件/目录回滚、断链 symlink、no-clobber 壁纸 | `test_deploy.py` |
 | NVIDIA 硬件 patch | lspci 参数形状；primary / hybrid / none 解析；解注释与重新注释 | `test_hardware.py` |
 | i18n 完整性 | ast 扫所有 `msg()`/`prompt_confirm()` 调用 vs TRANSLATIONS——无孤儿、无缺失 | `test_i18n.py` |

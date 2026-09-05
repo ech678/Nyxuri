@@ -30,4 +30,4 @@ imperative hooks，不是状态对账的一部分。
 - `preset diff`（`~/.config/<app>/` 是预设+custom 混合体，diff 会把 custom 当差异报；
   update 已有 diff 查看器，够用）
 - `.module.toml` `detect` 前缀 DSL（`detect = "kitty"` 纯名字，不要 `binary:` 前缀语法）
-- TUI 预设切换的两个级联 `Menu` 与自写焦点分发——被双栏布局取代（见 [tui-switcher](tui-switcher.md)）
+- TUI 预设切换的两个级联 `Menu` 与自写焦点分发——被单栏树状折叠拓扑工作台取代（见 [tui-switcher](tui-switcher.md)）

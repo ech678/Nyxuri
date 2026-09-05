@@ -7,12 +7,11 @@
 
 | 功能 | 快捷键 |
 |---|---|
-| 打开 / 关闭主星环 | `Super + S` |
-| 打开工具箱 / Scratchpad | `Super + Shift + S` |
+| 打开主星环 | `Mod + A`（`Super + A`）或 `Mod + MouseForward` |
 | 执行当前项 | `Enter` / 鼠标左键 / 松开 `Super` |
 | 进入文件夹子环 | `Enter` / 左键 / 松开 `Super` |
 | 返回父级 | `Backspace` / `Esc` / 右键 |
-| 关闭星环 | `Esc` 或再次 `Super + S` |
+| 关闭星环 | `Esc` |
 | 数字直达 | `1 - 9` |
 | 第二层直达 | `Super + 1 - 9` |
 | Vim 轮转 | `h / j / k / l` |
@@ -22,14 +21,14 @@
 
 ## 双模手势
 
-- **浏览模式**：`Super + S` 打开后移动鼠标 / Tab / 滚轮浏览，点击或 `Enter` 执行。适合探索、查找、确认。
+- **浏览模式**：`Mod + A` 打开后移动鼠标 / Tab / 滚轮浏览，点击或 `Enter` 执行。适合探索、查找、确认。
 - **盲甩模式**：按住 `Super` 或鼠标左键向目标方向甩出，松开即执行。适合肌肉记忆用户，零思考启动。
 
 ## 状态机
 
 ```
 IDLE
-  ↓ Super + S
+  ↓ Mod + A / MouseForward
 RING_OPEN
   ↓
 EXPLORE
@@ -96,4 +95,4 @@ sector = round(θ / Δ)
 
 ## 一句话总设计
 
-> `Super + S` 打开星环；轻用 hover 浏览，重用 hold-flick-release 盲甩；极坐标死区 + 角度滞后防误触；所有动画统一走二阶弹簧；文件夹用"父环后退、子环弹出"的引力隐喻。
+> `Mod + A`（或 `Mod + MouseForward`）打开星环；轻用 hover 浏览，重用 hold-flick-release 盲甩；极坐标死区 + 角度滞后防误触；所有动画统一走二阶弹簧；文件夹用"父环后退、子环弹出"的引力隐喻。

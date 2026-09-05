@@ -21,9 +21,9 @@
 ### 实际 ship 的 manifest
 
 ```toml
-# configs/niri/.module.toml — monitor.kdl 被 config.kdl include 引用，不能改名走 dunder
+# configs/niri/.module.toml — monitor.kdl 被 include 引用；effects.kdl 为运行时护眼模式符号链接
 [packages]
-preserve = ["monitor.kdl"]
+preserve = ["monitor.kdl", "effects.kdl"]
 chmod = ["scripts/*.sh"]
 
 # configs/fish/.module.toml — clean-cache.py 不是 .sh，需声明 chmod
