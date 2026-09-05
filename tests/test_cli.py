@@ -481,5 +481,76 @@ class TestDistroGuard(unittest.TestCase):
         self.assertIn("pacman", printed)
 
 
+class TestPreflightSudo(unittest.TestCase):
+    """Preflight must not request a password when sudo is already passwordless."""
+
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+
+    def tearDown(self):
+        self._ctx.__exit__()
+
+    @staticmethod
+    def _result(command, returncode=0):
+        import subprocess
+        return subprocess.CompletedProcess(command, returncode)
+
+    def _preflight(self):
+        from nyxniri.cli import _phase_preflight_check
+        _phase_preflight_check("full", [], False, False, False, False)
+
+    def test_passwordless_sudo_skips_interactive_authentication(self):
+        calls = []
+
+        def fake_run(command, **kwargs):
+            calls.append(command)
+            return self._result(command)
+
+        with patch("sys.stdin.isatty", return_value=True), \
+             patch("nyxniri.cli.subprocess.run", side_effect=fake_run), \
+             patch("builtins.print"), \
+             patch("nyxniri.cli.log_msg"):
+            self._preflight()
+
+        self.assertEqual(calls, [["sudo", "-n", "/bin/sh", "-c", ":"]])
+
+    def test_password_sudo_falls_back_to_existing_tty_commands(self):
+        for isatty, expected in ((True, ["sudo", "-v"]), (False, ["sudo", "-n", "-v"])):
+            with self.subTest(isatty=isatty):
+                calls = []
+
+                def fake_run(command, **kwargs):
+                    calls.append(command)
+                    return self._result(command, 1 if len(calls) == 1 else 0)
+
+                with patch("sys.stdin.isatty", return_value=isatty), \
+                     patch("nyxniri.cli.subprocess.run", side_effect=fake_run), \
+                     patch("builtins.print"), \
+                     patch("nyxniri.cli.log_msg"):
+                    self._preflight()
+
+                self.assertEqual(calls, [["sudo", "-n", "/bin/sh", "-c", ":"], expected])
+
+    def test_failed_fallback_still_aborts(self):
+        for isatty, expected in ((True, ["sudo", "-v"]), (False, ["sudo", "-n", "-v"])):
+            with self.subTest(isatty=isatty):
+                calls = []
+
+                def fake_run(command, **kwargs):
+                    calls.append(command)
+                    return self._result(command, 1)
+
+                with patch("sys.stdin.isatty", return_value=isatty), \
+                     patch("nyxniri.cli.subprocess.run", side_effect=fake_run), \
+                     patch("builtins.print"), \
+                     patch("nyxniri.cli.log_msg"), \
+                     self.assertRaises(SystemExit) as ctx:
+                    self._preflight()
+
+                self.assertEqual(ctx.exception.code, 1)
+                self.assertEqual(calls, [["sudo", "-n", "/bin/sh", "-c", ":"], expected])
+
+
 if __name__ == "__main__":
     unittest.main()

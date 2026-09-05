@@ -169,7 +169,7 @@ def _phase_preflight_check(
     do_wallpapers: bool,
     do_backup: bool,
 ) -> None:
-    """Pre-flight checklist & upfront sudo credentials validation."""
+    """Pre-flight checklist & upfront sudo access validation."""
     needs_sudo = mode == "full" or do_greeter
 
     print(msg("preflight_express_summary"))
@@ -188,16 +188,18 @@ def _phase_preflight_check(
     if needs_sudo:
         sys.stdout.write(msg("preflight_sudo_prompt") + "\n")
         sys.stdout.flush()
-        sudo_command = ["sudo", "-v"] if sys.stdin.isatty() else ["sudo", "-n", "-v"]
         try:
-            res = subprocess.run(sudo_command, check=False)
+            res = subprocess.run(["sudo", "-n", "/bin/sh", "-c", ":"], check=False)
+            if res.returncode != 0:
+                sudo_command = ["sudo", "-v"] if sys.stdin.isatty() else ["sudo", "-n", "-v"]
+                res = subprocess.run(sudo_command, check=False)
         except FileNotFoundError:
             print(msg("err_sudo_missing"), file=sys.stderr)
             sys.exit(1)
         if res.returncode != 0:
             print(msg("err_sudo_aborted"))
             sys.exit(1)
-        log_msg("INFO", "Sudo credentials cached upfront during pre-flight.")
+        log_msg("INFO", "Sudo access verified upfront during pre-flight.")
 
 def install_configs_workflow(mode: str = "full") -> bool:
     """Full execution pipeline for dotfiles, dependencies, wallpapers, and optional modules."""
