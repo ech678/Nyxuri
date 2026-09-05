@@ -265,6 +265,8 @@ Disable `ddcutil` in `~/.config/noctalia/noctalia-config.toml`:
 enable_ddcutil = false
 ```
 
+Brightness keys still work: internal panels go through Noctalia backlight, external monitors keep the `ddcutil` fallback. Leave this setting off unless you want Noctalia itself to own DDC.
+
 </details>
 
 <details>

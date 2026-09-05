@@ -265,6 +265,8 @@ NyxNiri
 enable_ddcutil = false
 ```
 
+亮度键仍然可用：笔记本内屏走 Noctalia 背光，外接显示器继续用 `ddcutil`。除非你希望由 Noctalia 自己管 DDC，否则保持关闭。
+
 </details>
 
 <details>
