@@ -21,6 +21,7 @@ capsule_thickness = 0.95999998226761818
 enabled = true
 panel_overlap = 12
 font_family = "JetBrains Mono"
+font_weight = 600
 margin_ends = 14
 margin_edge = 10
 scale = 1.1
@@ -33,7 +34,7 @@ end = [
     "session",
 ]
 center = ["clock"]
-start = ["launcher", "workspaces", "active_window", "group:g1"]
+start = ["launcher", "workspaces", "group:g1"]
 thickness = 36
 
 [[bar.bar.capsule_group]]
@@ -254,7 +255,11 @@ enabled = ["noctalia/mpvpaper"]
 min_length = 0
 
 [widget.clock]
-format = "{:%a, %d %b %H:%M}"
+format = "{:%m/%d/%y %H:%M}"
+
+[widget.media]
+hide_when_no_media = true
+max_length = 170
 
 [widget.tray]
 detached_panel = true
