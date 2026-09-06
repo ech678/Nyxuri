@@ -305,9 +305,9 @@ input_path = "/home/user/.config/noctalia/templates/gtk-4.0.css"
 output_path = "/home/user/.config/gtk-4.0/gtk.css"
 ```
 
-模板部署后由 `nyxniri/gtktheme.py` 的 `gtktheme_trigger_render()` 调用
+模板部署后由 `nyxniri/modules/gtktheme.py` 的 `gtktheme_trigger_render()` 调用
 `noctalia msg config-reload && noctalia msg templates-apply` 触发渲染；安装时
-`deploy.py:_phase_post_install_services()` 自动调用，手动触发用 `nyxniri gtk install`。
+`nyxniri/deploy/deploy.py:_phase_post_install_services()` 自动调用，手动触发用 `nyxniri gtk install`。
 
 ### 6.7 theme-sync.sh 关系
 
@@ -622,8 +622,8 @@ nyxniri theme light
 | `configs/noctalia/templates/gtk-4.0.css` | GTK4 M3 模板（双 @media） |
 | `configs/noctalia/wallpaper-hook.sh` | 壁纸切换 hook |
 | `configs/noctalia/mpvpaper-sync.sh` | mpvpaper 同步 |
-| `nyxniri/gtktheme.py` | `nyxniri gtk install\|status\|uninstall` |
+| `nyxniri/modules/gtktheme.py` | `nyxniri gtk install\|status\|uninstall` |
 | `nyxniri/cli.py` | `nyxniri theme` 子命令 |
-| `nyxniri/deploy.py` | 部署 + 模板渲染触发 |
+| `nyxniri/deploy/deploy.py` | 部署 + 模板渲染触发 |
 
 > 历史移植/排查笔记原在 `notes/`（本地开发笔记，不入库），内容已并入本文 §6 与 §7。

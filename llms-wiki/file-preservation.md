@@ -19,6 +19,8 @@
 test_mode 下跳过 `scratchpad-items__custom__.toml` 和 `orbit-items__custom__.toml`
 （test_deploy 的 idempotent 场景）。
 
+> **保留与加载解耦**：引擎只管“保留”（只要路径含 `__custom__` 就原子继承），应用各自“加载”（按各软件语法引入）。想要多文件模块化，直接在主自定义文件里再次 `include` 即可（例如在 `__custom__.kdl` 中写 `include "my_binds__custom__.kdl"`，子文件同样因包含 `__custom__` 享受更新保护）。
+
 ## 机制 2：manifest preserve（按声明注入）
 
 `.module.toml` 的 `preserve = ["monitor.kdl", "effects.kdl"]` 声明要保留的文件（按**名**，不是魔法文件名）。

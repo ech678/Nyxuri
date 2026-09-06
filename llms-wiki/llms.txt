@@ -21,12 +21,14 @@
 - [tui-switcher](tui-switcher.md): 树状折叠预设工作台（Accordion Tree）、apply 窄 deploy 路径
 - [declarative](declarative.md): 命令式 vs 声明式边界（啥该 / 不该声明式）
 - [orbit-launcher](orbit-launcher.md): 星环启动器设计规格（快捷键、状态机、极坐标防抖、弹簧参数、flick 判定）
+- [runtime-topology](runtime-topology.md): 运行时进程树与 IPC 拓扑（会话启动、守护进程、脚本层、信号广播流）
 
 ## Decoupled modules
 
 - [subpackages](subpackages.md): nyxniri/{deploy, state, modules, packaging} 子包职责、__init__ re-export、import 约定
 - [two-axis-config](two-axis-config.md): 可选（.optional-apps.toml）/ 有配置（目录）两轴独立、"加配置不毕业"
 - [manifest-schema](manifest-schema.md): .module.toml + .optional-apps.toml 字段参考
+- [theme-adaptation](../configs/noctalia/README.md): 主题中枢与 GTK/Brave 信号流全记录（GTK4 双 @media 块、settings.ini 兼容、Problem 1-12 证伪排查）
 
 ## Reference
 

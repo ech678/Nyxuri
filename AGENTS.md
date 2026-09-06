@@ -49,8 +49,8 @@
 的 `atomic_replace_item` 机制复制/替换，禁止 `ln -s` 软链接进 `~/.config/`
 （`~/.config/` 内部文件之间的软链接，如运行时主题切换，不受此限）。
 
-**Dunder Protocol**：文件名或目录名含 `__custom__`（如 `01__custom__.kdl`、自定义子目录）
-在更新时会被原子替换引擎识别并保留；`monitor.kdl` 等按名引用的文件走 manifest `preserve`
+**Dunder Protocol**：文件名或目录名含 `__custom__`（如 `__custom__.kdl`、`__custom__.conf`、自定义子目录）
+在更新时会被原子替换引擎识别并保留；各应用按自身机制加载（如 Niri 挂载 `__custom__.kdl`，可在其中继续引入其他 `*__custom__.kdl`；Fish 自动扫描 `conf.d/`）；`monitor.kdl` 等按名引用的文件走 manifest `preserve`
 声明保留（两套机制，不合并，详见 llms-wiki/file-preservation.md）。
 
 ---
