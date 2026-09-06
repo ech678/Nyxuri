@@ -108,7 +108,15 @@ NyxNiri
 
 ## Presets
 
-Some apps ship flavor variants — `kitty` comes with a `transparent` preset out of the box. Presets layer between defaults and your `__custom__` files, so switching never touches your own tweaks.
+Some apps ship flavor variants — presets layer between defaults and your `__custom__` files, so switching never touches your own tweaks.
+
+Built-in official presets:
+- **`kitty`**:
+  - `default`: standard 90% opacity
+  - `transparent`: 75% higher translucency flavor
+- **`niri`**:
+  - `default`: minimalist frameless look (default)
+  - `glow`: enables 2px outline and 28px soft diffused ambient glow (improves focus visibility across tiled windows)
 
 | Command | Description |
 | :--- | :--- |

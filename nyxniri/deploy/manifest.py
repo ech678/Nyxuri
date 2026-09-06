@@ -32,7 +32,7 @@ This module is pure stdlib (``tomllib``, 3.11+). No hardcoded project app names.
 """
 
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -57,6 +57,11 @@ class ModuleManifest:
     detect: str
     is_deployable: bool
     is_optional: bool = False  # True iff listed in .optional-apps.toml (§2 axis B)
+    preset_inherit: bool = False
+    preset_allow: List[str] = field(default_factory=list)
+    preset_standalone: List[str] = field(default_factory=list)
+    preset_include: List[str] = field(default_factory=list)
+    preset_exclude: List[str] = field(default_factory=list)
 
 
 def _manifest_path(app_src: Path) -> Path:
@@ -98,6 +103,7 @@ def load_manifest(app_src: Path, is_optional: bool = False) -> ModuleManifest:
             data = tomllib.load(f)
 
     packages = data.get("packages", {}) or {}
+    presets = data.get("presets", {}) or {}
     pkg_repo = packages.get("repo")
     if pkg_repo is None:
         pkg_repo = [name]
@@ -114,6 +120,11 @@ def load_manifest(app_src: Path, is_optional: bool = False) -> ModuleManifest:
         detect=packages.get("detect", name),
         is_deployable=_is_deployable(app_src),
         is_optional=is_optional,
+        preset_inherit=bool(presets.get("inherit", packages.get("preset_inherit", False))),
+        preset_allow=list(presets.get("allow", packages.get("preset_allow", []))),
+        preset_standalone=list(presets.get("standalone", packages.get("preset_standalone", []))),
+        preset_include=list(presets.get("include", packages.get("preset_include", []))),
+        preset_exclude=list(presets.get("exclude", packages.get("preset_exclude", []))),
     )
 
 
@@ -176,6 +187,11 @@ def _merge_optional_entry(m: ModuleManifest, entry: dict) -> ModuleManifest:
         detect=entry.get("detect", m.detect),
         is_deployable=m.is_deployable,
         is_optional=True,
+        preset_inherit=m.preset_inherit,
+        preset_allow=m.preset_allow,
+        preset_standalone=m.preset_standalone,
+        preset_include=m.preset_include,
+        preset_exclude=m.preset_exclude,
     )
 
 

@@ -7,6 +7,9 @@
 
 ## [Unreleased]
 
+### Added
+- Niri 新增 glow 预设
+
 ### Fixed
 - 自动修复指向旧安装路径或已清理缓存的无效 nyxniri 命令软链接
 - 核显 + NVIDIA 独显的笔记本不再强制所有程序使用 NVIDIA 环境变量，避免浏览器播放部分视频时画面错乱

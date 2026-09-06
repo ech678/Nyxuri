@@ -6,6 +6,7 @@ across preset switches (regression guard for the copytree ignore change).
 """
 
 import os
+import subprocess
 import tempfile
 import unittest
 from io import StringIO
@@ -220,6 +221,55 @@ class TestPresetOperations(unittest.TestCase):
         conf = self.env.config_dir / "kitty" / "kitty.conf"
         self.assertTrue(conf.is_file())
         self.assertIn("0.75", conf.read_text())  # the transparent variant
+
+    def test_list_includes_niri_glow_preset(self):
+        entries = preset.collect_presets("niri")
+        names = [n for n, _, _ in entries]
+        self.assertIn("default", names)
+        self.assertIn("glow", names)
+
+    def test_apply_niri_glow_sparse_overlay_end_to_end(self):
+        ok = preset.apply_preset("niri", "glow")
+        self.assertTrue(ok)
+        self.assertEqual(preset.read_active_preset("niri"), "glow")
+
+        # Overridden sparse file
+        layout = self.env.config_dir / "niri" / "layout.kdl"
+        self.assertTrue(layout.is_file())
+        self.assertIn("width 2", layout.read_text())
+        self.assertIn("shadow", layout.read_text())
+
+        # Inherited base files
+        config = self.env.config_dir / "niri" / "config.kdl"
+        self.assertTrue(config.is_file())
+        launcher = self.env.config_dir / "niri" / "scripts" / "orbit-launcher.py"
+        self.assertTrue(launcher.is_file())
+
+    @unittest.mock.patch("nyxniri.deploy.preset.timed_run")
+    @unittest.mock.patch("shutil.which", return_value="/usr/bin/niri")
+    def test_apply_preset_niri_reloads(self, mock_which, mock_timed_run):
+        ok = preset.apply_preset("niri", "glow")
+        self.assertTrue(ok)
+        mock_timed_run.assert_called_with(
+            ["niri", "msg", "action", "load-config-file"],
+            2,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+
+    @unittest.mock.patch("nyxniri.deploy.preset.timed_run")
+    @unittest.mock.patch("shutil.which", return_value="/usr/bin/pkill")
+    def test_apply_preset_kitty_reloads(self, mock_which, mock_timed_run):
+        ok = preset.apply_preset("kitty", "transparent")
+        self.assertTrue(ok)
+        mock_timed_run.assert_called_with(
+            ["pkill", "-SIGUSR1", "-x", "kitty"],
+            2,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
 
     def test_apply_default_resets(self):
         preset.write_active_preset("kitty", "transparent")
@@ -862,6 +912,152 @@ class TestPresetStudioActions(unittest.TestCase):
         # TAB expands, TAB collapses, q quits cleanly
         result = self._run_keys(sw, ["TAB", "TAB", "q"])
         self.assertIsNone(result)
+
+
+class TestPresetInheritance(unittest.TestCase):
+    """Preset inheritance, whitelists, blacklists, and base overlay deployment."""
+
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+        self.env = self._ctx.env
+        self._sandbox = tempfile.TemporaryDirectory()
+        self.env.configs_src = Path(self._sandbox.name)
+
+        self.app = "niri_test"
+        self.app_root = self.env.configs_src / self.app
+        self.app_root.mkdir(parents=True)
+        (self.app_root / "config.kdl").write_text("// base config")
+        (self.app_root / "layout.kdl").write_text("// base layout")
+        (self.app_root / "binds.kdl").write_text("// base binds")
+        (self.app_root / "scripts").mkdir(parents=True)
+        (self.app_root / "scripts" / "run.sh").write_text("#!/bin/sh\necho ok")
+        (self.app_root / "scripts" / "debug.bak").write_text("bak")
+        (self.app_root / "unwanted.txt").write_text("skip me")
+
+        # Create sparse preset 'glow'
+        self.sparse = self.app_root / "presets" / "glow"
+        self.sparse.mkdir(parents=True)
+        (self.sparse / "layout.kdl").write_text("// glow layout")
+
+        # Create standalone preset 'isolated'
+        self.isolated = self.app_root / "presets" / "isolated"
+        self.isolated.mkdir(parents=True)
+        (self.isolated / "isolated.kdl").write_text("// isolated only")
+
+        self.dest = self.env.config_dir / self.app
+
+    def tearDown(self):
+        self._sandbox.cleanup()
+        self._ctx.__exit__()
+
+    def test_inheritance_not_enabled_by_default(self):
+        base_src, inc, exc = preset.resolve_preset_inheritance(self.app, "glow")
+        self.assertIsNone(base_src)
+        self.assertEqual(inc, [])
+        self.assertEqual(exc, [])
+
+    def test_inheritance_allow_whitelist(self):
+        (self.app_root / ".module.toml").write_text("""
+[presets]
+allow = ["glow"]
+include = ["scripts/**", "*.kdl"]
+exclude = ["*.bak"]
+""")
+        # 'glow' is allowed -> should inherit with whitelists/blacklists
+        base_src, inc, exc = preset.resolve_preset_inheritance(self.app, "glow")
+        self.assertEqual(base_src, self.app_root)
+        self.assertEqual(inc, ["scripts/**", "*.kdl"])
+        self.assertEqual(exc, ["*.bak"])
+
+        # 'other' is not in allow -> should not inherit
+        base_src_other, _, _ = preset.resolve_preset_inheritance(self.app, "other")
+        self.assertIsNone(base_src_other)
+
+    def test_inheritance_standalone_blacklist(self):
+        (self.app_root / ".module.toml").write_text("""
+[presets]
+inherit = true
+standalone = ["isolated"]
+""")
+        base_src, _, _ = preset.resolve_preset_inheritance(self.app, "glow")
+        self.assertEqual(base_src, self.app_root)
+
+        base_src_iso, _, _ = preset.resolve_preset_inheritance(self.app, "isolated")
+        self.assertIsNone(base_src_iso)
+
+    def test_inheritance_simultaneous_whitelist_and_blacklist(self):
+        (self.app_root / ".module.toml").write_text("""
+[presets]
+allow = ["style-*"]
+standalone = ["style-dark"]
+include = ["scripts/**", "*.kdl"]
+exclude = ["scripts/debug.bak"]
+""")
+        # 1. Matches allow and not standalone -> inherits
+        base_src, inc, exc = preset.resolve_preset_inheritance(self.app, "style-light")
+        self.assertEqual(base_src, self.app_root)
+        self.assertEqual(inc, ["scripts/**", "*.kdl"])
+        self.assertEqual(exc, ["scripts/debug.bak"])
+
+        # 2. Matches allow BUT also matches standalone -> standalone vetoes -> does NOT inherit
+        base_src_veto, _, _ = preset.resolve_preset_inheritance(self.app, "style-dark")
+        self.assertIsNone(base_src_veto)
+
+        # 3. Does not match allow -> does NOT inherit
+        base_src_none, _, _ = preset.resolve_preset_inheritance(self.app, "other")
+        self.assertIsNone(base_src_none)
+
+    def test_atomic_replace_item_base_overlay_filtering(self):
+        ok = atomic_replace_item(
+            src=self.sparse,
+            dest=self.dest,
+            base_src=self.app_root,
+            base_include=["scripts/**", "*.kdl"],
+            base_exclude=["*.bak"],
+        )
+        self.assertTrue(ok)
+        # 1. Overridden file from preset
+        self.assertEqual((self.dest / "layout.kdl").read_text(), "// glow layout")
+        # 2. Inherited base files
+        self.assertEqual((self.dest / "config.kdl").read_text(), "// base config")
+        self.assertEqual((self.dest / "binds.kdl").read_text(), "// base binds")
+        self.assertTrue((self.dest / "scripts" / "run.sh").is_file())
+        # 3. Excluded file (*.bak) not present
+        self.assertFalse((self.dest / "scripts" / "debug.bak").exists())
+        # 4. Un-whitelisted file (unwanted.txt) not present
+        self.assertFalse((self.dest / "unwanted.txt").exists())
+
+    def test_apply_sparse_preset_end_to_end(self):
+        (self.app_root / ".module.toml").write_text("""
+[packages]
+preserve = ["monitor.kdl"]
+
+[presets]
+allow = ["glow"]
+include = ["scripts/**", "*.kdl"]
+exclude = ["*.bak"]
+""")
+        # Pre-seed destination with Dunder and Preserved files
+        self.dest.mkdir(parents=True)
+        (self.dest / "monitor.kdl").write_text("// user monitor")
+        (self.dest / "input__custom__.kdl").write_text("// user input")
+
+        ok = preset.apply_preset(self.app, "glow")
+        self.assertTrue(ok)
+        self.assertEqual(preset.read_active_preset(self.app), "glow")
+
+        # Check deployed contents
+        self.assertEqual((self.dest / "layout.kdl").read_text(), "// glow layout")
+        self.assertEqual((self.dest / "config.kdl").read_text(), "// base config")
+        self.assertEqual((self.dest / "binds.kdl").read_text(), "// base binds")
+        self.assertTrue((self.dest / "scripts" / "run.sh").is_file())
+        self.assertFalse((self.dest / "scripts" / "debug.bak").exists())
+        self.assertFalse((self.dest / "unwanted.txt").exists())
+
+        # Check preserved files survived
+        self.assertEqual((self.dest / "monitor.kdl").read_text(), "// user monitor")
+        self.assertEqual((self.dest / "input__custom__.kdl").read_text(), "// user input")
 
 
 if __name__ == "__main__":

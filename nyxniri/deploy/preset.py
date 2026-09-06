@@ -13,6 +13,7 @@ file. The dest-missing reset is the only sanctioned write-before-deploy (dest is
 empty, so a half-written state self-heals next run).
 """
 
+import fnmatch
 import os
 import secrets
 import shutil
@@ -26,7 +27,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 from nyxniri.constants import PROJECT_NAME, Colors
-from nyxniri.core import get_env, log_msg
+from nyxniri.core import get_env, log_msg, timed_run
 from nyxniri.i18n import msg
 
 
@@ -224,6 +225,47 @@ class PresetSrcResult:
     src: Optional[Path]          # None → freeze dest, skip deploy (preset not found)
     reset_active: Optional[str]  # write this before deploy (dest-missing reset to default)
     warnings: List[str] = field(default_factory=list)
+    base_src: Optional[Path] = None
+    base_include: List[str] = field(default_factory=list)
+    base_exclude: List[str] = field(default_factory=list)
+
+
+def resolve_preset_inheritance(
+    app: str, name: str
+) -> Tuple[Optional[Path], List[str], List[str]]:
+    """Determine whether preset `name` of `app` inherits from `configs/<app>`.
+
+    Returns (base_src, include_patterns, exclude_patterns).
+    If inheritance is not applicable or not enabled, returns (None, [], []).
+    Simultaneously enforces blacklist veto and whitelist match.
+    """
+    if name == "default":
+        return None, [], []
+
+    env = get_env()
+    app_root = _safe_child(env.configs_src, app)
+    if app_root is None or not (app_root.is_dir() and not app_root.is_symlink()):
+        return None, [], []
+
+    try:
+        from nyxniri.deploy.manifest import load_manifest_for
+        manifest = load_manifest_for(app)
+    except Exception:
+        return None, [], []
+
+    # 1. Blacklist has absolute veto power
+    if manifest.preset_standalone:
+        if any(fnmatch.fnmatch(name, pat.strip()) for pat in manifest.preset_standalone if pat.strip()):
+            return None, [], []
+
+    # 2. Whitelist requirement (if declared)
+    if manifest.preset_allow:
+        if not any(fnmatch.fnmatch(name, pat.strip()) for pat in manifest.preset_allow if pat.strip()):
+            return None, [], []
+    elif not manifest.preset_inherit:
+        return None, [], []
+
+    return app_root, list(manifest.preset_include), list(manifest.preset_exclude)
 
 
 def resolve_preset_src(app: str, active: str, dest: Path) -> PresetSrcResult:
@@ -277,11 +319,25 @@ def resolve_preset_src(app: str, active: str, dest: Path) -> PresetSrcResult:
 
     official = _safe_child(repo_presets, active)
     if official is not None and is_safe_dir(official):
-        return PresetSrcResult(src=official, reset_active=None)
+        base_src, base_inc, base_exc = resolve_preset_inheritance(app, active)
+        return PresetSrcResult(
+            src=official,
+            reset_active=None,
+            base_src=base_src,
+            base_include=base_inc,
+            base_exclude=base_exc,
+        )
 
     user = _safe_child(user_presets, active)
     if user is not None and is_safe_dir(user):
-        return PresetSrcResult(src=user, reset_active=None)
+        base_src, base_inc, base_exc = resolve_preset_inheritance(app, active)
+        return PresetSrcResult(
+            src=user,
+            reset_active=None,
+            base_src=base_src,
+            base_include=base_inc,
+            base_exclude=base_exc,
+        )
 
     # Active points at a preset that no longer exists anywhere — freeze dest,
     # do NOT fall back to default (would silently wipe the user's config).
@@ -488,8 +544,17 @@ def apply_preset(app: str, name: str) -> bool:
     except Exception:
         pass
 
+    base_src, base_inc, base_exc = resolve_preset_inheritance(app, name)
     preserved_log: List[str] = []
-    if not atomic_replace_item(src, dest, preserved_log=preserved_log, preserve=preserve):
+    if not atomic_replace_item(
+        src,
+        dest,
+        preserved_log=preserved_log,
+        preserve=preserve,
+        base_src=base_src,
+        base_include=base_inc,
+        base_exclude=base_exc,
+    ):
         _render_preset_result(app, name, preserved_log, failed=True)
         return False
 
@@ -505,6 +570,10 @@ def apply_preset(app: str, name: str) -> bool:
         log_msg("ERROR", f"Deployed preset '{name}' to {app} but recording active state failed: {e}")
         return False
     _render_preset_result(app, name, preserved_log)
+    if app == "niri" and shutil.which("niri"):
+        timed_run(["niri", "msg", "action", "load-config-file"], 2, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+    elif app == "kitty" and shutil.which("pkill"):
+        timed_run(["pkill", "-SIGUSR1", "-x", "kitty"], 2, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
     return True
 
 

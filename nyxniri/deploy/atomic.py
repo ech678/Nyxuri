@@ -6,6 +6,7 @@ The atomic_replace_item swap-then-preserve is the heart of NyxNiri's deploy
 ``preserve`` snapshot (files referenced by name, e.g. niri/monitor.kdl).
 """
 
+import fnmatch
 import os
 import shutil
 from pathlib import Path
@@ -13,6 +14,66 @@ from typing import List, Optional
 
 from nyxniri.core import get_env, log_msg, register_temp_path, remove_path
 from nyxniri.i18n import msg
+
+
+def _matches_pattern(rel_str: str, is_dir: bool, patterns: List[str]) -> bool:
+    for pat in patterns:
+        pat = pat.strip()
+        if not pat:
+            continue
+        if "/" not in pat:
+            name = rel_str.split("/")[-1]
+            if fnmatch.fnmatch(name, pat):
+                return True
+        else:
+            if fnmatch.fnmatch(rel_str, pat):
+                return True
+            if is_dir:
+                base_pat = pat.rstrip("/*")
+                if base_pat == rel_str or pat.startswith(rel_str + "/"):
+                    return True
+    return False
+
+
+def _base_deploy_ignore_factory(
+    root_src: Path,
+    include_patterns: Optional[List[str]] = None,
+    exclude_patterns: Optional[List[str]] = None,
+):
+    """copytree ignore for base overlay: drops repo-only entries and applies whitelists/blacklists."""
+    root = root_src
+    inc = [p for p in (include_patterns or []) if p and p.strip()]
+    exc = [p for p in (exclude_patterns or []) if p and p.strip()]
+
+    def _ignore(src_dir, names):
+        skip = {n for n in names if n in ("__pycache__", ".module.toml")}
+        if Path(src_dir) == root and "presets" in names:
+            skip.add("presets")
+
+        cur_dir = Path(src_dir)
+        for name in names:
+            if name in skip:
+                continue
+            item_path = cur_dir / name
+            try:
+                rel_str = item_path.relative_to(root).as_posix()
+            except ValueError:
+                rel_str = name
+            is_dir = item_path.is_dir() and not item_path.is_symlink()
+
+            # 1. Whitelist (include)
+            if inc and not _matches_pattern(rel_str, is_dir, inc):
+                skip.add(name)
+                continue
+
+            # 2. Blacklist (exclude)
+            if exc and _matches_pattern(rel_str, is_dir, exc):
+                skip.add(name)
+                continue
+
+        return skip
+
+    return _ignore
 
 
 def _deploy_ignore_factory(root_src: Path):
@@ -37,6 +98,9 @@ def atomic_replace_item(
     src: Path, dest: Path, preserved_log: Optional[List[str]] = None,
     test_mode: bool = False, preserve: Optional[List[str]] = None,
     preserve_custom: bool = True,
+    base_src: Optional[Path] = None,
+    base_include: Optional[List[str]] = None,
+    base_exclude: Optional[List[str]] = None,
 ) -> bool:
     """Atomic swap deployment via sibling temp directories with Dunder Protocol preservation.
 
@@ -80,7 +144,22 @@ def atomic_replace_item(
         dest_parent.mkdir(parents=True, exist_ok=True)
         if tmp_new.exists() or tmp_new.is_symlink():
             remove_path(tmp_new)
-        shutil.copytree(src, tmp_new, symlinks=True, ignore=_deploy_ignore_factory(src))
+        if base_src is not None and base_src.is_dir() and base_src != src:
+            shutil.copytree(
+                base_src,
+                tmp_new,
+                symlinks=True,
+                ignore=_base_deploy_ignore_factory(base_src, base_include, base_exclude),
+            )
+            shutil.copytree(
+                src,
+                tmp_new,
+                symlinks=True,
+                ignore=_deploy_ignore_factory(src),
+                dirs_exist_ok=True,
+            )
+        else:
+            shutil.copytree(src, tmp_new, symlinks=True, ignore=_deploy_ignore_factory(src))
 
         # Dunder Protocol: Scan and inherit *__custom__* files and directories
         if preserve_custom and dest.is_dir():

@@ -102,7 +102,16 @@ def _phase_atomic_deployment(
         manifest = load_manifest(env.configs_src / item)
         preserve = manifest.preserve if keep_preserved else None
 
-        if not atomic_replace_item(src, dest, preserved_log=preserved_log, test_mode=test_mode, preserve=preserve):
+        if not atomic_replace_item(
+            src,
+            dest,
+            preserved_log=preserved_log,
+            test_mode=test_mode,
+            preserve=preserve,
+            base_src=result.base_src,
+            base_include=result.base_include,
+            base_exclude=result.base_exclude,
+        ):
             failed_items.append(item)
             print(msg("log_deploy_config_failed", item), file=sys.stderr)
             continue

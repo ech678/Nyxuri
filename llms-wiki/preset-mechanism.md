@@ -63,6 +63,16 @@ theme-sync / gtk 重渲染）。切个 kitty 预设不该顺带跑 fisher，无�
 符合"破坏性操作必须显式确认"的精神。doctor 还有 `_check_preset_drift`——平时不 update
 也能撞见"你的 kitty 透明预设已不在上游"。
 
+## 预设继承与稀疏预设（Base Overlay & Sparse Presets）
+
+三层堆叠正式落地：`configs/<app>` (Base) ← `presets/<name>` (Overlay) ← `__custom__` (Dunder) / `preserve` (Manifest)。
+
+- **稀疏预设 (Sparse Presets)**：预设目录只需要存放与默认配置有差异的文件（例如 Niri 的 `glow` 仅需 49 行的 `layout.kdl`，无需镜像复制 4000+ 行 Python 脚本）。未重写的文件自动从仓库底版继承。
+- **双轴白名单保障**：
+  - **预设名白名单 (`allow = ["glow"]`)**：仅列入白名单的预设开启继承；未列入的预设和未声明的应用（如 Kitty）保持 100% 独立，零配置渗透。
+  - **文件白名单 (`include = ["scripts/**", "*.kdl"]`)**：仅继承白名单允许的底版文件；支持 `exclude` 黑名单进一步剔除特定文件。
+- **原子组装**：由 `atomic_replace_item(..., base_src, base_include, base_exclude)` 在 `tmp_new` 组装：先拷贝并过滤底版，再覆盖预设自身文件，最后注入 `__custom__` 与受保护文件，一次性原子 swap。
+
 ## CLI
 
 ```

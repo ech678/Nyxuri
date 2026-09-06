@@ -34,6 +34,15 @@ effects.kdl 是脚本动态管理的软链接，同样需要固定文件名。�
 > **竞态消除**：旧实现先 rename 整目录、再事后拷回 monitor.kdl，Niri 的 inotify 会在恢复前
 > 读到仓库默认的空 monitor.kdl 导致闪屏。现在注入在 rename 前完成，inotify 看到的就是最终态。
 
+## 机制 3：预设底版继承（Base Overlay）
+
+若当前部署的预设开启了继承，`atomic_replace_item` 接收可选的 `base_src`、`base_include` 与 `base_exclude` 参数：
+1. **Base 拷贝与白黑名单过滤**：先将 `base_src` 拷贝至 `tmp_new`（应用 `base_include` 与 `base_exclude` 规则过滤）；
+2. **Preset 覆盖**：将预设自身目录 `src` 覆盖拷贝至 `tmp_new`（`dirs_exist_ok=True`）；
+3. **Dunder 保护**：扫描 `dest` 中的 `__custom__` 文件与目录并注入 `tmp_new`；
+4. **Manifest 保护**：将 `preserve` 声明的文件（如 `monitor.kdl`、`effects.kdl`）从 `dest` 注入 `tmp_new`；
+5. **原子对调**：`os.replace` 将组装完成的 `tmp_new` 替换至 `dest`。
+
 ## 为什么不合并
 
 | | Dunder | manifest preserve |

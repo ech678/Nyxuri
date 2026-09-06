@@ -259,5 +259,63 @@ class TestRealRepoManifests(unittest.TestCase):
             self.assertIn(name, opts)
 
 
+    def test_real_niri_manifest_has_presets_whitelist(self):
+        m = manifest.load_manifest_for("niri")
+        self.assertEqual(m.preset_allow, ["glow"])
+        self.assertIn("scripts/**", m.preset_include)
+        self.assertIn("*.kdl", m.preset_include)
+
+
+class TestManifestPresets(unittest.TestCase):
+    """Presets table parsing in .module.toml (whitelist/blacklist/inheritance)."""
+
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+        self.env = self._ctx.env
+        self._sandbox = tempfile.TemporaryDirectory()
+        self.env.configs_src = Path(self._sandbox.name)
+
+    def tearDown(self):
+        self._sandbox.cleanup()
+        self._ctx.__exit__()
+
+    def _mkdir(self, rel: str) -> Path:
+        d = self.env.configs_src / rel
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+
+    def test_no_presets_table_defaults_to_safe(self):
+        app = self._mkdir("myapp")
+        (app / "config.conf").write_text("# conf")
+        m = manifest.load_manifest(app)
+        self.assertFalse(m.preset_inherit)
+        self.assertEqual(m.preset_allow, [])
+        self.assertEqual(m.preset_standalone, [])
+        self.assertEqual(m.preset_include, [])
+        self.assertEqual(m.preset_exclude, [])
+
+    def test_presets_table_parsed_correctly(self):
+        app = self._mkdir("niri_test")
+        (app / "config.kdl").write_text("# conf")
+        (app / ".module.toml").write_text("""
+[packages]
+preserve = ["monitor.kdl"]
+
+[presets]
+inherit = true
+allow = ["glow", "compact"]
+standalone = ["isolated"]
+include = ["scripts/**", "*.kdl"]
+exclude = ["scripts/debug.sh"]
+""")
+        m = manifest.load_manifest(app)
+        self.assertTrue(m.preset_inherit)
+        self.assertEqual(m.preset_allow, ["glow", "compact"])
+        self.assertEqual(m.preset_standalone, ["isolated"])
+        self.assertEqual(m.preset_include, ["scripts/**", "*.kdl"])
+        self.assertEqual(m.preset_exclude, ["scripts/debug.sh"])
+
+
 if __name__ == "__main__":
     unittest.main()
