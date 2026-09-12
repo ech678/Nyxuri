@@ -16,7 +16,7 @@ from nyxniri.core import (
     register_temp_path,
 )
 from nyxniri.i18n import msg
-from nyxniri.tui import CheckboxEntry, CheckboxList, Menu, MenuItem, drain_stdin, prompt_confirm, truncate_display
+from nyxniri.tui import CheckboxEntry, CheckboxList, Menu, MenuItem, prompt_confirm, truncate_display
 
 
 _MANAGED_SNAPSHOT_RE = re.compile(

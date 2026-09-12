@@ -41,6 +41,7 @@ class TestThemeSlices(unittest.TestCase):
         config = self._load_theme()
         background = config["InputPanel/Background/Margin"]
         highlight = config["InputPanel/Highlight/Margin"]
+        content_margin = config["InputPanel/ContentMargin"]
         panel = ET.parse(self.source / "panel.svg").getroot()
         highlight_svg = ET.parse(self.source / "highlight.svg").getroot()
 
@@ -48,16 +49,17 @@ class TestThemeSlices(unittest.TestCase):
         self.assertEqual(background.getint("Right"), 15)
         self.assertEqual(background.getint("Top"), 15)
         self.assertEqual(background.getint("Bottom"), 15)
-        self.assertEqual(panel.attrib["viewBox"], "0 0 64 64")
-        self.assertEqual(float(panel.attrib["width"]) - background.getint("Left") - background.getint("Right"), 2)
-        self.assertEqual(float(panel.attrib["height"]) - background.getint("Top") - background.getint("Bottom"), 2)
+        self.assertEqual(panel.attrib["viewBox"], "0 0 31 31")
+        self.assertEqual(float(panel.attrib["width"]) - background.getint("Left") - background.getint("Right"), 1)
+        self.assertEqual(float(panel.attrib["height"]) - background.getint("Top") - background.getint("Bottom"), 1)
 
         self.assertEqual(highlight.getint("Left"), 15)
         self.assertEqual(highlight.getint("Right"), 15)
         self.assertEqual(highlight.getint("Top"), 10)
         self.assertEqual(highlight.getint("Bottom"), 10)
-        self.assertEqual(highlight_svg.attrib["viewBox"], "0 0 64 60")
-        self.assertEqual(float(highlight_svg.attrib["width"]) - highlight.getint("Left") - highlight.getint("Right"), 2)
+        self.assertEqual(highlight_svg.attrib["viewBox"], "0 0 31 31")
+        self.assertEqual(float(highlight_svg.attrib["width"]) - highlight.getint("Left") - highlight.getint("Right"), 1)
+        self.assertEqual(content_margin.getint("Bottom"), 6)
 
     def test_theme_svg_templates_have_no_expensive_filters(self):
         for svg_name in ("panel.svg", "highlight.svg"):

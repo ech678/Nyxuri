@@ -9,7 +9,7 @@ TARGET_APP="${1:-kitty}"
 
 # ── Serialization Lock ──────────────────────────────────────────────
 LOCK_NAME=$(printf '%s' "$TARGET_APP" | tr -c 'a-zA-Z0-9_' '_')
-exec 9>"${XDG_RUNTIME_DIR:-/tmp}/nyxniri-scratch-${LOCK_NAME}.lock"
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/nyxniri-${UID}-scratch-${LOCK_NAME}.lock"
 flock -n 9 || exit 0
 
 case "$TARGET_APP" in
@@ -103,8 +103,8 @@ case "$TARGET_APP" in
     wallpaper|wallpapers|"wallpaper-picker"|WallpaperPicker|*wallpaper-picker.py)
         if [ -f "$HOME/.config/niri/scripts/wallpaper-picker.py" ]; then
             niri msg action spawn -- "$HOME/.config/niri/scripts/wallpaper-picker.py"
-        elif [ -f "${BASH_SOURCE%/*}/wallpaper-picker.py" ]; then
-            niri msg action spawn -- "${BASH_SOURCE%/*}/wallpaper-picker.py"
+        elif [ -f "$(dirname "${BASH_SOURCE[0]}")/wallpaper-picker.py" ]; then
+            niri msg action spawn -- "$(dirname "${BASH_SOURCE[0]}")/wallpaper-picker.py"
         else
             niri msg action spawn -- wallpaper-picker.py
         fi
@@ -122,7 +122,7 @@ case "$TARGET_APP" in
 
         # If it is clean-cache or interactive terminal tool, launch inside floating scratchpad terminal
         if [ "$TARGET_APP" = "$HOME/.config/fish/clean-cache.py" ] || [[ "$TARGET_APP" == *clean-cache.py* ]]; then
-            niri msg action spawn -- kitty --app-id "scratchpad" -e /bin/bash "$TARGET_APP"
+            niri msg action spawn -- kitty --app-id "scratchpad" -e "$TARGET_APP"
         elif [ -x "$TARGET_APP" ] || command -v "$TARGET_APP" >/dev/null 2>&1; then
             niri msg action spawn -- "$TARGET_APP"
         else

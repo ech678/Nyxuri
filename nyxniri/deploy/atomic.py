@@ -188,7 +188,10 @@ def atomic_replace_item(
                     target_item.symlink_to(os.readlink(src_item))
                 else:
                     shutil.copy2(src_item, target_item)
-                rel_display = str(dest.relative_to(home / ".config") / rel_path)
+                try:
+                    rel_display = str(dest.relative_to(home / ".config") / rel_path)
+                except ValueError:
+                    rel_display = str(dest / rel_path)
                 suffix = "/" if entry_type == "dir" else ""
                 print(msg("log_keep_custom_dir" if entry_type == "dir" else "log_keep_custom_file", rel_display + suffix))
                 if preserved_log is not None:

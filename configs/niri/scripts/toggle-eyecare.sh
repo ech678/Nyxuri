@@ -6,7 +6,7 @@
 set -uo pipefail
 
 # Ensure strict serialization to prevent any race conditions during rapid toggles or startup.
-exec 9> "${XDG_RUNTIME_DIR:-/tmp}/nyxniri-eyecare.lock"
+exec 9> "${XDG_RUNTIME_DIR:-/tmp}/nyxniri-${UID}-eyecare.lock"
 flock -w 5 9 || exit 1
 #
 # On/off state is derived from where effects.kdl points (eyecare target = ON)

@@ -24,13 +24,19 @@ from nyxniri.core import (
     log_msg,
 )
 from nyxniri.deploy import (
+    apply_preset,
+    collect_presets,
+    delete_preset,
     deploy_selected_configs,
     deploy_wallpapers,
     discover_config_items,
     discover_manifest_apps,
     discover_optional_apps,
+    edit_preset,
+    list_presets,
     render_completion_screen,
     run_user_hooks,
+    save_preset,
     test_deploy,
     wallpapers_pack_present,
 )
@@ -75,7 +81,6 @@ from nyxniri.state import (
 )
 from nyxniri.i18n import msg
 from nyxniri.network import safe_git_checkout_ref, safe_git_pull
-from nyxniri.deploy import apply_preset, collect_presets, delete_preset, edit_preset, list_presets, save_preset
 from nyxniri.tui import (
     CheckboxEntry,
     CheckboxList,
@@ -881,7 +886,7 @@ COMMANDS = {
 
 def main() -> None:
     """Main CLI entrypoint."""
-    if os.getuid() == 0:
+    if os.geteuid() == 0 or os.getuid() == 0:
         print(msg("err_root_denied"), file=sys.stderr)
         sys.exit(1)
 

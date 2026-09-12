@@ -7,7 +7,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from nyxniri.constants import Colors, FCITX_THEME, PROJECT_NAME, THEME_ENGINE
+from nyxniri.constants import FCITX_THEME, THEME_ENGINE
 from nyxniri.core import get_env, log_msg, timed_run
 from nyxniri.i18n import msg, text
 

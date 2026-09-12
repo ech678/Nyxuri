@@ -47,7 +47,7 @@ window-rule {
     match app-id=r"^galculator$"
     match app-id=r"^blueman-manager$"
     match app-id=r"^org\.gnome\.Nautilus$"
-    match app-id=r"^xdg-desktop-portal$"
+    match app-id=r"^xdg-desktop-portal-(gnome|gtk)$"
     open-floating true
 }
 

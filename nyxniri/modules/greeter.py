@@ -4,13 +4,11 @@ import os
 import shutil
 import stat
 import subprocess
-import sys
 import tempfile
 from pathlib import Path
 from typing import Optional
 
 from nyxniri.constants import (
-    Colors,
     GREETER_DM_STATE,
     GREETER_ETC_CFG,
     GREETER_PKG,

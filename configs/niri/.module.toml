@@ -7,7 +7,7 @@
 # EyeCare on/off state it encodes) across deploys and preset switches.
 [packages]
 preserve = ["monitor.kdl", "effects.kdl"]
-chmod = ["scripts/*.sh"]
+chmod = ["scripts/*.sh", "scripts/*.py"]
 
 [presets]
 allow = ["glow", "glow-material-you"]

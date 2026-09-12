@@ -74,6 +74,6 @@
    - 内置屏幕优先调用 Noctalia D-Bus 背光服务（毫秒级、无卡顿）；
    - 外接显示器使用 `ddcutil`，且带超时拦截，防止 I2C 总线挂起冻结 UI。
 2. **主题同步防抖竞态 (`theme-sync.sh`)**：
-   - 使用 `flock -n /tmp/nyxniri-theme-sync.lock` 保证瞬时多次快速按下快捷键时排队或安全丢弃，不发生状态竞争。
-3. **Orbit 启动器单实例锁 (`orbit/physics.py` / `/proc` 检测)**：
+   - 使用 `flock -w 5 "${XDG_RUNTIME_DIR:-/tmp}/nyxniri-${UID}-theme-sync.lock"` 保证瞬时多次快速按下快捷键时排队或安全丢弃，不发生状态竞争。
+3. **Orbit 启动器单实例锁 (`orbit/lock.py` / `/proc` 检测)**：
    - 防止重复唤起创建多个重叠悬浮窗，再次触发时优雅收起。

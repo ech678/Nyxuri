@@ -69,6 +69,7 @@ def _nvidia_role() -> str:
             capture_output=True,
             text=True,
             check=False,
+            timeout=10,
             env={**os.environ, "LC_ALL": "C"},
         )
         _NVIDIA_ROLE = _classify_nvidia_role(res.stdout)

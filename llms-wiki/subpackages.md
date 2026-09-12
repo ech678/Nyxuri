@@ -25,7 +25,7 @@ nyxniri/
 │   ├── hardware.py                     _phase_hardware_patches（NVIDIA env，独立硬件自适应层）
 │   ├── preset.py                       预设切换（active 状态、src 四分支、apply 窄路径）
 │   └── deploy.py                       编排器：discover_config_items、_phase_atomic_deployment、
-│                                       _phase_post_install_services、
+│                                       _phase_post_install_services、run_user_hooks、
 │                                       render_completion_screen、deploy_selected_configs、test_deploy
 │
 ├── state/                              状态子包
@@ -51,7 +51,7 @@ nyxniri/
 每个子包 `__init__.py` 把关键公共符号 re-export 到子包根：
 
 - `nyxniri.deploy/__init__`：`atomic_replace_item`、`discover_config_items`、`deploy_selected_configs`、
-  `deploy_wallpapers`、`wallpapers_pack_present`、`render_completion_screen`、`test_deploy`、
+  `deploy_wallpapers`、`wallpapers_pack_present`、`run_user_hooks`、`render_completion_screen`、`test_deploy`、
   preset 全套（`apply_preset`/`list_presets`/…）、manifest 全套
   （`load_manifest`/`discover_deployable_apps`/`discover_optional_apps`）…
 - `nyxniri.state/__init__`：`backup_configs`、`rollback_configs`、`list_backups`、`delete_backup`、

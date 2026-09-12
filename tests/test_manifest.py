@@ -155,7 +155,7 @@ class TestRealRepoManifests(unittest.TestCase):
     def test_niri_manifest(self):
         m = manifest.load_manifest(self.env.configs_src / "niri")
         self.assertEqual(m.preserve, ["monitor.kdl", "effects.kdl"])
-        self.assertEqual(m.chmod, ["scripts/*.sh"])
+        self.assertEqual(m.chmod, ["scripts/*.sh", "scripts/*.py"])
         self.assertTrue(m.is_deployable)
         # dir name = package = binary → no [packages] override needed
         self.assertEqual(m.packages_repo, ["niri"])

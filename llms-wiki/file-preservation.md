@@ -65,6 +65,6 @@ effects.kdl 是脚本动态管理的软链接，同样需要固定文件名。�
 
 ## 边界（§10.4）
 
-NyxNiri 元数据只许在 `~/.config/NyxNiri/`（backups、presets、active 状态）。
+NyxNiri 元数据只许在 `~/.config/NyxNiri/`（backups、presets、active 状态、hooks）。
 `~/.config/<app>/` 里不塞 NyxNiri 自己的东西——`__custom__` 是约定保留名，属 app 配置一部分，
 不算"拉屎"。`.module.toml` 是仓库元数据，deploy 时被 `_deploy_ignore_factory` 跳过，不进 dest。

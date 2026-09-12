@@ -8,12 +8,13 @@
 |---|---|---|
 | `repo_dir` | 源码所在地（cache / clone / system 三选一，谁被跑谁赢） | `~/.cache/NyxNiri` / clone 路径 / `/usr/share/nyxniri` |
 | `config_dir` | 部署目标，恒定 | `~/.config` |
-| `nyx_dir` | NyxNiri 自己的家：backups / presets / active | `~/.config/NyxNiri` |
+| `nyx_dir` | NyxNiri 自己的家：backups / presets / active / hooks | `~/.config/NyxNiri` |
 | `state_dir` | 运行时瞬态（lock + log） | `~/.local/state/NyxNiri`（XDG_STATE_HOME） |
 | `cache_dir` | curl 装法的源码缓存 | `~/.cache/NyxNiri` |
 | `configs_src` | 仓库配置源 | `repo_dir/configs` |
 | `assets_src` | 仓库静态资产源 | `repo_dir/assets` |
 | `presets_dir` | 用户预设 + active 状态 | `nyx_dir/presets` |
+| `hooks_dir` | 用户自定义部署后置钩子脚本 | `nyx_dir/hooks` |
 
 ## 动作术语
 

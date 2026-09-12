@@ -6,7 +6,6 @@ the outcome so the completion screen can render the right status line.
 """
 
 import shutil
-import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass
@@ -16,7 +15,7 @@ from typing import Tuple
 from nyxniri.constants import Colors, WALLPAPER_MIRRORS
 from nyxniri.core import get_env, get_pics_dir, log_msg, register_temp_path
 from nyxniri.i18n import msg
-from nyxniri.network import fetch_raw_with_fallback, git_clone_timeout
+from nyxniri.network import git_clone_timeout
 
 
 @dataclass(frozen=True)

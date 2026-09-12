@@ -56,9 +56,8 @@ class TestSafeGitCheckoutRef(unittest.TestCase):
 
         with patch("shutil.which", return_value="/usr/bin/git"):
             with patch("subprocess.run", side_effect=fake_run):
-                with patch("nyxniri.network._run_git_transfer", side_effect=fake_run):
-                    with redirect_stdout(io.StringIO()):
-                        result = safe_git_checkout_ref(self.fake_repo, "v9.9.9")
+                with redirect_stdout(io.StringIO()):
+                    result = safe_git_checkout_ref(self.fake_repo, "v9.9.9")
 
         self.assertEqual(result, False, "Dirty tree must be refused with False")
 
@@ -80,9 +79,8 @@ class TestSafeGitCheckoutRef(unittest.TestCase):
 
         with patch("shutil.which", return_value="/usr/bin/git"):
             with patch("subprocess.run", side_effect=fake_run):
-                with patch("nyxniri.network._run_git_transfer", side_effect=fake_run):
-                    with redirect_stdout(io.StringIO()):
-                        result = safe_git_checkout_ref(self.fake_repo, "abc1234")
+                with redirect_stdout(io.StringIO()):
+                    result = safe_git_checkout_ref(self.fake_repo, "abc1234")
 
         self.assertTrue(result, "Clean tree should succeed")
         fetch_cmds = [c for c in commands if "fetch" in c]

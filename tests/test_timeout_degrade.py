@@ -223,12 +223,16 @@ class TestGtkThemeTimeout(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_render_timeout_degrades_to_pending(self):
+        from nyxniri.i18n import msg
         from nyxniri.modules.gtktheme import gtktheme_trigger_render
 
+        out = StringIO()
         with patch("nyxniri.modules.gtktheme.noctalia_available", return_value=True), \
              patch("nyxniri.modules.gtktheme.timed_run", return_value=None), \
-             patch("builtins.print"):
+             redirect_stdout(out):
             gtktheme_trigger_render()
+
+        self.assertIn(msg("gtk_render_pending"), out.getvalue())
 
 
 if __name__ == "__main__":

@@ -134,7 +134,7 @@ def _phase_atomic_deployment(
     effects_sym = config_dir / MAIN_WM / "effects.kdl"
     if effects_normal.is_file() and not effects_sym.exists():
         try:
-            effects_sym.symlink_to(effects_normal)
+            effects_sym.symlink_to(effects_normal.name)
         except Exception:
             pass
 

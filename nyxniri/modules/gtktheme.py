@@ -4,7 +4,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from nyxniri.constants import Colors, THEME_ENGINE
+from nyxniri.constants import THEME_ENGINE
 from nyxniri.core import get_env, log_msg, timed_run
 from nyxniri.i18n import msg, text
 

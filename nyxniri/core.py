@@ -6,7 +6,6 @@ import fcntl
 import os
 import re
 import shutil
-import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -135,6 +134,7 @@ def get_pics_dir() -> Path:
         res = subprocess.run(
             ["xdg-user-dir", "PICTURES"],
             capture_output=True, text=True, check=False,
+            timeout=5,
             env={**os.environ, "LC_ALL": "C"}
         )
         d = res.stdout.strip()
@@ -168,6 +168,7 @@ def get_version(target_dir: Path) -> str:
             res = subprocess.run(
                 ["git", "describe", "--tags", "--abbrev=0"],
                 cwd=target_dir, capture_output=True, text=True, check=False,
+                timeout=5,
                 env={**os.environ, "LC_ALL": "C"}
             )
             v = res.stdout.strip()
@@ -181,6 +182,7 @@ def get_version(target_dir: Path) -> str:
             res = subprocess.run(
                 ["git", "rev-parse", "--short", "HEAD"],
                 cwd=target_dir, capture_output=True, text=True, check=False,
+                timeout=5,
                 env={**os.environ, "LC_ALL": "C"}
             )
             v = res.stdout.strip()

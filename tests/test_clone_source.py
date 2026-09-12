@@ -48,10 +48,11 @@ class TestCloneSourceOverride(unittest.TestCase):
             + env_assignment.rstrip(";") + "\n" +
             "from unittest.mock import patch\n"
             "from nyxniri.network import clone_repo_with_fallback\n"
-            "with patch('nyxniri.network.git_clone_timeout') as gct:\n"
-            "    result = clone_repo_with_fallback(Path(tempfile.mkdtemp()))\n"
-            "print(result)\n"
-            "print(gct.call_args_list)\n"
+            "with tempfile.TemporaryDirectory() as td:\n"
+            "    with patch('nyxniri.network.git_clone_timeout') as gct:\n"
+            "        result = clone_repo_with_fallback(Path(td))\n"
+            "    print(result)\n"
+            "    print(gct.call_args_list)\n"
         )
         res = subprocess.run(
             [sys.executable, "-c", code],
