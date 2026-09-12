@@ -121,19 +121,95 @@ window-rule {
     background-effect { blur true; }
 }
 
-// ==========================================
-// 游戏专属规则：强制无特效、最高性能
-// ==========================================
+// =============================================================================
+// 游戏与模拟器视口超级规则组 (Gaming & VRR Master Rules)
+// 设计目标：最大化游戏吞吐覆盖与绝对零浏览器误伤体系
+// =============================================================================
 window-rule {
+    // -------------------------------------------------------------------------
+    // 匹配分支 A: Valve 体系 (Steam 原生/Proton 游戏容器与 Gamescope 嵌套微合成器)
+    // -------------------------------------------------------------------------
     match app-id=r"^steam_app_.*"
-    match app-id=r"^gamescope$"
+    match app-id=r#"^(gamescope|com\.valvesoftware\.Steam\.Utility\.gamescope)$"#
+
+    // -------------------------------------------------------------------------
+    // 匹配分支 B: 主流控制台与街机模拟器全系视口 (Native 与 Flatpak)
+    // 涵盖索尼全系、任天堂全系、微软 Xbox、RetroArch 等全系列独立运行视口
+    // -------------------------------------------------------------------------
+    match app-id=r#"^org\.(duckstation\.DuckStation|ppsspp\.PPSSPP|libretro\.RetroArch|DolphinEmu\.dolphin-emu|citra_emu\.citra|azahar_emu\.Azahar|desmume\.DeSmuME|wesnoth\.Wesnoth)$"#
+    match app-id=r#"^net\.(pcsx2\.PCSX2|rpcs3\.RPCS3|shadps4\.shadPS4|kuribo64\.melonDS|veloren\.veloren)$"#
+    match app-id=r#"^io\.(mgba\.mGBA|openrct2\.OpenRCT2|anuke\.Mindustry)$"#
+    match app-id=r#"^io\.github\.(simple64\.simple64|lime3ds\.Lime3DS|ryubing\.Ryujinx|streetpea\.Chiaki4deck)$"#
+    match app-id=r#"^(info\.cemu\.Cemu|app\.xemu\.xemu|com\.fightcade\.Fightcade2|com\.mamedev\.MAME|com\.wildfiregames\.0ad|dev\.goats\.xivlauncher|com\.github\.Anuken\.Mindustry|org\.openmw\.OpenMW|org\.openttd\.OpenTTD|org\.cataclysmdda\.CataclysmDDA)$"#
+    match app-id=r#"^(duckstation-(qt|nogui)|pcsx2(-qt)?|rpcs3|shadps4|PPSSPP(Qt|SDL)|Vita3K|Ryujinx|suyu|sudachi|torzu|yuzu|cemu|dolphin-emu|lime3ds|citra(-qt)?|melonDS|mgba(-qt)?|simple64-gui|RMG|xemu|retroarch|mame|ggpofba|fbneo|snes9x)$"#
+
+    // -------------------------------------------------------------------------
+    // 匹配分支 C: 大型在线长线运营与竞技网游 (MMO / MOBA / FPS)
+    // 涵盖米哈游、库洛、鹰角、暴雪、拳头、V社及跨平台主流 3D 渲染客户端
+    // -------------------------------------------------------------------------
+    match app-id=r#"^((genshinimpact|yuanshen|starrail|zenlesszonezero|client-win64-shipping|wuthering waves|endfield|ffxiv_dx11|ffxiv|wow|wowclassic|league of legends|pathofexile|pathofexile_x64|pathofexile2|warframe\.x64|r5apex|overwatch|marvelrivals|deadlock|project8)\.exe)$"#
+    match app-id=r#"^(cs2|dota2)$"#
     match app-id=r"^wine$"
-    match title=r"(?i)genshin impact|zenless zone zero|victoria 3|Minecraft|Endfield"
+
+    // -------------------------------------------------------------------------
+    // 匹配分支 D: 经典独立神作、P 社五萌战略游戏、开源重制引擎与核心视口
+    // -------------------------------------------------------------------------
+    match app-id=r#"^(net-minecraft-client-main-Main|Minecraft.*|factorio|RimWorldLinux|Terraria\.bin\.x86_64|StardewValley\.bin\.x86_64|Hollow_Knight\.x86_64|deadcells|Celeste|victoria3|hoi4|ck3|stellaris|eu4|openmw|openra-(ra|cnc|d2k)|openrct2|openttd|spring|Beyond-All-Reason|mindustry|pyrogenesis|veloren-voxygen|cataclysm-tiles|wesnoth)$"#
+    match app-id=r#"^((RimWorldWin64|Balatro|noita|noita_dev|Hades|Hades2|xenia|xenia_canary|Cemu)\.exe)$"#
+
+    // -------------------------------------------------------------------------
+    // 匹配分支 E: 云游戏与局域网超低延迟串流视口
+    // -------------------------------------------------------------------------
+    match app-id=r#"^(com\.moonlight_stream\.Moonlight|moonlight|chiaki|chiaki-ng|com\.parsecgaming\.parsec|parsecd)$"#
+
+    // -------------------------------------------------------------------------
+    // 匹配分支 F: 动态标题精准补充（针对异步重命名窗口及 Minecraft Java 视口）
+    // -------------------------------------------------------------------------
+    match title=r#"^Minecraft [0-9]+\.[0-9]+(\.[0-9]+)?.*$"#
+    match title=r#"^Steam Big Picture Mode$"#
+    match title=r#"(?i)genshin impact|zenless zone zero|honkai: star rail|wuthering waves|minecraft|victoria 3|endfield"#
+
+    // =========================================================================
+    // 绝对安全隔离防线 (MANDATORY EXCLUSIONS)
+    // 只要命中以下任一应用，立即熔断规则，绝对禁止开启 VRR 与绕过合成
+    // =========================================================================
+
+    // 1. 全系 Web 浏览器及其派生版本隔离（杜绝 1~2Hz 光标刷新率震荡、面板频闪与视频失去半透明）
+    exclude app-id=r#"^(firefox.*|org\.mozilla\.firefox)$"#
+    exclude app-id=r#"^(google-chrome.*|chrome|chromium.*|com\.google\.Chrome|org\.chromium\.Chromium)$"#
+    exclude app-id=r#"^(brave.*|com\.brave\.Browser|microsoft-edge.*|edge|com\.microsoft\.Edge)$"#
+    exclude app-id=r#"^(zen.*|app\.zen_browser\.zen)$"#
+    exclude app-id=r#"^(vivaldi.*|opera.*|thorium.*|floorp.*|waterfox.*|librewolf.*)$"#
+    exclude app-id=r#"^(org\.gnome\.Epiphany.*|epiphany|falkon.*|nyxt.*|qutebrowser.*|ladybird.*|midori.*|tor-browser.*)$"#
+
+    // 2. Wine/Proton 常见日常与办公工具（严禁泛匹配 .exe 造成的静默误伤）
+    exclude app-id=r#"^(WeChat|QQ|wps|wpscloudsvr|notepad|winword|excel|powerpnt|dingtalk|AliWangWang|Foxmail|Feishu)\.exe$"#
+
+    // 3. 游戏启动器/更新器壳体（防止 Electron/CEF/Qt 管理界面意外触发游戏规则）
+    exclude app-id=r#"^(heroic|lutris|com\.usebottles\.bottles|org\.prismlauncher\.PrismLauncher|com\.lunarclient\.LunarClient)$"#
+    exclude app-id=r#"^(openmw-launcher|dowser\.exe|Battle\.net\.exe|LeagueClientUx\.exe)$"#
+
+    // -------------------------------------------------------------------------
+    // 执行属性设定 (Execution Directives)
+    // -------------------------------------------------------------------------
+    // 激活底层 DRM 的可变刷新率支持 (仅在 output 设置 on-demand=true 时生效)
+    variable-refresh-rate true
+
+    // 强制不透明度为 1.0，关闭半透明与背景模糊计算开销，释放显存带宽
     opacity 1.0
     background-effect {
         blur false
     }
+
+    // 消除窗口几何圆角切割计算，直接将原生矩形缓冲区送入直通扫描 (Direct Scanout)
+    geometry-corner-radius 0
+    clip-to-geometry false
+
+    // 彻底剥离合成器阴影与边框计算管线
     draw-border-with-background false
+    shadow {
+        off
+    }
 }
 
 // 视频画中画：所有画中画全工作区悬浮（Mod+拖拽可移动）

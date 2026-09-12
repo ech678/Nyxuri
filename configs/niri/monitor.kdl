@@ -15,10 +15,23 @@
 //     position x=0 y=0
 // }
 
-// 示例 2: 外接高刷显示器 (2K 144Hz 开启 VRR)
+// 示例 2: 外接高刷主显示器 (2K 165Hz 开启按需 VRR)
 // output "DP-1" {
-//     mode "2560x1440@144.000"
+//     mode "2560x1440@165.000"
 //     scale 1.0
-//     position x=1920 y=0
-//     variable-refresh-rate
+//     transform "normal"
+//     position x=0 y=0
+//     // 开启可变刷新率 (VRR / G-Sync / FreeSync)
+//     // 强烈推荐添加 on-demand=true：仅在运行游戏等规则应用时激活 VRR。
+//     // 这能彻底避免桌面静止、锁屏或终端光标跳变时因刷新率骤降产生的屏幕亮度频闪 (VRR Flicker)。
+//     variable-refresh-rate on-demand=true
+// }
+//
+// 示例 3: 外接高刷副显示器 (1080p 144Hz 开启按需 VRR)
+// output "HDMI-A-1" {
+//     mode "1920x1080@144.000"
+//     scale 1.0
+//     transform "normal"
+//     position x=2560 y=0
+//     variable-refresh-rate on-demand=true
 // }
