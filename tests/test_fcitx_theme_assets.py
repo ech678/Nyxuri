@@ -58,3 +58,13 @@ class TestThemeSlices(unittest.TestCase):
         self.assertEqual(highlight.getint("Bottom"), 10)
         self.assertEqual(highlight_svg.attrib["viewBox"], "0 0 64 60")
         self.assertEqual(float(highlight_svg.attrib["width"]) - highlight.getint("Left") - highlight.getint("Right"), 2)
+
+    def test_theme_svg_templates_have_no_expensive_filters(self):
+        for svg_name in ("panel.svg", "highlight.svg"):
+            with self.subTest(svg=svg_name):
+                content = (self.source / svg_name).read_text(encoding="utf-8")
+                self.assertNotIn("filter=", content)
+                self.assertNotIn("filter:", content)
+                self.assertNotIn("<filter", content)
+                self.assertNotIn("feGaussianBlur", content)
+
