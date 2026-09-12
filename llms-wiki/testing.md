@@ -41,7 +41,8 @@ argv[0]（shebang 直启下是解释器名，不是脚本名），验证恒假�
 | PresetSwitcher 树状工作台 | 展开/折叠、←/→ 穿梭不丢光标、↑/↓ 循环、Enter 调 apply、apply 走窄 deploy 不调 fisher | `test_preset.py` |
 | atomic replace | 文件/目录回滚、断链 symlink、no-clobber 壁纸 | `test_deploy.py` |
 | GPU 诊断与默认部署 | PCI 设备分类；报告探测失败、命令参数/语言/超时与配置只读；变量移除、重复部署、自定义保留、跨应用隔离 | `test_hardware.py` |
-| i18n 完整性 | ast 扫所有 `msg()`/`prompt_confirm()` 调用 vs TRANSLATIONS——无孤儿、无缺失 | `test_i18n.py` |
+| i18n 完整性 | AST 引用 vs translations.toml；无孤儿、无缺失，双语字段与参数一致 | `test_i18n.py` |
+| 包管理 | 后端参数、超时、取消不重试、每轮独立探测 | `test_pkg.py` |
 
 ## 必跑命令
 

@@ -26,7 +26,7 @@
 
 ## Decoupled modules
 
-- [subpackages](subpackages.md): nyxniri/{deploy, state, modules, packaging} 子包职责、__init__ re-export、import 约定
+- [subpackages](subpackages.md): nyxniri/{pkg, deploy, state, modules, packaging} 职责、CLI 与菜单分离、TOML 文案
 - [two-axis-config](two-axis-config.md): 可选（.optional-apps.toml）/ 有配置（目录）两轴独立、"加配置不毕业"
 - [manifest-schema](manifest-schema.md): .module.toml + .optional-apps.toml 字段参考
 - [theme-adaptation](../configs/noctalia/README.md): 主题中枢与 GTK/Brave 信号流全记录（GTK4 双 @media 块、settings.ini 兼容、Problem 1-12 证伪排查）
@@ -37,7 +37,7 @@
 - [concept-glossary](concept-glossary.md): 路径 / 动作 / 内容术语表（repo_dir、nyx_dir、deploy、preset…）
 - [operation-map](operation-map.md): 全部 CLI 命令目录（install / snapshot / preset / …）
 - [testing](testing.md): 测试策略与形状、TempEnv 隔离、mock 层级
-- [delayed-decisions](delayed-decisions.md): 留待触发条件的事项（overlay 预设、拆 cli、子目录分组）
+- [delayed-decisions](delayed-decisions.md): 留待触发条件的事项与已落地的结构调整
 
 ## Noctalia 参考
 

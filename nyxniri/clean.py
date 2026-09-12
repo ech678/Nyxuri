@@ -20,6 +20,8 @@ import tty
 import unicodedata
 from pathlib import Path
 
+from nyxniri.constants import CLI_CMD, PROJECT_NAME
+
 VERSION = "4.1"
 
 TASK_KEYS = ("cache", "flatpak-cache", "steam", "thumbnails", "npm", "cargo",
@@ -64,9 +66,9 @@ def warn(msg):
     print(_c("33", "  ! ") + msg, file=sys.stderr)
 
 
-HELP = f"""clean-cache v{VERSION} — {t("NyxNiri 缓存清理", "NyxNiri cache sweeper")}
+HELP = f"""{PROJECT_NAME} — {t("缓存清理", "Cache sweeper")}
 
-{t("用法", "Usage")}: clean-cache.py [-n] [--only <任务,...>] [-h]
+{t("用法", "Usage")}: {CLI_CMD} clean [-n] [--only <任务,...>] [-h]
 
   -n, --dry-run       {t("干跑：只展示计划，不删除、不提权", "dry run: plan only, no deletion, no elevation")}
   --only <a,b,...>    {t("非交互执行指定任务（免确认），all = 全部", "run only these tasks (no prompts); all = everything")}
@@ -350,7 +352,7 @@ def build_tasks(sizes, flat_roots):
 
 def _print_title():
     print()
-    print("  " + _c("1;35", f"NyxNiri · Cache Cleaner v{VERSION}"))
+    print("  " + _c("1;35", f"{PROJECT_NAME} · Cache Cleaner v{VERSION}"))
     print("  " + _c("2", t("把磁盘还给你。", "Giving your disk back.")))
 
 

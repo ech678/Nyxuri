@@ -125,7 +125,7 @@ function nyxhelp --description "NyxNiri Cheatsheet速查手册"
             set_color -o yellow; echo -n "    in [包名]                "; set_color green; echo "-> 安装软件包 (无参时自动开启 se 模糊搜索)"; set_color normal
             set_color -o yellow; echo -n "    se [关键字]              "; set_color green; echo "-> 模糊搜索软件包 (支持 aur/pac 前缀) 并 fzf 交互安装"; set_color normal
             set_color -o yellow; echo -n "    un [关键字]              "; set_color green; echo "-> 模糊搜索已安装包并 fzf 交互卸载"; set_color normal
-            set_color -o yellow; echo -n "    clean [--auto]           "; set_color green; echo "-> 扫描并清理大缓存与日志垃圾"; set_color normal
+            set_color -o yellow; echo -n "    clean [-n]               "; set_color green; echo "-> 扫描并清理缓存与日志，-n 只预览"; set_color normal
             return
         case keys bind keybindings
             set_color -o magenta; echo "  Niri 桌面核心快捷键"; set_color normal
@@ -189,82 +189,6 @@ function nyxhelp --description "NyxNiri Cheatsheet速查手册"
     end
 end
 
-# 私有包管理器感知助手 (Paru > Yay > Shelly > Pacman)
-function _nyxniri_pkg_helper
-    if command -v paru &>/dev/null
-        echo "paru"
-    else if command -v yay &>/dev/null
-        echo "yay"
-    else if command -v shelly &>/dev/null
-        echo "shelly"
-    else
-        echo "pacman"
-    end
-end
-
-# 私有搜索分流助手 (供 se 交互及 fzf change 动态 reload)
-function _nyxniri_se_search --argument-names query helper
-    set -l input (string trim -- "$query")
-    set -l parts (string split -n -m 1 " " -- "$input")
-    set -l cmd "$parts[1]"
-    set -l kw "$parts[2]"
-
-    switch "$cmd"
-        case aur
-            if test -n "$kw"
-                # AUR 在线搜索: paru/yay 直接搜, shelly 走 JSON; 失败时透传 helper 原话, 不再静默空
-                set -l aur_helper
-                if test "$helper" = "paru" -o "$helper" = "yay"
-                    set aur_helper "$helper"
-                else if command -v shelly &>/dev/null
-                    set aur_helper shelly
-                end
-
-                if test -z "$aur_helper"
-                    echo "[!] AUR search requires paru/yay/shelly" >&2
-                    return 1
-                end
-
-                set -l results
-                if test "$aur_helper" = shelly
-                    set results (shelly search aur -j "$kw" 2>/dev/null \
-                        | string match -a -r '"Name":"[^"]+"' | awk -F'"' '{print "[AUR] "$4}')
-                else
-                    set results ("$aur_helper" -Ssq --aur "$kw" 2>/dev/null | awk '{print "[AUR] "$0}')
-                end
-                set -l search_st $pipestatus[1]
-
-                if test -n "$results"
-                    printf '%s\n' $results
-                else if test $search_st -ne 0
-                    # 无匹配同样退出非零, 只有拿到 helper 原话才算真失败 (paru 报错在 stderr, shelly 在 stdout)
-                    set -l why
-                    if test "$aur_helper" = shelly
-                        set why (shelly search aur -j "$kw" 2>/dev/null | head -1)
-                    else
-                        set why ("$aur_helper" -Ssq --aur "$kw" 2>&1 >/dev/null | head -1)
-                    end
-                    if test -n "$why"
-                        echo "[!] $why" >&2
-                        return 1
-                    end
-                end
-            end
-        case pac repo
-            if test -n "$kw"
-                pacman -Slq | grep -i -- "$kw" | awk '{print "[PAC] "$0}' || true
-            else
-                pacman -Slq | awk '{print "[PAC] "$0}' || true
-            end
-        case '*'
-            if test -n "$input"
-                pacman -Slq | grep -i -- "$input" | awk '{print "[PAC] "$0}' || true
-            else
-                pacman -Slq | awk '{print "[PAC] "$0}' || true
-            end
-    end
-end
-
 if status is-interactive
     # No greeting
     set fish_greeting
@@ -299,106 +223,25 @@ if status is-interactive
     alias celar "printf '\033[2J\033[3J\033[1;1H'"
     alias claer "printf '\033[2J\033[3J\033[1;1H'"
 
-    # 智能一键更新 (优先 paru/yay，自动防中途取消误触发)
     function up --description "一键系统与软件包更新 (Arch / CachyOS)"
-        set -l helper (_nyxniri_pkg_helper)
-        set -l res 0
-
-        switch "$helper"
-            case paru
-                paru -Syu $argv
-                set res $status
-            case yay
-                yay -Syu $argv
-                set res $status
-            case shelly
-                shelly upgrade all $argv
-                set res $status
-            case '*'
-                sudo pacman -Syu $argv
-                set res $status
-        end
-
-        # 用户按 Ctrl+C / SIGINT (130) 或 SIGTERM (143) 取消操作时，安静退出
-        if test $res -eq 130 -o $res -eq 143
-            set_color yellow; echo "[!] 更新操作已由用户取消"; set_color normal
-            return 130
-        end
-
-        if test $res -ne 0 -a "$helper" = "shelly"
-            set_color yellow; echo "[!] Shelly 更新遇到异常，尝试使用备用包管理器..."; set_color normal
-            if command -v paru &>/dev/null
-                paru -Syu $argv
-            else if command -v yay &>/dev/null
-                yay -Syu $argv
-            else
-                sudo pacman -Syu $argv
-            end
-        end
+        nyxniri pkg upgrade $argv
     end
-    alias update='up'                             # 同上，完整拼写
+    alias update='up'
 
-    # 智能安装 (无参自动触发 se 模糊搜索)
     function in --description "智能安装软件包 (支持包名或交互搜索)"
         if test (count $argv) -eq 0
             se
-            return
-        end
-
-        set -l helper (_nyxniri_pkg_helper)
-        set -l res 0
-
-        switch "$helper"
-            case paru
-                paru -S $argv
-                set res $status
-            case yay
-                yay -S $argv
-                set res $status
-            case shelly
-                shelly install $argv
-                set res $status
-            case '*'
-                sudo pacman -S $argv
-                set res $status
-        end
-
-        if test $res -eq 130 -o $res -eq 143
-            set_color yellow; echo "[!] 安装操作已由用户取消"; set_color normal
-            return 130
-        end
-
-        if test $res -ne 0 -a "$helper" = "shelly"
-            set_color yellow; echo "[!] Shelly 安装遇到异常，尝试使用备用包管理器..."; set_color normal
-            if command -v paru &>/dev/null
-                paru -S $argv
-            else if command -v yay &>/dev/null
-                yay -S $argv
-            else
-                sudo pacman -S $argv
-            end
+        else
+            nyxniri pkg install $argv
         end
     end
 
-    alias clean='~/.config/fish/clean-cache.py'      # 运行一键缓存清理脚本
+    alias clean='nyxniri clean'
 
     # se：模糊搜索软件包 (支持 aur <kw> / pac <kw> 前缀) 并用 fzf 交互安装 (无 fzf 时自动降级)
     function se --description "Fuzzy search & install packages (aur/pac prefix)"
-        set -l helper (_nyxniri_pkg_helper)
-
-        # 无 fzf 时的降级处理
         if not command -v fzf &>/dev/null
-            set_color yellow; echo "[!] fzf not found, falling back to plain search"; set_color normal
-            switch "$helper"
-                case paru
-                    paru -Ss $argv
-                case yay
-                    yay -Ss $argv
-                case shelly
-                    shelly search $argv
-                case '*'
-                    pacman -Ss $argv
-            end
+            nyxniri pkg search $argv
             return
         end
 
@@ -408,25 +251,25 @@ if status is-interactive
             set fzf_query "$argv"
         end
 
-        set -l preview_cmd "pacman -Si {2}"
-        if test "$helper" = "paru"
-            set preview_cmd "paru -Si {2} 2>/dev/null || pacman -Si {2}"
-        else if test "$helper" = "yay"
-            set preview_cmd "yay -Si {2} 2>/dev/null || pacman -Si {2}"
-        end
+        set -l preview_cmd "nyxniri pkg info {2}"
 
         set -l header_str "aur <kw> → AUR | pac <kw> → repo | [Tab] multi-select"
 
-        set -l pkgs (_nyxniri_se_search "$fzf_query" "$helper" | fzf --multi --prompt='search > ' \
+        set -l pkgs (nyxniri pkg search "$fzf_query" | fzf --multi --disabled --prompt='search > ' \
             --header="$header_str" \
             --query="$fzf_query" \
-            --bind 'change:reload(fish -c "_nyxniri_se_search {q} '$helper'")' \
+            --bind 'change:reload(nyxniri pkg search {q})' \
             --preview "$preview_cmd" --preview-window 'right:60%:wrap')
 
         if test -n "$pkgs"
             set -l clean_pkgs
             for p in $pkgs
-                set -a clean_pkgs (string replace -r '^\[.*?\]\s+' '' -- $p)
+                set -l name (string replace -r '^\[.*?\]\s+' '' -- $p)
+                if string match -q -r '^\[AUR\]' -- $p
+                    set -a clean_pkgs "aur/$name"
+                else
+                    set -a clean_pkgs "repo/$name"
+                end
             end
             if test -n "$clean_pkgs"
                 in $clean_pkgs
@@ -436,11 +279,9 @@ if status is-interactive
 
     # un：模糊搜索已安装的包并用 fzf 交互卸载 (无 fzf 时自动降级)
     function un --description "Fuzzy search & remove installed packages"
-        set -l helper (_nyxniri_pkg_helper)
-
         if not command -v fzf &>/dev/null
             set_color yellow; echo "[!] fzf not found, falling back to installed list"; set_color normal
-            pacman -Qs $argv
+            nyxniri pkg installed $argv
             return
         end
 
@@ -449,22 +290,13 @@ if status is-interactive
             set fzf_query "$argv"
         end
 
-        set -l pkgs (pacman -Qq | fzf --multi --prompt='remove > ' \
+        set -l pkgs (nyxniri pkg installed | fzf --multi --prompt='remove > ' \
             --header='[Tab] multi-select | [Enter] remove | [Esc] cancel' \
             --query="$fzf_query" \
-            --preview 'pacman -Qi {1}' --preview-window 'right:60%:wrap')
+            --preview 'nyxniri pkg info {1}' --preview-window 'right:60%:wrap')
 
         if test -n "$pkgs"
-            switch "$helper"
-                case paru
-                    paru -Rns $pkgs
-                case yay
-                    yay -Rns $pkgs
-                case shelly
-                    shelly remove standard $pkgs
-                case '*'
-                    sudo pacman -Rns $pkgs
-            end
+            nyxniri pkg remove $pkgs
         end
     end
     

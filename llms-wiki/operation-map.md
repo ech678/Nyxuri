@@ -16,6 +16,7 @@
 |---|---|
 | `deps [core\|apps]` | 装软件包 |
 | `apps`（alias `recommended`） | 装可选软件 |
+| `pkg <install\|upgrade\|remove\|search\|info\|installed>` | Fish 与安装器共用包管理；安装接收包名，搜索支持 `aur` / `pac` 前缀 |
 | `wallpapers`（alias `wp`） | 装壁纸包 |
 | `<module> [install\|status\|uninstall]` | fcitx / fisher / greeter / gtk 四件套模块（动态 import `nyxniri.modules.<name>`，其中 `gtk` 映射至 `gtktheme`） |
 | `theme [toggle\|dark\|light\|sync\|status]` | 切换/同步深浅主题 |
@@ -28,6 +29,7 @@
 | `rollback [index]`（alias `restore`） | 从存档恢复 |
 | `list` | 看所有存档 |
 | `doctor` | 体检（_check_* 列表） |
+| `clean [-n] [--only <任务>]` | 缓存清理；`-n` 只预览，Fish 的 `clean` 指向此入口 |
 | `uninstall [--all\|standard\|restore\|purge]`（alias `remove`）/ `purge` | 卸载（勾选式） |
 | `bug`（alias `report`） | 导出诊断报告 |
 | `test` | 开发者沙箱部署测试 |

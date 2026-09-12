@@ -140,30 +140,19 @@ class TestDepsTimeout(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_pacman_timeout_degrades_to_empty_set(self):
-        import nyxniri.deps as deps_mod
-
-        deps_mod._PACMAN_INSTALLED_CACHE = None
-        try:
-            with patch("nyxniri.deps.timed_run", return_value=None):
-                self.assertEqual(deps_mod._get_pacman_installed(), set())
-        finally:
-            deps_mod._PACMAN_INSTALLED_CACHE = None
+        from nyxniri.pkg.detection import DependencyProbe
+        with patch("nyxniri.pkg.detection.timed_run", return_value=None):
+            self.assertEqual(DependencyProbe().packages, set())
 
     def test_fc_list_timeout_degrades_to_empty(self):
-        import nyxniri.deps as deps_mod
-
-        deps_mod._FC_LIST_CACHE = None
-        try:
-            with patch("nyxniri.deps.timed_run", return_value=None):
-                self.assertEqual(deps_mod._get_fc_list(), "")
-        finally:
-            deps_mod._FC_LIST_CACHE = None
+        from nyxniri.pkg.detection import DependencyProbe
+        with patch("nyxniri.pkg.detection.timed_run", return_value=None):
+            self.assertEqual(DependencyProbe().fonts, "")
 
     def test_gi_probe_timeout_reports_missing(self):
-        import nyxniri.deps as deps_mod
-
-        with patch("nyxniri.deps.timed_run", return_value=None):
-            self.assertFalse(deps_mod.is_dep_installed("python-gobject"))
+        from nyxniri.pkg.detection import DependencyProbe
+        with patch("nyxniri.pkg.detection.timed_run", return_value=None):
+            self.assertFalse(DependencyProbe().installed("python-gobject"))
 
 
 class TestDoctorTimeout(unittest.TestCase):

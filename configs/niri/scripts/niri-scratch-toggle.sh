@@ -110,20 +110,17 @@ case "$TARGET_APP" in
         fi
         ;;
 
+    clean|clean-cache.py|\~/.config/fish/clean-cache.py|"$HOME/.config/fish/clean-cache.py")
+        # Older preserved Orbit menus still carry the former script path.
+        niri msg action spawn -- kitty --app-id "scratchpad" -e nyxniri clean
+        ;;
 
     *)
         # Custom command or script execution
         if [[ "$TARGET_APP" =~ ^~.* ]]; then
             TARGET_APP="${TARGET_APP/#\~/$HOME}"
         fi
-        if [ "$TARGET_APP" = "clean-cache.py" ] && [ -x "$HOME/.config/fish/clean-cache.py" ]; then
-            TARGET_APP="$HOME/.config/fish/clean-cache.py"
-        fi
-
-        # If it is clean-cache or interactive terminal tool, launch inside floating scratchpad terminal
-        if [ "$TARGET_APP" = "$HOME/.config/fish/clean-cache.py" ] || [[ "$TARGET_APP" == *clean-cache.py* ]]; then
-            niri msg action spawn -- kitty --app-id "scratchpad" -e "$TARGET_APP"
-        elif [ -x "$TARGET_APP" ] || command -v "$TARGET_APP" >/dev/null 2>&1; then
+        if [ -x "$TARGET_APP" ] || command -v "$TARGET_APP" >/dev/null 2>&1; then
             niri msg action spawn -- "$TARGET_APP"
         else
             # No shell-string execution: menu cmds are data, not commands to
@@ -132,4 +129,3 @@ case "$TARGET_APP" in
         fi
         ;;
 esac
-

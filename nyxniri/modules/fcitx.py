@@ -1,15 +1,17 @@
 """Optional NyxMellow dynamic Fcitx5 skin (Noctalia user template integration)."""
 
-import os
-import re
+import configparser
 import shutil
 import subprocess
-import time
+import tempfile
+import tomllib
 from pathlib import Path
 
 from nyxniri.constants import FCITX_THEME, THEME_ENGINE
 from nyxniri.core import get_env, log_msg, timed_run
 from nyxniri.i18n import msg, text
+from nyxniri.deploy.atomic import atomic_replace_item
+from nyxniri.modules.lifecycle import module_action
 
 
 def _fcitx_paths():
@@ -50,13 +52,10 @@ def fcitx_templates_registered() -> bool:
     _, _, _, _, noctalia_conf, _, _, _ = _fcitx_paths()
     if noctalia_conf.is_file():
         try:
-            content = noctalia_conf.read_text(encoding="utf-8", errors="ignore")
-            return (
-                f"theme.templates.user.{FCITX_THEME}_theme" in content
-                or f"theme.templates.user.{FCITX_THEME}_panel" in content
-                or f"theme.templates.user.{FCITX_THEME}_highlight" in content
-            )
-        except Exception:
+            content = tomllib.loads(noctalia_conf.read_text(encoding="utf-8"))
+            registered = content.get("theme", {}).get("templates", {}).get("user", {})
+            return any(f"{FCITX_THEME}_{suffix}" in registered for suffix in ("theme", "panel", "highlight"))
+        except (OSError, tomllib.TOMLDecodeError):
             pass
     return False
 
@@ -71,14 +70,9 @@ def fcitx_backup_theme_settings() -> None:
     t, dt = "", ""
     if classicui.is_file():
         existed = 1
-        try:
-            content = classicui.read_text(encoding="utf-8", errors="ignore")
-            m_t = re.search(r"^Theme=(.*)", content, re.MULTILINE)
-            if m_t: t = m_t.group(1).strip()
-            m_dt = re.search(r"^DarkTheme=(.*)", content, re.MULTILINE)
-            if m_dt: dt = m_dt.group(1).strip()
-        except Exception:
-            pass
+        content = _parse_ini(classicui.read_text(encoding="utf-8"))
+        t = content.get("ClassicUI", "Theme", fallback="")
+        dt = content.get("ClassicUI", "DarkTheme", fallback="")
 
     state_file.write_text(f"Existed={existed}\nTheme={t}\nDarkTheme={dt}\n", encoding="utf-8")
 
@@ -89,161 +83,72 @@ def fcitx_deploy_templates() -> bool:
         print(msg("log_fcitx_template_missing", str(source_dir)))
         return False
 
-    template_dir.mkdir(parents=True, exist_ok=True)
-    for item in source_dir.iterdir():
-        shutil.copy2(item, template_dir / item.name)
+    if not atomic_replace_item(source_dir, template_dir):
+        return False
     print(msg("fcitx_templates_deployed"))
     return True
 
-def _update_ini_file(file_path: Path, section: str, key: str, val: str) -> None:
-    file_path.parent.mkdir(parents=True, exist_ok=True)
-    if not file_path.is_file():
-        file_path.write_text(f"[{section}]\n{key}={val}\n", encoding="utf-8")
-        return
+def _parse_ini(content):
+    parser = configparser.ConfigParser(interpolation=None)
+    parser.optionxform = str
+    parser.read_string(content)
+    return parser
 
-    content = file_path.read_text(encoding="utf-8", errors="replace")
-    if re.search(rf"^{re.escape(key)}=", content, re.MULTILINE):
-        content = re.sub(rf"^{re.escape(key)}=.*", f"{key}={val}", content, flags=re.MULTILINE)
-    else:
-        if re.search(rf"^\[{re.escape(section)}\]", content, re.MULTILINE):
-            content = re.sub(rf"(^\[{re.escape(section)}\].*)", rf"\1\n{key}={val}", content, flags=re.MULTILINE)
+
+def _edit_ini(content, section, changes):
+    # Validate before editing; retain comments, ordering and unrelated sections.
+    _parse_ini(content)
+    lines = content.splitlines(keepends=True)
+    start = next((i for i, line in enumerate(lines)
+                  if (match := configparser.ConfigParser.SECTCRE.match(line.strip()))
+                  and match.group("header") == section), None)
+    if start is None:
+        additions = [f"{key}={value}\n" for key, value in changes.items() if value is not None]
+        return content + ("\n" if content and not content.endswith("\n") else "") + (f"[{section}]\n" + "".join(additions) if additions else "")
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].lstrip().startswith("[")), len(lines))
+    pending = dict(changes)
+    edited = []
+    for line in lines[start + 1:end]:
+        key = line.split("=", 1)[0].strip() if "=" in line and not line.lstrip().startswith(("#", ";")) else None
+        if key in pending:
+            value = pending.pop(key)
+            if value is not None:
+                edited.append(f"{key}={value}\n")
         else:
-            content += f"\n[{section}]\n{key}={val}\n"
-    file_path.write_text(content, encoding="utf-8")
+            edited.append(line)
+    if edited and not edited[-1].endswith("\n"):
+        edited[-1] += "\n"
+    edited.extend(f"{key}={value}\n" for key, value in pending.items() if value is not None)
+    return "".join(lines[:start + 1] + edited + lines[end:])
+
+
+def _write_config(path, content):
+    with tempfile.TemporaryDirectory() as directory:
+        source = Path(directory) / path.name
+        source.write_text(content, encoding="utf-8")
+        if path.is_file():
+            source.chmod(path.stat().st_mode & 0o777)
+        if not atomic_replace_item(source, path):
+            raise OSError(f"Could not replace {path}")
 
 def fcitx_set_theme_conf() -> None:
     """Update Theme & DarkTheme in classicui.conf."""
     _, _, _, classicui, _, _, _, _ = _fcitx_paths()
     fcitx_backup_theme_settings()
-    _update_ini_file(classicui, "ClassicUI", "Theme", FCITX_THEME)
-    _update_ini_file(classicui, "ClassicUI", "DarkTheme", FCITX_THEME)
+    content = classicui.read_text(encoding="utf-8") if classicui.is_file() else ""
+    _write_config(classicui, _edit_ini(content, "ClassicUI", {"Theme": FCITX_THEME, "DarkTheme": FCITX_THEME}))
     print(msg("fcitx_theme_set", str(classicui)))
 
-def fcitx_configure_quickphrase() -> None:
-    """Configure QuickPhrase hotkey in quickphrase.conf."""
-    env = get_env()
-    qp_conf = env.config_dir / "fcitx5" / "conf" / "quickphrase.conf"
-    fcitx_backup_quickphrase()
-    _update_ini_file(qp_conf, "Hotkey", "TriggerKey", "Super+semicolon")
-    _update_ini_file(qp_conf, "Hotkey", "AlternativeTriggerKey", "")
 
-def fcitx_backup_quickphrase() -> None:
-    """Save prior QuickPhrase hotkeys before NyxNiri overrides them.
 
-    Mirrors fcitx_backup_theme_settings: an Existed= flag distinguishes
-    'file didn't exist' (uninstall deletes it) from 'existed with other hotkeys'
-    (uninstall restores the saved lines). Idempotent.
-    """
-    env = get_env()
-    qp_conf = env.config_dir / "fcitx5" / "conf" / "quickphrase.conf"
-    state = env.state_dir / f"fcitx-{FCITX_THEME}-quickphrase.prev"
-    state.parent.mkdir(parents=True, exist_ok=True)
-    if state.is_file():
+def fcitx_reload() -> None:
+    """Reload a running daemon without taking ownership of its lifecycle."""
+    if not shutil.which("fcitx5-remote"):
         return
+    res = timed_run(["fcitx5-remote", "--check", "-r"], 5, capture_output=True, check=False)
+    if res is not None and res.returncode == 0:
+        print(msg("fcitx_reloaded"))
 
-    existed = 0
-    tk, atk = "", ""
-    if qp_conf.is_file():
-        existed = 1
-        try:
-            content = qp_conf.read_text(encoding="utf-8", errors="ignore")
-            m_tk = re.search(r"^TriggerKey=(.*)", content, re.MULTILINE)
-            if m_tk:
-                tk = m_tk.group(1).strip()
-            m_atk = re.search(r"^AlternativeTriggerKey=(.*)", content, re.MULTILINE)
-            if m_atk:
-                atk = m_atk.group(1).strip()
-        except Exception:
-            pass
-
-    state.write_text(
-        f"Existed={existed}\nTriggerKey={tk}\nAlternativeTriggerKey={atk}\n",
-        encoding="utf-8",
-    )
-
-def fcitx_restart() -> None:
-    """Start fcitx5, replacing the running daemon when necessary."""
-    if fcitx5_installed():
-        res = timed_run(["pgrep", "-x", "fcitx5"], 5, capture_output=True, check=False)
-        if res is not None and res.returncode == 0:
-            timed_run(["pkill", "-x", "fcitx5"], 5, check=False)
-            time.sleep(1)
-        subprocess.Popen(["fcitx5", "-d"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        print(msg("fcitx_restarted"))
-
-def fcitx_configure_trigger_key() -> bool:
-    """Auto-configure Ctrl+Space as fcitx5 trigger key on first fcitx install.
-
-    Skips if:
-    - fcitx5 config doesn't exist (user hasn't initialised fcitx5 yet)
-    - [Hotkey/TriggerKeys] 0= is already set (respect user's existing choice)
-    - niri config.kdl already binds Ctrl+space
-
-    Mod+space is intentionally NOT treated as a conflict — nyxniri's own
-    Mod+Space is used for switch-preset-column-width, but niri intercepts
-    that binding so Ctrl+Space still reaches fcitx5 untouched.
-
-    Returns:
-        True if configured, False if skipped/failed (caller should not raise).
-    """
-    env = get_env()
-    config_path = env.config_dir / "fcitx5" / "config"
-    niri_config = env.config_dir / "niri" / "config.kdl"
-
-    target = "Ctrl+space"
-
-    if not config_path.is_file():
-        log_msg("INFO", "fcitx5 config 不存在，跳过触发键配置（用户尚未首次启动 fcitx5）")
-        return False
-
-    # 1. Key-conflict detection: only Ctrl+Space. Mod+Space is niri's
-    #    switch-preset-column-width and never reaches fcitx5, so it is no conflict.
-    if niri_config.is_file():
-        try:
-            binds = "\n".join(
-                line
-                for line in niri_config.read_text(encoding="utf-8", errors="ignore").splitlines()
-                if not line.lstrip().startswith("//")
-            )
-            if re.search(r"\bCtrl\+space\b", binds, re.IGNORECASE):
-                log_msg("INFO", "niri config 已绑定 Ctrl+space，跳过 fcitx5 触发键自动配置")
-                return False
-        except Exception as e:
-            log_msg("WARN", f"读取 niri config 失败：{e}")
-
-    # 2. Respect existing user choice
-    try:
-        content = config_path.read_text(encoding="utf-8", errors="ignore")
-    except OSError as e:
-        log_msg("WARN", f"读取 fcitx5 config 失败：{e}")
-        return False
-
-    # Decide against comment-stripped lines; write back to the original text.
-    probe = "\n".join(
-        line for line in content.splitlines() if not line.lstrip().startswith("#")
-    )
-    if re.search(r"\[Hotkey/TriggerKeys\][^\[]*?\b\d+=\S+", probe, re.DOTALL):
-        log_msg("INFO", "fcitx5 触发键已存在用户配置，跳过自动写入")
-        return False
-
-    if "[Hotkey/TriggerKeys]" in probe:
-        new_content = re.sub(
-            r"(\[Hotkey/TriggerKeys\]\s*\n)",
-            rf"\g<1>0={target}\n",
-            content,
-            count=1,
-        )
-    else:
-        sep = "\n\n" if content and not content.rstrip().endswith("\n") else "\n"
-        new_content = content.rstrip() + sep + f"[Hotkey/TriggerKeys]\n0={target}\n"
-
-    try:
-        config_path.write_text(new_content, encoding="utf-8")
-        log_msg("INFO", f"已自动配置 fcitx5 触发键为 {target}")
-        return True
-    except OSError as e:
-        log_msg("WARN", f"写入 fcitx5 config 失败：{e}")
-        return False
 
 def fcitx_trigger_render() -> None:
     """Ask Noctalia daemon to render templates for current palette."""
@@ -263,51 +168,30 @@ def fcitx_register_templates() -> bool:
     if not noctalia_conf.is_file():
         return False
 
-    content = noctalia_conf.read_text(encoding="utf-8", errors="replace")
+    content = noctalia_conf.read_text(encoding="utf-8")
+    tomllib.loads(content)
+    original = content
+    content = content.replace(
+        "if pgrep -x fcitx5 >/dev/null 2>&1; then pkill -x fcitx5; sleep 1; fcitx5 -d >/dev/null 2>&1 & fi",
+        "fcitx5-remote --check -r >/dev/null 2>&1 || true",
+    )
     env = get_env()
-    home = str(env.home)
-    expected_theme = f"[theme.templates.user.{FCITX_THEME}_theme]"
-    expected_panel = f"[theme.templates.user.{FCITX_THEME}_panel]"
-    expected_highlight = f"[theme.templates.user.{FCITX_THEME}_highlight]"
-
-    if expected_theme not in content or expected_panel not in content or expected_highlight not in content:
-        lines = content.splitlines()
-        clean_lines = []
-        skip = False
-        prefix = f"[theme.templates.user.{FCITX_THEME}_"
-        for line in lines:
-            if line.startswith(prefix):
-                skip = True
-                continue
-            if skip and line.startswith("["):
-                skip = False
-            if not skip:
-                clean_lines.append(line)
-
-        template_block = f"""
-# NyxMellow 动态 fcitx5 皮肤（mellow 形状 + Material You 自动取色）
-# 路径中的 /home/user 为占位符，由 nyxniri.deploy 在部署时替换为实际 $HOME
-[theme.templates.user.{FCITX_THEME}_theme]
-index = 0
-input_path = "{home}/.local/share/fcitx5/themes/{FCITX_THEME}/templates/theme.conf"
-output_path = "{home}/.local/share/fcitx5/themes/{FCITX_THEME}/theme.conf"
-
-[theme.templates.user.{FCITX_THEME}_panel]
-index = 1
-input_path = "{home}/.local/share/fcitx5/themes/{FCITX_THEME}/templates/panel.svg"
-output_path = "{home}/.local/share/fcitx5/themes/{FCITX_THEME}/panel.svg"
-
-[theme.templates.user.{FCITX_THEME}_highlight]
-index = 2
-input_path = "{home}/.local/share/fcitx5/themes/{FCITX_THEME}/templates/highlight.svg"
-output_path = "{home}/.local/share/fcitx5/themes/{FCITX_THEME}/highlight.svg"
-post_hook = "if pgrep -x fcitx5 >/dev/null 2>&1; then pkill -x fcitx5; sleep 1; fcitx5 -d >/dev/null 2>&1 & fi"
-"""
-        new_content = "\n".join(clean_lines).rstrip() + "\n" + template_block
-        noctalia_conf.write_text(new_content, encoding="utf-8")
-        log_msg("INFO", "Registered NyxMellow templates in noctalia-config.toml")
+    home = str(env.home).replace("\\", "\\\\").replace('"', '\\"')
+    registered = tomllib.loads(content).get("theme", {}).get("templates", {}).get("user", {})
+    for index, (suffix, filename) in enumerate((("theme", "theme.conf"), ("panel", "panel.svg"), ("highlight", "highlight.svg"))):
+        name = f"{FCITX_THEME}_{suffix}"
+        if name in registered:
+            continue
+        base = f"{home}/.local/share/fcitx5/themes/{FCITX_THEME}"
+        content = content.rstrip() + f'\n\n[theme.templates.user.{name}]\nindex = {index}\ninput_path = "{base}/templates/{filename}"\noutput_path = "{base}/{filename}"\n'
+        if suffix == "highlight":
+            content += 'post_hook = "fcitx5-remote --check -r >/dev/null 2>&1 || true"\n'
+    if content != original:
+        tomllib.loads(content)
+        _write_config(noctalia_conf, content)
     return True
 
+@module_action
 def fcitx_install() -> bool:
     """Deploy templates, apply configuration, and activate NyxMellow skin."""
     print(msg("fcitx_install_title"))
@@ -316,12 +200,11 @@ def fcitx_install() -> bool:
 
     _, _, _, _, _, _, enabled_marker, _ = _fcitx_paths()
     if fcitx5_installed():
-        fcitx_register_templates()
+        if not fcitx_register_templates():
+            return False
         fcitx_set_theme_conf()
-        fcitx_configure_quickphrase()
-        fcitx_configure_trigger_key()
         fcitx_trigger_render()
-        fcitx_restart()
+        fcitx_reload()
         enabled_marker.parent.mkdir(parents=True, exist_ok=True)
         enabled_marker.touch()
         log_msg("INFO", "Deployed and activated NyxMellow fcitx5 skin")
@@ -359,17 +242,34 @@ def fcitx_status() -> None:
 
     if classicui.is_file():
         try:
-            content = classicui.read_text(encoding="utf-8", errors="ignore")
-            t = re.search(r"^Theme=(.*)", content, re.MULTILINE)
-            dt = re.search(r"^DarkTheme=(.*)", content, re.MULTILINE)
-            t_str = t.group(1).strip() if t else ""
-            dt_str = dt.group(1).strip() if dt else ""
+            content = _parse_ini(classicui.read_text(encoding="utf-8"))
+            t_str = content.get("ClassicUI", "Theme", fallback="")
+            dt_str = content.get("ClassicUI", "DarkTheme", fallback="")
             print(msg("doctor_ok", f"classicui.conf: Theme={t_str} DarkTheme={dt_str}"))
-        except Exception:
+        except (OSError, configparser.Error):
             pass
     else:
         print(msg("doctor_warn", text("classicui.conf: 缺失", "classicui.conf: missing")))
 
+def _restore_settings(path, state_file, section, owned):
+    if not state_file.is_file():
+        return
+    state = _parse_ini("[Previous]\n" + state_file.read_text(encoding="utf-8"))["Previous"]
+    if path.is_file():
+        content = path.read_text(encoding="utf-8")
+        parser = _parse_ini(content)
+        changes = {key: state.get(key) or None for key, value in owned.items()
+                   if parser.get(section, key, fallback=None) == value}
+        updated = _edit_ini(content, section, changes)
+        remaining = _parse_ini(updated)
+        if state.get("Existed") != "1" and not any(dict(remaining[s]) for s in remaining.sections()):
+            path.unlink()
+        elif updated != content:
+            _write_config(path, updated)
+    state_file.unlink()
+
+
+@module_action
 def fcitx_uninstall() -> bool:
     """Uninstall NyxMellow skin, unregister templates, and revert classicui settings."""
     _, theme_dir, _, classicui, noctalia_conf, state_file, enabled_marker, _ = _fcitx_paths()
@@ -380,80 +280,40 @@ def fcitx_uninstall() -> bool:
         lines = noctalia_conf.read_text(encoding="utf-8").splitlines()
         new_lines = []
         skip = False
-        prefix = f"[theme.templates.user.{FCITX_THEME}_"
+        owned = {f"[theme.templates.user.{FCITX_THEME}_{suffix}]" for suffix in ("theme", "panel", "highlight")}
         for line in lines:
-            if line.startswith(prefix):
+            if line.split("#", 1)[0].strip() in owned:
                 skip = True
                 continue
-            if skip and line.startswith("["):
+            if skip and line.lstrip().startswith("["):
                 skip = False
             if not skip:
                 new_lines.append(line)
-        noctalia_conf.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+        content = "\n".join(new_lines) + "\n"
+        tomllib.loads(content)
+        _write_config(noctalia_conf, content)
         print(msg("log_fcitx_template_unregistered", THEME_ENGINE))
 
-    # Remove theme directory
-    if theme_dir.is_dir():
-        shutil.rmtree(theme_dir, ignore_errors=True)
-        print(msg("log_fcitx_theme_dir_removed", str(theme_dir)))
-
-    # Revert classicui.conf
-    if state_file.is_file():
+    # Remove only shipped/rendered assets; leave personal files in place.
+    for directory in (theme_dir / "templates", theme_dir):
+        for name in ("theme.conf", "panel.svg", "highlight.svg"):
+            (directory / name).unlink(missing_ok=True)
         try:
-            state_txt = state_file.read_text(encoding="utf-8")
-            m_ex = re.search(r"^Existed=(.*)", state_txt, re.MULTILINE)
-            m_t = re.search(r"^Theme=(.*)", state_txt, re.MULTILINE)
-            m_dt = re.search(r"^DarkTheme=(.*)", state_txt, re.MULTILINE)
-            existed = m_ex.group(1).strip() if m_ex else "0"
-            t = m_t.group(1).strip() if m_t else ""
-            dt = m_dt.group(1).strip() if m_dt else ""
-
-            if existed != "1":
-                classicui.unlink(missing_ok=True)
-            else:
-                if classicui.is_file():
-                    content = classicui.read_text(encoding="utf-8")
-                    if t: content = re.sub(r"^Theme=.*", f"Theme={t}", content, flags=re.MULTILINE)
-                    else: content = re.sub(r"^Theme=.*\n?", "", content, flags=re.MULTILINE)
-                    if dt: content = re.sub(r"^DarkTheme=.*", f"DarkTheme={dt}", content, flags=re.MULTILINE)
-                    else: content = re.sub(r"^DarkTheme=.*\n?", "", content, flags=re.MULTILINE)
-                    classicui.write_text(content, encoding="utf-8")
-        except Exception:
+            directory.rmdir()
+        except OSError:
             pass
-        state_file.unlink(missing_ok=True)
 
-    # Revert quickphrase.conf (same backup/restore mechanism as classicui)
+    _restore_settings(classicui, state_file, "ClassicUI", {"Theme": FCITX_THEME, "DarkTheme": FCITX_THEME})
+    # Older installs managed QuickPhrase. Restore only values still owned by us.
     env = get_env()
-    qp_conf = env.config_dir / "fcitx5" / "conf" / "quickphrase.conf"
-    qp_state = env.state_dir / f"fcitx-{FCITX_THEME}-quickphrase.prev"
-    if qp_state.is_file():
-        try:
-            qs = qp_state.read_text(encoding="utf-8")
-            m_ex = re.search(r"^Existed=(.*)", qs, re.MULTILINE)
-            m_tk = re.search(r"^TriggerKey=(.*)", qs, re.MULTILINE)
-            m_atk = re.search(r"^AlternativeTriggerKey=(.*)", qs, re.MULTILINE)
-            existed = m_ex.group(1).strip() if m_ex else "0"
-            tk = m_tk.group(1).strip() if m_tk else ""
-            atk = m_atk.group(1).strip() if m_atk else ""
-            if existed != "1":
-                qp_conf.unlink(missing_ok=True)
-            elif qp_conf.is_file():
-                content = qp_conf.read_text(encoding="utf-8")
-                if tk:
-                    content = re.sub(r"^TriggerKey=.*", f"TriggerKey={tk}", content, flags=re.MULTILINE)
-                else:
-                    content = re.sub(r"^TriggerKey=.*\n?", "", content, flags=re.MULTILINE)
-                if atk:
-                    content = re.sub(r"^AlternativeTriggerKey=.*", f"AlternativeTriggerKey={atk}", content, flags=re.MULTILINE)
-                else:
-                    content = re.sub(r"^AlternativeTriggerKey=.*\n?", "", content, flags=re.MULTILINE)
-                qp_conf.write_text(content, encoding="utf-8")
-        except Exception:
-            pass
-        qp_state.unlink(missing_ok=True)
+    _restore_settings(
+        env.config_dir / "fcitx5/conf/quickphrase.conf",
+        env.state_dir / f"fcitx-{FCITX_THEME}-quickphrase.prev",
+        "Hotkey", {"TriggerKey": "Super+semicolon", "AlternativeTriggerKey": ""},
+    )
 
     enabled_marker.unlink(missing_ok=True)
-    fcitx_restart()
+    fcitx_reload()
     print(msg("fcitx_uninstall_done"))
     log_msg("INFO", "Uninstalled NyxMellow fcitx5 skin")
     return True

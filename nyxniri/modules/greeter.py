@@ -279,25 +279,23 @@ def _greeter_session_arg() -> str:
 
 def greeter_install_packages() -> bool:
     """Install greetd and noctalia-greeter."""
-    from nyxniri.deps import ensure_aur_helper, get_preferred_pkg_manager
+    from nyxniri.deps import ensure_aur_helper
+    from nyxniri import pkg
     print(msg("greeter_install_pkgs"))
-
-    pkg_mgr = get_preferred_pkg_manager()
-    is_aur = pkg_mgr != ["sudo", "pacman"]
 
     # Check greetd
     if shutil.which("pacman"):
         res = subprocess.run(["pacman", "-Qq", "greetd"], capture_output=True, check=False)
         if res.returncode != 0:
-            subprocess.run([*pkg_mgr, "-S", "--noconfirm", "greetd"], check=False)
+            if not pkg.install(["greetd"]):
+                return False
 
     if not greeter_installed():
-        has_aur_helper = ensure_aur_helper() is not None if not is_aur else True
-        if not has_aur_helper:
+        helper = ensure_aur_helper()
+        if not helper:
             print(msg("greeter_aur_required"))
             return False
-        res_inst = subprocess.run([*pkg_mgr, "-S", "--noconfirm", GREETER_PKG], check=False)
-        if res_inst.returncode != 0 or not greeter_installed():
+        if not pkg.install([GREETER_PKG], source="aur", manager=helper) or not greeter_installed():
             print(msg("greeter_install_failed"))
             return False
 

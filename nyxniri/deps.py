@@ -1,14 +1,11 @@
 """System dependency management, package detection, AUR bootstrap, and optional software installer."""
 
-import os
 import re
 import shutil
-import subprocess
 import sys
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from nyxniri.constants import AUR_DEPS, CORE_DEPS
-from nyxniri.core import timed_run
 from nyxniri.i18n import msg
 from nyxniri.deploy.manifest import (
     discover_manifest_apps,
@@ -25,122 +22,31 @@ from nyxniri.tui import (
     prompt_confirm,
 )
 
-_PACMAN_INSTALLED_CACHE: Optional[set] = None
-_FLATPAK_LIST_CACHE: Optional[set] = None
-_FC_LIST_CACHE: Optional[str] = None
-_GI_CACHE: Optional[dict] = None
+from nyxniri import pkg
+from nyxniri.pkg import FLATHUB_REMOTE_URL
+from nyxniri.pkg.detection import DependencyProbe
 
-FLATHUB_REMOTE_URL = "https://dl.flathub.org/repo/flathub.remote"
-
-def _get_pacman_installed() -> set:
-    global _PACMAN_INSTALLED_CACHE
-    if _PACMAN_INSTALLED_CACHE is not None:
-        return _PACMAN_INSTALLED_CACHE
-    if not shutil.which("pacman"):
-        _PACMAN_INSTALLED_CACHE = set()
-        return _PACMAN_INSTALLED_CACHE
-    env = {**os.environ, "LC_ALL": "C"}
-    # Timeout degrades to an empty set: which()/font probes still run, worst
-    # case is re-suggesting a package — never a crash in the deps check.
-    res = timed_run(["pacman", "-Qq"], 30, capture_output=True, text=True, check=False, env=env)
-    _PACMAN_INSTALLED_CACHE = set(res.stdout.split()) if res is not None and res.returncode == 0 else set()
-    return _PACMAN_INSTALLED_CACHE
-
-def _get_fc_list() -> str:
-    global _FC_LIST_CACHE
-    if _FC_LIST_CACHE is not None:
-        return _FC_LIST_CACHE
-    if not shutil.which("fc-list"):
-        _FC_LIST_CACHE = ""
-        return _FC_LIST_CACHE
-    env = {**os.environ, "LC_ALL": "C"}
-    res = timed_run(["fc-list", ":", "family"], 15, capture_output=True, text=True, check=False, env=env)
-    _FC_LIST_CACHE = res.stdout.lower() if res is not None and res.returncode == 0 else ""
-    return _FC_LIST_CACHE
-
-def _get_flatpak_apps() -> set:
-    global _FLATPAK_LIST_CACHE
-    if _FLATPAK_LIST_CACHE is not None:
-        return _FLATPAK_LIST_CACHE
-    if not shutil.which("flatpak"):
-        _FLATPAK_LIST_CACHE = set()
-        return _FLATPAK_LIST_CACHE
-    env = {**os.environ, "LC_ALL": "C"}
-    res = timed_run(
-        ["flatpak", "list", "--system", "--app", "--columns=application"],
-        15, capture_output=True, text=True, check=False, env=env,
-    )
-    _FLATPAK_LIST_CACHE = set(res.stdout.split()) if res is not None and res.returncode == 0 else set()
-    return _FLATPAK_LIST_CACHE
 
 def is_flatpak_installed(app_id: str) -> bool:
-    return app_id in _get_flatpak_apps()
+    return app_id in DependencyProbe().flatpaks
 
-def _check_gi(version: str) -> bool:
-    global _GI_CACHE
-    if _GI_CACHE is None:
-        _GI_CACHE = {}
-    if version in _GI_CACHE:
-        return _GI_CACHE[version]
-    code = "import gi" if version == "gi" else f"import gi; gi.require_version('{version}', '0.1')"
-    res = timed_run([sys.executable, "-c", code], 10, capture_output=True, check=False)
-    _GI_CACHE[version] = res is not None and res.returncode == 0
-    return _GI_CACHE[version]
 
 def is_dep_installed(cmd: str) -> bool:
-    if cmd in _get_pacman_installed():
-        return True
-    if cmd == "inotify-tools":
-        return shutil.which("inotifywait") is not None
-    elif cmd == "python-gobject":
-        return _check_gi("gi")
-    elif cmd == "gtk-layer-shell":
-        return _check_gi("GtkLayerShell")
-    elif cmd == "ttf-jetbrains-mono":
-        return "jetbrains mono" in _get_fc_list()
-    elif cmd == "ttf-jetbrains-mono-nerd":
-        return bool(re.search(r"jetbrains.*nerd", _get_fc_list(), re.IGNORECASE))
-    elif cmd == "noto-fonts-cjk":
-        return bool(re.search(r"noto.*cjk", _get_fc_list(), re.IGNORECASE))
-    return shutil.which(cmd) is not None
+    return DependencyProbe().installed(cmd)
 
-_MISSING_DEPS_CACHE: Optional[List[str]] = None
 
 def check_all_deps() -> Dict[str, bool]:
-    return {dep: is_dep_installed(dep) for dep in CORE_DEPS}
+    probe = DependencyProbe()
+    return {dep: probe.installed(dep) for dep in CORE_DEPS}
+
 
 def get_missing_deps() -> List[str]:
-    global _MISSING_DEPS_CACHE
-    if _MISSING_DEPS_CACHE is not None:
-        return _MISSING_DEPS_CACHE
-    status_map = check_all_deps()
-    _MISSING_DEPS_CACHE = [dep for dep, installed in status_map.items() if not installed]
-    return _MISSING_DEPS_CACHE
+    return [dep for dep, installed in check_all_deps().items() if not installed]
 
-_AUR_HELPER_CACHE: Optional[str] = None
 
 def aur_helper_usable() -> Optional[str]:
-    global _AUR_HELPER_CACHE
-    if _AUR_HELPER_CACHE is not None:
-        return _AUR_HELPER_CACHE if _AUR_HELPER_CACHE else None
-    for helper in ("paru", "yay"):
-        if shutil.which(helper):
-            try:
-                res = subprocess.run([helper, "--version"], capture_output=True, check=False, timeout=10)
-                if res.returncode == 0:
-                    _AUR_HELPER_CACHE = helper
-                    return helper
-            except Exception:
-                pass
-    _AUR_HELPER_CACHE = ""
-    return None
+    return pkg.aur_helper()
 
-def get_preferred_pkg_manager() -> List[str]:
-    """Resolve preferred package manager (AUR helper if available, otherwise ['sudo', 'pacman'])."""
-    helper = aur_helper_usable()
-    if helper:
-        return [helper]
-    return ["sudo", "pacman"]
 
 def ensure_aur_helper() -> Optional[str]:
     """Bootstrap an AUR helper from official repositories only."""
@@ -157,29 +63,14 @@ def ensure_aur_helper() -> Optional[str]:
         print(msg("aur_bootstrap_failed"))
         return None
 
-    # Remove stale paru-bin if conflicting
-    env = {**os.environ, "LC_ALL": "C"}
-    for stale in ("paru-bin", "paru-bin-debug"):
-        res = subprocess.run(["pacman", "-Qq", stale], capture_output=True, check=False, env=env)
-        if res.returncode == 0:
-            print(msg("aur_bootstrap_cleanup"))
-            subprocess.run(["sudo", "pacman", "-Rdd", "--noconfirm", stale], check=False)
-
-    # 1. Try official repo package
-    res_si = subprocess.run(["pacman", "-Si", "paru"], capture_output=True, check=False, env=env)
-    if res_si.returncode == 0:
+    res = pkg.run(["pacman", "-Si", "paru"], capture=True, timeout=pkg.QUERY_TIMEOUT)
+    if res.returncode == 0:
         print(msg("aur_bootstrap_repo"))
-        subprocess.run(["sudo", "pacman", "-S", "--needed", "--noconfirm", "paru"], check=False)
-        # The first probe of this call may have cached "unusable"; the fresh
-        # install must be re-detected, not read from the stale cache.
-        global _AUR_HELPER_CACHE
-        _AUR_HELPER_CACHE = None
-        helper = aur_helper_usable()
-        if helper:
-            print(msg("aur_bootstrap_ok"))
-            return helper
-        # Repo paru installed but not usable — remove the failed install.
-        subprocess.run(["sudo", "pacman", "-Rdd", "--noconfirm", "paru"], check=False)
+        if pkg.install(["paru"], manager="pacman"):
+            helper = aur_helper_usable()
+            if helper:
+                print(msg("aur_bootstrap_ok"))
+                return helper
 
     print(msg("aur_bootstrap_failed"))
     return None
@@ -188,10 +79,8 @@ def check_mpvpaper_leak() -> None:
     """Check mpvpaper version for the OpenGL memory leak bug (< 1.9) and offer upgrade."""
     if not shutil.which("pacman"):
         return
-    env = {**os.environ, "LC_ALL": "C"}
-
     # Already on git version?
-    res_git = subprocess.run(["pacman", "-Qi", "mpvpaper-git"], capture_output=True, text=True, check=False, env=env)
+    res_git = pkg.run(["pacman", "-Qi", "mpvpaper-git"], capture=True, timeout=pkg.QUERY_TIMEOUT)
     if res_git.returncode == 0:
         git_ver = ""
         for line in res_git.stdout.splitlines():
@@ -205,7 +94,7 @@ def check_mpvpaper_leak() -> None:
         return
 
     print(msg("checking_mpvpaper"))
-    res = subprocess.run(["pacman", "-Qi", "mpvpaper"], capture_output=True, text=True, check=False, env=env)
+    res = pkg.run(["pacman", "-Qi", "mpvpaper"], capture=True, timeout=pkg.QUERY_TIMEOUT)
     version = ""
     for line in res.stdout.splitlines():
         if line.startswith("Version"):
@@ -234,8 +123,7 @@ def check_mpvpaper_leak() -> None:
             if not mgr:
                 mgr = ensure_aur_helper()
             if mgr:
-                res_inst = subprocess.run([mgr, "-S", "--noconfirm", "mpvpaper-git"], check=False)
-                if res_inst.returncode == 0:
+                if pkg.install(["mpvpaper-git"], source="aur", manager=mgr):
                     print(msg("mpvpaper_upgrade_done"))
                 else:
                     print(msg("err_mpvpaper_git_failed"))
@@ -245,40 +133,20 @@ def check_mpvpaper_leak() -> None:
             print(msg("mpvpaper_upgrade_skip"))
 
 def install_selected_deps(selected_deps: List[str]) -> bool:
-    global _MISSING_DEPS_CACHE, _PACMAN_INSTALLED_CACHE
-    if not selected_deps:
-        return True
-
-    repo_pkgs = [pkg for pkg in selected_deps if pkg not in AUR_DEPS]
-    aur_pkgs = [pkg for pkg in selected_deps if pkg in AUR_DEPS]
-
-    if repo_pkgs:
-        pkg_mgr = get_preferred_pkg_manager()
-        cmd = [*pkg_mgr, "-S", "--needed", "--noconfirm", *repo_pkgs]
-        print(msg("installing_official_packages", " ".join(repo_pkgs)))
-        res = subprocess.run(cmd, check=False)
-        if res.returncode != 0:
-            print(msg("log_official_pkgs_partial_fail"))
-
+    repo_pkgs = [name for name in selected_deps if name not in AUR_DEPS]
+    aur_pkgs = [name for name in selected_deps if name in AUR_DEPS]
+    ok = pkg.install(repo_pkgs)
     if aur_pkgs:
         helper = ensure_aur_helper()
         if helper:
-            cmd = [helper, "-S", "--needed", "--noconfirm", *aur_pkgs]
-            print(msg("installing_aur_packages", " ".join(aur_pkgs)))
-            res = subprocess.run(cmd, check=False)
-            if res.returncode != 0:
-                print(msg("log_aur_pkgs_partial_fail"))
+            ok = pkg.install(aur_pkgs, source="aur", manager=helper) and ok
         else:
             print(msg("aur_skip", ", ".join(aur_pkgs)))
-            print(msg("aur_helper_required"))
-
-    if "mpvpaper" in selected_deps or shutil.which("mpvpaper"):
+            ok = False
+    if "mpvpaper" in selected_deps:
         check_mpvpaper_leak()
+    return ok
 
-    _MISSING_DEPS_CACHE = None
-    _PACMAN_INSTALLED_CACHE = None
-    _AUR_HELPER_CACHE = None
-    return True
 
 def run_dep_menu_loop() -> None:
     """Open interactive checkbox list for core dependencies."""
@@ -300,13 +168,10 @@ def run_dep_menu_loop() -> None:
         print(msg("installing_selected"))
         install_selected_deps(chosen)
 
-def install_optional_apps(selected_apps: List[str]) -> None:
-    """Install selected optional apps using per-app manifest package mapping."""
+def install_optional_apps(selected_apps: List[str]) -> bool:
+    """Install package declarations; skin activation belongs to its own module."""
     manifests = dict(discover_manifest_apps())
-    repo_pkgs: List[str] = []
-    aur_pkgs: List[str] = []
-    flatpak_ids: List[str] = []
-    has_fcitx = False
+    repo_pkgs, aur_pkgs, flatpak_ids = [], [], []
     for app in selected_apps:
         manifest = manifests.get(app)
         if manifest is None:
@@ -314,50 +179,20 @@ def install_optional_apps(selected_apps: List[str]) -> None:
         repo_pkgs.extend(manifest.packages_repo)
         aur_pkgs.extend(manifest.packages_aur)
         flatpak_ids.extend(manifest.packages_flatpak)
-        if app == "fcitx5-rime":
-            has_fcitx = True
-
     if not repo_pkgs and not aur_pkgs and not flatpak_ids:
         print(msg("opt_apps_none_selected"))
-        return
-
+        return True
     print(msg("installing_selected_apps"))
-    pkg_mgr = get_preferred_pkg_manager()
-
-    # Flatpak apps need the flatpak runtime itself; add it to the repo batch.
-    if flatpak_ids and "flatpak" not in repo_pkgs:
+    if flatpak_ids:
         repo_pkgs.append("flatpak")
-
-    if repo_pkgs:
-        subprocess.run([*pkg_mgr, "-S", "--needed", "--noconfirm", *repo_pkgs], check=False)
-
+    ok = pkg.install(repo_pkgs)
     if aur_pkgs:
-        helper = aur_helper_usable()
-        if not helper:
-            helper = ensure_aur_helper()
-        if helper:
-            subprocess.run([helper, "-S", "--needed", "--noconfirm", *aur_pkgs], check=False)
-
-    if flatpak_ids and shutil.which("flatpak"):
-        subprocess.run(["flatpak", "remote-add", "--if-not-exists", "flathub", FLATHUB_REMOTE_URL], check=False)
-        print(msg("installing_flatpak_apps", " ".join(flatpak_ids)))
-        subprocess.run(["flatpak", "install", "--system", "--noninteractive", *flatpak_ids], check=False)
-
-    if has_fcitx and shutil.which("fcitx5"):
-        try:
-            from nyxniri.modules.fcitx import fcitx_install
-            fcitx_install()
-        except Exception:
-            pass
-
-    # Fresh detection on the next menu visit: installs just performed must
-    # not be masked by the probe caches built before them.
-    global _MISSING_DEPS_CACHE, _PACMAN_INSTALLED_CACHE, _FLATPAK_LIST_CACHE
-    _MISSING_DEPS_CACHE = None
-    _PACMAN_INSTALLED_CACHE = None
-    _FLATPAK_LIST_CACHE = None
-
-    print(msg("opt_apps_install_done"))
+        helper = ensure_aur_helper()
+        ok = bool(helper and pkg.install(aur_pkgs, source="aur", manager=helper)) and ok
+    if flatpak_ids:
+        ok = pkg.install_flatpaks(flatpak_ids) and ok
+    print(msg("opt_apps_install_done" if ok else "log_official_pkgs_partial_fail"))
+    return ok
 
 
 def run_optional_apps_menu_loop() -> None:
@@ -367,15 +202,16 @@ def run_optional_apps_menu_loop() -> None:
         return
 
     manifests = dict(discover_manifest_apps())
+    probe = DependencyProbe()
     grouped: Dict[str, List[CategoryAppEntry]] = {}
     order = {name: i for i, name in enumerate(load_optional_apps())}
     for app in discover_optional_apps():
         manifest = manifests.get(app)
         if manifest is None:
             continue
-        is_inst = is_dep_installed(manifest.detect)
+        is_inst = probe.installed(manifest.detect)
         if not is_inst and manifest.packages_flatpak:
-            is_inst = all(is_flatpak_installed(fid) for fid in manifest.packages_flatpak)
+            is_inst = all(fid in probe.flatpaks for fid in manifest.packages_flatpak)
         entry = CategoryAppEntry(
             key=app,
             label=msg(f"app_{app.replace('-', '_')}"),

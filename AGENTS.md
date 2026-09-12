@@ -41,7 +41,7 @@
 |---|---|
 | `configs/` | Dotfiles 配置源码（niri、noctalia 等的 `.kdl` / 配置模板） |
 | `assets/` | 静态资产（`assets/wallpapers/` 离线壁纸、`assets/fcitx5/` 输入法皮肤） |
-| `nyxniri/` | Python 部署 / 诊断 / 备份核心引擎（零 pip 依赖，纯标准库），拆 `deploy/`·`state/`·`modules/`·`packaging/` 四子包（详见 llms-wiki/subpackages.md） |
+| `nyxniri/` | Python 管理引擎（零 pip 依赖，纯标准库）；`pkg/`·`deploy/`·`state/`·`modules/`·`packaging/` 各管一域（详见 llms-wiki/subpackages.md） |
 | `llms-wiki/` | LLM 友好架构 wiki（索引 `llms.txt`，按需取详情页） |
 | `install.sh` | 统一引导入口点，负责环境预检并 `exec python3 -m nyxniri` |
 
@@ -101,7 +101,7 @@ HOME=$(mktemp -d) ./install.sh test
 - **加 CLI 命令**：写 `_cmd_xxx(sub_args) -> int` handler，加一行到 `COMMANDS` 字典。退出码自动传播。
 - **加可选模块**（greeter/fcitx 同款 install|status|uninstall 三件套）：用 `_module_handler()` 工厂，一行注册。
 - **加 doctor 检查项**：写 `_check_xxx(env) -> None` 函数，append 到 `DOCTOR_CHECKS` 列表。不碰 `run_doctor()`。
-- **加 i18n 键**：在 `TRANSLATIONS` 字典加 `zh` + `en` 条目。`test_i18n.py` 自动校验无孤儿/无缺失。
+- **加 i18n 键**：在 `nyxniri/translations.toml` 加 `[键名]` 及 `zh` + `en` 条目。`test_i18n.py` 校验无孤儿/无缺失、双语字段与参数一致。
 
 **sed 转义**：
 ```bash

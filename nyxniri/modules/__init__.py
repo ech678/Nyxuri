@@ -11,10 +11,8 @@ from nyxniri.modules.fcitx import (
     fcitx_status,
     fcitx_status_label,
     fcitx_uninstall,
-    fcitx_configure_quickphrase,
-    fcitx_backup_quickphrase,
     fcitx_templates_registered,
-    fcitx_restart,
+    fcitx_reload,
     fcitx_trigger_render,
 )
 from nyxniri.modules.fisher import (
@@ -43,8 +41,8 @@ from nyxniri.modules.gtktheme import (
 
 __all__ = [
     "fcitx5_installed", "fcitx_enabled", "fcitx_install", "fcitx_status",
-    "fcitx_status_label", "fcitx_uninstall", "fcitx_configure_quickphrase",
-    "fcitx_backup_quickphrase", "fcitx_templates_registered", "fcitx_restart",
+    "fcitx_status_label", "fcitx_uninstall",
+    "fcitx_templates_registered", "fcitx_reload",
     "fcitx_trigger_render",
     "fisher_installed", "fisher_status_label", "fisher_install", "fisher_status",
     "fisher_uninstall",

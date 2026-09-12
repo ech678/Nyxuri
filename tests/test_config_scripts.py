@@ -16,7 +16,7 @@ from tests.utils import TempEnv
 
 _REPO = Path(__file__).resolve().parent.parent
 _TOGGLE = _REPO / "configs" / "niri" / "scripts" / "niri-scratch-toggle.sh"
-_CLEAN_CACHE = _REPO / "configs" / "fish" / "clean-cache.py"
+_CLEAN_CACHE = _REPO / "nyxniri" / "clean.py"
 _START_NOCTALIA = _REPO / "configs" / "niri" / "scripts" / "start-noctalia.sh"
 _BRIGHTNESS = _REPO / "configs" / "niri" / "scripts" / "niri-brightness.sh"
 
@@ -78,6 +78,20 @@ class TestNoctaliaStartup(unittest.TestCase):
 
 
 class TestScratchToggle(unittest.TestCase):
+
+    def test_clean_and_preserved_legacy_paths_use_engine_command(self):
+        with TempEnv() as env:
+            bindir = env.home / "bin"
+            bindir.mkdir()
+            calls = env.home / "calls"
+            niri = bindir / "niri"
+            niri.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$CALLS"\n')
+            niri.chmod(0o755)
+            for target in ("clean", "clean-cache.py", "~/.config/fish/clean-cache.py", str(env.home / ".config/fish/clean-cache.py")):
+                result = subprocess.run(["bash", str(_TOGGLE), target], capture_output=True, text=True,
+                                        env={**os.environ, "PATH": f"{bindir}:/usr/bin:/bin", "CALLS": str(calls), "XDG_RUNTIME_DIR": str(env.home)})
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(calls.read_text().splitlines(), ["msg", "action", "spawn", "--", "kitty", "--app-id", "scratchpad", "-e", "nyxniri", "clean"])
 
     def test_no_shell_string_execution_fallback(self):
         """Menu cmds are data, not shell input: no `bash -c` fallback may exist."""
@@ -160,9 +174,9 @@ class TestCleanCache(unittest.TestCase):
 
     def _run(self, *args):
         return subprocess.run(
-            [sys.executable, str(_CLEAN_CACHE), *args],
+            [sys.executable, "-m", "nyxniri.clean", *args],
             capture_output=True, text=True, timeout=120,
-            env=self._env(), stdin=subprocess.DEVNULL,
+            env=self._env(), stdin=subprocess.DEVNULL, cwd=_REPO,
         )
 
     def _calls_text(self):

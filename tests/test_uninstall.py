@@ -545,13 +545,16 @@ class TestQuickphraseRestore(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_uninstall_restores_prior_quickphrase(self):
-        from nyxniri.modules.fcitx import fcitx_configure_quickphrase, fcitx_uninstall
+        from nyxniri.modules.fcitx import fcitx_uninstall
 
         # NyxNiri install overrides the hotkey (and backs up the prior state).
-        fcitx_configure_quickphrase()
+        self.qp.write_text("[Hotkey]\nTriggerKey=Super+semicolon\nAlternativeTriggerKey=\n")
+        self.env.state_dir.mkdir(parents=True, exist_ok=True)
+        state = self.env.state_dir / "fcitx-nyxmellow-quickphrase.prev"
+        state.write_text("Existed=1\nTriggerKey=Super+space\nAlternativeTriggerKey=\n")
         self.assertIn("Super+semicolon", self.qp.read_text())
 
-        with patch("nyxniri.modules.fcitx.fcitx_restart"):
+        with patch("nyxniri.modules.fcitx.fcitx_reload"):
             fcitx_uninstall()
 
         # Prior hotkey restored, .prev state file consumed.
@@ -561,13 +564,16 @@ class TestQuickphraseRestore(unittest.TestCase):
         self.assertFalse((self.env.state_dir / "fcitx-nyxmellow-quickphrase.prev").exists())
 
     def test_uninstall_deletes_quickphrase_if_never_existed(self):
-        from nyxniri.modules.fcitx import fcitx_configure_quickphrase, fcitx_uninstall
+        from nyxniri.modules.fcitx import fcitx_uninstall
 
         # No prior quickphrase.conf → install creates it, uninstall deletes it.
         self.qp.unlink()
-        fcitx_configure_quickphrase()
+        self.qp.write_text("[Hotkey]\nTriggerKey=Super+semicolon\nAlternativeTriggerKey=\n")
+        self.env.state_dir.mkdir(parents=True, exist_ok=True)
+        state = self.env.state_dir / "fcitx-nyxmellow-quickphrase.prev"
+        state.write_text("Existed=0\nTriggerKey=\nAlternativeTriggerKey=\n")
         self.assertTrue(self.qp.exists())
-        with patch("nyxniri.modules.fcitx.fcitx_restart"):
+        with patch("nyxniri.modules.fcitx.fcitx_reload"):
             fcitx_uninstall()
         self.assertFalse(self.qp.exists(), "quickphrase.conf must be deleted if it never existed")
 

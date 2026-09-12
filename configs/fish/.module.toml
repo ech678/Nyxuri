@@ -1,3 +1,0 @@
-# fish shell manifest
-[packages]
-chmod = ["clean-cache.py"]

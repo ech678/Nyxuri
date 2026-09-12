@@ -42,9 +42,9 @@ chmod = ["scripts/*.sh"]
 allow = ["glow", "glow-material-you"]
 include = ["scripts/**", "*.kdl", "orbit-items__custom__.toml"]
 
-# configs/fish/.module.toml — clean-cache.py 不是 .sh，需声明 chmod
+# 非 .sh 可执行脚本需声明 chmod（此处为示例）
 [packages]
-chmod = ["clean-cache.py"]
+chmod = ["helper.py"]
 
 # configs/noctalia/.module.toml — 三个主题脚本
 [packages]
@@ -129,5 +129,5 @@ aur = ["rime-ice-git"]
 ## 边界
 
 不放进 manifest 的（会让它膨胀成小语言）：doctor 检查项、post-install hook、i18n 键。
-这些是 `DOCTOR_CHECKS` 列表 / 代码内联 / `TRANSLATIONS` dict 的事，manifest 只管"这个 app
+这些是 `DOCTOR_CHECKS` 列表 / 模块入口 / `translations.toml` 的事，manifest 只管"这个 app
 配置上有啥例外"。

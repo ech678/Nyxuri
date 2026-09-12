@@ -14,14 +14,14 @@
 
 ## 不该声明式的部分（必命令式）
 
-deps 安装、主题同步、fcitx 重启——都是**副作用**，必命令式。这些是 deploy 后必然要跑的
-imperative hooks，不是状态对账的一部分。
+依赖安装、主题同步、Fcitx 配置重载都是命令式副作用，由对应模块的生命周期入口负责。
+安装可选软件只安装包，不自动调用皮肤模块；皮肤模块不修改输入法快捷键，也不接管进程启停。
 
 ## 明确不做（避免熵增）
 
 - `~/.config/NyxNiri/apps/<myapp>/` 用户 drop-in app 目录（加扫描路径 + 覆盖语义）
 - `.module.toml` 里声明 doctor 检查项、post-install hook（会让 manifest 膨胀成小语言）
-- `.module.toml` 里放 i18n 键（`TRANSLATIONS` dict 已有自动校验，够用）
+- `.module.toml` 里放 i18n 键（文案集中在 `translations.toml`，已有自动校验）
 - stable + git 双 AUR 包（双倍熵）
 - Nix 风格纯函数式部署引擎（杀不掉副作用，徒增复杂度）
 - 根据 PCI 设备自动选择驱动变量（PCI 列表无法确定实际渲染 GPU，见 [nvidia-patch](nvidia-patch.md)）
