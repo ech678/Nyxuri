@@ -2,7 +2,7 @@
 services, completion screen, fisher uninstall, and the deploy/test entry points.
 
 Coordinates the deploy/ siblings: atomic (swap+preserve), templates (render),
-assets (wallpapers), hardware (NVIDIA patch), manifest (app discovery), preset
+assets (wallpapers), manifest (app discovery), preset
 (active variant). Modules/state/deps are lazy-imported to avoid cycles.
 """
 
@@ -23,7 +23,6 @@ from nyxniri.deploy.atomic import (
     atomic_replace_item,
 )
 from nyxniri.deploy.assets import WallpaperDeployResult, deploy_wallpapers, wallpapers_pack_present
-from nyxniri.deploy.hardware import _phase_hardware_patches
 from nyxniri.deploy.manifest import discover_deployable_apps, load_manifest
 from nyxniri.deploy.preset import (
     InvalidActivePresetError,
@@ -321,7 +320,7 @@ def deploy_selected_configs(
     items_to_deploy: Optional[List[str]] = None,
     preserved_log: Optional[List[str]] = None,
 ) -> List[str]:
-    """Deploy selected dotfile items with optional backup, template rendering, and hardware patches."""
+    """Deploy selected dotfile items with optional backup and template rendering."""
     if items_to_deploy is None:
         items_to_deploy = discover_config_items()
     if preserved_log is None:
@@ -336,8 +335,8 @@ def deploy_selected_configs(
     if failed_items:
         print(msg("deploy_failed", ", ".join(failed_items)), file=sys.stderr)
         return failed_items
-    _phase_render_templates()
-    _phase_hardware_patches()
+    for item in items_to_deploy:
+        _phase_render_templates(only_app=item)
     _phase_post_install_services()
     print(msg("copy_done"))
     return []
@@ -354,7 +353,6 @@ def test_deploy() -> bool:
         render_completion_screen(mode="test", chosen_items=items, preserved_lines=preserved_log, failed_items=failed_items)
         return False
     _phase_render_templates()
-    _phase_hardware_patches()
     wallpaper_result = deploy_wallpapers(do_download=False)
     render_completion_screen(
         mode="test",

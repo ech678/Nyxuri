@@ -1,4 +1,4 @@
-"""Deploy subpackage — atomic swap, manifest, templates, assets, hardware,
+"""Deploy subpackage — atomic swap, manifest, templates, assets,
 preset, and the deploy orchestrator.
 
 Re-exports keep external imports shallow (§13). For test patching, address the
@@ -20,7 +20,6 @@ from nyxniri.deploy.assets import (
     deploy_wallpapers,
     wallpapers_pack_present,
 )
-from nyxniri.deploy.hardware import _phase_hardware_patches
 from nyxniri.deploy.preset import (
     InvalidActivePresetError,
     PresetInfo,

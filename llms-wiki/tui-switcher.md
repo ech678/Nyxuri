@@ -69,7 +69,7 @@
 ## apply 后的窄 deploy 路径
 
 切预设只跑该 app 的 `atomic_replace_item` + 模板渲染（`/home/user` 替换），**不走**
-`deploy_selected_configs` 全流水线——不触发 `_phase_hardware_patches`（NVIDIA 解注释）和
+`deploy_selected_configs` 全流水线——不触发
 `_phase_post_install_services`（fisher update / theme-sync / gtk 重渲染）。切个 kitty 预设
 不该顺带跑 fisher，无关副作用违反"无熵"。详见 [preset-mechanism](preset-mechanism.md)。
 
@@ -77,4 +77,3 @@
 
 `sys.stdout.write(Colors.CURSOR_HIDE)` 进入循环，`finally: CURSOR_SHOW`——光标恢复由 trap
 钩子绝对保障（崩溃也恢复），符合 TUI 宪章"光标恢复由 trap 钩子绝对保障"。
-

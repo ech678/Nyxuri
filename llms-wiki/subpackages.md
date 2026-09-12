@@ -22,7 +22,7 @@ nyxniri/
 │   ├── manifest.py                     .module.toml + .optional-apps.toml 解析、app 发现（两轴解耦，见下页）
 │   ├── templates.py                    _phase_render_templates（/home/user → $HOME、screenshot 路径）
 │   ├── assets.py                       壁纸部署（WallpaperDeployResult、no-clobber 同步 + 外部包下载）
-│   ├── hardware.py                     _phase_hardware_patches（NVIDIA env，独立硬件自适应层）
+│   ├── hardware.py                     classify_gpu_devices（诊断报告的纯文本 PCI 设备分类）
 │   ├── preset.py                       预设切换（active 状态、src 四分支、apply 窄路径）
 │   └── deploy.py                       编排器：discover_config_items、_phase_atomic_deployment、
 │                                       _phase_post_install_services、run_user_hooks、
@@ -75,7 +75,7 @@ from nyxniri.modules.fisher import fisher_uninstall
 from nyxniri.deploy.atomic import atomic_replace_item
 # 测试打补丁
 patch("nyxniri.deploy.atomic.atomic_replace_item", return_value=False)
-patch("nyxniri.deploy.hardware._phase_hardware_patches")
+patch("nyxniri.deploy.deploy._phase_post_install_services")
 ```
 
 ## 动态 import（cli.py `_module_handler`）

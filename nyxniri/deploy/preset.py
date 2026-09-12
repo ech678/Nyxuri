@@ -514,8 +514,8 @@ def _render_preset_result(app: str, name: str, preserved_lines: List[str], faile
 def apply_preset(app: str, name: str) -> bool:
     """Switch an app to a named preset (narrow deploy path).
 
-    Runs only atomic_replace + template render for this app — no hardware
-    patches, no post-install services (§9: switching kitty must not rerun
+    Runs only atomic_replace + template render for this app, without
+    post-install services (§9: switching kitty must not rerun
     fisher). Writes the active file AFTER deploy succeeds (iron law, §3.2).
 
     The manifest ``preserve`` list (e.g. niri/monitor.kdl, niri/effects.kdl) is

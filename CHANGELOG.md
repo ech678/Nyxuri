@@ -7,6 +7,9 @@
 
 ## [Unreleased]
 
+### Changed
+- 默认不再指定 NVIDIA 驱动，并移除旧 Electron 显示设置；部分旧应用可能改用 XWayland。
+
 ## [v3.0.5] - 2026-09-12
 
 ### Added

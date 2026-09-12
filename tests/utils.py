@@ -50,12 +50,10 @@ class TempEnv:
         # from a previously-deleted temp HOME, breaking wallpaper assertions.
         core._PICS_DIR_CACHE = None
         import nyxniri.deploy.deploy as _deploy_core
-        import nyxniri.deploy.hardware as _deploy_hw
         import nyxniri.deploy.manifest as _deploy_manifest
         import nyxniri.deps as _deps
         import nyxniri.modules.greeter as _greeter
         _deploy_core._CONFIG_ITEMS_CACHE = []
-        _deploy_hw._NVIDIA_ROLE = None
         _deploy_manifest._MANIFEST_CACHE = None
         _deps._AUR_HELPER_CACHE = None
         _deps._PACMAN_INSTALLED_CACHE = None

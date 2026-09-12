@@ -1,7 +1,7 @@
 """Portable template rendering — /home/user → real $HOME, dynamic paths.
 
-Called by the full deploy pipeline (render all) and the preset-switch narrow
-path (render only one app, §9). Kept side-effect-light: pure text substitution
+Called by deployment and preset switching for each selected app, or by the
+test pipeline for all apps. Kept side-effect-light: pure text substitution
 on already-deployed config files.
 """
 

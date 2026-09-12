@@ -16,7 +16,8 @@
 - [preset-mechanism](preset-mechanism.md): active 状态文件、src 四分支、写时序铁律、原子写、update 同步语义
 - [file-preservation](file-preservation.md): Dunder __custom__ walk + manifest preserve（两套刻意不合并）
 - [install-modes](install-modes.md): standalone / repo / system 三模式、.system-install marker、软链、PATH 遮蔽、update 分支、AUR
-- [nvidia-patch](nvidia-patch.md): 硬件自适应层（为何不塞进 preset 系统）
+- [nvidia-patch](nvidia-patch.md): GPU 设备诊断与默认驱动变量移除
+- [phase-zero](phase-zero.md): 阶段零清理清单与兼容边界
 - [uninstall](uninstall.md): 勾选式卸载、5 处历史 [gap]、执行顺序铁律
 - [tui-switcher](tui-switcher.md): 树状折叠预设工作台（Accordion Tree）、apply 窄 deploy 路径
 - [declarative](declarative.md): 命令式 vs 声明式边界（啥该 / 不该声明式）
@@ -32,6 +33,7 @@
 
 ## Reference
 
+- [roadmap](../ROADMAP.md): 暂放根目录的演进草案与完成状态（非当前架构说明）
 - [concept-glossary](concept-glossary.md): 路径 / 动作 / 内容术语表（repo_dir、nyx_dir、deploy、preset…）
 - [operation-map](operation-map.md): 全部 CLI 命令目录（install / snapshot / preset / …）
 - [testing](testing.md): 测试策略与形状、TempEnv 隔离、mock 层级

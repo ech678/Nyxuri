@@ -426,9 +426,13 @@ def generate_bug_report() -> Optional[Path]:
     shell = os.environ.get("SHELL", "Unknown")
 
     # GPU
+    from nyxniri.deploy.hardware import classify_gpu_devices
+
     gpu_info = "Unknown"
+    gpu_devices = "Unknown"
     lspci_res = results.get("lspci")
-    if lspci_res:
+    if lspci_res is not None and lspci_res.returncode == 0:
+        gpu_devices = classify_gpu_devices(lspci_res.stdout)
         gpu_lines = [line for line in lspci_res.stdout.splitlines() if "VGA" in line or "3D" in line or "Display" in line]
         if gpu_lines:
             gpu_info = "\n".join(gpu_lines)
@@ -526,6 +530,7 @@ def generate_bug_report() -> Optional[Path]:
         f"- **Desktop**: {compositor} ({session_type})\n"
         f"- **Shell**: {shell}\n\n"
         f"## 2. Hardware & GPU\n\n"
+        f"PCI device classification: {gpu_devices} (not the active rendering GPU)\n\n"
         f"```text\n{gpu_info}\n```\n\n"
         f"## 3. Connected Displays\n\n"
         f"```text\n{displays}\n```\n\n"

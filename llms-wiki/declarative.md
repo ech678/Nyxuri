@@ -24,7 +24,7 @@ imperative hooks，不是状态对账的一部分。
 - `.module.toml` 里放 i18n 键（`TRANSLATIONS` dict 已有自动校验，够用）
 - stable + git 双 AUR 包（双倍熵）
 - Nix 风格纯函数式部署引擎（杀不掉副作用，徒增复杂度）
-- NVIDIA 强行塞进 preset 系统（category error，见 [nvidia-patch](nvidia-patch.md)）
+- 根据 PCI 设备自动选择驱动变量（PCI 列表无法确定实际渲染 GPU，见 [nvidia-patch](nvidia-patch.md)）
 - `.nyxignore` 替代 `__custom__`（"魔法文件名"换成"魔法文件列魔法文件名"，更绕）
 - 安装方式优先级规则（被"哪里跑就是哪里的模式"取代，见 [install-modes](install-modes.md)）
 - `preset diff`（`~/.config/<app>/` 是预设+custom 混合体，diff 会把 custom 当差异报；

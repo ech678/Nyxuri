@@ -408,7 +408,7 @@ class TestPresetOperations(unittest.TestCase):
 
 
 class TestApplyNarrowPath(unittest.TestCase):
-    """§9 / §14 U1: apply runs only atomic_replace + render — no hw patches, no services."""
+    """Apply runs only atomic_replace + render, without post-install services."""
 
     def setUp(self):
         self._ctx = TempEnv()
@@ -417,14 +417,10 @@ class TestApplyNarrowPath(unittest.TestCase):
     def tearDown(self):
         self._ctx.__exit__()
 
-    def test_apply_skips_hardware_patches_and_post_install_services(self):
-        # Patch the deploy namespace: deploy.py holds its own from-import of
-        # _phase_hardware_patches, so patching the hardware module would miss.
-        with patch("nyxniri.deploy.deploy._phase_hardware_patches") as hw, \
-             patch("nyxniri.deploy.deploy._phase_post_install_services") as svc:
+    def test_apply_skips_post_install_services(self):
+        with patch("nyxniri.deploy.deploy._phase_post_install_services") as svc:
             ok = preset.apply_preset("kitty", "transparent")
         self.assertTrue(ok)
-        hw.assert_not_called()
         svc.assert_not_called()
 
 

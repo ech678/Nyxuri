@@ -7,7 +7,7 @@
 
 | 事项 | 触发条件 | 当前决策 |
 |---|---|---|
-| **硬件适配 Overlay**（NVIDIA / AMD / 多显示器…） | 硬件适配累积到 >3 处 | 保持 `_phase_hardware_patches` 硬编码。当前 ≤1 处（NVIDIA），不值得引入硬件 overlay 抽象。注意：此项专指硬件自适应，与已落地的**应用预设底版继承（Base Overlay）**不是同一概念。详见 [nvidia-patch](nvidia-patch.md) |
+| **硬件适配 Overlay**（NVIDIA / AMD / 多显示器…） | 出现多个明确的硬件适配需求 | 当前无自动驱动补丁，不引入硬件 overlay；应用预设底版继承（Base Overlay）保持独立。详见 [nvidia-patch](nvidia-patch.md) |
 | **拆 `cli.py`** 出 `workflow.py` | >900 行 或 menu_loop 重复模式 | 保持现状。`cli.py` 当前 924 行（虽触及 >900 参考线，但命令字典与菜单结构清晰内聚、模式稳定）。不为死抠数字硬拆，留待复杂度实质上升时再做加法拆解 |
 
 ## 这次重构已落地（主动覆盖延迟）

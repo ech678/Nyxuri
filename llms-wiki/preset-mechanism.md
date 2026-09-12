@@ -45,7 +45,7 @@ deploy 时根据 active 选源目录，四条分支 + 一条冻结：
 ## apply 的窄路径
 
 `apply_preset` 只跑该 app 的 `atomic_replace` + 模板渲染，**不走**全流水线——不触发
-`_phase_hardware_patches`（NVIDIA 解注释）和 `_phase_post_install_services`（fisher update /
+`_phase_post_install_services`（fisher update /
 theme-sync / gtk 重渲染）。切个 kitty 预设不该顺带跑 fisher，无关副作用违反"无熵"。
 
 ## update 同步语义（关键）

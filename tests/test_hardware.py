@@ -1,20 +1,14 @@
-"""Contracts for NVIDIA hardware env patching.
+"""GPU diagnostics and deployment contracts, isolated with TempEnv."""
 
-Safety: TempEnv only. lspci is always mocked — never read the host GPU.
-"""
-
-import re
+import contextlib
+import io
 import subprocess
 import unittest
-from pathlib import Path
 from unittest.mock import patch
 
-from nyxniri.deploy.hardware import (
-    _apply_nvidia_env,
-    _classify_nvidia_role,
-    _nvidia_role,
-    _phase_hardware_patches,
-)
+from nyxniri.deploy.hardware import classify_gpu_devices
+from nyxniri.deploy.deploy import deploy_selected_configs, test_deploy
+from nyxniri.doctor import generate_bug_report
 from tests.utils import TempEnv
 
 # Realistic `LC_ALL=C lspci` snippets. Kernel-driver continuation lines omitted;
@@ -53,196 +47,125 @@ LSPCI_DUAL_VGA = """\
 01:00.0 VGA compatible controller: NVIDIA Corporation GA102 [GeForce RTX 3080]
 """
 
-COMMENTED = """\
-environment {
-    XDG_CURRENT_DESKTOP "niri"
-    // NVIDIA env: deploy enables these only when NVIDIA is the display GPU
-    // GBM_BACKEND "nvidia-drm"
-    // __GLX_VENDOR_LIBRARY_NAME "nvidia"
-    // LIBVA_DRIVER_NAME "nvidia"
-}
-"""
 
-ENABLED = """\
-environment {
-    XDG_CURRENT_DESKTOP "niri"
-    // NVIDIA env: deploy enables these only when NVIDIA is the display GPU
-    GBM_BACKEND "nvidia-drm"
-    __GLX_VENDOR_LIBRARY_NAME "nvidia"
-    LIBVA_DRIVER_NAME "nvidia"
-}
-"""
+REMOVED_VARIABLES = (
+    "GBM_BACKEND", "__GLX_VENDOR_LIBRARY_NAME",
+    "LIBVA_DRIVER_NAME", "ELECTRON_OZONE_PLATFORM_HINT",
+)
+OLD_CONFIG = 'environment {\n' + ''.join(
+    f'    {name} "personal-value"\n' for name in REMOVED_VARIABLES
+) + '}\nscreenshot-path "/personal/screenshots/%s.png"\n'
 
 
-def _env_enabled(content: str) -> bool:
-    return bool(re.search(r'^\s*GBM_BACKEND\s+"nvidia-drm"', content, re.M))
-
-
-def _env_commented(content: str) -> bool:
-    return bool(re.search(r'^\s*//\s*GBM_BACKEND\s+"nvidia-drm"', content, re.M))
-
-
-class TestClassifyNvidiaRole(unittest.TestCase):
-    """Pure lspci-text parser. No subprocess."""
-
+class TestGpuContracts(unittest.TestCase):
     def setUp(self):
-        self._ctx = TempEnv()
-        self._ctx.__enter__()
+        self.ctx = TempEnv()
+        self.ctx.__enter__()
+        self.addCleanup(self.ctx.__exit__)
+        self.output = contextlib.redirect_stdout(io.StringIO())
+        self.output.__enter__()
+        self.addCleanup(self.output.__exit__, None, None, None)
 
-    def tearDown(self):
-        self._ctx.__exit__()
+    def test_device_classification(self):
+        for pci, expected in (
+            (LSPCI_HYBRID_AMD, "NVIDIA + other GPU devices"),
+            (LSPCI_HYBRID_INTEL, "NVIDIA + other GPU devices"),
+            (LSPCI_DUAL_VGA, "NVIDIA + other GPU devices"),
+            (LSPCI_NVIDIA_DESKTOP, "NVIDIA GPU devices only"),
+            (LSPCI_NVIDIA_ONLY_3D, "NVIDIA GPU devices only"),
+            ("00:01.0 Display controller: NVIDIA Corporation", "NVIDIA GPU devices only"),
+            (LSPCI_AMD_ONLY, "Other GPU devices only"),
+            (LSPCI_NVIDIA_AUDIO_ON_AMD, "Other GPU devices only"),
+            ("00:01.0 Audio device: NVIDIA Corporation", "Unknown"),
+            ("", "Unknown"),
+            ("  \n", "Unknown"),
+        ):
+            with self.subTest(pci=pci):
+                self.assertEqual(classify_gpu_devices(pci), expected)
+                self.assertEqual(classify_gpu_devices(pci.upper()), expected)
 
-    def test_hybrid_amd_igpu_nvidia_3d(self):
-        self.assertEqual(_classify_nvidia_role(LSPCI_HYBRID_AMD), "hybrid")
+    def _old_config(self):
+        target = self.ctx.env.config_dir / "niri"
+        target.mkdir()
+        (target / "config.kdl").write_text(OLD_CONFIG)
+        (target / "__custom__.kdl").write_text(OLD_CONFIG)
+        return target
 
-    def test_hybrid_intel_igpu_nvidia_3d(self):
-        self.assertEqual(_classify_nvidia_role(LSPCI_HYBRID_INTEL), "hybrid")
+    def test_default_redeploy_removes_variables_and_preserves_custom(self):
+        target = self._old_config()
+        with patch("nyxniri.deploy.deploy._phase_post_install_services"), \
+             patch("nyxniri.core.get_pics_dir", return_value=self.ctx.home / "Pictures"), \
+             patch("nyxniri.deploy.templates.get_pics_dir", return_value=self.ctx.home / "Pictures"), \
+             patch("subprocess.run", side_effect=AssertionError("Unexpected external command")):
+            self.assertEqual(deploy_selected_configs(items_to_deploy=["niri"]), [])
+            first = (target / "config.kdl").read_bytes()
+            self.assertEqual(deploy_selected_configs(items_to_deploy=["niri"]), [])
+            self.assertEqual((target / "config.kdl").read_bytes(), first)
+        for variable in REMOVED_VARIABLES:
+            self.assertNotIn(variable.encode(), first)
+        self.assertIn(b'~/Pictures/Screenshots/', first)
+        self.assertNotIn(b"/home/user", first)
+        self.assertEqual((target / "__custom__.kdl").read_text(), OLD_CONFIG)
 
-    def test_nvidia_desktop_vga(self):
-        self.assertEqual(_classify_nvidia_role(LSPCI_NVIDIA_DESKTOP), "primary")
-
-    def test_nvidia_only_3d_is_primary(self):
-        self.assertEqual(_classify_nvidia_role(LSPCI_NVIDIA_ONLY_3D), "primary")
-
-    def test_amd_only(self):
-        self.assertEqual(_classify_nvidia_role(LSPCI_AMD_ONLY), "none")
-
-    def test_empty(self):
-        self.assertEqual(_classify_nvidia_role(""), "none")
-
-    def test_nvidia_audio_line_is_not_a_gpu(self):
-        self.assertEqual(_classify_nvidia_role(LSPCI_NVIDIA_AUDIO_ON_AMD), "none")
-
-    def test_dual_vga_nvidia_counts_as_primary(self):
-        self.assertEqual(_classify_nvidia_role(LSPCI_DUAL_VGA), "primary")
-
-    def test_case_insensitive(self):
+    def test_other_app_deploy_leaves_niri_untouched(self):
+        target = self._old_config()
+        before = {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in target.iterdir()}
+        with patch("nyxniri.deploy.deploy._phase_post_install_services"):
+            self.assertEqual(deploy_selected_configs(items_to_deploy=["kitty"]), [])
         self.assertEqual(
-            _classify_nvidia_role(LSPCI_HYBRID_AMD.upper()),
-            "hybrid",
+            {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in target.iterdir()}, before,
         )
 
+    def test_test_deploy_removes_variables(self):
+        target = self._old_config()
+        with patch("nyxniri.deploy.deploy.deploy_wallpapers"), \
+             patch("nyxniri.deploy.deploy.render_completion_screen"):
+            self.assertTrue(test_deploy())
+        for variable in REMOVED_VARIABLES:
+            self.assertNotIn(variable, (target / "config.kdl").read_text())
+        self.assertEqual((target / "__custom__.kdl").read_text(), OLD_CONFIG)
 
-class TestApplyNvidiaEnv(unittest.TestCase):
-    def setUp(self):
-        self._ctx = TempEnv()
-        self._ctx.__enter__()
+    def test_report_reuses_pci_probe_and_never_changes_config(self):
+        target = self._old_config()
+        before = {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in target.iterdir()}
+        cases = (
+            (0, LSPCI_HYBRID_AMD, None, "NVIDIA + other GPU devices"),
+            (1, LSPCI_NVIDIA_DESKTOP, None, "Unknown"),
+            (0, "", None, "Unknown"),
+            (0, "", OSError("missing"), "Unknown"),
+            (0, "", subprocess.TimeoutExpired(["lspci"], 15), "Unknown"),
+        )
+        for code, stdout, error, expected in cases:
+            with self.subTest(code=code, error=error, stdout=stdout):
+                def fake_run(argv, **kwargs):
+                    if error:
+                        raise error
+                    return subprocess.CompletedProcess(argv, code, stdout=stdout, stderr="")
+                with patch("nyxniri.doctor.shutil.which", side_effect=lambda name: "/usr/bin/lspci" if name == "lspci" else None), \
+                     patch("nyxniri.doctor.subprocess.run", side_effect=fake_run) as run:
+                    report = generate_bug_report().read_text()
+                run.assert_called_once()
+                self.assertEqual(run.call_args.args, (["lspci"],))
+                kwargs = run.call_args.kwargs
+                self.assertEqual(kwargs["env"]["LC_ALL"], "C")
+                self.assertEqual(kwargs["env"]["HOME"], str(self.ctx.home))
+                self.assertEqual(kwargs["timeout"], 15)
+                self.assertTrue(kwargs["capture_output"])
+                self.assertTrue(kwargs["text"])
+                self.assertFalse(kwargs["check"])
+                self.assertIn(f"PCI device classification: {expected} (not the active rendering GPU)", report)
+                if expected == "Unknown":
+                    self.assertNotIn(LSPCI_NVIDIA_DESKTOP.strip(), report)
+        self.assertEqual(
+            {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in target.iterdir()}, before,
+        )
 
-    def tearDown(self):
-        self._ctx.__exit__()
-
-    def test_enable_uncomments(self):
-        out = _apply_nvidia_env(COMMENTED, True)
-        self.assertTrue(_env_enabled(out))
-        self.assertFalse(_env_commented(out))
-        self.assertIn('XDG_CURRENT_DESKTOP "niri"', out)
-
-    def test_disable_recomments(self):
-        out = _apply_nvidia_env(ENABLED, False)
-        self.assertTrue(_env_commented(out))
-        self.assertFalse(_env_enabled(out))
-
-    def test_enable_is_idempotent(self):
-        self.assertEqual(_apply_nvidia_env(ENABLED, True), ENABLED)
-
-    def test_disable_is_idempotent(self):
-        self.assertEqual(_apply_nvidia_env(COMMENTED, False), COMMENTED)
-
-    def test_disable_does_not_double_comment(self):
-        once = _apply_nvidia_env(ENABLED, False)
-        twice = _apply_nvidia_env(once, False)
-        self.assertEqual(once, twice)
-        self.assertEqual(twice.count("GBM_BACKEND"), 1)
-
-
-class TestLspciCommandShape(unittest.TestCase):
-    """§9: mock subprocess.run, assert argv/env shape, do not mock the classifier."""
-
-    def setUp(self):
-        self._ctx = TempEnv()
-        self._ctx.__enter__()
-
-    def tearDown(self):
-        self._ctx.__exit__()
-
-    def test_lspci_invocation_shape_and_cache(self):
-        calls = []
-
-        def fake_run(argv, **kwargs):
-            calls.append((list(argv), kwargs))
-            return subprocess.CompletedProcess(argv, 0, stdout=LSPCI_HYBRID_AMD, stderr="")
-
-        with patch("nyxniri.deploy.hardware.subprocess.run", side_effect=fake_run):
-            self.assertEqual(_nvidia_role(), "hybrid")
-            self.assertEqual(_nvidia_role(), "hybrid")
-
-        self.assertEqual(len(calls), 1, "role is cached for the process")
-        argv, kwargs = calls[0]
-        self.assertEqual(argv, ["lspci"])
-        self.assertTrue(kwargs.get("capture_output"))
-        self.assertTrue(kwargs.get("text"))
-        self.assertFalse(kwargs.get("check"))
-        self.assertEqual(kwargs["env"]["LC_ALL"], "C")
-
-    def test_lspci_failure_is_none(self):
-        with patch("nyxniri.deploy.hardware.subprocess.run", side_effect=OSError("no lspci")):
-            self.assertEqual(_nvidia_role(), "none")
-
-
-class TestPhaseHardwarePatches(unittest.TestCase):
-    def setUp(self):
-        self._ctx = TempEnv()
-        self._ctx.__enter__()
-        self.niri_conf = self._ctx.env.config_dir / "niri" / "config.kdl"
-
-    def tearDown(self):
-        self._ctx.__exit__()
-
-    def _write(self, content: str) -> Path:
-        self.niri_conf.parent.mkdir(parents=True, exist_ok=True)
-        self.niri_conf.write_text(content, encoding="utf-8")
-        return self.niri_conf
-
-    def _run(self, lspci_text: str) -> str:
-        def fake_run(argv, **kwargs):
-            return subprocess.CompletedProcess(argv, 0, stdout=lspci_text, stderr="")
-
-        with patch("nyxniri.deploy.hardware.subprocess.run", side_effect=fake_run):
-            _phase_hardware_patches()
-        return self.niri_conf.read_text(encoding="utf-8")
-
-    def test_primary_uncomments(self):
-        self._write(COMMENTED)
-        out = self._run(LSPCI_NVIDIA_DESKTOP)
-        self.assertTrue(_env_enabled(out))
-        self.assertFalse(_env_commented(out))
-
-    def test_hybrid_keeps_commented(self):
-        self._write(COMMENTED)
-        out = self._run(LSPCI_HYBRID_AMD)
-        self.assertTrue(_env_commented(out))
-        self.assertFalse(_env_enabled(out))
-
-    def test_hybrid_recomments_old_deploy(self):
-        """Existing hybrid installs already have the three lines uncommented."""
-        self._write(ENABLED)
-        out = self._run(LSPCI_HYBRID_AMD)
-        self.assertTrue(_env_commented(out))
-        self.assertFalse(_env_enabled(out))
-
-    def test_none_recomments_old_deploy(self):
-        self._write(ENABLED)
-        out = self._run(LSPCI_AMD_ONLY)
-        self.assertTrue(_env_commented(out))
-        self.assertFalse(_env_enabled(out))
-
-    def test_missing_config_is_noop(self):
-        def fake_run(argv, **kwargs):
-            self.fail("lspci must not run when config.kdl is absent")
-
-        with patch("nyxniri.deploy.hardware.subprocess.run", side_effect=fake_run):
-            _phase_hardware_patches()
-        self.assertFalse(self.niri_conf.exists())
+    def test_report_missing_lspci_is_unknown(self):
+        with patch("nyxniri.doctor.shutil.which", return_value=None), \
+             patch("nyxniri.doctor.subprocess.run") as run:
+            report = generate_bug_report().read_text()
+        run.assert_not_called()
+        self.assertIn("PCI device classification: Unknown", report)
 
 
 if __name__ == "__main__":

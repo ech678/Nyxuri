@@ -298,7 +298,9 @@ enable_ddcutil = false
 
 旧版只要 `lspci` 里出现 NVIDIA，就会打开 `GBM_BACKEND=nvidia-drm` 和 `LIBVA_DRIVER_NAME=nvidia`。混合显卡笔记本的桌面仍在核显上合成，Chromium/Brave 却可能在独显硬解，再交回核显显示——少数视频就会把窗口画花。
 
-更新并重新部署 NyxNiri。现在只有 NVIDIA 真正负责显示时才会打开这些变量。若你就是要用 NVIDIA 当合成器，在 `~/.config/niri/__custom__.kdl` 里自行解开即可。
+更新并重新部署 NyxNiri。默认配置不再指定 GPU 驱动，部署也不再根据 PCI 设备改写环境变量；PCI 列表不能确认实际负责渲染的 GPU。有特殊驱动需求时，在 `~/.config/niri/__custom__.kdl` 中自行配置。
+
+默认配置同时移除了旧的 `ELECTRON_OZONE_PLATFORM_HINT "auto"`，部分旧 Electron 应用可能改用 XWayland。正常部署会更新主配置，但不会清理个人覆盖、个人预设或历史快照，也不会改变现有会话环境；重新登录后再检查效果。
 
 </details>
 
