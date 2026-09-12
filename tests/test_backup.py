@@ -14,7 +14,7 @@ from tests.utils import TempEnv
 
 
 class TestUninstallNonInteractive(unittest.TestCase):
-    """Non-interactive uninstall: no mode → select-all + archive (§8.5)."""
+    """Non-interactive uninstall: no mode → standard scope + archive (§8.5)."""
 
     def setUp(self):
         self._ctx = TempEnv()
@@ -26,8 +26,8 @@ class TestUninstallNonInteractive(unittest.TestCase):
     def tearDown(self):
         self._ctx.__exit__()
 
-    def test_non_interactive_uninstall_selects_all_and_archives(self):
-        """Non-interactive uninstall (no mode) selects all + archives configs."""
+    def test_non_interactive_uninstall_uses_standard_scope_and_archives(self):
+        """Non-interactive uninstall archives configs without removing user data."""
         from nyxniri.state.uninstall import uninstall_nyxniri
         from nyxniri.constants import PROJECT_NAME
 
@@ -37,7 +37,7 @@ class TestUninstallNonInteractive(unittest.TestCase):
                  patch("nyxniri.modules.greeter.greeter_installed", return_value=False):
                 result = uninstall_nyxniri("")
 
-        self.assertTrue(result, "Non-interactive uninstall selects all (no longer a no-op)")
+        self.assertTrue(result, "Non-interactive uninstall uses standard scope")
         archives = list(self.env.config_dir.glob(f"{PROJECT_NAME}_archive_*"))
         self.assertTrue(archives, "Configs should be archived (non-interactive default = archive)")
         self.assertTrue((archives[0] / "niri" / "config.kdl").exists())
@@ -72,7 +72,7 @@ class TestModeAliases(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_alias_safe_accepted(self):
-        """Alias 'safe' is accepted and runs the all+archive path (non-TTY)."""
+        """Alias 'safe' is accepted and runs the standard path (non-TTY)."""
         from nyxniri.state.uninstall import uninstall_nyxniri
 
         with patch("sys.stdin.isatty", return_value=False), patch("builtins.print"), \

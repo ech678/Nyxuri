@@ -32,7 +32,8 @@ configs/noctalia/
 ├── mpvpaper-sync.sh       ← mpvpaper 视频壁纸同步
 └── templates/
     ├── gtk-3.0.css        ← GTK3 M3 模板（无条件 @define-color）
-    └── gtk-4.0.css        ← GTK4 M3 模板（双 @media 块）
+    ├── gtk-4.0.css        ← GTK4 M3 模板（双 @media 块）
+    └── niri-glow-material-you.kdl ← Niri 动态聚焦光晕（跟随当前配色）
 ```
 
 ### theme-sync.sh — 调度中枢
@@ -55,8 +56,9 @@ configs/noctalia/
 
 - **hook 注册**：`theme_mode_changed` → `theme-sync.sh`
 - **hook 注册**：`wallpaper_changed` → `wallpaper-hook.sh`
-- **user template 注册**：`nyxniri_gtk3` / `nyxniri_gtk4`
+- **user template 注册**：`nyxniri_gtk3` / `nyxniri_gtk4` / `nyxniri_niri_glow_material_you`
 - `/home/user` 占位符由 `nyxniri.deploy` 在部署时替换为实际 `$HOME`
+- **`nyxniri_niri_glow_material_you`**：渲染到 `niri-glow-material-you.rendered.kdl`，只在 `glow-material-you.enabled` 存在时覆盖 Niri 布局并重载。
 
 ### templates/gtk-3.0.css — GTK3 M3 模板
 

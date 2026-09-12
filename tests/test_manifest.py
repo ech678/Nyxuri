@@ -261,7 +261,7 @@ class TestRealRepoManifests(unittest.TestCase):
 
     def test_real_niri_manifest_has_presets_whitelist(self):
         m = manifest.load_manifest_for("niri")
-        self.assertEqual(m.preset_allow, ["glow"])
+        self.assertEqual(m.preset_allow, ["glow", "glow-material-you"])
         self.assertIn("scripts/**", m.preset_include)
         self.assertIn("*.kdl", m.preset_include)
 

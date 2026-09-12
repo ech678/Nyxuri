@@ -39,7 +39,7 @@ preserve = ["monitor.kdl", "effects.kdl"]
 chmod = ["scripts/*.sh"]
 
 [presets]
-allow = ["glow"]
+allow = ["glow", "glow-material-you"]
 include = ["scripts/**", "*.kdl", "orbit-items__custom__.toml"]
 
 # configs/fish/.module.toml — clean-cache.py 不是 .sh，需声明 chmod

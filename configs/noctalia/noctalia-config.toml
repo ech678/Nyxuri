@@ -243,6 +243,13 @@ index = 4
 input_path = "/home/user/.config/noctalia/templates/gtk-4.0.css"
 output_path = "/home/user/.config/gtk-4.0/gtk.css"
 
+# Niri glow-material-you: Noctalia is the only writer of the rendered layout.
+[theme.templates.user.nyxniri_niri_glow_material_you]
+index = 5
+input_path = "/home/user/.config/noctalia/templates/niri-glow-material-you.kdl"
+output_path = "/home/user/.config/noctalia/templates/niri-glow-material-you.rendered.kdl"
+post_hook = "if [ -f /home/user/.config/niri/glow-material-you.enabled ]; then cp -f /home/user/.config/noctalia/templates/niri-glow-material-you.rendered.kdl /home/user/.config/niri/layout.kdl && command -v niri >/dev/null 2>&1 && niri msg action load-config-file; fi"
+
 [wallpaper]
 directory = "/home/user/图片/Wallpapers"
 fill_mode = "crop"

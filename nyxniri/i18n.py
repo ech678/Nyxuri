@@ -1189,6 +1189,18 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "zh": f"{Colors.BOLD_RED}[✗] 配置安装失败: {{0}}。已停止后续步骤。{Colors.RESET}",
         "en": f"{Colors.BOLD_RED}[✗] Config install failed: {{0}}. Remaining steps stopped.{Colors.RESET}",
     },
+    "user_hook_timeout": {
+        "zh": f"{Colors.BOLD_YELLOW}[!]{Colors.RESET} 用户部署钩子 {{0}} 在 {{1}} 秒后超时，继续执行后续钩子",
+        "en": f"{Colors.BOLD_YELLOW}[!]{Colors.RESET} User deploy hook {{0}} timed out after {{1}}s; continuing",
+    },
+    "user_hook_failed": {
+        "zh": f"{Colors.BOLD_YELLOW}[!]{Colors.RESET} 用户部署钩子 {{0}} 退出码为 {{1}}，继续执行后续钩子",
+        "en": f"{Colors.BOLD_YELLOW}[!]{Colors.RESET} User deploy hook {{0}} exited with {{1}}; continuing",
+    },
+    "summary_section_hooks": {
+        "zh": "部署钩子提示",
+        "en": "Post-deploy hook notices",
+    },
     "log_deploy_config_failed": {
         "zh": f"  {Colors.BOLD_RED}[✗]{Colors.RESET} 配置安装失败: {{0}}",
         "en": f"  {Colors.BOLD_RED}[✗]{Colors.RESET} Config install failed: {{0}}",

@@ -30,6 +30,7 @@ from nyxniri.deploy import (
     discover_manifest_apps,
     discover_optional_apps,
     render_completion_screen,
+    run_user_hooks,
     test_deploy,
     wallpapers_pack_present,
 )
@@ -201,6 +202,11 @@ def _phase_preflight_check(
             sys.exit(1)
         log_msg("INFO", "Sudo access verified upfront during pre-flight.")
 
+def _finish_successful_deploy(mode: str, **completion_args) -> None:
+    """Run user hooks once, then render the matching completion screen."""
+    completion_args["hook_diagnostics"] = run_user_hooks()
+    render_completion_screen(mode, **completion_args)
+
 def install_configs_workflow(mode: str = "full") -> bool:
     """Full execution pipeline for dotfiles, dependencies, wallpapers, and optional modules."""
     if mode == "full" and not shutil.which("pacman"):
@@ -284,7 +290,7 @@ def install_configs_workflow(mode: str = "full") -> bool:
             return False
 
     # Completion
-    render_completion_screen(
+    _finish_successful_deploy(
         mode=mode,
         chosen_items=chosen_configs,
         preserved_lines=preserved_log,
@@ -311,7 +317,7 @@ def offer_overwrite_upgrade(flag: str = "") -> bool:
         except Exception as e:
             log_msg("WARN", f"Greeter install skipped during --force update: {e}")
             return False
-        render_completion_screen("update", wallpaper_result=wallpaper_result)
+        _finish_successful_deploy("update", wallpaper_result=wallpaper_result)
         return True
     elif flag == "--no-deploy":
         return True
@@ -323,7 +329,7 @@ def offer_overwrite_upgrade(flag: str = "") -> bool:
             return False
         wallpaper_result = deploy_wallpapers(do_download=False)
         if fcitx_enabled(): fcitx_install()
-        render_completion_screen("update", wallpaper_result=wallpaper_result)
+        _finish_successful_deploy("update", wallpaper_result=wallpaper_result)
         return True
 
     # Interactive choice menu
@@ -356,7 +362,7 @@ def offer_overwrite_upgrade(flag: str = "") -> bool:
             if chosen["greeter"]:
                 if not greeter_install():
                     return False
-            render_completion_screen(
+            _finish_successful_deploy(
                 "update",
                 chosen_items=chosen["configs"],
                 preserved_lines=preserved,

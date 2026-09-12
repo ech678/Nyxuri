@@ -34,6 +34,7 @@ from nyxniri.deploy.preset import (
 from nyxniri.deploy.templates import _phase_render_templates
 
 _CONFIG_ITEMS_CACHE: List[str] = []
+USER_HOOK_TIMEOUT = 30
 
 def discover_config_items() -> List[str]:
     """Deployable config app names (manifest-only dirs like nautilus/ are excluded)."""
@@ -139,8 +140,34 @@ def _phase_atomic_deployment(
 
     return failed_items
 
+def run_user_hooks() -> List[str]:
+    """Run user-owned scripts and return non-blocking diagnostics."""
+    hooks_dir = get_env().nyx_dir / "hooks"
+    if not hooks_dir.is_dir():
+        return []
+
+    diagnostics: List[str] = []
+    hooks = sorted(
+        (path for path in hooks_dir.glob("*.sh") if path.is_file()),
+        key=lambda path: path.name,
+    )
+    for hook in hooks:
+        result = timed_run(["bash", str(hook)], USER_HOOK_TIMEOUT, check=False)
+        if result is None:
+            log_msg("WARN", f"User deploy hook {hook.name} timed out after {USER_HOOK_TIMEOUT}s")
+            diagnostic = msg("user_hook_timeout", hook.name, USER_HOOK_TIMEOUT)
+            print(diagnostic, file=sys.stderr)
+            diagnostics.append(diagnostic)
+        elif result.returncode != 0:
+            log_msg("WARN", f"User deploy hook {hook.name} exited with {result.returncode}")
+            diagnostic = msg("user_hook_failed", hook.name, result.returncode)
+            print(diagnostic, file=sys.stderr)
+            diagnostics.append(diagnostic)
+    return diagnostics
+
+
 def _phase_post_install_services() -> None:
-    """Run post-deployment hooks (theme-sync, mpvpaper enable, Fisher plugins)."""
+    """Run built-in post-deployment work (theme-sync, mpvpaper, Fisher)."""
     env = get_env()
     config_dir = env.config_dir
 
@@ -168,14 +195,17 @@ def render_completion_screen(
     do_fcitx: bool = False,
     do_greeter: bool = False,
     failed_items: Optional[List[str]] = None,
+    hook_diagnostics: Optional[List[str]] = None,
 ) -> None:
-    """Render minimal, zero-entropy TUI Completion Screen according to TUI Design Charter."""
+    """Render completion state, including non-blocking hook diagnostics."""
     if chosen_items is None:
         chosen_items = discover_config_items()
     if preserved_lines is None:
         preserved_lines = []
     if failed_items is None:
         failed_items = []
+    if hook_diagnostics is None:
+        hook_diagnostics = []
 
     from nyxniri.modules.fcitx import fcitx5_installed, fcitx_enabled
     from nyxniri.deps import get_missing_deps
@@ -218,6 +248,11 @@ def render_completion_screen(
 
         if do_greeter:
             sys.stdout.write(f"    {Colors.BOLD_GREEN}[✓]{Colors.RESET} {msg('summary_item_greeter_ok')}\n")
+
+        if hook_diagnostics:
+            sys.stdout.write(f"\n  {Colors.BOLD_WHITE}{msg('summary_section_hooks')}{Colors.RESET}\n")
+            for diagnostic in hook_diagnostics:
+                sys.stdout.write(f"    {diagnostic}\n")
 
         if preserved_lines:
             sys.stdout.write(f"\n  {Colors.BOLD_WHITE}{msg('summary_section_preserved')}{Colors.RESET}\n")

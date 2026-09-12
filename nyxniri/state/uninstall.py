@@ -32,7 +32,7 @@ def uninstall_nyxniri(mode: str = "") -> bool:
 
     Defaults = the old 'standard' scope (archive configs + CLI + installed
     modules, now including greeter + fisher — fixes gaps #4). purge/--all and
-    non-interactive = all selected. Legacy 'restore' rolls back to the origin
+    non-interactive use the same standard scope. Legacy 'restore' rolls back to the origin
     snapshot (folded into `nyxniri rollback`).
     """
     from nyxniri.deploy.deploy import discover_config_items
@@ -92,6 +92,7 @@ def uninstall_nyxniri(mode: str = "") -> bool:
         entries.extend(module_entries)
 
     all_keys = [e.key for e in entries if not e.is_separator]
+    default_keys = [e.key for e in entries if not e.is_separator and e.checked]
 
     # --- Resolve the selected key set + whether configs are archived ---
     if mode == "all":
@@ -104,8 +105,8 @@ def uninstall_nyxniri(mode: str = "") -> bool:
                 return False
             print(msg("purge_start"))
     elif not sys.stdin.isatty():
-        # Non-interactive (pipe) → all selected; archive configs for safety.
-        selected = set(all_keys)
+        # Non-interactive (pipe) → the same standard defaults as the checklist.
+        selected = set(default_keys)
         archive_configs = True
     else:
         # Interactive checkbox.
@@ -165,7 +166,7 @@ def uninstall_nyxniri(mode: str = "") -> bool:
         if archive_dir is not None:
             print(msg("uninstall_archived", str(archive_dir)))
 
-    # 3. nyx_dir (~/.config/NyxNiri/: snapshots + presets) + legacy ~/.config/ snapshots.
+    # 3. nyx_dir (~/.config/NyxNiri/: snapshots, presets, active state, hooks) + legacy snapshots.
     if "nyx_dir" in selected:
         for backup in get_all_backups():
             remove_path(backup)

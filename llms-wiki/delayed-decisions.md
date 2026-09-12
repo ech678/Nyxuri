@@ -14,7 +14,7 @@
 
 | 事项 | 原触发 | 实际 |
 |---|---|---|
-| **应用预设底版继承（Base Overlay）** | 预设文件量大、仅少数文件有差异 | **已落地**。`atomic_replace_item` 支持底版拷贝与白黑名单过滤（manifest `[presets]` 表 `allow`/`include`/`exclude`），Niri `glow` 仅需 49 行 `layout.kdl`。详见 [preset-mechanism](preset-mechanism.md) 与 [manifest-schema](manifest-schema.md) |
+| **应用预设底版继承（Base Overlay）** | 预设文件量大、仅少数文件有差异 | **已落地**。`atomic_replace_item` 支持底版拷贝与白黑名单过滤（manifest `[presets]` 表 `allow`/`include`/`exclude`），Niri 的 `glow` 与 `glow-material-you` 只放差异文件。详见 [preset-mechanism](preset-mechanism.md) 与 [manifest-schema](manifest-schema.md) |
 | **子目录分组**（deploy/state/modules 子包） | >28 文件 或 某子领域 >5 文件 | **已做**。重构前 17 个 .py（< 28 触发未到），但为贯彻 §13 目标结构主动拆了四个子包——有意识覆盖 §11 的延迟决策。详见 [subpackages](subpackages.md) |
 | **doctor 预设漂移检查** | preset 系统落地后即加 | **已加** `_check_preset_drift`：扫所有 app 的 active 预设是否还在仓库/用户预设目录，给汇总。平时不 update 也能在 doctor 撞见"你的 kitty 透明预设已不在上游"。符合 §4 扩展指南（写 `_check_xxx` append 到 `DOCTOR_CHECKS`，不碰 `run_doctor`） |
 

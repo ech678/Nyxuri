@@ -209,6 +209,22 @@ if [ -d "/usr/share/Kvantum/$KVANTUM_THEME" ] || [ -d "$HOME/.config/Kvantum/$KV
     atomic_update_ini "$HOME/.config/Kvantum/kvantum.kvconfig" "theme" "$KVANTUM_THEME"
 fi
 
+# Keep the fixed-blue glow's dark/light details in sync. Dynamic glow is
+# rendered by Noctalia's template post_hook and intentionally stays out here.
+GLOW_DIR="$HOME/.config/niri"
+GLOW_ACTIVE="$HOME/.config/NyxNiri/presets/niri.active"
+if [ -f "$GLOW_ACTIVE" ] && [ "$(cat "$GLOW_ACTIVE" 2>/dev/null)" = "glow" ]; then
+    GLOW_SOURCE="$GLOW_DIR/layout-${TARGET_MODE}.kdl"
+    GLOW_DEST="$GLOW_DIR/layout.kdl"
+    if [ -f "$GLOW_SOURCE" ] && { [ ! -f "$GLOW_DEST" ] || ! cmp -s "$GLOW_SOURCE" "$GLOW_DEST"; }; then
+        tmp=$(mktemp "${GLOW_DEST}.XXXXXX") || exit 0
+        cp "$GLOW_SOURCE" "$tmp" && mv -f "$tmp" "$GLOW_DEST"
+        if command -v niri >/dev/null 2>&1; then
+            niri msg action load-config-file >/dev/null 2>&1 || true
+        fi
+    fi
+fi
+
 # 9. Feedback for Interactive CLI Invocations
 if [ -t 1 ] && [ -n "$ACTION" ]; then
     echo "Theme synced to: $TARGET_MODE (Scheme: $SCHEME_VAL, GTK: $GTK_THEME)"

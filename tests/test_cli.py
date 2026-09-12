@@ -180,6 +180,45 @@ class TestUpdateForcePath(unittest.TestCase):
         render.assert_not_called()
 
 
+class TestUserHookEntrypoints(unittest.TestCase):
+    """Hooks run once only after a successful config deployment."""
+
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+
+    def tearDown(self):
+        self._ctx.__exit__()
+
+    def test_force_update_runs_hooks_before_completion(self):
+        from nyxniri.cli import offer_overwrite_upgrade
+
+        events = []
+        with patch("nyxniri.cli.deploy_selected_configs", side_effect=lambda **_: events.append("configs") or []), \
+             patch("nyxniri.cli.deploy_wallpapers", side_effect=lambda **_: events.append("wallpapers")), \
+             patch("nyxniri.cli.fcitx_enabled", return_value=True), \
+             patch("nyxniri.cli.fcitx_install", side_effect=lambda: events.append("fcitx")), \
+             patch("nyxniri.cli.greeter_install", side_effect=lambda: events.append("greeter") or True), \
+             patch("nyxniri.cli.run_user_hooks", side_effect=lambda: events.append("hooks") or []), \
+             patch("nyxniri.cli.render_completion_screen", side_effect=lambda *_, **__: events.append("completion")):
+            self.assertTrue(offer_overwrite_upgrade("--force"))
+
+        self.assertEqual(events, ["configs", "wallpapers", "fcitx", "greeter", "hooks", "completion"])
+
+    def test_failed_and_code_only_updates_skip_hooks(self):
+        from nyxniri.cli import offer_overwrite_upgrade
+
+        with patch("nyxniri.cli.deploy_selected_configs", return_value=["niri"]), \
+             patch("nyxniri.cli.render_completion_screen"), \
+             patch("nyxniri.cli.run_user_hooks") as hooks:
+            self.assertFalse(offer_overwrite_upgrade("--force"))
+        hooks.assert_not_called()
+
+        with patch("nyxniri.cli.run_user_hooks") as hooks:
+            self.assertTrue(offer_overwrite_upgrade("--no-deploy"))
+        hooks.assert_not_called()
+
+
 class TestGreeterWorkflowFailure(unittest.TestCase):
     """Install and interactive update must not report a failed greeter as complete."""
 

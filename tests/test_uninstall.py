@@ -124,17 +124,52 @@ class TestUninstallArchiveGlob(unittest.TestCase):
         (self.env.config_dir / "niri").mkdir(parents=True, exist_ok=True)
         (self.env.config_dir / "niri" / "config.kdl").write_text("current")
 
-        with patch("sys.stdin.isatty", return_value=False), patch("builtins.print"), \
+        with patch("sys.stdin.isatty", return_value=True), patch("builtins.print"), \
+             patch("nyxniri.state.uninstall.CheckboxList") as checklist, \
              patch("nyxniri.modules.fcitx.fcitx5_installed", return_value=False), \
              patch("nyxniri.modules.gtktheme.gtktheme_registered", return_value=False), \
              patch("nyxniri.modules.greeter.greeter_installed", return_value=False):
-            uninstall_nyxniri("")  # non-TTY → all selected, configs archived
+            checklist.return_value.run.return_value = ["configs", "archives"]
+            uninstall_nyxniri("")
 
         # Old archive cleaned (gap #1), but the freshly-created config archive survives.
         self.assertFalse(old.exists(), "Pre-existing archive must be cleaned")
         new_archives = list(self.env.config_dir.glob(f"{PROJECT_NAME}_archive_*"))
         self.assertEqual(len(new_archives), 1, "Only the freshly-created archive remains")
         self.assertTrue((new_archives[0] / "niri" / "config.kdl").exists())
+
+
+class TestUninstallHookPreservation(unittest.TestCase):
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+        self.env = self._ctx.env
+
+    def tearDown(self):
+        self._ctx.__exit__()
+
+    def test_standard_uninstall_keeps_hooks_but_purge_removes_them(self):
+        from nyxniri.state.uninstall import uninstall_nyxniri
+
+        hook = self.env.nyx_dir / "hooks" / "keep.sh"
+        hook.parent.mkdir(parents=True)
+        hook.write_text("#!/bin/sh\n")
+
+        common = {
+            "sys.stdin.isatty": patch("sys.stdin.isatty", return_value=False),
+            "builtins.print": patch("builtins.print"),
+            "fcitx": patch("nyxniri.modules.fcitx.fcitx5_installed", return_value=False),
+            "gtk": patch("nyxniri.modules.gtktheme.gtktheme_registered", return_value=False),
+            "greeter": patch("nyxniri.modules.greeter.greeter_installed", return_value=False),
+            "fisher": patch("nyxniri.modules.fisher.fisher_installed", return_value=False),
+        }
+        with common["sys.stdin.isatty"], common["builtins.print"], common["fcitx"], common["gtk"], common["greeter"], common["fisher"]:
+            self.assertTrue(uninstall_nyxniri(""))
+        self.assertTrue(hook.exists())
+
+        with common["sys.stdin.isatty"], common["builtins.print"], common["fcitx"], common["gtk"], common["greeter"], common["fisher"]:
+            self.assertTrue(uninstall_nyxniri("all"))
+        self.assertFalse(hook.exists())
 
 
 class TestFisherOwnership(unittest.TestCase):

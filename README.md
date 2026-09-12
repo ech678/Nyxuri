@@ -117,6 +117,10 @@ Any file or folder containing `__custom__` survives updates and preset switches:
 
 </details>
 
+### Post-deploy hooks
+
+Put shell scripts in `~/.config/NyxNiri/hooks/` to run your own finishing work after every normal config deploy. Scripts ending in `.sh` run in filename order with a 30-second limit; a failed or timed-out script is reported without blocking the rest. `nyxniri test` skips these hooks, and ordinary uninstall keeps them.
+
 ## Presets
 
 Some apps ship flavor variants — presets layer between defaults and your `__custom__` files, so switching never touches your own tweaks.
@@ -128,6 +132,7 @@ Built-in official presets:
 - **`niri`**:
   - `default`: minimalist frameless look (default)
   - `glow`: enables 2px outline and 28px soft diffused ambient glow (improves focus visibility across tiled windows)
+  - `glow-material-you`: focus glow follows Noctalia's current Material You palette
 
 | Command | Description |
 | :--- | :--- |

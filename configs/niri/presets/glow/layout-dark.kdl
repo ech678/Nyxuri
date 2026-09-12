@@ -1,0 +1,41 @@
+window-rule {
+    geometry-corner-radius 12
+    clip-to-geometry true
+    draw-border-with-background false
+}
+
+layout {
+    background-color "transparent"
+    gaps 12
+    center-focused-column "never"
+    always-center-single-column
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+    default-column-width { proportion 0.5; }
+    focus-ring {
+        width 2
+        active-color "#1a73e8"
+        inactive-color "transparent"
+        urgent-color "#ffb4ab"
+    }
+    shadow {
+        on
+        softness 28
+        spread 6
+        offset x=0 y=0
+        draw-behind-window false
+        color "#1a73e895"
+        inactive-color "#00000045"
+    }
+    tab-indicator {
+        active-color "#b6c7e7"
+        inactive-color "#374761"
+        urgent-color "#ffb4ab"
+    }
+    insert-hint {
+        color "#b6c7e780"
+    }
+}

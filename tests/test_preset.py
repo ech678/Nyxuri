@@ -227,6 +227,7 @@ class TestPresetOperations(unittest.TestCase):
         names = [n for n, _, _ in entries]
         self.assertIn("default", names)
         self.assertIn("glow", names)
+        self.assertIn("glow-material-you", names)
 
     def test_apply_niri_glow_sparse_overlay_end_to_end(self):
         ok = preset.apply_preset("niri", "glow")
@@ -244,6 +245,43 @@ class TestPresetOperations(unittest.TestCase):
         self.assertTrue(config.is_file())
         launcher = self.env.config_dir / "niri" / "scripts" / "orbit-launcher.py"
         self.assertTrue(launcher.is_file())
+
+    def test_apply_niri_glow_material_you_sets_sentinel(self):
+        self.assertTrue(preset.apply_preset("niri", "glow-material-you"))
+        dest = self.env.config_dir / "niri"
+        self.assertEqual(preset.read_active_preset("niri"), "glow-material-you")
+        self.assertTrue((dest / "glow-material-you.enabled").is_file())
+        self.assertTrue((dest / "config.kdl").is_file())
+        self.assertTrue((dest / "scripts" / "orbit-launcher.py").is_file())
+
+        self.assertTrue(preset.apply_preset("niri", "glow"))
+        self.assertFalse((dest / "glow-material-you.enabled").exists())
+        self.assertTrue(preset.apply_preset("niri", "default"))
+        self.assertFalse((dest / "glow-material-you.enabled").exists())
+
+    def test_niri_glow_material_you_template_is_dynamic(self):
+        template = self.env.configs_src / "noctalia" / "templates" / "niri-glow-material-you.kdl"
+        content = template.read_text(encoding="utf-8")
+        self.assertIn("{{ colors.primary.default.hex }}", content)
+        self.assertIn("{{ colors.error.default.hex }}", content)
+        self.assertIn("{{ colors.primary_container.default.hex }}", content)
+        self.assertNotIn("#1a73e8", content)
+        noctalia = (self.env.configs_src / "noctalia" / "noctalia-config.toml").read_text(encoding="utf-8")
+        self.assertIn("niri-glow-material-you.rendered.kdl", noctalia)
+        self.assertIn("glow-material-you.enabled", noctalia)
+
+    @unittest.mock.patch("nyxniri.deploy.preset.timed_run")
+    def test_apply_niri_glow_material_you_uses_template_hook_for_reload(self, mock_timed_run):
+        with patch("shutil.which", side_effect=lambda command: f"/usr/bin/{command}"):
+            self.assertTrue(preset.apply_preset("niri", "glow-material-you"))
+
+        mock_timed_run.assert_called_once_with(
+            ["noctalia", "msg", "templates-apply"],
+            30,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
 
     @unittest.mock.patch("nyxniri.deploy.preset.timed_run")
     @unittest.mock.patch("shutil.which", return_value="/usr/bin/niri")
