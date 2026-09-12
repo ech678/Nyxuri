@@ -7,6 +7,8 @@
 
 ## [Unreleased]
 
+## [v3.0.5] - 2026-09-12
+
 ### Added
 - Niri 新增 glow(包括跟随Material You配色版本) 预设
 - 游戏与模拟器支持按需开启可变刷新率(VRR)，避免锁屏与桌面静止时频闪
@@ -448,7 +450,8 @@
 ### Added
 - 首次发布基于 Niri 与 Noctalia V5 的 NyxNiri 桌面配置。
 
-[Unreleased]: https://github.com/ech678/NyxNiri/compare/v3.0.4...HEAD
+[Unreleased]: https://github.com/ech678/NyxNiri/compare/v3.0.5...HEAD
+[v3.0.5]: https://github.com/ech678/NyxNiri/compare/v3.0.4...v3.0.5
 [v3.0.4]: https://github.com/ech678/NyxNiri/compare/v3.0.3...v3.0.4
 [v3.0.3]: https://github.com/ech678/NyxNiri/compare/v3.0.2...v3.0.3
 [v3.0.2]: https://github.com/ech678/NyxNiri/compare/v3.0.1...v3.0.2
