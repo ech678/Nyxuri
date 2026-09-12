@@ -4,7 +4,7 @@ title: NyxNiri 项目总纲
 description: NyxNiri 桌面配置原子部署引擎的完整蒸馏——架构、合约、领域模型、运行时序与扩展指南。
 resource: https://github.com/ech678/NyxNiri
 tags: [nyxniri, dotfiles, niri, noctalia, atomic-deploy, tui, python]
-timestamp: "2026-09-12T14:00:00Z"
+timestamp: "2026-09-12T14:14:25Z"
 atelier:
   weight: 1.0
   tier: long
