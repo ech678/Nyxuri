@@ -47,3 +47,5 @@ atelier:
 - **[create]** `pkg/detection.md` — 依赖探测蒸馏
 - **[create]** `package/abuild.md` — AUR 打包蒸馏
 - **[create]** `test/strategy.md` — 测试策略蒸馏
+
+- **[update]** commit 81f1e01: feat(okfwiki): 侧载 OKF 知识束，按业务域分区蒸馏项目架构
