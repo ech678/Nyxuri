@@ -57,3 +57,5 @@ atelier:
 - **[update]** commit d1cb40a: docs: 更新更新日志与Nyx文档时间戳
 
 - **[update]** commit 4227362: docs: add update record and update nyx doc timestamp
+
+- **[update]** commit 3b1ffa5: docs: 更新更新日志和nyx文档时间戳
