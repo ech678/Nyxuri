@@ -115,6 +115,21 @@ window-rule {
     background-effect { blur true; }
 }
 
+// ==========================================
+// Web 浏览器按需 VRR 支持 (防撕裂与高刷平滑)
+// ==========================================
+window-rule {
+    match app-id=r#"^(firefox.*|org\.mozilla\.firefox)$"#
+    match app-id=r#"^(google-chrome.*|chrome|chromium.*|com\.google\.Chrome|org\.chromium\.Chromium)$"#
+    match app-id=r#"^(brave.*|com\.brave\.Browser|microsoft-edge.*|edge|com\.microsoft\.Edge)$"#
+    match app-id=r#"^(zen.*|app\.zen_browser\.zen)$"#
+    match app-id=r#"^(vivaldi.*|opera.*|thorium.*|floorp.*|waterfox.*|librewolf.*)$"#
+    match app-id=r#"^(org\.gnome\.Epiphany.*|epiphany|falkon.*|nyxt.*|qutebrowser.*|ladybird.*|midori.*|tor-browser.*)$"#
+
+    variable-refresh-rate true
+}
+
+
 window-rule {
     match app-id=r"^org\.gnome\.Nautilus$"
     draw-border-with-background false
