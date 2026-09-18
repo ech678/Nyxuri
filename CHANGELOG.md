@@ -11,6 +11,7 @@
 - 常用浏览器支持按需开启可变刷新率(VRR)，消除滚动与视频播放画面撕裂
 
 ### Changed
+- Fcitx5 皮肤设置现在会迁移旧配置并立即应用到候选框。
 - 默认不再指定 NVIDIA 驱动，并移除旧 Electron 显示设置；部分旧应用可能改用 XWayland。
 - 安装器和 Fish 使用同一套包管理规则，支持 Shelly，安装失败或超时会如实反馈。
 - 缓存清理统一为 `nyxniri clean`，原来的 Fish 和 Orbit 入口仍可用。

@@ -226,7 +226,7 @@ output_path = "/home/user/.local/share/fcitx5/themes/nyxmellow/panel.svg"
 index = 2
 input_path = "/home/user/.local/share/fcitx5/themes/nyxmellow/templates/highlight.svg"
 output_path = "/home/user/.local/share/fcitx5/themes/nyxmellow/highlight.svg"
-post_hook = "fcitx5-remote --check -r >/dev/null 2>&1 || true"
+post_hook = "busctl --user call org.fcitx.Fcitx5 /controller org.fcitx.Fcitx.Controller1 ReloadAddonConfig s classicui >/dev/null 2>&1 || true"
 
 # GTK Material You 主题（移植自 HyprYou，由 Noctalia 动态渲染到 gtk.css）
 # 路径中的 /home/user 为占位符，由 nyxniri.deploy 在部署时替换为实际 $HOME

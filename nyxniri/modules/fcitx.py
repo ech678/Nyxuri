@@ -1,6 +1,7 @@
 """Optional NyxMellow dynamic Fcitx5 skin (Noctalia user template integration)."""
 
 import configparser
+import re
 import shutil
 import subprocess
 import tempfile
@@ -12,6 +13,13 @@ from nyxniri.core import get_env, log_msg, timed_run
 from nyxniri.i18n import msg, text
 from nyxniri.deploy.atomic import atomic_replace_item
 from nyxniri.modules.lifecycle import module_action
+
+
+FCITX_CLASSICUI_RELOAD = [
+    "busctl", "--user", "call", "org.fcitx.Fcitx5", "/controller",
+    "org.fcitx.Fcitx.Controller1", "ReloadAddonConfig", "s", "classicui",
+]
+FCITX_CLASSICUI_RELOAD_HOOK = "busctl --user call org.fcitx.Fcitx5 /controller org.fcitx.Fcitx.Controller1 ReloadAddonConfig s classicui >/dev/null 2>&1 || true"
 
 
 def _fcitx_paths():
@@ -91,7 +99,10 @@ def fcitx_deploy_templates() -> bool:
 def _parse_ini(content):
     parser = configparser.ConfigParser(interpolation=None)
     parser.optionxform = str
-    parser.read_string(content)
+    try:
+        parser.read_string(content)
+    except configparser.MissingSectionHeaderError:
+        parser.read_string("[ClassicUI]\n" + content)
     return parser
 
 
@@ -99,6 +110,21 @@ def _edit_ini(content, section, changes):
     # Validate before editing; retain comments, ordering and unrelated sections.
     _parse_ini(content)
     lines = content.splitlines(keepends=True)
+    section_start = next((i for i, line in enumerate(lines)
+                          if configparser.ConfigParser.SECTCRE.match(line.strip())), None)
+    if section_start is None:
+        pending = dict(changes)
+        edited = []
+        for line in lines:
+            key = line.split("=", 1)[0].strip() if "=" in line and not line.lstrip().startswith(("#", ";")) else None
+            if key in pending:
+                value = pending.pop(key)
+                edited.append(f"{key}={value}\n")
+            else:
+                edited.append(line)
+        edited.extend(f"{key}={value}\n" for key, value in pending.items() if value is not None)
+        return "".join(edited)
+
     start = next((i for i, line in enumerate(lines)
                   if (match := configparser.ConfigParser.SECTCRE.match(line.strip()))
                   and match.group("header") == section), None)
@@ -122,6 +148,38 @@ def _edit_ini(content, section, changes):
     return "".join(lines[:start + 1] + edited + lines[end:])
 
 
+def _edit_flat_config(content, changes):
+    lines = content.splitlines(keepends=True)
+    active_section = None
+    legacy = []
+    sections = []
+    for line in lines:
+        match = configparser.ConfigParser.SECTCRE.match(line.strip())
+        if match:
+            active_section = match.group("header")
+            if active_section != "ClassicUI":
+                sections.append((active_section, [line]))
+            continue
+        if active_section == "ClassicUI":
+            legacy.append(line)
+        elif sections:
+            sections[-1][1].append(line)
+        else:
+            legacy.append(line)
+
+    root = legacy
+    pending = dict(changes)
+    updated = []
+    for line in root:
+        key = line.split("=", 1)[0].strip() if "=" in line and not line.lstrip().startswith(("#", ";")) else None
+        if key in pending:
+            updated.append(f"{key}={pending.pop(key)}\n")
+        else:
+            updated.append(line)
+    updated.extend(f"{key}={value}\n" for key, value in pending.items() if value is not None)
+    return "".join(updated + [line for _, group in sections for line in group])
+
+
 def _write_config(path, content):
     with tempfile.TemporaryDirectory() as directory:
         source = Path(directory) / path.name
@@ -136,18 +194,17 @@ def fcitx_set_theme_conf() -> None:
     _, _, _, classicui, _, _, _, _ = _fcitx_paths()
     fcitx_backup_theme_settings()
     content = classicui.read_text(encoding="utf-8") if classicui.is_file() else ""
-    _write_config(classicui, _edit_ini(content, "ClassicUI", {"Theme": FCITX_THEME, "DarkTheme": FCITX_THEME}))
+    _write_config(classicui, _edit_flat_config(content, {"Theme": FCITX_THEME, "DarkTheme": FCITX_THEME}))
     print(msg("fcitx_theme_set", str(classicui)))
 
 
 
 def fcitx_reload() -> None:
-    """Reload a running daemon without taking ownership of its lifecycle."""
-    if not shutil.which("fcitx5-remote"):
-        return
-    res = timed_run(["fcitx5-remote", "--check", "-r"], 5, capture_output=True, check=False)
-    if res is not None and res.returncode == 0:
-        print(msg("fcitx_reloaded"))
+    if shutil.which("busctl"):
+        res = timed_run(FCITX_CLASSICUI_RELOAD, 5, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        if res is not None and res.returncode == 0:
+            print(msg("fcitx_reloaded"))
+            return
 
 
 def fcitx_trigger_render() -> None:
@@ -173,8 +230,8 @@ def fcitx_register_templates() -> bool:
     original = content
     content = content.replace(
         "if pgrep -x fcitx5 >/dev/null 2>&1; then pkill -x fcitx5; sleep 1; fcitx5 -d >/dev/null 2>&1 & fi",
-        "fcitx5-remote --check -r >/dev/null 2>&1 || true",
-    )
+        FCITX_CLASSICUI_RELOAD_HOOK,
+    ).replace("fcitx5-remote --check -r >/dev/null 2>&1 || true", FCITX_CLASSICUI_RELOAD_HOOK)
     env = get_env()
     home = str(env.home).replace("\\", "\\\\").replace('"', '\\"')
     registered = tomllib.loads(content).get("theme", {}).get("templates", {}).get("user", {})
@@ -185,7 +242,7 @@ def fcitx_register_templates() -> bool:
         base = f"{home}/.local/share/fcitx5/themes/{FCITX_THEME}"
         content = content.rstrip() + f'\n\n[theme.templates.user.{name}]\nindex = {index}\ninput_path = "{base}/templates/{filename}"\noutput_path = "{base}/{filename}"\n'
         if suffix == "highlight":
-            content += 'post_hook = "fcitx5-remote --check -r >/dev/null 2>&1 || true"\n'
+            content += f'post_hook = "{FCITX_CLASSICUI_RELOAD_HOOK}"\n'
     if content != original:
         tomllib.loads(content)
         _write_config(noctalia_conf, content)
