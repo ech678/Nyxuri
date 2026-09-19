@@ -8,6 +8,7 @@
 ## [Unreleased]
 
 ### Added
+- Niri 新增 xray-blur 预设，采用背景预模糊降低半透明窗口开销
 - 常用浏览器支持按需开启可变刷新率(VRR)，消除滚动与视频播放画面撕裂
 
 ### Changed

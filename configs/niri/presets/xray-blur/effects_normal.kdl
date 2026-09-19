@@ -1,0 +1,20 @@
+// X-ray 预计算模糊模式：直接采样预模糊壁纸，大幅降低 GPU 开销
+window-rule {
+    opacity 0.9
+    background-effect {
+        blur true
+        xray true
+    }
+}
+
+window-rule {
+    match is-focused=false
+    opacity 0.85
+}
+
+blur {
+    passes 3
+    offset 2.3
+    noise 0.001
+    saturation 2
+}

@@ -228,6 +228,7 @@ class TestPresetOperations(unittest.TestCase):
         self.assertIn("default", names)
         self.assertIn("glow", names)
         self.assertIn("glow-material-you", names)
+        self.assertIn("xray-blur", names)
 
     def test_apply_niri_glow_sparse_overlay_end_to_end(self):
         ok = preset.apply_preset("niri", "glow")

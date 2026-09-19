@@ -10,5 +10,5 @@ preserve = ["monitor.kdl", "effects.kdl"]
 chmod = ["scripts/*.sh", "scripts/*.py"]
 
 [presets]
-allow = ["glow", "glow-material-you"]
+allow = ["glow", "glow-material-you", "xray-blur"]
 include = ["scripts/**", "*.kdl", "orbit-items__custom__.toml"]
