@@ -29,7 +29,13 @@
 - [subpackages](subpackages.md): nyxniri/{pkg, deploy, state, modules, packaging} 职责、CLI 与菜单分离、TOML 文案
 - [two-axis-config](two-axis-config.md): 可选（.optional-apps.toml）/ 有配置（目录）两轴独立、"加配置不毕业"
 - [manifest-schema](manifest-schema.md): .module.toml + .optional-apps.toml 字段参考
+- [modules](modules.md): 系统级可选模块（fcitx5/greeter/fisher/gtktheme）与 lifecycle 上抛合约
+- [i18n](i18n.md): 双语文案引擎（msg/text 协议）、宏变量替换与 translations.toml 契约
+- [assets-deploy](assets-deploy.md): 壁纸与静态资产流水线、离线 fallback 与 WallpaperDeployResult
+- [backup-snapshot](backup-snapshot.md): 配置快照生命周期、上限 30 个自动 prune 与回滚防灾
+- [packaging](packaging.md): AUR 打包与 gen-deps.py 自动汇聚 depends/optdepends
 - [theme-adaptation](../configs/noctalia/README.md): 主题中枢与 GTK/Brave 信号流全记录（GTK4 双 @media 块、settings.ini 兼容、Problem 1-12 证伪排查）
+
 
 ## Reference
 

@@ -77,3 +77,21 @@
    - 使用 `flock -w 5 "${XDG_RUNTIME_DIR:-/tmp}/nyxniri-${UID}-theme-sync.lock"` 保证瞬时多次快速按下快捷键时排队或安全丢弃，不发生状态竞争。
 3. **Orbit 启动器单实例锁 (`orbit/lock.py` / `/proc` 检测)**：
    - 防止重复唤起创建多个重叠悬浮窗，再次触发时优雅收起。
+
+---
+
+## 5. 引擎宿主拓扑与 Environment 数据类
+
+Python 管理引擎在启动时由 `nyxniri.core.get_env()` 构建全局只读 `Environment` 单例：
+
+| 属性 | 解析路径 | 职责与生命周期 |
+|---|---|---|
+| `home` | `$HOME` | 用户家目录根基 |
+| `config_dir` | `~/.config` | dotfiles 目标部署目录 |
+| `nyx_dir` | `~/.config/NyxNiri` | 用户数据（backups、presets、active 状态） |
+| `state_dir` | `~/.local/state/NyxNiri` | 运行时临时目录（进程锁、易失日志） |
+| `cache_dir` | `~/.cache/NyxNiri` | 缓存目录（standalone 模式下的远端代码镜像） |
+| `run_mode` | `"system"` / `"repo"` / `"standalone"` | 判定执行模式（`.system-install` 标记优先） |
+
+两域绝对物理隔离：`state_dir` 放运行时瞬态数据，`nyx_dir` 放持久化用户配置，互不渗透。
+

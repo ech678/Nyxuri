@@ -55,3 +55,19 @@ xdg-desktop-portal、zed（`starship.toml` 是文件型 app，其余是目录）
   就更新了，下次 deploy 自动读到新源——**声明式核心**。
 
 详见 [operation-map](operation-map.md) 和 [install-modes](install-modes.md)。
+
+## 引擎结构与子包职责
+
+| 子包 / 模块 | 职责与关键能力 | 核心接口 |
+|---|---|---|
+| `core.py` | 环境检测（Environment 单例）、文件锁、symlink-aware 路径原语、进程超时包装 | `get_env()`, `timed_run()`, `acquire_lock()` |
+| `i18n.py` | 双语文案引擎（`translations.toml`），宏变量安全替换与性能缓存 | `msg(key, *args)`, `text(zh, en)` |
+| `constants.py` | 项目常量、ANSI 色阶表、核心系统与 AUR 依赖清单 | `PROJECT_NAME`, `CORE_DEPS`, `Colors` |
+| `deploy/` | 原子替换核心（swap+preserve+Dunder）、模板渲染、预设切换、壁纸部署 | `atomic_replace_item()`, `apply_preset()`, `deploy_wallpapers()` |
+| `pkg/` | 包管理器抽象后端（pacman/paru/yay/shelly）、依赖状态只读探测与缓存 | `pkg.run()`, `DependencyProbe` |
+| `state/` | 配置快照与回滚管理（上限 30 个自动 prune）、勾选式卸载 | `backup_configs()`, `rollback_configs()`, `uninstall_nyxniri()` |
+| `modules/` | 系统级可选组件（fcitx5 皮肤、greetd 登录器、fisher 插件、GTK 主题）与生命周期错误边界 | `module_action()`, 各模块 `*_install()/*_uninstall()` |
+| `packaging/` | 自动汇总 Manifest 依赖并生成 AUR PKGBUILD 依赖块 | `gen-deps.py` |
+| `tui.py` / `menus.py` | 终端 TUI 组件（TerminalGuard 光标保护、Menu、CheckboxList、PresetSwitcher）与菜单编排 | `TerminalGuard`, `main_menu_loop()` |
+| `doctor.py` | 系统健康与环境诊断（_check_* 注册模式）与 bug 报告导出 | `run_doctor()`, `generate_bug_report()` |
+
