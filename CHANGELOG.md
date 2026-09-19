@@ -20,6 +20,7 @@
 
 ### Fixed
 - 修复深浅模式切换时 Fcitx5 皮肤未能动态跟随的问题；完善 D-Bus Addon 重载调用并增加 `--auto-start=no`，防止在输入法未启动时意外拉起后台守护进程。
+- 修复 Noctalia Greeter 的 Polkit 免密规则中的 Action ID，由错误的 `apply-appearance` 修正为实际生效的 `sync-appearance`，避免同步外观时索要 root 密码。
 
 ## [v3.0.5] - 2026-09-12
 

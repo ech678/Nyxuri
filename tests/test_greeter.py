@@ -315,6 +315,22 @@ class TestGreeterInstall(unittest.TestCase):
         self.assertIn(["sudo", "install", "-d", "-o", "greeter", "-g", "greeter", "-m", "755", str(self._ctx.env.home / "state-dir")], calls)
         self.assertIn(["systemctl", "cat", "greetd"], calls)
 
+    def test_polkit_rule_uses_sync_appearance_action_id(self):
+        written_rules = []
+
+        def fake_run(argv, **kwargs):
+            if argv[:3] == ["sudo", "install", "-D"] and argv[-1].endswith(".rules"):
+                written_rules.append(Path(argv[-2]).read_text(encoding="utf-8"))
+            if argv[:2] == ["systemctl", "is-enabled"]:
+                return _result(0 if argv[-1] == "greetd" else 1)
+            return _result()
+
+        result, _ = self._install(fake_run)
+        self.assertTrue(result)
+        self.assertEqual(len(written_rules), 1)
+        self.assertIn('"org.noctalia.greeter.sync-appearance"', written_rules[0])
+        self.assertNotIn("apply-appearance", written_rules[0])
+
     def test_failed_switch_restores_even_when_disabling_previous_manager_fails(self):
         calls = []
 

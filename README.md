@@ -324,7 +324,7 @@ Install the Polkit rule manually if needed:
 ```bash
 sudo bash -c 'cat > /etc/polkit-1/rules.d/50-noctalia-greeter.rules << EOF
 polkit.addRule(function(action, subject) {
-    if (action.id == "org.noctalia.greeter.apply-appearance" &&
+    if (action.id == "org.noctalia.greeter.sync-appearance" &&
         subject.isInGroup("wheel")) {
         return polkit.Result.YES;
     }
