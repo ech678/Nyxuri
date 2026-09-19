@@ -16,10 +16,10 @@ from nyxniri.modules.lifecycle import module_action
 
 
 FCITX_CLASSICUI_RELOAD = [
-    "busctl", "--user", "call", "org.fcitx.Fcitx5", "/controller",
+    "busctl", "--user", "--auto-start=no", "call", "org.fcitx.Fcitx5", "/controller",
     "org.fcitx.Fcitx.Controller1", "ReloadAddonConfig", "s", "classicui",
 ]
-FCITX_CLASSICUI_RELOAD_HOOK = "busctl --user call org.fcitx.Fcitx5 /controller org.fcitx.Fcitx.Controller1 ReloadAddonConfig s classicui >/dev/null 2>&1 || true"
+FCITX_CLASSICUI_RELOAD_HOOK = "busctl --user --auto-start=no call org.fcitx.Fcitx5 /controller org.fcitx.Fcitx.Controller1 ReloadAddonConfig s classicui >/dev/null 2>&1 || true"
 
 
 def _fcitx_paths():
@@ -228,6 +228,9 @@ def fcitx_register_templates() -> bool:
     content = noctalia_conf.read_text(encoding="utf-8")
     tomllib.loads(content)
     original = content
+    highlight_section = f"{FCITX_THEME}_highlight"
+    hook_pattern = rf'(\[theme\.templates\.user\.{re.escape(highlight_section)}\](?:(?!\[)[\s\S])*?post_hook\s*=\s*")[^"]*(")'
+    content = re.sub(hook_pattern, rf'\g<1>{FCITX_CLASSICUI_RELOAD_HOOK}\g<2>', content)
     content = content.replace(
         "if pgrep -x fcitx5 >/dev/null 2>&1; then pkill -x fcitx5; sleep 1; fcitx5 -d >/dev/null 2>&1 & fi",
         FCITX_CLASSICUI_RELOAD_HOOK,
@@ -235,6 +238,9 @@ def fcitx_register_templates() -> bool:
     env = get_env()
     home = str(env.home).replace("\\", "\\\\").replace('"', '\\"')
     registered = tomllib.loads(content).get("theme", {}).get("templates", {}).get("user", {})
+    if highlight_section in registered and "post_hook" not in registered[highlight_section]:
+        section_pattern = rf'(\[theme\.templates\.user\.{re.escape(highlight_section)}\](?:(?!\[)[\s\S])*?)(\n\s*(?:\[|\Z))'
+        content = re.sub(section_pattern, rf'\g<1>post_hook = "{FCITX_CLASSICUI_RELOAD_HOOK}"\n\g<2>', content)
     for index, (suffix, filename) in enumerate((("theme", "theme.conf"), ("panel", "panel.svg"), ("highlight", "highlight.svg"))):
         name = f"{FCITX_THEME}_{suffix}"
         if name in registered:

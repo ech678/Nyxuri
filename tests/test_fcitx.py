@@ -91,7 +91,7 @@ class TestFcitxStartup(unittest.TestCase):
             fcitx_reload()
 
         run.assert_called_once_with(
-            ["busctl", "--user", "call", "org.fcitx.Fcitx5", "/controller", "org.fcitx.Fcitx.Controller1", "ReloadAddonConfig", "s", "classicui"],
+            ["busctl", "--user", "--auto-start=no", "call", "org.fcitx.Fcitx5", "/controller", "org.fcitx.Fcitx.Controller1", "ReloadAddonConfig", "s", "classicui"],
             5, stdout=-3, stderr=-3, check=False,
         )
         popen.assert_not_called()
@@ -189,6 +189,21 @@ class TestFcitxStartup(unittest.TestCase):
             self.assertTrue(fcitx_uninstall())
         self.assertIn(personal, path.read_text())
         self.assertNotIn("nyxmellow_theme]", path.read_text())
+
+    def test_template_registration_upgrades_legacy_hooks(self):
+        from nyxniri.modules.fcitx import fcitx_register_templates, FCITX_CLASSICUI_RELOAD_HOOK
+        path = self.env.config_dir / "noctalia/noctalia-config.toml"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        legacy_content = (
+            '[theme.templates.user.nyxmellow_highlight]\n'
+            'index = 2\n'
+            'input_path = "in.svg"\n'
+            'output_path = "out.svg"\n'
+            'post_hook = "fcitx5-remote --check -r >/dev/null 2>&1 || true"\n'
+        )
+        path.write_text(legacy_content)
+        self.assertTrue(fcitx_register_templates())
+        self.assertIn(f'post_hook = "{FCITX_CLASSICUI_RELOAD_HOOK}"', path.read_text())
 
     def test_failed_template_write_does_not_enable_module(self):
         from nyxniri.modules.fcitx import fcitx_install, fcitx_enabled
