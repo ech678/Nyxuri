@@ -20,6 +20,11 @@ nyxniri/
 ├── deps.py                             依赖批次、AUR 引导、可选软件菜单（无全局探测缓存）
 ├── clean.py                            缓存清理，入口 nyxniri clean
 ├── doctor.py                           体检（_check_* 追加到 DOCTOR_CHECKS）
+├── template_registry.py                TOML 用户模板原子修改与节段管理
+├── theme.py                            底座原生 GTK/Qt/Noctalia 主题同步引擎（替代脚本直写 INI / gsettings）
+│
+├── migrations/                         状态线性迁移与墓碑清单清理框架（MIGRATION_LEVEL、TOMBSTONES）
+│   └── __init__.py                     run() 执行升级清理并记录迁移版本
 │
 ├── pkg/                                Fish 与安装器共用的包管理
 │   ├── __init__.py                     后端选择、命令构造、安装与超时结果
@@ -30,16 +35,17 @@ nyxniri/
 │   ├── atomic.py                       atomic_replace_item（swap+preserve）+ Dunder walk + manifest preserve 快照
 │   ├── manifest.py                     .module.toml + .optional-apps.toml 解析、app 发现（两轴解耦，见下页）
 │   ├── templates.py                    _phase_render_templates（/home/user → $HOME、screenshot 路径）
-│   ├── assets.py                       壁纸部署（WallpaperDeployResult、no-clobber 同步 + 外部包下载）
+│   ├── assets.py                       壁纸部署（WallpaperDeployResult、no-clobber 同步 + 外部包下载 + managed 账本）
 │   ├── hardware.py                     classify_gpu_devices（诊断报告的纯文本 PCI 设备分类）
-│   ├── preset.py                       预设切换（active 状态、src 四分支、apply 窄路径）
+│   ├── preset.py                       预设切换（active 状态、src 四分支、apply 窄路径、接入 state.json 账本）
 │   └── deploy.py                       编排器：discover_config_items、_phase_atomic_deployment、
 │                                       _phase_post_install_services、run_user_hooks、
 │                                       render_completion_screen、deploy_selected_configs、test_deploy
 │
 ├── state/                              状态子包
 │   ├── backup.py                       快照 / 回滚 / 删除（path 原语 copy_path/remove_path 在 core.py）
-│   └── uninstall.py                    勾选式卸载（模块恢复先于 nyx_dir 删除）
+│   ├── ledger.py                       单一事实源轻量账本（state.json，模块标记、预设状态、活动 Shell 路由）
+│   └── uninstall.py                    勾选式卸载（模块恢复先于 nyx_dir 删除、managed 壁纸卸载保护）
 │
 ├── modules/                            模块子包（同款 install|status|uninstall 三件套）
 │   ├── fcitx.py                        NyxMellow 皮肤、主题字段恢复、旧 QuickPhrase 备份清退
@@ -65,7 +71,7 @@ nyxniri/
   preset 全套（`apply_preset`/`list_presets`/…）、manifest 全套
   （`load_manifest`/`discover_deployable_apps`/`discover_optional_apps`）…
 - `nyxniri.state/__init__`：`backup_configs`、`rollback_configs`、`list_backups`、`delete_backup`、
-  `get_all_backups`、`get_backup_base_dir`、`uninstall_nyxniri`（path 原语 `copy_path`/`remove_path` 在 core.py，按需直连）
+  `get_all_backups`、`get_backup_base_dir`、`uninstall_nyxniri`、`active_shell`、`ledger_path`、`read_ledger`、`update_ledger`（path 原语 `copy_path`/`remove_path` 在 core.py，按需直连）
 - `nyxniri.modules/__init__`：fcitx/fisher/greeter/gtktheme 四件套动词（`fcitx_install`/`fisher_uninstall`/…）
 
 ## Import 约定（两套路径，按场景选）

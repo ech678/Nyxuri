@@ -8,6 +8,7 @@ across preset switches (regression guard for the copytree ignore change).
 import os
 import subprocess
 import tempfile
+import tomllib
 import unittest
 from io import StringIO
 from pathlib import Path
@@ -267,7 +268,9 @@ class TestPresetOperations(unittest.TestCase):
         noctalia = (self.env.configs_src / "noctalia" / "noctalia-config.toml").read_text(encoding="utf-8")
         self.assertIn('output_path = "/home/user/.config/niri/colors.kdl"', noctalia)
         self.assertNotIn('output_path = "/home/user/.config/niri/layout.kdl"', noctalia)
-        self.assertNotIn("post_hook", noctalia)
+        parsed = tomllib.loads(noctalia)
+        niri_tpl = parsed.get("theme", {}).get("templates", {}).get("user", {}).get("nyxniri_niri_glow_material_you", {})
+        self.assertNotIn("post_hook", niri_tpl)
 
     @unittest.mock.patch("nyxniri.deploy.preset.timed_run")
     def test_apply_niri_glow_material_you_has_no_daemon_side_effect(self, mock_timed_run):

@@ -1246,9 +1246,6 @@ en = "{Colors.BOLD_RED}[✗] Unknown command: {0}{Colors.RESET}"
 zh = "{Colors.BOLD_RED}[✗] 参数无效。用法: {0}{Colors.RESET}"
 en = "{Colors.BOLD_RED}[✗] Invalid arguments. Usage: {0}{Colors.RESET}"
 
-[err_theme_sync_missing]
-zh = "{Colors.BOLD_RED}[✗] 未找到 theme-sync.sh。请先运行 nyxniri install config。{Colors.RESET}"
-en = "{Colors.BOLD_RED}[✗] theme-sync.sh was not found. Run nyxniri install config first.{Colors.RESET}"
 
 [cli_help]
 zh = """{0} 配置管理工具 ({1})
@@ -1430,9 +1427,6 @@ en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Installed config: ~/.config/{0}"
 zh = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 初始化主题与 GTK 同步"
 en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Initializing theme & GTK sync"
 
-[log_enable_mpvpaper]
-zh = ":: 启用 mpvpaper 插件"
-en = ":: Enabling mpvpaper plugin"
 
 [log_check_fisher]
 zh = "{Colors.BOLD_BLUE}:: 检查 Fisher…{Colors.RESET}"
@@ -1597,6 +1591,10 @@ en = "{Colors.BOLD_BLUE}:: Switching to pinned ref ({0})…{Colors.RESET}"
 [update_pin_done]
 zh = "{Colors.BOLD_GREEN}[✓] 已固定到指定版本: {0}{Colors.RESET}"
 en = "{Colors.BOLD_GREEN}[✓] Pinned to ref: {0}{Colors.RESET}"
+
+[migration_failed]
+zh = "{Colors.BOLD_RED}[✗] 迁移账本写入失败，已停止部署。{Colors.RESET}"
+en = "{Colors.BOLD_RED}[✗] Failed to write migration ledger; deployment stopped.{Colors.RESET}"
 
 [path_occlusion_warn]
 zh = "{Colors.BOLD_YELLOW}[!] 检测到 ~/.local/bin/nyxniri 遮蔽了系统包 (/usr/bin/nyxniri)。建议删除旧软链以使用系统包: rm ~/.local/bin/nyxniri{Colors.RESET}"

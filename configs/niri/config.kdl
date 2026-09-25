@@ -2,12 +2,12 @@
 include "monitor.kdl"
 // 动态引入视觉特效样式 (普通模式 vs 护眼模式)
 include "effects.kdl"
-// Dynamic palette output is isolated from the core layout file.
-include optional=true "colors.kdl"
 // 引入输入设备与手势配置 (受 Dunder Protocol 保护，更新自动保留)
 include optional=true "input__custom__.kdl"
 // 引入布局设置
 include "layout.kdl"
+// 动态色板与光晕输出 (与核心布局解耦，若存在则覆盖底版色彩)
+include optional=true "colors.kdl"
 // 引入动画配置
 include "animations.kdl"
 // 引入窗口与图层规则
@@ -35,7 +35,6 @@ spawn-at-startup "~/.config/niri/scripts/session-shell.sh"
 // niri does not consume /etc/xdg/autostart entries on its own.
 spawn-at-startup "sh" "-c" "command -v fcitx5 >/dev/null 2>&1 && exec fcitx5 -d"
 spawn-at-startup "~/.config/niri/scripts/toggle-eyecare.sh" "--sync"
-// Re-render GTK M3 templates after Noctalia palette is ready (~8s on cold start)
 
 hotkey-overlay {
     skip-at-startup

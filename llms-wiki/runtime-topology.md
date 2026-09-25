@@ -11,26 +11,26 @@
 [ Niri Compositor 会话 (Wayland) ]
   │
   ├── 1. 启动阶段 (spawn-at-startup)
-  │     ├── session-shell.sh   ───────► Shell 启动网关 (默认拉起 Noctalia V5 / 兼容 start-noctalia.sh)
+  │     ├── session-shell.sh   ───────► Shell 启动网关 (读取 state.json 的 active_shell 路由: Noctalia vs 自研 Shell)
   │     ├── fcitx5 -d          ───────► Fcitx5 输入法守护进程
-  │     ├── toggle-eyecare.sh --sync ─► 同步护眼模式状态与色温
-  │     └── (8s 延迟任务)      ───────► noctalia msg config-reload && templates-apply (M3 GTK 冷启动保底)
+  │     └── toggle-eyecare.sh --sync ─► 同步护眼模式状态与色温
   │
   ├── 2. 交互脚本层 (Keybindings 触发)
   │     ├── shell-action.sh    ───────► 统一动作网关 (launcher/session/settings/clipboard/lock/wallpaper-random)
-  │     │     ├── launcher     ───────► 优先唤起 orbit-launcher.py (未安装时回退 fuzzel)
+  │     │     ├── launcher     ───────► 唤起 orbit-launcher.py (~/.config/noctalia/tools/)
   │     │     └── session      ───────► 分发至 Shell IPC (noctalia msg / 未来自研 Shell)
-  │     ├── Super + W          ───────► wallpaper-picker.py (壁纸选择器)
+  │     ├── Super + W          ───────► wallpaper-picker.py (位于 ~/.config/noctalia/tools/)
   │     ├── Super + ~          ───────► niri-scratch-toggle.sh (Kitty 浮动终端切换)
   │     ├── Super + N          ───────► toggle-eyecare.sh (护眼色温与着色器切换)
   │     └── 亮度快捷键         ───────► niri-brightness.sh (内屏背光 / 外接 DDC 分流)
   │
   └── 3. 主题与色彩调度层
-        ├── nyxniri theme toggle / dark / light
+        ├── nyxniri theme toggle / dark / light / sync
         │     ▼
-        │   theme-sync.sh (排他 flock 保护)
+        │   nyxniri.theme.sync (fcntl 排他 flock 保护)
         │     ├── gsettings color-scheme ──► xdg-desktop-portal ──► GTK4/libadwaita & Brave
         │     ├── gtk-{3,4}.0/settings.ini 写入 ─────────────────► Chromium 启动读
+        │     ├── noctalia msg theme-mode-* ─────────────────────► 通知 Noctalia 切换色板与状态
         │     └── pkill -SIGUSR1 kitty ──────────────────────────► Kitty 终端秒跟
         │
         └── 壁纸切换事件 (wallpaper_changed hook)
@@ -39,7 +39,7 @@
               ▼
             Noctalia Material You 调色算法
               ▼ (~6s 自动触发)
-            渲染 ~/.config/gtk-{3,4}.0/gtk.css (双 @media 块)
+            渲染 ~/.config/gtk-{3,4}.0/gtk.css (双 @media 块) + ~/.cache/nyxniri/palette.toml
 ```
 
 ---
@@ -75,8 +75,8 @@
 1. **亮度调节降级 (`niri-brightness.sh`)**：
    - 内置屏幕优先调用 Noctalia D-Bus 背光服务（毫秒级、无卡顿）；
    - 外接显示器使用 `ddcutil`，且带超时拦截，防止 I2C 总线挂起冻结 UI。
-2. **主题同步防抖竞态 (`theme-sync.sh`)**：
-   - 使用 `flock -w 5 "${XDG_RUNTIME_DIR:-/tmp}/nyxniri-${UID}-theme-sync.lock"` 保证瞬时多次快速按下快捷键时排队或安全丢弃，不发生状态竞争。
+2. **主题同步防抖竞态 (`nyxniri.theme.sync`)**：
+   - 使用 `fcntl.flock` 锁定运行时文件（优先 `${XDG_RUNTIME_DIR}/nyxniri-${UID}-theme-sync.lock`），瞬时多次触发非阻塞快速丢弃，杜绝状态竞争。
 3. **Orbit 启动器单实例锁 (`orbit/lock.py` / `/proc` 检测)**：
    - 防止重复唤起创建多个重叠悬浮窗，再次触发时优雅收起。
 
@@ -90,10 +90,10 @@ Python 管理引擎在启动时由 `nyxniri.core.get_env()` 构建全局只读 `
 |---|---|---|
 | `home` | `$HOME` | 用户家目录根基 |
 | `config_dir` | `~/.config` | dotfiles 目标部署目录 |
-| `nyx_dir` | `~/.config/NyxNiri` | 用户数据（backups、presets、active 状态） |
-| `state_dir` | `~/.local/state/NyxNiri` | 运行时临时目录（进程锁、易失日志） |
-| `cache_dir` | `~/.cache/NyxNiri` | 缓存目录（standalone 模式下的远端代码镜像） |
+| `nyx_dir` | `~/.config/NyxNiri` | 用户数据（backups、presets 目录） |
+| `state_dir` | `~/.local/state/NyxNiri` | 运行时临时目录（`state.json` 账本、进程锁、易失日志） |
+| `cache_dir` | `~/.cache/NyxNiri` | 缓存目录（standalone 模式代码镜像；另含 `~/.cache/nyxniri/palette.toml` 动态色板） |
 | `run_mode` | `"system"` / `"repo"` / `"standalone"` | 判定执行模式（`.system-install` 标记优先） |
 
-两域绝对物理隔离：`state_dir` 放运行时瞬态数据，`nyx_dir` 放持久化用户配置，互不渗透。
+两域绝对物理隔离：`state_dir` 放运行时瞬态与账本数据，`nyx_dir` 放持久化用户配置，互不渗透。
 

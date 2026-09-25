@@ -7,8 +7,8 @@
 | 命令 | 干啥 |
 |---|---|
 | `install [full\|config]`（alias `deploy`） | 部署配置（full = + 壁纸 + 模块） |
-| `update [--force\|--no-deploy] [--to <tag\|commit>]` | 拉新版本 + 重新部署;`--to` 锁到指定版本（system 模式 → 提示 pacman） |
-| `preset <app> [list\|apply <name>\|save <name>\|edit <name>\|delete <name>]` | 切/管理预设 |
+| `update [--force\|--no-deploy] [--to <tag\|commit>]` | 拉新版本 + 线性状态迁移 (`migrations`) + 重新部署；`--to` 锁到指定版本（system 模式 → 提示 pacman） |
+| `preset <app> [list\|apply <name>\|save <name>\|edit <name>\|delete <name>]` | 切/管理预设（状态接入 `state.json` 账本） |
 
 ## 管"安装方式"的
 
@@ -17,9 +17,9 @@
 | `deps [core\|apps]` | 装软件包 |
 | `apps`（alias `recommended`） | 装可选软件 |
 | `pkg <install\|upgrade\|remove\|search\|info\|installed>` | Fish 与安装器共用包管理；安装接收包名，搜索支持 `aur` / `pac` 前缀 |
-| `wallpapers`（alias `wp`） | 装壁纸包 |
+| `wallpapers`（alias `wp`） | 装壁纸包（维护 `.nyxniri-managed.json` 跟踪清单） |
 | `<module> [install\|status\|uninstall]` | fcitx / fisher / greeter / gtk 四件套模块（动态 import `nyxniri.modules.<name>`，其中 `gtk` 映射至 `gtktheme`） |
-| `theme [toggle\|dark\|light\|sync\|status]` | 切换/同步深浅主题 |
+| `theme [toggle\|dark\|light\|sync\|status]` | 原生切换/同步深浅主题（纯 Python 调度 gsettings、GTK settings.ini、Noctalia IPC 与 Kitty 信号，status 查询当前模式） |
 
 ## 管"状态"的
 

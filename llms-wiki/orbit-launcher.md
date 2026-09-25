@@ -1,7 +1,7 @@
 # Orbit Launcher — 星环启动器设计规格
 
 > Material 3 Expressive 星环启动器：高频 Scratchpad / 快捷工具箱。极致手感、物理秩序、
-> 肌肉记忆、键盘友好、支持文件夹子环。入口：`configs/niri/scripts/orbit-launcher.py`；实现：`configs/niri/scripts/orbit/`（`window.py` 主体、`physics.py`、`config.py`、`renderer.py`）。
+> 肌肉记忆、键盘友好、支持文件夹子环。入口：`configs/noctalia/tools/orbit-launcher.py`（兼容转发包装：`configs/niri/scripts/niri-scratch-menu.py`）；实现：`configs/noctalia/tools/orbit/`（`window.py` 主体、`physics.py`、`config.py`、`renderer.py`、`palette.py`）。调色以 `~/.cache/nyxniri/palette.toml` 为唯一事实源。
 
 ## 快捷键
 

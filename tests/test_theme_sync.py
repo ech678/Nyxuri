@@ -24,6 +24,12 @@ class TestThemeSync(unittest.TestCase):
             self.assertEqual(parser["Settings"]["gtk-application-prefer-dark-theme"], "false")
             self.assertEqual(parser["Settings"]["gtk-theme-name"], "adw-gtk3")
 
+    def test_status_returns_zero(self):
+        from nyxniri.theme import status
+
+        with patch("nyxniri.theme.shutil.which", return_value=None):
+            self.assertEqual(status(), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -47,7 +47,8 @@ def set_section_key(content: str, section: str, key: str, value: str) -> str:
         if stripped.startswith("[") and stripped.endswith("]"):
             end = index
             break
-    assignment = f'{key} = "{value.replace(chr(92), chr(92) * 2).replace(chr(34), chr(92) + chr(34))}"'
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    assignment = f'{key} = "{escaped}"'
     pattern = re.compile(rf"^\s*{re.escape(key)}\s*=")
     for index in range(start + 1, end):
         if pattern.match(lines[index]):

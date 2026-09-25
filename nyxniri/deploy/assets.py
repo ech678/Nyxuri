@@ -75,8 +75,15 @@ def deploy_wallpapers(do_download: bool = False) -> WallpaperDeployResult:
     wp_dest.mkdir(parents=True, exist_ok=True)
     env = get_env()
     downloaded = False
-    fallback_synced = False
     managed: set[str] = set()
+    marker_path = wp_dest / ".nyxniri-managed.json"
+    if marker_path.is_file():
+        try:
+            existing = json.loads(marker_path.read_text(encoding="utf-8"))
+            if isinstance(existing, list):
+                managed.update(name for name in existing if isinstance(name, str))
+        except (OSError, ValueError, TypeError):
+            pass
 
     if do_download:
         print(msg("msg_downloading_wallpapers"))
@@ -120,14 +127,17 @@ def deploy_wallpapers(do_download: bool = False) -> WallpaperDeployResult:
                 print(msg(failure_key))
                 log_msg("WARN", "Wallpaper pack download failed on all mirrors")
 
+    fallback_synced = False
     # Incremental fallback sync
     fallback_src = env.assets_src / "wallpapers"
     if fallback_src.is_dir():
         for f in fallback_src.iterdir():
+            if not f.is_file():
+                continue
+            managed.add(f.name)
             target = wp_dest / f.name
             if not target.exists():
                 shutil.copy2(f, target)
-                managed.add(f.name)
         fallback_synced = True
         print(msg("log_sync_wallpapers", str(wp_dest)))
 

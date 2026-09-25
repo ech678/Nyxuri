@@ -7,7 +7,8 @@ Forwards execution to the Noctalia companion tool.
 import sys
 import os
 
-TARGET_SCRIPT = os.path.expanduser("~/.config/noctalia/tools/orbit-launcher.py")
+CONFIG_HOME = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
+TARGET_SCRIPT = os.path.join(CONFIG_HOME, "noctalia", "tools", "orbit-launcher.py")
 
 if __name__ == "__main__":
     if not os.path.isfile(TARGET_SCRIPT):

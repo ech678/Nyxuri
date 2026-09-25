@@ -340,11 +340,15 @@ def safe_git_pull(target_dir: Path) -> Optional[bool]:
             print(msg("update_skipped_dev_repo", str(target_dir)))
             log_msg("WARN", f"Skipped pull for detached local repo: {target_dir}")
             return None
-        res_fetch = _run_git_transfer(
-            ["git", *_GIT_NET, "fetch", "--depth", "1", "origin", "main"],
-            cwd=target_dir, env=env,
-        )
-        if res_fetch.returncode != 0:
+        try:
+            res_fetch = _run_git_transfer(
+                ["git", *_GIT_NET, "fetch", "--depth", "1", "origin", "main"],
+                cwd=target_dir, env=env,
+            )
+            if res_fetch.returncode != 0:
+                return False
+        except (subprocess.TimeoutExpired, OSError) as e:
+            log_msg("WARN", f"Fetch failed for detached checkout: {e}")
             return False
         res_reset = timed_run(
             ["git", "reset", "--hard", "origin/main"], 15,

@@ -7,9 +7,10 @@
 
 `~/.config/NyxNiri/presets/<app>.active`——一行，内容是预设名或 `default`。不占配置槽
 （这是扔掉 include 间接层、扔掉 `__preset__` 保留名的关键简化：一个概念减两份复杂度）。
+同时同步记录至 `~/.local/state/NyxNiri/state.json` 账本（`presets` 字典），`read_active_preset` 优先读账本并双向自愈。
 
 - `read_active_preset(app)` → 文件不存在时返回 `"default"`，空白、读失败或非法内容会抛出 `InvalidActivePresetError` 并冻结部署
-- `write_active_preset(app, name)` → **原子写**（temp + `os.replace`）。半写空文件会被
+- `write_active_preset(app, name)` → **原子写**（temp + `os.replace`）并同步更新 `state.json`。半写空文件会被
   拒绝并冻结部署——原子写堵死这条故障路径
 
 ## src 四分支（`resolve_preset_src(app, active, dest)`）
@@ -68,6 +69,7 @@ theme-sync / gtk 重渲染）。切个 kitty 预设不该顺带跑 fisher，无�
 三层堆叠正式落地：`configs/<app>` (Base) ← `presets/<name>` (Overlay) ← `__custom__` (Dunder) / `preserve` (Manifest)。
 
 - **稀疏预设 (Sparse Presets)**：预设目录只需要存放与默认配置有差异的文件（例如 Niri 的 `glow` 仅需 49 行的 `layout.kdl`，无需镜像复制 4000+ 行 Python 脚本）。未重写的文件自动从仓库底版继承。
+- **动态光晕模板解耦**：Niri 的 `glow-material-you` 由 Noctalia 原生渲染输出为独立的 `~/.config/niri/colors.kdl`，不再覆写核心布局 `layout.kdl`，亦无外部 IPC `post_hook` 副作用；`config.kdl` 中在 `layout.kdl` 之后可选加载 `include optional=true "colors.kdl"`。
 - **双轴白名单保障**：
   - **预设名白名单 (`allow = ["glow", "glow-material-you"]`)**：仅列入白名单的预设开启继承；未列入的预设和未声明的应用（如 Kitty）保持 100% 独立，零配置渗透。
   - **文件白名单 (`include = ["scripts/**", "*.kdl"]`)**：仅继承白名单允许的底版文件；支持 `exclude` 黑名单进一步剔除特定文件。

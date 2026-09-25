@@ -24,7 +24,11 @@ def update_ledger(**changes: Any) -> dict[str, Any]:
     path = ledger_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     data = read_ledger()
-    data.update(changes)
+    for key, value in changes.items():
+        if isinstance(value, dict) and isinstance(data.get(key), dict):
+            data[key] = {**data[key], **value}
+        else:
+            data[key] = value
     tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     os.replace(tmp, path)

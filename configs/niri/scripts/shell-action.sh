@@ -11,16 +11,10 @@ action="${1:-}"
 state_root="${XDG_STATE_HOME:-$HOME/.local/state}"
 state_file="$state_root/NyxNiri/state.json"
 active_shell="noctalia"
-if [ -r "$state_file" ] && command -v python3 >/dev/null 2>&1; then
-    active_shell="$(python3 - "$state_file" <<'PY'
-import json, sys
-try:
-    value = json.load(open(sys.argv[1], encoding="utf-8")).get("active_shell", "noctalia")
-    print(value if value in {"noctalia", "custom"} else "noctalia")
-except (OSError, ValueError, TypeError):
-    print("noctalia")
-PY
-)"
+if [ -r "$state_file" ]; then
+    if grep -q '"active_shell"[[:space:]]*:[[:space:]]*"custom"' "$state_file" 2>/dev/null; then
+        active_shell="custom"
+    fi
 fi
 
 if [ "$active_shell" = "custom" ]; then
