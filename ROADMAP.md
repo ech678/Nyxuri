@@ -115,29 +115,34 @@
 
 随着项目向**自研 Shell、双 Shell 平等共存、多合成器 (Multi-WM) 扩展、高鲁棒更新迁移与 TUI 风格化**纵深迈进，全库穿透审计定位出以下 6 大深层技术病灶（**坚持“一切皆可选、按需自由组装”原则**）：
 
-1. **项目改名与品牌路径死锁 (Naming & Case Split)**：
+1. **项目改名、大小写分裂与卸载孤儿 (Naming & Case Split)**：
    - 路径硬编码：配置根目录 `~/.config/NyxNiri`、状态 `~/.local/state/NyxNiri`、卸载归档、日志等处处绑定 `PROJECT_NAME`；
-   - 大小写分裂历史包袱：Python 底座用大写 `NyxNiri`，而 Noctalia 模板与 GUI 脚本硬编码小写 `~/.cache/nyxniri/palette.toml`，在 Linux 大小写敏感文件系统上造成目录分裂；
+   - 大小写分裂历史包袱：Python 底座用大写 `~/.cache/NyxNiri`（`core.py:98`），而 Noctalia 模板（`noctalia-config.toml:254`）与壁纸脚本（`scanner.py:25`）硬编码小写 `~/.cache/nyxniri`，在 Linux 大小写敏感文件系统上造成目录分裂；
+   - 卸载残留孤儿：`uninstall.py:201` 卸载时仅清除了大写的 `~/.cache/NyxNiri`，而小写目录内数十兆缩略图缓存与色板永久腐烂在磁盘上；
    - 软链防误删校验 `core.py:is_nyxniri_cli_symlink()` 字符串硬匹配，改名后合法的软链反被判定为外来文件无法接管或卸载；
    - 内部代码 `importlib.import_module("nyxniri.modules.*")` 写死顶层绝对包名。
-2. **双 Shell 运行时插槽与解耦不彻底 (Multi-Shell Slots Gap)**：
+2. **双 Shell 运行时插槽、主题总线寄生与假声明式 (Multi-Shell Slots & Sneaky Side Effects)**：
+   - 主题总线寄生：系统级全局主题同步脚本 `theme-sync.sh`（232 行）本应调度全系统 GTK/Qt/Kitty/GSettings，却被物理锁在 `configs/noctalia/theme-sync.sh`，底座代码（`cli.py:224`, `deploy.py:173`, `doctor.py:75`）通过 `THEME_ENGINE` 硬编码寻址；亟需彻底 Python 化收归为底座原生 `nyxniri theme` 指令；
+   - 部署引擎偷塞命令式私货：`deploy.py:131-139` 偷摸为 niri 创建 `effects.kdl` 软链；`deploy.py:183` 在文件部署中途突然通过 IPC 唤起外部守护进程执行 `noctalia msg plugins enable mpvpaper` 并触发 `templates-apply`；
    - 外围脚本仍有 14 处直接调用 `noctalia msg`（`session-shell.sh` 直接 `exec noctalia` 并杀 scope；`shell-action.sh` 6 个核心动作直连 noctalia；`niri-brightness.sh` 和 `toggle-eyecare.sh` 私自读写 `~/.config/noctalia`）；
    - 合成器启动存在脆弱补丁：`niri/config.kdl` 硬编码 `sleep 8; noctalia msg config-reload && templates-apply` 盲等补丁，换其他 Shell 会产生报错残留与竞态冲突；
    - 外部模板单向劫持：`gtktheme.py` 与 `fcitx.py` 直接操作读写 `noctalia-config.toml` 注入模板块，停用 Noctalia 会导致 GTK 与 Fcitx 失去配色来源。
 3. **公共桌面工具物理囚禁与合成器死绑 (Compositor Agnostic Gap)**：
-   - `orbit/`、`wallpaper_picker/`、`shell-action.sh` 等本质是通用的独立 Layer-Shell 桌面工具，却被物理囚禁在 `configs/niri/scripts/` 目录下，内部硬编码引用 `~/.config/niri/` 路径，其他合成器无法直接引用；
-   - 底座强制依赖：`constants.py:MAIN_WM = "niri"` 且被塞入必装 `CORE_DEPS`；`install.sh` 预检强制断言 `configs/niri/config.kdl` 必须存在；`doctor.py` 诊断、`greeter.py` 会话探测、`deploy.py` 护眼软链初始化与下一步提示固定绑定 `niri`；
-   - 预设热重载硬编码：`preset.py` 内部用 `if app == "niri"` 特判热重载指令。
-4. **升级系统缺乏代码执行能力与状态账本 (Zero Migration Framework)**：
-   - **痛点核心**：更新完全依赖原地 `git pull` + 原子覆盖，没有任何机制在版本间执行额外 Python 代码、进行配置键值重命名、结构整理或清理废弃目录；
-   - 缺少状态版本账本：本地没有记录 `installed_version` 与 `migration_level` 的持久化单一数据源；
+   - 近 3700 行重型 Python GUI 工具（`orbit/` 1728 行、`wallpaper_picker/` 1856 行）被物理囚禁在 `configs/niri/scripts/` 下；`orbit-items__custom__.toml` 被粗暴扔在 Niri 配置根目录下；它们本质是 Noctalia 的外挂伴生套件，应移入 `configs/noctalia/tools/`，在未来自研 Shell 下实现**零部署、纯白无残留**；
+   - 历史旧包装残留：`configs/niri/scripts/start-noctalia.sh` 仅 8 行且单纯转调 `session-shell.sh`，属于未清理的幽灵别名；
+   - 底座强制依赖：`constants.py:MAIN_WM = "niri"` 且被塞入必装 `CORE_DEPS`；`install.sh:132-136` 预检强制断言 `configs/niri/config.kdl` 与 `noctalia-config.toml` 必须存在；`doctor.py` 诊断、`greeter.py` 会话探测、`deploy.py` 护眼软链初始化与下一步提示固定绑定 `niri`；
+   - 预设热重载硬编码：`preset.py:573-585` 内部用 `if app == "niri"` 和 `elif app == "kitty"` 特判热重载指令。
+4. **升级系统缺乏代码执行能力、孤儿清理与状态账本 (Zero Migration Framework)**：
+   - 废弃项永久腐烂：更新只做现有项覆盖，一旦重命名目录或废弃旧模块，旧目录永久滞留在用户 `~/.config/` 中成为无人清理的死数据；需要轻量级静态墓碑清单（Tombstone List）与顺序纯 Python 迁移钩子顺手清理；
+   - 状态多头分裂散落：预设存放在 `~/.config/NyxNiri/presets/<app>.active`，卸载回退与开关标记散落在 `~/.local/state/NyxNiri/`（`*.prev`、`*.enabled`），护眼开关靠反推软链目标；亟需单一事实源 `state.json`；
    - 发布通道与游离头指针陷阱：`update --to <tag>` 导致本地 Git 进入 Detached HEAD 状态，下次执行 `nyxniri update` 时 `git pull --ff-only` 直接崩溃；
-   - 升级安全带缺失：非交互模式更新写死 `do_backup=False`；拉取或安装失败时无原子回滚，停留在半破坏状态（Half-deployed State）；运行时原地覆盖自身 Python 源码存在 AST/Bytecode 错乱与锁丢失竞争风险；
+   - 升级安全带缺失：非交互模式更新写死 `workflows.py:191: do_backup=False`；拉取更新前未暂存 Git HEAD SHA，拉取或安装失败时无原子回滚，停留在半破坏状态（Half-deployed State）；运行时原地覆盖自身 Python 源码存在 AST/Bytecode 错乱与锁丢失竞争风险；
    - 黑盒体验：升级完毕后缺乏 What's New / Release Notes 提示与重大破坏性变更警告。
 5. **底座遗留边角防御与信号处理隐患 (Base Architecture Deficiencies)**：
    - 🔴 高危存留：`atomic.py:221` 遇 Ctrl+C 时 `old_dest` 仍未进清理栈，且 `tui.py` 的 `sys.exit(130)` 绕过了 `except Exception:` 回滚逻辑；
-   - 🔴 高危存留：`uninstall.py:182` 壁纸卸载依然直接 `shutil.rmtree` 整个用户 Wallpapers 目录，误删私人壁纸；
-   - 🔴 高危存留：`layout.kdl` 依然在切换动态光晕时被 `theme-sync.sh` 直接覆盖，违反核心布局不可动原则；
+   - 🔴 高危存留：`uninstall.py:183` 壁纸卸载依然直接 `shutil.rmtree` 整个用户 Wallpapers 目录，误删私人壁纸；
+   - 🔴 高危存留：`theme-sync.sh:221` 在切换动态光晕时直接全盘覆写包含核心布局规则的 `layout.kdl`，违反核心布局不可动原则；
+   - 🔴 卸载盲区：`fcitx.py:354-410` 安装雾凇拼音注入的 Rime 补丁在 `fcitx_uninstall` 中缺乏逆向清除逻辑，留下一堆半截子脏数据；
    - 锁机制与单一数据源缺陷：`nyxniri pkg` 与 `clean` 绕过排他锁；状态文件分散在 `.local/state` 与 `.config/NyxNiri`。
 6. **TUI 终端秩序与质感痛点 (TUI Ergonomics & Polish Gap)**：
    - 未启用备用屏幕缓冲区 (Alternate Screen Buffer `\033[?1049h/l`)：终端 Scrollback 历史被反复抹除和污染；主菜单运行完 `doctor` 或快照查看后，按任意键结果被 `clear_screen()` 瞬间销毁，用户无法回头查阅细节；
@@ -221,7 +226,7 @@ Issue #102 下的深度探讨为本项目的工程落地注入了极其宝贵的
          ┌───────────────────────────┼───────────────────────────┐
          ▼                           ▼                           ▼
 [ Orbit Launcher ]           [ Wallpaper Picker ]         [ Theme Dispatcher ]
-(直接读取语义 Token)           (Noctalia 忠实搭档)          (theme-sync.sh 广播)
+(直接读取语义 Token)           (Noctalia 忠实搭档)          (nyxniri theme 原生调度)
 ```
 
 #### 四大 Provider 契约规范：
@@ -232,9 +237,10 @@ Issue #102 下的深度探讨为本项目的工程落地注入了极其宝贵的
    - 标准动词：`launcher` | `session` | `settings` | `clipboard` | `lock` | `wallpaper-random`；
    - 若当前为 Noctalia：分发至 `noctalia msg`（未安装星环启动器时回退 `fuzzel`）；
    - 若当前为自研 Shell：分发至自研 Shell 的 IPC/CLI，外围快捷键零改动。
-3. **PaletteProvider (调色板中枢)**：
+3. **PaletteProvider 与 Theme Dispatcher (调色板与主题中枢)**：
    - 固化 `~/.cache/nyxniri/palette.toml` 为唯一事实源；
-   - Noctalia 走原生 TOML 模板渲染；自研 Shell 凭借 M3 算法直出同构文件；下游 Orbit、Kitty、GTK 无感消费。
+   - Noctalia 走原生 TOML 模板渲染；自研 Shell 凭借 M3 算法直出同构文件；下游 Orbit、Kitty、GTK 无感消费；
+   - **主题调度彻底 Python 原生化**：彻底告别寄生在 Noctalia 目录下的脆弱 Bash 脚本 `theme-sync.sh`，由底座纯标库直接承载 `nyxniri theme <toggle|sync|dark|light>` 指令。利用 Python 的 `configparser` 安全原子改写 GTK3/4 与 Qt INI，免除复杂的 Shell 正则拼接；Noctalia 配置仅需 hook 调用 `["nyxniri", "theme", "sync"]`，快捷键亦直接绑定该命令。
 4. **TemplateAdapter (模板适配解耦与 Noctalia Template 兼容)**：
    - **全面兼容 Noctalia Template 系统**：自研 Shell 原生兼容并支持 Noctalia 的 Jinja 风格模板规范与变量命名空间（`{{ colors.primary.default.hex }}`、`{{ colors.surface.default.hex }}` 等）；
    - **零摩擦无缝复用**：现存的 GTK CSS、Fcitx SVG、Kitty、Starship 以及用户自定义的 `[theme.templates.user.*]` 模板资产在自研 Shell 下**无需重写、直接共享**；
@@ -247,8 +253,8 @@ Issue #102 下的深度探讨为本项目的工程落地注入了极其宝贵的
 #### (1) 桌面伴生工具归位与合成器脚本纯洁化 (Scoped Tools & Clean Compositor)
 - **核心原则**：自研 Shell 追求极致的纯白与简洁，原生内置启动器、壁纸管理与 M3 引擎，**绝不强加任何外部 Python GUI 脚本**。
 - **精准归位**：
-  - **Noctalia 专属伴生工具集 (`configs/noctalia/tools/`)**：将重型 Python GUI 工具 `orbit/` 与 `wallpaper_picker/` 收归至 Noctalia 伴生目录。仅在用户选择启用 Noctalia 时才会释放至 `~/.config/noctalia/tools/`；使用自研 Shell 时**零释放、零代码残留、绝对纯白**！
-  - **`configs/niri/scripts/` 极简化胶水层**：移走上述两个大型 GUI 目录后，合成器脚本目录彻底瘦身，仅保留 5 个精简纯粹的 Bash 胶水脚本（`session-shell.sh`, `shell-action.sh`, `niri-brightness.sh`, `toggle-eyecare.sh`, `niri-scratch-toggle.sh`），专注服务于合成器会话与快捷键分发。
+  - **Noctalia 专属伴生工具集 (`configs/noctalia/tools/`)**：将重型 Python GUI 工具 `orbit/`（1728 行）、`wallpaper_picker/`（1856 行）以及 `orbit-items__custom__.toml` 菜单配置文件全数收归至 Noctalia 伴生目录。仅在用户选择启用 Noctalia 时才会释放至 `~/.config/noctalia/tools/`；使用自研 Shell 时**零释放、零代码残留、绝对纯白**！
+  - **`configs/niri/scripts/` 极简化胶水层**：移走上述两个大型 GUI 目录并彻底物理删除废弃的 `start-noctalia.sh` 包装后，合成器脚本目录彻底瘦身，仅保留 5 个精简纯粹的 Bash 胶水脚本（`session-shell.sh`, `shell-action.sh`, `niri-brightness.sh`, `toggle-eyecare.sh`, `niri-scratch-toggle.sh`），专注服务于合成器会话与快捷键分发。
 
 #### (2) 核心依赖解耦与声明式化
 - 将 `niri` 从 `nyxniri/constants.py:CORE_DEPS` 强依赖中解绑；
@@ -272,22 +278,25 @@ Issue #102 下的深度探讨为本项目的工程落地注入了极其宝贵的
 - **现状缺陷**：当前更新仅为简单的 `git pull` + 原子覆盖。一旦版本迭代需要重命名目录、修改配置键值、转换快照结构或清理废弃旧配置，系统完全无能为力。
 - **极简解决方案**：
   1. **单一事实源版本账本 (`state.json`)**：
-     在 `~/.local/state/NyxNiri/state.json` 中持久化记录：
+     在 `~/.local/state/nyxniri/state.json` 中持久化记录全部运行时与模块状态，彻底废除散落在 `state_dir` 的零碎标记（如 `fcitx-*.prev`、`*.enabled`）：
      ```json
      {
-       "installed_version": "3.0.5",
+       "installed_version": "3.1.0",
        "migration_level": 4,
        "channel": "stable",
        "active_shell": "noctalia",
-       "active_wm": "niri"
+       "active_wm": "niri",
+       "active_presets": { "niri": "default", "kitty": "transparent" },
+       "modules": { "fcitx": { "enabled": true, "prev_theme": "classic" } }
      }
      ```
-  2. **轻量线性 Migration 机制 (`nyxniri/migrations/`)**：
-     创建纯标库迁移框架，每个迁移脚本仅需几十行简洁代码：
+  2. **轻量线性 Migration 与静态墓碑清单 (`nyxniri/migrations/`)**：
+     - **静态墓碑清单 (Tombstone List)**：维护极简废弃路径表（如历史废弃脚本、已重构目录），升级时自动探测并安全清理孤儿文件，防止死数据在用户磁盘腐烂；
+     - **纯标库微型迁移函数**：每个迁移脚本仅需几十行简洁代码：
      ```python
-     # nyxniri/migrations/0004_v3_1_desktop_scripts_promote.py
+     # nyxniri/migrations/0004_v3_1_noctalia_tools_reorganize.py
      def up(env: Environment) -> bool:
-         """将旧 niri/scripts 提升至 desktop，平移用户覆盖并建立兼容软链。"""
+         """将旧 niri/scripts 下的伴生套件平移至 noctalia/tools 并清理旧幽灵别名。"""
          ...
          return True
      ```
@@ -295,11 +304,13 @@ Issue #102 下的深度探讨为本项目的工程落地注入了极其宝贵的
 
 ### 2. 升级安全带与两阶段防错机制
 - **强制升级前受保快照 (Guaranteed Snapshot)**：
-  彻底废除“非交互更新跳过备份”的隐患，任何更新启动前强制生成带 Git Commit SHA 的 `pre_update` 快照；
+  彻底废除 `workflows.py:191` 在非交互更新时跳过备份的漏洞（`do_backup=False`），任何更新启动前强制生成带 Git Commit SHA 的 `pre_update` 快照；
+- **Git HEAD SHA 锚点记录与原子回滚**：
+  在执行 `git pull` 前暂存当前 Commit SHA。若拉取后语法自检（`compileall`）失败或部署流程异常中断，提供一键原路复原到该 SHA 的自愈能力，绝不让用户停留在破坏性的半安装状态（Half-deployed State）；
 - **修复 Detached HEAD 游离头指针陷阱**：
   规范化版本切换逻辑，切换 Tag 时自动建立本地受管状态，杜绝下一次 `git pull` 崩溃；
 - **沙箱化预检与两阶段交接**：
-  代码拉取与预检在临时隔离域完成，全部校验通过后再原子切换，部署过程发生中断或异常立即就地提示并保持现场，绝不留下破坏性的半安装状态。
+  代码拉取与预检在临时隔离域完成，全部校验通过后再原子切换，部署过程发生中断或异常立即就地提示并保持现场。
 
 ### 3. 远期储备：安全 Downdate（版本回退/降级）体系
 - **战略定位**：作为后续阶段的高级能力，优先级排在基础迁移引擎之后。
@@ -407,30 +418,35 @@ Issue #102 下的深度探讨为本项目的工程落地注入了极其宝贵的
 - [x] **Niri 快捷键插槽化**：落地 `shell-action.sh` 与 `session-shell.sh`；
 - [x] **调色板舒缓迁移落地**：新增原生 `nyxniri-palette.toml` 模板，Orbit 与壁纸选择器直读 M3 色板。
 
-### 阶段四：底座硬核演进——极简代码迁移引擎、边角防御收敛与 TUI 美学风格化 (Lean Migration Engine & TUI Styling)
-- [ ] **纯标库版本账本与线性迁移框架**：引入 `state.json` 与 `nyxniri/migrations/`，支持版本升级时执行额外 Python 代码、清理废弃项与目录迁移；
-- [ ] **升级安全带机制**：强制升级前自动生成受保快照，修复 Detached HEAD 游离头指针隐患；
-- [ ] **边角防御高危项抹平**：修复 `atomic.py` 的 Ctrl+C 栈保护与 `uninstall.py` 壁纸精准清理；拔除 `layout.kdl` 被覆盖隐患；
-- [ ] **TUI 视觉风格化与纯净感**：接入 Alternate Screen Buffer（`\033[?1049h/l`）保护终端历史，DEC 2025 消除频闪撕裂，引入单行微动 Zen Spinner。
+### 阶段四：Shell 前的准备工作——全局重命名、伴生套件归位与底座彻底清障 (Pre-Shell Groundwork & Rebranding)
+- [ ] **项目全局重命名与双轨平滑迁移 (Project Rebranding)**：在自研 Shell 动工前彻底完成品牌定名脱敏，常量集中统一（`constants.py`），环境变量双向兼容（优先新前缀，回退 `NYXNIRI_*`），`~/.config/NyxNiri` 与 `~/.local/state/NyxNiri` 自动安全平移并留兼容软链，`importlib` 动态导入升级；
+- [ ] **消灭 Linux 大小写分裂**：全库路径规范为统一小写规范（如 `~/.cache/<project>`），彻底终结历史大小写分裂包袱，卸载时完整清理历史孤儿；
+- [ ] **打通双 Shell 运行时插槽 (ShellProvider Slots)**：重构 `session-shell.sh` 与 `shell-action.sh`，基于 `state.json` 的 `active_shell` 动态路由（Noctalia vs Custom Shell），彻底告别写死 `exec noctalia`；彻底移除 `config.kdl` 中脆弱的 `sleep 8; noctalia msg ...` 盲等补丁；
+- [ ] **伴生套件归位与合成器配置纯洁化**：将近 3700 行的 `orbit/`、`wallpaper_picker/` 及 `orbit-items__custom__.toml` 整体收归进 `configs/noctalia/tools/`，物理删除废弃的 `start-noctalia.sh` 包装；`configs/niri/scripts/` 彻底瘦身为仅含 5 个纯粹胶水脚本；确立自研 Shell 下**零外部 Python GUI 释放、绝对纯白**！
+- [ ] **单一事实源版本账本与线性迁移框架 (`state.json`)**：引入 `~/.local/state/<project>/state.json` 单一事实源，收拢预设、状态与模块标记（消灭散落的 `.prev`、`.enabled` 碎片）；引入轻量迁移钩子（`nyxniri/migrations/`）与静态墓碑清单（`TOMBSTONES`），支持升级时顺手清理废弃目录与配置迁移；
+- [ ] **主题调度彻底 Python 原生化**：将 `theme-sync.sh` 彻底重构为底座原生 `nyxniri theme <toggle|sync|dark|light>` 指令，利用 Python 标准库 `configparser` 安全原子改写 INI，拔除对 Noctalia 目录脚本的寻径耦合；
+- [ ] **解除模板单向劫持与核心布局保护**：将 Niri 动态光晕抽离为独立的 `colors.kdl`，严禁覆写核心布局 `layout.kdl`；解耦 `gtktheme` 与 `fcitx` 对 `noctalia-config.toml` 的正则篡改，使模板资产面向自研 Shell 直接共享；
+- [ ] **纯化部署引擎与解绑核心依赖偏见**：解绑 `MAIN_WM` 与 `noctalia` 核心依赖强绑定，消除 `install.sh:132-136` 预检中对其配置文件的强制断言；消除 `preset.py` 中的 `if app == "niri"` 热重载特判；剔除 `deploy.py:131-139` 硬编码为 niri 创建 `effects.kdl` 软链的特判，拔除部署途中私自触发守护进程 IPC（`noctalia msg plugins enable mpvpaper`、`templates-apply`）的隐式副作用；
+- [ ] **升级安全带机制与高危边角抹平**：修复 `workflows.py:191` 非交互更新跳过备份漏洞，升级前强制生成受保快照并记录 Git HEAD SHA 锚点；修复 Detached HEAD 游离头指针陷阱；修复 `atomic.py` 的 Ctrl+C 栈保护；`uninstall.py` 壁纸卸载改为白名单精准删除（严禁暴力 `rmtree`）；补充 `fcitx.py` 雾凇拼音 Rime 补丁的对等卸载撤销逻辑。
 
-### 阶段五：架构泛化与多合成器解耦——抽离桌面公共脚本、抽象 Compositor 驱动与品牌平滑迁移 (Multi-WM Decoupling & Rebranding)
-- [ ] **桌面伴生工具归位与合成器脚本纯洁化**：将 `orbit/` 与 `wallpaper_picker/` 收归至 `configs/noctalia/tools/`，使 `configs/niri/scripts/` 瘦身为仅含 5 个纯粹胶水脚本；自研 Shell 下零外部脚本残留；
-- [ ] **解绑 Niri 强制核心依赖**：`niri` 退出 `CORE_DEPS`，下放为声明式模块；
-- [ ] **构建 CompositorDriver 驱动抽象层**：实现热重载、浮动便签与屏幕探测的跨合成器适配；
-- [ ] **项目重命名双轨平滑迁移**：常量统一、双向环境变量兼容与 `~/.config/NyxNiri` 自动安全平移。
+### 阶段五：做 Shell 中——自研 Material You Shell 核心研发与模板原生兼容 (Custom Shell Core Dev & Template Compatibility)
+- [ ] **自研 Material You Shell 核心架构研发**：纯粹单一风格、极致几何秩序，原生直连 Niri/Wayland IPC；
+- [ ] **原生内置启动器、壁纸管理与 M3 调色引擎**：算法直出同构 `palette.toml`，自研 Shell 下零外部 Python GUI 释放；
+- [ ] **原生兼容 Noctalia Template 系统**：自研 Shell 原生支持 Noctalia 的 Jinja 风格模板规范与变量命名空间（`{{ colors.primary.default.hex }}`、`{{ colors.surface.default.hex }}` 等），现存的 GTK CSS、Fcitx SVG、Kitty、Starship 以及用户自定义模板资产**无需重写、零摩擦直接复用**；
+- [ ] **Shell 生命周期与动作响应对接**：打通与 `session-shell.sh`、`shell-action.sh` 的 IPC/CLI 接口，外围快捷键零改动即刻响应。
 
-### 阶段六：自研 Material You Shell 启航与多 Shell 插槽接入 (Multi-Shell Slots: Noctalia & Custom Shell)
-- [ ] **实现统一 ShellProvider 插槽**：`session-shell.sh`、`shell-action.sh` 支持根据 `active_shell` 动态路由；
-- [ ] **Noctalia + Wallpaper Picker 协同方案稳固**：解耦 `gtktheme` 与 `fcitx` 对 Noctalia 配置的单向修改；
-- [ ] **自研 Material You Shell 核心研发**：纯粹单一风格、原生对接 Niri/Wayland IPC、算法直出同构 M3 `palette.toml`；
-- [ ] **兼容 Noctalia Template 系统**：自研 Shell 原生支持 Noctalia 模板规范与变量渲染，无缝复用现有的 GTK、Fcitx、Kitty 等全套模板资产；
-- [ ] **双 Shell 自由平滑切换**：支持 `nyxniri shell set <noctalia|custom>` 或快捷键即时切换；
+### 阶段六：Shell 雏形完毕与双轨生态收尾 (Shell Prototype Polish & Dual-Track Ecosystem)
+- [ ] **双 Shell 平滑自由切换**：支持 `nyxniri shell set <noctalia|custom>` 或快捷键即时热插拔，无缝在 Noctalia 与自研 Shell 之间来回穿梭；
+- [ ] **Noctalia + Wallpaper Picker 协同方案稳固验收**：验证 Noctalia 模式下伴生套件的按需部署与运行，确保双轨方案互不干扰、各自纯白；
+- [ ] **TUI 视觉风格化与纯净感**：接入 Alternate Screen Buffer（`\033[?1049h/l`）保护终端历史，DEC 2025 消除频闪撕裂，引入单行微动 Zen Spinner 就地收拢日志；
+- [ ] **多合成器 (Multi-WM) 架构解耦与驱动抽象**：构建 `CompositorDriver` 驱动抽象层，实现热重载、浮动便签与屏幕探测的跨合成器适配（Hyprland/Sway 扩展）；
 - [ ] **安全 Downdate 体系（储备）**：落地基于现场快照溯源与 Git 逆向检出的安全版本降级。
 
 ### 附录：边角防御顺带抹平清单 (顺手维护，不占主线心智)
 - [ ] `atomic.py`: swap 栈注册 `old_dest`，补强 Ctrl+C 状态保护；
 - [ ] `uninstall.py`: 壁纸卸载改为精准删除官方素材，不全盘 rmtree；
+- [ ] `fcitx.py`: 补充雾凇拼音 Rime 注入项的对等卸载撤销逻辑；
 - [ ] `deps.py`: 拔除 `-Rdd` 参数，修复返回值如实反映安装结果；
-- [ ] `install.sh` & `doctor.py`: 去除对特定 `noctalia-config.toml` 的硬编码断言；
+- [ ] `install.sh` & `doctor.py`: 去除对特定 `noctalia-config.toml` 与 `niri/config.kdl` 的硬编码断言；
 - [x] `hardware.py`: 移除写入、独立探测与缓存，仅保留纯文本设备分类供诊断报告使用。
 
