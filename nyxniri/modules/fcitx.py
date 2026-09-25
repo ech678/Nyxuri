@@ -20,6 +20,16 @@ FCITX_CLASSICUI_RELOAD = [
     "org.fcitx.Fcitx.Controller1", "ReloadAddonConfig", "s", "classicui",
 ]
 FCITX_CLASSICUI_RELOAD_HOOK = "busctl --user --auto-start=no call org.fcitx.Fcitx5 /controller org.fcitx.Fcitx.Controller1 ReloadAddonConfig s classicui >/dev/null 2>&1 || true"
+FCITX_RELOAD_CONFIG = [
+    "busctl", "--user", "--auto-start=no", "call", "org.fcitx.Fcitx5", "/controller",
+    "org.fcitx.Fcitx.Controller1", "ReloadConfig",
+]
+
+
+def fcitx_reload_all() -> None:
+    """Reload all Fcitx5 configurations via D-Bus controller."""
+    if shutil.which("busctl"):
+        timed_run(FCITX_RELOAD_CONFIG, 5, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
 
 
 def _fcitx_paths():
@@ -254,31 +264,167 @@ def fcitx_register_templates() -> bool:
         _write_config(noctalia_conf, content)
     return True
 
+def fcitx_preflight_plan(set_default: bool = True) -> list[str]:
+    """Return explicit list of actions and filesystem paths affected by skin setup."""
+    _, theme_dir, _, classicui, noctalia_conf, _, _, _ = _fcitx_paths()
+    plan = [
+        f"  [+] {text('素材释放', 'Deploy assets')}: {theme_dir}/templates/",
+        f"  [+] {text('模板注册', 'Register templates')}: {noctalia_conf}",
+    ]
+    if set_default:
+        plan.append(f"  [+] {text('设为默认', 'Set as default')}: {classicui} (Theme={FCITX_THEME})")
+    else:
+        plan.append(f"  [ ] {text('设为默认', 'Set as default')}: {text('跳过 (可通过 nyxniri fcitx activate 激活)', 'Skipped (run nyxniri fcitx activate to apply)')}")
+    return plan
+
+
 @module_action
-def fcitx_install() -> bool:
-    """Deploy templates, apply configuration, and activate NyxMellow skin."""
-    print(msg("fcitx_install_title"))
+def fcitx_deploy_assets() -> bool:
+    """Deploy skin templates and register Noctalia dynamic rendering without altering classicui.conf."""
     if not fcitx_deploy_templates():
         return False
-
-    _, _, _, _, _, _, enabled_marker, _ = _fcitx_paths()
     if fcitx5_installed():
         if not fcitx_register_templates():
             return False
-        fcitx_set_theme_conf()
         fcitx_trigger_render()
-        fcitx_reload()
-        enabled_marker.parent.mkdir(parents=True, exist_ok=True)
-        enabled_marker.touch()
-        log_msg("INFO", "Deployed and activated NyxMellow fcitx5 skin")
+        log_msg("INFO", "Deployed NyxMellow fcitx5 skin assets and registered templates")
         return True
     else:
         print(msg("fcitx_skip_no_fcitx5"))
+        return True
+
+
+@module_action
+def fcitx_activate() -> bool:
+    """Activate NyxMellow skin as default/dark theme in classicui.conf."""
+    if not fcitx5_installed():
+        print(msg("fcitx_skip_no_fcitx5"))
         return False
+    _, _, _, _, _, _, enabled_marker, _ = _fcitx_paths()
+    if not fcitx_register_templates():
+        return False
+    fcitx_set_theme_conf()
+    fcitx_trigger_render()
+    fcitx_reload()
+    enabled_marker.parent.mkdir(parents=True, exist_ok=True)
+    enabled_marker.touch()
+    log_msg("INFO", "Activated NyxMellow fcitx5 skin as default theme")
+    return True
+
+
+@module_action
+def fcitx_install(set_default: bool = True) -> bool:
+    """Deploy templates, output pre-flight plan, and conditionally activate NyxMellow skin."""
+    print(msg("fcitx_install_title"))
+    print(text(":: 变更清单 (Pre-flight Checklist):", ":: Pre-flight Checklist:"))
+    for line in fcitx_preflight_plan(set_default=set_default):
+        print(line)
+    if not fcitx_deploy_assets():
+        return False
+    if set_default:
+        if fcitx5_installed():
+            return fcitx_activate()
+        else:
+            return False
+    return True
+
+
+@module_action
+def setup_rime_ice() -> bool:
+    """Mount rime_ice schema into user rime dir, precompile, and ensure rime in fcitx5 profile."""
+    env = get_env()
+    rime_dir = env.home / ".local/share/fcitx5/rime"
+    rime_dir.mkdir(parents=True, exist_ok=True)
+    custom_yaml = rime_dir / "default.custom.yaml"
+
+    # 1. Mount rime_ice patch in default.custom.yaml
+    needs_patch = True
+    if custom_yaml.is_file():
+        existing_yaml = custom_yaml.read_text(encoding="utf-8")
+        if "rime_ice" in existing_yaml:
+            needs_patch = False
+
+    if needs_patch:
+        patched = False
+        if shutil.which("rime_deployer"):
+            res = timed_run(["rime_deployer", "--add-schema", "rime_ice"], 15, cwd=str(rime_dir), check=False)
+            if res is not None and res.returncode == 0:
+                patched = True
+        if not patched:
+            if custom_yaml.is_file() and custom_yaml.read_text(encoding="utf-8").strip():
+                content = custom_yaml.read_text(encoding="utf-8")
+                if "patch:" in content and "schema_list:" in content:
+                    content = content.replace("schema_list:\n", "schema_list:\n    - schema: rime_ice\n", 1)
+                elif "patch:" in content:
+                    content = content.rstrip() + "\n  schema_list:\n    - schema: rime_ice\n"
+                else:
+                    content = content.rstrip() + "\n\npatch:\n  schema_list:\n    - schema: rime_ice\n"
+                custom_yaml.write_text(content, encoding="utf-8")
+            else:
+                custom_yaml.write_text("patch:\n  schema_list:\n    - schema: rime_ice\n", encoding="utf-8")
+
+    # 2. Precompile schema with rime_deployer if available
+    shared_data = Path("/usr/share/rime-data")
+    if shutil.which("rime_deployer") and shared_data.is_dir():
+        build_dir = rime_dir / "build"
+        timed_run(["rime_deployer", "--build", str(rime_dir), str(shared_data), str(build_dir)], 45, check=False)
+        timed_run(["rime_deployer", "--set-active-schema", "rime_ice"], 15, cwd=str(rime_dir), check=False)
+    else:
+        user_yaml = rime_dir / "user.yaml"
+        if not user_yaml.is_file():
+            user_yaml.write_text("var:\n  previously_selected_schema: rime_ice\n", encoding="utf-8")
+
+    # 3. Ensure rime is registered in ~/.config/fcitx5/profile
+    profile_path = env.config_dir / "fcitx5/profile"
+    profile_path.parent.mkdir(parents=True, exist_ok=True)
+    if profile_path.is_file():
+        profile_content = profile_path.read_text(encoding="utf-8")
+    else:
+        profile_content = ""
+
+    if "Name=rime" not in profile_content:
+        if not profile_content.strip():
+            new_profile = (
+                "[Groups/0]\n"
+                "Name=默认\n"
+                "Default Layout=us\n"
+                "DefaultIM=keyboard-us\n\n"
+                "[Groups/0/Items/0]\n"
+                "Name=rime\n"
+                "Layout=\n\n"
+                "[Groups/0/Items/1]\n"
+                "Name=keyboard-us\n"
+                "Layout=\n\n"
+                "[GroupOrder]\n"
+                "0=默认\n"
+            )
+            _write_config(profile_path, new_profile)
+        else:
+            existing_indices = [int(m.group(1)) for m in re.finditer(r"\[Groups/0/Items/(\d+)\]", profile_content)]
+            next_idx = max(existing_indices) + 1 if existing_indices else 0
+            addition = f"[Groups/0/Items/{next_idx}]\nName=rime\nLayout=\n"
+            if "[GroupOrder]" in profile_content:
+                profile_content = profile_content.replace("[GroupOrder]", addition + "\n[GroupOrder]")
+            else:
+                profile_content = profile_content.rstrip() + "\n\n" + addition
+            _write_config(profile_path, profile_content)
+
+    # 4. Trigger Fcitx5 reload via D-Bus controller
+    fcitx_reload_all()
+    print(msg("fcitx_rime_setup_ok"))
+    log_msg("INFO", "Configured and precompiled Rime Ice schema for Fcitx5")
+    return True
+
+
+fcitx_setup_rime = setup_rime_ice
+
 
 def fcitx_status() -> None:
-    """Check and display status of fcitx5 and NyxMellow theme."""
+    """Check and display status of fcitx5, NyxMellow theme, and Rime configuration."""
     _, theme_dir, _, classicui, noctalia_conf, _, _, _ = _fcitx_paths()
+    env = get_env()
+    rime_dir = env.home / ".local/share/fcitx5/rime"
+    profile_path = env.config_dir / "fcitx5/profile"
     print(msg("fcitx_status_title"))
 
     if fcitx5_installed():
@@ -313,6 +459,18 @@ def fcitx_status() -> None:
             pass
     else:
         print(msg("doctor_warn", text("classicui.conf: 缺失", "classicui.conf: missing")))
+
+    # Rime Ice status
+    custom_yaml = rime_dir / "default.custom.yaml"
+    if custom_yaml.is_file() and "rime_ice" in custom_yaml.read_text(encoding="utf-8"):
+        print(msg("doctor_ok", text("Rime: 雾凇拼音已配置 (rime_ice)", "Rime: Rime Ice configured (rime_ice)")))
+    else:
+        print(msg("doctor_warn", text("Rime: 雾凇拼音未配置", "Rime: Rime Ice not configured")))
+
+    if profile_path.is_file() and "Name=rime" in profile_path.read_text(encoding="utf-8"):
+        print(msg("doctor_ok", text("Fcitx5 profile: rime 输入法已激活", "Fcitx5 profile: rime input method active")))
+    else:
+        print(msg("doctor_warn", text("Fcitx5 profile: rime 输入法未加入", "Fcitx5 profile: rime input method missing")))
 
 def _restore_settings(path, state_file, section, owned):
     if not state_file.is_file():

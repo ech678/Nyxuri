@@ -151,3 +151,4 @@ label = "Fcitx5 Rime"
 category = "system"
 repo = ["fcitx5", "fcitx5-gtk", "fcitx5-qt", "fcitx5-configtool", "fcitx5-rime"]
 aur = ["rime-ice-git"]
+post_install = "fcitx:setup_rime_ice"

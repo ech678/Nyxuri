@@ -212,5 +212,105 @@ class TestFcitxStartup(unittest.TestCase):
         self.assertFalse(fcitx_enabled())
 
 
+class TestFcitxDecouplingAndRime(unittest.TestCase):
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+        self.env = self._ctx.env
+
+    def tearDown(self):
+        self._ctx.__exit__()
+
+    def test_deploy_assets_does_not_modify_classicui_or_enable_marker(self):
+        """fcitx_deploy_assets only deploys templates and hooks, leaving classicui untouched."""
+        from nyxniri.modules.fcitx import fcitx_deploy_assets, fcitx_enabled
+
+        classicui = self.env.config_dir / "fcitx5/conf/classicui.conf"
+        noctalia_conf = self.env.config_dir / "noctalia/noctalia-config.toml"
+        noctalia_conf.parent.mkdir(parents=True, exist_ok=True)
+        noctalia_conf.write_text('[theme]\nmode = "dark"\n')
+
+        with patch("nyxniri.modules.fcitx.fcitx5_installed", return_value=True), \
+             patch("nyxniri.modules.fcitx.fcitx_deploy_templates", return_value=True), \
+             patch("nyxniri.modules.fcitx.fcitx_trigger_render"):
+            self.assertTrue(fcitx_deploy_assets())
+
+        self.assertFalse(classicui.exists(), "classicui.conf must NOT be created or modified by deploy_assets")
+        self.assertFalse(fcitx_enabled(), "enabled marker must NOT be created by deploy_assets")
+
+    def test_activate_modifies_classicui_and_creates_marker(self):
+        """fcitx_activate sets theme in classicui and creates consent marker."""
+        from nyxniri.modules.fcitx import fcitx_activate, fcitx_enabled
+
+        classicui = self.env.config_dir / "fcitx5/conf/classicui.conf"
+        noctalia_conf = self.env.config_dir / "noctalia/noctalia-config.toml"
+        noctalia_conf.parent.mkdir(parents=True, exist_ok=True)
+        noctalia_conf.write_text('[theme]\nmode = "dark"\n')
+
+        with patch("nyxniri.modules.fcitx.fcitx5_installed", return_value=True), \
+             patch("nyxniri.modules.fcitx.fcitx_trigger_render"), \
+             patch("nyxniri.modules.fcitx.fcitx_reload"):
+            self.assertTrue(fcitx_activate())
+
+        self.assertTrue(classicui.is_file())
+        self.assertIn("Theme=nyxmellow", classicui.read_text())
+        self.assertTrue(fcitx_enabled())
+
+    def test_preflight_plan_clarity(self):
+        """Preflight plan must clearly distinguish deploy-only vs default theme activation."""
+        from nyxniri.modules.fcitx import fcitx_preflight_plan
+
+        plan_full = fcitx_preflight_plan(set_default=True)
+        plan_deploy = fcitx_preflight_plan(set_default=False)
+
+        full_text = " ".join(plan_full)
+        deploy_text = " ".join(plan_deploy)
+
+        self.assertIn("classicui.conf", full_text)
+        self.assertIn("templates", full_text)
+        self.assertIn("跳过", deploy_text)
+
+    def test_setup_rime_ice_creates_yaml_and_profile(self):
+        """setup_rime_ice patches default.custom.yaml and adds rime to profile."""
+        from nyxniri.modules.fcitx import setup_rime_ice
+
+        with patch("nyxniri.modules.fcitx.fcitx_reload_all"):
+            self.assertTrue(setup_rime_ice())
+
+        custom_yaml = self.env.home / ".local/share/fcitx5/rime/default.custom.yaml"
+        profile = self.env.config_dir / "fcitx5/profile"
+
+        self.assertTrue(custom_yaml.is_file(), "default.custom.yaml must be created")
+        self.assertIn("rime_ice", custom_yaml.read_text(), "rime_ice schema must be in default.custom.yaml")
+
+        self.assertTrue(profile.is_file(), "fcitx5 profile must be created")
+        self.assertIn("Name=rime", profile.read_text(), "rime input method must be in fcitx5 profile")
+
+    def test_setup_rime_ice_preserves_existing_profile_items(self):
+        """setup_rime_ice appends to existing profile without overwriting."""
+        from nyxniri.modules.fcitx import setup_rime_ice
+
+        profile = self.env.config_dir / "fcitx5/profile"
+        profile.parent.mkdir(parents=True, exist_ok=True)
+        profile.write_text(
+            "[Groups/0]\n"
+            "Name=默认\n"
+            "Default Layout=us\n\n"
+            "[Groups/0/Items/0]\n"
+            "Name=keyboard-us\n"
+            "Layout=\n\n"
+            "[GroupOrder]\n"
+            "0=默认\n"
+        )
+
+        with patch("nyxniri.modules.fcitx.fcitx_reload_all"):
+            self.assertTrue(setup_rime_ice())
+
+        content = profile.read_text()
+        self.assertIn("Name=keyboard-us", content)
+        self.assertIn("Name=rime", content)
+        self.assertIn("[Groups/0/Items/1]", content)
+
+
 if __name__ == "__main__":
     unittest.main()

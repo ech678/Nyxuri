@@ -185,10 +185,28 @@ def _module_handler(module_name: str, triad_name: str):
         install_fn = getattr(mod, f"{module_name}_install")
         uninstall_fn = getattr(mod, f"{module_name}_uninstall")
         status_fn = getattr(mod, f"{module_name}_status")
+        deploy_fn = getattr(mod, f"{module_name}_deploy_assets", None)
+        activate_fn = getattr(mod, f"{module_name}_activate", None)
+
+        valid_subs = ["", "install", "setup", "status", "uninstall", "remove"]
+        if deploy_fn is not None:
+            valid_subs.append("deploy")
+        if activate_fn is not None:
+            valid_subs.append("activate")
+
         sub = sub_args[0].lower() if sub_args else ""
-        if len(sub_args) > 1 or sub not in ("", "install", "setup", "status", "uninstall", "remove"):
-            exit_usage(f"{CLI_CMD} {triad_name} [install|status|uninstall]")
-        if sub in ("install", "setup"):
+        deploy_only = "--deploy-only" in sub_args
+        if len(sub_args) > 2 or (len(sub_args) == 2 and not deploy_only) or sub not in valid_subs:
+            usage_cmds = "|".join(s for s in ("install", "deploy", "activate", "status", "uninstall") if s in valid_subs or s in ("install", "status", "uninstall"))
+            exit_usage(f"{CLI_CMD} {triad_name} [{usage_cmds}]")
+
+        if sub == "deploy":
+            return 0 if (deploy_fn() if deploy_fn else install_fn()) else 1
+        elif sub == "activate":
+            return 0 if (activate_fn() if activate_fn else install_fn()) else 1
+        elif sub in ("install", "setup"):
+            if deploy_only and deploy_fn is not None:
+                return 0 if deploy_fn() else 1
             return 0 if install_fn() else 1
         elif sub in ("uninstall", "remove"):
             return 0 if uninstall_fn() else 1
@@ -299,7 +317,7 @@ COMMANDS = {
     "greeter":   (_module_handler("greeter", "greeter"),
                   f"{CLI_CMD} greeter [install|status|uninstall]"),
     "fcitx":     (_module_handler("fcitx", "fcitx"),
-                  f"{CLI_CMD} fcitx [install|status|uninstall]"),
+                  f"{CLI_CMD} fcitx [install|deploy|activate|status|uninstall]"),
     "gtk":       (_module_handler("gtktheme", "gtk"),
                   f"{CLI_CMD} gtk [install|status|uninstall]"),
     "fisher":    (_module_handler("fisher", "fisher"),

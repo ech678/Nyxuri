@@ -18,7 +18,69 @@ _REPO = Path(__file__).resolve().parent.parent
 _TOGGLE = _REPO / "configs" / "niri" / "scripts" / "niri-scratch-toggle.sh"
 _CLEAN_CACHE = _REPO / "nyxniri" / "clean.py"
 _START_NOCTALIA = _REPO / "configs" / "niri" / "scripts" / "start-noctalia.sh"
+_SESSION_SHELL = _REPO / "configs" / "niri" / "scripts" / "session-shell.sh"
+_SHELL_ACTION = _REPO / "configs" / "niri" / "scripts" / "shell-action.sh"
 _BRIGHTNESS = _REPO / "configs" / "niri" / "scripts" / "niri-brightness.sh"
+
+
+class TestShellAction(unittest.TestCase):
+    """Contract tests for shell-action.sh gateway."""
+
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+        self.home = self._ctx.home
+        self.bin_dir = self.home / "bin"
+        self.bin_dir.mkdir()
+        self.calls = self.home / "calls"
+
+    def tearDown(self):
+        self._ctx.__exit__()
+
+    def _write_command(self, name, body):
+        command = self.bin_dir / name
+        command.write_text(f"#!/bin/sh\n{body}\n", encoding="utf-8")
+        command.chmod(0o755)
+
+    def _run_action(self, *args):
+        return subprocess.run(
+            ["/bin/bash", str(_SHELL_ACTION), *args],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            env={
+                "PATH": f"{self.bin_dir}:/usr/bin:/bin",
+                "HOME": str(self.home),
+                "CALLS": str(self.calls),
+            },
+        )
+
+    def test_actions_map_to_exact_commands(self):
+        self._write_command("noctalia", 'printf "%s\\n" "$*" >>"$CALLS"')
+
+        verb_expected = {
+            "launcher": "msg panel-toggle launcher",
+            "session": "msg panel-toggle session",
+            "settings": "msg settings-toggle",
+            "clipboard": "msg panel-toggle clipboard",
+            "lock": "msg session lock",
+            "wallpaper-random": "msg wallpaper-random",
+        }
+
+        for verb, expected_args in verb_expected.items():
+            self.calls.unlink(missing_ok=True)
+            proc = self._run_action(verb)
+            self.assertEqual(proc.returncode, 0, f"Action '{verb}' failed: {proc.stderr}")
+            self.assertEqual(
+                self.calls.read_text(encoding="utf-8").strip(),
+                expected_args,
+                f"Action '{verb}' did not produce expected arguments",
+            )
+
+    def test_unknown_action_refused(self):
+        proc = self._run_action("invalid-verb")
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("Unknown shell action", proc.stderr)
 
 
 class TestNoctaliaStartup(unittest.TestCase):
@@ -67,14 +129,30 @@ class TestNoctaliaStartup(unittest.TestCase):
             ],
         )
 
-    def test_no_matching_scope_does_not_block_start(self):
-        self._write_command("systemctl", "exit 1")
-        self._write_command("noctalia", 'printf "noctalia\\n" >"$CALLS"')
+    def test_session_shell_stops_stale_scope_and_starts(self):
+        self._write_command("systemctl", 'printf "systemctl:%s\\n" "$*" >>"$CALLS"')
+        self._write_command("noctalia", 'printf "noctalia\\n" >>"$CALLS"')
 
-        proc = self._run_start()
+        proc = subprocess.run(
+            ["/bin/bash", str(_SESSION_SHELL)],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            env={
+                "PATH": f"{self.bin_dir}:/usr/bin:/bin",
+                "HOME": str(self.home),
+                "CALLS": str(self.calls),
+            },
+        )
 
         self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertEqual(self.calls.read_text(encoding="utf-8"), "noctalia\n")
+        self.assertEqual(
+            self.calls.read_text(encoding="utf-8").splitlines(),
+            [
+                "systemctl:--user stop app-niri-noctalia-*.scope",
+                "noctalia",
+            ],
+        )
 
 
 class TestScratchToggle(unittest.TestCase):

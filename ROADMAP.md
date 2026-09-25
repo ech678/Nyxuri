@@ -262,10 +262,10 @@ Issue #102 下的深度探讨为本项目的工程落地注入了极其宝贵的
 - [x] **约束模块越界**：重构 `modules/fcitx.py`，去除强杀与粗暴覆写，规范生命周期 Hook。
 
 ### 阶段三：业务痛点闭环与 Shell 解耦插槽 (Groundwork Phase 3)
-- [ ] **Fcitx5 + 雾凇闭环**：安装时自动在用户 Rime 目录挂载 `rime_ice` 补丁，预编译 schema，写入 profile 激活项；
-- [ ] **NyxMellow 知情权**：素材释放与“设为默认”彻底解耦，改动前输出 Pre-flight 清单；
-- [ ] **Niri 快捷键插槽化**：落地 `shell-action.sh`，解绑 `binds.kdl` 中的 Noctalia 硬编码；
-- [ ] **调色板舒缓迁移落地**：新增 Noctalia 原生 `nyxniri-palette.toml` 模板，重构 Orbit 与壁纸选择器直接读取 M3 标准色，移除 Catppuccin 反推逻辑。
+- [x] **Fcitx5 + 雾凇闭环**：安装时自动在用户 Rime 目录挂载 `rime_ice` 补丁，预编译 schema，写入 profile 激活项；
+- [x] **NyxMellow 知情权**：素材释放与“设为默认”彻底解耦，改动前输出 Pre-flight 清单；
+- [x] **Niri 快捷键插槽化**：落地 `shell-action.sh`，解绑 `binds.kdl` 中的 Noctalia 硬编码；
+- [x] **调色板舒缓迁移落地**：新增 Noctalia 原生 `nyxniri-palette.toml` 模板，重构 Orbit 与壁纸选择器直接读取 M3 标准色，移除 Catppuccin 反推逻辑。
 
 ### 阶段四：半年后自研 Shell 启航 (Custom Shell Phase)
 - [ ] 基于最适合的技术栈开发纯粹的 Material You (M3) 桌面外壳（Top Bar / Taskbar / Launcher / Control Center）；

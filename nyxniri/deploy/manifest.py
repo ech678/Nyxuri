@@ -57,6 +57,7 @@ class ModuleManifest:
     detect: str
     is_deployable: bool
     is_optional: bool = False  # True iff listed in .optional-apps.toml (§2 axis B)
+    post_install: str = ""     # Optional lifecycle hook spec (e.g. "fcitx:setup_rime_ice")
     preset_inherit: bool = False
     preset_allow: List[str] = field(default_factory=list)
     preset_standalone: List[str] = field(default_factory=list)
@@ -120,6 +121,7 @@ def load_manifest(app_src: Path, is_optional: bool = False) -> ModuleManifest:
         detect=packages.get("detect", name),
         is_deployable=_is_deployable(app_src),
         is_optional=is_optional,
+        post_install=str(packages.get("post_install", "")),
         preset_inherit=bool(presets.get("inherit", packages.get("preset_inherit", False))),
         preset_allow=list(presets.get("allow", packages.get("preset_allow", []))),
         preset_standalone=list(presets.get("standalone", packages.get("preset_standalone", []))),
@@ -165,6 +167,7 @@ def _manifest_from_optional(name: str, entry: dict) -> ModuleManifest:
         detect=entry.get("detect", name),
         is_deployable=False,
         is_optional=True,
+        post_install=str(entry.get("post_install", "")),
     )
 
 
@@ -187,6 +190,7 @@ def _merge_optional_entry(m: ModuleManifest, entry: dict) -> ModuleManifest:
         detect=entry.get("detect", m.detect),
         is_deployable=m.is_deployable,
         is_optional=True,
+        post_install=str(entry.get("post_install", m.post_install)),
         preset_inherit=m.preset_inherit,
         preset_allow=m.preset_allow,
         preset_standalone=m.preset_standalone,

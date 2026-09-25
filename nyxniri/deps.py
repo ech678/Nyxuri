@@ -191,8 +191,29 @@ def install_optional_apps(selected_apps: List[str]) -> bool:
         ok = bool(helper and pkg.install(aur_pkgs, source="aur", manager=helper)) and ok
     if flatpak_ids:
         ok = pkg.install_flatpaks(flatpak_ids) and ok
+    if ok:
+        for app in selected_apps:
+            manifest = manifests.get(app)
+            if manifest and manifest.post_install:
+                _run_post_install_hook(manifest.post_install)
     print(msg("opt_apps_install_done" if ok else "log_official_pkgs_partial_fail"))
     return ok
+
+
+def _run_post_install_hook(hook_spec: str) -> bool:
+    """Execute a lifecycle hook declared as 'module:function' (e.g. 'fcitx:setup_rime_ice')."""
+    if not hook_spec or ":" not in hook_spec:
+        return False
+    mod_name, fn_name = hook_spec.split(":", 1)
+    try:
+        import importlib
+        mod = importlib.import_module(f"nyxniri.modules.{mod_name}")
+        fn = getattr(mod, fn_name, None)
+        if callable(fn):
+            return bool(fn())
+    except Exception as e:
+        log_msg("WARN", f"Module post-install hook '{hook_spec}' failed: {e}")
+    return False
 
 
 def run_optional_apps_menu_loop() -> None:

@@ -83,6 +83,20 @@ class TestOptionalAppPackageMapping(unittest.TestCase):
 
                         mock_fcitx.assert_not_called()
 
+    def test_post_install_hook_triggered_after_install(self):
+        """Installing fcitx5-rime triggers its declared post_install hook."""
+        from nyxniri.deps import install_optional_apps
+
+        with patch("subprocess.run", return_value=MagicMock(returncode=0)):
+            with patch("nyxniri.pkg.preferred_manager", return_value="paru"):
+                with patch("nyxniri.deps.aur_helper_usable", return_value="paru"):
+                    with patch("shutil.which", return_value="/usr/bin/fcitx5"):
+                        with patch("nyxniri.modules.fcitx.setup_rime_ice") as mock_rime:
+                            with patch("builtins.print"):
+                                install_optional_apps(["fcitx5-rime"])
+
+                        mock_rime.assert_called_once()
+
 
 class TestMpvpaperDetection(unittest.TestCase):
     """mpvpaper version must be checked via pacman -Qi, not binary --version."""

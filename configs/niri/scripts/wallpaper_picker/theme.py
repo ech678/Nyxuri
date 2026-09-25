@@ -132,6 +132,7 @@ DUR_STATE_MS = 150
 DUR_FAST_SPATIAL_MS = 350
 DUR_EXIT_MS = 200
 
+NYXNIRI_PALETTE_PATH = "~/.cache/nyxniri/palette.toml"
 STARSHIP_PALETTE_PATH = "~/.cache/noctalia/starship-palette.toml"
 
 # Starship (Catppuccin-compatible) key candidates per M3 role, first hit wins.
@@ -209,10 +210,10 @@ def _sl(base, fg, opacity):
 
 # ── Palette loading ────────────────────────────────────────────────────────
 
-def _load_starship_colors(path=None):
-    """Parse Noctalia's starship palette cache into a key → rgb dict."""
+def _load_toml_palette(path):
+    """Parse a simple key = "value" TOML file into a key -> normalized RGB dict."""
     colors = {}
-    p = os.path.expanduser(path or STARSHIP_PALETTE_PATH)
+    p = os.path.expanduser(path)
     if not os.path.isfile(p):
         return colors
     try:
@@ -230,24 +231,43 @@ def _load_starship_colors(path=None):
     return colors
 
 
+def _load_m3_palette(path=None):
+    """Load native NyxNiri M3 palette (~/.cache/nyxniri/palette.toml)."""
+    return _load_toml_palette(path or NYXNIRI_PALETTE_PATH)
+
+
+def _load_starship_colors(path=None):
+    """Parse Noctalia's starship palette cache into a key → rgb dict."""
+    return _load_toml_palette(path or STARSHIP_PALETTE_PATH)
+
+
 def build_tokens(raw=None):
-    """Compile the full M3 color-role set from starship raw colors (or fallback).
+    """Compile the full M3 color-role set prioritizing native M3 palette (or starship fallback).
 
     Container tiers approximate the M3 tonal ladder: dark surfaces step toward
     the on-color (tones 4/10/12/17/22), light surfaces step down toward the
     on-color while `lowest` steps up toward white (tone 100).
     """
     if raw is None:
-        raw = _load_starship_colors()
+        raw = _load_m3_palette()
+        if not (raw and "primary" in raw and "surface" in raw):
+            raw = _load_starship_colors()
 
     def pick(role):
-        for key in _ROLE_SOURCES[role]:
-            if key in raw:
-                v = raw[key]
-                if isinstance(v, str):
-                    v = hex_to_rgb(v)
-                if v is not None:
-                    return v
+        if role in raw:
+            v = raw[role]
+            if isinstance(v, str):
+                v = hex_to_rgb(v)
+            if v is not None:
+                return v
+        if role in _ROLE_SOURCES:
+            for key in _ROLE_SOURCES[role]:
+                if key in raw:
+                    v = raw[key]
+                    if isinstance(v, str):
+                        v = hex_to_rgb(v)
+                    if v is not None:
+                        return v
         return _FALLBACK[role]
 
     primary = pick("primary")

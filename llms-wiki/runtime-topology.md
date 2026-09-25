@@ -11,13 +11,15 @@
 [ Niri Compositor 会话 (Wayland) ]
   │
   ├── 1. 启动阶段 (spawn-at-startup)
-  │     ├── start-noctalia.sh  ───────► Noctalia V5 Shell (顶栏 / Dock / 通知 / 调色中枢)
+  │     ├── session-shell.sh   ───────► Shell 启动网关 (默认拉起 Noctalia V5 / 兼容 start-noctalia.sh)
   │     ├── fcitx5 -d          ───────► Fcitx5 输入法守护进程
   │     ├── toggle-eyecare.sh --sync ─► 同步护眼模式状态与色温
   │     └── (8s 延迟任务)      ───────► noctalia msg config-reload && templates-apply (M3 GTK 冷启动保底)
   │
   ├── 2. 交互脚本层 (Keybindings 触发)
-  │     ├── Super + A / MouseForward ─► orbit-launcher.py (极坐标星环启动器)
+  │     ├── shell-action.sh    ───────► 统一动作网关 (launcher/session/settings/clipboard/lock/wallpaper-random)
+  │     │     ├── launcher     ───────► 优先唤起 orbit-launcher.py (未安装时回退 fuzzel)
+  │     │     └── session      ───────► 分发至 Shell IPC (noctalia msg / 未来自研 Shell)
   │     ├── Super + W          ───────► wallpaper-picker.py (壁纸选择器)
   │     ├── Super + ~          ───────► niri-scratch-toggle.sh (Kitty 浮动终端切换)
   │     ├── Super + N          ───────► toggle-eyecare.sh (护眼色温与着色器切换)
@@ -47,7 +49,7 @@
 | 进程 | 职责 | 拉起方式 | 存活策略 |
 |---|---|---|---|
 | **`niri`** | Wayland 合成器内核 | 登录管理器 (greetd / tty) | 根进程；退出即结束会话 |
-| **`noctalia`** | 状态栏、桌面部件、调色引擎、OSD | `start-noctalia.sh` | 会话期常驻；注销时由清理钩子回收避免孤儿 |
+| **`noctalia`** | 状态栏、桌面部件、调色引擎、OSD | `session-shell.sh` | 会话期常驻；注销时由清理钩子回收避免孤儿 |
 | **`fcitx5`** | 中文与多语言输入法框架 | `spawn-at-startup "fcitx5 -d"` | 守护进程常驻 |
 | **`xdg-desktop-portal`** | 桌面 Portal（文件、截图、色彩外观） | D-Bus 按需激活 / session 激活 | 由 `configs/xdg-desktop-portal/portals.conf` 分流路由 |
 | **`mpvpaper`** | 动态视频壁纸渲染器 | 壁纸选择器按需拉起 | 仅在选中动态壁纸时启动，换静态壁纸时终止 |

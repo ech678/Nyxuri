@@ -212,6 +212,7 @@ class TestRealRepoManifests(unittest.TestCase):
         self.assertEqual(m.packages_aur, ["rime-ice-git"])
         self.assertIn("fcitx5-rime", m.packages_repo)
         self.assertTrue(m.is_optional)
+        self.assertEqual(m.post_install, "fcitx:setup_rime_ice")
 
     def test_zed_dual_axis_merge(self):
         # zed ships config AND registers in .optional-apps.toml (§2 coexistence):

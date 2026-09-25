@@ -76,6 +76,7 @@ kitty / fastfetch / zed **不写 manifest**（目录名 = 包名 = 二进制名 
 | `label` | `<name>` | PKGBUILD optdepends 展示名（菜单显示名走 i18n `app_*` 键） |
 | `category` | `""` | 菜单分组键，显示名走 i18n `apps_cat_<key>`；分类顺序 = 块首次出现顺序 |
 | `detect` | `<name>` | 检测安装的命令名（Flatpak app 额外用 app id 探测 `flatpak list`） |
+| `post_install` | `""` | 可选模块安装完成钩子，格式 `<module>:<function>`（如 `fcitx:setup_rime_ice`） |
 
 块顺序即菜单顺序。菜单显示名必须配 i18n `app_<name>`（zh/en 成对，`-` 换 `_`）。
 
@@ -128,6 +129,6 @@ aur = ["rime-ice-git"]
 
 ## 边界
 
-不放进 manifest 的（会让它膨胀成小语言）：doctor 检查项、post-install hook、i18n 键。
-这些是 `DOCTOR_CHECKS` 列表 / 模块入口 / `translations.toml` 的事，manifest 只管"这个 app
-配置上有啥例外"。
+不放进 manifest 的（会让它膨胀成小语言）：doctor 检查项、i18n 键。
+这些是 `DOCTOR_CHECKS` 列表 / `translations.toml` 的事，manifest 只管 app 的包定义、
+配置例外与极轻量生命周期钩子（如 `post_install` 转发至模块函数）。

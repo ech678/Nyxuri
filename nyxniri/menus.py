@@ -21,6 +21,8 @@ from nyxniri.deploy import (
 from nyxniri.deps import is_dep_installed, run_dep_menu_loop, run_optional_apps_menu_loop
 from nyxniri.doctor import generate_bug_report, run_doctor
 from nyxniri.modules.fcitx import (
+    fcitx_activate,
+    fcitx_deploy_assets,
     fcitx_enabled,
     fcitx_install,
     fcitx_status,
@@ -98,13 +100,12 @@ def run_master_component_menu(is_update: bool = False, mode: str = "full") -> Op
         ))
 
         # 3. Fcitx5
-        if fcitx5_installed():
-            fcitx_check = not (is_update and not fcitx_enabled())
-            entries.append(CheckboxEntry(
-                key="module_fcitx",
-                label=msg("master_item_module", f"NyxMellow fcitx5 {fcitx_status_label()}"),
-                checked=fcitx_check,
-            ))
+        fcitx_check = fcitx5_installed() and not (is_update and not fcitx_enabled())
+        entries.append(CheckboxEntry(
+            key="module_fcitx",
+            label=msg("master_item_module", f"NyxMellow fcitx5 {fcitx_status_label()}"),
+            checked=fcitx_check,
+        ))
 
         # 4. Greeter
         entries.append(CheckboxEntry(
@@ -191,6 +192,8 @@ def fcitx_menu_loop() -> None:
     while True:
         items = [
             MenuItem(label=msg("fcitx_sub_install")),
+            MenuItem(label=msg("fcitx_sub_deploy")),
+            MenuItem(label=msg("fcitx_sub_activate")),
             MenuItem(label=msg("fcitx_sub_status")),
             MenuItem(label=msg("fcitx_sub_uninstall"), style="warn"),
             MenuItem(label=msg("fcitx_sub_back"), style="subtle"),
@@ -198,9 +201,11 @@ def fcitx_menu_loop() -> None:
         menu = Menu("fcitx_menu_title", items, hint_key="submenu_hint", compact=True)
         choice = menu.run()
         if choice == 0: fcitx_install(); press_any_key()
-        elif choice == 1: fcitx_status(); press_any_key()
-        elif choice == 2: fcitx_uninstall(); press_any_key()
-        elif choice == 3: break
+        elif choice == 1: fcitx_deploy_assets(); press_any_key()
+        elif choice == 2: fcitx_activate(); press_any_key()
+        elif choice == 3: fcitx_status(); press_any_key()
+        elif choice == 4: fcitx_uninstall(); press_any_key()
+        elif choice == 5: break
 
 
 def gtk_menu_loop() -> None:

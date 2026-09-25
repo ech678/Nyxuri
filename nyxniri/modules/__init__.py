@@ -8,6 +8,10 @@ from nyxniri.modules.fcitx import (
     fcitx5_installed,
     fcitx_enabled,
     fcitx_install,
+    fcitx_deploy_assets,
+    fcitx_activate,
+    setup_rime_ice,
+    fcitx_setup_rime,
     fcitx_status,
     fcitx_status_label,
     fcitx_uninstall,
@@ -40,8 +44,9 @@ from nyxniri.modules.gtktheme import (
 )
 
 __all__ = [
-    "fcitx5_installed", "fcitx_enabled", "fcitx_install", "fcitx_status",
-    "fcitx_status_label", "fcitx_uninstall",
+    "fcitx5_installed", "fcitx_enabled", "fcitx_install",
+    "fcitx_deploy_assets", "fcitx_activate", "setup_rime_ice", "fcitx_setup_rime",
+    "fcitx_status", "fcitx_status_label", "fcitx_uninstall",
     "fcitx_templates_registered", "fcitx_reload",
     "fcitx_trigger_render",
     "fisher_installed", "fisher_status_label", "fisher_install", "fisher_status",

@@ -247,6 +247,12 @@ input_path = "/home/user/.config/noctalia/templates/niri-glow-material-you.kdl"
 output_path = "/home/user/.config/noctalia/templates/niri-glow-material-you.rendered.kdl"
 post_hook = "if [ -f /home/user/.config/niri/glow-material-you.enabled ]; then cp -f /home/user/.config/noctalia/templates/niri-glow-material-you.rendered.kdl /home/user/.config/niri/layout.kdl && command -v niri >/dev/null 2>&1 && niri msg action load-config-file; fi"
 
+# NyxNiri Material You 动态色板（由 Noctalia 渲染到 ~/.cache/nyxniri/palette.toml，供周边组件零反推直接读取）
+[theme.templates.user.nyxniri_palette]
+index = 6
+input_path = "/home/user/.config/noctalia/templates/nyxniri-palette.toml"
+output_path = "/home/user/.cache/nyxniri/palette.toml"
+
 [wallpaper]
 directory = "/home/user/图片/Wallpapers"
 fill_mode = "crop"

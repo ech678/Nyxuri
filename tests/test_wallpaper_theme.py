@@ -194,6 +194,55 @@ class TestStarshipLoading(unittest.TestCase):
         self.assertEqual(self.theme._load_starship_colors("/nonexistent/x.toml"), {})
 
 
+class TestNativeM3PaletteLoading(unittest.TestCase):
+    def setUp(self):
+        self.theme = _load_theme()
+
+    def test_parses_native_m3_palette(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".toml", delete=False) as f:
+            f.write(
+                'primary = "#feacef"\n'
+                'surface = "#131318"\n'
+                'secondary = "#c6c3e9"\n'
+                'outline_variant = "#474551"\n'
+            )
+            path = f.name
+        try:
+            colors = self.theme._load_m3_palette(path)
+        finally:
+            os.unlink(path)
+        self.assertEqual(colors["primary"], self.theme.hex_to_rgb("#feacef"))
+        self.assertEqual(colors["surface"], self.theme.hex_to_rgb("#131318"))
+        self.assertEqual(colors["secondary"], self.theme.hex_to_rgb("#c6c3e9"))
+        self.assertEqual(colors["outline_variant"], self.theme.hex_to_rgb("#474551"))
+
+    def test_build_tokens_prioritizes_native_m3_over_starship(self):
+        m3_content = (
+            'primary = "#112233"\n'
+            'surface = "#445566"\n'
+            'secondary = "#778899"\n'
+        )
+        starship_content = (
+            'blue = "#ffffff"\n'
+            'base = "#000000"\n'
+        )
+        with tempfile.NamedTemporaryFile("w", suffix=".toml", delete=False) as f1, \
+             tempfile.NamedTemporaryFile("w", suffix=".toml", delete=False) as f2:
+            f1.write(m3_content)
+            f2.write(starship_content)
+            m3_path, starship_path = f1.name, f2.name
+        try:
+            with unittest.mock.patch.object(self.theme, "NYXNIRI_PALETTE_PATH", m3_path), \
+                 unittest.mock.patch.object(self.theme, "STARSHIP_PALETTE_PATH", starship_path):
+                tokens = self.theme.build_tokens()
+                self.assertEqual(tokens["primary"], self.theme.hex_to_rgb("#112233"))
+                self.assertEqual(tokens["surface"], self.theme.hex_to_rgb("#445566"))
+                self.assertEqual(tokens["secondary"], self.theme.hex_to_rgb("#778899"))
+        finally:
+            os.unlink(m3_path)
+            os.unlink(starship_path)
+
+
 class TestCssContract(unittest.TestCase):
     def setUp(self):
         self.theme = _load_theme()

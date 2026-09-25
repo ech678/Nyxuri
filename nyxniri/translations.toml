@@ -145,8 +145,16 @@ en = """\n  {Colors.BOLD_CYAN}── NyxMellow fcitx5 Skin ──{Colors.RESET}
 """
 
 [fcitx_sub_install]
-zh = "安装皮肤"
-en = "Install Skin"
+zh = "完整安装皮肤 (释放素材 + 设为默认)"
+en = "Full Install (Deploy Assets + Set Default)"
+
+[fcitx_sub_deploy]
+zh = "仅部署素材与模板 (不改默认主题)"
+en = "Deploy Assets & Templates (Keep Current Theme)"
+
+[fcitx_sub_activate]
+zh = "设为当前活动主题 (应用到 fcitx5)"
+en = "Activate Theme (Apply to fcitx5)"
 
 [fcitx_sub_status]
 zh = "查看状态"
@@ -1079,6 +1087,10 @@ en = "{Colors.BOLD_GREEN}[✓] Noctalia templates registered ({0}){Colors.RESET}
 [fcitx_not_registered]
 zh = "{Colors.BOLD_YELLOW}[!] Noctalia 模板未注册 ({0}){Colors.RESET}"
 en = "{Colors.BOLD_YELLOW}[!] Noctalia templates not registered ({0}){Colors.RESET}"
+
+[fcitx_rime_setup_ok]
+zh = "{Colors.BOLD_GREEN}[✓] Fcitx5 雾凇拼音 (Rime Ice) 方案已挂载并预编译完成{Colors.RESET}"
+en = "{Colors.BOLD_GREEN}[✓] Fcitx5 Rime Ice schema mounted and precompiled successfully{Colors.RESET}"
 
 [gtk_install_title]
 zh = """\n{Colors.BOLD_PURPLE}:: GTK Material You 主题安装{Colors.RESET}"""
