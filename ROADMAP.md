@@ -97,17 +97,54 @@
 
 ## 第三部分：顶级架构师眼中的全库“熵增”排查地图
 
-为了捍卫“纯白画布”与“架构对称”，全库以下 9 处是暗中滋生熵增、破坏几何秩序的技术病灶：
+为了捍卫“纯白画布”与“架构对称”，全库曾存在以下 9 处破坏几何秩序的历史病灶：
 
-1. **双脑分裂 (Shell vs Python)**：`config.fish`（479 行）与 `nyxniri/deps.py`（414 行）各自独立实现包管理，Shelly 支持分裂，破坏系统的一致性。
-2. **数据伪装成代码 (i18n 膨胀)**：`nyxniri/i18n.py` 膨胀到了 **1794 行**，巨大嵌套字典成为沉重负累。必须瘦身，测试 (`test_i18n.py`) 随之升级。
-3. **厨房水槽大管家 (cli.py 堆叠)**：`cli.py` 逼近 1000 行，把路由、UI、流程、提权全混在一块，破坏单一职责。
-4. **错位工具存放 (物理隔离击穿)**：700 行的独立清理工具 `clean-cache.py` 寄生在 Dotfiles 配置源码目录 `configs/fish/` 里，违反物理隔离。
-5. **模块职责越界 (modules/fcitx.py)**：越权动配置文件、动快捷键、强杀重启进程，失去分寸。
-6. **伪声明式特判泄漏**：`.optional-apps.toml` 缺乏闭环能力，导致底层写死 `if app == "fcitx5-rime"` 特判，打破几何对称。
-7. **时序耦合的全局状态**：`deps.py` 遍布全局可变变量，时序隐式依赖容易造成玄学 Bug。
-8. **调色板隐式寄生与别扭反推**：`orbit/palette.py` 与 `wallpaper_picker/theme.py` 硬编码偷读 `~/.cache/noctalia/starship-palette.toml`，并做 Catppuccin 到 M3 的蹩脚别名反推。
-9. **Niri 桌面服务硬编码绑定**：`binds.kdl` 和 `config.kdl` 充斥大量的 `spawn "noctalia" "msg" ...`，未抽象统一动作网关，阻碍未来切换 Shell。
+1. **双脑分裂 (Shell vs Python)**：`config.fish` 与 `nyxniri/deps.py` 各自独立实现包管理，破坏一致性。[已治理 · 阶段二]
+2. **数据伪装成代码 (i18n 膨胀)**：`nyxniri/i18n.py` 膨胀至 1794 行大字典，沉重负累。[已治理 · 阶段二]
+3. **厨房水槽大管家 (cli.py 堆叠)**：`cli.py` 逼近 1000 行，路由、UI、流程、提权混杂。[已治理 · 阶段二]
+4. **错位工具存放 (物理隔离击穿)**：独立清理工具 `clean-cache.py` 寄生在 `configs/fish/` 里。[已治理 · 阶段二]
+5. **模块职责越界 (modules/fcitx.py)**：越权动配置文件、改快捷键、重启进程。[已治理 · 阶段二与阶段三]
+6. **伪声明式特判泄漏**：底层写死 `if app == "fcitx5-rime"` 特判。[已治理 · 阶段三]
+7. **时序耦合的全局状态**：`deps.py` 遍布全局可变变量引发隐式依赖。[已治理 · 阶段二]
+8. **调色板隐式寄生与别扭反推**：硬编码偷读 starship 色板并蹩脚反推 Catppuccin。[已治理 · 阶段三]
+9. **Niri 桌面服务硬编码绑定**：快捷键与启动直绑 `noctalia msg`。[已治理 · 阶段三]
+
+---
+
+### 全库最新穿透审计：新时代 6 大深层技术痛点与问题汇总
+
+随着项目向**自研 Shell、双 Shell 平等共存、多合成器 (Multi-WM) 扩展、高鲁棒更新迁移与 TUI 风格化**纵深迈进，全库穿透审计定位出以下 6 大深层技术病灶（**坚持“一切皆可选、按需自由组装”原则**）：
+
+1. **项目改名与品牌路径死锁 (Naming & Case Split)**：
+   - 路径硬编码：配置根目录 `~/.config/NyxNiri`、状态 `~/.local/state/NyxNiri`、卸载归档、日志等处处绑定 `PROJECT_NAME`；
+   - 大小写分裂历史包袱：Python 底座用大写 `NyxNiri`，而 Noctalia 模板与 GUI 脚本硬编码小写 `~/.cache/nyxniri/palette.toml`，在 Linux 大小写敏感文件系统上造成目录分裂；
+   - 软链防误删校验 `core.py:is_nyxniri_cli_symlink()` 字符串硬匹配，改名后合法的软链反被判定为外来文件无法接管或卸载；
+   - 内部代码 `importlib.import_module("nyxniri.modules.*")` 写死顶层绝对包名。
+2. **双 Shell 运行时插槽与解耦不彻底 (Multi-Shell Slots Gap)**：
+   - 外围脚本仍有 14 处直接调用 `noctalia msg`（`session-shell.sh` 直接 `exec noctalia` 并杀 scope；`shell-action.sh` 6 个核心动作直连 noctalia；`niri-brightness.sh` 和 `toggle-eyecare.sh` 私自读写 `~/.config/noctalia`）；
+   - 合成器启动存在脆弱补丁：`niri/config.kdl` 硬编码 `sleep 8; noctalia msg config-reload && templates-apply` 盲等补丁，换其他 Shell 会产生报错残留与竞态冲突；
+   - 外部模板单向劫持：`gtktheme.py` 与 `fcitx.py` 直接操作读写 `noctalia-config.toml` 注入模板块，停用 Noctalia 会导致 GTK 与 Fcitx 失去配色来源。
+3. **公共桌面工具物理囚禁与合成器死绑 (Compositor Agnostic Gap)**：
+   - `orbit/`、`wallpaper_picker/`、`shell-action.sh` 等本质是通用的独立 Layer-Shell 桌面工具，却被物理囚禁在 `configs/niri/scripts/` 目录下，内部硬编码引用 `~/.config/niri/` 路径，其他合成器无法直接引用；
+   - 底座强制依赖：`constants.py:MAIN_WM = "niri"` 且被塞入必装 `CORE_DEPS`；`install.sh` 预检强制断言 `configs/niri/config.kdl` 必须存在；`doctor.py` 诊断、`greeter.py` 会话探测、`deploy.py` 护眼软链初始化与下一步提示固定绑定 `niri`；
+   - 预设热重载硬编码：`preset.py` 内部用 `if app == "niri"` 特判热重载指令。
+4. **升级系统缺乏代码执行能力与状态账本 (Zero Migration Framework)**：
+   - **痛点核心**：更新完全依赖原地 `git pull` + 原子覆盖，没有任何机制在版本间执行额外 Python 代码、进行配置键值重命名、结构整理或清理废弃目录；
+   - 缺少状态版本账本：本地没有记录 `installed_version` 与 `migration_level` 的持久化单一数据源；
+   - 发布通道与游离头指针陷阱：`update --to <tag>` 导致本地 Git 进入 Detached HEAD 状态，下次执行 `nyxniri update` 时 `git pull --ff-only` 直接崩溃；
+   - 升级安全带缺失：非交互模式更新写死 `do_backup=False`；拉取或安装失败时无原子回滚，停留在半破坏状态（Half-deployed State）；运行时原地覆盖自身 Python 源码存在 AST/Bytecode 错乱与锁丢失竞争风险；
+   - 黑盒体验：升级完毕后缺乏 What's New / Release Notes 提示与重大破坏性变更警告。
+5. **底座遗留边角防御与信号处理隐患 (Base Architecture Deficiencies)**：
+   - 🔴 高危存留：`atomic.py:221` 遇 Ctrl+C 时 `old_dest` 仍未进清理栈，且 `tui.py` 的 `sys.exit(130)` 绕过了 `except Exception:` 回滚逻辑；
+   - 🔴 高危存留：`uninstall.py:182` 壁纸卸载依然直接 `shutil.rmtree` 整个用户 Wallpapers 目录，误删私人壁纸；
+   - 🔴 高危存留：`layout.kdl` 依然在切换动态光晕时被 `theme-sync.sh` 直接覆盖，违反核心布局不可动原则；
+   - 锁机制与单一数据源缺陷：`nyxniri pkg` 与 `clean` 绕过排他锁；状态文件分散在 `.local/state` 与 `.config/NyxNiri`。
+6. **TUI 终端秩序与质感痛点 (TUI Ergonomics & Polish Gap)**：
+   - 未启用备用屏幕缓冲区 (Alternate Screen Buffer `\033[?1049h/l`)：终端 Scrollback 历史被反复抹除和污染；主菜单运行完 `doctor` 或快照查看后，按任意键结果被 `clear_screen()` 瞬间销毁，用户无法回头查阅细节；
+   - 焦点移动全屏重绘：每按一次方向键就完整重新打印 15 行 ASCII Logo，未启用 DEC 2025（`\033[?2025h/l`）原子帧同步，在高刷终端有肉眼可见的频闪与撕裂感；
+   - 缺乏即时模糊搜索：数十款常用应用与预设列表无法打字过滤；
+   - 长时间操作原始日志失控滚屏：`pacman/paru/git` 原始输出冲毁终端，缺乏单行就地收拢的 Spinner 与耗时汇总；
+   - 交互模式断层：`clean.py` 在终端可用行较小时退化为 `input("> ")` 字符串输入，快照备注行式输入打断 TUI。
 
 ---
 
@@ -141,137 +178,254 @@ Issue #102 下的深度探讨为本项目的工程落地注入了极其宝贵的
 
 ---
 
-## 第五部分：面向半年后对标 iNiR 自研 Shell 的解耦地基与调色板“舒缓演进”蓝图
+## 第五部分：多 Shell 平等共存与多合成器 (Multi-WM) 泛化解耦蓝图
 
-> 用户确认：**计划在半年后开启自研桌面 Shell，总体构想对标 [iNiR](https://github.com/snowarch/iNiR)**。
-> **关键决策**：**不基于 Quickshell**（具体技术栈待半年后根据审美与成熟度选型，不作茧自缚），**暂不预设名称**，保持架构中立与设计留白。
-
-### 1. 深度对标 iNiR：学其长处，弃其糟粕
-
-| 维度 | iNiR 的长处 (我们要学) | iNiR 的致命糟粕 (我们坚决不要) |
-|---|---|---|
-| **交互表现** | 深入贯彻 Material Design (M3) 动态色彩与灵动几何交互，面板、启动器、Dock、锁屏高度协调一致。 | **多重人格分裂**：同时塞入 Windows 11 风格（Waffle）和 Material 风格（ii），导致数万行冗余与条件分支。 |
-| **系统贴合** | 原生对接 Niri IPC，工作区滚动与窗口焦点捕捉极其丝滑。 | **历史债务深重**：从 `end-4/dots-hyprland` 粗暴 Fork 遗留的 `~/.config/illogical-impulse/` 幽灵路径与残存 Hyprland 兼容代码。 |
-| **框架反思** | 拥有完整的界面表现力。 | 内部混杂 Bash、Python、Go 甚至 Nix，工具链割裂；将安装更新脚本与 UI 界面死死捆绑（`sdata/` 目录大量脆弱脚本）。 |
-
-> [!IMPORTANT]
-> **未来自有 Shell 的纯粹定位**：
-> 具备与 iNiR 媲美的全套 M3 桌面交互与 Niri 原生深度整合，但**专精 Niri**、单一纯粹的高审美 Material You 风格、零历史包袱，且**界面开发与四包管理底座严格物理隔离**。
+> **战略定调**：
+> 1. **双 Shell 并立共存，不清退 Noctalia**：确立 **Noctalia + 自研 Shell** 双一等公民架构。`wallpaper_picker.py` 维持作为 Noctalia 的亲密搭档永久保留并协同运作；自研 Shell 则原生内置 Material You 灵动交互、桌面背景与 M3 取色引擎。
+> 2. **一切皆可选 (Everything is Optional)**：无论 Shell 还是合成器，全系统杜绝强加捆绑，用户可按需自由组合、平滑插拔。
+> 3. **多合成器 (Multi-WM) 支持正式立项**：打破单一绑定，构建通用的桌面组件层与 Compositor 适配层，让系统同时兼备 Niri 极致滚轴与新合成器（Hyprland/Sway 等）的高自由度。
 
 ---
 
-### 2. 当前必须做好的 3 项“打地基”解耦工程
+### 1. 双 Shell 平等插槽与四大 Provider 契约
 
-在接下来的半年地基期内，现有仓库必须完成以下脱敏与解耦，确保半年后接入自有 Shell 就像插拔卡带一样无感：
+为了实现 Noctalia 与自研 Material You Shell 的平等共存与秒级切换，构建标准化的 **`ShellProvider` 协议**：
 
-#### (1) Niri 启动与快捷键网关化（拔掉 Noctalia 钉子）
-- 新增 `configs/niri/scripts/shell-action.sh` 统一网关脚本，接收 `launcher`、`session`、`settings`、`clipboard`、`lock` 等标准动词；
-- `binds.kdl` 中所有的快捷键全部指向 `shell-action.sh`，当前由它分发给 `noctalia msg`，半年后一行切换给自研 Shell；
-- `config.kdl` 中的 `spawn-at-startup` 升级为通用 `session-shell.sh`。
+```
+                            [ Compositor 会话 ]
+                                     │
+           ┌─────────────────────────┴────────────────────────┐
+           ▼                                                  ▼
+[ configs/desktop/session-shell.sh ]         [ configs/desktop/shell-action.sh ]
+           │                                                  │
+           │ 读取活动 Shell 标记                                │ 读取活动 Shell 标记
+           │ (~/.local/state/NyxNiri/active_shell)            │ (~/.local/state/NyxNiri/active_shell)
+           ▼                                                  ▼
+┌──────────────────────────────────────┐          ┌──────────────────────────────────────┐
+│       SessionProvider (生命周期)      │          │        ActionProvider (动作网关)      │
+│  - noctalia: 拉起 noctalia 守护进程    │          │  - launcher / session / settings     │
+│  - custom: 启动自研 Shell 二进制       │          │  - clipboard / lock / wallpaper      │
+└──────────────────────────────────────┘          └──────────────────────────────────────┘
+                                     │
+                                     ▼
+                ┌──────────────────────────────────────────┐
+                │        PaletteProvider (调色基准)        │
+                │  - Noctalia: 模板输出至 palette.toml     │
+                │  - 自研 Shell: 原生算法直出 palette.toml  │
+                └──────────────────────────────────────────┘
+                                     │
+                                     ▼
+                      ~/.cache/nyxniri/palette.toml
+                   (Single Source of Truth 色板单点基准)
+                                     │
+         ┌───────────────────────────┼───────────────────────────┐
+         ▼                           ▼                           ▼
+[ Orbit Launcher ]           [ Wallpaper Picker ]         [ Theme Dispatcher ]
+(直接读取语义 Token)           (Noctalia 忠实搭档)          (theme-sync.sh 广播)
+```
 
-#### (2) 调色板的“舒缓无感迁移”：借力 Noctalia 原生模板，确立未来同构契约
-用户的核心顿悟：**既然 Noctalia v5 已经在稳定运行，绝不能突兀地加入第二个独立取色工具产生系统熵增。** 应该“借力打力”：
-
-1. **当下（零新开销，消灭二次反推）**：
-   * 在 `configs/noctalia/templates/nyxniri-palette.toml` 增加一个原生 TOML 模板；
-   * 在 `noctalia-config.toml` 中通过 `[theme.templates.user.nyxniri_palette]` 注册，让 Noctalia 原生渲染到 `~/.cache/nyxniri/palette.toml`；
-   * 模板内容直接暴露纯正的 M3 语义字段（`primary`, `secondary`, `surface`, `on_surface`, `outline` 等）；
-   * 改造 Orbit 与壁纸选择器：优先读取这个结构直白的 `palette.toml`，未生成时回退读取 `starship-palette.toml`；
-   * **收益**：彻底消灭了 Orbit 里把 Catppuccin `sapphire/mauve` 反推成 `primary/secondary` 的丑陋代码，而且零新增进程！
-
-2. **未来（顺水推舟接管）**：
-   * 半年后自有 Shell 研发落地时，无论用什么技术实现，只需向 `~/.cache/nyxniri/palette.toml` 写入格式完全相同的标准 TOML；
-   * 下游 Orbit、壁纸选择器、其他桌面工具**一行代码都不用改**，实现完美无缝切换；
-   * 切换完成后干脆利落地清退 Noctalia，整个过渡极致舒缓、自然。
-
-#### (3) 四包纯标库底座护航
-- 将现有的 `pkg/deploy/doctor/state` 磨砺成通用中台；
-- 半年后自有 Shell 研发启动时，它在引擎眼里仅仅是一个普通的声明式模块（`.module.toml`），安装、更新、回滚与依赖由底座全自动处理，开发者只需专注纯粹的界面交互与动效。
+#### 四大 Provider 契约规范：
+1. **SessionProvider (`session-shell.sh`)**：
+   - 依据 `active_shell` 标记分发启动命令；
+   - 彻底移除 `config.kdl` 中脆弱的 `sleep 8; noctalia msg ...` 盲等补丁，冷启动由各自 Shell 自主保底。
+2. **ActionProvider (`shell-action.sh`)**：
+   - 标准动词：`launcher` | `session` | `settings` | `clipboard` | `lock` | `wallpaper-random`；
+   - 若当前为 Noctalia：分发至 `noctalia msg`（未安装星环启动器时回退 `fuzzel`）；
+   - 若当前为自研 Shell：分发至自研 Shell 的 IPC/CLI，外围快捷键零改动。
+3. **PaletteProvider (调色板中枢)**：
+   - 固化 `~/.cache/nyxniri/palette.toml` 为唯一事实源；
+   - Noctalia 走原生 TOML 模板渲染；自研 Shell 凭借 M3 算法直出同构文件；下游 Orbit、Kitty、GTK 无感消费。
+4. **TemplateAdapter (模板适配解耦与 Noctalia Template 兼容)**：
+   - **全面兼容 Noctalia Template 系统**：自研 Shell 原生兼容并支持 Noctalia 的 Jinja 风格模板规范与变量命名空间（`{{ colors.primary.default.hex }}`、`{{ colors.surface.default.hex }}` 等）；
+   - **零摩擦无缝复用**：现存的 GTK CSS、Fcitx SVG、Kitty、Starship 以及用户自定义的 `[theme.templates.user.*]` 模板资产在自研 Shell 下**无需重写、直接共享**；
+   - 拔除 `gtktheme.py` 与 `fcitx.py` 直接改写 `noctalia-config.toml` 的越权代码，由模板适配层面向通用的 template 规范进行统一注册与渲染。
 
 ---
 
-## 第六部分：排查发现的【边角防御与安全补丁】备忘 (Secondary & Defensive Edge Cases)
+### 2. 多合成器 (Multi-WM) 架构解耦体系
 
-> **定位与原则**：这些问题属于**底层极端边界防御与安全带机制**（如特定毫秒中断、卸载选项、硬件驱动解耦等），绝非当前阻碍日常使用与核心审美的首要矛盾。
-> 按照“核心逻辑零将就，边角适度放宽标准”的原则，这些项目**绝不单独兴师动众立项占用主线心智**，仅作为账本备忘，在后续重构或推进相关模块时顺手几行代码抹平。
+#### (1) 桌面伴生工具归位与合成器脚本纯洁化 (Scoped Tools & Clean Compositor)
+- **核心原则**：自研 Shell 追求极致的纯白与简洁，原生内置启动器、壁纸管理与 M3 引擎，**绝不强加任何外部 Python GUI 脚本**。
+- **精准归位**：
+  - **Noctalia 专属伴生工具集 (`configs/noctalia/tools/`)**：将重型 Python GUI 工具 `orbit/` 与 `wallpaper_picker/` 收归至 Noctalia 伴生目录。仅在用户选择启用 Noctalia 时才会释放至 `~/.config/noctalia/tools/`；使用自研 Shell 时**零释放、零代码残留、绝对纯白**！
+  - **`configs/niri/scripts/` 极简化胶水层**：移走上述两个大型 GUI 目录后，合成器脚本目录彻底瘦身，仅保留 5 个精简纯粹的 Bash 胶水脚本（`session-shell.sh`, `shell-action.sh`, `niri-brightness.sh`, `toggle-eyecare.sh`, `niri-scratch-toggle.sh`），专注服务于合成器会话与快捷键分发。
 
-### 1. [边角 · 状态安全] `atomic_replace_item` 遇 Ctrl+C 原子交换保护
-- **代码位置**: `nyxniri/deploy/atomic.py:221-237`
-- **问题**: 在刚执行完 `dest.rename(old_dest)`（原配置移入临时名）的极短瞬间，若用户强行按 Ctrl+C，`old_dest` 没被注册到临时清理栈，异常抛出可能导致原配置留在孤儿目录中。
-- **顺手修复**: 将 `old_dest` 统一登记入 swap 临时保护栈，或在毫秒级 rename 期间屏蔽信号中断。
+#### (2) 核心依赖解耦与声明式化
+- 将 `niri` 从 `nyxniri/constants.py:CORE_DEPS` 强依赖中解绑；
+- 将合成器下放为普通可选组件：在 `configs/niri/.module.toml`、`configs/hypr/.module.toml` 中按需声明各自的包名与预设；
+- 预设热重载指令下放至各模块的 manifest（消除 `preset.py` 中的 `if app == "niri"` 硬编码）。
 
-### 2. [边角 · 资产安全] 卸载壁纸时避免粗暴 `rmtree` 用户壁纸目录
+#### (3) CompositorDriver 驱动抽象层
+- 在 Python 底座中抽象 `CompositorDriver` 接口，抹平各合成器底层差异：
+  - **热重载 (Reload)**：`niri msg action load-config-file` vs `hyprctl reload` vs `swaymsg reload`；
+  - **浮动便签 (Scratchpad)**：统一调度 Kitty 浮动窗口；
+  - **屏幕输出探测 (Focused Output)**：内屏与外接屏亮度分流；
+- **智能诊断与会话引导**：`doctor.py` 根据当前 `$XDG_CURRENT_DESKTOP` 自适应诊断，不再对非 niri 会话虚假报红；`greeter.py` 动态扫描并提供会话选项。
+
+---
+
+## 第六部分：极简高鲁棒代码迁移与升级体系 (Lean Migration Engine & Safe Downdate)
+
+> **设计哲学**：拒绝笨重的第三方包管理与复杂数据库依赖，依托 Python 纯标准库实现**轻量、线性、绝对受控**的升级迁移体系。
+
+### 1. 痛点破除：解决“升级时需要执行额外代码”的核心诉求
+- **现状缺陷**：当前更新仅为简单的 `git pull` + 原子覆盖。一旦版本迭代需要重命名目录、修改配置键值、转换快照结构或清理废弃旧配置，系统完全无能为力。
+- **极简解决方案**：
+  1. **单一事实源版本账本 (`state.json`)**：
+     在 `~/.local/state/NyxNiri/state.json` 中持久化记录：
+     ```json
+     {
+       "installed_version": "3.0.5",
+       "migration_level": 4,
+       "channel": "stable",
+       "active_shell": "noctalia",
+       "active_wm": "niri"
+     }
+     ```
+  2. **轻量线性 Migration 机制 (`nyxniri/migrations/`)**：
+     创建纯标库迁移框架，每个迁移脚本仅需几十行简洁代码：
+     ```python
+     # nyxniri/migrations/0004_v3_1_desktop_scripts_promote.py
+     def up(env: Environment) -> bool:
+         """将旧 niri/scripts 提升至 desktop，平移用户覆盖并建立兼容软链。"""
+         ...
+         return True
+     ```
+     执行 `nyxniri update` 时，自动对比 `migration_level`，按顺序链式触发新版本所需的全部一次性代码，并落盘账本。
+
+### 2. 升级安全带与两阶段防错机制
+- **强制升级前受保快照 (Guaranteed Snapshot)**：
+  彻底废除“非交互更新跳过备份”的隐患，任何更新启动前强制生成带 Git Commit SHA 的 `pre_update` 快照；
+- **修复 Detached HEAD 游离头指针陷阱**：
+  规范化版本切换逻辑，切换 Tag 时自动建立本地受管状态，杜绝下一次 `git pull` 崩溃；
+- **沙箱化预检与两阶段交接**：
+  代码拉取与预检在临时隔离域完成，全部校验通过后再原子切换，部署过程发生中断或异常立即就地提示并保持现场，绝不留下破坏性的半安装状态。
+
+### 3. 远期储备：安全 Downdate（版本回退/降级）体系
+- **战略定位**：作为后续阶段的高级能力，优先级排在基础迁移引擎之后。
+- **落地机制（快照优先 + 逆向检出）**：
+  1. **现场快照优先还原**：用户指定降级至旧版本时，优先检索并恢复该版本升级前留存的原版受保快照（100% 保真还原）；
+  2. **逆向 Git 检出兜底**：若本地无对应快照，稳妥检出目标 Tag，执行向下兼容检查并原子替换，保留用户 `__custom__`。
+
+---
+
+## 第七部分：TUI 视觉风格化与终端美学跃迁 (TUI Stylization & Aesthetic Polish)
+
+> **设计哲学**：当前 TUI 逻辑完全可用，未来的重心是**视觉质感、艺术留白与纯粹秩序**，打造与自研 Material You Shell 气质协调一致的 Terminal Rice。
+
+### 1. 终端纯净感：备用屏幕缓冲区 (Alternate Screen Buffer)
+- 引入 ANSI `\033[?1049h` 与 `\033[?1049l`：
+  - 进入 TUI 控制面板时自动切入备用屏幕；
+  - 退出 TUI 时完整恢复进入前的终端历史，Scrollback 零污染、零残留；
+  - 运行 `doctor` 或查看快照时，执行结果永久驻留在终端主屏上供对照查阅，绝不再被主菜单粗暴抹除。
+
+### 2. 消除重绘闪烁：DEC 2025 帧同步与区域解耦
+- 引入终端原子帧同步更新协议（`\033[?2025h/l`），彻底消除高刷终端上的菜单撕裂；
+- 将巨型 ASCII Banner 与动态菜单列表区域物理解耦，焦点移动时仅局部差分重绘，杜绝高频整屏闪烁。
+
+### 3. 控制感与微动动效 (Zen Spinner)
+- 废弃 `pacman/paru/git` 原始命令直通滚屏导致的屏幕失控；
+- 引入纯标库极简单行微动 Spinner（显示当前步骤、最新摘要与已耗时间），任务成功就地收拢为规整徽章 `[✓]`，仅在异常时展开最后 10 行错误日志。
+
+---
+
+## 第八部分：项目重命名与双轨平滑迁移 (Project Rebranding & Dual-Track Migration)
+
+> 随着项目从单一 Niri 合成器迈向多 WM、多 Shell 的全景桌面生态，项目名脱敏与重命名成为顺应演进的必然之举。
+
+### 1. 常量集中与双轨兼容
+- 集中统一品牌常量于 `nyxniri/constants.py`（如 `PROJECT_NAME`, `CLI_CMD`, `LEGACY_NAMES`）；
+- 环境变量提供双向自动兼容：优先读取新前缀变量，无设置时自动平滑回退读取 `NYXNIRI_*`。
+
+### 2. 存储路径自动平移与大小写规范化
+- **三级路径透明平移**：启动时检测旧路径 `~/.config/NyxNiri`，自动安全平移至新目录，并保留兼容软链接 `~/.config/NyxNiri -> ~/.config/<NewName>`；
+- **大小写彻底统一**：借重命名契机统一规范化为规范小写目录，消灭 `NyxNiri` 与 `nyxniri` 在 Linux 缓存目录下的历史分裂。
+
+### 3. 动态 Import 与 CLI 软链自愈
+- 将内部 `importlib.import_module("nyxniri.modules.*")` 升级为基于 `__package__` 的相对/动态导入；
+- 升级软链防误删探测算法，自动接管并清理旧软链接，杜绝孤儿文件。
+
+---
+
+## 第九部分：排查发现的【边角防御与安全补丁】备忘 (Secondary & Defensive Edge Cases)
+
+> **定位与原则**：属于底层极端边界防御，在推进底座与模块演进时顺手抹平。
+
+### 1. [高危 · 状态安全] `atomic_replace_item` 遇 Ctrl+C 原子交换保护
+- **代码位置**: `nyxniri/deploy/atomic.py:221-237`, `nyxniri/tui.py:59-62`
+- **问题**: 在刚执行完 `dest.rename(old_dest)` 瞬间若用户敲击 Ctrl+C，`tui.py` 的 `sys.exit(130)` 绕过了 `except Exception:` 回滚栈，导致原配置变成孤儿。
+- **修复**: 将 `old_dest` 统一登记入 swap 临时保护栈，捕获 `BaseException` 确保中断时安全回滚。
+
+### 2. [高危 · 资产安全] 卸载壁纸时避免粗暴 `rmtree` 用户壁纸目录
 - **代码位置**: `nyxniri/state/uninstall.py:182-184`
-- **问题**: 卸载勾选 `wallpapers` 时，直接 `shutil.rmtree(get_pics_dir() / "Wallpapers")`，有误删用户自己存放在该目录下的私人壁纸的风险。
-- **顺手修复**: 改为按资产清单只删除 NyxNiri 原装的那几张官方图片，严禁物理抹除用户壁纸总目录。
+- **问题**: 卸载勾选 `wallpapers` 时，直接 `shutil.rmtree` 用户 Wallpapers 目录，误删私人壁纸。
+- **修复**: 改为严格按照官方素材文件清单精准删除，严禁物理抹除用户壁纸总目录。
 
-### 3. [边角 · 系统安全] 拔除 AUR 引导中的 `pacman -Rdd` 暴力拆包
+### 3. [高危 · 边界防护] Niri 动态光晕预设解耦
+- **代码位置**: `configs/noctalia/noctalia-config.toml:248`, `configs/noctalia/theme-sync.sh:220`
+- **问题**: Noctalia 切换光晕预设时直接覆写包含核心布局规则的 `layout.kdl`。
+- **修复**: 将光晕抽取为独立的 `colors.kdl` include，严禁外围脚本覆写 `layout.kdl`。
+
+### 4. [系统安全] 拔除 AUR 引导中的 `pacman -Rdd` 暴力拆包
 - **代码位置**: `nyxniri/deps.py:166`
-- **问题**: 检测到 `paru-bin` 冲突时使用了 `-Rdd`（无视依赖强制拆包），存在破坏宿主核心依赖链的潜在风险。
-- **顺手修复**: 移除 `-Rdd` 暴力参数，走常规依赖冲突提示。
+- **修复**: 移除 `-Rdd` 暴力参数，走常规依赖冲突提示。[已完成核心清理]
 
-### 4. [边角 · 真实反馈] 修复 `install_selected_deps` 恒真返回与外部超时
+### 5. [真实反馈] 修复 `install_selected_deps` 恒真返回与外部超时
 - **代码位置**: `nyxniri/deps.py:247-282`
-- **问题**: 底层 `pacman`/`aur` 报错退出后，函数最后依然无条件 `return True`，报告虚假成功；且缺乏外部调用超时控制。
-- **顺手修复**: 如实反映命令退出码，并给外部调用补上合理的 `timeout` 控制。
+- **修复**: 如实反映命令退出码，并为外部调用补充合理超时控制。
 
-### 5. [边角 · 架构解绑] 清除 `install.sh` / `doctor.py` 对特定组件名的断言
-- **代码位置**: `install.sh:129`, `nyxniri/constants.py:10`, `nyxniri/doctor.py:43-80`
-- **问题**: `install.sh` 检查完整性时硬编码了 `noctalia-config.toml`；`constants.py` 写死 `THEME_ENGINE = "noctalia"`。
-- **顺手修复**: 解绑特定组件名检测，仅检测 NyxNiri 核心模块，为未来换 Shell 彻底扫清障碍。
-
-### 6. [已完成 · 硬件减法] 删除默认 NVIDIA 环境变量与部署改写
-- **完成情况**：默认配置已移除三个驱动变量及旧 Electron 设置；部署不再根据 PCI 设备改写驱动变量。
-- **诊断边界**：PCI 列表只能分类设备，不能确认实际渲染 GPU。`hardware.py` 仅保留纯文本分类，报告复用已有探测结果。
-- **兼容边界**：正常原子部署更新主配置，个人覆盖、个人预设、历史快照和现有会话环境保持原样；路径与截图目录适配保留。详见 [GPU 诊断与兼容边界](llms-wiki/nvidia-patch.md)。
-
-### 7. [边角 · 错位工具] 将 `clean-cache.py` 从 `configs/fish/` 挪出归位
-- **代码位置**: `configs/fish/clean-cache.py`
-- **问题**: 700 行的通用系统运维工具塞在 fish 用户配置目录下，导致 Orbit 启动器必须跨界去寻找。
-- **顺手修复**: 移出 fish 目录，归位为通用脚本或作为 `nyxniri clean` 统一子命令。
-
-### 8. [边角 · 边界防护] Niri 动态光晕预设解耦
-- **代码位置**: `configs/noctalia/noctalia-config.toml:248`, `theme-sync.sh:220`
-- **问题**: 虽然平时受 `glow-material-you.enabled` 守门保护，但切换为该预设时 Noctalia 会覆盖 `layout.kdl`。
-- **顺手修复**: 将颜色光晕抽离为独立的 `colors.kdl` include，严禁任何外围脚本覆写包含核心布局规则的 `layout.kdl`。
+### 6. [架构解绑] 清除 `install.sh` / `doctor.py` 对特定组件名的断言
+- **代码位置**: `install.sh:133`, `nyxniri/constants.py:10`, `nyxniri/doctor.py:43-80`
+- **修复**: 解绑特定组件名检测，仅检测通用核心模块。
 
 ---
 
-## 第七部分：全景改造终极落地清单 (Master Action Checklist)
+## 第十部分：全景改造终极落地清单 (Master Action Checklist)
 
 ### 阶段零：主配置纯白画布与过时硬件补丁拔除 (Zero Entropy Phase 0 - Immediate Cleanup)
-- [x] **移除默认 NVIDIA 环境变量**：删除 `GBM_BACKEND`、`__GLX_VENDOR_LIBRARY_NAME`、`LIBVA_DRIVER_NAME` 及相关注释；
-- [x] **移除旧 Electron 设置**：删除 `ELECTRON_OZONE_PLATFORM_HINT "auto"`，说明部分旧应用可能改用 XWayland；
-- [x] **移除部署驱动改写**：删除硬件补丁阶段、两个部署入口调用、转导出及失效日志，保留路径与截图目录适配；
-- [x] **硬件层退回纯文本分类**：删除独立探测与缓存，报告复用 PCI 输出；失败或空输出显示未知，不推断实际渲染 GPU，常规 doctor 不增加输出；
-- [x] **同步契约测试与文档**：验证变量移除、重复部署、自定义保留、跨应用隔离、报告只读及命令参数；语法检查、shellcheck、393 项测试与隔离部署通过。
-
-本次不含 GTK 清理、Orbit 兼容入口或启动延迟补丁。
+- [x] **移除默认 NVIDIA 环境变量**：删除驱动变量及旧 Electron 设置；
+- [x] **移除部署驱动改写**：删除硬件补丁阶段，保留路径适配；
+- [x] **硬件层退回纯文本分类**：报告复用 PCI 输出，常规 doctor 不增加输出；
+- [x] **同步契约测试与文档**：393 项测试与隔离部署验证通过。
 
 ### 阶段一：四包底座与契约冻结 (Groundwork Phase 1)
-- [x] 固化 `nyxniri.pkg` 统一包管理接口，规范输入输出模型与网络超时跳过机制；
-- [x] 完善 `nyxniri.deploy` 声明式与原子替换规则，确保 `__custom__` 私域绝对安全；
-- [x] 强化 `nyxniri.state` 四级回滚能力，支持依赖组回退与纯白清退；
-- [x] 编写语言无关的契约测试样本，覆盖中断、失败、快照与配置漂移。
+- [x] 固化 `nyxniri.pkg` 统一包管理接口；
+- [x] 完善 `nyxniri.deploy` 声明式与原子替换规则，确保 `__custom__` 绝对安全；
+- [x] 强化 `nyxniri.state` 四级回滚能力；
+- [x] 编写契约测试样本，覆盖中断、失败、快照与配置漂移。
 
 ### 阶段二：全库大做减法与防熵增专项 (Groundwork Phase 2)
-- [x] **消灭双脑分裂**：统一 Fish 与 Python 包管理逻辑，消除 `deps.py` 全局可变状态；
-- [x] **数据与代码解耦**：`i18n.py` 结构化瘦身，同步更新 `test_i18n.py`；
-- [x] **收束单一职责**：拆解 `cli.py` 臃肿代码，路由与 UI 彻底分离；
-- [x] **纠正错位工具**：将 `clean-cache.py` 从 `configs/fish/` 挪出，回归系统维护领域；
-- [x] **约束模块越界**：重构 `modules/fcitx.py`，去除强杀与粗暴覆写，规范生命周期 Hook。
+- [x] **消灭双脑分裂**：统一 Fish 与 Python 包管理逻辑；
+- [x] **数据与代码解耦**：`i18n.py` 结构化瘦身至 TOML；
+- [x] **收束单一职责**：拆解 `cli.py` 臃肿代码；
+- [x] **纠正错位工具**：将 `clean-cache.py` 挪出，回归系统维护领域；
+- [x] **约束模块越界**：重构 `modules/fcitx.py`，规范生命周期 Hook。
 
 ### 阶段三：业务痛点闭环与 Shell 解耦插槽 (Groundwork Phase 3)
-- [x] **Fcitx5 + 雾凇闭环**：安装时自动在用户 Rime 目录挂载 `rime_ice` 补丁，预编译 schema，写入 profile 激活项；
-- [x] **NyxMellow 知情权**：素材释放与“设为默认”彻底解耦，改动前输出 Pre-flight 清单；
-- [x] **Niri 快捷键插槽化**：落地 `shell-action.sh`，解绑 `binds.kdl` 中的 Noctalia 硬编码；
-- [x] **调色板舒缓迁移落地**：新增 Noctalia 原生 `nyxniri-palette.toml` 模板，重构 Orbit 与壁纸选择器直接读取 M3 标准色，移除 Catppuccin 反推逻辑。
+- [x] **Fcitx5 + 雾凇闭环**：安装时自动挂载 `rime_ice` 补丁，预编译 schema，写入 profile；
+- [x] **NyxMellow 知情权**：素材部署与激活解耦，展示 Pre-flight 清单；
+- [x] **Niri 快捷键插槽化**：落地 `shell-action.sh` 与 `session-shell.sh`；
+- [x] **调色板舒缓迁移落地**：新增原生 `nyxniri-palette.toml` 模板，Orbit 与壁纸选择器直读 M3 色板。
 
-### 阶段四：半年后自研 Shell 启航 (Custom Shell Phase)
-- [ ] 基于最适合的技术栈开发纯粹的 Material You (M3) 桌面外壳（Top Bar / Taskbar / Launcher / Control Center）；
-- [ ] 深度接入 Niri 官方 IPC，实现工作区与窗口焦点无缝响应；
-- [ ] 自有 Shell 直接向 `~/.cache/nyxniri/palette.toml` 写入同构色板，下游无缝接管；
-- [ ] 平滑清退 Noctalia，完成 NyxNiri 2.0 终极闭环。
+### 阶段四：底座硬核演进——极简代码迁移引擎、边角防御收敛与 TUI 美学风格化 (Lean Migration Engine & TUI Styling)
+- [ ] **纯标库版本账本与线性迁移框架**：引入 `state.json` 与 `nyxniri/migrations/`，支持版本升级时执行额外 Python 代码、清理废弃项与目录迁移；
+- [ ] **升级安全带机制**：强制升级前自动生成受保快照，修复 Detached HEAD 游离头指针隐患；
+- [ ] **边角防御高危项抹平**：修复 `atomic.py` 的 Ctrl+C 栈保护与 `uninstall.py` 壁纸精准清理；拔除 `layout.kdl` 被覆盖隐患；
+- [ ] **TUI 视觉风格化与纯净感**：接入 Alternate Screen Buffer（`\033[?1049h/l`）保护终端历史，DEC 2025 消除频闪撕裂，引入单行微动 Zen Spinner。
+
+### 阶段五：架构泛化与多合成器解耦——抽离桌面公共脚本、抽象 Compositor 驱动与品牌平滑迁移 (Multi-WM Decoupling & Rebranding)
+- [ ] **桌面伴生工具归位与合成器脚本纯洁化**：将 `orbit/` 与 `wallpaper_picker/` 收归至 `configs/noctalia/tools/`，使 `configs/niri/scripts/` 瘦身为仅含 5 个纯粹胶水脚本；自研 Shell 下零外部脚本残留；
+- [ ] **解绑 Niri 强制核心依赖**：`niri` 退出 `CORE_DEPS`，下放为声明式模块；
+- [ ] **构建 CompositorDriver 驱动抽象层**：实现热重载、浮动便签与屏幕探测的跨合成器适配；
+- [ ] **项目重命名双轨平滑迁移**：常量统一、双向环境变量兼容与 `~/.config/NyxNiri` 自动安全平移。
+
+### 阶段六：自研 Material You Shell 启航与多 Shell 插槽接入 (Multi-Shell Slots: Noctalia & Custom Shell)
+- [ ] **实现统一 ShellProvider 插槽**：`session-shell.sh`、`shell-action.sh` 支持根据 `active_shell` 动态路由；
+- [ ] **Noctalia + Wallpaper Picker 协同方案稳固**：解耦 `gtktheme` 与 `fcitx` 对 Noctalia 配置的单向修改；
+- [ ] **自研 Material You Shell 核心研发**：纯粹单一风格、原生对接 Niri/Wayland IPC、算法直出同构 M3 `palette.toml`；
+- [ ] **兼容 Noctalia Template 系统**：自研 Shell 原生支持 Noctalia 模板规范与变量渲染，无缝复用现有的 GTK、Fcitx、Kitty 等全套模板资产；
+- [ ] **双 Shell 自由平滑切换**：支持 `nyxniri shell set <noctalia|custom>` 或快捷键即时切换；
+- [ ] **安全 Downdate 体系（储备）**：落地基于现场快照溯源与 Git 逆向检出的安全版本降级。
 
 ### 附录：边角防御顺带抹平清单 (顺手维护，不占主线心智)
 - [ ] `atomic.py`: swap 栈注册 `old_dest`，补强 Ctrl+C 状态保护；
@@ -279,3 +433,4 @@ Issue #102 下的深度探讨为本项目的工程落地注入了极其宝贵的
 - [ ] `deps.py`: 拔除 `-Rdd` 参数，修复返回值如实反映安装结果；
 - [ ] `install.sh` & `doctor.py`: 去除对特定 `noctalia-config.toml` 的硬编码断言；
 - [x] `hardware.py`: 移除写入、独立探测与缓存，仅保留纯文本设备分类供诊断报告使用。
+
