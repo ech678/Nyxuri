@@ -8,6 +8,7 @@ the outcome so the completion screen can render the right status line.
 import shutil
 import sys
 import tempfile
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Tuple
@@ -75,6 +76,7 @@ def deploy_wallpapers(do_download: bool = False) -> WallpaperDeployResult:
     env = get_env()
     downloaded = False
     fallback_synced = False
+    managed: set[str] = set()
 
     if do_download:
         print(msg("msg_downloading_wallpapers"))
@@ -108,6 +110,7 @@ def deploy_wallpapers(do_download: bool = False) -> WallpaperDeployResult:
                         shutil.copytree(item, target, dirs_exist_ok=True)
                     else:
                         shutil.copy2(item, target)
+                    managed.add(item.name)
                 downloaded = True
                 print(msg("msg_wallpapers_download_success"))
                 log_msg("INFO", f"Wallpaper pack deployed to {wp_dest}")
@@ -124,8 +127,14 @@ def deploy_wallpapers(do_download: bool = False) -> WallpaperDeployResult:
             target = wp_dest / f.name
             if not target.exists():
                 shutil.copy2(f, target)
+                managed.add(f.name)
         fallback_synced = True
         print(msg("log_sync_wallpapers", str(wp_dest)))
+
+    if managed:
+        (wp_dest / ".nyxniri-managed.json").write_text(
+            json.dumps(sorted(managed), ensure_ascii=False) + "\n", encoding="utf-8"
+        )
 
     return WallpaperDeployResult(
         download_attempted=do_download,

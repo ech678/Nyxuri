@@ -28,9 +28,9 @@ CAPSULE_ACTIVE_H = 54.0     # Active capsule height (px)
 
 # Config Search Paths (Prioritized)
 CONFIG_PATHS = [
-    os.path.expanduser("~/.config/niri/orbit-items__custom__.toml"),
+    os.path.expanduser("~/.config/noctalia/tools/orbit-items__custom__.toml"),
     os.path.expanduser("~/.config/niri/scratchpad-items__custom__.toml"),
-    os.path.expanduser("~/.config/niri/orbit-items.toml"),
+    os.path.expanduser("~/.config/noctalia/tools/orbit-items.toml"),
     os.path.expanduser("~/.config/niri/scratchpad-items.toml"),
     os.path.expanduser("~/.config/niri/scratchpad-items.json"),
 ]
@@ -125,7 +125,7 @@ DEFAULT_MENU_TREE = [
         "name": "Wallpapers",
         "desc": "Static & Live",
         "icon": "󰸉",
-        "cmd": "~/.config/niri/scripts/wallpaper-picker.py",
+        "cmd": "~/.config/noctalia/tools/wallpaper-picker.py",
         "shortcut": "4",
         "color_key": "secondary",
     },

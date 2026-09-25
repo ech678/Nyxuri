@@ -1,6 +1,6 @@
 """
 Orbit Launcher Palette Engine
-Extracts dynamic colors from Noctalia Starship palette cache or defaults to Material You tokens.
+Loads the shared NyxNiri Material 3 palette or static defaults.
 """
 
 import os
@@ -18,7 +18,6 @@ def hex_to_rgb(hex_str: str, default=(0.5, 0.5, 0.5)):
 
 
 NYXNIRI_PALETTE_PATH = "~/.cache/nyxniri/palette.toml"
-STARSHIP_PALETTE_PATH = "~/.cache/noctalia/starship-palette.toml"
 
 
 def _parse_toml_colors(path: str) -> dict:
@@ -68,29 +67,6 @@ def load_material_palette(path: str = None) -> dict:
         sr, sg, sb = palette["surface"]
         palette["is_dark"] = (0.299 * sr + 0.587 * sg + 0.114 * sb < 0.5)
         return palette
-
-    # 2. Fallback: Noctalia starship palette cache (legacy compatibility)
-    starship_path = os.path.expanduser(STARSHIP_PALETTE_PATH)
-    raw = _parse_toml_colors(starship_path)
-    if raw:
-        for k, rgb in raw.items():
-            palette[k] = rgb
-            if k in ("blue", "sapphire", "primary"):
-                palette["primary"] = rgb
-            elif k in ("teal", "green", "secondary"):
-                palette["secondary"] = rgb
-            elif k in ("peach", "pink", "mauve", "yellow", "tertiary"):
-                palette["tertiary"] = rgb
-            elif k in ("surface0", "surface1", "base"):
-                palette["surface"] = rgb
-            elif k in ("crust", "mantle"):
-                palette["surface_dim"] = rgb
-            elif k in ("text", "white"):
-                palette["on_surface"] = rgb
-            elif k in ("subtext0", "subtext1", "overlay2"):
-                palette["on_surface_var"] = rgb
-            elif k in ("overlay0", "overlay1"):
-                palette["outline"] = rgb
 
     sr, sg, sb = palette["surface"]
     palette["is_dark"] = (0.299 * sr + 0.587 * sg + 0.114 * sb < 0.5)

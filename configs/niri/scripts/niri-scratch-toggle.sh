@@ -101,10 +101,10 @@ case "$TARGET_APP" in
         ;;
 
     wallpaper|wallpapers|"wallpaper-picker"|WallpaperPicker|*wallpaper-picker.py)
-        if [ -f "$HOME/.config/niri/scripts/wallpaper-picker.py" ]; then
-            niri msg action spawn -- "$HOME/.config/niri/scripts/wallpaper-picker.py"
-        elif [ -f "$(dirname "${BASH_SOURCE[0]}")/wallpaper-picker.py" ]; then
-            niri msg action spawn -- "$(dirname "${BASH_SOURCE[0]}")/wallpaper-picker.py"
+        if [ -f "$HOME/.config/noctalia/tools/wallpaper-picker.py" ]; then
+            niri msg action spawn -- "$HOME/.config/noctalia/tools/wallpaper-picker.py"
+        elif [ -f "$(dirname "${BASH_SOURCE[0]}")/../../noctalia/tools/wallpaper-picker.py" ]; then
+            niri msg action spawn -- "$(dirname "${BASH_SOURCE[0]}")/../../noctalia/tools/wallpaper-picker.py"
         else
             niri msg action spawn -- wallpaper-picker.py
         fi

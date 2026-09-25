@@ -146,6 +146,10 @@ def read_active_preset(app: str) -> str:
     """Return the active preset or raise instead of silently deploying defaults."""
     if not _is_deployable_app(app):
         raise InvalidActivePresetError("invalid preset app")
+    from nyxniri.state.ledger import read_ledger
+    ledger_presets = read_ledger().get("presets", {})
+    if isinstance(ledger_presets, dict) and isinstance(ledger_presets.get(app), str):
+        return ledger_presets[app]
     presets_fd: Optional[int] = None
     try:
         presets_fd = _open_presets_dir()
@@ -175,6 +179,10 @@ def read_active_preset(app: str) -> str:
         raise InvalidActivePresetError("invalid active preset state") from exc
     if len(content) > 4096 or not _is_safe_component(name):
         raise InvalidActivePresetError("invalid active preset state")
+    from nyxniri.state.ledger import update_ledger
+    ledger = read_ledger()
+    presets = ledger.get("presets", {})
+    update_ledger(presets={**(presets if isinstance(presets, dict) else {}), app: name})
     return name
 
 
@@ -209,6 +217,9 @@ def write_active_preset(app: str, name: str) -> None:
         finally:
             os.close(fd)
         os.replace(tmp, f"{app}.active", src_dir_fd=presets_fd, dst_dir_fd=presets_fd)
+        from nyxniri.state.ledger import read_ledger, update_ledger
+        presets = read_ledger().get("presets", {})
+        update_ledger(presets={**(presets if isinstance(presets, dict) else {}), app: name})
     finally:
         try:
             os.unlink(tmp, dir_fd=presets_fd)
@@ -570,17 +581,7 @@ def apply_preset(app: str, name: str) -> bool:
         log_msg("ERROR", f"Deployed preset '{name}' to {app} but recording active state failed: {e}")
         return False
     _render_preset_result(app, name, preserved_log)
-    if app == "niri" and name == "glow-material-you" and shutil.which("noctalia"):
-        timed_run(
-            ["noctalia", "msg", "templates-apply"],
-            30,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
-        )
-    elif app == "niri" and shutil.which("niri"):
-        timed_run(["niri", "msg", "action", "load-config-file"], 2, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
-    elif app == "kitty" and shutil.which("pkill"):
+    if app == "kitty" and shutil.which("pkill"):
         timed_run(["pkill", "-SIGUSR1", "-x", "kitty"], 2, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
     return True
 

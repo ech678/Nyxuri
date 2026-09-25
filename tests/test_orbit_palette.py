@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 from tests.utils import TempEnv
 
-_PALETTE_PATH = Path(__file__).resolve().parent.parent / "configs" / "niri" / "scripts" / "orbit" / "palette.py"
+_PALETTE_PATH = Path(__file__).resolve().parent.parent / "configs" / "noctalia" / "tools" / "orbit" / "palette.py"
 
 
 def _load_palette_module():
@@ -45,19 +45,12 @@ class TestOrbitPalette(unittest.TestCase):
             'on_surface_variant = "#888899"\n'
             'outline = "#a0a0b0"\n'
         )
-        starship_content = (
-            'blue = "#ffffff"\n'
-            'base = "#000000"\n'
-        )
-        with tempfile.NamedTemporaryFile("w", suffix=".toml", delete=False) as f1, \
-             tempfile.NamedTemporaryFile("w", suffix=".toml", delete=False) as f2:
+        with tempfile.NamedTemporaryFile("w", suffix=".toml", delete=False) as f1:
             f1.write(m3_content)
-            f2.write(starship_content)
-            m3_path, starship_path = f1.name, f2.name
+            m3_path = f1.name
 
         try:
-            with patch.object(self.orbit_palette, "NYXNIRI_PALETTE_PATH", m3_path), \
-                 patch.object(self.orbit_palette, "STARSHIP_PALETTE_PATH", starship_path):
+            with patch.object(self.orbit_palette, "NYXNIRI_PALETTE_PATH", m3_path):
                 palette = self.orbit_palette.load_material_palette()
                 self.assertEqual(palette["primary"], self.orbit_palette.hex_to_rgb("#123456"))
                 self.assertEqual(palette["secondary"], self.orbit_palette.hex_to_rgb("#654321"))
@@ -67,35 +60,10 @@ class TestOrbitPalette(unittest.TestCase):
                 self.assertTrue(palette["is_dark"])
         finally:
             os.unlink(m3_path)
-            os.unlink(starship_path)
-
-    def test_fallback_to_starship_when_m3_absent(self):
-        """When native M3 palette does not exist, fall back to starship cache."""
-        starship_content = (
-            'blue = "#feacef"\n'
-            'teal = "#c6c3e9"\n'
-            'base = "#131318"\n'
-            'text = "#e5e1e9"\n'
-        )
-        with tempfile.NamedTemporaryFile("w", suffix=".toml", delete=False) as f:
-            f.write(starship_content)
-            starship_path = f.name
-
-        try:
-            with patch.object(self.orbit_palette, "NYXNIRI_PALETTE_PATH", "/nonexistent/palette.toml"), \
-                 patch.object(self.orbit_palette, "STARSHIP_PALETTE_PATH", starship_path):
-                palette = self.orbit_palette.load_material_palette()
-                self.assertEqual(palette["primary"], self.orbit_palette.hex_to_rgb("#feacef"))
-                self.assertEqual(palette["secondary"], self.orbit_palette.hex_to_rgb("#c6c3e9"))
-                self.assertEqual(palette["surface"], self.orbit_palette.hex_to_rgb("#131318"))
-                self.assertEqual(palette["on_surface"], self.orbit_palette.hex_to_rgb("#e5e1e9"))
-        finally:
-            os.unlink(starship_path)
 
     def test_fallback_to_defaults_when_both_absent(self):
         """When neither palette exists, return static fallback values."""
-        with patch.object(self.orbit_palette, "NYXNIRI_PALETTE_PATH", "/nonexistent/palette.toml"), \
-             patch.object(self.orbit_palette, "STARSHIP_PALETTE_PATH", "/nonexistent/starship.toml"):
+        with patch.object(self.orbit_palette, "NYXNIRI_PALETTE_PATH", "/nonexistent/palette.toml"):
             palette = self.orbit_palette.load_material_palette()
             self.assertEqual(palette["primary"], (0.42, 0.70, 1.00))
             self.assertEqual(palette["surface"], (0.12, 0.13, 0.18))

@@ -244,8 +244,6 @@ class TestPresetOperations(unittest.TestCase):
         # Inherited base files
         config = self.env.config_dir / "niri" / "config.kdl"
         self.assertTrue(config.is_file())
-        launcher = self.env.config_dir / "niri" / "scripts" / "orbit-launcher.py"
-        self.assertTrue(launcher.is_file())
 
     def test_apply_niri_glow_material_you_sets_sentinel(self):
         self.assertTrue(preset.apply_preset("niri", "glow-material-you"))
@@ -253,7 +251,6 @@ class TestPresetOperations(unittest.TestCase):
         self.assertEqual(preset.read_active_preset("niri"), "glow-material-you")
         self.assertTrue((dest / "glow-material-you.enabled").is_file())
         self.assertTrue((dest / "config.kdl").is_file())
-        self.assertTrue((dest / "scripts" / "orbit-launcher.py").is_file())
 
         self.assertTrue(preset.apply_preset("niri", "glow"))
         self.assertFalse((dest / "glow-material-you.enabled").exists())
@@ -268,34 +265,23 @@ class TestPresetOperations(unittest.TestCase):
         self.assertIn("{{ colors.primary_container.default.hex }}", content)
         self.assertNotIn("#1a73e8", content)
         noctalia = (self.env.configs_src / "noctalia" / "noctalia-config.toml").read_text(encoding="utf-8")
-        self.assertIn("niri-glow-material-you.rendered.kdl", noctalia)
-        self.assertIn("glow-material-you.enabled", noctalia)
+        self.assertIn('output_path = "/home/user/.config/niri/colors.kdl"', noctalia)
+        self.assertNotIn('output_path = "/home/user/.config/niri/layout.kdl"', noctalia)
+        self.assertNotIn("post_hook", noctalia)
 
     @unittest.mock.patch("nyxniri.deploy.preset.timed_run")
-    def test_apply_niri_glow_material_you_uses_template_hook_for_reload(self, mock_timed_run):
+    def test_apply_niri_glow_material_you_has_no_daemon_side_effect(self, mock_timed_run):
         with patch("shutil.which", side_effect=lambda command: f"/usr/bin/{command}"):
             self.assertTrue(preset.apply_preset("niri", "glow-material-you"))
 
-        mock_timed_run.assert_called_once_with(
-            ["noctalia", "msg", "templates-apply"],
-            30,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
-        )
+        mock_timed_run.assert_not_called()
 
     @unittest.mock.patch("nyxniri.deploy.preset.timed_run")
     @unittest.mock.patch("shutil.which", return_value="/usr/bin/niri")
-    def test_apply_preset_niri_reloads(self, mock_which, mock_timed_run):
+    def test_apply_preset_niri_has_no_daemon_side_effect(self, mock_which, mock_timed_run):
         ok = preset.apply_preset("niri", "glow")
         self.assertTrue(ok)
-        mock_timed_run.assert_called_with(
-            ["niri", "msg", "action", "load-config-file"],
-            2,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
-        )
+        mock_timed_run.assert_not_called()
 
     @unittest.mock.patch("nyxniri.deploy.preset.timed_run")
     @unittest.mock.patch("shutil.which", return_value="/usr/bin/pkill")

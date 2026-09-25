@@ -188,7 +188,9 @@ def offer_overwrite_upgrade(flag: str = "") -> bool:
         return True
 
     if not sys.stdin.isatty():
-        failed_items = deploy_selected_configs(do_backup=False)
+        # Updates must always create a protected snapshot before replacing
+        # configuration; a failed update must have a concrete rollback point.
+        failed_items = deploy_selected_configs(do_backup=True)
         if failed_items:
             render_completion_screen("update", failed_items=failed_items)
             return False

@@ -220,6 +220,9 @@ def _cmd_theme(sub_args: List[str]) -> int:
     sub = sub_args[0] if sub_args else "toggle"
     if len(sub_args) > 1 or sub not in ("toggle", "dark", "light", "sync", "status"):
         exit_usage(f"{CLI_CMD} theme [toggle|dark|light|sync|status]")
+    from nyxniri.theme import sync
+    if sub != "status":
+        return sync(sub)
     env = get_env()
     sync_script = env.config_dir / THEME_ENGINE / "theme-sync.sh"
     if not sync_script.is_file() and (env.configs_src / THEME_ENGINE / "theme-sync.sh").is_file():
@@ -259,6 +262,17 @@ def _cmd_update(sub_args: List[str]) -> int:
     else:
         update_result = safe_git_pull(env.repo_dir)
     if update_result is True:
+        head = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=env.repo_dir,
+            capture_output=True, text=True, check=False,
+        )
+        if head.returncode == 0 and head.stdout.strip():
+            from nyxniri.state.ledger import update_ledger
+            update_ledger(last_update_head=head.stdout.strip())
+        from nyxniri.migrations import run as run_migrations
+        if not run_migrations():
+            print("迁移账本写入失败，已停止部署。", file=sys.stderr)
+            return 1
         # Hand the deploy over to a fresh process so it runs on the updated
         # engine code instead of the modules loaded before the pull.
         try:

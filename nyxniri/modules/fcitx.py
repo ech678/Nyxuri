@@ -13,6 +13,7 @@ from nyxniri.core import get_env, log_msg, timed_run
 from nyxniri.i18n import msg, text
 from nyxniri.deploy.atomic import atomic_replace_item
 from nyxniri.modules.lifecycle import module_action
+from nyxniri.template_registry import remove_sections, set_section_key, validate
 
 
 FCITX_CLASSICUI_RELOAD = [
@@ -55,6 +56,10 @@ def noctalia_available() -> bool:
 def fcitx_enabled() -> bool:
     """Check if user consent marker exists."""
     _, _, _, _, _, _, enabled_marker, _ = _fcitx_paths()
+    from nyxniri.state.ledger import read_ledger
+    modules = read_ledger().get("modules", {})
+    if isinstance(modules, dict) and "fcitx" in modules:
+        return bool(modules["fcitx"])
     return enabled_marker.is_file()
 
 def fcitx_status_label() -> str:
@@ -239,8 +244,9 @@ def fcitx_register_templates() -> bool:
     tomllib.loads(content)
     original = content
     highlight_section = f"{FCITX_THEME}_highlight"
-    hook_pattern = rf'(\[theme\.templates\.user\.{re.escape(highlight_section)}\](?:(?!\[)[\s\S])*?post_hook\s*=\s*")[^"]*(")'
-    content = re.sub(hook_pattern, rf'\g<1>{FCITX_CLASSICUI_RELOAD_HOOK}\g<2>', content)
+    content = set_section_key(
+        content, f"theme.templates.user.{highlight_section}", "post_hook", FCITX_CLASSICUI_RELOAD_HOOK,
+    )
     content = content.replace(
         "if pgrep -x fcitx5 >/dev/null 2>&1; then pkill -x fcitx5; sleep 1; fcitx5 -d >/dev/null 2>&1 & fi",
         FCITX_CLASSICUI_RELOAD_HOOK,
@@ -249,8 +255,9 @@ def fcitx_register_templates() -> bool:
     home = str(env.home).replace("\\", "\\\\").replace('"', '\\"')
     registered = tomllib.loads(content).get("theme", {}).get("templates", {}).get("user", {})
     if highlight_section in registered and "post_hook" not in registered[highlight_section]:
-        section_pattern = rf'(\[theme\.templates\.user\.{re.escape(highlight_section)}\](?:(?!\[)[\s\S])*?)(\n\s*(?:\[|\Z))'
-        content = re.sub(section_pattern, rf'\g<1>post_hook = "{FCITX_CLASSICUI_RELOAD_HOOK}"\n\g<2>', content)
+        content = set_section_key(
+            content, f"theme.templates.user.{highlight_section}", "post_hook", FCITX_CLASSICUI_RELOAD_HOOK,
+        )
     for index, (suffix, filename) in enumerate((("theme", "theme.conf"), ("panel", "panel.svg"), ("highlight", "highlight.svg"))):
         name = f"{FCITX_THEME}_{suffix}"
         if name in registered:
@@ -308,6 +315,8 @@ def fcitx_activate() -> bool:
     fcitx_reload()
     enabled_marker.parent.mkdir(parents=True, exist_ok=True)
     enabled_marker.touch()
+    from nyxniri.state.ledger import update_ledger
+    update_ledger(modules={"fcitx": True})
     log_msg("INFO", "Activated NyxMellow fcitx5 skin as default theme")
     return True
 
@@ -490,6 +499,31 @@ def _restore_settings(path, state_file, section, owned):
     state_file.unlink()
 
 
+def _remove_rime_ice_patch(rime_dir: Path) -> None:
+    """Remove only the schema selection lines NyxNiri added for Rime Ice."""
+    custom = rime_dir / "default.custom.yaml"
+    if custom.is_file():
+        lines = custom.read_text(encoding="utf-8").splitlines()
+        kept = [line for line in lines if "schema: rime_ice" not in line]
+        while kept and not kept[-1].strip():
+            kept.pop()
+        if kept == ["patch:", "  schema_list:"] or not kept:
+            custom.unlink(missing_ok=True)
+        elif kept != lines:
+            custom.write_text("\n".join(kept) + "\n", encoding="utf-8")
+
+    user = rime_dir / "user.yaml"
+    if user.is_file():
+        lines = user.read_text(encoding="utf-8").splitlines()
+        kept = [line for line in lines if "previously_selected_schema: rime_ice" not in line]
+        while kept and not kept[-1].strip():
+            kept.pop()
+        if kept:
+            user.write_text("\n".join(kept) + "\n", encoding="utf-8")
+        else:
+            user.unlink(missing_ok=True)
+
+
 @module_action
 def fcitx_uninstall() -> bool:
     """Uninstall NyxMellow skin, unregister templates, and revert classicui settings."""
@@ -498,20 +532,9 @@ def fcitx_uninstall() -> bool:
 
     # Unregister from noctalia-config.toml
     if noctalia_conf.is_file() and fcitx_templates_registered():
-        lines = noctalia_conf.read_text(encoding="utf-8").splitlines()
-        new_lines = []
-        skip = False
-        owned = {f"[theme.templates.user.{FCITX_THEME}_{suffix}]" for suffix in ("theme", "panel", "highlight")}
-        for line in lines:
-            if line.split("#", 1)[0].strip() in owned:
-                skip = True
-                continue
-            if skip and line.lstrip().startswith("["):
-                skip = False
-            if not skip:
-                new_lines.append(line)
-        content = "\n".join(new_lines) + "\n"
-        tomllib.loads(content)
+        owned = {f"theme.templates.user.{FCITX_THEME}_{suffix}" for suffix in ("theme", "panel", "highlight")}
+        content = remove_sections(noctalia_conf.read_text(encoding="utf-8"), owned)
+        validate(content)
         _write_config(noctalia_conf, content)
         print(msg("log_fcitx_template_unregistered", THEME_ENGINE))
 
@@ -527,6 +550,7 @@ def fcitx_uninstall() -> bool:
     _restore_settings(classicui, state_file, "ClassicUI", {"Theme": FCITX_THEME, "DarkTheme": FCITX_THEME})
     # Older installs managed QuickPhrase. Restore only values still owned by us.
     env = get_env()
+    _remove_rime_ice_patch(env.home / ".local/share/fcitx5/rime")
     _restore_settings(
         env.config_dir / "fcitx5/conf/quickphrase.conf",
         env.state_dir / f"fcitx-{FCITX_THEME}-quickphrase.prev",
@@ -534,6 +558,8 @@ def fcitx_uninstall() -> bool:
     )
 
     enabled_marker.unlink(missing_ok=True)
+    from nyxniri.state.ledger import update_ledger
+    update_ledger(modules={"fcitx": False})
     fcitx_reload()
     print(msg("fcitx_uninstall_done"))
     log_msg("INFO", "Uninstalled NyxMellow fcitx5 skin")

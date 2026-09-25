@@ -58,7 +58,7 @@ configs/noctalia/
 - **hook 注册**：`wallpaper_changed` → `wallpaper-hook.sh`
 - **user template 注册**：`nyxniri_gtk3` / `nyxniri_gtk4` / `nyxniri_niri_glow_material_you`
 - `/home/user` 占位符由 `nyxniri.deploy` 在部署时替换为实际 `$HOME`
-- **`nyxniri_niri_glow_material_you`**：渲染到 `niri-glow-material-you.rendered.kdl`，只在 `glow-material-you.enabled` 存在时覆盖 Niri 布局并重载。
+- **`nyxniri_niri_glow_material_you`**：渲染到 Niri 独立的 `colors.kdl`，不会覆盖核心 `layout.kdl`。
 
 ### templates/gtk-3.0.css — GTK3 M3 模板
 

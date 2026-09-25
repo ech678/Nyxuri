@@ -8,6 +8,7 @@ deletions, then nyx_dir + state last.
 """
 
 import datetime
+import json
 import sys
 from pathlib import Path
 
@@ -171,6 +172,11 @@ def uninstall_nyxniri(mode: str = "") -> bool:
         for backup in get_all_backups():
             remove_path(backup)
         _rm_report(env.config_dir / PROJECT_NAME)
+        # Clean the historical lowercase namespace as well. This is a narrow
+        # project-owned path, so it cannot touch unrelated user configuration.
+        legacy_config = env.config_dir / PROJECT_NAME.lower()
+        if legacy_config != env.config_dir / PROJECT_NAME:
+            _rm_report(legacy_config)
 
     # 4. Archives (~/.config/NyxNiri_archive_*) — gap #1 fix. Only pre-existing
     #    ones (the snapshot above), so a freshly-created config archive survives.
@@ -180,7 +186,24 @@ def uninstall_nyxniri(mode: str = "") -> bool:
 
     # 5. Wallpapers.
     if "wallpapers" in selected:
-        _rm_report(get_pics_dir() / "Wallpapers")
+        wp_dir = get_pics_dir() / "Wallpapers"
+        marker = wp_dir / ".nyxniri-managed.json"
+        removed = False
+        try:
+            names = json.loads(marker.read_text(encoding="utf-8"))
+            if isinstance(names, list):
+                for name in names:
+                    if isinstance(name, str) and name not in ("", ".", ".."):
+                        target = wp_dir / name
+                        if target.parent == wp_dir and (target.exists() or target.is_symlink()):
+                            remove_path(target)
+                            removed = True
+                marker.unlink(missing_ok=True)
+                print(msg("uninstall_removed", str(wp_dir)))
+        except (OSError, ValueError, TypeError):
+            pass
+        if not removed:
+            print(msg("uninstall_skipped", str(wp_dir)))
 
     # 6. CLI entry.
     if "cli" in selected:
@@ -195,10 +218,16 @@ def uninstall_nyxniri(mode: str = "") -> bool:
     # 7. state_dir — AFTER module uninstallers (.prev lives here). §8.6
     if "state" in selected:
         _rm_report(env.state_dir)
+        legacy_state = env.home / ".local" / "state" / PROJECT_NAME.lower()
+        if legacy_state != env.state_dir:
+            _rm_report(legacy_state)
 
     # 8. cache_dir.
     if "cache" in selected:
         _rm_report(env.cache_dir)
+        legacy_cache = env.home / ".cache" / PROJECT_NAME.lower()
+        if legacy_cache != env.cache_dir:
+            _rm_report(legacy_cache)
 
     if env.run_mode == "system":
         print(msg("uninstall_system_hint"))

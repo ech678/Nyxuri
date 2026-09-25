@@ -1,0 +1,36 @@
+"""Small atomic JSON ledger for runtime selections and module state."""
+
+import json
+import os
+from pathlib import Path
+from typing import Any
+
+from nyxniri.core import get_env
+
+
+def ledger_path() -> Path:
+    return get_env().state_dir / "state.json"
+
+
+def read_ledger() -> dict[str, Any]:
+    try:
+        data = json.loads(ledger_path().read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError, TypeError):
+        return {}
+
+
+def update_ledger(**changes: Any) -> dict[str, Any]:
+    path = ledger_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = read_ledger()
+    data.update(changes)
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+    return data
+
+
+def active_shell(default: str = "noctalia") -> str:
+    value = read_ledger().get("active_shell", default)
+    return value if value in {"noctalia", "custom"} else default

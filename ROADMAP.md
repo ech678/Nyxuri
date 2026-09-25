@@ -424,15 +424,15 @@ Issue #102 下的深度探讨为本项目的工程落地注入了极其宝贵的
 > **核心目标**：在动工自研 Shell 之前，将全库现存的路径硬编码、大小写分裂、伴生工具倒挂、假声明式副作用与脆弱补丁彻底拔除，把底座打造成一尘不染的纯白画布。
 
 - [ ] **项目全局重命名与双轨平滑迁移 (Project Rebranding)**：在自研 Shell 动工前彻底完成品牌定名脱敏，常量集中统一（`constants.py`），环境变量双向兼容（优先新前缀，回退 `NYXNIRI_*`），`~/.config/NyxNiri` 与 `~/.local/state/NyxNiri` 自动安全平移并留兼容软链，`importlib` 动态导入升级；
-- [ ] **消灭 Linux 大小写分裂与孤儿清理**：全库规范为统一小写路径（如 `~/.cache/<project>`），彻底终结历史大小写分裂包袱，卸载时完整清理历史缩略图与色板孤儿；
-- [ ] **伴生套件归位与合成器配置纯洁化**：将近 3700 行的 `orbit/`、`wallpaper_picker/` 及 `orbit-items__custom__.toml` 整体收归进 `configs/noctalia/tools/`，物理删除废弃的 `start-noctalia.sh` 包装；`configs/niri/scripts/` 彻底瘦身为仅含 5 个纯粹胶水脚本；确立自研 Shell 下**零外部 Python GUI 释放、绝对纯白**；
-- [ ] **打通双 Shell 运行时插槽基座 (ShellProvider Slots)**：重构 `session-shell.sh` 与 `shell-action.sh`，基于 `state.json` 的 `active_shell` 动态路由（Noctalia vs 自研 Shell），彻底告别写死 `exec noctalia`；彻底移除 `config.kdl` 中脆弱的 `sleep 8; noctalia msg ...` 盲等补丁；
-- [ ] **调色基准单点事实源 (PaletteProvider)**：固化 `~/.cache/<project>/palette.toml` 为唯一事实源，Noctalia 走原生 TOML 模板渲染直出，下游 Orbit、Kitty、GTK 等无感消费，为后续自研 Shell 原生直出色板铺平标准契约；
-- [ ] **主题调度彻底 Python 原生化**：将 `theme-sync.sh` 彻底重构为底座原生 `nyxniri theme <toggle|sync|dark|light>` 指令，利用 Python 标准库 `configparser` 安全原子改写 GTK3/4 与 Qt INI，拔除对 Noctalia 目录脚本的寻径耦合；
-- [ ] **解除模板单向劫持与核心布局保护**：将 Niri 动态光晕抽离为独立的 `colors.kdl`，严禁覆写核心布局 `layout.kdl`；解耦 `gtktheme` 与 `fcitx` 对 `noctalia-config.toml` 的正则篡改，使模板资产面向自研 Shell 直接共享；
-- [ ] **单一事实源版本账本与线性迁移框架 (`state.json`)**：引入 `~/.local/state/<project>/state.json` 单一事实源，收拢预设、状态与模块标记（消灭散落的 `.prev`、`.enabled` 碎片）；引入轻量迁移钩子（`nyxniri/migrations/`）与静态墓碑清单（`TOMBSTONES`），支持升级时顺手清理废弃目录与配置迁移；
-- [ ] **纯化部署引擎与解绑核心依赖偏见**：解绑 `MAIN_WM` 与 `noctalia` 核心依赖强绑定，消除 `install.sh:132-136` 预检中对其配置文件的强制断言；消除 `preset.py` 中的 `if app == "niri"` 热重载特判；剔除 `deploy.py:131-139` 硬编码为 niri 创建 `effects.kdl` 软链的特判，拔除部署途中私自触发守护进程 IPC（`noctalia msg plugins enable mpvpaper`、`templates-apply`）的隐式副作用；
-- [ ] **升级安全带机制与高危边角防护抹平**：
+- [x] **消灭 Linux 大小写分裂与孤儿清理**：全库规范为统一小写路径（如 `~/.cache/<project>`），彻底终结历史大小写分裂包袱，卸载时完整清理历史缩略图与色板孤儿；
+- [x] **伴生套件归位与合成器配置纯洁化**：将近 3700 行的 `orbit/`、`wallpaper_picker/` 及 `orbit-items__custom__.toml` 整体收归进 `configs/noctalia/tools/`，物理删除废弃的 `start-noctalia.sh` 包装；`configs/niri/scripts/` 彻底瘦身为仅含 5 个纯粹胶水脚本；确立自研 Shell 下**零外部 Python GUI 释放、绝对纯白**；
+- [x] **打通双 Shell 运行时插槽基座 (ShellProvider Slots)**：重构 `session-shell.sh` 与 `shell-action.sh`，基于 `state.json` 的 `active_shell` 动态路由（Noctalia vs 自研 Shell），彻底告别写死 `exec noctalia`；彻底移除 `config.kdl` 中脆弱的 `sleep 8; noctalia msg ...` 盲等补丁；
+- [x] **调色基准单点事实源 (PaletteProvider)**：固化 `~/.cache/<project>/palette.toml` 为唯一事实源，Noctalia 走原生 TOML 模板渲染直出，下游 Orbit、Kitty、GTK 等无感消费，为后续自研 Shell 原生直出色板铺平标准契约；
+- [x] **主题调度彻底 Python 原生化**：将 `theme-sync.sh` 彻底重构为底座原生 `nyxniri theme <toggle|sync|dark|light>` 指令，利用 Python 标准库 `configparser` 安全原子改写 GTK3/4 与 Qt INI，拔除对 Noctalia 目录脚本的寻径耦合；
+- [x] **解除模板单向劫持与核心布局保护**：将 Niri 动态光晕抽离为独立的 `colors.kdl`，严禁覆写核心布局 `layout.kdl`；解耦 `gtktheme` 与 `fcitx` 对 `noctalia-config.toml` 的正则篡改，使模板资产面向自研 Shell 直接共享；
+- [x] **单一事实源版本账本与线性迁移框架 (`state.json`)**：引入 `~/.local/state/<project>/state.json` 单一事实源，收拢预设、状态与模块标记（消灭散落的 `.prev`、`.enabled` 碎片）；引入轻量迁移钩子（`nyxniri/migrations/`）与静态墓碑清单（`TOMBSTONES`），支持升级时顺手清理废弃目录与配置迁移；
+- [x] **纯化部署引擎与解绑核心依赖偏见**：解绑 `MAIN_WM` 与 `noctalia` 核心依赖强绑定，消除 `install.sh:132-136` 预检中对其配置文件的强制断言；消除 `preset.py` 中的 `if app == "niri"` 热重载特判；剔除 `deploy.py:131-139` 硬编码为 niri 创建 `effects.kdl` 软链的特判，拔除部署途中私自触发守护进程 IPC（`noctalia msg plugins enable mpvpaper`、`templates-apply`）的隐式副作用；
+- [x] **升级安全带机制与高危边角防护抹平**：
   - 修复 `workflows.py:191` 非交互更新跳过备份漏洞，升级前强制生成受保快照并记录 Git HEAD SHA 锚点，失败可原子回滚；
   - 修复 Detached HEAD 游离头指针陷阱；
   - 补强 `atomic.py` 的 swap 保护栈，捕获中断确保 Ctrl+C 时原配置不丢失；
@@ -456,4 +456,3 @@ Issue #102 下的深度探讨为本项目的工程落地注入了极其宝贵的
 - [ ] **TUI 视觉风格化与纯净感 (Terminal Rice)**：接入 Alternate Screen Buffer（`\033[?1049h/l`）保护终端历史（运行 `doctor` / 查看快照不被抹除），DEC 2025 协议消除高刷频闪撕裂，引入单行微动 Zen Spinner 就地收拢命令滚屏日志；
 - [ ] **多合成器 (Multi-WM) 架构解耦与驱动抽象**：构建 `CompositorDriver` 驱动抽象层，实现热重载、浮动便签与屏幕探测的跨合成器适配（Hyprland/Sway 等按需扩展），`doctor` 诊断与 `greeter` 会话自适应；
 - [ ] **安全 Downdate 体系（高级储备）**：落地基于现场快照优先还原与 Git 逆向检出的安全版本回退机制。
-

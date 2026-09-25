@@ -128,15 +128,6 @@ def _phase_atomic_deployment(
         print(msg("log_deploy_config_item", item))
         log_msg("INFO", f"Deployed config ~/.config/{item}")
 
-    # Initial EyeCare symlink (niri one-off, not manifest-driven)
-    effects_normal = config_dir / MAIN_WM / "effects_normal.kdl"
-    effects_sym = config_dir / MAIN_WM / "effects.kdl"
-    if effects_normal.is_file() and not effects_sym.exists():
-        try:
-            effects_sym.symlink_to(effects_normal.name)
-        except Exception:
-            pass
-
     return failed_items
 
 def run_user_hooks() -> List[str]:
@@ -179,8 +170,8 @@ def _phase_post_install_services() -> None:
     if shutil.which(THEME_ENGINE):
         from nyxniri.modules.gtktheme import gtktheme_trigger_render
         gtktheme_trigger_render()
-        print(msg("log_enable_mpvpaper"))
-        timed_run([THEME_ENGINE, "msg", "plugins", "enable", f"{THEME_ENGINE}/mpvpaper"], 15, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        # Plugin activation is user policy, not a deploy side effect.  The
+        # module remains available for an explicit Noctalia configuration.
 
     if shutil.which("fish"):
         from nyxniri.modules.fisher import fisher_install

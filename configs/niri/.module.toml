@@ -11,4 +11,4 @@ chmod = ["scripts/*.sh", "scripts/*.py"]
 
 [presets]
 allow = ["glow", "glow-material-you", "xray-blur"]
-include = ["scripts/**", "*.kdl", "orbit-items__custom__.toml"]
+include = ["scripts/**", "*.kdl"]

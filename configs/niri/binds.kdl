@@ -49,7 +49,7 @@ binds {
     Mod+V { spawn "~/.config/niri/scripts/shell-action.sh" "clipboard"; }
 
     // 呼出 M3E 原生壁纸选择器 (聚合静态/动态壁纸/搜索/分类) / Open M3E wallpaper picker (Static & Live)
-    Mod+W repeat=false { spawn "~/.config/niri/scripts/wallpaper-picker.py"; }
+    Mod+W repeat=false { spawn "~/.config/noctalia/tools/wallpaper-picker.py"; }
 
     // 免打扰随机切换下一张壁纸 (外壳网关) / Switch to a random wallpaper immediately
     Mod+Ctrl+W { spawn "~/.config/niri/scripts/shell-action.sh" "wallpaper-random"; }
@@ -61,8 +61,8 @@ binds {
     Mod+Grave { spawn "~/.config/niri/scripts/niri-scratch-toggle.sh" "kitty"; }
 
     // 呼出 Orbit Launcher M3E 矢量星环启动器 (按住 Super 点鼠标前侧键，或键盘 Mod+A) / Open Orbit Launcher M3E radial menu
-    Mod+A repeat=false { spawn "~/.config/niri/scripts/orbit-launcher.py"; }
-    Mod+MouseForward repeat=false { spawn "~/.config/niri/scripts/orbit-launcher.py"; }
+    Mod+A repeat=false { spawn "~/.config/noctalia/tools/orbit-launcher.py"; }
+    Mod+MouseForward repeat=false { spawn "~/.config/noctalia/tools/orbit-launcher.py"; }
 
     // -------------------------------------------------------------------------
     // 3. 焦点导航与窗口移动 / Focus Navigation & Window Movement

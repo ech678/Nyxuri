@@ -325,6 +325,33 @@ def safe_git_pull(target_dir: Path) -> Optional[bool]:
         timed_run(["git", "reset", "--hard", "HEAD"], 15, cwd=target_dir, check=False, env=env)
         timed_run(["git", "clean", "-fd"], 15, cwd=target_dir, check=False, env=env)
 
+    # A prior pinned checkout may leave HEAD detached. Never pass that state
+    # to `git pull`: local development repos are left untouched, while the
+    # disposable cache is moved back to the tracked main branch explicitly.
+    head_probe = None
+    head_file = target_dir / ".git" / "HEAD"
+    if head_file.is_file():
+        head_probe = subprocess.run(
+            ["git", "symbolic-ref", "--quiet", "--short", "HEAD"],
+            cwd=target_dir, capture_output=True, text=True, check=False, env=env,
+        )
+    if head_probe is not None and head_probe.returncode != 0:
+        if run_mode == "repo":
+            print(msg("update_skipped_dev_repo", str(target_dir)))
+            log_msg("WARN", f"Skipped pull for detached local repo: {target_dir}")
+            return None
+        res_fetch = _run_git_transfer(
+            ["git", *_GIT_NET, "fetch", "--depth", "1", "origin", "main"],
+            cwd=target_dir, env=env,
+        )
+        if res_fetch.returncode != 0:
+            return False
+        res_reset = timed_run(
+            ["git", "reset", "--hard", "origin/main"], 15,
+            cwd=target_dir, capture_output=True, text=True, check=False, env=env,
+        )
+        return res_reset is not None and res_reset.returncode == 0
+
     # Fetch & pull
     sys.stdout.write(msg("checking_updates") + "\n")
     res_pull = _run_git_transfer(

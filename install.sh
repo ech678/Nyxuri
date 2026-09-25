@@ -129,8 +129,7 @@ engine_is_complete() {
     for module in __init__ fcitx fisher greeter gtktheme lifecycle; do
         [ -f "$target_dir/nyxniri/modules/$module.py" ] || return 1
     done
-    [ -f "$target_dir/configs/niri/config.kdl" ] \
-        && [ -f "$target_dir/configs/noctalia/noctalia-config.toml" ] \
+    [ -d "$target_dir/configs" ] \
         && [ -f "$target_dir/configs/fish/config.fish" ] \
         && [ -d "$target_dir/assets/wallpapers" ] \
         && [ -d "$target_dir/assets/fcitx5" ]

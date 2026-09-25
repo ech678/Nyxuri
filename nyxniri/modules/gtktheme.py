@@ -7,6 +7,7 @@ from pathlib import Path
 from nyxniri.constants import THEME_ENGINE
 from nyxniri.core import get_env, log_msg, timed_run
 from nyxniri.i18n import msg, text
+from nyxniri.template_registry import remove_sections, validate, write_atomic
 
 GTK_TEMPLATE_KEYS = ("nyxniri_gtk3", "nyxniri_gtk4")
 
@@ -145,20 +146,10 @@ def gtktheme_uninstall() -> bool:
 
     # Unregister from noctalia-config.toml
     if noctalia_conf.is_file() and gtktheme_registered():
-        lines = noctalia_conf.read_text(encoding="utf-8").splitlines()
-        new_lines = []
-        skip = False
-        for line in lines:
-            if any(line.startswith(f"[theme.templates.user.{key}]") for key in GTK_TEMPLATE_KEYS):
-                skip = True
-                continue
-            if skip and line.startswith("["):
-                skip = False
-            if not skip:
-                new_lines.append(line)
-        # Clean up trailing blank lines left by removed blocks
-        cleaned = "\n".join(new_lines).rstrip() + "\n"
-        noctalia_conf.write_text(cleaned, encoding="utf-8")
+        sections = {f"theme.templates.user.{key}" for key in GTK_TEMPLATE_KEYS}
+        cleaned = remove_sections(noctalia_conf.read_text(encoding="utf-8"), sections)
+        validate(cleaned)
+        write_atomic(noctalia_conf, cleaned)
         print(msg("gtk_unregistered", THEME_ENGINE))
 
     # Remove rendered gtk.css files

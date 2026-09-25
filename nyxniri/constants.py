@@ -57,8 +57,6 @@ WALLPAPER_MIRRORS = [
 
 # --- Dependencies ---
 CORE_DEPS = [
-    MAIN_WM,
-    THEME_ENGINE,
     "wlsunset",
     "fish",
     "starship",
@@ -77,6 +75,10 @@ CORE_DEPS = [
     "ttf-jetbrains-mono-nerd",
     "noto-fonts-cjk",
 ]
+
+# Desktop integrations are selectable components; the management engine does
+# not require a particular compositor or shell to start and diagnose itself.
+DESKTOP_DEPS = [MAIN_WM, THEME_ENGINE]
 
 AUR_DEPS = [
     "mpvpaper",

@@ -77,9 +77,9 @@ def _check_scripts(env) -> None:
         (f"{THEME_ENGINE}/mpvpaper-sync.sh", "mpvpaper-sync.sh"),
         (f"{MAIN_WM}/scripts/toggle-eyecare.sh", "toggle-eyecare.sh"),
         (f"{MAIN_WM}/scripts/niri-scratch-toggle.sh", "niri-scratch-toggle.sh"),
-        (f"{MAIN_WM}/scripts/orbit-launcher.py", "orbit-launcher.py"),
+        (f"{THEME_ENGINE}/tools/orbit-launcher.py", "orbit-launcher.py"),
         (f"{MAIN_WM}/scripts/niri-scratch-menu.py", "niri-scratch-menu.py"),
-        (f"{MAIN_WM}/scripts/wallpaper-picker.py", "wallpaper-picker.py"),
+        (f"{THEME_ENGINE}/tools/wallpaper-picker.py", "wallpaper-picker.py"),
         (f"{MAIN_WM}/scripts/niri-brightness.sh", "niri-brightness.sh"),
     ]
     for rel_path, name in scripts_info:

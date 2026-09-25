@@ -104,7 +104,7 @@ behavior_order = [ "lock", "screen-off", "lock-and-suspend" ]
     timeout = 360.0
 
 [hooks]
-theme_mode_changed = ["~/.config/noctalia/theme-sync.sh"]
+theme_mode_changed = "nyxniri theme sync"
 wallpaper_changed = ["~/.config/noctalia/wallpaper-hook.sh"]
 
 [hot_corners.bottom_right]
@@ -244,8 +244,7 @@ output_path = "/home/user/.config/gtk-4.0/gtk.css"
 [theme.templates.user.nyxniri_niri_glow_material_you]
 index = 5
 input_path = "/home/user/.config/noctalia/templates/niri-glow-material-you.kdl"
-output_path = "/home/user/.config/noctalia/templates/niri-glow-material-you.rendered.kdl"
-post_hook = "if [ -f /home/user/.config/niri/glow-material-you.enabled ]; then cp -f /home/user/.config/noctalia/templates/niri-glow-material-you.rendered.kdl /home/user/.config/niri/layout.kdl && command -v niri >/dev/null 2>&1 && niri msg action load-config-file; fi"
+output_path = "/home/user/.config/niri/colors.kdl"
 
 # NyxNiri Material You 动态色板（由 Noctalia 渲染到 ~/.cache/nyxniri/palette.toml，供周边组件零反推直接读取）
 [theme.templates.user.nyxniri_palette]

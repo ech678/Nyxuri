@@ -127,7 +127,7 @@ def atomic_replace_item(
             else:
                 tmp_file.rename(dest)
             return True
-        except Exception as e:
+        except BaseException as e:
             remove_path(tmp_file)
             if old_dest is not None and old_dest.exists():
                 try:
@@ -140,6 +140,7 @@ def atomic_replace_item(
     tmp_new = dest.with_name(f"{dest.name}.new.{pid}")
     register_temp_path(tmp_new)
 
+    old_dest = None
     try:
         dest_parent.mkdir(parents=True, exist_ok=True)
         if tmp_new.exists() or tmp_new.is_symlink():
@@ -231,7 +232,12 @@ def atomic_replace_item(
         else:
             tmp_new.rename(dest)
             return True
-    except Exception as e:
+    except BaseException as e:
         remove_path(tmp_new)
+        if old_dest is not None and old_dest.exists() and not dest.exists():
+            try:
+                old_dest.rename(dest)
+            except OSError:
+                pass
         log_msg("ERROR", f"Atomic replace failed for directory {dest}: {e}")
         return False

@@ -17,7 +17,7 @@ from tests.utils import TempEnv
 _REPO = Path(__file__).resolve().parent.parent
 _TOGGLE = _REPO / "configs" / "niri" / "scripts" / "niri-scratch-toggle.sh"
 _CLEAN_CACHE = _REPO / "nyxniri" / "clean.py"
-_START_NOCTALIA = _REPO / "configs" / "niri" / "scripts" / "start-noctalia.sh"
+_START_NOCTALIA = _REPO / "configs" / "niri" / "scripts" / "session-shell.sh"
 _SESSION_SHELL = _REPO / "configs" / "niri" / "scripts" / "session-shell.sh"
 _SHELL_ACTION = _REPO / "configs" / "niri" / "scripts" / "shell-action.sh"
 _BRIGHTNESS = _REPO / "configs" / "niri" / "scripts" / "niri-brightness.sh"

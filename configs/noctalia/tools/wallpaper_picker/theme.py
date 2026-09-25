@@ -133,7 +133,6 @@ DUR_FAST_SPATIAL_MS = 350
 DUR_EXIT_MS = 200
 
 NYXNIRI_PALETTE_PATH = "~/.cache/nyxniri/palette.toml"
-STARSHIP_PALETTE_PATH = "~/.cache/noctalia/starship-palette.toml"
 
 # Starship (Catppuccin-compatible) key candidates per M3 role, first hit wins.
 _ROLE_SOURCES = {
@@ -236,13 +235,8 @@ def _load_m3_palette(path=None):
     return _load_toml_palette(path or NYXNIRI_PALETTE_PATH)
 
 
-def _load_starship_colors(path=None):
-    """Parse Noctalia's starship palette cache into a key → rgb dict."""
-    return _load_toml_palette(path or STARSHIP_PALETTE_PATH)
-
-
 def build_tokens(raw=None):
-    """Compile the full M3 color-role set prioritizing native M3 palette (or starship fallback).
+    """Compile the full M3 color-role set from the shared palette.
 
     Container tiers approximate the M3 tonal ladder: dark surfaces step toward
     the on-color (tones 4/10/12/17/22), light surfaces step down toward the
@@ -250,8 +244,8 @@ def build_tokens(raw=None):
     """
     if raw is None:
         raw = _load_m3_palette()
-        if not (raw and "primary" in raw and "surface" in raw):
-            raw = _load_starship_colors()
+        if not raw:
+            raw = {}
 
     def pick(role):
         if role in raw:
