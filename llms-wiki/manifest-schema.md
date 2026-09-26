@@ -15,26 +15,26 @@
 | `chmod` | `[]` | 部署后设 +x 的 glob（相对 app 目录，如 `scripts/*.sh`） |
 | `label` | `<目录名>` | 菜单显示名 |
 | `detect` | `<目录名>` | 检测是否安装的命令名（纯名字，无 `binary:` 前缀 DSL） |
-| `preset_reload` | `[]` | 预设切换后执行的热重载命令参数列表（如 `["pkill", "-SIGUSR1", "-x", "kitty"]`） |
 
 ### 通用零件插槽（`[parts.<slot>]` 表，可选）
 
-支持全系统通用零件化插槽体系，每个 `[parts.<slot>]` 定义一个可单独切换的配置零件（如视觉效果、按键绑定）：
+支持全系统通用零件化插槽体系，每个 `[parts.<slot>]` 定义一个可单独切换的配置零件（如视觉效果、发光边框）：
 
 | 字段 | 默认 | 作用 |
 |---|---|---|
-| `target` | （必填） | 目标配置文件相对路径（如 `"effects_normal.kdl"`） |
+| `target` | （必填） | 目标配置文件相对路径（如 `"effects_normal.kdl"`）。**引擎解析时会自动将其追加到 `preserve` 保护清单中**，无需重复手动声明。 |
 | `source_dir` | `<slot>` | 零件源文件目录名（位于 `configs/<app>/__presets__/<source_dir>/`） |
 | `default` | `""` | 默认选用的零件名称 |
 
 零件文件存放于 `configs/<app>/__presets__/<source_dir>/` 目录（例如 `effects/default.kdl`）。
 
-### 预设继承控制（`[presets]` 表，可选）
+### 预设与继承控制（`[presets]` 表，可选）
 
-针对预设较多、希望支持轻量差异化预设（如 Niri `glow` 仅修改 `layout.kdl`）的应用，可通过 `[presets]` 表精确配置底版继承（Base Overlay）：
+针对预设较多、希望支持轻量差异化预设（如 Niri `glow` 仅修改 `layout.kdl`）或热重载信号的应用，可通过 `[presets]` 表精确配置：
 
 | 字段 | 默认 | 作用 |
 |---|---|---|
+| `reload` | `[]` | 预设切换后执行的热重载命令参数列表（如 `["pkill", "-SIGUSR1", "-x", "kitty"]`） |
 | `allow` | `[]` | **预设白名单**：仅列出的预设开启底版继承（未列出的保持 100% 独立） |
 | `standalone` | `[]` | **预设黑名单**：强制列出的预设独立部署，绝不继承底版 |
 | `inherit` | `false` | 全局继承开关（当 `allow` 与 `standalone` 均为空时的兜底策略） |
@@ -63,7 +63,10 @@ default = "default"
 
 # configs/kitty/.module.toml — 切换预设后发送 SIGUSR1 热重载
 [packages]
-preset_reload = ["pkill", "-SIGUSR1", "-x", "kitty"]
+repo = ["kitty"]
+
+[presets]
+reload = ["pkill", "-SIGUSR1", "-x", "kitty"]
 
 # configs/noctalia/.module.toml — 三个主题脚本
 [packages]
@@ -131,6 +134,7 @@ label = "Fcitx5 Rime"
 category = "system"
 repo = ["fcitx5", "fcitx5-gtk", "fcitx5-qt", "fcitx5-configtool", "fcitx5-rime"]
 aur = ["rime-ice-git"]
+post_install = "fcitx:setup_rime_ice"
 ```
 
 这些 app **无配置目录**（住 configs/ 只为 apps 菜单 + PKGBUILD optdepends 知道它们存在，

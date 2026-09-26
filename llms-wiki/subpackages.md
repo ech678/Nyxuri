@@ -71,7 +71,7 @@ nyxuri/
   preset 全套（`apply_preset`/`list_presets`/…）、manifest 全套
   （`load_manifest`/`discover_deployable_apps`/`discover_optional_apps`）…
 - `nyxuri.state/__init__`：`backup_configs`、`rollback_configs`、`list_backups`、`delete_backup`、
-  `get_all_backups`、`get_backup_base_dir`、`uninstall_nyxuri`、`active_shell`、`ledger_path`、`read_ledger`、`update_ledger`（path 原语 `copy_path`/`remove_path` 在 core.py，按需直连）
+  `get_all_backups`、`get_backup_base_dir`、`uninstall_nyxuri`、`uninstall_nyxniri`（兼容别名）、`active_shell`、`ledger_path`、`read_ledger`、`update_ledger`（path 原语 `copy_path`/`remove_path` 在 core.py，按需直连）
 - `nyxuri.modules/__init__`：fcitx/fisher/greeter/gtktheme 四件套动词（`fcitx_install`/`fisher_uninstall`/…）
 
 ## Import 约定（两套路径，按场景选）
@@ -117,10 +117,11 @@ CLI 的 `greeter`/`fcitx`/`gtk` 命令经 `_module_handler(module_name, triad_na
 
 `install.sh` 的 `engine_is_complete` 按**子包结构**校验 curl 装法下载的缓存是否完整：
 
-- 顶层：`__init__ __main__ clean cli constants core deps doctor i18n menus network tui workflows`，以及 `translations.toml`
+- 顶层：`__init__ __main__ clean cli constants core deps doctor i18n menus network template_registry theme tui workflows`，以及 `translations.toml`
 - `pkg/`：`__init__ cli detection`
 - `deploy/`：`__init__ atomic assets deploy hardware manifest preset templates`
-- `state/`：`__init__ backup uninstall`
+- `state/`：`__init__ backup ledger uninstall`
 - `modules/`：`__init__ fcitx fisher greeter gtktheme lifecycle`
+- 关键资产校验：`configs/fish/config.fish`、`assets/wallpapers/`、`assets/fcitx5/`
 
 缺任何一个 `make install` 前就拦下，避免半残引擎跑起来。

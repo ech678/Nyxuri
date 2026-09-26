@@ -64,17 +64,19 @@ theme-sync / gtk 重渲染）。切个 kitty 预设不该顺带跑 fisher，无�
 符合"破坏性操作必须显式确认"的精神。doctor 还有 `_check_preset_drift`——平时不 update
 也能撞见"你的 kitty 透明预设已不在上游"。
 
-## 预设继承与稀疏预设（Base Overlay & Sparse Presets）
+## 预设继承与通用零件插槽体系（Parts Slots）
 
-三层堆叠正式落地：`configs/<app>` (Base) ← `__presets__/<name>` (Overlay) ← `__custom__` (Dunder) / `preserve` (Manifest)。
+配置体系支持应用级整包预设与解耦的声明式零件插槽（Parts）：
 
-- **稀疏预设 (Sparse Presets)**：预设目录只需要存放与默认配置有差异的文件（例如 Niri 的 `glow` 仅需 49 行的 `layout.kdl`，无需镜像复制 4000+ 行 Python 脚本）。未重写的文件自动从仓库底版继承。
-- **动态光晕模板解耦**：Niri 的 `glow-material-you` 由 Noctalia 原生渲染输出为独立的 `~/.config/niri/colors.kdl`，不再覆写核心布局 `layout.kdl`，亦无外部 IPC `post_hook` 副作用；`config.kdl` 中在 `layout.kdl` 之后可选加载 `include optional=true "colors.kdl"`。
-- **通用零件插槽 (`preset <app> part <slot> <name>`)**：在 `.module.toml` 中声明 `[parts.<slot>]` 后，可独立切换具体目标文件（如 `effects.kdl`），无需重新部署整套配置。
-- **双轴白名单保障**：
-  - **预设名白名单 (`allow = ["glow", "glow-material-you"]`)**：仅列入白名单的预设开启继承；未列入的预设和未声明的应用（如 Kitty）保持 100% 独立，零配置渗透。
-  - **文件白名单 (`include = ["scripts/**", "*.kdl"]`)**：仅继承白名单允许的底版文件；支持 `exclude` 黑名单进一步剔除特定文件。
-- **原子组装**：由 `atomic_replace_item(..., base_src, base_include, base_exclude)` 在 `tmp_new` 组装：先拷贝并过滤底版，再覆盖预设自身文件，最后注入 `__custom__` 与受保护文件，一次性原子 swap。若 manifest 声明了 `preset_reload`，切换后自动触发定义的热重载指令。
+- **通用零件插槽 (`preset <app> part <slot> <name>`)**：
+  - 核心逻辑由 `nyxuri.deploy.preset` 提供（`list_parts`、`apply_part`、`get_active_part`）。
+  - 元数据在应用配置根目录 `configs/<app>/.module.toml` 的 `[parts.<slot>]` 声明（如 Niri 声明了 `[parts.effects]` 与 `[parts.glow]`）。
+  - 零件源模板存放于 `configs/<app>/__presets__/<source_dir>/`，目标为具体的配置零件（如 `target = "effects_normal.kdl"` 或 `target = "glow.kdl"`）。
+  - 声明在 `[parts.<slot>]` 的 `target` 在解析 manifest 时会自动追加至受保护清单（`preserve`），避免全量替换时被覆盖。
+  - **防覆写自愈（commit `db289bd`）**：在部署与重载流水线中，`_reconcile_active_parts` 机制会自动读取 `state.json` 账本中已激活的非默认变体并对齐应用，确保配置重新应用时零件插槽目标不被默认模板回退。
+- **稀疏预设 (Sparse Presets)**：应用级整包预设目录仅存放与底版有差异的文件，未重写的文件自动从底版继承。
+  - **白名单保障**：由 `.module.toml` 中的 `allow` 与 `include` 控制继承白名单与匹配范围。
+- **动态光晕模板解耦**：Niri 的 `glow-material-you` 由 Noctalia 原生渲染输出为独立的 `~/.config/niri/colors.kdl`，不再覆写核心布局 `layout.kdl`；`config.kdl` 中在 `layout.kdl` 之后通过 `include optional=true "colors.kdl"` 引入。
 
 ## CLI
 
@@ -84,7 +86,8 @@ nyxuri preset <app> apply <name>        # 切预设（apply default = 回默认 
 nyxuri preset <app> save <name>         # 当前配置存成用户预设（过滤 __custom__）
 nyxuri preset <app> edit <name>         # 在 $EDITOR 里直接改用户预设目录（改完重新 apply 生效）
 nyxuri preset <app> delete <name>       # 删用户预设（官方不能删）
-nyxuri preset <app> part <slot> <name>  # 切换通用零件插槽（如 niri 的 effects 零件）
+nyxuri preset <app> parts               # 查询应用声明的所有零件插槽及其可用变体
+nyxuri preset <app> part <slot> <name>  # 切换通用零件插槽（如 nyxuri preset niri part effects xray-blur）
 ```
 
 `save` 拒 `default`（保留字）、拒官方同名（官方优先）。`delete` 同样拒这两类。`edit` 也拒这两类

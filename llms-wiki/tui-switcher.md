@@ -1,37 +1,31 @@
-# TUI Preset Switcher — 树状折叠拓扑工作台、单一光标、原位无熵操作
+# TUI Preset Switcher — 双栏工作台拓扑、左右分栏焦点、原位无熵操作
 
 > CLI（`nyxuri preset <app> apply <name>`）之外，交互菜单提供自包含的 Preset Studio 工作台。
-> **单栏树状折叠拓扑（Accordion Tree）**，默认折叠，下方支持分行可折叠详情卡片。源码：`nyxuri/tui.py`（`PresetSwitcher`）。
+> 采用 **双栏（Dual-Pane）工作台拓扑**：左栏应用列表与状态，右栏预设方案与独立零件双分区，下方支持可折叠详情卡片。源码：`nyxuri/tui.py`（`PresetSwitcher`）。
 
 ## 布局与视线设计
 
 ```text
-  NYX NIRI  v3.0.3  ·  预设管理
+  NYXURI  ·  预设与零件管理
 
-    ▸ fastfetch                 default
-    ▸ fish                      default
-  ▾ kitty
-      default                   ●
-    ❯ transparent
-      nord
-    ▸ niri                      default (2)
-    ▸ noctalia                  default
+  [应用列表]               │ [配置详情 · niri]
+    fastfetch    default   │  ── 预设方案 ──
+    fish         default   │  ❯ default                   ●
+    kitty        transp.   │
+  ❯ niri         default   │  ── 独立零件 ──
+    noctalia     default   │    ▸ 零件 · 特效 (effects)    default
+                           │    ▸ 零件 · 发光 (glow)       default
 
   ────────────────────────────────────────────────────────────
 
-  源: configs/kitty/presets/transparent
-
-  ▸ 包含文件 (2)
-  ▸ 保留文件 (0)
-
-  [Enter] 展开/应用   [Tab] 详情   [s] 保存当前   [e] 编辑   [d] 删除   [q] 返回
+  [Tab] 详情   [Enter] 应用/展开   [←/→] 切栏   [s] 保存   [e] 编辑   [d] 删除   [q] 返回
 ```
 
 ### 展开详情视图（按 `Tab` / `i` 或鼠标点击）：
 ```text
   ────────────────────────────────────────────────────────────
 
-  源: configs/kitty/presets/transparent
+  源: configs/kitty/__presets__/transparent
 
   ▾ 包含文件 (2):
       · current-theme.conf
@@ -40,15 +34,17 @@
   ▾ 保留文件 (1):
       · monitor.kdl
 
-  [Enter] 展开/应用   [Tab] 详情   [s] 保存当前   [e] 编辑   [d] 删除   [q] 返回
+  [Tab] 详情   [Enter] 应用/展开   [←/→] 切栏   [s] 保存   [e] 编辑   [d] 删除   [q] 返回
 ```
 
-### 单一光标法则 (Single Cursor Rule)
-- **全屏唯一光标**：`❯`（青色粗体）在整个屏幕中永远只有 1 个，在 App 行与展开的预设行之间平滑流转。
-- **默认折叠**：所有应用默认折叠（`▸`），右侧灰色轻量展示当前活动预设名称与预设数量。
-- **下方独立多行折叠**：包含文件与保留文件各占独立一行，支持按 `[Tab]`（或 `[i]` / 鼠标点击）展开与收起。
-- **状态指示**：去掉重复的 `[官方]` 标签，活动预设右侧用绿色圆点 `●` 标识。
-- **零错位盒状线**：废除 `┼`、`┴`、`│` 盒状字符，使用 56 字符定宽底部分隔线，完全免疫终端字符公差错位。
+### 双栏交互法则 (Dual-Pane Rules)
+- **左右分栏焦点**：
+  - **左栏**：宽度约为 `cols // 3`（22~32 字符），高亮聚焦应用并显示当前活动预设名称与可用数量。
+  - **中轴分割线**：采用 `│` 垂直分割。
+  - **右栏**：清晰区分 `── 预设方案 ──` 与 `── 独立零件 ──` 两个层级，支持展开零件变体。
+- **平滑切栏 (`←` / `→`)**：左右方向键在应用列表与详情面板之间切换控制焦点；在右栏内部，`←` 可从零件变体折叠回插槽。
+- **状态指示**：活动预设与已激活零件右侧均以绿色圆点 `●` 明确标识。
+- **动态 Inspector 卡片**：按 `[Tab]` 在底部唤起所选预设或零件的文件组成与保留清单。
 
 ## 原位拓扑操作 (In-Place Interaction Flow)
 

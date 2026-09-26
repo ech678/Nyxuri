@@ -16,10 +16,11 @@
   │     └── toggle-eyecare.sh --sync ─► 同步护眼模式状态与色温
   │
   ├── 2. 交互脚本层 (Keybindings 触发)
-  │     ├── shell-action.sh    ───────► 统一动作网关 (launcher/session/settings/clipboard/lock/wallpaper-random)
-  │     │     ├── launcher     ───────► 唤起 orbit-launcher.py (~/.config/noctalia/tools/)
-  │     │     └── session      ───────► 分发至 Shell IPC (noctalia msg / 未来自研 Shell)
-  │     ├── Super + W          ───────► wallpaper-picker.py (位于 ~/.config/noctalia/tools/)
+  │     ├── shell-action.sh    ───────► 统一动作网关 (8大动作: launcher/session/settings/clipboard/lock/wallpaper-random/wallpaper-picker/radial-launcher)
+  │     │     ├── launcher (Mod+R)       ───────► Noctalia 面板: noctalia msg panel-toggle launcher
+  │     │     ├── radial-launcher (Mod+A) ──────► Orbit 星环: orbit-launcher.py (~/.config/noctalia/tools/)
+  │     │     ├── wallpaper-picker (Mod+W) ─────► 壁纸选择器: wallpaper-picker.py (~/.config/noctalia/tools/)
+  │     │     └── session (Mod+X) / 等 ────────► 分发至 Shell IPC (noctalia msg / 未来自研 Shell)
   │     ├── Super + ~          ───────► niri-scratch-toggle.sh (Kitty 浮动终端切换)
   │     ├── Super + N          ───────► toggle-eyecare.sh (护眼色温与着色器切换)
   │     └── 亮度快捷键         ───────► niri-brightness.sh (内屏背光 / 外接 DDC 分流)

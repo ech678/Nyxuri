@@ -34,7 +34,8 @@
 ## CLI 接口
 
 ```bash
-nyxuri snapshot create [note]   # 创建新快照
-nyxuri snapshot list            # 列出所有可用快照（带序号与时间）
-nyxuri snapshot rollback [id]   # 回滚到指定快照（回滚前自动生成安全快照）
+nyxuri snapshot [note]          # 创建新快照（alias: backup）
+nyxuri snapshot delete [index]  # 删除指定序号的快照
+nyxuri list                     # 列出所有可用快照（带序号与时间）
+nyxuri rollback [index]         # 回滚到指定快照（回滚前自动生成安全快照，alias: restore）
 ```

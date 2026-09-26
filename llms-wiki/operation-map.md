@@ -8,7 +8,7 @@
 |---|---|
 | `install [full\|config]`（alias `deploy`） | 部署配置（full = + 壁纸 + 模块） |
 | `update [--force\|--no-deploy] [--to <tag\|commit>]` | 拉新版本 + 线性状态迁移 (`migrations`) + 重新部署；`--to` 锁到指定版本（system 模式 → 提示 pacman） |
-| `preset <app> [list\|apply <name>\|save <name>\|edit <name>\|delete <name>\|part <slot> <name>]` | 切/管理预设与零件插槽（状态接入 `state.json` 账本） |
+| `preset <app> [list\|apply <name>\|save <name>\|edit <name>\|delete <name>\|parts\|part <slot> <name>]` | 切/管理预设与零件插槽（状态接入 `state.json` 账本） |
 
 ## 管"安装方式"的
 
@@ -18,7 +18,7 @@
 | `apps`（alias `recommended`） | 装可选软件 |
 | `pkg <install\|upgrade\|remove\|search\|info\|installed>` | Fish 与安装器共用包管理；安装接收包名，搜索支持 `aur` / `pac` 前缀 |
 | `wallpapers`（alias `wp`） | 装壁纸包（维护 `.nyxuri-managed.json` 跟踪清单） |
-| `<module> [install\|status\|uninstall]` | fcitx / fisher / greeter / gtk 四件套模块（动态 import `nyxuri.modules.<name>`，其中 `gtk` 映射至 `gtktheme`） |
+| `<module> [install\|status\|uninstall]` | 扩展模块管理；fisher / greeter / gtk 走标准三件套；`fcitx` 支持细粒度解耦动词 `[install\|deploy\|activate\|status\|uninstall]` |
 | `theme [toggle\|dark\|light\|sync\|status]` | 原生切换/同步深浅主题（纯 Python 调度 gsettings、GTK settings.ini、Noctalia IPC 与 Kitty 信号，status 查询当前模式） |
 
 ## 管"状态"的
@@ -40,3 +40,7 @@
 
 三层（configs < presets < customs）是内容侧，其他都是围绕它的操作。详见
 [overview](overview.md)、[preset-mechanism](preset-mechanism.md)。
+
+## 兼容别名
+
+在全局更名迁移期内，系统软链接与用户端别名 `nyxniri` 完全保留，执行任何命令均等价于 `nyxuri`，且自动兼容 `NYXNIRI_*` 环境变量。

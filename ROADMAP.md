@@ -44,7 +44,7 @@
 
 ### 6. 对标 iNiR 的未来野心 vs 当前对 Noctalia 的隐式寄生陷阱
 - **真实感受**：
-  虽然当前依赖 Noctalia 提供桌面外壳，但我**明确计划做一个自己的 Shell，总体构想是对标 [iNiR](https://github.com/snowarch/iNiR)**：完整的 M3 交互、服务 Niri，但坚决不基于 Quickshell，名称与框架暂不预设。
+  虽然当前依赖 Noctalia 提供桌面外壳，但我**明确计划做一个自己的 Shell，总体构想是对标 [iNiR](https://github.com/snowarch/iNiR)**：完整的 M3 交互、服务 Niri，名称暂不预设。
   但反观全库现状，代码里暗中滋生了大量对 Noctalia 的“寄生硬编码”：
   - `binds.kdl` 和 `config.kdl` 写死了十几处 `noctalia msg ...` 快捷键与启动项；
   - Orbit 和壁纸选择器为了拿到 Material You 颜色，**硬编码偷读 `~/.cache/noctalia/starship-palette.toml`**，并且为了迎合 Starship 的 Catppuccin 别名，在代码里写了一堆别扭的二次反推推断（如把 `sapphire/mauve` 猜成 `primary/secondary`）。

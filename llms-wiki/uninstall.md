@@ -50,7 +50,7 @@ fisher.fish 存在），旁边显示实际路径（§8.4"每项旁边显示实�
 5. wallpapers         ~/Pictures/Wallpapers/（读 .nyxuri-managed.json / .nyxniri-managed.json 仅清理受管壁纸，绝不误伤用户私人壁纸）
 6. cli                ~/.local/bin/nyxuri
 7. state              ~/.local/state/nyxuri/（AFTER 模块卸载；连带清理历史小写目录）
-8. cache              ~/.cache/nyxuri/（连带清理历史小写目录 ~/.cache/nyxuri）
+8. cache              ~/.cache/nyxuri/（连带清理历史小写目录 ~/.cache/nyxniri）
 ```
 
 **铁律**：模块恢复先于 `~/.config/nyxuri/` 删除——fcitx 的 classicui/quickphrase 恢复要读
