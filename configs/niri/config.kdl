@@ -6,8 +6,8 @@ include "effects.kdl"
 include optional=true "input__custom__.kdl"
 // 引入布局设置
 include "layout.kdl"
-// 动态色板与光晕输出 (与核心布局解耦，若存在则覆盖底版色彩)
-include optional=true "colors.kdl"
+// 引入焦点环与阴影光晕零件 (default / glow / glow-material-you)
+include "glow.kdl"
 // 引入动画配置
 include "animations.kdl"
 // 引入窗口与图层规则

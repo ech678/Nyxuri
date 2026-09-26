@@ -154,9 +154,11 @@ class TestRealRepoManifests(unittest.TestCase):
 
     def test_niri_manifest(self):
         m = manifest.load_manifest(self.env.configs_src / "niri")
-        self.assertEqual(m.preserve, ["monitor.kdl", "effects.kdl"])
+        self.assertEqual(m.preserve, ["monitor.kdl", "effects.kdl", "glow.kdl", "colors.kdl"])
         self.assertEqual(m.chmod, ["scripts/*.sh", "scripts/*.py"])
         self.assertTrue(m.is_deployable)
+        self.assertIn("effects", m.parts)
+        self.assertIn("glow", m.parts)
         # dir name = package = binary → no [packages] override needed
         self.assertEqual(m.packages_repo, ["niri"])
 
@@ -260,11 +262,12 @@ class TestRealRepoManifests(unittest.TestCase):
             self.assertIn(name, opts)
 
 
-    def test_real_niri_manifest_has_presets_whitelist(self):
+    def test_real_niri_manifest_has_parts(self):
         m = manifest.load_manifest_for("niri")
-        self.assertEqual(m.preset_allow, ["glow", "glow-material-you", "xray-blur"])
-        self.assertIn("scripts/**", m.preset_include)
-        self.assertIn("*.kdl", m.preset_include)
+        self.assertIn("effects", m.parts)
+        self.assertEqual(m.parts["effects"]["target"], "effects_normal.kdl")
+        self.assertIn("glow", m.parts)
+        self.assertEqual(m.parts["glow"]["target"], "glow.kdl")
 
 
 class TestManifestPresets(unittest.TestCase):

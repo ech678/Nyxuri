@@ -29,8 +29,14 @@ def run(argv: list[str], *, capture: bool = False, timeout: int = INSTALL_TIMEOU
     return result
 
 
+def _is_cachyos() -> bool:
+    from pathlib import Path
+    return Path("/etc/cachyos-release").is_file()
+
+
 def aur_helper() -> str | None:
-    for name in ("paru", "yay", "shelly"):
+    candidates = ("shelly", "paru", "yay") if _is_cachyos() else ("paru", "yay", "shelly")
+    for name in candidates:
         if shutil.which(name) and run([name, "--version"], capture=True, timeout=10).returncode == 0:
             return name
     return None

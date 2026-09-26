@@ -34,9 +34,11 @@ class TestGenDeps(unittest.TestCase):
         for app_pkg in ("kitty", "niri", "fish", "fastfetch", "starship", "noctalia", "xdg-desktop-portal"):
             self.assertIn(app_pkg, depends)
         # Base system deps not tied to an app (from CORE_DEPS).
-        for base in ("wlsunset", "eza", "jq", "tmux", "inotify-tools", "fzf", "python-gobject",
-                     "gtk-layer-shell", "ttf-jetbrains-mono", "noto-fonts-cjk"):
+        for base in ("wlsunset", "eza", "jq", "tmux", "inotify-tools", "fzf",
+                     "ttf-jetbrains-mono", "noto-fonts-cjk"):
             self.assertIn(base, depends)
+        for companion in ("python-gobject", "gtk-layer-shell"):
+            self.assertIn(companion, depends)
         # AUR-only deps.
         self.assertIn("mpvpaper", depends)
 

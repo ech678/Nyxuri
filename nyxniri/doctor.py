@@ -39,7 +39,28 @@ def _check_wayland_session(env) -> None:
     else:
         print(msg("doctor_warn", text(f"会话: 缺少 {sess_file}", f"Session: {sess_file} is missing")))
 
+def _check_shell_provider(env) -> None:
+    from nyxniri.state.ledger import active_shell, read_ledger
+    current = active_shell()
+    if current == "noctalia":
+        if shutil.which(THEME_ENGINE):
+            print(msg("doctor_ok", text(f"桌面外壳: 当前选用 Noctalia", f"Desktop Shell: Noctalia active")))
+        else:
+            print(msg("doctor_warn", text(f"桌面外壳: 当前选用 Noctalia 但未在 PATH 中找到", f"Desktop Shell: Noctalia selected but missing from PATH")))
+    else:
+        custom_bin = read_ledger().get("custom_shell_bin", os.environ.get("NYXNIRI_CUSTOM_SHELL_BIN", ""))
+        if custom_bin and os.path.isfile(custom_bin) and os.access(custom_bin, os.X_OK):
+            print(msg("doctor_ok", text(f"桌面外壳: 自研/自定义 Shell ({custom_bin}) 可用", f"Desktop Shell: Custom shell ({custom_bin}) available")))
+        else:
+            print(msg("doctor_warn", text(
+                f"桌面外壳: 自研/自定义 Shell ({custom_bin or '未配置'}) 不可执行，将回退 Noctalia",
+                f"Desktop Shell: Custom shell ({custom_bin or 'not configured'}) not executable; will fallback to Noctalia",
+            )))
+
 def _check_noctalia(env) -> None:
+    from nyxniri.state.ledger import active_shell
+    if active_shell() != "noctalia":
+        return
     if not shutil.which(THEME_ENGINE):
         print(msg("doctor_err", text(f"{THEME_ENGINE}: 未在 PATH 中找到", f"{THEME_ENGINE}: not found in PATH")))
     else:
@@ -106,6 +127,13 @@ def _check_scratchpad(env) -> None:
         print(msg("doctor_warn", text("Scratchpad: 缺少 tmux", "Scratchpad: tmux is missing")))
 
 def _check_orbit(env) -> None:
+    from nyxniri.state.ledger import active_shell
+    if active_shell() != "noctalia":
+        return
+    launcher = env.config_dir / THEME_ENGINE / "tools" / "orbit-launcher.py"
+    src_launcher = env.configs_src / THEME_ENGINE / "tools" / "orbit-launcher.py"
+    if not launcher.is_file() and not src_launcher.is_file():
+        return
     try:
         res = timed_run(
             [sys.executable, "-c", "import gi; gi.require_version('Gtk', '3.0'); gi.require_version('GtkLayerShell', '0.1')"],
@@ -283,6 +311,7 @@ DOCTOR_SECTIONS = [
     ("doctor_sec_desktop", [
         _check_compositor,
         _check_wayland_session,
+        _check_shell_provider,
         _check_noctalia,
         _check_wallpapers,
     ]),

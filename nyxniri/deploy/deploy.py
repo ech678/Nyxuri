@@ -161,11 +161,12 @@ def _phase_post_install_services() -> None:
     env = get_env()
     config_dir = env.config_dir
 
-    sync_script = config_dir / THEME_ENGINE / "theme-sync.sh"
-    if sync_script.is_file():
-        sync_script.chmod(0o755)
-        timed_run(["bash", str(sync_script)], 30, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+    try:
+        from nyxniri.theme import sync
+        sync()
         print(msg("log_gtk_theme_init"))
+    except Exception as e:
+        log_msg("WARN", f"Theme sync failed during deploy: {e}")
 
     if shutil.which(THEME_ENGINE):
         from nyxniri.modules.gtktheme import gtktheme_trigger_render

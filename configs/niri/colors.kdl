@@ -1,23 +1,8 @@
-window-rule {
-    geometry-corner-radius 12
-    clip-to-geometry true
-    draw-border-with-background false
-}
-
+// Niri Material You Dynamic Colors (rendered by Noctalia based on wallpaper palette)
 layout {
-    background-color "transparent"
-    gaps 12
-    center-focused-column "never"
-    always-center-single-column
-    preset-column-widths {
-        proportion 0.33333
-        proportion 0.5
-        proportion 0.66667
-    }
-    default-column-width { proportion 0.5; }
     focus-ring {
         width 2
-        active-color "#1a73e8"
+        active-color "#b6c7e7"
         inactive-color "transparent"
         urgent-color "#ffb4ab"
     }
@@ -27,7 +12,7 @@ layout {
         spread 6
         offset x=0 y=0
         draw-behind-window false
-        color "#1a73e895"
+        color "#b6c7e795"
         inactive-color "#00000045"
     }
     tab-indicator {

@@ -56,7 +56,7 @@ class TestPostInstallHooksIndependence(unittest.TestCase):
         sync_script.parent.mkdir(parents=True, exist_ok=True)
         sync_script.touch()
 
-        with patch("nyxniri.deploy.deploy.timed_run", side_effect=[None, None]), \
+        with patch("nyxniri.theme.sync", side_effect=RuntimeError("theme failure")), \
              patch("nyxniri.deploy.deploy.shutil.which", return_value=True), \
              patch("nyxniri.modules.fisher.fisher_install") as mock_fisher, \
              patch("builtins.print"):

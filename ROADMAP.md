@@ -432,7 +432,7 @@ Issue #102 下的深度探讨为本项目的工程落地注入了极其宝贵的
 - **问题**: 根目录 README 高达 390 行，充斥着庞大的代码目录树、历史迁移警告和繁杂安装细节，破坏首屏极简美感；胶水脚本中存在语言硬编码。
 - **修复**: 
   - 根目录 README 大瘦身（目标 150 行以内），打造纯粹的视觉门面与极简单行安装入口；
-  - 长篇技术架构、设计哲学、模块手册与故障排查全量移交面向人类读者的 GitHub Wiki（双轨中英 `Home.md` / `Home-zh.md`）；
+  - 长篇技术架构、设计哲学、模块手册与故障排查全量移交面向人类读者的 `humans-wiki/`（双轨中英 `Home.md` / `Home-zh.md`，与 `llms-wiki/` 形成对偶秩序并自动镜像至 GitHub Wiki）；
   - **文风铁律**：GitHub Wiki 全文必须严格恪守 `@AGENTS.md` §8（Writing / Voice）标准——**清楚优先、保留人格、具体胜过漂亮、像人说话、去 AI 味、避免刻意正式与机械三段式，不要把所有文字写得像 Apple 或 Google，让每一句话都像 NyxNiri 原生发声**；
   - `translations.toml` 作为终端和 CLI 唯一事实源，消除脚本中的硬编码双语字符串。
 
@@ -497,16 +497,16 @@ Issue #102 下的深度探讨为本项目的工程落地注入了极其宝贵的
   - `uninstall.py` 壁纸卸载改为白名单精准删除官方素材，严禁暴力 `rmtree` 用户壁纸目录；
   - 补充 `fcitx.py` 雾凇拼音 Rime 补丁的对等卸载撤销逻辑；
   - 拔除 AUR 引导中的暴力 `-Rdd`，修复 `install_selected_deps` 如实反映退出码并添加合理超时；
-- [ ] **核心依赖彻底净化与伴生包隔离**：从 `nyxniri/constants.py:CORE_DEPS` 移除 `python-gobject` 与 `gtk-layer-shell`，精准下放至 `configs/noctalia/.module.toml:packages:repo`；`deps.py` 优化对 CachyOS 原生 `shelly` 优先引导并完善网络超时防御；
-- [ ] **全面适配 Shelly 现代包管理器 (CachyOS Native Shelly)**：在 `nyxniri.pkg` 核心抽象、`deps.py` 引导探测、Fish 搜索交互与依赖安装全链路中，全面适配 CachyOS 原生包管理器 `shelly`（无缝兼容 `standard`/`aur` 分流、`--no-confirm` 自动化参数、JSON 格式搜索解析与无缝提权）；
-- [ ] **合成器快捷键完全中立与网关调度**：`binds.kdl` 中直连 `noctalia/tools/*.py` 的路径全部拔除，收归 `shell-action.sh` 统一调度网关（`wallpaper-picker` / `radial-launcher`），实现 Compositor 与桌面外壳物理隔离；
-- [ ] **双 Shell 运行时插槽闭环与 CLI 管理 (`nyxniri shell`)**：落地 `nyxniri shell [get|set|status]` CLI，`state.json` 账本持久化记录 `active_shell` 与 `custom_shell_bin`；`session-shell.sh` 故障时发送 `notify-send` 弹窗警示并安全回退到 Noctalia 避免黑屏死锁；`doctor.py` 增加双 Shell 健康体检并消除 Orbit 绑定的全域虚警；
-- [ ] **部署流程自洽与 Python 原生主题调度**：`_phase_post_install_services` 移除外部 Bash 脚本转调，直调底座纯 Python 原生 `nyxniri.theme.sync()`，提速并实现原子防锁死；
-- [ ] **M3 调色板语义补齐与轻量模板系统储备**：`nyxniri-palette.toml` 补齐 M3 核心角色 `background` 与 `on_background`；`nyxniri/template_registry.py` 补充 `has_section` 与 `add_section` 原语；微型纯标库轻量占位填空原语储备；
-- [ ] **升级引导结构完备性自愈**：`install.sh:engine_is_complete()` 对齐新增的 `ledger`、`theme`、`template_registry` 模块检查；
-- [ ] **`__presets__` Dunder 命名规整与全软件通用零件化插槽体系**：将 `presets/` 重命名为 `__presets__/`，在 `.module.toml` 中支持通用 `[parts.<slot>]` 规则声明，使所有软件均可通过纯声明式 TOML 像替换零件一样切换视觉、按键与规则；
-- [ ] **终端 Windows PowerShell 级优雅交互体验**：Kitty 配置右键直接粘贴剪贴板、键盘 `Ctrl+C` 智能识别复制/中断、`Ctrl+V` 原生粘贴（无自动划词进剪贴板干扰）；Fish 保留 `ask_agy` 原生懒加载函数，窗口快捷键冻结原样保持；
-- [ ] **文档极简降噪与 GitHub Wiki 归位策略 (严格遵循 AGENTS.md §8 语言风骨)**：根目录 README 大瘦身（压缩至 150 行以内），庞大目录树与深度手册移交 GitHub Wiki（中英双轨架构），以自然、清晰、去 AI 味、像人说话的原生笔调书写，消除胶水脚本中的语言硬编码；
+- [x] **核心依赖彻底净化与伴生包隔离**：从 `nyxniri/constants.py:CORE_DEPS` 移除 `python-gobject` 与 `gtk-layer-shell`，精准下放至 `configs/noctalia/.module.toml:packages:repo`；`deps.py` 优化对 CachyOS 原生 `shelly` 优先引导并完善网络超时防御；
+- [x] **全面适配 Shelly 现代包管理器 (CachyOS Native Shelly)**：在 `nyxniri.pkg` 核心抽象、`deps.py` 引导探测、Fish 搜索交互与依赖安装全链路中，全面适配 CachyOS 原生包管理器 `shelly`（无缝兼容 `standard`/`aur` 分流、`--no-confirm` 自动化参数、JSON 格式搜索解析与无缝提权）；
+- [x] **合成器快捷键完全中立与网关调度**：`binds.kdl` 中直连 `noctalia/tools/*.py` 的路径全部拔除，收归 `shell-action.sh` 统一调度网关（`wallpaper-picker` / `radial-launcher`），实现 Compositor 与桌面外壳物理隔离；
+- [x] **双 Shell 运行时插槽闭环与 CLI 管理 (`nyxniri shell`)**：落地 `nyxniri shell [get|set|status]` CLI，`state.json` 账本持久化记录 `active_shell` 与 `custom_shell_bin`；`session-shell.sh` 故障时发送 `notify-send` 弹窗警示并安全回退到 Noctalia 避免黑屏死锁；`doctor.py` 增加双 Shell 健康体检并消除 Orbit 绑定的全域虚警；
+- [x] **部署流程自洽与 Python 原生主题调度**：`_phase_post_install_services` 移除外部 Bash 脚本转调，直调底座纯 Python 原生 `nyxniri.theme.sync()`，提速并实现原子防锁死；
+- [x] **M3 调色板语义补齐与轻量模板系统储备**：`nyxniri-palette.toml` 补齐 M3 核心角色 `background` 与 `on_background`；`nyxniri/template_registry.py` 补充 `has_section` 与 `add_section` 原语；微型纯标库轻量占位填空原语储备；
+- [x] **升级引导结构完备性自愈**：`install.sh:engine_is_complete()` 对齐新增的 `ledger`、`theme`、`template_registry` 模块检查；
+- [x] **`__presets__` Dunder 命名规整与全软件通用零件化插槽体系**：将 `presets/` 重命名为 `__presets__/`，在 `.module.toml` 中支持通用 `[parts.<slot>]` 规则声明，使所有软件均可通过纯声明式 TOML 像替换零件一样切换视觉、按键与规则；
+- [x] **终端 Windows PowerShell 级优雅交互体验**：Kitty 配置右键直接粘贴剪贴板、键盘 `Ctrl+C` 智能识别复制/中断、`Ctrl+V` 原生粘贴（无自动划词进剪贴板干扰）；Fish 常用终端函数与窗口快捷键冻结原样保持；
+- [x] **文档极简降噪与 GitHub Wiki 归位策略 (严格遵循 AGENTS.md §8 语言风骨)**：根目录 README 大瘦身（压缩至 150 行以内），庞大目录树与深度手册移交 `humans-wiki/`（双轨中英 `Home.md` / `Home-zh.md`，与 `llms-wiki/` 对称且 100% 完整收录所有排障与指令表，自动镜像 GitHub Wiki），以自然、清晰、去 AI 味、像人说话的原生笔调书写，消除胶水脚本中的语言硬编码；
 - [ ] **GitHub 仓库工程标准化与轻量 CI 流**：增补 `.gitattributes` 锁死 LF 换行符杜绝跨平台脚本损坏、配置轻量 GitHub Actions CI 工作流（秒级跑完 compileall / shellcheck / unittest）与 Wiki 自动化同步流。
 
 #### 2. 开发 Shell 时 (During Shell Development)
@@ -523,5 +523,3 @@ Issue #102 下的深度探讨为本项目的工程落地注入了极其宝贵的
 - [ ] **TUI 视觉风格化与纯净感 (Terminal Rice)**：接入 Alternate Screen Buffer（`\033[?1049h/l`）保护终端历史（运行 `doctor` / 查看快照不被抹除），DEC 2025 协议消除高刷频闪撕裂，引入单行微动 Zen Spinner 就地收拢命令滚屏日志；
 - [ ] **多合成器 (Multi-WM) 架构解耦与驱动抽象**：构建 `CompositorDriver` 驱动抽象层，实现热重载、浮动便签与屏幕探测的跨合成器适配（Hyprland/Sway 等按需扩展），`doctor` 诊断与 `greeter` 会话自适应；
 - [ ] **安全 Downdate 体系（高级储备）**：落地基于现场快照优先还原与 Git 逆向检出的安全版本回退机制。
-
-

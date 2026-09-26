@@ -279,6 +279,16 @@ def resolve_preset_inheritance(
     return app_root, list(manifest.preset_include), list(manifest.preset_exclude)
 
 
+def _find_official_presets_dir(app_root: Optional[Path]) -> Optional[Path]:
+    if app_root is None:
+        return None
+    for dirname in ("__presets__", "presets"):
+        d = _safe_child(app_root, dirname)
+        if d is not None and d.is_dir() and not d.is_symlink():
+            return d
+    return _safe_child(app_root, "__presets__") or _safe_child(app_root, "presets")
+
+
 def resolve_preset_src(app: str, active: str, dest: Path) -> PresetSrcResult:
     """Resolve which source dir to deploy for ``app`` given its ``active`` preset.
 
@@ -288,7 +298,7 @@ def resolve_preset_src(app: str, active: str, dest: Path) -> PresetSrcResult:
     """
     env = get_env()
     app_root = _safe_child(env.configs_src, app)
-    repo_presets = _safe_child(app_root, "presets") if app_root else None
+    repo_presets = _find_official_presets_dir(app_root)
     user_presets = _safe_child(env.presets_dir, app)
     expected_dest = _safe_child(env.config_dir, app)
     if (
@@ -370,9 +380,16 @@ def _find_preset_src(app: str, name: str) -> Optional[Path]:
     """
     if not _is_deployable_app(app) or not _is_safe_component(name):
         return None
+    try:
+        from nyxniri.deploy.manifest import load_manifest_for
+        manifest = load_manifest_for(app)
+        if manifest.parts and name in {cfg.get("source_dir", slot) for slot, cfg in manifest.parts.items()}:
+            return None
+    except Exception:
+        pass
     env = get_env()
     app_root = _safe_child(env.configs_src, app)
-    repo_presets = _safe_child(app_root, "presets") if app_root else None
+    repo_presets = _find_official_presets_dir(app_root)
     user_presets = _safe_child(env.presets_dir, app)
     if app_root is None or repo_presets is None or user_presets is None:
         return None
@@ -415,27 +432,30 @@ def get_preset_info(app: str, name: str) -> PresetInfo:
     source = "official"
     is_editable = False
     is_deletable = False
+    app_root = _safe_child(get_env().configs_src, app) if valid else None
+    official_dir = _find_official_presets_dir(app_root)
+    dir_name = official_dir.name if official_dir else "presets"
     if not valid:
         rel_path = "(invalid)"
     elif name == "default":
         rel_path = f"configs/{app}"
     elif src is not None:
-        official = _safe_child(get_env().configs_src, app, "presets", name)
+        official = _safe_child(official_dir, name) if official_dir else None
         if src == official:
-            rel_path = f"configs/{app}/presets/{name}"
+            rel_path = f"configs/{app}/{dir_name}/{name}"
         else:
             source = "user"
             is_editable = True
             is_deletable = True
             rel_path = f"~/.config/{PROJECT_NAME}/presets/{app}/{name}"
     else:
-        rel_path = f"configs/{app}/presets/{name} (not found)"
+        rel_path = f"configs/{app}/{dir_name}/{name} (not found)"
 
     files: List[str] = []
     if src and src.is_dir():
         for p in sorted(src.rglob("*")):
             if p.is_file() and not p.name.startswith(".") and "__custom__" not in p.name:
-                if name == "default" and "presets" in p.parts:
+                if name == "default" and any(part in ("presets", "__presets__") for part in p.parts):
                     continue
                 try:
                     rel = str(p.relative_to(src))
@@ -479,13 +499,24 @@ def collect_presets(app: str) -> List[Tuple[str, str, bool]]:
     except InvalidActivePresetError:
         print(msg("preset_warn_invalid_active", app))
         return []
+    part_source_dirs: set[str] = set()
+    try:
+        from nyxniri.deploy.manifest import load_manifest_for
+        manifest = load_manifest_for(app)
+        if manifest.parts:
+            part_source_dirs = {cfg.get("source_dir", slot) for slot, cfg in manifest.parts.items()}
+    except Exception:
+        pass
+
     entries: List[Tuple[str, str, bool]] = [("default", "official", active == "default")]
 
     env = get_env()
     app_root = _safe_child(env.configs_src, app)
-    official_dir = _safe_child(app_root, "presets") if app_root else None
+    official_dir = _find_official_presets_dir(app_root)
     if official_dir is not None and official_dir.is_dir() and not official_dir.is_symlink():
         for p in sorted(official_dir.iterdir(), key=lambda x: x.name):
+            if p.name in part_source_dirs:
+                continue
             if _is_safe_component(p.name) and p.is_dir() and not p.is_symlink():
                 entries.append((p.name, "official", active == p.name))
     user_dir = _safe_child(env.presets_dir, app)
@@ -581,8 +612,16 @@ def apply_preset(app: str, name: str) -> bool:
         log_msg("ERROR", f"Deployed preset '{name}' to {app} but recording active state failed: {e}")
         return False
     _render_preset_result(app, name, preserved_log)
-    if app == "kitty" and shutil.which("pkill"):
-        timed_run(["pkill", "-SIGUSR1", "-x", "kitty"], 2, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+    try:
+        from nyxniri.deploy.manifest import load_manifest_for
+        manifest = load_manifest_for(app)
+        if manifest.preset_reload:
+            timed_run(manifest.preset_reload, 2, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        elif app == "kitty" and shutil.which("pkill"):
+            timed_run(["pkill", "-SIGUSR1", "-x", "kitty"], 2, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+    except Exception:
+        if app == "kitty" and shutil.which("pkill"):
+            timed_run(["pkill", "-SIGUSR1", "-x", "kitty"], 2, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
     return True
 
 
@@ -608,7 +647,8 @@ def save_preset(app: str, name: str) -> bool:
     if dest is None or not dest.is_dir() or dest.is_symlink():
         print(msg("preset_nothing_to_save", app))
         return False
-    official = _safe_child(env.configs_src, app, "presets", name)
+    official_dir = _find_official_presets_dir(_safe_child(env.configs_src, app))
+    official = _safe_child(official_dir, name) if official_dir else None
     if official is not None and official.is_dir() and not official.is_symlink():
         print(msg("preset_official_name_collision", name))
         return False
@@ -715,3 +755,105 @@ def edit_preset(app: str, name: str) -> bool:
         return False
     print(msg("preset_edit_opened", app, name))
     return True
+
+
+def list_parts(app: str) -> dict:
+    """Return declared parts slots and available variant options for an app."""
+    from nyxniri.deploy.manifest import load_manifest_for
+    try:
+        manifest = load_manifest_for(app)
+    except Exception:
+        return {}
+    if not manifest.parts:
+        return {}
+    env = get_env()
+    app_root = _safe_child(env.configs_src, app)
+    official_dir = _find_official_presets_dir(app_root)
+    result = {}
+    for slot, cfg in manifest.parts.items():
+        slot_info = dict(cfg)
+        variants = []
+        source_dir_name = cfg.get("source_dir", slot)
+        if official_dir:
+            src_slot_dir = _safe_child(official_dir, source_dir_name)
+            if src_slot_dir and src_slot_dir.is_dir():
+                for item in sorted(src_slot_dir.iterdir()):
+                    if not item.name.startswith(".") and not item.is_symlink():
+                        variants.append(item.stem if item.is_file() else item.name)
+        slot_info["variants"] = variants
+        result[slot] = slot_info
+    return result
+
+
+def apply_part(app: str, slot: str, variant: str) -> bool:
+    """Hot-swap a specific declared component part of an app."""
+    from nyxniri.deploy.manifest import load_manifest_for
+    from nyxniri.deploy.atomic import atomic_replace_item
+    from nyxniri.state.ledger import read_ledger, update_ledger
+
+    try:
+        manifest = load_manifest_for(app)
+    except Exception as e:
+        log_msg("ERROR", f"Failed to load manifest for {app}: {e}")
+        return False
+    if slot not in manifest.parts:
+        log_msg("WARN", f"No part slot '{slot}' declared for {app}")
+        return False
+
+    cfg = manifest.parts[slot]
+    target_rel = cfg.get("target")
+    if not target_rel:
+        return False
+
+    env = get_env()
+    app_root = _safe_child(env.configs_src, app)
+    official_dir = _find_official_presets_dir(app_root)
+    source_dir_name = cfg.get("source_dir", slot)
+
+    src_candidate = None
+    if official_dir:
+        src_slot_dir = _safe_child(official_dir, source_dir_name)
+        if src_slot_dir and src_slot_dir.is_dir():
+            for item in src_slot_dir.iterdir():
+                if item.name == variant or item.stem == variant:
+                    src_candidate = item
+                    break
+
+    if src_candidate is None or not src_candidate.exists():
+        log_msg("WARN", f"Part variant '{variant}' not found in {source_dir_name}")
+        return False
+
+    dest = env.config_dir / app / target_rel
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if not atomic_replace_item(src_candidate, dest):
+        return False
+
+    current_parts = read_ledger().get("parts", {})
+    if not isinstance(current_parts, dict):
+        current_parts = {}
+    current_parts[f"{app}:{slot}"] = variant
+    update_ledger(parts=current_parts)
+
+    if manifest.preset_reload:
+        timed_run(manifest.preset_reload, 5, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+    return True
+
+
+def get_active_part(app: str, slot: str) -> str:
+    """Return the currently active variant for an app's part slot."""
+    from nyxniri.state.ledger import read_ledger
+    ledger = read_ledger()
+    parts = ledger.get("parts", {})
+    if isinstance(parts, dict) and f"{app}:{slot}" in parts:
+        val = parts[f"{app}:{slot}"]
+        if isinstance(val, str) and val:
+            return val
+    try:
+        from nyxniri.deploy.manifest import load_manifest_for
+        m = load_manifest_for(app)
+        if slot in m.parts:
+            return m.parts[slot].get("default", "default")
+    except Exception:
+        pass
+    return "default"
+

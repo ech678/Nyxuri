@@ -15,6 +15,19 @@
 | `chmod` | `[]` | 部署后设 +x 的 glob（相对 app 目录，如 `scripts/*.sh`） |
 | `label` | `<目录名>` | 菜单显示名 |
 | `detect` | `<目录名>` | 检测是否安装的命令名（纯名字，无 `binary:` 前缀 DSL） |
+| `preset_reload` | `[]` | 预设切换后执行的热重载命令参数列表（如 `["pkill", "-SIGUSR1", "-x", "kitty"]`） |
+
+### 通用零件插槽（`[parts.<slot>]` 表，可选）
+
+支持全系统通用零件化插槽体系，每个 `[parts.<slot>]` 定义一个可单独切换的配置零件（如视觉效果、按键绑定）：
+
+| 字段 | 默认 | 作用 |
+|---|---|---|
+| `target` | （必填） | 目标配置文件相对路径（如 `"effects_normal.kdl"`） |
+| `source_dir` | `<slot>` | 零件源文件目录名（位于 `configs/<app>/__presets__/<source_dir>/`） |
+| `default` | `""` | 默认选用的零件名称 |
+
+零件文件存放于 `configs/<app>/__presets__/<source_dir>/` 目录（例如 `effects/default.kdl`）。
 
 ### 预设继承控制（`[presets]` 表，可选）
 
@@ -38,16 +51,22 @@
 preserve = ["monitor.kdl", "effects.kdl"]
 chmod = ["scripts/*.sh"]
 
+[parts.effects]
+target = "effects.kdl"
+default = "xray-blur"
+options = ["glow", "glow-material-you", "xray-blur"]
+
 [presets]
 allow = ["glow", "glow-material-you"]
 include = ["scripts/**", "*.kdl", "orbit-items__custom__.toml"]
 
-# 非 .sh 可执行脚本需声明 chmod（此处为示例）
+# configs/kitty/.module.toml — 切换预设后发送 SIGUSR1 热重载
 [packages]
-chmod = ["helper.py"]
+preset_reload = ["pkill", "-SIGUSR1", "-x", "kitty"]
 
 # configs/noctalia/.module.toml — 三个主题脚本
 [packages]
+repo = ["noctalia", "python-gobject", "gtk-layer-shell"]
 chmod = ["theme-sync.sh", "wallpaper-hook.sh", "mpvpaper-sync.sh"]
 
 # configs/xdg-desktop-portal/.module.toml — 只改菜单名
@@ -61,7 +80,7 @@ detect = "starship"
 label = "Starship"
 ```
 
-kitty / fastfetch / zed **不写 manifest**（目录名 = 包名 = 二进制名 = 无例外，presets 不开启继承保持独立），全默认即对。
+fastfetch / zed **不写 manifest**（目录名 = 包名 = 二进制名 = 无例外），全默认即对。
 
 ## `.optional-apps.toml`（可选软件，无配置）
 

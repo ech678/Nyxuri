@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y shellcheck
+
+      - name: Bytecode compilation check
+        run: python3 -m compileall nyxniri
+
+      - name: Shell syntax check
+        run: |
+          bash -n install.sh configs/noctalia/*.sh configs/niri/scripts/*.sh
+
+      - name: ShellCheck lint
+        run: |
+          shellcheck install.sh configs/niri/scripts/*.sh
+
+      - name: Run test suite
+        run: |
+          python3 -m unittest discover -s tests -q

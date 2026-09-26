@@ -1,0 +1,18 @@
+// Niri Glow Part: Static Glow (Azure Focus Ring & Spreading Glow Shadow)
+layout {
+    focus-ring {
+        width 2
+        active-color "#1a73e8"
+        inactive-color "transparent"
+        urgent-color "#ffb4ab"
+    }
+    shadow {
+        on
+        softness 28
+        spread 6
+        offset x=0 y=0
+        draw-behind-window false
+        color "#1a73e895"
+        inactive-color "#00000045"
+    }
+}

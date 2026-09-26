@@ -18,12 +18,18 @@ if [ -r "$state_file" ]; then
 fi
 
 if [ "$active_shell" = "custom" ]; then
-    : "${NYXNIRI_CUSTOM_SHELL_BIN:?active_shell=custom requires NYXNIRI_CUSTOM_SHELL_BIN}"
-    if [ ! -x "$NYXNIRI_CUSTOM_SHELL_BIN" ]; then
-        echo "Custom shell is not executable: $NYXNIRI_CUSTOM_SHELL_BIN" >&2
-        exit 1
+    if [ -z "${NYXNIRI_CUSTOM_SHELL_BIN:-}" ] && [ -r "$state_file" ]; then
+        custom_bin_json=$(grep -o '"custom_shell_bin"[[:space:]]*:[[:space:]]*"[^"]*"' "$state_file" 2>/dev/null | head -n 1 | sed 's/.*"[[:space:]]*:[[:space:]]*"//;s/"//' || true)
+        if [ -n "$custom_bin_json" ]; then
+            NYXNIRI_CUSTOM_SHELL_BIN="$custom_bin_json"
+        fi
     fi
-    exec "$NYXNIRI_CUSTOM_SHELL_BIN" --action "$action"
+
+    if [ -n "${NYXNIRI_CUSTOM_SHELL_BIN:-}" ] && [ -x "$NYXNIRI_CUSTOM_SHELL_BIN" ]; then
+        exec "$NYXNIRI_CUSTOM_SHELL_BIN" --action "$action"
+    else
+        echo "Warning: Custom shell binary is missing or not executable (${NYXNIRI_CUSTOM_SHELL_BIN:-none}), falling back to Noctalia." >&2
+    fi
 fi
 
 case "$action" in
@@ -45,9 +51,23 @@ case "$action" in
     wallpaper-random)
         exec noctalia msg wallpaper-random
         ;;
+    wallpaper-picker)
+        tools_dir="${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/tools"
+        if [ -x "$tools_dir/wallpaper-picker.py" ]; then
+            exec "$tools_dir/wallpaper-picker.py"
+        fi
+        exec python3 "$tools_dir/wallpaper-picker.py"
+        ;;
+    radial-launcher)
+        tools_dir="${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/tools"
+        if [ -x "$tools_dir/orbit-launcher.py" ]; then
+            exec "$tools_dir/orbit-launcher.py"
+        fi
+        exec python3 "$tools_dir/orbit-launcher.py"
+        ;;
     *)
         echo "Unknown shell action: $action" >&2
-        echo "Usage: $0 {launcher|session|settings|clipboard|lock|wallpaper-random}" >&2
+        echo "Usage: $0 {launcher|session|settings|clipboard|lock|wallpaper-random|wallpaper-picker|radial-launcher}" >&2
         exit 1
         ;;
 esac

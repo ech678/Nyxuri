@@ -47,8 +47,11 @@ def _base_deploy_ignore_factory(
 
     def _ignore(src_dir, names):
         skip = {n for n in names if n in ("__pycache__", ".module.toml")}
-        if Path(src_dir) == root and "presets" in names:
-            skip.add("presets")
+        if Path(src_dir) == root:
+            if "presets" in names:
+                skip.add("presets")
+            if "__presets__" in names:
+                skip.add("__presets__")
 
         cur_dir = Path(src_dir)
         for name in names:
@@ -81,14 +84,17 @@ def _deploy_ignore_factory(root_src: Path):
 
     - .module.toml: self-describing manifest (NyxNiri metadata, §10.4 boundary)
     - __pycache__: bytecode cache, never user config
-    - presets/: top-level variant source tree (only at app root, not nested)
+    - presets/ & __presets__/: top-level variant source tree (only at app root, not nested)
     """
     root = root_src
 
     def _ignore(src_dir, names):
         skip = {n for n in names if n in ("__pycache__", ".module.toml")}
-        if Path(src_dir) == root and "presets" in names:
-            skip.add("presets")
+        if Path(src_dir) == root:
+            if "presets" in names:
+                skip.add("presets")
+            if "__presets__" in names:
+                skip.add("__presets__")
         return skip
 
     return _ignore

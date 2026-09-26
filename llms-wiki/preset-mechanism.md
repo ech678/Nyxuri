@@ -22,7 +22,7 @@ deploy 时根据 active 选源目录，四条分支 + 一条冻结：
    **额外警告**（上游改名/删除信息不能被静默吞）。这是唯一 **write-before-deploy** 例外
    （dest 已空，reset 后下次自愈）。
 2. **active == "default"** → `src=app_root`（仓库默认配置）。
-3. **官方预设**（`configs/<app>/presets/<active>/` 存在）→ `src=` 该目录。
+3. **官方预设**（`configs/<app>/__presets__/<active>/` 或 `presets/<active>/` 存在）→ `src=` 该目录。
 4. **用户预设**（`~/.config/NyxNiri/presets/<app>/<active>/` 存在）→ `src=` 该目录。
    官方优先：同名时先查仓库再查用户。
 5. **找不到** → `src=None`（冻结 dest + 警告），**绝不回 default**（会静默擦用户配置）。
@@ -66,14 +66,15 @@ theme-sync / gtk 重渲染）。切个 kitty 预设不该顺带跑 fisher，无�
 
 ## 预设继承与稀疏预设（Base Overlay & Sparse Presets）
 
-三层堆叠正式落地：`configs/<app>` (Base) ← `presets/<name>` (Overlay) ← `__custom__` (Dunder) / `preserve` (Manifest)。
+三层堆叠正式落地：`configs/<app>` (Base) ← `__presets__/<name>` (Overlay) ← `__custom__` (Dunder) / `preserve` (Manifest)。
 
 - **稀疏预设 (Sparse Presets)**：预设目录只需要存放与默认配置有差异的文件（例如 Niri 的 `glow` 仅需 49 行的 `layout.kdl`，无需镜像复制 4000+ 行 Python 脚本）。未重写的文件自动从仓库底版继承。
 - **动态光晕模板解耦**：Niri 的 `glow-material-you` 由 Noctalia 原生渲染输出为独立的 `~/.config/niri/colors.kdl`，不再覆写核心布局 `layout.kdl`，亦无外部 IPC `post_hook` 副作用；`config.kdl` 中在 `layout.kdl` 之后可选加载 `include optional=true "colors.kdl"`。
+- **通用零件插槽 (`preset <app> part <slot> <name>`)**：在 `.module.toml` 中声明 `[parts.<slot>]` 规则后，支持针对具体零件目标文件（如 `effects.kdl`）独立切换对应零件，实现免重启无缝热插拔。
 - **双轴白名单保障**：
   - **预设名白名单 (`allow = ["glow", "glow-material-you"]`)**：仅列入白名单的预设开启继承；未列入的预设和未声明的应用（如 Kitty）保持 100% 独立，零配置渗透。
   - **文件白名单 (`include = ["scripts/**", "*.kdl"]`)**：仅继承白名单允许的底版文件；支持 `exclude` 黑名单进一步剔除特定文件。
-- **原子组装**：由 `atomic_replace_item(..., base_src, base_include, base_exclude)` 在 `tmp_new` 组装：先拷贝并过滤底版，再覆盖预设自身文件，最后注入 `__custom__` 与受保护文件，一次性原子 swap。
+- **原子组装**：由 `atomic_replace_item(..., base_src, base_include, base_exclude)` 在 `tmp_new` 组装：先拷贝并过滤底版，再覆盖预设自身文件，最后注入 `__custom__` 与受保护文件，一次性原子 swap。若 manifest 声明了 `preset_reload`，切换后自动触发定义的热重载指令。
 
 ## CLI
 
@@ -83,6 +84,7 @@ nyxniri preset <app> apply <name>        # 切预设（apply default = 回默认
 nyxniri preset <app> save <name>         # 当前配置存成用户预设（过滤 __custom__）
 nyxniri preset <app> edit <name>         # 在 $EDITOR 里直接改用户预设目录（改完重新 apply 生效）
 nyxniri preset <app> delete <name>       # 删用户预设（官方不能删）
+nyxniri preset <app> part <slot> <name>  # 切换通用零件插槽（如 niri 的 effects 零件）
 ```
 
 `save` 拒 `default`（保留字）、拒官方同名（官方优先）。`delete` 同样拒这两类。`edit` 也拒这两类

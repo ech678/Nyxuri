@@ -69,8 +69,6 @@ CORE_DEPS = [
     "tmux",
     "inotify-tools",
     "fzf",
-    "python-gobject",
-    "gtk-layer-shell",
     "ttf-jetbrains-mono",
     "ttf-jetbrains-mono-nerd",
     "noto-fonts-cjk",

@@ -1,0 +1,6 @@
+# kitty terminal emulator manifest
+[packages]
+repo = ["kitty"]
+
+[presets]
+reload = ["pkill", "-SIGUSR1", "-x", "kitty"]

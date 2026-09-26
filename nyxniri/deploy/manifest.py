@@ -63,6 +63,8 @@ class ModuleManifest:
     preset_standalone: List[str] = field(default_factory=list)
     preset_include: List[str] = field(default_factory=list)
     preset_exclude: List[str] = field(default_factory=list)
+    preset_reload: List[str] = field(default_factory=list)
+    parts: Dict[str, dict] = field(default_factory=dict)
 
 
 def _manifest_path(app_src: Path) -> Path:
@@ -127,6 +129,8 @@ def load_manifest(app_src: Path, is_optional: bool = False) -> ModuleManifest:
         preset_standalone=list(presets.get("standalone", packages.get("preset_standalone", []))),
         preset_include=list(presets.get("include", packages.get("preset_include", []))),
         preset_exclude=list(presets.get("exclude", packages.get("preset_exclude", []))),
+        preset_reload=list(presets.get("reload", packages.get("reload", []))),
+        parts=dict(data.get("parts", {}) or {}),
     )
 
 

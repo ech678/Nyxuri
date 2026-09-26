@@ -8,7 +8,7 @@
 |---|---|
 | `install [full\|config]`（alias `deploy`） | 部署配置（full = + 壁纸 + 模块） |
 | `update [--force\|--no-deploy] [--to <tag\|commit>]` | 拉新版本 + 线性状态迁移 (`migrations`) + 重新部署；`--to` 锁到指定版本（system 模式 → 提示 pacman） |
-| `preset <app> [list\|apply <name>\|save <name>\|edit <name>\|delete <name>]` | 切/管理预设（状态接入 `state.json` 账本） |
+| `preset <app> [list\|apply <name>\|save <name>\|edit <name>\|delete <name>\|part <slot> <name>]` | 切/管理预设与零件插槽（状态接入 `state.json` 账本） |
 
 ## 管"安装方式"的
 
@@ -28,6 +28,7 @@
 | `snapshot [note]`（alias `backup`） | 存档当前配置 |
 | `rollback [index]`（alias `restore`） | 从存档恢复 |
 | `list` | 看所有存档 |
+| `shell [get\|set <noctalia\|custom> [path]\|status]` | 查看或切换桌面外壳运行插槽（记录于 state.json 账本） |
 | `doctor` | 体检（_check_* 列表） |
 | `clean [-n] [--only <任务>]` | 缓存清理；`-n` 只预览，Fish 的 `clean` 指向此入口 |
 | `uninstall [--all\|standard\|restore\|purge]`（alias `remove`）/ `purge` | 卸载（勾选式） |

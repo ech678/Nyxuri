@@ -17,7 +17,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from nyxniri.constants import Colors
 from nyxniri.core import Environment, get_env
-from nyxniri.i18n import msg
+from nyxniri.i18n import msg, text
 
 ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 
@@ -939,20 +939,9 @@ def show_header(title: str, env: Optional[Environment] = None) -> int:
 
 # --- Component: Dual-Pane Preset Switcher (§9) ---
 class PresetSwitcher:
-    """Accordion Tree Preset Studio: flat list with expandable/collapsible app branches.
-
-    - All apps displayed in a single unified list, collapsed by default (`▸`).
-    - Pressing Enter / Space / → (or mouse click) on an App expands its presets (`▾`).
-    - Presets indented underneath with single `❯` cursor navigation.
-    - Active preset marked with pure minimal green dot `●`.
-    - Zero vertical box-drawing lines, zero cross-character misalignments.
-
-    Actions:
-      [Enter] Expand App / Apply Preset
-      [s]     Save current config to a user preset (in-place prompt)
-      [e]     Open user preset in $EDITOR
-      [d]     Delete user preset (in-place confirmation)
-      [q/Esc] Exit
+    """Dual-Pane Accordion Preset Studio:
+    Left: List of apps with active preset indicator.
+    Right: Accordion panels for Presets and Parts with in-place action handling.
     """
 
     def __init__(
@@ -963,6 +952,8 @@ class PresetSwitcher:
         on_action: Optional[Callable[[str, str, str], Optional[str]]] = None,
         title_key: str = "preset_switcher_title",
         hint_key: str = "preset_switcher_hint",
+        parts_for: Optional[Callable[[str], Dict[str, Any]]] = None,
+        active_part_for: Optional[Callable[[str, str], str]] = None,
     ):
         self.apps = apps
         self.presets_for = presets_for
@@ -970,9 +961,10 @@ class PresetSwitcher:
         self.on_action = on_action
         self.title_key = title_key
         self.hint_key = hint_key
+        self.parts_for = parts_for
+        self.active_part_for = active_part_for
 
     def _normalize_presets(self, raw_list: List[Any]) -> List[Tuple[str, str, bool]]:
-        """Normalize (name, is_active) or (name, source, is_active) entries."""
         norm: List[Tuple[str, str, bool]] = []
         for item in raw_list:
             if len(item) == 2:
@@ -988,47 +980,89 @@ class PresetSwitcher:
         if not self.apps or not sys.stdin.isatty():
             return None
         env = get_env()
-        expanded: Set[str] = set()
-        right_cache: Dict[str, List[Tuple[str, str, bool]]] = {}
-        focus = 0
+        active_pane = "left"
+        left_focus = 0
+        right_focus = 0
+        show_inspector = False
         toast_msg: Optional[str] = None
 
-        def presets_for_app(app: str) -> List[Tuple[str, str, bool]]:
+        right_cache: Dict[str, List[Tuple[str, str, bool]]] = {}
+        parts_cache: Dict[str, Dict[str, Any]] = {}
+        expanded_slots: Dict[str, Set[str]] = {}
+
+        def get_presets(app: str) -> List[Tuple[str, str, bool]]:
             if app not in right_cache:
                 right_cache[app] = self._normalize_presets(self.presets_for(app))
             return right_cache[app]
 
-        def build_flat_list() -> List[Dict[str, Any]]:
+        def get_parts(app: str) -> Dict[str, Any]:
+            if not self.parts_for:
+                return {}
+            if app not in parts_cache:
+                parts_cache[app] = self.parts_for(app)
+            return parts_cache[app]
+
+        def get_active_part(app: str, slot: str, default: str = "default") -> str:
+            if self.active_part_for:
+                return self.active_part_for(app, slot)
+            return default
+
+        def build_right_items(app: str) -> List[Dict[str, Any]]:
             items: List[Dict[str, Any]] = []
-            for a in self.apps:
-                p_list = presets_for_app(a)
-                act_name = "default"
-                for p_n, _, is_act in p_list:
-                    if is_act:
-                        act_name = p_n
-                        break
-                is_exp = a in expanded
+            p_list = get_presets(app)
+            a_parts = get_parts(app)
+            slots = expanded_slots.setdefault(app, set())
+
+            for p_n, src, is_act in p_list:
                 items.append({
-                    "type": "app",
-                    "app": a,
-                    "active": act_name,
-                    "count": len(p_list),
-                    "is_expanded": is_exp,
+                    "type": "preset",
+                    "app": app,
+                    "name": p_n,
+                    "source": src,
+                    "is_active": is_act,
                 })
-                if is_exp:
-                    for p_n, src, is_act in p_list:
-                        items.append({
-                            "type": "preset",
-                            "app": a,
-                            "name": p_n,
-                            "source": src,
-                            "is_active": is_act,
-                        })
+
+            if a_parts:
+                for slot, s_info in a_parts.items():
+                    s_exp = slot in slots
+                    act_var = get_active_part(app, slot, s_info.get("default", "default"))
+                    items.append({
+                        "type": "part_slot",
+                        "app": app,
+                        "slot": slot,
+                        "slot_info": s_info,
+                        "active": act_var,
+                        "is_expanded": s_exp,
+                    })
+                    if s_exp:
+                        for var in s_info.get("variants", []):
+                            items.append({
+                                "type": "part_variant",
+                                "app": app,
+                                "slot": slot,
+                                "name": var,
+                                "slot_info": s_info,
+                                "is_active": (var == act_var),
+                            })
             return items
 
-        flat_items = build_flat_list()
+        def get_active_preset_name(app: str) -> str:
+            for p_n, _, is_act in get_presets(app):
+                if is_act:
+                    return p_n
+            return "default"
 
-        expand_details = False
+        def get_active_preset_focus(items: List[Dict[str, Any]]) -> int:
+            for idx, it in enumerate(items):
+                if it["type"] == "preset" and it["is_active"]:
+                    return idx
+            return 0
+
+        # Initial focus setup
+        cur_app = self.apps[left_focus]
+        right_items = build_right_items(cur_app)
+        right_focus = get_active_preset_focus(right_items)
+
         with interactive_screen(clear_first=False, mouse=True):
             while True:
                 cols, terminal_lines = shutil.get_terminal_size((80, 24))
@@ -1037,299 +1071,392 @@ class PresetSwitcher:
                 title = msg(self.title_key).strip("\n")
                 write_cleared(f"  {Colors.BOLD_WHITE}{title}{Colors.RESET}\n\n")
 
-                if not flat_items:
-                    flat_items = build_flat_list()
-                focus = max(0, min(focus, len(flat_items) - 1))
-
-                visible = max(3, terminal_lines - (24 if expand_details else 18))
-                start = max(0, min(focus - visible // 2, len(flat_items) - visible))
-                end = min(len(flat_items), start + visible)
-
-                hit_map: List[Tuple[int, int]] = []
-                hit_actions: Dict[int, str] = {}
-                cur_row = logo_rows + 3
-                if start > 0:
-                    write_cleared(f"    {Colors.DARK_GRAY}...{Colors.RESET}\n")
-                    cur_row += 1
-
-                for i in range(start, end):
-                    item = flat_items[i]
-                    if item["type"] == "app":
-                        arrow = "▾" if item["is_expanded"] else "▸"
-                        count_tag = f" ({item['count']})" if item["count"] > 1 else ""
-                        if i == focus:
-                            prefix = f"  {Colors.BOLD_CYAN}❯ {arrow}{Colors.RESET} "
-                            app_display = f"{Colors.BOLD_WHITE}{pad_display(item['app'], 28)}{Colors.RESET}"
-                        else:
-                            prefix = f"    {Colors.DARK_GRAY}{arrow}{Colors.RESET} "
-                            app_display = f"{Colors.WHITE}{pad_display(item['app'], 28)}{Colors.RESET}"
-                        status_str = f"{Colors.DARK_GRAY}{item['active']}{count_tag}{Colors.RESET}"
-                        line = f"{prefix}{app_display}  {status_str}"
-                    else:
-                        active_badge = f"  {msg('preset_status_active')}" if item["is_active"] else ""
-                        if i == focus:
-                            prefix = f"      {Colors.BOLD_CYAN}❯{Colors.RESET}   "
-                            name_display = f"{Colors.BOLD_WHITE}{pad_display(item['name'], 24)}{Colors.RESET}"
-                        else:
-                            prefix = "          "
-                            name_display = f"{Colors.WHITE}{pad_display(item['name'], 24)}{Colors.RESET}"
-                        line = f"{prefix}{name_display}{active_badge}"
-
-                    write_cleared(f"{line}\033[K\n")
-                    hit_map.append((cur_row, i))
-                    cur_row += 1
-
-                if end < len(flat_items):
-                    write_cleared(f"    {Colors.DARK_GRAY}...{Colors.RESET}\n")
-                    cur_row += 1
-
-                # Divider with vertical breathing room
-                divider_w = min(56, max(20, cols - 4))
-                write_cleared(f"\n  {Colors.DARK_GRAY}{'─' * divider_w}{Colors.RESET}\n\n")
-                cur_row += 3
-
-                # Inspector section (Details)
-                curr_item = flat_items[focus] if flat_items else None
-                if curr_item and self.info_for:
-                    cur_app = curr_item["app"]
-                    cur_preset = curr_item["name"] if curr_item["type"] == "preset" else curr_item["active"]
-                    info = self.info_for(cur_app, cur_preset)
-                    if info:
-                        write_cleared(f"  {Colors.DARK_GRAY}{msg('preset_info_source')}:{Colors.RESET} {info.path}\033[K\n\n")
-                        cur_row += 2
-
-                        # Included Files (independent line, collapsible)
-                        f_cnt = len(info.files)
-                        f_arrow = "▾" if expand_details else "▸"
-                        write_cleared(f"  {Colors.WHITE}{f_arrow} {msg('preset_info_files')} ({f_cnt}){Colors.RESET}\033[K\n")
-                        hit_actions[cur_row] = "toggle_details"
-                        cur_row += 1
-
-                        if expand_details:
-                            if info.files:
-                                for f_name in info.files:
-                                    write_cleared(f"      {Colors.DARK_GRAY}·{Colors.RESET} {Colors.WHITE}{f_name}{Colors.RESET}\033[K\n")
-                                    cur_row += 1
-                            else:
-                                write_cleared(f"      {Colors.DARK_GRAY}· {msg('preset_info_none')}{Colors.RESET}\033[K\n")
-                                cur_row += 1
-                            write_cleared("\n")
-                            cur_row += 1
-
-                        # Preserved Files (independent line, collapsible)
-                        p_cnt = len(info.preserve)
-                        p_arrow = "▾" if expand_details else "▸"
-                        write_cleared(f"  {Colors.WHITE}{p_arrow} {msg('preset_info_preserve')} ({p_cnt}){Colors.RESET}\033[K\n")
-                        hit_actions[cur_row] = "toggle_details"
-                        cur_row += 1
-
-                        if expand_details:
-                            if info.preserve:
-                                for p_name in info.preserve:
-                                    write_cleared(f"      {Colors.DARK_GRAY}·{Colors.RESET} {Colors.YELLOW}{p_name}{Colors.RESET}\033[K\n")
-                                    cur_row += 1
-                            else:
-                                write_cleared(f"      {Colors.DARK_GRAY}· {msg('preset_info_none')}{Colors.RESET}\033[K\n")
-                                cur_row += 1
-                    else:
-                        write_cleared("\n\n\n")
+                left_focus = max(0, min(left_focus, len(self.apps) - 1))
+                cur_app = self.apps[left_focus]
+                right_items = build_right_items(cur_app)
+                if right_items:
+                    right_focus = max(0, min(right_focus, len(right_items) - 1))
                 else:
-                    write_cleared("\n\n\n")
+                    right_focus = 0
 
-                # Action Bar / Toast feedback
+                left_w = min(32, max(22, cols // 3))
+                sep = f" {Colors.DARK_GRAY}│{Colors.RESET} "
+                sep_display_w = 3
+                right_w = max(24, cols - left_w - sep_display_w - 4)
+                content_rows = max(5, terminal_lines - logo_rows - 7)
+
+                left_start = max(0, min(left_focus - content_rows // 2, len(self.apps) - content_rows))
+                left_end = min(len(self.apps), left_start + content_rows)
+
+                left_lines: List[str] = []
+                l_hdr_color = Colors.BOLD_CYAN if active_pane == "left" else Colors.DARK_GRAY
+                left_header = f"{l_hdr_color}[{text('应用列表', 'Applications')}]{Colors.RESET}"
+                left_lines.append(pad_display(left_header, left_w))
+
+                for idx in range(left_start, left_end):
+                    a_name = self.apps[idx]
+                    p_list = get_presets(a_name)
+                    act_name = "default"
+                    for p_n, _, is_act in p_list:
+                        if is_act:
+                            act_name = p_n
+                            break
+                    count_str = f"({len(p_list)})" if len(p_list) > 1 else ""
+
+                    is_focused_app = (idx == left_focus)
+                    if is_focused_app and active_pane == "left":
+                        ptr = f"{Colors.BOLD_CYAN}❯{Colors.RESET} "
+                        name_str = f"{Colors.BOLD_WHITE}{a_name}{Colors.RESET}"
+                        stat_str = f"{Colors.CYAN}{act_name} {count_str}{Colors.RESET}".strip()
+                    elif is_focused_app and active_pane == "right":
+                        ptr = f"{Colors.DARK_GRAY}❯{Colors.RESET} "
+                        name_str = f"{Colors.WHITE}{a_name}{Colors.RESET}"
+                        stat_str = f"{Colors.DARK_GRAY}{act_name} {count_str}{Colors.RESET}".strip()
+                    else:
+                        ptr = "  "
+                        name_str = f"{Colors.DARK_GRAY}{a_name}{Colors.RESET}"
+                        stat_str = f"{Colors.DARK_GRAY}{act_name} {count_str}{Colors.RESET}".strip()
+
+                    row_content = f"{ptr}{name_str}"
+                    avail_stat = max(0, left_w - display_width(row_content) - 1)
+                    if avail_stat > 0 and stat_str:
+                        stat_clipped = truncate_display(stat_str, avail_stat)
+                        row_content = f"{row_content}{' ' * (avail_stat - display_width(stat_clipped))}{stat_clipped}"
+                    left_lines.append(pad_display(row_content, left_w))
+
+                right_lines: List[str] = []
+                r_hdr_color = Colors.BOLD_CYAN if active_pane == "right" else Colors.DARK_GRAY
+                right_header = f"{r_hdr_color}[{text('配置详情 · ', 'Details · ')}{cur_app}]{Colors.RESET}"
+                right_lines.append(pad_display(right_header, right_w))
+
+                if show_inspector:
+                    curr_item = right_items[right_focus] if right_items else None
+                    if curr_item and curr_item["type"] in ("part_slot", "part_variant"):
+                        slot = curr_item["slot"]
+                        s_info = curr_item["slot_info"]
+                        target = s_info.get("target", "")
+                        desc = s_info.get("desc", "")
+                        variants = s_info.get("variants", [])
+                        target_disp = f"~/.config/{curr_item['app']}/{target}" if target else "-"
+                        right_lines.append(pad_display(f"{Colors.DARK_GRAY}{msg('preset_part_target')}:{Colors.RESET} {target_disp}", right_w))
+                        if desc:
+                            right_lines.append(pad_display(f"{Colors.DARK_GRAY}{msg('preset_part_desc')}:{Colors.RESET} {desc}", right_w))
+                        var_str = " · ".join(variants) if variants else msg("preset_info_none")
+                        right_lines.append(pad_display(f"{Colors.DARK_GRAY}{msg('preset_part_variants')}:{Colors.RESET} {var_str}", right_w))
+                        if curr_item["type"] == "part_variant":
+                            st_txt = msg("preset_part_status_active") if curr_item["is_active"] else msg("preset_part_status_inactive")
+                            right_lines.append(pad_display(f"{Colors.DARK_GRAY}{msg('preset_part_active')}:{Colors.RESET} {curr_item['name']} ({st_txt})", right_w))
+                        else:
+                            right_lines.append(pad_display(f"{Colors.DARK_GRAY}{msg('preset_part_active')}:{Colors.RESET} {curr_item['active']}", right_w))
+                    else:
+                        cur_preset = "default"
+                        if curr_item and curr_item["type"] == "preset":
+                            cur_preset = curr_item["name"]
+                        info = self.info_for(cur_app, cur_preset) if self.info_for else None
+                        if info:
+                            right_lines.append(pad_display(f"{Colors.DARK_GRAY}{msg('preset_info_source')}:{Colors.RESET} {info.path}", right_w))
+                            right_lines.append(pad_display(f"{Colors.DARK_GRAY}{msg('preset_info_files')} ({len(info.files)}):{Colors.RESET}", right_w))
+                            if info.files:
+                                for f_n in info.files[:max(1, content_rows - 6)]:
+                                    right_lines.append(pad_display(f"  {Colors.WHITE}· {f_n}{Colors.RESET}", right_w))
+                            else:
+                                right_lines.append(pad_display(f"  {Colors.DARK_GRAY}· {msg('preset_info_none')}{Colors.RESET}", right_w))
+                            if info.preserve:
+                                right_lines.append(pad_display(f"{Colors.DARK_GRAY}{msg('preset_info_preserve')} ({len(info.preserve)}):{Colors.RESET}", right_w))
+                                for p_n in info.preserve[:2]:
+                                    right_lines.append(pad_display(f"  {Colors.YELLOW}· {p_n}{Colors.RESET}", right_w))
+                        else:
+                            right_lines.append(pad_display(f"{Colors.DARK_GRAY}{msg('preset_info_none')}{Colors.RESET}", right_w))
+                else:
+                    right_start = max(0, min(right_focus - content_rows // 2, len(right_items) - content_rows))
+                    right_end = min(len(right_items), right_start + content_rows)
+
+                    for r_i in range(right_start, right_end):
+                        r_item = right_items[r_i]
+                        is_r_focused = (r_i == right_focus and active_pane == "right")
+                        r_ptr = f"{Colors.BOLD_CYAN}❯{Colors.RESET} " if is_r_focused else "  "
+
+                        itype = r_item["type"]
+                        if itype == "preset":
+                            badge = f"{msg('preset_status_active')}" if r_item["is_active"] else ""
+                            p_name = r_item["name"]
+                            if is_r_focused:
+                                p_display = f"{r_ptr}{Colors.BOLD_WHITE}{p_name}{Colors.RESET}"
+                            else:
+                                p_color = Colors.WHITE if r_item["is_active"] else Colors.DARK_GRAY
+                                p_display = f"{r_ptr}{p_color}{p_name}{Colors.RESET}"
+                            avail = max(0, right_w - display_width(p_display) - display_width(badge))
+                            r_text = f"{p_display}{' ' * avail}{badge}"
+                        elif itype == "part_slot":
+                            arrow = "▾" if r_item["is_expanded"] else "▸"
+                            s_label = f"{arrow} {msg('preset_part_slot_label')} · {r_item['slot']}"
+                            act_tag = f"{Colors.DARK_GRAY}{r_item['active']}{Colors.RESET}"
+                            if is_r_focused:
+                                s_display = f"{r_ptr}{Colors.BOLD_WHITE}{s_label}{Colors.RESET}"
+                            else:
+                                s_display = f"{r_ptr}{Colors.DARK_GRAY}{s_label}{Colors.RESET}"
+                            avail = max(0, right_w - display_width(s_display) - display_width(act_tag))
+                            r_text = f"{s_display}{' ' * avail}{act_tag}"
+                        elif itype == "part_variant":
+                            badge = f"{msg('preset_status_active')}" if r_item["is_active"] else ""
+                            v_name = r_item["name"]
+                            if is_r_focused:
+                                v_display = f"{r_ptr}  {Colors.BOLD_WHITE}{v_name}{Colors.RESET}"
+                            else:
+                                v_color = Colors.WHITE if r_item["is_active"] else Colors.DARK_GRAY
+                                v_display = f"{r_ptr}  {v_color}{v_name}{Colors.RESET}"
+                            avail = max(0, right_w - display_width(v_display) - display_width(badge))
+                            r_text = f"{v_display}{' ' * avail}{badge}"
+                        else:
+                            r_text = ""
+
+                        right_lines.append(pad_display(r_text, right_w))
+
+                max_lines = max(len(left_lines), len(right_lines))
+                for row_idx in range(max_lines):
+                    l_str = left_lines[row_idx] if row_idx < len(left_lines) else pad_display("", left_w)
+                    r_str = right_lines[row_idx] if row_idx < len(right_lines) else pad_display("", right_w)
+                    write_cleared(f"  {l_str}{sep}{r_str}\033[K\n")
+
+                write_cleared(f"\n  {Colors.DARK_GRAY}{'─' * min(cols - 4, 76)}{Colors.RESET}\n")
+                if self.info_for and not show_inspector:
+                    act_preset = get_active_preset_name(cur_app)
+                    info = self.info_for(cur_app, act_preset)
+                    if info:
+                        f_count = len(info.files)
+                        p_count = len(info.preserve)
+                        meta_text = f"{text('源', 'Source')}: {info.path} · {f_count} {text('包含文件', 'included')} · {p_count} {text('保留文件', 'preserved')}"
+                        write_cleared(f"  {Colors.DARK_GRAY}{truncate_display(meta_text, cols - 6)}{Colors.RESET}\033[K\n")
+                    else:
+                        write_cleared(f"  \033[K\n")
+                else:
+                    write_cleared(f"  \033[K\n")
+
                 if toast_msg:
-                    write_cleared(f"\n  {toast_msg}\033[K\n")
+                    write_cleared(f"  {toast_msg}\033[K\n")
                 else:
                     hint = responsive_hint(self.hint_key).strip("\n")
-                    write_cleared(f"\n{hint}\033[K\n")
+                    write_cleared(f"{hint}\033[K\n")
 
                 sys.stdout.write("\033[J")
                 sys.stdout.flush()
 
                 key = read_key()
 
-                # Mouse handling
                 if isinstance(key, MouseEvent):
-                    if key.kind in ("WHEEL_UP", "WHEEL_DOWN"):
-                        delta = -1 if key.kind == "WHEEL_UP" else 1
-                        focus = (focus + delta) % len(flat_items)
+                    if key.kind == "WHEEL_UP":
+                        if active_pane == "left":
+                            left_focus = (left_focus - 1) % len(self.apps)
+                            cur_app = self.apps[left_focus]
+                            right_focus = get_active_preset_focus(build_right_items(cur_app))
+                        else:
+                            if right_items:
+                                right_focus = (right_focus - 1) % len(right_items)
+                        toast_msg = None
+                    elif key.kind == "WHEEL_DOWN":
+                        if active_pane == "left":
+                            left_focus = (left_focus + 1) % len(self.apps)
+                            cur_app = self.apps[left_focus]
+                            right_focus = get_active_preset_focus(build_right_items(cur_app))
+                        else:
+                            if right_items:
+                                right_focus = (right_focus + 1) % len(right_items)
                         toast_msg = None
                     elif key.kind == "PRESS":
-                        if key.row in hit_actions:
-                            if hit_actions[key.row] == "toggle_details":
-                                expand_details = not expand_details
-                                continue
-                        hit_i = next((i for (r, i) in hit_map if r == key.row), None)
-                        if hit_i is not None and 0 <= hit_i < len(flat_items):
-                            focus = hit_i
-                            hit_item = flat_items[hit_i]
-                            if hit_item["type"] == "app":
-                                a = hit_item["app"]
-                                if not self.on_action:
-                                    return (a, hit_item["active"])
-                                if a in expanded:
-                                    expanded.remove(a)
-                                else:
-                                    expanded.add(a)
-                                flat_items = build_flat_list()
-                            elif hit_item["type"] == "preset":
-                                a = hit_item["app"]
-                                p_n = hit_item["name"]
-                                if self.on_action:
-                                    toast_msg = self.on_action("apply", a, p_n)
-                                    if a in right_cache:
-                                        del right_cache[a]
-                                    flat_items = build_flat_list()
-                                else:
-                                    return (a, p_n)
+                        data_start_row = logo_rows + 3
+                        data_row = key.row - data_start_row
+                        if 0 <= data_row < content_rows:
+                            if key.col <= left_w + 3:
+                                target_app_idx = left_start + data_row
+                                if 0 <= target_app_idx < len(self.apps):
+                                    left_focus = target_app_idx
+                                    cur_app = self.apps[left_focus]
+                                    right_focus = get_active_preset_focus(build_right_items(cur_app))
+                                    if not self.on_action:
+                                        return (cur_app, get_active_preset_name(cur_app))
+                                    else:
+                                        active_pane = "left"
+                            else:
+                                target_r_idx = right_start + data_row
+                                if 0 <= target_r_idx < len(right_items):
+                                    right_focus = target_r_idx
+                                    r_it = right_items[right_focus]
+                                    if r_it["type"] == "preset":
+                                        if not self.on_action:
+                                            return (cur_app, r_it["name"])
+                                        else:
+                                            toast_msg = self.on_action("apply", cur_app, r_it["name"])
+                                            if cur_app in right_cache:
+                                                del right_cache[cur_app]
+                                    elif r_it["type"] == "part_variant":
+                                        slot_n = r_it["slot"]
+                                        var_n = r_it["name"]
+                                        if not self.on_action:
+                                            return (cur_app, f"{slot_n}:{var_n}")
+                                        else:
+                                            toast_msg = self.on_action("apply_part", cur_app, f"{slot_n}:{var_n}")
+                                            if cur_app in parts_cache:
+                                                del parts_cache[cur_app]
+                                    elif r_it["type"] == "part_slot":
+                                        slot_n = r_it["slot"]
+                                        slots = expanded_slots.setdefault(cur_app, set())
+                                        if slot_n in slots:
+                                            slots.remove(slot_n)
+                                        else:
+                                            slots.add(slot_n)
                     continue
 
-                # Keyboard handling
-                if key in ("TAB", "\t", "i", "I"):
-                    expand_details = not expand_details
-                    toast_msg = None
-                elif key in ("UP", "k", "K"):
-                    focus = (focus - 1) % len(flat_items)
-                    toast_msg = None
-                elif key in ("DOWN", "j", "J"):
-                    focus = (focus + 1) % len(flat_items)
-                    toast_msg = None
-                elif key in ("PAGEUP",):
-                    focus = max(0, focus - visible)
-                    toast_msg = None
-                elif key in ("PAGEDOWN",):
-                    focus = min(len(flat_items) - 1, focus + visible)
-                    toast_msg = None
-                elif key in ("HOME", "g"):
-                    focus = 0
-                    toast_msg = None
-                elif key in ("END", "G"):
-                    focus = len(flat_items) - 1
-                    toast_msg = None
-                elif key in ("RIGHT", "l", "L"):
-                    toast_msg = None
-                    if curr_item and curr_item["type"] == "app":
-                        a = curr_item["app"]
-                        if a not in expanded:
-                            expanded.add(a)
-                            flat_items = build_flat_list()
-                        target_focus = None
-                        for i_f, it in enumerate(flat_items):
-                            if it["type"] == "preset" and it["app"] == a:
-                                if target_focus is None:
-                                    target_focus = i_f
-                                if it["is_active"]:
-                                    target_focus = i_f
-                                    break
-                        if target_focus is not None:
-                            focus = target_focus
-                elif key in ("LEFT", "h", "H"):
-                    toast_msg = None
-                    if curr_item:
-                        if curr_item["type"] == "preset":
-                            for i_f, it in enumerate(flat_items):
-                                if it["type"] == "app" and it["app"] == curr_item["app"]:
-                                    focus = i_f
-                                    break
-                        elif curr_item["type"] == "app" and curr_item["app"] in expanded:
-                            expanded.remove(curr_item["app"])
-                            flat_items = build_flat_list()
-                elif key in ("ENTER", "SPACE"):
-                    if not curr_item:
-                        continue
-                    if curr_item["type"] == "app":
-                        a = curr_item["app"]
-                        if not self.on_action:
-                            return (a, curr_item["active"])
-                        if a in expanded:
-                            expanded.remove(a)
-                            flat_items = build_flat_list()
-                        else:
-                            expanded.add(a)
-                            flat_items = build_flat_list()
-                            target_focus = None
-                            for i_f, it in enumerate(flat_items):
-                                if it["type"] == "preset" and it["app"] == a:
-                                    if target_focus is None:
-                                        target_focus = i_f
-                                    if it["is_active"]:
-                                        target_focus = i_f
-                                        break
-                            if target_focus is not None:
-                                focus = target_focus
-                    elif curr_item["type"] == "preset":
-                        a = curr_item["app"]
-                        p_n = curr_item["name"]
-                        if self.on_action:
-                            toast_msg = self.on_action("apply", a, p_n)
-                            if a in right_cache:
-                                del right_cache[a]
-                            flat_items = build_flat_list()
-                        else:
-                            return (a, p_n)
-                elif key in ("s", "S"):
-                    if not curr_item:
-                        continue
-                    cur_app = curr_item["app"]
+                if key in ("s", "S"):
                     prompt = f"  {Colors.BOLD_CYAN}{msg('preset_prompt_save_name')}{Colors.RESET}"
                     save_name = self._read_line_raw(prompt)
-                    if save_name:
-                        if self.on_action:
-                            toast_msg = self.on_action("save", cur_app, save_name)
-                            if cur_app in right_cache:
-                                del right_cache[cur_app]
-                            expanded.add(cur_app)
-                            flat_items = build_flat_list()
-                            for i_f, it in enumerate(flat_items):
-                                if it["type"] == "preset" and it["app"] == cur_app and it["name"] == save_name:
-                                    focus = i_f
-                                    break
+                    if save_name and self.on_action:
+                        toast_msg = self.on_action("save", cur_app, save_name)
+                        if cur_app in right_cache:
+                            del right_cache[cur_app]
                 elif key in ("e", "E"):
-                    if not curr_item:
-                        continue
-                    if curr_item["type"] == "preset":
-                        cur_app = curr_item["app"]
-                        cur_preset = curr_item["name"]
+                    curr_item = right_items[right_focus] if (right_items and active_pane == "right") else None
+                    p_name = curr_item["name"] if (curr_item and curr_item["type"] == "preset") else get_active_preset_name(cur_app)
+                    if p_name:
                         if self.info_for:
-                            info = self.info_for(cur_app, cur_preset)
+                            info = self.info_for(cur_app, p_name)
                             if info and not info.is_editable:
-                                toast_msg = msg("preset_edit_official_denied", cur_preset)
+                                toast_msg = msg("preset_edit_official_denied", p_name)
                                 continue
                         if self.on_action:
-                            toast_msg = self.on_action("edit", cur_app, cur_preset)
+                            toast_msg = self.on_action("edit", cur_app, p_name)
                             if cur_app in right_cache:
                                 del right_cache[cur_app]
-                            flat_items = build_flat_list()
-                    else:
-                        toast_msg = msg("preset_edit_official_denied", curr_item["active"])
                 elif key in ("d", "D"):
-                    if not curr_item:
-                        continue
-                    if curr_item["type"] == "preset":
-                        cur_app = curr_item["app"]
-                        cur_preset = curr_item["name"]
+                    curr_item = right_items[right_focus] if (right_items and active_pane == "right") else None
+                    p_name = curr_item["name"] if (curr_item and curr_item["type"] == "preset") else get_active_preset_name(cur_app)
+                    if p_name:
                         if self.info_for:
-                            info = self.info_for(cur_app, cur_preset)
+                            info = self.info_for(cur_app, p_name)
                             if info and not info.is_deletable:
-                                toast_msg = msg("preset_delete_official_denied", cur_preset)
+                                toast_msg = msg("preset_delete_official_denied", p_name)
                                 continue
-                        prompt = f"  {Colors.BOLD_YELLOW}{msg('preset_prompt_delete_confirm', cur_preset)}{Colors.RESET}"
+                        prompt = f"  {Colors.BOLD_YELLOW}{msg('preset_prompt_delete_confirm', p_name)}{Colors.RESET}"
                         sys.stdout.write(f"\r\033[K{prompt}")
                         sys.stdout.flush()
                         confirm_key = read_key()
                         if confirm_key in ("y", "Y"):
                             if self.on_action:
-                                toast_msg = self.on_action("delete", cur_app, cur_preset)
+                                toast_msg = self.on_action("delete", cur_app, p_name)
                                 if cur_app in right_cache:
                                     del right_cache[cur_app]
-                                flat_items = build_flat_list()
-                                focus = min(focus, max(0, len(flat_items) - 1))
+                                right_focus = max(0, right_focus - 1)
                         else:
                             toast_msg = msg("delete_cancelled")
-                    else:
-                        toast_msg = msg("preset_delete_official_denied", curr_item["active"])
-                elif key in ("0", "q", "Q", "ESC", "EXIT"):
-                    return None
+                elif key in ("TAB", "\t"):
+                    active_pane = "right" if active_pane == "left" else "left"
+                    toast_msg = None
+                elif key in ("i", "I"):
+                    show_inspector = not show_inspector
+                    toast_msg = None
+                elif active_pane == "left":
+                    if key in ("UP", "k", "K"):
+                        left_focus = (left_focus - 1) % len(self.apps)
+                        cur_app = self.apps[left_focus]
+                        right_focus = get_active_preset_focus(build_right_items(cur_app))
+                        toast_msg = None
+                    elif key in ("DOWN", "j", "J"):
+                        left_focus = (left_focus + 1) % len(self.apps)
+                        cur_app = self.apps[left_focus]
+                        right_focus = get_active_preset_focus(build_right_items(cur_app))
+                        toast_msg = None
+                    elif key in ("RIGHT", "l", "L"):
+                        active_pane = "right"
+                        toast_msg = None
+                    elif key in ("ENTER", "SPACE"):
+                        if not self.on_action:
+                            return (cur_app, get_active_preset_name(cur_app))
+                        else:
+                            active_pane = "right"
+                            toast_msg = None
+                    elif key in ("q", "Q", "ESC", "EXIT"):
+                        return None
+                elif active_pane == "right":
+                    curr_item = right_items[right_focus] if right_items else None
+                    if key in ("UP", "k", "K"):
+                        if right_items:
+                            right_focus = (right_focus - 1) % len(right_items)
+                        toast_msg = None
+                    elif key in ("DOWN", "j", "J"):
+                        if right_items:
+                            right_focus = (right_focus + 1) % len(right_items)
+                        toast_msg = None
+                    elif key in ("LEFT", "h", "H"):
+                        if curr_item and curr_item["type"] == "part_variant":
+                            target_idx = None
+                            for p_idx in range(right_focus - 1, -1, -1):
+                                if right_items[p_idx]["type"] == "part_slot" and right_items[p_idx]["slot"] == curr_item["slot"]:
+                                    target_idx = p_idx
+                                    break
+                            if target_idx is not None:
+                                right_focus = target_idx
+                            else:
+                                active_pane = "left"
+                        elif curr_item and curr_item["type"] == "part_slot":
+                            slot_name = curr_item["slot"]
+                            slots = expanded_slots.setdefault(cur_app, set())
+                            if slot_name in slots:
+                                slots.remove(slot_name)
+                            else:
+                                active_pane = "left"
+                        else:
+                            active_pane = "left"
+                        toast_msg = None
+                    elif key in ("RIGHT", "l", "L"):
+                        if curr_item and curr_item["type"] == "part_slot":
+                            slot_name = curr_item["slot"]
+                            slots = expanded_slots.setdefault(cur_app, set())
+                            if slot_name not in slots:
+                                slots.add(slot_name)
+                                new_items = build_right_items(cur_app)
+                                act_var = curr_item["active"]
+                                for v_idx, v_it in enumerate(new_items):
+                                    if v_it["type"] == "part_variant" and v_it["slot"] == slot_name:
+                                        right_focus = v_idx
+                                        if v_it["name"] == act_var:
+                                            break
+                        toast_msg = None
+                    elif key in ("ENTER", "SPACE"):
+                        if not curr_item:
+                            continue
+                        itype = curr_item["type"]
+                        if itype == "part_slot":
+                            slot_name = curr_item["slot"]
+                            slots = expanded_slots.setdefault(cur_app, set())
+                            if slot_name in slots:
+                                slots.remove(slot_name)
+                            else:
+                                slots.add(slot_name)
+                                new_items = build_right_items(cur_app)
+                                act_var = curr_item["active"]
+                                for v_idx, v_it in enumerate(new_items):
+                                    if v_it["type"] == "part_variant" and v_it["slot"] == slot_name:
+                                        right_focus = v_idx
+                                        if v_it["name"] == act_var:
+                                            break
+                        elif itype == "preset":
+                            p_name = curr_item["name"]
+                            if self.on_action:
+                                toast_msg = self.on_action("apply", cur_app, p_name)
+                                if cur_app in right_cache:
+                                    del right_cache[cur_app]
+                            else:
+                                return (cur_app, p_name)
+                        elif itype == "part_variant":
+                            slot_name = curr_item["slot"]
+                            v_name = curr_item["name"]
+                            if self.on_action:
+                                toast_msg = self.on_action("apply_part", cur_app, f"{slot_name}:{v_name}")
+                                if cur_app in parts_cache:
+                                    del parts_cache[cur_app]
+                            else:
+                                return (cur_app, f"{slot_name}:{v_name}")
+                    elif key in ("q", "Q", "ESC", "EXIT"):
+                        return None
 
     def _read_line_raw(self, prompt_str: str) -> Optional[str]:
         """Read a line of text in raw mode with backspace support."""

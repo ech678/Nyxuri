@@ -63,14 +63,19 @@ def ensure_aur_helper() -> Optional[str]:
         print(msg("aur_bootstrap_failed"))
         return None
 
-    res = pkg.run(["pacman", "-Si", "paru"], capture=True, timeout=pkg.QUERY_TIMEOUT)
-    if res.returncode == 0:
-        print(msg("aur_bootstrap_repo"))
-        if pkg.install(["paru"], manager="pacman"):
-            helper = aur_helper_usable()
-            if helper:
-                print(msg("aur_bootstrap_ok"))
-                return helper
+    from pathlib import Path
+    is_cachyos = Path("/etc/cachyos-release").is_file()
+    candidates = ["shelly", "paru"] if is_cachyos else ["paru"]
+
+    for cand in candidates:
+        res = pkg.run(["pacman", "-Si", cand], capture=True, timeout=pkg.QUERY_TIMEOUT)
+        if res.returncode == 0:
+            print(msg("aur_bootstrap_repo"))
+            if pkg.install([cand], manager="pacman"):
+                helper = aur_helper_usable()
+                if helper:
+                    print(msg("aur_bootstrap_ok"))
+                    return helper
 
     print(msg("aur_bootstrap_failed"))
     return None

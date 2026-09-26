@@ -1,20 +1,4 @@
-window-rule {
-    geometry-corner-radius 12
-    clip-to-geometry true
-    draw-border-with-background false
-}
-
 layout {
-    background-color "transparent"
-    gaps 12
-    center-focused-column "never"
-    always-center-single-column
-    preset-column-widths {
-        proportion 0.33333
-        proportion 0.5
-        proportion 0.66667
-    }
-    default-column-width { proportion 0.5; }
     focus-ring {
         width 2
         active-color "{{ colors.primary.default.hex }}"
@@ -39,3 +23,4 @@ layout {
         color "{{ colors.primary.default.hex }}80"
     }
 }
+

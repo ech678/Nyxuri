@@ -294,7 +294,7 @@ def preset_switcher_loop() -> None:
         print(msg("interactive_terminal_required"), file=sys.stderr)
         return
 
-    from nyxniri.deploy.preset import get_preset_info
+    from nyxniri.deploy.preset import get_preset_info, list_parts, get_active_part, apply_part
 
     apps = discover_config_items()
 
@@ -302,6 +302,10 @@ def preset_switcher_loop() -> None:
         if action == "apply":
             ok = apply_preset(app, name)
             return msg("preset_toast_applied", app, name) if ok else msg("preset_apply_failed", app, name)
+        elif action == "apply_part":
+            slot, variant = name.split(":", 1)
+            ok = apply_part(app, slot, variant)
+            return msg("preset_part_toast_applied", app, slot, variant) if ok else msg("preset_apply_failed", app, f"{slot}:{variant}")
         elif action == "save":
             ok = save_preset(app, name)
             return msg("preset_toast_saved", app, name) if ok else None
@@ -318,6 +322,8 @@ def preset_switcher_loop() -> None:
         presets_for=collect_presets,
         info_for=get_preset_info,
         on_action=on_action,
+        parts_for=list_parts,
+        active_part_for=get_active_part,
     ).run()
 
 

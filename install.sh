@@ -111,18 +111,19 @@ engine_is_complete() {
     [ -f "$target_dir/install.sh" ] || return 1
     [ -f "$target_dir/nyxniri/translations.toml" ] || return 1
     # Top-level engine modules (infrastructure + entrypoints, §13)
-    for module in __init__ __main__ clean cli constants core deps doctor i18n menus network tui workflows; do
+    for module in __init__ __main__ clean cli constants core deps doctor i18n menus network template_registry theme tui workflows; do
         [ -f "$target_dir/nyxniri/$module.py" ] || return 1
     done
     # deploy/ subpackage (atomic · manifest · templates · assets · hardware · preset · deploy)
     for module in __init__ atomic assets deploy hardware manifest preset templates; do
         [ -f "$target_dir/nyxniri/deploy/$module.py" ] || return 1
     done
-    # state/ subpackage (backup · uninstall)
+    # pkg/ subpackage (cli · detection)
     for module in __init__ cli detection; do
         [ -f "$target_dir/nyxniri/pkg/$module.py" ] || return 1
     done
-    for module in __init__ backup uninstall; do
+    # state/ subpackage (backup · ledger · uninstall)
+    for module in __init__ backup ledger uninstall; do
         [ -f "$target_dir/nyxniri/state/$module.py" ] || return 1
     done
     # modules/ subpackage (fcitx · fisher · greeter · gtktheme)

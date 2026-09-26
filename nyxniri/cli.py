@@ -155,9 +155,10 @@ def _cmd_test(sub_args: List[str]) -> int:
 
 
 def _cmd_preset(sub_args: List[str]) -> int:
-    """nyxniri preset <app> [list|apply <name>|save <name>|edit <name>|delete <name>]"""
+    """nyxniri preset <app> [list|apply <name>|save <name>|edit <name>|delete <name>|parts|part <slot> <name>]"""
+    usage = f"{CLI_CMD} preset <app> [list|apply <name>|save <name>|edit <name>|delete <name>|parts|part <slot> <name>]"
     if len(sub_args) < 2:
-        exit_usage(f"{CLI_CMD} preset <app> [list|apply <name>|save <name>|edit <name>|delete <name>]")
+        exit_usage(usage)
     app = sub_args[0]
     action = sub_args[1]
     name = sub_args[2] if len(sub_args) > 2 else ""
@@ -166,12 +167,43 @@ def _cmd_preset(sub_args: List[str]) -> int:
             exit_usage(f"{CLI_CMD} preset {app} list")
         list_presets(app)
         return 0
+    if action == "parts":
+        if len(sub_args) > 2:
+            exit_usage(f"{CLI_CMD} preset {app} parts")
+        from nyxniri.deploy.preset import list_parts
+        from nyxniri.state.ledger import read_ledger
+        slots = list_parts(app)
+        if not slots:
+            print(f"[!] {app} 暂无可用零件插槽")
+            return 0
+        current_parts = read_ledger().get("parts", {})
+        print(f"\n── {app} 零件插槽 ──\n")
+        for slot, info in slots.items():
+            curr = current_parts.get(f"{app}:{slot}", info.get("default", "default"))
+            print(f"  [{slot}] 目标: {info.get('target', '')} (当前: {curr})")
+            for var in info.get("variants", []):
+                mark = "*" if var == curr else " "
+                print(f"    {mark} {var}")
+        print()
+        return 0
+    if action == "part":
+        if len(sub_args) != 4:
+            exit_usage(f"{CLI_CMD} preset {app} part <slot> <name>")
+        slot = sub_args[2]
+        part_name = sub_args[3]
+        from nyxniri.deploy.preset import apply_part
+        if apply_part(app, slot, part_name):
+            print(f"[✓] 已切换 {app} 零件 [{slot}]: {part_name}")
+            return 0
+        else:
+            print(f"[✗] 切换 {app} 零件 [{slot}]: {part_name} 失败")
+            return 1
     if action in ("apply", "save", "edit", "delete"):
         if not name or len(sub_args) > 3:
             exit_usage(f"{CLI_CMD} preset {app} {action} <name>")
         fn = {"apply": apply_preset, "save": save_preset, "edit": edit_preset, "delete": delete_preset}[action]
         return 0 if fn(app, name) else 1
-    exit_usage(f"{CLI_CMD} preset {app} [list|apply <name>|save <name>|edit <name>|delete <name>]")
+    exit_usage(usage)
 
 
 def _module_handler(module_name: str, triad_name: str):
@@ -224,6 +256,46 @@ def _cmd_theme(sub_args: List[str]) -> int:
     if sub == "status":
         return status()
     return sync(sub)
+
+
+def _cmd_shell(sub_args: List[str]) -> int:
+    sub = sub_args[0] if sub_args else "status"
+    usage = f"{CLI_CMD} shell [get|set <noctalia|custom> [bin_path]|status]"
+    from nyxniri.state.ledger import active_shell, custom_shell_bin, set_shell
+    if sub == "get":
+        if len(sub_args) > 1:
+            exit_usage(usage)
+        print(active_shell())
+        return 0
+    elif sub == "status":
+        if len(sub_args) > 1:
+            exit_usage(usage)
+        current = active_shell()
+        cbin = custom_shell_bin()
+        print(f"Active Shell: {current}")
+        if current == "custom":
+            print(f"Custom Shell Binary: {cbin or '<unset>'}")
+            if cbin and os.path.isfile(cbin) and os.access(cbin, os.X_OK):
+                print("Custom Shell Status: Ready")
+            else:
+                print("Custom Shell Status: Not executable (will fallback to Noctalia)")
+        return 0
+    elif sub == "set":
+        if len(sub_args) < 2 or len(sub_args) > 3:
+            exit_usage(usage)
+        target = sub_args[1].lower()
+        if target not in ("noctalia", "custom"):
+            exit_usage(usage)
+        bin_path = sub_args[2] if len(sub_args) > 2 else None
+        set_shell(target, bin_path)
+        print(f"Shell set to: {target}" + (f" ({bin_path})" if bin_path else ""))
+        if target == "custom":
+            cbin = custom_shell_bin()
+            if not cbin or not os.path.isfile(cbin) or not os.access(cbin, os.X_OK):
+                print(f"Notice: Custom shell binary is not executable ({cbin or 'unset'}). Specify with: {CLI_CMD} shell set custom <path>")
+        return 0
+    else:
+        exit_usage(usage)
 
 
 def _cmd_update(sub_args: List[str]) -> int:
@@ -314,7 +386,7 @@ COMMANDS = {
     "bug":       (_cmd_bug,       f"{CLI_CMD} bug"),
     "report":    (_cmd_bug,       f"{CLI_CMD} bug"),
     "test":      (_cmd_test,      f"{CLI_CMD} test"),
-    "preset":    (_cmd_preset,    f"{CLI_CMD} preset <app> [list|apply <name>|save <name>|edit <name>|delete <name>]"),
+    "preset":    (_cmd_preset,    f"{CLI_CMD} preset <app> [list|apply <name>|save <name>|edit <name>|delete <name>|parts|part <slot> <name>]"),
     "greeter":   (_module_handler("greeter", "greeter"),
                   f"{CLI_CMD} greeter [install|status|uninstall]"),
     "fcitx":     (_module_handler("fcitx", "fcitx"),
@@ -324,6 +396,7 @@ COMMANDS = {
     "fisher":    (_module_handler("fisher", "fisher"),
                   f"{CLI_CMD} fisher [install|status|uninstall]"),
     "theme":     (_cmd_theme,     f"{CLI_CMD} theme [toggle|dark|light|sync|status]"),
+    "shell":     (_cmd_shell,     f"{CLI_CMD} shell [get|set <noctalia|custom> [path]|status]"),
     "update":    (_cmd_update,    f"{CLI_CMD} update [--force|--no-deploy] [--to <tag|commit>]"),
     "help":      (_cmd_help,      f"{CLI_CMD} help"),
     "-h":        (_cmd_help,      f"{CLI_CMD} help"),

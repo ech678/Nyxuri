@@ -37,7 +37,7 @@
 - **Eye Care** (`Super+N`) — warmer color temperature, no blur, opaque windows.
 - **Scratchpad** (`Super+~`) — persistent Kitty floating terminal.
 - **Orbit Launcher** (`Super+A` / `Super+MouseForward`) — vector radial; apps, tools, links, AI/search dial (TOML-configurable).
-- **Shell & Terminal** — Fish aliases for proxy/cache, Kitty cursor trails, Windows-style shortcuts.
+- **Shell & Terminal** — Fish aliases for proxy/cache, Kitty cursor trails, Windows-familiar shortcuts (smart Ctrl+C/Ctrl+V, right-click paste, selection without overriding clipboard).
 - **NyxMellow** — dynamic fcitx5 skin: mellow geometry + Noctalia Material You palette.
 - **Presets** — per-app flavor variants (e.g. kitty transparent); switch with one command, save your setup as a private preset, or edit it in `$EDITOR`.
 
@@ -53,7 +53,7 @@ curl -fsSL --connect-timeout 10 https://raw.githubusercontent.com/ech678/NyxNiri
 ```
 
 > [!TIP]
-> Without an AUR helper, `nyxniri install full` can bootstrap `paru` for you.
+> Auto-detects Shelly, paru, and yay; if none are installed, `nyxniri install full` automatically bootstraps `paru`.
 
 ### From a git checkout (recommended)
 
@@ -132,7 +132,9 @@ Built-in official presets:
 - **`niri`**:
   - `default`: minimalist frameless look (default)
   - `glow`: enables 2px outline and 28px soft diffused ambient glow (improves focus visibility across tiled windows)
-  - `glow-material-you`: focus glow follows Noctalia's current Material You palette
+  - `glow-material-you`: focus glow follows Noctalia's active Material You wallpaper palette (dynamically re-rendered in real time)
+
+The preset architecture also supports modular Parts slots (e.g. `glow` and `effects` in `niri`), allowing full preset switching as well as granular piece-by-piece overlay.
 
 | Command | Description |
 | :--- | :--- |

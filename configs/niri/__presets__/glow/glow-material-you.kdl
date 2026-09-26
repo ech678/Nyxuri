@@ -1,0 +1,4 @@
+// Niri Glow Part: Material You Dynamic Glow
+// Dynamically rendered by Noctalia to colors.kdl based on wallpaper palette
+include optional=true "colors.kdl"
+

@@ -1683,12 +1683,12 @@ zh = "预设管理"
 en = "Preset Management"
 
 [preset_switcher_hint]
-zh = "  {Colors.DARK_GRAY}[Enter] 展开/应用   [Tab] 详情   [s] 保存当前   [e] 编辑   [d] 删除   [q] 返回{Colors.RESET}"
-en = "  {Colors.DARK_GRAY}[Enter] Expand/Apply   [Tab] Details   [s] Save   [e] Edit   [d] Delete   [q] Back{Colors.RESET}"
+zh = "  {Colors.DARK_GRAY}[Enter/→] 进入右栏   [←/Esc] 返回左栏   [Tab] 双栏切换   [s] 保存   [i] 详情   [q] 退出{Colors.RESET}"
+en = "  {Colors.DARK_GRAY}[Enter/→] Enter Right   [←/Esc] Back to Left   [Tab] Switch Pane   [s] Save   [i] Details   [q] Quit{Colors.RESET}"
 
 [preset_switcher_hint_short]
-zh = "  {Colors.DARK_GRAY}[Enter] 选  [Tab] 详  [s] 存  [e] 改  [d] 删  [q] 退{Colors.RESET}"
-en = "  {Colors.DARK_GRAY}[Enter] Select  [Tab] Info  [s] Save  [e] Edit  [d] Del  [q] Back{Colors.RESET}"
+zh = "  {Colors.DARK_GRAY}[Enter/→] 进   [←] 退   [Tab] 切栏   [s] 存   [i] 详   [q] 退{Colors.RESET}"
+en = "  {Colors.DARK_GRAY}[Enter/→] Enter   [←] Back   [Tab] Switch   [s] Save   [i] Info   [q] Quit{Colors.RESET}"
 
 [preset_status_active]
 zh = "{Colors.BOLD_GREEN}●{Colors.RESET}"
@@ -1729,6 +1729,37 @@ en = "Preserved Files"
 [preset_info_none]
 zh = "(无)"
 en = "(none)"
+[preset_part_toast_applied]
+zh = "{Colors.BOLD_GREEN}[✓] 已应用 {0} 零件 [{1}]: {2}{Colors.RESET}"
+en = "{Colors.BOLD_GREEN}[✓] Applied {0} part [{1}]: {2}{Colors.RESET}"
+
+[preset_part_slot_label]
+zh = "零件"
+en = "Part"
+
+[preset_part_target]
+zh = "目标"
+en = "Target"
+
+[preset_part_desc]
+zh = "说明"
+en = "Desc"
+
+[preset_part_variants]
+zh = "选项"
+en = "Options"
+
+[preset_part_active]
+zh = "当前"
+en = "Active"
+
+[preset_part_status_active]
+zh = "生效中"
+en = "Active"
+
+[preset_part_status_inactive]
+zh = "未生效"
+en = "Inactive"
 
 [fcitx_reloaded]
 zh = "{Colors.BOLD_GREEN}[✓] fcitx5 配置已重载{Colors.RESET}"

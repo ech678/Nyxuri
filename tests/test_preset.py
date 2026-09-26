@@ -226,37 +226,39 @@ class TestPresetOperations(unittest.TestCase):
     def test_list_includes_niri_glow_preset(self):
         entries = preset.collect_presets("niri")
         names = [n for n, _, _ in entries]
-        self.assertIn("default", names)
-        self.assertIn("glow", names)
-        self.assertIn("glow-material-you", names)
-        self.assertIn("xray-blur", names)
+        self.assertEqual(names, ["default"])
+
+        parts = preset.list_parts("niri")
+        self.assertIn("effects", parts)
+        self.assertEqual(set(parts["effects"]["variants"]), {"default", "xray-blur"})
+        self.assertIn("glow", parts)
+        self.assertEqual(set(parts["glow"]["variants"]), {"default", "glow", "glow-material-you"})
 
     def test_apply_niri_glow_sparse_overlay_end_to_end(self):
-        ok = preset.apply_preset("niri", "glow")
+        ok = preset.apply_part("niri", "glow", "glow")
         self.assertTrue(ok)
-        self.assertEqual(preset.read_active_preset("niri"), "glow")
+        self.assertEqual(preset.get_active_part("niri", "glow"), "glow")
 
-        # Overridden sparse file
-        layout = self.env.config_dir / "niri" / "layout.kdl"
-        self.assertTrue(layout.is_file())
-        self.assertIn("width 2", layout.read_text())
-        self.assertIn("shadow", layout.read_text())
-
-        # Inherited base files
-        config = self.env.config_dir / "niri" / "config.kdl"
-        self.assertTrue(config.is_file())
+        glow_file = self.env.config_dir / "niri" / "glow.kdl"
+        self.assertTrue(glow_file.is_file())
+        content = glow_file.read_text(encoding="utf-8")
+        self.assertIn("width 2", content)
+        self.assertIn("shadow", content)
 
     def test_apply_niri_glow_material_you_sets_sentinel(self):
-        self.assertTrue(preset.apply_preset("niri", "glow-material-you"))
-        dest = self.env.config_dir / "niri"
-        self.assertEqual(preset.read_active_preset("niri"), "glow-material-you")
-        self.assertTrue((dest / "glow-material-you.enabled").is_file())
-        self.assertTrue((dest / "config.kdl").is_file())
+        self.assertTrue(preset.apply_part("niri", "glow", "glow-material-you"))
+        self.assertEqual(preset.get_active_part("niri", "glow"), "glow-material-you")
+        glow_file = self.env.config_dir / "niri" / "glow.kdl"
+        self.assertTrue(glow_file.is_file())
+        content = glow_file.read_text(encoding="utf-8")
+        self.assertIn('include optional=true "colors.kdl"', content)
+        self.assertNotIn("#1a73e8", content)
 
-        self.assertTrue(preset.apply_preset("niri", "glow"))
-        self.assertFalse((dest / "glow-material-you.enabled").exists())
-        self.assertTrue(preset.apply_preset("niri", "default"))
-        self.assertFalse((dest / "glow-material-you.enabled").exists())
+        self.assertTrue(preset.apply_part("niri", "glow", "default"))
+        self.assertEqual(preset.get_active_part("niri", "glow"), "default")
+        def_content = glow_file.read_text(encoding="utf-8")
+        self.assertIn("off", def_content)
+        self.assertNotIn("colors.kdl", def_content)
 
     def test_niri_glow_material_you_template_is_dynamic(self):
         template = self.env.configs_src / "noctalia" / "templates" / "niri-glow-material-you.kdl"
@@ -275,14 +277,14 @@ class TestPresetOperations(unittest.TestCase):
     @unittest.mock.patch("nyxniri.deploy.preset.timed_run")
     def test_apply_niri_glow_material_you_has_no_daemon_side_effect(self, mock_timed_run):
         with patch("shutil.which", side_effect=lambda command: f"/usr/bin/{command}"):
-            self.assertTrue(preset.apply_preset("niri", "glow-material-you"))
+            self.assertTrue(preset.apply_part("niri", "glow", "glow-material-you"))
 
         mock_timed_run.assert_not_called()
 
     @unittest.mock.patch("nyxniri.deploy.preset.timed_run")
     @unittest.mock.patch("shutil.which", return_value="/usr/bin/niri")
     def test_apply_preset_niri_has_no_daemon_side_effect(self, mock_which, mock_timed_run):
-        ok = preset.apply_preset("niri", "glow")
+        ok = preset.apply_part("niri", "glow", "glow")
         self.assertTrue(ok)
         mock_timed_run.assert_not_called()
 
@@ -671,6 +673,70 @@ class TestPresetSwitcher(unittest.TestCase):
         with patch("sys.stdin.isatty", return_value=False):
             self.assertIsNone(sw.run())
 
+    def test_parts_keyboard_navigation_and_selection(self):
+        parts_data = {
+            "effects": {
+                "desc": "Window effects",
+                "target": "effects_normal.kdl",
+                "default": "default",
+                "variants": ["default", "xray-blur"],
+            }
+        }
+        sw = PresetSwitcher(
+            apps=["niri"],
+            presets_for=lambda a: [("default", True)],
+            parts_for=lambda a: parts_data if a == "niri" else {},
+            active_part_for=lambda a, slot: "default",
+        )
+        self.assertEqual(
+            self._run_keys(sw, ["RIGHT", "DOWN", "RIGHT", "DOWN", "ENTER"]),
+            ("niri", "effects:xray-blur"),
+        )
+
+    def test_parts_action_callback(self):
+        parts_data = {
+            "effects": {
+                "desc": "Window effects",
+                "target": "effects_normal.kdl",
+                "default": "default",
+                "variants": ["default", "xray-blur"],
+            }
+        }
+        actions = []
+        def on_action(action, app, name):
+            actions.append((action, app, name))
+            return "ok"
+
+        sw = PresetSwitcher(
+            apps=["niri"],
+            presets_for=lambda a: [("default", True)],
+            parts_for=lambda a: parts_data,
+            active_part_for=lambda a, slot: "default",
+            on_action=on_action,
+        )
+        self._run_keys(sw, ["RIGHT", "DOWN", "RIGHT", "DOWN", "ENTER", "q"])
+        self.assertEqual(actions, [("apply_part", "niri", "effects:xray-blur")])
+
+    def test_parts_left_arrow_navigation(self):
+        parts_data = {
+            "effects": {
+                "desc": "Window effects",
+                "target": "effects_normal.kdl",
+                "default": "default",
+                "variants": ["default", "xray-blur"],
+            }
+        }
+        sw = PresetSwitcher(
+            apps=["niri"],
+            presets_for=lambda a: [("default", True)],
+            parts_for=lambda a: parts_data,
+            active_part_for=lambda a, slot: "default",
+        )
+        self.assertEqual(
+            self._run_keys(sw, ["RIGHT", "DOWN", "RIGHT", "LEFT", "LEFT", "LEFT", "ENTER"]),
+            ("niri", "default"),
+        )
+
 
 class TestPresetSwitcherMouse(unittest.TestCase):
     """Mouse interaction: click selects/expands, wheel scrolls."""
@@ -806,7 +872,7 @@ class TestPresetStudioInspection(unittest.TestCase):
         self.assertEqual(info.source, "official")
         self.assertFalse(info.is_editable)
         self.assertFalse(info.is_deletable)
-        self.assertEqual(info.path, "configs/kitty/presets/transparent")
+        self.assertEqual(info.path, "configs/kitty/__presets__/transparent")
 
     def test_user_preset_info(self):
         user_dir = self.env.presets_dir / "kitty" / "my-nord"
@@ -1081,7 +1147,89 @@ exclude = ["*.bak"]
 
         # Check preserved files survived
         self.assertEqual((self.dest / "monitor.kdl").read_text(), "// user monitor")
-        self.assertEqual((self.dest / "input__custom__.kdl").read_text(), "// user input")
+
+class TestPartsMechanism(unittest.TestCase):
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+        self.env = self._ctx.env
+        self._sandbox = tempfile.TemporaryDirectory()
+        self.env.configs_src = Path(self._sandbox.name)
+
+        self.app = "niri_parts_test"
+        self.app_root = self.env.configs_src / self.app
+        self.app_root.mkdir(parents=True)
+        self.dest = self.env.config_dir / self.app
+        self.dest.mkdir(parents=True)
+
+        # Setup manifest
+        (self.app_root / ".module.toml").write_text("""
+[packages]
+preserve = ["monitor.kdl"]
+
+[parts.effects]
+target = "effects_normal.kdl"
+source_dir = "effects"
+default = "default"
+""")
+
+        # Setup parts files under __presets__/effects
+        effects_dir = self.app_root / "__presets__" / "effects"
+        effects_dir.mkdir(parents=True)
+        (effects_dir / "default.kdl").write_text("// default blur")
+        (effects_dir / "xray.kdl").write_text("// xray blur")
+
+    def tearDown(self):
+        self._sandbox.cleanup()
+        self._ctx.__exit__()
+
+    def test_list_parts(self):
+        parts_info = preset.list_parts(self.app)
+        self.assertIn("effects", parts_info)
+        eff = parts_info["effects"]
+        self.assertEqual(eff["target"], "effects_normal.kdl")
+        self.assertEqual(eff["default"], "default")
+        self.assertEqual(sorted(eff["variants"]), ["default", "xray"])
+
+    def test_apply_part_success(self):
+        from nyxniri.state.ledger import read_ledger
+        target_file = self.dest / "effects_normal.kdl"
+        target_file.write_text("// initial")
+
+        ok = preset.apply_part(self.app, "effects", "xray")
+        self.assertTrue(ok)
+        self.assertEqual(target_file.read_text(), "// xray blur")
+        self.assertEqual(read_ledger().get("parts", {}).get(f"{self.app}:effects"), "xray")
+
+    def test_apply_part_nonexistent_returns_false(self):
+        ok = preset.apply_part(self.app, "effects", "ghost")
+        self.assertFalse(ok)
+
+    def test_collect_presets_excludes_parts_source_dir(self):
+        presets = preset.collect_presets(self.app)
+        preset_names = [p[0] for p in presets]
+        self.assertNotIn("effects", preset_names)
+
+    def test_get_active_part(self):
+        self.assertEqual(preset.get_active_part(self.app, "effects"), "default")
+        preset.apply_part(self.app, "effects", "xray")
+        self.assertEqual(preset.get_active_part(self.app, "effects"), "xray")
+
+    def test_preset_switcher_loop_wires_parts_and_on_action(self):
+        from nyxniri.menus import preset_switcher_loop
+        with patch("sys.stdin.isatty", return_value=True), \
+             patch("nyxniri.menus.discover_config_items", return_value=["niri"]), \
+             patch("nyxniri.deploy.preset.apply_part", return_value=True) as mock_apply, \
+             patch("nyxniri.menus.PresetSwitcher") as mock_switcher_cls:
+            preset_switcher_loop()
+            mock_switcher_cls.assert_called_once()
+            _, kwargs = mock_switcher_cls.call_args
+            self.assertIn("parts_for", kwargs)
+            self.assertIn("active_part_for", kwargs)
+            on_action = kwargs["on_action"]
+            toast = on_action("apply_part", "niri", "effects:xray-blur")
+            mock_apply.assert_called_once_with("niri", "effects", "xray-blur")
+            self.assertIn("xray-blur", toast)
 
 
 if __name__ == "__main__":

@@ -37,7 +37,7 @@
 - **护眼模式**（`Super+N`）— 暖色温、关模糊、纯色不透明窗口。
 - **Scratchpad**（`Super+~`）— 随时呼出的 Kitty 持久浮动终端。
 - **Orbit 启动器**（`Super+A` / `Super+鼠标前侧键`）— 矢量星环；应用、工具、网页、AI/搜索轮盘，全 TOML 自定义。
-- **Shell 和终端** — Fish 代理/缓存别名，Kitty 光标轨迹，Windows 风格快捷键。
+- **Shell 和终端** — Fish 代理/缓存别名，Kitty 光标轨迹，Windows 风格快捷键（智能 Ctrl+C/Ctrl+V、右键粘贴、划选防覆盖剪贴板）。
 - **NyxMellow** — 动态 fcitx5 皮肤：mellow 圆角 + Noctalia Material You 配色。
 - **配置预设** — 每个应用多套风味变体（如 kitty 透明）；一条命令切换，把当前配置存为私有预设，或直接在 `$EDITOR` 里改。
 
@@ -53,7 +53,7 @@ curl -fsSL --connect-timeout 10 https://raw.githubusercontent.com/ech678/NyxNiri
 ```
 
 > [!TIP]
-> 没有 AUR helper 时，`nyxniri install full` 会自动装好 `paru`。
+> 自动支持 Shelly、paru、yay；均未安装时，`nyxniri install full` 会自动装好 `paru`。
 
 ### 从 Git 仓库安装（推荐）
 
@@ -132,7 +132,9 @@ NyxNiri
 - **`niri`**：
   - `default`：极致极简无边框（默认）
   - `glow`：启用 2px 轮廓与 28px 柔和弥散光晕（解决多窗口平铺下的焦点识别问题）
-  - `glow-material-you`：聚焦光晕跟随 Noctalia 当前的 Material You 配色
+  - `glow-material-you`：聚焦光晕跟随 Noctalia 当前壁纸提取的 Material You 配色（实时动态重绘）
+
+预设体系同时支持独立零件插槽（Parts slot，如 `niri` 的 `glow` 与 `effects`），既可一键应用整套预设，也能自由组合叠加视觉部件。
 
 | 指令 | 作用 |
 | :--- | :--- |
