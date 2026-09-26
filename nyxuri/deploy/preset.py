@@ -617,8 +617,6 @@ def apply_preset(app: str, name: str) -> bool:
         manifest = load_manifest_for(app)
         if manifest.preset_reload:
             timed_run(manifest.preset_reload, 2, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
-        elif app == "kitty" and shutil.which("pkill"):
-            timed_run(["pkill", "-SIGUSR1", "-x", "kitty"], 2, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
     except Exception:
         if app == "kitty" and shutil.which("pkill"):
             timed_run(["pkill", "-SIGUSR1", "-x", "kitty"], 2, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
