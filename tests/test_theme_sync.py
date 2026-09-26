@@ -14,9 +14,9 @@ class TestThemeSync(unittest.TestCase):
         self.ctx.__exit__()
 
     def test_sync_writes_both_gtk_settings_files(self):
-        from nyxniri.theme import sync
+        from nyxuri.theme import sync
 
-        with patch("nyxniri.theme.shutil.which", return_value=None):
+        with patch("nyxuri.theme.shutil.which", return_value=None):
             self.assertEqual(sync("light"), 0)
         for version in ("gtk-3.0", "gtk-4.0"):
             parser = configparser.ConfigParser()
@@ -25,10 +25,25 @@ class TestThemeSync(unittest.TestCase):
             self.assertEqual(parser["Settings"]["gtk-theme-name"], "adw-gtk3")
 
     def test_status_returns_zero(self):
-        from nyxniri.theme import status
+        from nyxuri.theme import status
 
-        with patch("nyxniri.theme.shutil.which", return_value=None):
+        with patch("nyxuri.theme.shutil.which", return_value=None):
             self.assertEqual(status(), 0)
+
+    def test_sync_respects_nyxuri_gtk_theme_env_precedence(self):
+        from nyxuri.theme import sync
+        import os
+
+        env_vars = {
+            "NYXURI_GTK_THEME_LIGHT": "custom-nyxuri-light",
+            "NYXNIRI_GTK_THEME_LIGHT": "custom-nyxniri-light",
+        }
+        with patch.dict(os.environ, env_vars, clear=False), \
+             patch("nyxuri.theme.shutil.which", return_value=None):
+            self.assertEqual(sync("light"), 0)
+            parser = configparser.ConfigParser()
+            parser.read(self.ctx.home / ".config" / "gtk-3.0" / "settings.ini")
+            self.assertEqual(parser["Settings"]["gtk-theme-name"], "custom-nyxuri-light")
 
 
 if __name__ == "__main__":

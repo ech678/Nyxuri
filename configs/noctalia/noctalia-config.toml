@@ -104,7 +104,7 @@ behavior_order = [ "lock", "screen-off", "lock-and-suspend" ]
     timeout = 360.0
 
 [hooks]
-theme_mode_changed = "nyxniri theme sync"
+theme_mode_changed = "nyxuri theme sync"
 wallpaper_changed = ["~/.config/noctalia/wallpaper-hook.sh"]
 
 [hot_corners.bottom_right]
@@ -211,7 +211,7 @@ builtin_ids = ["kitty", "qt", "starship"]
 community_ids = []
 
 # NyxMellow 动态 fcitx5 皮肤（mellow 形状 + Material You 自动取色）
-# 路径中的 /home/user 为占位符，由 nyxniri.deploy 在部署时替换为实际 $HOME
+# 路径中的 /home/user 为占位符，由 nyxuri.deploy 在部署时替换为实际 $HOME
 [theme.templates.user.nyxmellow_theme]
 index = 0
 input_path = "/home/user/.local/share/fcitx5/themes/nyxmellow/templates/theme.conf"
@@ -229,28 +229,28 @@ output_path = "/home/user/.local/share/fcitx5/themes/nyxmellow/highlight.svg"
 post_hook = "busctl --user --auto-start=no call org.fcitx.Fcitx5 /controller org.fcitx.Fcitx.Controller1 ReloadAddonConfig s classicui >/dev/null 2>&1 || true"
 
 # GTK Material You 主题（移植自 HyprYou，由 Noctalia 动态渲染到 gtk.css）
-# 路径中的 /home/user 为占位符，由 nyxniri.deploy 在部署时替换为实际 $HOME
-[theme.templates.user.nyxniri_gtk3]
+# 路径中的 /home/user 为占位符，由 nyxuri.deploy 在部署时替换为实际 $HOME
+[theme.templates.user.nyxuri_gtk3]
 index = 3
 input_path = "/home/user/.config/noctalia/templates/gtk-3.0.css"
 output_path = "/home/user/.config/gtk-3.0/gtk.css"
 
-[theme.templates.user.nyxniri_gtk4]
+[theme.templates.user.nyxuri_gtk4]
 index = 4
 input_path = "/home/user/.config/noctalia/templates/gtk-4.0.css"
 output_path = "/home/user/.config/gtk-4.0/gtk.css"
 
 # Niri glow-material-you: Noctalia is the only writer of the rendered layout.
-[theme.templates.user.nyxniri_niri_glow_material_you]
+[theme.templates.user.nyxuri_niri_glow_material_you]
 index = 5
 input_path = "/home/user/.config/noctalia/templates/niri-glow-material-you.kdl"
 output_path = "/home/user/.config/niri/colors.kdl"
 
-# NyxNiri Material You 动态色板（由 Noctalia 渲染到 ~/.cache/nyxniri/palette.toml，供周边组件零反推直接读取）
-[theme.templates.user.nyxniri_palette]
+# Material You 动态色板（由 Noctalia 渲染到 ~/.cache/nyxuri/palette.toml，供周边组件直接读取）
+[theme.templates.user.palette]
 index = 6
-input_path = "/home/user/.config/noctalia/templates/nyxniri-palette.toml"
-output_path = "/home/user/.cache/nyxniri/palette.toml"
+input_path = "/home/user/.config/noctalia/templates/palette.toml"
+output_path = "/home/user/.cache/nyxuri/palette.toml"
 
 [wallpaper]
 directory = "/home/user/图片/Wallpapers"

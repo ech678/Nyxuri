@@ -1,7 +1,7 @@
 # Assets Deploy — 壁纸与静态资产部署流水线
 
-> NyxNiri 的壁纸资产管理遵循“离线优先、无破坏覆盖 (no-clobber)”原则。
-> 源码：`nyxniri/deploy/assets.py`，静态包：`assets/wallpapers/`。
+> Nyxuri 的壁纸资产管理遵循“离线优先、无破坏覆盖 (no-clobber)”原则。
+> 源码：`nyxuri/deploy/assets.py`，静态包：`assets/wallpapers/`。
 
 ## 核心设计
 

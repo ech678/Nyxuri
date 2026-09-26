@@ -1,4 +1,4 @@
-# Subpackages — nyxniri/{pkg, deploy, state, modules, packaging}
+# Subpackages — nyxuri/{pkg, deploy, state, modules, packaging}
 
 > 引擎按职责分包，顶层保留入口与基础设施。子包 `__init__.py` 提供公共接口——
 > **外部 import 不变深**。懒加载/测试打补丁用直接子模块路径。
@@ -6,7 +6,7 @@
 ## 结构
 
 ```
-nyxniri/
+nyxuri/
 ├── __init__.py · __main__.py          包入口
 ├── constants.py                        路径 / 包名 / ANSI 色阶常量
 ├── core.py                             Environment（run_mode、路径）、锁、日志、path 原语（remove_path/copy_path）、CLI 软链、PATH 遮蔽、timed_run
@@ -18,7 +18,7 @@ nyxniri/
 ├── menus.py                            主菜单、子菜单与组件选择
 ├── workflows.py                        安装 / 更新编排、预检、完成反馈
 ├── deps.py                             依赖批次、AUR 引导、可选软件菜单（无全局探测缓存）
-├── clean.py                            缓存清理，入口 nyxniri clean
+├── clean.py                            缓存清理，入口 nyxuri clean
 ├── doctor.py                           体检（_check_* 追加到 DOCTOR_CHECKS）
 ├── template_registry.py                TOML 用户模板原子修改与节段管理
 ├── theme.py                            底座原生 GTK/Qt/Noctalia 主题同步引擎（替代脚本直写 INI / gsettings）
@@ -55,7 +55,7 @@ nyxniri/
 │   └── gtktheme.py                     GTK Material You 主题渲染
 │
 └── packaging/                          AUR 打包
-    ├── PKGBUILD                        nyxniri-git rolling 包
+    ├── PKGBUILD                        nyxuri-git rolling 包
     └── gen-deps.py                     扫所有 manifest 聚合依赖 → 重写 PKGBUILD 块
 ```
 
@@ -66,39 +66,39 @@ nyxniri/
 
 每个子包 `__init__.py` 把关键公共符号 re-export 到子包根：
 
-- `nyxniri.deploy/__init__`：`atomic_replace_item`、`discover_config_items`、`deploy_selected_configs`、
+- `nyxuri.deploy/__init__`：`atomic_replace_item`、`discover_config_items`、`deploy_selected_configs`、
   `deploy_wallpapers`、`wallpapers_pack_present`、`run_user_hooks`、`render_completion_screen`、`test_deploy`、
   preset 全套（`apply_preset`/`list_presets`/…）、manifest 全套
   （`load_manifest`/`discover_deployable_apps`/`discover_optional_apps`）…
-- `nyxniri.state/__init__`：`backup_configs`、`rollback_configs`、`list_backups`、`delete_backup`、
-  `get_all_backups`、`get_backup_base_dir`、`uninstall_nyxniri`、`active_shell`、`ledger_path`、`read_ledger`、`update_ledger`（path 原语 `copy_path`/`remove_path` 在 core.py，按需直连）
-- `nyxniri.modules/__init__`：fcitx/fisher/greeter/gtktheme 四件套动词（`fcitx_install`/`fisher_uninstall`/…）
+- `nyxuri.state/__init__`：`backup_configs`、`rollback_configs`、`list_backups`、`delete_backup`、
+  `get_all_backups`、`get_backup_base_dir`、`uninstall_nyxuri`、`active_shell`、`ledger_path`、`read_ledger`、`update_ledger`（path 原语 `copy_path`/`remove_path` 在 core.py，按需直连）
+- `nyxuri.modules/__init__`：fcitx/fisher/greeter/gtktheme 四件套动词（`fcitx_install`/`fisher_uninstall`/…）
 
 ## Import 约定（两套路径，按场景选）
 
 **顶层调用方**（cli.py、doctor.py、deps.py 的 top-level import）：用 re-export，保持浅。
 ```python
-from nyxniri.deploy import deploy_selected_configs, discover_config_items
-from nyxniri.state import backup_configs, uninstall_nyxniri
+from nyxuri.deploy import deploy_selected_configs, discover_config_items
+from nyxuri.state import backup_configs, uninstall_nyxuri
 ```
 
 **懒加载 + 测试打补丁**：用**直接子模块路径**。因为 mock.patch 命中的是被测代码运行时
 读的源模块；re-export 在 `__init__` import 时已绑定旧引用，patch 源不影响 re-export 绑定。
 ```python
 # 引擎内懒加载（state/uninstall.py 内）
-from nyxniri.deploy.deploy import discover_config_items
-from nyxniri.modules.fisher import fisher_uninstall
-from nyxniri.deploy.atomic import atomic_replace_item
+from nyxuri.deploy.deploy import discover_config_items
+from nyxuri.modules.fisher import fisher_uninstall
+from nyxuri.deploy.atomic import atomic_replace_item
 # 测试打补丁
-patch("nyxniri.deploy.atomic.atomic_replace_item", return_value=False)
-patch("nyxniri.deploy.deploy._phase_post_install_services")
+patch("nyxuri.deploy.atomic.atomic_replace_item", return_value=False)
+patch("nyxuri.deploy.deploy._phase_post_install_services")
 ```
 
 ## 动态 import（cli.py `_module_handler`）
 
 CLI 的 `greeter`/`fcitx`/`gtk` 命令经 `_module_handler(module_name, triad_name)` 工厂分发，
-懒加载 `importlib.import_module(f"nyxniri.modules.{module_name}")`——这样测试 `patch` 能命中
-（架构 §13：`_module_handler` 动态 import 改 `nyxniri.modules.{name}`，一处）。
+懒加载 `importlib.import_module(f"nyxuri.modules.{module_name}")`——这样测试 `patch` 能命中
+（架构 §13：`_module_handler` 动态 import 改 `nyxuri.modules.{name}`，一处）。
 
 ## 外部命令超时（timed_run，铁律）
 

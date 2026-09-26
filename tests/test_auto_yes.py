@@ -22,28 +22,39 @@ class TestAutoYesBoundaries(unittest.TestCase):
 
     def tearDown(self):
         os.environ.pop("NYXNIRI_AUTO_YES", None)
+        os.environ.pop("NYXURI_AUTO_YES", None)
         self._ctx.__exit__()
 
     def test_auto_yes_consents_to_routine_prompt(self):
-        from nyxniri.tui import prompt_confirm
+        from nyxuri.tui import prompt_confirm
 
         self.assertTrue(prompt_confirm("prompt_install_missing_deps", "y"))
 
+    def test_nyxuri_auto_yes_takes_precedence(self):
+        from nyxuri.tui import prompt_confirm
+
+        os.environ["NYXURI_AUTO_YES"] = "0"
+        os.environ["NYXNIRI_AUTO_YES"] = "1"
+        # Since NYXURI_AUTO_YES is "0", auto_yes should be disabled even if NYXNIRI_AUTO_YES is "1"
+        with patch("nyxuri.tui.sys.stdout"), \
+             patch("nyxuri.tui.sys.stdin.isatty", return_value=False):
+            self.assertFalse(prompt_confirm("prompt_install_missing_deps", "n"))
+
     def test_destructive_prompt_still_asked_under_auto_yes(self):
-        from nyxniri.tui import prompt_confirm
+        from nyxuri.tui import prompt_confirm
 
         # Force the non-tty fallback (answers with the default "n", i.e. it did
         # NOT blindly consent — the ask still happened). Without this the tty
         # path enters raw mode and blocks the suite waiting for a keypress.
-        with patch("nyxniri.tui.sys.stdout"), \
-             patch("nyxniri.tui.sys.stdin.isatty", return_value=False):
+        with patch("nyxuri.tui.sys.stdout"), \
+             patch("nyxuri.tui.sys.stdin.isatty", return_value=False):
             self.assertFalse(prompt_confirm("purge_prompt", "n", destructive=True))
             self.assertFalse(prompt_confirm("delete_prompt", "n", destructive=True))
             self.assertFalse(prompt_confirm("dirty_tree_confirm", "n", destructive=True))
 
     def test_destructive_call_sites_are_marked(self):
-        from nyxniri import network
-        from nyxniri.state import backup, uninstall
+        from nyxuri import network
+        from nyxuri.state import backup, uninstall
 
         for module, key in (
             (uninstall, "purge_prompt"),

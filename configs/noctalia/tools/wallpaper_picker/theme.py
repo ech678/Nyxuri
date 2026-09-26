@@ -132,7 +132,10 @@ DUR_STATE_MS = 150
 DUR_FAST_SPATIAL_MS = 350
 DUR_EXIT_MS = 200
 
-NYXNIRI_PALETTE_PATH = "~/.cache/nyxniri/palette.toml"
+PALETTE_PATH = "~/.cache/nyxuri/palette.toml"
+LEGACY_PALETTE_PATH = "~/.cache/nyxniri/palette.toml"
+NYXNIRI_PALETTE_PATH = PALETTE_PATH
+NYXURI_PALETTE_PATH = PALETTE_PATH
 
 # Starship (Catppuccin-compatible) key candidates per M3 role, first hit wins.
 _ROLE_SOURCES = {
@@ -231,8 +234,18 @@ def _load_toml_palette(path):
 
 
 def _load_m3_palette(path=None):
-    """Load native NyxNiri M3 palette (~/.cache/nyxniri/palette.toml)."""
-    return _load_toml_palette(path or NYXNIRI_PALETTE_PATH)
+    """Load native Nyxuri M3 palette (~/.cache/nyxuri/palette.toml)."""
+    target = path or (
+        NYXURI_PALETTE_PATH
+        if NYXURI_PALETTE_PATH != PALETTE_PATH
+        else (NYXNIRI_PALETTE_PATH if NYXNIRI_PALETTE_PATH != PALETTE_PATH else PALETTE_PATH)
+    )
+    expanded = os.path.expanduser(target)
+    if not path and target == PALETTE_PATH and not os.path.isfile(expanded):
+        legacy = os.path.expanduser(LEGACY_PALETTE_PATH)
+        if os.path.isfile(legacy):
+            return _load_toml_palette(legacy)
+    return _load_toml_palette(target)
 
 
 def build_tokens(raw=None):

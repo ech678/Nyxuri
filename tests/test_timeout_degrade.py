@@ -25,15 +25,15 @@ def _cp(returncode=0, stdout=""):
 class TestTimedRun(unittest.TestCase):
 
     def test_timeout_degrades_to_none(self):
-        from nyxniri.core import timed_run
+        from nyxuri.core import timed_run
 
-        with patch("nyxniri.core.subprocess.run", side_effect=subprocess.TimeoutExpired(cmd=["x"], timeout=5)):
+        with patch("nyxuri.core.subprocess.run", side_effect=subprocess.TimeoutExpired(cmd=["x"], timeout=5)):
             self.assertIsNone(timed_run(["x"], 5, check=False))
 
     def test_passes_through_args_and_result(self):
-        from nyxniri.core import timed_run
+        from nyxuri.core import timed_run
 
-        with patch("nyxniri.core.subprocess.run", return_value=_cp(0)) as m:
+        with patch("nyxuri.core.subprocess.run", return_value=_cp(0)) as m:
             r = timed_run(["x"], 7, check=False, capture_output=True)
         m.assert_called_once_with(["x"], timeout=7, check=False, capture_output=True)
         self.assertEqual(r.returncode, 0)
@@ -50,15 +50,15 @@ class TestPostInstallHooksIndependence(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_sync_timeout_does_not_block_fisher(self):
-        from nyxniri.deploy.deploy import _phase_post_install_services
+        from nyxuri.deploy.deploy import _phase_post_install_services
 
         sync_script = self._ctx.env.config_dir / "noctalia" / "theme-sync.sh"
         sync_script.parent.mkdir(parents=True, exist_ok=True)
         sync_script.touch()
 
-        with patch("nyxniri.theme.sync", side_effect=RuntimeError("theme failure")), \
-             patch("nyxniri.deploy.deploy.shutil.which", return_value=True), \
-             patch("nyxniri.modules.fisher.fisher_install") as mock_fisher, \
+        with patch("nyxuri.theme.sync", side_effect=RuntimeError("theme failure")), \
+             patch("nyxuri.deploy.deploy.shutil.which", return_value=True), \
+             patch("nyxuri.modules.fisher.fisher_install") as mock_fisher, \
              patch("builtins.print"):
             _phase_post_install_services()
 
@@ -75,7 +75,7 @@ class TestUserPostDeployHooks(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_runs_scripts_in_filename_order_with_bash_argv(self):
-        from nyxniri.deploy.deploy import USER_HOOK_TIMEOUT, run_user_hooks
+        from nyxuri.deploy.deploy import USER_HOOK_TIMEOUT, run_user_hooks
 
         self.hooks_dir.mkdir(parents=True)
         first = self.hooks_dir / "10-first.sh"
@@ -85,7 +85,7 @@ class TestUserPostDeployHooks(unittest.TestCase):
         (self.hooks_dir / "ignored.txt").touch()
         (self.hooks_dir / "directory.sh").mkdir()
 
-        with patch("nyxniri.deploy.deploy.timed_run", return_value=_cp(0)) as run:
+        with patch("nyxuri.deploy.deploy.timed_run", return_value=_cp(0)) as run:
             self.assertEqual(run_user_hooks(), [])
 
         self.assertEqual(run.call_args_list, [
@@ -94,15 +94,15 @@ class TestUserPostDeployHooks(unittest.TestCase):
         ])
 
     def test_timeout_and_failure_do_not_stop_later_hooks(self):
-        from nyxniri.deploy.deploy import run_user_hooks
+        from nyxuri.deploy.deploy import run_user_hooks
 
         self.hooks_dir.mkdir(parents=True)
         hooks = [self.hooks_dir / name for name in ("10-timeout.sh", "20-failure.sh", "30-later.sh")]
         for hook in hooks:
             hook.touch()
 
-        with patch("nyxniri.deploy.deploy.timed_run", side_effect=[None, _cp(7), _cp(0)]) as run, \
-             patch("nyxniri.deploy.deploy.log_msg") as log, \
+        with patch("nyxuri.deploy.deploy.timed_run", side_effect=[None, _cp(7), _cp(0)]) as run, \
+             patch("nyxuri.deploy.deploy.log_msg") as log, \
              patch("builtins.print") as output:
             diagnostics = run_user_hooks()
 
@@ -119,11 +119,11 @@ class TestUserPostDeployHooks(unittest.TestCase):
         ])
 
     def test_completion_keeps_hook_diagnostics_after_clear_screen(self):
-        from nyxniri.deploy.deploy import render_completion_screen
+        from nyxuri.deploy.deploy import render_completion_screen
 
         output = StringIO()
         with patch("sys.stdin.isatty", return_value=False), \
-             patch("nyxniri.deploy.deploy.show_logo"), \
+             patch("nyxuri.deploy.deploy.show_logo"), \
              redirect_stdout(output):
             render_completion_screen(chosen_items=[], hook_diagnostics=["hook failed"])
 
@@ -140,18 +140,18 @@ class TestDepsTimeout(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_pacman_timeout_degrades_to_empty_set(self):
-        from nyxniri.pkg.detection import DependencyProbe
-        with patch("nyxniri.pkg.detection.timed_run", return_value=None):
+        from nyxuri.pkg.detection import DependencyProbe
+        with patch("nyxuri.pkg.detection.timed_run", return_value=None):
             self.assertEqual(DependencyProbe().packages, set())
 
     def test_fc_list_timeout_degrades_to_empty(self):
-        from nyxniri.pkg.detection import DependencyProbe
-        with patch("nyxniri.pkg.detection.timed_run", return_value=None):
+        from nyxuri.pkg.detection import DependencyProbe
+        with patch("nyxuri.pkg.detection.timed_run", return_value=None):
             self.assertEqual(DependencyProbe().fonts, "")
 
     def test_gi_probe_timeout_reports_missing(self):
-        from nyxniri.pkg.detection import DependencyProbe
-        with patch("nyxniri.pkg.detection.timed_run", return_value=None):
+        from nyxuri.pkg.detection import DependencyProbe
+        with patch("nyxuri.pkg.detection.timed_run", return_value=None):
             self.assertFalse(DependencyProbe().installed("python-gobject"))
 
 
@@ -166,12 +166,12 @@ class TestDoctorTimeout(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_check_timeout_does_not_abort_run_doctor(self):
-        from nyxniri.doctor import run_doctor
+        from nyxuri.doctor import run_doctor
 
         def boom(env):
             raise subprocess.TimeoutExpired(cmd="probe", timeout=1)
 
-        with patch("nyxniri.doctor.DOCTOR_SECTIONS", [("doctor_sec_x", [boom])]), \
+        with patch("nyxuri.doctor.DOCTOR_SECTIONS", [("doctor_sec_x", [boom])]), \
              patch("builtins.print"):
             self.assertTrue(run_doctor())
 
@@ -191,14 +191,14 @@ class TestGitTimeout(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_reset_timeout_returns_false(self):
-        from nyxniri.network import safe_git_pull
+        from nyxuri.network import safe_git_pull
 
         fake_env = type("E", (), {"run_mode": "cache"})()
-        with patch("nyxniri.network.get_env", return_value=fake_env), \
-             patch("nyxniri.network.shutil.which", return_value=True), \
-             patch("nyxniri.network.subprocess.run", return_value=_cp(0, "")), \
-             patch("nyxniri.network._run_git_transfer", side_effect=[_cp(1), _cp(0)]), \
-             patch("nyxniri.network.timed_run", return_value=None):
+        with patch("nyxuri.network.get_env", return_value=fake_env), \
+             patch("nyxuri.network.shutil.which", return_value=True), \
+             patch("nyxuri.network.subprocess.run", return_value=_cp(0, "")), \
+             patch("nyxuri.network._run_git_transfer", side_effect=[_cp(1), _cp(0)]), \
+             patch("nyxuri.network.timed_run", return_value=None):
             self.assertIs(safe_git_pull(self._ctx.env.repo_dir), False)
 
 
@@ -212,12 +212,12 @@ class TestGtkThemeTimeout(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_render_timeout_degrades_to_pending(self):
-        from nyxniri.i18n import msg
-        from nyxniri.modules.gtktheme import gtktheme_trigger_render
+        from nyxuri.i18n import msg
+        from nyxuri.modules.gtktheme import gtktheme_trigger_render
 
         out = StringIO()
-        with patch("nyxniri.modules.gtktheme.noctalia_available", return_value=True), \
-             patch("nyxniri.modules.gtktheme.timed_run", return_value=None), \
+        with patch("nyxuri.modules.gtktheme.noctalia_available", return_value=True), \
+             patch("nyxuri.modules.gtktheme.timed_run", return_value=None), \
              redirect_stdout(out):
             gtktheme_trigger_render()
 

@@ -10,7 +10,7 @@ from pathlib import Path
 
 import tomllib
 
-import nyxniri.deploy.manifest as manifest
+import nyxuri.deploy.manifest as manifest
 from tests.utils import TempEnv
 
 

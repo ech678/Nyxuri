@@ -481,7 +481,7 @@ Issue #102 下的深度探讨为本项目的工程落地注入了极其宝贵的
 #### 1. 开发 Shell 前的准备工作 (Pre-Shell Groundwork)
 > **核心目标**：在动工自研 Shell 之前，将全库现存的路径硬编码、大小写分裂、伴生工具倒挂、假声明式副作用与脆弱补丁彻底拔除，把底座打造成一尘不染的纯白画布。
 
-- [ ] **项目全局重命名与双轨平滑迁移 (Project Rebranding)**：在自研 Shell 动工前彻底完成品牌定名脱敏，常量集中统一（`constants.py`），环境变量双向兼容（优先新前缀，回退 `NYXNIRI_*`），`~/.config/NyxNiri` 与 `~/.local/state/NyxNiri` 自动安全平移并留兼容软链，`importlib` 动态导入升级；
+- [x] **项目全局重命名与双轨平滑迁移 (Project Rebranding)**：在自研 Shell 动工前彻底完成品牌定名脱敏（Nyxuri），常量集中统一（`constants.py`），环境变量双向兼容（优先新前缀，回退 `NYXNIRI_*`），`~/.config/NyxNiri` 与 `~/.local/state/NyxNiri` 自动安全平移并彻底清理历史残留，`nyxuri` 模块平滑迁移；
 - [x] **消灭 Linux 大小写分裂与孤儿清理**：全库规范为统一小写路径（如 `~/.cache/<project>`），彻底终结历史大小写分裂包袱，卸载时完整清理历史缩略图与色板孤儿；
 - [x] **伴生套件归位与合成器配置纯洁化**：将近 3700 行的 `orbit/`、`wallpaper_picker/` 及 `orbit-items__custom__.toml` 整体收归进 `configs/noctalia/tools/`，物理删除废弃的 `start-noctalia.sh` 包装；`configs/niri/scripts/` 彻底瘦身为仅含 5 个纯粹胶水脚本；确立自研 Shell 下**零外部 Python GUI 释放、绝对纯白**；
 - [x] **打通双 Shell 运行时插槽基座 (ShellProvider Slots)**：重构 `session-shell.sh` 与 `shell-action.sh`，基于 `state.json` 的 `active_shell` 动态路由（Noctalia vs 自研 Shell），彻底告别写死 `exec noctalia`；彻底移除 `config.kdl` 中脆弱的 `sleep 8; noctalia msg ...` 盲等补丁；

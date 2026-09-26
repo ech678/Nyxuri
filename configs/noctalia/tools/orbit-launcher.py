@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-NyxNiri Orbit Launcher (星环启动器)
+Nyxuri Orbit Launcher (星环启动器)
 Zero-Daemon Stateless Radial App Launcher & Gemini Search Hub for Niri / Wayland Layer-Shell.
 """
 
@@ -21,10 +21,10 @@ if SCRIPTS_DIR not in sys.path:
 from orbit.lock import acquire_instance_lock, release_instance_lock
 from orbit.window import OrbitLauncher
 
-RUNTIME_DIR = os.environ.get("XDG_RUNTIME_DIR") or f"/tmp/nyxniri-{os.getuid()}"
+RUNTIME_DIR = os.environ.get("XDG_RUNTIME_DIR") or f"/tmp/nyxuri-{os.getuid()}"
 os.makedirs(RUNTIME_DIR, exist_ok=True)
-LOCK_FILE_PATH = os.path.join(RUNTIME_DIR, "nyxniri-orbit-launcher.lock")
-PID_FILE_PATH = os.path.join(RUNTIME_DIR, "nyxniri-orbit-launcher.pid")
+LOCK_FILE_PATH = os.path.join(RUNTIME_DIR, "orbit-launcher.lock")
+PID_FILE_PATH = os.path.join(RUNTIME_DIR, "orbit-launcher.pid")
 
 
 def main():

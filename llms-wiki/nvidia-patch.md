@@ -6,7 +6,7 @@
 
 ## 诊断报告
 
-`nyxniri/deploy/hardware.py` 仅保留纯文本函数 `classify_gpu_devices(text)`。
+`nyxuri/deploy/hardware.py` 仅保留纯文本函数 `classify_gpu_devices(text)`。
 `doctor.py` 的报告复用已采集的 `lspci` 输出，按 VGA / Display / 3D controller
 设备行分为 NVIDIA、其他 GPU、两者共存或未知；音频设备不算 GPU。
 探测失败、空输出或未识别到 GPU 设备时显示 `Unknown`。

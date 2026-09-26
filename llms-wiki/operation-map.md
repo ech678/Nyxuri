@@ -1,6 +1,6 @@
 # Operation Map — 全部 CLI 命令
 
-> 命令分发在 `nyxniri/cli.py` 的 `COMMANDS` dict。退出码自动传播。aliases 并列。
+> 命令分发在 `nyxuri/cli.py` 的 `COMMANDS` dict。退出码自动传播。aliases 并列。
 
 ## 管"配置内容"的
 
@@ -17,8 +17,8 @@
 | `deps [core\|apps]` | 装软件包 |
 | `apps`（alias `recommended`） | 装可选软件 |
 | `pkg <install\|upgrade\|remove\|search\|info\|installed>` | Fish 与安装器共用包管理；安装接收包名，搜索支持 `aur` / `pac` 前缀 |
-| `wallpapers`（alias `wp`） | 装壁纸包（维护 `.nyxniri-managed.json` 跟踪清单） |
-| `<module> [install\|status\|uninstall]` | fcitx / fisher / greeter / gtk 四件套模块（动态 import `nyxniri.modules.<name>`，其中 `gtk` 映射至 `gtktheme`） |
+| `wallpapers`（alias `wp`） | 装壁纸包（维护 `.nyxuri-managed.json` 跟踪清单） |
+| `<module> [install\|status\|uninstall]` | fcitx / fisher / greeter / gtk 四件套模块（动态 import `nyxuri.modules.<name>`，其中 `gtk` 映射至 `gtktheme`） |
 | `theme [toggle\|dark\|light\|sync\|status]` | 原生切换/同步深浅主题（纯 Python 调度 gsettings、GTK settings.ini、Noctalia IPC 与 Kitty 信号，status 查询当前模式） |
 
 ## 管"状态"的

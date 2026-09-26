@@ -17,7 +17,10 @@ def hex_to_rgb(hex_str: str, default=(0.5, 0.5, 0.5)):
     return default
 
 
-NYXNIRI_PALETTE_PATH = "~/.cache/nyxniri/palette.toml"
+PALETTE_PATH = "~/.cache/nyxuri/palette.toml"
+LEGACY_PALETTE_PATH = "~/.cache/nyxniri/palette.toml"
+NYXURI_PALETTE_PATH = PALETTE_PATH
+NYXNIRI_PALETTE_PATH = PALETTE_PATH
 
 
 def _parse_toml_colors(path: str) -> dict:
@@ -40,7 +43,7 @@ def _parse_toml_colors(path: str) -> dict:
 
 
 def load_material_palette(path: str = None) -> dict:
-    """Load dynamic palette prioritizing native M3 cache (~/.cache/nyxniri/palette.toml) with graceful fallback."""
+    """Load dynamic palette prioritizing native M3 cache (~/.cache/nyxuri/palette.toml) with graceful fallback."""
     palette = {
         "primary": (0.42, 0.70, 1.00),
         "secondary": (0.38, 0.85, 0.65),
@@ -53,9 +56,18 @@ def load_material_palette(path: str = None) -> dict:
         "is_dark": True,
     }
 
-    # 1. Primary: Native NyxNiri M3 palette (clean semantic keys, zero reverse inference)
-    nyx_path = os.path.expanduser(path or NYXNIRI_PALETTE_PATH)
-    m3_colors = _parse_toml_colors(nyx_path)
+    # 1. Primary: Native Nyxuri M3 palette
+    target_path = path or (
+        NYXURI_PALETTE_PATH
+        if NYXURI_PALETTE_PATH != PALETTE_PATH
+        else (NYXNIRI_PALETTE_PATH if NYXNIRI_PALETTE_PATH != PALETTE_PATH else PALETTE_PATH)
+    )
+    expanded = os.path.expanduser(target_path)
+    if not path and target_path == PALETTE_PATH and not os.path.isfile(expanded):
+        legacy = os.path.expanduser(LEGACY_PALETTE_PATH)
+        if os.path.isfile(legacy):
+            expanded = legacy
+    m3_colors = _parse_toml_colors(expanded)
     if m3_colors and "primary" in m3_colors and "surface" in m3_colors:
         for k in ("primary", "secondary", "tertiary", "surface", "surface_dim", "on_surface", "outline"):
             if k in m3_colors:

@@ -1,6 +1,6 @@
 """Behavior contract tests for Orbit Launcher palette loading.
 
-Verifies priority loading of native M3 ~/.cache/nyxniri/palette.toml,
+Verifies priority loading of native M3 ~/.cache/nyxuri/palette.toml,
 fallback to Noctalia starship palette cache, and final static default fallback.
 """
 
@@ -61,9 +61,30 @@ class TestOrbitPalette(unittest.TestCase):
         finally:
             os.unlink(m3_path)
 
+    def test_nyxuri_palette_path_priority(self):
+        """NYXURI_PALETTE_PATH takes precedence over NYXNIRI_PALETTE_PATH."""
+        content1 = 'primary = "#111111"\nsurface = "#222222"\n'
+        content2 = 'primary = "#333333"\nsurface = "#444444"\n'
+        with tempfile.NamedTemporaryFile("w", suffix=".toml", delete=False) as f1, \
+             tempfile.NamedTemporaryFile("w", suffix=".toml", delete=False) as f2:
+            f1.write(content1)
+            f2.write(content2)
+            p1 = f1.name
+            p2 = f2.name
+
+        try:
+            with patch.object(self.orbit_palette, "NYXURI_PALETTE_PATH", p1), \
+                 patch.object(self.orbit_palette, "NYXNIRI_PALETTE_PATH", p2):
+                palette = self.orbit_palette.load_material_palette()
+                self.assertEqual(palette["primary"], self.orbit_palette.hex_to_rgb("#111111"))
+        finally:
+            os.unlink(p1)
+            os.unlink(p2)
+
     def test_fallback_to_defaults_when_both_absent(self):
         """When neither palette exists, return static fallback values."""
-        with patch.object(self.orbit_palette, "NYXNIRI_PALETTE_PATH", "/nonexistent/palette.toml"):
+        with patch.object(self.orbit_palette, "NYXURI_PALETTE_PATH", "/nonexistent/palette.toml"), \
+             patch.object(self.orbit_palette, "NYXNIRI_PALETTE_PATH", "/nonexistent/legacy.toml"):
             palette = self.orbit_palette.load_material_palette()
             self.assertEqual(palette["primary"], (0.42, 0.70, 1.00))
             self.assertEqual(palette["surface"], (0.12, 0.13, 0.18))

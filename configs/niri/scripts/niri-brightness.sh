@@ -33,7 +33,7 @@ case "$connector" in
         ;;
 esac
 
-backlight_dir="${NYXNIRI_BACKLIGHT_DIR:-/sys/class/backlight}"
+backlight_dir="${NYXURI_BACKLIGHT_DIR:-${NYXNIRI_BACKLIGHT_DIR:-/sys/class/backlight}}"
 has_backlight=false
 if [ -d "$backlight_dir" ]; then
     for dev in "$backlight_dir"/*; do

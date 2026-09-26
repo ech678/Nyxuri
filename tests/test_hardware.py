@@ -6,9 +6,9 @@ import subprocess
 import unittest
 from unittest.mock import patch
 
-from nyxniri.deploy.hardware import classify_gpu_devices
-from nyxniri.deploy.deploy import deploy_selected_configs, test_deploy
-from nyxniri.doctor import generate_bug_report
+from nyxuri.deploy.hardware import classify_gpu_devices
+from nyxuri.deploy.deploy import deploy_selected_configs, test_deploy
+from nyxuri.doctor import generate_bug_report
 from tests.utils import TempEnv
 
 # Realistic `LC_ALL=C lspci` snippets. Kernel-driver continuation lines omitted;
@@ -93,9 +93,9 @@ class TestGpuContracts(unittest.TestCase):
 
     def test_default_redeploy_removes_variables_and_preserves_custom(self):
         target = self._old_config()
-        with patch("nyxniri.deploy.deploy._phase_post_install_services"), \
-             patch("nyxniri.core.get_pics_dir", return_value=self.ctx.home / "Pictures"), \
-             patch("nyxniri.deploy.templates.get_pics_dir", return_value=self.ctx.home / "Pictures"), \
+        with patch("nyxuri.deploy.deploy._phase_post_install_services"), \
+             patch("nyxuri.core.get_pics_dir", return_value=self.ctx.home / "Pictures"), \
+             patch("nyxuri.deploy.templates.get_pics_dir", return_value=self.ctx.home / "Pictures"), \
              patch("subprocess.run", side_effect=AssertionError("Unexpected external command")):
             self.assertEqual(deploy_selected_configs(items_to_deploy=["niri"]), [])
             first = (target / "config.kdl").read_bytes()
@@ -110,7 +110,7 @@ class TestGpuContracts(unittest.TestCase):
     def test_other_app_deploy_leaves_niri_untouched(self):
         target = self._old_config()
         before = {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in target.iterdir()}
-        with patch("nyxniri.deploy.deploy._phase_post_install_services"):
+        with patch("nyxuri.deploy.deploy._phase_post_install_services"):
             self.assertEqual(deploy_selected_configs(items_to_deploy=["kitty"]), [])
         self.assertEqual(
             {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in target.iterdir()}, before,
@@ -118,8 +118,8 @@ class TestGpuContracts(unittest.TestCase):
 
     def test_test_deploy_removes_variables(self):
         target = self._old_config()
-        with patch("nyxniri.deploy.deploy.deploy_wallpapers"), \
-             patch("nyxniri.deploy.deploy.render_completion_screen"):
+        with patch("nyxuri.deploy.deploy.deploy_wallpapers"), \
+             patch("nyxuri.deploy.deploy.render_completion_screen"):
             self.assertTrue(test_deploy())
         for variable in REMOVED_VARIABLES:
             self.assertNotIn(variable, (target / "config.kdl").read_text())
@@ -141,8 +141,8 @@ class TestGpuContracts(unittest.TestCase):
                     if error:
                         raise error
                     return subprocess.CompletedProcess(argv, code, stdout=stdout, stderr="")
-                with patch("nyxniri.doctor.shutil.which", side_effect=lambda name: "/usr/bin/lspci" if name == "lspci" else None), \
-                     patch("nyxniri.doctor.subprocess.run", side_effect=fake_run) as run:
+                with patch("nyxuri.doctor.shutil.which", side_effect=lambda name: "/usr/bin/lspci" if name == "lspci" else None), \
+                     patch("nyxuri.doctor.subprocess.run", side_effect=fake_run) as run:
                     report = generate_bug_report().read_text()
                 run.assert_called_once()
                 self.assertEqual(run.call_args.args, (["lspci"],))
@@ -161,8 +161,8 @@ class TestGpuContracts(unittest.TestCase):
         )
 
     def test_report_missing_lspci_is_unknown(self):
-        with patch("nyxniri.doctor.shutil.which", return_value=None), \
-             patch("nyxniri.doctor.subprocess.run") as run:
+        with patch("nyxuri.doctor.shutil.which", return_value=None), \
+             patch("nyxuri.doctor.subprocess.run") as run:
             report = generate_bug_report().read_text()
         run.assert_not_called()
         self.assertIn("PCI device classification: Unknown", report)

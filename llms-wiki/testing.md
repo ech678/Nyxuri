@@ -22,8 +22,8 @@ argv[0]（shebang 直启下是解释器名，不是脚本名），验证恒假�
 （附带发现：`Popen` 返回后立即读 `/proc/<pid>/cmdline` 大概率还是空的，argv 发布与 exec
 有竞态——测试需轮询等 cmdline 落地，真实运行场景不受影响。）
 
-正确做法：被测代码**懒加载**（函数内 `from nyxniri.deploy.atomic import X`），测试
-`patch("nyxniri.deploy.atomic.X")` 直接打**源模块**——运行时懒加载读到 patched 属性。
+正确做法：被测代码**懒加载**（函数内 `from nyxuri.deploy.atomic import X`），测试
+`patch("nyxuri.deploy.atomic.X")` 直接打**源模块**——运行时懒加载读到 patched 属性。
 （re-export 绑定在 `__init__` import 时，patch 源不影响 re-export，所以测试用直接子模块路径。）
 
 ## 测试形状（按功能）
@@ -47,7 +47,7 @@ argv[0]（shebang 直启下是解释器名，不是脚本名），验证恒假�
 ## 必跑命令
 
 ```bash
-python3 -m compileall nyxniri                                    # 语法/静态检查
+python3 -m compileall nyxuri                                    # 语法/静态检查
 bash -n install.sh configs/noctalia/*.sh configs/niri/scripts/*.sh
 shellcheck install.sh
 python3 -m unittest discover -s tests -q                        # 行为契约

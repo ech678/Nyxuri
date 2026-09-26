@@ -10,11 +10,11 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-import nyxniri.core as core
+import nyxuri.core as core
 
 
 class TempEnv:
-    """Context manager that fully isolates the NyxNiri Environment to a temp HOME.
+    """Context manager that fully isolates the Nyxuri Environment to a temp HOME.
 
     Patches core._ENV, os.environ["HOME"], and get_env() so that every module
     that calls get_env() gets the temp environment — not the real one.
@@ -31,7 +31,7 @@ class TempEnv:
         # Create directory skeleton
         (home / ".config").mkdir(parents=True, exist_ok=True)
         (home / ".local" / "bin").mkdir(parents=True, exist_ok=True)
-        (home / ".local" / "state" / "NyxNiri").mkdir(parents=True, exist_ok=True)
+        (home / ".local" / "state" / "nyxuri").mkdir(parents=True, exist_ok=True)
         (home / ".cache").mkdir(parents=True, exist_ok=True)
         (home / "Pictures").mkdir(parents=True, exist_ok=True)
 
@@ -49,9 +49,9 @@ class TempEnv:
         # _PICS_DIR_CACHE especially: get_pics_dir() otherwise returns a path
         # from a previously-deleted temp HOME, breaking wallpaper assertions.
         core._PICS_DIR_CACHE = None
-        import nyxniri.deploy.deploy as _deploy_core
-        import nyxniri.deploy.manifest as _deploy_manifest
-        import nyxniri.modules.greeter as _greeter
+        import nyxuri.deploy.deploy as _deploy_core
+        import nyxuri.deploy.manifest as _deploy_manifest
+        import nyxuri.modules.greeter as _greeter
         _deploy_core._CONFIG_ITEMS_CACHE = []
         _deploy_manifest._MANIFEST_CACHE = None
         _greeter._GREETER_STATUS_CACHE = None

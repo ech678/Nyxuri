@@ -1,7 +1,7 @@
 # Manifest Schema — `.module.toml` + `.optional-apps.toml`
 
 > 两个 manifest 文件，**全字段可选、无文件 = 全默认**。约定自描述：目录名驱动所有默认值。
-> 源码：`nyxniri/deploy/manifest.py`（`load_manifest`、`load_optional_apps`）。
+> 源码：`nyxuri/deploy/manifest.py`（`load_manifest`、`load_optional_apps`）。
 
 ## `.module.toml`（有配置的 app）
 

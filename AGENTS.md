@@ -21,7 +21,7 @@
 ## 1. 【最高优先级】存疑必全仓库排查
 
 对代码、路径、变量、配置项有任何疑问，下结论、判定 Bug 或修改前，**必
-须全仓库检索相关文件**（至少含 `install.sh`、`nyxniri/*.py`、`configs/**/*.sh`
+须全仓库检索相关文件**（至少含 `install.sh`、`nyxuri/*.py`、`configs/**/*.sh`
 及其引用文件）。
 
 - 禁止仅凭单文件或"看起来像"的假设下结论。
@@ -41,11 +41,11 @@
 |---|---|
 | `configs/` | Dotfiles 配置源码（niri、noctalia 等的 `.kdl` / 配置模板） |
 | `assets/` | 静态资产（`assets/wallpapers/` 离线壁纸、`assets/fcitx5/` 输入法皮肤） |
-| `nyxniri/` | Python 管理引擎（零 pip 依赖，纯标准库）；`pkg/`·`deploy/`·`state/`·`modules/`·`packaging/` 各管一域（详见 llms-wiki/subpackages.md） |
+| `nyxuri/` | Python 管理引擎（零 pip 依赖，纯标准库）；`pkg/`·`deploy/`·`state/`·`modules/`·`packaging/` 各管一域（详见 llms-wiki/subpackages.md） |
 | `llms-wiki/` | LLM 友好架构 wiki（索引 `llms.txt`，按需取详情页） |
-| `install.sh` | 统一引导入口点，负责环境预检并 `exec python3 -m nyxniri` |
+| `install.sh` | 统一引导入口点，负责环境预检并 `exec python3 -m nyxuri` |
 
-**物理隔离**：仓库源码与 `~/.config/` 隔离，仅允许通过 `nyxniri.deploy.atomic`
+**物理隔离**：仓库源码与 `~/.config/` 隔离，仅允许通过 `nyxuri.deploy.atomic`
 的 `atomic_replace_item` 机制复制/替换，禁止 `ln -s` 软链接进 `~/.config/`
 （`~/.config/` 内部文件之间的软链接，如运行时主题切换，不受此限）。
 
@@ -59,7 +59,7 @@
 
 ```bash
 # 语法与静态检查（改动后必跑，零网络秒级）
-python3 -m compileall nyxniri
+python3 -m compileall nyxuri
 bash -n install.sh configs/noctalia/*.sh configs/niri/scripts/*.sh
 shellcheck install.sh
 
@@ -75,7 +75,7 @@ HOME=$(mktemp -d) ./install.sh test
 
 **提交前验证**：
 
-1. **代码修改**：跑语法检查 `python3 -m compileall nyxniri` + `shellcheck`（成本极低，无例外）。
+1. **代码修改**：跑语法检查 `python3 -m compileall nyxuri` + `shellcheck`（成本极低，无例外）。
 2. **行为/逻辑改动**：跑 `python3 -m unittest discover -s tests -q`（契约测试，捕获回归）。
 3. **部署流程改动**：追加沙箱部署测试 `HOME=$(mktemp -d) ./install.sh test`。
 4. **文档同步**：改动涉及 `atomic_replace_item` 签名、manifest schema、CLI 命令、子包结构、部署/保留机制等 wiki 描述的行为时，同步更新 `llms-wiki/` 对应页（陈述参考，非生成——改完手验一遍）。
@@ -89,11 +89,11 @@ HOME=$(mktemp -d) ./install.sh test
 | 对代码/路径/变量存疑 | 见第 1 条，必须全仓库排查后再下结论 |
 | 部署仓库文件到 `~/.config/` | 只能走 `atomic_replace_item`，禁止软链接 |
 | 文件/目录名含 `__custom__` | 更新时自动保留，不需手动处理 |
-| 脚本以 `id -u == 0` 运行 | `install.sh`/`nyxniri` 直接拒绝；系统级维护脚本（如 `clean-cache`）例外，允许要求 root |
+| 脚本以 `id -u == 0` 运行 | `install.sh`/`nyxuri` 直接拒绝；系统级维护脚本（如 `clean-cache`）例外，允许要求 root |
 | `configs/` 模板里的 `/home/user` | 占位符，由部署引擎替换为目标 `$HOME`，勿改为硬编码 |
 | GPU 环境变量 | 默认配置不指定驱动，部署不按 PCI 设备自动改写；诊断仅分类设备，不推断实际渲染 GPU |
 | 网络命令（curl 等） | 必须带 `--connect-timeout`，非关键调用加容错 |
-| 引擎代码（`nyxniri/`） | 避免硬编码特定项目名，用 `constants.py` 常量；TUI 文案可适当灵活 |
+| 引擎代码（`nyxuri/`） | 避免硬编码特定项目名，用 `constants.py` 常量；TUI 文案可适当灵活 |
 | 改动涉及 wiki 描述的行为 | 同步更新 `llms-wiki/` 对应页，改完手验一遍 |
 
 **扩展指南（加法不是重构）**：
@@ -101,7 +101,7 @@ HOME=$(mktemp -d) ./install.sh test
 - **加 CLI 命令**：写 `_cmd_xxx(sub_args) -> int` handler，加一行到 `COMMANDS` 字典。退出码自动传播。
 - **加可选模块**（greeter/fcitx 同款 install|status|uninstall 三件套）：用 `_module_handler()` 工厂，一行注册。
 - **加 doctor 检查项**：写 `_check_xxx(env) -> None` 函数，append 到 `DOCTOR_CHECKS` 列表。不碰 `run_doctor()`。
-- **加 i18n 键**：在 `nyxniri/translations.toml` 加 `[键名]` 及 `zh` + `en` 条目。`test_i18n.py` 校验无孤儿/无缺失、双语字段与参数一致。
+- **加 i18n 键**：在 `nyxuri/translations.toml` 加 `[键名]` 及 `zh` + `en` 条目。`test_i18n.py` 校验无孤儿/无缺失、双语字段与参数一致。
 
 **sed 转义**：
 ```bash
@@ -201,7 +201,7 @@ export VAR
 ### Session 启动
 1. 读完整份 AGENTS.md（不是只看标题）。
 2. `git status` 看脏树——有未提交改动先问用户，别在脏树上动工。
-3. 跑 `python3 -m compileall nyxniri` + `unittest` 建基线，确认环境绿再改。
+3. 跑 `python3 -m compileall nyxuri` + `unittest` 建基线，确认环境绿再改。
 
 ### Intake（呼应 §0"懒得开局"）
 - 3 步以下、无歧义、非破坏性 → 直接干，别问。

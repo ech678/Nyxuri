@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# NyxNiri System Theme Dispatcher & Bus (theme-sync.sh)
+# Nyxuri System Theme Dispatcher & Bus (theme-sync.sh)
 # High-robustness, atomic, zero-entropy theme synchronization engine.
 # ==============================================================================
 
 set -uo pipefail
 
 # 1. Portability: Overridable theme configuration variables
-GTK_THEME_DARK="${NYXNIRI_GTK_THEME_DARK:-adw-gtk3-dark}"
-GTK_THEME_LIGHT="${NYXNIRI_GTK_THEME_LIGHT:-adw-gtk3}"
-KVANTUM_THEME_DARK="${NYXNIRI_KVANTUM_DARK:-KvLibadwaitaDark}"
-KVANTUM_THEME_LIGHT="${NYXNIRI_KVANTUM_LIGHT:-KvLibadwaita}"
-DEFAULT_FALLBACK_MODE="${NYXNIRI_DEFAULT_MODE:-dark}"
+GTK_THEME_DARK="${NYXURI_GTK_THEME_DARK:-${NYXNIRI_GTK_THEME_DARK:-adw-gtk3-dark}}"
+GTK_THEME_LIGHT="${NYXURI_GTK_THEME_LIGHT:-${NYXNIRI_GTK_THEME_LIGHT:-adw-gtk3}}"
+KVANTUM_THEME_DARK="${NYXURI_KVANTUM_DARK:-${NYXNIRI_KVANTUM_DARK:-KvLibadwaitaDark}}"
+KVANTUM_THEME_LIGHT="${NYXURI_KVANTUM_LIGHT:-${NYXNIRI_KVANTUM_LIGHT:-KvLibadwaita}}"
+DEFAULT_FALLBACK_MODE="${NYXURI_DEFAULT_MODE:-${NYXNIRI_DEFAULT_MODE:-dark}}"
 
 # 2. Concurrency Lock: Prevent race conditions from rapid toggles or startup hooks
-LOCK_FILE="${XDG_RUNTIME_DIR:-/tmp}/nyxniri-${UID}-theme-sync.lock"
+LOCK_FILE="${XDG_RUNTIME_DIR:-/tmp}/nyxuri-${UID}-theme-sync.lock"
 exec 9>"$LOCK_FILE"
 flock -w 5 9 || {
     echo "[!] Theme sync locked by another process. Skipping." >&2
@@ -182,7 +182,7 @@ atomic_update_ini "$HOME/.config/gtk-4.0/settings.ini" "gtk-application-prefer-d
 atomic_update_ini "$HOME/.config/gtk-4.0/settings.ini" "gtk-theme-name" "$GTK_THEME"
 
 # Clean up any legacy or stale GTK CSS overrides that break Libadwaita/Nautilus
-# Note: gtk.css is now managed by Noctalia user templates (nyxniri_gtk3/gtk4),
+# Note: gtk.css is now managed by Noctalia user templates (nyxuri_gtk3/gtk4),
 # which do not contain the legacy markers below and will not be removed.
 for css_dir in "$HOME/.config/gtk-4.0" "$HOME/.config/gtk-3.0"; do
     if [ -f "$css_dir/noctalia.css" ]; then
@@ -212,7 +212,12 @@ fi
 # Keep the fixed-blue glow's dark/light details in sync. Dynamic glow is
 # rendered by Noctalia's template post_hook and intentionally stays out here.
 GLOW_DIR="$HOME/.config/niri"
-GLOW_ACTIVE="$HOME/.config/NyxNiri/presets/niri.active"
+GLOW_ACTIVE="${XDG_CONFIG_HOME:-$HOME/.config}/nyxuri/presets/niri.active"
+if [ ! -f "$GLOW_ACTIVE" ] && [ -f "${XDG_CONFIG_HOME:-$HOME/.config}/nyxniri/presets/niri.active" ]; then
+    GLOW_ACTIVE="${XDG_CONFIG_HOME:-$HOME/.config}/nyxniri/presets/niri.active"
+elif [ ! -f "$GLOW_ACTIVE" ] && [ -f "${XDG_CONFIG_HOME:-$HOME/.config}/NyxNiri/presets/niri.active" ]; then
+    GLOW_ACTIVE="${XDG_CONFIG_HOME:-$HOME/.config}/NyxNiri/presets/niri.active"
+fi
 if [ -f "$GLOW_ACTIVE" ] && [ "$(cat "$GLOW_ACTIVE" 2>/dev/null)" = "glow" ]; then
     GLOW_SOURCE="$GLOW_DIR/layout-${TARGET_MODE}.kdl"
     GLOW_DEST="$GLOW_DIR/layout.kdl"

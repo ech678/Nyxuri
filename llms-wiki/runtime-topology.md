@@ -1,6 +1,6 @@
 # Runtime Topology — 进程树、IPC 管道与信号链路
 
-> NyxNiri 桌面运行时的动态全景：合成器会话启动、常驻守护进程、快捷键脚本层与跨应用 IPC 信号流。
+> Nyxuri 桌面运行时的动态全景：合成器会话启动、常驻守护进程、快捷键脚本层与跨应用 IPC 信号流。
 > 源码：`configs/niri/config.kdl`、`configs/niri/scripts/`、`configs/noctalia/`。
 
 ---
@@ -25,9 +25,9 @@
   │     └── 亮度快捷键         ───────► niri-brightness.sh (内屏背光 / 外接 DDC 分流)
   │
   └── 3. 主题与色彩调度层
-        ├── nyxniri theme toggle / dark / light / sync
+        ├── nyxuri theme toggle / dark / light / sync
         │     ▼
-        │   nyxniri.theme.sync (fcntl 排他 flock 保护)
+        │   nyxuri.theme.sync (fcntl 排他 flock 保护)
         │     ├── gsettings color-scheme ──► xdg-desktop-portal ──► GTK4/libadwaita & Brave
         │     ├── gtk-{3,4}.0/settings.ini 写入 ─────────────────► Chromium 启动读
         │     ├── noctalia msg theme-mode-* ─────────────────────► 通知 Noctalia 切换色板与状态
@@ -39,7 +39,7 @@
               ▼
             Noctalia Material You 调色算法
               ▼ (~6s 自动触发)
-            渲染 ~/.config/gtk-{3,4}.0/gtk.css (双 @media 块) + ~/.cache/nyxniri/palette.toml
+            渲染 ~/.config/gtk-{3,4}.0/gtk.css (双 @media 块) + ~/.cache/nyxuri/palette.toml
 ```
 
 ---
@@ -75,8 +75,8 @@
 1. **亮度调节降级 (`niri-brightness.sh`)**：
    - 内置屏幕优先调用 Noctalia D-Bus 背光服务（毫秒级、无卡顿）；
    - 外接显示器使用 `ddcutil`，且带超时拦截，防止 I2C 总线挂起冻结 UI。
-2. **主题同步防抖竞态 (`nyxniri.theme.sync`)**：
-   - 使用 `fcntl.flock` 锁定运行时文件（优先 `${XDG_RUNTIME_DIR}/nyxniri-${UID}-theme-sync.lock`），瞬时多次触发非阻塞快速丢弃，杜绝状态竞争。
+2. **主题同步防抖竞态 (`nyxuri.theme.sync`)**：
+   - 使用 `fcntl.flock` 锁定运行时文件（优先 `${XDG_RUNTIME_DIR}/nyxuri-${UID}-theme-sync.lock`），瞬时多次触发非阻塞快速丢弃，杜绝状态竞争。
 3. **Orbit 启动器单实例锁 (`orbit/lock.py` / `/proc` 检测)**：
    - 防止重复唤起创建多个重叠悬浮窗，再次触发时优雅收起。
 
@@ -84,15 +84,15 @@
 
 ## 5. 引擎宿主拓扑与 Environment 数据类
 
-Python 管理引擎在启动时由 `nyxniri.core.get_env()` 构建全局只读 `Environment` 单例：
+Python 管理引擎在启动时由 `nyxuri.core.get_env()` 构建全局只读 `Environment` 单例：
 
 | 属性 | 解析路径 | 职责与生命周期 |
 |---|---|---|
 | `home` | `$HOME` | 用户家目录根基 |
 | `config_dir` | `~/.config` | dotfiles 目标部署目录 |
-| `nyx_dir` | `~/.config/NyxNiri` | 用户数据（backups、presets 目录） |
-| `state_dir` | `~/.local/state/NyxNiri` | 运行时临时目录（`state.json` 账本、进程锁、易失日志） |
-| `cache_dir` | `~/.cache/NyxNiri` | 缓存目录（standalone 模式代码镜像；另含 `~/.cache/nyxniri/palette.toml` 动态色板） |
+| `nyx_dir` | `~/.config/nyxuri` | 用户数据（backups、presets 目录） |
+| `state_dir` | `~/.local/state/nyxuri` | 运行时临时目录（`state.json` 账本、进程锁、易失日志） |
+| `cache_dir` | `~/.cache/nyxuri` | 缓存目录（standalone 模式代码镜像；另含 `~/.cache/nyxuri/palette.toml` 动态色板） |
 | `run_mode` | `"system"` / `"repo"` / `"standalone"` | 判定执行模式（`.system-install` 标记优先） |
 
 两域绝对物理隔离：`state_dir` 放运行时瞬态与账本数据，`nyx_dir` 放持久化用户配置，互不渗透。

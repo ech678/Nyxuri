@@ -13,7 +13,7 @@ from tests.utils import TempEnv
 
 _LOCK_CHILD = """
 import os
-from nyxniri.core import acquire_lock
+from nyxuri.core import acquire_lock
 
 acquire_lock()
 ready_fd = os.environ.get("READY_FD")
@@ -96,7 +96,7 @@ class TestCliLock(unittest.TestCase):
 
     def test_failed_competitors_do_not_remove_active_lock(self):
         holder, release_w = self._start_holder()
-        lock_path = self._ctx.env.state_dir / "nyxniri.lock"
+        lock_path = self._ctx.env.state_dir / "nyxuri.lock"
         try:
             self.assertTrue(lock_path.is_file())
 
@@ -120,26 +120,26 @@ class TestCliLock(unittest.TestCase):
         self.assertTrue(lock_path.is_file(), "normal release must keep lock path")
 
     def test_release_closes_fd_if_unlock_fails(self):
-        import nyxniri.core as core
+        import nyxuri.core as core
 
         core.acquire_lock()
         held_fd = core._LOCK_FD
-        with patch("nyxniri.core.fcntl.flock", side_effect=OSError), \
-             patch("nyxniri.core.os.close", wraps=os.close) as close:
+        with patch("nyxuri.core.fcntl.flock", side_effect=OSError), \
+             patch("nyxuri.core.os.close", wraps=os.close) as close:
             core.release_lock()
         close.assert_called_once_with(held_fd)
         self.assertIsNone(core._LOCK_FD)
         self.assertFalse(core._LOCK_ACQUIRED)
-        self.assertTrue(self._ctx.env.state_dir.joinpath("nyxniri.lock").is_file())
+        self.assertTrue(self._ctx.env.state_dir.joinpath("nyxuri.lock").is_file())
         self.assertIsNotNone(held_fd)
 
     def test_failed_acquire_closes_fd_and_clears_state(self):
-        import nyxniri.core as core
+        import nyxuri.core as core
 
-        with patch("nyxniri.core.os.open", return_value=17), \
-             patch("nyxniri.core.fcntl.flock", side_effect=BlockingIOError), \
-             patch("nyxniri.core.os.close") as close, \
-             patch("nyxniri.core.sys.exit", side_effect=SystemExit(1)):
+        with patch("nyxuri.core.os.open", return_value=17), \
+             patch("nyxuri.core.fcntl.flock", side_effect=BlockingIOError), \
+             patch("nyxuri.core.os.close") as close, \
+             patch("nyxuri.core.sys.exit", side_effect=SystemExit(1)):
             with self.assertRaises(SystemExit):
                 core.acquire_lock()
         close.assert_called_once_with(17)

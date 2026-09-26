@@ -1,12 +1,12 @@
-"""Contract tests for dual shell management and CLI (nyxniri shell)."""
+"""Contract tests for dual shell management and CLI (nyxuri shell)."""
 
 import io
 import unittest
 from contextlib import redirect_stdout
 from unittest.mock import patch
 
-from nyxniri.state.ledger import active_shell, custom_shell_bin, set_shell
-from nyxniri.cli import _cmd_shell
+from nyxuri.state.ledger import active_shell, custom_shell_bin, set_shell
+from nyxuri.cli import _cmd_shell
 from tests.utils import TempEnv
 
 

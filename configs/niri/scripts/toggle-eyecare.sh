@@ -1,12 +1,12 @@
 #!/bin/bash
-# NyxNiri EyeCare One-shot Self-Healing Toggle & Sync Script
+# Nyxuri EyeCare One-shot Self-Healing Toggle & Sync Script
 # Zero background process besides wlsunset itself. Runs in < 2ms then exits.
 #
 # shellcheck disable=SC2317  # commands invoked via ||/&& intentional control flow
 set -uo pipefail
 
 # Ensure strict serialization to prevent any race conditions during rapid toggles or startup.
-exec 9> "${XDG_RUNTIME_DIR:-/tmp}/nyxniri-${UID}-eyecare.lock"
+exec 9> "${XDG_RUNTIME_DIR:-/tmp}/nyxuri-${UID}-eyecare.lock"
 flock -w 5 9 || exit 1
 #
 # On/off state is derived from where effects.kdl points (eyecare target = ON)
@@ -26,7 +26,7 @@ EYECARE_EFFECTS="$NIRI_DIR/effects_eyecare.kdl"
 EYECARE_TEMP=5500
 
 # Log for reload failures / self-healing events (empty on success)
-LOG_FILE="${XDG_RUNTIME_DIR:-/tmp}/nyxniri-eyecare.log"
+LOG_FILE="${XDG_RUNTIME_DIR:-/tmp}/nyxuri-eyecare.log"
 
 HAS_NOCTALIA=false
 if command -v noctalia >/dev/null 2>&1; then

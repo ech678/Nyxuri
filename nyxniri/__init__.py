@@ -1,1 +1,0 @@
-"""NyxNiri — Noctalia & Niri Dotfiles Installer & Toolbox Engine."""

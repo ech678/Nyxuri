@@ -1,14 +1,14 @@
 """Unit tests for template_registry primitives and placeholder interpolation."""
 
 import unittest
-from nyxniri.template_registry import has_section, add_section, render_template
+from nyxuri.template_registry import has_section, add_section, render_template
 
 
 class TestTemplateRegistryPrimitives(unittest.TestCase):
     def test_has_section(self):
         content = """
 [package]
-name = "nyxniri"
+name = "nyxuri"
 
 [parts.effects]
 target = "effects.kdl"

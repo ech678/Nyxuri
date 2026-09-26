@@ -23,22 +23,22 @@ class TestGreeterInstall(unittest.TestCase):
         self._ctx.__exit__()
 
     def _install(self, fake_run):
-        from nyxniri.modules.greeter import greeter_install
+        from nyxuri.modules.greeter import greeter_install
 
         config = self._ctx.env.home / "greetd" / "config.toml"
         polkit = self._ctx.env.home / "polkit.rules"
         state_dir = self._ctx.env.home / "state-dir"
         dm_state = self._ctx.env.home / "display-manager"
-        with patch("nyxniri.modules.greeter.shutil.which", return_value="/usr/bin/env"), \
-             patch("nyxniri.modules.greeter.subprocess.run", side_effect=fake_run), \
-             patch("nyxniri.modules.greeter.greeter_install_packages", return_value=True), \
-             patch("nyxniri.modules.greeter._greeter_session_path", return_value="/usr/bin/noctalia-greeter-session"), \
-             patch("nyxniri.modules.greeter._greeter_session_arg", return_value=""), \
-             patch("nyxniri.modules.greeter.GREETER_ETC_CFG", config), \
-             patch("nyxniri.modules.greeter.GREETER_POLKIT_RULE", polkit), \
-             patch("nyxniri.modules.greeter.GREETER_STATE_DIR", state_dir), \
-             patch("nyxniri.modules.greeter.GREETER_DM_STATE", dm_state), \
-             patch("nyxniri.modules.greeter.log_msg") as log, \
+        with patch("nyxuri.modules.greeter.shutil.which", return_value="/usr/bin/env"), \
+             patch("nyxuri.modules.greeter.subprocess.run", side_effect=fake_run), \
+             patch("nyxuri.modules.greeter.greeter_install_packages", return_value=True), \
+             patch("nyxuri.modules.greeter._greeter_session_path", return_value="/usr/bin/noctalia-greeter-session"), \
+             patch("nyxuri.modules.greeter._greeter_session_arg", return_value=""), \
+             patch("nyxuri.modules.greeter.GREETER_ETC_CFG", config), \
+             patch("nyxuri.modules.greeter.GREETER_POLKIT_RULE", polkit), \
+             patch("nyxuri.modules.greeter.GREETER_STATE_DIR", state_dir), \
+             patch("nyxuri.modules.greeter.GREETER_DM_STATE", dm_state), \
+             patch("nyxuri.modules.greeter.log_msg") as log, \
              patch("builtins.print"):
             result = greeter_install()
         return result, log
@@ -59,7 +59,7 @@ class TestGreeterInstall(unittest.TestCase):
         self.assertFalse(any(command[:3] == ["sudo", "systemctl", "disable"] for command in calls))
 
     def test_failed_setup_removes_transaction_backups_after_restoring_files(self):
-        from nyxniri.modules.greeter import greeter_install
+        from nyxuri.modules.greeter import greeter_install
 
         config = self._ctx.env.home / "greetd" / "config.toml"
         polkit = self._ctx.env.home / "polkit.rules"
@@ -85,14 +85,14 @@ class TestGreeterInstall(unittest.TestCase):
                 Path(argv[-1]).unlink(missing_ok=True)
             return _result()
 
-        with patch("nyxniri.modules.greeter.GREETER_ETC_CFG", config), \
-             patch("nyxniri.modules.greeter.GREETER_POLKIT_RULE", polkit), \
-             patch("nyxniri.modules.greeter.GREETER_STATE_DIR", state_dir), \
-             patch("nyxniri.modules.greeter.shutil.which", return_value="/usr/bin/env"), \
-             patch("nyxniri.modules.greeter.subprocess.run", side_effect=fake_run), \
-             patch("nyxniri.modules.greeter.greeter_install_packages", return_value=True), \
-             patch("nyxniri.modules.greeter._greeter_session_path", return_value="/usr/bin/noctalia-greeter-session"), \
-             patch("nyxniri.modules.greeter._greeter_session_arg", return_value=""), \
+        with patch("nyxuri.modules.greeter.GREETER_ETC_CFG", config), \
+             patch("nyxuri.modules.greeter.GREETER_POLKIT_RULE", polkit), \
+             patch("nyxuri.modules.greeter.GREETER_STATE_DIR", state_dir), \
+             patch("nyxuri.modules.greeter.shutil.which", return_value="/usr/bin/env"), \
+             patch("nyxuri.modules.greeter.subprocess.run", side_effect=fake_run), \
+             patch("nyxuri.modules.greeter.greeter_install_packages", return_value=True), \
+             patch("nyxuri.modules.greeter._greeter_session_path", return_value="/usr/bin/noctalia-greeter-session"), \
+             patch("nyxuri.modules.greeter._greeter_session_arg", return_value=""), \
              patch("builtins.print"):
             self.assertFalse(greeter_install())
 
@@ -101,16 +101,16 @@ class TestGreeterInstall(unittest.TestCase):
         self.assertEqual(calls[:4], [
             ["sudo", "cat", str(config)],
             ["sudo", "cat", str(polkit)],
-            ["sudo", "cp", "-n", "--", str(config), f"{config}.nyxniri.bak"],
-            ["sudo", "cp", "-n", "--", str(polkit), f"{polkit}.nyxniri.bak"],
+            ["sudo", "cp", "-n", "--", str(config), f"{config}.nyxuri.bak"],
+            ["sudo", "cp", "-n", "--", str(polkit), f"{polkit}.nyxuri.bak"],
         ])
-        self.assertIn(["sudo", "rm", "-f", f"{config}.nyxniri.bak"], calls)
-        self.assertIn(["sudo", "rm", "-f", f"{polkit}.nyxniri.bak"], calls)
-        self.assertFalse(Path(f"{config}.nyxniri.bak").exists())
-        self.assertFalse(Path(f"{polkit}.nyxniri.bak").exists())
+        self.assertIn(["sudo", "rm", "-f", f"{config}.nyxuri.bak"], calls)
+        self.assertIn(["sudo", "rm", "-f", f"{polkit}.nyxuri.bak"], calls)
+        self.assertFalse(Path(f"{config}.nyxuri.bak").exists())
+        self.assertFalse(Path(f"{polkit}.nyxuri.bak").exists())
 
     def test_failed_setup_keeps_existing_backups(self):
-        from nyxniri.modules.greeter import greeter_install
+        from nyxuri.modules.greeter import greeter_install
 
         config = self._ctx.env.home / "greetd" / "config.toml"
         polkit = self._ctx.env.home / "polkit.rules"
@@ -118,8 +118,8 @@ class TestGreeterInstall(unittest.TestCase):
         config.parent.mkdir(parents=True)
         config.write_text("old config", encoding="utf-8")
         polkit.write_text("old rule", encoding="utf-8")
-        config_backup = Path(f"{config}.nyxniri.bak")
-        polkit_backup = Path(f"{polkit}.nyxniri.bak")
+        config_backup = Path(f"{config}.nyxuri.bak")
+        polkit_backup = Path(f"{polkit}.nyxuri.bak")
         config_backup.write_text("keep config", encoding="utf-8")
         polkit_backup.write_text("keep rule", encoding="utf-8")
         calls = []
@@ -136,14 +136,14 @@ class TestGreeterInstall(unittest.TestCase):
                 return _result(1)
             return _result()
 
-        with patch("nyxniri.modules.greeter.GREETER_ETC_CFG", config), \
-             patch("nyxniri.modules.greeter.GREETER_POLKIT_RULE", polkit), \
-             patch("nyxniri.modules.greeter.GREETER_STATE_DIR", state_dir), \
-             patch("nyxniri.modules.greeter.shutil.which", return_value="/usr/bin/env"), \
-             patch("nyxniri.modules.greeter.subprocess.run", side_effect=fake_run), \
-             patch("nyxniri.modules.greeter.greeter_install_packages", return_value=True), \
-             patch("nyxniri.modules.greeter._greeter_session_path", return_value="/usr/bin/noctalia-greeter-session"), \
-             patch("nyxniri.modules.greeter._greeter_session_arg", return_value=""), \
+        with patch("nyxuri.modules.greeter.GREETER_ETC_CFG", config), \
+             patch("nyxuri.modules.greeter.GREETER_POLKIT_RULE", polkit), \
+             patch("nyxuri.modules.greeter.GREETER_STATE_DIR", state_dir), \
+             patch("nyxuri.modules.greeter.shutil.which", return_value="/usr/bin/env"), \
+             patch("nyxuri.modules.greeter.subprocess.run", side_effect=fake_run), \
+             patch("nyxuri.modules.greeter.greeter_install_packages", return_value=True), \
+             patch("nyxuri.modules.greeter._greeter_session_path", return_value="/usr/bin/noctalia-greeter-session"), \
+             patch("nyxuri.modules.greeter._greeter_session_arg", return_value=""), \
              patch("builtins.print"):
             self.assertFalse(greeter_install())
 
@@ -153,7 +153,7 @@ class TestGreeterInstall(unittest.TestCase):
         self.assertNotIn(["sudo", "rm", "-f", str(polkit_backup)], calls)
 
     def test_second_backup_failure_only_removes_transaction_config_backup(self):
-        from nyxniri.modules.greeter import greeter_install
+        from nyxuri.modules.greeter import greeter_install
 
         config = self._ctx.env.home / "greetd" / "config.toml"
         polkit = self._ctx.env.home / "polkit.rules"
@@ -171,32 +171,32 @@ class TestGreeterInstall(unittest.TestCase):
             calls.append(argv)
             if argv[:2] == ["sudo", "cat"]:
                 return _result(stdout=Path(argv[-1]).read_text(encoding="utf-8"))
-            if argv == ["sudo", "cp", "-n", "--", str(config), f"{config}.nyxniri.bak"]:
+            if argv == ["sudo", "cp", "-n", "--", str(config), f"{config}.nyxuri.bak"]:
                 Path(argv[-1]).write_bytes(config.read_bytes())
                 return _result()
-            if argv == ["sudo", "cp", "-n", "--", str(polkit), f"{polkit}.nyxniri.bak"]:
+            if argv == ["sudo", "cp", "-n", "--", str(polkit), f"{polkit}.nyxuri.bak"]:
                 return _result(1)
-            if argv == ["sudo", "rm", "-f", f"{config}.nyxniri.bak"]:
+            if argv == ["sudo", "rm", "-f", f"{config}.nyxuri.bak"]:
                 Path(argv[-1]).unlink(missing_ok=True)
             return _result()
 
-        with patch("nyxniri.modules.greeter.GREETER_ETC_CFG", config), \
-             patch("nyxniri.modules.greeter.GREETER_POLKIT_RULE", polkit), \
-             patch("nyxniri.modules.greeter.GREETER_STATE_DIR", state_dir), \
-             patch("nyxniri.modules.greeter.shutil.which", return_value="/usr/bin/env"), \
-             patch("nyxniri.modules.greeter.subprocess.run", side_effect=fake_run), \
-             patch("nyxniri.modules.greeter.greeter_install_packages", return_value=True), \
-             patch("nyxniri.modules.greeter._greeter_session_path", return_value="/usr/bin/noctalia-greeter-session"), \
-             patch("nyxniri.modules.greeter._greeter_session_arg", return_value=""), \
+        with patch("nyxuri.modules.greeter.GREETER_ETC_CFG", config), \
+             patch("nyxuri.modules.greeter.GREETER_POLKIT_RULE", polkit), \
+             patch("nyxuri.modules.greeter.GREETER_STATE_DIR", state_dir), \
+             patch("nyxuri.modules.greeter.shutil.which", return_value="/usr/bin/env"), \
+             patch("nyxuri.modules.greeter.subprocess.run", side_effect=fake_run), \
+             patch("nyxuri.modules.greeter.greeter_install_packages", return_value=True), \
+             patch("nyxuri.modules.greeter._greeter_session_path", return_value="/usr/bin/noctalia-greeter-session"), \
+             patch("nyxuri.modules.greeter._greeter_session_arg", return_value=""), \
              patch("builtins.print"):
             self.assertFalse(greeter_install())
 
         self.assertEqual(calls, [
             ["sudo", "cat", str(config)],
             ["sudo", "cat", str(polkit)],
-            ["sudo", "cp", "-n", "--", str(config), f"{config}.nyxniri.bak"],
-            ["sudo", "cp", "-n", "--", str(polkit), f"{polkit}.nyxniri.bak"],
-            ["sudo", "rm", "-f", f"{config}.nyxniri.bak"],
+            ["sudo", "cp", "-n", "--", str(config), f"{config}.nyxuri.bak"],
+            ["sudo", "cp", "-n", "--", str(polkit), f"{polkit}.nyxuri.bak"],
+            ["sudo", "rm", "-f", f"{config}.nyxuri.bak"],
         ])
         self.assertEqual(config.read_bytes(), b"old config\n")
         self.assertEqual(polkit.read_bytes(), b"old rule\n")
@@ -205,15 +205,15 @@ class TestGreeterInstall(unittest.TestCase):
         self.assertFalse(state_dir.exists())
 
     def test_untrusted_session_path_is_rejected_before_privileged_command(self):
-        from nyxniri.modules.greeter import greeter_install
+        from nyxuri.modules.greeter import greeter_install
 
         calls = []
         packages = MagicMock(return_value=True)
         with patch(
-            "nyxniri.modules.greeter.shutil.which",
+            "nyxuri.modules.greeter.shutil.which",
             side_effect=lambda name: "/tmp/noctalia;id\n" if name == "noctalia-greeter-session" else "/usr/bin/systemctl",
-        ), patch("nyxniri.modules.greeter.subprocess.run", side_effect=lambda argv, **kwargs: calls.append(argv)), \
-             patch("nyxniri.modules.greeter.greeter_install_packages", packages), \
+        ), patch("nyxuri.modules.greeter.subprocess.run", side_effect=lambda argv, **kwargs: calls.append(argv)), \
+             patch("nyxuri.modules.greeter.greeter_install_packages", packages), \
              patch("builtins.print"):
             result = greeter_install()
 
@@ -222,7 +222,7 @@ class TestGreeterInstall(unittest.TestCase):
         self.assertEqual(calls, [])
 
     def test_trusted_executable_requires_root_owned_nonwritable_ancestors(self):
-        from nyxniri.modules.greeter import _trusted_executable
+        from nyxuri.modules.greeter import _trusted_executable
 
         class FakePath:
             def __init__(self, name, uid=0, mode=stat.S_IFDIR | 0o755):
@@ -253,8 +253,8 @@ class TestGreeterInstall(unittest.TestCase):
                 "/usr/bin/noctalia-greeter-session", uid=executable_uid, mode=executable_mode
             )
             executable.parent = trusted_dir
-            with patch("nyxniri.modules.greeter.Path", return_value=executable), \
-                 patch("nyxniri.modules.greeter.TRUSTED_EXEC_DIRS", (trusted_dir,)):
+            with patch("nyxuri.modules.greeter.Path", return_value=executable), \
+                 patch("nyxuri.modules.greeter.TRUSTED_EXEC_DIRS", (trusted_dir,)):
                 return _trusted_executable("/usr/bin/noctalia-greeter-session")
 
         self.assertEqual(validate(), "/usr/bin/noctalia-greeter-session")
@@ -351,7 +351,7 @@ class TestGreeterInstall(unittest.TestCase):
         self.assertIn(["sudo", "systemctl", "enable", "--force", "sddm"], calls)
 
     def test_failed_switch_does_not_claim_restore_when_greetd_stays_enabled(self):
-        from nyxniri.modules.greeter import _switch_to_greetd
+        from nyxuri.modules.greeter import _switch_to_greetd
 
         calls = []
         greetd_checks = {"count": 0}
@@ -363,8 +363,8 @@ class TestGreeterInstall(unittest.TestCase):
                 return _result(1 if greetd_checks["count"] == 1 else 0)
             return _result(1 if argv == ["sudo", "systemctl", "enable", "greetd"] else 0)
 
-        with patch("nyxniri.modules.greeter.subprocess.run", side_effect=fake_run), \
-             patch("nyxniri.modules.greeter._clear_display_manager_record") as clear_record, \
+        with patch("nyxuri.modules.greeter.subprocess.run", side_effect=fake_run), \
+             patch("nyxuri.modules.greeter._clear_display_manager_record") as clear_record, \
              patch("builtins.print"):
             result = _switch_to_greetd("sddm")
 
@@ -374,7 +374,7 @@ class TestGreeterInstall(unittest.TestCase):
         clear_record.assert_not_called()
 
     def test_backup_failure_returns_false_before_configuration_changes(self):
-        from nyxniri.modules.greeter import greeter_install
+        from nyxuri.modules.greeter import greeter_install
 
         config = self._ctx.env.home / "config.toml"
         config.write_text("old", encoding="utf-8")
@@ -386,20 +386,20 @@ class TestGreeterInstall(unittest.TestCase):
                 return _result(1)
             return _result()
 
-        with patch("nyxniri.modules.greeter.GREETER_ETC_CFG", config), \
-             patch("nyxniri.modules.greeter.shutil.which", return_value="/usr/bin/env"), \
-             patch("nyxniri.modules.greeter.subprocess.run", side_effect=fake_run), \
-             patch("nyxniri.modules.greeter.greeter_install_packages", return_value=True), \
-             patch("nyxniri.modules.greeter._greeter_session_path", return_value="/usr/bin/noctalia-greeter-session"), \
-             patch("nyxniri.modules.greeter._greeter_session_arg", return_value=""), \
-             patch("nyxniri.modules.greeter.log_msg"), \
+        with patch("nyxuri.modules.greeter.GREETER_ETC_CFG", config), \
+             patch("nyxuri.modules.greeter.shutil.which", return_value="/usr/bin/env"), \
+             patch("nyxuri.modules.greeter.subprocess.run", side_effect=fake_run), \
+             patch("nyxuri.modules.greeter.greeter_install_packages", return_value=True), \
+             patch("nyxuri.modules.greeter._greeter_session_path", return_value="/usr/bin/noctalia-greeter-session"), \
+             patch("nyxuri.modules.greeter._greeter_session_arg", return_value=""), \
+             patch("nyxuri.modules.greeter.log_msg"), \
              patch("builtins.print"):
             result = greeter_install()
 
         self.assertFalse(result)
         self.assertEqual(calls, [
             ["sudo", "cat", str(config)],
-            ["sudo", "cp", "-n", "--", str(config), f"{config}.nyxniri.bak"],
+            ["sudo", "cp", "-n", "--", str(config), f"{config}.nyxuri.bak"],
         ])
 
     def test_state_directory_and_polkit_failures_propagate(self):
@@ -425,7 +425,7 @@ class TestGreeterInstall(unittest.TestCase):
                     self.assertIn(["sudo", "rm", "-f", str(self._ctx.env.home / "polkit.rules")], calls)
 
     def test_setup_failure_restores_existing_configuration_and_polkit_rule(self):
-        from nyxniri.modules.greeter import greeter_install
+        from nyxuri.modules.greeter import greeter_install
 
         config = self._ctx.env.home / "greetd" / "config.toml"
         polkit = self._ctx.env.home / "polkit.rules"
@@ -445,14 +445,14 @@ class TestGreeterInstall(unittest.TestCase):
                 return _result(1)
             return _result()
 
-        with patch("nyxniri.modules.greeter.GREETER_ETC_CFG", config), \
-             patch("nyxniri.modules.greeter.GREETER_POLKIT_RULE", polkit), \
-             patch("nyxniri.modules.greeter.GREETER_STATE_DIR", state_dir), \
-             patch("nyxniri.modules.greeter.shutil.which", return_value="/usr/bin/env"), \
-             patch("nyxniri.modules.greeter.subprocess.run", side_effect=fake_run), \
-             patch("nyxniri.modules.greeter.greeter_install_packages", return_value=True), \
-             patch("nyxniri.modules.greeter._greeter_session_path", return_value="/usr/bin/noctalia-greeter-session"), \
-             patch("nyxniri.modules.greeter._greeter_session_arg", return_value=""), \
+        with patch("nyxuri.modules.greeter.GREETER_ETC_CFG", config), \
+             patch("nyxuri.modules.greeter.GREETER_POLKIT_RULE", polkit), \
+             patch("nyxuri.modules.greeter.GREETER_STATE_DIR", state_dir), \
+             patch("nyxuri.modules.greeter.shutil.which", return_value="/usr/bin/env"), \
+             patch("nyxuri.modules.greeter.subprocess.run", side_effect=fake_run), \
+             patch("nyxuri.modules.greeter.greeter_install_packages", return_value=True), \
+             patch("nyxuri.modules.greeter._greeter_session_path", return_value="/usr/bin/noctalia-greeter-session"), \
+             patch("nyxuri.modules.greeter._greeter_session_arg", return_value=""), \
              patch("builtins.print"):
             result = greeter_install()
 
@@ -481,7 +481,7 @@ class TestGreeterInstall(unittest.TestCase):
         self.assertGreaterEqual(calls.count(["systemctl", "is-enabled", "greetd"]), 3)
 
     def test_failed_reinstall_restores_recorded_manager_without_deleting_record(self):
-        from nyxniri.modules.greeter import greeter_install
+        from nyxuri.modules.greeter import greeter_install
 
         config = self._ctx.env.home / "greetd" / "config.toml"
         polkit = self._ctx.env.home / "polkit.rules"
@@ -507,15 +507,15 @@ class TestGreeterInstall(unittest.TestCase):
                 sddm_enabled["value"] = True
             return _result()
 
-        with patch("nyxniri.modules.greeter.GREETER_ETC_CFG", config), \
-             patch("nyxniri.modules.greeter.GREETER_POLKIT_RULE", polkit), \
-             patch("nyxniri.modules.greeter.GREETER_STATE_DIR", state_dir), \
-             patch("nyxniri.modules.greeter.GREETER_DM_STATE", record), \
-             patch("nyxniri.modules.greeter.shutil.which", return_value="/usr/bin/systemctl"), \
-             patch("nyxniri.modules.greeter.subprocess.run", side_effect=fake_run), \
-             patch("nyxniri.modules.greeter.greeter_install_packages", return_value=True), \
-             patch("nyxniri.modules.greeter._greeter_session_path", return_value="/usr/bin/noctalia-greeter-session"), \
-             patch("nyxniri.modules.greeter._greeter_session_arg", return_value=""), \
+        with patch("nyxuri.modules.greeter.GREETER_ETC_CFG", config), \
+             patch("nyxuri.modules.greeter.GREETER_POLKIT_RULE", polkit), \
+             patch("nyxuri.modules.greeter.GREETER_STATE_DIR", state_dir), \
+             patch("nyxuri.modules.greeter.GREETER_DM_STATE", record), \
+             patch("nyxuri.modules.greeter.shutil.which", return_value="/usr/bin/systemctl"), \
+             patch("nyxuri.modules.greeter.subprocess.run", side_effect=fake_run), \
+             patch("nyxuri.modules.greeter.greeter_install_packages", return_value=True), \
+             patch("nyxuri.modules.greeter._greeter_session_path", return_value="/usr/bin/noctalia-greeter-session"), \
+             patch("nyxuri.modules.greeter._greeter_session_arg", return_value=""), \
              patch("builtins.print"):
             result = greeter_install()
 
@@ -535,7 +535,7 @@ class TestGreeterUninstall(unittest.TestCase):
         self._ctx.__exit__()
 
     def _uninstall(self, state="sddm\n", fail=None, greetd_enabled=False):
-        from nyxniri.modules.greeter import greeter_uninstall
+        from nyxuri.modules.greeter import greeter_uninstall
 
         if state is not None:
             self.state_file.write_text(state, encoding="utf-8")
@@ -559,13 +559,13 @@ class TestGreeterUninstall(unittest.TestCase):
                 return _result(0 if active["greetd"] else 1)
             return _result()
 
-        with patch("nyxniri.modules.greeter.GREETER_DM_STATE", self.state_file), \
-             patch("nyxniri.modules.greeter.GREETER_ETC_CFG", config), \
-             patch("nyxniri.modules.greeter.GREETER_POLKIT_RULE", polkit), \
-             patch("nyxniri.modules.greeter.GREETER_STATE_DIR", state_dir), \
-             patch("nyxniri.modules.greeter.shutil.which", return_value="/usr/bin/systemctl"), \
-             patch("nyxniri.modules.greeter.subprocess.run", side_effect=fake_run), \
-             patch("nyxniri.modules.greeter.log_msg") as log, \
+        with patch("nyxuri.modules.greeter.GREETER_DM_STATE", self.state_file), \
+             patch("nyxuri.modules.greeter.GREETER_ETC_CFG", config), \
+             patch("nyxuri.modules.greeter.GREETER_POLKIT_RULE", polkit), \
+             patch("nyxuri.modules.greeter.GREETER_STATE_DIR", state_dir), \
+             patch("nyxuri.modules.greeter.shutil.which", return_value="/usr/bin/systemctl"), \
+             patch("nyxuri.modules.greeter.subprocess.run", side_effect=fake_run), \
+             patch("nyxuri.modules.greeter.log_msg") as log, \
              patch("builtins.print"):
             result = greeter_uninstall()
         return result, calls, log
@@ -585,7 +585,7 @@ class TestGreeterUninstall(unittest.TestCase):
         log.assert_called_once_with("INFO", "Uninstalled Noctalia Greeter configuration")
 
     def test_successful_install_then_uninstall_restores_original_manager(self):
-        from nyxniri.modules.greeter import greeter_install, greeter_uninstall
+        from nyxuri.modules.greeter import greeter_install, greeter_uninstall
 
         config = self._ctx.env.home / "greetd" / "config.toml"
         polkit = self._ctx.env.home / "polkit.rules"
@@ -617,15 +617,15 @@ class TestGreeterUninstall(unittest.TestCase):
                 return _result(stdout=self.state_file.read_text(encoding="utf-8"))
             return _result()
 
-        with patch("nyxniri.modules.greeter.GREETER_ETC_CFG", config), \
-             patch("nyxniri.modules.greeter.GREETER_POLKIT_RULE", polkit), \
-             patch("nyxniri.modules.greeter.GREETER_STATE_DIR", state_dir), \
-             patch("nyxniri.modules.greeter.GREETER_DM_STATE", self.state_file), \
-             patch("nyxniri.modules.greeter.shutil.which", return_value="/usr/bin/systemctl"), \
-             patch("nyxniri.modules.greeter.subprocess.run", side_effect=fake_run), \
-             patch("nyxniri.modules.greeter.greeter_install_packages", return_value=True), \
-             patch("nyxniri.modules.greeter._greeter_session_path", return_value="/usr/bin/noctalia-greeter-session"), \
-             patch("nyxniri.modules.greeter._greeter_session_arg", return_value=""), \
+        with patch("nyxuri.modules.greeter.GREETER_ETC_CFG", config), \
+             patch("nyxuri.modules.greeter.GREETER_POLKIT_RULE", polkit), \
+             patch("nyxuri.modules.greeter.GREETER_STATE_DIR", state_dir), \
+             patch("nyxuri.modules.greeter.GREETER_DM_STATE", self.state_file), \
+             patch("nyxuri.modules.greeter.shutil.which", return_value="/usr/bin/systemctl"), \
+             patch("nyxuri.modules.greeter.subprocess.run", side_effect=fake_run), \
+             patch("nyxuri.modules.greeter.greeter_install_packages", return_value=True), \
+             patch("nyxuri.modules.greeter._greeter_session_path", return_value="/usr/bin/noctalia-greeter-session"), \
+             patch("nyxuri.modules.greeter._greeter_session_arg", return_value=""), \
              patch("builtins.print"):
             self.assertTrue(greeter_install())
             self.assertTrue(greeter_uninstall())

@@ -6,13 +6,13 @@
 
 <div align="center">
 
-<h1>NyxNiri</h1>
+<h1>Nyxuri</h1>
 
-<p><strong>Arch / CachyOS 上的 Material You 桌面体验</strong><br />
+<p><strong>/nɪkˈsuːri/ · Arch / CachyOS 上的 Material You 桌面体验</strong><br />
 <sub>基于 Niri 和 Noctalia V5 —— 然后闭嘴！</sub></p>
 
 <p>
-  <a href="https://github.com/ech678/NyxNiri/stargazers"><img height="22" src="https://m3-markdown-badges.vercel.app/stars/3/3/ech678/NyxNiri" alt="Stars" /></a>
+  <a href="https://github.com/ech678/Nyxuri/stargazers"><img height="22" src="https://m3-markdown-badges.vercel.app/stars/3/3/ech678/Nyxuri" alt="Stars" /></a>
   &nbsp;
   <a href="https://archlinux.org"><img height="22" src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Arch/arch2.svg" alt="Arch Linux" /></a>
   &nbsp;
@@ -20,7 +20,7 @@
 </p>
 
 <a href="https://github.com/user-attachments/assets/9ef4da30-54c0-491b-916f-2f2a3beac6be">
-  <img src="https://github.com/user-attachments/assets/9ef4da30-54c0-491b-916f-2f2a3beac6be" alt="NyxNiri 预览" width="92%" />
+  <img src="https://github.com/user-attachments/assets/9ef4da30-54c0-491b-916f-2f2a3beac6be" alt="Nyxuri 预览" width="92%" />
 </a>
 
 <p>
@@ -28,6 +28,10 @@
 </p>
 
 </div>
+
+> **关于 Nyxuri**（*nik-SOO-ri* `/nɪkˈsuːri/`）：原创造词。由希腊神话夜之女神 **Nyx**（黑暗、静谧、深度）与 **-uri**（呼应「潤」うるおう，柔和光泽、表面反光质感）结合而成，意象接近「带着一层柔和光泽的夜色」。
+>
+> *从原 NyxNiri 迁移？* 运行 `nyxuri` 会自动将原有的配置、历史快照及状态无缝迁移至 `nyxuri` 目录，并干净清理旧目录与残留，零冗余。
 
 ## 特性
 
@@ -44,39 +48,39 @@
 ## 安装
 
 > [!IMPORTANT]
-> **从旧版 Bash 目录（`lib/` + `v2/`）升级：**旧版 `nyxniri update` 无法直接切换到新版 Python 目录。更新前请先运行一次新版引导。现有配置、`~/.config/NyxNiri/backups/` 和旧版 `~/.config/dotfiles_backup_*` 快照都会保留。
+> **从旧版 Bash 目录（`lib/` + `v2/`）升级：**旧版 `nyxniri update` 无法直接切换到新版 Python 目录。更新前请先运行一次新版引导。现有配置、`~/.config/nyxuri/backups/` 和旧版 `~/.config/dotfiles_backup_*` 快照都会保留。
 
 ### 独立在线安装
 
 ```bash
-curl -fsSL --connect-timeout 10 https://raw.githubusercontent.com/ech678/NyxNiri/main/install.sh | bash
+curl -fsSL --connect-timeout 10 https://raw.githubusercontent.com/ech678/Nyxuri/main/install.sh | bash
 ```
 
 > [!TIP]
-> 自动支持 Shelly、paru、yay；均未安装时，`nyxniri install full` 会自动装好 `paru`。
+> 自动支持 Shelly、paru、yay；均未安装时，`nyxuri install full` 会自动装好 `paru`。
 
 ### 从 Git 仓库安装（推荐）
 
 ```bash
 # 浅克隆：只拉最新快照；要完整历史去掉 --depth 1
-git clone --depth 1 https://github.com/ech678/NyxNiri.git ~/NyxNiri
-cd ~/NyxNiri && ./install.sh
+git clone --depth 1 https://github.com/ech678/Nyxuri.git ~/Nyxuri
+cd ~/Nyxuri && ./install.sh
 ```
 
 ### 系统包安装（AUR）
 
-> 即将支持——`paru -S nyxniri-git`，更新由 pacman 管理。
+> 即将支持——`paru -S nyxuri-git`，更新由 pacman 管理。
 
 <details>
 <summary>国内镜像加速（gh-proxy / CDN）</summary>
 
 ```bash
 # 通过 gh-proxy.org 独立安装
-curl -fsSL --connect-timeout 10 https://gh-proxy.org/https://raw.githubusercontent.com/ech678/NyxNiri/main/install.sh | bash
+curl -fsSL --connect-timeout 10 https://gh-proxy.org/https://raw.githubusercontent.com/ech678/Nyxuri/main/install.sh | bash
 
 # 通过 gh-proxy.org 克隆仓库
-git clone --depth 1 https://gh-proxy.org/https://github.com/ech678/NyxNiri.git ~/NyxNiri
-cd ~/NyxNiri && ./install.sh
+git clone --depth 1 https://gh-proxy.org/https://github.com/ech678/Nyxuri.git ~/Nyxuri
+cd ~/Nyxuri && ./install.sh
 ```
 
 拉取仓库时，`install.sh` 先走 GitHub，失败再走 gh-proxy。
@@ -85,9 +89,9 @@ cd ~/NyxNiri && ./install.sh
 ## 包含配置
 
 ```text
-NyxNiri
+Nyxuri
 ├── install.sh                  # 极简引导入口
-├── nyxniri/                    # Python 核心引擎（零 pip 依赖）
+├── nyxuri/                     # Python 核心引擎（零 pip 依赖）
 ├── assets/                     # 静态资产（壁纸、fcitx5 皮肤模板）
 └── configs/
     ├── niri/                   # 窗口管理器（.kdl、.toml）
@@ -119,7 +123,7 @@ NyxNiri
 
 ### 部署后钩子
 
-把自己的收尾脚本放进 `~/.config/NyxNiri/hooks/`，每次正常部署完成后会按文件名字典序执行其中的 `.sh`。单个脚本最多运行 30 秒；失败或超时会提示，但不会阻塞后续脚本。`nyxniri test` 不会执行这些钩子，普通卸载也会保留它们。
+把自己的收尾脚本放进 `~/.config/nyxuri/hooks/`，每次正常部署完成后会按文件名字典序执行其中的 `.sh`。单个脚本最多运行 30 秒；失败或超时会提示，但不会阻塞后续脚本。`nyxuri test` 不会执行这些钩子，普通卸载也会保留它们。
 
 ## 预设
 
@@ -138,13 +142,13 @@ NyxNiri
 
 | 指令 | 作用 |
 | :--- | :--- |
-| `nyxniri preset <app> list` | 列出预设（`*` 标当前活动） |
-| `nyxniri preset <app> apply <name>` | 切换预设（`apply default` 回默认） |
-| `nyxniri preset <app> save <name>` | 把当前配置存为私有预设 |
-| `nyxniri preset <app> edit <name>` | 在 `$EDITOR` 里改私有预设 |
-| `nyxniri preset <app> delete <name>` | 删除私有预设（官方预设只读） |
+| `nyxuri preset <app> list` | 列出预设（`*` 标当前活动） |
+| `nyxuri preset <app> apply <name>` | 切换预设（`apply default` 回默认） |
+| `nyxuri preset <app> save <name>` | 把当前配置存为私有预设 |
+| `nyxuri preset <app> edit <name>` | 在 `$EDITOR` 里改私有预设 |
+| `nyxuri preset <app> delete <name>` | 删除私有预设（官方预设只读） |
 
-官方预设随 `nyxniri update` 更新；私有预设存在 `~/.config/NyxNiri/presets/`。
+官方预设随 `nyxuri update` 更新；私有预设存在 `~/.config/nyxuri/presets/`。
 
 ## 快捷键
 
@@ -200,7 +204,7 @@ NyxNiri
 
 > GTK 主题和 fisher 插件管理器随全量安装自动部署；下面的条目按需启用。
 
-**NyxMellow fcitx5 皮肤：** 圆角 mellow 风格，跟随 Noctalia 配色和明暗。`nyxniri fcitx install` 注册为模板，随主题自动重绘；按需启用，不覆盖现有配置。
+**NyxMellow fcitx5 皮肤：** 圆角 mellow 风格，跟随 Noctalia 配色和明暗。`nyxuri fcitx install` 注册为模板，随主题自动重绘；按需启用，不覆盖现有配置。
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/3f861e8e-55da-408e-a9d5-7f337a039b74" alt="NyxMellow 皮肤（亮色）" width="48%" />
@@ -209,13 +213,13 @@ NyxNiri
   <sub><em>NyxMellow 皮肤亮色 / 暗色效果</em></sub>
 </p>
 
-**壁纸和动态视频包：** 高清壁纸和动态视频（约 100MB）在独立仓库 [wallpaper-collection](https://github.com/ech678/wallpaper-collection)。`install` 时可选拉取，或随时用 `nyxniri wallpapers` 下载。
+**壁纸和动态视频包：** 高清壁纸和动态视频（约 100MB）在独立仓库 [wallpaper-collection](https://github.com/ech678/wallpaper-collection)。`install` 时可选拉取，或随时用 `nyxuri wallpapers` 下载。
 
-**Noctalia Greeter：** 和 Noctalia 主题一致的 greetd 登录界面，`nyxniri greeter install` 装 `greetd` + `noctalia-greeter`（AUR），备份现有配置并写入 Polkit 规则，随后切换下次启动使用 greetd，不会中断当前图形会话，切换失败或运行 `nyxniri greeter uninstall` 会恢复原显示管理器
+**Noctalia Greeter：** 和 Noctalia 主题一致的 greetd 登录界面，`nyxuri greeter install` 装 `greetd` + `noctalia-greeter`（AUR），备份现有配置并写入 Polkit 规则，随后切换下次启动使用 greetd，不会中断当前图形会话，切换失败或运行 `nyxuri greeter uninstall` 会恢复原显示管理器
 
 ## 工具
 
-`nyxniri` 管理安装、快照和系统诊断。交互式部署默认先在 `~/.config/NyxNiri/backups/` 创建快照。
+`nyxuri` 管理安装、快照和系统诊断。交互式部署默认先在 `~/.config/nyxuri/backups/` 创建快照。
 
 > 旧版 Bash 用户需先运行上面的新版引导，再用以下命令；旧版 `nyxniri update` 无法完成目录迁移。
 
@@ -223,51 +227,51 @@ NyxNiri
 
 | 指令 | 作用 |
 | :--- | :--- |
-| `nyxniri` | 交互式菜单 |
-| `nyxniri test` | 开发者实机测试部署（不备份、保留 monitor.kdl） |
+| `nyxuri` | 交互式菜单 |
+| `nyxuri test` | 开发者实机测试部署（不备份、保留 monitor.kdl） |
 
 **部署**
 
 | 指令 | 作用 |
 | :--- | :--- |
-| `nyxniri install [full\|config]` | 全量部署，或只同步配置 |
-| `nyxniri update [--force\|--no-deploy]` | 更新源码，并强制部署或跳过配置部署 |
+| `nyxuri install [full\|config]` | 全量部署，或只同步配置 |
+| `nyxuri update [--force\|--no-deploy]` | 更新源码，并强制部署或跳过配置部署 |
 
 **快照**
 
 | 指令 | 作用 |
 | :--- | :--- |
-| `nyxniri snapshot [备注]` | 保存当前配置快照 |
-| `nyxniri snapshot delete [序号]` | 删除快照（未指定序号则可批量勾选） |
-| `nyxniri rollback [序号]` | 恢复历史快照 |
-| `nyxniri list` | 查看快照列表 |
+| `nyxuri snapshot [备注]` | 保存当前配置快照 |
+| `nyxuri snapshot delete [序号]` | 删除快照（未指定序号则可批量勾选） |
+| `nyxuri rollback [序号]` | 恢复历史快照 |
+| `nyxuri list` | 查看快照列表 |
 
 **系统**
 
 | 指令 | 作用 |
 | :--- | :--- |
-| `nyxniri doctor` | 依赖与系统健康检查 |
-| `nyxniri deps` | 打开依赖检查与安装菜单 |
-| `nyxniri apps` | 常用软件安装菜单（按用途分组：浏览器、社交通讯、游戏等） |
-| `nyxniri wallpapers` | 从外部仓库下载全套壁纸和动态视频包 |
-| `nyxniri theme [toggle\|dark\|light\|sync\|status]` | 切换或同步系统深浅主题 |
-| `nyxniri bug` / `nyxniri report` | 生成诊断报告 |
+| `nyxuri doctor` | 依赖与系统健康检查 |
+| `nyxuri deps` | 打开依赖检查与安装菜单 |
+| `nyxuri apps` | 常用软件安装菜单（按用途分组：浏览器、社交通讯、游戏等） |
+| `nyxuri wallpapers` | 从外部仓库下载全套壁纸和动态视频包 |
+| `nyxuri theme [toggle\|dark\|light\|sync\|status]` | 切换或同步系统深浅主题 |
+| `nyxuri bug` / `nyxuri report` | 生成诊断报告 |
 
 **卸载**
 
 | 指令 | 作用 |
 | :--- | :--- |
-| `nyxniri uninstall [--all\|standard\|restore\|purge]` | 勾选式卸载——逐项选择清理内容（配置、CLI、模块、快照、壁纸），默认勾选等同标准范围 |
-| `nyxniri purge` | `uninstall --all` 的简写 |
+| `nyxuri uninstall [--all\|standard\|restore\|purge]` | 勾选式卸载——逐项选择清理内容（配置、CLI、模块、快照、壁纸），默认勾选等同标准范围 |
+| `nyxuri purge` | `uninstall --all` 的简写 |
 
 **扩展**
 
 | 指令 | 作用 |
 | :--- | :--- |
-| `nyxniri fcitx [install\|status\|uninstall]` | NyxMellow fcitx5 皮肤 |
-| `nyxniri greeter [install\|status\|uninstall]` | Noctalia Greeter（登录界面） |
-| `nyxniri gtk [install\|status\|uninstall]` | Material You GTK3/4 主题 |
-| `nyxniri fisher [install\|status\|uninstall]` | Fish 的 fisher 插件管理器 |
+| `nyxuri fcitx [install\|status\|uninstall]` | NyxMellow fcitx5 皮肤 |
+| `nyxuri greeter [install\|status\|uninstall]` | Noctalia Greeter（登录界面） |
+| `nyxuri gtk [install\|status\|uninstall]` | Material You GTK3/4 主题 |
+| `nyxuri fisher [install\|status\|uninstall]` | Fish 的 fisher 插件管理器 |
 
 `nyxhelp` 是基于 `fzf` 的简明速查，覆盖 CLI、Shell 助手和核心快捷键：
 
@@ -300,7 +304,7 @@ enable_ddcutil = false
 
 旧版只要 `lspci` 里出现 NVIDIA，就会打开 `GBM_BACKEND=nvidia-drm` 和 `LIBVA_DRIVER_NAME=nvidia`。混合显卡笔记本的桌面仍在核显上合成，Chromium/Brave 却可能在独显硬解，再交回核显显示——少数视频就会把窗口画花。
 
-更新并重新部署 NyxNiri。默认配置不再指定 GPU 驱动，部署也不再根据 PCI 设备改写环境变量；PCI 列表不能确认实际负责渲染的 GPU。有特殊驱动需求时，在 `~/.config/niri/__custom__.kdl` 中自行配置。
+更新并重新部署 Nyxuri。默认配置不再指定 GPU 驱动，部署也不再根据 PCI 设备改写环境变量；PCI 列表不能确认实际负责渲染的 GPU。有特殊驱动需求时，在 `~/.config/niri/__custom__.kdl` 中自行配置。
 
 默认配置同时移除了旧的 `ELECTRON_OZONE_PLATFORM_HINT "auto"`，部分旧 Electron 应用可能改用 XWayland。正常部署会更新主配置，但不会清理个人覆盖、个人预设或历史快照，也不会改变现有会话环境；重新登录后再检查效果。
 
@@ -319,7 +323,7 @@ git -C ~/.local/state/noctalia/plugins/sources/official/repo reset --hard HEAD
 </details>
 
 <details>
-<summary><b>Greeter 同步要密码</b> — 加一条 Polkit 免密规则（<code>nyxniri greeter install</code> 会自动写入）。</summary>
+<summary><b>Greeter 同步要密码</b> — 加一条 Polkit 免密规则（<code>nyxuri greeter install</code> 会自动写入）。</summary>
 
 手动添加 Polkit 规则：
 
@@ -344,7 +348,7 @@ EOF'
 运行主题同步，或手动删掉残留文件：
 
 ```bash
-nyxniri theme sync
+nyxuri theme sync
 # 或手动删除：
 rm -f ~/.config/gtk-4.0/gtk.css ~/.config/gtk-4.0/noctalia.css ~/.config/gtk-3.0/gtk.css ~/.config/gtk-3.0/noctalia.css
 ```
@@ -352,9 +356,9 @@ rm -f ~/.config/gtk-4.0/gtk.css ~/.config/gtk-4.0/noctalia.css ~/.config/gtk-3.0
 </details>
 
 <details>
-<summary><b>Brave 切换主题后不变色</b> — Brave 冷启动 bug（非 NyxNiri 问题）。</summary>
+<summary><b>Brave 切换主题后不变色</b> — Brave 冷启动 bug（非 Nyxuri 问题）。</summary>
 
-Brave 在非 GNOME Wayland 上冷启动时，portal 主题信号订阅未正确初始化，`nyxniri theme toggle` 后不变色。去 `brave://settings/appearance` 手动切一次主题模式（如"经典"→"GTK"→"经典"）即可唤醒，此后实时跟随，无需重启 Brave；重启 Brave 后需再次唤醒。
+Brave 在非 GNOME Wayland 上冷启动时，portal 主题信号订阅未正确初始化，`nyxuri theme toggle` 后不变色。去 `brave://settings/appearance` 手动切一次主题模式（如"经典"→"GTK"→"经典"）即可唤醒，此后实时跟随，无需重启 Brave；重启 Brave 后需再次唤醒。
 
 </details>
 
@@ -364,7 +368,7 @@ Brave 在非 GNOME Wayland 上冷启动时，portal 主题信号订阅未正确�
 
 - TG 频道：[@linux_ricing](https://t.me/linux_ricing)
 - QQ：`2040244628` · Linux Ricing 交流群：`631425889`
-- 赞助：[爱发电](https://afdian.com/a/Echoes678) · 问题反馈：[GitHub Issues](https://github.com/ech678/NyxNiri/issues)
+- 赞助：[爱发电](https://afdian.com/a/Echoes678) · 问题反馈：[GitHub Issues](https://github.com/ech678/Nyxuri/issues)
 
 **协助与鸣谢：**
 

@@ -16,7 +16,7 @@ from tests.utils import TempEnv
 
 _REPO = Path(__file__).resolve().parent.parent
 _TOGGLE = _REPO / "configs" / "niri" / "scripts" / "niri-scratch-toggle.sh"
-_CLEAN_CACHE = _REPO / "nyxniri" / "clean.py"
+_CLEAN_CACHE = _REPO / "nyxuri" / "clean.py"
 _START_NOCTALIA = _REPO / "configs" / "niri" / "scripts" / "session-shell.sh"
 _SESSION_SHELL = _REPO / "configs" / "niri" / "scripts" / "session-shell.sh"
 _SHELL_ACTION = _REPO / "configs" / "niri" / "scripts" / "shell-action.sh"
@@ -169,7 +169,7 @@ class TestScratchToggle(unittest.TestCase):
                 result = subprocess.run(["bash", str(_TOGGLE), target], capture_output=True, text=True,
                                         env={**os.environ, "PATH": f"{bindir}:/usr/bin:/bin", "CALLS": str(calls), "XDG_RUNTIME_DIR": str(env.home)})
                 self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertEqual(calls.read_text().splitlines(), ["msg", "action", "spawn", "--", "kitty", "--app-id", "scratchpad", "-e", "nyxniri", "clean"])
+                self.assertEqual(calls.read_text().splitlines(), ["msg", "action", "spawn", "--", "kitty", "--app-id", "scratchpad", "-e", "nyxuri", "clean"])
 
     def test_no_shell_string_execution_fallback(self):
         """Menu cmds are data, not shell input: no `bash -c` fallback may exist."""
@@ -252,7 +252,7 @@ class TestCleanCache(unittest.TestCase):
 
     def _run(self, *args):
         return subprocess.run(
-            [sys.executable, "-m", "nyxniri.clean", *args],
+            [sys.executable, "-m", "nyxuri.clean", *args],
             capture_output=True, text=True, timeout=120,
             env=self._env(), stdin=subprocess.DEVNULL, cwd=_REPO,
         )

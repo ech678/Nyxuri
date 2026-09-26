@@ -16,7 +16,7 @@ class TestPresetDrift(unittest.TestCase):
         self._ctx.__exit__()
 
     def _run_drift(self):
-        from nyxniri.doctor import _check_preset_drift
+        from nyxuri.doctor import _check_preset_drift
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             _check_preset_drift(self._ctx.env)
@@ -27,13 +27,13 @@ class TestPresetDrift(unittest.TestCase):
         self.assertNotIn("已不在仓库", self._run_drift())
 
     def test_active_existing_preset_no_warn(self):
-        from nyxniri.deploy.preset import write_active_preset
+        from nyxuri.deploy.preset import write_active_preset
         # 'transparent' exists in the shipped kitty presets → no drift.
         write_active_preset("kitty", "transparent")
         self.assertNotIn("已不在仓库", self._run_drift())
 
     def test_active_missing_preset_warns(self):
-        from nyxniri.deploy.preset import write_active_preset
+        from nyxuri.deploy.preset import write_active_preset
         write_active_preset("kitty", "ghost")  # not in repo or user presets
         out = self._run_drift()
         self.assertIn("kitty", out)

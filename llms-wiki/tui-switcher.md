@@ -1,7 +1,7 @@
 # TUI Preset Switcher — 树状折叠拓扑工作台、单一光标、原位无熵操作
 
-> CLI（`nyxniri preset <app> apply <name>`）之外，交互菜单提供自包含的 Preset Studio 工作台。
-> **单栏树状折叠拓扑（Accordion Tree）**，默认折叠，下方支持分行可折叠详情卡片。源码：`nyxniri/tui.py`（`PresetSwitcher`）。
+> CLI（`nyxuri preset <app> apply <name>`）之外，交互菜单提供自包含的 Preset Studio 工作台。
+> **单栏树状折叠拓扑（Accordion Tree）**，默认折叠，下方支持分行可折叠详情卡片。源码：`nyxuri/tui.py`（`PresetSwitcher`）。
 
 ## 布局与视线设计
 

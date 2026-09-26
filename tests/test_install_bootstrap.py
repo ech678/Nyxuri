@@ -15,7 +15,7 @@ from tests.utils import TempEnv
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PYTHON_LAUNCHER = (
     'import sys; target = sys.argv.pop(1); sys.path.insert(0, target); '
-    'sys.argv[0] = "nyxniri"; from nyxniri.cli import main; main()'
+    'sys.argv[0] = "nyxuri"; from nyxuri.cli import main; main()'
 )
 PYTHON_VERSION_CODE = 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")'
 
@@ -51,7 +51,7 @@ class TestInstallBootstrap(unittest.TestCase):
         return bindir
 
     def _fake_package(self, root: Path, marker: Path) -> None:
-        package = root / "nyxniri"
+        package = root / "nyxuri"
         package.mkdir()
         (package / "__init__.py").write_text(
             f"from pathlib import Path; Path({str(marker)!r}).write_text('loaded')\n",
@@ -146,12 +146,12 @@ class TestInstallBootstrap(unittest.TestCase):
                 check=False,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertIn("NyxNiri", result.stdout)
-            self.assertIn("(nyxniri)", result.stdout)
+            self.assertIn("Nyxuri", result.stdout)
+            self.assertIn("(nyxuri)", result.stdout)
             self.assertFalse(marker.exists(), result.stdout)
 
     def _prepare_cache(self, env, root: Path) -> Path:
-        cache = env.home / ".cache" / "NyxNiri"
+        cache = env.home / ".cache" / "nyxuri"
         shutil.copytree(
             REPO_ROOT,
             cache,

@@ -9,7 +9,7 @@ TARGET_APP="${1:-kitty}"
 
 # ── Serialization Lock ──────────────────────────────────────────────
 LOCK_NAME=$(printf '%s' "$TARGET_APP" | tr -c 'a-zA-Z0-9_' '_')
-exec 9>"${XDG_RUNTIME_DIR:-/tmp}/nyxniri-${UID}-scratch-${LOCK_NAME}.lock"
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/nyxuri-${UID}-scratch-${LOCK_NAME}.lock"
 flock -n 9 || exit 0
 
 case "$TARGET_APP" in
@@ -112,7 +112,7 @@ case "$TARGET_APP" in
 
     clean|clean-cache.py|\~/.config/fish/clean-cache.py|"$HOME/.config/fish/clean-cache.py")
         # Older preserved Orbit menus still carry the former script path.
-        niri msg action spawn -- kitty --app-id "scratchpad" -e nyxniri clean
+        niri msg action spawn -- kitty --app-id "scratchpad" -e nyxuri clean
         ;;
 
     *)

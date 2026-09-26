@@ -1,7 +1,7 @@
 """Contract tests for system mode (§5, §14 C2).
 
 Covers: .system-install marker detection (first), repo/standalone fallbacks,
-PATH occlusion warning, safe_git_pull system branch, and ensure_nyxniri_symlink
+PATH occlusion warning, safe_git_pull system branch, and ensure_nyxuri_symlink
 no-op in system mode.
 """
 
@@ -12,8 +12,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import nyxniri.core as core
-import nyxniri.tui as tui
+import nyxuri.core as core
+import nyxuri.tui as tui
 from tests.utils import TempEnv
 
 
@@ -60,7 +60,7 @@ class TestDetectRunMode(unittest.TestCase):
 
 
 class TestCheckPathOcclusion(unittest.TestCase):
-    """§5.3: system mode warns when ~/.local/bin/nyxniri shadows /usr/bin/nyxniri."""
+    """§5.3: system mode warns when ~/.local/bin/nyxuri shadows /usr/bin/nyxuri."""
 
     def setUp(self):
         self._ctx = TempEnv()
@@ -72,7 +72,7 @@ class TestCheckPathOcclusion(unittest.TestCase):
     def test_warns_in_system_mode_when_user_link_present(self):
         self._ctx.env.run_mode = "system"
         (self._ctx.env.home / ".local/bin").mkdir(parents=True, exist_ok=True)
-        (self._ctx.env.home / ".local/bin" / "nyxniri").symlink_to("/usr/bin/nyxniri")
+        (self._ctx.env.home / ".local/bin" / "nyxuri").symlink_to("/usr/bin/nyxuri")
         with patch("builtins.print"):
             self.assertTrue(core.check_path_occlusion())
 
@@ -84,7 +84,7 @@ class TestCheckPathOcclusion(unittest.TestCase):
     def test_silent_outside_system_mode(self):
         self._ctx.env.run_mode = "repo"
         (self._ctx.env.home / ".local/bin").mkdir(parents=True, exist_ok=True)
-        (self._ctx.env.home / ".local/bin" / "nyxniri").symlink_to("/usr/bin/foo")
+        (self._ctx.env.home / ".local/bin" / "nyxuri").symlink_to("/usr/bin/foo")
         with patch("builtins.print"):
             self.assertFalse(core.check_path_occlusion())
 
@@ -101,8 +101,8 @@ class TestEnsureSymlinkSystemMode(unittest.TestCase):
 
     def test_system_mode_does_not_create_user_link(self):
         self._ctx.env.run_mode = "system"
-        target = self._ctx.env.home / ".local/bin" / "nyxniri"
-        core.ensure_nyxniri_symlink()
+        target = self._ctx.env.home / ".local/bin" / "nyxuri"
+        core.ensure_nyxuri_symlink()
         self.assertFalse(target.exists(), "system mode must not create a user-territory link")
 
 
@@ -113,32 +113,32 @@ class TestCliLinkOwnership(unittest.TestCase):
         self._ctx = TempEnv()
         self._ctx.__enter__()
         self.env = self._ctx.env
-        self.target = self.env.home / ".local/bin" / "nyxniri"
+        self.target = self.env.home / ".local/bin" / "nyxuri"
 
     def tearDown(self):
         self._ctx.__exit__()
 
     def _uninstall_cli(self):
-        from nyxniri.state.uninstall import uninstall_nyxniri
+        from nyxuri.state.uninstall import uninstall_nyxuri
 
         with patch("sys.stdin.isatty", return_value=False), \
-             patch("nyxniri.modules.fcitx.fcitx5_installed", return_value=False), \
-             patch("nyxniri.modules.gtktheme.gtktheme_registered", return_value=False), \
-             patch("nyxniri.modules.greeter.greeter_installed", return_value=False), \
-             patch("nyxniri.modules.fisher.fisher_installed", return_value=False), \
+             patch("nyxuri.modules.fcitx.fcitx5_installed", return_value=False), \
+             patch("nyxuri.modules.gtktheme.gtktheme_registered", return_value=False), \
+             patch("nyxuri.modules.greeter.greeter_installed", return_value=False), \
+             patch("nyxuri.modules.fisher.fisher_installed", return_value=False), \
              patch("builtins.print"):
-            self.assertTrue(uninstall_nyxniri("all"))
+            self.assertTrue(uninstall_nyxuri("all"))
 
     def test_regular_file_survives_cli_start_and_uninstall(self):
         self.target.write_text("my launcher")
-        core.ensure_nyxniri_symlink()
+        core.ensure_nyxuri_symlink()
         self.assertEqual(self.target.read_text(), "my launcher")
         self._uninstall_cli()
         self.assertEqual(self.target.read_text(), "my launcher")
 
     def test_directory_survives_cli_start_and_uninstall(self):
         self.target.mkdir()
-        core.ensure_nyxniri_symlink()
+        core.ensure_nyxuri_symlink()
         self.assertTrue(self.target.is_dir())
         self._uninstall_cli()
         self.assertTrue(self.target.is_dir())
@@ -150,7 +150,7 @@ class TestCliLinkOwnership(unittest.TestCase):
         ):
             with self.subTest(name=name):
                 self.target.symlink_to(destination)
-                core.ensure_nyxniri_symlink()
+                core.ensure_nyxuri_symlink()
                 self.assertTrue(self.target.is_symlink())
                 self.assertEqual(self.target.resolve(strict=False), destination.resolve(strict=False))
                 self._uninstall_cli()
@@ -159,10 +159,10 @@ class TestCliLinkOwnership(unittest.TestCase):
                 self.target.unlink()
 
     def test_created_link_is_kept_then_removed(self):
-        marker = self.env.state_dir / "nyxniri.link"
-        core.ensure_nyxniri_symlink()
+        marker = self.env.state_dir / "nyxuri.link"
+        core.ensure_nyxuri_symlink()
         before = self.target.lstat().st_ino
-        core.ensure_nyxniri_symlink()
+        core.ensure_nyxuri_symlink()
         self.assertEqual(self.target.lstat().st_ino, before)
         self.assertTrue(marker.is_file())
         self._uninstall_cli()
@@ -171,8 +171,8 @@ class TestCliLinkOwnership(unittest.TestCase):
 
     def test_cli_start_adopts_unrecorded_expected_link_and_records_marker(self):
         self.target.symlink_to(self.env.repo_dir / "install.sh")
-        core.ensure_nyxniri_symlink()
-        marker = self.env.state_dir / "nyxniri.link"
+        core.ensure_nyxuri_symlink()
+        marker = self.env.state_dir / "nyxuri.link"
         self.assertTrue(marker.is_file(), "adopted link must have marker recorded")
         self._uninstall_cli()
         self.assertFalse(self.target.is_symlink(), "adopted link is cleanly removed on uninstall")
@@ -182,22 +182,22 @@ class TestCliLinkOwnership(unittest.TestCase):
         dangling_target = self.env.cache_dir / "install.sh"
         self.target.symlink_to(dangling_target)
         self.assertFalse(self.target.exists(), "must be a dangling link initially")
-        core.ensure_nyxniri_symlink()
+        core.ensure_nyxuri_symlink()
         self.assertEqual(
             self.target.resolve(strict=False),
             (self.env.repo_dir / "install.sh").resolve(strict=False),
             "dangling NyxNiri link must be healed to current installer",
         )
-        marker = self.env.state_dir / "nyxniri.link"
+        marker = self.env.state_dir / "nyxuri.link"
         self.assertTrue(marker.is_file())
 
     def test_dangling_expected_link_is_removed(self):
-        source = self.env.home / "old-nyxniri"
+        source = self.env.home / "old-nyxuri"
         source.mkdir()
         installer = source / "install.sh"
         installer.write_text("#!/bin/sh\n")
         self.env.repo_dir = source
-        core.ensure_nyxniri_symlink()
+        core.ensure_nyxuri_symlink()
         installer.unlink()
         self.assertTrue(self.target.is_symlink())
         self._uninstall_cli()
@@ -205,26 +205,26 @@ class TestCliLinkOwnership(unittest.TestCase):
 
     def test_forged_marker_does_not_claim_foreign_link(self):
         foreign = self.env.home / "another-launcher"
-        marker = self.env.state_dir / "nyxniri.link"
+        marker = self.env.state_dir / "nyxuri.link"
         self.target.symlink_to(foreign)
         marker.write_text(f"{foreign}\n0:0\n")
-        core.ensure_nyxniri_symlink()
+        core.ensure_nyxuri_symlink()
         self._uninstall_cli()
         self.assertTrue(self.target.is_symlink())
 
     def test_stale_marker_does_not_claim_replaced_link(self):
-        marker = self.env.state_dir / "nyxniri.link"
-        core.ensure_nyxniri_symlink()
+        marker = self.env.state_dir / "nyxuri.link"
+        core.ensure_nyxuri_symlink()
         self.target.unlink()
         self.target.symlink_to(self.env.home / "another-launcher")
-        core.ensure_nyxniri_symlink()
+        core.ensure_nyxuri_symlink()
         self.assertTrue(marker.is_file())
         self._uninstall_cli()
         self.assertTrue(self.target.is_symlink())
 
     def test_owned_link_updates_to_new_installer(self):
-        old_source = self.env.home / "old-nyxniri"
-        new_source = self.env.home / "new-nyxniri"
+        old_source = self.env.home / "old-nyxuri"
+        new_source = self.env.home / "new-nyxuri"
         old_source.mkdir()
         new_source.mkdir()
         old_installer = old_source / "install.sh"
@@ -232,21 +232,21 @@ class TestCliLinkOwnership(unittest.TestCase):
         old_installer.write_text("#!/bin/sh\n")
         new_installer.write_text("#!/bin/sh\n")
         self.env.repo_dir = old_source
-        core.ensure_nyxniri_symlink()
+        core.ensure_nyxuri_symlink()
         self.env.repo_dir = new_source
-        core.ensure_nyxniri_symlink()
+        core.ensure_nyxuri_symlink()
         self.assertEqual(self.target.resolve(strict=False), new_installer.resolve(strict=False))
         self._uninstall_cli()
         self.assertFalse(self.target.is_symlink())
 
     def test_xdg_state_home_outside_home_is_isolated(self):
         import os
-        from nyxniri.core import Environment
+        from nyxuri.core import Environment
         with patch.dict(os.environ, {"XDG_STATE_HOME": "/some/foreign/home/.local/state"}):
             env = Environment()
             self.assertEqual(
                 env.state_dir,
-                env.home / ".local/state" / "NyxNiri",
+                env.home / ".local/state" / "nyxuri",
                 "XDG_STATE_HOME outside home must not be used",
             )
 
@@ -268,8 +268,8 @@ class TestSafeGitPullSystemBranch(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_system_mode_returns_none_and_skips_pull(self):
-        from nyxniri.network import safe_git_pull
-        with patch("nyxniri.network.shutil.which", return_value="/usr/bin/git"), \
+        from nyxuri.network import safe_git_pull
+        with patch("nyxuri.network.shutil.which", return_value="/usr/bin/git"), \
              patch("builtins.print"):
             result = safe_git_pull(self._ctx.env.repo_dir)
         self.assertIsNone(result, "system mode must skip git pull (return None)")
@@ -305,7 +305,7 @@ class TestRemovePath(unittest.TestCase):
 
     def test_missing_path_is_noop(self):
         # Must not raise on a path that does not exist.
-        core.remove_path(Path("/nonexistent/nyxniri-does-not-exist"))
+        core.remove_path(Path("/nonexistent/nyxuri-does-not-exist"))
 
 
 class TestRawInputMode(unittest.TestCase):

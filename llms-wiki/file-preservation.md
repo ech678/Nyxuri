@@ -1,7 +1,7 @@
 # File Preservation — Dunder + manifest preserve（两套刻意不合并）
 
 > 跨部署保留用户文件有**两套机制**，服务不同场景，是双机制不是重复设计——后人勿"统一"。
-> 源码：`nyxniri/deploy/atomic.py`。
+> 源码：`nyxuri/deploy/atomic.py`。
 
 ## 机制 1：Dunder `__custom__`（按名通用 walk）
 
@@ -65,6 +65,6 @@ effects.kdl 是脚本动态管理的软链接，同样需要固定文件名。�
 
 ## 边界（§10.4）
 
-NyxNiri 元数据只许在 `~/.config/NyxNiri/`（backups、presets、active 状态、hooks）。
-`~/.config/<app>/` 里不塞 NyxNiri 自己的东西——`__custom__` 是约定保留名，属 app 配置一部分，
+Nyxuri 元数据只许在 `~/.config/nyxuri/`（backups、presets、active 状态、hooks）。
+`~/.config/<app>/` 里不塞 Nyxuri 自己的东西——`__custom__` 是约定保留名，属 app 配置一部分，
 不算"拉屎"。`.module.toml` 是仓库元数据，deploy 时被 `_deploy_ignore_factory` 跳过，不进 dest。

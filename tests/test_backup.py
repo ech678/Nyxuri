@@ -28,14 +28,14 @@ class TestUninstallNonInteractive(unittest.TestCase):
 
     def test_non_interactive_uninstall_uses_standard_scope_and_archives(self):
         """Non-interactive uninstall archives configs without removing user data."""
-        from nyxniri.state.uninstall import uninstall_nyxniri
-        from nyxniri.constants import PROJECT_NAME
+        from nyxuri.state.uninstall import uninstall_nyxuri
+        from nyxuri.constants import PROJECT_NAME
 
         with patch("sys.stdin.isatty", return_value=False), patch("builtins.print"):
-            with patch("nyxniri.modules.fcitx.fcitx5_installed", return_value=False), \
-                 patch("nyxniri.modules.gtktheme.gtktheme_registered", return_value=False), \
-                 patch("nyxniri.modules.greeter.greeter_installed", return_value=False):
-                result = uninstall_nyxniri("")
+            with patch("nyxuri.modules.fcitx.fcitx5_installed", return_value=False), \
+                 patch("nyxuri.modules.gtktheme.gtktheme_registered", return_value=False), \
+                 patch("nyxuri.modules.greeter.greeter_installed", return_value=False):
+                result = uninstall_nyxuri("")
 
         self.assertTrue(result, "Non-interactive uninstall uses standard scope")
         archives = list(self.env.config_dir.glob(f"{PROJECT_NAME}_archive_*"))
@@ -45,17 +45,17 @@ class TestUninstallNonInteractive(unittest.TestCase):
 
     def test_non_interactive_uninstall_purge_still_works(self):
         """Explicit purge mode should still execute even non-interactively."""
-        from nyxniri.state.uninstall import uninstall_nyxniri
+        from nyxuri.state.uninstall import uninstall_nyxuri
 
         with patch("sys.stdin.isatty", return_value=False):
             with patch("builtins.print"):
-                with patch("nyxniri.state.uninstall.prompt_confirm", return_value=True):
-                    with patch("nyxniri.state.uninstall.get_all_backups", return_value=[]):
-                        with patch("nyxniri.modules.fcitx.fcitx_uninstall"):
-                            with patch("nyxniri.modules.greeter.greeter_uninstall"):
-                                with patch("nyxniri.state.uninstall.remove_path"):
-                                    with patch("nyxniri.state.uninstall.get_pics_dir", return_value=self.env.home / "Pictures"):
-                                        result = uninstall_nyxniri("purge")
+                with patch("nyxuri.state.uninstall.prompt_confirm", return_value=True):
+                    with patch("nyxuri.state.uninstall.get_all_backups", return_value=[]):
+                        with patch("nyxuri.modules.fcitx.fcitx_uninstall"):
+                            with patch("nyxuri.modules.greeter.greeter_uninstall"):
+                                with patch("nyxuri.state.uninstall.remove_path"):
+                                    with patch("nyxuri.state.uninstall.get_pics_dir", return_value=self.env.home / "Pictures"):
+                                        result = uninstall_nyxuri("purge")
 
         self.assertTrue(result)
 
@@ -73,30 +73,30 @@ class TestModeAliases(unittest.TestCase):
 
     def test_alias_safe_accepted(self):
         """Alias 'safe' is accepted and runs the standard path (non-TTY)."""
-        from nyxniri.state.uninstall import uninstall_nyxniri
+        from nyxuri.state.uninstall import uninstall_nyxuri
 
         with patch("sys.stdin.isatty", return_value=False), patch("builtins.print"), \
-             patch("nyxniri.state.uninstall.copy_path"), patch("nyxniri.state.uninstall.remove_path"):
-            with patch("nyxniri.modules.fcitx.fcitx5_installed", return_value=False), \
-                 patch("nyxniri.modules.gtktheme.gtktheme_registered", return_value=False), \
-                 patch("nyxniri.modules.greeter.greeter_installed", return_value=False):
-                result = uninstall_nyxniri("safe")
+             patch("nyxuri.state.uninstall.copy_path"), patch("nyxuri.state.uninstall.remove_path"):
+            with patch("nyxuri.modules.fcitx.fcitx5_installed", return_value=False), \
+                 patch("nyxuri.modules.gtktheme.gtktheme_registered", return_value=False), \
+                 patch("nyxuri.modules.greeter.greeter_installed", return_value=False):
+                result = uninstall_nyxuri("safe")
 
         self.assertTrue(result)
 
     def test_alias_purge_maps_correctly(self):
         """Alias '3' should map to purge."""
-        from nyxniri.state.uninstall import uninstall_nyxniri
+        from nyxuri.state.uninstall import uninstall_nyxuri
 
         with patch("sys.stdin.isatty", return_value=False):
             with patch("builtins.print"):
-                with patch("nyxniri.state.uninstall.prompt_confirm", return_value=True):
-                    with patch("nyxniri.state.uninstall.get_all_backups", return_value=[]):
-                        with patch("nyxniri.modules.fcitx.fcitx_uninstall"):
-                            with patch("nyxniri.modules.greeter.greeter_uninstall"):
-                                with patch("nyxniri.state.uninstall.remove_path"):
-                                    with patch("nyxniri.state.uninstall.get_pics_dir", return_value=self.env.home / "Pictures"):
-                                        result = uninstall_nyxniri("3")
+                with patch("nyxuri.state.uninstall.prompt_confirm", return_value=True):
+                    with patch("nyxuri.state.uninstall.get_all_backups", return_value=[]):
+                        with patch("nyxuri.modules.fcitx.fcitx_uninstall"):
+                            with patch("nyxuri.modules.greeter.greeter_uninstall"):
+                                with patch("nyxuri.state.uninstall.remove_path"):
+                                    with patch("nyxuri.state.uninstall.get_pics_dir", return_value=self.env.home / "Pictures"):
+                                        result = uninstall_nyxuri("3")
                                         self.assertTrue(result)
 
 
@@ -112,10 +112,10 @@ class TestBackupInteractiveFlag(unittest.TestCase):
 
     def test_interactive_false_suppresses_output(self):
         """backup_configs with interactive=False should not print backing_up/done messages."""
-        from nyxniri.state.backup import backup_configs
+        from nyxuri.state.backup import backup_configs
 
         with patch("builtins.print") as mock_print:
-            with patch("nyxniri.deploy.deploy.discover_config_items", return_value=[]):
+            with patch("nyxuri.deploy.deploy.discover_config_items", return_value=[]):
                 backup_configs(note="test", interactive=False)
 
         printed = " ".join(str(c) for c in mock_print.call_args_list)
@@ -124,10 +124,10 @@ class TestBackupInteractiveFlag(unittest.TestCase):
 
     def test_interactive_true_prints_output(self):
         """backup_configs with interactive=True should print."""
-        from nyxniri.state.backup import backup_configs
+        from nyxuri.state.backup import backup_configs
 
         with patch("builtins.print") as mock_print:
-            with patch("nyxniri.deploy.deploy.discover_config_items", return_value=[]):
+            with patch("nyxuri.deploy.deploy.discover_config_items", return_value=[]):
                 backup_configs(note="test", interactive=True)
 
         mock_print.assert_called()
@@ -140,7 +140,7 @@ class TestSnapshotRotation(unittest.TestCase):
         self._ctx = TempEnv()
         self._ctx.__enter__()
         self.env = self._ctx.env
-        self.base_dir = self.env.config_dir / "NyxNiri" / "backups"
+        self.base_dir = self.env.nyx_dir / "backups"
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
     def tearDown(self):
@@ -148,7 +148,7 @@ class TestSnapshotRotation(unittest.TestCase):
 
     def test_excess_snapshots_pruned_oldest_first(self):
         """Beyond MAX_SNAPSHOTS, oldest (by name) are removed."""
-        from nyxniri.state.backup import _prune_old_snapshots, MAX_SNAPSHOTS
+        from nyxuri.state.backup import _prune_old_snapshots, MAX_SNAPSHOTS
 
         for i in range(MAX_SNAPSHOTS + 3):
             d = self.base_dir / f"snapshot_20260101_000000_{i:06d}"
@@ -166,7 +166,7 @@ class TestSnapshotRotation(unittest.TestCase):
 
     def test_at_or_below_limit_no_prune(self):
         """At or below MAX_SNAPSHOTS → nothing removed."""
-        from nyxniri.state.backup import _prune_old_snapshots, MAX_SNAPSHOTS
+        from nyxuri.state.backup import _prune_old_snapshots, MAX_SNAPSHOTS
 
         for i in range(MAX_SNAPSHOTS):
             d = self.base_dir / f"snapshot_20260101_000000_{i:06d}"
@@ -185,7 +185,7 @@ class TestRollbackSafety(unittest.TestCase):
         self._ctx = TempEnv()
         self._ctx.__enter__()
         self.env = self._ctx.env
-        self.base_dir = self.env.config_dir / "NyxNiri" / "backups"
+        self.base_dir = self.env.nyx_dir / "backups"
         self.base_dir.mkdir(parents=True)
 
     def tearDown(self):
@@ -193,7 +193,7 @@ class TestRollbackSafety(unittest.TestCase):
 
     def test_oldest_snapshot_survives_pre_rollback_rotation(self):
         """At the limit, rollback keeps and restores the chosen oldest snapshot."""
-        from nyxniri.state.backup import MAX_SNAPSHOTS, rollback_configs
+        from nyxuri.state.backup import MAX_SNAPSHOTS, rollback_configs
 
         oldest = None
         for index in range(MAX_SNAPSHOTS):
@@ -208,7 +208,7 @@ class TestRollbackSafety(unittest.TestCase):
         current.mkdir()
         (current / "config.kdl").write_text("current")
 
-        with patch("nyxniri.deploy.deploy.discover_config_items", return_value=["niri"]):
+        with patch("nyxuri.deploy.deploy.discover_config_items", return_value=["niri"]):
             self.assertTrue(rollback_configs(str(oldest)))
 
         self.assertTrue(oldest.is_dir())
@@ -217,7 +217,7 @@ class TestRollbackSafety(unittest.TestCase):
 
     def test_default_rollback_restores_snapshot_custom_bytes(self):
         """Rollback must not overlay snapshot custom files with current config."""
-        from nyxniri.state.backup import rollback_configs
+        from nyxuri.state.backup import rollback_configs
 
         snapshot = self.base_dir / "snapshot_20260101_000000"
         (snapshot / "niri").mkdir(parents=True)
@@ -230,7 +230,7 @@ class TestRollbackSafety(unittest.TestCase):
         (current / "__custom__").mkdir()
         (current / "__custom__" / "rule.kdl").write_text("current rule")
 
-        with patch("nyxniri.deploy.deploy.discover_config_items", return_value=["niri"]):
+        with patch("nyxuri.deploy.deploy.discover_config_items", return_value=["niri"]):
             self.assertTrue(rollback_configs(str(snapshot)))
 
         self.assertEqual((current / "__custom__.kdl").read_text(), "historical custom")
@@ -238,7 +238,7 @@ class TestRollbackSafety(unittest.TestCase):
 
     def test_rollback_fails_when_selected_source_disappears(self):
         """A selected snapshot removed during the safety backup is a hard failure."""
-        from nyxniri.state.backup import rollback_configs
+        from nyxuri.state.backup import rollback_configs
 
         snapshot = self.base_dir / "snapshot_20260101_000000"
         (snapshot / "niri").mkdir(parents=True)
@@ -248,9 +248,9 @@ class TestRollbackSafety(unittest.TestCase):
             shutil.rmtree(snapshot)
             return self.base_dir / "snapshot_20260102_000000"
 
-        with patch("nyxniri.state.backup.backup_configs", side_effect=remove_source), \
-             patch("nyxniri.deploy.deploy.discover_config_items", return_value=["niri"]), \
-             patch("nyxniri.state.backup.msg", side_effect=lambda key, *_args: key), \
+        with patch("nyxuri.state.backup.backup_configs", side_effect=remove_source), \
+             patch("nyxuri.deploy.deploy.discover_config_items", return_value=["niri"]), \
+             patch("nyxuri.state.backup.msg", side_effect=lambda key, *_args: key), \
              patch("builtins.print") as mock_print:
             self.assertFalse(rollback_configs(str(snapshot)))
 
@@ -258,7 +258,7 @@ class TestRollbackSafety(unittest.TestCase):
 
     def test_rollback_fails_when_an_expected_item_disappears(self):
         """Rollback must not partly restore a snapshot whose item disappears."""
-        from nyxniri.state.backup import rollback_configs
+        from nyxuri.state.backup import rollback_configs
 
         snapshot = self.base_dir / "snapshot_20260101_000000"
         for item, content in (("niri", "historical niri"), ("kitty", "historical kitty")):
@@ -271,8 +271,8 @@ class TestRollbackSafety(unittest.TestCase):
             shutil.rmtree(snapshot / "niri")
             return self.base_dir / "snapshot_20260102_000000"
 
-        with patch("nyxniri.state.backup.backup_configs", side_effect=remove_niri), \
-             patch("nyxniri.deploy.deploy.discover_config_items", return_value=["niri", "kitty"]), \
+        with patch("nyxuri.state.backup.backup_configs", side_effect=remove_niri), \
+             patch("nyxuri.deploy.deploy.discover_config_items", return_value=["niri", "kitty"]), \
              patch("builtins.print"):
             self.assertFalse(rollback_configs(str(snapshot)))
 
@@ -280,7 +280,7 @@ class TestRollbackSafety(unittest.TestCase):
 
     def test_rollback_keeps_earlier_items_when_a_later_item_disappears(self):
         """All expected items must survive the safety backup before any restore."""
-        from nyxniri.state.backup import rollback_configs
+        from nyxuri.state.backup import rollback_configs
 
         snapshot = self.base_dir / "snapshot_20260101_000000"
         for item, content in (("niri", "historical niri"), ("kitty", "historical kitty")):
@@ -293,8 +293,8 @@ class TestRollbackSafety(unittest.TestCase):
             shutil.rmtree(snapshot / "kitty")
             return self.base_dir / "snapshot_20260102_000000"
 
-        with patch("nyxniri.state.backup.backup_configs", side_effect=remove_kitty), \
-             patch("nyxniri.deploy.deploy.discover_config_items", return_value=["niri", "kitty"]), \
+        with patch("nyxuri.state.backup.backup_configs", side_effect=remove_kitty), \
+             patch("nyxuri.deploy.deploy.discover_config_items", return_value=["niri", "kitty"]), \
              patch("builtins.print"):
             self.assertFalse(rollback_configs(str(snapshot)))
 
@@ -302,12 +302,12 @@ class TestRollbackSafety(unittest.TestCase):
 
     def test_rollback_fails_when_snapshot_has_no_restorable_items(self):
         """A snapshot that restores nothing must not report success."""
-        from nyxniri.state.backup import rollback_configs
+        from nyxuri.state.backup import rollback_configs
 
         snapshot = self.base_dir / "snapshot_20260101_000000"
         snapshot.mkdir()
 
-        with patch("nyxniri.deploy.deploy.discover_config_items", return_value=["niri"]), \
+        with patch("nyxuri.deploy.deploy.discover_config_items", return_value=["niri"]), \
              patch("builtins.print"):
             self.assertFalse(rollback_configs(str(snapshot)))
 

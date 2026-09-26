@@ -22,7 +22,7 @@ STATIC_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".jxl", ".avif", ".bmp", 
 VIDEO_EXTENSIONS = {".mp4", ".webm", ".mkv", ".mov", ".gif"}
 ALL_SUPPORTED_EXTENSIONS = STATIC_EXTENSIONS | VIDEO_EXTENSIONS
 
-CACHE_DIR = os.path.expanduser("~/.cache/nyxniri/thumbnails")
+CACHE_DIR = os.path.expanduser("~/.cache/nyxuri/thumbnails")
 NOCTALIA_CONFIG_PATH = os.path.expanduser("~/.config/noctalia/noctalia-config.toml")
 USER_DIRS_PATH = os.path.expanduser("~/.config/user-dirs.dirs")
 
@@ -95,7 +95,7 @@ def get_wallpaper_search_roots() -> list:
     candidates.append(os.path.expanduser("~/Wallpapers"))
 
     # Priority 4: Environment variable override
-    env_dir = os.environ.get("NYXNIRI_WALLPAPERS_DIR")
+    env_dir = os.environ.get("NYXURI_WALLPAPERS_DIR", os.environ.get("NYXNIRI_WALLPAPERS_DIR"))
     if env_dir:
         candidates.insert(0, os.path.expanduser(env_dir))
 

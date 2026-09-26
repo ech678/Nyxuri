@@ -6,7 +6,7 @@ from pathlib import Path
 
 from tests.utils import TempEnv
 
-_GENDEPS = Path(__file__).resolve().parent.parent / "nyxniri" / "packaging" / "gen-deps.py"
+_GENDEPS = Path(__file__).resolve().parent.parent / "nyxuri" / "packaging" / "gen-deps.py"
 
 
 def _load_gendeps():

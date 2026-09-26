@@ -1,6 +1,6 @@
 # Noctalia 主题适配 (Theme Adaptation)
 
-> 本目录是 NyxNiri 主题系统的物理归属，包含调度脚本、配置模板、
+> 本目录是 Nyxuri 主题系统的物理归属，包含调度脚本、配置模板、
 > hook 脚本和 GTK Material You 模板。本文档记录架构设计、遇到过的
 > 所有问题及其解决方案，供未来维护参考。
 
@@ -42,7 +42,7 @@ configs/noctalia/
 
 | Step | 职责 | 说明 |
 |---|---|---|
-| 1 | 可覆盖变量 | `NYXNIRI_GTK_THEME_DARK` 等环境变量 |
+| 1 | 可覆盖变量 | `NYXURI_GTK_THEME_DARK` (兼顾 `NYXNIRI_*`) 等环境变量 |
 | 2 | 并发锁 | `flock` 防止快速 toggle 竞争 |
 | 3 | `atomic_update_ini` | 原子写 INI，含 regex 特殊字符转义 |
 | 4 | `set_system_theme` | gsettings / dconf 双路径降级 |
@@ -56,9 +56,9 @@ configs/noctalia/
 
 - **hook 注册**：`theme_mode_changed` → `theme-sync.sh`
 - **hook 注册**：`wallpaper_changed` → `wallpaper-hook.sh`
-- **user template 注册**：`nyxniri_gtk3` / `nyxniri_gtk4` / `nyxniri_niri_glow_material_you`
-- `/home/user` 占位符由 `nyxniri.deploy` 在部署时替换为实际 `$HOME`
-- **`nyxniri_niri_glow_material_you`**：渲染到 Niri 独立的 `colors.kdl`，不会覆盖核心 `layout.kdl`。
+- **user template 注册**：`nyxuri_gtk3` / `nyxuri_gtk4` / `nyxuri_niri_glow_material_you`
+- `/home/user` 占位符由 `nyxuri.deploy` 在部署时替换为实际 `$HOME`
+- **`nyxuri_niri_glow_material_you`**：渲染到 Niri 独立的 `colors.kdl`，不会覆盖核心 `layout.kdl`。
 
 ### templates/gtk-3.0.css — GTK3 M3 模板
 
@@ -94,7 +94,7 @@ portal `color-scheme` 选择。
 ## 3. 信号流图 (Signal Flow)
 
 ```
-nyxniri theme toggle / dark / light
+nyxuri theme toggle / dark / light
         │
         ▼
 theme-sync.sh
@@ -276,7 +276,7 @@ GTK3 跳过第二行用 flat 色，GTK4 用第二行覆盖。`@define-color` 中
 
 **删除**：
 - `window.hypryou-dialog`（gtk4.scss:555-591）——HyprYou 专有弹窗 widget。
-- Budgie named colors（`budgie_tasklist_indicator_color` 等）——NyxNiri 不用 Budgie。
+- Budgie named colors（`budgie_tasklist_indicator_color` 等）——Nyxuri 不用 Budgie。
 
 **修正**：
 - `through` → `trough`——原 SCSS progressbar 块里是拼写错误，GTK 的槽叫 `trough`。
@@ -285,7 +285,7 @@ GTK3 跳过第二行用 flat 色，GTK4 用第二行覆盖。`@define-color` 中
 
 ```
 configs/noctalia/templates/gtk-3.0.css / gtk-4.0.css  (模板源)
-  ↓ nyxniri deploy（atomic_replace_item，随 noctalia 目录部署）
+  ↓ nyxuri deploy（atomic_replace_item，随 noctalia 目录部署）
 ~/.config/noctalia/templates/gtk-3.0.css / gtk-4.0.css
 ~/.config/noctalia/noctalia-config.toml  (/home/user → $HOME 替换)
   ↓ Noctalia 壁纸/明暗切换时自动渲染
@@ -296,20 +296,20 @@ configs/noctalia/templates/gtk-3.0.css / gtk-4.0.css  (模板源)
 `noctalia-config.toml` 注册（`/home/user` 占位符由部署引擎替换为 `$HOME`）：
 
 ```toml
-[theme.templates.user.nyxniri_gtk3]
+[theme.templates.user.nyxuri_gtk3]
 index = 3
 input_path = "/home/user/.config/noctalia/templates/gtk-3.0.css"
 output_path = "/home/user/.config/gtk-3.0/gtk.css"
 
-[theme.templates.user.nyxniri_gtk4]
+[theme.templates.user.nyxuri_gtk4]
 index = 4
 input_path = "/home/user/.config/noctalia/templates/gtk-4.0.css"
 output_path = "/home/user/.config/gtk-4.0/gtk.css"
 ```
 
-模板部署后由 `nyxniri/modules/gtktheme.py` 的 `gtktheme_trigger_render()` 调用
+模板部署后由 `nyxuri/modules/gtktheme.py` 的 `gtktheme_trigger_render()` 调用
 `noctalia msg config-reload && noctalia msg templates-apply` 触发渲染；安装时
-`nyxniri/deploy/deploy.py:_phase_post_install_services()` 自动调用，手动触发用 `nyxniri gtk install`。
+`nyxuri/deploy/deploy.py:_phase_post_install_services()` 自动调用，手动触发用 `nyxuri gtk install`。
 
 ### 6.7 theme-sync.sh 关系
 
@@ -355,7 +355,7 @@ M3 配色后，Qt 应用自动跟随，不需要 Kvantum（Kvantum 仅给走 Kva
 
 ## 7. 问题与解决全记录 (Problem Log)
 
-### Problem 1: `nyxniri theme toggle` 不广播 gsettings
+### Problem 1: `nyxuri theme toggle` 不广播 gsettings
 
 - **症状**：toggle 后 Chrome/Edge/Brave/Kitty 深浅色不跟随
 - **根因**：`toggle` 分支调用 `noctalia msg theme-mode-toggle` 后直接
@@ -377,7 +377,7 @@ M3 配色后，Qt 应用自动跟随，不需要 Kvantum（Kvantum 仅给走 Kva
 
 - **症状**：`templates-apply` 不碰 gtk.css
 - **根因**：工作树的 `noctalia-config.toml` GTK 注册块 + `templates/` 目录
-  从未通过 `nyxniri install config` 部署到实机。`templates-apply` 不碰
+  从未通过 `nyxuri install config` 部署到实机。`templates-apply` 不碰
   gtk.css 是因为 toml 里没注册，不是缓存 bug
 - **修复**：部署 toml + 模板目录，注册后 `templates-apply` 完全正常
   （0.023s 重渲染，无占位符残留）
@@ -425,13 +425,13 @@ M3 配色后，Qt 应用自动跟随，不需要 Kvantum（Kvantum 仅给走 Kva
 
 - **症状**：模式切换后，gtk.css（M3 配色）约 6 秒后才更新
 - **根因**：Noctalia 调色板重算本身需要时间（壁纸 Material You 算法），
-  这是 Noctalia 固有速度，NyxNiri 侧无法再快
+  这是 Noctalia 固有速度，Nyxuri 侧无法再快
 - **状态**：可接受。深浅模式立即跟，M3 颜色 6 秒跟
 
 ### Problem 8: `gtk uninstall` 不持久
 
-- **根因**：GTK 模板注册写在源 `noctalia-config.toml`，每次 `nyxniri install`
-  会重新部署并自动重渲染。`nyxniri gtk uninstall` 从已部署的 toml 删除注册
+- **根因**：GTK 模板注册写在源 `noctalia-config.toml`，每次 `nyxuri install`
+  会重新部署并自动重渲染。`nyxuri gtk uninstall` 从已部署的 toml 删除注册
   并删 gtk.css，但下次 install 会完全恢复
 - **对比**：fcitx/greeter 在安装时动态写入 toml，卸载是持久的
 - **状态**：可接受。核心特性定位下不影响功能
@@ -459,20 +459,20 @@ M3 配色后，Qt 应用自动跟随，不需要 Kvantum（Kvantum 仅给走 Kva
 
 ### Problem 11: Brave (Chromium) toggle 时不实时变色
 
-- **症状**：`nyxniri theme toggle` 后 Nautilus 秒跟，但 Brave 不变色，需重启
+- **症状**：`nyxuri theme toggle` 后 Nautilus 秒跟，但 Brave 不变色，需重启
 - **调查**：
   - Chromium 114+ 官方用 XDG Desktop Portal `color-scheme` 检测暗色
     （[ArchWiki](https://wiki.archlinux.org/title/Chromium#Dark_mode) 确认），
     dissociated from GTK theme
   - `theme-sync.sh` step 6 已 `gsettings set color-scheme` → portal 广播
     `SettingChanged`，portal 值正确（`uint32 1` = dark）
-  - NyxNiri 侧信号链路正确，问题在 Brave 自身
+  - Nyxuri 侧信号链路正确，问题在 Brave 自身
   - `colorreload-gtk-module`（`kde-gtk-config` 包）经反编译验证只监视
     `~/.config/gtk-3.0/colors.css`，不读 `settings.ini`，对 Brave 无用，
     从未加入 config.kdl
 - **根因**：Brave 在非 GNOME 的 Wayland 复合器（如 Niri）上冷启动时，
   portal `SettingChanged` 信号订阅未正确初始化。这是 Brave/Chromium
-  自身的冷启动 bug，不是 NyxNiri 的信号链路问题。
+  自身的冷启动 bug，不是 Nyxuri 的信号链路问题。
   实测直接 `gsettings set org.gnome.desktop.interface color-scheme`（绕开
   theme-sync.sh）Brave 亦不变色——gsettings 值正确变化、portal 信号确实
   发出，但 Brave 不处理；偶尔跟一次是 portal 订阅 race 命中，不可靠。
@@ -483,7 +483,7 @@ M3 配色后，Qt 应用自动跟随，不需要 Kvantum（Kvantum 仅给走 Kva
   portal 订阅被激活，此后 toggle 即可实时跟随
 - **排障指引**：如果 Brave 不跟随 toggle，去 `brave://settings/appearance`
   切一次模式即可唤醒，无需重启 Brave
-- **状态**：已确认 Brave upstream bug，NyxNiri 侧无法修复。方案 A
+- **状态**：已确认 Brave upstream bug，Nyxuri 侧无法修复。方案 A
   （延迟广播）实机证伪；方案 B（CDP）因 `brave://` 禁 CDP 导航不可行；
   两全方案（toggle 跳过 gsettings 广播让 Noctalia hook 异步独占）实测
   gsettings 值正确变化但 Brave 仍不响应
@@ -550,7 +550,7 @@ M3 配色后，Qt 应用自动跟随，不需要 Kvantum（Kvantum 仅给走 Kva
 | `config-reload` 卡 30s 网络超时 | 实测 0.045s，无超时 |
 | `gtk-dark.css` 软链接是根因 | 无关（GTK4 下 gtk-theme-name 无效）|
 | `.rgb_csv` 渲染风险 | 实机验证成功，0 个占位符残留 |
-| `palette-export --format gtk-css` 子命令 | **不存在**（`unknown command`）。PR #20 的 GTK 方案依赖此子命令，不可行；其 GTK Material You 目标已被当前用户模板架构（nyxniri_gtk3/gtk4）取代，PR #20 已关闭 |
+| `palette-export --format gtk-css` 子命令 | **不存在**（`unknown command`）。PR #20 的 GTK 方案依赖此子命令，不可行；其 GTK Material You 目标已被当前用户模板架构（nyxuri_gtk3/gtk4）取代，PR #20 已关闭 |
 | `prefer-dark-theme` 是 Nautilus 不跟的根因 | 真根因是 `gtk-4.0.css` 无条件 `@define-color` 覆盖 libadwaita `@media` |
 
 ---
@@ -564,7 +564,7 @@ M3 配色后，Qt 应用自动跟随，不需要 Kvantum（Kvantum 仅给走 Kva
 | Brave toggle 时不实时变色 | 去 `brave://settings/appearance` 切一次模式唤醒（Brave 冷启动 bug，见 Problem 11） |
 | 重启后 Nautilus 显示 adw（非 M3） | Noctalia 是否已渲染 gtk.css？等 ~8s 或手动 toggle 一次 |
 | 所有应用都不跟 | `gsettings get org.gnome.desktop.interface color-scheme` 是否正确？`theme-sync.sh` 是否运行？ |
-| gtk.css 不更新 | `noctalia-config.toml` 是否注册了 `theme.templates.user.nyxniri_gtk4`？ |
+| gtk.css 不更新 | `noctalia-config.toml` 是否注册了 `theme.templates.user.nyxuri_gtk4`？ |
 | gtk.css 渲染错色 | Noctalia 调色板是否已更新？（等 ~6s）`noctalia msg config-reload && noctalia msg templates-apply` |
 | Brave 报 Theme parsing error | `gtk-3.0.css` 是否含 GTK4 专有属性？ |
 | M3 颜色覆盖不了 | `gtk-dark.css` 软链接是否已删？`ls -la ~/.config/gtk-4.0/gtk-dark.css` |
@@ -607,9 +607,9 @@ print('dark:', sm.get_dark())
 dconf watch /org/gnome/desktop/interface/
 
 # 手动切换
-nyxniri theme toggle
-nyxniri theme dark
-nyxniri theme light
+nyxuri theme toggle
+nyxuri theme dark
+nyxuri theme light
 ```
 
 ---
@@ -624,8 +624,8 @@ nyxniri theme light
 | `configs/noctalia/templates/gtk-4.0.css` | GTK4 M3 模板（双 @media） |
 | `configs/noctalia/wallpaper-hook.sh` | 壁纸切换 hook |
 | `configs/noctalia/mpvpaper-sync.sh` | mpvpaper 同步 |
-| `nyxniri/modules/gtktheme.py` | `nyxniri gtk install\|status\|uninstall` |
-| `nyxniri/cli.py` | `nyxniri theme` 子命令 |
-| `nyxniri/deploy/deploy.py` | 部署 + 模板渲染触发 |
+| `nyxuri/modules/gtktheme.py` | `nyxuri gtk install\|status\|uninstall` |
+| `nyxuri/cli.py` | `nyxuri theme` 子命令 |
+| `nyxuri/deploy/deploy.py` | 部署 + 模板渲染触发 |
 
 > 历史移植/排查笔记原在 `notes/`（本地开发笔记，不入库），内容已并入本文 §6 与 §7。

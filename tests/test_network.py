@@ -21,7 +21,7 @@ class TestGitExistenceCheck(unittest.TestCase):
 
     def test_git_missing_returns_false_not_crash(self):
         """If git is not installed, should return False with friendly message, not crash."""
-        from nyxniri.network import safe_git_pull
+        from nyxuri.network import safe_git_pull
 
         with patch("shutil.which", return_value=None):
             with redirect_stdout(io.StringIO()):
@@ -41,7 +41,7 @@ class TestRawFetchDigest(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_digest_mismatch_never_moves_downloaded_file(self):
-        from nyxniri.network import _ProcessAttempt, fetch_raw_with_fallback
+        from nyxuri.network import _ProcessAttempt, fetch_raw_with_fallback
 
         target = self._ctx.home / "bootstrap.fish"
         url = "https://example.invalid/org/repo/commit/file.fish"
@@ -56,8 +56,8 @@ class TestRawFetchDigest(unittest.TestCase):
             tmp_path.write_text("unexpected", encoding="utf-8")
             return _ProcessAttempt(0, "200")
 
-        with patch("nyxniri.network.RAW_MIRROR_TEMPLATES", [("test", url)]), \
-             patch("nyxniri.network._run_cancellable_process", side_effect=fake_process), \
+        with patch("nyxuri.network.RAW_MIRROR_TEMPLATES", [("test", url)]), \
+             patch("nyxuri.network._run_cancellable_process", side_effect=fake_process), \
              redirect_stdout(io.StringIO()):
             self.assertFalse(fetch_raw_with_fallback("org/repo", "commit", "file.fish", target, "0" * 64))
 
@@ -77,14 +77,14 @@ class TestDirtyTreeReturnValue(unittest.TestCase):
 
     def test_non_interactive_dirty_tree_returns_false(self):
         """Non-interactive + dirty tree should return False (not None=skip, not True=ok)."""
-        from nyxniri.network import safe_git_pull
+        from nyxuri.network import safe_git_pull
 
         fake_repo = self.home / "fake-repo"
         fake_repo.mkdir()
         (fake_repo / ".git").mkdir()
 
         # Force standalone mode so dirty tree doesn't short-circuit on "repo" mode
-        from nyxniri.core import get_env
+        from nyxuri.core import get_env
         get_env().run_mode = "standalone"
         get_env().repo_dir = fake_repo
 
@@ -110,13 +110,13 @@ class TestDirtyTreeReturnValue(unittest.TestCase):
 
     def test_interactive_dirty_tree_cancelled_returns_none(self):
         """Interactive + dirty tree + user says no → None (skip)."""
-        from nyxniri.network import safe_git_pull
+        from nyxuri.network import safe_git_pull
 
         fake_repo = self.home / "fake-repo"
         fake_repo.mkdir()
         (fake_repo / ".git").mkdir()
 
-        from nyxniri.core import get_env
+        from nyxuri.core import get_env
         get_env().run_mode = "standalone"
         get_env().repo_dir = fake_repo
 
@@ -133,7 +133,7 @@ class TestDirtyTreeReturnValue(unittest.TestCase):
         with patch("shutil.which", return_value="/usr/bin/git"):
             with patch("subprocess.run", side_effect=fake_run):
                 with patch("sys.stdin.isatty", return_value=True):
-                    with patch("nyxniri.network.prompt_confirm", return_value=False):
+                    with patch("nyxuri.network.prompt_confirm", return_value=False):
                         with redirect_stdout(io.StringIO()):
                             result = safe_git_pull(fake_repo)
 
@@ -142,13 +142,13 @@ class TestDirtyTreeReturnValue(unittest.TestCase):
 
     def test_clean_tree_proceeds_to_pull(self):
         """Clean tree should proceed to git pull."""
-        from nyxniri.network import safe_git_pull
+        from nyxuri.network import safe_git_pull
 
         fake_repo = self.home / "fake-repo"
         fake_repo.mkdir()
         (fake_repo / ".git").mkdir()
 
-        from nyxniri.core import get_env
+        from nyxuri.core import get_env
         get_env().run_mode = "standalone"
         get_env().repo_dir = fake_repo
 
@@ -166,7 +166,7 @@ class TestDirtyTreeReturnValue(unittest.TestCase):
             return mock
 
         with patch("shutil.which", return_value="/usr/bin/git"):
-            with patch("nyxniri.network._run_git_transfer") as mock_transfer:
+            with patch("nyxuri.network._run_git_transfer") as mock_transfer:
                 mock_transfer.return_value = MagicMock(returncode=0)
                 with redirect_stdout(io.StringIO()):
                     result = safe_git_pull(fake_repo)
@@ -186,7 +186,7 @@ class TestGitProgressInsertion(unittest.TestCase):
 
     def test_progress_after_subcommand_for_c_prefixed_pull(self):
         """对 `git -c K=V -c K=V pull --ff-only`，--progress 必须在 pull 之后。"""
-        from nyxniri.network import _with_git_progress
+        from nyxuri.network import _with_git_progress
 
         with patch("sys.stderr.isatty", return_value=True):
             cmd, show = _with_git_progress(
@@ -207,7 +207,7 @@ class TestGitProgressInsertion(unittest.TestCase):
 
     def test_progress_after_clone_subcommand(self):
         """对 `git clone -c ...`，--progress 必须紧跟 clone 之后。"""
-        from nyxniri.network import _with_git_progress
+        from nyxuri.network import _with_git_progress
 
         with patch("sys.stderr.isatty", return_value=True):
             cmd, show = _with_git_progress(
@@ -221,7 +221,7 @@ class TestGitProgressInsertion(unittest.TestCase):
 
     def test_no_progress_when_not_tty(self):
         """非 tty 环境不应注入 --progress。"""
-        from nyxniri.network import _with_git_progress
+        from nyxuri.network import _with_git_progress
 
         with patch("sys.stderr.isatty", return_value=False):
             cmd, show = _with_git_progress(
@@ -247,8 +247,8 @@ class TestSafeGitPullCommandShape(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_pull_command_has_network_timeouts(self):
-        from nyxniri.network import safe_git_pull
-        from nyxniri.core import get_env
+        from nyxuri.network import safe_git_pull
+        from nyxuri.core import get_env
 
         fake_repo = self.home / "fake-repo"
         fake_repo.mkdir()

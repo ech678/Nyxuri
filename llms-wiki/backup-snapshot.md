@@ -1,14 +1,14 @@
 # Backup Snapshot — 快照生命周期、回滚与防灾合约
 
-> NyxNiri 的状态引擎负责为用户的 dotfiles 提供轻量、免依赖的原子快照与回滚。
-> 源码：`nyxniri/state/backup.py`，快照根目录：`~/.config/NyxNiri/backups/`。
+> Nyxuri 的状态引擎负责为用户的 dotfiles 提供轻量、免依赖的原子快照与回滚。
+> 源码：`nyxuri/state/backup.py`，快照根目录：`~/.config/nyxuri/backups/`。
 
 ## 快照存储拓扑
 
-所有状态信息严格收拢在 NyxNiri 独立状态目录内，禁止向 `~/.config/` 根目录倾倒元数据：
+所有状态信息严格收拢在 Nyxuri 独立状态目录内，禁止向 `~/.config/` 根目录倾倒元数据：
 
 ```
-~/.config/NyxNiri/backups/
+~/.config/nyxuri/backups/
 ├── snapshot_20260912_140000/
 │   ├── niri/
 │   ├── kitty/
@@ -34,7 +34,7 @@
 ## CLI 接口
 
 ```bash
-nyxniri snapshot create [note]   # 创建新快照
-nyxniri snapshot list            # 列出所有可用快照（带序号与时间）
-nyxniri snapshot rollback [id]   # 回滚到指定快照（回滚前自动生成安全快照）
+nyxuri snapshot create [note]   # 创建新快照
+nyxuri snapshot list            # 列出所有可用快照（带序号与时间）
+nyxuri snapshot rollback [id]   # 回滚到指定快照（回滚前自动生成安全快照）
 ```

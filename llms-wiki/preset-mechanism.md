@@ -1,13 +1,13 @@
 # Preset Mechanism — active 状态、src 四分支、写时序、原子写、同步语义
 
 > 预设机制的核心：活动选择存 state 文件（不占配置槽），deploy 时读它决定 src 是哪个目录。
-> 写时序铁律 + 原子写堵死所有"半途崩溃留下错乱态"的故障路径。源码：`nyxniri/deploy/preset.py`。
+> 写时序铁律 + 原子写堵死所有"半途崩溃留下错乱态"的故障路径。源码：`nyxuri/deploy/preset.py`。
 
 ## active 状态文件
 
-`~/.config/NyxNiri/presets/<app>.active`——一行，内容是预设名或 `default`。不占配置槽
+`~/.config/nyxuri/presets/<app>.active`——一行，内容是预设名或 `default`。不占配置槽
 （这是扔掉 include 间接层、扔掉 `__preset__` 保留名的关键简化：一个概念减两份复杂度）。
-同时同步记录至 `~/.local/state/NyxNiri/state.json` 账本（`presets` 字典），`read_active_preset` 优先读账本并双向自愈。
+同时同步记录至 `~/.local/state/nyxuri/state.json` 账本（`presets` 字典），`read_active_preset` 优先读账本并双向自愈。
 
 - `read_active_preset(app)` → 文件不存在时返回 `"default"`，空白、读失败或非法内容会抛出 `InvalidActivePresetError` 并冻结部署
 - `write_active_preset(app, name)` → **原子写**（temp + `os.replace`）并同步更新 `state.json`。半写空文件会被
@@ -23,10 +23,10 @@ deploy 时根据 active 选源目录，四条分支 + 一条冻结：
    （dest 已空，reset 后下次自愈）。
 2. **active == "default"** → `src=app_root`（仓库默认配置）。
 3. **官方预设**（`configs/<app>/__presets__/<active>/` 或 `presets/<active>/` 存在）→ `src=` 该目录。
-4. **用户预设**（`~/.config/NyxNiri/presets/<app>/<active>/` 存在）→ `src=` 该目录。
+4. **用户预设**（`~/.config/nyxuri/presets/<app>/<active>/` 存在）→ `src=` 该目录。
    官方优先：同名时先查仓库再查用户。
 5. **找不到** → `src=None`（冻结 dest + 警告），**绝不回 default**（会静默擦用户配置）。
-   `~/.config/<app>` 保持当前内容、未重新部署，提示用户 `nyxniri preset <app> list` 选新的。
+   `~/.config/<app>` 保持当前内容、未重新部署，提示用户 `nyxuri preset <app> list` 选新的。
 
 官方/用户优先级在 `elif` 链里：先 official、再 user、都没命中才冻结。
 
@@ -79,14 +79,14 @@ theme-sync / gtk 重渲染）。切个 kitty 预设不该顺带跑 fisher，无�
 ## CLI
 
 ```
-nyxniri preset <app> list                # 列所有预设，* 标当前活动（list 即 status）
-nyxniri preset <app> apply <name>        # 切预设（apply default = 回默认 = reset）
-nyxniri preset <app> save <name>         # 当前配置存成用户预设（过滤 __custom__）
-nyxniri preset <app> edit <name>         # 在 $EDITOR 里直接改用户预设目录（改完重新 apply 生效）
-nyxniri preset <app> delete <name>       # 删用户预设（官方不能删）
-nyxniri preset <app> part <slot> <name>  # 切换通用零件插槽（如 niri 的 effects 零件）
+nyxuri preset <app> list                # 列所有预设，* 标当前活动（list 即 status）
+nyxuri preset <app> apply <name>        # 切预设（apply default = 回默认 = reset）
+nyxuri preset <app> save <name>         # 当前配置存成用户预设（过滤 __custom__）
+nyxuri preset <app> edit <name>         # 在 $EDITOR 里直接改用户预设目录（改完重新 apply 生效）
+nyxuri preset <app> delete <name>       # 删用户预设（官方不能删）
+nyxuri preset <app> part <slot> <name>  # 切换通用零件插槽（如 niri 的 effects 零件）
 ```
 
 `save` 拒 `default`（保留字）、拒官方同名（官方优先）。`delete` 同样拒这两类。`edit` 也拒这两类
 （官方预设只读）——想改官方预设的口味，先 `apply` 它再 `save` 成用户预设。也可跳过命令，直接
-编辑 `~/.config/NyxNiri/presets/<app>/<name>/` 里的文件，`apply` 即部署。
+编辑 `~/.config/nyxuri/presets/<app>/<name>/` 里的文件，`apply` 即部署。

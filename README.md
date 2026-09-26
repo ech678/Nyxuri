@@ -6,13 +6,13 @@
 
 <div align="center">
 
-<h1>NyxNiri</h1>
+<h1>Nyxuri</h1>
 
-<p><strong>A Material You desktop experience for Arch / CachyOS</strong><br />
+<p><strong>/nɪkˈsuːri/ · A Material You desktop experience for Arch / CachyOS</strong><br />
 <sub>Built on Niri and Noctalia V5 — and stays out of your way.</sub></p>
 
 <p>
-  <a href="https://github.com/ech678/NyxNiri/stargazers"><img height="22" src="https://m3-markdown-badges.vercel.app/stars/3/3/ech678/NyxNiri" alt="Stars" /></a>
+  <a href="https://github.com/ech678/Nyxuri/stargazers"><img height="22" src="https://m3-markdown-badges.vercel.app/stars/3/3/ech678/Nyxuri" alt="Stars" /></a>
   &nbsp;
   <a href="https://archlinux.org"><img height="22" src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Arch/arch2.svg" alt="Arch Linux" /></a>
   &nbsp;
@@ -20,7 +20,7 @@
 </p>
 
 <a href="https://github.com/user-attachments/assets/9ef4da30-54c0-491b-916f-2f2a3beac6be">
-  <img src="https://github.com/user-attachments/assets/9ef4da30-54c0-491b-916f-2f2a3beac6be" alt="NyxNiri Preview" width="92%" />
+  <img src="https://github.com/user-attachments/assets/9ef4da30-54c0-491b-916f-2f2a3beac6be" alt="Nyxuri Preview" width="92%" />
 </a>
 
 <p>
@@ -28,6 +28,10 @@
 </p>
 
 </div>
+
+> **Nyxuri** (*nik-SOO-ri* `/nɪkˈsuːri/`): An invented name blending **Nyx** (Greek goddess of night: calm, dark, deep) and **-uri** (echoing *uruou* 潤, moisture and subtle gloss). The quiet glow of night with a soft luster.
+>
+> *Upgrading from NyxNiri?* Running `nyxuri` automatically migrates your configurations, snapshots, and state to `nyxuri` cleanly with zero residue.
 
 ## Features
 
@@ -44,39 +48,39 @@
 ## Install
 
 > [!IMPORTANT]
-> **Upgrading from the legacy Bash release (`lib/` + `v2/`):** its `nyxniri update` cannot switch to the current Python layout. Run the current bootstrap once before updating. Configs, `~/.config/NyxNiri/backups/`, and legacy `~/.config/dotfiles_backup_*` snapshots are preserved.
+> **Upgrading from the legacy Bash release (`lib/` + `v2/`):** its `nyxniri update` cannot switch to the current Python layout. Run the current bootstrap once before updating. Configs, `~/.config/nyxuri/backups/`, and legacy `~/.config/dotfiles_backup_*` snapshots are preserved.
 
 ### Standalone (online)
 
 ```bash
-curl -fsSL --connect-timeout 10 https://raw.githubusercontent.com/ech678/NyxNiri/main/install.sh | bash
+curl -fsSL --connect-timeout 10 https://raw.githubusercontent.com/ech678/Nyxuri/main/install.sh | bash
 ```
 
 > [!TIP]
-> Auto-detects Shelly, paru, and yay; if none are installed, `nyxniri install full` automatically bootstraps `paru`.
+> Auto-detects Shelly, paru, and yay; if none are installed, `nyxuri install full` automatically bootstraps `paru`.
 
 ### From a git checkout (recommended)
 
 ```bash
 # shallow clone: latest snapshot only; drop --depth 1 for full history
-git clone --depth 1 https://github.com/ech678/NyxNiri.git ~/NyxNiri
-cd ~/NyxNiri && ./install.sh
+git clone --depth 1 https://github.com/ech678/Nyxuri.git ~/Nyxuri
+cd ~/Nyxuri && ./install.sh
 ```
 
 ### System package (AUR)
 
-> Coming soon — `paru -S nyxniri-git`, with updates handled by pacman.
+> Coming soon — `paru -S nyxuri-git`, with updates handled by pacman.
 
 <details>
 <summary>Mirrors for China (gh-proxy / CDN)</summary>
 
 ```bash
 # Standalone via gh-proxy.org
-curl -fsSL --connect-timeout 10 https://gh-proxy.org/https://raw.githubusercontent.com/ech678/NyxNiri/main/install.sh | bash
+curl -fsSL --connect-timeout 10 https://gh-proxy.org/https://raw.githubusercontent.com/ech678/Nyxuri/main/install.sh | bash
 
 # git clone via gh-proxy.org
-git clone --depth 1 https://gh-proxy.org/https://github.com/ech678/NyxNiri.git ~/NyxNiri
-cd ~/NyxNiri && ./install.sh
+git clone --depth 1 https://gh-proxy.org/https://github.com/ech678/Nyxuri.git ~/Nyxuri
+cd ~/Nyxuri && ./install.sh
 ```
 
 For repository downloads, `install.sh` tries GitHub first, then gh-proxy.
@@ -85,9 +89,9 @@ For repository downloads, `install.sh` tries GitHub first, then gh-proxy.
 ## Included Configs
 
 ```text
-NyxNiri
+Nyxuri
 ├── install.sh                  # lightweight bootstrap entrypoint
-├── nyxniri/                    # Python core engine (zero pip dependencies)
+├── nyxuri/                     # Python core engine (zero pip dependencies)
 ├── assets/                     # static assets (wallpapers, fcitx5 skin templates)
 └── configs/
     ├── niri/                   # window manager (.kdl, .toml)
@@ -119,7 +123,7 @@ Any file or folder containing `__custom__` survives updates and preset switches:
 
 ### Post-deploy hooks
 
-Put shell scripts in `~/.config/NyxNiri/hooks/` to run your own finishing work after every normal config deploy. Scripts ending in `.sh` run in filename order with a 30-second limit; a failed or timed-out script is reported without blocking the rest. `nyxniri test` skips these hooks, and ordinary uninstall keeps them.
+Put shell scripts in `~/.config/nyxuri/hooks/` to run your own finishing work after every normal config deploy. Scripts ending in `.sh` run in filename order with a 30-second limit; a failed or timed-out script is reported without blocking the rest. `nyxuri test` skips these hooks, and ordinary uninstall keeps them.
 
 ## Presets
 
@@ -138,13 +142,13 @@ The preset architecture also supports modular Parts slots (e.g. `glow` and `effe
 
 | Command | Description |
 | :--- | :--- |
-| `nyxniri preset <app> list` | List presets (`*` marks the active one) |
-| `nyxniri preset <app> apply <name>` | Switch preset (`apply default` resets) |
-| `nyxniri preset <app> save <name>` | Save the current config as a private preset |
-| `nyxniri preset <app> edit <name>` | Edit a private preset in `$EDITOR` |
-| `nyxniri preset <app> delete <name>` | Delete a private preset (official ones are read-only) |
+| `nyxuri preset <app> list` | List presets (`*` marks the active one) |
+| `nyxuri preset <app> apply <name>` | Switch preset (`apply default` resets) |
+| `nyxuri preset <app> save <name>` | Save the current config as a private preset |
+| `nyxuri preset <app> edit <name>` | Edit a private preset in `$EDITOR` |
+| `nyxuri preset <app> delete <name>` | Delete a private preset (official ones are read-only) |
 
-Official presets update with `nyxniri update`; private ones live in `~/.config/NyxNiri/presets/`.
+Official presets update with `nyxuri update`; private ones live in `~/.config/nyxuri/presets/`.
 
 ## Keybindings
 
@@ -200,7 +204,7 @@ Official presets update with `nyxniri update`; private ones live in `~/.config/N
 
 > The GTK theme and fisher plugin manager deploy automatically with a full install; the items below are opt-in.
 
-**NyxMellow fcitx5 skin:** mellow rounded shape matching Noctalia color palette (auto light/dark switch). `nyxniri fcitx install` registers it as a template and re-renders on wallpaper/theme changes. Opt-in only.
+**NyxMellow fcitx5 skin:** mellow rounded shape matching Noctalia color palette (auto light/dark switch). `nyxuri fcitx install` registers it as a template and re-renders on wallpaper/theme changes. Opt-in only.
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/3f861e8e-55da-408e-a9d5-7f337a039b74" alt="NyxMellow skin (light)" width="48%" />
@@ -209,13 +213,13 @@ Official presets update with `nyxniri update`; private ones live in `~/.config/N
   <sub><em>NyxMellow skin in light and dark mode</em></sub>
 </p>
 
-**Wallpaper & video pack:** high-res wallpapers and live videos (~100MB) live in [wallpaper-collection](https://github.com/ech678/wallpaper-collection). Opt-in during `install` or download anytime via `nyxniri wallpapers`.
+**Wallpaper & video pack:** high-res wallpapers and live videos (~100MB) live in [wallpaper-collection](https://github.com/ech678/wallpaper-collection). Opt-in during `install` or download anytime via `nyxuri wallpapers`.
 
-**Noctalia Greeter:** greetd login screen matching Noctalia style, `nyxniri greeter install` installs `greetd` + `noctalia-greeter` (AUR), backs up existing configuration, configures Polkit rules, then switches the next boot to greetd without ending the current session, a failed switch or `nyxniri greeter uninstall` restores the previous display manager
+**Noctalia Greeter:** greetd login screen matching Noctalia style, `nyxuri greeter install` installs `greetd` + `noctalia-greeter` (AUR), backs up existing configuration, configures Polkit rules, then switches the next boot to greetd without ending the current session, a failed switch or `nyxuri greeter uninstall` restores the previous display manager
 
 ## Tooling
 
-`nyxniri` manages install, snapshots and diagnostics. Interactive deployments create a snapshot in `~/.config/NyxNiri/backups/` by default.
+`nyxuri` manages install, snapshots and diagnostics. Interactive deployments create a snapshot in `~/.config/nyxuri/backups/` by default.
 
 > Legacy Bash users must run the current bootstrap shown above before using these commands. The old `nyxniri update` cannot perform the directory migration.
 
@@ -223,51 +227,51 @@ Official presets update with `nyxniri update`; private ones live in `~/.config/N
 
 | Command | Description |
 | :--- | :--- |
-| `nyxniri` | Interactive menu |
-| `nyxniri test` | Developer test deploy (no backup, keep monitor.kdl) |
+| `nyxuri` | Interactive menu |
+| `nyxuri test` | Developer test deploy (no backup, keep monitor.kdl) |
 
 **Deploy**
 
 | Command | Description |
 | :--- | :--- |
-| `nyxniri install [full\|config]` | Deploy everything, or sync configs only |
-| `nyxniri update [--force\|--no-deploy]` | Update source; force config deployment or skip it |
+| `nyxuri install [full\|config]` | Deploy everything, or sync configs only |
+| `nyxuri update [--force\|--no-deploy]` | Update source; force config deployment or skip it |
 
 **Snapshots**
 
 | Command | Description |
 | :--- | :--- |
-| `nyxniri snapshot [note]` | Save current config state |
-| `nyxniri snapshot delete [idx]` | Delete snapshots (multi-select if no index) |
-| `nyxniri rollback [index]` | Restore a snapshot |
-| `nyxniri list` | List snapshots |
+| `nyxuri snapshot [note]` | Save current config state |
+| `nyxuri snapshot delete [idx]` | Delete snapshots (multi-select if no index) |
+| `nyxuri rollback [index]` | Restore a snapshot |
+| `nyxuri list` | List snapshots |
 
 **System**
 
 | Command | Description |
 | :--- | :--- |
-| `nyxniri doctor` | Dependency + system health check |
-| `nyxniri deps` | Open dependency check & install menu |
-| `nyxniri apps` | Category-grouped recommended apps installer (Brave, Steam, WeChat, ...) |
-| `nyxniri wallpapers` | Download the full wallpaper & video pack from the external repo |
-| `nyxniri theme [toggle\|dark\|light\|sync\|status]` | Switch or sync system dark/light theme |
-| `nyxniri bug` / `nyxniri report` | Generate diagnostic bug report |
+| `nyxuri doctor` | Dependency + system health check |
+| `nyxuri deps` | Open dependency check & install menu |
+| `nyxuri apps` | Category-grouped recommended apps installer (Brave, Steam, WeChat, ...) |
+| `nyxuri wallpapers` | Download the full wallpaper & video pack from the external repo |
+| `nyxuri theme [toggle\|dark\|light\|sync\|status]` | Switch or sync system dark/light theme |
+| `nyxuri bug` / `nyxuri report` | Generate diagnostic bug report |
 
 **Uninstall**
 
 | Command | Description |
 | :--- | :--- |
-| `nyxniri uninstall [--all\|standard\|restore\|purge]` | Checkbox uninstall — pick what to remove (configs, CLI, modules, snapshots, wallpapers); defaults to the standard range |
-| `nyxniri purge` | Shorthand for `uninstall --all` |
+| `nyxuri uninstall [--all\|standard\|restore\|purge]` | Checkbox uninstall — pick what to remove (configs, CLI, modules, snapshots, wallpapers); defaults to the standard range |
+| `nyxuri purge` | Shorthand for `uninstall --all` |
 
 **Extensions**
 
 | Command | Description |
 | :--- | :--- |
-| `nyxniri fcitx [install\|status\|uninstall]` | NyxMellow fcitx5 skin |
-| `nyxniri greeter [install\|status\|uninstall]` | Noctalia Greeter (login screen) |
-| `nyxniri gtk [install\|status\|uninstall]` | Material You GTK3/4 theme |
-| `nyxniri fisher [install\|status\|uninstall]` | fisher plugin manager for Fish |
+| `nyxuri fcitx [install\|status\|uninstall]` | NyxMellow fcitx5 skin |
+| `nyxuri greeter [install\|status\|uninstall]` | Noctalia Greeter (login screen) |
+| `nyxuri gtk [install\|status\|uninstall]` | Material You GTK3/4 theme |
+| `nyxuri fisher [install\|status\|uninstall]` | fisher plugin manager for Fish |
 
 `nyxhelp` is a compact fzf-based reference for the CLI, shell helpers, and core keybindings:
 
@@ -298,9 +302,9 @@ Brightness keys still work: internal panels go through Noctalia backlight, exter
 <details>
 <summary><b>Browser video looks stacked, black, or see-through</b> — hybrid GPU (AMD/Intel iGPU + NVIDIA dGPU) used to force NVIDIA video decode for every app.</summary>
 
-NyxNiri used to uncomment `GBM_BACKEND=nvidia-drm` and `LIBVA_DRIVER_NAME=nvidia` whenever `lspci` mentioned NVIDIA. On hybrid laptops the compositor stays on the iGPU, so Chromium/Brave can decode on NVIDIA and present on AMD/Intel — a few videos then corrupt the window.
+Nyxuri used to uncomment `GBM_BACKEND=nvidia-drm` and `LIBVA_DRIVER_NAME=nvidia` whenever `lspci` mentioned NVIDIA. On hybrid laptops the compositor stays on the iGPU, so Chromium/Brave can decode on NVIDIA and present on AMD/Intel — a few videos then corrupt the window.
 
-Update and redeploy NyxNiri. The default configuration no longer selects a GPU driver, and deployment no longer rewrites environment variables based on PCI devices. A PCI listing cannot identify the active rendering GPU. Put any driver settings you need in `~/.config/niri/__custom__.kdl`.
+Update and redeploy Nyxuri. The default configuration no longer selects a GPU driver, and deployment no longer rewrites environment variables based on PCI devices. A PCI listing cannot identify the active rendering GPU. Put any driver settings you need in `~/.config/niri/__custom__.kdl`.
 
 The old `ELECTRON_OZONE_PLATFORM_HINT "auto"` setting has also been removed; some older Electron apps may use XWayland instead. Normal deployment updates the main configuration but leaves personal overrides, personal presets, historical snapshots, and the current session environment alone. Log out and back in before checking the result.
 
@@ -319,7 +323,7 @@ git -C ~/.local/state/noctalia/plugins/sources/official/repo reset --hard HEAD
 </details>
 
 <details>
-<summary><b>Greeter sync asks for a password</b> — add a Polkit rule (<code>nyxniri greeter install</code> does this for you).</summary>
+<summary><b>Greeter sync asks for a password</b> — add a Polkit rule (<code>nyxuri greeter install</code> does this for you).</summary>
 
 Install the Polkit rule manually if needed:
 
@@ -344,7 +348,7 @@ If Noctalia's built-in GTK templates or old tools generated `noctalia.css` or `g
 Run theme sync or remove the stale override files:
 
 ```bash
-nyxniri theme sync
+nyxuri theme sync
 # Or manually:
 rm -f ~/.config/gtk-4.0/gtk.css ~/.config/gtk-4.0/noctalia.css ~/.config/gtk-3.0/gtk.css ~/.config/gtk-3.0/noctalia.css
 ```
@@ -352,9 +356,9 @@ rm -f ~/.config/gtk-4.0/gtk.css ~/.config/gtk-4.0/noctalia.css ~/.config/gtk-3.0
 </details>
 
 <details>
-<summary><b>Brave doesn't follow theme toggle</b> — Brave cold-start bug (not a NyxNiri issue).</summary>
+<summary><b>Brave doesn't follow theme toggle</b> — Brave cold-start bug (not a Nyxuri issue).</summary>
 
-On non-GNOME Wayland compositors, Brave's portal theme-signal subscription fails to initialize on cold start, so `nyxniri theme toggle` doesn't recolor it. Open `brave://settings/appearance` and switch theme mode once (e.g. Classic → GTK → Classic) to wake it up; it follows live afterwards without restarting Brave. Needs re-waking after each Brave restart.
+On non-GNOME Wayland compositors, Brave's portal theme-signal subscription fails to initialize on cold start, so `nyxuri theme toggle` doesn't recolor it. Open `brave://settings/appearance` and switch theme mode once (e.g. Classic → GTK → Classic) to wake it up; it follows live afterwards without restarting Brave. Needs re-waking after each Brave restart.
 
 </details>
 
@@ -364,7 +368,7 @@ On non-GNOME Wayland compositors, Brave's portal theme-signal subscription fails
 
 - Telegram Channel: [@linux_ricing](https://t.me/linux_ricing)
 - QQ: `2040244628` · Linux Ricing Group: `631425889`
-- Sponsor: [Afdian](https://afdian.com/a/Echoes678) · Bug reports: [GitHub Issues](https://github.com/ech678/NyxNiri/issues)
+- Sponsor: [Afdian](https://afdian.com/a/Echoes678) · Bug reports: [GitHub Issues](https://github.com/ech678/Nyxuri/issues)
 
 **Special Thanks & Contributors:**
 

@@ -1,13 +1,13 @@
-# NyxNiri
+# Nyxuri
 
-> NyxNiri 把精选桌面配置（niri / kitty / fish / noctalia …）原子部署到 ~/.config。
+> Nyxuri 把精选桌面配置（niri / kitty / fish / noctalia …）原子部署到 ~/.config。
 > 三层叠加（默认 → 预设 → __custom__），三模式安装（curl|bash / git clone / AUR），
 > 纯 Python 标准库引擎（零 pip 依赖，需 3.11+ 因 tomllib）。repo = 真值，
 > ~/.config = 派生物。
 
 这份 wiki 是项目的 LLM 友好参考：每页一主题、自包含、按需取。读这份索引找入口，再
 跟链接到详情页。横向**祈使**规则（跑啥命令、铁律、工作流、voice）在 [../AGENTS.md](../AGENTS.md)；
-本文是**陈述**参考（系统怎么运作、长啥样）。源码（configs/ + nyxniri/）永远是最终真值，
+本文是**陈述**参考（系统怎么运作、长啥样）。源码（configs/ + nyxuri/）永远是最终真值，
 这份 wiki 是它的结构化镜像——有出入以源码为准。
 
 ## Architecture
@@ -26,7 +26,7 @@
 
 ## Decoupled modules
 
-- [subpackages](subpackages.md): nyxniri/{pkg, deploy, state, modules, packaging} 职责、CLI 与菜单分离、TOML 文案
+- [subpackages](subpackages.md): nyxuri/{pkg, deploy, state, modules, packaging} 职责、CLI 与菜单分离、TOML 文案
 - [two-axis-config](two-axis-config.md): 可选（.optional-apps.toml）/ 有配置（目录）两轴独立、"加配置不毕业"
 - [manifest-schema](manifest-schema.md): .module.toml + .optional-apps.toml 字段参考
 - [modules](modules.md): 系统级可选模块（fcitx5/greeter/fisher/gtktheme）与 lifecycle 上抛合约
@@ -52,4 +52,4 @@
 ## Source of truth
 
 - [../AGENTS.md](../AGENTS.md): 祈使规则——铁律、必跑命令、工作流、writing voice
-- 仓库 `configs/` + `nyxniri/` 源码本身（这份 wiki 是它的结构化镜像，源码为准）
+- 仓库 `configs/` + `nyxuri/` 源码本身（这份 wiki 是它的结构化镜像，源码为准）

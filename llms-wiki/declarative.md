@@ -1,6 +1,6 @@
 # Declarative vs Imperative — 边界（啥该 / 不该声明式）
 
-> NyxNiri 已是 80% 声明式。这不是范式重写，是让现有的隐式声明式**显式化**——用加法做。
+> Nyxuri 已是 80% 声明式。这不是范式重写，是让现有的隐式声明式**显式化**——用加法做。
 
 ## 已是声明式的部分
 
@@ -8,7 +8,7 @@
 - ✅ `~/.config/` = 当前状态
 - ✅ `atomic_replace_item` = 对账器，Dunder = 增量保留
 - ✅ snapshot = 存档当前状态，rollback = 恢复
-- ✅ active 预设名写在 state 文件，`nyxniri install` = 读 state + 对账到 `~/.config` + 跑命令式副作用
+- ✅ active 预设名写在 state 文件，`nyxuri install` = 读 state + 对账到 `~/.config` + 跑命令式副作用
 
 让"期望状态"更显式：active 预设名在 state 文件里，repo = 真值、`~/.config` = 派生物。
 
@@ -19,7 +19,7 @@
 
 ## 明确不做（避免熵增）
 
-- `~/.config/NyxNiri/apps/<myapp>/` 用户 drop-in app 目录（加扫描路径 + 覆盖语义）
+- `~/.config/nyxuri/apps/<myapp>/` 用户 drop-in app 目录（加扫描路径 + 覆盖语义）
 - `.module.toml` 里声明 doctor 检查项、post-install hook（会让 manifest 膨胀成小语言）
 - `.module.toml` 里放 i18n 键（文案集中在 `translations.toml`，已有自动校验）
 - stable + git 双 AUR 包（双倍熵）

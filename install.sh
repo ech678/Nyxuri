@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 
 # ==============================================================================
-# NyxNiri — Noctalia & Niri Dotfiles Installer Bootstrap
+# Nyxuri — Noctalia & Desktop Dotfiles Installer Bootstrap
 # Lightweight Bash bootstrap wrapper for local execution and curl pipelines.
-# Hands over execution to the native Python engine (nyxniri).
+# Hands over execution to the native Python engine (nyxuri).
 # ==============================================================================
 
 set -euo pipefail
 
-# --- ANSI palette (mirrors nyxniri/constants.py:Colors; single source of style) ---
+# --- ANSI palette (mirrors nyxuri/constants.py:Colors; single source of style) ---
 RED=$'\033[1;31m'; GRN=$'\033[1;32m'; YEL=$'\033[1;33m'; BLU=$'\033[1;34m'; OFF=$'\033[0m'
 
 # --- Bilingual helper: bootstrap runs before Python i18n, so sniff $LANG/$LC_ALL ---
@@ -16,8 +16,8 @@ _lang_is_zh() { [[ "${LANG:-}${LC_ALL:-}" == *zh* ]]; }
 # say "zh text" "en text" -> prints zh when locale is Chinese, else en.
 say() { if _lang_is_zh; then printf '%s' "$1"; else printf '%s' "${2:-$1}"; fi; }
 
-CACHE_DIR="$HOME/.cache/NyxNiri"
-BOOTSTRAP_URL="https://raw.githubusercontent.com/ech678/NyxNiri/main/install.sh"
+CACHE_DIR="$HOME/.cache/nyxuri"
+BOOTSTRAP_URL="https://raw.githubusercontent.com/ech678/Nyxuri/main/install.sh"
 
 # Normalize XDG variables to prevent sandboxes (e.g. HOME=$(mktemp -d)) from leaking into the host
 if [ -n "${XDG_STATE_HOME:-}" ] && [[ "$XDG_STATE_HOME" != "$HOME/"* ]]; then
@@ -31,19 +31,20 @@ if [ -n "${XDG_CACHE_HOME:-}" ] && [[ "$XDG_CACHE_HOME" != "$HOME/"* ]]; then
 fi
 
 GIT_MIRROR_REGISTRY=(
-    "Official|https://github.com/ech678/NyxNiri.git"
-    "gh-proxy.org|https://gh-proxy.org/https://github.com/ech678/NyxNiri.git"
+    "Official|https://github.com/ech678/Nyxuri.git"
+    "gh-proxy.org|https://gh-proxy.org/https://github.com/ech678/Nyxuri.git"
 )
 
-# NYXNIRI_REPO: 指定后单源直连(不回退官方),服务 fork 与内网镜像场景
-if [ -n "${NYXNIRI_REPO:-}" ]; then
-    case "$NYXNIRI_REPO" in
+# NYXURI_REPO / NYXNIRI_REPO: 指定后单源直连(不回退官方),服务 fork 与内网镜像场景
+REPO_OVERRIDE="${NYXURI_REPO:-${NYXNIRI_REPO:-}}"
+if [ -n "$REPO_OVERRIDE" ]; then
+    case "$REPO_OVERRIDE" in
         https://*|git@*|ssh://*)
-            GIT_MIRROR_REGISTRY=("Custom|${NYXNIRI_REPO}")
+            GIT_MIRROR_REGISTRY=("Custom|${REPO_OVERRIDE}")
             ;;
         *)
             printf '%s[✗] %s%s\n' "$RED" \
-                "$(say "NYXNIRI_REPO 指定的地址不受支持: ${NYXNIRI_REPO}" "Unsupported NYXNIRI_REPO address: ${NYXNIRI_REPO}")" \
+                "$(say "仓库源指定的地址不受支持: ${REPO_OVERRIDE}" "Unsupported repo address: ${REPO_OVERRIDE}")" \
                 "$OFF" >&2
             printf '  %s\n' "$(say "仅接受 https:// 、 git@ 、 ssh:// 开头的仓库地址。" "Only https:// , git@ , ssh:// addresses are accepted.")" >&2
             exit 1
@@ -95,7 +96,7 @@ exec_python_engine() {
     cd -- "$target_dir" || return 1
     # -I -S blocks PYTHON* and sitecustomize startup injection; the fixed
     # launcher receives the validated tree and user arguments separately.
-    local python_launcher='import sys; target = sys.argv.pop(1); sys.path.insert(0, target); sys.argv[0] = "nyxniri"; from nyxniri.cli import main; main()'
+    local python_launcher='import sys; target = sys.argv.pop(1); sys.path.insert(0, target); sys.argv[0] = "nyxuri"; from nyxuri.cli import main; main()'
 
     # Only reconnect to /dev/tty if stdin is piped (e.g. curl | bash) AND no subcommand args are given
     if [ "$#" -eq 0 ] && [ ! -t 0 ] && [ -t 1 ] && [ -r /dev/tty ]; then
@@ -109,26 +110,26 @@ engine_is_complete() {
     local target_dir="$1"
     local module
     [ -f "$target_dir/install.sh" ] || return 1
-    [ -f "$target_dir/nyxniri/translations.toml" ] || return 1
+    [ -f "$target_dir/nyxuri/translations.toml" ] || return 1
     # Top-level engine modules (infrastructure + entrypoints, §13)
     for module in __init__ __main__ clean cli constants core deps doctor i18n menus network template_registry theme tui workflows; do
-        [ -f "$target_dir/nyxniri/$module.py" ] || return 1
+        [ -f "$target_dir/nyxuri/$module.py" ] || return 1
     done
     # deploy/ subpackage (atomic · manifest · templates · assets · hardware · preset · deploy)
     for module in __init__ atomic assets deploy hardware manifest preset templates; do
-        [ -f "$target_dir/nyxniri/deploy/$module.py" ] || return 1
+        [ -f "$target_dir/nyxuri/deploy/$module.py" ] || return 1
     done
     # pkg/ subpackage (cli · detection)
     for module in __init__ cli detection; do
-        [ -f "$target_dir/nyxniri/pkg/$module.py" ] || return 1
+        [ -f "$target_dir/nyxuri/pkg/$module.py" ] || return 1
     done
     # state/ subpackage (backup · ledger · uninstall)
     for module in __init__ backup ledger uninstall; do
-        [ -f "$target_dir/nyxniri/state/$module.py" ] || return 1
+        [ -f "$target_dir/nyxuri/state/$module.py" ] || return 1
     done
     # modules/ subpackage (fcitx · fisher · greeter · gtktheme)
     for module in __init__ fcitx fisher greeter gtktheme lifecycle; do
-        [ -f "$target_dir/nyxniri/modules/$module.py" ] || return 1
+        [ -f "$target_dir/nyxuri/modules/$module.py" ] || return 1
     done
     [ -d "$target_dir/configs" ] \
         && [ -f "$target_dir/configs/fish/config.fish" ] \
@@ -140,7 +141,7 @@ legacy_tree_detected() {
     local target_dir="$1"
     [ -f "$target_dir/lib/main.sh" ] \
         && [ -d "$target_dir/v2" ] \
-        && [ ! -d "$target_dir/nyxniri" ]
+        && [ ! -d "$target_dir/nyxuri" ]
 }
 
 show_legacy_migration() {
@@ -204,9 +205,9 @@ main() {
 
     # 4. Local repository execution
     if [ -n "$script_dir" ] \
-        && { [ -d "$script_dir/nyxniri" ] || [ -d "$script_dir/configs" ] || [ -d "$script_dir/assets" ]; }; then
+        && { [ -d "$script_dir/nyxuri" ] || [ -d "$script_dir/configs" ] || [ -d "$script_dir/assets" ]; }; then
         if ! engine_is_complete "$script_dir"; then
-            printf '%s[✗] %s: %s%s\n' "$RED" "$(say "NyxNiri 源码不完整" "NyxNiri source is incomplete")" "$script_dir" "$OFF" >&2
+            printf '%s[✗] %s: %s%s\n' "$RED" "$(say "Nyxuri 源码不完整" "Nyxuri source is incomplete")" "$script_dir" "$OFF" >&2
             printf '    %s\n' "$(say "请恢复或重新克隆仓库后再运行 ./install.sh。" "Restore or clone the repository again, then rerun ./install.sh.")" >&2
             exit 1
         fi

@@ -12,7 +12,7 @@ class TestCloneSourceOverride(unittest.TestCase):
         )
         code = (
             "import os;" + env_assignment +
-            "from nyxniri import constants;"
+            "from nyxuri import constants;"
             "print(constants.REPO_URL);"
             "print(constants.GIT_MIRROR_REGISTRY)"
         )
@@ -30,7 +30,7 @@ class TestCloneSourceOverride(unittest.TestCase):
 
     def test_display_repo_url_stays_official_even_when_overridden(self):
         repo_url, _ = self._registry_with_env("https://git.internal/NyxNiri.git")
-        self.assertTrue(repo_url.endswith("ech678/NyxNiri.git"))
+        self.assertTrue(repo_url.endswith("ech678/Nyxuri.git"))
 
     def test_default_without_env_unchanged(self):
         repo_url, registry = self._registry_with_env(None)
@@ -47,9 +47,9 @@ class TestCloneSourceOverride(unittest.TestCase):
             "from pathlib import Path\n"
             + env_assignment.rstrip(";") + "\n" +
             "from unittest.mock import patch\n"
-            "from nyxniri.network import clone_repo_with_fallback\n"
+            "from nyxuri.network import clone_repo_with_fallback\n"
             "with tempfile.TemporaryDirectory() as td:\n"
-            "    with patch('nyxniri.network.git_clone_timeout') as gct:\n"
+            "    with patch('nyxuri.network.git_clone_timeout') as gct:\n"
             "        result = clone_repo_with_fallback(Path(td))\n"
             "    print(result)\n"
             "    print(gct.call_args_list)\n"
@@ -76,6 +76,21 @@ class TestCloneSourceOverride(unittest.TestCase):
         result, git_calls = self._clone_behavior_with_env("ssh://git.internal/NyxNiri.git")
         self.assertEqual(result, "True")
         self.assertIn("ssh://git.internal/NyxNiri.git", git_calls)
+
+    def test_nyxuri_repo_takes_precedence_over_nyxniri_repo(self):
+        code = (
+            "import os;"
+            "os.environ['NYXURI_REPO']='https://git.primary/Nyxuri.git';"
+            "os.environ['NYXNIRI_REPO']='https://git.secondary/NyxNiri.git';"
+            "from nyxuri import constants;"
+            "print(constants.GIT_MIRROR_REGISTRY)"
+        )
+        res = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True, text=True, check=True,
+        )
+        self.assertIn("https://git.primary/Nyxuri.git", res.stdout)
+        self.assertNotIn("https://git.secondary/NyxNiri.git", res.stdout)
 
 
 if __name__ == "__main__":

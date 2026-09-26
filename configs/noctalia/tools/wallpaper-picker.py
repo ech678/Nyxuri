@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-NyxNiri M3E Wallpaper Picker
+Nyxuri M3E Wallpaper Picker
 Zero-Daemon Stateless Wayland Layer-Shell Wallpaper Selector & Live Video Wallpaper Manager.
 """
 
@@ -21,10 +21,10 @@ if SCRIPTS_DIR not in sys.path:
 from wallpaper_picker.lock import acquire_instance_lock, release_instance_lock
 from wallpaper_picker.window import WallpaperPickerWindow
 
-RUNTIME_DIR = os.environ.get("XDG_RUNTIME_DIR") or f"/tmp/nyxniri-{os.getuid()}"
+RUNTIME_DIR = os.environ.get("XDG_RUNTIME_DIR") or f"/tmp/nyxuri-{os.getuid()}"
 os.makedirs(RUNTIME_DIR, exist_ok=True)
-LOCK_FILE_PATH = os.path.join(RUNTIME_DIR, "nyxniri-wallpaper-picker.lock")
-PID_FILE_PATH = os.path.join(RUNTIME_DIR, "nyxniri-wallpaper-picker.pid")
+LOCK_FILE_PATH = os.path.join(RUNTIME_DIR, "wallpaper-picker.lock")
+PID_FILE_PATH = os.path.join(RUNTIME_DIR, "wallpaper-picker.pid")
 
 
 def main():

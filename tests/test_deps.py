@@ -19,7 +19,7 @@ class TestOptionalAppPackageMapping(unittest.TestCase):
 
     def test_missioncenter_maps_to_mission_center(self):
         """missioncenter key must install 'mission-center' package (hyphen difference)."""
-        from nyxniri.deps import install_optional_apps
+        from nyxuri.deps import install_optional_apps
 
         captured_cmds = []
 
@@ -28,9 +28,9 @@ class TestOptionalAppPackageMapping(unittest.TestCase):
             return MagicMock(returncode=0)
 
         with patch("subprocess.run", side_effect=fake_run):
-            with patch("nyxniri.pkg.preferred_manager", return_value="pacman"):
-                with patch("nyxniri.deps.aur_helper_usable", return_value=None):
-                    with patch("nyxniri.deps.ensure_aur_helper", return_value=None):
+            with patch("nyxuri.pkg.preferred_manager", return_value="pacman"):
+                with patch("nyxuri.deps.aur_helper_usable", return_value=None):
+                    with patch("nyxuri.deps.ensure_aur_helper", return_value=None):
                         with patch("shutil.which", return_value=None):
                             with patch("builtins.print"):
                                 install_optional_apps(["missioncenter"])
@@ -44,7 +44,7 @@ class TestOptionalAppPackageMapping(unittest.TestCase):
 
     def test_fcitx5_rime_installs_full_suite(self):
         """fcitx5-rime must install fcitx5 core + gtk + qt + configtool + rime + rime-ice-git."""
-        from nyxniri.deps import install_optional_apps
+        from nyxuri.deps import install_optional_apps
 
         captured_cmds = []
 
@@ -53,10 +53,10 @@ class TestOptionalAppPackageMapping(unittest.TestCase):
             return MagicMock(returncode=0)
 
         with patch("subprocess.run", side_effect=fake_run):
-            with patch("nyxniri.pkg.preferred_manager", return_value="paru"):
-                with patch("nyxniri.deps.aur_helper_usable", return_value="paru"):
+            with patch("nyxuri.pkg.preferred_manager", return_value="paru"):
+                with patch("nyxuri.deps.aur_helper_usable", return_value="paru"):
                     with patch("shutil.which", return_value="/usr/bin/fcitx5"):
-                        with patch("nyxniri.modules.fcitx.fcitx_install", return_value=True):
+                        with patch("nyxuri.modules.fcitx.fcitx_install", return_value=True):
                             with patch("builtins.print"):
                                 install_optional_apps(["fcitx5-rime"])
 
@@ -71,13 +71,13 @@ class TestOptionalAppPackageMapping(unittest.TestCase):
 
     def test_fcitx_skin_hook_after_install(self):
         """Installing packages does not select a skin or change input settings."""
-        from nyxniri.deps import install_optional_apps
+        from nyxuri.deps import install_optional_apps
 
         with patch("subprocess.run", return_value=MagicMock(returncode=0)):
-            with patch("nyxniri.pkg.preferred_manager", return_value="paru"):
-                with patch("nyxniri.deps.aur_helper_usable", return_value="paru"):
+            with patch("nyxuri.pkg.preferred_manager", return_value="paru"):
+                with patch("nyxuri.deps.aur_helper_usable", return_value="paru"):
                     with patch("shutil.which", return_value="/usr/bin/fcitx5"):
-                        with patch("nyxniri.modules.fcitx.fcitx_install") as mock_fcitx:
+                        with patch("nyxuri.modules.fcitx.fcitx_install") as mock_fcitx:
                             with patch("builtins.print"):
                                 install_optional_apps(["fcitx5-rime"])
 
@@ -85,13 +85,13 @@ class TestOptionalAppPackageMapping(unittest.TestCase):
 
     def test_post_install_hook_triggered_after_install(self):
         """Installing fcitx5-rime triggers its declared post_install hook."""
-        from nyxniri.deps import install_optional_apps
+        from nyxuri.deps import install_optional_apps
 
         with patch("subprocess.run", return_value=MagicMock(returncode=0)):
-            with patch("nyxniri.pkg.preferred_manager", return_value="paru"):
-                with patch("nyxniri.deps.aur_helper_usable", return_value="paru"):
+            with patch("nyxuri.pkg.preferred_manager", return_value="paru"):
+                with patch("nyxuri.deps.aur_helper_usable", return_value="paru"):
                     with patch("shutil.which", return_value="/usr/bin/fcitx5"):
-                        with patch("nyxniri.modules.fcitx.setup_rime_ice") as mock_rime:
+                        with patch("nyxuri.modules.fcitx.setup_rime_ice") as mock_rime:
                             with patch("builtins.print"):
                                 install_optional_apps(["fcitx5-rime"])
 
@@ -110,7 +110,7 @@ class TestMpvpaperDetection(unittest.TestCase):
 
     def test_uses_pacman_qi_not_binary_version(self):
         """check_mpvpaper_leak should use pacman -Qi, not mpvpaper --version."""
-        from nyxniri.deps import check_mpvpaper_leak
+        from nyxuri.deps import check_mpvpaper_leak
 
         captured_cmds = []
 
@@ -129,7 +129,7 @@ class TestMpvpaperDetection(unittest.TestCase):
 
         with patch("shutil.which", side_effect=lambda x: f"/usr/bin/{x}" if x in ("pacman", "mpvpaper") else None):
             with patch("subprocess.run", side_effect=fake_run):
-                with patch("nyxniri.deps.prompt_confirm", return_value=False):
+                with patch("nyxuri.deps.prompt_confirm", return_value=False):
                     with patch("builtins.print"):
                         check_mpvpaper_leak()
 
@@ -145,7 +145,7 @@ class TestMpvpaperDetection(unittest.TestCase):
 
     def test_git_version_short_circuits(self):
         """If mpvpaper-git is installed, should report OK and not check regular version."""
-        from nyxniri.deps import check_mpvpaper_leak
+        from nyxuri.deps import check_mpvpaper_leak
 
         captured_cmds = []
 
@@ -176,14 +176,14 @@ class TestFlatpakApps(unittest.TestCase):
     def setUp(self):
         self._ctx = TempEnv()
         self._ctx.__enter__()
-        import nyxniri.deps as deps_mod
+        import nyxuri.deps as deps_mod
 
     def tearDown(self):
         self._ctx.__exit__()
 
     def test_flatpak_ids_never_leak_into_pacman(self):
         """Selecting qq+wechat: pacman gets only 'flatpak'; IDs go to the flatpak CLI."""
-        from nyxniri.deps import FLATHUB_REMOTE_URL, install_optional_apps
+        from nyxuri.deps import FLATHUB_REMOTE_URL, install_optional_apps
 
         captured_cmds = []
 
@@ -192,9 +192,9 @@ class TestFlatpakApps(unittest.TestCase):
             return MagicMock(returncode=0)
 
         with patch("subprocess.run", side_effect=fake_run):
-            with patch("nyxniri.pkg.preferred_manager", return_value="pacman"):
-                with patch("nyxniri.deps.aur_helper_usable", return_value=None):
-                    with patch("nyxniri.deps.ensure_aur_helper", return_value=None):
+            with patch("nyxuri.pkg.preferred_manager", return_value="pacman"):
+                with patch("nyxuri.deps.aur_helper_usable", return_value=None):
+                    with patch("nyxuri.deps.ensure_aur_helper", return_value=None):
                         with patch("shutil.which", side_effect=lambda x: "/usr/bin/flatpak" if x == "flatpak" else None):
                             with patch("builtins.print"):
                                 install_optional_apps(["qq", "wechat"])
@@ -217,12 +217,12 @@ class TestFlatpakApps(unittest.TestCase):
             [["flatpak", "install", "--system", "--noninteractive", "flathub", "com.qq.QQ", "com.tencent.WeChat"]],
         )
 
-        import nyxniri.deps as deps_mod
+        import nyxuri.deps as deps_mod
         self.assertFalse(hasattr(deps_mod, "_FLATPAK_LIST_CACHE"))
 
     def test_missing_flatpak_binary_skips_flatpak_cli(self):
         """Without the flatpak binary the runtime is still provisioned, but no CLI call."""
-        from nyxniri.deps import install_optional_apps
+        from nyxuri.deps import install_optional_apps
 
         captured_cmds = []
 
@@ -231,9 +231,9 @@ class TestFlatpakApps(unittest.TestCase):
             return MagicMock(returncode=0)
 
         with patch("subprocess.run", side_effect=fake_run):
-            with patch("nyxniri.pkg.preferred_manager", return_value="pacman"):
-                with patch("nyxniri.deps.aur_helper_usable", return_value=None):
-                    with patch("nyxniri.deps.ensure_aur_helper", return_value=None):
+            with patch("nyxuri.pkg.preferred_manager", return_value="pacman"):
+                with patch("nyxuri.deps.aur_helper_usable", return_value=None):
+                    with patch("nyxuri.deps.ensure_aur_helper", return_value=None):
                         with patch("shutil.which", return_value=None):
                             with patch("builtins.print"):
                                 install_optional_apps(["spotify"])
@@ -247,7 +247,7 @@ class TestFlatpakApps(unittest.TestCase):
 
     def test_flatpak_detection_uses_list_columns(self):
         """Detection probes `flatpak list --system --app --columns=application` with LC_ALL=C."""
-        from nyxniri.pkg.detection import DependencyProbe
+        from nyxuri.pkg.detection import DependencyProbe
         probe = DependencyProbe()
 
         captured_cmds = []
@@ -259,7 +259,7 @@ class TestFlatpakApps(unittest.TestCase):
             return result
 
         with patch("shutil.which", return_value="/usr/bin/flatpak"):
-            with patch("nyxniri.pkg.detection.timed_run", side_effect=fake_timed_run):
+            with patch("nyxuri.pkg.detection.timed_run", side_effect=fake_timed_run):
                 self.assertTrue("com.qq.QQ" in probe.flatpaks)
                 self.assertFalse("com.tencent.WeChat" in probe.flatpaks)
 
@@ -280,7 +280,7 @@ class TestAurBootstrapFailsClosed(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_missing_repo_package_never_builds_from_aur(self):
-        from nyxniri.deps import ensure_aur_helper
+        from nyxuri.deps import ensure_aur_helper
 
         commands = []
 
@@ -292,8 +292,8 @@ class TestAurBootstrapFailsClosed(unittest.TestCase):
             return result
 
         with patch("subprocess.run", side_effect=fake_run), \
-             patch("nyxniri.deps.aur_helper_usable", return_value=None), \
-             patch("nyxniri.deps.prompt_confirm", return_value=True), \
+             patch("nyxuri.deps.aur_helper_usable", return_value=None), \
+             patch("nyxuri.deps.prompt_confirm", return_value=True), \
              patch("shutil.which", side_effect=lambda name: "/usr/bin/pacman" if name == "pacman" else None), \
              patch("builtins.print"):
             self.assertIsNone(ensure_aur_helper())
@@ -310,15 +310,15 @@ class TestAurHelperCacheInvalidation(unittest.TestCase):
     def setUp(self):
         self._ctx = TempEnv()
         self._ctx.__enter__()
-        import nyxniri.deps as deps_mod
+        import nyxuri.deps as deps_mod
 
     def tearDown(self):
-        import nyxniri.deps as deps_mod
+        import nyxuri.deps as deps_mod
         self._ctx.__exit__()
 
     def test_freshly_installed_paru_is_rediscovered_not_uninstalled(self):
-        import nyxniri.deps as deps_mod
-        from nyxniri.deps import ensure_aur_helper
+        import nyxuri.deps as deps_mod
+        from nyxuri.deps import ensure_aur_helper
 
         state = {"installed": False}
         removed = []
@@ -344,8 +344,8 @@ class TestAurHelperCacheInvalidation(unittest.TestCase):
             return result
 
         with patch("shutil.which", side_effect=fake_which), \
-             patch("nyxniri.pkg.subprocess.run", side_effect=fake_run), \
-             patch("nyxniri.deps.prompt_confirm", return_value=True), \
+             patch("nyxuri.pkg.subprocess.run", side_effect=fake_run), \
+             patch("nyxuri.deps.prompt_confirm", return_value=True), \
              patch("builtins.print"):
             self.assertEqual(ensure_aur_helper(), "paru")
 

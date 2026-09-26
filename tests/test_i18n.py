@@ -15,7 +15,7 @@ from pathlib import Path
 from tests.utils import TempEnv
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-ENGINE_DIR = REPO_ROOT / "nyxniri"
+ENGINE_DIR = REPO_ROOT / "nyxuri"
 
 
 def _collect_msg_calls() -> set:
@@ -59,9 +59,9 @@ def _collect_prompt_confirm_calls() -> set:
 # Key prefixes built at runtime via f-strings (AST scan cannot see them).
 # Must point at the construction site when adding a new prefix.
 DYNAMIC_KEY_PREFIXES = (
-    "app_",         # nyxniri/deps.py: msg(f"app_{app.replace('-', '_')}")
-    "apps_cat_",    # nyxniri/deps.py: msg(f"apps_cat_{cat}")
-    "preset_src_",  # nyxniri/deploy/preset.py: msg(f"preset_src_{source}")
+    "app_",         # nyxuri/deps.py: msg(f"app_{app.replace('-', '_')}")
+    "apps_cat_",    # nyxuri/deps.py: msg(f"apps_cat_{cat}")
+    "preset_src_",  # nyxuri/deploy/preset.py: msg(f"preset_src_{source}")
 )
 
 
@@ -136,7 +136,7 @@ class TestTemplateSubstitution(unittest.TestCase):
         self.addCleanup(self.env.__exit__, None, None, None)
 
     def test_catalog_languages_and_arguments(self):
-        from nyxniri.i18n import TRANSLATIONS
+        from nyxuri.i18n import TRANSLATIONS
         formatter = string.Formatter()
         self.assertTrue(TRANSLATIONS)
         for key, entry in TRANSLATIONS.items():
@@ -151,7 +151,7 @@ class TestTemplateSubstitution(unittest.TestCase):
                 self.assertEqual(*fields)
 
     def test_language_switch_and_fallback(self):
-        from nyxniri import i18n
+        from nyxuri import i18n
         self.addCleanup(i18n.set_lang, i18n.get_lang())
         for language in ("zh", "en", "zh"):
             i18n.set_lang(language)
@@ -161,7 +161,7 @@ class TestTemplateSubstitution(unittest.TestCase):
         self.assertEqual(i18n.msg("unknown_key", "sample"), "unknown_key (sample)")
 
     def test_no_double_brace_residual(self):
-        from nyxniri.i18n import TRANSLATIONS
+        from nyxuri.i18n import TRANSLATIONS
         offenders = []
         for key, entry in TRANSLATIONS.items():
             for lang, val in entry.items():

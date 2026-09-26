@@ -10,7 +10,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 
-from nyxniri.constants import PENDING_UPGRADE_ENV, PENDING_UPGRADE_MENU_ENV
+from nyxuri.constants import PENDING_UPGRADE_ENV, PENDING_UPGRADE_MENU_ENV
 from tests.utils import TempEnv
 
 
@@ -25,25 +25,25 @@ class TestGreeterExitCode(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_greeter_install_failure_propagates_exit_1(self):
-        from nyxniri.cli import main
+        from nyxuri.cli import main
 
-        with patch("sys.argv", ["nyxniri", "greeter", "install"]):
-            with patch("nyxniri.cli.acquire_lock"):
-                with patch("nyxniri.cli.init_logger"):
-                    with patch("nyxniri.cli.ensure_nyxniri_symlink"):
-                        with patch("nyxniri.modules.greeter.greeter_install", return_value=False):
+        with patch("sys.argv", ["nyxuri", "greeter", "install"]):
+            with patch("nyxuri.cli.acquire_lock"):
+                with patch("nyxuri.cli.init_logger"):
+                    with patch("nyxuri.cli.ensure_nyxuri_symlink"):
+                        with patch("nyxuri.modules.greeter.greeter_install", return_value=False):
                             with self.assertRaises(SystemExit) as ctx:
                                 main()
                             self.assertEqual(ctx.exception.code, 1)
 
     def test_greeter_install_success_propagates_exit_0(self):
-        from nyxniri.cli import main
+        from nyxuri.cli import main
 
-        with patch("sys.argv", ["nyxniri", "greeter", "install"]):
-            with patch("nyxniri.cli.acquire_lock"):
-                with patch("nyxniri.cli.init_logger"):
-                    with patch("nyxniri.cli.ensure_nyxniri_symlink"):
-                        with patch("nyxniri.modules.greeter.greeter_install", return_value=True):
+        with patch("sys.argv", ["nyxuri", "greeter", "install"]):
+            with patch("nyxuri.cli.acquire_lock"):
+                with patch("nyxuri.cli.init_logger"):
+                    with patch("nyxuri.cli.ensure_nyxuri_symlink"):
+                        with patch("nyxuri.modules.greeter.greeter_install", return_value=True):
                             with self.assertRaises(SystemExit) as ctx:
                                 main()
                             self.assertEqual(ctx.exception.code, 0)
@@ -60,13 +60,13 @@ class TestFcitxExitCode(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_fcitx_uninstall_failure_propagates_exit_1(self):
-        from nyxniri.cli import main
+        from nyxuri.cli import main
 
-        with patch("sys.argv", ["nyxniri", "fcitx", "uninstall"]):
-            with patch("nyxniri.cli.acquire_lock"):
-                with patch("nyxniri.cli.init_logger"):
-                    with patch("nyxniri.cli.ensure_nyxniri_symlink"):
-                        with patch("nyxniri.modules.fcitx.fcitx_uninstall", return_value=False):
+        with patch("sys.argv", ["nyxuri", "fcitx", "uninstall"]):
+            with patch("nyxuri.cli.acquire_lock"):
+                with patch("nyxuri.cli.init_logger"):
+                    with patch("nyxuri.cli.ensure_nyxuri_symlink"):
+                        with patch("nyxuri.modules.fcitx.fcitx_uninstall", return_value=False):
                             with self.assertRaises(SystemExit) as ctx:
                                 main()
                             self.assertEqual(ctx.exception.code, 1)
@@ -83,25 +83,25 @@ class TestGtkExitCode(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_gtk_install_failure_propagates_exit_1(self):
-        from nyxniri.cli import main
+        from nyxuri.cli import main
 
-        with patch("sys.argv", ["nyxniri", "gtk", "install"]):
-            with patch("nyxniri.cli.acquire_lock"):
-                with patch("nyxniri.cli.init_logger"):
-                    with patch("nyxniri.cli.ensure_nyxniri_symlink"):
-                        with patch("nyxniri.modules.gtktheme.gtktheme_install", return_value=False):
+        with patch("sys.argv", ["nyxuri", "gtk", "install"]):
+            with patch("nyxuri.cli.acquire_lock"):
+                with patch("nyxuri.cli.init_logger"):
+                    with patch("nyxuri.cli.ensure_nyxuri_symlink"):
+                        with patch("nyxuri.modules.gtktheme.gtktheme_install", return_value=False):
                             with self.assertRaises(SystemExit) as ctx:
                                 main()
                             self.assertEqual(ctx.exception.code, 1)
 
     def test_gtk_install_success_propagates_exit_0(self):
-        from nyxniri.cli import main
+        from nyxuri.cli import main
 
-        with patch("sys.argv", ["nyxniri", "gtk", "install"]):
-            with patch("nyxniri.cli.acquire_lock"):
-                with patch("nyxniri.cli.init_logger"):
-                    with patch("nyxniri.cli.ensure_nyxniri_symlink"):
-                        with patch("nyxniri.modules.gtktheme.gtktheme_install", return_value=True):
+        with patch("sys.argv", ["nyxuri", "gtk", "install"]):
+            with patch("nyxuri.cli.acquire_lock"):
+                with patch("nyxuri.cli.init_logger"):
+                    with patch("nyxuri.cli.ensure_nyxuri_symlink"):
+                        with patch("nyxuri.modules.gtktheme.gtktheme_install", return_value=True):
                             with self.assertRaises(SystemExit) as ctx:
                                 main()
                             self.assertEqual(ctx.exception.code, 0)
@@ -118,25 +118,25 @@ class TestFisherExitCode(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_fisher_install_failure_propagates_exit_1(self):
-        from nyxniri.cli import main
+        from nyxuri.cli import main
 
-        with patch("sys.argv", ["nyxniri", "fisher", "install"]):
-            with patch("nyxniri.cli.acquire_lock"):
-                with patch("nyxniri.cli.init_logger"):
-                    with patch("nyxniri.cli.ensure_nyxniri_symlink"):
-                        with patch("nyxniri.modules.fisher.fisher_install", return_value=False):
+        with patch("sys.argv", ["nyxuri", "fisher", "install"]):
+            with patch("nyxuri.cli.acquire_lock"):
+                with patch("nyxuri.cli.init_logger"):
+                    with patch("nyxuri.cli.ensure_nyxuri_symlink"):
+                        with patch("nyxuri.modules.fisher.fisher_install", return_value=False):
                             with self.assertRaises(SystemExit) as ctx:
                                 main()
                             self.assertEqual(ctx.exception.code, 1)
 
     def test_fisher_install_success_propagates_exit_0(self):
-        from nyxniri.cli import main
+        from nyxuri.cli import main
 
-        with patch("sys.argv", ["nyxniri", "fisher", "install"]):
-            with patch("nyxniri.cli.acquire_lock"):
-                with patch("nyxniri.cli.init_logger"):
-                    with patch("nyxniri.cli.ensure_nyxniri_symlink"):
-                        with patch("nyxniri.modules.fisher.fisher_install", return_value=True):
+        with patch("sys.argv", ["nyxuri", "fisher", "install"]):
+            with patch("nyxuri.cli.acquire_lock"):
+                with patch("nyxuri.cli.init_logger"):
+                    with patch("nyxuri.cli.ensure_nyxuri_symlink"):
+                        with patch("nyxuri.modules.fisher.fisher_install", return_value=True):
                             with self.assertRaises(SystemExit) as ctx:
                                 main()
                             self.assertEqual(ctx.exception.code, 0)
@@ -153,27 +153,27 @@ class TestUpdateForcePath(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_force_deploys_wallpapers_and_greeter(self):
-        from nyxniri.workflows import offer_overwrite_upgrade
+        from nyxuri.workflows import offer_overwrite_upgrade
 
-        with patch("nyxniri.workflows.deploy_selected_configs", return_value=[]):
-            with patch("nyxniri.workflows.deploy_wallpapers") as mock_wp:
-                with patch("nyxniri.workflows.fcitx_enabled", return_value=True):
-                    with patch("nyxniri.workflows.fcitx_install"):
-                        with patch("nyxniri.workflows.greeter_install") as mock_greeter:
-                            with patch("nyxniri.workflows.render_completion_screen"):
+        with patch("nyxuri.workflows.deploy_selected_configs", return_value=[]):
+            with patch("nyxuri.workflows.deploy_wallpapers") as mock_wp:
+                with patch("nyxuri.workflows.fcitx_enabled", return_value=True):
+                    with patch("nyxuri.workflows.fcitx_install"):
+                        with patch("nyxuri.workflows.greeter_install") as mock_greeter:
+                            with patch("nyxuri.workflows.render_completion_screen"):
                                 offer_overwrite_upgrade("--force")
 
         mock_wp.assert_called_once_with(do_download=True)
         mock_greeter.assert_called_once()
 
     def test_force_returns_false_when_greeter_fails(self):
-        from nyxniri.workflows import offer_overwrite_upgrade
+        from nyxuri.workflows import offer_overwrite_upgrade
 
-        with patch("nyxniri.workflows.deploy_selected_configs", return_value=[]), \
-             patch("nyxniri.workflows.deploy_wallpapers"), \
-             patch("nyxniri.workflows.fcitx_enabled", return_value=False), \
-             patch("nyxniri.workflows.greeter_install", return_value=False), \
-             patch("nyxniri.workflows.render_completion_screen") as render:
+        with patch("nyxuri.workflows.deploy_selected_configs", return_value=[]), \
+             patch("nyxuri.workflows.deploy_wallpapers"), \
+             patch("nyxuri.workflows.fcitx_enabled", return_value=False), \
+             patch("nyxuri.workflows.greeter_install", return_value=False), \
+             patch("nyxuri.workflows.render_completion_screen") as render:
             result = offer_overwrite_upgrade("--force")
 
         self.assertFalse(result)
@@ -191,30 +191,30 @@ class TestUserHookEntrypoints(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_force_update_runs_hooks_before_completion(self):
-        from nyxniri.workflows import offer_overwrite_upgrade
+        from nyxuri.workflows import offer_overwrite_upgrade
 
         events = []
-        with patch("nyxniri.workflows.deploy_selected_configs", side_effect=lambda **_: events.append("configs") or []), \
-             patch("nyxniri.workflows.deploy_wallpapers", side_effect=lambda **_: events.append("wallpapers")), \
-             patch("nyxniri.workflows.fcitx_enabled", return_value=True), \
-             patch("nyxniri.workflows.fcitx_install", side_effect=lambda: events.append("fcitx") or True), \
-             patch("nyxniri.workflows.greeter_install", side_effect=lambda: events.append("greeter") or True), \
-             patch("nyxniri.workflows.run_user_hooks", side_effect=lambda: events.append("hooks") or []), \
-             patch("nyxniri.workflows.render_completion_screen", side_effect=lambda *_, **__: events.append("completion")):
+        with patch("nyxuri.workflows.deploy_selected_configs", side_effect=lambda **_: events.append("configs") or []), \
+             patch("nyxuri.workflows.deploy_wallpapers", side_effect=lambda **_: events.append("wallpapers")), \
+             patch("nyxuri.workflows.fcitx_enabled", return_value=True), \
+             patch("nyxuri.workflows.fcitx_install", side_effect=lambda: events.append("fcitx") or True), \
+             patch("nyxuri.workflows.greeter_install", side_effect=lambda: events.append("greeter") or True), \
+             patch("nyxuri.workflows.run_user_hooks", side_effect=lambda: events.append("hooks") or []), \
+             patch("nyxuri.workflows.render_completion_screen", side_effect=lambda *_, **__: events.append("completion")):
             self.assertTrue(offer_overwrite_upgrade("--force"))
 
         self.assertEqual(events, ["configs", "wallpapers", "fcitx", "greeter", "hooks", "completion"])
 
     def test_failed_and_code_only_updates_skip_hooks(self):
-        from nyxniri.workflows import offer_overwrite_upgrade
+        from nyxuri.workflows import offer_overwrite_upgrade
 
-        with patch("nyxniri.workflows.deploy_selected_configs", return_value=["niri"]), \
-             patch("nyxniri.workflows.render_completion_screen"), \
-             patch("nyxniri.workflows.run_user_hooks") as hooks:
+        with patch("nyxuri.workflows.deploy_selected_configs", return_value=["niri"]), \
+             patch("nyxuri.workflows.render_completion_screen"), \
+             patch("nyxuri.workflows.run_user_hooks") as hooks:
             self.assertFalse(offer_overwrite_upgrade("--force"))
         hooks.assert_not_called()
 
-        with patch("nyxniri.workflows.run_user_hooks") as hooks:
+        with patch("nyxuri.workflows.run_user_hooks") as hooks:
             self.assertTrue(offer_overwrite_upgrade("--no-deploy"))
         hooks.assert_not_called()
 
@@ -237,14 +237,14 @@ class TestGreeterWorkflowFailure(unittest.TestCase):
         }
 
     def test_install_returns_false_when_greeter_fails(self):
-        from nyxniri.workflows import install_configs_workflow
+        from nyxuri.workflows import install_configs_workflow
 
         with patch("sys.stdin.isatty", return_value=True), \
-             patch("nyxniri.workflows.run_master_component_menu", return_value=self._greeter_only_selection()), \
-             patch("nyxniri.workflows._phase_preflight_check"), \
-             patch("nyxniri.workflows.deploy_wallpapers"), \
-             patch("nyxniri.workflows.greeter_install", return_value=False), \
-             patch("nyxniri.workflows.render_completion_screen") as render, \
+             patch("nyxuri.workflows.run_master_component_menu", return_value=self._greeter_only_selection()), \
+             patch("nyxuri.workflows._phase_preflight_check"), \
+             patch("nyxuri.workflows.deploy_wallpapers"), \
+             patch("nyxuri.workflows.greeter_install", return_value=False), \
+             patch("nyxuri.workflows.render_completion_screen") as render, \
              patch("builtins.print"):
             result = install_configs_workflow("config")
 
@@ -252,13 +252,13 @@ class TestGreeterWorkflowFailure(unittest.TestCase):
         render.assert_not_called()
 
     def test_interactive_update_returns_false_when_greeter_fails(self):
-        from nyxniri.workflows import offer_overwrite_upgrade
+        from nyxuri.workflows import offer_overwrite_upgrade
 
         with patch("sys.stdin.isatty", return_value=True), \
-             patch("nyxniri.workflows.Menu") as menu, \
-             patch("nyxniri.workflows.run_master_component_menu", return_value=self._greeter_only_selection()), \
-             patch("nyxniri.workflows.greeter_install", return_value=False), \
-             patch("nyxniri.workflows.render_completion_screen") as render, \
+             patch("nyxuri.workflows.Menu") as menu, \
+             patch("nyxuri.workflows.run_master_component_menu", return_value=self._greeter_only_selection()), \
+             patch("nyxuri.workflows.greeter_install", return_value=False), \
+             patch("nyxuri.workflows.render_completion_screen") as render, \
              patch("builtins.print"):
             menu.return_value.run.return_value = 0
             result = offer_overwrite_upgrade()
@@ -279,16 +279,16 @@ class TestUpdateReexecHandoff(unittest.TestCase):
         self._ctx.__exit__()
 
     def _main_update(self, *flags, pull=True, checkout=True, exec_side_effect=None):
-        from nyxniri.cli import main
+        from nyxuri.cli import main
 
-        with patch("sys.argv", ["nyxniri", "update", *flags]):
-            with patch("nyxniri.cli.acquire_lock"), \
-                 patch("nyxniri.cli.init_logger"), \
-                 patch("nyxniri.cli.ensure_nyxniri_symlink"), \
-                 patch("nyxniri.cli.check_path_occlusion"), \
-                 patch("nyxniri.cli.safe_git_pull", return_value=True if pull else False), \
-                 patch("nyxniri.cli.safe_git_checkout_ref", return_value=True if checkout else False), \
-                 patch("nyxniri.cli.os.execve", side_effect=exec_side_effect) as mock_exec, \
+        with patch("sys.argv", ["nyxuri", "update", *flags]):
+            with patch("nyxuri.cli.acquire_lock"), \
+                 patch("nyxuri.cli.init_logger"), \
+                 patch("nyxuri.cli.ensure_nyxuri_symlink"), \
+                 patch("nyxuri.cli.check_path_occlusion"), \
+                 patch("nyxuri.cli.safe_git_pull", return_value=True if pull else False), \
+                 patch("nyxuri.cli.safe_git_checkout_ref", return_value=True if checkout else False), \
+                 patch("nyxuri.cli.os.execve", side_effect=exec_side_effect) as mock_exec, \
                  patch("builtins.print"):
                 with self.assertRaises(SystemExit) as ctx:
                     main()
@@ -300,7 +300,7 @@ class TestUpdateReexecHandoff(unittest.TestCase):
         argv = mock_exec.call_args[0][1]
         env = mock_exec.call_args[0][2]
         # §9 argument-shape contract: [python, -m, <cli>] + pending marker
-        self.assertEqual(argv, [sys.executable, "-m", "nyxniri"])
+        self.assertEqual(argv, [sys.executable, "-m", "nyxuri"])
         self.assertEqual(env[PENDING_UPGRADE_ENV], "")
         self.assertNotIn(PENDING_UPGRADE_MENU_ENV, env)  # CLI source: exit after deploy
         self.assertEqual(ctx.exception.code, 0)
@@ -330,14 +330,14 @@ class TestUpdateReexecHandoff(unittest.TestCase):
         self.assertEqual(ctx.exception.code, 1)
 
     def test_update_keeps_foreign_cli_link(self):
-        from nyxniri.cli import main
+        from nyxuri.cli import main
 
-        target = self._ctx.env.home / ".local/bin" / "nyxniri"
+        target = self._ctx.env.home / ".local/bin" / "nyxuri"
         target.symlink_to(self._ctx.env.home / "another-launcher")
-        with patch("sys.argv", ["nyxniri", "update"]), \
-             patch("nyxniri.cli.acquire_lock"), \
-             patch("nyxniri.cli.init_logger"), \
-             patch("nyxniri.cli.safe_git_pull", return_value=None), \
+        with patch("sys.argv", ["nyxuri", "update"]), \
+             patch("nyxuri.cli.acquire_lock"), \
+             patch("nyxuri.cli.init_logger"), \
+             patch("nyxuri.cli.safe_git_pull", return_value=None), \
              patch("builtins.print"):
             with self.assertRaises(SystemExit) as ctx:
                 main()
@@ -358,14 +358,14 @@ class TestCliLinkOwnershipCallChains(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_install_keeps_foreign_cli_file(self):
-        from nyxniri.cli import main
+        from nyxuri.cli import main
 
-        target = self._ctx.env.home / ".local/bin" / "nyxniri"
+        target = self._ctx.env.home / ".local/bin" / "nyxuri"
         target.write_text("my launcher")
-        with patch("sys.argv", ["nyxniri", "install", "config"]), \
-             patch("nyxniri.cli.acquire_lock"), \
-             patch("nyxniri.cli.init_logger"), \
-             patch("nyxniri.cli.install_configs_workflow", return_value=True):
+        with patch("sys.argv", ["nyxuri", "install", "config"]), \
+             patch("nyxuri.cli.acquire_lock"), \
+             patch("nyxuri.cli.init_logger"), \
+             patch("nyxuri.cli.install_configs_workflow", return_value=True):
             with self.assertRaises(SystemExit) as ctx:
                 main()
 
@@ -384,20 +384,20 @@ class TestCheckNewDepsPostUpdate(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_no_missing_deps_no_action(self):
-        from nyxniri.workflows import check_new_deps_post_update
+        from nyxuri.workflows import check_new_deps_post_update
 
-        with patch("nyxniri.workflows.get_missing_deps", return_value=[]):
-            with patch("nyxniri.workflows.install_selected_deps") as mock_install:
+        with patch("nyxuri.workflows.get_missing_deps", return_value=[]):
+            with patch("nyxuri.workflows.install_selected_deps") as mock_install:
                 check_new_deps_post_update()
 
         mock_install.assert_not_called()
 
     def test_missing_deps_non_interactive_auto_installs(self):
-        from nyxniri.workflows import check_new_deps_post_update
+        from nyxuri.workflows import check_new_deps_post_update
 
-        with patch("nyxniri.workflows.get_missing_deps", return_value=["some-pkg"]):
+        with patch("nyxuri.workflows.get_missing_deps", return_value=["some-pkg"]):
             with patch("sys.stdin.isatty", return_value=False):
-                with patch("nyxniri.workflows.install_selected_deps") as mock_install:
+                with patch("nyxuri.workflows.install_selected_deps") as mock_install:
                     with patch("builtins.print"):
                         check_new_deps_post_update()
 
@@ -419,22 +419,22 @@ class TestPendingUpgradeBranch(unittest.TestCase):
         self._ctx.__exit__()
 
     def _main_pending(self, env_extra, tty=False, offer_result=True):
-        from nyxniri.cli import main
+        from nyxuri.cli import main
 
         fake_stdin = MagicMock()
         fake_stdin.isatty.return_value = tty
         os.environ.update(env_extra)
 
-        with patch("sys.argv", ["nyxniri"]), \
+        with patch("sys.argv", ["nyxuri"]), \
              patch("sys.stdin", fake_stdin), \
-             patch("nyxniri.cli.acquire_lock"), \
-             patch("nyxniri.cli.init_logger"), \
-             patch("nyxniri.cli.ensure_nyxniri_symlink"), \
-             patch("nyxniri.cli.offer_overwrite_upgrade", return_value=offer_result) as mock_offer, \
-             patch("nyxniri.cli.check_new_deps_post_update") as mock_check, \
-             patch("nyxniri.cli.press_any_key"), \
-             patch("nyxniri.cli.select_language"), \
-             patch("nyxniri.cli.main_menu_loop") as mock_menu, \
+             patch("nyxuri.cli.acquire_lock"), \
+             patch("nyxuri.cli.init_logger"), \
+             patch("nyxuri.cli.ensure_nyxuri_symlink"), \
+             patch("nyxuri.cli.offer_overwrite_upgrade", return_value=offer_result) as mock_offer, \
+             patch("nyxuri.cli.check_new_deps_post_update") as mock_check, \
+             patch("nyxuri.cli.press_any_key"), \
+             patch("nyxuri.cli.select_language"), \
+             patch("nyxuri.cli.main_menu_loop") as mock_menu, \
              patch("builtins.print"):
             if tty:
                 try:
@@ -483,10 +483,10 @@ class TestDistroGuard(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_install_full_blocked_without_pacman(self):
-        from nyxniri.workflows import install_configs_workflow
+        from nyxuri.workflows import install_configs_workflow
 
-        with patch("nyxniri.workflows.shutil.which", return_value=None), \
-             patch("nyxniri.workflows.run_master_component_menu") as menu, \
+        with patch("nyxuri.workflows.shutil.which", return_value=None), \
+             patch("nyxuri.workflows.run_master_component_menu") as menu, \
              patch("builtins.print") as prn:
             result = install_configs_workflow("full")
 
@@ -496,22 +496,22 @@ class TestDistroGuard(unittest.TestCase):
         self.assertIn("pacman", printed)
 
     def test_install_config_mode_not_blocked(self):
-        from nyxniri.workflows import install_configs_workflow
+        from nyxuri.workflows import install_configs_workflow
 
-        with patch("nyxniri.workflows.shutil.which", return_value=None), \
+        with patch("nyxuri.workflows.shutil.which", return_value=None), \
              patch("sys.stdin.isatty", return_value=True), \
-             patch("nyxniri.workflows.run_master_component_menu", return_value=None), \
+             patch("nyxuri.workflows.run_master_component_menu", return_value=None), \
              patch("builtins.print"):
             result = install_configs_workflow("config")
 
         self.assertTrue(result)  # cancelled-by-user path, not the distro guard
 
     def test_deps_menu_blocked_without_pacman(self):
-        from nyxniri.menus import deps_menu_loop
+        from nyxuri.menus import deps_menu_loop
 
         with patch("sys.stdin.isatty", return_value=True), \
-             patch("nyxniri.menus.shutil.which", return_value=None), \
-             patch("nyxniri.menus.Menu") as menu, \
+             patch("nyxuri.menus.shutil.which", return_value=None), \
+             patch("nyxuri.menus.Menu") as menu, \
              patch("builtins.print") as prn:
             deps_menu_loop()
 
@@ -536,7 +536,7 @@ class TestPreflightSudo(unittest.TestCase):
         return subprocess.CompletedProcess(command, returncode)
 
     def _preflight(self):
-        from nyxniri.workflows import _phase_preflight_check
+        from nyxuri.workflows import _phase_preflight_check
         _phase_preflight_check("full", [], False, False, False, False)
 
     def test_passwordless_sudo_skips_interactive_authentication(self):
@@ -547,9 +547,9 @@ class TestPreflightSudo(unittest.TestCase):
             return self._result(command)
 
         with patch("sys.stdin.isatty", return_value=True), \
-             patch("nyxniri.cli.subprocess.run", side_effect=fake_run), \
+             patch("nyxuri.cli.subprocess.run", side_effect=fake_run), \
              patch("builtins.print"), \
-             patch("nyxniri.cli.log_msg"):
+             patch("nyxuri.cli.log_msg"):
             self._preflight()
 
         self.assertEqual(calls, [["sudo", "-n", "/bin/sh", "-c", ":"]])
@@ -564,9 +564,9 @@ class TestPreflightSudo(unittest.TestCase):
                     return self._result(command, 1 if len(calls) == 1 else 0)
 
                 with patch("sys.stdin.isatty", return_value=isatty), \
-                     patch("nyxniri.cli.subprocess.run", side_effect=fake_run), \
+                     patch("nyxuri.cli.subprocess.run", side_effect=fake_run), \
                      patch("builtins.print"), \
-                     patch("nyxniri.cli.log_msg"):
+                     patch("nyxuri.cli.log_msg"):
                     self._preflight()
 
                 self.assertEqual(calls, [["sudo", "-n", "/bin/sh", "-c", ":"], expected])
@@ -581,9 +581,9 @@ class TestPreflightSudo(unittest.TestCase):
                     return self._result(command, 1)
 
                 with patch("sys.stdin.isatty", return_value=isatty), \
-                     patch("nyxniri.cli.subprocess.run", side_effect=fake_run), \
+                     patch("nyxuri.cli.subprocess.run", side_effect=fake_run), \
                      patch("builtins.print"), \
-                     patch("nyxniri.cli.log_msg"), \
+                     patch("nyxuri.cli.log_msg"), \
                      self.assertRaises(SystemExit) as ctx:
                     self._preflight()
 

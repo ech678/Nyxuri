@@ -176,7 +176,7 @@ class WallpaperPickerWindow(Gtk.Window):
 
     def __init__(self, lock_fd=None, pid_path=None):
         super().__init__(type=Gtk.WindowType.TOPLEVEL)
-        self.set_name("NyxNiriWallpaperPicker")
+        self.set_name("NyxuriWallpaperPicker")
 
         self.lock_fd = lock_fd
         self.pid_path = pid_path

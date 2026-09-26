@@ -1,4 +1,4 @@
-# NyxNiri Custom Fish Configuration
+# Nyxuri Custom Fish Configuration
 #
 # Any modifications in this file (such as aliases, exports) will be safely preserved during system updates.
 # You can also create a `__custom__/` directory in the current folder to drop your private scripts in.

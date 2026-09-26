@@ -14,10 +14,10 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
-import nyxniri.deploy.preset as preset
-from nyxniri.deploy.atomic import atomic_replace_item
-from nyxniri.tui import PresetSwitcher
-from nyxniri.i18n import msg
+import nyxuri.deploy.preset as preset
+from nyxuri.deploy.atomic import atomic_replace_item
+from nyxuri.tui import PresetSwitcher
+from nyxuri.i18n import msg
 from tests.utils import TempEnv
 
 
@@ -271,24 +271,24 @@ class TestPresetOperations(unittest.TestCase):
         self.assertIn('output_path = "/home/user/.config/niri/colors.kdl"', noctalia)
         self.assertNotIn('output_path = "/home/user/.config/niri/layout.kdl"', noctalia)
         parsed = tomllib.loads(noctalia)
-        niri_tpl = parsed.get("theme", {}).get("templates", {}).get("user", {}).get("nyxniri_niri_glow_material_you", {})
+        niri_tpl = parsed.get("theme", {}).get("templates", {}).get("user", {}).get("nyxuri_niri_glow_material_you", {})
         self.assertNotIn("post_hook", niri_tpl)
 
-    @unittest.mock.patch("nyxniri.deploy.preset.timed_run")
+    @unittest.mock.patch("nyxuri.deploy.preset.timed_run")
     def test_apply_niri_glow_material_you_has_no_daemon_side_effect(self, mock_timed_run):
         with patch("shutil.which", side_effect=lambda command: f"/usr/bin/{command}"):
             self.assertTrue(preset.apply_part("niri", "glow", "glow-material-you"))
 
         mock_timed_run.assert_not_called()
 
-    @unittest.mock.patch("nyxniri.deploy.preset.timed_run")
+    @unittest.mock.patch("nyxuri.deploy.preset.timed_run")
     @unittest.mock.patch("shutil.which", return_value="/usr/bin/niri")
     def test_apply_preset_niri_has_no_daemon_side_effect(self, mock_which, mock_timed_run):
         ok = preset.apply_part("niri", "glow", "glow")
         self.assertTrue(ok)
         mock_timed_run.assert_not_called()
 
-    @unittest.mock.patch("nyxniri.deploy.preset.timed_run")
+    @unittest.mock.patch("nyxuri.deploy.preset.timed_run")
     @unittest.mock.patch("shutil.which", return_value="/usr/bin/pkill")
     def test_apply_preset_kitty_reloads(self, mock_which, mock_timed_run):
         ok = preset.apply_preset("kitty", "transparent")
@@ -317,7 +317,7 @@ class TestPresetOperations(unittest.TestCase):
     def test_apply_then_write_timing_atomic_fail_leaves_active(self):
         # B2 (§14): if atomic_replace fails, active must NOT be written.
         preset.write_active_preset("kitty", "default")
-        with patch("nyxniri.deploy.atomic.atomic_replace_item", return_value=False):
+        with patch("nyxuri.deploy.atomic.atomic_replace_item", return_value=False):
             ok = preset.apply_preset("kitty", "transparent")
         self.assertFalse(ok)
         # active still default — deploy-then-write held back the write.
@@ -410,7 +410,7 @@ class TestApplyNarrowPath(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_apply_skips_post_install_services(self):
-        with patch("nyxniri.deploy.deploy._phase_post_install_services") as svc:
+        with patch("nyxuri.deploy.deploy._phase_post_install_services") as svc:
             ok = preset.apply_preset("kitty", "transparent")
         self.assertTrue(ok)
         svc.assert_not_called()
@@ -431,7 +431,7 @@ class TestPresetSwitchPreservesManifestFiles(unittest.TestCase):
         self.env = self._ctx.env
         self.niri_dest = self.env.config_dir / "niri"
         # Deploy niri defaults first so monitor.kdl + effects_*.kdl exist.
-        from nyxniri.deploy.atomic import atomic_replace_item
+        from nyxuri.deploy.atomic import atomic_replace_item
         atomic_replace_item(self.env.configs_src / "niri", self.niri_dest)
         # Create the runtime effects.kdl symlink (as deploy.py does on first install).
         effects_normal = self.niri_dest / "effects_normal.kdl"
@@ -483,7 +483,7 @@ class TestPresetPathBoundary(unittest.TestCase):
         absolute = str(self._ctx.home / "outside")
         for name in ("../victim", absolute, ".", ".."):
             with self.subTest(name=name), \
-                 patch("nyxniri.deploy.atomic.atomic_replace_item") as replace, \
+                 patch("nyxuri.deploy.atomic.atomic_replace_item") as replace, \
                  patch.object(preset.subprocess, "run") as run:
                 self.assertFalse(preset.apply_preset("kitty", name))
                 self.assertFalse(preset.save_preset("kitty", name))
@@ -520,7 +520,7 @@ class TestPresetPathBoundary(unittest.TestCase):
         user_root.mkdir(parents=True)
         (user_root / "mine").symlink_to(outside, target_is_directory=True)
 
-        with patch("nyxniri.deploy.atomic.atomic_replace_item") as replace:
+        with patch("nyxuri.deploy.atomic.atomic_replace_item") as replace:
             self.assertFalse(preset.apply_preset("kitty", "mine"))
         self.assertFalse(preset.delete_preset("kitty", "mine"))
 
@@ -533,7 +533,7 @@ class TestPresetPathBoundary(unittest.TestCase):
         (outside / "sentinel").write_text("keep")
         (self.env.config_dir / "kitty").symlink_to(outside, target_is_directory=True)
 
-        with patch("nyxniri.deploy.atomic.atomic_replace_item") as replace:
+        with patch("nyxuri.deploy.atomic.atomic_replace_item") as replace:
             self.assertFalse(preset.apply_preset("kitty", "default"))
 
         replace.assert_not_called()
@@ -573,9 +573,9 @@ class TestPresetPathBoundary(unittest.TestCase):
         active.parent.mkdir(parents=True, exist_ok=True)
         active.write_text("../victim")
 
-        with patch("nyxniri.deploy.deploy.atomic_replace_item") as replace, \
+        with patch("nyxuri.deploy.deploy.atomic_replace_item") as replace, \
              patch("sys.stdout", new_callable=StringIO) as output:
-            from nyxniri.deploy.deploy import _phase_atomic_deployment
+            from nyxuri.deploy.deploy import _phase_atomic_deployment
             _phase_atomic_deployment(["kitty"])
 
         replace.assert_not_called()
@@ -621,7 +621,7 @@ class TestPresetPathBoundary(unittest.TestCase):
                 swapped = True
             return real_open(path, flags, *args, **kwargs)
 
-        with patch("nyxniri.deploy.preset.os.open", side_effect=open_then_swap):
+        with patch("nyxuri.deploy.preset.os.open", side_effect=open_then_swap):
             self.assertFalse(preset.delete_preset("kitty", "mine"))
 
         self.assertTrue(swapped)
@@ -633,7 +633,7 @@ class TestPresetSwitcher(unittest.TestCase):
 
     def _run_keys(self, switcher, keys):
         with patch("sys.stdin.isatty", return_value=True), \
-             patch("nyxniri.tui.read_key", side_effect=keys), \
+             patch("nyxuri.tui.read_key", side_effect=keys), \
              patch("sys.stdout", new_callable=StringIO):
             return switcher.run()
 
@@ -743,20 +743,20 @@ class TestPresetSwitcherMouse(unittest.TestCase):
 
     def _run_keys(self, switcher, keys):
         import os
-        import nyxniri.tui as tui
+        import nyxuri.tui as tui
         fake_size = os.terminal_size((80, 24))
         with patch("sys.stdin.isatty", return_value=True), \
-             patch("nyxniri.tui.read_key", side_effect=keys), \
+             patch("nyxuri.tui.read_key", side_effect=keys), \
              patch.object(tui.shutil, "get_terminal_size", return_value=fake_size), \
              patch("sys.stdout", new_callable=StringIO):
             return switcher.run()
 
     def _click(self, col, row):
-        from nyxniri.tui import MouseEvent
+        from nyxuri.tui import MouseEvent
         return MouseEvent(kind="PRESS", col=col, row=row)
 
     def _wheel(self, kind, col=3, row=15):
-        from nyxniri.tui import MouseEvent
+        from nyxuri.tui import MouseEvent
         return MouseEvent(kind=kind, col=col, row=row)
 
     def test_click_app_applies_active_preset_in_standalone_mode(self):
@@ -890,7 +890,7 @@ class TestPresetStudioInspection(unittest.TestCase):
     def test_invalid_info_never_loads_a_manifest(self):
         for app, name in (("../../outside", "default"), ("kitty", "../outside")):
             with self.subTest(app=app, name=name), \
-                 patch("nyxniri.deploy.manifest.load_manifest_for") as load_manifest:
+                 patch("nyxuri.deploy.manifest.load_manifest_for") as load_manifest:
                 info = preset.get_preset_info(app, name)
 
             self.assertEqual(info.path, "(invalid)")
@@ -903,7 +903,7 @@ class TestPresetStudioActions(unittest.TestCase):
     def _run_keys(self, switcher, keys):
         fake_size = os.terminal_size((80, 24))
         with patch("sys.stdin.isatty", return_value=True), \
-             patch("nyxniri.tui.read_key", side_effect=keys), \
+             patch("nyxuri.tui.read_key", side_effect=keys), \
              patch("shutil.get_terminal_size", return_value=fake_size), \
              patch("sys.stdout", new_callable=StringIO):
             return switcher.run()
@@ -947,7 +947,7 @@ class TestPresetStudioActions(unittest.TestCase):
         info_map = {
             ("kitty", "my-nord"): preset.PresetInfo(
                 app="kitty", name="my-nord", source="user", is_active=False,
-                path="~/.config/NyxNiri/presets/kitty/my-nord", files=[], preserve=[],
+                path="~/.config/nyxuri/presets/kitty/my-nord", files=[], preserve=[],
                 is_editable=True, is_deletable=True
             )
         }
@@ -971,7 +971,7 @@ class TestPresetStudioActions(unittest.TestCase):
         info_map = {
             ("kitty", "my-nord"): preset.PresetInfo(
                 app="kitty", name="my-nord", source="user", is_active=False,
-                path="~/.config/NyxNiri/presets/kitty/my-nord", files=[], preserve=[],
+                path="~/.config/nyxuri/presets/kitty/my-nord", files=[], preserve=[],
                 is_editable=True, is_deletable=True
             )
         }
@@ -1192,7 +1192,7 @@ default = "default"
         self.assertEqual(sorted(eff["variants"]), ["default", "xray"])
 
     def test_apply_part_success(self):
-        from nyxniri.state.ledger import read_ledger
+        from nyxuri.state.ledger import read_ledger
         target_file = self.dest / "effects_normal.kdl"
         target_file.write_text("// initial")
 
@@ -1216,11 +1216,11 @@ default = "default"
         self.assertEqual(preset.get_active_part(self.app, "effects"), "xray")
 
     def test_preset_switcher_loop_wires_parts_and_on_action(self):
-        from nyxniri.menus import preset_switcher_loop
+        from nyxuri.menus import preset_switcher_loop
         with patch("sys.stdin.isatty", return_value=True), \
-             patch("nyxniri.menus.discover_config_items", return_value=["niri"]), \
-             patch("nyxniri.deploy.preset.apply_part", return_value=True) as mock_apply, \
-             patch("nyxniri.menus.PresetSwitcher") as mock_switcher_cls:
+             patch("nyxuri.menus.discover_config_items", return_value=["niri"]), \
+             patch("nyxuri.deploy.preset.apply_part", return_value=True) as mock_apply, \
+             patch("nyxuri.menus.PresetSwitcher") as mock_switcher_cls:
             preset_switcher_loop()
             mock_switcher_cls.assert_called_once()
             _, kwargs = mock_switcher_cls.call_args

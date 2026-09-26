@@ -15,7 +15,7 @@ class TestMigrations(unittest.TestCase):
         self.ctx.__exit__()
 
     def test_runner_is_idempotent_and_records_level(self):
-        from nyxniri import migrations
+        from nyxuri import migrations
 
         with patch.object(migrations, "TOMBSTONES", (".cache/obsolete",)):
             old = self.ctx.home / ".cache/obsolete"
@@ -28,15 +28,15 @@ class TestMigrations(unittest.TestCase):
         self.assertEqual(ledger["migration_level"], migrations.MIGRATION_LEVEL)
 
     def test_tombstone_cannot_escape_home(self):
-        from nyxniri import migrations
+        from nyxuri import migrations
 
-        outside = Path("/tmp/nyxniri-migration-test-outside")
-        with patch.object(migrations, "TOMBSTONES", ("../nyxniri-migration-test-outside",)):
+        outside = Path("/tmp/nyxuri-migration-test-outside")
+        with patch.object(migrations, "TOMBSTONES", ("../nyxuri-migration-test-outside",)):
             self.assertFalse(migrations.run())
         self.assertFalse(outside.exists())
 
     def test_update_ledger_merges_nested_dicts(self):
-        from nyxniri.state.ledger import read_ledger, update_ledger
+        from nyxuri.state.ledger import read_ledger, update_ledger
 
         update_ledger(modules={"fcitx": True})
         update_ledger(modules={"fisher": True})
