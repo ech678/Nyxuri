@@ -14,7 +14,7 @@ from .physics import Spring
 from .palette import load_material_palette, hex_to_rgb
 from .lock import release_instance_lock
 from .config import (
-    BASE_ORBIT_RADIUS, DEADZONE_RADIUS, HYSTERESIS_DEG, FLOAT_SPRING,
+    BASE_ORBIT_RADIUS, DEADZONE_RADIUS, HYSTERESIS_DEG,
     DEFAULT_MENU_TREE, load_menu_tree, load_search_config
 )
 from .renderer import (

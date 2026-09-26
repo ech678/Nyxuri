@@ -28,10 +28,6 @@ from nyxuri.pkg import FLATHUB_REMOTE_URL
 from nyxuri.pkg.detection import DependencyProbe
 
 
-def is_flatpak_installed(app_id: str) -> bool:
-    return app_id in DependencyProbe().flatpaks
-
-
 def is_dep_installed(cmd: str) -> bool:
     return DependencyProbe().installed(cmd)
 
