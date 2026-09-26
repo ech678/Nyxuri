@@ -246,13 +246,17 @@ def offer_overwrite_upgrade(flag: str = "") -> bool:
             src = env.configs_src / it
             dest = env.config_dir / it
             if src.exists() and dest.exists():
-                diff_cmds.append(f"diff -urN --color=always '{dest}' '{src}'")
+                diff_cmds.append(["diff", "-urN", "--color=always", str(dest), str(src)])
         if diff_cmds:
-            full_cmd = " ; ".join(diff_cmds)
             if shutil.which("less"):
-                subprocess.run(full_cmd + " | less -R", shell=True, check=False)
+                pager = subprocess.Popen(["less", "-R"], stdin=subprocess.PIPE, text=True)
+                for cmd in diff_cmds:
+                    subprocess.run(cmd, stdout=pager.stdin, stderr=subprocess.STDOUT, check=False)
+                pager.stdin.close()
+                pager.wait()
             else:
-                subprocess.run(full_cmd, shell=True, check=False)
+                for cmd in diff_cmds:
+                    subprocess.run(cmd, check=False)
     else:
         print(msg("log_config_deploy_skipped"))
     return True

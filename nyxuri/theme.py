@@ -4,7 +4,6 @@ import configparser
 import fcntl
 import os
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -14,19 +13,15 @@ from nyxuri.core import get_env, timed_run
 
 def _mode_from_system() -> str:
     if shutil.which("noctalia"):
-        try:
-            res = subprocess.run(["noctalia", "msg", "theme-mode-get"], capture_output=True, text=True, timeout=3, check=False)
+        res = timed_run(["noctalia", "msg", "theme-mode-get"], 3, capture_output=True, text=True, check=False)
+        if res is not None and res.returncode == 0:
             val = res.stdout.strip()
             if val in ("dark", "light"):
                 return val
-        except (OSError, subprocess.SubprocessError):
-            pass
     if shutil.which("gsettings"):
-        try:
-            value = subprocess.run(["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"], capture_output=True, text=True, timeout=5, check=False).stdout
-            return "light" if "prefer-light" in value or "default" in value else "dark"
-        except (OSError, subprocess.SubprocessError):
-            pass
+        res = timed_run(["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"], 5, capture_output=True, text=True, check=False)
+        if res is not None:
+            return "light" if "prefer-light" in res.stdout or "default" in res.stdout else "dark"
     return get_compat_env("DEFAULT_MODE", "dark")
 
 
@@ -48,18 +43,14 @@ def _write_ini(path: Path, key: str, value: str) -> None:
 def status() -> int:
     scheme = "unknown"
     if shutil.which("gsettings"):
-        try:
-            res = subprocess.run(["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"], capture_output=True, text=True, timeout=5, check=False)
+        res = timed_run(["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"], 5, capture_output=True, text=True, check=False)
+        if res is not None:
             scheme = res.stdout.strip().strip("'") or "unknown"
-        except (OSError, subprocess.SubprocessError):
-            pass
     noctalia_mode = "unknown"
     if shutil.which("noctalia"):
-        try:
-            res = subprocess.run(["noctalia", "msg", "theme-mode-get"], capture_output=True, text=True, timeout=5, check=False)
+        res = timed_run(["noctalia", "msg", "theme-mode-get"], 5, capture_output=True, text=True, check=False)
+        if res is not None:
             noctalia_mode = res.stdout.strip() or "unknown"
-        except (OSError, subprocess.SubprocessError):
-            pass
     print(f"Current Scheme: {scheme} | Noctalia Mode: {noctalia_mode}")
     return 0
 
@@ -94,8 +85,8 @@ def sync(mode: str = "sync") -> int:
         scheme_val = "prefer-dark" if dark else "prefer-light"
         gtk = get_compat_env("GTK_THEME_DARK" if dark else "GTK_THEME_LIGHT", "adw-gtk3-dark" if dark else "adw-gtk3")
         if shutil.which("gsettings"):
-            subprocess.run(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", scheme_val], check=False, timeout=5)
-            subprocess.run(["gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", gtk], check=False, timeout=5)
+            timed_run(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", scheme_val], 5, check=False)
+            timed_run(["gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", gtk], 5, check=False)
         for version in ("gtk-3.0", "gtk-4.0"):
             path = env.config_dir / version / "settings.ini"
             _write_ini(path, "gtk-application-prefer-dark-theme", "true" if dark else "false")
