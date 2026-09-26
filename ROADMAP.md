@@ -441,11 +441,11 @@ Issue #102 下的深度探讨为本项目的工程落地注入了极其宝贵的
 - **问题**: 缺少右键一键粘贴；`Ctrl+C` 绑定存在冲突风险；默认缺少无干扰剪贴板体验。
 - **修复**: 引入经典 Windows Terminal / PowerShell 交互习惯：鼠标右键直接粘贴剪贴板、键盘 `Ctrl+C`（有选中文本复制，无选中文本中断）、`Ctrl+V` 原生粘贴；不启用划词自动污染剪贴板，保留干净的阅读选择体验。
 
-### 17. [工程规整 · GitHub 仓库标准化与自动化 CI]
-- **涉及文件**: `.github/workflows/ci.yml`, `.gitattributes`
+### 17. [工程规整 · 仓库标准化与换行符锁定]
+- **涉及文件**: `.gitattributes`
 - **极简方案**:
-  1. `.gitattributes`：锁死 `*.sh`/`*.py`/`*.kdl`/`*.fish` 为 LF 换行符，防跨平台克隆带入 CRLF 搞坏脚本；排除资产目录语言统计，保持仓库语言纯净；
-  2. `ci.yml`：极轻 GitHub Actions（零外部依赖，30 秒跑完 compileall、shellcheck、unittest 出绿标）。
+  - `.gitattributes`：锁死 `*.sh`/`*.py`/`*.kdl`/`*.fish` 为 LF 换行符，防跨平台克隆带入 CRLF 搞坏脚本；排除资产目录语言统计，保持仓库语言纯净；
+  - **验证收归本地**：遵循 AGENTS.md 减法与防熵增原则，不引入非 Arch 平台（Ubuntu CI）的云端杂音与维护负担，验证完全收归本地秒级契约（`python3 -m unittest`）。
 
 ---
 
@@ -506,8 +506,7 @@ Issue #102 下的深度探讨为本项目的工程落地注入了极其宝贵的
 - [x] **升级引导结构完备性自愈**：`install.sh:engine_is_complete()` 对齐新增的 `ledger`、`theme`、`template_registry` 模块检查；
 - [x] **`__presets__` Dunder 命名规整与全软件通用零件化插槽体系**：将 `presets/` 重命名为 `__presets__/`，在 `.module.toml` 中支持通用 `[parts.<slot>]` 规则声明，使所有软件均可通过纯声明式 TOML 像替换零件一样切换视觉、按键与规则；
 - [x] **终端 Windows PowerShell 级优雅交互体验**：Kitty 配置右键直接粘贴剪贴板、键盘 `Ctrl+C` 智能识别复制/中断、`Ctrl+V` 原生粘贴（无自动划词进剪贴板干扰）；Fish 常用终端函数与窗口快捷键冻结原样保持；
-- [x] **文档极简降噪与 GitHub Wiki 归位策略 (严格遵循 AGENTS.md §8 语言风骨)**：根目录 README 大瘦身（压缩至 150 行以内），庞大目录树与深度手册移交 `humans-wiki/`（双轨中英 `Home.md` / `Home-zh.md`，与 `llms-wiki/` 对称且 100% 完整收录所有排障与指令表，自动镜像 GitHub Wiki），以自然、清晰、去 AI 味、像人说话的原生笔调书写，消除胶水脚本中的语言硬编码；
-- [ ] **GitHub 仓库工程标准化与轻量 CI 流**：增补 `.gitattributes` 锁死 LF 换行符杜绝跨平台脚本损坏、配置轻量 GitHub Actions CI 工作流（秒级跑完 compileall / shellcheck / unittest）与 Wiki 自动化同步流。
+- [ ] **GitHub 仓库工程标准化**：增补 `.gitattributes` 锁死 LF 换行符杜绝跨平台脚本损坏与 Wiki 自动化同步流，保持验证收归本地。
 
 #### 2. 开发 Shell 时 (During Shell Development)
 > **核心目标**：专注于自研 Material You Shell 本体的高质感构建与契约接驳，做到零外部侵入、原生直连。
