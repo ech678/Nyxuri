@@ -1,20 +1,17 @@
 # Auto detect text files and perform LF normalization
 * text=auto eol=lf
 
-# Explicit text files with LF line endings
+# Explicitly lock LF on core scripts and configs
 *.sh text eol=lf
+*.bash text eol=lf
 *.py text eol=lf
 *.kdl text eol=lf
 *.fish text eol=lf
 *.toml text eol=lf
-*.md text eol=lf
-*.json text eol=lf
 *.conf text eol=lf
+*.css text eol=lf
+*.json text eol=lf
+*.md text eol=lf
 
-# Exclude binary and assets from language statistics and diff noise
+# Exclude static media and third-party assets from GitHub linguist stats
 assets/** linguist-vendored
-*.png binary
-*.jpg binary
-*.jpeg binary
-*.webp binary
-*.gif binary

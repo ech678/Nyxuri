@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# NyxNiri Shell Action Gateway (shell-action.sh)
+# Nyxuri shell action gateway (shell-action.sh)
 # Unified dispatch gateway decoupling desktop shell actions from compositor keybinds.
 # ==============================================================================
 

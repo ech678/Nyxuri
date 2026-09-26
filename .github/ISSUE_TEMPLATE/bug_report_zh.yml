@@ -1,5 +1,5 @@
 name: 错误报告 (中文)
-description: 报告 NyxNiri 脚本或配置异常
+description: 报告 Nyxuri 脚本或配置异常
 title: "[Bug] "
 labels: ["bug"]
 assignees: ["ech678"]
@@ -31,7 +31,7 @@ body:
     id: diagnostic
     attributes:
       label: 诊断日志
-      description: 粘贴 nyxniri-bug-report-*.md 的内容。若无日志，请提供系统与硬件环境。
+      description: 粘贴 nyxuri-bug-report-*.md 的内容。若无日志，请提供系统与硬件环境。
     validations:
       required: true
   - type: textarea

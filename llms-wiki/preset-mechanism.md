@@ -70,7 +70,7 @@ theme-sync / gtk 重渲染）。切个 kitty 预设不该顺带跑 fisher，无�
 
 - **稀疏预设 (Sparse Presets)**：预设目录只需要存放与默认配置有差异的文件（例如 Niri 的 `glow` 仅需 49 行的 `layout.kdl`，无需镜像复制 4000+ 行 Python 脚本）。未重写的文件自动从仓库底版继承。
 - **动态光晕模板解耦**：Niri 的 `glow-material-you` 由 Noctalia 原生渲染输出为独立的 `~/.config/niri/colors.kdl`，不再覆写核心布局 `layout.kdl`，亦无外部 IPC `post_hook` 副作用；`config.kdl` 中在 `layout.kdl` 之后可选加载 `include optional=true "colors.kdl"`。
-- **通用零件插槽 (`preset <app> part <slot> <name>`)**：在 `.module.toml` 中声明 `[parts.<slot>]` 规则后，支持针对具体零件目标文件（如 `effects.kdl`）独立切换对应零件，实现免重启无缝热插拔。
+- **通用零件插槽 (`preset <app> part <slot> <name>`)**：在 `.module.toml` 中声明 `[parts.<slot>]` 后，可独立切换具体目标文件（如 `effects.kdl`），无需重新部署整套配置。
 - **双轴白名单保障**：
   - **预设名白名单 (`allow = ["glow", "glow-material-you"]`)**：仅列入白名单的预设开启继承；未列入的预设和未声明的应用（如 Kitty）保持 100% 独立，零配置渗透。
   - **文件白名单 (`include = ["scripts/**", "*.kdl"]`)**：仅继承白名单允许的底版文件；支持 `exclude` 黑名单进一步剔除特定文件。

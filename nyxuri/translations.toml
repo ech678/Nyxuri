@@ -26,7 +26,7 @@ en = "Switch preset"
 
 [menu_opt2]
 zh = "软件与依赖"
-en = "Software & Dependencies"
+en = "Software & dependencies"
 
 [menu_group_maint]
 zh = "  {Colors.BOLD_BLUE}管理{Colors.RESET}"
@@ -72,19 +72,19 @@ en = """\n  {Colors.BOLD_CYAN}── Snapshot Management ──{Colors.RESET}
 
 [snapshot_sub_create]
 zh = "创建快照"
-en = "Create Snapshot"
+en = "Create snapshot"
 
 [snapshot_sub_list]
 zh = "查看快照列表"
-en = "List Snapshots"
+en = "List snapshots"
 
 [snapshot_sub_delete]
 zh = "删除快照"
-en = "Delete Snapshot"
+en = "Delete snapshots"
 
 [snapshot_sub_rollback]
 zh = "回滚快照"
-en = "Rollback Snapshot"
+en = "Restore snapshot"
 
 [snapshot_sub_back]
 zh = "返回"
@@ -124,15 +124,15 @@ en = """\n  {Colors.BOLD_CYAN}── Noctalia Greeter ──{Colors.RESET}
 
 [greeter_sub_install]
 zh = "安装与配置"
-en = "Install & Configure"
+en = "Install & configure"
 
 [greeter_sub_status]
 zh = "查看状态"
-en = "Show Status"
+en = "Show status"
 
 [greeter_sub_uninstall]
 zh = "卸载配置"
-en = "Uninstall Config"
+en = "Uninstall config"
 
 [greeter_sub_back]
 zh = "返回"
@@ -145,24 +145,24 @@ en = """\n  {Colors.BOLD_CYAN}── NyxMellow fcitx5 Skin ──{Colors.RESET}
 """
 
 [fcitx_sub_install]
-zh = "完整安装皮肤 (释放素材 + 设为默认)"
-en = "Full Install (Deploy Assets + Set Default)"
+zh = "完整安装皮肤（部署素材并设为默认）"
+en = "Full install (deploy assets + set default)"
 
 [fcitx_sub_deploy]
-zh = "仅部署素材与模板 (不改默认主题)"
-en = "Deploy Assets & Templates (Keep Current Theme)"
+zh = "仅部署素材与模板（不改默认主题）"
+en = "Deploy assets & templates (keep current theme)"
 
 [fcitx_sub_activate]
-zh = "设为当前活动主题 (应用到 fcitx5)"
-en = "Activate Theme (Apply to fcitx5)"
+zh = "设为当前主题（应用到 fcitx5）"
+en = "Activate theme (apply to fcitx5)"
 
 [fcitx_sub_status]
 zh = "查看状态"
-en = "Show Status"
+en = "Show status"
 
 [fcitx_sub_uninstall]
 zh = "卸载皮肤"
-en = "Uninstall Skin"
+en = "Uninstall skin"
 
 [fcitx_sub_back]
 zh = "返回"
@@ -349,7 +349,7 @@ zh = "壁纸包:     已跳过"
 en = "Wallpapers:     Skipped"
 
 [summary_item_fcitx_ok]
-zh = "输入法:     NyxMellow fcitx5 skin"
+zh = "输入法:     NyxMellow fcitx5 皮肤"
 en = "Input Method:   NyxMellow fcitx5 skin"
 
 [summary_item_fcitx_skip]
@@ -374,7 +374,7 @@ en = "Preserved configs"
 
 [summary_section_next]
 zh = "下一步"
-en = "Next Steps"
+en = "Next steps"
 
 [summary_next_start]
 zh = "启动桌面 : 运行 niri-session"
@@ -403,7 +403,7 @@ en = "[!] pacman not found: the dependency menus only apply to Arch-based system
 [summary_action_title]
 zh = """\n  {Colors.BOLD_CYAN}── 下一步 ──{Colors.RESET}
 """
-en = """\n  {Colors.BOLD_CYAN}── Next Steps ──{Colors.RESET}
+en = """\n  {Colors.BOLD_CYAN}── Next steps ──{Colors.RESET}
 """
 
 [summary_action_apps]
@@ -411,7 +411,7 @@ zh = "常用软件"
 en = "Recommended Apps"
 
 [summary_action_star]
-zh = "给作者 GitHub 点 Star"
+zh = "去 GitHub 点个 Star"
 en = "Star on GitHub"
 
 [summary_action_exit]
@@ -427,7 +427,7 @@ zh = "  {Colors.DARK_GRAY}[↑/↓] 移动  [Enter] 选择  [q] 退出{Colors.RE
 en = "  {Colors.DARK_GRAY}[↑/↓] Move  [Enter] Select  [q] Exit{Colors.RESET}"
 
 [msg_star_opened]
-zh = """\n  {Colors.BOLD_GREEN}[✓] 感谢支持！已打开项目主页:{Colors.RESET} {0}
+zh = """\n  {Colors.BOLD_GREEN}[✓] 感谢支持！已打开项目主页：{Colors.RESET} {0}
 """
 en = """\n  {Colors.BOLD_GREEN}[✓] Thanks for your support! Opened repository:{Colors.RESET} {0}
 """
@@ -525,7 +525,7 @@ zh = "安装前自动创建快照"
 en = "Auto-create snapshot before install"
 
 [diff_viewer_title]
-zh = """\n{Colors.BOLD_CYAN}:: 配置改动 (按 q 退出){Colors.RESET}"""
+zh = """\n{Colors.BOLD_CYAN}:: 配置改动（按 q 退出）{Colors.RESET}"""
 en = """\n{Colors.BOLD_CYAN}:: Changes (press q to quit){Colors.RESET}"""
 
 [uninstall_title]
@@ -627,7 +627,7 @@ zh = """\n{Colors.BOLD_RED}[!] 将清空配置、快照、缓存与壁纸。不�
 en = """\n{Colors.BOLD_RED}[!] This clears configs, snapshots, cache, and wallpapers. It cannot be undone.{Colors.RESET}"""
 
 [purge_prompt]
-zh = "▸ 确认深度清理？[y/N]: "
+zh = "▸ 确认深度清理？此操作不可撤销 [y/N]: "
 en = "▸ Continue with deep clean? [y/N]: "
 
 [purge_cancelled]
@@ -695,7 +695,7 @@ zh = "{Colors.BOLD_GREEN}[✓] 已恢复至快照: {0}{Colors.RESET}"
 en = "{Colors.BOLD_GREEN}[✓] Restored to snapshot: {0}{Colors.RESET}"
 
 [snapshot_note_prompt]
-zh = "▸ 请输入快照备注 (直接回车跳过): "
+zh = "▸ 请输入快照备注（直接回车跳过）: "
 en = "▸ Enter snapshot note (press Enter to skip): "
 
 [delete_confirm]
@@ -910,7 +910,7 @@ en = "{Colors.DARK_GRAY}No apps selected.{Colors.RESET}"
 
 [interactive_terminal_required]
 zh = "{Colors.BOLD_YELLOW}[!] 需要交互式终端。{Colors.RESET}"
-en = "{Colors.BOLD_YELLOW}[!] Needs an interactive terminal.{Colors.RESET}"
+en = "{Colors.BOLD_YELLOW}[!] An interactive terminal is required.{Colors.RESET}"
 
 [new_deps_detected]
 zh = """\n  {Colors.BOLD_YELLOW}[!] 检测到未安装的依赖:{Colors.RESET} {0}"""
@@ -933,7 +933,7 @@ zh = """\n{Colors.BOLD_BLUE}:: 正在安装 greetd 与 noctalia-greeter…{Color
 en = """\n{Colors.BOLD_BLUE}:: Installing greetd & noctalia-greeter…{Colors.RESET}"""
 
 [greeter_aur_required]
-zh = "{Colors.BOLD_YELLOW}[!] noctalia-greeter (AUR) 需要 paru 或 yay。请先安装 AUR helper。{Colors.RESET}"
+zh = "{Colors.BOLD_YELLOW}[!] noctalia-greeter（AUR）需要 paru 或 yay。请先安装 AUR 助手。{Colors.RESET}"
 en = "{Colors.BOLD_YELLOW}[!] noctalia-greeter (AUR) requires paru/yay. Install an AUR helper first.{Colors.RESET}"
 
 [greeter_install_failed]
@@ -941,7 +941,7 @@ zh = "{Colors.BOLD_RED}[!] noctalia-greeter 安装失败。稍后运行 {CLI_CMD
 en = "{Colors.BOLD_RED}[!] Install failed. Retry later with: {CLI_CMD} greeter install{Colors.RESET}"
 
 [greeter_dm_conflict]
-zh = "{Colors.BOLD_YELLOW}[!] 检测到已启用的显示管理器 ({0})，现在切换到 greetd{Colors.RESET}"
+zh = "{Colors.BOLD_YELLOW}[!] 检测到已启用的显示管理器（{0}），现在切换到 greetd{Colors.RESET}"
 en = "{Colors.BOLD_YELLOW}[!] Enabled display manager detected ({0}); switching to greetd{Colors.RESET}"
 
 [greeter_dm_disable_failed]
@@ -978,7 +978,7 @@ en = "{Colors.BOLD_RED}[!] Failed to write greetd config: {0} (requires sudo){Co
 
 [greeter_state_dir_created]
 zh = "{Colors.BOLD_GREEN}[✓] 已创建状态目录 /var/lib/noctalia-greeter{Colors.RESET}"
-en = "{Colors.BOLD_GREEN}[✓] Created state dir /var/lib/noctalia-greeter{Colors.RESET}"
+en = "{Colors.BOLD_GREEN}[✓] Created state directory /var/lib/noctalia-greeter{Colors.RESET}"
 
 [greeter_cmd_failed]
 zh = "{Colors.BOLD_RED}[!] 特权命令执行失败: {0} (需要 sudo 权限){Colors.RESET}"
@@ -993,7 +993,7 @@ zh = "{Colors.BOLD_RED}[!] 写入 polkit 规则失败{Colors.RESET}"
 en = "{Colors.BOLD_RED}[!] Failed to write polkit rule{Colors.RESET}"
 
 [greeter_enabled]
-zh = "{Colors.BOLD_GREEN}[✓] 已启用 greetd 服务 (重启生效){Colors.RESET}"
+zh = "{Colors.BOLD_GREEN}[✓] 已启用 greetd 服务（重启生效）{Colors.RESET}"
 en = "{Colors.BOLD_GREEN}[✓] greetd service enabled (takes effect after reboot){Colors.RESET}"
 
 [greeter_enabled_skip]
@@ -1049,7 +1049,7 @@ zh = """\n{Colors.BOLD_PURPLE}:: NyxMellow fcitx5 皮肤安装{Colors.RESET}"""
 en = """\n{Colors.BOLD_PURPLE}:: NyxMellow fcitx5 skin{Colors.RESET}"""
 
 [fcitx_skip_no_fcitx5]
-zh = "{Colors.BOLD_YELLOW}[!] 未找到 fcitx5，已跳过皮肤激活 (安装后运行 {CLI_CMD} fcitx install 即可){Colors.RESET}"
+zh = "{Colors.BOLD_YELLOW}[!] 未找到 fcitx5，已跳过皮肤激活（安装后运行 {CLI_CMD} fcitx install 即可）{Colors.RESET}"
 en = "{Colors.BOLD_YELLOW}[!] fcitx5 not detected; skipped skin activation (theme templates deployed; run {CLI_CMD} fcitx install after installing fcitx5).{Colors.RESET}"
 
 [fcitx_templates_deployed]
@@ -1081,15 +1081,15 @@ zh = "{Colors.BOLD_GREEN}[✓] NyxMellow 皮肤已卸载，fcitx5 主题已还�
 en = "{Colors.BOLD_GREEN}[✓] NyxMellow skin uninstalled; fcitx5 theme reverted{Colors.RESET}"
 
 [fcitx_registered]
-zh = "{Colors.BOLD_GREEN}[✓] Noctalia 模板已注册 ({0}){Colors.RESET}"
+zh = "{Colors.BOLD_GREEN}[✓] Noctalia 模板已注册（{0}）{Colors.RESET}"
 en = "{Colors.BOLD_GREEN}[✓] Noctalia templates registered ({0}){Colors.RESET}"
 
 [fcitx_not_registered]
-zh = "{Colors.BOLD_YELLOW}[!] Noctalia 模板未注册 ({0}){Colors.RESET}"
+zh = "{Colors.BOLD_YELLOW}[!] Noctalia 模板未注册（{0}）{Colors.RESET}"
 en = "{Colors.BOLD_YELLOW}[!] Noctalia templates not registered ({0}){Colors.RESET}"
 
 [fcitx_rime_setup_ok]
-zh = "{Colors.BOLD_GREEN}[✓] Fcitx5 雾凇拼音 (Rime Ice) 方案已挂载并预编译完成{Colors.RESET}"
+zh = "{Colors.BOLD_GREEN}[✓] Fcitx5 雾凇拼音（Rime Ice）方案已挂载并预编译完成{Colors.RESET}"
 en = "{Colors.BOLD_GREEN}[✓] Fcitx5 Rime Ice schema mounted and precompiled successfully{Colors.RESET}"
 
 [gtk_install_title]
@@ -1221,7 +1221,7 @@ zh = """\n{Colors.BOLD_RED}[✗] 未找到 sudo。请先安装 sudo，再重新�
 en = """\n{Colors.BOLD_RED}[✗] sudo is not installed. Install it, then retry.{Colors.RESET}"""
 
 [err_already_running]
-zh = """\n{Colors.BOLD_YELLOW}[!] 进程已在运行 (PID: {0}){Colors.RESET}"""
+zh = """\n{Colors.BOLD_YELLOW}[!] 进程已在运行（PID: {0}）{Colors.RESET}"""
 en = """\n{Colors.BOLD_YELLOW}[!] Process already running (PID: {0}){Colors.RESET}"""
 
 [err_root_denied]
@@ -1340,8 +1340,8 @@ zh = """\n{Colors.BOLD_BLUE}:: 以下步骤需要 sudo，验证一次：{Colors.
 en = """\n{Colors.BOLD_BLUE}:: These steps need sudo. Authenticate once:{Colors.RESET}"""
 
 [net_pull_repo]
-zh = "{Colors.BOLD_BLUE}:: 拉取仓库 (官方 -> gh-proxy)…{Colors.RESET}"
-en = "{Colors.BOLD_BLUE}:: Pulling repository (Official -> gh-proxy)…{Colors.RESET}"
+zh = "{Colors.BOLD_BLUE}:: 拉取仓库（官方 -> gh-proxy）…{Colors.RESET}"
+en = "{Colors.BOLD_BLUE}:: Pulling repository (official -> gh-proxy)…{Colors.RESET}"
 
 [net_pull_node]
 zh = """\n  {Colors.BOLD_CYAN}[{0}/{1}] 从 [{2}] 节点拉取…{Colors.RESET}"""
@@ -1364,11 +1364,11 @@ en = """{Colors.BOLD_RED}[✗] All mirror nodes failed. Please check network.{Co
 """
 
 [net_custom_repo_invalid]
-zh = """{Colors.BOLD_RED}[✗] NYXURI_REPO (或 NYXNIRI_REPO) 指定的地址不受支持: {0}{Colors.RESET}
-  仅接受 https:// 、 git@ 、 ssh:// 开头的仓库地址，已按要求停止安装。
+zh = """{Colors.BOLD_RED}[✗] NYXURI_REPO（或 NYXNIRI_REPO）指定的地址不受支持：{0}{Colors.RESET}
+  仅接受以 https://、git@ 或 ssh:// 开头的仓库地址，已停止安装。
 """
 en = """{Colors.BOLD_RED}[✗] Unsupported NYXURI_REPO (or NYXNIRI_REPO) address: {0}{Colors.RESET}
-  Only https:// , git@ , ssh:// addresses are accepted; aborting as configured.
+  Only addresses beginning with https://, git@, or ssh:// are accepted; installation stopped.
 """
 
 [net_download_asset]
@@ -1425,7 +1425,7 @@ en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Installed config: ~/.config/{0}"
 
 [log_gtk_theme_init]
 zh = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 初始化主题与 GTK 同步"
-en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Initializing theme & GTK sync"
+en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Initialized theme & GTK sync"
 
 
 [log_check_fisher]
@@ -1485,7 +1485,7 @@ zh = "{Colors.BOLD_YELLOW}[!] AUR 软件包 ({0}) 需要 paru 或 yay，已跳�
 en = "{Colors.BOLD_YELLOW}[!] AUR packages ({0}) require paru/yay; skipped.{Colors.RESET}"
 
 [aur_bootstrap_prompt]
-zh = "▸ 未找到可用 AUR 助手 (paru/yay)。是否自动安装 paru？[Y/n]: "
+zh = "▸ 未找到可用 AUR 助手（paru/yay）。是否自动安装 paru？[Y/n]: "
 en = "▸ No usable AUR helper (paru/yay) found. Auto-bootstrap paru? [Y/n]: "
 
 [aur_bootstrap_start]
@@ -1497,8 +1497,8 @@ zh = "{Colors.BOLD_BLUE}:: 从官方源安装 paru…{Colors.RESET}"
 en = "{Colors.BOLD_BLUE}:: Installing paru from official repos…{Colors.RESET}"
 
 [aur_bootstrap_ok]
-zh = "{Colors.BOLD_GREEN}[✓] paru 安装成功{Colors.RESET}"
-en = "{Colors.BOLD_GREEN}[✓] paru installed successfully{Colors.RESET}"
+zh = "{Colors.BOLD_GREEN}[✓] paru 已安装{Colors.RESET}"
+en = "{Colors.BOLD_GREEN}[✓] paru installed{Colors.RESET}"
 
 [aur_bootstrap_failed]
 zh = "{Colors.BOLD_RED}[!] paru 安装失败，已跳过 AUR 依赖。请手动安装后重试。{Colors.RESET}"
@@ -1518,7 +1518,7 @@ en = "{Colors.BOLD_GREEN}[✓]{Colors.RESET} mpvpaper {0} >= 1.9, no known memor
 
 [mpvpaper_leak_warn]
 zh = """{Colors.BOLD_YELLOW}[!]{Colors.RESET} mpvpaper {0} 在默认硬解配置下存在 OpenGL 内存泄漏，建议升级至 1.9+ 或 mpvpaper-git
-   (参见: https://github.com/GhostNaN/mpvpaper/issues/127)"""
+   （参见：https://github.com/GhostNaN/mpvpaper/issues/127）"""
 en = """{Colors.BOLD_YELLOW}[!]{Colors.RESET} mpvpaper {0} has an OpenGL memory leak. Upgrade to 1.9+ or install mpvpaper-git
    (See: https://github.com/GhostNaN/mpvpaper/issues/127)"""
 
@@ -1585,7 +1585,7 @@ en = """\n{Colors.BOLD_CYAN}System package is managed by pacman; git pull skippe
 """
 
 [update_pin_target]
-zh = "{Colors.BOLD_BLUE}:: 正在切换到指定版本 ({0})…{Colors.RESET}"
+zh = "{Colors.BOLD_BLUE}:: 正在切换到指定版本（{0}）…{Colors.RESET}"
 en = "{Colors.BOLD_BLUE}:: Switching to pinned ref ({0})…{Colors.RESET}"
 
 [update_pin_done]

@@ -28,7 +28,7 @@
 
 ### 3. 精确恢复模式 (Preserve Custom Contract)
 调用 `atomic_replace_item` 执行回滚还原时，传入 `preserve_custom=False`：
-- 回滚的目标是精准还原该历史时刻的纯净状态。
+- 回滚要还原快照当时的状态，不混入之后新增的自定义文件。
 - 若继承当前实机后期产生的 `__custom__` 文件，将导致回滚产生脏数据污染。因此回滚模式下不进行 Dunder 继承，确保还原一致性。
 
 ## CLI 接口

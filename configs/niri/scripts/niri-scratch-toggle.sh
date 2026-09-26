@@ -1,5 +1,5 @@
 #!/bin/bash
-# NyxNiri Multi-App Scratchpad Toggle
+# Nyxuri multi-app scratchpad toggle
 # Controls floating scratchpad lifecycle for Kitty, Mission Center, Nautilus, and custom apps.
 
 # shellcheck disable=SC2317

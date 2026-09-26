@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        提交前，请确保建议契合 NyxNiri 的极简与秩序原则（做减法、零熵增）。
+        提交前，先看看这项建议是否符合 Nyxuri 的极简与秩序原则：做减法，少添负担。
   - type: textarea
     id: problem
     attributes:

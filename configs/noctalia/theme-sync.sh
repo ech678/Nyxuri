@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Nyxuri System Theme Dispatcher & Bus (theme-sync.sh)
-# High-robustness, atomic, zero-entropy theme synchronization engine.
+# Nyxuri theme dispatcher (theme-sync.sh)
+# Keeps GTK, Qt, Kitty, and the desktop color scheme in step.
 # ==============================================================================
 
 set -uo pipefail

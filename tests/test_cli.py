@@ -348,7 +348,7 @@ class TestUpdateReexecHandoff(unittest.TestCase):
 
 
 class TestCliLinkOwnershipCallChains(unittest.TestCase):
-    """Install and update retain an entry NyxNiri does not own."""
+    """Install and update retain an entry Nyxuri does not own."""
 
     def setUp(self):
         self._ctx = TempEnv()

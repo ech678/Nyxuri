@@ -23,7 +23,7 @@
 //     position x=0 y=0
 //     // 开启可变刷新率 (VRR / G-Sync / FreeSync)
 //     // 强烈推荐添加 on-demand=true：仅在运行游戏等规则应用时激活 VRR。
-//     // 这能彻底避免桌面静止、锁屏或终端光标跳变时因刷新率骤降产生的屏幕亮度频闪 (VRR Flicker)。
+//     // 避免桌面静止、锁屏或终端光标跳变时因刷新率骤降产生亮度频闪（VRR Flicker）。
 //     variable-refresh-rate on-demand=true
 // }
 //

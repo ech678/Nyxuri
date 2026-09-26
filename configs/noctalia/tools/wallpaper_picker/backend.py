@@ -1,5 +1,5 @@
 """
-NyxNiri Wallpaper Picker Backend Engine
+Nyxuri wallpaper picker backend
 Executes wallpaper switching for static images and live video wallpapers, synchronized with Noctalia & mpvpaper plugin state.
 """
 
@@ -60,7 +60,7 @@ def apply_static_wallpaper(path: str) -> bool:
         # 3. Terminate any running mpvpaper instances with process wait
         _clear_mpvpaper()
 
-        # 4. Apply static wallpaper via Noctalia IPC to trigger full-system theme extraction and layer restore
+        # 4. Apply through Noctalia so it can refresh the palette and wallpaper layer
         subprocess.Popen(["noctalia", "msg", "wallpaper-set", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return True
     except Exception as e:

@@ -1,4 +1,4 @@
-# Optional installable apps — no NyxNiri config shipped, just package metadata
+# Optional installable apps — no Nyxuri config shipped, just package metadata
 # for the apps menu + AUR optdepends. Single source of truth (§3.1 spirit:
 # data-driven, no hardcoded dict). Independent of config dirs (§2 the two-axis
 # design): an app here stays "optional" even if a configs/<app>/ dir is later

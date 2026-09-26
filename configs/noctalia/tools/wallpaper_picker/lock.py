@@ -1,5 +1,5 @@
 """
-NyxNiri Wallpaper Picker Single-Instance & True-Toggle Locking Engine
+Single-instance and toggle-close lock for the Nyxuri wallpaper picker.
 Ensures atomic single-instance execution. If another instance is running, sends SIGTERM to toggle-close it.
 """
 

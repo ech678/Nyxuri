@@ -173,7 +173,7 @@ class TestUninstallHookPreservation(unittest.TestCase):
 
 
 class TestFisherOwnership(unittest.TestCase):
-    """Fisher cleanup is limited to the files recorded by NyxNiri."""
+    """Fisher cleanup is limited to the files recorded by Nyxuri."""
 
     def setUp(self):
         self._ctx = TempEnv()
@@ -538,7 +538,7 @@ class TestQuickphraseRestore(unittest.TestCase):
         self.env = self._ctx.env
         self.qp = self.env.config_dir / "fcitx5" / "conf" / "quickphrase.conf"
         self.qp.parent.mkdir(parents=True)
-        # Prior user setting (before NyxNiri touched it).
+        # Prior user setting (before Nyxuri touched it).
         self.qp.write_text("[Hotkey]\nTriggerKey=Super+space\n", encoding="utf-8")
 
     def tearDown(self):
@@ -547,7 +547,7 @@ class TestQuickphraseRestore(unittest.TestCase):
     def test_uninstall_restores_prior_quickphrase(self):
         from nyxuri.modules.fcitx import fcitx_uninstall
 
-        # NyxNiri install overrides the hotkey (and backs up the prior state).
+        # Nyxuri install overrides the hotkey (and backs up the prior state).
         self.qp.write_text("[Hotkey]\nTriggerKey=Super+semicolon\nAlternativeTriggerKey=\n")
         self.env.state_dir.mkdir(parents=True, exist_ok=True)
         state = self.env.state_dir / "fcitx-nyxmellow-quickphrase.prev"
@@ -619,7 +619,7 @@ class TestGreeterStateDirRemoval(unittest.TestCase):
 
 
 class TestFisherInstallDetect(unittest.TestCase):
-    """Fisher needs both the host and NyxNiri's ownership record."""
+    """Fisher needs both the host and Nyxuri's ownership record."""
 
     def setUp(self):
         self._ctx = TempEnv()

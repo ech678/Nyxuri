@@ -1,6 +1,6 @@
 """
 Orbit Launcher Palette Engine
-Loads the shared NyxNiri Material 3 palette or static defaults.
+Load Nyxuri's shared Material 3 palette, with static fallbacks.
 """
 
 import os

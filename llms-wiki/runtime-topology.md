@@ -1,11 +1,11 @@
 # Runtime Topology — 进程树、IPC 管道与信号链路
 
-> Nyxuri 桌面运行时的动态全景：合成器会话启动、常驻守护进程、快捷键脚本层与跨应用 IPC 信号流。
+> Nyxuri 桌面运行时：合成器会话启动、常驻进程、快捷键脚本与跨应用 IPC 信号流。
 > 源码：`configs/niri/config.kdl`、`configs/niri/scripts/`、`configs/noctalia/`。
 
 ---
 
-## 1. 运行时架构全景
+## 1. 运行时架构
 
 ```
 [ Niri Compositor 会话 (Wayland) ]
@@ -78,7 +78,7 @@
 2. **主题同步防抖竞态 (`nyxuri.theme.sync`)**：
    - 使用 `fcntl.flock` 锁定运行时文件（优先 `${XDG_RUNTIME_DIR}/nyxuri-${UID}-theme-sync.lock`），瞬时多次触发非阻塞快速丢弃，杜绝状态竞争。
 3. **Orbit 启动器单实例锁 (`orbit/lock.py` / `/proc` 检测)**：
-   - 防止重复唤起创建多个重叠悬浮窗，再次触发时优雅收起。
+   - 防止重复唤起创建多个重叠悬浮窗；再次触发时关闭现有窗口。
 
 ---
 
@@ -96,4 +96,3 @@ Python 管理引擎在启动时由 `nyxuri.core.get_env()` 构建全局只读 `E
 | `run_mode` | `"system"` / `"repo"` / `"standalone"` | 判定执行模式（`.system-install` 标记优先） |
 
 两域绝对物理隔离：`state_dir` 放运行时瞬态与账本数据，`nyx_dir` 放持久化用户配置，互不渗透。
-

@@ -325,7 +325,7 @@ def fcitx_activate() -> bool:
 def fcitx_install(set_default: bool = True) -> bool:
     """Deploy templates, output pre-flight plan, and conditionally activate NyxMellow skin."""
     print(msg("fcitx_install_title"))
-    print(text(":: 变更清单 (Pre-flight Checklist):", ":: Pre-flight Checklist:"))
+    print(text(":: 变更清单：", ":: Changes:"))
     for line in fcitx_preflight_plan(set_default=set_default):
         print(line)
     if not fcitx_deploy_assets():
@@ -500,7 +500,7 @@ def _restore_settings(path, state_file, section, owned):
 
 
 def _remove_rime_ice_patch(rime_dir: Path) -> None:
-    """Remove only the schema selection lines NyxNiri added for Rime Ice."""
+    """Remove only the Rime Ice schema selection lines managed by Nyxuri."""
     custom = rime_dir / "default.custom.yaml"
     if custom.is_file():
         lines = custom.read_text(encoding="utf-8").splitlines()

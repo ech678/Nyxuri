@@ -1,5 +1,5 @@
 """
-NyxNiri Wallpaper Picker Configuration Engine
+Nyxuri wallpaper picker configuration
 Multi-source prioritized wallpaper directory resolver and format definitions.
 """
 

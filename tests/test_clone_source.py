@@ -1,4 +1,4 @@
-"""Contract tests for NYXNIRI_REPO clone-source override."""
+"""Contract tests for the NYXURI_REPO override and its legacy fallback."""
 
 import subprocess
 import sys

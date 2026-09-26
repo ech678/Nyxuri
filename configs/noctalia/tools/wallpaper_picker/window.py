@@ -1,5 +1,5 @@
 """
-NyxNiri Wallpaper Picker — Material 3 layer-shell UI.
+Nyxuri wallpaper picker: a Material 3 layer-shell UI.
 
 Wayland overlay dialog assembled from M3 components: scrim, top app bar,
 search bar, filter chips and image cards. All styling is compiled from

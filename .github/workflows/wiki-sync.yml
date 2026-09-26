@@ -1,0 +1,45 @@
+name: Sync Wiki to GitHub
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'humans-wiki/**'
+  workflow_dispatch:
+
+concurrency:
+  group: wiki-sync
+  cancel-in-progress: true
+
+jobs:
+  sync-wiki:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Sync Wiki
+        env:
+          WIKI_REPO: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git clone "$WIKI_REPO" wiki-dir; then
+            cd wiki-dir
+            rm -rf *
+            cp -r ../humans-wiki/* .
+            git add -A
+            if git diff-index --quiet HEAD; then
+              echo "Wiki is already up to date."
+            else
+              git commit -m "docs(wiki): sync from humans-wiki (${{ github.sha }})"
+              git push origin master || git push origin main
+            fi
+          else
+            echo "Wiki repository not initialized yet or not accessible. Please ensure Wiki is enabled in repository settings."
+            exit 1
+          fi

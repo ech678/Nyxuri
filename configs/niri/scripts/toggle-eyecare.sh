@@ -1,11 +1,11 @@
 #!/bin/bash
-# Nyxuri EyeCare One-shot Self-Healing Toggle & Sync Script
-# Zero background process besides wlsunset itself. Runs in < 2ms then exits.
+# Nyxuri EyeCare toggle and startup sync
+# The script exits after reconciling effects.kdl and wlsunset.
 #
 # shellcheck disable=SC2317  # commands invoked via ||/&& intentional control flow
 set -uo pipefail
 
-# Ensure strict serialization to prevent any race conditions during rapid toggles or startup.
+# Serialize rapid toggles and startup sync.
 exec 9> "${XDG_RUNTIME_DIR:-/tmp}/nyxuri-${UID}-eyecare.lock"
 flock -w 5 9 || exit 1
 #
@@ -66,9 +66,8 @@ apply_effects() {
 # spawn-at-startup so a niri restart re-aligns wlsunset with whatever
 # effects.kdl actually points to (the persistent state), instead of staying
 # stuck on a stale process state until the next manual toggle.
-# Deterministic rebuild: unconditionally drop any leftover warm engine (a
-# wlsunset orphaned by a previous session still matches pgrep but its gamma
-# connection died with the old niri), then start a fresh one if EyeCare is ON.
+# Restart wlsunset because a process left by the previous session may still
+# match pgrep even though its gamma connection died with the old niri.
 # This keeps EyeCare consistent across logout/login on the persisted symlink.
 if [ "${1:-}" = "--sync" ]; then
     link_target="$(readlink "$EFFECTS_LINK" 2>/dev/null || true)"
@@ -81,7 +80,7 @@ if [ "${1:-}" = "--sync" ]; then
             niri msg action load-config-file >>"$LOG_FILE" 2>&1 || true
         fi
     fi
-    # 阻塞等待 1 秒，确保 Wayland 和 Noctalia IPC 完全启动
+    # 给 Wayland 和 Noctalia IPC 一秒启动时间
     sleep 1
     if [ "$HAS_NOCTALIA" = "true" ]; then
         noctalia msg nightlight-disable 2>/dev/null || true
@@ -95,7 +94,7 @@ if [ "${1:-}" = "--sync" ]; then
     exit 0
 fi
 
-# 1. Pre-execution Self-Healing: Force Noctalia to release Wayland gamma lock
+# 1. Ask Noctalia to release the Wayland gamma lock
 if [ "$HAS_NOCTALIA" = "true" ]; then
     noctalia msg nightlight-disable 2>/dev/null || true
 fi

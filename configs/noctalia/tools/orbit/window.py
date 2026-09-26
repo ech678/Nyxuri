@@ -54,7 +54,7 @@ class OrbitLauncher(Gtk.Window):
         self.apps = self.root_items
         self.num_items = len(self.apps)
 
-        # Search Config & Engine Suite
+        # Search providers
         self.search_engines, self.search_meta = load_search_config()
         self.default_engine_id = self.search_meta.get("default_engine", "bing")
         self.placeholder_text = self.search_meta.get("placeholder", "Search or ask...")

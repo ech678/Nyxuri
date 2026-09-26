@@ -1,4 +1,4 @@
-"""Contract tests for NYXNIRI_AUTO_YES confirmation semantics.
+"""Contract tests for NYXURI_AUTO_YES and its legacy fallback.
 
 AUTO_YES is an express-mode convenience: it may auto-consent to routine
 prompts, never to destructive ones (purge / snapshot delete / dirty-tree

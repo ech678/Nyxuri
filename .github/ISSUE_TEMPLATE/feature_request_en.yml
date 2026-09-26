@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Before submitting, ensure the suggestion aligns with NyxNiri's principles of minimalism and order.
+        Before submitting, consider whether the suggestion fits Nyxuri's principles of minimalism and order.
   - type: textarea
     id: problem
     attributes:

@@ -252,7 +252,7 @@ def draw_search_hub(cr, cx: float, cy: float, search_prog: float, entry_val: flo
     cr.stroke()
     cr.restore()
 
-    # (4) Left Circular Engine Avatar Island
+    # (4) Search provider icon
     if search_prog > 0.25 and search_engines:
         tag_fade = min(1.0, (search_prog - 0.25) / 0.75) * entry_val
         cur_eng = search_engines[current_engine_idx % len(search_engines)]
@@ -270,7 +270,7 @@ def draw_search_hub(cr, cx: float, cy: float, search_prog: float, entry_val: flo
         cr.scale(switch_prog, switch_prog)
         cr.translate(-avatar_cx, -avatar_cy)
 
-        # Circular Avatar Background
+        # Icon background
         cr.new_path()
         cr.arc(avatar_cx, avatar_cy, avatar_r, 0, 2 * math.pi)
         cr.set_source_rgba(dim_r, dim_g, dim_b, (0.55 + 0.15 * search_prog) * tag_fade)
@@ -279,7 +279,7 @@ def draw_search_hub(cr, cx: float, cy: float, search_prog: float, entry_val: flo
         cr.set_line_width(1.0)
         cr.stroke()
 
-        # Engine Icon Centered
+        # Center the provider icon
         if ink_rect:
             draw_icon_x = avatar_cx - ink_rect.x - (ink_rect.width / 2.0)
             draw_icon_y = avatar_cy - ink_rect.y - (ink_rect.height / 2.0)

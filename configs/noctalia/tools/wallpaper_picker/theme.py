@@ -1,5 +1,5 @@
 """
-NyxNiri Wallpaper Picker — Material 3 Expressive (M3E) Design System.
+Material 3 Expressive theme support for the Nyxuri wallpaper picker.
 
 From M3 (published values, transcribed verbatim): the 10-step shape scale,
 30-style type scale, 6 elevation levels, state-layer opacities, and the

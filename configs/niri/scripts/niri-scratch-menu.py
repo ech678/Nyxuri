@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-NyxNiri Orbit Launcher (Legacy Compatibility Wrapper)
+Nyxuri Orbit launcher compatibility wrapper.
 Forwards execution to the Noctalia companion tool.
 """
 

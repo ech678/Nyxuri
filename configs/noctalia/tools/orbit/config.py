@@ -1,6 +1,6 @@
 """
-Orbit Launcher Configuration Engine
-Declarative default menu tree, Tier-1 search engines, and multi-source prioritized TOML/JSON loaders.
+Orbit launcher configuration.
+Default menu entries, search providers, and prioritized TOML/JSON loading.
 """
 
 import os
@@ -131,7 +131,7 @@ DEFAULT_MENU_TREE = [
     },
 ]
 
-# ── Built-in Declarative Tier-1 Search Engine Suite ───────────────────────────
+# ── Built-in search providers ────────────────────────────────────────────────
 DEFAULT_SEARCH_ENGINES = [
     {
         "id": "bing",

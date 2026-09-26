@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# NyxNiri Session Shell Gateway (session-shell.sh)
+# Nyxuri session shell gateway (session-shell.sh)
 # Launches desktop shell and cleans up leftover compositor session scopes.
 # ==============================================================================
 

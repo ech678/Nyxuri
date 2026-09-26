@@ -1,5 +1,5 @@
 name: Bug Report (English)
-description: Report an issue with NyxNiri script or configs
+description: Report an issue with Nyxuri scripts or configs
 title: "[Bug] "
 labels: ["bug"]
 assignees: ["ech678"]
@@ -31,7 +31,7 @@ body:
     id: diagnostic
     attributes:
       label: Diagnostic Report
-      description: Paste the contents of `nyxniri-bug-report-*.md`. If no log is available, provide system and hardware details.
+      description: Paste the contents of `nyxuri-bug-report-*.md`. If no log is available, provide system and hardware details.
     validations:
       required: true
   - type: textarea

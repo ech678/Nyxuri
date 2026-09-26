@@ -24,14 +24,13 @@
 </a>
 
 <p>
-  <sub><em><a href="https://nyxniri.com">Website</a> · Watch demo on <a href="https://www.bilibili.com/video/BV1c63n6dEEG">Bilibili</a> · Join discussion on <a href="https://www.reddit.com/r/niri/comments/1vf53le/nyxniri_a_material_you_desktop_config_for_niri/">Reddit</a></em></sub>
+  <sub><em><a href="https://nyxniri.com">Website</a> · Watch demo on <a href="https://www.bilibili.com/video/BV1c63n6dEEG">Bilibili</a> · Join discussion on <a href="https://www.reddit.com/r/niri/comments/1vf53le/nyxniri_a_material_you_desktop_config_for_niri/">Reddit</a> · Read <a href="https://github.com/ech678/Nyxuri/wiki/Home">Wiki</a></em></sub>
 </p>
+<br />
 
 </div>
 
-> **Nyxuri** (*nik-SOO-ri* `/nɪkˈsuːri/`): An invented name blending **Nyx** (Greek goddess of night: calm, dark, deep) and **-uri** (echoing *uruou* 潤, moisture and subtle gloss). The quiet glow of night with a soft luster.
->
-> *Upgrading from NyxNiri?* Running `nyxuri` automatically migrates your configurations, snapshots, and state to `nyxuri` cleanly with zero residue.
+> Upgrading from **NyxNiri**? The project is rebranded to **Nyxuri** (/nɪkˈsuːri/) as we expand toward a custom desktop shell and multi-window manager support. Running `nyxuri` automatically migrates your existing configs, snapshots, and state, then safely cleans up legacy paths.
 
 ## Features
 
@@ -47,8 +46,13 @@
 
 ## Install
 
-> [!IMPORTANT]
-> **Upgrading from the legacy Bash release (`lib/` + `v2/`):** its `nyxniri update` cannot switch to the current Python layout. Run the current bootstrap once before updating. Configs, `~/.config/nyxuri/backups/`, and legacy `~/.config/dotfiles_backup_*` snapshots are preserved.
+### From a git checkout (recommended)
+
+```bash
+# shallow clone: latest snapshot only; drop --depth 1 for full history
+git clone --depth 1 https://github.com/ech678/Nyxuri.git ~/Nyxuri
+cd ~/Nyxuri && ./install.sh
+```
 
 ### Standalone (online)
 
@@ -58,18 +62,6 @@ curl -fsSL --connect-timeout 10 https://raw.githubusercontent.com/ech678/Nyxuri/
 
 > [!TIP]
 > Auto-detects Shelly, paru, and yay; if none are installed, `nyxuri install full` automatically bootstraps `paru`.
-
-### From a git checkout (recommended)
-
-```bash
-# shallow clone: latest snapshot only; drop --depth 1 for full history
-git clone --depth 1 https://github.com/ech678/Nyxuri.git ~/Nyxuri
-cd ~/Nyxuri && ./install.sh
-```
-
-### System package (AUR)
-
-> Coming soon — `paru -S nyxuri-git`, with updates handled by pacman.
 
 <details>
 <summary>Mirrors for China (gh-proxy / CDN)</summary>
@@ -82,8 +74,6 @@ curl -fsSL --connect-timeout 10 https://gh-proxy.org/https://raw.githubuserconte
 git clone --depth 1 https://gh-proxy.org/https://github.com/ech678/Nyxuri.git ~/Nyxuri
 cd ~/Nyxuri && ./install.sh
 ```
-
-For repository downloads, `install.sh` tries GitHub first, then gh-proxy.
 </details>
 
 ## Included Configs
@@ -95,8 +85,8 @@ Nyxuri
 ├── assets/                     # static assets (wallpapers, fcitx5 skin templates)
 └── configs/
     ├── niri/                   # window manager (.kdl, .toml)
-    │   └── scripts/            # Orbit launcher, wallpaper picker & scratchpad scripts
-    ├── noctalia/               # shell + theme sync
+    │   └── scripts/            # glue scripts & action gateways
+    ├── noctalia/               # shell + theme sync & companion tools (Orbit, wallpaper picker)
     ├── xdg-desktop-portal/     # portal routing (Settings / screencast)
     ├── kitty/                  # terminal
     ├── fish/                   # aliases + functions
@@ -105,286 +95,60 @@ Nyxuri
     └── starship.toml           # prompt
 ```
 
-> [!NOTE]
-> Configs deploy atomically. Personal tweaks survive updates via the Dunder protocol:
-> - Any file (e.g. `__custom__.kdl`, `__custom__.conf`) or folder containing `__custom__` is preserved.
-> - `~/.config/niri/monitor.kdl` is kept across deployments.
+Configs deploy atomically. Personal tweaks survive updates via the Dunder protocol: any file or folder containing `__custom__` (e.g. `__custom__.kdl`, `__custom__.conf`) and `monitor.kdl` are preserved.
 
-<details>
-<summary><b>How to customize (Dunder Protocol)</b></summary>
-
-Any file or folder containing `__custom__` survives updates and preset switches:
-
-- **Loaded per-app**: each app uses its native include mechanism — Niri includes `__custom__.kdl`, Kitty includes `__custom__.conf`, while Fish autoloads files under `conf.d/`.
-- **Modular & composable**: to split tweaks across multiple files, simply include them from your main custom file (e.g. put `include "my_rules__custom__.kdl"` inside `__custom__.kdl` — all files containing `__custom__` remain preserved).
-- **Dedicated files**: files referenced by name like `~/.config/niri/monitor.kdl` are preserved automatically; edit them directly.
-
-</details>
-
-### Post-deploy hooks
-
-Put shell scripts in `~/.config/nyxuri/hooks/` to run your own finishing work after every normal config deploy. Scripts ending in `.sh` run in filename order with a 30-second limit; a failed or timed-out script is reported without blocking the rest. `nyxuri test` skips these hooks, and ordinary uninstall keeps them.
+For detailed customization rules and post-deploy hooks, see [Configuration Guide (Wiki)](https://github.com/ech678/Nyxuri/wiki/Configuration).
 
 ## Presets
 
-Some apps ship flavor variants — presets layer between defaults and your `__custom__` files, so switching never touches your own tweaks.
+Presets layer between defaults and your `__custom__` files, so switching never touches your own tweaks. Supports modular Parts slots.
 
-Built-in official presets:
-- **`kitty`**:
-  - `default`: standard 90% opacity
-  - `transparent`: 75% higher translucency flavor
-- **`niri`**:
-  - `default`: minimalist frameless look (default)
-  - `glow`: enables 2px outline and 28px soft diffused ambient glow (improves focus visibility across tiled windows)
-  - `glow-material-you`: focus glow follows Noctalia's active Material You wallpaper palette (dynamically re-rendered in real time)
-
-The preset architecture also supports modular Parts slots (e.g. `glow` and `effects` in `niri`), allowing full preset switching as well as granular piece-by-piece overlay.
-
-| Command | Description |
-| :--- | :--- |
-| `nyxuri preset <app> list` | List presets (`*` marks the active one) |
-| `nyxuri preset <app> apply <name>` | Switch preset (`apply default` resets) |
-| `nyxuri preset <app> save <name>` | Save the current config as a private preset |
-| `nyxuri preset <app> edit <name>` | Edit a private preset in `$EDITOR` |
-| `nyxuri preset <app> delete <name>` | Delete a private preset (official ones are read-only) |
-
-Official presets update with `nyxuri update`; private ones live in `~/.config/nyxuri/presets/`.
+See full official preset list, Parts architecture, and private preset setup in [Presets Guide (Wiki)](https://github.com/ech678/Nyxuri/wiki/Presets).
 
 ## Keybindings
 
-<details>
-<summary>Window management</summary>
+Core keybindings dispatch through `shell-action.sh`. Quick reference: `nyxhelp keys`.
 
-| Shortcut | Action |
-| :--- | :--- |
-| <kbd>Super</kbd> + <kbd>Enter</kbd> | Open terminal |
-| <kbd>Super</kbd> + <kbd>Q</kbd> | Close window |
-| <kbd>Super</kbd> + <kbd>T</kbd> | Toggle floating/tiling |
-| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd> | Switch focus between floating and tiling |
-| <kbd>Super</kbd> + <kbd>G</kbd> | Toggle tabbed column display (Tabbed Group) |
-| <kbd>Super</kbd> + <kbd>F</kbd> | Maximize current column |
-| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> | Fullscreen |
-| <kbd>Super</kbd> + <kbd>Tab</kbd> | Workspace overview |
-| <kbd>Super</kbd> + <kbd>Z</kbd> / <kbd>C</kbd> | Focus left / right column |
-| <kbd>Super</kbd> + <kbd>Arrows</kbd> | Smart focus (column/monitor/workspace) |
-| <kbd>Super</kbd> + <kbd>Ctrl</kbd> + <kbd>Arrows</kbd> | Smart move (column/monitor/workspace) |
-| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>Arrows</kbd> | Precision local move (incl. within column) |
-| <kbd>Super</kbd> + <kbd>D</kbd> / <kbd>U</kbd> | Workspace down/up |
-| <kbd>Super</kbd> + <kbd>Space</kbd> | Switch preset column widths |
-| <kbd>Super</kbd> + <kbd>-</kbd> / <kbd>=</kbd> | Decrease/increase column width |
-
-</details>
-
-<details>
-<summary>System & components</summary>
-
-| Shortcut | Action |
-| :--- | :--- |
-| <kbd>Super</kbd> + <kbd>R</kbd> | App launcher |
-| <kbd>Super</kbd> + <kbd>E</kbd> | File manager |
-| <kbd>Super</kbd> + <kbd>X</kbd> | Power menu |
-| <kbd>Super</kbd> + <kbd>I</kbd> | Control center |
-| <kbd>Super</kbd> + <kbd>V</kbd> | Clipboard history |
-| <kbd>Super</kbd> + <kbd>W</kbd> | Wallpaper picker (static & live) |
-| <kbd>Super</kbd> + <kbd>Ctrl</kbd> + <kbd>W</kbd> | Switch to random wallpaper |
-| <kbd>Super</kbd> + <kbd>N</kbd> | Toggle Eye Care Mode |
-| <kbd>Super</kbd> + <kbd>~</kbd> | Toggle Kitty scratchpad terminal |
-| <kbd>Super</kbd> + <kbd>A</kbd> / <kbd>Super</kbd> + <kbd>Mouse Forward</kbd> | Orbit vector radial launcher |
-| <kbd>Super</kbd> + <kbd>L</kbd> | Lock screen |
-| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> | Screenshot |
-| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>R</kbd> | Reload Niri |
-| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>Q</kbd> | Quit Niri |
-
-</details>
-
-> [!TIP]
-> Quick reference: `nyxhelp keys`. For Niri's full overlay, press <kbd>Super</kbd> + <kbd>/</kbd>.
+See complete window navigation and monitor moving shortcuts in [Keybindings (Wiki)](https://github.com/ech678/Nyxuri/wiki/Keybindings).
 
 ## Extensions
 
-> The GTK theme and fisher plugin manager deploy automatically with a full install; the items below are opt-in.
+Optional extensions include dynamic Material You fcitx5 skin (NyxMellow), companion wallpaper and video pack, and greetd login screen matching Noctalia.
 
-**NyxMellow fcitx5 skin:** mellow rounded shape matching Noctalia color palette (auto light/dark switch). `nyxuri fcitx install` registers it as a template and re-renders on wallpaper/theme changes. Opt-in only.
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/3f861e8e-55da-408e-a9d5-7f337a039b74" alt="NyxMellow skin (light)" width="48%" />
-  <img src="https://github.com/user-attachments/assets/291918e9-4532-480f-b777-7ebe0691eaf9" alt="NyxMellow skin (dark)" width="48%" />
-  <br />
-  <sub><em>NyxMellow skin in light and dark mode</em></sub>
-</p>
-
-**Wallpaper & video pack:** high-res wallpapers and live videos (~100MB) live in [wallpaper-collection](https://github.com/ech678/wallpaper-collection). Opt-in during `install` or download anytime via `nyxuri wallpapers`.
-
-**Noctalia Greeter:** greetd login screen matching Noctalia style, `nyxuri greeter install` installs `greetd` + `noctalia-greeter` (AUR), backs up existing configuration, configures Polkit rules, then switches the next boot to greetd without ending the current session, a failed switch or `nyxuri greeter uninstall` restores the previous display manager
+For extension setup and lifecycle commands, see [Extensions Guide (Wiki)](https://github.com/ech678/Nyxuri/wiki/CLI-Reference#extensions).
 
 ## Tooling
 
-`nyxuri` manages install, snapshots and diagnostics. Interactive deployments create a snapshot in `~/.config/nyxuri/backups/` by default.
+`nyxuri` manages install, update, snapshots, and diagnostics. Use `nyxhelp` in terminal for instant cheatsheet lookup.
 
-> Legacy Bash users must run the current bootstrap shown above before using these commands. The old `nyxniri update` cannot perform the directory migration.
-
-**Top-level**
-
-| Command | Description |
-| :--- | :--- |
-| `nyxuri` | Interactive menu |
-| `nyxuri test` | Developer test deploy (no backup, keep monitor.kdl) |
-
-**Deploy**
-
-| Command | Description |
-| :--- | :--- |
-| `nyxuri install [full\|config]` | Deploy everything, or sync configs only |
-| `nyxuri update [--force\|--no-deploy]` | Update source; force config deployment or skip it |
-
-**Snapshots**
-
-| Command | Description |
-| :--- | :--- |
-| `nyxuri snapshot [note]` | Save current config state |
-| `nyxuri snapshot delete [idx]` | Delete snapshots (multi-select if no index) |
-| `nyxuri rollback [index]` | Restore a snapshot |
-| `nyxuri list` | List snapshots |
-
-**System**
-
-| Command | Description |
-| :--- | :--- |
-| `nyxuri doctor` | Dependency + system health check |
-| `nyxuri deps` | Open dependency check & install menu |
-| `nyxuri apps` | Category-grouped recommended apps installer (Brave, Steam, WeChat, ...) |
-| `nyxuri wallpapers` | Download the full wallpaper & video pack from the external repo |
-| `nyxuri theme [toggle\|dark\|light\|sync\|status]` | Switch or sync system dark/light theme |
-| `nyxuri bug` / `nyxuri report` | Generate diagnostic bug report |
-
-**Uninstall**
-
-| Command | Description |
-| :--- | :--- |
-| `nyxuri uninstall [--all\|standard\|restore\|purge]` | Checkbox uninstall — pick what to remove (configs, CLI, modules, snapshots, wallpapers); defaults to the standard range |
-| `nyxuri purge` | Shorthand for `uninstall --all` |
-
-**Extensions**
-
-| Command | Description |
-| :--- | :--- |
-| `nyxuri fcitx [install\|status\|uninstall]` | NyxMellow fcitx5 skin |
-| `nyxuri greeter [install\|status\|uninstall]` | Noctalia Greeter (login screen) |
-| `nyxuri gtk [install\|status\|uninstall]` | Material You GTK3/4 theme |
-| `nyxuri fisher [install\|status\|uninstall]` | fisher plugin manager for Fish |
-
-`nyxhelp` is a compact fzf-based reference for the CLI, shell helpers, and core keybindings:
-
-| Command | Description |
-| :--- | :--- |
-| `nyxhelp` | Interactive dual-panel cheatsheet |
-| `nyxhelp keys` | Niri keybindings |
-| `nyxhelp proxy` | Proxy controls (`proxy_on [port]`, `proxy_off`, `proxy_status`) |
-| `nyxhelp pkg` | Package shortcuts (`up`, `in`, `se`, `un`, `clean`) |
-| `nyxhelp all` | Full cheatsheet |
+See full command matrix and options in [CLI Reference (Wiki)](https://github.com/ech678/Nyxuri/wiki/CLI-Reference).
 
 ## Troubleshooting
 
-<details>
-<summary><b>Noctalia hangs on startup</b> — <code>ddcutil</code> can time out scanning the I2C bus (common on NVIDIA).</summary>
+When encountering issues, run `./install.sh doctor` first.
 
-Disable `ddcutil` in `~/.config/noctalia/noctalia-config.toml`:
-
-```toml
-[brightness]
-enable_ddcutil = false
-```
-
-Brightness keys still work: internal panels go through Noctalia backlight, external monitors keep the `ddcutil` fallback. Leave this setting off unless you want Noctalia itself to own DDC.
-
-</details>
-
-<details>
-<summary><b>Browser video looks stacked, black, or see-through</b> — hybrid GPU (AMD/Intel iGPU + NVIDIA dGPU) used to force NVIDIA video decode for every app.</summary>
-
-Nyxuri used to uncomment `GBM_BACKEND=nvidia-drm` and `LIBVA_DRIVER_NAME=nvidia` whenever `lspci` mentioned NVIDIA. On hybrid laptops the compositor stays on the iGPU, so Chromium/Brave can decode on NVIDIA and present on AMD/Intel — a few videos then corrupt the window.
-
-Update and redeploy Nyxuri. The default configuration no longer selects a GPU driver, and deployment no longer rewrites environment variables based on PCI devices. A PCI listing cannot identify the active rendering GPU. Put any driver settings you need in `~/.config/niri/__custom__.kdl`.
-
-The old `ELECTRON_OZONE_PLATFORM_HINT "auto"` setting has also been removed; some older Electron apps may use XWayland instead. Normal deployment updates the main configuration but leaves personal overrides, personal presets, historical snapshots, and the current session environment alone. Log out and back in before checking the result.
-
-</details>
-
-<details>
-<summary><b>Plugin repo corrupted</b> — Noctalia hangs while checking out plugins.</summary>
-
-Run the following commands to reset the plugin repos:
-
-```bash
-git -C ~/.local/state/noctalia/plugins/sources/community/repo reset --hard HEAD
-git -C ~/.local/state/noctalia/plugins/sources/official/repo reset --hard HEAD
-```
-
-</details>
-
-<details>
-<summary><b>Greeter sync asks for a password</b> — add a Polkit rule (<code>nyxuri greeter install</code> does this for you).</summary>
-
-Install the Polkit rule manually if needed:
-
-```bash
-sudo bash -c 'cat > /etc/polkit-1/rules.d/50-noctalia-greeter.rules << EOF
-polkit.addRule(function(action, subject) {
-    if (action.id == "org.noctalia.greeter.sync-appearance" &&
-        subject.isInGroup("wheel")) {
-        return polkit.Result.YES;
-    }
-});
-EOF'
-```
-
-</details>
-
-<details>
-<summary><b>Nautilus or Libadwaita apps stuck in light mode</b> — leftover user CSS overrides dark mode.</summary>
-
-If Noctalia's built-in GTK templates or old tools generated `noctalia.css` or `gtk.css` in `~/.config/gtk-4.0/`, GTK4 forces those CSS color definitions over system dark mode.
-
-Run theme sync or remove the stale override files:
-
-```bash
-nyxuri theme sync
-# Or manually:
-rm -f ~/.config/gtk-4.0/gtk.css ~/.config/gtk-4.0/noctalia.css ~/.config/gtk-3.0/gtk.css ~/.config/gtk-3.0/noctalia.css
-```
-
-</details>
-
-<details>
-<summary><b>Brave doesn't follow theme toggle</b> — Brave cold-start bug (not a Nyxuri issue).</summary>
-
-On non-GNOME Wayland compositors, Brave's portal theme-signal subscription fails to initialize on cold start, so `nyxuri theme toggle` doesn't recolor it. Open `brave://settings/appearance` and switch theme mode once (e.g. Classic → GTK → Classic) to wake it up; it follows live afterwards without restarting Brave. Needs re-waking after each Brave restart.
-
-</details>
+See full diagnostic guides and step-by-step solutions in [Troubleshooting (Wiki)](https://github.com/ech678/Nyxuri/wiki/Troubleshooting).
 
 ## Credits
 
 **Contact & Community:**
-
 - Telegram Channel: [@linux_ricing](https://t.me/linux_ricing)
 - QQ: `2040244628` · Linux Ricing Group: `631425889`
 - Sponsor: [Afdian](https://afdian.com/a/Echoes678) · Bug reports: [GitHub Issues](https://github.com/ech678/Nyxuri/issues)
 
 **Special Thanks & Contributors:**
-
+- [Google Gemini](https://deepmind.google/technologies/gemini/) — burned through a pile of free Google tokens
 - [@zhuhuaian](https://github.com/zhuhuaian), [@Krits03](https://github.com/Krits03), [@Yulljie](https://github.com/Yulljie) — community management & support
 - [@TyhLxxxhLrqTq](https://github.com/TyhLxxxhLrqTq) — companion wallpaper site (in development)
 
 **Thanks to:**
-
-- [RanXOM/glassy-niri](https://github.com/RanXom/glassy-niri) — blur effects reference
+- [RanXOM/glassy-niri](https://github.com/RanXOM/glassy-niri) — blur effects reference
 - [SHORiN-KiWATA/shorin-niri](https://github.com/SHORiN-KiWATA/shorin-niri) — heavily referenced
 - [sanweiya/fcitx5-mellow-themes](https://github.com/sanweiya/fcitx5-mellow-themes) — mellow shape source for NyxMellow skin
 - [StarWhiteIsBusy/Round-Simple-Fcitx5-Skin](https://github.com/StarWhiteIsBusy/Round-Simple-Fcitx5-Skin) — Noctalia color-sync pattern reference
 - [doctorlogix](https://github.com/doctorlogix) — website design inspiration
 
 **Recommended:**
-
 - [h465855hgg/noctalia-lyrics](https://github.com/h465855hgg/noctalia-lyrics) — status bar lyrics widget
 - [Ocfeather/chrome-niri-opacity](https://github.com/Ocfeather/chrome-niri-opacity) — browser opacity script
 

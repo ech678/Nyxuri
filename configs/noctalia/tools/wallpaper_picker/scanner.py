@@ -1,5 +1,5 @@
 """
-NyxNiri Wallpaper Picker Scanner Engine
+Nyxuri wallpaper scanner
 Recursive directory traversal, asynchronous thumbnail generation, and active wallpaper detection.
 
 Thumbnails live on disk; the UI mounts each one lazily as a CSS
