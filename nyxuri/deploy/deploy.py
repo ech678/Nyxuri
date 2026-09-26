@@ -23,7 +23,7 @@ from nyxuri.deploy.atomic import (
     atomic_replace_item,
 )
 from nyxuri.deploy.assets import WallpaperDeployResult, deploy_wallpapers, wallpapers_pack_present
-from nyxuri.deploy.manifest import discover_deployable_apps, load_manifest
+from nyxuri.deploy.manifest import ModuleManifest, discover_deployable_apps, load_manifest
 from nyxuri.deploy.preset import (
     InvalidActivePresetError,
     read_active_preset,
@@ -125,10 +125,27 @@ def _phase_atomic_deployment(
                     except OSError:
                         pass
 
+        _reconcile_active_parts(item, manifest)
+
         print(msg("log_deploy_config_item", item))
         log_msg("INFO", f"Deployed config ~/.config/{item}")
 
     return failed_items
+
+
+def _reconcile_active_parts(app: str, manifest: ModuleManifest) -> None:
+    """Ensure ledger-recorded active parts are realized in dest."""
+    if not manifest.parts:
+        return
+    from nyxuri.state.ledger import read_ledger
+    from nyxuri.deploy.preset import apply_part
+    parts_state = read_ledger().get("parts", {})
+    if not isinstance(parts_state, dict):
+        return
+    for slot, cfg in manifest.parts.items():
+        var = parts_state.get(f"{app}:{slot}")
+        if var and var != cfg.get("default", "default"):
+            apply_part(app, slot, var)
 
 def run_user_hooks() -> List[str]:
     """Run user-owned scripts and return non-blocking diagnostics."""

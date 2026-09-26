@@ -48,17 +48,18 @@
 ```toml
 # configs/niri/.module.toml — monitor.kdl 被 include 引用；effects.kdl 为运行时护眼模式符号链接
 [packages]
-preserve = ["monitor.kdl", "effects.kdl"]
-chmod = ["scripts/*.sh"]
+preserve = ["monitor.kdl", "effects.kdl", "effects_normal.kdl", "glow.kdl", "colors.kdl"]
+chmod = ["scripts/*.sh", "scripts/*.py"]
 
 [parts.effects]
-target = "effects.kdl"
-default = "xray-blur"
-options = ["glow", "glow-material-you", "xray-blur"]
+target = "effects_normal.kdl"
+source_dir = "effects"
+default = "default"
 
-[presets]
-allow = ["glow", "glow-material-you"]
-include = ["scripts/**", "*.kdl", "orbit-items__custom__.toml"]
+[parts.glow]
+target = "glow.kdl"
+source_dir = "glow"
+default = "default"
 
 # configs/kitty/.module.toml — 切换预设后发送 SIGUSR1 热重载
 [packages]

@@ -111,12 +111,20 @@ def load_manifest(app_src: Path, is_optional: bool = False) -> ModuleManifest:
     if pkg_repo is None:
         pkg_repo = [name]
 
+    manifest_preserve = list(packages.get("preserve", []))
+    manifest_parts = dict(data.get("parts", {}) or {})
+    for slot_cfg in manifest_parts.values():
+        if isinstance(slot_cfg, dict):
+            target = slot_cfg.get("target")
+            if target and target not in manifest_preserve:
+                manifest_preserve.append(target)
+
     return ModuleManifest(
         name=name,
         packages_repo=list(pkg_repo),
         packages_aur=list(packages.get("aur", [])),
         packages_flatpak=list(packages.get("flatpak", [])),
-        preserve=list(packages.get("preserve", [])),
+        preserve=manifest_preserve,
         chmod=list(packages.get("chmod", [])),
         label=packages.get("label", name),
         category=packages.get("category", ""),
@@ -130,7 +138,7 @@ def load_manifest(app_src: Path, is_optional: bool = False) -> ModuleManifest:
         preset_include=list(presets.get("include", packages.get("preset_include", []))),
         preset_exclude=list(presets.get("exclude", packages.get("preset_exclude", []))),
         preset_reload=list(presets.get("reload", packages.get("reload", []))),
-        parts=dict(data.get("parts", {}) or {}),
+        parts=manifest_parts,
     )
 
 

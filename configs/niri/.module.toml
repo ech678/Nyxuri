@@ -5,10 +5,11 @@
 # effects.kdl is a runtime symlink (→ effects_normal.kdl / effects_eyecare.kdl)
 # created by toggle-eyecare.sh; preserve keeps the link itself (and the
 # EyeCare on/off state it encodes) across deploys and preset switches.
+# effects_normal.kdl stores active effects part variant across deploys.
 # glow.kdl stores active glow/focus-ring part variant across deploys.
 # colors.kdl stores dynamic Material You palette rendered by Noctalia.
 [packages]
-preserve = ["monitor.kdl", "effects.kdl", "glow.kdl", "colors.kdl"]
+preserve = ["monitor.kdl", "effects.kdl", "effects_normal.kdl", "glow.kdl", "colors.kdl"]
 chmod = ["scripts/*.sh", "scripts/*.py"]
 
 [parts.effects]

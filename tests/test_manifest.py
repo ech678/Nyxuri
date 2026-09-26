@@ -154,7 +154,7 @@ class TestRealRepoManifests(unittest.TestCase):
 
     def test_niri_manifest(self):
         m = manifest.load_manifest(self.env.configs_src / "niri")
-        self.assertEqual(m.preserve, ["monitor.kdl", "effects.kdl", "glow.kdl", "colors.kdl"])
+        self.assertEqual(m.preserve, ["monitor.kdl", "effects.kdl", "effects_normal.kdl", "glow.kdl", "colors.kdl"])
         self.assertEqual(m.chmod, ["scripts/*.sh", "scripts/*.py"])
         self.assertTrue(m.is_deployable)
         self.assertIn("effects", m.parts)
@@ -319,6 +319,34 @@ exclude = ["scripts/debug.sh"]
         self.assertEqual(m.preset_standalone, ["isolated"])
         self.assertEqual(m.preset_include, ["scripts/**", "*.kdl"])
         self.assertEqual(m.preset_exclude, ["scripts/debug.sh"])
+
+    def test_parts_targets_auto_included_in_preserve(self):
+        app = self._mkdir("part_app")
+        (app / "config.kdl").write_text("# conf")
+        (app / ".module.toml").write_text("""
+[packages]
+preserve = ["explicit.kdl"]
+
+[parts.theme]
+target = "theme.kdl"
+
+[parts.effects]
+target = "effects.kdl"
+""")
+        m = manifest.load_manifest(app)
+        self.assertIn("explicit.kdl", m.preserve)
+        self.assertIn("theme.kdl", m.preserve)
+        self.assertIn("effects.kdl", m.preserve)
+        # Ensure no duplicates if target was already explicitly declared
+        (app / ".module.toml").write_text("""
+[packages]
+preserve = ["theme.kdl"]
+
+[parts.theme]
+target = "theme.kdl"
+""")
+        m2 = manifest.load_manifest(app)
+        self.assertEqual(m2.preserve, ["theme.kdl"])
 
 
 if __name__ == "__main__":

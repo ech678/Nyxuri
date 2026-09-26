@@ -454,6 +454,12 @@ class TestPresetSwitchPreservesManifestFiles(unittest.TestCase):
         self.assertTrue(preset.apply_preset("niri", "default"))
         self.assertIn("# USER-MARKER", self.monitor.read_text())
 
+    def test_effects_normal_kdl_survives_preset_switch(self):
+        normal_file = self.niri_dest / "effects_normal.kdl"
+        normal_file.write_text("// USER-EFFECTS-MARKER\n")
+        self.assertTrue(preset.apply_preset("niri", "default"))
+        self.assertIn("// USER-EFFECTS-MARKER", normal_file.read_text())
+
 
 class TestPresetPathBoundary(unittest.TestCase):
     def setUp(self):
@@ -1230,6 +1236,38 @@ default = "default"
             toast = on_action("apply_part", "niri", "effects:xray-blur")
             mock_apply.assert_called_once_with("niri", "effects", "xray-blur")
             self.assertIn("xray-blur", toast)
+
+    def test_deploy_reconciles_active_parts_end_to_end(self):
+        from nyxuri.deploy.deploy import deploy_selected_configs
+        (self.app_root / "config.kdl").write_text("// base config")
+        (self.app_root / "effects_normal.kdl").write_text("// default blur")
+
+        # 1. Apply xray part
+        self.assertTrue(preset.apply_part(self.app, "effects", "xray"))
+        self.assertEqual(preset.get_active_part(self.app, "effects"), "xray")
+
+        # Re-deploy configs (deploy_selected_configs)
+        with patch("nyxuri.deploy.deploy._phase_render_templates"), \
+             patch("nyxuri.deploy.deploy._phase_post_install_services"):
+            failed = deploy_selected_configs(items_to_deploy=[self.app])
+            self.assertEqual(failed, [])
+
+        target_file = self.dest / "effects_normal.kdl"
+        self.assertTrue(target_file.is_file())
+        self.assertEqual(target_file.read_text(), "// xray blur")
+        self.assertEqual(preset.get_active_part(self.app, "effects"), "xray")
+
+        # 2. Desync healing: disk was reset to default, but ledger records xray
+        target_file.write_text("// default blur")
+        self.assertEqual(target_file.read_text(), "// default blur")
+
+        with patch("nyxuri.deploy.deploy._phase_render_templates"), \
+             patch("nyxuri.deploy.deploy._phase_post_install_services"):
+            failed = deploy_selected_configs(items_to_deploy=[self.app])
+            self.assertEqual(failed, [])
+
+        self.assertEqual(target_file.read_text(), "// xray blur")
+        self.assertEqual(preset.get_active_part(self.app, "effects"), "xray")
 
 
 if __name__ == "__main__":
