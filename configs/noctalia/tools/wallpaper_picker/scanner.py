@@ -21,7 +21,7 @@ gi.require_version("GdkPixbuf", "2.0")
 from gi.repository import GLib, GdkPixbuf
 
 from .config import (
-    STATIC_EXTENSIONS, VIDEO_EXTENSIONS, ALL_SUPPORTED_EXTENSIONS,
+    VIDEO_EXTENSIONS, ALL_SUPPORTED_EXTENSIONS,
     CACHE_DIR, get_wallpaper_search_roots
 )
 

@@ -7,14 +7,12 @@ assets (wallpapers), manifest (app discovery), preset
 """
 
 import shutil
-import subprocess
 import sys
 import time
 from contextlib import ExitStack
-from pathlib import Path
 from typing import List, Optional
 
-from nyxuri.constants import Colors, MAIN_WM, REPO_URL, THEME_ENGINE
+from nyxuri.constants import Colors, REPO_URL, THEME_ENGINE
 from nyxuri.core import get_env, log_msg, timed_run
 from nyxuri.i18n import msg
 from nyxuri.tui import read_key, responsive_hint, show_logo, raw_input_mode, _drain_pending
@@ -175,9 +173,6 @@ def run_user_hooks() -> List[str]:
 
 def _phase_post_install_services() -> None:
     """Run built-in post-deployment work (theme-sync, mpvpaper, Fisher)."""
-    env = get_env()
-    config_dir = env.config_dir
-
     try:
         from nyxuri.theme import sync
         sync()

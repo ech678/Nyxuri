@@ -6,6 +6,7 @@ import sys
 from typing import Dict, List, Optional
 
 from nyxuri.constants import AUR_DEPS, CORE_DEPS
+from nyxuri.core import log_msg
 from nyxuri.i18n import msg
 from nyxuri.deploy.manifest import (
     discover_manifest_apps,
@@ -25,10 +26,6 @@ from nyxuri.tui import (
 from nyxuri import pkg
 from nyxuri.pkg import FLATHUB_REMOTE_URL
 from nyxuri.pkg.detection import DependencyProbe
-
-
-def is_flatpak_installed(app_id: str) -> bool:
-    return app_id in DependencyProbe().flatpaks
 
 
 def is_dep_installed(cmd: str) -> bool:

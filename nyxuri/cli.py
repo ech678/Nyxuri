@@ -10,7 +10,6 @@ from nyxuri.constants import (
     PENDING_UPGRADE_ENV,
     PENDING_UPGRADE_MENU_ENV,
     PROJECT_NAME,
-    THEME_ENGINE,
 )
 from nyxuri.core import (
     acquire_lock,

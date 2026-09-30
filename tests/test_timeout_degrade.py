@@ -38,6 +38,26 @@ class TestTimedRun(unittest.TestCase):
         m.assert_called_once_with(["x"], timeout=7, check=False, capture_output=True)
         self.assertEqual(r.returncode, 0)
 
+    def test_missing_binary_degrades_to_none(self):
+        from nyxuri.core import timed_run
+
+        with patch("nyxuri.core.subprocess.run", side_effect=FileNotFoundError("missing")):
+            self.assertIsNone(timed_run(["nonexistent-bin"], 5, check=False))
+
+    def test_oserror_degrades_to_none(self):
+        from nyxuri.core import timed_run
+
+        with patch("nyxuri.core.subprocess.run", side_effect=OSError("permission denied")):
+            self.assertIsNone(timed_run(["inaccessible-bin"], 5, check=False))
+
+    def test_empty_cmd_does_not_raise(self):
+        from nyxuri.core import timed_run
+
+        with patch("nyxuri.core.subprocess.run", side_effect=FileNotFoundError()):
+            self.assertIsNone(timed_run([], 5, check=False))
+        with patch("nyxuri.core.subprocess.run", side_effect=subprocess.TimeoutExpired(cmd=[], timeout=5)):
+            self.assertIsNone(timed_run([], 5, check=False))
+
 
 class TestPostInstallHooksIndependence(unittest.TestCase):
     """A timed-out hook (theme-sync) must not abort the remaining hooks (fisher)."""

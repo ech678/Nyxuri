@@ -268,7 +268,7 @@ class TestFcitxDecouplingAndRime(unittest.TestCase):
 
         self.assertIn("classicui.conf", full_text)
         self.assertIn("templates", full_text)
-        self.assertIn("跳过", deploy_text)
+        self.assertTrue("跳过" in deploy_text or "Skipped" in deploy_text)
 
     def test_setup_rime_ice_creates_yaml_and_profile(self):
         """setup_rime_ice patches default.custom.yaml and adds rime to profile."""

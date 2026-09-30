@@ -1,6 +1,5 @@
 """Optional Noctalia Greeter (greetd login) installation and system setup."""
 
-import os
 import shutil
 import stat
 import subprocess
@@ -303,6 +302,7 @@ def greeter_install_packages() -> bool:
 
 def greeter_install() -> bool:
     """Full Noctalia Greeter installation and configuration pipeline."""
+    global _GREETER_STATUS_CACHE
     print(msg("greeter_install_title"))
 
     # Reject control characters and shell syntax before package installation
@@ -463,6 +463,7 @@ def greeter_status() -> None:
 
 def greeter_uninstall() -> bool:
     """Uninstall Noctalia Greeter configuration and restore backups."""
+    global _GREETER_STATUS_CACHE
     print(msg("greeter_uninstall_title"))
 
     valid_record, previous_dm = _recorded_display_manager()

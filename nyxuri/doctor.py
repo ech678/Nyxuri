@@ -45,9 +45,9 @@ def _check_shell_provider(env) -> None:
     current = active_shell()
     if current == "noctalia":
         if shutil.which(THEME_ENGINE):
-            print(msg("doctor_ok", text(f"桌面外壳: 当前选用 Noctalia", f"Desktop Shell: Noctalia active")))
+            print(msg("doctor_ok", text("桌面外壳: 当前选用 Noctalia", "Desktop Shell: Noctalia active")))
         else:
-            print(msg("doctor_warn", text(f"桌面外壳: 当前选用 Noctalia 但未在 PATH 中找到", f"Desktop Shell: Noctalia selected but missing from PATH")))
+            print(msg("doctor_warn", text("桌面外壳: 当前选用 Noctalia 但未在 PATH 中找到", "Desktop Shell: Noctalia selected but missing from PATH")))
     else:
         custom_bin = read_ledger().get("custom_shell_bin", get_compat_env("CUSTOM_SHELL_BIN", ""))
         if custom_bin and os.path.isfile(custom_bin) and os.access(custom_bin, os.X_OK):

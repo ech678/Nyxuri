@@ -2,7 +2,6 @@
 
 import shutil
 import subprocess
-from pathlib import Path
 
 from nyxuri.constants import THEME_ENGINE
 from nyxuri.core import get_env, log_msg, timed_run

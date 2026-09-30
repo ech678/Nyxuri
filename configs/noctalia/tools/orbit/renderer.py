@@ -364,8 +364,8 @@ def draw_capsules(cr, cx: float, cy: float, orbit_r: float, apps: list,
         ix = cx + cur_dist * math.cos(ang_rad)
         iy = cy + cur_dist * math.sin(ang_rad)
 
-        tw, th = app["title_w"], app["title_h"]
-        dw, dh = app["desc_w"], app["desc_h"]
+        th = app["title_h"]
+        dh = app["desc_h"]
         kw, kh = app["badge_w"], app["badge_h"]
         ink_rect = app["icon_ink_rect"]
 

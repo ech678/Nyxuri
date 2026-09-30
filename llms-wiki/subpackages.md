@@ -102,11 +102,11 @@ CLI 的 `greeter`/`fcitx`/`gtk` 命令经 `_module_handler(module_name, triad_na
 
 ## 外部命令超时（timed_run，铁律）
 
-部署与诊断的有界调用经 `core.timed_run`：超时降级为返回
-`None` + WARN 日志，**不抛** `TimeoutExpired`。背景：v3.0.3 给外部命令加了超时
-防卡死，但只有 network.py 自己接了异常——fisher install 弱网 60s 超时直接炸穿
-整个部署（真实事故：配置已部署完，完成界面没渲染，用户拿到裸 traceback）。
-原则：外部命令是"锦上添花"，超时 = 跳过该步继续走，绝不阻断主流程。调用方
+部署与诊断的有界调用经 `core.timed_run`：超时或命令缺失/OS异常（`TimeoutExpired`、
+`FileNotFoundError`、`OSError`）统一降级为返回 `None` + WARN 日志，**绝不外抛异常**。
+背景：v3.0.3 给外部命令加了超时防卡死，但只有 network.py 自己接了异常——fisher install 弱网
+60s 超时直接炸穿整个部署（真实事故：配置已部署完，完成界面没渲染，用户拿到裸 traceback）。
+原则：外部命令是"锦上添花"，超时或执行失败 = 跳过该步继续走，绝不阻断主流程。调用方
 拿到 `None` 按各处语义降级（探测失败/未运行/依赖未知）。
 
 包管理用 `pkg.run` 返回 `CompletedProcess`：命令退出码原样保留，超时为 124，

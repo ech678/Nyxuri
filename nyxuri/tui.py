@@ -13,7 +13,7 @@ import tty
 import unicodedata
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from nyxuri.constants import Colors, get_compat_env
 from nyxuri.core import Environment, get_env
@@ -1132,7 +1132,6 @@ class PresetSwitcher:
                 if show_inspector:
                     curr_item = right_items[right_focus] if right_items else None
                     if curr_item and curr_item["type"] in ("part_slot", "part_variant"):
-                        slot = curr_item["slot"]
                         s_info = curr_item["slot_info"]
                         target = s_info.get("target", "")
                         desc = s_info.get("desc", "")
@@ -1228,9 +1227,9 @@ class PresetSwitcher:
                         meta_text = f"{text('源', 'Source')}: {info.path} · {f_count} {text('包含文件', 'included')} · {p_count} {text('保留文件', 'preserved')}"
                         write_cleared(f"  {Colors.DARK_GRAY}{truncate_display(meta_text, cols - 6)}{Colors.RESET}\033[K\n")
                     else:
-                        write_cleared(f"  \033[K\n")
+                        write_cleared("  \033[K\n")
                 else:
-                    write_cleared(f"  \033[K\n")
+                    write_cleared("  \033[K\n")
 
                 if toast_msg:
                     write_cleared(f"  {toast_msg}\033[K\n")

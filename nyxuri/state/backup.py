@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 from typing import List, Optional
 
-from nyxuri.constants import Colors, PROJECT_NAME
+from nyxuri.constants import Colors
 from nyxuri.core import (
     copy_path,
     get_env,
