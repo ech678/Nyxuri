@@ -14,13 +14,14 @@ class TestAISpecs(unittest.TestCase):
         self.llms_txt = self.wiki_dir / "llms.txt"
         self.agents_md = self.root_dir / "AGENTS.md"
 
-    def test_agents_md_exists_and_authoritative(self):
-        """AGENTS.md must exist at repository root and contain imperative sections."""
+    def test_agents_md_exists_and_compact(self):
+        """AGENTS.md must exist at root, be concise (~100 lines), and reference routing."""
         self.assertTrue(self.agents_md.is_file(), "AGENTS.md must exist at root")
         content = self.agents_md.read_text(encoding="utf-8")
-        self.assertGreater(len(content), 2000, "AGENTS.md must not be empty or truncated")
-        self.assertIn("最高优先级", content)
+        lines = content.strip().splitlines()
+        self.assertLess(len(lines), 150, f"AGENTS.md should stay concise, got {len(lines)} lines")
         self.assertIn("llms-wiki/llms.txt", content)
+        self.assertIn("必读 Wiki 契约", content)
 
     def test_llms_txt_links_resolve(self):
         """Every link referenced in llms-wiki/llms.txt must resolve to an existing non-empty file."""
@@ -38,10 +39,35 @@ class TestAISpecs(unittest.TestCase):
             self.assertGreater(target.stat().st_size, 0, f"Referenced file is empty: {target}")
 
     def test_new_domain_topics_indexed(self):
-        """Ensure absorbed domain topics are strictly indexed in llms.txt."""
+        """Ensure domain topics and guidelines are strictly indexed in llms.txt."""
         content = self.llms_txt.read_text(encoding="utf-8")
-        for topic in ("i18n.md", "assets-deploy.md", "backup-snapshot.md", "modules.md", "packaging.md"):
+        for topic in (
+            "i18n.md",
+            "assets-deploy.md",
+            "backup-snapshot.md",
+            "modules.md",
+            "packaging.md",
+            "writing-voice.md",
+            "changelog-spec.md",
+            "tui-charter.md",
+            "vision.md",
+            "agent-rules-provenance.md",
+        ):
             self.assertIn(topic, content, f"Domain topic {topic} must be indexed in llms.txt")
+
+    def test_cli_commands_documented_in_operation_map(self):
+        """Ensure all CLI commands in cli.py COMMANDS are documented in operation-map.md."""
+        from nyxuri.cli import COMMANDS
+
+        op_map = (self.wiki_dir / "operation-map.md").read_text(encoding="utf-8")
+        for cmd in COMMANDS:
+            if cmd in ("-h", "--help"):
+                continue
+            self.assertIn(
+                f"`{cmd}",
+                op_map,
+                f"CLI command '{cmd}' is implemented in cli.py but missing from operation-map.md",
+            )
 
 
 if __name__ == "__main__":

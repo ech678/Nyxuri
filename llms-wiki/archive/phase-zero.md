@@ -1,6 +1,6 @@
 # 阶段零清理
 
-总路线与后续待办见 [ROADMAP](../ROADMAP.md)。
+总路线与后续待办见 [ROADMAP](../../ROADMAP.md)。
 
 - [x] 移除默认 Niri 配置的三个 NVIDIA 驱动变量及旧 Electron 显示设置。
 - [x] 移除部署中的硬件探测、缓存、变量改写及相关日志。

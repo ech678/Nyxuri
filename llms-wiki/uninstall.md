@@ -1,7 +1,6 @@
-# Uninstall — 勾选式、5 处 [gap]、执行顺序铁律
+# Uninstall — 勾选式卸载、历史遗留修复与执行时序
 
-> 卸载是**一个勾选清单**（替换旧的"三选一"），用户逐项选要清什么。源码：
-> `nyxuri/state/uninstall.py`（`uninstall_nyxuri`）。
+> 卸载采用清晰的勾选清单机制，用户按需选择清理项。源码：`nyxuri/state/uninstall.py`（`uninstall_nyxuri`）。
 
 ## 勾选清单
 
@@ -15,31 +14,28 @@
 [ ] wallpapers                        [✓] fisher (~/.config/fish/functions/fisher.fish, conf.d/)
 ```
 
-模块项只显示已装的（`fcitx5_installed` / `gtktheme_registered` / `greeter_installed` /
-fisher.fish 存在），旁边显示实际路径（§8.4"每项旁边显示实际路径"）。
+模块项只显示已装的（`fcitx5_installed` / `gtktheme_registered` / `greeter_installed` / fisher.fish 存在），旁边显示实际路径。
 
 ## CLI 适配
 
 - `nyxuri uninstall`（无参）→ 交互勾选清单（默认 standard 范围）
-- `nyxuri purge` / `uninstall --all` → 跳过勾选、全选 + 确认（等价旧 purge 但补全 5 处遗漏）
+- `nyxuri purge` / `uninstall --all` → 跳过勾选、全选 + 确认（等价完全卸载但补全历史遗留）
 - 非交互式（管道，非 TTY）→ 默认全选 + 归档配置
 - 检测到 system 模式 → 清单末尾提示"源码包归 pacman 管，完全卸载请再跑 `sudo pacman -R nyxuri-git`"
 
-## 5 处历史 [gap]（全修）
+## 5 处历史 [gap]（已修复）
 
-| gap | 落在哪个勾选项 | 修法 |
+| 历史遗留问题 | 落在哪个勾选项 | 修复策略 |
 |---|---|---|
 | `~/.config/nyxuri_archive_*` 不清 | `[ ] archives` 独立项 | purge/全选时勾上，glob 清（只清预存的，保护当次新建的归档） |
 | `/var/lib/noctalia-greeter/` 残留 | `[✓] Noctalia Greeter` 模块项 | `greeter_uninstall` 加 `sudo rm -rf /var/lib/...`（`GREETER_STATE_DIR` 常量） |
-| fisher + fish 插件谁都不清 | `[✓] fisher` 模块项 | 新增 `fisher_uninstall`（modules/fisher.py）：fish 在→`fisher remove --all`；不在→直接 rm conf.d/（降级，§8.6） |
+| fisher + fish 插件谁都不清 | `[✓] fisher` 模块项 | 新增 `fisher_uninstall`（modules/fisher.py）：fish 在→`fisher remove --all`；不在→直接 rm conf.d/ 降级清理 |
 | standard 漏调 greeter_uninstall | `[✓] Greeter` 默认勾 | standard 范围默认含 greeter 模块项 |
 | 旧 quickphrase.conf 修改的清退 | `[✓] fcitx` 模块项 | 恢复旧版备份中仍由项目占用的热键；新版皮肤安装不再修改热键 |
 
-`fisher_uninstall` 在 `nyxuri/modules/fisher.py`——fisher 现是一等模块（与 fcitx/greeter/gtk
-同款 install|status|uninstall），由 deploy 流水线自动安装（同 gtk 被自动渲染）。卸载元组四项
-全来自 modules/，归类一致。
+`fisher_uninstall` 在 `nyxuri/modules/fisher.py`——fisher 为一等模块（与 fcitx/greeter/gtk 同款 install|status|uninstall），由 deploy 流水线自动安装。
 
-## 执行顺序铁律（§8.6）
+## 卸载执行顺序
 
 ```
 1. 模块卸载器 FIRST   fcitx/gtk/greeter/fisher 各自 *_uninstall
@@ -53,10 +49,6 @@ fisher.fish 存在），旁边显示实际路径（§8.4"每项旁边显示实�
 8. cache              ~/.cache/nyxuri/（连带清理历史小写目录 ~/.cache/nyxniri）
 ```
 
-**铁律**：模块恢复先于 `~/.config/nyxuri/` 删除——fcitx 的 classicui/quickphrase 恢复要读
-state_dir/nyx_dir 里的备份，备份目录必须活到模块恢复完成之后。删 Nyxuri dir 永远排在所有
-`*_uninstall` 之后。
+**核心时序**：模块恢复先于 `~/.config/nyxuri/` 删除——fcitx 的 classicui/quickphrase 恢复要读 state_dir/nyx_dir 里的备份，备份目录必须活到模块恢复完成之后。删 Nyxuri dir 永远排在所有 `*_uninstall` 之后。
 
-> greeter（sudo / 系统领地）在 step 1（模块阶段），技术上早于用户领地删除（step 2-8）。
-> 这优先满足铁律（模块先于 nyx_dir 删除）；sudo 若失败时用户领地尚未删，反而更安全（啥都没删，
-> 可重试）。
+> greeter（sudo / 系统领地）在 step 1（模块阶段），技术上早于用户领地删除（step 2-8）。这优先满足模块先于 nyx_dir 删除的原则；sudo 若失败时用户领地尚未删，反而更安全（未破坏用户环境，可重试）。

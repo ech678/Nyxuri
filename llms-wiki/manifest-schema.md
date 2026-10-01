@@ -138,7 +138,7 @@ post_install = "fcitx:setup_rime_ice"
 ```
 
 这些 app **无配置目录**（住 configs/ 只为 apps 菜单 + PKGBUILD optdepends 知道它们存在，
-解决"git 不跟踪空目录"）。例外是 **zed**：既有配置目录又登记可选（§2 双轴共存），
+解决"git 不跟踪空目录"）。例外是 **zed**：既有配置目录又登记可选（双轴共存），
 可选轴字段（category 等）以 toml 为准、包不进硬依赖。详见 [two-axis-config](two-axis-config.md)。
 
 ## 两个 manifest 的分工

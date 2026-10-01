@@ -2,22 +2,20 @@
 
 > Nyxuri 把精选桌面配置（niri / kitty / fish / noctalia …）原子部署到 ~/.config。
 > 三层叠加（默认 → 预设 → __custom__），三模式安装（curl|bash / git clone / AUR），
-> 纯 Python 标准库引擎（零 pip 依赖，需 3.11+ 因 tomllib）。repo = 真值，
-> ~/.config = 派生物。
+> 纯 Python 标准库引擎（零 pip 依赖，需 3.11+ 因 tomllib）。
 
-这份 wiki 是项目的 LLM 友好参考：每页一主题、自包含、按需取。读这份索引找入口，再
-跟链接到详情页。横向**祈使**规则（跑啥命令、铁律、工作流、voice）在 [../AGENTS.md](../AGENTS.md)；
-本文是**陈述**参考（系统怎么运作、长啥样）。源码（configs/ + nyxuri/）永远是最终真值，
-这份 wiki 是它的结构化镜像——有出入以源码为准。
+这份 wiki 是项目的架构与设计决策参考：每页一主题、自包含、按需取。
+- **真值分工 (Source of Truth)**：运行时行为与实现细节以**源码（`configs/` + `nyxuri/`）与契约测试（`tests/`）**为准；本 wiki 负责记录**架构契约、设计决策与原因意图**。
+- 根目录 [../AGENTS.md](../AGENTS.md) 仅保留全局不变量、命令路由与秒级验证契约。
 
 ## Architecture
 
 - [overview](overview.md): 精神、三概念（Configs / Presets / Customs）、叠加规则
+- [vision](vision.md): 纯白洁癖、做减法、反失控感与对称性设计哲学
 - [preset-mechanism](preset-mechanism.md): active 状态文件、通用零件插槽体系（Parts Slots）、防覆盖自愈、写时序铁律、原子写
 - [file-preservation](file-preservation.md): Dunder __custom__ walk + manifest preserve（两套刻意不合并）
 - [install-modes](install-modes.md): standalone / repo / system 三模式、.system-install marker、软链、PATH 遮蔽、update 分支、AUR
 - [nvidia-patch](nvidia-patch.md): GPU 设备诊断与默认驱动变量移除
-- [phase-zero](phase-zero.md): 阶段零清理清单与兼容边界
 - [uninstall](uninstall.md): 勾选式卸载、5 处历史 [gap]、执行顺序铁律
 - [tui-switcher](tui-switcher.md): 双栏预设与零件工作台（Dual-Pane Studio）、apply 窄 deploy 路径
 - [declarative](declarative.md): 命令式 vs 声明式边界（啥该 / 不该声明式）
@@ -36,20 +34,17 @@
 - [packaging](packaging.md): AUR 打包与 gen-deps.py 自动汇聚 depends/optdepends
 - [theme-adaptation](../configs/noctalia/README.md): 主题中枢与 GTK/Brave 信号流全记录（GTK4 双 @media 块、settings.ini 兼容、Problem 1-12 证伪排查）
 
+## Guidelines & Standards
+
+- [writing-voice](writing-voice.md): 文案风格、去 AI 味、清楚自然的人格语调
+- [changelog-spec](changelog-spec.md): Changelog 规范、真实净变更原则与中间态 Bug 拦截
+- [tui-charter](tui-charter.md): 宏观 TUI 设计宪章、减法降噪、控制感与 Pre-flight 清单
+- [agent-rules-provenance](agent-rules-provenance.md): 规则历史事故溯源、回归测试集与被拒绝规则记录
 
 ## Reference
 
-- [roadmap](../ROADMAP.md): 暂放根目录的演进草案与完成状态（非当前架构说明）
+- [roadmap](../ROADMAP.md): 活跃待办与近期路线草案
 - [concept-glossary](concept-glossary.md): 路径 / 动作 / 内容术语表（repo_dir、nyx_dir、deploy、preset…）
 - [operation-map](operation-map.md): 全部 CLI 命令目录（install / snapshot / preset / …）
 - [testing](testing.md): 测试策略与形状、TempEnv 隔离、mock 层级
 - [delayed-decisions](delayed-decisions.md): 留待触发条件的事项与已落地的结构调整
-
-## Noctalia 参考
-
-- [noctalia-llm-docs/00_INDEX](noctalia-llm-docs/00_INDEX.md): Noctalia 合成器 LLM 参考文档索引（启动、配置、widget、IPC、插件、greeter、Umbriel…按需取详情页）
-
-## Source of truth
-
-- [../AGENTS.md](../AGENTS.md): 祈使规则——铁律、必跑命令、工作流、writing voice
-- 仓库 `configs/` + `nyxuri/` 源码本身（这份 wiki 是它的结构化镜像，源码为准）

@@ -1,6 +1,6 @@
 # Testing — 策略、形状、隔离
 
-> 对照 AGENTS.md §9（TempEnv 隔离、参数形状契约、mock 紧贴被测代码）。
+> 对照 AGENTS.md 测试规范（TempEnv 隔离、参数形状契约、mock 紧贴被测代码）。
 
 ## 隔离（铁律）
 

@@ -98,7 +98,7 @@ patch("nyxuri.deploy.deploy._phase_post_install_services")
 
 CLI 的 `greeter`/`fcitx`/`gtk` 命令经 `_module_handler(module_name, triad_name)` 工厂分发，
 懒加载 `importlib.import_module(f"nyxuri.modules.{module_name}")`——这样测试 `patch` 能命中
-（架构 §13：`_module_handler` 动态 import 改 `nyxuri.modules.{name}`，一处）。
+（`_module_handler` 动态 import 统一寻址 `nyxuri.modules.{name}`）。
 
 ## 外部命令超时（timed_run，铁律）
 

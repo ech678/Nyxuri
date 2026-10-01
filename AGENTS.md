@@ -8,228 +8,65 @@
 几何精度（对齐规整）+ 做减法（砍掉一切不必要的）。我受不了任何"失控
 感"——依赖地狱、体积膨胀、卸载残留，本质上都是熵增，能不产生就不产生。
 
-以下是灵活参考，不是铁律，具体怎么判断你自己拿捏：
-
 - "能跑但脏" vs "慢一点但干净可控"——默认选后者。
-- 我懒得开局，一旦犹豫要不要动手，直接给个最小可执行起点，别等我把
-  全部细节想清楚再问。
-- 别用"这已经很好了"这种话敷衍，我要的是经得起自己回头看的东西。
-- 汇报/解释不用刻意正式，说重点，不用每次都完整背景铺垫。
+- 我懒得开局，一旦犹豫要不要动手，直接给个最小可执行起点，别等我把全部细节想清楚再问。
+- 别用"这已经很好了"敷衍，我要的是经得起自己回头看的东西；汇报说重点，不用每次背景铺垫。
 
 ---
 
-## 1. 【最高优先级】存疑必全仓库排查与阅读 llms-wiki
+## 1. 真值体系与改动路由 (Task Routing)
 
-对代码、路径、变量、配置项有任何疑问，下结论、判定 Bug 或修改前，**必须全仓库检索相关文件并查阅 `llms-wiki/`**（至少含 `install.sh`、`nyxuri/*.py`、`configs/**/*.sh`、`llms-wiki/*.md` 及其引用文件）。
+- **真值分工 (Source of Truth)**：运行时行为与实现细节以**源码（`configs/` + `nyxuri/`）与契约测试（`tests/`）**为准；架构契约、设计决策与原因意图以 [llms-wiki/llms.txt](llms-wiki/llms.txt) 为准。
+- **改动范围 ➔ 必读 Wiki 契约**：拒绝盲目全库勘探，按改动范围查阅对应契约：
 
-- **llms-wiki 必读契约**：`llms-wiki/` 是全系统架构、设计决策与既有契约的唯一事实源知识库。涉及部署、预设、零件、状态流转、CLI 命令或 manifest 时，**动手前必须先读对应 wiki 页面**，严禁不读文档凭空臆测现有行为。
-- 禁止仅凭单文件或"看起来像"的假设下结论。
-- 禁止在未完成全局排查前判定某处为硬编码/缺陷并擅自修复。
-- 排查方式：全库 `grep` 检索对象的所有引用点，确认是否已有对应处理逻辑（如字符串替换、条件判断、环境检测等）。
-- 排查后仍无法确定，必须列出已排查文件清单并说明理由。
-- 不因改动小或时间紧而跳过。
-
----
-
-## 2. 架构与目录约定
-
-> 完整架构与结构见 **[llms-wiki/llms.txt](llms-wiki/llms.txt)**（唯一事实源知识库）；本节只列铁律级约定。涉及架构、CLI、状态、零件与部署改动时，**必须同步更新 `llms-wiki/` 对应页面，严禁代码先行而 wiki 滞后脱节**。
-
-| 目录 | 职责 |
-|---|---|
-| `configs/` | Dotfiles 配置源码（niri、noctalia 等的 `.kdl` / 配置模板） |
-| `assets/` | 静态资产（`assets/wallpapers/` 离线壁纸、`assets/fcitx5/` 输入法皮肤） |
-| `nyxuri/` | Python 管理引擎（零 pip 依赖，纯标准库）；`pkg/`·`deploy/`·`state/`·`modules/`·`packaging/` 各管一域（详见 llms-wiki/subpackages.md） |
-| `llms-wiki/` | LLM 友好架构 wiki（索引 `llms.txt`，按需取详情页；开发中必须同步维护事实） |
-| `install.sh` | 统一引导入口点，负责环境预检并 `exec python3 -m nyxuri` |
-
-**物理隔离**：仓库源码与 `~/.config/` 隔离，仅允许通过 `nyxuri.deploy.atomic`
-的 `atomic_replace_item` 机制复制/替换，禁止 `ln -s` 软链接进 `~/.config/`
-（`~/.config/` 内部文件之间的软链接，如运行时主题切换，不受此限）。
-
-**Dunder Protocol**：文件名或目录名含 `__custom__`（如 `__custom__.kdl`、`__custom__.conf`、自定义子目录）
-在更新时会被原子替换引擎识别并保留；各应用按自身机制加载（如 Niri 挂载 `__custom__.kdl`，可在其中继续引入其他 `*__custom__.kdl`；Fish 自动扫描 `conf.d/`）；`monitor.kdl` 等按名引用的文件走 manifest `preserve`
-声明保留（两套机制，不合并，详见 llms-wiki/file-preservation.md）。
+| 改动范围 / 目标路径 | 必读 Wiki 契约 | 推荐验证命令 |
+|---|---|---|
+| 部署引擎 / 文件写入 (`nyxuri/deploy/`, `configs/`) | `overview.md`, `file-preservation.md`, `preset-mechanism.md` | `python3 -m unittest tests/test_deploy.py` + 沙箱部署 |
+| 包管理 / 软件依赖 (`nyxuri/pkg/`, `nyxuri/deps.py`) | `subpackages.md`, `delayed-decisions.md` | `python3 -m unittest tests/test_pkg.py tests/test_deps.py` |
+| 状态 / 快照 / 迁移 (`nyxuri/state/`, `migrations/`) | `backup-snapshot.md`, `uninstall.md` | `python3 -m unittest tests/test_backup.py tests/test_migrations.py` |
+| CLI 命令 / 流程编排 (`cli.py`, `workflows.py`, `menus.py`) | `operation-map.md`, `manifest-schema.md` | `python3 -m unittest tests/test_cli.py tests/test_ai_specs.py` |
+| 终端 UI / 交互流程 (`tui.py`, `menus.py`) | `tui-charter.md` | 交互冒烟，检查退出 trap |
+| 双语文案 / 提示信息 (`translations.toml`, `i18n.py`) | `i18n.md`, `writing-voice.md` | `python3 -m unittest tests/test_i18n.py` |
+| 版本发布 / 变更记录 (`CHANGELOG.md`) | `changelog-spec.md` | `git log <last-release-tag>..HEAD` 对齐净变更 |
 
 ---
 
-## 3. 关键命令
+## 2. 核心架构不变量 (Invariants)
+
+1. **物理隔离**：仓库源码与 `~/.config/` 物理隔离，只能走 `nyxuri.deploy.atomic` 的 `atomic_replace_item` 机制原子复制，严禁 `ln -s` 软链接进 `~/.config/`。
+2. **Dunder 保留协议**：文件或目录名含 `__custom__`（如 `__custom__.kdl`）在更新/预设切换时必须保留；`monitor.kdl` 等按名引用走 manifest `preserve`。
+3. **纯标库与无未声明依赖**：`nyxuri/` 引擎坚守 Python 纯标准库（零 pip 依赖，需 3.11+ 因 `tomllib`）。
+4. **权限防御**：`install.sh` / `nyxuri` 严禁以 root 权限运行（`id -u == 0` 直接拒绝，系统级维护除外）。
+5. **模板占位符**：`configs/` 模板里的 `/home/user` 必须由部署引擎替换为目标 `$HOME`，禁止硬编码。
+6. **硬件中立**：默认配置不指定特定 GPU 驱动变量，部署不按 PCI 设备改写驱动（详见 `llms-wiki/nvidia-patch.md`）。
+
+---
+
+## 3. 本地秒级验证命令
 
 ```bash
-# 语法与静态检查（改动后必跑，零网络秒级）
-python3 -m compileall nyxuri
+# 1. 语法与静态检查（零网络秒级）
+python3 -m compileall nyxuri tests
 bash -n install.sh configs/noctalia/*.sh configs/niri/scripts/*.sh
 shellcheck install.sh
 
-# 行为契约测试（改动后必跑，零依赖秒级）
+# 2. 契约与行为测试（零依赖秒级，含文档契约一致性）
 python3 -m unittest discover -s tests -q
 
-# 沙箱隔离部署测试（极速、不污染实机、不下载外部大包）
+# 3. 沙箱隔离部署测试（极速、不污染实机）
 HOME=$(mktemp -d) ./install.sh test
-
-# 系统诊断
-./install.sh doctor
-```
-
-**提交前验证**：
-
-1. **代码修改**：跑语法检查 `python3 -m compileall nyxuri` + `shellcheck`（成本极低，无例外）。
-2. **行为/逻辑改动**：跑 `python3 -m unittest discover -s tests -q`（契约测试，捕获回归）。
-3. **部署流程改动**：追加沙箱部署测试 `HOME=$(mktemp -d) ./install.sh test`。
-4. **文档与 Wiki 同步（硬性门禁）**：改动涉及架构契约、`atomic_replace_item` 签名、manifest schema、CLI 命令、子包结构、预设/零件或部署机制时，**必须同步核验并更新 `llms-wiki/` 对应页面**（陈述参考，非生成——改完手验一遍，严禁代码先行而 wiki 脱节）。
-
----
-
-## 4. 开发铁律速查
-
-| 场景 | 要求 |
-|---|---|
-| 对代码/路径/变量存疑 | 见第 1 条，必须全仓库排查并查阅 `llms-wiki/` 后再下结论 |
-| 部署仓库文件到 `~/.config/` | 只能走 `atomic_replace_item`，禁止软链接 |
-| 文件/目录名含 `__custom__` | 更新时自动保留，不需手动处理 |
-| 脚本以 `id -u == 0` 运行 | `install.sh`/`nyxuri` 直接拒绝；系统级维护脚本（如 `clean-cache`）例外，允许要求 root |
-| `configs/` 模板里的 `/home/user` | 占位符，由部署引擎替换为目标 `$HOME`，勿改为硬编码 |
-| GPU 环境变量 | 默认配置不指定驱动，部署不按 PCI 设备自动改写；诊断仅分类设备，不推断实际渲染 GPU |
-| 网络命令（curl 等） | 必须带 `--connect-timeout`，非关键调用加容错 |
-| 引擎代码（`nyxuri/`） | 避免硬编码特定项目名，用 `constants.py` 常量；TUI 文案可适当灵活 |
-| 改动涉及 wiki 描述的行为 | 同步更新 `llms-wiki/` 对应页，代码改动与 wiki 事实必须同步提交 |
-
-**扩展指南（加法不是重构）**：
-
-- **加 CLI 命令**：写 `_cmd_xxx(sub_args) -> int` handler，加一行到 `COMMANDS` 字典。退出码自动传播。
-- **加可选模块**（greeter/fcitx 同款 install|status|uninstall 三件套）：用 `_module_handler()` 工厂，一行注册。
-- **加 doctor 检查项**：写 `_check_xxx(env) -> None` 函数，append 到 `DOCTOR_CHECKS` 列表。不碰 `run_doctor()`。
-- **加 i18n 键**：在 `nyxuri/translations.toml` 加 `[键名]` 及 `zh` + `en` 条目。`test_i18n.py` 校验无孤儿/无缺失、双语字段与参数一致。
-
-**sed 转义**：
-```bash
-sed "s|PLACEHOLDER|$(printf '%s' "$target_path" | sed 's/[&|]/\\&/g')|g"
-```
-
-**mktemp 陷阱**：`export VAR=$(mktemp)` 会吞掉失败返回值，必须拆两行：
-```bash
-VAR=$(mktemp) || { echo "mktemp failed" >&2; exit 1; }
-export VAR
 ```
 
 ---
 
-## 5. Changelog 规范（严格执行，无例外）
+## 4. 协作工作流与完成定义 (Definition of Done)
 
-每条记录必须同时满足以下要求，缺一不可：
-
-1. **极简**：单条改动一行以内，禁止罗列内部实现细节/函数名/文件路径。
-2. **通俗**：面向普通用户的自然语言。禁止工程黑话（"重构""解耦""状态机""网关分发"等），禁止 AI 套话（如"提升了整体体验""进一步优化了性能"这类空洞表述）。
-3. **真实 / 净变更（绝对红线）**：
-   - 只记录相对上一个**已发布 tag** 的真实净变更。修改前必须执行 `git log <last-release-tag>..HEAD` 对齐。
-   - **严禁中间态 Bug**：开发过程中引入、且在该版本发布前就已修复的 bug，**绝对不写**——这是内部开发波折，不是对用户而言真实存在过的历史缺陷。
-   - **禁止碎片化凑数**：全局更名等重大变更引申出的各命令派生更名，合并为一条陈述，严禁拆成多条水字数。
-
-写完后自查：如果删掉这条记录用户会不会真的错过重要信息？如果不会，删掉，不为了显得"改动很多"而凑数。
-
----
-
-## 6. 安装交互与用户体验
-
-- **非交互式优先原则 (Non-interactive/Express Mode)**：当执行“一键部署”或自动化安装流程（例如核心安装逻辑使用 `express` 参数时），应当尽可能避免在安装循环中弹出阻断式的交互确认（如繁杂的 `Y/n` 选择），保持流程的流畅性。
-- **部署前确认 (Pre-flight Checklist)**：为了提升用户体验，建议在执行真正的安装与文件覆盖逻辑之前，统一进行前置检查（如调用 `_phase_preflight_check` ）。在此阶段集中向用户展示“即将变更的操作清单”，并视情况提前通过 `sudo -v` 索取权限，以确保随后的自动化流程不再被打断。
-
----
-
-## 7. 宏观 TUI 设计宪章 (Macro TUI Design Charter)
-
-- **秩序与简洁 (Order & Pragmatic Simplicity)**：排版追求清晰规整。对齐代码以极致简洁为原则，不为了极端字符边界增加复杂工程代码；色彩严格沿用项目原生 ANSI 色阶，保持一致的视觉识别。
-- **减法与降噪 (Reductionism & Anti-Noise)**：剥离无意义的彩色图标与 Emoji 堆砌，仅保留必要的结构分割与状态语义表达，呈现高质感、纯粹的终端质感。以行间距与层级缩进作为第一视线引导元素，拒绝密密麻麻的文本堆叠。
-- **控制感与无熵 (Silent Execution & Low Entropy)**：过程状态就地收拢或静默，避免无意义的滚屏刷屏破坏终端上下文历史。常规操作轻量流畅，无闪烁重绘；写磁盘/覆盖配置等破坏性操作必须具备清晰的前置变更清单与显式防误触确认；光标恢复由 trap 钩子绝对保障。
-
----
-
-## 8. Writing / Voice
-
-文字应该像这个项目本来就会这么说。
-
-### 核心
-
-* **清楚优先，简洁其次。** 能短就短，但不要为了短而变得生硬、含糊或失去语气。
-* **保留人格。** Nyxuri 不是企业产品，也不是 AI 生成的设计稿。允许自然、灵动、锋利、轻微幽默，甚至偶尔不那么“规范”。
-* **少改比乱改好。** 原文已经自然、准确、有项目气质时，不要为了统一风格强行重写。
-* **具体胜过漂亮。** 少说“提升体验”“更加稳定”“无缝”“强大”等空话，直接说发生了什么。
-* **像人说话。** 避免模板句、万能总结、过度解释、机械的“三段式”、刻意正式和明显的 AI 套话。
-* **不要为了显得专业而失去自然。** 技术术语可以用，只要读者真正需要它。
-
-### 按场景调整
-
-| 场景        | 方向                     |
-| --------- | ---------------------- |
-| CLI / 错误  | 清楚、直接、克制               |
-| 确认 / 危险操作 | 说明后果，让用户做决定            |
-| TUI       | 清晰为底，可以有一点 Nyxuri 的个性 |
-| README    | 自然、有观点，不写营销稿           |
-| 注释        | 像作者留给未来自己的便签，解释“为什么”   |
-| Changelog | 只写用户真正感知到的变化，短，但不要僵    |
-| 安装器       | 流畅、安静；只有真正需要用户决定时才打断   |
-
-### AI 去味
-
-重写时优先检查：
-
-1. 这句话原本有没有必要改？
-2. 是否只是换成了更“规范”的说法？
-3. 是否出现了 AI 常见的套话或重复结构？
-4. 读起来像不像一个真实作者写的？
-5. 删掉这句话后，信息真的会损失吗？
-
-**不要把所有文字写得像 Apple 或 Google。**
-
-借鉴它们的清晰、秩序和克制；保留这个项目自己的语气。
-
-> 极简是秩序，不是沉默。
-> 规范是底线，不是人格。
->
-> **让每一句话都像 Nyxuri。**
-
----
-
-## 9. Agent 工作流（纵向 pipeline）
-
-横向规则在 §1–§8；这里是"跑一个完整任务"的顺序。
-
-### Session 启动
-1. 读完整份 AGENTS.md（不是只看标题）。
-2. `git status` 看脏树——有未提交改动先问用户，别在脏树上动工。
-3. 跑 `python3 -m compileall nyxuri` + `unittest` 建基线，确认环境绿再改。
-4. **查阅 llms-wiki**：若任务涉及架构、部署、预设/零件、状态账本、CLI 或 manifest，动手前**必须查阅 `llms-wiki/` 对应页面**理解既有契约。
-
-### Intake（呼应 §0"懒得开局"）
-- 3 步以下、无歧义、非破坏性 → 直接干，别问。
-- 涉及破坏性操作（卸载/覆盖/写 /etc）、影响发布、或请求自相矛盾 → 先问一句。
-- 犹豫要不要动手 → 给最小可执行起点，别等用户把细节想清楚。
-
-### 执行
-- 3 步以上用 todo 列表追踪。
-- 最小改动：只动请求范围内的文件，不顺手重构、不"统一风格"。
-- 遵循 §1（存疑全库排查与读 wiki）、§4（铁律）、§8（语气）。
-
-### Definition of Done
-- §3 对应级别的验证跑过且绿（纯本地验证，秒级无报错）。
-- 无 `# TODO`、调试 print、注释掉的代码残留。
-- 改动范围与请求一致；没有未说明的副作用。
-- **Wiki 事实同步核验**：若涉及架构、CLI、manifest、预设/零件或流程，`llms-wiki/` 对应文档必须已同步修改且事实对齐。
-- **Changelog 合规核验**：若涉及用户可感知变化，必须严格对照 §5 执行（通过 `git log <last-release-tag>..HEAD` 对齐真实净变更，**彻底拦截一切开发态中间 Bug**，语言极简通俗无黑话）。
-
-### 测试隔离
-- 所有新测试必须用 `tests/utils.py:TempEnv`，禁止碰真实 `~/.config`。
-- 反例：9cb1e0a 之前的测试把实仓库 `configs/niri/config.kdl` 写成桩文件。
-
-### 测试深度
-- 构造外部命令（git/curl/systemd 等）的函数，必须有"参数列表形状"契约测试，不能只断言返回值。
-- mock 层级要紧贴被测代码；mock 打得太高会绕过命令构造逻辑（反例：测 `safe_git_pull` 时 mock `_run_git_transfer`，就跳过了 `_with_git_progress` 的参数变形）。
-
-### Commit
-- Conventional Commits：`feat|fix|refactor|test|docs|chore: 简述`。
-- body 说"为什么"，不说"做了什么"（diff 已经说明做什么）。
-- 不主动 commit，除非用户明确要求。
-
-### 不确定时（呼应 §1）
-- 列已排查文件清单 + 理由，不要猜。
-- 宁可多问一句，不要凭"看起来像"下结论。
+- **Session 启动**：`git status` 看工作区；跑本地单测确认基线绿再动工。
+- **改动原则**：
+  - 3 步以下直接做；涉及卸载/破坏性操作先确认。
+  - 只动请求范围，不顺手重构无关代码；文字遵循 `writing-voice.md`（像人说话、去 AI 味）。
+- **测试规范**：所有新测试必须使用 `tests/utils.py:TempEnv`，严禁写入真实 `~/.config`；外部命令必须有参数形状断言。
+- **完成检查**：
+  1. 本地秒级验证（第 3 节命令）全绿；
+  2. 若改动涉及架构契约、命令或 manifest，对应 `llms-wiki/` 页面必须已同步事实；
+  3. 不主动 commit，除非用户明确要求。

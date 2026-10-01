@@ -3,7 +3,7 @@
 > Nyxuri 支持通过 Arch Linux AUR（`nyxuri-git`）进行系统级安装。
 > 源码：`nyxuri/packaging/`，核心依赖汇聚工具：`gen-deps.py`。
 
-## 单真值依赖原则 (§5.7)
+## 单真值依赖原则
 
 为了避免在多个地方维护重复的软件包列表，依赖关系遵循**单一真值**：
 - 桌面组件的具体包依赖写在各自的 `configs/<app>/.module.toml` 中。

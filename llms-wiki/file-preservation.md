@@ -63,7 +63,7 @@ effects.kdl 是脚本动态管理的软链接，同样需要固定文件名。�
 "一旦用户可能改过就不碰"的安全代价。因为模板只有注释无生效配置，冻结的只是注释 wording，
 不影响功能。
 
-## 边界（§10.4）
+## 存储路径与命名边界
 
 Nyxuri 元数据只许在 `~/.config/nyxuri/`（backups、presets、active 状态、hooks）。
 `~/.config/<app>/` 里不塞 Nyxuri 自己的东西——`__custom__` 是约定保留名，属 app 配置一部分，
