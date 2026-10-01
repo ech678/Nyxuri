@@ -7,6 +7,7 @@ import qs.Modules.Bar.Tray
 import qs.Modules.Bar.SysMonitor
 import qs.Modules.Bar.Media
 import qs.Modules.Bar.QuickSettings
+import qs.Modules.Bar.Clock
 
 Loader {
     id: root
@@ -33,6 +34,8 @@ Loader {
             return systemMonitorComponent;
         case "quickSettings":
             return quickSettingsComponent;
+        case "clock":
+            return clockComponent;
         default:
             return null;
         }
@@ -102,6 +105,14 @@ Loader {
 
         QuickSettings {
             screen: root.screen
+            vertical: root.vertical
+        }
+    }
+
+    Component {
+        id: clockComponent
+
+        Clock {
             vertical: root.vertical
         }
     }

@@ -22,6 +22,10 @@ Text {
         return 48;
     }
 
+    width: root.renderedIconSize
+    height: root.renderedIconSize
+    clip: true
+
     renderType: Text.NativeRendering
     font {
         family: Fonts.materialSymbolsRounded

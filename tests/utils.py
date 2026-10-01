@@ -36,8 +36,9 @@ class TempEnv:
         (home / "Pictures").mkdir(parents=True, exist_ok=True)
 
         # Save and override environment variables
-        for key in ("HOME", "XDG_STATE_HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME"):
+        for key in ("HOME", "XDG_STATE_HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "WAYLAND_DISPLAY"):
             self._old_env[key] = os.environ.get(key)
+        os.environ.pop("WAYLAND_DISPLAY", None)
         os.environ["HOME"] = str(home)
         os.environ["XDG_STATE_HOME"] = str(home / ".local" / "state")
         os.environ["XDG_CONFIG_HOME"] = str(home / ".config")

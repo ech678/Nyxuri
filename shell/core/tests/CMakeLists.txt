@@ -57,6 +57,7 @@ target_link_libraries(niri_workspace_deriver_tests PRIVATE
 
 add_test(NAME niri_workspace_deriver_tests COMMAND niri_workspace_deriver_tests)
 
+if(ENABLE_CAVA)
 qt_add_executable(audio_visual_analyzer_tests
     audio_visual_analyzer_test.cpp
 )
@@ -68,7 +69,9 @@ target_link_libraries(audio_visual_analyzer_tests PRIVATE
 )
 
 add_test(NAME audio_visual_analyzer_tests COMMAND audio_visual_analyzer_tests)
+endif()
 
+if(ENABLE_LYRICS)
 qt_add_executable(lyrics_tests
     lyrics_test.cpp
 )
@@ -86,6 +89,7 @@ target_include_directories(lyrics_tests PRIVATE
 )
 
 add_test(NAME lyrics_tests COMMAND lyrics_tests)
+endif()
 
 qt_add_executable(clavis_paths_tests
     clavis_paths_test.cpp
@@ -117,6 +121,7 @@ target_include_directories(wallpaper_analyzer_tests PRIVATE
 
 add_test(NAME wallpaper_analyzer_tests COMMAND wallpaper_analyzer_tests)
 
+if(ENABLE_WEATHER)
 qt_add_executable(weather_climate_normals_tests
     weather_climate_normals_test.cpp
 )
@@ -133,6 +138,7 @@ target_include_directories(weather_climate_normals_tests PRIVATE
 )
 
 add_test(NAME weather_climate_normals_tests COMMAND weather_climate_normals_tests)
+endif()
 
 qt_add_executable(i18n_manager_tests
     i18n_manager_test.cpp
@@ -165,6 +171,7 @@ qt_add_executable(niri_minimize_tests niri_minimize_test.cpp)
 target_link_libraries(niri_minimize_tests PRIVATE ClavisNiri ClavisNiriCore Qt6::Core Qt6::Qml Qt6::Network Qt6::Test)
 add_test(NAME niri_minimize_tests COMMAND niri_minimize_tests)
 
+if(ENABLE_WINDOWPREVIEW)
 qt_add_executable(window_preview_cache_tests window_preview_cache_test.cpp)
 target_link_libraries(window_preview_cache_tests PRIVATE ClavisWindowPreview Qt6::Gui Qt6::Qml Qt6::Test)
 add_test(NAME window_preview_cache_tests COMMAND window_preview_cache_tests)
@@ -188,13 +195,16 @@ qt_add_executable(window_preview_protocol_tests window_preview_protocol_test.cpp
 target_include_directories(window_preview_protocol_tests PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(window_preview_protocol_tests PRIVATE ClavisWindowPreview Qt6::Gui Qt6::Qml Qt6::Test PkgConfig::WaylandServer)
 add_test(NAME window_preview_protocol_tests COMMAND window_preview_protocol_tests)
+endif()
 
 add_test(NAME release_contracts COMMAND ${Python3_EXECUTABLE} ${CLAVIS_SOURCE_ROOT}/tests/test_release.py)
 add_test(NAME installer_contracts COMMAND ${Python3_EXECUTABLE} ${CLAVIS_SOURCE_ROOT}/tests/test_installer.py)
 
+if(ENABLE_WEATHER)
 qt_add_executable(weather_location_tests weather_location_test.cpp)
 target_link_libraries(weather_location_tests PRIVATE ClavisWeatherCore Qt6::Core Qt6::Network Qt6::Test)
 add_test(NAME weather_location_tests COMMAND weather_location_tests)
+endif()
 
 add_test(NAME search_catalog_contracts COMMAND ${Python3_EXECUTABLE} ${CLAVIS_SOURCE_ROOT}/tests/test_search_catalog.py)
 

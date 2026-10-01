@@ -29,6 +29,10 @@ if [ "$active_shell" = "custom" ]; then
         fi
     fi
 
+    if [ -z "$custom_shell_bin" ] && command -v nyxuri-shell >/dev/null 2>&1; then
+        custom_shell_bin=$(command -v nyxuri-shell)
+    fi
+
     if [ -n "$custom_shell_bin" ] && [ -x "$custom_shell_bin" ]; then
         exec "$custom_shell_bin"
     else

@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Nyxuri Shell Launcher & Gateway (nyxuri-shell)
+# Native wrapper for starting Nyxuri Shell and dispatching shell actions.
+# ==============================================================================
+
+set -euo pipefail
+
+SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+SHELL_DIR=$(CDPATH='' cd -- "${SCRIPT_DIR}/.." && pwd)
+REPO_ROOT=$(CDPATH='' cd -- "${SHELL_DIR}/.." && pwd)
+
+# Discover compiled native QML plugin path if not explicitly provided
+if [ -z "${QML2_IMPORT_PATH:-}" ]; then
+    if [ -d "${REPO_ROOT}/build/shell-test/qml" ]; then
+        export QML2_IMPORT_PATH="${REPO_ROOT}/build/shell-test/qml"
+    elif [ -d "${SHELL_DIR}/core/build/qml" ]; then
+        export QML2_IMPORT_PATH="${SHELL_DIR}/core/build/qml"
+    fi
+fi
+
+ACTION=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --action)
+            ACTION="${2:-}"
+            shift 2
+            ;;
+        --check-ready)
+            ACTION="check-ready"
+            shift 1
+            ;;
+        --stop)
+            ACTION="stop"
+            shift 1
+            ;;
+        -h|--help)
+            echo "Usage: nyxuri-shell [--action <launcher|session|settings|clipboard|lock|wallpaper-random>|--check-ready|--stop]"
+            exit 0
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+if [ -n "$ACTION" ]; then
+    case "$ACTION" in
+        launcher)
+            exec qs -p "${SHELL_DIR}" ipc call spotlight toggle
+            ;;
+        session)
+            exec qs -p "${SHELL_DIR}" ipc call power-menu toggle
+            ;;
+        settings)
+            exec qs -p "${SHELL_DIR}" ipc call control-center toggle ""
+            ;;
+        clipboard)
+            exec qs -p "${SHELL_DIR}" ipc call spotlight commands
+            ;;
+        lock)
+            exec qs -p "${SHELL_DIR}" ipc call lock open
+            ;;
+        wallpaper-random)
+            exec qs -p "${SHELL_DIR}" ipc call wallpaper random
+            ;;
+        check-ready)
+            if qs -p "${SHELL_DIR}" ipc show >/dev/null 2>&1; then
+                exit 0
+            else
+                exit 1
+            fi
+            ;;
+        stop)
+            exec qs kill -p "${SHELL_DIR}" >/dev/null 2>&1 || true
+            ;;
+        *)
+            echo "Unknown action: ${ACTION}" >&2
+            exit 1
+            ;;
+    esac
+fi
+
+# Default: start Nyxuri Shell via quickshell
+exec qs -p "${SHELL_DIR}" --no-duplicate "$@"

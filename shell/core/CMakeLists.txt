@@ -52,15 +52,25 @@ endif()
 if(NOT DEFINED CLAVIS_CONFIG_INSTALL_DIR)
     set(CLAVIS_CONFIG_INSTALL_DIR "etc/xdg/quickshell/clavis")
 endif()
+# Options for heavy / archived native plugins
+option(ENABLE_CAVA "Build Cava audio spectrum plugin" OFF)
+option(ENABLE_WEATHER "Build Weather and WeatherMap plugins" OFF)
+option(ENABLE_LYRICS "Build Lyrics plugin" OFF)
+option(ENABLE_WINDOWPREVIEW "Build WindowPreview plugin" OFF)
+
 # Find Qt 6 basics
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Network ShaderTools LinguistTools)
-find_package(Qt6Keychain REQUIRED)
+if(ENABLE_WEATHER)
+    find_package(Qt6Keychain REQUIRED)
+endif()
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(Udev REQUIRED IMPORTED_TARGET libudev)
-pkg_check_modules(Pipewire IMPORTED_TARGET libpipewire-0.3 REQUIRED)
-pkg_check_modules(Cava IMPORTED_TARGET libcava QUIET)
-if(NOT Cava_FOUND)
-    pkg_check_modules(Cava IMPORTED_TARGET cava REQUIRED)
+if(ENABLE_CAVA)
+    pkg_check_modules(Pipewire IMPORTED_TARGET libpipewire-0.3 REQUIRED)
+    pkg_check_modules(Cava IMPORTED_TARGET libcava QUIET)
+    if(NOT Cava_FOUND)
+        pkg_check_modules(Cava IMPORTED_TARGET cava REQUIRED)
+    endif()
 endif()
 qt_standard_project_setup(REQUIRES 6.5)
 
@@ -77,21 +87,47 @@ if(BUILD_TESTING)
 endif()
 
 # Quickshell plugins
-add_subdirectory(plugin/weather)
-add_subdirectory(plugin/weathermap)
 add_subdirectory(plugin/niri)
-add_subdirectory(plugin/cava)
 add_subdirectory(plugin/media)
 add_subdirectory(plugin/keyboard)
-add_subdirectory(plugin/lyrics)
 add_subdirectory(plugin/i18n)
 add_subdirectory(plugin/runtime)
 add_subdirectory(plugin/files)
 add_subdirectory(plugin/gamma)
-add_subdirectory(plugin/windowpreview)
 
-foreach(module IN ITEMS DesktopCards Weather WeatherMap Niri Cava Media Keyboard
-        Lyrics I18n Runtime Files Gamma WindowPreview)
+set(ENABLED_CLAVIS_MODULES
+    DesktopCards
+    Niri
+    Media
+    Keyboard
+    I18n
+    Runtime
+    Files
+    Gamma
+)
+
+if(ENABLE_WEATHER)
+    add_subdirectory(plugin/weather)
+    add_subdirectory(plugin/weathermap)
+    list(APPEND ENABLED_CLAVIS_MODULES Weather WeatherMap)
+endif()
+
+if(ENABLE_CAVA)
+    add_subdirectory(plugin/cava)
+    list(APPEND ENABLED_CLAVIS_MODULES Cava)
+endif()
+
+if(ENABLE_LYRICS)
+    add_subdirectory(plugin/lyrics)
+    list(APPEND ENABLED_CLAVIS_MODULES Lyrics)
+endif()
+
+if(ENABLE_WINDOWPREVIEW)
+    add_subdirectory(plugin/windowpreview)
+    list(APPEND ENABLED_CLAVIS_MODULES WindowPreview)
+endif()
+
+foreach(module IN LISTS ENABLED_CLAVIS_MODULES)
     install(TARGETS Clavis${module} Clavis${module}plugin
         LIBRARY DESTINATION "${CLAVIS_QML_INSTALL_DIR}/Clavis/${module}")
 endforeach()

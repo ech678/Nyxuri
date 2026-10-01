@@ -271,12 +271,16 @@ def _cmd_shell(sub_args: List[str]) -> int:
     elif sub == "status":
         if len(sub_args) > 1:
             exit_usage(usage)
+        from nyxuri.shell_switcher import probe_running_shell, resolve_custom_bin
         current = active_shell()
         cbin = custom_shell_bin()
+        effective_bin = resolve_custom_bin(cbin)
+        running_name, running_pid = probe_running_shell()
         print(f"Active Shell: {current}")
-        if current == "custom":
-            print(f"Custom Shell Binary: {cbin or '<unset>'}")
-            if cbin and os.path.isfile(cbin) and os.access(cbin, os.X_OK):
+        print(f"Running Instance: {running_name}" + (f" (PID: {running_pid})" if running_pid else " (not running)"))
+        if current == "custom" or cbin:
+            print(f"Custom Shell Binary: {cbin or effective_bin or '<unset>'}")
+            if effective_bin and os.path.isfile(effective_bin) and os.access(effective_bin, os.X_OK):
                 print("Custom Shell Status: Ready")
             else:
                 print("Custom Shell Status: Not executable (will fallback to Noctalia)")
@@ -288,13 +292,15 @@ def _cmd_shell(sub_args: List[str]) -> int:
         if target not in ("noctalia", "custom"):
             exit_usage(usage)
         bin_path = sub_args[2] if len(sub_args) > 2 else None
-        set_shell(target, bin_path)
-        print(f"Shell set to: {target}" + (f" ({bin_path})" if bin_path else ""))
-        if target == "custom":
-            cbin = custom_shell_bin()
-            if not cbin or not os.path.isfile(cbin) or not os.access(cbin, os.X_OK):
-                print(f"Notice: Custom shell binary is not executable ({cbin or 'unset'}). Specify with: {CLI_CMD} shell set custom <path>")
-        return 0
+        from nyxuri.shell_switcher import hot_switch_shell
+        success, message = hot_switch_shell(target, bin_path)
+        if success:
+            print(f"Shell set to: {target}" + (f" ({bin_path})" if bin_path else ""))
+            print(f"[✓] {message}")
+            return 0
+        else:
+            print(f"[✗] {message}", file=sys.stderr)
+            return 1
     else:
         exit_usage(usage)
 

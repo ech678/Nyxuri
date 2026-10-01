@@ -362,9 +362,9 @@ Singleton {
     property bool barOverlay: false
     property string barPosition: "top"
     readonly property var barComponentIds: ["workspaces", "information", "activeWindow", "media", "tray",
-        "systemMonitor", "quickSettings"]
-    readonly property var defaultBarLeadingComponents: ["workspaces", "information", "activeWindow"]
-    readonly property var defaultBarTrailingComponents: ["tray", "systemMonitor", "quickSettings"]
+        "systemMonitor", "quickSettings", "clock"]
+    readonly property var defaultBarLeadingComponents: ["workspaces", "activeWindow"]
+    readonly property var defaultBarTrailingComponents: ["tray", "systemMonitor", "quickSettings", "clock"]
     readonly property var barComponentOptions: [({
                                                      "value": "media",
                                                      "label": qsTr("Media"),

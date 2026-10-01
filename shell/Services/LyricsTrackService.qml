@@ -2,12 +2,12 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
-import Clavis.Lyrics
 
 Singleton {
     id: root
 
     readonly property var player: MediaManager.active
+    readonly property bool available: backendLoader.status === Loader.Ready && backendLoader.item !== null
 
     function playerIdentity(playerObject) {
         if (!playerObject)
@@ -21,13 +21,16 @@ Singleton {
     }
 
     function sync() {
+        if (!root.available)
+            return;
+
         const current = MediaManager.active;
         if (!current || !String(current.trackTitle || "").trim()) {
-            Lyrics.clearTrack();
+            backendLoader.item.clearTrack();
             return;
         }
 
-        Lyrics.setTrack(
+        backendLoader.item.setTrack(
             String(current.trackArtist || ""),
             String(current.trackTitle || ""),
             String(current.trackAlbum || ""),
@@ -40,7 +43,14 @@ Singleton {
         root.sync();
     }
 
-    Component.onCompleted: root.sync()
+    Loader {
+        id: backendLoader
+        source: "lyrics/LyricsBackend.qml"
+        onStatusChanged: {
+            if (status === Loader.Ready)
+                root.sync();
+        }
+    }
 
     Connections {
         target: MediaManager

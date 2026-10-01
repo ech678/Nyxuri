@@ -350,3 +350,103 @@ MaterialSymbol 用系统 Material Symbols 字体，文件不是内嵌资产；�
 | [scripts/theme/manage_matugen_templates.sh](../scripts/theme/manage_matugen_templates.sh) | 6, 28, 29, 31, 109, 114, 126 |
 | [scripts/theme/set_system_color_scheme.sh](../scripts/theme/set_system_color_scheme.sh) | 17, 18, 22, 29, 37 |
 | [scripts/theme/write_niri_cursor_config.sh](../scripts/theme/write_niri_cursor_config.sh) | 4 |
+
+## P0 调查结论与契约沉淀
+
+### P0-03 启动闭包分类与副作用归属
+
+| 类别 | 模块 / 组件 | 导入与初始化路径 | 副作用与所有者 | 处置方案 |
+| --- | --- | --- | --- | --- |
+| **核心必需** | `shell.qml` -> `AppShell.qml` | 根实例，Quickshell 入口 | 装配顶层组件与全局 IPC handler | 保留，解除对封存模块的硬依赖 |
+| **核心必需** | `Modules/Bar` | `AppShell.qml` 直接实例化 `Bar {}` | 管理 Horizontal/Vertical 状态栏各屏 surface | 保留基础 Bar 框架 |
+| **核心必需** | `Bar/Workspaces` | `BarComponentLoader.qml` | 消费 `Clavis.Niri` 工作区模型及点击切换 | 保留，标准 Niri 工作区 |
+| **核心必需** | `Bar/ActiveWindow` | `BarComponentLoader.qml` | 消费 `Clavis.Niri` focusedWindow 模型 | 保留，标准 Niri 聚焦窗口标题与图标 |
+| **核心必需** | `Modules/Launcher` | `AppShell.qml` 的 `LauncherWindow` | 本地桌面应用搜索与启动，键盘快捷键唤起 | 保留，作为基础启动器 |
+| **核心必需** | `Modules/Lock` | `AppShell.qml` 的 `Lock` | Wayland session-lock、PAM 认证上下文 | 保留，安全会话锁核心 |
+| **核心必需** | `Modules/PowerMenu` | `AppShell.qml` 的 `PowerMenu` | 系统关机、重启、锁屏、注销动作收发 | 保留，改为完全按需加载 |
+| **核心必需** | `Common/Fonts` | `Common/Fonts.qml` 单例 | 系统与角色字体解析、FontLoader | 保留，提供系统字体 fallback |
+| **核心必需** | `Services/Time` | `Time.qml` 单例 | 30s 周期时钟计时器 | 保留，仅供 Bar 时钟消费 |
+| **可选/延后** | `Modules/ControlCenter` | `LazyLoader` 挂载 `ControlCenterWindow` | 多页面系统设置、DBus/网络监控 | P2-P3 逐步解耦迁移 |
+| **可选/延后** | `Modules/Sidebars` | `SidebarHostWindow` | 侧栏通知抽屉与工具集 | P2-P3 迁移 |
+| **可选/延后** | `Services/NotificationManager` | `NotificationManager.qml` | 接收 org.freedesktop.Notifications | P3 接入独立生命周期 |
+| **可选/延后** | `Modules/Bar/Tray` | `BarComponentLoader.qml` | 消费 SNI 托盘 D-Bus 接口 | P3 接入 |
+| **封存隔离** | `Cava` / `AudioSpectrum` | `AppShell` / `Bar` / `core/plugin/cava` | 连接 PipeWire、运行音频分析循环 | 封存，关闭默认 CMake 构建，隔离 QML 导入 |
+| **封存隔离** | `Weather` / `WeatherMap` | `AppShell` / `Sidebars` / `core/plugin/weather*` | ipwho.is / Open-Meteo 定时请求、瓦片缓存 | 封存，关闭网络请求与后台定位 |
+| **封存隔离** | `Lyrics` / `LyricsTrackService` | `AppShell.Component.onCompleted` | 监听 MPRIS 曲目、调用 LRCLIB 在线 API | 封存，撤出 AppShell 装配 |
+| **封存隔离** | `DesktopCards` / `Dock` | `AppShell` 直接实例化 | 桌面底层小部件与 Dock 窗口 | 封存，顶层装配移除 |
+| **封存隔离** | `AwwwWallpaperService` | `Services/AwwwWallpaperService.qml` | 启动 awww 进程与定时轮巡 | 封存，P4 统一用自研与 palette.toml 替换 |
+
+### P0-04 原版 Niri 协议能力分类
+
+目标原版版本基线：Niri 0.1.10+ / 25.x 官方 Release。
+
+| 协议 / 接口 | 实现路径 | 原版状态 | 行为与降级决策 |
+| --- | --- | --- | --- |
+| `EventStream` | `niri_ipc_client.cpp:63` | **官方标准** | Unix domain socket 流式事件，核心必须保留 |
+| `Workspaces` 查询与事件 | `niri_plugin.cpp:111` | **官方标准** | 解析 id, idx, name, output, is_active, is_focused，完整支持 |
+| `Windows` 查询与事件 | `niri_plugin.cpp:112` | **官方标准** | 解析 id, title, app_id, pid, workspace_id, is_focused，完整支持 |
+| `Outputs` 查询与事件 | `niri_plugin.cpp:113` | **官方标准** | 解析 name, make, model, logical_x/y, scale, modes，完整支持 |
+| `Action` (Focus/Close/Overview) | `niri_plugin.cpp:71-89` | **官方标准** | 原版 Niri 标准 Action，直接调用，行为一致 |
+| `Capabilities` 查询 | `niri_plugin.cpp:80` | **扩展能力** | 原版返回错误或缺少字段时，优雅置为 false，不抛 action 异常 |
+| `MinimizeWindow` / `RestoreWindow` | `niri_plugin.cpp:75-76` | **非标扩展** | 原版尚未包含此协议，受 `supportsMinimize` 守护，为 false 时禁用或隐藏 |
+| `SetWindowAnimationTargets` | `niri_animation_targets.cpp` | **魔改专有** | 仅魔改 Niri 存在，原版降级为无动画或默认过渡，不阻断核心 |
+| `MoveFloatingWindow` (视差) | `niri_floating_parallax.cpp` | **组合效果** | 缺视差支持时平滑退化为普通浮动位置 |
+
+### P0-05 Native 构建与系统字体拆分
+
+#### 1. CMake 依赖最小拆分矩阵
+
+| Target | 依赖库 | 状态 | 编译开关与策略 |
+| --- | --- | --- | --- |
+| `ClavisRuntimeCore` / `ClavisRuntime` | Qt6::Core, Qt6::Network, libudev | **核心必需** | 默认编译，提供路径与硬件基础探测 |
+| `ClavisNiriCore` / `ClavisNiri` | Qt6::Core, Qt6::Gui, Qt6::Qml, Qt6::Network | **核心必需** | 默认编译，零魔改外部依赖，支持原版 Niri IPC |
+| `ClavisCavaCore` / `ClavisCava` | PkgConfig::Pipewire, libcava/cava | **封存可选** | `ENABLE_CAVA=OFF` 默认关闭，缺少 cava.pc 不阻断配置 |
+| `ClavisWeatherCore` / `ClavisWeather` | Qt6::Core, Qt6::Network | **封存可选** | `ENABLE_WEATHER=OFF` 默认关闭 |
+| `ClavisWeatherMapCore` / `ClavisWeatherMap` | Qt6Keychain, MapLibre, QtLocation | **封存可选** | `ENABLE_WEATHERMAP=OFF` 默认关闭 |
+| `ClavisLyrics` | Qt6::Network | **封存可选** | `ENABLE_LYRICS=OFF` 默认关闭 |
+| `ClavisWindowPreview` | Qt6::WaylandClient | **封存可选** | `ENABLE_WINDOWPREVIEW=OFF` 默认关闭 |
+
+#### 2. 系统字体与图标回退矩阵
+
+| 角色 | 原始资源 | 系统回退方案 | 视觉保障 |
+| --- | --- | --- | --- |
+| `ui` | 依赖配置/LXGW WenKai | 优先系统文楷，回退系统无衬线 (sans-serif) | 字符清晰，不因字形变化产生排版截断 |
+| `mono` | JetBrainsMono Nerd Font | 优先系统 Nerd Font，回退 monospace | 终端与代码对齐规整 |
+| `numeric` | JetBrainsMono Nerd Font | 回退 monospace | 纯数字等宽对齐 |
+| `expressive` | 内嵌 Google Sans Flex (4MB) | 移除非必需内嵌依赖，回退 `ui` / sans-serif | 节省 4MB 体积，首屏排版按几何比例对齐 |
+| `systemClock` | 内嵌 Google Sans Flex | 回退 `ui` / sans-serif | 时钟显示规整，按字号几何缩放 |
+| `icons` | Material Symbols (系统) | 优先系统字体，提供本地内置 SVG 兜底 | 不联网下载，避免文字占位符出现 |
+
+### P0-06 双 Shell 切换状态机 (nyxuri shell)
+
+#### 切换时序与状态流转
+
+1. **Preflight (预检)**：
+   - 目标为 `custom`：检查 `custom_shell_bin` 路径非空、文件存在且具备执行权限 (`X_OK`)；检查当前属于 Wayland 会话。
+   - 目标为 `noctalia`：检查 `noctalia` 命令在 `PATH` 中可执行。
+   - 若系统当前已被锁屏 (`session-lock` 活跃)，拒绝切换并直接返回错误。
+2. **Stop Old (停止旧端)**：
+   - 若当前活跃为 `noctalia`：通过 `systemctl --user stop app-niri-noctalia-*.scope` 或 IPC 请求优雅退出。
+   - 若当前活跃为 `custom`：发送退出 IPC 或向受管 PID 发送 SIGTERM。超时 2.5s 未退出则 SIGKILL 并清理残留 socket，回收 D-Bus 接口。
+3. **Start New (启动新端)**：
+   - 启动目标进程（带日志重定向），不使用孤立 shell 拼串。
+4. **Ready Probe (就绪探测)**：
+   - 探测新实例：通过 IPC socket 握手或有界轮询（最大 3.0s），确认首帧渲染或动作注册就绪。
+5. **Commit or Rollback (提交或回滚)**：
+   - **探测成功**：原子更新 `~/.local/state/nyxuri/state.json` 中的 `active_shell` 字段，通知动作路由更新，返回 0。
+   - **探测超时/崩溃**：立即清理失败的目标实例，回滚重启旧 Shell（恢复原桌面），在终端输出详细错误并在桌面发送 critical 通知。
+
+### P0-07 调试与检查工作流规范
+
+1. **隔离启动命令**：
+   ```bash
+   # 仅在开发环境预览，不影响系统全局配置与其它 Shell
+   qs --path ./shell --no-duplicate --log-times -v
+   ```
+2. **热重载与编译流程**：
+   - **QML 变动**：保存文件即触发 Quickshell 动态热重载，无需重启进程。
+   - **C++ 变动**：执行 `cmake --build build/shell --target ClavisNiri`，完成后重启 Shell 实例。
+3. **日志追踪与检查**：
+   - 跟踪当前 Shell 日志：`qs log --path ./shell --follow`。
+   - IPC 接口内省：`qs ipc --path ./shell show`。
+

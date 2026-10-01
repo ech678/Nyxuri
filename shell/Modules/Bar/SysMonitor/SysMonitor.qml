@@ -21,7 +21,8 @@ TopBarPill {
     readonly property real diskUsage: root.normalizedPercent(root.disk.usagePercent)
     readonly property real temperatureValue: Format.isNumber(root.cpu.packageTemperatureCelsius)
                                              ? root.cpu.packageTemperatureCelsius :
-                                               root.cpu.temperatureCelsius
+                                               (Format.isNumber(root.cpu.temperatureCelsius)
+                                                ? root.cpu.temperatureCelsius : 0)
     readonly property real temperatureUsage: root.normalizedTemperature(root.temperatureValue)
     readonly property real cpuUsage: root.normalizedPercent(root.cpu.usagePercent)
     readonly property bool useFahrenheit: UiPreferences.systemTemperatureUnit === "fahrenheit"

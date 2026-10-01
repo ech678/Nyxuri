@@ -12,3 +12,7 @@ __pycache__/
 # Temp & backup files
 *.tmp
 *.bak
+
+# Build artifacts
+build/
+build-*/

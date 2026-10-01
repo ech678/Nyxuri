@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
-import M3Shapes
 import qs.Common
 import qs.Widgets.common
 
@@ -10,20 +9,7 @@ FocusScope {
     id: root
 
     property var context: null
-    readonly property var passwordShapeQueue: {
-        const shapes = [MaterialShape.Slanted, MaterialShape.Arch, MaterialShape.Fan, MaterialShape.Arrow,
-                        MaterialShape.SemiCircle, MaterialShape.Triangle, MaterialShape.Diamond,
-                        MaterialShape.ClamShell, MaterialShape.Pentagon, MaterialShape.Gem,
-                        MaterialShape.Sunny, MaterialShape.VerySunny, MaterialShape.Cookie4Sided,
-                        MaterialShape.Ghostish, MaterialShape.SoftBurst];
-        for (let i = shapes.length - 1; i > 0; --i) {
-            const j = Math.floor(Math.random() * (i + 1));
-            const shape = shapes[i];
-            shapes[i] = shapes[j];
-            shapes[j] = shape;
-        }
-        return shapes;
-    }
+    readonly property var passwordShapeQueue: ["circle"]
     readonly property bool hasText: input.text.length > 0
     readonly property bool busy: context && context.unlockInProgress
     readonly property bool enterEnabled: hasText && !busy
@@ -258,15 +244,14 @@ FocusScope {
                             removeAnimation.start();
                         }
 
-                        MaterialShape {
+                        Rectangle {
                             id: characterShape
 
                             anchors.centerIn: parent
-                            implicitSize: dotsList.dotSize * 1.5
-                            shape: root.passwordShapeQueue[character.index % root.passwordShapeQueue.length]
-                                   ?? MaterialShape.Circle
+                            width: dotsList.dotSize * 1.2
+                            height: dotsList.dotSize * 1.2
+                            radius: width / 2
                             color: Appearance.colors.colOnSurface
-                            animationDuration: Appearance.animation.expressiveFastSpatial.duration
 
                             SequentialAnimation {
                                 id: appearAnimation
@@ -315,12 +300,6 @@ FocusScope {
 
                                 PauseAnimation {
                                     duration: Appearance.animation.expressiveEffects.duration * 0.9
-                                }
-
-                                PropertyAction {
-                                    target: characterShape
-                                    property: "shape"
-                                    value: MaterialShape.Circle
                                 }
 
                                 ParallelAnimation {

@@ -18,10 +18,33 @@ Singleton {
     property string configuredMono: ""
     property string configuredNumeric: ""
     property string configuredExpressive: ""
-    readonly property string ui: root.resolveFamily(root.configuredUi, root.defaultUi, "")
-    readonly property string mono: root.resolveFamily(root.configuredMono, root.defaultMono, "monospace")
-    readonly property string numeric: root.resolveFamily(root.configuredNumeric, root.defaultNumeric,
-                                                         "monospace")
+    // Candidate fallback families to ensure smooth rendering across varied environments
+    readonly property var uiFallbackFamilies: [
+        "LXGW WenKai GB Screen",
+        "LXGW WenKai Mono",
+        "霞鹜文楷等宽",
+        "Noto Sans CJK SC",
+        "Noto Sans CJK",
+        "sans-serif"
+    ]
+    readonly property var monoFallbackFamilies: [
+        "JetBrainsMono Nerd Font",
+        "JetBrains Mono",
+        "monospace"
+    ]
+
+    readonly property string ui: root.resolveFirstAvailable(
+        [root.configuredUi, root.defaultUi].concat(root.uiFallbackFamilies),
+        ""
+    )
+    readonly property string mono: root.resolveFirstAvailable(
+        [root.configuredMono, root.defaultMono].concat(root.monoFallbackFamilies),
+        "monospace"
+    )
+    readonly property string numeric: root.resolveFirstAvailable(
+        [root.configuredNumeric, root.defaultNumeric, root.mono].concat(root.monoFallbackFamilies),
+        "monospace"
+    )
     readonly property string expressive: root.resolveFamily(root.configuredExpressive, root.bundledFamilyName,
                                                             root.ui)
     // This role is intentionally independent of every user preference. If
@@ -52,6 +75,15 @@ Singleton {
         if (root.familyAvailable(defaultValue))
             return defaultValue;
 
+        return genericFallback || "";
+    }
+
+    function resolveFirstAvailable(candidates, genericFallback) {
+        for (let i = 0; i < candidates.length; ++i) {
+            const family = String(candidates[i] || "").trim();
+            if (family !== "" && root.familyAvailable(family))
+                return family;
+        }
         return genericFallback || "";
     }
 

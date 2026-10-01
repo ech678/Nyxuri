@@ -3,17 +3,9 @@ import Quickshell
 import Quickshell.Io
 import Clavis.Niri
 import qs.Modules.Bar
-import qs.Modules.ControlCenter
-import qs.Modules.DesktopCards
-import qs.Modules.Dock
-import qs.Modules.HotCorners
-import qs.Modules.Keystone
 import qs.Modules.Launcher
 import qs.Modules.Lock
 import qs.Modules.PowerMenu
-import qs.Modules.RegionSelector
-import qs.Modules.Sidebars
-import qs.Modules.Wallpaper
 import qs.Common
 import qs.Services
 
@@ -42,18 +34,9 @@ Item {
             }
             return false;
         case "keystone":
-            switch (action.method) {
-            case "closeAllOthers":
-            case "dashboard":
-            case "hub":
-            case "lyrics":
-            case "tools":
-                return keystone.invoke(action.method) !== "KEYSTONE_UNAVAILABLE";
-            }
             return false;
         case "sidebar":
-            return (action.method === "toggle" ? sidebarHost.toggleSidebar(action.args[0]) : sidebarHost.setSidebarOpen(
-                                                     action.args[0], true)) !== "INVALID_SIDE";
+            return false;
         case "shortcut-map":
             ShortcutMapService.open();
             return true;
@@ -87,68 +70,12 @@ Item {
 
     Component.onCompleted: {
         SpotlightCatalog.actionExecutor = root.executeSearchAction;
-        SpotlightCatalog.keystoneAvailable = Qt.binding(() => keystone.searchActionsAvailable);
+        SpotlightCatalog.keystoneAvailable = false;
         I18nService.initialize();
-        DisplayColor.evaluate();
-        LyricsTrackService.initialize();
         SystemIdentityService.initialize();
     }
 
-    DisplayOverlays {}
-
-    WallpaperBackground {}
-
-    // Desktop cards are an independent bottom-layer subsystem.  It remains
-    // loaded when the awww backend hides Clavis' wallpaper renderer.
-    DesktopCardHost {}
-
-    LazyLoader {
-        id: controlCenterLoader
-
-        active: false
-        Component.onCompleted: ControlCenterService.registerLoader(controlCenterLoader)
-        onItemChanged: {
-            if (item)
-                ControlCenterService.registerWindow(item);
-        }
-
-        ControlCenterWindow {
-            id: controlCenterWindow
-
-            onPopoutClosed: ControlCenterService.windowClosed(controlCenterWindow)
-        }
-    }
-
     Bar {}
-
-    DockHost {}
-
-    Keystone {
-        id: keystone
-    }
-
-    RegionSelector {}
-
-    SidebarHostWindow {
-        id: sidebarHost
-    }
-
-    HotCorners {
-        locked: sessionLocker.active
-        onTriggered: (action, screenName) => {
-            if (action === "overview") {
-                WidgetState.closeAllPopups();
-                Niri.toggleOverview();
-                return;
-            }
-            const target = action.split(":");
-            if (target.length === 2) {
-                if (Niri.inOverview)
-                    Niri.toggleOverview();
-                sidebarHost.openOnScreen(target[0], target[1], screenName);
-            }
-        }
-    }
 
     Lock {
         id: sessionLocker
@@ -206,9 +133,13 @@ Item {
 
     Loader {
         active: ShortcutMapService.visible
-        sourceComponent: ShortcutMap {
-            targetScreen: ShortcutMapService.targetScreen
-            onDismissed: ShortcutMapService.close()
+        source: "Modules/ControlCenter/ShortcutMap.qml"
+        onLoaded: {
+            if (item) {
+                item.targetScreen = ShortcutMapService.targetScreen;
+                if (item.dismissed)
+                    item.dismissed.connect(ShortcutMapService.close);
+            }
         }
     }
 

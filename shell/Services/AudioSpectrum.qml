@@ -2,7 +2,6 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
-import Clavis.Cava
 
 Singleton {
     id: root
@@ -12,8 +11,8 @@ Singleton {
 
     readonly property int refCount: Object.keys(_owners).length
     readonly property bool active: refCount > 0
-    readonly property bool available: cava.available
-    readonly property var values: cava.values
+    readonly property bool available: backendLoader.status === Loader.Ready && backendLoader.item ? backendLoader.item.available : false
+    readonly property var values: backendLoader.status === Loader.Ready && backendLoader.item ? backendLoader.item.values : []
 
     function acquire(token) {
         if (!token || root._owners[token])
@@ -33,10 +32,10 @@ Singleton {
         root._owners = next;
     }
 
-    CavaProvider {
-        id: cava
+    Loader {
+        id: backendLoader
 
         active: root.active
-        bars: root.bars
+        source: "cava/CavaBackend.qml"
     }
 }

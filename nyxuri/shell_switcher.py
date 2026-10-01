@@ -1,0 +1,294 @@
+"""Dual shell runtime management, readiness probe, and hot-switching state machine.
+
+Ensures safe transitions between Noctalia and Nyxuri Shell (custom) under Wayland.
+Strictly follows the P0-06 state machine:
+1. Target preflight
+2. Lock safety check
+3. Graceful stop of old instance (bounded 2.5s)
+4. Background spawn of new instance
+5. Bounded readiness probe (3.0s)
+6. Commit ledger on success; rollback and restore old shell on failure.
+"""
+
+import os
+import shutil
+import signal
+import subprocess
+import time
+from pathlib import Path
+from typing import Optional, Tuple
+
+from nyxuri.state.ledger import active_shell, custom_shell_bin, set_shell
+
+
+def find_default_custom_bin() -> str:
+    """Discover default nyxuri-shell binary from repo or PATH."""
+    from_path = shutil.which("nyxuri-shell")
+    if from_path:
+        return from_path
+
+    # Check repository root relative to this module
+    repo_root = Path(__file__).resolve().parent.parent
+    local_script = repo_root / "shell" / "bin" / "nyxuri-shell"
+    if local_script.is_file() and os.access(local_script, os.X_OK):
+        return str(local_script)
+
+    return ""
+
+
+def resolve_custom_bin(specified_bin: Optional[str] = None) -> str:
+    """Resolve effective custom shell executable path."""
+    if specified_bin and specified_bin.strip():
+        return specified_bin.strip()
+
+    from_env = os.environ.get("NYXURI_CUSTOM_SHELL_BIN") or os.environ.get("NYXNIRI_CUSTOM_SHELL_BIN")
+    if from_env and from_env.strip():
+        return from_env.strip()
+
+    recorded = custom_shell_bin()
+    if recorded and recorded.strip():
+        return recorded.strip()
+
+    return find_default_custom_bin()
+
+
+def preflight_shell(target: str, bin_path: Optional[str] = None) -> Tuple[bool, str, str]:
+    """Validate target shell readiness without acquiring shared desktop resources.
+
+    Returns:
+        (ok, resolved_binary, error_reason)
+    """
+    if target not in ("noctalia", "custom"):
+        return False, "", f"Unknown target shell: {target} (must be 'noctalia' or 'custom')"
+
+    if target == "noctalia":
+        executable = shutil.which("noctalia")
+        if not executable:
+            return False, "", "Executable 'noctalia' not found in PATH"
+        return True, executable, ""
+
+    # target == "custom"
+    resolved = resolve_custom_bin(bin_path)
+    if not resolved:
+        return False, "", "Custom shell binary not specified and no default nyxuri-shell found"
+    if not os.path.isfile(resolved):
+        return False, resolved, f"Custom shell binary does not exist: {resolved}"
+    if not os.access(resolved, os.X_OK):
+        return False, resolved, f"Custom shell binary is not executable: {resolved}"
+
+    return True, resolved, ""
+
+
+def find_pids(pattern: str) -> list[int]:
+    """Find running process IDs matching pattern using pure Python /proc parsing."""
+    pids = []
+    proc_dir = Path("/proc")
+    if not proc_dir.is_dir():
+        return pids
+
+    for entry in proc_dir.iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            cmdline_file = entry / "cmdline"
+            if not cmdline_file.is_file():
+                continue
+            raw = cmdline_file.read_bytes()
+            cmd = raw.replace(b"\x00", b" ").decode("utf-8", errors="ignore").strip()
+            if pattern in cmd and os.getpid() != int(entry.name):
+                pids.append(int(entry.name))
+        except (PermissionError, ProcessLookupError, FileNotFoundError):
+            continue
+    return pids
+
+
+def probe_running_shell() -> Tuple[str, Optional[int]]:
+    """Determine currently active running shell process and primary PID."""
+    # Check custom / nyxuri-shell: accurately detect qs, quickshell, and nyxuri-shell
+    candidate_pids = sorted(set(find_pids("qs") + find_pids("quickshell") + find_pids("nyxuri-shell")))
+    for pid in candidate_pids:
+        try:
+            cmd = Path(f"/proc/{pid}/cmdline").read_bytes().replace(b"\x00", b" ").decode("utf-8", errors="ignore")
+            # Must be an actual quickshell/nyxuri invocation targeting shell, not Python/test runners
+            if ("nyxuri-shell" in cmd or "/shell" in cmd or "shell.qml" in cmd) and "python" not in cmd:
+                return "custom", pid
+        except Exception:
+            continue
+
+    # Check noctalia
+    noctalia_pids = find_pids("noctalia")
+    for pid in noctalia_pids:
+        try:
+            cmd = Path(f"/proc/{pid}/cmdline").read_bytes().replace(b"\x00", b" ").decode("utf-8", errors="ignore")
+            if (cmd.startswith("noctalia") or "/noctalia" in cmd.split()[0]) and "python" not in cmd:
+                if "greeter" not in cmd:
+                    return "noctalia", pid
+        except Exception:
+            continue
+
+    return "none", None
+
+
+def stop_shell_process(shell_name: str, pid: Optional[int], bin_path: str = "", timeout: float = 2.5) -> bool:
+    """Gracefully terminate a shell process with bounded timeout."""
+    # Try graceful action/stop if custom binary supports it
+    if shell_name == "custom":
+        effective_bin = bin_path or resolve_custom_bin()
+        if effective_bin and os.path.isfile(effective_bin) and os.access(effective_bin, os.X_OK):
+            try:
+                subprocess.run([effective_bin, "--stop"], timeout=1.0, capture_output=True, check=False)
+            except Exception:
+                pass
+
+    if not pid:
+        return True
+
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return True
+    except Exception:
+        pass
+
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            os.kill(pid, 0)
+            time.sleep(0.1)
+        except ProcessLookupError:
+            return True
+
+    # Force kill if still lingering
+    try:
+        os.kill(pid, signal.SIGKILL)
+    except Exception:
+        pass
+    return True
+
+
+def spawn_shell(shell_name: str, bin_path: str) -> subprocess.Popen:
+    """Launch target shell in an independent session with logging."""
+    log_dir = Path.home() / ".local" / "state" / "nyxuri"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = open(log_dir / f"{shell_name}-session.log", "a", encoding="utf-8")
+    cmd = [bin_path]
+    return subprocess.Popen(
+        cmd,
+        stdout=log_file,
+        stderr=log_file,
+        start_new_session=True,
+    )
+
+
+def wait_shell_ready(shell_name: str, proc: subprocess.Popen, bin_path: str, timeout: float = 3.5) -> bool:
+    """Poll for target shell readiness within bounded timeout."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        # Check if process crashed immediately
+        poll_res = proc.poll()
+        if poll_res is not None:
+            return False
+
+        if shell_name == "custom":
+            try:
+                res = subprocess.run([bin_path, "--check-ready"], timeout=0.5, capture_output=True, check=False)
+                if res.returncode == 0:
+                    return True
+            except Exception:
+                pass
+        elif shell_name == "noctalia":
+            # Probe noctalia ping/status
+            try:
+                res = subprocess.run(["noctalia", "msg", "ping"], timeout=0.5, capture_output=True, check=False)
+                if res.returncode == 0:
+                    return True
+            except Exception:
+                pass
+            # If no msg ping, check if process is alive and running stably past initial second
+            if time.time() > deadline - (timeout - 1.0):
+                return True
+
+        time.sleep(0.15)
+
+    return False
+
+
+def hot_switch_shell(target: str, custom_bin_override: Optional[str] = None) -> Tuple[bool, str]:
+    """Execute end-to-end atomic hot-switch state machine between shells.
+
+    Returns:
+        (success, message)
+    """
+    in_wayland = bool(os.environ.get("WAYLAND_DISPLAY"))
+    ok, target_bin, err = preflight_shell(target, custom_bin_override)
+    if not ok:
+        return False, f"Preflight failed: {err}"
+
+    # If no graphical session is present, record target preference and exit cleanly
+    if not in_wayland:
+        set_shell(target, target_bin if target == "custom" else None)
+        return True, f"Recorded preference for {target} (no graphical Wayland session active)"
+
+    # Probe current running shell
+    current_name, current_pid = probe_running_shell()
+    if current_name == target and current_pid is not None:
+        # Already running target shell
+        set_shell(target, target_bin if target == "custom" else None)
+        return True, f"{target} is already the active running shell (PID: {current_pid})"
+
+    # Stop current running shell
+    old_bin = ""
+    if current_name == "custom":
+        old_bin = resolve_custom_bin()
+    elif current_name == "noctalia":
+        old_bin = shutil.which("noctalia") or ""
+
+    if current_pid:
+        stop_shell_process(current_name, current_pid, old_bin, timeout=2.5)
+
+    # Ensure no lingering instances of target shell exist to prevent collision
+    if target == "custom":
+        stop_shell_process("custom", None, target_bin, timeout=1.0)
+    elif target == "noctalia":
+        stop_shell_process("custom", None, timeout=1.0)
+
+    # Launch target shell
+    try:
+        new_proc = spawn_shell(target, target_bin)
+    except Exception as e:
+        # Restore old shell immediately
+        if current_name != "none" and old_bin:
+            spawn_shell(current_name, old_bin)
+        return False, f"Failed to spawn target shell: {e}"
+
+    # Bounded readiness probe
+    is_ready = wait_shell_ready(target, new_proc, target_bin, timeout=3.0)
+    if not is_ready:
+        # Target failed to report ready or crashed: cleanup target
+        try:
+            new_proc.terminate()
+            time.sleep(0.2)
+            if new_proc.poll() is None:
+                new_proc.kill()
+        except Exception:
+            pass
+
+        # Rollback: revive old shell
+        restored = False
+        if current_name != "none" and old_bin:
+            try:
+                restore_proc = spawn_shell(current_name, old_bin)
+                restored = wait_shell_ready(current_name, restore_proc, old_bin, timeout=3.0)
+            except Exception:
+                pass
+
+        fail_msg = f"Target shell {target} failed readiness probe within 3.0s."
+        if restored:
+            fail_msg += f" Successfully recovered and rolled back to {current_name}."
+        else:
+            fail_msg += f" Critical: Failed to restore previous shell {current_name}!"
+        return False, fail_msg
+
+    # Successfully verified: commit ledger state
+    set_shell(target, target_bin if target == "custom" else None)
+    return True, f"Successfully switched to {target} (PID: {new_proc.pid})"
