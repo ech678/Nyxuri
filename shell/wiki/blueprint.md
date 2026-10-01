@@ -3,9 +3,9 @@
 ## 文档状态
 
 当前处于详细计划阶段，尚未修复母体启动或实施四层迁移。本页区分确定约束、当前事实和
-候选设计；任务顺序/状态唯一维护在 [Shell ROADMAP](../shell/ROADMAP.md)，
-约束见 [AGENTS](../shell/AGENTS.md)，事实见 [审计](shell-audit.md)，操作见
-[开发与调试](shell-development.md)。产品名 Nyxuri Shell，程序/配置标识 nyxuri-shell。
+候选设计；任务顺序/状态唯一维护在 [Shell ROADMAP](../ROADMAP.md)，
+约束见 [AGENTS](../AGENTS.md)，事实见 [审计](audit.md)，操作见
+[开发与调试](development.md)。产品名 Nyxuri Shell，程序/配置标识 nyxuri-shell。
 
 “精神 → 详细计划 → 开发”是开发推进顺序，不意味着必须新增一个轻量程序启动复杂程序。
 原版 Niri、完整母体就地修整、视觉保真与干净生命周期已确定；启动管理实现尚须论证。
@@ -93,7 +93,7 @@ app 协调，域 backend 执行；Action Gateway 不包揽业务。先用两个�
 设置和安全锁屏；核心最低面不等于永久删除这些功能。Cava、天气地图、歌词等重型
 附加功能不进入奠基闭包。静态色板可用于奠基，后续必须兑现原生壁纸/M3 同构 palette.toml。
 
-TemplateAdapter 根据 Wiki 的 [主题适配](../configs/noctalia/README.md)、注册配置和
+TemplateAdapter 根据 Wiki 的 [主题适配](../../configs/noctalia/README.md)、注册配置和
 真实模板确定渲染器/变量契约；GTK CSS、Fcitx SVG、Kitty、Starship 与用户模板无需重写
 的承诺保留，不能未经调查自创有限 Jinja 子集并声称完全兼容。
 

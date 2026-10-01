@@ -1,13 +1,13 @@
 # Nyxuri Shell 路线图
 
 本文件维护阶段、依赖、状态与验收。设计精神与开发边界见 [AGENTS.md](AGENTS.md)，
-日常工作流见 [开发与调试](../llms-wiki/shell-development.md)。当前行为以源码与行为测试为准。
+日常工作流见 [开发与调试](wiki/development.md)。当前行为以源码与行为测试为准。
 
 ## 设计来源与长期目标
 
 设计来源：[Nyxuri Shell 宣言（issue #111）](https://github.com/ech678/Nyxuri/issues/111)，
 获取日期 2026-10-01。上游母体为 [StatIndet/quickshell](https://github.com/StatIndet/quickshell)
-（Clavis）；固定版本与导入证据见 [审计](../llms-wiki/shell-audit.md)。
+（Clavis）；固定版本与导入证据见 [审计](wiki/audit.md)。
 宣言已融入开发契约与阶段验收，原文可从 Git 历史追溯，不再维护第二套逐字副本。
 
 主线是去臃肿化、四层架构、可靠启动与视觉守护。宿主目标见 [根路线图](../ROADMAP.md)：
@@ -172,6 +172,6 @@ Terminal Rice、安全 Downdate 仍属于根目录宿主路线；多合成器抽
 | 壁纸/M3/模板与六动作、双轨承诺 | P4、P5 |
 
 文档职责：本文件维护阶段与状态，[开发约定](AGENTS.md) 管约束，
-[蓝图](../llms-wiki/shell-blueprint.md) 管设计与未决方案，
-[审计](../llms-wiki/shell-audit.md) 管事实，
-[开发与调试](../llms-wiki/shell-development.md) 管实际工具与未来开发流程。
+[蓝图](wiki/blueprint.md) 管设计与未决方案，
+[审计](wiki/audit.md) 管事实，
+[开发与调试](wiki/development.md) 管实际工具与未来开发流程。

@@ -5,6 +5,9 @@
 !ROADMAP.md
 !docs/*.md
 !docs/**/*.md
+!wiki/*.md
+!wiki/**/*.md
+!wiki/llms.txt
 
 # Local tool/editor state
 .agentrules

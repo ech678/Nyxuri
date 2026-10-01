@@ -11,9 +11,9 @@ Nyxuri Shell 以完整 Clavis 母体为起点，就地净化、重构；当前�
 - 设计依据：[issue #111](https://github.com/ech678/Nyxuri/issues/111)。宣言精神已融入本文件
   与 [ROADMAP.md](ROADMAP.md)，原文通过 Git 历史追溯，不要求维护逐字副本。
 - 当前实现以源码和行为测试为准；本文件是开发契约，ROADMAP 是阶段与验收计划。
-- 母体版本、审计证据和未验证事项见 [shell-audit](../llms-wiki/shell-audit.md)；
-  接口设计参考 [shell-blueprint](../llms-wiki/shell-blueprint.md)，实际工具与未来调试流程见
-  [shell-development](../llms-wiki/shell-development.md)。详细阶段以本目录 ROADMAP 为准。
+- 母体版本、审计证据和未验证事项见 [audit](wiki/audit.md)；
+  接口设计参考 [blueprint](wiki/blueprint.md)，实际工具与未来调试流程见
+  [development](wiki/development.md)。详细阶段以本目录 ROADMAP 为准。
 - `docs/` 中的 Clavis 文档属于上游参考，不能覆盖 Nyxuri 契约；上游安装命令、软链
   开发入口、key-cli 工作流不自动成为本项目要求。
 
@@ -116,7 +116,7 @@ UI 只呈现和响应输入；桌面意图经 Action Gateway 执行。命令、�
 先看 git status，运行宿主基线测试。只改请求范围，不主动 commit、不重排无关文件。
 文档修改只做相关一致性、链接和空白检查；运行代码修改按影响选择必要验证。
 日常循环、单开发分支实验与阶段合并规则见
-[开发与调试](../llms-wiki/shell-development.md)。分支不改变真实配置与服务的隔离要求。
+[开发与调试](wiki/development.md)。分支不改变真实配置与服务的隔离要求。
 
 - QML：只格式化改动文件，检查真实 import/类型和受影响消费者，按需做原版 Niri
   视觉/交互冒烟。普通布局不自动新增 QtTest。

@@ -1,0 +1,12 @@
+# Nyxuri Shell Wiki
+
+> Nyxuri 自研桌面 Shell 知识库：契约、路线、架构设计、基准审计与调试指南。
+> 本子 Wiki 维护 Nyxuri Shell 专属规约，上游 Clavis 历史文档见 [upstream](upstream.md)。
+
+- [rules](../AGENTS.md): 开发契约、原版 Niri 基线与四层/生命周期红线
+- [roadmap](../ROADMAP.md): 阶段推进、去臃肿化目标与阶段验收矩阵
+- [index](index.md): 子 Wiki 架构总览与导读
+- [blueprint](blueprint.md): 四层架构边界、启动/切换目标与待论证设计
+- [audit](audit.md): Clavis 完整母体基准、启动/依赖审计与全树资源索引
+- [development](development.md): QS 工具使用、隔离调试循环与验证证据
+- [upstream](upstream.md): 上游 docs/ 22 篇历史文档状态分级与参考索引
