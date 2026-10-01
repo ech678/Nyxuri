@@ -1,0 +1,729 @@
+pragma Singleton
+
+import QtQuick
+import Quickshell
+import Quickshell.Io
+import qs.Common
+import qs.Services
+import "../Common/functions/WallpaperSource.js" as WallpaperSource
+
+Singleton {
+    id: root
+
+    property bool scanning: false
+    property bool switching: false
+    property var wallpapers: []
+    property string currentWallpaper: PersonalizationConfig.wallpaperPath
+    property int revision: 0
+    property int settingsRevision: 0
+    property string pendingCycleAction: ""
+    property bool pendingCycleAutomatic: false
+    property string pendingWallpaperPath: ""
+    property string pendingWallpaperScreen: ""
+    property bool scanRequested: false
+    property var scanResults: []
+    property var desktopErrors: ({})
+    property var overviewErrors: ({})
+    property var overviewReadyScreens: ({})
+    property string lastDesktopError: ""
+    property string lastOverviewError: ""
+    readonly property bool overviewBackdropRuleDetected: NiriConfigService.snapshot.overviewBackdrop === true
+    readonly property bool niriTransparentBackgroundDetected: NiriConfigService.snapshot.overviewTransparent
+                                                              === true
+    readonly property bool overviewBackdropRuleProbeComplete: NiriConfigService.revision !== ""
+
+    readonly property bool busy: scanning || switching || ThemeService.generating || AwwwWallpaperService.busy
+    readonly property var imageExtensions: ["jpg", "jpeg", "png", "webp", "bmp", "gif"]
+    readonly property bool overviewReady: {
+        if (!PersonalizationConfig.overviewEnabled)
+            return true;
+        for (let index = 0; index < Quickshell.screens.length; index += 1) {
+            const name = String(Quickshell.screens[index].name);
+            if (root.overviewReadyScreens[name] !== true)
+                return false;
+        }
+        return true;
+    }
+
+    function basename(path) {
+        if (!path)
+            return "";
+        const value = String(path);
+        if (WallpaperSource.kind(value) === "palette")
+            return qsTr("Palette wallpaper");
+        if (root.isColorSource(value))
+            return qsTr("Solid-color wallpaper ") + value;
+        return value.substring(value.lastIndexOf("/") + 1);
+    }
+
+    function parentFolder(path) {
+        if (!path || path.indexOf("/") === -1)
+            return "";
+        return path.substring(0, path.lastIndexOf("/"));
+    }
+
+    function normalizedPath(value) {
+        return WallpaperSource.localPath(value);
+    }
+
+    function isColorSource(value) {
+        return WallpaperSource.isSolid(value);
+    }
+    function isImagePath(value) {
+        return WallpaperSource.isImage(value);
+    }
+    function sourceKind(value) {
+        return WallpaperSource.kind(value);
+    }
+    function primaryColor(value) {
+        return WallpaperSource.primary(value);
+    }
+    readonly property bool canUseAwww: {
+        const revision = root.revision;
+        const screens = Quickshell.screens;
+        if (!screens.length)
+            return WallpaperSource.isImage(root.wallpaperForScreen(""));
+        for (let i = 0; i < screens.length; ++i)
+            if (!WallpaperSource.isImage(root.wallpaperForScreen(screens[i].name)))
+                return false;
+        return true;
+    }
+
+    function fillModeForScreen(screenName) {
+        return PersonalizationConfig.perMonitorWallpaper ? PersonalizationConfig.monitorFillMode(screenName) :
+                                                           PersonalizationConfig.wallpaperFillMode;
+    }
+
+    function overviewFillModeForScreen(screenName) {
+        return PersonalizationConfig.overviewPerMonitorWallpaper
+                ? PersonalizationConfig.overviewMonitorFillMode(screenName) :
+                  PersonalizationConfig.overviewWallpaperFillMode;
+    }
+
+    function qtFillMode(modeName) {
+        switch (modeName) {
+        case "Stretch":
+            return Image.Stretch;
+        case "Fit":
+        case "PreserveAspectFit":
+            return Image.PreserveAspectFit;
+        case "Fill":
+        case "PreserveAspectCrop":
+        case "panorama":
+            return Image.PreserveAspectCrop;
+        case "Tile":
+            return Image.Tile;
+        case "TileVertically":
+            return Image.TileVertically;
+        case "TileHorizontally":
+            return Image.TileHorizontally;
+        case "Pad":
+            return Image.Pad;
+        default:
+            return Image.PreserveAspectCrop;
+        }
+    }
+
+    function shaderFillMode(modeName) {
+        switch (modeName) {
+        case "Stretch":
+            return 0;
+        case "Fit":
+        case "PreserveAspectFit":
+            return 1;
+        case "Fill":
+        case "PreserveAspectCrop":
+        case "panorama":
+            return 2;
+        case "Tile":
+            return 3;
+        case "TileVertically":
+            return 4;
+        case "TileHorizontally":
+            return 5;
+        case "Pad":
+            return 6;
+        default:
+            return 2;
+        }
+    }
+
+    function wallpaperForScreen(screenName) {
+        let path = "";
+        if (PersonalizationConfig.perMonitorWallpaper)
+            path = PersonalizationConfig.monitorWallpaper(screenName);
+
+        if (!path && PersonalizationConfig.perModeWallpaper)
+            path = UiPreferences.darkMode ? PersonalizationConfig.wallpaperPathDark :
+                                            PersonalizationConfig.wallpaperPathLight;
+
+        if (!path)
+            path = PersonalizationConfig.wallpaperPath;
+
+        return path || "";
+    }
+
+    function overviewWallpaperForScreen(screenName) {
+        let path = "";
+        if (!PersonalizationConfig.overviewUseDesktopWallpaper) {
+            if (PersonalizationConfig.overviewPerMonitorWallpaper)
+                path = PersonalizationConfig.overviewMonitorWallpaper(screenName);
+            if (!path)
+                path = PersonalizationConfig.overviewWallpaperPath;
+        }
+        if (!path)
+            path = root.wallpaperForScreen(screenName);
+        return path || "";
+    }
+
+    function updateErrorMap(propertyName, screenName, message) {
+        const current = root[propertyName] || {};
+        const next = {};
+        for (let key in current)
+            next[key] = current[key];
+        const name = String(screenName || qsTr("Global"));
+        if (message)
+            next[name] = String(message);
+        else
+            delete next[name];
+        root[propertyName] = next;
+        const values = Object.keys(next);
+        return values.length > 0 ? next[values[values.length - 1]] : "";
+    }
+
+    function reportDesktopError(screenName, message) {
+        root.lastDesktopError = root.updateErrorMap("desktopErrors", screenName, message);
+    }
+
+    function clearDesktopError(screenName) {
+        root.lastDesktopError = root.updateErrorMap("desktopErrors", screenName, "");
+    }
+
+    function reportOverviewSurface(screenName, ready, errorMessage) {
+        const next = {};
+        for (let key in root.overviewReadyScreens)
+            next[key] = root.overviewReadyScreens[key];
+        next[String(screenName || "")] = !!ready;
+        root.overviewReadyScreens = next;
+
+        if (errorMessage) {
+            root.lastOverviewError = root.updateErrorMap("overviewErrors", screenName, errorMessage);
+        } else if (ready) {
+            root.lastOverviewError = root.updateErrorMap("overviewErrors", screenName, "");
+        }
+    }
+
+    function pruneRuntimeScreenState() {
+        const names = {};
+        for (let index = 0; index < Quickshell.screens.length; index += 1) {
+            names[String(Quickshell.screens[index].name)] = true;
+        }
+
+        function pruned(source, preserveGlobal) {
+            const result = {};
+            for (let key in source) {
+                if (names[key] || (preserveGlobal && key === qsTr("Global")))
+                    result[key] = source[key];
+            }
+            return result;
+        }
+
+        root.desktopErrors = pruned(root.desktopErrors, true);
+        root.overviewErrors = pruned(root.overviewErrors, true);
+        root.overviewReadyScreens = pruned(root.overviewReadyScreens, false);
+
+        const desktopKeys = Object.keys(root.desktopErrors);
+        root.lastDesktopError = desktopKeys.length > 0 ? root.desktopErrors[desktopKeys[desktopKeys.length
+                                                                                        - 1]] : "";
+        const overviewKeys = Object.keys(root.overviewErrors);
+        root.lastOverviewError = overviewKeys.length > 0
+                ? root.overviewErrors[overviewKeys[overviewKeys.length - 1]] : "";
+    }
+
+    function scan() {
+        if (scanProcess.running) {
+            root.scanRequested = true;
+            return;
+        }
+
+        root.scanRequested = false;
+        root.scanResults = [];
+        scanProcess.command = ["find", PersonalizationConfig.wallpaperFolder, "-type", "f", "(", "-iname", "*.jpg",
+                               "-o", "-iname", "*.jpeg", "-o", "-iname", "*.png", "-o", "-iname", "*.webp",
+                               "-o", "-iname", "*.bmp", "-o", "-iname", "*.gif", ")", "-print"];
+        scanProcess.running = false;
+        scanProcess.running = true;
+    }
+
+    function rememberWallpaper(path) {
+        if (!root.isImagePath(path) || root.wallpapers.indexOf(path) !== -1)
+            return;
+
+        const next = root.wallpapers.concat([path]);
+        root.wallpapers = next.slice().sort();
+    }
+
+    function setWallpaper(path, screenName) {
+        if (!WallpaperSource.supported(path, PersonalizationConfig.desktopWallpaperBackend))
+            return false;
+
+        if (PersonalizationConfig.perMonitorWallpaper && screenName)
+            PersonalizationConfig.setMonitorWallpaper(screenName, path);
+        else if (PersonalizationConfig.perModeWallpaper)
+            PersonalizationConfig.setWallpaperPathForMode(UiPreferences.darkMode ? "dark" : "light", path);
+        else
+            PersonalizationConfig.setWallpaperPath(path);
+
+        root.currentWallpaper = path;
+        root.rememberWallpaper(path);
+        Appearance.currentWallpaperPreview = root.isImagePath(path) ? Paths.fileUrl(path) : path;
+        root.switching = true;
+
+        if (root.isImagePath(path))
+            ThemeService.generateFromWallpaper(path);
+        else if (WallpaperSource.primary(path))
+            ThemeService.generateFromColor(WallpaperSource.primary(path));
+        else
+            root.switching = false;
+
+        return true;
+    }
+
+    function clearWallpaper(screenName) {
+        if (PersonalizationConfig.perMonitorWallpaper && screenName)
+            PersonalizationConfig.setMonitorWallpaper(screenName, "");
+        else if (PersonalizationConfig.perModeWallpaper)
+            PersonalizationConfig.setWallpaperPathForMode(UiPreferences.darkMode ? "dark" : "light", "");
+        else
+            PersonalizationConfig.setWallpaperPath("");
+
+        root.currentWallpaper = root.wallpaperForScreen("");
+        Appearance.currentWallpaperPreview = "";
+        root.switching = false;
+
+        return true;
+    }
+
+    function _setWallpaperFolder(path) {
+        PersonalizationConfig.setWallpaperFolder(path || Paths.dataHome + "/wallpapers");
+        root.scan();
+        return true;
+    }
+
+    function setWallpaperFolder(path) {
+        root.pendingWallpaperPath = "";
+        root.pendingWallpaperScreen = "";
+        return root._setWallpaperFolder(path);
+    }
+
+    function setWallpaperFromFile(path, screenName) {
+        if (!path || !root.isImagePath(path))
+            return false;
+
+        const folder = root.parentFolder(path);
+        if (folder === "")
+            return root.setWallpaper(path, screenName || "");
+
+        // Queue the selected file before changing the folder. The folder
+        // setter may synchronously emit wallpaperFolderChanged(), so the
+        // scan completion handler always sees the complete pending request.
+        root.pendingWallpaperPath = path;
+        root.pendingWallpaperScreen = screenName || "";
+        return root._setWallpaperFolder(folder);
+    }
+
+    function setWallpaperFillMode(value) {
+        PersonalizationConfig.setWallpaperFillMode(value);
+        return true;
+    }
+
+    function setWallpaperFillModeForScreen(screenName, value) {
+        if (screenName)
+            PersonalizationConfig.setMonitorWallpaperFillMode(screenName, value);
+        else
+            PersonalizationConfig.setWallpaperFillMode(value);
+        return true;
+    }
+
+    function setDesktopWallpaperBackend(value) {
+        if (value === "awww" && !root.canUseAwww)
+            return false;
+        PersonalizationConfig.setDesktopWallpaperBackend(value);
+        return true;
+    }
+
+    function setWallpaperTransitionType(value) {
+        PersonalizationConfig.setWallpaperTransitionType(value);
+        return true;
+    }
+
+    function setTransitionDurationMs(value) {
+        PersonalizationConfig.setTransitionDurationMs(value);
+        return true;
+    }
+
+    function setTransitionEasingMode(value) {
+        PersonalizationConfig.setTransitionEasingMode(value);
+        return true;
+    }
+
+    function setTransitionBezierCurve(value) {
+        PersonalizationConfig.setTransitionBezierCurve(value);
+        return true;
+    }
+
+    function setOverviewWallpaper(path, screenName) {
+        if (!WallpaperSource.supported(path, "quickshell"))
+            return false;
+        if (screenName) {
+            PersonalizationConfig.setOverviewMonitorWallpaper(screenName, path);
+        } else {
+            PersonalizationConfig.setOverviewWallpaperPath(path);
+        }
+        return true;
+    }
+
+    function clearOverviewWallpaper(screenName) {
+        if (screenName)
+            PersonalizationConfig.setOverviewMonitorWallpaper(screenName, "");
+        else
+            PersonalizationConfig.setOverviewWallpaperPath("");
+        return true;
+    }
+
+    function setOverviewFillModeForScreen(screenName, value) {
+        if (screenName) {
+            PersonalizationConfig.setOverviewMonitorFillMode(screenName, value);
+        } else {
+            PersonalizationConfig.setOverviewWallpaperFillMode(value);
+        }
+        return true;
+    }
+
+    function cycle(action, automatic) {
+        if (automatic && WallpaperPaletteSession.desktopActive)
+            return false;
+        if (root.wallpapers.length === 0) {
+            root.pendingCycleAction = action;
+            root.pendingCycleAutomatic = !!automatic;
+            root.scan();
+            return false;
+        }
+
+        return root.applyCycle(action);
+    }
+
+    function applyCycle(action) {
+        if (root.wallpapers.length === 0)
+            return false;
+
+        const current = root.currentWallpaper || root.wallpaperForScreen("");
+        let index = root.wallpapers.indexOf(current);
+        let nextIndex = 0;
+
+        if (action === "previous") {
+            nextIndex = index >= 0 ? (index - 1 + root.wallpapers.length) % root.wallpapers.length :
+                                     root.wallpapers.length - 1;
+        } else if (action === "random") {
+            if (root.wallpapers.length === 1) {
+                nextIndex = 0;
+            } else {
+                do {
+                    nextIndex = Math.floor(Math.random() * root.wallpapers.length);
+                } while (nextIndex === index)
+            }
+        } else {
+            nextIndex = index >= 0 ? (index + 1) % root.wallpapers.length : 0;
+        }
+
+        return root.setWallpaper(root.wallpapers[nextIndex], "");
+    }
+
+    function cycleNext() {
+        return root.cycle("next");
+    }
+
+    function cyclePrevious() {
+        return root.cycle("previous");
+    }
+
+    function cycleRandom() {
+        return root.cycle("random");
+    }
+
+    function refreshFromConfig() {
+        root.currentWallpaper = root.wallpaperForScreen("");
+        root.revision += 1;
+    }
+
+    function refreshSettingsFromConfig() {
+        root.settingsRevision += 1;
+    }
+
+    function refreshOverviewBackdropRule() {
+        NiriConfigService.refresh();
+    }
+
+    Component.onCompleted: {
+        root.refreshFromConfig();
+        root.scan();
+        root.refreshOverviewBackdropRule();
+    }
+
+    Connections {
+        target: PersonalizationConfig
+
+        function onWallpaperFolderChanged() {
+            root.scan();
+        }
+
+        function onWallpaperPathChanged() {
+            root.refreshFromConfig();
+        }
+
+        function onWallpaperPathLightChanged() {
+            root.refreshFromConfig();
+        }
+
+        function onWallpaperPathDarkChanged() {
+            root.refreshFromConfig();
+        }
+
+        function onPerModeWallpaperChanged() {
+            root.refreshFromConfig();
+        }
+
+        function onPerMonitorWallpaperChanged() {
+            root.refreshFromConfig();
+            root.refreshSettingsFromConfig();
+        }
+
+        function onMonitorWallpapersChanged() {
+            root.refreshFromConfig();
+        }
+
+        function onDesktopWallpaperBackendChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onWallpaperFillModeChanged() {
+            root.refreshFromConfig();
+            root.refreshSettingsFromConfig();
+        }
+
+        function onMonitorWallpaperFillModesChanged() {
+            root.refreshFromConfig();
+            root.refreshSettingsFromConfig();
+        }
+
+        function onWallpaperTransitionTypeChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onIncludedTransitionsChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onTransitionDurationMsChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onTransitionEasingModeChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onTransitionBezierCurveChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onAwwwDesktopTransitionTypeChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onAwwwTransitionFpsChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onAwwwTransitionAngleChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onAwwwTransitionPositionChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onAwwwTransitionWaveChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onOverviewEnabledChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onOverviewUseDesktopWallpaperChanged() {
+            root.refreshFromConfig();
+        }
+
+        function onOverviewWallpaperPathChanged() {
+            root.refreshFromConfig();
+        }
+
+        function onOverviewWallpaperFillModeChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onOverviewPerMonitorWallpaperChanged() {
+            root.refreshFromConfig();
+            root.refreshSettingsFromConfig();
+        }
+
+        function onOverviewMonitorWallpapersChanged() {
+            root.refreshFromConfig();
+        }
+
+        function onOverviewMonitorFillModesChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onOverviewTransitionTypeChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onOverviewBlurRadiusChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onOverviewDimChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onOverviewSaturationChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onOverviewContrastChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onParallaxVerticalEnabledChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onParallaxFollowWorkspacesChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onParallaxFollowSidebarsChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onParallaxFollowTiledColumnsChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onParallaxPreferredScaleChanged() {
+            root.refreshSettingsFromConfig();
+        }
+
+        function onParallaxTiledColumnSpanChanged() {
+            root.refreshSettingsFromConfig();
+        }
+    }
+
+    Connections {
+        target: Quickshell
+
+        function onScreensChanged() {
+            root.pruneRuntimeScreenState();
+        }
+    }
+
+    Connections {
+        target: UiPreferences
+
+        function onDarkModeChanged() {
+            if (PersonalizationConfig.perModeWallpaper)
+                root.refreshFromConfig();
+        }
+    }
+
+    Connections {
+        target: ThemeService
+
+        function onGeneratingChanged() {
+            if (!ThemeService.generating)
+                root.switching = false;
+        }
+    }
+
+    Timer {
+        id: cycleTimer
+        interval: Math.max(5, PersonalizationConfig.autoCycleInterval) * 1000
+        repeat: true
+        running: !WallpaperPaletteSession.desktopActive && PersonalizationConfig.autoCycleEnabled
+                 && PersonalizationConfig.autoCycleMode === "interval"
+        onTriggered: root.cycle("next", true)
+    }
+
+    Timer {
+        id: dailyTimer
+        interval: 30000
+        repeat: true
+        running: !WallpaperPaletteSession.desktopActive && PersonalizationConfig.autoCycleEnabled
+                 && PersonalizationConfig.autoCycleMode === "time"
+        property string lastTriggered: ""
+        onTriggered: {
+            const now = new Date();
+            const stamp = now.toISOString().slice(0, 10) + " " + PersonalizationConfig.autoCycleTime;
+            const current = ("0" + now.getHours()).slice(-2) + ":" + ("0" + now.getMinutes()).slice(-2);
+            if (current === PersonalizationConfig.autoCycleTime && lastTriggered !== stamp) {
+                lastTriggered = stamp;
+                root.cycle("next", true);
+            }
+        }
+    }
+
+    Process {
+        id: scanProcess
+        onRunningChanged: if (running)
+                              root.scanning = true
+        stdout: SplitParser {
+            splitMarker: "\n"
+            onRead: file => {
+                const path = file.trim();
+                if (path !== "")
+                    root.scanResults.push(path);
+            }
+        }
+        onExited: {
+            root.scanning = false;
+            const sorted = root.scanResults.slice().sort();
+            const unique = [];
+            for (let i = 0; i < sorted.length; i += 1) {
+                if (i === 0 || sorted[i] !== sorted[i - 1])
+                    unique.push(sorted[i]);
+            }
+            root.wallpapers = unique;
+            if (root.scanRequested) {
+                root.scan();
+                return;
+            }
+
+            if (root.pendingWallpaperPath !== "") {
+                const path = root.pendingWallpaperPath;
+                const screenName = root.pendingWallpaperScreen;
+                root.pendingWallpaperPath = "";
+                root.pendingWallpaperScreen = "";
+                root.setWallpaper(path, screenName);
+            }
+
+            if (root.pendingCycleAction !== "" && root.wallpapers.length > 0) {
+                const action = root.pendingCycleAction;
+                root.pendingCycleAction = "";
+                if (!root.pendingCycleAutomatic || !WallpaperPaletteSession.desktopActive)
+                    root.applyCycle(action);
+                root.pendingCycleAutomatic = false;
+            }
+        }
+    }
+}

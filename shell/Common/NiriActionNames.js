@@ -1,0 +1,248 @@
+// Names extracted from the bundled action catalog. IDs are language-independent.
+function translated(name) {
+    switch (name) {
+    case "Weather sidebar: toggle": return qsTranslate("NiriActions", "Weather sidebar: toggle");
+    case "Sidebar drawer: toggle": return qsTranslate("NiriActions", "Sidebar drawer: toggle");
+    case "Spotlight: Commands": return qsTranslate("NiriActions", "Spotlight: Commands");
+    case "Spotlight: Calculator": return qsTranslate("NiriActions", "Spotlight: Calculator");
+    case "Spotlight: Currency": return qsTranslate("NiriActions", "Spotlight: Currency");
+    case "Spotlight: Time zone": return qsTranslate("NiriActions", "Spotlight: Time zone");
+    case "Spotlight: Light theme": return qsTranslate("NiriActions", "Spotlight: Light theme");
+    case "Spotlight: Dark theme": return qsTranslate("NiriActions", "Spotlight: Dark theme");
+    case "Spotlight: Search settings": return qsTranslate("NiriActions", "Spotlight: Search settings");
+    case "Spotlight: Search IPC actions": return qsTranslate("NiriActions", "Spotlight: Search IPC actions");
+    case "Spotlight: Location picker": return qsTranslate("NiriActions", "Spotlight: Location picker");
+
+    case "Spotlight: Search": return qsTranslate("NiriActions", "Spotlight: Search");
+    case "Spotlight: Find files": return qsTranslate("NiriActions", "Spotlight: Find files");
+    case "Quit": return qsTranslate("NiriActions", "Quit");
+    case "Suspend": return qsTranslate("NiriActions", "Suspend");
+    case "Power off monitors": return qsTranslate("NiriActions", "Power off monitors");
+    case "Power on monitors": return qsTranslate("NiriActions", "Power on monitors");
+    case "Toggle debug tint": return qsTranslate("NiriActions", "Toggle debug tint");
+    case "Debug toggle opaque regions": return qsTranslate("NiriActions", "Debug toggle opaque regions");
+    case "Debug toggle damage": return qsTranslate("NiriActions", "Debug toggle damage");
+    case "Do screen transition": return qsTranslate("NiriActions", "Do screen transition");
+    case "Screenshot": return qsTranslate("NiriActions", "Screenshot");
+    case "Screenshot screen": return qsTranslate("NiriActions", "Screenshot screen");
+    case "Screenshot window": return qsTranslate("NiriActions", "Screenshot window");
+    case "Toggle keyboard shortcuts inhibit": return qsTranslate("NiriActions", "Toggle keyboard shortcuts inhibit");
+    case "Close window": return qsTranslate("NiriActions", "Close window");
+    case "Fullscreen window": return qsTranslate("NiriActions", "Fullscreen window");
+    case "Toggle windowed fullscreen": return qsTranslate("NiriActions", "Toggle windowed fullscreen");
+    case "Focus window in column": return qsTranslate("NiriActions", "Focus window in column");
+    case "Focus window previous": return qsTranslate("NiriActions", "Focus window previous");
+    case "Focus column left": return qsTranslate("NiriActions", "Focus column left");
+    case "Focus column right": return qsTranslate("NiriActions", "Focus column right");
+    case "Focus column first": return qsTranslate("NiriActions", "Focus column first");
+    case "Focus column last": return qsTranslate("NiriActions", "Focus column last");
+    case "Focus column right or first": return qsTranslate("NiriActions", "Focus column right or first");
+    case "Focus column left or last": return qsTranslate("NiriActions", "Focus column left or last");
+    case "Focus column": return qsTranslate("NiriActions", "Focus column");
+    case "Focus window or monitor up": return qsTranslate("NiriActions", "Focus window or monitor up");
+    case "Focus window or monitor down": return qsTranslate("NiriActions", "Focus window or monitor down");
+    case "Focus column or monitor left": return qsTranslate("NiriActions", "Focus column or monitor left");
+    case "Focus column or monitor right": return qsTranslate("NiriActions", "Focus column or monitor right");
+    case "Focus window down": return qsTranslate("NiriActions", "Focus window down");
+    case "Focus window up": return qsTranslate("NiriActions", "Focus window up");
+    case "Focus window down or column left": return qsTranslate("NiriActions", "Focus window down or column left");
+    case "Focus window down or column right": return qsTranslate("NiriActions", "Focus window down or column right");
+    case "Focus window up or column left": return qsTranslate("NiriActions", "Focus window up or column left");
+    case "Focus window up or column right": return qsTranslate("NiriActions", "Focus window up or column right");
+    case "Focus window or workspace down": return qsTranslate("NiriActions", "Focus window or workspace down");
+    case "Focus window or workspace up": return qsTranslate("NiriActions", "Focus window or workspace up");
+    case "Focus window top": return qsTranslate("NiriActions", "Focus window top");
+    case "Focus window bottom": return qsTranslate("NiriActions", "Focus window bottom");
+    case "Focus window down or top": return qsTranslate("NiriActions", "Focus window down or top");
+    case "Focus window up or bottom": return qsTranslate("NiriActions", "Focus window up or bottom");
+    case "Move column left": return qsTranslate("NiriActions", "Move column left");
+    case "Move column right": return qsTranslate("NiriActions", "Move column right");
+    case "Move column to first": return qsTranslate("NiriActions", "Move column to first");
+    case "Move column to last": return qsTranslate("NiriActions", "Move column to last");
+    case "Move column left or to monitor left": return qsTranslate("NiriActions", "Move column left or to monitor left");
+    case "Move column right or to monitor right": return qsTranslate("NiriActions", "Move column right or to monitor right");
+    case "Move column to index": return qsTranslate("NiriActions", "Move column to index");
+    case "Move window down": return qsTranslate("NiriActions", "Move window down");
+    case "Move window up": return qsTranslate("NiriActions", "Move window up");
+    case "Move window down or to workspace down": return qsTranslate("NiriActions", "Move window down or to workspace down");
+    case "Move window up or to workspace up": return qsTranslate("NiriActions", "Move window up or to workspace up");
+    case "Consume or expel window left": return qsTranslate("NiriActions", "Consume or expel window left");
+    case "Consume or expel window right": return qsTranslate("NiriActions", "Consume or expel window right");
+    case "Consume window into column": return qsTranslate("NiriActions", "Consume window into column");
+    case "Expel window from column": return qsTranslate("NiriActions", "Expel window from column");
+    case "Swap window left": return qsTranslate("NiriActions", "Swap window left");
+    case "Swap window right": return qsTranslate("NiriActions", "Swap window right");
+    case "Toggle column tabbed display": return qsTranslate("NiriActions", "Toggle column tabbed display");
+    case "Set column display": return qsTranslate("NiriActions", "Set column display");
+    case "Center column": return qsTranslate("NiriActions", "Center column");
+    case "Center window": return qsTranslate("NiriActions", "Center window");
+    case "Center visible columns": return qsTranslate("NiriActions", "Center visible columns");
+    case "Focus workspace down": return qsTranslate("NiriActions", "Focus workspace down");
+    case "Focus workspace up": return qsTranslate("NiriActions", "Focus workspace up");
+    case "Focus workspace": return qsTranslate("NiriActions", "Focus workspace");
+    case "Focus workspace previous": return qsTranslate("NiriActions", "Focus workspace previous");
+    case "Move window to workspace down": return qsTranslate("NiriActions", "Move window to workspace down");
+    case "Move window to workspace up": return qsTranslate("NiriActions", "Move window to workspace up");
+    case "Move window to workspace": return qsTranslate("NiriActions", "Move window to workspace");
+    case "Move column to workspace down": return qsTranslate("NiriActions", "Move column to workspace down");
+    case "Move column to workspace up": return qsTranslate("NiriActions", "Move column to workspace up");
+    case "Move column to workspace": return qsTranslate("NiriActions", "Move column to workspace");
+    case "Move workspace down": return qsTranslate("NiriActions", "Move workspace down");
+    case "Move workspace up": return qsTranslate("NiriActions", "Move workspace up");
+    case "Move workspace to index": return qsTranslate("NiriActions", "Move workspace to index");
+    case "Move workspace to monitor": return qsTranslate("NiriActions", "Move workspace to monitor");
+    case "Set workspace name": return qsTranslate("NiriActions", "Set workspace name");
+    case "Unset workspace name": return qsTranslate("NiriActions", "Unset workspace name");
+    case "Focus monitor left": return qsTranslate("NiriActions", "Focus monitor left");
+    case "Focus monitor right": return qsTranslate("NiriActions", "Focus monitor right");
+    case "Focus monitor down": return qsTranslate("NiriActions", "Focus monitor down");
+    case "Focus monitor up": return qsTranslate("NiriActions", "Focus monitor up");
+    case "Focus monitor previous": return qsTranslate("NiriActions", "Focus monitor previous");
+    case "Focus monitor next": return qsTranslate("NiriActions", "Focus monitor next");
+    case "Focus monitor": return qsTranslate("NiriActions", "Focus monitor");
+    case "Move window to monitor left": return qsTranslate("NiriActions", "Move window to monitor left");
+    case "Move window to monitor right": return qsTranslate("NiriActions", "Move window to monitor right");
+    case "Move window to monitor down": return qsTranslate("NiriActions", "Move window to monitor down");
+    case "Move window to monitor up": return qsTranslate("NiriActions", "Move window to monitor up");
+    case "Move window to monitor previous": return qsTranslate("NiriActions", "Move window to monitor previous");
+    case "Move window to monitor next": return qsTranslate("NiriActions", "Move window to monitor next");
+    case "Move window to monitor": return qsTranslate("NiriActions", "Move window to monitor");
+    case "Move column to monitor left": return qsTranslate("NiriActions", "Move column to monitor left");
+    case "Move column to monitor right": return qsTranslate("NiriActions", "Move column to monitor right");
+    case "Move column to monitor down": return qsTranslate("NiriActions", "Move column to monitor down");
+    case "Move column to monitor up": return qsTranslate("NiriActions", "Move column to monitor up");
+    case "Move column to monitor previous": return qsTranslate("NiriActions", "Move column to monitor previous");
+    case "Move column to monitor next": return qsTranslate("NiriActions", "Move column to monitor next");
+    case "Move column to monitor": return qsTranslate("NiriActions", "Move column to monitor");
+    case "Set window width": return qsTranslate("NiriActions", "Set window width");
+    case "Set window height": return qsTranslate("NiriActions", "Set window height");
+    case "Reset window height": return qsTranslate("NiriActions", "Reset window height");
+    case "Switch preset column width": return qsTranslate("NiriActions", "Switch preset column width");
+    case "Switch preset column width back": return qsTranslate("NiriActions", "Switch preset column width back");
+    case "Switch preset window width": return qsTranslate("NiriActions", "Switch preset window width");
+    case "Switch preset window width back": return qsTranslate("NiriActions", "Switch preset window width back");
+    case "Switch preset window height": return qsTranslate("NiriActions", "Switch preset window height");
+    case "Switch preset window height back": return qsTranslate("NiriActions", "Switch preset window height back");
+    case "Maximize column": return qsTranslate("NiriActions", "Maximize column");
+    case "Maximize window to edges": return qsTranslate("NiriActions", "Maximize window to edges");
+    case "Set column width": return qsTranslate("NiriActions", "Set column width");
+    case "Expand column to available width": return qsTranslate("NiriActions", "Expand column to available width");
+    case "Switch layout": return qsTranslate("NiriActions", "Switch layout");
+    case "Show hotkey overlay": return qsTranslate("NiriActions", "Show hotkey overlay");
+    case "Move workspace to monitor left": return qsTranslate("NiriActions", "Move workspace to monitor left");
+    case "Move workspace to monitor right": return qsTranslate("NiriActions", "Move workspace to monitor right");
+    case "Move workspace to monitor down": return qsTranslate("NiriActions", "Move workspace to monitor down");
+    case "Move workspace to monitor up": return qsTranslate("NiriActions", "Move workspace to monitor up");
+    case "Move workspace to monitor previous": return qsTranslate("NiriActions", "Move workspace to monitor previous");
+    case "Move workspace to monitor next": return qsTranslate("NiriActions", "Move workspace to monitor next");
+    case "Toggle window floating": return qsTranslate("NiriActions", "Toggle window floating");
+    case "Move window to floating": return qsTranslate("NiriActions", "Move window to floating");
+    case "Move window to tiling": return qsTranslate("NiriActions", "Move window to tiling");
+    case "Focus floating": return qsTranslate("NiriActions", "Focus floating");
+    case "Focus tiling": return qsTranslate("NiriActions", "Focus tiling");
+    case "Switch focus between floating and tiling": return qsTranslate("NiriActions", "Switch focus between floating and tiling");
+    case "Toggle window rule opacity": return qsTranslate("NiriActions", "Toggle window rule opacity");
+    case "Set dynamic cast window": return qsTranslate("NiriActions", "Set dynamic cast window");
+    case "Set dynamic cast monitor": return qsTranslate("NiriActions", "Set dynamic cast monitor");
+    case "Clear dynamic cast target": return qsTranslate("NiriActions", "Clear dynamic cast target");
+    case "Toggle overview": return qsTranslate("NiriActions", "Toggle overview");
+    case "Open overview": return qsTranslate("NiriActions", "Open overview");
+    case "Close overview": return qsTranslate("NiriActions", "Close overview");
+    case "Lock: open": return qsTranslate("NiriActions", "Lock: open");
+    case "Lock: is locked": return qsTranslate("NiriActions", "Lock: is locked");
+    case "Spotlight: toggle": return qsTranslate("NiriActions", "Spotlight: toggle");
+    case "Spotlight: open": return qsTranslate("NiriActions", "Spotlight: open");
+    case "Spotlight: close": return qsTranslate("NiriActions", "Spotlight: close");
+    case "Spotlight: web": return qsTranslate("NiriActions", "Spotlight: web");
+    case "Spotlight: open mode": return qsTranslate("NiriActions", "Spotlight: open mode");
+    case "Wallpaper: set": return qsTranslate("NiriActions", "Wallpaper: set");
+    case "Wallpaper: set for screen": return qsTranslate("NiriActions", "Wallpaper: set for screen");
+    case "Wallpaper: clear": return qsTranslate("NiriActions", "Wallpaper: clear");
+    case "Wallpaper: clear for screen": return qsTranslate("NiriActions", "Wallpaper: clear for screen");
+    case "Wallpaper: previous": return qsTranslate("NiriActions", "Wallpaper: previous");
+    case "Wallpaper: next": return qsTranslate("NiriActions", "Wallpaper: next");
+    case "Wallpaper: random": return qsTranslate("NiriActions", "Wallpaper: random");
+    case "Wallpaper: set folder": return qsTranslate("NiriActions", "Wallpaper: set folder");
+    case "Control center: open": return qsTranslate("NiriActions", "Control center: open");
+    case "Control center: close": return qsTranslate("NiriActions", "Control center: close");
+    case "Control center: toggle": return qsTranslate("NiriActions", "Control center: toggle");
+    case "Keystone: cancel record": return qsTranslate("NiriActions", "Keystone: cancel record");
+    case "Keystone: close all others": return qsTranslate("NiriActions", "Keystone: close all others");
+    case "Keystone: current style": return qsTranslate("NiriActions", "Keystone: current style");
+    case "Keystone: dashboard": return qsTranslate("NiriActions", "Keystone: dashboard");
+    case "Keystone: hub": return qsTranslate("NiriActions", "Keystone: hub");
+    case "Keystone: lyrics": return qsTranslate("NiriActions", "Keystone: lyrics");
+    case "Keystone: tools": return qsTranslate("NiriActions", "Keystone: tools");
+    case "Sidebar: open": return qsTranslate("NiriActions", "Sidebar: open");
+    case "Sidebar: close": return qsTranslate("NiriActions", "Sidebar: close");
+    case "Sidebar: toggle": return qsTranslate("NiriActions", "Sidebar: toggle");
+    case "Run program": return qsTranslate("NiriActions", "Run program");
+    case "Run shell command": return qsTranslate("NiriActions", "Run shell command");
+    case "Spotlight: open applications": return qsTranslate("NiriActions", "Spotlight: open applications");
+    case "Spotlight: open clipboard": return qsTranslate("NiriActions", "Spotlight: open clipboard");
+    case "Spotlight: open wallpaper picker": return qsTranslate("NiriActions", "Spotlight: open wallpaper picker");
+    case "Control center: open Account": return qsTranslate("NiriActions", "Control center: open Account");
+    case "Control center: open General": return qsTranslate("NiriActions", "Control center: open General");
+    case "Control center: open Wallpaper": return qsTranslate("NiriActions", "Control center: open Wallpaper");
+    case "Control center: open Theme": return qsTranslate("NiriActions", "Control center: open Theme");
+    case "Control center: open Keystone": return qsTranslate("NiriActions", "Control center: open Keystone");
+    case "Control center: open Advanced": return qsTranslate("NiriActions", "Control center: open Advanced");
+    case "Control center: open Language & region": return qsTranslate("NiriActions", "Control center: open Language & region");
+    case "Control center: open current page": return qsTranslate("NiriActions", "Control center: open current page");
+    case "Control center: toggle Account": return qsTranslate("NiriActions", "Control center: toggle Account");
+    case "Control center: toggle General": return qsTranslate("NiriActions", "Control center: toggle General");
+    case "Control center: toggle Wallpaper": return qsTranslate("NiriActions", "Control center: toggle Wallpaper");
+    case "Control center: toggle Theme": return qsTranslate("NiriActions", "Control center: toggle Theme");
+    case "Control center: toggle Keystone": return qsTranslate("NiriActions", "Control center: toggle Keystone");
+    case "Control center: toggle Advanced": return qsTranslate("NiriActions", "Control center: toggle Advanced");
+    case "Control center: toggle Language & region": return qsTranslate("NiriActions", "Control center: toggle Language & region");
+    case "Control center: toggle current page": return qsTranslate("NiriActions", "Control center: toggle current page");
+    case "Notifications: open": return qsTranslate("NiriActions", "Notifications: open");
+    case "Quick settings: open": return qsTranslate("NiriActions", "Quick settings: open");
+    case "Notifications: close": return qsTranslate("NiriActions", "Notifications: close");
+    case "Quick settings: close": return qsTranslate("NiriActions", "Quick settings: close");
+    case "Notifications: toggle": return qsTranslate("NiriActions", "Notifications: toggle");
+    case "Quick settings: toggle": return qsTranslate("NiriActions", "Quick settings: toggle");
+    case "Power menu: open": return qsTranslate("NiriActions", "Power menu: open");
+    case "Power menu: close": return qsTranslate("NiriActions", "Power menu: close");
+    case "Power menu: toggle": return qsTranslate("NiriActions", "Power menu: toggle");
+    case "Shortcut map: open": return qsTranslate("NiriActions", "Shortcut map: open");
+    case "Shortcut map: close": return qsTranslate("NiriActions", "Shortcut map: close");
+    case "Shortcut map: toggle": return qsTranslate("NiriActions", "Shortcut map: toggle");
+    default: return name;
+    }
+}
+
+// Recognize only complete, known default commands; never infer an action from
+// the bound key or a substring of an arbitrary shell script.
+function commandName(expression) {
+    const match = expression.trim().match(/^(spawn|spawn-sh)\s+((?:"(?:[^"\\]|\\.)*"\s*)+);?$/);
+    if (!match)
+        return "";
+    let args;
+    try {
+        args = JSON.parse("[" + match[2].match(/"(?:[^"\\]|\\.)*"/g).join(",") + "]");
+    } catch (error) {
+        return "";
+    }
+    const commands = [
+        { shell: "pkill orca || exec orca", argv: [], name: qsTranslate("NiriCommands", "Toggle screen reader") },
+        { shell: "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+ -l 1.0", argv: ["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "0.1+", "-l", "1.0"], name: qsTranslate("NiriCommands", "Increase volume") },
+        { shell: "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-", argv: ["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "0.1-"], name: qsTranslate("NiriCommands", "Decrease volume") },
+        { shell: "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle", argv: ["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"], name: qsTranslate("NiriCommands", "Toggle audio mute") },
+        { shell: "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle", argv: ["wpctl", "set-mute", "@DEFAULT_AUDIO_SOURCE@", "toggle"], name: qsTranslate("NiriCommands", "Toggle microphone mute") },
+        { shell: "playerctl play-pause", argv: ["playerctl", "play-pause"], name: qsTranslate("NiriCommands", "Play/pause media") },
+        { shell: "playerctl stop", argv: ["playerctl", "stop"], name: qsTranslate("NiriCommands", "Stop media") },
+        { shell: "playerctl previous", argv: ["playerctl", "previous"], name: qsTranslate("NiriCommands", "Previous track") },
+        { shell: "playerctl next", argv: ["playerctl", "next"], name: qsTranslate("NiriCommands", "Next track") },
+        { shell: "brightnessctl --class=backlight set +10%", argv: ["brightnessctl", "--class=backlight", "set", "+10%"], name: qsTranslate("NiriCommands", "Increase screen brightness") },
+        { shell: "brightnessctl --class=backlight set 10%-", argv: ["brightnessctl", "--class=backlight", "set", "10%-"], name: qsTranslate("NiriCommands", "Decrease screen brightness") },
+    ];
+    for (const command of commands) {
+        if (match[1] === "spawn-sh" && args.length === 1 && args[0] === command.shell)
+            return command.name;
+        if (match[1] === "spawn" && command.argv.length && JSON.stringify(args) === JSON.stringify(command.argv))
+            return command.name;
+    }
+    return "";
+}

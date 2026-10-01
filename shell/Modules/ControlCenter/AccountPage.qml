@@ -1,0 +1,817 @@
+pragma ComponentBehavior: Bound
+
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Effects
+import QtQuick.Layouts
+import QtQuick.Window
+import qs.Common
+import qs.Components
+import qs.Modules.FilePicker
+import qs.Services
+import qs.Widgets.common
+
+Item {
+    id: root
+    readonly property var searchLeaf: accountScroll
+
+    property var parentModal: null
+    property bool presentationActive: false
+    signal navigateRequested(string pageId)
+
+    onPresentationActiveChanged: SystemIdentityService.setUptimeConsumer("account-page",
+                                                                         root.presentationActive)
+    Component.onDestruction: SystemIdentityService.setUptimeConsumer("account-page", false)
+
+    function closeChildWindows() {
+        bannerEditor.close();
+        avatarPicker.dismiss();
+        backupWindow.dismiss();
+    }
+
+    readonly property real maximumContentWidth: 1024
+    readonly property bool wideLayout: pageColumn.width >= 848
+    readonly property real cardGap: Appearance.spacing.medium
+    readonly property real columnWidth: wideLayout ? (cardLayout.width - cardGap) / 2 : cardLayout.width
+    readonly property real wallpaperPreviewMaximumWidth: 152
+    readonly property real wallpaperPreviewWidth: Math.min(wallpaperPreviewMaximumWidth, Math.floor((
+                                                                                                        personalizationCard.width
+                                                                                                        - Appearance.spacing.large
+                                                                                                        * 2 - Appearance.spacing.medium
+                                                                                                        * 2 - Appearance.spacing.small
+                                                                                                        * 2) / 3))
+    readonly property real wallpaperPreviewHeight: Math.round(wallpaperPreviewWidth / 1.25)
+    readonly property var pairedBluetoothDevices: {
+        const result = [];
+        const seen = {};
+        const groups = [BluetoothService.connectedDevices.filter(device => device.paired || device.bonded
+                                                                           || device.trusted),
+                        BluetoothService.pairedDevices];
+        for (const group of groups) {
+            for (const device of group) {
+                const key = String(device.address || device.id || device.name || "");
+                if (seen[key])
+                    continue;
+                seen[key] = true;
+                result.push(device);
+            }
+        }
+        return result;
+    }
+    readonly property var wallpaperChoices: {
+        const values = [];
+        const current = WallpaperService.currentWallpaper;
+        if (current)
+            values.push(current);
+        for (const path of WallpaperService.wallpapers) {
+            if (values.indexOf(path) < 0)
+                values.push(path);
+            if (values.length >= 6)
+                break;
+        }
+        return values;
+    }
+
+    function formatBytes(value) {
+        const bytes = Number(value);
+        if (!isFinite(bytes) || bytes < 0)
+            return qsTr("Unknown");
+        const units = [qsTr("B"), qsTr("KB"), qsTr("MB"), qsTr("GB"), qsTr("TB"), qsTr("PB")];
+        let amount = bytes;
+        let unit = 0;
+        while (amount >= 1024 && unit < units.length - 1) {
+            amount /= 1024;
+            unit += 1;
+        }
+        const digits = unit === 0 || amount >= 100 ? 0 : amount >= 10 ? 1 : 2;
+        return amount.toFixed(digits) + " " + units[unit];
+    }
+
+    function providerName(remote) {
+        if (!remote)
+            return qsTr("Not connected to cloud storage");
+        const type = String(remote.type || "").toLowerCase();
+        const name = String(remote.name || "").toLowerCase();
+        switch (type) {
+        case "drive":
+            return "Google Drive";
+        case "onedrive":
+            return "Microsoft OneDrive";
+        case "dropbox":
+            return "Dropbox";
+        case "s3":
+            return name.indexOf("r2") >= 0 || name.indexOf("cloudflare") >= 0 ? "Cloudflare R2" : "Amazon S3";
+        case "http":
+            return "HTTP";
+        case "smb":
+            return "SMB";
+        case "ftp":
+            return "FTP";
+        case "sftp":
+            return "SFTP";
+        case "webdav":
+            return "WebDAV";
+        default:
+            return remote.type || qsTr("Other cloud storage");
+        }
+    }
+
+    function bluetoothIcon(device) {
+        const icon = String(device && device.icon || "").toLowerCase();
+        if (icon.indexOf("head") >= 0 || icon.indexOf("audio") >= 0)
+            return "headphones";
+        if (icon.indexOf("keyboard") >= 0)
+            return "keyboard";
+        if (icon.indexOf("mouse") >= 0)
+            return "mouse";
+        if (icon.indexOf("phone") >= 0)
+            return "smartphone";
+        return "bluetooth";
+    }
+
+    function bluetoothState(device) {
+        if (device.connected)
+            return qsTr("Connected");
+        return qsTr("Paired");
+    }
+
+    function bluetoothAction(device) {
+        if (device.connected)
+            BluetoothService.disconnectDevice(device);
+        else
+            BluetoothService.connectDevice(device);
+    }
+
+    function bluetoothActionText(device) {
+        if (device.connected)
+            return qsTr("Disconnect");
+        return qsTr("Connect");
+    }
+
+    function networkStatusIcon() {
+        if (NetworkService.wifiConnecting)
+            return "wifi_find";
+        if (!NetworkService.available || !NetworkService.connected)
+            return "wifi_off";
+        if (NetworkService.activeNetwork && NetworkService.activeNetwork.type === "wired")
+            return "settings_ethernet";
+        if (NetworkService.signalStrength >= 70)
+            return "signal_wifi_4_bar";
+        if (NetworkService.signalStrength >= 35)
+            return "network_wifi_2_bar";
+        return "network_wifi_1_bar";
+    }
+
+    function networkStatusText() {
+        if (!NetworkService.available)
+            return qsTr("Network unavailable");
+        if (NetworkService.wifiConnecting)
+            return NetworkService.connectTargetSsid || qsTr("Connecting");
+        if (NetworkService.connected)
+            return NetworkService.activeConnection;
+        return qsTr("Not connected");
+    }
+
+    function networkStatusDetail() {
+        if (NetworkService.wifiConnecting)
+            return NetworkService.connectTargetSsid ? qsTr("Connecting") : "";
+        if (!NetworkService.connected)
+            return "";
+        if (NetworkService.activeNetwork && NetworkService.activeNetwork.type === "wired")
+            return qsTr("Connected, wired");
+        return NetworkService.activeWifi && NetworkService.activeWifi.isSecure ? qsTr("Connected, secure") :
+                                                                                 qsTr("Connected, open");
+    }
+
+    Component.onCompleted: {
+        SystemIdentityService.setUptimeConsumer("account-page", root.presentationActive);
+        if (WallpaperService.wallpapers.length === 0 && !WallpaperService.scanning)
+            WallpaperService.scan();
+    }
+
+    StyledFlickable {
+        id: accountScroll
+        anchors.fill: parent
+        contentWidth: width
+        contentHeight: pageColumn.implicitHeight + Appearance.spacing.large * 2
+
+        Column {
+            id: pageColumn
+
+            x: (parent.width - width) / 2
+            y: Appearance.spacing.large
+            width: Math.min(root.maximumContentWidth, Math.max(0, parent.width - Appearance.spacing.large
+                                                               * 2))
+
+            spacing: Appearance.spacing.large
+
+            AccountProfileHeader {
+                width: parent.width
+                wallpaperPath: bannerEditor.source
+                previewWallpaperPath: bannerEditor.previewSource
+                colorWallpaper: WallpaperService.isColorSource(wallpaperPath)
+                avatarUrl: AvatarService.avatarUrl
+                fallbackAvatarUrl: Paths.fileUrl(Paths.defaultAvatar)
+                accountIdentity: SystemIdentityService.accountIdentity
+                distroId: SystemIdentityService.distroId
+                distroName: SystemIdentityService.distroName
+                uptimeText: SystemIdentityService.uptimeText
+                showNetworkStatus: true
+                networkIconName: root.networkStatusIcon()
+                networkStatusText: root.networkStatusText()
+                networkStatusDetail: root.networkStatusDetail()
+                onBannerFileActivated: bannerEditor.chooseFile()
+                onBannerColorActivated: bannerEditor.chooseColor()
+                onBannerCleared: bannerEditor.clear()
+                onAvatarActivated: avatarPicker.openAt(avatarPicker.picturesDir)
+                onNetworkActivated: root.navigateRequested("network")
+            }
+
+            Item {
+                id: cardLayout
+
+                width: parent.width
+                height: root.wideLayout ? Math.max(shortcutsCard.y + shortcutsCard.height,
+                                                   personalizationCard.y + personalizationCard.height) :
+                                          personalizationCard.y + personalizationCard.height
+
+                MaterialCard {
+                    id: languageCard
+
+                    width: root.columnWidth
+                    title: extraSearchAnchor0.title
+                    SettingsSearchAnchor {
+                        id: extraSearchAnchor0
+                        target: languageCard
+                        declaration:
+                            '{"id":"account.section.language","route":"account","title":"Language","context":"AccountPage","icon":"settings","aliases":[]}'
+                    }
+                    iconName: "translate"
+                    containerColor: Appearance.m3colors.m3surfaceContainerHigh
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Appearance.spacing.medium
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: qsTr("Display language")
+                            color: Appearance.colors.colOnSurface
+                            font.family: Fonts.ui
+                            font.pixelSize: Typography.bodyMedium.pixelSize
+                            font.weight: Font.Medium
+                        }
+
+                        SearchSelectMenuField {
+                            Layout.preferredWidth: 190
+                            options: I18nService.supportedLanguages
+                            value: UiPreferences.language
+                            placeholder: qsTr("Choose language")
+                            textRole: "label"
+                            valueRole: "code"
+                            closeOnAccept: true
+                            onAccepted: value => UiPreferences.setLanguage(value)
+                        }
+                    }
+                }
+
+                MaterialCard {
+                    id: bluetoothCard
+
+                    x: 0
+                    y: languageCard.y + languageCard.height + root.cardGap
+                    width: root.columnWidth
+                    title: extraSearchAnchor1.title
+                    SettingsSearchAnchor {
+                        id: extraSearchAnchor1
+                        target: bluetoothCard
+                        declaration:
+                            '{"id":"account.section.bluetooth-devices","route":"account","title":"Bluetooth devices","context":"AccountPage","icon":"settings","aliases":[]}'
+                    }
+                    iconName: BluetoothService.enabled ? "bluetooth" : "bluetooth_disabled"
+                    containerColor: Appearance.m3colors.m3surfaceContainerHigh
+
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: BluetoothService.enabled ? qsTr("Bluetooth") : qsTr(
+                                                                 "Turn on Bluetooth to connect devices")
+                            color: Appearance.colors.colOnSurfaceVariant
+                            font.family: Fonts.ui
+                            font.pixelSize: Typography.bodyMedium.pixelSize
+                        }
+
+                        StyledSwitch {
+                            checked: BluetoothService.enabled
+                            enabled: BluetoothService.available && !BluetoothService.busy
+                            Accessible.name: qsTr("Bluetooth switch")
+                            onToggled: BluetoothService.setBluetoothEnabled(checked)
+                        }
+                    }
+
+                    Flickable {
+                        id: pairedDeviceList
+
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: Math.min(pairedDeviceColumn.implicitHeight, 56 * 3
+                                                         + Appearance.spacing.small * 2)
+                        Layout.maximumHeight: 56 * 3 + Appearance.spacing.small * 2
+                        contentWidth: width
+                        contentHeight: pairedDeviceColumn.implicitHeight
+                        clip: true
+                        interactive: contentHeight > height
+
+                        Column {
+                            id: pairedDeviceColumn
+
+                            width: pairedDeviceList.width
+                            spacing: Appearance.spacing.small
+
+                            Repeater {
+                                model: root.pairedBluetoothDevices
+
+                                delegate: Rectangle {
+                                    id: deviceRow
+
+                                    required property var modelData
+
+                                    width: pairedDeviceColumn.width
+                                    height: 56
+                                    radius: Appearance.rounding.normal
+                                    color: Appearance.colors.colSurfaceContainer
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: Appearance.spacing.medium
+                                        anchors.rightMargin: Appearance.spacing.small
+                                        spacing: Appearance.spacing.small
+
+                                        MaterialSymbol {
+                                            text: root.bluetoothIcon(deviceRow.modelData)
+                                            iconSize: 22
+                                            color: Appearance.colors.colPrimary
+                                        }
+
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 0
+
+                                            Text {
+                                                Layout.fillWidth: true
+                                                text: deviceRow.modelData.name || qsTr("Unnamed device")
+                                                color: Appearance.colors.colOnSurface
+                                                font.family: Fonts.ui
+                                                font.pixelSize: Typography.bodyMedium.pixelSize
+                                                elide: Text.ElideRight
+                                            }
+
+                                            Text {
+                                                Layout.fillWidth: true
+                                                text: root.bluetoothState(deviceRow.modelData)
+                                                color: Appearance.colors.colOnSurfaceVariant
+                                                font.family: Fonts.ui
+                                                font.pixelSize: Typography.bodySmall.pixelSize
+                                            }
+                                        }
+
+                                        ActionButton {
+                                            text: root.bluetoothActionText(deviceRow.modelData)
+                                            enabled: BluetoothService.enabled && !BluetoothService.busy
+                                            onClicked: root.bluetoothAction(deviceRow.modelData)
+                                        }
+
+                                        Item {
+                                            Layout.preferredWidth: Metrics.controlHeightM
+                                            Layout.preferredHeight: Metrics.controlHeightM
+
+                                            IconButton {
+                                                id: moreButton
+
+                                                anchors.fill: parent
+                                                enabled: !BluetoothService.busy
+                                                iconName: "more_horiz"
+                                                iconSize: 22
+                                                iconColor: Appearance.colors.colOnSurfaceVariant
+                                                accessibleName: qsTr("More options for %1").arg(
+                                                                    deviceRow.modelData.name || qsTr(
+                                                                        "Unnamed device"))
+                                                onClicked: forgetMenu.open()
+                                            }
+
+                                            StyledMenu {
+                                                id: forgetMenu
+                                                parent: moreButton
+                                                x: moreButton.width - width
+
+                                                y: moreButton.height
+
+                                                StyledMenuItem {
+                                                    iconName: "delete"
+                                                    destructive: true
+                                                    text: qsTr("Forget device")
+                                                    onTriggered: BluetoothService.forgetDevice(
+                                                                     deviceRow.modelData)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        visible: BluetoothService.enabled && root.pairedBluetoothDevices.length === 0
+                        text: qsTr("No paired devices")
+                        color: Appearance.colors.colOnSurfaceVariant
+                        font.family: Fonts.ui
+                        font.pixelSize: Typography.bodyMedium.pixelSize
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+
+                    SettingsActionRow {
+                        Layout.fillWidth: true
+                        text: qsTr("More Bluetooth settings")
+                        trailingIconName: "chevron_right"
+                        onClicked: root.navigateRequested("connected-devices")
+                    }
+                }
+
+                MaterialCard {
+                    id: shortcutsCard
+                    y: bluetoothCard.y + bluetoothCard.height + root.cardGap
+                    width: root.columnWidth
+                    title: extraSearchAnchor2.title
+                    SettingsSearchAnchor {
+                        id: extraSearchAnchor2
+                        target: shortcutsCard
+                        declaration:
+                            '{"id":"account.section.keyboard-shortcuts","route":"account","title":"Keyboard shortcuts","context":"AccountPage","icon":"settings","aliases":[]}'
+                    }
+                    iconName: "keyboard"
+                    containerColor: Appearance.m3colors.m3surfaceContainerHigh
+
+                    SettingsActionRow {
+                        Layout.fillWidth: true
+                        text: qsTr("Configure shortcuts")
+                        trailingIconName: "chevron_right"
+                        onClicked: root.navigateRequested("shortcuts")
+                    }
+                    SettingsActionRow {
+                        Layout.fillWidth: true
+                        text: qsTr("Shortcut map")
+                        trailingIconName: "open_in_new"
+                        onClicked: ShortcutMapService.open(root.parentModal ? root.parentModal.screen : null)
+                    }
+                }
+
+                MaterialCard {
+                    id: cloudCard
+
+                    x: root.wideLayout ? root.columnWidth + root.cardGap : 0
+                    y: root.wideLayout ? 0 : shortcutsCard.y + shortcutsCard.height + root.cardGap
+                    width: root.columnWidth
+                    title: extraSearchAnchor3.title
+                    SettingsSearchAnchor {
+                        id: extraSearchAnchor3
+                        target: cloudCard
+                        declaration:
+                            '{"id":"account.section.cloud-storage","route":"account","title":"Cloud storage","context":"AccountPage","icon":"settings","aliases":[]}'
+                    }
+                    iconName: "cloud"
+                    containerColor: Appearance.m3colors.m3surfaceContainerHigh
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Appearance.spacing.small
+
+                        CloudProviderIcon {
+                            remoteName: RcloneService.selectedRemote ? RcloneService.selectedRemote.name : ""
+                            remoteType: RcloneService.selectedRemote ? RcloneService.selectedRemote.type : ""
+                            iconSize: 34
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: root.providerName(RcloneService.selectedRemote)
+                            color: Appearance.colors.colOnSurface
+                            font.family: Fonts.ui
+                            font.pixelSize: Typography.bodyLarge.pixelSize
+                            font.weight: Font.DemiBold
+                            elide: Text.ElideRight
+                        }
+
+                        IconButton {
+                            controlSize: Metrics.controlHeightL
+                            iconName: "refresh"
+                            iconSize: 22
+                            iconColor: Appearance.colors.colOnSurfaceVariant
+                            accessibleName: qsTr("Refresh cloud storage information")
+                            enabled: RcloneService.selectedRemote !== null && RcloneService.quotaState
+                                     !== "loading"
+                            onClicked: RcloneService.refreshCard()
+                        }
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: Appearance.spacing.xSmall
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: RcloneService.quotaAvailable ? qsTr("Storage: Used %1 of %2 (%3%)").arg(
+                                                                     root.formatBytes(
+                                                                         RcloneService.usedBytes)).arg(
+                                                                     root.formatBytes(
+                                                                         RcloneService.totalBytes)).arg(
+                                                                     Math.round(RcloneService.usageRatio
+                                                                                * 100)) : RcloneService.quotaState
+                                                                 === "loading" ? qsTr("Reading capacity…") :
+                                                                                 RcloneService.quotaMessage
+                            color: Appearance.colors.colOnSurfaceVariant
+                            font.family: Fonts.ui
+                            font.pixelSize: Typography.bodyMedium.pixelSize
+                            elide: Text.ElideRight
+                        }
+
+                        ThinReadOnlySlider {
+                            Layout.fillWidth: true
+                            value: RcloneService.usageRatio
+                            Accessible.name: qsTr("Cloud storage used capacity")
+                        }
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        visible: RcloneService.backupState !== "idle"
+                        spacing: Appearance.spacing.xSmall
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: RcloneService.backupMessage
+                            color: RcloneService.backupState === "error" ? Appearance.colors.colError :
+                                                                           Appearance.colors.colOnSurfaceVariant
+                            font.family: Fonts.ui
+                            font.pixelSize: Typography.bodySmall.pixelSize
+                            wrapMode: Text.Wrap
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            visible: RcloneService.backupActive
+                            spacing: Appearance.spacing.small
+
+                            MaterialLoadingIndicator {
+                                Layout.preferredWidth: 36
+                                Layout.preferredHeight: 36
+                                contained: false
+                                accessibleName: qsTr("Backing up")
+                            }
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: RcloneService.backupState === "stopping" ? qsTr("Stopping backup…") :
+                                                                                 RcloneService.backupPhase
+                                                                                 === "transferring"
+                                                                                 && RcloneService.backupProgress
+                                                                                 >= 0 ? qsTr(
+                                                                                            "%1: current folder %2%").arg(
+                                                                                            RcloneService.backupCurrentFolderName).arg(
+                                                                                            Math.round(
+                                                                                                RcloneService.backupProgress
+                                                                                                * 100)) : RcloneService.backupPhase
+                                                                                        === "checking"
+                                                                                        ? RcloneService.backupChecks
+                                                                                          > 0 ? qsTr(
+                                                                                                    "Checking files…") :
+                                                                                                RcloneService.backupListed
+                                                                                                > 0 ? qsTr(
+                                                                                                          "%1 items scanned").arg(
+                                                                                                          RcloneService.backupListed) :
+                                                                                                      qsTr("Scanning files…") :
+                                                                                                      qsTr("Preparing backup")
+                                color: Appearance.colors.colOnSurfaceVariant
+                                font.family: Typography.labelMedium.family
+                                font.pixelSize: Typography.labelMedium.pixelSize
+                                font.weight: Typography.labelMedium.weight
+                            }
+                        }
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+
+                        SettingsActionRow {
+                            Layout.fillWidth: true
+                            text: qsTr("Computer backup")
+                            iconName: "backup"
+                            enabled: RcloneService.selectedRemote !== null && !RcloneService.isReadOnly(
+                                         RcloneService.selectedRemote)
+                            onClicked: backupWindow.showWindow()
+                        }
+
+                        SettingsActionRow {
+                            Layout.fillWidth: true
+                            text: qsTr("Manage cloud storage")
+                            iconName: "settings"
+                            trailingIconName: "chevron_right"
+                            onClicked: root.navigateRequested("advanced")
+                        }
+                    }
+                }
+
+                MaterialCard {
+                    id: personalizationCard
+
+                    x: cloudCard.x
+                    y: cloudCard.y + cloudCard.height + root.cardGap
+                    width: root.columnWidth
+                    title: extraSearchAnchor4.title
+                    SettingsSearchAnchor {
+                        id: extraSearchAnchor4
+                        target: personalizationCard
+                        declaration:
+                            '{"id":"account.section.personalization","route":"account","title":"Personalization","context":"AccountPage","icon":"settings","aliases":[]}'
+                    }
+                    iconName: "palette"
+                    containerColor: Appearance.m3colors.m3surfaceContainerHigh
+
+                    GridLayout {
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.leftMargin: Appearance.spacing.medium
+                        Layout.rightMargin: Appearance.spacing.medium
+                        columns: 3
+                        columnSpacing: Appearance.spacing.small
+                        rowSpacing: Appearance.spacing.small
+
+                        Repeater {
+                            model: root.wallpaperChoices
+
+                            delegate: RippleButton {
+                                id: wallpaperChoice
+
+                                required property string modelData
+
+                                Layout.preferredWidth: root.wallpaperPreviewWidth
+                                Layout.preferredHeight: root.wallpaperPreviewHeight
+                                padding: 0
+                                buttonRadius: Appearance.rounding.small
+                                containerColor: Appearance.colors.colSurfaceContainer
+                                hoverStateLayerOpacity: 0
+                                pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
+                                rippleColor: Appearance.colors.colOnSurface
+                                Accessible.name: qsTr("Use wallpaper %1").arg(WallpaperService.basename(
+                                                                                  modelData))
+                                onClicked: WallpaperService.setWallpaper(modelData)
+
+                                backgroundContent: Rectangle {
+                                    anchors.fill: parent
+                                    radius: Appearance.rounding.small
+                                    color: WallpaperService.isColorSource(wallpaperChoice.modelData)
+                                           ? wallpaperChoice.modelData : Appearance.colors.colSurfaceContainer
+
+                                    Image {
+                                        id: wallpaperImage
+
+                                        anchors.fill: parent
+                                        source: WallpaperService.isImagePath(wallpaperChoice.modelData)
+                                                ? Paths.fileUrl(wallpaperChoice.modelData) : ""
+                                        sourceSize: Qt.size(Math.max(1, Math.ceil(width
+                                                                                  * Screen.devicePixelRatio
+                                                                                  * 2)), Math.max(1, Math.ceil(
+                                                                                                      height * Screen.devicePixelRatio
+                                                                                                      * 2)))
+                                        fillMode: Image.PreserveAspectCrop
+                                        asynchronous: true
+                                        cache: true
+                                        smooth: false
+                                        mipmap: false
+                                        visible: source !== ""
+                                        layer.enabled: true
+                                        layer.effect: MultiEffect {
+                                            maskEnabled: true
+                                            maskSource: wallpaperMask
+                                            maskThresholdMin: 0.5
+                                            maskSpreadAtMin: 1
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        id: wallpaperMask
+
+                                        anchors.fill: parent
+                                        radius: Appearance.rounding.small
+                                        color: Appearance.m3colors.m3scrim
+                                        visible: false
+                                        layer.enabled: true
+                                    }
+                                }
+
+                                contentItem: Item {}
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.preferredWidth: root.wallpaperPreviewWidth
+                            Layout.preferredHeight: root.wallpaperPreviewHeight
+                            visible: root.wallpaperChoices.length === 0
+                            radius: Appearance.rounding.small
+                            color: Appearance.colors.colSurfaceContainer
+
+                            MaterialSymbol {
+                                anchors.centerIn: parent
+                                text: WallpaperService.scanning ? "progress_activity" : "wallpaper"
+                                iconSize: 28
+                                color: Appearance.colors.colOnSurfaceVariant
+                            }
+                        }
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Appearance.spacing.medium
+
+                        MaterialSymbol {
+                            text: "palette"
+                            iconSize: 22
+                            color: Appearance.colors.colOnSurfaceVariant
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: qsTr("Color mode")
+                            color: Appearance.colors.colOnSurface
+                            font.family: Fonts.ui
+                            font.pixelSize: Typography.bodyMedium.pixelSize
+                            font.weight: Font.Medium
+                        }
+
+                        SearchSelectMenuField {
+                            Layout.preferredWidth: 142
+                            options: [({
+                                           "label": qsTr("Light"),
+                                           "value": "light"
+                                       }), ({
+                                                "label": qsTr("Dark"),
+                                                "value": "dark"
+                                            })]
+                            value: PersonalizationConfig.themeMode
+                            placeholder: qsTr("Choose color mode")
+                            closeOnAccept: true
+                            onAccepted: value => ThemeService.setThemeMode(value)
+                        }
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+
+                        SettingsActionRow {
+                            Layout.fillWidth: true
+                            text: qsTr("Wallpaper")
+                            iconName: "wallpaper"
+                            trailingIconName: "chevron_right"
+                            onClicked: root.navigateRequested("wallpaper")
+                        }
+
+                        SettingsActionRow {
+                            Layout.fillWidth: true
+                            text: qsTr("Theme")
+                            iconName: "palette"
+                            trailingIconName: "chevron_right"
+                            onClicked: root.navigateRequested("theme")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    ProfileBannerEditor {
+        id: bannerEditor
+        parentModal: root.parentModal
+    }
+
+    FilePickerWindow {
+        id: avatarPicker
+
+        parentModal: root.parentModal
+        requiresParentWindow: true
+        dialogTitle: qsTr("Choose avatar")
+        onAccepted: (path, isDirectory) => {
+            if (!isDirectory)
+                AvatarService.setAvatar(path);
+        }
+    }
+
+    ComputerBackupWindow {
+        id: backupWindow
+
+        parentModal: root.parentModal
+    }
+}

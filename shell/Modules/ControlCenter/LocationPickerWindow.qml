@@ -1,0 +1,194 @@
+import QtQuick
+import QtQuick.Controls.Material
+import QtQuick.Layouts
+import Quickshell
+import Qt5Compat.GraphicalEffects
+import qs.Common
+import qs.Modules.Map
+import qs.Widgets.common
+
+FloatingWindow {
+    id: root
+
+    property var parentModal: null
+    property bool locationLoading: false
+    signal automaticLocationRequested
+    property real centerLatitude: 0
+    property real centerLongitude: 0
+    property real markerLatitude: 0
+    property real markerLongitude: 0
+    property real zoomLevel: 12
+    property real bearing: 0
+    property real tilt: 0
+
+    signal cameraChanged(real latitude, real longitude, real zoom, real bearing, real tilt)
+    signal markerChanged(real latitude, real longitude)
+    signal restoreRequested
+    signal saveRequested
+    signal dismissed
+
+    function recenter(latitudeValue, longitudeValue, zoomValue, bearingValue, tiltValue) {
+        map.recenter(latitudeValue, longitudeValue, zoomValue, bearingValue, tiltValue);
+    }
+
+    function showWindow() {
+        root.visible = true;
+    }
+
+    function dismiss() {
+        root.visible = false;
+        root.dismissed();
+    }
+
+    visible: false
+    parentWindow: root.parentModal
+    // Stable compositor rule identity; visible headings remain localized.
+    title: "clavis-control-center-location-picker"
+    implicitWidth: 920
+    implicitHeight: 680
+    minimumSize: Qt.size(600, 440)
+    color: "transparent"
+    Material.theme: Appearance.m3colors.darkmode ? Material.Dark : Material.Light
+    Material.accent: Appearance.colors.colPrimary
+    onClosed: root.dismiss()
+
+    Rectangle {
+        id: mapFrame
+
+        anchors.fill: parent
+        radius: Appearance.rounding.extraLarge
+        color: Appearance.colors.colLayer0Base
+        clip: true
+        layer.enabled: true
+        layer.samples: 4
+
+        MapLibreView {
+            id: map
+
+            anchors.fill: parent
+            active: root.visible
+            styleUrl: "https://tiles.openfreemap.org/styles/liberty"
+            copyrightsVisible: false
+            centerLatitude: root.centerLatitude
+            centerLongitude: root.centerLongitude
+            markerLatitude: root.markerLatitude
+            markerLongitude: root.markerLongitude
+            markerVisible: true
+            markerDraggable: true
+            zoomLevel: root.zoomLevel
+            bearing: root.bearing
+            tilt: root.tilt
+            onCameraMoved: (latitudeValue, longitudeValue, zoom, bearingValue, tiltValue) => {
+                root.cameraChanged(latitudeValue, longitudeValue, zoom, bearingValue, tiltValue);
+            }
+            onMarkerMoved: (latitudeValue, longitudeValue) => {
+                root.markerChanged(latitudeValue, longitudeValue);
+            }
+        }
+
+        RowLayout {
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: Metrics.spacingL
+
+            IconButton {
+                iconName: "my_location"
+                accessibleName: qsTr("Center current marker")
+                iconColor: "#FF111111"
+                normalHoverStateLayerColor: "#14111111"
+                normalPressedStateLayerColor: "#1F111111"
+                onClicked: map.recenter(root.markerLatitude, root.markerLongitude, root.zoomLevel)
+            }
+
+            IconButton {
+                iconName: "restore"
+                accessibleName: qsTr("Return to saved location and initial view")
+                iconColor: "#FF111111"
+                normalHoverStateLayerColor: "#14111111"
+                normalPressedStateLayerColor: "#1F111111"
+                onClicked: root.restoreRequested()
+            }
+
+            IconButton {
+                iconName: "close"
+                accessibleName: qsTr("Close")
+                iconColor: "#FF111111"
+                normalHoverStateLayerColor: "#14111111"
+                normalPressedStateLayerColor: "#1F111111"
+                onClicked: root.dismiss()
+            }
+        }
+
+        RowLayout {
+            id: mapActions
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.margins: Metrics.spacingL
+            InlineBusyIndicator {
+                busy: root.locationLoading
+            }
+            ActionButton {
+                text: qsTranslate("LocationPicker", "Use automatic location")
+                iconName: "my_location"
+                enabled: !root.locationLoading
+                contentColor: "#FF111111"
+                rippleColor: "#FF111111"
+                stateLayerColor: "#FF111111"
+                hoverStateLayerColor: "#FF111111"
+                pressedStateLayerColor: "#FF111111"
+                onClicked: root.automaticLocationRequested()
+            }
+            ActionButton {
+                text: qsTr("Save location")
+                iconName: "save"
+                contentColor: "#FF111111"
+                rippleColor: "#FF111111"
+                stateLayerColor: "#FF111111"
+                hoverStateLayerColor: "#FF111111"
+                pressedStateLayerColor: "#FF111111"
+                onClicked: root.saveRequested()
+            }
+        }
+
+        Text {
+            id: coordinateLabel
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+            anchors.margins: Metrics.spacingL
+            width: Math.max(0, mapActions.x - x - Metrics.spacingM)
+            text: Number(root.markerLatitude).toFixed(6) + ", " + Number(root.markerLongitude).toFixed(6)
+            textFormat: Text.PlainText
+            elide: Text.ElideRight
+            color: "#FF111111"
+            font.family: Typography.labelMedium.family
+            font.pixelSize: Typography.labelMedium.pixelSize
+            font.weight: Typography.labelMedium.weight
+        }
+
+        LocationMapAttribution {
+            anchors.left: parent.left
+            anchors.bottom: coordinateLabel.top
+            anchors.leftMargin: Metrics.spacingL
+            anchors.bottomMargin: Metrics.spacingS
+            width: Math.min(implicitWidth, parent.width - 2 * Metrics.spacingL)
+        }
+
+        FocusScope {
+            anchors.fill: parent
+            focus: root.visible
+            Keys.onEscapePressed: event => {
+                root.dismiss();
+                event.accepted = true;
+            }
+        }
+
+        layer.effect: OpacityMask {
+
+            maskSource: Rectangle {
+                width: mapFrame.width
+                height: mapFrame.height
+                radius: mapFrame.radius
+            }
+        }
+    }
+}

@@ -1,0 +1,1233 @@
+pragma ComponentBehavior: Bound
+
+import Qt.labs.folderlistmodel
+import QtCore
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Controls.Material
+import QtQuick.Effects
+import QtQuick.Layouts
+import Quickshell
+import Quickshell.Wayland
+import qs.Common
+import qs.Components
+import qs.Services
+import qs.Widgets.common
+
+FloatingWindow {
+    id: root
+
+    enum SelectionMode {
+        Files,
+        Folders,
+        FilesAndFolders
+    }
+
+    property var targetScreen: null
+    property int selectionMode: FilePickerWindow.Files
+    property string description: qsTr("Choose an image for your user avatar")
+    property string dialogTitle: qsTr("Choose image")
+    property string startPath: picturesDir
+    property var nameFilters: ["*.jpg", "*.jpeg", "*.png", "*.webp", "*.bmp", "*.gif"]
+    property string windowIconName: "add_photo_alternate"
+    property string emptyStateText: qsTr("No selectable images in this folder")
+    property string selectionPrompt: qsTr("Choose an image")
+    property string acceptLabel: qsTr("Choose")
+    property string formatSummary: "JPG · PNG · WebP\nBMP · GIF"
+    property var parentModal: null
+    property bool requiresParentWindow: false
+    property bool allowCurrentFolderSelection: false
+    property string currentPath: startPath
+    property string selectedPath: ""
+    property string selectedName: ""
+    property bool selectedIsDir: false
+    property bool showHiddenFiles: false
+    property bool pathEditing: false
+    property string pathDraft: ""
+    property bool _completionHandled: true
+    property bool _folderModelAttached: true
+
+    readonly property string homeDir: StandardPaths.writableLocation(StandardPaths.HomeLocation)
+    readonly property string desktopDir: StandardPaths.writableLocation(StandardPaths.DesktopLocation)
+    readonly property string documentsDir: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+    readonly property string musicDir: StandardPaths.writableLocation(StandardPaths.MusicLocation)
+    readonly property string picturesDir: StandardPaths.writableLocation(StandardPaths.PicturesLocation)
+    readonly property string videosDir: StandardPaths.writableLocation(StandardPaths.MoviesLocation)
+    readonly property string downloadsDir: StandardPaths.writableLocation(StandardPaths.DownloadLocation)
+    readonly property bool hasSelection: selectedPath !== ""
+    readonly property bool currentFolderIsSelection: allowCurrentFolderSelection && selectionMode
+                                                     !== FilePickerWindow.Files && selectedPath === ""
+    readonly property bool selectionValid: currentFolderIsSelection || (selectedPath !== "" && ((
+                                                                                                    selectedIsDir
+                                                                                                    && selectionMode
+                                                                                                    !== FilePickerWindow.Files)
+                                                                                                || (!selectedIsDir
+                                                                                                    && selectionMode
+                                                                                                    !== FilePickerWindow.Folders)))
+    readonly property alias blurController: pickerBlurController
+    readonly property alias blurBackground: outerBackground
+    readonly property alias fileGridView: fileGrid
+
+    signal accepted(string path, bool isDirectory)
+    signal rejected
+
+    visible: false
+    parentWindow: root.parentModal
+    title: "clavis-file-picker"
+    implicitWidth: 920
+    implicitHeight: 600
+    minimumSize: Qt.size(680, 440)
+    color: "transparent"
+    Material.theme: Appearance.m3colors.darkmode ? Material.Dark : Material.Light
+    Material.accent: Appearance.colors.colPrimary
+
+    onTargetScreenChanged: {
+        if (targetScreen)
+            screen = targetScreen;
+    }
+    onCurrentPathChanged: Qt.callLater(refreshBreadcrumbs)
+    onVisibleChanged: {
+        if (visible)
+            Qt.callLater(fileGrid.refreshLayout);
+    }
+    onClosed: {
+        if (_completionHandled)
+            return;
+        _completionHandled = true;
+        visible = false;
+        pathEditing = false;
+        clearSelection();
+        rejected();
+    }
+    Component.onCompleted: {
+        currentPath = normalizePath(currentPath) || normalizePath(picturesDir) || "/";
+        pathDraft = currentPath;
+        refreshBreadcrumbs();
+    }
+
+    function encodeFileUrl(path) {
+        const normalized = normalizePath(path);
+        if (normalized === "")
+            return "";
+        return "file://" + normalized.split("/").map(segment => encodeURIComponent(segment)).join("/");
+    }
+
+    function normalizePath(path) {
+        let value = String(path || "").trim();
+        if (value.startsWith("file://")) {
+            try {
+                value = decodeURIComponent(value.substring(7));
+            } catch (error) {
+                value = value.substring(7);
+            }
+        }
+        if (value === "~")
+            value = normalizePath(homeDir);
+        else if (value.startsWith("~/"))
+            value = normalizePath(homeDir) + value.substring(1);
+        if (!value.startsWith("/"))
+            return "";
+
+        const normalizedParts = [];
+        for (const part of value.split("/")) {
+            if (part === "" || part === ".")
+                continue;
+            if (part === "..") {
+                normalizedParts.pop();
+                continue;
+            }
+            normalizedParts.push(part);
+        }
+        return normalizedParts.length === 0 ? "/" : "/" + normalizedParts.join("/");
+    }
+
+    function buildBreadcrumbItems(path) {
+        const normalized = normalizePath(path) || "/";
+        const normalizedHome = normalizePath(homeDir);
+        const insideHome = normalized === normalizedHome || normalized.startsWith(normalizedHome + "/");
+        const items = [];
+        let cursor = insideHome ? normalizedHome : "";
+        let remainder = normalized;
+
+        if (insideHome) {
+            items.push({
+                           label: qsTr("Home"),
+                           path: normalizedHome,
+                           iconName: "home"
+                       });
+            remainder = normalized.substring(normalizedHome.length);
+        } else {
+            items.push({
+                           label: qsTr("File system"),
+                           path: "/",
+                           iconName: "hard_drive"
+                       });
+        }
+
+        for (const part of remainder.split("/").filter(component => component !== "")) {
+            cursor = cursor === "" ? "/" + part : cursor + "/" + part;
+            items.push({
+                           label: part,
+                           path: cursor,
+                           iconName: ""
+                       });
+        }
+        return items;
+    }
+
+    function refreshBreadcrumbs() {
+        const items = buildBreadcrumbItems(currentPath);
+        breadcrumbModel.clear();
+        for (const item of items)
+            breadcrumbModel.append(item);
+        Qt.callLater(() => breadcrumbFlick.revealCurrent());
+    }
+
+    function beginPathEditing() {
+        pathDraft = currentPath;
+        pathEditing = true;
+        Qt.callLater(() => {
+            pathEditor.forceActiveFocus();
+            pathEditor.selectAll();
+        });
+    }
+
+    function cancelPathEditing() {
+        if (!pathEditing)
+            return;
+        pathEditing = false;
+        pathDraft = currentPath;
+        Qt.callLater(() => fileGrid.forceActiveFocus());
+    }
+
+    function commitPathEditing() {
+        const normalized = normalizePath(pathDraft);
+        if (normalized !== "")
+            navigateTo(normalized);
+        else
+            cancelPathEditing();
+    }
+
+    function openAt(path) {
+        if (root.requiresParentWindow && !root.parentModal) {
+            console.warn("FilePickerWindow cannot open without parentModal");
+            return;
+        }
+        currentPath = normalizePath(path && path !== "" ? path : picturesDir) || normalizePath(picturesDir)
+                || "/";
+        pathEditing = false;
+        pathDraft = currentPath;
+        refreshBreadcrumbs();
+        clearSelection();
+        if (targetScreen)
+            screen = targetScreen;
+        _completionHandled = false;
+        visible = true;
+        Qt.callLater(() => {
+            dialogFocus.forceActiveFocus();
+            fileGrid.forceActiveFocus();
+        });
+    }
+
+    function dismiss() {
+        if (!visible || _completionHandled)
+            return;
+        _completionHandled = true;
+        visible = false;
+        pathEditing = false;
+        clearSelection();
+        rejected();
+    }
+
+    function acceptSelection() {
+        if (!selectionValid)
+            return;
+        const path = currentFolderIsSelection ? currentPath : selectedPath;
+        const isDirectory = currentFolderIsSelection || selectedIsDir;
+        _completionHandled = true;
+        visible = false;
+        clearSelection();
+        accepted(path, isDirectory);
+    }
+
+    function clearSelection() {
+        selectedPath = "";
+        selectedName = "";
+        selectedIsDir = false;
+    }
+
+    function navigateTo(path) {
+        const normalized = normalizePath(path);
+        if (normalized === "")
+            return;
+        currentPath = normalized;
+        pathDraft = normalized;
+        pathEditing = false;
+        clearSelection();
+        refreshBreadcrumbs();
+    }
+
+    function navigateUp() {
+        if (currentPath === "/")
+            return;
+        const index = currentPath.lastIndexOf("/");
+        navigateTo(index <= 0 ? "/" : currentPath.substring(0, index));
+    }
+
+    function selectEntry(path, name, isDir) {
+        const normalized = normalizePath(path);
+        if (normalized === "") {
+            clearSelection();
+            return;
+        }
+        selectedPath = normalized;
+        selectedName = String(name || "");
+        selectedIsDir = Boolean(isDir);
+    }
+
+    function openEntry(path, name, isDir) {
+        if (isDir)
+            navigateTo(path);
+        else {
+            selectEntry(path, name, false);
+            acceptSelection();
+        }
+    }
+
+    function setHiddenFilesVisible(visible) {
+        if (showHiddenFiles === visible)
+            return;
+
+        clearSelection();
+        _folderModelAttached = false;
+        Qt.callLater(() => {
+            showHiddenFiles = visible;
+            Qt.callLater(() => {
+                _folderModelAttached = true;
+                fileGrid.positionViewAtBeginning();
+                Qt.callLater(fileGrid.refreshLayout);
+            });
+        });
+    }
+
+    function isImageName(name) {
+        const lower = String(name || "").toLowerCase();
+        return [".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif"].some(extension => lower.endsWith(
+                                                                                        extension));
+
+    }
+
+    FolderListModel {
+        id: folderModel
+
+        folder: root.encodeFileUrl(root.currentPath)
+        showDirs: true
+        showFiles: root.selectionMode !== FilePickerWindow.Folders
+        showDirsFirst: true
+        showDotAndDotDot: false
+        showHidden: root.showHiddenFiles
+        caseSensitive: false
+        nameFilters: root.nameFilters
+        sortField: FolderListModel.Name
+    }
+
+    ListModel {
+        id: breadcrumbModel
+    }
+
+    FocusScope {
+        id: dialogFocus
+
+        property real revealProgress: root.visible ? 1 : 0
+
+        anchors.fill: parent
+        focus: root.visible
+        opacity: revealProgress
+        scale: 0.97 + revealProgress * 0.03
+
+        Behavior on revealProgress {
+            NumberAnimation {
+                duration: Appearance.animation.expressiveDefaultSpatial.duration
+                easing.type: Appearance.animation.expressiveDefaultSpatial.type
+                easing.bezierCurve: Appearance.animation.expressiveDefaultSpatial.bezierCurve
+            }
+        }
+
+        Keys.onEscapePressed: event => {
+            if (root.pathEditing)
+                root.cancelPathEditing();
+            else
+                root.dismiss();
+            event.accepted = true;
+        }
+        Keys.onReturnPressed: event => {
+            if (root.pathEditing) {
+                root.commitPathEditing();
+                event.accepted = true;
+            } else {
+                root.acceptSelection();
+                event.accepted = root.selectionValid;
+            }
+        }
+        Keys.onEnterPressed: event => {
+            if (root.pathEditing) {
+                root.commitPathEditing();
+                event.accepted = true;
+            } else {
+                root.acceptSelection();
+                event.accepted = root.selectionValid;
+            }
+        }
+        Keys.onPressed: event => {
+            if (!root.pathEditing && event.key === Qt.Key_Backspace) {
+                root.navigateUp();
+                event.accepted = true;
+            }
+        }
+
+        Rectangle {
+            id: outerBackground
+
+            anchors.fill: parent
+            z: -2
+            radius: Appearance.rounding.veryLarge
+            color: BlurService.backgroundColor(Appearance.m3colors.m3surface)
+        }
+
+        CompositorBlurRegion {
+            id: pickerBlurController
+
+            targetWindow: root
+            backgroundItem: outerBackground
+            radius: outerBackground.radius
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.AllButtons
+            z: -1
+            onPressed: event => {
+                if (event.button === Qt.LeftButton && root.pathEditing)
+                    root.cancelPathEditing();
+                event.accepted = true;
+            }
+            onClicked: event => event.accepted = true
+        }
+
+        TapHandler {
+            acceptedButtons: Qt.LeftButton
+            onTapped: eventPoint => {
+                if (!root.pathEditing)
+                    return;
+
+                const topLeft = pathEditor.mapToItem(dialogFocus, 0, 0);
+                const position = eventPoint.position;
+                const insideEditor = position.x >= topLeft.x && position.x <= topLeft.x + pathEditor.width
+                      && position.y >= topLeft.y && position.y <= topLeft.y + pathEditor.height;
+                if (!insideEditor)
+                    root.cancelPathEditing();
+            }
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 12
+            spacing: 12
+
+            Item {
+                id: titleBar
+
+                Layout.fillWidth: true
+                Layout.preferredHeight: 58
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 8
+                    anchors.rightMargin: 2
+                    spacing: 14
+
+                    Rectangle {
+                        Layout.preferredWidth: 44
+                        Layout.preferredHeight: 44
+                        radius: Appearance.rounding.normal
+                        color: Appearance.colors.colPrimaryContainer
+
+                        MaterialSymbol {
+                            anchors.centerIn: parent
+                            text: root.windowIconName
+                            iconSize: 25
+                            fill: 1
+                            color: Appearance.colors.colOnPrimaryContainer
+                        }
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 1
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: root.dialogTitle
+                            color: Appearance.colors.colOnSurface
+                            font.family: Fonts.ui
+                            font.pixelSize: 19
+                            font.weight: Font.DemiBold
+                            elide: Text.ElideRight
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: root.description
+                            color: Appearance.colors.colSubtext
+                            font.family: Fonts.ui
+                            font.pixelSize: 12
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    PickerToolButton {
+                        iconName: "close"
+                        tooltipText: qsTr("Close")
+                        onClicked: root.dismiss()
+                    }
+                }
+
+                DragHandler {
+                    target: null
+                    acceptedButtons: Qt.LeftButton
+                    onActiveChanged: {
+                        if (active)
+                            root.startSystemMove();
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                spacing: 12
+
+                Rectangle {
+                    Layout.preferredWidth: 184
+                    Layout.fillHeight: true
+                    radius: Appearance.rounding.large
+                    color: Appearance.colors.colSurfaceContainer
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        spacing: 5
+
+                        Text {
+                            Layout.leftMargin: 12
+                            Layout.topMargin: 4
+                            Layout.bottomMargin: 6
+                            text: qsTr("Location")
+                            color: Appearance.colors.colOnSurface
+                            font.family: Fonts.ui
+                            font.pixelSize: 15
+                            font.weight: Font.DemiBold
+                        }
+
+                        LocationButton {
+                            label: qsTr("Home")
+                            iconName: "home"
+                            path: root.homeDir
+                        }
+                        LocationButton {
+                            label: qsTr("Desktop")
+                            iconName: "desktop_windows"
+                            path: root.desktopDir
+                            visible: path !== ""
+                        }
+                        LocationButton {
+                            label: qsTr("Documents")
+                            iconName: "description"
+                            path: root.documentsDir
+                            visible: path !== ""
+                        }
+                        LocationButton {
+                            label: qsTr("Music")
+                            iconName: "music_note"
+                            path: root.musicDir
+                            visible: path !== ""
+                        }
+                        LocationButton {
+                            label: qsTr("Pictures")
+                            iconName: "image"
+                            path: root.picturesDir
+                            visible: path !== ""
+                        }
+                        LocationButton {
+                            label: qsTr("Videos")
+                            iconName: "movie"
+                            path: root.videosDir
+                            visible: path !== ""
+                        }
+                        LocationButton {
+                            label: qsTr("Downloads")
+                            iconName: "download"
+                            path: root.downloadsDir
+                            visible: path !== ""
+                        }
+
+                        Item {
+                            Layout.fillHeight: true
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: formatLabel.implicitHeight + 20
+                            radius: Appearance.rounding.normal
+                            color: Appearance.colors.colSurfaceContainerHigh
+
+                            Text {
+                                id: formatLabel
+
+                                anchors.fill: parent
+                                anchors.leftMargin: 12
+                                anchors.rightMargin: 12
+                                text: root.formatSummary
+                                color: Appearance.colors.colOnSurfaceVariant
+                                font.family: Fonts.ui
+                                font.pixelSize: 11
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                                wrapMode: Text.WordWrap
+                                visible: root.formatSummary !== ""
+                            }
+                        }
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    spacing: 12
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 54
+                        radius: Appearance.rounding.full
+                        color: Appearance.colors.colSurfaceContainerHigh
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 7
+                            spacing: 8
+
+                            PickerToolButton {
+                                iconName: "arrow_upward"
+                                tooltipText: qsTr("Up one level")
+                                enabled: root.currentPath !== "/"
+                                onClicked: root.navigateUp()
+                            }
+
+                            Rectangle {
+                                id: pathBar
+
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                radius: Appearance.rounding.full
+                                color: Appearance.colors.colSurfaceContainerHighest
+                                clip: true
+
+                                Item {
+                                    anchors.fill: parent
+                                    visible: !root.pathEditing
+
+                                    Flickable {
+                                        id: breadcrumbFlick
+
+                                        function revealCurrent() {
+                                            contentX = Math.max(0, contentWidth - width);
+                                        }
+
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 4
+                                        anchors.rightMargin: 4
+                                        contentWidth: breadcrumbRow.implicitWidth
+                                        contentHeight: height
+                                        boundsBehavior: Flickable.StopAtBounds
+                                        flickableDirection: Flickable.HorizontalFlick
+                                        interactive: contentWidth > width
+                                        clip: true
+
+                                        onContentWidthChanged: Qt.callLater(revealCurrent)
+                                        onWidthChanged: Qt.callLater(revealCurrent)
+
+                                        Row {
+                                            id: breadcrumbRow
+
+                                            height: breadcrumbFlick.height
+                                            spacing: 2
+
+                                            Repeater {
+                                                model: breadcrumbModel
+
+                                                delegate: Row {
+                                                    id: breadcrumbEntry
+
+                                                    required property int index
+                                                    required property string label
+                                                    required property string path
+                                                    required property string iconName
+                                                    readonly property bool current: index
+                                                                                    === breadcrumbModel.count
+                                                                                    - 1
+
+                                                    height: breadcrumbRow.height
+                                                    spacing: 2
+
+                                                    Text {
+                                                        anchors.verticalCenter: parent.verticalCenter
+                                                        visible: breadcrumbEntry.index > 0
+                                                        text: "/"
+                                                        color: Appearance.colors.colOnSurfaceVariant
+                                                        font.family: Fonts.mono
+                                                        font.pixelSize: 13
+                                                    }
+
+                                                    BreadcrumbButton {
+                                                        anchors.verticalCenter: parent.verticalCenter
+                                                        label: breadcrumbEntry.label
+                                                        path: breadcrumbEntry.path
+                                                        iconName: breadcrumbEntry.iconName
+                                                        current: breadcrumbEntry.current
+                                                    }
+                                                }
+                                            }
+
+                                            Item {
+                                                width: Math.max(18, breadcrumbFlick.width - x)
+                                                height: breadcrumbRow.height
+
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    cursorShape: Qt.IBeamCursor
+                                                    onClicked: root.beginPathEditing()
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                TextField {
+                                    id: pathEditor
+
+                                    anchors.fill: parent
+                                    visible: root.pathEditing
+                                    text: root.pathDraft
+                                    leftPadding: 14
+                                    rightPadding: 14
+                                    topPadding: 0
+                                    bottomPadding: 0
+                                    selectByMouse: true
+                                    selectedTextColor: Appearance.colors.colOnSecondaryContainer
+                                    selectionColor: Appearance.colors.colSecondaryContainer
+                                    color: Appearance.colors.colOnSurface
+                                    verticalAlignment: TextInput.AlignVCenter
+                                    font.family: Fonts.mono
+                                    font.pixelSize: 12
+
+                                    background: Rectangle {
+                                        radius: Appearance.rounding.full
+                                        color: Appearance.colors.colSurfaceContainerHighest
+                                    }
+
+                                    onTextEdited: root.pathDraft = text
+                                    onAccepted: root.commitPathEditing()
+                                    onActiveFocusChanged: {
+                                        if (!activeFocus && root.pathEditing)
+                                            root.cancelPathEditing();
+                                    }
+
+                                    Keys.onEscapePressed: event => {
+                                        root.cancelPathEditing();
+                                        event.accepted = true;
+                                    }
+                                }
+                            }
+
+                            PickerToolButton {
+                                iconName: root.showHiddenFiles ? "visibility_off" : "visibility"
+                                tooltipText: root.showHiddenFiles ? qsTr("Hide hidden files") : qsTr(
+                                                                        "Show hidden files")
+                                active: root.showHiddenFiles
+                                onClicked: root.setHiddenFilesVisible(!root.showHiddenFiles)
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        radius: Appearance.rounding.large
+                        color: Appearance.colors.colSurfaceContainer
+                        clip: true
+
+                        ColumnLayout {
+                            anchors.centerIn: parent
+                            spacing: 8
+                            visible: folderModel.count === 0
+
+                            MaterialSymbol {
+                                Layout.alignment: Qt.AlignHCenter
+                                text: "scan_delete"
+                                iconSize: 52
+                                color: Appearance.colors.colOutline
+                            }
+
+                            Text {
+                                text: root.emptyStateText
+                                color: Appearance.colors.colSubtext
+                                font.family: Fonts.ui
+                                font.pixelSize: 14
+                            }
+                        }
+
+                        StyledGridView {
+                            id: fileGrid
+
+                            function refreshLayout() {
+                                if (!root.visible || width <= 0 || height <= 0)
+                                    return;
+                                forceLayout();
+                            }
+
+                            anchors.fill: parent
+                            anchors.margins: 10
+                            clip: true
+                            cellWidth: width > 0 ? width / Math.max(1, Math.floor(width / 146)) : 146
+                            cellHeight: 142
+                            model: root._folderModelAttached ? folderModel : null
+                            animateAppearance: false
+                            animateMovement: false
+                            onWidthChanged: Qt.callLater(fileGrid.refreshLayout)
+                            onHeightChanged: Qt.callLater(fileGrid.refreshLayout)
+                            onCellWidthChanged: Qt.callLater(fileGrid.refreshLayout)
+
+                            delegate: RippleButton {
+                                id: fileItem
+
+                                required property int index
+                                required property string fileName
+                                required property string filePath
+                                required property bool fileIsDir
+
+                                property bool appeared: false
+                                readonly property bool selected: root.selectedPath === root.normalizePath(
+                                                                     filePath)
+                                readonly property real initialX: ((index * 37) % 3 - 1) * 24
+                                readonly property real initialY: ((index * 53) % 5 - 2) * 10
+
+                                width: fileGrid.cellWidth - 8
+                                height: fileGrid.cellHeight - 8
+                                padding: 0
+                                opacity: appeared ? 1 : 0
+                                scale: appeared ? 1 : 0.76
+                                rotation: appeared ? 0 : ((index % 3) - 1) * 3
+                                toggled: selected
+                                buttonRadius: Appearance.rounding.large
+                                containerColor: fileItem.selected ? Appearance.colors.colSecondaryContainer :
+                                                                    "transparent"
+                                stateLayerColor: fileItem.selected
+                                                 ? Appearance.colors.colSecondaryContainerHover :
+                                                   Appearance.colors.colLayer3Hover
+                                rippleColor: fileItem.selected ? Appearance.colors.colOnSecondaryContainer :
+                                                                 Appearance.colors.colOnSurface
+                                releaseAction: () => {
+                                    root.selectEntry(filePath, fileName, fileIsDir);
+                                }
+                                doubleClickAction: () => root.openEntry(filePath, fileName, fileIsDir)
+                                transform: Translate {
+                                    x: fileItem.appeared ? 0 : fileItem.initialX
+                                    y: fileItem.appeared ? 0 : fileItem.initialY
+                                }
+
+                                Behavior on opacity {
+                                    NumberAnimation {
+                                        duration: 190
+                                    }
+                                }
+                                Behavior on scale {
+                                    NumberAnimation {
+                                        duration: Appearance.animation.expressiveDefaultSpatial.duration
+                                        easing.type: Appearance.animation.expressiveDefaultSpatial.type
+                                        easing.bezierCurve:
+                                            Appearance.animation.expressiveDefaultSpatial.bezierCurve
+                                    }
+                                }
+                                Behavior on rotation {
+                                    NumberAnimation {
+                                        duration: Appearance.animation.expressiveDefaultSpatial.duration
+                                        easing.type: Appearance.animation.expressiveDefaultSpatial.type
+                                        easing.bezierCurve:
+                                            Appearance.animation.expressiveDefaultSpatial.bezierCurve
+                                    }
+                                }
+
+                                Timer {
+                                    interval: Math.min(260, fileItem.index * 18) + ((fileItem.index * 29)
+                                                                                    % 5) * 8
+                                    running: true
+                                    onTriggered: fileItem.appeared = true
+                                }
+
+                                contentItem: Item {
+                                    Item {
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.top: parent.top
+                                        anchors.margins: 8
+                                        height: 92
+
+                                        Image {
+                                            id: previewImage
+
+                                            anchors.fill: parent
+                                            source: !fileItem.fileIsDir && root.isImageName(
+                                                        fileItem.fileName) ? root.encodeFileUrl(
+                                                                                 fileItem.filePath) : ""
+                                            fillMode: Image.PreserveAspectCrop
+                                            asynchronous: true
+                                            cache: true
+                                            visible: false
+                                        }
+
+                                        Rectangle {
+                                            id: previewMask
+
+                                            anchors.fill: parent
+                                            radius: Appearance.rounding.normal
+                                            color: "black"
+                                            visible: false
+                                            layer.enabled: true
+                                        }
+
+                                        MultiEffect {
+                                            anchors.fill: parent
+                                            source: previewImage
+                                            maskEnabled: true
+                                            maskSource: previewMask
+                                            visible: !fileItem.fileIsDir && previewImage.status
+                                                     === Image.Ready
+                                            maskThresholdMin: 0.5
+                                            maskSpreadAtMin: 1
+                                        }
+
+                                        Rectangle {
+                                            anchors.fill: parent
+                                            radius: Appearance.rounding.normal
+                                            color: Appearance.colors.colSurfaceContainerHighest
+                                            visible: fileItem.fileIsDir || previewImage.status !== Image.Ready
+
+                                            MaterialSymbol {
+                                                anchors.centerIn: parent
+                                                text: fileItem.fileIsDir ? "folder" : root.isImageName(
+                                                                               fileItem.fileName) ? "image" :
+                                                                                                    "draft"
+                                                iconSize: 38
+                                                fill: fileItem.fileIsDir ? 1 : 0
+                                                color: fileItem.fileIsDir ? Appearance.colors.colPrimary :
+                                                                            Appearance.colors.colOnSurfaceVariant
+                                            }
+                                        }
+
+                                        Rectangle {
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            anchors.margins: 6
+                                            width: 27
+                                            height: 27
+                                            radius: Appearance.rounding.full
+                                            visible: fileItem.selected
+                                            color: Appearance.colors.colPrimary
+
+                                            MaterialSymbol {
+                                                anchors.centerIn: parent
+                                                text: "check"
+                                                iconSize: 17
+                                                color: Appearance.colors.colOnPrimary
+                                            }
+                                        }
+                                    }
+
+                                    Text {
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.bottom: parent.bottom
+                                        anchors.leftMargin: 8
+                                        anchors.rightMargin: 8
+                                        anchors.bottomMargin: 9
+                                        text: fileItem.fileName
+                                        color: fileItem.selected ? Appearance.colors.colOnSecondaryContainer :
+                                                                   Appearance.colors.colOnSurface
+                                        font.family: Fonts.ui
+                                        font.pixelSize: 12
+                                        font.weight: fileItem.selected ? Font.DemiBold : Font.Normal
+                                        horizontalAlignment: Text.AlignHCenter
+                                        elide: Text.ElideMiddle
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 64
+                        radius: Appearance.rounding.large
+                        color: Appearance.colors.colSurfaceContainerHigh
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 10
+                            spacing: 10
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                radius: Appearance.rounding.full
+                                color: Appearance.colors.colSurfaceContainerHighest
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 13
+                                    anchors.rightMargin: 13
+                                    spacing: 8
+
+                                    MaterialSymbol {
+                                        Layout.preferredWidth: 22
+                                        Layout.preferredHeight: 22
+                                        text: root.selectedIsDir ? "folder" : root.selectionValid ? "image" :
+                                                                                                    "info"
+                                        iconSize: 20
+                                        color: root.selectionValid ? Appearance.colors.colPrimary :
+                                                                     Appearance.colors.colOnSurfaceVariant
+                                    }
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: root.selectedPath === "" ? root.currentFolderIsSelection ? qsTr(
+                                                                                                             "Current folder: %1").arg(
+                                                                                                             root.currentPath) :
+                                                                                                         root.selectionPrompt :
+                                                                                                         root.selectedIsDir
+                                                                                                         ? qsTr("Double-click to open ")
+                                                                                                           + root.selectedName :
+                                                                                                           root.selectedName
+                                        color: Appearance.colors.colOnSurfaceVariant
+                                        font.family: Fonts.ui
+                                        font.pixelSize: 13
+                                        elide: Text.ElideMiddle
+                                    }
+                                }
+                            }
+
+                            PickerActionButton {
+                                label: qsTr("Cancel")
+                                iconName: "close"
+                                enabled: root.hasSelection
+                                onClicked: root.clearSelection()
+                            }
+
+                            PickerActionButton {
+                                label: root.acceptLabel
+                                iconName: "check"
+                                primary: root.selectionValid
+                                enabled: root.selectionValid
+                                onClicked: root.acceptSelection()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    component BreadcrumbButton: RippleButton {
+        id: breadcrumbButton
+
+        required property string label
+        required property string path
+        property string iconName: ""
+        property bool current: false
+
+        implicitWidth: breadcrumbContent.implicitWidth + 22
+        implicitHeight: 36
+        padding: 0
+        toggled: current
+        buttonRadius: Appearance.rounding.small
+        containerColor: breadcrumbButton.current ? Appearance.colors.colLayer3 : "transparent"
+        stateLayerColor: Appearance.colors.colLayer3Hover
+        rippleColor: Appearance.colors.colOnSurface
+        releaseAction: () => {
+            if (breadcrumbButton.current)
+                root.beginPathEditing();
+            else
+                root.navigateTo(breadcrumbButton.path);
+        }
+
+        contentItem: Item {
+            RowLayout {
+                id: breadcrumbContent
+
+                anchors.centerIn: parent
+                spacing: 6
+
+                MaterialSymbol {
+                    Layout.preferredWidth: breadcrumbButton.iconName === "" ? 0 : 18
+                    Layout.preferredHeight: 18
+                    visible: breadcrumbButton.iconName !== ""
+                    text: breadcrumbButton.iconName
+                    iconSize: 17
+                    fill: 1
+                    color: Appearance.colors.colOnSurfaceVariant
+                }
+
+                Text {
+                    Layout.alignment: Qt.AlignVCenter
+                    text: breadcrumbButton.label
+                    color: Appearance.colors.colOnSurface
+                    font.family: Fonts.ui
+                    font.pixelSize: 12
+                    font.weight: breadcrumbButton.current ? Font.DemiBold : Font.Medium
+                }
+            }
+        }
+    }
+
+    component PickerToolButton: RippleButton {
+        id: toolButton
+
+        property string iconName: ""
+        property string tooltipText: ""
+        property bool active: false
+
+        implicitWidth: 40
+        implicitHeight: 40
+        padding: 0
+        toggled: active
+        buttonRadius: Appearance.rounding.full
+        containerColor: toolButton.active ? Appearance.colors.colSecondaryContainer : "transparent"
+        stateLayerColor: toolButton.active ? Appearance.colors.colSecondaryContainerHover :
+                                             Appearance.colors.colLayer3Hover
+        rippleColor: toolButton.active ? Appearance.colors.colOnSecondaryContainer :
+                                         Appearance.colors.colOnSurface
+
+        contentItem: MaterialSymbol {
+            text: toolButton.iconName
+            iconSize: 20
+            fill: toolButton.active ? 1 : 0
+            color: toolButton.active ? Appearance.colors.colOnSecondaryContainer :
+                                       Appearance.colors.colOnSurface
+        }
+
+        StyledToolTip {
+            extraVisibleCondition: toolButton.pointerHovered && toolButton.tooltipText !== ""
+            text: toolButton.tooltipText
+        }
+    }
+
+    component LocationButton: RippleButton {
+        id: locationButton
+
+        required property string label
+        required property string iconName
+        required property string path
+        readonly property string normalizedPath: root.normalizePath(path)
+        readonly property bool active: root.currentPath === normalizedPath
+
+        Layout.fillWidth: true
+        Layout.preferredHeight: 44
+        padding: 0
+        toggled: active
+        buttonRadius: Appearance.rounding.full
+        containerColor: locationButton.active ? Appearance.colors.colSecondaryContainer : "transparent"
+        stateLayerColor: locationButton.active ? Appearance.colors.colSecondaryContainerHover :
+                                                 Appearance.colors.colLayer2Hover
+        rippleColor: locationButton.active ? Appearance.colors.colOnSecondaryContainer :
+                                             Appearance.colors.colOnSurface
+        releaseAction: () => root.navigateTo(locationButton.normalizedPath)
+
+        contentItem: RowLayout {
+            spacing: 10
+
+            Item {
+                Layout.preferredWidth: 2
+            }
+
+            MaterialSymbol {
+                Layout.preferredWidth: 22
+                Layout.preferredHeight: 22
+                text: locationButton.iconName
+                iconSize: 20
+                fill: locationButton.active ? 1 : 0
+                color: locationButton.active ? Appearance.colors.colOnSecondaryContainer :
+                                               Appearance.colors.colOnSurfaceVariant
+            }
+
+            Text {
+                Layout.fillWidth: true
+                text: locationButton.label
+                color: locationButton.active ? Appearance.colors.colOnSecondaryContainer :
+                                               Appearance.colors.colOnSurface
+                font.family: Fonts.ui
+                font.pixelSize: 13
+                font.weight: locationButton.active ? Font.DemiBold : Font.Normal
+                elide: Text.ElideRight
+            }
+
+            Item {
+                Layout.preferredWidth: 4
+            }
+        }
+    }
+
+    component PickerActionButton: RippleButton {
+        id: actionButton
+
+        required property string label
+        property string iconName: ""
+        property bool primary: false
+
+        implicitWidth: Math.max(92, actionContent.implicitWidth + 30)
+        implicitHeight: 44
+        padding: 0
+        buttonRadius: Appearance.rounding.full
+        containerColor: primary ? Appearance.colors.colPrimary : Appearance.colors.colSurfaceContainerHighest
+        stateLayerColor: primary ? Appearance.colors.colPrimaryHover :
+                                   Appearance.colors.colSurfaceContainerHighestHover
+        rippleColor: primary ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSurface
+
+        contentItem: Item {
+            RowLayout {
+                id: actionContent
+
+                anchors.centerIn: parent
+                spacing: 7
+
+                MaterialSymbol {
+                    Layout.preferredWidth: actionButton.iconName === "" ? 0 : 19
+                    Layout.preferredHeight: 19
+                    visible: actionButton.iconName !== ""
+                    text: actionButton.iconName
+                    iconSize: 18
+                    color: actionButton.primary ? Appearance.colors.colOnPrimary :
+                                                  Appearance.colors.colOnSurface
+                }
+
+                Text {
+                    Layout.alignment: Qt.AlignVCenter
+                    text: actionButton.label
+                    color: actionButton.primary ? Appearance.colors.colOnPrimary :
+                                                  Appearance.colors.colOnSurface
+                    font.family: Fonts.ui
+                    font.pixelSize: 13
+                    font.weight: Font.DemiBold
+                }
+            }
+        }
+    }
+}

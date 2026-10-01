@@ -1,0 +1,236 @@
+import QtQuick
+import Qt5Compat.GraphicalEffects
+import Clavis.WeatherMap
+import qs.Common
+import qs.Modules.Map
+import qs.Services
+import qs.Widgets.common
+
+Rectangle {
+    id: root
+
+    property real latitude: 0
+    property real longitude: 0
+    property bool locationAvailable: false
+    property bool active: visible
+    property bool showLayerSelector: true
+    property string selectedLayer: "radar"
+    property bool mapTilerRuntimeFallback: false
+    property real currentMapZoom: 6
+    readonly property string preferredBase: UiPreferences.weatherMapBaseProvider
+    readonly property string preferredOverlay: UiPreferences.weatherMapOverlayProvider
+    readonly property bool mapTilerAvailable: WeatherMapPlugin.mapTilerStatus === "ready"
+                                              || WeatherMapPlugin.mapTilerStatus === "loading"
+    readonly property bool openWeatherAvailable: WeatherMapPlugin.status === "ready"
+                                                 || WeatherMapPlugin.status === "loading"
+    readonly property string effectiveBase: preferredBase === "maptiler"
+                                            && WeatherMapPlugin.mapTilerConfigured && mapTilerAvailable &&
+                                            !mapTilerRuntimeFallback ? "maptiler" : "openfreemap"
+    readonly property string effectiveOverlay: preferredOverlay === "openweather"
+                                               && WeatherMapPlugin.apiConfigured && openWeatherAvailable
+                                               ? "openweather" : "rainviewer"
+    readonly property bool darkBase: effectiveOverlay === "openweather" && selectedLayer === "clouds"
+    readonly property string baseStyleUrl: effectiveBase === "maptiler" ? WeatherMapPlugin.mapTilerStyleUrl(
+                                                                              darkBase ? "dataviz-dark" :
+                                                                                         "dataviz") :
+                                                                          "https://tiles.openfreemap.org/styles/"
+                                                                          + (darkBase ? "dark" : "positron")
+    readonly property string overlayTileUrl: effectiveOverlay === "rainviewer"
+                                             ? WeatherMapPlugin.radarTileUrl :
+                                               WeatherMapPlugin.openWeatherTileUrl(selectedLayer)
+    readonly property bool overlayLoading: effectiveOverlay === "rainviewer" && WeatherMapPlugin.radarStatus
+                                           === "loading"
+    readonly property bool overlayFailed: effectiveOverlay === "rainviewer" && WeatherMapPlugin.radarStatus
+                                          !== "idle" && WeatherMapPlugin.radarStatus !== "loading"
+                                          && WeatherMapPlugin.radarStatus !== "ready"
+    readonly property real rainViewerMaximumDisplayZoom: WeatherMapProviders.provider(
+                                                             "rainviewer").maximumDisplayZoom
+    readonly property bool rainViewerOutOfRange: effectiveOverlay === "rainviewer" && currentMapZoom
+                                                 > rainViewerMaximumDisplayZoom
+    readonly property string radarMaximumZoomText: qsTranslate("WeatherMapCard", "Radar reached maximum zoom")
+    readonly property string openFreeMapFallbackText: qsTranslate("WeatherMapCard", "Using OpenFreeMap")
+    readonly property string rainViewerFallbackText: qsTranslate("WeatherMapCard", "Using RainViewer")
+    readonly property string overlayLoadingText: qsTranslate("WeatherMapCard", "Loading weather layer")
+    readonly property string overlayUnavailableText: qsTranslate("WeatherMapCard",
+                                                                 "Weather layer temporarily unavailable")
+
+    function refreshMap() {
+        if (root.effectiveOverlay === "rainviewer")
+            WeatherMapPlugin.refreshRadarMetadata();
+        else
+            WeatherMapPlugin.validateOpenWeatherLayer(root.selectedLayer);
+        if (root.effectiveBase === "maptiler")
+            WeatherMapPlugin.validateMapTilerStyle(root.darkBase ? "dataviz-dark" : "dataviz");
+
+        map.reload();
+    }
+
+    function validatePreferredProviders() {
+        if (!root.active)
+            return;
+
+        if (root.preferredBase === "maptiler" && WeatherMapPlugin.mapTilerConfigured)
+            WeatherMapPlugin.validateMapTilerStyle(root.darkBase ? "dataviz-dark" : "dataviz");
+
+        if (root.preferredOverlay === "openweather" && WeatherMapPlugin.apiConfigured)
+            WeatherMapPlugin.validateOpenWeatherLayer(root.selectedLayer);
+    }
+
+    function normalizeLayer() {
+        const normalized = WeatherMapProviders.normalizedLayer(root.effectiveOverlay, root.selectedLayer);
+        if (root.selectedLayer !== normalized)
+            root.selectedLayer = normalized;
+    }
+
+    radius: Appearance.rounding.large
+    color: Appearance.colors.colSurfaceContainerHigh
+    clip: true
+    layer.enabled: true
+    layer.samples: 4
+    onPreferredBaseChanged: mapTilerRuntimeFallback = false
+    onSelectedLayerChanged: root.validatePreferredProviders()
+    onActiveChanged: {
+        WeatherMapPlugin.active = active;
+        root.validatePreferredProviders();
+    }
+    Component.onCompleted: {
+        root.normalizeLayer();
+        WeatherMapPlugin.active = root.active;
+        root.validatePreferredProviders();
+    }
+    Component.onDestruction: WeatherMapPlugin.active = false
+    onEffectiveOverlayChanged: {
+        root.normalizeLayer();
+    }
+
+    Connections {
+        function onApiKeyChanged() {
+            root.validatePreferredProviders();
+        }
+
+        function onMapTilerApiKeyChanged() {
+            root.mapTilerRuntimeFallback = false;
+            root.validatePreferredProviders();
+        }
+
+        target: WeatherMapPlugin
+    }
+
+    MapLibreView {
+        id: map
+
+        anchors.fill: parent
+        active: root.active && root.locationAvailable
+        styleUrl: root.baseStyleUrl
+        copyrightsVisible: false
+        centerLatitude: root.latitude
+        centerLongitude: root.longitude
+        markerLatitude: root.latitude
+        markerLongitude: root.longitude
+        zoomLevel: 6
+        markerVisible: root.locationAvailable
+        overlayTileUrl: root.overlayTileUrl
+        overlayOpacity: 0.72
+        overlayMaximumDisplayZoom: root.effectiveOverlay === "rainviewer" ? root.rainViewerMaximumDisplayZoom :
+                                                                            -1
+        onCameraMoved: (latitudeValue, longitudeValue, zoom, bearingValue, tiltValue) => {
+            root.currentMapZoom = zoom;
+        }
+        onMapStateChanged: {
+            if (mapState === "error" && root.effectiveBase === "maptiler")
+                root.mapTilerRuntimeFallback = true;
+        }
+    }
+
+    WeatherMapLayerSelector {
+        id: layerSelector
+
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.margins: Metrics.spacingM
+        visible: root.showLayerSelector && root.locationAvailable
+        providerId: root.effectiveOverlay
+        currentLayer: root.selectedLayer
+        onLayerSelected: layerId => {
+            return root.selectedLayer = layerId;
+        }
+    }
+
+    MapLegend {
+        anchors.left: parent.left
+        anchors.top: layerSelector.visible ? layerSelector.bottom : parent.top
+        anchors.leftMargin: Metrics.spacingM
+        anchors.topMargin: Metrics.spacingM
+        visible: root.locationAvailable && root.overlayTileUrl !== "" && !root.rainViewerOutOfRange
+        mode: root.selectedLayer
+    }
+
+    IconButton {
+        id: recenterButton
+
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.margins: Metrics.spacingM
+        visible: root.locationAvailable
+        iconName: "my_location"
+        accessibleName: qsTr("Return to weather location")
+        iconColor: "#FF111111"
+        normalHoverStateLayerColor: "#14111111"
+        normalPressedStateLayerColor: "#1F111111"
+        onClicked: map.recenter(root.latitude, root.longitude, 6)
+    }
+
+    Text {
+        id: overlayStatus
+
+        anchors.top: recenterButton.bottom
+        anchors.right: parent.right
+        anchors.margins: Metrics.spacingM
+        width: Math.max(0, root.width - 208)
+        horizontalAlignment: Text.AlignRight
+        wrapMode: Text.Wrap
+        visible: root.rainViewerOutOfRange || root.overlayLoading || root.overlayFailed || root.preferredBase
+                 !== root.effectiveBase || root.preferredOverlay !== root.effectiveOverlay
+        text: root.rainViewerOutOfRange ? root.radarMaximumZoomText : root.preferredBase
+                                          !== root.effectiveBase ? root.openFreeMapFallbackText :
+                                                                   root.preferredOverlay
+                                                                   !== root.effectiveOverlay
+                                                                   ? root.rainViewerFallbackText :
+                                                                     root.overlayLoading
+                                                                     ? root.overlayLoadingText :
+                                                                       root.overlayUnavailableText
+        color: "#FF111111"
+        font.family: Typography.labelMedium.family
+        font.pixelSize: Typography.labelMedium.pixelSize
+        font.weight: Typography.labelMedium.weight
+    }
+
+    MapAttribution {
+        id: attribution
+
+        anchors.left: parent.left
+        anchors.bottom: parent.bottom
+        anchors.margins: Metrics.spacingM
+        width: Math.min(implicitWidth, parent.width - 2 * Metrics.spacingM)
+        visible: root.locationAvailable
+        baseProvider: root.effectiveBase
+        overlayProvider: root.overlayTileUrl !== "" ? root.effectiveOverlay : ""
+    }
+
+    MapFallback {
+        anchors.fill: parent
+        visible: !root.locationAvailable
+        loading: false
+        message: qsTr("Weather location temporarily unavailable")
+        onRetryRequested: WeatherPlugin.refresh()
+    }
+
+    layer.effect: OpacityMask {
+
+        maskSource: Rectangle {
+            width: root.width
+            height: root.height
+            radius: root.radius
+        }
+    }
+}

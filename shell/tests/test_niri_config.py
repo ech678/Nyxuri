@@ -1,0 +1,632 @@
+#!/usr/bin/env python3
+"""Black-box configuration contracts, all writes confined to temporary dirs."""
+import concurrent.futures
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import tempfile
+import unittest
+from unittest import mock
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'scripts/system'))
+import niri_config as config
+
+
+class ConfigurationContracts(unittest.TestCase):
+    def setUp(self):
+        environment = mock.patch.dict(os.environ)
+        environment.start()
+        self.addCleanup(environment.stop)
+        os.environ.pop('NIRI_SOCKET', None)
+        self.temp = tempfile.TemporaryDirectory(prefix='clavis-config-test-')
+        self.addCleanup(self.temp.cleanup)
+        self.main = Path(self.temp.name) / 'config.kdl'
+        self.main.write_text('// User configuration\ninput {}\n')
+
+    def run_config(self, operation='status', feature='binds', **kwargs):
+        return config.run(dict(main=str(self.main), operation=operation, feature=feature, **kwargs))
+
+    def fragment(self, feature='binds'):
+        return self.main.parent / 'clavis' / (feature + '.kdl')
+
+    def setup_binds(self):
+        # Editing contracts start from an explicitly empty user fragment.
+        self.fragment().parent.mkdir(exist_ok=True)
+        if not self.fragment().exists():
+            self.fragment().write_text('binds {}\n')
+        self.run_config('setup')
+        return self.run_config()
+
+    def test_hot_corners_setup_is_explicit_and_preserves_other_settings(self):
+        original = ('// User gestures stay intact\n'
+                    'gestures { dnd-edge-view-scroll { trigger-width 60; }; hot-corners { top-right; }; }\n'
+                    'output "DP-1" { scale 1.5; position x=0 y=0; }\n'
+                    'output "DP-2" { hot-corners { off; }; }\n')
+        self.main.write_text(original)
+        state = self.run_config()
+        self.assertEqual(state['fragments']['hot-corners']['state'], 'not-connected')
+        self.assertFalse(state['hotCorners']['disabled'])
+        self.assertFalse(self.fragment('hot-corners').exists())
+        self.assertEqual(self.main.read_text(), original)
+
+        state = self.run_config('setup', feature='hot-corners')
+        self.assertEqual(state['fragments']['hot-corners']['state'], 'ready')
+        self.assertTrue(state['hotCorners']['disabled'])
+        self.assertFalse(state['diagnostics']['invalid'])
+        self.assertTrue(self.main.read_text().startswith(original))
+        self.assertEqual(len(list(self.main.parent.glob('config.kdl.clavis-backup-*'))), 1)
+        saved = self.fragment('hot-corners').read_bytes()
+        connected = self.main.read_bytes()
+        self.run_config('setup', feature='hot-corners')
+        self.assertEqual(self.main.read_bytes(), connected)
+        self.assertEqual(self.fragment('hot-corners').read_bytes(), saved)
+
+    def test_hot_corners_setup_repairs_owned_setting_and_preserves_owned_gestures(self):
+        fragment = self.fragment('hot-corners')
+        fragment.parent.mkdir()
+        original = ('// Custom gestures\r\n'
+                    'gestures { dnd-edge-workspace-switch { delay-ms 250; }; '
+                    'hot-corners { bottom-right; }; }\r\n')
+        fragment.write_bytes(original.encode())
+        state = self.run_config('setup', feature='hot-corners')
+        self.assertEqual(state['fragments']['hot-corners']['state'], 'ready')
+        self.assertTrue(state['hotCorners']['disabled'])
+        result = fragment.read_bytes().decode()
+        self.assertTrue(result.startswith('// Custom gestures\r\n'))
+        self.assertIn('dnd-edge-workspace-switch { delay-ms 250; };', result)
+        self.assertTrue(result.endswith('; }\r\n'))
+
+    def test_hot_corners_output_overrides_abort_setup_without_writes(self):
+        included = self.main.parent / 'monitors.kdl'
+        external = ('// Output configuration is not owned by Clavis\n'
+                    'output "DP-1" { scale 1.5; hot-corners {}; }\n'
+                    'output "Vendor Screen Serial" { transform "90"; hot-corners { bottom-left; }; }\n')
+        included.write_text(external)
+        self.main.write_text('include "monitors.kdl"\n')
+        original = self.main.read_bytes()
+        state = self.run_config()
+        self.assertEqual(state['hotCorners']['outputConflicts'], [
+            dict(identifier='DP-1', source=str(included)),
+            dict(identifier='Vendor Screen Serial', source=str(included))])
+        with self.assertRaisesRegex(ValueError, 'DP-1'):
+            self.run_config('setup', feature='hot-corners')
+        self.assertEqual(self.main.read_bytes(), original)
+        self.assertEqual(included.read_text(), external)
+        self.assertFalse(self.fragment('hot-corners').exists())
+        self.assertEqual(list(self.main.parent.glob('config.kdl.clavis-backup-*')), [])
+
+    def test_hot_corners_external_edits_revoke_readiness(self):
+        self.run_config('setup', feature='hot-corners')
+        saved = self.fragment('hot-corners').read_bytes()
+        included = self.main.parent / 'later.kdl'
+        included.write_text('gestures { hot-corners {}; }\n')
+        self.main.write_text(self.main.read_text() + 'include "later.kdl"\n')
+        connected = self.main.read_bytes()
+        state = self.run_config()
+        self.assertEqual(state['fragments']['hot-corners']['state'], 'conflict')
+        self.assertFalse(state['hotCorners']['globalDisabled'])
+        self.assertEqual(state['hotCorners']['globalSource'], str(included))
+        with self.assertRaisesRegex(ValueError, 'move the Clavis'):
+            self.run_config('setup', feature='hot-corners')
+        self.assertEqual(self.main.read_bytes(), connected)
+        self.assertEqual(self.fragment('hot-corners').read_bytes(), saved)
+
+        included.write_text('gestures { dnd-edge-view-scroll { trigger-width 70; }; }\n')
+        self.assertEqual(self.run_config()['fragments']['hot-corners']['state'], 'ready')
+        included.write_text('output "Disconnected Display" { hot-corners { top-right; }; }\n')
+        state = self.run_config()
+        self.assertEqual(state['fragments']['hot-corners']['state'], 'conflict')
+        self.assertTrue(state['hotCorners']['globalDisabled'])
+        self.assertEqual(state['hotCorners']['outputConflicts'], [
+            dict(identifier='Disconnected Display', source=str(included))])
+
+    def test_hot_corners_uses_first_case_insensitive_output_match(self):
+        self.main.write_text('output "DP-1" { hot-corners { off; }; }\n'
+                             'output "dp-1" { hot-corners { top-right; }; }\n')
+        state = self.run_config('setup', feature='hot-corners')
+        self.assertEqual(state['fragments']['hot-corners']['state'], 'ready')
+        self.assertEqual(state['hotCorners']['outputConflicts'], [])
+
+    def test_hot_corners_invalid_config_and_missing_include_are_not_ready(self):
+        self.run_config('setup', feature='hot-corners')
+        connected = self.main.read_text()
+        self.main.write_text(connected + 'unknown-niri-setting\n')
+        state = self.run_config()
+        self.assertEqual(state['fragments']['hot-corners']['state'], 'error')
+        self.assertTrue(state['diagnostics']['invalid'])
+        self.main.write_text(connected + 'include "clavis/cursor.kdl"\n')
+        self.assertEqual(self.run_config()['fragments']['hot-corners']['state'], 'error')
+        self.main.write_text(connected + 'include "optional.kdl" optional=true\n')
+        self.assertEqual(self.run_config()['fragments']['hot-corners']['state'], 'ready')
+
+    def test_hot_corners_rejected_validation_and_stale_revision_do_not_write(self):
+        original = self.main.read_bytes()
+        with mock.patch.object(config.Graph, 'validate', side_effect=ValueError('Unavailable hot corners')):
+            with self.assertRaisesRegex(ValueError, 'Unavailable'):
+                self.run_config('setup', feature='hot-corners')
+        self.assertEqual(self.main.read_bytes(), original)
+        self.assertFalse(self.fragment('hot-corners').exists())
+        state = self.run_config()
+        self.main.write_text(self.main.read_text() + '// external change\n')
+        changed = self.main.read_bytes()
+        with self.assertRaisesRegex(ValueError, 'changed externally'):
+            self.run_config('setup', feature='hot-corners', revision=state['revision'])
+        self.assertEqual(self.main.read_bytes(), changed)
+        self.assertFalse(self.fragment('hot-corners').exists())
+
+    @mock.patch.object(config.Graph, 'validate')
+    def test_minimize_style_roundtrip_preserves_animation_settings(self, validate):
+        original = 'animations { off; window-open { duration-ms 90; }; window-minimize { duration-ms 600; }; }\n'
+        self.main.write_text(original)
+        state = self.run_config('setup', feature='minimize-animation', effect='scale')
+        self.assertEqual(state['minimizeAnimation'], dict(effect='scale', disabled=True))
+        connected = self.main.read_text()
+        self.assertTrue(connected.startswith(original))
+        path = self.fragment('minimize-animation')
+        # An existing managed animation block may contain timing but no style yet.
+        path.write_text('// Custom timing stays intact\nanimations { window-close { off; }; }\n')
+        state = self.run_config('update', feature='minimize-animation', effect='genie', revision=self.run_config()['revision'])
+        self.assertEqual(state['minimizeAnimation'], dict(effect='genie', disabled=True))
+        self.assertEqual(self.main.read_text(), connected)
+        self.assertIn('// Custom timing stays intact\n', path.read_text())
+        self.assertIn('window-close { off; };', path.read_text())
+        self.assertEqual(len(config.parse(path.read_text()).nodes), 1)
+        self.assertEqual(self.run_config()['minimizeAnimation']['effect'], 'genie')
+        state = self.run_config('update', feature='minimize-animation', effect='scale')
+        self.assertEqual(state['minimizeAnimation']['effect'], 'scale')
+        validate.assert_called()
+
+    @mock.patch.object(config.Graph, 'validate')
+    def test_minimize_rejected_candidate_and_stale_revision_do_not_write(self, validate):
+        state = self.run_config('setup', feature='minimize-animation')
+        before = self.fragment('minimize-animation').read_bytes()
+        with self.assertRaises(ValueError):
+            self.run_config('update', feature='minimize-animation', effect='unknown')
+        validate.side_effect = ValueError('Unsupported animation option')
+        with self.assertRaises(ValueError):
+            self.run_config('update', feature='minimize-animation', effect='genie')
+        validate.side_effect = None
+        self.main.write_text(self.main.read_text() + '// external edit\n')
+        with self.assertRaises(ValueError):
+            self.run_config('update', feature='minimize-animation', effect='genie', revision=state['revision'])
+        self.assertEqual(before, self.fragment('minimize-animation').read_bytes())
+
+    @mock.patch.object(config.Graph, 'validate')
+    def test_minimize_external_override_is_reported_without_overwriting_it(self, validate):
+        self.run_config('setup', feature='minimize-animation')
+        before = self.fragment('minimize-animation').read_bytes()
+        self.main.write_text(self.main.read_text() + 'animations { window-minimize-effect "scale"; }\n')
+        with self.assertRaisesRegex(ValueError, 'overrides'):
+            self.run_config('update', feature='minimize-animation', effect='genie')
+        self.assertEqual(before, self.fragment('minimize-animation').read_bytes())
+
+
+    def test_files_catalog_action_starts_unbound_and_round_trips(self):
+        with mock.patch.object(config.subprocess, 'run', return_value=mock.Mock(returncode=0, stderr='')):
+            catalog = self.run_config('catalog')['catalog']
+        action = next(item for item in catalog if item['id'] == 'clavis:spotlight:files')
+        self.assertTrue(action['supported'])
+        self.assertFalse(action['parameters'])
+        state = self.run_config('setup')
+        self.assertFalse(any(row['action'].rstrip(';') == action['expression'] for row in state['bindings']))
+        self.run_config('save', key='Mod+F12', action=action['expression'])
+        saved = next(row for row in self.run_config()['bindings'] if row['key'] == 'Mod+F12')
+        self.assertEqual(saved['action'].rstrip(';'), action['expression'])
+        self.assertTrue(saved['editable'])
+        self.run_config('delete', id=saved['id'])
+        self.assertFalse(any(row['key'] == 'Mod+F12' for row in self.run_config()['bindings']))
+
+    def test_palette_shortcuts_remain_available_without_default_bindings(self):
+        with mock.patch.object(config.subprocess, 'run', return_value=mock.Mock(returncode=0, stderr='')):
+            catalog = self.run_config('catalog')['catalog']
+        ids = ['clavis:spotlight:commands'] + [
+            'clavis:spotlight:command:' + name for name in
+            ['calc', 'fx', 'time', 'light', 'dark', 'find-settings', 'actions', 'map']] + [
+            'clavis:sidebar:toggle:weather', 'clavis:sidebar:toggle:drawer']
+        actions = {entry['id']: entry for entry in catalog}
+        state = self.run_config('setup')
+        for action_id in ids:
+            with self.subTest(action=action_id):
+                action = actions[action_id]
+                self.assertTrue(action['supported'])
+                self.assertFalse(action['parameters'])
+                argv = config.parse(action['expression']).nodes[0].args
+                self.assertEqual(argv[:6], ['qs', '-c', 'clavis', 'ipc', 'call', action['target']])
+                self.assertNotIn('<', action['expression'])
+                self.assertFalse(any(row['action'].rstrip(';') == action['expression'] for row in state['bindings']))
+                self.run_config('save', key='Mod+F12', action=action['expression'])
+                saved = next(row for row in self.run_config()['bindings'] if row['key'] == 'Mod+F12')
+                self.assertEqual(saved['action'].rstrip(';'), action['expression'])
+                self.run_config('delete', id=saved['id'])
+        with mock.patch.object(config.subprocess, 'run', return_value=mock.Mock(returncode=0, stderr='')):
+            remaining = {entry['id'] for entry in self.run_config('catalog')['catalog']}
+        self.assertTrue(set(ids).issubset(remaining))
+
+    def test_mouse_bindings_remain_visible_after_save_and_reload(self):
+        self.setup_binds()
+        keys = ['MouseLeft', 'MouseMiddle', 'MouseRight', 'MouseBack', 'Ctrl+MouseForward']
+        for key in keys:
+            self.run_config('save', key=key, action='close-window')
+        rows = self.run_config()['bindings']
+        self.assertEqual({row['key'] for row in rows}, set(keys))
+        self.assertTrue(all(row['managed'] and row['editable'] for row in rows))
+        forward = next(row for row in rows if row['key'] == 'Ctrl+MouseForward')
+        self.run_config('delete', id=forward['id'])
+        self.assertEqual({row['key'] for row in self.run_config()['bindings']}, set(keys[:-1]))
+
+    def test_first_setup_defaults_are_unique_direct_ipc_and_not_restored(self):
+        state = self.run_config('setup')
+        rows = state['bindings']
+        self.assertEqual(len(rows), len(config.DEFAULT_BINDINGS))
+        self.assertEqual(len({row['identity'] for row in rows}), len(rows))
+        self.assertTrue(all(not row.get('collision') for row in rows))
+        for row in rows:
+            action = config.parse(row['action']).nodes[0]
+            self.assertEqual(action.name, 'spawn')
+            self.assertEqual(action.args[:5], ['qs', '-c', 'clavis', 'ipc', 'call'])
+            self.assertIs(row['props']['repeat'], False)
+        self.run_config('delete', id=rows[0]['id'])
+        remaining = self.fragment().read_bytes()
+        self.run_config('setup')
+        self.assertEqual(self.fragment().read_bytes(), remaining)
+
+    def test_conflicts_follow_includes_and_clear_independently_of_unrelated_saves(self):
+        self.main.write_text('binds { Control+F1 { close-window; }; }\n')
+        self.setup_binds()
+        self.main.parent.joinpath('unused.kdl').write_text('binds { F9 { quit; }; F9 { quit; }; }')
+        state = self.run_config('save', key='Ctrl+F1', action='close-window', patch={'hotkey-overlay-title': 'Title'})
+        self.assertFalse(state['diagnostics']['conflicts'])
+        state = self.run_config('save', key='Ctrl+F1', action='quit')
+        self.assertTrue(state['diagnostics']['conflicts'])
+        self.assertTrue(state['diagnostics']['invalid'])
+        self.assertTrue(all(row['collision'] for row in state['bindings']))
+        duplicate = state['bindings'][-1]
+        state = self.run_config('save', key='F2', action='close-window')
+        self.assertTrue(state['diagnostics']['conflicts'])
+        state = self.run_config('delete', id=duplicate['id'])
+        self.assertFalse(state['diagnostics']['conflicts'])
+        self.assertFalse(state['diagnostics']['invalid'])
+        self.assertEqual(state['fragments']['binds']['state'], 'ready')
+        self.main.write_text(self.main.read_text().replace('close-window', 'quit'))
+        self.assertTrue(self.run_config()['diagnostics']['conflicts'])
+        self.main.write_text(self.main.read_text().replace('quit', 'close-window'))
+        self.assertFalse(self.run_config()['diagnostics']['conflicts'])
+
+    def test_default_conflict_is_diagnostic_and_keeps_user_binding(self):
+        self.main.write_text('binds { Super+Space { spawn "user-launcher"; }; }\n')
+        state = self.run_config('setup')
+        self.assertTrue(state['diagnostics']['conflicts'])
+        self.assertIn('spawn "user-launcher"', self.main.read_text())
+        self.assertTrue(self.fragment().exists())
+        self.assertEqual(state['fragments']['binds']['state'], 'ready')
+
+    def test_later_include_override_and_invalid_duplicate_are_distinct(self):
+        self.setup_binds()
+        self.run_config('save', key='F1', action='close-window')
+        later = self.main.parent / 'later.kdl'
+        later.write_text('binds { F1 { quit; }; }\n')
+        with self.main.open('a') as out:
+            out.write('include "later.kdl"\n')
+        state = self.run_config()
+        self.assertEqual(state['error'], '')
+        later.write_text('binds { F1 { quit; }; F1 { close-window; }; }\n')
+        state = self.run_config()
+        self.assertTrue(state['diagnostics']['invalid'])
+        self.assertTrue(all(row['collision'] for row in state['bindings']))
+        self.assertEqual(state['fragments']['binds']['state'], 'ready')
+
+    def test_group_deletion_keeps_external_binding(self):
+        self.main.write_text('binds { F1 { spawn "never-run"; }; }\n')
+        self.setup_binds()
+        state = self.run_config('save', key='F2', action='spawn "never-run"')
+        original = self.main.read_bytes()
+        state = self.run_config('delete-group', group=state['bindings'][0]['group'])
+        self.assertEqual(len(state['bindings']), 1)
+        self.assertFalse(state['bindings'][0]['managed'])
+        self.assertEqual(original, self.main.read_bytes())
+
+    def test_edit_during_validation_is_not_overwritten(self):
+        self.setup_binds()
+        before = self.fragment().read_bytes()
+        validator = self.main.parent / 'validator'
+        validator.write_text('#!/usr/bin/env python3\nimport subprocess,sys,pathlib\nr=subprocess.run(["niri"]+sys.argv[1:])\npathlib.Path(' + repr(str(self.main)) + ').write_text("// edited externally\\n")\nsys.exit(r.returncode)\n')
+        validator.chmod(0o700)
+        with self.assertRaises(ValueError):
+            self.run_config('save', key='F1', action='quit', niri=str(validator))
+        self.assertEqual(self.fragment().read_bytes(), before)
+        self.assertEqual(self.main.read_text(), '// edited externally\n')
+
+    def test_mod_aliases_nested_mapping_and_typed_identity(self):
+        self.main.write_text('input { mod-key "Alt"; mod-key-nested "Super"; }\nbinds { Mod+Q { close-window; }; }\n')
+        graph = config.Graph(self.main)
+        with mock.patch.object(config, 'session_nested', return_value=True):
+            rows, mod = config.bindings(graph, self.fragment())
+        self.assertEqual(mod, 'Super')
+        self.assertEqual(rows[0]['identity'], config.key_identity('win+q'))
+        self.assertEqual(config.key_identity('Control+Mod5+F1'), config.key_identity('ctrl+ISO_Level3_Shift+F1'))
+        self.assertNotEqual(config.action_identity(config.parse('focus-workspace 1').nodes[0]), config.action_identity(config.parse('focus-workspace "1"').nodes[0]))
+
+    def test_sidebar_content_targets_preserve_legacy_shortcuts(self):
+        for old, role in [('left', 'dashboard'), ('right', 'quicksettings')]:
+            for method in ['open', 'close', 'toggle']:
+                modern = f'spawn "qs" "-c" "clavis" "ipc" "call" "sidebar" "{method}" "{role}"'
+                expected = config.action_identity(config.parse(modern).nodes[0])
+                for prefix in ['"qs" "-c" "clavis" "ipc" "call"', '"key" "ipc" "call"']:
+                    legacy = f'spawn {prefix} "sidebar" "{method}" "{old}"'
+                    self.assertEqual(config.action_identity(config.parse(legacy).nodes[0]), expected)
+        self.assertNotEqual(
+            config.action_identity(config.parse('spawn "qs" "-c" "clavis" "ipc" "call" "sidebar" "toggle" "dashboard"').nodes[0]),
+            config.action_identity(config.parse('spawn "qs" "-c" "clavis" "ipc" "call" "sidebar" "toggle" "quicksettings"').nodes[0]))
+
+    def test_setup_preserves_crlf_and_unrelated_missing_include(self):
+        original = b'// user formatting\r\ninput { }\r\n'
+        self.main.write_bytes(original)
+        self.setup_binds()
+        self.assertTrue(self.main.read_bytes().startswith(original))
+        self.main.write_text('include "unrelated-missing.kdl"\ninclude "clavis/effects.kdl"\n')
+        before = self.main.read_bytes()
+        with self.assertRaises(ValueError):
+            self.run_config('setup', 'effects')
+        self.assertFalse(self.fragment('effects').exists())
+        self.assertEqual(before, self.main.read_bytes())
+
+    def test_mod_spelling_collision_does_not_masquerade_as_include_override(self):
+        self.main.write_text('binds { Mod+Q { close-window; }; }\n')
+        self.setup_binds()
+        state = self.run_config('save', key='Super+Q', action='quit')
+        self.assertEqual(state['error'], '')
+        first, last = state['bindings']
+        self.assertTrue(first['collision'])
+        self.assertTrue(last['collision'])
+        self.assertFalse(last['override'])
+
+    def test_read_linked_external_include_uses_its_logical_parent(self):
+        elsewhere = self.main.parent / 'elsewhere'
+        elsewhere.mkdir()
+        real = elsewhere / 'shared.kdl'
+        real.write_text('include "neighbor.kdl"\n')
+        link = self.main.parent / 'linked.kdl'
+        link.symlink_to(real)
+        neighbor = self.main.parent / 'neighbor.kdl'
+        neighbor.write_text('binds { F1 { close-window; }; }\n')
+        self.main.write_text('include "linked.kdl"\n')
+        native = subprocess.run(['niri', 'validate', '-c', str(self.main)], capture_output=True, text=True)
+        self.assertEqual(native.returncode, 0, native.stderr)
+        state = self.setup_binds()
+        self.assertEqual(state['error'], '')
+        self.assertEqual(state['bindings'][0]['key'], 'F1')
+        self.assertIn(str(link), state['files'])
+
+    def test_cursor_wrapper(self):
+        script = str(ROOT / 'scripts/theme/write_niri_cursor_config.sh')
+        args = [script, str(self.fragment('cursor')), str(self.main), 'Quoted "theme', '32', 'true', '1000', 'niri']
+        self.assertNotEqual(subprocess.run(args, capture_output=True).returncode, 0)
+        self.assertFalse(self.fragment('cursor').exists())
+        result = subprocess.run(args + ['configure'], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        before = self.main.read_bytes()
+        args[3] = 'Another theme'
+        self.assertEqual(subprocess.run(args, capture_output=True).returncode, 0)
+        self.assertEqual(before, self.main.read_bytes())
+
+    def test_effects_wrapper(self):
+        script = str(ROOT / 'scripts/system/manage-niri-effects.sh')
+        args = [str(self.main), str(self.fragment('effects')), 'true', 'niri']
+        self.assertNotEqual(subprocess.run([script, 'write'] + args, capture_output=True).returncode, 0)
+        self.assertFalse(self.fragment('effects').exists())
+        self.assertEqual(subprocess.run([script, 'configure'] + args, capture_output=True).returncode, 0)
+        before = self.main.read_bytes()
+        args[2] = 'false'
+        self.assertEqual(subprocess.run([script, 'write'] + args, capture_output=True).returncode, 0)
+        self.assertEqual(before, self.main.read_bytes())
+
+    def test_read_does_not_initialize(self):
+        before = self.main.read_bytes()
+        for feature in config.FRAGMENTS:
+            result = self.run_config(feature=feature)
+            self.assertEqual(result['fragments'][feature]['state'], 'not-connected')
+            with self.assertRaises(ValueError):
+                self.run_config('update', feature)
+        self.assertFalse(self.fragment().parent.exists())
+        self.assertEqual(before, self.main.read_bytes())
+
+    def test_individual_setup_empty_and_deleted_fragment(self):
+        for feature in config.FRAGMENTS:
+            with self.subTest(feature=feature):
+                self.run_config('setup', feature)
+                path = self.fragment(feature)
+                self.assertTrue(path.exists())
+                text = self.main.read_bytes()
+                path.write_text('')
+                state = self.run_config('setup', feature)
+                if feature == 'hot-corners':
+                    # Explicitly taking over corners must restore the native
+                    # disable setting before the shell can receive corner input.
+                    self.assertEqual(state['fragments'][feature]['state'], 'ready')
+                    self.assertTrue(state['hotCorners']['disabled'])
+                    configured = path.read_bytes()
+                    self.run_config('setup', feature)
+                    self.assertEqual(path.read_bytes(), configured)
+                else:
+                    self.assertEqual(path.read_text(), '')
+                self.assertEqual(text, self.main.read_bytes())
+                path.unlink()
+                self.assertEqual(self.run_config(feature=feature)['fragments'][feature]['state'], 'missing')
+                self.assertFalse(path.exists())
+                self.run_config('setup', feature)
+                self.assertEqual(text, self.main.read_bytes())
+        self.assertTrue(list(self.main.parent.glob('config.kdl.clavis-backup-*')))
+
+    def test_include_graph_comments_optional_and_equivalent_paths(self):
+        self.fragment().parent.mkdir()
+        self.fragment().write_text('')
+        other = self.main.parent / 'other.kdl'
+        other.write_text('include optional=true "./clavis/../clavis/binds.kdl"\n')
+        self.main.write_text('/* include "missing.kdl" */\n/- include "missing.kdl"\ninclude "other.kdl"\n')
+        self.assertEqual(self.run_config()['fragments']['binds']['state'], 'ready')
+        before = self.main.read_bytes()
+        self.run_config('setup')
+        self.assertEqual(before, self.main.read_bytes())
+        other.write_text('include "config.kdl"\n')
+        self.assertIn('Recursive', self.run_config()['error'])
+        with self.assertRaises(ValueError):
+            self.run_config('setup')
+
+    def test_generated_update_never_changes_main(self):
+        for feature in ('cursor', 'effects', 'layer-rules'):
+            self.run_config('setup', feature)
+            before = self.main.read_bytes()
+            self.run_config('update', feature, theme='A "quoted" \\ theme', xray=False)
+            self.assertEqual(before, self.main.read_bytes())
+            timestamp = self.fragment(feature).stat().st_mtime_ns
+            self.run_config('update', feature, theme='A "quoted" \\ theme', xray=False)
+            self.assertEqual(timestamp, self.fragment(feature).stat().st_mtime_ns)
+        self.main.write_text('input {}\n')
+        with self.assertRaises(ValueError):
+            self.run_config('update', 'cursor')
+
+    def test_external_override_preserves_properties_and_falls_back(self):
+        self.main.write_text('binds { Mod+Q repeat=false cooldown-ms=100 hotkey-overlay-title=null { close-window; }; }\n')
+        state = self.setup_binds()
+        original = self.main.read_bytes()
+        external = state['bindings'][0]
+        state = self.run_config('save', id=external['id'], revision=state['revision'], patch={'hotkey-overlay-title': 'Close'})
+        self.assertEqual(original, self.main.read_bytes())
+        managed = state['bindings'][-1]
+        self.assertTrue(managed['override'])
+        self.assertFalse(managed['props']['repeat'])
+        self.assertEqual(managed['props']['cooldown-ms'], 100)
+        state = self.run_config('delete', id=managed['id'], revision=state['revision'])
+        self.assertEqual(len(state['bindings']), 1)
+        with self.assertRaises(ValueError):
+            self.run_config('delete', id=external['id'])
+
+    def test_roundtrip_argv_typed_values_and_untouched_special_sections(self):
+        self.setup_binds()
+        preserved = '// preserve me\nbinds { Mod+WheelScrollDown { focus-workspace-down; }; }\nswitch-events { lid-close { spawn "never-run"; }; }\n'
+        self.fragment().write_text(preserved)
+        expressions = ['spawn "never-run" "" "a b" "\\\\" "\\\""', 'spawn-sh "pkill qs || exit 1"', 'focus-workspace 1', 'focus-workspace "1"']
+        identities = []
+        for index, expression in enumerate(expressions):
+            state = self.run_config('save', key='F' + str(index + 1), action=expression)
+            row = state['bindings'][-1]
+            identities.append(row['group'])
+            self.assertEqual(config.parse(expression).nodes[0], config.parse(row['action']).nodes[0])
+        self.assertNotEqual(identities[-2], identities[-1])
+        self.assertIn('Mod+WheelScrollDown { focus-workspace-down; };', self.fragment().read_text())
+        self.assertIn('switch-events { lid-close { spawn "never-run"; }; }', self.fragment().read_text())
+
+    def test_invalid_candidate_rename_conflict_and_injection_preserve_file(self):
+        self.setup_binds()
+        state = self.run_config('save', key='Mod+Q', action='close-window')
+        row = state['bindings'][0]
+        before = self.fragment().read_bytes()
+        for action in ['close-window; spawn "never"', 'close-window; }\nbinds { F1 { quit; } }']:
+            with self.assertRaises(Exception):
+                self.run_config('save', id=row['id'], key='F5', action=action)
+            self.assertEqual(before, self.fragment().read_bytes())
+        state = self.run_config('save', key='Super+q', action='quit')
+        self.assertEqual(len(state['bindings']), 2)
+        self.assertTrue(state['diagnostics']['conflicts'])
+
+    def test_external_changes_and_parse_failure_do_not_overwrite(self):
+        state = self.setup_binds()
+        self.fragment().write_text('// new user content\n')
+        with self.assertRaises(ValueError):
+            self.run_config('save', revision=state['revision'], key='F1', action='quit')
+        self.assertEqual(self.fragment().read_text(), '// new user content\n')
+        self.fragment().write_text('binds { broken')
+        with self.assertRaises(Exception):
+            self.run_config('save', key='F1', action='quit')
+        self.assertEqual(self.fragment().read_text(), 'binds { broken')
+
+    def test_concurrent_setup_serializes_features(self):
+        def setup(feature):
+            request = dict(main=str(self.main), operation='setup', feature=feature)
+            return subprocess.run([sys.executable, str(ROOT / 'scripts/system/niri_config.py'), json.dumps(request)], capture_output=True, text=True)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            results = list(executor.map(setup, config.FRAGMENTS))
+        for result in results:
+            self.assertEqual(result.returncode, 0, result.stderr)
+        state = self.run_config()
+        self.assertTrue(all(f['state'] == 'ready' for f in state['fragments'].values()))
+
+    def test_symlink_write_is_rejected(self):
+        self.setup_binds()
+        outside = self.main.parent / 'user.kdl'
+        outside.write_text('')
+        self.fragment().unlink()
+        self.fragment().symlink_to(outside)
+        with self.assertRaises(ValueError):
+            self.run_config('save', key='F1', action='quit')
+        self.assertEqual(outside.read_text(), '')
+
+    def test_same_action_multiple_chips_have_independent_title_and_options(self):
+        self.setup_binds()
+        self.run_config('save', key='F1', action='close-window', patch={'hotkey-overlay-title': '', 'repeat': False})
+        state = self.run_config('save', key='F2', action='close-window', patch={'hotkey-overlay-title': None, 'repeat': True})
+        first, second = state['bindings']
+        state = self.run_config('save', id=first['id'], patch={'hotkey-overlay-title': 'First'})
+        self.assertIsNone(state['bindings'][1]['props']['hotkey-overlay-title'])
+        self.assertTrue(state['bindings'][1]['props']['repeat'])
+        self.assertEqual(first['group'], second['group'])
+
+
+class OutputContracts(unittest.TestCase):
+    setUp = ConfigurationContracts.setUp
+    run_config = ConfigurationContracts.run_config
+    fragment = ConfigurationContracts.fragment
+    def test_output_roundtrip_preserves_unowned_content_and_inheritance(self):
+        self.run_config('setup', feature='outputs')
+        fragment=self.fragment('outputs')
+        fragment.write_text('// preserved header\noutput "DP-1" {\n    backdrop-color "#112233" // keep this\n    layout { border { width 3; }; gaps 8; always-center-single-column true; }\n}\n')
+        before=self.run_config()
+        patch=dict(identifier='DP-1', settings={'mode':'1920x1080@59.951','scale':1.25,
+            'transform':'normal','position':{'x':0,'y':0},'vrr':'on-demand',
+            'hotCorners':['bottom-left'],'focusAtStartup':True,
+            'preset-column-widths':[{'kind':'fixed','value':840},{'kind':'proportion','value':0.5}],
+            'default-column-width':[{'kind':'proportion','value':0.333333333333}],
+            'always-center-single-column':False})
+        state=self.run_config('save',feature='outputs',revision=before['revision'],outputs=[patch])
+        self.assertFalse(state['diagnostics']['invalid'])
+        output=state['outputs'][0]
+        self.assertEqual(output['settings']['mode'],'1920x1080@59.951')
+        self.assertEqual(output['settings']['vrr'],'on-demand')
+        self.assertIs(output['settings']['always-center-single-column'],False)
+        self.assertNotIn('gaps',output['settings'])
+        self.assertEqual(output['settings']['default-column-width'][0]['value'],0.333333333333)
+        self.assertIn('backdrop-color "#112233" // keep this',fragment.read_text())
+        self.assertIn('border { width 3; }',fragment.read_text())
+        self.run_config('setup',feature='outputs')
+        self.assertEqual(state['outputs'],self.run_config()['outputs'])
+
+    def test_external_output_conflict_and_revision_are_read_only(self):
+        self.main.write_text('output "DP-1" { scale 1; }\n')
+        self.run_config('setup',feature='outputs')
+        before=self.fragment('outputs').read_bytes()
+        with self.assertRaises(ValueError):
+            self.run_config('save',feature='outputs',outputs=[dict(identifier='DP-1',settings={'scale':2})])
+        self.assertEqual(before,self.fragment('outputs').read_bytes())
+        state=self.run_config()
+        self.main.write_text(self.main.read_text()+'// external edit\n')
+        with self.assertRaises(ValueError):
+            self.run_config('save',feature='outputs',revision=state['revision'],outputs=[])
+
+    def test_disconnected_output_is_retained_and_explicitly_deleted(self):
+        self.run_config('setup',feature='outputs')
+        self.run_config('save',feature='outputs',outputs=[dict(identifier='Absent Screen S1',settings={'enabled':False,'mode':'1920x1080@60.000'})])
+        state=self.run_config('save',feature='outputs',outputs=[])
+        self.assertEqual(len(state['outputs']),1)
+        self.assertFalse(state['outputs'][0]['settings']['enabled'])
+        state=self.run_config('save',feature='outputs',outputs=[dict(identifier='Absent Screen S1',delete=True)])
+        self.assertEqual(state['outputs'],[])
+
+
+if __name__ == '__main__':
+    if not shutil.which('niri'):
+        raise SystemExit('niri is required for real isolated validation')
+    unittest.main()

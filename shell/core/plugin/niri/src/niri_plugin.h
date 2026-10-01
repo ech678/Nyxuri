@@ -1,0 +1,152 @@
+#pragma once
+
+#include "niri_icon_lookup.h"
+#include "niri_floating_parallax.h"
+#include "niri_ipc_client.h"
+#include "niri_output_model.h"
+#include "niri_window_model.h"
+#include "niri_workspace_model.h"
+
+#include <QObject>
+#include <QHash>
+#include <QJsonObject>
+#include <QVariantMap>
+#include <QtQml/qqmlregistration.h>
+
+class NiriPlugin : public QObject {
+    Q_OBJECT
+    QML_NAMED_ELEMENT(Niri)
+    QML_SINGLETON
+
+    Q_PROPERTY(bool connected READ connected NOTIFY connectedChanged)
+    Q_PROPERTY(bool supportsMinimizeAnimation READ supportsMinimizeAnimation NOTIFY capabilitiesChanged)
+    Q_PROPERTY(QStringList minimizeEffects READ minimizeEffects NOTIFY capabilitiesChanged)
+    Q_PROPERTY(bool supportsMinimize READ supportsMinimize NOTIFY capabilitiesChanged)
+    Q_PROPERTY(quint64 connectionGeneration READ connectionGeneration NOTIFY connectedChanged)
+    Q_PROPERTY(QString socketPath READ socketPath NOTIFY connectedChanged)
+    Q_PROPERTY(QString lastError READ lastError NOTIFY errorChanged)
+    Q_PROPERTY(NiriWorkspaceModel *workspaces READ workspaces CONSTANT)
+    Q_PROPERTY(NiriWindowModel *windows READ windows CONSTANT)
+    Q_PROPERTY(NiriOutputModel *outputs READ outputs CONSTANT)
+    Q_PROPERTY(QVariantMap focusedWindow READ focusedWindow NOTIFY focusedWindowChanged)
+    Q_PROPERTY(QVariantMap focusedWorkspace READ focusedWorkspace NOTIFY focusedWorkspaceChanged)
+    Q_PROPERTY(QString currentOutput READ currentOutput NOTIFY focusedWorkspaceChanged)
+    Q_PROPERTY(bool inOverview READ inOverview NOTIFY overviewChanged)
+    Q_PROPERTY(QStringList keyboardLayoutNames READ keyboardLayoutNames NOTIFY keyboardLayoutChanged)
+    Q_PROPERTY(QString currentKeyboardLayoutName READ currentKeyboardLayoutName NOTIFY keyboardLayoutChanged)
+  public:
+    explicit NiriPlugin(QObject *parent = nullptr);
+    ~NiriPlugin() override;
+
+    bool connected() const;
+    bool supportsMinimize() const { return connected() && m_supportsMinimize; }
+    bool supportsMinimizeAnimation() const { return connected() && m_supportsMinimizeAnimation; }
+    QStringList minimizeEffects() const { return m_minimizeEffects; }
+    quint64 connectionGeneration() const { return m_connectionGeneration; }
+    QString socketPath() const;
+    QString lastError() const;
+    NiriWorkspaceModel *workspaces();
+    NiriWindowModel *windows();
+    NiriOutputModel *outputs();
+    QVariantMap focusedWindow() const;
+    QVariantMap focusedWorkspace() const;
+    QString currentOutput() const;
+    bool inOverview() const;
+    QStringList keyboardLayoutNames() const;
+    QString currentKeyboardLayoutName() const;
+    Q_INVOKABLE bool connectToNiri();
+    Q_INVOKABLE QVariantList outputSnapshot() const;
+    Q_INVOKABLE void refreshOutputs();
+    Q_INVOKABLE void configureOutput(const QString &requestId, const QString &name, const QVariant &action);
+
+    Q_INVOKABLE QVariantList workspacesForOutput(const QString &outputName) const;
+    Q_INVOKABLE QVariantList windowsForWorkspace(quint64 workspaceId) const;
+    Q_INVOKABLE QVariantList windowsForOutput(const QString &outputName) const;
+    Q_INVOKABLE QVariantMap activeWorkspaceForOutput(const QString &outputName) const;
+    Q_INVOKABLE QVariantMap workspaceById(quint64 id) const;
+    Q_INVOKABLE QVariantMap windowById(quint64 id) const;
+    Q_INVOKABLE QVariantList workspaceIcons(quint64 workspaceId, bool groupApps = true) const;
+    Q_INVOKABLE QVariantList searchWindows(const QString &query) const;
+
+    Q_INVOKABLE bool focusWorkspaceByIndex(int index);
+    Q_INVOKABLE bool focusWorkspaceById(quint64 id);
+    Q_INVOKABLE bool focusWorkspaceByName(const QString &name);
+    Q_INVOKABLE bool focusWindow(quint64 id);
+    Q_INVOKABLE bool minimizeWindow(quint64 id);
+    Q_INVOKABLE bool restoreWindow(quint64 id, const QString &output = QString());
+    Q_INVOKABLE bool closeWindow(quint64 id);
+    Q_INVOKABLE bool closeFocusedWindow();
+    Q_INVOKABLE bool toggleOverview();
+    Q_INVOKABLE bool focusColumnLeft();
+    Q_INVOKABLE bool focusColumnRight();
+    Q_INVOKABLE bool focusWorkspaceUp();
+    Q_INVOKABLE bool focusWorkspaceDown();
+    Q_INVOKABLE bool moveWorkspaceToIndex(int workspaceIndex, int targetIndex);
+    Q_INVOKABLE bool setWorkspaceName(const QString &name);
+    Q_INVOKABLE bool unsetWorkspaceName();
+    Q_INVOKABLE bool powerOffMonitors();
+    Q_INVOKABLE bool powerOnMonitors();
+    Q_INVOKABLE bool cycleKeyboardLayout();
+    Q_INVOKABLE bool doScreenTransition(int delayMs = 0);
+    Q_INVOKABLE void setFloatingParallaxOffsets(const QVariantMap &offsets);
+
+  signals:
+    void connectedChanged();
+    void capabilitiesChanged();
+    void errorChanged();
+    void workspacesChanged();
+    void windowsChanged();
+    void outputsChanged();
+    void outputRequestFinished(const QString &requestId, bool success, const QString &error);
+    void focusedWindowChanged();
+    void focusedWorkspaceChanged();
+    void overviewChanged();
+    void keyboardLayoutChanged();
+    void configLoaded(bool failed, const QString &error);
+
+  private slots:
+    void handleEvent(const QJsonObject &event);
+
+  private:
+    NiriWorkspace parseWorkspace(const QJsonObject &object) const;
+    NiriWindow parseWindow(const QJsonObject &object);
+    NiriOutput parseOutput(const QString &name, const QJsonObject &object) const;
+    void loadInitialState();
+    void fetchOutputs();
+    void connectionChanged();
+    void setError(const QString &message);
+    void publishState(bool workspaceChanged, bool windowChanged, bool outputChanged);
+    void recomputeDerivedState();
+    void sortWorkspaces();
+    void sortWindows();
+    bool sendAction(const QJsonObject &action);
+
+    QVariantMap windowToMap(const NiriWindow &window) const;
+    QVariantMap workspaceToMap(const NiriWorkspace &workspace) const;
+    QVariantMap makeWorkspaceIcon(const NiriWindow &window, int count, bool active) const;
+
+    NiriIpcClient m_client;
+    NiriFloatingParallax *m_floatingParallax;
+    quint64 m_floatingParallaxLease;
+    NiriWorkspaceModel m_workspaceModel;
+    NiriWindowModel m_windowModel;
+    NiriOutputModel m_outputModel;
+    NiriIconLookup m_iconLookup;
+
+    QList<NiriWorkspace> m_workspaces;
+    QList<NiriWindow> m_windows;
+    QList<NiriOutput> m_outputs;
+    QString m_lastError;
+    QString m_currentOutput;
+    QVariantMap m_focusedWindow;
+    QVariantMap m_focusedWorkspace;
+    bool m_inOverview = false;
+    QStringList m_keyboardLayoutNames;
+    int m_currentKeyboardLayoutIndex = -1;
+    quint64 m_outputRefreshGeneration = 0;
+    quint64 m_connectionGeneration = 0;
+    bool m_wasConnected = false;
+    bool m_supportsMinimize = false;
+    bool m_supportsMinimizeAnimation = false;
+    QStringList m_minimizeEffects;
+};

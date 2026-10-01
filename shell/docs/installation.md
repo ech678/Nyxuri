@@ -1,0 +1,109 @@
+# Arch installation
+
+The first release targets Arch-compatible x86_64 systems. The two active projects
+are distributed as `clavis-shell` and `key-cli`. `clavis` is an unrelated AUR package.
+The one-command installer requires complete [GitHub Releases](releasing.md) for both
+projects. First-party packages do not require AUR registration. Third-party dependencies
+such as `libcava` and `qt6-m3shapes-git` still require access to AUR.
+
+## One command
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/StatIndet/quickshell/main/install.sh | bash
+```
+
+Run as the desktop user, not root. Bash, curl, coreutils and sudo are prerequisites.
+The raw entry point selects the latest completed date release, downloads its installer,
+and verifies its SHA-256 against that release's checksum list. HTTPS and the repository
+are the trust boundary; the checksum detects corruption, not compromise of that repository.
+The complete verified installer runs only after the download succeeds. It bootstraps Python
+if absent, then installs official dependencies and builds source packages as your user.
+Clavis uses the exact release that generated the installer. key-cli resolves
+GitHub's latest formal release once per run, which must satisfy the required minimum version.
+An unavailable, incomplete or incompatible release stops installation without falling back to AUR.
+The installer verifies `PKGBUILD`, `.SRCINFO`, the source archive and accompanying install/hook
+files against that release's `SHA256SUMS` before resolving build dependencies or running makepkg.
+GitHub serves the hidden `.SRCINFO` asset as `default.SRCINFO`; the installer verifies it
+against the `.SRCINFO` checksum and stores it under its Arch filename.
+Split permission packages reuse their backend's release and build; only selected outputs are installed.
+No AUR helper is required. Pacman owns installed files and handles removal and upgrades.
+The initial `pacman -Syu` keeps Arch synchronized; review its normal transaction prompt.
+
+To inspect the requested packages without installing:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/StatIndet/quickshell/main/install.sh | bash -s -- --dry-run
+```
+
+Without Python, dry-run prints the bootstrap requirement and package requests without installing it.
+The installer includes the full optional-feature profile from [dependencies](dependencies.md).
+Existing dependency providers are retained. It does not replace drivers or audio services,
+write Niri configuration, set PATH, remove source installations, or restart running processes.
+AUR `PKGBUILD` files execute code as your user; their checksums protect upstream source integrity.
+
+## Explicit choices
+
+The installer reads prompts through `/dev/tty`, including when stdin comes from curl.
+All five prompts default to `[Y/n]`:
+
+- Keyboard access: grants access to whole matching evdev keyboard nodes, including raw
+  keystrokes, to active local users. This is broader than reading lock LEDs.
+- CPU power access: grants `cap_dac_read_search` to the narrow `key-cpu-power` helper only.
+  Ordinary CPU usage does not need it; protected RAPL energy sensors may.
+- Enable Clavis Shell with the Niri user service.
+- Enable the separate clipboard-history watcher with the Niri user service.
+- Start both services now, if `niri.service` is active, independently of the autostart choices.
+  Active services are not restarted.
+
+For unattended use every choice must be explicit:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/StatIndet/quickshell/main/install.sh | bash -s -- \
+  --non-interactive \
+  --keyboard-access=no --power-access=no \
+  --enable-shell=no --enable-clipboard=no --start-now=no
+```
+
+`--non-interactive` also accepts pacman transactions without prompting. There is no general
+`--yes` that grants permissions. `no` skips new authorization/activation; it does not revoke
+an existing administrator policy or disable an existing service. Repeated interactive
+installations retain recorded permission choices and current service enablement, without
+restarting or asking again. Choices are saved under `$XDG_STATE_HOME/clavis/installer/choices.json`
+(default `~/.local/state`). Invalid state files are preserved for manual review.
+
+Authorization is separate from the base packages:
+
+- `key-cli-keyboard-access` supplies the udev rule. Removing it removes the persistent rule;
+  existing ACLs/descriptors and other rules may still grant access. Reconnect the device and
+  log in again before checking actual access.
+- `key-cli-cpu-power-access` applies capabilities using a pacman transaction hook, reapplies
+  them when key-cli is upgraded, and removes matching capabilities before its own removal.
+  Unexpected capabilities, non-package-owned files, symlinks and writable installation paths
+  are preserved/rejected for manual review. Already running processes may retain access.
+
+The installer leaves existing `/etc`, `/run` or `/usr/local` keyboard rules untouched and
+reports them instead of silently layering a new rule underneath them.
+
+## Existing installations and sessions
+
+System files are installed under `/etc/xdg/quickshell/clavis`, `/usr/lib/qt6/qml/Clavis`,
+and `/usr/lib/systemd/user`. User configuration remains in the existing XDG locations.
+`~/.config/quickshell/clavis`, `/usr/local/bin/key`, development venvs, environment overrides
+and systemd drop-ins can select an older source installation. The installer reports these
+and skips activation rather than removing them. Withdraw development overrides through the
+existing key-cli installation tooling, then select the intended service yourself.
+
+If no Niri user session is active, enabled units take effect in the next such session.
+The installer never starts Niri, NetworkManager, Bluetooth or an audio server. It reports
+session prerequisites and `key doctor --json`; missing hardware/authorization may leave
+specific features unavailable while ordinary metrics continue working.
+
+A failed step returns nonzero and identifies the stage. Successfully installed packages
+remain pacman-owned; fix the reported cause and rerun. There is no application rollback
+manager. For manual installation, build third-party dependencies as needed, then download and
+verify the GitHub Release build assets for `key-cli` and `clavis-shell` in that order.
+Run makepkg as an ordinary user and install the selected packages with pacman.
+Installing only the base packages never grants the two optional access policies or enables
+user services. Rerun the one-command installer to discover new first-party releases; installed
+versions at least as new as the selected release are retained. Pacman handles removal, and
+pacman/AUR tooling handles third-party updates. No application updater or background polling is added.

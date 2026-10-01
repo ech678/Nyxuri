@@ -1,0 +1,22 @@
+#!/bin/sh
+
+set -eu
+
+if [ "${1:-}" = "msg" ] \
+    && [ "${2:-}" = "action" ] \
+    && [ "${3:-}" = "load-config-file" ]; then
+    exit 0
+fi
+
+if [ "${1:-}" != "validate" ] || [ "${2:-}" != "-c" ]; then
+    echo "unexpected mock niri invocation" >&2
+    exit 2
+fi
+
+config=${3:-}
+if [ "${MOCK_NIRI_FAIL:-0}" = "1" ] || grep -q "INVALID" "$config"; then
+    echo "mock validation failed" >&2
+    exit 1
+fi
+
+exit 0

@@ -1,0 +1,5 @@
+qt_add_executable(clavis-window-preview main.cpp)
+set_target_properties(clavis-window-preview PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tools)
+target_link_libraries(clavis-window-preview PRIVATE ClavisWindowPreview Qt6::Quick Qt6::Qml)
+target_compile_definitions(clavis-window-preview PRIVATE CLAVIS_CAPTURE_IMPORT_PATH="${CLAVIS_QML_BUILD_DIR}")
+qt_add_resources(clavis-window-preview preview_ui PREFIX "/probe" FILES Preview.qml Fixture.qml)

@@ -1,0 +1,21 @@
+[Unit]
+Description=Clavis Shell
+Documentation=https://github.com/StatIndet/quickshell
+Requisite=niri.service
+PartOf=niri.service
+After=niri.service
+StartLimitIntervalSec=30
+StartLimitBurst=5
+
+[Service]
+Type=simple
+# Apply before qs starts: QML Env pragmas run after allocator initialization.
+# Ignored by Quickshell builds that do not use jemalloc.
+Environment="MALLOC_CONF=thp:never,narenas:4,dirty_decay_ms:3000"
+ExecStart=key shell --foreground --no-duplicate
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=10
+
+[Install]
+WantedBy=niri.service
