@@ -7,6 +7,8 @@
 
 ## 活跃进行中：自研 Shell 阶段
 
+> 设计宣言原文、相关目标与详细阶段见 [Shell ROADMAP](shell/ROADMAP.md)；开发约束见 [Shell AGENTS](shell/AGENTS.md)。
+
 ### 1. 开发 Shell 时 (During Shell Development)
 > **核心目标**：专注自研 Material You Shell 本体，以及它与现有契约的连接。
 

@@ -22,6 +22,15 @@
 - [orbit-launcher](orbit-launcher.md): 星环启动器设计规格（快捷键、状态机、极坐标防抖、弹簧参数、flick 判定）
 - [runtime-topology](runtime-topology.md): 运行时进程树与 IPC 拓扑（会话启动、守护进程、脚本层、信号广播流）
 
+## Nyxuri Shell
+
+- [shell-rules](../shell/AGENTS.md): Nyxuri Shell 开发契约、原版 Niri 基线与四层/生命周期约束
+- [shell-roadmap](../shell/ROADMAP.md): issue #111 完整原文、宿主相关计划原文与分阶段验收
+
+- [shell-audit](shell-audit.md): Clavis 完整母体基准、启动/依赖/生命周期审计与资源接口索引
+- [shell-blueprint](shell-blueprint.md): 已确定架构边界、启动/切换目标与待论证设计
+- [shell-development](shell-development.md): 当前 QS 工具与阻断、开发隔离和调试流程计划
+
 ## Decoupled modules
 
 - [subpackages](subpackages.md): nyxuri/{pkg, deploy, state, modules, packaging} 职责、CLI 与菜单分离、TOML 文案
