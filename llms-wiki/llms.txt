@@ -25,11 +25,11 @@
 ## Nyxuri Shell
 
 - [shell-rules](../shell/AGENTS.md): Nyxuri Shell 开发契约、原版 Niri 基线与四层/生命周期约束
-- [shell-roadmap](../shell/ROADMAP.md): issue #111 完整原文、宿主相关计划原文与分阶段验收
+- [shell-roadmap](../shell/ROADMAP.md): 宣言目标、去臃肿化与架构迁移、启动检查点及分阶段验收
 
 - [shell-audit](shell-audit.md): Clavis 完整母体基准、启动/依赖/生命周期审计与资源接口索引
 - [shell-blueprint](shell-blueprint.md): 已确定架构边界、启动/切换目标与待论证设计
-- [shell-development](shell-development.md): 当前 QS 工具与阻断、开发隔离和调试流程计划
+- [shell-development](shell-development.md): 当前 QS 工具与阻断、开发循环、单分支实验、隔离调试与验收证据
 
 ## Decoupled modules
 
