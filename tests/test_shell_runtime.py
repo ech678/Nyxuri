@@ -94,7 +94,7 @@ class ShellLauncherTests(unittest.TestCase):
             ("launcher", "spotlight", "toggle", []),
             ("session", "power-menu", "toggle", []),
             ("settings", "control-center", "toggle", [""]),
-            ("clipboard", "spotlight", "commands", []),
+            ("clipboard", "spotlight", "openMode", ["clipboard"]),
             ("lock", "lock", "open", []),
             ("wallpaper-random", "wallpaper", "random", []),
         ]:

@@ -82,6 +82,33 @@ class TestShellAction(unittest.TestCase):
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("Unknown shell action", proc.stderr)
 
+    def test_actions_custom_shell_dispatch(self):
+        self._write_command("nyxuri-shell", 'printf "%s\\n" "$*" >>"$CALLS"')
+
+        state_dir = self.home / ".local" / "state" / "nyxuri"
+        state_dir.mkdir(parents=True, exist_ok=True)
+        state_file = state_dir / "state.json"
+        state_file.write_text('{"active_shell": "custom", "custom_shell_bin": ""}', encoding="utf-8")
+
+        verbs = [
+            "launcher",
+            "session",
+            "settings",
+            "clipboard",
+            "lock",
+            "wallpaper-random",
+        ]
+
+        for verb in verbs:
+            self.calls.unlink(missing_ok=True)
+            proc = self._run_action(verb)
+            self.assertEqual(proc.returncode, 0, f"Custom action '{verb}' failed: {proc.stderr}")
+            self.assertEqual(
+                self.calls.read_text(encoding="utf-8").strip(),
+                f"--action {verb}",
+                f"Action '{verb}' did not dispatch with --action {verb}",
+            )
+
 
 class TestNoctaliaStartup(unittest.TestCase):
 

@@ -8,6 +8,13 @@ import qs.modules.lock
 import qs.app
 import qs.modules.session
 import qs.modules.settings
+import qs.modules.keystone
+import qs.modules.wallpaper
+import qs.modules.desktopcards
+import qs.modules.dock
+import qs.modules.regionselector
+import qs.modules.hotcorners
+import qs.modules.sidebars
 import qs.shared.theme
 import qs.app.services
 
@@ -35,8 +42,11 @@ Item {
             }
             return false;
         case "keystone":
-            return false;
+            return keystone ? (keystone.invoke(action.method) !== "KEYSTONE_UNAVAILABLE") : false;
         case "sidebar":
+            if (sidebarHost) {
+                return sidebarHost.toggleSidebar(action.argument || "dashboard") !== "INVALID_SIDE";
+            }
             return false;
         case "shortcut-map":
             ShortcutMapService.open();
@@ -72,14 +82,49 @@ Item {
     Component.onCompleted: {
         ActionGateway.sessionLocker = sessionLocker;
         SpotlightCatalog.actionExecutor = root.executeSearchAction;
-        SpotlightCatalog.keystoneAvailable = false;
+        SpotlightCatalog.keystoneAvailable = Qt.binding(() => keystone ? keystone.searchActionsAvailable : false);
         ThemeService.reloadColors();
         FontService.refresh();
         I18nService.initialize();
         SystemIdentityService.initialize();
     }
 
+    DisplayOverlays {}
+
+    WallpaperBackground {}
+
+    DesktopCardHost {}
+
     Bar {}
+
+    DockHost {}
+
+    Keystone {
+        id: keystone
+    }
+
+    RegionSelector {}
+
+    SidebarHostWindow {
+        id: sidebarHost
+    }
+
+    HotCorners {
+        locked: sessionLocker.active
+        onTriggered: (action, screenName) => {
+            if (action === "overview") {
+                WidgetState.closeAllPopups();
+                Niri.toggleOverview();
+                return;
+            }
+            const target = action.split(":");
+            if (target.length === 2) {
+                if (Niri.inOverview)
+                    Niri.toggleOverview();
+                sidebarHost.openOnScreen(target[0], target[1], screenName);
+            }
+        }
+    }
 
     Lock {
         id: sessionLocker

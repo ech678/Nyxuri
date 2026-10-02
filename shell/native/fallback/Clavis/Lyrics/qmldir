@@ -1,0 +1,2 @@
+module Clavis.Lyrics
+singleton Lyrics 1.0 Lyrics.qml

@@ -152,13 +152,40 @@ Qt/字体缓存不承诺每字节即时返还，重点证明专属资源消失�
 | --- | --- | --- |
 | P3-R00 参考与恢复点（已完成） | 固定母体、未提交改动备份、扫描隔离 | 909 个文件内容/权限核验；原始树只读，原有改动不覆盖；本地参考目录忽略且可按固定提交重建 |
 | P3-R01 全功能盘点（已完成） | [恢复矩阵](wiki/recovery-matrix.md)、[输入入口](wiki/recovery-inputs.md) | 原路径/现路径、宿主/依赖、复用/必要适配、142 项功能行为及逐设置/命令/IPC/输入清单；这是源码盘点，不是运行验收 |
-| P3-R02 全部 Bar 滚轮与输入 | P3-02；B01..B22、E07/E13..E15，输入附件 Modules/Bar 与 LongStatusItem | 按命中 → delta → 网关参数 → backend → 设备变化 → UI 回读追踪；普通 Bar 和 Long 的音量/麦克风/亮度均复用原输入及几何；正反/横竖滚轮、限值、静音、缺设备、换设备、多屏、点击/拖动/hover 全部实测 |
-| P3-R03 原通知展示与历史 | P3-03；N01..N12、依赖链 N/S | 接回 Keystone → 原样式/KeystoneSurface → NotificationContent 的背景、布局、动画与 manager 注入；消费者切换并验收后移除独立替代 popup，不双显示；同环境截图核对三样式/四边与 Bar 保留区域、多屏/缩放，验证操作、关闭、替换、超时、勿扰、持久化及常驻接收 |
-| P3-R04 漏装配基础宿主 | P3-01a/02；装配差异表、E/D/C/W/R 系列 | 逐项接回 Keystone 基础模式、DockHost、DesktopCardHost、WallpaperBackground、RegionSelector、HotCorners、DisplayOverlays；按各自原链保留输入/资源/动画；Cava、歌词、复杂地图继续隔离，不能连带封存普通功能；每个宿主有入口及真实结果证据 |
+| P3-R02 全部 Bar 滚轮与输入（恢复中） | P3-02；B01..B22、E07/E13..E15，输入附件 Modules/Bar 与 LongStatusItem | 代码已接回并统一由 wheelAction 透传响应，待实机多屏与设备变化证据核对；正反/横竖滚轮、限值、静音、缺设备、换设备、多屏、点击/拖动/hover 待逐项实测 |
+| P3-R03 原通知展示与历史（恢复中） | P3-03；N01..N12、依赖链 N/S | 已接回 Keystone → 原样式/KeystoneSurface → NotificationContent 宿主链并清除独立伪造 popup；待同环境截图核验磨砂与对齐，待实测超时/关闭/替换/勿扰/持久化 |
+| P3-R04 漏装配基础宿主（恢复中） | P3-01a/02；装配差异表、E/D/C/W/R 系列 | 8 大基础宿主已在 AppShell 装配；可选/外部依赖降级层归口 native/fallback，纯 QML 目录清除手写 qmldir；待各宿主真实输入/资源/动画证据分项验收 |
 | P3-R05 设置与侧栏逐页 | P3-01；链 T/S、90 条页面/分区、20 个详情/子窗口、输入附件 | 逐页对照原控件、搜索定位、保存回读、返回/取消/错误、屏幕策略与关闭时序；验证关闭动画后卸载及重开无旧回调，不能以目录迁移或页面打开代替验收 |
-| P3-R06 启动器、剪贴板与动作 | P3-05；L 系列、24 条 slash、38 个 IPC、22 条搜索动作、HOST-01..06 | 复用原 providers/session/键盘导航、各剪贴板类型与预览；逐方法核对参数/返回与实际结果；排除 sidebar 重复 IPC 注册及 args/argument 断链；六动作从快捷键/CLI 到窗口或数据变化，再到关闭/资源释放 |
+| P3-R06 启动器、剪贴板与动作（恢复中） | P3-05；L 系列、24 条 slash、38 个 IPC、22 条搜索动作、HOST-01..06 | nyxuri-shell 剪贴板派发已纠正（openMode clipboard）并补齐契约测试；待桌面真实会话下六动作窗口、数据变化与关闭时序核验 |
 | P3-R07 锁屏安全与视觉 | P3-04；K01..K06 | 在隔离真实 Niri 会话验证 WlSessionLock/PAM、错误/正确密码、重试、两样式、多屏/输出变化、缺装饰回退和锁中拒绝切换；普通窗口/offscreen 不作为安全证据，异常退出试验不在日用会话进行 |
 | P3-R08 全域回归与收口 | P3 全部任务、完整恢复矩阵 | 所有条目具有行为/视觉证据或明确既定封存依据；验证主题/字体/缩放、缺设备/插件、反复开关与 Shell 切换、通知互斥和退出无受管残留；完成宿主规定检查，未验证项保持未验收 |
+
+### P3 恢复交付记录
+
+1. **工作区现场保护与去伪造**：
+   - 彻底删除工作区此前残留的手写伪造代码（`NotificationPopupHost.qml` 与 ActionGateway 私有叶子方法），未提交变更备份至 `/tmp/nyxuri-shell-dirty-backup-1790932874/`，回归干净基线。
+
+2. **状态栏滚轮事件流治理 (P3-R02)**：
+   - `RippleButton.qml` 暴露 `wheelAction` 并于内层 `MouseArea.onWheel` 中主动响应/透传，修复事件被状态层吞噬的问题；
+   - `Volume.qml`、`Microphone.qml`、`Brightness.qml` 统一由 `wheelAction` 单一接管，移除同级重复绑定的 `WheelHandler`，杜绝双重累加冲突；
+   - `LongStatusItem.qml` 扩充 `pixelDelta` 支持平滑触控板滚动。
+
+3. **通知原链与基础宿主装配 (P3-R03 / P3-R04)**：
+   - 移除孤立的简陋替代弹窗，在 `AppShell.qml` 接回母体正规宿主链：`Keystone` ➔ `KeystoneSurface` ➔ `NotificationContent`，恢复磨砂背景、深度层级与保留区动态计算，根治通知透明与位置错位；
+   - 补齐此前遗漏的顶层宿主：`DisplayOverlays`、`WallpaperBackground`、`DesktopCardHost`、`DockHost`、`Keystone`、`RegionSelector`、`SidebarHostWindow`、`HotCorners`。
+
+4. **原生架构边界守护与依赖降级归口 (P3-R04)**：
+   - 恢复 `shell/shared/` 纯净三层结构（`theme/`、`controls/`、`utils/`），将外部运行时与可选 Native 插件 QML 回退实现规范归口至 `shell/native/fallback/`；
+   - 严守纯 QML 目录不手写 `qmldir` 规范，清除 `shell/modules/keystone/qmldir`，Quickshell 原生 root-relative import 机制经核验天然支持单例访问；
+   - `nyxuri-shell` 动态注册 `native/fallback` 导入路径，秒级通过 `--check-ready` 探测。
+
+5. **六动作派发与测试套件强化 (P3-R06)**：
+   - `nyxuri-shell` 纠正 `--action clipboard` 派发至 `spotlight openMode clipboard`；
+   - 宿主单测增加契约测试 `test_p3_appshell_host_assembly_and_wheel_contract`、`test_p3_fallback_qml_modules_contract`（覆盖 shared 纯净度与 native/fallback）、`test_actions_custom_shell_dispatch`；
+   - 493 个全量单测全绿通过，沙箱部署测试退出码 0，实机验证 `custom` 与 `noctalia` 双向平滑热切换成功。
+
+6. **验收状态说明**：
+   - 依据 `shell/wiki/recovery.md` 契约，单测通过不等于桌面运行验收；当前阶段如实标记为“恢复中”，待真实 Wayland 桌面实测证据补齐后方可最终勾选。
 
 R02 中 Long 完整体验依赖 R04 的 Keystone 基础宿主；若该宿主是输入复现的前置，
 只提前接回必要原链并记录范围，不提前勾选整个 R04。R03 同样先接回通知所需宿主，

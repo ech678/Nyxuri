@@ -333,7 +333,7 @@ Item {
                      ? Qt.ArrowCursor : Qt.PointingHandCursor
         onClicked: mouse => root.activate(mouse.button)
         onWheel: wheel => {
-            const delta = wheel.angleDelta.y || wheel.angleDelta.x;
+            const delta = wheel.angleDelta.y || wheel.angleDelta.x || wheel.pixelDelta.y || wheel.pixelDelta.x;
             if (!delta)
                 return;
             const step = delta > 0 ? 0.05 : -0.05;

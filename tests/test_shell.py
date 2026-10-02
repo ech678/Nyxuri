@@ -289,6 +289,64 @@ class TestShellManagement(unittest.TestCase):
                                 f"Non-lowercase qs.modules import '{mod_path}' found in {full_path}"
                             )
 
+    def test_p3_appshell_host_assembly_and_wheel_contract(self):
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. Base hosts exist in modules/
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "keystone", "Keystone.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "wallpaper", "WallpaperBackground.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "desktopcards", "DesktopCardHost.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "dock", "DockHost.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "regionselector", "RegionSelector.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "hotcorners", "HotCorners.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "settings", "DisplayOverlays.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "sidebars", "SidebarHostWindow.qml")))
+
+        # 2. NotificationContent and KeystoneSurface exist for native notification chain
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "keystone", "styles", "shared", "KeystoneSurface.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "keystone", "notifications", "NotificationContent.qml")))
+
+        # 3. Bar quicksettings controls exist
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "bar", "quicksettings", "Volume.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "bar", "quicksettings", "Microphone.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "bar", "quicksettings", "Brightness.qml")))
+
+    def test_p3_fallback_qml_modules_contract(self):
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+        fallback_dir = os.path.join(shell_dir, "native", "fallback")
+
+        # 1. Fallback directories exist in native/fallback
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "M3Shapes", "qmldir")))
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "M3Shapes", "MaterialShape.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "Lyrics", "qmldir")))
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "Lyrics", "Lyrics.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "Cava", "qmldir")))
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "Cava", "CavaProvider.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "Cava", "AudioLevelProvider.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "Weather", "qmldir")))
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "Weather", "WeatherPlugin.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "WeatherMap", "qmldir")))
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "WeatherMap", "WeatherMapPlugin.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Qt", "labs", "lottieqt", "qmldir")))
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Qt", "labs", "lottieqt", "LottieAnimation.qml")))
+
+        # 2. Pure QML directory modules/keystone does not have handwritten qmldir
+        self.assertFalse(os.path.isfile(os.path.join(shell_dir, "modules", "keystone", "qmldir")), "Pure QML directory should not have handwritten qmldir")
+
+        # 3. shared layer strictly contains only theme, controls, utils
+        shared_dir = os.path.join(shell_dir, "shared")
+        shared_entries = sorted(os.listdir(shared_dir))
+        self.assertEqual(shared_entries, ["controls", "theme", "utils"])
+
+        # 4. nyxuri-shell exports FALLBACK_QML_PATH pointing to native/fallback
+        launcher_path = os.path.join(shell_dir, "bin", "nyxuri-shell")
+        with open(launcher_path, "r", encoding="utf-8") as f:
+            launcher_content = f.read()
+        self.assertIn("FALLBACK_QML_PATH", launcher_content)
+        self.assertIn("native/fallback", launcher_content)
+
 
 if __name__ == "__main__":
     unittest.main()

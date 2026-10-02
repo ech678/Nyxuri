@@ -20,6 +20,7 @@ import qs.modules.keystone.hub
 import qs.modules.keystone.tools
 import qs.modules.keystone.styles.recording
 import qs.modules.keystone.styles.long
+import qs.modules.keystone
 
 Variants {
     id: styleSurface

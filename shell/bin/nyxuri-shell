@@ -39,6 +39,12 @@ if [ -n "${NATIVE_PLUGIN_PATH}" ]; then
     fi
 fi
 
+FALLBACK_QML_PATH="${SHELL_DIR}/native/fallback"
+if [ -d "${FALLBACK_QML_PATH}" ]; then
+    export QML_IMPORT_PATH="${QML_IMPORT_PATH:+${QML_IMPORT_PATH}:}${FALLBACK_QML_PATH}"
+    export QML2_IMPORT_PATH="${QML2_IMPORT_PATH:+${QML2_IMPORT_PATH}:}${FALLBACK_QML_PATH}"
+fi
+
 ACTION=""
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -80,7 +86,7 @@ if [ -n "$ACTION" ]; then
             exec qs -p "${SHELL_DIR}" ipc call control-center toggle ""
             ;;
         clipboard)
-            exec qs -p "${SHELL_DIR}" ipc call spotlight commands
+            exec qs -p "${SHELL_DIR}" ipc call spotlight openMode clipboard
             ;;
         lock)
             exec qs -p "${SHELL_DIR}" ipc call lock open

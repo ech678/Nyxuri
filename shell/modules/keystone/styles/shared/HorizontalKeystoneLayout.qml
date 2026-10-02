@@ -1,5 +1,6 @@
 import QtQuick
 import qs.shared.theme
+import qs.modules.keystone
 
 QtObject {
     required property bool recordingActive

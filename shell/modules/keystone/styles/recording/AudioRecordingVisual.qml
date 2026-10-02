@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Clavis.Cava
 import qs.shared.theme
+import qs.modules.keystone
 import "RecordingFormat.js" as RecordingFormat
 
 Item {

@@ -16,6 +16,7 @@ Button {
     property var doubleClickAction
     property var altAction
     property var middleClickAction
+    property var wheelAction
     property color containerColor: "transparent"
     property color rippleColor: Appearance.colors.colOnSurface
     property bool stateLayerEnabled: true
@@ -113,6 +114,13 @@ Button {
             root.down = false;
             root.pointerPressActive = false;
             root.finishRipple();
+        }
+        onWheel: (wheel) => {
+            if (root.wheelAction) {
+                root.wheelAction(wheel);
+            } else {
+                wheel.accepted = false;
+            }
         }
     }
 
