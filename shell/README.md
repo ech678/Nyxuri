@@ -40,7 +40,7 @@
 
 ## Acknowledgements
 
-Clavis takes inspiration from and integrates ideas or components from projects including:
+Nyxuri Shell takes inspiration from and integrates ideas or components from projects including:
 
 - [end-4/dots-hyprland](https://github.com/end-4/dots-hyprland)
 - [Zen Browser](https://github.com/zen-browser/desktop) — palette algorithms and editor; see [source and license mapping](wiki/upstream-licenses/README.md).

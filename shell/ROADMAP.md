@@ -265,6 +265,24 @@ Qt/字体缓存不承诺每字节即时返还，重点证明专属资源消失�
      - 精简 `clavis_zh_CN.ts` 与 `clavis_en_US.ts`，彻底消除已删除组件的悬挂翻译上下文；
    - **体积成效**：`shell/assets/` 体积从 6.1MB 骤降至 1.5MB（削减约 75%），消除 4 项常驻/后台多余轮询，`check.sh --full` 与 Python 单测套件全绿。
 
+14. **全工程优雅化与极简秩序治理 (P3-R13)**：
+    - **零风险纯减法**：删除孤立过时安装器/打包脚本（`shell/scripts/install/arch.py`, `launcher.sh.in`, `release.py`, `check-package.py`）及废弃单测；清理未引用工具（`astro.js`, `SearchUtils.js`, `screenshot_to_clipboard.sh`）；剔除死 C++ 类（`clavis_build_info`, `clavis_file_system`）；修复 wiki 坏链。
+    - **品牌、XDG 路径与环境命名归一**：systemd 服务规范命名为 `nyxuri-shell.service`；Wayland 顶层 layer namespace 全量归一至 `nyxuri-*` 并在 `configs/niri/rules.kdl` 完成前缀匹配适配；CMake 规范为 `project(NyxuriShell)`；环境变量全面支持 `NYXURI_SHELL_*` 优先并保留 `CLAVIS_*` 兼容降级；彻底消除源码及文档中的硬编码个人目录。
+    - **服务层解耦与逆向依赖解除**：彻底切除 `app/services/` 反向导入 `modules/` 的架构倒错，将 `RecordingState.js`、`SidebarPolicy.js`、`WallpaperSource.js`、`AwwwCommand.js`、`WallpaperMath.js`、`WallpaperPaletteScope.js`、`ZenPalette.js` 下沉至 `shared/utils/`，实现单向分层依赖图（`shared/utils` ➔ `app/services` ➔ `modules`）。
+    - **AppShell 与 ActionGateway 契约收敛**：剔除 `AppShell.qml` 中冗余重复的 `pendingSecurePowerAction`、`runSecurePowerAction` 与 `requestSecurePowerAction`，将电源操作生命周期与安全锁屏逻辑 100% 收敛至 `ActionGateway` 单一事实来源；消除 7 组 `IpcHandler` 的阶梯缩进漂移，恢复严谨的几何秩序与代码对齐。
+    - **共享层净化与死控件剔除**：物理删除未引用的 `RadialSpectrum.qml` 废弃控件；清理残留空目录；脚本工具库全面注入 `NYXURI_SHELL_*` 双向解析；所有测试、CTest 与本地秒级验证全量全绿。
+
+### P3-R13 全工程优雅化与极简秩序治理（已完成）
+
+| 治理范围 | 处理方式 | 影响与验收 |
+| --- | --- | --- |
+| 过时脚本与构建脚手架 | 物理删除 `shell/scripts/install/`、`release.py`、`check-package.py` 及旧测试 | 消除未使用的打包与安装工具链，仓库更加轻巧 |
+| 死 C++ 源码 | 物理删除 `clavis_build_info`、`clavis_file_system` 并更新 CMake | CTest 19 项通过，无冗余编译单元 |
+| 品牌与命名归一 | systemd 单元重命名为 `nyxuri-shell.service`，CMake 项目名归一，Layer 归一 `nyxuri-*` | 无缝兼容 `configs/niri/rules.kdl`，消解历史品牌痕迹 |
+| 逆向依赖与架构分层 | 7 个模型/算法 JS 迁入 `shared/utils/`，解除 `app/services/` 倒错导入 | 形成单向清晰依赖链：`shared/utils` ➔ `app/services` ➔ `modules` |
+| AppShell 电源中枢 | 重复电源逻辑收敛至 `ActionGateway`，规整 7 组 `IpcHandler` 几何排版 | 杜绝逻辑分叉，消除楼梯式代码缩进，代码极度清爽整洁 |
+| 共享层与废弃控件 | 剔除 `RadialSpectrum.qml`，脚本库注入 `NYXURI_SHELL_*` 双向查找 | 501 个 Python 测试全绿，19 个 CTest 全绿，生命周期审计 0 违规 |
+
 ### P3-R12 资产外科手术式清理与负资产切除（已完成）
 
 | 模块 / 资产 | 处理方式 | 影响与验收 |
