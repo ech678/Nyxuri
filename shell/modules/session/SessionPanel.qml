@@ -3,9 +3,9 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 import qs.Common
-import qs.Components
-import qs.Services
-import qs.Widgets.common
+import qs.shared.theme
+import qs.shared.controls
+import qs.shared.compositor
 
 PanelWindow {
     id: root
@@ -14,23 +14,32 @@ PanelWindow {
     readonly property real buttonSize: Math.max(72, Math.min(128, (width - 112 - actionRow.spacing * 5) / 6))
 
     property int selectedIndex: 0
+    property bool closing: false
 
-    onVisibleChanged: {
-        if (visible) {
-            root.selectedIndex = 0;
-            interactionArea.forceActiveFocus(Qt.OtherFocusReason);
-        }
+    signal actionTriggered(string action)
+    signal dismissRequested()
+    signal dismissFinished()
+
+    function requestDismiss() {
+        if (root.closing)
+            return;
+        root.closing = true;
+        exitAnimation.start();
+    }
+
+    function trigger(action) {
+        root.actionTriggered(action);
+        root.requestDismiss();
     }
 
     screen: targetScreen
-    visible: PowerMenuService.active && targetScreen && targetScreen.name
-             === PowerMenuService.targetScreenName
+    visible: true
     color: "transparent"
     exclusiveZone: 0
-    WlrLayershell.namespace: "clavis-shell-power-menu"
+    WlrLayershell.namespace: "nyxuri-shell-session"
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.exclusionMode: ExclusionMode.Ignore
-    WlrLayershell.keyboardFocus: visible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
 
     anchors {
         left: true
@@ -39,12 +48,70 @@ PanelWindow {
         bottom: true
     }
 
+    Component.onCompleted: {
+        root.selectedIndex = 0;
+        interactionArea.forceActiveFocus(Qt.OtherFocusReason);
+        enterAnimation.start();
+    }
+
+    ParallelAnimation {
+        id: enterAnimation
+        NumberAnimation {
+            target: menuBackground
+            property: "opacity"
+            from: 0.0
+            to: 1.0
+            duration: Appearance.animation.expressiveFastEffects.duration
+            easing.type: Appearance.animation.expressiveFastEffects.type
+            easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
+        }
+        NumberAnimation {
+            target: menuBackground
+            property: "scale"
+            from: 0.92
+            to: 1.0
+            duration: Appearance.animation.expressiveFastEffects.duration
+            easing.type: Appearance.animation.expressiveFastEffects.type
+            easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
+        }
+    }
+
+    ParallelAnimation {
+        id: exitAnimation
+        NumberAnimation {
+            target: menuBackground
+            property: "opacity"
+            from: 1.0
+            to: 0.0
+            duration: Appearance.animation.expressiveFastEffects.duration
+            easing.type: Appearance.animation.expressiveFastEffects.type
+            easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
+        }
+        NumberAnimation {
+            target: menuBackground
+            property: "scale"
+            from: 1.0
+            to: 0.95
+            duration: Appearance.animation.expressiveFastEffects.duration
+            easing.type: Appearance.animation.expressiveFastEffects.type
+            easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
+        }
+        onFinished: {
+            root.dismissFinished();
+        }
+    }
+
     Item {
         id: interactionArea
 
         anchors.fill: parent
-        focus: root.visible
+        focus: true
         Keys.onPressed: event => {
+            if (root.closing) {
+                event.accepted = true;
+                return;
+            }
+
             switch (event.key) {
             case Qt.Key_Left:
             case Qt.Key_Up:
@@ -57,28 +124,28 @@ PanelWindow {
             case Qt.Key_Return:
             case Qt.Key_Enter:
                 if (!event.isAutoRepeat)
-                    PowerMenuService.trigger(actionRepeater.itemAt(root.selectedIndex).modelData.action);
+                    root.trigger(actionRepeater.itemAt(root.selectedIndex).modelData.action);
                 break;
             case Qt.Key_Escape:
-                PowerMenuService.close();
+                root.requestDismiss();
                 break;
             case Qt.Key_L:
-                PowerMenuService.trigger("lock");
+                root.trigger("lock");
                 break;
             case Qt.Key_E:
-                PowerMenuService.trigger("logout");
+                root.trigger("logout");
                 break;
             case Qt.Key_U:
-                PowerMenuService.trigger("suspend");
+                root.trigger("suspend");
                 break;
             case Qt.Key_S:
-                PowerMenuService.trigger("poweroff");
+                root.trigger("poweroff");
                 break;
             case Qt.Key_H:
-                PowerMenuService.trigger("hibernate");
+                root.trigger("hibernate");
                 break;
             case Qt.Key_R:
-                PowerMenuService.trigger("reboot");
+                root.trigger("reboot");
                 break;
             default:
                 return;
@@ -88,7 +155,7 @@ PanelWindow {
 
         MouseArea {
             anchors.fill: parent
-            onClicked: PowerMenuService.close()
+            onClicked: root.requestDismiss()
         }
 
         Rectangle {
@@ -98,7 +165,7 @@ PanelWindow {
             width: actionRow.implicitWidth + 56
             height: actionRow.implicitHeight + 56
             radius: Appearance.rounding.extraLarge
-            color: BlurService.backgroundColor(Appearance.colors.colLayer0)
+            color: Appearance.colors.colLayer0
 
             MouseArea {
                 anchors.fill: parent
@@ -155,15 +222,15 @@ PanelWindow {
                         Accessible.role: Accessible.Button
                         Accessible.name: modelData.label
                         Accessible.focused: selected && interactionArea.activeFocus
-                        Accessible.onPressAction: PowerMenuService.trigger(modelData.action)
+                        Accessible.onPressAction: root.trigger(modelData.action)
 
                         Layout.preferredWidth: root.buttonSize
                         Layout.preferredHeight: root.buttonSize
                         radius: Appearance.rounding.large
                         color: actionMouse.pressed ? Appearance.colors.colPrimaryActive : (
-                                                         actionButton.selected
-                                                         ? Appearance.colors.colPrimaryHover :
-                                                           Appearance.colors.colLayer1)
+                                   actionButton.selected
+                                   ? Appearance.colors.colPrimaryHover :
+                                     Appearance.colors.colLayer1)
 
                         ColumnLayout {
                             anchors.centerIn: parent
@@ -183,8 +250,7 @@ PanelWindow {
                                     fill: 0
                                     color: actionButton.selected ? Appearance.colors.colOnPrimary :
                                                                    Appearance.colors.colOnLayer1
-                                    scale: actionMouse.pressed ? 50 / 54 : (actionButton.selected ? 1 : 44
-                                                                                                    / 54)
+                                    scale: actionMouse.pressed ? 50 / 54 : (actionButton.selected ? 1 : 44 / 54)
                                     transformOrigin: Item.Center
                                     smooth: true
                                     layer.enabled: true
@@ -195,8 +261,7 @@ PanelWindow {
                                         NumberAnimation {
                                             duration: Appearance.animation.expressiveSlowEffects.duration
                                             easing.type: Appearance.animation.expressiveSlowEffects.type
-                                            easing.bezierCurve:
-                                                Appearance.animation.expressiveSlowEffects.bezierCurve
+                                            easing.bezierCurve: Appearance.animation.expressiveSlowEffects.bezierCurve
                                         }
                                     }
 
@@ -204,8 +269,7 @@ PanelWindow {
                                         ColorAnimation {
                                             duration: Appearance.animation.expressiveFastEffects.duration
                                             easing.type: Appearance.animation.expressiveFastEffects.type
-                                            easing.bezierCurve:
-                                                Appearance.animation.expressiveFastEffects.bezierCurve
+                                            easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
                                         }
                                     }
                                 }
@@ -229,7 +293,7 @@ PanelWindow {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onEntered: root.selectedIndex = actionButton.index
-                            onClicked: PowerMenuService.trigger(actionButton.modelData.action)
+                            onClicked: root.trigger(actionButton.modelData.action)
                         }
 
                         Behavior on color {

@@ -27,9 +27,9 @@
 
 AppShell 的完成钩子初始化 I18n、DisplayColor、LyricsTrackService、SystemIdentityService；歌词初始化明确接通 MPRIS 曲目和 native Lyrics，不能仅隐藏歌词画面来封存它。`DisplayColor.evaluate()` 又把 Gamma 能力拉入启动路径。[DisplayColor.qml](../Services/DisplayColor.qml) 还引用天气位置。
 
-控制中心是反例：[ControlCenterService.qml](../Services/ControlCenterService.qml) 打开时激活 LazyLoader；[ControlCenterWindow.qml](../Modules/ControlCenter/ControlCenterWindow.qml) 第 150 行附近的 `onVisibleChanged` 发出 `popoutClosed`，AppShell 转给 `windowClosed()`，最终将 Loader 设为 inactive。不能只读 `close()` 中的 `visible=false` 就判定虚假关闭。是否存在关闭后引用或进程残留仍需运行验证。
+控制中心（ControlCenter）：上游通过 [ControlCenterService.qml](../Services/ControlCenterService.qml) 在打开时激活 LazyLoader；[ControlCenterWindow.qml](../Modules/ControlCenter/ControlCenterWindow.qml) 关闭时发出 `popoutClosed` 将 Loader 设为 inactive。在 P1 启动阻断排查中，审计发现 ControlCenter 虽未在顶层阻断，但其子组件（`LanguageAndRegionPage.qml:3`、`MapTilerApiSettingsCard.qml:2`、`OpenWeatherApiSettingsCard.qml:2`）静态硬导入了 `Clavis.WeatherMap`。在 `ENABLE_WEATHERMAP=OFF` 默认构建下，直接实例化会导致 QML 加载崩溃；P1 为保核心亮屏暂时将其移出装配，P3-01 将完成这三处硬依赖的解耦并恢复按需挂载。
 
-[LauncherWindow.qml](../Modules/Launcher/LauncherWindow.qml) 本体由 AppShell 直接创建，导入 `Clavis.Keyboard`；多个 provider 已按 showing、mode 和 closing 状态启停。后续应把整个临时面板放进可销毁的宿主，同时保留 provider 的按需规则。[PowerMenu.qml](../Modules/PowerMenu/PowerMenu.qml) 每屏 Loader 的 active 恒为 true，窗口再按服务状态控制 visible，适合改成真正按需实例化。
+会话面板（原 PowerMenu）：原 [PowerMenu.qml](../Modules/PowerMenu/PowerMenu.qml) 每屏 Loader 的 active 恒为 true，窗口仅按服务状态控制 visible。**P2 已完成重构**：将其彻底迁移为 `modules/session/SessionHost.qml` 与 `SessionPanel.qml`，对接 `app/ActionGateway.qml` 意图收敛中枢，关闭动画后触发 `dismissFinished` 彻底销毁窗口（`active: false`），旧 `Modules/PowerMenu/` 与单例 `PowerMenuService.qml` 已彻底安全删除。
 
 ### 依赖与降级缺口
 
@@ -363,10 +363,10 @@ MaterialSymbol 用系统 Material Symbols 字体，文件不是内嵌资产；�
 | **核心必需** | `Bar/ActiveWindow` | `BarComponentLoader.qml` | 消费 `Clavis.Niri` focusedWindow 模型 | 保留，标准 Niri 聚焦窗口标题与图标 |
 | **核心必需** | `Modules/Launcher` | `AppShell.qml` 的 `LauncherWindow` | 本地桌面应用搜索与启动，键盘快捷键唤起 | 保留，作为基础启动器 |
 | **核心必需** | `Modules/Lock` | `AppShell.qml` 的 `Lock` | Wayland session-lock、PAM 认证上下文 | 保留，安全会话锁核心 |
-| **核心必需** | `Modules/PowerMenu` | `AppShell.qml` 的 `PowerMenu` | 系统关机、重启、锁屏、注销动作收发 | 保留，改为完全按需加载 |
+| **核心必需** | `modules/session/` (原 `Modules/PowerMenu`) | `AppShell.qml` 挂载 `SessionHost` | 系统关机、重启、锁屏、注销动作收发 | **P2 已完成**：迁移为自治按需加载，关闭即销毁，淘汰 `PowerMenuService` |
 | **核心必需** | `Common/Fonts` | `Common/Fonts.qml` 单例 | 系统与角色字体解析、FontLoader | 保留，提供系统字体 fallback |
 | **核心必需** | `Services/Time` | `Time.qml` 单例 | 30s 周期时钟计时器 | 保留，仅供 Bar 时钟消费 |
-| **可选/延后** | `Modules/ControlCenter` | `LazyLoader` 挂载 `ControlCenterWindow` | 多页面系统设置、DBus/网络监控 | P2-P3 逐步解耦迁移 |
+| **可选/延后** | `Modules/ControlCenter` | `LazyLoader` 挂载 `ControlCenterWindow` | 多页面系统设置、DBus/网络监控 | **P3 迁移中**：审计发现子页面静态依赖 `Clavis.WeatherMap`，P3-01 解耦后安全接入 LazyLoader 与 ActionGateway |
 | **可选/延后** | `Modules/Sidebars` | `SidebarHostWindow` | 侧栏通知抽屉与工具集 | P2-P3 迁移 |
 | **可选/延后** | `Services/NotificationManager` | `NotificationManager.qml` | 接收 org.freedesktop.Notifications | P3 接入独立生命周期 |
 | **可选/延后** | `Modules/Bar/Tray` | `BarComponentLoader.qml` | 消费 SNI 托盘 D-Bus 接口 | P3 接入 |

@@ -9,6 +9,8 @@ import qs.Common
 import qs.Services
 import qs.Widgets.common
 import qs.Modules.ControlCenter
+import qs.app
+import qs.shared.controls
 import "../../Common/functions/SpotlightCommands.js" as Commands
 
 PanelWindow {

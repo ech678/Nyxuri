@@ -5,6 +5,7 @@ import qs.Common
 import qs.Components
 import qs.Services
 import qs.Widgets.common
+import qs.app
 
 WidgetPanel {
     id: root
@@ -292,7 +293,7 @@ WidgetPanel {
             padding: root.headerButtonPadding
             iconName: "power_settings_new"
             tooltipText: qsTr("Power menu")
-            onTriggered: PowerMenuService.open(root.screen)
+            onTriggered: ActionGateway.requestSessionOpen(root.screen)
         }
     }
 

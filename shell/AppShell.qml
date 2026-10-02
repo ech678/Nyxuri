@@ -5,7 +5,8 @@ import Clavis.Niri
 import qs.Modules.Bar
 import qs.Modules.Launcher
 import qs.Modules.Lock
-import qs.Modules.PowerMenu
+import qs.app
+import qs.modules.session
 import qs.Common
 import qs.Services
 
@@ -19,8 +20,7 @@ Item {
     function executeSearchAction(action) {
         switch (action.target) {
         case "lock":
-            const status = sessionLocker.open();
-            return status === "LOCKED" || status === "ALREADY_LOCKED";
+            return ActionGateway.powerAction("lock", "launcher:search");
         case "wallpaper":
             switch (action.method) {
             case "clear":
@@ -41,7 +41,7 @@ Item {
             ShortcutMapService.open();
             return true;
         case "power-menu":
-            return PowerMenuService.open();
+            return ActionGateway.requestSessionOpen();
         default:
             return false;
         }
@@ -69,6 +69,7 @@ Item {
     }
 
     Component.onCompleted: {
+        ActionGateway.sessionLocker = sessionLocker;
         SpotlightCatalog.actionExecutor = root.executeSearchAction;
         SpotlightCatalog.keystoneAvailable = false;
         I18nService.initialize();
@@ -81,33 +82,8 @@ Item {
         id: sessionLocker
     }
 
-    PowerMenu {}
-
-    Connections {
-        function onActionRequested(action) {
-            switch (action) {
-            case "lock":
-                sessionLocker.open();
-                break;
-            case "logout":
-                Quickshell.execDetached(["niri", "msg", "action", "quit", "--skip-confirmation"]);
-                break;
-            case "suspend":
-                root.requestSecurePowerAction("suspend");
-                break;
-            case "poweroff":
-                Quickshell.execDetached(["systemctl", "poweroff"]);
-                break;
-            case "hibernate":
-                root.requestSecurePowerAction("hibernate");
-                break;
-            case "reboot":
-                Quickshell.execDetached(["systemctl", "reboot"]);
-                break;
-            }
-        }
-
-        target: PowerMenuService
+    SessionHost {
+        id: sessionHost
     }
 
     Connections {
@@ -146,14 +122,14 @@ Item {
     IpcHandler {
         target: "power-menu"
         function open(): void {
-        PowerMenuService.open();
-    }
+            ActionGateway.requestSessionOpen();
+        }
         function close(): void {
-                              PowerMenuService.close();
-                          }
+            ActionGateway.requestSessionClose();
+        }
         function toggle(): void {
-        PowerMenuService.toggle();
-    }
+            ActionGateway.requestSessionToggle();
+        }
     }
 
         IpcHandler {

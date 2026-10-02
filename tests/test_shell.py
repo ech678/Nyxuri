@@ -1,6 +1,7 @@
 """Contract tests for dual shell management and CLI (nyxuri shell)."""
 
 import io
+import os
 import unittest
 from contextlib import redirect_stdout
 from unittest.mock import patch
@@ -127,6 +128,35 @@ class TestShellManagement(unittest.TestCase):
         # Ledger must NOT have been changed to target
         self.assertEqual(active_shell(), "noctalia")
         mock_new_proc.terminate.assert_called()
+
+    def test_p2_layer_structure_and_session_decoupling(self):
+        import os
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # Verify 4-layer directories exist
+        self.assertTrue(os.path.isdir(os.path.join(repo_root, "shell", "app")))
+        self.assertTrue(os.path.isdir(os.path.join(repo_root, "shell", "shared")))
+        self.assertTrue(os.path.isdir(os.path.join(repo_root, "shell", "modules", "session")))
+
+        # Verify ActionGateway and SessionHost exist
+        self.assertTrue(os.path.isfile(os.path.join(repo_root, "shell", "app", "ActionGateway.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(repo_root, "shell", "modules", "session", "SessionHost.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(repo_root, "shell", "modules", "session", "SessionPanel.qml")))
+
+        # Verify old PowerMenu directory and service are completely deleted
+        self.assertFalse(os.path.exists(os.path.join(repo_root, "shell", "Modules", "PowerMenu")))
+        self.assertFalse(os.path.exists(os.path.join(repo_root, "shell", "Services", "PowerMenuService.qml")))
+
+    def test_action_gateway_command_arguments(self):
+        import subprocess
+        from pathlib import Path
+        nyxuri_shell_bin = Path(__file__).resolve().parent.parent / "shell" / "bin" / "nyxuri-shell"
+        self.assertTrue(nyxuri_shell_bin.exists() and os.access(nyxuri_shell_bin, os.X_OK))
+
+        # Check help output lists session and all standard actions
+        res = subprocess.run([str(nyxuri_shell_bin), "--help"], capture_output=True, text=True, check=True)
+        self.assertIn("--action", res.stdout)
+        self.assertIn("session", res.stdout)
+        self.assertIn("launcher", res.stdout)
 
 
 if __name__ == "__main__":

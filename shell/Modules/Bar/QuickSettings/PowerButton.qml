@@ -1,7 +1,7 @@
 import QtQuick
 import qs.Common
-import qs.Services
 import qs.Widgets.common
+import qs.app
 
 BarCircularButton {
     id: root
@@ -13,5 +13,5 @@ BarCircularButton {
     rippleColor: Appearance.colors.colOnSurface
     iconColor: Appearance.colors.colOnSurface
     tooltipText: qsTr("Power menu")
-    onClicked: PowerMenuService.open(root.screen)
+    onClicked: ActionGateway.requestSessionOpen(root.screen)
 }

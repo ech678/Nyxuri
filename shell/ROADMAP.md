@@ -16,18 +16,14 @@
 都保留，分别在 P1、P3、P4、P5 验收。用户模板和外围快捷键无需重写的承诺不变。
 Terminal Rice、多合成器与安全 Downdate 仍属于宿主后续路线，不提前绑入启动奠基。
 
-## 当前阶段：P1——第一个可用里程碑
+## 当前阶段：P3——基础体验完整化
 
 产品名为 **Nyxuri Shell**，程序/配置标识为 **nyxuri-shell**。Clavis 名称在上游归属、
 历史证据和尚未迁移的内部符号中保留，不为统一名称一次重命名全部源码。
 
-开发顺序：**精神与原则 → 详细启动及整理计划 → 按计划开发**。前两步已完成，
-P0 启动计划与技术事实已冻结。当前进入第三步：按计划实施 P1 任务。
-“先简单、再复杂”指开发推进顺序，不是要求用一个新程序启动另一个程序。
-
-当前起点：901 个母体文件已在 `feat/nyxuri-shell` 分支提交纯净基准历史；
-P0-01 至 P0-08 均已完成并在审计报告与实施蓝图中冻结。当前任务为 P1 隔离启动阻断、
-原版 Niri 基础界面亮屏与即时切换闭环。
+开发顺序：**精神与原则 → 详细启动及整理计划 → 按计划开发**。P0 启动计划冻结，
+P1 隔离启动阻断、基础界面亮屏与即时热切换闭环已完成验收，P2 四层架构骨架（app、modules、shared、native）、
+会话面板自治生命周期与 Action Gateway 意图收敛已落地并消除旧常驻实现。当前进入 P3 基础体验完整化阶段。
 
 ### 任务记录方式
 
@@ -106,6 +102,12 @@ P0 调查默认修整现有代码，复用有效模型和协议。界面/普通�
 先完成第一个域，再由第二个真实域检验接口复用与主干改动，发现问题后修正边界；
 不提前建设通用插件框架，不以“永远无需调整”验收扩展性。
 
+- [x] P2-01 装配与注入：通过 `AppShell.qml` 与 `SessionHost.qml` 显式属性注入，彻底移除跨域 Singleton (`PowerMenuService`) 随意访问。
+- [x] P2-02 纯共享层：提取 `shared/theme/Appearance.qml`、`shared/controls/StateLayer.qml`、`shared/controls/MaterialSymbol.qml`、`shared/compositor/CompositorBlurRegion.qml`，严守无 IO、无外部进程、无环境读取原则。
+- [x] P2-03 动作与资源归属：实现 `app/ActionGateway.qml` 意图收敛中枢，外部命令全面参数数组化（`["systemctl", "poweroff"]` 等），明确登记 owner。
+- [x] P2-04 自治加载与销毁：`SessionHost` 动态按需加载，关闭动画播放完毕触发 `dismissFinished` 彻底销毁窗口（`active: false`），淘汰常驻占用；旧实现安全删除。
+- [x] P2-05 可选 native：原版 Niri 接口对接与可选模块解耦保持稳定，23 个原生 CTest 与 480 个宿主单测保持 100% 通过。
+
 | 任务 | 改动边界与交付物 | 验收 |
 | --- | --- | --- |
 | P2-01 装配与注入 | app 持有协调和环境；模块通过窄属性/接口获取依赖 | 迁移域不再随手访问其他域 singleton；上下文和绑定可运行 |
@@ -122,16 +124,21 @@ Qt/字体缓存不承诺每字节即时返还，重点证明专属资源消失�
 
 ## P3：基础体验完整化
 
-前置：P2。状态栏工作区/活动窗口/时钟/电池/托盘、启动器、会话面板、通知、音量、
-亮度、设置与真实锁屏逐域完善，复用上游视觉，设备缺失局部不可用。
+前置：P2。设置（控制中心）、状态栏外设、通知、真实锁屏与剪贴板逐域完善，复用上游视觉，设备缺失局部不可用。
 
-- [ ] P3-01 明确各域模型、动作、设置、资源 owner 与加载方式，并逐域实现/验收。
-- [ ] P3-02 通知接收与临时历史/弹窗分开；关闭历史不停止接收，存储有界。
-- [ ] P3-03 Wayland session-lock/PAM 安全状态与装饰解耦；错误密码、认证成功、多屏、崩溃及退出保护验收。
-- [ ] P3-04 补齐 clipboard 能力，为六大标准动作完整对接准备；不默认引入整套 key-cli。
+- [ ] P3-01 设置系统（ControlCenter）解耦恢复：消除 `Clavis.WeatherMap` 静态导入阻断；按需 `LazyLoader` 挂载 `ControlCenterWindow`，关闭完全释放；对接 `ActionGateway` 与 `nyxuri shell --action settings`。
+- [ ] P3-02 状态栏与外设基础域完善：状态栏工作区/活动窗口/时钟/电池/托盘；音量与亮度滑条收敛至 `ActionGateway`；缺失硬件优雅降级。
+- [ ] P3-03 通知接收与临时历史/弹窗分离：通知接收常驻后台（D-Bus），与临时通知抽屉/弹窗解耦；关闭历史不停止接收，历史存储有界。
+- [ ] P3-04 Wayland session-lock/PAM 安全状态与装饰解耦：错误密码震动反馈、认证成功即刻解锁、多屏容灾与崩溃退出保护。
+- [ ] P3-05 剪贴板与六动作闭环：补齐 clipboard 面板对接；保证六大标准动作（launcher, session, settings, clipboard, lock, wallpaper-random）与 Noctalia 100% 同构。
 
-验收：原版 Niri 多屏/设备断开/通知/认证冒烟；状态栏与面板布局、字体、动效对照；
-锁屏期间禁止普通切换或销毁安全锁，缺安全能力明确失败。
+| 任务 | 前置与改动边界 | 交付物 | 验收证据 |
+| --- | --- | --- | --- |
+| P3-01 设置解耦恢复 | P2；`Modules/ControlCenter`、`AppShell.qml`、`ActionGateway.qml` | 消除 WeatherMap 导入硬依赖；按需挂载与释放；IPC 调起 settings 正常显示并可关闭 | `nyxuri-shell --action settings` 流畅打开多页面设置面板；关闭后窗口与内存释放；无 Native 缺失报错 |
+| P3-02 状态栏外设域 | P3-01；`Modules/Bar/` 各组件、音量/亮度/电池服务 | 状态栏各组件对接 `shared/` 控件与 `ActionGateway`；无电池/背光时平滑降级 | 多显示器 Bar 正常布局；无电池设备不抛未捕获异常；音量/亮度拖动生效 |
+| P3-03 通知系统解耦 | P2；`Services/NotificationManager.qml`、`Modules/Sidebars` | 常驻 D-Bus 监听与瞬态面板解耦；通知弹窗与历史有界存储（例如上限 100 条） | 连续发送 `notify-send` 弹窗正常且声音播放；关闭历史抽屉不漏收新通知 |
+| P3-04 真实锁屏PAM | P2；`Modules/Lock/`、PAM 桥 | 认证状态与装饰分离；密码错误清空并震动反馈；多屏安全覆盖；锁屏中拒绝 Shell 切换 | 错误密码不卡死；正确密码秒级解锁；锁屏中 `nyxuri shell set` 明确拒绝 |
+| P3-05 六动作闭环 | P3-01 至 04；`shell-action.sh`、快捷键 | 六大动作在 Nyxuri Shell 下全面可用并与 Noctalia 行为对齐 | 快捷键触发六动作无一报错；`wallpaper-random` 等动作派发生效 |
 
 ## P4：壁纸、M3 调色与模板兼容
 
