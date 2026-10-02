@@ -26,11 +26,11 @@ class ClavisPaths:
         runtime = Path(os.environ.get("XDG_RUNTIME_DIR", cache / "clavis/runtime"))
         return cls(
             home=home,
-            config_home=Path(os.environ.get("CLAVIS_CONFIG_HOME", config / "clavis")),
-            data_home=Path(os.environ.get("CLAVIS_DATA_HOME", data / "clavis")),
-            state_home=Path(os.environ.get("CLAVIS_STATE_HOME", state / "clavis")),
-            cache_home=Path(os.environ.get("CLAVIS_CACHE_HOME", cache / "clavis")),
-            runtime_home=Path(os.environ.get("CLAVIS_RUNTIME_HOME", runtime / "clavis")),
+            config_home=Path(os.environ.get("NYXURI_SHELL_CONFIG_HOME", os.environ.get("CLAVIS_CONFIG_HOME", config / "clavis"))),
+            data_home=Path(os.environ.get("NYXURI_SHELL_DATA_HOME", os.environ.get("CLAVIS_DATA_HOME", data / "clavis"))),
+            state_home=Path(os.environ.get("NYXURI_SHELL_STATE_HOME", os.environ.get("CLAVIS_STATE_HOME", state / "clavis"))),
+            cache_home=Path(os.environ.get("NYXURI_SHELL_CACHE_HOME", os.environ.get("CLAVIS_CACHE_HOME", cache / "clavis"))),
+            runtime_home=Path(os.environ.get("NYXURI_SHELL_RUNTIME_HOME", os.environ.get("CLAVIS_RUNTIME_HOME", runtime / "clavis"))),
         )
 
 
