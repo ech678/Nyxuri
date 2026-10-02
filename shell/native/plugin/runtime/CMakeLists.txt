@@ -15,10 +15,6 @@ qt_add_qml_module(ClavisRuntime
         src/backlight_state.cpp
         src/config_file_watch.h
         src/config_file_watch.cpp
-        src/clavis_build_info.h
-        src/clavis_build_info.cpp
-        src/clavis_file_system.h
-        src/clavis_file_system.cpp
         src/icon_theme_controller.h
         src/icon_theme_controller.cpp
     OUTPUT_DIRECTORY ${CLAVIS_QML_BUILD_DIR}/Clavis/Runtime

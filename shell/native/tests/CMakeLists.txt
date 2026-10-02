@@ -197,8 +197,6 @@ target_link_libraries(window_preview_protocol_tests PRIVATE ClavisWindowPreview 
 add_test(NAME window_preview_protocol_tests COMMAND window_preview_protocol_tests)
 endif()
 
-add_test(NAME release_contracts COMMAND ${Python3_EXECUTABLE} ${CLAVIS_SOURCE_ROOT}/tests/test_release.py)
-add_test(NAME installer_contracts COMMAND ${Python3_EXECUTABLE} ${CLAVIS_SOURCE_ROOT}/tests/test_installer.py)
 
 if(ENABLE_WEATHER)
 qt_add_executable(weather_location_tests weather_location_test.cpp)

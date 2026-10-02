@@ -11,10 +11,10 @@
 
 | 文件 | 上游原述内容 | 失效/冲突原因 |
 | --- | --- | --- |
-| [development.md](../docs/development.md) | 引导使用软链接将源码软链至 `~/.config/quickshell/clavis` | **违背物理隔离红线**：Nyxuri 严禁源码软链入 `~/.config`，必须使用原子复制 |
-| [installation.md](../docs/installation.md) | 引导运行 `scripts/install/arch.py` 全量安装上游环境与依赖 | **违背无未声明依赖**：不可运行上游安装器，依赖收敛按 P0 审计推进 |
-| [architecture/install-layout.md](../docs/architecture/install-layout.md) | 描述 Clavis 原版系统与用户目录打包布局 | Nyxuri Shell 目标标识为 `nyxuri-shell`，布局遵循 XDG 与宿主部署契约 |
-| [releasing.md](../docs/releasing.md) | 上游 release 打包与发布脚本流 | Nyxuri 有统一的发布流水线，不使用上游发布流程 |
+| [development.md](upstream-docs/development.md) | 引导使用软链接将源码软链至 `~/.config/quickshell/clavis` | **违背物理隔离红线**：Nyxuri 严禁源码软链入 `~/.config`，必须使用原子复制 |
+| [installation.md](upstream-docs/installation.md) | 引导运行 `scripts/install/arch.py` 全量安装上游环境与依赖 | **违背无未声明依赖**：不可运行上游安装器，依赖收敛按 P0 审计推进 |
+| [architecture/install-layout.md](upstream-docs/architecture/install-layout.md) | 描述 Clavis 原版系统与用户目录打包布局 | Nyxuri Shell 目标标识为 `nyxuri-shell`，布局遵循 XDG 与宿主部署契约 |
+| [releasing.md](upstream-docs/releasing.md) | 上游 release 打包与发布脚本流 | Nyxuri 有统一的发布流水线，不使用上游发布流程 |
 
 ---
 
@@ -24,18 +24,18 @@
 
 | 文件 | 核心价值与内容 | 后续参考阶段 |
 | --- | --- | --- |
-| [architecture/clipboard.md](../docs/architecture/clipboard.md) | 剪贴板历史监听、MIME 类型支持与持久化思路 | P3-04 (Clipboard 动作接入) |
-| [architecture/logical-metrics.md](../docs/architecture/logical-metrics.md) | 多显示器逻辑像素缩放、对齐与几何边界处理 | P1-02 / P3-01 (多屏适配) |
-| [architecture/cpu-power-security.md](../docs/architecture/cpu-power-security.md) | 电池、电源状态与空闲省电策略 | P3-01 (系统状态栏服务) |
-| [architecture/spotlight-search.md](../docs/architecture/spotlight-search.md) | 启动器搜索权重算法、.desktop 解析与缓存逻辑 | P1-02 (应用启动器接入) |
-| [architecture/config-isolation.md](../docs/architecture/config-isolation.md) | 原版配置文件隔离思考 | 架构参考 |
-| [architecture/runtime-compatibility.md](../docs/architecture/runtime-compatibility.md) | 运行时动态兼容性探测策略 | P2-05 (可选 native 降级) |
-| [lock-snapshot-crash.md](../docs/lock-snapshot-crash.md) | Wayland `ext-session-lock-v1` 锁屏崩溃恢复与快照保护 | P3-03 (锁屏安全状态机) |
-| [ipc.md](../docs/ipc.md) | 原版 Quickshell IPC socket 通信协议与动作格式 | P0-06 / P1-03 (动作路由) |
-| [sysmon-schema-v1.md](../docs/sysmon-schema-v1.md) | 硬件监视 JSON/JSONL 数据契约规格 | P3 (系统监控域，本期封存) |
-| [ui-guidelines.md](../docs/ui-guidelines.md) | Material 3 动效曲线、圆角 Token 与组件视觉规约 | 贯穿全阶段 (视觉守护红线) |
-| [wallpaper-backends.md](../docs/wallpaper-backends.md) | swww / hyprpaper 等壁纸后端优劣比对 | P4-02 (原生壁纸后端选型) |
-| [internationalization.md](../docs/internationalization.md) | 原版 qsTr / qsTranslate 双语翻译组织方式 | P3 / 宿主 i18n 对齐 |
+| [architecture/clipboard.md](upstream-docs/architecture/clipboard.md) | 剪贴板历史监听、MIME 类型支持与持久化思路 | P3-04 (Clipboard 动作接入) |
+| [architecture/logical-metrics.md](upstream-docs/architecture/logical-metrics.md) | 多显示器逻辑像素缩放、对齐与几何边界处理 | P1-02 / P3-01 (多屏适配) |
+| [architecture/cpu-power-security.md](upstream-docs/architecture/cpu-power-security.md) | 电池、电源状态与空闲省电策略 | P3-01 (系统状态栏服务) |
+| [architecture/spotlight-search.md](upstream-docs/architecture/spotlight-search.md) | 启动器搜索权重算法、.desktop 解析与缓存逻辑 | P1-02 (应用启动器接入) |
+| [architecture/config-isolation.md](upstream-docs/architecture/config-isolation.md) | 原版配置文件隔离思考 | 架构参考 |
+| [architecture/runtime-compatibility.md](upstream-docs/architecture/runtime-compatibility.md) | 运行时动态兼容性探测策略 | P2-05 (可选 native 降级) |
+| [lock-snapshot-crash.md](upstream-docs/lock-snapshot-crash.md) | Wayland `ext-session-lock-v1` 锁屏崩溃恢复与快照保护 | P3-03 (锁屏安全状态机) |
+| [ipc.md](upstream-docs/ipc.md) | 原版 Quickshell IPC socket 通信协议与动作格式 | P0-06 / P1-03 (动作路由) |
+| [sysmon-schema-v1.md](upstream-docs/sysmon-schema-v1.md) | 硬件监视 JSON/JSONL 数据契约规格 | P3 (系统监控域，本期封存) |
+| [ui-guidelines.md](upstream-docs/ui-guidelines.md) | Material 3 动效曲线、圆角 Token 与组件视觉规约 | 贯穿全阶段 (视觉守护红线) |
+| [wallpaper-backends.md](upstream-docs/wallpaper-backends.md) | swww / hyprpaper 等壁纸后端优劣比对 | P4-02 (原生壁纸后端选型) |
+| [internationalization.md](upstream-docs/internationalization.md) | 原版 qsTr / qsTranslate 双语翻译组织方式 | P3 / 宿主 i18n 对齐 |
 
 ---
 
@@ -43,8 +43,8 @@
 
 | 文件 | 内容概览 |
 | --- | --- |
-| [development-checks.md](../docs/development-checks.md) | 上游格式化、lint 与代码检查脚本说明 |
-| [system-monitor-material3-audit.md](../docs/system-monitor-material3-audit.md) | 监控组件 M3 适配审计记录 |
-| [repository-split-audit.md](../docs/repository-split-audit.md) | 上游仓库拆分历史与模块溯源记录 |
-| [shell-background-effects.md](../docs/shell-background-effects.md) | 背景模糊与合成器特效细节分析 |
-| [dependencies.md](../docs/dependencies.md) | 上游全量依赖表（注意：当前处于臃肿状态，待净化） |
+| [development-checks.md](upstream-docs/development-checks.md) | 上游格式化、lint 与代码检查脚本说明 |
+| [system-monitor-material3-audit.md](upstream-docs/system-monitor-material3-audit.md) | 监控组件 M3 适配审计记录 |
+| [repository-split-audit.md](upstream-docs/repository-split-audit.md) | 上游仓库拆分历史与模块溯源记录 |
+| [shell-background-effects.md](upstream-docs/shell-background-effects.md) | 背景模糊与合成器特效细节分析 |
+| [dependencies.md](upstream-docs/dependencies.md) | 上游全量依赖表（注意：当前处于臃肿状态，待净化） |
