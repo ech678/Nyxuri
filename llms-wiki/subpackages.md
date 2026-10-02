@@ -7,14 +7,14 @@
 
 ```
 nyxuri/
-├── __init__.py · __main__.py          包入口
+├── __init__.py · __main__.py          包入口；__main__ 对 pkg/clean 轻量分发，绕过 cli 全量导入
 ├── constants.py                        路径 / 包名 / ANSI 色阶常量
 ├── core.py                             Environment（run_mode、路径）、锁、日志、path 原语（remove_path/copy_path）、CLI 软链、PATH 遮蔽、timed_run
 ├── i18n.py                             msg()、语言选择、颜色与项目名替换
 ├── translations.toml                   双语文案（zh/en，test_i18n 校验字段、引用与参数）
 ├── tui.py                              Menu / CheckboxList / PresetSwitcher / 原语
 ├── network.py                          git pull / curl（带 connect-timeout + 容错）
-├── cli.py                              命令分发（COMMANDS dict）与进程入口
+├── cli.py                              命令分发（COMMANDS dict）与进程入口（重命令经 __main__ 落这里）
 ├── menus.py                            主菜单、子菜单与组件选择
 ├── workflows.py                        安装 / 更新编排、预检、完成反馈
 ├── deps.py                             依赖批次、AUR 引导、可选软件菜单（无全局探测缓存）

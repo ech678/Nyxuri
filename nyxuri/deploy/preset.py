@@ -15,7 +15,6 @@ empty, so a half-written state self-heals next run).
 
 import fnmatch
 import os
-import secrets
 import shutil
 import stat
 import subprocess
@@ -197,7 +196,7 @@ def write_active_preset(app: str, name: str) -> None:
     if not _is_safe_component(name):
         raise ValueError("invalid preset name")
     presets_fd = _open_presets_dir(create=True)
-    tmp = f".{app}.active.{secrets.token_hex(16)}"
+    tmp = f".{app}.active.{os.urandom(16).hex()}"
     try:
         try:
             current = os.stat(f"{app}.active", dir_fd=presets_fd, follow_symlinks=False)

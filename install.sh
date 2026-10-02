@@ -96,7 +96,7 @@ exec_python_engine() {
     cd -- "$target_dir" || return 1
     # -I -S blocks PYTHON* and sitecustomize startup injection; the fixed
     # launcher receives the validated tree and user arguments separately.
-    local python_launcher='import sys; target = sys.argv.pop(1); sys.path.insert(0, target); sys.argv[0] = "nyxuri"; from nyxuri.cli import main; main()'
+    local python_launcher='import sys; target = sys.argv.pop(1); sys.path.insert(0, target); sys.argv[0] = "nyxuri"; from nyxuri.__main__ import _run; sys.exit(_run())'
 
     # Only reconnect to /dev/tty if stdin is piped (e.g. curl | bash) AND no subcommand args are given
     if [ "$#" -eq 0 ] && [ ! -t 0 ] && [ -t 1 ] && [ -r /dev/tty ]; then

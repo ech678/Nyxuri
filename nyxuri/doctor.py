@@ -1,9 +1,7 @@
 """System health diagnostics (System Doctor) and diagnostic report exporter."""
 
-import concurrent.futures
 import datetime
 import os
-import platform
 import re
 import shutil
 import subprocess
@@ -407,6 +405,9 @@ def _run_cmd(cmd: List[str], timeout: int = 15):
 
 def generate_bug_report() -> Optional[Path]:
     """Generate a clean, standardized Markdown bug report aggregating system state."""
+    import concurrent.futures
+    import platform
+
     print(msg("generating_report"))
     env = get_env()
     env.state_dir.mkdir(parents=True, exist_ok=True)

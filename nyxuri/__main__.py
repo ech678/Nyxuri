@@ -1,10 +1,28 @@
 """Entry point for python3 -m nyxuri."""
 
+import os
 import sys
+
+_LIGHT_COMMANDS = {
+    "pkg": "nyxuri.pkg.cli",
+    "clean": "nyxuri.clean",
+}
+
+
+def _run_light(module_name: str, sub_args: list) -> int:
+    if os.geteuid() == 0 or os.getuid() == 0:
+        from nyxuri.i18n import msg
+        print(msg("err_root_denied"), file=sys.stderr)
+        return 1
+    import importlib
+    return importlib.import_module(module_name).main(sub_args)
 
 
 def _run() -> int:
+    args = sys.argv[1:]
     try:
+        if args and args[0] in _LIGHT_COMMANDS:
+            return _run_light(_LIGHT_COMMANDS[args[0]], args[1:])
         from nyxuri.cli import main
         main()
     except ModuleNotFoundError as e:
