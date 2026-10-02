@@ -13,7 +13,7 @@
 # 语法与编译检查
 python3 -m compileall nyxuri tests shell
 
-# 480 个宿主契约测试（含状态机与隔离环境单测）
+# 宿主契约与行为测试（含状态机、启动器和隔离 QML 测试）
 python3 -m unittest discover -s tests -q
 
 # 原生 CTest 契约测试集（23 个原生 IPC 与协议测试）
@@ -26,7 +26,7 @@ ctest --test-dir build/shell-test --output-on-failure
 
 ```bash
 # 带编译插件路径的隔离前台启动（详细日志）
-QML2_IMPORT_PATH=build/shell-test/qml qs --path ./shell --no-duplicate -v
+CLAVIS_BUILD_DIR="$PWD/build/shell-test" shell/bin/nyxuri-shell -v
 
 # 观察实时日志流（另一终端）
 qs log --path ./shell --follow
@@ -107,8 +107,43 @@ nyxuri shell set noctalia
 | 锁屏/多屏/通知 | 真实原版 Niri 会话验收 | offscreen 与普通窗口不能替代安全锁或通知服务互斥 |
 | 宿主命令/部署 | TempEnv 行为测试、参数数组断言、沙箱部署 | 不写真实 ~/.config，不通过 source matching 冒充行为测试 |
 
-上游 scripts/dev/check.sh 尚需确认宿主路径与变更选择；当前不能承诺一条 check 已覆盖全部。
+scripts/dev/check.sh 已适配宿主 Git：变更路径以 shell/ 为基准，宿主文件不会混入 Shell 检查。lint 的自动构建就绪判断只要求核心插件；全树包含封存组件，缺可选插件时须区分诊断，不能把核心启动通过写成全树导入通过。
 文档修改检查一致性、链接和空白；日常实现按风险选择上表验证，阶段完成时执行宿主
 规定的完整检查与受影响上游检查。工具缺失记录阻断，不安装大工具链来掩盖未验证行为。
 生成物写独立 build/staging，运行日志注明时间、实例与失败阶段，限制增长。
 P0 调查后在此补齐实际命令、路径和恢复步骤，撤下过期建议；未实现工具始终标为计划。
+
+## 目录迁移复核与可复现验证
+
+启动器构建路径：`CLAVIS_QML_BUILD_DIR` → `CLAVIS_BUILD_DIR/qml` → 仓库 `build/shell-test/qml` → `shell/build/qml` → 历史 `shell/native/build/qml`。显式目录不存在直接报错；自动发现路径追加到已有 QML 搜索路径后。系统已安装插件不需要构建目录。
+
+```bash
+# 干净默认构建（不构建封存插件）
+cmake -S shell -B /tmp/nyxuri-shell-default -G Ninja -DBUILD_TESTING=ON
+cmake --build /tmp/nyxuri-shell-default
+ctest --test-dir /tmp/nyxuri-shell-default --output-on-failure
+
+# 可选窗口预览与独立 probe
+cmake -S shell -B /tmp/nyxuri-shell-preview -G Ninja -DBUILD_TESTING=ON \
+  -DENABLE_WINDOWPREVIEW=ON -DCLAVIS_BUILD_WINDOW_PREVIEW_PROBE=ON
+cmake --build /tmp/nyxuri-shell-preview
+
+# 使用现有工具：临时 HOME、私有 D-Bus、无界面 Weston，测试完成后清理进程
+CLAVIS_TEST_QML_IMPORT_PATH=/tmp/nyxuri-shell-default/qml \
+  python3 -m unittest tests.test_shell_runtime -v
+```
+
+QML 行为测试验证调色热更新、非法文件保留最后有效值、字体回退、资源/透明度注入、设置搜索锚点注册与销毁、图标重载、无可选预览插件时 Dock/账户组件加载。缺 qs、Weston、D-Bus 或核心构建时明确跳过，不自动安装工具。
+
+复核还修正了 native probe 和翻译提取旧路径、快捷键面板相对 URL、会话/设置的翻译上下文。翻译更新在隔离副本执行；先核对全部消息与译文，再同步失配上下文和目录迁移后的源码位置。
+
+真实桌面的声音、锁屏认证、通知互斥、双 Shell 接管与像素级视觉仍须在用户会话验收；无界面预览和 CTest 不替代这些证据。
+
+### 本轮复核结果
+
+- 宿主完整测试：490 项通过，6 项跳过；新增的 8 项启动器/工具选择/QML 行为测试均执行通过。
+- 独立目录默认构建、窗口预览 + probe 构建、安装到临时 prefix、宿主沙箱部署通过；干净构建 CTest 为 22 项通过，matugen registry 因工具缺失跳过。
+- 改动的 65 个 QML 文件格式检查通过；真实 Quickshell VFS 下 qmllint 退出 0，但仍产生 1172 条 advisory 诊断，主要涉及动态 QObject 接口、类型收窄和 PanelWindow 工具类型信息。未将这些诊断标为全绿，运行时加载与交互另由行为测试验证。
+- 无界面 Weston 内嵌套 Niri：默认插件集完整 Shell 启动，启动器、会话面板、账户/主题设置页与命令模式的开关通过；没有致命 QML 加载、引用、赋值或绑定环错误；默认构建缺预览插件时有局部不可用警告。启用预览插件的构建也通过完整启动，快捷键面板和壁纸清除动作通过。私有环境没有 PipeWire，音频连接报环境错误；未据此验收真实音频能力。
+- 隔离翻译更新：每种语言 2637 条消息，上下文迁移后没有新增/删除消息或译文变化。同步两个失配上下文和迁移后的源码位置；每条位置均指向存在的文件。
+- 退出时结束测试进程组和临时 D-Bus/合成器；没有修改真实 HOME、启动持久服务、安装依赖或自动提交。

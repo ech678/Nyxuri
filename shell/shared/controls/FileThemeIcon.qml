@@ -1,8 +1,6 @@
 import QtQuick
 import QtQuick.Window
-import Quickshell
 import qs.shared.theme
-import qs.app.services
 
 Item {
     id: root
@@ -18,7 +16,7 @@ Item {
     // Animated consumers can keep the decoded image stable while scaling it.
     property real rasterSize: 0
     property bool transformed: false
-    readonly property int themeRevision: ThemeService.iconThemeRevision
+    readonly property int themeRevision: Resources.iconThemeRevision
     readonly property var candidates: {
         if (directory)
             return themeIcon && themeIcon !== "folder" ? [themeIcon, "folder"] : ["folder"];
@@ -28,6 +26,7 @@ Item {
         const names = [themeIcon || mime.replace("/", "-"), family + "-x-generic", "text-x-generic"];
         return names.filter((name, index) => name !== "" && names.indexOf(name) === index);
     }
+    property var resolvedSources: []
     property var attemptedSources: []
     property int candidateIndex: 0
     property int generation: 0
@@ -37,13 +36,8 @@ Item {
     implicitHeight: iconSize
 
     function nextSource() {
-        while (candidateIndex < candidates.length) {
-            const name = candidates[candidateIndex++];
-            // Check before resolving: the resolver's image-missing fallback
-            // must not short-circuit the remaining semantic candidates.
-            if (!Quickshell.hasThemeIcon(name))
-                continue;
-            const resolved = Quickshell.iconPath(name, true);
+        while (candidateIndex < resolvedSources.length) {
+            const resolved = resolvedSources[candidateIndex++];
             if (resolved !== "" && attemptedSources.indexOf(resolved) < 0) {
                 attemptedSources = attemptedSources.concat([resolved]);
                 artwork.iconSource = resolved;
@@ -60,11 +54,16 @@ Item {
         if (active)
             nextSource();
     }
+
+    function retryFailedSource(failedGeneration, failedSource) {
+        if (root.generation === failedGeneration && artwork.iconSource.toString() === failedSource)
+            root.nextSource();
+    }
     onActiveChanged: {
         if (initialized)
             reset();
     }
-    onCandidatesChanged: {
+    onResolvedSourcesChanged: {
         if (initialized)
             reset();
     }
@@ -99,10 +98,7 @@ Item {
                 return;
             const failedGeneration = root.generation;
             const failedSource = source.toString();
-            Qt.callLater(() => {
-                if (root.generation === failedGeneration && artwork.iconSource.toString() === failedSource)
-                    root.nextSource();
-            });
+            Qt.callLater(root.retryFailedSource, failedGeneration, failedSource);
         }
     }
     MaterialSymbol {

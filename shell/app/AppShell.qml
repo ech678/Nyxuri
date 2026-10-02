@@ -73,6 +73,8 @@ Item {
         ActionGateway.sessionLocker = sessionLocker;
         SpotlightCatalog.actionExecutor = root.executeSearchAction;
         SpotlightCatalog.keystoneAvailable = false;
+        ThemeService.reloadColors();
+        FontService.refresh();
         I18nService.initialize();
         SystemIdentityService.initialize();
     }
@@ -114,7 +116,7 @@ Item {
 
     Loader {
         active: ShortcutMapService.visible
-        source: "modules/settings/ShortcutMap.qml"
+        source: Qt.resolvedUrl("../modules/settings/ShortcutMap.qml")
         onLoaded: {
             if (item) {
                 item.targetScreen = ShortcutMapService.targetScreen;
@@ -127,14 +129,14 @@ Item {
     IpcHandler {
         target: "power-menu"
         function open(): void {
-            ActionGateway.requestSessionOpen();
-        }
+        ActionGateway.requestSessionOpen();
+    }
         function close(): void {
-            ActionGateway.requestSessionClose();
-        }
+                              ActionGateway.requestSessionClose();
+                          }
         function toggle(): void {
-            ActionGateway.requestSessionToggle();
-        }
+        ActionGateway.requestSessionToggle();
+    }
     }
 
         IpcHandler {

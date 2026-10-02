@@ -812,10 +812,10 @@ Singleton {
                                                              "customColor": ""
                                                          })
                                          })
-    readonly property string uiFontFamily: Fonts.configuredUi || Fonts.defaultUi
-    readonly property string monoFontFamily: Fonts.configuredMono || Fonts.defaultMono
-    readonly property string numericFontFamily: Fonts.configuredNumeric || Fonts.defaultNumeric
-    readonly property string expressiveFontFamily: Fonts.configuredExpressive || Fonts.bundledFamilyName
+    readonly property string uiFontFamily: FontService.configuredUi || FontService.defaultUi
+    readonly property string monoFontFamily: FontService.configuredMono || FontService.defaultMono
+    readonly property string numericFontFamily: FontService.configuredNumeric || FontService.defaultNumeric
+    readonly property string expressiveFontFamily: FontService.configuredExpressive || Fonts.bundledFamilyName
     property real shellBackgroundOpacity: 1
     property bool shellBlurEnabled: false
     property bool shellBlurXray: true
@@ -1442,7 +1442,7 @@ Singleton {
         if (!FontService.containsFamily(value))
             return false;
 
-        if (!Fonts.setConfiguredFamily(role, value))
+        if (!FontService.setConfiguredFamily(role, value))
             return false;
 
         root.save();
@@ -2001,7 +2001,7 @@ Singleton {
         root.cursorHideAfterInactiveMs = root.normalizedBoundedInt(theme.cursorHideAfterInactiveMs, 0, 0,
                                                                    5000);
         root.iconTheme = theme.iconTheme || "";
-        Fonts.setConfiguredFamilies(fonts.ui, fonts.mono, fonts.numeric, fonts.expressive);
+        FontService.setConfiguredFamilies(fonts.ui, fonts.mono, fonts.numeric, fonts.expressive);
         root.shellBackgroundOpacity = normalizedBoundedReal(effects.shellBackgroundOpacity, 1, 0, 1);
         root.shellBlurEnabled = typeof effects.shellBlurEnabled === "boolean" ? effects.shellBlurEnabled :
                                                                                 false;

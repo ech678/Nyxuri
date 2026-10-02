@@ -10,7 +10,7 @@
     "app",
     "modules",
     "shared",
-    "native",
+    "bin",
     "shell.qml",
     "assets",
     "scripts",

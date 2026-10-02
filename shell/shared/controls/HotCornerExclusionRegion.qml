@@ -1,6 +1,5 @@
 import Quickshell
 import qs.shared.theme
-import qs.app.services
 
 Region {
     id: root
@@ -11,10 +10,11 @@ Region {
     property bool bottomEdge: true
     property bool leftEdge: true
     property bool rightEdge: true
-    readonly property bool active: NiriConfigService.ready("hot-corners")
+    property bool active: false
+    property var cornerActions: ({})
 
     function cornerSize(corner, onEdge) {
-        return active && onEdge && PersonalizationConfig.hotCornerActions[corner] !== "disabled"
+        return active && onEdge && root.cornerActions[corner] && root.cornerActions[corner] !== "disabled"
                 ? Metrics.hotCornerSize : 0;
     }
 

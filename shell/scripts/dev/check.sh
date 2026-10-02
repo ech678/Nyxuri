@@ -124,7 +124,8 @@ if ${native}; then
     require cmake cmake
     require ninja ninja
     step configure cmake -S "${repo_root}" -B "${build_root}" -G Ninja \
-        -DCMAKE_BUILD_TYPE="${CLAVIS_BUILD_TYPE:-Debug}" -DBUILD_TESTING=ON
+        -DCMAKE_BUILD_TYPE="${CLAVIS_BUILD_TYPE:-Debug}" -DBUILD_TESTING=ON \
+        -DCLAVIS_QML_BUILD_DIR="${CLAVIS_QML_BUILD_DIR:-${build_root}/qml}"
     step build cmake --build "${build_root}"
     step tests ctest --test-dir "${build_root}" --output-on-failure --no-tests=error
 fi

@@ -1,10 +1,9 @@
 pragma Singleton
 import QtQuick
 import qs.shared.theme
-import qs.app
 
 QtObject {
-    readonly property string basePath: Paths.iconsDir + "/"
+    readonly property string basePath: Resources.iconsRoot
 
     // 注册图标值
     property string previous: basePath + "previous.svg"

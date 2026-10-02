@@ -16,27 +16,17 @@ Item {
     property bool valueAvailable: true
     property string accessibilityName: ""
     property int shapeId: MaterialShape.Cookie4Sided
-    property color shapeColor:
-        Appearance.colors.colPrimaryContainer
-    property color liquidColor: Appearance.applyAlpha(
-        Appearance.colors.colPrimary,
-        0.62
-    )
-    property color contentColor:
-        Appearance.colors.colOnPrimaryContainer
-    readonly property real targetLevel: root.valueAvailable
-        ? Math.max(0, Math.min(1, root.level))
-        : 0
+    property color shapeColor: Appearance.colors.colPrimaryContainer
+    property color liquidColor: Appearance.applyAlpha(Appearance.colors.colPrimary, 0.62)
+    property color contentColor: Appearance.colors.colOnPrimaryContainer
+    readonly property real targetLevel: root.valueAvailable ? Math.max(0, Math.min(1, root.level)) : 0
     property real animatedLevel: targetLevel
     readonly property string metricFontFamily: Fonts.expressive
-    readonly property var metricFontAxes:
-        Fonts.familyAvailable(Fonts.bundledFamilyName)
-            && Fonts.expressive === Fonts.bundledFamilyName
-            ? ({
-                "ROND": 25,
-                "wdth": 62
-            })
-            : ({})
+    readonly property var metricFontAxes: Fonts.bundledFamilyAvailable && Fonts.expressive
+                                          === Fonts.bundledFamilyName ? ({
+                                                                             "ROND": 25,
+                                                                             "wdth": 62
+                                                                         }) : ({})
 
     Accessible.name: root.accessibilityName
 
@@ -44,8 +34,7 @@ Item {
         NumberAnimation {
             duration: Appearance.animation.expressiveSlowSpatial.duration
             easing.type: Appearance.animation.expressiveSlowSpatial.type
-            easing.bezierCurve:
-                Appearance.animation.expressiveSlowSpatial.bezierCurve
+            easing.bezierCurve: Appearance.animation.expressiveSlowSpatial.bezierCurve
         }
     }
 
@@ -53,11 +42,7 @@ Item {
         id: shapeFrame
 
         anchors.centerIn: parent
-        width: Math.max(
-            72,
-            Math.min(parent.width, parent.height)
-                - Appearance.spacing.small
-        )
+        width: Math.max(72, Math.min(parent.width, parent.height) - Appearance.spacing.small)
         height: width
 
         MaterialShape {
@@ -91,10 +76,7 @@ Item {
                     right: parent.right
                     bottom: parent.bottom
                 }
-                height: Math.min(
-                    parent.height + 8,
-                    parent.height * root.animatedLevel + 8
-                )
+                height: Math.min(parent.height + 8, parent.height * root.animatedLevel + 8)
                 visible: root.animatedLevel > 0
                 preferredRendererType: Shape.CurveRenderer
 
@@ -109,31 +91,19 @@ Item {
                     PathSvg {
                         path: {
                             const width = shapeFrame.width;
-                            const height = Math.max(
-                                8,
-                                liquidFill.height
-                            );
-                            const amplitude = Math.min(
-                                3.5,
-                                shapeFrame.height * 0.035
-                            );
+                            const height = Math.max(8, liquidFill.height);
+                            const amplitude = Math.min(3.5, shapeFrame.height * 0.035);
                             const waveLength = width / 4;
                             const half = waveLength / 2;
                             let result = "M 0," + amplitude + " ";
                             for (let index = 0; index < 4; index += 1) {
                                 const x = index * waveLength;
-                                result += "Q "
-                                    + (x + half / 2) + ",0 "
-                                    + (x + half) + "," + amplitude + " ";
-                                result += "Q "
-                                    + (x + half + half / 2) + ","
-                                    + (amplitude * 2) + " "
-                                    + (x + waveLength) + ","
-                                    + amplitude + " ";
+                                result += "Q " + (x + half / 2) + ",0 " + (x + half) + "," + amplitude + " ";
+                                result += "Q " + (x + half + half / 2) + "," + (amplitude * 2) + " " + (x
+                                                                                                        + waveLength)
+                                        + "," + amplitude + " ";
                             }
-                            return result
-                                + "L " + width + "," + height
-                                + " L 0," + height + " Z";
+                            return result + "L " + width + "," + height + " L 0," + height + " Z";
                         }
                     }
                 }

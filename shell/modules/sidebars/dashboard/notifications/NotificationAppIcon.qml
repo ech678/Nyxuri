@@ -1,4 +1,7 @@
 import QtQuick
+import qs.app.services
 import qs.shared.controls
 
-NotificationVisual {}
+NotificationVisual {
+    resolvedAppIcon: ThemeService.resolveIcon(appIcon)
+}

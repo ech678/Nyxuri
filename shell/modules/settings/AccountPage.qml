@@ -1,6 +1,8 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import qs.modules.wallpaper
+import "../wallpaper/WallpaperSource.js" as WallpaperSource
 import QtQuick.Controls
 import QtQuick.Effects
 import QtQuick.Layouts
@@ -206,6 +208,12 @@ Item {
             spacing: Appearance.spacing.large
 
             AccountProfileHeader {
+                id: accountHeader
+                wallpaperIsImage: WallpaperSource.isImage(wallpaperPath)
+                wallpaperComponent: ProfileWallpaper {
+                    sourcePath: accountHeader.wallpaperPath
+                    previewPath: accountHeader.previewWallpaperPath
+                }
                 width: parent.width
                 wallpaperPath: bannerEditor.source
                 previewWallpaperPath: bannerEditor.previewSource

@@ -1,15 +1,14 @@
 import QtQuick
 import Qt5Compat.GraphicalEffects
-import Quickshell
 import Quickshell.Services.Notifications
 import qs.shared.controls
 import qs.shared.theme
-import qs.app.services
 
 Item {
     id: root
 
     property string appIcon: ""
+    property url resolvedAppIcon: ""
     property string image: ""
     property string summary: ""
     property var urgency: NotificationUrgency.Normal
@@ -21,7 +20,8 @@ Item {
     readonly property bool appIconIsFile: appIcon.startsWith("file://") || appIcon.startsWith("/")
     readonly property string imageSource: normalizeSource(image)
     readonly property string appIconSource: appIcon === "" ? "" : appIconIsFile ? normalizeSource(appIcon) :
-                                                                                  resolvedIconSource(appIcon)
+                                                                                  root.resolvedAppIcon.toString(
+                                                                                      )
     readonly property bool hasImage: imageSource !== "" && !image.startsWith("icon:")
     readonly property bool hasAppIcon: appIconSource !== ""
     readonly property bool showImage: hasImage && imageLoaded && !imageLoadFailed
@@ -33,12 +33,6 @@ Item {
             return "";
 
         return source.startsWith("/") ? "file://" + source : source;
-    }
-
-    function resolvedIconSource(iconName) {
-        const revision = ThemeService.iconThemeRevision;
-        const iconPath = Quickshell.iconPath(iconName, "image-missing");
-        return iconPath && iconPath !== "" ? iconPath : "image://icon/" + iconName;
     }
 
     implicitWidth: 44

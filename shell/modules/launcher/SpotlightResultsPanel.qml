@@ -313,6 +313,7 @@ Item {
                         spacing: 14
 
                         FileThemeIcon {
+                            resolvedSources: ThemeService.resolveFileIcons(candidates)
                             active: root.fileMode && !!appDelegate.modelData.file
                             visible: active
                             Layout.preferredWidth: root.style.resultIconSize

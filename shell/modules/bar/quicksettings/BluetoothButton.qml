@@ -1,10 +1,12 @@
 import QtQuick
+import qs.app
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
 
 BarLabelButton {
     id: root
+    barEdge: PersonalizationConfig.barPosition
 
     property var screen: null
     readonly property bool active: WidgetState.quickSettingsOpen && WidgetState.quickSettingsView

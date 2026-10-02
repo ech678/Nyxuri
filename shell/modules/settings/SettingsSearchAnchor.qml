@@ -1,7 +1,7 @@
 import QtQuick
+import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
-import qs.modules.settings
 
 // An explicit declaration attached to the actual section. The build consumes
 // only this JSON literal; its ID is also the runtime registration key.
@@ -81,19 +81,30 @@ Item {
             }
         }
     }
-    Rectangle {
+    Item {
         parent: root.target
-        anchors.fill: parent
-        radius: Metrics.cornerM
-        color: Appearance.applyAlpha(Appearance.colors.colPrimary, 0.10)
-        border.width: 1
-        border.color: Appearance.applyAlpha(Appearance.colors.colPrimary, 0.38)
-        opacity: root.highlightOpacity
-        visible: opacity > 0
+        // A layout may own target's children. Give its overlay container no
+        // layout extent, and draw relative to target without layout anchors.
+        width: 0
+        height: 0
+        Layout.maximumWidth: 0
+        Layout.maximumHeight: 0
         z: 100
-        Behavior on opacity {
-            NumberAnimation {
-                duration: Appearance.animation.expressiveDefaultEffects.duration
+        Rectangle {
+            x: -parent.x
+            y: -parent.y
+            width: root.target ? root.target.width : 0
+            height: root.target ? root.target.height : 0
+            radius: Metrics.cornerM
+            color: Appearance.applyAlpha(Appearance.colors.colPrimary, 0.10)
+            border.width: 1
+            border.color: Appearance.applyAlpha(Appearance.colors.colPrimary, 0.38)
+            opacity: root.highlightOpacity
+            visible: opacity > 0
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: Appearance.animation.expressiveDefaultEffects.duration
+                }
             }
         }
     }

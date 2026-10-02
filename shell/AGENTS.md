@@ -5,7 +5,7 @@
 本文件适用于 `shell/`，继承仓库根目录 [AGENTS.md](../AGENTS.md) 的约束。
 Nyxuri Shell 以完整 Clavis 母体为起点，就地净化、重构；当前先完成干净启动与规整架构，
 为未来功能移植建立可持续的底座。产品名 **Nyxuri Shell**，程序/配置标识 **nyxuri-shell**。
-开发顺序是精神与原则 → 详细启动及整理计划 → 开发；当前只补计划，不实施运行代码。
+开发顺序是精神与原则 → 详细启动及整理计划 → 开发；按已确认的阶段计划实施与验收。
 这不是必须采用两级程序启动架构的要求，候选实现不能提前变成契约。
 
 - 设计依据：[issue #111](https://github.com/ech678/Nyxuri/issues/111)。宣言精神已融入本文件
@@ -14,7 +14,7 @@ Nyxuri Shell 以完整 Clavis 母体为起点，就地净化、重构；当前�
 - 母体版本、审计证据和未验证事项见 [audit](wiki/audit.md)；
   接口设计参考 [blueprint](wiki/blueprint.md)，实际工具与未来调试流程见
   [development](wiki/development.md)。详细阶段以本目录 ROADMAP 为准。
-- `docs/` 中的 Clavis 文档属于上游参考，不能覆盖 Nyxuri 契约；上游安装命令、软链
+- `wiki/upstream-docs/` 中的 Clavis 文档属于上游参考，不能覆盖 Nyxuri 契约；上游安装命令、软链
   开发入口、key-cli 工作流不自动成为本项目要求。
 
 ## 设计精神
@@ -104,7 +104,7 @@ UI 只呈现和响应输入；桌面意图经 Action Gateway 执行。命令、�
   native 的 qmldir、qmltypes 和 plugin 由 CMake/Qt 生成，不手改生成物或用户安装目录。
 - 静态 import 不因 Loader inactive 自动变成可选。缺插件路径必须用真实独立组件
   验证隔离；默认构建不 require 封存依赖。
-- `shared/` 严格由 `theme/`（设计 Token）、`controls/`（原子控件）、`compositor/`（合成器特效）与 `utils/`（纯数学/工具函数）构成，严守无 IO、无进程副作用铁律。环境与路径归入 `app/Paths.qml`，全局常驻服务收敛至 `app/services/`。
+- `shared/` 由 `theme/`（设计 Token 与注入数据）、`controls/`（原子控件与区域几何）和 `utils/`（纯计算）构成，不读取环境、发现系统字体/图标或监听文件。主题 IO、字体加载与发现、图标解析归 `app/services/`，路径归 `app/Paths.qml`；`Resources` 与 `Fonts` 仅承载 app 注入的展示数据。设置搜索锚点归 settings，面板协调状态归 app；共享控件的 Connections 只能观察注入对象和自身几何。
 - 删除内嵌字体时同步处理 family、时钟、图标与排版回退，禁止启动时联网下载。
 - UI 文案沿用 qsTr/qsTranslate、占位符与 Qt numerus；修改时同步相关翻译。
   语言切换不改变地区、单位或用户数据。宿主文案遵循 writing-voice 与 i18n 契约。
@@ -123,7 +123,7 @@ UI 只呈现和响应输入；桌面意图经 Action Gateway 执行。命令、�
   外部命令断言参数数组形状，禁止写真实 ~/.config。
 - 生命周期：用可观测窗口、进程、连接、请求和多轮开关验证；禁止用 grep/regex 匹配
   Loader、property、目录或对象层级来假装行为测试。静态审计可以搜索源码，但不替代测试。
-- 上游 scripts/dev/check.sh 尚需适配宿主 Git 路径与导入基线；不得把未覆盖或工具阻断
+- scripts/dev/check.sh 按 Shell 内相对路径选择变更；QML lint 检查核心 native 模块就绪，可选插件缺失须注明；不得把未覆盖或工具阻断
   报成成功。工具缺失只诊断一次，不顺手安装、重排全库或引入大工具链。
 
 完成时说明真实改动、验证结果和阻断；架构/接口/命令变更同步对应 Wiki 与 ROADMAP。

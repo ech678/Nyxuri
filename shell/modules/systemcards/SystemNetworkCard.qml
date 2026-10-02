@@ -92,12 +92,12 @@ Item {
         }
         return Math.max(1, maximum * 1.2);
     }
-    readonly property var expressiveBoldAxes: Fonts.familyAvailable(Fonts.bundledFamilyName)
-                                              && Fonts.expressive === Fonts.bundledFamilyName ? ({
-                                                                                                     "GRAD": 100,
-                                                                                                     "ROND": 35,
-                                                                                                     "wdth": 85
-                                                                                                 }) : ({})
+    readonly property var expressiveBoldAxes: Fonts.bundledFamilyAvailable && Fonts.expressive
+                                              === Fonts.bundledFamilyName ? ({
+                                                                                 "GRAD": 100,
+                                                                                 "ROND": 35,
+                                                                                 "wdth": 85
+                                                                             }) : ({})
 
     signal interfaceSelected(string networkInterface)
 

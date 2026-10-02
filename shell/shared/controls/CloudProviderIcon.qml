@@ -1,6 +1,5 @@
 import QtQuick
 import qs.shared.theme
-import qs.app
 import qs.shared.controls
 
 Item {
@@ -14,13 +13,15 @@ Item {
     readonly property string normalizedName: remoteName.toLowerCase()
     readonly property string logoPath: {
         if (normalizedType === "drive")
-            return Paths.rcloneIconsDir + "/logos--google-drive.svg";
+            return Resources.cloudIconsRoot + "logos--google-drive.svg";
 
         if (normalizedType === "onedrive")
-            return Paths.rcloneIconsDir + "/logos--microsoft-onedrive.svg";
+            return Resources.cloudIconsRoot + "logos--microsoft-onedrive.svg";
 
         if (normalizedType === "s3")
-            return normalizedName.indexOf("r2") >= 0 || normalizedName.indexOf("cloudflare") >= 0 ? Paths.rcloneIconsDir + "/logos--cloudflare-icon.svg" : Paths.rcloneIconsDir + "/logos--aws-s3.svg";
+            return normalizedName.indexOf("r2") >= 0 || normalizedName.indexOf("cloudflare") >= 0
+                    ? Resources.cloudIconsRoot + "logos--cloudflare-icon.svg" : Resources.cloudIconsRoot
+                      + "logos--aws-s3.svg";
 
         const logos = {
             "azureblob": "logos--microsoft-azure.svg",
@@ -50,7 +51,7 @@ Item {
             "zoho": "logos--zoho.svg"
         };
         if (logos[normalizedType])
-            return Paths.rcloneIconsDir + "/" + logos[normalizedType];
+            return Resources.cloudIconsRoot + "" + logos[normalizedType];
 
         return "";
     }
@@ -99,7 +100,7 @@ Item {
         anchors.centerIn: parent
         width: root.iconSize
         height: root.iconSize
-        source: root.logoPath !== "" ? Paths.fileUrl(root.logoPath) : ""
+        source: root.logoPath !== "" ? root.logoPath : ""
         fillMode: Image.PreserveAspectFit
         asynchronous: true
         visible: root.logoPath !== ""
@@ -113,5 +114,4 @@ Item {
         fill: 1
         color: root.symbolColor
     }
-
 }

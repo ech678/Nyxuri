@@ -5,7 +5,7 @@ clavis_files() {
     if [[ ${scope} == all ]]; then
         git ls-files --cached --others --exclude-standard -z
     else
-        git diff --name-only -z HEAD
+        git diff --relative --name-only -z HEAD -- .
         git ls-files --others --exclude-standard -z
     fi | sort -zu
 }

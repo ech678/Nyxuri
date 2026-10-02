@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import qs.shared.theme
-import qs.app.services
 
 Dialog {
     id: root
@@ -45,8 +44,8 @@ Dialog {
             anchors.fill: parent
             visible: root.visible
             radius: Appearance.rounding.extraLarge
-            color: BlurService.backgroundColor(
-                Appearance.m3colors.m3surfaceContainerHigh)
+            color: Appearance.applyAlpha(Appearance.m3colors.m3surfaceContainerHigh,
+                                         Appearance.backgroundOpacity)
             antialiasing: true
         }
     }
@@ -55,8 +54,7 @@ Dialog {
         id: contentFrame
 
         implicitWidth: root.implicitWidth
-        implicitHeight: contentColumn.implicitHeight
-            + root.contentPadding * 2
+        implicitHeight: contentColumn.implicitHeight + root.contentPadding * 2
 
         ColumnLayout {
             id: contentColumn

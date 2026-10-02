@@ -1,13 +1,11 @@
 import QtQuick
 import QtQuick.Effects
 import qs.shared.theme
-import qs.app.services
 
 Item {
     id: root
 
-    property color fillColor: BlurService.backgroundColor(
-        Appearance.colors.colLayer0)
+    property color fillColor: Appearance.applyAlpha(Appearance.colors.colLayer0, Appearance.backgroundOpacity)
     property real cornerRadius: height / 2
     property real shadowPadding: Sizes.barShadowBuffer
     readonly property string contextualEdge: findContextEdge(root.parent)
@@ -35,13 +33,10 @@ Item {
         anchors.fill: sourceItem
         source: sourceItem
         shadowEnabled: true
-        shadowColor: Appearance.applyAlpha(
-            Appearance.colors.colShadow, 0.4)
+        shadowColor: Appearance.applyAlpha(Appearance.colors.colShadow, 0.4)
         shadowBlur: 0.8
-        shadowVerticalOffset: root.contextualEdge === "top" ? 3
-            : root.contextualEdge === "bottom" ? -3 : 0
-        shadowHorizontalOffset: root.contextualEdge === "left" ? 3
-            : root.contextualEdge === "right" ? -3 : 0
+        shadowVerticalOffset: root.contextualEdge === "top" ? 3 : root.contextualEdge === "bottom" ? -3 : 0
+        shadowHorizontalOffset: root.contextualEdge === "left" ? 3 : root.contextualEdge === "right" ? -3 : 0
 
         // Let MultiEffect derive the source texture padding from its blur.
         // A manually expanded paddingRect caused the source itself to vanish

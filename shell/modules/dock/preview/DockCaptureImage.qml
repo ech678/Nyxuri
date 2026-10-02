@@ -1,0 +1,3 @@
+import Clavis.WindowPreview
+
+CaptureImage {}

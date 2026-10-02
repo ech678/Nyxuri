@@ -71,6 +71,8 @@ PanelWindow {
         }
 
         HotCornerExclusionRegion {
+            active: NiriConfigService.ready("hot-corners")
+            cornerActions: PersonalizationConfig.hotCornerActions
             surfaceWidth: root.width
             surfaceHeight: root.height
             topEdge: axis.isTop

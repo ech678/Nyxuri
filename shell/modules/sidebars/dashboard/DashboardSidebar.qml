@@ -1,4 +1,5 @@
 import QtQuick
+import qs.app
 import qs.modules.settings
 import qs.modules.filepicker
 import qs.shared.theme

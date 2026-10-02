@@ -15,7 +15,7 @@ Rectangle {
     readonly property var accessibleWeekdayNames: [qsTr("Sunday"), qsTr("Monday"), qsTr("Tuesday"), qsTr("Wednesday"),
         qsTr("Thursday"), qsTr("Friday"), qsTr("Saturday")]
     readonly property string calendarFamily: Fonts.expressive
-    readonly property var calendarAxes: Fonts.familyAvailable(Fonts.bundledFamilyName) && Fonts.expressive
+    readonly property var calendarAxes: Fonts.bundledFamilyAvailable && Fonts.expressive
                                         === Fonts.bundledFamilyName ? ({
                                                                            "ROND": 45,
                                                                            "wdth": 78

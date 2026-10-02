@@ -81,6 +81,7 @@ Item {
                 spacing: 12
 
                 NotificationVisual {
+                    resolvedAppIcon: ThemeService.resolveIcon(appIcon)
                     Layout.preferredWidth: 44
                     Layout.preferredHeight: 44
                     Layout.alignment: Qt.AlignTop

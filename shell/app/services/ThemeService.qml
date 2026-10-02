@@ -11,6 +11,112 @@ import qs.app
 Singleton {
     id: root
 
+    readonly property string colorsPath: Paths.generatedHome + "/clavis/colors.json"
+    property string paletteError: ""
+
+    function snakeToM3(key) {
+        const parts = key.split("_");
+        let result = "m3" + parts[0];
+        for (let i = 1; i < parts.length; i += 1)
+            result += parts[i].charAt(0).toUpperCase() + parts[i].slice(1);
+        return result;
+    }
+
+    function applyGeneratedColors(text) {
+        const generatedColors = JSON.parse(text);
+        if (!generatedColors || typeof generatedColors !== "object" || Array.isArray(generatedColors))
+            throw new Error("Expected a palette object");
+        const updates = [];
+        for (let key in generatedColors) {
+            const propertyName = root.snakeToM3(key);
+            if (propertyName in Appearance.m3colors && propertyName !== "darkmode") {
+                if (typeof generatedColors[key] !== "string" || !Qt.color(generatedColors[key]).valid)
+                    throw new Error("Invalid palette color: " + key);
+                updates.push([propertyName, Qt.color(generatedColors[key])]);
+            }
+        }
+        for (const update of updates)
+            Appearance.m3colors[update[0]] = update[1];
+    }
+
+    function reloadColors() {
+        colorFile.reload();
+    }
+
+    FileView {
+        id: colorFile
+        path: root.colorsPath
+        watchChanges: true
+        onLoaded: {
+            try {
+                root.applyGeneratedColors(colorFile.text());
+                root.paletteError = "";
+            } catch (error) {
+                root.paletteError = String(error);
+                console.warn("Unable to apply palette:", error);
+            }
+        }
+        onFileChanged: root.reloadColors()
+        onLoadFailed: error => {
+            root.paletteError = error === FileViewError.FileNotFound ? "" : FileViewError.toString(error);
+        }
+    }
+
+    Binding {
+        target: Appearance
+        property: "backgroundOpacity"
+        value: PersonalizationConfig.shellBackgroundOpacity
+    }
+    Binding {
+        target: Resources
+        property: "iconsRoot"
+        value: Paths.fileUrl(Paths.iconsDir + "/")
+    }
+    Binding {
+        target: Resources
+        property: "cloudIconsRoot"
+        value: Paths.fileUrl(Paths.rcloneIconsDir + "/")
+    }
+    Binding {
+        target: Resources
+        property: "meteoconsRoot"
+        value: Paths.fileUrl(Paths.meteoconsDir + "/")
+    }
+    Binding {
+        target: Resources
+        property: "iconThemeRevision"
+        value: root.iconThemeRevision
+    }
+
+    function resolveIcon(name) {
+        const revision = root.iconThemeRevision;
+        if (!name)
+            return "";
+        return Quickshell.iconPath(name, "image-missing") || "image://icon/" + name;
+    }
+
+    function resolveFileIcons(candidates) {
+        const revision = root.iconThemeRevision;
+        const sources = [];
+        for (const name of candidates) {
+            if (!Quickshell.hasThemeIcon(name))
+                continue;
+            const source = Quickshell.iconPath(name, true);
+            if (source && sources.indexOf(source) === -1)
+                sources.push(source);
+        }
+        return sources;
+    }
+
+    function mediaIcon(player) {
+        const revision = root.iconThemeRevision;
+        if (!player)
+            return "";
+        const entry = DesktopEntries.heuristicLookup(player.desktopEntry || "")
+              || DesktopEntries.heuristicLookup(player.identity || "");
+        return entry && entry.icon ? Quickshell.iconPath(entry.icon, true) : "";
+    }
+
     property string generationError: ""
     property string externalGenerationError: ""
     property string generationTemplateId: ""
@@ -359,7 +465,7 @@ Singleton {
                         return;
                     if (status.event === "core-ready") {
                         root.coreReloaded = true;
-                        Appearance.reloadColors();
+                        root.reloadColors();
                     } else if (status.event === "external-error") {
                         root.externalGenerationError += (root.externalGenerationError ? "\n" : "")
                                 + status.id + ": " + status.error;
@@ -375,7 +481,7 @@ Singleton {
             root.generating = false;
             root.generationTemplateId = "";
             if ((exitCode === 0 || exitCode === 3) && !root.coreReloaded)
-                Appearance.reloadColors();
+                root.reloadColors();
             if (exitCode !== 0 && exitCode !== 3)
                 root.generationError = root.generationError || generationStderr.text.trim() || qsTr(
                             "Failed to generate Matugen colors");

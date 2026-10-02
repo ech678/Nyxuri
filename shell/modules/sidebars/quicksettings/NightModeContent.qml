@@ -1,4 +1,5 @@
 import QtQuick
+import qs.app
 import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls

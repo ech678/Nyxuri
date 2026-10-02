@@ -1,6 +1,7 @@
 pragma Singleton
 
 import QtQuick
+import qs.app
 import Quickshell
 import Clavis.Niri
 import qs.shared.theme

@@ -35,7 +35,7 @@ TopBarPill {
                 anchors.centerIn: parent
                 width: Sizes.barIconSize
                 height: Sizes.barIconSize
-                player: root.player
+                iconSource: ThemeService.mediaIcon(root.player)
             }
         }
 

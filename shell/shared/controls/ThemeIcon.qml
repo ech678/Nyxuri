@@ -1,12 +1,16 @@
 import QtQuick
-import qs.app.services
+import qs.shared.theme
 
 Image {
     id: root
 
     property url iconSource: ""
-    readonly property int themeRevision: ThemeService.iconThemeRevision
+    readonly property int themeRevision: Resources.iconThemeRevision
     property bool refreshing: false
+
+    function finishRefresh() {
+        refreshing = false;
+    }
 
     source: refreshing ? "" : iconSource
     // Quickshell's image://icon URL is unchanged when QIcon's theme changes.
@@ -16,6 +20,6 @@ Image {
         if (!iconSource.toString().startsWith("image://icon/"))
             return;
         refreshing = true;
-        Qt.callLater(() => root.refreshing = false);
+        Qt.callLater(root.finishRefresh);
     }
 }

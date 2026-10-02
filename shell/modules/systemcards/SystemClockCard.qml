@@ -16,10 +16,10 @@ Item {
     readonly property string minuteText: String(currentTime.getMinutes()).padStart(2, "0")
     readonly property string periodText: hour24 >= 12 ? "PM" : "AM"
     readonly property string clockFamily: Fonts.systemClock
-    readonly property var clockAxes: Fonts.familyAvailable(Fonts.systemClock) ? ({
-                                                                                     "ROND": 25,
-                                                                                     "wdth": 30
-                                                                                 }) : ({})
+    readonly property var clockAxes: Fonts.bundledFamilyAvailable ? ({
+                                                                         "ROND": 25,
+                                                                         "wdth": 30
+                                                                     }) : ({})
     readonly property var dayNames: [qsTr("Sunday"), qsTr("Monday"), qsTr("Tuesday"), qsTr("Wednesday"), qsTr("Thursday"),
         qsTr("Friday"), qsTr("Saturday")]
     readonly property var monthNames: [qsTr("January"), qsTr("February"), qsTr("March"), qsTr("April"), qsTr(

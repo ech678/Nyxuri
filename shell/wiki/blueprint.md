@@ -14,7 +14,7 @@
 
 运行代码最终分为 app（装配/环境/协调）、modules（自治功能域）、shared（纯控件/
 动画/计算）、native（必要原生桥）。资源、测试、工具和许可不强行塞进四层。
-现有 AppShell/Modules/Services/Common/core 是待修整母体，不是已完成的目标架构。
+母体目录已归入 app/modules/shared/native；目录归位不表示所有功能域的生命周期与跨域协调已经完成。
 
 - 依赖显式注入；跨域协调通过窄接口，不能随手调用全局业务 singleton。
 - 展示组件不执行命令、写文件或发请求；Action Gateway 收敛桌面意图，明确 backend
@@ -178,7 +178,7 @@ shell/
 │   └── wallpaper/                # 原生壁纸与调色（P4）：渲染器与 palette.toml 导出
 ├── shared/                       # 第三层：纯共享层（严格零 IO、零外部进程、零环境读取）
 │   ├── theme/                    # 设计系统 Token：Appearance, Fonts, Sizes, Typography, Animations, Metrics
-│   ├── controls/                 # 基础原子控件：StateLayer, MaterialSymbol, CompositorBlurRegion, Button, Slider, etc.
+│   ├── controls/                 # 基础原子控件：MaterialSymbol, CompositorBlurRegion, Button, Slider, etc.
 │   └── utils/                    # 纯计算与数学函数（DateFormat, TimeUtils, SystemFormat, FileUtils, etc.）
 ├── native/                       # 第四层：原生 C++ 桥与扩展
 │   ├── src/                      # ClavisRuntime, Niri 基础模型与接口
@@ -193,7 +193,6 @@ shell/
 │   ├── map-attribution/
 │   ├── matugen/                  # 配色模板系统（原根目录 matugen/ 归入）
 │   └── shaders/
-├── bin/                          # nyxuri-shell 运行时启动脚本
 ├── packaging/                    # 系统依赖与 systemd 配置
 ├── scripts/                      # 本地构建与维护脚本（已剔除上游 ci/ 与 capture/ 残余）
 ├── tests/                        # 契约测试与 QML 集成测试
@@ -229,7 +228,17 @@ shell/
 
 1. **逐域推进，拒绝大爆炸重构**：严禁一次性全库移动文件导致几百个 QML import 断裂。必须遵循“选定功能域 ➔ 提取 shared 原子 ➔ 实现 modules 自治域 ➔ 接入 app ➔ 物理删除旧目录 ➔ 契约单测断言旧文件消失”的严谨闭环。
 2. **零容忍代码冗余**：新域交付的同时，旧实现必须彻底从磁盘删除，严禁新旧两套代码长期并存。
-3. **单向依赖铁律**：`shared/` 绝对禁止 import `modules/`、`Services/` 或 `app/`；`modules/` 只能依赖 `shared/`，跨域必须经过 `app/ActionGateway` 或显式属性注入。
+3. **单向依赖铁律**：`shared/` 绝对禁止 import `modules/`、`Services/` 或 `app/`；`modules/` 的跨域意图经 `app/ActionGateway` 或显式注入；现有 app/services 接口的逐域内聚仍按后续任务推进。
 
 
 
+
+### 4. 目录迁移后的职责修正
+
+- `ThemeService` 拥有颜色文件的监听、校验与重载；完整校验后更新 `Appearance.m3colors`，坏文件保留最后有效色板，首次缺文件保留默认值。透明度和资源根 URL 注入 shared 展示数据，不由控件读取设置或环境。
+- `FontService` 拥有内嵌字体加载、系统字体发现与偏好回退，将有效角色注入 `Fonts`；共享层保留字体角色和 CSS 转义，不进行系统发现。
+- 图标主题发现和解析归 `ThemeService`；文件图标接收候选 URL，媒体与通知图标接收解析结果。`Resources.iconThemeRevision` 保留主题切换后的图片刷新语义。
+- `SettingsSearchAnchor` 归 settings；`WidgetState` 归 app。账户封面接收 wallpaper 域提供的 `ProfileWallpaper` Component，共享头部不再导入 wallpaper。
+- `WindowPreviewService` 的可选 native import 位于独立后台文件；Dock 捕获画面也独立加载。缺插件时返回真实不可用状态，普通窗口操作保留，默认构建不需要预览插件。
+
+这些修改清除了 shared 对 app/modules 的反向导入、颜色文件监听、字体加载/发现和图标主题解析；没有增加依赖，也不宣称 app/services 已全部完成模块自治。

@@ -10,23 +10,43 @@ SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 SHELL_DIR=$(CDPATH='' cd -- "${SCRIPT_DIR}/.." && pwd)
 REPO_ROOT=$(CDPATH='' cd -- "${SHELL_DIR}/.." && pwd)
 
-# Discover compiled native QML plugin path if not explicitly provided
+# Explicit build paths are authoritative; an invalid override must not
+# silently load an unrelated build. Existing QML search paths keep priority.
 NATIVE_PLUGIN_PATH=""
-if [ -d "${REPO_ROOT}/build/shell-test/qml" ]; then
+if [ -n "${CLAVIS_QML_BUILD_DIR:-}" ]; then
+    NATIVE_PLUGIN_PATH="${CLAVIS_QML_BUILD_DIR}"
+elif [ -n "${CLAVIS_BUILD_DIR:-}" ]; then
+    NATIVE_PLUGIN_PATH="${CLAVIS_BUILD_DIR}/qml"
+elif [ -d "${REPO_ROOT}/build/shell-test/qml" ]; then
     NATIVE_PLUGIN_PATH="${REPO_ROOT}/build/shell-test/qml"
+elif [ -d "${SHELL_DIR}/build/qml" ]; then
+    NATIVE_PLUGIN_PATH="${SHELL_DIR}/build/qml"
 elif [ -d "${SHELL_DIR}/native/build/qml" ]; then
     NATIVE_PLUGIN_PATH="${SHELL_DIR}/native/build/qml"
 fi
 
 if [ -n "${NATIVE_PLUGIN_PATH}" ]; then
-    export QML_IMPORT_PATH="${NATIVE_PLUGIN_PATH}${QML_IMPORT_PATH:+:${QML_IMPORT_PATH}}"
-    export QML2_IMPORT_PATH="${NATIVE_PLUGIN_PATH}${QML2_IMPORT_PATH:+:${QML2_IMPORT_PATH}}"
+    if [ ! -d "${NATIVE_PLUGIN_PATH}" ]; then
+        printf 'Native QML build directory does not exist: %s\n' "${NATIVE_PLUGIN_PATH}" >&2
+        exit 1
+    fi
+    if [ -n "${CLAVIS_QML_BUILD_DIR:-}${CLAVIS_BUILD_DIR:-}" ]; then
+        export QML_IMPORT_PATH="${NATIVE_PLUGIN_PATH}${QML_IMPORT_PATH:+:${QML_IMPORT_PATH}}"
+        export QML2_IMPORT_PATH="${NATIVE_PLUGIN_PATH}${QML2_IMPORT_PATH:+:${QML2_IMPORT_PATH}}"
+    else
+        export QML_IMPORT_PATH="${QML_IMPORT_PATH:+${QML_IMPORT_PATH}:}${NATIVE_PLUGIN_PATH}"
+        export QML2_IMPORT_PATH="${QML2_IMPORT_PATH:+${QML2_IMPORT_PATH}:}${NATIVE_PLUGIN_PATH}"
+    fi
 fi
 
 ACTION=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --action)
+            if [ $# -lt 2 ] || [ -z "$2" ]; then
+                printf 'Missing action after --action\n' >&2
+                exit 2
+            fi
             ACTION="${2:-}"
             shift 2
             ;;

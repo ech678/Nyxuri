@@ -4,16 +4,15 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Layouts
 import qs.shared.theme
-import qs.app
 import qs.shared.controls
-import qs.modules.wallpaper
-import "../../modules/wallpaper/WallpaperSource.js" as Source
 
 Rectangle {
     id: root
 
     property string wallpaperPath: ""
     property string previewWallpaperPath: ""
+    property Component wallpaperComponent
+    property bool wallpaperIsImage: false
     property bool colorWallpaper: false
     property string avatarUrl: ""
     property string fallbackAvatarUrl: ""
@@ -40,7 +39,6 @@ Rectangle {
 
     property color surfaceColor: Appearance.m3colors.m3surfaceContainerHigh
     readonly property color profileSurfaceColor: surfaceColor
-    readonly property string wallpaperUrl: Source.isImage(wallpaperPath) ? Paths.fileUrl(wallpaperPath) : ""
 
     function distroLogo() {
         const logos = {
@@ -78,7 +76,7 @@ Rectangle {
         topRightRadius: root.radius
         color: root.colorWallpaper ? root.wallpaperPath : Appearance.colors.colPrimaryContainer
 
-        gradient: root.wallpaperUrl === "" && !root.colorWallpaper ? fallbackGradient : null
+        gradient: !root.wallpaperIsImage && !root.colorWallpaper ? fallbackGradient : null
 
         Gradient {
             id: fallbackGradient
@@ -113,23 +111,12 @@ Rectangle {
                     easing.bezierCurve: Appearance.animation.expressiveDefaultEffects.bezierCurve
                 }
             }
-            readonly property bool ready: savedWallpaper.ready || (previewLoader.item !== null
-                                                                   && previewLoader.item.ready)
+            readonly property bool ready: coverLoader.item !== null && coverLoader.item.ready
 
-            // Preview is an overlay: cancelling must not clear and reload the
-            // saved image's texture in the masked banner layer.
-            WallpaperImageViewport {
-                id: savedWallpaper
-                anchors.fill: parent
-                sourcePath: root.wallpaperPath
-            }
             Loader {
-                id: previewLoader
+                id: coverLoader
                 anchors.fill: parent
-                active: root.previewWallpaperPath !== ""
-                sourceComponent: WallpaperImageViewport {
-                    sourcePath: root.previewWallpaperPath
-                }
+                sourceComponent: root.wallpaperComponent
             }
         }
 

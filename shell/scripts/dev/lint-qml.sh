@@ -36,15 +36,18 @@ command -v qs >/dev/null 2>&1 || {
 }
 
 native_build_ready() {
-    [[ -f "${qml_build_dir}/Clavis/Weather/qmldir" ]] \
-        && [[ -f "${qml_build_dir}/Clavis/Lyrics/qmldir" ]]
+    local module
+    for module in DesktopCards Niri Media Keyboard I18n Runtime Files Gamma; do
+        [[ -f "${qml_build_dir}/Clavis/${module}/qmldir" ]] || return 1
+    done
 }
 
 if ! native_build_ready; then
     printf 'lint-qml: native QML modules are missing; configuring and building %s\n' \
         "${build_root}"
     cmake -S "${repo_root}" -B "${build_root}" -G Ninja \
-        -DCMAKE_BUILD_TYPE="${CLAVIS_BUILD_TYPE:-Debug}"
+        -DCMAKE_BUILD_TYPE="${CLAVIS_BUILD_TYPE:-Debug}" \
+        -DCLAVIS_QML_BUILD_DIR="${qml_build_dir}"
     cmake --build "${build_root}"
 fi
 

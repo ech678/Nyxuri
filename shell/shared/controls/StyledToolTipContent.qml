@@ -1,6 +1,5 @@
 import QtQuick
 import qs.shared.theme
-import qs.app.services
 
 Item {
     id: root
@@ -29,7 +28,7 @@ Item {
             horizontalCenter: root.horizontalCenter
         }
 
-        color: BlurService.backgroundColor(Appearance.colors.colTooltip)
+        color: Appearance.applyAlpha(Appearance.colors.colTooltip, Appearance.backgroundOpacity)
         radius: 8
         opacity: root.shown ? 1 : 0
         width: root.shown ? root.implicitWidth : 0

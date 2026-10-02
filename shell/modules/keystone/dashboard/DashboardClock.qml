@@ -9,15 +9,14 @@ Item {
     property string minuteText: "00"
     property string periodText: "A"
     readonly property string clockFamily: Fonts.systemClock
-    readonly property var clockAxes: Fonts.familyAvailable(Fonts.systemClock) ? ({
-        "wght": 700,
-        "wdth": 75,
-        "opsz": 132,
-        "GRAD": 75,
-        "ROND": 25,
-        "slnt": 0
-    }) : ({
-    })
+    readonly property var clockAxes: Fonts.bundledFamilyAvailable ? ({
+                                                                         "wght": 700,
+                                                                         "wdth": 75,
+                                                                         "opsz": 132,
+                                                                         "GRAD": 75,
+                                                                         "ROND": 25,
+                                                                         "slnt": 0
+                                                                     }) : ({})
 
     function updateTime() {
         const now = new Date();
@@ -70,11 +69,8 @@ Item {
                         radius: 7
                         color: Appearance.colors.colOutlineVariant
                     }
-
                 }
-
             }
-
         }
 
         Text {
@@ -104,7 +100,5 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
         }
-
     }
-
 }

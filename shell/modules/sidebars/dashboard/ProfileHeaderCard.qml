@@ -1,4 +1,6 @@
 import QtQuick
+import qs.modules.wallpaper
+import "../../wallpaper/WallpaperSource.js" as WallpaperSource
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
@@ -6,6 +8,11 @@ import qs.app
 
 AccountProfileHeader {
     id: root
+    wallpaperIsImage: WallpaperSource.isImage(wallpaperPath)
+    wallpaperComponent: ProfileWallpaper {
+        sourcePath: root.wallpaperPath
+        previewPath: root.previewWallpaperPath
+    }
 
     signal imageSelectionRequested(bool forAvatar)
     signal bannerColorRequested

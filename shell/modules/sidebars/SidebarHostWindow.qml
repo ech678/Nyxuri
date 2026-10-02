@@ -1,4 +1,5 @@
 import QtQuick
+import qs.app
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -142,6 +143,8 @@ PanelWindow {
         item: root.anySidebarOpen ? interactionRegion : null
 
         HotCornerExclusionRegion {
+            active: NiriConfigService.ready("hot-corners")
+            cornerActions: PersonalizationConfig.hotCornerActions
             surfaceWidth: root.width
             surfaceHeight: root.height
         }

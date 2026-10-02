@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import qs.app.services
 import qs.shared.theme
 import qs.shared.controls
 
@@ -11,6 +10,7 @@ Item {
     property string tooltipText: ""
     property bool showLabel: false
     property bool vertical: false
+    property string barEdge: "top"
     property bool selected: false
     readonly property bool hasLabel: showLabel && label !== ""
     signal clicked
@@ -55,8 +55,7 @@ Item {
                         id: labelText
                         anchors.centerIn: parent
                         width: parent.extent
-                        rotation: root.vertical ? (PersonalizationConfig.barPosition === "right" ? 90 : -90) :
-                                                  0
+                        rotation: root.vertical ? (root.barEdge === "right" ? 90 : -90) : 0
                         text: root.label
                         textFormat: Text.PlainText
                         elide: Text.ElideRight

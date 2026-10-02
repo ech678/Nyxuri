@@ -14,14 +14,6 @@ qt_add_qml_module(ClavisI18n
 )
 
 file(GLOB_RECURSE CLAVIS_TRANSLATION_SOURCES CONFIGURE_DEPENDS
-    "${CLAVIS_SOURCE_ROOT}/Common/*.js"
-    "${CLAVIS_SOURCE_ROOT}/Common/*.qml"
-    "${CLAVIS_SOURCE_ROOT}/Components/*.js"
-    "${CLAVIS_SOURCE_ROOT}/Components/*.qml"
-    "${CLAVIS_SOURCE_ROOT}/Services/*.js"
-    "${CLAVIS_SOURCE_ROOT}/Services/*.qml"
-    "${CLAVIS_SOURCE_ROOT}/Widgets/*.js"
-    "${CLAVIS_SOURCE_ROOT}/Widgets/*.qml"
     "${CLAVIS_SOURCE_ROOT}/app/*.js"
     "${CLAVIS_SOURCE_ROOT}/app/*.qml"
     "${CLAVIS_SOURCE_ROOT}/modules/*.js"
@@ -30,9 +22,9 @@ file(GLOB_RECURSE CLAVIS_TRANSLATION_SOURCES CONFIGURE_DEPENDS
     "${CLAVIS_SOURCE_ROOT}/shared/*.qml"
 )
 list(APPEND CLAVIS_TRANSLATION_SOURCES
-    "${CLAVIS_SOURCE_ROOT}/core/plugin/keyboard/src/shortcut_recorder.cpp"
+    "${CLAVIS_SOURCE_ROOT}/native/plugin/keyboard/src/shortcut_recorder.cpp"
     "${CLAVIS_SOURCE_ROOT}/shell.qml"
-    "${CLAVIS_SOURCE_ROOT}/core/tools/window-preview/Preview.qml"
+    "${CLAVIS_SOURCE_ROOT}/native/tools/window-preview/Preview.qml"
 )
 
 # Qt 6.7+ otherwise scans every target, including tests and dependency headers.

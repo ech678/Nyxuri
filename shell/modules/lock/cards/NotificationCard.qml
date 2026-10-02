@@ -147,6 +147,7 @@ Rectangle {
                         spacing: 12
 
                         NotificationVisual {
+                            resolvedAppIcon: ThemeService.resolveIcon(appIcon)
                             Layout.preferredWidth: 56
                             Layout.preferredHeight: 56
                             Layout.alignment: Qt.AlignTop

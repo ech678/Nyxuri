@@ -1,4 +1,5 @@
 import QtQuick
+import qs.app
 import QtQuick.Effects
 import Qt5Compat.GraphicalEffects
 import Quickshell
@@ -1965,6 +1966,8 @@ Variants {
             }
 
             HotCornerExclusionRegion {
+                active: NiriConfigService.ready("hot-corners")
+                cornerActions: PersonalizationConfig.hotCornerActions
                 surfaceWidth: keystoneWindow.width
                 surfaceHeight: keystoneWindow.height
             }

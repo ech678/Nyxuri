@@ -103,7 +103,7 @@ P0 调查默认修整现有代码，复用有效模型和协议。界面/普通�
 不提前建设通用插件框架，不以“永远无需调整”验收扩展性。
 
 - [x] P2-01 装配与注入：通过 `AppShell.qml` 与 `SessionHost.qml` 显式属性注入，彻底移除跨域 Singleton (`PowerMenuService`) 随意访问。
-- [x] P2-02 纯共享层：提取 `shared/theme/Appearance.qml`、`shared/controls/StateLayer.qml`、`shared/controls/MaterialSymbol.qml`、`shared/compositor/CompositorBlurRegion.qml`，严守无 IO、无外部进程、无环境读取原则。
+- [x] P2-02 纯共享层：提取 `shared/theme/Appearance.qml`、`shared/controls/MaterialSymbol.qml`、`shared/controls/CompositorBlurRegion.qml`，严守无 IO、无外部进程、无环境读取原则。
 - [x] P2-03 动作与资源归属：实现 `app/ActionGateway.qml` 意图收敛中枢，外部命令全面参数数组化（`["systemctl", "poweroff"]` 等），明确登记 owner。
 - [x] P2-04 自治加载与销毁：`SessionHost` 动态按需加载，关闭动画播放完毕触发 `dismissFinished` 彻底销毁窗口（`active: false`），淘汰常驻占用；旧实现安全删除。
 - [x] P2-05 可选 native：原版 Niri 接口对接与可选模块解耦保持稳定，23 个原生 CTest 与 480 个宿主单测保持 100% 通过。
@@ -127,7 +127,7 @@ Qt/字体缓存不承诺每字节即时返还，重点证明专属资源消失�
 前置：P2。设置（控制中心）、状态栏外设、通知、真实锁屏与剪贴板逐域完善，复用上游视觉，设备缺失局部不可用。
 
 - [x] P3-01 设置系统（ControlCenter ➔ modules/settings）解耦恢复：消除 `Clavis.WeatherMap` 静态导入阻断；按需 `LazyLoader` 挂载 `ControlCenterWindow`，关闭完全释放；全局单例内聚为 `SettingsBackend.qml`，对接 `ActionGateway` 与 `nyxuri-shell --action settings`；旧目录与旧单例物理删除。
-- [x] P3-01a 彻底重构当前文件架构：沿 `app/`、`modules/`、`shared/`、`native/` 四层收敛目录与职责，拆解并归并遗留母体结构（彻底清除 `Common/`、`Services/`、`Widgets/`、`core/`）；控件归入 `shared/controls/`，主题/工具分别归入 `shared/theme/` 与 `shared/utils/`，服务归入 `app/services/`，构建与 C++ 归入 `native/`；完成极简秩序化收敛（删除上游 install.sh/ci 残余，assets 吸收 i18n/matugen，modules 内部 28 处目录全小写几何对齐），更新全库导入并维护 100% 契约单测。
+- [x] P3-01a 彻底重构当前文件架构：沿 `app/`、`modules/`、`shared/`、`native/` 四层收敛目录与职责，拆解并归并遗留母体结构（彻底清除 `Common/`、`Services/`、`Widgets/`、`core/`）；控件归入 `shared/controls/`，主题/工具分别归入 `shared/theme/` 与 `shared/utils/`，服务归入 `app/services/`，构建与 C++ 归入 `native/`；完成极简秩序化收敛（删除上游 install.sh/ci 残余，assets 吸收 i18n/matugen，modules 内部 28 处目录全小写几何对齐），更新导入与构建引用。目录迁移后的职责与行为复核见 development；真实桌面视觉、锁屏与双 Shell 接管验收仍需单独记录。
 - [ ] P3-02 状态栏与外设基础域完善：状态栏工作区/活动窗口/时钟/电池/托盘；音量与亮度滑条收敛至 `ActionGateway`；缺失硬件优雅降级。
 - [ ] P3-03 通知接收与临时历史/弹窗分离：通知接收常驻后台（D-Bus），与临时通知抽屉/弹窗解耦；关闭历史不停止接收，历史存储有界。
 - [ ] P3-04 Wayland session-lock/PAM 安全状态与装饰解耦：错误密码震动反馈、认证成功即刻解锁、多屏容灾与崩溃退出保护。

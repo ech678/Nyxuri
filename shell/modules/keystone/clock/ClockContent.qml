@@ -15,14 +15,14 @@ Item {
     readonly property string clockFamily: Fonts.systemClock
     readonly property var horizontalClockAxes: root.safeHorizontalClockAxes(
                                                    PersonalizationConfig.horizontalClockAxes)
-    readonly property var verticalClockAxes: Fonts.familyAvailable(Fonts.systemClock) ? ({
-                                                                                             "wght": 900,
-                                                                                             "wdth": 85,
-                                                                                             "opsz": 24,
-                                                                                             "GRAD": 75,
-                                                                                             "ROND": 25,
-                                                                                             "slnt": 0
-                                                                                         }) : ({})
+    readonly property var verticalClockAxes: Fonts.bundledFamilyAvailable ? ({
+                                                                                 "wght": 900,
+                                                                                 "wdth": 85,
+                                                                                 "opsz": 24,
+                                                                                 "GRAD": 75,
+                                                                                 "ROND": 25,
+                                                                                 "slnt": 0
+                                                                             }) : ({})
     readonly property real horizontalFontSize: root.boundedNumber(
                                                    PersonalizationConfig.horizontalClockFontSize, 22, 16, 28)
     // 【核心变化1】把时间拆分成 4 个独立的整数型变量，绑定动画目标值

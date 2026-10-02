@@ -265,6 +265,7 @@ ColumnLayout {
                      && root.failure === ""
 
             FileThemeIcon {
+                resolvedSources: ThemeService.resolveFileIcons(candidates)
                 active: parent.visible
                 category: root.singleFile ? String(root.singleFile.category || "") : ""
                 anchors.horizontalCenter: parent.horizontalCenter

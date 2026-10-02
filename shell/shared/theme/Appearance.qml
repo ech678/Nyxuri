@@ -1,18 +1,16 @@
 pragma Singleton
 
 import Quickshell
-import Quickshell.Io
 import QtQuick
-import qs.app
 
 Singleton {
     id: root
 
-    readonly property string colorsPath: Paths.generatedHome + "/clavis/colors.json"
     property string matugenScheme: "scheme-tonal-spot"
     property string matugenMode: "dark"
     readonly property string effectiveMatugenMode: matugenMode.toLowerCase() === "light" ? "light" : "dark"
     property string currentWallpaperPreview: ""
+    property real backgroundOpacity: 1
     property real backgroundTransparency: 0
     property real contentTransparency: 0.9
     property QtObject m3colors
@@ -32,12 +30,8 @@ Singleton {
         const amount = percentage === undefined ? 0.5 : percentage;
         const c1 = Qt.color(color1);
         const c2 = Qt.color(color2);
-        return Qt.rgba(
-            amount * c1.r + (1 - amount) * c2.r,
-            amount * c1.g + (1 - amount) * c2.g,
-            amount * c1.b + (1 - amount) * c2.b,
-            amount * c1.a + (1 - amount) * c2.a
-        );
+        return Qt.rgba(amount * c1.r + (1 - amount) * c2.r, amount * c1.g + (1 - amount) * c2.g, amount
+                       * c1.b + (1 - amount) * c2.b, amount * c1.a + (1 - amount) * c2.a);
     }
 
     function transparentize(color, percentage) {
@@ -59,36 +53,9 @@ Singleton {
         const base = Qt.color(baseColor);
         const target = Qt.color(targetColor);
         const invOpacity = 1 - opacity;
-        return Qt.rgba(
-            clamp01((target.r - base.r * invOpacity) / opacity),
-            clamp01((target.g - base.g * invOpacity) / opacity),
-            clamp01((target.b - base.b * invOpacity) / opacity),
-            opacity
-        );
-    }
-
-    function snakeToM3(key) {
-        const parts = key.split("_");
-        let result = "m3" + parts[0];
-        for (let i = 1; i < parts.length; i += 1)
-            result += parts[i].charAt(0).toUpperCase() + parts[i].slice(1);
-        return result;
-    }
-
-    function applyGeneratedColors(text) {
-        if (!text)
-            return;
-
-        const generatedColors = JSON.parse(text);
-        for (let key in generatedColors) {
-            const propertyName = root.snakeToM3(key);
-            if (propertyName in root.m3colors)
-                root.m3colors[propertyName] = Qt.color(generatedColors[key]);
-        }
-    }
-
-    function reloadColors() {
-        colorFile.reload();
+        return Qt.rgba(clamp01((target.r - base.r * invOpacity) / opacity), clamp01((target.g - base.g
+                                                                                     * invOpacity) / opacity),
+                       clamp01((target.b - base.b * invOpacity) / opacity), opacity);
     }
 
     m3colors: QtObject {
@@ -151,35 +118,60 @@ Singleton {
         property color colLayer0Base: root.mix(root.m3colors.m3background, root.m3colors.m3primary, 0.99)
         property color colLayer0: root.transparentize(colLayer0Base, root.backgroundTransparency)
         property color colOnLayer0: root.m3colors.m3onBackground
-        property color colLayer0Hover: root.transparentize(root.mix(colLayer0, colOnLayer0, 0.9), root.contentTransparency)
-        property color colLayer0Active: root.transparentize(root.mix(colLayer0, colOnLayer0, 0.8), root.contentTransparency)
+        property color colLayer0Hover: root.transparentize(root.mix(colLayer0, colOnLayer0, 0.9),
+                                                           root.contentTransparency)
+
+        property color colLayer0Active: root.transparentize(root.mix(colLayer0, colOnLayer0, 0.8),
+                                                            root.contentTransparency)
+
         property color colLayer0Border: root.mix(root.m3colors.m3outlineVariant, colLayer0, 0.4)
 
         property color colLayer1Base: root.m3colors.m3surfaceContainerLow
-        property color colLayer1: root.solveOverlayColor(colLayer0Base, colLayer1Base, 1 - root.contentTransparency)
+        property color colLayer1: root.solveOverlayColor(colLayer0Base, colLayer1Base, 1
+                                                         - root.contentTransparency)
         property color colOnLayer1: root.m3colors.m3onSurfaceVariant
         property color colOnLayer1Inactive: root.mix(colOnLayer1, colLayer1, 0.45)
-        property color colLayer1Hover: root.transparentize(root.mix(colLayer1, colOnLayer1, 0.92), root.contentTransparency)
-        property color colLayer1Active: root.transparentize(root.mix(colLayer1, colOnLayer1, 0.85), root.contentTransparency)
+        property color colLayer1Hover: root.transparentize(root.mix(colLayer1, colOnLayer1, 0.92),
+                                                           root.contentTransparency)
+
+        property color colLayer1Active: root.transparentize(root.mix(colLayer1, colOnLayer1, 0.85),
+                                                            root.contentTransparency)
 
         property color colLayer2Base: root.m3colors.m3surfaceContainer
-        property color colLayer2: root.solveOverlayColor(colLayer1Base, colLayer2Base, 1 - root.contentTransparency)
-        property color colLayer2Hover: root.solveOverlayColor(colLayer1Base, root.mix(colLayer2Base, colOnLayer2, 0.90), 1 - root.contentTransparency)
-        property color colLayer2Active: root.solveOverlayColor(colLayer1Base, root.mix(colLayer2Base, colOnLayer2, 0.80), 1 - root.contentTransparency)
-        property color colLayer2Disabled: root.solveOverlayColor(colLayer1Base, root.mix(colLayer2Base, root.m3colors.m3background, 0.8), 1 - root.contentTransparency)
+        property color colLayer2: root.solveOverlayColor(colLayer1Base, colLayer2Base, 1
+                                                         - root.contentTransparency)
+        property color colLayer2Hover: root.solveOverlayColor(colLayer1Base, root.mix(colLayer2Base,
+                                                                                      colOnLayer2, 0.90), 1
+                                                              - root.contentTransparency)
+        property color colLayer2Active: root.solveOverlayColor(colLayer1Base, root.mix(colLayer2Base,
+                                                                                       colOnLayer2, 0.80), 1
+                                                               - root.contentTransparency)
+        property color colLayer2Disabled: root.solveOverlayColor(colLayer1Base, root.mix(colLayer2Base,
+                                                                                         root.m3colors.m3background,
+                                                                                         0.8), 1 - root.contentTransparency)
         property color colOnLayer2: root.m3colors.m3onSurface
         property color colOnLayer2Disabled: root.mix(colOnLayer2, root.m3colors.m3background, 0.4)
 
         property color colLayer3Base: root.m3colors.m3surfaceContainerHigh
-        property color colLayer3: root.solveOverlayColor(colLayer2Base, colLayer3Base, 1 - root.contentTransparency)
-        property color colLayer3Hover: root.solveOverlayColor(colLayer2Base, root.mix(colLayer3Base, colOnLayer3, 0.90), 1 - root.contentTransparency)
-        property color colLayer3Active: root.solveOverlayColor(colLayer2Base, root.mix(colLayer3Base, colOnLayer3, 0.80), 1 - root.contentTransparency)
+        property color colLayer3: root.solveOverlayColor(colLayer2Base, colLayer3Base, 1
+                                                         - root.contentTransparency)
+        property color colLayer3Hover: root.solveOverlayColor(colLayer2Base, root.mix(colLayer3Base,
+                                                                                      colOnLayer3, 0.90), 1
+                                                              - root.contentTransparency)
+        property color colLayer3Active: root.solveOverlayColor(colLayer2Base, root.mix(colLayer3Base,
+                                                                                       colOnLayer3, 0.80), 1
+                                                               - root.contentTransparency)
         property color colOnLayer3: root.m3colors.m3onSurface
 
         property color colLayer4Base: root.m3colors.m3surfaceContainerHighest
-        property color colLayer4: root.solveOverlayColor(colLayer3Base, colLayer4Base, 1 - root.contentTransparency)
-        property color colLayer4Hover: root.solveOverlayColor(colLayer3Base, root.mix(colLayer4Base, colOnLayer4, 0.90), 1 - root.contentTransparency)
-        property color colLayer4Active: root.solveOverlayColor(colLayer3Base, root.mix(colLayer4Base, colOnLayer4, 0.80), 1 - root.contentTransparency)
+        property color colLayer4: root.solveOverlayColor(colLayer3Base, colLayer4Base, 1
+                                                         - root.contentTransparency)
+        property color colLayer4Hover: root.solveOverlayColor(colLayer3Base, root.mix(colLayer4Base,
+                                                                                      colOnLayer4, 0.90), 1
+                                                              - root.contentTransparency)
+        property color colLayer4Active: root.solveOverlayColor(colLayer3Base, root.mix(colLayer4Base,
+                                                                                       colOnLayer4, 0.80), 1
+                                                               - root.contentTransparency)
         property color colOnLayer4: root.m3colors.m3onSurface
 
         property color colPrimary: root.m3colors.m3primary
@@ -201,8 +193,10 @@ Singleton {
         property color colSecondaryActive: root.mix(colSecondary, colLayer1Active, 0.4)
         property color colSecondaryContainer: root.m3colors.m3secondaryContainer
         property color colOnSecondaryContainer: root.m3colors.m3onSecondaryContainer
-        property color colSecondaryContainerHover: root.mix(colSecondaryContainer, colOnSecondaryContainer, 0.90)
-        property color colSecondaryContainerActive: root.mix(colSecondaryContainer, colOnSecondaryContainer, 0.54)
+        property color colSecondaryContainerHover: root.mix(colSecondaryContainer, colOnSecondaryContainer,
+                                                            0.90)
+        property color colSecondaryContainerActive: root.mix(colSecondaryContainer, colOnSecondaryContainer,
+                                                             0.54)
         property color colSecondaryFixed: root.m3colors.m3secondaryFixed
         property color colSecondaryFixedDim: root.m3colors.m3secondaryFixedDim
         property color colOnSecondaryFixed: root.m3colors.m3onSecondaryFixed
@@ -221,13 +215,24 @@ Singleton {
         property color colOnTertiaryFixed: root.m3colors.m3onTertiaryFixed
         property color colOnTertiaryFixedVariant: root.m3colors.m3onTertiaryFixedVariant
 
-        property color colBackgroundSurfaceContainer: root.transparentize(root.m3colors.m3surfaceContainer, root.backgroundTransparency)
-        property color colSurfaceContainerLow: root.solveOverlayColor(root.m3colors.m3background, root.m3colors.m3surfaceContainerLow, 1 - root.contentTransparency)
-        property color colSurfaceContainer: root.solveOverlayColor(root.m3colors.m3surfaceContainerLow, root.m3colors.m3surfaceContainer, 1 - root.contentTransparency)
-        property color colSurfaceContainerHigh: root.solveOverlayColor(root.m3colors.m3surfaceContainer, root.m3colors.m3surfaceContainerHigh, 1 - root.contentTransparency)
-        property color colSurfaceContainerHighest: root.solveOverlayColor(root.m3colors.m3surfaceContainerHigh, root.m3colors.m3surfaceContainerHighest, 1 - root.contentTransparency)
-        property color colSurfaceContainerHighestHover: root.mix(root.m3colors.m3surfaceContainerHighest, root.m3colors.m3onSurface, 0.95)
-        property color colSurfaceContainerHighestActive: root.mix(root.m3colors.m3surfaceContainerHighest, root.m3colors.m3onSurface, 0.85)
+        property color colBackgroundSurfaceContainer: root.transparentize(root.m3colors.m3surfaceContainer,
+                                                                          root.backgroundTransparency)
+        property color colSurfaceContainerLow: root.solveOverlayColor(root.m3colors.m3background,
+                                                                      root.m3colors.m3surfaceContainerLow, 1
+                                                                      - root.contentTransparency)
+        property color colSurfaceContainer: root.solveOverlayColor(root.m3colors.m3surfaceContainerLow,
+                                                                   root.m3colors.m3surfaceContainer, 1
+                                                                   - root.contentTransparency)
+        property color colSurfaceContainerHigh: root.solveOverlayColor(root.m3colors.m3surfaceContainer,
+                                                                       root.m3colors.m3surfaceContainerHigh,
+                                                                       1 - root.contentTransparency)
+        property color colSurfaceContainerHighest: root.solveOverlayColor(root.m3colors.m3surfaceContainerHigh,
+                                                                          root.m3colors.m3surfaceContainerHighest,
+                                                                          1 - root.contentTransparency)
+        property color colSurfaceContainerHighestHover: root.mix(root.m3colors.m3surfaceContainerHighest,
+                                                                 root.m3colors.m3onSurface, 0.95)
+        property color colSurfaceContainerHighestActive: root.mix(root.m3colors.m3surfaceContainerHighest,
+                                                                  root.m3colors.m3onSurface, 0.85)
         property color colOnSurface: root.m3colors.m3onSurface
         property color colOnSurfaceVariant: root.m3colors.m3onSurfaceVariant
         property color colInversePrimary: root.m3colors.m3inversePrimary
@@ -294,20 +299,5 @@ Singleton {
         property real activeOpacity: 0.5
         property real inactiveOpacity: 0
         property color thumbColor: root.colors.colOnSurfaceVariant
-    }
-
-    FileView {
-        id: colorFile
-        path: root.colorsPath
-        watchChanges: true
-
-        onLoaded: {
-            try {
-                root.applyGeneratedColors(colorFile.text());
-            } catch (error) {
-            }
-        }
-
-        onFileChanged: colorFile.reload()
     }
 }
