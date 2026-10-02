@@ -2,10 +2,10 @@
 
 ## 文档状态
 
-当前已完成 P0 调查并冻结启动计划，正式进入 P1 阶段（第一个可用里程碑）。本页维护确定约束、技术事实与
-已冻结设计；任务顺序/状态唯一维护在 [Shell ROADMAP](../ROADMAP.md)，
-约束见 [AGENTS](../AGENTS.md)，事实见 [审计](audit.md)，操作见
-[开发与调试](development.md)。产品名 Nyxuri Shell，程序/配置标识 nyxuri-shell。
+当前 P3 的基础体验完成判定已撤回，正在按 [母体复用与恢复计划](recovery.md) 纠偏。
+本页维护设计边界；任务状态唯一维护在 [Shell ROADMAP](../ROADMAP.md)，
+约束见 [AGENTS](../AGENTS.md)，来源证据见 [审计](audit.md)。
+目录迁移与接口存在不证明视觉、输入和完整功能已恢复。
 
 “精神 → 详细计划 → 开发”是开发推进顺序，不意味着必须新增一个轻量程序启动复杂程序。
 原版 Niri、完整母体就地修整、视觉保真与干净生命周期已确定；启动管理实现尚须论证。
@@ -117,7 +117,9 @@ Shell 执行。Noctalia 伴生 GUI 在 Noctalia 模式按需使用，自研模�
 - 宿主必要检查、受影响 native/协议测试和文档事实同步；上游 monorepo 路径、格式基线与
   源码内生成问题先明确，阻断如实记录，不安装工具或全库重排来掩盖它。
 
-## P1 交付事实与工程成果
+## P1 历史交付记录
+
+以下保留当时的交付与测试记录，不作为当前版本完整功能、视觉或生命周期的验收证据。
 
 1. **构建与加载解耦**：
    - CMake 将 Cava、Weather、Lyrics 设为默认 `OFF`，保留 7 个核心 native 模块并保持 21 个 CTest 100% 通过；
@@ -133,7 +135,7 @@ Shell 执行。Noctalia 伴生 GUI 在 Noctalia 模式按需使用，自研模�
    - `session-shell.sh` 与 `shell-action.sh` 增加对 `nyxuri-shell` 的自动回退发现；
    - 宿主单元测试增加状态机与回滚测试，478 个全量单测全部保持秒级通过。
 
-## P2 交付事实与工程成果
+## P2 历史交付记录
 
 1. **四层架构骨架落地**：
    - 创建 `shell/app/`（装配、环境与协调）、`shell/modules/`（自治功能域）、`shell/shared/`（纯共享层）三层目录，形成规范的单向依赖流；
@@ -199,9 +201,9 @@ shell/
 └── wiki/                         # 架构契约与开发文档
 ```
 
-### 2. 旧母体清算与迁移映射表
+### 2. 旧母体目录迁移记录
 
-| 原母体目录 / 文件 | 处置动作 | 目标路径 | 依赖与副作用处理 | 清理时机 |
+| 原母体目录 / 文件 | 处置动作 | 目标路径 | 依赖与副作用处理 | 目录处置记录（非功能验收） |
 |---|---|---|---|---|
 | `tools/` | **物理收敛** | `native/tools/window-preview` | 归入原生 C++ 核心，消除顶层孤岛目录 | **已完成** |
 | `licenses/` | **归档收敛** | `wiki/upstream-licenses/` | 与 `wiki/upstream-docs/` 对称归档，消除顶层孤岛目录 | **已完成** |
@@ -216,18 +218,18 @@ shell/
 | `shell/matugen/` | **收敛归一** | `assets/matugen/` | 配色模板并入 assets 资源枢纽，更新 Paths.builtinMatugenDir | **已完成** |
 | `Modules/PowerMenu/` | **物理删除** | `modules/session/` | 淘汰 `PowerMenuService`，改用 `ActionGateway` 纯数组调用 | **P2 已完成** |
 | `Services/PowerMenuService.qml` | **物理删除** | `app/ActionGateway.qml` | 消除全局业务单例 | **P2 已完成** |
-| `Modules/ControlCenter/` | **重构迁移** | `modules/settings/` | 剥离 `Clavis.WeatherMap` 依赖；改为按需 Loader 与动态页面加载 | **P3-01 已完成** |
-| `Services/ControlCenterService.qml` | **私有内聚** | `modules/settings/SettingsBackend.qml` | 消除全局单例，降级为 settings module 内部私有协调对象 | **P3-01 已完成** |
-| `core/` | **收敛更名** | `native/` | 正式收敛为第四层原生 C++ 核心目录，消除别名分裂 | **P3-01a 已完成** |
-| `Widgets/` (common/audio/weather) | **吸收删除** | `shared/controls/` | 删除重复项，原子控件全面吸收归并，物理删除 `Widgets/` | **P3-01a 已完成** |
-| `Common/` (Token/Utils/Paths/Domain) | **拆解删除** | `shared/theme/`, `shared/utils/`, `app/`, `modules/` | Token 归 shared/theme，纯函数归 shared/utils，路径归 app，物理删除 `Common/` | **P3-01a 已完成** |
-| `Services/` | **收敛平移** | `app/services/` | 全局常驻服务统一归入 app/services/，物理删除根目录 `Services/` | **P3-01a 已完成** |
+| `Modules/ControlCenter/` | **重构迁移** | `modules/settings/` | 剥离 `Clavis.WeatherMap` 依赖；改为按需 Loader 与动态页面加载 | **已迁移；待复核** |
+| `Services/ControlCenterService.qml` | **私有内聚** | `modules/settings/SettingsBackend.qml` | 消除全局单例，降级为 settings module 内部私有协调对象 | **已迁移；待复核** |
+| `core/` | **收敛更名** | `native/` | 正式收敛为第四层原生 C++ 核心目录，消除别名分裂 | **已迁移；待复核** |
+| `Widgets/` (common/audio/weather) | **吸收删除** | `shared/controls/` | 删除重复项，原子控件全面吸收归并，物理删除 `Widgets/` | **已迁移；待复核** |
+| `Common/` (Token/Utils/Paths/Domain) | **拆解删除** | `shared/theme/`, `shared/utils/`, `app/`, `modules/` | Token 归 shared/theme，纯函数归 shared/utils，路径归 app，物理删除 `Common/` | **已迁移；待复核** |
+| `Services/` | **收敛平移** | `app/services/` | 全局常驻服务统一归入 app/services/，物理删除根目录 `Services/` | **已迁移；待复核** |
 | `modules/*` 深层 PascalCase 目录 | **全小写几何对齐** | `modules/*/<lowercase>` | 消灭 bar/activewindow、keystone/clock、sidebars/dashboard 等 28 处大写目录 | **已完成** |
 
 ### 3. 重构执行守则
 
-1. **逐域推进，拒绝大爆炸重构**：严禁一次性全库移动文件导致几百个 QML import 断裂。必须遵循“选定功能域 ➔ 提取 shared 原子 ➔ 实现 modules 自治域 ➔ 接入 app ➔ 物理删除旧目录 ➔ 契约单测断言旧文件消失”的严谨闭环。
-2. **零容忍代码冗余**：新域交付的同时，旧实现必须彻底从磁盘删除，严禁新旧两套代码长期并存。
+1. **逐域推进**：先读取原实现与依赖上下文、填写复用映射，再做必要边界适配。接入 app 后验证实际行为、视觉与生命周期，验收通过再删除被替代实现；旧路径消失不是功能验收。
+2. **清理有前置**：消费者切换并验证通过后再删除旧实现，不留下两套生产实现同时接收输入或通知。`shell/references/` 内的固定原版参考树独立保存，不参与生产加载。
 3. **单向依赖铁律**：`shared/` 绝对禁止 import `modules/`、`Services/` 或 `app/`；`modules/` 的跨域意图经 `app/ActionGateway` 或显式注入；现有 app/services 接口的逐域内聚仍按后续任务推进。
 
 
@@ -242,3 +244,14 @@ shell/
 - `WindowPreviewService` 的可选 native import 位于独立后台文件；Dock 捕获画面也独立加载。缺插件时返回真实不可用状态，普通窗口操作保留，默认构建不需要预览插件。
 
 这些修改清除了 shared 对 app/modules 的反向导入、颜色文件监听、字体加载/发现和图标主题解析；没有增加依赖，也不宣称 app/services 已全部完成模块自治。
+
+### 5. P3 基础体验完整化与会话安全边界
+
+P3 现有代码包含外设动作网关、通知弹窗宿主、历史限制、锁屏反馈与剪贴板派发等实现，
+但这些实现不能作为基础桌面体验已完成的证据。用户已报告 Bar 滚轮失效、通知透明和位置错位。
+恢复必须追溯完整母体的组件、上下文、几何、主题与输入链，不能继续添加独立替代 UI。
+
+通知接收与历史面板生命周期仍须分离；弹窗应复用原版卡片、背景和相对 Bar 的定位规则，
+而非仅挂载 Overlay 并固定屏幕边距。动作网关只适配执行边界，不改变原控件的交互语义。
+会话锁异常退出由真实协议与合成器行为验证，不能将客户端退出描述成必然安全解锁。
+六动作必须验证实际窗口、数据和操作结果，不能声称仅凭路由测试与 Noctalia 完全一致。

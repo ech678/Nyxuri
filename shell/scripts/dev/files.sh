@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 # Shared file selection. Callers set repo_root and cd there before using paths.
 clavis_files() {
-    local scope=$1
+    local scope=$1 file
     if [[ ${scope} == all ]]; then
         git ls-files --cached --others --exclude-standard -z
     else
         git diff --relative --name-only -z HEAD -- .
         git ls-files --others --exclude-standard -z
-    fi | sort -zu
+    fi | while IFS= read -r -d '' file; do
+        case ${file} in references/*) continue ;; esac
+        printf '%s\0' "${file}"
+    done | sort -zu
 }
 
 clavis_qml_files() {

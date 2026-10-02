@@ -266,7 +266,9 @@ class TestShellManagement(unittest.TestCase):
         # 5. Zero occurrences of obsolete imports across all QML/JS files
         import re
         qs_mod_re = re.compile(r"import\s+qs\.modules\.([A-Za-z0-9_.]+)")
-        for root_path, _, files in os.walk(shell_dir):
+        for root_path, dirs, files in os.walk(shell_dir):
+            if root_path == shell_dir:
+                dirs[:] = [entry for entry in dirs if entry != "references"]
             for file in files:
                 if file.endswith((".qml", ".js")):
                     full_path = os.path.join(root_path, file)

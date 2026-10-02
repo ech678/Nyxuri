@@ -6,6 +6,9 @@
 - [rules](../AGENTS.md): 开发契约、原版 Niri 基线与四层/生命周期红线
 - [roadmap](../ROADMAP.md): 阶段推进、去臃肿化目标与阶段验收矩阵
 - [index](index.md): 子 Wiki 架构总览与导读
+- [recovery](recovery.md): P3 纠偏、仓库内完整参考树、逐项复用映射与功能/视觉验收
+- [recovery-matrix](recovery-matrix.md): 原版全功能、设置、模式、IPC 与逐项复用/验收矩阵
+- [recovery-inputs](recovery-inputs.md): 原版显式输入/操作入口及当前处理器候选
 - [blueprint](blueprint.md): 四层架构边界、启动/切换目标与待论证设计
 - [audit](audit.md): Clavis 完整母体基准、启动/依赖审计与全树资源索引
 - [development](development.md): QS 工具使用、隔离调试循环与验证证据

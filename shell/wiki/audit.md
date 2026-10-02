@@ -17,19 +17,31 @@
 提交 16785c6 只记录计划、契约与审计，检出该提交不能获得完整母体。
 后续首次源码提交应单独保存母体与来源，再开展可追溯改造；本次文档修改不暂存或提交源码。
 
+## P3 恢复依据（2026-10-02）
+
+已核实本地提交 `15403b970a73e39ee8e5e42e567fdce0f570e4c0` 保存原始母体，
+`shell` tree 为 `bf81fa27845207502798e35b17157402961e4e99`。下文旧路径是历史审计引用，
+不能按当前树路径不存在推断原功能不存在。历史源码引用用代码路径表示，
+从固定提交或完整参考树读取，不链接到已经移除的现树位置。恢复步骤见 [恢复计划](recovery.md)。
+用户报告 Bar 滚轮失效、通知透明与错位；尚未逐项实机复现。已提取并逐文件核验参考树：909 个文件、11,943,087 字节、18 个可执行文件，
+内容与权限全部匹配固定 Git 树；来源与核验见 [SOURCE](../references/clavis-15403b9/SOURCE.md)。
+参考树位于`shell/references/clavis-15403b9/`，保留完整原始路径；不参与运行、构建或部署。
+[恢复矩阵](recovery-matrix.md) 覆盖全功能入口及原路径/现路径，
+[输入附件](recovery-inputs.md) 逐一列出显式交互。未修改运行代码或实测产品恢复。
+
 ## 结论与证据等级
 
 本页的“确认”来自固定 commit 源码；“实测”仅限下面的隔离探测。静态扫描列出候选接口，不能证明文件启动可达、进程实际常驻或网络实际发出。没有真实 Wayland 视觉、冷启动性能、RSS 或退出残留测量，不能宣称秒启、零报错或泄漏成立。
 
 ### 启动闭包
 
-[shell.qml](../shell.qml) 的 `ShellRoot` 直接创建 [AppShell.qml](../AppShell.qml)。AppShell 静态导入 `Clavis.Niri` 和多个功能目录，直接实例化 DisplayOverlays、WallpaperBackground、DesktopCardHost、Bar、DockHost、Keystone、RegionSelector、SidebarHostWindow、HotCorners、Lock、PowerMenu、LauncherWindow。这里是**对象装配事实**，并不意味着每个对象的所有内部窗口和后台都已活跃。
+[shell.qml](../shell.qml) 的 `ShellRoot` 直接创建 `shell/AppShell.qml`。AppShell 静态导入 `Clavis.Niri` 和多个功能目录，直接实例化 DisplayOverlays、WallpaperBackground、DesktopCardHost、Bar、DockHost、Keystone、RegionSelector、SidebarHostWindow、HotCorners、Lock、PowerMenu、LauncherWindow。这里是**对象装配事实**，并不意味着每个对象的所有内部窗口和后台都已活跃。
 
-AppShell 的完成钩子初始化 I18n、DisplayColor、LyricsTrackService、SystemIdentityService；歌词初始化明确接通 MPRIS 曲目和 native Lyrics，不能仅隐藏歌词画面来封存它。`DisplayColor.evaluate()` 又把 Gamma 能力拉入启动路径。[DisplayColor.qml](../Services/DisplayColor.qml) 还引用天气位置。
+AppShell 的完成钩子初始化 I18n、DisplayColor、LyricsTrackService、SystemIdentityService；歌词初始化明确接通 MPRIS 曲目和 native Lyrics，不能仅隐藏歌词画面来封存它。`DisplayColor.evaluate()` 又把 Gamma 能力拉入启动路径。`shell/Services/DisplayColor.qml` 还引用天气位置。
 
-控制中心（ControlCenter）：上游通过 [ControlCenterService.qml](../Services/ControlCenterService.qml) 在打开时激活 LazyLoader；[ControlCenterWindow.qml](../Modules/ControlCenter/ControlCenterWindow.qml) 关闭时发出 `popoutClosed` 将 Loader 设为 inactive。在 P1 启动阻断排查中，审计发现 ControlCenter 虽未在顶层阻断，但其子组件（`LanguageAndRegionPage.qml:3`、`MapTilerApiSettingsCard.qml:2`、`OpenWeatherApiSettingsCard.qml:2`）静态硬导入了 `Clavis.WeatherMap`。在 `ENABLE_WEATHERMAP=OFF` 默认构建下，直接实例化会导致 QML 加载崩溃；P1 为保核心亮屏暂时将其移出装配，P3-01 将完成这三处硬依赖的解耦并恢复按需挂载。
+控制中心（ControlCenter）：上游通过 `shell/Services/ControlCenterService.qml` 在打开时激活 LazyLoader；`shell/Modules/ControlCenter/ControlCenterWindow.qml` 关闭时发出 `popoutClosed` 将 Loader 设为 inactive。在 P1 启动阻断排查中，审计发现 ControlCenter 虽未在顶层阻断，但其子组件（`LanguageAndRegionPage.qml:3`、`MapTilerApiSettingsCard.qml:2`、`OpenWeatherApiSettingsCard.qml:2`）静态硬导入了 `Clavis.WeatherMap`。在 `ENABLE_WEATHERMAP=OFF` 默认构建下，直接实例化会导致 QML 加载崩溃；P1 为保核心亮屏暂时将其移出装配，P3-01 将完成这三处硬依赖的解耦并恢复按需挂载。
 
-会话面板（原 PowerMenu）：原 [PowerMenu.qml](../Modules/PowerMenu/PowerMenu.qml) 每屏 Loader 的 active 恒为 true，窗口仅按服务状态控制 visible。**P2 已完成重构**：将其彻底迁移为 `modules/session/SessionHost.qml` 与 `SessionPanel.qml`，对接 `app/ActionGateway.qml` 意图收敛中枢，关闭动画后触发 `dismissFinished` 彻底销毁窗口（`active: false`），旧 `Modules/PowerMenu/` 与单例 `PowerMenuService.qml` 已彻底安全删除。
+会话面板（原 PowerMenu）：原 `shell/Modules/PowerMenu/PowerMenu.qml` 每屏 Loader 的 active 恒为 true，窗口仅按服务状态控制 visible。**P2 已完成重构**：将其彻底迁移为 `modules/session/SessionHost.qml` 与 `SessionPanel.qml`，对接 `app/ActionGateway.qml` 意图收敛中枢，关闭动画后触发 `dismissFinished` 彻底销毁窗口（`active: false`），旧 `Modules/PowerMenu/` 与单例 `PowerMenuService.qml` 已彻底安全删除。
 
 ### 依赖与降级缺口
 
@@ -73,7 +85,7 @@ QML 的静态 import 解析先于 `active:false` 的对象控制。把带缺失�
 
 ### 资产、许可证与视觉
 
-[Fonts.qml](../Common/Fonts.qml) 不只是设置默认 family：它加载内嵌 Google Sans Flex，并让 expressive 和 systemClock 使用该字体；删除字体必须同时改消费者与回退规则。ui 已有系统字体可用性判断，mono/numeric 有 monospace fallback。
+`shell/Common/Fonts.qml` 不只是设置默认 family：它加载内嵌 Google Sans Flex，并让 expressive 和 systemClock 使用该字体；删除字体必须同时改消费者与回退规则。ui 已有系统字体可用性判断，mono/numeric 有 monospace fallback。
 
 MaterialSymbol 用系统 Material Symbols 字体，文件不是内嵌资产；直接退回普通字体会显示图标名称。必须声明系统图标字体能力，或为首期图标提供 SVG fallback。优先复用原有 ThemeIcon/SvgIcon，不凭空重做图标系统。删除字体不意味着删除对应历史许可记录。
 
@@ -109,216 +121,216 @@ MaterialSymbol 用系统 Material Symbols 字体，文件不是内嵌资产；�
 
 | 文件 | 接口及行号 |
 | --- | --- |
-| [AppShell.qml](../AppShell.qml) | 脱离进程：73, 166, 172, 178；原生导入：4 |
-| [Common/Appearance.qml](../Common/Appearance.qml) | 文件接口：298 |
-| [Modules/Bar/ActiveWindow/ActiveWindow.qml](../Modules/Bar/ActiveWindow/ActiveWindow.qml) | 原生导入：3 |
-| [Modules/Bar/SysMonitor/SysMonitor.qml](../Modules/Bar/SysMonitor/SysMonitor.qml) | 销毁钩子：76 |
-| [Modules/Bar/Workspaces/Workspaces.qml](../Modules/Bar/Workspaces/Workspaces.qml) | 原生导入：4 |
-| [Modules/ControlCenter/AccountPage.qml](../Modules/ControlCenter/AccountPage.qml) | 销毁钩子：24 |
-| [Modules/ControlCenter/AddNetworkPage.qml](../Modules/ControlCenter/AddNetworkPage.qml) | 销毁钩子：45 |
-| [Modules/ControlCenter/AdvancedPage.qml](../Modules/ControlCenter/AdvancedPage.qml) | 计时器：108 |
-| [Modules/ControlCenter/BezierCurveEditor.qml](../Modules/ControlCenter/BezierCurveEditor.qml) | 脱离进程：266 |
-| [Modules/ControlCenter/BezierCurveLayerEditor.qml](../Modules/ControlCenter/BezierCurveLayerEditor.qml) | 脱离进程：193 |
-| [Modules/ControlCenter/BluetoothPairingPage.qml](../Modules/ControlCenter/BluetoothPairingPage.qml) | 销毁钩子：44 |
-| [Modules/ControlCenter/CloudRemoteManagerWindow.qml](../Modules/ControlCenter/CloudRemoteManagerWindow.qml) | 计时器：79 |
-| [Modules/ControlCenter/ComputerBackupWindow.qml](../Modules/ControlCenter/ComputerBackupWindow.qml) | 计时器：284 |
-| [Modules/ControlCenter/ControlCenterWindow.qml](../Modules/ControlCenter/ControlCenterWindow.qml) | 计时器：166 |
-| [Modules/ControlCenter/DisplaysPage.qml](../Modules/ControlCenter/DisplaysPage.qml) | 销毁钩子：50 |
-| [Modules/ControlCenter/GeneralSidebarPage.qml](../Modules/ControlCenter/GeneralSidebarPage.qml) | 销毁钩子：107 |
-| [Modules/ControlCenter/LanguageAndRegionPage.qml](../Modules/ControlCenter/LanguageAndRegionPage.qml) | 原生导入：3 |
-| [Modules/ControlCenter/MapTilerApiSettingsCard.qml](../Modules/ControlCenter/MapTilerApiSettingsCard.qml) | 原生导入：2 |
-| [Modules/ControlCenter/NetworkPage.qml](../Modules/ControlCenter/NetworkPage.qml) | 计时器：179；销毁钩子：147 |
-| [Modules/ControlCenter/OpenWeatherApiSettingsCard.qml](../Modules/ControlCenter/OpenWeatherApiSettingsCard.qml) | 原生导入：2 |
-| [Modules/ControlCenter/ShortcutsPage.qml](../Modules/ControlCenter/ShortcutsPage.qml) | 原生导入：8；销毁钩子：358 |
-| [Modules/ControlCenter/SplitMenuButton.qml](../Modules/ControlCenter/SplitMenuButton.qml) | 销毁钩子：116 |
-| [Modules/ControlCenter/WallpaperColorPicker.qml](../Modules/ControlCenter/WallpaperColorPicker.qml) | 销毁钩子：30 |
-| [Modules/DesktopCards/DesktopCardHost.qml](../Modules/DesktopCards/DesktopCardHost.qml) | 原生导入：4；销毁钩子：260 |
-| [Modules/Dock/DockFileArtwork.qml](../Modules/Dock/DockFileArtwork.qml) | 原生导入：2 |
-| [Modules/Dock/DockFileDrag.qml](../Modules/Dock/DockFileDrag.qml) | 销毁钩子：63 |
-| [Modules/Dock/DockFileIcon.qml](../Modules/Dock/DockFileIcon.qml) | 原生导入：2 |
-| [Modules/Dock/DockFilePopup.qml](../Modules/Dock/DockFilePopup.qml) | 原生导入：4 |
-| [Modules/Dock/DockFolderFan.qml](../Modules/Dock/DockFolderFan.qml) | 原生导入：3 |
-| [Modules/Dock/DockFolderModel.qml](../Modules/Dock/DockFolderModel.qml) | 原生导入：3 |
-| [Modules/Dock/DockPreviewPopup.qml](../Modules/Dock/DockPreviewPopup.qml) | 原生导入：6；销毁钩子：62 |
-| [Modules/Dock/DockSurface.qml](../Modules/Dock/DockSurface.qml) | 计时器：624, 632, 642, 650, 659；原生导入：5, 6 |
-| [Modules/Dock/DockWindowCard.qml](../Modules/Dock/DockWindowCard.qml) | 原生导入：4 |
-| [Modules/FilePicker/FilePickerWindow.qml](../Modules/FilePicker/FilePickerWindow.qml) | 计时器：870 |
-| [Modules/HotCorners/HotCorners.qml](../Modules/HotCorners/HotCorners.qml) | 原生导入：4 |
-| [Modules/Keystone/ClockContent/ClockContent.qml](../Modules/Keystone/ClockContent/ClockContent.qml) | 计时器：103 |
-| [Modules/Keystone/CloudUploadContent/CloudUploadContent.qml](../Modules/Keystone/CloudUploadContent/CloudUploadContent.qml) | 计时器：182 |
-| [Modules/Keystone/DashboardContent/DashboardClock.qml](../Modules/Keystone/DashboardContent/DashboardClock.qml) | 计时器：31 |
-| [Modules/Keystone/DashboardContent/DashboardWeatherCard.qml](../Modules/Keystone/DashboardContent/DashboardWeatherCard.qml) | 计时器：100 |
-| [Modules/Keystone/DashboardContent/UserCard.qml](../Modules/Keystone/DashboardContent/UserCard.qml) | 原生导入：3 |
-| [Modules/Keystone/LyricsContent/LyricsContent.qml](../Modules/Keystone/LyricsContent/LyricsContent.qml) | 原生导入：2 |
-| [Modules/Keystone/LyricsContent/LyricsSpectrum.qml](../Modules/Keystone/LyricsContent/LyricsSpectrum.qml) | 销毁钩子：26 |
-| [Modules/Keystone/MediaContent/CaelestiaCover.qml](../Modules/Keystone/MediaContent/CaelestiaCover.qml) | 原生导入：9；销毁钩子：49 |
-| [Modules/Keystone/Styles/Long/LongStatusItem.qml](../Modules/Keystone/Styles/Long/LongStatusItem.qml) | 销毁钩子：213 |
-| [Modules/Keystone/Styles/Long/LongWorkspaces.qml](../Modules/Keystone/Styles/Long/LongWorkspaces.qml) | 原生导入：4 |
-| [Modules/Keystone/Styles/Recording/AudioRecordingVisual.qml](../Modules/Keystone/Styles/Recording/AudioRecordingVisual.qml) | 原生导入：3 |
-| [Modules/Keystone/Styles/Shared/KeystoneHoverController.qml](../Modules/Keystone/Styles/Shared/KeystoneHoverController.qml) | 计时器：54, 62 |
-| [Modules/Keystone/Styles/Shared/KeystoneSurface.qml](../Modules/Keystone/Styles/Shared/KeystoneSurface.qml) | 计时器：1387, 1476；原生导入：9；销毁钩子：925 |
-| [Modules/Keystone/Tools/ToolsBackend.qml](../Modules/Keystone/Tools/ToolsBackend.qml) | 进程对象：35 |
-| [Modules/Keystone/WeatherContent/WeatherContent.qml](../Modules/Keystone/WeatherContent/WeatherContent.qml) | 计时器：195 |
-| [Modules/Keystone/WeatherContent/WeatherMapCard.qml](../Modules/Keystone/WeatherContent/WeatherMapCard.qml) | 原生导入：3；销毁钩子：101 |
-| [Modules/Keystone/WeatherContent/WeatherSunriseSunset.qml](../Modules/Keystone/WeatherContent/WeatherSunriseSunset.qml) | 计时器：62 |
-| [Modules/Launcher/LauncherWindow.qml](../Modules/Launcher/LauncherWindow.qml) | 计时器：321；原生导入：7 |
-| [Modules/Launcher/SpotlightAppDrag.qml](../Modules/Launcher/SpotlightAppDrag.qml) | 销毁钩子：96 |
-| [Modules/Launcher/SpotlightClipboardDetails.qml](../Modules/Launcher/SpotlightClipboardDetails.qml) | 计时器：63, 242；销毁钩子：59 |
-| [Modules/Launcher/SpotlightFileProvider.qml](../Modules/Launcher/SpotlightFileProvider.qml) | 销毁钩子：62 |
-| [Modules/Launcher/SpotlightResultsPanel.qml](../Modules/Launcher/SpotlightResultsPanel.qml) | 计时器：509；销毁钩子：779 |
-| [Modules/Lock/Cards/AuthCard.qml](../Modules/Lock/Cards/AuthCard.qml) | 原生导入：5 |
-| [Modules/Lock/Cards/WeatherCard.qml](../Modules/Lock/Cards/WeatherCard.qml) | 计时器：383 |
-| [Modules/Lock/DefaultLockContent.qml](../Modules/Lock/DefaultLockContent.qml) | 计时器：75 |
-| [Modules/Lock/DefaultLockStatus.qml](../Modules/Lock/DefaultLockStatus.qml) | 销毁钩子：32 |
-| [Modules/Lock/Lock.qml](../Modules/Lock/Lock.qml) | 销毁钩子：56 |
-| [Modules/Lock/LockContent.qml](../Modules/Lock/LockContent.qml) | 计时器：578 |
-| [Modules/Lock/PreLockCapture.qml](../Modules/Lock/PreLockCapture.qml) | 进程对象：197；计时器：107；销毁钩子：227 |
-| [Modules/Map/MapLibreView.qml](../Modules/Map/MapLibreView.qml) | 网络接口：37, 40；销毁钩子：124 |
-| [Modules/Sidebars/Dashboard/DailyAirQualityTrendPane.qml](../Modules/Sidebars/Dashboard/DailyAirQualityTrendPane.qml) | 计时器：173 |
-| [Modules/Sidebars/Dashboard/DailyForecastTrendCard.qml](../Modules/Sidebars/Dashboard/DailyForecastTrendCard.qml) | 计时器：175 |
-| [Modules/Sidebars/Dashboard/DailyWindTrendPane.qml](../Modules/Sidebars/Dashboard/DailyWindTrendPane.qml) | 计时器：162 |
-| [Modules/Sidebars/Dashboard/DrawerView.qml](../Modules/Sidebars/Dashboard/DrawerView.qml) | 原生导入：2；销毁钩子：321 |
-| [Modules/Sidebars/Dashboard/HourlyAirQualityTrendPane.qml](../Modules/Sidebars/Dashboard/HourlyAirQualityTrendPane.qml) | 计时器：172 |
-| [Modules/Sidebars/Dashboard/HourlyWindTrendPane.qml](../Modules/Sidebars/Dashboard/HourlyWindTrendPane.qml) | 计时器：165 |
-| [Modules/Sidebars/Dashboard/InfoView.qml](../Modules/Sidebars/Dashboard/InfoView.qml) | 销毁钩子：30 |
-| [Modules/Sidebars/Dashboard/WeatherAqiCard.qml](../Modules/Sidebars/Dashboard/WeatherAqiCard.qml) | 原生导入：3 |
-| [Modules/Sidebars/Dashboard/WeatherAstroCard.qml](../Modules/Sidebars/Dashboard/WeatherAstroCard.qml) | 原生导入：3 |
-| [Modules/Sidebars/Dashboard/WeatherBlob.qml](../Modules/Sidebars/Dashboard/WeatherBlob.qml) | 原生导入：3 |
-| [Modules/Sidebars/Dashboard/WeatherHumidityCard.qml](../Modules/Sidebars/Dashboard/WeatherHumidityCard.qml) | 原生导入：4 |
-| [Modules/Sidebars/Dashboard/WeatherInsightCard.qml](../Modules/Sidebars/Dashboard/WeatherInsightCard.qml) | 原生导入：2 |
-| [Modules/Sidebars/Dashboard/WeatherMetricTrendPane.qml](../Modules/Sidebars/Dashboard/WeatherMetricTrendPane.qml) | 计时器：314 |
-| [Modules/Sidebars/Dashboard/WeatherPrecipitationCard.qml](../Modules/Sidebars/Dashboard/WeatherPrecipitationCard.qml) | 原生导入：3 |
-| [Modules/Sidebars/Dashboard/WeatherPressureCard.qml](../Modules/Sidebars/Dashboard/WeatherPressureCard.qml) | 原生导入：3 |
-| [Modules/Sidebars/Dashboard/WeatherView.qml](../Modules/Sidebars/Dashboard/WeatherView.qml) | 计时器：380 |
-| [Modules/Sidebars/Dashboard/WeatherVisibilityCard.qml](../Modules/Sidebars/Dashboard/WeatherVisibilityCard.qml) | 原生导入：3 |
-| [Modules/Sidebars/Dashboard/WeatherWindCard.qml](../Modules/Sidebars/Dashboard/WeatherWindCard.qml) | 原生导入：3 |
-| [Modules/Sidebars/Dashboard/infoTools/InfoToolDrawer.qml](../Modules/Sidebars/Dashboard/infoTools/InfoToolDrawer.qml) | 计时器：135 |
-| [Modules/Sidebars/Dashboard/notifications/NotificationItem.qml](../Modules/Sidebars/Dashboard/notifications/NotificationItem.qml) | 计时器：301 |
-| [Modules/Sidebars/Dashboard/notifications/NotificationList.qml](../Modules/Sidebars/Dashboard/notifications/NotificationList.qml) | 原生导入：4 |
-| [Modules/Sidebars/QuickSettings/BluetoothContent.qml](../Modules/Sidebars/QuickSettings/BluetoothContent.qml) | 计时器：137, 145；销毁钩子：109 |
-| [Modules/Sidebars/QuickSettings/IdleContent.qml](../Modules/Sidebars/QuickSettings/IdleContent.qml) | 计时器：41 |
-| [Modules/Sidebars/QuickSettings/NetworkContent.qml](../Modules/Sidebars/QuickSettings/NetworkContent.qml) | 计时器：170, 178；销毁钩子：145 |
-| [Modules/SystemCards/CookieClock/BubbleDate.qml](../Modules/SystemCards/CookieClock/BubbleDate.qml) | 原生导入：2 |
-| [Modules/SystemCards/CookieClock/CookieFace.qml](../Modules/SystemCards/CookieClock/CookieFace.qml) | 原生导入：2 |
-| [Modules/SystemCards/ExpressiveMetricTile.qml](../Modules/SystemCards/ExpressiveMetricTile.qml) | 原生导入：4 |
-| [Modules/SystemCards/SidebarCookieClock.qml](../Modules/SystemCards/SidebarCookieClock.qml) | 计时器：32 |
-| [Modules/SystemCards/SystemCalendarCard.qml](../Modules/SystemCards/SystemCalendarCard.qml) | 计时器：30 |
-| [Modules/SystemCards/SystemCardContent.qml](../Modules/SystemCards/SystemCardContent.qml) | 原生导入：3 |
-| [Modules/SystemCards/SystemClockCard.qml](../Modules/SystemCards/SystemClockCard.qml) | 计时器：46 |
-| [Modules/SystemCards/SystemLiquidMetricCard.qml](../Modules/SystemCards/SystemLiquidMetricCard.qml) | 原生导入：5 |
-| [Modules/SystemCards/SystemWeatherCard.qml](../Modules/SystemCards/SystemWeatherCard.qml) | 原生导入：3 |
-| [Modules/Wallpaper/WallpaperTransitionSurface.qml](../Modules/Wallpaper/WallpaperTransitionSurface.qml) | 计时器：497 |
-| [Modules/Wallpaper/ZenPaletteRenderer.qml](../Modules/Wallpaper/ZenPaletteRenderer.qml) | 原生导入：17 |
-| [Services/ApplicationService.qml](../Services/ApplicationService.qml) | 脱离进程：66；原生导入：5 |
-| [Services/AudioRecordingService.qml](../Services/AudioRecordingService.qml) | 进程对象：185, 209, 235, 250；脱离进程：60；计时器：264, 273 |
-| [Services/AudioSpectrum.qml](../Services/AudioSpectrum.qml) | 原生导入：5 |
-| [Services/AutostartService.qml](../Services/AutostartService.qml) | 进程对象：472, 560；文件接口：498, 542 |
-| [Services/AvatarService.qml](../Services/AvatarService.qml) | 进程对象：33；脱离进程：41, 45 |
-| [Services/AwwwWallpaperService.qml](../Services/AwwwWallpaperService.qml) | 进程对象：325, 339, 349, 386, 440, 468；计时器：430 |
-| [Services/BluetoothService.qml](../Services/BluetoothService.qml) | 计时器：576, 587；销毁钩子：445 |
-| [Services/BlurService.qml](../Services/BlurService.qml) | 进程对象：76 |
-| [Services/Brightness.qml](../Services/Brightness.qml) | 进程对象：158, 175, 296, 304；计时器：311；原生导入：6, 7 |
-| [Services/ClipboardService.qml](../Services/ClipboardService.qml) | 进程对象：483, 500, 520, 540 |
-| [Services/CloudUploadService.qml](../Services/CloudUploadService.qml) | 进程对象：294；原生导入：2 |
-| [Services/ControlCenterService.qml](../Services/ControlCenterService.qml) | 脱离进程：44；计时器：100 |
-| [Services/DefaultApplicationsService.qml](../Services/DefaultApplicationsService.qml) | 进程对象：805；文件接口：755, 778 |
-| [Services/DisplayColor.qml](../Services/DisplayColor.qml) | 进程对象：148；计时器：126, 139, 144；文件接口：159；网络接口：80, 83；原生导入：6 |
-| [Services/DisplayConfigService.qml](../Services/DisplayConfigService.qml) | 进程对象：186；计时器：175, 180；原生导入：6 |
-| [Services/DockService.qml](../Services/DockService.qml) | 进程对象：468；计时器：510；文件接口：480；原生导入：6, 7 |
-| [Services/FileActionService.qml](../Services/FileActionService.qml) | 进程对象：24 |
-| [Services/FileSearchService.qml](../Services/FileSearchService.qml) | 进程对象：219, 234, 249；计时器：214 |
-| [Services/I18nService.qml](../Services/I18nService.qml) | 原生导入：5 |
-| [Services/IdleService.qml](../Services/IdleService.qml) | 进程对象：363, 403, 421；脱离进程：444；文件接口：374；销毁钩子：441 |
-| [Services/InfoDrawerState.qml](../Services/InfoDrawerState.qml) | 进程对象：142；计时器：185；文件接口：154 |
-| [Services/KeyboardLockService.qml](../Services/KeyboardLockService.qml) | 进程对象：80；计时器：99 |
-| [Services/LyricsTrackService.qml](../Services/LyricsTrackService.qml) | 原生导入：5 |
-| [Services/MatugenTemplateService.qml](../Services/MatugenTemplateService.qml) | 进程对象：109, 143；计时器：96, 103；文件接口：90 |
-| [Services/MediaManager.qml](../Services/MediaManager.qml) | 计时器：39 |
-| [Services/MediaPalette.qml](../Services/MediaPalette.qml) | 原生导入：5 |
-| [Services/NetworkManagerExtras.qml](../Services/NetworkManagerExtras.qml) | 进程对象：116, 188, 226, 253, 286 |
-| [Services/NetworkService.qml](../Services/NetworkService.qml) | 计时器：1104, 1118, 1131, 1142；销毁钩子：953 |
-| [Services/NiriConfigService.qml](../Services/NiriConfigService.qml) | 进程对象：151；文件接口：221；原生导入：8 |
-| [Services/NotificationManager.qml](../Services/NotificationManager.qml) | 进程对象：172；计时器：74；文件接口：246 |
-| [Services/PackageService.qml](../Services/PackageService.qml) | 进程对象：34, 53；计时器：72 |
-| [Services/PersonalizationConfig.qml](../Services/PersonalizationConfig.qml) | 进程对象：2182；计时器：2193；文件接口：2167, 2201 |
-| [Services/QuickToggleConfig.qml](../Services/QuickToggleConfig.qml) | 进程对象：124；文件接口：134 |
-| [Services/RcloneService.qml](../Services/RcloneService.qml) | 进程对象：703, 760, 793, 848, 889；计时器：922, 932, 942 |
-| [Services/RecordingService.qml](../Services/RecordingService.qml) | 进程对象：220, 239, 259, 274；计时器：288, 297 |
-| [Services/RegionSelectionService.qml](../Services/RegionSelectionService.qml) | 计时器：65 |
-| [Services/SpotlightAppUsage.qml](../Services/SpotlightAppUsage.qml) | 进程对象：61；文件接口：74 |
-| [Services/SpotlightCatalog.qml](../Services/SpotlightCatalog.qml) | 脱离进程：93 |
-| [Services/SpotlightSearchService.qml](../Services/SpotlightSearchService.qml) | 进程对象：127；计时器：141, 151 |
-| [Services/SpotlightToolService.qml](../Services/SpotlightToolService.qml) | 进程对象：209, 224；计时器：195, 200 |
-| [Services/SystemCardService.qml](../Services/SystemCardService.qml) | 销毁钩子：278 |
-| [Services/SystemIdentityService.qml](../Services/SystemIdentityService.qml) | 进程对象：153；计时器：130, 134；文件接口：141 |
-| [Services/SystemMonitorService.qml](../Services/SystemMonitorService.qml) | 进程对象：734；计时器：662, 669, 703, 723, 742 |
-| [Services/ThemeService.qml](../Services/ThemeService.qml) | 进程对象：321, 331, 346；原生导入：6 |
-| [Services/Time.qml](../Services/Time.qml) | 计时器：26, 32 |
-| [Services/TimerService.qml](../Services/TimerService.qml) | 脱离进程：87；计时器：219, 226 |
-| [Services/TodoService.qml](../Services/TodoService.qml) | 进程对象：80；文件接口：92 |
-| [Services/TrayService.qml](../Services/TrayService.qml) | 进程对象：108；文件接口：118 |
-| [Services/UiPreferences.qml](../Services/UiPreferences.qml) | 进程对象：575, 706, 720；计时器：698, 741, 751；文件接口：588；原生导入：7 |
-| [Services/WallpaperSceneService.qml](../Services/WallpaperSceneService.qml) | 原生导入：5 |
-| [Services/WallpaperService.qml](../Services/WallpaperService.qml) | 进程对象：686；计时器：659, 668 |
-| [Services/WeatherPlugin.qml](../Services/WeatherPlugin.qml) | 原生导入：3 |
-| [Services/WindowPreviewService.qml](../Services/WindowPreviewService.qml) | 计时器：97；原生导入：4, 5；销毁钩子：79 |
-| [Widgets/common/BrailleSpinner.qml](../Widgets/common/BrailleSpinner.qml) | 计时器：23 |
-| [Widgets/common/CompositorBlurRegion.qml](../Widgets/common/CompositorBlurRegion.qml) | 计时器：196；销毁钩子：189 |
-| [Widgets/common/MaterialStepper.qml](../Widgets/common/MaterialStepper.qml) | 计时器：95 |
-| [Widgets/common/SearchSelectMenuField.qml](../Widgets/common/SearchSelectMenuField.qml) | 计时器：423 |
-| [Widgets/common/SettingsSearchAnchor.qml](../Widgets/common/SettingsSearchAnchor.qml) | 计时器：99；销毁钩子：55 |
-| [Widgets/common/StyledScrollBar.qml](../Widgets/common/StyledScrollBar.qml) | 计时器：29 |
-| [Widgets/weather/WeatherBackground.qml](../Widgets/weather/WeatherBackground.qml) | 计时器：1026, 1124 |
-| [core/plugin/cava/src/audio_level_provider.cpp](../core/plugin/cava/src/audio_level_provider.cpp) | 计时器：9, 12 |
-| [core/plugin/cava/src/audio_level_provider.h](../core/plugin/cava/src/audio_level_provider.h) | 计时器：7, 65, 66 |
-| [core/plugin/cava/src/cava_provider.cpp](../core/plugin/cava/src/cava_provider.cpp) | 计时器：13 |
-| [core/plugin/cava/src/cava_provider.h](../core/plugin/cava/src/cava_provider.h) | 计时器：4, 49 |
-| [core/plugin/desktopcards/src/wallpaper_analyzer.cpp](../core/plugin/desktopcards/src/wallpaper_analyzer.cpp) | 计时器：6, 383 |
-| [core/plugin/files/src/desktop_files.cpp](../core/plugin/files/src/desktop_files.cpp) | 进程对象：8, 165, 177, 178, 181, 182；文件接口：5, 39, 40 |
-| [core/plugin/files/src/desktop_files.h](../core/plugin/files/src/desktop_files.h) | 文件接口：2, 38 |
-| [core/plugin/files/src/file_metadata.cpp](../core/plugin/files/src/file_metadata.cpp) | 文件接口：4, 13, 17 |
-| [core/plugin/gamma/src/gamma_backend.cpp](../core/plugin/gamma/src/gamma_backend.cpp) | 计时器：9, 69, 75, 125, 138, 183 |
-| [core/plugin/keyboard/src/shortcut_recorder.cpp](../core/plugin/keyboard/src/shortcut_recorder.cpp) | 文件接口：4, 5, 72, 73, 74 |
-| [core/plugin/lyrics/src/lyrics.cpp](../core/plugin/lyrics/src/lyrics.cpp) | 计时器：232；文件接口：4, 6, 14, 656, 667, 682, 1261, 1276, 1284, 1297, 1298, 1310, 1311, 1342, 1348, 1350, 1351, 1359, 1373, 1374, 1388；网络接口：12, 239, 623, 829, 835, 836, 848, 850, 851, 857, 871, 872 |
-| [core/plugin/lyrics/src/lyrics.h](../core/plugin/lyrics/src/lyrics.h) | 计时器：9, 106；网络接口：5, 6, 41, 103, 104, 105, 176 |
-| [core/plugin/niri/src/niri_animation_targets.cpp](../core/plugin/niri/src/niri_animation_targets.cpp) | 计时器：11, 12 |
-| [core/plugin/niri/src/niri_animation_targets.h](../core/plugin/niri/src/niri_animation_targets.h) | 计时器：4, 29, 30 |
-| [core/plugin/niri/src/niri_floating_parallax.cpp](../core/plugin/niri/src/niri_floating_parallax.cpp) | 计时器：8, 128 |
-| [core/plugin/niri/src/niri_plugin.cpp](../core/plugin/niri/src/niri_plugin.cpp) | 计时器：7, 17, 597 |
-| [core/plugin/runtime/src/clavis_file_system.cpp](../core/plugin/runtime/src/clavis_file_system.cpp) | 文件接口：3, 27, 30 |
-| [core/plugin/runtime/src/config_file_watch.cpp](../core/plugin/runtime/src/config_file_watch.cpp) | 文件接口：2, 12, 13, 30 |
-| [core/plugin/runtime/src/config_file_watch.h](../core/plugin/runtime/src/config_file_watch.h) | 文件接口：2, 23 |
-| [core/plugin/windowpreview/src/window_capture_probe.cpp](../core/plugin/windowpreview/src/window_capture_probe.cpp) | 计时器：7, 30, 31, 69, 71, 132 |
-| [core/plugin/windowpreview/src/window_preview_manager.cpp](../core/plugin/windowpreview/src/window_preview_manager.cpp) | 计时器：8, 11, 100, 226 |
-| [core/plugin/windowpreview/src/window_preview_manager.h](../core/plugin/windowpreview/src/window_preview_manager.h) | 计时器：6, 44, 45 |
-| [core/src/niri_icon_lookup.cpp](../core/src/niri_icon_lookup.cpp) | 文件接口：3, 5, 110, 124, 152, 219, 232 |
-| [core/src/niri_ipc_client.cpp](../core/src/niri_ipc_client.cpp) | 计时器：8, 201, 217 |
-| [core/src/openmeteo_client.cpp](../core/src/openmeteo_client.cpp) | 计时器：14, 176；网络接口：7, 8, 172, 173, 180, 182, 183 |
-| [core/src/openmeteo_client.h](../core/src/openmeteo_client.h) | 计时器：7, 42；网络接口：4, 40 |
-| [core/src/runtime/backlight_reading.cpp](../core/src/runtime/backlight_reading.cpp) | 文件接口：2, 7 |
-| [core/src/runtime/clavis_paths.cpp](../core/src/runtime/clavis_paths.cpp) | 文件接口：3, 17, 43, 55, 60, 64, 84, 86, 98 |
-| [core/src/weather_backend.cpp](../core/src/weather_backend.cpp) | 计时器：66, 67, 69 |
-| [core/src/weather_backend.h](../core/src/weather_backend.h) | 计时器：8, 38, 39 |
-| [core/src/weather_cache.cpp](../core/src/weather_cache.cpp) | 文件接口：3, 4, 12, 14, 20, 34, 35 |
-| [core/src/weather_map_provider.cpp](../core/src/weather_map_provider.cpp) | 计时器：25；网络接口：7, 8, 48, 139, 140, 143, 144, 150, 153, 186, 187, 190, 191, 197, 200, 225, 226, 229, 230, 236, 239 |
-| [core/src/weather_map_provider.h](../core/src/weather_map_provider.h) | 计时器：5, 73；网络接口：3, 8, 72, 74, 75, 76 |
-| [core/src/weather_normals_cache.cpp](../core/src/weather_normals_cache.cpp) | 文件接口：3, 4, 8, 13, 24, 26, 88, 89 |
-| [core/tests/clavis_paths_test.cpp](../core/tests/clavis_paths_test.cpp) | 文件接口：3, 4, 31, 32, 33, 34, 35, 36, 39, 40, 41, 42, 44, 47, 48, 49, 50, 51, 53, 54, 55, 56 |
-| [core/tests/desktop_files_test.cpp](../core/tests/desktop_files_test.cpp) | 进程对象：8, 61, 67；文件接口：4, 5, 34, 35, 37, 73, 82, 99, 126, 144, 166 |
-| [core/tests/device_state_test.cpp](../core/tests/device_state_test.cpp) | 文件接口：2, 14, 35 |
-| [core/tests/icon_theme_controller_test.cpp](../core/tests/icon_theme_controller_test.cpp) | 文件接口：3, 4, 24, 26 |
-| [core/tests/lyrics_test.cpp](../core/tests/lyrics_test.cpp) | 计时器：15, 137；文件接口：3, 5, 185, 186, 187, 188, 284, 285；网络接口：9, 11, 12, 44, 46, 47, 51, 53, 57, 62, 63, 77, 104, 108, 117, 124, 127, 149, 425, 439, 589 |
-| [core/tests/niri_icon_lookup_test.cpp](../core/tests/niri_icon_lookup_test.cpp) | 文件接口：3, 4, 39, 40, 41, 47 |
-| [core/tests/niri_ipc_async_test.cpp](../core/tests/niri_ipc_async_test.cpp) | 计时器：5, 24 |
-| [core/tests/niri_minimize_test.cpp](../core/tests/niri_minimize_test.cpp) | 计时器：10, 53, 90 |
-| [core/tests/process_quit_test.cpp](../core/tests/process_quit_test.cpp) | 进程对象：2, 11, 20, 25, 41 |
-| [core/tests/weather_climate_normals_test.cpp](../core/tests/weather_climate_normals_test.cpp) | 文件接口：5, 71 |
-| [core/tests/weather_location_test.cpp](../core/tests/weather_location_test.cpp) | 文件接口：5, 47 |
+| `shell/AppShell.qml` | 脱离进程：73, 166, 172, 178；原生导入：4 |
+| `shell/Common/Appearance.qml` | 文件接口：298 |
+| `shell/Modules/Bar/ActiveWindow/ActiveWindow.qml` | 原生导入：3 |
+| `shell/Modules/Bar/SysMonitor/SysMonitor.qml` | 销毁钩子：76 |
+| `shell/Modules/Bar/Workspaces/Workspaces.qml` | 原生导入：4 |
+| `shell/Modules/ControlCenter/AccountPage.qml` | 销毁钩子：24 |
+| `shell/Modules/ControlCenter/AddNetworkPage.qml` | 销毁钩子：45 |
+| `shell/Modules/ControlCenter/AdvancedPage.qml` | 计时器：108 |
+| `shell/Modules/ControlCenter/BezierCurveEditor.qml` | 脱离进程：266 |
+| `shell/Modules/ControlCenter/BezierCurveLayerEditor.qml` | 脱离进程：193 |
+| `shell/Modules/ControlCenter/BluetoothPairingPage.qml` | 销毁钩子：44 |
+| `shell/Modules/ControlCenter/CloudRemoteManagerWindow.qml` | 计时器：79 |
+| `shell/Modules/ControlCenter/ComputerBackupWindow.qml` | 计时器：284 |
+| `shell/Modules/ControlCenter/ControlCenterWindow.qml` | 计时器：166 |
+| `shell/Modules/ControlCenter/DisplaysPage.qml` | 销毁钩子：50 |
+| `shell/Modules/ControlCenter/GeneralSidebarPage.qml` | 销毁钩子：107 |
+| `shell/Modules/ControlCenter/LanguageAndRegionPage.qml` | 原生导入：3 |
+| `shell/Modules/ControlCenter/MapTilerApiSettingsCard.qml` | 原生导入：2 |
+| `shell/Modules/ControlCenter/NetworkPage.qml` | 计时器：179；销毁钩子：147 |
+| `shell/Modules/ControlCenter/OpenWeatherApiSettingsCard.qml` | 原生导入：2 |
+| `shell/Modules/ControlCenter/ShortcutsPage.qml` | 原生导入：8；销毁钩子：358 |
+| `shell/Modules/ControlCenter/SplitMenuButton.qml` | 销毁钩子：116 |
+| `shell/Modules/ControlCenter/WallpaperColorPicker.qml` | 销毁钩子：30 |
+| `shell/Modules/DesktopCards/DesktopCardHost.qml` | 原生导入：4；销毁钩子：260 |
+| `shell/Modules/Dock/DockFileArtwork.qml` | 原生导入：2 |
+| `shell/Modules/Dock/DockFileDrag.qml` | 销毁钩子：63 |
+| `shell/Modules/Dock/DockFileIcon.qml` | 原生导入：2 |
+| `shell/Modules/Dock/DockFilePopup.qml` | 原生导入：4 |
+| `shell/Modules/Dock/DockFolderFan.qml` | 原生导入：3 |
+| `shell/Modules/Dock/DockFolderModel.qml` | 原生导入：3 |
+| `shell/Modules/Dock/DockPreviewPopup.qml` | 原生导入：6；销毁钩子：62 |
+| `shell/Modules/Dock/DockSurface.qml` | 计时器：624, 632, 642, 650, 659；原生导入：5, 6 |
+| `shell/Modules/Dock/DockWindowCard.qml` | 原生导入：4 |
+| `shell/Modules/FilePicker/FilePickerWindow.qml` | 计时器：870 |
+| `shell/Modules/HotCorners/HotCorners.qml` | 原生导入：4 |
+| `shell/Modules/Keystone/ClockContent/ClockContent.qml` | 计时器：103 |
+| `shell/Modules/Keystone/CloudUploadContent/CloudUploadContent.qml` | 计时器：182 |
+| `shell/Modules/Keystone/DashboardContent/DashboardClock.qml` | 计时器：31 |
+| `shell/Modules/Keystone/DashboardContent/DashboardWeatherCard.qml` | 计时器：100 |
+| `shell/Modules/Keystone/DashboardContent/UserCard.qml` | 原生导入：3 |
+| `shell/Modules/Keystone/LyricsContent/LyricsContent.qml` | 原生导入：2 |
+| `shell/Modules/Keystone/LyricsContent/LyricsSpectrum.qml` | 销毁钩子：26 |
+| `shell/Modules/Keystone/MediaContent/CaelestiaCover.qml` | 原生导入：9；销毁钩子：49 |
+| `shell/Modules/Keystone/Styles/Long/LongStatusItem.qml` | 销毁钩子：213 |
+| `shell/Modules/Keystone/Styles/Long/LongWorkspaces.qml` | 原生导入：4 |
+| `shell/Modules/Keystone/Styles/Recording/AudioRecordingVisual.qml` | 原生导入：3 |
+| `shell/Modules/Keystone/Styles/Shared/KeystoneHoverController.qml` | 计时器：54, 62 |
+| `shell/Modules/Keystone/Styles/Shared/KeystoneSurface.qml` | 计时器：1387, 1476；原生导入：9；销毁钩子：925 |
+| `shell/Modules/Keystone/Tools/ToolsBackend.qml` | 进程对象：35 |
+| `shell/Modules/Keystone/WeatherContent/WeatherContent.qml` | 计时器：195 |
+| `shell/Modules/Keystone/WeatherContent/WeatherMapCard.qml` | 原生导入：3；销毁钩子：101 |
+| `shell/Modules/Keystone/WeatherContent/WeatherSunriseSunset.qml` | 计时器：62 |
+| `shell/Modules/Launcher/LauncherWindow.qml` | 计时器：321；原生导入：7 |
+| `shell/Modules/Launcher/SpotlightAppDrag.qml` | 销毁钩子：96 |
+| `shell/Modules/Launcher/SpotlightClipboardDetails.qml` | 计时器：63, 242；销毁钩子：59 |
+| `shell/Modules/Launcher/SpotlightFileProvider.qml` | 销毁钩子：62 |
+| `shell/Modules/Launcher/SpotlightResultsPanel.qml` | 计时器：509；销毁钩子：779 |
+| `shell/Modules/Lock/Cards/AuthCard.qml` | 原生导入：5 |
+| `shell/Modules/Lock/Cards/WeatherCard.qml` | 计时器：383 |
+| `shell/Modules/Lock/DefaultLockContent.qml` | 计时器：75 |
+| `shell/Modules/Lock/DefaultLockStatus.qml` | 销毁钩子：32 |
+| `shell/Modules/Lock/Lock.qml` | 销毁钩子：56 |
+| `shell/Modules/Lock/LockContent.qml` | 计时器：578 |
+| `shell/Modules/Lock/PreLockCapture.qml` | 进程对象：197；计时器：107；销毁钩子：227 |
+| `shell/Modules/Map/MapLibreView.qml` | 网络接口：37, 40；销毁钩子：124 |
+| `shell/Modules/Sidebars/Dashboard/DailyAirQualityTrendPane.qml` | 计时器：173 |
+| `shell/Modules/Sidebars/Dashboard/DailyForecastTrendCard.qml` | 计时器：175 |
+| `shell/Modules/Sidebars/Dashboard/DailyWindTrendPane.qml` | 计时器：162 |
+| `shell/Modules/Sidebars/Dashboard/DrawerView.qml` | 原生导入：2；销毁钩子：321 |
+| `shell/Modules/Sidebars/Dashboard/HourlyAirQualityTrendPane.qml` | 计时器：172 |
+| `shell/Modules/Sidebars/Dashboard/HourlyWindTrendPane.qml` | 计时器：165 |
+| `shell/Modules/Sidebars/Dashboard/InfoView.qml` | 销毁钩子：30 |
+| `shell/Modules/Sidebars/Dashboard/WeatherAqiCard.qml` | 原生导入：3 |
+| `shell/Modules/Sidebars/Dashboard/WeatherAstroCard.qml` | 原生导入：3 |
+| `shell/Modules/Sidebars/Dashboard/WeatherBlob.qml` | 原生导入：3 |
+| `shell/Modules/Sidebars/Dashboard/WeatherHumidityCard.qml` | 原生导入：4 |
+| `shell/Modules/Sidebars/Dashboard/WeatherInsightCard.qml` | 原生导入：2 |
+| `shell/Modules/Sidebars/Dashboard/WeatherMetricTrendPane.qml` | 计时器：314 |
+| `shell/Modules/Sidebars/Dashboard/WeatherPrecipitationCard.qml` | 原生导入：3 |
+| `shell/Modules/Sidebars/Dashboard/WeatherPressureCard.qml` | 原生导入：3 |
+| `shell/Modules/Sidebars/Dashboard/WeatherView.qml` | 计时器：380 |
+| `shell/Modules/Sidebars/Dashboard/WeatherVisibilityCard.qml` | 原生导入：3 |
+| `shell/Modules/Sidebars/Dashboard/WeatherWindCard.qml` | 原生导入：3 |
+| `shell/Modules/Sidebars/Dashboard/infoTools/InfoToolDrawer.qml` | 计时器：135 |
+| `shell/Modules/Sidebars/Dashboard/notifications/NotificationItem.qml` | 计时器：301 |
+| `shell/Modules/Sidebars/Dashboard/notifications/NotificationList.qml` | 原生导入：4 |
+| `shell/Modules/Sidebars/QuickSettings/BluetoothContent.qml` | 计时器：137, 145；销毁钩子：109 |
+| `shell/Modules/Sidebars/QuickSettings/IdleContent.qml` | 计时器：41 |
+| `shell/Modules/Sidebars/QuickSettings/NetworkContent.qml` | 计时器：170, 178；销毁钩子：145 |
+| `shell/Modules/SystemCards/CookieClock/BubbleDate.qml` | 原生导入：2 |
+| `shell/Modules/SystemCards/CookieClock/CookieFace.qml` | 原生导入：2 |
+| `shell/Modules/SystemCards/ExpressiveMetricTile.qml` | 原生导入：4 |
+| `shell/Modules/SystemCards/SidebarCookieClock.qml` | 计时器：32 |
+| `shell/Modules/SystemCards/SystemCalendarCard.qml` | 计时器：30 |
+| `shell/Modules/SystemCards/SystemCardContent.qml` | 原生导入：3 |
+| `shell/Modules/SystemCards/SystemClockCard.qml` | 计时器：46 |
+| `shell/Modules/SystemCards/SystemLiquidMetricCard.qml` | 原生导入：5 |
+| `shell/Modules/SystemCards/SystemWeatherCard.qml` | 原生导入：3 |
+| `shell/Modules/Wallpaper/WallpaperTransitionSurface.qml` | 计时器：497 |
+| `shell/Modules/Wallpaper/ZenPaletteRenderer.qml` | 原生导入：17 |
+| `shell/Services/ApplicationService.qml` | 脱离进程：66；原生导入：5 |
+| `shell/Services/AudioRecordingService.qml` | 进程对象：185, 209, 235, 250；脱离进程：60；计时器：264, 273 |
+| `shell/Services/AudioSpectrum.qml` | 原生导入：5 |
+| `shell/Services/AutostartService.qml` | 进程对象：472, 560；文件接口：498, 542 |
+| `shell/Services/AvatarService.qml` | 进程对象：33；脱离进程：41, 45 |
+| `shell/Services/AwwwWallpaperService.qml` | 进程对象：325, 339, 349, 386, 440, 468；计时器：430 |
+| `shell/Services/BluetoothService.qml` | 计时器：576, 587；销毁钩子：445 |
+| `shell/Services/BlurService.qml` | 进程对象：76 |
+| `shell/Services/Brightness.qml` | 进程对象：158, 175, 296, 304；计时器：311；原生导入：6, 7 |
+| `shell/Services/ClipboardService.qml` | 进程对象：483, 500, 520, 540 |
+| `shell/Services/CloudUploadService.qml` | 进程对象：294；原生导入：2 |
+| `shell/Services/ControlCenterService.qml` | 脱离进程：44；计时器：100 |
+| `shell/Services/DefaultApplicationsService.qml` | 进程对象：805；文件接口：755, 778 |
+| `shell/Services/DisplayColor.qml` | 进程对象：148；计时器：126, 139, 144；文件接口：159；网络接口：80, 83；原生导入：6 |
+| `shell/Services/DisplayConfigService.qml` | 进程对象：186；计时器：175, 180；原生导入：6 |
+| `shell/Services/DockService.qml` | 进程对象：468；计时器：510；文件接口：480；原生导入：6, 7 |
+| `shell/Services/FileActionService.qml` | 进程对象：24 |
+| `shell/Services/FileSearchService.qml` | 进程对象：219, 234, 249；计时器：214 |
+| `shell/Services/I18nService.qml` | 原生导入：5 |
+| `shell/Services/IdleService.qml` | 进程对象：363, 403, 421；脱离进程：444；文件接口：374；销毁钩子：441 |
+| `shell/Services/InfoDrawerState.qml` | 进程对象：142；计时器：185；文件接口：154 |
+| `shell/Services/KeyboardLockService.qml` | 进程对象：80；计时器：99 |
+| `shell/Services/LyricsTrackService.qml` | 原生导入：5 |
+| `shell/Services/MatugenTemplateService.qml` | 进程对象：109, 143；计时器：96, 103；文件接口：90 |
+| `shell/Services/MediaManager.qml` | 计时器：39 |
+| `shell/Services/MediaPalette.qml` | 原生导入：5 |
+| `shell/Services/NetworkManagerExtras.qml` | 进程对象：116, 188, 226, 253, 286 |
+| `shell/Services/NetworkService.qml` | 计时器：1104, 1118, 1131, 1142；销毁钩子：953 |
+| `shell/Services/NiriConfigService.qml` | 进程对象：151；文件接口：221；原生导入：8 |
+| `shell/Services/NotificationManager.qml` | 进程对象：172；计时器：74；文件接口：246 |
+| `shell/Services/PackageService.qml` | 进程对象：34, 53；计时器：72 |
+| `shell/Services/PersonalizationConfig.qml` | 进程对象：2182；计时器：2193；文件接口：2167, 2201 |
+| `shell/Services/QuickToggleConfig.qml` | 进程对象：124；文件接口：134 |
+| `shell/Services/RcloneService.qml` | 进程对象：703, 760, 793, 848, 889；计时器：922, 932, 942 |
+| `shell/Services/RecordingService.qml` | 进程对象：220, 239, 259, 274；计时器：288, 297 |
+| `shell/Services/RegionSelectionService.qml` | 计时器：65 |
+| `shell/Services/SpotlightAppUsage.qml` | 进程对象：61；文件接口：74 |
+| `shell/Services/SpotlightCatalog.qml` | 脱离进程：93 |
+| `shell/Services/SpotlightSearchService.qml` | 进程对象：127；计时器：141, 151 |
+| `shell/Services/SpotlightToolService.qml` | 进程对象：209, 224；计时器：195, 200 |
+| `shell/Services/SystemCardService.qml` | 销毁钩子：278 |
+| `shell/Services/SystemIdentityService.qml` | 进程对象：153；计时器：130, 134；文件接口：141 |
+| `shell/Services/SystemMonitorService.qml` | 进程对象：734；计时器：662, 669, 703, 723, 742 |
+| `shell/Services/ThemeService.qml` | 进程对象：321, 331, 346；原生导入：6 |
+| `shell/Services/Time.qml` | 计时器：26, 32 |
+| `shell/Services/TimerService.qml` | 脱离进程：87；计时器：219, 226 |
+| `shell/Services/TodoService.qml` | 进程对象：80；文件接口：92 |
+| `shell/Services/TrayService.qml` | 进程对象：108；文件接口：118 |
+| `shell/Services/UiPreferences.qml` | 进程对象：575, 706, 720；计时器：698, 741, 751；文件接口：588；原生导入：7 |
+| `shell/Services/WallpaperSceneService.qml` | 原生导入：5 |
+| `shell/Services/WallpaperService.qml` | 进程对象：686；计时器：659, 668 |
+| `shell/Services/WeatherPlugin.qml` | 原生导入：3 |
+| `shell/Services/WindowPreviewService.qml` | 计时器：97；原生导入：4, 5；销毁钩子：79 |
+| `shell/Widgets/common/BrailleSpinner.qml` | 计时器：23 |
+| `shell/Widgets/common/CompositorBlurRegion.qml` | 计时器：196；销毁钩子：189 |
+| `shell/Widgets/common/MaterialStepper.qml` | 计时器：95 |
+| `shell/Widgets/common/SearchSelectMenuField.qml` | 计时器：423 |
+| `shell/Widgets/common/SettingsSearchAnchor.qml` | 计时器：99；销毁钩子：55 |
+| `shell/Widgets/common/StyledScrollBar.qml` | 计时器：29 |
+| `shell/Widgets/weather/WeatherBackground.qml` | 计时器：1026, 1124 |
+| `shell/core/plugin/cava/src/audio_level_provider.cpp` | 计时器：9, 12 |
+| `shell/core/plugin/cava/src/audio_level_provider.h` | 计时器：7, 65, 66 |
+| `shell/core/plugin/cava/src/cava_provider.cpp` | 计时器：13 |
+| `shell/core/plugin/cava/src/cava_provider.h` | 计时器：4, 49 |
+| `shell/core/plugin/desktopcards/src/wallpaper_analyzer.cpp` | 计时器：6, 383 |
+| `shell/core/plugin/files/src/desktop_files.cpp` | 进程对象：8, 165, 177, 178, 181, 182；文件接口：5, 39, 40 |
+| `shell/core/plugin/files/src/desktop_files.h` | 文件接口：2, 38 |
+| `shell/core/plugin/files/src/file_metadata.cpp` | 文件接口：4, 13, 17 |
+| `shell/core/plugin/gamma/src/gamma_backend.cpp` | 计时器：9, 69, 75, 125, 138, 183 |
+| `shell/core/plugin/keyboard/src/shortcut_recorder.cpp` | 文件接口：4, 5, 72, 73, 74 |
+| `shell/core/plugin/lyrics/src/lyrics.cpp` | 计时器：232；文件接口：4, 6, 14, 656, 667, 682, 1261, 1276, 1284, 1297, 1298, 1310, 1311, 1342, 1348, 1350, 1351, 1359, 1373, 1374, 1388；网络接口：12, 239, 623, 829, 835, 836, 848, 850, 851, 857, 871, 872 |
+| `shell/core/plugin/lyrics/src/lyrics.h` | 计时器：9, 106；网络接口：5, 6, 41, 103, 104, 105, 176 |
+| `shell/core/plugin/niri/src/niri_animation_targets.cpp` | 计时器：11, 12 |
+| `shell/core/plugin/niri/src/niri_animation_targets.h` | 计时器：4, 29, 30 |
+| `shell/core/plugin/niri/src/niri_floating_parallax.cpp` | 计时器：8, 128 |
+| `shell/core/plugin/niri/src/niri_plugin.cpp` | 计时器：7, 17, 597 |
+| `shell/core/plugin/runtime/src/clavis_file_system.cpp` | 文件接口：3, 27, 30 |
+| `shell/core/plugin/runtime/src/config_file_watch.cpp` | 文件接口：2, 12, 13, 30 |
+| `shell/core/plugin/runtime/src/config_file_watch.h` | 文件接口：2, 23 |
+| `shell/core/plugin/windowpreview/src/window_capture_probe.cpp` | 计时器：7, 30, 31, 69, 71, 132 |
+| `shell/core/plugin/windowpreview/src/window_preview_manager.cpp` | 计时器：8, 11, 100, 226 |
+| `shell/core/plugin/windowpreview/src/window_preview_manager.h` | 计时器：6, 44, 45 |
+| `shell/core/src/niri_icon_lookup.cpp` | 文件接口：3, 5, 110, 124, 152, 219, 232 |
+| `shell/core/src/niri_ipc_client.cpp` | 计时器：8, 201, 217 |
+| `shell/core/src/openmeteo_client.cpp` | 计时器：14, 176；网络接口：7, 8, 172, 173, 180, 182, 183 |
+| `shell/core/src/openmeteo_client.h` | 计时器：7, 42；网络接口：4, 40 |
+| `shell/core/src/runtime/backlight_reading.cpp` | 文件接口：2, 7 |
+| `shell/core/src/runtime/clavis_paths.cpp` | 文件接口：3, 17, 43, 55, 60, 64, 84, 86, 98 |
+| `shell/core/src/weather_backend.cpp` | 计时器：66, 67, 69 |
+| `shell/core/src/weather_backend.h` | 计时器：8, 38, 39 |
+| `shell/core/src/weather_cache.cpp` | 文件接口：3, 4, 12, 14, 20, 34, 35 |
+| `shell/core/src/weather_map_provider.cpp` | 计时器：25；网络接口：7, 8, 48, 139, 140, 143, 144, 150, 153, 186, 187, 190, 191, 197, 200, 225, 226, 229, 230, 236, 239 |
+| `shell/core/src/weather_map_provider.h` | 计时器：5, 73；网络接口：3, 8, 72, 74, 75, 76 |
+| `shell/core/src/weather_normals_cache.cpp` | 文件接口：3, 4, 8, 13, 24, 26, 88, 89 |
+| `shell/core/tests/clavis_paths_test.cpp` | 文件接口：3, 4, 31, 32, 33, 34, 35, 36, 39, 40, 41, 42, 44, 47, 48, 49, 50, 51, 53, 54, 55, 56 |
+| `shell/core/tests/desktop_files_test.cpp` | 进程对象：8, 61, 67；文件接口：4, 5, 34, 35, 37, 73, 82, 99, 126, 144, 166 |
+| `shell/core/tests/device_state_test.cpp` | 文件接口：2, 14, 35 |
+| `shell/core/tests/icon_theme_controller_test.cpp` | 文件接口：3, 4, 24, 26 |
+| `shell/core/tests/lyrics_test.cpp` | 计时器：15, 137；文件接口：3, 5, 185, 186, 187, 188, 284, 285；网络接口：9, 11, 12, 44, 46, 47, 51, 53, 57, 62, 63, 77, 104, 108, 117, 124, 127, 149, 425, 439, 589 |
+| `shell/core/tests/niri_icon_lookup_test.cpp` | 文件接口：3, 4, 39, 40, 41, 47 |
+| `shell/core/tests/niri_ipc_async_test.cpp` | 计时器：5, 24 |
+| `shell/core/tests/niri_minimize_test.cpp` | 计时器：10, 53, 90 |
+| `shell/core/tests/process_quit_test.cpp` | 进程对象：2, 11, 20, 25, 41 |
+| `shell/core/tests/weather_climate_normals_test.cpp` | 文件接口：5, 71 |
+| `shell/core/tests/weather_location_test.cpp` | 文件接口：5, 47 |
 | [scripts/capture/LockSnapshot.qml](../scripts/capture/LockSnapshot.qml) | 计时器：14 |
 | [tests/qml/tst_gamma_backend.qml](../tests/qml/tst_gamma_backend.qml) | 原生导入：3 |
-| [tools/window-preview/Fixture.qml](../tools/window-preview/Fixture.qml) | 计时器：14 |
-| [tools/window-preview/Preview.qml](../tools/window-preview/Preview.qml) | 原生导入：4 |
-| [tools/window-preview/main.cpp](../tools/window-preview/main.cpp) | 计时器：12, 62, 106, 111, 116, 153, 168, 174；文件接口：4, 77 |
+| `shell/tools/window-preview/Fixture.qml` | 计时器：14 |
+| `shell/tools/window-preview/Preview.qml` | 原生导入：4 |
+| `shell/tools/window-preview/main.cpp` | 计时器：12, 62, 106, 111, 116, 153, 168, 174；文件接口：4, 77 |
 
 ### 脚本调用与写入复查入口
 
@@ -329,8 +341,8 @@ MaterialSymbol 用系统 Material Symbols 字体，文件不是内嵌资产；�
 | [scripts/build/compile-launcher-shaders.sh](../scripts/build/compile-launcher-shaders.sh) | 43 |
 | [scripts/capture/screenshot_to_clipboard.sh](../scripts/capture/screenshot_to_clipboard.sh) | 5 |
 | [scripts/check-package.py](../scripts/check-package.py) | 6, 13, 43 |
-| [scripts/ci/arch.sh](../scripts/ci/arch.sh) | 23, 36 |
-| [scripts/ci/publish.sh](../scripts/ci/publish.sh) | 9 |
+| `shell/scripts/ci/arch.sh` | 23, 36 |
+| `shell/scripts/ci/publish.sh` | 9 |
 | [scripts/dev/check.sh](../scripts/dev/check.sh) | 69, 97, 106, 107, 108, 113 |
 | [scripts/dev/format-qml.sh](../scripts/dev/format-qml.sh) | 62 |
 | [scripts/dev/generate-search-catalog.py](../scripts/dev/generate-search-catalog.py) | 15, 30, 32, 33, 101, 103, 131, 147, 148 |

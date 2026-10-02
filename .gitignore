@@ -25,3 +25,6 @@ build-*/
 .qmlls.ini
 .packaging/
 local/
+
+# Local, pinned upstream reference (recreate from the commit in shell/wiki/recovery.md)
+/shell/references/
