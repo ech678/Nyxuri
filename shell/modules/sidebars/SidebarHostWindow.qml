@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import qs.shared.theme
-import "./SidebarPolicy.js" as SidebarPolicy
+import "../../shared/utils/SidebarPolicy.js" as SidebarPolicy
 import qs.modules.sidebars.dashboard
 import qs.modules.sidebars.quicksettings
 import qs.app.services

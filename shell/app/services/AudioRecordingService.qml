@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Io
 import qs.shared.theme
 import qs.app
-import "../../modules/keystone/RecordingState.js" as RecordingState
+import "../../shared/utils/RecordingState.js" as RecordingState
 
 Singleton {
     id: root

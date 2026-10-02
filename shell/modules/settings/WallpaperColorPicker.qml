@@ -8,7 +8,7 @@ import qs.shared.theme
 import qs.modules.wallpaper
 import qs.app.services
 import qs.shared.controls
-import "../wallpaper/ZenPalette.js" as Zen
+import "../../shared/utils/ZenPalette.js" as Zen
 
 Item {
     id: root

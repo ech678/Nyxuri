@@ -2,7 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import qs.modules.wallpaper
-import "../wallpaper/WallpaperSource.js" as WallpaperSource
+import "../../shared/utils/WallpaperSource.js" as WallpaperSource
 import QtQuick.Controls
 import QtQuick.Effects
 import QtQuick.Layouts

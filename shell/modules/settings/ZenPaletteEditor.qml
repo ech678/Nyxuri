@@ -21,7 +21,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
-import "../wallpaper/ZenPalette.js" as Zen
+import "../../shared/utils/ZenPalette.js" as Zen
 
 ColumnLayout {
     id: root

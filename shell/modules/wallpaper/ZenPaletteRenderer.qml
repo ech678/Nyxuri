@@ -16,7 +16,7 @@
 import QtQuick
 import Clavis.Runtime
 import qs.app.services
-import "./ZenPalette.js" as Zen
+import "../../shared/utils/ZenPalette.js" as Zen
 
 ShaderEffect {
     id: root

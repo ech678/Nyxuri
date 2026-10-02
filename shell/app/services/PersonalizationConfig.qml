@@ -3,8 +3,8 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.shared.theme
-import "../../modules/sidebars/SidebarPolicy.js" as SidebarPolicy
-import "../../modules/wallpaper/WallpaperSource.js" as WallpaperSource
+import "../../shared/utils/SidebarPolicy.js" as SidebarPolicy
+import "../../shared/utils/WallpaperSource.js" as WallpaperSource
 import qs.app.services
 import qs.app
 

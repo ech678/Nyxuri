@@ -3,7 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import "../../modules/wallpaper/AwwwCommand.js" as AwwwCommand
+import "../../shared/utils/AwwwCommand.js" as AwwwCommand
 
 Singleton {
     id: root

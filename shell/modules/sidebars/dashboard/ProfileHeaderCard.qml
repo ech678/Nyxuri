@@ -1,6 +1,6 @@
 import QtQuick
 import qs.modules.wallpaper
-import "../../wallpaper/WallpaperSource.js" as WallpaperSource
+import "../../../shared/utils/WallpaperSource.js" as WallpaperSource
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls

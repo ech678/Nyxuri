@@ -1,8 +1,8 @@
 import QtQuick
 import qs.shared.theme
 import qs.app
-import "./WallpaperSource.js" as WallpaperSource
-import "./WallpaperMath.js" as WallpaperMath
+import "../../shared/utils/WallpaperSource.js" as WallpaperSource
+import "../../shared/utils/WallpaperMath.js" as WallpaperMath
 
 Item {
     id: root

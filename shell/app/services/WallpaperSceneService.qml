@@ -6,9 +6,9 @@ import Quickshell
 import Clavis.Niri
 import qs.shared.theme
 import qs.shared.controls
-import "../../modules/sidebars/SidebarPolicy.js" as SidebarPolicy
+import "../../shared/utils/SidebarPolicy.js" as SidebarPolicy
 import qs.app.services
-import "../../modules/wallpaper/WallpaperMath.js" as WallpaperMath
+import "../../shared/utils/WallpaperMath.js" as WallpaperMath
 
 Singleton {
     id: root

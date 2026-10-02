@@ -3,9 +3,9 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import qs.app.services
-import "../../modules/wallpaper/WallpaperSource.js" as Source
-import "../../modules/wallpaper/ZenPalette.js" as Zen
-import "../../modules/wallpaper/WallpaperPaletteScope.js" as Scope
+import "../../shared/utils/WallpaperSource.js" as Source
+import "../../shared/utils/ZenPalette.js" as Zen
+import "../../shared/utils/WallpaperPaletteScope.js" as Scope
 
 Singleton {
     id: root

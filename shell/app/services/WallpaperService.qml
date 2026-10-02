@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.shared.theme
 import qs.app.services
-import "../../modules/wallpaper/WallpaperSource.js" as WallpaperSource
+import "../../shared/utils/WallpaperSource.js" as WallpaperSource
 import qs.app
 
 Singleton {
