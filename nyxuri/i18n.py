@@ -1,6 +1,7 @@
 """Bilingual internationalization and translation engine with automatic fallbacks."""
 
 import os
+import re
 import tomllib
 from pathlib import Path
 from typing import Any, Dict
@@ -8,6 +9,8 @@ from typing import Any, Dict
 from nyxuri.constants import CLI_CMD, Colors, PROJECT_NAME, STORAGE_NAME
 
 _CURRENT_LANG: str = "zh" if "zh" in os.environ.get("LANG", "").lower() or "zh" in os.environ.get("LC_ALL", "").lower() else "en"
+
+_MACRO_RE = re.compile(r"\{([A-Za-z_][A-Za-z0-9_.]*)\}")
 
 def get_lang() -> str:
     """Get currently selected language mode ('zh' or 'en')."""
@@ -38,11 +41,14 @@ def _load_translations() -> Dict[str, Dict[str, str]]:
     }
     constants.update({f"Colors.{name}": value for name, value in vars(Colors).items()
                       if name.isupper() and isinstance(value, str)})
+
+    def substitute(match: "re.Match[str]") -> str:
+        name = match.group(1)
+        return constants.get(name, match.group(0))
+
     for entry in translations.values():
         for lang, template in entry.items():
-            for name, value in constants.items():
-                template = template.replace("{" + name + "}", value)
-            entry[lang] = template
+            entry[lang] = _MACRO_RE.sub(substitute, template)
     return translations
 
 

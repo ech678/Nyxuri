@@ -15,7 +15,7 @@ from tests.utils import TempEnv
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PYTHON_LAUNCHER = (
     'import sys; target = sys.argv.pop(1); sys.path.insert(0, target); '
-    'sys.argv[0] = "nyxuri"; from nyxuri.cli import main; main()'
+    'sys.argv[0] = "nyxuri"; from nyxuri.__main__ import _run; sys.exit(_run())'
 )
 PYTHON_VERSION_CODE = 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")'
 
