@@ -210,6 +210,32 @@ def wait_shell_ready(shell_name: str, proc: subprocess.Popen, bin_path: str, tim
 
         time.sleep(0.15)
 
+def is_shell_locked(shell_name: str, bin_path: str = "") -> bool:
+    """Check if the currently running shell is in locked state."""
+    if shell_name == "custom":
+        effective_bin = bin_path or resolve_custom_bin()
+        shell_dir = Path(effective_bin).resolve().parent.parent if effective_bin else None
+        if shell_dir and (shell_dir / "shell.qml").is_file():
+            try:
+                res = subprocess.run(
+                    ["qs", "-p", str(shell_dir), "ipc", "call", "lock", "isLocked"],
+                    timeout=1.0, capture_output=True, text=True, check=False,
+                )
+                if res.returncode == 0 and res.stdout.strip().lower() in ("true", "1", "locked"):
+                    return True
+            except Exception:
+                pass
+    elif shell_name == "noctalia":
+        try:
+            res = subprocess.run(
+                ["loginctl", "show-session", "self", "-p", "LockedHint"],
+                timeout=0.5, capture_output=True, text=True, check=False,
+            )
+            if "LockedHint=yes" in res.stdout:
+                return True
+        except Exception:
+            pass
+
     return False
 
 
@@ -242,6 +268,10 @@ def hot_switch_shell(target: str, custom_bin_override: Optional[str] = None) -> 
         old_bin = resolve_custom_bin()
     elif current_name == "noctalia":
         old_bin = shutil.which("noctalia") or ""
+
+    # 2. Lock safety check: refuse switching while locked
+    if is_shell_locked(current_name, old_bin):
+        return False, "Cannot switch shell while screen is locked (security invariant violated)"
 
     if current_pid:
         stop_shell_process(current_name, current_pid, old_bin, timeout=2.5)

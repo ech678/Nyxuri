@@ -31,7 +31,13 @@ Scope {
     }
 
     function toggle(pageId) {
-        return root.active ? root.close() : root.open(pageId);
+        if (root.active) {
+            root.close();
+            return false;
+        } else {
+            root.open(pageId);
+            return true;
+        }
     }
 
     function openSearch(searchId) {

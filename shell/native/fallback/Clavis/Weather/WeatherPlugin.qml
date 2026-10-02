@@ -31,11 +31,10 @@ QtObject {
     readonly property double currentPressureHpa: 0.0
     readonly property double currentCloudCover: 0.0
     readonly property double currentVisibilityM: 0.0
-    readonly property var currentAirQuality: null
-    readonly property var hourlyForecast: null
-    readonly property var dailyForecast: null
-    readonly property var dailyTrendForecast: null
-    readonly property var minutelyForecast: null
+    readonly property var hourlyForecast: ({ count: () => 0, get: () => ({}) })
+    readonly property var dailyForecast: ({ count: () => 0, get: () => ({}) })
+    readonly property var dailyTrendForecast: ({ count: () => 0, get: () => ({}) })
+    readonly property var minutelyForecast: ({ count: () => 0, get: () => ({}) })
 
     signal dataChanged()
     signal normalsChanged()

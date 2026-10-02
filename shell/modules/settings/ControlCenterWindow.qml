@@ -162,6 +162,7 @@ FloatingWindow {
         root.closeChildWindows();
         SettingsBackend.retrySearch();
     }
+    Component.onDestruction: root.closeChildWindows()
 
     Timer {
         id: copiedTimer

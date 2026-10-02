@@ -103,7 +103,7 @@ Item {
         sourceComponent: LottieAnimation {
             source: root.lottieSource
             autoPlay: root.playing
-            loops: LottieAnimation.Infinite
+            loops: -1
 
             onStatusChanged: {
                 if (status !== LottieAnimation.Ready)

@@ -38,7 +38,8 @@ Rectangle {
         if (current && current.isDaylight !== undefined)
             return !current.isDaylight;
 
-        const hourly = WeatherPlugin.hourlyForecast.count() > 0 ? WeatherPlugin.hourlyForecast.get(0) : ({});
+        const hourly = (WeatherPlugin.hourlyForecast && typeof WeatherPlugin.hourlyForecast.count === "function" && WeatherPlugin.hourlyForecast.count() > 0)
+                       ? WeatherPlugin.hourlyForecast.get(0) : ({});
         if (hourly.isDaylight !== undefined)
             return !hourly.isDaylight;
 
@@ -74,7 +75,8 @@ Rectangle {
     }
 
     function syncWeatherData() {
-        today = WeatherPlugin.dailyForecast.count() > 0 ? WeatherPlugin.dailyForecast.get(0) : ({});
+        today = (WeatherPlugin.dailyForecast && typeof WeatherPlugin.dailyForecast.count === "function" && WeatherPlugin.dailyForecast.count() > 0)
+                ? WeatherPlugin.dailyForecast.get(0) : ({});
         currentEpoch = Math.floor(Date.now() / 1000);
     }
 

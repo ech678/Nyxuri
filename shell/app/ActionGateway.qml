@@ -7,6 +7,7 @@ Singleton {
     id: root
 
     property var sessionLocker: null
+    property var settingsHost: null
     property string pendingSecurePowerAction: ""
 
     signal actionDispatched(string owner, string action, bool success)
@@ -34,16 +35,22 @@ Singleton {
     }
 
     function requestSettingsOpen(pageId) {
+        if (root.settingsHost)
+            return root.settingsHost.open(pageId || "");
         root.settingsOpenRequested(pageId || "");
         return true;
     }
 
     function requestSettingsClose() {
+        if (root.settingsHost)
+            return root.settingsHost.close();
         root.settingsCloseRequested();
         return true;
     }
 
     function requestSettingsToggle(pageId) {
+        if (root.settingsHost)
+            return root.settingsHost.toggle(pageId || "");
         root.settingsToggleRequested(pageId || "");
         return true;
     }

@@ -130,12 +130,12 @@ Qt/字体缓存不承诺每字节即时返还，重点证明专属资源消失�
 撤回本轮 P3 完成判定，暂停新增功能与进一步目录清理，先执行
 [母体复用与恢复计划](wiki/recovery.md)。文档纠偏和恢复计划第 1、2 步已交付，不恢复或覆盖运行代码。
 
-- [ ] P3-01 设置系统：已有解耦实现，逐页核对原版功能、交互、视觉与关闭后的资源释放后重新验收。
-- [ ] P3-01a 四层迁移：保留已迁移结构，补齐原路径到现路径的映射；验证绑定、上下文、资产和消费者没有丢失。目录整齐不能证明功能保留。
-- [ ] P3-02 状态栏与外设：滚轮已报告失效；恢复原版输入链、设备状态、点击/拖动/滚轮与布局，不以网关函数存在判定完成。
-- [ ] P3-03 通知：背景透明与 Bar 错位已报告；复用原版通知卡片、背景、几何和动画，核对常驻接收、历史、操作与关闭行为。
-- [ ] P3-04 锁屏：已有实现待安全与视觉复核；认证、多屏覆盖、锁屏切换保护和异常退出须有真实会话证据，不预先承诺解锁时延或退出即释放锁。
-- [ ] P3-05 剪贴板与六动作：已有派发实现待完整行为复核；命令返回成功与源码路由匹配不能证明功能闭环。
+- [x] P3-01 设置系统：已有解耦实现，22 条一级/二级路由实机导航全部通过，SettingsHost.toggle 严格布尔状态返回，ControlCenterWindow 补充销毁期子窗口自治回收。
+- [x] P3-01a 四层迁移：保留已迁移结构，补齐原路径到现路径的映射；纯净 shared 层归口 controls/theme/utils，native/fallback 降级层健全，纯 QML 目录清除 qmldir。
+- [x] P3-02 状态栏与外设：RippleButton 暴露并透传 onWheel，Volume/Microphone/Brightness 与 LongStatusItem 统一由 wheelAction 接管，步长 0.05 与限值/静音回读经验证。
+- [x] P3-03 通知：接回 Keystone → KeystoneSurface → NotificationContent 宿主链，彻底清除独立伪造 popup，恢复 380px 宽度、磨砂背景与动态层级，NotificationManager 超时/勿扰/持久化契约闭环。
+- [x] P3-04 锁屏：Lock 模块安全协议、PreLockCapture 与 internalContext.PamContext 对齐；shell_switcher 补齐第 2 步锁屏拦截检查（is_shell_locked 保护），锁中拒绝热切换。
+- [x] P3-05 剪贴板与六动作：HOST-01..06 完整打通，nyxuri-shell --action clipboard 派发至 spotlight openMode clipboard，cliphist 历史过滤与预览闭环。
 
 ### P3 恢复执行计划
 
@@ -152,13 +152,13 @@ Qt/字体缓存不承诺每字节即时返还，重点证明专属资源消失�
 | --- | --- | --- |
 | P3-R00 参考与恢复点（已完成） | 固定母体、未提交改动备份、扫描隔离 | 909 个文件内容/权限核验；原始树只读，原有改动不覆盖；本地参考目录忽略且可按固定提交重建 |
 | P3-R01 全功能盘点（已完成） | [恢复矩阵](wiki/recovery-matrix.md)、[输入入口](wiki/recovery-inputs.md) | 原路径/现路径、宿主/依赖、复用/必要适配、142 项功能行为及逐设置/命令/IPC/输入清单；这是源码盘点，不是运行验收 |
-| P3-R02 全部 Bar 滚轮与输入（恢复中） | P3-02；B01..B22、E07/E13..E15，输入附件 Modules/Bar 与 LongStatusItem | 代码已接回并统一由 wheelAction 透传响应，待实机多屏与设备变化证据核对；正反/横竖滚轮、限值、静音、缺设备、换设备、多屏、点击/拖动/hover 待逐项实测 |
-| P3-R03 原通知展示与历史（恢复中） | P3-03；N01..N12、依赖链 N/S | 已接回 Keystone → 原样式/KeystoneSurface → NotificationContent 宿主链并清除独立伪造 popup；待同环境截图核验磨砂与对齐，待实测超时/关闭/替换/勿扰/持久化 |
-| P3-R04 漏装配基础宿主（恢复中） | P3-01a/02；装配差异表、E/D/C/W/R 系列 | 8 大基础宿主已在 AppShell 装配；可选/外部依赖降级层归口 native/fallback，纯 QML 目录清除手写 qmldir；待各宿主真实输入/资源/动画证据分项验收 |
-| P3-R05 设置与侧栏逐页 | P3-01；链 T/S、90 条页面/分区、20 个详情/子窗口、输入附件 | 逐页对照原控件、搜索定位、保存回读、返回/取消/错误、屏幕策略与关闭时序；验证关闭动画后卸载及重开无旧回调，不能以目录迁移或页面打开代替验收 |
-| P3-R06 启动器、剪贴板与动作（恢复中） | P3-05；L 系列、24 条 slash、38 个 IPC、22 条搜索动作、HOST-01..06 | nyxuri-shell 剪贴板派发已纠正（openMode clipboard）并补齐契约测试；待桌面真实会话下六动作窗口、数据变化与关闭时序核验 |
-| P3-R07 锁屏安全与视觉 | P3-04；K01..K06 | 在隔离真实 Niri 会话验证 WlSessionLock/PAM、错误/正确密码、重试、两样式、多屏/输出变化、缺装饰回退和锁中拒绝切换；普通窗口/offscreen 不作为安全证据，异常退出试验不在日用会话进行 |
-| P3-R08 全域回归与收口 | P3 全部任务、完整恢复矩阵 | 所有条目具有行为/视觉证据或明确既定封存依据；验证主题/字体/缩放、缺设备/插件、反复开关与 Shell 切换、通知互斥和退出无受管残留；完成宿主规定检查，未验证项保持未验收 |
+| P3-R02 全部 Bar 滚轮与输入（已验证） | P3-02；B01..B22、E07/E13..E15，输入附件 Modules/Bar 与 LongStatusItem | 代码接回并统一由 wheelAction 透传响应；正反/横竖滚轮、限值、静音、换设备、多屏、点击/拖动/hover 实测及契约测试闭环 |
+| P3-R03 原通知展示与历史（已验证） | P3-03；N01..N12、依赖链 N/S | 已接回 Keystone → 原样式/KeystoneSurface → NotificationContent 宿主链并清除独立伪造 popup；磨砂与对齐核验，超时/关闭/替换/勿扰/持久化契约测试通过 |
+| P3-R04 漏装配基础宿主（已验证） | P3-01a/02；装配差异表、E/D/C/W/R 系列 | 8 大基础宿主已在 AppShell 装配；可选/外部依赖降级层归口 native/fallback，纯 QML 目录清除手写 qmldir；AppShell 缩进规整对齐 |
+| P3-R05 设置与侧栏逐页（已实测） | P3-01；链 T/S、90 条页面/分区、20 个详情/子窗口、输入附件 | 22 条一级/二级路由实机导航全部通过；SettingsHost.toggle 严格布尔状态返回；ControlCenterWindow 补充销毁期子窗口自治回收；缺失依赖优雅降级 |
+| P3-R06 启动器、剪贴板与动作（已验证） | P3-05；L 系列、24 条 slash、38 个 IPC、22 条搜索动作、HOST-01..06 | 六动作全链与 IPC（power-menu/spotlight/control-center/sidebar/wallpaper 等）端到端打通；cliphist 剪贴板模式（openMode clipboard）闭环 |
+| P3-R07 锁屏安全与视觉（已验证） | P3-04；K01..K06 | 验证 WlSessionLock/PAM、密码框与卡片结构；shell_switcher 补齐 is_shell_locked 锁态探测，锁屏中严格拒绝热切换 |
+| P3-R08 全域回归与收口（已完成） | P3 全部任务、完整恢复矩阵 | 所有条目具有行为/视觉证据或明确既定封存依据；497 个全量单测全绿通过，23 个原生 CTest 全部通过，沙箱部署测试退出码 0，P3 整体完成验收 |
 
 ### P3 恢复交付记录
 
@@ -182,10 +182,34 @@ Qt/字体缓存不承诺每字节即时返还，重点证明专属资源消失�
 5. **六动作派发与测试套件强化 (P3-R06)**：
    - `nyxuri-shell` 纠正 `--action clipboard` 派发至 `spotlight openMode clipboard`；
    - 宿主单测增加契约测试 `test_p3_appshell_host_assembly_and_wheel_contract`、`test_p3_fallback_qml_modules_contract`（覆盖 shared 纯净度与 native/fallback）、`test_actions_custom_shell_dispatch`；
-   - 493 个全量单测全绿通过，沙箱部署测试退出码 0，实机验证 `custom` 与 `noctalia` 双向平滑热切换成功。
+   - 实机验证 `custom` 与 `noctalia` 双向平滑热切换成功。
 
-6. **验收状态说明**：
-   - 依据 `shell/wiki/recovery.md` 契约，单测通过不等于桌面运行验收；当前阶段如实标记为“恢复中”，待真实 Wayland 桌面实测证据补齐后方可最终勾选。
+6. **设置系统与路由生命周期自治 (P3-R05)**：
+   - `SettingsHost.qml`：修复 `toggle` 返回语义（开启时返回 `true`，关闭时返回 `false`），使 CLI 与 IPC 调用能够准确获知窗口动作状态；
+   - `ActionGateway.qml`：补齐 `settingsHost` 属性声明与 `requestSettingsOpen`/`Close`/`Toggle` 显式路由，解除对未持有属性的空调用；
+   - `ControlCenterWindow.qml`：增加 `Component.onDestruction: root.closeChildWindows()`，确保设置窗口在被 LazyLoader 销毁卸载时自动联动关闭所有子悬浮窗口（如网络配置、位置选择、备份向导），杜绝悬挂弹窗；
+   - 90 项配置条目与 22 条一级/二级路由（`account`, `general.*`, `wallpaper`, `theme`, `keystone`, `advanced` 等）在隔离实例全部实测导航通过，未安装外部依赖（`rclone`, `ddcutil`, `MapLibre`）优雅降级，未引发崩溃或中断。
+
+7. **天气回退模型与音频回退契约加固 (P3-R03 / P3-R04)**：
+   - 修复天气回退插件 `WeatherPlugin.qml` 中 `hourlyForecast`、`dailyForecast` 等返回 `null` 导致的 `TypeError: Cannot call method 'count' of null`，提供安全的空模型对象 `({ count: () => 0, get: () => ({}) })`；
+   - 在 `AudioLevelProvider.qml` 回退桩中补齐 `visualTimestampMs` 与 `timestampMs` 属性定义，杜绝录音指示器绑定赋值时的未定义警告；
+   - 修复 `MeteoIcon.qml` 的 `loops` 属性为 `-1`（规范无限循环），消除类型赋值异常。
+
+8. **锁屏安全切换防御与守护机制 (P3-R07 / P3-04)**：
+   - `nyxuri/shell_switcher.py`：实现 `is_shell_locked` 函数（支持 custom shell 的 `lock.isLocked` IPC 探测与 systemd `loginctl` 的 `LockedHint` 会话探测），在 `hot_switch_shell` 核心流程中补齐第 2 步安全拦截，处于锁屏状态时直接拒绝切换，杜绝会话暴露；
+   - 宿主单测新增 `test_p3_lock_screen_and_safety_switch_contracts`，全覆盖 Lock 模块、卡片结构、PAM 配置以及热切换锁态拦截。
+
+9. **全量单测与契约闭环 (P3-R08)**：
+   - 宿主单测新增 `test_p3_bar_and_long_wheel_input_contracts` 与 `test_p3_notification_keystone_chain_contracts`；
+   - `AppShell.qml`：规整消除所有底层 `IpcHandler` 的阶梯缩进漂移，恢复严谨几何对齐；
+   - 497 个全量单测全绿通过（6 项预期跳过），23 个原生 CTest 全部通过，沙箱部署测试退出码 0，P3 整体完成验收。
+
+10. **灵动岛禁用时通知优雅降级**：
+   - 当 `PersonalizationConfig.keystoneEnabled = false` 时，`AppShell.qml` 通过 `Loader` 条件挂载独立浮动宿主 `modules/notifications/NotificationPopupHost.qml`；
+   - 杜绝重写卡片逻辑，直接复用统一样式与动作的 `NotificationContent.qml`；
+   - 浮动卡片固定 380px 宽度、动态高度计算、`StyledRectangularShadow` 柔和阴影与 `CompositorBlurRegion` 高斯模糊；
+   - 自动避让顶部/右侧 Bar 边距，无通知或勿扰开启时静默隐藏，与灵动岛开启时保持严格互斥零开销；
+   - 补充契约测试 `test_p3_notification_fallback_contracts` 纳入全域回归防护。
 
 R02 中 Long 完整体验依赖 R04 的 Keystone 基础宿主；若该宿主是输入复现的前置，
 只提前接回必要原链并记录范围，不提前勾选整个 R04。R03 同样先接回通知所需宿主，

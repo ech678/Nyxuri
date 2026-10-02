@@ -347,7 +347,205 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("FALLBACK_QML_PATH", launcher_content)
         self.assertIn("native/fallback", launcher_content)
 
+    def test_p3_settings_wiring_and_weather_fallback_contracts(self):
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. ActionGateway has settingsHost property and requestSettings* uses it
+        gw_path = os.path.join(shell_dir, "app", "ActionGateway.qml")
+        with open(gw_path, "r", encoding="utf-8") as f:
+            gw_content = f.read()
+        self.assertIn("property var settingsHost: null", gw_content)
+        self.assertIn("root.settingsHost.toggle", gw_content)
+
+        # 2. AppShell injects settingsHost on completion
+        app_path = os.path.join(shell_dir, "app", "AppShell.qml")
+        with open(app_path, "r", encoding="utf-8") as f:
+            app_content = f.read()
+        self.assertIn("ActionGateway.settingsHost = settingsHost;", app_content)
+
+        # 3. SettingsHost toggle returns boolean indicating opening/closing
+        sh_path = os.path.join(shell_dir, "modules", "settings", "SettingsHost.qml")
+        with open(sh_path, "r", encoding="utf-8") as f:
+            sh_content = f.read()
+        self.assertIn("function toggle(pageId)", sh_content)
+        self.assertIn("return false;", sh_content)
+        self.assertIn("return true;", sh_content)
+
+        # 4. Weather fallback provides safe count() and get() methods on forecast models
+        weather_fallback = os.path.join(shell_dir, "native", "fallback", "Clavis", "Weather", "WeatherPlugin.qml")
+        with open(weather_fallback, "r", encoding="utf-8") as f:
+            wf_content = f.read()
+        self.assertIn("count: () => 0", wf_content)
+        self.assertIn("get: () => ({})", wf_content)
+
+    def test_p3_audio_level_provider_and_settings_cleanup_contracts(self):
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. Fallback AudioLevelProvider defines visualTimestampMs and timestampMs
+        cava_fallback = os.path.join(shell_dir, "native", "fallback", "Clavis", "Cava", "AudioLevelProvider.qml")
+        with open(cava_fallback, "r", encoding="utf-8") as f:
+            cava_content = f.read()
+        self.assertIn("readonly property double visualTimestampMs: 0", cava_content)
+        self.assertIn("readonly property double timestampMs: 0", cava_content)
+
+        # 2. ControlCenterWindow cleans up child windows on destruction
+        cc_window = os.path.join(shell_dir, "modules", "settings", "ControlCenterWindow.qml")
+        with open(cc_window, "r", encoding="utf-8") as f:
+            cc_content = f.read()
+        self.assertIn("Component.onDestruction: root.closeChildWindows()", cc_content)
+
+        # 3. MeteoIcon uses loops: -1 for infinite loop
+        meteo_icon = os.path.join(shell_dir, "shared", "controls", "MeteoIcon.qml")
+        with open(meteo_icon, "r", encoding="utf-8") as f:
+            meteo_content = f.read()
+        self.assertIn("loops: -1", meteo_content)
+
+    def test_p3_bar_and_long_wheel_input_contracts(self):
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. RippleButton exposes wheelAction and dispatches to onWheel
+        rb_path = os.path.join(shell_dir, "shared", "controls", "RippleButton.qml")
+        with open(rb_path, "r", encoding="utf-8") as f:
+            rb_content = f.read()
+        self.assertIn("property var wheelAction", rb_content)
+        self.assertIn("root.wheelAction(wheel)", rb_content)
+
+        # 2. Volume.qml handles wheelAction with 0.05 step
+        vol_path = os.path.join(shell_dir, "modules", "bar", "quicksettings", "Volume.qml")
+        with open(vol_path, "r", encoding="utf-8") as f:
+            vol_content = f.read()
+        self.assertIn("wheelAction: wheel =>", vol_content)
+        self.assertIn("Volume.setSinkVolume(Volume.sinkVolume + step)", vol_content)
+        self.assertIn("0.05", vol_content)
+
+        # 3. Microphone.qml handles wheelAction with 0.05 step
+        mic_path = os.path.join(shell_dir, "modules", "bar", "quicksettings", "Microphone.qml")
+        with open(mic_path, "r", encoding="utf-8") as f:
+            mic_content = f.read()
+        self.assertIn("wheelAction: wheel =>", mic_content)
+        self.assertIn("Volume.setSourceVolume(Volume.sourceVolume + step)", mic_content)
+        self.assertIn("0.05", mic_content)
+
+        # 4. Brightness.qml handles wheelAction with 0.05 step
+        br_path = os.path.join(shell_dir, "modules", "bar", "quicksettings", "Brightness.qml")
+        with open(br_path, "r", encoding="utf-8") as f:
+            br_content = f.read()
+        self.assertIn("wheelAction: wheel =>", br_content)
+        self.assertIn("Brightness.setBrightnessForScreen", br_content)
+        self.assertIn("0.05", br_content)
+
+        # 5. LongStatusItem handles onWheel with pixelDelta/angleDelta support
+        long_item = os.path.join(shell_dir, "modules", "keystone", "styles", "long", "LongStatusItem.qml")
+        with open(long_item, "r", encoding="utf-8") as f:
+            long_content = f.read()
+        self.assertIn("onWheel: wheel =>", long_content)
+        self.assertIn("pixelDelta", long_content)
+        self.assertIn("Volume.setSinkVolume", long_content)
+        self.assertIn("Volume.setSourceVolume", long_content)
+        self.assertIn("Brightness.setBrightnessForScreen", long_content)
+
+    def test_p3_notification_keystone_chain_contracts(self):
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. KeystoneSurface embeds NotificationContent with isNotifMode binding
+        surface_path = os.path.join(shell_dir, "modules", "keystone", "styles", "shared", "KeystoneSurface.qml")
+        with open(surface_path, "r", encoding="utf-8") as f:
+            surface_content = f.read()
+        self.assertIn("NotificationContent {", surface_content)
+        self.assertIn("property bool isNotifMode:", surface_content)
+        self.assertIn("NotificationManager.hasNotifs", surface_content)
+
+        # 2. NotificationContent provides ListView, sanitizedBody, normalActions, dismiss
+        notif_content = os.path.join(shell_dir, "modules", "keystone", "notifications", "NotificationContent.qml")
+        with open(notif_content, "r", encoding="utf-8") as f:
+            nc_content = f.read()
+        self.assertIn("StyledListView {", nc_content)
+        self.assertIn("sanitizedBody()", nc_content)
+        self.assertIn("root.manager.normalActions", nc_content)
+        self.assertIn("root.manager.dismissPopup", nc_content)
+        self.assertIn("root.manager.invokeDefaultAction", nc_content)
+
+        # 3. NotificationManager holds timeout, persistence and DND inhibition
+        nm_path = os.path.join(shell_dir, "app", "services", "NotificationManager.qml")
+        with open(nm_path, "r", encoding="utf-8") as f:
+            nm_content = f.read()
+        self.assertIn("defaultPopupTimeoutMs: 7000", nm_content)
+        self.assertIn("notifications.json", nm_content)
+        self.assertIn("silent: UiPreferences.dndEnabled", nm_content)
+        self.assertIn("popupInhibited:", nm_content)
+
+        # 4. Notification history components exist in sidebar
+        hist_list = os.path.join(shell_dir, "modules", "sidebars", "dashboard", "notifications", "NotificationList.qml")
+        hist_center = os.path.join(shell_dir, "modules", "sidebars", "dashboard", "notifications", "NotificationCenterCard.qml")
+        self.assertTrue(os.path.isfile(hist_list))
+        self.assertTrue(os.path.isfile(hist_center))
+
+    def test_p3_lock_screen_and_safety_switch_contracts(self):
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. Lock screen structure: Lock.qml, DefaultLockContent, CaelestiaLock, PAM config
+        lock_path = os.path.join(shell_dir, "modules", "lock", "Lock.qml")
+        with open(lock_path, "r", encoding="utf-8") as f:
+            lock_content = f.read()
+        self.assertIn("WlSessionLock {", lock_content)
+        self.assertIn("PreLockCapture {", lock_content)
+        self.assertIn("function open()", lock_content)
+        self.assertIn("function isLocked()", lock_content)
+        self.assertIn("password.conf", lock_content)
+
+        # 2. Lock cards exist
+        cards_dir = os.path.join(shell_dir, "modules", "lock", "cards")
+        for card in ["NotificationCard.qml", "MediaCard.qml", "WeatherCard.qml", "MottoCard.qml", "SystemGrid.qml"]:
+            self.assertTrue(os.path.isfile(os.path.join(cards_dir, card)), f"Lock card missing: {card}")
+
+        # 3. Hot switch refuses to switch when screen is locked (K06 invariant)
+        from nyxuri.shell_switcher import hot_switch_shell
+        with patch("nyxuri.shell_switcher.is_shell_locked", return_value=True), \
+             patch("nyxuri.shell_switcher.probe_running_shell", return_value=("custom", 9999)), \
+             patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-test"}):
+            ok, msg = hot_switch_shell("noctalia")
+            self.assertFalse(ok)
+            self.assertIn("Cannot switch shell while screen is locked", msg)
+
+    def test_p3_notification_fallback_contracts(self):
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. Standalone notification fallback host exists
+        host_path = os.path.join(shell_dir, "modules", "notifications", "NotificationPopupHost.qml")
+        self.assertTrue(os.path.isfile(host_path))
+        with open(host_path, "r", encoding="utf-8") as f:
+            host_content = f.read()
+
+        # 2. Reuses unified NotificationContent with manager injection
+        self.assertIn("NotificationContent {", host_content)
+        self.assertIn("manager: NotificationManager", host_content)
+
+        # 3. Includes CompositorBlurRegion and StyledRectangularShadow
+        self.assertIn("CompositorBlurRegion {", host_content)
+        self.assertIn("StyledRectangularShadow {", host_content)
+
+        # 4. Respects Bar collision avoidance
+        self.assertIn("PersonalizationConfig.barPosition === \"top\"", host_content)
+        self.assertIn("Sizes.barVisualThickness", host_content)
+
+        # 5. Non-intrusive: does not steal keyboard focus
+        self.assertIn("WlrLayershell.keyboardFocus: WlrKeyboardFocus.None", host_content)
+
+        # 6. AppShell mounts the host conditionally when Keystone is disabled
+        app_shell_path = os.path.join(shell_dir, "app", "AppShell.qml")
+        with open(app_shell_path, "r", encoding="utf-8") as f:
+            app_shell_content = f.read()
+        self.assertIn("active: !PersonalizationConfig.keystoneEnabled", app_shell_content)
+        self.assertIn("NotificationPopupHost.qml", app_shell_content)
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
