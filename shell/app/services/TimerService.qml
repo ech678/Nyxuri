@@ -85,7 +85,7 @@ Singleton {
         else
             message = qsTr("🔴 Focus: %1 minutes").arg(Math.floor(root.focusTime / 60));
 
-        ActionGateway.execute(["notify-send", qsTr("Pomodoro"), message, "-a", "Clavis"],
+        ActionGateway.execute(["notify-send", qsTr("Pomodoro"), message, "-a", "Nyxuri Shell"],
                               "timer:pomodoro-stage");
     }
 

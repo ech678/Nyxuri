@@ -20,7 +20,7 @@ PanelWindow {
     mask: Region {}
 
     WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.namespace: "clavis-idle-inhibitor"
+    WlrLayershell.namespace: "nyxuri-idle-inhibitor"
     WlrLayershell.exclusionMode: ExclusionMode.Ignore
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 }

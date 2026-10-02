@@ -233,7 +233,7 @@ TopBarPill {
         }
 
         WlrLayershell.layer: root.QsWindow.window ? root.QsWindow.window.WlrLayershell.layer : WlrLayer.Top
-        WlrLayershell.namespace: "clavis-shell-tray-overflow"
+        WlrLayershell.namespace: "nyxuri-shell-tray-overflow"
         WlrLayershell.keyboardFocus: overflowPopup.visible ? WlrKeyboardFocus.Exclusive :
                                                              WlrKeyboardFocus.None
         WlrLayershell.exclusionMode: ExclusionMode.Ignore

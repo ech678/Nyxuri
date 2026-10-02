@@ -52,7 +52,7 @@ qs kill --path ./shell
 nyxuri shell status
 
 # 平滑切换至 Nyxuri Shell（停止旧端 -> 启动新端 -> 3.0s 探测就绪 -> 失败回滚）
-nyxuri shell set custom /home/ray/dev/Nyxuri/shell/bin/nyxuri-shell
+nyxuri shell set custom "$PWD/shell/bin/nyxuri-shell"
 
 # 验证六大标准动作（快捷键或命令行）
 nyxuri-shell --action session        # 呼出会话菜单

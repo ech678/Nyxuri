@@ -58,7 +58,7 @@ Singleton {
 
         root._lastErrorKey = key;
         root.commandError(code, message);
-        ActionGateway.execute(["notify-send", "-a", "Clavis Shell", "-u", "critical", qsTr("Recording failed"),
+        ActionGateway.execute(["notify-send", "-a", "Nyxuri Shell", "-u", "critical", qsTr("Recording failed"),
                                message], "audio-recording:error");
     }
 

@@ -176,7 +176,7 @@ install(
 )
 
 install(
-    FILES "${CLAVIS_SOURCE_ROOT}/packaging/systemd/user/clavis-shell.service"
+    FILES "${CLAVIS_SOURCE_ROOT}/packaging/systemd/user/nyxuri-shell.service"
     DESTINATION "${CLAVIS_SYSTEMD_USER_INSTALL_DIR}"
 )
 

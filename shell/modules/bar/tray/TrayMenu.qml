@@ -91,7 +91,7 @@ PopupWindow {
         exclusiveZone: 0
         WlrLayershell.layer: root.anchorItem && root.anchorItem.QsWindow.window
                              ? root.anchorItem.QsWindow.window.WlrLayershell.layer : WlrLayer.Top
-        WlrLayershell.namespace: "clavis-shell-tray-menu-backdrop"
+        WlrLayershell.namespace: "nyxuri-shell-tray-menu-backdrop"
         WlrLayershell.exclusionMode: ExclusionMode.Ignore
 
         anchors {

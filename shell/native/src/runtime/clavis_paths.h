@@ -23,9 +23,8 @@ class ClavisPaths {
     QString stableKey() const;
 
   private:
-    static QString cleanAbsolute(const QString &value);
-    static QString environmentPath(const char *overrideName, const char *xdgName, const QString &fallback,
-                                   const QString &suffix);
+    static QString environmentPath(const char *primaryName, const char *legacyName, const char *xdgName,
+                                   const QString &fallback, const QString &suffix);
 
     QString m_home;
     QString m_binHome;

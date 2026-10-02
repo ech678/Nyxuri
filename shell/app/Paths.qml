@@ -13,12 +13,9 @@ Singleton {
     readonly property string assetsDir: shareRoot + "/assets"
     readonly property string builtinMatugenDir: assetsDir + "/matugen"
     readonly property string userMatugenDir: configHome + "/matugen"
-    readonly property string fontsDir: assetsDir + "/fonts"
     readonly property string iconsDir: assetsDir + "/icons"
-    readonly property string appIconsDir: iconsDir + "/apps"
     readonly property string weatherIconsDir: iconsDir + "/weather"
     readonly property string meteoconsDir: weatherIconsDir + "/meteocons"
-    readonly property string imagesDir: assetsDir + "/images"
     readonly property string scriptsDir: shareRoot + "/scripts"
     readonly property string audioScriptsDir: scriptsDir + "/audio"
     readonly property string captureScriptsDir: scriptsDir + "/capture"
@@ -31,29 +28,44 @@ Singleton {
                                             + "/.config"
     readonly property string xdgDataHome: root.absoluteEnvironment("XDG_DATA_HOME") || homeDir
                                           + "/.local/share"
-    readonly property string binHome: root.absoluteEnvironment("CLAVIS_BIN_HOME") || homeDir + "/.local/bin"
-    readonly property string stableKey: root.absoluteEnvironment("CLAVIS_KEY") || "key"
-    readonly property string configHome: root.absoluteEnvironment("CLAVIS_CONFIG_HOME") || xdgConfigHome
-                                         + "/clavis"
-    readonly property string dataHome: root.absoluteEnvironment("CLAVIS_DATA_HOME") || xdgDataHome + "/clavis"
-    readonly property string stateHome: root.absoluteEnvironment("CLAVIS_STATE_HOME") || (
-                                            root.absoluteEnvironment("XDG_STATE_HOME") || homeDir
+    readonly property string binHome: root.absoluteEnvironment("NYXURI_BIN_HOME")
+                                      || root.absoluteEnvironment("CLAVIS_BIN_HOME")
+                                      || homeDir + "/.local/bin"
+    readonly property string stableKey: root.absoluteEnvironment("NYXURI_KEY")
+                                        || root.absoluteEnvironment("CLAVIS_KEY")
+                                        || "key"
+    readonly property string configHome: root.absoluteEnvironment("NYXURI_SHELL_CONFIG_HOME")
+                                         || root.absoluteEnvironment("CLAVIS_CONFIG_HOME")
+                                         || xdgConfigHome + "/clavis"
+    readonly property string dataHome: root.absoluteEnvironment("NYXURI_SHELL_DATA_HOME")
+                                       || root.absoluteEnvironment("CLAVIS_DATA_HOME")
+                                       || xdgDataHome + "/clavis"
+    readonly property string stateHome: root.absoluteEnvironment("NYXURI_SHELL_STATE_HOME")
+                                        || root.absoluteEnvironment("CLAVIS_STATE_HOME")
+                                        || (root.absoluteEnvironment("XDG_STATE_HOME") || homeDir
                                             + "/.local/state") + "/clavis"
-    readonly property string cacheHome: root.absoluteEnvironment("CLAVIS_CACHE_HOME") || (
-                                            root.absoluteEnvironment("XDG_CACHE_HOME") || homeDir
+    readonly property string cacheHome: root.absoluteEnvironment("NYXURI_SHELL_CACHE_HOME")
+                                        || root.absoluteEnvironment("CLAVIS_CACHE_HOME")
+                                        || (root.absoluteEnvironment("XDG_CACHE_HOME") || homeDir
                                             + "/.cache") + "/clavis"
-    readonly property string runtimeHome: root.absoluteEnvironment("CLAVIS_RUNTIME_HOME") || (
-                                              root.absoluteEnvironment("XDG_RUNTIME_DIR") || cacheHome
+    readonly property string runtimeHome: root.absoluteEnvironment("NYXURI_SHELL_RUNTIME_HOME")
+                                          || root.absoluteEnvironment("CLAVIS_RUNTIME_HOME")
+                                          || (root.absoluteEnvironment("XDG_RUNTIME_DIR") || cacheHome
                                               + "/runtime") + "/clavis"
-    readonly property string requestedProfileName: Quickshell.env("CLAVIS_PROFILE") || "default"
+    readonly property string requestedProfileName: Quickshell.env("NYXURI_SHELL_PROFILE")
+                                                   || Quickshell.env("CLAVIS_PROFILE")
+                                                   || "default"
     readonly property string profileName: root.validProfileName(requestedProfileName)
                                           ? requestedProfileName.trim() : "default"
-    readonly property string profileConfigHome: root.absoluteEnvironment("CLAVIS_PROFILE_CONFIG_HOME")
+    readonly property string profileConfigHome: root.absoluteEnvironment("NYXURI_SHELL_PROFILE_CONFIG_HOME")
+                                                || root.absoluteEnvironment("CLAVIS_PROFILE_CONFIG_HOME")
                                                 || configHome + "/profiles/" + profileName
-    readonly property string profileHome: root.absoluteEnvironment("CLAVIS_PROFILE_HOME") || dataHome
-                                          + "/profiles/" + profileName
-    readonly property string generatedHome: root.absoluteEnvironment("CLAVIS_GENERATED_HOME") || profileHome
-                                            + "/generated"
+    readonly property string profileHome: root.absoluteEnvironment("NYXURI_SHELL_PROFILE_HOME")
+                                          || root.absoluteEnvironment("CLAVIS_PROFILE_HOME")
+                                          || dataHome + "/profiles/" + profileName
+    readonly property string generatedHome: root.absoluteEnvironment("NYXURI_SHELL_GENERATED_HOME")
+                                            || root.absoluteEnvironment("CLAVIS_GENERATED_HOME")
+                                            || profileHome + "/generated"
     readonly property string currentWallpaper: stateHome + "/wallpaper/current"
     readonly property string profileAvatar: homeDir + "/.face"
     readonly property string defaultAvatar: ""
@@ -77,10 +89,6 @@ Singleton {
 
     function icon(name) {
         return fileUrl(iconsDir + "/" + name);
-    }
-
-    function appIcon(name) {
-        return fileUrl(appIconsDir + "/" + name);
     }
 
     function scriptPath(group, name) {

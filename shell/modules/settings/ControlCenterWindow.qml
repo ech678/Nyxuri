@@ -140,7 +140,7 @@ FloatingWindow {
     }
 
     visible: false
-    title: "clavis-control-center"
+    title: "nyxuri-settings"
     implicitWidth: 1100
     implicitHeight: 750
     minimumSize: Qt.size(760, 520)

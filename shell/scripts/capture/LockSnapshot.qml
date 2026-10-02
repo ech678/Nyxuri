@@ -26,7 +26,7 @@ ShellRoot {
         color: "transparent"
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.layer: WlrLayer.Background
-        WlrLayershell.namespace: "clavis-lock-snapshot"
+        WlrLayershell.namespace: "nyxuri-lock-snapshot"
         mask: Region {}
 
         ScreencopyView {

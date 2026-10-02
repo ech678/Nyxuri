@@ -136,7 +136,7 @@ Singleton {
         const now = Date.now();
         const notif = notifComponent.createObject(root, {
                                                       notificationId: ++root.idOffset,
-                                                      appName: "Clavis Shell",
+                                                      appName: "Nyxuri Shell",
                                                       appIcon: "folder",
                                                       summary: title,
                                                       body: body.replace(/&/g, "&amp;").replace(/</g,

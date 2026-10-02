@@ -91,7 +91,7 @@ Singleton {
             return false;
         const accepted = available(entry) && actionExecutor && actionExecutor(entry) === true;
         if (!accepted)
-            ActionGateway.execute(["notify-send", "-a", "Clavis Shell", qsTr("Action unavailable"),
+            ActionGateway.execute(["notify-send", "-a", "Nyxuri Shell", qsTr("Action unavailable"),
                                    Catalog.title(id)], "spotlight:catalog-action");
         return accepted;
     }

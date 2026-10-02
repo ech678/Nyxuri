@@ -214,7 +214,7 @@ Variants {
         color: "transparent"
         exclusiveZone: 0
         WlrLayershell.layer: WlrLayer.Bottom
-        WlrLayershell.namespace: "clavis-desktop-cards"
+        WlrLayershell.namespace: "nyxuri-desktop-cards"
         WlrLayershell.exclusionMode: ExclusionMode.Ignore
         onDesktopIdsChanged: window.scheduleDesktopLayout("desktop-cards-changed")
         onWidthChanged: window.scheduleDesktopLayout("screen-geometry-changed")

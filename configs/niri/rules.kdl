@@ -8,14 +8,14 @@ layer-rule {
     place-within-backdrop true
 }
 
-// Nyxuri Shell (Quickshell / Clavis) 壁纸与表面层规则
+// Nyxuri Shell 壁纸与表面层规则
 layer-rule {
-    match namespace="^clavis-wallpaper$"
+    match namespace="^(nyxuri|clavis)-wallpaper$"
     place-within-backdrop true
 }
 
 layer-rule {
-    match namespace="^clavis-shell-"
+    match namespace="^(nyxuri|clavis)-shell-"
     background-effect {
         xray false
     }

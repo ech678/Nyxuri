@@ -102,8 +102,8 @@ function pinnedKey(entry) {
 
 function applicationForWindow(window, applications) {
     // The shell's internal Settings window does not have a desktop file.
-    if (window.title === "clavis-control-center") {
-        return applications.find(application => application.id === "org.clavis.Settings") || null;
+    if (window.title === "nyxuri-settings" || window.title === "clavis-control-center") {
+        return applications.find(application => application.id === "org.nyxuri.Settings" || application.id === "org.clavis.Settings") || null;
     }
     const identity = desktopId(window.appId);
     if (!identity || identity === "unknown") return null;

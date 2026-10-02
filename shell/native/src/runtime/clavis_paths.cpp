@@ -7,6 +7,13 @@ namespace {
 
 QString env(const char *name) { return QString::fromLocal8Bit(qgetenv(name)).trimmed(); }
 
+QString cleanAbsolute(const QString &value)
+{
+    if (value.isEmpty() || !QDir::isAbsolutePath(value))
+        return {};
+    return QDir::cleanPath(value);
+}
+
 } // namespace
 
 ClavisPaths ClavisPaths::fromEnvironment()
@@ -16,26 +23,32 @@ ClavisPaths ClavisPaths::fromEnvironment()
     if (paths.m_home.isEmpty())
         paths.m_home = cleanAbsolute(QDir::homePath());
 
-    paths.m_binHome = cleanAbsolute(env("CLAVIS_BIN_HOME"));
+    paths.m_binHome = cleanAbsolute(env("NYXURI_BIN_HOME"));
+    if (paths.m_binHome.isEmpty())
+        paths.m_binHome = cleanAbsolute(env("CLAVIS_BIN_HOME"));
     if (paths.m_binHome.isEmpty())
         paths.m_binHome = paths.m_home + QStringLiteral("/.local/bin");
 
-    paths.m_stableKey = cleanAbsolute(env("CLAVIS_KEY"));
+    paths.m_stableKey = cleanAbsolute(env("NYXURI_KEY"));
+    if (paths.m_stableKey.isEmpty())
+        paths.m_stableKey = cleanAbsolute(env("CLAVIS_KEY"));
     if (paths.m_stableKey.isEmpty())
         paths.m_stableKey = QStringLiteral("key");
 
-    paths.m_configHome = environmentPath("CLAVIS_CONFIG_HOME", "XDG_CONFIG_HOME",
+    paths.m_configHome = environmentPath("NYXURI_SHELL_CONFIG_HOME", "CLAVIS_CONFIG_HOME", "XDG_CONFIG_HOME",
                                          paths.m_home + QStringLiteral("/.config"), QStringLiteral("clavis"));
     paths.m_dataHome =
-        environmentPath("CLAVIS_DATA_HOME", "XDG_DATA_HOME", paths.m_home + QStringLiteral("/.local/share"),
+        environmentPath("NYXURI_SHELL_DATA_HOME", "CLAVIS_DATA_HOME", "XDG_DATA_HOME", paths.m_home + QStringLiteral("/.local/share"),
                         QStringLiteral("clavis"));
     paths.m_stateHome =
-        environmentPath("CLAVIS_STATE_HOME", "XDG_STATE_HOME", paths.m_home + QStringLiteral("/.local/state"),
+        environmentPath("NYXURI_SHELL_STATE_HOME", "CLAVIS_STATE_HOME", "XDG_STATE_HOME", paths.m_home + QStringLiteral("/.local/state"),
                         QStringLiteral("clavis"));
-    paths.m_cacheHome = environmentPath("CLAVIS_CACHE_HOME", "XDG_CACHE_HOME",
+    paths.m_cacheHome = environmentPath("NYXURI_SHELL_CACHE_HOME", "CLAVIS_CACHE_HOME", "XDG_CACHE_HOME",
                                         paths.m_home + QStringLiteral("/.cache"), QStringLiteral("clavis"));
 
-    paths.m_runtimeHome = cleanAbsolute(env("CLAVIS_RUNTIME_HOME"));
+    paths.m_runtimeHome = cleanAbsolute(env("NYXURI_SHELL_RUNTIME_HOME"));
+    if (paths.m_runtimeHome.isEmpty())
+        paths.m_runtimeHome = cleanAbsolute(env("CLAVIS_RUNTIME_HOME"));
     if (paths.m_runtimeHome.isEmpty()) {
         QString runtimeBase = cleanAbsolute(env("XDG_RUNTIME_DIR"));
         if (runtimeBase.isEmpty())
@@ -43,23 +56,31 @@ ClavisPaths ClavisPaths::fromEnvironment()
         paths.m_runtimeHome = QDir(runtimeBase).filePath(QStringLiteral("clavis"));
     }
 
-    paths.m_profileName = env("CLAVIS_PROFILE");
+    paths.m_profileName = env("NYXURI_SHELL_PROFILE");
+    if (paths.m_profileName.isEmpty())
+        paths.m_profileName = env("CLAVIS_PROFILE");
     if (paths.m_profileName.isEmpty() || paths.m_profileName.contains(QLatin1Char('/')) ||
         paths.m_profileName.contains(QLatin1Char('\\')) || paths.m_profileName == QStringLiteral(".") ||
         paths.m_profileName == QStringLiteral("..")) {
         paths.m_profileName = QStringLiteral("default");
     }
-    paths.m_profileHome = cleanAbsolute(env("CLAVIS_PROFILE_HOME"));
+    paths.m_profileHome = cleanAbsolute(env("NYXURI_SHELL_PROFILE_HOME"));
+    if (paths.m_profileHome.isEmpty())
+        paths.m_profileHome = cleanAbsolute(env("CLAVIS_PROFILE_HOME"));
     if (paths.m_profileHome.isEmpty()) {
         paths.m_profileHome =
             QDir(paths.m_dataHome).filePath(QStringLiteral("profiles/%1").arg(paths.m_profileName));
     }
-    paths.m_profileConfigHome = cleanAbsolute(env("CLAVIS_PROFILE_CONFIG_HOME"));
+    paths.m_profileConfigHome = cleanAbsolute(env("NYXURI_SHELL_PROFILE_CONFIG_HOME"));
+    if (paths.m_profileConfigHome.isEmpty())
+        paths.m_profileConfigHome = cleanAbsolute(env("CLAVIS_PROFILE_CONFIG_HOME"));
     if (paths.m_profileConfigHome.isEmpty()) {
         paths.m_profileConfigHome =
             QDir(paths.m_configHome).filePath(QStringLiteral("profiles/%1").arg(paths.m_profileName));
     }
-    paths.m_generatedHome = cleanAbsolute(env("CLAVIS_GENERATED_HOME"));
+    paths.m_generatedHome = cleanAbsolute(env("NYXURI_SHELL_GENERATED_HOME"));
+    if (paths.m_generatedHome.isEmpty())
+        paths.m_generatedHome = cleanAbsolute(env("CLAVIS_GENERATED_HOME"));
     if (paths.m_generatedHome.isEmpty()) {
         paths.m_generatedHome = QDir(paths.m_profileHome).filePath(QStringLiteral("generated"));
     }
@@ -79,17 +100,13 @@ QString ClavisPaths::profileHome() const { return m_profileHome; }
 QString ClavisPaths::generatedHome() const { return m_generatedHome; }
 QString ClavisPaths::stableKey() const { return m_stableKey; }
 
-QString ClavisPaths::cleanAbsolute(const QString &value)
-{
-    if (value.isEmpty() || !QDir::isAbsolutePath(value))
-        return {};
-    return QDir::cleanPath(value);
-}
 
-QString ClavisPaths::environmentPath(const char *overrideName, const char *xdgName, const QString &fallback,
-                                     const QString &suffix)
+QString ClavisPaths::environmentPath(const char *primaryName, const char *legacyName, const char *xdgName,
+                                     const QString &fallback, const QString &suffix)
 {
-    const QString overridePath = cleanAbsolute(env(overrideName));
+    QString overridePath = cleanAbsolute(env(primaryName));
+    if (overridePath.isEmpty() && legacyName)
+        overridePath = cleanAbsolute(env(legacyName));
     if (!overridePath.isEmpty())
         return overridePath;
     QString base = cleanAbsolute(env(xdgName));

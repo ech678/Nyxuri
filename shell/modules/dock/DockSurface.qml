@@ -50,7 +50,7 @@ PanelWindow {
                     result.push({
                                     id: window.id,
                                     output: root.screen.name,
-                                    layer_namespace: "clavis-shell-dock",
+                                    layer_namespace: "nyxuri-shell-dock",
                                     edge: root.edge,
                                     rect: [start.x, start.y, end.x - start.x, end.y - start.y]
                                 });
@@ -606,7 +606,7 @@ PanelWindow {
     anchors.top: !horizontal
     anchors.bottom: true
     exclusiveZone: DockService.autoHide ? 0 : restingThickness + edgeOffset
-    WlrLayershell.namespace: "clavis-shell-dock"
+    WlrLayershell.namespace: "nyxuri-shell-dock"
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.exclusionMode: ExclusionMode.Normal
     WlrLayershell.keyboardFocus: dragKey || contextMenu || filePopupActive ? WlrKeyboardFocus.Exclusive :

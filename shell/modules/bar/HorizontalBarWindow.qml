@@ -20,7 +20,7 @@ PanelWindow {
     exclusiveZone: PersonalizationConfig.barOverlay ? 0 : exclusiveThickness
     // Floating changes desktop reservation, not stacking above fullscreen windows.
     WlrLayershell.layer: WlrLayer.Top
-    WlrLayershell.namespace: "clavis-shell-bar-horizontal"
+    WlrLayershell.namespace: "nyxuri-shell-bar-horizontal"
     WlrLayershell.exclusionMode: PersonalizationConfig.barOverlay ? ExclusionMode.Ignore :
                                                                     ExclusionMode.Normal
 
