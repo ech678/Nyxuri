@@ -534,11 +534,6 @@
           "defaultInstall": true
         },
         {
-          "package": "rclone",
-          "purpose": "Cloud upload and backup",
-          "defaultInstall": true
-        },
-        {
           "package": "brightnessctl",
           "purpose": "Backlight control",
           "defaultInstall": true

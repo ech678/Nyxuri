@@ -1003,19 +1003,6 @@ var catalog = {
       "anchor": true,
       "context": "AccountPage",
       "icon": "settings",
-      "id": "account.section.cloud-storage",
-      "path": [
-        "account"
-      ],
-      "route": "account",
-      "source": "AccountPage.qml",
-      "title": "Cloud storage"
-    },
-    {
-      "aliases": [],
-      "anchor": true,
-      "context": "AccountPage",
-      "icon": "settings",
       "id": "account.section.personalization",
       "path": [
         "account"
@@ -1036,19 +1023,6 @@ var catalog = {
       "route": "advanced",
       "source": "AdvancedPage.qml",
       "title": "Map and weather services"
-    },
-    {
-      "aliases": [],
-      "anchor": true,
-      "context": "AdvancedPage",
-      "icon": "tune",
-      "id": "advanced.section.cloud-storage",
-      "path": [
-        "advanced"
-      ],
-      "route": "advanced",
-      "source": "AdvancedPage.qml",
-      "title": "Cloud storage"
     },
     {
       "aliases": [],
@@ -1940,10 +1914,8 @@ function title(id) {
     case "account.section.language": return qsTranslate("AccountPage", "Language");
     case "account.section.bluetooth-devices": return qsTranslate("AccountPage", "Bluetooth devices");
     case "account.section.keyboard-shortcuts": return qsTranslate("AccountPage", "Keyboard shortcuts");
-    case "account.section.cloud-storage": return qsTranslate("AccountPage", "Cloud storage");
     case "account.section.personalization": return qsTranslate("AccountPage", "Personalization");
     case "advanced.section.map-and-weather-services": return qsTranslate("AdvancedPage", "Map and weather services");
-    case "advanced.section.cloud-storage": return qsTranslate("AdvancedPage", "Cloud storage");
     case "advanced.section.matugen-template-generation": return qsTranslate("AdvancedPage", "Matugen template generation");
     case "general.autostart.section.add-application-to-autostart": return qsTranslate("AutostartPage", "Add application to autostart");
     case "general.autostart.section.user-autostart-applications": return qsTranslate("AutostartPage", "User autostart applications");

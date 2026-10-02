@@ -74,11 +74,6 @@ Singleton {
     }
     Binding {
         target: Resources
-        property: "cloudIconsRoot"
-        value: Paths.fileUrl(Paths.rcloneIconsDir + "/")
-    }
-    Binding {
-        target: Resources
         property: "meteoconsRoot"
         value: Paths.fileUrl(Paths.meteoconsDir + "/")
     }

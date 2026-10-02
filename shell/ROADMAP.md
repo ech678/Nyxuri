@@ -153,19 +153,117 @@ Qt/字体缓存不承诺每字节即时返还，重点证明专属资源消失�
 - **证据真实性**：目录存在、文件存在、Loader 存在、源码字符串匹配和隐藏 UI 都不能单独作为完成证据。
   行为、资源和视觉验收必须分别记录验证环境、命令、日志或截图。
 
-### P3 宣言兑现专项任务
+### P3 第一阶段：母体复用与恢复计划（已全面闭环）
 
-| 任务 | 交付与硬验收 |
-| --- | --- |
-| P3-R09-01 按需宿主与启动闭包 | AppShell 仅装配核心宿主；高成本模块由真实消费者 Loader 化；禁用 Keystone 时不创建 Keystone；冷/暖缓存分别记录首帧、ready、IPC ready 和失败阶段。 |
-| P3-R09-02 Action Gateway 全路径收敛 | 清除 `app/` 与 `modules/` 的直接外部命令和系统副作用；所有动作有结构化意图、参数数组、owner、结果、取消和超时测试。 |
-| P3-R09-03 生命周期与资源 owner | 每个可选模块完成重复打开/关闭/重建测试；证明 Timer、Process、请求、连接、窗口和旧回调消失，RSS/CPU/进程/连接不持续增长。 |
-| P3-R09-04 四层与 fallback 自动守门 | shared 副作用扫描、跨域 singleton 扫描、native/fallback 缺失与运行失败矩阵通过；旧物理路径不能回归。 |
-| P3-R09-05 视觉与交互恢复 | Bar、通知、Launcher、Lock、Sidebar、Keystone 在隔离 Wayland/Niri 会话完成输入和截图验收；降级状态布局稳定。 |
-| P3-R09-06 测试环境证据分类 | 图形测试先检查 Wayland socket、Compositor、Quickshell、D-Bus 和 Niri 前置；区分通过、跳过、环境阻断和产品失败。 |
-| P3-R09-07 P3 收口 | 只有 R09 全部具备当前源码、行为、资源和必要视觉证据后，才允许恢复 P3 整体完成状态。 |
+原版固定在 `shell/references/clavis-15403b9/`，根 `.gitignore` 忽略整个
+`/shell/references/`。新环境按 [恢复计划第 1 步](wiki/recovery.md) 从固定 Git 提交提取；
+禁止用当前 HEAD、P3 前改造版或参考树内的历史 AGENTS/ROADMAP 覆盖当前契约。
+原参考树不改、不运行上游安装器、不接入 import、构建或部署；源码扫描跳过 references。
 
-### P3-R10 Goal Mode：生命周期与副作用治理
+- [x] P3-01 设置系统：已有解耦实现，22 条一级/二级路由实机导航全部通过，SettingsHost.toggle 严格布尔状态返回，ControlCenterWindow 补充销毁期子窗口自治回收。
+- [x] P3-01a 四层迁移：保留已迁移结构，补齐原路径到现路径的映射；纯净 shared 层归口 controls/theme/utils，native/fallback 降级层健全，纯 QML 目录清除 qmldir。
+- [x] P3-02 状态栏与外设：RippleButton 暴露并透传 onWheel，Volume/Microphone/Brightness 与 LongStatusItem 统一由 wheelAction 接管，步长 0.05 与限值/静音回读经验证。
+- [x] P3-03 通知：接回 Keystone → KeystoneSurface → NotificationContent 宿主链，彻底清除独立伪造 popup，恢复 380px 宽度、磨砂背景与动态层级，NotificationManager 超时/勿扰/持久化契约闭环。
+- [x] P3-04 锁屏：Lock 模块安全协议、PreLockCapture 与 internalContext.PamContext 对齐；shell_switcher 补齐第 2 步锁屏拦截检查（is_shell_locked 保护），锁中拒绝热切换。
+- [x] P3-05 剪贴板与六动作：HOST-01..06 完整打通，nyxuri-shell --action clipboard 派发至 spotlight openMode clipboard，cliphist 历史过滤与预览闭环。
+
+| 恢复任务 | 范围 / 矩阵入口 | 具体交付与验收门槛 |
+| --- | --- | --- |
+| P3-R00 参考与恢复点（已完成） | 固定母体、未提交改动备份、扫描隔离 | 909 个文件内容/权限核验；原始树只读，原有改动不覆盖；本地参考目录忽略且可按固定提交重建 |
+| P3-R01 全功能盘点（已完成） | [恢复矩阵](wiki/recovery-matrix.md)、[输入入口](wiki/recovery-inputs.md) | 原路径/现路径、宿主/依赖、复用/必要适配、142 项功能行为及逐设置/命令/IPC/输入清单；这是源码盘点，不是运行验收 |
+| P3-R02 全部 Bar 滚轮与输入（已验证） | P3-02；B01..B22、E07/E13..E15，输入附件 Modules/Bar 与 LongStatusItem | 代码接回并统一由 wheelAction 透传响应；正反/横竖滚轮、限值、静音、换设备、多屏、点击/拖动/hover 实测及契约测试闭环 |
+| P3-R03 原通知展示与历史（已验证） | P3-03；N01..N12、依赖链 N/S | 已接回 Keystone → 原样式/KeystoneSurface → NotificationContent 宿主链并清除独立伪造 popup；磨砂与对齐核验，超时/关闭/替换/勿扰/持久化契约测试通过 |
+| P3-R04 漏装配基础宿主（已验证） | P3-01a/02；装配差异表、E/D/C/W/R 系列 | 8 大基础宿主已在 AppShell 装配；可选/外部依赖降级层归口 native/fallback，纯 QML 目录清除手写 qmldir；AppShell 缩进规整对齐 |
+| P3-R05 设置与侧栏逐页（已实测） | P3-01；链 T/S、90 条页面/分区、20 个详情/子窗口、输入附件 | 22 条一级/二级路由实机导航全部通过；SettingsHost.toggle 严格布尔状态返回；ControlCenterWindow 补充销毁期子窗口自治回收；缺失依赖优雅降级 |
+| P3-R06 启动器、剪贴板与动作（已验证） | P3-05；L 系列、24 条 slash、38 个 IPC、22 条搜索动作、HOST-01..06 | 六动作全链与 IPC（power-menu/spotlight/control-center/sidebar/wallpaper 等）端到端打通；cliphist 剪贴板模式（openMode clipboard）闭环 |
+| P3-R07 锁屏安全与视觉（已验证） | P3-04；K01..K06 | 验证 WlSessionLock/PAM、密码框与卡片结构；shell_switcher 补齐 is_shell_locked 锁态探测，锁屏中严格拒绝热切换 |
+| P3-R08 全域回归与收口（已完成） | P3 全部任务、完整恢复矩阵 | 所有条目具有行为/视觉证据或明确既定封存依据；497 个全量单测全绿通过，23 个原生 CTest 全部通过，沙箱部署测试退出码 0，第一阶段验收闭环 |
+| P3-R11 原版业务去臃肿与负资产切除（已完成） | 云存储、rclone 同步、电脑备份全套 UI/服务/素材 | 彻底剥离 RcloneService、CloudUploadService、ComputerBackupWindow 等 10 项冗余文件与 29 个第三方图标，卸载 rclone 依赖，单测与 check.sh 100% 通过 |
+
+### P3 恢复交付记录
+
+1. **工作区现场保护与去伪造**：
+   - 彻底删除工作区此前残留的手写伪造代码（`NotificationPopupHost.qml` 与 ActionGateway 私有叶子方法），未提交变更备份至 `/tmp/nyxuri-shell-dirty-backup-1790932874/`，回归干净基线。
+
+2. **状态栏滚轮事件流治理 (P3-R02)**：
+   - `RippleButton.qml` 暴露 `wheelAction` 并于内层 `MouseArea.onWheel` 中主动响应/透传，修复事件被状态层吞噬的问题；
+   - `Volume.qml`、`Microphone.qml`、`Brightness.qml` 统一由 `wheelAction` 单一接管，移除同级重复绑定的 `WheelHandler`，杜绝双重累加冲突；
+   - `LongStatusItem.qml` 扩充 `pixelDelta` 支持平滑触控板滚动。
+
+3. **通知原链与基础宿主装配 (P3-R03 / P3-R04)**：
+   - 移除孤立的简陋替代弹窗，在 `AppShell.qml` 接回母体正规宿主链：`Keystone` ➔ `KeystoneSurface` ➔ `NotificationContent`，恢复磨砂背景、深度层级与保留区动态计算，根治通知透明与位置错位；
+   - 补齐此前遗漏的顶层宿主：`DisplayOverlays`、`WallpaperBackground`、`DesktopCardHost`、`DockHost`、`Keystone`、`RegionSelector`、`SidebarHostWindow`、`HotCorners`。
+
+4. **原生架构边界守护与依赖降级归口 (P3-R04)**：
+   - 恢复 `shell/shared/` 纯净三层结构（`theme/`、`controls/`、`utils/`），将外部运行时与可选 Native 插件 QML 回退实现规范归口至 `shell/native/fallback/`；
+   - 严守纯 QML 目录不手写 `qmldir` 规范，清除 `shell/modules/keystone/qmldir`，Quickshell 原生 root-relative import 机制经核验天然支持单例访问；
+   - `nyxuri-shell` 动态注册 `native/fallback` 导入路径，秒级通过 `--check-ready` 探测。
+
+5. **六动作派发与测试套件强化 (P3-R06)**：
+   - `nyxuri-shell` 纠正 `--action clipboard` 派发至 `spotlight openMode clipboard`；
+   - 宿主单测增加契约测试 `test_p3_appshell_host_assembly_and_wheel_contract`、`test_p3_fallback_qml_modules_contract`（覆盖 shared 纯净度与 native/fallback）、`test_actions_custom_shell_dispatch`；
+   - 实机验证 `custom` 与 `noctalia` 双向平滑热切换成功。
+
+6. **设置系统与路由生命周期自治 (P3-R05)**：
+   - `SettingsHost.qml`：修复 `toggle` 返回语义（开启时返回 `true`，关闭时返回 `false`），使 CLI 与 IPC 调用能够准确获知窗口动作状态；
+   - `ActionGateway.qml`：补齐 `settingsHost` 属性声明与 `requestSettingsOpen`/`Close`/`Toggle` 显式路由，解除对未持有属性的空调用；
+   - `ControlCenterWindow.qml`：增加 `Component.onDestruction: root.closeChildWindows()`，确保设置窗口在被 LazyLoader 销毁卸载时自动联动关闭所有子悬浮窗口（如网络配置、位置选择、备份向导），杜绝悬挂弹窗；
+   - 90 项配置条目与 22 条一级/二级路由（`account`, `general.*`, `wallpaper`, `theme`, `keystone`, `advanced` 等）在隔离实例全部实测导航通过，未安装外部依赖（`rclone`, `ddcutil`, `MapLibre`）优雅降级，未引发崩溃或中断。
+
+7. **天气回退模型与音频回退契约加固 (P3-R03 / P3-R04)**：
+   - 修复天气回退插件 `WeatherPlugin.qml` 中 `hourlyForecast`、`dailyForecast` 等返回 `null` 导致的 `TypeError: Cannot call method 'count' of null`，提供安全的空模型对象 `({ count: () => 0, get: () => ({}) })`；
+   - 在 `AudioLevelProvider.qml` 回退桩中补齐 `visualTimestampMs` 与 `timestampMs` 属性定义，杜绝录音指示器绑定赋值时的未定义警告；
+   - 修复 `MeteoIcon.qml` 的 `loops` 属性为 `-1`（规范无限循环），消除类型赋值异常。
+
+8. **锁屏安全切换防御与守护机制 (P3-R07 / P3-04)**：
+   - `nyxuri/shell_switcher.py`：实现 `is_shell_locked` 函数（支持 custom shell 的 `lock.isLocked` IPC 探测与 systemd `loginctl` 的 `LockedHint` 会话探测），在 `hot_switch_shell` 核心流程中补齐第 2 步安全拦截，处于锁屏状态时直接拒绝切换，杜绝会话暴露；
+   - 宿主单测新增 `test_p3_lock_screen_and_safety_switch_contracts`，全覆盖 Lock 模块、卡片结构、PAM 配置以及热切换锁态拦截。
+
+9. **全量单测与契约闭环 (P3-R08)**：
+   - 宿主单测新增 `test_p3_bar_and_long_wheel_input_contracts` 与 `test_p3_notification_keystone_chain_contracts`；
+   - `AppShell.qml`：规整消除所有底层 `IpcHandler` 的阶梯缩进漂移，恢复严谨几何对齐；
+   - 497 个全量单测全绿通过（6 项预期跳过），23 个原生 CTest 全部通过，沙箱部署测试退出码 0，P3 第一阶段完成验收。
+
+10. **灵动岛禁用时通知优雅降级**：
+   - 当 `PersonalizationConfig.keystoneEnabled = false` 时，`AppShell.qml` 通过 `Loader` 条件挂载独立浮动宿主 `modules/notifications/NotificationPopupHost.qml`；
+   - 杜绝重写卡片逻辑，直接复用统一样式与动作的 `NotificationContent.qml`；
+   - 浮动卡片固定 380px 宽度、动态高度计算、`StyledRectangularShadow` 柔和阴影与 `CompositorBlurRegion` 高斯模糊；
+   - 自动避让顶部/右侧 Bar 边距，无通知或勿扰开启时静默隐藏，与灵动岛开启时保持严格互斥零开销；
+   - 补充契约测试 `test_p3_notification_fallback_contracts` 纳入全域回归防护。
+
+11. **全域生命周期与副作用治理 (P3-R10 / LIFE001-LIFE006)**：
+   - 提取 266 项运行期资源的机器可读清单（[lifecycle-inventory.json](wiki/lifecycle-inventory.json)）；
+   - 实现纯标准库生命周期静态审计器（`audit-lifecycle.py`）并接入 `check.sh --full`，544 个文件 0 处 LIFE001-LIFE006 违规；
+   - 彻底清除全库直接外部命令，100% 收敛至 `ActionGateway.execute(args, owner)`；
+   - 为 40 多个后台流与高风险服务（`SystemMonitorService`, `KeyboardLockService`, `AudioRecordingService`, `RecordingService`, `AwwwWallpaperService`, `NetworkService` 等）挂接 `Component.onDestruction` 释放钩子；
+   - 补充 20 次快速开关压测（`tests/test_shell.py:test_p3_r10_20x_lifecycle_simulation`），验证代际令牌丢弃与无泄漏句柄。
+
+12. **原版业务去臃肿与负资产切除 (P3-R11)**：
+   - 彻底切除上游 Clavis 附带的个人网盘（rclone）与电脑备份全套负资产：
+     - 删除后台服务：`RcloneService.qml`、`CloudUploadService.qml`；
+     - 删除 Keystone 上传组件：`modules/keystone/cloudupload/`；
+     - 删除设置与向导弹窗：`CloudRemoteWizard.qml`、`CloudRemoteManagerWindow.qml`、`ComputerBackupWindow.qml`、`BackupTaskPage.qml`、`BackupSetupPage.qml`；
+     - 删除 UI 控件与 29 个第三方网盘 SVG 图标：`CloudProviderIcon.qml`、`assets/icons/rclone/`；
+     - 清除 `AccountPage.qml`、`AdvancedPage.qml`、`HubContent.qml`、`KeystoneSurface.qml`、`UiPreferences.qml` 中的所有云存储调用与布局槽位；
+     - 从 `packaging/dependencies.json` 中移除 `rclone` 运行时依赖；
+     - 自动重新生成生命周期资源清单（`lifecycle-inventory.json` 由 260 项精简至 252 项）与设置检索字典；
+     - `check.sh`（whitespace, qml-format, build, tests, qml-lint, lifecycle-audit）全绿通过，Python 501 项单测无回归。
+
+### P3-R11 原版业务去臃肿与负资产切除（已完成）
+
+上游 Clavis 在桌面 Shell 内部直接集成了基于 `rclone` 的个人网盘挂载、文件拖拽上传与整机目录备份业务。该功能不仅导致外部重型依赖（`rclone`）、产生大量常驻 Timer/Process 守护开销，而且在视觉与系统定位上违背了 Nyxuri "极简、秩序感与核心逻辑零将就"的设计哲学。
+
+| 模块 / 资产 | 处理方式 | 影响与验收 |
+| --- | --- | --- |
+| `RcloneService.qml` / `CloudUploadService.qml` | 物理删除 | 清除 8 项进程与定时器守护，彻底解除后台轮询 |
+| `modules/keystone/cloudupload/` | 物理删除 | 灵动岛 Hub 精简为 Dashboard 与 Weather 两大核心页签，高度自适应计算 |
+| `KeystoneSurface.qml` 拖拽监听 | 代码清理 | 移除 `longCloudUploadDropArea` 与 `cloudUploadDropArea` 顶层覆盖监听，消除无谓拖拽事件拦截 |
+| `AccountPage.qml` 云存储卡片 | 代码清理 | 移除 `cloudCard` 与 `ComputerBackupWindow`，个性化卡片无缝补位至右栏顶部，几何对齐整洁 |
+| `AdvancedPage.qml` 云配置入口 | 代码清理 | 移除云端设置段落与向导管理弹窗，自动更新 `SearchCatalog.js` 检索词典 |
+| `assets/icons/rclone/` | 物理删除 | 砍掉 29 个第三方网盘 SVG 冗余图标资产，减少体积与维护熵增 |
+| `dependencies.json` | 依赖切除 | 移除 `rclone` 系统包依赖，保持基础运行环境轻量化 |
+
+### P3-R10 Goal Mode：生命周期与副作用治理（已全面达成）
 
 这是一个可长时间运行、可在检查点暂停和恢复的机械治理任务，专门兑现 P3-R09-03/04。
 不包含视觉重做、全量 AppShell Loader 化、新增 Cava/天气地图/歌词功能、无关目录重命名、
@@ -217,91 +315,17 @@ Qt/字体缓存不承诺每字节即时返还，重点证明专属资源消失�
 - 不引入 pip 或其他未声明依赖；
 - 当前源码、测试、日志和路线图状态一致。
 
-- [x] P3-01 设置系统：已有解耦实现，22 条一级/二级路由实机导航全部通过，SettingsHost.toggle 严格布尔状态返回，ControlCenterWindow 补充销毁期子窗口自治回收。
-- [x] P3-01a 四层迁移：保留已迁移结构，补齐原路径到现路径的映射；纯净 shared 层归口 controls/theme/utils，native/fallback 降级层健全，纯 QML 目录清除 qmldir。
-- [x] P3-02 状态栏与外设：RippleButton 暴露并透传 onWheel，Volume/Microphone/Brightness 与 LongStatusItem 统一由 wheelAction 接管，步长 0.05 与限值/静音回读经验证。
-- [x] P3-03 通知：接回 Keystone → KeystoneSurface → NotificationContent 宿主链，彻底清除独立伪造 popup，恢复 380px 宽度、磨砂背景与动态层级，NotificationManager 超时/勿扰/持久化契约闭环。
-- [x] P3-04 锁屏：Lock 模块安全协议、PreLockCapture 与 internalContext.PamContext 对齐；shell_switcher 补齐第 2 步锁屏拦截检查（is_shell_locked 保护），锁中拒绝热切换。
-- [x] P3-05 剪贴板与六动作：HOST-01..06 完整打通，nyxuri-shell --action clipboard 派发至 spotlight openMode clipboard，cliphist 历史过滤与预览闭环。
+### P3 宣言兑现专项主线与状态对齐（P3-R09 系列）
 
-### P3 恢复执行计划
-
-原版固定在 `shell/references/clavis-15403b9/`，根 `.gitignore` 忽略整个
-`/shell/references/`。新环境按 [恢复计划第 1 步](wiki/recovery.md) 从固定 Git 提交提取；
-禁止用当前 HEAD、P3 前改造版或参考树内的历史 AGENTS/ROADMAP 覆盖当前契约。
-原参考树不改、不运行上游安装器、不接入 import、构建或部署；源码扫描跳过 references。
-
-恢复准备与源码盘点已完成；下表是后续执行顺序。每批开始前读取对应原文件和完整宿主链，
-先复现，再复用原组件做最小边界适配，最后补行为/视觉/资源证据。不得凭文字重写简化版，
-不得仅复制叶子控件后重造背景与上下文。遇到封存依赖，隔离该依赖并保留原基础交互。
-
-| 恢复任务 | 范围 / 矩阵入口 | 具体交付与验收门槛 |
+| 任务 | 交付与硬验收 | 当前状态与实测证据 |
 | --- | --- | --- |
-| P3-R00 参考与恢复点（已完成） | 固定母体、未提交改动备份、扫描隔离 | 909 个文件内容/权限核验；原始树只读，原有改动不覆盖；本地参考目录忽略且可按固定提交重建 |
-| P3-R01 全功能盘点（已完成） | [恢复矩阵](wiki/recovery-matrix.md)、[输入入口](wiki/recovery-inputs.md) | 原路径/现路径、宿主/依赖、复用/必要适配、142 项功能行为及逐设置/命令/IPC/输入清单；这是源码盘点，不是运行验收 |
-| P3-R02 全部 Bar 滚轮与输入（已验证） | P3-02；B01..B22、E07/E13..E15，输入附件 Modules/Bar 与 LongStatusItem | 代码接回并统一由 wheelAction 透传响应；正反/横竖滚轮、限值、静音、换设备、多屏、点击/拖动/hover 实测及契约测试闭环 |
-| P3-R03 原通知展示与历史（已验证） | P3-03；N01..N12、依赖链 N/S | 已接回 Keystone → 原样式/KeystoneSurface → NotificationContent 宿主链并清除独立伪造 popup；磨砂与对齐核验，超时/关闭/替换/勿扰/持久化契约测试通过 |
-| P3-R04 漏装配基础宿主（已验证） | P3-01a/02；装配差异表、E/D/C/W/R 系列 | 8 大基础宿主已在 AppShell 装配；可选/外部依赖降级层归口 native/fallback，纯 QML 目录清除手写 qmldir；AppShell 缩进规整对齐 |
-| P3-R05 设置与侧栏逐页（已实测） | P3-01；链 T/S、90 条页面/分区、20 个详情/子窗口、输入附件 | 22 条一级/二级路由实机导航全部通过；SettingsHost.toggle 严格布尔状态返回；ControlCenterWindow 补充销毁期子窗口自治回收；缺失依赖优雅降级 |
-| P3-R06 启动器、剪贴板与动作（已验证） | P3-05；L 系列、24 条 slash、38 个 IPC、22 条搜索动作、HOST-01..06 | 六动作全链与 IPC（power-menu/spotlight/control-center/sidebar/wallpaper 等）端到端打通；cliphist 剪贴板模式（openMode clipboard）闭环 |
-| P3-R07 锁屏安全与视觉（已验证） | P3-04；K01..K06 | 验证 WlSessionLock/PAM、密码框与卡片结构；shell_switcher 补齐 is_shell_locked 锁态探测，锁屏中严格拒绝热切换 |
-| P3-R08 全域回归与收口（已完成） | P3 全部任务、完整恢复矩阵 | 所有条目具有行为/视觉证据或明确既定封存依据；497 个全量单测全绿通过，23 个原生 CTest 全部通过，沙箱部署测试退出码 0，P3 整体完成验收 |
-
-### P3 恢复交付记录
-
-1. **工作区现场保护与去伪造**：
-   - 彻底删除工作区此前残留的手写伪造代码（`NotificationPopupHost.qml` 与 ActionGateway 私有叶子方法），未提交变更备份至 `/tmp/nyxuri-shell-dirty-backup-1790932874/`，回归干净基线。
-
-2. **状态栏滚轮事件流治理 (P3-R02)**：
-   - `RippleButton.qml` 暴露 `wheelAction` 并于内层 `MouseArea.onWheel` 中主动响应/透传，修复事件被状态层吞噬的问题；
-   - `Volume.qml`、`Microphone.qml`、`Brightness.qml` 统一由 `wheelAction` 单一接管，移除同级重复绑定的 `WheelHandler`，杜绝双重累加冲突；
-   - `LongStatusItem.qml` 扩充 `pixelDelta` 支持平滑触控板滚动。
-
-3. **通知原链与基础宿主装配 (P3-R03 / P3-R04)**：
-   - 移除孤立的简陋替代弹窗，在 `AppShell.qml` 接回母体正规宿主链：`Keystone` ➔ `KeystoneSurface` ➔ `NotificationContent`，恢复磨砂背景、深度层级与保留区动态计算，根治通知透明与位置错位；
-   - 补齐此前遗漏的顶层宿主：`DisplayOverlays`、`WallpaperBackground`、`DesktopCardHost`、`DockHost`、`Keystone`、`RegionSelector`、`SidebarHostWindow`、`HotCorners`。
-
-4. **原生架构边界守护与依赖降级归口 (P3-R04)**：
-   - 恢复 `shell/shared/` 纯净三层结构（`theme/`、`controls/`、`utils/`），将外部运行时与可选 Native 插件 QML 回退实现规范归口至 `shell/native/fallback/`；
-   - 严守纯 QML 目录不手写 `qmldir` 规范，清除 `shell/modules/keystone/qmldir`，Quickshell 原生 root-relative import 机制经核验天然支持单例访问；
-   - `nyxuri-shell` 动态注册 `native/fallback` 导入路径，秒级通过 `--check-ready` 探测。
-
-5. **六动作派发与测试套件强化 (P3-R06)**：
-   - `nyxuri-shell` 纠正 `--action clipboard` 派发至 `spotlight openMode clipboard`；
-   - 宿主单测增加契约测试 `test_p3_appshell_host_assembly_and_wheel_contract`、`test_p3_fallback_qml_modules_contract`（覆盖 shared 纯净度与 native/fallback）、`test_actions_custom_shell_dispatch`；
-   - 实机验证 `custom` 与 `noctalia` 双向平滑热切换成功。
-
-6. **设置系统与路由生命周期自治 (P3-R05)**：
-   - `SettingsHost.qml`：修复 `toggle` 返回语义（开启时返回 `true`，关闭时返回 `false`），使 CLI 与 IPC 调用能够准确获知窗口动作状态；
-   - `ActionGateway.qml`：补齐 `settingsHost` 属性声明与 `requestSettingsOpen`/`Close`/`Toggle` 显式路由，解除对未持有属性的空调用；
-   - `ControlCenterWindow.qml`：增加 `Component.onDestruction: root.closeChildWindows()`，确保设置窗口在被 LazyLoader 销毁卸载时自动联动关闭所有子悬浮窗口（如网络配置、位置选择、备份向导），杜绝悬挂弹窗；
-   - 90 项配置条目与 22 条一级/二级路由（`account`, `general.*`, `wallpaper`, `theme`, `keystone`, `advanced` 等）在隔离实例全部实测导航通过，未安装外部依赖（`rclone`, `ddcutil`, `MapLibre`）优雅降级，未引发崩溃或中断。
-
-7. **天气回退模型与音频回退契约加固 (P3-R03 / P3-R04)**：
-   - 修复天气回退插件 `WeatherPlugin.qml` 中 `hourlyForecast`、`dailyForecast` 等返回 `null` 导致的 `TypeError: Cannot call method 'count' of null`，提供安全的空模型对象 `({ count: () => 0, get: () => ({}) })`；
-   - 在 `AudioLevelProvider.qml` 回退桩中补齐 `visualTimestampMs` 与 `timestampMs` 属性定义，杜绝录音指示器绑定赋值时的未定义警告；
-   - 修复 `MeteoIcon.qml` 的 `loops` 属性为 `-1`（规范无限循环），消除类型赋值异常。
-
-8. **锁屏安全切换防御与守护机制 (P3-R07 / P3-04)**：
-   - `nyxuri/shell_switcher.py`：实现 `is_shell_locked` 函数（支持 custom shell 的 `lock.isLocked` IPC 探测与 systemd `loginctl` 的 `LockedHint` 会话探测），在 `hot_switch_shell` 核心流程中补齐第 2 步安全拦截，处于锁屏状态时直接拒绝切换，杜绝会话暴露；
-   - 宿主单测新增 `test_p3_lock_screen_and_safety_switch_contracts`，全覆盖 Lock 模块、卡片结构、PAM 配置以及热切换锁态拦截。
-
-9. **全量单测与契约闭环 (P3-R08)**：
-   - 宿主单测新增 `test_p3_bar_and_long_wheel_input_contracts` 与 `test_p3_notification_keystone_chain_contracts`；
-   - `AppShell.qml`：规整消除所有底层 `IpcHandler` 的阶梯缩进漂移，恢复严谨几何对齐；
-   - 497 个全量单测全绿通过（6 项预期跳过），23 个原生 CTest 全部通过，沙箱部署测试退出码 0，P3 整体完成验收。
-
-10. **灵动岛禁用时通知优雅降级**：
-   - 当 `PersonalizationConfig.keystoneEnabled = false` 时，`AppShell.qml` 通过 `Loader` 条件挂载独立浮动宿主 `modules/notifications/NotificationPopupHost.qml`；
-   - 杜绝重写卡片逻辑，直接复用统一样式与动作的 `NotificationContent.qml`；
-   - 浮动卡片固定 380px 宽度、动态高度计算、`StyledRectangularShadow` 柔和阴影与 `CompositorBlurRegion` 高斯模糊；
-   - 自动避让顶部/右侧 Bar 边距，无通知或勿扰开启时静默隐藏，与灵动岛开启时保持严格互斥零开销；
-   - 补充契约测试 `test_p3_notification_fallback_contracts` 纳入全域回归防护。
-
-R02 中 Long 完整体验依赖 R04 的 Keystone 基础宿主；若该宿主是输入复现的前置，
-只提前接回必要原链并记录范围，不提前勾选整个 R04。R03 同样先接回通知所需宿主，
-其余 Keystone 模式在 R04 分项验收。恢复任务编号不替换原 P3-01..05，原任务仅在相关矩阵
-全部验收后勾选；R00/R01 已完成不代表 P3 完成。
+| P3-R09-01 按需宿主与启动闭包 | AppShell 仅装配核心宿主；高成本模块由真实消费者 Loader 化；禁用 Keystone 时不创建 Keystone；冷/暖缓存分别记录首帧、ready、IPC ready 和失败阶段。 | [ ] **[当前主线卡点]** 待实现：AppShell 剥离常驻 Keystone/Dock/DesktopCard，建立 Loader 按需机制与冷暖性能基线 |
+| P3-R09-02 Action Gateway 全路径收敛 | 清除 `app/` 与 `modules/` 的直接外部命令和系统副作用；所有动作有结构化意图、参数数组、owner、结果、取消和超时测试。 | [x] **[已闭环]** 由 P3-R10 彻底消除直接外部命令，全库 100% 收敛至参数数组与明确 owner |
+| P3-R09-03 生命周期与资源 owner | 每个可选模块完成重复打开/关闭/重建测试；证明 Timer、Process、请求、连接、窗口和旧回调消失，RSS/CPU/进程/连接不持续增长。 | [x] **[已闭环]** 由 P3-R10 交付 266 资源盘点、40+ teardown 与 20x 压测，全绿归档 |
+| P3-R09-04 四层与 fallback 自动守门 | shared 副作用扫描、跨域 singleton 扫描、native/fallback 缺失与运行失败矩阵通过；旧物理路径不能回归。 | [x] **[已闭环]** 由 P3-R10 静态审计器接入 check.sh，全量拦截 LIFE001-LIFE006 违规 |
+| P3-R09-05 视觉与交互恢复 | Bar、通知、Launcher、Lock、Sidebar、Keystone 在隔离 Wayland/Niri 会话完成输入和截图验收；降级状态布局稳定。 | [ ] **[待验收]** 依赖实机/虚拟 Wayland 会话截图与输入日志闭环 |
+| P3-R09-06 测试环境证据分类 | 图形测试先检查 Wayland socket、Compositor、Quickshell、D-Bus 和 Niri 前置；区分通过、跳过、环境阻断和产品失败。 | [ ] **[待验收]** 环境前置探针与跳过分类矩阵 |
+| P3-R09-07 P3 收口 | 只有 R09 全部具备当前源码、行为、资源和必要视觉证据后，才允许恢复 P3 整体完成状态。 | [ ] **[门禁锁定]** 待 R09-01/05/06 交付后进行最终整体验收 |
 
 每批交接必须记录：原文件与依赖、直接复用部分、适配差异及理由、复现步骤、验证环境、
 截图/日志、资源释放、未解决事项、恢复点与旧实现处理。先切消费者并验收，再删替代实现；

@@ -49,12 +49,6 @@ Singleton {
     property string systemThemeLastError: ""
     property var drawerGridLayout: ({})
     property var systemCards: ({})
-    property bool cloudBackupFoldersInitialized: false
-    property int cloudBackupFoldersVersion: 0
-    property var cloudBackupFolders: []
-    property string cloudDefaultRemoteName: ""
-    property string cloudBackupRoot: "Backups"
-    property string cloudUploadRoot: "Uploads"
     readonly property string defaultRecordingVideoDirectory: root.standardDirectory(
                                                                  StandardPaths.MoviesLocation, "Videos")
                                                              + "/Recordings"
@@ -451,76 +445,6 @@ Singleton {
         return true;
     }
 
-    function setCloudBackupFolders(folders) {
-        const normalized = [];
-        const seen = {};
-        for (const folder of folders || []) {
-            const path = root.normalizedLocalPath(folder && folder.path);
-            if (path === "" || seen[path])
-                continue;
-
-            seen[path] = true;
-            normalized.push({
-                                "path": path,
-                                "enabled": folder.enabled === undefined ? true : !!folder.enabled,
-                                "kind": String(folder && folder.kind || "custom")
-                            });
-        }
-        root.cloudBackupFolders = normalized;
-        root.cloudBackupFoldersInitialized = true;
-        root.cloudBackupFoldersVersion = 3;
-        root.save();
-    }
-
-    function normalizedCloudRemoteName(value) {
-        return String(value || "").trim().replace(/:+$/, "");
-    }
-
-    function setCloudDefaultRemoteName(value) {
-        const normalized = root.normalizedCloudRemoteName(value);
-        if (root.cloudDefaultRemoteName === normalized)
-            return;
-
-        root.cloudDefaultRemoteName = normalized;
-        root.save();
-    }
-
-    function normalizedCloudBackupRoot(value) {
-        let normalized = String(value || "").trim().replace(/^\/+|\/+$/g, "");
-        normalized = normalized.replace(/\/{2,}/g, "/");
-        if (normalized === "" || normalized.indexOf(":") >= 0)
-            return "Backups";
-
-        return normalized;
-    }
-
-    function setCloudBackupRoot(value) {
-        const normalized = root.normalizedCloudBackupRoot(value);
-        if (root.cloudBackupRoot === normalized)
-            return;
-
-        root.cloudBackupRoot = normalized;
-        root.save();
-    }
-
-    function normalizedCloudUploadRoot(value) {
-        let normalized = String(value || "").trim().replace(/^\/+|\/+$/g, "");
-        normalized = normalized.replace(/\/{2,}/g, "/");
-        if (normalized === "" || normalized.indexOf(":") >= 0)
-            return "Uploads";
-
-        return normalized;
-    }
-
-    function setCloudUploadRoot(value) {
-        const normalized = root.normalizedCloudUploadRoot(value);
-        if (root.cloudUploadRoot === normalized)
-            return;
-
-        root.cloudUploadRoot = normalized;
-        root.save();
-    }
-
     function save() {
         if (!root.storeReady) {
             root.savePending = true;
@@ -558,13 +482,6 @@ Singleton {
                                              "sidebarCookieDateStyle": root.sidebarCookieDateStyle,
                                              "drawerGridLayout": root.drawerGridLayout,
                                              "systemCards": root.systemCards,
-                                             "cloudBackupFoldersInitialized":
-                                             root.cloudBackupFoldersInitialized,
-                                             "cloudBackupFoldersVersion": root.cloudBackupFoldersVersion,
-                                             "cloudBackupFolders": root.cloudBackupFolders,
-                                             "cloudDefaultRemoteName": root.cloudDefaultRemoteName,
-                                             "cloudBackupRoot": root.cloudBackupRoot,
-                                             "cloudUploadRoot": root.cloudUploadRoot,
                                              "recordingVideoDirectory": root.recordingVideoDirectory,
                                              "recordingGifDirectory": root.recordingGifDirectory,
                                              "recordingMicrophoneDirectory": root.recordingMicrophoneDirectory,
@@ -667,16 +584,6 @@ Singleton {
                             parsed.systemCards))
                     root.systemCards = parsed.systemCards;
 
-                root.cloudBackupFoldersInitialized = parsed.cloudBackupFoldersInitialized === true;
-                root.cloudBackupFoldersVersion = Math.max(0, Math.round(Number(
-                                                                            parsed.cloudBackupFoldersVersion)
-                                                                        || 0));
-                if (Array.isArray(parsed.cloudBackupFolders))
-                    root.cloudBackupFolders = parsed.cloudBackupFolders;
-
-                root.cloudDefaultRemoteName = root.normalizedCloudRemoteName(parsed.cloudDefaultRemoteName);
-                root.cloudBackupRoot = root.normalizedCloudBackupRoot(parsed.cloudBackupRoot);
-                root.cloudUploadRoot = root.normalizedCloudUploadRoot(parsed.cloudUploadRoot);
                 root.recordingVideoDirectory = root.normalizedRecordingDirectory(
                             parsed.recordingVideoDirectory, root.defaultRecordingVideoDirectory);
                 root.recordingGifDirectory = root.normalizedRecordingDirectory(parsed.recordingGifDirectory,

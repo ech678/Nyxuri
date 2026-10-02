@@ -607,17 +607,6 @@ Variants {
                 }
             }
 
-            // The long main bar stays visible while its child surface is collapsed.
-            DropArea {
-                id: longCloudUploadDropArea
-                parent: styleSurface.elongated && longFrame.item ? longFrame.item.mainItem : maskContainer
-                anchors.fill: parent
-                z: 20000
-                enabled: styleSurface.elongated && !!longFrame.item && root.cloudUploadDropEnabled
-                onEntered: drag => root.enterCloudUploadDrag(drag)
-                onDropped: drop => root.acceptCloudUploadDrop(drop)
-            }
-
             KeystoneHoverController {
                 id: hoverIntent
                 triggerHovered: styleSurface.elongated ? !!longFrame.item && longFrame.item.clockHovered :
@@ -641,46 +630,13 @@ Variants {
 
                 property bool hoverOpened: false
 
-                readonly property bool cloudUploadDropEnabled: !contentPresentationActive && (isCollapsedMode
-                                                                                              || isHubMode)
-
-                function supportsCloudUploadDrop(event) {
-                    return cloudUploadDropEnabled && event.hasUrls && event.formats.indexOf("text/uri-list")
-                            >= 0 && CloudUploadService.hasLocalUrls(event.urls);
-                }
-
-                function enterCloudUploadDrag(drag) {
-                    drag.accepted = supportsCloudUploadDrop(drag);
-                    if (!drag.accepted)
-                        return;
-                    hoverOpened = false;
-                    hoverIntent.cancel();
-                    expanded = false;
-                    showLyrics = false;
-                    showVolume = false;
-                    showTools = false;
-                    hubTabIndex = 1;
-                    showHub = true;
-                }
-
-                function acceptCloudUploadDrop(drop) {
-                    if (!supportsCloudUploadDrop(drop)) {
-                        drop.accepted = false;
-                        return;
-                    }
-                    const addedCount = CloudUploadService.enqueueUrls(drop.urls);
-                    hub.finishCloudUploadDrop(addedCount);
-                    drop.acceptProposedAction();
-                }
-
                 function activateMouseAction(action, toggle, fromHover = false) {
                     if (action === "none" || action === "peak" || root.contentPresentationActive
                             || root.isNotifMode || root.isVolumeMode)
                         return;
                     const tabs = {
                         dashboard: 0,
-                        upload: 1,
-                        weather: 2
+                        weather: 1
                     };
                     const isTab = Object.prototype.hasOwnProperty.call(tabs, action);
                     const alreadyOpen = action === "media" ? root.expanded : action === "lyrics"
@@ -1670,7 +1626,6 @@ Variants {
                         width: implicitWidth
                         height: implicitHeight
                         screen: keystoneWindow.screen
-                        dragActive: cloudUploadDropArea.containsDrag || longCloudUploadDropArea.containsDrag
                         onCurrentIndexChanged: {
                             if (root.hubTabIndex !== currentIndex)
                                 root.hubTabIndex = currentIndex;
@@ -1727,16 +1682,6 @@ Variants {
                             }
                         }
                     }
-                }
-
-                DropArea {
-                    id: cloudUploadDropArea
-
-                    anchors.fill: parent
-                    z: 20000
-                    enabled: root.cloudUploadDropEnabled
-                    onEntered: drag => root.enterCloudUploadDrag(drag)
-                    onDropped: drop => root.acceptCloudUploadDrop(drop)
                 }
 
                 Connections {

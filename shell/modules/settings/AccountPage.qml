@@ -28,7 +28,6 @@ Item {
     function closeChildWindows() {
         bannerEditor.close();
         avatarPicker.dismiss();
-        backupWindow.dismiss();
     }
 
     readonly property real maximumContentWidth: 1024
@@ -72,50 +71,6 @@ Item {
                 break;
         }
         return values;
-    }
-
-    function formatBytes(value) {
-        const bytes = Number(value);
-        if (!isFinite(bytes) || bytes < 0)
-            return qsTr("Unknown");
-        const units = [qsTr("B"), qsTr("KB"), qsTr("MB"), qsTr("GB"), qsTr("TB"), qsTr("PB")];
-        let amount = bytes;
-        let unit = 0;
-        while (amount >= 1024 && unit < units.length - 1) {
-            amount /= 1024;
-            unit += 1;
-        }
-        const digits = unit === 0 || amount >= 100 ? 0 : amount >= 10 ? 1 : 2;
-        return amount.toFixed(digits) + " " + units[unit];
-    }
-
-    function providerName(remote) {
-        if (!remote)
-            return qsTr("Not connected to cloud storage");
-        const type = String(remote.type || "").toLowerCase();
-        const name = String(remote.name || "").toLowerCase();
-        switch (type) {
-        case "drive":
-            return "Google Drive";
-        case "onedrive":
-            return "Microsoft OneDrive";
-        case "dropbox":
-            return "Dropbox";
-        case "s3":
-            return name.indexOf("r2") >= 0 || name.indexOf("cloudflare") >= 0 ? "Cloudflare R2" : "Amazon S3";
-        case "http":
-            return "HTTP";
-        case "smb":
-            return "SMB";
-        case "ftp":
-            return "FTP";
-        case "sftp":
-            return "SFTP";
-        case "webdav":
-            return "WebDAV";
-        default:
-            return remote.type || qsTr("Other cloud storage");
-        }
     }
 
     function bluetoothIcon(device) {
@@ -477,166 +432,10 @@ Item {
                 }
 
                 MaterialCard {
-                    id: cloudCard
+                    id: personalizationCard
 
                     x: root.wideLayout ? root.columnWidth + root.cardGap : 0
                     y: root.wideLayout ? 0 : shortcutsCard.y + shortcutsCard.height + root.cardGap
-                    width: root.columnWidth
-                    title: extraSearchAnchor3.title
-                    SettingsSearchAnchor {
-                        id: extraSearchAnchor3
-                        target: cloudCard
-                        declaration:
-                            '{"id":"account.section.cloud-storage","route":"account","title":"Cloud storage","context":"AccountPage","icon":"settings","aliases":[]}'
-                    }
-                    iconName: "cloud"
-                    containerColor: Appearance.m3colors.m3surfaceContainerHigh
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Appearance.spacing.small
-
-                        CloudProviderIcon {
-                            remoteName: RcloneService.selectedRemote ? RcloneService.selectedRemote.name : ""
-                            remoteType: RcloneService.selectedRemote ? RcloneService.selectedRemote.type : ""
-                            iconSize: 34
-                        }
-
-                        Text {
-                            Layout.fillWidth: true
-                            text: root.providerName(RcloneService.selectedRemote)
-                            color: Appearance.colors.colOnSurface
-                            font.family: Fonts.ui
-                            font.pixelSize: Typography.bodyLarge.pixelSize
-                            font.weight: Font.DemiBold
-                            elide: Text.ElideRight
-                        }
-
-                        IconButton {
-                            controlSize: Metrics.controlHeightL
-                            iconName: "refresh"
-                            iconSize: 22
-                            iconColor: Appearance.colors.colOnSurfaceVariant
-                            accessibleName: qsTr("Refresh cloud storage information")
-                            enabled: RcloneService.selectedRemote !== null && RcloneService.quotaState
-                                     !== "loading"
-                            onClicked: RcloneService.refreshCard()
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: Appearance.spacing.xSmall
-
-                        Text {
-                            Layout.fillWidth: true
-                            text: RcloneService.quotaAvailable ? qsTr("Storage: Used %1 of %2 (%3%)").arg(
-                                                                     root.formatBytes(
-                                                                         RcloneService.usedBytes)).arg(
-                                                                     root.formatBytes(
-                                                                         RcloneService.totalBytes)).arg(
-                                                                     Math.round(RcloneService.usageRatio
-                                                                                * 100)) : RcloneService.quotaState
-                                                                 === "loading" ? qsTr("Reading capacity…") :
-                                                                                 RcloneService.quotaMessage
-                            color: Appearance.colors.colOnSurfaceVariant
-                            font.family: Fonts.ui
-                            font.pixelSize: Typography.bodyMedium.pixelSize
-                            elide: Text.ElideRight
-                        }
-
-                        ThinReadOnlySlider {
-                            Layout.fillWidth: true
-                            value: RcloneService.usageRatio
-                            Accessible.name: qsTr("Cloud storage used capacity")
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        visible: RcloneService.backupState !== "idle"
-                        spacing: Appearance.spacing.xSmall
-
-                        Text {
-                            Layout.fillWidth: true
-                            text: RcloneService.backupMessage
-                            color: RcloneService.backupState === "error" ? Appearance.colors.colError :
-                                                                           Appearance.colors.colOnSurfaceVariant
-                            font.family: Fonts.ui
-                            font.pixelSize: Typography.bodySmall.pixelSize
-                            wrapMode: Text.Wrap
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            visible: RcloneService.backupActive
-                            spacing: Appearance.spacing.small
-
-                            MaterialLoadingIndicator {
-                                Layout.preferredWidth: 36
-                                Layout.preferredHeight: 36
-                                contained: false
-                                accessibleName: qsTr("Backing up")
-                            }
-
-                            Text {
-                                Layout.fillWidth: true
-                                text: RcloneService.backupState === "stopping" ? qsTr("Stopping backup…") :
-                                                                                 RcloneService.backupPhase
-                                                                                 === "transferring"
-                                                                                 && RcloneService.backupProgress
-                                                                                 >= 0 ? qsTr(
-                                                                                            "%1: current folder %2%").arg(
-                                                                                            RcloneService.backupCurrentFolderName).arg(
-                                                                                            Math.round(
-                                                                                                RcloneService.backupProgress
-                                                                                                * 100)) : RcloneService.backupPhase
-                                                                                        === "checking"
-                                                                                        ? RcloneService.backupChecks
-                                                                                          > 0 ? qsTr(
-                                                                                                    "Checking files…") :
-                                                                                                RcloneService.backupListed
-                                                                                                > 0 ? qsTr(
-                                                                                                          "%1 items scanned").arg(
-                                                                                                          RcloneService.backupListed) :
-                                                                                                      qsTr("Scanning files…") :
-                                                                                                      qsTr("Preparing backup")
-                                color: Appearance.colors.colOnSurfaceVariant
-                                font.family: Typography.labelMedium.family
-                                font.pixelSize: Typography.labelMedium.pixelSize
-                                font.weight: Typography.labelMedium.weight
-                            }
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 0
-
-                        SettingsActionRow {
-                            Layout.fillWidth: true
-                            text: qsTr("Computer backup")
-                            iconName: "backup"
-                            enabled: RcloneService.selectedRemote !== null && !RcloneService.isReadOnly(
-                                         RcloneService.selectedRemote)
-                            onClicked: backupWindow.showWindow()
-                        }
-
-                        SettingsActionRow {
-                            Layout.fillWidth: true
-                            text: qsTr("Manage cloud storage")
-                            iconName: "settings"
-                            trailingIconName: "chevron_right"
-                            onClicked: root.navigateRequested("advanced")
-                        }
-                    }
-                }
-
-                MaterialCard {
-                    id: personalizationCard
-
-                    x: cloudCard.x
-                    y: cloudCard.y + cloudCard.height + root.cardGap
                     width: root.columnWidth
                     title: extraSearchAnchor4.title
                     SettingsSearchAnchor {
@@ -815,11 +614,5 @@ Item {
             if (!isDirectory)
                 AvatarService.setAvatar(path);
         }
-    }
-
-    ComputerBackupWindow {
-        id: backupWindow
-
-        parentModal: root.parentModal
     }
 }

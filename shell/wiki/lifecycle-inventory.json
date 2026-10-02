@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "generatedAt": "2026-10-02T22:00:00Z",
-  "totalResources": 266,
+  "totalResources": 252,
   "resources": [
     {
       "file": "app/ActionGateway.qml",
@@ -660,34 +660,6 @@
       "visible_only_deactivation": false,
       "has_fallback": true,
       "risk_level": "medium"
-    },
-    {
-      "file": "app/services/CloudUploadService.qml",
-      "line": 2,
-      "resource_type": "NativeConsumer",
-      "name": "Clavis.Runtime",
-      "module": "app/services",
-      "creation_condition": "qml-import",
-      "resource_owner": "app/services",
-      "stop_entry": "native teardown",
-      "has_destruction": true,
-      "visible_only_deactivation": false,
-      "has_fallback": true,
-      "risk_level": "medium"
-    },
-    {
-      "file": "app/services/CloudUploadService.qml",
-      "line": 294,
-      "resource_type": "Process",
-      "name": "uploadProcess",
-      "module": "app/services",
-      "creation_condition": "dynamic",
-      "resource_owner": "app/services",
-      "stop_entry": "uploadProcess.running = false",
-      "has_destruction": true,
-      "visible_only_deactivation": false,
-      "has_fallback": true,
-      "risk_level": "high"
     },
     {
       "file": "app/services/DefaultApplicationsService.qml",
@@ -1600,118 +1572,6 @@
       "risk_level": "low"
     },
     {
-      "file": "app/services/RcloneService.qml",
-      "line": 703,
-      "resource_type": "Process",
-      "name": "remoteListProcess",
-      "module": "app/services",
-      "creation_condition": "dynamic",
-      "resource_owner": "app/services",
-      "stop_entry": "remoteListProcess.running = false",
-      "has_destruction": true,
-      "visible_only_deactivation": false,
-      "has_fallback": true,
-      "risk_level": "medium"
-    },
-    {
-      "file": "app/services/RcloneService.qml",
-      "line": 760,
-      "resource_type": "Process",
-      "name": "providersProcess",
-      "module": "app/services",
-      "creation_condition": "dynamic",
-      "resource_owner": "app/services",
-      "stop_entry": "providersProcess.running = false",
-      "has_destruction": true,
-      "visible_only_deactivation": false,
-      "has_fallback": true,
-      "risk_level": "medium"
-    },
-    {
-      "file": "app/services/RcloneService.qml",
-      "line": 793,
-      "resource_type": "Process",
-      "name": "configProcess",
-      "module": "app/services",
-      "creation_condition": "dynamic",
-      "resource_owner": "app/services",
-      "stop_entry": "configProcess.running = false",
-      "has_destruction": true,
-      "visible_only_deactivation": false,
-      "has_fallback": true,
-      "risk_level": "medium"
-    },
-    {
-      "file": "app/services/RcloneService.qml",
-      "line": 848,
-      "resource_type": "Process",
-      "name": "quotaProcess",
-      "module": "app/services",
-      "creation_condition": "dynamic",
-      "resource_owner": "app/services",
-      "stop_entry": "quotaProcess.running = false",
-      "has_destruction": true,
-      "visible_only_deactivation": false,
-      "has_fallback": true,
-      "risk_level": "medium"
-    },
-    {
-      "file": "app/services/RcloneService.qml",
-      "line": 889,
-      "resource_type": "Process",
-      "name": "backupProcess",
-      "module": "app/services",
-      "creation_condition": "dynamic",
-      "resource_owner": "app/services",
-      "stop_entry": "backupProcess.running = false",
-      "has_destruction": true,
-      "visible_only_deactivation": false,
-      "has_fallback": true,
-      "risk_level": "high"
-    },
-    {
-      "file": "app/services/RcloneService.qml",
-      "line": 922,
-      "resource_type": "Timer",
-      "name": "remoteTimeout",
-      "module": "app/services",
-      "creation_condition": "false",
-      "resource_owner": "app/services",
-      "stop_entry": "remoteTimeout.stop()",
-      "has_destruction": true,
-      "visible_only_deactivation": false,
-      "has_fallback": true,
-      "risk_level": "low"
-    },
-    {
-      "file": "app/services/RcloneService.qml",
-      "line": 932,
-      "resource_type": "Timer",
-      "name": "quotaTimeout",
-      "module": "app/services",
-      "creation_condition": "false",
-      "resource_owner": "app/services",
-      "stop_entry": "quotaTimeout.stop()",
-      "has_destruction": true,
-      "visible_only_deactivation": false,
-      "has_fallback": true,
-      "risk_level": "low"
-    },
-    {
-      "file": "app/services/RcloneService.qml",
-      "line": 942,
-      "resource_type": "Timer",
-      "name": "quotaTimer",
-      "module": "app/services",
-      "creation_condition": "root.selectedRemoteName !== \"\"",
-      "resource_owner": "app/services",
-      "stop_entry": "quotaTimer.stop()",
-      "has_destruction": true,
-      "visible_only_deactivation": false,
-      "has_fallback": true,
-      "risk_level": "medium"
-    },
-    {
       "file": "app/services/RecordingService.qml",
       "line": 221,
       "resource_type": "Process",
@@ -2105,7 +1965,7 @@
     },
     {
       "file": "app/services/ThemeService.qml",
-      "line": 428,
+      "line": 423,
       "resource_type": "Process",
       "name": "detectIconThemesProcess",
       "module": "app/services",
@@ -2119,7 +1979,7 @@
     },
     {
       "file": "app/services/ThemeService.qml",
-      "line": 438,
+      "line": 433,
       "resource_type": "Process",
       "name": "detectCursorThemesProcess",
       "module": "app/services",
@@ -2133,7 +1993,7 @@
     },
     {
       "file": "app/services/ThemeService.qml",
-      "line": 453,
+      "line": 448,
       "resource_type": "Process",
       "name": "generateColorsProcess",
       "module": "app/services",
@@ -2273,7 +2133,7 @@
     },
     {
       "file": "app/services/UiPreferences.qml",
-      "line": 576,
+      "line": 493,
       "resource_type": "Process",
       "name": "ensureStoreDir",
       "module": "app/services",
@@ -2287,7 +2147,7 @@
     },
     {
       "file": "app/services/UiPreferences.qml",
-      "line": 589,
+      "line": 506,
       "resource_type": "FileView",
       "name": "prefsFile",
       "module": "app/services",
@@ -2301,7 +2161,7 @@
     },
     {
       "file": "app/services/UiPreferences.qml",
-      "line": 699,
+      "line": 606,
       "resource_type": "Timer",
       "name": "preferencesReloadDebounce",
       "module": "app/services",
@@ -2315,7 +2175,7 @@
     },
     {
       "file": "app/services/UiPreferences.qml",
-      "line": 707,
+      "line": 614,
       "resource_type": "Process",
       "name": "themePoller",
       "module": "app/services",
@@ -2329,7 +2189,7 @@
     },
     {
       "file": "app/services/UiPreferences.qml",
-      "line": 721,
+      "line": 628,
       "resource_type": "Process",
       "name": "systemThemeWriter",
       "module": "app/services",
@@ -2343,7 +2203,7 @@
     },
     {
       "file": "app/services/UiPreferences.qml",
-      "line": 742,
+      "line": 649,
       "resource_type": "Timer",
       "name": "themePollTimer",
       "module": "app/services",
@@ -2357,7 +2217,7 @@
     },
     {
       "file": "app/services/UiPreferences.qml",
-      "line": 753,
+      "line": 660,
       "resource_type": "Timer",
       "name": "themeDebounce",
       "module": "app/services",
@@ -2818,20 +2678,6 @@
       "risk_level": "medium"
     },
     {
-      "file": "modules/keystone/cloudupload/CloudUploadContent.qml",
-      "line": 182,
-      "resource_type": "Timer",
-      "name": "clearCompletedTimer",
-      "module": "modules/keystone",
-      "creation_condition": "false",
-      "resource_owner": "modules/keystone",
-      "stop_entry": "clearCompletedTimer.stop()",
-      "has_destruction": false,
-      "visible_only_deactivation": false,
-      "has_fallback": true,
-      "risk_level": "low"
-    },
-    {
       "file": "modules/keystone/dashboard/DashboardClock.qml",
       "line": 30,
       "resource_type": "Timer",
@@ -2945,7 +2791,7 @@
     },
     {
       "file": "modules/keystone/styles/shared/KeystoneSurface.qml",
-      "line": 1389,
+      "line": 1345,
       "resource_type": "Timer",
       "name": "contentResetTimer",
       "module": "modules/keystone",
@@ -2959,7 +2805,7 @@
     },
     {
       "file": "modules/keystone/styles/shared/KeystoneSurface.qml",
-      "line": 1478,
+      "line": 1434,
       "resource_type": "Timer",
       "name": "volHideTimer",
       "module": "modules/keystone",
@@ -3182,20 +3028,6 @@
       "risk_level": "medium"
     },
     {
-      "file": "modules/settings/AdvancedPage.qml",
-      "line": 107,
-      "resource_type": "Timer",
-      "name": "refreshConfirmationTimer",
-      "module": "modules/settings",
-      "creation_condition": "false",
-      "resource_owner": "modules/settings",
-      "stop_entry": "refreshConfirmationTimer.stop()",
-      "has_destruction": false,
-      "visible_only_deactivation": false,
-      "has_fallback": true,
-      "risk_level": "low"
-    },
-    {
       "file": "modules/settings/BezierCurveEditor.qml",
       "line": 266,
       "resource_type": "ExternalCommand",
@@ -3222,34 +3054,6 @@
       "visible_only_deactivation": false,
       "has_fallback": true,
       "risk_level": "medium"
-    },
-    {
-      "file": "modules/settings/CloudRemoteManagerWindow.qml",
-      "line": 78,
-      "resource_type": "Timer",
-      "name": "messageTimer",
-      "module": "modules/settings",
-      "creation_condition": "false",
-      "resource_owner": "modules/settings",
-      "stop_entry": "messageTimer.stop()",
-      "has_destruction": false,
-      "visible_only_deactivation": false,
-      "has_fallback": true,
-      "risk_level": "low"
-    },
-    {
-      "file": "modules/settings/ComputerBackupWindow.qml",
-      "line": 284,
-      "resource_type": "Timer",
-      "name": "clearBackupStatusTimer",
-      "module": "modules/settings",
-      "creation_condition": "false",
-      "resource_owner": "modules/settings",
-      "stop_entry": "clearBackupStatusTimer.stop()",
-      "has_destruction": false,
-      "visible_only_deactivation": false,
-      "has_fallback": true,
-      "risk_level": "low"
     },
     {
       "file": "modules/settings/ControlCenterWindow.qml",

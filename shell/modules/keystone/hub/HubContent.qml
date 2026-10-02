@@ -3,7 +3,6 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import qs.shared.theme
 import qs.shared.controls
-import qs.modules.keystone.cloudupload
 import qs.modules.keystone.dashboard
 import qs.modules.keystone.weather
 
@@ -12,7 +11,6 @@ Item {
 
     property var screen: null
     property int currentIndex: 0
-    property bool dragActive: false
     readonly property var dashboardKeyholeGlassItems: dashboardContent.keyholeGlassItems
     readonly property real dashboardKeyholeCenterOffset: dashboardContent.keyholeCenterOffset
 
@@ -25,12 +23,8 @@ Item {
             root.currentIndex = ((root.currentIndex + step) % count + count) % count;
     }
 
-    function finishCloudUploadDrop(addedCount) {
-        cloudUploadContent.finishDrop(addedCount);
-    }
-
     implicitWidth: currentIndex === 0 ? dashboardContent.implicitWidth : 960
-    implicitHeight: 100 + (currentIndex === 0 ? 520 : currentIndex === 1 ? 480 : weatherContent.height)
+    implicitHeight: 100 + (currentIndex === 0 ? 520 : weatherContent.height)
 
     Shortcut {
         enabled: root.visible
@@ -61,15 +55,9 @@ Item {
         }
 
         TabBtn {
-            icon: "cloud_upload"
-            title: qsTr("Upload")
-            index: 1
-        }
-
-        TabBtn {
             icon: "sunny"
             title: qsTr("Weather")
-            index: 2
+            index: 1
         }
     }
 
@@ -172,31 +160,13 @@ Item {
             }
         }
 
-        CloudUploadContent {
-            id: cloudUploadContent
-
-            anchors.top: parent.top
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: parent.width * 0.95
-            height: 480
-            dragActive: root.dragActive
-            visible: root.currentIndex === 1
-            opacity: visible ? 1 : 0
-
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 300
-                }
-            }
-        }
-
         WeatherContent {
             id: weatherContent
 
             anchors.top: parent.top
             anchors.horizontalCenter: parent.horizontalCenter
-            active: root.currentIndex === 2 && root.visible
-            visible: root.currentIndex === 2
+            active: root.currentIndex === 1 && root.visible
+            visible: root.currentIndex === 1
             opacity: visible ? 1 : 0
 
             Behavior on opacity {

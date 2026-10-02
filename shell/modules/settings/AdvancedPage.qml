@@ -11,21 +11,7 @@ StyledFlickable {
     id: root
 
     property var parentModal: null
-    property bool refreshRequested: false
-    property bool refreshConfirmed: false
     readonly property real pageContentWidth: 600
-    readonly property var remoteOptions: RcloneService.remotes.map(remote => {
-        return ({
-                    "label": remote.name,
-                    "value": remote.name,
-                    "remoteName": remote.name,
-                    "remoteType": remote.type,
-                    "enabled": !RcloneService.isReadOnly(remote),
-                    "tooltip": RcloneService.isReadOnly(remote) ? qsTr(
-                                                                      "This cloud storage is read-only and cannot be set as default") :
-                                                                  ""
-                });
-    })
     property var pendingDeleteTemplate: null
 
     function requestTemplateDeletion(template) {
@@ -36,80 +22,11 @@ StyledFlickable {
     function closeChildWindows() {
         templateAddWindow.dismiss();
         templateDialog.close();
-        cloudWizard.dismiss();
-        cloudManager.dismiss();
-    }
-
-    function cloudRootError(value) {
-        const raw = String(value || "").trim();
-        if (raw.indexOf(":") >= 0)
-            return qsTr(
-                        "Enter a relative directory inside the remote; do not include a remote name or colon");
-
-        const relative = raw.replace(/^\/+|\/+$/g, "");
-        if (relative === "." || relative === "..")
-            return qsTr("Enter a valid remote directory");
-
-        return "";
-    }
-
-    function saveBackupRoot() {
-        const error = root.cloudRootError(backupRootField.text);
-        if (error !== "")
-            return;
-
-        UiPreferences.setCloudBackupRoot(backupRootField.text);
-        backupRootField.text = "/" + UiPreferences.cloudBackupRoot;
-    }
-
-    function saveUploadRoot() {
-        const error = root.cloudRootError(uploadRootField.text);
-        if (error !== "")
-            return;
-
-        UiPreferences.setCloudUploadRoot(uploadRootField.text);
-        uploadRootField.text = "/" + UiPreferences.cloudUploadRoot;
-    }
-
-    function refreshConfiguration() {
-        if (RcloneService.remotesLoading)
-            return;
-
-        refreshConfirmationTimer.stop();
-        root.refreshRequested = true;
-        root.refreshConfirmed = false;
-        RcloneService.refreshRemotes();
     }
 
     clip: true
     contentWidth: width
     contentHeight: contentColumn.y + contentColumn.implicitHeight + 24
-    Component.onCompleted: {
-        if (RcloneService.providers.length === 0)
-            RcloneService.loadProviders();
-    }
-
-    Connections {
-        function onRemotesLoadingChanged() {
-            if (RcloneService.remotesLoading || !root.refreshRequested)
-                return;
-
-            root.refreshRequested = false;
-            if (RcloneService.remotesError === "") {
-                root.refreshConfirmed = true;
-                refreshConfirmationTimer.restart();
-            }
-        }
-
-        target: RcloneService
-    }
-
-    Timer {
-        id: refreshConfirmationTimer
-
-        interval: 1400
-        onTriggered: root.refreshConfirmed = false
-    }
 
     ColumnLayout {
         id: contentColumn
@@ -137,111 +54,6 @@ StyledFlickable {
 
             OpenWeatherApiSettingsCard {
                 Layout.fillWidth: true
-            }
-        }
-
-        SettingsSection {
-            id: searchSection1
-            Layout.fillWidth: true
-            title: searchAnchor1.title
-            SettingsSearchAnchor {
-                id: searchAnchor1
-                target: searchSection1
-                declaration:
-                    '{"id":"advanced.section.cloud-storage","route":"advanced","title":"Cloud storage","context":"AdvancedPage","icon":"tune","aliases":[]}'
-            }
-            iconName: "cloud"
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Metrics.spacingS
-
-                SearchSelectMenuField {
-                    Layout.fillWidth: true
-                    options: root.remoteOptions
-                    value: RcloneService.selectedRemoteName
-                    placeholder: qsTr("No cloud storage selected")
-                    closeOnAccept: true
-                    showCheckmark: false
-                    fieldHeight: Metrics.controlHeightXL
-                    itemHeight: Metrics.controlHeightXL
-                    leadingWidth: Metrics.iconM
-                    enabled: options.length > 0
-                    onAccepted: value => {
-                        return RcloneService.setDefaultRemote(value);
-                    }
-
-                    leadingDelegate: Component {
-                        CloudProviderIcon {
-                            property var optionData: null
-
-                            remoteName: optionData ? optionData.remoteName : ""
-                            remoteType: optionData ? optionData.remoteType : ""
-                            iconSize: Metrics.iconM
-                        }
-                    }
-                }
-
-                IconButton {
-                    id: refreshButton
-
-                    Layout.preferredWidth: Metrics.controlHeightXL
-                    Layout.preferredHeight: Metrics.controlHeightXL
-                    iconName: RcloneService.remotesError !== "" && !RcloneService.remotesLoading
-                              ? "sync_problem" : root.refreshConfirmed ? "check" : "refresh"
-                    iconFill: root.refreshConfirmed ? 1 : 0
-                    iconColor: RcloneService.remotesError !== "" && !RcloneService.remotesLoading
-                               ? Appearance.colors.colError : root.refreshConfirmed
-                                 ? Appearance.colors.colPrimary : Appearance.colors.colOnSurfaceVariant
-                    tooltipText: RcloneService.remotesLoading ? qsTr("Refreshing configuration") :
-                                                                RcloneService.remotesError !== ""
-                                                                ? RcloneService.remotesError :
-                                                                  root.refreshConfirmed ? qsTr(
-                                                                                              "Configuration refreshed") :
-                                                                                          qsTr("Refresh configuration")
-                    accessibleName: tooltipText
-                    enabled: !RcloneService.remotesLoading && !RcloneService.configBusy
-                    onClicked: root.refreshConfiguration()
-                }
-            }
-
-            SettingsActionRow {
-                Layout.fillWidth: true
-                text: qsTr("View cloud storage")
-                iconName: "cloud_queue"
-                trailingIconName: "chevron_right"
-                onClicked: cloudManager.showWindow()
-            }
-
-            SettingsActionRow {
-                Layout.fillWidth: true
-                text: qsTr("Add cloud storage")
-                iconName: "add"
-                trailingIconName: "chevron_right"
-                enabled: !RcloneService.configBusy
-                onClicked: cloudWizard.showWindow()
-            }
-
-            MaterialFilledTextField {
-                id: uploadRootField
-
-                Layout.fillWidth: true
-                labelText: qsTr("File upload location")
-                text: "/" + UiPreferences.cloudUploadRoot
-                error: root.cloudRootError(text) !== ""
-                onAccepted: root.saveUploadRoot()
-                onEditingFinished: root.saveUploadRoot()
-            }
-
-            MaterialFilledTextField {
-                id: backupRootField
-
-                Layout.fillWidth: true
-                labelText: qsTr("Computer backup location")
-                text: "/" + UiPreferences.cloudBackupRoot
-                error: root.cloudRootError(text) !== ""
-                onAccepted: root.saveBackupRoot()
-                onEditingFinished: root.saveBackupRoot()
             }
         }
 
@@ -446,17 +258,5 @@ StyledFlickable {
                 }
             }
         }
-    }
-
-    CloudRemoteWizard {
-        id: cloudWizard
-
-        parentModal: root.parentModal
-    }
-
-    CloudRemoteManagerWindow {
-        id: cloudManager
-
-        parentModal: root.parentModal
     }
 }
