@@ -1,6 +1,6 @@
 import QtQuick
 import qs.Services
-import qs.Modules.FilePicker
+import qs.modules.filepicker
 
 Item {
     id: root

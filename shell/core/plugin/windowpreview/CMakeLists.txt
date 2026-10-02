@@ -27,5 +27,5 @@ target_include_directories(ClavisWindowPreview PUBLIC src PRIVATE ${CMAKE_CURREN
 target_link_libraries(ClavisWindowPreview PRIVATE Qt6::Quick Qt6::Qml PkgConfig::WaylandClient)
 option(CLAVIS_BUILD_WINDOW_PREVIEW_PROBE "Build the standalone ext window capture probe" OFF)
 if(CLAVIS_BUILD_WINDOW_PREVIEW_PROBE)
-    add_subdirectory(${CLAVIS_SOURCE_ROOT}/tools/window-preview ${CMAKE_CURRENT_BINARY_DIR}/probe)
+    add_subdirectory(${CLAVIS_SOURCE_ROOT}/core/tools/window-preview ${CMAKE_CURRENT_BINARY_DIR}/probe)
 endif()

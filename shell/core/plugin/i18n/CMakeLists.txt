@@ -18,8 +18,6 @@ file(GLOB_RECURSE CLAVIS_TRANSLATION_SOURCES CONFIGURE_DEPENDS
     "${CLAVIS_SOURCE_ROOT}/Common/*.qml"
     "${CLAVIS_SOURCE_ROOT}/Components/*.js"
     "${CLAVIS_SOURCE_ROOT}/Components/*.qml"
-    "${CLAVIS_SOURCE_ROOT}/Modules/*.js"
-    "${CLAVIS_SOURCE_ROOT}/Modules/*.qml"
     "${CLAVIS_SOURCE_ROOT}/Services/*.js"
     "${CLAVIS_SOURCE_ROOT}/Services/*.qml"
     "${CLAVIS_SOURCE_ROOT}/Widgets/*.js"
@@ -33,9 +31,8 @@ file(GLOB_RECURSE CLAVIS_TRANSLATION_SOURCES CONFIGURE_DEPENDS
 )
 list(APPEND CLAVIS_TRANSLATION_SOURCES
     "${CLAVIS_SOURCE_ROOT}/core/plugin/keyboard/src/shortcut_recorder.cpp"
-    "${CLAVIS_SOURCE_ROOT}/AppShell.qml"
     "${CLAVIS_SOURCE_ROOT}/shell.qml"
-    "${CLAVIS_SOURCE_ROOT}/tools/window-preview/Preview.qml"
+    "${CLAVIS_SOURCE_ROOT}/core/tools/window-preview/Preview.qml"
 )
 
 # Qt 6.7+ otherwise scans every target, including tests and dependency headers.

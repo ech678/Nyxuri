@@ -144,17 +144,17 @@ install(
 install(
     DIRECTORY
         "${CLAVIS_SOURCE_ROOT}/Common"
-        "${CLAVIS_SOURCE_ROOT}/Components"
-        "${CLAVIS_SOURCE_ROOT}/Modules"
         "${CLAVIS_SOURCE_ROOT}/Services"
         "${CLAVIS_SOURCE_ROOT}/Widgets"
+        "${CLAVIS_SOURCE_ROOT}/app"
+        "${CLAVIS_SOURCE_ROOT}/modules"
+        "${CLAVIS_SOURCE_ROOT}/shared"
     DESTINATION "${CLAVIS_CONFIG_INSTALL_DIR}"
     PATTERN "*.qmlc" EXCLUDE
 )
 install(
     FILES
         "${CLAVIS_SOURCE_ROOT}/shell.qml"
-        "${CLAVIS_SOURCE_ROOT}/AppShell.qml"
     DESTINATION "${CLAVIS_CONFIG_INSTALL_DIR}"
 )
 install(
@@ -187,7 +187,7 @@ install(
     DESTINATION "${CLAVIS_SYSTEMD_USER_INSTALL_DIR}"
 )
 
-install(DIRECTORY "${CLAVIS_SOURCE_ROOT}/licenses/"
+install(DIRECTORY "${CLAVIS_SOURCE_ROOT}/wiki/upstream-licenses/"
     DESTINATION "${CLAVIS_CONFIG_INSTALL_DIR}/licenses")
 install(FILES "${CLAVIS_SOURCE_ROOT}/LICENSE"
     DESTINATION "${CLAVIS_CONFIG_INSTALL_DIR}")

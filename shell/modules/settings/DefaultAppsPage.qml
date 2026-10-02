@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.Common
-import qs.Components
+import qs.shared.controls
 import qs.Services
 import qs.Widgets.common
 

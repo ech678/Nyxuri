@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Window
 import Qt5Compat.GraphicalEffects
 import qs.Common
-import qs.Components
+import qs.shared.controls
 
 FocusScope {
     id: root

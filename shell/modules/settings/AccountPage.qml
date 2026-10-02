@@ -6,8 +6,8 @@ import QtQuick.Effects
 import QtQuick.Layouts
 import QtQuick.Window
 import qs.Common
-import qs.Components
-import qs.Modules.FilePicker
+import qs.shared.controls
+import qs.modules.filepicker
 import qs.Services
 import qs.Widgets.common
 

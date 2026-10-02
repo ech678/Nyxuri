@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 import qs.Common
-import qs.Components
+import qs.shared.controls
 import qs.Widgets.common
 
 Item {

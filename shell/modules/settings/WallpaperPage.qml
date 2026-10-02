@@ -7,8 +7,8 @@ import QtQuick.Window
 import Quickshell
 import qs.Common
 import qs.Services
-import qs.Modules.Wallpaper
-import qs.Components
+import qs.modules.wallpaper
+import qs.shared.controls
 import qs.Widgets.common
 
 StyledFlickable {

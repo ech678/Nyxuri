@@ -4,7 +4,7 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import Quickshell
 import qs.Common
-import qs.Components
+import qs.shared.controls
 import qs.Widgets.common
 
 Item {

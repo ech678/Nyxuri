@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import qs.Common
 import qs.Services
-import qs.Components
+import qs.shared.controls
 import qs.Widgets.common
 
 StyledFlickable {

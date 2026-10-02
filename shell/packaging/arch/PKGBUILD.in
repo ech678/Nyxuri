@@ -32,5 +32,5 @@ package_clavis-shell() {
     optdepends=@CLAVIS_SHELL_OPTDEPENDS@
     DESTDIR="${pkgdir}" cmake --install build
     install -Dm644 "clavis-shell-${pkgver}/LICENSE" "${pkgdir}/usr/share/licenses/clavis-shell/LICENSE"
-    cp -r "clavis-shell-${pkgver}/licenses" "${pkgdir}/usr/share/licenses/clavis-shell/third-party"
+    cp -r "clavis-shell-${pkgver}/wiki/upstream-licenses" "${pkgdir}/usr/share/licenses/clavis-shell/third-party"
 }

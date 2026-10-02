@@ -2,7 +2,7 @@ import QtCore
 import QtQuick
 import Quickshell
 import qs.Common
-import qs.Modules.FilePicker
+import qs.modules.filepicker
 import qs.Services
 import qs.Widgets.common
 

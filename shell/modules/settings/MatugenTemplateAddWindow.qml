@@ -4,10 +4,10 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import qs.Common
-import qs.Components
+import qs.shared.controls
 import qs.Services
 import qs.Widgets.common
-import qs.Modules.FilePicker
+import qs.modules.filepicker
 
 FloatingWindow {
     id: root

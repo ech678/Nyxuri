@@ -5,7 +5,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import qs.Common
-import qs.Components
+import qs.shared.controls
 import qs.Services
 import qs.Widgets.common
 

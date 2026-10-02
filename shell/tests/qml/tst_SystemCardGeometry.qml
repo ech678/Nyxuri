@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtTest 1.3
-import "../../Modules/SystemCards/SystemCardCatalog.js" as Catalog
-import "../../Modules/SystemCards/SystemCardGeometry.js" as Geometry
+import "../../modules/systemcards/SystemCardCatalog.js" as Catalog
+import "../../modules/systemcards/SystemCardGeometry.js" as Geometry
 
 TestCase {
     function test_sidebarAndDesktopUseTheSameCanonicalSize() {

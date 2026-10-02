@@ -194,20 +194,27 @@ shell/
 
 | 原母体目录 / 文件 | 处置动作 | 目标路径 | 依赖与副作用处理 | 清理时机 |
 |---|---|---|---|---|
+| `tools/` | **物理收敛** | `core/tools/window-preview` | 归入原生 C++ 核心，消除顶层孤岛目录 | **已完成** |
+| `licenses/` | **归档收敛** | `wiki/upstream-licenses/` | 与 `wiki/upstream-docs/` 对称归档，消除顶层孤岛目录 | **已完成** |
+| `Components/` | **吸收合并** | `shared/controls/` | 吸收全部图标组件，全库改用 `qs.shared.controls`，消除顶层碎片目录 | **已完成** |
+| `Modules/` 全体模块 | **全小写统一** | `modules/` | 消除大小写分裂，16 个模块全部全小写规整，100% 完整保留源码 | **已完成** |
+| `AppShell.qml` | **归位装配** | `app/AppShell.qml` | 收敛顶层装配至第一层 `app/` | **已完成** |
+| `shell/docs/` | **归档文档** | `wiki/upstream-docs/` | 上游参考文档归档至架构 wiki 统一维护 | **已完成** |
+| `shell/.github/`、`.gitignore` | **物理清理** | 根目录统一管理 | 移除上游冗余 CI 目录，忽略规则并入根 `.gitignore` | **已完成** |
 | `Modules/PowerMenu/` | **物理删除** | `modules/session/` | 淘汰 `PowerMenuService`，改用 `ActionGateway` 纯数组调用 | **P2 已完成** |
 | `Services/PowerMenuService.qml` | **物理删除** | `app/ActionGateway.qml` | 消除全局业务单例 | **P2 已完成** |
 | `Modules/ControlCenter/` | **重构迁移** | `modules/settings/` | 剥离 `Clavis.WeatherMap` 依赖；改为按需 Loader 与动态页面加载 | **P3-01 已完成** |
 | `Services/ControlCenterService.qml` | **私有内聚** | `modules/settings/SettingsBackend.qml` | 消除全局单例，降级为 settings module 内部私有协调对象 | **P3-01 已完成** |
-| `Modules/Bar/` | **重构迁移** | `modules/bar/` | 接入 `shared/controls` 与 `shared/theme`；外设断开平滑降级 | P3-02 |
+| `modules/bar/` | **重构迁移** | `modules/bar/` | 接入 `shared/controls` 与 `shared/theme`；外设断开平滑降级 | P3-02 |
 | `Services/NotificationManager.qml` | **重构内聚** | `modules/notifications/NotificationService.qml` | 保留常驻 D-Bus 监听，消除与 UI 面板的硬耦合，限制历史上限 | P3-03 |
-| `Modules/Sidebars/notifications/` | **重构迁移** | `modules/notifications/NotificationDrawer.qml` | 瞬态面板，关闭即销毁 | P3-03 |
-| `Modules/Lock/` | **重构迁移** | `modules/lock/` | 解耦 PAM 认证状态机与装饰层；锁屏中状态机安全防御 | P3-04 |
-| `Modules/Launcher/` | **重构迁移** | `modules/launcher/` | 对接 `ActionGateway` 与 `shared/`；解耦按需 provider | P3-05 |
+| `modules/sidebars/notifications/` | **重构迁移** | `modules/notifications/NotificationDrawer.qml` | 瞬态面板，关闭即销毁 | P3-03 |
+| `modules/lock/` | **重构迁移** | `modules/lock/` | 解耦 PAM 认证状态机与装饰层；锁屏中状态机安全防御 | P3-04 |
+| `modules/launcher/` | **重构迁移** | `modules/launcher/` | 对接 `ActionGateway` 与 `shared/`；解耦按需 provider | P3-05 |
 | `Common/Appearance.qml` | **拆分迁移** | `shared/theme/Appearance.qml` | 剥离文件读写与 XDG 依赖，变为纯设计系统 Token | P2 已提取纯净层，P5 彻底清理旧文件 |
 | `Common/Fonts.qml` | **重构迁移** | `shared/theme/Fonts.qml` | 建立系统文楷与 Sans 回退链，删除 4MB Google Sans 实体 | P5 |
 | `Widgets/common/*` | **提取迁移** | `shared/controls/*` | StateLayer、MaterialSymbol 等纯交互控件逐项收敛入 shared | P2 已开始，P3-P5 逐步清空 |
 | `Widgets/audio/`、`weather/` | **封存删除** | — | 随重型功能封存，不进入核心四层 | P3 期间清理 |
-| `Modules/DesktopCards/`、`Dock/` | **封存删除** | — | 非核心桌面层，P1 已解除装配，彻底物理清理 | P5 |
+| `modules/desktopcards/`、`dock/` | **封存重构** | — | 非核心桌面层，P1 已解除装配，保留源码供后续恢复/清理 | P5 |
 | `Services/AwwwWallpaperService.qml` | **物理删除** | `modules/wallpaper/` (P4 自研) | 淘汰 awww 进程轮询，P4 统一用自研与 palette.toml 替换 | P4 |
 | `Services/cava/`、`lyrics/`、`weather/` | **封存隔离** | `native/optional/` | 静态 import 阻断已消除，P5 移出主构建树 | P5 |
 | 跨域 Services (40+ 个) | **彻底清算** | 归入所属 module 或淘汰 | 彻底根除“全局单例地狱”，只允许 app 持有全局协调 | P3-P5 逐域清空 |

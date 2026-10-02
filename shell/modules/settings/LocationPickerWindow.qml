@@ -4,7 +4,7 @@ import QtQuick.Layouts
 import Quickshell
 import Qt5Compat.GraphicalEffects
 import qs.Common
-import qs.Modules.Map
+import qs.modules.map
 import qs.Widgets.common
 
 FloatingWindow {

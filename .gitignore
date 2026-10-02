@@ -16,3 +16,12 @@ __pycache__/
 # Build artifacts
 build/
 build-*/
+.build/
+*.so
+*.o
+*.a
+
+# Quickshell & local state
+.qmlls.ini
+.packaging/
+local/

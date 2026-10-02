@@ -16,7 +16,7 @@
   - 基准审计与接口索引：[wiki/audit.md](wiki/audit.md)
   - 开发调试与沙箱命令：[wiki/development.md](wiki/development.md)
   - 上游 22 篇历史文档导引：[wiki/upstream.md](wiki/upstream.md)
-- **上游母体历史文档归档**：[docs/README.md](docs/README.md)
+- **上游母体历史文档归档**：[wiki/upstream-docs/README.md](wiki/upstream-docs/README.md)
 
 ---
 
@@ -43,15 +43,15 @@
 Clavis takes inspiration from and integrates ideas or components from projects including:
 
 - [end-4/dots-hyprland](https://github.com/end-4/dots-hyprland)
-- [Zen Browser](https://github.com/zen-browser/desktop) — palette algorithms and editor; see [source and license mapping](licenses/README.md).
+- [Zen Browser](https://github.com/zen-browser/desktop) — palette algorithms and editor; see [source and license mapping](wiki/upstream-licenses/README.md).
 - [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell)
 - [Caelestia Shell](https://github.com/caelestia-dots/shell)
 - [qml-niri](https://github.com/imiric/qml-niri)
 - [Breezy Weather](https://github.com/breezy-weather/breezy-weather)
-- [Animated Weather Cards](https://codepen.io/ste-vg/pen/GqaZbo) by Steve Gardner — the current-weather animation at the top of the sidebar weather view is a Qt/QML recreation of this web project. The original is licensed under MIT; see the [full license and copyright notice](licenses/AnimatedWeatherCards-MIT.txt).
+- [Animated Weather Cards](https://codepen.io/ste-vg/pen/GqaZbo) by Steve Gardner — the current-weather animation at the top of the sidebar weather view is a Qt/QML recreation of this web project. The original is licensed under MIT; see the [full license and copyright notice](wiki/upstream-licenses/AnimatedWeatherCards-MIT.txt).
 - [m3shapes](https://github.com/soramanew/m3shapes)
 
-Third-party license notices are kept in [`licenses/`](licenses/).
+Third-party license notices are kept in [`wiki/upstream-licenses/`](wiki/upstream-licenses/).
 # License
 
 See [LICENSE](LICENSE).

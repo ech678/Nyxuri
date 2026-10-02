@@ -2,7 +2,7 @@ import QtQuick
 import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Services.Notifications
-import qs.Components
+import qs.shared.controls
 import qs.Common
 import qs.Services
 

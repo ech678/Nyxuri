@@ -4,8 +4,8 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Layouts
 import qs.Common
-import qs.Components
-import qs.Modules.Wallpaper
+import qs.shared.controls
+import qs.modules.wallpaper
 import "../../Common/functions/WallpaperSource.js" as Source
 
 Rectangle {

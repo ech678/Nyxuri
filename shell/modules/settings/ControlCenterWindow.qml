@@ -7,7 +7,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.Common
 import qs.Services
-import qs.Components
+import qs.shared.controls
 import qs.Widgets.common
 
 FloatingWindow {

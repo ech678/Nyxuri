@@ -3,7 +3,7 @@ import QtQuick.Layouts
 import qs.Common
 import qs.Services
 import qs.Widgets.common
-import qs.Modules.SystemCards
+import qs.modules.systemcards
 
 StyledFlickable {
     id: root

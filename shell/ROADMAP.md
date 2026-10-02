@@ -134,10 +134,10 @@ Qt/字体缓存不承诺每字节即时返还，重点证明专属资源消失�
 
 | 任务 | 前置与改动边界 | 交付物 | 验收证据 |
 | --- | --- | --- | --- |
-| P3-01 设置解耦恢复 | P2；`modules/settings/`、`AppShell.qml`、`ActionGateway.qml` | 消除 WeatherMap 导入硬依赖；按需挂载与释放；IPC 调起 settings 正常显示并可关闭 | `nyxuri-shell --action settings` 流畅打开多页面设置面板；关闭后窗口与内存释放；无 Native 缺失报错 |
-| P3-02 状态栏外设域 | P3-01；`Modules/Bar/` 各组件、音量/亮度/电池服务 | 状态栏各组件对接 `shared/` 控件与 `ActionGateway`；无电池/背光时平滑降级 | 多显示器 Bar 正常布局；无电池设备不抛未捕获异常；音量/亮度拖动生效 |
-| P3-03 通知系统解耦 | P2；`Services/NotificationManager.qml`、`Modules/Sidebars` | 常驻 D-Bus 监听与瞬态面板解耦；通知弹窗与历史有界存储（例如上限 100 条） | 连续发送 `notify-send` 弹窗正常且声音播放；关闭历史抽屉不漏收新通知 |
-| P3-04 真实锁屏PAM | P2；`Modules/Lock/`、PAM 桥 | 认证状态与装饰分离；密码错误清空并震动反馈；多屏安全覆盖；锁屏中拒绝 Shell 切换 | 错误密码不卡死；正确密码秒级解锁；锁屏中 `nyxuri shell set` 明确拒绝 |
+| P3-01 设置解耦恢复 | P2；`modules/settings/`、`app/AppShell.qml`、`ActionGateway.qml` | 消除 WeatherMap 导入硬依赖；按需挂载与释放；IPC 调起 settings 正常显示并可关闭 | `nyxuri-shell --action settings` 流畅打开多页面设置面板；关闭后窗口与内存释放；无 Native 缺失报错 |
+| P3-02 状态栏外设域 | P3-01；`modules/bar/` 各组件、音量/亮度/电池服务 | 状态栏各组件对接 `shared/` 控件与 `ActionGateway`；无电池/背光时平滑降级 | 多显示器 Bar 正常布局；无电池设备不抛未捕获异常；音量/亮度拖动生效 |
+| P3-03 通知系统解耦 | P2；`Services/NotificationManager.qml`、`modules/sidebars` | 常驻 D-Bus 监听与瞬态面板解耦；通知弹窗与历史有界存储（例如上限 100 条） | 连续发送 `notify-send` 弹窗正常且声音播放；关闭历史抽屉不漏收新通知 |
+| P3-04 真实锁屏PAM | P2；`modules/lock/`、PAM 桥 | 认证状态与装饰分离；密码错误清空并震动反馈；多屏安全覆盖；锁屏中拒绝 Shell 切换 | 错误密码不卡死；正确密码秒级解锁；锁屏中 `nyxuri shell set` 明确拒绝 |
 | P3-05 六动作闭环 | P3-01 至 04；`shell-action.sh`、快捷键 | 六大动作在 Nyxuri Shell 下全面可用并与 Noctalia 行为对齐 | 快捷键触发六动作无一报错；`wallpaper-random` 等动作派发生效 |
 
 ## P4：壁纸、M3 调色与模板兼容

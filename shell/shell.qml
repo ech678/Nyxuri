@@ -3,6 +3,7 @@
 
 import QtQuick
 import Quickshell
+import qs.app
 
 ShellRoot {
     AppShell {}

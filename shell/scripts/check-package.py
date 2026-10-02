@@ -47,7 +47,7 @@ def main():
             prefix = "etc/xdg/quickshell/clavis/"
             required = {
                 prefix + "shell.qml",
-                prefix + "AppShell.qml",
+                prefix + "app/AppShell.qml",
                 prefix + "licenses/Meteocons-MIT.txt",
                 "usr/lib/systemd/user/clavis-shell.service",
             }

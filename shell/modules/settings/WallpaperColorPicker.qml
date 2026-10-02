@@ -5,7 +5,7 @@ import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
 import qs.Common
-import qs.Modules.Wallpaper
+import qs.modules.wallpaper
 import qs.Services
 import qs.Widgets.common
 import "../../Common/functions/ZenPalette.js" as Zen

@@ -192,6 +192,60 @@ class TestShellManagement(unittest.TestCase):
         with open(check_script, "r", encoding="utf-8") as f:
             self.assertNotIn("Modules/ControlCenter", f.read())
 
+    def test_shell_directory_hygiene_and_module_unification(self):
+        import os
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. Top-level clutter removed / relocated
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, ".github")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, ".gitignore")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "docs")))
+        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "wiki", "upstream-docs")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "tools")))
+        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "core", "tools", "window-preview")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "licenses")))
+        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "wiki", "upstream-licenses")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "Components")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "shared", "controls", "ThemeIcon.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "shared", "controls", "FileThemeIcon.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "shared", "controls", "SvgIcon.qml")))
+
+        # 2. AppShell encapsulated in app/
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "AppShell.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "app", "AppShell.qml")))
+
+        # 3. Capitalized Modules/ directory completely eliminated
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "Modules")))
+
+        # 4. Modules unified under modules/ in uniform lowercase with all functional code preserved
+        expected_modules = [
+            "bar", "desktopcards", "dock", "filepicker", "hotcorners",
+            "keystone", "launcher", "lock", "map", "quicksettings",
+            "regionselector", "session", "settings", "sidebars",
+            "systemcards", "wallpaper"
+        ]
+        for mod in expected_modules:
+            self.assertTrue(
+                os.path.isdir(os.path.join(shell_dir, "modules", mod)),
+                f"Expected module directory missing: shell/modules/{mod}"
+            )
+        # Assert no PascalCase/uppercase directories in modules/
+        for entry in os.listdir(os.path.join(shell_dir, "modules")):
+            if os.path.isdir(os.path.join(shell_dir, "modules", entry)):
+                self.assertEqual(entry, entry.lower(), f"Non-lowercase module found: {entry}")
+
+        # 5. Zero occurrences of qs.Modules. or qs.Components in any QML/JS files
+        for root_path, _, files in os.walk(shell_dir):
+            for file in files:
+                if file.endswith((".qml", ".js")):
+                    full_path = os.path.join(root_path, file)
+                    with open(full_path, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    self.assertNotIn("qs.Modules.", content, f"Obsolete qs.Modules. import found in {full_path}")
+                    self.assertNotIn("import qs.Components", content, f"Obsolete qs.Components import found in {full_path}")
+
 
 if __name__ == "__main__":
     unittest.main()
+

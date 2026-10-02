@@ -2,7 +2,7 @@ import QtQuick 2.15
 import QtTest 1.3
 
 import "../../Services/SystemCardDragState.js" as DragState
-import "../../Modules/SystemCards/SystemCardPlacement.js" as Placement
+import "../../modules/systemcards/SystemCardPlacement.js" as Placement
 
 TestCase {
     name: "SystemCardDragState"

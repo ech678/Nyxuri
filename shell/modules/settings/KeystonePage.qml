@@ -2,8 +2,8 @@ import QtQuick
 import QtQuick.Layouts
 import qs.Common
 import qs.Services
-import qs.Components
-import qs.Modules.FilePicker
+import qs.shared.controls
+import qs.modules.filepicker
 import qs.Widgets.common
 
 Item {

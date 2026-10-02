@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import qs.Common
-import qs.Modules.Map
+import qs.modules.map
 import qs.Services
 import qs.Widgets.common
 

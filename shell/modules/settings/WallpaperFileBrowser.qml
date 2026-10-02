@@ -1,5 +1,5 @@
 import QtQuick
-import qs.Modules.FilePicker
+import qs.modules.filepicker
 
 FilePickerWindow {
     id: root

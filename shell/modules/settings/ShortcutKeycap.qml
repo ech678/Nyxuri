@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Effects
 import qs.Common
 import qs.Services
-import qs.Components
+import qs.shared.controls
 import "../../Common/ShortcutKeySymbols.js" as KeySymbols
 
 Rectangle {

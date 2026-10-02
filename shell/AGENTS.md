@@ -56,9 +56,7 @@ Nyxuri Shell 以完整 Clavis 母体为起点，就地净化、重构；当前�
 
 ## 四层边界
 
-目标运行代码分为 `app/`、`modules/`、`shared/`、`native/`。现有 Modules/Services/
-Common/core 是待迁移的母体结构，不代表分层已完成。测试、资源、工具和许可证保留
-各自合理位置；封存功能无需为目录整齐提前重写。
+目标运行代码分为 `app/`、`modules/`、`shared/`、`native/`。旧 `Modules/` 目录已全面并入 `modules/` 统一管理，所有功能模块代码完整保留供后续持续修复与解耦；`Services/`、`Common/`、`Widgets/`、`Components/` 为待进一步提取与内聚的母体结构。测试、资源、工具和许可证保留各自合理位置；封存与待恢复功能无需为目录整齐提前重写。
 
 - **app**：顶层装配、环境与能力感知、IPC、全局快捷键意图、生命周期与存储协调；
   业务执行归明确 backend，不把 app 变成包揽所有业务的控制中心。

@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import qs.Services
 import qs.Common
-import qs.Components
+import qs.shared.controls
 
 Item {
     id: root

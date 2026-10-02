@@ -2,10 +2,10 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import qs.Services
-import "../Modules/SystemCards/SystemCardCatalog.js" as Catalog
-import "../Modules/SystemCards/SystemCardGeometry.js" as Geometry
-import "../Modules/SystemCards/SystemCardState.js" as CardState
-import "../Modules/Sidebars/Dashboard/drawer/DrawerGridLayout.js" as DrawerLayout
+import "../modules/systemcards/SystemCardCatalog.js" as Catalog
+import "../modules/systemcards/SystemCardGeometry.js" as Geometry
+import "../modules/systemcards/SystemCardState.js" as CardState
+import "../modules/sidebars/Dashboard/drawer/DrawerGridLayout.js" as DrawerLayout
 
 Singleton {
     id: root

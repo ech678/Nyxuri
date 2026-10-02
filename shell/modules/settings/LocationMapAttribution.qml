@@ -1,3 +1,3 @@
-import qs.Modules.Map
+import qs.modules.map
 
 MapAttribution {}

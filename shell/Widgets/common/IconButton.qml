@@ -1,6 +1,6 @@
 import QtQuick
 import qs.Common
-import qs.Components
+import qs.shared.controls
 
 RippleButton {
     id: root

@@ -2,7 +2,7 @@ import QtQuick
 import Qt5Compat.GraphicalEffects
 import qs.Common
 import qs.Services
-import qs.Modules.Keystone.ClockContent
+import qs.modules.keystone.ClockContent
 
 Item {
     id: root
