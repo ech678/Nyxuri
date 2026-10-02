@@ -13,6 +13,10 @@ Singleton {
     signal sessionOpenRequested(var screen)
     signal sessionCloseRequested()
     signal sessionToggleRequested(var screen)
+    signal settingsOpenRequested(string pageId)
+    signal settingsCloseRequested()
+    signal settingsToggleRequested(string pageId)
+    signal settingsSearchRequested(string searchId)
 
     function requestSessionOpen(screen) {
         root.sessionOpenRequested(screen);
@@ -26,6 +30,26 @@ Singleton {
 
     function requestSessionToggle(screen) {
         root.sessionToggleRequested(screen);
+        return true;
+    }
+
+    function requestSettingsOpen(pageId) {
+        root.settingsOpenRequested(pageId || "");
+        return true;
+    }
+
+    function requestSettingsClose() {
+        root.settingsCloseRequested();
+        return true;
+    }
+
+    function requestSettingsToggle(pageId) {
+        root.settingsToggleRequested(pageId || "");
+        return true;
+    }
+
+    function requestSettingsSearch(searchId) {
+        root.settingsSearchRequested(searchId || "");
         return true;
     }
 

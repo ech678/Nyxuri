@@ -121,7 +121,7 @@ def render(catalog):
 
 def load(root):
     routes = json.loads((root/'Common/settings-routes.json').read_text())
-    page_dir = root/'Modules/ControlCenter'
+    page_dir = root / 'modules/settings'
     for route in routes['routes']:
         if not (page_dir/route['source']).is_file():
             raise ValueError(f'Missing page: {route["source"]}')

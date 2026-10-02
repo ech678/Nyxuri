@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Clavis.Files
 import qs.Services
+import qs.app
 
 Singleton {
     id: root
@@ -71,7 +72,7 @@ Singleton {
         if (!application || application.dragOnly)
             return false;
         if (application.id === root.settingsApplication.id)
-            return ControlCenterService.openOrFocus();
+            return ActionGateway.requestSettingsOpen();
         return root.launchApplicationCommand(application, application.command);
     }
 

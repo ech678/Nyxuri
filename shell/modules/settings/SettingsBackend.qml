@@ -1,15 +1,15 @@
 pragma Singleton
 
 import QtQuick
-import qs.Common
-import qs.Services
 import Quickshell
 import Quickshell.Wayland
+import qs.Common
+import qs.Services
+import qs.app
 
 Singleton {
     id: root
 
-    property var controlCenterLoader: null
     property var controlCenterWindow: null
 
     property bool applyingSearch: false
@@ -25,6 +25,7 @@ Singleton {
         searchAnchors = next;
         retrySearch();
     }
+
     function unregisterSearchAnchor(anchor) {
         if (searchAnchors[anchor.entry.id] !== anchor)
             return;
@@ -32,18 +33,22 @@ Singleton {
         delete next[anchor.entry.id];
         searchAnchors = next;
     }
+
     function cancelSearch() {
         searchSerial += 1;
         searchTarget = null;
         settledGeometry = "";
         searchDeadline.stop();
     }
+
     function reportSearchError(message) {
         searchError = message;
-        if (!visible)
-            Quickshell.execDetached(["notify-send", "-a", "Clavis Shell", qsTranslate("ControlCenterWindow",
-                                                                                      "Settings"), message]);
+        if (!visible) {
+            ActionGateway.execute(["notify-send", "-a", "Nyxuri Shell",
+                                   qsTranslate("ControlCenterWindow", "Settings"), message], "settings");
+        }
     }
+
     function openSearch(id) {
         const entry = SpotlightCatalog.setting(id);
         cancelSearch();
@@ -62,12 +67,14 @@ Singleton {
         retrySearch();
         return accepted;
     }
+
     function retrySearch() {
         if (searchTarget)
             Qt.callLater(trySearch);
     }
+
     function trySearch() {
-        if (!searchTarget || !visible)
+        if (!searchTarget || !visible || !controlCenterWindow)
             return;
         applyingSearch = true;
         const state = controlCenterWindow.advanceSearchTarget(searchTarget, searchSerial);
@@ -97,6 +104,7 @@ Singleton {
             searchDeadline.stop();
         }
     }
+
     Timer {
         id: searchDeadline
         interval: 4000
@@ -113,12 +121,6 @@ Singleton {
 
     readonly property bool loaded: controlCenterWindow !== null
     readonly property bool visible: loaded && controlCenterWindow.visible
-
-    function registerLoader(loader) {
-        root.controlCenterLoader = loader;
-        if (loader && loader.item)
-            root.registerWindow(loader.item);
-    }
 
     function registerWindow(window) {
         if (!window)
@@ -161,21 +163,17 @@ Singleton {
             root._pendingPage = String(pageId);
         }
 
-        if (!root.controlCenterLoader)
-            return false;
-
-        root.controlCenterLoader.active = true;
-        if (root.controlCenterLoader.item) {
-            if (root.controlCenterWindow !== root.controlCenterLoader.item)
-                root.registerWindow(root.controlCenterLoader.item);
-            else
-                root.presentWindow(root.controlCenterWindow);
+        if (root.controlCenterWindow) {
+            root.presentWindow(root.controlCenterWindow);
+            return true;
         }
+
+        ActionGateway.requestSettingsOpen(pageId);
         return true;
     }
 
     function focusWindow() {
-        if (!root.visible)
+        if (!root.visible || !root.controlCenterWindow)
             return;
         const target = ToplevelManager.toplevels.values.find(window => window.title
                                                                        === root.controlCenterWindow.title);
@@ -185,7 +183,7 @@ Singleton {
 
     function openOrFocus() {
         WidgetState.closeAllPopups();
-        if (root.visible) {
+        if (root.visible && root.controlCenterWindow) {
             const target = ToplevelManager.toplevels.values.find(window => window.title
                                                                            === root.controlCenterWindow.title);
             if (target) {
@@ -201,8 +199,7 @@ Singleton {
         root._openRequested = false;
         root._pendingPage = "";
 
-        const window = root.controlCenterWindow || (root.controlCenterLoader ? root.controlCenterLoader.item :
-                                                                               null);
+        const window = root.controlCenterWindow;
         if (window) {
             if (window.hideWindow)
                 window.hideWindow();
@@ -210,9 +207,6 @@ Singleton {
                 window.visible = false;
             return true;
         }
-
-        if (root.controlCenterLoader)
-            root.controlCenterLoader.active = false;
         return false;
     }
 
@@ -226,14 +220,11 @@ Singleton {
 
     function windowClosed(window) {
         root.cancelSearch();
-        if (root.controlCenterWindow && root.controlCenterWindow !== window) {
+        if (root.controlCenterWindow && root.controlCenterWindow !== window)
             return;
-        }
 
         root.controlCenterWindow = null;
         root._openRequested = false;
         root._pendingPage = "";
-        if (root.controlCenterLoader)
-            root.controlCenterLoader.active = false;
     }
 }

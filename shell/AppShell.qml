@@ -7,6 +7,7 @@ import qs.Modules.Launcher
 import qs.Modules.Lock
 import qs.app
 import qs.modules.session
+import qs.modules.settings
 import qs.Common
 import qs.Services
 
@@ -86,6 +87,10 @@ Item {
         id: sessionHost
     }
 
+    SettingsHost {
+        id: settingsHost
+    }
+
     Connections {
         function onSecured() {
             root.runSecurePowerAction();
@@ -109,7 +114,7 @@ Item {
 
     Loader {
         active: ShortcutMapService.visible
-        source: "Modules/ControlCenter/ShortcutMap.qml"
+        source: "modules/settings/ShortcutMap.qml"
         onLoaded: {
             if (item) {
                 item.targetScreen = ShortcutMapService.targetScreen;
@@ -248,17 +253,33 @@ Item {
 
             IpcHandler {
                 function open(pageId: string): string {
-                    return ControlCenterService.open(pageId || "") ? "OK" : "UNAVAILABLE";
+                    return ActionGateway.requestSettingsOpen(pageId || "") ? "OK" : "UNAVAILABLE";
                 }
 
                 function close(): string {
-                    return ControlCenterService.close() ? "OK" : "CLOSED";
+                    return ActionGateway.requestSettingsClose() ? "OK" : "CLOSED";
                 }
 
                 function toggle(pageId: string): string {
-                    return ControlCenterService.toggle(pageId || "") ? "OPENING" : "CLOSING";
+                    return ActionGateway.requestSettingsToggle(pageId || "") ? "OPENING" : "CLOSING";
                 }
 
                 target: "control-center"
+            }
+
+            IpcHandler {
+                function open(pageId: string): string {
+                    return ActionGateway.requestSettingsOpen(pageId || "") ? "OK" : "UNAVAILABLE";
+                }
+
+                function close(): string {
+                    return ActionGateway.requestSettingsClose() ? "OK" : "CLOSED";
+                }
+
+                function toggle(pageId: string): string {
+                    return ActionGateway.requestSettingsToggle(pageId || "") ? "OPENING" : "CLOSING";
+                }
+
+                target: "settings"
             }
         }

@@ -9,6 +9,7 @@ import qs.Common
 import qs.Components
 import qs.Services
 import qs.Widgets.common
+import qs.app
 import "../../Common/functions/DockLayout.js" as DockLayout
 import "../../Common/functions/DockMotion.js" as DockMotion
 
@@ -821,7 +822,7 @@ PanelWindow {
                         if (entry)
                             root.showPopup(entry.key, true);
                         else
-                            ControlCenterService.openSearch("general.dock");
+                            ActionGateway.requestSettingsSearch("general.dock");
                     }
                 }
             }

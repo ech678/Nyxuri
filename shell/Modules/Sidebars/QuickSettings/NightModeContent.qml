@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import qs.Common
 import qs.Widgets.common
-import qs.Modules.ControlCenter
+import qs.modules.settings
 
 WidgetPanel {
     title: qsTr("Night Mode")

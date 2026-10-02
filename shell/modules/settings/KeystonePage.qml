@@ -32,10 +32,10 @@ Item {
 
     property var parentModal: null
     onCurrentSectionChanged: {
-        if (ControlCenterService.searchTarget && !ControlCenterService.applyingSearch && searchRequestSerial
-                === ControlCenterService.searchSerial)
-            ControlCenterService.cancelSearch();
-        ControlCenterService.retrySearch();
+        if (SettingsBackend.searchTarget && !SettingsBackend.applyingSearch && searchRequestSerial
+                === SettingsBackend.searchSerial)
+            SettingsBackend.cancelSearch();
+        SettingsBackend.retrySearch();
     }
     property string currentSection: "overview"
     property string editingDirectoryKey: ""
@@ -464,7 +464,7 @@ Item {
 
     Loader {
         id: pageLoader
-        onLoaded: ControlCenterService.retrySearch()
+        onLoaded: SettingsBackend.retrySearch()
 
         anchors.left: parent.left
         anchors.right: parent.right

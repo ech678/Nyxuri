@@ -31,7 +31,7 @@ WidgetPanel {
 
     function openControlCenter() {
         WidgetState.closeAllPopups();
-        ControlCenterService.open();
+        ActionGateway.requestSettingsOpen();
     }
 
     function sizeForToggle(toggle) {

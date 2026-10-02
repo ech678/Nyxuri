@@ -30,10 +30,10 @@ ColumnLayout {
             pageLoader.item.closeChildWindows();
     }
     onSectionChanged: {
-        if (ControlCenterService.searchTarget && !ControlCenterService.applyingSearch && searchRequestSerial
-                === ControlCenterService.searchSerial)
-            ControlCenterService.cancelSearch();
-        ControlCenterService.retrySearch();
+        if (SettingsBackend.searchTarget && !SettingsBackend.applyingSearch && searchRequestSerial
+                === SettingsBackend.searchSerial)
+            SettingsBackend.cancelSearch();
+        SettingsBackend.retrySearch();
         closeChildWindows();
         DisplayConfigService.clearCompletionNotice();
     }
@@ -68,7 +68,7 @@ ColumnLayout {
     Loader {
         id: pageLoader
         onLoaded: {
-            ControlCenterService.retrySearch();
+            SettingsBackend.retrySearch();
             if (item && "parentModal" in item)
                 item.parentModal = Qt.binding(() => root.parentModal);
         }

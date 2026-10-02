@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import Clavis.WeatherMap
 import qs.Common
 import qs.Services
 import qs.Widgets.common
@@ -123,7 +122,7 @@ StyledFlickable {
             SettingsActionRow {
                 Layout.fillWidth: true
                 visible: UiPreferences.weatherMapBaseProvider === "maptiler"
-                         && WeatherMapPlugin.credentialsReady && !WeatherMapPlugin.mapTilerConfigured
+                         && WeatherMapBridge.credentialsReady && !WeatherMapBridge.mapTilerConfigured
                 text: qsTr("MapTiler is not configured; using OpenFreeMap")
                 iconName: "key_off"
                 trailingIconName: "arrow_forward"
@@ -156,7 +155,7 @@ StyledFlickable {
             SettingsActionRow {
                 Layout.fillWidth: true
                 visible: UiPreferences.weatherMapOverlayProvider === "openweather"
-                         && WeatherMapPlugin.credentialsReady && !WeatherMapPlugin.apiConfigured
+                         && WeatherMapBridge.credentialsReady && !WeatherMapBridge.apiConfigured
                 text: qsTr("OpenWeather is not configured; using RainViewer")
                 iconName: "key_off"
                 trailingIconName: "arrow_forward"

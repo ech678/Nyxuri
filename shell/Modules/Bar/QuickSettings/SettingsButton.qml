@@ -2,6 +2,7 @@ import QtQuick
 import qs.Common
 import qs.Services
 import qs.Widgets.common
+import qs.app
 
 BarCircularButton {
     id: root
@@ -27,5 +28,5 @@ BarCircularButton {
             WidgetState.quickSettingsOpen = true;
         }
     }
-    onAltClicked: ControlCenterService.openOrFocus()
+    onAltClicked: ActionGateway.requestSettingsOpen()
 }

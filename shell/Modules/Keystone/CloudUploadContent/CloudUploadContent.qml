@@ -6,6 +6,7 @@ import qs.Components
 import qs.Modules.Sidebars.Dashboard.notifications as NotificationComponents
 import qs.Services
 import qs.Widgets.common
+import qs.app
 
 Item {
     id: root
@@ -151,7 +152,7 @@ Item {
                 text: qsTr("Open cloud storage settings")
                 iconName: "settings"
                 filled: true
-                onClicked: ControlCenterService.open("advanced")
+                onClicked: ActionGateway.requestSettingsOpen("advanced")
             }
         }
     }

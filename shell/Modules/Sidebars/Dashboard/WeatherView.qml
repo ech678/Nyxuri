@@ -5,6 +5,7 @@ import qs.Common
 import qs.Widgets.common
 import qs.Widgets.weather
 import qs.Services
+import qs.app
 
 Item {
     id: root
@@ -484,7 +485,7 @@ Item {
                                                       root.headerInkMuted.b, 0.1)
                         pressedStateLayerColor: Qt.rgba(root.headerInkMuted.r, root.headerInkMuted.g,
                                                         root.headerInkMuted.b, 0.18)
-                        onClicked: ControlCenterService.open("language-region")
+                        onClicked: ActionGateway.requestSettingsOpen("language-region")
                     }
 
                     IconButton {

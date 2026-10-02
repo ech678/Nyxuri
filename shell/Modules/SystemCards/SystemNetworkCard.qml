@@ -2,7 +2,7 @@ import QtQuick
 import Qt5Compat.GraphicalEffects
 import qs.Common
 import qs.Components
-import "../ControlCenter" as ControlCenter
+import qs.modules.settings as ControlCenter
 import "../../Common/functions/SystemFormat.js" as Format
 
 Item {

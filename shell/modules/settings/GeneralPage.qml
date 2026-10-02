@@ -31,10 +31,10 @@ Item {
     property string selectedBluetoothAdapterId: ""
 
     onCurrentSectionChanged: {
-        if (ControlCenterService.searchTarget && !ControlCenterService.applyingSearch && searchRequestSerial
-                === ControlCenterService.searchSerial)
-            ControlCenterService.cancelSearch();
-        ControlCenterService.retrySearch();
+        if (SettingsBackend.searchTarget && !SettingsBackend.applyingSearch && searchRequestSerial
+                === SettingsBackend.searchSerial)
+            SettingsBackend.cancelSearch();
+        SettingsBackend.retrySearch();
     }
 
     signal navigateRequested(string pageId)
@@ -128,7 +128,7 @@ Item {
                                                                                "GeneralOverviewPage.qml");
         }
         onLoaded: {
-            ControlCenterService.retrySearch();
+            SettingsBackend.retrySearch();
             if (!item)
                 return;
 

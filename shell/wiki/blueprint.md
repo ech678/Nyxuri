@@ -196,8 +196,8 @@ shell/
 |---|---|---|---|---|
 | `Modules/PowerMenu/` | **物理删除** | `modules/session/` | 淘汰 `PowerMenuService`，改用 `ActionGateway` 纯数组调用 | **P2 已完成** |
 | `Services/PowerMenuService.qml` | **物理删除** | `app/ActionGateway.qml` | 消除全局业务单例 | **P2 已完成** |
-| `Modules/ControlCenter/` | **重构迁移** | `modules/settings/` | 剥离 `Clavis.WeatherMap` 依赖；改为按需 Loader 与动态页面加载 | P3-01 |
-| `Services/ControlCenterService.qml` | **私有内聚** | `modules/settings/SettingsBackend.qml` | 消除全局单例，降级为 settings module 内部私有协调对象 | P3-01 |
+| `Modules/ControlCenter/` | **重构迁移** | `modules/settings/` | 剥离 `Clavis.WeatherMap` 依赖；改为按需 Loader 与动态页面加载 | **P3-01 已完成** |
+| `Services/ControlCenterService.qml` | **私有内聚** | `modules/settings/SettingsBackend.qml` | 消除全局单例，降级为 settings module 内部私有协调对象 | **P3-01 已完成** |
 | `Modules/Bar/` | **重构迁移** | `modules/bar/` | 接入 `shared/controls` 与 `shared/theme`；外设断开平滑降级 | P3-02 |
 | `Services/NotificationManager.qml` | **重构内聚** | `modules/notifications/NotificationService.qml` | 保留常驻 D-Bus 监听，消除与 UI 面板的硬耦合，限制历史上限 | P3-03 |
 | `Modules/Sidebars/notifications/` | **重构迁移** | `modules/notifications/NotificationDrawer.qml` | 瞬态面板，关闭即销毁 | P3-03 |

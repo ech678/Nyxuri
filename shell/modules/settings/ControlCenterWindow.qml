@@ -149,18 +149,18 @@ FloatingWindow {
     Material.accent: Appearance.colors.colPrimary
     onVisibleChanged: {
         if (!root.visible && root._wasShown) {
-            ControlCenterService.cancelSearch();
+            SettingsBackend.cancelSearch();
             root.closeChildWindows();
             root._wasShown = false;
             root.popoutClosed();
         }
     }
     onCurrentPageChanged: {
-        if (ControlCenterService.searchTarget && !ControlCenterService.applyingSearch && searchRequestSerial
-                === ControlCenterService.searchSerial)
-            ControlCenterService.cancelSearch();
+        if (SettingsBackend.searchTarget && !SettingsBackend.applyingSearch && searchRequestSerial
+                === SettingsBackend.searchSerial)
+            SettingsBackend.cancelSearch();
         root.closeChildWindows();
-        ControlCenterService.retrySearch();
+        SettingsBackend.retrySearch();
     }
 
     Timer {
@@ -370,9 +370,9 @@ FloatingWindow {
                         anchors.right: parent.right
                         anchors.bottom: parent.bottom
                         anchors.margins: Metrics.spacingM
-                        visible: ControlCenterService.searchError !== ""
+                        visible: SettingsBackend.searchError !== ""
                         tone: "error"
-                        message: ControlCenterService.searchError
+                        message: SettingsBackend.searchError
                     }
 
                     SettingsPageHost {
@@ -394,7 +394,7 @@ FloatingWindow {
                                 });
 
                             root.applyPendingPageSection();
-                            ControlCenterService.retrySearch();
+                            SettingsBackend.retrySearch();
                         }
                     }
 

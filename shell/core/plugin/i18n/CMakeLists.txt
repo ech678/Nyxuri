@@ -24,6 +24,12 @@ file(GLOB_RECURSE CLAVIS_TRANSLATION_SOURCES CONFIGURE_DEPENDS
     "${CLAVIS_SOURCE_ROOT}/Services/*.qml"
     "${CLAVIS_SOURCE_ROOT}/Widgets/*.js"
     "${CLAVIS_SOURCE_ROOT}/Widgets/*.qml"
+    "${CLAVIS_SOURCE_ROOT}/app/*.js"
+    "${CLAVIS_SOURCE_ROOT}/app/*.qml"
+    "${CLAVIS_SOURCE_ROOT}/modules/*.js"
+    "${CLAVIS_SOURCE_ROOT}/modules/*.qml"
+    "${CLAVIS_SOURCE_ROOT}/shared/*.js"
+    "${CLAVIS_SOURCE_ROOT}/shared/*.qml"
 )
 list(APPEND CLAVIS_TRANSLATION_SOURCES
     "${CLAVIS_SOURCE_ROOT}/core/plugin/keyboard/src/shortcut_recorder.cpp"

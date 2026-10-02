@@ -8,8 +8,8 @@ import Clavis.Keyboard
 import qs.Common
 import qs.Services
 import qs.Widgets.common
-import qs.Modules.ControlCenter
 import qs.app
+import qs.modules.settings
 import qs.shared.controls
 import "../../Common/functions/SpotlightCommands.js" as Commands
 
@@ -501,9 +501,9 @@ PanelWindow {
             else
                 locationPickerLoader.active = true;
         } else if (activation.provider === "settings-open")
-            ControlCenterService.openOrFocus();
+            ActionGateway.requestSettingsOpen();
         else if (activation.provider === "settings")
-            ControlCenterService.openSearch(activation.sourceId);
+            ActionGateway.requestSettingsSearch(activation.sourceId);
         else if (activation.provider === "actions")
             SpotlightCatalog.execute(activation.sourceId);
         else if (activation.provider === "web")

@@ -8,6 +8,7 @@ import qs.Components
 import qs.Common
 import qs.Services
 import qs.Widgets.common
+import qs.app
 import "../../Common/functions/DockLayout.js" as DockLayout
 import "../../Common/functions/DockBubble.js" as DockBubble
 import "../../Common/functions/DockMedia.js" as DockMedia
@@ -404,7 +405,7 @@ Item {
                     rightPadding: 8
                     text: qsTr("Dock settings")
                     onTriggered: {
-                        ControlCenterService.openSearch("general.dock");
+                        ActionGateway.requestSettingsSearch("general.dock");
                         root.dismissed();
                     }
                 }

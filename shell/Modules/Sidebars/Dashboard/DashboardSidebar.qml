@@ -1,5 +1,5 @@
 import QtQuick
-import qs.Modules.ControlCenter
+import qs.modules.settings
 import qs.Modules.FilePicker
 import qs.Common
 import qs.Services

@@ -1,5 +1,4 @@
 import QtQuick
-import Clavis.WeatherMap
 
 WeatherServiceApiKeyCard {
     id: root
@@ -10,16 +9,16 @@ WeatherServiceApiKeyCard {
     placeholderText: qsTr("Enter MapTiler API key")
     invalidKeyText: qsTr("Enter a valid MapTiler API key")
     clearDescription: qsTr("Remove the MapTiler API key from the system keyring")
-    configured: WeatherMapPlugin.mapTilerConfigured
-    credentialsReady: WeatherMapPlugin.credentialsReady
-    busy: WeatherMapPlugin.credentialBusy
-    checking: !WeatherMapPlugin.credentialsReady || WeatherMapPlugin.mapTilerStatus === "loading_credentials"
-    statusError: WeatherMapPlugin.mapTilerStatus === "keychain_error"
+    configured: WeatherMapBridge.mapTilerConfigured
+    credentialsReady: WeatherMapBridge.credentialsReady
+    busy: WeatherMapBridge.credentialBusy
+    checking: WeatherMapBridge.available && (!WeatherMapBridge.credentialsReady || WeatherMapBridge.mapTilerStatus === "loading_credentials")
+    statusError: !WeatherMapBridge.available || WeatherMapBridge.mapTilerStatus === "keychain_error"
     storeAction: value => {
-        return WeatherMapPlugin.storeMapTilerApiKey(value);
+        return WeatherMapBridge.storeMapTilerApiKey(value);
     }
     clearAction: () => {
-        return WeatherMapPlugin.clearMapTilerApiKey();
+        return WeatherMapBridge.clearMapTilerApiKey();
     }
 
     Connections {
@@ -28,6 +27,6 @@ WeatherServiceApiKeyCard {
                 root.completeOperation(success, message);
         }
 
-        target: WeatherMapPlugin
+        target: WeatherMapBridge
     }
 }

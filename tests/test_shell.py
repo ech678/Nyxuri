@@ -157,6 +157,40 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("--action", res.stdout)
         self.assertIn("session", res.stdout)
         self.assertIn("launcher", res.stdout)
+        self.assertIn("settings", res.stdout)
+
+    def test_p3_settings_decoupling_and_module_structure(self):
+        import os
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        settings_dir = os.path.join(repo_root, "shell", "modules", "settings")
+
+        # Verify modules/settings exists and contains required host/backend/bridge
+        self.assertTrue(os.path.isdir(settings_dir))
+        self.assertTrue(os.path.isfile(os.path.join(settings_dir, "SettingsHost.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(settings_dir, "SettingsBackend.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(settings_dir, "WeatherMapBridge.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(settings_dir, "ControlCenterWindow.qml")))
+
+        # Verify old ControlCenter directory and ControlCenterService are deleted
+        self.assertFalse(os.path.exists(os.path.join(repo_root, "shell", "Modules", "ControlCenter")))
+        self.assertFalse(os.path.exists(os.path.join(repo_root, "shell", "Services", "ControlCenterService.qml")))
+
+        # Verify no QML file under modules/settings statically imports Clavis.WeatherMap (except backend/WeatherMapBackend.qml)
+        for root_path, _, files in os.walk(settings_dir):
+            for file in files:
+                if file.endswith(".qml") and file != "WeatherMapBackend.qml":
+                    full_path = os.path.join(root_path, file)
+                    with open(full_path, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    self.assertNotIn("import Clavis.WeatherMap", content, f"Static import Clavis.WeatherMap found in {full_path}")
+
+        # Verify no script references deleted Modules/ControlCenter
+        gen_script = os.path.join(repo_root, "shell", "scripts", "dev", "generate-search-catalog.py")
+        with open(gen_script, "r", encoding="utf-8") as f:
+            self.assertNotIn("Modules/ControlCenter", f.read())
+        check_script = os.path.join(repo_root, "shell", "scripts", "dev", "check.sh")
+        with open(check_script, "r", encoding="utf-8") as f:
+            self.assertNotIn("Modules/ControlCenter", f.read())
 
 
 if __name__ == "__main__":

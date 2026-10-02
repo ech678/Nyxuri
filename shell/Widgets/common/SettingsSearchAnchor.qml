@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Common
 import qs.Services
+import qs.modules.settings
 
 // An explicit declaration attached to the actual section. The build consumes
 // only this JSON literal; its ID is also the runtime registration key.
@@ -50,31 +51,31 @@ Item {
     }
     Component.onCompleted: {
         if (registerAnchor)
-            ControlCenterService.registerSearchAnchor(root);
+            SettingsBackend.registerSearchAnchor(root);
     }
     Component.onDestruction: {
         if (registerAnchor)
-            ControlCenterService.unregisterSearchAnchor(root);
+            SettingsBackend.unregisterSearchAnchor(root);
     }
     Connections {
         target: root.target
         function onWidthChanged() {
-            ControlCenterService.retrySearch();
+            SettingsBackend.retrySearch();
         }
         function onHeightChanged() {
-            ControlCenterService.retrySearch();
+            SettingsBackend.retrySearch();
         }
         function onYChanged() {
-            ControlCenterService.retrySearch();
+            SettingsBackend.retrySearch();
         }
         function onVisibleChanged() {
-            ControlCenterService.retrySearch();
+            SettingsBackend.retrySearch();
         }
     }
     Connections {
-        target: ControlCenterService
+        target: SettingsBackend
         function onSearchSerialChanged() {
-            if (root.requestSerial !== ControlCenterService.searchSerial) {
+            if (root.requestSerial !== SettingsBackend.searchSerial) {
                 hold.stop();
                 root.highlightOpacity = 0;
             }

@@ -1,5 +1,4 @@
 import QtQuick
-import Clavis.WeatherMap
 
 WeatherServiceApiKeyCard {
     id: root
@@ -10,16 +9,16 @@ WeatherServiceApiKeyCard {
     placeholderText: qsTr("Enter OpenWeather API key")
     invalidKeyText: qsTr("Enter a valid OpenWeather API key")
     clearDescription: qsTr("Remove the OpenWeather API key from the system keyring")
-    configured: WeatherMapPlugin.apiConfigured
-    credentialsReady: WeatherMapPlugin.credentialsReady
-    busy: WeatherMapPlugin.credentialBusy
-    checking: !WeatherMapPlugin.credentialsReady || WeatherMapPlugin.status === "loading_credentials"
-    statusError: WeatherMapPlugin.status === "keychain_error"
+    configured: WeatherMapBridge.apiConfigured
+    credentialsReady: WeatherMapBridge.credentialsReady
+    busy: WeatherMapBridge.credentialBusy
+    checking: WeatherMapBridge.available && (!WeatherMapBridge.credentialsReady || WeatherMapBridge.status === "loading_credentials")
+    statusError: !WeatherMapBridge.available || WeatherMapBridge.status === "keychain_error"
     storeAction: value => {
-        return WeatherMapPlugin.storeApiKey(value);
+        return WeatherMapBridge.storeApiKey(value);
     }
     clearAction: () => {
-        return WeatherMapPlugin.clearApiKey();
+        return WeatherMapBridge.clearApiKey();
     }
 
     Connections {
@@ -28,6 +27,6 @@ WeatherServiceApiKeyCard {
                 root.completeOperation(success, message);
         }
 
-        target: WeatherMapPlugin
+        target: WeatherMapBridge
     }
 }

@@ -1,5 +1,5 @@
 import "../../Common/functions/SystemFormat.js" as Format
-import "../ControlCenter" as ControlCenter
+import qs.modules.settings as ControlCenter
 import Qt5Compat.GraphicalEffects
 import QtQuick
 import qs.Common

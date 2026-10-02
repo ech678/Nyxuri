@@ -17,7 +17,7 @@ set(CLAVIS_SYSTEMD_USER_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/systemd/user" CACHE
     "Install destination for Clavis systemd user units")
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
-file(GLOB SEARCH_DECLARATIONS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/Modules/ControlCenter/*.qml")
+file(GLOB SEARCH_DECLARATIONS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/modules/settings/*.qml")
 set(SEARCH_CATALOG "${CMAKE_CURRENT_SOURCE_DIR}/Common/generated/SearchCatalog.js")
 add_custom_command(OUTPUT "${SEARCH_CATALOG}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/dev/generate-search-catalog.py"

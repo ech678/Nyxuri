@@ -66,7 +66,7 @@ for file in "${files[@]}"; do
         core/*|CMakeLists.txt|VERSION|*.cmake|tests/qml/*|scripts/release.py|scripts/install/*|install.sh|tests/test_release.py|tests/test_installer.py|packaging/*) native=true ;;
     esac
     case ${file} in
-        Common/settings-routes.json|Common/generated/SearchCatalog.js|Modules/ControlCenter/*.qml|scripts/system/niri-actions.json|scripts/dev/generate-search-catalog.py|tests/test_search_catalog.py) catalog=true ;;
+        Common/settings-routes.json|Common/generated/SearchCatalog.js|modules/settings/*.qml|scripts/system/niri-actions.json|scripts/dev/generate-search-catalog.py|tests/test_search_catalog.py) catalog=true ;;
     esac
     [[ -f ${file} ]] || continue
     case ${file} in

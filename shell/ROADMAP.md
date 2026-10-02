@@ -126,7 +126,7 @@ Qt/字体缓存不承诺每字节即时返还，重点证明专属资源消失�
 
 前置：P2。设置（控制中心）、状态栏外设、通知、真实锁屏与剪贴板逐域完善，复用上游视觉，设备缺失局部不可用。
 
-- [ ] P3-01 设置系统（ControlCenter）解耦恢复：消除 `Clavis.WeatherMap` 静态导入阻断；按需 `LazyLoader` 挂载 `ControlCenterWindow`，关闭完全释放；对接 `ActionGateway` 与 `nyxuri shell --action settings`。
+- [x] P3-01 设置系统（ControlCenter ➔ modules/settings）解耦恢复：消除 `Clavis.WeatherMap` 静态导入阻断；按需 `LazyLoader` 挂载 `ControlCenterWindow`，关闭完全释放；全局单例内聚为 `SettingsBackend.qml`，对接 `ActionGateway` 与 `nyxuri-shell --action settings`；旧目录与旧单例物理删除。
 - [ ] P3-02 状态栏与外设基础域完善：状态栏工作区/活动窗口/时钟/电池/托盘；音量与亮度滑条收敛至 `ActionGateway`；缺失硬件优雅降级。
 - [ ] P3-03 通知接收与临时历史/弹窗分离：通知接收常驻后台（D-Bus），与临时通知抽屉/弹窗解耦；关闭历史不停止接收，历史存储有界。
 - [ ] P3-04 Wayland session-lock/PAM 安全状态与装饰解耦：错误密码震动反馈、认证成功即刻解锁、多屏容灾与崩溃退出保护。
@@ -134,7 +134,7 @@ Qt/字体缓存不承诺每字节即时返还，重点证明专属资源消失�
 
 | 任务 | 前置与改动边界 | 交付物 | 验收证据 |
 | --- | --- | --- | --- |
-| P3-01 设置解耦恢复 | P2；`Modules/ControlCenter`、`AppShell.qml`、`ActionGateway.qml` | 消除 WeatherMap 导入硬依赖；按需挂载与释放；IPC 调起 settings 正常显示并可关闭 | `nyxuri-shell --action settings` 流畅打开多页面设置面板；关闭后窗口与内存释放；无 Native 缺失报错 |
+| P3-01 设置解耦恢复 | P2；`modules/settings/`、`AppShell.qml`、`ActionGateway.qml` | 消除 WeatherMap 导入硬依赖；按需挂载与释放；IPC 调起 settings 正常显示并可关闭 | `nyxuri-shell --action settings` 流畅打开多页面设置面板；关闭后窗口与内存释放；无 Native 缺失报错 |
 | P3-02 状态栏外设域 | P3-01；`Modules/Bar/` 各组件、音量/亮度/电池服务 | 状态栏各组件对接 `shared/` 控件与 `ActionGateway`；无电池/背光时平滑降级 | 多显示器 Bar 正常布局；无电池设备不抛未捕获异常；音量/亮度拖动生效 |
 | P3-03 通知系统解耦 | P2；`Services/NotificationManager.qml`、`Modules/Sidebars` | 常驻 D-Bus 监听与瞬态面板解耦；通知弹窗与历史有界存储（例如上限 100 条） | 连续发送 `notify-send` 弹窗正常且声音播放；关闭历史抽屉不漏收新通知 |
 | P3-04 真实锁屏PAM | P2；`Modules/Lock/`、PAM 桥 | 认证状态与装饰分离；密码错误清空并震动反馈；多屏安全覆盖；锁屏中拒绝 Shell 切换 | 错误密码不卡死；正确密码秒级解锁；锁屏中 `nyxuri shell set` 明确拒绝 |

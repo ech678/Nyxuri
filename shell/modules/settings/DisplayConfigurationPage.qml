@@ -22,7 +22,7 @@ StyledFlickable {
             scaleDialog.dismiss();
     }
     function revealAdvancedSearch() {
-        if (ControlCenterService.searchTarget?.id === "general.displays.configuration.section.hot-corners")
+        if (SettingsBackend.searchTarget?.id === "general.displays.configuration.section.hot-corners")
             advanced = true;
     }
     Component.onCompleted: {
@@ -30,7 +30,7 @@ StyledFlickable {
         root.revealAdvancedSearch();
     }
     Connections {
-        target: ControlCenterService
+        target: SettingsBackend
         function onSearchTargetChanged() {
             root.revealAdvancedSearch();
         }
