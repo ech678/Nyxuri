@@ -1,5 +1,5 @@
 import QtQuick
-import qs.Common
+import qs.shared.theme
 import qs.modules.systemcards
 
 Item {

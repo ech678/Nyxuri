@@ -1,7 +1,7 @@
 import QtQuick
 import QtTest
-import "../../Common/functions/DisplaySchedule.js" as Schedule
-import "../../Common/functions/DisplayConfiguration.js" as Config
+import "../../modules/settings/DisplaySchedule.js" as Schedule
+import "../../modules/settings/DisplayConfiguration.js" as Config
 
 TestCase {
     name: "DisplayMath"

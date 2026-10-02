@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQml.Models
-import qs.Services
+import qs.app.services
 
 Item {
     id: root

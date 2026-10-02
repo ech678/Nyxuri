@@ -1,7 +1,7 @@
 import QtQuick
-import qs.Common
-import qs.Services
-import "../../Common/functions/DisplayConfiguration.js" as Config
+import qs.shared.theme
+import qs.app.services
+import "./DisplayConfiguration.js" as Config
 
 Rectangle {
     id: root

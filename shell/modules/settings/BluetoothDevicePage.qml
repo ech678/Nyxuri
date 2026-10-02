@@ -1,9 +1,9 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import qs.Common
-import qs.Services
-import qs.Widgets.common
+import qs.shared.theme
+import qs.app.services
+import qs.shared.controls
 
 StyledFlickable {
     id: root

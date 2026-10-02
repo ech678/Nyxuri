@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
-import qs.Services
-import qs.Common
-import qs.Widgets.common
+import qs.app.services
+import qs.shared.theme
+import qs.shared.controls
 
 ColumnLayout {
     id: root

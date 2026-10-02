@@ -1,9 +1,10 @@
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
-import qs.Common
-import qs.Services
-import "Cards"
+import qs.shared.theme
+import qs.app.services
+import "cards"
+import qs.app
 
 Item {
     id: root

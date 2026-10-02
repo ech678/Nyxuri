@@ -1,8 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
-import qs.Common
+import qs.shared.theme
 import qs.shared.controls
-import qs.Widgets.common
 
 Rectangle {
     id: root

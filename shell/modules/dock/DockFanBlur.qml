@@ -2,8 +2,8 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQml.Models
 import Quickshell
-import qs.Services
-import "../../Common/functions/DockBubble.js" as DockBubble
+import qs.app.services
+import "./DockBubble.js" as DockBubble
 
 Region {
     id: root

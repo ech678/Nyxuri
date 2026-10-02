@@ -5,13 +5,12 @@ import Quickshell
 import Clavis.Files
 import Clavis.Niri
 import Quickshell.Wayland
-import qs.Common
+import qs.shared.theme
 import qs.shared.controls
-import qs.Services
-import qs.Widgets.common
+import qs.app.services
 import qs.app
-import "../../Common/functions/DockLayout.js" as DockLayout
-import "../../Common/functions/DockMotion.js" as DockMotion
+import "./DockLayout.js" as DockLayout
+import "./DockMotion.js" as DockMotion
 
 PanelWindow {
     id: root

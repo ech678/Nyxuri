@@ -120,8 +120,9 @@ reject remove kitty
 installed="$test_root/package/etc/xdg/quickshell/clavis"
 mkdir -p "$installed/scripts"
 cp -r "$repo_root/scripts/lib" "$repo_root/scripts/theme" "$installed/scripts/"
-cp -r "$repo_root/matugen" "$installed/matugen"
-bash "$installed/scripts/theme/manage_matugen_templates.sh" list | jq -e --arg prefix "$installed/matugen/" 'all(.templates[] | select(.origin == "builtin"); .inputPath | startswith($prefix))' >/dev/null
+mkdir -p "$installed/assets"
+cp -r "$repo_root/assets/matugen" "$installed/assets/matugen"
+bash "$installed/scripts/theme/manage_matugen_templates.sh" list | jq -e --arg prefix "$installed/assets/matugen/" 'all(.templates[] | select(.origin == "builtin"); .inputPath | startswith($prefix))' >/dev/null
 bash "$installed/scripts/theme/generate_matugen_colors.sh" --color '#aabbcc' --templates '' --mode light > /dev/null
 assert test -s "$CLAVIS_GENERATED_HOME/clavis/colors.json"
 

@@ -1,7 +1,7 @@
 import QtQuick
-import qs.Common
-import qs.Services
-import "../../Common/functions/DockBubble.js" as DockBubble
+import qs.shared.theme
+import qs.app.services
+import "./DockBubble.js" as DockBubble
 
 Item {
     id: root

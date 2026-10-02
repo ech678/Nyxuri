@@ -1,6 +1,6 @@
 import QtQuick
 import QtTest
-import "../../Common/SidebarPolicy.js" as SidebarPolicy
+import "../../modules/sidebars/SidebarPolicy.js" as SidebarPolicy
 
 TestCase {
     name: "SidebarPolicy"

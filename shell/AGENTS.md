@@ -56,7 +56,7 @@ Nyxuri Shell 以完整 Clavis 母体为起点，就地净化、重构；当前�
 
 ## 四层边界
 
-目标运行代码分为 `app/`、`modules/`、`shared/`、`native/`。旧 `Modules/` 目录已全面并入 `modules/` 统一管理，所有功能模块代码完整保留供后续持续修复与解耦；`Services/`、`Common/`、`Widgets/`、`Components/` 为待进一步提取与内聚的母体结构。测试、资源、工具和许可证保留各自合理位置；封存与待恢复功能无需为目录整齐提前重写。
+目标运行代码严格分为 `app/`、`modules/`、`shared/`、`native/` 四层。遗留母体结构 `Modules/`、`Components/`、`Widgets/`、`Common/`、`Services/` 与 `core/` 已全面清算归并；所有功能模块代码完整保留在四层结构中，旧平铺母体彻底移除。静态资源统一由 `assets/` 枢纽归口（吸收 `i18n` 与 `matugen`），所有模块与深层目录严格遵循全小写规范，根目录已消除上游独立发行残余（`install.sh`、`scripts/ci/`）。测试、资源、工具和许可证保留各自合理位置。
 
 - **app**：顶层装配、环境与能力感知、IPC、全局快捷键意图、生命周期与存储协调；
   业务执行归明确 backend，不把 app 变成包揽所有业务的控制中心。
@@ -104,7 +104,7 @@ UI 只呈现和响应输入；桌面意图经 Action Gateway 执行。命令、�
   native 的 qmldir、qmltypes 和 plugin 由 CMake/Qt 生成，不手改生成物或用户安装目录。
 - 静态 import 不因 Loader inactive 自动变成可选。缺插件路径必须用真实独立组件
   验证隔离；默认构建不 require 封存依赖。
-- 不整体搬迁 Common 为 shared；文件接口、环境与业务 singleton 必须先拆开。
+- `shared/` 严格由 `theme/`（设计 Token）、`controls/`（原子控件）、`compositor/`（合成器特效）与 `utils/`（纯数学/工具函数）构成，严守无 IO、无进程副作用铁律。环境与路径归入 `app/Paths.qml`，全局常驻服务收敛至 `app/services/`。
 - 删除内嵌字体时同步处理 family、时钟、图标与排版回退，禁止启动时联网下载。
 - UI 文案沿用 qsTr/qsTranslate、占位符与 Qt numerus；修改时同步相关翻译。
   语言切换不改变地区、单位或用户数据。宿主文案遵循 writing-voice 与 i18n 契约。

@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Effects
 import Quickshell.Wayland
-import qs.Common
-import qs.Services
+import qs.shared.theme
+import qs.app.services
 import qs.modules.wallpaper
 
 Item {

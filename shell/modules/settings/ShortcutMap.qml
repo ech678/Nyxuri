@@ -5,10 +5,10 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
-import qs.Common
-import qs.Services
-import qs.Widgets.common
-import "../../Common/NiriActionNames.js" as ActionNames
+import qs.shared.theme
+import qs.app.services
+import qs.shared.controls
+import "./NiriActionNames.js" as ActionNames
 
 PanelWindow {
     id: root

@@ -1,6 +1,7 @@
 pragma Singleton
 import QtQuick
-import qs.Common
+import qs.shared.theme
+import qs.app
 
 QtObject {
     readonly property string basePath: Paths.iconsDir + "/"

@@ -1,5 +1,5 @@
 import QtQuick
-import qs.Services
+import qs.app.services
 
 Item {
     OverviewWallpaper {}

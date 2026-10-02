@@ -2,10 +2,9 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
-import qs.Common
+import qs.shared.theme
 import qs.shared.controls
-import qs.Services
-import qs.Widgets.common
+import qs.app.services
 
 FloatingWindow {
     id: root

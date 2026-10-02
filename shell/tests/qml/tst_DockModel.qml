@@ -1,6 +1,6 @@
 import QtQuick
 import QtTest
-import "../../Common/functions/DockModel.js" as DockModel
+import "../../modules/dock/DockModel.js" as DockModel
 
 TestCase {
     name: "DockModel"

@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Shapes
-import qs.Common
+import qs.shared.theme
 
 Item {
     id: root

@@ -5,13 +5,12 @@ import QtQuick.Layouts
 import Quickshell
 import Clavis.Runtime
 import qs.shared.controls
-import qs.Common
-import qs.Services
-import qs.Widgets.common
+import qs.shared.theme
+import qs.app.services
 import qs.app
-import "../../Common/functions/DockLayout.js" as DockLayout
-import "../../Common/functions/DockBubble.js" as DockBubble
-import "../../Common/functions/DockMedia.js" as DockMedia
+import "./DockLayout.js" as DockLayout
+import "./DockBubble.js" as DockBubble
+import "./DockMedia.js" as DockMedia
 
 Item {
     id: root

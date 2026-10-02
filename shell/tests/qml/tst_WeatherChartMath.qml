@@ -1,6 +1,6 @@
 import QtQuick 2.15
 import QtTest 1.3
-import "../../modules/sidebars/Dashboard/WeatherChartMath.js" as WeatherChartMath
+import "../../modules/sidebars/dashboard/WeatherChartMath.js" as WeatherChartMath
 
 TestCase {
     function test_temperatureDomainPadsSmallRange() {

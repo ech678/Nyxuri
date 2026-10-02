@@ -127,6 +127,7 @@ Qt/字体缓存不承诺每字节即时返还，重点证明专属资源消失�
 前置：P2。设置（控制中心）、状态栏外设、通知、真实锁屏与剪贴板逐域完善，复用上游视觉，设备缺失局部不可用。
 
 - [x] P3-01 设置系统（ControlCenter ➔ modules/settings）解耦恢复：消除 `Clavis.WeatherMap` 静态导入阻断；按需 `LazyLoader` 挂载 `ControlCenterWindow`，关闭完全释放；全局单例内聚为 `SettingsBackend.qml`，对接 `ActionGateway` 与 `nyxuri-shell --action settings`；旧目录与旧单例物理删除。
+- [x] P3-01a 彻底重构当前文件架构：沿 `app/`、`modules/`、`shared/`、`native/` 四层收敛目录与职责，拆解并归并遗留母体结构（彻底清除 `Common/`、`Services/`、`Widgets/`、`core/`）；控件归入 `shared/controls/`，主题/工具分别归入 `shared/theme/` 与 `shared/utils/`，服务归入 `app/services/`，构建与 C++ 归入 `native/`；完成极简秩序化收敛（删除上游 install.sh/ci 残余，assets 吸收 i18n/matugen，modules 内部 28 处目录全小写几何对齐），更新全库导入并维护 100% 契约单测。
 - [ ] P3-02 状态栏与外设基础域完善：状态栏工作区/活动窗口/时钟/电池/托盘；音量与亮度滑条收敛至 `ActionGateway`；缺失硬件优雅降级。
 - [ ] P3-03 通知接收与临时历史/弹窗分离：通知接收常驻后台（D-Bus），与临时通知抽屉/弹窗解耦；关闭历史不停止接收，历史存储有界。
 - [ ] P3-04 Wayland session-lock/PAM 安全状态与装饰解耦：错误密码震动反馈、认证成功即刻解锁、多屏容灾与崩溃退出保护。
@@ -135,10 +136,11 @@ Qt/字体缓存不承诺每字节即时返还，重点证明专属资源消失�
 | 任务 | 前置与改动边界 | 交付物 | 验收证据 |
 | --- | --- | --- | --- |
 | P3-01 设置解耦恢复 | P2；`modules/settings/`、`app/AppShell.qml`、`ActionGateway.qml` | 消除 WeatherMap 导入硬依赖；按需挂载与释放；IPC 调起 settings 正常显示并可关闭 | `nyxuri-shell --action settings` 流畅打开多页面设置面板；关闭后窗口与内存释放；无 Native 缺失报错 |
-| P3-02 状态栏外设域 | P3-01；`modules/bar/` 各组件、音量/亮度/电池服务 | 状态栏各组件对接 `shared/` 控件与 `ActionGateway`；无电池/背光时平滑降级 | 多显示器 Bar 正常布局；无电池设备不抛未捕获异常；音量/亮度拖动生效 |
+| P3-01a 文件架构彻底重构 | P3-01；四层运行代码与遗留母体目录，测试、资源、工具和许可证保留合理归属 | 明确文件归属与职责边界；同步更新导入和构建引用；核实后清理重复实现、废弃路径与无用层级，记录被替代旧路径 | 现有启动、设置与会话动作正常；视觉与生命周期无回退；文件组织与依赖归属清晰，旧实现不重复保留 |
+| P3-02 状态栏外设域 | P3-01a；`modules/bar/` 各组件、音量/亮度/电池服务 | 状态栏各组件对接 `shared/` 控件与 `ActionGateway`；无电池/背光时平滑降级 | 多显示器 Bar 正常布局；无电池设备不抛未捕获异常；音量/亮度拖动生效 |
 | P3-03 通知系统解耦 | P2；`Services/NotificationManager.qml`、`modules/sidebars` | 常驻 D-Bus 监听与瞬态面板解耦；通知弹窗与历史有界存储（例如上限 100 条） | 连续发送 `notify-send` 弹窗正常且声音播放；关闭历史抽屉不漏收新通知 |
 | P3-04 真实锁屏PAM | P2；`modules/lock/`、PAM 桥 | 认证状态与装饰分离；密码错误清空并震动反馈；多屏安全覆盖；锁屏中拒绝 Shell 切换 | 错误密码不卡死；正确密码秒级解锁；锁屏中 `nyxuri shell set` 明确拒绝 |
-| P3-05 六动作闭环 | P3-01 至 04；`shell-action.sh`、快捷键 | 六大动作在 Nyxuri Shell 下全面可用并与 Noctalia 行为对齐 | 快捷键触发六动作无一报错；`wallpaper-random` 等动作派发生效 |
+| P3-05 六动作闭环 | P3-01、P3-01a、P3-02 至 04；`shell-action.sh`、快捷键 | 六大动作在 Nyxuri Shell 下全面可用并与 Noctalia 行为对齐 | 快捷键触发六动作无一报错；`wallpaper-random` 等动作派发生效 |
 
 ## P4：壁纸、M3 调色与模板兼容
 

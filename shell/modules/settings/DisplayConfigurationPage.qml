@@ -1,10 +1,10 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import qs.Common
-import qs.Services
-import qs.Widgets.common
-import "../../Common/functions/DisplayConfiguration.js" as Config
+import qs.shared.theme
+import qs.app.services
+import qs.shared.controls
+import "./DisplayConfiguration.js" as Config
 
 StyledFlickable {
     id: root

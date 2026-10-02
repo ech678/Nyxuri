@@ -5,13 +5,12 @@ import QtQuick.Controls.Material
 import Quickshell
 import Quickshell.Wayland
 import Clavis.Keyboard
-import qs.Common
-import qs.Services
-import qs.Widgets.common
+import qs.shared.theme
+import qs.app.services
+import qs.shared.controls
 import qs.app
 import qs.modules.settings
-import qs.shared.controls
-import "../../Common/functions/SpotlightCommands.js" as Commands
+import "./SpotlightCommands.js" as Commands
 
 PanelWindow {
     id: root

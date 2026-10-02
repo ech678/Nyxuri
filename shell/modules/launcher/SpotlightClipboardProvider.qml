@@ -1,7 +1,8 @@
 import QtQuick
-import qs.Common
-import "../../Common/functions/FileUtils.js" as FileUtils
-import qs.Services
+import qs.shared.theme
+import "../../shared/utils/FileUtils.js" as FileUtils
+import qs.app.services
+import qs.app
 
 Item {
     id: root

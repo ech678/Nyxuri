@@ -1,10 +1,9 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
-import qs.Common
+import qs.shared.theme
 import qs.shared.controls
-import qs.Services
-import qs.Widgets.common
+import qs.app.services
 
 StyledMenu {
     id: root

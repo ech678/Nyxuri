@@ -1,6 +1,6 @@
 import QtQuick
 import QtTest
-import "../../Common/functions/DockBubble.js" as DockBubble
+import "../../modules/dock/DockBubble.js" as DockBubble
 
 TestCase {
     name: "DockBubble"

@@ -2,7 +2,7 @@ import QtQuick
 import QtLocation
 import QtPositioning
 import MapLibre 3.0
-import qs.Common
+import qs.shared.theme
 
 Item {
     id: root

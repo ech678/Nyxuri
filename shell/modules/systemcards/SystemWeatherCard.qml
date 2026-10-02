@@ -1,9 +1,9 @@
 import QtQuick
 import QtQuick.Effects
 import M3Shapes
-import qs.Common
+import qs.shared.theme
 import qs.shared.controls
-import qs.Services
+import qs.app.services
 
 Item {
     id: root

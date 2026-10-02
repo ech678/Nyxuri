@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import qs.Common
+import qs.shared.theme
 import qs.shared.controls
 
 TabButton {

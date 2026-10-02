@@ -3,8 +3,9 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import qs.Common
-import qs.Services
+import qs.shared.theme
+import qs.shared.controls
+import qs.app.services
 import qs.app
 
 Singleton {

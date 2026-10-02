@@ -63,10 +63,10 @@ catalog=false
 for file in "${files[@]}"; do
     # Include deletions when deciding whether native build/tests are affected.
     case ${file} in
-        core/*|CMakeLists.txt|VERSION|*.cmake|tests/qml/*|scripts/release.py|scripts/install/*|install.sh|tests/test_release.py|tests/test_installer.py|packaging/*) native=true ;;
+        native/*|CMakeLists.txt|VERSION|*.cmake|tests/qml/*|scripts/release.py|scripts/install/*|tests/test_release.py|tests/test_installer.py|packaging/*) native=true ;;
     esac
     case ${file} in
-        Common/settings-routes.json|Common/generated/SearchCatalog.js|modules/settings/*.qml|scripts/system/niri-actions.json|scripts/dev/generate-search-catalog.py|tests/test_search_catalog.py) catalog=true ;;
+        modules/settings/settings-routes.json|modules/settings/generated/SearchCatalog.js|modules/settings/*.qml|scripts/system/niri-actions.json|scripts/dev/generate-search-catalog.py|tests/test_search_catalog.py) catalog=true ;;
     esac
     [[ -f ${file} ]] || continue
     case ${file} in

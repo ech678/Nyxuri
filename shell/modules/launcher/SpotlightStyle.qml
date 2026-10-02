@@ -1,6 +1,6 @@
 import QtQuick
-import qs.Common
-import qs.Services
+import qs.shared.theme
+import qs.app.services
 
 QtObject {
     readonly property color surfaceColor: BlurService.backgroundColor(

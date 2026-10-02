@@ -1,8 +1,8 @@
 import QtQuick
 import QtTest
-import "../../Common/functions/WallpaperSource.js" as Source
-import "../../Common/functions/ZenPalette.js" as Zen
-import "../../Common/functions/WallpaperPaletteScope.js" as Scope
+import "../../modules/wallpaper/WallpaperSource.js" as Source
+import "../../modules/wallpaper/ZenPalette.js" as Zen
+import "../../modules/wallpaper/WallpaperPaletteScope.js" as Scope
 
 TestCase {
     name: "WallpaperSource"

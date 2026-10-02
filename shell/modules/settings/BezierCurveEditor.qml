@@ -3,9 +3,8 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 import Quickshell
-import qs.Common
+import qs.shared.theme
 import qs.shared.controls
-import qs.Widgets.common
 
 Item {
     id: root

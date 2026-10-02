@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Window
 import Quickshell
-import qs.Common
-import qs.Services
+import qs.shared.theme
+import qs.app.services
 
 Item {
     id: root

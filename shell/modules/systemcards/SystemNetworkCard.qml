@@ -1,9 +1,9 @@
 import QtQuick
 import Qt5Compat.GraphicalEffects
-import qs.Common
+import qs.shared.theme
 import qs.shared.controls
 import qs.modules.settings as ControlCenter
-import "../../Common/functions/SystemFormat.js" as Format
+import "../../shared/utils/SystemFormat.js" as Format
 
 Item {
     id: root

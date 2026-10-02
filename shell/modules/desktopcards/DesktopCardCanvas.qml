@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
-import qs.Common
-import qs.Services
+import qs.shared.theme
+import qs.app.services
 import "./DesktopCardLayout.js" as DesktopCardLayout
 import "../systemcards/SystemCardPlacement.js" as Placement
 

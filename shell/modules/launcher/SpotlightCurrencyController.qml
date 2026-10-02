@@ -1,6 +1,6 @@
 import QtQuick
-import qs.Services
-import "../../Common/functions/SpotlightCurrency.js" as Currency
+import qs.app.services
+import "./SpotlightCurrency.js" as Currency
 
 QtObject {
     id: root

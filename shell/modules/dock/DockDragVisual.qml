@@ -1,8 +1,8 @@
 import QtQuick
-import qs.Common
+import qs.shared.theme
 import qs.shared.controls
-import qs.Services
-import "../../Common/functions/DockMotion.js" as DockMotion
+import qs.app.services
+import "./DockMotion.js" as DockMotion
 
 // This snapshot outlives the model row. The pointer owns its position during
 // a drag; only the short release/return transition interpolates that position.

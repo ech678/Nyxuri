@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtTest 1.3
-import "../../Common/functions/AwwwCommand.js" as AwwwCommand
-import "../../Common/functions/WallpaperMath.js" as WallpaperMath
+import "../../modules/wallpaper/AwwwCommand.js" as AwwwCommand
+import "../../modules/wallpaper/WallpaperMath.js" as WallpaperMath
 
 TestCase {
     name: "WallpaperMathAndAwwwCommand"

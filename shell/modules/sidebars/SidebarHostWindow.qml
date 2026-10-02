@@ -2,12 +2,12 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
-import qs.Common
-import "../../Common/SidebarPolicy.js" as SidebarPolicy
-import qs.modules.sidebars.Dashboard
-import qs.modules.sidebars.QuickSettings
-import qs.Services
-import qs.Widgets.common
+import qs.shared.theme
+import "./SidebarPolicy.js" as SidebarPolicy
+import qs.modules.sidebars.dashboard
+import qs.modules.sidebars.quicksettings
+import qs.app.services
+import qs.shared.controls
 
 PanelWindow {
     id: root

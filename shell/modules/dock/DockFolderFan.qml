@@ -1,8 +1,8 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import Clavis.Runtime
-import qs.Services
-import "../../Common/functions/DockLayout.js" as DockLayout
+import qs.app.services
+import "./DockLayout.js" as DockLayout
 
 Item {
     id: root

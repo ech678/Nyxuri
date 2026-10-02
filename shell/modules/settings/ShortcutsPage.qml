@@ -3,11 +3,11 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Wayland
-import qs.Common
-import "../../Common/NiriActionNames.js" as ActionNames
+import qs.shared.theme
+import "./NiriActionNames.js" as ActionNames
 import Clavis.Keyboard
-import qs.Services
-import qs.Widgets.common
+import qs.app.services
+import qs.shared.controls
 
 Item {
     id: root

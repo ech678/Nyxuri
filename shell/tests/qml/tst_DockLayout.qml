@@ -1,6 +1,6 @@
 import QtQuick
 import QtTest
-import "../../Common/functions/DockLayout.js" as DockLayout
+import "../../modules/dock/DockLayout.js" as DockLayout
 
 TestCase {
     name: "DockLayout"

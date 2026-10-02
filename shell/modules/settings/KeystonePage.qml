@@ -1,10 +1,9 @@
 import QtQuick
 import QtQuick.Layouts
-import qs.Common
-import qs.Services
+import qs.shared.theme
+import qs.app.services
 import qs.shared.controls
 import qs.modules.filepicker
-import qs.Widgets.common
 
 Item {
     id: root

@@ -1,8 +1,8 @@
 import QtQuick
 import Qt5Compat.GraphicalEffects
-import qs.Common
-import qs.Services
-import qs.modules.keystone.ClockContent
+import qs.shared.theme
+import qs.app.services
+import qs.modules.keystone.clock
 
 Item {
     id: root

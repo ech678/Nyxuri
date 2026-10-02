@@ -1,6 +1,6 @@
 import QtQuick
-import qs.Services
-import "../../Common/functions/SpotlightCommands.js" as Commands
+import qs.app.services
+import "./SpotlightCommands.js" as Commands
 
 QtObject {
     id: root

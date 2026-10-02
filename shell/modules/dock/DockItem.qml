@@ -2,11 +2,10 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Effects
 import Quickshell
-import qs.Common
+import qs.shared.theme
 import qs.shared.controls
-import qs.Services
-import qs.Widgets.common
-import "../../Common/functions/DockMotion.js" as DockMotion
+import qs.app.services
+import "./DockMotion.js" as DockMotion
 
 Item {
     id: root

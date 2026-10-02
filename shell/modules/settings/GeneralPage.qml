@@ -1,9 +1,9 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import qs.Widgets.common
-import qs.Common
-import qs.Services
+import qs.shared.controls
+import qs.shared.theme
+import qs.app.services
 
 Item {
     id: root

@@ -11,12 +11,16 @@ SHELL_DIR=$(CDPATH='' cd -- "${SCRIPT_DIR}/.." && pwd)
 REPO_ROOT=$(CDPATH='' cd -- "${SHELL_DIR}/.." && pwd)
 
 # Discover compiled native QML plugin path if not explicitly provided
-if [ -z "${QML2_IMPORT_PATH:-}" ]; then
-    if [ -d "${REPO_ROOT}/build/shell-test/qml" ]; then
-        export QML2_IMPORT_PATH="${REPO_ROOT}/build/shell-test/qml"
-    elif [ -d "${SHELL_DIR}/core/build/qml" ]; then
-        export QML2_IMPORT_PATH="${SHELL_DIR}/core/build/qml"
-    fi
+NATIVE_PLUGIN_PATH=""
+if [ -d "${REPO_ROOT}/build/shell-test/qml" ]; then
+    NATIVE_PLUGIN_PATH="${REPO_ROOT}/build/shell-test/qml"
+elif [ -d "${SHELL_DIR}/native/build/qml" ]; then
+    NATIVE_PLUGIN_PATH="${SHELL_DIR}/native/build/qml"
+fi
+
+if [ -n "${NATIVE_PLUGIN_PATH}" ]; then
+    export QML_IMPORT_PATH="${NATIVE_PLUGIN_PATH}${QML_IMPORT_PATH:+:${QML_IMPORT_PATH}}"
+    export QML2_IMPORT_PATH="${NATIVE_PLUGIN_PATH}${QML2_IMPORT_PATH:+:${QML2_IMPORT_PATH}}"
 fi
 
 ACTION=""

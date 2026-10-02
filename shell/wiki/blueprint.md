@@ -137,7 +137,7 @@ Shell 执行。Noctalia 伴生 GUI 在 Noctalia 模式按需使用，自研模�
 
 1. **四层架构骨架落地**：
    - 创建 `shell/app/`（装配、环境与协调）、`shell/modules/`（自治功能域）、`shell/shared/`（纯共享层）三层目录，形成规范的单向依赖流；
-   - 提取纯净共享层：`shared/theme/Appearance.qml`（纯设计系统 Token）、`shared/controls/StateLayer.qml`（状态交互层）、`shared/controls/MaterialSymbol.qml`（安全边界图标渲染）与 `shared/compositor/CompositorBlurRegion.qml`（无 Services 耦合的高斯模糊），严守零 IO、零进程副作用底线。
+   - 提取纯净共享层：`shared/theme/Appearance.qml`（纯设计系统 Token）、`shared/controls/StateLayer.qml`（状态交互层）、`shared/controls/MaterialSymbol.qml`（安全边界图标渲染）与 `shared/controls/CompositorBlurRegion.qml`（无 Services 耦合的高斯模糊），严守零 IO、零进程副作用底线。
 2. **意图收敛与命令安全**：
    - 实现全局单例 `shell/app/ActionGateway.qml`，所有系统电源动作（`poweroff`、`reboot`、`suspend`、`hibernate`、`logout`、`lock`）及应用启动全部收敛并使用纯参数数组调用外部命令（`Quickshell.execDetached`）；
    - 继承安全锁屏挂起防御（挂起/休眠前确保 `sessionLocker.secure`）。
@@ -165,28 +165,38 @@ shell/
 ├── app/                          # 第一层：装配、协调与动作网关
 │   ├── AppShell.qml              # 顶层对象装配与环境协调
 │   ├── ActionGateway.qml         # 动作收敛中枢（参数数组化命令调用、锁屏防御）
-│   └── RuntimeContext.qml        # 全局只读上下文（显示器、会话状态注入）
+│   ├── Paths.qml                 # 全局环境与 XDG 路径管理
+│   └── services/                 # 全局常驻系统服务层
 ├── modules/                      # 第二层：自治功能域（按需加载、关闭即销毁、内聚私有逻辑）
 │   ├── session/                  # 会话面板（P2 已完成）：SessionHost, SessionPanel
-│   ├── settings/                 # 系统设置（原 ControlCenter，P3-01）：SettingsHost, pages/
-│   ├── bar/                      # 状态栏（原 Modules/Bar，P3-02）：BarHost, workspaces, clock, tray
+│   ├── settings/                 # 系统设置（P3-01）：SettingsHost, pages/, routes
+│   ├── bar/                      # 状态栏（P3-02）：BarHost, workspaces, clock, tray
 │   ├── notifications/            # 通知系统（P3-03）：常驻 D-Bus 监听与瞬态弹窗/抽屉
-│   ├── lock/                     # 真实锁屏（原 Modules/Lock，P3-04）：LockHost, PAM 上下文
+│   ├── lock/                     # 真实锁屏（P3-04）：LockHost, PAM 上下文
 │   ├── launcher/                 # 应用启动器（P3-05）：LauncherHost, providers/
 │   ├── clipboard/                # 剪贴板历史（P3-05）：ClipboardHost, 数据源
 │   └── wallpaper/                # 原生壁纸与调色（P4）：渲染器与 palette.toml 导出
 ├── shared/                       # 第三层：纯共享层（严格零 IO、零外部进程、零环境读取）
-│   ├── theme/                    # 设计系统 Token：Appearance.qml, Fonts.qml, Colors.qml
-│   ├── controls/                 # 基础原子控件：StateLayer.qml, MaterialSymbol.qml, Button, Slider...
-│   ├── compositor/               # 合成器特效桥：CompositorBlurRegion.qml
-│   └── utils/                    # 纯计算与数学函数（几何对齐、颜色转换、贝塞尔）
-├── native/ (或 core/)            # 第四层：原生 C++ 桥与扩展
-│   ├── runtime/                  # ClavisRuntime: 硬件/输出/路径探测
-│   ├── niri/                     # ClavisNiri: 原版 Niri IPC Socket 流与标准事件
+│   ├── theme/                    # 设计系统 Token：Appearance, Fonts, Sizes, Typography, Animations, Metrics
+│   ├── controls/                 # 基础原子控件：StateLayer, MaterialSymbol, CompositorBlurRegion, Button, Slider, etc.
+│   └── utils/                    # 纯计算与数学函数（DateFormat, TimeUtils, SystemFormat, FileUtils, etc.）
+├── native/                       # 第四层：原生 C++ 桥与扩展
+│   ├── src/                      # ClavisRuntime, Niri 基础模型与接口
+│   ├── plugin/                   # Quickshell 插件
 │   ├── tests/                    # CTest 契约测试集
-│   └── optional/                 # 封存可选模块 (cava, weather, weathermap, lyrics, windowpreview)
-├── assets/                       # 静态资源（本地 SVG 图标、QSB 着色器；内嵌字体彻底淘汰）
-├── i18n/                         # 国际化多语言翻译
+│   └── tools/                    # window-preview 原生独立工具
+├── assets/                       # 统一资源枢纽（本地 SVG 图标、着色器、字体、i18n 多语言翻译、matugen 模板）
+│   ├── fonts/
+│   ├── icons/
+│   ├── i18n/                     # 国际化多语言翻译（原根目录 i18n/ 归入）
+│   ├── images/
+│   ├── map-attribution/
+│   ├── matugen/                  # 配色模板系统（原根目录 matugen/ 归入）
+│   └── shaders/
+├── bin/                          # nyxuri-shell 运行时启动脚本
+├── packaging/                    # 系统依赖与 systemd 配置
+├── scripts/                      # 本地构建与维护脚本（已剔除上游 ci/ 与 capture/ 残余）
+├── tests/                        # 契约测试与 QML 集成测试
 └── wiki/                         # 架构契约与开发文档
 ```
 
@@ -194,30 +204,26 @@ shell/
 
 | 原母体目录 / 文件 | 处置动作 | 目标路径 | 依赖与副作用处理 | 清理时机 |
 |---|---|---|---|---|
-| `tools/` | **物理收敛** | `core/tools/window-preview` | 归入原生 C++ 核心，消除顶层孤岛目录 | **已完成** |
+| `tools/` | **物理收敛** | `native/tools/window-preview` | 归入原生 C++ 核心，消除顶层孤岛目录 | **已完成** |
 | `licenses/` | **归档收敛** | `wiki/upstream-licenses/` | 与 `wiki/upstream-docs/` 对称归档，消除顶层孤岛目录 | **已完成** |
 | `Components/` | **吸收合并** | `shared/controls/` | 吸收全部图标组件，全库改用 `qs.shared.controls`，消除顶层碎片目录 | **已完成** |
-| `Modules/` 全体模块 | **全小写统一** | `modules/` | 消除大小写分裂，16 个模块全部全小写规整，100% 完整保留源码 | **已完成** |
+| `Modules/` 全体模块 | **全小写统一** | `modules/` | 消除大小写分裂，16 个模块及所有深层子目录全部全小写规整 | **已完成** |
 | `AppShell.qml` | **归位装配** | `app/AppShell.qml` | 收敛顶层装配至第一层 `app/` | **已完成** |
 | `shell/docs/` | **归档文档** | `wiki/upstream-docs/` | 上游参考文档归档至架构 wiki 统一维护 | **已完成** |
 | `shell/.github/`、`.gitignore` | **物理清理** | 根目录统一管理 | 移除上游冗余 CI 目录，忽略规则并入根 `.gitignore` | **已完成** |
+| `shell/install.sh` | **物理删除** | 根目录 `install.sh` | 斩断上游 curl 脚本残骸，统一使用宿主 install.sh | **已完成** |
+| `shell/scripts/ci/` | **物理删除** | 根目录 `.github/workflows` | 斩断上游 GitHub Actions 发布残骸 | **已完成** |
+| `shell/i18n/` | **收敛归一** | `assets/i18n/` | 国际化资源并入 assets 资源枢纽，顶层目录减负 | **已完成** |
+| `shell/matugen/` | **收敛归一** | `assets/matugen/` | 配色模板并入 assets 资源枢纽，更新 Paths.builtinMatugenDir | **已完成** |
 | `Modules/PowerMenu/` | **物理删除** | `modules/session/` | 淘汰 `PowerMenuService`，改用 `ActionGateway` 纯数组调用 | **P2 已完成** |
 | `Services/PowerMenuService.qml` | **物理删除** | `app/ActionGateway.qml` | 消除全局业务单例 | **P2 已完成** |
 | `Modules/ControlCenter/` | **重构迁移** | `modules/settings/` | 剥离 `Clavis.WeatherMap` 依赖；改为按需 Loader 与动态页面加载 | **P3-01 已完成** |
 | `Services/ControlCenterService.qml` | **私有内聚** | `modules/settings/SettingsBackend.qml` | 消除全局单例，降级为 settings module 内部私有协调对象 | **P3-01 已完成** |
-| `modules/bar/` | **重构迁移** | `modules/bar/` | 接入 `shared/controls` 与 `shared/theme`；外设断开平滑降级 | P3-02 |
-| `Services/NotificationManager.qml` | **重构内聚** | `modules/notifications/NotificationService.qml` | 保留常驻 D-Bus 监听，消除与 UI 面板的硬耦合，限制历史上限 | P3-03 |
-| `modules/sidebars/notifications/` | **重构迁移** | `modules/notifications/NotificationDrawer.qml` | 瞬态面板，关闭即销毁 | P3-03 |
-| `modules/lock/` | **重构迁移** | `modules/lock/` | 解耦 PAM 认证状态机与装饰层；锁屏中状态机安全防御 | P3-04 |
-| `modules/launcher/` | **重构迁移** | `modules/launcher/` | 对接 `ActionGateway` 与 `shared/`；解耦按需 provider | P3-05 |
-| `Common/Appearance.qml` | **拆分迁移** | `shared/theme/Appearance.qml` | 剥离文件读写与 XDG 依赖，变为纯设计系统 Token | P2 已提取纯净层，P5 彻底清理旧文件 |
-| `Common/Fonts.qml` | **重构迁移** | `shared/theme/Fonts.qml` | 建立系统文楷与 Sans 回退链，删除 4MB Google Sans 实体 | P5 |
-| `Widgets/common/*` | **提取迁移** | `shared/controls/*` | StateLayer、MaterialSymbol 等纯交互控件逐项收敛入 shared | P2 已开始，P3-P5 逐步清空 |
-| `Widgets/audio/`、`weather/` | **封存删除** | — | 随重型功能封存，不进入核心四层 | P3 期间清理 |
-| `modules/desktopcards/`、`dock/` | **封存重构** | — | 非核心桌面层，P1 已解除装配，保留源码供后续恢复/清理 | P5 |
-| `Services/AwwwWallpaperService.qml` | **物理删除** | `modules/wallpaper/` (P4 自研) | 淘汰 awww 进程轮询，P4 统一用自研与 palette.toml 替换 | P4 |
-| `Services/cava/`、`lyrics/`、`weather/` | **封存隔离** | `native/optional/` | 静态 import 阻断已消除，P5 移出主构建树 | P5 |
-| 跨域 Services (40+ 个) | **彻底清算** | 归入所属 module 或淘汰 | 彻底根除“全局单例地狱”，只允许 app 持有全局协调 | P3-P5 逐域清空 |
+| `core/` | **收敛更名** | `native/` | 正式收敛为第四层原生 C++ 核心目录，消除别名分裂 | **P3-01a 已完成** |
+| `Widgets/` (common/audio/weather) | **吸收删除** | `shared/controls/` | 删除重复项，原子控件全面吸收归并，物理删除 `Widgets/` | **P3-01a 已完成** |
+| `Common/` (Token/Utils/Paths/Domain) | **拆解删除** | `shared/theme/`, `shared/utils/`, `app/`, `modules/` | Token 归 shared/theme，纯函数归 shared/utils，路径归 app，物理删除 `Common/` | **P3-01a 已完成** |
+| `Services/` | **收敛平移** | `app/services/` | 全局常驻服务统一归入 app/services/，物理删除根目录 `Services/` | **P3-01a 已完成** |
+| `modules/*` 深层 PascalCase 目录 | **全小写几何对齐** | `modules/*/<lowercase>` | 消灭 bar/activewindow、keystone/clock、sidebars/dashboard 等 28 处大写目录 | **已完成** |
 
 ### 3. 重构执行守则
 

@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
-import qs.Services
-import "../../Common/functions/SpotlightLocalSearch.js" as LocalSearch
+import qs.app.services
+import "./SpotlightLocalSearch.js" as LocalSearch
 
 Item {
     id: root

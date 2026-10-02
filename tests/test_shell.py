@@ -197,19 +197,44 @@ class TestShellManagement(unittest.TestCase):
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         shell_dir = os.path.join(repo_root, "shell")
 
-        # 1. Top-level clutter removed / relocated
+        # 1. Top-level clutter and legacy mother directories removed / relocated
         self.assertFalse(os.path.exists(os.path.join(shell_dir, ".github")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, ".gitignore")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "docs")))
         self.assertTrue(os.path.isdir(os.path.join(shell_dir, "wiki", "upstream-docs")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "tools")))
-        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "core", "tools", "window-preview")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "core")))
+        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "native", "tools", "window-preview")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "licenses")))
         self.assertTrue(os.path.isdir(os.path.join(shell_dir, "wiki", "upstream-licenses")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "Components")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "shared", "controls", "ThemeIcon.qml")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "shared", "controls", "FileThemeIcon.qml")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "shared", "controls", "SvgIcon.qml")))
+
+        # Legacy mother directories and upstream artifacts eliminated
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "Common")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "Services")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "Widgets")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "install.sh")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "i18n")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "matugen")))
+        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "assets", "i18n")))
+        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "assets", "matugen")))
+        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "app", "services")))
+        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "shared", "controls")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "shared", "controls", "CompositorBlurRegion.qml")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "shared", "compositor")))
+        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "shared", "theme")))
+        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "shared", "utils")))
+        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "native")))
+
+        # Runner exports QML_IMPORT_PATH and QML2_IMPORT_PATH
+        runner_path = os.path.join(shell_dir, "bin", "nyxuri-shell")
+        with open(runner_path, "r", encoding="utf-8") as f:
+            runner_txt = f.read()
+        self.assertIn("QML_IMPORT_PATH=", runner_txt)
+        self.assertIn("QML2_IMPORT_PATH=", runner_txt)
 
         # 2. AppShell encapsulated in app/
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "AppShell.qml")))
@@ -230,12 +255,17 @@ class TestShellManagement(unittest.TestCase):
                 os.path.isdir(os.path.join(shell_dir, "modules", mod)),
                 f"Expected module directory missing: shell/modules/{mod}"
             )
-        # Assert no PascalCase/uppercase directories in modules/
-        for entry in os.listdir(os.path.join(shell_dir, "modules")):
-            if os.path.isdir(os.path.join(shell_dir, "modules", entry)):
-                self.assertEqual(entry, entry.lower(), f"Non-lowercase module found: {entry}")
+        # Assert no PascalCase/uppercase directories anywhere in modules/ (strictly all lowercase)
+        for root_path, dirs, _ in os.walk(os.path.join(shell_dir, "modules")):
+            for entry in dirs:
+                self.assertEqual(
+                    entry, entry.lower(),
+                    f"Non-lowercase directory found in modules: {os.path.join(root_path, entry)}"
+                )
 
-        # 5. Zero occurrences of qs.Modules. or qs.Components in any QML/JS files
+        # 5. Zero occurrences of obsolete imports across all QML/JS files
+        import re
+        qs_mod_re = re.compile(r"import\s+qs\.modules\.([A-Za-z0-9_.]+)")
         for root_path, _, files in os.walk(shell_dir):
             for file in files:
                 if file.endswith((".qml", ".js")):
@@ -244,6 +274,18 @@ class TestShellManagement(unittest.TestCase):
                         content = f.read()
                     self.assertNotIn("qs.Modules.", content, f"Obsolete qs.Modules. import found in {full_path}")
                     self.assertNotIn("import qs.Components", content, f"Obsolete qs.Components import found in {full_path}")
+                    self.assertNotIn("import qs.Common", content, f"Obsolete qs.Common import found in {full_path}")
+                    self.assertNotIn("import qs.Services", content, f"Obsolete qs.Services import found in {full_path}")
+                    self.assertNotIn("qs.Widgets.", content, f"Obsolete qs.Widgets. import found in {full_path}")
+                    self.assertNotIn("Common/functions", content, f"Obsolete Common/functions import found in {full_path}")
+                    self.assertNotIn("qs.shared.compositor", content, f"Obsolete qs.shared.compositor import found in {full_path}")
+                    for match in qs_mod_re.finditer(content):
+                        mod_path = match.group(1)
+                        for seg in mod_path.split("."):
+                            self.assertEqual(
+                                seg, seg.lower(),
+                                f"Non-lowercase qs.modules import '{mod_path}' found in {full_path}"
+                            )
 
 
 if __name__ == "__main__":

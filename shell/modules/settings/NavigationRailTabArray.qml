@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
-import qs.Common
+import qs.shared.theme
 
 Item {
     id: root

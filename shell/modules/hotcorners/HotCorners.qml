@@ -2,8 +2,8 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import Clavis.Niri
-import qs.Common
-import qs.Services
+import qs.shared.theme
+import qs.app.services
 
 Item {
     id: root

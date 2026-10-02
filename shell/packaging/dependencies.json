@@ -6,17 +6,13 @@
   "sourceRoots": [
     "VERSION",
     "CMakeLists.txt",
-    "core",
-    "Common",
-    "Services",
-    "Widgets",
+    "native",
     "app",
     "modules",
     "shared",
+    "native",
     "shell.qml",
     "assets",
-    "i18n",
-    "matugen",
     "scripts",
     "tests",
     "packaging",
@@ -24,8 +20,7 @@
     "README.md",
     "AGENTS.md",
     ".clang-format",
-    ".qmlformat.ini",
-    "install.sh"
+    ".qmlformat.ini"
   ],
   "build": [
     {

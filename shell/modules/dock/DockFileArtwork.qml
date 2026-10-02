@@ -1,6 +1,6 @@
 import QtQuick
 import Clavis.Files
-import qs.Services
+import qs.app.services
 
 Item {
     id: root

@@ -5,11 +5,10 @@ import QtQuick.Effects
 import QtQuick.Layouts
 import QtQuick.Window
 import Quickshell
-import qs.Common
-import qs.Services
+import qs.shared.theme
+import qs.app.services
 import qs.modules.wallpaper
 import qs.shared.controls
-import qs.Widgets.common
 
 StyledFlickable {
     id: root

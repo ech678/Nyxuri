@@ -1,10 +1,10 @@
 import QtCore
 import QtQuick
 import Quickshell
-import qs.Common
+import qs.shared.theme
 import qs.modules.filepicker
-import qs.Services
-import qs.Widgets.common
+import qs.app.services
+import qs.shared.controls
 
 FloatingWindow {
     id: root

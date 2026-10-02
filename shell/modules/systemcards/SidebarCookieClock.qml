@@ -1,7 +1,7 @@
 import QtQuick
-import qs.Common
-import qs.Services
-import "CookieClock"
+import qs.shared.theme
+import qs.app.services
+import "cookieclock"
 
 Item {
     id: root

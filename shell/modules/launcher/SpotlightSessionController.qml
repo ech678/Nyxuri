@@ -1,7 +1,7 @@
 import QtQuick
-import qs.Services
-import "../../Common/functions/SpotlightSession.js" as Session
-import "../../Common/functions/SpotlightCommands.js" as Commands
+import qs.app.services
+import "./SpotlightSession.js" as Session
+import "./SpotlightCommands.js" as Commands
 
 QtObject {
     id: root

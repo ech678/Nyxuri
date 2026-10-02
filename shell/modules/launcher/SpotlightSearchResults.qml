@@ -1,10 +1,10 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
-import qs.Common
-import qs.Services
-import qs.Widgets.common
-import "../../Common/functions/SpotlightLocalSearch.js" as LocalSearch
+import qs.shared.theme
+import qs.app.services
+import qs.shared.controls
+import "./SpotlightLocalSearch.js" as LocalSearch
 
 Item {
     id: root

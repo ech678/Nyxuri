@@ -7,7 +7,7 @@ matugen_registry_init() {
     # shellcheck source=scripts/lib/clavis-paths.sh
     source "$library_dir/clavis-paths.sh"
     clavis_paths_init
-    matugen_builtin_dir=$(cd -- "$library_dir/../.." && pwd)/matugen
+    matugen_builtin_dir=$(cd -- "$library_dir/../.." && pwd)/assets/matugen
     matugen_user_dir="$CLAVIS_CONFIG_HOME/matugen"
     matugen_parser="$library_dir/../theme/matugen_registry.jq"
 }

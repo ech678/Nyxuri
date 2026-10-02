@@ -1,9 +1,9 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
-import qs.Widgets.common
-import qs.Common
-import qs.Services
+import qs.shared.controls
+import qs.shared.theme
+import qs.app.services
 import qs.modules.systemcards
 import "./DesktopCardLayout.js" as DesktopCardLayout
 

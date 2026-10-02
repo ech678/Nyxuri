@@ -2,7 +2,8 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Effects
-import qs.Common
+import qs.shared.theme
+import qs.app
 
 Item {
     id: root

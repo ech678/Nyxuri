@@ -1,6 +1,6 @@
 import QtQuick
-import qs.Services
-import "../../Common/functions/SpotlightTemplates.js" as Templates
+import qs.app.services
+import "./SpotlightTemplates.js" as Templates
 
 QtObject {
     id: root

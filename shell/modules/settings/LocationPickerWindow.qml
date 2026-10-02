@@ -3,9 +3,9 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import Quickshell
 import Qt5Compat.GraphicalEffects
-import qs.Common
+import qs.shared.theme
 import qs.modules.map
-import qs.Widgets.common
+import qs.shared.controls
 
 FloatingWindow {
     id: root

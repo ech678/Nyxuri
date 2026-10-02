@@ -1,10 +1,10 @@
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
-import qs.Common
+import qs.shared.theme
 import qs.modules.map
-import qs.Services
-import qs.Widgets.common
+import qs.app.services
+import qs.shared.controls
 
 ColumnLayout {
     id: root

@@ -2,10 +2,10 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
-import qs.Common
+import qs.shared.theme
 import qs.shared.controls
-import qs.Services
-import "../../Common/functions/SystemFormat.js" as Format
+import qs.app.services
+import "../../shared/utils/SystemFormat.js" as Format
 
 Item {
     id: root

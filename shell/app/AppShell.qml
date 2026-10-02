@@ -8,8 +8,8 @@ import qs.modules.lock
 import qs.app
 import qs.modules.session
 import qs.modules.settings
-import qs.Common
-import qs.Services
+import qs.shared.theme
+import qs.app.services
 
 Item {
     id: root

@@ -1,8 +1,8 @@
-import "../../Common/functions/DateFormat.js" as DateFormat
+import "../../shared/utils/DateFormat.js" as DateFormat
 import QtQuick
 import QtQuick.Effects
-import qs.Common
-import qs.Services
+import qs.shared.theme
+import qs.app.services
 
 Item {
     id: root

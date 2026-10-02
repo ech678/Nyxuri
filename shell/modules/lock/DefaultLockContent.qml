@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Effects
-import qs.Common
-import qs.Services
-import qs.Widgets.common
+import qs.shared.theme
+import qs.app.services
+import qs.shared.controls
 
 Item {
     id: root

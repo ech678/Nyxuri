@@ -1,6 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import qs.Common
+import qs.shared.theme
 
 FocusScope {
     id: root

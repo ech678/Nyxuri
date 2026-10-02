@@ -2,10 +2,8 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
-import qs.Common
 import qs.shared.theme
 import qs.shared.controls
-import qs.shared.compositor
 
 PanelWindow {
     id: root

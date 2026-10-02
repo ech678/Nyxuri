@@ -1,10 +1,9 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
-import qs.Services
-import qs.Common
+import qs.app.services
+import qs.shared.theme
 import qs.shared.controls
-import qs.Widgets.common
 
 Item {
     id: root

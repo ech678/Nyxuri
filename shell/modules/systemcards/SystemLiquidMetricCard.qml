@@ -3,7 +3,7 @@ import QtQuick.Layouts
 import QtQuick.Shapes
 import Qt5Compat.GraphicalEffects
 import M3Shapes
-import qs.Common
+import qs.shared.theme
 import qs.shared.controls
 
 Item {

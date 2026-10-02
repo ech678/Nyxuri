@@ -1,11 +1,11 @@
-import "../../Common/functions/SystemFormat.js" as Format
+import "../../shared/utils/SystemFormat.js" as Format
 import "./SystemCardCatalog.js" as CardCatalog
 import M3Shapes
 import QtQuick
 import QtQuick.Effects
-import qs.Common
+import qs.shared.theme
 import qs.shared.controls
-import qs.Services
+import qs.app.services
 
 Item {
     id: root

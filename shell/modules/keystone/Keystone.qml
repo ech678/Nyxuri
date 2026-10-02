@@ -1,11 +1,12 @@
 import QtQuick
 import Quickshell.Io
-import qs.Common
-import qs.Services
+import qs.shared.theme
+import qs.app.services
 import qs.modules.filepicker
-import qs.modules.keystone.Styles.Bangs
-import qs.modules.keystone.Styles.Long
-import qs.modules.keystone.Styles.Pill
+import qs.modules.keystone.styles.bangs
+import qs.modules.keystone.styles.long
+import qs.modules.keystone.styles.pill
+import qs.app
 
 Item {
     id: root

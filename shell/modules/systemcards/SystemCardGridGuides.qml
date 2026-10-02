@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Shapes
-import qs.Common
+import qs.shared.theme
 import "./SystemCardGrid.js" as Grid
 
 Shape {

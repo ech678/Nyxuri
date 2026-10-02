@@ -472,50 +472,6 @@ class InstallerContracts(unittest.TestCase):
         self.assertIn(b"transaction-answer:n", output)
         self.assertFalse((self.root / "state").exists())
 
-    def test_bootstrap_checks_integrity_and_download_errors(self):
-        commands = self.root / "bin"
-        commands.mkdir()
-        payload = b"#!/bin/bash\nprintf 'verified installer executed\\n'\n"
-        (self.root / "install-arch.sh").write_bytes(payload)
-        (self.root / "SHA256SUMS").write_text(
-            hashlib.sha256(payload).hexdigest() + "  install-arch.sh\n"
-        )
-        curl = commands / "curl"
-        curl.write_text("""#!/usr/bin/env python3
-import json,os,sys
-from pathlib import Path
-root=Path(os.environ['BOOTSTRAP_FIXTURE'])
-url=next(x for x in sys.argv if x.startswith('https://'))
-if os.environ.get('DOWNLOAD_FAIL')=='1':sys.exit(22)
-if url.endswith('/releases/latest'):print(json.dumps({'tag_name':'v2026.9.12'}))
-else:Path(sys.argv[sys.argv.index('--output')+1]).write_bytes((root/url.rsplit('/',1)[1]).read_bytes())
-""")
-        curl.chmod(0o755)
-        environment = {
-            **self.environment,
-            "PATH": str(commands) + ":" + os.environ["PATH"],
-            "BOOTSTRAP_FIXTURE": str(self.root),
-        }
-        result = subprocess.run(
-            ["bash", str(ROOT / "install.sh")], capture_output=True, text=True, env=environment
-        )
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("verified installer executed", result.stdout)
-        (self.root / "install-arch.sh").write_bytes(b"corrupt")
-        result = subprocess.run(
-            ["bash", str(ROOT / "install.sh")], capture_output=True, text=True, env=environment
-        )
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("checksum mismatch", result.stderr)
-        result = subprocess.run(
-            ["bash", str(ROOT / "install.sh")],
-            capture_output=True,
-            text=True,
-            env={**environment, "DOWNLOAD_FAIL": "1"},
-        )
-        self.assertNotEqual(result.returncode, 0)
-        self.assertNotIn("executed", result.stdout)
-
 
 if __name__ == "__main__":
     unittest.main()
