@@ -1,21 +1,20 @@
 # Internationalization
 
 Clavis uses English source text with Qt's context-based translation system.
-English (`en_US`), Simplified Chinese (`zh_CN`), and Traditional Chinese (`zh_TW`)
-are maintained together in `i18n/clavis_*.ts`.
+English (`en_US`) and Simplified Chinese (`zh_CN`) are maintained together in
+`assets/i18n/clavis_*.ts`.
 
 ## Language selection
 
 A saved language selection takes precedence. Without one, Clavis selects the
 first supported language in Qt's system UI language preferences, falling back
-to English if none match. English variants use `en_US`; Chinese defaults to
-`zh_CN`, while Hant and Taiwan/Hong Kong/Macao locales use `zh_TW`. An explicit
-Hans script selects Simplified Chinese even with a Traditional Chinese region.
+to English if none match. English variants use `en_US`; all Chinese variants
+resolve to `zh_CN`.
 
 Language normalization lives in `Clavis.I18n.I18nManager`; UI preferences use
 that same resolver. Existing saved choices remain valid. Switching UI language
 does not change the global regional locale, temperature units, weather location,
-or clock preferences. Language labels remain English, 简体中文, and 繁體中文.
+or clock preferences. Language labels are English and 简体中文.
 
 ## Editing messages
 

@@ -187,14 +187,11 @@ shell/
 │   ├── plugin/                   # Quickshell 插件
 │   ├── tests/                    # CTest 契约测试集
 │   └── tools/                    # window-preview 原生独立工具
-├── assets/                       # 统一资源枢纽（本地 SVG 图标、着色器、字体、i18n 多语言翻译、matugen 模板）
-│   ├── fonts/
-│   ├── icons/
-│   ├── i18n/                     # 国际化多语言翻译（原根目录 i18n/ 归入）
-│   ├── images/
-│   ├── map-attribution/
-│   ├── matugen/                  # 配色模板系统（原根目录 matugen/ 归入）
-│   └── shaders/
+├── assets/                       # 统一资源枢纽（本地 SVG 图标、着色器、i18n 多语言翻译、matugen 模板）
+│   ├── icons/                    # 本地基础图标（键盘布局预览与天气 fallback）
+│   ├── i18n/                     # 国际化多语言翻译（统一归口 clavis_zh_CN.ts 与 clavis_en_US.ts）
+│   ├── matugen/                  # 配色模板系统（Paths.builtinMatugenDir）
+│   └── shaders/                  # Keystone、Launcher、Wallpaper GPU 着色器
 ├── packaging/                    # 系统依赖与 systemd 配置
 ├── scripts/                      # 本地构建与维护脚本（已剔除上游 ci/ 与 capture/ 残余）
 ├── tests/                        # 契约测试与 QML 集成测试
@@ -225,6 +222,15 @@ shell/
 | `Common/` (Token/Utils/Paths/Domain) | **拆解删除** | `shared/theme/`, `shared/utils/`, `app/`, `modules/` | Token 归 shared/theme，纯函数归 shared/utils，路径归 app，物理删除 `Common/` | **已迁移；待复核** |
 | `Services/` | **收敛平移** | `app/services/` | 全局常驻服务统一归入 app/services/，物理删除根目录 `Services/` | **已迁移；待复核** |
 | `modules/*` 深层 PascalCase 目录 | **全小写几何对齐** | `modules/*/<lowercase>` | 消灭 bar/activewindow、keystone/clock、sidebars/dashboard 等 28 处大写目录 | **已完成** |
+| `assets/fonts/` (3.9MB 变体字) | **物理删除** | 无（回退系统字体栈） | 移除打包硬断言，Fonts/FontService 自动降级至系统栈 | **P3-R12 已完成** |
+| `assets/i18n/clavis_zh_TW.ts` | **物理删除** | `assets/i18n/clavis_zh_CN.ts` | 原生 C++ 与 QML 将 zh 全部映射至 zh_CN | **P3-R12 已完成** |
+| `assets/icons/search-engines/` | **物理删除** | `MaterialSymbol` | 18 个引擎图标删除，统一复用 search 矢量符号 | **P3-R12 已完成** |
+| `assets/images/dino.png` / `lock.svg` | **物理删除** | `MaterialSymbol` | 消除死图片资产，锁屏无通知占位重构为标准图标 | **P3-R12 已完成** |
+| `assets/map-attribution/` (maptiler.svg) | **物理删除** | 纯文本渲染 | MapAttribution 纯文本化，LocationPicker 直接引用 | **P3-R12 已完成** |
+| `Services/PackageService.qml` | **物理删除** | 无（0 引用） | 铲除 30 分钟 paru 轮询常驻定时器，dependencies 移除 paru | **P3-R12 已完成** |
+| `Services/RecordingCoordinator.qml` | **物理删除** | 无（0 引用） | 消除孤儿服务与 TS 翻译废弃 context | **P3-R12 已完成** |
+| `Services/LyricsTrackService.qml` | **物理删除** | 无（0 引用） | 消除未使用的后台歌词同步空服务 | **P3-R12 已完成** |
+| `Modules/ControlCenter/MapTilerApiSettingsCard.qml` 等 | **物理删除** | 无（0 引用） | 清理 MapTiler / OpenWeather 死卡片与空段落 | **P3-R12 已完成** |
 
 ### 3. 重构执行守则
 
@@ -238,7 +244,7 @@ shell/
 ### 4. 目录迁移后的职责修正
 
 - `ThemeService` 拥有颜色文件的监听、校验与重载；完整校验后更新 `Appearance.m3colors`，坏文件保留最后有效色板，首次缺文件保留默认值。透明度和资源根 URL 注入 shared 展示数据，不由控件读取设置或环境。
-- `FontService` 拥有内嵌字体加载、系统字体发现与偏好回退，将有效角色注入 `Fonts`；共享层保留字体角色和 CSS 转义，不进行系统发现。
+- `FontService` 拥有系统字体发现与偏好回退栈（Inter / Roboto / Noto Sans / sans-serif），将有效角色注入 `Fonts`；无需内置 3.9MB 巨型变体字文件，零断链零告警。
 - 图标主题发现和解析归 `ThemeService`；文件图标接收候选 URL，媒体与通知图标接收解析结果。`Resources.iconThemeRevision` 保留主题切换后的图片刷新语义。
 - `SettingsSearchAnchor` 归 settings；`WidgetState` 归 app。账户封面接收 wallpaper 域提供的 `ProfileWallpaper` Component，共享头部不再导入 wallpaper。
 - `WindowPreviewService` 的可选 native import 位于独立后台文件；Dock 捕获画面也独立加载。缺插件时返回真实不可用状态，普通窗口操作保留，默认构建不需要预览插件。

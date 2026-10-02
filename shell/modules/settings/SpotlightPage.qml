@@ -132,15 +132,10 @@ StyledFlickable {
                     }
 
                     leadingDelegate: Component {
-                        Image {
-                            property var optionData: null
-
-                            source: optionData ? Qt.resolvedUrl("../../assets/icons/search-engines/"
-                                                                + optionData.icon) : ""
-                            sourceSize.width: Metrics.iconM * 2
-                            sourceSize.height: Metrics.iconM * 2
-                            fillMode: Image.PreserveAspectFit
-                            smooth: true
+                        MaterialSymbol {
+                            text: "search"
+                            pixelSize: Metrics.iconM
+                            color: Appearance.colors.colOnSurface
                         }
                     }
                 }

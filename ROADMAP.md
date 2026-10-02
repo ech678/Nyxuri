@@ -16,6 +16,7 @@
 - [ ] **兼容 Noctalia Template 系统 (TemplateAdapter)**：支持其 Jinja 风格模板规范与变量命名空间，让现有 GTK CSS、Fcitx SVG、Kitty、Starship 和用户模板无需重写；
 - [ ] **Shell 生命周期与动作响应网关对接**：打通与 `session-shell.sh` 的守护拉起及 `shell-action.sh` 的 6 大标准动作（`launcher` / `session` / `settings` / `clipboard` / `lock` / `wallpaper-random`）IPC/CLI 接口，外围快捷键零改动即刻响应。
 - [ ] **双 Shell 切换 (`nyxuri shell set`)**：支持 `nyxuri shell set <noctalia|custom>` 或快捷键切换 Noctalia 与自研 Shell；可靠即时切换提前在 Shell P1 交付，完整生态协同在 P5 验收。
+- [x] **极简减负与负资产大清扫 (P3-R11 / P3-R12)**：彻底切除上游个人网盘（rclone）、3.9MB 内置变体字体（回退系统字体栈）、繁体中文字典（统一 zh_CN）、搜索引擎与死图片资产；shell/assets 体积缩减 75%（6.1MB → 1.5MB）；切除 paru 30m 查包与多项常驻后台轮询。
 
 ---
 

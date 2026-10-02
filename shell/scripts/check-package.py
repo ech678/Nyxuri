@@ -76,11 +76,6 @@ def main():
                 for group in ("dev/", "ci/", "install/", "release.py")
             ):
                 raise ValueError("Development or release tools leaked into the installed shell")
-            if not any(
-                f.startswith(prefix + "assets/fonts/google-sans-flex/") and f.endswith(".ttf")
-                for f in files
-            ):
-                raise ValueError("Missing bundled expressive font")
         elif name == "key-cli":
             required = {
                 "usr/bin/key",

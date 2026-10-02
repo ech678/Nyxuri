@@ -1016,19 +1016,6 @@ var catalog = {
       "anchor": true,
       "context": "AdvancedPage",
       "icon": "tune",
-      "id": "advanced.section.map-and-weather-services",
-      "path": [
-        "advanced"
-      ],
-      "route": "advanced",
-      "source": "AdvancedPage.qml",
-      "title": "Map and weather services"
-    },
-    {
-      "aliases": [],
-      "anchor": true,
-      "context": "AdvancedPage",
-      "icon": "tune",
       "id": "advanced.section.matugen-template-generation",
       "path": [
         "advanced"
@@ -1915,7 +1902,6 @@ function title(id) {
     case "account.section.bluetooth-devices": return qsTranslate("AccountPage", "Bluetooth devices");
     case "account.section.keyboard-shortcuts": return qsTranslate("AccountPage", "Keyboard shortcuts");
     case "account.section.personalization": return qsTranslate("AccountPage", "Personalization");
-    case "advanced.section.map-and-weather-services": return qsTranslate("AdvancedPage", "Map and weather services");
     case "advanced.section.matugen-template-generation": return qsTranslate("AdvancedPage", "Matugen template generation");
     case "general.autostart.section.add-application-to-autostart": return qsTranslate("AutostartPage", "Add application to autostart");
     case "general.autostart.section.user-autostart-applications": return qsTranslate("AutostartPage", "User autostart applications");

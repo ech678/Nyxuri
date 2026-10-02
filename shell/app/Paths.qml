@@ -56,7 +56,7 @@ Singleton {
                                             + "/generated"
     readonly property string currentWallpaper: stateHome + "/wallpaper/current"
     readonly property string profileAvatar: homeDir + "/.face"
-    readonly property string defaultAvatar: imagesDir + "/dino.png"
+    readonly property string defaultAvatar: ""
 
     function absoluteEnvironment(name) {
         const value = String(Quickshell.env(name) || "").trim();

@@ -99,15 +99,6 @@ Singleton {
         interval: 150
         onTriggered: root.refresh()
     }
-    // Also discovers a previously absent config and missing/restored inputs.
-    // No writable registry directory is created for watching.
-    Timer {
-        id: pollTimer
-        interval: 5000
-        repeat: true
-        running: true
-        onTriggered: root.refresh()
-    }
     Process {
         id: listing
         command: ["bash", root.script, "list"]
@@ -178,7 +169,6 @@ Singleton {
 
     Component.onDestruction: {
         refreshDebounce.stop();
-        pollTimer.stop();
         if (listing)
             listing.running = false;
         if (mutation)

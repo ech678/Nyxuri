@@ -133,7 +133,8 @@ done
 manage list | jq -e '[.templates[] | select(.id | startswith("application-"))] | length == 100 and all(.[]; .valid)' >/dev/null
 generate --templates application-100 > /dev/null
 assert test -s "$HOME/application-100/theme"
-bash "$generator" --image "$repo_root/assets/images/dino.png" --templates '' > /dev/null
+python3 -c "import base64, pathlib; pathlib.Path('$test_root/test.png').write_bytes(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='))"
+bash "$generator" --image "$test_root/test.png" --templates '' > /dev/null
 assert test -s "$CLAVIS_GENERATED_HOME/clavis/colors.json"
 
 # A registration with no input can still be removed without touching output.

@@ -7,11 +7,13 @@ import Clavis.I18n
 Singleton {
     id: root
 
-    readonly property var supportedLanguages: [
-        ({ code: "en_US", label: "English" }),
-        ({ code: "zh_CN", label: "\u7b80\u4f53\u4e2d\u6587" }),
-        ({ code: "zh_TW", label: "\u7e41\u9ad4\u4e2d\u6587" })
-    ]
+    readonly property var supportedLanguages: [({
+                                                    code: "en_US",
+                                                    label: "English"
+                                                }), ({
+                                                         code: "zh_CN",
+                                                         label: "\u7b80\u4f53\u4e2d\u6587"
+                                                     })]
     readonly property string language: UiPreferences.language
     property bool ready: false
     property string lastError: ""

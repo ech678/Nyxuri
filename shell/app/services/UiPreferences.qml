@@ -648,7 +648,7 @@ Singleton {
 
     Timer {
         id: themePollTimer
-        interval: 5000
+        interval: 60000
         running: true
         repeat: true
         onTriggered: {

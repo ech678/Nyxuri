@@ -597,12 +597,6 @@
           "package": "gsettings-desktop-schemas",
           "purpose": "Desktop color scheme schema",
           "defaultInstall": true
-        },
-        {
-          "package": "paru",
-          "purpose": "Unused PackageService package counters; not needed by the installer",
-          "defaultInstall": false,
-          "aur": "paru"
         }
       ]
     }

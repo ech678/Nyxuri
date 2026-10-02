@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "generatedAt": "2026-10-02T22:00:00Z",
-  "totalResources": 252,
+  "totalResources": 247,
   "resources": [
     {
       "file": "app/ActionGateway.qml",
@@ -1167,21 +1167,7 @@
     },
     {
       "file": "app/services/MatugenTemplateService.qml",
-      "line": 104,
-      "resource_type": "Timer",
-      "name": "pollTimer",
-      "module": "app/services",
-      "creation_condition": "true",
-      "resource_owner": "app/services",
-      "stop_entry": "pollTimer.stop()",
-      "has_destruction": true,
-      "visible_only_deactivation": false,
-      "has_fallback": true,
-      "risk_level": "medium"
-    },
-    {
-      "file": "app/services/MatugenTemplateService.qml",
-      "line": 111,
+      "line": 102,
       "resource_type": "Process",
       "name": "listing",
       "module": "app/services",
@@ -1195,7 +1181,7 @@
     },
     {
       "file": "app/services/MatugenTemplateService.qml",
-      "line": 145,
+      "line": 136,
       "resource_type": "Process",
       "name": "mutation",
       "module": "app/services",
@@ -1213,7 +1199,7 @@
       "resource_type": "Timer",
       "name": "positionPollTimer",
       "module": "app/services",
-      "creation_condition": "root.active !== null",
+      "creation_condition": "root.active !== null && root.active.isPlaying",
       "resource_owner": "app/services",
       "stop_entry": "positionPollTimer.stop()",
       "has_destruction": true,
@@ -1444,48 +1430,6 @@
       "visible_only_deactivation": false,
       "has_fallback": true,
       "risk_level": "low"
-    },
-    {
-      "file": "app/services/PackageService.qml",
-      "line": 33,
-      "resource_type": "Process",
-      "name": "totalProcess",
-      "module": "app/services",
-      "creation_condition": "[root.commandName, \"-Qq\"]",
-      "resource_owner": "app/services",
-      "stop_entry": "totalProcess.running = false",
-      "has_destruction": true,
-      "visible_only_deactivation": false,
-      "has_fallback": true,
-      "risk_level": "high"
-    },
-    {
-      "file": "app/services/PackageService.qml",
-      "line": 52,
-      "resource_type": "Process",
-      "name": "updatesProcess",
-      "module": "app/services",
-      "creation_condition": "[root.commandName, \"-Quq\"]",
-      "resource_owner": "app/services",
-      "stop_entry": "updatesProcess.running = false",
-      "has_destruction": true,
-      "visible_only_deactivation": false,
-      "has_fallback": true,
-      "risk_level": "high"
-    },
-    {
-      "file": "app/services/PackageService.qml",
-      "line": 71,
-      "resource_type": "Timer",
-      "name": "updateTimer",
-      "module": "app/services",
-      "creation_condition": "true",
-      "resource_owner": "app/services",
-      "stop_entry": "updateTimer.stop()",
-      "has_destruction": true,
-      "visible_only_deactivation": false,
-      "has_fallback": true,
-      "risk_level": "medium"
     },
     {
       "file": "app/services/PersonalizationConfig.qml",
@@ -2312,20 +2256,6 @@
       "visible_only_deactivation": false,
       "has_fallback": false,
       "risk_level": "high"
-    },
-    {
-      "file": "app/services/lyrics/LyricsBackend.qml",
-      "line": 2,
-      "resource_type": "NativeConsumer",
-      "name": "Clavis.Lyrics",
-      "module": "app/services",
-      "creation_condition": "qml-import",
-      "resource_owner": "app/services",
-      "stop_entry": "native teardown",
-      "has_destruction": false,
-      "visible_only_deactivation": false,
-      "has_fallback": false,
-      "risk_level": "medium"
     },
     {
       "file": "app/services/weather/WeatherBackend.qml",

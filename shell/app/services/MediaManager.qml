@@ -41,7 +41,7 @@ Item {
         interval: 250
         repeat: true
         triggeredOnStart: true
-        running: root.active !== null
+        running: root.active !== null && root.active.isPlaying
         onTriggered: {
             const player = root.active;
             if (player && player.positionChanged)
@@ -54,6 +54,9 @@ Item {
         target: root.active
         ignoreUnknownSignals: true
 
+        function onIsPlayingChanged() {
+            root.refreshPosition();
+        }
         function onPositionChanged() {
             root.refreshPosition();
         }

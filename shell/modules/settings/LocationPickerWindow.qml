@@ -165,7 +165,7 @@ FloatingWindow {
             font.weight: Typography.labelMedium.weight
         }
 
-        LocationMapAttribution {
+        MapAttribution {
             anchors.left: parent.left
             anchors.bottom: coordinateLabel.top
             anchors.leftMargin: Metrics.spacingL

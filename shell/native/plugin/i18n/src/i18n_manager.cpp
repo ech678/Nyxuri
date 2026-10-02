@@ -28,11 +28,6 @@ QString supportedLanguage(const QString &language)
         return QStringLiteral("en_US");
     if (parts.first() != QStringLiteral("zh"))
         return {};
-    if (parts.contains(QStringLiteral("hans")))
-        return QStringLiteral("zh_CN");
-    if (parts.contains(QStringLiteral("hant")) || parts.contains(QStringLiteral("tw")) ||
-        parts.contains(QStringLiteral("hk")) || parts.contains(QStringLiteral("mo")))
-        return QStringLiteral("zh_TW");
     return QStringLiteral("zh_CN");
 }
 } // namespace

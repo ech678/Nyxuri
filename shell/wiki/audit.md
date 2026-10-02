@@ -39,7 +39,7 @@
 
 AppShell 的完成钩子初始化 I18n、DisplayColor、LyricsTrackService、SystemIdentityService；歌词初始化明确接通 MPRIS 曲目和 native Lyrics，不能仅隐藏歌词画面来封存它。`DisplayColor.evaluate()` 又把 Gamma 能力拉入启动路径。`shell/Services/DisplayColor.qml` 还引用天气位置。
 
-控制中心（ControlCenter）：上游通过 `shell/Services/ControlCenterService.qml` 在打开时激活 LazyLoader；`shell/Modules/ControlCenter/ControlCenterWindow.qml` 关闭时发出 `popoutClosed` 将 Loader 设为 inactive。在 P1 启动阻断排查中，审计发现 ControlCenter 虽未在顶层阻断，但其子组件（`LanguageAndRegionPage.qml:3`、`MapTilerApiSettingsCard.qml:2`、`OpenWeatherApiSettingsCard.qml:2`）静态硬导入了 `Clavis.WeatherMap`。在 `ENABLE_WEATHERMAP=OFF` 默认构建下，直接实例化会导致 QML 加载崩溃；P1 为保核心亮屏暂时将其移出装配，P3-01 将完成这三处硬依赖的解耦并恢复按需挂载。
+控制中心（ControlCenter）：上游通过 `shell/Services/ControlCenterService.qml` 在打开时激活 LazyLoader；`shell/Modules/ControlCenter/ControlCenterWindow.qml` 关闭时发出 `popoutClosed` 将 Loader 设为 inactive。在 P1 启动阻断排查中，审计发现 ControlCenter 虽未在顶层阻断，但其子组件（`LanguageAndRegionPage.qml:3`、`MapTilerApiSettingsCard.qml:2`、`OpenWeatherApiSettingsCard.qml:2`）静态硬导入了 `Clavis.WeatherMap`。在 `ENABLE_WEATHERMAP=OFF` 默认构建下，直接实例化会导致 QML 加载崩溃；P1 为保核心亮屏暂时将其移出装配；后续在 P3-R05 中完成了按需 Loader 解耦，并在 P3-R12 负资产大清扫中将已废弃的 MapTiler 与 OpenWeather 死卡片及其设置段落彻底物理删除。
 
 会话面板（原 PowerMenu）：原 `shell/Modules/PowerMenu/PowerMenu.qml` 每屏 Loader 的 active 恒为 true，窗口仅按服务状态控制 visible。**P2 已完成重构**：将其彻底迁移为 `modules/session/SessionHost.qml` 与 `SessionPanel.qml`，对接 `app/ActionGateway.qml` 意图收敛中枢，关闭动画后触发 `dismissFinished` 彻底销毁窗口（`active: false`），旧 `Modules/PowerMenu/` 与单例 `PowerMenuService.qml` 已彻底安全删除。
 

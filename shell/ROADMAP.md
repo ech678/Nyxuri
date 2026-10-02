@@ -179,6 +179,7 @@ Qt/字体缓存不承诺每字节即时返还，重点证明专属资源消失�
 | P3-R07 锁屏安全与视觉（已验证） | P3-04；K01..K06 | 验证 WlSessionLock/PAM、密码框与卡片结构；shell_switcher 补齐 is_shell_locked 锁态探测，锁屏中严格拒绝热切换 |
 | P3-R08 全域回归与收口（已完成） | P3 全部任务、完整恢复矩阵 | 所有条目具有行为/视觉证据或明确既定封存依据；497 个全量单测全绿通过，23 个原生 CTest 全部通过，沙箱部署测试退出码 0，第一阶段验收闭环 |
 | P3-R11 原版业务去臃肿与负资产切除（已完成） | 云存储、rclone 同步、电脑备份全套 UI/服务/素材 | 彻底剥离 RcloneService、CloudUploadService、ComputerBackupWindow 等 10 项冗余文件与 29 个第三方图标，卸载 rclone 依赖，单测与 check.sh 100% 通过 |
+| P3-R12 资产外科手术式清理与负资产切除（已完成） | 字体瘦身、繁体剔除、搜素引擎图标、死代码与僵尸轮询切除 | 剔除 3.9MB 内置字体（回退系统字体栈）、~600KB 繁体字典（zh 统一 zh_CN）、18 个搜索引擎图标、恐龙图片等冗余素材（assets 缩减 75% 至 1.5MB）；铲除 PackageService（0 引用 paru 轮询）、Matugen 5s 轮询、UiPreferences 高频 gsettings 轮询、MediaManager 250ms 闲置轮询；清理 RecordingCoordinator、LyricsTrackService、MapTilerApiSettingsCard 等死组件；单测与 check.sh 100% 通过 |
 
 ### P3 恢复交付记录
 
@@ -248,6 +249,37 @@ Qt/字体缓存不承诺每字节即时返还，重点证明专属资源消失�
      - 从 `packaging/dependencies.json` 中移除 `rclone` 运行时依赖；
      - 自动重新生成生命周期资源清单（`lifecycle-inventory.json` 由 260 项精简至 252 项）与设置检索字典；
      - `check.sh`（whitespace, qml-format, build, tests, qml-lint, lifecycle-audit）全绿通过，Python 501 项单测无回归。
+
+13. **资产外科手术式清理与负资产切除 (P3-R12)**：
+   - **字体瘦身**：彻底删除 `assets/fonts/` (3.9MB 内置 Google Sans Flex 变体字)，`Fonts.qml` 与 `FontService.qml` 建立多级系统字体栈回退机制（Inter / Roboto / Noto Sans / sans-serif），保留动态检测能力，零断链零警告；
+   - **繁体中文剔除**：删除 `assets/i18n/clavis_zh_TW.ts` (~600KB)，C++ 原生层 `I18nManager` 与 QML `I18nService` 将所有 `zh` 前缀语言环境自动映射至 `zh_CN`，更新单测与构建列表；
+   - **搜索引擎素材轻量化**：删除 `assets/icons/search-engines/` 全部 18 个冗余图标文件，Spotlight 统一复用系统 MaterialSymbol 图标；
+   - **占位与死资产切除**：删除 12KB `dino.png`（锁屏无通知占位重构为标准 MaterialSymbol `notifications_off`）、删除无引用 `lock.svg`、删除 `assets/map-attribution/`（`maptiler.svg` 16KB），`MapAttribution` 纯净文本化；
+   - **僵尸轮询与死服务铲除**：
+     - 物理删除 `PackageService.qml`（0 引用、每 30 分钟轮询 `paru` 查包更新），从 `dependencies.json` 剔除 `paru`；
+     - `MatugenTemplateService.qml` 彻底移除 5 秒 `pollTimer`（已有 `FileView` 监听 `config.toml` 真实文件变更）；
+     - `UiPreferences.qml` 将 5 秒高频 `gsettings` 轮询降频至 60 秒，减少每日逾万次 fork/exec；
+     - `MediaManager.qml` 将 250ms 高频进度轮询严格限制在 `isPlaying` 播放状态下，闲置时立即静默；
+     - 物理删除 0 引用服务与死组件：`RecordingCoordinator.qml`、`LyricsTrackService.qml`、`lyrics/LyricsBackend.qml`、`MapTilerApiSettingsCard.qml`、`OpenWeatherApiSettingsCard.qml`、`LocationMapAttribution.qml`；
+     - 清除 `AdvancedPage.qml` 中对应 MapTiler / OpenWeather 的空段落并重新生成设置检索目录；
+     - 精简 `clavis_zh_CN.ts` 与 `clavis_en_US.ts`，彻底消除已删除组件的悬挂翻译上下文；
+   - **体积成效**：`shell/assets/` 体积从 6.1MB 骤降至 1.5MB（削减约 75%），消除 4 项常驻/后台多余轮询，`check.sh --full` 与 Python 单测套件全绿。
+
+### P3-R12 资产外科手术式清理与负资产切除（已完成）
+
+| 模块 / 资产 | 处理方式 | 影响与验收 |
+| --- | --- | --- |
+| `assets/fonts/google-sans-flex/` (3.9MB) | 物理删除 | 字体栈回退系统字体，消除大体积二进制字体文件 |
+| `assets/i18n/clavis_zh_TW.ts` (~600KB) | 物理删除 | 统一归口 `zh_CN`，原生与 QML 测试全绿 |
+| `assets/icons/search-engines/` (18 个图标) | 物理删除 | Spotlight 统一使用 MaterialSymbol "search"，无图片加载开销 |
+| `dino.png` / `lock.svg` / `maptiler.svg` | 物理删除 | 消除死图片资产，占位替换为 MaterialSymbol，MapAttribution 纯文本渲染 |
+| `PackageService.qml` | 物理删除 | 斩杀 0 引用 paru 查包 30 分钟常驻定时器 |
+| `MatugenTemplateService.qml` 5s 轮询 | 代码切除 | 消除无谓 bash 命令调用，依赖文件监视触发 |
+| `UiPreferences.qml` 5s gsettings 轮询 | 参数优化 | 间隔放宽至 60s，消除频繁进程派生 |
+| `MediaManager.qml` 250ms 轮询 | 条件限制 | 仅在 `isPlaying` 时运行，播放暂停/空闲时完全静默 |
+| `RecordingCoordinator.qml` / `LyricsTrackService.qml` | 物理删除 | 清理 0 引用孤儿服务，精简生命周期清单 |
+| `MapTilerApiSettingsCard.qml` / `OpenWeatherApiSettingsCard.qml` | 物理删除 | 清理死卡片与空段落，自动更新 SearchCatalog 检索字典 |
+
 
 ### P3-R11 原版业务去臃肿与负资产切除（已完成）
 

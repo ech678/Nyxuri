@@ -40,7 +40,6 @@ qt_add_translations(ClavisI18n
     TS_FILES
         ${CLAVIS_SOURCE_ROOT}/assets/i18n/clavis_en_US.ts
         ${CLAVIS_SOURCE_ROOT}/assets/i18n/clavis_zh_CN.ts
-        ${CLAVIS_SOURCE_ROOT}/assets/i18n/clavis_zh_TW.ts
     LUPDATE_OPTIONS -no-obsolete -source-language en_US
     RESOURCE_PREFIX "/i18n"
 )

@@ -170,7 +170,7 @@ ColumnLayout {
             }
         }
 
-        LocationMapAttribution {
+        MapAttribution {
             anchors.left: parent.left
             anchors.bottom: parent.bottom
             anchors.margins: Metrics.spacingM

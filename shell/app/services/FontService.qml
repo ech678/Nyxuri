@@ -12,7 +12,7 @@ Singleton {
     readonly property string defaultUi: "LXGW WenKai GB Screen"
     readonly property string defaultMono: "JetBrainsMono Nerd Font"
     readonly property string defaultNumeric: root.defaultMono
-    readonly property string bundledFamilyName: bundledFont.name || "Google Sans Flex"
+    readonly property string bundledFamilyName: "Google Sans Flex"
     // These preferences are deliberately separate from the effective family
     // properties below. An unavailable saved family is retained for the next
     // run while rendering falls back safely.
@@ -24,6 +24,8 @@ Singleton {
     readonly property var uiFallbackFamilies: ["LXGW WenKai GB Screen", "LXGW WenKai Mono", "霞鹜文楷等宽",
         "Noto Sans CJK SC", "Noto Sans CJK", "sans-serif"]
     readonly property var monoFallbackFamilies: ["JetBrainsMono Nerd Font", "JetBrains Mono", "monospace"]
+    readonly property var expressiveFallbackFamilies: ["Google Sans Flex", "Google Sans", "Inter", "Roboto",
+        "Noto Sans", "sans-serif"]
 
     readonly property string ui: root.resolveFirstAvailable([root.configuredUi, root.defaultUi].concat(
                                                                 root.uiFallbackFamilies), "")
@@ -32,21 +34,19 @@ Singleton {
     readonly property string numeric: root.resolveFirstAvailable([root.configuredNumeric, root.defaultNumeric,
                                                                   root.mono].concat(root.monoFallbackFamilies),
                                                                  "monospace")
-    readonly property string expressive: root.resolveFamily(root.configuredExpressive, root.bundledFamilyName,
-                                                            root.ui)
-    // This role is intentionally independent of every user preference. If
-    // the bundled file cannot load, Qt's normal font fallback still applies
-    // to this family name; the clock must never switch to a user-selected
-    // family.
-    readonly property string systemClock: root.bundledFamilyName
+    readonly property string expressive: root.resolveFirstAvailable([root.configuredExpressive,
+                                                                     root.bundledFamilyName].concat(
+                                                                        root.expressiveFallbackFamilies),
+                                                                    root.ui)
+    // This role resolves cleanly from the expressive fallback stack to root.ui.
+    readonly property string systemClock: root.resolveFirstAvailable([root.bundledFamilyName].concat(
+                                                                         root.expressiveFallbackFamilies),
+                                                                     root.ui)
 
     function familyAvailable(family) {
         const value = String(family || "").trim();
         if (value === "")
             return false;
-
-        if (value === root.bundledFamilyName)
-            return bundledFont.status === FontLoader.Ready;
 
         return Qt.fontFamilies().indexOf(value) !== -1;
     }
@@ -94,13 +94,6 @@ Singleton {
         root.configuredExpressive = String(expressive || "").trim();
     }
 
-    FontLoader {
-        id: bundledFont
-
-        source: Paths.fileUrl(Paths.fontsDir + "/google-sans-flex/" + "GoogleSansFlex-VariableFont_"
-                              + "GRAD,ROND,opsz,slnt,wdth,wght.ttf")
-    }
-
     Binding {
         target: Fonts
         property: "ui"
@@ -134,7 +127,7 @@ Singleton {
     Binding {
         target: Fonts
         property: "bundledFamilyAvailable"
-        value: bundledFont.status === FontLoader.Ready
+        value: root.familyAvailable(root.bundledFamilyName)
     }
 
     readonly property string bundledExpressiveFamily: root.bundledFamilyName
@@ -164,7 +157,8 @@ Singleton {
 
             result.push(family);
         }
-        if (result.indexOf(root.bundledExpressiveFamily) === -1)
+        if (root.familyAvailable(root.bundledExpressiveFamily) && result.indexOf(
+                    root.bundledExpressiveFamily) === -1)
             result.push(root.bundledExpressiveFamily);
 
         result.sort();

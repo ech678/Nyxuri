@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import Qt5Compat.GraphicalEffects
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
@@ -71,26 +70,11 @@ Rectangle {
                 scale: root.notificationCount > 0 ? 0.96 : 1
                 visible: opacity > 0
 
-                Item {
+                MaterialSymbol {
                     Layout.alignment: Qt.AlignHCenter
-                    Layout.preferredWidth: Math.min(clipRect.width * 0.8, 360)
-                    Layout.preferredHeight: width * 868 / 1984
-
-                    Image {
-                        id: dinoImage
-
-                        anchors.fill: parent
-                        source: Paths.fileUrl(Paths.imagesDir + "/dino.png")
-                        fillMode: Image.PreserveAspectFit
-                        asynchronous: true
-                        visible: false
-                    }
-
-                    ColorOverlay {
-                        anchors.fill: dinoImage
-                        source: dinoImage
-                        color: Appearance.colors.colOutlineVariant
-                    }
+                    text: "notifications_off"
+                    iconSize: 48
+                    color: Appearance.colors.colOutlineVariant
                 }
 
                 Text {

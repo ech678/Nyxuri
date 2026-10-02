@@ -37,27 +37,6 @@ StyledFlickable {
         spacing: Appearance.spacing.medium
 
         SettingsSection {
-            id: searchSection0
-            Layout.fillWidth: true
-            title: searchAnchor0.title
-            SettingsSearchAnchor {
-                id: searchAnchor0
-                target: searchSection0
-                declaration:
-                    '{"id":"advanced.section.map-and-weather-services","route":"advanced","title":"Map and weather services","context":"AdvancedPage","icon":"tune","aliases":[]}'
-            }
-            iconName: "map"
-
-            MapTilerApiSettingsCard {
-                Layout.fillWidth: true
-            }
-
-            OpenWeatherApiSettingsCard {
-                Layout.fillWidth: true
-            }
-        }
-
-        SettingsSection {
             id: searchSection2
             Layout.fillWidth: true
             title: searchAnchor2.title

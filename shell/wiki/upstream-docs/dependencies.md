@@ -139,11 +139,10 @@ This phase is used only in CI; these tools are not installer runtime requests.
 | `pipewire` | Audio server | Yes |
 | `wireplumber` | Audio session manager when none is installed | Yes |
 | `gsettings-desktop-schemas` | Desktop color scheme schema | Yes |
-| `paru` (AUR) | Unused PackageService package counters; not needed by the installer | No |
 
 ## Bundled resources
 
-Google Sans Flex and its license are tracked in `assets/fonts/google-sans-flex`. Material
+Fonts are resolved from system font stacks (Google Sans / Inter / Roboto / Noto Sans / sans-serif). Material
 Symbols Rounded/Outlined are supplied by `ttf-material-symbols-variable`; an already installed
 compatible provider is retained. Shell font settings keep their existing fallback behavior.
 

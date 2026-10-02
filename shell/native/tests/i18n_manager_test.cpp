@@ -21,14 +21,14 @@ void I18nManagerTest::resolvesLanguagePreferences_data()
     QTest::newRow("simplified") << QStringList{"zh_CN.UTF-8"} << "zh_CN";
     QTest::newRow("chinese-default") << QStringList{"zh"} << "zh_CN";
     QTest::newRow("singapore") << QStringList{"zh-SG"} << "zh_CN";
-    QTest::newRow("taiwan") << QStringList{"zh-TW"} << "zh_TW";
-    QTest::newRow("hong-kong") << QStringList{"zh_HK.UTF-8"} << "zh_TW";
-    QTest::newRow("macao") << QStringList{"zh-MO"} << "zh_TW";
-    QTest::newRow("hant") << QStringList{"zh-Hant-US"} << "zh_TW";
+    QTest::newRow("taiwan") << QStringList{"zh-TW"} << "zh_CN";
+    QTest::newRow("hong-kong") << QStringList{"zh_HK.UTF-8"} << "zh_CN";
+    QTest::newRow("macao") << QStringList{"zh-MO"} << "zh_CN";
+    QTest::newRow("hant") << QStringList{"zh-Hant-US"} << "zh_CN";
     QTest::newRow("hans-before-region") << QStringList{"zh-Hans-HK"} << "zh_CN";
-    QTest::newRow("case-and-whitespace") << QStringList{" ZH-hant "} << "zh_TW";
+    QTest::newRow("case-and-whitespace") << QStringList{" ZH-hant "} << "zh_CN";
     QTest::newRow("unsupported") << QStringList{"ja-JP", "fr-FR"} << "en_US";
-    QTest::newRow("supported-secondary") << QStringList{"fr-FR", "zh-Hant", "en-US"} << "zh_TW";
+    QTest::newRow("supported-secondary") << QStringList{"fr-FR", "zh-Hant", "en-US"} << "zh_CN";
     QTest::newRow("first-supported") << QStringList{"zh-CN", "en-US"} << "zh_CN";
     QTest::newRow("empty") << QStringList{} << "en_US";
     QTest::newRow("posix") << QStringList{"C.UTF-8"} << "en_US";
@@ -68,11 +68,11 @@ void I18nManagerTest::switchesCatalogsWithoutChangingRegionalSettings()
     QCOMPARE(QLocale().name(), regionalLocale.name());
 
     QVERIFY(manager.setLanguage(QStringLiteral("zh-Hant")));
-    QCOMPARE(manager.language(), QStringLiteral("zh_TW"));
+    QCOMPARE(manager.language(), QStringLiteral("zh_CN"));
     QCOMPARE(translate("AccountPage", "Unknown"), QStringLiteral("未知"));
-    QCOMPARE(translate("TimeUtils", "%n minute(s) ago", 2), QStringLiteral("2 分鐘以前"));
+    QCOMPARE(translate("TimeUtils", "%n minute(s) ago", 2), QStringLiteral("2 分钟以前"));
     QCOMPARE(translate("DashboardPomodoroCard", "Round %1 / %2").arg(1).arg(4),
-             QStringLiteral("第 1 / 4 輪"));
+             QStringLiteral("第 1 / 4 轮"));
 
     QVERIFY(manager.setLanguage(QStringLiteral("en-GB")));
     QCOMPARE(manager.language(), QStringLiteral("en_US"));
