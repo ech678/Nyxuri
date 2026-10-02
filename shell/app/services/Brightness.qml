@@ -318,4 +318,11 @@ Singleton {
             }
         }
     }
+
+    Component.onDestruction: {
+        if (ddcDetectProcess)
+            ddcDetectProcess.running = false;
+        if (fallbackSetProc)
+            fallbackSetProc.running = false;
+    }
 }

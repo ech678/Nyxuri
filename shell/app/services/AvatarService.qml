@@ -39,14 +39,22 @@ Singleton {
             if (exitCode === 0) {
                 root.revision += 1;
                 root.updateFinished(true, qsTr("Avatar updated"));
-                Quickshell.execDetached(["notify-send", "-a", "quickshell", "-u", "low", qsTr(
-                                             "Avatar updated"), root.pendingSource]);
+                ActionGateway.execute(["notify-send", "-a", "quickshell", "-u", "low", qsTr("Avatar updated"),
+                                       root.pendingSource], "avatar:update-success");
             } else {
                 root.updateFinished(false, qsTr("Could not update avatar"));
-                Quickshell.execDetached(["notify-send", "-a", "quickshell", "-u", "critical", qsTr(
-                                             "Avatar update failed"), root.pendingSource]);
+                ActionGateway.execute(["notify-send", "-a", "quickshell", "-u", "critical", qsTr(
+                                           "Avatar update failed"), root.pendingSource],
+                                      "avatar:update-failed");
             }
             root.pendingSource = "";
         }
+    }
+
+    Component.onDestruction: {
+        if (copyProcess)
+            copyProcess.running = false;
+        root.busy = false;
+        root.pendingSource = "";
     }
 }

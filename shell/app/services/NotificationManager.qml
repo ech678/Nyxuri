@@ -560,4 +560,10 @@ Singleton {
         if (action)
             action.invoke();
     }
+
+    Component.onDestruction: {
+        if (ensureStoreDir)
+            ensureStoreDir.running = false;
+        root.list.forEach(notif => root.stopPopupTimer(notif));
+    }
 }

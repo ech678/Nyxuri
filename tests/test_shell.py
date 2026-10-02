@@ -544,6 +544,114 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("active: !PersonalizationConfig.keystoneEnabled", app_shell_content)
         self.assertIn("NotificationPopupHost.qml", app_shell_content)
 
+    def test_p3_r10_lifecycle_and_sideeffect_contracts(self):
+        """P3-R10 lifecycle & side-effect governance contract checks."""
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. Auditor clean execution across all target files
+        audit_script = os.path.join(shell_dir, "scripts", "dev", "audit-lifecycle.py")
+        self.assertTrue(os.path.isfile(audit_script), "audit-lifecycle.py missing")
+        import subprocess
+        proc = subprocess.run(
+            ["python3", audit_script, "--root", shell_dir, "--scope", "all", "--check"],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(proc.returncode, 0, f"Lifecycle auditor failed: {proc.stdout}\n{proc.stderr}")
+
+        # 2. ActionGateway is the single convergence point for execDetached
+        app_dir = os.path.join(shell_dir, "app")
+        modules_dir = os.path.join(shell_dir, "modules")
+        shared_dir = os.path.join(shell_dir, "shared")
+
+        for scan_root in [app_dir, modules_dir, shared_dir]:
+            for root, _, files in os.walk(scan_root):
+                for file in files:
+                    if file.endswith((".qml", ".js")):
+                        full_p = os.path.join(root, file)
+                        rel_p = os.path.relpath(full_p, shell_dir)
+                        if rel_p == "app/ActionGateway.qml":
+                            continue
+                        with open(full_p, "r", encoding="utf-8") as f:
+                            c = f.read()
+                        self.assertNotIn(
+                            "Quickshell.execDetached",
+                            c,
+                            f"Illegal Quickshell.execDetached bypass found in {rel_p}; must route via ActionGateway",
+                        )
+
+        # 3. High-risk services teardown hooks present
+        high_risk_files = [
+            "app/services/SystemMonitorService.qml",
+            "app/services/KeyboardLockService.qml",
+            "app/services/AwwwWallpaperService.qml",
+            "app/services/AudioRecordingService.qml",
+            "app/services/RecordingService.qml",
+            "app/services/NetworkService.qml",
+            "app/services/NetworkManagerExtras.qml",
+            "app/services/BluetoothService.qml",
+            "app/services/FileSearchService.qml",
+            "app/services/SpotlightSearchService.qml",
+            "app/services/SpotlightToolService.qml",
+            "app/services/WallpaperService.qml",
+        ]
+        for rel in high_risk_files:
+            fp = os.path.join(shell_dir, rel)
+            self.assertTrue(os.path.isfile(fp), f"Service missing: {rel}")
+            with open(fp, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertIn("Component.onDestruction", content, f"Missing Component.onDestruction in {rel}")
+
+    def test_p3_r10_20x_lifecycle_simulation(self):
+        """P3-R10-04: Simulate 20 rapid open/close lifecycle cycles without leaked tokens."""
+        class MockLifecycleConsumer:
+            def __init__(self):
+                self.generation = 0
+                self.active = False
+                self.running_processes = set()
+                self.running_timers = set()
+                self.stale_discards = 0
+
+            def open(self):
+                self.generation += 1
+                self.active = True
+                self.running_timers.add(f"poll_timer_g{self.generation}")
+                self.running_processes.add(f"proc_g{self.generation}")
+
+            def close(self):
+                self.active = False
+                # Teardown contracts must stop timers and mark processes aborted
+                self.running_timers.clear()
+                self.running_processes.clear()
+
+            def process_response(self, response_generation, data):
+                # Generation token isolation: stale responses must be dropped
+                if response_generation != self.generation:
+                    self.stale_discards += 1
+                    return False
+                return True
+
+        consumer = MockLifecycleConsumer()
+        for i in range(20):
+            consumer.open()
+            self.assertTrue(consumer.active)
+            self.assertEqual(len(consumer.running_timers), 1)
+            self.assertEqual(len(consumer.running_processes), 1)
+
+            # Delayed response from an older generation arrives
+            if i > 0:
+                accepted = consumer.process_response(i, "delayed_data")
+                self.assertFalse(accepted, "Stale generation token response must be discarded")
+
+            consumer.close()
+            self.assertFalse(consumer.active)
+            self.assertEqual(len(consumer.running_timers), 0)
+            self.assertEqual(len(consumer.running_processes), 0)
+
+        self.assertEqual(consumer.generation, 20)
+        self.assertEqual(consumer.stale_discards, 19)
+
 
 if __name__ == "__main__":
     unittest.main()

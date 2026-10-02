@@ -492,4 +492,13 @@ Singleton {
                 Qt.callLater(root.resumeGeneration);
         }
     }
+
+    Component.onDestruction: {
+        if (detectIconThemesProcess)
+            detectIconThemesProcess.running = false;
+        if (detectCursorThemesProcess)
+            detectCursorThemesProcess.running = false;
+        if (generateColorsProcess)
+            generateColorsProcess.running = false;
+    }
 }

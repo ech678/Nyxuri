@@ -262,4 +262,14 @@ Singleton {
             root.finishAction();
         }
     }
+
+    Component.onDestruction: {
+        debounce.stop();
+        if (statusProcess)
+            statusProcess.running = false;
+        if (searchProcess)
+            searchProcess.running = false;
+        if (actionProcess)
+            actionProcess.running = false;
+    }
 }

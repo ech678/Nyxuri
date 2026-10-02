@@ -34,8 +34,9 @@ Item {
                 root.sunriseTime = WeatherPlugin.current().sunrise || 0;
                 root.sunsetTime = WeatherPlugin.current().sunset || 0;
             } else {
-                const today = (WeatherPlugin.dailyForecast && typeof WeatherPlugin.dailyForecast.count === "function" && WeatherPlugin.dailyForecast.count() > 0)
-                              ? WeatherPlugin.dailyForecast.get(0) : null;
+                const today = (WeatherPlugin.dailyForecast && typeof WeatherPlugin.dailyForecast.count
+                               === "function" && WeatherPlugin.dailyForecast.count() > 0)
+                      ? WeatherPlugin.dailyForecast.get(0) : null;
                 if (today) {
                     root.sunriseTime = today.sunrise || 0;
                     root.sunsetTime = today.sunset || 0;
@@ -50,8 +51,9 @@ Item {
             root.sunriseTime = WeatherPlugin.current().sunrise || 0;
             root.sunsetTime = WeatherPlugin.current().sunset || 0;
         } else {
-            const today = (WeatherPlugin.dailyForecast && typeof WeatherPlugin.dailyForecast.count === "function" && WeatherPlugin.dailyForecast.count() > 0)
-                          ? WeatherPlugin.dailyForecast.get(0) : null;
+            const today = (WeatherPlugin.dailyForecast && typeof WeatherPlugin.dailyForecast.count
+                           === "function" && WeatherPlugin.dailyForecast.count() > 0)
+                  ? WeatherPlugin.dailyForecast.get(0) : null;
             if (today) {
                 root.sunriseTime = today.sunrise || 0;
                 root.sunsetTime = today.sunset || 0;
@@ -61,6 +63,7 @@ Item {
     }
 
     Timer {
+        id: progressTimer
         interval: 60000
         running: true
         repeat: true
@@ -194,5 +197,9 @@ Item {
                 font.weight: Font.Medium
             }
         }
+    }
+
+    Component.onDestruction: {
+        progressTimer.stop();
     }
 }

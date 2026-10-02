@@ -102,4 +102,9 @@ Singleton {
             root.refreshIntegrationState();
         }
     }
+
+    Component.onDestruction: {
+        if (versionProcess)
+            versionProcess.running = false;
+    }
 }

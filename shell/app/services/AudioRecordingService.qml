@@ -58,8 +58,8 @@ Singleton {
 
         root._lastErrorKey = key;
         root.commandError(code, message);
-        Quickshell.execDetached(["notify-send", "-a", "Clavis Shell", "-u", "critical", qsTr(
-                                     "Recording failed"), message]);
+        ActionGateway.execute(["notify-send", "-a", "Clavis Shell", "-u", "critical", qsTr("Recording failed"),
+                               message], "audio-recording:error");
     }
 
     function reportOperation(errorObject) {
@@ -276,5 +276,17 @@ Singleton {
         repeat: true
         running: root.isActive
         onTriggered: root._nowMs = Date.now()
+    }
+
+    Component.onDestruction: {
+        reconnect.stop();
+        if (startProcess)
+            startProcess.running = false;
+        if (stopProcess)
+            stopProcess.running = false;
+        if (initialStatus)
+            initialStatus.running = false;
+        if (watchProcess)
+            watchProcess.running = false;
     }
 }

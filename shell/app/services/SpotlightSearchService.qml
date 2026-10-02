@@ -155,4 +155,11 @@ Singleton {
         repeat: true
         onTriggered: root.tryActivateBrowser()
     }
+
+    Component.onDestruction: {
+        queryTimeout.stop();
+        focusTimer.stop();
+        if (browserQuery)
+            browserQuery.running = false;
+    }
 }

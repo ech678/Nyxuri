@@ -443,6 +443,10 @@ Singleton {
 
     Component.onCompleted: root._applyDiscovery()
     Component.onDestruction: {
+        manualDiscoveryReleaseTimer.stop();
+        operationTimeout.stop();
+        root._discoveryOwners = ({});
+        root._manualDiscoveryActive = false;
         for (const nativeAdapter of root._nativeAdapters) {
             if (nativeAdapter && nativeAdapter.discovering)
                 nativeAdapter.discovering = false;

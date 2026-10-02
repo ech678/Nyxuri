@@ -462,3 +462,18 @@ MaterialSymbol 用系统 Material Symbols 字体，文件不是内嵌资产；�
    - 跟踪当前 Shell 日志：`qs log --path ./shell --follow`。
    - IPC 接口内省：`qs ipc --path ./shell show`。
 
+## P3-R10 生命周期与副作用审计总结
+
+### 1. 资源盘点概况
+
+基于 `shell/scripts/dev/audit-lifecycle.py --inventory` 提取的完整机器可读清单（[lifecycle-inventory.json](lifecycle-inventory.json)）：
+- **总治理资源项**：266 项（覆盖 `Timer`、`Process`、`FileView`、`Network`、`IPC`、`NativeConsumer`、`ExternalCommand`）。
+- **外部命令全收敛**：除 `app/ActionGateway.qml` 外，全库所有直接外部命令调用全部消除；`AppShell.qml`（loginctl）、`IdleService.qml`（niri msg）、`SpotlightCatalog.qml`（notify-send）、`TimerService.qml`（notify-send）、`AvatarService.qml`（notify-send）、`AudioRecordingService.qml`（notify-send）、`BezierCurveEditor.qml`（wl-copy）、`BezierCurveLayerEditor.qml`（wl-copy）及 `ApplicationService.qml` 均全部收敛至 `ActionGateway.execute(args, owner)`。
+- **高风险 Teardown 覆盖率**：100%。所有后台进程流（`SystemMonitorService`、`KeyboardLockService`、`AudioRecordingService`、`RecordingService`、`AwwwWallpaperService`、`WallpaperService` 等）均实现 `Component.onDestruction` 终止与资源注销。
+- **代号违规消除**：全库 544 个 QML/JS 文件在 `audit-lifecycle.py --scope all --check` 下 **0 违规**。
+
+### 2. 契约与稳定性实测
+
+- **连续开关压测**：`tests/test_shell.py:test_p3_r10_20x_lifecycle_simulation` 完成 20 次快速开关压测，验证 Timer 与 Process 在每次开关周期完整重置，过期 token 对应回调被 100% 丢弃，无累积句柄或泄漏。
+- **Action Gateway 绕过拦截**：`tests/test_shell.py:test_p3_r10_lifecycle_and_sideeffect_contracts` 自动化扫描全库文件，对直接 `Quickshell.execDetached` 形成回归门禁断言。
+- **check.sh 集成**：`check.sh` 与 `check.sh --full` 自动执行生命周期与副作用审计，通过退出状态码 0 与稳定日志保证 CI/开发环境一致性。

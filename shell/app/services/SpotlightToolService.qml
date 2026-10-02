@@ -229,4 +229,13 @@ Singleton {
                 root.feedback = code === 0 ? qsTr("Copied") : qsTr("Could not copy the result");
         }
     }
+
+    Component.onDestruction: {
+        debounce.stop();
+        deadline.stop();
+        if (worker)
+            worker.running = false;
+        if (copier)
+            copier.running = false;
+    }
 }

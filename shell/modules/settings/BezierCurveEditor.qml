@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 import Quickshell
+import qs.app
 import qs.shared.theme
 import qs.shared.controls
 
@@ -262,7 +263,7 @@ Item {
     }
 
     function copyCoordinateList() {
-        Quickshell.execDetached(["wl-copy", coordinateListText()]);
+        ActionGateway.execute(["wl-copy", coordinateListText()], "settings:bezier-copy");
     }
 
     function coordinateFallback(index) {

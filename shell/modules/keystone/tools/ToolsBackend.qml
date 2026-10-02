@@ -12,10 +12,11 @@ Item {
 
     function startRecord(mode) {
         RecordingService.start(mode, {
-            "audio": "none",
-            "fps": 60,
-            "output": mode === "gif" ? UiPreferences.recordingGifDirectory : UiPreferences.recordingVideoDirectory
-        });
+                                   "audio": "none",
+                                   "fps": 60,
+                                   "output": mode === "gif" ? UiPreferences.recordingGifDirectory :
+                                                              UiPreferences.recordingVideoDirectory
+                               });
     }
 
     function stopRecord() {
@@ -24,8 +25,10 @@ Item {
 
     function startAudio(source) {
         return AudioRecordingService.start(source, {
-            "output": source === "system" ? UiPreferences.recordingSystemAudioDirectory : UiPreferences.recordingMicrophoneDirectory
-        });
+                                               "output": source === "system"
+                                                         ? UiPreferences.recordingSystemAudioDirectory :
+                                                           UiPreferences.recordingMicrophoneDirectory
+                                           });
     }
 
     function stopAudio() {
@@ -38,4 +41,8 @@ Item {
         command: ["hyprpicker", "-a"]
     }
 
+    Component.onDestruction: {
+        if (colorPickerProcess)
+            colorPickerProcess.running = false;
+    }
 }

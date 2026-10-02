@@ -336,4 +336,10 @@ Singleton {
             }
         }
     }
+
+    Component.onDestruction: {
+        if (uploadProcess)
+            uploadProcess.running = false;
+        root._jobs = [];
+    }
 }

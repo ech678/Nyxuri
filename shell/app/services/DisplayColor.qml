@@ -147,6 +147,7 @@ Singleton {
         onDateChanged: root.evaluate()
     }
     Process {
+        id: ensureConfigDir
         command: ["mkdir", "-p", Paths.configHome]
         running: true
         onExited: code => {
@@ -181,5 +182,11 @@ Singleton {
                 root.error = qsTr("Unable to read display preferences");
         }
         onSaveFailed: root.error = qsTr("Unable to save display preferences")
+    }
+
+    Component.onDestruction: {
+        deadline.stop();
+        if (ensureConfigDir)
+            ensureConfigDir.running = false;
     }
 }

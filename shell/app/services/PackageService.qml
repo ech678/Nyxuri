@@ -7,8 +7,7 @@ import Quickshell.Io
 Singleton {
     id: root
 
-    readonly property string commandName:
-        Quickshell.env("CLAVIS_PARU") || "paru"
+    readonly property string commandName: Quickshell.env("CLAVIS_PARU") || "paru"
     property int totalPackages: -1
     property int pendingUpdates: -1
     property bool totalLoading: false
@@ -70,9 +69,18 @@ Singleton {
     }
 
     Timer {
+        id: updateTimer
         interval: 30 * 60 * 1000
         repeat: true
         running: true
         onTriggered: root.refresh()
+    }
+
+    Component.onDestruction: {
+        updateTimer.stop();
+        if (totalProcess)
+            totalProcess.running = false;
+        if (updatesProcess)
+            updatesProcess.running = false;
     }
 }

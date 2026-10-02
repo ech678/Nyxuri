@@ -554,4 +554,16 @@ Singleton {
             root.finalizeInspectIfReady();
         }
     }
+
+    Component.onDestruction: {
+        if (configProcess)
+            configProcess.running = false;
+        if (listProcess)
+            listProcess.running = false;
+        if (actionProcess)
+            actionProcess.running = false;
+        if (inspectProcess)
+            inspectProcess.running = false;
+        root._inspectQueue = [];
+    }
 }

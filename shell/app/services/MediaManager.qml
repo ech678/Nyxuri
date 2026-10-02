@@ -37,6 +37,7 @@ Item {
     Component.onCompleted: root.refreshPosition()
 
     Timer {
+        id: positionPollTimer
         interval: 250
         repeat: true
         triggeredOnStart: true
@@ -97,5 +98,9 @@ Item {
             return "Edge";
 
         return player.identity;
+    }
+
+    Component.onDestruction: {
+        positionPollTimer.stop();
     }
 }

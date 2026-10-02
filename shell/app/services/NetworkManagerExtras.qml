@@ -286,4 +286,18 @@ Singleton {
     Process {
         id: cleanupProcess
     }
+
+    Component.onDestruction: {
+        root._runtimeCallback = null;
+        root._addCallback = null;
+        root._password = "";
+        if (runtimeProcess)
+            runtimeProcess.running = false;
+        if (addProcess)
+            addProcess.running = false;
+        if (activateProcess)
+            activateProcess.running = false;
+        if (cleanupProcess)
+            cleanupProcess.running = false;
+    }
 }

@@ -166,4 +166,9 @@ Singleton {
 
         stderr: StdioCollector {}
     }
+
+    Component.onDestruction: {
+        if (identityProcess)
+            identityProcess.running = false;
+    }
 }

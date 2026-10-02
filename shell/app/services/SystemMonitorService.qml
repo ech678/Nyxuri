@@ -815,4 +815,19 @@ Singleton {
     MonitorStream {
         id: secondStream
     }
+
+    Component.onDestruction: {
+        reconnectTimer.stop();
+        forceStopTimer.stop();
+        if (firstStream) {
+            firstStream.running = false;
+            firstStream.terminationTimer.stop();
+        }
+        if (secondStream) {
+            secondStream.running = false;
+            secondStream.terminationTimer.stop();
+        }
+        root._consumerModules = [];
+        root.state = "idle";
+    }
 }

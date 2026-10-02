@@ -727,4 +727,11 @@ Singleton {
             }
         }
     }
+
+    Component.onDestruction: {
+        cycleTimer.stop();
+        dailyTimer.stop();
+        if (scanProcess)
+            scanProcess.running = false;
+    }
 }

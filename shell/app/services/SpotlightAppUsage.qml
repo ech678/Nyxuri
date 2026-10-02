@@ -60,6 +60,7 @@ Singleton {
     }
 
     Process {
+        id: ensureStateDir
         command: ["mkdir", "-p", Paths.stateHome]
         running: true
         onExited: exitCode => {
@@ -94,5 +95,10 @@ Singleton {
             root.finishLoad({}, missing);
         }
         onSaveFailed: error => console.warn("SpotlightAppUsage: cannot save history:", error)
+    }
+
+    Component.onDestruction: {
+        if (ensureStateDir)
+            ensureStateDir.running = false;
     }
 }

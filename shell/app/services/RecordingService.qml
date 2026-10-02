@@ -301,4 +301,16 @@ Singleton {
         running: root.isRecording
         onTriggered: root._nowMs = Date.now()
     }
+
+    Component.onDestruction: {
+        reconnect.stop();
+        if (startProcess)
+            startProcess.running = false;
+        if (stopProcess)
+            stopProcess.running = false;
+        if (initialStatus)
+            initialStatus.running = false;
+        if (watchProcess)
+            watchProcess.running = false;
+    }
 }

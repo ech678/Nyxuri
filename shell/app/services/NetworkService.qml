@@ -951,6 +951,12 @@ Singleton {
 
     Component.onCompleted: root._applyScanning()
     Component.onDestruction: {
+        profileWriteTimeout.stop();
+        profileForgetTimeout.stop();
+        manualScanReleaseTimer.stop();
+        operationTimeout.stop();
+        root._scanOwners = ({});
+        root._manualScanActive = false;
         for (const device of root._nativeWifiDevices) {
             if (device && device.scannerEnabled)
                 device.scannerEnabled = false;

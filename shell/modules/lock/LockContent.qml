@@ -586,4 +586,8 @@ Item {
         repeat: true
         onTriggered: now = new Date()
     }
+
+    Component.onDestruction: {
+        clockTimer.stop();
+    }
 }

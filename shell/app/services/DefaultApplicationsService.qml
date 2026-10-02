@@ -822,4 +822,11 @@ Singleton {
             }
         }
     }
+
+    Component.onDestruction: {
+        if (root._activeCommand && root._activeCommand.process)
+            root._activeCommand.process.running = false;
+        root._activeCommand = null;
+        root._queue = [];
+    }
 }

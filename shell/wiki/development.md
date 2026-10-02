@@ -156,3 +156,35 @@ QML 行为测试验证调色热更新、非法文件保留最后有效值、字�
 沙箱外隔离复跑 `python3 -m unittest tests.test_shell_runtime.ShellPresentationTests -q`，两项通过。
 未将环境阻断归为产品缺陷，未实测用户报告的 Bar 滚轮、通知背景与错位；
 具体复用流程及后续参考目录见 [恢复计划](recovery.md)。
+
+## P3-R10 生命周期与副作用治理规范
+
+为保障 Shell 在长时间运行和高频开关下的秩序感与整洁度，所有 QML/JS 资源必须遵守生命周期与副作用治理契约：
+
+### 1. 固定审计规则与错误代号
+
+| 代号 | 检查项 | 治理契约与修复要求 |
+|---|---|---|
+| `LIFE001` | 缺少 owner 声明 | `ActionGateway.execute(args, owner)` 与 `powerAction` 必须传入非空 owner 标识 |
+| `LIFE002` | 缺少销毁/清理路径 | 创建 Process、网络请求、长期订阅、周期 Timer 的组件必须具备 `Component.onDestruction` 释放钩子 |
+| `LIFE003` | shared 层副作用 | `shared/` 纯展示层严禁 Process、FileView、XMLHttpRequest、环境读取及业务服务引用 |
+| `LIFE004` | 直接外部命令执行 | `app/` 与 `modules/` 严禁直接调用 `Quickshell.execDetached` 或拼接 shell 字符串，必须收敛至 `ActionGateway.execute` |
+| `LIFE005` | 可选依赖无降级 | 可选插件导入必须经由 fallback 隔离层或桥接组件，缺失时不崩溃、有降级提示 |
+| `LIFE006` | 仅通过 visible 停用 | 弹窗、抽屉与大型面板停用时必须真实卸载或断开流（`active: false`），禁止仅用 `visible: false` 隐藏 |
+
+### 2. 验证与审计命令
+
+```bash
+# 1. 生命周期审计器（秒级，纯 Python 标准库）
+python3 shell/scripts/dev/audit-lifecycle.py --root shell --scope all --check
+
+# 2. 刷新机器可读资源清单（266 项已登记资源）
+python3 shell/scripts/dev/audit-lifecycle.py --root shell --inventory shell/wiki/lifecycle-inventory.json
+
+# 3. 运行生命周期单元与契约测试
+python3 -m unittest shell/tests/test_lifecycle_audit.py -v
+python3 -m unittest tests/test_shell.py -v
+
+# 4. 一键集成检查（自动包含生命周期与格式化）
+./shell/scripts/dev/check.sh --full
+```

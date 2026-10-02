@@ -179,6 +179,7 @@ Singleton {
         onTriggered: root.identify = false
     }
     Timer {
+        id: pollTimer
         interval: 400
         running: root.token !== ""
         repeat: true
@@ -242,5 +243,11 @@ Singleton {
         recordCollisions(live);
         previousCombination = Config.combination(live, identityCollisions);
         refresh();
+    }
+
+    Component.onDestruction: {
+        pollTimer.stop();
+        if (operation)
+            operation.running = false;
     }
 }

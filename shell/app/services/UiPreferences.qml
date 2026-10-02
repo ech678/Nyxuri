@@ -740,6 +740,7 @@ Singleton {
     }
 
     Timer {
+        id: themePollTimer
         interval: 5000
         running: true
         repeat: true
@@ -756,5 +757,17 @@ Singleton {
         running: false
         repeat: false
         onTriggered: themePoller.running = true
+    }
+
+    Component.onDestruction: {
+        preferencesReloadDebounce.stop();
+        themePollTimer.stop();
+        themeDebounce.stop();
+        if (ensureStoreDir)
+            ensureStoreDir.running = false;
+        if (systemThemeWriter)
+            systemThemeWriter.running = false;
+        if (themePoller)
+            themePoller.running = false;
     }
 }

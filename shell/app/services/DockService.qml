@@ -467,6 +467,7 @@ Singleton {
         }
     }
     Process {
+        id: ensureConfigDir
         command: ["mkdir", "-p", Paths.configHome]
         running: true
         onExited: exitCode => {
@@ -543,4 +544,10 @@ Singleton {
     }
 
     Component.onCompleted: root.rebuild()
+
+    Component.onDestruction: {
+        launchTimeout.stop();
+        if (ensureConfigDir)
+            ensureConfigDir.running = false;
+    }
 }

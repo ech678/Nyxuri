@@ -73,6 +73,7 @@ Item {
     }
 
     Timer {
+        id: clockTimer
         interval: 1000
         running: true
         repeat: true
@@ -423,5 +424,9 @@ Item {
             failureFlash.restart();
             root.forceAuthFocus();
         }
+    }
+
+    Component.onDestruction: {
+        clockTimer.stop();
     }
 }

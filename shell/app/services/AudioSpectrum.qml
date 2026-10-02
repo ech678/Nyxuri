@@ -11,8 +11,10 @@ Singleton {
 
     readonly property int refCount: Object.keys(_owners).length
     readonly property bool active: refCount > 0
-    readonly property bool available: backendLoader.status === Loader.Ready && backendLoader.item ? backendLoader.item.available : false
-    readonly property var values: backendLoader.status === Loader.Ready && backendLoader.item ? backendLoader.item.values : []
+    readonly property bool available: backendLoader.status === Loader.Ready && backendLoader.item
+                                      ? backendLoader.item.available : false
+    readonly property var values: backendLoader.status === Loader.Ready && backendLoader.item
+                                  ? backendLoader.item.values : []
 
     function acquire(token) {
         if (!token || root._owners[token])
@@ -37,5 +39,9 @@ Singleton {
 
         active: root.active
         source: "cava/CavaBackend.qml"
+    }
+
+    Component.onDestruction: {
+        root._owners = ({});
     }
 }

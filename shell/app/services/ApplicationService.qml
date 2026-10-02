@@ -64,7 +64,7 @@ Singleton {
                                "--expand-environment=no"];
         if (workingDirectory)
             scopedCommand.push("--working-directory=" + String(workingDirectory));
-        Quickshell.execDetached(scopedCommand.concat(["--"], argv));
+        ActionGateway.execute(scopedCommand.concat(["--"], argv), "app-service:launch");
         return true;
     }
 

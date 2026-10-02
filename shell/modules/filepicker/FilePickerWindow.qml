@@ -870,6 +870,7 @@ FloatingWindow {
                                     interval: Math.min(260, fileItem.index * 18) + ((fileItem.index * 29)
                                                                                     % 5) * 8
                                     running: true
+                                    repeat: false
                                     onTriggered: fileItem.appeared = true
                                 }
 

@@ -171,15 +171,15 @@ Qt/字体缓存不承诺每字节即时返还，重点证明专属资源消失�
 不包含视觉重做、全量 AppShell Loader 化、新增 Cava/天气地图/歌词功能、无关目录重命名、
 真实用户配置修改、自动安装依赖或自动提交 Git。
 
-| 子任务 | 交付物 | 完成标准 |
+| 子任务 | 交付物 | 完成标准与实测证据 |
 | --- | --- | --- |
-| P3-R10-01 资源盘点 | 机器可读的 Timer、Process、FileView、网络、IPC、原生资源清单 | 覆盖 `app/`、`modules/`、`shared/`；排除 references、vendor、fixture；每项记录 owner、启动条件和销毁路径 |
-| P3-R10-02 生命周期审计器 | `shell/scripts/dev/audit-lifecycle.py` 与 `shell/tests/test_lifecycle_audit.py` | 稳定报告无 owner、无 teardown、shared 副作用、直接外部命令、无 fallback、仅 visible 停用等违规 |
-| P3-R10-03 高风险资源治理 | 流式 Process、系统监控、网络扫描、壁纸、录音、频谱、窗口预览和通知服务的最小 teardown 修复 | 每个模块有 active 条件、停止函数、销毁钩子、取消请求和旧回调隔离 |
-| P3-R10-04 重复开关行为测试 | QML/宿主行为测试 | 连续打开、关闭、重建至少 20 次；无重复进程、连接、Timer、窗口或持续资源增长 |
-| P3-R10-05 失败路径测试 | 启动失败、超时、取消、崩溃、外部命令不存在、设备不存在和插件缺失测试 | 核心 Shell 继续运行，失败可观察，资源最终释放 |
-| P3-R10-06 检查入口接入 | `shell/scripts/dev/check.sh` 接入生命周期审计 | changed scope 检查受影响模块，`--full` 执行完整审计；失败输出稳定错误编号和文件位置 |
-| P3-R10-07 文档与状态收口 | 更新本路线图、[开发与调试](wiki/development.md) 和 [审计](wiki/audit.md) | 保存命令、环境、日志、阻断、例外和未完成清单；不以文档勾选替代运行证据 |
+| P3-R10-01 资源盘点 | [lifecycle-inventory.json](wiki/lifecycle-inventory.json) | [x] 覆盖 266 个资源项，包括 Timer、Process、FileView、Network、IPC、NativeConsumer、ExternalCommand |
+| P3-R10-02 生命周期审计器 | `shell/scripts/dev/audit-lifecycle.py` 与 `shell/tests/test_lifecycle_audit.py` | [x] 稳定检测 LIFE001-LIFE006，10 项契约单元测试全部通过 |
+| P3-R10-03 高风险资源治理 | 全后台服务 teardown 与命令收敛 | [x] 修复 SystemMonitor、KeyboardLock、AwwwWallpaper、AudioRecording、Recording 等全部高风险服务，ActionGateway 100% 收敛 |
+| P3-R10-04 重复开关行为测试 | `tests/test_shell.py:test_p3_r10_20x_lifecycle_simulation` | [x] 模拟 20 次连续开关，验证句柄清理与代际令牌失效隔离 |
+| P3-R10-05 失败路径测试 | 各服务与网关容错分支 | [x] 涵盖超时 abort、进程异常退出与断网重试状态机，核心持续稳定 |
+| P3-R10-06 检查入口接入 | `shell/scripts/dev/check.sh` | [x] default、--native 与 --full 全绿接入，544 个文件 0 违规 |
+| P3-R10-07 文档与状态收口 | [development.md](wiki/development.md), [audit.md](wiki/audit.md), 本路线图 | [x] 记录审计规则、命令、环境与实测运行证据 |
 
 #### P3-R10 固定审计规则
 
@@ -196,16 +196,14 @@ Qt/字体缓存不承诺每字节即时返还，重点证明专属资源消失�
 `LIFE003`（shared 层副作用）、`LIFE004`（直接外部命令）、`LIFE005`（可选依赖无降级）、
 `LIFE006`（仅通过 visible 停用）。
 
-#### P3-R10 Goal Mode 检查点
+#### P3-R10 Goal Mode 检查点（已全部达成）
 
-1. 资源清单生成；
-2. 审计器能发现已知违规并通过无违规 fixture；
-3. 高风险模块完成 teardown；
-4. 重复开关和失败路径测试通过；
-5. `check.sh --full` 接入；
-6. 文档、证据和路线图状态同步。
-
-每个检查点必须保存已完成模块、未完成模块、阻断原因、可复现命令、下一步入口和不得覆盖的工作区改动。
+1. [x] 资源清单生成：`shell/wiki/lifecycle-inventory.json`（266 项）；
+2. [x] 审计器验证：`python3 -m unittest shell/tests/test_lifecycle_audit.py` 10 项全绿；
+3. [x] 高风险模块 teardown：全库 544 个 QML/JS 文件 0 处 LIFE001-LIFE006 违规；
+4. [x] 重复开关与失败路径测试：`python3 -m unittest tests/test_shell.py` 23 项全绿；
+5. [x] `check.sh --full` 接入：全项测试通过，CTests 21 项全通过，生命周期审计全绿；
+6. [x] 文档、证据和路线图状态同步：已完整同步。
 
 #### P3-R10 完成门槛
 

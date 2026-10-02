@@ -101,6 +101,7 @@ Item {
     }
 
     Timer {
+        id: clockTimer
         interval: 1000
         running: true
         repeat: true
@@ -425,5 +426,9 @@ Item {
             lineHeight: letterContainer.lineHeight
             lineHeightMode: Text.FixedHeight
         }
+    }
+
+    Component.onDestruction: {
+        clockTimer.stop();
     }
 }

@@ -1,7 +1,8 @@
 pragma Singleton
 import QtQuick
-import qs.app.services
 import Quickshell
+import qs.app
+import qs.app.services
 import qs.shared.theme
 import "../../modules/settings/generated/SearchCatalog.js" as Catalog
 import "../../modules/launcher/SpotlightCommands.js" as Commands
@@ -90,8 +91,8 @@ Singleton {
             return false;
         const accepted = available(entry) && actionExecutor && actionExecutor(entry) === true;
         if (!accepted)
-            Quickshell.execDetached(["notify-send", "-a", "Clavis Shell", qsTr("Action unavailable"),
-                                     Catalog.title(id)]);
+            ActionGateway.execute(["notify-send", "-a", "Clavis Shell", qsTr("Action unavailable"),
+                                   Catalog.title(id)], "spotlight:catalog-action");
         return accepted;
     }
     onLanguageChanged: rebuild()

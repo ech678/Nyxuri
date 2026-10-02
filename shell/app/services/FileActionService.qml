@@ -52,4 +52,12 @@ Singleton {
             }
         }
     }
+
+    Component.onDestruction: {
+        for (let i = 0; i < root.children.length; ++i) {
+            const child = root.children[i];
+            if (child && child.running !== undefined)
+                child.running = false;
+        }
+    }
 }

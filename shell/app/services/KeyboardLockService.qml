@@ -102,4 +102,9 @@ Singleton {
         interval: 1000 * root._reconnectAttempts
         onTriggered: stream.running = true
     }
+
+    Component.onDestruction: {
+        reconnect.stop();
+        stream.running = false;
+    }
 }

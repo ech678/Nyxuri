@@ -247,4 +247,9 @@ Singleton {
         paths: root.snapshot.files || []
         onChanged: Qt.callLater(root.refresh)
     }
+
+    Component.onDestruction: {
+        if (operation)
+            operation.running = false;
+    }
 }

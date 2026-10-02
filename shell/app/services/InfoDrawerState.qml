@@ -32,18 +32,16 @@ Singleton {
 
     function clampTab(value) {
         const numberValue = Number(value);
-        return Number.isFinite(numberValue)
-            ? Math.max(0, Math.min(2, Math.floor(numberValue)))
-            : 0;
+        return Number.isFinite(numberValue) ? Math.max(0, Math.min(2, Math.floor(numberValue))) : 0;
     }
 
     function normalizedLaps(value) {
         if (!Array.isArray(value))
             return [];
 
-        return value
-            .map(lap => Math.max(0, Math.floor(Number(lap) || 0)))
-            .filter(lap => Number.isFinite(lap));
+        return value.map(lap => Math.max(0, Math.floor(Number(lap) || 0))).filter(lap => Number.isFinite(
+                                                                                             lap));
+
     }
 
     function setCollapsed(value) {
@@ -84,24 +82,24 @@ Singleton {
             return;
 
         stateFile.setText(JSON.stringify({
-            "drawer": {
-                "collapsed": root.collapsed,
-                "selectedTab": root.selectedTab
-            },
-            "pomodoro": {
-                "running": root.pomodoroRunning,
-                "isBreak": root.pomodoroBreak,
-                "cycle": root.pomodoroCycle,
-                "start": root.pomodoroStart,
-                "secondsLeft": root.pomodoroSecondsLeft
-            },
-            "stopwatch": {
-                "running": root.stopwatchRunning,
-                "start": root.stopwatchStart,
-                "elapsed": root.stopwatchElapsed,
-                "laps": root.stopwatchLaps
-            }
-        }, null, 2));
+                                             "drawer": {
+                                                 "collapsed": root.collapsed,
+                                                 "selectedTab": root.selectedTab
+                                             },
+                                             "pomodoro": {
+                                                 "running": root.pomodoroRunning,
+                                                 "isBreak": root.pomodoroBreak,
+                                                 "cycle": root.pomodoroCycle,
+                                                 "start": root.pomodoroStart,
+                                                 "secondsLeft": root.pomodoroSecondsLeft
+                                             },
+                                             "stopwatch": {
+                                                 "running": root.stopwatchRunning,
+                                                 "start": root.stopwatchStart,
+                                                 "elapsed": root.stopwatchElapsed,
+                                                 "laps": root.stopwatchLaps
+                                             }
+                                         }, null, 2));
         root.pendingSave = false;
     }
 
@@ -119,24 +117,23 @@ Singleton {
         const loadedPomodoroCycle = Number(pomodoro.cycle);
         const loadedPomodoroStart = Number(pomodoro.start);
         const loadedPomodoroSecondsLeft = Number(pomodoro.secondsLeft);
-        root.pomodoroCycle = Number.isFinite(loadedPomodoroCycle)
-            ? Math.max(0, Math.floor(loadedPomodoroCycle)) % 4
-            : 0;
-        root.pomodoroStart = Number.isFinite(loadedPomodoroStart)
-            ? Math.max(0, Math.floor(loadedPomodoroStart))
-            : 0;
-        root.pomodoroSecondsLeft = Number.isFinite(loadedPomodoroSecondsLeft)
-            ? Math.max(0, Math.floor(loadedPomodoroSecondsLeft))
-            : 1500;
+        root.pomodoroCycle = Number.isFinite(loadedPomodoroCycle) ? Math.max(0, Math.floor(
+                                                                                 loadedPomodoroCycle)) % 4 :
+                                                                    0;
+        root.pomodoroStart = Number.isFinite(loadedPomodoroStart) ? Math.max(0, Math.floor(
+                                                                                 loadedPomodoroStart)) : 0;
+        root.pomodoroSecondsLeft = Number.isFinite(loadedPomodoroSecondsLeft) ? Math.max(0, Math.floor(
+                                                                                             loadedPomodoroSecondsLeft)) :
+                                                                                1500;
 
         const loadedStopwatchStart = Number(stopwatch.start);
         const loadedStopwatchElapsed = Number(stopwatch.elapsed);
         const validStopwatchStart = Number.isFinite(loadedStopwatchStart) && loadedStopwatchStart > 0;
         root.stopwatchRunning = stopwatch.running === true && validStopwatchStart;
         root.stopwatchStart = validStopwatchStart ? Math.floor(loadedStopwatchStart) : 0;
-        root.stopwatchElapsed = Number.isFinite(loadedStopwatchElapsed)
-            ? Math.max(0, Math.floor(loadedStopwatchElapsed))
-            : 0;
+        root.stopwatchElapsed = Number.isFinite(loadedStopwatchElapsed) ? Math.max(0, Math.floor(
+                                                                                       loadedStopwatchElapsed)) :
+                                                                          0;
         root.stopwatchLaps = root.normalizedLaps(stopwatch.laps);
     }
 
@@ -189,5 +186,11 @@ Singleton {
         interval: 100
         repeat: false
         onTriggered: root.save()
+    }
+
+    Component.onDestruction: {
+        saveTimer.stop();
+        if (ensureStateDir)
+            ensureStateDir.running = false;
     }
 }

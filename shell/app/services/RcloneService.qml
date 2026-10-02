@@ -940,9 +940,26 @@ Singleton {
     }
 
     Timer {
+        id: quotaTimer
         interval: 300000
         repeat: true
         running: root.selectedRemoteName !== ""
         onTriggered: root.refreshQuota()
+    }
+
+    Component.onDestruction: {
+        remoteTimeout.stop();
+        quotaTimeout.stop();
+        quotaTimer.stop();
+        if (remoteListProcess)
+            remoteListProcess.running = false;
+        if (providersProcess)
+            providersProcess.running = false;
+        if (configProcess)
+            configProcess.running = false;
+        if (quotaProcess)
+            quotaProcess.running = false;
+        if (backupProcess)
+            backupProcess.running = false;
     }
 }

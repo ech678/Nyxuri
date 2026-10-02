@@ -381,6 +381,7 @@ Rectangle {
     }
 
     Timer {
+        id: weatherRefreshTimer
         running: true
         repeat: true
         interval: 900000
@@ -412,5 +413,9 @@ Rectangle {
         color: Appearance.colors.colOnSurfaceVariant
         opacity: 0.14 + pulse * 0.12
         radius: 8
+    }
+
+    Component.onDestruction: {
+        weatherRefreshTimer.stop();
     }
 }

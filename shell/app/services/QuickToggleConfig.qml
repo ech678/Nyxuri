@@ -152,4 +152,9 @@ Singleton {
             root.save();
         }
     }
+
+    Component.onDestruction: {
+        if (ensureStoreDir)
+            ensureStoreDir.running = false;
+    }
 }

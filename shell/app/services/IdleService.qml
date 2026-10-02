@@ -442,6 +442,12 @@ Singleton {
     Component.onDestruction: {
         root._setDimmed(false);
         if (root.displaysOff)
-            Quickshell.execDetached(["niri", "msg", "action", "power-on-monitors"]);
+            ActionGateway.execute(["niri", "msg", "action", "power-on-monitors"], "idle:power-on");
+        if (displayPowerProcess)
+            displayPowerProcess.running = false;
+        if (suspendProcess)
+            suspendProcess.running = false;
+        if (ensurePolicyStore)
+            ensurePolicyStore.running = false;
     }
 }

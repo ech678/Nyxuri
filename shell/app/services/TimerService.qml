@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import qs.app
 import qs.app.services
 
 Singleton {
@@ -84,7 +85,8 @@ Singleton {
         else
             message = qsTr("🔴 Focus: %1 minutes").arg(Math.floor(root.focusTime / 60));
 
-        Quickshell.execDetached(["notify-send", qsTr("Pomodoro"), message, "-a", "Clavis"]);
+        ActionGateway.execute(["notify-send", qsTr("Pomodoro"), message, "-a", "Clavis"],
+                              "timer:pomodoro-stage");
     }
 
     function refreshPomodoro() {
@@ -217,6 +219,7 @@ Singleton {
     }
 
     Timer {
+        id: pomodoroTimer
         interval: 200
         running: root.pomodoroRunning
         repeat: true
@@ -224,9 +227,15 @@ Singleton {
     }
 
     Timer {
+        id: stopwatchTimer
         interval: 10
         running: root.stopwatchRunning
         repeat: true
         onTriggered: root.refreshStopwatch()
+    }
+
+    Component.onDestruction: {
+        pomodoroTimer.stop();
+        stopwatchTimer.stop();
     }
 }

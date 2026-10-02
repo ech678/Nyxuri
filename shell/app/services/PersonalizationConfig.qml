@@ -2244,4 +2244,10 @@ Singleton {
             root.save();
         }
     }
+
+    Component.onDestruction: {
+        configReloadDebounce.stop();
+        if (ensureStoreDir)
+            ensureStoreDir.running = false;
+    }
 }

@@ -573,4 +573,9 @@ Singleton {
             }
         }
     }
+
+    Component.onDestruction: {
+        if (initProcess)
+            initProcess.running = false;
+    }
 }

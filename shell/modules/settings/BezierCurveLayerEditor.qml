@@ -4,6 +4,7 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import Quickshell
+import qs.app
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
@@ -189,7 +190,8 @@ FloatingWindow {
     }
 
     function copyCurve() {
-        Quickshell.execDetached(["wl-copy", curveText([renderX1, renderY1, renderX2, renderY2, 1, 1])]);
+        ActionGateway.execute(["wl-copy", curveText([renderX1, renderY1, renderX2, renderY2, 1, 1])],
+                              "settings:bezier-layer-copy");
     }
 
     function p1() {

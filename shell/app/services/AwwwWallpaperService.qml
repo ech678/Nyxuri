@@ -491,4 +491,20 @@ Singleton {
             root.state = "ready";
         }
     }
+
+    Component.onDestruction: {
+        queryRetry.stop();
+        if (probeClient)
+            probeClient.running = false;
+        if (probeDaemon)
+            probeDaemon.running = false;
+        if (daemonProcess)
+            daemonProcess.running = false;
+        if (queryProcess)
+            queryProcess.running = false;
+        if (applyProcess)
+            applyProcess.running = false;
+        if (stopProcess)
+            stopProcess.running = false;
+    }
 }

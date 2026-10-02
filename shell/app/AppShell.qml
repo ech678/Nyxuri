@@ -64,7 +64,7 @@ Item {
 
         const action = pendingSecurePowerAction;
         pendingSecurePowerAction = "";
-        Quickshell.execDetached(["loginctl", action]);
+        ActionGateway.execute(["loginctl", action], "session:secure-power");
     }
 
     function requestSecurePowerAction(action) {
@@ -83,7 +83,8 @@ Item {
         ActionGateway.sessionLocker = sessionLocker;
         ActionGateway.settingsHost = settingsHost;
         SpotlightCatalog.actionExecutor = root.executeSearchAction;
-        SpotlightCatalog.keystoneAvailable = Qt.binding(() => keystone ? keystone.searchActionsAvailable : false);
+        SpotlightCatalog.keystoneAvailable = Qt.binding(() => keystone ? keystone.searchActionsAvailable :
+                                                                         false);
         ThemeService.reloadColors();
         FontService.refresh();
         I18nService.initialize();
@@ -182,164 +183,164 @@ Item {
         target: "power-menu"
 
         function open(): void {
-            ActionGateway.requestSessionOpen();
-        }
-
-        function close(): void {
-            ActionGateway.requestSessionClose();
-        }
-
-        function toggle(): void {
-            ActionGateway.requestSessionToggle();
-        }
+        ActionGateway.requestSessionOpen();
     }
 
-    IpcHandler {
-        target: "shortcut-map"
+        function close(): void {
+                              ActionGateway.requestSessionClose();
+                          }
 
-        function open(): void {
+        function toggle(): void {
+        ActionGateway.requestSessionToggle();
+    }
+    }
+
+        IpcHandler {
+            target: "shortcut-map"
+
+            function open(): void {
             ShortcutMapService.open();
         }
 
-        function close(): void {
-            ShortcutMapService.close();
-        }
+            function close(): void {
+                                  ShortcutMapService.close();
+                              }
 
-        function toggle(): void {
+            function toggle(): void {
             ShortcutMapService.toggle();
         }
-    }
-
-    IpcHandler {
-        target: "lock"
-
-        function open() {
-            return sessionLocker.open();
         }
 
-        function isLocked() {
-            return sessionLocker.isLocked();
+            IpcHandler {
+                target: "lock"
+
+                function open() {
+                    return sessionLocker.open();
+                }
+
+                function isLocked() {
+                    return sessionLocker.isLocked();
+                }
+            }
+
+            LauncherWindow {
+                id: spotlightLauncher
+            }
+
+            IpcHandler {
+                target: "spotlight"
+
+                function toggle(): string {
+                    spotlightLauncher.toggleWindow();
+                    return spotlightLauncher.windowPhase.toUpperCase();
+                }
+
+                function open(): string {
+                    spotlightLauncher.openSpotlight();
+                    return spotlightLauncher.windowPhase.toUpperCase();
+                }
+
+                function search(): string {
+                    spotlightLauncher.openSpotlight("search");
+                    return "SEARCH";
+                }
+
+                function close(): string {
+                    spotlightLauncher.requestClose();
+                    return spotlightLauncher.windowPhase.toUpperCase();
+                }
+
+                function web(): string {
+                    spotlightLauncher.openWebMode();
+                    return "WEB";
+                }
+
+                function command(name: string): string {
+                    return spotlightLauncher.runCommand(name);
+                }
+
+                function commands(): string {
+                    return openMode("commands");
+                }
+
+                function files(): string {
+                    return openMode("files");
+                }
+
+                function openMode(mode: string): string {
+                    if (spotlightLauncher.normalizedMode(mode || "") === "")
+                        return "INVALID_MODE";
+
+                    spotlightLauncher.openSpotlight(mode);
+                    return String(mode).toUpperCase();
+                }
+            }
+
+            IpcHandler {
+                target: "wallpaper"
+
+                function set(path: string): string {
+                    return WallpaperService.setWallpaper(path || "", "") ? "OK" : "INVALID";
+                }
+
+                function setForScreen(path: string, screenName: string): string {
+                    return WallpaperService.setWallpaper(path || "", screenName || "") ? "OK" : "INVALID";
+                }
+
+                function clear(): string {
+                    return WallpaperService.clearWallpaper("") ? "OK" : "INVALID";
+                }
+
+                function clearForScreen(screenName: string): string {
+                    return WallpaperService.clearWallpaper(screenName || "") ? "OK" : "INVALID";
+                }
+
+                function previous(): string {
+                    return WallpaperService.cyclePrevious() ? "OK" : "PENDING";
+                }
+
+                function next(): string {
+                    return WallpaperService.cycleNext() ? "OK" : "PENDING";
+                }
+
+                function random(): string {
+                    return WallpaperService.cycleRandom() ? "OK" : "PENDING";
+                }
+
+                function setFolder(path: string): string {
+                    return WallpaperService.setWallpaperFolder(path || "") ? "OK" : "INVALID";
+                }
+            }
+
+            IpcHandler {
+                target: "control-center"
+
+                function open(pageId: string): string {
+                    return ActionGateway.requestSettingsOpen(pageId || "") ? "OK" : "UNAVAILABLE";
+                }
+
+                function close(): string {
+                    return ActionGateway.requestSettingsClose() ? "OK" : "CLOSED";
+                }
+
+                function toggle(pageId: string): string {
+                    return ActionGateway.requestSettingsToggle(pageId || "") ? "OPENING" : "CLOSING";
+                }
+            }
+
+            IpcHandler {
+                target: "settings"
+
+                function open(pageId: string): string {
+                    return ActionGateway.requestSettingsOpen(pageId || "") ? "OK" : "UNAVAILABLE";
+                }
+
+                function close(): string {
+                    return ActionGateway.requestSettingsClose() ? "OK" : "CLOSED";
+                }
+
+                function toggle(pageId: string): string {
+                    return ActionGateway.requestSettingsToggle(pageId || "") ? "OPENING" : "CLOSING";
+                }
+            }
         }
-    }
-
-    LauncherWindow {
-        id: spotlightLauncher
-    }
-
-    IpcHandler {
-        target: "spotlight"
-
-        function toggle(): string {
-            spotlightLauncher.toggleWindow();
-            return spotlightLauncher.windowPhase.toUpperCase();
-        }
-
-        function open(): string {
-            spotlightLauncher.openSpotlight();
-            return spotlightLauncher.windowPhase.toUpperCase();
-        }
-
-        function search(): string {
-            spotlightLauncher.openSpotlight("search");
-            return "SEARCH";
-        }
-
-        function close(): string {
-            spotlightLauncher.requestClose();
-            return spotlightLauncher.windowPhase.toUpperCase();
-        }
-
-        function web(): string {
-            spotlightLauncher.openWebMode();
-            return "WEB";
-        }
-
-        function command(name: string): string {
-            return spotlightLauncher.runCommand(name);
-        }
-
-        function commands(): string {
-            return openMode("commands");
-        }
-
-        function files(): string {
-            return openMode("files");
-        }
-
-        function openMode(mode: string): string {
-            if (spotlightLauncher.normalizedMode(mode || "") === "")
-                return "INVALID_MODE";
-
-            spotlightLauncher.openSpotlight(mode);
-            return String(mode).toUpperCase();
-        }
-    }
-
-    IpcHandler {
-        target: "wallpaper"
-
-        function set(path: string): string {
-            return WallpaperService.setWallpaper(path || "", "") ? "OK" : "INVALID";
-        }
-
-        function setForScreen(path: string, screenName: string): string {
-            return WallpaperService.setWallpaper(path || "", screenName || "") ? "OK" : "INVALID";
-        }
-
-        function clear(): string {
-            return WallpaperService.clearWallpaper("") ? "OK" : "INVALID";
-        }
-
-        function clearForScreen(screenName: string): string {
-            return WallpaperService.clearWallpaper(screenName || "") ? "OK" : "INVALID";
-        }
-
-        function previous(): string {
-            return WallpaperService.cyclePrevious() ? "OK" : "PENDING";
-        }
-
-        function next(): string {
-            return WallpaperService.cycleNext() ? "OK" : "PENDING";
-        }
-
-        function random(): string {
-            return WallpaperService.cycleRandom() ? "OK" : "PENDING";
-        }
-
-        function setFolder(path: string): string {
-            return WallpaperService.setWallpaperFolder(path || "") ? "OK" : "INVALID";
-        }
-    }
-
-    IpcHandler {
-        target: "control-center"
-
-        function open(pageId: string): string {
-            return ActionGateway.requestSettingsOpen(pageId || "") ? "OK" : "UNAVAILABLE";
-        }
-
-        function close(): string {
-            return ActionGateway.requestSettingsClose() ? "OK" : "CLOSED";
-        }
-
-        function toggle(pageId: string): string {
-            return ActionGateway.requestSettingsToggle(pageId || "") ? "OPENING" : "CLOSING";
-        }
-    }
-
-    IpcHandler {
-        target: "settings"
-
-        function open(pageId: string): string {
-            return ActionGateway.requestSettingsOpen(pageId || "") ? "OK" : "UNAVAILABLE";
-        }
-
-        function close(): string {
-            return ActionGateway.requestSettingsClose() ? "OK" : "CLOSED";
-        }
-
-        function toggle(pageId: string): string {
-            return ActionGateway.requestSettingsToggle(pageId || "") ? "OPENING" : "CLOSING";
-        }
-    }
-}

@@ -102,6 +102,7 @@ Singleton {
     // Also discovers a previously absent config and missing/restored inputs.
     // No writable registry directory is created for watching.
     Timer {
+        id: pollTimer
         interval: 5000
         repeat: true
         running: true
@@ -173,5 +174,14 @@ Singleton {
             }
             root.refresh();
         }
+    }
+
+    Component.onDestruction: {
+        refreshDebounce.stop();
+        pollTimer.stop();
+        if (listing)
+            listing.running = false;
+        if (mutation)
+            mutation.running = false;
     }
 }
