@@ -83,6 +83,8 @@ CORE_DEPS = [
     "ttf-jetbrains-mono",
     "ttf-jetbrains-mono-nerd",
     "noto-fonts-cjk",
+    "qt6-imageformats",
+    "cliphist",
 ]
 
 # Desktop integrations are selectable components; the management engine does

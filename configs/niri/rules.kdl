@@ -8,6 +8,19 @@ layer-rule {
     place-within-backdrop true
 }
 
+// Nyxuri Shell (Quickshell / Clavis) 壁纸与表面层规则
+layer-rule {
+    match namespace="^clavis-wallpaper$"
+    place-within-backdrop true
+}
+
+layer-rule {
+    match namespace="^clavis-shell-"
+    background-effect {
+        xray false
+    }
+}
+
 // noctalia(v5.0.0) 状态栏的命名空间
 layer-rule {
     match namespace="^noctalia-bar-bar$"
