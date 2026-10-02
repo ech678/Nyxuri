@@ -10,6 +10,17 @@ Singleton {
     property var settingsHost: null
     property string pendingSecurePowerAction: ""
 
+    Connections {
+        target: root.sessionLocker
+        function onSecured() {
+            root.runSecurePowerAction();
+        }
+        function onActiveChanged() {
+            if (root.sessionLocker && !root.sessionLocker.active)
+                root.pendingSecurePowerAction = "";
+        }
+    }
+
     signal actionDispatched(string owner, string action, bool success)
     signal sessionOpenRequested(var screen)
     signal sessionCloseRequested()
