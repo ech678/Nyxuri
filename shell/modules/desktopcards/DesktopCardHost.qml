@@ -6,6 +6,7 @@ import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
 import qs.modules.systemcards
+import qs.modules.wallpaper
 import "./DesktopCardLayout.js" as DesktopCardLayout
 import "../systemcards/SystemCardPlacement.js" as Placement
 

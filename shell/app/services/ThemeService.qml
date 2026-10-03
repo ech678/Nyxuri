@@ -6,6 +6,7 @@ import Quickshell.Io
 import Clavis.Runtime
 import qs.shared.theme
 import qs.app.services
+import qs.modules.wallpaper
 import qs.app
 
 Singleton {

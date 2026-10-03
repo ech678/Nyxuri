@@ -3,6 +3,7 @@ import QtQuick
 import Quickshell
 import qs.app
 import qs.app.services
+import qs.modules.wallpaper
 import qs.shared.theme
 import "../../modules/settings/generated/SearchCatalog.js" as Catalog
 import "../../modules/launcher/SpotlightCommands.js" as Commands

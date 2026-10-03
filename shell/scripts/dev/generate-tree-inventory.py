@@ -48,6 +48,15 @@ MIGRATED_SERVICES = {
     "modules/bar/quicksettings/Brightness.qml": ("重命名", "modules/bar/quicksettings/BrightnessButton.qml", "消除与服务同名冲突"),
     "modules/sidebars/dashboard/infotools/calendar_layout.js": ("重命名", "modules/sidebars/dashboard/infotools/CalendarLayout.js", "对齐全库 PascalCase.js 命名法典"),
     "app/services/weather/WeatherBackend.qml": ("合并", "app/services/WeatherService.qml", "9 行纯 Loader 壳，待合并入天气组件或 R4-C-05 消除"),
+    "app/services/WallpaperService.qml": ("移动", "modules/wallpaper/WallpaperService.qml", "壁纸功能域核心服务"),
+    "app/services/WallpaperSceneService.qml": ("移动", "modules/wallpaper/WallpaperSceneService.qml", "壁纸视差与视口场景服务"),
+    "app/services/WallpaperPaletteSession.qml": ("移动", "modules/wallpaper/WallpaperPaletteSession.qml", "壁纸取色与调色会话"),
+    "app/services/AwwwWallpaperService.qml": ("移动", "modules/wallpaper/AwwwWallpaperService.qml", "awww 外部壁纸后端服务"),
+    "app/services/DesktopPresentationService.qml": ("移动", "modules/desktopcards/DesktopPresentationService.qml", "桌面卡片呈现视口与坐标变换服务"),
+    "app/services/SystemCardDragSession.qml": ("移动", "modules/desktopcards/SystemCardDragSession.qml", "桌面卡片手势拖放会话"),
+    "app/services/SystemCardDragState.js": ("移动", "modules/desktopcards/SystemCardDragState.js", "桌面卡片拖放状态机纯函数"),
+    "app/services/TimerService.qml": ("移动", "modules/sidebars/dashboard/infotools/TimerService.qml", "侧边栏抽屉番茄钟与秒表计时服务"),
+    "app/services/InfoDrawerState.qml": ("移动", "modules/sidebars/dashboard/infotools/InfoDrawerState.qml", "侧边栏抽屉与计时器持久化状态"),
 }
 
 

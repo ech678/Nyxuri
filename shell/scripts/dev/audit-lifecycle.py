@@ -54,11 +54,12 @@ GATEWAY_FILE = "app/ActionGateway.qml"
 
 ALLOWED_MODULE_CROSS_IMPORTS = {
     # host domain -> set of allowed target domains
-    "desktopcards": {"systemcards"},
-    "sidebars": {"systemcards", "settings", "wallpaper", "filepicker", "quicksettings"},
+    "desktopcards": {"systemcards", "wallpaper"},
+    "sidebars": {"systemcards", "settings", "wallpaper", "filepicker", "quicksettings", "desktopcards"},
     "lock": {"wallpaper"},
     "settings": {"wallpaper", "filepicker", "systemcards", "keystone"},
-    "keystone": {"notifications", "filepicker", "bar"},
+    "keystone": {"notifications", "filepicker", "bar", "sidebars"},
+    "launcher": {"wallpaper"},
 }
 
 

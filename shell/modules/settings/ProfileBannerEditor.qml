@@ -1,5 +1,6 @@
 import QtQuick
 import qs.app.services
+import qs.modules.wallpaper
 import qs.modules.filepicker
 
 Item {

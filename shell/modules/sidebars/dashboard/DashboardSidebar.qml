@@ -2,6 +2,7 @@ import QtQuick
 import qs.app
 import qs.modules.settings
 import qs.modules.filepicker
+import qs.modules.wallpaper
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls

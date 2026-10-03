@@ -1,6 +1,7 @@
 import QtQuick
 import qs.shared.theme
 import qs.app.services
+import qs.modules.wallpaper
 import "./SpotlightLocalSearch.js" as LocalSearch
 import qs.app
 

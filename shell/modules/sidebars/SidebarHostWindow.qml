@@ -7,6 +7,7 @@ import qs.shared.theme
 import "../../shared/utils/SidebarPolicy.js" as SidebarPolicy
 import qs.modules.sidebars.dashboard
 import qs.modules.sidebars.quicksettings
+import qs.modules.desktopcards
 import qs.app.services
 import qs.shared.controls
 

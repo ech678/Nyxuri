@@ -6,6 +6,7 @@ import qs.shared.theme
 import "../../shared/utils/SidebarPolicy.js" as SidebarPolicy
 import "../../shared/utils/WallpaperSource.js" as WallpaperSource
 import qs.app.services
+import qs.modules.wallpaper
 import qs.app
 
 Singleton {

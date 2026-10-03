@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.modules.sidebars.dashboard.infotools
 
 Item {
     id: root

@@ -676,7 +676,7 @@ class TestShellManagement(unittest.TestCase):
         high_risk_files = [
             "app/services/SystemMonitorService.qml",
             "app/services/KeyboardLockService.qml",
-            "app/services/AwwwWallpaperService.qml",
+            "modules/wallpaper/AwwwWallpaperService.qml",
             "modules/keystone/tools/AudioRecordingService.qml",
             "modules/keystone/tools/RecordingService.qml",
             "app/services/NetworkService.qml",
@@ -685,7 +685,7 @@ class TestShellManagement(unittest.TestCase):
             "modules/launcher/FileSearchService.qml",
             "modules/launcher/SpotlightSearchService.qml",
             "modules/launcher/SpotlightToolService.qml",
-            "app/services/WallpaperService.qml",
+            "modules/wallpaper/WallpaperService.qml",
         ]
         for rel in high_risk_files:
             fp = os.path.join(shell_dir, rel)
@@ -1260,6 +1260,66 @@ class TestShellManagement(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(shell_dir, "scripts", "theme", s)), f"{s} must exist")
             old_s = s.replace("-", "_")
             self.assertFalse(os.path.exists(os.path.join(shell_dir, "scripts", "theme", old_s)), f"Old {old_s} must not exist")
+
+    def test_r4c_app_global_boundary_convergence(self):
+        """R4-C-02a Contract: app/ global boundary convergence and domain state containment."""
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+        services_dir = os.path.join(shell_dir, "app", "services")
+
+        # 1. Assert 9 domain-specific files migrated into functional domains
+        migrated_services = [
+            "modules/wallpaper/WallpaperService.qml",
+            "modules/wallpaper/WallpaperSceneService.qml",
+            "modules/wallpaper/WallpaperPaletteSession.qml",
+            "modules/wallpaper/AwwwWallpaperService.qml",
+            "modules/desktopcards/DesktopPresentationService.qml",
+            "modules/desktopcards/SystemCardDragSession.qml",
+            "modules/desktopcards/SystemCardDragState.js",
+            "modules/sidebars/dashboard/infotools/TimerService.qml",
+            "modules/sidebars/dashboard/infotools/InfoDrawerState.qml",
+        ]
+        for rel in migrated_services:
+            target_file = os.path.join(shell_dir, rel)
+            self.assertTrue(os.path.isfile(target_file), f"Migrated service missing in domain: {target_file}")
+
+        # 2. Assert old app/services/ locations no longer exist
+        old_service_names = [
+            "WallpaperService.qml",
+            "WallpaperSceneService.qml",
+            "WallpaperPaletteSession.qml",
+            "AwwwWallpaperService.qml",
+            "DesktopPresentationService.qml",
+            "SystemCardDragSession.qml",
+            "SystemCardDragState.js",
+            "TimerService.qml",
+            "InfoDrawerState.qml",
+        ]
+        for name in old_service_names:
+            old_file = os.path.join(services_dir, name)
+            self.assertFalse(os.path.exists(old_file), f"Old service duplicate must not exist in app/services: {old_file}")
+
+        # 3. Assert app/ file count strictly converged: 42 files total (4 app root, 38 in services)
+        app_files = []
+        for root_dir, _, files in os.walk(os.path.join(shell_dir, "app")):
+            for f in files:
+                if f.endswith((".qml", ".js")):
+                    app_files.append(os.path.join(root_dir, f))
+        self.assertEqual(len(app_files), 42, f"app/ must strictly contain 42 files, found {len(app_files)}: {app_files}")
+
+        # 4. Tree inventory document matches 42 app files
+        inv_path = os.path.join(shell_dir, "wiki", "tree-inventory.md")
+        with open(inv_path, "r", encoding="utf-8") as f:
+            inv_text = f.read()
+        self.assertIn("### app/ （共 42 文件）", inv_text)
+
+        # 5. Static lifecycle audit passes clean with zero violations
+        import subprocess
+        audit_res = subprocess.run(
+            [sys.executable, os.path.join(shell_dir, "scripts", "dev", "audit-lifecycle.py"), "--check", "--scope", "all"],
+            capture_output=True, text=True, check=True
+        )
+        self.assertIn("lifecycle-audit: clean", audit_res.stdout)
 
 
 if __name__ == "__main__":

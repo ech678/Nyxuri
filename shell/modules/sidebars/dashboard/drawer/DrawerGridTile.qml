@@ -2,6 +2,7 @@ import QtQuick
 import qs.shared.theme
 import qs.app.services
 import qs.modules.systemcards
+import qs.modules.desktopcards
 
 Item {
     id: root
