@@ -550,6 +550,34 @@ def ensure_nyxuri_symlink() -> None:
 ensure_nyxniri_symlink = ensure_nyxuri_symlink
 
 
+def ensure_nyxuri_shell_symlink() -> None:
+    """Ensure ~/.local/bin/nyxuri-shell points to shell/bin/nyxuri-shell in repo mode."""
+    env = get_env()
+    if env.run_mode == "system":
+        return
+
+    bin_dir = env.home / ".local/bin"
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    target_bin = bin_dir / "nyxuri-shell"
+
+    root_script = env.repo_dir / "shell" / "bin" / "nyxuri-shell"
+    if not root_script.is_file():
+        return
+
+    try:
+        if target_bin.is_symlink():
+            if target_bin.resolve(strict=False) == root_script.resolve(strict=False):
+                root_script.chmod(0o755)
+                return
+            target_bin.unlink(missing_ok=True)
+        elif target_bin.exists():
+            return
+        target_bin.symlink_to(root_script)
+        root_script.chmod(0o755)
+    except Exception:
+        pass
+
+
 def check_path_occlusion() -> bool:
     """In system mode, warn if ~/.local/bin/nyxuri shadows /usr/bin/nyxuri.
 

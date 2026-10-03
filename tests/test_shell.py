@@ -143,6 +143,30 @@ class TestShellManagement(unittest.TestCase):
         self.assertTrue(ok)
         self.assertEqual(resolved, "/bin/sh")
 
+    def test_ensure_compositor_gateway_scripts(self):
+        from nyxuri.core import get_env
+        from nyxuri.shell_switcher import ensure_compositor_gateway_scripts
+        env = get_env()
+        fake_configs = self._ctx.home / "fake_configs"
+        env.configs_src = fake_configs
+        src_dir = fake_configs / "niri" / "scripts"
+        src_dir.mkdir(parents=True, exist_ok=True)
+        (src_dir / "session-shell.sh").write_text("#!/bin/sh\necho session new\n", encoding="utf-8")
+        (src_dir / "shell-action.sh").write_text("#!/bin/sh\necho action new\n", encoding="utf-8")
+
+        dest_dir = env.config_dir / "niri" / "scripts"
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        (dest_dir / "session-shell.sh").write_text("#!/bin/sh\necho session old\n", encoding="utf-8")
+        (dest_dir / "shell-action.sh").write_text("#!/bin/sh\necho action old\n", encoding="utf-8")
+        (dest_dir / "session-shell.sh").chmod(0o644)
+
+        ensure_compositor_gateway_scripts()
+
+        self.assertEqual((dest_dir / "session-shell.sh").read_text(encoding="utf-8"), "#!/bin/sh\necho session new\n")
+        self.assertEqual((dest_dir / "shell-action.sh").read_text(encoding="utf-8"), "#!/bin/sh\necho action new\n")
+        self.assertTrue(os.access(dest_dir / "session-shell.sh", os.X_OK))
+        self.assertTrue(os.access(dest_dir / "shell-action.sh", os.X_OK))
+
     @patch("nyxuri.shell_switcher.wait_shell_ready")
     @patch("nyxuri.shell_switcher.spawn_shell")
     @patch("nyxuri.shell_switcher.stop_shell_process")
@@ -222,6 +246,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("session", res.stdout)
         self.assertIn("launcher", res.stdout)
         self.assertIn("settings", res.stdout)
+        self.assertIn("wallpaper-picker", res.stdout)
 
     def test_p3_settings_decoupling_and_module_structure(self):
         import os

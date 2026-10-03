@@ -97,6 +97,7 @@ class ShellLauncherTests(unittest.TestCase):
             ("clipboard", "spotlight", "openMode", ["clipboard"]),
             ("lock", "lock", "open", []),
             ("wallpaper-random", "wallpaper", "random", []),
+            ("wallpaper-picker", "control-center", "toggle", ["wallpaper"]),
         ]:
             with self.subTest(action=action):
                 result = self.invoke("--action", action)
@@ -106,6 +107,23 @@ class ShellLauncherTests(unittest.TestCase):
         result = self.invoke("--action")
         self.assertEqual(result.returncode, 2)
         self.assertIn("Missing action", result.stderr)
+
+    def test_action_invoked_via_symlink(self):
+        symlink_bin = self.ctx.home / "bin" / "nyxuri-shell-link"
+        symlink_bin.parent.mkdir(parents=True, exist_ok=True)
+        symlink_bin.symlink_to(self.runner)
+        result = subprocess.run(
+            [str(symlink_bin), "--action", "launcher"],
+            cwd=self.shell,
+            capture_output=True,
+            text=True,
+            env=self.environment,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            json.loads(result.stdout)["argv"],
+            ["-p", str(self.shell), "ipc", "call", "spotlight", "toggle"],
+        )
 
     def test_changed_scope_is_relative_and_excludes_host_changes(self):
         repo = self.ctx.home / "git fixture"

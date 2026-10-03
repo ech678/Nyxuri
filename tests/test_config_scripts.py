@@ -97,6 +97,7 @@ class TestShellAction(unittest.TestCase):
             "clipboard",
             "lock",
             "wallpaper-random",
+            "wallpaper-picker",
         ]
 
         for verb in verbs:
@@ -124,6 +125,7 @@ class TestShellAction(unittest.TestCase):
             "clipboard",
             "lock",
             "wallpaper-random",
+            "wallpaper-picker",
         ]
 
         for verb in verbs:
