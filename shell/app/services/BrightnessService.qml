@@ -3,7 +3,6 @@ pragma Singleton
 import Quickshell
 import Quickshell.Io
 import QtQuick
-import Clavis.Runtime
 
 Singleton {
     id: root
@@ -21,6 +20,49 @@ Singleton {
                                              root.monitors.length > 0 ? root.monitors[0] : null)
     readonly property real brightnessValue: root.activeMonitor ? root.activeMonitor.brightness :
                                                                  root.fallbackBrightnessValue
+
+    QtObject {
+        id: backlightState
+
+        property bool available: false
+        property string deviceName: ""
+        property int maxBrightness: 100
+        property real brightness: 0.5
+
+        signal changed
+
+        function refresh() {
+            if (!readProc.running)
+                readProc.running = true;
+        }
+
+        Component.onCompleted: refresh()
+
+        readonly property Process readProc: Process {
+            command: [Paths.systemScriptsDir + "/query-backlight.sh"]
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    const out = (this.text || "").trim();
+                    if (!out) {
+                        backlightState.available = false;
+                        return;
+                    }
+                    const parts = out.split(",");
+                    if (parts.length >= 5) {
+                        backlightState.deviceName = parts[0];
+                        const cur = parseFloat(parts[2]);
+                        const max = parseFloat(parts[4]);
+                        if (max > 0) {
+                            backlightState.maxBrightness = max;
+                            backlightState.brightness = cur / max;
+                            backlightState.available = true;
+                            backlightState.changed();
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     Component.onCompleted: {
         root.rebuildMonitors();
@@ -49,7 +91,7 @@ Singleton {
     }
 
     Connections {
-        target: BacklightState
+        target: backlightState
         function onChanged() {
             for (const monitor of root.monitors) {
                 if (monitor.ready && !monitor.isDdc)
@@ -60,8 +102,8 @@ Singleton {
 
     function backlightCommand(percent) {
         const command = ["brightnessctl", "--class", "backlight"];
-        if (BacklightState.deviceName.length > 0)
-            command.push("--device", BacklightState.deviceName);
+        if (backlightState.deviceName.length > 0)
+            command.push("--device", backlightState.deviceName);
         return command.concat(["s", percent + "%", "--quiet"]);
     }
 
@@ -173,7 +215,7 @@ Singleton {
 
     Process {
         id: fallbackSetProc
-        onExited: BacklightState.refresh()
+        onExited: backlightState.refresh()
     }
 
     Component {
@@ -220,11 +262,11 @@ Singleton {
             }
 
             function applyBacklight() {
-                if (!BacklightState.available)
+                if (!backlightState.available)
                     return;
                 reading = true;
-                rawMaxBrightness = BacklightState.maxBrightness;
-                brightness = BacklightState.brightness;
+                rawMaxBrightness = backlightState.maxBrightness;
+                brightness = backlightState.brightness;
                 reading = false;
                 root.fallbackBrightnessValue = brightness;
             }
@@ -303,7 +345,7 @@ Singleton {
             readonly property Process setProcess: Process {
                 onExited: {
                     if (!monitor.isDdc)
-                        BacklightState.refresh();
+                        backlightState.refresh();
                 }
             }
 

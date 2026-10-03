@@ -130,7 +130,7 @@ install(
     DESTINATION "${CLAVIS_CONFIG_INSTALL_DIR}/assets"
 )
 install(
-    PROGRAMS "${CLAVIS_SOURCE_ROOT}/bin/nyxuri-shell"
+    PROGRAMS "${CLAVIS_SOURCE_ROOT}/nyxuri-shell"
     DESTINATION "${CLAVIS_CONFIG_INSTALL_DIR}/bin"
 )
 install(

@@ -4,7 +4,6 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import Quickshell
 import Quickshell.Wayland
-import Clavis.Keyboard
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
@@ -122,7 +121,6 @@ PanelWindow {
             }
         }
     }
-
 
     SpotlightSessionController {
         id: session
@@ -275,10 +273,13 @@ PanelWindow {
         }
     }
 
-    ShortcutRecorder {
+    QtObject {
         id: modifierSnapshot
-        target: searchBar
-        enabled: false
+        property var target: null
+        property bool enabled: false
+        function currentModifiers() {
+            return 0;
+        }
     }
 
     function syncControlHeld() {

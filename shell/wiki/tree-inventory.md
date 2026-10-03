@@ -168,6 +168,7 @@
 | `modules/desktopcards/SystemCardDragState.js` | **移动** | `desktopcards` | modules/desktopcards | 方法(9) | 无 | 已由 app/services/SystemCardDragState.js 移动，遵循命名法典与内聚规范 |
 | `modules/dock/DockBubble.js` | **保留** | `dock` | modules/dock | 方法(6) | 无 | 功能域自治代码 |
 | `modules/dock/DockBubbleSurface.qml` | **保留** | `dock` | modules/dock | 属性(12)/方法(1) | 无 | 功能域自治代码 |
+| `modules/dock/DesktopFiles.qml` | **保留** | `dock` | app, modules/dock | 属性(3)/信号(3)/方法(7) | 无 | 纯 QML 桌面与文件操作单例，替代 Clavis.Files |
 | `modules/dock/DockDragVisual.qml` | **保留** | `dock` | modules/dock | 属性(8)/方法(5) | 无 | 功能域自治代码 |
 | `modules/dock/DockFanBlur.qml` | **保留** | `dock` | modules/dock | 属性(6)/方法(4) | 无 | 功能域自治代码 |
 | `modules/dock/DockFileArtwork.qml` | **保留** | `dock` | modules/dock | 属性(7) | 无 | 功能域自治代码 |
@@ -715,7 +716,7 @@
 
 | 文件路径 | 处置状态 | 归属 (Owner) | 消费者 (Consumers) | I/O | 副作用 | 目标路径 / 说明 |
 |---|---|---|---|---|---|---|
-| `bin/nyxuri-shell` | **保留** | `bin` | 内部/自包含 | - | 无 | 薄启动脚本与 Action Gateway 入口 |
+| `bin/nyxuri-shell` | **移动** | `bin` | 外部/CLI | - | 无 | 移至 shell/nyxuri-shell 根目录与 shell.qml 并列为极简双入口，砍掉 bin/ 目录 |
 
 ### packaging/ （共 3 文件）
 

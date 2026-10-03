@@ -1472,7 +1472,7 @@ Variants {
                         root.triggerSliderOSD("brightness");
                     }
 
-                    target: Brightness
+                    target: BrightnessService
                 }
 
                 MouseArea {

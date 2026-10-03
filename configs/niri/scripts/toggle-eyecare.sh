@@ -23,7 +23,14 @@ NORMAL_EFFECTS="$NIRI_DIR/effects_normal.kdl"
 EYECARE_EFFECTS="$NIRI_DIR/effects_eyecare.kdl"
 
 # Desired EyeCare warm color temperature (in Kelvin: 5500K for subtle natural warmth)
-EYECARE_TEMP=5500
+EYECARE_TEMP="${NYXURI_EYECARE_TEMP:-${NYXNIRI_EYECARE_TEMP:-5500}}"
+TEMP_FILE="$NIRI_DIR/eyecare_temp"
+if [ -f "$TEMP_FILE" ]; then
+    read -r FILE_TEMP < "$TEMP_FILE" 2>/dev/null || true
+    if [[ "$FILE_TEMP" =~ ^[0-9]+$ ]]; then
+        EYECARE_TEMP="$FILE_TEMP"
+    fi
+fi
 
 # Log for reload failures / self-healing events (empty on success)
 LOG_FILE="${XDG_RUNTIME_DIR:-/tmp}/nyxuri-eyecare.log"
@@ -100,16 +107,40 @@ if [ "$HAS_NOCTALIA" = "true" ]; then
 fi
 pkill -x wlsunset 2>/dev/null || true
 
+ACTION="${1:-toggle}"
 IS_TURNING_ON=false
 
-if [ "$CURRENTLY_ON" = "true" ]; then
-    # --- Turning EyeCare Mode OFF ---
-    apply_effects off
-else
-    # --- Turning EyeCare Mode ON ---
-    apply_effects on
-    IS_TURNING_ON=true
-fi
+case "$ACTION" in
+    set-temp)
+        NEW_TEMP="${2:-}"
+        if [[ "$NEW_TEMP" =~ ^[0-9]+$ ]]; then
+            echo "$NEW_TEMP" > "$TEMP_FILE"
+            EYECARE_TEMP="$NEW_TEMP"
+            if [ "$CURRENTLY_ON" = "true" ]; then
+                pkill -x wlsunset 2>/dev/null || true
+                nohup wlsunset -T 6500 -t "$EYECARE_TEMP" -d 0.3 -S 00:00 -s 00:00 >/dev/null 2>&1 9>&- &
+            fi
+        fi
+        exit 0
+        ;;
+    on)
+        apply_effects on
+        IS_TURNING_ON=true
+        ;;
+    off)
+        apply_effects off
+        IS_TURNING_ON=false
+        ;;
+    toggle|*)
+        if [ "$CURRENTLY_ON" = "true" ]; then
+            apply_effects off
+            IS_TURNING_ON=false
+        else
+            apply_effects on
+            IS_TURNING_ON=true
+        fi
+        ;;
+esac
 
 # 3. Smoothly ramp color temperature over 0.3s without GPU pipeline tearing
 if [ "$IS_TURNING_ON" = "true" ]; then

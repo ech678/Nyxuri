@@ -7,7 +7,7 @@ import sys
 import time
 import unittest
 from contextlib import redirect_stdout
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from nyxuri.state.ledger import active_shell, custom_shell_bin, set_shell
 from nyxuri.cli import _cmd_shell
@@ -237,7 +237,7 @@ class TestShellManagement(unittest.TestCase):
     def test_action_gateway_command_arguments(self):
         import subprocess
         from pathlib import Path
-        nyxuri_shell_bin = Path(__file__).resolve().parent.parent / "shell" / "bin" / "nyxuri-shell"
+        nyxuri_shell_bin = Path(__file__).resolve().parent.parent / "shell" / "nyxuri-shell"
         self.assertTrue(nyxuri_shell_bin.exists() and os.access(nyxuri_shell_bin, os.X_OK))
 
         # Check help output lists session and all standard actions
@@ -319,7 +319,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertTrue(os.path.isdir(os.path.join(shell_dir, "native")))
 
         # Runner exports QML_IMPORT_PATH and QML2_IMPORT_PATH
-        runner_path = os.path.join(shell_dir, "bin", "nyxuri-shell")
+        runner_path = os.path.join(shell_dir, "nyxuri-shell")
         with open(runner_path, "r", encoding="utf-8") as f:
             runner_txt = f.read()
         self.assertIn("QML_IMPORT_PATH=", runner_txt)
@@ -427,7 +427,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertEqual(shared_entries, ["controls", "theme", "utils"])
 
         # 4. nyxuri-shell exports FALLBACK_QML_PATH pointing to native/fallback
-        launcher_path = os.path.join(shell_dir, "bin", "nyxuri-shell")
+        launcher_path = os.path.join(shell_dir, "nyxuri-shell")
         with open(launcher_path, "r", encoding="utf-8") as f:
             launcher_content = f.read()
         self.assertIn("FALLBACK_QML_PATH", launcher_content)
@@ -464,6 +464,20 @@ class TestShellManagement(unittest.TestCase):
             wf_content = f.read()
         self.assertIn("count: () => 0", wf_content)
         self.assertIn("get: () => ({})", wf_content)
+
+        # 5. Pure QML WeatherBackend provides makeForecastModel and air-quality support
+        weather_backend = os.path.join(shell_dir, "app", "services", "weather", "WeatherBackend.qml")
+        with open(weather_backend, "r", encoding="utf-8") as f:
+            wb_content = f.read()
+        self.assertIn("makeForecastModel", wb_content)
+        self.assertIn("air-quality-api.open-meteo.com", wb_content)
+        self.assertIn("calculateMoonPhaseAngle", wb_content)
+
+        # 6. nyxuri-shell wallpaper-picker action directly routes to control-center without noctalia fallback
+        nyxuri_shell = os.path.join(shell_dir, "nyxuri-shell")
+        with open(nyxuri_shell, "r", encoding="utf-8") as f:
+            ns_content = f.read()
+        self.assertNotIn("wallpaper-picker.py", ns_content)
 
     def test_p3_audio_level_provider_and_settings_cleanup_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -595,13 +609,23 @@ class TestShellManagement(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(cards_dir, card)), f"Lock card missing: {card}")
 
         # 3. Hot switch refuses to switch when screen is locked (K06 invariant)
-        from nyxuri.shell_switcher import hot_switch_shell
+        from nyxuri.shell_switcher import hot_switch_shell, is_shell_locked
         with patch("nyxuri.shell_switcher.is_shell_locked", return_value=True), \
              patch("nyxuri.shell_switcher.probe_running_shell", return_value=("custom", 9999)), \
              patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-test"}):
             ok, msg = hot_switch_shell("noctalia")
             self.assertFalse(ok)
             self.assertIn("Cannot switch shell while screen is locked", msg)
+
+        # 4. is_shell_locked properly resolves shell_dir containing shell.qml
+        shell_bin = os.path.join(shell_dir, "nyxuri-shell")
+        with patch("subprocess.run") as mock_sub:
+            mock_sub.return_value = MagicMock(returncode=0, stdout="true")
+            self.assertTrue(is_shell_locked("nyxuri-shell", shell_bin))
+            mock_sub.assert_called_once_with(
+                ["qs", "-p", shell_dir, "ipc", "call", "lock", "isLocked"],
+                timeout=1.0, capture_output=True, text=True, check=False,
+            )
 
     def test_p3_notification_fallback_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -875,7 +899,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("readonly property string stageFailed: \"FAILED\"", sss_content)
 
         # 10. Runner nyxuri-shell supports --stage, --status, and updated check-ready
-        runner_file = os.path.join(shell_dir, "bin", "nyxuri-shell")
+        runner_file = os.path.join(shell_dir, "nyxuri-shell")
         with open(runner_file, "r", encoding="utf-8") as f:
             runner_content = f.read()
         self.assertIn("--stage", runner_content)
@@ -1381,6 +1405,35 @@ class TestShellManagement(unittest.TestCase):
         with open(roadmap_path, "r", encoding="utf-8") as rf:
             roadmap_content = rf.read()
         self.assertIn("| 已完成 | 建立 Niri 单一运行时入口 | R4-C-02 |", roadmap_content)
+
+    def test_r4c_i18n_service_and_catalog_contracts(self):
+        """Assert I18nService binds to I18nManager (QTranslator), fallback exists, and catalogs are valid."""
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+        i18n_service_path = os.path.join(shell_dir, "app", "services", "I18nService.qml")
+        self.assertTrue(os.path.isfile(i18n_service_path), f"I18nService.qml must exist at {i18n_service_path}")
+
+        with open(i18n_service_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # 1. I18nService imports Clavis.I18n and calls I18nManager.setLanguage
+        self.assertIn("import Clavis.I18n", content)
+        self.assertIn("I18nManager.setLanguage", content)
+        self.assertIn('code: "zh_CN"', content)
+        self.assertIn('code: "en_US"', content)
+
+        # 2. Fallback QML plugin exists for headless/uncompiled environments
+        fallback_dir = os.path.join(shell_dir, "native", "fallback", "Clavis", "I18n")
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "qmldir")))
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "I18nManager.qml")))
+
+        # 3. Translation catalog zh_CN.toml exists and has core mappings
+        zh_toml = os.path.join(shell_dir, "assets", "i18n", "zh_CN.toml")
+        self.assertTrue(os.path.isfile(zh_toml))
+        with open(zh_toml, "r", encoding="utf-8") as f:
+            toml_text = f.read()
+        self.assertIn('"Desktop" = "桌面"', toml_text)
+        self.assertIn('"Weather" = "天气"', toml_text)
 
 
 if __name__ == "__main__":

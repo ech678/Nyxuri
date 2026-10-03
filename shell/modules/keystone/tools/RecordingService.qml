@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import qs.shared.theme
 import qs.app
+import qs.app.services
 import "../../../shared/utils/RecordingState.js" as RecordingState
 
 Singleton {

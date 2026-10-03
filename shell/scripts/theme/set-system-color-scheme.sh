@@ -14,6 +14,11 @@ case "${mode}" in
         ;;
 esac
 
+theme_sync="${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/theme-sync.sh"
+if [ -x "$theme_sync" ]; then
+    exec "$theme_sync" "$mode"
+fi
+
 if ! command -v gsettings >/dev/null 2>&1; then
     printf 'gsettings is required to synchronize the system color scheme\n' >&2
     exit 127

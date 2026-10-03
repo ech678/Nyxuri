@@ -4,7 +4,6 @@ import QtQuick
 import "../../modules/launcher/SpotlightAppOrder.js" as AppOrder
 import Quickshell
 import Quickshell.Io
-import Clavis.I18n
 import qs.shared.theme
 import qs.app
 import "../../modules/launcher/SpotlightSearch.js" as SpotlightSearch
@@ -20,7 +19,7 @@ Singleton {
     property string spotlightClipboardStyle: "default"
     property bool dndEnabled: false
     property bool darkMode: false
-    property string language: I18nManager.systemLanguage
+    property string language: root.systemLanguage
     property string weatherTemperatureUnit: "celsius"
     property string systemTemperatureUnit: "celsius"
     property string weatherMapBaseProvider: "openfreemap"
@@ -67,7 +66,13 @@ Singleton {
     property string recordingSystemAudioDirectory: defaultRecordingSystemAudioDirectory
 
     function normalizedLanguage(value) {
-        return I18nManager.normalizeLanguage(String(value || ""));
+        const s = String(value || "").trim().toLowerCase();
+        return s.startsWith("zh") ? "zh_CN" : "en_US";
+    }
+
+    readonly property string systemLanguage: {
+        const l = (Quickshell.env("LANG") || Quickshell.env("LC_ALL") || "en").toLowerCase();
+        return l.startsWith("zh") ? "zh_CN" : "en_US";
     }
 
     function setSpotlightSearchEngine(value) {
@@ -518,7 +523,7 @@ Singleton {
                 if (typeof parsed.dndEnabled === "boolean")
                     root.dndEnabled = parsed.dndEnabled;
 
-                root.language = root.normalizedLanguage(parsed.language || I18nManager.systemLanguage);
+                root.language = root.normalizedLanguage(parsed.language || root.systemLanguage);
                 root.weatherTemperatureUnit = root.normalizedTemperatureUnit(parsed.weatherTemperatureUnit);
                 root.systemTemperatureUnit = root.normalizedTemperatureUnit(parsed.systemTemperatureUnit);
                 root.spotlightClipboardStyle = root.allowedValue(parsed.spotlightClipboardStyle, ["default",

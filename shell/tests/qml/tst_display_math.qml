@@ -8,6 +8,7 @@ TestCase {
     function test_schedule() {
         const p = Schedule.normalize({
                                          nightEnabled: true,
+                                         nightTemperature: 4000,
                                          mode: "time",
                                          start: 1200,
                                          end: 420,

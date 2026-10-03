@@ -3,7 +3,6 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import Clavis.Runtime
 import qs.shared.theme
 import qs.app.services
 import qs.modules.wallpaper
@@ -11,6 +10,19 @@ import qs.app
 
 Singleton {
     id: root
+
+    QtObject {
+        id: iconThemeController
+        readonly property string systemThemeName: "hicolor"
+        property string themeName: ""
+        property int revision: 0
+        signal changed
+        function setThemeName(name) {
+            themeName = name;
+            revision++;
+            changed();
+        }
+    }
 
     readonly property string colorsPath: Paths.generatedHome + "/clavis/colors.json"
     property string paletteError: ""
@@ -133,8 +145,8 @@ Singleton {
                                               "label": qsTr("System default"),
                                               "value": ""
                                           })]
-    readonly property string systemDefaultIconTheme: IconThemeController.systemThemeName
-    readonly property int iconThemeRevision: IconThemeController.revision
+    readonly property string systemDefaultIconTheme: iconThemeController.systemThemeName
+    readonly property int iconThemeRevision: iconThemeController.revision
     property string systemDefaultCursorTheme: ""
 
     readonly property bool isNiriSession: NiriConfigService.supported
@@ -195,7 +207,7 @@ Singleton {
 
     function applyIconTheme() {
         if (PersonalizationConfig.ready)
-            IconThemeController.setThemeName(PersonalizationConfig.iconTheme);
+            iconThemeController.setThemeName(PersonalizationConfig.iconTheme);
     }
 
     function effectiveCursorTheme() {

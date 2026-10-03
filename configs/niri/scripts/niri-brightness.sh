@@ -18,20 +18,17 @@ case "$dir" in
         ;;
 esac
 
+noctalia_ok=false
 if command -v noctalia >/dev/null 2>&1; then
-    noctalia msg "brightness-${dir}" || true
+    if noctalia msg "brightness-${dir}" 2>/dev/null; then
+        noctalia_ok=true
+    fi
 fi
 
 connector=""
 if command -v niri >/dev/null 2>&1; then
     connector="$(niri msg focused-output 2>/dev/null | sed -n '1s/.*(\([^)]*\))$/\1/p')"
 fi
-
-case "$connector" in
-    eDP-*|LVDS-*|DSI-*)
-        exit 0
-        ;;
-esac
 
 backlight_dir="${NYXURI_BACKLIGHT_DIR:-${NYXNIRI_BACKLIGHT_DIR:-/sys/class/backlight}}"
 has_backlight=false
@@ -42,6 +39,29 @@ if [ -d "$backlight_dir" ]; then
             break
         fi
     done
+fi
+
+is_internal=false
+case "$connector" in
+    eDP-*|LVDS-*|DSI-*)
+        is_internal=true
+        ;;
+    "")
+        if [ "$has_backlight" = true ]; then
+            is_internal=true
+        fi
+        ;;
+esac
+
+if [ "$is_internal" = true ]; then
+    if [ "$noctalia_ok" = false ] && command -v brightnessctl >/dev/null 2>&1; then
+        if [ "$dir" = up ]; then
+            brightnessctl set 5%+ >/dev/null 2>&1 || true
+        else
+            brightnessctl set 5%- >/dev/null 2>&1 || true
+        fi
+    fi
+    exit 0
 fi
 
 # Unknown connector on a machine that already has a sysfs backlight: treat

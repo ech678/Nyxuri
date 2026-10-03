@@ -20,9 +20,9 @@ class ShellLauncherTests(unittest.TestCase):
         self.ctx.__enter__()
         self.root = self.ctx.home / "source tree"
         self.shell = self.root / "shell"
-        (self.shell / "bin").mkdir(parents=True)
-        self.runner = self.shell / "bin/nyxuri-shell"
-        shutil.copy2(SHELL / "bin/nyxuri-shell", self.runner)
+        self.shell.mkdir(parents=True)
+        self.runner = self.shell / "nyxuri-shell"
+        shutil.copy2(SHELL / "nyxuri-shell", self.runner)
         bin_dir = self.ctx.home / "bin"
         bin_dir.mkdir()
         qs = bin_dir / "qs"

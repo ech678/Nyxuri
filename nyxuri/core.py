@@ -551,7 +551,7 @@ ensure_nyxniri_symlink = ensure_nyxuri_symlink
 
 
 def ensure_nyxuri_shell_symlink() -> None:
-    """Ensure ~/.local/bin/nyxuri-shell points to shell/bin/nyxuri-shell in repo mode."""
+    """Ensure ~/.local/bin/nyxuri-shell points to shell/nyxuri-shell in repo mode."""
     env = get_env()
     if env.run_mode == "system":
         return
@@ -560,7 +560,9 @@ def ensure_nyxuri_shell_symlink() -> None:
     bin_dir.mkdir(parents=True, exist_ok=True)
     target_bin = bin_dir / "nyxuri-shell"
 
-    root_script = env.repo_dir / "shell" / "bin" / "nyxuri-shell"
+    root_script = env.repo_dir / "shell" / "nyxuri-shell"
+    if not root_script.is_file():
+        root_script = env.repo_dir / "shell" / "bin" / "nyxuri-shell"
     if not root_script.is_file():
         return
 

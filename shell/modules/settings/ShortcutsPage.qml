@@ -5,12 +5,26 @@ import Quickshell
 import Quickshell.Wayland
 import qs.shared.theme
 import "./NiriActionNames.js" as ActionNames
-import Clavis.Keyboard
 import qs.app.services
 import qs.shared.controls
 
 Item {
     id: root
+
+    component ShortcutRecorder: QtObject {
+        id: recorder
+        property var target: null
+        property bool enabled: false
+        property var keymap: ({})
+        signal captured(string key)
+        signal cancelled
+        signal failed(string reason)
+        function currentModifiers() {
+            return 0;
+        }
+        function captureMouse(button, modifiers) {
+        }
+    }
     property var parentModal: null
     property bool presentationActive: false
     property var groups: []

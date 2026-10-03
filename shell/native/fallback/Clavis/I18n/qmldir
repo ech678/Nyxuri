@@ -1,0 +1,2 @@
+module Clavis.I18n
+singleton I18nManager 1.0 I18nManager.qml

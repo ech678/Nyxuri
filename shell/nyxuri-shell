@@ -8,7 +8,7 @@ set -euo pipefail
 
 SOURCE_FILE="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || realpath "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")"
 SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "${SOURCE_FILE}")" && pwd)
-SHELL_DIR=$(CDPATH='' cd -- "${SCRIPT_DIR}/.." && pwd)
+SHELL_DIR="${SCRIPT_DIR}"
 REPO_ROOT=$(CDPATH='' cd -- "${SHELL_DIR}/.." && pwd)
 
 # Explicit build paths are authoritative; an invalid override must not
@@ -78,7 +78,7 @@ while [ $# -gt 0 ]; do
             shift 1
             ;;
         -h|--help)
-            echo "Usage: nyxuri-shell [--action <launcher|session|settings|clipboard|lock|wallpaper-random|wallpaper-picker>|--check-ready|--stage|--status|--stop]"
+            echo "Usage: nyxuri-shell [--action <launcher|session|settings|clipboard|lock|wallpaper-random|wallpaper-picker|radial-launcher>|--check-ready|--stage|--status|--stop]"
             exit 0
             ;;
         *)
@@ -109,6 +109,16 @@ if [ -n "$ACTION" ]; then
             ;;
         wallpaper-picker)
             exec qs -p "${SHELL_DIR}" ipc call control-center toggle "wallpaper"
+            ;;
+        radial-launcher)
+            tools_dir="${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/tools"
+            if [ -x "$tools_dir/orbit-launcher.py" ]; then
+                exec "$tools_dir/orbit-launcher.py"
+            fi
+            if [ -f "$tools_dir/orbit-launcher.py" ]; then
+                exec python3 "$tools_dir/orbit-launcher.py"
+            fi
+            exit 0
             ;;
         stage)
             exec qs -p "${SHELL_DIR}" ipc call shell stage

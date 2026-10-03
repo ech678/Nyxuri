@@ -33,6 +33,13 @@ if [ "$active_shell" = "nyxuri-shell" ] || [ "$active_shell" = "custom" ]; then
         custom_shell_bin=$(command -v nyxuri-shell)
     fi
 
+    if [ -n "$custom_shell_bin" ] && [ ! -x "$custom_shell_bin" ]; then
+        healed="${custom_shell_bin%/bin/nyxuri-shell}/nyxuri-shell"
+        if [ -x "$healed" ]; then
+            custom_shell_bin="$healed"
+        fi
+    fi
+
     if [ -n "$custom_shell_bin" ] && [ -x "$custom_shell_bin" ]; then
         exec "$custom_shell_bin"
     else

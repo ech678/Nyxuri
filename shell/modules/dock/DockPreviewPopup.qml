@@ -3,7 +3,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
-import Clavis.Runtime
+import Quickshell.Io
 import qs.shared.controls
 import qs.shared.theme
 import qs.app.services
@@ -15,8 +15,28 @@ import "./DockMedia.js" as DockMedia
 Item {
     id: root
 
-    ProcessQuit {
+    QtObject {
         id: processQuit
+        property var targets: []
+        function cancel() {
+            targets = [];
+        }
+        function prepare(pids) {
+            cancel();
+            if (!pids || pids.length === 0)
+                return false;
+            targets = Array.from(pids).map(p => Number(p)).filter(p => !isNaN(p) && p > 1);
+            return targets.length > 0;
+        }
+        function confirm() {
+            if (targets.length === 0)
+                return false;
+            killProc.command = ["kill", "-KILL"].concat(targets.map(String));
+            killProc.running = true;
+            targets = [];
+            return true;
+        }
+        readonly property Process killProc: Process {}
     }
     property bool quitFailed: false
     function resetQuit() {
@@ -394,5 +414,9 @@ Item {
                 }
             }
         }
+    }
+
+    Component.onDestruction: {
+        root.resetQuit();
     }
 }

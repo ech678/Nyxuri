@@ -1,6 +1,6 @@
 import QtQuick
 import Qt.labs.folderlistmodel
-import Clavis.Files
+import qs.app.services
 
 QtObject {
     id: root
@@ -8,10 +8,17 @@ QtObject {
     function get(index) {
         const version = root.revision;
         const length = root.count;
-        return sortedModel.get(index);
+        return {
+            name: directory.get(index, "fileName") || "",
+            url: directory.get(index, "fileURL") || "",
+            filePath: directory.get(index, "filePath") || "",
+            isFolder: directory.isFolder(index),
+            isDirectory: directory.isFolder(index),
+            icon: directory.isFolder(index) ? "folder" : "text-x-generic"
+        };
     }
     property Connections updates: Connections {
-        target: sortedModel
+        target: directory
         function onModelReset() {
             root.revision++;
         }
@@ -30,25 +37,20 @@ QtObject {
     }
     required property url folder
     property string sort: "name"
-    readonly property alias model: sortedModel
-    readonly property int count: sorted.count
+    readonly property alias model: dirModel
+    readonly property int count: directory.count
     readonly property bool ready: directory.status === FolderListModel.Ready
     readonly property bool loading: directory.status === FolderListModel.Loading
-    readonly property var info: {
-        const count = sorted.count;
-        const status = directory.status;
-        return DesktopFiles.info(folder);
-    }
+    readonly property var info: DesktopFiles.info(folder)
     readonly property bool available: !!info.available && !!info.isDirectory && !!info.readable
     property FolderListModel directory: FolderListModel {
+        id: dirModel
         folder: root.folder
         showDotAndDotDot: false
         showHidden: false
-        sortField: FolderListModel.Unsorted
-    }
-    property FolderSortModel sorted: FolderSortModel {
-        id: sortedModel
-        sourceModel: root.directory
-        order: root.sort
+        sortField: root.sort === "time" ? FolderListModel.Time : root.sort === "size" ? FolderListModel.Size : root.sort
+                                                                                        === "type"
+                                                                                        ? FolderListModel.Type :
+                                                                                          FolderListModel.Name
     }
 }

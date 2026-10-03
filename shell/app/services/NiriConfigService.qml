@@ -5,7 +5,6 @@ import Quickshell
 import Quickshell.Io
 import qs.shared.theme
 import qs.app.services
-import Clavis.Runtime
 import qs.app
 
 Singleton {
@@ -243,9 +242,13 @@ Singleton {
         }
     }
 
-    ConfigFileWatch {
-        paths: root.snapshot.files || []
-        onChanged: Qt.callLater(root.refresh)
+    Instantiator {
+        model: root.snapshot.files || []
+        delegate: FileView {
+            path: modelData
+            watchChanges: true
+            onFileChanged: Qt.callLater(root.refresh)
+        }
     }
 
     Component.onDestruction: {

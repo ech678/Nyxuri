@@ -3,7 +3,6 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import Clavis.Gamma
 import qs.shared.theme
 import qs.app
 import "../../modules/settings/DisplaySchedule.js" as Schedule
@@ -20,8 +19,8 @@ Singleton {
     property var ipLocation: null
     property bool locationAttempted: false
     property var schedule: Schedule.evaluate(preferences, Date.now())
-    readonly property bool available: backend.available
-    readonly property var outputs: backend.outputs
+    readonly property bool available: true
+    readonly property var outputs: []
     readonly property real dimming: preferences.dimming
     readonly property real dimmingLowerLimit: 0.25
     readonly property real gamma: preferences.gamma
@@ -41,13 +40,27 @@ Singleton {
         }
     }
 
+    signal resumed
+
     function setPreference(key, value) {
         if (!ready)
             return;
+        const oldNightEnabled = preferences.nightEnabled;
         preferences = Schedule.normalize(Object.assign({}, preferences, {
                                                            [key]: value
                                                        }));
         config.setText(JSON.stringify(preferences, null, 2));
+
+        if (key === "nightEnabled" && oldNightEnabled !== value) {
+            eyecareToggleProc.command = [Paths.xdgConfigHome + "/niri/scripts/toggle-eyecare.sh", value
+                                         ? "on" : "off"];
+            eyecareToggleProc.running = true;
+        } else if (key === "nightTemperature") {
+            eyecareTempProc.command = [Paths.xdgConfigHome + "/niri/scripts/toggle-eyecare.sh", "set-temp",
+                                       String(value)];
+            eyecareTempProc.running = true;
+        }
+
         if (key === "useIP") {
             locationAttempted = false;
             locationError = "";
@@ -59,9 +72,11 @@ Singleton {
         }
         evaluate();
     }
+
     function setDimming(value) {
         setPreference("dimming", value);
     }
+
     function useWeatherLocation() {
         if (!WeatherService.hasValidData)
             return;
@@ -72,6 +87,7 @@ Singleton {
         config.setText(JSON.stringify(preferences, null, 2));
         evaluate();
     }
+
     function locate() {
         if (!preferences.useIP || locating)
             return;
@@ -102,28 +118,60 @@ Singleton {
             }
             root.evaluate();
         };
-        // Same opt-in location provider as the existing weather client. The
-        // weather location is never changed by this independent request.
         request.open("GET", "https://ipwho.is/?fields=success,latitude,longitude");
         request.send();
         locationTimeout.restart();
     }
+
     function evaluate() {
         if (ready && preferences.useIP && !locationAttempted)
             locate();
         const effective = preferences.useIP && ipLocation ? Object.assign({}, preferences, ipLocation) :
                                                             preferences;
         schedule = Schedule.evaluate(effective, Date.now());
-        if (ready)
-            backend.apply(gamma, contrast, schedule.temperature, dimming);
         deadline.interval = Math.max(100, Math.min(2147483647, schedule.wake - Date.now()));
         deadline.restart();
     }
 
-    GammaBackend {
-        id: backend
-        onResumed: root.evaluate()
+    function checkSystemEyecareSync() {
+        if (!effectsCheckProc.running)
+            effectsCheckProc.running = true;
     }
+
+    Process {
+        id: eyecareToggleProc
+        onExited: root.checkSystemEyecareSync()
+    }
+
+    Process {
+        id: eyecareTempProc
+    }
+
+    Process {
+        id: effectsCheckProc
+        command: ["readlink", Paths.xdgConfigHome + "/niri/effects.kdl"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const target = (this.text || "").trim();
+                const isOn = target.indexOf("effects_eyecare.kdl") >= 0;
+                if (root.ready && root.preferences.nightEnabled !== isOn) {
+                    root.preferences = Schedule.normalize(Object.assign({}, root.preferences, {
+                                                                            nightEnabled: isOn
+                                                                        }));
+                    root.evaluate();
+                }
+            }
+        }
+    }
+
+    Timer {
+        id: eyecarePollTimer
+        interval: 2000
+        running: true
+        repeat: true
+        onTriggered: root.checkSystemEyecareSync()
+    }
+
     Timer {
         id: locationTimeout
         interval: 15000
@@ -137,15 +185,17 @@ Singleton {
                         "Location lookup timed out. Using the manual location or fixed night temperature.");
         }
     }
+
     Timer {
         id: deadline
         onTriggered: root.evaluate()
     }
-    // Clock changes and wake-up reevaluate civil time; this never enumerates outputs.
+
     SystemClock {
         precision: SystemClock.Minutes
         onDateChanged: root.evaluate()
     }
+
     Process {
         id: ensureConfigDir
         command: ["mkdir", "-p", Paths.configHome]
@@ -158,6 +208,7 @@ Singleton {
             config.reload();
         }
     }
+
     FileView {
         id: config
         path: Paths.configHome + "/display-color.json"
@@ -170,6 +221,7 @@ Singleton {
                 root.ready = true;
                 root.error = "";
                 root.evaluate();
+                root.checkSystemEyecareSync();
             } catch (e) {
                 root.error = qsTr("Invalid display preferences: %1").arg(String(e));
             }
@@ -178,6 +230,7 @@ Singleton {
             if (error === FileViewError.FileNotFound) {
                 root.ready = true;
                 root.evaluate();
+                root.checkSystemEyecareSync();
             } else
                 root.error = qsTr("Unable to read display preferences");
         }
@@ -186,7 +239,14 @@ Singleton {
 
     Component.onDestruction: {
         deadline.stop();
+        eyecarePollTimer.stop();
         if (ensureConfigDir)
             ensureConfigDir.running = false;
+        if (effectsCheckProc)
+            effectsCheckProc.running = false;
+        if (eyecareToggleProc)
+            eyecareToggleProc.running = false;
+        if (eyecareTempProc)
+            eyecareTempProc.running = false;
     }
 }

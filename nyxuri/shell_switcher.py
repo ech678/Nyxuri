@@ -33,15 +33,18 @@ def normalize_shell_name(name: str) -> str:
 
 def find_default_custom_bin() -> str:
     """Discover default nyxuri-shell binary from repo or PATH."""
-    from_path = shutil.which("nyxuri-shell")
-    if from_path:
-        return from_path
-
-    # Check repository root relative to this module
     repo_root = Path(__file__).resolve().parent.parent
-    local_script = repo_root / "shell" / "bin" / "nyxuri-shell"
+    local_script = repo_root / "shell" / "nyxuri-shell"
     if local_script.is_file() and os.access(local_script, os.X_OK):
         return str(local_script)
+
+    legacy_script = repo_root / "shell" / "bin" / "nyxuri-shell"
+    if legacy_script.is_file() and os.access(legacy_script, os.X_OK):
+        return str(legacy_script)
+
+    from_path = shutil.which("nyxuri-shell")
+    if from_path and os.path.isfile(from_path) and os.access(from_path, os.X_OK):
+        return from_path
 
     return ""
 
@@ -52,15 +55,31 @@ find_default_shell_bin = find_default_custom_bin
 def resolve_custom_bin(specified_bin: Optional[str] = None) -> str:
     """Resolve effective nyxuri-shell executable path."""
     if specified_bin and specified_bin.strip():
-        return specified_bin.strip()
+        candidate = specified_bin.strip()
+        # Self-healing for explicit legacy path
+        if candidate.endswith("/shell/bin/nyxuri-shell") and not os.path.isfile(candidate):
+            healed = candidate.replace("/shell/bin/nyxuri-shell", "/shell/nyxuri-shell")
+            if os.path.isfile(healed) and os.access(healed, os.X_OK):
+                return healed
+        return candidate
 
     from_env = os.environ.get("NYXURI_CUSTOM_SHELL_BIN") or os.environ.get("NYXNIRI_CUSTOM_SHELL_BIN")
     if from_env and from_env.strip():
-        return from_env.strip()
+        candidate = from_env.strip()
+        if candidate.endswith("/shell/bin/nyxuri-shell") and not os.path.isfile(candidate):
+            healed = candidate.replace("/shell/bin/nyxuri-shell", "/shell/nyxuri-shell")
+            if os.path.isfile(healed) and os.access(healed, os.X_OK):
+                return healed
+        return candidate
 
     recorded = custom_shell_bin()
     if recorded and recorded.strip():
-        return recorded.strip()
+        candidate = recorded.strip()
+        if candidate.endswith("/shell/bin/nyxuri-shell") and not os.path.isfile(candidate):
+            healed = candidate.replace("/shell/bin/nyxuri-shell", "/shell/nyxuri-shell")
+            if os.path.isfile(healed) and os.access(healed, os.X_OK):
+                return healed
+        return candidate
 
     return find_default_custom_bin()
 
@@ -235,7 +254,13 @@ def is_shell_locked(shell_name: str, bin_path: str = "") -> bool:
     norm = normalize_shell_name(shell_name)
     if norm == "nyxuri-shell":
         effective_bin = bin_path or resolve_shell_bin()
-        shell_dir = Path(effective_bin).resolve().parent.parent if effective_bin else None
+        shell_dir = None
+        if effective_bin:
+            p = Path(effective_bin).resolve()
+            if (p.parent / "shell.qml").is_file():
+                shell_dir = p.parent
+            elif (p.parent.parent / "shell.qml").is_file():
+                shell_dir = p.parent.parent
         if shell_dir and (shell_dir / "shell.qml").is_file():
             try:
                 res = subprocess.run(

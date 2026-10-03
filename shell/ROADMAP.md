@@ -99,9 +99,8 @@
 | 已完成 | 统一全库命名法典与清理死代码假桩 | R4-C-02 | 确立全库艺术级命名法典（QML 类型/单例统一 PascalCase `*Service.qml`/`*Config.qml`，JS 工具统一 PascalCase.js 镜像别名，CLI 脚本统一 kebab-case，目录统一全小写）；物理删除 Keystone 歌词僵尸代码（5 文件）、Dock 假预览空壳（DockCaptureImage.qml）与废弃 Cava 模板（cava-colors.ini）；拔除 AudioSpectrum 与 WindowPreviewService 空桩并解除调用点假绑定；消除 Brightness 与 Bar 按钮同名冲突及 WeatherPlugin 伪命名；暂不动 native C++；单测与生命周期审计全绿 |
 | 已完成 | 收敛 `app/` 全局边界 | R4-C-02a | 彻底解决 app/services 局部状态外溢；壁纸域（WallpaperService、WallpaperSceneService、WallpaperPaletteSession、AwwwWallpaperService 4 文件）归入 modules/wallpaper；桌面卡片拖拽与展示（DesktopPresentationService、SystemCardDragSession、SystemCardDragState.js 3 文件）归入 modules/desktopcards；侧边栏抽屉番茄钟（TimerService、InfoDrawerState 2 文件）归入 modules/sidebars/dashboard/infotools；app/ 规模严格收敛至 42 文件（app/services/ 降至 38 个纯粹全局服务）；白名单与清单闭环，单测契约全绿 |
 | 已完成 | 建立 Niri 单一运行时入口 | R4-C-02 | 建立 `app/services/NiriService.qml` 成为唯一运行时 IPC 入口；统一管理 EventStream Socket、Action Socket 与 Process 异步查询；内置指数退避抖动自动重连与防陈旧 generation 校验；提供 workspacesModel/outputsModel/windowsModel 统一状态源及丰富查询/动作接口；全面移除全库所有 QML 业务模块中的 `import Clavis.Niri` 与直接 IPC 连接（11 个消费者完全安全重定向接入 NiriService）；生命周期审计与测试全绿 |
-| 待开始 | 迁移纯逻辑与系统边界 | R4-C-03 | 纯计算、数据整形、路径、天气、图标和媒体辅助逻辑优先使用 QML/JS；文件、设备、亮度、网络、音频、显示和通知按真实边界归属；外部命令使用参数数组并可追踪失败、取消、超时和销毁 |
-| 待开始 | 清理 `shared/`、`bin/` 和 `packaging/` | R4-C-03 | `shared/` 仅保留实际复用的纯控件、主题 token 和纯函数；彻底砍掉 `bin/` 目录，将 `nyxuri-shell` 提升至 `shell/` 根目录与 `shell.qml` 并列；`packaging/` 仅保留当前发布、安装和 systemd 所需文件；死文件、死变量、旧 native 路径和重复包装被删除 |
-| 待开始 | 处理无法替代的能力 | R4-C-04 | 窗口预览、频谱、Wayland/Gamma 等能力逐项决定迁移、删除或阻断；不得保留无消费者空壳、兼容代理或为通过检查而存在的插件 |
+| 已完成 | 迁移纯逻辑与系统边界 | R4-C-03 | 纯计算、数据整形、路径、天气、图标和媒体辅助逻辑全部迁移至纯 QML/JS；文件、设备、亮度、网络、音频、显示和通知按真实边界归属；彻底砍掉 `bin/` 目录，将 `nyxuri-shell` 提升至 `shell/` 根目录与 `shell.qml` 并列；CLI/Niri 脚本全面接入自动自愈机制；单测与生命周期审计全绿 |
+| 已完成 | 彻底解耦全部 Native 插件与统一生态体验 | R4-C-04 | 业务层除 I18nManager 双轨兼容桥外实现 0 `import Clavis.*`；7 项插件（Gamma/Runtime/Weather/Files/Media/Keyboard/DesktopCards）全面解耦为纯 QML/JS，I18n 提供纯 QML fallback 桩保证离线免编译运行；DisplayColor 深度整合 Niri `toggle-eyecare.sh` 与 `effects.kdl` 单一真值源；笔记本背光（brightnessctl 降级）与系统色彩模式（theme-sync 广播）在 Noctalia 与 Nyxuri Shell 达成 100% 体验统一；全库 517 项单测与生命周期审计全绿 |
 | 待开始 | 删除 Nyxuri 自有 C++ 构建链 | R4-C-05 | 删除自有 C++、fallback、native 测试、CMake native target、原生安装元数据和遗留生成入口；默认构建不要求 C++ 编译器、Qt native target 或 native CTest |
 | 待开始 | 完成结构与行为收口 | R4-C-06 | 每个功能域可从单一目录追踪到界面、状态、数据和动作；Niri 只有一个状态源；核心 QML/JS、生命周期、原版 Niri 和退出清理测试全绿 |
 
@@ -148,7 +147,7 @@
 | P0 | 启动、依赖、资源接口和 Niri 能力初步盘点 | 历史调查；事实按 R1 重新核对 |
 | P1 | 隔离启动、基础界面、Shell 切换和开发闭环 | 历史里程碑；不能替代 R2 当前证据 |
 | P2 | 四层骨架、Action Gateway、按需加载和 native 解耦基础 | 历史架构交付；R4 重新验证边界和生命周期 |
-| R4-C | 活跃交付中；已交付 R4-C-01 域服务回迁、R4-C-02 命名法典与假桩清理、R4-C-02a app 边界收敛与 Niri 单一运行时入口（NiriService.qml） | 全库 11 个业务 QML 模块彻底解除直接 native 依赖 Clavis.Niri；全库 0 跨域直接 IPC 连接；单测契约覆盖 |
+| R4-C | 活跃交付中；已交付 R4-C-01 域服务回迁、R4-C-02 命名法典与假桩清理、R4-C-02a app 边界收敛与 Niri 单一入口、R4-C-03 提升 nyxuri-shell 根入口与路径自愈、R4-C-04 彻底解耦全部 Native 插件与统一生态体验 | 业务层除 I18nManager 外 0 Clavis 依赖；解耦 7 大 C++ 插件为纯 QML/JS；砍掉 bin/ 目录；背光与色彩系统级联动；单测契约覆盖 |
 | P3-R00/R01 | 参考树固定、恢复点和功能矩阵 | 资料保留；见 [恢复矩阵](wiki/recovery-matrix.md) |
 | P3-R02..R08 | Bar、通知、设置、锁屏、启动器和剪贴板恢复 | 历史恢复记录；证据由 R1/R2 重新归档 |
 | P3-R09 | 按需启动、动作收敛、生命周期和视觉门禁 | 仍有未完成门禁，不标为整体完成 |

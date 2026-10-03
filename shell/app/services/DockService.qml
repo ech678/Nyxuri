@@ -3,10 +3,10 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import Clavis.Files
 import qs.shared.theme
 import qs.app.services
 import "../../modules/dock/DockModel.js" as DockModel
+import qs.modules.dock
 import qs.app
 
 Singleton {
@@ -295,7 +295,8 @@ Singleton {
         const window = NiriService.windowById(id);
         if (!window || !window.id)
             return false;
-        return window.isMinimized ? NiriService.restoreWindow(id, String(outputName || "")) : NiriService.focusWindow(id);
+        return window.isMinimized ? NiriService.restoreWindow(id, String(outputName || "")) :
+                                    NiriService.focusWindow(id);
     }
 
     function minimizeWindow(id) {

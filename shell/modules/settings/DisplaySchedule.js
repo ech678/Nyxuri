@@ -9,7 +9,7 @@ function normalize(raw) {
     return {
         gamma: finite(p.gamma, 1, 0.5, 2), contrast: finite(p.contrast, 1, 0.5, 2),
         dimming: finite(p.dimming, 1, 0.25, 1), nightEnabled: p.nightEnabled === true,
-        nightTemperature: Math.round(finite(p.nightTemperature, 4000, 1000, 6500)),
+        nightTemperature: Math.round(finite(p.nightTemperature, 5500, 1000, 6500)),
         dayTemperature: Math.round(finite(p.dayTemperature, 6500, 1000, 10000)),
         useIP: p.useIP === true,
         mode: ["fixed", "time", "location"].indexOf(p.mode) >= 0 ? p.mode : "fixed",

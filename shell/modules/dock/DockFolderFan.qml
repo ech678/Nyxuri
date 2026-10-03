@@ -1,6 +1,5 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import Clavis.Runtime
 import qs.app.services
 import "./DockLayout.js" as DockLayout
 
@@ -47,12 +46,13 @@ Item {
     HoverHandler {
         id: hover
     }
-    HorizontalWheelArea {
-        anchors.fill: parent
-        z: 100
+    WheelHandler {
         enabled: root.horizontal && view.interactive && root.geometry.count > 0
-        target: view
-        reverseVertical: root.edge === "right"
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        onWheel: event => {
+            const delta = (root.edge === "right" ? -1 : 1) * (event.angleDelta.y || event.angleDelta.x);
+            view.flick(delta * 8, 0);
+        }
     }
     ListView {
         id: view

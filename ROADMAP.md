@@ -12,7 +12,7 @@
 ### 1. 开发 Shell 时 (During Shell Development)
 > **核心目标**：专注自研 Material You Shell 本体，以及它与现有契约的连接。
 
-- [ ] **原生内置启动器、壁纸管理与 M3 调色引擎**：原生承载应用启动检索与壁纸管理；算法直出同构 `palette.toml`，在自研 Shell 模式下无需安装任何外部 Python GUI 伴生脚本；（注：启动器与壁纸域已在 R4-C 完成代码自治，M3 调色直出留待 P4 阶段）
+- [ ] **原生内置启动器、壁纸管理与 M3 调色引擎**：原生承载应用启动检索与壁纸管理；算法直出同构 `palette.toml`，在自研 Shell 模式下无需安装任何外部 Python GUI 伴生脚本；（注：启动器与壁纸域已在 R4-C 完成代码自治，全面解耦 Native 插件走向纯 QML，M3 调色直出留待 P4 阶段）
 - [ ] **兼容 Noctalia Template 系统 (TemplateAdapter)**：支持其 Jinja 风格模板规范与变量命名空间，让现有 GTK CSS、Fcitx SVG、Kitty、Starship 和用户模板无需重写；（计划在 P4 阶段交付）
 - [x] **Shell 生命周期与动作响应网关对接**：打通与 `session-shell.sh` 的守护拉起及 `shell-action.sh` 的 6 大标准动作（`launcher` / `session` / `settings` / `clipboard` / `lock` / `wallpaper-random`）IPC/CLI 接口，外围快捷键零改动即刻响应。（已在 P1/P2 阶段完成对接，单测覆盖命令参数与守护脚本形状）
 - [x] **双 Shell 切换 (`nyxuri shell set`)**：支持 `nyxuri shell set <noctalia|custom>` 或快捷键切换 Noctalia 与自研 Shell；可靠即时切换提前在 Shell P1 交付，完整生态协同在 P5 验收。（CLI、热切换、异常安全回滚与状态落盘已全面交付并通过单测验证）

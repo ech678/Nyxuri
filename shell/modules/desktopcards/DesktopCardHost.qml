@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import Clavis.DesktopCards
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
@@ -12,6 +11,35 @@ import "../systemcards/SystemCardPlacement.js" as Placement
 
 Variants {
     id: variants
+
+    QtObject {
+        id: wallpaperAnalyzer
+        property int pendingCount: 0
+        signal pendingCountChanged
+        signal analysisReady(string requestKey, int generation, var result)
+
+        function release(requestKey) {
+        }
+        function request(requestKey, generation, sourcePath, canvasWidth, canvasHeight, fillMode, imageWidth,
+                         imageHeight) {
+            Qt.callLater(() => {
+                const res = {
+                    valid: true,
+                    analysisWidth: canvasWidth,
+                    analysisHeight: canvasHeight,
+                    canvasWidth: canvasWidth,
+                    canvasHeight: canvasHeight,
+                    minBusyScore: 0.0,
+                    maxBusyScore: 1.0,
+                    errorString: "",
+                    busyScore: function (x, y, w, h) {
+                        return 0.1;
+                    }
+                };
+                wallpaperAnalyzer.analysisReady(requestKey, generation, res);
+            });
+        }
+    }
 
     model: Quickshell.screens
 
@@ -51,7 +79,7 @@ Variants {
                     !window.scene.analysisGeometryReady) {
                 window.analysis = null;
                 window.requestedAnalysisKey = "";
-                WallpaperAnalyzer.release(window.analysisRequestKey);
+                wallpaperAnalyzer.release(window.analysisRequestKey);
                 return;
             }
 
@@ -61,7 +89,7 @@ Variants {
             window.analysis = null;
             window.requestedAnalysisKey = window.analysisKey;
             window.analysisGeneration += 1;
-            WallpaperAnalyzer.request(window.analysisRequestKey, window.analysisGeneration, (
+            wallpaperAnalyzer.request(window.analysisRequestKey, window.analysisGeneration, (
                                           WallpaperService.isImagePath(window.scene.sourcePath)
                                           ? window.scene.sourcePath : ""), Math.round(
                                           window.scene.canvasWidth), Math.round(window.scene.canvasHeight),
@@ -132,7 +160,7 @@ Variants {
             if (!SystemCardService.isWallpaperLayoutMode(mode)) {
                 window.analysis = null;
                 window.requestedAnalysisKey = "";
-                WallpaperAnalyzer.release(window.analysisRequestKey);
+                wallpaperAnalyzer.release(window.analysisRequestKey);
             }
             if (SystemCardService.isFreeLayoutMode(mode)) {
                 window.runFreeCollisionLayout();
@@ -259,7 +287,7 @@ Variants {
             });
         }
         Component.onDestruction: {
-            WallpaperAnalyzer.release(window.analysisRequestKey);
+            wallpaperAnalyzer.release(window.analysisRequestKey);
             DesktopPresentationService.unregisterHost(window.screenKey, viewport);
         }
 
@@ -375,7 +403,7 @@ Variants {
                 window.scheduleDesktopLayout("analysis-ready");
             }
 
-            target: WallpaperAnalyzer
+            target: wallpaperAnalyzer
         }
 
         Connections {

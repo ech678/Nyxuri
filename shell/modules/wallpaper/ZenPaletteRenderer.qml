@@ -14,7 +14,6 @@
 * with this program. If not, see https://www.gnu.org/licenses/.
 */
 import QtQuick
-import Clavis.Runtime
 import qs.app.services
 import "../../shared/utils/ZenPalette.js" as Zen
 

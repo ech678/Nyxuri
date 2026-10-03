@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import Quickshell
-import Clavis.Files
 import Quickshell.Wayland
 import qs.shared.theme
 import qs.shared.controls
@@ -41,8 +40,8 @@ PanelWindow {
             const artwork = item.artworkItem;
             const start = artwork.mapToItem(content, 0, 0);
             const end = artwork.mapToItem(content, artwork.width, artwork.height);
-            if (![start.x, start.y, end.x, end.y].every(value => isFinite(value)) || end.x <= start.x
-                    || end.y <= start.y)
+            if (![start.x, start.y, end.x, end.y].every(value => isFinite(value)) || end.x <= start.x || end.y
+                    <= start.y)
                 continue;
             for (const window of DockService.windowsFor(item.entryKey)) {
                 result.push({

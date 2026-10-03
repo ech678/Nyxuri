@@ -1,6 +1,5 @@
 import QtQuick
 import qs.app.services
-import Clavis.Files
 import qs.shared.controls
 
 Item {
