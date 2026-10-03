@@ -3,7 +3,6 @@ import QtQuick
 import QtQuick.Controls
 import Quickshell
 import Clavis.Files
-import Clavis.Niri
 import Quickshell.Wayland
 import qs.shared.theme
 import qs.shared.controls
@@ -17,11 +16,9 @@ PanelWindow {
 
     required property string edge
 
-    NiriAnimationTargets {
-        id: animationTargets
-        enabled: Niri.supportsMinimizeAnimation && root.visible
-        onEnabledChanged: root.updateAnimationTargets()
-    }
+    readonly property bool animationTargetsEnabled: NiriService.supportsMinimizeAnimation && root.visible
+    onAnimationTargetsEnabledChanged: root.updateAnimationTargets()
+
     // Geometry notifications arrive once per animated property, not once per
     // frame. Coalesce before walking the row and converting the IPC payload;
     // the native publisher's send throttle happens too late to save that work.
@@ -30,34 +27,34 @@ PanelWindow {
     onAnimationTargetGeometryChanged: scheduleAnimationTargets()
 
     function scheduleAnimationTargets() {
-        if (animationTargets.enabled)
+        if (root.animationTargetsEnabled)
             Qt.callLater(root.updateAnimationTargets);
     }
     function updateAnimationTargets() {
+        if (!root.animationTargetsEnabled || !root.screen)
+            return;
         const result = [];
-        if (animationTargets.enabled && root.screen) {
-            for (let i = 0; i < iconItems.count; ++i) {
-                const item = iconItems.itemAt(i) as DockItem;
-                if (!item || item.kind !== "app" || visualEntries.get(i).retiring || item.dragged)
-                    continue;
-                const artwork = item.artworkItem;
-                const start = artwork.mapToItem(content, 0, 0);
-                const end = artwork.mapToItem(content, artwork.width, artwork.height);
-                if (![start.x, start.y, end.x, end.y].every(value => isFinite(value)) || end.x <= start.x
-                        || end.y <= start.y)
-                    continue;
-                for (const window of DockService.windowsFor(item.entryKey)) {
-                    result.push({
-                                    id: window.id,
-                                    output: root.screen.name,
-                                    layer_namespace: "nyxuri-shell-dock",
-                                    edge: root.edge,
-                                    rect: [start.x, start.y, end.x - start.x, end.y - start.y]
-                                });
-                }
+        for (let i = 0; i < iconItems.count; ++i) {
+            const item = iconItems.itemAt(i) as DockItem;
+            if (!item || item.kind !== "app" || visualEntries.get(i).retiring || item.dragged)
+                continue;
+            const artwork = item.artworkItem;
+            const start = artwork.mapToItem(content, 0, 0);
+            const end = artwork.mapToItem(content, artwork.width, artwork.height);
+            if (![start.x, start.y, end.x, end.y].every(value => isFinite(value)) || end.x <= start.x
+                    || end.y <= start.y)
+                continue;
+            for (const window of DockService.windowsFor(item.entryKey)) {
+                result.push({
+                                id: window.id,
+                                output: root.screen.name,
+                                layer_namespace: "nyxuri-shell-dock",
+                                edge: root.edge,
+                                rect: [start.x, start.y, end.x - start.x, end.y - start.y]
+                            });
             }
         }
-        animationTargets.targets = result;
+        NiriService.setWindowAnimationTargets(root.screen.name, result);
     }
     readonly property bool horizontal: edge === "bottom"
     readonly property real axisLength: horizontal ? width : height

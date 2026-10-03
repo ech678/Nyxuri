@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import Clavis.Niri
 import qs.modules.bar
 import qs.modules.launcher
 import qs.modules.lock
@@ -107,13 +106,13 @@ Item {
         onTriggered: (action, screenName) => {
             if (action === "overview") {
                 WidgetState.closeAllPopups();
-                Niri.toggleOverview();
+                NiriService.toggleOverview();
                 return;
             }
             const target = action.split(":");
             if (target.length === 2) {
-                if (Niri.inOverview)
-                    Niri.toggleOverview();
+                if (NiriService.inOverview)
+                    NiriService.toggleOverview();
                 sidebarHost.openOnScreen(target[0], target[1], screenName);
             }
         }

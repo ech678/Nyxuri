@@ -4,7 +4,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Clavis.Files
-import Clavis.Niri
 import qs.shared.theme
 import qs.app.services
 import "../../modules/dock/DockModel.js" as DockModel
@@ -18,9 +17,9 @@ Singleton {
     readonly property bool supportsThumbnails: false
     readonly property bool showThumbnails: root._options.showThumbnails
     readonly property int previewSize: root._options.previewSize
-    readonly property bool supportsMinimize: Niri.supportsMinimize
-    readonly property bool supportsMinimizeEffects: Niri.minimizeEffects.indexOf("scale") >= 0
-                                                    && Niri.minimizeEffects.indexOf("genie") >= 0
+    readonly property bool supportsMinimize: NiriService.supportsMinimize
+    readonly property bool supportsMinimizeEffects: NiriService.minimizeEffects.indexOf("scale") >= 0
+                                                    && NiriService.minimizeEffects.indexOf("genie") >= 0
     property alias model: entries
     readonly property var pinnedEntries: root._pinned
     readonly property int pinnedAppCount: root._pinned.filter(entry => !DockModel.isFile(entry)).length
@@ -159,7 +158,7 @@ Singleton {
     function rebuild() {
         const applications = ApplicationService.launcherApplications.filter(application =>
         !application.dragOnly);
-        const windows = Niri.connected ? Niri.searchWindows("") : [];
+        const windows = NiriService.connected ? NiriService.searchWindows("") : [];
         const focusOrder = Object.create(null);
         for (const window of windows)
             focusOrder[window.id] = root._focusOrder[window.id] || 0;
@@ -291,25 +290,25 @@ Singleton {
     }
 
     function focusWindow(id, outputName) {
-        if (!Niri.connected)
+        if (!NiriService.connected)
             return false;
-        const window = Niri.windowById(id);
+        const window = NiriService.windowById(id);
         if (!window || !window.id)
             return false;
-        return window.isMinimized ? Niri.restoreWindow(id, String(outputName || "")) : Niri.focusWindow(id);
+        return window.isMinimized ? NiriService.restoreWindow(id, String(outputName || "")) : NiriService.focusWindow(id);
     }
 
     function minimizeWindow(id) {
         if (!root.supportsMinimize)
             return false;
-        const window = Niri.windowById(id);
+        const window = NiriService.windowById(id);
         if (!window || !window.id || window.isMinimized)
             return false;
-        return Niri.minimizeWindow(id);
+        return NiriService.minimizeWindow(id);
     }
 
     function closeWindow(id) {
-        return Niri.connected && Niri.closeWindow(id);
+        return NiriService.connected && NiriService.closeWindow(id);
     }
 
     function setOption(name, value) {
@@ -513,7 +512,7 @@ Singleton {
     }
 
     Connections {
-        target: Niri
+        target: NiriService
         function onWindowsChanged() {
             root.rebuild();
         }

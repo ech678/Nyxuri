@@ -7,7 +7,6 @@ import Quickshell.Io
 import Quickshell.Services.Mpris
 import Quickshell.Services.Pipewire
 import Quickshell.Wayland
-import Clavis.Niri
 import qs.app.services
 import qs.shared.theme
 import qs.shared.controls
@@ -37,7 +36,7 @@ Variants {
         if (instances.length === 0)
             return null;
 
-        const outputName = String(Niri.currentOutput || "");
+        const outputName = String(NiriService.currentOutput || "");
         if (outputName.length > 0) {
             for (let index = 0; index < instances.length; ++index) {
                 const instance = instances[index];

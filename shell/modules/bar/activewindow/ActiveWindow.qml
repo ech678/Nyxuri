@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import Clavis.Niri
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
@@ -11,7 +10,7 @@ TopBarPill {
     property bool vertical: false
     property real maximumTitleWidth: 250
     readonly property string edge: PersonalizationConfig.barPosition
-    readonly property var activeWindow: Niri.focusedWindow
+    readonly property var activeWindow: NiriService.focusedWindow
     readonly property string activeTitle: activeWindow.title || qsTr("Desktop")
     readonly property string activeIcon: activeWindow.iconPath || ""
     readonly property string activeAppName: activeWindow.appName || activeWindow.appId || ""

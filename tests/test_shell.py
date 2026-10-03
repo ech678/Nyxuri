@@ -1299,19 +1299,19 @@ class TestShellManagement(unittest.TestCase):
             old_file = os.path.join(services_dir, name)
             self.assertFalse(os.path.exists(old_file), f"Old service duplicate must not exist in app/services: {old_file}")
 
-        # 3. Assert app/ file count strictly converged: 42 files total (4 app root, 38 in services)
+        # 3. Assert app/ file count strictly converged: 43 files total (4 app root, 39 in services)
         app_files = []
         for root_dir, _, files in os.walk(os.path.join(shell_dir, "app")):
             for f in files:
                 if f.endswith((".qml", ".js")):
                     app_files.append(os.path.join(root_dir, f))
-        self.assertEqual(len(app_files), 42, f"app/ must strictly contain 42 files, found {len(app_files)}: {app_files}")
+        self.assertEqual(len(app_files), 43, f"app/ must strictly contain 43 files, found {len(app_files)}: {app_files}")
 
-        # 4. Tree inventory document matches 42 app files
+        # 4. Tree inventory document matches 43 app files
         inv_path = os.path.join(shell_dir, "wiki", "tree-inventory.md")
         with open(inv_path, "r", encoding="utf-8") as f:
             inv_text = f.read()
-        self.assertIn("### app/ （共 42 文件）", inv_text)
+        self.assertIn("### app/ （共 43 文件）", inv_text)
 
         # 5. Static lifecycle audit passes clean with zero violations
         import subprocess
@@ -1320,6 +1320,67 @@ class TestShellManagement(unittest.TestCase):
             capture_output=True, text=True, check=True
         )
         self.assertIn("lifecycle-audit: clean", audit_res.stdout)
+
+    def test_r4c_niri_single_runtime_entry(self):
+        """R4-C-02: Assert NiriService is the sole runtime IPC entry point and no Clavis.Niri imports remain in QML."""
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+        niri_service_path = os.path.join(shell_dir, "app", "services", "NiriService.qml")
+        self.assertTrue(os.path.isfile(niri_service_path), f"NiriService.qml must exist at {niri_service_path}")
+
+        with open(niri_service_path, "r", encoding="utf-8") as f:
+            niri_service_content = f.read()
+
+        # 1. Assert NiriService contract invariants
+        self.assertIn("pragma Singleton", niri_service_content)
+        self.assertIn("Component.onDestruction", niri_service_content)
+        self.assertIn("eventStreamSocket", niri_service_content)
+        self.assertIn("requestSocket", niri_service_content)
+        self.assertIn("fetchOutputsProcess", niri_service_content)
+        self.assertIn("workspacesModel", niri_service_content)
+        self.assertIn("property var outputs:", niri_service_content)
+        self.assertIn("property var windows:", niri_service_content)
+        self.assertIn("supportsMinimize: false", niri_service_content)
+        self.assertIn("supportsMinimizeAnimation: false", niri_service_content)
+
+        # 2. Assert zero imports of Clavis.Niri in app/, modules/, shared/
+        violating_files = []
+        for scope_dir in ["app", "modules", "shared"]:
+            target_path = os.path.join(shell_dir, scope_dir)
+            for root_dir, _, files in os.walk(target_path):
+                for f in files:
+                    if f.endswith(".qml"):
+                        full_path = os.path.join(root_dir, f)
+                        with open(full_path, "r", encoding="utf-8") as qml_f:
+                            content = qml_f.read()
+                            if "import Clavis.Niri" in content:
+                                violating_files.append(os.path.relpath(full_path, shell_dir))
+
+        self.assertEqual(violating_files, [], f"No QML file in app/, modules/, shared/ may import Clavis.Niri: {violating_files}")
+
+        # 3. Assert former consumers reference NiriService
+        consumer_samples = [
+            ("app/AppShell.qml", "NiriService"),
+            ("app/services/DockService.qml", "NiriService"),
+            ("modules/bar/workspaces/Workspaces.qml", "NiriService"),
+            ("modules/bar/activewindow/ActiveWindow.qml", "NiriService"),
+            ("modules/dock/DockSurface.qml", "NiriService"),
+            ("modules/hotcorners/HotCorners.qml", "NiriService"),
+            ("modules/keystone/styles/long/LongWorkspaces.qml", "NiriService"),
+            ("modules/settings/DisplayConfigService.qml", "NiriService"),
+            ("modules/wallpaper/WallpaperSceneService.qml", "NiriService"),
+        ]
+        for rel_path, pattern in consumer_samples:
+            target_f = os.path.join(shell_dir, rel_path)
+            self.assertTrue(os.path.isfile(target_f), f"Consumer {rel_path} must exist")
+            with open(target_f, "r", encoding="utf-8") as cf:
+                self.assertIn(pattern, cf.read(), f"{rel_path} must reference {pattern}")
+
+        # 4. Assert ROADMAP status updated
+        roadmap_path = os.path.join(shell_dir, "ROADMAP.md")
+        with open(roadmap_path, "r", encoding="utf-8") as rf:
+            roadmap_content = rf.read()
+        self.assertIn("| 已完成 | 建立 Niri 单一运行时入口 | R4-C-02 |", roadmap_content)
 
 
 if __name__ == "__main__":

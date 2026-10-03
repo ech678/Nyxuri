@@ -1,7 +1,6 @@
 import Quickshell
 import QtQuick
 import QtQuick.Layouts
-import Clavis.Niri
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
@@ -11,7 +10,7 @@ TopBarPill {
 
     property string screenName: ""
     property bool vertical: false
-    readonly property bool hasMultipleOutputs: Niri.outputs.count > 1
+    readonly property bool hasMultipleOutputs: (NiriService.outputs.count || 0) > 1
 
     implicitHeight: vertical ? layout.implicitHeight + 2 * Sizes.barPillHorizontalPadding :
                                Sizes.barPillThickness
@@ -40,11 +39,11 @@ TopBarPill {
         anchors.centerIn: parent
         rowSpacing: Sizes.barItemSpacing
         columnSpacing: Sizes.barItemSpacing
-        columns: root.vertical ? 1 : Math.max(1, Niri.workspaces.count)
+        columns: root.vertical ? 1 : Math.max(1, NiriService.workspaces.count)
 
         Repeater {
             id: workspaceRepeater
-            model: Niri.workspaces
+            model: NiriService.workspaces
 
             delegate: Item {
                 id: delegateRoot
@@ -98,7 +97,7 @@ TopBarPill {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: Niri.focusWorkspaceById(model.id)
+                    onClicked: NiriService.focusWorkspaceById(model.id)
                 }
 
                 PopupToolTip {

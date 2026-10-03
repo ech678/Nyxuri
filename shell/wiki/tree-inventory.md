@@ -8,16 +8,16 @@
 
 ## 1. 统计概览
 
-- **现存文件总数**：621 个（基线 631 文件；R4-C-01 物理删除 2 个冗余代理，迁入 12 个服务；R4-C-02 物理删除 8 个僵尸代码与假桩，重命名 8 个服务/按钮/工具）
+- **现存文件总数**：622 个（基线 631 文件；R4-C-01 物理删除 2 个冗余代理，迁入 12 个服务；R4-C-02 物理删除 8 个僵尸代码与假桩，重命名 8 个服务/按钮/工具；建立 Niri 单一运行时入口 NiriService.qml）
 - **分层分布**：
-  - `app/`：42 个文件
+  - `app/`：43 个文件
   - `modules/`：366 个文件
   - `shared/`：96 个文件
   - `native/`：113 个文件
   - `bin/`：1 个文件
   - `packaging/`：3 个文件
 - **处置状态分布**：
-  - **保留**：591 个文件
+  - **保留**：592 个文件
   - **合并**：1 个文件
   - **移动**：21 个文件
   - **重命名**：8 个文件
@@ -73,7 +73,7 @@
 
 ## 3. 逐层结构清单与实时映射
 
-### app/ （共 42 文件）
+### app/ （共 43 文件）
 
 | 文件路径 | 处置状态 | 归属 (Owner) | 消费者 (Consumers) | I/O | 副作用 | 目标路径 / 说明 |
 |---|---|---|---|---|---|---|
@@ -101,6 +101,7 @@
 | `app/services/NetworkManagerExtras.qml` | **保留** | `app` | app | 属性(17)/方法(7) | Process | 功能域自治代码 |
 | `app/services/NetworkService.qml` | **保留** | `app` | modules/bar, modules/keystone, modules/lock, modules/quicksettings, modules/settings, modules/sidebars, modules/systemcards | 属性(70)/信号(8)/方法(57) | Timer | 功能域自治代码 |
 | `app/services/NiriConfigService.qml` | **保留** | `app` | app, modules/bar, modules/hotcorners, modules/keystone, modules/settings, modules/sidebars, modules/wallpaper | 属性(21)/信号(1)/方法(10) | Process, FileView, Env | 功能域自治代码 |
+| `app/services/NiriService.qml` | **保留** | `app` | app, modules/bar, modules/dock, modules/hotcorners, modules/keystone, modules/settings, modules/wallpaper | 属性(22)/信号(11)/方法(28) | Process, Socket, Timer, Env | Niri 单一运行时 IPC 入口，统一负责事件订阅、窗口/工作区/输出状态与动作派发 |
 | `app/services/NotificationService.qml` | **重命名** | `app` | modules/keystone, modules/lock, modules/notifications, modules/sidebars | 属性(28)/信号(5)/方法(34) | Process, Timer, FileView | 已由 app/services/NotificationManager.qml 重命名，遵循命名法典与内聚规范 |
 | `app/services/PersonalizationConfig.qml` | **保留** | `app` | app, modules/bar, modules/desktopcards, modules/hotcorners, modules/keystone, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/settings, modules/sidebars, modules/wallpaper | 属性(146)/信号(1)/方法(143) | Process, Timer, FileView, Env | 功能域自治代码 |
 | `app/services/PopupInputRegionService.qml` | **保留** | `app` | modules/desktopcards, modules/settings, modules/systemcards | 属性(1)/方法(3) | 无 | 功能域自治代码 |

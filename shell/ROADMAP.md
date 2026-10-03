@@ -98,7 +98,7 @@
 | 已完成 | 按功能域重组运行代码 | R4-C-01 | 12 项专属服务（FileSearchService、SpotlightSearchService、SpotlightToolService、AudioRecordingService、RecordingService、MediaPalette、TrayService、QuickToggleConfig、NetworkInterfaceHistoryService、TodoService、AutostartService、DisplayConfigService）成功迁回所属功能域；物理删除 ToolsBackend.qml 与 settings/SplitMenuButton.qml 冗余代理；清理 settings/backend 与 native/tools 空目录；静态审计 0 违规，tests/test_shell.py 与全量单测全绿 |
 | 已完成 | 统一全库命名法典与清理死代码假桩 | R4-C-02 | 确立全库艺术级命名法典（QML 类型/单例统一 PascalCase `*Service.qml`/`*Config.qml`，JS 工具统一 PascalCase.js 镜像别名，CLI 脚本统一 kebab-case，目录统一全小写）；物理删除 Keystone 歌词僵尸代码（5 文件）、Dock 假预览空壳（DockCaptureImage.qml）与废弃 Cava 模板（cava-colors.ini）；拔除 AudioSpectrum 与 WindowPreviewService 空桩并解除调用点假绑定；消除 Brightness 与 Bar 按钮同名冲突及 WeatherPlugin 伪命名；暂不动 native C++；单测与生命周期审计全绿 |
 | 已完成 | 收敛 `app/` 全局边界 | R4-C-02a | 彻底解决 app/services 局部状态外溢；壁纸域（WallpaperService、WallpaperSceneService、WallpaperPaletteSession、AwwwWallpaperService 4 文件）归入 modules/wallpaper；桌面卡片拖拽与展示（DesktopPresentationService、SystemCardDragSession、SystemCardDragState.js 3 文件）归入 modules/desktopcards；侧边栏抽屉番茄钟（TimerService、InfoDrawerState 2 文件）归入 modules/sidebars/dashboard/infotools；app/ 规模严格收敛至 42 文件（app/services/ 降至 38 个纯粹全局服务）；白名单与清单闭环，单测契约全绿 |
-| 待开始 | 建立 Niri 单一运行时入口 | R4-C-02 | `app/NiriService.qml`（或同等明确的 app 级路径）唯一负责运行时 IPC、订阅、重连、基础状态和销毁；模块不得直接连接 IPC、解析原始事件或导入 native Niri 类型；低频能力按需创建并真实释放 |
+| 已完成 | 建立 Niri 单一运行时入口 | R4-C-02 | 建立 `app/services/NiriService.qml` 成为唯一运行时 IPC 入口；统一管理 EventStream Socket、Action Socket 与 Process 异步查询；内置指数退避抖动自动重连与防陈旧 generation 校验；提供 workspacesModel/outputsModel/windowsModel 统一状态源及丰富查询/动作接口；全面移除全库所有 QML 业务模块中的 `import Clavis.Niri` 与直接 IPC 连接（11 个消费者完全安全重定向接入 NiriService）；生命周期审计与测试全绿 |
 | 待开始 | 迁移纯逻辑与系统边界 | R4-C-03 | 纯计算、数据整形、路径、天气、图标和媒体辅助逻辑优先使用 QML/JS；文件、设备、亮度、网络、音频、显示和通知按真实边界归属；外部命令使用参数数组并可追踪失败、取消、超时和销毁 |
 | 待开始 | 清理 `shared/`、`bin/` 和 `packaging/` | R4-C-03 | `shared/` 仅保留实际复用的纯控件、主题 token 和纯函数；彻底砍掉 `bin/` 目录，将 `nyxuri-shell` 提升至 `shell/` 根目录与 `shell.qml` 并列；`packaging/` 仅保留当前发布、安装和 systemd 所需文件；死文件、死变量、旧 native 路径和重复包装被删除 |
 | 待开始 | 处理无法替代的能力 | R4-C-04 | 窗口预览、频谱、Wayland/Gamma 等能力逐项决定迁移、删除或阻断；不得保留无消费者空壳、兼容代理或为通过检查而存在的插件 |
@@ -148,7 +148,7 @@
 | P0 | 启动、依赖、资源接口和 Niri 能力初步盘点 | 历史调查；事实按 R1 重新核对 |
 | P1 | 隔离启动、基础界面、Shell 切换和开发闭环 | 历史里程碑；不能替代 R2 当前证据 |
 | P2 | 四层骨架、Action Gateway、按需加载和 native 解耦基础 | 历史架构交付；R4 重新验证边界和生命周期 |
-| R4-C | 尚未开始；参考 iNiR 的功能域、少量服务和按需装配取向 | 先完成全树结构映射与无用内容清理，再按能力迁移；不是按目录名整体删除 `shared/`、`bin/` 或 `packaging/` |
+| R4-C | 活跃交付中；已交付 R4-C-01 域服务回迁、R4-C-02 命名法典与假桩清理、R4-C-02a app 边界收敛与 Niri 单一运行时入口（NiriService.qml） | 全库 11 个业务 QML 模块彻底解除直接 native 依赖 Clavis.Niri；全库 0 跨域直接 IPC 连接；单测契约覆盖 |
 | P3-R00/R01 | 参考树固定、恢复点和功能矩阵 | 资料保留；见 [恢复矩阵](wiki/recovery-matrix.md) |
 | P3-R02..R08 | Bar、通知、设置、锁屏、启动器和剪贴板恢复 | 历史恢复记录；证据由 R1/R2 重新归档 |
 | P3-R09 | 按需启动、动作收敛、生命周期和视觉门禁 | 仍有未完成门禁，不标为整体完成 |

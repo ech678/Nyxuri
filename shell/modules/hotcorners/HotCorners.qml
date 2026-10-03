@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import Clavis.Niri
 import qs.shared.theme
 import qs.app.services
 
@@ -30,7 +29,7 @@ Item {
                     required property string modelData
                     readonly property string action: PersonalizationConfig.hotCornerActions[modelData]
                                                      || "disabled"
-                    readonly property bool blocked: !Niri.connected || root.locked
+                    readonly property bool blocked: !NiriService.connected || root.locked
 
                     screen: output.modelData
                     implicitWidth: Metrics.hotCornerSize

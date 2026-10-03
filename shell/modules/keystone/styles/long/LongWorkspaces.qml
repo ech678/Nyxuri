@@ -1,7 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import Clavis.Niri
+import qs.app.services
 import qs.shared.theme
 import qs.shared.controls
 
@@ -20,7 +20,7 @@ Item {
         anchors.centerIn: parent
         spacing: 2
         Repeater {
-            model: root.vertical ? null : Niri.workspaces
+            model: root.vertical ? null : NiriService.workspaces
             delegate: WorkspaceNumber {}
         }
     }
@@ -31,7 +31,7 @@ Item {
         anchors.centerIn: parent
         spacing: 2
         Repeater {
-            model: root.vertical ? Niri.workspaces : null
+            model: root.vertical ? NiriService.workspaces : null
             delegate: WorkspaceNumber {}
         }
     }
@@ -40,13 +40,13 @@ Item {
         id: workspace
         required property var model
         readonly property bool belongsToScreen: !root.screen || model.output === root.screen.name || (
-                                                    Niri.outputs.count <= 1 && model.output === "")
+                                                    (NiriService.outputs.count || 0) <= 1 && model.output === "")
         visible: belongsToScreen
         width: visible ? 28 : 0
         height: visible ? 32 : 0
         Accessible.role: Accessible.Button
         Accessible.name: qsTr("Workspace %1").arg(model.name || model.index)
-        Accessible.onPressAction: Niri.focusWorkspaceById(model.id)
+        Accessible.onPressAction: NiriService.focusWorkspaceById(model.id)
 
         Text {
             anchors.centerIn: parent
@@ -63,7 +63,7 @@ Item {
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            onClicked: Niri.focusWorkspaceById(workspace.model.id)
+            onClicked: NiriService.focusWorkspaceById(workspace.model.id)
         }
 
         PopupToolTip {

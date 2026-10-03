@@ -3,7 +3,6 @@ pragma Singleton
 import QtQuick
 import qs.app
 import Quickshell
-import Clavis.Niri
 import qs.shared.theme
 import qs.shared.controls
 import "../../shared/utils/SidebarPolicy.js" as SidebarPolicy
@@ -22,7 +21,7 @@ Singleton {
 
     function publishFloatingParallax() {
         // A live QML reload can still be using the previous native plugin.
-        if (!Niri.connected || typeof Niri.setFloatingParallaxOffsets !== "function")
+        if (!NiriService.connected || typeof NiriService.setFloatingParallaxOffsets !== "function")
             return;
         const offsets = {};
         for (let key in root.scenes) {
@@ -33,12 +32,12 @@ Singleton {
         }
         // Publish targets, never the per-frame wallpaper transform. Niri owns
         // the window animation and tracks which windows actually moved.
-        Niri.setFloatingParallaxOffsets(offsets);
+        NiriService.setFloatingParallaxOffsets(offsets);
     }
 
     function rememberFocusedWindow() {
         const next = WallpaperMath.rememberFocusedHorizontalColumn(root.lastFocusedHorizontalColumnByWorkspace,
-                                                                   Niri.focusedWindow);
+                                                                   NiriService.focusedWindow);
         if (next !== root.lastFocusedHorizontalColumnByWorkspace)
             root.lastFocusedHorizontalColumnByWorkspace = next;
     }
@@ -52,7 +51,7 @@ Singleton {
         const workspaceKey = String(workspaceId);
         let preferred = Number(root.lastFocusedHorizontalColumnByWorkspace[workspaceKey]);
         if (!isFinite(preferred) || preferred <= 0) {
-            const activeWindow = Niri.windowById(workspace.activeWindowId || 0);
+            const activeWindow = NiriService.windowById(workspace.activeWindowId || 0);
             if (WallpaperMath.isHorizontalTiledWindow(activeWindow))
                 preferred = Number(activeWindow.layoutColumn);
         }
@@ -282,11 +281,11 @@ Singleton {
             }
 
             function refreshNiriState() {
-                scene.outputWorkspaces = Niri.workspacesForOutput(scene.screenName);
-                scene.activeWorkspace = Niri.activeWorkspaceForOutput(scene.screenName);
+                scene.outputWorkspaces = NiriService.workspacesForOutput(scene.screenName);
+                scene.activeWorkspace = NiriService.activeWorkspaceForOutput(scene.screenName);
                 const workspaceId = scene.activeWorkspace && scene.activeWorkspace.id
                       ? scene.activeWorkspace.id : 0;
-                const windows = workspaceId ? Niri.windowsForWorkspace(workspaceId) : [];
+                const windows = workspaceId ? NiriService.windowsForWorkspace(workspaceId) : [];
                 scene.horizontalColumns = WallpaperMath.horizontalColumns(windows);
                 scene.focusedHorizontalColumn = root.resolveHorizontalColumn(scene.activeWorkspace,
                                                                              scene.horizontalColumns);
@@ -297,7 +296,7 @@ Singleton {
     }
 
     Connections {
-        target: Niri
+        target: NiriService
 
         function onConnectedChanged() {
             root.refreshAllScenes();

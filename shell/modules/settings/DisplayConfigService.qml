@@ -3,7 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import Clavis.Niri
+import qs.app.services
 import qs.shared.theme
 import qs.app
 import "./DisplayConfiguration.js" as Config
@@ -11,7 +11,7 @@ import "./DisplayConfiguration.js" as Config
 Singleton {
     id: root
 
-    property var live: Niri.outputSnapshot()
+    property var live: NiriService.outputSnapshot()
     property var draft: []
     property var baseline: []
     property string revision: ""
@@ -48,7 +48,7 @@ Singleton {
         completionNotice = "";
     }
     function refresh() {
-        Niri.refreshOutputs();
+        NiriService.refreshOutputs();
         NiriConfigService.refresh();
     }
     function reload(clearError) {
@@ -141,9 +141,9 @@ Singleton {
         }
     }
     Connections {
-        target: Niri
+        target: NiriService
         function onOutputsChanged() {
-            const next = Niri.outputSnapshot();
+            const next = NiriService.outputSnapshot();
             root.recordCollisions(next);
             const combination = Config.combination(next, root.identityCollisions);
             const changed = root.previousCombination !== "" && combination !== root.previousCombination;
