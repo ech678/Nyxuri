@@ -58,7 +58,11 @@ PanelWindow {
     readonly property bool horizontal: edge === "bottom"
     readonly property real axisLength: horizontal ? width : height
     readonly property real availableLength: Math.max(80, axisLength - 32)
-    readonly property real edgeOffset: 8
+    readonly property real edgeOffset: root.notchSurface ? 0 : 8
+    // Notch style reuses the Keystone tray look: the surface hugs the screen
+    // edge instead of floating with a gap, and grows concave transitions into
+    // that edge. Kept as a view-level flag so layout maths stay shared.
+    readonly property bool notchSurface: DockService.surfaceStyle === "notch"
     readonly property var kinds: {
         const revision = DockService.revision;
         const result = [];
@@ -798,7 +802,7 @@ PanelWindow {
                 width: root.horizontal ? parent.width : root.restingThickness
                 height: root.horizontal ? root.restingThickness : parent.height
                 radius: 20
-                color: BlurService.backgroundColor(Appearance.colors.colSurfaceContainer)
+                color: BlurService.backgroundColor(Appearance.colors.colBackgroundSurfaceContainer)
                 border.color: Appearance.applyAlpha(Appearance.colors.colOutlineVariant, 0.65)
                 border.width: 1
                 MouseArea {
@@ -811,6 +815,53 @@ PanelWindow {
                         else
                             ActionGateway.requestSettingsSearch("general.dock");
                     }
+                }
+            }
+
+            // Keystone notch decor. Sits above the glass but below the icon
+            // tray: it squares off the edge-facing corners and grows the two
+            // concave curves that make the tray read as attached to the screen
+            // edge rather than floating above it.
+            Item {
+                id: notchDecor
+                visible: root.notchSurface
+                anchors.fill: glass
+
+                Rectangle {
+                    // Rectangle cannot round individual corners, so the
+                    // edge-facing pair is squared with an opaque patch of the
+                    // same colour; it also hides the border on that side.
+                    color: glass.color
+                    x: root.horizontal ? 0 : root.edge === "left" ? 0 : parent.width - glass.radius
+                    y: root.horizontal ? parent.height - glass.radius : 0
+                    width: root.horizontal ? parent.width : glass.radius
+                    height: root.horizontal ? glass.radius : parent.height
+                }
+
+                AttachedEdgeCurve {
+                    edge: root.edge
+                    after: false
+                    along: Sizes.notchCurveAlong
+                    depth: Sizes.notchCurveDepth
+                    fillColor: glass.color
+                    anchors.right: root.horizontal ? parent.left : root.edge === "right" ? parent.right :
+                                                                                           undefined
+                    anchors.left: !root.horizontal && root.edge === "left" ? parent.left : undefined
+                    anchors.bottom: root.horizontal ? parent.bottom : parent.top
+                }
+
+                AttachedEdgeCurve {
+                    edge: root.edge
+                    after: true
+                    along: Sizes.notchCurveAlong
+                    depth: Sizes.notchCurveDepth
+                    fillColor: glass.color
+                    anchors.left: root.horizontal ? parent.right : root.edge === "left" ? parent.left :
+                                                                                          undefined
+
+                    anchors.right: !root.horizontal && root.edge === "right" ? parent.right : undefined
+                    anchors.top: !root.horizontal ? parent.bottom : undefined
+                    anchors.bottom: root.horizontal ? parent.bottom : undefined
                 }
             }
 

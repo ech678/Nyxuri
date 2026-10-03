@@ -156,6 +156,30 @@ TestCase {
         compare(DockModel.option("previewSize", 0), 96);
     }
 
+    // surfaceStyle is a string enum, so it must be validated before the
+    // numeric branch of DockModel.option(), which rejects every non-number.
+    function test_surfaceStyleEnumValidationAndRoundTrip() {
+        compare(DockModel.option("surfaceStyle", "default"), "default");
+        compare(DockModel.option("surfaceStyle", "notch"), "notch");
+        compare(DockModel.option("surfaceStyle", "rounded"), undefined);
+        compare(DockModel.option("surfaceStyle", ""), undefined);
+        compare(DockModel.option("surfaceStyle", true), undefined);
+        compare(DockModel.option("surfaceStyle", 1), undefined);
+        compare(DockModel.option("surfaceStyle", null), undefined);
+
+        const decoded = DockModel.decodeConfig(encodedConfig([], {
+                                                                 surfaceStyle: "notch"
+                                                             }));
+        compare(decoded.options.surfaceStyle, "notch");
+        compare(DockModel.decodeConfig(JSON.stringify(decoded)), decoded);
+
+        // Configs written before this option existed must fall back to default.
+        const legacy = DockModel.decodeConfig(encodedConfig([], {
+                                                                iconSize: 48
+                                                            }));
+        compare(legacy.options.surfaceStyle, "default");
+    }
+
     function test_legacySeparatorsKeepTheirPositionAndIdentity() {
         const config = DockModel.decodeConfig(encodedConfig([
                                                                 {

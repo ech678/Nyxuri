@@ -126,10 +126,10 @@ class TestLifecycleAudit(unittest.TestCase):
         self.assertNotIn("NativeConsumer", types)
         self.assertIn("IPC", types)
 
-        brightness_service = self.shell_root / "app" / "services" / "BrightnessService.qml"
-        bs_entries = audit.build_inventory_entry(brightness_service, self.shell_root)
-        bs_types = [e["resource_type"] for e in bs_entries]
-        self.assertIn("NativeConsumer", bs_types)
+        i18n_service = self.shell_root / "app" / "services" / "I18nService.qml"
+        i18n_entries = audit.build_inventory_entry(i18n_service, self.shell_root)
+        i18n_types = [e["resource_type"] for e in i18n_entries]
+        self.assertIn("NativeConsumer", i18n_types)
 
         gateway = self.shell_root / "app" / "ActionGateway.qml"
         gateway_entries = audit.build_inventory_entry(gateway, self.shell_root)

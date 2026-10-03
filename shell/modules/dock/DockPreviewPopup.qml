@@ -92,7 +92,8 @@ Item {
                                                                   0, maximumHeight - tailSize)) :
                                                      windowRow.height + contentMargin * 2
 
-    readonly property color surfaceColor: BlurService.backgroundColor(Appearance.colors.colSurfaceContainer)
+    readonly property color surfaceColor: BlurService.backgroundColor(
+                                              Appearance.colors.colBackgroundSurfaceContainer)
     readonly property color outlineColor: Appearance.applyAlpha(Appearance.colors.colOnSurface, 0.18)
 
     signal dismissed

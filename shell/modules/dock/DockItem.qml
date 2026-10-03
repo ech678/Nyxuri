@@ -151,7 +151,7 @@ Item {
             visible: root.kind === "folder" && opacity > 0
             opacity: root.folderOpenProgress
             radius: width * 0.23
-            color: BlurService.backgroundColor(Appearance.colors.colSurfaceContainer)
+            color: BlurService.backgroundColor(Appearance.colors.colBackgroundSurfaceContainer)
             border.width: 1
             border.color: Appearance.applyAlpha(Appearance.colors.colOnSurface, 0.2)
             MaterialSymbol {
