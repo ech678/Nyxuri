@@ -19,8 +19,8 @@ mkdir -p "$HOME" "$test_root/bin"
 printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$*" >> "$HOME/signals"\n' > "$test_root/bin/pkill"
 chmod +x "$test_root/bin/pkill"
 export PATH="$test_root/bin:$PATH"
-manager="$repo_root/scripts/theme/manage_matugen_templates.sh"
-generator="$repo_root/scripts/theme/generate_matugen_colors.sh"
+manager="$repo_root/scripts/theme/manage-matugen-templates.sh"
+generator="$repo_root/scripts/theme/generate-matugen-colors.sh"
 manage() { bash "$manager" "$@"; }
 generate() { bash "$generator" --color '#6750a4' "$@"; }
 assert() { if ! "$@"; then printf 'Assertion failed: %s\n' "$*" >&2; exit 1; fi; }
@@ -122,8 +122,8 @@ mkdir -p "$installed/scripts"
 cp -r "$repo_root/scripts/lib" "$repo_root/scripts/theme" "$installed/scripts/"
 mkdir -p "$installed/assets"
 cp -r "$repo_root/assets/matugen" "$installed/assets/matugen"
-bash "$installed/scripts/theme/manage_matugen_templates.sh" list | jq -e --arg prefix "$installed/assets/matugen/" 'all(.templates[] | select(.origin == "builtin"); .inputPath | startswith($prefix))' >/dev/null
-bash "$installed/scripts/theme/generate_matugen_colors.sh" --color '#aabbcc' --templates '' --mode light > /dev/null
+bash "$installed/scripts/theme/manage-matugen-templates.sh" list | jq -e --arg prefix "$installed/assets/matugen/" 'all(.templates[] | select(.origin == "builtin"); .inputPath | startswith($prefix))' >/dev/null
+bash "$installed/scripts/theme/generate-matugen-colors.sh" --color '#aabbcc' --templates '' --mode light > /dev/null
 assert test -s "$CLAVIS_GENERATED_HOME/clavis/colors.json"
 
 # Arbitrary newly registered IDs scale without app-specific code paths.

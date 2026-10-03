@@ -11,7 +11,7 @@ TopBarPill {
     property bool vertical: false
     property string edge: PersonalizationConfig.barPosition
     property real maximumTitleWidth: 180
-    readonly property var player: MediaManager.active
+    readonly property var player: MediaService.active
     readonly property string title: player ? player.trackTitle || player.identity || qsTr("No media") : qsTr(
                                                  "No media")
     implicitWidth: vertical ? Sizes.barPillThickness : layout.implicitWidth + 2

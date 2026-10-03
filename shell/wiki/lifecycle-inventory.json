@@ -357,7 +357,7 @@
         "risk_level": "medium"
       },
       {
-        "file": "app/services/Brightness.qml",
+        "file": "app/services/BrightnessService.qml",
         "line": 6,
         "resource_type": "NativeConsumer",
         "name": "Clavis.Niri",
@@ -371,7 +371,7 @@
         "risk_level": "medium"
       },
       {
-        "file": "app/services/Brightness.qml",
+        "file": "app/services/BrightnessService.qml",
         "line": 7,
         "resource_type": "NativeConsumer",
         "name": "Clavis.Runtime",
@@ -385,7 +385,7 @@
         "risk_level": "medium"
       },
       {
-        "file": "app/services/Brightness.qml",
+        "file": "app/services/BrightnessService.qml",
         "line": 158,
         "resource_type": "Process",
         "name": "ddcDetectProcess",
@@ -399,7 +399,7 @@
         "risk_level": "high"
       },
       {
-        "file": "app/services/Brightness.qml",
+        "file": "app/services/BrightnessService.qml",
         "line": 175,
         "resource_type": "Process",
         "name": "fallbackSetProc",
@@ -413,7 +413,7 @@
         "risk_level": "medium"
       },
       {
-        "file": "app/services/Brightness.qml",
+        "file": "app/services/BrightnessService.qml",
         "line": 296,
         "resource_type": "Process",
         "name": "proc_L296",
@@ -427,7 +427,7 @@
         "risk_level": "medium"
       },
       {
-        "file": "app/services/Brightness.qml",
+        "file": "app/services/BrightnessService.qml",
         "line": 304,
         "resource_type": "Process",
         "name": "proc_L304",
@@ -441,7 +441,7 @@
         "risk_level": "medium"
       },
       {
-        "file": "app/services/Brightness.qml",
+        "file": "app/services/BrightnessService.qml",
         "line": 311,
         "resource_type": "Timer",
         "name": "ddcSetTimer",
@@ -666,7 +666,7 @@
       },
       {
         "file": "app/services/DockService.qml",
-        "line": 469,
+        "line": 465,
         "resource_type": "Process",
         "name": "ensureConfigDir",
         "module": "app/services",
@@ -680,7 +680,7 @@
       },
       {
         "file": "app/services/DockService.qml",
-        "line": 482,
+        "line": 478,
         "resource_type": "FileView",
         "name": "configFile",
         "module": "app/services",
@@ -694,7 +694,7 @@
       },
       {
         "file": "app/services/DockService.qml",
-        "line": 512,
+        "line": 508,
         "resource_type": "Timer",
         "name": "launchTimeout",
         "module": "app/services",
@@ -736,7 +736,7 @@
       },
       {
         "file": "app/services/IdleService.qml",
-        "line": 364,
+        "line": 365,
         "resource_type": "Process",
         "name": "ensurePolicyStore",
         "module": "app/services",
@@ -750,7 +750,7 @@
       },
       {
         "file": "app/services/IdleService.qml",
-        "line": 375,
+        "line": 376,
         "resource_type": "FileView",
         "name": "policyFile",
         "module": "app/services",
@@ -764,7 +764,7 @@
       },
       {
         "file": "app/services/IdleService.qml",
-        "line": 404,
+        "line": 405,
         "resource_type": "Process",
         "name": "displayPowerProcess",
         "module": "app/services",
@@ -778,7 +778,7 @@
       },
       {
         "file": "app/services/IdleService.qml",
-        "line": 422,
+        "line": 423,
         "resource_type": "Process",
         "name": "suspendProcess",
         "module": "app/services",
@@ -792,7 +792,7 @@
       },
       {
         "file": "app/services/IdleService.qml",
-        "line": 445,
+        "line": 446,
         "resource_type": "ExternalCommand",
         "name": "ActionGateway.execute(idle:power-on)",
         "module": "app/services",
@@ -931,7 +931,7 @@
         "risk_level": "medium"
       },
       {
-        "file": "app/services/MediaManager.qml",
+        "file": "app/services/MediaService.qml",
         "line": 39,
         "resource_type": "Timer",
         "name": "positionPollTimer",
@@ -1113,7 +1113,7 @@
         "risk_level": "low"
       },
       {
-        "file": "app/services/NotificationManager.qml",
+        "file": "app/services/NotificationService.qml",
         "line": 76,
         "resource_type": "Timer",
         "name": "timer_L76",
@@ -1127,7 +1127,7 @@
         "risk_level": "low"
       },
       {
-        "file": "app/services/NotificationManager.qml",
+        "file": "app/services/NotificationService.qml",
         "line": 174,
         "resource_type": "Process",
         "name": "ensureStoreDir",
@@ -1141,7 +1141,7 @@
         "risk_level": "medium"
       },
       {
-        "file": "app/services/NotificationManager.qml",
+        "file": "app/services/NotificationService.qml",
         "line": 248,
         "resource_type": "FileView",
         "name": "notifFileView",
@@ -1463,7 +1463,7 @@
         "risk_level": "high"
       },
       {
-        "file": "app/services/Time.qml",
+        "file": "app/services/TimeService.qml",
         "line": 32,
         "resource_type": "Timer",
         "name": "refreshTimer",
@@ -1849,7 +1849,7 @@
         "creation_condition": "qml-import",
         "resource_owner": "modules/dock",
         "stop_entry": "native teardown",
-        "has_destruction": true,
+        "has_destruction": false,
         "visible_only_deactivation": false,
         "has_fallback": true,
         "risk_level": "medium"
@@ -1884,7 +1884,7 @@
       },
       {
         "file": "modules/dock/DockSurface.qml",
-        "line": 624,
+        "line": 616,
         "resource_type": "Timer",
         "name": "magnificationExit",
         "module": "modules/dock",
@@ -1898,7 +1898,7 @@
       },
       {
         "file": "modules/dock/DockSurface.qml",
-        "line": 632,
+        "line": 624,
         "resource_type": "Timer",
         "name": "hideTimer",
         "module": "modules/dock",
@@ -1912,7 +1912,7 @@
       },
       {
         "file": "modules/dock/DockSurface.qml",
-        "line": 642,
+        "line": 634,
         "resource_type": "Timer",
         "name": "closeTimer",
         "module": "modules/dock",
@@ -1926,7 +1926,7 @@
       },
       {
         "file": "modules/dock/DockSurface.qml",
-        "line": 650,
+        "line": 642,
         "resource_type": "Timer",
         "name": "hoverTimer",
         "module": "modules/dock",
@@ -1940,9 +1940,9 @@
       },
       {
         "file": "modules/dock/DockSurface.qml",
-        "line": 659,
+        "line": 651,
         "resource_type": "Timer",
-        "name": "timer_L659",
+        "name": "timer_L651",
         "module": "modules/dock",
         "creation_condition": "(root.dragKey !== \"\" || dropArea.containsDrag) && root.layout.overflow",
         "resource_owner": "modules/dock",
@@ -2024,9 +2024,9 @@
       },
       {
         "file": "modules/keystone/dashboard/DashboardWeatherCard.qml",
-        "line": 101,
+        "line": 102,
         "resource_type": "Timer",
-        "name": "timer_L101",
+        "name": "timer_L102",
         "module": "modules/keystone",
         "creation_condition": "root.active",
         "resource_owner": "modules/keystone",
@@ -2906,7 +2906,7 @@
       },
       {
         "file": "modules/sidebars/SidebarHostWindow.qml",
-        "line": 127,
+        "line": 128,
         "resource_type": "IPC",
         "name": "IpcHandler(sidebar)",
         "module": "modules/sidebars",

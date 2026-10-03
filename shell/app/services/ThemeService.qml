@@ -274,7 +274,7 @@ Singleton {
 
     function detectAvailableThemes() {
         const paths = root.dataDirs().map(dir => dir + "/icons").concat([Paths.homeDir + "/.icons"]);
-        const script = Paths.scriptPath("theme", "list_cursor_icon_themes.sh");
+        const script = Paths.scriptPath("theme", "list-cursor-icon-themes.sh");
         detectIconThemesProcess.command = ["bash", script, "icon", ...paths];
         detectCursorThemesProcess.command = ["bash", script, "cursor", ...paths];
         detectIconThemesProcess.running = false;
@@ -300,7 +300,7 @@ Singleton {
 
         root.applyConfigToAppearance();
         root.lastSource = path;
-        const command = ["bash", Paths.scriptPath("theme", "generate_matugen_colors.sh"), "--image", path, "--scheme",
+        const command = ["bash", Paths.scriptPath("theme", "generate-matugen-colors.sh"), "--image", path, "--scheme",
                          PersonalizationConfig.matugenScheme, "--mode", PersonalizationConfig.themeMode,
                          "--templates", root.enabledMatugenTemplates().join(",")];
         root.startGeneration(command, templateId);
@@ -355,7 +355,7 @@ Singleton {
         const sourceColor = root.opaqueHexFromColor(value);
         root.applyConfigToAppearance();
         root.lastSource = value;
-        const command = ["bash", Paths.scriptPath("theme", "generate_matugen_colors.sh"), "--color",
+        const command = ["bash", Paths.scriptPath("theme", "generate-matugen-colors.sh"), "--color",
                          sourceColor, "--scheme", PersonalizationConfig.matugenScheme, "--mode",
                          PersonalizationConfig.themeMode, "--templates", root.enabledMatugenTemplates().join(
                              ",")];

@@ -22,7 +22,7 @@ Singleton {
     property bool refreshPending: false
     property string operation: ""
     property string operationId: ""
-    readonly property string script: Paths.scriptPath("theme", "manage_matugen_templates.sh")
+    readonly property string script: Paths.scriptPath("theme", "manage-matugen-templates.sh")
 
     signal validated(bool valid)
     signal added(string templateId)

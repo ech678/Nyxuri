@@ -36,20 +36,20 @@ Item {
                     Layout.preferredHeight: Sizes.barControlCircleSize
                     Layout.alignment: Qt.AlignCenter
 
-                    value: Volume.sinkVolume
-                    progressColor: (Volume.sinkMuted || Volume.sinkVolume <= 0) ? Appearance.colors.colError :
-                                                                                  Appearance.colors.colPrimary
+                    value: VolumeService.sinkVolume
+                    progressColor: (VolumeService.sinkMuted || VolumeService.sinkVolume <= 0)
+                                   ? Appearance.colors.colError : Appearance.colors.colPrimary
                     trackColor: Appearance.colors.colLayer2Hover
                     handleColor: Appearance.colors.colOnSurface
-                    iconColor: (Volume.sinkMuted || Volume.sinkVolume <= 0) ? Appearance.colors.colError :
-                                                                              Appearance.colors.colOnSurface
+                    iconColor: (VolumeService.sinkMuted || VolumeService.sinkVolume <= 0)
+                               ? Appearance.colors.colError : Appearance.colors.colOnSurface
 
                     icon: {
-                        if (Volume.isHeadphone)
+                        if (VolumeService.isHeadphone)
                             return "headphones";
-                        if (Volume.sinkMuted || Volume.sinkVolume <= 0)
+                        if (VolumeService.sinkMuted || VolumeService.sinkVolume <= 0)
                             return "volume_off";
-                        if (Volume.sinkVolume < 0.5)
+                        if (VolumeService.sinkVolume < 0.5)
                             return "volume_down";
                         return "volume_up";
                     }
@@ -58,7 +58,7 @@ Item {
                 Text {
                     id: valueText
                     visible: root.showValue
-                    text: Math.round(Volume.sinkVolume * 100) + "%"
+                    text: Math.round(VolumeService.sinkVolume * 100) + "%"
                     font.family: Fonts.numeric
                     font.pixelSize: 12
                     color: Appearance.colors.colOnSurface
@@ -69,11 +69,14 @@ Item {
         Accessible.name: tooltip.text
 
         wheelAction: wheel => {
-            const delta = wheel.angleDelta.y || wheel.angleDelta.x || wheel.pixelDelta.y || wheel.pixelDelta.x;
+            const delta = wheel.angleDelta.y || wheel.angleDelta.x || wheel.pixelDelta.y
+                  || wheel.pixelDelta.x;
+
+
             if (!delta)
                 return;
             const step = delta > 0 ? 0.05 : -0.05;
-            Volume.setSinkVolume(Volume.sinkVolume + step);
+            VolumeService.setSinkVolume(VolumeService.sinkVolume + step);
             wheel.accepted = true;
         }
         onClicked: {
@@ -91,8 +94,8 @@ Item {
     PopupToolTip {
         id: tooltip
         extraVisibleCondition: mouseArea.pointerHovered
-        text: (Volume.sinkMuted ? qsTr("Volume: muted") : qsTr("Volume: ") + Math.round(Volume.sinkVolume
-                                                                                        * 100) + "%") + qsTr(
+        text: (VolumeService.sinkMuted ? qsTr("Volume: muted") : qsTr("Volume: ") + Math.round(
+                                             VolumeService.sinkVolume * 100) + "%") + qsTr(
                   "\nScroll to adjust; click to open sound")
     }
 }

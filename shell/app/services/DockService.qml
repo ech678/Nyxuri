@@ -15,7 +15,7 @@ Singleton {
 
     readonly property string filePath: Paths.configHome + "/dock.json"
     readonly property string dragMimeType: "application/x-clavis-dock"
-    readonly property bool supportsThumbnails: WindowPreviewService.supported
+    readonly property bool supportsThumbnails: false
     readonly property bool showThumbnails: root._options.showThumbnails
     readonly property int previewSize: root._options.previewSize
     readonly property bool supportsMinimize: Niri.supportsMinimize
@@ -291,7 +291,7 @@ Singleton {
     }
 
     function focusWindow(id, outputName) {
-        if (!Niri.connected || WindowPreviewService.suspended)
+        if (!Niri.connected)
             return false;
         const window = Niri.windowById(id);
         if (!window || !window.id)
@@ -300,16 +300,12 @@ Singleton {
     }
 
     function minimizeWindow(id) {
-        if (!root.supportsMinimize || WindowPreviewService.suspended)
+        if (!root.supportsMinimize)
             return false;
         const window = Niri.windowById(id);
         if (!window || !window.id || window.isMinimized)
             return false;
-        return WindowPreviewService.snapshot(id, () => {
-            const current = Niri.windowById(id);
-            if (root.supportsMinimize && current && current.id && !current.isMinimized)
-                Niri.minimizeWindow(id);
-        });
+        return Niri.minimizeWindow(id);
     }
 
     function closeWindow(id) {

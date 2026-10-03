@@ -11,16 +11,16 @@ Item {
     property var dailyData: []
 
     function syncForecast() {
-        if (!WeatherPlugin.hasValidData) {
+        if (!WeatherService.hasValidData) {
             root.dailyData = [];
             return;
         }
         const nextDaily = [];
-        const count = Math.min(5, WeatherPlugin.dailyForecast.count());
+        const count = Math.min(5, WeatherService.dailyForecast.count());
         let globalMin = 1000;
         let globalMax = -1000;
         for (let i = 0; i < count; ++i) {
-            const item = WeatherPlugin.dailyForecast.get(i);
+            const item = WeatherService.dailyForecast.get(i);
             const dayPart = item.day || {};
             const minTemp = Number(item.temperatureMinC || 0);
             const maxTemp = Number(item.temperatureMaxC || dayPart.temperatureC || 0);
@@ -63,7 +63,7 @@ Item {
             syncForecast();
         }
 
-        target: WeatherPlugin
+        target: WeatherService
     }
 
     Connections {

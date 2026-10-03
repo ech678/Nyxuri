@@ -28,7 +28,7 @@ Item {
                                                                           ? parentDragDistance * 0.3 :
                                                                             dragIndexDiff === 2
                                                                             ? parentDragDistance * 0.1 : 0
-    readonly property var notificationActions: NotificationManager.normalActions(notificationObject)
+    readonly property var notificationActions: NotificationService.normalActions(notificationObject)
     readonly property var notificationUrgency: notificationObject ? notificationObject.urgency :
                                                                     NotificationUrgency.Normal
 
@@ -80,7 +80,7 @@ Item {
                 root.dismissGroup(destroyAnimation.left);
                 return;
             }
-            NotificationManager.discardNotification(root.notificationObject.notificationId);
+            NotificationService.discardNotification(root.notificationObject.notificationId);
         }
 
         NumberAnimation {
@@ -105,7 +105,7 @@ Item {
             if (mouse.button === Qt.MiddleButton)
                 root.destroyWithAnimation();
             else if (mouse.button === Qt.LeftButton && root.notificationObject)
-                NotificationManager.invokeDefaultAction(root.notificationObject.notificationId);
+                NotificationService.invokeDefaultAction(root.notificationObject.notificationId);
         }
         onDraggingChanged: {
             if (dragging && root.dragHost)
@@ -281,7 +281,7 @@ Item {
                                     Layout.fillWidth: true
                                     buttonText: modelData.text
                                     urgency: root.notificationUrgency
-                                    onClicked: NotificationManager.invokeAction(modelData)
+                                    onClicked: NotificationService.invokeAction(modelData)
                                 }
                             }
 

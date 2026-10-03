@@ -20,9 +20,9 @@ SidebarFlickable {
     onIsForegroundChanged: {
         SystemIdentityService.setUptimeConsumer("left-sidebar-info:" + root.screenName, root.isForeground);
         if (isForeground) {
-            NotificationManager.hideAllPopups();
-            NotificationManager.markAllRead();
-            Time.refreshNow();
+            NotificationService.hideAllPopups();
+            NotificationService.markAllRead();
+            TimeService.refreshNow();
         }
     }
     Component.onCompleted: SystemIdentityService.setUptimeConsumer("left-sidebar-info:" + root.screenName,

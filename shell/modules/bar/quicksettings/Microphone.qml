@@ -36,20 +36,20 @@ Item {
                     Layout.preferredHeight: Sizes.barControlCircleSize
                     Layout.alignment: Qt.AlignCenter
 
-                    value: Volume.sourceMuted ? 0 : Volume.sourceVolume
-                    progressColor: (Volume.sourceMuted || Volume.sourceVolume <= 0)
+                    value: VolumeService.sourceMuted ? 0 : VolumeService.sourceVolume
+                    progressColor: (VolumeService.sourceMuted || VolumeService.sourceVolume <= 0)
                                    ? Appearance.colors.colError : Appearance.colors.colPrimary
                     trackColor: Appearance.colors.colLayer2Hover
                     handleColor: Appearance.colors.colOnSurface
-                    iconColor: (Volume.sourceMuted || Volume.sourceVolume <= 0) ? Appearance.colors.colError :
-                                                                                  Appearance.colors.colOnSurface
-                    icon: (Volume.sourceMuted || Volume.sourceVolume <= 0) ? "mic_off" : "mic"
+                    iconColor: (VolumeService.sourceMuted || VolumeService.sourceVolume <= 0)
+                               ? Appearance.colors.colError : Appearance.colors.colOnSurface
+                    icon: (VolumeService.sourceMuted || VolumeService.sourceVolume <= 0) ? "mic_off" : "mic"
                 }
 
                 Text {
                     id: valueText
                     visible: root.showValue
-                    text: Math.round(Volume.sourceVolume * 100) + "%"
+                    text: Math.round(VolumeService.sourceVolume * 100) + "%"
                     font.family: Fonts.numeric
                     font.pixelSize: 12
                     color: Appearance.colors.colOnSurface
@@ -60,11 +60,14 @@ Item {
         Accessible.name: tooltip.text
 
         wheelAction: wheel => {
-            const delta = wheel.angleDelta.y || wheel.angleDelta.x || wheel.pixelDelta.y || wheel.pixelDelta.x;
+            const delta = wheel.angleDelta.y || wheel.angleDelta.x || wheel.pixelDelta.y
+                  || wheel.pixelDelta.x;
+
+
             if (!delta)
                 return;
             const step = delta > 0 ? 0.05 : -0.05;
-            Volume.setSourceVolume(Volume.sourceVolume + step);
+            VolumeService.setSourceVolume(VolumeService.sourceVolume + step);
             wheel.accepted = true;
         }
         onClicked: {
@@ -82,8 +85,8 @@ Item {
     PopupToolTip {
         id: tooltip
         extraVisibleCondition: mouseArea.pointerHovered
-        text: (Volume.sourceMuted ? qsTr("Microphone: muted") : qsTr("Microphone: ") + Math.round(
-                                        Volume.sourceVolume * 100) + "%") + qsTr(
+        text: (VolumeService.sourceMuted ? qsTr("Microphone: muted") : qsTr("Microphone: ") + Math.round(
+                                               VolumeService.sourceVolume * 100) + "%") + qsTr(
                   "\nScroll to adjust; click to open microphone controls")
     }
 }

@@ -400,7 +400,7 @@ class TestShellManagement(unittest.TestCase):
         # 3. Bar quicksettings controls exist
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "bar", "quicksettings", "Volume.qml")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "bar", "quicksettings", "Microphone.qml")))
-        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "bar", "quicksettings", "Brightness.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "bar", "quicksettings", "BrightnessButton.qml")))
 
     def test_p3_fallback_qml_modules_contract(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -477,11 +477,9 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("id: levelProvider", arv_content)
         self.assertIn("readonly property bool available: false", arv_content)
 
-        # AudioSpectrum is a zero-overhead stub
+        # AudioSpectrum is physically deleted (R4-C-02)
         asp_path = os.path.join(shell_dir, "app", "services", "AudioSpectrum.qml")
-        with open(asp_path, "r", encoding="utf-8") as f:
-            asp_content = f.read()
-        self.assertIn("readonly property bool available: false", asp_content)
+        self.assertFalse(os.path.exists(asp_path))
 
         # 2. ControlCenterWindow cleans up child windows on destruction
         cc_window = os.path.join(shell_dir, "modules", "settings", "ControlCenterWindow.qml")
@@ -511,7 +509,7 @@ class TestShellManagement(unittest.TestCase):
         with open(vol_path, "r", encoding="utf-8") as f:
             vol_content = f.read()
         self.assertIn("wheelAction: wheel =>", vol_content)
-        self.assertIn("Volume.setSinkVolume(Volume.sinkVolume + step)", vol_content)
+        self.assertIn("VolumeService.setSinkVolume(VolumeService.sinkVolume + step)", vol_content)
         self.assertIn("0.05", vol_content)
 
         # 3. Microphone.qml handles wheelAction with 0.05 step
@@ -519,15 +517,15 @@ class TestShellManagement(unittest.TestCase):
         with open(mic_path, "r", encoding="utf-8") as f:
             mic_content = f.read()
         self.assertIn("wheelAction: wheel =>", mic_content)
-        self.assertIn("Volume.setSourceVolume(Volume.sourceVolume + step)", mic_content)
+        self.assertIn("VolumeService.setSourceVolume(VolumeService.sourceVolume + step)", mic_content)
         self.assertIn("0.05", mic_content)
 
-        # 4. Brightness.qml handles wheelAction with 0.05 step
-        br_path = os.path.join(shell_dir, "modules", "bar", "quicksettings", "Brightness.qml")
+        # 4. BrightnessButton.qml handles wheelAction with 0.05 step
+        br_path = os.path.join(shell_dir, "modules", "bar", "quicksettings", "BrightnessButton.qml")
         with open(br_path, "r", encoding="utf-8") as f:
             br_content = f.read()
         self.assertIn("wheelAction: wheel =>", br_content)
-        self.assertIn("Brightness.setBrightnessForScreen", br_content)
+        self.assertIn("BrightnessService.setBrightnessForScreen", br_content)
         self.assertIn("0.05", br_content)
 
         # 5. LongStatusItem handles onWheel with pixelDelta/angleDelta support
@@ -536,9 +534,9 @@ class TestShellManagement(unittest.TestCase):
             long_content = f.read()
         self.assertIn("onWheel: wheel =>", long_content)
         self.assertIn("pixelDelta", long_content)
-        self.assertIn("Volume.setSinkVolume", long_content)
-        self.assertIn("Volume.setSourceVolume", long_content)
-        self.assertIn("Brightness.setBrightnessForScreen", long_content)
+        self.assertIn("VolumeService.setSinkVolume", long_content)
+        self.assertIn("VolumeService.setSourceVolume", long_content)
+        self.assertIn("BrightnessService.setBrightnessForScreen", long_content)
 
     def test_p3_notification_keystone_chain_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -550,7 +548,7 @@ class TestShellManagement(unittest.TestCase):
             surface_content = f.read()
         self.assertIn("NotificationContent {", surface_content)
         self.assertIn("property bool isNotifMode:", surface_content)
-        self.assertIn("NotificationManager.hasNotifs", surface_content)
+        self.assertIn("NotificationService.hasNotifs", surface_content)
 
         # 2. NotificationContent provides ListView, sanitizedBody, normalActions, dismiss
         notif_content = os.path.join(shell_dir, "modules", "notifications", "NotificationContent.qml")
@@ -562,8 +560,8 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("root.manager.dismissPopup", nc_content)
         self.assertIn("root.manager.invokeDefaultAction", nc_content)
 
-        # 3. NotificationManager holds timeout, persistence and DND inhibition
-        nm_path = os.path.join(shell_dir, "app", "services", "NotificationManager.qml")
+        # 3. NotificationService holds timeout, persistence and DND inhibition
+        nm_path = os.path.join(shell_dir, "app", "services", "NotificationService.qml")
         with open(nm_path, "r", encoding="utf-8") as f:
             nm_content = f.read()
         self.assertIn("defaultPopupTimeoutMs: 7000", nm_content)
@@ -617,7 +615,7 @@ class TestShellManagement(unittest.TestCase):
 
         # 2. Reuses unified NotificationContent with manager injection
         self.assertIn("NotificationContent {", host_content)
-        self.assertIn("manager: NotificationManager", host_content)
+        self.assertIn("manager: NotificationService", host_content)
 
         # 3. Includes CompositorBlurRegion and StyledRectangularShadow
         self.assertIn("CompositorBlurRegion {", host_content)
@@ -788,24 +786,13 @@ class TestShellManagement(unittest.TestCase):
         for d in deleted_dirs:
             self.assertFalse(os.path.exists(d), f"Pruned directory still exists: {d}")
 
-        # 3. AudioSpectrum is a zero-overhead stub
+        # 3. AudioSpectrum is physically deleted (R4-C-02)
         asp_file = os.path.join(shell_dir, "app", "services", "AudioSpectrum.qml")
-        self.assertTrue(os.path.isfile(asp_file))
-        with open(asp_file, "r", encoding="utf-8") as f:
-            asp_content = f.read()
-        self.assertIn("readonly property bool available: false", asp_content)
-        self.assertIn("readonly property bool active: false", asp_content)
-        self.assertIn("readonly property var values: []", asp_content)
-        self.assertNotIn("Loader", asp_content)
+        self.assertFalse(os.path.exists(asp_file))
 
-        # 4. WindowPreviewService is a zero-overhead stub
+        # 4. WindowPreviewService is physically deleted (R4-C-02)
         wps_file = os.path.join(shell_dir, "app", "services", "WindowPreviewService.qml")
-        self.assertTrue(os.path.isfile(wps_file))
-        with open(wps_file, "r", encoding="utf-8") as f:
-            wps_content = f.read()
-        self.assertIn("readonly property bool supported: false", wps_content)
-        self.assertIn("readonly property bool connected: false", wps_content)
-        self.assertNotIn("Loader", wps_content)
+        self.assertFalse(os.path.exists(wps_file))
 
         # 5. WeatherMapBridge is a zero-overhead stub
         wmb_file = os.path.join(shell_dir, "modules", "settings", "WeatherMapBridge.qml")
@@ -958,7 +945,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertTrue(os.path.isfile(toml_en), f"en_US.toml must exist: {toml_en}")
 
         # 3. Translation compiler script exists and is executable
-        compile_script = os.path.join(shell_dir, "scripts", "dev", "compile_i18n.py")
+        compile_script = os.path.join(shell_dir, "scripts", "dev", "compile-i18n.py")
         self.assertTrue(os.path.isfile(compile_script))
         self.assertTrue(os.access(compile_script, os.X_OK))
 
@@ -989,39 +976,33 @@ class TestShellManagement(unittest.TestCase):
 
         # 7. i18n scanner captures qsTranslate contexts and correctly localizes settings
         from pathlib import Path
-        sys_path_added = False
-        scripts_dev = os.path.join(shell_dir, "scripts", "dev")
-        if scripts_dev not in sys.path:
-            sys.path.insert(0, scripts_dev)
-            sys_path_added = True
-        try:
-            import compile_i18n
-            contexts = compile_i18n.scan_source_strings(Path(shell_dir))
-            self.assertIn("ControlCenterWindow", contexts)
-            self.assertIn("GeneralPage", contexts)
-            self.assertIn("GeneralOverviewPage", contexts)
-            self.assertIn("Account", contexts["ControlCenterWindow"])
-            self.assertIn("Bar", contexts["GeneralPage"])
-            self.assertIn("Dock", contexts["GeneralPage"])
-            self.assertIn("Displays", contexts["GeneralPage"])
-            self.assertIn("System", contexts["GeneralOverviewPage"])
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("compile_i18n", compile_script)
+        compile_i18n = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(compile_i18n)
+        contexts = compile_i18n.scan_source_strings(Path(shell_dir))
+        self.assertIn("ControlCenterWindow", contexts)
+        self.assertIn("GeneralPage", contexts)
+        self.assertIn("GeneralOverviewPage", contexts)
+        self.assertIn("Account", contexts["ControlCenterWindow"])
+        self.assertIn("Bar", contexts["GeneralPage"])
+        self.assertIn("Dock", contexts["GeneralPage"])
+        self.assertIn("Displays", contexts["GeneralPage"])
+        self.assertIn("System", contexts["GeneralOverviewPage"])
 
-            # Verify generate_ts produces translated entries for these contexts
-            ts_zh_output = compile_i18n.generate_ts(Path(toml_zh), "zh_CN", contexts)
-            self.assertIn("<name>ControlCenterWindow</name>", ts_zh_output)
-            self.assertIn("<source>Account</source>\n        <translation>账户</translation>", ts_zh_output)
-            self.assertIn("<source>General</source>\n        <translation>通用</translation>", ts_zh_output)
-            self.assertIn("<source>Keystone</source>\n        <translation>Keystone</translation>", ts_zh_output)
-            self.assertIn("<name>GeneralPage</name>", ts_zh_output)
-            self.assertIn("<source>Bar</source>\n        <translation>Bar</translation>", ts_zh_output)
-            self.assertIn("<source>Dock</source>\n        <translation>Dock</translation>", ts_zh_output)
-            self.assertIn("<source>Spotlight</source>\n        <translation>Spotlight</translation>", ts_zh_output)
-            self.assertIn("<source>Displays</source>\n        <translation>显示器</translation>", ts_zh_output)
-            self.assertIn("<name>GeneralOverviewPage</name>", ts_zh_output)
-            self.assertIn("<source>System</source>\n        <translation>系统</translation>", ts_zh_output)
-        finally:
-            if sys_path_added and scripts_dev in sys.path:
-                sys.path.remove(scripts_dev)
+        # Verify generate_ts produces translated entries for these contexts
+        ts_zh_output = compile_i18n.generate_ts(Path(toml_zh), "zh_CN", contexts)
+        self.assertIn("<name>ControlCenterWindow</name>", ts_zh_output)
+        self.assertIn("<source>Account</source>\n        <translation>账户</translation>", ts_zh_output)
+        self.assertIn("<source>General</source>\n        <translation>通用</translation>", ts_zh_output)
+        self.assertIn("<source>Keystone</source>\n        <translation>Keystone</translation>", ts_zh_output)
+        self.assertIn("<name>GeneralPage</name>", ts_zh_output)
+        self.assertIn("<source>Bar</source>\n        <translation>Bar</translation>", ts_zh_output)
+        self.assertIn("<source>Dock</source>\n        <translation>Dock</translation>", ts_zh_output)
+        self.assertIn("<source>Spotlight</source>\n        <translation>Spotlight</translation>", ts_zh_output)
+        self.assertIn("<source>Displays</source>\n        <translation>显示器</translation>", ts_zh_output)
+        self.assertIn("<name>GeneralOverviewPage</name>", ts_zh_output)
+        self.assertIn("<source>System</source>\n        <translation>系统</translation>", ts_zh_output)
 
     def test_r4_architecture_and_lifecycle_contracts(self):
         """R4 Contract: Four-layer boundaries, shared purity, cross-domain isolation, and lifecycle separation."""
@@ -1202,6 +1183,83 @@ class TestShellManagement(unittest.TestCase):
             capture_output=True, text=True, check=True
         )
         self.assertIn("lifecycle-audit: clean", audit_res.stdout)
+
+    def test_r4c_naming_codex_and_dead_stub_elimination(self):
+        """R4-C-02 Contract: Full library naming codex unified and dead code/stubs eliminated."""
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. Keystone lyrics directory and files physically deleted
+        lyrics_dir = os.path.join(shell_dir, "modules", "keystone", "lyrics")
+        self.assertFalse(os.path.exists(lyrics_dir), "Keystone lyrics directory must be deleted")
+
+        # 2. Dock preview fake capture image physically deleted
+        dock_preview_dir = os.path.join(shell_dir, "modules", "dock", "preview")
+        self.assertFalse(os.path.exists(dock_preview_dir), "Dock preview directory must be deleted")
+
+        # 3. Deprecated Cava template deleted and removed from matugen config
+        cava_tpl = os.path.join(shell_dir, "assets", "matugen", "templates", "cava-colors.ini")
+        self.assertFalse(os.path.exists(cava_tpl), "cava-colors.ini template must be deleted")
+        matugen_cfg = os.path.join(shell_dir, "assets", "matugen", "config.toml")
+        with open(matugen_cfg, "r", encoding="utf-8") as f:
+            matugen_content = f.read()
+        self.assertNotIn("templates.cava", matugen_content)
+
+        # 4. AudioSpectrum and WindowPreviewService stubs deleted
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "app", "services", "AudioSpectrum.qml")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "app", "services", "WindowPreviewService.qml")))
+
+        # 5. Service singletons renamed to *Service.qml and bare nouns eliminated
+        services_dir = os.path.join(shell_dir, "app", "services")
+        renamed_services = {
+            "VolumeService.qml": "Volume.qml",
+            "BrightnessService.qml": "Brightness.qml",
+            "TimeService.qml": "Time.qml",
+            "WeatherService.qml": "WeatherPlugin.qml",
+            "NotificationService.qml": "NotificationManager.qml",
+            "MediaService.qml": "MediaManager.qml",
+        }
+        for new_name, old_name in renamed_services.items():
+            self.assertTrue(os.path.isfile(os.path.join(services_dir, new_name)), f"{new_name} must exist")
+            self.assertFalse(os.path.exists(os.path.join(services_dir, old_name)), f"Old {old_name} must not exist")
+
+        # 6. Bar quicksettings Brightness button renamed to BrightnessButton.qml
+        bar_qs_dir = os.path.join(shell_dir, "modules", "bar", "quicksettings")
+        self.assertTrue(os.path.isfile(os.path.join(bar_qs_dir, "BrightnessButton.qml")))
+        self.assertFalse(os.path.exists(os.path.join(bar_qs_dir, "Brightness.qml")))
+
+        # 7. JS tools 100% PascalCase.js
+        calendar_layout = os.path.join(shell_dir, "modules", "sidebars", "dashboard", "infotools", "CalendarLayout.js")
+        self.assertTrue(os.path.isfile(calendar_layout))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "modules", "sidebars", "dashboard", "infotools", "calendar_layout.js")))
+
+        import re
+        pascal_case_re = re.compile(r"^[A-Z][a-zA-Z0-9]*\.js$")
+        for root_dir, dirs, files in os.walk(shell_dir):
+            if any(part in root_dir for part in ["native", "references", "build"]):
+                continue
+            for f in files:
+                if f.endswith(".js"):
+                    self.assertTrue(pascal_case_re.match(f), f"JS file must be PascalCase.js: {os.path.join(root_dir, f)}")
+
+        # 8. CLI scripts unified to kebab-case
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "scripts", "dev", "compile-i18n.py")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "scripts", "dev", "compile_i18n.py")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "scripts", "capture", "lock-snapshot.sh")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "scripts", "capture", "lock_snapshot.sh")))
+
+        theme_scripts = [
+            "generate-matugen-colors.sh",
+            "list-cursor-icon-themes.sh",
+            "manage-matugen-templates.sh",
+            "set-system-color-scheme.sh",
+            "write-niri-cursor-config.sh",
+            "matugen-registry.jq",
+        ]
+        for s in theme_scripts:
+            self.assertTrue(os.path.isfile(os.path.join(shell_dir, "scripts", "theme", s)), f"{s} must exist")
+            old_s = s.replace("-", "_")
+            self.assertFalse(os.path.exists(os.path.join(shell_dir, "scripts", "theme", old_s)), f"Old {old_s} must not exist")
 
 
 if __name__ == "__main__":

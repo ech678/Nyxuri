@@ -65,7 +65,7 @@ MouseArea {
 
         running: false
         onFinished: {
-            NotificationManager.discardNotifications(root.notifications.map(notif => {
+            NotificationService.discardNotifications(root.notifications.map(notif => {
                 return notif.notificationId;
             }));
         }
@@ -95,7 +95,7 @@ MouseArea {
             if (mouse.button === Qt.MiddleButton)
                 root.destroyWithAnimation();
             else if (mouse.button === Qt.LeftButton && root.notificationCount === 1)
-                NotificationManager.invokeDefaultAction(root.notifications[0].notificationId);
+                NotificationService.invokeDefaultAction(root.notifications[0].notificationId);
         }
         onDraggingChanged: {
             if (dragging && root.dragHost)
@@ -194,7 +194,7 @@ MouseArea {
                             horizontalAlignment: Text.AlignLeft
                             text: notifUtils.getFriendlyNotifTimeString(root.notificationGroup
                                                                         ? root.notificationGroup.receivedAt :
-                                                                          0, Time.now)
+                                                                          0, TimeService.now)
                             font.family: Fonts.numeric
                             font.pixelSize: topRow.fontSize
                             color: Appearance.colors.colSubtext

@@ -8,18 +8,19 @@
 
 ## 1. 统计概览
 
-- **现存文件总数**：629 个（基线 631 文件，物理删除 2 个冗余代理，迁入 12 个服务）
+- **现存文件总数**：621 个（基线 631 文件；R4-C-01 物理删除 2 个冗余代理，迁入 12 个服务；R4-C-02 物理删除 8 个僵尸代码与假桩，重命名 8 个服务/按钮/工具）
 - **分层分布**：
-  - `app/`：53 个文件
-  - `modules/`：363 个文件
+  - `app/`：51 个文件
+  - `modules/`：357 个文件
   - `shared/`：96 个文件
   - `native/`：113 个文件
   - `bin/`：1 个文件
   - `packaging/`：3 个文件
 - **处置状态分布**：
-  - **保留**：616 个文件
+  - **保留**：600 个文件
   - **合并**：1 个文件
   - **移动**：12 个文件
+  - **重命名**：8 个文件
 
 ---
 
@@ -28,26 +29,42 @@
 | 原文件路径 | 处置动作 | 目标路径 | 处置原因与验收结果 |
 |---|---|---|---|
 | `app/services/AudioRecordingService.qml` | **移动** | `modules/keystone/tools/AudioRecordingService.qml` | 仅 keystone 消费的音频录制后台 |
+| `app/services/AudioSpectrum.qml` | **删除** | `-` | 纯假桩空壳，已物理删除并解除调用点假绑定 |
 | `app/services/AutostartService.qml` | **移动** | `modules/settings/AutostartService.qml` | 仅 settings 自启动页消费的配置服务 |
+| `app/services/Brightness.qml` | **重命名** | `app/services/BrightnessService.qml` | 确立 Service 后缀并消除与 Bar 按钮同名冲突 |
 | `app/services/DisplayConfigService.qml` | **移动** | `modules/settings/DisplayConfigService.qml` | 仅 settings 显示设置页消费的显示配置服务 |
 | `app/services/FileSearchService.qml` | **移动** | `modules/launcher/FileSearchService.qml` | 仅 launcher 消费的专属文件检索后台 |
+| `app/services/MediaManager.qml` | **重命名** | `app/services/MediaService.qml` | 确立 Service 后缀命名法典 |
 | `app/services/MediaPalette.qml` | **移动** | `modules/keystone/media/MediaPalette.qml` | 仅 keystone 消费的媒体色板辅助 |
 | `app/services/NetworkInterfaceHistoryService.qml` | **移动** | `modules/systemcards/NetworkInterfaceHistoryService.qml` | 仅 systemcards 消费的网络流量历史服务 |
+| `app/services/NotificationManager.qml` | **重命名** | `app/services/NotificationService.qml` | 确立 Service 后缀命名法典 |
 | `app/services/QuickToggleConfig.qml` | **移动** | `modules/quicksettings/QuickToggleConfig.qml` | 仅 quicksettings 消费的快捷开关配置 |
 | `app/services/RecordingService.qml` | **移动** | `modules/keystone/tools/RecordingService.qml` | 仅 keystone 消费的屏幕录制后台 |
 | `app/services/SpotlightSearchService.qml` | **移动** | `modules/launcher/SpotlightSearchService.qml` | 仅 launcher 消费的聚焦搜索执行后台 |
 | `app/services/SpotlightToolService.qml` | **移动** | `modules/launcher/SpotlightToolService.qml` | 仅 launcher 消费的数学/时区工具后台 |
+| `app/services/Time.qml` | **重命名** | `app/services/TimeService.qml` | 确立 Service 后缀命名法典 |
 | `app/services/TodoService.qml` | **移动** | `modules/sidebars/dashboard/infotools/TodoService.qml` | 仅 sidebars 消费的待办事项服务 |
 | `app/services/TrayService.qml` | **移动** | `modules/bar/tray/TrayService.qml` | 仅 bar 托盘消费的系统托盘服务 |
-| `app/services/weather/WeatherBackend.qml` | **合并** | `app/services/WeatherPlugin.qml` | 9 行纯 Loader 壳，合并入天气组件或 R4-C-05 消除 |
+| `app/services/Volume.qml` | **重命名** | `app/services/VolumeService.qml` | 确立 Service 后缀命名法典 |
+| `app/services/WeatherPlugin.qml` | **重命名** | `app/services/WeatherService.qml` | 消除伪插件名并确立 Service 命名法典 |
+| `app/services/WindowPreviewService.qml` | **删除** | `-` | 纯假桩空壳，已物理删除并解除调用点假绑定 |
+| `app/services/weather/WeatherBackend.qml` | **合并** | `app/services/WeatherService.qml` | 9 行纯 Loader 壳，待合并入天气组件或 R4-C-05 消除 |
+| `modules/bar/quicksettings/Brightness.qml` | **重命名** | `modules/bar/quicksettings/BrightnessButton.qml` | 消除与服务同名冲突 |
+| `modules/dock/preview/DockCaptureImage.qml` | **删除** | `-` | 假预览空壳，已物理删除 |
+| `modules/keystone/lyrics/HorizontalLyricsLayout.qml` | **删除** | `-` | 废弃歌词僵尸代码，已物理删除 |
+| `modules/keystone/lyrics/LyricsAlbumArt.qml` | **删除** | `-` | 废弃歌词僵尸代码，已物理删除 |
+| `modules/keystone/lyrics/LyricsContent.qml` | **删除** | `-` | 废弃歌词僵尸代码，已物理删除 |
+| `modules/keystone/lyrics/LyricsSpectrum.qml` | **删除** | `-` | 废弃歌词僵尸代码，已物理删除 |
+| `modules/keystone/lyrics/VerticalLyricsLayout.qml` | **删除** | `-` | 废弃歌词僵尸代码，已物理删除 |
 | `modules/keystone/tools/ToolsBackend.qml` | **删除** | `-` | 纯转发代理，直连录制服务，取色走 ActionGateway |
 | `modules/settings/SplitMenuButton.qml` | **删除** | `-` | 重复包装壳，直接使用 shared/controls/SplitMenuButton |
+| `modules/sidebars/dashboard/infotools/calendar_layout.js` | **重命名** | `modules/sidebars/dashboard/infotools/CalendarLayout.js` | 对齐全库 PascalCase.js 命名法典 |
 
 ---
 
 ## 3. 逐层结构清单与实时映射
 
-### app/ （共 53 文件）
+### app/ （共 51 文件）
 
 | 文件路径 | 处置状态 | 归属 (Owner) | 消费者 (Consumers) | I/O | 副作用 | 目标路径 / 说明 |
 |---|---|---|---|---|---|---|
@@ -56,12 +73,11 @@
 | `app/Paths.qml` | **保留** | `app` | app, modules/bar, modules/keystone, modules/launcher, modules/lock, modules/quicksettings, modules/settings, modules/sidebars, modules/wallpaper | 属性(33)/方法(7) | Env | 功能域自治代码 |
 | `app/WidgetState.qml` | **保留** | `app` | app, modules/bar, modules/keystone, modules/quicksettings, modules/settings, modules/sidebars | 属性(7)/信号(1)/方法(2) | 无 | 功能域自治代码 |
 | `app/services/ApplicationService.qml` | **保留** | `app` | app, modules/bar, modules/dock, modules/launcher, modules/notifications, modules/settings, modules/sidebars | 属性(6)/方法(13) | GatewayExec | 功能域自治代码 |
-| `app/services/AudioSpectrum.qml` | **保留** | `app` | modules/keystone, modules/lock | 属性(5)/方法(2) | 无 | 功能域自治代码 |
 | `app/services/AvatarService.qml` | **保留** | `app` | modules/keystone, modules/lock, modules/settings, modules/sidebars | 属性(5)/信号(1)/方法(1) | GatewayExec, Process | 功能域自治代码 |
 | `app/services/AwwwWallpaperService.qml` | **保留** | `app` | app, modules/settings, modules/wallpaper | 属性(24)/方法(21) | Process, Timer, Env | 功能域自治代码 |
 | `app/services/BluetoothService.qml` | **保留** | `app` | modules/bar, modules/keystone, modules/quicksettings, modules/settings, modules/sidebars | 属性(29)/信号(3)/方法(44) | Timer | 功能域自治代码 |
 | `app/services/BlurService.qml` | **保留** | `app` | modules/bar, modules/desktopcards, modules/dock, modules/filepicker, modules/keystone, modules/launcher, modules/lock, modules/settings, modules/sidebars, modules/systemcards | 属性(10)/信号(2)/方法(9) | Process | 功能域自治代码 |
-| `app/services/Brightness.qml` | **保留** | `app` | app, modules/bar, modules/keystone, modules/quicksettings, modules/sidebars | 属性(17)/信号(1)/方法(22) | Process, Timer | 功能域自治代码 |
+| `app/services/BrightnessService.qml` | **重命名** | `app` | app, modules/bar, modules/keystone, modules/quicksettings, modules/sidebars | 属性(17)/信号(1)/方法(22) | Process, Timer | 已由 app/services/Brightness.qml 重命名，遵循命名法典与内聚规范 |
 | `app/services/ClipboardService.qml` | **保留** | `app` | modules/launcher, modules/settings | 属性(48)/信号(6)/方法(24) | Process | 功能域自治代码 |
 | `app/services/DefaultApplicationsService.qml` | **保留** | `app` | modules/launcher, modules/settings | 属性(27)/信号(1)/方法(36) | Process, FileView | 功能域自治代码 |
 | `app/services/DesktopPresentationService.qml` | **保留** | `app` | modules/desktopcards, modules/sidebars | 属性(1)/方法(7) | 无 | 功能域自治代码 |
@@ -75,11 +91,11 @@
 | `app/services/InfoDrawerState.qml` | **保留** | `app` | app, modules/sidebars | 属性(16)/方法(8) | Process, Timer, FileView | 功能域自治代码 |
 | `app/services/KeyboardLockService.qml` | **保留** | `app` | app, modules/keystone, modules/lock, modules/settings | 属性(8)/信号(2)/方法(2) | Process, Timer | 功能域自治代码 |
 | `app/services/MatugenTemplateService.qml` | **保留** | `app` | app, modules/settings | 属性(13)/信号(3)/方法(9) | Process, Timer, FileView | 功能域自治代码 |
-| `app/services/MediaManager.qml` | **保留** | `app` | modules/bar, modules/dock, modules/keystone, modules/lock | 属性(2)/方法(6) | Timer | 功能域自治代码 |
+| `app/services/MediaService.qml` | **重命名** | `app` | modules/bar, modules/dock, modules/keystone, modules/lock | 属性(2)/方法(6) | Timer | 已由 app/services/MediaManager.qml 重命名，遵循命名法典与内聚规范 |
 | `app/services/NetworkManagerExtras.qml` | **保留** | `app` | app | 属性(17)/方法(7) | Process | 功能域自治代码 |
 | `app/services/NetworkService.qml` | **保留** | `app` | modules/bar, modules/keystone, modules/lock, modules/quicksettings, modules/settings, modules/sidebars, modules/systemcards | 属性(70)/信号(8)/方法(57) | Timer | 功能域自治代码 |
 | `app/services/NiriConfigService.qml` | **保留** | `app` | app, modules/bar, modules/hotcorners, modules/keystone, modules/settings, modules/sidebars | 属性(21)/信号(1)/方法(10) | Process, FileView, Env | 功能域自治代码 |
-| `app/services/NotificationManager.qml` | **保留** | `app` | modules/keystone, modules/lock, modules/notifications, modules/sidebars | 属性(28)/信号(5)/方法(34) | Process, Timer, FileView | 功能域自治代码 |
+| `app/services/NotificationService.qml` | **重命名** | `app` | modules/keystone, modules/lock, modules/notifications, modules/sidebars | 属性(28)/信号(5)/方法(34) | Process, Timer, FileView | 已由 app/services/NotificationManager.qml 重命名，遵循命名法典与内聚规范 |
 | `app/services/PersonalizationConfig.qml` | **保留** | `app` | app, modules/bar, modules/desktopcards, modules/hotcorners, modules/keystone, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/settings, modules/sidebars, modules/wallpaper | 属性(146)/信号(1)/方法(143) | Process, Timer, FileView, Env | 功能域自治代码 |
 | `app/services/PopupInputRegionService.qml` | **保留** | `app` | modules/desktopcards, modules/settings, modules/systemcards | 属性(1)/方法(3) | 无 | 功能域自治代码 |
 | `app/services/PowerService.qml` | **保留** | `app` | modules/bar, modules/keystone, modules/lock, modules/systemcards | 属性(13)/方法(1) | 无 | 功能域自治代码 |
@@ -94,18 +110,17 @@
 | `app/services/SystemIdentityService.qml` | **保留** | `app` | app, modules/keystone, modules/lock, modules/settings, modules/sidebars, modules/systemcards | 属性(31)/方法(7) | Process, Timer, FileView, Env | 功能域自治代码 |
 | `app/services/SystemMonitorService.qml` | **保留** | `app` | app, modules/bar, modules/keystone, modules/lock, modules/settings, modules/sidebars, modules/systemcards | 属性(65)/方法(33) | Process, Timer, Env | 功能域自治代码 |
 | `app/services/ThemeService.qml` | **保留** | `app` | app, modules/bar, modules/dock, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/settings, modules/sidebars | 属性(19)/方法(42) | Process, FileView, Env | 功能域自治代码 |
-| `app/services/Time.qml` | **保留** | `app` | modules/bar, modules/launcher, modules/settings, modules/sidebars, modules/systemcards | 属性(4)/方法(1) | Timer | 功能域自治代码 |
+| `app/services/TimeService.qml` | **重命名** | `app` | modules/bar, modules/sidebars | 属性(4)/方法(1) | Timer | 已由 app/services/Time.qml 重命名，遵循命名法典与内聚规范 |
 | `app/services/TimerService.qml` | **保留** | `app` | modules/keystone, modules/sidebars | 属性(14)/方法(17) | GatewayExec, Timer | 功能域自治代码 |
 | `app/services/UiPreferences.qml` | **保留** | `app` | app, modules/bar, modules/keystone, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/settings, modules/sidebars, modules/systemcards, modules/wallpaper | 属性(45)/方法(52) | Process, Timer, FileView | 功能域自治代码 |
-| `app/services/Volume.qml` | **保留** | `app` | app, modules/bar, modules/keystone, modules/quicksettings, modules/sidebars | 属性(19)/信号(1)/方法(26) | 无 | 功能域自治代码 |
+| `app/services/VolumeService.qml` | **重命名** | `app` | modules/bar, modules/keystone, modules/quicksettings, modules/sidebars | 属性(19)/信号(1)/方法(26) | 无 | 已由 app/services/Volume.qml 重命名，遵循命名法典与内聚规范 |
 | `app/services/WallpaperPaletteSession.qml` | **保留** | `app` | app, modules/settings, modules/sidebars, modules/wallpaper | 属性(11)/信号(1)/方法(7) | 无 | 功能域自治代码 |
 | `app/services/WallpaperSceneService.qml` | **保留** | `app` | modules/desktopcards, modules/wallpaper | 属性(48)/方法(15) | 无 | 功能域自治代码 |
 | `app/services/WallpaperService.qml` | **保留** | `app` | app, modules/desktopcards, modules/launcher, modules/lock, modules/settings, modules/sidebars, modules/wallpaper | 属性(25)/方法(85) | Process, Timer | 功能域自治代码 |
-| `app/services/WeatherPlugin.qml` | **保留** | `app` | app, modules/bar, modules/keystone, modules/lock, modules/settings, modules/sidebars, modules/systemcards, native | 属性(36)/信号(2)/方法(8) | 无 | 功能域自治代码 |
-| `app/services/WindowPreviewService.qml` | **保留** | `app` | app, modules/dock, modules/lock | 属性(6)/方法(6) | 无 | 功能域自治代码 |
-| `app/services/weather/WeatherBackend.qml` | **合并** | `app` | app, native | 属性(1) | 无 | 9 行纯 Loader 壳，合并入天气组件或 R4-C-05 消除 |
+| `app/services/WeatherService.qml` | **重命名** | `app` | app, modules/bar, modules/keystone, modules/lock, modules/settings, modules/sidebars, modules/systemcards | 属性(36)/信号(2)/方法(8) | 无 | 已由 app/services/WeatherPlugin.qml 重命名，遵循命名法典与内聚规范 |
+| `app/services/weather/WeatherBackend.qml` | **合并** | `app` | app, native | 属性(1) | 无 | 9 行纯 Loader 壳，待合并入天气组件或 R4-C-05 消除 |
 
-### modules/ （共 363 文件）
+### modules/ （共 357 文件）
 
 | 文件路径 | 处置状态 | 归属 (Owner) | 消费者 (Consumers) | I/O | 副作用 | 目标路径 / 说明 |
 |---|---|---|---|---|---|---|
@@ -127,20 +142,20 @@
 | `modules/bar/media/MediaBar.qml` | **保留** | `bar` | modules/bar, modules/keystone | 属性(7)/方法(2) | 无 | 功能域自治代码 |
 | `modules/bar/quicksettings/Battery.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, modules/settings, modules/sidebars, modules/systemcards | 属性(7)/方法(3) | 无 | 功能域自治代码 |
 | `modules/bar/quicksettings/BluetoothButton.qml` | **保留** | `bar` | modules/bar | 属性(2) | 无 | 功能域自治代码 |
-| `modules/bar/quicksettings/Brightness.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, modules/quicksettings, modules/sidebars | 属性(5) | 无 | 功能域自治代码 |
+| `modules/bar/quicksettings/BrightnessButton.qml` | **重命名** | `bar` | modules/bar | 属性(5) | 无 | 已由 modules/bar/quicksettings/Brightness.qml 重命名，遵循命名法典与内聚规范 |
 | `modules/bar/quicksettings/Microphone.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, modules/quicksettings, modules/settings, modules/sidebars, native | 属性(3) | 无 | 功能域自治代码 |
 | `modules/bar/quicksettings/Network.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, modules/lock, modules/quicksettings, modules/settings, modules/sidebars, modules/systemcards, native, packaging | 属性(3)/方法(1) | 无 | 功能域自治代码 |
 | `modules/bar/quicksettings/PowerButton.qml` | **保留** | `bar` | modules/bar | 属性(1) | 无 | 功能域自治代码 |
 | `modules/bar/quicksettings/QuickSettings.qml` | **保留** | `bar` | modules/bar, modules/sidebars | 属性(3)/方法(1) | 无 | 功能域自治代码 |
 | `modules/bar/quicksettings/SettingsButton.qml` | **保留** | `bar` | modules/bar | 属性(2) | 无 | 功能域自治代码 |
-| `modules/bar/quicksettings/Volume.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, modules/quicksettings, modules/sidebars | 属性(3) | 无 | 功能域自治代码 |
+| `modules/bar/quicksettings/Volume.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, modules/sidebars | 属性(3) | 无 | 功能域自治代码 |
 | `modules/bar/sysmonitor/ResourcePie.qml` | **保留** | `bar` | modules/bar | 属性(17) | 无 | 功能域自治代码 |
 | `modules/bar/sysmonitor/SysMonitor.qml` | **保留** | `bar` | modules/bar, modules/keystone | 属性(25)/方法(4) | 无 | 功能域自治代码 |
 | `modules/bar/tray/Tray.qml` | **保留** | `bar` | app, modules/bar, modules/keystone | 属性(19)/方法(7) | 无 | 功能域自治代码 |
 | `modules/bar/tray/TrayItem.qml` | **保留** | `bar` | modules/bar | 属性(4)/信号(2)/方法(3) | 无 | 功能域自治代码 |
 | `modules/bar/tray/TrayMenu.qml` | **保留** | `bar` | modules/bar | 属性(12)/信号(2)/方法(3) | 无 | 功能域自治代码 |
 | `modules/bar/tray/TrayMenuEntry.qml` | **保留** | `bar` | modules/bar | 属性(10)/信号(2) | 无 | 功能域自治代码 |
-| `modules/bar/tray/TrayService.qml` | **移动** | `bar` | modules/bar | 属性(12)/方法(7) | Process, FileView | 已由 app/services/TrayService.qml 迁入本功能域，保持内聚 |
+| `modules/bar/tray/TrayService.qml` | **移动** | `bar` | modules/bar | 属性(12)/方法(7) | Process, FileView | 已由 app/services/TrayService.qml 移动，遵循命名法典与内聚规范 |
 | `modules/bar/workspaces/Workspaces.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, modules/settings, native | 属性(8)/方法(1) | 无 | 功能域自治代码 |
 | `modules/desktopcards/DesktopCard.qml` | **保留** | `desktopcards` | app, modules/desktopcards, modules/sidebars | 属性(13)/方法(3) | 无 | 功能域自治代码 |
 | `modules/desktopcards/DesktopCardCanvas.qml` | **保留** | `desktopcards` | app, modules/desktopcards | 属性(48)/信号(3)/方法(34) | 无 | 功能域自治代码 |
@@ -165,10 +180,9 @@
 | `modules/dock/DockMedia.js` | **保留** | `dock` | modules/dock | 方法(3) | 无 | 功能域自治代码 |
 | `modules/dock/DockModel.js` | **保留** | `dock` | app | 方法(21) | 无 | 功能域自治代码 |
 | `modules/dock/DockMotion.js` | **保留** | `dock` | modules/dock | 方法(1) | 无 | 功能域自治代码 |
-| `modules/dock/DockPreviewPopup.qml` | **保留** | `dock` | modules/dock | 属性(35)/信号(1)/方法(3) | 无 | 功能域自治代码 |
-| `modules/dock/DockSurface.qml` | **保留** | `dock` | modules/dock | 属性(70)/方法(33) | Timer | 功能域自治代码 |
+| `modules/dock/DockPreviewPopup.qml` | **保留** | `dock` | modules/dock | 属性(33)/信号(1)/方法(3) | 无 | 功能域自治代码 |
+| `modules/dock/DockSurface.qml` | **保留** | `dock` | modules/dock | 属性(70)/方法(32) | Timer | 功能域自治代码 |
 | `modules/dock/DockWindowCard.qml` | **保留** | `dock` | modules/dock | 属性(13)/信号(2) | 无 | 功能域自治代码 |
-| `modules/dock/preview/DockCaptureImage.qml` | **保留** | `dock` | modules/dock | 属性(1) | 无 | 功能域自治代码 |
 | `modules/filepicker/FilePickerWindow.qml` | **保留** | `filepicker` | modules/keystone, modules/settings, modules/sidebars | 属性(65)/信号(2)/方法(19) | Timer | 功能域自治代码 |
 | `modules/hotcorners/HotCorners.qml` | **保留** | `hotcorners` | app | 属性(5)/信号(1) | 无 | 功能域自治代码 |
 | `modules/keystone/Keystone.qml` | **保留** | `keystone` | app, modules/keystone, modules/settings | 属性(1)/方法(9) | 无 | 功能域自治代码 |
@@ -182,16 +196,11 @@
 | `modules/keystone/dashboard/KeyholeCard.qml` | **保留** | `keystone` | modules/keystone | 属性(1) | 无 | 功能域自治代码 |
 | `modules/keystone/dashboard/UserCard.qml` | **保留** | `keystone` | modules/keystone | 属性(6)/信号(1)/方法(2) | 无 | 功能域自治代码 |
 | `modules/keystone/hub/HubContent.qml` | **保留** | `keystone` | modules/keystone | 属性(8)/信号(2)/方法(1) | 无 | 功能域自治代码 |
-| `modules/keystone/lyrics/HorizontalLyricsLayout.qml` | **保留** | `keystone` | modules/keystone | 属性(11) | 无 | 功能域自治代码 |
-| `modules/keystone/lyrics/LyricsAlbumArt.qml` | **保留** | `keystone` | modules/keystone | 属性(1) | 无 | 功能域自治代码 |
-| `modules/keystone/lyrics/LyricsContent.qml` | **保留** | `keystone` | 内部/自包含 | 属性(10) | 无 | 功能域自治代码 |
-| `modules/keystone/lyrics/LyricsSpectrum.qml` | **保留** | `keystone` | modules/keystone | 属性(5)/方法(1) | 无 | 功能域自治代码 |
-| `modules/keystone/lyrics/VerticalLyricsLayout.qml` | **保留** | `keystone` | modules/keystone | 属性(15)/方法(4) | 无 | 功能域自治代码 |
-| `modules/keystone/media/CaelestiaCover.qml` | **保留** | `keystone` | modules/keystone | 属性(15)/方法(1) | 无 | 功能域自治代码 |
+| `modules/keystone/media/CaelestiaCover.qml` | **保留** | `keystone` | modules/keystone | 属性(14) | 无 | 功能域自治代码 |
 | `modules/keystone/media/MediaBackdrop.qml` | **保留** | `keystone` | modules/keystone | 属性(5) | 无 | 功能域自治代码 |
 | `modules/keystone/media/MediaContent.qml` | **保留** | `keystone` | modules/keystone | 属性(19)/方法(2) | 无 | 功能域自治代码 |
 | `modules/keystone/media/MediaCover.qml` | **保留** | `keystone` | modules/keystone | 属性(4) | 无 | 功能域自治代码 |
-| `modules/keystone/media/MediaPalette.qml` | **移动** | `keystone` | modules/keystone, native | 方法(1) | 无 | 已由 app/services/MediaPalette.qml 迁入本功能域，保持内聚 |
+| `modules/keystone/media/MediaPalette.qml` | **移动** | `keystone` | modules/keystone, native | 方法(1) | 无 | 已由 app/services/MediaPalette.qml 移动，遵循命名法典与内聚规范 |
 | `modules/keystone/styles/bangs/Bangs.qml` | **保留** | `keystone` | app, modules/keystone | - | 无 | 功能域自治代码 |
 | `modules/keystone/styles/long/Long.qml` | **保留** | `keystone` | app, modules/keystone, modules/sidebars | - | 无 | 功能域自治代码 |
 | `modules/keystone/styles/long/LongIslandFrame.qml` | **保留** | `keystone` | modules/keystone | 属性(49)/信号(2)/方法(5) | 无 | 功能域自治代码 |
@@ -216,8 +225,8 @@
 | `modules/keystone/styles/shared/KeystoneHoverController.qml` | **保留** | `keystone` | modules/keystone | 属性(6)/信号(2)/方法(2) | Timer | 功能域自治代码 |
 | `modules/keystone/styles/shared/KeystoneSurface.qml` | **保留** | `keystone` | modules/keystone | 属性(99)/信号(1)/方法(38) | Timer | 功能域自治代码 |
 | `modules/keystone/styles/shared/VerticalKeystoneLayout.qml` | **保留** | `keystone` | modules/keystone | 属性(31) | 无 | 功能域自治代码 |
-| `modules/keystone/tools/AudioRecordingService.qml` | **移动** | `keystone` | modules/keystone | 属性(28)/信号(2)/方法(5) | GatewayExec, Process, Timer | 已由 app/services/AudioRecordingService.qml 迁入本功能域，保持内聚 |
-| `modules/keystone/tools/RecordingService.qml` | **移动** | `keystone` | modules/keystone | 属性(24)/信号(3)/方法(7) | Process, Timer | 已由 app/services/RecordingService.qml 迁入本功能域，保持内聚 |
+| `modules/keystone/tools/AudioRecordingService.qml` | **移动** | `keystone` | modules/keystone | 属性(28)/信号(2)/方法(5) | GatewayExec, Process, Timer | 已由 app/services/AudioRecordingService.qml 移动，遵循命名法典与内聚规范 |
+| `modules/keystone/tools/RecordingService.qml` | **移动** | `keystone` | modules/keystone | 属性(24)/信号(3)/方法(7) | Process, Timer | 已由 app/services/RecordingService.qml 移动，遵循命名法典与内聚规范 |
 | `modules/keystone/tools/ToolsContent.qml` | **保留** | `keystone` | modules/keystone | 属性(11)/信号(2)/方法(3) | GatewayExec | 功能域自治代码 |
 | `modules/keystone/volume/VolumeContent.qml` | **保留** | `keystone` | modules/keystone | 属性(22)/信号(2)/方法(1) | 无 | 功能域自治代码 |
 | `modules/keystone/weather/FrostedMapSurface.qml` | **保留** | `keystone` | 内部/自包含 | 属性(3) | 无 | 功能域自治代码 |
@@ -230,7 +239,7 @@
 | `modules/keystone/weather/WeatherMoonPhase.qml` | **保留** | `keystone` | 内部/自包含 | 属性(4)/方法(3) | 无 | 功能域自治代码 |
 | `modules/keystone/weather/WeatherParameters.qml` | **保留** | `keystone` | modules/keystone | 属性(6)/方法(3) | 无 | 功能域自治代码 |
 | `modules/keystone/weather/WeatherSunriseSunset.qml` | **保留** | `keystone` | modules/keystone | 属性(3)/方法(2) | Timer | 功能域自治代码 |
-| `modules/launcher/FileSearchService.qml` | **移动** | `launcher` | modules/launcher | 属性(27)/信号(1)/方法(9) | Process, Timer | 已由 app/services/FileSearchService.qml 迁入本功能域，保持内聚 |
+| `modules/launcher/FileSearchService.qml` | **移动** | `launcher` | modules/launcher | 属性(27)/信号(1)/方法(9) | Process, Timer | 已由 app/services/FileSearchService.qml 移动，遵循命名法典与内聚规范 |
 | `modules/launcher/LauncherHost.qml` | **保留** | `launcher` | app | 属性(5)/方法(6) | 无 | 功能域自治代码 |
 | `modules/launcher/LauncherWindow.qml` | **保留** | `launcher` | modules/launcher | 属性(53)/方法(46) | Timer | 功能域自治代码 |
 | `modules/launcher/SpotlightAppDrag.qml` | **保留** | `launcher` | modules/launcher | 属性(8)/方法(4) | 无 | 功能域自治代码 |
@@ -252,7 +261,7 @@
 | `modules/launcher/SpotlightSearchBar.qml` | **保留** | `launcher` | modules/launcher | 属性(39)/信号(7)/方法(11) | 无 | 功能域自治代码 |
 | `modules/launcher/SpotlightSearchProvider.qml` | **保留** | `launcher` | modules/launcher | 属性(8)/信号(3)/方法(12) | 无 | 功能域自治代码 |
 | `modules/launcher/SpotlightSearchResults.qml` | **保留** | `launcher` | modules/launcher | 属性(11)/信号(2)/方法(3) | 无 | 功能域自治代码 |
-| `modules/launcher/SpotlightSearchService.qml` | **移动** | `launcher` | modules/launcher, modules/settings | 属性(6)/方法(7) | Process, Timer | 已由 app/services/SpotlightSearchService.qml 迁入本功能域，保持内聚 |
+| `modules/launcher/SpotlightSearchService.qml` | **移动** | `launcher` | modules/launcher, modules/settings | 属性(6)/方法(7) | Process, Timer | 已由 app/services/SpotlightSearchService.qml 移动，遵循命名法典与内聚规范 |
 | `modules/launcher/SpotlightSearchTile.qml` | **保留** | `launcher` | modules/launcher | 属性(6)/信号(2) | 无 | 功能域自治代码 |
 | `modules/launcher/SpotlightSession.js` | **保留** | `launcher` | modules/launcher | 方法(10) | 无 | 功能域自治代码 |
 | `modules/launcher/SpotlightSessionController.qml` | **保留** | `launcher` | modules/launcher | 属性(14)/信号(5)/方法(9) | 无 | 功能域自治代码 |
@@ -261,12 +270,12 @@
 | `modules/launcher/SpotlightTemplates.js` | **保留** | `launcher` | modules/launcher | 方法(2) | 无 | 功能域自治代码 |
 | `modules/launcher/SpotlightToolPanel.qml` | **保留** | `launcher` | modules/launcher | 属性(12)/信号(1) | 无 | 功能域自治代码 |
 | `modules/launcher/SpotlightToolResponse.js` | **保留** | `launcher` | modules/launcher | 方法(2) | 无 | 功能域自治代码 |
-| `modules/launcher/SpotlightToolService.qml` | **移动** | `launcher` | modules/launcher | 属性(23)/方法(8) | Process, Timer | 已由 app/services/SpotlightToolService.qml 迁入本功能域，保持内聚 |
+| `modules/launcher/SpotlightToolService.qml` | **移动** | `launcher` | modules/launcher | 属性(23)/方法(8) | Process, Timer | 已由 app/services/SpotlightToolService.qml 移动，遵循命名法典与内聚规范 |
 | `modules/launcher/SpotlightWallpaperProvider.qml` | **保留** | `launcher` | modules/launcher | 属性(8)/方法(6) | 无 | 功能域自治代码 |
 | `modules/lock/CaelestiaLock.qml` | **保留** | `lock` | modules/lock | 属性(19)/方法(6) | IPC/Wayland | 功能域自治代码 |
 | `modules/lock/DefaultLock.qml` | **保留** | `lock` | modules/lock | 属性(12)/方法(2) | IPC/Wayland | 功能域自治代码 |
 | `modules/lock/DefaultLockContent.qml` | **保留** | `lock` | modules/lock | 属性(17)/方法(3) | Timer | 功能域自治代码 |
-| `modules/lock/DefaultLockStatus.qml` | **保留** | `lock` | modules/lock | 属性(11)/方法(3) | 无 | 功能域自治代码 |
+| `modules/lock/DefaultLockStatus.qml` | **保留** | `lock` | modules/lock | 属性(8)/方法(2) | 无 | 功能域自治代码 |
 | `modules/lock/Lock.qml` | **保留** | `lock` | app, modules/keystone, modules/lock, modules/session, modules/settings, modules/sidebars, packaging, shared/theme | 属性(9)/信号(4)/方法(5) | IPC/Wayland | 功能域自治代码 |
 | `modules/lock/LockContent.qml` | **保留** | `lock` | modules/lock | 属性(17)/方法(6) | Timer | 功能域自治代码 |
 | `modules/lock/LockContext.qml` | **保留** | `lock` | 内部/自包含 | 属性(3)/信号(2)/方法(1) | 无 | 功能域自治代码 |
@@ -285,7 +294,7 @@
 | `modules/notifications/NotificationPopupHost.qml` | **保留** | `notifications` | app | 属性(7) | 无 | 功能域自治代码 |
 | `modules/quicksettings/QuickSettingsSurface.qml` | **保留** | `quicksettings` | modules/sidebars | 属性(21)/方法(13) | 无 | 功能域自治代码 |
 | `modules/quicksettings/QuickSliders.qml` | **保留** | `quicksettings` | modules/quicksettings | 属性(10) | 无 | 功能域自治代码 |
-| `modules/quicksettings/QuickToggleConfig.qml` | **移动** | `quicksettings` | modules/quicksettings | 属性(4)/方法(7) | Process, FileView | 已由 app/services/QuickToggleConfig.qml 迁入本功能域，保持内聚 |
+| `modules/quicksettings/QuickToggleConfig.qml` | **移动** | `quicksettings` | modules/quicksettings | 属性(4)/方法(7) | Process, FileView | 已由 app/services/QuickToggleConfig.qml 移动，遵循命名法典与内聚规范 |
 | `modules/regionselector/RegionSelectionWindow.qml` | **保留** | `regionselector` | modules/regionselector | 属性(15)/方法(2) | 无 | 功能域自治代码 |
 | `modules/regionselector/RegionSelector.qml` | **保留** | `regionselector` | app | 属性(1) | 无 | 功能域自治代码 |
 | `modules/session/SessionHost.qml` | **保留** | `session` | app | 属性(3)/信号(1)/方法(6) | 无 | 功能域自治代码 |
@@ -295,7 +304,7 @@
 | `modules/settings/AdvancedPage.qml` | **保留** | `settings` | modules/settings | 属性(4)/方法(2) | 无 | 功能域自治代码 |
 | `modules/settings/AppBrowserPopup.qml` | **保留** | `settings` | modules/settings | 属性(8)/信号(1)/方法(7) | 无 | 功能域自治代码 |
 | `modules/settings/AutostartPage.qml` | **保留** | `settings` | modules/settings | 属性(4)/方法(5) | 无 | 功能域自治代码 |
-| `modules/settings/AutostartService.qml` | **移动** | `settings` | modules/settings | 属性(18)/信号(1)/方法(29) | Process, FileView | 已由 app/services/AutostartService.qml 迁入本功能域，保持内聚 |
+| `modules/settings/AutostartService.qml` | **移动** | `settings` | modules/settings | 属性(18)/信号(1)/方法(29) | Process, FileView | 已由 app/services/AutostartService.qml 移动，遵循命名法典与内聚规范 |
 | `modules/settings/BarLayoutDragCoordinator.qml` | **保留** | `settings` | modules/settings | 属性(12)/信号(1)/方法(7) | 无 | 功能域自治代码 |
 | `modules/settings/BezierCurveEditor.qml` | **保留** | `settings` | modules/settings | 属性(26)/信号(2)/方法(42) | GatewayExec | 功能域自治代码 |
 | `modules/settings/BezierCurveLayerEditor.qml` | **保留** | `settings` | modules/settings | 属性(48)/信号(3)/方法(45) | GatewayExec | 功能域自治代码 |
@@ -309,7 +318,7 @@
 | `modules/settings/DisplayAdvancedSettings.qml` | **保留** | `settings` | modules/settings | 属性(3)/方法(1) | 无 | 功能域自治代码 |
 | `modules/settings/DisplayChoice.qml` | **保留** | `settings` | modules/settings | 属性(3)/信号(1) | 无 | 功能域自治代码 |
 | `modules/settings/DisplayColumnWidths.qml` | **保留** | `settings` | modules/settings | 属性(5)/信号(1) | 无 | 功能域自治代码 |
-| `modules/settings/DisplayConfigService.qml` | **移动** | `settings` | modules/settings | 属性(20)/方法(14) | Process, Timer | 已由 app/services/DisplayConfigService.qml 迁入本功能域，保持内聚 |
+| `modules/settings/DisplayConfigService.qml` | **移动** | `settings` | modules/settings | 属性(20)/方法(14) | Process, Timer | 已由 app/services/DisplayConfigService.qml 移动，遵循命名法典与内聚规范 |
 | `modules/settings/DisplayConfiguration.js` | **保留** | `settings` | modules/settings | 方法(13) | 无 | 功能域自治代码 |
 | `modules/settings/DisplayConfigurationPage.qml` | **保留** | `settings` | modules/settings | 属性(8)/方法(7) | 无 | 功能域自治代码 |
 | `modules/settings/DisplayHotCornerSettings.qml` | **保留** | `settings` | modules/settings | 属性(6) | 无 | 功能域自治代码 |
@@ -401,17 +410,17 @@
 | `modules/sidebars/dashboard/drawer/DrawerGridTile.qml` | **保留** | `sidebars` | modules/sidebars | 属性(6)/信号(4) | 无 | 功能域自治代码 |
 | `modules/sidebars/dashboard/drawer/SystemLoadingState.qml` | **保留** | `sidebars` | modules/sidebars | 属性(2) | 无 | 功能域自治代码 |
 | `modules/sidebars/dashboard/drawer/SystemUnavailableState.qml` | **保留** | `sidebars` | modules/sidebars | 属性(3)/信号(1) | 无 | 功能域自治代码 |
+| `modules/sidebars/dashboard/infotools/CalendarLayout.js` | **重命名** | `sidebars` | modules/sidebars | 方法(2) | 无 | 已由 modules/sidebars/dashboard/infotools/calendar_layout.js 重命名，遵循命名法典与内聚规范 |
 | `modules/sidebars/dashboard/infotools/CalendarWidget.qml` | **保留** | `sidebars` | modules/sidebars | 属性(15)/方法(1) | 无 | 功能域自治代码 |
 | `modules/sidebars/dashboard/infotools/InfoToolDrawer.qml` | **保留** | `sidebars` | modules/sidebars | 属性(11)/方法(5) | Timer | 功能域自治代码 |
 | `modules/sidebars/dashboard/infotools/PomodoroTimer.qml` | **保留** | `sidebars` | modules/sidebars | - | 无 | 功能域自治代码 |
 | `modules/sidebars/dashboard/infotools/Stopwatch.qml` | **保留** | `sidebars` | modules/sidebars | 属性(6)/方法(2) | 无 | 功能域自治代码 |
 | `modules/sidebars/dashboard/infotools/TaskList.qml` | **保留** | `sidebars` | modules/sidebars | 属性(9) | 无 | 功能域自治代码 |
 | `modules/sidebars/dashboard/infotools/TimerWidget.qml` | **保留** | `sidebars` | modules/sidebars | 属性(3)/方法(2) | 无 | 功能域自治代码 |
-| `modules/sidebars/dashboard/infotools/TodoService.qml` | **移动** | `sidebars` | modules/sidebars | 属性(5)/方法(7) | Process, FileView | 已由 app/services/TodoService.qml 迁入本功能域，保持内聚 |
+| `modules/sidebars/dashboard/infotools/TodoService.qml` | **移动** | `sidebars` | modules/sidebars | 属性(5)/方法(7) | Process, FileView | 已由 app/services/TodoService.qml 移动，遵循命名法典与内聚规范 |
 | `modules/sidebars/dashboard/infotools/TodoWidget.qml` | **保留** | `sidebars` | modules/sidebars | 属性(7)/方法(1) | 无 | 功能域自治代码 |
 | `modules/sidebars/dashboard/infotools/ToolSecondaryTabBar.qml` | **保留** | `sidebars` | modules/sidebars | 属性(4) | 无 | 功能域自治代码 |
 | `modules/sidebars/dashboard/infotools/ToolSecondaryTabButton.qml` | **保留** | `sidebars` | modules/sidebars | 属性(3) | 无 | 功能域自治代码 |
-| `modules/sidebars/dashboard/infotools/calendar_layout.js` | **保留** | `sidebars` | modules/sidebars | 方法(2) | 无 | 功能域自治代码 |
 | `modules/sidebars/dashboard/notifications/DragManager.qml` | **保留** | `sidebars` | modules/sidebars | 属性(10)/信号(1)/方法(1) | 无 | 功能域自治代码 |
 | `modules/sidebars/dashboard/notifications/NotificationActionButton.qml` | **保留** | `sidebars` | modules/sidebars | 属性(4) | 无 | 功能域自治代码 |
 | `modules/sidebars/dashboard/notifications/NotificationAppIcon.qml` | **保留** | `sidebars` | modules/sidebars | - | 无 | 功能域自治代码 |
@@ -433,7 +442,7 @@
 | `modules/sidebars/quicksettings/QuickSettingsSidebar.qml` | **保留** | `sidebars` | modules/sidebars | 属性(11)/方法(6) | 无 | 功能域自治代码 |
 | `modules/sidebars/quicksettings/SettingsContent.qml` | **保留** | `sidebars` | modules/sidebars | - | 无 | 功能域自治代码 |
 | `modules/systemcards/ExpressiveMetricTile.qml` | **保留** | `systemcards` | modules/systemcards | 属性(16) | 无 | 功能域自治代码 |
-| `modules/systemcards/NetworkInterfaceHistoryService.qml` | **移动** | `systemcards` | modules/systemcards | 属性(3)/方法(6) | 无 | 已由 app/services/NetworkInterfaceHistoryService.qml 迁入本功能域，保持内聚 |
+| `modules/systemcards/NetworkInterfaceHistoryService.qml` | **移动** | `systemcards` | modules/systemcards | 属性(3)/方法(6) | 无 | 已由 app/services/NetworkInterfaceHistoryService.qml 移动，遵循命名法典与内聚规范 |
 | `modules/systemcards/SidebarCookieClock.qml` | **保留** | `systemcards` | modules/systemcards | 属性(10) | Timer | 功能域自治代码 |
 | `modules/systemcards/SystemBatteryTank.qml` | **保留** | `systemcards` | modules/systemcards | 属性(12)/方法(3) | 无 | 功能域自治代码 |
 | `modules/systemcards/SystemCalendarCard.qml` | **保留** | `systemcards` | modules/systemcards | 属性(6) | Timer | 功能域自治代码 |
@@ -534,7 +543,7 @@
 | `shared/controls/StyledButtonGroup.qml` | **保留** | `shared/controls` | modules/settings, modules/sidebars | 属性(34)/信号(1)/方法(9) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/StyledFlickable.qml` | **保留** | `shared/controls` | modules/launcher, modules/notifications, modules/settings, modules/sidebars, shared/controls | 属性(3) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/StyledGridView.qml` | **保留** | `shared/controls` | modules/filepicker | 属性(7) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
-| `shared/controls/StyledListView.qml` | **保留** | `shared/controls` | modules/keystone, modules/lock, modules/notifications, modules/settings, modules/sidebars, shared/controls | 属性(7) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
+| `shared/controls/StyledListView.qml` | **保留** | `shared/controls` | modules/lock, modules/notifications, modules/settings, modules/sidebars, shared/controls | 属性(7) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/StyledMenu.qml` | **保留** | `shared/controls` | modules/desktopcards, modules/dock, modules/settings, modules/sidebars | - | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/StyledMenuItem.qml` | **保留** | `shared/controls` | modules/desktopcards, modules/dock, modules/settings, modules/sidebars | 属性(2) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/StyledRectangularShadow.qml` | **保留** | `shared/controls` | modules/bar, modules/notifications, modules/sidebars | 属性(1) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
@@ -580,7 +589,7 @@
 |---|---|---|---|---|---|---|
 | `native/CMakeLists.txt` | **保留** | `native/CMakeLists.txt` | packaging | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
 | `native/clavis_release.h.in` | **保留** | `native/clavis_release.h.in` | 内部/自包含 | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/fallback/Clavis/Weather/WeatherPlugin.qml` | **保留** | `native/fallback` | app, modules/bar, modules/keystone, modules/lock, modules/settings, modules/sidebars, modules/systemcards, native | 属性(20)/信号(2)/方法(6) | 无 | 纯 QML 零依赖降级安全桩 |
+| `native/fallback/Clavis/Weather/WeatherPlugin.qml` | **保留** | `native/fallback` | app, native | 属性(20)/信号(2)/方法(6) | 无 | 纯 QML 零依赖降级安全桩 |
 | `native/fallback/Clavis/Weather/qmldir` | **保留** | `native/fallback` | native | - | 无 | 纯 QML 零依赖降级安全桩 |
 | `native/fallback/M3Shapes/MaterialShape.qml` | **保留** | `native/fallback` | modules/keystone, modules/sidebars, modules/systemcards, native | 属性(6)/方法(3) | 无 | 纯 QML 零依赖降级安全桩 |
 | `native/fallback/M3Shapes/qmldir` | **保留** | `native/fallback` | native | - | 无 | 纯 QML 零依赖降级安全桩 |

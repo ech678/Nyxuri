@@ -32,7 +32,7 @@ set(GENERATED_QM_ZH "${CMAKE_CURRENT_BINARY_DIR}/clavis_zh_CN.qm")
 
 add_custom_command(
     OUTPUT "${GENERATED_QM_EN}" "${GENERATED_QM_ZH}"
-    COMMAND "${Python3_EXECUTABLE}" "${CLAVIS_SOURCE_ROOT}/scripts/dev/compile_i18n.py"
+    COMMAND "${Python3_EXECUTABLE}" "${CLAVIS_SOURCE_ROOT}/scripts/dev/compile-i18n.py"
         --input-dir "${CLAVIS_SOURCE_ROOT}/assets/i18n"
         --output-dir "${CMAKE_CURRENT_BINARY_DIR}"
         --source-root "${CLAVIS_SOURCE_ROOT}"
@@ -41,7 +41,7 @@ add_custom_command(
     DEPENDS
         "${CLAVIS_SOURCE_ROOT}/assets/i18n/zh_CN.toml"
         "${CLAVIS_SOURCE_ROOT}/assets/i18n/en_US.toml"
-        "${CLAVIS_SOURCE_ROOT}/scripts/dev/compile_i18n.py"
+        "${CLAVIS_SOURCE_ROOT}/scripts/dev/compile-i18n.py"
     VERBATIM
 )
 

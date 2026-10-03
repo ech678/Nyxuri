@@ -5,7 +5,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
-import "calendar_layout.js" as CalendarLayout
+import "CalendarLayout.js" as CalendarLayout
 import "../../../../shared/utils/DateFormat.js" as DateFormat
 
 Item {

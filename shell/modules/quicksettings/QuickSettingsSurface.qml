@@ -113,9 +113,9 @@ WidgetPanel {
         case "caffeine":
             return IdleService.inhibited ? qsTr("Keep awake") : qsTr("Normal sleep");
         case "mic":
-            return Volume.sourceMuted ? qsTr("Muted") : qsTr("On");
+            return VolumeService.sourceMuted ? qsTr("Muted") : qsTr("On");
         case "audio":
-            return Volume.sinkMuted ? qsTr("Muted") : Math.round(Volume.sinkVolume * 100) + "%";
+            return VolumeService.sinkMuted ? qsTr("Muted") : Math.round(VolumeService.sinkVolume * 100) + "%";
         case "theme":
             return PersonalizationConfig.themeMode === "dark" ? qsTr("Dark") : qsTr("Light");
         case "dnd":
@@ -137,9 +137,9 @@ WidgetPanel {
         case "caffeine":
             return "coffee";
         case "mic":
-            return Volume.sourceMuted ? "mic_off" : "mic";
+            return VolumeService.sourceMuted ? "mic_off" : "mic";
         case "audio":
-            return Volume.sinkMuted || Volume.sinkVolume <= 0 ? "volume_off" : "volume_up";
+            return VolumeService.sinkMuted || VolumeService.sinkVolume <= 0 ? "volume_off" : "volume_up";
         case "theme":
             return PersonalizationConfig.themeMode === "dark" ? "dark_mode" : "light_mode";
         case "dnd":
@@ -160,9 +160,9 @@ WidgetPanel {
         case "caffeine":
             return IdleService.inhibited;
         case "mic":
-            return !Volume.sourceMuted;
+            return !VolumeService.sourceMuted;
         case "audio":
-            return !Volume.sinkMuted && Volume.sinkVolume > 0;
+            return !VolumeService.sinkMuted && VolumeService.sinkVolume > 0;
         case "theme":
             return PersonalizationConfig.themeMode === "dark";
         case "dnd":
@@ -200,10 +200,10 @@ WidgetPanel {
             IdleService.toggleInhibited();
             break;
         case "mic":
-            Volume.toggleSourceMute();
+            VolumeService.toggleSourceMute();
             break;
         case "audio":
-            Volume.toggleSinkMute();
+            VolumeService.toggleSinkMute();
             break;
         case "theme":
             ThemeService.setThemeMode(PersonalizationConfig.themeMode === "dark" ? "light" : "dark");
@@ -453,9 +453,9 @@ WidgetPanel {
                             case "bluetooth":
                                 return BluetoothService.connectedName;
                             case "audio":
-                                return Volume.sinkName;
+                                return VolumeService.sinkName;
                             case "mic":
-                                return Volume.sourceName;
+                                return VolumeService.sourceName;
                             case "night":
                                 return DisplayColor.preferences.nightEnabled ? qsTr("%1 K").arg(
                                                                                    DisplayColor.schedule.temperature) :

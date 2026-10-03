@@ -9,7 +9,7 @@ Rectangle {
     id: root
 
     property bool compact: false
-    property var player: MediaManager.active
+    property var player: MediaService.active
     property bool hasMedia: player !== null
     property bool isPlaying: player && player.isPlaying
     property string artUrl: (player && player.trackArtUrl) ? player.trackArtUrl : ""

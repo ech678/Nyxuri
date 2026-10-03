@@ -18,8 +18,8 @@ Item {
     signal refreshRequested
 
     function syncData() {
-        if (!WeatherPlugin.hasValidData) {
-            root.locationName = WeatherPlugin.locationName || qsTr("Weather");
+        if (!WeatherService.hasValidData) {
+            root.locationName = WeatherService.locationName || qsTr("Weather");
             root.currentTemp = "--";
             root.currentIcon = "cloud";
             root.currentDesc = "--";
@@ -27,13 +27,13 @@ Item {
             root.lowTemp = "--";
             return;
         }
-        root.locationName = WeatherPlugin.locationName || qsTr("Unknown");
-        root.currentTemp = Math.round(UiPreferences.weatherTemperature(WeatherPlugin.currentTemperatureC
+        root.locationName = WeatherService.locationName || qsTr("Unknown");
+        root.currentTemp = Math.round(UiPreferences.weatherTemperature(WeatherService.currentTemperatureC
                                                                        || 0)) + "°";
-        root.currentIcon = WeatherPlugin.currentIconName || "cloud";
-        root.currentDesc = WeatherPlugin.currentWeatherText || qsTr("Unknown");
-        if (WeatherPlugin.dailyForecast.count() > 0) {
-            const today = WeatherPlugin.dailyForecast.get(0);
+        root.currentIcon = WeatherService.currentIconName || "cloud";
+        root.currentDesc = WeatherService.currentWeatherText || qsTr("Unknown");
+        if (WeatherService.dailyForecast.count() > 0) {
+            const today = WeatherService.dailyForecast.get(0);
             const dayPart = today.day || {};
             root.highTemp = Math.round(UiPreferences.weatherTemperature(Number(today.temperatureMaxC
                                                                                || dayPart.temperatureC
@@ -56,7 +56,7 @@ Item {
             syncData();
         }
 
-        target: WeatherPlugin
+        target: WeatherService
     }
 
     Connections {
@@ -119,11 +119,11 @@ Item {
         IconButton {
             Layout.alignment: Qt.AlignVCenter
             controlSize: 42
-            enabled: !WeatherPlugin.loading
+            enabled: !WeatherService.loading
             iconName: "refresh"
             iconSize: 26
             iconColor: Appearance.colors.colOnSurface
-            iconRotation: WeatherPlugin.loading ? 360 : 0
+            iconRotation: WeatherService.loading ? 360 : 0
             accessibleName: qsTr("Refresh weather")
             onClicked: root.refreshRequested()
 
@@ -132,7 +132,7 @@ Item {
                 to: 360
                 duration: 800
                 loops: Animation.Infinite
-                running: WeatherPlugin.loading
+                running: WeatherService.loading
             }
         }
     }

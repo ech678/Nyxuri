@@ -18,8 +18,8 @@ Item {
 
     function updateMoonPhase() {
         let angle = 0;
-        if (WeatherPlugin.hasValidData && WeatherPlugin.dailyForecast.count() > 0) {
-            angle = WeatherPlugin.dailyForecast.get(0).moonPhaseAngle || 0;
+        if (WeatherService.hasValidData && WeatherService.dailyForecast.count() > 0) {
+            angle = WeatherService.dailyForecast.get(0).moonPhaseAngle || 0;
         }
         root.moonPhaseAngle = angle;
 
@@ -55,7 +55,7 @@ Item {
     }
 
     Connections {
-        target: WeatherPlugin
+        target: WeatherService
         function onDataChanged() {
             updateMoonPhase();
         }

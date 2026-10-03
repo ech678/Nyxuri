@@ -11,8 +11,8 @@ Item {
     property var screen: null
     property bool vertical: false
     readonly property bool showValue: PersonalizationConfig.barShowValues
-    readonly property var monitor: Brightness.getMonitorForScreen(screen)
-    readonly property real brightnessValue: monitor ? monitor.brightness : Brightness.brightnessValue
+    readonly property var monitor: BrightnessService.getMonitorForScreen(screen)
+    readonly property real brightnessValue: monitor ? monitor.brightness : BrightnessService.brightnessValue
 
     implicitWidth: mouseArea.implicitWidth
     implicitHeight: mouseArea.implicitHeight
@@ -59,11 +59,14 @@ Item {
         Accessible.name: tooltip.text
 
         wheelAction: wheel => {
-            const delta = wheel.angleDelta.y || wheel.angleDelta.x || wheel.pixelDelta.y || wheel.pixelDelta.x;
+            const delta = wheel.angleDelta.y || wheel.angleDelta.x || wheel.pixelDelta.y
+                  || wheel.pixelDelta.x;
+
+
             if (!delta)
                 return;
             const step = delta > 0 ? 0.05 : -0.05;
-            Brightness.setBrightnessForScreen(root.screen, root.brightnessValue + step);
+            BrightnessService.setBrightnessForScreen(root.screen, root.brightnessValue + step);
             wheel.accepted = true;
         }
     }

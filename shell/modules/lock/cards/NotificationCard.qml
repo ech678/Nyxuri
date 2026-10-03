@@ -10,7 +10,7 @@ Rectangle {
 
     property bool compact: false
     property bool veryCompact: false
-    readonly property var notifications: NotificationManager.list.slice().sort((a, b) => {
+    readonly property var notifications: NotificationService.list.slice().sort((a, b) => {
         return b.receivedAt - a.receivedAt;
     })
     readonly property int notificationCount: notifications.length

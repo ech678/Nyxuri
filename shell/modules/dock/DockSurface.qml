@@ -19,7 +19,7 @@ PanelWindow {
 
     NiriAnimationTargets {
         id: animationTargets
-        enabled: Niri.supportsMinimizeAnimation && !WindowPreviewService.suspended && root.visible
+        enabled: Niri.supportsMinimizeAnimation && root.visible
         onEnabledChanged: root.updateAnimationTargets()
     }
     // Geometry notifications arrive once per animated property, not once per
@@ -310,8 +310,8 @@ PanelWindow {
         }
     }
     function hoverEntry(key) {
-        if (WindowPreviewService.suspended || dragKey || dragGhost.active || handoffKey
-                || DockService.externalDragActive || contextMenu || filePopupActive)
+        if (dragKey || dragGhost.active || handoffKey || DockService.externalDragActive || contextMenu
+                || filePopupActive)
             return;
         hoverKey = key;
         closeTimer.stop();
@@ -341,8 +341,6 @@ PanelWindow {
         hoverTimer.stop();
     }
     function showPopup(key, context, folderClick) {
-        if (WindowPreviewService.suspended)
-            return;
         const entry = DockService.entryFor(key);
         if (!entry || (!context && entry.kind !== "app" && !(folderClick && entry.kind === "folder")))
             return;
@@ -587,13 +585,7 @@ PanelWindow {
             root.scheduleAnimationTargets();
         }
     }
-    Connections {
-        target: WindowPreviewService
-        function onSuspendedChanged() {
-            if (WindowPreviewService.suspended)
-                root.dismissPopup();
-        }
-    }
+
     Component.onCompleted: root.syncVisualEntries()
 
     // The surface supplies animation/drag space. Input stays in the revealed
@@ -964,17 +956,11 @@ PanelWindow {
                         folderExpanded: kind === "folder" && root.popupKey === key && !root.contextMenu &&
                                         !filePopup.list && !filePopup.closing
 
-                        showTooltip: !root.contextMenu && !WindowPreviewService.suspended && (kind === "app"
-                                                                                              ? root.popupKey
-                                                                                                === key && (
-                                                                                                    windowCount
-                                                                                                    === 0 ||
-                                                                                                    !DockService.showThumbnails) :
-                                                                                                !spacer
-                                                                                                && root.hoverKey
-                                                                                                === key
-                                                                                                && root.popupKey
-                                                                                                !== key)
+                        showTooltip: !root.contextMenu && (kind === "app" ? root.popupKey === key && (
+                                                                                windowCount === 0 ||
+                                                                                !DockService.showThumbnails) :
+                                                                            !spacer && root.hoverKey === key
+                                                                            && root.popupKey !== key)
                         dragged: key === root.dragKey || (dragGhost.entry && dragGhost.entry.key === key) || (
                                      root.externalOver && !root.externalFiles && !root.dropTargetKey
                                      && root.externalSourceKey === key)

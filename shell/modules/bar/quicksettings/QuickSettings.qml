@@ -81,7 +81,7 @@ TopBarPill {
     Component {
         id: brightnessComponent
 
-        Brightness {
+        BrightnessButton {
             vertical: root.vertical
             screen: root.screen
         }

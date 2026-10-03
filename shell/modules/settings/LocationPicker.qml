@@ -9,8 +9,8 @@ ColumnLayout {
 
     property var parentModal: null
     property bool active: visible
-    property real candidateLatitude: Number(WeatherPlugin.latitude)
-    property real candidateLongitude: Number(WeatherPlugin.longitude)
+    property real candidateLatitude: Number(WeatherService.latitude)
+    property real candidateLongitude: Number(WeatherService.longitude)
     property string coordinateError: ""
     readonly property bool expanded: false
 
@@ -45,8 +45,8 @@ ColumnLayout {
     }
 
     function returnToSavedLocation() {
-        const latitudeValue = Number(WeatherPlugin.latitude);
-        const longitudeValue = Number(WeatherPlugin.longitude);
+        const latitudeValue = Number(WeatherService.latitude);
+        const longitudeValue = Number(WeatherService.longitude);
         root.setCandidate(latitudeValue, longitudeValue);
     }
 
@@ -55,16 +55,18 @@ ColumnLayout {
         if (root.coordinateError !== "")
             return;
 
-        WeatherPlugin.setManualLocation(root.candidateLatitude, root.candidateLongitude, root.coordinateText(
-                                            root.candidateLatitude, root.candidateLongitude));
+        WeatherService.setManualLocation(root.candidateLatitude, root.candidateLongitude, root.coordinateText(
+                                             root.candidateLatitude, root.candidateLongitude));
     }
 
     function useAutomaticLocation() {
-        WeatherPlugin.clearManualLocation();
+        WeatherService.clearManualLocation();
     }
 
-    function openWindow() {}
-    function closeChildWindows() {}
+    function openWindow() {
+    }
+    function closeChildWindows() {
+    }
 
     spacing: Metrics.spacingM
 
@@ -88,7 +90,7 @@ ColumnLayout {
         }
 
         InlineBusyIndicator {
-            busy: WeatherPlugin.loading
+            busy: WeatherService.loading
         }
 
         ActionButton {
@@ -102,21 +104,20 @@ ColumnLayout {
         ActionButton {
             text: qsTr("Use automatic location")
             iconName: "my_location"
-            enabled: !WeatherPlugin.loading
+            enabled: !WeatherService.loading
             onClicked: root.useAutomaticLocation()
         }
     }
 
     Connections {
-        target: WeatherPlugin
+        target: WeatherService
         function onDataChanged() {
-            if (WeatherPlugin.hasManualLocation || WeatherPlugin.locationName === "")
+            if (WeatherService.hasManualLocation || WeatherService.locationName === "")
                 return;
 
-            root.candidateLatitude = Number(WeatherPlugin.latitude);
-            root.candidateLongitude = Number(WeatherPlugin.longitude);
+            root.candidateLatitude = Number(WeatherService.latitude);
+            root.candidateLongitude = Number(WeatherService.longitude);
             root.setCandidate(root.candidateLatitude, root.candidateLongitude);
         }
     }
 }
-

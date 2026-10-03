@@ -244,12 +244,13 @@ Singleton {
 
         if (requested) {
             const saved = {};
-            for (const monitor of Brightness.monitors) {
+            for (const monitor of BrightnessService.monitors) {
                 if (!monitor || !monitor.screen)
                     continue;
                 saved[monitor.screenName] = Number(monitor.brightness);
-                Brightness.setBrightnessForScreen(monitor.screen, Math.max(0.05, Number(monitor.brightness)
-                                                                           * root.dimFraction));
+                BrightnessService.setBrightnessForScreen(monitor.screen, Math.max(0.05, Number(
+                                                                                      monitor.brightness)
+                                                                                  * root.dimFraction));
             }
             root._savedBrightness = saved;
             root.dimmed = true;
@@ -259,10 +260,10 @@ Singleton {
         const previous = root._savedBrightness;
         root._savedBrightness = {};
         root.dimmed = false;
-        for (const monitor of Brightness.monitors) {
+        for (const monitor of BrightnessService.monitors) {
             if (!monitor || !monitor.screen || previous[monitor.screenName] === undefined)
                 continue;
-            Brightness.setBrightnessForScreen(monitor.screen, Number(previous[monitor.screenName]));
+            BrightnessService.setBrightnessForScreen(monitor.screen, Number(previous[monitor.screenName]));
         }
     }
 

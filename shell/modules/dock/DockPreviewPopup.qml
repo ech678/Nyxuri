@@ -45,21 +45,13 @@ Item {
     }
     readonly property bool hovered: popupHover.hovered
     readonly property bool thumbnails: DockService.showThumbnails && DockService.supportsThumbnails
-    readonly property var matchingPlayers: DockMedia.matchingPlayers(MediaManager.list, entry
+    readonly property var matchingPlayers: DockMedia.matchingPlayers(MediaService.list, entry
                                                                      ? entry.desktopId : "")
     property var mediaPlayer: null
     onMatchingPlayersChanged: mediaPlayer = DockMedia.selectPlayer(matchingPlayers, mediaPlayer)
-    property string previewConsumer: ""
-    readonly property var captureTargets: !visible || contextMenu || !thumbnails ||
-                                          !WindowPreviewService.connected ? [] : windows.map(window => String(
-                                                                                                           window.id))
-    onCaptureTargetsChanged: WindowPreviewService.setTargets(previewConsumer, captureTargets)
     Component.onCompleted: {
         mediaPlayer = DockMedia.selectPlayer(matchingPlayers, mediaPlayer);
-        previewConsumer = WindowPreviewService.createConsumer();
-        WindowPreviewService.setTargets(previewConsumer, captureTargets);
     }
-    Component.onDestruction: WindowPreviewService.release(previewConsumer)
     readonly property string entryName: entry ? String(entry.name || "") : ""
     readonly property bool canLaunch: !!entry && entry.kind === "app" && entry.available && String(
                                           entry.desktopId || "").length > 0
@@ -163,16 +155,8 @@ Item {
                 mediaPlayer: root.mediaPlayer
                 width: root.rowLayout.cardWidth
                 showThumbnail: root.thumbnails
-                capture: {
-                    const revision = WindowPreviewService.revision;
-                    return root.visible && root.thumbnails ? WindowPreviewService.captureFor(modelData.id) :
-                                                             null;
-                }
-                previewFrame: {
-                    const revision = WindowPreviewService.revision;
-                    return root.visible && root.thumbnails ? WindowPreviewService.frameFor(modelData.id) :
-                                                             null;
-                }
+                capture: null
+                previewFrame: null
                 onActivated: {
                     DockService.focusWindow(modelData.id, root.outputName);
                     root.dismissed();

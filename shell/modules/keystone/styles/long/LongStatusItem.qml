@@ -17,18 +17,18 @@ Item {
     readonly property bool rotateLabel: vertical && nameLabel
     property real maximumNameWidth: 160
     readonly property var connectedDeviceNames: BluetoothService.connectedDevices.map(device => device.name)
-    readonly property var player: MediaManager.active
-    readonly property var monitor: Brightness.getMonitorForScreen(screen)
-    readonly property real brightness: monitor ? monitor.brightness : Brightness.brightnessValue
+    readonly property var player: MediaService.active
+    readonly property var monitor: BrightnessService.getMonitorForScreen(screen)
+    readonly property real brightness: monitor ? monitor.brightness : BrightnessService.brightnessValue
     required property string ownerId
     readonly property bool batteryAvailable: PowerService.ready && PowerService.present && Format.isNumber(
                                                  PowerService.percentage)
     readonly property string displayText: {
         switch (itemId) {
         case "weather":
-            return WeatherPlugin.hasValidData ? Math.round(UiPreferences.weatherTemperature(
-                                                               WeatherPlugin.currentTemperatureC)) + "°" :
-                                                "--°";
+            return WeatherService.hasValidData ? Math.round(UiPreferences.weatherTemperature(
+                                                                WeatherService.currentTemperatureC)) + "°" :
+                                                 "--°";
         case "network":
             return root.tooltipText;
         case "bluetooth":
@@ -38,11 +38,11 @@ Item {
         case "brightness":
             return Format.percent(brightness * 100, 0);
         case "volume":
-            return Volume.outputAvailable ? Format.percent(Volume.sinkVolume * 100, 0) : Format.unavailable();
+            return VolumeService.outputAvailable ? Format.percent(VolumeService.sinkVolume * 100, 0) :
+                                                   Format.unavailable();
         case "microphone":
-            return Volume.inputAvailable ? Format.percent(Volume.sourceVolume * 100, 0) : Format.unavailable(
-                                               );
-
+            return VolumeService.inputAvailable ? Format.percent(VolumeService.sourceVolume * 100, 0) :
+                                                  Format.unavailable();
         case "battery":
             return batteryAvailable ? Format.percent(PowerService.percentage * 100, 0) : Format.unavailable();
         default:
@@ -57,7 +57,7 @@ Item {
     readonly property string iconName: {
         switch (itemId) {
         case "weather":
-            return WeatherPlugin.hasValidData ? WeatherPlugin.currentIconName || "cloud" : "cloud_off";
+            return WeatherService.hasValidData ? WeatherService.currentIconName || "cloud" : "cloud_off";
         case "media":
             return player ? (player.isPlaying ? "play_arrow" : "pause") : "music_note";
         case "network":
@@ -83,14 +83,11 @@ Item {
             return level >= 0.95 ? "battery_android_full" : "battery_android_" + Math.max(0, Math.min(6, Math.floor(
                                                                                                           level * 7)));
         case "volume":
-            return !Volume.outputAvailable || Volume.sinkMuted || Volume.sinkVolume <= 0 ? "volume_off" :
-                                                                                           Volume.isHeadphone
-                                                                                           ? "headphones" :
-                                                                                             Volume.sinkVolume
-                                                                                             < 0.5 ? "volume_down" :
-                                                                                                     "volume_up";
+            return !VolumeService.outputAvailable || VolumeService.sinkMuted || VolumeService.sinkVolume <= 0
+                    ? "volume_off" : VolumeService.isHeadphone ? "headphones" : VolumeService.sinkVolume
+                                                                 < 0.5 ? "volume_down" : "volume_up";
         case "microphone":
-            return !Volume.inputAvailable || Volume.sourceMuted ? "mic_off" : "mic";
+            return !VolumeService.inputAvailable || VolumeService.sourceMuted ? "mic_off" : "mic";
         case "brightness":
             return "brightness_medium";
         default:
@@ -100,8 +97,8 @@ Item {
     readonly property string tooltipText: {
         switch (itemId) {
         case "weather":
-            return [WeatherPlugin.locationName, WeatherPlugin.hasValidData ? WeatherPlugin.currentWeatherText :
-                                                                             WeatherPlugin.errorMessage,
+            return [WeatherService.locationName, WeatherService.hasValidData
+                    ? WeatherService.currentWeatherText : WeatherService.errorMessage,
                     root.displayText].filter(value => !!value).join("\n");
         case "media":
             return player ? [player.trackTitle, player.trackArtist, player.identity].filter(value => !!value).join(
@@ -129,23 +126,23 @@ Item {
                                                                                                        ? screen.name :
                                                                                                          "");
         case "volume":
-            return !Volume.outputAvailable ? qsTr("No audio output") : (Volume.sinkMuted ? qsTr(
-                                                                                               "Volume: muted\n%1").arg(
-                                                                                               Volume.sinkName) :
-                                                                                           qsTr("Volume: %1%\n%2").arg(
-                                                                                               Math.round(
-                                                                                                   Volume.sinkVolume
-                                                                                                   * 100)).arg(
-                                                                                               Volume.sinkName));
+            return !VolumeService.outputAvailable ? qsTr("No audio output") : (VolumeService.sinkMuted ? qsTr(
+                                                                                                             "Volume: muted\n%1").arg(
+                                                                                                             VolumeService.sinkName) :
+                                                                                                         qsTr("Volume: %1%\n%2").arg(
+                                                                                                             Math.round(
+                                                                                                                 VolumeService.sinkVolume
+                                                                                                                 * 100)).arg(
+                                                                                                             VolumeService.sinkName));
         case "microphone":
-            return !Volume.inputAvailable ? qsTr("No audio input") : (Volume.sourceMuted ? qsTr(
-                                                                                               "Microphone: muted\n%1").arg(
-                                                                                               Volume.sourceName) :
-                                                                                           qsTr("Microphone: %1%\n%2").arg(
-                                                                                               Math.round(
-                                                                                                   Volume.sourceVolume
-                                                                                                   * 100)).arg(
-                                                                                               Volume.sourceName));
+            return !VolumeService.inputAvailable ? qsTr("No audio input") : (VolumeService.sourceMuted ? qsTr(
+                                                                                                             "Microphone: muted\n%1").arg(
+                                                                                                             VolumeService.sourceName) :
+                                                                                                         qsTr("Microphone: %1%\n%2").arg(
+                                                                                                             Math.round(
+                                                                                                                 VolumeService.sourceVolume
+                                                                                                                 * 100)).arg(
+                                                                                                             VolumeService.sourceName));
         default:
             return [SystemMonitorService.statusText, qsTr(
                         "CPU: %1\nMemory: %2\nDisk: %3\nTemperature: %4").arg(Format.percent(
@@ -173,11 +170,11 @@ Item {
             return;
         }
         if (button === Qt.MiddleButton && itemId === "volume") {
-            Volume.toggleSinkMute();
+            VolumeService.toggleSinkMute();
             return;
         }
         if (button === Qt.MiddleButton && itemId === "microphone") {
-            Volume.toggleSourceMute();
+            VolumeService.toggleSourceMute();
             return;
         }
         if (itemId === "systemMonitor") {
@@ -333,16 +330,19 @@ Item {
                      ? Qt.ArrowCursor : Qt.PointingHandCursor
         onClicked: mouse => root.activate(mouse.button)
         onWheel: wheel => {
-            const delta = wheel.angleDelta.y || wheel.angleDelta.x || wheel.pixelDelta.y || wheel.pixelDelta.x;
+            const delta = wheel.angleDelta.y || wheel.angleDelta.x || wheel.pixelDelta.y
+                  || wheel.pixelDelta.x;
+
+
             if (!delta)
                 return;
             const step = delta > 0 ? 0.05 : -0.05;
-            if (root.itemId === "volume" && Volume.outputAvailable)
-                Volume.setSinkVolume(Volume.sinkVolume + step);
-            else if (root.itemId === "microphone" && Volume.inputAvailable)
-                Volume.setSourceVolume(Volume.sourceVolume + step);
+            if (root.itemId === "volume" && VolumeService.outputAvailable)
+                VolumeService.setSinkVolume(VolumeService.sinkVolume + step);
+            else if (root.itemId === "microphone" && VolumeService.inputAvailable)
+                VolumeService.setSourceVolume(VolumeService.sourceVolume + step);
             else if (root.itemId === "brightness")
-                Brightness.setBrightnessForScreen(root.screen, root.brightness + step);
+                BrightnessService.setBrightnessForScreen(root.screen, root.brightness + step);
             else {
                 wheel.accepted = false;
                 return;

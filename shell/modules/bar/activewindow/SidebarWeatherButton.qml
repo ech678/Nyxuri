@@ -10,10 +10,10 @@ Item {
 
     property bool vertical: false
     readonly property bool showValue: PersonalizationConfig.barShowValues
-    readonly property string temperatureText: WeatherPlugin.hasValidData ? Math.round(
-                                                                               UiPreferences.weatherTemperature(
-                                                                                   WeatherPlugin.currentTemperatureC))
-                                                                           + "°" : "--°"
+    readonly property string temperatureText: WeatherService.hasValidData ? Math.round(
+                                                                                UiPreferences.weatherTemperature(
+                                                                                    WeatherService.currentTemperatureC))
+                                                                            + "°" : "--°"
     readonly property int iconSize: Sizes.barIconSize
     readonly property int temperatureSize: 12
     readonly property real contentSpacing: Sizes.barLabelSpacing
@@ -60,7 +60,7 @@ Item {
                     Layout.preferredWidth: root.iconSize
                     Layout.preferredHeight: root.iconSize
                     Layout.alignment: Qt.AlignCenter
-                    text: WeatherPlugin.currentIconName || "cloud"
+                    text: WeatherService.currentIconName || "cloud"
                     iconSize: root.iconSize
                     fill: 0
                     color: Appearance.colors.colOnSurface

@@ -37,7 +37,7 @@ Rectangle {
     Item {
         id: emptyState
 
-        readonly property bool shown: NotificationManager.list.length === 0
+        readonly property bool shown: NotificationService.list.length === 0
 
         anchors.fill: listView
         anchors.topMargin: -30 * (1 - opacity)
@@ -95,20 +95,20 @@ Rectangle {
         NotificationStatusButton {
             Layout.fillWidth: false
             buttonIcon: "notifications_paused"
-            toggled: NotificationManager.silent
-            onClicked: NotificationManager.setSilent(!NotificationManager.silent)
+            toggled: NotificationService.silent
+            onClicked: NotificationService.setSilent(!NotificationService.silent)
         }
 
         NotificationStatusButton {
             Layout.fillWidth: true
             enabled: false
-            buttonText: `${NotificationManager.list.length} notifications`
+            buttonText: `${NotificationService.list.length} notifications`
         }
 
         NotificationStatusButton {
             Layout.fillWidth: false
             buttonIcon: "delete_sweep"
-            onClicked: NotificationManager.discardAllNotifications()
+            onClicked: NotificationService.discardAllNotifications()
         }
     }
 }

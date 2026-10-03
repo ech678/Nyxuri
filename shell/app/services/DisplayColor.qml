@@ -63,11 +63,11 @@ Singleton {
         setPreference("dimming", value);
     }
     function useWeatherLocation() {
-        if (!WeatherPlugin.hasValidData)
+        if (!WeatherService.hasValidData)
             return;
         preferences = Schedule.normalize(Object.assign({}, preferences, {
-                                                           latitude: WeatherPlugin.latitude,
-                                                           longitude: WeatherPlugin.longitude
+                                                           latitude: WeatherService.latitude,
+                                                           longitude: WeatherService.longitude
                                                        }));
         config.setText(JSON.stringify(preferences, null, 2));
         evaluate();

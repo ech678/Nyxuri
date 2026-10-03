@@ -11,7 +11,7 @@ Rectangle {
     property bool active: false
     property real currentEpoch: Math.floor(Date.now() / 1000)
     property var today: ({})
-    readonly property bool hasWeather: WeatherPlugin.hasValidData
+    readonly property bool hasWeather: WeatherService.hasValidData
     readonly property bool night: currentIsNight()
 
     function validNumber(value) {
@@ -34,49 +34,50 @@ Rectangle {
         if (sunrise > 0 && sunset > 0)
             return currentEpoch < sunrise || currentEpoch >= sunset;
 
-        const current = WeatherPlugin.current();
+        const current = WeatherService.current();
         if (current && current.isDaylight !== undefined)
             return !current.isDaylight;
 
-        const hourly = (WeatherPlugin.hourlyForecast && typeof WeatherPlugin.hourlyForecast.count === "function" && WeatherPlugin.hourlyForecast.count() > 0)
-                       ? WeatherPlugin.hourlyForecast.get(0) : ({});
+        const hourly = (WeatherService.hourlyForecast && typeof WeatherService.hourlyForecast.count
+                        === "function" && WeatherService.hourlyForecast.count() > 0)
+              ? WeatherService.hourlyForecast.get(0) : ({});
         if (hourly.isDaylight !== undefined)
             return !hourly.isDaylight;
 
-        const iconName = String(WeatherPlugin.currentIconName || "").toLowerCase();
+        const iconName = String(WeatherService.currentIconName || "").toLowerCase();
         return iconName.indexOf("night") >= 0 || iconName.indexOf("_night") >= 0;
     }
 
     function conditionText() {
         if (hasWeather)
-            return WeatherPlugin.currentWeatherText || qsTr("Unknown");
+            return WeatherService.currentWeatherText || qsTr("Unknown");
 
-        if (WeatherPlugin.loading)
+        if (WeatherService.loading)
             return qsTr("Getting weather");
 
         return qsTr("Weather is unavailable");
     }
 
     function updatedText() {
-        if (WeatherPlugin.loading)
+        if (WeatherService.loading)
             return qsTr("Refreshing");
 
-        if (WeatherPlugin.status === "stale")
+        if (WeatherService.status === "stale")
             return qsTr("Data is old");
 
-        if (WeatherPlugin.status === "error")
+        if (WeatherService.status === "error")
             return qsTr("Update failed");
 
-        if (WeatherPlugin.lastUpdated) {
-            const updated = new Date(WeatherPlugin.lastUpdated);
+        if (WeatherService.lastUpdated) {
+            const updated = new Date(WeatherService.lastUpdated);
             return UiPreferences.shortTime(updated);
         }
         return qsTr("Update pending");
     }
 
     function syncWeatherData() {
-        today = (WeatherPlugin.dailyForecast && typeof WeatherPlugin.dailyForecast.count === "function" && WeatherPlugin.dailyForecast.count() > 0)
-                ? WeatherPlugin.dailyForecast.get(0) : ({});
+        today = (WeatherService.dailyForecast && typeof WeatherService.dailyForecast.count === "function"
+                 && WeatherService.dailyForecast.count() > 0) ? WeatherService.dailyForecast.get(0) : ({});
         currentEpoch = Math.floor(Date.now() / 1000);
     }
 
@@ -86,8 +87,8 @@ Rectangle {
     layer.enabled: true
     Component.onCompleted: {
         syncWeatherData();
-        if (!WeatherPlugin.hasValidData && !WeatherPlugin.loading)
-            WeatherPlugin.refresh();
+        if (!WeatherService.hasValidData && !WeatherService.loading)
+            WeatherService.refresh();
     }
 
     Connections {
@@ -95,7 +96,7 @@ Rectangle {
             root.syncWeatherData();
         }
 
-        target: WeatherPlugin
+        target: WeatherService
     }
 
     Timer {
@@ -107,10 +108,10 @@ Rectangle {
 
     WeatherBackground {
         anchors.fill: parent
-        weatherCode: WeatherPlugin.currentWeatherCode
-        iconName: WeatherPlugin.currentIconName
-        windSpeedMs: WeatherPlugin.currentWindSpeedMs
-        windGustsMs: WeatherPlugin.currentWindGustsMs
+        weatherCode: WeatherService.currentWeatherCode
+        iconName: WeatherService.currentIconName
+        windSpeedMs: WeatherService.currentWindSpeedMs
+        windGustsMs: WeatherService.currentWindGustsMs
         night: root.night
         rainBounceY: height
         scrollProgress: 0
@@ -136,7 +137,7 @@ Rectangle {
 
         Text {
             Layout.fillWidth: true
-            text: WeatherPlugin.locationName || qsTr("Weather")
+            text: WeatherService.locationName || qsTr("Weather")
             color: root.night ? Qt.rgba(0.96, 0.98, 1, 0.96) : Qt.rgba(0.09, 0.14, 0.2, 0.9)
             font.family: Fonts.ui
             font.pixelSize: 15
@@ -182,7 +183,7 @@ Rectangle {
 
                 anchors.left: parent.left
                 anchors.bottom: parent.bottom
-                text: root.fmtTempPlain(WeatherPlugin.currentTemperatureC)
+                text: root.fmtTempPlain(WeatherService.currentTemperatureC)
                 color: Appearance.colors.colOnImage
                 font.family: Fonts.numeric
                 font.pixelSize: 92
@@ -197,8 +198,8 @@ Rectangle {
                 anchors.top: parent.top
                 width: 88
                 height: 88
-                weatherCode: WeatherPlugin.currentWeatherCode
-                iconName: WeatherPlugin.currentIconName
+                weatherCode: WeatherService.currentWeatherCode
+                iconName: WeatherService.currentIconName
                 night: root.night
                 animated: true
                 playing: root.active
@@ -207,7 +208,7 @@ Rectangle {
 
         Text {
             width: parent.width
-            text: qsTr("Feels like: ") + root.fmtTemp(WeatherPlugin.currentFeelsLikeC)
+            text: qsTr("Feels like: ") + root.fmtTemp(WeatherService.currentFeelsLikeC)
             color: Appearance.colors.colOnImage
             font.family: Fonts.ui
             font.pixelSize: 16

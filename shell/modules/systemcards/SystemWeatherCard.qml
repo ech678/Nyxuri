@@ -8,19 +8,19 @@ import qs.app.services
 Item {
     id: root
 
-    readonly property bool dataAvailable: WeatherPlugin.hasValidData
+    readonly property bool dataAvailable: WeatherService.hasValidData
     readonly property string temperature: root.dataAvailable && isFinite(Number(
-                                                                             WeatherPlugin.currentTemperatureC))
+                                                                             WeatherService.currentTemperatureC))
                                           ? Math.round(UiPreferences.weatherTemperature(
-                                                           WeatherPlugin.currentTemperatureC)) + "°" : "--°"
-    readonly property string weatherIcon: root.dataAvailable && String(WeatherPlugin.currentIconName
+                                                           WeatherService.currentTemperatureC)) + "°" : "--°"
+    readonly property string weatherIcon: root.dataAvailable && String(WeatherService.currentIconName
                                                                        || "").length > 0
-                                          ? WeatherPlugin.currentIconName : "cloud"
+                                          ? WeatherService.currentIconName : "cloud"
 
     implicitWidth: backgroundShape.implicitWidth
     implicitHeight: backgroundShape.implicitHeight
     Accessible.name: qsTr("Weather,") + root.temperature + "，" + (root.dataAvailable
-                                                                  ? WeatherPlugin.currentWeatherText : qsTr(
+                                                                  ? WeatherService.currentWeatherText : qsTr(
                                                                         "Weather unavailable"))
 
     MaterialShape {

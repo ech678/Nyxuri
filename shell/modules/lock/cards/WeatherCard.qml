@@ -7,23 +7,23 @@ Rectangle {
     id: root
 
     property real availableHeight: height
-    readonly property string temp: fmtTemp(WeatherPlugin.currentTemperatureC, "--")
-    readonly property string cond: WeatherPlugin.loading ? qsTr("Loading…") : (
-                                                               WeatherPlugin.currentWeatherText || qsTr(
-                                                                   "Unknown"))
-    readonly property string loc: WeatherPlugin.locationName || qsTr("Location")
-    readonly property string iconName: WeatherPlugin.currentIconName || "cloud"
-    readonly property string feelsLike: qsTr("Feels like: %1").arg(fmtTemp(WeatherPlugin.currentFeelsLikeC,
+    readonly property string temp: fmtTemp(WeatherService.currentTemperatureC, "--")
+    readonly property string cond: WeatherService.loading ? qsTr("Loading…") : (
+                                                                WeatherService.currentWeatherText || qsTr(
+                                                                    "Unknown"))
+    readonly property string loc: WeatherService.locationName || qsTr("Location")
+    readonly property string iconName: WeatherService.currentIconName || "cloud"
+    readonly property string feelsLike: qsTr("Feels like: %1").arg(fmtTemp(WeatherService.currentFeelsLikeC,
                                                                            "--"))
     readonly property string humidity: qsTr("Humidity: %1").arg(fmtPercent(
-                                                                    WeatherPlugin.currentRelativeHumidity))
-    readonly property bool loadingState: WeatherPlugin.loading || !WeatherPlugin.hasValidData
+                                                                    WeatherService.currentRelativeHumidity))
+    readonly property bool loadingState: WeatherService.loading || !WeatherService.hasValidData
     readonly property bool veryCompact: root.availableHeight < Metrics.lockVeryCompactBreakpoint
     readonly property bool showTitle: root.availableHeight >= Metrics.lockCompactBreakpoint
     readonly property bool allowForecast: root.availableHeight >= Metrics.lockForecastBreakpoint
     readonly property bool showSkeletonForecast: root.loadingState && root.allowForecast
-    readonly property bool showForecast: WeatherPlugin.hasValidData && root.allowForecast
-                                         && WeatherPlugin.hourlyForecast.count() > 0
+    readonly property bool showForecast: WeatherService.hasValidData && root.allowForecast
+                                         && WeatherService.hourlyForecast.count() > 0
     readonly property int forecastCount: root.availableHeight < Metrics.lockFetchExpandedBreakpoint ? 3 :
                                                                                                       root.width
                                                                                                       < 360 ? 4 :
@@ -40,14 +40,14 @@ Rectangle {
     }
 
     function fmtTemp(value, fallback) {
-        if (!WeatherPlugin.hasValidData || !validNumber(value))
+        if (!WeatherService.hasValidData || !validNumber(value))
             return fallback;
 
         return Math.round(UiPreferences.weatherTemperature(value)) + "°";
     }
 
     function fmtPercent(value) {
-        if (!WeatherPlugin.hasValidData || !validNumber(value))
+        if (!WeatherService.hasValidData || !validNumber(value))
             return "--";
 
         return Math.round(value) + "%";
@@ -73,10 +73,10 @@ Rectangle {
     }
 
     function forecastModel() {
-        const count = Math.min(root.forecastCount, WeatherPlugin.hourlyForecast.count());
+        const count = Math.min(root.forecastCount, WeatherService.hourlyForecast.count());
         const items = [];
         for (let i = 0; i < count; i += 1)
-            items.push(WeatherPlugin.hourlyForecast.get(i));
+            items.push(WeatherService.hourlyForecast.get(i));
         return items;
     }
 
@@ -88,8 +88,8 @@ Rectangle {
     radius: Metrics.lockCardRadius
     clip: true
     Component.onCompleted: {
-        if (!WeatherPlugin.hasValidData)
-            WeatherPlugin.refresh();
+        if (!WeatherService.hasValidData)
+            WeatherService.refresh();
     }
 
     ColumnLayout {
@@ -385,7 +385,7 @@ Rectangle {
         running: true
         repeat: true
         interval: 900000
-        onTriggered: WeatherPlugin.refresh()
+        onTriggered: WeatherService.refresh()
     }
 
     SequentialAnimation on skeletonPulse {

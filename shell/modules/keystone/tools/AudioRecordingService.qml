@@ -142,7 +142,7 @@ Singleton {
         if (!snapshot && (newer || expectedCommand === "audio.stop") && response.ok && response.state === "completed"
                 && response.outputPath && root._lastSavedKey !== savedKey) {
             root._lastSavedKey = savedKey;
-            NotificationManager.fileSaved(root.sourceType === "system" ? qsTr("System audio recording saved") :
+            NotificationService.fileSaved(root.sourceType === "system" ? qsTr("System audio recording saved") :
                                                                          qsTr("Microphone recording saved"),
                                           response.outputPath);
         }

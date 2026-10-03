@@ -12,7 +12,7 @@ Item {
     property bool foreground: false
     property bool presentationActive: false
     property var weatherSourceOverride: null
-    readonly property var weatherSource: weatherSourceOverride || WeatherPlugin
+    readonly property var weatherSource: weatherSourceOverride || WeatherService
     readonly property bool weatherAnimationActive: weatherBackground.animationTimerRunning
     readonly property int weatherTargetFps: weatherBackground.targetFps
     readonly property int weatherFrameInterval: weatherBackground.sceneFrameInterval

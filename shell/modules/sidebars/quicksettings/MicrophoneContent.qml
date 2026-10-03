@@ -10,11 +10,11 @@ WidgetPanel {
 
     property bool foreground: false
     readonly property string stateMessage: {
-        if (Volume.lastError.length > 0)
-            return Volume.lastError;
-        if (!Volume.ready)
+        if (VolumeService.lastError.length > 0)
+            return VolumeService.lastError;
+        if (!VolumeService.ready)
             return qsTr("Connecting to the PipeWire audio service");
-        if (Volume.inputDevices.length === 0 && !Volume.inputAvailable)
+        if (VolumeService.inputDevices.length === 0 && !VolumeService.inputAvailable)
             return qsTr("No microphone devices detected");
         return "";
     }
@@ -34,7 +34,7 @@ WidgetPanel {
         pressedStateLayerColor: Appearance.colors.colLayer2Active
         onClicked: {
             WidgetState.closeAllPopups();
-            Volume.openMixer();
+            VolumeService.openMixer();
         }
     }
 
@@ -59,7 +59,7 @@ WidgetPanel {
                     Layout.topMargin: sidebarScroll.gapFor(0, 1)
                     Layout.fillWidth: true
                     visible: root.stateMessage.length > 0
-                    tone: Volume.lastError.length > 0 ? "error" : "info"
+                    tone: VolumeService.lastError.length > 0 ? "error" : "info"
                     message: root.stateMessage
                 }
 
@@ -68,21 +68,21 @@ WidgetPanel {
                     Layout.topMargin: sidebarScroll.gapFor(1, 1)
 
                     Layout.fillWidth: true
-                    visible: Volume.ready && Volume.inputAvailable
+                    visible: VolumeService.ready && VolumeService.inputAvailable
                     title: qsTr("Input")
                     iconName: "mic"
 
                     VolumeSlider {
                         Layout.fillWidth: true
-                        title: Volume.sourceName || qsTr("Default input")
-                        supportingText: Volume.nodeSupportingText(Volume.source)
-                        iconName: Volume.nodeIconName(Volume.source)
-                        volume: Volume.sourceVolume
-                        muted: Volume.sourceMuted
-                        available: Volume.inputAvailable
+                        title: VolumeService.sourceName || qsTr("Default input")
+                        supportingText: VolumeService.nodeSupportingText(VolumeService.source)
+                        iconName: VolumeService.nodeIconName(VolumeService.source)
+                        volume: VolumeService.sourceVolume
+                        muted: VolumeService.sourceMuted
+                        available: VolumeService.inputAvailable
                         showMuteButton: true
-                        onVolumeMoved: value => Volume.setSourceVolume(value)
-                        onMuteRequested: Volume.toggleSourceMute()
+                        onVolumeMoved: value => VolumeService.setSourceVolume(value)
+                        onMuteRequested: VolumeService.toggleSourceMute()
                     }
                 }
 
@@ -91,13 +91,13 @@ WidgetPanel {
                     Layout.topMargin: sidebarScroll.gapFor(2, 1)
 
                     Layout.fillWidth: true
-                    visible: Volume.ready && Volume.inputDevices.length > 0
+                    visible: VolumeService.ready && VolumeService.inputDevices.length > 0
                     title: qsTr("Input devices")
                     iconName: "settings_voice"
                     contentSpacing: Metrics.spacingL
 
                     Repeater {
-                        model: Volume.inputDevices
+                        model: VolumeService.inputDevices
 
                         ColumnLayout {
                             id: device
@@ -110,14 +110,14 @@ WidgetPanel {
 
                             SettingsRow {
                                 Layout.fillWidth: true
-                                title: Volume.nodeDisplayName(device.modelData)
-                                supportingText: Volume.nodeSupportingText(device.modelData)
-                                iconName: Volume.nodeIconName(device.modelData)
-                                highlighted: Volume.isDefaultInput(device.modelData)
+                                title: VolumeService.nodeDisplayName(device.modelData)
+                                supportingText: VolumeService.nodeSupportingText(device.modelData)
+                                iconName: VolumeService.nodeIconName(device.modelData)
+                                highlighted: VolumeService.isDefaultInput(device.modelData)
                                 interactive: !highlighted
-                                onClicked: Volume.setDefaultInput(device.modelData)
+                                onClicked: VolumeService.setDefaultInput(device.modelData)
                                 trailing: MaterialSymbol {
-                                    visible: Volume.isDefaultInput(device.modelData)
+                                    visible: VolumeService.isDefaultInput(device.modelData)
                                     text: "check_circle"
                                     iconSize: Metrics.iconM
                                     color: Appearance.colors.colPrimary
@@ -126,14 +126,14 @@ WidgetPanel {
 
                             VolumeSlider {
                                 Layout.fillWidth: true
-                                visible: !Volume.isDefaultInput(device.modelData)
+                                visible: !VolumeService.isDefaultInput(device.modelData)
                                 title: qsTr("Volume")
-                                iconName: Volume.nodeIconName(device.modelData)
-                                volume: Volume.nodeVolume(device.modelData)
-                                muted: Volume.nodeMuted(device.modelData)
+                                iconName: VolumeService.nodeIconName(device.modelData)
+                                volume: VolumeService.nodeVolume(device.modelData)
+                                muted: VolumeService.nodeMuted(device.modelData)
                                 showMuteButton: true
-                                onVolumeMoved: value => Volume.setNodeVolume(device.modelData, value)
-                                onMuteRequested: Volume.toggleNodeMute(device.modelData)
+                                onVolumeMoved: value => VolumeService.setNodeVolume(device.modelData, value)
+                                onMuteRequested: VolumeService.toggleNodeMute(device.modelData)
                             }
                         }
                     }

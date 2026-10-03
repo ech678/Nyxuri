@@ -402,7 +402,7 @@ class ConfigurationContracts(unittest.TestCase):
         self.assertIn(str(link), state['files'])
 
     def test_cursor_wrapper(self):
-        script = str(ROOT / 'scripts/theme/write_niri_cursor_config.sh')
+        script = str(ROOT / 'scripts/theme/write-niri-cursor-config.sh')
         args = [script, str(self.fragment('cursor')), str(self.main), 'Quoted "theme', '32', 'true', '1000', 'niri']
         self.assertNotEqual(subprocess.run(args, capture_output=True).returncode, 0)
         self.assertFalse(self.fragment('cursor').exists())

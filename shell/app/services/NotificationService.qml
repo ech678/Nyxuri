@@ -289,7 +289,7 @@ Singleton {
                 root.saveNotifications();
                 root.initDone();
             } catch (error) {
-                console.warn("NotificationManager failed to load history:", error);
+                console.warn("NotificationService failed to load history:", error);
                 root.list = [];
                 root.idOffset = 0;
                 root.initDone();
@@ -302,7 +302,7 @@ Singleton {
                 root.saveNotifications();
                 root.initDone();
             } else {
-                console.warn("NotificationManager failed to load notification file:", error);
+                console.warn("NotificationService failed to load notification file:", error);
                 root.initDone();
             }
         }

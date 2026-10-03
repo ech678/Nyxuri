@@ -3,8 +3,8 @@
 
 Generates shell/wiki/tree-inventory.md covering:
   1. R4-C-01 Baseline 631-file Inventory & Migration Mapping
-  2. R4-C-02 Domain Reorganization Executed Results
-  3. Current Tree State (629 files)
+  2. R4-C-02 Naming Codex & Dead Code Elimination
+  3. Current Tree State (621 files)
 """
 
 from __future__ import annotations
@@ -31,7 +31,23 @@ MIGRATED_SERVICES = {
     "app/services/DisplayConfigService.qml": ("移动", "modules/settings/DisplayConfigService.qml", "仅 settings 显示设置页消费的显示配置服务"),
     "modules/keystone/tools/ToolsBackend.qml": ("删除", "-", "纯转发代理，直连录制服务，取色走 ActionGateway"),
     "modules/settings/SplitMenuButton.qml": ("删除", "-", "重复包装壳，直接使用 shared/controls/SplitMenuButton"),
-    "app/services/weather/WeatherBackend.qml": ("合并", "app/services/WeatherPlugin.qml", "9 行纯 Loader 壳，合并入天气组件或 R4-C-05 消除"),
+    "app/services/AudioSpectrum.qml": ("删除", "-", "纯假桩空壳，已物理删除并解除调用点假绑定"),
+    "app/services/WindowPreviewService.qml": ("删除", "-", "纯假桩空壳，已物理删除并解除调用点假绑定"),
+    "modules/dock/preview/DockCaptureImage.qml": ("删除", "-", "假预览空壳，已物理删除"),
+    "modules/keystone/lyrics/HorizontalLyricsLayout.qml": ("删除", "-", "废弃歌词僵尸代码，已物理删除"),
+    "modules/keystone/lyrics/LyricsAlbumArt.qml": ("删除", "-", "废弃歌词僵尸代码，已物理删除"),
+    "modules/keystone/lyrics/LyricsContent.qml": ("删除", "-", "废弃歌词僵尸代码，已物理删除"),
+    "modules/keystone/lyrics/LyricsSpectrum.qml": ("删除", "-", "废弃歌词僵尸代码，已物理删除"),
+    "modules/keystone/lyrics/VerticalLyricsLayout.qml": ("删除", "-", "废弃歌词僵尸代码，已物理删除"),
+    "app/services/Volume.qml": ("重命名", "app/services/VolumeService.qml", "确立 Service 后缀命名法典"),
+    "app/services/Brightness.qml": ("重命名", "app/services/BrightnessService.qml", "确立 Service 后缀并消除与 Bar 按钮同名冲突"),
+    "app/services/Time.qml": ("重命名", "app/services/TimeService.qml", "确立 Service 后缀命名法典"),
+    "app/services/WeatherPlugin.qml": ("重命名", "app/services/WeatherService.qml", "消除伪插件名并确立 Service 命名法典"),
+    "app/services/NotificationManager.qml": ("重命名", "app/services/NotificationService.qml", "确立 Service 后缀命名法典"),
+    "app/services/MediaManager.qml": ("重命名", "app/services/MediaService.qml", "确立 Service 后缀命名法典"),
+    "modules/bar/quicksettings/Brightness.qml": ("重命名", "modules/bar/quicksettings/BrightnessButton.qml", "消除与服务同名冲突"),
+    "modules/sidebars/dashboard/infotools/calendar_layout.js": ("重命名", "modules/sidebars/dashboard/infotools/CalendarLayout.js", "对齐全库 PascalCase.js 命名法典"),
+    "app/services/weather/WeatherBackend.qml": ("合并", "app/services/WeatherService.qml", "9 行纯 Loader 壳，待合并入天气组件或 R4-C-05 消除"),
 }
 
 
@@ -54,17 +70,19 @@ def analyze_file(rel_path: str, content: str) -> dict:
     else:
         owner = layer
 
-    # Check if this file was moved here from app/services/
+    # Check if this file was moved/renamed here
     moved_from = None
+    action_type = None
     for orig, (act, tgt, rat) in MIGRATED_SERVICES.items():
-        if tgt == rel_path and act == "移动":
+        if tgt == rel_path and act in ("移动", "重命名"):
             moved_from = orig
+            action_type = act
             break
 
     if moved_from:
-        action = "移动"
+        action = action_type
         target = rel_path
-        rationale = f"已由 {moved_from} 迁入本功能域，保持内聚"
+        rationale = f"已由 {moved_from} {action_type}，遵循命名法典与内聚规范"
     elif rel_path in MIGRATED_SERVICES:
         action, target, rationale = MIGRATED_SERVICES[rel_path]
     elif layer == "shared":
@@ -181,7 +199,7 @@ def generate_markdown(entries: list[dict], consumers: dict[str, list[str]]) -> s
         by_layer[e["layer"]] += 1
         by_action[e["action"]] += 1
 
-    lines.append(f"- **现存文件总数**：{total_files} 个（基线 631 文件，物理删除 2 个冗余代理，迁入 12 个服务）")
+    lines.append(f"- **现存文件总数**：{total_files} 个（基线 631 文件；R4-C-01 物理删除 2 个冗余代理，迁入 12 个服务；R4-C-02 物理删除 8 个僵尸代码与假桩，重命名 8 个服务/按钮/工具）")
     lines.append("- **分层分布**：")
     for l in TARGET_DIRS:
         lines.append(f"  - `{l}/`：{by_layer[l]} 个文件")

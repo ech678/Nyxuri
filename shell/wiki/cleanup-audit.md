@@ -88,11 +88,16 @@
 
 ## P2：中优先级问题
 
-### P2-01 命名与大小写风格仍不统一
+### P2-01 命名与大小写风格仍不统一（R4-C-02 已统一法典并清理死代码）
 
 - 位置：`modules/` 文件名大量 PascalCase，目录为小写；服务、backend、component、host、state、manager 后缀混用。
-- 问题：同一层级的文件命名不能稳定推断职责，旧母体命名与 Nyxuri 新命名共存。
-- 建议：冻结目录小写、QML 类型 PascalCase、纯数据/工具文件命名规则，并按域批量重命名；重命名必须同步 import、测试、文档和恢复矩阵。
+- 现状（R4-C-02 交付）：
+  - 确立全库艺术级命名法典：QML 服务单例统一 PascalCase `*Service.qml`（`BrightnessService`、`MediaService`、`NotificationService`、`TimeService`、`VolumeService`、`WeatherService`）；
+  - 消除同名冲突：`modules/bar/quicksettings/Brightness.qml` 重命名为 `BrightnessButton.qml`；
+  - JS 工具脚本 100% 遵循 PascalCase.js（`calendar_layout.js` -> `CalendarLayout.js`）；
+  - CLI 脚本统一 kebab-case（`compile-i18n.py`、`lock-snapshot.sh`、`generate-matugen-colors.sh` 等）；
+  - 彻底物理拔除 Keystone 歌词（5 文件）、Dock 假预览空壳（`DockCaptureImage.qml`）、废弃 Cava 模板（`cava-colors.ini`）及 `AudioSpectrum` / `WindowPreviewService` 假桩，调用点假绑定完全解除；
+  - `tests/test_shell.py` 固化 `test_r4c_naming_codex_and_dead_stub_elimination` 契约断言。
 
 ### P2-02 注释、README 和路线图存在历史语气与重复契约
 

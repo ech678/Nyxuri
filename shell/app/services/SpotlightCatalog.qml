@@ -16,7 +16,7 @@ Singleton {
     property var actionExecutor: null
     property bool keystoneAvailable: false
     readonly property bool keyboardLockAvailable: KeyboardLockService.available
-    readonly property bool dockPreviewsAvailable: WindowPreviewService.supported
+    readonly property bool dockPreviewsAvailable: false
 
     readonly property var commands: Commands.entries
     function commandTitle(entry) {

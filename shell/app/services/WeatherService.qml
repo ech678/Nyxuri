@@ -54,8 +54,8 @@ Item {
         ignoreUnknownSignals: true
     }
 
-    signal dataChanged()
-    signal normalsChanged()
+    signal dataChanged
+    signal normalsChanged
 
     function refresh() {
         return backend ? backend.refresh() : false;

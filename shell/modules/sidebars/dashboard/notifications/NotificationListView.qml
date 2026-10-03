@@ -22,7 +22,7 @@ StyledListView {
     remove: Transition {}
 
     model: ScriptModel {
-        values: root.popup ? NotificationManager.popupAppNameList : NotificationManager.appNameList
+        values: root.popup ? NotificationService.popupAppNameList : NotificationService.appNameList
     }
 
     delegate: NotificationGroup {
@@ -33,7 +33,7 @@ StyledListView {
         dragHost: root
         popup: root.popup
         width: ListView.view.width
-        notificationGroup: root.popup ? NotificationManager.popupGroupsByAppName[modelData] :
-                                        NotificationManager.groupsByAppName[modelData]
+        notificationGroup: root.popup ? NotificationService.popupGroupsByAppName[modelData] :
+                                        NotificationService.groupsByAppName[modelData]
     }
 }

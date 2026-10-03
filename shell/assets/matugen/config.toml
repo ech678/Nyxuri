@@ -10,10 +10,6 @@ input_path = "templates/btop.theme"
 output_path = "~/.config/btop/themes/matugen.theme"
 post_hook = "pkill -USR2 btop >/dev/null 2>&1 || true"
 
-[templates.cava]
-input_path = "templates/cava-colors.ini"
-output_path = "~/.config/cava/themes/matugen"
-post_hook = "pkill -USR1 cava >/dev/null 2>&1 || true"
 
 [templates.kitty]
 input_path = "templates/kitty-colors.conf"

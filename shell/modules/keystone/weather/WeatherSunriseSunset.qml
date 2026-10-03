@@ -28,15 +28,15 @@ Item {
     }
 
     Connections {
-        target: WeatherPlugin
+        target: WeatherService
         function onDataChanged() {
-            if (WeatherPlugin.hasValidData && WeatherPlugin.current) {
-                root.sunriseTime = WeatherPlugin.current().sunrise || 0;
-                root.sunsetTime = WeatherPlugin.current().sunset || 0;
+            if (WeatherService.hasValidData && WeatherService.current) {
+                root.sunriseTime = WeatherService.current().sunrise || 0;
+                root.sunsetTime = WeatherService.current().sunset || 0;
             } else {
-                const today = (WeatherPlugin.dailyForecast && typeof WeatherPlugin.dailyForecast.count
-                               === "function" && WeatherPlugin.dailyForecast.count() > 0)
-                      ? WeatherPlugin.dailyForecast.get(0) : null;
+                const today = (WeatherService.dailyForecast && typeof WeatherService.dailyForecast.count
+                               === "function" && WeatherService.dailyForecast.count() > 0)
+                      ? WeatherService.dailyForecast.get(0) : null;
                 if (today) {
                     root.sunriseTime = today.sunrise || 0;
                     root.sunsetTime = today.sunset || 0;
@@ -47,13 +47,13 @@ Item {
     }
 
     Component.onCompleted: {
-        if (WeatherPlugin.hasValidData && WeatherPlugin.current) {
-            root.sunriseTime = WeatherPlugin.current().sunrise || 0;
-            root.sunsetTime = WeatherPlugin.current().sunset || 0;
+        if (WeatherService.hasValidData && WeatherService.current) {
+            root.sunriseTime = WeatherService.current().sunrise || 0;
+            root.sunsetTime = WeatherService.current().sunset || 0;
         } else {
-            const today = (WeatherPlugin.dailyForecast && typeof WeatherPlugin.dailyForecast.count
-                           === "function" && WeatherPlugin.dailyForecast.count() > 0)
-                  ? WeatherPlugin.dailyForecast.get(0) : null;
+            const today = (WeatherService.dailyForecast && typeof WeatherService.dailyForecast.count
+                           === "function" && WeatherService.dailyForecast.count() > 0)
+                  ? WeatherService.dailyForecast.get(0) : null;
             if (today) {
                 root.sunriseTime = today.sunrise || 0;
                 root.sunsetTime = today.sunset || 0;

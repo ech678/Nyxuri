@@ -97,19 +97,7 @@ Button {
                 color: Appearance.applyAlpha(Appearance.colors.colOnSurface, 0.05)
                 radius: 4
                 clip: true
-                Loader {
-                    id: captureLoader
-                    anchors.fill: parent
-                    active: root.showThumbnail && root.previewFrame !== null
-                    visible: root.hasFrame
-                    source: Qt.resolvedUrl("preview/DockCaptureImage.qml")
-                }
-                Binding {
-                    target: captureLoader.item
-                    property: "frame"
-                    value: root.previewFrame
-                    when: captureLoader.item !== null
-                }
+
                 Text {
                     anchors.fill: parent
                     anchors.margins: 4

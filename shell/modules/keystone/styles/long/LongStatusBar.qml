@@ -37,7 +37,7 @@ Item {
         width: root.vertical ? 42 : 220
         height: root.vertical ? 220 : 42
         edge: root.edge
-        player: MediaManager.active
+        player: MediaService.active
 
         HoverHandler {
             id: clockHover

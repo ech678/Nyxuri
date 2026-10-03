@@ -9,7 +9,7 @@ matugen_registry_init() {
     clavis_paths_init
     matugen_builtin_dir=$(cd -- "$library_dir/../.." && pwd)/assets/matugen
     matugen_user_dir="$CLAVIS_CONFIG_HOME/matugen"
-    matugen_parser="$library_dir/../theme/matugen_registry.jq"
+    matugen_parser="$library_dir/../theme/matugen-registry.jq"
 }
 
 matugen_read_config() {

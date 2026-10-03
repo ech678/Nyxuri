@@ -50,18 +50,18 @@ Item {
     }
 
     Connections {
-        target: WeatherPlugin
+        target: WeatherService
         function onDataChanged() {
-            if (WeatherPlugin.hasValidData && WeatherPlugin.currentAirQuality) {
-                root.aqi = calculateAQI(WeatherPlugin.currentAirQuality.pm25 || 0);
+            if (WeatherService.hasValidData && WeatherService.currentAirQuality) {
+                root.aqi = calculateAQI(WeatherService.currentAirQuality.pm25 || 0);
             }
             canvas.requestPaint();
         }
     }
 
     Component.onCompleted: {
-        if (WeatherPlugin.hasValidData && WeatherPlugin.currentAirQuality) {
-            root.aqi = calculateAQI(WeatherPlugin.currentAirQuality.pm25 || 0);
+        if (WeatherService.hasValidData && WeatherService.currentAirQuality) {
+            root.aqi = calculateAQI(WeatherService.currentAirQuality.pm25 || 0);
         }
     }
 

@@ -58,10 +58,10 @@ PanelWindow {
     function opened(role) {
         lastOpenedSidebar = role;
         reconcileSidebars();
-        const requested = Brightness.getScreenByName(openingScreenName || (role === "quicksettings"
-                                                                           ? WidgetState.quickSettingsScreenName :
-                                                                             ""));
-        const nextScreen = requested || Brightness.activeScreen;
+        const requested = BrightnessService.getScreenByName(openingScreenName || (role === "quicksettings"
+                                                                                  ? WidgetState.quickSettingsScreenName :
+                                                                                    ""));
+        const nextScreen = requested || BrightnessService.activeScreen;
         if (nextScreen)
             retainedScreenName = nextScreen.name;
     }
@@ -75,7 +75,7 @@ PanelWindow {
                                                                                                         [];
         if (views.indexOf(view) < 0)
             return "INVALID_VIEW";
-        const requestedScreen = Brightness.getScreenByName(screenName);
+        const requestedScreen = BrightnessService.getScreenByName(screenName);
         if (!requestedScreen)
             return "SCREEN_UNAVAILABLE";
 
@@ -93,16 +93,17 @@ PanelWindow {
     }
 
     readonly property bool anySidebarOpen: WidgetState.dashboardSidebarOpen || WidgetState.quickSettingsOpen
-    readonly property var fallbackScreen: Brightness.activeScreen || (Quickshell.screens.length > 0
-                                                                      ? Quickshell.screens[0] : null)
+    readonly property var fallbackScreen: BrightnessService.activeScreen || (Quickshell.screens.length > 0
+                                                                             ? Quickshell.screens[0] : null)
     // DPMS cycles can replace the Screen instance while preserving its name.
     property string retainedScreenName: ""
-    readonly property var retainedScreen: Brightness.getScreenByName(retainedScreenName)
+    readonly property var retainedScreen: BrightnessService.getScreenByName(retainedScreenName)
 
     screen: retainedScreen || fallbackScreen
     onScreenChanged: WidgetState.sidebarScreenName = screen ? screen.name : ""
-    visible: (retainedScreen !== null || fallbackScreen !== null)
-             && (root.anySidebarOpen || dashboardSidebar.panelPresented || quickSettingsSidebar.panelPresented)
+    visible: (retainedScreen !== null || fallbackScreen !== null) && (root.anySidebarOpen
+                                                                      || dashboardSidebar.panelPresented
+                                                                      || quickSettingsSidebar.panelPresented)
     color: "transparent"
 
     anchors {
@@ -162,7 +163,7 @@ PanelWindow {
         target: WidgetState
 
         function onQuickSettingsScreenNameChanged() {
-            const requestedScreen = Brightness.getScreenByName(WidgetState.quickSettingsScreenName);
+            const requestedScreen = BrightnessService.getScreenByName(WidgetState.quickSettingsScreenName);
             if (requestedScreen)
                 root.retainedScreenName = requestedScreen.name;
         }

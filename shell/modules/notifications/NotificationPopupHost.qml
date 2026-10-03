@@ -16,12 +16,14 @@ Scope {
 
             required property var modelData
 
-            readonly property bool barTop: PersonalizationConfig.barEnabled && PersonalizationConfig.barPosition === "top"
-            readonly property bool barRight: PersonalizationConfig.barEnabled && PersonalizationConfig.barPosition === "right"
+            readonly property bool barTop: PersonalizationConfig.barEnabled
+                                           && PersonalizationConfig.barPosition === "top"
+            readonly property bool barRight: PersonalizationConfig.barEnabled
+                                             && PersonalizationConfig.barPosition === "right"
             readonly property int notifWidth: 380
-            readonly property int notifContentHeight: NotificationManager.popupList.reduce((h, notif) => {
-                return h + (NotificationManager.normalActions(notif).length > 0 ? 104 : 64);
-            }, 0) + Math.max(0, NotificationManager.popupList.length - 1) * 10
+            readonly property int notifContentHeight: NotificationService.popupList.reduce((h, notif) => {
+                return h + (NotificationService.normalActions(notif).length > 0 ? 104 : 64);
+            }, 0) + Math.max(0, NotificationService.popupList.length - 1) * 10
             readonly property int cardHeight: notifContentHeight > 0 ? (notifContentHeight + 20) : 0
             readonly property real shadowBuffer: 10
 
@@ -33,7 +35,7 @@ Scope {
             WlrLayershell.exclusionMode: ExclusionMode.Ignore
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
-            visible: NotificationManager.popupList.length > 0 && !NotificationManager.popupInhibited
+            visible: NotificationService.popupList.length > 0 && !NotificationService.popupInhibited
 
             anchors {
                 top: true
@@ -41,8 +43,10 @@ Scope {
             }
 
             margins {
-                top: (popupWindow.barTop ? (Sizes.barOuterEdgeMargin + Sizes.barVisualThickness + 12) : 16) - popupWindow.shadowBuffer
-                right: (popupWindow.barRight ? (Sizes.barOuterEdgeMargin + Sizes.barVisualThickness + 12) : 16) - popupWindow.shadowBuffer
+                top: (popupWindow.barTop ? (Sizes.barOuterEdgeMargin + Sizes.barVisualThickness + 12) : 16)
+                     - popupWindow.shadowBuffer
+                right: (popupWindow.barRight ? (Sizes.barOuterEdgeMargin + Sizes.barVisualThickness + 12) : 16)
+                       - popupWindow.shadowBuffer
             }
 
             implicitWidth: notifWidth + shadowBuffer * 2
@@ -80,7 +84,7 @@ Scope {
                         anchors.centerIn: parent
                         width: parent.width - 20
                         height: Math.max(0, parent.height - 20)
-                        manager: NotificationManager
+                        manager: NotificationService
                     }
                 }
 

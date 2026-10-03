@@ -11,9 +11,9 @@ Rectangle {
     property var screen: null
     property bool detailed: false
     property real pullExpansion: 0
-    readonly property var brightnessMonitor: Brightness.getMonitorForScreen(screen)
+    readonly property var brightnessMonitor: BrightnessService.getMonitorForScreen(screen)
     readonly property real brightnessValue: brightnessMonitor ? brightnessMonitor.brightness :
-                                                                Brightness.brightnessValue
+                                                                BrightnessService.brightnessValue
     property real verticalPadding: detailed ? Metrics.spacingL : 4
     property real horizontalPadding: detailed ? Metrics.spacingL : 12
 
@@ -63,13 +63,15 @@ Rectangle {
                                                                        Math.round(DisplayColor.dimming * 100))
             onMoved: {
                 if (value >= root.gammaCutoff) {
-                    Brightness.setBrightnessForScreen(root.screen, (value - root.gammaCutoff) / (1
-                                                                                                 - root.gammaCutoff));
+                    BrightnessService.setBrightnessForScreen(root.screen, (value - root.gammaCutoff) / (1
+                                                                                                        - root.gammaCutoff));
+
+
                     if ((DisplayColor.dimming * 100) !== 100)
                         DisplayColor.setDimming(1);
                 } else {
                     if (root.brightnessValue > 0)
-                        Brightness.setBrightnessForScreen(root.screen, 0, true);
+                        BrightnessService.setBrightnessForScreen(root.screen, 0, true);
                     DisplayColor.setDimming(value / root.gammaCutoff * (1 - DisplayColor.dimmingLowerLimit)
                                             + DisplayColor.dimmingLowerLimit);
                 }
@@ -80,32 +82,32 @@ Rectangle {
             visible: root.detailed
             Layout.topMargin: (root.detailed ? Metrics.spacingS : 0) + root.pullExpansion * 1.5
             title: qsTr("Sound")
-            detail: Volume.sinkName
+            detail: VolumeService.sinkName
         }
 
         QuickMaterialSlider {
             Accessible.name: qsTr("Sound")
-            enabled: Volume.outputAvailable
-            materialSymbol: Volume.sinkMuted ? "volume_off" : "volume_up"
-            value: Volume.sinkVolume
-            percentText: Volume.sinkMuted ? qsTr("Muted") : Math.round(value * 100) + "%"
-            onMoved: Volume.setSinkVolume(value)
+            enabled: VolumeService.outputAvailable
+            materialSymbol: VolumeService.sinkMuted ? "volume_off" : "volume_up"
+            value: VolumeService.sinkVolume
+            percentText: VolumeService.sinkMuted ? qsTr("Muted") : Math.round(value * 100) + "%"
+            onMoved: VolumeService.setSinkVolume(value)
         }
 
         SliderHeading {
             visible: root.detailed
             Layout.topMargin: (root.detailed ? Metrics.spacingS : 0) + root.pullExpansion * 1.5
             title: qsTr("Microphone")
-            detail: Volume.sourceName
+            detail: VolumeService.sourceName
         }
 
         QuickMaterialSlider {
             Accessible.name: qsTr("Microphone")
-            enabled: Volume.inputAvailable
-            materialSymbol: Volume.sourceMuted ? "mic_off" : "mic"
-            value: Volume.sourceVolume
-            percentText: Volume.sourceMuted ? qsTr("Muted") : Math.round(value * 100) + "%"
-            onMoved: Volume.setSourceVolume(value)
+            enabled: VolumeService.inputAvailable
+            materialSymbol: VolumeService.sourceMuted ? "mic_off" : "mic"
+            value: VolumeService.sourceVolume
+            percentText: VolumeService.sourceMuted ? qsTr("Muted") : Math.round(value * 100) + "%"
+            onMoved: VolumeService.setSourceVolume(value)
         }
     }
 

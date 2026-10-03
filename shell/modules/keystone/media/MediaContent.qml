@@ -17,26 +17,26 @@ Item {
     readonly property var sourceOvershootCurve: [0.16, 0.7, 0.3, 1.06, 0.65, 1.025, 0.8, 1.025, 0.92, 1, 1, 1]
     readonly property var sourceEaseOutCurve: [0.2, 0, 0, 1, 1, 1]
 
-    readonly property bool isActive: root.visible && MediaManager.active
-    property bool isPlaying: isActive && MediaManager.active && MediaManager.active.isPlaying
+    readonly property bool isActive: root.visible && MediaService.active
+    property bool isPlaying: isActive && MediaService.active && MediaService.active.isPlaying
 
-    property string artUrl: (isActive && MediaManager.active.trackArtUrl) ? MediaManager.active.trackArtUrl :
+    property string artUrl: (isActive && MediaService.active.trackArtUrl) ? MediaService.active.trackArtUrl :
                                                                             ""
 
-    property string title: (isActive && MediaManager.active.trackTitle) ? MediaManager.active.trackTitle :
+    property string title: (isActive && MediaService.active.trackTitle) ? MediaService.active.trackTitle :
                                                                           qsTr("No media")
 
-    property string artist: (isActive && MediaManager.active.trackArtist) ? MediaManager.active.trackArtist :
+    property string artist: (isActive && MediaService.active.trackArtist) ? MediaService.active.trackArtist :
                                                                             qsTr("Unknown artist")
 
-    readonly property double currentPos: root.isActive ? MediaManager.currentPosition : 0
+    readonly property double currentPos: root.isActive ? MediaService.currentPosition : 0
 
-    readonly property bool hasDuration: isActive && Number.isFinite(MediaManager.active.length)
-                                        && MediaManager.active.length > 0
-    readonly property bool canSeek: hasDuration && MediaManager.active.canSeek
+    readonly property bool hasDuration: isActive && Number.isFinite(MediaService.active.length)
+                                        && MediaService.active.length > 0
+    readonly property bool canSeek: hasDuration && MediaService.active.canSeek
     readonly property double progress: hasDuration && Number.isFinite(root.currentPos) ? Math.max(0, Math.min(1,
                                                                                                               root.currentPos
-                                                                                                              / MediaManager.active.length)) :
+                                                                                                              / MediaService.active.length)) :
                                                                                          0
     readonly property bool caelestiaCover: PersonalizationConfig.keystoneMediaCoverStyle === "caelestia"
     readonly property real panelWidth: caelestiaCover || backgroundCover ? 640 : 540
@@ -61,7 +61,7 @@ Item {
 
     function seek(position) {
         if (root.canSeek && Number.isFinite(position))
-            MediaManager.active.position = Math.max(0, Math.min(1, position)) * MediaManager.active.length;
+            MediaService.active.position = Math.max(0, Math.min(1, position)) * MediaService.active.length;
     }
 
     onPaletteArtUrlChanged: updatePalette()
@@ -70,8 +70,8 @@ Item {
 
     // 对播放器列表进行重排序，让当前播放器排在第一位
     property var sortedPlayerList: {
-        let activeP = MediaManager.active;
-        let allP = MediaManager.list;
+        let activeP = MediaService.active;
+        let allP = MediaService.list;
 
         if (!activeP || allP.length <= 1)
             return allP;
@@ -204,14 +204,14 @@ Item {
                 Layout.alignment: Qt.AlignHCenter
                 spacing: 24
                 isPlaying: root.isPlaying
-                shuffleActive: MediaManager.active && MediaManager.active.shuffle
-                shuffleEnabled: MediaManager.active && MediaManager.active.shuffleSupported
-                previousEnabled: MediaManager.active
-                playPauseEnabled: MediaManager.active
-                nextEnabled: MediaManager.active
-                loopEnabled: MediaManager.active && MediaManager.active.loopSupported
-                loopMode: !MediaManager.active || MediaManager.active.loopState === MprisLoopState.None ? 0 : (
-                                                                                                              MediaManager.active.loopState
+                shuffleActive: MediaService.active && MediaService.active.shuffle
+                shuffleEnabled: MediaService.active && MediaService.active.shuffleSupported
+                previousEnabled: MediaService.active
+                playPauseEnabled: MediaService.active
+                nextEnabled: MediaService.active
+                loopEnabled: MediaService.active && MediaService.active.loopSupported
+                loopMode: !MediaService.active || MediaService.active.loopState === MprisLoopState.None ? 0 : (
+                                                                                                              MediaService.active.loopState
                                                                                                               === MprisLoopState.Track
                                                                                                               ? 2 : 1)
                 activeColor: root.accentColor
@@ -222,24 +222,24 @@ Item {
                 pausedFg: root.coverColors ? root.accentColor : Appearance.colors.colOnSecondaryContainer
                 morphEnabled: true
 
-                onShuffleClicked: if (MediaManager.active && MediaManager.active.shuffleSupported)
-                                      MediaManager.active.shuffle = !MediaManager.active.shuffle
-                onPreviousClicked: if (MediaManager.active)
-                                       MediaManager.active.previous()
-                onPlayPauseClicked: if (MediaManager.active)
-                                        MediaManager.active.togglePlaying()
-                onNextClicked: if (MediaManager.active)
-                                   MediaManager.active.next()
+                onShuffleClicked: if (MediaService.active && MediaService.active.shuffleSupported)
+                                      MediaService.active.shuffle = !MediaService.active.shuffle
+                onPreviousClicked: if (MediaService.active)
+                                       MediaService.active.previous()
+                onPlayPauseClicked: if (MediaService.active)
+                                        MediaService.active.togglePlaying()
+                onNextClicked: if (MediaService.active)
+                                   MediaService.active.next()
                 onLoopClicked: {
-                    if (!MediaManager.active || !MediaManager.active.loopSupported)
+                    if (!MediaService.active || !MediaService.active.loopSupported)
                         return;
 
-                    if (MediaManager.active.loopState === MprisLoopState.None)
-                        MediaManager.active.loopState = MprisLoopState.Playlist;
-                    else if (MediaManager.active.loopState === MprisLoopState.Playlist)
-                        MediaManager.active.loopState = MprisLoopState.Track;
+                    if (MediaService.active.loopState === MprisLoopState.None)
+                        MediaService.active.loopState = MprisLoopState.Playlist;
+                    else if (MediaService.active.loopState === MprisLoopState.Playlist)
+                        MediaService.active.loopState = MprisLoopState.Track;
                     else
-                        MediaManager.active.loopState = MprisLoopState.None;
+                        MediaService.active.loopState = MprisLoopState.None;
                 }
             }
         }
@@ -259,7 +259,7 @@ Item {
         readonly property color baseColor: root.coverColors ? root.accentColor : Appearance.colors.colTertiary
         color: Qt.tint(baseColor, Qt.rgba(0, 0, 0, pillMa.pressed ? 0.12 : pillMa.containsMouse ? 0.06 : 0))
         width: menuExpanded ? Math.max(150, pillText.implicitWidth + 28) : pillText.implicitWidth + 28
-        height: menuExpanded ? Math.max(30, 30 * MediaManager.list.length + 12) : 30
+        height: menuExpanded ? Math.max(30, 30 * MediaService.list.length + 12) : 30
         radius: 8
         topRightRadius: Math.max(0, root.surfaceTopRightRadius - root.sourceBadgeInset)
 
@@ -288,7 +288,7 @@ Item {
         Text {
             id: pillText
             anchors.centerIn: parent
-            text: MediaManager.getIdentity(MediaManager.active)
+            text: MediaService.getIdentity(MediaService.active)
             color: root.coverColors ? root.onAccentColor : Appearance.colors.colOnTertiary
             font.pixelSize: 11
             font.weight: Font.DemiBold
@@ -307,7 +307,7 @@ Item {
             cursorShape: Qt.PointingHandCursor
             visible: !pillRect.menuExpanded
             onClicked: {
-                if (MediaManager.list.length > 1)
+                if (MediaService.list.length > 1)
                     pillRect.menuExpanded = true;
             }
         }
@@ -349,7 +349,7 @@ Item {
 
                         Text {
                             Layout.fillWidth: true
-                            text: MediaManager.getIdentity(modelData)
+                            text: MediaService.getIdentity(modelData)
                             color: root.coverColors ? root.onAccentColor : Appearance.colors.colOnTertiary
                             font.pixelSize: 11
                             font.weight: Font.DemiBold
@@ -364,7 +364,7 @@ Item {
                         cursorShape: Qt.PointingHandCursor
 
                         onClicked: {
-                            MediaManager.manualActive = modelData;
+                            MediaService.manualActive = modelData;
                             pillRect.menuExpanded = false;
                         }
                     }

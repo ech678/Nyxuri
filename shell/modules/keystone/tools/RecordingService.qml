@@ -126,7 +126,7 @@ Singleton {
         if (!snapshot && (newer || expectedCommand === "record.stop") && response.ok && response.state === "completed"
                 && response.outputPath && root._lastSavedKey !== savedKey) {
             root._lastSavedKey = savedKey;
-            NotificationManager.fileSaved(root.recordingType === "gif" ? qsTr("GIF saved") : qsTr(
+            NotificationService.fileSaved(root.recordingType === "gif" ? qsTr("GIF saved") : qsTr(
                                                                              "Screen recording saved"),
                                           response.outputPath);
         }

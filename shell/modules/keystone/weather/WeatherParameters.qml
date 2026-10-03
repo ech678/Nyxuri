@@ -16,7 +16,7 @@ Item {
     property string visibility: "--"
 
     function syncParams() {
-        if (!WeatherPlugin.hasValidData) {
+        if (!WeatherService.hasValidData) {
             root.uv = "--";
             root.feelsLike = "--";
             root.humidity = "--";
@@ -25,13 +25,13 @@ Item {
             root.visibility = "--";
             return;
         }
-        root.uv = Math.round(WeatherPlugin.currentUvIndex || 0).toString();
-        root.feelsLike = Math.round(UiPreferences.weatherTemperature(WeatherPlugin.currentFeelsLikeC || 0))
+        root.uv = Math.round(WeatherService.currentUvIndex || 0).toString();
+        root.feelsLike = Math.round(UiPreferences.weatherTemperature(WeatherService.currentFeelsLikeC || 0))
                 + UiPreferences.weatherTemperatureSymbol();
-        root.humidity = Math.round(WeatherPlugin.currentRelativeHumidity || 0) + "%";
-        root.wind = Math.round((WeatherPlugin.currentWindSpeedMs || 0) * 3.6) + " km/h";
-        root.pressure = Math.round(WeatherPlugin.currentPressureHpa || 0) + " hPa";
-        root.visibility = Math.round((WeatherPlugin.currentVisibilityM || 0) / 1000) + " km";
+        root.humidity = Math.round(WeatherService.currentRelativeHumidity || 0) + "%";
+        root.wind = Math.round((WeatherService.currentWindSpeedMs || 0) * 3.6) + " km/h";
+        root.pressure = Math.round(WeatherService.currentPressureHpa || 0) + " hPa";
+        root.visibility = Math.round((WeatherService.currentVisibilityM || 0) / 1000) + " km";
     }
 
     implicitHeight: grid.implicitHeight
@@ -43,7 +43,7 @@ Item {
             syncParams();
         }
 
-        target: WeatherPlugin
+        target: WeatherService
     }
 
     Connections {

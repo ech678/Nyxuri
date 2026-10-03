@@ -9,11 +9,13 @@ TopBarPill {
 
     property bool vertical: false
 
-    implicitHeight: vertical ? layout.implicitHeight + 2 * Sizes.barPillHorizontalPadding : Sizes.barPillThickness
-    implicitWidth: vertical ? Sizes.barPillThickness : layout.implicitWidth + 2 * Sizes.barPillHorizontalPadding
+    implicitHeight: vertical ? layout.implicitHeight + 2 * Sizes.barPillHorizontalPadding :
+                               Sizes.barPillThickness
+    implicitWidth: vertical ? Sizes.barPillThickness : layout.implicitWidth + 2
+                              * Sizes.barPillHorizontalPadding
 
-    readonly property string timeString: (Time.hours || "00") + ":" + (Time.minutes || "00")
-    readonly property string dateString: (Time.month || "") + " " + (Time.day || "")
+    readonly property string timeString: (TimeService.hours || "00") + ":" + (TimeService.minutes || "00")
+    readonly property string dateString: (TimeService.month || "") + " " + (TimeService.day || "")
 
     RowLayout {
         id: layout

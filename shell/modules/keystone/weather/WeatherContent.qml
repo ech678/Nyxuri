@@ -23,7 +23,7 @@ Item {
     property bool isHourly: true
     property var hourlyData: []
     property var dailyData: []
-    readonly property bool hasWeather: WeatherPlugin.hasValidData
+    readonly property bool hasWeather: WeatherService.hasValidData
 
     function validNumber(value) {
         return value !== undefined && value !== null && !isNaN(Number(value));
@@ -40,20 +40,20 @@ Item {
     }
 
     function updatedText() {
-        if (WeatherPlugin.loading)
+        if (WeatherService.loading)
             return root.hasWeather ? qsTr("Refreshing") : qsTr("Locating");
 
-        if (WeatherPlugin.status === "stale")
+        if (WeatherService.status === "stale")
             return qsTr("Data may be stale");
 
-        if (WeatherPlugin.status === "partial")
+        if (WeatherService.status === "partial")
             return qsTr("Partially updated");
 
-        if (WeatherPlugin.status === "error")
+        if (WeatherService.status === "error")
             return qsTr("Update failed");
 
-        if (WeatherPlugin.lastUpdated) {
-            const updated = new Date(WeatherPlugin.lastUpdated);
+        if (WeatherService.lastUpdated) {
+            const updated = new Date(WeatherService.lastUpdated);
             if (!isNaN(updated.getTime()))
                 return qsTr("Updated %1").arg(UiPreferences.shortTime(updated));
         }
@@ -61,7 +61,7 @@ Item {
     }
 
     function weatherErrorText() {
-        return WeatherPlugin.errorMessage || qsTr("Weather data unavailable");
+        return WeatherService.errorMessage || qsTr("Weather data unavailable");
     }
 
     function hourlyTemperatureBound(findMaximum) {
@@ -88,17 +88,17 @@ Item {
     }
 
     function fetchData() {
-        if (WeatherPlugin.loading)
+        if (WeatherService.loading)
             return;
 
-        WeatherPlugin.refresh();
+        WeatherService.refresh();
         if (weatherMapLoader.status === Loader.Ready && weatherMapLoader.item)
             weatherMapLoader.item.refreshMap();
     }
 
     function syncWeatherData() {
-        if (!WeatherPlugin.hasValidData) {
-            root.locationName = WeatherPlugin.locationName || qsTr("Weather");
+        if (!WeatherService.hasValidData) {
+            root.locationName = WeatherService.locationName || qsTr("Weather");
             root.currentTemp = "--";
             root.currentIcon = "cloud";
             root.currentDesc = "--";
@@ -110,22 +110,22 @@ Item {
             root.dailyData = [];
             return;
         }
-        root.latitude = Number(WeatherPlugin.latitude);
-        root.longitude = Number(WeatherPlugin.longitude);
-        root.locationName = WeatherPlugin.locationName || qsTr("Unknown");
-        root.currentTemp = Math.round(UiPreferences.weatherTemperature(WeatherPlugin.currentTemperatureC))
+        root.latitude = Number(WeatherService.latitude);
+        root.longitude = Number(WeatherService.longitude);
+        root.locationName = WeatherService.locationName || qsTr("Unknown");
+        root.currentTemp = Math.round(UiPreferences.weatherTemperature(WeatherService.currentTemperatureC))
                 + "°";
-        root.currentIcon = WeatherPlugin.currentIconName || "cloud";
-        root.currentDesc = WeatherPlugin.currentWeatherText || qsTr("Unknown");
-        root.feelsLike = Math.round(UiPreferences.weatherTemperature(WeatherPlugin.currentFeelsLikeC))
+        root.currentIcon = WeatherService.currentIconName || "cloud";
+        root.currentDesc = WeatherService.currentWeatherText || qsTr("Unknown");
+        root.feelsLike = Math.round(UiPreferences.weatherTemperature(WeatherService.currentFeelsLikeC))
                 + UiPreferences.weatherTemperatureSymbol();
-        root.humidity = Math.round(WeatherPlugin.currentRelativeHumidity) + "%";
-        root.windSpeed = Math.round(WeatherPlugin.currentWindSpeedMs * 3.6) + " km/h";
-        root.pressure = Math.round(WeatherPlugin.currentPressureHpa) + " hPa";
+        root.humidity = Math.round(WeatherService.currentRelativeHumidity) + "%";
+        root.windSpeed = Math.round(WeatherService.currentWindSpeedMs * 3.6) + " km/h";
+        root.pressure = Math.round(WeatherService.currentPressureHpa) + " hPa";
         const nextHourly = [];
-        const hourlyCount = Math.min(8, WeatherPlugin.hourlyForecast.count());
+        const hourlyCount = Math.min(8, WeatherService.hourlyForecast.count());
         for (let hourIndex = 0; hourIndex < hourlyCount; ++hourIndex) {
-            const item = WeatherPlugin.hourlyForecast.get(hourIndex);
+            const item = WeatherService.hourlyForecast.get(hourIndex);
             const timeObject = new Date(Number(item.time || 0) * 1000);
             nextHourly.push({
                                 "time": UiPreferences.hourTime(timeObject),
@@ -138,9 +138,9 @@ Item {
         }
         root.hourlyData = nextHourly;
         const nextDaily = [];
-        const dailyCount = Math.min(5, WeatherPlugin.dailyForecast.count());
+        const dailyCount = Math.min(5, WeatherService.dailyForecast.count());
         for (let dayIndex = 0; dayIndex < dailyCount; ++dayIndex) {
-            const item = WeatherPlugin.dailyForecast.get(dayIndex);
+            const item = WeatherService.dailyForecast.get(dayIndex);
             const dateObject = item.date ? new Date(item.date + "T00:00:00") : new Date(Number(item.time
                                                                                                || 0) * 1000);
             const dayPart = item.day || ({});
@@ -167,8 +167,8 @@ Item {
     Material.accent: Appearance.colors.colPrimary
     Component.onCompleted: {
         root.syncWeatherData();
-        if (!WeatherPlugin.hasValidData && !WeatherPlugin.loading)
-            WeatherPlugin.refresh();
+        if (!WeatherService.hasValidData && !WeatherService.loading)
+            WeatherService.refresh();
     }
 
     Connections {
@@ -176,7 +176,7 @@ Item {
             root.syncWeatherData();
         }
 
-        target: WeatherPlugin
+        target: WeatherService
     }
 
     Connections {
@@ -196,8 +196,8 @@ Item {
         running: root.active
         repeat: true
         onTriggered: {
-            if (!WeatherPlugin.loading)
-                WeatherPlugin.refresh();
+            if (!WeatherService.loading)
+                WeatherService.refresh();
         }
     }
 
@@ -257,7 +257,7 @@ Item {
                             Layout.alignment: Qt.AlignHCenter
                             Layout.preferredWidth: 42
                             Layout.preferredHeight: 42
-                            running: WeatherPlugin.loading
+                            running: WeatherService.loading
                             visible: running
                             Material.accent: Appearance.colors.colPrimary
                         }
@@ -267,13 +267,13 @@ Item {
                             text: "cloud_off"
                             iconSize: 38
                             color: Appearance.colors.colError
-                            visible: !WeatherPlugin.loading
+                            visible: !WeatherService.loading
                         }
 
                         Text {
                             Layout.fillWidth: true
-                            text: WeatherPlugin.loading ? qsTr("Loading weather") : qsTr(
-                                                              "Weather unavailable")
+                            text: WeatherService.loading ? qsTr("Loading weather") : qsTr(
+                                                               "Weather unavailable")
                             color: Appearance.colors.colOnSurface
                             font.family: Fonts.ui
                             font.pixelSize: 16
@@ -283,8 +283,8 @@ Item {
 
                         Text {
                             Layout.fillWidth: true
-                            text: WeatherPlugin.loading ? qsTr("Finding your local forecast…") :
-                                                          root.weatherErrorText()
+                            text: WeatherService.loading ? qsTr("Finding your local forecast…") :
+                                                           root.weatherErrorText()
                             color: Appearance.colors.colOnSurfaceVariant
                             font.family: Fonts.ui
                             font.pixelSize: 12
@@ -303,8 +303,6 @@ Item {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignTop
             spacing: 20
-
-
 
             // Parameters (Stack 2)
             WeatherParameters {

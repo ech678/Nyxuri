@@ -719,7 +719,7 @@ Variants {
                                          !isLyricsMode
                 property bool isVolumeMode: !contentPresentationActive && showVolume && !expanded &&
                                             !isHubMode && !isToolsMode && !isLyricsMode
-                property bool isNotifMode: !contentPresentationActive && NotificationManager.hasNotifs &&
+                property bool isNotifMode: !contentPresentationActive && NotificationService.hasNotifs &&
                                            !expanded && !showVolume && !isHubMode && !isToolsMode &&
                                            !isLyricsMode
                 property bool isCollapsedMode: !contentPresentationActive && !expanded && !isNotifMode &&
@@ -751,9 +751,9 @@ Variants {
                 readonly property int pillFusionDuration: 820
                 property int pillActiveFusionDuration: pillFusionDuration
                 property int notifW: 380
-                property int notifH: 20 + NotificationManager.popupList.reduce((height, notif) => {
-                    return height + (NotificationManager.normalActions(notif).length > 0 ? 104 : 64);
-                }, 0) + Math.max(0, NotificationManager.popupList.length - 1) * 10
+                property int notifH: 20 + NotificationService.popupList.reduce((height, notif) => {
+                    return height + (NotificationService.normalActions(notif).length > 0 ? 104 : 64);
+                }, 0) + Math.max(0, NotificationService.popupList.length - 1) * 10
                 property color color: BlurService.backgroundColor(mediaWidget.visible
                                                                   && mediaWidget.coverColors
                                                                   ? mediaWidget.surfaceColor :
@@ -821,7 +821,7 @@ Variants {
                     locksInitialized = true;
                 }
 
-                readonly property var currentPlayer: MediaManager.active
+                readonly property var currentPlayer: MediaService.active
 
                 function isHoverWidthMotion(nextW) {
                     return isCollapsedMode && Math.abs(nextW - width) <= KeystoneMotion.hoverWidthDelta;
@@ -844,7 +844,7 @@ Variants {
                     root.showTools = false;
                     root.hoverOpened = false;
                     if (root.isNotifMode)
-                        NotificationManager.hideAllPopups();
+                        NotificationService.hideAllPopups();
                 }
 
                 function triggerSliderOSD(mode) {
@@ -1535,13 +1535,13 @@ Variants {
                         mode: root.sliderMode
                         audioNode: root.sliderMode === "volume" ? root.audioNode : root.sliderMode === "mic"
                                                                   ? root.sourceAudioNode : null
-                        externalValue: Brightness.brightnessValue
+                        externalValue: BrightnessService.brightnessValue
                         iconName: root.sliderMode === "brightness" ? "brightness_medium" : ""
                         opacity: root.isVolumeMode && !root.keyboardOsd ? 1 : 0
                         visible: opacity > 0.01
                         onMoved: value => {
                             if (root.sliderMode === "brightness")
-                                Brightness.setBrightness(value);
+                                BrightnessService.setBrightness(value);
                         }
 
                         Behavior on opacity {
@@ -1559,7 +1559,7 @@ Variants {
                         anchors.topMargin: 10
                         width: root.notifW - 20
                         height: root.notifH - 20
-                        manager: NotificationManager
+                        manager: NotificationService
                         opacity: root.isNotifMode ? 1 : 0
                         visible: opacity > 0.01
 

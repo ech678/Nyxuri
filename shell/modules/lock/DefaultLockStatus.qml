@@ -7,10 +7,8 @@ import qs.app.services
 Item {
     id: root
 
-    readonly property var player: MediaManager.active
+    readonly property var player: MediaService.active
     readonly property string title: player && player.trackTitle ? player.trackTitle : qsTr("No media")
-    readonly property bool spectrumActive: visible && player !== null && player.isPlaying
-    readonly property string spectrumToken: "default-lock-" + String(root)
     readonly property real batteryPercent: Math.max(0, Math.min(100, PowerService.percentage * 100))
     readonly property string networkIcon: {
         if (!NetworkService.connected)
@@ -26,49 +24,11 @@ Item {
 
     implicitWidth: statusRow.width
     implicitHeight: 40
-    onSpectrumActiveChanged: updateSpectrum()
-    Component.onCompleted: updateSpectrum()
-    Component.onDestruction: AudioSpectrum.release(spectrumToken)
-
-    function updateSpectrum() {
-        if (spectrumActive)
-            AudioSpectrum.acquire(spectrumToken);
-        else
-            AudioSpectrum.release(spectrumToken);
-    }
 
     Row {
         id: statusRow
         spacing: 8
         height: 40
-
-        Row {
-            width: 46
-            height: 40
-            spacing: 2
-            Repeater {
-                model: 8
-                Rectangle {
-                    required property int index
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 4
-                    height: 2 + 22 * (root.spectrumActive && AudioSpectrum.available ? Math.max(0, Math.min(1,
-                                                                                                            Number(AudioSpectrum.values[Math.floor(
-                                                                                                                                            index * AudioSpectrum.bars
-                                                                                                                                            / 8)]) || 0)) :
-                                                                                       0)
-                    radius: 2
-                    color: "#F5F7FA"
-                    Behavior on height {
-                        NumberAnimation {
-                            duration: 80
-                            easing.type: Easing.BezierSpline
-                            easing.bezierCurve: [0.2, 0, 0, 1, 1, 1]
-                        }
-                    }
-                }
-            }
-        }
 
         Row {
             spacing: 2
@@ -151,16 +111,16 @@ Item {
         Row {
             spacing: 4
             StatusIcon {
-                symbol: WeatherPlugin.hasValidData ? WeatherPlugin.currentIconName || "cloud" : "cloud_off"
-                description: WeatherPlugin.hasValidData ? WeatherPlugin.currentWeatherText : qsTr(
-                                                              "Weather unavailable")
+                symbol: WeatherService.hasValidData ? WeatherService.currentIconName || "cloud" : "cloud_off"
+                description: WeatherService.hasValidData ? WeatherService.currentWeatherText : qsTr(
+                                                               "Weather unavailable")
             }
             Text {
                 height: 40
                 verticalAlignment: Text.AlignVCenter
-                text: WeatherPlugin.hasValidData ? Math.round(UiPreferences.weatherTemperature(
-                                                                  WeatherPlugin.currentTemperatureC))
-                                                   + UiPreferences.weatherTemperatureSymbol() : "—"
+                text: WeatherService.hasValidData ? Math.round(UiPreferences.weatherTemperature(
+                                                                   WeatherService.currentTemperatureC))
+                                                    + UiPreferences.weatherTemperatureSymbol() : "—"
                 font.family: Fonts.numeric
                 font.pixelSize: 16
                 color: "#F5F7FA"

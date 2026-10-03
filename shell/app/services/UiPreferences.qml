@@ -373,7 +373,7 @@ Singleton {
         }
         root.systemThemeWriteQueued = false;
         root.systemThemeLastError = "";
-        systemThemeWriter.command = ["bash", Paths.scriptPath("theme", "set_system_color_scheme.sh"),
+        systemThemeWriter.command = ["bash", Paths.scriptPath("theme", "set-system-color-scheme.sh"),
                                      root.requestedDarkMode ? "dark" : "light"];
         systemThemeWriter.running = true;
     }
