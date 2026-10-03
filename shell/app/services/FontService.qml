@@ -9,7 +9,7 @@ Singleton {
 
     // User-configurable family defaults. Keep all family literals in this
     // singleton so components only depend on semantic roles.
-    readonly property string defaultUi: "LXGW WenKai GB Screen"
+    readonly property string defaultUi: "霞鹜文楷 GB 屏幕阅读版"
     readonly property string defaultMono: "JetBrainsMono Nerd Font"
     readonly property string defaultNumeric: root.defaultMono
     readonly property string bundledFamilyName: "Google Sans Flex"
@@ -21,8 +21,10 @@ Singleton {
     property string configuredNumeric: ""
     property string configuredExpressive: ""
     // Candidate fallback families to ensure smooth rendering across varied environments
-    readonly property var uiFallbackFamilies: ["LXGW WenKai GB Screen", "LXGW WenKai Mono", "霞鹜文楷等宽",
-        "Noto Sans CJK SC", "Noto Sans CJK", "sans-serif"]
+    // LXGW fonts register their Chinese family name first in fontconfig and
+    // Qt6 only reads FC_FAMILY[0], so the English aliases alone never resolve.
+    readonly property var uiFallbackFamilies: ["霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai GB Screen", "霞鹜文楷等宽",
+        "LXGW WenKai Mono", "Noto Sans CJK SC", "Noto Sans CJK", "sans-serif"]
     readonly property var monoFallbackFamilies: ["JetBrainsMono Nerd Font", "JetBrains Mono", "monospace"]
     readonly property var expressiveFallbackFamilies: ["Google Sans Flex", "Google Sans", "Inter", "Roboto",
         "Noto Sans", "sans-serif"]
