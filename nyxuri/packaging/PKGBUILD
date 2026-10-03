@@ -88,6 +88,5 @@ package() {
     ln -s ../share/nyxuri/install.sh "$pkgdir/usr/bin/nyxuri"
     ln -s ../share/nyxuri/install.sh "$pkgdir/usr/bin/nyxniri"
 
-    # Strip Python bytecode caches and the git history from the payload.
-    find "$pkgdir/usr/share/nyxuri" -type d -name '__pycache__' -prune -exec rm -rf {} +
+    python3 -m compileall -q -f "$pkgdir/usr/share/nyxuri"
 }

@@ -249,33 +249,12 @@ def get_version(target_dir: Path) -> str:
         except Exception:
             pass
     if (target_dir / ".git").is_dir():
-        try:
-            res = subprocess.run(
-                ["git", "describe", "--tags", "--abbrev=0"],
-                cwd=target_dir, capture_output=True, text=True, check=False,
-                timeout=5,
-                env={**os.environ, "LC_ALL": "C"}
-            )
-            v = res.stdout.strip()
-            if v:
-                _VERSION_CACHE = v
+        git_env = {**os.environ, "LC_ALL": "C"}
+        for probe in (["git", "describe", "--tags", "--abbrev=0"], ["git", "rev-parse", "--short", "HEAD"]):
+            res = timed_run(probe, 5, cwd=target_dir, capture_output=True, text=True, check=False, env=git_env)
+            if res is not None and res.stdout.strip():
+                _VERSION_CACHE = res.stdout.strip()
                 return _VERSION_CACHE
-        except Exception:
-            pass
-    if (target_dir / ".git").is_dir():
-        try:
-            res = subprocess.run(
-                ["git", "rev-parse", "--short", "HEAD"],
-                cwd=target_dir, capture_output=True, text=True, check=False,
-                timeout=5,
-                env={**os.environ, "LC_ALL": "C"}
-            )
-            v = res.stdout.strip()
-            if v:
-                _VERSION_CACHE = v
-                return _VERSION_CACHE
-        except Exception:
-            pass
     _VERSION_CACHE = "v3.0.0"
     return _VERSION_CACHE
 

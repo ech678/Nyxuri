@@ -71,13 +71,18 @@ pull 成功后**当前进程不做任何部署**：菜单路径与 `nyxuri updat
 入口兜底：`__main__._run()` 捕获 `nyxuri.*` 的 ModuleNotFoundError（树混合/更新中断的
 残留状态），一句话指引重跑 install.sh；非 nyxuri 的缺模块原样抛出。`install.sh` 侧的
 `engine_is_complete` 只护住走引导的入口，直接 `python3 -m nyxuri` 靠这层兜底。
+`__main__` 同时对 `pkg`/`clean` 做轻量分发：这两个命令在 `cli.main()` 里本就于初始化之前
+提前退出（不碰锁、日志、软链），直接 import 对应子模块即可跳过 `cli.py` 的全量导入链
+（冷启动约减半）。`install.sh` 的 `exec_python_engine` 启动器同样走 `__main__._run()`，
+两条入口共用一份分发逻辑。
 
 ## AUR 包（`nyxuri/packaging/PKGBUILD`）
 
 - 单一 rolling 包 `nyxuri-git`，`source=("git+https://github.com/ech678/Nyxuri.git#branch=main")`
 - `pkgver()` = `git describe --long --tags`
 - `package()`：cp nyxuri/configs/assets/install.sh 到 `/usr/share/nyxuri/`、`touch .system-install`、
-  `/usr/bin/nyxuri` 软链到 install.sh、strip `__pycache__`
+  `/usr/bin/nyxuri` 软链到 install.sh、`compileall` 预编译 `__pycache__`（/usr/share/nyxuri
+  归 root 所有，不预编译则每次调用都要重新编译整个引擎）
 - **不做交互安装**（makepkg 不能 sudo）；用户装完包跑 `nyxuri install`
 - 不发 stable 包——现状更新模型就是 rolling，双包 = 双倍熵
 - `depends` / `optdepends` 由 `nyxuri/packaging/gen-deps.py` 扫所有 manifest 聚合生成——
