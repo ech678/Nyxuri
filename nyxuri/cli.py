@@ -261,8 +261,9 @@ def _cmd_theme(sub_args: List[str]) -> int:
 
 def _cmd_shell(sub_args: List[str]) -> int:
     sub = sub_args[0] if sub_args else "status"
-    usage = f"{CLI_CMD} shell [get|set <noctalia|custom> [bin_path]|status]"
-    from nyxuri.state.ledger import active_shell, custom_shell_bin, set_shell
+    usage = f"{CLI_CMD} shell [get|set <noctalia|nyxuri-shell> [bin_path]|switch [<noctalia|nyxuri-shell> [bin_path]]|status]"
+    from nyxuri.state.ledger import active_shell, nyxuri_shell_bin
+    from nyxuri.shell_switcher import normalize_shell_name, probe_running_shell, resolve_custom_bin, hot_switch_shell
     if sub == "get":
         if len(sub_args) > 1:
             exit_usage(usage)
@@ -271,31 +272,38 @@ def _cmd_shell(sub_args: List[str]) -> int:
     elif sub == "status":
         if len(sub_args) > 1:
             exit_usage(usage)
-        from nyxuri.shell_switcher import probe_running_shell, resolve_custom_bin
         current = active_shell()
-        cbin = custom_shell_bin()
+        cbin = nyxuri_shell_bin()
         effective_bin = resolve_custom_bin(cbin)
         running_name, running_pid = probe_running_shell()
         print(f"Active Shell: {current}")
         print(f"Running Instance: {running_name}" + (f" (PID: {running_pid})" if running_pid else " (not running)"))
-        if current == "custom" or cbin:
-            print(f"Custom Shell Binary: {cbin or effective_bin or '<unset>'}")
+        if current in ("nyxuri-shell", "custom") or cbin:
+            print(f"Nyxuri Shell Binary: {cbin or effective_bin or '<unset>'}")
             if effective_bin and os.path.isfile(effective_bin) and os.access(effective_bin, os.X_OK):
-                print("Custom Shell Status: Ready")
+                print("Nyxuri Shell Status: Ready")
             else:
-                print("Custom Shell Status: Not executable (will fallback to Noctalia)")
+                print("Nyxuri Shell Status: Not executable (will fallback to Noctalia)")
         return 0
-    elif sub == "set":
-        if len(sub_args) < 2 or len(sub_args) > 3:
-            exit_usage(usage)
-        target = sub_args[1].lower()
-        if target not in ("noctalia", "custom"):
-            exit_usage(usage)
-        bin_path = sub_args[2] if len(sub_args) > 2 else None
-        from nyxuri.shell_switcher import hot_switch_shell
+    elif sub in ("set", "switch"):
+        if sub == "switch" and len(sub_args) == 1:
+            current = active_shell()
+            target = "noctalia" if current in ("nyxuri-shell", "custom") else "nyxuri-shell"
+            bin_path = None
+        else:
+            if len(sub_args) < 2 or len(sub_args) > 3:
+                exit_usage(usage)
+            raw_target = sub_args[1].lower()
+            try:
+                target = normalize_shell_name(raw_target)
+            except ValueError:
+                exit_usage(usage)
+            bin_path = sub_args[2] if len(sub_args) > 2 else None
+
         success, message = hot_switch_shell(target, bin_path)
         if success:
-            print(f"Shell set to: {target}" + (f" ({bin_path})" if bin_path else ""))
+            action_verb = "switched" if sub == "switch" else "set"
+            print(f"Shell {action_verb} to: {target}" + (f" ({bin_path})" if bin_path else ""))
             print(f"[✓] {message}")
             return 0
         else:
@@ -403,7 +411,7 @@ COMMANDS = {
     "fisher":    (_module_handler("fisher", "fisher"),
                   f"{CLI_CMD} fisher [install|status|uninstall]"),
     "theme":     (_cmd_theme,     f"{CLI_CMD} theme [toggle|dark|light|sync|status]"),
-    "shell":     (_cmd_shell,     f"{CLI_CMD} shell [get|set <noctalia|custom> [path]|status]"),
+    "shell":     (_cmd_shell,     f"{CLI_CMD} shell [get|set <noctalia|nyxuri-shell> [bin_path]|switch [<noctalia|nyxuri-shell> [bin_path]]|status]"),
     "update":    (_cmd_update,    f"{CLI_CMD} update [--force|--no-deploy] [--to <tag|commit>]"),
     "help":      (_cmd_help,      f"{CLI_CMD} help"),
     "-h":        (_cmd_help,      f"{CLI_CMD} help"),

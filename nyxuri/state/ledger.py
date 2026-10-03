@@ -37,18 +37,32 @@ def update_ledger(**changes: Any) -> dict[str, Any]:
 
 def active_shell(default: str = "noctalia") -> str:
     value = read_ledger().get("active_shell", default)
-    return value if value in {"noctalia", "custom"} else default
+    if value in {"nyxuri-shell", "nyxuri", "custom"}:
+        return "nyxuri-shell"
+    if value == "noctalia":
+        return "noctalia"
+    return default
 
 
 def custom_shell_bin() -> str:
-    val = read_ledger().get("custom_shell_bin", "")
+    ledger = read_ledger()
+    val = ledger.get("custom_shell_bin") or ledger.get("nyxuri_shell_bin", "")
     return str(val) if isinstance(val, str) else ""
 
 
+def nyxuri_shell_bin() -> str:
+    return custom_shell_bin()
+
+
 def set_shell(shell_name: str, bin_path: str | None = None) -> dict[str, Any]:
-    if shell_name not in {"noctalia", "custom"}:
-        raise ValueError(f"Invalid shell: {shell_name} (must be 'noctalia' or 'custom')")
-    changes: dict[str, Any] = {"active_shell": shell_name}
+    s = str(shell_name).strip().lower()
+    if s in {"nyxuri-shell", "nyxuri", "custom"}:
+        canonical = "nyxuri-shell"
+    elif s == "noctalia":
+        canonical = "noctalia"
+    else:
+        raise ValueError(f"Invalid shell: {shell_name} (must be 'noctalia' or 'nyxuri-shell')")
+    changes: dict[str, Any] = {"active_shell": canonical}
     if bin_path is not None:
         changes["custom_shell_bin"] = bin_path
     return update_ledger(**changes)

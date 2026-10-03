@@ -41,7 +41,7 @@ def _check_wayland_session(env) -> None:
         print(msg("doctor_warn", text(f"会话: 缺少 {sess_file}", f"Session: {sess_file} is missing")))
 
 def _check_shell_provider(env) -> None:
-    from nyxuri.state.ledger import active_shell, read_ledger
+    from nyxuri.state.ledger import active_shell, nyxuri_shell_bin
     current = active_shell()
     if current == "noctalia":
         if shutil.which(THEME_ENGINE):
@@ -49,13 +49,13 @@ def _check_shell_provider(env) -> None:
         else:
             print(msg("doctor_warn", text("桌面外壳: 当前选用 Noctalia 但未在 PATH 中找到", "Desktop Shell: Noctalia selected but missing from PATH")))
     else:
-        custom_bin = read_ledger().get("custom_shell_bin", get_compat_env("CUSTOM_SHELL_BIN", ""))
+        custom_bin = nyxuri_shell_bin() or get_compat_env("CUSTOM_SHELL_BIN", "")
         if custom_bin and os.path.isfile(custom_bin) and os.access(custom_bin, os.X_OK):
-            print(msg("doctor_ok", text(f"桌面外壳: 自研/自定义 Shell ({custom_bin}) 可用", f"Desktop Shell: Custom shell ({custom_bin}) available")))
+            print(msg("doctor_ok", text(f"桌面外壳: Nyxuri Shell ({custom_bin}) 可用", f"Desktop Shell: Nyxuri Shell ({custom_bin}) available")))
         else:
             print(msg("doctor_warn", text(
-                f"桌面外壳: 自研/自定义 Shell ({custom_bin or '未配置'}) 不可执行，将回退 Noctalia",
-                f"Desktop Shell: Custom shell ({custom_bin or 'not configured'}) not executable; will fallback to Noctalia",
+                f"桌面外壳: Nyxuri Shell ({custom_bin or '未配置'}) 不可执行，将回退 Noctalia",
+                f"Desktop Shell: Nyxuri Shell ({custom_bin or 'not configured'}) not executable; will fallback to Noctalia",
             )))
 
 def _check_noctalia(env) -> None:

@@ -109,6 +109,33 @@ class TestShellAction(unittest.TestCase):
                 f"Action '{verb}' did not dispatch with --action {verb}",
             )
 
+    def test_actions_nyxuri_shell_dispatch(self):
+        self._write_command("nyxuri-shell", 'printf "%s\\n" "$*" >>"$CALLS"')
+
+        state_dir = self.home / ".local" / "state" / "nyxuri"
+        state_dir.mkdir(parents=True, exist_ok=True)
+        state_file = state_dir / "state.json"
+        state_file.write_text('{"active_shell": "nyxuri-shell", "custom_shell_bin": ""}', encoding="utf-8")
+
+        verbs = [
+            "launcher",
+            "session",
+            "settings",
+            "clipboard",
+            "lock",
+            "wallpaper-random",
+        ]
+
+        for verb in verbs:
+            self.calls.unlink(missing_ok=True)
+            proc = self._run_action(verb)
+            self.assertEqual(proc.returncode, 0, f"Nyxuri shell action '{verb}' failed: {proc.stderr}")
+            self.assertEqual(
+                self.calls.read_text(encoding="utf-8").strip(),
+                f"--action {verb}",
+                f"Action '{verb}' did not dispatch with --action {verb}",
+            )
+
 
 class TestNoctaliaStartup(unittest.TestCase):
 
@@ -180,6 +207,61 @@ class TestNoctaliaStartup(unittest.TestCase):
                 "noctalia",
             ],
         )
+
+    def test_session_shell_launches_nyxuri_shell(self):
+        self._write_command("systemctl", 'printf "systemctl:%s\n" "$*" >>"$CALLS"')
+        self._write_command("nyxuri-shell", 'printf "nyxuri-shell\n" >>"$CALLS"')
+        self._write_command("noctalia", 'printf "noctalia\n" >>"$CALLS"')
+
+        state_dir = self.home / ".local" / "state" / "nyxuri"
+        state_dir.mkdir(parents=True, exist_ok=True)
+        (state_dir / "state.json").write_text('{"active_shell": "nyxuri-shell"}', encoding="utf-8")
+
+        proc = subprocess.run(
+            ["/bin/bash", str(_SESSION_SHELL)],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            env={
+                "PATH": f"{self.bin_dir}:/usr/bin:/bin",
+                "HOME": str(self.home),
+                "CALLS": str(self.calls),
+            },
+        )
+
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(
+            self.calls.read_text(encoding="utf-8").splitlines(),
+            [
+                "systemctl:--user stop app-niri-noctalia-*.scope",
+                "nyxuri-shell",
+            ],
+        )
+
+    def test_session_shell_fallback_when_nyxuri_shell_missing(self):
+        self._write_command("systemctl", 'printf "systemctl:%s\n" "$*" >>"$CALLS"')
+        self._write_command("noctalia", 'printf "noctalia\n" >>"$CALLS"')
+        self._write_command("notify-send", 'printf "notify-send:%s\n" "$*" >>"$CALLS"')
+
+        state_dir = self.home / ".local" / "state" / "nyxuri"
+        state_dir.mkdir(parents=True, exist_ok=True)
+        (state_dir / "state.json").write_text('{"active_shell": "nyxuri-shell", "custom_shell_bin": "/nonexistent/path"}', encoding="utf-8")
+
+        proc = subprocess.run(
+            ["/bin/bash", str(_SESSION_SHELL)],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            env={
+                "PATH": f"{self.bin_dir}:/usr/bin:/bin",
+                "HOME": str(self.home),
+                "CALLS": str(self.calls),
+            },
+        )
+
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        calls = self.calls.read_text(encoding="utf-8").splitlines()
+        self.assertIn("noctalia", calls)
 
 
 class TestScratchToggle(unittest.TestCase):

@@ -27,14 +27,22 @@ class TestShellManagement(unittest.TestCase):
         self.assertEqual(custom_shell_bin(), "")
 
     def test_set_shell_valid(self):
-        set_shell("custom", "/usr/bin/my-shell")
-        self.assertEqual(active_shell(), "custom")
+        set_shell("nyxuri-shell", "/usr/bin/my-shell")
+        self.assertEqual(active_shell(), "nyxuri-shell")
         self.assertEqual(custom_shell_bin(), "/usr/bin/my-shell")
+
+        # Backward compatibility with 'custom' and 'nyxuri'
+        set_shell("custom", "/usr/bin/custom-shell")
+        self.assertEqual(active_shell(), "nyxuri-shell")
+        self.assertEqual(custom_shell_bin(), "/usr/bin/custom-shell")
+
+        set_shell("nyxuri")
+        self.assertEqual(active_shell(), "nyxuri-shell")
 
         set_shell("noctalia")
         self.assertEqual(active_shell(), "noctalia")
         # custom_shell_bin remains recorded
-        self.assertEqual(custom_shell_bin(), "/usr/bin/my-shell")
+        self.assertEqual(custom_shell_bin(), "/usr/bin/custom-shell")
 
     def test_set_shell_invalid_raises_error(self):
         with self.assertRaises(ValueError):
@@ -48,24 +56,72 @@ class TestShellManagement(unittest.TestCase):
         self.assertEqual(ret, 0)
         self.assertEqual(f.getvalue().strip(), "noctalia")
 
+        set_shell("nyxuri-shell")
+        f = io.StringIO()
+        with redirect_stdout(f):
+            ret = _cmd_shell(["get"])
+        self.assertEqual(ret, 0)
+        self.assertEqual(f.getvalue().strip(), "nyxuri-shell")
+
     def test_cmd_shell_set(self):
         f = io.StringIO()
         with redirect_stdout(f):
-            ret = _cmd_shell(["set", "custom", "/bin/sh"])
+            ret = _cmd_shell(["set", "nyxuri-shell", "/bin/sh"])
         self.assertEqual(ret, 0)
-        self.assertEqual(active_shell(), "custom")
+        self.assertEqual(active_shell(), "nyxuri-shell")
         self.assertEqual(custom_shell_bin(), "/bin/sh")
 
+        # Test backward-compatible alias 'custom'
+        f = io.StringIO()
+        with redirect_stdout(f):
+            ret = _cmd_shell(["set", "custom", "/bin/bash"])
+        self.assertEqual(ret, 0)
+        self.assertEqual(active_shell(), "nyxuri-shell")
+        self.assertEqual(custom_shell_bin(), "/bin/bash")
+
+    def test_cmd_shell_switch(self):
+        # 1. Switch with explicit target
+        f = io.StringIO()
+        with redirect_stdout(f):
+            ret = _cmd_shell(["switch", "noctalia"])
+        self.assertEqual(ret, 0)
+        self.assertEqual(active_shell(), "noctalia")
+
+        # 2. Switch toggle: noctalia -> nyxuri-shell
+        with patch("nyxuri.shell_switcher.hot_switch_shell", return_value=(True, "Switched successfully")) as mock_switch:
+            f = io.StringIO()
+            with redirect_stdout(f):
+                ret = _cmd_shell(["switch"])
+            self.assertEqual(ret, 0)
+            mock_switch.assert_called_with("nyxuri-shell", None)
+
+        # 3. Switch toggle: nyxuri-shell -> noctalia
+        set_shell("nyxuri-shell", "/bin/sh")
+        with patch("nyxuri.shell_switcher.hot_switch_shell", return_value=(True, "Switched successfully")) as mock_switch:
+            f = io.StringIO()
+            with redirect_stdout(f):
+                ret = _cmd_shell(["switch"])
+            self.assertEqual(ret, 0)
+            mock_switch.assert_called_with("noctalia", None)
+
+        # 4. Switch with alias 'custom'
+        with patch("nyxuri.shell_switcher.hot_switch_shell", return_value=(True, "Switched successfully")) as mock_switch:
+            f = io.StringIO()
+            with redirect_stdout(f):
+                ret = _cmd_shell(["switch", "custom", "/bin/sh"])
+            self.assertEqual(ret, 0)
+            mock_switch.assert_called_with("nyxuri-shell", "/bin/sh")
+
     def test_cmd_shell_status(self):
-        set_shell("custom", "/bin/sh")
+        set_shell("nyxuri-shell", "/bin/sh")
         f = io.StringIO()
         with redirect_stdout(f):
             ret = _cmd_shell(["status"])
         self.assertEqual(ret, 0)
         output = f.getvalue()
-        self.assertIn("Active Shell: custom", output)
-        self.assertIn("Custom Shell Binary: /bin/sh", output)
-        self.assertIn("Custom Shell Status: Ready", output)
+        self.assertIn("Active Shell: nyxuri-shell", output)
+        self.assertIn("Nyxuri Shell Binary: /bin/sh", output)
+        self.assertIn("Nyxuri Shell Status: Ready", output)
 
     def test_preflight_shell(self):
         from nyxuri.shell_switcher import preflight_shell
@@ -73,14 +129,19 @@ class TestShellManagement(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("Unknown target shell", err)
 
-        ok, _, err = preflight_shell("custom", "/nonexistent/path/to/shell")
+        ok, _, err = preflight_shell("nyxuri-shell", "/nonexistent/path/to/shell")
         self.assertFalse(ok)
         self.assertIn("does not exist", err)
 
-        ok, resolved, err = preflight_shell("custom", "/bin/sh")
+        ok, resolved, err = preflight_shell("nyxuri-shell", "/bin/sh")
         self.assertTrue(ok)
         self.assertEqual(resolved, "/bin/sh")
         self.assertEqual(err, "")
+
+        # Alias custom
+        ok, resolved, err = preflight_shell("custom", "/bin/sh")
+        self.assertTrue(ok)
+        self.assertEqual(resolved, "/bin/sh")
 
     @patch("nyxuri.shell_switcher.wait_shell_ready")
     @patch("nyxuri.shell_switcher.spawn_shell")
@@ -98,12 +159,12 @@ class TestShellManagement(unittest.TestCase):
         mock_spawn.return_value = mock_proc
         mock_wait.return_value = True
 
-        ok, msg = hot_switch_shell("custom", "/bin/sh")
+        ok, msg = hot_switch_shell("nyxuri-shell", "/bin/sh")
         self.assertTrue(ok)
-        self.assertIn("Successfully switched to custom", msg)
-        self.assertEqual(active_shell(), "custom")
+        self.assertIn("Successfully switched to nyxuri-shell", msg)
+        self.assertEqual(active_shell(), "nyxuri-shell")
         self.assertTrue(mock_stop.called)
-        mock_spawn.assert_called_once_with("custom", "/bin/sh")
+        mock_spawn.assert_called_once_with("nyxuri-shell", "/bin/sh")
         mock_wait.assert_called_once()
 
     @patch("nyxuri.shell_switcher.wait_shell_ready")
@@ -124,7 +185,7 @@ class TestShellManagement(unittest.TestCase):
         # Target fails readiness, restore succeeds
         mock_wait.side_effect = [False, True]
 
-        ok, msg = hot_switch_shell("custom", "/bin/sh")
+        ok, msg = hot_switch_shell("nyxuri-shell", "/bin/sh")
         self.assertFalse(ok)
         self.assertIn("failed readiness probe", msg)
         self.assertIn("rolled back to noctalia", msg)
