@@ -47,9 +47,9 @@
 
 | 状态 | 任务 | 前置 | 验收 |
 | --- | --- | --- | --- |
-| 待开始 | 决定 `Clavis` 标识、旧路径、旧变量、IPC 和 QML module 的兼容期限 | R1 | 公开接口、迁移兼容层和内部实现分层列出 |
-| 待开始 | 收敛 CMake、安装目录、脚本、fallback、日志和翻译命名 | R3-01 | 无消费者旧分支删除；源码、安装树和测试树使用同一资源解析契约 |
-| 待开始 | 确定生成文件、qsb、vendor、fixture 和构建缓存的版本控制策略 | R1 | 每类文件有保留/生成/忽略规则、来源、许可证和离线构建验证 |
+| 已完成 | 决定 `Clavis` 标识、旧路径、旧变量、IPC 和 QML module 的兼容期限 | R1 | 公开接口与运行时收敛为 nyxuri，Paths.qml 默认 ~/.config/nyxuri；薄兼容层 nyxuri_paths.py / nyxuri-paths.sh 承接旧变量；作者拍板 CPP 内部暂不动并直接对接 R4-C 去 C++ 化 |
+| 已完成 | 收敛 CMake、安装目录、脚本、fallback、日志和翻译命名 | R3-01 | 彻底物理删除 2.6 万行臃肿 XML (.ts) 翻译文件；全面切换为纯净 TOML 字典 (zh_CN.toml, en_US.toml) 并通过 compile_i18n.py 驱动 Qt 运行时构建；Paths.qml 与构建树一致解析 |
+| 已完成 | 确定生成文件、qsb、vendor、fixture 和构建缓存的版本控制策略 | R1 | qsb 二进制保留免工具链离线运行；SearchCatalog.js 脚本生成并入库由单测契约约束；vendor/kdl 严格忽略并清理 __pycache__；fixtures 仅留存于测试树 |
 
 ### R4 架构与生命周期（P1/P2）
 
@@ -124,12 +124,11 @@
 | P3-R13 | 脚手架、死 C++、命名和共享层整理 | 历史清理记录；品牌与构建由 R3 收口 |
 
 ## 待作者拍板
-
-1. `Clavis` 内部标识是否彻底移除，或保留明确期限的兼容迁移层。
+1. **[已拍板]** `Clavis` 内部标识处理：作者明确指示 CPP 部分不动（后续直接对接 R4-C 全面去 C++ 化）；QML、路径、脚本全部收敛至 `nyxuri` 命名空间，仅保留极薄兼容层。
 2. `references/` 与 `wiki/upstream-*` 是否长期保留，或压缩为最小来源/许可证档案。
 3. **[已拍板]** Keystone、天气、地图、歌词等能力的核心/可选边界：作者明确拍板放弃 Cava、地图、歌词、窗口预览；已在 R2 彻底物理移除相关 native 插件、fallback 与死 QML UI，相关消费者转化为零开销安全桩。
-4. 生成文件、qsb、vendor Python 包和测试 fixture 的版本控制策略。
-5. 对外 IPC、脚本命令、配置路径和旧环境变量的兼容期限。
+4. **[已拍板]** 生成文件、qsb、vendor Python 包和测试 fixture 的版本控制策略：qsb 作为免编译运行资产保留；SearchCatalog.js 脚本生成入库由单测校验；vendor 清理缓存；fixtures 隔离在测试树。
+5. **[已拍板]** 翻译与对外兼容：废除 2.6 万行 XML，采用纯 TOML 双语字典；对外变量优先 NYXURI_*，兼容读取 CLAVIS_*。
 
 ## 当前门禁
 

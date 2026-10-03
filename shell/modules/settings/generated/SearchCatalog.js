@@ -1593,20 +1593,6 @@ var catalog = {
       "anchor": true,
       "context": "LanguageAndRegionPage",
       "icon": "language",
-      "id": "general.language-region.section.weather-map",
-      "path": [
-        "general",
-        "language-region"
-      ],
-      "route": "general.language-region",
-      "source": "LanguageAndRegionPage.qml",
-      "title": "Weather map"
-    },
-    {
-      "aliases": [],
-      "anchor": true,
-      "context": "LanguageAndRegionPage",
-      "icon": "language",
       "id": "general.language-region.section.units",
       "path": [
         "general",
@@ -1942,7 +1928,6 @@ function title(id) {
     case "keystone.section.recording": return qsTranslate("KeystonePage", "Recording");
     case "general.language-region.section.language": return qsTranslate("LanguageAndRegionPage", "Language");
     case "general.language-region.section.region-weather-location": return qsTranslate("LanguageAndRegionPage", "Region & weather location");
-    case "general.language-region.section.weather-map": return qsTranslate("LanguageAndRegionPage", "Weather map");
     case "general.language-region.section.units": return qsTranslate("LanguageAndRegionPage", "Units");
     case "general.language-region.section.time-date": return qsTranslate("LanguageAndRegionPage", "Time & date");
     case "general.network.section.wired-connections": return qsTranslate("NetworkPage", "Wired connections");

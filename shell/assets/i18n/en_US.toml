@@ -1,0 +1,13 @@
+# ==============================================================================
+# Nyxuri Shell - English Language Pack (en_US)
+# Format: Clean TOML dictionary for plural rules and English adjustments
+# ==============================================================================
+
+"%n minute(s) ago" = ["%n minute ago", "%n minutes ago"]
+"%n hour(s) ago" = ["%n hour ago", "%n hours ago"]
+"%n second(s)" = ["%n second", "%n seconds"]
+"%n minute(s)" = ["%n minute", "%n minutes"]
+"%n file(s)" = ["%n file", "%n files"]
+"%n device(s)" = ["%n device", "%n devices"]
+"%n network(s)" = ["%n network", "%n networks"]
+"Reverting in %n second(s)" = ["Reverting in %n second", "Reverting in %n seconds"]

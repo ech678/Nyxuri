@@ -36,22 +36,22 @@ Singleton {
                                         || "key"
     readonly property string configHome: root.absoluteEnvironment("NYXURI_SHELL_CONFIG_HOME")
                                          || root.absoluteEnvironment("CLAVIS_CONFIG_HOME")
-                                         || xdgConfigHome + "/clavis"
+                                         || xdgConfigHome + "/nyxuri"
     readonly property string dataHome: root.absoluteEnvironment("NYXURI_SHELL_DATA_HOME")
                                        || root.absoluteEnvironment("CLAVIS_DATA_HOME")
-                                       || xdgDataHome + "/clavis"
+                                       || xdgDataHome + "/nyxuri"
     readonly property string stateHome: root.absoluteEnvironment("NYXURI_SHELL_STATE_HOME")
                                         || root.absoluteEnvironment("CLAVIS_STATE_HOME")
                                         || (root.absoluteEnvironment("XDG_STATE_HOME") || homeDir
-                                            + "/.local/state") + "/clavis"
+                                            + "/.local/state") + "/nyxuri"
     readonly property string cacheHome: root.absoluteEnvironment("NYXURI_SHELL_CACHE_HOME")
                                         || root.absoluteEnvironment("CLAVIS_CACHE_HOME")
                                         || (root.absoluteEnvironment("XDG_CACHE_HOME") || homeDir
-                                            + "/.cache") + "/clavis"
+                                            + "/.cache") + "/nyxuri"
     readonly property string runtimeHome: root.absoluteEnvironment("NYXURI_SHELL_RUNTIME_HOME")
                                           || root.absoluteEnvironment("CLAVIS_RUNTIME_HOME")
                                           || (root.absoluteEnvironment("XDG_RUNTIME_DIR") || cacheHome
-                                              + "/runtime") + "/clavis"
+                                              + "/runtime") + "/nyxuri"
     readonly property string requestedProfileName: Quickshell.env("NYXURI_SHELL_PROFILE")
                                                    || Quickshell.env("CLAVIS_PROFILE")
                                                    || "default"

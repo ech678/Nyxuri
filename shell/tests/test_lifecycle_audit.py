@@ -112,7 +112,12 @@ class TestLifecycleAudit(unittest.TestCase):
         entries = audit.build_inventory_entry(app_shell, self.shell_root)
         types = [e["resource_type"] for e in entries]
         self.assertIn("NativeConsumer", types)
-        self.assertIn("ExternalCommand", types)
+        self.assertIn("IPC", types)
+
+        gateway = self.shell_root / "app" / "ActionGateway.qml"
+        gateway_entries = audit.build_inventory_entry(gateway, self.shell_root)
+        gateway_types = [e["resource_type"] for e in gateway_entries]
+        self.assertIn("ExternalCommand", gateway_types)
 
 
 if __name__ == "__main__":

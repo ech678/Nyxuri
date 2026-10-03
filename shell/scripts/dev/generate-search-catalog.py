@@ -80,7 +80,7 @@ def compile_catalog(route_document, declarations, actions):
     selected = []
     action_ids = set()
     for action in actions:
-        if action['category'] != 'clavis':
+        if action['category'] not in ('clavis', 'nyxuri'):
             continue
         if action['id'] in action_ids:
             raise ValueError('Duplicate action ID')
@@ -100,8 +100,9 @@ def compile_catalog(route_document, declarations, actions):
         if entry['target'] == 'power-menu' and entry['confirmation'] != 'power-menu':
             raise ValueError('Power actions must open the existing confirmation UI')
         # Check fixed argv against the existing shortcut declaration, never run it.
-        expected = 'spawn ' + ' '.join(json.dumps(v) for v in ['qs', '-c', 'clavis', 'ipc', 'call', entry['target'], entry['method'], *args])
-        if action['expression'] != expected:
+        expected_clavis = 'spawn ' + ' '.join(json.dumps(v) for v in ['qs', '-c', 'clavis', 'ipc', 'call', entry['target'], entry['method'], *args])
+        expected_nyxuri = 'spawn ' + ' '.join(json.dumps(v) for v in ['qs', '-c', 'nyxuri', 'ipc', 'call', entry['target'], entry['method'], *args])
+        if action['expression'] not in (expected_clavis, expected_nyxuri):
             raise ValueError(f'Fixed arguments disagree with shortcut: {entry["id"]}')
         selected.append(entry)
     return {'schemaVersion': 1, 'routes': routes, 'settings': settings, 'actions': selected}

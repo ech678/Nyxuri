@@ -177,7 +177,7 @@ class ShellPresentationTests(unittest.TestCase):
                 compositor_log.seek(0)
                 self.fail("Private compositor did not start:\n" + compositor_log.read())
             time.sleep(0.05)
-        self.palette = self.ctx.home / "data/clavis/profiles/default/generated/clavis/colors.json"
+        self.palette = self.ctx.home / "data/nyxuri/profiles/default/generated/clavis/colors.json"
         self.palette.parent.mkdir(parents=True)
         if self._testMethodName != "test_missing_palette_uses_defaults_then_watches_creation":
             self.palette.write_text('{"primary":"#123456"}')

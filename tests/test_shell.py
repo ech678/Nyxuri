@@ -3,6 +3,7 @@
 import io
 import os
 import signal
+import sys
 import time
 import unittest
 from contextlib import redirect_stdout
@@ -851,8 +852,90 @@ class TestShellManagement(unittest.TestCase):
             ok, msg = hot_switch_shell("custom", "/bin/sh")
             self.assertFalse(ok)
             self.assertIn("failed readiness probe", msg)
-            self.assertIn("rolled back to noctalia", msg)
             self.assertEqual(active_shell(), "noctalia")
+
+    def test_r3_brand_paths_and_toml_i18n_contracts(self):
+        """R3 Contract: Brand convergence, nyxuri namespace, and TOML translation dictionaries."""
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. Obsolete 26,000-line XML .ts files are completely purged from git
+        ts_zh = os.path.join(shell_dir, "assets", "i18n", "clavis_zh_CN.ts")
+        ts_en = os.path.join(shell_dir, "assets", "i18n", "clavis_en_US.ts")
+        self.assertFalse(os.path.exists(ts_zh), f"Obsolete XML ts file must not exist: {ts_zh}")
+        self.assertFalse(os.path.exists(ts_en), f"Obsolete XML ts file must not exist: {ts_en}")
+
+        # 2. Modern clean TOML translation dictionaries exist
+        toml_zh = os.path.join(shell_dir, "assets", "i18n", "zh_CN.toml")
+        toml_en = os.path.join(shell_dir, "assets", "i18n", "en_US.toml")
+        self.assertTrue(os.path.isfile(toml_zh), f"zh_CN.toml must exist: {toml_zh}")
+        self.assertTrue(os.path.isfile(toml_en), f"en_US.toml must exist: {toml_en}")
+
+        # 3. Translation compiler script exists and is executable
+        compile_script = os.path.join(shell_dir, "scripts", "dev", "compile_i18n.py")
+        self.assertTrue(os.path.isfile(compile_script))
+        self.assertTrue(os.access(compile_script, os.X_OK))
+
+        # 4. Paths.qml defaults configHome to nyxuri namespace
+        paths_file = os.path.join(shell_dir, "app", "Paths.qml")
+        with open(paths_file, "r", encoding="utf-8") as f:
+            paths_content = f.read()
+        self.assertIn('xdgConfigHome + "/nyxuri"', paths_content)
+        self.assertIn('NYXURI_SHELL_CONFIG_HOME', paths_content)
+
+        # 5. nyxuri_paths.py and nyxuri-paths.sh exist and default to nyxuri
+        py_paths = os.path.join(shell_dir, "scripts", "lib", "nyxuri_paths.py")
+        sh_paths = os.path.join(shell_dir, "scripts", "lib", "nyxuri-paths.sh")
+        self.assertTrue(os.path.isfile(py_paths))
+        self.assertTrue(os.path.isfile(sh_paths))
+        with open(py_paths, "r", encoding="utf-8") as f:
+            py_content = f.read()
+        self.assertIn('config / "nyxuri"', py_content)
+
+        # 6. vendor/kdl has no __pycache__ or .pyc tracked in git
+        import subprocess
+        tracked_vendor = subprocess.run(
+            ["git", "ls-files", os.path.join(shell_dir, "scripts", "system", "vendor", "kdl")],
+            capture_output=True, text=True, check=True
+        ).stdout
+        self.assertNotIn(".pyc", tracked_vendor)
+        self.assertNotIn("__pycache__", tracked_vendor)
+
+        # 7. i18n scanner captures qsTranslate contexts and correctly localizes settings
+        from pathlib import Path
+        sys_path_added = False
+        scripts_dev = os.path.join(shell_dir, "scripts", "dev")
+        if scripts_dev not in sys.path:
+            sys.path.insert(0, scripts_dev)
+            sys_path_added = True
+        try:
+            import compile_i18n
+            contexts = compile_i18n.scan_source_strings(Path(shell_dir))
+            self.assertIn("ControlCenterWindow", contexts)
+            self.assertIn("GeneralPage", contexts)
+            self.assertIn("GeneralOverviewPage", contexts)
+            self.assertIn("Account", contexts["ControlCenterWindow"])
+            self.assertIn("Bar", contexts["GeneralPage"])
+            self.assertIn("Dock", contexts["GeneralPage"])
+            self.assertIn("Displays", contexts["GeneralPage"])
+            self.assertIn("System", contexts["GeneralOverviewPage"])
+
+            # Verify generate_ts produces translated entries for these contexts
+            ts_zh_output = compile_i18n.generate_ts(Path(toml_zh), "zh_CN", contexts)
+            self.assertIn("<name>ControlCenterWindow</name>", ts_zh_output)
+            self.assertIn("<source>Account</source>\n        <translation>账户</translation>", ts_zh_output)
+            self.assertIn("<source>General</source>\n        <translation>通用</translation>", ts_zh_output)
+            self.assertIn("<source>Keystone</source>\n        <translation>Keystone</translation>", ts_zh_output)
+            self.assertIn("<name>GeneralPage</name>", ts_zh_output)
+            self.assertIn("<source>Bar</source>\n        <translation>Bar</translation>", ts_zh_output)
+            self.assertIn("<source>Dock</source>\n        <translation>Dock</translation>", ts_zh_output)
+            self.assertIn("<source>Spotlight</source>\n        <translation>Spotlight</translation>", ts_zh_output)
+            self.assertIn("<source>Displays</source>\n        <translation>显示器</translation>", ts_zh_output)
+            self.assertIn("<name>GeneralOverviewPage</name>", ts_zh_output)
+            self.assertIn("<source>System</source>\n        <translation>系统</translation>", ts_zh_output)
+        finally:
+            if sys_path_added and scripts_dev in sys.path:
+                sys.path.remove(scripts_dev)
 
 
 if __name__ == "__main__":

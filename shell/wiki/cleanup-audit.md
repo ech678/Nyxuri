@@ -32,11 +32,14 @@
 - 问题：当前装配与 `P3-R09-01` 的“核心启动闭包”目标冲突；`visible: false` 或内部降级不能证明未创建后台、窗口、监听器或 native consumer。
 - 建议：先生成真实消费者矩阵，再将可选宿主改为按需 Loader/显式生命周期；把冷启动、首帧、IPC ready 和专属资源作为验收证据。
 
-### P0-03 运行标识没有完成 Nyxuri 收口
+### P0-03 运行标识没有完成 Nyxuri 收口（R3 部分收口，剩余对接 R4-C）
 
-- 位置：`CMakeLists.txt`、`native/`、`app/Paths.qml`、`bin/nyxuri-shell`、`scripts/system/niri-actions.json`、`assets/i18n/clavis_*.ts`、fallback `Clavis/*` qmldir，以及 55 个命中文件。
-- 问题：内部 module、安装目录、变量、配置目录、脚本动作和翻译仍混用 Clavis；兼容变量与产品内部标识没有边界或弃用期限。
-- 建议：建立公开接口/迁移兼容/内部实现三层清单；作者拍板兼容保留期后，按依赖图统一重命名，最后删除无消费者兼容分支。
+- 位置：`CMakeLists.txt`、`native/`、`app/Paths.qml`、`bin/nyxuri-shell`、`scripts/system/niri-actions.json`、`assets/i18n/`、fallback `Clavis/*` qmldir。
+- 现状（R3 交付）：
+  - 公开接口、路径、脚本已全面收敛至 `nyxuri`（`Paths.qml` 默认 `~/.config/nyxuri`，`nyxuri_paths.py` / `nyxuri-paths.sh` 承接旧变量）；
+  - 彻底物理删除了 2.6 万行 XML 翻译文件，全面采用 `zh_CN.toml` / `en_US.toml`；
+  - 作者明确拍板：内部 C++ 插件与 CMake target 不做无意义的中间重命名，直接对接后续 R4-C 全面去 C++ 化彻底消除。
+
 
 ## P1：高优先级问题
 
@@ -60,11 +63,10 @@
 - 建议：新增独立迁移主线，先迁纯算法和数据整形，再迁 IPC/文件/设备边界；优先使用 Quickshell 内置模块、QML/JS、`Process`/文件接口和外部工具。每项必须记录替代方案、行为差异和删除条件，最终移除 Nyxuri 自有 C++ target、fallback、native CTest 与安装元数据。
 - 边界：不把 Quickshell、Wayland、Niri 或系统服务内部的原生实现算作 Nyxuri C++；若某项能力确实无法替代，必须单独记录“保留最小原生桥/删除功能/阻断”的决策，不能用空插件伪装完成。
 
-### P1-03 兼容路径、环境变量和安装元数据重复
+### P1-03 兼容路径、环境变量和安装元数据重复（R3 已收敛）
 
 - 位置：`app/Paths.qml`、`bin/nyxuri-shell`、`scripts/lib/*`、`CMakeLists.txt`、`packaging/*`。
-- 问题：`NYXURI_*` 与 `CLAVIS_*` 双向解析、旧配置路径和多个 build 搜索路径并存；CMake 安装目录仍使用 Clavis 名称，导致来源、开发树和安装树可能加载不同资源。
-- 建议：确定唯一 Nyxuri 路径；兼容读取集中到一个迁移层并记录弃用期限，禁止业务文件直接读取旧变量；安装、源码运行和测试运行使用同一资源解析契约。
+- 现状（R3 交付）：已建立单点路径映射契约。`Paths.qml` 默认指向 `~/.config/nyxuri`，内部通过 `nyxuri_paths.py` / `nyxuri-paths.sh` 集中管理 `NYXURI_*` 与旧 `CLAVIS_*` 变量的回退兼容。业务脚本统一引用新路径，旧脚本转为薄包装兼容层。
 
 ### P1-04 上游参考资料与运行文档边界不够清楚
 
@@ -72,11 +74,14 @@
 - 问题：参考文档仍包含上游安装、软链、key-cli、旧配置和旧品牌内容，读者可能误把它们当作 Nyxuri 操作契约。
 - 建议：参考资料统一加“仅供比对/不可执行”的索引和醒目标记；作者拍板长期保留完整上游文档还是压缩为许可证、来源和恢复所需最小资料。
 
-### P1-05 生成物、缓存与 vendor 的仓库策略未统一
+### P1-05 生成物、缓存与 vendor 的仓库策略未统一（R3 策略已确定）
 
 - 位置：`modules/settings/generated/SearchCatalog.js`、qsb shader、`scripts/**/__pycache__`、`tests/**/__pycache__`、`scripts/system/vendor/kdl`。
-- 问题：生成文件、构建缓存、内嵌 vendor 和测试 fixture 混在同一资源树，未在文档中区分可审阅源文件、构建产物和第三方代码；构建树还存在历史产物痕迹。
-- 建议：逐项决定“源码生成/提交生成结果/完全忽略”；vendor 记录版本、许可证、调用面和升级方式；清理策略必须不影响恢复和离线构建。
+- 现状（R3 交付）：
+  - qsb 二进制作为免构建工具链运行资产保留；
+  - `SearchCatalog.js` 统一由脚本生成并入库，由单测强制约束格式与一致性；
+  - vendor/kdl 严格忽略并清理 `__pycache__`；
+  - fixtures 仅留存于测试树中，不混入主运行树。
 
 ## P2：中优先级问题
 
@@ -98,11 +103,10 @@
 - 问题：现有审计器能拦截部分模式，但不能替代真实开关、取消、崩溃、SIGTERM、旧 generation 回调和资源稳态测试；路线图把静态 0 违规写成全面治理完成。
 - 建议：保留静态门禁，另建按域的行为矩阵；完成项记录环境、重复次数、专属进程/连接/窗口和失败恢复结果。
 
-### P2-04 资产和翻译需要重新做消费者盘点
+### P2-04 资产和翻译需要重新做消费者盘点（R3 翻译已重构）
 
 - 位置：`assets/icons`、`assets/i18n`、`assets/shaders`、`assets/matugen`、天气资源和键盘图标。
-- 问题：文件名和上游品牌仍可见，资源是否被运行代码引用、是否属于已封存模块、许可证是否随来源同步，当前文档没有一份可复核索引。
-- 建议：生成资源消费者表，区分核心、可选、封存、第三方和死数据；删除前保留许可证和来源证据，避免仅按体积清理有效视觉资产。
+- 现状（R3 交付）：翻译部分彻底物理清除 2.6 万行 XML 翻译文件 (`.ts`)，采用简洁易维护的 TOML 翻译字典 (`zh_CN.toml`, `en_US.toml`)，通过 `compile_i18n.py` 驱动 Qt 构建，为 R4-C 去 C++ 阶段直接用 QML 解析 TOML 奠定基础。其他资产待 R5 统一盘点。
 
 ### P2-05 测试目录和测试命名没有体现契约边界
 
@@ -120,11 +124,11 @@
 
 ## 需作者拍板
 
-1. 是否彻底移除内部 `Clavis` 标识，还是保留一个明确期限的兼容迁移层。
-2. `references/` 和 `wiki/upstream-*` 是长期恢复资料，还是压缩为最小来源/许可证档案。
-3. 是否继续保留完整 Keystone、天气、地图、歌词等能力，还是按核心 Shell 与可选模块重新划界。
-4. 生成文件、qsb、vendor Python 包和测试 fixture 的版本控制策略。
-5. 对外 IPC、脚本命令、配置路径和旧环境变量的兼容期限。
+1. **[已拍板]** `Clavis` 内部标识处理：作者明确指示 CPP 部分不动（后续直接对接 R4-C 全面去 C++ 化）；QML、路径、脚本全部收敛至 `nyxuri` 命名空间，仅保留极薄兼容层。
+2. `references/` 与 `wiki/upstream-*` 是否长期保留，或压缩为最小来源/许可证档案。
+3. **[已拍板]** Keystone、天气、地图、歌词等能力的核心/可选边界：作者明确拍板放弃 Cava、地图、歌词、窗口预览；已在 R2 彻底物理移除相关 native 插件、fallback 与死 QML UI，相关消费者转化为零开销安全桩。
+4. **[已拍板]** 生成文件、qsb、vendor Python 包和测试 fixture 的版本控制策略：qsb 作为免编译运行资产保留；SearchCatalog.js 脚本生成入库由单测契约约束；vendor/kdl 严格忽略并清理 __pycache__；fixtures 仅留存于测试树。
+5. **[已拍板]** 翻译与对外兼容：废除 2.6 万行 XML，采用纯 TOML 双语字典；对外变量优先 NYXURI_*，兼容读取 CLAVIS_*。
 
 ## 建议执行顺序
 
