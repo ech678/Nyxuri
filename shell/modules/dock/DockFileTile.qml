@@ -36,7 +36,7 @@ Item {
                                                                + artwork.width + 12 : 0
         opacity: root.labelReveal
         radius: 7
-        color: root.fan ? BlurService.backgroundColor(Appearance.colors.colSurfaceContainer) :
+        color: root.fan ? BlurService.backgroundColor(Appearance.colors.colBackgroundSurfaceContainer) :
                           pointer.hovered ? Appearance.applyAlpha(Appearance.colors.colOnSurface, 0.12) :
                                             "transparent"
         border.width: root.fan ? 1 : 0
@@ -66,7 +66,7 @@ Item {
         height: width
         radius: width / 2
         antialiasing: root.fan
-        color: BlurService.backgroundColor(Appearance.colors.colSurfaceContainer)
+        color: BlurService.backgroundColor(Appearance.colors.colBackgroundSurfaceContainer)
         MaterialSymbol {
             anchors.centerIn: parent
             anchors.alignWhenCentered: false

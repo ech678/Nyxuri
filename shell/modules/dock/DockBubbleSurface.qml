@@ -39,7 +39,8 @@ Item {
         anchors.fill: parent
         antialiasing: true
         readonly property var outline: root.outline
-        readonly property color fillColor: BlurService.backgroundColor(Appearance.colors.colSurfaceContainer)
+        readonly property color fillColor: BlurService.backgroundColor(
+                                               Appearance.colors.colBackgroundSurfaceContainer)
         readonly property color lineColor: Appearance.applyAlpha(Appearance.colors.colOnSurface, 0.18)
         onOutlineChanged: requestPaint()
         onFillColorChanged: requestPaint()

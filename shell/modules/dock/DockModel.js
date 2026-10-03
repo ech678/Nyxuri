@@ -13,7 +13,8 @@ function defaults() {
         showRecent: true,
         showThumbnails: true,
         previewSize: 160,
-        contextPinning: true
+        contextPinning: true,
+        surfaceStyle: "default"
     };
 }
 
@@ -32,6 +33,7 @@ function option(name, value) {
     if (!Object.prototype.hasOwnProperty.call(standard, name)) return undefined;
     if (typeof standard[name] === "boolean") return typeof value === "boolean" ? value : undefined;
     if (name === "position") return ["bottom", "left", "right"].indexOf(value) >= 0 ? value : undefined;
+    if (name === "surfaceStyle") return ["default", "notch"].indexOf(value) >= 0 ? value : undefined;
     if (typeof value !== "number" || !isFinite(value)) return undefined;
     if (name === "previewSize") return Math.round(Math.max(96, Math.min(240, value)));
     if (name === "iconSize") return Math.round(Math.max(32, Math.min(80, value)));

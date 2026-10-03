@@ -37,14 +37,12 @@ Canvas {
             context.moveTo(0, 0);
             context.lineTo(along, 0);
             context.lineTo(along, depth);
-            context.bezierCurveTo(along, depth * sideControl,
-                along * edgeControl, 0, 0, 0);
+            context.bezierCurveTo(along, depth * sideControl, along * edgeControl, 0, 0, 0);
         } else {
             context.moveTo(along, 0);
             context.lineTo(0, 0);
             context.lineTo(0, depth);
-            context.bezierCurveTo(0, depth * sideControl,
-                along * (1 - edgeControl), 0, along, 0);
+            context.bezierCurveTo(0, depth * sideControl, along * (1 - edgeControl), 0, along, 0);
         }
         context.fill();
     }

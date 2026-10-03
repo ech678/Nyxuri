@@ -75,6 +75,7 @@ Singleton {
     readonly property int revision: root._revision
     readonly property bool enabled: root._options.enabled
     readonly property string position: root._options.position
+    readonly property string surfaceStyle: root._options.surfaceStyle
     readonly property int iconSize: root._options.iconSize
     readonly property bool magnification: root._options.magnification
     readonly property real magnificationScale: root._options.magnificationScale

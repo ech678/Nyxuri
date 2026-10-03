@@ -67,7 +67,7 @@ StyledFlickable {
 
                 target: appearanceSection
                 declaration:
-                    '{"id":"general.dock.section.appearance","route":"general.dock","title":"Appearance","context":"DockPage","icon":"dock_to_bottom","aliases":["size","position","magnification"]}'
+                    '{"id":"general.dock.section.appearance","route":"general.dock","title":"Appearance","context":"DockPage","icon":"dock_to_bottom","aliases":["size","position","magnification","surface style","notch"]}'
             }
 
             SettingsRow {
@@ -139,6 +139,36 @@ StyledFlickable {
                 value: DockService.magnificationScale * 100
                 onMoved: value => {
                     return DockService.setOption("magnificationScale", value / 100);
+                }
+            }
+
+            SettingsRow {
+                Layout.fillWidth: true
+                title: qsTr("Surface style")
+                iconName: "rounded_corner"
+
+                trailing: StyledButtonGroup {
+                    model: [
+                        {
+                            "value": "default",
+                            "label": qsTr("Default"),
+                            "icon": "rounded_corner",
+                            "tooltip": qsTr("Floating rounded tray")
+                        },
+                        {
+                            "value": "notch",
+                            "label": qsTr("Notch"),
+                            "icon": "bottom_panel_close",
+                            "tooltip": qsTr("Keystone notch, attached to the edge")
+                        }
+                    ]
+                    currentValue: DockService.surfaceStyle
+                    iconOnly: true
+                    buttonMinWidth: 64
+                    horizontalPadding: Metrics.spacingL
+                    onValueSelected: value => {
+                        return DockService.setOption("surfaceStyle", String(value));
+                    }
                 }
             }
         }

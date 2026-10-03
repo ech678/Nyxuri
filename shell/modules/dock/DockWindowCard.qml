@@ -136,7 +136,7 @@ Button {
                     height: 36
                     radius: 8
                     visible: !!root.mediaPlayer
-                    color: Appearance.applyAlpha(Appearance.colors.colSurfaceContainer, 0.94)
+                    color: Appearance.applyAlpha(Appearance.colors.colBackgroundSurfaceContainer, 0.94)
 
                     // Consume the bar's gaps and disabled buttons as well, so
                     // no media click activates the window behind this overlay.

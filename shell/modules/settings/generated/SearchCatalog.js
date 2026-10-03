@@ -1216,7 +1216,9 @@ var catalog = {
       "aliases": [
         "size",
         "position",
-        "magnification"
+        "magnification",
+        "surface style",
+        "notch"
       ],
       "anchor": true,
       "context": "DockPage",
