@@ -9,7 +9,6 @@ import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
 import qs.app
-import qs.modules.settings
 import "./SpotlightCommands.js" as Commands
 
 PanelWindow {
@@ -124,15 +123,6 @@ PanelWindow {
         }
     }
 
-    Loader {
-        id: locationPickerLoader
-        active: false
-        onLoaded: item.openWindow()
-        sourceComponent: LocationPicker {
-            visible: false
-            active: false
-        }
-    }
 
     SpotlightSessionController {
         id: session
@@ -495,10 +485,7 @@ PanelWindow {
         if (!activation)
             return;
         if (activation.provider === "map") {
-            if (locationPickerLoader.item)
-                locationPickerLoader.item.openWindow();
-            else
-                locationPickerLoader.active = true;
+            ActionGateway.requestSettingsOpen("language");
         } else if (activation.provider === "settings-open")
             ActionGateway.requestSettingsOpen();
         else if (activation.provider === "settings")

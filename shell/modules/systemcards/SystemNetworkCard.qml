@@ -2,7 +2,7 @@ import QtQuick
 import Qt5Compat.GraphicalEffects
 import qs.shared.theme
 import qs.shared.controls
-import qs.modules.settings as ControlCenter
+import qs.app.services
 import "../../shared/utils/SystemFormat.js" as Format
 
 Item {
@@ -213,10 +213,11 @@ Item {
                 bottomMargin: 10
             }
 
-            ControlCenter.SplitMenuButton {
+            SplitMenuButton {
                 width: parent.width
                 height: 36
                 buttonHeight: 36
+                inputRegionService: PopupInputRegionService
                 minimumWidth: parent.width
                 maximumWidth: parent.width
                 menuMinimumWidth: Math.max(190, width)

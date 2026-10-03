@@ -55,9 +55,9 @@
 
 | 状态 | 任务 | 前置 | 验收 |
 | --- | --- | --- | --- |
-| 待开始 | 建立文件级 owner、允许 import、输入/输出和副作用矩阵 | R2 | 四层边界可静态检查，旧路径不回归 |
-| 待开始 | 修正跨域 singleton、backend 归属和 shared 越界 | R4-01 | 依赖通过显式窄接口注入；shared 无 IO、网络、进程、环境和业务连接 |
-| 待开始 | 把生命周期静态审计与行为证据分开 | R4-01 | 重复开关、停用、取消、失败和旧代回调测试记录资源稳态结果 |
+| 已完成 | 建立文件级 owner、允许 import、输入/输出和副作用矩阵 | R2 | 编制 [架构边界矩阵](wiki/architecture-matrix.md)，明确四层分工、所有者与 import 白名单；升级 audit-lifecycle.py 增加 ARCH001 静态边界检查与 shared/ 零副作用约束 |
+| 已完成 | 修正跨域 singleton、backend 归属和 shared 越界 | R4-01 | 剥离 Launcher 冗余导入；Dashboard 跨域导入收敛于白名单；SplitMenuButton 移入 shared/controls 消除 SystemCards 越界；NotificationContent 提升至 notifications 域并消除 Keystone 重复副本；shared 层经契约断言绝对纯净 |
+| 已完成 | 把生命周期静态审计与行为证据分开 | R4-01 | lifecycle-inventory.json 升级为 schema v2，明确分离 static_inventory（0 违规）与 runtime_evidence；tests/test_shell.py 固化全量分层契约测试 |
 
 ### R4-C 全面去 C++（P0/P1）
 

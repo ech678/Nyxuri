@@ -309,7 +309,7 @@ class TestShellManagement(unittest.TestCase):
 
         # 2. NotificationContent and KeystoneSurface exist for native notification chain
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "keystone", "styles", "shared", "KeystoneSurface.qml")))
-        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "keystone", "notifications", "NotificationContent.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "notifications", "NotificationContent.qml")))
 
         # 3. Bar quicksettings controls exist
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "bar", "quicksettings", "Volume.qml")))
@@ -467,7 +467,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("NotificationManager.hasNotifs", surface_content)
 
         # 2. NotificationContent provides ListView, sanitizedBody, normalActions, dismiss
-        notif_content = os.path.join(shell_dir, "modules", "keystone", "notifications", "NotificationContent.qml")
+        notif_content = os.path.join(shell_dir, "modules", "notifications", "NotificationContent.qml")
         with open(notif_content, "r", encoding="utf-8") as f:
             nc_content = f.read()
         self.assertIn("StyledListView {", nc_content)
@@ -937,8 +937,116 @@ class TestShellManagement(unittest.TestCase):
             if sys_path_added and scripts_dev in sys.path:
                 sys.path.remove(scripts_dev)
 
+    def test_r4_architecture_and_lifecycle_contracts(self):
+        """R4 Contract: Four-layer boundaries, shared purity, cross-domain isolation, and lifecycle separation."""
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. Architecture matrix contract document exists
+        matrix_file = os.path.join(shell_dir, "wiki", "architecture-matrix.md")
+        self.assertTrue(os.path.isfile(matrix_file), f"architecture-matrix.md must exist: {matrix_file}")
+        with open(matrix_file, "r", encoding="utf-8") as f:
+            matrix_content = f.read()
+        self.assertIn("app/", matrix_content)
+        self.assertIn("modules/", matrix_content)
+        self.assertIn("shared/", matrix_content)
+        self.assertIn("native/", matrix_content)
+
+        # 2. Shared layer is completely pure (zero side-effects, zero forbidden imports)
+        shared_dir = os.path.join(shell_dir, "shared")
+        for root_dir, _, files in os.walk(shared_dir):
+            for file in files:
+                if file.endswith(".qml"):
+                    full_p = os.path.join(root_dir, file)
+                    with open(full_p, "r", encoding="utf-8") as f:
+                        qml_text = f.read()
+                    self.assertNotIn("import qs.app", qml_text, f"{file} in shared/ must not import qs.app")
+                    self.assertNotIn("import qs.modules", qml_text, f"{file} in shared/ must not import qs.modules")
+                    self.assertNotIn("import Quickshell.Io", qml_text, f"{file} in shared/ must not import Quickshell.Io")
+                    self.assertNotIn("import Clavis.", qml_text, f"{file} in shared/ must not import Clavis native plugins")
+                    self.assertNotIn("Process {", qml_text, f"{file} in shared/ must not define Process")
+                    self.assertNotIn("FileView {", qml_text, f"{file} in shared/ must not define FileView")
+                    self.assertNotIn("Quickshell.execDetached", qml_text, f"{file} in shared/ must not call execDetached")
+
+        # 3. Cross-domain module imports removed / decoupled
+        launcher_file = os.path.join(shell_dir, "modules", "launcher", "LauncherWindow.qml")
+        with open(launcher_file, "r", encoding="utf-8") as f:
+            launcher_content = f.read()
+            self.assertNotIn("import qs.modules.settings", launcher_content, "LauncherWindow must not import settings")
+            self.assertNotIn("LocationPicker", launcher_content, "LauncherWindow must not instantiate LocationPicker")
+            self.assertNotIn("locationPickerLoader", launcher_content, "LauncherWindow must not retain locationPickerLoader")
+
+        dashboard_file = os.path.join(shell_dir, "modules", "sidebars", "dashboard", "DashboardSidebar.qml")
+        with open(dashboard_file, "r", encoding="utf-8") as f:
+            sidebar_content = f.read()
+            # DashboardSidebar legitimately requires settings & filepicker for WallpaperColorPicker & FilePickerWindow (whitelisted)
+            self.assertIn("import qs.modules.settings", sidebar_content, "DashboardSidebar needs settings for WallpaperColorPicker")
+            self.assertIn("import qs.modules.filepicker", sidebar_content, "DashboardSidebar needs filepicker for FilePickerWindow")
+            self.assertNotIn("import qs.modules.keystone", sidebar_content, "DashboardSidebar must not import keystone")
+            self.assertNotIn("import qs.modules.launcher", sidebar_content, "DashboardSidebar must not import launcher")
+            self.assertNotIn("import qs.modules.bar", sidebar_content, "DashboardSidebar must not import bar")
+
+        storage_card = os.path.join(shell_dir, "modules", "systemcards", "SystemStorageCard.qml")
+        with open(storage_card, "r", encoding="utf-8") as f:
+            storage_content = f.read()
+            self.assertNotIn("import qs.modules.settings", storage_content, "SystemStorageCard must not import settings")
+            self.assertIn("inputRegionService: PopupInputRegionService", storage_content, "SystemStorageCard must inject inputRegionService")
+
+        network_card = os.path.join(shell_dir, "modules", "systemcards", "SystemNetworkCard.qml")
+        with open(network_card, "r", encoding="utf-8") as f:
+            network_content = f.read()
+            self.assertNotIn("import qs.modules.settings", network_content, "SystemNetworkCard must not import settings")
+            self.assertIn("inputRegionService: PopupInputRegionService", network_content, "SystemNetworkCard must inject inputRegionService")
+
+        notif_host = os.path.join(shell_dir, "modules", "notifications", "NotificationPopupHost.qml")
+        with open(notif_host, "r", encoding="utf-8") as f:
+            self.assertNotIn("import qs.modules.keystone.notifications", f.read(), "NotificationPopupHost must not import keystone")
+
+        keystone_surface = os.path.join(shell_dir, "modules", "keystone", "styles", "shared", "KeystoneSurface.qml")
+        with open(keystone_surface, "r", encoding="utf-8") as f:
+            keystone_content = f.read()
+            self.assertIn("import qs.modules.notifications", keystone_content, "KeystoneSurface must import from qs.modules.notifications")
+            self.assertNotIn("import qs.modules.keystone.notifications", keystone_content, "Legacy keystone.notifications import must be gone")
+
+        # Keystone notifications directory must be removed to avoid duplication
+        keystone_notif_dir = os.path.join(shell_dir, "modules", "keystone", "notifications")
+        self.assertFalse(os.path.exists(keystone_notif_dir), "keystone/notifications directory must be removed to avoid duplication")
+
+        # 4. SplitMenuButton is in shared/controls as a pure UI control
+        split_btn = os.path.join(shell_dir, "shared", "controls", "SplitMenuButton.qml")
+        self.assertTrue(os.path.isfile(split_btn), "SplitMenuButton must exist in shared/controls")
+        with open(split_btn, "r", encoding="utf-8") as f:
+            btn_content = f.read()
+            self.assertNotIn("import qs.app.services", btn_content, "shared/controls/SplitMenuButton must be pure")
+
+        # 5. NotificationContent is in modules/notifications/
+        notif_content = os.path.join(shell_dir, "modules", "notifications", "NotificationContent.qml")
+        self.assertTrue(os.path.isfile(notif_content), "NotificationContent must exist in modules/notifications")
+
+        # 6. Lifecycle inventory schema separates static inventory and runtime evidence
+        inv_file = os.path.join(shell_dir, "wiki", "lifecycle-inventory.json")
+        self.assertTrue(os.path.isfile(inv_file))
+        import json
+        with open(inv_file, "r", encoding="utf-8") as f:
+            inv_data = json.load(f)
+        self.assertEqual(inv_data.get("schemaVersion"), 2)
+        self.assertIn("static_inventory", inv_data)
+        self.assertIn("runtime_evidence", inv_data)
+        self.assertEqual(inv_data["static_inventory"].get("violations"), 0)
+        self.assertIn("generation_anti_stale", inv_data["runtime_evidence"])
+        self.assertIn("idempotent_teardown", inv_data["runtime_evidence"])
+
+        # 7. Static audit tool passes with zero violations across entire tree
+        import subprocess
+        audit_res = subprocess.run(
+            [sys.executable, os.path.join(shell_dir, "scripts", "dev", "audit-lifecycle.py"), "--check", "--scope", "all"],
+            capture_output=True, text=True, check=True
+        )
+        self.assertIn("lifecycle-audit: clean", audit_res.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
 

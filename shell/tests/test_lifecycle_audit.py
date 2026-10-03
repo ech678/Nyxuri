@@ -81,6 +81,18 @@ class TestLifecycleAudit(unittest.TestCase):
         self.assertEqual(v.line_number, 9)
         self.assertIn("Deactivation only via visible", v.message)
 
+    def test_arch001_cross_domain(self):
+        target = self.fixtures_dir / "invalid" / "arch001_cross_domain.qml"
+        violations = audit.check_file_violations(
+            target, self.shell_root, force=True, module_domain_override="launcher"
+        )
+        codes = [v.code for v in violations]
+        self.assertIn("ARCH001", codes)
+        v = next(v for v in violations if v.code == "ARCH001")
+        self.assertEqual(v.line_number, 2)
+        self.assertIn("Forbidden cross-domain import", v.message)
+        self.assertIn("Domain 'launcher' cannot import domain 'settings'", v.message)
+
     def test_excluded_paths(self):
         self.assertTrue(audit.is_path_excluded("references/clavis-15403b9/AppShell.qml"))
         self.assertTrue(audit.is_path_excluded("vendor/somelib/Module.qml"))

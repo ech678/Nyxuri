@@ -4,7 +4,6 @@ import Quickshell.Wayland
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
-import qs.modules.keystone.notifications
 
 Scope {
     id: root

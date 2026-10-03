@@ -13,7 +13,7 @@ import qs.shared.theme
 import qs.shared.controls
 import qs.modules.keystone.clock
 import qs.modules.keystone.media
-import qs.modules.keystone.notifications
+import qs.modules.notifications
 import qs.modules.keystone.volume
 import qs.modules.keystone.hub
 import qs.modules.keystone.tools

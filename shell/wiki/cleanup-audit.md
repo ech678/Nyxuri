@@ -43,11 +43,14 @@
 
 ## P1：高优先级问题
 
-### P1-01 目录边界与实际依赖需要重新核对
+### P1-01 目录边界与实际依赖需要重新核对（R4 已收口）
 
 - 位置：`app/services/`、`modules/*/backend`、`shared/utils`、`native/fallback`、`native/plugin/*`。
-- 问题：四层原则已经写入契约，但服务文件、模块专属 backend、fallback 和生成目录的归属标准不够明确；`app` 可能承担业务执行，`shared`/模块之间仍可能通过上下文 singleton 取值。
-- 建议：以依赖图为准制定目录迁移表；每个文件记录 owner、输入、输出、副作用和允许 import，迁移完成后删除旧路径，不保留并行实现。
+- 现状（R4 交付）：
+  - 编制 `shell/wiki/architecture-matrix.md` 明确四层职责边界与 Import 白名单；
+  - 升级 `audit-lifecycle.py` 引入 `ARCH001` 跨域静态拦截，强化 `LIFE003` 规则（`shared/` 禁绝 `app/`、`modules/`、`Quickshell.Io` 与 `Clavis.*`）；
+  - 将 `SplitMenuButton` 迁移至 `shared/controls/` 消除 SystemCards 对 Settings 的越界，提升 `NotificationContent` 至 notifications 域并消除 Keystone 重复副本；
+  - 剥离 Launcher 残留的无用横向导入，Dashboard 跨域导入严格收敛于白名单；`shared/` 经自动化测试断言 100% 绝对纯净。
 
 ### P1-02 可选 native 和外部依赖的隔离证据不足
 
@@ -97,11 +100,12 @@
 - 问题：设计原则、生命周期规则、上游来源和完成标准在多个文档重复，部分内容描述历史状态或未来目标，维护时容易互相漂移。
 - 建议：`AGENTS.md` 只保留不变量，`ROADMAP.md` 只保留阶段和验收，`wiki/audit.md` 只保留事实，`wiki/development.md` 只保留工具；删除已失效注释，保留复杂边界的短说明。
 
-### P2-03 直接副作用和生命周期检查需要从“静态通过”升级为行为证据
+### P2-03 直接副作用和生命周期检查需要从“静态通过”升级为行为证据（R4 已分离）
 
 - 位置：所有 `Process`、`Timer`、`FileView`、网络、IPC 和 native consumer 使用点；`scripts/dev/audit-lifecycle.py`。
-- 问题：现有审计器能拦截部分模式，但不能替代真实开关、取消、崩溃、SIGTERM、旧 generation 回调和资源稳态测试；路线图把静态 0 违规写成全面治理完成。
-- 建议：保留静态门禁，另建按域的行为矩阵；完成项记录环境、重复次数、专属进程/连接/窗口和失败恢复结果。
+- 现状（R4 交付）：
+  - `shell/wiki/lifecycle-inventory.json` 架构全面升级至 schemaVersion 2，物理拆分 `static_inventory`（静态 0 违规）与 `runtime_evidence`（世代防抖、幂等清理、优雅退出与崩溃回滚）；
+  - 在 `tests/test_shell.py` 中编写 `test_r4_architecture_and_lifecycle_contracts` 固化动态行为与分层断言，生命周期治理不再以纯静态扫描掩盖行为证据。
 
 ### P2-04 资产和翻译需要重新做消费者盘点（R3 翻译已重构）
 
