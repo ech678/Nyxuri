@@ -13,23 +13,6 @@ target_link_libraries(ClavisRuntimeCore PRIVATE Qt6::Core Qt6::Network PkgConfig
 target_include_directories(ClavisRuntimeCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(ENABLE_WEATHER)
-qt_add_library(ClavisWeatherMapCore STATIC)
-target_sources(ClavisWeatherMapCore PRIVATE
-    weather_map_provider.h
-    weather_map_provider.cpp
-)
-
-set_target_properties(ClavisWeatherMapCore PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
-target_link_libraries(ClavisWeatherMapCore PRIVATE
-    ClavisRuntimeCore
-    Qt6::Core
-    Qt6::Gui
-    Qt6::Network
-    Qt6Keychain::Qt6Keychain
-)
-target_include_directories(ClavisWeatherMapCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
 qt_add_library(ClavisWeatherCore STATIC)
 target_sources(ClavisWeatherCore PRIVATE
     weather_types.h
@@ -76,26 +59,6 @@ target_link_libraries(ClavisNiriCore PRIVATE
     Qt6::Network
 )
 target_include_directories(ClavisNiriCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-if(ENABLE_CAVA)
-qt_add_library(ClavisCavaCore STATIC)
-target_sources(ClavisCavaCore PRIVATE
-    audio_collector.h
-    audio_collector.cpp
-    audio_level_collector.h
-    audio_level_collector.cpp
-    audio_visual_analyzer.h
-    audio_visual_analyzer.cpp
-)
-
-set_target_properties(ClavisCavaCore PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
-target_link_libraries(ClavisCavaCore PRIVATE
-    Qt6::Core
-    PkgConfig::Pipewire
-)
-target_include_directories(ClavisCavaCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-endif()
 
 qt_add_library(ClavisMediaCore STATIC)
 target_sources(ClavisMediaCore PRIVATE

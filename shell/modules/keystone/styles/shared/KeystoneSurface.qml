@@ -15,7 +15,6 @@ import qs.modules.keystone.clock
 import qs.modules.keystone.media
 import qs.modules.keystone.notifications
 import qs.modules.keystone.volume
-import qs.modules.keystone.lyrics
 import qs.modules.keystone.hub
 import qs.modules.keystone.tools
 import qs.modules.keystone.styles.recording
@@ -1573,26 +1572,11 @@ Variants {
                         }
                     }
 
-                    LyricsContent {
+                    Item {
                         id: lyricsWidget
-
-                        anchors.top: parent.top
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        width: implicitWidth
-                        height: implicitHeight
-                        player: root.currentPlayer
-                        vertical: !keystoneWindow.horizontalEdge
-                        edge: keystoneWindow.edge
-                        opacity: root.isLyricsMode ? 1 : 0
-                        visible: opacity > 0.01
-
-                        Behavior on opacity {
-                            NumberAnimation {
-                                duration: Appearance.animation.expressiveEffects.duration
-                                easing.type: Appearance.animation.expressiveEffects.type
-                                easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
-                            }
-                        }
+                        implicitWidth: 0
+                        implicitHeight: 0
+                        visible: false
                     }
 
                     MediaContent {

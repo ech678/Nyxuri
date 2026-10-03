@@ -2,6 +2,8 @@
 
 import io
 import os
+import signal
+import time
 import unittest
 from contextlib import redirect_stdout
 from unittest.mock import patch
@@ -204,7 +206,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertTrue(os.path.isdir(os.path.join(shell_dir, "wiki", "upstream-docs")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "tools")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "core")))
-        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "native", "tools", "window-preview")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "native", "tools", "window-preview")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "licenses")))
         self.assertTrue(os.path.isdir(os.path.join(shell_dir, "wiki", "upstream-licenses")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "Components")))
@@ -246,10 +248,11 @@ class TestShellManagement(unittest.TestCase):
         # 4. Modules unified under modules/ in uniform lowercase with all functional code preserved
         expected_modules = [
             "bar", "desktopcards", "dock", "filepicker", "hotcorners",
-            "keystone", "launcher", "lock", "map", "quicksettings",
+            "keystone", "launcher", "lock", "quicksettings",
             "regionselector", "session", "settings", "sidebars",
             "systemcards", "wallpaper"
         ]
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "modules", "map")))
         for mod in expected_modules:
             self.assertTrue(
                 os.path.isdir(os.path.join(shell_dir, "modules", mod)),
@@ -317,18 +320,14 @@ class TestShellManagement(unittest.TestCase):
         shell_dir = os.path.join(repo_root, "shell")
         fallback_dir = os.path.join(shell_dir, "native", "fallback")
 
-        # 1. Fallback directories exist in native/fallback
+        # 1. Fallback directories: pruned features removed, kept ones present
+        self.assertFalse(os.path.exists(os.path.join(fallback_dir, "Clavis", "Lyrics")))
+        self.assertFalse(os.path.exists(os.path.join(fallback_dir, "Clavis", "Cava")))
+        self.assertFalse(os.path.exists(os.path.join(fallback_dir, "Clavis", "WeatherMap")))
         self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "M3Shapes", "qmldir")))
         self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "M3Shapes", "MaterialShape.qml")))
-        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "Lyrics", "qmldir")))
-        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "Lyrics", "Lyrics.qml")))
-        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "Cava", "qmldir")))
-        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "Cava", "CavaProvider.qml")))
-        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "Cava", "AudioLevelProvider.qml")))
         self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "Weather", "qmldir")))
         self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "Weather", "WeatherPlugin.qml")))
-        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "WeatherMap", "qmldir")))
-        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "WeatherMap", "WeatherMapPlugin.qml")))
         self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Qt", "labs", "lottieqt", "qmldir")))
         self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Qt", "labs", "lottieqt", "LottieAnimation.qml")))
 
@@ -383,12 +382,19 @@ class TestShellManagement(unittest.TestCase):
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         shell_dir = os.path.join(repo_root, "shell")
 
-        # 1. Fallback AudioLevelProvider defines visualTimestampMs and timestampMs
-        cava_fallback = os.path.join(shell_dir, "native", "fallback", "Clavis", "Cava", "AudioLevelProvider.qml")
-        with open(cava_fallback, "r", encoding="utf-8") as f:
-            cava_content = f.read()
-        self.assertIn("readonly property double visualTimestampMs: 0", cava_content)
-        self.assertIn("readonly property double timestampMs: 0", cava_content)
+        # 1. Pruned Cava: AudioRecordingVisual provides local fallback levelProvider without Clavis.Cava
+        arv_path = os.path.join(shell_dir, "modules", "keystone", "styles", "recording", "AudioRecordingVisual.qml")
+        with open(arv_path, "r", encoding="utf-8") as f:
+            arv_content = f.read()
+        self.assertNotIn("Clavis.Cava", arv_content)
+        self.assertIn("id: levelProvider", arv_content)
+        self.assertIn("readonly property bool available: false", arv_content)
+
+        # AudioSpectrum is a zero-overhead stub
+        asp_path = os.path.join(shell_dir, "app", "services", "AudioSpectrum.qml")
+        with open(asp_path, "r", encoding="utf-8") as f:
+            asp_content = f.read()
+        self.assertIn("readonly property bool available: false", asp_content)
 
         # 2. ControlCenterWindow cleans up child windows on destruction
         cc_window = os.path.join(shell_dir, "modules", "settings", "ControlCenterWindow.qml")
@@ -651,6 +657,202 @@ class TestShellManagement(unittest.TestCase):
 
         self.assertEqual(consumer.generation, 20)
         self.assertEqual(consumer.stale_discards, 19)
+
+    def test_r2_pruned_optional_features_contract(self):
+        """R2-02 Contract: Cava, Lyrics, WeatherMap, and WindowPreview completely abandoned.
+
+        Ensures 0 imports of deleted plugins and safe zero-overhead stubs in consumers.
+        """
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. Scanned QML/JS files have zero imports of abandoned native plugins or modules
+        forbidden_patterns = [
+            "Clavis.Cava",
+            "Clavis.WeatherMap",
+            "Clavis.Lyrics",
+            "Clavis.WindowPreview",
+            "qs.modules.map",
+        ]
+        for root_path, dirs, files in os.walk(shell_dir):
+            if root_path == shell_dir:
+                dirs[:] = [entry for entry in dirs if entry not in ("references", "tests", "build")]
+            for file in files:
+                if file.endswith((".qml", ".js")):
+                    full_p = os.path.join(root_path, file)
+                    with open(full_p, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    for pattern in forbidden_patterns:
+                        self.assertNotIn(
+                            pattern,
+                            content,
+                            f"Forbidden pruned feature reference '{pattern}' found in {os.path.relpath(full_p, shell_dir)}"
+                        )
+
+        # 2. Deleted plugin directories are physically removed
+        deleted_dirs = [
+            os.path.join(shell_dir, "native", "plugin", "cava"),
+            os.path.join(shell_dir, "native", "plugin", "lyrics"),
+            os.path.join(shell_dir, "native", "plugin", "weathermap"),
+            os.path.join(shell_dir, "native", "plugin", "windowpreview"),
+            os.path.join(shell_dir, "modules", "map"),
+            os.path.join(shell_dir, "native", "tools", "window-preview"),
+        ]
+        for d in deleted_dirs:
+            self.assertFalse(os.path.exists(d), f"Pruned directory still exists: {d}")
+
+        # 3. AudioSpectrum is a zero-overhead stub
+        asp_file = os.path.join(shell_dir, "app", "services", "AudioSpectrum.qml")
+        self.assertTrue(os.path.isfile(asp_file))
+        with open(asp_file, "r", encoding="utf-8") as f:
+            asp_content = f.read()
+        self.assertIn("readonly property bool available: false", asp_content)
+        self.assertIn("readonly property bool active: false", asp_content)
+        self.assertIn("readonly property var values: []", asp_content)
+        self.assertNotIn("Loader", asp_content)
+
+        # 4. WindowPreviewService is a zero-overhead stub
+        wps_file = os.path.join(shell_dir, "app", "services", "WindowPreviewService.qml")
+        self.assertTrue(os.path.isfile(wps_file))
+        with open(wps_file, "r", encoding="utf-8") as f:
+            wps_content = f.read()
+        self.assertIn("readonly property bool supported: false", wps_content)
+        self.assertIn("readonly property bool connected: false", wps_content)
+        self.assertNotIn("Loader", wps_content)
+
+        # 5. WeatherMapBridge is a zero-overhead stub
+        wmb_file = os.path.join(shell_dir, "modules", "settings", "WeatherMapBridge.qml")
+        self.assertTrue(os.path.isfile(wmb_file))
+        with open(wmb_file, "r", encoding="utf-8") as f:
+            wmb_content = f.read()
+        self.assertIn("readonly property bool available: false", wmb_content)
+        self.assertIn("readonly property string status: \"unavailable\"", wmb_content)
+
+        # 6. Native CMakeLists.txt does not configure pruned options
+        cm_file = os.path.join(shell_dir, "native", "CMakeLists.txt")
+        with open(cm_file, "r", encoding="utf-8") as f:
+            cm_content = f.read()
+        self.assertNotIn("ENABLE_CAVA", cm_content)
+        self.assertNotIn("ENABLE_LYRICS", cm_content)
+        self.assertNotIn("ENABLE_WINDOWPREVIEW", cm_content)
+
+    def test_r2_startup_closure_and_lazy_hosts(self):
+        """R2-01 Contract: Startup closure and lazy loading of heavy hosts."""
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. LauncherHost replaces direct LauncherWindow in AppShell
+        app_file = os.path.join(shell_dir, "app", "AppShell.qml")
+        with open(app_file, "r", encoding="utf-8") as f:
+            app_content = f.read()
+        self.assertIn("LauncherHost {", app_content)
+        self.assertIn("id: spotlightLauncher", app_content)
+        self.assertNotIn("LauncherWindow {\n        id: spotlightLauncher", app_content)
+
+        # 2. DesktopCardHost gated by desktopCardIds
+        self.assertIn("SystemCardService.desktopCardIds.length > 0", app_content)
+        self.assertIn("DesktopCardHost.qml", app_content)
+
+        # 3. ShellStartupService stages and lifecycle tracking
+        self.assertIn("ShellStartupService.recordCoreReady()", app_content)
+        self.assertIn("ShellStartupService.recordFirstFrame()", app_content)
+        self.assertIn("ShellStartupService.recordIpcReady()", app_content)
+
+        # 4. AppShell exposes shell IpcHandler
+        self.assertIn("target: \"shell\"", app_content)
+        self.assertIn("function stage(): string", app_content)
+        self.assertIn("function isReady(): bool", app_content)
+        self.assertIn("function status(): string", app_content)
+
+        # 5. RegionSelector gated by RegionSelectionService.active
+        reg_file = os.path.join(shell_dir, "modules", "regionselector", "RegionSelector.qml")
+        with open(reg_file, "r", encoding="utf-8") as f:
+            reg_content = f.read()
+        self.assertIn("active: RegionSelectionService.active", reg_content)
+
+        # 6. DisplayOverlays markers and confirmation dialog gated
+        disp_file = os.path.join(shell_dir, "modules", "settings", "DisplayOverlays.qml")
+        with open(disp_file, "r", encoding="utf-8") as f:
+            disp_content = f.read()
+        self.assertIn("model: DisplayConfigService.identify ? Quickshell.screens : []", disp_content)
+        self.assertIn("active: DisplayConfigService.confirming", disp_content)
+
+        # 7. SidebarHostWindow visibility gated on open or panel presented
+        sb_file = os.path.join(shell_dir, "modules", "sidebars", "SidebarHostWindow.qml")
+        with open(sb_file, "r", encoding="utf-8") as f:
+            sb_content = f.read()
+        self.assertIn("root.anySidebarOpen || dashboardSidebar.panelPresented || quickSettingsSidebar.panelPresented", sb_content)
+
+        # 8. Keystone avatar file picker is lazy loaded
+        ks_file = os.path.join(shell_dir, "modules", "keystone", "Keystone.qml")
+        with open(ks_file, "r", encoding="utf-8") as f:
+            ks_content = f.read()
+        self.assertIn("id: avatarFilePickerLoader", ks_content)
+        self.assertIn("active: false", ks_content)
+
+        # 9. ShellStartupService defines valid stages
+        sss_file = os.path.join(shell_dir, "app", "services", "ShellStartupService.qml")
+        with open(sss_file, "r", encoding="utf-8") as f:
+            sss_content = f.read()
+        self.assertIn("readonly property string stageInit: \"INIT\"", sss_content)
+        self.assertIn("readonly property string stageFirstFrame: \"FIRST_FRAME\"", sss_content)
+        self.assertIn("readonly property string stageReady: \"READY\"", sss_content)
+        self.assertIn("readonly property string stageIpcReady: \"IPC_READY\"", sss_content)
+        self.assertIn("readonly property string stageFailed: \"FAILED\"", sss_content)
+
+        # 10. Runner nyxuri-shell supports --stage, --status, and updated check-ready
+        runner_file = os.path.join(shell_dir, "bin", "nyxuri-shell")
+        with open(runner_file, "r", encoding="utf-8") as f:
+            runner_content = f.read()
+        self.assertIn("--stage", runner_content)
+        self.assertIn("--status", runner_content)
+        self.assertIn("ipc call shell isReady", runner_content)
+
+        # 11. ClockContent defines font.weight: Font.Black fallback for rolling digits
+        clock_file = os.path.join(shell_dir, "modules", "keystone", "clock", "ClockContent.qml")
+        with open(clock_file, "r", encoding="utf-8") as f:
+            clock_content = f.read()
+        self.assertIn("font.weight: Font.Black", clock_content)
+
+    def test_r2_lifecycle_exit_sigterm_and_crash_recovery(self):
+        """R2-03 Contract: SIGTERM exit bounding, early crash detection, and rollback safety."""
+        from unittest.mock import MagicMock, patch
+        from nyxuri.shell_switcher import wait_shell_ready, stop_shell_process, hot_switch_shell
+
+        # 1. Early crash detection in wait_shell_ready: exits immediately if proc.poll() is not None
+        mock_dead_proc = MagicMock()
+        mock_dead_proc.poll.return_value = 1  # Process crashed with exit code 1
+        t_start = time.time()
+        ready = wait_shell_ready("custom", mock_dead_proc, "/bin/false", timeout=3.5)
+        elapsed = time.time() - t_start
+        self.assertFalse(ready)
+        self.assertLess(elapsed, 0.5, "wait_shell_ready must exit immediately on process death without waiting for 3.5s timeout")
+
+        # 2. stop_shell_process terminates within bounded timeout
+        with patch("os.kill") as mock_kill, patch("subprocess.run"):
+            # First call sends SIGTERM, then check loop raises ProcessLookupError
+            mock_kill.side_effect = [None, ProcessLookupError]
+            ok = stop_shell_process("custom", 12345, "/fake/nyxuri-shell", timeout=2.5)
+            self.assertTrue(ok)
+            mock_kill.assert_any_call(12345, signal.SIGTERM)
+
+        # 3. Crash recovery rolls back ledger and restores old shell
+        with patch("nyxuri.shell_switcher.probe_running_shell", return_value=("noctalia", 1111)), \
+             patch("nyxuri.shell_switcher.stop_shell_process", return_value=True), \
+             patch("nyxuri.shell_switcher.spawn_shell") as mock_spawn, \
+             patch("nyxuri.shell_switcher.wait_shell_ready") as mock_wait, \
+             patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-test"}):
+            # Target shell fails to become ready; rollback restores noctalia
+            mock_crashed = MagicMock()
+            mock_crashed.poll.return_value = 1
+            mock_restored = MagicMock()
+            mock_spawn.side_effect = [mock_crashed, mock_restored]
+            mock_wait.side_effect = [False, True]
+            ok, msg = hot_switch_shell("custom", "/bin/sh")
+            self.assertFalse(ok)
+            self.assertIn("failed readiness probe", msg)
+            self.assertIn("rolled back to noctalia", msg)
+            self.assertEqual(active_shell(), "noctalia")
 
 
 if __name__ == "__main__":

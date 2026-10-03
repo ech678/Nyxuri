@@ -6,45 +6,31 @@ import Quickshell
 Singleton {
     id: root
 
-    readonly property bool available: backendLoader.status === Loader.Ready && backendLoader.item !== null
-    readonly property var backend: available ? backendLoader.item.plugin : null
-
-    readonly property bool credentialsReady: backend ? backend.credentialsReady : false
-    readonly property bool mapTilerConfigured: backend ? backend.mapTilerConfigured : false
-    readonly property bool apiConfigured: backend ? backend.apiConfigured : false
-    readonly property bool credentialBusy: backend ? backend.credentialBusy : false
-    readonly property string mapTilerStatus: backend ? backend.mapTilerStatus : "unavailable"
-    readonly property string status: backend ? backend.status : "unavailable"
+    readonly property bool available: false
+    readonly property var backend: null
+    readonly property bool credentialsReady: false
+    readonly property bool mapTilerConfigured: false
+    readonly property bool apiConfigured: false
+    readonly property bool credentialBusy: false
+    readonly property string mapTilerStatus: "unavailable"
+    readonly property string status: "unavailable"
 
     signal credentialOperationFinished(string operation, bool success, string message)
 
     function storeMapTilerApiKey(value) {
-        return backend ? backend.storeMapTilerApiKey(value) : { ok: false, message: "WeatherMap plugin not installed" };
+        return { ok: false, message: "WeatherMap not supported" };
     }
 
     function clearMapTilerApiKey() {
-        return backend ? backend.clearMapTilerApiKey() : { ok: false, message: "WeatherMap plugin not installed" };
+        return { ok: false, message: "WeatherMap not supported" };
     }
 
     function storeApiKey(value) {
-        return backend ? backend.storeApiKey(value) : { ok: false, message: "WeatherMap plugin not installed" };
+        return { ok: false, message: "WeatherMap not supported" };
     }
 
     function clearApiKey() {
-        return backend ? backend.clearApiKey() : { ok: false, message: "WeatherMap plugin not installed" };
-    }
-
-    Connections {
-        target: root.backend
-        ignoreUnknownSignals: true
-
-        function onCredentialOperationFinished(operation, success, message) {
-            root.credentialOperationFinished(operation, success, message);
-        }
-    }
-
-    Loader {
-        id: backendLoader
-        source: "backend/WeatherMapBackend.qml"
+        return { ok: false, message: "WeatherMap not supported" };
     }
 }
+

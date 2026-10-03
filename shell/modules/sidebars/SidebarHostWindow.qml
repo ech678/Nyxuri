@@ -101,7 +101,8 @@ PanelWindow {
 
     screen: retainedScreen || fallbackScreen
     onScreenChanged: WidgetState.sidebarScreenName = screen ? screen.name : ""
-    visible: retainedScreen !== null || fallbackScreen !== null
+    visible: (retainedScreen !== null || fallbackScreen !== null)
+             && (root.anySidebarOpen || dashboardSidebar.panelPresented || quickSettingsSidebar.panelPresented)
     color: "transparent"
 
     anchors {

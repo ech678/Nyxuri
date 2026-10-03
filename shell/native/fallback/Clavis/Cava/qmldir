@@ -1,3 +1,0 @@
-module Clavis.Cava
-CavaProvider 1.0 CavaProvider.qml
-AudioLevelProvider 1.0 AudioLevelProvider.qml

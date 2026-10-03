@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import qs.app.services
 
 Scope {
     Variants {
@@ -9,7 +10,7 @@ Scope {
             id: selectorLoader
             required property var modelData
 
-            active: true
+            active: RegionSelectionService.active
             sourceComponent: RegionSelectionWindow {
                 targetScreen: selectorLoader.modelData
             }

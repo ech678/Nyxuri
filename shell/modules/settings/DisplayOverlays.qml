@@ -8,12 +8,12 @@ import qs.app.services
 
 Item {
     Variants {
-        model: Quickshell.screens
+        model: DisplayConfigService.identify ? Quickshell.screens : []
         PanelWindow {
             id: marker
             required property var modelData
             screen: modelData
-            visible: DisplayConfigService.identify
+            visible: true
             color: "transparent"
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.namespace: "clavis-display-identify"
@@ -64,69 +64,72 @@ Item {
             }
         }
     }
-    PanelWindow {
-        id: confirmation
-        screen: Quickshell.screens.length ? Quickshell.screens[0] : null
-        visible: DisplayConfigService.confirming
-        color: "transparent"
-        exclusionMode: ExclusionMode.Ignore
-        WlrLayershell.namespace: "clavis-shell-display-confirmation"
-        WlrLayershell.layer: WlrLayer.Overlay
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-        implicitWidth: Math.min(440, screen ? screen.width : 440)
-        implicitHeight: content.implicitHeight + Metrics.spacingXL * 2
-        CompositorBlurRegion {
-            targetWindow: confirmation
-            backgroundItem: confirmationBackground
-            radius: confirmationBackground.radius
-        }
-        Rectangle {
-            id: confirmationBackground
-            anchors.fill: parent
-            radius: Appearance.rounding.large
-            color: BlurService.backgroundColor(Appearance.m3colors.m3surfaceContainerHigh)
-            border.width: Metrics.dividerWidth
-            border.color: Appearance.colors.colOutline
-            FocusScope {
+    Loader {
+        active: DisplayConfigService.confirming
+        sourceComponent: PanelWindow {
+            id: confirmation
+            screen: Quickshell.screens.length ? Quickshell.screens[0] : null
+            visible: true
+            color: "transparent"
+            exclusionMode: ExclusionMode.Ignore
+            WlrLayershell.namespace: "clavis-shell-display-confirmation"
+            WlrLayershell.layer: WlrLayer.Overlay
+            WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+            implicitWidth: Math.min(440, screen ? screen.width : 440)
+            implicitHeight: content.implicitHeight + Metrics.spacingXL * 2
+            CompositorBlurRegion {
+                targetWindow: confirmation
+                backgroundItem: confirmationBackground
+                radius: confirmationBackground.radius
+            }
+            Rectangle {
+                id: confirmationBackground
                 anchors.fill: parent
-                focus: true
-                Keys.onEscapePressed: DisplayConfigService.revert()
-                Keys.onReturnPressed: DisplayConfigService.keep()
-                ColumnLayout {
-                    id: content
-                    anchors {
-                        left: parent.left
-                        right: parent.right
-                        top: parent.top
-                        margins: Metrics.spacingXL
-                    }
-                    spacing: Metrics.spacingL
-                    Text {
-                        Layout.fillWidth: true
-                        text: qsTr("Keep display changes?")
-                        wrapMode: Text.Wrap
-                        font.family: Fonts.ui
-                        font.pixelSize: Typography.titleLarge.pixelSize
-                        color: Appearance.colors.colOnSurface
-                    }
-                    Text {
-                        Layout.fillWidth: true
-                        text: qsTr("Reverting in %n second(s)", "", DisplayConfigService.remaining)
-                        wrapMode: Text.Wrap
-                        font.family: Fonts.ui
-                        color: Appearance.colors.colOnSurfaceVariant
-                    }
-                    Flow {
-                        Layout.fillWidth: true
-                        spacing: Metrics.spacingS
-                        ActionButton {
-                            text: qsTr("Revert")
-                            onClicked: DisplayConfigService.revert()
+                radius: Appearance.rounding.large
+                color: BlurService.backgroundColor(Appearance.m3colors.m3surfaceContainerHigh)
+                border.width: Metrics.dividerWidth
+                border.color: Appearance.colors.colOutline
+                FocusScope {
+                    anchors.fill: parent
+                    focus: true
+                    Keys.onEscapePressed: DisplayConfigService.revert()
+                    Keys.onReturnPressed: DisplayConfigService.keep()
+                    ColumnLayout {
+                        id: content
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            top: parent.top
+                            margins: Metrics.spacingXL
                         }
-                        ActionButton {
-                            text: qsTr("Keep Changes")
-                            filled: true
-                            onClicked: DisplayConfigService.keep()
+                        spacing: Metrics.spacingL
+                        Text {
+                            Layout.fillWidth: true
+                            text: qsTr("Keep display changes?")
+                            wrapMode: Text.Wrap
+                            font.family: Fonts.ui
+                            font.pixelSize: Typography.titleLarge.pixelSize
+                            color: Appearance.colors.colOnSurface
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: qsTr("Reverting in %n second(s)", "", DisplayConfigService.remaining)
+                            wrapMode: Text.Wrap
+                            font.family: Fonts.ui
+                            color: Appearance.colors.colOnSurfaceVariant
+                        }
+                        Flow {
+                            Layout.fillWidth: true
+                            spacing: Metrics.spacingS
+                            ActionButton {
+                                text: qsTr("Revert")
+                                onClicked: DisplayConfigService.revert()
+                            }
+                            ActionButton {
+                                text: qsTr("Keep Changes")
+                                filled: true
+                                onClicked: DisplayConfigService.keep()
+                            }
                         }
                     }
                 }

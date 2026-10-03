@@ -53,25 +53,12 @@ if(NOT DEFINED CLAVIS_CONFIG_INSTALL_DIR)
     set(CLAVIS_CONFIG_INSTALL_DIR "etc/xdg/quickshell/clavis")
 endif()
 # Options for heavy / archived native plugins
-option(ENABLE_CAVA "Build Cava audio spectrum plugin" OFF)
-option(ENABLE_WEATHER "Build Weather and WeatherMap plugins" OFF)
-option(ENABLE_LYRICS "Build Lyrics plugin" OFF)
-option(ENABLE_WINDOWPREVIEW "Build WindowPreview plugin" OFF)
+option(ENABLE_WEATHER "Build Weather plugin" OFF)
 
 # Find Qt 6 basics
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Network ShaderTools LinguistTools)
-if(ENABLE_WEATHER)
-    find_package(Qt6Keychain REQUIRED)
-endif()
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(Udev REQUIRED IMPORTED_TARGET libudev)
-if(ENABLE_CAVA)
-    pkg_check_modules(Pipewire IMPORTED_TARGET libpipewire-0.3 REQUIRED)
-    pkg_check_modules(Cava IMPORTED_TARGET libcava QUIET)
-    if(NOT Cava_FOUND)
-        pkg_check_modules(Cava IMPORTED_TARGET cava REQUIRED)
-    endif()
-endif()
 qt_standard_project_setup(REQUIRES 6.5)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
@@ -108,23 +95,7 @@ set(ENABLED_CLAVIS_MODULES
 
 if(ENABLE_WEATHER)
     add_subdirectory(plugin/weather)
-    add_subdirectory(plugin/weathermap)
-    list(APPEND ENABLED_CLAVIS_MODULES Weather WeatherMap)
-endif()
-
-if(ENABLE_CAVA)
-    add_subdirectory(plugin/cava)
-    list(APPEND ENABLED_CLAVIS_MODULES Cava)
-endif()
-
-if(ENABLE_LYRICS)
-    add_subdirectory(plugin/lyrics)
-    list(APPEND ENABLED_CLAVIS_MODULES Lyrics)
-endif()
-
-if(ENABLE_WINDOWPREVIEW)
-    add_subdirectory(plugin/windowpreview)
-    list(APPEND ENABLED_CLAVIS_MODULES WindowPreview)
+    list(APPEND ENABLED_CLAVIS_MODULES Weather)
 endif()
 
 foreach(module IN LISTS ENABLED_CLAVIS_MODULES)

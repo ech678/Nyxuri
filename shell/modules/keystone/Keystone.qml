@@ -20,9 +20,14 @@ Item {
     }
 
     function openAvatarPicker(screen) {
-        avatarFilePicker.targetScreen = screen;
-        Qt.callLater(() => avatarFilePicker.openAt(avatarFilePicker.picturesDir !== ""
-                                                   ? avatarFilePicker.picturesDir : Paths.homeDir));
+        avatarFilePickerLoader.active = true;
+        Qt.callLater(() => {
+            if (avatarFilePickerLoader.item) {
+                avatarFilePickerLoader.item.targetScreen = screen;
+                avatarFilePickerLoader.item.openAt(avatarFilePickerLoader.item.picturesDir !== ""
+                                                   ? avatarFilePickerLoader.item.picturesDir : Paths.homeDir);
+            }
+        });
     }
 
     Loader {
@@ -34,12 +39,15 @@ Item {
                                                                           === "pill" ? pillStyle : bangsStyle
     }
 
-    FilePickerWindow {
-        id: avatarFilePicker
+    Loader {
+        id: avatarFilePickerLoader
+        active: false
 
-        dialogTitle: qsTr("Choose user avatar")
-        description: qsTr("The image will be copied to ~/.face and used by the Dashboard and lock screen")
-        onAccepted: path => AvatarService.setAvatar(path)
+        sourceComponent: FilePickerWindow {
+            dialogTitle: qsTr("Choose user avatar")
+            description: qsTr("The image will be copied to ~/.face and used by the Dashboard and lock screen")
+            onAccepted: path => AvatarService.setAvatar(path)
+        }
     }
 
     IpcHandler {

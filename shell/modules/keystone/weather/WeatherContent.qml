@@ -304,54 +304,7 @@ Item {
             Layout.alignment: Qt.AlignTop
             spacing: 20
 
-            // Map Area (Stack 1)
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.minimumWidth: 500
-                Layout.preferredWidth: 500
-                Layout.minimumHeight: 352
-                Layout.preferredHeight: 352
-                radius: Appearance.rounding.large
-                color: Appearance.colors.colSurfaceContainerHigh
-                clip: true
 
-                Loader {
-                    id: weatherMapLoader
-
-                    anchors.fill: parent
-                    active: root.active
-                    asynchronous: true
-                    source: active ? Qt.resolvedUrl("WeatherMapCard.qml") : ""
-                }
-
-                Binding {
-                    target: weatherMapLoader.item
-                    property: "latitude"
-                    value: root.latitude
-                    when: weatherMapLoader.status === Loader.Ready
-                }
-
-                Binding {
-                    target: weatherMapLoader.item
-                    property: "longitude"
-                    value: root.longitude
-                    when: weatherMapLoader.status === Loader.Ready
-                }
-
-                Binding {
-                    target: weatherMapLoader.item
-                    property: "locationAvailable"
-                    value: root.hasCoordinates()
-                    when: weatherMapLoader.status === Loader.Ready
-                }
-
-                Binding {
-                    target: weatherMapLoader.item
-                    property: "active"
-                    value: root.active && root.visible
-                    when: weatherMapLoader.status === Loader.Ready
-                }
-            }
 
             // Parameters (Stack 2)
             WeatherParameters {

@@ -64,12 +64,20 @@ while [ $# -gt 0 ]; do
             ACTION="check-ready"
             shift 1
             ;;
+        --stage)
+            ACTION="stage"
+            shift 1
+            ;;
+        --status)
+            ACTION="status"
+            shift 1
+            ;;
         --stop)
             ACTION="stop"
             shift 1
             ;;
         -h|--help)
-            echo "Usage: nyxuri-shell [--action <launcher|session|settings|clipboard|lock|wallpaper-random>|--check-ready|--stop]"
+            echo "Usage: nyxuri-shell [--action <launcher|session|settings|clipboard|lock|wallpaper-random>|--check-ready|--stage|--status|--stop]"
             exit 0
             ;;
         *)
@@ -98,7 +106,19 @@ if [ -n "$ACTION" ]; then
         wallpaper-random)
             exec qs -p "${SHELL_DIR}" ipc call wallpaper random
             ;;
+        stage)
+            exec qs -p "${SHELL_DIR}" ipc call shell stage
+            ;;
+        status)
+            exec qs -p "${SHELL_DIR}" ipc call shell status
+            ;;
         check-ready)
+            if res=$(qs -p "${SHELL_DIR}" ipc call shell isReady 2>/dev/null); then
+                if [ "${res}" = "true" ]; then
+                    exit 0
+                fi
+                exit 1
+            fi
             if qs -p "${SHELL_DIR}" ipc show >/dev/null 2>&1; then
                 exit 0
             else

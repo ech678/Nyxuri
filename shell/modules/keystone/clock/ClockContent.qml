@@ -372,6 +372,7 @@ Item {
             text: "0\n1\n2\n3\n4\n5\n6\n7\n8\n9"
             color: digitContainer.digitColor
             font.family: root.clockFamily
+            font.weight: Font.Black
             font.variableAxes: root.horizontalClockAxes
             font.pixelSize: root.horizontalFontSize
             lineHeight: digitContainer.lineHeight
@@ -421,6 +422,7 @@ Item {
             text: letterContainer.value
             color: root.horizontalDigitColor(letterContainer.letterId)
             font.family: root.clockFamily
+            font.weight: Font.Black
             font.variableAxes: root.horizontalClockAxes
             font.pixelSize: root.horizontalFontSize
             lineHeight: letterContainer.lineHeight

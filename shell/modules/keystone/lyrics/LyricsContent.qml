@@ -1,5 +1,4 @@
 import QtQuick
-import Clavis.Lyrics
 import qs.app.services
 
 Item {
@@ -8,18 +7,14 @@ Item {
     required property var player
     property bool vertical: false
     property string edge: "top"
-    readonly property var lyricsModel: Lyrics.lyrics
-    readonly property string artUrl: player ? player.trackArtUrl || "" : ""
-    readonly property int currentLineIndex: {
-        const lines = Lyrics.lyrics;
-        if (!root.player || !Lyrics.hasSynchronizedLyrics || !lines || lines.length === 0)
-            return -1;
 
-        const position = root.player === MediaManager.active ? MediaManager.currentPosition : Math.max(0, Number(
-                                                                                                           root.player.position)
-                                                                                                       || 0);
-        return Lyrics.indexForTime(position);
-    }
+    // 封存组件：解耦已废弃的 C++ 原生歌词插件，支持外部注入或纯 QML/JS 服务
+    property var lyricsModel: []
+    property bool hasSynchronizedLyrics: false
+    property string status: "idle"
+    property string errorText: ""
+    readonly property string artUrl: player ? player.trackArtUrl || "" : ""
+    readonly property int currentLineIndex: -1
     readonly property string currentLyric: currentLineIndex >= 0 && currentLineIndex < lyricsModel.length ? String(
                                                                                                                 lyricsModel[currentLineIndex].text
                                                                                                                 || "") : lyricsModel
@@ -45,8 +40,8 @@ Item {
             currentLineIndex: root.currentLineIndex
             artUrl: root.artUrl
             player: root.player
-            status: Lyrics.status
-            errorText: Lyrics.error
+            status: root.status
+            errorText: root.errorText
         }
     }
 
@@ -58,8 +53,8 @@ Item {
             artUrl: root.artUrl
             player: root.player
             edge: root.edge
-            status: Lyrics.status
-            errorText: Lyrics.error
+            status: root.status
+            errorText: root.errorText
         }
     }
 }

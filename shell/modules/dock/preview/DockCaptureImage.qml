@@ -1,3 +1,7 @@
-import Clavis.WindowPreview
+import QtQuick
 
-CaptureImage {}
+Item {
+    property var frame: null
+    visible: false
+}
+

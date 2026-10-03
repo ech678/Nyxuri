@@ -66,13 +66,21 @@ Item {
         FontService.refresh();
         I18nService.initialize();
         SystemIdentityService.initialize();
+        ShellStartupService.recordCoreReady();
+        Qt.callLater(() => {
+            ShellStartupService.recordFirstFrame();
+            ShellStartupService.recordIpcReady();
+        });
     }
 
     DisplayOverlays {}
 
     WallpaperBackground {}
 
-    DesktopCardHost {}
+    Loader {
+        active: SystemCardService.desktopCardIds.length > 0
+        source: Qt.resolvedUrl("../modules/desktopcards/DesktopCardHost.qml")
+    }
 
     Bar {}
 
@@ -186,7 +194,7 @@ Item {
         }
     }
 
-    LauncherWindow {
+    LauncherHost {
         id: spotlightLauncher
     }
 
@@ -304,6 +312,27 @@ Item {
 
         function toggle(pageId: string): string {
             return ActionGateway.requestSettingsToggle(pageId || "") ? "OPENING" : "CLOSING";
+        }
+    }
+
+    IpcHandler {
+        target: "shell"
+
+        function status(): string {
+            return JSON.stringify(ShellStartupService.startupMetrics());
+        }
+
+        function stage(): string {
+            return ShellStartupService.currentStage;
+        }
+
+        function isReady(): bool {
+            return ShellStartupService.currentStage === ShellStartupService.stageIpcReady
+                || ShellStartupService.currentStage === ShellStartupService.stageReady;
+        }
+
+        function metrics(): string {
+            return JSON.stringify(ShellStartupService.startupMetrics());
         }
     }
 }

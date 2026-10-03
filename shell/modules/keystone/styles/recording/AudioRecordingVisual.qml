@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import Clavis.Cava
 import qs.shared.theme
 import qs.modules.keystone
 import "RecordingFormat.js" as RecordingFormat
@@ -33,17 +32,12 @@ Item {
         exitSequence.restart();
     }
 
-    AudioLevelProvider {
+    QtObject {
         id: levelProvider
 
-        active: root.recording && root.sourceNodeName !== ""
-        sourceNodeName: root.sourceNodeName
-        captureSink: root.captureSink
-        onErrorStringChanged: {
-            if (errorString !== "")
-                console.warn("[AudioLevelProvider]", errorString);
-
-        }
+        readonly property bool available: false
+        readonly property real visualAmplitude: 0
+        readonly property double visualTimestampMs: 0
     }
 
     Item {
