@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import qs.app.services
-import "../../modules/launcher/SpotlightSearch.js" as SpotlightSearch
+import "./SpotlightSearch.js" as SpotlightSearch
 
 Singleton {
     id: root

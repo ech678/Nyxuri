@@ -795,6 +795,7 @@ StyledFlickable {
                             Layout.alignment: Qt.AlignLeft
                             minimumWidth: 136
                             maximumWidth: 172
+                            inputRegionService: PopupInputRegionService
                             model: PersonalizationConfig.transitionEasingModes
                             currentValue: PersonalizationConfig.transitionEasingMode
                             onValueSelected: value => WallpaperService.setTransitionEasingMode(value)

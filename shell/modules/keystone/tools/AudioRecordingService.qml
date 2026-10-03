@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Io
 import qs.shared.theme
 import qs.app
-import "../../shared/utils/RecordingState.js" as RecordingState
+import "../../../shared/utils/RecordingState.js" as RecordingState
 
 Singleton {
     id: root
@@ -13,16 +13,17 @@ Singleton {
     readonly property string commandName: Paths.stableKey
     property string backendState: "idle"
     property string transientState: ""
-    readonly property string state: transientState !== "" ? transientState : backendState
+    readonly property string state: transientState || backendState
     property string sessionId: ""
-    property double updatedAtMs: 0
     property int pid: 0
-    property string recordingType: "video"
-    property var target: ({
-                              "type": "region",
-                              "geometry": null
-                          })
+    property string sourceType: "mic"
+    property string sourceName: ""
+    property string sourceNodeName: ""
+    property string sourceDescription: ""
+    property bool captureSink: false
     property double startedAtMs: 0
+    property double completedAtMs: 0
+    property double updatedAtMs: 0
     property string temporaryPath: ""
     property string outputPath: ""
     property var error: null
@@ -32,21 +33,34 @@ Singleton {
     readonly property bool backendActive: RecordingState.isActive(backendState)
     property int lastExitCode: 0
     property double _nowMs: Date.now()
-    readonly property bool isSelecting: state === "selecting"
+    property string _lastErrorKey: ""
     readonly property bool isStarting: state === "starting"
     readonly property bool isRecording: state === "recording"
+    readonly property bool isStopping: state === "stopping"
     readonly property bool isFinalizing: state === "finalizing"
-    readonly property bool isCompleted: state === "completed"
-    readonly property bool isActive: isSelecting || isStarting || isRecording || state === "paused" || state
-                                     === "stopping" || isFinalizing
-    readonly property bool isStopPending: stopProcess.running || state === "stopping" || isFinalizing
-    readonly property double elapsedMs: (isRecording || state === "paused") && startedAtMs > 0 ? Math.max(0,
-                                                                                                          _nowMs - startedAtMs) :
-                                                                                                 0
+    readonly property bool isError: state === "error"
+    readonly property bool isActive: isStarting || isRecording || isStopping || isFinalizing
+    readonly property bool isStopPending: stopProcess.running || isStopping || isFinalizing
+    readonly property double elapsedMs: startedAtMs > 0 && isActive ? Math.max(0, _nowMs - startedAtMs) : 0
 
     signal commandFinished(string command, bool ok)
-    signal selectionCancelled
     signal commandError(string code, string message)
+
+    function notifyError(errorObject) {
+        if (!errorObject)
+            return;
+
+        const code = errorObject.code || "audio_recording_error";
+        const message = errorObject.message || qsTr("Recording command failed");
+        const key = code + "\u001f" + message + "\u001f" + root.sessionId;
+        if (key === root._lastErrorKey)
+            return;
+
+        root._lastErrorKey = key;
+        root.commandError(code, message);
+        ActionGateway.execute(["notify-send", "-a", "Nyxuri Shell", "-u", "critical", qsTr("Recording failed"),
+                               message], "audio-recording:error");
+    }
 
     function reportOperation(errorObject) {
         root.operationError = errorObject;
@@ -71,31 +85,29 @@ Singleton {
                 || response.command !== expectedCommand || typeof response.ok !== "boolean") {
             root.reportOperation({
                                      "code": "invalid_key_response",
-                                     "message": qsTr("key command failed")
+                                     "message": qsTr("Recording command failed")
                                  });
             return false;
         }
-        const watching = expectedCommand === "record.watch";
-        const snapshot = expectedCommand === "record.status" || (watching && response.event === "snapshot");
+        const watching = expectedCommand === "audio.watch";
+        const snapshot = expectedCommand === "audio.status" || (watching && response.event === "snapshot");
         if (watching && response.event !== "snapshot" && response.event !== "changed") {
             root.reportOperation(response.error);
             return false;
         }
         if (!watching) {
-            if (expectedCommand !== "record.status")
+            if (expectedCommand !== "audio.status")
                 root.transientState = "";
             root.commandFinished(expectedCommand, response.ok);
         }
-        if (response.cancelled === true)
-            root.selectionCancelled();
         if (!RecordingState.valid(response)) {
             // Initialization can race a CLI operation; watch waits for its lock once.
-            if (expectedCommand === "record.status" && response.error && response.error.code
+            if (expectedCommand === "audio.status" && response.error && response.error.code
                     === "recording_busy")
                 watchProcess.running = true;
             root.reportOperation(response.error || {
                                      "code": "invalid_key_state",
-                                     "message": qsTr("key command failed")
+                                     "message": qsTr("Recording command failed")
                                  });
             return false;
         }
@@ -112,22 +124,26 @@ Singleton {
             root.temporaryPath = response.temporaryPath;
             root.outputPath = response.outputPath;
             root.error = response.state === "error" ? response.error : null;
-            if (response.type === "gif" || response.type === "video")
-                root.recordingType = response.type;
-            root.target = response.target || root.target;
+            const source = response.source || {};
+            root.sourceType = source.type || root.sourceType;
+            root.sourceName = source.name || "";
+            root.sourceNodeName = source.nodeName || "";
+            root.sourceDescription = source.description || "";
+            root.captureSink = source.captureSink === true;
+            root.completedAtMs = response.completedAtMs;
             if (!snapshot && newer && root.backendState === "error" && root.error)
-                root.commandError(root.error.code, root.error.message);
+                root.notifyError(root.error);
         }
         if (!response.ok && response.state !== "error")
             root.reportOperation(response.error);
         else
             root.operationError = null;
         const savedKey = response.sessionId + ":" + response.updatedAtMs;
-        if (!snapshot && (newer || expectedCommand === "record.stop") && response.ok && response.state === "completed"
+        if (!snapshot && (newer || expectedCommand === "audio.stop") && response.ok && response.state === "completed"
                 && response.outputPath && root._lastSavedKey !== savedKey) {
             root._lastSavedKey = savedKey;
-            NotificationManager.fileSaved(root.recordingType === "gif" ? qsTr("GIF saved") : qsTr(
-                                                                             "Screen recording saved"),
+            NotificationManager.fileSaved(root.sourceType === "system" ? qsTr("System audio recording saved") :
+                                                                         qsTr("Microphone recording saved"),
                                           response.outputPath);
         }
         if (root.backendActive && !watchProcess.running && !reconnect.running) {
@@ -137,85 +153,34 @@ Singleton {
         return true;
     }
 
-    function start(type, options) {
-        if (startProcess.running || root.isActive)
+    function start(source, options) {
+        if (startProcess.running || stopProcess.running || root.isActive)
             return false;
 
         const settings = options || {};
-        const requestedType = type === "gif" ? "gif" : "video";
+        root.sourceType = source === "system" ? "system" : "mic";
+        root.transientState = "starting";
+        root.startedAtMs = 0;
+        root.completedAtMs = 0;
         root.error = null;
-        root.recordingType = requestedType;
-        root.transientState = "selecting";
-        if (!RegionSelectionService.begin("record", {
-                                              "type": requestedType,
-                                              "audio": settings.audio || "none",
-                                              "fps": settings.fps || 60,
-                                              "output": settings.output || ""
-                                          })) {
-            root.transientState = "";
-            return false;
-        }
-        return true;
-    }
-
-    function startSelected(geometry, options) {
-        if (!geometry || startProcess.running)
-            return false;
-
-        const settings = options || {};
-        const requestedType = settings.type === "gif" ? "gif" : "video";
-        const command = [root.commandName, "record", "start", "--type", requestedType, "--target", "region", "--geometry",
-                         geometry, "--audio", settings.audio || "none", "--fps", String(settings.fps || 60),
-                         "--json"];
+        root._lastErrorKey = "";
+        const command = [root.commandName, "audio", "start", "--source", root.sourceType, "--json"];
         if (settings.output)
             command.splice(command.length - 1, 0, "--output", settings.output);
 
-        root.error = null;
-        root.recordingType = requestedType;
-        root.transientState = "starting";
-        root.target = {
-            "type": "region",
-            "geometry": geometry
-        };
         startProcess.command = command;
         startProcess.running = true;
         return true;
     }
 
     function stop() {
-        if (root.isStopPending || !(root.isRecording || root.state === "paused"))
+        if (stopProcess.running || !root.isRecording)
             return false;
 
-        stopProcess.command = [root.commandName, "record", "stop", "--json"];
+        root.transientState = "stopping";
+        stopProcess.command = [root.commandName, "audio", "stop", "--json"];
         stopProcess.running = true;
         return true;
-    }
-
-    Connections {
-        function onSelectionAccepted(action, geometry, options) {
-            if (action !== "record" || root.transientState !== "selecting")
-                return;
-
-            if (!root.startSelected(geometry, options)) {
-                root.transientState = "";
-                root.error = {
-                    "code": "record_start_unavailable",
-                    "message": qsTr("Could not start the recording command")
-                };
-                root.commandError(root.error.code, root.error.message);
-            }
-        }
-
-        function onSelectionCancelled(action) {
-            if (action !== "record" || root.transientState !== "selecting")
-                return;
-
-            root.transientState = "";
-            root.selectionCancelled();
-            root.commandFinished("record.start", false);
-        }
-
-        target: RegionSelectionService
     }
 
     Process {
@@ -226,14 +191,19 @@ Singleton {
             if (exitCode !== 0 && !root.operationError && !root.error)
                 root.reportOperation({
                                          "code": "key_unavailable",
-                                         "message": qsTr("key command failed")
+                                         "message": qsTr("Recording command failed")
                                      });
-            root.transientState = "";
             root.transientState = "";
         }
 
         stdout: StdioCollector {
-            onStreamFinished: root.applyResponse(this.text, "record.start")
+            onStreamFinished: root.applyResponse(this.text, "audio.start")
+        }
+
+        stderr: SplitParser {
+            onRead: data => {
+                return console.warn("[key audio start]", data.trim());
+            }
         }
     }
 
@@ -245,13 +215,19 @@ Singleton {
             if (exitCode !== 0 && !root.operationError && !root.error)
                 root.reportOperation({
                                          "code": "key_unavailable",
-                                         "message": qsTr("key command failed")
+                                         "message": qsTr("Recording command failed")
                                      });
             root.transientState = "";
         }
 
         stdout: StdioCollector {
-            onStreamFinished: root.applyResponse(this.text, "record.stop")
+            onStreamFinished: root.applyResponse(this.text, "audio.stop")
+        }
+
+        stderr: SplitParser {
+            onRead: data => {
+                return console.warn("[key audio stop]", data.trim());
+            }
         }
     }
 
@@ -259,7 +235,7 @@ Singleton {
 
     Process {
         id: initialStatus
-        command: [root.commandName, "record", "status", "--json"]
+        command: [root.commandName, "audio", "status", "--json"]
         onExited: exitCode => {
             if (exitCode !== 0 && !root.operationError && !root.error)
                 root.reportOperation({
@@ -268,15 +244,15 @@ Singleton {
                                      });
         }
         stdout: StdioCollector {
-            onStreamFinished: root.applyResponse(this.text, "record.status")
+            onStreamFinished: root.applyResponse(this.text, "audio.status")
         }
     }
 
     Process {
         id: watchProcess
-        command: [root.commandName, "record", "watch", "--format", "jsonl"]
+        command: [root.commandName, "audio", "watch", "--format", "jsonl"]
         stdout: SplitParser {
-            onRead: data => root.applyResponse(data, "record.watch")
+            onRead: data => root.applyResponse(data, "audio.watch")
         }
         onExited: exitCode => {
             if (root.backendActive && root._reconnectAttempts < 3) {
@@ -296,9 +272,9 @@ Singleton {
     }
 
     Timer {
-        interval: 250
+        interval: 50
         repeat: true
-        running: root.isRecording
+        running: root.isActive
         onTriggered: root._nowMs = Date.now()
     }
 

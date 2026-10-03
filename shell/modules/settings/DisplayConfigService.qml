@@ -6,7 +6,7 @@ import Quickshell.Io
 import Clavis.Niri
 import qs.shared.theme
 import qs.app
-import "../../modules/settings/DisplayConfiguration.js" as Config
+import "./DisplayConfiguration.js" as Config
 
 Singleton {
     id: root

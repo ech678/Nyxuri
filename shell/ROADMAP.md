@@ -65,16 +65,42 @@
 `shell/references/iNiR/services/NiriService.qml`，但不复制代码、命名或未经验证的依赖。
 
 目标不是按目录名机械删改，而是让每个文件都有清楚归属，每项能力只有一个实现和一个状态源。`shared/`、`bin/`、`packaging/`
-均逐项审查，只有无消费者、无运行时价值或仅为历史结构存在的内容才删除。
+#### 架构与美学审计基准（灵魂拷问：这是最简洁优雅的状态了吗？）
+
+在 R4-C 初期整理后，以艺术品和极致秩序感标准排查，源码仍存六重严重破坏几何精度的熵增与杂质：
+
+1. **`app/services/` 依旧臃肿（48 个文件）与局部状态外溢**：
+   - 壁纸域碎片（`WallpaperService`, `WallpaperSceneService`, `WallpaperPaletteSession`, `AwwwWallpaperService` 4 个文件）散落在全局；
+   - 桌面卡片拖拽与展示（`DesktopPresentationService`, `SystemCardDragSession`, `SystemCardDragState.js`）等领域私有状态外溢到 app；
+   - 侧边栏抽屉番茄钟（`TimerService`, `InfoDrawerState`）私有状态未归域。
+2. **死功能空壳与僵尸目录残留（做减法未彻底）**：
+   - Keystone 歌词整套目录（`modules/keystone/lyrics/` 5 个文件）全库零消费，纯死代码；
+   - Dock 假预览（`modules/dock/preview/DockCaptureImage.qml` 8 行空白 Item）；
+   - 已放弃的 Cava（`AudioSpectrum.qml`）与窗口预览（`WindowPreviewService.qml`）伪单例空桩依然在多处被调用；
+   - `cava-colors.ini` 模板残留。
+3. **服务命名三权割据与同名污染**：
+   - 裸名词混乱：`Volume.qml`（Pipewire 复杂音频）、`Brightness.qml`（背光控制）、`Time.qml`（系统时钟）；
+   - **同名污染**：`modules/bar/quicksettings/Brightness.qml`（UI 按钮）与全局服务 `Brightness.qml` 同名冲突；
+   - 伪插件名不副实：`WeatherPlugin.qml` 既非原生插件亦非扩展，实为 QML 单例服务；
+   - Manager 与 Service 混用：`NotificationManager`、`MediaManager` 破坏一致性。
+4. **JS 工具脚本孤例怪胎与开发脚本风格混杂**：
+   - 全库 40 个 JS 文件中 39 个遵循 `PascalCase.js`，唯独孤立一个 `calendar_layout.js`（而 QML 导入却写 `as CalendarLayout`）；
+   - `scripts/` 目录下短横线（`audit-lifecycle.py`）与下划线（`compile_i18n.py`, `lock_snapshot.sh`）五五开混杂；双语脚本如 `clavis_paths.py` 与 `clavis-paths.sh` 连分隔符都对不齐。
+5. **功能域重名与嵌套冗余（Stuttering）**：
+   - `modules/quicksettings/`（弹窗）与 `modules/sidebars/quicksettings/`（侧边栏）同名混淆；
+   - `modules/sidebars/quicksettings/QuickSettingsSidebar.qml` 产生语义三重叠床架屋。
+6. **`shell/bin/` 目录形式大于实质（单文件孤岛）**：
+   - `bin/` 目录下仅有唯一的 `nyxuri-shell` 脚本，与 `scripts/` 功能割裂，作者已拍板直接砍掉 `bin/`，将 `nyxuri-shell` 提升至 `shell/` 根目录。
 
 | 状态 | 任务 | 前置 | 验收 |
 | --- | --- | --- | --- |
-| 待开始 | 建立全树结构清单和迁移映射 | R4 | 覆盖 `app/`、`modules/`、`shared/`、`native/`、`bin/`、`packaging/`；每个文件标记保留、移动、合并、删除或阻断，并记录消费者、owner、输入输出和副作用 |
-| 待开始 | 按功能域重组运行代码 | R4-C-01 | 模块内聚 view、状态、模型和专属逻辑；单模块服务迁回所属模块；删除只做转发的 Manager/Controller/Backend/Session 和重复入口 |
-| 待开始 | 收敛 `app/` 全局边界 | R4-C-02 | `app/` 只保留装配、路径、Action Gateway、生命周期和确有跨模块必要性的长期服务；每个全局服务有跨域消费者或独立生命周期理由 |
+| 已完成 | 建立全树结构清单和迁移映射 | R4 | 完成全树 631 文件全量盘点并输出 [结构清单与迁移映射](wiki/tree-inventory.md)；标定 616 保留、12 移动、2 删除、1 合并；每项记录 owner、consumers、I/O 与副作用；tests/test_shell.py 契约全绿 |
+| 已完成 | 按功能域重组运行代码 | R4-C-01 | 12 项专属服务（FileSearchService、SpotlightSearchService、SpotlightToolService、AudioRecordingService、RecordingService、MediaPalette、TrayService、QuickToggleConfig、NetworkInterfaceHistoryService、TodoService、AutostartService、DisplayConfigService）成功迁回所属功能域；物理删除 ToolsBackend.qml 与 settings/SplitMenuButton.qml 冗余代理；清理 settings/backend 与 native/tools 空目录；静态审计 0 违规，tests/test_shell.py 与全量单测全绿 |
+| 待开始 | 统一全库命名法典与清理死代码假桩 | R4-C-02 | 确立全库艺术级命名法典（QML 类型/单例统一 PascalCase `*Service.qml`/`*Config.qml`，JS 工具统一 PascalCase.js 镜像别名，CLI 脚本统一 kebab-case，目录统一全小写）；物理删除 Keystone 歌词僵尸代码（5 文件）、Dock 假预览空壳（DockCaptureImage.qml）与废弃 Cava 模板（cava-colors.ini）；拔除 AudioSpectrum 与 WindowPreviewService 空桩并解除调用点假绑定；消除 Brightness 与 Bar 按钮同名冲突及 WeatherPlugin 伪命名；暂不动 native C++；单测与生命周期审计全绿 |
+| 待开始 | 收敛 `app/` 全局边界 | R4-C-02a | `app/` 只保留装配、路径、Action Gateway、生命周期和确有跨模块必要性的长期服务；每个全局服务有跨域消费者或独立生命周期理由 |
 | 待开始 | 建立 Niri 单一运行时入口 | R4-C-02 | `app/NiriService.qml`（或同等明确的 app 级路径）唯一负责运行时 IPC、订阅、重连、基础状态和销毁；模块不得直接连接 IPC、解析原始事件或导入 native Niri 类型；低频能力按需创建并真实释放 |
 | 待开始 | 迁移纯逻辑与系统边界 | R4-C-03 | 纯计算、数据整形、路径、天气、图标和媒体辅助逻辑优先使用 QML/JS；文件、设备、亮度、网络、音频、显示和通知按真实边界归属；外部命令使用参数数组并可追踪失败、取消、超时和销毁 |
-| 待开始 | 清理 `shared/`、`bin/` 和 `packaging/` | R4-C-03 | `shared/` 仅保留实际复用的纯控件、主题 token 和纯函数；`bin/` 仅保留薄启动/动作入口；`packaging/` 仅保留当前发布、安装和 systemd 所需文件；死文件、死变量、旧 native 路径和重复包装被删除 |
+| 待开始 | 清理 `shared/`、`bin/` 和 `packaging/` | R4-C-03 | `shared/` 仅保留实际复用的纯控件、主题 token 和纯函数；彻底砍掉 `bin/` 目录，将 `nyxuri-shell` 提升至 `shell/` 根目录与 `shell.qml` 并列；`packaging/` 仅保留当前发布、安装和 systemd 所需文件；死文件、死变量、旧 native 路径和重复包装被删除 |
 | 待开始 | 处理无法替代的能力 | R4-C-04 | 窗口预览、频谱、Wayland/Gamma 等能力逐项决定迁移、删除或阻断；不得保留无消费者空壳、兼容代理或为通过检查而存在的插件 |
 | 待开始 | 删除 Nyxuri 自有 C++ 构建链 | R4-C-05 | 删除自有 C++、fallback、native 测试、CMake native target、原生安装元数据和遗留生成入口；默认构建不要求 C++ 编译器、Qt native target 或 native CTest |
 | 待开始 | 完成结构与行为收口 | R4-C-06 | 每个功能域可从单一目录追踪到界面、状态、数据和动作；Niri 只有一个状态源；核心 QML/JS、生命周期、原版 Niri 和退出清理测试全绿 |
@@ -136,6 +162,7 @@
 3. **[已拍板]** Keystone、天气、地图、歌词等能力的核心/可选边界：作者明确拍板放弃 Cava、地图、歌词、窗口预览；已在 R2 彻底物理移除相关 native 插件、fallback 与死 QML UI，相关消费者转化为零开销安全桩。
 4. **[已拍板]** 生成文件、qsb、vendor Python 包和测试 fixture 的版本控制策略：qsb 作为免编译运行资产保留；SearchCatalog.js 脚本生成入库由单测校验；vendor 清理缓存；fixtures 隔离在测试树。
 5. **[已拍板]** 翻译与对外兼容：废除 2.6 万行 XML，采用纯 TOML 双语字典；对外变量优先 NYXURI_*，兼容读取 CLAVIS_*。
+6. **[已拍板]** 目录极简与 `bin/` 处置：作者明确拍板砍掉 `shell/bin/` 目录，将 `nyxuri-shell` 提升至 `shell/` 根目录，与 `shell.qml` 并列构成一动一静、一外一内的极简双入口；全库命名统一遵循艺术级命名法典；暂不改动 C++ 部分。
 
 ## 当前门禁
 

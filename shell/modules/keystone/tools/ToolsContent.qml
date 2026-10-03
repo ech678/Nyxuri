@@ -3,6 +3,8 @@ import QtQuick.Layouts
 import QtQuick.Window
 import qs.shared.theme
 import qs.shared.controls
+import qs.app
+import qs.app.services
 
 Item {
     id: toolsRoot
@@ -60,19 +62,31 @@ Item {
             toolsRoot.requestHideKeystone();
         switch (tool.action) {
         case "color-picker":
-            toolsBackend.pickColor();
+            ActionGateway.execute(["hyprpicker", "-a"], "keystone");
             break;
         case "record-video":
-            toolsBackend.startRecord("video");
+            RecordingService.start("video", {
+                                       "audio": "none",
+                                       "fps": 60,
+                                       "output": UiPreferences.recordingVideoDirectory
+                                   });
             break;
         case "record-gif":
-            toolsBackend.startRecord("gif");
+            RecordingService.start("gif", {
+                                       "audio": "none",
+                                       "fps": 60,
+                                       "output": UiPreferences.recordingGifDirectory
+                                   });
             break;
         case "audio-mic":
-            toolsBackend.startAudio("mic");
+            AudioRecordingService.start("mic", {
+                                            "output": UiPreferences.recordingMicrophoneDirectory
+                                        });
             break;
         case "audio-system":
-            toolsBackend.startAudio("system");
+            AudioRecordingService.start("system", {
+                                            "output": UiPreferences.recordingSystemAudioDirectory
+                                        });
             break;
         default:
             console.warn("[Tools] backend unavailable", tool.action);
@@ -80,11 +94,11 @@ Item {
     }
 
     function stopRecording() {
-        toolsBackend.stopRecord();
+        RecordingService.stop();
     }
 
     function stopAudio() {
-        toolsBackend.stopAudio();
+        AudioRecordingService.stop();
     }
 
     implicitWidth: vertical ? crossExtent : buttonsExtent
@@ -114,10 +128,6 @@ Item {
     }
     Keys.onReturnPressed: triggerSelected()
     Keys.onEnterPressed: triggerSelected()
-
-    ToolsBackend {
-        id: toolsBackend
-    }
 
     Grid {
         anchors.centerIn: parent

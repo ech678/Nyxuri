@@ -679,14 +679,14 @@ class TestShellManagement(unittest.TestCase):
             "app/services/SystemMonitorService.qml",
             "app/services/KeyboardLockService.qml",
             "app/services/AwwwWallpaperService.qml",
-            "app/services/AudioRecordingService.qml",
-            "app/services/RecordingService.qml",
+            "modules/keystone/tools/AudioRecordingService.qml",
+            "modules/keystone/tools/RecordingService.qml",
             "app/services/NetworkService.qml",
             "app/services/NetworkManagerExtras.qml",
             "app/services/BluetoothService.qml",
-            "app/services/FileSearchService.qml",
-            "app/services/SpotlightSearchService.qml",
-            "app/services/SpotlightToolService.qml",
+            "modules/launcher/FileSearchService.qml",
+            "modules/launcher/SpotlightSearchService.qml",
+            "modules/launcher/SpotlightToolService.qml",
             "app/services/WallpaperService.qml",
         ]
         for rel in high_risk_files:
@@ -1123,6 +1123,79 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("idempotent_teardown", inv_data["runtime_evidence"])
 
         # 7. Static audit tool passes with zero violations across entire tree
+        import subprocess
+        audit_res = subprocess.run(
+            [sys.executable, os.path.join(shell_dir, "scripts", "dev", "audit-lifecycle.py"), "--check", "--scope", "all"],
+            capture_output=True, text=True, check=True
+        )
+        self.assertIn("lifecycle-audit: clean", audit_res.stdout)
+
+    def test_r4c_tree_inventory_and_domain_reorganization(self):
+        """R4-C Contract: Full tree inventory completeness and domain reorganization."""
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. Tree inventory document exists and covers key sections
+        inv_path = os.path.join(shell_dir, "wiki", "tree-inventory.md")
+        self.assertTrue(os.path.isfile(inv_path), f"tree-inventory.md missing: {inv_path}")
+        with open(inv_path, "r", encoding="utf-8") as f:
+            inv_text = f.read()
+        self.assertIn("### app/ （共", inv_text)
+        self.assertIn("### modules/ （共", inv_text)
+        self.assertIn("### shared/ （共", inv_text)
+        self.assertIn("### native/ （共", inv_text)
+        self.assertIn("### bin/ （共", inv_text)
+        self.assertIn("### packaging/ （共", inv_text)
+
+        # 2. Assert 12 single-module services relocated into their functional domains
+        migrated_services = [
+            "modules/launcher/FileSearchService.qml",
+            "modules/launcher/SpotlightSearchService.qml",
+            "modules/launcher/SpotlightToolService.qml",
+            "modules/keystone/tools/AudioRecordingService.qml",
+            "modules/keystone/tools/RecordingService.qml",
+            "modules/keystone/media/MediaPalette.qml",
+            "modules/bar/tray/TrayService.qml",
+            "modules/quicksettings/QuickToggleConfig.qml",
+            "modules/systemcards/NetworkInterfaceHistoryService.qml",
+            "modules/sidebars/dashboard/infotools/TodoService.qml",
+            "modules/settings/AutostartService.qml",
+            "modules/settings/DisplayConfigService.qml",
+        ]
+        for rel in migrated_services:
+            target_file = os.path.join(shell_dir, rel)
+            self.assertTrue(os.path.isfile(target_file), f"Migrated service missing in domain: {target_file}")
+
+        # 3. Assert old app/services/ locations no longer exist
+        old_service_names = [
+            "FileSearchService.qml",
+            "SpotlightSearchService.qml",
+            "SpotlightToolService.qml",
+            "AudioRecordingService.qml",
+            "RecordingService.qml",
+            "MediaPalette.qml",
+            "TrayService.qml",
+            "QuickToggleConfig.qml",
+            "NetworkInterfaceHistoryService.qml",
+            "TodoService.qml",
+            "AutostartService.qml",
+            "DisplayConfigService.qml",
+        ]
+        for name in old_service_names:
+            old_file = os.path.join(shell_dir, "app", "services", name)
+            self.assertFalse(os.path.exists(old_file), f"Old service duplicate must not exist in app/services: {old_file}")
+
+        # 4. Redundant forwarders and duplicate wrappers physically deleted
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "modules", "keystone", "tools", "ToolsBackend.qml")),
+                         "Redundant ToolsBackend.qml must be deleted")
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "modules", "settings", "SplitMenuButton.qml")),
+                         "Duplicate settings/SplitMenuButton.qml must be deleted")
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "modules", "settings", "backend")),
+                         "Empty settings/backend directory must not exist")
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "native", "tools")),
+                         "Empty native/tools directory must not exist")
+
+        # 5. Static lifecycle audit passes clean with zero violations
         import subprocess
         audit_res = subprocess.run(
             [sys.executable, os.path.join(shell_dir, "scripts", "dev", "audit-lifecycle.py"), "--check", "--scope", "all"],

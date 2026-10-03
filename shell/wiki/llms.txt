@@ -11,5 +11,6 @@
 - [recovery-inputs](recovery-inputs.md): 原版显式输入/操作入口及当前处理器候选
 - [blueprint](blueprint.md): 四层架构边界、启动/切换目标与待论证设计
 - [audit](audit.md): Clavis 完整母体基准、启动/依赖审计与全树资源索引
+- [tree-inventory](tree-inventory.md): R4-C 全树结构清单、逐文件归属/消费者/副作用与迁移映射
 - [development](development.md): QS 工具使用、隔离调试循环与验证证据
 - [upstream](upstream.md): 上游 docs/ 22 篇历史文档状态分级与参考索引

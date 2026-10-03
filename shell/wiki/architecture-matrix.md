@@ -49,16 +49,17 @@
 
 | 功能域 | 目录 | 职责与内聚内容 | 外部依赖输入 | 对外意图输出 |
 |---|---|---|---|---|
-| **bar** | `modules/bar/` | 桌面状态栏、托盘、工作区指示、时钟 | `Quickshell.screens`、`Workspaces`、`ThemeService` | 触发面板展开、窗口切换 |
+| **bar** | `modules/bar/` | 桌面状态栏、托盘（内聚 `TrayService`）、工作区指示、时钟 | `Quickshell.screens`、`Workspaces`、`ThemeService` | 触发面板展开、窗口切换 |
 | **dock** | `modules/dock/` | 应用停靠栏、常驻应用、活动窗口指示 | `DockService`、`ApplicationService` | 启动应用、激活/最小化窗口 |
-| **keystone** | `modules/keystone/` | 动态岛/多形态中枢（Bangs, Long, Pill） | `MediaManager`、`NotificationManager`、`WidgetState` | 媒体控制、快速操作 |
-| **launcher** | `modules/launcher/` | Spotlight 聚焦启动器、搜索结果列表 | `ApplicationService`、`SearchCatalog` | `ActionGateway.execute(args, "launcher")` |
-| **settings** | `modules/settings/` | 控制中心设置窗口、页面与配置面板 | `PersonalizationConfig`、`DisplayConfigService` | 更新用户配置、重启服务 |
-| **sidebars** | `modules/sidebars/` | 侧边栏（Dashboard, QuickSettings） | `WidgetState`、`SystemStatusService` | 切换视图、系统快捷开关 |
+| **keystone** | `modules/keystone/` | 动态岛/多形态中枢、专属录制与辅助（内聚 `AudioRecordingService`、`RecordingService`、`MediaPalette`） | `MediaManager`、`NotificationManager`、`WidgetState` | 媒体控制、快速操作、录制派发 |
+| **launcher** | `modules/launcher/` | Spotlight 聚焦启动器、专属检索与工具（内聚 `FileSearchService`、`SpotlightSearchService`、`SpotlightToolService`） | `ApplicationService`、`SearchCatalog` | `ActionGateway.execute(args, "launcher")` |
+| **settings** | `modules/settings/` | 控制中心设置窗口与配置管理（内聚 `AutostartService`、`DisplayConfigService`） | `PersonalizationConfig`、`NiriConfigService` | 更新用户配置、重启服务 |
+| **quicksettings** | `modules/quicksettings/` | 快捷设置托板与开关配置（内聚 `QuickToggleConfig`） | `NetworkService`、`BluetoothService` | 快速开关网络/蓝牙/显示状态 |
+| **sidebars** | `modules/sidebars/` | 侧边栏（Dashboard、QuickSettings、内聚 `TodoService`） | `WidgetState`、`SystemStatusService` | 切换视图、系统快捷开关 |
 | **notifications** | `modules/notifications/` | 通知弹窗宿主（PopupHost）、通知卡片视图 | `NotificationManager` | 点击通知动作、关闭通知 |
 | **lock** | `modules/lock/` | 锁屏界面、PAM/认证交互 | `WlSessionLock`、`WallpaperService` | 解锁会话、密码校验 |
 | **wallpaper** | `modules/wallpaper/` | 壁纸背景渲染、调色盘提取视图 | `WallpaperSceneService`、`Appearance` | 请求壁纸重绘、分析通知 |
-| **systemcards** | `modules/systemcards/` | 系统监控卡片（CPU, RAM, 存储, 网络） | `SystemMonitorService`、`Appearance` | 卡片拖放、切换监控视图 |
+| **systemcards** | `modules/systemcards/` | 系统监控卡片（CPU, RAM, 存储, 网络与流量历史 `NetworkInterfaceHistoryService`） | `SystemMonitorService`、`Appearance` | 卡片拖放、切换监控视图 |
 | **desktopcards** | `modules/desktopcards/` | 桌面卡片宿主、画布网格吸附与布局 | `SystemCardService`、`WallpaperSceneService` | 卡片持久化排布 |
 | **hotcorners** | `modules/hotcorners/` | 屏幕热区感知与触发 | `Quickshell.screens`、`NiriConfigService` | 触发 Overview 或自定义动作 |
 | **regionselector** | `modules/regionselector/` | 截图/取色屏幕区域选择器 | `RegionSelectionService` | 选区坐标上抛并结束交互 |

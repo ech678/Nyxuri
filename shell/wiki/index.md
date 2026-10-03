@@ -16,6 +16,7 @@
 | [原版输入入口](recovery-inputs.md) | 原处理器位置、动作源码与当前处理器候选 | 追踪滚轮/点击/键盘/拖放断链 |
 | [架构与启动蓝图](blueprint.md) | 四层（app/modules/shared/native）、生命周期、双 Shell 切换状态机 | 架构演进与接口设计 |
 | [基准与审计](audit.md) | 固定 commit 母体基准、启动闭包追踪、依赖现状、全树资源接口索引 | 审查依赖与评估代码改动影响 |
+| [全树结构清单与迁移映射](tree-inventory.md) | 覆盖全树 631 文件的处置动作、真实消费者、所有者、I/O 与副作用 | R4-C 结构重组与去 C++ 索引 |
 | [开发与调试](development.md) | QS 预览命令、沙箱隔离环境、日常调试循环与验证证据 | 本地开发、热重载与排障 |
 | [Quickshell 完整参考](quickshell-llms-wiki.md) | Quickshell 0.3.1 的架构、QML、生命周期与模块参考 | 查阅 Quickshell 原生能力和运行时行为 |
 | [上游历史文档参考](upstream.md) | 上游 `shell/docs/` 下 22 篇原版文档的状态分级、可用性评估与索引 | 查阅母体原始设计与协议格式 |

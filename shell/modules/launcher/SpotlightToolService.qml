@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Io
 import qs.shared.theme
 import qs.app
-import "../../modules/launcher/SpotlightToolResponse.js" as ToolResponse
+import "./SpotlightToolResponse.js" as ToolResponse
 
 Singleton {
     id: root
