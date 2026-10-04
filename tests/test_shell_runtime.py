@@ -142,14 +142,14 @@ class ShellPresentationTests(unittest.TestCase):
         self.qs = shutil.which("qs")
         dbus = shutil.which("dbus-run-session")
         weston = shutil.which("weston")
-        imports = Path(os.environ.get("CLAVIS_TEST_QML_IMPORT_PATH", SHELL.parent / "build/shell-test/qml"))
-        if not self.qs or not dbus or not weston or not (imports / "Clavis/Runtime/qmldir").is_file():
-            self.skipTest("Quickshell, Weston, private D-Bus and built core QML modules required")
+        if not self.qs or not dbus or not weston:
+            self.skipTest("Quickshell, Weston, and private D-Bus required for presentation tests")
         self.shell = self.ctx.home / "preview"
         shutil.copytree(SHELL, self.shell, ignore=shutil.ignore_patterns(
             "native", "build", "wiki", "tests", ".qmlls.ini", "__pycache__"))
         runtime = self.ctx.home / "runtime"
         runtime.mkdir(mode=0o700)
+        fallback = str(SHELL / "fallback")
         self.environment = {
             key: value for key, value in os.environ.items()
             if not key.startswith(("CLAVIS_", "QS_"))
@@ -159,7 +159,7 @@ class ShellPresentationTests(unittest.TestCase):
             QT_QPA_PLATFORM="wayland", QT_QPA_PLATFORMTHEME="", QT_QUICK_BACKEND="software",
             XDG_RUNTIME_DIR=str(runtime), XDG_DATA_HOME=str(self.ctx.home / "data"),
             XDG_CURRENT_DESKTOP="", XDG_SESSION_DESKTOP="", WAYLAND_DISPLAY="presentation-wayland",
-            QML_IMPORT_PATH=str(imports), QML2_IMPORT_PATH=str(imports),
+            QML_IMPORT_PATH=fallback, QML2_IMPORT_PATH=fallback,
         )
         compositor_log = open(self.ctx.home / "compositor.log", "w+")
         self.addCleanup(compositor_log.close)

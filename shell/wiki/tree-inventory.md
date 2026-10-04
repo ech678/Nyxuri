@@ -8,17 +8,18 @@
 
 ## 1. 统计概览
 
-- **现存文件总数**：508 个（R4-C-05/06 彻底物理删除 native/ 113 个 C++/fallback/CTest 文件及 CMakeLists.txt，实现 100% 纯 QML/JS/Script 纯净架构）
+- **现存文件总数**：508 个（基线 631 文件；R4-C-01 物理删除 2 个冗余代理，迁入 12 个服务；R4-C-02 物理删除 8 个僵尸代码与假桩，重命名 8 个服务/按钮/工具）
 - **分层分布**：
-  - `app/`：42 个文件
+  - `app/`：43 个文件
   - `modules/`：366 个文件
   - `shared/`：96 个文件
-  - `native/`：0 个文件（已彻底物理删除）
-  - `packaging/`：2 个文件
+  - `native/`：0 个文件
+  - `bin/`：0 个文件
+  - `packaging/`：3 个文件
 - **处置状态分布**：
-  - **保留**：506 个文件
-  - **删除**：123 个文件（含 native/ 113 文件、CMakeLists.txt、僵尸代码及测试）
-  - **移动/收敛**：21 个文件
+  - **保留**：478 个文件
+  - **合并**：1 个文件
+  - **移动**：21 个文件
   - **重命名**：8 个文件
 
 ---
@@ -84,14 +85,14 @@
 | `app/services/AvatarService.qml` | **保留** | `app` | modules/keystone, modules/lock, modules/settings, modules/sidebars | 属性(5)/信号(1)/方法(1) | GatewayExec, Process | 功能域自治代码 |
 | `app/services/BluetoothService.qml` | **保留** | `app` | modules/bar, modules/keystone, modules/quicksettings, modules/settings, modules/sidebars | 属性(29)/信号(3)/方法(44) | Timer | 功能域自治代码 |
 | `app/services/BlurService.qml` | **保留** | `app` | modules/bar, modules/desktopcards, modules/dock, modules/filepicker, modules/keystone, modules/launcher, modules/lock, modules/settings, modules/sidebars, modules/systemcards | 属性(10)/信号(2)/方法(9) | Process | 功能域自治代码 |
-| `app/services/BrightnessService.qml` | **重命名** | `app` | app, modules/bar, modules/keystone, modules/quicksettings, modules/sidebars | 属性(17)/信号(1)/方法(22) | Process, Timer | 已由 app/services/Brightness.qml 重命名，遵循命名法典与内聚规范 |
+| `app/services/BrightnessService.qml` | **重命名** | `app` | app, modules/bar, modules/keystone, modules/quicksettings, modules/sidebars | 属性(21)/信号(2)/方法(23) | Process, Timer | 已由 app/services/Brightness.qml 重命名，遵循命名法典与内聚规范 |
 | `app/services/ClipboardService.qml` | **保留** | `app` | modules/launcher, modules/settings | 属性(48)/信号(6)/方法(24) | Process | 功能域自治代码 |
 | `app/services/DefaultApplicationsService.qml` | **保留** | `app` | modules/launcher, modules/settings | 属性(27)/信号(1)/方法(36) | Process, FileView | 功能域自治代码 |
-| `app/services/DisplayColor.qml` | **保留** | `app` | modules/quicksettings, modules/settings | 属性(16)/方法(5) | Process, Timer, FileView | 功能域自治代码 |
-| `app/services/DockService.qml` | **保留** | `app` | modules/dock, modules/launcher, modules/settings | 属性(38)/信号(1)/方法(32) | Process, Timer, FileView, Env | 功能域自治代码 |
+| `app/services/DisplayColor.qml` | **保留** | `app` | modules/quicksettings, modules/settings | 属性(16)/信号(1)/方法(6) | Process, Timer, FileView | 功能域自治代码 |
+| `app/services/DockService.qml` | **保留** | `app` | modules/dock, modules/launcher, modules/settings | 属性(39)/信号(1)/方法(32) | Process, Timer, FileView, Env | 功能域自治代码 |
 | `app/services/FileActionService.qml` | **保留** | `app` | app | 属性(2)/信号(1)/方法(1) | Process | 功能域自治代码 |
 | `app/services/FontService.qml` | **保留** | `app` | app, modules/settings | 属性(20)/方法(8) | 无 | 功能域自治代码 |
-| `app/services/I18nService.qml` | **保留** | `app` | app, modules/keystone, modules/settings, modules/sidebars, modules/systemcards | 属性(4)/方法(2) | 无 | 功能域自治代码 |
+| `app/services/I18nService.qml` | **保留** | `app` | app, modules/keystone, modules/settings, modules/sidebars, modules/systemcards | 属性(5)/方法(5) | Env | 功能域自治代码 |
 | `app/services/IdleInhibitorSurface.qml` | **保留** | `app` | app | - | 无 | 功能域自治代码 |
 | `app/services/IdleService.qml` | **保留** | `app` | app, modules/quicksettings, modules/sidebars | 属性(29)/信号(4)/方法(19) | GatewayExec, Process, FileView | 功能域自治代码 |
 | `app/services/KeyboardLockService.qml` | **保留** | `app` | app, modules/keystone, modules/lock, modules/settings | 属性(8)/信号(2)/方法(2) | Process, Timer | 功能域自治代码 |
@@ -100,7 +101,7 @@
 | `app/services/NetworkManagerExtras.qml` | **保留** | `app` | app | 属性(17)/方法(7) | Process | 功能域自治代码 |
 | `app/services/NetworkService.qml` | **保留** | `app` | modules/bar, modules/keystone, modules/lock, modules/quicksettings, modules/settings, modules/sidebars, modules/systemcards | 属性(70)/信号(8)/方法(57) | Timer | 功能域自治代码 |
 | `app/services/NiriConfigService.qml` | **保留** | `app` | app, modules/bar, modules/hotcorners, modules/keystone, modules/settings, modules/sidebars, modules/wallpaper | 属性(21)/信号(1)/方法(10) | Process, FileView, Env | 功能域自治代码 |
-| `app/services/NiriService.qml` | **保留** | `app` | app, modules/bar, modules/dock, modules/hotcorners, modules/keystone, modules/settings, modules/wallpaper | 属性(22)/信号(11)/方法(28) | Process, Socket, Timer, Env | Niri 单一运行时 IPC 入口，统一负责事件订阅、窗口/工作区/输出状态与动作派发 |
+| `app/services/NiriService.qml` | **保留** | `app` | app, modules/bar, modules/dock, modules/hotcorners, modules/keystone, modules/settings, modules/wallpaper | 属性(35)/信号(6)/方法(73) | Process, Timer, Env, IPC/Wayland | 功能域自治代码 |
 | `app/services/NotificationService.qml` | **重命名** | `app` | modules/keystone, modules/lock, modules/notifications, modules/sidebars | 属性(28)/信号(5)/方法(34) | Process, Timer, FileView | 已由 app/services/NotificationManager.qml 重命名，遵循命名法典与内聚规范 |
 | `app/services/PersonalizationConfig.qml` | **保留** | `app` | app, modules/bar, modules/desktopcards, modules/hotcorners, modules/keystone, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/settings, modules/sidebars, modules/wallpaper | 属性(146)/信号(1)/方法(143) | Process, Timer, FileView, Env | 功能域自治代码 |
 | `app/services/PopupInputRegionService.qml` | **保留** | `app` | modules/desktopcards, modules/settings, modules/systemcards | 属性(1)/方法(3) | 无 | 功能域自治代码 |
@@ -113,12 +114,12 @@
 | `app/services/SystemCardService.qml` | **保留** | `app` | app, modules/desktopcards, modules/settings, modules/sidebars | 属性(12)/信号(2)/方法(32) | 无 | 功能域自治代码 |
 | `app/services/SystemIdentityService.qml` | **保留** | `app` | app, modules/keystone, modules/lock, modules/settings, modules/sidebars, modules/systemcards | 属性(31)/方法(7) | Process, Timer, FileView, Env | 功能域自治代码 |
 | `app/services/SystemMonitorService.qml` | **保留** | `app` | app, modules/bar, modules/keystone, modules/lock, modules/settings, modules/sidebars, modules/systemcards | 属性(65)/方法(33) | Process, Timer, Env | 功能域自治代码 |
-| `app/services/ThemeService.qml` | **保留** | `app` | app, modules/bar, modules/dock, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/settings, modules/sidebars, modules/wallpaper | 属性(19)/方法(42) | Process, FileView, Env | 功能域自治代码 |
+| `app/services/ThemeService.qml` | **保留** | `app` | app, modules/bar, modules/dock, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/settings, modules/sidebars, modules/wallpaper | 属性(22)/信号(1)/方法(43) | Process, FileView, Env | 功能域自治代码 |
 | `app/services/TimeService.qml` | **重命名** | `app` | modules/bar, modules/sidebars | 属性(4)/方法(1) | Timer | 已由 app/services/Time.qml 重命名，遵循命名法典与内聚规范 |
-| `app/services/UiPreferences.qml` | **保留** | `app` | app, modules/bar, modules/keystone, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/settings, modules/sidebars, modules/systemcards, modules/wallpaper | 属性(45)/方法(52) | Process, Timer, FileView | 功能域自治代码 |
+| `app/services/UiPreferences.qml` | **保留** | `app` | app, modules/bar, modules/keystone, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/settings, modules/sidebars, modules/systemcards, modules/wallpaper | 属性(46)/方法(52) | Process, Timer, FileView, Env | 功能域自治代码 |
 | `app/services/VolumeService.qml` | **重命名** | `app` | modules/bar, modules/keystone, modules/quicksettings, modules/sidebars | 属性(19)/信号(1)/方法(26) | 无 | 已由 app/services/Volume.qml 重命名，遵循命名法典与内聚规范 |
 | `app/services/WeatherService.qml` | **重命名** | `app` | app, modules/bar, modules/keystone, modules/lock, modules/settings, modules/sidebars, modules/systemcards | 属性(36)/信号(2)/方法(8) | 无 | 已由 app/services/WeatherPlugin.qml 重命名，遵循命名法典与内聚规范 |
-| `app/services/weather/WeatherBackend.qml` | **合并** | `app` | app, native | 属性(1) | 无 | 9 行纯 Loader 壳，待合并入天气组件或 R4-C-05 消除 |
+| `app/services/weather/WeatherBackend.qml` | **合并** | `app` | app | 属性(24)/信号(2)/方法(14) | Timer | 9 行纯 Loader 壳，待合并入天气组件或 R4-C-05 消除 |
 
 ### modules/ （共 366 文件）
 
@@ -137,14 +138,14 @@
 | `modules/bar/activewindow/SidebarButton.qml` | **保留** | `bar` | modules/bar | 属性(1) | 无 | 功能域自治代码 |
 | `modules/bar/activewindow/SidebarPillButton.qml` | **保留** | `bar` | modules/bar | 属性(3)/方法(1) | 无 | 功能域自治代码 |
 | `modules/bar/activewindow/SidebarWeatherButton.qml` | **保留** | `bar` | modules/bar | 属性(7)/方法(1) | 无 | 功能域自治代码 |
-| `modules/bar/clock/Clock.qml` | **保留** | `bar` | app, modules/bar, modules/settings, modules/systemcards | 属性(3) | 无 | 功能域自治代码 |
-| `modules/bar/clock/qmldir` | **保留** | `bar` | native | - | 无 | 功能域自治代码 |
+| `modules/bar/clock/Clock.qml` | **保留** | `bar` | modules/bar, modules/settings, modules/systemcards | 属性(3) | 无 | 功能域自治代码 |
+| `modules/bar/clock/qmldir` | **保留** | `bar` | 内部/自包含 | - | 无 | 功能域自治代码 |
 | `modules/bar/media/MediaBar.qml` | **保留** | `bar` | modules/bar, modules/keystone | 属性(7)/方法(2) | 无 | 功能域自治代码 |
 | `modules/bar/quicksettings/Battery.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, modules/settings, modules/sidebars, modules/systemcards | 属性(7)/方法(3) | 无 | 功能域自治代码 |
 | `modules/bar/quicksettings/BluetoothButton.qml` | **保留** | `bar` | modules/bar | 属性(2) | 无 | 功能域自治代码 |
 | `modules/bar/quicksettings/BrightnessButton.qml` | **重命名** | `bar` | modules/bar | 属性(5) | 无 | 已由 modules/bar/quicksettings/Brightness.qml 重命名，遵循命名法典与内聚规范 |
-| `modules/bar/quicksettings/Microphone.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, modules/quicksettings, modules/settings, modules/sidebars, native | 属性(3) | 无 | 功能域自治代码 |
-| `modules/bar/quicksettings/Network.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, modules/lock, modules/quicksettings, modules/settings, modules/sidebars, modules/systemcards, native, packaging | 属性(3)/方法(1) | 无 | 功能域自治代码 |
+| `modules/bar/quicksettings/Microphone.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, modules/quicksettings, modules/settings, modules/sidebars | 属性(3) | 无 | 功能域自治代码 |
+| `modules/bar/quicksettings/Network.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, modules/lock, modules/quicksettings, modules/settings, modules/sidebars, modules/systemcards, packaging | 属性(3)/方法(1) | 无 | 功能域自治代码 |
 | `modules/bar/quicksettings/PowerButton.qml` | **保留** | `bar` | modules/bar | 属性(1) | 无 | 功能域自治代码 |
 | `modules/bar/quicksettings/QuickSettings.qml` | **保留** | `bar` | modules/bar, modules/sidebars | 属性(3)/方法(1) | 无 | 功能域自治代码 |
 | `modules/bar/quicksettings/SettingsButton.qml` | **保留** | `bar` | modules/bar | 属性(2) | 无 | 功能域自治代码 |
@@ -156,18 +157,18 @@
 | `modules/bar/tray/TrayMenu.qml` | **保留** | `bar` | modules/bar | 属性(12)/信号(2)/方法(3) | 无 | 功能域自治代码 |
 | `modules/bar/tray/TrayMenuEntry.qml` | **保留** | `bar` | modules/bar | 属性(10)/信号(2) | 无 | 功能域自治代码 |
 | `modules/bar/tray/TrayService.qml` | **移动** | `bar` | modules/bar | 属性(12)/方法(7) | Process, FileView | 已由 app/services/TrayService.qml 移动，遵循命名法典与内聚规范 |
-| `modules/bar/workspaces/Workspaces.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, modules/settings, native | 属性(8)/方法(1) | 无 | 功能域自治代码 |
+| `modules/bar/workspaces/Workspaces.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, modules/settings | 属性(8)/方法(1) | 无 | 功能域自治代码 |
 | `modules/desktopcards/DesktopCard.qml` | **保留** | `desktopcards` | modules/desktopcards, modules/sidebars | 属性(13)/方法(3) | 无 | 功能域自治代码 |
 | `modules/desktopcards/DesktopCardCanvas.qml` | **保留** | `desktopcards` | modules/desktopcards, modules/wallpaper | 属性(48)/信号(3)/方法(34) | 无 | 功能域自治代码 |
 | `modules/desktopcards/DesktopCardGridOverlay.qml` | **保留** | `desktopcards` | modules/desktopcards | 属性(4) | 无 | 功能域自治代码 |
-| `modules/desktopcards/DesktopCardHost.qml` | **保留** | `desktopcards` | app, modules/desktopcards, modules/wallpaper, shared/utils | 属性(16)/方法(24) | 无 | 功能域自治代码 |
+| `modules/desktopcards/DesktopCardHost.qml` | **保留** | `desktopcards` | app, modules/desktopcards, modules/wallpaper, shared/utils | 属性(17)/信号(2)/方法(26) | 无 | 功能域自治代码 |
 | `modules/desktopcards/DesktopCardLayout.js` | **保留** | `desktopcards` | modules/desktopcards, modules/sidebars | 方法(35) | 无 | 功能域自治代码 |
 | `modules/desktopcards/DesktopPresentationService.qml` | **移动** | `desktopcards` | modules/desktopcards, modules/sidebars | 属性(1)/方法(7) | 无 | 已由 app/services/DesktopPresentationService.qml 移动，遵循命名法典与内聚规范 |
 | `modules/desktopcards/SystemCardDragSession.qml` | **移动** | `desktopcards` | modules/desktopcards, modules/sidebars | 属性(34)/信号(3)/方法(16) | 无 | 已由 app/services/SystemCardDragSession.qml 移动，遵循命名法典与内聚规范 |
 | `modules/desktopcards/SystemCardDragState.js` | **移动** | `desktopcards` | modules/desktopcards | 方法(9) | 无 | 已由 app/services/SystemCardDragState.js 移动，遵循命名法典与内聚规范 |
+| `modules/dock/DesktopFiles.qml` | **保留** | `dock` | app, modules/dock | 属性(3)/信号(3)/方法(7) | 无 | 功能域自治代码 |
 | `modules/dock/DockBubble.js` | **保留** | `dock` | modules/dock | 方法(6) | 无 | 功能域自治代码 |
 | `modules/dock/DockBubbleSurface.qml` | **保留** | `dock` | modules/dock | 属性(12)/方法(1) | 无 | 功能域自治代码 |
-| `modules/dock/DesktopFiles.qml` | **保留** | `dock` | app, modules/dock | 属性(3)/信号(3)/方法(7) | 无 | 纯 QML 桌面与文件操作单例，替代 Clavis.Files |
 | `modules/dock/DockDragVisual.qml` | **保留** | `dock` | modules/dock | 属性(8)/方法(5) | 无 | 功能域自治代码 |
 | `modules/dock/DockFanBlur.qml` | **保留** | `dock` | modules/dock | 属性(6)/方法(4) | 无 | 功能域自治代码 |
 | `modules/dock/DockFileArtwork.qml` | **保留** | `dock` | modules/dock | 属性(7) | 无 | 功能域自治代码 |
@@ -184,18 +185,18 @@
 | `modules/dock/DockMedia.js` | **保留** | `dock` | modules/dock | 方法(3) | 无 | 功能域自治代码 |
 | `modules/dock/DockModel.js` | **保留** | `dock` | app | 方法(21) | 无 | 功能域自治代码 |
 | `modules/dock/DockMotion.js` | **保留** | `dock` | modules/dock | 方法(1) | 无 | 功能域自治代码 |
-| `modules/dock/DockPreviewPopup.qml` | **保留** | `dock` | modules/dock | 属性(33)/信号(1)/方法(3) | 无 | 功能域自治代码 |
-| `modules/dock/DockSurface.qml` | **保留** | `dock` | modules/dock | 属性(71)/方法(32) | Timer | 功能域自治代码 |
+| `modules/dock/DockPreviewPopup.qml` | **保留** | `dock` | modules/dock | 属性(34)/信号(1)/方法(6) | Process | 功能域自治代码 |
+| `modules/dock/DockSurface.qml` | **保留** | `dock` | modules/dock | 属性(72)/方法(32) | Timer | 功能域自治代码 |
 | `modules/dock/DockWindowCard.qml` | **保留** | `dock` | modules/dock | 属性(13)/信号(2) | 无 | 功能域自治代码 |
 | `modules/filepicker/FilePickerWindow.qml` | **保留** | `filepicker` | modules/keystone, modules/settings, modules/sidebars | 属性(65)/信号(2)/方法(19) | Timer | 功能域自治代码 |
 | `modules/hotcorners/HotCorners.qml` | **保留** | `hotcorners` | app | 属性(5)/信号(1) | 无 | 功能域自治代码 |
-| `modules/keystone/Keystone.qml` | **保留** | `keystone` | app, modules/dock, modules/keystone, modules/settings | 属性(1)/方法(9) | 无 | 功能域自治代码 |
+| `modules/keystone/Keystone.qml` | **保留** | `keystone` | app, modules/dock, modules/keystone, modules/settings, shared/theme | 属性(1)/方法(9) | 无 | 功能域自治代码 |
 | `modules/keystone/KeystoneMotion.qml` | **保留** | `keystone` | modules/keystone | 属性(20) | 无 | 功能域自治代码 |
 | `modules/keystone/clock/ClockContent.qml` | **保留** | `keystone` | modules/keystone, modules/settings | 属性(29)/方法(6) | Timer | 功能域自治代码 |
 | `modules/keystone/dashboard/CalendarCard.qml` | **保留** | `keystone` | modules/keystone | 属性(7)/方法(2) | 无 | 功能域自治代码 |
 | `modules/keystone/dashboard/DashboardClock.qml` | **保留** | `keystone` | modules/keystone | 属性(5)/方法(1) | Timer | 功能域自治代码 |
 | `modules/keystone/dashboard/DashboardContent.qml` | **保留** | `keystone` | modules/keystone | 属性(9)/信号(2) | 无 | 功能域自治代码 |
-| `modules/keystone/dashboard/DashboardPomodoroCard.qml` | **保留** | `keystone` | modules/keystone, native | 属性(4)/方法(2) | 无 | 功能域自治代码 |
+| `modules/keystone/dashboard/DashboardPomodoroCard.qml` | **保留** | `keystone` | modules/keystone | 属性(4)/方法(2) | 无 | 功能域自治代码 |
 | `modules/keystone/dashboard/DashboardWeatherCard.qml` | **保留** | `keystone` | modules/keystone | 属性(5)/方法(8) | Timer | 功能域自治代码 |
 | `modules/keystone/dashboard/KeyholeCard.qml` | **保留** | `keystone` | modules/keystone | 属性(1) | 无 | 功能域自治代码 |
 | `modules/keystone/dashboard/UserCard.qml` | **保留** | `keystone` | modules/keystone | 属性(6)/信号(1)/方法(2) | 无 | 功能域自治代码 |
@@ -204,7 +205,7 @@
 | `modules/keystone/media/MediaBackdrop.qml` | **保留** | `keystone` | modules/keystone | 属性(5) | 无 | 功能域自治代码 |
 | `modules/keystone/media/MediaContent.qml` | **保留** | `keystone` | modules/keystone | 属性(19)/方法(2) | 无 | 功能域自治代码 |
 | `modules/keystone/media/MediaCover.qml` | **保留** | `keystone` | modules/keystone | 属性(4) | 无 | 功能域自治代码 |
-| `modules/keystone/media/MediaPalette.qml` | **移动** | `keystone` | modules/keystone, native | 方法(1) | 无 | 已由 app/services/MediaPalette.qml 移动，遵循命名法典与内聚规范 |
+| `modules/keystone/media/MediaPalette.qml` | **移动** | `keystone` | modules/keystone | 方法(1) | 无 | 已由 app/services/MediaPalette.qml 移动，遵循命名法典与内聚规范 |
 | `modules/keystone/styles/bangs/Bangs.qml` | **保留** | `keystone` | app, modules/keystone | - | 无 | 功能域自治代码 |
 | `modules/keystone/styles/long/Long.qml` | **保留** | `keystone` | app, modules/keystone, modules/sidebars | - | 无 | 功能域自治代码 |
 | `modules/keystone/styles/long/LongIslandFrame.qml` | **保留** | `keystone` | modules/keystone | 属性(49)/信号(2)/方法(5) | 无 | 功能域自治代码 |
@@ -212,7 +213,7 @@
 | `modules/keystone/styles/long/LongStatusItem.qml` | **保留** | `keystone` | modules/keystone | 属性(19)/信号(1)/方法(3) | 无 | 功能域自治代码 |
 | `modules/keystone/styles/long/LongWorkspaces.qml` | **保留** | `keystone` | 内部/自包含 | 属性(4) | 无 | 功能域自治代码 |
 | `modules/keystone/styles/pill/.gitkeep` | **保留** | `keystone` | 内部/自包含 | - | 无 | 功能域自治代码 |
-| `modules/keystone/styles/pill/Pill.qml` | **保留** | `keystone` | app, modules/keystone, modules/systemcards, native, shared/theme | - | 无 | 功能域自治代码 |
+| `modules/keystone/styles/pill/Pill.qml` | **保留** | `keystone` | app, modules/keystone, modules/systemcards, shared/theme | - | 无 | 功能域自治代码 |
 | `modules/keystone/styles/recording/AudioRecordingVisual.qml` | **保留** | `keystone` | modules/keystone | 属性(10)/信号(3)/方法(2) | 无 | 功能域自治代码 |
 | `modules/keystone/styles/recording/AudioStopButton.qml` | **保留** | `keystone` | modules/keystone | 属性(2)/信号(1) | 无 | 功能域自治代码 |
 | `modules/keystone/styles/recording/AudioWaveform.qml` | **保留** | `keystone` | modules/keystone | 属性(17)/方法(7) | 无 | 功能域自治代码 |
@@ -244,13 +245,13 @@
 | `modules/keystone/weather/WeatherSunriseSunset.qml` | **保留** | `keystone` | modules/keystone | 属性(3)/方法(2) | Timer | 功能域自治代码 |
 | `modules/launcher/FileSearchService.qml` | **移动** | `launcher` | modules/launcher | 属性(27)/信号(1)/方法(9) | Process, Timer | 已由 app/services/FileSearchService.qml 移动，遵循命名法典与内聚规范 |
 | `modules/launcher/LauncherHost.qml` | **保留** | `launcher` | app | 属性(5)/方法(6) | 无 | 功能域自治代码 |
-| `modules/launcher/LauncherWindow.qml` | **保留** | `launcher` | modules/launcher | 属性(53)/方法(46) | Timer | 功能域自治代码 |
+| `modules/launcher/LauncherWindow.qml` | **保留** | `launcher` | modules/launcher | 属性(55)/方法(47) | Timer | 功能域自治代码 |
 | `modules/launcher/SpotlightAppDrag.qml` | **保留** | `launcher` | modules/launcher | 属性(8)/方法(4) | 无 | 功能域自治代码 |
 | `modules/launcher/SpotlightAppGrid.qml` | **保留** | `launcher` | modules/launcher | 属性(7)/信号(2) | 无 | 功能域自治代码 |
 | `modules/launcher/SpotlightAppOrder.js` | **保留** | `launcher` | app, modules/launcher | 方法(9) | 无 | 功能域自治代码 |
 | `modules/launcher/SpotlightAppProvider.qml` | **保留** | `launcher` | modules/launcher | 属性(5)/方法(6) | 无 | 功能域自治代码 |
 | `modules/launcher/SpotlightClipboardDetails.qml` | **保留** | `launcher` | modules/launcher | 属性(19)/信号(2)/方法(7) | Timer | 功能域自治代码 |
-| `modules/launcher/SpotlightClipboardProvider.qml` | **保留** | `launcher` | modules/launcher, native | 属性(9)/信号(3)/方法(28) | 无 | 功能域自治代码 |
+| `modules/launcher/SpotlightClipboardProvider.qml` | **保留** | `launcher` | modules/launcher | 属性(9)/信号(3)/方法(28) | 无 | 功能域自治代码 |
 | `modules/launcher/SpotlightCommandProvider.qml` | **保留** | `launcher` | modules/launcher | 属性(6) | 无 | 功能域自治代码 |
 | `modules/launcher/SpotlightCommands.js` | **保留** | `launcher` | app, modules/launcher | 方法(6) | 无 | 功能域自治代码 |
 | `modules/launcher/SpotlightConversionEditor.qml` | **保留** | `launcher` | modules/launcher | 属性(10)/信号(3)/方法(3) | 无 | 功能域自治代码 |
@@ -302,7 +303,7 @@
 | `modules/regionselector/RegionSelector.qml` | **保留** | `regionselector` | app | 属性(1) | 无 | 功能域自治代码 |
 | `modules/session/SessionHost.qml` | **保留** | `session` | app | 属性(3)/信号(1)/方法(6) | 无 | 功能域自治代码 |
 | `modules/session/SessionPanel.qml` | **保留** | `session` | modules/session | 属性(7)/信号(3)/方法(2) | 无 | 功能域自治代码 |
-| `modules/settings/AccountPage.qml` | **保留** | `settings` | modules/settings, modules/sidebars, native | 属性(14)/信号(1)/方法(8) | 无 | 功能域自治代码 |
+| `modules/settings/AccountPage.qml` | **保留** | `settings` | modules/settings, modules/sidebars | 属性(14)/信号(1)/方法(8) | 无 | 功能域自治代码 |
 | `modules/settings/AddNetworkPage.qml` | **保留** | `settings` | modules/settings | 属性(6)/信号(1)/方法(4) | 无 | 功能域自治代码 |
 | `modules/settings/AdvancedPage.qml` | **保留** | `settings` | modules/settings | 属性(4)/方法(2) | 无 | 功能域自治代码 |
 | `modules/settings/AppBrowserPopup.qml` | **保留** | `settings` | modules/settings | 属性(8)/信号(1)/方法(7) | 无 | 功能域自治代码 |
@@ -364,7 +365,7 @@
 | `modules/settings/ShortcutKeySymbols.js` | **保留** | `settings` | modules/settings | 方法(1) | 无 | 功能域自治代码 |
 | `modules/settings/ShortcutKeycap.qml` | **保留** | `settings` | modules/settings | 属性(5) | 无 | 功能域自治代码 |
 | `modules/settings/ShortcutMap.qml` | **保留** | `settings` | app | 属性(10)/信号(1)/方法(3) | 无 | 功能域自治代码 |
-| `modules/settings/ShortcutsPage.qml` | **保留** | `settings` | modules/settings | 属性(27)/信号(1)/方法(20) | 无 | 功能域自治代码 |
+| `modules/settings/ShortcutsPage.qml` | **保留** | `settings` | modules/settings | 属性(30)/信号(4)/方法(22) | 无 | 功能域自治代码 |
 | `modules/settings/SpotlightPage.qml` | **保留** | `settings` | modules/settings | 方法(1) | 无 | 功能域自治代码 |
 | `modules/settings/ThemePage.qml` | **保留** | `settings` | modules/settings | 属性(34)/信号(4)/方法(1) | 无 | 功能域自治代码 |
 | `modules/settings/WallpaperColorPicker.qml` | **保留** | `settings` | modules/settings, modules/sidebars | 属性(5)/方法(4) | 无 | 功能域自治代码 |
@@ -491,7 +492,7 @@
 | `modules/wallpaper/WallpaperTransitionSurface.qml` | **保留** | `wallpaper` | modules/wallpaper | 属性(119)/信号(1)/方法(11) | Timer | 功能域自治代码 |
 | `modules/wallpaper/ZenPaletteRenderer.qml` | **保留** | `wallpaper` | modules/settings, modules/wallpaper | 属性(6) | 无 | 功能域自治代码 |
 
-### shared/ （共 97 文件）
+### shared/ （共 96 文件）
 
 | 文件路径 | 处置状态 | 归属 (Owner) | 消费者 (Consumers) | I/O | 副作用 | 目标路径 / 说明 |
 |---|---|---|---|---|---|---|
@@ -561,7 +562,6 @@
 | `shared/controls/StyledSwitch.qml` | **保留** | `shared/controls` | modules/settings, modules/sidebars | 属性(1) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/StyledToolTip.qml` | **保留** | `shared/controls` | modules/bar, modules/dock, modules/filepicker, modules/keystone, modules/launcher, modules/settings, modules/sidebars, shared/controls | - | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/StyledToolTipContent.qml` | **保留** | `shared/controls` | shared/controls | 属性(8) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
-| `shared/controls/SvgIcon.qml` | **保留** | `shared/controls` | 内部/自包含 | 属性(5) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/ThemeIcon.qml` | **保留** | `shared/controls` | modules/dock, modules/launcher, modules/settings, shared/controls | 属性(2)/方法(1) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/ThinReadOnlySlider.qml` | **保留** | `shared/controls` | modules/settings | 属性(4) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/ToolCircularProgress.qml` | **保留** | `shared/controls` | modules/keystone, modules/sidebars | 属性(10) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
@@ -579,7 +579,7 @@
 | `shared/theme/Fonts.qml` | **保留** | `shared/theme` | app, modules/bar, modules/dock, modules/filepicker, modules/keystone, modules/launcher, modules/lock, modules/notifications, modules/regionselector, modules/session, modules/settings, modules/sidebars, modules/systemcards, shared/controls, shared/theme | 属性(9)/方法(1) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/theme/Metrics.qml` | **保留** | `shared/theme` | modules/bar, modules/hotcorners, modules/launcher, modules/lock, modules/quicksettings, modules/settings, modules/sidebars, shared/controls | 属性(50) | IPC/Wayland | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/theme/Resources.qml` | **保留** | `shared/theme` | app, shared/controls | 属性(3) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
-| `shared/theme/Sizes.qml` | **保留** | `shared/theme` | modules/bar, modules/lock, modules/notifications, shared/controls | 属性(18) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
+| `shared/theme/Sizes.qml` | **保留** | `shared/theme` | modules/bar, modules/dock, modules/lock, modules/notifications, shared/controls | 属性(19) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/theme/Typography.qml` | **保留** | `shared/theme` | modules/bar, modules/dock, modules/quicksettings, modules/settings, modules/sidebars, modules/systemcards, shared/controls | 属性(48) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/utils/AwwwCommand.js` | **保留** | `shared/utils` | modules/wallpaper | 方法(19) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/utils/DateFormat.js` | **保留** | `shared/utils` | modules/keystone, modules/sidebars, modules/systemcards | 方法(6) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
@@ -587,137 +587,21 @@
 | `shared/utils/RecordingState.js` | **保留** | `shared/utils` | modules/keystone | 方法(2) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/utils/SidebarPolicy.js` | **保留** | `shared/utils` | app, modules/sidebars, modules/wallpaper | 方法(6) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/utils/SystemFormat.js` | **保留** | `shared/utils` | modules/bar, modules/keystone, modules/systemcards | 方法(14) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
-| `shared/utils/TimeUtils.js` | **保留** | `shared/utils` | native | 方法(1) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
+| `shared/utils/TimeUtils.js` | **保留** | `shared/utils` | 内部/自包含 | 方法(1) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/utils/WallpaperMath.js` | **保留** | `shared/utils` | modules/wallpaper | 方法(18) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/utils/WallpaperPaletteScope.js` | **保留** | `shared/utils` | modules/wallpaper | 方法(1) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/utils/WallpaperSource.js` | **保留** | `shared/utils` | app, modules/settings, modules/sidebars, modules/wallpaper, shared/utils | 方法(10) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/utils/ZenPalette.js` | **保留** | `shared/utils` | modules/settings, modules/wallpaper, shared/utils | 方法(16) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 
-### fallback/ （共 4 文件）
-
-> **纯 QML 外部运行时优雅降级桩**：为可选 AUR 插件（`qt6-m3shapes-git`）及可选 Qt 动画插件（`qt6-lottie`）提供纯 QML 保底支持，零 C++ 原生代码。
+### native/ （共 0 文件）
 
 | 文件路径 | 处置状态 | 归属 (Owner) | 消费者 (Consumers) | I/O | 副作用 | 目标路径 / 说明 |
 |---|---|---|---|---|---|---|
-| `fallback/M3Shapes/qmldir` | **保留** | `fallback` | modules/keystone, modules/sidebars, modules/systemcards | - | 无 | 外部 M3Shapes QML 模块元数据 |
-| `fallback/M3Shapes/MaterialShape.qml` | **保留** | `fallback` | modules/keystone, modules/sidebars, modules/systemcards | 属性(6)/方法(3) | 无 | 纯 QML 零依赖降级安全桩 |
-| `fallback/Qt/labs/lottieqt/qmldir` | **保留** | `fallback` | shared/controls | - | 无 | 外部 Qt.labs.lottieqt 模块元数据 |
-| `fallback/Qt/labs/lottieqt/LottieAnimation.qml` | **保留** | `fallback` | shared/controls | 属性(3)/方法(2) | 无 | 纯 QML 零依赖降级安全桩 |
 
-### native/ （共 113 文件，已在 R4-C-05 彻底物理删除）
-
-> **已彻底移除**：本目录所有原生 C++ 源码、插件、CTest 测试套件及 CMake 构建配置已于 R4-C-05 全量删除，转入历史存档。Nyxuri Shell 现为 100% 纯 QML/JS/Script 纯净架构。
-| `native/plugin/desktopcards/CMakeLists.txt` | **保留** | `native/plugin` | packaging | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/desktopcards/src/wallpaper_analyzer.cpp` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/desktopcards/src/wallpaper_analyzer.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/files/CMakeLists.txt` | **保留** | `native/plugin` | packaging | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/files/src/desktop_files.cpp` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/files/src/desktop_files.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/files/src/file_metadata.cpp` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/files/src/file_metadata.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/files/src/folder_sort_model.cpp` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/files/src/folder_sort_model.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/gamma/CMakeLists.txt` | **保留** | `native/plugin` | packaging | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/gamma/protocols/wlr-gamma-control-unstable-v1.xml` | **保留** | `native/plugin` | 内部/自包含 | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/gamma/src/gamma_backend.cpp` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/gamma/src/gamma_backend.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/gamma/src/gamma_curve.cpp` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/gamma/src/gamma_curve.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/i18n/CMakeLists.txt` | **保留** | `native/plugin` | packaging | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/i18n/src/i18n_manager.cpp` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/i18n/src/i18n_manager.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/keyboard/CMakeLists.txt` | **保留** | `native/plugin` | packaging | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/keyboard/src/shortcut_recorder.cpp` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/keyboard/src/shortcut_recorder.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/media/CMakeLists.txt` | **保留** | `native/plugin` | packaging | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/media/src/media_palette_plugin.cpp` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/media/src/media_palette_plugin.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/niri/CMakeLists.txt` | **保留** | `native/plugin` | packaging | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/niri/src/niri_animation_targets.cpp` | **保留** | `native/plugin` | native | - | IPC/Wayland | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/niri/src/niri_animation_targets.h` | **保留** | `native/plugin` | native | - | IPC/Wayland | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/niri/src/niri_floating_parallax.cpp` | **保留** | `native/plugin` | native | - | IPC/Wayland | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/niri/src/niri_floating_parallax.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/niri/src/niri_plugin.cpp` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/niri/src/niri_plugin.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/runtime/CMakeLists.txt` | **保留** | `native/plugin` | packaging | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/runtime/src/backlight_state.cpp` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/runtime/src/backlight_state.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/runtime/src/config_file_watch.cpp` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/runtime/src/config_file_watch.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/runtime/src/horizontal_wheel_area.cpp` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/runtime/src/horizontal_wheel_area.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/runtime/src/icon_theme_controller.cpp` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/runtime/src/icon_theme_controller.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/runtime/src/process_quit.cpp` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/runtime/src/process_quit.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/weather/CMakeLists.txt` | **保留** | `native/plugin` | packaging | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/weather/src/weather_list_model.cpp` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/weather/src/weather_list_model.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/weather/src/weather_plugin.cpp` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/plugin/weather/src/weather_plugin.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/CMakeLists.txt` | **保留** | `native/src` | packaging | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/audio_collector.cpp` | **保留** | `native/src` | 内部/自包含 | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/audio_collector.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/audio_level_collector.cpp` | **保留** | `native/src` | 内部/自包含 | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/audio_level_collector.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/audio_visual_analyzer.cpp` | **保留** | `native/src` | 内部/自包含 | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/audio_visual_analyzer.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/media_palette_backend.cpp` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/media_palette_backend.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/niri_icon_lookup.cpp` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/niri_icon_lookup.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/niri_ipc_client.cpp` | **保留** | `native/src` | native | - | IPC/Wayland | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/niri_ipc_client.h` | **保留** | `native/src` | native | - | IPC/Wayland | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/niri_output_model.cpp` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/niri_output_model.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/niri_types.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/niri_window_model.cpp` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/niri_window_model.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/niri_workspace_deriver.cpp` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/niri_workspace_deriver.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/niri_workspace_model.cpp` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/niri_workspace_model.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/openmeteo_client.cpp` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/openmeteo_client.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/runtime/backlight_reading.cpp` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/runtime/backlight_reading.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/runtime/clavis_paths.cpp` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/runtime/clavis_paths.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/runtime/udev_monitor.cpp` | **保留** | `native/src` | native | - | IPC/Wayland | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/runtime/udev_monitor.h` | **保留** | `native/src` | native | - | IPC/Wayland | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/weather_backend.cpp` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/weather_backend.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/weather_cache.cpp` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/weather_cache.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/weather_calculator.cpp` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/weather_calculator.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/weather_climate_normals.cpp` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/weather_climate_normals.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/weather_normals_cache.cpp` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/weather_normals_cache.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/weather_types.cpp` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/src/weather_types.h` | **保留** | `native/src` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/tests/CMakeLists.txt` | **保留** | `native/tests` | packaging | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/tests/clavis_paths_test.cpp` | **保留** | `native/tests` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/tests/desktop_files_test.cpp` | **保留** | `native/tests` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/tests/device_state_test.cpp` | **保留** | `native/tests` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/tests/gamma_curve_test.cpp` | **保留** | `native/tests` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/tests/i18n_manager_test.cpp` | **保留** | `native/tests` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/tests/icon_theme_controller_test.cpp` | **保留** | `native/tests` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/tests/niri_icon_lookup_test.cpp` | **保留** | `native/tests` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/tests/niri_ipc_async_test.cpp` | **保留** | `native/tests` | native | - | IPC/Wayland | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/tests/niri_minimize_test.cpp` | **保留** | `native/tests` | native | - | IPC/Wayland | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/tests/niri_workspace_deriver_test.cpp` | **保留** | `native/tests` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/tests/process_quit_test.cpp` | **保留** | `native/tests` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/tests/wallpaper_analyzer_test.cpp` | **保留** | `native/tests` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/tests/weather_climate_normals_test.cpp` | **保留** | `native/tests` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/tests/weather_location_test.cpp` | **保留** | `native/tests` | native | - | IPC/Wayland | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-
-### bin/ （共 1 文件）
+### bin/ （共 0 文件）
 
 | 文件路径 | 处置状态 | 归属 (Owner) | 消费者 (Consumers) | I/O | 副作用 | 目标路径 / 说明 |
 |---|---|---|---|---|---|---|
-| `bin/nyxuri-shell` | **移动** | `bin` | 外部/CLI | - | 无 | 移至 shell/nyxuri-shell 根目录与 shell.qml 并列为极简双入口，砍掉 bin/ 目录 |
 
 ### packaging/ （共 3 文件）
 

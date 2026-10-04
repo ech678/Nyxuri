@@ -108,9 +108,9 @@
 
 | 状态 | 任务 | 前置 | 验收 |
 | --- | --- | --- | --- |
-| 待开始 | 盘点图标、翻译、shader、主题和第三方资源消费者 | R2/R3 | 核心、可选、封存、第三方和死数据分类完成，许可证可追溯 |
-| 待开始 | 统一 README、wiki、注释和上游参考资料职责 | R1/R3 | 不再把上游安装或旧品牌误当 Nyxuri 契约 |
-| 待开始 | 按逻辑、运行时资源、native、图形环境和静态规则分类测试 | R4 | 报告按类别记录，不用单一总数代表完成 |
+| 已完成 | 盘点图标、翻译、shader、主题和第三方资源消费者 | R2/R3 | 彻底盘点全库资产并消除死资产（物理删除 SvgIcon.qml 与无消费 Font Awesome 图标）；修复 Zen 着色器断裂缺陷（预编译 zen-palette.frag.qsb，消除 qrc: 悬空路径，路径收敛为 Paths.fileUrl）；清理 zh_CN.toml 孤立歌词段落；Simple Icons 许可证自包含；Meteocons 保持构建时拉取机制；全量着色器存在性与有效性闭环 |
+| 已完成 | 统一 README、wiki、注释和上游参考资料职责 | R1/R3 | 物理删除 4 篇违背物理隔离的冲突母体文档；P3 近 600KB 恢复比对档案移至 wiki/archive/ 解除认知过载；翻新 wiki/development.md 为 100% 纯 QML 调试指南；编制 wiki/references.md 固化母体 commit 15403b9 提取指令；index.md 与 llms.txt 确立 architecture-matrix 为核心真值；PKGBUILD.in 与 AwwwWallpaperService 命名空间收敛为 nyxuri |
+| 已完成 | 按逻辑、运行时资源、native、图形环境和静态规则分类测试 | R4 | 建立 run-tests.py 分类测试运行器，将测试体系解耦为 [STATIC]、[LOGIC]、[RESOURCE]、[NATIVE]、[GRAPHICS] 五大独立分类；修复 Presentation 测试因 Clavis/Runtime 遗留检测导致的硬跳过阻断；集成至 check.sh；独立输出五分类成绩单，杜绝单一总数掩盖缺陷 |
 
 ## 后续阶段
 
@@ -157,7 +157,7 @@
 
 ## 待作者拍板
 1. **[已拍板]** `Clavis` 内部标识处理：作者明确指示 CPP 部分不动（直接对接 R4-C 全面去 C++ 化）；已在 R4-C-05 彻底物理清除全部自有 C++ 源码与构建链，全库转为纯 QML/JS/Script 架构，公开标识全面收敛至 `nyxuri`。
-2. `references/` 与 `wiki/upstream-*` 是否长期保留，或压缩为最小来源/许可证档案。
+2. **[已拍板]** `references/` 与 `wiki/upstream-*` 处理：作者明确指示 `references/` 保持保留作为本地参考；`wiki/upstream-docs` 冲突文档清理，协议规约收敛至 upstream-specs，巨型比对档案移入 archive/，编制 references.md 固化提取指南。
 3. **[已拍板]** Keystone、天气、地图、歌词等能力的核心/可选边界：作者明确拍板放弃 Cava、地图、歌词、窗口预览；已在 R2 彻底物理移除相关 native 插件、fallback 与死 QML UI，相关消费者转化为零开销安全桩。
 4. **[已拍板]** 生成文件、qsb、vendor Python 包和测试 fixture 的版本控制策略：qsb 作为免编译运行资产保留；SearchCatalog.js 脚本生成入库由单测校验；vendor 清理缓存；fixtures 隔离在测试树。
 5. **[已拍板]** 翻译与对外兼容：废除 2.6 万行 XML，采用纯 TOML 双语字典；对外变量优先 NYXURI_*，兼容读取 CLAVIS_*。

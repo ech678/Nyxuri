@@ -18,12 +18,12 @@ CodePen project's `LICENSE.txt`.
 Source: [Zen Browser / zen-browser/desktop](https://github.com/zen-browser/desktop),
 local checkout commit `412731f37e567223097101d9fae9f9d364708b6b`.
 
-| Upstream file | Clavis adaptation |
+| Upstream file | Nyxuri adaptation |
 | --- | --- |
-| `src/zen/spaces/ZenGradientGenerator.mjs` | `Common/functions/ZenPalette.js`: color-position math, harmony relations, primary identity and Linux opaque background semantics; `assets/shaders/zen-palette.frag`: layered gradients |
-| `src/browser/base/content/zen-panels/theme-picker.inc` | `Common/functions/ZenPalette.js`: all 41 presets across five pages, including positions, algorithms, lightness and type; `Modules/ControlCenter/ZenPaletteEditor.qml`: editor controls |
-| `src/zen/spaces/zen-gradient-generator.css` | `Modules/ControlCenter/ZenPaletteEditor.qml`: dotted editing pad, primary/secondary dots, preset pagination, opacity range and 16-position grain control |
-| `src/zen/common/styles/zen-browser-ui.css` | `assets/shaders/zen-palette.frag` and `Modules/Wallpaper/ZenPaletteRenderer.qml`: screen-blended background layers and ordinary alpha grain overlay |
+| `src/zen/spaces/ZenGradientGenerator.mjs` | `shared/utils/ZenPalette.js`: color-position math, harmony relations, primary identity and Linux opaque background semantics; `assets/shaders/wallpaper/frag/zen-palette.frag`: layered gradients |
+| `src/browser/base/content/zen-panels/theme-picker.inc` | `shared/utils/ZenPalette.js`: all 41 presets across five pages, including positions, algorithms, lightness and type; `modules/settings/ZenPaletteEditor.qml`: editor controls |
+| `src/zen/spaces/zen-gradient-generator.css` | `modules/settings/ZenPaletteEditor.qml`: dotted editing pad, primary/secondary dots, preset pagination, opacity range and 16-position grain control |
+| `src/zen/common/styles/zen-browser-ui.css` | `assets/shaders/wallpaper/frag/zen-palette.frag` and `modules/wallpaper/ZenPaletteRenderer.qml`: screen-blended background layers and ordinary alpha grain overlay |
 
 These files retain the upstream MPL notice. The complete license is in
 `ZenBrowser-MPL-2.0.txt`. No file-level “Incompatible With Secondary Licenses”
@@ -32,12 +32,12 @@ notice template, not such a designation of these files. No separate license
 was found for these source files. No Zen artwork, logos, or grain bitmap is
 copied; the shader implements independent, deterministic monochrome grain.
 
-The modified files and their additions are initially distributed under both
-MPL-2.0 and GPL-3.0-or-later as part of the Clavis Larger Work, pursuant to MPL
+The modified files and their additions are distributed under both
+MPL-2.0 and GPL-3.0-or-later as part of the Nyxuri Larger Work, pursuant to MPL
 section 3.3. Recipients may use these files under either license. See Mozilla's
 [MPL-in-GPL developer guidelines](https://www.mozilla.org/en-US/MPL/2.0/combining-mpl-and-gpl/).
 The existing GPL code is reused through component interfaces, not copied into
-the MPL files. Clavis configuration, draft lifecycle and backend services remain
+the MPL files. Nyxuri configuration, draft lifecycle and backend services remain
 under the project's original license.
 
 Adaptations replace browser DOM/events with QML, normalize editor positions on a fixed 380px square color plane (the upstream
@@ -45,16 +45,15 @@ nominal panel width), independent of browser padding and live QML geometry,
 make secondary positions and RGB derived state, fix secondary dragging and
 primary selection, canonicalize the upstream `float` preset spelling to
 `floating`, and keep theme selection local to the wallpaper. The desktop uses
-an opaque base following the global Clavis theme, using Zen’s light/dark base
+an opaque base following the global theme, using Zen’s light/dark base
 colors instead of browser platform transparency. Palette data and presets do not
 select or change the global theme.
-Save/cancel, per-output scopes and external theme generation belong to Clavis.
+Save/cancel, per-output scopes and external theme generation belong to Nyxuri.
 
 QML/JS and GLSL source are installed with the shell. The shader is compiled by
-`qt_add_shaders` in `core/plugin/runtime/CMakeLists.txt` into the existing
-`Clavis.Runtime` module at `qrc:/clavis/shaders/zen-palette.frag.qsb`; normal
-CMake source distributions include that build recipe. No reference checkout
-is needed to build, test, install or run Clavis. This port does not imply Zen
+Qt Shader Baker (`qsb`) into `assets/shaders/wallpaper/qsb/zen-palette.frag.qsb`
+and loaded via `Paths.fileUrl(...)` without requiring runtime compiler toolchains.
+No reference checkout is needed to build, test, install or run Nyxuri. This port does not imply Zen
 Browser endorsement.
 
 ## Caelestia media cover

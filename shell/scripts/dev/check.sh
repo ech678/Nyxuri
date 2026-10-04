@@ -119,4 +119,7 @@ fi
 if [[ ${scope} == all ]] || [[ " ${python_files[*]:-} " =~ audit-lifecycle.py ]]; then
     step lifecycle-audit-tests python3 -m unittest tests/test_lifecycle_audit.py
 fi
+if [[ ${scope} == all ]]; then
+    step categorized-tests python3 "${script_dir}/run-tests.py" --all
+fi
 printf 'check: passed (%s scope)\n' "${scope}"

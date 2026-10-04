@@ -9,9 +9,12 @@ import "../../shared/utils/AwwwCommand.js" as AwwwCommand
 Singleton {
     id: root
 
-    readonly property string namespaceName: "clavis-desktop"
-    readonly property string awwwCommand: Quickshell.env("CLAVIS_AWWW_COMMAND") || "awww"
-    readonly property string daemonCommand: Quickshell.env("CLAVIS_AWWW_DAEMON_COMMAND") || "awww-daemon"
+    readonly property string namespaceName: "nyxuri-desktop"
+    readonly property string awwwCommand: Quickshell.env("NYXURI_AWWW_COMMAND")
+                                          || Quickshell.env("CLAVIS_AWWW_COMMAND") || "awww"
+    readonly property string daemonCommand: Quickshell.env("NYXURI_AWWW_DAEMON_COMMAND")
+                                            || Quickshell.env("CLAVIS_AWWW_DAEMON_COMMAND")
+                                            || "awww-daemon"
 
     property bool available: false
     property bool probeComplete: false
@@ -421,7 +424,7 @@ Singleton {
             root.queryAttempts += 1;
             if (root.queryAttempts >= 20) {
                 root.failAwwwActivation(qsTr(
-                                            "The clavis-desktop awww namespace did not become ready before timeout"));
+                                            "The nyxuri-desktop awww namespace did not become ready before timeout"));
                 return;
             }
             queryRetry.restart();
@@ -472,7 +475,7 @@ Singleton {
         onExited: exitCode => {
             if (exitCode !== 0) {
                 root.daemonStopRequested = false;
-                root.lastError = qsTr("Failed to stop the clavis-desktop awww namespace; exit code %1").arg(
+                root.lastError = qsTr("Failed to stop the nyxuri-desktop awww namespace; exit code %1").arg(
                             exitCode);
                 root.state = "error";
                 return;

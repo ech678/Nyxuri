@@ -14,6 +14,7 @@
 * with this program. If not, see https://www.gnu.org/licenses/.
 */
 import QtQuick
+import qs.app
 import qs.app.services
 import "../../shared/utils/ZenPalette.js" as Zen
 
@@ -31,5 +32,5 @@ ShaderEffect {
     property real colorCount: safePalette.count
     property real paletteOpacity: safePalette.opacity
     property real grain: safePalette.grain
-    fragmentShader: "qrc:/clavis/shaders/zen-palette.frag.qsb"
+    fragmentShader: Paths.fileUrl(Paths.assetsDir + "/shaders/wallpaper/qsb/zen-palette.frag.qsb")
 }

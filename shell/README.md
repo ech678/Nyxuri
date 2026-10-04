@@ -1,7 +1,7 @@
 
 # Nyxuri Shell
 
-> Nyxuri 自研桌面 Shell，基于 Quickshell、QML、Qt 6 与必要原版 Niri 原生桥构建。
+> Nyxuri 自研桌面 Shell，基于 Quickshell、QML 与 Qt 6 构建，采用 100% 纯 QML/JS 架构。
 > 上游母体为 [StatIndet/quickshell](https://github.com/StatIndet/quickshell)（Clavis，commit `91cdecb`）。
 
 ---
@@ -12,11 +12,11 @@
 - **阶段推进与验收矩阵**：[ROADMAP.md](ROADMAP.md)
 - **专属子 Wiki 索引**：[wiki/llms.txt](wiki/llms.txt)
 - **子 Wiki 导读与总览**：[wiki/index.md](wiki/index.md)
-  - 架构与启动蓝图：[wiki/blueprint.md](wiki/blueprint.md)
-  - 基准审计与接口索引：[wiki/audit.md](wiki/audit.md)
-  - 开发调试与沙箱命令：[wiki/development.md](wiki/development.md)
-  - 上游 22 篇历史文档导引：[wiki/upstream.md](wiki/upstream.md)
-- **上游母体历史文档归档**：[wiki/upstream-docs/README.md](wiki/upstream-docs/README.md)
+  - 核心架构矩阵：[wiki/architecture-matrix.md](wiki/architecture-matrix.md)
+  - 全树结构清单：[wiki/tree-inventory.md](wiki/tree-inventory.md)
+  - 开发调试指南：[wiki/development.md](wiki/development.md)
+  - 上游参考与重现：[wiki/references.md](wiki/references.md)
+  - 上游历史文档导引：[wiki/upstream.md](wiki/upstream.md)
 
 ---
 

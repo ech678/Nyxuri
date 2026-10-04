@@ -5,16 +5,14 @@
 
 ---
 
-## 1. 冲突 / 已失效文档（禁止采纳）
+## 1. 冲突 / 已失效文档（已在 R5 彻底物理删除）
 
-以下文档描述上游单体开发模式或旧构建/安装流程，与 Nyxuri 的物理隔离不变量、纯标准库引擎和原子部署契约直接冲突，**仅做历史考证，严禁在 Nyxuri 中执行或引入**：
+以下 4 篇文档描述上游单体开发模式或旧构建/安装流程，与 Nyxuri 的物理隔离不变量、纯标准库引擎和原子部署契约直接冲突，**已在 R5 阶段彻底物理删除，防止对开发造成误导**：
 
-| 文件 | 上游原述内容 | 失效/冲突原因 |
-| --- | --- | --- |
-| [development.md](upstream-docs/development.md) | 引导使用软链接将源码软链至 `~/.config/quickshell/clavis` | **违背物理隔离红线**：Nyxuri 严禁源码软链入 `~/.config`，必须使用原子复制 |
-| [installation.md](upstream-docs/installation.md) | 引导运行 `scripts/install/arch.py` 全量安装上游环境与依赖 | **违背无未声明依赖**：不可运行上游安装器，依赖收敛按 P0 审计推进 |
-| [architecture/install-layout.md](upstream-docs/architecture/install-layout.md) | 描述 Clavis 原版系统与用户目录打包布局 | Nyxuri Shell 目标标识为 `nyxuri-shell`，布局遵循 XDG 与宿主部署契约 |
-| [releasing.md](upstream-docs/releasing.md) | 上游 release 打包与发布脚本流 | Nyxuri 有统一的发布流水线，不使用上游发布流程 |
+- `development.md`（引导使用软链接将源码软链至 `~/.config`，违背物理隔离红线）
+- `installation.md`（引导运行 `scripts/install/arch.py` 全量安装上游依赖，违背无未声明依赖）
+- `architecture/install-layout.md`（描述 Clavis 原版打包布局，现已收敛为 `nyxuri-shell`）
+- `releasing.md`（上游发布流，现由 Nyxuri 统一管道承接）
 
 ---
 

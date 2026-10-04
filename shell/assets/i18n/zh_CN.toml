@@ -2097,10 +2097,6 @@
 "On battery" = "未接通电源"
 "Power" = "功率"
 
-[VerticalLyricsLayout]
-"Loading" = "加载中"
-"Unavailable" = "暂无"
-
 [WallpaperPage]
 "Transition duration" = "过渡时间"
 

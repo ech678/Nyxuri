@@ -299,7 +299,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "Components")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "shared", "controls", "ThemeIcon.qml")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "shared", "controls", "FileThemeIcon.qml")))
-        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "shared", "controls", "SvgIcon.qml")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "shared", "controls", "SvgIcon.qml")))
 
         # Legacy mother directories and upstream artifacts eliminated
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "Common")))
@@ -1487,6 +1487,59 @@ class TestShellManagement(unittest.TestCase):
             roadmap_content = rf.read()
         self.assertIn("| 已完成 | 删除 Nyxuri 自有 C++ 构建链 | R4-C-05 |", roadmap_content)
         self.assertIn("| 已完成 | 完成结构与行为收口 | R4-C-06 |", roadmap_content)
+
+    def test_r5_resource_doc_and_test_closure(self):
+        """R5 Contract: Resource integrity, documentation hygiene, and categorized test runner."""
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. Shader QSB integrity & ZenPaletteRenderer fix
+        zen_qsb = os.path.join(shell_dir, "assets", "shaders", "wallpaper", "qsb", "zen-palette.frag.qsb")
+        self.assertTrue(os.path.isfile(zen_qsb), "zen-palette.frag.qsb must be precompiled")
+        self.assertGreater(os.path.getsize(zen_qsb), 0)
+
+        zen_renderer = os.path.join(shell_dir, "modules", "wallpaper", "ZenPaletteRenderer.qml")
+        with open(zen_renderer, "r", encoding="utf-8") as f:
+            zr_code = f.read()
+        self.assertNotIn("qrc:/", zr_code, "ZenPaletteRenderer must not use deleted qrc: paths")
+        self.assertIn("Paths.fileUrl", zr_code)
+        self.assertIn("zen-palette.frag.qsb", zr_code)
+
+        # 2. Dead icons and orphaned SvgIcon.qml eliminated
+        for dead_icon in ["play.svg", "pause.svg", "previous.svg", "next.svg"]:
+            self.assertFalse(os.path.exists(os.path.join(shell_dir, "assets", "icons", dead_icon)))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "shared", "controls", "SvgIcon.qml")))
+
+        # 3. Conflicting upstream docs removed
+        for doc in ["development.md", "installation.md", "releasing.md"]:
+            self.assertFalse(os.path.exists(os.path.join(shell_dir, "wiki", "upstream-docs", doc)))
+
+        # 4. P3 recovery matrix archived
+        archive_dir = os.path.join(shell_dir, "wiki", "archive")
+        self.assertTrue(os.path.isdir(archive_dir))
+        for archived in ["recovery.md", "recovery-matrix.md", "recovery-inputs.md"]:
+            self.assertTrue(os.path.isfile(os.path.join(archive_dir, archived)))
+
+        # 5. References documentation and modern development guide
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "wiki", "references.md")))
+        dev_guide = os.path.join(shell_dir, "wiki", "development.md")
+        with open(dev_guide, "r", encoding="utf-8") as f:
+            dev_text = f.read()
+        self.assertNotIn("cmake -S", dev_text)
+        self.assertNotIn("ctest --test-dir", dev_text)
+
+        # 6. Categorized test runner exists
+        run_tests = os.path.join(shell_dir, "scripts", "dev", "run-tests.py")
+        self.assertTrue(os.path.isfile(run_tests))
+        self.assertTrue(os.access(run_tests, os.X_OK))
+
+        # 7. Roadmap status reflects R5 completion
+        roadmap_path = os.path.join(shell_dir, "ROADMAP.md")
+        with open(roadmap_path, "r", encoding="utf-8") as rf:
+            roadmap_content = rf.read()
+        self.assertIn("| 已完成 | 盘点图标、翻译、shader、主题和第三方资源消费者 | R2/R3 |", roadmap_content)
+        self.assertIn("| 已完成 | 统一 README、wiki、注释和上游参考资料职责 | R1/R3 |", roadmap_content)
+        self.assertIn("| 已完成 | 按逻辑、运行时资源、native、图形环境和静态规则分类测试 | R4 |", roadmap_content)
 
 
 if __name__ == "__main__":
