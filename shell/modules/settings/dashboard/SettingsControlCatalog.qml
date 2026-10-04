@@ -84,6 +84,30 @@ Singleton {
                                                                                        => PersonalizationConfig.settingsPanelStyle,
                                                                                        value => PersonalizationConfig.setSettingsPanelStyle(
                                                                                                     value), PersonalizationConfig.settingsPanelStyles),
+
+                                         // ── Lyrics ───────────────────────────────────────────────────
+                                         // The source choice is the only lever for "Kugou matched
+                                         // the wrong recording": lrclib matches on exact names, so
+                                         // it is the honest fallback rather than a re-rank.
+                                         "lyrics:Backend": root.select(()
+                                                                       => PersonalizationConfig.lyricSource,
+                                                                       value => PersonalizationConfig.setLyricSource(
+                                                                                    value), PersonalizationConfig.lyricSources),
+                                         "lyrics:Timing offset (ms)": root.spin(() => PersonalizationConfig.lyricOffsetMs,
+                                                                                value => PersonalizationConfig.setLyricOffsetMs(
+                                                                                             value),
+                                                                                PersonalizationConfig.lyricOffsetMinMs,
+                                                                                PersonalizationConfig.lyricOffsetMaxMs,
+                                                                                50),
+                                         "lyrics:Font size": root.spin(() => PersonalizationConfig.lyricFontSize,
+                                                                       value => PersonalizationConfig.setLyricFontSize(
+                                                                                    value),
+                                                                       PersonalizationConfig.lyricFontSizeMin,
+                                                                       PersonalizationConfig.lyricFontSizeMax, 2),
+                                         "lyrics:Tint from album art": root.toggle(()
+                                                                                   => PersonalizationConfig.lyricAlbumArtTint,
+                                                                                   value => PersonalizationConfig.setLyricAlbumArtTint(
+                                                                                                value)),
                                          "interface:Matugen scheme": root.select(()
                                                                                  => PersonalizationConfig.matugenScheme,
                                                                                  value => PersonalizationConfig.setMatugenScheme(

@@ -62,27 +62,30 @@ DashboardCard {
             }
         }
 
-        // Two-sided spacers, as in end4-pC's DashboardSliderCard. A single
-        // leading spacer would strand the slider on the card's bottom edge and
-        // pool every unused pixel into one dead band above it — at the [2,2]
-        // span that is ~158px of nothing on a 292px tile. Splitting the slack
-        // above and below reads as deliberate padding and keeps the track
-        // optically centred.
+        // One flexible band between the label and the track, and the slider at a
+        // fixed compact height.
+        //
+        // end4-pC's DashboardSliderCard puts two uncapped `fillHeight` spacers
+        // around a `StyledSlider` whose implicit height is only about a track
+        // thick, so its [2, 1] tile has room to spare. nyxuri's MaterialSlider
+        // is a 78px control — twice that — and at 78 it does not fit a 140px
+        // tile alongside a 46px label row. The equivalent arrangement is
+        // therefore the same [2, 1] span with a compact slider: 48px plus the
+        // label fits with room left over, and the single spacer puts the little
+        // that remains in one place above the control instead of splitting it
+        // into two dead strips.
         Item {
+            Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.maximumHeight: 24
+            Layout.minimumHeight: 0
         }
 
         MaterialSlider {
             id: slider
 
             Layout.fillWidth: true
-            // Absorb what is left after the capped spacers. MaterialSlider
-            // re-centres its track from the actual height, so a taller tile
-            // widens the gap between the label and the track rather than
-            // opening a void underneath it.
-            Layout.fillHeight: true
-            Layout.minimumHeight: implicitHeight
+            Layout.preferredHeight: 48
+            Layout.minimumHeight: 48
             from: root.fromValue
             to: root.toValue
             stepSize: root.control ? root.control.stepSize ?? 0 : 0
@@ -93,11 +96,6 @@ DashboardCard {
                 if (root.control)
                     root.control.set(value);
             }
-        }
-
-        Item {
-            Layout.fillHeight: true
-            Layout.maximumHeight: 24
         }
     }
 }

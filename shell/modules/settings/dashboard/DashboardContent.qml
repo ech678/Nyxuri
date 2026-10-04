@@ -47,6 +47,52 @@ Item {
     // now hosts the matugen scheme gallery (see DashboardThemesPage).
     readonly property bool themesImplemented: root.currentPage === root.presetsPage
 
+    // ── Cover-art theming ───────────────────────────────────────────────────
+    // While the media page is up and a palette was extracted, the page is
+    // painted from the album art instead of the wallpaper theme. Ported from
+    // end4-pC's DashboardContent, where `mediaColors` is what makes that page
+    // look like the record rather than like the settings panel.
+    //
+    // Gated on `pendingPage` as well as `currentPage`: the page transition
+    // animates the outgoing cards out while the incoming ones fly in, and
+    // flipping the whole surface at the start of that overlap makes the
+    // crossfade read as a colour glitch.
+    readonly property bool mediaVisible: mediaState.active
+                                          && root.currentPage === root.mediaPage
+                                          && root.pendingPage === root.mediaPage
+
+    // The resolved palette, in the same shape end4-pC passes to its media page:
+    // either the cover-derived scheme or a plain Appearance.colors. Both expose
+    // the same colour names, so consumers read `mediaColors.colOnLayer0` with
+    // no ternary and a non-media page tracks theme changes as before.
+    readonly property var mediaColors: root.mediaVisible ? mediaState.blendedColors : Appearance.colors
+
+    // Named aliases for the shell chrome around the page. The ternary lives
+    // here rather than at each call site because two of the names differ
+    // between the two objects (the toolbar uses a surface container, and the
+    // hover state comes from the layer rather than the secondary container).
+    readonly property QtObject ui: QtObject {
+        readonly property color surface: root.mediaColors.colLayer1
+        readonly property color toolbar: root.mediaVisible ? root.mediaColors.colLayer1 :
+                                                             Appearance.m3colors.m3surfaceContainer
+        readonly property color fgSurface: root.mediaColors.colOnLayer1
+        readonly property color subtext: root.mediaColors.colSubtext
+        readonly property color hover: root.mediaVisible ? root.mediaColors.colSecondaryContainerHover :
+                                                           Appearance.colors.colLayer1Hover
+        readonly property color accent: root.mediaColors.colPrimary
+        readonly property color accentHover: root.mediaColors.colPrimaryHover
+        readonly property color accentActive: root.mediaColors.colPrimaryActive
+        readonly property color fgAccent: root.mediaColors.colOnPrimary
+        readonly property color container: root.mediaVisible ? root.mediaColors.colSecondaryContainer :
+                                                               Appearance.colors.colPrimaryContainer
+        readonly property color fgContainer: root.mediaVisible ? root.mediaColors.colOnSecondaryContainer :
+                                                                 Appearance.colors.colOnPrimaryContainer
+    }
+
+    DashboardMediaState {
+        id: mediaState
+    }
+
     readonly property var pageNames: [
         {
             "id": "home",
@@ -295,6 +341,64 @@ Item {
         }
     }
 
+    // Album-art backdrop for the media page. Three stacked pieces, matching
+    // end4-pC:
+    //
+    //   1. the cover itself, hidden — it exists only as the blur's source, so
+    //      it must be laid out but not painted;
+    //   2. a heavily blurred copy of it, faded in with the media page;
+    //   3. a translucent layer tinted with the derived colLayer0, which is
+    //      what keeps the cards and text legible over an arbitrary photograph.
+    //      Blur alone is not enough: a bright cover blurs into a bright wash and
+    //      the label text disappears into it.
+    //
+    // All three sit before the ColumnLayout, so the page content draws on top
+    // without needing a z index.
+    Image {
+        id: dashboardArtSource
+
+        anchors.fill: parent
+        source: mediaState.displayedArtFilePath
+        fillMode: Image.PreserveAspectCrop
+        asynchronous: true
+        // The same cover is decoded again inside the media page's own art card,
+        // at a different size. Sharing the cache would make whichever asks
+        // first win the dimensions and scale the other one.
+        cache: false
+        sourceSize: Qt.size(800, 800)
+        visible: false
+    }
+
+    FastBlur {
+        id: dashboardArt
+
+        anchors.fill: parent
+        source: dashboardArtSource
+        radius: 64
+        opacity: root.mediaVisible ? 1 : 0
+        visible: opacity > 0
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 300
+                easing.type: Easing.OutCubic
+            }
+        }
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        color: mediaState.blendedColors.colLayer0
+        opacity: root.mediaVisible ? 0.6 : 0
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 300
+                easing.type: Easing.OutCubic
+            }
+        }
+    }
+
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 16
@@ -312,9 +416,9 @@ Item {
                 implicitHeight: 44
                 implicitWidth: distroPillRow.implicitWidth + 28
                 radius: height / 2
-                color: Appearance.colors.colLayer1
+                color: root.ui.surface
                 border.width: 2
-                border.color: Appearance.colors.colPrimary
+                border.color: root.ui.accent
 
                 RowLayout {
                     id: distroPillRow
@@ -326,7 +430,7 @@ Item {
                         Layout.preferredWidth: 22
                         Layout.preferredHeight: 22
                         text: root.distroGlyph
-                        color: Appearance.colors.colOnLayer1
+                        color: root.ui.fgSurface
                         font.family: Fonts.ui
                         font.pixelSize: 20
                         horizontalAlignment: Text.AlignHCenter
@@ -337,14 +441,14 @@ Item {
                         text: SystemIdentityService.distroName
                         font.pixelSize: Typography.bodyLarge.pixelSize
                         font.weight: Font.Medium
-                        color: Appearance.colors.colOnLayer1
+                        color: root.ui.fgSurface
                     }
                 }
             }
 
             Toolbar {
                 anchors.centerIn: parent
-                colBackground: Appearance.colors.colLayer1
+                colBackground: root.ui.surface
 
                 Repeater {
                     model: root.pageNames
@@ -361,11 +465,11 @@ Item {
                         buttonRadius: height / 2
                         toggled: root.pendingPage === index
                         onClicked: root.goToPage(index)
-                        containerColor: navBtn.toggled ? Appearance.colors.colPrimary : "transparent"
-                        rippleColor: navBtn.toggled ? Appearance.colors.colOnPrimary :
-                                                      Appearance.colors.colOnSurface
-                        stateLayerColor: navBtn.toggled ? Appearance.colors.colOnPrimary :
-                                                          Appearance.colors.colOnSurface
+                        containerColor: navBtn.toggled ? root.ui.accent : "transparent"
+                        rippleColor: navBtn.toggled ? root.ui.fgAccent :
+                                                      root.ui.fgSurface
+                        stateLayerColor: navBtn.toggled ? root.ui.fgAccent :
+                                                          root.ui.fgSurface
                         // RippleButton draws its state layer at full opacity by
                         // default, which over a transparent container floods the
                         // button and swallows the label. Use the M3 hover/focus/
@@ -388,15 +492,15 @@ Item {
                                 MaterialSymbol {
                                     text: navBtn.modelData.icon
                                     iconSize: Typography.titleLarge.pixelSize
-                                    color: navBtn.toggled ? Appearance.colors.colOnPrimary :
-                                                            Appearance.colors.colOnLayer1
+                                    color: navBtn.toggled ? root.ui.fgAccent :
+                                                            root.ui.fgSurface
                                     fill: navBtn.toggled ? 1 : 0
                                 }
 
                                 StyledText {
                                     text: navBtn.modelData.name
-                                    color: navBtn.toggled ? Appearance.colors.colOnPrimary :
-                                                            Appearance.colors.colOnLayer1
+                                    color: navBtn.toggled ? root.ui.fgAccent :
+                                                            root.ui.fgSurface
                                     visible: navBtn.toggled
                                 }
                             }
@@ -416,9 +520,9 @@ Item {
                     implicitHeight: 44
                     implicitWidth: root.searchOpen ? 280 : 44
                     radius: height / 2
-                    color: Appearance.colors.colLayer1
+                    color: root.ui.surface
                     border.width: searchInput.activeFocus ? 2 : 0
-                    border.color: Appearance.colors.colPrimary
+                    border.color: root.ui.accent
 
                     Behavior on implicitWidth {
                         NumberAnimation {
@@ -447,7 +551,7 @@ Item {
                                 anchors.centerIn: parent
                                 text: "search"
                                 iconSize: Typography.titleLarge.pixelSize
-                                color: Appearance.colors.colOnLayer1
+                                color: root.ui.fgSurface
                             }
                         }
                     }
@@ -463,8 +567,8 @@ Item {
                         clip: true
                         font.pixelSize: Typography.bodyLarge.pixelSize
                         font.family: Fonts.ui
-                        color: Appearance.colors.colOnLayer1
-                        selectionColor: Appearance.colors.colPrimary
+                        color: root.ui.fgSurface
+                        selectionColor: root.ui.accent
                         onTextChanged: root.searchQuery = text
                         Keys.onEscapePressed: {
                             if (text !== "")
@@ -477,7 +581,7 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter
                             visible: searchInput.text === ""
                             text: qsTr("Search settings")
-                            color: Appearance.colors.colSubtext
+                            color: root.ui.subtext
                         }
                     }
                 }
@@ -488,7 +592,7 @@ Item {
                     implicitWidth: 44
                     implicitHeight: 44
                     buttonRadius: height / 2
-                    containerColor: Appearance.colors.colLayer1
+                    containerColor: root.ui.surface
                     stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                     hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                     focusStateLayerOpacity: Appearance.interaction.focusStateLayerOpacity
@@ -500,7 +604,7 @@ Item {
                             anchors.centerIn: parent
                             text: "notifications"
                             iconSize: Typography.titleLarge.pixelSize
-                            color: Appearance.colors.colOnLayer1
+                            color: root.ui.fgSurface
                         }
 
                         Rectangle {
@@ -536,7 +640,7 @@ Item {
                     Layout.preferredWidth: 44
                     Layout.preferredHeight: 44
                     radius: width / 2
-                    color: Appearance.colors.colPrimaryContainer
+                    color: root.ui.container
 
                     Image {
                         id: avatarImage
@@ -562,7 +666,7 @@ Item {
                         visible: avatarImage.status !== Image.Ready
                         text: "account_circle"
                         iconSize: 30
-                        color: Appearance.colors.colOnPrimaryContainer
+                        color: root.ui.fgContainer
                     }
                 }
             }
@@ -671,6 +775,11 @@ Item {
             sourceComponent: DashboardMediaPage {
                 pager: root
                 staggerMs: root.staggerMs
+                // The cover-derived scheme, or the theme's own colours when no
+                // palette is available. Same shape either way, so the page
+                // never branches on it.
+                colors: root.mediaColors
+                blurSource: dashboardArt
             }
         }
 

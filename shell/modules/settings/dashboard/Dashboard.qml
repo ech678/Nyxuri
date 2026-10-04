@@ -60,13 +60,21 @@ FloatingWindow {
     // ToplevelManager titles, so two settings windows sharing one title would
     // make focus ambiguous the moment both are mapped.
     title: "nyxuri-settings-dashboard"
-    // Every other FloatingWindow in this shell paints a rounded surface and asks
-    // the compositor to blur behind it; without this the dashboard was the one
-    // window with square corners.
-    color: "transparent"
+
+    // Opaque layer-0 fill, no rounded rectangle and no compositor blur region.
+    // This is what end4-pC's Dashboard.qml does: upstream lets the compositor
+    // round the window (niri's `geometry-corner-radius`) instead of painting its
+    // own corners, and has no behind-window blur. Keeping nyxuri's own rounded
+    // surface here would be an invented style on top of the reference.
+    color: Appearance.colors.colLayer0
+
+    // Fixed design size, same numbers as end4-pC's Dashboard.qml. Anything else
+    // — the compositor's placement, whether it floats, what size it actually
+    // ends up — is the compositor's call, so the shell asks for the design size
+    // and stops there.
     implicitWidth: 1100
     implicitHeight: 680
-    minimumSize: Qt.size(900, 600)
+
     visible: false
     Material.theme: PersonalizationConfig.themeMode === "light" ? Material.Light : Material.Dark
 
@@ -89,22 +97,6 @@ FloatingWindow {
         interval: 70
         running: true
         onTriggered: root.settled = true
-    }
-
-    Rectangle {
-        id: outerBackground
-
-        anchors.fill: parent
-        radius: Appearance.rounding.large
-        color: BlurService.backgroundColor(Appearance.m3colors.m3background)
-        border.width: 1
-        border.color: Appearance.colors.colOutlineVariant
-    }
-
-    CompositorBlurRegion {
-        targetWindow: root
-        backgroundItem: outerBackground
-        radius: outerBackground.radius
     }
 
     Loader {

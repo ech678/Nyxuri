@@ -18,12 +18,14 @@ QtObject {
             "icon": "palette",
             "cards": [
                 {
-                    "type": "select",
+                    // Upstream keeps this one outside the sections as a "hero"
+                    // tile; nyxuri has no hero row, so it stays the first card
+                    // of Interface. Span comes from baseSpan("style").
+                    "type": "style",
                     "key": "interface:Settings panel style",
                     "title": qsTr("Settings panel style"),
                     "icon": "dashboard_customize",
-                    "w": 4,
-                    "kw": "settings panel style default minimal dashboard"
+                    "kw": "settings panel style default minimal dashboard window overlay"
                 },
                 {
                     "type": "select",
@@ -32,10 +34,14 @@ QtObject {
                     "icon": "contrast"
                 },
                 {
-                    "type": "combo",
+                    // Rendered as the wide `palette` tile (span [4,1]) rather
+                    // than a combo: nine schemes do not fit a dropdown and the
+                    // grid has the room. Span comes from baseSpan("palette").
+                    "type": "palette",
                     "key": "interface:Matugen scheme",
-                    "title": qsTr("Matugen scheme"),
-                    "icon": "colors"
+                    "title": qsTr("Palette style"),
+                    "icon": "auto_awesome",
+                    "kw": "palette style scheme auto content expressive fidelity fruit salad monochrome neutral rainbow tonal spot vibrant matugen"
                 },
                 {
                     "type": "combo",
@@ -249,6 +255,41 @@ QtObject {
                     "key": "keystone:Show monitor values in long form",
                     "title": qsTr("Long form monitor values"),
                     "icon": "monitor"
+                }
+            ]
+        },
+        {
+            "title": qsTr("Media"),
+            "icon": "lyrics",
+            "cards": [
+                {
+                    "type": "select",
+                    "key": "lyrics:Backend",
+                    "title": qsTr("Lyric source"),
+                    "icon": "cloud_download",
+                    "w": 2,
+                    "kw": "lyrics kugou lrclib source backend provider 歌词 来源"
+                },
+                {
+                    "type": "spin",
+                    "key": "lyrics:Timing offset (ms)",
+                    "title": qsTr("Timing offset"),
+                    "icon": "timer",
+                    "kw": "lyrics offset delay timing sync 歌词 偏移 延迟"
+                },
+                {
+                    "type": "spin",
+                    "key": "lyrics:Font size",
+                    "title": qsTr("Font size"),
+                    "icon": "format_size",
+                    "kw": "lyrics font size text 歌词 字号"
+                },
+                {
+                    "type": "toggle",
+                    "key": "lyrics:Tint from album art",
+                    "title": qsTr("Tint from album art"),
+                    "icon": "palette",
+                    "kw": "lyrics album art colour color palette extract 歌词 封面 取色"
                 }
             ]
         },

@@ -3,11 +3,15 @@ singleton DashboardSettingsCatalog 1.0 DashboardSettingsCatalog.qml
 Dashboard 1.0 Dashboard.qml
 DashboardContent 1.0 DashboardContent.qml
 DashboardHomePage 1.0 DashboardHomePage.qml
+DashboardLyricsPane 1.0 DashboardLyricsPane.qml
+DashboardMediaState 1.0 DashboardMediaState.qml
 DashboardSettingsPage 1.0 DashboardSettingsPage.qml
 DashboardToggleCard 1.0 DashboardToggleCard.qml
 DashboardSelectCard 1.0 DashboardSelectCard.qml
 DashboardSliderCard 1.0 DashboardSliderCard.qml
 DashboardSpinCard 1.0 DashboardSpinCard.qml
+DashboardStyleCard 1.0 DashboardStyleCard.qml
+DashboardPaletteCard 1.0 DashboardPaletteCard.qml
 DashboardComboCard 1.0 DashboardComboCard.qml
 DashboardTextCard 1.0 DashboardTextCard.qml
 DashboardWallpapersPage 1.0 DashboardWallpapersPage.qml

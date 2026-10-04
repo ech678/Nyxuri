@@ -19,9 +19,14 @@ FloatingWindow {
     // restarts and config reloads. Only "minimal" changes this window — the
     // "dashboard" style is a separate window (see SettingsHost).
     readonly property bool isMinimal: PersonalizationConfig.settingsPanelStyle === "minimal"
-    // 0.75 is end4-pC's sizeScale for its minimal style; kept verbatim so the
-    // compact variant lands at the same proportions.
-    readonly property real panelScale: root.isMinimal ? 0.75 : 1
+
+    // end4-pC sizes this surface to 980x665, and to 0.75 of that for the minimal
+    // style (its Settings.qml). Kept verbatim. Upstream presents it as a
+    // layer-shell PanelWindow overlay rather than a floating window; nyxuri
+    // keeps a FloatingWindow here, so only the numbers transfer and the
+    // compositor decides what actually lands on screen.
+    readonly property real styleScale: root.isMinimal ? 0.75 : 1
+
     property real contentPadding: root.isMinimal ? 4 : 8
     property int currentPage: 0
     // Minimal pins the rail to icons — expanding it would defeat the point.
@@ -150,9 +155,8 @@ FloatingWindow {
 
     visible: false
     title: "nyxuri-settings"
-    implicitWidth: 1100 * root.panelScale
-    implicitHeight: 750 * root.panelScale
-    minimumSize: root.isMinimal ? Qt.size(620, 420) : Qt.size(760, 520)
+    implicitWidth: 980 * root.styleScale
+    implicitHeight: 665 * root.styleScale
     color: "transparent"
     Material.theme: PersonalizationConfig.themeMode === "light" ? Material.Light : Material.Dark
     Material.accent: Appearance.colors.colPrimary
@@ -283,6 +287,9 @@ FloatingWindow {
                     }
                 }
 
+                // Drag-to-move. Same shape as the other floating windows in the
+                // shell: DragHandler with a null target, and startSystemMove()
+                // handed to the compositor as soon as the handler activates.
                 DragHandler {
                     target: null
                     acceptedButtons: Qt.LeftButton

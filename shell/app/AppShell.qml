@@ -318,6 +318,40 @@ Item {
     }
 
     IpcHandler {
+        target: "lyrics"
+
+        // Diagnostic surface for the lyric pipeline. The card is the only
+        // consumer, so without this there is no way to tell a wedged fetch from
+        // a track that simply has no lyrics without reading the shell logs.
+        function status(): string {
+            return JSON.stringify({
+                                      "state": LyricsService.state,
+                                      "source": LyricsService.source,
+                                      "matched": LyricsService.matched,
+                                      "title": LyricsService.title,
+                                      "artist": LyricsService.artist,
+                                      "lines": LyricsService.lines.length,
+                                      "lineIndex": LyricsService.currentLineIndex,
+                                      "positionMs": LyricsService.positionMs,
+                                      "offsetMs": LyricsService.offsetMs,
+                                      "hasLyrics": LyricsService.hasLyrics,
+                                      "error": LyricsService.errorMessage
+                                  });
+        }
+
+        function refresh(): string {
+            LyricsService.refresh();
+            return "REFRESHING";
+        }
+
+        // Positive shifts lyrics later, in milliseconds.
+        function offset(ms: string): string {
+            LyricsService.setOffsetMs(Number(ms));
+            return String(LyricsService.offsetMs);
+        }
+    }
+
+    IpcHandler {
         target: "shell"
 
         function status(): string {

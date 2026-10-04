@@ -18,6 +18,7 @@ Singleton {
     readonly property string scriptsDir: shareRoot + "/scripts"
     readonly property string audioScriptsDir: scriptsDir + "/audio"
     readonly property string captureScriptsDir: scriptsDir + "/capture"
+    readonly property string lyricsScriptsDir: scriptsDir + "/lyrics"
     readonly property string mediaScriptsDir: scriptsDir + "/media"
     readonly property string systemScriptsDir: scriptsDir + "/system"
     readonly property string themeScriptsDir: scriptsDir + "/theme"

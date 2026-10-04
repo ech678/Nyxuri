@@ -300,6 +300,62 @@ Singleton {
         }
     ]
     property string settingsPanelStyle: "default"
+
+    // ── Lyrics ──────────────────────────────────────────────────────────────
+    //
+    // Backend order for the lyric fetcher. Kugou serves KRC, which carries
+    // per-word timings and is what makes the sweep highlight possible; lrclib
+    // only has line stamps. "kugou" tries Kugou then falls back to lrclib;
+    // "lrclib" skips Kugou entirely (useful when Kugou is unreachable, and for
+    // tracks Kugou matches wrongly).
+    readonly property var lyricSources: [
+        {
+            "value": "kugou",
+            "label": qsTr("Kugou (word timing)")
+        },
+        {
+            "value": "lrclib",
+            "label": qsTr("LRCLIB only")
+        }
+    ]
+    property string lyricSource: "kugou"
+
+    // Manual timing correction, in milliseconds. Positive shifts lyrics later,
+    // which is what a track needs when the vocal trails the reported position.
+    // Bounded because a typo here would make the whole song look broken rather
+    // than merely offset — the user would have no way to tell it apart from a
+    // fetch failure.
+    readonly property int lyricOffsetMinMs: -5000
+    readonly property int lyricOffsetMaxMs: 5000
+    property int lyricOffsetMs: 0
+
+    // Font size of the lyric line on the dashboard card. Bounded so the card
+    // cannot be configured into a state where the line clips.
+    readonly property int lyricFontSizeMin: 16
+    readonly property int lyricFontSizeMax: 40
+    property int lyricFontSize: 26
+
+    // When on, the album art's dominant colour tints the lyric card instead of
+    // the theme's tertiary container. Only takes effect for local artwork:
+    // remote http(s) covers cannot be read by the palette extractor.
+    property bool lyricAlbumArtTint: true
+
+    function setLyricSource(value) {
+        setValue("lyricSource", normalizedOption(root.lyricSources, value, "kugou"));
+    }
+
+    function setLyricOffsetMs(value) {
+        setValue("lyricOffsetMs", normalizedBoundedInt(value, 0, root.lyricOffsetMinMs, root.lyricOffsetMaxMs));
+    }
+
+    function setLyricFontSize(value) {
+        setValue("lyricFontSize", normalizedBoundedInt(value, 26, root.lyricFontSizeMin,
+                                                       root.lyricFontSizeMax));
+    }
+
+    function setLyricAlbumArtTint(value) {
+        setValue("lyricAlbumArtTint", value === true);
+    }
     property string themeMode: "dark"
     property string superKeyStyle: "text"
     readonly property var superKeyStyles: [
@@ -1455,6 +1511,7 @@ Singleton {
         setValue("settingsPanelStyle", normalizedOption(root.settingsPanelStyles, value, "default"));
     }
 
+
     function setKeystoneStyle(value) {
         setValue("keystoneStyle", normalizedOption(root.keystoneStyles, value, "bangs"));
     }
@@ -1880,6 +1937,10 @@ Singleton {
                 "superKeyStyle": root.superKeyStyle,
                 "lockScreenStyle": root.lockScreenStyle,
                 "settingsPanelStyle": root.settingsPanelStyle,
+                "lyricSource": root.lyricSource,
+                "lyricOffsetMs": root.lyricOffsetMs,
+                "lyricFontSize": root.lyricFontSize,
+                "lyricAlbumArtTint": root.lyricAlbumArtTint,
                 "cursorTheme": root.cursorTheme,
                 "cursorSize": root.cursorSize,
                 "cursorHideWhenTyping": root.cursorHideWhenTyping,
@@ -2023,6 +2084,14 @@ Singleton {
         root.lockScreenStyle = normalizedOption(root.lockScreenStyles, theme.lockScreenStyle, "default");
         root.settingsPanelStyle = normalizedOption(root.settingsPanelStyles, theme.settingsPanelStyle,
                                                    "default");
+        root.lyricSource = normalizedOption(root.lyricSources, theme.lyricSource, "kugou");
+        root.lyricOffsetMs = normalizedBoundedInt(theme.lyricOffsetMs, 0, root.lyricOffsetMinMs,
+                                                  root.lyricOffsetMaxMs);
+        root.lyricFontSize = normalizedBoundedInt(theme.lyricFontSize, 26, root.lyricFontSizeMin,
+                                                  root.lyricFontSizeMax);
+        // A hand-edited config could carry any JSON type here; only an explicit
+        // true enables the tint, so a stray string cannot flip it on.
+        root.lyricAlbumArtTint = theme.lyricAlbumArtTint === true;
         root.themeMode = theme.mode === "light" ? "light" : "dark";
         root.superKeyStyle = root.superKeyStyles.some(style => style.value === theme.superKeyStyle)
                 ? theme.superKeyStyle : "text";
