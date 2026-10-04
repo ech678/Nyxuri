@@ -340,6 +340,17 @@ PopupWindow {
             }
         }
 
+        Text {
+            visible: menuOpener.children.values.length === 0
+            text: I18n.tr("No menu items")
+            color: Appearance.colors.colSubtext
+            font.family: Fonts.ui
+            font.pixelSize: 13
+            leftPadding: 12
+            rightPadding: 12
+            topPadding: 8
+            bottomPadding: 8
+        }
         Behavior on opacity {
             NumberAnimation {
                 alwaysRunToEnd: true
