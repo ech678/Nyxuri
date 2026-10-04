@@ -112,6 +112,14 @@ def build_category_suite(category: str) -> unittest.TestSuite:
         # Lifecycle and boundary tests
         from shell.tests.test_lifecycle_audit import TestLifecycleAudit
         suite.addTests(loader.loadTestsFromTestCase(TestLifecycleAudit))
+        from shell.tests.test_visual_tokens import DesignTokenContracts
+        suite.addTests(loader.loadTestsFromTestCase(DesignTokenContracts))
+        from shell.tests.test_contrast_guard import ContrastContracts
+        suite.addTests(loader.loadTestsFromTestCase(ContrastContracts))
+        from shell.tests.test_reduce_motion import ReduceMotionContracts
+        suite.addTests(loader.loadTestsFromTestCase(ReduceMotionContracts))
+        from shell.tests.test_i18n_catalog import CatalogContracts
+        suite.addTests(loader.loadTestsFromTestCase(CatalogContracts))
         from tests.test_shell import TestShellManagement
         static_test_names = [
             "test_p2_layer_structure_and_session_decoupling",

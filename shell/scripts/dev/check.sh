@@ -105,6 +105,22 @@ for test_name in niri_cursor_config manage_niri_effects matugen_registry; do
         step "${test_name}" bash "tests/test_${test_name}.sh"
     fi
 done
+for test_name in i18n_catalog contrast_guard reduce_motion visual_tokens; do
+    run_test=false
+    [[ ${scope} != all ]] || run_test=true
+    for file in "${files[@]}"; do
+        case "${test_name}:${file}" in
+            i18n_catalog:assets/i18n/*|i18n_catalog:shared/i18n/*|i18n_catalog:tests/test_i18n_catalog.py) run_test=true ;;
+            contrast_guard:shared/theme/Appearance.qml|contrast_guard:tests/test_contrast_guard.py) run_test=true ;;
+            reduce_motion:shared/theme/Appearance.qml|reduce_motion:app/services/UiPreferences.qml|reduce_motion:app/services/ThemeService.qml|reduce_motion:tests/test_reduce_motion.py) run_test=true ;;
+            visual_tokens:shared/theme/*|visual_tokens:tests/test_visual_tokens.py) run_test=true ;;
+        esac
+    done
+    if ${run_test}; then
+        require python3 python
+        step "${test_name}" python3 -m unittest "tests/test_${test_name}.py"
+    fi
+done
 if ${catalog}; then
     step search-catalog python3 "${script_dir}/generate-search-catalog.py"
     step search-catalog-contracts python3 tests/test_search_catalog.py
