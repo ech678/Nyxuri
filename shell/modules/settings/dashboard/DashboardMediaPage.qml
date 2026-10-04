@@ -7,20 +7,29 @@ import qs.shared.controls
 import qs.app.services
 
 // Dashboard "Media" page. Layout ported from end4-pC's DashboardMediaPage: a
-// 46/54 split with album art, track info and transport controls on the left.
+// 46/54 split with album art, track info and transport controls on the left,
+// and the scrolling lyrics on the right.
 //
-// Not ported, because nyxuri has no counterpart:
-//   - the cava wave visualiser (Cava is sealed in this tree).
-//   - the lyrics pane that fills the right column (keystone/lyrics was deleted).
-//   - the album-art derived palette that recolours the whole dashboard
-//     (`DashboardMediaState` + ColorQuantizer + AdaptedMaterialScheme). nyxuri
-//     derives colours from the wallpaper through matugen instead.
-// The right column is kept so the split geometry still matches end4-pC.
+// The page takes its colours from `colors`, which DashboardContent supplies
+// from the cover art while a track is playing (see DashboardMediaState). That
+// is what makes the page look like the record instead of like the settings
+// panel. `colors` follows the same shape as end4-pC's `mediaColors`: it is
+// either the derived scheme or a plain Appearance.colors, and both expose the
+// same names, so nothing below needs to branch. The fallback exists only so the
+// page can be previewed standalone.
 Item {
     id: root
 
     required property Item pager
     property int staggerMs: 45
+
+    // Resolved palette: the cover-derived scheme, or the theme's own colours.
+    property var colors: null
+    readonly property var scheme: root.colors ?? Appearance.colors
+
+    // The blurred album-art backdrop, handed to the cards so their tint is
+    // sampled from the artwork rather than a flat colour.
+    property Item blurSource: null
 
     readonly property var player: MediaService.active
     readonly property bool playing: root.player ? root.player.isPlaying : false
@@ -30,8 +39,10 @@ Item {
                                         root.player ? root.player.canControl ?? false : false)
     readonly property bool canSeek: root.player ? root.player.canSeek ?? false : false
 
-    readonly property color fg: Appearance.colors.colOnLayer0
-    readonly property color fgDim: Appearance.colors.colSubtext
+    readonly property color fg: root.scheme.colOnLayer0
+    readonly property color fgDim: root.scheme.colSubtext
+    readonly property color hoverColor: root.scheme.colSecondaryContainerHover
+    readonly property color activeColor: root.scheme.colSecondaryContainerActive
 
     property string shownTitle: ""
     property string shownArtist: ""
@@ -159,7 +170,7 @@ Item {
                     anchors.bottom: parent.bottom
                     width: Math.min(parent.width, parent.height)
                     height: width
-                    tint: Appearance.colors.colSecondaryContainer
+                    tint: root.scheme.colSecondaryContainer
                     pager: root.pager
                     staggerMs: root.staggerMs
                     animIndex: 0
@@ -192,7 +203,7 @@ Item {
                         text: "music_note"
                         fill: 1
                         iconSize: 96
-                        color: Appearance.colors.colPrimary
+                        color: root.scheme.colPrimary
                     }
                 }
             }
@@ -241,8 +252,12 @@ Item {
             DashboardCard {
                 Layout.fillWidth: true
                 Layout.preferredHeight: controlsLayout.implicitHeight + 28
-                tint: Appearance.colors.colSecondaryContainer
+                tint: root.scheme.colSecondaryContainer
                 tintOpacity: 0.45
+                // The transport bar sits on a blurred slice of the cover rather
+                // than a flat fill, which is what ties it to the artwork behind
+                // it. Same arrangement as end4-pC.
+                blurSource: root.blurSource
                 pager: root.pager
                 staggerMs: root.staggerMs
                 animIndex: 2
@@ -267,33 +282,55 @@ Item {
                         spacing: 10
 
                         StyledText {
+                            // Fixed slot for the elapsed time. Without it the
+                            // label width tracks the text, so every tick that
+                            // changed "0:59" to "1:00" resized the row and slid
+                            // the slider out from under the cursor mid-drag.
+                            Layout.preferredWidth: 44
+                            horizontalAlignment: Text.AlignRight
                             text: root.formatTime(root.player ? root.player.position : 0)
                             font.pixelSize: Typography.bodySmall.pixelSize
                             color: root.fg
                         }
 
-                        MaterialSlider {
+                        MaterialSplitSlider {
+                            id: seekSlider
+
                             Layout.fillWidth: true
+                            // 44px rather than the 78px default: what the transport
+                            // row's height budget allows.
                             Layout.preferredHeight: 44
+                            Layout.minimumHeight: 44
+                            // Wavy is upstream's seek-bar configuration. The track
+                            // is one line tall, which is what makes the row fit
+                            // around it; the settings tiles keep the taller handle.
+                            configuration: MaterialSplitSlider.Configuration.Wavy
                             enabled: root.canSeek
                             from: 0
                             to: 1
                             value: root.player && root.player.length > 0 ? (root.player.position ?? 0)
                                                                            / root.player.length : 0
-                            accessibleName: qsTr("Seek")
-                            // The slider tracks a 0..1 ratio, so the default indicator
-                            // showed "0"/"1" instead of a position. Render it as time.
-                            valueFormatter: sliderValue => root.formatTime(sliderValue * (root.player
-                                                                                          && root.player.length
-                                                                                          > 0 ? root.player.length :
-                                                                                                0))
-                            onMoved: value => {
+                            highlightColor: root.scheme.colPrimary
+                            trackColor: root.scheme.colSecondaryContainer
+                            handleColor: root.scheme.colPrimary
+                            // The slider tracks a 0..1 ratio, so the default
+                            // indicator would read "0"/"1"; show the time the
+                            // handle is sitting on instead.
+                            usePercentTooltip: false
+                            tooltipContent: root.formatTime(seekSlider.value * (root.player
+                                                                                && root.player.length > 0
+                                                                                ? root.player.length : 0))
+                            // QtQuick's moved() carries no argument, unlike the
+                            // MaterialSlider this replaced.
+                            onMoved: {
                                 if (root.player && root.canSeek)
-                                    root.player.position = value * root.player.length;
+                                    root.player.position = seekSlider.value * root.player.length;
                             }
                         }
 
                         StyledText {
+                            Layout.preferredWidth: 44
+                            horizontalAlignment: Text.AlignLeft
                             text: "-" + root.formatTime((root.player ? root.player.length ?? 0 : 0) - (
                                                             root.player ? root.player.position ?? 0 : 0))
                             font.pixelSize: Typography.bodySmall.pixelSize
@@ -368,9 +405,9 @@ Item {
                             implicitWidth: 64
                             implicitHeight: 64
                             buttonRadius: root.playing ? Appearance.rounding.large : 32
-                            containerColor: Appearance.colors.colPrimary
-                            rippleColor: Appearance.colors.colOnPrimary
-                            stateLayerColor: Appearance.colors.colOnPrimary
+                            containerColor: root.scheme.colPrimary
+                            rippleColor: root.scheme.colOnPrimary
+                            stateLayerColor: root.scheme.colOnPrimary
                             stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                             hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                             pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
@@ -385,7 +422,7 @@ Item {
                                     text: root.playing ? "pause" : "play_arrow"
                                     iconSize: 32
                                     fill: 1
-                                    color: Appearance.colors.colOnPrimary
+                                    color: root.scheme.colOnPrimary
                                 }
                             }
                         }
@@ -453,25 +490,16 @@ Item {
             }
         }
 
-        // ── 待接入：歌词栏 ──────────────────────────────────────────────
-        // end4-pC 在这个位置放 `Lyrics` 组件（见其 DashboardMediaPage 右列：
-        // fontScale 1.8、lineSpacing 28、居中对齐，当前行跟随播放进度高亮）。
-        //
-        // nyxuri 现状：keystone/lyrics 在 R4-C-02 被物理删除，仓库里已无歌词能力，
-        // 因此这里只保留 46/54 分栏的几何，右列空置。
-        //
-        // 要补齐需要：
-        //   1. 歌词来源。MPRIS 不提供歌词，需接一个 provider —— end4-pC 走 kugou
-        //      抓取，另有 SPlayer WebSocket 与 songrec 音频指纹两种兜底。
-        //   2. 一个 Lyrics 组件：逐行渲染 + 当前行高亮 + 随进度滚动。
-        //   3. 数据注入：从 `MediaService.active` 取 trackTitle / trackArtist 匹配
-        //      歌词，用 `MediaService.currentPosition` 驱动当前行。
-        //   4. 若还要恢复封面取色重着色，需补上 end4-pC 的 DashboardMediaState
-        //      （ColorQuantizer + AdaptedMaterialScheme）；nyxuri 目前走 matugen
-        //      从壁纸取色。
+        // Lyrics fill the right column, which is what the 46/54 split exists
+        // for: the left column is the record, this is what is being sung.
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
+
+            DashboardLyricsPane {
+                anchors.fill: parent
+                colors: root.colors
+            }
         }
     }
 }
