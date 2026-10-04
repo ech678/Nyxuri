@@ -50,9 +50,14 @@ window-rule {
     open-floating true
 }
 
+// Shell 设置窗口最佳自适应尺寸规则（精准覆盖 Nyxuri Shell 与 Noctalia 设置面板）
+// 采用比例（proportion）自适应屏幕大小，确保在 1080p、2K、4K 及便携屏等所有屏幕下均呈现最佳视觉与排版
 window-rule {
-    match app-id=r"dev.noctalia.Noctalia"
+    match app-id=r"^org\.quickshell$" title=r"^nyxuri-settings"
+    match app-id=r"^dev\.noctalia\.Noctalia$"
     open-floating true
+    default-column-width { proportion 0.65; }
+    default-window-height { proportion 0.75; }
 }
 
 window-rule {

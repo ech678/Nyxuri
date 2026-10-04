@@ -155,24 +155,33 @@ Singleton {
         root.focusWindow();
     }
 
+    property bool _inOpen: false
+
     function open(pageId, preserveSearch) {
-        WidgetState.closeAllPopups();
-        if (!preserveSearch) {
-            cancelSearch();
-            searchError = "";
-        }
-        root._openRequested = true;
-        if (pageId !== undefined && pageId !== null && String(pageId) !== "") {
-            root._pendingPage = String(pageId);
-        }
+        if (root._inOpen)
+            return false;
+        root._inOpen = true;
+        try {
+            WidgetState.closeAllPopups();
+            if (!preserveSearch) {
+                cancelSearch();
+                searchError = "";
+            }
+            root._openRequested = true;
+            if (pageId !== undefined && pageId !== null && String(pageId) !== "") {
+                root._pendingPage = String(pageId);
+            }
 
-        if (root.controlCenterWindow) {
-            root.presentWindow(root.controlCenterWindow);
+            if (root.controlCenterWindow) {
+                root.presentWindow(root.controlCenterWindow);
+                return true;
+            }
+
+            ActionGateway.requestSettingsOpen(pageId);
             return true;
+        } finally {
+            root._inOpen = false;
         }
-
-        ActionGateway.requestSettingsOpen(pageId);
-        return true;
     }
 
     function focusWindow() {

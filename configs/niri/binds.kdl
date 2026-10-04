@@ -43,7 +43,7 @@ binds {
     Mod+X { spawn "~/.config/niri/scripts/shell-action.sh" "session"; }
 
     // 切换系统设置面板 (外壳网关) / Toggle shell system settings panel
-    Mod+I { spawn "~/.config/niri/scripts/shell-action.sh" "settings"; }
+    Mod+I repeat=false { spawn "~/.config/niri/scripts/shell-action.sh" "settings"; }
 
     // 切换剪贴板历史 (外壳网关) / Toggle shell clipboard history panel
     Mod+V { spawn "~/.config/niri/scripts/shell-action.sh" "clipboard"; }

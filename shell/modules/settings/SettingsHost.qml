@@ -17,25 +17,32 @@ Scope {
     // rail + page window. The switch is at window granularity, not a body swap,
     // so each style owns its own chrome and geometry.
     readonly property bool dashboardStyle: PersonalizationConfig.settingsPanelStyle === "dashboard"
-    readonly property Component panelComponent: root.dashboardStyle ? dashboardWindowComponent :
-                                                                      controlCenterWindowComponent
+    readonly property var activeWindow: root.dashboardStyle ? dashboardLoader.item : controlCenterLoader.item
+    property bool _inOpen: false
 
     function open(pageId) {
-        if (root.active && settingsLoader.item) {
-            SettingsBackend.open(pageId || "");
+        if (root._inOpen)
+            return false;
+        root._inOpen = true;
+        try {
+            if (root.active && root.activeWindow) {
+                SettingsBackend.open(pageId || "");
+                return true;
+            }
+            root.pendingPage = pageId || "";
+            root.pendingSearchId = "";
+            root.active = true;
             return true;
+        } finally {
+            root._inOpen = false;
         }
-        root.pendingPage = pageId || "";
-        root.pendingSearchId = "";
-        root.active = true;
-        return true;
     }
 
     function close() {
         if (!root.active)
             return false;
-        if (settingsLoader.item && typeof settingsLoader.item.closeChildWindows === "function")
-            settingsLoader.item.closeChildWindows();
+        if (root.activeWindow && typeof root.activeWindow.closeChildWindows === "function")
+            root.activeWindow.closeChildWindows();
         SettingsBackend.close();
         root.active = false;
         root.pendingPage = "";
@@ -54,7 +61,7 @@ Scope {
     }
 
     function openSearch(searchId) {
-        if (root.active && settingsLoader.item) {
+        if (root.active && root.activeWindow) {
             SettingsBackend.openSearch(searchId || "");
             return true;
         }
@@ -64,27 +71,35 @@ Scope {
         return true;
     }
 
+    function handleWindowLoaded(item) {
+        if (!item)
+            return;
+        SettingsBackend.registerWindow(item);
+        if (root.pendingSearchId !== "") {
+            SettingsBackend.openSearch(root.pendingSearchId);
+            root.pendingSearchId = "";
+        } else if (root.pendingPage !== "") {
+            SettingsBackend.open(root.pendingPage);
+            root.pendingPage = "";
+        } else {
+            SettingsBackend.presentWindow(item);
+        }
+    }
+
     // Route-preserving hot-switching
     Connections {
         target: PersonalizationConfig
 
         function onSettingsPanelStyleChanged() {
-            if (!root.active || !settingsLoader.item)
+            if (!root.active || !root.activeWindow)
                 return;
 
-            const currentRoute = settingsLoader.item.currentRouteId || "";
-            if (typeof settingsLoader.item.closeChildWindows === "function")
-                settingsLoader.item.closeChildWindows();
+            const currentRoute = root.activeWindow.currentRouteId || "";
+            if (typeof root.activeWindow.closeChildWindows === "function")
+                root.activeWindow.closeChildWindows();
 
             root.pendingPage = currentRoute;
             root.pendingSearchId = "";
-
-            // Tear down old window and cleanly recreate target window
-            settingsLoader.active = false;
-            Qt.callLater(() => {
-                if (root.active)
-                    settingsLoader.active = true;
-            });
         }
     }
 
@@ -108,48 +123,41 @@ Scope {
         }
     }
 
-    // QtQuick Loader: destroys old item when sourceComponent or active changes
-    Loader {
-        id: settingsLoader
-        active: root.active
-        sourceComponent: root.panelComponent
+    LazyLoader {
+        id: controlCenterLoader
+        active: root.active && !root.dashboardStyle
 
         onItemChanged: {
-            if (item) {
-                SettingsBackend.registerWindow(item);
-                if (root.pendingSearchId !== "") {
-                    SettingsBackend.openSearch(root.pendingSearchId);
-                    root.pendingSearchId = "";
-                } else if (root.pendingPage !== "") {
-                    SettingsBackend.open(root.pendingPage);
-                    root.pendingPage = "";
-                } else {
-                    SettingsBackend.presentWindow(item);
-                }
-            }
+            if (item)
+                root.handleWindowLoaded(item);
         }
-    }
-
-    Component {
-        id: controlCenterWindowComponent
 
         ControlCenterWindow {
+            id: controlCenterWindow
+
             onPopoutClosed: {
                 root.active = false;
-                SettingsBackend.windowClosed(this);
+                SettingsBackend.windowClosed(controlCenterWindow);
             }
         }
     }
 
-    Component {
-        id: dashboardWindowComponent
+    LazyLoader {
+        id: dashboardLoader
+        active: root.active && root.dashboardStyle
+
+        onItemChanged: {
+            if (item)
+                root.handleWindowLoaded(item);
+        }
 
         Dashboard {
+            id: dashboardWindow
             todoService: root.todoService
 
             onPopoutClosed: {
                 root.active = false;
-                SettingsBackend.windowClosed(this);
+                SettingsBackend.windowClosed(dashboardWindow);
             }
         }
     }

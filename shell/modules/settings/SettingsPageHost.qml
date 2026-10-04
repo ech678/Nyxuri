@@ -31,6 +31,8 @@ Item {
                                                     navigationDepth: root.navigationDepth,
                                                     header: root.headerComponent
                                                 });
+        if (!next)
+            return;
         pendingLayer = next;
         next.load(source);
     }
