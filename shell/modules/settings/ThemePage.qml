@@ -484,6 +484,22 @@ StyledFlickable {
         }
 
         Section {
+            id: searchSectionPanelStyle
+            title: searchAnchorPanelStyle.title
+            SettingsSearchAnchor {
+                id: searchAnchorPanelStyle
+                target: searchSectionPanelStyle
+                declaration:
+                    '{"id":"theme.section.settings-panel-style","route":"theme","title":"Settings panel style","context":"ThemePage","icon":"palette","aliases":[]}'
+            }
+            iconName: "dashboard_customize"
+
+            SettingsPanelStyleCard {
+                Layout.fillWidth: true
+            }
+        }
+
+        Section {
             id: searchSection0
             title: searchAnchor0.title
             SettingsSearchAnchor {

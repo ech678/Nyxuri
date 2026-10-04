@@ -23,7 +23,7 @@ Singleton {
     // Candidate fallback families to ensure smooth rendering across varied environments
     // LXGW fonts register their Chinese family name first in fontconfig and
     // Qt6 only reads FC_FAMILY[0], so the English aliases alone never resolve.
-    readonly property var uiFallbackFamilies: ["Noto Sans", "Noto Sans CJK SC", "Noto Sans CJK",
+    readonly property var uiFallbackFamilies: ["MiSans", "Noto Sans", "Noto Sans CJK SC", "Noto Sans CJK",
         "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai GB Screen", "霞鹜文楷等宽", "LXGW WenKai Mono", "sans-serif"]
     readonly property var monoFallbackFamilies: ["JetBrainsMono Nerd Font", "JetBrains Mono", "monospace"]
     readonly property var expressiveFallbackFamilies: ["Google Sans Flex", "Google Sans", "Inter", "Roboto",

@@ -12,9 +12,15 @@ source_color=""
 dry_run=false
 templates_requested=false
 templates_csv=""
+# assets/matugen/config.toml ships output_path as the literal placeholder
+# @CLAVIS_GENERATED_HOME@, which the Python deployer substitutes at install time.
+# Running straight from a checkout there is no deployer, so the path arrives here
+# unresolved and matugen writes somewhere the shell never reads. Callers pass
+# the real directory; the fallbacks keep the CLI usable by hand.
+generated_home="${NYXURI_SHELL_GENERATED_HOME:-${CLAVIS_GENERATED_HOME:-}}"
 
 usage() {
-    printf 'Usage: %s (--image PATH | --color HEX) [--mode dark|light] [--scheme SCHEME] [--templates ID,...] [--dry-run]\n' "$0" >&2
+    printf 'Usage: %s (--image PATH | --color HEX) [--mode dark|light] [--scheme SCHEME] [--templates ID,...] [--generated-home DIR] [--dry-run]\n' "$0" >&2
 }
 
 while [[ $# -gt 0 ]]; do
@@ -43,6 +49,11 @@ while [[ $# -gt 0 ]]; do
             [[ $# -ge 2 ]] || { usage; exit 2; }
             templates_requested=true
             templates_csv=$2
+            shift 2
+            ;;
+        --generated-home)
+            [[ $# -ge 2 ]] || { usage; exit 2; }
+            generated_home=$2
             shift 2
             ;;
         --dry-run)
@@ -90,6 +101,11 @@ runtime_config="$runtime_dir/config.toml"
 
 run_template() {
     local entry=$1 output
+    # Resolve the deploy-time placeholder before rendering, so matugen receives
+    # the directory the shell actually reads (Paths.generatedHome).
+    if [[ -n "$generated_home" && "$entry" == *"@CLAVIS_GENERATED_HOME@"* ]]; then
+        entry=${entry//@CLAVIS_GENERATED_HOME@/$generated_home}
+    fi
     {
         printf '[config]\nversion_check = false\n\n'
         matugen_render_entry <<< "$entry"

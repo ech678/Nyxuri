@@ -36,6 +36,20 @@ layer-rule {
 // 特定应用规则
 // ==========================================
 
+// Nyxuri Shell 的浮动窗口：设置面板（两种样式）、文件选择器、网络配置等。
+//
+// 这条必须有。Quickshell 的 FloatingWindow 是 xdg-toplevel，而 xdg-shell 协议
+// 里根本没有「我请求以浮动方式打开」这种字段 —— 浮动与否完全由合成器决定。
+// niri 的默认行为是平铺，所以缺了这条规则，设置面板会作为一列平铺窗口打开，
+// 看起来是全屏/贴边，而不是浮在桌面上的面板。QML 侧无解：没有可用的协议字段，
+// 只能在合成器规则里放行。
+//
+// 放在通用规则之后：niri 按出现顺序处理窗口规则，后出现的覆盖先出现的。
+window-rule {
+    match app-id=r"^org\.quickshell$"
+    open-floating true
+}
+
 window-rule {
     match app-id=r"dev.noctalia.Noctalia"
     open-floating true

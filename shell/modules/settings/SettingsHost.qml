@@ -1,6 +1,9 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import qs.app
+import qs.app.services
+import qs.modules.settings.dashboard
 
 Scope {
     id: root
@@ -8,6 +11,14 @@ Scope {
     property bool active: false
     property string pendingPage: ""
     property string pendingSearchId: ""
+    property var todoService: null
+
+    // "dashboard" gets end4-pC's card-grid window; every other style keeps the
+    // rail + page window. The switch is at window granularity, not a body swap,
+    // so each style owns its own chrome and geometry.
+    readonly property bool dashboardStyle: PersonalizationConfig.settingsPanelStyle === "dashboard"
+    readonly property Component panelComponent: root.dashboardStyle ? dashboardWindowComponent :
+                                                                      controlCenterWindowComponent
 
     function open(pageId) {
         if (root.active && settingsLoader.item) {
@@ -23,6 +34,8 @@ Scope {
     function close() {
         if (!root.active)
             return false;
+        if (settingsLoader.item && typeof settingsLoader.item.closeChildWindows === "function")
+            settingsLoader.item.closeChildWindows();
         SettingsBackend.close();
         root.active = false;
         root.pendingPage = "";
@@ -51,6 +64,30 @@ Scope {
         return true;
     }
 
+    // Route-preserving hot-switching
+    Connections {
+        target: PersonalizationConfig
+
+        function onSettingsPanelStyleChanged() {
+            if (!root.active || !settingsLoader.item)
+                return;
+
+            const currentRoute = settingsLoader.item.currentRouteId || "";
+            if (typeof settingsLoader.item.closeChildWindows === "function")
+                settingsLoader.item.closeChildWindows();
+
+            root.pendingPage = currentRoute;
+            root.pendingSearchId = "";
+
+            // Tear down old window and cleanly recreate target window
+            settingsLoader.active = false;
+            Qt.callLater(() => {
+                if (root.active)
+                    settingsLoader.active = true;
+            });
+        }
+    }
+
     Connections {
         target: ActionGateway
 
@@ -71,9 +108,11 @@ Scope {
         }
     }
 
-    LazyLoader {
+    // QtQuick Loader: destroys old item when sourceComponent or active changes
+    Loader {
         id: settingsLoader
         active: root.active
+        sourceComponent: root.panelComponent
 
         onItemChanged: {
             if (item) {
@@ -89,13 +128,28 @@ Scope {
                 }
             }
         }
+    }
+
+    Component {
+        id: controlCenterWindowComponent
 
         ControlCenterWindow {
-            id: controlCenterWindow
+            onPopoutClosed: {
+                root.active = false;
+                SettingsBackend.windowClosed(this);
+            }
+        }
+    }
+
+    Component {
+        id: dashboardWindowComponent
+
+        Dashboard {
+            todoService: root.todoService
 
             onPopoutClosed: {
                 root.active = false;
-                SettingsBackend.windowClosed(controlCenterWindow);
+                SettingsBackend.windowClosed(this);
             }
         }
     }

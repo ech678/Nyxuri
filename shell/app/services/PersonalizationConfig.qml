@@ -281,6 +281,62 @@ Singleton {
         }
     ]
     property string lockScreenStyle: "default"
+    readonly property var settingsPanelStyles: [
+        {
+            "value": "default",
+            "label": I18n.tr("Default")
+        },
+        {
+            "value": "minimal",
+            "label": I18n.tr("Minimal")
+        },
+        {
+            "value": "dashboard",
+            "label": I18n.tr("Dashboard")
+        }
+    ]
+    property string settingsPanelStyle: "default"
+
+    // ── Lyrics ──────────────────────────────────────────────────────────────
+    readonly property var lyricSources: [
+        {
+            "value": "kugou",
+            "label": I18n.tr("Kugou (word timing)")
+        },
+        {
+            "value": "lrclib",
+            "label": I18n.tr("LRCLIB only")
+        }
+    ]
+    property string lyricSource: "kugou"
+
+    readonly property int lyricOffsetMinMs: -5000
+    readonly property int lyricOffsetMaxMs: 5000
+    property int lyricOffsetMs: 0
+
+    readonly property int lyricFontSizeMin: 16
+    readonly property int lyricFontSizeMax: 40
+    property int lyricFontSize: 26
+
+    property bool lyricAlbumArtTint: true
+
+    function setLyricSource(value) {
+        setValue("lyricSource", normalizedOption(root.lyricSources, value, "kugou"));
+    }
+
+    function setLyricOffsetMs(value) {
+        setValue("lyricOffsetMs", normalizedBoundedInt(value, 0, root.lyricOffsetMinMs,
+                                                       root.lyricOffsetMaxMs));
+    }
+
+    function setLyricFontSize(value) {
+        setValue("lyricFontSize", normalizedBoundedInt(value, 26, root.lyricFontSizeMin,
+                                                       root.lyricFontSizeMax));
+    }
+
+    function setLyricAlbumArtTint(value) {
+        setValue("lyricAlbumArtTint", value === true);
+    }
     property string themeMode: "dark"
     property string superKeyStyle: "text"
     readonly property var superKeyStyles: [
@@ -1432,6 +1488,10 @@ Singleton {
         setValue("lockScreenStyle", normalizedOption(root.lockScreenStyles, value, "default"));
     }
 
+    function setSettingsPanelStyle(value) {
+        setValue("settingsPanelStyle", normalizedOption(root.settingsPanelStyles, value, "default"));
+    }
+
     function setKeystoneStyle(value) {
         setValue("keystoneStyle", normalizedOption(root.keystoneStyles, value, "bangs"));
     }
@@ -1856,6 +1916,11 @@ Singleton {
                 "mode": root.themeMode,
                 "superKeyStyle": root.superKeyStyle,
                 "lockScreenStyle": root.lockScreenStyle,
+                "settingsPanelStyle": root.settingsPanelStyle,
+                "lyricSource": root.lyricSource,
+                "lyricOffsetMs": root.lyricOffsetMs,
+                "lyricFontSize": root.lyricFontSize,
+                "lyricAlbumArtTint": root.lyricAlbumArtTint,
                 "cursorTheme": root.cursorTheme,
                 "cursorSize": root.cursorSize,
                 "cursorHideWhenTyping": root.cursorHideWhenTyping,
@@ -1997,6 +2062,14 @@ Singleton {
         root.matugenScheme = normalizedOption(root.matugenSchemes, theme.matugenScheme, "scheme-tonal-spot");
         root.matugenTemplates = normalizedMatugenTemplates(theme.matugenTemplates);
         root.lockScreenStyle = normalizedOption(root.lockScreenStyles, theme.lockScreenStyle, "default");
+        root.settingsPanelStyle = normalizedOption(root.settingsPanelStyles, theme.settingsPanelStyle,
+                                                   "default");
+        root.lyricSource = normalizedOption(root.lyricSources, theme.lyricSource, "kugou");
+        root.lyricOffsetMs = normalizedBoundedInt(theme.lyricOffsetMs, 0, root.lyricOffsetMinMs,
+                                                  root.lyricOffsetMaxMs);
+        root.lyricFontSize = normalizedBoundedInt(theme.lyricFontSize, 26, root.lyricFontSizeMin,
+                                                  root.lyricFontSizeMax);
+        root.lyricAlbumArtTint = theme.lyricAlbumArtTint === true;
         root.themeMode = theme.mode === "light" ? "light" : "dark";
         root.superKeyStyle = root.superKeyStyles.some(style => style.value === theme.superKeyStyle)
                 ? theme.superKeyStyle : "text";

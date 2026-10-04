@@ -21,6 +21,27 @@ Singleton {
     property QtObject spacing
     property QtObject scrollBar
     property QtObject interaction
+    // end4-pC sources read type through Appearance.font.pixelSize.<token>; nyxuri
+    // keeps it in Typography under Material 3 token names. Binding the upstream
+    // names here lets ported components run unmodified instead of being rewritten
+    // token by token — the names are the only difference, not the scale.
+    readonly property QtObject font: QtObject {
+        readonly property QtObject pixelSize: QtObject {
+            readonly property int smallest: Typography.labelSmall.pixelSize
+            readonly property int smaller: Typography.bodySmall.pixelSize
+            readonly property int smallie: Typography.labelMedium.pixelSize
+            readonly property int small: Typography.bodyMedium.pixelSize
+            readonly property int normal: Typography.bodyLarge.pixelSize
+            readonly property int large: Typography.titleMedium.pixelSize
+            readonly property int larger: Typography.titleLarge.pixelSize
+            readonly property int huge: Typography.headlineSmall.pixelSize
+            readonly property int title: Typography.headlineMedium.pixelSize
+        }
+
+        readonly property string main: Typography.bodyLarge.family
+        readonly property string monospace: Fonts.mono
+        readonly property string iconMaterial: Fonts.materialSymbolsRounded
+    }
 
     function clamp01(value) {
         return Math.max(0, Math.min(1, value));

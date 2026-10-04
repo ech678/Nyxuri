@@ -8,6 +8,7 @@ Singleton {
 
     property var sessionLocker: null
     property var settingsHost: null
+    property var sidebarHost: null
     property string pendingSecurePowerAction: ""
 
     Connections {
@@ -23,10 +24,10 @@ Singleton {
 
     signal actionDispatched(string owner, string action, bool success)
     signal sessionOpenRequested(var screen)
-    signal sessionCloseRequested()
+    signal sessionCloseRequested
     signal sessionToggleRequested(var screen)
     signal settingsOpenRequested(string pageId)
-    signal settingsCloseRequested()
+    signal settingsCloseRequested
     signal settingsToggleRequested(string pageId)
     signal settingsSearchRequested(string searchId)
 
@@ -71,9 +72,16 @@ Singleton {
         return true;
     }
 
+    function requestSidebarToggle(target) {
+        if (!root.sidebarHost)
+            return false;
+        return root.sidebarHost.toggleSidebar(target || "dashboard") !== "INVALID_SIDE";
+    }
+
     function execute(args, owner) {
         if (!args || !Array.isArray(args) || args.length === 0) {
-            console.warn("[ActionGateway] Invalid execution args:", JSON.stringify(args), "from owner:", owner);
+            console.warn("[ActionGateway] Invalid execution args:", JSON.stringify(args), "from owner:",
+                         owner);
             return false;
         }
 
@@ -93,7 +101,8 @@ Singleton {
             return;
 
         if (root.sessionLocker && !root.sessionLocker.secure) {
-            console.warn("[ActionGateway] Waiting for session locker to secure before", root.pendingSecurePowerAction);
+            console.warn("[ActionGateway] Waiting for session locker to secure before",
+                         root.pendingSecurePowerAction);
             return;
         }
 

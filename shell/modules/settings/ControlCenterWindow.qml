@@ -15,9 +15,11 @@ FloatingWindow {
     id: root
 
     property bool _wasShown: false
-    property real contentPadding: 8
+    readonly property bool isMinimal: PersonalizationConfig.settingsPanelStyle === "minimal"
+    readonly property real styleScale: root.isMinimal ? 0.75 : 1
+    property real contentPadding: root.isMinimal ? 4 : 8
     property int currentPage: 0
-    property bool navExpanded: width > 900
+    property bool navExpanded: !root.isMinimal && width > 900
     property string pendingPageSection: ""
     readonly property var pages: SpotlightCatalog.routes.filter(entry => entry.path.length === 1).map(entry
                                                                                                       => Object.assign(
@@ -26,6 +28,7 @@ FloatingWindow {
                                                                                                                  title: SpotlightCatalog.title(
                                                                                                                             entry.id)
                                                                                                              }))
+    readonly property string currentRouteId: pages && pages[currentPage] ? pages[currentPage].id : ""
     property int searchRequestSerial: -1
     property var searchLeaf: null
     readonly property var searchPageAnchor: pageSearchAnchor
@@ -142,9 +145,8 @@ FloatingWindow {
 
     visible: false
     title: "nyxuri-settings"
-    implicitWidth: 1100
-    implicitHeight: 750
-    minimumSize: Qt.size(760, 520)
+    implicitWidth: 980 * root.styleScale
+    implicitHeight: 665 * root.styleScale
     color: "transparent"
     Material.theme: PersonalizationConfig.themeMode === "light" ? Material.Light : Material.Dark
     Material.accent: Appearance.colors.colPrimary

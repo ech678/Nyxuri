@@ -34,6 +34,7 @@ Singleton {
     readonly property string boardName: system.boardName || ""
     readonly property string biosVersion: system.biosVersion || ""
     readonly property string cpuModelName: system.cpuModelName || ""
+    property string gpuModelName: ""
     readonly property int physicalCoreCount: Number(system.physicalCoreCount) || 0
     readonly property int logicalCpuCount: Number(system.logicalCpuCount) || 0
     readonly property real bootTimeMs: Number(system.bootTimeMs) || 0
@@ -102,6 +103,20 @@ Singleton {
         root._initializationStarted = true;
         identityProcess.command = [root.commandName, "sysmon", "system", "--format", "json"];
         identityProcess.running = true;
+        gpuProcess.running = true;
+    }
+
+    function _parseGpuModel(output) {
+        const lines = String(output || "").split("\n");
+        for (let i = 0; i < lines.length; i++) {
+            const fields = lines[i].match(/"((?:[^"\\]|\\.)*)"/g);
+            if (!fields || fields.length < 4)
+                continue;
+            if (!/(vga|3d|display)/i.test(fields[0].slice(1, -1)))
+                continue;
+            return fields[2].slice(1, -1).trim();
+        }
+        return "";
     }
 
     function formatUptime(value) {
@@ -168,8 +183,27 @@ Singleton {
         stderr: StdioCollector {}
     }
 
+    Process {
+        id: gpuProcess
+
+        command: ["lspci", "-mm"]
+
+        onExited: exitCode => {
+            if (exitCode === 0)
+                root.gpuModelName = root._parseGpuModel(gpuOutput.text);
+        }
+
+        stdout: StdioCollector {
+            id: gpuOutput
+        }
+
+        stderr: StdioCollector {}
+    }
+
     Component.onDestruction: {
         if (identityProcess)
             identityProcess.running = false;
+        if (gpuProcess)
+            gpuProcess.running = false;
     }
 }

@@ -28,7 +28,33 @@ Item {
     readonly property real trackHeight: 16
     readonly property real handleHeight: 44
     readonly property real handleTrackGap: 18
-    readonly property real trackCenterY: Math.min(54, Math.max(30, root.height - 12))
+    // Track baseline, derived rather than hard-coded.
+    // History: the old formula was min(54, max(30, height - 12)). It pinned every
+    // control taller than 66px to a 54px baseline, so the slack pooled as one dead
+    // strip above the track (up to 32px at the 78px default, ~80px inside a
+    // dashboard tile), and it let the 44px handle spill 10px past the bottom of
+    // anything shorter than 76px. Callers reading that as "too much empty space"
+    // were seeing both halves of the same fault.
+    //
+    // Second history: the replacement was `height / 2 + 15` clamped to the
+    // handle's own bounds. The +15 is right at the 78px default — it is what
+    // keeps the established look, value indicator pill included — but it is a
+    // constant, so on a stretched control it pinned the track 15px below the
+    // optical centre and left a matching dead band underneath. Callers that
+    // solve "too much empty space" by handing the slider more height therefore
+    // moved the void rather than removing it.
+    //
+    // Current rule: the +15 bias exists to make room for the value indicator
+    // pill above the handle, and it is only needed while the control is close to
+    // its default height. It decays to zero as the control grows, so anything
+    // taller than ~140px tracks on its true vertical centre. Floor at
+    // handleHeight/2 and ceiling at height - handleHeight/2 so the handle never
+    // leaves the control at either end.
+    readonly property real indicatorBias: Math.max(0, Math.min(15, 15 - (root.height - 78) / 4))
+    readonly property real trackCenterY: Math.max(root.handleHeight / 2, Math.min(root.height
+                                                                                  - root.handleHeight / 2,
+                                                                                  root.height / 2
+                                                                                  + root.indicatorBias))
     readonly property bool valueIndicatorVisible: root.showValueIndicator && root.enabled && (control.pressed
                                                                                               || control.hovered
                                                                                               || control.visualFocus)
@@ -216,7 +242,13 @@ Item {
                 height: 32
                 x: Math.max(-handleRoot.x, Math.min(root.width - handleRoot.x - width, (handleRoot.width
                                                                                         - width) / 2))
-                y: -height - 8 + (root.valueIndicatorVisible ? 0 : 8)
+                // The pill normally floats 8px above the handle, which is what
+                // the established look is. On a control too short to hold it
+                // (the media page's 44px seek bar) that pushed it out of the
+                // item and into whatever was painted above, so it is pulled
+                // back inside — the pill overlapping the track beats the pill
+                // overlapping a neighbour.
+                y: Math.max(-handleRoot.y, -height - 8 + (root.valueIndicatorVisible ? 0 : 8))
                 opacity: root.valueIndicatorVisible ? 1 : 0
                 scale: root.valueIndicatorVisible ? 1 : 0.82
                 transformOrigin: Item.Bottom
