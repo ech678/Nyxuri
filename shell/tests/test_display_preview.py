@@ -29,6 +29,12 @@ class PreviewContracts(unittest.TestCase):
         self.environment=mock.patch.dict(os.environ,{'XDG_RUNTIME_DIR':str(self.directory),'NIRI_CONFIG':str(self.main)})
         self.environment.start(); self.addCleanup(self.environment.stop)
         os.environ.pop('NIRI_SOCKET',None)
+        self.bin=self.directory/'bin'
+        self.bin.mkdir()
+        wrapper=self.bin/'niri'
+        wrapper.write_text('#!/bin/sh\nexec '+str(ROOT/'tests'/'fixtures'/'mock-niri')+' "$@"\n')
+        wrapper.chmod(0o755)
+        os.environ['PATH']=str(self.bin)+os.pathsep+os.environ.get('PATH','')
         config.run(dict(operation='setup',feature='outputs',main=str(self.main)))
         self.before_file=(self.directory/'clavis/outputs.kdl').read_bytes()
         self.peer=socket.socket(socket.AF_UNIX)

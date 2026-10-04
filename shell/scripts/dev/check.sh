@@ -94,7 +94,7 @@ for test_name in niri_cursor_config manage_niri_effects matugen_registry; do
             niri_cursor_config:scripts/theme/write-niri-cursor-config.sh|niri_cursor_config:tests/test_niri_cursor_config.sh|\
             manage_niri_effects:scripts/system/manage-niri-effects.sh|manage_niri_effects:tests/test_manage_niri_effects.sh|\
             matugen_registry:scripts/theme/*|matugen_registry:scripts/lib/matugen-registry.sh|matugen_registry:tests/test_matugen_registry.sh|\
-            *:scripts/lib/clavis-paths.sh|*:scripts/system/manage-niri-fragment.sh|*:tests/fixtures/mock-niri) run_test=true ;;
+            *:scripts/lib/clavis-paths.sh|*:scripts/system/manage-niri-fragment.sh|*:tests/fixtures/mock-niri|*:tests/fixtures/mock-niri-check.py) run_test=true ;;
         esac
     done
     if ${run_test}; then
@@ -103,6 +103,22 @@ for test_name in niri_cursor_config manage_niri_effects matugen_registry; do
             require jq jq
         fi
         step "${test_name}" bash "tests/test_${test_name}.sh"
+    fi
+done
+for test_name in niri_config exit_cleanup; do
+    run_test=false
+    [[ ${scope} != all ]] || run_test=true
+    for file in "${files[@]}"; do
+        case "${test_name}:${file}" in
+            niri_config:scripts/system/niri_config.py|niri_config:scripts/system/niri_outputs.py|niri_config:tests/test_niri_config.py|\
+            niri_config:tests/fixtures/mock-niri|niri_config:tests/fixtures/mock-niri-check.py|\
+            niri_config:scripts/theme/write-niri-cursor-config.sh|niri_config:scripts/system/manage-niri-effects.sh) run_test=true ;;
+            exit_cleanup:nyxuri-shell|exit_cleanup:tests/test_exit_cleanup.py) run_test=true ;;
+        esac
+    done
+    if ${run_test}; then
+        require python3 python
+        step "${test_name}" python3 -m unittest "tests/test_${test_name}.py"
     fi
 done
 if ${catalog}; then
@@ -115,6 +131,7 @@ if ${qml}; then
     step qml-lint "${script_dir}/lint-qml.sh" "${lint_args[@]}"
     audit_args=(--scope "${scope}" --check)
     step lifecycle-audit python3 "${script_dir}/audit-lifecycle.py" "${audit_args[@]}"
+    step qml-tests "${script_dir}/test-qml.sh"
 fi
 if [[ ${scope} == all ]] || [[ " ${python_files[*]:-} " =~ audit-lifecycle.py ]]; then
     step lifecycle-audit-tests python3 -m unittest tests/test_lifecycle_audit.py

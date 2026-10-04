@@ -767,6 +767,115 @@ def get_all_target_files(repo_root: Path) -> List[Path]:
     return sorted(result)
 
 
+DOMAIN_ENTRYPOINTS = {
+    "bar": "modules/bar/Bar.qml",
+    "desktopcards": "modules/desktopcards/DesktopCardHost.qml",
+    "dock": "modules/dock/DockHost.qml",
+    "filepicker": "modules/filepicker/FilePickerWindow.qml",
+    "hotcorners": "modules/hotcorners/HotCorners.qml",
+    "keystone": "modules/keystone/Keystone.qml",
+    "launcher": "modules/launcher/LauncherHost.qml",
+    "lock": "modules/lock/Lock.qml",
+    "notifications": "modules/notifications/NotificationPopupHost.qml",
+    "quicksettings": "modules/quicksettings/QuickSettingsSurface.qml",
+    "regionselector": "modules/regionselector/RegionSelector.qml",
+    "session": "modules/session/SessionHost.qml",
+    "settings": "modules/settings/ControlCenterWindow.qml",
+    "sidebars": "modules/sidebars/SidebarHostWindow.qml",
+    "systemcards": "modules/systemcards/SystemCardContent.qml",
+    "wallpaper": "modules/wallpaper/DesktopWallpaper.qml",
+}
+NIRI_STATE_SOURCE = "app/services/NiriService.qml"
+NIRI_STATE_TOKENS = ("NIRI_SOCKET", "EventStream")
+IMPORT_PATTERN = re.compile(r"^\s*import\s+qs\.([A-Za-z0-9_.]+)", re.MULTILINE)
+
+
+def _domain_of(rel_path: str) -> str:
+    if rel_path.startswith("modules/"):
+        parts = rel_path.split("/")
+        return parts[1] if len(parts) >= 3 else ""
+    if rel_path.startswith("app/"):
+        return "app"
+    return ""
+
+
+def check_structure_violations(root_path: Path) -> List[AuditViolation]:
+    violations: List[AuditViolation] = []
+    sources: List[Tuple[str, Path, str]] = []
+    for base in ("app", "modules"):
+        base_path = root_path / base
+        if not base_path.is_dir():
+            continue
+        for p in base_path.rglob("*"):
+            if not p.is_file() or p.suffix not in (".qml", ".js"):
+                continue
+            rel = p.relative_to(root_path).as_posix()
+            if is_path_excluded(rel):
+                continue
+            try:
+                text = p.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            sources.append((rel, p, text))
+    edges: Dict[str, set] = {}
+    for rel, _p, text in sources:
+        domain = _domain_of(rel)
+        if not domain:
+            continue
+        targets = edges.setdefault(domain, set())
+        for match in IMPORT_PATTERN.finditer(text):
+            parts = match.group(1).split(".")
+            if parts[0] == "modules" and len(parts) >= 2:
+                targets.add(parts[1])
+            elif parts[0] == "app":
+                targets.add("app")
+    reachable = {"app"}
+    stack = ["app"]
+    while stack:
+        for nxt in edges.get(stack.pop(), ()):
+            if nxt not in reachable:
+                reachable.add(nxt)
+                stack.append(nxt)
+    for domain in sorted(DOMAIN_ENTRYPOINTS):
+        entry = DOMAIN_ENTRYPOINTS[domain]
+        if not (root_path / entry).is_file():
+            violations.append(
+                AuditViolation(
+                    "ARCH002",
+                    entry,
+                    1,
+                    f"Domain '{domain}' has no traceable entrypoint at {entry}",
+                )
+            )
+        if domain not in reachable:
+            violations.append(
+                AuditViolation(
+                    "ARCH002",
+                    entry,
+                    1,
+                    f"Domain '{domain}' is unreachable from app/; compose every domain from the app boundary",
+                )
+            )
+    for rel, _p, text in sources:
+        if rel == NIRI_STATE_SOURCE:
+            continue
+        for idx, line in enumerate(text.splitlines(), 1):
+            stripped = line.strip()
+            if stripped.startswith("//") or stripped.startswith("/*") or stripped.startswith("*"):
+                continue
+            for token in NIRI_STATE_TOKENS:
+                if token in line:
+                    violations.append(
+                        AuditViolation(
+                            "ARCH003",
+                            rel,
+                            idx,
+                            f"Niri state token '{token}' must live only in {NIRI_STATE_SOURCE}",
+                        )
+                    )
+    return violations
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Nyxuri Shell Lifecycle & Side-Effect Auditor")
     parser.add_argument("--scope", choices=["changed", "all", "full"], default="changed",
@@ -860,7 +969,8 @@ def main() -> int:
     for file_path in files_to_check:
         violations = check_file_violations(file_path, root_path, force=force_audit)
         all_violations.extend(violations)
-
+    if args.scope in ("all", "full"):
+        all_violations.extend(check_structure_violations(root_path))
     # Deterministic sorting: (file_path, line_number, code, message)
     all_violations.sort(key=lambda v: v.to_tuple())
 

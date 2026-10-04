@@ -119,20 +119,20 @@ TestCase {
     }
 
     function test_fanCurveAndTiltShareTangent() {
-        const short = DockLayout.folderFan("bottom", 5, 1000, 1600, true, 84);
-        const long = DockLayout.folderFan("bottom", 11, 1000, 1600, true, 84);
-        compare(short.count, 5);
-        compare(long.count, 8);
-        const first = fanCenter(long.slots[0], long, true);
-        const last = fanCenter(long.slots[long.count - 1], long, true);
-        const shortFirst = fanCenter(short.slots[0], short, true);
-        const shortLast = fanCenter(short.slots[short.count - 1], short, true);
-        verify(last.x - first.x > shortLast.x - shortFirst.x);
-        for (let index = 1; index < long.count; ++index) {
-            const before = long.slots[index - 1], after = long.slots[index];
-            const a = fanCenter(before, long, true), b = fanCenter(after, long, true);
+        const narrow = DockLayout.folderFan("bottom", 5, 1000, 1600, true, 84);
+        const wide = DockLayout.folderFan("bottom", 11, 1000, 1600, true, 84);
+        compare(narrow.count, 5);
+        compare(wide.count, 8);
+        const first = fanCenter(wide.slots[0], wide, true);
+        const last = fanCenter(wide.slots[wide.count - 1], wide, true);
+        const narrowFirst = fanCenter(narrow.slots[0], narrow, true);
+        const narrowLast = fanCenter(narrow.slots[narrow.count - 1], narrow, true);
+        verify(last.x - first.x > narrowLast.x - narrowFirst.x);
+        for (let index = 1; index < wide.count; ++index) {
+            const before = wide.slots[index - 1], after = wide.slots[index];
+            const a = fanCenter(before, wide, true), b = fanCenter(after, wide, true);
             verify(b.x > a.x && b.y < a.y);
-            verify(Math.hypot(b.x - a.x, b.y - a.y) > long.iconSize);
+            verify(Math.hypot(b.x - a.x, b.y - a.y) > wide.iconSize);
             // The connecting chord follows the midpoint tangent. This also
             // catches separate, unrelated interpolation of position and tilt.
             fuzzyCompare(Math.atan2(b.x - a.x, a.y - b.y) * 180 / Math.PI, (before.rotation + after.rotation)

@@ -6,15 +6,13 @@ import Quickshell.Io
 import qs.shared.theme
 import qs.app.services
 import qs.app
-import qs.shared.i18n
 
 Singleton {
     id: root
 
     readonly property string sessionDesktop: (Quickshell.env("XDG_CURRENT_DESKTOP") || Quickshell.env(
                                                   "XDG_SESSION_DESKTOP") || "").toLowerCase()
-    readonly property bool supported: sessionDesktop.indexOf("niri") !== -1 || (Quickshell.env("NIRI_SOCKET")
-                                                                                || "") !== ""
+    readonly property bool supported: sessionDesktop.indexOf("niri") !== -1 || NiriService.isNiri
     property var snapshot: ({
                                 fragments: {},
                                 files: [],
@@ -26,17 +24,15 @@ Singleton {
     property string error: ""
     property string readError: ""
     property string errorFeature: ""
-    readonly property string operationMessage: error === "" ? "" : I18n.tr("Unable to save changes")
+    readonly property string operationMessage: error === "" ? "" : qsTr("Unable to save changes")
     readonly property var diagnostics: snapshot.diagnostics || ({})
-    readonly property string configurationMessage: readError !== "" ? I18n.tr(
-                                                                          "Unable to check configuration") :
-                                                                      diagnostics.invalid ? I18n.tr(
+    readonly property string configurationMessage: readError !== "" ? qsTr("Unable to check configuration") :
+                                                                      diagnostics.invalid ? qsTr(
                                                                                                 "Configuration is invalid") :
                                                                                             diagnostics.writable
-                                                                                            === false
-                                                                                            ? I18n.tr(
-                                                                                                  "Configuration is not writable") :
-                                                                                              ""
+                                                                                            === false ? qsTr(
+                                                                                                            "Configuration is not writable") :
+                                                                                                        ""
 
     function clearEditError() {
         if (errorFeature === "binds" || errorFeature === "") {
@@ -168,7 +164,7 @@ Singleton {
                     throw new Error("Unsupported configuration response");
                 if (writing) {
                     if (code !== 0) {
-                        root.error = response.error || I18n.tr("Unable to save changes");
+                        root.error = response.error || qsTr("Unable to save changes");
                         root.errorFeature = root.activeFeature;
                     } else if (root.errorFeature === root.activeFeature) {
                         root.error = "";

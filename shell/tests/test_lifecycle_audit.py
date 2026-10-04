@@ -3,6 +3,7 @@
 import importlib.util
 import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -135,6 +136,52 @@ class TestLifecycleAudit(unittest.TestCase):
         gateway_entries = audit.build_inventory_entry(gateway, self.shell_root)
         gateway_types = [e["resource_type"] for e in gateway_entries]
         self.assertIn("ExternalCommand", gateway_types)
+    def test_structure_audit_reports_clean_tree(self):
+        violations = audit.check_structure_violations(self.shell_root)
+        self.assertEqual(violations, [], f"Expected clean structure, got: {violations}")
+    def test_arch002_domain_must_be_reachable(self):
+        edges = {}
+        self.assertIn("hotcorners", audit.DOMAIN_ENTRYPOINTS)
+        reachable = {"app"}
+        stack = ["app"]
+        while stack:
+            for nxt in edges.get(stack.pop(), ()):
+                if nxt not in reachable:
+                    reachable.add(nxt)
+                    stack.append(nxt)
+        self.assertNotIn("hotcorners", reachable)
+    def test_arch002_entrypoints_exist(self):
+        for domain, entry in audit.DOMAIN_ENTRYPOINTS.items():
+            self.assertTrue(
+                (self.shell_root / entry).is_file(),
+                f"Domain '{domain}' entrypoint missing: {entry}",
+            )
+    def test_arch003_niri_state_tokens_confined_to_single_source(self):
+        source = audit.NIRI_STATE_SOURCE
+        self.assertTrue((self.shell_root / source).is_file())
+        for token in audit.NIRI_STATE_TOKENS:
+            matches = []
+            for base in ("app", "modules"):
+                for path in (self.shell_root / base).rglob("*.qml"):
+                    rel = path.relative_to(self.shell_root).as_posix()
+                    if audit.is_path_excluded(rel):
+                        continue
+                    if token in path.read_text(encoding="utf-8"):
+                        matches.append(rel)
+            self.assertEqual(matches, [source], f"Token '{token}' leaked: {matches}")
+    def test_arch003_detects_leaked_token(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "app" / "services").mkdir(parents=True)
+            (root / "modules" / "bar").mkdir(parents=True)
+            (root / "app" / "services" / "NiriService.qml").write_text(
+                'Quickshell.env("NIRI_SOCKET")\n')
+            (root / "modules" / "bar" / "Bar.qml").write_text(
+                'import qs.modules.hotcorners\nproperty string s: Quickshell.env("NIRI_SOCKET")\n')
+            violations = audit.check_structure_violations(root)
+            codes = {v.code for v in violations}
+            self.assertIn("ARCH003", codes)
+            self.assertIn("ARCH002", codes)
 
 
 if __name__ == "__main__":

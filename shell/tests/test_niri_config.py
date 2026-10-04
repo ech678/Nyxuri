@@ -26,8 +26,16 @@ class ConfigurationContracts(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.main = Path(self.temp.name) / 'config.kdl'
         self.main.write_text('// User configuration\ninput {}\n')
+        self.bin = Path(self.temp.name) / 'bin'
+        self.bin.mkdir()
+        self.niri = str(self.bin / 'niri')
+        wrapper = self.bin / 'niri'
+        wrapper.write_text('#!/bin/sh\nexec ' + str(ROOT / 'tests' / 'fixtures' / 'mock-niri') + ' "$@"\n')
+        wrapper.chmod(0o755)
+        os.environ['PATH'] = str(self.bin) + os.pathsep + os.environ.get('PATH', '')
 
     def run_config(self, operation='status', feature='binds', **kwargs):
+        kwargs.setdefault('niri', self.niri)
         return config.run(dict(main=str(self.main), operation=operation, feature=feature, **kwargs))
 
     def fragment(self, feature='binds'):
@@ -394,7 +402,7 @@ class ConfigurationContracts(unittest.TestCase):
         neighbor = self.main.parent / 'neighbor.kdl'
         neighbor.write_text('binds { F1 { close-window; }; }\n')
         self.main.write_text('include "linked.kdl"\n')
-        native = subprocess.run(['niri', 'validate', '-c', str(self.main)], capture_output=True, text=True)
+        native = subprocess.run([self.niri, 'validate', '-c', str(self.main)], capture_output=True, text=True)
         self.assertEqual(native.returncode, 0, native.stderr)
         state = self.setup_binds()
         self.assertEqual(state['error'], '')
@@ -403,7 +411,7 @@ class ConfigurationContracts(unittest.TestCase):
 
     def test_cursor_wrapper(self):
         script = str(ROOT / 'scripts/theme/write-niri-cursor-config.sh')
-        args = [script, str(self.fragment('cursor')), str(self.main), 'Quoted "theme', '32', 'true', '1000', 'niri']
+        args = [script, str(self.fragment('cursor')), str(self.main), 'Quoted "theme', '32', 'true', '1000', self.niri]
         self.assertNotEqual(subprocess.run(args, capture_output=True).returncode, 0)
         self.assertFalse(self.fragment('cursor').exists())
         result = subprocess.run(args + ['configure'], capture_output=True, text=True)
@@ -415,7 +423,7 @@ class ConfigurationContracts(unittest.TestCase):
 
     def test_effects_wrapper(self):
         script = str(ROOT / 'scripts/system/manage-niri-effects.sh')
-        args = [str(self.main), str(self.fragment('effects')), 'true', 'niri']
+        args = [str(self.main), str(self.fragment('effects')), 'true', self.niri]
         self.assertNotEqual(subprocess.run([script, 'write'] + args, capture_output=True).returncode, 0)
         self.assertFalse(self.fragment('effects').exists())
         self.assertEqual(subprocess.run([script, 'configure'] + args, capture_output=True).returncode, 0)
@@ -627,6 +635,4 @@ class OutputContracts(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    if not shutil.which('niri'):
-        raise SystemExit('niri is required for real isolated validation')
     unittest.main()
