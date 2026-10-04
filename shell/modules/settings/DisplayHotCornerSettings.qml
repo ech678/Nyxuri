@@ -84,7 +84,7 @@ ColumnLayout {
     NiriSetupPrompt {
         Layout.fillWidth: true
         title: I18n.tr("Hot corners", "HotCornersPage")
-        description: I18n.tr("Let Clavis manage corner actions instead of the compositor's overview gesture.",
+        description: I18n.tr("Let Nyxuri manage corner actions instead of the compositor's overview gesture.",
                              "HotCornersPage")
         integrationState: NiriConfigService.state("hot-corners")
         busy: NiriConfigService.busy

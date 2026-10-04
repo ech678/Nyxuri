@@ -24,7 +24,7 @@ StyledFlickable {
         NiriSetupPrompt {
             Layout.fillWidth: true
             title: I18n.tr("Background effects")
-            description: I18n.tr("Create or connect the Clavis X-Ray rules.")
+            description: I18n.tr("Create or connect the Nyxuri X-Ray rules.")
             integrationState: NiriConfigService.state("effects")
             busy: NiriConfigService.busy && NiriConfigService.activeFeature === "effects"
             blocked: NiriConfigService.busy

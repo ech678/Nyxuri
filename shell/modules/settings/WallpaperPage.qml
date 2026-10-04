@@ -281,7 +281,7 @@ StyledFlickable {
             Layout.fillWidth: true
             visible: NiriConfigService.snapshot.overviewSatisfied === true && !NiriConfigService.ready(
                          "layer-rules")
-            message: I18n.tr("Overview is already configured outside Clavis")
+            message: I18n.tr("Overview is already configured outside Nyxuri")
         }
 
         Component {

@@ -58,6 +58,38 @@ Singleton {
                        clamp01((target.b - base.b * invOpacity) / opacity), opacity);
     }
 
+    function relativeLuminance(color) {
+        const c = Qt.color(color);
+        const channels = [c.r, c.g, c.b];
+        const linear = [];
+        for (let i = 0; i < channels.length; ++i) {
+            const v = clamp01(channels[i]);
+            linear.push(v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+        }
+        return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+    }
+    function contrastRatio(foreground, background) {
+        const a = relativeLuminance(foreground);
+        const b = relativeLuminance(background);
+        const lighter = Math.max(a, b);
+        const darker = Math.min(a, b);
+        return (lighter + 0.05) / (darker + 0.05);
+    }
+    function ensureContrast(foreground, background, minimum) {
+        const target = minimum === undefined ? 4.5 : minimum;
+        if (contrastRatio(foreground, background) >= target)
+            return foreground;
+        const bg = Qt.color(background);
+        const bgLuma = relativeLuminance(background);
+        const light = Qt.rgba(1, 1, 1, 1);
+        const dark = Qt.rgba(0, 0, 0, 1);
+        const candidates = bgLuma > 0.5 ? [dark, light] : [light, dark];
+        for (let i = 0; i < candidates.length; ++i) {
+            if (contrastRatio(candidates[i], bg) >= target)
+                return candidates[i];
+        }
+        return candidates[0];
+    }
     m3colors: QtObject {
         property bool darkmode: root.effectiveMatugenMode === "dark"
         property color m3background: "#0f1416"
@@ -113,7 +145,7 @@ Singleton {
     }
 
     colors: QtObject {
-        property color colSubtext: root.m3colors.m3outline
+        property color colSubtext: root.ensureContrast(root.m3colors.m3outline, root.m3colors.m3background, 3.5)
 
         property color colLayer0Base: root.mix(root.m3colors.m3background, root.m3colors.m3primary, 0.99)
         property color colLayer0: root.transparentize(colLayer0Base, root.backgroundTransparency)
