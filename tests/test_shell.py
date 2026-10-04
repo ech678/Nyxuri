@@ -449,6 +449,17 @@ class TestShellManagement(unittest.TestCase):
         self.assertNotIn("gcc", deps_content.lower())
         self.assertNotIn("clang", deps_content.lower())
 
+        # 7. No leftover C++ formatter or C++ source files
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, ".clang-format")))
+        cxx_exts = (".c", ".cpp", ".cc", ".cxx", ".h", ".hpp")
+        cxx_files = [
+            os.path.relpath(os.path.join(root, f), shell_dir)
+            for root, _, files in os.walk(shell_dir)
+            for f in files
+            if f.endswith(cxx_exts) and "references" not in root
+        ]
+        self.assertEqual(cxx_files, [], f"Leftover C/C++ files found in shell/: {cxx_files}")
+
     def test_p3_settings_wiring_and_weather_backend_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         shell_dir = os.path.join(repo_root, "shell")
