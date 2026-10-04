@@ -19,6 +19,7 @@ Singleton {
     property string spotlightAppStyle: "list"
     property string spotlightClipboardStyle: "default"
     property bool dndEnabled: false
+    property bool reduceMotion: false
     property bool darkMode: false
     property string language: root.systemLanguage
     property string weatherTemperatureUnit: "celsius"
@@ -117,6 +118,13 @@ Singleton {
 
     function toggleDnd() {
         root.setDndEnabled(!root.dndEnabled);
+    }
+    function setReduceMotion(value) {
+        root.reduceMotion = value === true;
+        root.save();
+    }
+    function toggleReduceMotion() {
+        root.setReduceMotion(!root.reduceMotion);
     }
 
     function setLanguage(value) {
@@ -459,6 +467,7 @@ Singleton {
         root.savePending = false;
         prefsFile.setText(JSON.stringify({
                                              "dndEnabled": root.dndEnabled,
+                                             "reduceMotion": root.reduceMotion,
                                              "language": root.language,
                                              "weatherTemperatureUnit": root.weatherTemperatureUnit,
                                              "systemTemperatureUnit": root.systemTemperatureUnit,
@@ -523,6 +532,8 @@ Singleton {
                 const parsed = JSON.parse(prefsFile.text().trim() || "{}");
                 if (typeof parsed.dndEnabled === "boolean")
                     root.dndEnabled = parsed.dndEnabled;
+                if (typeof parsed.reduceMotion === "boolean")
+                    root.reduceMotion = parsed.reduceMotion;
 
                 root.language = root.normalizedLanguage(parsed.language || root.systemLanguage);
                 root.weatherTemperatureUnit = root.normalizedTemperatureUnit(parsed.weatherTemperatureUnit);

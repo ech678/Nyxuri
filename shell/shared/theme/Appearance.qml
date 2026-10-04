@@ -10,6 +10,9 @@ Singleton {
     property string matugenMode: "dark"
     readonly property string effectiveMatugenMode: matugenMode.toLowerCase() === "light" ? "light" : "dark"
     property string currentWallpaperPreview: ""
+    property bool reduceMotion: false
+    readonly property bool animationsEnabled: !reduceMotion
+    readonly property real motionScale: reduceMotion ? 0 : 1
     property real backgroundOpacity: 1
     property real backgroundTransparency: 0
     property real contentTransparency: 0.9

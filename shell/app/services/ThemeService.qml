@@ -150,6 +150,13 @@ Singleton {
     function applyConfigToAppearance() {
         Appearance.matugenScheme = PersonalizationConfig.matugenScheme;
         Appearance.matugenMode = PersonalizationConfig.themeMode;
+        Appearance.reduceMotion = UiPreferences.reduceMotion;
+    }
+    Connections {
+        target: UiPreferences
+        function onReduceMotionChanged() {
+            Appearance.reduceMotion = UiPreferences.reduceMotion;
+        }
     }
 
     function setMatugenScheme(value) {
