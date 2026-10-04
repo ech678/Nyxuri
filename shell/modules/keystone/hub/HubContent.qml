@@ -12,8 +12,8 @@ Item {
 
     property var screen: null
     property int currentIndex: 0
-    readonly property var dashboardKeyholeGlassItems: dashboardContent.keyholeGlassItems
-    readonly property real dashboardKeyholeCenterOffset: dashboardContent.keyholeCenterOffset
+    readonly property var dashboardKeyholeGlassItems: dashboardLoader.item ? dashboardLoader.item.keyholeGlassItems : []
+    readonly property real dashboardKeyholeCenterOffset: dashboardLoader.item ? dashboardLoader.item.keyholeCenterOffset : 0
 
     signal closeRequested
     signal avatarEditRequested
@@ -24,8 +24,8 @@ Item {
             root.currentIndex = ((root.currentIndex + step) % count + count) % count;
     }
 
-    implicitWidth: currentIndex === 0 ? dashboardContent.implicitWidth : 960
-    implicitHeight: 100 + (currentIndex === 0 ? 520 : weatherContent.height)
+    implicitWidth: currentIndex === 0 ? (dashboardLoader.item ? dashboardLoader.item.implicitWidth : 1040) : 960
+    implicitHeight: 100 + (currentIndex === 0 ? 520 : (weatherLoader.item ? weatherLoader.item.height : 570))
 
     Shortcut {
         enabled: root.visible
@@ -143,16 +143,20 @@ Item {
         anchors.bottom: parent.bottom
         anchors.topMargin: 10
 
-        DashboardContent {
-            id: dashboardContent
+        Loader {
+            id: dashboardLoader
 
             anchors.top: parent.top
             anchors.horizontalCenter: parent.horizontalCenter
-            screen: root.screen
-            visible: root.currentIndex === 0
+            active: root.visible && root.currentIndex === 0
+            visible: active
             opacity: visible ? 1 : 0
-            onCloseRequested: root.closeRequested()
-            onAvatarEditRequested: root.avatarEditRequested()
+            sourceComponent: DashboardContent {
+                screen: root.screen
+                active: root.visible && root.currentIndex === 0
+                onCloseRequested: root.closeRequested()
+                onAvatarEditRequested: root.avatarEditRequested()
+            }
 
             Behavior on opacity {
                 NumberAnimation {
@@ -161,14 +165,17 @@ Item {
             }
         }
 
-        WeatherContent {
-            id: weatherContent
+        Loader {
+            id: weatherLoader
 
             anchors.top: parent.top
             anchors.horizontalCenter: parent.horizontalCenter
-            active: root.currentIndex === 1 && root.visible
-            visible: root.currentIndex === 1
+            active: root.visible && root.currentIndex === 1
+            visible: active
             opacity: visible ? 1 : 0
+            sourceComponent: WeatherContent {
+                active: root.visible && root.currentIndex === 1
+            }
 
             Behavior on opacity {
                 NumberAnimation {

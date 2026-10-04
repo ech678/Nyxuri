@@ -133,7 +133,7 @@ Item {
                 to: 360
                 duration: 800
                 loops: Animation.Infinite
-                running: WeatherService.loading
+                running: root.visible && WeatherService.loading
             }
         }
     }

@@ -5,6 +5,7 @@ import qs.app.services
 Item {
     id: root
 
+    property bool active: visible
     readonly property Item glassBackgroundItem: glassBackground
     readonly property real glassAlpha: BlurService.enabled ? Math.min(
                                                                  PersonalizationConfig.shellBackgroundOpacity,
@@ -26,14 +27,14 @@ Item {
     Component {
         id: weatherCard
         DashboardWeatherCard {
-            active: root.visible
+            active: root.active && root.visible
         }
     }
 
     Component {
         id: pomodoroCard
         DashboardPomodoroCard {
-            active: root.visible
+            active: root.active && root.visible
         }
     }
 }

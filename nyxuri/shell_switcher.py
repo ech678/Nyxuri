@@ -140,23 +140,44 @@ def find_pids(pattern: str) -> list[int]:
 
 def probe_running_shell() -> Tuple[str, Optional[int]]:
     """Determine currently active running shell process and primary PID."""
-    # Check nyxuri-shell: accurately detect qs, quickshell, and nyxuri-shell
+    my_pids = {os.getpid(), os.getppid()}
+
+    # Check nyxuri-shell: accurately detect qs, quickshell, and nyxuri-shell daemons
     candidate_pids = sorted(set(find_pids("qs") + find_pids("quickshell") + find_pids("nyxuri-shell")))
     for pid in candidate_pids:
+        if pid in my_pids:
+            continue
         try:
-            cmd = Path(f"/proc/{pid}/cmdline").read_bytes().replace(b"\x00", b" ").decode("utf-8", errors="ignore")
-            # Must be an actual quickshell/nyxuri invocation targeting shell, not Python/test runners
-            if ("nyxuri-shell" in cmd or "/shell" in cmd or "shell.qml" in cmd) and "python" not in cmd:
-                return "nyxuri-shell", pid
+            raw = Path(f"/proc/{pid}/cmdline").read_bytes()
+            args = [a.decode("utf-8", errors="ignore") for a in raw.split(b"\x00") if a]
+            if not args:
+                continue
+            prog = Path(args[0]).name
+            cmd = " ".join(args)
+            if any(bad in cmd for bad in ["nyxuri shell", "test_shell", "pytest", "shell_switcher"]):
+                continue
+            if prog in ("qs", "quickshell", "nyxuri-shell"):
+                if not any(sub in args for sub in ["ipc", "kill", "--stop", "--check-ready", "--status", "--stage"]):
+                    if any("shell" in a for a in args) or prog == "nyxuri-shell":
+                        return "nyxuri-shell", pid
         except Exception:
             continue
 
     # Check noctalia
     noctalia_pids = find_pids("noctalia")
     for pid in noctalia_pids:
+        if pid in my_pids:
+            continue
         try:
-            cmd = Path(f"/proc/{pid}/cmdline").read_bytes().replace(b"\x00", b" ").decode("utf-8", errors="ignore")
-            if (cmd.startswith("noctalia") or "/noctalia" in cmd.split()[0]) and "python" not in cmd:
+            raw = Path(f"/proc/{pid}/cmdline").read_bytes()
+            args = [a.decode("utf-8", errors="ignore") for a in raw.split(b"\x00") if a]
+            if not args:
+                continue
+            prog = Path(args[0]).name
+            cmd = " ".join(args)
+            if any(bad in cmd for bad in ["nyxuri shell", "test_shell", "pytest", "shell_switcher"]):
+                continue
+            if (prog == "noctalia" or args[0].endswith("/noctalia")) and "python" not in prog:
                 if "greeter" not in cmd:
                     return "noctalia", pid
         except Exception:

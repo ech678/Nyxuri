@@ -80,8 +80,7 @@ Item {
                 shape: MaterialShape.Cookie9Sided
                 color: "white"
                 NumberAnimation on rotation {
-                    running: true
-                    paused: !root.active || !root.playing
+                    running: root.active && root.playing
                     from: 360
                     to: 0
                     duration: 23500

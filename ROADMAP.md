@@ -20,6 +20,8 @@
 - [x] **全面去 C++ 与纯 QML 架构收口 (R4-C-01 ~ R4-C-06)**：彻底移除 113 项自有 C++ 插件与 CMake 构建体系（免除 cmake/ninja/gcc/clang 编译依赖）；架构彻底收敛为 `app/` -> `modules/` -> `shared/` 三级纯 QML 体系；Niri 确立单一运行时状态源（`NiriService`）；生命周期审计 0 违规，全量单测与沙箱部署全绿。
 - [x] **资源治理、文档契约与五分类测试套件 (R5-01 ~ R5-03)**：彻底清除废弃 FA 图标与 SvgIcon.qml，修复 Zen 着色器离线预编译（zen-palette.frag.qsb），归档历史恢复比对文档；建立 run-tests.py 分类测试运行器（STATIC/LOGIC/RESOURCE/NATIVE/GRAPHICS），五分类独立运行全绿通过无跳过。（已于 c4fc653 交付）
 - [x] **纯 QML/JS 动态国际化闭环 (Pure QML/JS I18n Closure)**：彻底切除对 Qt C++ Linguist / .qm 二进制的隐式运行时依赖；在 `shared/i18n/` 建立纯 QML 单例 `I18n.qml` 与 `Translations.js` 内存字典，引入纯脚本 `Toml.js` 实现启动时直接热解析 `zh_CN.toml`；全库 228 个 QML/JS 源码文件 100% 迁出 `qsTr`/`qsTranslate` 直通 `I18n.tr`，实现真正的零 Native 编译、离线零依赖多语言热切换。
+- [x] **能耗基线、事件循环与稳态治理 (R6-01 ~ R6-03)**：彻底淘汰 48.5MB (3,806 文件) 的 meteocons 外部包，采用 Material Symbols 纯字体方案做极致减法；MPRIS DBus 建立订阅式引用计数与安全注销，根除断联日志风暴；清零全库 Timer interval: 0 隐式空转并降频高频秒表；静态审计新增 LIFE007/LIFE008 门禁；单测契约与五分类测试全绿。
+
 
 ---
 

@@ -1,5 +1,4 @@
 import QtQuick
-import Qt.labs.lottieqt
 import qs.shared.theme
 
 Item {
@@ -9,132 +8,70 @@ Item {
     property string iconName: ""
     property bool night: false
     property string style: "flat"
-    property bool smooth: true
     property bool animated: true
     property bool playing: visible
     property real baseSize: 128
-    readonly property string resolvedSlug: iconSlug()
-    readonly property url svgSource: Resources.meteoconsRoot + "svg/" + normalizedStyle() + "/" + resolvedSlug
-                                     + ".svg"
-    readonly property url lottieSource: Resources.meteoconsRoot + "lottie/fill/" + resolvedSlug + ".json"
-    readonly property real fittedScale: Math.min(width / baseSize, height / baseSize)
-    readonly property bool lottieReady: lottieLoader.item && lottieLoader.item.status
-                                        === LottieAnimation.Ready
+    property color color: Appearance.colors.colPrimary
 
-    function normalizedStyle() {
-        if (style === "fill" || style === "line" || style === "monochrome" || style === "flat")
-            return style;
-        return "flat";
-    }
+    readonly property string iconSymbol: symbolForCode(weatherCode, iconName, night)
 
-    function slugForCode(code, isNight) {
+    function symbolForCode(code, name, isNight) {
         if (code === 0)
-            return isNight ? "clear-night" : "clear-day";
+            return isNight ? "bedtime" : "wb_sunny";
         if (code === 1)
-            return isNight ? "mostly-clear-night" : "mostly-clear-day";
+            return isNight ? "partly_cloudy_night" : "partly_cloudy_day";
         if (code === 2)
-            return isNight ? "partly-cloudy-night" : "partly-cloudy-day";
+            return isNight ? "partly_cloudy_night" : "partly_cloudy_day";
         if (code === 3)
-            return "cloudy";
+            return "cloud";
         if (code === 45 || code === 48)
-            return isNight ? "fog-night" : "fog-day";
+            return "foggy";
         if (code >= 51 && code <= 57)
-            return "drizzle";
+            return "rainy";
         if (code === 61 || code === 63 || code === 65)
-            return isNight ? "overcast-night-rain" : "overcast-day-rain";
+            return "rainy";
         if (code === 66 || code === 67)
-            return isNight ? "overcast-night-sleet" : "overcast-day-sleet";
+            return "weather_mix";
         if (code >= 71 && code <= 77)
-            return isNight ? "overcast-night-snow" : "overcast-day-snow";
+            return "ac_unit";
         if (code >= 80 && code <= 82)
-            return isNight ? "partly-cloudy-night-rain" : "partly-cloudy-day-rain";
+            return "rainy";
         if (code === 85 || code === 86)
-            return isNight ? "partly-cloudy-night-snow" : "partly-cloudy-day-snow";
+            return "weather_snowy";
         if (code === 95)
-            return isNight ? "thunderstorms-night" : "thunderstorms-day";
+            return "thunderstorm";
         if (code === 96 || code === 99)
-            return isNight ? "thunderstorms-night-hail" : "thunderstorms-day-hail";
-        return "not-available";
-    }
+            return "thunderstorm";
 
-    function slugFromName(name, isNight) {
-        if (!name || name.length === 0)
-            return "";
-        if (name.indexOf("clear_night") >= 0)
-            return "clear-night";
-        if (name.indexOf("sun") >= 0)
-            return "clear-day";
-        if (name.indexOf("partly") >= 0)
-            return isNight ? "partly-cloudy-night" : "partly-cloudy-day";
-        if (name.indexOf("cloud") >= 0)
-            return "cloudy";
-        if (name.indexOf("fog") >= 0)
-            return isNight ? "fog-night" : "fog-day";
-        if (name.indexOf("drizzle") >= 0)
-            return "drizzle";
-        if (name.indexOf("rain") >= 0)
-            return isNight ? "overcast-night-rain" : "overcast-day-rain";
-        if (name.indexOf("snow") >= 0)
-            return isNight ? "overcast-night-snow" : "overcast-day-snow";
-        if (name.indexOf("thunder") >= 0)
-            return isNight ? "thunderstorms-night" : "thunderstorms-day";
-        return "";
-    }
-
-    function iconSlug() {
-        const byCode = slugForCode(weatherCode, night);
-        if (byCode !== "not-available")
-            return byCode;
-        const byName = slugFromName(iconName, night);
-        return byName.length > 0 ? byName : "not-available";
-    }
-
-    Loader {
-        id: lottieLoader
-
-        anchors.centerIn: parent
-        width: root.baseSize
-        height: root.baseSize
-        scale: root.fittedScale
-        transformOrigin: Item.Center
-        active: root.animated
-        visible: root.lottieReady
-
-        sourceComponent: LottieAnimation {
-            source: root.lottieSource
-            autoPlay: root.playing
-            loops: -1
-
-            onStatusChanged: {
-                if (status !== LottieAnimation.Ready)
-                    return;
-                if (root.playing)
-                    play();
-                else
-                    pause();
-            }
+        if (name && name.length > 0) {
+            const lower = name.toLowerCase();
+            if (lower.includes("clear_night") || lower.includes("night"))
+                return "bedtime";
+            if (lower.includes("sun") || lower.includes("sunny"))
+                return "wb_sunny";
+            if (lower.includes("partly"))
+                return isNight ? "partly_cloudy_night" : "partly_cloudy_day";
+            if (lower.includes("cloud"))
+                return "cloud";
+            if (lower.includes("fog"))
+                return "foggy";
+            if (lower.includes("drizzle") || lower.includes("rain"))
+                return "rainy";
+            if (lower.includes("snow"))
+                return "ac_unit";
+            if (lower.includes("thunder"))
+                return "thunderstorm";
         }
+        return isNight ? "bedtime" : "wb_sunny";
     }
 
-    onPlayingChanged: {
-        if (!lottieLoader.item)
-            return;
-        if (!playing)
-            lottieLoader.item.pause();
-        else if (root.lottieReady)
-            lottieLoader.item.play();
-    }
-
-    Image {
-        anchors.fill: parent
-        visible: !root.lottieReady
-        source: root.svgSource
-        fillMode: Image.PreserveAspectFit
-        asynchronous: true
-        cache: true
-        smooth: root.smooth
-        mipmap: true
-        sourceSize.width: Math.max(1, Math.round(width * 2))
-        sourceSize.height: Math.max(1, Math.round(height * 2))
+    Text {
+        anchors.centerIn: parent
+        text: root.iconSymbol
+        font.family: Fonts.materialSymbolsOutlined
+        font.pixelSize: Math.max(1, Math.round(Math.min(root.width, root.height) * 0.85))
+        color: root.color
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
     }
 }

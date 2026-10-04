@@ -171,20 +171,13 @@ Item {
         keyLines = lines;
     }
 
-    Timer {
-        id: rebuildTimer
-        interval: 0
-        repeat: false
-        onTriggered: rebuild()
-    }
-
     onSourceModelChanged: rebuild()
-    onWidthChanged: rebuildTimer.restart()
-    onHeightChanged: rebuildTimer.restart()
+    onWidthChanged: Qt.callLater(rebuild)
+    onHeightChanged: Qt.callLater(rebuild)
     Component.onCompleted: rebuild()
 
     Connections {
-        target: root.sourceModel
+        target: (root.sourceModel && typeof root.sourceModel === "object" && !Array.isArray(root.sourceModel)) ? root.sourceModel : null
         ignoreUnknownSignals: true
 
         function onModelReset() {

@@ -23,6 +23,23 @@ Item {
     property var _regionObjects: []
     property var _subtractionRegionObjects: []
     property var _postSubtractionRegionObjects: []
+    property var _appliedBackgroundItems: []
+    property var _appliedSubtractedItems: []
+    property var _appliedPostSubtractionItems: []
+
+    function _itemsMatch(a, b) {
+        if (!a && !b)
+            return true;
+        if (!a || !b)
+            return false;
+        if (a.length !== b.length)
+            return false;
+        for (let i = 0; i < a.length; ++i) {
+            if (a[i] !== b[i])
+                return false;
+        }
+        return true;
+    }
 
     readonly property int visibleBackgroundCount: {
         let count = 0;
@@ -85,6 +102,21 @@ Item {
     }
 
     function rebuildRegions() {
+        const items = root.allBackgroundItems();
+        const subtractedItems = root.allSubtractedBackgroundItems();
+        const postSubtractionItems = root.allPostSubtractionBackgroundItems();
+
+        if (root._regionObjects.length > 0
+                && root._itemsMatch(items, root._appliedBackgroundItems)
+                && root._itemsMatch(subtractedItems, root._appliedSubtractedItems)
+                && root._itemsMatch(postSubtractionItems, root._appliedPostSubtractionItems)) {
+            return;
+        }
+
+        root._appliedBackgroundItems = items.slice();
+        root._appliedSubtractedItems = subtractedItems.slice();
+        root._appliedPostSubtractionItems = postSubtractionItems.slice();
+
         for (let index = 0; index < root._regionObjects.length; ++index)
             root._regionObjects[index].destroy();
         for (let index = 0; index < root._subtractionRegionObjects.length; ++index)
@@ -93,7 +125,6 @@ Item {
             root._postSubtractionRegionObjects[index].destroy();
 
         const regions = [];
-        const items = root.allBackgroundItems();
         for (let index = 0; index < items.length; ++index) {
             const region = itemRegionComponent.createObject(combinedRegion, {
                 "sourceItem": items[index]
@@ -104,7 +135,6 @@ Item {
         root._regionObjects = regions;
 
         const subtractionRegions = [];
-        const subtractedItems = root.allSubtractedBackgroundItems();
         for (let index = 0; index < subtractedItems.length; ++index) {
             const region = subtractionRegionComponent.createObject(combinedRegion, {
                 "sourceItem": subtractedItems[index]
@@ -115,7 +145,6 @@ Item {
         root._subtractionRegionObjects = subtractionRegions;
 
         const postSubtractionRegions = [];
-        const postSubtractionItems = root.allPostSubtractionBackgroundItems();
         for (let index = 0; index < postSubtractionItems.length; ++index) {
             const region = clippedItemRegionComponent.createObject(combinedRegion, {
                 "sourceItem": postSubtractionItems[index]
@@ -148,20 +177,25 @@ Item {
         if (root.publishPending)
             return;
         root.publishPending = true;
-        commitTimer.restart();
+        Qt.callLater(root._executeCommit);
+    }
+
+    function _executeCommit() {
+        if (!root.destroying)
+            root.commit();
     }
 
     function commit() {
         root.publishPending = false;
         if (!root.targetWindow)
             return;
-        root.targetWindow.BackgroundEffect.blurRegion = null;
-        if (root.submittedRegion)
-            root.targetWindow.BackgroundEffect.blurRegion = root.submittedRegion;
+        const targetRegion = root.submittedRegion || null;
+        if (root.targetWindow.BackgroundEffect.blurRegion !== targetRegion)
+            root.targetWindow.BackgroundEffect.blurRegion = targetRegion;
     }
 
     function clear() {
-        if (root.targetWindow)
+        if (root.targetWindow && root.targetWindow.BackgroundEffect.blurRegion !== null)
             root.targetWindow.BackgroundEffect.blurRegion = null;
     }
 
@@ -181,19 +215,9 @@ Item {
 
     Component.onDestruction: {
         root.destroying = true;
-        commitTimer.stop();
+        root.publishPending = false;
         if (root.targetWindow)
             root.targetWindow.BackgroundEffect.blurRegion = null;
-    }
-
-    Timer {
-        id: commitTimer
-        interval: 0
-        repeat: false
-        onTriggered: {
-            if (!root.destroying)
-                root.commit();
-        }
     }
 
     Connections {

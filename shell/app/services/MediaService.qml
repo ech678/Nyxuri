@@ -28,27 +28,50 @@ Item {
     // One shared, low-frequency position tick feeds all media surfaces. MPRIS
     // implementations do not need a separate QML polling loop per consumer.
     property real currentPosition: 0
+    property int positionSubscribers: 0
+
+    function acquirePositionTracking() {
+        positionSubscribers += 1;
+        if (positionSubscribers === 1)
+            refreshPosition();
+    }
+
+    function releasePositionTracking() {
+        positionSubscribers = Math.max(0, positionSubscribers - 1);
+        if (positionSubscribers === 0)
+            root.currentPosition = 0;
+    }
 
     function refreshPosition() {
         const player = root.active;
-        root.currentPosition = player ? Math.max(0, Number(player.position) || 0) : 0;
+        if (!player || !player.positionSupported || player.canControl === false) {
+            root.currentPosition = 0;
+            return;
+        }
+        try {
+            root.currentPosition = Math.max(0, Number(player.position) || 0);
+        } catch (e) {
+            root.currentPosition = 0;
+        }
     }
 
-    onActiveChanged: root.refreshPosition()
-    Component.onCompleted: root.refreshPosition()
+    onActiveChanged: {
+        if (root.positionSubscribers > 0)
+            root.refreshPosition();
+    }
+    Component.onCompleted: {
+        if (root.positionSubscribers > 0)
+            root.refreshPosition();
+    }
 
     Timer {
         id: positionPollTimer
-        interval: 250
+        interval: 500
         repeat: true
-        triggeredOnStart: true
-        running: root.active !== null && root.active.isPlaying
-        onTriggered: {
-            const player = root.active;
-            if (player && player.positionChanged)
-                player.positionChanged();
-            root.refreshPosition();
-        }
+        triggeredOnStart: false
+        running: root.positionSubscribers > 0 && root.active !== null && root.active.isPlaying
+                 && root.active.positionSupported
+        onTriggered: root.refreshPosition()
     }
 
     Connections {
@@ -56,13 +79,16 @@ Item {
         ignoreUnknownSignals: true
 
         function onIsPlayingChanged() {
-            root.refreshPosition();
+            if (root.positionSubscribers > 0)
+                root.refreshPosition();
         }
         function onPositionChanged() {
-            root.refreshPosition();
+            if (root.positionSubscribers > 0)
+                root.refreshPosition();
         }
         function onLengthChanged() {
-            root.refreshPosition();
+            if (root.positionSubscribers > 0)
+                root.refreshPosition();
         }
     }
 
@@ -80,6 +106,17 @@ Item {
                 }
                 if (!stillExists)
                     root.manualActive = null;
+            }
+            if (root.positionSubscribers > 0)
+                root.refreshPosition();
+        }
+
+        function onObjectRemovedPost(object, index) {
+            if (root.manualActive === object)
+                root.manualActive = null;
+            if (root.active === object) {
+                root.currentPosition = 0;
+                root.refreshPosition();
             }
         }
     }

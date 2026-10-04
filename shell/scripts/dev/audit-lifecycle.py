@@ -9,6 +9,8 @@ Detects:
   LIFE004: Direct external command execution
   LIFE005: Optional dependency without fallback
   LIFE006: Deactivation only via visible
+  LIFE007: Prohibit interval: 0 in Timer
+  LIFE008: Duplicate Component handler or property definition
 """
 
 from __future__ import annotations
@@ -425,7 +427,53 @@ def check_file_violations(
                 )
             )
 
-    # 7. ARCH001: Forbidden cross-domain import in modules/
+    # 7. LIFE007: Prohibit interval: 0 in Timer
+    for match in re.finditer(r"\bTimer\s*\{", content):
+        start = match.start()
+        end = find_matching_brace(content, match.end() - 1)
+        block = content[start:end] if end != -1 else content[start:start + 400]
+        interval_match = re.search(r"\binterval:\s*0\b", block)
+        if interval_match:
+            timer_line = get_line_number(content, start + interval_match.start())
+            violations.append(
+                AuditViolation(
+                    "LIFE007",
+                    rel_path,
+                    timer_line,
+                    "Prohibit interval: 0 in Timer: Use Qt.callLater() or an explicit non-zero interval",
+                )
+            )
+
+    # 8. LIFE008: Duplicate Component handler or property definition
+    completed_matches = list(re.finditer(r"\bComponent\.onCompleted\s*:", content))
+    if len(completed_matches) > 1:
+        root_matches = [m for m in completed_matches if re.search(r"^[ \t]{0,4}Component\.onCompleted\s*:", content[content.rfind("\n", 0, m.start()) + 1 : m.end()])]
+        if len(root_matches) > 1:
+            second_line = get_line_number(content, root_matches[1].start())
+            violations.append(
+                AuditViolation(
+                    "LIFE008",
+                    rel_path,
+                    second_line,
+                    "Duplicate Component.onCompleted handler at root scope: merge handlers to avoid QML runtime parser error",
+                )
+            )
+
+    destruction_matches = list(re.finditer(r"\bComponent\.onDestruction\s*:", content))
+    if len(destruction_matches) > 1:
+        root_matches = [m for m in destruction_matches if re.search(r"^[ \t]{0,4}Component\.onDestruction\s*:", content[content.rfind("\n", 0, m.start()) + 1 : m.end()])]
+        if len(root_matches) > 1:
+            second_line = get_line_number(content, root_matches[1].start())
+            violations.append(
+                AuditViolation(
+                    "LIFE008",
+                    rel_path,
+                    second_line,
+                    "Duplicate Component.onDestruction handler at root scope: merge handlers to avoid QML runtime parser error",
+                )
+            )
+
+    # 9. ARCH001: Forbidden cross-domain import in modules/
     parts = rel_path.split("/")
     if rel_path.startswith("modules/") or module_domain_override is not None:
         curr_domain = module_domain_override if module_domain_override is not None else (parts[1].lower() if len(parts) >= 3 else "")

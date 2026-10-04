@@ -66,7 +66,7 @@ Item {
     Timer {
         id: progressTimer
         interval: 60000
-        running: true
+        running: root.visible
         repeat: true
         onTriggered: updateProgress()
     }

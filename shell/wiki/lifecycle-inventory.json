@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-10-03T14:40:00Z",
-  "totalResources": 219,
+  "totalResources": 213,
   "static_inventory": {
-    "total": 219,
+    "total": 213,
     "violations": 0,
     "resources": [
       {
@@ -134,7 +134,7 @@
       },
       {
         "file": "app/services/ApplicationService.qml",
-        "line": 66,
+        "line": 68,
         "resource_type": "ExternalCommand",
         "name": "ActionGateway.execute(app-service:launch)",
         "module": "app/services",
@@ -148,7 +148,7 @@
       },
       {
         "file": "app/services/AvatarService.qml",
-        "line": 34,
+        "line": 35,
         "resource_type": "Process",
         "name": "copyProcess",
         "module": "app/services",
@@ -162,11 +162,11 @@
       },
       {
         "file": "app/services/AvatarService.qml",
-        "line": 42,
+        "line": 43,
         "resource_type": "ExternalCommand",
         "name": "ActionGateway.execute(avatar:update-success)",
         "module": "app/services",
-        "creation_condition": "[\"notify-send\", \"-a\", \"quickshell\", \"-u\", \"low\", qsTr(\"Avata",
+        "creation_condition": "[\"notify-send\", \"-a\", \"quickshell\", \"-u\", \"low\", I18n.tr(\n  ",
         "resource_owner": "avatar:update-success",
         "stop_entry": "ActionGateway.execute",
         "has_destruction": true,
@@ -176,11 +176,11 @@
       },
       {
         "file": "app/services/AvatarService.qml",
-        "line": 46,
+        "line": 47,
         "resource_type": "ExternalCommand",
         "name": "ActionGateway.execute(avatar:update-failed)",
         "module": "app/services",
-        "creation_condition": "[\"notify-send\", \"-a\", \"quickshell\", \"-u\", \"critical\", qsTr(\n",
+        "creation_condition": "[\"notify-send\", \"-a\", \"quickshell\", \"-u\", \"critical\", I18n.t",
         "resource_owner": "avatar:update-failed",
         "stop_entry": "ActionGateway.execute",
         "has_destruction": true,
@@ -190,7 +190,7 @@
       },
       {
         "file": "app/services/BluetoothService.qml",
-        "line": 580,
+        "line": 581,
         "resource_type": "Timer",
         "name": "manualDiscoveryReleaseTimer",
         "module": "app/services",
@@ -204,7 +204,7 @@
       },
       {
         "file": "app/services/BluetoothService.qml",
-        "line": 591,
+        "line": 592,
         "resource_type": "Timer",
         "name": "operationTimeout",
         "module": "app/services",
@@ -218,7 +218,7 @@
       },
       {
         "file": "app/services/BlurService.qml",
-        "line": 76,
+        "line": 77,
         "resource_type": "Process",
         "name": "versionProcess",
         "module": "app/services",
@@ -232,13 +232,13 @@
       },
       {
         "file": "app/services/BrightnessService.qml",
-        "line": 41,
+        "line": 42,
         "resource_type": "Process",
-        "name": "proc_L41",
+        "name": "proc_L42",
         "module": "app/services",
         "creation_condition": "[Paths.systemScriptsDir + \"/query-backlight.sh\"]",
         "resource_owner": "app/services",
-        "stop_entry": "proc_L41.running = false",
+        "stop_entry": "proc_L42.running = false",
         "has_destruction": true,
         "visible_only_deactivation": false,
         "has_fallback": true,
@@ -246,7 +246,7 @@
       },
       {
         "file": "app/services/BrightnessService.qml",
-        "line": 199,
+        "line": 200,
         "resource_type": "Process",
         "name": "ddcDetectProcess",
         "module": "app/services",
@@ -260,7 +260,7 @@
       },
       {
         "file": "app/services/BrightnessService.qml",
-        "line": 216,
+        "line": 217,
         "resource_type": "Process",
         "name": "fallbackSetProc",
         "module": "app/services",
@@ -274,13 +274,13 @@
       },
       {
         "file": "app/services/BrightnessService.qml",
-        "line": 337,
+        "line": 338,
         "resource_type": "Process",
-        "name": "proc_L337",
+        "name": "proc_L338",
         "module": "app/services",
         "creation_condition": "dynamic",
         "resource_owner": "app/services",
-        "stop_entry": "proc_L337.running = false",
+        "stop_entry": "proc_L338.running = false",
         "has_destruction": true,
         "visible_only_deactivation": false,
         "has_fallback": true,
@@ -288,13 +288,13 @@
       },
       {
         "file": "app/services/BrightnessService.qml",
-        "line": 345,
+        "line": 346,
         "resource_type": "Process",
-        "name": "proc_L345",
+        "name": "proc_L346",
         "module": "app/services",
         "creation_condition": "dynamic",
         "resource_owner": "app/services",
-        "stop_entry": "proc_L345.running = false",
+        "stop_entry": "proc_L346.running = false",
         "has_destruction": true,
         "visible_only_deactivation": false,
         "has_fallback": true,
@@ -302,7 +302,7 @@
       },
       {
         "file": "app/services/BrightnessService.qml",
-        "line": 352,
+        "line": 353,
         "resource_type": "Timer",
         "name": "ddcSetTimer",
         "module": "app/services",
@@ -316,7 +316,7 @@
       },
       {
         "file": "app/services/ClipboardService.qml",
-        "line": 484,
+        "line": 485,
         "resource_type": "Process",
         "name": "configProcess",
         "module": "app/services",
@@ -330,7 +330,7 @@
       },
       {
         "file": "app/services/ClipboardService.qml",
-        "line": 501,
+        "line": 502,
         "resource_type": "Process",
         "name": "listProcess",
         "module": "app/services",
@@ -344,7 +344,7 @@
       },
       {
         "file": "app/services/ClipboardService.qml",
-        "line": 521,
+        "line": 522,
         "resource_type": "Process",
         "name": "actionProcess",
         "module": "app/services",
@@ -358,7 +358,7 @@
       },
       {
         "file": "app/services/ClipboardService.qml",
-        "line": 541,
+        "line": 542,
         "resource_type": "Process",
         "name": "inspectProcess",
         "module": "app/services",
@@ -372,7 +372,7 @@
       },
       {
         "file": "app/services/DefaultApplicationsService.qml",
-        "line": 755,
+        "line": 757,
         "resource_type": "FileView",
         "name": "terminalFile",
         "module": "app/services",
@@ -386,7 +386,7 @@
       },
       {
         "file": "app/services/DefaultApplicationsService.qml",
-        "line": 778,
+        "line": 780,
         "resource_type": "FileView",
         "name": "terminalWatcher",
         "module": "app/services",
@@ -400,7 +400,7 @@
       },
       {
         "file": "app/services/DefaultApplicationsService.qml",
-        "line": 805,
+        "line": 807,
         "resource_type": "Process",
         "name": "output",
         "module": "app/services",
@@ -414,7 +414,7 @@
       },
       {
         "file": "app/services/DisplayColor.qml",
-        "line": 97,
+        "line": 98,
         "resource_type": "Network",
         "name": "XMLHttpRequest",
         "module": "app/services",
@@ -428,7 +428,7 @@
       },
       {
         "file": "app/services/DisplayColor.qml",
-        "line": 141,
+        "line": 142,
         "resource_type": "Process",
         "name": "eyecareToggleProc",
         "module": "app/services",
@@ -442,7 +442,7 @@
       },
       {
         "file": "app/services/DisplayColor.qml",
-        "line": 146,
+        "line": 147,
         "resource_type": "Process",
         "name": "eyecareTempProc",
         "module": "app/services",
@@ -456,7 +456,7 @@
       },
       {
         "file": "app/services/DisplayColor.qml",
-        "line": 150,
+        "line": 151,
         "resource_type": "Process",
         "name": "effectsCheckProc",
         "module": "app/services",
@@ -470,7 +470,7 @@
       },
       {
         "file": "app/services/DisplayColor.qml",
-        "line": 167,
+        "line": 168,
         "resource_type": "Timer",
         "name": "eyecarePollTimer",
         "module": "app/services",
@@ -484,7 +484,7 @@
       },
       {
         "file": "app/services/DisplayColor.qml",
-        "line": 175,
+        "line": 176,
         "resource_type": "Timer",
         "name": "locationTimeout",
         "module": "app/services",
@@ -498,7 +498,7 @@
       },
       {
         "file": "app/services/DisplayColor.qml",
-        "line": 189,
+        "line": 190,
         "resource_type": "Timer",
         "name": "deadline",
         "module": "app/services",
@@ -512,7 +512,7 @@
       },
       {
         "file": "app/services/DisplayColor.qml",
-        "line": 199,
+        "line": 200,
         "resource_type": "Process",
         "name": "ensureConfigDir",
         "module": "app/services",
@@ -526,7 +526,7 @@
       },
       {
         "file": "app/services/DisplayColor.qml",
-        "line": 212,
+        "line": 213,
         "resource_type": "FileView",
         "name": "config",
         "module": "app/services",
@@ -540,7 +540,7 @@
       },
       {
         "file": "app/services/DockService.qml",
-        "line": 466,
+        "line": 467,
         "resource_type": "Process",
         "name": "ensureConfigDir",
         "module": "app/services",
@@ -554,7 +554,7 @@
       },
       {
         "file": "app/services/DockService.qml",
-        "line": 479,
+        "line": 480,
         "resource_type": "FileView",
         "name": "configFile",
         "module": "app/services",
@@ -568,7 +568,7 @@
       },
       {
         "file": "app/services/DockService.qml",
-        "line": 509,
+        "line": 511,
         "resource_type": "Timer",
         "name": "launchTimeout",
         "module": "app/services",
@@ -595,8 +595,22 @@
         "risk_level": "medium"
       },
       {
+        "file": "app/services/I18nService.qml",
+        "line": 32,
+        "resource_type": "FileView",
+        "name": "tomlFileView",
+        "module": "app/services",
+        "creation_condition": "root.language === \"en_US\" ? \"\" : (Paths.assetsDir + \"/i18n/\" + root.language + \".toml\")",
+        "resource_owner": "app/services",
+        "stop_entry": "QObject destruction",
+        "has_destruction": false,
+        "visible_only_deactivation": false,
+        "has_fallback": true,
+        "risk_level": "low"
+      },
+      {
         "file": "app/services/IdleService.qml",
-        "line": 365,
+        "line": 366,
         "resource_type": "Process",
         "name": "ensurePolicyStore",
         "module": "app/services",
@@ -610,7 +624,7 @@
       },
       {
         "file": "app/services/IdleService.qml",
-        "line": 376,
+        "line": 377,
         "resource_type": "FileView",
         "name": "policyFile",
         "module": "app/services",
@@ -624,7 +638,7 @@
       },
       {
         "file": "app/services/IdleService.qml",
-        "line": 405,
+        "line": 406,
         "resource_type": "Process",
         "name": "displayPowerProcess",
         "module": "app/services",
@@ -638,7 +652,7 @@
       },
       {
         "file": "app/services/IdleService.qml",
-        "line": 423,
+        "line": 424,
         "resource_type": "Process",
         "name": "suspendProcess",
         "module": "app/services",
@@ -652,7 +666,7 @@
       },
       {
         "file": "app/services/IdleService.qml",
-        "line": 446,
+        "line": 447,
         "resource_type": "ExternalCommand",
         "name": "ActionGateway.execute(idle:power-on)",
         "module": "app/services",
@@ -694,9 +708,9 @@
       },
       {
         "file": "app/services/MatugenTemplateService.qml",
-        "line": 91,
+        "line": 92,
         "resource_type": "FileView",
-        "name": "fileview_L91",
+        "name": "fileview_L92",
         "module": "app/services",
         "creation_condition": "Paths.userMatugenDir + \"/config.toml\"",
         "resource_owner": "app/services",
@@ -708,7 +722,7 @@
       },
       {
         "file": "app/services/MatugenTemplateService.qml",
-        "line": 97,
+        "line": 98,
         "resource_type": "Timer",
         "name": "refreshDebounce",
         "module": "app/services",
@@ -722,7 +736,7 @@
       },
       {
         "file": "app/services/MatugenTemplateService.qml",
-        "line": 102,
+        "line": 103,
         "resource_type": "Process",
         "name": "listing",
         "module": "app/services",
@@ -736,7 +750,7 @@
       },
       {
         "file": "app/services/MatugenTemplateService.qml",
-        "line": 136,
+        "line": 137,
         "resource_type": "Process",
         "name": "mutation",
         "module": "app/services",
@@ -750,11 +764,11 @@
       },
       {
         "file": "app/services/MediaService.qml",
-        "line": 39,
+        "line": 67,
         "resource_type": "Timer",
         "name": "positionPollTimer",
         "module": "app/services",
-        "creation_condition": "root.active !== null && root.active.isPlaying",
+        "creation_condition": "root.positionSubscribers > 0 && root.active !== null && root.active.isPlaying",
         "resource_owner": "app/services",
         "stop_entry": "positionPollTimer.stop()",
         "has_destruction": true,
@@ -764,7 +778,7 @@
       },
       {
         "file": "app/services/NetworkManagerExtras.qml",
-        "line": 116,
+        "line": 118,
         "resource_type": "Process",
         "name": "runtimeProcess",
         "module": "app/services",
@@ -778,7 +792,7 @@
       },
       {
         "file": "app/services/NetworkManagerExtras.qml",
-        "line": 188,
+        "line": 190,
         "resource_type": "Process",
         "name": "frequencyProcess",
         "module": "app/services",
@@ -792,7 +806,7 @@
       },
       {
         "file": "app/services/NetworkManagerExtras.qml",
-        "line": 226,
+        "line": 228,
         "resource_type": "Process",
         "name": "addProcess",
         "module": "app/services",
@@ -806,7 +820,7 @@
       },
       {
         "file": "app/services/NetworkManagerExtras.qml",
-        "line": 253,
+        "line": 255,
         "resource_type": "Process",
         "name": "activateProcess",
         "module": "app/services",
@@ -820,7 +834,7 @@
       },
       {
         "file": "app/services/NetworkManagerExtras.qml",
-        "line": 286,
+        "line": 288,
         "resource_type": "Process",
         "name": "cleanupProcess",
         "module": "app/services",
@@ -834,7 +848,7 @@
       },
       {
         "file": "app/services/NetworkService.qml",
-        "line": 1110,
+        "line": 1111,
         "resource_type": "Timer",
         "name": "profileWriteTimeout",
         "module": "app/services",
@@ -848,7 +862,7 @@
       },
       {
         "file": "app/services/NetworkService.qml",
-        "line": 1124,
+        "line": 1125,
         "resource_type": "Timer",
         "name": "profileForgetTimeout",
         "module": "app/services",
@@ -862,7 +876,7 @@
       },
       {
         "file": "app/services/NetworkService.qml",
-        "line": 1137,
+        "line": 1138,
         "resource_type": "Timer",
         "name": "manualScanReleaseTimer",
         "module": "app/services",
@@ -876,7 +890,7 @@
       },
       {
         "file": "app/services/NetworkService.qml",
-        "line": 1148,
+        "line": 1149,
         "resource_type": "Timer",
         "name": "operationTimeout",
         "module": "app/services",
@@ -890,7 +904,7 @@
       },
       {
         "file": "app/services/NiriConfigService.qml",
-        "line": 151,
+        "line": 154,
         "resource_type": "Process",
         "name": "operation",
         "module": "app/services",
@@ -904,7 +918,7 @@
       },
       {
         "file": "app/services/NiriConfigService.qml",
-        "line": 221,
+        "line": 224,
         "resource_type": "FileView",
         "name": "actionCatalogFile",
         "module": "app/services",
@@ -918,9 +932,9 @@
       },
       {
         "file": "app/services/NiriConfigService.qml",
-        "line": 247,
+        "line": 250,
         "resource_type": "FileView",
-        "name": "fileview_L247",
+        "name": "fileview_L250",
         "module": "app/services",
         "creation_condition": "modelData",
         "resource_owner": "app/services",
@@ -988,9 +1002,9 @@
       },
       {
         "file": "app/services/NotificationService.qml",
-        "line": 76,
+        "line": 77,
         "resource_type": "Timer",
-        "name": "timer_L76",
+        "name": "timer_L77",
         "module": "app/services",
         "creation_condition": "true",
         "resource_owner": "app/services",
@@ -1002,7 +1016,7 @@
       },
       {
         "file": "app/services/NotificationService.qml",
-        "line": 174,
+        "line": 175,
         "resource_type": "Process",
         "name": "ensureStoreDir",
         "module": "app/services",
@@ -1016,7 +1030,7 @@
       },
       {
         "file": "app/services/NotificationService.qml",
-        "line": 248,
+        "line": 249,
         "resource_type": "FileView",
         "name": "notifFileView",
         "module": "app/services",
@@ -1030,9 +1044,9 @@
       },
       {
         "file": "app/services/PersonalizationConfig.qml",
-        "line": 2169,
+        "line": 2174,
         "resource_type": "FileView",
-        "name": "fileview_L2169",
+        "name": "fileview_L2174",
         "module": "app/services",
         "creation_condition": "unknown",
         "resource_owner": "app/services",
@@ -1044,7 +1058,7 @@
       },
       {
         "file": "app/services/PersonalizationConfig.qml",
-        "line": 2184,
+        "line": 2189,
         "resource_type": "Process",
         "name": "ensureStoreDir",
         "module": "app/services",
@@ -1058,7 +1072,7 @@
       },
       {
         "file": "app/services/PersonalizationConfig.qml",
-        "line": 2195,
+        "line": 2200,
         "resource_type": "Timer",
         "name": "configReloadDebounce",
         "module": "app/services",
@@ -1072,7 +1086,7 @@
       },
       {
         "file": "app/services/PersonalizationConfig.qml",
-        "line": 2203,
+        "line": 2208,
         "resource_type": "FileView",
         "name": "configFile",
         "module": "app/services",
@@ -1128,11 +1142,11 @@
       },
       {
         "file": "app/services/SpotlightCatalog.qml",
-        "line": 95,
+        "line": 96,
         "resource_type": "ExternalCommand",
         "name": "ActionGateway.execute(spotlight:catalog-action)",
         "module": "app/services",
-        "creation_condition": "[\"notify-send\", \"-a\", \"Nyxuri Shell\", qsTr(\"Action unavailab",
+        "creation_condition": "[\"notify-send\", \"-a\", \"Nyxuri Shell\", I18n.tr(\"Action unavai",
         "resource_owner": "spotlight:catalog-action",
         "stop_entry": "ActionGateway.execute",
         "has_destruction": false,
@@ -1142,9 +1156,9 @@
       },
       {
         "file": "app/services/SystemIdentityService.qml",
-        "line": 134,
+        "line": 135,
         "resource_type": "Timer",
-        "name": "timer_L134",
+        "name": "timer_L135",
         "module": "app/services",
         "creation_condition": "root.uptimeActive && root._uptimeBaseReady",
         "resource_owner": "app/services",
@@ -1156,7 +1170,7 @@
       },
       {
         "file": "app/services/SystemIdentityService.qml",
-        "line": 141,
+        "line": 142,
         "resource_type": "FileView",
         "name": "uptimeFile",
         "module": "app/services",
@@ -1170,7 +1184,7 @@
       },
       {
         "file": "app/services/SystemIdentityService.qml",
-        "line": 153,
+        "line": 154,
         "resource_type": "Process",
         "name": "identityProcess",
         "module": "app/services",
@@ -1184,7 +1198,7 @@
       },
       {
         "file": "app/services/SystemMonitorService.qml",
-        "line": 662,
+        "line": 664,
         "resource_type": "Timer",
         "name": "reconnectTimer",
         "module": "app/services",
@@ -1198,9 +1212,9 @@
       },
       {
         "file": "app/services/SystemMonitorService.qml",
-        "line": 669,
+        "line": 671,
         "resource_type": "Timer",
-        "name": "timer_L669",
+        "name": "timer_L671",
         "module": "app/services",
         "creation_condition": "root.active",
         "resource_owner": "app/services",
@@ -1212,7 +1226,7 @@
       },
       {
         "file": "app/services/SystemMonitorService.qml",
-        "line": 703,
+        "line": 706,
         "resource_type": "Timer",
         "name": "forceStopTimer",
         "module": "app/services",
@@ -1226,9 +1240,9 @@
       },
       {
         "file": "app/services/SystemMonitorService.qml",
-        "line": 723,
+        "line": 726,
         "resource_type": "Timer",
-        "name": "timer_L723",
+        "name": "timer_L726",
         "module": "app/services",
         "creation_condition": "root._replacementProcess !== null",
         "resource_owner": "app/services",
@@ -1240,7 +1254,7 @@
       },
       {
         "file": "app/services/SystemMonitorService.qml",
-        "line": 734,
+        "line": 737,
         "resource_type": "Process",
         "name": "MonitorStream",
         "module": "app/services",
@@ -1254,9 +1268,9 @@
       },
       {
         "file": "app/services/SystemMonitorService.qml",
-        "line": 742,
+        "line": 745,
         "resource_type": "Timer",
-        "name": "timer_L742",
+        "name": "timer_L745",
         "module": "app/services",
         "creation_condition": "false",
         "resource_owner": "app/services",
@@ -1268,7 +1282,7 @@
       },
       {
         "file": "app/services/ThemeService.qml",
-        "line": 59,
+        "line": 60,
         "resource_type": "FileView",
         "name": "colorFile",
         "module": "app/services",
@@ -1282,7 +1296,7 @@
       },
       {
         "file": "app/services/ThemeService.qml",
-        "line": 436,
+        "line": 432,
         "resource_type": "Process",
         "name": "detectIconThemesProcess",
         "module": "app/services",
@@ -1296,7 +1310,7 @@
       },
       {
         "file": "app/services/ThemeService.qml",
-        "line": 446,
+        "line": 442,
         "resource_type": "Process",
         "name": "detectCursorThemesProcess",
         "module": "app/services",
@@ -1310,7 +1324,7 @@
       },
       {
         "file": "app/services/ThemeService.qml",
-        "line": 461,
+        "line": 457,
         "resource_type": "Process",
         "name": "generateColorsProcess",
         "module": "app/services",
@@ -1338,7 +1352,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 498,
+        "line": 499,
         "resource_type": "Process",
         "name": "ensureStoreDir",
         "module": "app/services",
@@ -1352,7 +1366,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 511,
+        "line": 512,
         "resource_type": "FileView",
         "name": "prefsFile",
         "module": "app/services",
@@ -1366,7 +1380,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 611,
+        "line": 612,
         "resource_type": "Timer",
         "name": "preferencesReloadDebounce",
         "module": "app/services",
@@ -1380,7 +1394,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 619,
+        "line": 620,
         "resource_type": "Process",
         "name": "themePoller",
         "module": "app/services",
@@ -1394,7 +1408,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 633,
+        "line": 634,
         "resource_type": "Process",
         "name": "systemThemeWriter",
         "module": "app/services",
@@ -1408,7 +1422,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 654,
+        "line": 655,
         "resource_type": "Timer",
         "name": "themePollTimer",
         "module": "app/services",
@@ -1422,7 +1436,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 665,
+        "line": 666,
         "resource_type": "Timer",
         "name": "themeDebounce",
         "module": "app/services",
@@ -1436,7 +1450,7 @@
       },
       {
         "file": "app/services/weather/WeatherBackend.qml",
-        "line": 274,
+        "line": 275,
         "resource_type": "Network",
         "name": "XMLHttpRequest",
         "module": "app/services",
@@ -1450,7 +1464,7 @@
       },
       {
         "file": "app/services/weather/WeatherBackend.qml",
-        "line": 323,
+        "line": 324,
         "resource_type": "Network",
         "name": "XMLHttpRequest",
         "module": "app/services",
@@ -1464,7 +1478,7 @@
       },
       {
         "file": "app/services/weather/WeatherBackend.qml",
-        "line": 347,
+        "line": 348,
         "resource_type": "Network",
         "name": "XMLHttpRequest",
         "module": "app/services",
@@ -1478,7 +1492,7 @@
       },
       {
         "file": "app/services/weather/WeatherBackend.qml",
-        "line": 680,
+        "line": 681,
         "resource_type": "Timer",
         "name": "refreshTimer",
         "module": "app/services",
@@ -1492,7 +1506,7 @@
       },
       {
         "file": "modules/bar/tray/TrayService.qml",
-        "line": 109,
+        "line": 110,
         "resource_type": "Process",
         "name": "ensureStoreDir",
         "module": "modules/bar",
@@ -1506,7 +1520,7 @@
       },
       {
         "file": "modules/bar/tray/TrayService.qml",
-        "line": 119,
+        "line": 120,
         "resource_type": "FileView",
         "name": "configFile",
         "module": "modules/bar",
@@ -1520,13 +1534,13 @@
       },
       {
         "file": "modules/dock/DockPreviewPopup.qml",
-        "line": 39,
+        "line": 40,
         "resource_type": "Process",
-        "name": "proc_L39",
+        "name": "proc_L40",
         "module": "modules/dock",
         "creation_condition": "dynamic",
         "resource_owner": "modules/dock",
-        "stop_entry": "proc_L39.running = false",
+        "stop_entry": "proc_L40.running = false",
         "has_destruction": true,
         "visible_only_deactivation": false,
         "has_fallback": true,
@@ -1534,7 +1548,7 @@
       },
       {
         "file": "modules/dock/DockSurface.qml",
-        "line": 616,
+        "line": 617,
         "resource_type": "Timer",
         "name": "magnificationExit",
         "module": "modules/dock",
@@ -1548,7 +1562,7 @@
       },
       {
         "file": "modules/dock/DockSurface.qml",
-        "line": 624,
+        "line": 625,
         "resource_type": "Timer",
         "name": "hideTimer",
         "module": "modules/dock",
@@ -1562,7 +1576,7 @@
       },
       {
         "file": "modules/dock/DockSurface.qml",
-        "line": 634,
+        "line": 635,
         "resource_type": "Timer",
         "name": "closeTimer",
         "module": "modules/dock",
@@ -1576,7 +1590,7 @@
       },
       {
         "file": "modules/dock/DockSurface.qml",
-        "line": 642,
+        "line": 643,
         "resource_type": "Timer",
         "name": "hoverTimer",
         "module": "modules/dock",
@@ -1590,9 +1604,9 @@
       },
       {
         "file": "modules/dock/DockSurface.qml",
-        "line": 651,
+        "line": 652,
         "resource_type": "Timer",
-        "name": "timer_L651",
+        "name": "timer_L652",
         "module": "modules/dock",
         "creation_condition": "(root.dragKey !== \"\" || dropArea.containsDrag) && root.layout.overflow",
         "resource_owner": "modules/dock",
@@ -1604,9 +1618,9 @@
       },
       {
         "file": "modules/filepicker/FilePickerWindow.qml",
-        "line": 869,
+        "line": 870,
         "resource_type": "Timer",
-        "name": "timer_L869",
+        "name": "timer_L870",
         "module": "modules/filepicker",
         "creation_condition": "true",
         "resource_owner": "modules/filepicker",
@@ -1618,7 +1632,7 @@
       },
       {
         "file": "modules/keystone/Keystone.qml",
-        "line": 53,
+        "line": 55,
         "resource_type": "IPC",
         "name": "IpcHandler(keystone)",
         "module": "modules/keystone",
@@ -1636,7 +1650,7 @@
         "resource_type": "Timer",
         "name": "clockTimer",
         "module": "modules/keystone",
-        "creation_condition": "true",
+        "creation_condition": "root.visible",
         "resource_owner": "modules/keystone",
         "stop_entry": "clockTimer.stop()",
         "has_destruction": true,
@@ -1660,9 +1674,9 @@
       },
       {
         "file": "modules/keystone/dashboard/DashboardWeatherCard.qml",
-        "line": 102,
+        "line": 103,
         "resource_type": "Timer",
-        "name": "timer_L102",
+        "name": "timer_L103",
         "module": "modules/keystone",
         "creation_condition": "root.active",
         "resource_owner": "modules/keystone",
@@ -1730,11 +1744,11 @@
       },
       {
         "file": "modules/keystone/tools/AudioRecordingService.qml",
-        "line": 61,
+        "line": 62,
         "resource_type": "ExternalCommand",
         "name": "ActionGateway.execute(audio-recording:error)",
         "module": "modules/keystone",
-        "creation_condition": "[\"notify-send\", \"-a\", \"Nyxuri Shell\", \"-u\", \"critical\", qsTr",
+        "creation_condition": "[\"notify-send\", \"-a\", \"Nyxuri Shell\", \"-u\", \"critical\", I18n",
         "resource_owner": "audio-recording:error",
         "stop_entry": "ActionGateway.execute",
         "has_destruction": true,
@@ -1744,7 +1758,7 @@
       },
       {
         "file": "modules/keystone/tools/AudioRecordingService.qml",
-        "line": 186,
+        "line": 188,
         "resource_type": "Process",
         "name": "startProcess",
         "module": "modules/keystone",
@@ -1758,7 +1772,7 @@
       },
       {
         "file": "modules/keystone/tools/AudioRecordingService.qml",
-        "line": 210,
+        "line": 212,
         "resource_type": "Process",
         "name": "stopProcess",
         "module": "modules/keystone",
@@ -1772,7 +1786,7 @@
       },
       {
         "file": "modules/keystone/tools/AudioRecordingService.qml",
-        "line": 236,
+        "line": 238,
         "resource_type": "Process",
         "name": "initialStatus",
         "module": "modules/keystone",
@@ -1786,7 +1800,7 @@
       },
       {
         "file": "modules/keystone/tools/AudioRecordingService.qml",
-        "line": 251,
+        "line": 253,
         "resource_type": "Process",
         "name": "watchProcess",
         "module": "modules/keystone",
@@ -1800,7 +1814,7 @@
       },
       {
         "file": "modules/keystone/tools/AudioRecordingService.qml",
-        "line": 265,
+        "line": 267,
         "resource_type": "Timer",
         "name": "reconnect",
         "module": "modules/keystone",
@@ -1814,9 +1828,9 @@
       },
       {
         "file": "modules/keystone/tools/AudioRecordingService.qml",
-        "line": 274,
+        "line": 276,
         "resource_type": "Timer",
-        "name": "timer_L274",
+        "name": "timer_L276",
         "module": "modules/keystone",
         "creation_condition": "root.isActive",
         "resource_owner": "modules/keystone",
@@ -1828,7 +1842,7 @@
       },
       {
         "file": "modules/keystone/tools/RecordingService.qml",
-        "line": 222,
+        "line": 223,
         "resource_type": "Process",
         "name": "startProcess",
         "module": "modules/keystone",
@@ -1842,7 +1856,7 @@
       },
       {
         "file": "modules/keystone/tools/RecordingService.qml",
-        "line": 241,
+        "line": 242,
         "resource_type": "Process",
         "name": "stopProcess",
         "module": "modules/keystone",
@@ -1856,7 +1870,7 @@
       },
       {
         "file": "modules/keystone/tools/RecordingService.qml",
-        "line": 261,
+        "line": 262,
         "resource_type": "Process",
         "name": "initialStatus",
         "module": "modules/keystone",
@@ -1870,7 +1884,7 @@
       },
       {
         "file": "modules/keystone/tools/RecordingService.qml",
-        "line": 276,
+        "line": 277,
         "resource_type": "Process",
         "name": "watchProcess",
         "module": "modules/keystone",
@@ -1884,7 +1898,7 @@
       },
       {
         "file": "modules/keystone/tools/RecordingService.qml",
-        "line": 290,
+        "line": 291,
         "resource_type": "Timer",
         "name": "reconnect",
         "module": "modules/keystone",
@@ -1898,9 +1912,9 @@
       },
       {
         "file": "modules/keystone/tools/RecordingService.qml",
-        "line": 299,
+        "line": 300,
         "resource_type": "Timer",
-        "name": "timer_L299",
+        "name": "timer_L300",
         "module": "modules/keystone",
         "creation_condition": "root.isRecording",
         "resource_owner": "modules/keystone",
@@ -1912,7 +1926,7 @@
       },
       {
         "file": "modules/keystone/tools/ToolsContent.qml",
-        "line": 65,
+        "line": 66,
         "resource_type": "ExternalCommand",
         "name": "ActionGateway.execute(keystone)",
         "module": "modules/keystone",
@@ -1926,9 +1940,9 @@
       },
       {
         "file": "modules/keystone/weather/WeatherContent.qml",
-        "line": 194,
+        "line": 195,
         "resource_type": "Timer",
-        "name": "timer_L194",
+        "name": "timer_L195",
         "module": "modules/keystone",
         "creation_condition": "root.active",
         "resource_owner": "modules/keystone",
@@ -1940,7 +1954,7 @@
       },
       {
         "file": "modules/keystone/weather/WeatherSunriseSunset.qml",
-        "line": 65,
+        "line": 66,
         "resource_type": "Timer",
         "name": "progressTimer",
         "module": "modules/keystone",
@@ -1954,7 +1968,7 @@
       },
       {
         "file": "modules/launcher/FileSearchService.qml",
-        "line": 215,
+        "line": 216,
         "resource_type": "Timer",
         "name": "debounce",
         "module": "modules/launcher",
@@ -1968,7 +1982,7 @@
       },
       {
         "file": "modules/launcher/FileSearchService.qml",
-        "line": 220,
+        "line": 221,
         "resource_type": "Process",
         "name": "statusProcess",
         "module": "modules/launcher",
@@ -1982,7 +1996,7 @@
       },
       {
         "file": "modules/launcher/FileSearchService.qml",
-        "line": 235,
+        "line": 236,
         "resource_type": "Process",
         "name": "searchProcess",
         "module": "modules/launcher",
@@ -1996,7 +2010,7 @@
       },
       {
         "file": "modules/launcher/FileSearchService.qml",
-        "line": 250,
+        "line": 251,
         "resource_type": "Process",
         "name": "actionProcess",
         "module": "modules/launcher",
@@ -2010,7 +2024,7 @@
       },
       {
         "file": "modules/launcher/LauncherWindow.qml",
-        "line": 313,
+        "line": 314,
         "resource_type": "Timer",
         "name": "clipboardFeedbackTimer",
         "module": "modules/launcher",
@@ -2024,7 +2038,7 @@
       },
       {
         "file": "modules/launcher/SpotlightClipboardDetails.qml",
-        "line": 62,
+        "line": 63,
         "resource_type": "Timer",
         "name": "selectionDelay",
         "module": "modules/launcher",
@@ -2038,7 +2052,7 @@
       },
       {
         "file": "modules/launcher/SpotlightClipboardDetails.qml",
-        "line": 241,
+        "line": 242,
         "resource_type": "Timer",
         "name": "resizeDelay",
         "module": "modules/launcher",
@@ -2052,9 +2066,9 @@
       },
       {
         "file": "modules/launcher/SpotlightResultsPanel.qml",
-        "line": 510,
+        "line": 511,
         "resource_type": "Timer",
-        "name": "timer_L510",
+        "name": "timer_L511",
         "module": "modules/launcher",
         "creation_condition": "root.mode === \"wallpapers\"",
         "resource_owner": "modules/launcher",
@@ -2108,7 +2122,7 @@
       },
       {
         "file": "modules/launcher/SpotlightToolService.qml",
-        "line": 196,
+        "line": 198,
         "resource_type": "Timer",
         "name": "debounce",
         "module": "modules/launcher",
@@ -2122,7 +2136,7 @@
       },
       {
         "file": "modules/launcher/SpotlightToolService.qml",
-        "line": 201,
+        "line": 203,
         "resource_type": "Timer",
         "name": "deadline",
         "module": "modules/launcher",
@@ -2136,7 +2150,7 @@
       },
       {
         "file": "modules/launcher/SpotlightToolService.qml",
-        "line": 210,
+        "line": 212,
         "resource_type": "Process",
         "name": "worker",
         "module": "modules/launcher",
@@ -2150,7 +2164,7 @@
       },
       {
         "file": "modules/launcher/SpotlightToolService.qml",
-        "line": 225,
+        "line": 227,
         "resource_type": "Process",
         "name": "copier",
         "module": "modules/launcher",
@@ -2164,7 +2178,7 @@
       },
       {
         "file": "modules/lock/DefaultLockContent.qml",
-        "line": 75,
+        "line": 76,
         "resource_type": "Timer",
         "name": "clockTimer",
         "module": "modules/lock",
@@ -2178,7 +2192,7 @@
       },
       {
         "file": "modules/lock/LockContent.qml",
-        "line": 579,
+        "line": 580,
         "resource_type": "Timer",
         "name": "clockTimer",
         "module": "modules/lock",
@@ -2220,7 +2234,7 @@
       },
       {
         "file": "modules/lock/cards/WeatherCard.qml",
-        "line": 383,
+        "line": 384,
         "resource_type": "Timer",
         "name": "weatherRefreshTimer",
         "module": "modules/lock",
@@ -2262,7 +2276,7 @@
       },
       {
         "file": "modules/settings/AutostartService.qml",
-        "line": 473,
+        "line": 474,
         "resource_type": "Process",
         "name": "initProcess",
         "module": "modules/settings",
@@ -2276,7 +2290,7 @@
       },
       {
         "file": "modules/settings/AutostartService.qml",
-        "line": 499,
+        "line": 500,
         "resource_type": "FileView",
         "name": "writerFileView",
         "module": "modules/settings",
@@ -2290,7 +2304,7 @@
       },
       {
         "file": "modules/settings/AutostartService.qml",
-        "line": 543,
+        "line": 544,
         "resource_type": "FileView",
         "name": "fileView",
         "module": "modules/settings",
@@ -2304,7 +2318,7 @@
       },
       {
         "file": "modules/settings/AutostartService.qml",
-        "line": 561,
+        "line": 562,
         "resource_type": "Process",
         "name": "deleteError",
         "module": "modules/settings",
@@ -2318,7 +2332,7 @@
       },
       {
         "file": "modules/settings/BezierCurveEditor.qml",
-        "line": 266,
+        "line": 267,
         "resource_type": "ExternalCommand",
         "name": "ActionGateway.execute(settings:bezier-copy)",
         "module": "modules/settings",
@@ -2332,7 +2346,7 @@
       },
       {
         "file": "modules/settings/BezierCurveLayerEditor.qml",
-        "line": 193,
+        "line": 194,
         "resource_type": "ExternalCommand",
         "name": "ActionGateway.execute(settings:bezier-layer-copy)",
         "module": "modules/settings",
@@ -2346,7 +2360,7 @@
       },
       {
         "file": "modules/settings/ControlCenterWindow.qml",
-        "line": 167,
+        "line": 168,
         "resource_type": "Timer",
         "name": "copiedTimer",
         "module": "modules/settings",
@@ -2360,7 +2374,7 @@
       },
       {
         "file": "modules/settings/DisplayConfigService.qml",
-        "line": 176,
+        "line": 177,
         "resource_type": "Timer",
         "name": "identifyTimer",
         "module": "modules/settings",
@@ -2374,7 +2388,7 @@
       },
       {
         "file": "modules/settings/DisplayConfigService.qml",
-        "line": 181,
+        "line": 182,
         "resource_type": "Timer",
         "name": "pollTimer",
         "module": "modules/settings",
@@ -2388,7 +2402,7 @@
       },
       {
         "file": "modules/settings/DisplayConfigService.qml",
-        "line": 188,
+        "line": 189,
         "resource_type": "Process",
         "name": "operation",
         "module": "modules/settings",
@@ -2402,7 +2416,7 @@
       },
       {
         "file": "modules/settings/NetworkPage.qml",
-        "line": 178,
+        "line": 179,
         "resource_type": "Timer",
         "name": "initialLoadTimer",
         "module": "modules/settings",
@@ -2416,11 +2430,11 @@
       },
       {
         "file": "modules/settings/SettingsBackend.qml",
-        "line": 48,
+        "line": 49,
         "resource_type": "ExternalCommand",
         "name": "ActionGateway.execute(settings)",
         "module": "modules/settings",
-        "creation_condition": "[\"notify-send\", \"-a\", \"Nyxuri Shell\",\n                      ",
+        "creation_condition": "[\"notify-send\", \"-a\", \"Nyxuri Shell\", I18n.tr(\"Settings\",\n  ",
         "resource_owner": "settings",
         "stop_entry": "ActionGateway.execute",
         "has_destruction": false,
@@ -2430,7 +2444,7 @@
       },
       {
         "file": "modules/settings/SettingsBackend.qml",
-        "line": 109,
+        "line": 111,
         "resource_type": "Timer",
         "name": "searchDeadline",
         "module": "modules/settings",
@@ -2471,94 +2485,10 @@
         "risk_level": "low"
       },
       {
-        "file": "modules/sidebars/dashboard/DailyAirQualityTrendPane.qml",
-        "line": 173,
-        "resource_type": "Timer",
-        "name": "rebuildTimer",
-        "module": "modules/sidebars",
-        "creation_condition": "false",
-        "resource_owner": "modules/sidebars",
-        "stop_entry": "rebuildTimer.stop()",
-        "has_destruction": false,
-        "visible_only_deactivation": false,
-        "has_fallback": true,
-        "risk_level": "low"
-      },
-      {
-        "file": "modules/sidebars/dashboard/DailyForecastTrendCard.qml",
-        "line": 174,
-        "resource_type": "Timer",
-        "name": "initialPositionTimer",
-        "module": "modules/sidebars",
-        "creation_condition": "false",
-        "resource_owner": "modules/sidebars",
-        "stop_entry": "initialPositionTimer.stop()",
-        "has_destruction": false,
-        "visible_only_deactivation": false,
-        "has_fallback": true,
-        "risk_level": "low"
-      },
-      {
-        "file": "modules/sidebars/dashboard/DailyWindTrendPane.qml",
-        "line": 162,
-        "resource_type": "Timer",
-        "name": "rebuildTimer",
-        "module": "modules/sidebars",
-        "creation_condition": "false",
-        "resource_owner": "modules/sidebars",
-        "stop_entry": "rebuildTimer.stop()",
-        "has_destruction": false,
-        "visible_only_deactivation": false,
-        "has_fallback": true,
-        "risk_level": "low"
-      },
-      {
-        "file": "modules/sidebars/dashboard/HourlyAirQualityTrendPane.qml",
-        "line": 172,
-        "resource_type": "Timer",
-        "name": "rebuildTimer",
-        "module": "modules/sidebars",
-        "creation_condition": "false",
-        "resource_owner": "modules/sidebars",
-        "stop_entry": "rebuildTimer.stop()",
-        "has_destruction": false,
-        "visible_only_deactivation": false,
-        "has_fallback": true,
-        "risk_level": "low"
-      },
-      {
-        "file": "modules/sidebars/dashboard/HourlyWindTrendPane.qml",
-        "line": 165,
-        "resource_type": "Timer",
-        "name": "rebuildTimer",
-        "module": "modules/sidebars",
-        "creation_condition": "false",
-        "resource_owner": "modules/sidebars",
-        "stop_entry": "rebuildTimer.stop()",
-        "has_destruction": false,
-        "visible_only_deactivation": false,
-        "has_fallback": true,
-        "risk_level": "low"
-      },
-      {
-        "file": "modules/sidebars/dashboard/WeatherMetricTrendPane.qml",
-        "line": 313,
-        "resource_type": "Timer",
-        "name": "initialPositionTimer",
-        "module": "modules/sidebars",
-        "creation_condition": "false",
-        "resource_owner": "modules/sidebars",
-        "stop_entry": "initialPositionTimer.stop()",
-        "has_destruction": false,
-        "visible_only_deactivation": false,
-        "has_fallback": true,
-        "risk_level": "low"
-      },
-      {
         "file": "modules/sidebars/dashboard/WeatherView.qml",
-        "line": 380,
+        "line": 381,
         "resource_type": "Timer",
-        "name": "timer_L380",
+        "name": "timer_L381",
         "module": "modules/sidebars",
         "creation_condition": "root.foreground",
         "resource_owner": "modules/sidebars",
@@ -2612,9 +2542,9 @@
       },
       {
         "file": "modules/sidebars/dashboard/infotools/InfoToolDrawer.qml",
-        "line": 134,
+        "line": 135,
         "resource_type": "Timer",
-        "name": "timer_L134",
+        "name": "timer_L135",
         "module": "modules/sidebars",
         "creation_condition": "root.active",
         "resource_owner": "modules/sidebars",
@@ -2626,11 +2556,11 @@
       },
       {
         "file": "modules/sidebars/dashboard/infotools/TimerService.qml",
-        "line": 88,
+        "line": 89,
         "resource_type": "ExternalCommand",
         "name": "ActionGateway.execute(timer:pomodoro-stage)",
         "module": "modules/sidebars",
-        "creation_condition": "[\"notify-send\", qsTr(\"Pomodoro\"), message, \"-a\", \"Nyxuri She",
+        "creation_condition": "[\"notify-send\", I18n.tr(\"Pomodoro\"), message, \"-a\", \"Nyxuri ",
         "resource_owner": "timer:pomodoro-stage",
         "stop_entry": "ActionGateway.execute",
         "has_destruction": true,
@@ -2640,7 +2570,7 @@
       },
       {
         "file": "modules/sidebars/dashboard/infotools/TimerService.qml",
-        "line": 221,
+        "line": 222,
         "resource_type": "Timer",
         "name": "pomodoroTimer",
         "module": "modules/sidebars",
@@ -2654,7 +2584,7 @@
       },
       {
         "file": "modules/sidebars/dashboard/infotools/TimerService.qml",
-        "line": 229,
+        "line": 230,
         "resource_type": "Timer",
         "name": "stopwatchTimer",
         "module": "modules/sidebars",
@@ -2710,7 +2640,7 @@
       },
       {
         "file": "modules/sidebars/quicksettings/BluetoothContent.qml",
-        "line": 137,
+        "line": 138,
         "resource_type": "Timer",
         "name": "initialLoadTimer",
         "module": "modules/sidebars",
@@ -2724,7 +2654,7 @@
       },
       {
         "file": "modules/sidebars/quicksettings/BluetoothContent.qml",
-        "line": 145,
+        "line": 146,
         "resource_type": "Timer",
         "name": "refreshTimer",
         "module": "modules/sidebars",
@@ -2738,7 +2668,7 @@
       },
       {
         "file": "modules/sidebars/quicksettings/IdleContent.qml",
-        "line": 41,
+        "line": 43,
         "resource_type": "Timer",
         "name": "dimFractionCommitTimer",
         "module": "modules/sidebars",
@@ -2752,7 +2682,7 @@
       },
       {
         "file": "modules/sidebars/quicksettings/NetworkContent.qml",
-        "line": 170,
+        "line": 171,
         "resource_type": "Timer",
         "name": "initialLoadTimer",
         "module": "modules/sidebars",
@@ -2766,7 +2696,7 @@
       },
       {
         "file": "modules/sidebars/quicksettings/NetworkContent.qml",
-        "line": 178,
+        "line": 179,
         "resource_type": "Timer",
         "name": "refreshTimer",
         "module": "modules/sidebars",
@@ -2780,9 +2710,9 @@
       },
       {
         "file": "modules/systemcards/SidebarCookieClock.qml",
-        "line": 32,
+        "line": 33,
         "resource_type": "Timer",
-        "name": "timer_L32",
+        "name": "timer_L33",
         "module": "modules/systemcards",
         "creation_condition": "root.active",
         "resource_owner": "modules/systemcards",
@@ -2794,9 +2724,9 @@
       },
       {
         "file": "modules/systemcards/SystemCalendarCard.qml",
-        "line": 30,
+        "line": 31,
         "resource_type": "Timer",
-        "name": "timer_L30",
+        "name": "timer_L31",
         "module": "modules/systemcards",
         "creation_condition": "root.active",
         "resource_owner": "modules/systemcards",
@@ -2808,9 +2738,9 @@
       },
       {
         "file": "modules/systemcards/SystemClockCard.qml",
-        "line": 46,
+        "line": 47,
         "resource_type": "Timer",
-        "name": "timer_L46",
+        "name": "timer_L47",
         "module": "modules/systemcards",
         "creation_condition": "root.active",
         "resource_owner": "modules/systemcards",
@@ -2822,7 +2752,7 @@
       },
       {
         "file": "modules/wallpaper/AwwwWallpaperService.qml",
-        "line": 326,
+        "line": 329,
         "resource_type": "Process",
         "name": "probeClient",
         "module": "modules/wallpaper",
@@ -2836,7 +2766,7 @@
       },
       {
         "file": "modules/wallpaper/AwwwWallpaperService.qml",
-        "line": 340,
+        "line": 343,
         "resource_type": "Process",
         "name": "probeDaemon",
         "module": "modules/wallpaper",
@@ -2850,7 +2780,7 @@
       },
       {
         "file": "modules/wallpaper/AwwwWallpaperService.qml",
-        "line": 350,
+        "line": 353,
         "resource_type": "Process",
         "name": "daemonProcess",
         "module": "modules/wallpaper",
@@ -2864,7 +2794,7 @@
       },
       {
         "file": "modules/wallpaper/AwwwWallpaperService.qml",
-        "line": 387,
+        "line": 390,
         "resource_type": "Process",
         "name": "queryProcess",
         "module": "modules/wallpaper",
@@ -2878,7 +2808,7 @@
       },
       {
         "file": "modules/wallpaper/AwwwWallpaperService.qml",
-        "line": 431,
+        "line": 434,
         "resource_type": "Timer",
         "name": "queryRetry",
         "module": "modules/wallpaper",
@@ -2892,7 +2822,7 @@
       },
       {
         "file": "modules/wallpaper/AwwwWallpaperService.qml",
-        "line": 441,
+        "line": 444,
         "resource_type": "Process",
         "name": "applyProcess",
         "module": "modules/wallpaper",
@@ -2906,7 +2836,7 @@
       },
       {
         "file": "modules/wallpaper/AwwwWallpaperService.qml",
-        "line": 469,
+        "line": 472,
         "resource_type": "Process",
         "name": "stopProcess",
         "module": "modules/wallpaper",
@@ -2920,7 +2850,7 @@
       },
       {
         "file": "modules/wallpaper/WallpaperService.qml",
-        "line": 660,
+        "line": 661,
         "resource_type": "Timer",
         "name": "cycleTimer",
         "module": "modules/wallpaper",
@@ -2934,7 +2864,7 @@
       },
       {
         "file": "modules/wallpaper/WallpaperService.qml",
-        "line": 669,
+        "line": 670,
         "resource_type": "Timer",
         "name": "dailyTimer",
         "module": "modules/wallpaper",
@@ -2948,7 +2878,7 @@
       },
       {
         "file": "modules/wallpaper/WallpaperService.qml",
-        "line": 687,
+        "line": 688,
         "resource_type": "Process",
         "name": "scanProcess",
         "module": "modules/wallpaper",
@@ -2962,7 +2892,7 @@
       },
       {
         "file": "modules/wallpaper/WallpaperTransitionSurface.qml",
-        "line": 498,
+        "line": 499,
         "resource_type": "Timer",
         "name": "transitionDelayTimer",
         "module": "modules/wallpaper",
@@ -2989,24 +2919,10 @@
         "risk_level": "medium"
       },
       {
-        "file": "shared/controls/CompositorBlurRegion.qml",
-        "line": 189,
-        "resource_type": "Timer",
-        "name": "commitTimer",
-        "module": "shared/controls",
-        "creation_condition": "false",
-        "resource_owner": "shared/controls",
-        "stop_entry": "commitTimer.stop()",
-        "has_destruction": true,
-        "visible_only_deactivation": false,
-        "has_fallback": true,
-        "risk_level": "low"
-      },
-      {
         "file": "shared/controls/MaterialStepper.qml",
-        "line": 95,
+        "line": 96,
         "resource_type": "Timer",
-        "name": "timer_L95",
+        "name": "timer_L96",
         "module": "shared/controls",
         "creation_condition": "pointer.pressed && pointer.containsMouse && pointer.enabled && pointer.visible",
         "resource_owner": "shared/controls",
@@ -3018,7 +2934,7 @@
       },
       {
         "file": "shared/controls/SearchSelectMenuField.qml",
-        "line": 423,
+        "line": 424,
         "resource_type": "Timer",
         "name": "closeDelay",
         "module": "shared/controls",

@@ -1125,7 +1125,7 @@ Item {
         id: sceneTimer
 
         interval: root.sceneFrameInterval
-        running: root.animate && root.hasCanvasScene
+        running: root.animate && root.hasCanvasScene && root.visible
         repeat: true
 
         property double lastTickMs: 0

@@ -141,7 +141,7 @@ Rectangle {
     clip: true
     onSourceModelChanged: {
         trendFlick.initialPositionApplied = false;
-        initialPositionTimer.restart();
+        Qt.callLater(root.applyInitialPosition);
         updateTemperatureDomain();
     }
     onCurrentTabChanged: {
@@ -173,13 +173,6 @@ Rectangle {
         ignoreUnknownSignals: true
     }
 
-    Timer {
-        id: initialPositionTimer
-
-        interval: 0
-        repeat: false
-        onTriggered: applyInitialPosition()
-    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -325,12 +318,12 @@ Rectangle {
                 contentWidth: Math.max(width, root.modelCount() * root.itemWidth)
                 contentHeight: height
                 visible: root.currentTab === 0
-                Component.onCompleted: initialPositionTimer.restart()
-                onContentWidthChanged: initialPositionTimer.restart()
-                onWidthChanged: initialPositionTimer.restart()
+                Component.onCompleted: Qt.callLater(root.applyInitialPosition)
+                onContentWidthChanged: Qt.callLater(root.applyInitialPosition)
+                onWidthChanged: Qt.callLater(root.applyInitialPosition)
                 onVisibleChanged: {
                     if (visible)
-                        initialPositionTimer.restart();
+                        Qt.callLater(root.applyInitialPosition);
                 }
 
                 Item {
@@ -714,7 +707,7 @@ Rectangle {
     Connections {
         function onModelReset() {
             trendFlick.initialPositionApplied = false;
-            initialPositionTimer.restart();
+            Qt.callLater(root.applyInitialPosition);
             root.updateTemperatureDomain();
         }
 
@@ -724,7 +717,7 @@ Rectangle {
 
         function onRowsInserted() {
             trendFlick.initialPositionApplied = false;
-            initialPositionTimer.restart();
+            Qt.callLater(root.applyInitialPosition);
             root.updateTemperatureDomain();
         }
 
@@ -732,7 +725,7 @@ Rectangle {
             root.updateTemperatureDomain();
         }
 
-        target: root.sourceModel
+        target: (root.sourceModel && typeof root.sourceModel === "object" && !Array.isArray(root.sourceModel)) ? root.sourceModel : null
         ignoreUnknownSignals: true
     }
 

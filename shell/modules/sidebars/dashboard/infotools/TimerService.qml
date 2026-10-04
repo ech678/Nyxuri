@@ -229,7 +229,7 @@ Singleton {
 
     Timer {
         id: stopwatchTimer
-        interval: 10
+        interval: 50
         running: root.stopwatchRunning
         repeat: true
         onTriggered: root.refreshStopwatch()

@@ -112,11 +112,19 @@
 | 已完成 | 统一 README、wiki、注释和上游参考资料职责 | R1/R3 | 物理删除 4 篇违背物理隔离的冲突母体文档；P3 近 600KB 恢复比对档案移至 wiki/archive/ 解除认知过载；翻新 wiki/development.md 为 100% 纯 QML 调试指南；编制 wiki/references.md 固化母体 commit 15403b9 提取指令；index.md 与 llms.txt 确立 architecture-matrix 为核心真值；PKGBUILD.in 与 AwwwWallpaperService 命名空间收敛为 nyxuri |
 | 已完成 | 按逻辑、运行时资源、native、图形环境和静态规则分类测试 | R4 | 建立 run-tests.py 分类测试运行器，将测试体系解耦为 [STATIC]、[LOGIC]、[RESOURCE]、[NATIVE]、[GRAPHICS] 五大独立分类；修复 Presentation 测试因 Clavis/Runtime 遗留检测导致的硬跳过阻断；集成至 check.sh；独立输出五分类成绩单，杜绝单一总数掩盖缺陷 |
 
+### R6 能耗基线、事件循环与稳态治理（P0）
+
+| 状态 | 任务 | 前置 | 验收 |
+| --- | --- | --- | --- |
+| 已完成 | 天气资产做减法：淘汰 meteocons 臃肿依赖，原生化图标映射 | R5 | 彻底移除 48.5MB (3,806 文件) 的 meteocons 外部资源包与构建依赖；MeteoIcon 切换为纯字体图标（Fonts.materialSymbolsOutlined）与 24 状态字典映射；零网络依赖、零磁盘冗余、零 Lottie/SVG 异步加载开销 |
+| 已完成 | MPRIS DBus 频繁失效重连与位置轮询治理 | R5 | MediaService 建立 positionSubscribers 引用计数与按需轮询机制（仅在 Keystone 媒体前台展开且活跃播放时订阅）；移除外部伪触发 player.positionChanged()；挂接 onObjectRemovedPost 瞬时注销断开播放器，彻底消除“Remote peer disconnected”无意义会话日志风暴 |
+| 已完成 | 根除 `interval: 0` 事件循环空转与高频定时器降频 | R5 | 消除全库 7 处 Timer `interval: 0` 隐式空转，统一重构为帧级安全的 `Qt.callLater` 批处理；TimerService 秒表定时器由 10ms (100Hz) 平滑降频至 50ms (20Hz)；ClockContent 时钟定时器绑定 visible 属性；静态审计新增 LIFE007 门禁，全库零违规 |
+
 ## 后续阶段
 
 ### P4：壁纸、调色与模板兼容
 
-前置：R1-R5 完成，核心启动和生命周期门禁通过。
+前置：R1-R6 完成，核心启动和生命周期门禁通过。
 
 - 核对 Noctalia 模板、变量、过滤器和 palette.toml 字段，不自行发明兼容语法。
 - 复用已验证的壁纸、M3 调色和模板算法；明确 native 必要性与失败降级。
@@ -149,6 +157,7 @@
 | P2 | 四层骨架、Action Gateway、按需加载和 native 解耦基础 | 历史架构交付；R4 重新验证边界和生命周期 |
 | R4-C | 已完成；全量交付 R4-C-01 至 R4-C-06 | 彻底移除 113 项自有 C++ 插件与 CMakeLists.txt；全库 0 Clavis 依赖与 0 C++ 编译要求；收敛为 app/ -> modules/ -> shared/ 3 级纯 QML 体系；Niri 确立单一运行时状态源（NiriService）；shared 层零副作用；生命周期审计 0 违规，全量单测与沙箱部署全绿 |
 | R5 | 已完成；全量交付 R5-01 至 R5-03 | 彻底盘点并消除死资产与无消费图标；修复 Zen 着色器断裂；重写 pure QML 调试指南；建立 5 分类独立测试套件集成至 check.sh 并全绿通过 |
+| R6 | 已完成；全量交付 R6-01 至 R6-03 | 砍掉 48.5MB meteocons 冗余；MPRIS DBus 订阅式轮询根除断联日志风暴；清零 interval: 0 避免事件循环死转；新增 LIFE007 审计规约与 R6 单测契约 |
 | 纯 QML 国际化 | 已完成；彻底淘汰 qsTr 隐式 Native 翻译器依赖 | 在 shared/i18n/ 设立 I18n 单例与 Translations.js，引入 Toml.js 纯脚本解析器直接读取 zh_CN.toml；全库 228 个 QML/JS 文件迁移至 I18n.tr，实现 0 C++ 编译与 0 .qm 依赖的多语言热切换 |
 | P3-R00/R01 | 参考树固定、恢复点和功能矩阵 | 资料保留；见 [恢复矩阵](wiki/recovery-matrix.md) |
 | P3-R02..R08 | Bar、通知、设置、锁屏、启动器和剪贴板恢复 | 历史恢复记录；证据由 R1/R2 重新归档 |
@@ -164,6 +173,7 @@
 4. **[已拍板]** 生成文件、qsb、vendor Python 包和测试 fixture 的版本控制策略：qsb 作为免编译运行资产保留；SearchCatalog.js 脚本生成入库由单测校验；vendor 清理缓存；fixtures 隔离在测试树。
 5. **[已拍板]** 翻译与对外兼容：废除 2.6 万行 XML，采用纯 TOML 双语字典；对外变量优先 NYXURI_*，兼容读取 CLAVIS_*。全库现已全面落地纯 QML/JS 动态国际化（`I18n.qml` + `Translations.js` + `Toml.js`），彻底切除对 Qt Linguist / QTranslator 的 C++ 运行时依赖。
 6. **[已拍板]** 目录极简与 `bin/` 处置：作者明确拍板砍掉 `shell/bin/` 目录，将 `nyxuri-shell` 提升至 `shell/` 根目录，与 `shell.qml` 并列构成一动一静、一外一内的极简双入口；全库命名统一遵循艺术级命名法典；C++ 构建链已于 R4-C-05 全量清除。
+7. **[已拍板]** 天气图标与能耗治理：作者明确拍板采用方案 A（彻底移除 meteocons，拥抱 Material Symbols 纯字体方案，做纯粹的减法）；已在 R6 彻底删除 meteocons 资源包与 dependencies.json 外部拉取，事件循环与定时器全量完成稳态降频。
 
 ## 当前门禁
 

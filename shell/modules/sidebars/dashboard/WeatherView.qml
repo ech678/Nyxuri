@@ -612,6 +612,7 @@ Item {
                                 weatherCode: root.weatherSource.currentWeatherCode
                                 iconName: root.weatherSource.currentIconName
                                 night: root.currentIsNight()
+                                color: Appearance.colors.colOnImage
                                 playing: root.presentationActive && currentSummary.y + currentSummary.height
                                          >= flick.contentY && currentSummary.y <= flick.contentY
                                          + flick.height

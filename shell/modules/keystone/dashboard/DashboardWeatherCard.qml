@@ -103,7 +103,7 @@ Rectangle {
     Timer {
         interval: 60000
         repeat: true
-        running: root.active
+        running: root.active && root.visible
         onTriggered: root.currentEpoch = Math.floor(Date.now() / 1000)
     }
 
@@ -116,7 +116,7 @@ Rectangle {
         night: root.night
         rainBounceY: height
         scrollProgress: 0
-        animate: root.active
+        animate: root.active && root.visible
         fullCardParticleBounds: true
     }
 
@@ -202,6 +202,7 @@ Rectangle {
                 weatherCode: WeatherService.currentWeatherCode
                 iconName: WeatherService.currentIconName
                 night: root.night
+                color: Appearance.colors.colOnImage
                 animated: true
                 playing: root.active
             }

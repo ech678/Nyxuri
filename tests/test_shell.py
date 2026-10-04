@@ -1,7 +1,9 @@
 """Contract tests for dual shell management and CLI (nyxuri shell)."""
 
 import io
+import json
 import os
+import re
 import signal
 import sys
 import time
@@ -508,11 +510,11 @@ class TestShellManagement(unittest.TestCase):
             cc_content = f.read()
         self.assertIn("Component.onDestruction: root.closeChildWindows()", cc_content)
 
-        # 3. MeteoIcon uses loops: -1 for infinite loop
+        # 3. MeteoIcon uses native font symbols (R6-01: pure subtraction, no lottie)
         meteo_icon = os.path.join(shell_dir, "shared", "controls", "MeteoIcon.qml")
         with open(meteo_icon, "r", encoding="utf-8") as f:
             meteo_content = f.read()
-        self.assertIn("loops: -1", meteo_content)
+        self.assertIn("Fonts.materialSymbolsOutlined", meteo_content)
 
     def test_p3_bar_and_long_wheel_input_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -1558,6 +1560,112 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("| 已完成 | 盘点图标、翻译、shader、主题和第三方资源消费者 | R2/R3 |", roadmap_content)
         self.assertIn("| 已完成 | 统一 README、wiki、注释和上游参考资料职责 | R1/R3 |", roadmap_content)
         self.assertIn("| 已完成 | 按逻辑、运行时资源、native、图形环境和静态规则分类测试 | R4 |", roadmap_content)
+
+    def test_r6_performance_and_event_loop_governance(self):
+        """R6 Contract: Weather icon subtraction, MPRIS DBus mitigation, and timer zero-interval prohibition."""
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. Weather Icon Subtraction (R6-01): 48.5MB meteocons bloat eliminated
+        meteocons_dir = os.path.join(shell_dir, "assets", "icons", "weather", "meteocons")
+        self.assertFalse(os.path.exists(meteocons_dir), "meteocons directory must be physically eliminated")
+
+        deps_json_path = os.path.join(shell_dir, "packaging", "dependencies.json")
+        with open(deps_json_path, "r", encoding="utf-8") as f:
+            deps_data = json.load(f)
+        self.assertEqual(deps_data.get("resources", []), [], "resources array in dependencies.json must be empty")
+
+        meteo_icon_path = os.path.join(shell_dir, "shared", "controls", "MeteoIcon.qml")
+        with open(meteo_icon_path, "r", encoding="utf-8") as f:
+            meteo_code = f.read()
+        self.assertIn("Fonts.materialSymbolsOutlined", meteo_code)
+        self.assertNotIn("Qt.labs.lottieqt", meteo_code)
+        self.assertNotIn("meteoconSvg", meteo_code)
+
+        paths_qml_path = os.path.join(shell_dir, "app", "Paths.qml")
+        with open(paths_qml_path, "r", encoding="utf-8") as f:
+            paths_code = f.read()
+        self.assertNotIn("meteoconsDir", paths_code)
+
+        # 2. MPRIS DBus Mitigation (R6-02): reference-counted position polling and rogue signal removal
+        media_service_path = os.path.join(shell_dir, "app", "services", "MediaService.qml")
+        with open(media_service_path, "r", encoding="utf-8") as f:
+            ms_code = f.read()
+        self.assertIn("property int positionSubscribers: 0", ms_code)
+        self.assertIn("function acquirePositionTracking()", ms_code)
+        self.assertIn("function releasePositionTracking()", ms_code)
+        self.assertIn("root.positionSubscribers > 0", ms_code)
+        self.assertNotIn("player.positionChanged()", ms_code)
+        self.assertIn("onObjectRemovedPost", ms_code)
+
+        media_content_path = os.path.join(shell_dir, "modules", "keystone", "media", "MediaContent.qml")
+        with open(media_content_path, "r", encoding="utf-8") as f:
+            mc_code = f.read()
+        self.assertIn("MediaService.acquirePositionTracking()", mc_code)
+        self.assertIn("MediaService.releasePositionTracking()", mc_code)
+
+        # 3. Timer Governance & Zero-Interval Prohibition (R6-03):
+        # Assert zero occurrences of `interval: 0` across shell/ QML files
+        zero_interval_regex = re.compile(r"\binterval:\s*0\b")
+        for root_dir, dirs, files in os.walk(shell_dir):
+            if any(p in root_dir for p in ["references", ".git", "build"]):
+                continue
+            for fname in files:
+                if fname.endswith(".qml"):
+                    full_p = os.path.join(root_dir, fname)
+                    with open(full_p, "r", encoding="utf-8", errors="ignore") as qf:
+                        code = qf.read()
+                    self.assertIsNone(
+                        zero_interval_regex.search(code),
+                        f"Found interval: 0 in {full_p} - must use Qt.callLater or non-zero interval",
+                    )
+
+        # TimerService stopwatchTimer interval is 50ms (not 10ms)
+        timer_service_path = os.path.join(shell_dir, "modules", "sidebars", "dashboard", "infotools", "TimerService.qml")
+        with open(timer_service_path, "r", encoding="utf-8") as f:
+            ts_code = f.read()
+        self.assertIn("interval: 50", ts_code)
+        self.assertNotIn("interval: 10", ts_code)
+
+        # ClockContent clockTimer.running is bound to root.visible
+        clock_content_path = os.path.join(shell_dir, "modules", "keystone", "clock", "ClockContent.qml")
+        with open(clock_content_path, "r", encoding="utf-8") as f:
+            cc_code = f.read()
+        self.assertIn("running: root.visible", cc_code)
+
+        # LIFE007 and LIFE008 rules exist in audit-lifecycle.py
+        audit_py_path = os.path.join(shell_dir, "scripts", "dev", "audit-lifecycle.py")
+        with open(audit_py_path, "r", encoding="utf-8") as f:
+            audit_code = f.read()
+        self.assertIn("LIFE007", audit_code)
+        self.assertIn("LIFE008", audit_code)
+
+        # MediaContent.qml has exactly one Component.onCompleted and no duplicate handlers
+        with open(media_content_path, "r", encoding="utf-8") as f:
+            mc_code = f.read()
+        self.assertEqual(mc_code.count("Component.onCompleted"), 1, "MediaContent.qml must have exactly one onCompleted")
+
+        # Zero duplicate Component.onCompleted or Component.onDestruction across shell
+        for root_dir, dirs, files in os.walk(shell_dir):
+            if any(p in root_dir for p in ["references", ".git", "build"]):
+                continue
+            for fname in files:
+                if fname.endswith(".qml"):
+                    full_p = os.path.join(root_dir, fname)
+                    with open(full_p, "r", encoding="utf-8", errors="ignore") as qf:
+                        code = qf.read()
+                    completed_count = len(re.findall(r"^[ \t]{0,4}Component\.onCompleted\s*:", code, re.MULTILINE))
+                    destruction_count = len(re.findall(r"^[ \t]{0,4}Component\.onDestruction\s*:", code, re.MULTILINE))
+                    self.assertLessEqual(completed_count, 1, f"Duplicate Component.onCompleted in {full_p}")
+                    self.assertLessEqual(destruction_count, 1, f"Duplicate Component.onDestruction in {full_p}")
+
+        # 4. Roadmap status reflects R6 completion
+        roadmap_path = os.path.join(shell_dir, "ROADMAP.md")
+        with open(roadmap_path, "r", encoding="utf-8") as rf:
+            roadmap_content = rf.read()
+        self.assertIn("| 已完成 | 天气资产做减法：淘汰 meteocons 臃肿依赖，原生化图标映射 | R5 |", roadmap_content)
+        self.assertIn("| 已完成 | MPRIS DBus 频繁失效重连与位置轮询治理 | R5 |", roadmap_content)
+        self.assertIn("| 已完成 | 根除 `interval: 0` 事件循环空转与高频定时器降频 | R5 |", roadmap_content)
 
 
 if __name__ == "__main__":

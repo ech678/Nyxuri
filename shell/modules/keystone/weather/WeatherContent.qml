@@ -194,7 +194,7 @@ Item {
 
     Timer {
         interval: 1.8e+06
-        running: root.active
+        running: root.active && root.visible
         repeat: true
         onTriggered: {
             if (!WeatherService.loading)
@@ -258,7 +258,7 @@ Item {
                             Layout.alignment: Qt.AlignHCenter
                             Layout.preferredWidth: 42
                             Layout.preferredHeight: 42
-                            running: WeatherService.loading
+                            running: root.visible && WeatherService.loading
                             visible: running
                             Material.accent: Appearance.colors.colPrimary
                         }

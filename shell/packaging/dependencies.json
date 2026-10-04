@@ -491,31 +491,7 @@
       ]
     }
   },
-  "resources": [
-    {
-      "name": "@meteocons/svg",
-      "version": "0.1.0",
-      "url": "https://registry.npmjs.org/@meteocons/svg/-/svg-0.1.0.tgz",
-      "sha256": "91b48d1f8497d9e8f4ed1d5bcc32d306aaa5050de99c38467c2a58f7add5a501",
-      "destination": "assets/icons/weather/meteocons/svg",
-      "directories": [
-        "fill",
-        "flat",
-        "line",
-        "monochrome"
-      ]
-    },
-    {
-      "name": "@meteocons/lottie",
-      "version": "0.1.0",
-      "url": "https://registry.npmjs.org/@meteocons/lottie/-/lottie-0.1.0.tgz",
-      "sha256": "43ea2732abde8e429c4fc56a27bb2cefd853f8c34a904b57f86a4b5a2bf1a13d",
-      "destination": "assets/icons/weather/meteocons/lottie",
-      "directories": [
-        "fill"
-      ]
-    }
-  ],
+  "resources": [],
   "releaseSources": {
     "clavis-shell": {
       "repository": "StatIndet/quickshell",

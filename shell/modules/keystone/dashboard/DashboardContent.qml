@@ -6,6 +6,7 @@ Item {
     id: root
 
     property var screen: null
+    property bool active: visible
     readonly property var keyholeGlassItems: [keyholeCard.glassBackgroundItem]
     readonly property real clockColumnWidth: 160
     readonly property real profileColumnWidth: 392
@@ -29,6 +30,7 @@ Item {
         spacing: root.layoutSpacing
 
         DashboardClock {
+            active: root.active && root.visible
             Layout.minimumWidth: root.clockColumnWidth
             Layout.preferredWidth: root.clockColumnWidth
             Layout.maximumWidth: root.clockColumnWidth
@@ -61,6 +63,7 @@ Item {
             KeyholeCard {
                 id: keyholeCard
 
+                active: root.active && root.visible
                 width: root.keyholeWidth
                 anchors.left: parent.left
                 anchors.leftMargin: root.keyholeLeftMargin

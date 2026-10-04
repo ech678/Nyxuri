@@ -5,6 +5,7 @@ import qs.app.services
 Item {
     id: root
 
+    property bool active: visible
     property string hourText: "00"
     property string minuteText: "00"
     property string periodText: "A"
@@ -29,7 +30,7 @@ Item {
 
     Timer {
         interval: 1000
-        running: root.visible
+        running: root.active && root.visible
         repeat: true
         triggeredOnStart: true
         onTriggered: root.updateTime()

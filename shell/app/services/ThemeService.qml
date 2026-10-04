@@ -88,11 +88,6 @@ Singleton {
     }
     Binding {
         target: Resources
-        property: "meteoconsRoot"
-        value: Paths.fileUrl(Paths.meteoconsDir + "/")
-    }
-    Binding {
-        target: Resources
         property: "iconThemeRevision"
         value: root.iconThemeRevision
     }

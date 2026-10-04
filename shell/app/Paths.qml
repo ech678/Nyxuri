@@ -15,7 +15,6 @@ Singleton {
     readonly property string userMatugenDir: configHome + "/matugen"
     readonly property string iconsDir: assetsDir + "/icons"
     readonly property string weatherIconsDir: iconsDir + "/weather"
-    readonly property string meteoconsDir: weatherIconsDir + "/meteocons"
     readonly property string scriptsDir: shareRoot + "/scripts"
     readonly property string audioScriptsDir: scriptsDir + "/audio"
     readonly property string captureScriptsDir: scriptsDir + "/capture"
@@ -83,6 +82,8 @@ Singleton {
     }
 
     function fileUrl(path) {
+        if (!path || String(path).trim() === "")
+            return "";
         const value = String(path);
         return value.startsWith("file://") ? value : "file://" + value;
     }
@@ -93,13 +94,5 @@ Singleton {
 
     function scriptPath(group, name) {
         return scriptsDir + "/" + group + "/" + name;
-    }
-
-    function meteoconSvg(style, slug) {
-        return fileUrl(meteoconsDir + "/svg/" + style + "/" + slug + ".svg");
-    }
-
-    function meteoconLottie(slug) {
-        return fileUrl(meteoconsDir + "/lottie/fill/" + slug + ".json");
     }
 }

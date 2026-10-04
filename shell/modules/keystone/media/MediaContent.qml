@@ -67,7 +67,10 @@ Item {
 
     onPaletteArtUrlChanged: updatePalette()
     onThemePrimaryChanged: updatePalette()
-    Component.onCompleted: updatePalette()
+    Component.onCompleted: {
+        updatePalette();
+        _syncTracking();
+    }
 
     // 对播放器列表进行重排序，让当前播放器排在第一位
     property var sortedPlayerList: {
@@ -379,5 +382,26 @@ Item {
         z: pillRect.z - 1
         visible: pillRect.menuExpanded
         onClicked: pillRect.menuExpanded = false
+    }
+
+    property bool _trackingActive: false
+
+    function _syncTracking() {
+        const shouldTrack = root.isActive;
+        if (shouldTrack === root._trackingActive)
+            return;
+        root._trackingActive = shouldTrack;
+        if (shouldTrack)
+            MediaService.acquirePositionTracking();
+        else
+            MediaService.releasePositionTracking();
+    }
+
+    onIsActiveChanged: _syncTracking()
+    Component.onDestruction: {
+        if (root._trackingActive) {
+            root._trackingActive = false;
+            MediaService.releasePositionTracking();
+        }
     }
 }

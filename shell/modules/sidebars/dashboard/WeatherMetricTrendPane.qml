@@ -312,13 +312,6 @@ Item {
     onOutlineColorChanged: chartCanvas.requestPaint()
     Component.onCompleted: rebuild()
 
-    Timer {
-        id: initialPositionTimer
-
-        interval: 0
-        repeat: false
-        onTriggered: root.applyInitialPosition()
-    }
 
     Connections {
         function onModelReset() {
@@ -338,7 +331,7 @@ Item {
             root.rebuild();
         }
 
-        target: root.sourceModel
+        target: (root.sourceModel && typeof root.sourceModel === "object" && !Array.isArray(root.sourceModel)) ? root.sourceModel : null
         ignoreUnknownSignals: true
     }
 
@@ -364,9 +357,9 @@ Item {
         showVerticalScrollBar: false
         contentWidth: root.contentWidth
         contentHeight: height
-        Component.onCompleted: initialPositionTimer.restart()
-        onContentWidthChanged: initialPositionTimer.restart()
-        onWidthChanged: initialPositionTimer.restart()
+        Component.onCompleted: Qt.callLater(root.applyInitialPosition)
+        onContentWidthChanged: Qt.callLater(root.applyInitialPosition)
+        onWidthChanged: Qt.callLater(root.applyInitialPosition)
 
         Item {
             width: trendFlick.contentWidth

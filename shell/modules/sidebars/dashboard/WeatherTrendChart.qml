@@ -175,7 +175,7 @@ Canvas {
             root.requestPaint();
         }
 
-        target: root.sourceModel
+        target: (root.sourceModel && typeof root.sourceModel === "object" && !Array.isArray(root.sourceModel)) ? root.sourceModel : null
         ignoreUnknownSignals: true
     }
 
