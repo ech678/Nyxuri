@@ -1,6 +1,9 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import qs.app
+import qs.app.services
+import qs.modules.settings.dashboard
 
 Scope {
     id: root
@@ -8,6 +11,13 @@ Scope {
     property bool active: false
     property string pendingPage: ""
     property string pendingSearchId: ""
+
+    // "dashboard" gets end4-pC's card-grid window; every other style keeps the
+    // rail + page window. The switch is at window granularity, not a body swap,
+    // so each style owns its own chrome and geometry.
+    readonly property bool dashboardStyle: PersonalizationConfig.settingsPanelStyle === "dashboard"
+    readonly property Component panelComponent: root.dashboardStyle ? dashboardWindowComponent :
+                                                                      controlCenterWindowComponent
 
     function open(pageId) {
         if (root.active && settingsLoader.item) {
@@ -71,9 +81,13 @@ Scope {
         }
     }
 
-    LazyLoader {
+    // QtQuick Loader, not Quickshell's LazyLoader: LazyLoader keeps the old item
+    // alive while active, so changing `component` (i.e. switching the panel
+    // style) would leave the previous window on screen until close/reopen.
+    Loader {
         id: settingsLoader
         active: root.active
+        sourceComponent: root.panelComponent
 
         onItemChanged: {
             if (item) {
@@ -89,13 +103,26 @@ Scope {
                 }
             }
         }
+    }
+
+    Component {
+        id: controlCenterWindowComponent
 
         ControlCenterWindow {
-            id: controlCenterWindow
-
             onPopoutClosed: {
                 root.active = false;
-                SettingsBackend.windowClosed(controlCenterWindow);
+                SettingsBackend.windowClosed(this);
+            }
+        }
+    }
+
+    Component {
+        id: dashboardWindowComponent
+
+        Dashboard {
+            onPopoutClosed: {
+                root.active = false;
+                SettingsBackend.windowClosed(this);
             }
         }
     }

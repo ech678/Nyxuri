@@ -15,9 +15,17 @@ FloatingWindow {
     id: root
 
     property bool _wasShown: false
-    property real contentPadding: 8
+    // Panel presentation style, owned by PersonalizationConfig so it survives
+    // restarts and config reloads. Only "minimal" changes this window — the
+    // "dashboard" style is a separate window (see SettingsHost).
+    readonly property bool isMinimal: PersonalizationConfig.settingsPanelStyle === "minimal"
+    // 0.75 is end4-pC's sizeScale for its minimal style; kept verbatim so the
+    // compact variant lands at the same proportions.
+    readonly property real panelScale: root.isMinimal ? 0.75 : 1
+    property real contentPadding: root.isMinimal ? 4 : 8
     property int currentPage: 0
-    property bool navExpanded: width > 900
+    // Minimal pins the rail to icons — expanding it would defeat the point.
+    property bool navExpanded: !root.isMinimal && width > 900
     property string pendingPageSection: ""
     readonly property var pages: SpotlightCatalog.routes.filter(entry => entry.path.length === 1).map(entry
                                                                                                       => Object.assign(
@@ -142,9 +150,9 @@ FloatingWindow {
 
     visible: false
     title: "nyxuri-settings"
-    implicitWidth: 1100
-    implicitHeight: 750
-    minimumSize: Qt.size(760, 520)
+    implicitWidth: 1100 * root.panelScale
+    implicitHeight: 750 * root.panelScale
+    minimumSize: root.isMinimal ? Qt.size(620, 420) : Qt.size(760, 520)
     color: "transparent"
     Material.theme: PersonalizationConfig.themeMode === "light" ? Material.Light : Material.Dark
     Material.accent: Appearance.colors.colPrimary

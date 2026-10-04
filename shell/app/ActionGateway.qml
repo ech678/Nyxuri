@@ -8,6 +8,14 @@ Singleton {
 
     property var sessionLocker: null
     property var settingsHost: null
+    // Sidebar host is injected by AppShell the same way settingsHost is: views
+    // (e.g. the dashboard toolbar) need to toggle a sidebar without importing
+    // the host module and creating a cycle.
+    property var sidebarHost: null
+    // Todo lives in the sidebars domain. Settings is not allowed to import that
+    // domain directly (ARCH001), so the app layer injects the service here and
+    // views read through the gateway instead.
+    property var todoService: null
     property string pendingSecurePowerAction: ""
 
     Connections {
@@ -69,6 +77,12 @@ Singleton {
     function requestSettingsSearch(searchId) {
         root.settingsSearchRequested(searchId || "");
         return true;
+    }
+
+    function requestSidebarToggle(target) {
+        if (!root.sidebarHost)
+            return false;
+        return root.sidebarHost.toggleSidebar(target || "dashboard") !== "INVALID_SIDE";
     }
 
     function execute(args, owner) {

@@ -1722,6 +1722,19 @@ var catalog = {
       "anchor": true,
       "context": "ThemePage",
       "icon": "palette",
+      "id": "theme.section.settings-panel-style",
+      "path": [
+        "theme"
+      ],
+      "route": "theme",
+      "source": "ThemePage.qml",
+      "title": "Settings panel style"
+    },
+    {
+      "aliases": [],
+      "anchor": true,
+      "context": "ThemePage",
+      "icon": "palette",
       "id": "theme.section.matugen-color-scheme",
       "path": [
         "theme"
@@ -1940,6 +1953,7 @@ function title(id) {
     case "general.spotlight.section.applications": return I18n.tr("Applications", "SpotlightPage");
     case "general.spotlight.section.web-search": return I18n.tr("Web search", "SpotlightPage");
     case "general.spotlight.section.clipboard": return I18n.tr("Clipboard", "SpotlightPage");
+    case "theme.section.settings-panel-style": return I18n.tr("Settings panel style", "ThemePage");
     case "theme.section.matugen-color-scheme": return I18n.tr("matugen color scheme", "ThemePage");
     case "theme.section.super-key-appearance": return I18n.tr("Super key appearance", "ThemePage");
     case "theme.section.lock-screen": return I18n.tr("Lock screen", "ThemePage");

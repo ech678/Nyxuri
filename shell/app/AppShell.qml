@@ -14,6 +14,7 @@ import qs.modules.dock
 import qs.modules.regionselector
 import qs.modules.hotcorners
 import qs.modules.sidebars
+import qs.modules.sidebars.dashboard.infotools
 import qs.shared.theme
 import qs.app.services
 
@@ -58,6 +59,8 @@ Item {
     Component.onCompleted: {
         ActionGateway.sessionLocker = sessionLocker;
         ActionGateway.settingsHost = settingsHost;
+        ActionGateway.sidebarHost = sidebarHost;
+        ActionGateway.todoService = TodoService;
         SpotlightCatalog.actionExecutor = root.executeSearchAction;
         SpotlightCatalog.keystoneAvailable = Qt.binding(() => keystone ? keystone.searchActionsAvailable :
                                                                          false);

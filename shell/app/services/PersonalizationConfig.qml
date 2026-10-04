@@ -281,6 +281,25 @@ Singleton {
         }
     ]
     property string lockScreenStyle: "default"
+    // How the settings panel presents itself. "default" keeps the rail + page
+    // layout; "minimal" narrows the rail and padding; "dashboard" swaps the
+    // page area for a card grid. Constrained exactly like lockScreenStyle so a
+    // hand-edited config.json cannot leave the shell in an unknown style.
+    readonly property var settingsPanelStyles: [
+        {
+            "value": "default",
+            "label": qsTr("Default")
+        },
+        {
+            "value": "minimal",
+            "label": qsTr("Minimal")
+        },
+        {
+            "value": "dashboard",
+            "label": qsTr("Dashboard")
+        }
+    ]
+    property string settingsPanelStyle: "default"
     property string themeMode: "dark"
     property string superKeyStyle: "text"
     readonly property var superKeyStyles: [
@@ -1432,6 +1451,10 @@ Singleton {
         setValue("lockScreenStyle", normalizedOption(root.lockScreenStyles, value, "default"));
     }
 
+    function setSettingsPanelStyle(value) {
+        setValue("settingsPanelStyle", normalizedOption(root.settingsPanelStyles, value, "default"));
+    }
+
     function setKeystoneStyle(value) {
         setValue("keystoneStyle", normalizedOption(root.keystoneStyles, value, "bangs"));
     }
@@ -1856,6 +1879,7 @@ Singleton {
                 "mode": root.themeMode,
                 "superKeyStyle": root.superKeyStyle,
                 "lockScreenStyle": root.lockScreenStyle,
+                "settingsPanelStyle": root.settingsPanelStyle,
                 "cursorTheme": root.cursorTheme,
                 "cursorSize": root.cursorSize,
                 "cursorHideWhenTyping": root.cursorHideWhenTyping,
@@ -1997,6 +2021,8 @@ Singleton {
         root.matugenScheme = normalizedOption(root.matugenSchemes, theme.matugenScheme, "scheme-tonal-spot");
         root.matugenTemplates = normalizedMatugenTemplates(theme.matugenTemplates);
         root.lockScreenStyle = normalizedOption(root.lockScreenStyles, theme.lockScreenStyle, "default");
+        root.settingsPanelStyle = normalizedOption(root.settingsPanelStyles, theme.settingsPanelStyle,
+                                                   "default");
         root.themeMode = theme.mode === "light" ? "light" : "dark";
         root.superKeyStyle = root.superKeyStyles.some(style => style.value === theme.superKeyStyle)
                 ? theme.superKeyStyle : "text";
