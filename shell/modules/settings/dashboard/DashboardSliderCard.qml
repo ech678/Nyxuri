@@ -62,13 +62,27 @@ DashboardCard {
             }
         }
 
+        // Two-sided spacers, as in end4-pC's DashboardSliderCard. A single
+        // leading spacer would strand the slider on the card's bottom edge and
+        // pool every unused pixel into one dead band above it — at the [2,2]
+        // span that is ~158px of nothing on a 292px tile. Splitting the slack
+        // above and below reads as deliberate padding and keeps the track
+        // optically centred.
         Item {
             Layout.fillHeight: true
+            Layout.maximumHeight: 24
         }
 
         MaterialSlider {
+            id: slider
+
             Layout.fillWidth: true
-            Layout.preferredHeight: 54
+            // Absorb what is left after the capped spacers. MaterialSlider
+            // re-centres its track from the actual height, so a taller tile
+            // widens the gap between the label and the track rather than
+            // opening a void underneath it.
+            Layout.fillHeight: true
+            Layout.minimumHeight: implicitHeight
             from: root.fromValue
             to: root.toValue
             stepSize: root.control ? root.control.stepSize ?? 0 : 0
@@ -79,6 +93,11 @@ DashboardCard {
                 if (root.control)
                     root.control.set(value);
             }
+        }
+
+        Item {
+            Layout.fillHeight: true
+            Layout.maximumHeight: 24
         }
     }
 }

@@ -55,7 +55,11 @@ FloatingWindow {
         return "cancelled";
     }
 
-    title: "nyxuri-settings"
+    // Distinct from ControlCenterWindow's "nyxuri-settings" on purpose.
+    // SettingsBackend.focusWindow() resolves the window to raise by matching
+    // ToplevelManager titles, so two settings windows sharing one title would
+    // make focus ambiguous the moment both are mapped.
+    title: "nyxuri-settings-dashboard"
     // Every other FloatingWindow in this shell paints a rounded surface and asks
     // the compositor to blur behind it; without this the dashboard was the one
     // window with square corners.

@@ -3,6 +3,9 @@ pragma Singleton
 import Quickshell
 import Quickshell.Io
 import QtQuick
+// Paths lives in qs.app. Without this the backlight reader throws
+// "ReferenceError: Paths is not defined" at startup and brightness silently
+// stays on the 0.5 fallback, because the shell never resolves the script path.
 import qs.app
 
 Singleton {

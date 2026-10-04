@@ -28,7 +28,21 @@ Item {
     readonly property real trackHeight: 16
     readonly property real handleHeight: 44
     readonly property real handleTrackGap: 18
-    readonly property real trackCenterY: Math.min(54, Math.max(30, root.height - 12))
+    // Track baseline, derived rather than hard-coded.
+    // History: the old formula was min(54, max(30, height - 12)). It pinned every
+    // control taller than 66px to a 54px baseline, so the slack pooled as one dead
+    // strip above the track (up to 32px at the 78px default, ~80px inside a
+    // dashboard tile), and it let the 44px handle spill 10px past the bottom of
+    // anything shorter than 76px. Callers reading that as "too much empty space"
+    // were seeing both halves of the same fault.
+    //
+    // New rule: keep the 78px default at exactly 54 — the established look, value
+    // indicator pill included — and above/below that follow the centre of the
+    // handle-free zone. Floor at handleHeight/2 so the handle never leaves the
+    // control, ceiling at height - handleHeight/2 for the same reason at the top.
+    readonly property real trackCenterY: Math.max(root.handleHeight / 2, Math.min(root.height
+                                                                                  - root.handleHeight / 2,
+                                                                                  root.height / 2 + 15))
     readonly property bool valueIndicatorVisible: root.showValueIndicator && root.enabled && (control.pressed
                                                                                               || control.hovered
                                                                                               || control.visualFocus)
