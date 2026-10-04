@@ -42,6 +42,20 @@ Item {
     readonly property var todoService: ActionGateway.todoService
     readonly property var todoList: root.todoService ? root.todoService.list : []
     readonly property int pendingTasks: root.todoList.filter(t => !t.done).length
+    // lspci supplies the marketing name ("Navi 33 [Radeon RX 7600/…]"); the
+    // sysmon sample only carries vendor and driver ("AMD (amdgpu)"). Falling
+    // back on the latter keeps the tile readable on a host without pciutils.
+    readonly property string gpuLabel: {
+        if (SystemIdentityService.gpuModelName !== "")
+            return SystemIdentityService.gpuModelName;
+        return SystemMonitorService.selectedGpuId !== "" ? String(SystemMonitorService.selectedGpu.name
+                                                                || "") : "";
+    }
+    // Derived rather than inlined at the label: the interpolated expression is
+    // long enough that qmlformat wraps the template literal onto a second
+    // source line, and the card then renders the count as "0/\n0".
+    readonly property string taskProgressText: (root.todoList.length - root.pendingTasks) + "/"
+                                               + root.todoList.length
 
     readonly property var rootDisk: Format.rootDisk(SystemMonitorService.disks)
 
@@ -576,9 +590,7 @@ Item {
                             Layout.columnSpan: 2
                             icon: "videocam"
                             label: qsTr("GPU")
-                            value: SystemMonitorService.selectedGpuId !== "" ? String(
-                                                                                   SystemMonitorService.selectedGpu.name
-                                                                                   || "") : ""
+                            value: root.gpuLabel
                             accent: Appearance.colors.colTertiaryContainer
                             onAccent: Appearance.colors.colOnTertiaryContainer
                         }
@@ -1011,8 +1023,7 @@ Item {
                             }
 
                             StyledText {
-                                text: `${root.todoList.length - root.pendingTasks}/
-${root.todoList.length}`
+                                text: root.taskProgressText
                                 font.pixelSize: Typography.titleLarge.pixelSize
                                 font.weight: Font.Light
                                 color: Appearance.colors.colOnSecondaryContainer

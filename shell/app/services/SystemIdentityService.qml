@@ -34,6 +34,11 @@ Singleton {
     readonly property string boardName: system.boardName || ""
     readonly property string biosVersion: system.biosVersion || ""
     readonly property string cpuModelName: system.cpuModelName || ""
+    // Marketing name of the primary GPU. `key sysmon` reports only vendor and
+    // driver ("AMD (amdgpu)"), which reads like a detection failure, so the
+    // model string comes from lspci — the same source end4-pC's SystemInfo uses.
+    // Empty when lspci is unavailable; callers fall back on the sysmon name.
+    property string gpuModelName: ""
     readonly property int physicalCoreCount: Number(system.physicalCoreCount) || 0
     readonly property int logicalCpuCount: Number(system.logicalCpuCount) || 0
     readonly property real bootTimeMs: Number(system.bootTimeMs) || 0
@@ -102,6 +107,31 @@ Singleton {
         root._initializationStarted = true;
         identityProcess.command = [root.commandName, "sysmon", "system", "--format", "json"];
         identityProcess.running = true;
+        // Deliberately its own process: lspci is unrelated to the key backend,
+        // and a missing pciutils must not stall or fail the identity read.
+        gpuProcess.running = true;
+    }
+
+    // `lspci -mm` quotes every field, so a vendor whose name contains spaces and
+    // brackets ("[AMD/ATI]") stays a single field and the model can be taken by
+    // position instead of by stripping prefixes with sed. Returns the model of
+    // the first display-class device, or "" when there is nothing to report.
+    function _parseGpuModel(output) {
+        const lines = String(output || "").split("\n");
+        for (let i = 0; i < lines.length; i++) {
+            // match() with /g returns the *whole* match including quotes, so the
+            // fields are positional: [0] class, [1] vendor, [2] device,
+            // [3] subsystem vendor. Reading the class from [1] compares against
+            // the vendor string instead, never matches a display class, and the
+            // model quietly comes back empty.
+            const fields = lines[i].match(/"((?:[^"\\]|\\.)*)"/g);
+            if (!fields || fields.length < 4)
+                continue;
+            if (!/(vga|3d|display)/i.test(fields[0].slice(1, -1)))
+                continue;
+            return fields[2].slice(1, -1).trim();
+        }
+        return "";
     }
 
     function formatUptime(value) {
@@ -168,8 +198,29 @@ Singleton {
         stderr: StdioCollector {}
     }
 
+    Process {
+        id: gpuProcess
+
+        // No `bash -c`: the pipe and sed of the upstream implementation are not
+        // needed once lspci is asked for a machine-readable layout.
+        command: ["lspci", "-mm"]
+
+        onExited: exitCode => {
+            if (exitCode === 0)
+                root.gpuModelName = root._parseGpuModel(gpuOutput.text);
+        }
+
+        stdout: StdioCollector {
+            id: gpuOutput
+        }
+
+        stderr: StdioCollector {}
+    }
+
     Component.onDestruction: {
         if (identityProcess)
             identityProcess.running = false;
+        if (gpuProcess)
+            gpuProcess.running = false;
     }
 }
