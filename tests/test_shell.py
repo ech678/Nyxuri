@@ -1339,19 +1339,19 @@ class TestShellManagement(unittest.TestCase):
             old_file = os.path.join(services_dir, name)
             self.assertFalse(os.path.exists(old_file), f"Old service duplicate must not exist in app/services: {old_file}")
 
-        # 3. Assert app/ file count strictly converged: 43 files total (4 app root, 39 in services)
+        # 3. Assert app/ file count strictly converged: 46 files total (4 app root, 42 in services)
         app_files = []
         for root_dir, _, files in os.walk(os.path.join(shell_dir, "app")):
             for f in files:
                 if f.endswith((".qml", ".js")):
                     app_files.append(os.path.join(root_dir, f))
-        self.assertEqual(len(app_files), 43, f"app/ must strictly contain 43 files, found {len(app_files)}: {app_files}")
+        self.assertEqual(len(app_files), 46, f"app/ must strictly contain 46 files, found {len(app_files)}: {app_files}")
 
-        # 4. Tree inventory document matches 43 app files
+        # 4. Tree inventory document matches 46 app files
         inv_path = os.path.join(shell_dir, "wiki", "tree-inventory.md")
         with open(inv_path, "r", encoding="utf-8") as f:
             inv_text = f.read()
-        self.assertIn("### app/ （共 43 文件）", inv_text)
+        self.assertIn("### app/ （共 46 文件）", inv_text)
 
         # 5. Static lifecycle audit passes clean with zero violations
         import subprocess
