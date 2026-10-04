@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 PanelWindow {
     id: root
@@ -15,8 +16,8 @@ PanelWindow {
     property bool closing: false
 
     signal actionTriggered(string action)
-    signal dismissRequested()
-    signal dismissFinished()
+    signal dismissRequested
+    signal dismissFinished
 
     function requestDismiss() {
         if (root.closing)
@@ -181,32 +182,32 @@ PanelWindow {
                         {
                             "action": "lock",
                             "icon": "lock",
-                            "label": qsTr("Lock screen")
+                            "label": I18n.tr("Lock screen")
                         },
                         {
                             "action": "logout",
                             "icon": "logout",
-                            "label": qsTr("Log out")
+                            "label": I18n.tr("Log out")
                         },
                         {
                             "action": "suspend",
                             "icon": "bedtime",
-                            "label": qsTr("Suspend")
+                            "label": I18n.tr("Suspend")
                         },
                         {
                             "action": "poweroff",
                             "icon": "power_settings_new",
-                            "label": qsTr("Shut down")
+                            "label": I18n.tr("Shut down")
                         },
                         {
                             "action": "hibernate",
                             "icon": "mode_night",
-                            "label": qsTr("Hibernate")
+                            "label": I18n.tr("Hibernate")
                         },
                         {
                             "action": "reboot",
                             "icon": "restart_alt",
-                            "label": qsTr("Restart")
+                            "label": I18n.tr("Restart")
                         }
                     ]
 
@@ -226,9 +227,9 @@ PanelWindow {
                         Layout.preferredHeight: root.buttonSize
                         radius: Appearance.rounding.large
                         color: actionMouse.pressed ? Appearance.colors.colPrimaryActive : (
-                                   actionButton.selected
-                                   ? Appearance.colors.colPrimaryHover :
-                                     Appearance.colors.colLayer1)
+                                                         actionButton.selected
+                                                         ? Appearance.colors.colPrimaryHover :
+                                                           Appearance.colors.colLayer1)
 
                         ColumnLayout {
                             anchors.centerIn: parent
@@ -248,7 +249,8 @@ PanelWindow {
                                     fill: 0
                                     color: actionButton.selected ? Appearance.colors.colOnPrimary :
                                                                    Appearance.colors.colOnLayer1
-                                    scale: actionMouse.pressed ? 50 / 54 : (actionButton.selected ? 1 : 44 / 54)
+                                    scale: actionMouse.pressed ? 50 / 54 : (actionButton.selected ? 1 : 44
+                                                                                                    / 54)
                                     transformOrigin: Item.Center
                                     smooth: true
                                     layer.enabled: true
@@ -259,7 +261,8 @@ PanelWindow {
                                         NumberAnimation {
                                             duration: Appearance.animation.expressiveSlowEffects.duration
                                             easing.type: Appearance.animation.expressiveSlowEffects.type
-                                            easing.bezierCurve: Appearance.animation.expressiveSlowEffects.bezierCurve
+                                            easing.bezierCurve:
+                                                Appearance.animation.expressiveSlowEffects.bezierCurve
                                         }
                                     }
 
@@ -267,7 +270,8 @@ PanelWindow {
                                         ColorAnimation {
                                             duration: Appearance.animation.expressiveFastEffects.duration
                                             easing.type: Appearance.animation.expressiveFastEffects.type
-                                            easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
+                                            easing.bezierCurve:
+                                                Appearance.animation.expressiveFastEffects.bezierCurve
                                         }
                                     }
                                 }

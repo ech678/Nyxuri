@@ -6,6 +6,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -68,11 +69,11 @@ StyledFlickable {
 
                     IconButton {
                         iconName: "refresh"
-                        tooltipText: qsTr("Refresh templates")
+                        tooltipText: I18n.tr("Refresh templates")
                         onClicked: MatugenTemplateService.refresh()
                     }
                     ActionButton {
-                        text: qsTr("Add")
+                        text: I18n.tr("Add")
                         iconName: "add"
                         enabled: !MatugenTemplateService.busy && PersonalizationConfig.ready
                         onClicked: templateAddWindow.showWindow()
@@ -96,8 +97,8 @@ StyledFlickable {
                 Layout.fillWidth: true
                 visible: ThemeService.generationError !== "" || ThemeService.externalGenerationError !== ""
                 tone: "error"
-                message: ThemeService.generationError !== "" ? qsTr("Failed to generate Matugen colors") :
-                                                               qsTr("Some Matugen templates failed to generate")
+                message: ThemeService.generationError !== "" ? I18n.tr("Failed to generate Matugen colors") :
+                                                               I18n.tr("Some Matugen templates failed to generate")
                 StyledToolTip {
                     extraVisibleCondition: errorHover.hovered
                     text: ThemeService.generationError || ThemeService.externalGenerationError
@@ -117,8 +118,7 @@ StyledFlickable {
                     Layout.fillWidth: true
                     iconName: modelData.valid ? modelData.icon : "error"
                     title: modelData.title
-                    supportingText: !modelData.valid ? modelData.error : modelData.origin === "user" ? qsTr(
-                                                                                                           "User templates") :
+                    supportingText: !modelData.valid ? modelData.error : modelData.origin === "user" ? I18n.tr("User templates") :
                                                                                                        ""
 
                     trailing: Item {
@@ -146,7 +146,7 @@ StyledFlickable {
                                 implicitWidth: Metrics.controlHeightM
                                 implicitHeight: Metrics.controlHeightM
                                 Accessible.role: Accessible.StaticText
-                                Accessible.name: qsTr("Run after each generation: %1").arg(
+                                Accessible.name: I18n.tr("Run after each generation: %1").arg(
                                                      templateRow.modelData.postHook)
 
                                 MaterialSymbol {
@@ -160,22 +160,22 @@ StyledFlickable {
                                 }
                                 StyledToolTip {
                                     extraVisibleCondition: hookHover.hovered
-                                    text: qsTr("Run after each generation:\n%1").arg(
+                                    text: I18n.tr("Run after each generation:\n%1").arg(
                                               templateRow.modelData.postHook)
                                 }
                             }
                             IconButton {
                                 visible: templateRow.modelData.origin === "user"
                                 iconName: "folder_open"
-                                tooltipText: qsTr("Open template location") + "\n"
-                                             + templateRow.modelData.inputPath + "\n" + qsTr("Output: %1").arg(
-                                                 templateRow.modelData.outputPath)
+                                tooltipText: I18n.tr("Open template location") + "\n"
+                                             + templateRow.modelData.inputPath + "\n" + I18n.tr(
+                                                 "Output: %1").arg(templateRow.modelData.outputPath)
                                 onClicked: MatugenTemplateService.openLocation(templateRow.modelData)
                             }
                             IconButton {
                                 visible: templateRow.modelData.origin === "user"
                                 iconName: "delete"
-                                tooltipText: qsTr("Delete template")
+                                tooltipText: I18n.tr("Delete template")
                                 enabled: !MatugenTemplateService.busy && !ThemeService.generating
                                          && PersonalizationConfig.ready
                                 onClicked: root.requestTemplateDeletion(templateRow.modelData)
@@ -186,7 +186,7 @@ StyledFlickable {
                                 checked: templateRow.modelData.valid
                                          && PersonalizationConfig.isMatugenTemplateEnabled(
                                              templateRow.modelData.id)
-                                Accessible.name: qsTr("Enable the %1 Matugen template").arg(
+                                Accessible.name: I18n.tr("Enable the %1 Matugen template").arg(
                                                      templateRow.modelData.title)
                                 onToggled: ThemeService.setMatugenTemplateEnabled(templateRow.modelData.id,
                                                                                   checked)
@@ -212,9 +212,9 @@ StyledFlickable {
         id: templateDialog
         anchors.centerIn: Overlay.overlay
         width: Math.min(480, root.width - 32)
-        dialogTitle: root.pendingDeleteTemplate ? qsTr("Delete “%1”?").arg(root.pendingDeleteTemplate.title) :
-                                                  ""
-        messageText: qsTr("Delete the template and its registration. Keep generated output files.")
+        dialogTitle: root.pendingDeleteTemplate ? I18n.tr("Delete “%1”?").arg(
+                                                      root.pendingDeleteTemplate.title) : ""
+        messageText: I18n.tr("Delete the template and its registration. Keep generated output files.")
         onClosed: root.pendingDeleteTemplate = null
         actionsComponent: Component {
             RowLayout {
@@ -222,11 +222,11 @@ StyledFlickable {
                     Layout.fillWidth: true
                 }
                 ActionButton {
-                    text: qsTr("Cancel")
+                    text: I18n.tr("Cancel")
                     onClicked: templateDialog.close()
                 }
                 ActionButton {
-                    text: qsTr("Delete")
+                    text: I18n.tr("Delete")
                     enabled: !MatugenTemplateService.busy && !ThemeService.generating
                              && PersonalizationConfig.ready
                     onClicked: {

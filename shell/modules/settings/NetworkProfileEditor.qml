@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -142,7 +143,8 @@ StyledFlickable {
         const discardedChanges = root.dirty;
         root.loadProfile();
         if (discardedChanges)
-            root.errorMessage = qsTr("The active network profile changed; unapplied changes were discarded");
+            root.errorMessage = I18n.tr(
+                        "The active network profile changed; unapplied changes were discarded");
     }
 
     Connections {
@@ -152,9 +154,9 @@ StyledFlickable {
 
             root.saving = false;
             root.errorMessage = "";
-            root.successMessage = root.nativeNetwork && root.nativeNetwork.connected ? qsTr(
+            root.successMessage = root.nativeNetwork && root.nativeNetwork.connected ? I18n.tr(
                                                                                            "Profile saved; reconnect to fully apply the new IPv4 settings") :
-                                                                                       qsTr("Profile saved");
+                                                                                       I18n.tr("Profile saved");
             root.loadProfile();
         }
 
@@ -199,7 +201,7 @@ StyledFlickable {
 
             ActionButton {
                 visible: root.connectionIsActive
-                text: qsTr("Disconnect")
+                text: I18n.tr("Disconnect")
                 iconName: "link_off"
                 enabled: !NetworkService.busy
                 onClicked: NetworkService.disconnectNetwork(root.target)
@@ -207,7 +209,7 @@ StyledFlickable {
 
             ActionButton {
                 visible: root.nativeNetwork && !root.connectionIsActive
-                text: qsTr("Connect")
+                text: I18n.tr("Connect")
                 iconName: "link"
                 enabled: !NetworkService.busy && (!root.isWired || root.wiredDevice
                                                   && root.wiredDevice.hasLink)
@@ -221,7 +223,7 @@ StyledFlickable {
 
             ActionButton {
                 visible: root.profile !== null && !root.isWired
-                text: qsTr("Forget")
+                text: I18n.tr("Forget")
                 iconName: "delete"
                 enabled: !NetworkService.busy && !root.saving
                 onClicked: {
@@ -254,25 +256,25 @@ StyledFlickable {
 
         SettingsSection {
             Layout.fillWidth: true
-            title: qsTr("Basic information")
+            title: I18n.tr("Basic information")
             iconName: "info"
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Profile name")
-                supportingText: root.profile ? root.profile.name : qsTr("No editable profile")
+                title: I18n.tr("Profile name")
+                supportingText: root.profile ? root.profile.name : I18n.tr("No editable profile")
             }
 
             SettingsRow {
                 Layout.fillWidth: true
                 visible: !root.isWired
-                title: qsTr("SSID")
+                title: I18n.tr("SSID")
                 supportingText: root.profile ? root.profile.ssid : "—"
             }
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Interface")
+                title: I18n.tr("Interface")
                 supportingText: root.profile ? root.profile.deviceName : root.target ? root.target.deviceName
                                                                                        || root.target.name :
                                                                                        "—"
@@ -282,13 +284,13 @@ StyledFlickable {
         SettingsSection {
             Layout.fillWidth: true
             visible: root.profile !== null
-            title: qsTr("IPv4")
+            title: I18n.tr("IPv4")
             iconName: "network_manage"
             contentSpacing: Metrics.spacingL
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Connect automatically")
+                title: I18n.tr("Connect automatically")
 
                 trailing: StyledSwitch {
                     checked: root.autoconnect
@@ -301,7 +303,7 @@ StyledFlickable {
                 spacing: Metrics.spacingXS
 
                 Text {
-                    text: qsTr("IP assignment")
+                    text: I18n.tr("IP assignment")
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Typography.labelLarge.family
                     font.pixelSize: Typography.labelLarge.pixelSize
@@ -313,15 +315,15 @@ StyledFlickable {
                     model: [
                         {
                             "value": "auto",
-                            "label": qsTr("Automatic (DHCP)")
+                            "label": I18n.tr("Automatic (DHCP)")
                         },
                         {
                             "value": "auto-dns",
-                            "label": qsTr("DHCP + custom DNS")
+                            "label": I18n.tr("DHCP + custom DNS")
                         },
                         {
                             "value": "manual",
-                            "label": qsTr("Manual")
+                            "label": I18n.tr("Manual")
                         }
                     ]
                     currentValue: root.mode
@@ -338,9 +340,9 @@ StyledFlickable {
 
                 OutlinedTextField {
                     Layout.fillWidth: true
-                    labelText: qsTr("IPv4 address / CIDR")
+                    labelText: I18n.tr("IPv4 address / CIDR")
                     text: root.address
-                    errorText: root.addressTouched && !root.addressValid ? qsTr(
+                    errorText: root.addressTouched && !root.addressValid ? I18n.tr(
                                                                                "Enter a valid IPv4 CIDR, such as 192.168.1.50/24") :
                                                                            ""
                     onTextChanged: root.address = text
@@ -349,9 +351,10 @@ StyledFlickable {
 
                 OutlinedTextField {
                     Layout.fillWidth: true
-                    labelText: qsTr("Gateway")
+                    labelText: I18n.tr("Gateway")
                     text: root.gateway
-                    errorText: root.gatewayTouched && !root.gatewayValid ? qsTr("Enter a valid IPv4 gateway") :
+                    errorText: root.gatewayTouched && !root.gatewayValid ? I18n.tr(
+                                                                               "Enter a valid IPv4 gateway") :
                                                                            ""
                     onTextChanged: root.gateway = text
                     onEditingFinished: root.gatewayTouched = true
@@ -365,9 +368,9 @@ StyledFlickable {
 
                 OutlinedTextField {
                     Layout.fillWidth: true
-                    labelText: qsTr("DNS")
+                    labelText: I18n.tr("DNS")
                     text: root.dns
-                    errorText: root.dnsTouched && !root.dnsValid ? qsTr(
+                    errorText: root.dnsTouched && !root.dnsValid ? I18n.tr(
                                                                        "Enter at least one valid IPv4 DNS address") :
                                                                    ""
                     onTextChanged: root.dns = text
@@ -392,7 +395,7 @@ StyledFlickable {
             }
 
             ActionButton {
-                text: qsTr("Apply")
+                text: I18n.tr("Apply")
                 iconName: "save"
                 filled: true
                 enabled: root.dirty && root.formValid && !root.saving

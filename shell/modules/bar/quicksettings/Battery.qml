@@ -5,6 +5,7 @@ import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
 import "../../../shared/utils/SystemFormat.js" as Format
+import qs.shared.i18n
 
 Item {
     id: root
@@ -26,59 +27,54 @@ Item {
 
     function stateAndTimeText() {
         if (PowerService.full)
-            return qsTr("Status: Fully charged");
+            return I18n.tr("Status: Fully charged");
 
         if (PowerService.charging)
-            return Format.isNumber(PowerService.timeToFull) ? qsTr("Status: Charging · Full in ")
+            return Format.isNumber(PowerService.timeToFull) ? I18n.tr("Status: Charging · Full in ")
                                                               + Format.duration(PowerService.timeToFull) :
-                                                              qsTr("Status: Charging · Time to full unknown");
+                                                              I18n.tr("Status: Charging · Time to full unknown");
 
         if (PowerService.discharging)
-            return Format.isNumber(PowerService.timeToEmpty) ? qsTr("Status: Discharging · ")
+            return Format.isNumber(PowerService.timeToEmpty) ? I18n.tr("Status: Discharging · ")
                                                                + Format.duration(PowerService.timeToEmpty) :
-                                                               qsTr("Status: Discharging · Remaining time unknown");
+                                                               I18n.tr("Status: Discharging · Remaining time unknown");
 
         if (PowerService.state === UPowerDeviceState.Empty)
-            return qsTr("Status: Empty");
+            return I18n.tr("Status: Empty");
 
         if (PowerService.state === UPowerDeviceState.PendingCharge)
-            return qsTr("Status: Pending charge");
+            return I18n.tr("Status: Pending charge");
 
         if (PowerService.state === UPowerDeviceState.PendingDischarge)
-            return qsTr("Status: Pending discharge");
+            return I18n.tr("Status: Pending discharge");
 
-        return PowerService.powerConnected ? qsTr("Status: Plugged in, not charging") : qsTr(
+        return PowerService.powerConnected ? I18n.tr("Status: Plugged in, not charging") : I18n.tr(
                                                  "Status: Unknown");
     }
 
     function powerText() {
-        const label = PowerService.charging ? qsTr("Live charging power: ") : PowerService.discharging ? qsTr(
-                                                                                                             "Live discharging power: ") :
-                                                                                                         qsTr("Live power: ");
+        const label = PowerService.charging ? I18n.tr("Live charging power: ") : PowerService.discharging
+                                              ? I18n.tr("Live discharging power: ") : I18n.tr("Live power: ");
         return label + (Format.isNumber(PowerService.changeRate) ? Format.watts(Math.abs(
                                                                                     PowerService.changeRate)) :
-                                                                   qsTr("Unknown"));
+                                                                   I18n.tr("Unknown"));
     }
 
     function buildTooltip() {
         if (!PowerService.ready)
-            return [qsTr("Detecting battery"), qsTr("UPower has not provided battery data yet"), qsTr(
+            return [I18n.tr("Detecting battery"), I18n.tr("UPower has not provided battery data yet"), I18n.tr(
                         "Plug status, power, and health are temporarily unavailable")].join("\n");
 
         if (!PowerService.present)
-            return [qsTr("No battery detected"), qsTr("This device may not have a built-in battery"), qsTr(
-                        "Plugged in: ") + (PowerService.powerConnected ? qsTr("Yes") : qsTr("No")), qsTr(
-                        "Charge state, power, and health are unavailable")].join("\n");
+            return [I18n.tr("No battery detected"), I18n.tr("This device may not have a built-in battery"),
+                    I18n.tr("Plugged in: ") + (PowerService.powerConnected ? I18n.tr("Yes") : I18n.tr("No")),
+                    I18n.tr("Charge state, power, and health are unavailable")].join("\n");
 
-        return [qsTr("Battery level: ") + Format.percent(root.percentage, 0), qsTr("Plugged in: ") + (PowerService.powerConnected
-                                                                                                      ? qsTr("Yes") :
-                                                                                                        qsTr("No")),
-                root.stateAndTimeText(), root.powerText(), qsTr("Health: ") + (Format.isNumber(
-                                                                                   PowerService.healthPercentage)
-                                                                               ? Format.percent(
-                                                                                     PowerService.healthPercentage,
-                                                                                     0) : qsTr(
-                                                                                     "Unknown"))].join("\n");
+        return [I18n.tr("Battery level: ") + Format.percent(root.percentage, 0), I18n.tr("Plugged in: ") + (
+                    PowerService.powerConnected ? I18n.tr("Yes") : I18n.tr("No")), root.stateAndTimeText(),
+                root.powerText(), I18n.tr("Health: ") + (Format.isNumber(PowerService.healthPercentage)
+                                                         ? Format.percent(PowerService.healthPercentage, 0) :
+                                                           I18n.tr("Unknown"))].join("\n");
     }
 
     implicitWidth: root.vertical ? Math.max(28, batteryContent.implicitWidth) : batteryContent.implicitWidth

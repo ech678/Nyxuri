@@ -5,6 +5,7 @@ import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
 import qs.app
+import qs.shared.i18n
 
 Item {
     id: root
@@ -76,27 +77,27 @@ Item {
 
     function updatedText() {
         if (root.weatherSource.loading)
-            return qsTr("Refreshing");
+            return I18n.tr("Refreshing");
 
         if (root.weatherSource.status === "fresh" || root.weatherSource.status === "partial") {
             const date = new Date(root.weatherSource.lastUpdated);
-            return qsTr("Updated ") + UiPreferences.shortTime(date);
+            return I18n.tr("Updated ") + UiPreferences.shortTime(date);
         }
         if (root.weatherSource.status === "stale")
-            return qsTr("Data is old");
+            return I18n.tr("Data is old");
 
         if (root.weatherSource.status === "error")
-            return qsTr("Update failed");
+            return I18n.tr("Update failed");
 
-        return qsTr("Update pending");
+        return I18n.tr("Update pending");
     }
 
     function dayLabel(index, epoch) {
         if (index === 0)
-            return qsTr("Today");
+            return I18n.tr("Today");
 
         if (index === 1)
-            return qsTr("Tomorrow");
+            return I18n.tr("Tomorrow");
 
         return epoch ? Qt.formatDateTime(new Date(epoch * 1000), "ddd") : "--";
     }
@@ -106,18 +107,18 @@ Item {
             return "--";
 
         if (value < 3)
-            return qsTr("Low");
+            return I18n.tr("Low");
 
         if (value < 6)
-            return qsTr("Moderate");
+            return I18n.tr("Moderate");
 
         if (value < 8)
-            return qsTr("High");
+            return I18n.tr("High");
 
         if (value < 11)
-            return qsTr("Very high");
+            return I18n.tr("Very high");
 
-        return qsTr("Extreme");
+        return I18n.tr("Extreme");
     }
 
     function uvIndexBucket(value) {
@@ -220,15 +221,15 @@ Item {
         const hour = currentHour();
         const isDay = hour >= 5 && hour < 17;
         if (snow > 0 && rain <= 0)
-            return isDay ? qsTr("Total daytime snowfall") : qsTr("Total nighttime snowfall");
+            return isDay ? I18n.tr("Total daytime snowfall") : I18n.tr("Total nighttime snowfall");
 
         if (rain > 0 && snow <= 0)
-            return isDay ? qsTr("Total daytime rainfall") : qsTr("Total nighttime rainfall");
+            return isDay ? I18n.tr("Total daytime rainfall") : I18n.tr("Total nighttime rainfall");
 
         if (snow > 0 && rain > 0)
-            return isDay ? qsTr("Total daytime precipitation") : qsTr("Total nighttime precipitation");
+            return isDay ? I18n.tr("Total daytime precipitation") : I18n.tr("Total nighttime precipitation");
 
-        return isDay ? qsTr("Total daytime precipitation") : qsTr("Total nighttime precipitation");
+        return isDay ? I18n.tr("Total daytime precipitation") : I18n.tr("Total nighttime precipitation");
     }
 
     function humidityWaveAccent() {
@@ -241,21 +242,21 @@ Item {
 
         const km = meters / 1000;
         if (km >= 16)
-            return qsTr("Crystal clear");
+            return I18n.tr("Crystal clear");
 
         if (km >= 10)
-            return qsTr("Clear");
+            return I18n.tr("Clear");
 
         if (km >= 6)
-            return qsTr("Good visibility");
+            return I18n.tr("Good visibility");
 
         if (km >= 3)
-            return qsTr("Hazy");
+            return I18n.tr("Hazy");
 
         if (km >= 1)
-            return qsTr("Low visibility");
+            return I18n.tr("Low visibility");
 
-        return qsTr("Dense fog");
+        return I18n.tr("Dense fog");
     }
 
     function aqiThresholds() {
@@ -304,8 +305,8 @@ Item {
     }
 
     function aqiLevelName(level) {
-        const names = [qsTr("Excellent"), qsTr("Good"), qsTr("Poor"), qsTr("Unhealthy"), qsTr(
-                           "Very unhealthy"), qsTr("Hazardous")];
+        const names = [I18n.tr("Excellent"), I18n.tr("Good"), I18n.tr("Poor"), I18n.tr("Unhealthy"), I18n.tr(
+                           "Very unhealthy"), I18n.tr("Hazardous")];
         if (level < 0 || level >= names.length)
             return "--";
 
@@ -463,7 +464,7 @@ Item {
                         }
 
                         Text {
-                            text: root.weatherSource.locationName || qsTr("Weather")
+                            text: root.weatherSource.locationName || I18n.tr("Weather")
                             color: root.headerInk
                             font.family: Fonts.ui
                             font.pixelSize: 19
@@ -479,7 +480,7 @@ Item {
                         iconName: "edit"
                         iconSize: 22
                         iconColor: root.headerInk
-                        accessibleName: qsTr("Edit weather location")
+                        accessibleName: I18n.tr("Edit weather location")
                         hoverStateLayerColor: Qt.rgba(root.headerInkMuted.r, root.headerInkMuted.g,
                                                       root.headerInkMuted.b, 0.1)
                         pressedStateLayerColor: Qt.rgba(root.headerInkMuted.r, root.headerInkMuted.g,
@@ -494,7 +495,7 @@ Item {
                         iconName: "refresh"
                         iconSize: 22
                         iconColor: root.headerInk
-                        accessibleName: qsTr("Refresh weather")
+                        accessibleName: I18n.tr("Refresh weather")
                         hoverStateLayerColor: Qt.rgba(root.headerInkMuted.r, root.headerInkMuted.g,
                                                       root.headerInkMuted.b, 0.1)
                         pressedStateLayerColor: Qt.rgba(root.headerInkMuted.r, root.headerInkMuted.g,
@@ -572,7 +573,7 @@ Item {
 
                         Text {
                             width: parent.width
-                            text: root.weatherSource.currentWeatherText || qsTr("Unknown")
+                            text: root.weatherSource.currentWeatherText || I18n.tr("Unknown")
                             color: Appearance.colors.colOnImage
                             font.family: Fonts.ui
                             font.pixelSize: 26
@@ -619,7 +620,7 @@ Item {
 
                         Text {
                             width: parent.width
-                            text: qsTr("Feels like: ") + fmtTemp(root.weatherSource.currentFeelsLikeC)
+                            text: I18n.tr("Feels like: ") + fmtTemp(root.weatherSource.currentFeelsLikeC)
                             color: Appearance.colors.colOnImage
                             font.family: Fonts.ui
                             font.pixelSize: 18
@@ -629,8 +630,8 @@ Item {
 
                         Text {
                             width: parent.width
-                            text: qsTr("High ") + fmtTemp(today().temperatureMaxC) + qsTr(" · Low ") + fmtTemp(
-                                      today().temperatureMinC)
+                            text: I18n.tr("High ") + fmtTemp(today().temperatureMaxC) + I18n.tr(" · Low ")
+                                  + fmtTemp(today().temperatureMinC)
                             color: Appearance.colors.colOnImage
                             font.family: Fonts.ui
                             font.pixelSize: 18
@@ -703,7 +704,7 @@ Item {
                             anchors.fill: parent
                             directionDegrees: root.weatherSource.currentWindDirection
                             valueText: fmtSpeed(root.weatherSource.currentWindSpeedMs)
-                            detailText: qsTr("Gusts ") + fmtSpeed(root.weatherSource.currentWindGustsMs)
+                            detailText: I18n.tr("Gusts ") + fmtSpeed(root.weatherSource.currentWindGustsMs)
                                         + " · " + directionLabel(root.weatherSource.currentWindDirection)
                             accent: windAccent(root.weatherSource.currentWindSpeedMs)
                             animationEnabled: true

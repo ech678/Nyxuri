@@ -7,6 +7,7 @@ import qs.modules.keystone.styles.bangs
 import qs.modules.keystone.styles.long
 import qs.modules.keystone.styles.pill
 import qs.app
+import qs.shared.i18n
 
 Item {
     id: root
@@ -44,8 +45,9 @@ Item {
         active: false
 
         sourceComponent: FilePickerWindow {
-            dialogTitle: qsTr("Choose user avatar")
-            description: qsTr("The image will be copied to ~/.face and used by the Dashboard and lock screen")
+            dialogTitle: I18n.tr("Choose user avatar")
+            description: I18n.tr(
+                             "The image will be copied to ~/.face and used by the Dashboard and lock screen")
             onAccepted: path => AvatarService.setAvatar(path)
         }
     }

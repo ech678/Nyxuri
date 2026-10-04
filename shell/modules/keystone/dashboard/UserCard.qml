@@ -5,6 +5,7 @@ import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
 import qs.app
+import qs.shared.i18n
 
 // Adapted from Caelestia Shell's dashboard user card (GPL-3.0).
 Rectangle {
@@ -314,7 +315,7 @@ Rectangle {
         anchors.verticalCenter: uptimeShape.verticalCenter
         anchors.leftMargin: 5
         anchors.rightMargin: 16
-        text: qsTr("Up for ") + root.uptime
+        text: I18n.tr("Up for ") + root.uptime
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.numeric
         font.pixelSize: 12

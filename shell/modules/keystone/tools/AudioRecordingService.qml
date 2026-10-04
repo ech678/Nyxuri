@@ -5,6 +5,7 @@ import Quickshell.Io
 import qs.shared.theme
 import qs.app
 import "../../../shared/utils/RecordingState.js" as RecordingState
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -51,15 +52,15 @@ Singleton {
             return;
 
         const code = errorObject.code || "audio_recording_error";
-        const message = errorObject.message || qsTr("Recording command failed");
+        const message = errorObject.message || I18n.tr("Recording command failed");
         const key = code + "\u001f" + message + "\u001f" + root.sessionId;
         if (key === root._lastErrorKey)
             return;
 
         root._lastErrorKey = key;
         root.commandError(code, message);
-        ActionGateway.execute(["notify-send", "-a", "Nyxuri Shell", "-u", "critical", qsTr("Recording failed"),
-                               message], "audio-recording:error");
+        ActionGateway.execute(["notify-send", "-a", "Nyxuri Shell", "-u", "critical", I18n.tr(
+                                   "Recording failed"), message], "audio-recording:error");
     }
 
     function reportOperation(errorObject) {
@@ -85,7 +86,7 @@ Singleton {
                 || response.command !== expectedCommand || typeof response.ok !== "boolean") {
             root.reportOperation({
                                      "code": "invalid_key_response",
-                                     "message": qsTr("Recording command failed")
+                                     "message": I18n.tr("Recording command failed")
                                  });
             return false;
         }
@@ -107,7 +108,7 @@ Singleton {
                 watchProcess.running = true;
             root.reportOperation(response.error || {
                                      "code": "invalid_key_state",
-                                     "message": qsTr("Recording command failed")
+                                     "message": I18n.tr("Recording command failed")
                                  });
             return false;
         }
@@ -142,8 +143,9 @@ Singleton {
         if (!snapshot && (newer || expectedCommand === "audio.stop") && response.ok && response.state === "completed"
                 && response.outputPath && root._lastSavedKey !== savedKey) {
             root._lastSavedKey = savedKey;
-            NotificationService.fileSaved(root.sourceType === "system" ? qsTr("System audio recording saved") :
-                                                                         qsTr("Microphone recording saved"),
+            NotificationService.fileSaved(root.sourceType === "system" ? I18n.tr(
+                                                                             "System audio recording saved") :
+                                                                         I18n.tr("Microphone recording saved"),
                                           response.outputPath);
         }
         if (root.backendActive && !watchProcess.running && !reconnect.running) {
@@ -191,7 +193,7 @@ Singleton {
             if (exitCode !== 0 && !root.operationError && !root.error)
                 root.reportOperation({
                                          "code": "key_unavailable",
-                                         "message": qsTr("Recording command failed")
+                                         "message": I18n.tr("Recording command failed")
                                      });
             root.transientState = "";
         }
@@ -215,7 +217,7 @@ Singleton {
             if (exitCode !== 0 && !root.operationError && !root.error)
                 root.reportOperation({
                                          "code": "key_unavailable",
-                                         "message": qsTr("Recording command failed")
+                                         "message": I18n.tr("Recording command failed")
                                      });
             root.transientState = "";
         }
@@ -240,7 +242,7 @@ Singleton {
             if (exitCode !== 0 && !root.operationError && !root.error)
                 root.reportOperation({
                                          "code": "key_unavailable",
-                                         "message": qsTr("Could not query recording status through key")
+                                         "message": I18n.tr("Could not query recording status through key")
                                      });
         }
         stdout: StdioCollector {

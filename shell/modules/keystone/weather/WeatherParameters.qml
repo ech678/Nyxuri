@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import qs.app.services
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -66,32 +67,32 @@ Item {
             model: [
                 {
                     "icon": "sunny",
-                    "label": qsTr("UV index"),
+                    "label": I18n.tr("UV index"),
                     "value": root.uv
                 },
                 {
                     "icon": "thermostat",
-                    "label": qsTr("Feels like"),
+                    "label": I18n.tr("Feels like"),
                     "value": root.feelsLike
                 },
                 {
                     "icon": "water_drop",
-                    "label": qsTr("Humidity"),
+                    "label": I18n.tr("Humidity"),
                     "value": root.humidity
                 },
                 {
                     "icon": "air",
-                    "label": qsTr("Wind speed"),
+                    "label": I18n.tr("Wind speed"),
                     "value": root.wind
                 },
                 {
                     "icon": "compress",
-                    "label": qsTr("Pressure"),
+                    "label": I18n.tr("Pressure"),
                     "value": root.pressure
                 },
                 {
                     "icon": "visibility",
-                    "label": qsTr("Visibility"),
+                    "label": I18n.tr("Visibility"),
                     "value": root.visibility
                 }
             ]

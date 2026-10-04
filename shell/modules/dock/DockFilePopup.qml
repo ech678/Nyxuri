@@ -4,6 +4,7 @@ import QtQuick.Controls
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 Item {
     id: root
@@ -150,7 +151,7 @@ Item {
     }
     function open(info) {
         if (!DesktopFiles.info(info.url).available) {
-            DockService.fileError = qsTranslate("DockService", "This file or folder is unavailable.");
+            DockService.fileError = I18n.tr("This file or folder is unavailable.", "DockService");
             return;
         }
         if (info.isDirectory) {
@@ -225,8 +226,8 @@ Item {
         canOpen: root.directoryAvailable
         canGoBack: root.history.length > 0
         actionText: root.history.length && directory.item ? directory.item.info.name : !root.directoryAvailable
-                                                            ? qsTr("Folder is unavailable") : root.count
-                                                              ? qsTr("Open in File Manager") : qsTr(
+                                                            ? I18n.tr("Folder is unavailable") : root.count
+                                                              ? I18n.tr("Open in File Manager") : I18n.tr(
                                                                     "Folder is empty")
         onActivated: info => root.open(info)
         onOpenRequested: {
@@ -305,7 +306,7 @@ Item {
                     required property int index
                     readonly property bool openFolder: index === root.count
                     fileInfo: openFolder ? ({
-                                                name: qsTr("Open in File Manager")
+                                                name: I18n.tr("Open in File Manager")
                                             }) : directory.item ? directory.item.get(index) : ({})
                     actionIcon: openFolder ? "open_in_new" : ""
                     enabled: !openFolder || root.directoryAvailable
@@ -331,7 +332,8 @@ Item {
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                     visible: root.count === 0 && !(directory.item && directory.item.loading)
-                    text: root.directoryAvailable ? qsTr("Folder is empty") : qsTr("Folder is unavailable")
+                    text: root.directoryAvailable ? I18n.tr("Folder is empty") : I18n.tr(
+                                                        "Folder is unavailable")
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.ui
                 }
@@ -342,14 +344,14 @@ Item {
         if (confirmEmpty)
             return [
                         {
-                            heading: qsTr("Permanently delete all items in Trash?")
+                            heading: I18n.tr("Permanently delete all items in Trash?")
                         },
                         {
-                            label: qsTr("Cancel"),
+                            label: I18n.tr("Cancel"),
                             action: "cancel"
                         },
                         {
-                            label: qsTr("Empty Trash"),
+                            label: I18n.tr("Empty Trash"),
                             action: "empty",
                             destructive: true
                         }
@@ -359,11 +361,11 @@ Item {
             return result;
         if (entry.kind === "folder") {
             result.push({
-                            heading: qsTr("Sort by")
+                            heading: I18n.tr("Sort by")
                         });
-            const sorts = [["name", qsTr("Name")], ["modified", qsTr("Date Modified")], ["created", qsTr(
-                                                                                             "Date Created")],
-                           ["kind", qsTr("Kind")], ["size", qsTr("Size")]];
+            const sorts = [["name", I18n.tr("Name")], ["modified", I18n.tr("Date Modified")], ["created",
+                                                                                               I18n.tr("Date Created")],
+                           ["kind", I18n.tr("Kind")], ["size", I18n.tr("Size")]];
             for (const option of sorts)
                 result.push({
                                 label: option[1],
@@ -371,22 +373,23 @@ Item {
                                 value: option[0]
                             });
             result.push({
-                            heading: qsTr("Display as")
+                            heading: I18n.tr("Display as")
                         });
             result.push({
-                            label: qsTr("Folder"),
+                            label: I18n.tr("Folder"),
                             option: "display",
                             value: "folder"
                         });
             result.push({
-                            label: qsTr("Stack"),
+                            label: I18n.tr("Stack"),
                             option: "display",
                             value: "stack"
                         });
             result.push({
-                            heading: qsTr("View content as")
+                            heading: I18n.tr("View content as")
                         });
-            for (const option of [["fan", qsTr("Fan")], ["grid", qsTr("Grid")], ["list", qsTr("List")]])
+            for (const option of [["fan", I18n.tr("Fan")], ["grid", I18n.tr("Grid")], ["list", I18n.tr(
+                                                                                           "List")]])
                 result.push({
                                 label: option[1],
                                 option: "view",
@@ -394,20 +397,19 @@ Item {
                             });
         }
         result.push({
-                        label: entry.kind === "trash" ? qsTr("Open Trash") : entry.kind === "file" ? qsTr(
-                                                                                                         "Open") : qsTr(
-                                                                                                         "Open in File Manager"),
+                        label: entry.kind === "trash" ? I18n.tr("Open Trash") : entry.kind === "file"
+                                                        ? I18n.tr("Open") : I18n.tr("Open in File Manager"),
                         action: "open"
                     });
         if (entry.kind === "trash")
             result.push({
-                            label: qsTr("Empty Trash…"),
+                            label: I18n.tr("Empty Trash…"),
                             action: "confirm",
                             destructive: true
                         });
         else
             result.push({
-                            label: qsTr("Remove from Dock"),
+                            label: I18n.tr("Remove from Dock"),
                             action: "remove"
                         });
         return result;
@@ -436,14 +438,14 @@ Item {
                 visible: DockService.fileError !== ""
                 width: parent.width
                 implicitHeight: visible ? 30 : 0
-                text: qsTr("Dismiss")
+                text: I18n.tr("Dismiss")
                 onTriggered: DockService.fileError = ""
             }
             Text {
                 visible: !!root.entry && root.entry.kind === "trash" && !DesktopFiles.trashAvailable
                 width: parent.width - 16
                 x: 8
-                text: qsTr("Trash is unavailable. Install or enable GVfs.")
+                text: I18n.tr("Trash is unavailable. Install or enable GVfs.")
                 wrapMode: Text.Wrap
                 color: Appearance.colors.colOnSurfaceVariant
                 font.family: Fonts.ui

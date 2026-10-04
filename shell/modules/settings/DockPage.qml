@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -25,8 +26,8 @@ StyledFlickable {
                                                                                              !== "loading"
                                                                                              || error.length
                                                                                              > 0)
-            title: qsTr("First-time setup")
-            description: qsTr("Set up window minimization animations.")
+            title: I18n.tr("First-time setup")
+            description: I18n.tr("Set up window minimization animations.")
             integrationState: NiriConfigService.state("minimize-animation")
             busy: NiriConfigService.busy && NiriConfigService.activeFeature === "minimize-animation"
             blocked: NiriConfigService.busy
@@ -37,12 +38,12 @@ StyledFlickable {
 
         SettingsRow {
             Layout.fillWidth: true
-            title: qsTr("Show Dock")
+            title: I18n.tr("Show Dock")
             iconName: "dock_to_bottom"
 
             trailing: StyledSwitch {
                 checked: DockService.enabled
-                Accessible.name: qsTr("Show Dock")
+                Accessible.name: I18n.tr("Show Dock")
                 onToggled: DockService.setOption("enabled", checked)
             }
         }
@@ -72,27 +73,27 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Screen edge")
+                title: I18n.tr("Screen edge")
 
                 trailing: StyledButtonGroup {
                     model: [
                         {
                             "value": "left",
-                            "label": qsTr("Left"),
+                            "label": I18n.tr("Left"),
                             "icon": "dock_to_left",
-                            "tooltip": qsTr("Left")
+                            "tooltip": I18n.tr("Left")
                         },
                         {
                             "value": "bottom",
-                            "label": qsTr("Bottom"),
+                            "label": I18n.tr("Bottom"),
                             "icon": "dock_to_bottom",
-                            "tooltip": qsTr("Bottom")
+                            "tooltip": I18n.tr("Bottom")
                         },
                         {
                             "value": "right",
-                            "label": qsTr("Right"),
+                            "label": I18n.tr("Right"),
                             "icon": "dock_to_right",
-                            "tooltip": qsTr("Right")
+                            "tooltip": I18n.tr("Right")
                         }
                     ]
                     currentValue: DockService.position
@@ -106,7 +107,7 @@ StyledFlickable {
             }
 
             GeneralSliderSetting {
-                title: qsTr("Icon size")
+                title: I18n.tr("Icon size")
                 from: 32
                 to: 80
                 stepSize: 2
@@ -119,18 +120,18 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Magnify on hover")
+                title: I18n.tr("Magnify on hover")
                 iconName: "zoom_in"
 
                 trailing: StyledSwitch {
                     checked: DockService.magnification
-                    Accessible.name: qsTr("Magnify on hover")
+                    Accessible.name: I18n.tr("Magnify on hover")
                     onToggled: DockService.setOption("magnification", checked)
                 }
             }
 
             GeneralSliderSetting {
-                title: qsTr("Magnification")
+                title: I18n.tr("Magnification")
                 enabled: DockService.magnification
                 from: 100
                 to: 200
@@ -144,22 +145,22 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Surface style")
+                title: I18n.tr("Surface style")
                 iconName: "rounded_corner"
 
                 trailing: StyledButtonGroup {
                     model: [
                         {
                             "value": "default",
-                            "label": qsTr("Default"),
+                            "label": I18n.tr("Default"),
                             "icon": "rounded_corner",
-                            "tooltip": qsTr("Floating rounded tray")
+                            "tooltip": I18n.tr("Floating rounded tray")
                         },
                         {
                             "value": "notch",
-                            "label": qsTr("Notch"),
+                            "label": I18n.tr("Notch"),
                             "icon": "bottom_panel_close",
-                            "tooltip": qsTr("Keystone notch, attached to the edge")
+                            "tooltip": I18n.tr("Keystone notch, attached to the edge")
                         }
                     ]
                     currentValue: DockService.surfaceStyle
@@ -191,36 +192,36 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Automatically hide")
+                title: I18n.tr("Automatically hide")
                 iconName: "visibility_off"
 
                 trailing: StyledSwitch {
                     checked: DockService.autoHide
-                    Accessible.name: qsTr("Automatically hide")
+                    Accessible.name: I18n.tr("Automatically hide")
                     onToggled: DockService.setOption("autoHide", checked)
                 }
             }
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Bounce when launching")
+                title: I18n.tr("Bounce when launching")
                 iconName: "animation"
 
                 trailing: StyledSwitch {
                     checked: DockService.launchBounce
-                    Accessible.name: qsTr("Bounce when launching")
+                    Accessible.name: I18n.tr("Bounce when launching")
                     onToggled: DockService.setOption("launchBounce", checked)
                 }
             }
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Show running indicators")
+                title: I18n.tr("Show running indicators")
                 iconName: "fiber_manual_record"
 
                 trailing: StyledSwitch {
                     checked: DockService.showIndicators
-                    Accessible.name: qsTr("Show running indicators")
+                    Accessible.name: I18n.tr("Show running indicators")
                     onToggled: DockService.setOption("showIndicators", checked)
                 }
             }
@@ -228,12 +229,13 @@ StyledFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 visible: !DockService.supportsMinimizeEffects || NiriConfigService.ready("minimize-animation")
-                title: qsTr("Minimize animation")
+                title: I18n.tr("Minimize animation")
                 iconName: "animation"
-                supportingText: !DockService.supportsMinimizeEffects ? qsTr(
+                supportingText: !DockService.supportsMinimizeEffects ? I18n.tr(
                                                                            "Window animation selection is unavailable in this session") :
                                                                        NiriConfigService.minimizeAnimationsDisabled
-                                                                       ? qsTr("Animations are disabled in your configuration") :
+                                                                       ? I18n.tr(
+                                                                             "Animations are disabled in your configuration") :
                                                                          ""
                 trailing: Item {
                     implicitWidth: effectButtons.implicitWidth
@@ -246,11 +248,11 @@ StyledFlickable {
                         model: [
                             {
                                 value: "genie",
-                                label: qsTr("Genie")
+                                label: I18n.tr("Genie")
                             },
                             {
                                 value: "scale",
-                                label: qsTr("Scale")
+                                label: I18n.tr("Scale")
                             }
                         ]
                         currentValue: NiriConfigService.minimizeEffect
@@ -276,24 +278,24 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Show recent applications")
+                title: I18n.tr("Show recent applications")
                 iconName: "history"
 
                 trailing: StyledSwitch {
                     checked: DockService.showRecent
-                    Accessible.name: qsTr("Show recent applications")
+                    Accessible.name: I18n.tr("Show recent applications")
                     onToggled: DockService.setOption("showRecent", checked)
                 }
             }
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Pin applications from the menu")
+                title: I18n.tr("Pin applications from the menu")
                 iconName: "keep"
 
                 trailing: StyledSwitch {
                     checked: DockService.contextPinning
-                    Accessible.name: qsTr("Pin applications from the menu")
+                    Accessible.name: I18n.tr("Pin applications from the menu")
                     onToggled: DockService.setOption("contextPinning", checked)
                 }
             }
@@ -315,16 +317,16 @@ StyledFlickable {
             }
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Show window thumbnails")
+                title: I18n.tr("Show window thumbnails")
                 iconName: "preview"
                 trailing: StyledSwitch {
                     checked: DockService.showThumbnails
-                    Accessible.name: qsTr("Show window thumbnails")
+                    Accessible.name: I18n.tr("Show window thumbnails")
                     onToggled: DockService.setOption("showThumbnails", checked)
                 }
             }
             GeneralSliderSetting {
-                title: qsTr("Preview size")
+                title: I18n.tr("Preview size")
                 enabled: DockService.showThumbnails
                 from: 96
                 to: 240

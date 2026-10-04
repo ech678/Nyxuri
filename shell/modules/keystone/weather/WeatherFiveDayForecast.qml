@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import qs.app.services
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -84,15 +85,15 @@ Item {
             model: root.dailyData
 
             delegate: RowLayout {
-                property var week: [qsTr("Sun"), qsTr("Mon"), qsTr("Tue"), qsTr("Wed"), qsTr("Thu"), qsTr(
-                        "Fri"), qsTr("Sat")]
+                property var week: [I18n.tr("Sun"), I18n.tr("Mon"), I18n.tr("Tue"), I18n.tr("Wed"), I18n.tr(
+                        "Thu"), I18n.tr("Fri"), I18n.tr("Sat")]
 
                 Layout.fillWidth: true
                 spacing: 8
 
                 Text {
                     Layout.preferredWidth: 40
-                    text: index === 0 ? qsTr("Today") : week[modelData.dayIndex]
+                    text: index === 0 ? I18n.tr("Today") : week[modelData.dayIndex]
                     color: index === 0 ? Appearance.colors.colOnSurface :
                                          Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.ui

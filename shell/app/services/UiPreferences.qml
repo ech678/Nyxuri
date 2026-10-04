@@ -7,6 +7,7 @@ import Quickshell.Io
 import qs.shared.theme
 import qs.app
 import "../../modules/launcher/SpotlightSearch.js" as SpotlightSearch
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -635,7 +636,7 @@ Singleton {
 
         onExited: exitCode => {
             if (exitCode !== 0) {
-                root.systemThemeLastError = systemThemeWriteError.text.trim() || qsTr(
+                root.systemThemeLastError = systemThemeWriteError.text.trim() || I18n.tr(
                             "Unable to sync the system color scheme");
                 console.warn("UiPreferences failed to set system color scheme:", root.systemThemeLastError);
             }

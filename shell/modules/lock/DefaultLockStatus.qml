@@ -3,12 +3,13 @@ import QtQuick
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 Item {
     id: root
 
     readonly property var player: MediaService.active
-    readonly property string title: player && player.trackTitle ? player.trackTitle : qsTr("No media")
+    readonly property string title: player && player.trackTitle ? player.trackTitle : I18n.tr("No media")
     readonly property real batteryPercent: Math.max(0, Math.min(100, PowerService.percentage * 100))
     readonly property string networkIcon: {
         if (!NetworkService.connected)
@@ -34,19 +35,19 @@ Item {
             spacing: 2
             MediaButton {
                 iconName: "skip_previous"
-                accessibleName: qsTr("Previous track")
+                accessibleName: I18n.tr("Previous track")
                 enabled: root.player !== null && root.player.canGoPrevious
                 onClicked: root.player.previous()
             }
             MediaButton {
                 iconName: root.player && root.player.isPlaying ? "pause" : "play_arrow"
-                accessibleName: root.player && root.player.isPlaying ? qsTr("Pause") : qsTr("Play")
+                accessibleName: root.player && root.player.isPlaying ? I18n.tr("Pause") : I18n.tr("Play")
                 enabled: root.player !== null && root.player.canTogglePlaying
                 onClicked: root.player.togglePlaying()
             }
             MediaButton {
                 iconName: "skip_next"
-                accessibleName: qsTr("Next track")
+                accessibleName: I18n.tr("Next track")
                 enabled: root.player !== null && root.player.canGoNext
                 onClicked: root.player.next()
             }
@@ -112,7 +113,7 @@ Item {
             spacing: 4
             StatusIcon {
                 symbol: WeatherService.hasValidData ? WeatherService.currentIconName || "cloud" : "cloud_off"
-                description: WeatherService.hasValidData ? WeatherService.currentWeatherText : qsTr(
+                description: WeatherService.hasValidData ? WeatherService.currentWeatherText : I18n.tr(
                                                                "Weather unavailable")
             }
             Text {
@@ -130,21 +131,22 @@ Item {
         StatusIcon {
             symbol: root.networkIcon
             active: NetworkService.connected
-            description: !NetworkService.available ? qsTr("Network unavailable") : NetworkService.connected
-                                                     ? NetworkService.activeConnection || qsTr("Connected") :
-                                                       qsTr("Disconnected")
+            description: !NetworkService.available ? I18n.tr("Network unavailable") :
+                                                     NetworkService.connected
+                                                     ? NetworkService.activeConnection || I18n.tr(
+                                                           "Connected") : I18n.tr("Disconnected")
         }
         StatusIcon {
             visible: KeyboardLockService.available
             symbol: "keyboard_capslock"
             active: KeyboardLockService.available && KeyboardLockService.capsLock
-            description: active ? qsTr("Caps Lock on") : qsTr("Caps Lock off")
+            description: active ? I18n.tr("Caps Lock on") : I18n.tr("Caps Lock off")
         }
         StatusIcon {
             visible: KeyboardLockService.available
             symbol: "pin"
             active: KeyboardLockService.available && KeyboardLockService.numLock
-            description: active ? qsTr("Num Lock on") : qsTr("Num Lock off")
+            description: active ? I18n.tr("Num Lock on") : I18n.tr("Num Lock off")
         }
         Row {
             visible: PowerService.present
@@ -157,11 +159,12 @@ Item {
                                                                                                                     Math.floor(
                                                                                                                         root.batteryPercent
                                                                                                                         / 15)))
-                description: PowerService.full ? qsTr("Fully charged") : PowerService.charging ? qsTr(
-                                                                                                     "Charging") :
-                                                                                                 PowerService.powerConnected
-                                                                                                 ? qsTr("Plugged in") :
-                                                                                                   qsTr("On battery")
+                description: PowerService.full ? I18n.tr("Fully charged") : PowerService.charging ? I18n.tr(
+                                                                                                        "Charging") :
+                                                                                                    PowerService.powerConnected
+                                                                                                    ? I18n.tr(
+                                                                                                          "Plugged in") :
+                                                                                                      I18n.tr("On battery")
             }
             Text {
                 height: 40

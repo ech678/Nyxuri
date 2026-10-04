@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 Rectangle {
     id: root
@@ -37,12 +38,12 @@ Rectangle {
 
         SliderHeading {
             visible: root.detailed
-            title: qsTr("Brightness")
+            title: I18n.tr("Brightness")
             detail: root.screen ? root.screen.name : ""
         }
 
         QuickMaterialSlider {
-            Accessible.name: qsTr("Brightness")
+            Accessible.name: I18n.tr("Brightness")
             materialSymbol: "light_mode"
             secondaryMaterialSymbol: "wb_twilight"
             secondaryIconLocation: root.gammaCutoff
@@ -59,7 +60,7 @@ Rectangle {
             percentText: (DisplayColor.dimming * 100) === 100 ? `${Math.round(root.brightnessValue * 100)}%` :
                                                                 `${Math.round(DisplayColor.dimming * 100)}%`
             tooltipContent: (DisplayColor.dimming * 100) === 100 ? `${Math.round(root.brightnessValue * 100)}%` :
-                                                                   qsTr("Software dimming: %1%").arg(
+                                                                   I18n.tr("Software dimming: %1%").arg(
                                                                        Math.round(DisplayColor.dimming * 100))
             onMoved: {
                 if (value >= root.gammaCutoff) {
@@ -81,32 +82,32 @@ Rectangle {
         SliderHeading {
             visible: root.detailed
             Layout.topMargin: (root.detailed ? Metrics.spacingS : 0) + root.pullExpansion * 1.5
-            title: qsTr("Sound")
+            title: I18n.tr("Sound")
             detail: VolumeService.sinkName
         }
 
         QuickMaterialSlider {
-            Accessible.name: qsTr("Sound")
+            Accessible.name: I18n.tr("Sound")
             enabled: VolumeService.outputAvailable
             materialSymbol: VolumeService.sinkMuted ? "volume_off" : "volume_up"
             value: VolumeService.sinkVolume
-            percentText: VolumeService.sinkMuted ? qsTr("Muted") : Math.round(value * 100) + "%"
+            percentText: VolumeService.sinkMuted ? I18n.tr("Muted") : Math.round(value * 100) + "%"
             onMoved: VolumeService.setSinkVolume(value)
         }
 
         SliderHeading {
             visible: root.detailed
             Layout.topMargin: (root.detailed ? Metrics.spacingS : 0) + root.pullExpansion * 1.5
-            title: qsTr("Microphone")
+            title: I18n.tr("Microphone")
             detail: VolumeService.sourceName
         }
 
         QuickMaterialSlider {
-            Accessible.name: qsTr("Microphone")
+            Accessible.name: I18n.tr("Microphone")
             enabled: VolumeService.inputAvailable
             materialSymbol: VolumeService.sourceMuted ? "mic_off" : "mic"
             value: VolumeService.sourceVolume
-            percentText: VolumeService.sourceMuted ? qsTr("Muted") : Math.round(value * 100) + "%"
+            percentText: VolumeService.sourceMuted ? I18n.tr("Muted") : Math.round(value * 100) + "%"
             onMoved: VolumeService.setSourceVolume(value)
         }
     }

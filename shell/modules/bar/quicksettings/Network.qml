@@ -3,6 +3,7 @@ import qs.app
 import qs.app.services
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 BarLabelButton {
     id: root
@@ -11,8 +12,9 @@ BarLabelButton {
     property var screen: null
     readonly property bool active: WidgetState.quickSettingsOpen && WidgetState.quickSettingsView
                                    === "network"
-    tooltipText: NetworkService.connected ? ((NetworkService.activeConnection || qsTr("Network connected"))
-                                             + qsTr("\nClick to open network settings")) : qsTr(
+    tooltipText: NetworkService.connected ? ((NetworkService.activeConnection || I18n.tr(
+                                                  "Network connected")) + I18n.tr(
+                                                 "\nClick to open network settings")) : I18n.tr(
                                                 "Network disconnected\nClick to open network settings")
     readonly property string networkIcon: {
         if (NetworkService.activeConnectionType === "ETHERNET")

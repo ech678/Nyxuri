@@ -3,6 +3,7 @@ import qs.shared.theme
 import qs.app.services
 import "../../shared/utils/FileUtils.js" as FileUtils
 import qs.app
+import qs.shared.i18n
 
 Item {
     id: root
@@ -27,29 +28,32 @@ Item {
         return path === home || path.startsWith(home + "/") ? "~" + path.slice(home.length) : path;
     }
     function metadataLine(entry) {
-        const type = entry.isDirectory ? qsTr("Folder") : entry.mimeType.startsWith("audio/") ? qsTr(
-                                                                                                    "%1 audio").arg(
-                                                                                                    entry.extension.toUpperCase(
-                                                                                                        )) : entry.mimeType.startsWith(
-                                                                                                    "image/")
-                                                                                                ? qsTr("%1 image").arg(
-                                                                                                      entry.extension.toUpperCase(
-                                                                                                          )) : entry.mimeType.startsWith(
-                                                                                                      "video/")
-                                                                                                  ? qsTr("%1 video").arg(
-                                                                                                        entry.extension.toUpperCase(
-                                                                                                            )) : entry.extension
-                                                                                                    ? qsTr("%1 file").arg(
-                                                                                                          entry.extension.toUpperCase(
-                                                                                                              )) : qsTr(
-                                                                                                          "File");
+        const type = entry.isDirectory ? I18n.tr("Folder") : entry.mimeType.startsWith("audio/") ? I18n.tr(
+                                                                                                       "%1 audio").arg(
+                                                                                                       entry.extension.toUpperCase(
+                                                                                                           )) : entry.mimeType.startsWith(
+                                                                                                       "image/")
+                                                                                                   ? I18n.tr(
+                                                                                                         "%1 image").arg(
+                                                                                                         entry.extension.toUpperCase(
+                                                                                                             )) : entry.mimeType.startsWith(
+                                                                                                         "video/")
+                                                                                                     ? I18n.tr(
+                                                                                                           "%1 video").arg(
+                                                                                                           entry.extension.toUpperCase(
+                                                                                                               )) : entry.extension
+                                                                                                       ? I18n.tr(
+                                                                                                             "%1 file").arg(
+                                                                                                             entry.extension.toUpperCase(
+                                                                                                                 )) : I18n.tr(
+                                                                                                             "File");
         const parts = [type];
         if (entry.size !== null && !entry.isDirectory)
             parts.push(FileUtils.humanReadableSize(entry.size));
         if (entry.modifiedTime !== null) {
             const date = new Date(entry.modifiedTime * 1000);
-            parts.push(qsTr("%1 %2").arg(date.toLocaleDateString(Qt.locale(), Locale.ShortFormat)).arg(
-                           UiPreferences.shortTime(date)));
+            parts.push(I18n.tr("%1 %2").arg(date.toLocaleDateString(Qt.locale(), Locale.ShortFormat)).arg(UiPreferences.shortTime(
+                                                                                                              date)));
         }
         parts.push(entry.parentName);
         return parts.join(" · ");

@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 ColumnLayout {
     id: root
@@ -28,17 +29,17 @@ ColumnLayout {
     function commitCoordinate() {
         const values = coordinateField.text.trim().split(/[\s,]+/);
         if (values.length !== 2 || values[0] === "" || values[1] === "") {
-            root.coordinateError = qsTr("Enter latitude and longitude");
+            root.coordinateError = I18n.tr("Enter latitude and longitude");
             return;
         }
         const latitudeValue = Number(values[0]);
         const longitudeValue = Number(values[1]);
         if (!isFinite(latitudeValue) || latitudeValue < -90 || latitudeValue > 90) {
-            root.coordinateError = qsTr("Latitude must be between -90 and 90");
+            root.coordinateError = I18n.tr("Latitude must be between -90 and 90");
             return;
         }
         if (!isFinite(longitudeValue) || longitudeValue < -180 || longitudeValue > 180) {
-            root.coordinateError = qsTr("Longitude must be between -180 and 180");
+            root.coordinateError = I18n.tr("Longitude must be between -180 and 180");
             return;
         }
         root.setCandidate(latitudeValue, longitudeValue);
@@ -74,7 +75,7 @@ ColumnLayout {
         id: coordinateField
 
         Layout.fillWidth: true
-        labelText: qsTr("Coordinates")
+        labelText: I18n.tr("Coordinates")
         errorText: root.coordinateError
         text: root.coordinateText(root.candidateLatitude, root.candidateLongitude)
         onTextChanged: root.coordinateError = ""
@@ -96,13 +97,13 @@ ColumnLayout {
         ActionButton {
             id: saveLocationButton
 
-            text: qsTr("Save location")
+            text: I18n.tr("Save location")
             iconName: "save"
             onClicked: root.saveCoordinate()
         }
 
         ActionButton {
-            text: qsTr("Use automatic location")
+            text: I18n.tr("Use automatic location")
             iconName: "my_location"
             enabled: !WeatherService.loading
             onClicked: root.useAutomaticLocation()

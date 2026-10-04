@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 SidebarFlickable {
     id: root
@@ -33,7 +34,7 @@ SidebarFlickable {
 
             Layout.fillWidth: true
             visible: !DisplayColor.available
-            message: qsTr("The compositor does not provide Gamma control")
+            message: I18n.tr("The compositor does not provide Gamma control")
         }
         InlineStatusBanner {
             Layout.topMargin: root.gapFor(1, 1)
@@ -60,7 +61,7 @@ SidebarFlickable {
             flat: true
             enabled: DisplayColor.ready
             GeneralSliderSetting {
-                title: qsTr("Gamma")
+                title: I18n.tr("Gamma")
                 from: 50
                 to: 200
                 stepSize: 1
@@ -69,7 +70,7 @@ SidebarFlickable {
                 onMoved: value => DisplayColor.setPreference("gamma", value / 100)
             }
             GeneralSliderSetting {
-                title: qsTr("Contrast")
+                title: I18n.tr("Contrast")
                 from: 50
                 to: 200
                 stepSize: 1
@@ -78,7 +79,7 @@ SidebarFlickable {
                 onMoved: value => DisplayColor.setPreference("contrast", value / 100)
             }
             GeneralSliderSetting {
-                title: qsTr("Software dimming")
+                title: I18n.tr("Software dimming")
                 from: 25
                 to: 100
                 stepSize: 1
@@ -95,17 +96,17 @@ SidebarFlickable {
             flat: true
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Night Mode")
+                title: I18n.tr("Night Mode")
                 iconName: "nightlight"
                 trailing: StyledSwitch {
                     checked: root.preferences.nightEnabled
-                    Accessible.name: qsTr("Night Mode")
+                    Accessible.name: I18n.tr("Night Mode")
                     onToggled: DisplayColor.setPreference("nightEnabled", checked)
                 }
             }
             GeneralSliderSetting {
                 visible: root.preferences.nightEnabled
-                title: qsTr("Night temperature")
+                title: I18n.tr("Night temperature")
                 from: 1000
                 to: 6500
                 stepSize: 100
@@ -132,19 +133,19 @@ SidebarFlickable {
             flat: true
             DisplayChoice {
                 Layout.fillWidth: true
-                title: qsTr("Automatic control")
+                title: I18n.tr("Automatic control")
                 options: [
                     {
                         value: "fixed",
-                        label: qsTr("Fixed temperature")
+                        label: I18n.tr("Fixed temperature")
                     },
                     {
                         value: "time",
-                        label: qsTr("Time")
+                        label: I18n.tr("Time")
                     },
                     {
                         value: "location",
-                        label: qsTr("Sunrise and sunset")
+                        label: I18n.tr("Sunrise and sunset")
                     }
                 ]
                 value: root.preferences.mode
@@ -153,14 +154,14 @@ SidebarFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 visible: root.preferences.mode === "time"
-                title: qsTr("Night starts")
+                title: I18n.tr("Night starts")
                 iconName: "nightlight"
                 trailing: OutlinedTextField {
                     Layout.preferredWidth: 140
                     Layout.minimumWidth: 140
                     Layout.maximumWidth: 140
                     Layout.fillWidth: false
-                    Accessible.name: qsTr("Night starts")
+                    Accessible.name: I18n.tr("Night starts")
                     text: root.timeText(root.preferences.start)
                     validator: RegularExpressionValidator {
                         regularExpression: /([01][0-9]|2[0-3]):[0-5][0-9]/
@@ -171,14 +172,14 @@ SidebarFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 visible: root.preferences.mode === "time"
-                title: qsTr("Day starts")
+                title: I18n.tr("Day starts")
                 iconName: "light_mode"
                 trailing: OutlinedTextField {
                     Layout.preferredWidth: 140
                     Layout.minimumWidth: 140
                     Layout.maximumWidth: 140
                     Layout.fillWidth: false
-                    Accessible.name: qsTr("Day starts")
+                    Accessible.name: I18n.tr("Day starts")
                     text: root.timeText(root.preferences.end)
                     validator: RegularExpressionValidator {
                         regularExpression: /([01][0-9]|2[0-3]):[0-5][0-9]/
@@ -194,12 +195,12 @@ SidebarFlickable {
                     model: [
                         {
                             key: "latitude",
-                            label: qsTr("Latitude"),
+                            label: I18n.tr("Latitude"),
                             limit: 90
                         },
                         {
                             key: "longitude",
-                            label: qsTr("Longitude"),
+                            label: I18n.tr("Longitude"),
                             limit: 180
                         }
                     ]
@@ -222,11 +223,11 @@ SidebarFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 visible: root.preferences.mode === "location"
-                title: qsTr("Automatic IP location")
+                title: I18n.tr("Automatic IP location")
 
                 trailing: StyledSwitch {
                     checked: root.preferences.useIP
-                    Accessible.name: qsTr("Automatic IP location")
+                    Accessible.name: I18n.tr("Automatic IP location")
                     onToggled: DisplayColor.setPreference("useIP", checked)
                     InlineBusyIndicator {
                         anchors.centerIn: parent
@@ -241,7 +242,7 @@ SidebarFlickable {
             }
             ActionButton {
                 visible: root.preferences.mode === "location" && root.preferences.useIP
-                text: qsTr("Refresh location")
+                text: I18n.tr("Refresh location")
                 enabled: !DisplayColor.locating
                 onClicked: DisplayColor.locate()
             }
@@ -249,12 +250,12 @@ SidebarFlickable {
                 visible: root.preferences.mode === "location"
                 enabled: DisplayColor.ready
                 Layout.alignment: Qt.AlignRight
-                text: qsTr("Use weather location")
+                text: I18n.tr("Use weather location")
                 onClicked: DisplayColor.useWeatherLocation()
             }
             GeneralSliderSetting {
                 visible: root.preferences.mode !== "fixed"
-                title: qsTr("Day temperature")
+                title: I18n.tr("Day temperature")
                 from: 1000
                 to: 10000
                 stepSize: 100
@@ -264,11 +265,11 @@ SidebarFlickable {
             }
             GeneralSliderSetting {
                 visible: root.preferences.mode !== "fixed"
-                title: qsTr("Transition duration")
+                title: I18n.tr("Transition duration")
                 from: 0
                 to: 180
                 stepSize: 1
-                suffix: qsTr(" min")
+                suffix: I18n.tr(" min")
                 value: root.preferences.transition
                 onMoved: value => DisplayColor.setPreference("transition", value)
             }
@@ -298,11 +299,11 @@ SidebarFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 visible: true
-                title: qsTr("Scheduled temperature")
+                title: I18n.tr("Scheduled temperature")
                 iconName: "thermostat"
                 supportingText: ""
                 trailing: Text {
-                    text: qsTr("%1 K").arg(DisplayColor.schedule.temperature)
+                    text: I18n.tr("%1 K").arg(DisplayColor.schedule.temperature)
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Typography.bodyLarge.family
                     font.pixelSize: Typography.bodyLarge.pixelSize
@@ -311,11 +312,11 @@ SidebarFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 visible: true
-                title: qsTr("Period")
+                title: I18n.tr("Period")
                 iconName: DisplayColor.schedule.period === "day" ? "light_mode" : "nightlight"
-                supportingText: DisplayColor.schedule.transitioning ? qsTr("Transitioning") : ""
+                supportingText: DisplayColor.schedule.transitioning ? I18n.tr("Transitioning") : ""
                 trailing: Text {
-                    text: DisplayColor.schedule.period === "day" ? qsTr("Daytime") : qsTr("Nighttime")
+                    text: DisplayColor.schedule.period === "day" ? I18n.tr("Daytime") : I18n.tr("Nighttime")
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Typography.bodyLarge.family
                     font.pixelSize: Typography.bodyLarge.pixelSize
@@ -324,7 +325,8 @@ SidebarFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 visible: DisplayColor.schedule.next > 0
-                title: DisplayColor.schedule.transitioning ? qsTr("Transition ends") : qsTr("Next transition")
+                title: DisplayColor.schedule.transitioning ? I18n.tr("Transition ends") : I18n.tr(
+                                                                 "Next transition")
                 iconName: "schedule"
                 supportingText: ""
                 trailing: Text {
@@ -345,7 +347,7 @@ SidebarFlickable {
                                                                                   === "unavailable")
             visible: DisplayColor.available && failedOutputs.length > 0
             tone: "error"
-            message: qsTr("Gamma control unavailable: %1").arg(failedOutputs.map(o => o.name).join(", "))
+            message: I18n.tr("Gamma control unavailable: %1").arg(failedOutputs.map(o => o.name).join(", "))
         }
     }
 }

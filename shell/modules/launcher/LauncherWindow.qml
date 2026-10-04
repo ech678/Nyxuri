@@ -9,6 +9,7 @@ import qs.app.services
 import qs.shared.controls
 import qs.app
 import "./SpotlightCommands.js" as Commands
+import qs.shared.i18n
 
 PanelWindow {
     id: root
@@ -644,7 +645,7 @@ PanelWindow {
         if (root.clipboardActionState === "copying") {
             if (root.clipboardActionEntryId === id)
                 return false;
-            root.clipboardActionError = qsTr("A clipboard operation is already running");
+            root.clipboardActionError = I18n.tr("A clipboard operation is already running");
             return false;
         }
         clipboardFeedbackTimer.stop();
@@ -655,7 +656,7 @@ PanelWindow {
         if (!clipboardProvider.execute(root.selectedResultIndex)) {
             if (root.clipboardActionState === "copying") {
                 root.clipboardActionState = "error";
-                root.clipboardActionError = qsTr("Copy failed");
+                root.clipboardActionError = I18n.tr("Copy failed");
             }
             return false;
         }
@@ -687,7 +688,7 @@ PanelWindow {
             return;
         root.clipboardActionEntryId = String(id);
         root.clipboardActionState = "error";
-        root.clipboardActionError = String(message || qsTr("Copy failed"));
+        root.clipboardActionError = String(message || I18n.tr("Copy failed"));
         root.clipboardActionKeepOpen = false;
         clipboardFeedbackTimer.stop();
     }

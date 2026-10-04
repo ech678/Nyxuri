@@ -7,6 +7,7 @@ import qs.shared.controls
 import qs.app.services
 import "CalendarLayout.js" as CalendarLayout
 import "../../../../shared/utils/DateFormat.js" as DateFormat
+import qs.shared.i18n
 
 Item {
     id: root
@@ -61,7 +62,7 @@ Item {
 
             HeaderButton {
                 buttonText: `${root.monthShift !== 0 ? "• " : ""}${root.monthTitle(root.viewingDate)}`
-                tooltipText: root.monthShift === 0 ? "" : qsTr("Jump to current month")
+                tooltipText: root.monthShift === 0 ? "" : I18n.tr("Jump to current month")
                 onClicked: root.monthShift = 0
             }
 
@@ -72,14 +73,14 @@ Item {
             HeaderButton {
                 forceCircle: true
                 iconName: "chevron_left"
-                accessibleName: qsTr("Previous month")
+                accessibleName: I18n.tr("Previous month")
                 onClicked: root.monthShift -= 1
             }
 
             HeaderButton {
                 forceCircle: true
                 iconName: "chevron_right"
-                accessibleName: qsTr("Next month")
+                accessibleName: I18n.tr("Next month")
                 onClicked: root.monthShift += 1
             }
         }

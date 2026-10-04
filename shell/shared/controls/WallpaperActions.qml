@@ -1,5 +1,6 @@
 import QtQuick
 import qs.shared.theme
+import qs.shared.i18n
 
 Item {
     id: root
@@ -7,8 +8,8 @@ Item {
     property bool paletteEnabled: true
     property real topRadius: Appearance.rounding.normal
     property real bottomRadius: topRadius
-    property string fileTooltip: qsTranslate("WallpaperPage", "Choose folder")
-    property string clearTooltip: qsTranslate("WallpaperPage", "Clear wallpaper")
+    property string fileTooltip: I18n.tr("Choose folder", "WallpaperPage")
+    property string clearTooltip: I18n.tr("Clear wallpaper", "WallpaperPage")
     signal chooseFile
     signal chooseColor
     signal clearWallpaper
@@ -64,9 +65,9 @@ Item {
 
             HoverActionButton {
                 iconName: "palette"
-                tooltipText: root.paletteEnabled ? qsTranslate("WallpaperPage", "Choose color") : qsTranslate(
-                                                       "WallpaperPage",
-                                                       "Color and gradient wallpapers require the Quickshell backend")
+                tooltipText: root.paletteEnabled ? I18n.tr("Choose color", "WallpaperPage") : I18n.tr(
+                                                       "Color and gradient wallpapers require the Quickshell backend",
+                                                       "WallpaperPage")
                 darkOverlay: true
                 enabled: root.actionsEnabled && root.paletteEnabled
                 disabledHoverFeedback: !root.paletteEnabled

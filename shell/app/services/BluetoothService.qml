@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Bluetooth
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -86,7 +87,7 @@ Singleton {
 
         const deviceAdapter = device.adapter;
         return {
-            "name": String(device.name || device.deviceName || device.address || qsTr("Unknown device")),
+            "name": String(device.name || device.deviceName || device.address || I18n.tr("Unknown device")),
             "deviceName": String(device.deviceName || ""),
             "address": String(device.address || ""),
             "icon": String(device.icon || ""),
@@ -161,7 +162,7 @@ Singleton {
 
     function _beginOperation(operation) {
         if (root._pendingOperation.length > 0) {
-            root.operationFailed(operation, qsTr("Another Bluetooth operation is already in progress"));
+            root.operationFailed(operation, I18n.tr("Another Bluetooth operation is already in progress"));
             return false;
         }
         root.lastError = "";
@@ -188,7 +189,7 @@ Singleton {
             return;
 
         const operation = root._pendingOperation;
-        root.lastError = String(message || qsTr("Bluetooth operation failed"));
+        root.lastError = String(message || I18n.tr("Bluetooth operation failed"));
         operationTimeout.stop();
         root._clearPendingOperation();
         root.operationFailed(operation, root.lastError);
@@ -209,12 +210,12 @@ Singleton {
         const nativeAdapter = root._resolveAdapter(adapterLike);
         const requested = !!value;
         if (!nativeAdapter) {
-            root.lastError = qsTr("No Bluetooth adapter detected");
+            root.lastError = I18n.tr("No Bluetooth adapter detected");
             root.operationFailed("set-adapter-enabled", root.lastError);
             return;
         }
         if (requested && nativeAdapter.state === BluetoothAdapterState.Blocked) {
-            root.lastError = qsTr("The Bluetooth adapter is blocked by rfkill");
+            root.lastError = I18n.tr("The Bluetooth adapter is blocked by rfkill");
             root.operationFailed("set-adapter-enabled", root.lastError);
             return;
         }
@@ -242,7 +243,7 @@ Singleton {
         const nativeAdapter = root._resolveAdapter(adapterLike);
         const requested = !!value;
         if (!nativeAdapter || !nativeAdapter.enabled) {
-            root.lastError = nativeAdapter ? qsTr("The Bluetooth adapter is off") : qsTr(
+            root.lastError = nativeAdapter ? I18n.tr("The Bluetooth adapter is off") : I18n.tr(
                                                  "No Bluetooth adapter detected");
             root.operationFailed("set-discoverable", root.lastError);
             return;
@@ -262,7 +263,7 @@ Singleton {
         const nativeAdapter = root._resolveAdapter(adapterLike);
         const requested = !!value;
         if (!nativeAdapter || !nativeAdapter.enabled) {
-            root.lastError = nativeAdapter ? qsTr("The Bluetooth adapter is off") : qsTr(
+            root.lastError = nativeAdapter ? I18n.tr("The Bluetooth adapter is off") : I18n.tr(
                                                  "No Bluetooth adapter detected");
             root.operationFailed("set-pairable", root.lastError);
             return;
@@ -306,12 +307,12 @@ Singleton {
 
     function requestDiscovery() {
         if (!root.available) {
-            root.lastError = qsTr("No Bluetooth adapter detected or BlueZ is unavailable");
+            root.lastError = I18n.tr("No Bluetooth adapter detected or BlueZ is unavailable");
             root.operationFailed("discovery", root.lastError);
             return;
         }
         if (!root.enabled) {
-            root.lastError = qsTr("The Bluetooth adapter is off");
+            root.lastError = I18n.tr("The Bluetooth adapter is off");
             root.operationFailed("discovery", root.lastError);
             return;
         }
@@ -344,12 +345,12 @@ Singleton {
     function _beginDeviceOperation(operation, deviceLike, targetState) {
         const nativeDevice = root._resolveDevice(deviceLike);
         if (!nativeDevice) {
-            root.lastError = qsTr("The target Bluetooth device is no longer available");
+            root.lastError = I18n.tr("The target Bluetooth device is no longer available");
             root.operationFailed(operation, root.lastError);
             return null;
         }
         if (nativeDevice.blocked && (operation === "connect" || operation === "pair")) {
-            root.lastError = qsTr("The target Bluetooth device is blocked");
+            root.lastError = I18n.tr("The target Bluetooth device is blocked");
             root.operationFailed(operation, root.lastError);
             return null;
         }
@@ -524,7 +525,7 @@ Singleton {
 
             if (root._pendingOperation === "connect" && root._pendingStateWasChanging
                     && root._pendingDevice.state === BluetoothDeviceState.Disconnected)
-                root._finishOperationFailed(qsTr("Could not connect to the device"));
+                root._finishOperationFailed(I18n.tr("Could not connect to the device"));
         }
 
         function onPairingChanged() {
@@ -537,7 +538,7 @@ Singleton {
                 root._finishOperationSucceeded();
             else if (root._pendingOperation === "pair" && root._pendingPairingStarted &&
                      !root._pendingDevice.paired)
-                root._finishOperationFailed(qsTr("Pairing failed"));
+                root._finishOperationFailed(I18n.tr("Pairing failed"));
         }
 
         function onPairedChanged() {
@@ -593,7 +594,7 @@ Singleton {
 
         interval: 60000
         repeat: false
-        onTriggered: root._finishOperationFailed(qsTr(
+        onTriggered: root._finishOperationFailed(I18n.tr(
                                                      "Bluetooth operation timed out; the current Quickshell API provides no more detailed BlueZ error"))
     }
 }

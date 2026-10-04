@@ -6,6 +6,7 @@ import Quickshell.Wayland
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 PopupWindow {
     id: root
@@ -287,7 +288,7 @@ PopupWindow {
                     }
 
                     Text {
-                        text: qsTr("Back")
+                        text: I18n.tr("Back")
                         color: backButton.pointerHovered ? Appearance.colors.colOnSecondaryContainer :
                                                            Appearance.colors.colOnLayer0
                         font.family: Fonts.ui

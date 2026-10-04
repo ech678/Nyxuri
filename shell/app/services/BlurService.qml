@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.shared.theme
 import qs.app.services
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -91,9 +92,9 @@ Singleton {
             root.niriVersion = versionOutput.text.trim();
             root.compositorSupported = exitCode === 0 && root.supportsVersion(root.niriVersion);
             if (!root.compositorSupported) {
-                root.versionErrorText = exitCode === 0 ? qsTr(
+                root.versionErrorText = exitCode === 0 ? I18n.tr(
                                                              "The current Niri version does not support background blur") :
-                                                         (versionError.text.trim() || qsTr(
+                                                         (versionError.text.trim() || I18n.tr(
                                                               "Unable to detect the Niri version"));
                 return;
             }

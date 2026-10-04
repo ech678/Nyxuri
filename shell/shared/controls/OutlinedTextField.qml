@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import qs.shared.theme
+import qs.shared.i18n
 
 ColumnLayout {
     id: root
@@ -57,7 +58,7 @@ ColumnLayout {
             controlSize: Metrics.touchTarget
             iconName: root.passwordVisible ? "visibility_off" : "visibility"
             iconSize: Metrics.iconM
-            accessibleName: root.passwordVisible ? qsTr("Hide password") : qsTr("Show password")
+            accessibleName: root.passwordVisible ? I18n.tr("Hide password") : I18n.tr("Show password")
             onClicked: root.passwordVisible = !root.passwordVisible
         }
     }

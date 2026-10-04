@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import qs.shared.theme
+import qs.shared.i18n
 
 FocusScope {
     id: root
@@ -125,18 +126,20 @@ FocusScope {
                         readOnly: !root.controller.editable(slot.index)
                         inputMethodHints: slot.unit || root.timeMode ? Qt.ImhNoPredictiveText :
                                                                        Qt.ImhFormattedNumbersOnly
-                        Accessible.name: root.timeMode ? (slot.index === 0 ? qsTr("Source time") : slot.index
-                                                                             === 1 ? qsTr("Source time zone") :
-                                                                                     slot.index === 2 ? qsTr(
+                        Accessible.name: root.timeMode ? (slot.index === 0 ? I18n.tr("Source time") :
+                                                                             slot.index === 1 ? I18n.tr(
+                                                                                                    "Source time zone") :
+                                                                                                slot.index
+                                                                                                === 2 ? I18n.tr(
                                                                                                             "Target time") :
-                                                                                                        qsTr("Target time zone")) :
-                                                         (slot.index === 0 ? qsTr("Source amount") :
-                                                                             slot.index === 1 ? qsTr(
+                                                                                                        I18n.tr("Target time zone")) :
+                                                         (slot.index === 0 ? I18n.tr("Source amount") :
+                                                                             slot.index === 1 ? I18n.tr(
                                                                                                     "Source currency") :
                                                                                                 slot.index
-                                                                                                === 2 ? qsTr(
+                                                                                                === 2 ? I18n.tr(
                                                                                                             "Target amount") :
-                                                                                                        qsTr("Target currency"))
+                                                                                                        I18n.tr("Target currency"))
                         onTextEdited: {
                             root.allSelected = false;
                             root.controller.edit(slot.index, text);

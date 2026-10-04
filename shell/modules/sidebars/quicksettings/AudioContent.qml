@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 WidgetPanel {
     id: root
@@ -13,13 +14,13 @@ WidgetPanel {
         if (VolumeService.lastError.length > 0)
             return VolumeService.lastError;
         if (!VolumeService.ready)
-            return qsTr("Connecting to the PipeWire audio service");
+            return I18n.tr("Connecting to the PipeWire audio service");
         if (VolumeService.outputDevices.length === 0 && !VolumeService.outputAvailable)
-            return qsTr("No audio output devices detected");
+            return I18n.tr("No audio output devices detected");
         return "";
     }
 
-    title: qsTr("Sound")
+    title: I18n.tr("Sound")
     icon: "volume_up"
     showBackButton: true
     backAction: () => WidgetState.quickSettingsView = "settings"
@@ -29,7 +30,7 @@ WidgetPanel {
         iconName: "open_in_new"
         iconSize: 20
         iconColor: Appearance.colors.colOnLayer2
-        accessibleName: qsTr("Open advanced sound settings")
+        accessibleName: I18n.tr("Open advanced sound settings")
         hoverStateLayerColor: Appearance.colors.colLayer2Hover
         pressedStateLayerColor: Appearance.colors.colLayer2Active
         onClicked: {
@@ -69,12 +70,12 @@ WidgetPanel {
 
                     Layout.fillWidth: true
                     visible: VolumeService.ready && VolumeService.outputAvailable
-                    title: qsTr("Output")
+                    title: I18n.tr("Output")
                     iconName: "volume_up"
 
                     VolumeSlider {
                         Layout.fillWidth: true
-                        title: VolumeService.sinkName || qsTr("Default output")
+                        title: VolumeService.sinkName || I18n.tr("Default output")
                         supportingText: VolumeService.nodeSupportingText(VolumeService.sink)
                         iconName: VolumeService.nodeIconName(VolumeService.sink)
                         volume: VolumeService.sinkVolume
@@ -92,7 +93,7 @@ WidgetPanel {
 
                     Layout.fillWidth: true
                     visible: VolumeService.ready && VolumeService.outputDevices.length > 0
-                    title: qsTr("Output devices")
+                    title: I18n.tr("Output devices")
                     iconName: "speaker_group"
                     contentSpacing: Metrics.spacingL
 
@@ -127,7 +128,7 @@ WidgetPanel {
                             VolumeSlider {
                                 Layout.fillWidth: true
                                 visible: !VolumeService.isDefaultOutput(device.modelData)
-                                title: qsTr("Volume")
+                                title: I18n.tr("Volume")
                                 iconName: VolumeService.nodeIconName(device.modelData)
                                 volume: VolumeService.nodeVolume(device.modelData)
                                 muted: VolumeService.nodeMuted(device.modelData)
@@ -145,7 +146,7 @@ WidgetPanel {
 
                     Layout.fillWidth: true
                     visible: VolumeService.ready && VolumeService.outputAvailable
-                    title: qsTr("Application volume")
+                    title: I18n.tr("Application volume")
                     iconName: "apps"
                     contentSpacing: Metrics.spacingL
 
@@ -173,7 +174,7 @@ WidgetPanel {
                         Layout.fillWidth: true
                         visible: VolumeService.playbackStreams.length === 0
                         iconName: "music_off"
-                        title: qsTr("No active application audio")
+                        title: I18n.tr("No active application audio")
                     }
                 }
             }

@@ -4,6 +4,7 @@ import Quickshell
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 FloatingWindow {
     id: root
@@ -116,7 +117,7 @@ FloatingWindow {
 
                 WizardHeader {
                     Layout.fillWidth: true
-                    title: qsTr("Saved networks")
+                    title: I18n.tr("Saved networks")
                     onCloseRequested: root.dismiss()
                 }
 
@@ -142,7 +143,7 @@ FloatingWindow {
 
                 WizardHeader {
                     Layout.fillWidth: true
-                    title: qsTr("Connection profile")
+                    title: I18n.tr("Connection profile")
                     subtitle: root.selectedProfile ? String(root.selectedProfile.ssid
                                                             || root.selectedProfile.name || "") : ""
                     showBack: root.profileParentPage === "saved"
@@ -173,7 +174,7 @@ FloatingWindow {
 
                 WizardHeader {
                     Layout.fillWidth: true
-                    title: qsTr("Add network")
+                    title: I18n.tr("Add network")
                     onCloseRequested: root.dismiss()
                 }
 

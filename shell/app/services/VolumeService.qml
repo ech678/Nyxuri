@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Services.Pipewire
 import QtQuick
 import qs.app.services
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -97,17 +98,17 @@ Singleton {
             return "";
 
         const properties = root.nodeProperties(node);
-        return properties["application.name"] || node.description || node.nickname || node.name || qsTr(
+        return properties["application.name"] || node.description || node.nickname || node.name || I18n.tr(
                     "Unknown audio device");
     }
 
     function applicationDisplayName(node) {
         if (!node)
-            return qsTr("Unknown application");
+            return I18n.tr("Unknown application");
 
         const properties = root.nodeProperties(node);
         return properties["application.name"] || properties["application.process.binary"] || node.nickname
-                || node.name || qsTr("Unknown application");
+                || node.name || I18n.tr("Unknown application");
     }
 
     function nodeSupportingText(node) {
@@ -127,7 +128,7 @@ Singleton {
             return profile;
         if (node.name && node.name !== root.nodeDisplayName(node))
             return node.name;
-        return node.isSink ? qsTr("Audio output device") : qsTr("Audio input device");
+        return node.isSink ? I18n.tr("Audio output device") : I18n.tr("Audio input device");
     }
 
     function nodeIconName(node) {
@@ -140,15 +141,14 @@ Singleton {
 
         if (node.isStream)
             return "music_note";
-        if (descriptor.indexOf("headphone") >= 0 || descriptor.indexOf("headset") >= 0 || descriptor.indexOf(qsTr(
-                                                                                                                 "Headphones"))
-                >= 0)
+        if (descriptor.indexOf("headphone") >= 0 || descriptor.indexOf("headset") >= 0 || descriptor.indexOf(
+                    I18n.tr("Headphones")) >= 0)
             return "headphones";
         if (descriptor.indexOf("bluetooth") >= 0 || descriptor.indexOf("bluez") >= 0)
             return node.isSink ? "headphones" : "mic";
         if (descriptor.indexOf("hdmi") >= 0 || descriptor.indexOf("displayport") >= 0)
             return "tv";
-        if (descriptor.indexOf("speaker") >= 0 || descriptor.indexOf(qsTr("Speakers")) >= 0)
+        if (descriptor.indexOf("speaker") >= 0 || descriptor.indexOf(I18n.tr("Speakers")) >= 0)
             return "speaker";
         return node.isSink ? "volume_up" : "mic";
     }
@@ -202,7 +202,8 @@ Singleton {
     function setDefaultOutput(node) {
         const currentNode = root.resolveNode(node, root.outputDevices);
         if (!currentNode)
-            return root.fail("set-default-output", qsTr("The selected output device is no longer available"));
+            return root.fail("set-default-output", I18n.tr(
+                                 "The selected output device is no longer available"));
 
         root.clearError();
         Pipewire.preferredDefaultAudioSink = currentNode;
@@ -212,7 +213,8 @@ Singleton {
     function setDefaultInput(node) {
         const currentNode = root.resolveNode(node, root.inputDevices);
         if (!currentNode)
-            return root.fail("set-default-input", qsTr("The selected input device is no longer available"));
+            return root.fail("set-default-input", I18n.tr(
+                                 "The selected input device is no longer available"));
 
         root.clearError();
         Pipewire.preferredDefaultAudioSource = currentNode;
@@ -221,11 +223,11 @@ Singleton {
 
     function setNodeVolume(node, volume) {
         if (!node || !node.audio)
-            return root.fail("set-volume", qsTr("The audio object is no longer available"));
+            return root.fail("set-volume", I18n.tr("The audio object is no longer available"));
 
         const safeVolume = Math.max(0, Math.min(1, Number(volume)));
         if (isNaN(safeVolume))
-            return root.fail("set-volume", qsTr("Invalid volume value"));
+            return root.fail("set-volume", I18n.tr("Invalid volume value"));
 
         root.clearError();
         node.audio.volume = safeVolume;
@@ -236,7 +238,7 @@ Singleton {
 
     function toggleNodeMute(node) {
         if (!node || !node.audio)
-            return root.fail("toggle-mute", qsTr("The audio object is no longer available"));
+            return root.fail("toggle-mute", I18n.tr("The audio object is no longer available"));
 
         root.clearError();
         node.audio.muted = !node.audio.muted;

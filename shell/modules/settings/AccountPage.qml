@@ -12,6 +12,7 @@ import qs.shared.controls
 import qs.modules.filepicker
 import qs.app.services
 import qs.app
+import qs.shared.i18n
 
 Item {
     id: root
@@ -88,8 +89,8 @@ Item {
 
     function bluetoothState(device) {
         if (device.connected)
-            return qsTr("Connected");
-        return qsTr("Paired");
+            return I18n.tr("Connected");
+        return I18n.tr("Paired");
     }
 
     function bluetoothAction(device) {
@@ -101,8 +102,8 @@ Item {
 
     function bluetoothActionText(device) {
         if (device.connected)
-            return qsTr("Disconnect");
-        return qsTr("Connect");
+            return I18n.tr("Disconnect");
+        return I18n.tr("Connect");
     }
 
     function networkStatusIcon() {
@@ -121,23 +122,23 @@ Item {
 
     function networkStatusText() {
         if (!NetworkService.available)
-            return qsTr("Network unavailable");
+            return I18n.tr("Network unavailable");
         if (NetworkService.wifiConnecting)
-            return NetworkService.connectTargetSsid || qsTr("Connecting");
+            return NetworkService.connectTargetSsid || I18n.tr("Connecting");
         if (NetworkService.connected)
             return NetworkService.activeConnection;
-        return qsTr("Not connected");
+        return I18n.tr("Not connected");
     }
 
     function networkStatusDetail() {
         if (NetworkService.wifiConnecting)
-            return NetworkService.connectTargetSsid ? qsTr("Connecting") : "";
+            return NetworkService.connectTargetSsid ? I18n.tr("Connecting") : "";
         if (!NetworkService.connected)
             return "";
         if (NetworkService.activeNetwork && NetworkService.activeNetwork.type === "wired")
-            return qsTr("Connected, wired");
-        return NetworkService.activeWifi && NetworkService.activeWifi.isSecure ? qsTr("Connected, secure") :
-                                                                                 qsTr("Connected, open");
+            return I18n.tr("Connected, wired");
+        return NetworkService.activeWifi && NetworkService.activeWifi.isSecure ? I18n.tr("Connected, secure") :
+                                                                                 I18n.tr("Connected, open");
     }
 
     Component.onCompleted: {
@@ -218,7 +219,7 @@ Item {
 
                         Text {
                             Layout.fillWidth: true
-                            text: qsTr("Display language")
+                            text: I18n.tr("Display language")
                             color: Appearance.colors.colOnSurface
                             font.family: Fonts.ui
                             font.pixelSize: Typography.bodyMedium.pixelSize
@@ -229,7 +230,7 @@ Item {
                             Layout.preferredWidth: 190
                             options: I18nService.supportedLanguages
                             value: UiPreferences.language
-                            placeholder: qsTr("Choose language")
+                            placeholder: I18n.tr("Choose language")
                             textRole: "label"
                             valueRole: "code"
                             closeOnAccept: true
@@ -259,7 +260,7 @@ Item {
 
                         Text {
                             Layout.fillWidth: true
-                            text: BluetoothService.enabled ? qsTr("Bluetooth") : qsTr(
+                            text: BluetoothService.enabled ? I18n.tr("Bluetooth") : I18n.tr(
                                                                  "Turn on Bluetooth to connect devices")
                             color: Appearance.colors.colOnSurfaceVariant
                             font.family: Fonts.ui
@@ -269,7 +270,7 @@ Item {
                         StyledSwitch {
                             checked: BluetoothService.enabled
                             enabled: BluetoothService.available && !BluetoothService.busy
-                            Accessible.name: qsTr("Bluetooth switch")
+                            Accessible.name: I18n.tr("Bluetooth switch")
                             onToggled: BluetoothService.setBluetoothEnabled(checked)
                         }
                     }
@@ -323,7 +324,7 @@ Item {
 
                                             Text {
                                                 Layout.fillWidth: true
-                                                text: deviceRow.modelData.name || qsTr("Unnamed device")
+                                                text: deviceRow.modelData.name || I18n.tr("Unnamed device")
                                                 color: Appearance.colors.colOnSurface
                                                 font.family: Fonts.ui
                                                 font.pixelSize: Typography.bodyMedium.pixelSize
@@ -357,8 +358,8 @@ Item {
                                                 iconName: "more_horiz"
                                                 iconSize: 22
                                                 iconColor: Appearance.colors.colOnSurfaceVariant
-                                                accessibleName: qsTr("More options for %1").arg(
-                                                                    deviceRow.modelData.name || qsTr(
+                                                accessibleName: I18n.tr("More options for %1").arg(
+                                                                    deviceRow.modelData.name || I18n.tr(
                                                                         "Unnamed device"))
                                                 onClicked: forgetMenu.open()
                                             }
@@ -373,7 +374,7 @@ Item {
                                                 StyledMenuItem {
                                                     iconName: "delete"
                                                     destructive: true
-                                                    text: qsTr("Forget device")
+                                                    text: I18n.tr("Forget device")
                                                     onTriggered: BluetoothService.forgetDevice(
                                                                      deviceRow.modelData)
                                                 }
@@ -388,7 +389,7 @@ Item {
                     Text {
                         Layout.fillWidth: true
                         visible: BluetoothService.enabled && root.pairedBluetoothDevices.length === 0
-                        text: qsTr("No paired devices")
+                        text: I18n.tr("No paired devices")
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.ui
                         font.pixelSize: Typography.bodyMedium.pixelSize
@@ -397,7 +398,7 @@ Item {
 
                     SettingsActionRow {
                         Layout.fillWidth: true
-                        text: qsTr("More Bluetooth settings")
+                        text: I18n.tr("More Bluetooth settings")
                         trailingIconName: "chevron_right"
                         onClicked: root.navigateRequested("connected-devices")
                     }
@@ -419,13 +420,13 @@ Item {
 
                     SettingsActionRow {
                         Layout.fillWidth: true
-                        text: qsTr("Configure shortcuts")
+                        text: I18n.tr("Configure shortcuts")
                         trailingIconName: "chevron_right"
                         onClicked: root.navigateRequested("shortcuts")
                     }
                     SettingsActionRow {
                         Layout.fillWidth: true
-                        text: qsTr("Shortcut map")
+                        text: I18n.tr("Shortcut map")
                         trailingIconName: "open_in_new"
                         onClicked: ShortcutMapService.open(root.parentModal ? root.parentModal.screen : null)
                     }
@@ -472,8 +473,8 @@ Item {
                                 hoverStateLayerOpacity: 0
                                 pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                                 rippleColor: Appearance.colors.colOnSurface
-                                Accessible.name: qsTr("Use wallpaper %1").arg(WallpaperService.basename(
-                                                                                  modelData))
+                                Accessible.name: I18n.tr("Use wallpaper %1").arg(WallpaperService.basename(
+                                                                                     modelData))
                                 onClicked: WallpaperService.setWallpaper(modelData)
 
                                 backgroundContent: Rectangle {
@@ -551,7 +552,7 @@ Item {
 
                         Text {
                             Layout.fillWidth: true
-                            text: qsTr("Color mode")
+                            text: I18n.tr("Color mode")
                             color: Appearance.colors.colOnSurface
                             font.family: Fonts.ui
                             font.pixelSize: Typography.bodyMedium.pixelSize
@@ -561,14 +562,14 @@ Item {
                         SearchSelectMenuField {
                             Layout.preferredWidth: 142
                             options: [({
-                                           "label": qsTr("Light"),
+                                           "label": I18n.tr("Light"),
                                            "value": "light"
                                        }), ({
-                                                "label": qsTr("Dark"),
+                                                "label": I18n.tr("Dark"),
                                                 "value": "dark"
                                             })]
                             value: PersonalizationConfig.themeMode
-                            placeholder: qsTr("Choose color mode")
+                            placeholder: I18n.tr("Choose color mode")
                             closeOnAccept: true
                             onAccepted: value => ThemeService.setThemeMode(value)
                         }
@@ -580,7 +581,7 @@ Item {
 
                         SettingsActionRow {
                             Layout.fillWidth: true
-                            text: qsTr("Wallpaper")
+                            text: I18n.tr("Wallpaper")
                             iconName: "wallpaper"
                             trailingIconName: "chevron_right"
                             onClicked: root.navigateRequested("wallpaper")
@@ -588,7 +589,7 @@ Item {
 
                         SettingsActionRow {
                             Layout.fillWidth: true
-                            text: qsTr("Theme")
+                            text: I18n.tr("Theme")
                             iconName: "palette"
                             trailingIconName: "chevron_right"
                             onClicked: root.navigateRequested("theme")
@@ -609,7 +610,7 @@ Item {
 
         parentModal: root.parentModal
         requiresParentWindow: true
-        dialogTitle: qsTr("Choose avatar")
+        dialogTitle: I18n.tr("Choose avatar")
         onAccepted: (path, isDirectory) => {
             if (!isDirectory)
                 AvatarService.setAvatar(path);

@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Window
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 FocusScope {
     id: root
@@ -535,7 +536,7 @@ FocusScope {
 
         Text {
             visible: chipModel.count === 0
-            text: qsTr("No components selected")
+            text: I18n.tr("No components selected")
             color: Appearance.colors.colSubtext
             font.family: Fonts.ui
             font.pixelSize: 14
@@ -711,7 +712,7 @@ FocusScope {
                         visible: root.availableOptions.length === 0
                         width: optionFlow.width
                         height: root.itemHeight
-                        text: qsTr("All widgets are in use")
+                        text: I18n.tr("All widgets are in use")
                         color: Appearance.colors.colSubtext
                         font.family: Fonts.ui
                         font.pixelSize: 13

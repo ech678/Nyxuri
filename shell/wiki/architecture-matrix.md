@@ -34,7 +34,7 @@
 |---|---|---|---|---|
 | **app** | `shell/app/` | 顶层装配（`AppShell`）、环境/路径感知（`Paths`）、Niri 单一运行时 IPC（`NiriService`）、会话/启动管理（`services/`）、全局动作网关（`ActionGateway`） | Qt 原语、`Quickshell`、`qs.shared.*`、`qs.app.*`、按需装配的 `qs.modules.*` 顶层 Host | 禁止在展示组件中写死命令或业务逻辑；禁止绕过 `ActionGateway` 随意执行外部进程；非 `NiriService` 严禁直接建立 Niri IPC 连接 |
 | **modules** | `shell/modules/<domain>/` | 独立桌面功能域（`bar/`, `dock/`, `keystone/`, `launcher/`, `settings/`, `sidebars/`, `notifications/`, `osd/`, `lock/`, `wallpaper/`, `systemcards/`, `desktopcards/`, `hotcorners/`, `regionselector/`） | Qt 原语、`Quickshell`、`qs.shared.*`、`qs.app.services`、同域相对路径 `./*` 或 `qs.modules.<domain>.*` | **严禁横向私自跨域导入**（如 `modules/launcher` 直接导入 `qs.modules.settings`）；跨域桌面意图必须路由至 `ActionGateway` |
-| **shared** | `shell/shared/` | 纯净原子复用层：`controls/`（原子按钮/卡片/滑动条/指示器）、`theme/`（调色板与字体代币）、`utils/`（数学/时间/格式化纯算法） | Qt 原语、`qs.shared.theme`、`qs.shared.controls`、`qs.shared.utils` | **绝对零副作用**：严禁 `import qs.app.*`、`import qs.modules.*`、`Quickshell.Io`、`Process`、`FileView`、`Socket`、`Quickshell.env`、`XMLHttpRequest`、文件写操作或 DBus 发送 |
+| **shared** | `shell/shared/` | 纯净原子复用层：`controls/`（原子按钮/卡片/滑动条/指示器）、`theme/`（调色板与字体代币）、`utils/`（数学/时间/格式化/TOML 解析纯算法）、`i18n/`（纯 QML/JS 国际化单例与内存字典） | Qt 原语、`qs.shared.theme`、`qs.shared.controls`、`qs.shared.utils`、`qs.shared.i18n` | **绝对零副作用**：严禁 `import qs.app.*`、`import qs.modules.*`、`Quickshell.Io`、`Process`、`FileView`、`Socket`、`Quickshell.env`、`XMLHttpRequest`、文件写操作或 DBus 发送 |
 | *(已退役)* | `shell/native/` | **已于 R4-C-05 彻底物理删除**。原 C++ 插件与 fallback 桩由 pure QML/JS/Script 替代 | - | 全库严禁任何 `import Clavis.*` 原生插件导入 |
 
 ---

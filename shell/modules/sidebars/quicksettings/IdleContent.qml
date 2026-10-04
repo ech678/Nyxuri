@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 WidgetPanel {
     id: panelRoot
@@ -12,7 +13,7 @@ WidgetPanel {
     property real pendingDimFraction: IdleService.dimFraction
     readonly property var timeoutPresetSeconds: [60, 120, 300, 600, 900, 1800, 3600, 7200]
 
-    title: qsTr("Idle management")
+    title: I18n.tr("Idle management")
     icon: "schedule"
     showBackButton: true
     backAction: () => WidgetState.quickSettingsView = "settings"
@@ -20,10 +21,11 @@ WidgetPanel {
     function formatTimeout(seconds) {
         const value = Math.max(0, Number(seconds || 0));
         if (value < 60)
-            return qsTr("%n second(s)", "", Math.round(value));
+            return I18n.tr("%n second(s)", Math.round(value));
         const minutes = value / 60;
-        return Math.abs(minutes - Math.round(minutes)) < 0.001 ? qsTr("%n minute(s)", "", Math.round(minutes)) :
-                                                                 qsTr("%1 minutes").arg(minutes.toFixed(1));
+        return Math.abs(minutes - Math.round(minutes)) < 0.001 ? I18n.tr("%n minute(s)", Math.round(minutes)) :
+                                                                 I18n.tr("%1 minutes").arg(minutes.toFixed(
+                                                                                               1));
     }
 
     function timeoutOptions(currentSeconds) {
@@ -76,11 +78,11 @@ WidgetPanel {
         SettingsRow {
         Layout.fillWidth: true
         iconName: "coffee"
-        title: qsTr("Keep awake")
+        title: I18n.tr("Keep awake")
         trailing: StyledSwitch {
         checked: IdleService.inhibited
         enabled: !IdleService.busy
-        Accessible.name: qsTr("Keep awake")
+        Accessible.name: I18n.tr("Keep awake")
         onToggled: IdleService.setInhibited(checked)
     }
     }
@@ -88,11 +90,11 @@ WidgetPanel {
         SettingsRow {
         Layout.fillWidth: true
         iconName: "schedule"
-        title: qsTr("Automatic idle")
+        title: I18n.tr("Automatic idle")
         trailing: StyledSwitch {
         checked: IdleService.policyEnabled
         enabled: IdleService.policyReady
-        Accessible.name: qsTr("Automatic idle")
+        Accessible.name: I18n.tr("Automatic idle")
         onToggled: IdleService.setPolicyEnabled(checked)
     }
     }
@@ -103,7 +105,7 @@ WidgetPanel {
 
         Layout.fillWidth: true
         stageName: "dim"
-        stageTitle: qsTr("Dim screen")
+        stageTitle: I18n.tr("Dim screen")
         stageIcon: "brightness_4"
         showDimFraction: true
     }
@@ -112,7 +114,7 @@ WidgetPanel {
 
         Layout.fillWidth: true
         stageName: "lock"
-        stageTitle: qsTr("Lock session")
+        stageTitle: I18n.tr("Lock session")
         stageIcon: "lock"
     }
         StageEditor {
@@ -120,7 +122,7 @@ WidgetPanel {
 
         Layout.fillWidth: true
         stageName: "displayOff"
-        stageTitle: qsTr("Turn off displays")
+        stageTitle: I18n.tr("Turn off displays")
         stageIcon: "display_settings"
     }
         StageEditor {
@@ -128,7 +130,7 @@ WidgetPanel {
 
         Layout.fillWidth: true
         stageName: "suspend"
-        stageTitle: qsTr("Suspend system")
+        stageTitle: I18n.tr("Suspend system")
         stageIcon: "mode_standby"
     }
     }
@@ -153,7 +155,7 @@ WidgetPanel {
         Layout.fillWidth: true
         iconName: stageEditor.stageIcon
         title: stageEditor.stageTitle
-        supportingText: stageEditor.stageActive ? qsTr("Triggered") : ""
+        supportingText: stageEditor.stageActive ? I18n.tr("Triggered") : ""
         trailing: StyledSwitch {
         checked: stageEditor.stageEnabled
         enabled: IdleService.policyReady
@@ -165,7 +167,7 @@ WidgetPanel {
 
         SettingsRow {
         Layout.fillWidth: true
-        title: qsTr("Wait time")
+        title: I18n.tr("Wait time")
         trailing: SearchSelectMenuField {
         Layout.preferredWidth: 180
         options: panelRoot.timeoutOptions(stageEditor.stageTimeout)
@@ -176,7 +178,7 @@ WidgetPanel {
         popupBoundsItem: panelRoot
         closeOnAccept: true
         enabled: IdleService.policyReady
-        Accessible.name: qsTr("%1 wait time").arg(stageEditor.stageTitle)
+        Accessible.name: I18n.tr("%1 wait time").arg(stageEditor.stageTitle)
         onAccepted: value => IdleService.configureStage(stageEditor.stageName, stageEditor.stageEnabled,
         Number(value), stageEditor.respectInhibitors)
     }
@@ -188,7 +190,7 @@ WidgetPanel {
         spacing: Metrics.spacingS
 
         Text {
-        text: qsTr("Dim percentage")
+        text: I18n.tr("Dim percentage")
         color: Appearance.colors.colOnLayer2
         font.family: Typography.bodyMedium.family
         font.pixelSize: Typography.bodyMedium.pixelSize
@@ -206,7 +208,7 @@ WidgetPanel {
         showTooltipOnHover: true
         usePercentTooltip: false
         tooltipContent: Math.round(value * 100) + "%"
-        Accessible.name: qsTr("Screen dim percentage")
+        Accessible.name: I18n.tr("Screen dim percentage")
         Binding {
         target: dimFractionSlider
         property: "value"
@@ -223,11 +225,11 @@ WidgetPanel {
         SettingsRow {
         Layout.fillWidth: true
         iconName: "coffee"
-        title: qsTr("Skip while keeping awake")
+        title: I18n.tr("Skip while keeping awake")
         trailing: StyledSwitch {
         checked: stageEditor.respectInhibitors
         enabled: IdleService.policyReady
-        Accessible.name: qsTr("%1: respect keep-awake").arg(stageEditor.stageTitle)
+        Accessible.name: I18n.tr("%1: respect keep-awake").arg(stageEditor.stageTitle)
         onToggled: IdleService.configureStage(stageEditor.stageName, stageEditor.stageEnabled,
         stageEditor.stageTimeout, checked)
     }

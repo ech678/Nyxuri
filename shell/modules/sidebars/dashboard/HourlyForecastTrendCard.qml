@@ -4,6 +4,7 @@ import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
 import "WeatherChartMath.js" as WeatherChartMath
+import qs.shared.i18n
 
 Rectangle {
     id: root
@@ -85,9 +86,9 @@ Rectangle {
     }
 
     function extraTabLabel() {
-        const labels = [qsTr("UV index"), qsTr("Precipitation"), qsTr("Feels like"), qsTr(
-                            "Relative humidity / Dew point"), qsTr("Pressure"), qsTr("Cloud cover"), qsTr(
-                            "Visibility")];
+        const labels = [I18n.tr("UV index"), I18n.tr("Precipitation"), I18n.tr("Feels like"), I18n.tr(
+                            "Relative humidity / Dew point"), I18n.tr("Pressure"), I18n.tr("Cloud cover"),
+                        I18n.tr("Visibility")];
         return currentTab >= 3 && currentTab < 10 ? labels[currentTab - 3] : "";
     }
 
@@ -153,7 +154,7 @@ Rectangle {
                 }
 
                 Text {
-                    text: qsTr("Hourly forecast")
+                    text: I18n.tr("Hourly forecast")
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.ui
                     font.bold: true
@@ -174,13 +175,13 @@ Rectangle {
                     currentValue: root.currentTab
                     model: [({
                                  "value": 0,
-                                 "label": qsTr("Conditions")
+                                 "label": I18n.tr("Conditions")
                              }), ({
                                       "value": 1,
-                                      "label": qsTr("Air quality")
+                                      "label": I18n.tr("Air quality")
                                   }), ({
                                            "value": 2,
-                                           "label": qsTr("Wind")
+                                           "label": I18n.tr("Wind")
                                        })]
                     onValueSelected: value => {
                         return root.currentTab = value;
@@ -211,7 +212,7 @@ Rectangle {
                     iconColor: Appearance.colors.colOnSurfaceVariant
                     selected: root.currentTab >= 3 || extraMenu.opened
                     selectedIconColor: Appearance.colors.colOnPrimaryContainer
-                    accessibleName: qsTr("More hourly forecast options")
+                    accessibleName: I18n.tr("More hourly forecast options")
                     normalContainerColor: Appearance.colors.colLayer2
                     selectedContainerColor: Appearance.colors.colPrimaryContainer
                     hoverStateLayerColor: Appearance.colors.colLayer4
@@ -227,37 +228,37 @@ Rectangle {
                         options: [
                             {
                                 "value": 3,
-                                "label": qsTr("UV index"),
+                                "label": I18n.tr("UV index"),
                                 "icon": "sunny"
                             },
                             {
                                 "value": 4,
-                                "label": qsTr("Precipitation"),
+                                "label": I18n.tr("Precipitation"),
                                 "icon": "water_drop"
                             },
                             {
                                 "value": 5,
-                                "label": qsTr("Feels like"),
+                                "label": I18n.tr("Feels like"),
                                 "icon": "thermostat"
                             },
                             {
                                 "value": 6,
-                                "label": qsTr("Relative humidity / Dew point"),
+                                "label": I18n.tr("Relative humidity / Dew point"),
                                 "icon": "humidity_percentage"
                             },
                             {
                                 "value": 7,
-                                "label": qsTr("Pressure"),
+                                "label": I18n.tr("Pressure"),
                                 "icon": "speed"
                             },
                             {
                                 "value": 8,
-                                "label": qsTr("Cloud cover"),
+                                "label": I18n.tr("Cloud cover"),
                                 "icon": "cloud"
                             },
                             {
                                 "value": 9,
-                                "label": qsTr("Visibility"),
+                                "label": I18n.tr("Visibility"),
                                 "icon": "visibility"
                             }
                         ]

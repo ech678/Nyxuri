@@ -4,6 +4,7 @@ import Qt5Compat.GraphicalEffects
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 Rectangle {
     id: root
@@ -13,8 +14,8 @@ Rectangle {
     property bool hasMedia: player !== null
     property bool isPlaying: player && player.isPlaying
     property string artUrl: (player && player.trackArtUrl) ? player.trackArtUrl : ""
-    property string title: (player && player.trackTitle) ? player.trackTitle : qsTr("No media")
-    property string artist: (player && player.trackArtist) ? player.trackArtist : qsTr("Not playing")
+    property string title: (player && player.trackTitle) ? player.trackTitle : I18n.tr("No media")
+    property string artist: (player && player.trackArtist) ? player.trackArtist : I18n.tr("Not playing")
 
     Layout.fillWidth: true
     implicitHeight: contentLayout.implicitHeight + Metrics.lockOuterPadding * 2
@@ -106,7 +107,7 @@ Rectangle {
             Layout.topMargin: root.compact ? 0 : Metrics.spacingM
             Layout.bottomMargin: root.compact ? Metrics.spacingS : Metrics.spacingM
             visible: !root.compact
-            text: qsTr("Now playing")
+            text: I18n.tr("Now playing")
             color: Appearance.colors.colOnSurfaceVariant
             font.family: Fonts.numeric
             font.pixelSize: 17

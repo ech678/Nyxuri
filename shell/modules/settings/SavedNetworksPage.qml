@@ -2,6 +2,7 @@ import QtQuick
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 Item {
     id: root
@@ -21,7 +22,7 @@ Item {
         anchors.margins: Metrics.cardPadding
         radius: Metrics.cornerM
         visible: NetworkService.savedWifiProfiles.length === 0
-        message: qsTr("No saved networks")
+        message: I18n.tr("No saved networks")
     }
 
     StyledListView {
@@ -49,7 +50,7 @@ Item {
                     details.push(savedRow.profileName);
 
                 if (savedRow.modelData.autoconnect)
-                    details.push(qsTr("Connect automatically"));
+                    details.push(I18n.tr("Connect automatically"));
 
                 return details.join(" · ");
             }

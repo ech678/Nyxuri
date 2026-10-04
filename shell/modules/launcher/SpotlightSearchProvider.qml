@@ -4,6 +4,7 @@ import qs.app.services
 import qs.modules.wallpaper
 import "./SpotlightLocalSearch.js" as LocalSearch
 import qs.app
+import qs.shared.i18n
 
 Item {
     id: root
@@ -38,8 +39,8 @@ Item {
                 title: entry.title,
                 icon: entry.icon,
                 symbol: entry.icon,
-                subtitle: SpotlightCatalog.available(entry) ? (entry.breadcrumb || entry.description || "") : qsTr(
-                                                                  "Currently unavailable")
+                subtitle: SpotlightCatalog.available(entry) ? (entry.breadcrumb || entry.description || "") :
+                                                              I18n.tr("Currently unavailable")
             }));
             return;
         }
@@ -59,15 +60,16 @@ Item {
                                                   query).map(entry => ({
                                                       id: entry.id,
                                                       title: entry.title,
-                                                      subtitle: qsTr("Settings · %1").arg(entry.breadcrumb),
+                                                      subtitle: I18n.tr("Settings · %1").arg(entry.breadcrumb),
                                                       iconKind: "symbol",
                                                       symbol: entry.icon
                                                   }));
         const actions = LocalSearch.matchCatalog(SpotlightCatalog.actions, query).map(entry => ({
             id: entry.id,
             title: entry.title,
-            subtitle: SpotlightCatalog.available(entry) ? qsTr("Action · %1").arg(entry.description) : qsTr(
-                                                              "Action · Currently unavailable"),
+            subtitle: SpotlightCatalog.available(entry) ? I18n.tr("Action · %1").arg(entry.description) : I18n.tr("Action · Currently unavailable"),
+
+
             iconKind: "symbol",
             symbol: entry.icon,
             available: SpotlightCatalog.available(entry)
@@ -87,12 +89,12 @@ Item {
                                                  actions: actions,
                                                  wallpapers: wallpapers
                                              }, query, {
-                                                 apps: qsTr("Apps"),
-                                                 settings: qsTr("Settings"),
-                                                 actions: qsTr("Actions"),
-                                                 wallpapers: qsTr("Wallpapers"),
-                                                 files: qsTr("Search files for “%1”").arg(query),
-                                                 web: qsTr("Search the web for “%1”").arg(query)
+                                                 apps: I18n.tr("Apps"),
+                                                 settings: I18n.tr("Settings"),
+                                                 actions: I18n.tr("Actions"),
+                                                 wallpapers: I18n.tr("Wallpapers"),
+                                                 files: I18n.tr("Search files for “%1”").arg(query),
+                                                 web: I18n.tr("Search the web for “%1”").arg(query)
                                              }, capacities, retainedResultId);
     }
     function activate(id) {
@@ -141,7 +143,7 @@ Item {
                 deferredRequested("actions", action.id, request.query);
             return true;
         }
-        error = qsTr("This result is currently unavailable");
+        error = I18n.tr("This result is currently unavailable");
         return false;
     }
     onQueryChanged: {

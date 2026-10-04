@@ -4,6 +4,7 @@ import QtQuick.Controls.Material
 import qs.app.services
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -209,12 +210,12 @@ Item {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             Accessible.role: Accessible.Button
-            Accessible.name: qsTr("Search (Ctrl+0)")
+            Accessible.name: I18n.tr("Search (Ctrl+0)")
             onClicked: root.searchRequested()
             Accessible.onPressAction: root.searchRequested()
             StyledToolTip {
                 extraVisibleCondition: returnSearchMouse.containsMouse
-                text: qsTr("Search (Ctrl+0)")
+                text: I18n.tr("Search (Ctrl+0)")
             }
         }
 
@@ -262,7 +263,7 @@ Item {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             Accessible.role: Accessible.Button
-            Accessible.name: qsTr("Return to previous context (Backspace)")
+            Accessible.name: I18n.tr("Return to previous context (Backspace)")
             onClicked: {
                 root.pillClosed();
                 root.focusInput();
@@ -276,7 +277,7 @@ Item {
             }
             StyledToolTip {
                 extraVisibleCondition: pillClose.containsMouse
-                text: qsTr("Return to previous context (Backspace)")
+                text: I18n.tr("Return to previous context (Backspace)")
             }
         }
 
@@ -305,16 +306,16 @@ Item {
                 anchors.fill: parent
                 text: {
                     if (root.mode === "commands")
-                        return qsTr("Search commands");
+                        return I18n.tr("Search commands");
                     if (root.mode === "search")
-                        return qsTr("Search");
+                        return I18n.tr("Search");
                     if (root.mode === "files")
-                        return qsTr("Search files and folders");
+                        return I18n.tr("Search files and folders");
                     if (root.mode === "clipboard")
-                        return qsTr("Search clipboard history");
+                        return I18n.tr("Search clipboard history");
                     if (root.mode === "wallpapers")
-                        return qsTr("Search wallpapers");
-                    return qsTr("Search apps");
+                        return I18n.tr("Search wallpapers");
+                    return I18n.tr("Search apps");
                 }
                 color: Appearance.applyAlpha(Appearance.colors.colOnSurfaceVariant, 0.72)
                 font.family: Fonts.ui
@@ -326,19 +327,16 @@ Item {
 
             Text {
                 anchors.fill: parent
-                text: root.mode === "calculator" ? qsTr("Enter an expression") : root.mode === "currency"
-                                                   ? qsTr("Amount and currency") : root.mode === "time" ? qsTr(
-                                                                                                              "Choose a time conversion template") :
-                                                                                                          root.mode
-                                                                                                          === "settings"
-                                                                                                          ? qsTr("Search settings") :
-                                                                                                            root.mode
-                                                                                                            === "actions"
-                                                                                                            ? qsTr("Search actions") :
-                                                                                                              root.mode
-                                                                                                              === "web"
-                                                                                                              ? qsTr("Search the web") :
-                                                                                                                qsTr("Search")
+                text: root.mode === "calculator" ? I18n.tr("Enter an expression") : root.mode === "currency"
+                                                   ? I18n.tr("Amount and currency") : root.mode === "time"
+                                                     ? I18n.tr("Choose a time conversion template") :
+                                                       root.mode === "settings" ? I18n.tr("Search settings") :
+                                                                                  root.mode === "actions"
+                                                                                  ? I18n.tr("Search actions") :
+                                                                                    root.mode === "web"
+                                                                                    ? I18n.tr(
+                                                                                          "Search the web") :
+                                                                                      I18n.tr("Search")
                 color: Appearance.applyAlpha(Appearance.colors.colOnSurfaceVariant, 0.72)
                 font.family: Fonts.ui
                 font.pixelSize: 20
@@ -365,9 +363,9 @@ Item {
                 focus: true
                 activeFocusOnTab: false
 
-                Accessible.name: root.mode === "web" ? qsTr("Web search") : qsTr("Spotlight search")
+                Accessible.name: root.mode === "web" ? I18n.tr("Web search") : I18n.tr("Spotlight search")
                 Accessible.role: Accessible.EditableText
-                Accessible.description: root.pillError || qsTr("Tab to show and cycle modes")
+                Accessible.description: root.pillError || I18n.tr("Tab to show and cycle modes")
                 HoverHandler {
                     id: inputHover
                 }
@@ -398,19 +396,19 @@ Item {
         model: [
             {
                 icon: "grid_view",
-                label: qsTr("Apply")
+                label: I18n.tr("Apply")
             },
             {
                 icon: "image",
-                label: qsTr("Wallpaper")
+                label: I18n.tr("Wallpaper")
             },
             {
                 icon: "content_paste",
-                label: qsTr("Clipboard")
+                label: I18n.tr("Clipboard")
             },
             {
                 icon: "draft",
-                label: qsTr("Files")
+                label: I18n.tr("Files")
             }
         ]
 
@@ -477,7 +475,7 @@ Item {
 
             StyledToolTip {
                 extraVisibleCondition: modeMouse.containsMouse && modeMouse.enabled
-                text: qsTr("%1 (Ctrl+%2)").arg(modeButton.modelData.label).arg(modeButton.index + 1)
+                text: I18n.tr("%1 (Ctrl+%2)").arg(modeButton.modelData.label).arg(modeButton.index + 1)
             }
         }
     }

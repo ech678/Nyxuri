@@ -22,6 +22,7 @@ import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
 import "../../shared/utils/ZenPalette.js" as Zen
+import qs.shared.i18n
 
 ColumnLayout {
     id: root
@@ -31,12 +32,12 @@ ColumnLayout {
     readonly property var points: Zen.positions(paletteState)
     readonly property var colors: Zen.colors(paletteState)
     readonly property var algorithmNames: ({
-                                               floating: qsTr("Single color"),
-                                               complementary: qsTr("Complementary"),
-                                               singleAnalogous: qsTr("Analogous"),
-                                               splitComplementary: qsTr("Split complementary"),
-                                               analogous: qsTr("Analogous"),
-                                               triadic: qsTr("Triadic")
+                                               floating: I18n.tr("Single color"),
+                                               complementary: I18n.tr("Complementary"),
+                                               singleAnalogous: I18n.tr("Analogous"),
+                                               splitComplementary: I18n.tr("Split complementary"),
+                                               analogous: I18n.tr("Analogous"),
+                                               triadic: I18n.tr("Triadic")
                                            })
     signal edited(var value)
     function change(key, value) {
@@ -141,7 +142,8 @@ ColumnLayout {
                             duration: 120
                         }
                     }
-                    Accessible.name: index === 0 ? qsTr("Primary color") : qsTr("Color %1").arg(index + 1)
+                    Accessible.name: index === 0 ? I18n.tr("Primary color") : I18n.tr("Color %1").arg(index
+                                                                                                      + 1)
                     Accessible.role: Accessible.Button
                     HoverHandler {
                         cursorShape: Qt.OpenHandCursor
@@ -192,13 +194,13 @@ ColumnLayout {
             anchors.margins: 8
             IconButton {
                 iconName: "add"
-                tooltipText: qsTr("Add color")
+                tooltipText: I18n.tr("Add color")
                 enabled: root.paletteState.count < 3
                 onClicked: root.edited(Zen.resize(root.paletteState, root.paletteState.count + 1))
             }
             IconButton {
                 iconName: "remove"
-                tooltipText: qsTr("Remove color")
+                tooltipText: I18n.tr("Remove color")
                 enabled: root.paletteState.count > 1
                 onClicked: root.edited(Zen.resize(root.paletteState, root.paletteState.count - 1))
             }
@@ -219,7 +221,7 @@ ColumnLayout {
         spacing: 4
         IconButton {
             iconName: "chevron_left"
-            Accessible.name: qsTr("Previous presets")
+            Accessible.name: I18n.tr("Previous presets")
             enabled: root.page > 0
             onClicked: root.page--
         }
@@ -310,7 +312,7 @@ ColumnLayout {
                                                                       root.paletteState))
                                 }
                                 Accessible.role: Accessible.Button
-                                Accessible.name: qsTr("Preset %1").arg(presetIndex + 1)
+                                Accessible.name: I18n.tr("Preset %1").arg(presetIndex + 1)
                             }
                         }
                     }
@@ -319,7 +321,7 @@ ColumnLayout {
         }
         IconButton {
             iconName: "chevron_right"
-            Accessible.name: qsTr("Next presets")
+            Accessible.name: I18n.tr("Next presets")
             enabled: root.page < 4
             onClicked: root.page++
         }
@@ -334,7 +336,7 @@ ColumnLayout {
             to: 0.8
             stepSize: 0.001
             hoverEnabled: true
-            Accessible.name: qsTr("Opacity")
+            Accessible.name: I18n.tr("Opacity")
             Binding {
                 target: opacitySlider
                 property: "value"
@@ -425,7 +427,7 @@ ColumnLayout {
                 }
             }
             StyledToolTip {
-                text: qsTr("Opacity: %1%").arg(Math.round(root.paletteState.opacity * 100))
+                text: I18n.tr("Opacity: %1%").arg(Math.round(root.paletteState.opacity * 100))
                 extraVisibleCondition: opacitySlider.hovered || opacitySlider.pressed
             }
         }
@@ -433,7 +435,7 @@ ColumnLayout {
             id: knob
             Layout.preferredWidth: 80
             Layout.preferredHeight: 80
-            Accessible.name: qsTr("Grain")
+            Accessible.name: I18n.tr("Grain")
             Accessible.role: Accessible.Slider
             focus: knobMouse.pressed
             Keys.onLeftPressed: root.change("grain", Math.max(0, root.paletteState.grain - 1 / 16))
@@ -537,7 +539,7 @@ ColumnLayout {
                 }
             }
             StyledToolTip {
-                text: qsTr("Grain: %1%").arg(Math.round(root.paletteState.grain * 100))
+                text: I18n.tr("Grain: %1%").arg(Math.round(root.paletteState.grain * 100))
                 extraVisibleCondition: knobMouse.containsMouse
             }
         }

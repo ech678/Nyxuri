@@ -1,4 +1,5 @@
 import QtQuick
+import qs.shared.i18n
 
 Item {
     id: root
@@ -11,7 +12,7 @@ Item {
     required property string temperatureText
     required property string numericFontFamily
     required property string uiFontFamily
-    property string normalText: qsTr("Normal")
+    property string normalText: I18n.tr("Normal")
     property color lineColor
     property color labelColor
     readonly property real lineY: chartBottom - (temperatureC - domainMinimumC) / (domainMaximumC
@@ -21,7 +22,7 @@ Item {
     y: lineY
     height: 1
     enabled: false
-    Accessible.name: temperatureText + " " + qsTr("1991–2020 climate normal")
+    Accessible.name: temperatureText + " " + I18n.tr("1991–2020 climate normal")
 
     Rectangle {
         anchors.left: parent.left

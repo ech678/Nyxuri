@@ -5,6 +5,7 @@ import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
 import "./DisplayConfiguration.js" as Config
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -51,7 +52,7 @@ StyledFlickable {
         spacing: Metrics.spacingL
         NiriSetupPrompt {
             Layout.fillWidth: true
-            title: qsTr("Display configuration")
+            title: I18n.tr("Display configuration")
             description: ""
             integrationState: NiriConfigService.state("outputs")
             busy: NiriConfigService.busy && NiriConfigService.activeFeature === "outputs"
@@ -87,7 +88,7 @@ StyledFlickable {
                     z: 3
                     variant: "standard"
                     iconName: "id_card"
-                    accessibleName: qsTr("Identify displays")
+                    accessibleName: I18n.tr("Identify displays")
                     onClicked: DisplayConfigService.identifyDisplays()
                 }
             }
@@ -100,7 +101,8 @@ StyledFlickable {
         InlineStatusBanner {
             Layout.fillWidth: true
             visible: root.selected && !root.selected.editable
-            message: qsTr("This output is read-only. Resolve conflicting or unsupported settings in %1.").arg(
+            message: I18n.tr(
+                         "This output is read-only. Resolve conflicting or unsupported settings in %1.").arg(
                          root.selected ? root.selected.source : "")
         }
         SettingsSection {
@@ -118,11 +120,11 @@ StyledFlickable {
             iconName: "tune"
             DisplayChoice {
                 Layout.fillWidth: true
-                title: qsTr("Display")
+                title: I18n.tr("Display")
                 value: DisplayConfigService.selection
                 options: DisplayConfigService.draft.filter(r => !r.deleted).map(r => ({
                     value: r.key,
-                    label: r.connected ? r.label : qsTr("%1 (disconnected)").arg(r.label)
+                    label: r.connected ? r.label : I18n.tr("%1 (disconnected)").arg(r.label)
                 }))
                 onSelected: value => DisplayConfigService.selection = value
             }
@@ -133,33 +135,33 @@ StyledFlickable {
                 enabled: root.selected && root.selected.editable && !DisplayConfigService.busy
                 SettingsRow {
                     Layout.fillWidth: true
-                    title: qsTr("Enabled")
+                    title: I18n.tr("Enabled")
                     iconName: "monitor"
                     trailing: StyledSwitch {
                         checked: root.settings.enabled !== false
                         enabled: !root.selected || !root.selected.connected || !checked
                                  || DisplayConfigService.draft.filter(r => r.connected && r.settings.enabled
                                                                            !== false).length > 1
-                        Accessible.name: qsTr("Enabled")
+                        Accessible.name: I18n.tr("Enabled")
                         onToggled: root.edit("enabled", checked)
                     }
                 }
                 DisplayChoice {
                     Layout.fillWidth: true
                     visible: root.selected && root.selected.connected
-                    title: qsTr("Resolution and refresh rate")
+                    title: I18n.tr("Resolution and refresh rate")
                     value: root.settings.mode || ""
                     placeholder: root.settings.mode || ""
                     options: root.selected && root.selected.live ? root.selected.live.modes.map(m => ({
                         value: Config.modeString(m),
-                        label: qsTr("%1 × %2 · %3 Hz").arg(m.width).arg(m.height).arg((m.refreshMilliHz
-                                                                                       / 1000).toFixed(3))
+                        label: I18n.tr("%1 × %2 · %3 Hz").arg(m.width).arg(m.height).arg((m.refreshMilliHz
+                                                                                          / 1000).toFixed(3))
                     })) : []
                     onSelected: value => root.edit("mode", value)
                 }
                 DisplayChoice {
                     Layout.fillWidth: true
-                    title: qsTr("Scale")
+                    title: I18n.tr("Scale")
                     value: String(root.settings.scale || 1)
                     options: {
                         const values = [1, 1.25, 1.5, 1.75, 2, 2.5, 3];
@@ -171,12 +173,12 @@ StyledFlickable {
                         if (values.indexOf(current) < 0)
                             result.push({
                                             value: String(current),
-                                            label: qsTr("%1% (Custom)").arg(Math.round(current * 1000000)
-                                                                            / 10000)
+                                            label: I18n.tr("%1% (Custom)").arg(Math.round(current * 1000000)
+                                                                               / 10000)
                                         });
                         result.push({
                                         value: "custom",
-                                        label: qsTr("Custom")
+                                        label: I18n.tr("Custom")
                                     });
                         return result;
                     }
@@ -197,11 +199,11 @@ StyledFlickable {
                         model: [
                             {
                                 key: "x",
-                                label: qsTr("Logical X")
+                                label: I18n.tr("Logical X")
                             },
                             {
                                 key: "y",
-                                label: qsTr("Logical Y")
+                                label: I18n.tr("Logical Y")
                             }
                         ]
                         OutlinedTextField {
@@ -220,11 +222,11 @@ StyledFlickable {
                 }
                 DisplayChoice {
                     Layout.fillWidth: true
-                    title: qsTr("Rotation and reflection")
+                    title: I18n.tr("Rotation and reflection")
                     options: [
                         {
                             value: "normal",
-                            label: qsTr("Normal")
+                            label: I18n.tr("Normal")
                         },
                         {
                             value: "90",
@@ -240,19 +242,19 @@ StyledFlickable {
                         },
                         {
                             value: "flipped",
-                            label: qsTr("Flipped")
+                            label: I18n.tr("Flipped")
                         },
                         {
                             value: "flipped-90",
-                            label: qsTr("Flipped · 90°")
+                            label: I18n.tr("Flipped · 90°")
                         },
                         {
                             value: "flipped-180",
-                            label: qsTr("Flipped · 180°")
+                            label: I18n.tr("Flipped · 180°")
                         },
                         {
                             value: "flipped-270",
-                            label: qsTr("Flipped · 270°")
+                            label: I18n.tr("Flipped · 270°")
                         }
                     ]
                     value: root.settings.transform || "normal"
@@ -260,21 +262,21 @@ StyledFlickable {
                 }
                 DisplayChoice {
                     Layout.fillWidth: true
-                    title: qsTr("Variable refresh rate")
+                    title: I18n.tr("Variable refresh rate")
                     enabled: root.selected && (!root.selected.connected || root.selected.live.vrrSupported)
 
                     options: [
                         {
                             value: "off",
-                            label: qsTr("Off")
+                            label: I18n.tr("Off")
                         },
                         {
                             value: "on",
-                            label: qsTr("On")
+                            label: I18n.tr("On")
                         },
                         {
                             value: "on-demand",
-                            label: qsTr("On-Demand")
+                            label: I18n.tr("On-Demand")
                         }
                     ]
                     value: root.settings.vrr || "off"
@@ -282,7 +284,7 @@ StyledFlickable {
                 }
                 SettingsActionRow {
                     Layout.fillWidth: true
-                    text: qsTr("Advanced settings")
+                    text: I18n.tr("Advanced settings")
                     iconName: "tune"
                     trailingIconName: root.advanced ? "expand_less" : "expand_more"
                     onClicked: root.advanced = !root.advanced
@@ -305,7 +307,7 @@ StyledFlickable {
                 }
                 ActionButton {
                     visible: root.selected && !root.selected.connected
-                    text: qsTr("Delete saved display")
+                    text: I18n.tr("Delete saved display")
                     onClicked: DisplayConfigService.forget(root.selected.key)
                 }
             }
@@ -318,7 +320,7 @@ StyledFlickable {
                 Layout.minimumWidth: Metrics.iconM + Metrics.spacingXS
             }
             ActionButton {
-                text: qsTr("Discard")
+                text: I18n.tr("Discard")
                 enabled: DisplayConfigService.dirty && !DisplayConfigService.busy
                 onClicked: DisplayConfigService.reload()
                 InlineBusyIndicator {
@@ -329,7 +331,7 @@ StyledFlickable {
                 }
             }
             ActionButton {
-                text: qsTr("Apply")
+                text: I18n.tr("Apply")
                 filled: true
                 enabled: DisplayConfigService.dirty && !DisplayConfigService.busy &&
                          !DisplayConfigService.validation && NiriConfigService.ready("outputs")
@@ -392,7 +394,7 @@ StyledFlickable {
                 spacing: Metrics.spacingM
                 Text {
                     Layout.fillWidth: true
-                    text: qsTr("Custom scale")
+                    text: I18n.tr("Custom scale")
                     font.family: Typography.headlineSmall.family
                     font.pixelSize: Typography.headlineSmall.pixelSize
                     font.weight: Typography.headlineSmall.weight
@@ -402,7 +404,7 @@ StyledFlickable {
                 OutlinedTextField {
                     id: percentInput
                     Layout.fillWidth: true
-                    labelText: qsTr("Scale (%)")
+                    labelText: I18n.tr("Scale (%)")
                     text: scaleDialog.inputText
                     validator: DoubleValidator {
                         bottom: 10
@@ -421,11 +423,11 @@ StyledFlickable {
                         Layout.fillWidth: true
                     }
                     ActionButton {
-                        text: qsTr("Cancel")
+                        text: I18n.tr("Cancel")
                         onClicked: scaleDialog.dismiss()
                     }
                     ActionButton {
-                        text: qsTr("Apply")
+                        text: I18n.tr("Apply")
                         filled: true
                         enabled: scaleDialog.acceptable && !DisplayConfigService.busy
                         onClicked: scaleDialog.applyScale()

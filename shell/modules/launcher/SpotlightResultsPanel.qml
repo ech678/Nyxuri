@@ -9,6 +9,7 @@ import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
 import qs.modules.wallpaper
+import qs.shared.i18n
 
 Item {
     id: root
@@ -430,11 +431,11 @@ Item {
                             root.modalClosed();
                         }
                         MenuItem {
-                            text: qsTr("Open")
+                            text: I18n.tr("Open")
                             onTriggered: root.activationRequested(appDelegate.index, false)
                         }
                         MenuItem {
-                            text: qsTr("Show in file manager")
+                            text: I18n.tr("Show in file manager")
                             onTriggered: root.revealRequested(appDelegate.index)
                         }
                     }
@@ -668,9 +669,9 @@ Item {
                     anchors.left: parent.left
                     anchors.leftMargin: 8
                     anchors.verticalCenter: parent.verticalCenter
-                    text: root.providerAvailable && !root.canRestore ? qsTr(
+                    text: root.providerAvailable && !root.canRestore ? I18n.tr(
                                                                            "wl-copy is missing: restore is unavailable") :
-                                                                       qsTr("Clipboard history")
+                                                                       I18n.tr("Clipboard history")
                     color: root.providerAvailable && !root.canRestore ? Appearance.colors.colError :
                                                                         Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.ui
@@ -685,7 +686,7 @@ Item {
                              && root.results.length > 0
                     filled: false
                     iconName: "delete_sweep"
-                    text: qsTr("Clear")
+                    text: I18n.tr("Clear")
                     onClicked: clearDialog.open()
                 }
             }
@@ -914,7 +915,7 @@ Item {
                                     iconName: "delete"
                                     iconSize: 20
                                     iconColor: Appearance.colors.colOnSurfaceVariant
-                                    accessibleName: qsTr("Delete clipboard entry")
+                                    accessibleName: I18n.tr("Delete clipboard entry")
                                     onClicked: root.deleteRequested(clipboardDelegate.index)
                                 }
 
@@ -947,8 +948,8 @@ Item {
 
                                     Text {
                                         anchors.verticalCenter: parent.verticalCenter
-                                        text: root.clipboardActionState === "copied" ? qsTr("Copied") : qsTr(
-                                                                                           "Copy failed")
+                                        text: root.clipboardActionState === "copied" ? I18n.tr("Copied") :
+                                                                                       I18n.tr("Copy failed")
                                         color: root.clipboardActionState === "copied"
                                                ? Appearance.colors.colPrimary : Appearance.colors.colError
                                         font.family: Fonts.ui
@@ -1008,9 +1009,9 @@ Item {
         x: 20
         y: 8
         width: parent.width - 40
-        text: root.fileError ? root.fileError.message : root.fileState === "limited" ? qsTr(
+        text: root.fileError ? root.fileError.message : root.fileState === "limited" ? I18n.tr(
                                                                                            "Limited results — refine your search") :
-                                                                                       qsTr("Enter — Open · Ctrl+Enter — Show in file manager")
+                                                                                       I18n.tr("Enter — Open · Ctrl+Enter — Show in file manager")
         textFormat: Text.PlainText
         elide: Text.ElideRight
         font.family: Fonts.ui
@@ -1048,20 +1049,22 @@ Item {
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: Math.min(520, root.width - 48)
-                text: root.fileMode ? (root.fileError ? root.fileError.message : root.loading ? qsTr(
+                text: root.fileMode ? (root.fileError ? root.fileError.message : root.loading ? I18n.tr(
                                                                                                     "Searching…") :
                                                                                                 root.fileState
                                                                                                 === "idle"
-                                                                                                ? qsTr("Search files and folders") :
+                                                                                                ? I18n.tr(
+                                                                                                      "Search files and folders") :
                                                                                                   root.fileState
                                                                                                   === "limited"
-                                                                                                  ? qsTr("Search stopped before completion — refine your search") :
-                                                                                                    qsTr("No matching results")) :
-                                      root.loading ? qsTr("Reading…") : (!root.providerAvailable ? (
-                                                                                                       root.providerError
-                                                                                                       ? root.providerError.message :
-                                                                                                         qsTr("Current provider is unavailable")) :
-                                                                                                   qsTr("No matching results"))
+                                                                                                  ? I18n.tr(
+                                                                                                        "Search stopped before completion — refine your search") :
+                                                                                                    I18n.tr("No matching results")) :
+                                      root.loading ? I18n.tr("Reading…") : (!root.providerAvailable ? (
+                                                                                                          root.providerError
+                                                                                                          ? root.providerError.message :
+                                                                                                            I18n.tr("Current provider is unavailable")) :
+                                                                                                      I18n.tr("No matching results"))
                 color: Appearance.colors.colOnSurfaceVariant
                 font.family: Fonts.ui
                 font.pixelSize: 15
@@ -1076,8 +1079,8 @@ Item {
 
         anchors.centerIn: Overlay.overlay
         width: 380
-        dialogTitle: qsTr("Clear clipboard history?")
-        messageText: qsTr("This clears all clipboard history in cliphist and cannot be undone.")
+        dialogTitle: I18n.tr("Clear clipboard history?")
+        messageText: I18n.tr("This clears all clipboard history in cliphist and cannot be undone.")
 
         actionsComponent: Component {
             RowLayout {
@@ -1090,13 +1093,13 @@ Item {
                 ActionButton {
                     id: cancelButton
 
-                    text: qsTr("Cancel")
+                    text: I18n.tr("Cancel")
                     Component.onCompleted: clearDialog.initialFocusItem = cancelButton
                     onClicked: clearDialog.close()
                 }
 
                 ActionButton {
-                    text: qsTr("Clear")
+                    text: I18n.tr("Clear")
                     onClicked: {
                         root.clearRequested();
                         clearDialog.close();

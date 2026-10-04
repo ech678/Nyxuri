@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -120,7 +121,7 @@ StyledFlickable {
                 Layout.fillWidth: true
                 iconName: "wifi"
                 text: SpotlightCatalog.title("general.network")
-                description: NetworkService.available ? NetworkService.activeConnection : qsTr(
+                description: NetworkService.available ? NetworkService.activeConnection : I18n.tr(
                                                             "Network unavailable")
                 trailingIconName: "chevron_right"
                 onClicked: root.sectionRequested("network")
@@ -132,16 +133,16 @@ StyledFlickable {
                 text: SpotlightCatalog.title("general.connected-devices")
                 description: {
                     if (!BluetoothService.available)
-                        return qsTr("Bluetooth unavailable");
+                        return I18n.tr("Bluetooth unavailable");
 
                     if (!BluetoothService.enabled)
-                        return qsTr("Bluetooth is off");
+                        return I18n.tr("Bluetooth is off");
 
                     if (BluetoothService.connectedDevices.length === 1)
                         return BluetoothService.connectedDevices[0].name;
 
                     if (BluetoothService.connectedDevices.length > 1)
-                        return qsTr("%1 devices connected").arg(BluetoothService.connectedDevices.length);
+                        return I18n.tr("%1 devices connected").arg(BluetoothService.connectedDevices.length);
 
                     return "";
                 }

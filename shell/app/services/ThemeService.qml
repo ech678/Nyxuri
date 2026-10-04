@@ -7,6 +7,7 @@ import qs.shared.theme
 import qs.app.services
 import qs.modules.wallpaper
 import qs.app
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -138,11 +139,11 @@ Singleton {
     readonly property bool cursorSyncBusy: NiriConfigService.busy && NiriConfigService.activeFeature
                                            === "cursor"
     property var availableIconThemes: [({
-                                            "label": qsTr("System default"),
+                                            "label": I18n.tr("System default"),
                                             "value": ""
                                         })]
     property var availableCursorThemes: [({
-                                              "label": qsTr("System default"),
+                                              "label": I18n.tr("System default"),
                                               "value": ""
                                           })]
     readonly property string systemDefaultIconTheme: iconThemeController.systemThemeName
@@ -437,7 +438,7 @@ Singleton {
         id: detectIconThemesProcess
         stdout: StdioCollector {
             onStreamFinished: {
-                root.availableIconThemes = root.parseDetectedThemes(this.text, qsTr("System default"),
+                root.availableIconThemes = root.parseDetectedThemes(this.text, I18n.tr("System default"),
                                                                     PersonalizationConfig.iconTheme, false);
             }
         }
@@ -447,7 +448,7 @@ Singleton {
         id: detectCursorThemesProcess
         stdout: StdioCollector {
             onStreamFinished: {
-                root.availableCursorThemes = root.parseDetectedThemes(this.text, qsTr("System default"),
+                root.availableCursorThemes = root.parseDetectedThemes(this.text, I18n.tr("System default"),
                                                                       PersonalizationConfig.cursorTheme,
                                                                       true);
             }
@@ -491,10 +492,10 @@ Singleton {
             if ((exitCode === 0 || exitCode === 3) && !root.coreReloaded)
                 root.reloadColors();
             if (exitCode !== 0 && exitCode !== 3)
-                root.generationError = root.generationError || generationStderr.text.trim() || qsTr(
+                root.generationError = root.generationError || generationStderr.text.trim() || I18n.tr(
                             "Failed to generate Matugen colors");
             if (exitCode === 3 && !root.externalGenerationError)
-                root.externalGenerationError = generationStderr.text.trim() || qsTr(
+                root.externalGenerationError = generationStderr.text.trim() || I18n.tr(
                             "Some Matugen templates failed to generate");
             if (root.pendingGeneration)
                 Qt.callLater(root.resumeGeneration);

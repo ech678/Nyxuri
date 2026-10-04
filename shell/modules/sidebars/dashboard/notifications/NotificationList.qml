@@ -4,6 +4,7 @@ import Qt5Compat.GraphicalEffects
 import M3Shapes
 import qs.shared.theme
 import qs.app.services
+import qs.shared.i18n
 
 Rectangle {
     id: root
@@ -75,7 +76,7 @@ Rectangle {
 
             Text {
                 Layout.alignment: Qt.AlignHCenter
-                text: qsTr("No notifications")
+                text: I18n.tr("No notifications")
                 font.family: Fonts.ui
                 font.pixelSize: 14
                 font.weight: Font.Medium

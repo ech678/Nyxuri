@@ -8,6 +8,7 @@ import qs.shared.controls
 import qs.app.services
 import qs.modules.filepicker
 import qs.app
+import qs.shared.i18n
 
 FloatingWindow {
     id: root
@@ -71,7 +72,7 @@ FloatingWindow {
 
             WizardHeader {
                 Layout.fillWidth: true
-                title: qsTr("Add Matugen template")
+                title: I18n.tr("Add Matugen template")
                 onCloseRequested: root.dismiss()
             }
             StyledFlickable {
@@ -89,7 +90,7 @@ FloatingWindow {
 
                     SettingsActionRow {
                         Layout.fillWidth: true
-                        text: qsTr("Template file")
+                        text: I18n.tr("Template file")
                         description: root.sourcePath
                         iconName: "description"
                         trailingIconName: "folder_open"
@@ -98,17 +99,17 @@ FloatingWindow {
                     MaterialFilledTextField {
                         id: idField
                         Layout.fillWidth: true
-                        labelText: qsTr("Template ID")
+                        labelText: I18n.tr("Template ID")
                         error: text !== "" && !/^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*$/.test(text)
                     }
                     MaterialFilledTextField {
                         id: outputField
                         Layout.fillWidth: true
-                        labelText: qsTr("Output path")
+                        labelText: I18n.tr("Output path")
                     }
                     SettingsActionRow {
                         Layout.fillWidth: true
-                        text: qsTr("Advanced options")
+                        text: I18n.tr("Advanced options")
                         trailingIconName: root.advanced ? "expand_less" : "expand_more"
                         onClicked: root.advanced = !root.advanced
                     }
@@ -116,12 +117,12 @@ FloatingWindow {
                         id: hookField
                         Layout.fillWidth: true
                         visible: root.advanced
-                        labelText: qsTr("Run command after generation")
+                        labelText: I18n.tr("Run command after generation")
                     }
                     Text {
                         Layout.fillWidth: true
                         visible: root.advanced
-                        text: qsTr(
+                        text: I18n.tr(
                                   "This command runs every time Matugen regenerates the theme. Only enable trusted templates.")
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.ui
@@ -156,12 +157,12 @@ FloatingWindow {
                     anchors.verticalCenter: parent.verticalCenter
 
                     ActionButton {
-                        text: qsTr("Cancel")
+                        text: I18n.tr("Cancel")
                         enabled: !MatugenTemplateService.adding
                         onClicked: root.dismiss()
                     }
                     ActionButton {
-                        text: qsTr("Add")
+                        text: I18n.tr("Add")
                         filled: true
                         enabled: !MatugenTemplateService.busy && root.sourcePath !== "" && idField.text !== ""
                                  && !idField.error && outputField.text.trim() !== ""
@@ -178,11 +179,11 @@ FloatingWindow {
         requiresParentWindow: true
         selectionMode: FilePickerWindow.Files
         nameFilters: ["*"]
-        dialogTitle: qsTr("Choose template file")
+        dialogTitle: I18n.tr("Choose template file")
         description: ""
         windowIconName: "description"
-        emptyStateText: qsTr("No files available")
-        selectionPrompt: qsTr("Choose template file")
+        emptyStateText: I18n.tr("No files available")
+        selectionPrompt: I18n.tr("Choose template file")
         formatSummary: ""
         onAccepted: (path, isDirectory) => {
             if (!isDirectory)

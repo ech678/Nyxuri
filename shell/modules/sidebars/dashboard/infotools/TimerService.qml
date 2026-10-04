@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import qs.app
 import qs.app.services
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -79,13 +80,13 @@ Singleton {
     function notifyPomodoroStage() {
         let message = "";
         if (root.pomodoroLongBreak)
-            message = qsTr("🌿 Long break: %1 minutes").arg(Math.floor(root.longBreakTime / 60));
+            message = I18n.tr("🌿 Long break: %1 minutes").arg(Math.floor(root.longBreakTime / 60));
         else if (root.pomodoroBreak)
-            message = qsTr("☕ Break: %1 minutes").arg(Math.floor(root.breakTime / 60));
+            message = I18n.tr("☕ Break: %1 minutes").arg(Math.floor(root.breakTime / 60));
         else
-            message = qsTr("🔴 Focus: %1 minutes").arg(Math.floor(root.focusTime / 60));
+            message = I18n.tr("🔴 Focus: %1 minutes").arg(Math.floor(root.focusTime / 60));
 
-        ActionGateway.execute(["notify-send", qsTr("Pomodoro"), message, "-a", "Nyxuri Shell"],
+        ActionGateway.execute(["notify-send", I18n.tr("Pomodoro"), message, "-a", "Nyxuri Shell"],
                               "timer:pomodoro-stage");
     }
 

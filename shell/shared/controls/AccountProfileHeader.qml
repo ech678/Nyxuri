@@ -5,6 +5,7 @@ import QtQuick.Effects
 import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Rectangle {
     id: root
@@ -24,7 +25,7 @@ Rectangle {
     property string networkIconName: "wifi_off"
     property string networkStatusText: ""
     property string networkStatusDetail: ""
-    property string avatarActionLabel: qsTr("Change avatar")
+    property string avatarActionLabel: I18n.tr("Change avatar")
     property real coverHeight: Math.max(150, Math.min(220, width * 0.23))
     property real profileAreaHeight: 120
     property real avatarSize: 104
@@ -141,8 +142,8 @@ Rectangle {
             anchors.fill: parent
             topRadius: root.radius
             bottomRadius: 0
-            fileTooltip: qsTr("Choose banner image")
-            clearTooltip: qsTr("Reset to desktop wallpaper")
+            fileTooltip: I18n.tr("Choose banner image")
+            clearTooltip: I18n.tr("Reset to desktop wallpaper")
             onChooseFile: root.bannerFileActivated()
             onChooseColor: root.bannerColorActivated()
             onClearWallpaper: root.bannerCleared()
@@ -307,7 +308,7 @@ Rectangle {
 
                 Text {
                     Layout.fillWidth: true
-                    text: qsTr("Up for %1").arg(root.uptimeText)
+                    text: I18n.tr("Up for %1").arg(root.uptimeText)
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.ui
                     font.pixelSize: Typography.bodyMedium.pixelSize

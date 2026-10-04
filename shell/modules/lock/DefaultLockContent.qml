@@ -3,6 +3,7 @@ import QtQuick.Effects
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -132,7 +133,7 @@ Item {
 
         Text {
             width: parent.width
-            text: root.now.toLocaleDateString(Qt.locale(Qt.uiLanguage), qsTr("yyyy MMMM d, dddd"))
+            text: root.now.toLocaleDateString(Qt.locale(Qt.uiLanguage), I18n.tr("yyyy MMMM d, dddd"))
             color: "white"
             font.family: Fonts.ui
             font.pixelSize: Math.min(26, root.width * 0.035)
@@ -228,8 +229,8 @@ Item {
                     activeFocusOnPress: true
                     cursorVisible: false
                     maximumLength: 4096
-                    Accessible.name: qsTr("Password")
-                    Accessible.description: root.context.showFailure ? qsTr("Incorrect password") : ""
+                    Accessible.name: I18n.tr("Password")
+                    Accessible.description: root.context.showFailure ? I18n.tr("Incorrect password") : ""
                     onCursorVisibleChanged: {
                         if (cursorVisible)
                             cursorVisible = false;
@@ -263,7 +264,7 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     visible: input.text.length === 0 && !root.busy
-                    text: qsTr("Password")
+                    text: I18n.tr("Password")
                     font.family: Fonts.ui
                     font.pixelSize: 20 * root.uiScale
                     color: "#4D5861"

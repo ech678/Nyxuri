@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import qs.app.services
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -12,7 +13,7 @@ Item {
     implicitWidth: 300
 
     property real moonPhaseAngle: 0
-    property string moonPhaseName: qsTr("New moon")
+    property string moonPhaseName: I18n.tr("New moon")
     property int illumination: 0
     property int currentPhaseIndex: 0
 
@@ -48,9 +49,9 @@ Item {
 
         root.currentPhaseIndex = index;
 
-        const phases = [qsTr("New moon"), qsTr("Waxing crescent"), qsTr("First quarter"), qsTr(
-                            "Waxing gibbous"), qsTr("Full moon"), qsTr("Waning gibbous"), qsTr("Last quarter"),
-                        qsTr("Waning crescent")];
+        const phases = [I18n.tr("New moon"), I18n.tr("Waxing crescent"), I18n.tr("First quarter"), I18n.tr(
+                            "Waxing gibbous"), I18n.tr("Full moon"), I18n.tr("Waning gibbous"), I18n.tr(
+                            "Last quarter"), I18n.tr("Waning crescent")];
         root.moonPhaseName = phases[index];
     }
 
@@ -104,7 +105,7 @@ Item {
                 }
 
                 Text {
-                    text: root.illumination + "% " + qsTr("Illumination")
+                    text: root.illumination + "% " + I18n.tr("Illumination")
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.numeric
                     font.pixelSize: 16

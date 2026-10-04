@@ -3,12 +3,13 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 import qs.shared.theme
+import qs.shared.i18n
 
 Item {
     id: root
 
     property bool active: true
-    property string message: qsTr("Connecting to the system monitor service")
+    property string message: I18n.tr("Connecting to the system monitor service")
 
     implicitHeight: 240
 
@@ -32,7 +33,7 @@ Item {
         }
 
         Text {
-            text: qsTr("Live metrics appear after the first valid snapshot arrives")
+            text: I18n.tr("Live metrics appear after the first valid snapshot arrives")
             color: Appearance.colors.colOnSurfaceVariant
             font.family: Fonts.ui
             font.pixelSize: Typography.bodySmall.pixelSize

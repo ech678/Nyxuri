@@ -6,6 +6,7 @@ import Quickshell.Io
 import Quickshell.Services.SystemTray
 import qs.shared.theme
 import qs.app
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -69,7 +70,7 @@ Singleton {
 
     function getTooltipForItem(item) {
         if (!item)
-            return qsTr("Tray");
+            return I18n.tr("Tray");
 
         let result = item.tooltipTitle && item.tooltipTitle.length > 0 ? item.tooltipTitle : (item.title
                                                                                               && item.title.length

@@ -18,6 +18,8 @@
 - [x] **双 Shell 切换 (`nyxuri shell set`)**：支持 `nyxuri shell set <noctalia|custom>` 或快捷键切换 Noctalia 与自研 Shell；可靠即时切换提前在 Shell P1 交付，完整生态协同在 P5 验收。（CLI、热切换、异常安全回滚与状态落盘已全面交付并通过单测验证）
 - [x] **极简减负与负资产大清扫 (P3-R11 / P3-R12)**：彻底切除上游个人网盘（rclone）、3.9MB 内置变体字体（回退系统字体栈）、繁体中文字典（统一 zh_CN）、搜索引擎与死图片资产；shell/assets 体积缩减 75%（6.1MB → 1.5MB）；切除 paru 30m 查包与多项常驻后台轮询。
 - [x] **全面去 C++ 与纯 QML 架构收口 (R4-C-01 ~ R4-C-06)**：彻底移除 113 项自有 C++ 插件与 CMake 构建体系（免除 cmake/ninja/gcc/clang 编译依赖）；架构彻底收敛为 `app/` -> `modules/` -> `shared/` 三级纯 QML 体系；Niri 确立单一运行时状态源（`NiriService`）；生命周期审计 0 违规，全量单测与沙箱部署全绿。
+- [x] **资源治理、文档契约与五分类测试套件 (R5-01 ~ R5-03)**：彻底清除废弃 FA 图标与 SvgIcon.qml，修复 Zen 着色器离线预编译（zen-palette.frag.qsb），归档历史恢复比对文档；建立 run-tests.py 分类测试运行器（STATIC/LOGIC/RESOURCE/NATIVE/GRAPHICS），五分类独立运行全绿通过无跳过。（已于 c4fc653 交付）
+- [x] **纯 QML/JS 动态国际化闭环 (Pure QML/JS I18n Closure)**：彻底切除对 Qt C++ Linguist / .qm 二进制的隐式运行时依赖；在 `shared/i18n/` 建立纯 QML 单例 `I18n.qml` 与 `Translations.js` 内存字典，引入纯脚本 `Toml.js` 实现启动时直接热解析 `zh_CN.toml`；全库 228 个 QML/JS 源码文件 100% 迁出 `qsTr`/`qsTranslate` 直通 `I18n.tr`，实现真正的零 Native 编译、离线零依赖多语言热切换。
 
 ---
 

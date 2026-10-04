@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Shapes
 import M3Shapes
 import qs.shared.theme
+import qs.shared.i18n
 
 WeatherInsightCard {
     id: root
@@ -50,9 +51,9 @@ WeatherInsightCard {
 
     function localizedUnit(unit) {
         if (unit === "mm")
-            return qsTr("millimeters");
+            return I18n.tr("millimeters");
         if (unit === "cm")
-            return qsTr("centimeters");
+            return I18n.tr("centimeters");
         return unit;
     }
 
@@ -60,9 +61,9 @@ WeatherInsightCard {
         let label = (text || "").trim();
         if (label.length === 0)
             return "";
-        label = label.replace(qsTr("Total rainfall"), qsTr("Precipitation"));
-        label = label.replace(qsTr("Total precipitation"), qsTr("Precipitation"));
-        label = label.replace(qsTr("Total"), "");
+        label = label.replace(I18n.tr("Total rainfall"), I18n.tr("Precipitation"));
+        label = label.replace(I18n.tr("Total precipitation"), I18n.tr("Precipitation"));
+        label = label.replace(I18n.tr("Total"), "");
         return label;
     }
 
@@ -119,7 +120,7 @@ WeatherInsightCard {
             fontSizeMode: Text.HorizontalFit
             minimumPixelSize: 14
             elide: Text.ElideRight
-            text: qsTr("Precipitation amount")
+            text: I18n.tr("Precipitation amount")
             color: root.mutedInk
             font.family: Fonts.expressive
             font.pixelSize: 18

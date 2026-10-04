@@ -7,6 +7,7 @@ import qs.shared.theme
 import qs.app.services
 import "../../shared/utils/WallpaperSource.js" as WallpaperSource
 import qs.app
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -51,9 +52,9 @@ Singleton {
             return "";
         const value = String(path);
         if (WallpaperSource.kind(value) === "palette")
-            return qsTr("Palette wallpaper");
+            return I18n.tr("Palette wallpaper");
         if (root.isColorSource(value))
-            return qsTr("Solid-color wallpaper ") + value;
+            return I18n.tr("Solid-color wallpaper ") + value;
         return value.substring(value.lastIndexOf("/") + 1);
     }
 
@@ -182,7 +183,7 @@ Singleton {
         const next = {};
         for (let key in current)
             next[key] = current[key];
-        const name = String(screenName || qsTr("Global"));
+        const name = String(screenName || I18n.tr("Global"));
         if (message)
             next[name] = String(message);
         else
@@ -223,7 +224,7 @@ Singleton {
         function pruned(source, preserveGlobal) {
             const result = {};
             for (let key in source) {
-                if (names[key] || (preserveGlobal && key === qsTr("Global")))
+                if (names[key] || (preserveGlobal && key === I18n.tr("Global")))
                     result[key] = source[key];
             }
             return result;

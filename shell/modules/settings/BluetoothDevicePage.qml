@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -15,7 +16,7 @@ StyledFlickable {
         return candidate.address === root.deviceAddress && (root.deviceAdapterId.length === 0
                                                             || candidate.adapterId === root.deviceAdapterId);
     }) || null
-    readonly property string pageTitle: root.device ? root.device.name : qsTr("Bluetooth device")
+    readonly property string pageTitle: root.device ? root.device.name : I18n.tr("Bluetooth device")
     readonly property bool deviceChanging: root.device && (root.device.connecting
                                                            || root.device.disconnecting
                                                            || root.device.pairing)
@@ -27,19 +28,19 @@ StyledFlickable {
             return "";
 
         if (root.device.blocked)
-            return qsTr("Blocked");
+            return I18n.tr("Blocked");
 
         if (root.device.connecting)
-            return qsTr("Connecting…");
+            return I18n.tr("Connecting…");
 
         if (root.device.disconnecting)
-            return qsTr("Disconnecting…");
+            return I18n.tr("Disconnecting…");
 
         if (root.device.connected)
-            return root.device.batteryAvailable ? qsTr("Connected · %1%").arg(root.device.batteryLevel) : qsTr(
-                                                      "Connected");
+            return root.device.batteryAvailable ? I18n.tr("Connected · %1%").arg(root.device.batteryLevel) :
+                                                  I18n.tr("Connected");
 
-        return qsTr("Saved");
+        return I18n.tr("Saved");
     }
 
     function ensureDeviceAvailable() {
@@ -100,7 +101,7 @@ StyledFlickable {
                              !root.deviceChanging && (!root.device.blocked || root.device.connected)
                     filled: root.device ? !root.device.connected : false
                     iconName: root.device && root.device.connected ? "link_off" : "link"
-                    text: root.device && root.device.connected ? qsTr("Disconnect") : qsTr("Connect")
+                    text: root.device && root.device.connected ? I18n.tr("Disconnect") : I18n.tr("Connect")
                     onClicked: {
                         if (!root.device)
                             return;
@@ -117,7 +118,7 @@ StyledFlickable {
                 Layout.fillWidth: true
                 enabled: root.device !== null && !BluetoothService.busy
                 iconName: "delete"
-                text: qsTr("Forget device")
+                text: I18n.tr("Forget device")
                 trailingIconName: ""
                 onClicked: forgetDialog.open()
             }
@@ -125,18 +126,18 @@ StyledFlickable {
 
         SettingsSection {
             Layout.fillWidth: true
-            title: qsTr("Connection", "Bluetooth settings section")
+            title: I18n.tr("Connection", "Bluetooth settings section")
             iconName: "link"
 
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: "verified_user"
-                title: qsTr("Trusted device")
+                title: I18n.tr("Trusted device")
 
                 trailing: StyledSwitch {
                     checked: root.device ? root.device.trusted : false
                     enabled: root.device !== null && !BluetoothService.busy
-                    Accessible.name: qsTr("Trusted device")
+                    Accessible.name: I18n.tr("Trusted device")
                     onToggled: {
                         if (root.device)
                             BluetoothService.setDeviceTrusted(root.device, checked);
@@ -147,12 +148,12 @@ StyledFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: "block"
-                title: qsTr("Block device")
+                title: I18n.tr("Block device")
 
                 trailing: StyledSwitch {
                     checked: root.device ? root.device.blocked : false
                     enabled: root.device !== null && !BluetoothService.busy
-                    Accessible.name: qsTr("Block device")
+                    Accessible.name: I18n.tr("Block device")
                     onToggled: {
                         if (root.device)
                             BluetoothService.setDeviceBlocked(root.device, checked);
@@ -163,12 +164,12 @@ StyledFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: "power_settings_new"
-                title: qsTr("Allow wake")
+                title: I18n.tr("Allow wake")
 
                 trailing: StyledSwitch {
                     checked: root.device ? root.device.wakeAllowed : false
                     enabled: root.device !== null && !BluetoothService.busy
-                    Accessible.name: qsTr("Allow device to wake the system")
+                    Accessible.name: I18n.tr("Allow device to wake the system")
                     onToggled: {
                         if (root.device)
                             BluetoothService.setDeviceWakeAllowed(root.device, checked);
@@ -179,38 +180,38 @@ StyledFlickable {
 
         SettingsSection {
             Layout.fillWidth: true
-            title: qsTr("Device information")
+            title: I18n.tr("Device information")
             iconName: "info"
 
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: "battery_full"
-                title: qsTr("Battery")
-                supportingText: root.device && root.device.batteryAvailable ? qsTr("%1%").arg(root.device.batteryLevel) :
-                                                                              qsTr("Unavailable")
+                title: I18n.tr("Battery")
+                supportingText: root.device && root.device.batteryAvailable ? I18n.tr("%1%").arg(root.device.batteryLevel) :
+                                                                              I18n.tr("Unavailable")
 
                 trailing: ThinReadOnlySlider {
                     visible: root.device && root.device.batteryAvailable
                     Layout.preferredWidth: visible ? Math.min(180, Math.max(80, root.width * 0.28)) : 0
                     value: root.device && root.device.batteryAvailable ? root.device.battery : 0
-                    Accessible.name: root.device && root.device.batteryAvailable ? qsTr(
+                    Accessible.name: root.device && root.device.batteryAvailable ? I18n.tr(
                                                                                        "Device battery %1%").arg(
                                                                                        root.device.batteryLevel) :
-                                                                                   qsTr("Device battery unavailable")
+                                                                                   I18n.tr("Device battery unavailable")
                 }
             }
 
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: "fingerprint"
-                title: qsTr("Address")
+                title: I18n.tr("Address")
                 supportingText: root.device ? root.device.address : ""
             }
 
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: "settings_bluetooth"
-                title: qsTr("Adapter")
+                title: I18n.tr("Adapter")
                 supportingText: root.device ? root.device.adapterId : ""
             }
         }
@@ -221,8 +222,8 @@ StyledFlickable {
 
         anchors.centerIn: Overlay.overlay
         width: Math.min(420, root.width - Metrics.spacingL * 2)
-        dialogTitle: root.device ? qsTr("Forget “%1”?").arg(root.device.name) : qsTr("Forget device?")
-        messageText: qsTr("This removes the saved Bluetooth pairing information for this device.")
+        dialogTitle: root.device ? I18n.tr("Forget “%1”?").arg(root.device.name) : I18n.tr("Forget device?")
+        messageText: I18n.tr("This removes the saved Bluetooth pairing information for this device.")
 
         actionsComponent: Component {
             RowLayout {
@@ -233,13 +234,13 @@ StyledFlickable {
                 }
 
                 ActionButton {
-                    text: qsTr("Cancel")
+                    text: I18n.tr("Cancel")
                     onClicked: forgetDialog.close()
                 }
 
                 ActionButton {
                     enabled: root.device !== null && !BluetoothService.busy
-                    text: qsTr("Forget")
+                    text: I18n.tr("Forget")
                     onClicked: {
                         const target = root.device;
                         forgetDialog.close();

@@ -1,5 +1,6 @@
 import QtQuick
 import qs.shared.theme
+import qs.shared.i18n
 
 Item {
     id: root
@@ -19,7 +20,7 @@ Item {
     property real lineWidth: 2.5
     property real fillOpacity: 0.14
     property real transitionProgress: 1
-    property string accessibilityName: qsTr("trend over the last minute")
+    property string accessibilityName: I18n.tr("trend over the last minute")
     property string accessibilityDescription: ""
 
     readonly property real dataMaximum: {

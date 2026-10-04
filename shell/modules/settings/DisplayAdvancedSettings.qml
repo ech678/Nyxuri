@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 ColumnLayout {
     id: root
@@ -15,28 +16,28 @@ ColumnLayout {
     }
     SettingsRow {
         Layout.fillWidth: true
-        title: qsTr("Focus at Startup")
+        title: I18n.tr("Focus at Startup")
         trailing: StyledSwitch {
             checked: root.settings.focusAtStartup === true
-            Accessible.name: qsTr("Focus at Startup")
+            Accessible.name: I18n.tr("Focus at Startup")
             onToggled: root.edit("focusAtStartup", checked ? true : null)
         }
     }
     DisplayChoice {
         Layout.fillWidth: true
-        title: qsTr("Overview corners")
+        title: I18n.tr("Overview corners")
         options: [
             {
                 value: "inherit",
-                label: qsTr("Inherit")
+                label: I18n.tr("Inherit")
             },
             {
                 value: "off",
-                label: qsTr("Off")
+                label: I18n.tr("Off")
             },
             {
                 value: "custom",
-                label: qsTr("Select corners")
+                label: I18n.tr("Select corners")
             }
         ]
         value: !root.settings.hotCorners ? "inherit" : root.settings.hotCorners.indexOf("off") >= 0 ? "off" :
@@ -55,19 +56,19 @@ ColumnLayout {
             model: [
                 {
                     key: "top-left",
-                    label: qsTr("Top left")
+                    label: I18n.tr("Top left")
                 },
                 {
                     key: "top-right",
-                    label: qsTr("Top right")
+                    label: I18n.tr("Top right")
                 },
                 {
                     key: "bottom-left",
-                    label: qsTr("Bottom left")
+                    label: I18n.tr("Bottom left")
                 },
                 {
                     key: "bottom-right",
-                    label: qsTr("Bottom right")
+                    label: I18n.tr("Bottom right")
                 }
             ]
             SettingsRow {
@@ -90,8 +91,8 @@ ColumnLayout {
     }
     OutlinedTextField {
         Layout.fillWidth: true
-        labelText: qsTr("Window gaps")
-        placeholderText: qsTr("Inherit")
+        labelText: I18n.tr("Window gaps")
+        placeholderText: I18n.tr("Inherit")
         text: root.settings.gaps === undefined ? "" : String(root.settings.gaps)
         validator: DoubleValidator {
             bottom: 0
@@ -102,19 +103,19 @@ ColumnLayout {
     }
     DisplayChoice {
         Layout.fillWidth: true
-        title: qsTr("Always center single column")
+        title: I18n.tr("Always center single column")
         options: [
             {
                 value: "inherit",
-                label: qsTr("Inherit")
+                label: I18n.tr("Inherit")
             },
             {
                 value: "on",
-                label: qsTr("On")
+                label: I18n.tr("On")
             },
             {
                 value: "off",
-                label: qsTr("Off")
+                label: I18n.tr("Off")
             }
         ]
         value: root.settings["always-center-single-column"] === undefined ? "inherit" :
@@ -126,14 +127,14 @@ ColumnLayout {
     }
     DisplayColumnWidths {
         Layout.fillWidth: true
-        title: qsTr("Default column width")
+        title: I18n.tr("Default column width")
         single: true
         widths: root.settings["default-column-width"] || []
         onEdited: widths => root.edit("default-column-width", widths.length ? widths : null)
     }
     DisplayColumnWidths {
         Layout.fillWidth: true
-        title: qsTr("Preset column widths")
+        title: I18n.tr("Preset column widths")
         widths: root.settings["preset-column-widths"] || []
         onEdited: widths => root.edit("preset-column-widths", widths.length ? widths : null)
     }

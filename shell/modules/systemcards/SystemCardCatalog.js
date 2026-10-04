@@ -7,7 +7,7 @@ var cardDefinitions = [
     {
         id: "time",
         nameKey: "时钟",
-        name: qsTr("Clock"),
+        name: "Clock",
         icon: "schedule",
         columnSpan: 2,
         rowSpan: 2,
@@ -18,7 +18,7 @@ var cardDefinitions = [
     {
         id: "battery",
         nameKey: "电池",
-        name: qsTr("Battery"),
+        name: "Battery",
         icon: "battery_full",
         columnSpan: 1,
         rowSpan: 2,
@@ -28,7 +28,7 @@ var cardDefinitions = [
     {
         id: "cpu",
         nameKey: "CPU",
-        name: qsTr("CPU"),
+        name: "CPU",
         icon: "memory",
         columnSpan: 2,
         rowSpan: 1,
@@ -38,7 +38,7 @@ var cardDefinitions = [
     {
         id: "gpu",
         nameKey: "GPU",
-        name: qsTr("GPU"),
+        name: "GPU",
         icon: "developer_board",
         columnSpan: 2,
         rowSpan: 1,
@@ -48,7 +48,7 @@ var cardDefinitions = [
     {
         id: "memoryUsed",
         nameKey: "内存",
-        name: qsTr("Memory"),
+        name: "Memory",
         icon: "memory_alt",
         columnSpan: 1,
         rowSpan: 1,
@@ -59,7 +59,7 @@ var cardDefinitions = [
     {
         id: "wifi",
         nameKey: "Wi-Fi",
-        name: qsTr("Wi-Fi"),
+        name: "Wi-Fi",
         icon: "wifi",
         columnSpan: 1,
         rowSpan: 1,
@@ -70,7 +70,7 @@ var cardDefinitions = [
     {
         id: "network",
         nameKey: "网络",
-        name: qsTr("Network"),
+        name: "Network",
         icon: "swap_vert",
         columnSpan: 3,
         rowSpan: 1,
@@ -79,7 +79,7 @@ var cardDefinitions = [
     {
         id: "storage",
         nameKey: "磁盘 I/O",
-        name: qsTr("Disk I/O"),
+        name: "Disk I/O",
         icon: "hard_drive",
         columnSpan: 3,
         rowSpan: 1,
@@ -88,7 +88,7 @@ var cardDefinitions = [
     {
         id: "storageCapacity",
         nameKey: "磁盘容量",
-        name: qsTr("Disk capacity"),
+        name: "Disk capacity",
         icon: "data_usage",
         columnSpan: 1,
         rowSpan: 1,
@@ -99,7 +99,7 @@ var cardDefinitions = [
     {
         id: "calendar",
         nameKey: "日历",
-        name: qsTr("Calendar"),
+        name: "Calendar",
         icon: "calendar_month",
         columnSpan: 1,
         rowSpan: 1,
@@ -108,7 +108,7 @@ var cardDefinitions = [
     {
         id: "weather",
         nameKey: "天气",
-        name: qsTr("Weather"),
+        name: "Weather",
         icon: "cloud",
         columnSpan: 2,
         rowSpan: 2,
@@ -162,27 +162,27 @@ function definitionFor(id) {
 function nameFor(id) {
     switch (String(id)) {
     case "time":
-        return qsTr("Clock");
+        return "Clock";
     case "battery":
-        return qsTr("Battery");
+        return "Battery";
     case "cpu":
-        return qsTr("CPU");
+        return "CPU";
     case "gpu":
-        return qsTr("GPU");
+        return "GPU";
     case "memoryUsed":
-        return qsTr("Memory");
+        return "Memory";
     case "wifi":
-        return qsTr("Wi-Fi");
+        return "Wi-Fi";
     case "network":
-        return qsTr("Network");
+        return "Network";
     case "storage":
-        return qsTr("Disk I/O");
+        return "Disk I/O";
     case "storageCapacity":
-        return qsTr("Disk capacity");
+        return "Disk capacity";
     case "calendar":
-        return qsTr("Calendar");
+        return "Calendar";
     case "weather":
-        return qsTr("Weather");
+        return "Weather";
     default:
         return String(id);
     }

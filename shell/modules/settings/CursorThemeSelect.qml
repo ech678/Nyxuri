@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -22,7 +23,7 @@ Item {
         Text {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignVCenter
-            text: qsTr("Cursor theme")
+            text: I18n.tr("Cursor theme")
             color: Appearance.colors.colOnSurface
             font.family: Fonts.ui
             font.pixelSize: 15
@@ -37,7 +38,7 @@ Item {
             Layout.alignment: Qt.AlignVCenter
             options: root.cursorThemes
             value: root.currentCursorTheme
-            placeholder: qsTr("Choose cursor theme")
+            placeholder: I18n.tr("Choose cursor theme")
             textRole: "label"
             valueRole: "value"
             onAccepted: value => root.accepted(value)

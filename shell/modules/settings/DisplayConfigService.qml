@@ -7,6 +7,7 @@ import qs.app.services
 import qs.shared.theme
 import qs.app
 import "./DisplayConfiguration.js" as Config
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -35,11 +36,11 @@ Singleton {
     readonly property var selected: draft.find(r => r.key === selection) || null
     readonly property string validation: {
         const reason = Config.validation(draft);
-        return reason === "last-output" ? qsTr("At least one connected display must remain enabled") : reason
-                                          === "overlap" ? qsTr("Display rectangles overlap") : reason
-                                                          === "mode" ? qsTr(
-                                                                           "Select an available display mode") :
-                                                                       "";
+        return reason === "last-output" ? I18n.tr("At least one connected display must remain enabled") :
+                                          reason === "overlap" ? I18n.tr("Display rectangles overlap") :
+                                                                 reason === "mode" ? I18n.tr(
+                                                                                         "Select an available display mode") :
+                                                                                     "";
     }
 
     function clearCompletionNotice() {
@@ -158,7 +159,7 @@ Singleton {
                                              live: output || null
                                          });
                 });
-                root.error = qsTr("Connected displays changed. Reload before applying.");
+                root.error = I18n.tr("Connected displays changed. Reload before applying.");
             }
             if (!root.busy && !root.dirty)
                 root.reload(false);
@@ -170,7 +171,7 @@ Singleton {
             if (!root.busy && !root.dirty)
                 root.reload(false);
             else if (!root.busy && root.revision !== NiriConfigService.revision)
-                root.error = qsTr("Configuration changed externally. Reload before applying.");
+                root.error = I18n.tr("Configuration changed externally. Reload before applying.");
         }
     }
     Timer {

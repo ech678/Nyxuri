@@ -6,6 +6,7 @@ import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
 import "../../../../shared/utils/DateFormat.js" as DateFormat
+import qs.shared.i18n
 
 Rectangle {
     id: root
@@ -20,15 +21,15 @@ Rectangle {
 
     readonly property var tabs: [
         {
-            "name": qsTr("Calendar"),
+            "name": I18n.tr("Calendar"),
             "icon": "calendar_month"
         },
         {
-            "name": qsTr("To-do"),
+            "name": I18n.tr("To-do"),
             "icon": "done_outline"
         },
         {
-            "name": qsTr("Timer"),
+            "name": I18n.tr("Timer"),
             "icon": "schedule"
         }
     ]
@@ -162,7 +163,7 @@ Rectangle {
             stateLayerColor: Appearance.colors.colLayer2Hover
             pressedStateLayerColor: Appearance.colors.colLayer2Active
             rippleColor: Appearance.colors.colOnLayer2
-            Accessible.name: qsTr("Expand tools")
+            Accessible.name: I18n.tr("Expand tools")
             onClicked: root.setCollapsed(false)
 
             contentItem: MaterialSymbol {
@@ -172,7 +173,7 @@ Rectangle {
             }
 
             StyledToolTip {
-                text: qsTr("Expand tools")
+                text: I18n.tr("Expand tools")
                 alternativeVisibleCondition: expandButton.activeFocus
             }
         }
@@ -185,7 +186,7 @@ Rectangle {
             Layout.fillWidth: true
             Layout.rightMargin: 10
             Layout.alignment: Qt.AlignVCenter
-            text: root.formattedDate(root.currentDate) + qsTr("   •   %1 tasks").arg(remainingTasks)
+            text: root.formattedDate(root.currentDate) + I18n.tr("   •   %1 tasks").arg(remainingTasks)
             color: Appearance.colors.colOnLayer1
             font.family: Fonts.ui
             font.pixelSize: 15
@@ -218,7 +219,7 @@ Rectangle {
                 stateLayerColor: Appearance.colors.colLayer2Hover
                 pressedStateLayerColor: Appearance.colors.colLayer2Active
                 rippleColor: Appearance.colors.colOnLayer2
-                Accessible.name: qsTr("Collapse tools")
+                Accessible.name: I18n.tr("Collapse tools")
                 onClicked: root.setCollapsed(true)
 
                 contentItem: MaterialSymbol {
@@ -228,7 +229,7 @@ Rectangle {
                 }
 
                 StyledToolTip {
-                    text: qsTr("Collapse tools")
+                    text: I18n.tr("Collapse tools")
                     alternativeVisibleCondition: collapseButton.activeFocus
                 }
             }

@@ -6,6 +6,7 @@ import Quickshell
 import qs.app
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -798,7 +799,7 @@ Item {
                     iconName: "content_copy"
                     iconSize: 16
                     iconColor: Appearance.colors.colOnSurfaceVariant
-                    accessibleName: qsTr("Copy coordinates")
+                    accessibleName: I18n.tr("Copy coordinates")
                     hoverStateLayerColor: Appearance.colors.colLayer2Hover
                     pressedStateLayerColor: Appearance.colors.colLayer2Active
                     onClicked: root.copyCoordinateList()

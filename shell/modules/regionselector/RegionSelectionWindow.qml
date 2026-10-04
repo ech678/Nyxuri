@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.shared.theme
 import qs.app.services
+import qs.shared.i18n
 
 PanelWindow {
     id: root
@@ -215,7 +216,7 @@ PanelWindow {
             }
 
             Text {
-                text: qsTr("Drag to select a region  ·  Esc to cancel")
+                text: I18n.tr("Drag to select a region  ·  Esc to cancel")
                 font.family: Fonts.ui
                 font.pixelSize: 13
                 color: Appearance.colors.colOnPrimaryContainer

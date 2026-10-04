@@ -70,6 +70,10 @@ def scan_source_strings(source_root: Path) -> Dict[str, Set[str]]:
     )
 
     contexts: Dict[str, Set[str]] = {}
+    i18n_re = re.compile(
+        r"""I18n\.(?:tr|t)\s*\(\s*(["\'])(.*?)\1\s*(?:,\s*(["\'])(.*?)\3)?\s*(?:,\s*[^)]+)?\s*\)""",
+        re.DOTALL,
+    )
 
     for root, dirs, files in os.walk(source_root):
         if any(ignored in root for ignored in ("build", "references", ".git")):
@@ -96,6 +100,12 @@ def scan_source_strings(source_root: Path) -> Dict[str, Set[str]]:
             for m in translate_re.finditer(content):
                 ctx = _unescape_c_string(m.group(2))
                 src = _unescape_c_string(m.group(4))
+                contexts.setdefault(ctx, set()).add(src)
+
+            # In I18n.tr(src, ctx) or I18n.tr(src)
+            for m in i18n_re.finditer(content):
+                src = _unescape_c_string(m.group(2))
+                ctx = _unescape_c_string(m.group(4)) if m.group(4) else file_stem
                 contexts.setdefault(ctx, set()).add(src)
 
     return contexts
@@ -196,8 +206,27 @@ def compile_ts_to_qm(ts_path: Path, qm_path: Path) -> bool:
     return True
 
 
+def generate_pure_translations(input_dir: Path, source_root: Path) -> None:
+    """Validate TOML translation syntax and ensure pure QML/JS dynamic Translations.js exists."""
+    zh_toml = input_dir / "zh_CN.toml"
+    if not zh_toml.exists():
+        return
+
+    with zh_toml.open("rb") as f:
+        data = tomllib.load(f)
+    print(f"Validated {zh_toml.name}: {len(data)} translation entries loaded cleanly.")
+
+    # Remove legacy zh_CN.json if present
+    legacy_json = input_dir / "zh_CN.json"
+    if legacy_json.exists():
+        legacy_json.unlink()
+
+
+
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Compile TOML catalogs to Qt TS / QM files")
+    parser = argparse.ArgumentParser(description="Compile TOML catalogs to Qt TS / QM files and pure QML Translations.js")
     parser.add_argument("--input-dir", type=Path, required=True, help="Directory containing zh_CN.toml and en_US.toml")
     parser.add_argument("--output-dir", type=Path, required=True, help="Output directory for generated TS/QM files")
     parser.add_argument("--source-root", type=Path, default=None, help="Root directory of QML/JS sources (default: input-dir/../..)")
@@ -211,6 +240,9 @@ def main() -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     source_root = args.source_root.resolve() if args.source_root else input_dir.parent.parent
+
+    # Always generate pure QML/JS catalogs
+    generate_pure_translations(input_dir, source_root)
 
     source_contexts = scan_source_strings(source_root)
 

@@ -3,6 +3,7 @@ import qs.shared.theme
 import "../../shared/utils/FileUtils.js" as FileUtils
 import qs.app.services
 import qs.app
+import qs.shared.i18n
 
 Item {
     id: root
@@ -65,7 +66,7 @@ Item {
     function friendlyFileType(file) {
         const category = String(file && file.category || "file").toLowerCase();
         if (category === "folder")
-            return qsTr("Folder");
+            return I18n.tr("Folder");
 
         if (category === "code") {
             const codeTypes = {
@@ -95,7 +96,7 @@ Item {
                 fish: "Fish"
             };
             const extension = root.fileExtension(file);
-            return codeTypes[extension] || qsTr("Code");
+            return codeTypes[extension] || I18n.tr("Code");
         }
 
         if (category === "pdf")
@@ -110,7 +111,7 @@ Item {
             if (subtype !== "")
                 return subtype;
         }
-        return qsTr("File");
+        return I18n.tr("File");
     }
 
     function singleFileSubtitle(file) {
@@ -133,22 +134,22 @@ Item {
         if (kind === "file" || kind === "file-list") {
             const files = Array.isArray(entry.files) ? entry.files : [];
             if (files.length > 1)
-                return qsTr("%n file(s)", "clipboard file count", files.length);
+                return I18n.tr("%n file(s)", "clipboard file count", files.length);
             if (files.length === 1 && String(files[0].name || "") !== "")
                 return String(files[0].name);
-            return qsTr("File");
+            return I18n.tr("File");
         }
         if (kind === "image")
-            return qsTr("Clipboard image");
+            return I18n.tr("Clipboard image");
         if (kind === "binary")
-            return qsTr("Binary clipboard content");
+            return I18n.tr("Binary clipboard content");
 
         const lines = root.textSummary(rawPreview);
         if (lines.length > 0)
             return lines[0].slice(0, 240);
         if (String(entry.textSubtype || "") === "html")
-            return qsTr("HTML content");
-        return qsTr("Empty text");
+            return I18n.tr("HTML content");
+        return I18n.tr("Empty text");
     }
 
     function displaySubtitle(entry, rawPreview) {
@@ -160,7 +161,7 @@ Item {
                             "、");
             if (files.length === 1)
                 return root.singleFileSubtitle(files[0]);
-            return qsTr("File");
+            return I18n.tr("File");
         }
         if (kind === "image") {
             const mime = String(entry.mimeType || "");
@@ -177,15 +178,15 @@ Item {
         }
         if (kind === "binary") {
             const byteSize = Number(entry.byteSize || 0);
-            return qsTr("Unknown binary content") + (byteSize > 0 ? " · " + byteSize + " B" : "");
+            return I18n.tr("Unknown binary content") + (byteSize > 0 ? " · " + byteSize + " B" : "");
         }
 
         const lines = root.textSummary(rawPreview);
         if (lines.length > 1)
             return (lines[1] + (lines.length > 2 ? "…" : "")).slice(0, 300);
         if (String(entry.textSubtype || "") === "html")
-            return lines.length > 0 ? qsTr("HTML content") : qsTr("No safe text to display");
-        return qsTr("Text");
+            return lines.length > 0 ? I18n.tr("HTML content") : I18n.tr("No safe text to display");
+        return I18n.tr("Text");
     }
 
     function replaceModel(next) {
@@ -328,12 +329,12 @@ Item {
         if (!root.canRestore) {
             const failure = ClipboardService.normalizedError(null, ClipboardService.dependencies.wlCopy
                                                              ? "cliphist_unavailable" : "wl_copy_unavailable",
-                                                             qsTr("Clipboard restore is unavailable"));
+                                                             I18n.tr("Clipboard restore is unavailable"));
             root.restoreFailed(result.id, failure.code, failure.message);
             return false;
         }
         if (result.restorable === false) {
-            root.restoreFailed(result.id, "clipboard_mime_unsupported", qsTr(
+            root.restoreFailed(result.id, "clipboard_mime_unsupported", I18n.tr(
                                    "This format cannot be restored reliably"));
             return false;
         }

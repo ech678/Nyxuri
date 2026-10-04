@@ -2,6 +2,7 @@ import QtQuick
 import qs.shared.theme
 import qs.shared.controls
 import qs.app
+import qs.shared.i18n
 
 BarCircularButton {
     id: root
@@ -12,6 +13,6 @@ BarCircularButton {
     containerColor: "transparent"
     rippleColor: Appearance.colors.colOnSurface
     iconColor: Appearance.colors.colOnSurface
-    tooltipText: qsTr("Power menu")
+    tooltipText: I18n.tr("Power menu")
     onClicked: ActionGateway.requestSessionOpen(root.screen)
 }

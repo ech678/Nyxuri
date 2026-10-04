@@ -4,6 +4,7 @@ import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
 import qs.modules.filepicker
+import qs.shared.i18n
 
 Item {
     id: root
@@ -78,7 +79,7 @@ Item {
         anchors.top: parent.top
         visible: root.currentSection !== "overview"
         title: SpotlightCatalog.title("keystone." + root.currentSection)
-        backAccessibleName: qsTr("Back to Keystone settings")
+        backAccessibleName: I18n.tr("Back to Keystone settings")
         z: 2
         onBackRequested: root.showOverview()
     }
@@ -112,29 +113,29 @@ Item {
 
                 SettingsRow {
                     Layout.fillWidth: true
-                    title: qsTr("Show Keystone")
+                    title: I18n.tr("Show Keystone")
                     trailing: StyledSwitch {
                         checked: PersonalizationConfig.keystoneEnabled
-                        Accessible.name: qsTr("Show Keystone")
+                        Accessible.name: I18n.tr("Show Keystone")
                         onToggled: PersonalizationConfig.setValue("keystoneEnabled", checked)
                     }
                 }
 
                 SettingsRow {
                     Layout.fillWidth: true
-                    title: qsTr("Floating")
+                    title: I18n.tr("Floating")
                     trailing: StyledSwitch {
                         checked: PersonalizationConfig.keystoneOverlay
-                        Accessible.name: qsTr("Floating")
+                        Accessible.name: I18n.tr("Floating")
                         onToggled: PersonalizationConfig.setValue("keystoneOverlay", checked)
                     }
                 }
 
                 SearchSelectSettingRow {
-                    title: qsTr("Style")
+                    title: I18n.tr("Style")
                     options: PersonalizationConfig.keystoneStyles
                     value: PersonalizationConfig.keystoneStyle
-                    placeholder: qsTr("Choose Keystone style")
+                    placeholder: I18n.tr("Choose Keystone style")
                     onAccepted: value => {
                         return PersonalizationConfig.setKeystoneStyle(value);
                     }
@@ -142,7 +143,7 @@ Item {
 
                 SettingsRow {
                     Layout.fillWidth: true
-                    title: qsTr("Screen edge")
+                    title: I18n.tr("Screen edge")
 
                     trailing: EdgePositionSelector {
                         position: PersonalizationConfig.keystonePosition
@@ -165,43 +166,43 @@ Item {
                 iconName: "mouse"
 
                 SearchSelectSettingRow {
-                    title: qsTr("Hover")
+                    title: I18n.tr("Hover")
                     options: PersonalizationConfig.availableKeystoneHoverActionOptions
                     value: PersonalizationConfig.effectiveKeystoneHoverAction
                     onAccepted: value => PersonalizationConfig.setKeystoneAction("hover", value)
                 }
 
                 GeneralSliderSetting {
-                    title: qsTr("Hover open delay")
+                    title: I18n.tr("Hover open delay")
                     value: PersonalizationConfig.keystoneHoverOpenDelay
                     from: 0
                     to: 500
                     stepSize: 25
-                    suffix: qsTr(" ms")
+                    suffix: I18n.tr(" ms")
                     enabled: PersonalizationConfig.effectiveKeystoneHoverAction !== "none"
                     onMoved: value => PersonalizationConfig.setKeystoneHoverOpenDelay(value)
                 }
 
                 GeneralSliderSetting {
-                    title: qsTr("Hover close delay")
+                    title: I18n.tr("Hover close delay")
                     value: PersonalizationConfig.keystoneHoverCloseDelay
                     from: 0
                     to: 600
                     stepSize: 25
-                    suffix: qsTr(" ms")
+                    suffix: I18n.tr(" ms")
                     enabled: PersonalizationConfig.effectiveKeystoneHoverAction !== "none"
                     onMoved: value => PersonalizationConfig.setKeystoneHoverCloseDelay(value)
                 }
 
                 SearchSelectSettingRow {
-                    title: qsTr("Left click")
+                    title: I18n.tr("Left click")
                     options: PersonalizationConfig.keystoneActionOptions
                     value: PersonalizationConfig.keystoneLeftClickAction
                     onAccepted: value => PersonalizationConfig.setKeystoneAction("left", value)
                 }
 
                 SearchSelectSettingRow {
-                    title: qsTr("Middle click")
+                    title: I18n.tr("Middle click")
                     options: PersonalizationConfig.keystoneActionOptions
                     value: PersonalizationConfig.keystoneMiddleClickAction
                     onAccepted: value => PersonalizationConfig.setKeystoneAction("middle", value)
@@ -221,21 +222,21 @@ Item {
                 }
 
                 SearchSelectSettingRow {
-                    title: qsTr("Progress bar")
+                    title: I18n.tr("Progress bar")
                     options: PersonalizationConfig.keystoneMediaProgressOptions
                     value: PersonalizationConfig.keystoneMediaProgressStyle
                     onAccepted: value => PersonalizationConfig.setKeystoneMediaProgressStyle(value)
                 }
 
                 SearchSelectSettingRow {
-                    title: qsTr("Cover style")
+                    title: I18n.tr("Cover style")
                     options: PersonalizationConfig.keystoneMediaCoverOptions
                     value: PersonalizationConfig.keystoneMediaCoverStyle
                     onAccepted: value => PersonalizationConfig.setKeystoneMediaCoverStyle(value)
                 }
 
                 SearchSelectSettingRow {
-                    title: qsTr("Colors")
+                    title: I18n.tr("Colors")
                     options: PersonalizationConfig.keystoneMediaColorOptions
                     value: PersonalizationConfig.keystoneMediaColorStyle
                     onAccepted: value => PersonalizationConfig.setKeystoneMediaColorStyle(value)
@@ -244,35 +245,35 @@ Item {
 
             KeystoneSection {
                 visible: PersonalizationConfig.keystoneStyle === "long"
-                title: qsTr("Status items")
+                title: I18n.tr("Status items")
                 iconName: "view_week"
 
                 SettingsRow {
                     Layout.fillWidth: true
-                    title: qsTr("Show device names")
+                    title: I18n.tr("Show device names")
                     trailing: StyledSwitch {
                         checked: PersonalizationConfig.keystoneLongShowNames
-                        Accessible.name: qsTr("Show device names")
+                        Accessible.name: I18n.tr("Show device names")
                         onToggled: PersonalizationConfig.setKeystoneLongShowNames(checked)
                     }
                 }
 
                 SettingsRow {
                     Layout.fillWidth: true
-                    title: qsTr("Show system monitor values")
+                    title: I18n.tr("Show system monitor values")
                     trailing: StyledSwitch {
                         checked: PersonalizationConfig.keystoneLongShowMonitorValues
-                        Accessible.name: qsTr("Show system monitor values")
+                        Accessible.name: I18n.tr("Show system monitor values")
                         onToggled: PersonalizationConfig.setKeystoneLongShowMonitorValues(checked)
                     }
                 }
 
                 SettingsRow {
                     Layout.fillWidth: true
-                    title: qsTr("Show numeric values")
+                    title: I18n.tr("Show numeric values")
                     trailing: StyledSwitch {
                         checked: PersonalizationConfig.keystoneLongShowValues
-                        Accessible.name: qsTr("Show numeric values")
+                        Accessible.name: I18n.tr("Show numeric values")
                         onToggled: PersonalizationConfig.setKeystoneLongShowValues(checked)
                     }
                 }
@@ -281,7 +282,8 @@ Item {
                     id: longLeadingFieldRow
                     Layout.fillWidth: true
                     title: PersonalizationConfig.keystonePosition === "top"
-                           || PersonalizationConfig.keystonePosition === "bottom" ? qsTr("Left") : qsTr("Top")
+                           || PersonalizationConfig.keystonePosition === "bottom" ? I18n.tr("Left") : I18n.tr(
+                                                                                        "Top")
                     trailing: SortableMultiSelectField {
                         id: longLeadingField
                         Layout.minimumWidth: 0
@@ -300,7 +302,7 @@ Item {
                     id: longTrailingFieldRow
                     Layout.fillWidth: true
                     title: PersonalizationConfig.keystonePosition === "top"
-                           || PersonalizationConfig.keystonePosition === "bottom" ? qsTr("Right") : qsTr(
+                           || PersonalizationConfig.keystonePosition === "bottom" ? I18n.tr("Right") : I18n.tr(
                                                                                         "Bottom")
                     trailing: SortableMultiSelectField {
                         id: longTrailingField
@@ -331,20 +333,20 @@ Item {
 
                 SettingsRow {
                     Layout.fillWidth: true
-                    title: qsTr("Caps Lock changes")
+                    title: I18n.tr("Caps Lock changes")
                     trailing: StyledSwitch {
                         checked: PersonalizationConfig.keystoneCapsLockOsd
-                        Accessible.name: qsTr("Caps Lock changes")
+                        Accessible.name: I18n.tr("Caps Lock changes")
                         onToggled: PersonalizationConfig.setKeystoneCapsLockOsd(checked)
                     }
                 }
 
                 SettingsRow {
                     Layout.fillWidth: true
-                    title: qsTr("Num Lock changes")
+                    title: I18n.tr("Num Lock changes")
                     trailing: StyledSwitch {
                         checked: PersonalizationConfig.keystoneNumLockOsd
-                        Accessible.name: qsTr("Num Lock changes")
+                        Accessible.name: I18n.tr("Num Lock changes")
                         onToggled: PersonalizationConfig.setKeystoneNumLockOsd(checked)
                     }
                 }
@@ -362,7 +364,7 @@ Item {
                 iconName: "dashboard"
 
                 SearchSelectSettingRow {
-                    title: qsTr("Card")
+                    title: I18n.tr("Card")
                     closeOnAccept: true
                     options: PersonalizationConfig.keystoneKeyholeCardOptions
                     value: PersonalizationConfig.keystoneKeyholeCard
@@ -399,11 +401,11 @@ Item {
 
                 SettingsRow {
                     Layout.fillWidth: true
-                    title: qsTr("Hide date")
+                    title: I18n.tr("Hide date")
 
                     trailing: StyledSwitch {
                         checked: PersonalizationConfig.keystoneHideDate
-                        Accessible.name: qsTr("Hide date")
+                        Accessible.name: I18n.tr("Hide date")
                         onToggled: PersonalizationConfig.setKeystoneHideDate(checked)
                     }
                 }
@@ -411,8 +413,8 @@ Item {
                 SettingsActionRow {
                     Layout.fillWidth: true
                     iconName: "tune"
-                    text: qsTr("Horizontal clock style")
-                    description: qsTr("Font, digit positions, and colors")
+                    text: I18n.tr("Horizontal clock style")
+                    description: I18n.tr("Font, digit positions, and colors")
                     trailingIconName: "chevron_right"
                     onClicked: root.openSection("horizontal-clock")
                 }
@@ -430,25 +432,25 @@ Item {
                 iconName: "video_camera_front"
 
                 RecordingDirectoryField {
-                    settingTitle: qsTr("Video recording")
+                    settingTitle: I18n.tr("Video recording")
                     settingKey: "recordingVideoDirectory"
                     value: UiPreferences.recordingVideoDirectory
                 }
 
                 RecordingDirectoryField {
-                    settingTitle: qsTr("GIF recording")
+                    settingTitle: I18n.tr("GIF recording")
                     settingKey: "recordingGifDirectory"
                     value: UiPreferences.recordingGifDirectory
                 }
 
                 RecordingDirectoryField {
-                    settingTitle: qsTr("Microphone recording")
+                    settingTitle: I18n.tr("Microphone recording")
                     settingKey: "recordingMicrophoneDirectory"
                     value: UiPreferences.recordingMicrophoneDirectory
                 }
 
                 RecordingDirectoryField {
-                    settingTitle: qsTr("System audio recording")
+                    settingTitle: I18n.tr("System audio recording")
                     settingKey: "recordingSystemAudioDirectory"
                     value: UiPreferences.recordingSystemAudioDirectory
                 }
@@ -493,14 +495,14 @@ Item {
         requiresParentWindow: true
         selectionMode: FilePickerWindow.Folders
         allowCurrentFolderSelection: true
-        dialogTitle: qsTr("Save location")
+        dialogTitle: I18n.tr("Save location")
         description: root.editingDirectoryField ? root.editingDirectoryField.settingTitle : ""
         nameFilters: []
         windowIconName: "folder_open"
-        emptyStateText: qsTr("This folder is empty")
-        selectionPrompt: qsTr("Choose folder")
-        acceptLabel: qsTr("Choose")
-        formatSummary: qsTr("Choose the current folder or a selected subfolder")
+        emptyStateText: I18n.tr("This folder is empty")
+        selectionPrompt: I18n.tr("Choose folder")
+        acceptLabel: I18n.tr("Choose")
+        formatSummary: I18n.tr("Choose the current folder or a selected subfolder")
         onAccepted: function (path, isDirectory) {
             if (isDirectory && root.editingDirectoryKey !== "")
                 root.saveDirectory(root.editingDirectoryKey, path, root.editingDirectoryField);
@@ -540,7 +542,7 @@ Item {
             id: directoryField
 
             Layout.fillWidth: true
-            labelText: qsTr("Save location")
+            labelText: I18n.tr("Save location")
             text: directorySetting.value
             trailingContentWidth: Metrics.touchTarget
             onAccepted: root.saveDirectory(directorySetting.settingKey, text, directoryField)
@@ -550,8 +552,8 @@ Item {
                 IconButton {
                     anchors.centerIn: parent
                     iconName: "folder_open"
-                    accessibleName: qsTr("Choose folder")
-                    tooltipText: qsTr("Choose folder")
+                    accessibleName: I18n.tr("Choose folder")
+                    tooltipText: I18n.tr("Choose folder")
                     controlSize: Metrics.touchTarget
                     onClicked: root.openDirectoryPicker(directorySetting.settingKey, directoryField)
                 }

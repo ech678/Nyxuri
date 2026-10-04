@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -25,15 +26,15 @@ Item {
 
     function dayLabel(index, epoch) {
         if (index === 0)
-            return qsTr("Yesterday");
+            return I18n.tr("Yesterday");
         if (index === 1)
-            return qsTr("Today");
+            return I18n.tr("Today");
         if (index === 2)
-            return qsTr("Tomorrow");
+            return I18n.tr("Tomorrow");
         if (!epoch)
             return "--";
-        const week = [qsTr("Sun"), qsTr("Mon"), qsTr("Tue"), qsTr("Wed"), qsTr("Thu"), qsTr("Fri"), qsTr(
-                          "Sat")];
+        const week = [I18n.tr("Sun"), I18n.tr("Mon"), I18n.tr("Tue"), I18n.tr("Wed"), I18n.tr("Thu"), I18n.tr(
+                          "Fri"), I18n.tr("Sat")];
         return week[new Date(epoch * 1000).getDay()];
     }
 
@@ -237,7 +238,7 @@ Item {
                         color: parent.weekColor
                         font.family: Fonts.ui
                         font.pixelSize: 14
-                        font.bold: modelData.dayText === qsTr("Today")
+                        font.bold: modelData.dayText === I18n.tr("Today")
                     }
 
                     Text {
@@ -345,7 +346,7 @@ Item {
     Text {
         anchors.centerIn: parent
         visible: !root.hasData
-        text: qsTr("Wind data is unavailable")
+        text: I18n.tr("Wind data is unavailable")
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.ui
         font.pixelSize: 16

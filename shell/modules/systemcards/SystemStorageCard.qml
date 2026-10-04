@@ -4,6 +4,7 @@ import QtQuick
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 Item {
     id: root
@@ -73,10 +74,11 @@ Item {
 
     clip: true
     layer.enabled: true
-    Accessible.name: root.disks.length > 0 ? qsTr("Disk %1, read %2, write %3").arg(root.selectedDevice).arg(
-                                                 Format.bytesPerSecond(root.disk.readBytesPerSecond)).arg(
-                                                 Format.bytesPerSecond(root.disk.writeBytesPerSecond)) : qsTr(
-                                                 "No disk detected")
+    Accessible.name: root.disks.length > 0 ? I18n.tr("Disk %1, read %2, write %3").arg(
+                                                 root.selectedDevice).arg(Format.bytesPerSecond(
+                                                                              root.disk.readBytesPerSecond)).arg(
+                                                 Format.bytesPerSecond(root.disk.writeBytesPerSecond)) :
+                                             I18n.tr("No disk detected")
 
     Rectangle {
         anchors.fill: parent
@@ -85,7 +87,7 @@ Item {
     }
 
     Text {
-        text: qsTr("Disk I/O")
+        text: I18n.tr("Disk I/O")
         color: root.leftForeground
         renderType: Text.NativeRendering
         font.family: Fonts.expressive
@@ -135,9 +137,9 @@ Item {
         showGuideLines: false
         fillArea: true
         fillOpacity: 0.26
-        accessibilityName: qsTr("Recent disk throughput trend")
-        accessibilityDescription: qsTr("Read %1, write %2").arg(Format.bytesPerSecond(
-                                                                    root.disk.readBytesPerSecond)).arg(
+        accessibilityName: I18n.tr("Recent disk throughput trend")
+        accessibilityDescription: I18n.tr("Read %1, write %2").arg(Format.bytesPerSecond(
+                                                                       root.disk.readBytesPerSecond)).arg(
                                       Format.bytesPerSecond(root.disk.writeBytesPerSecond))
         lineColor: root.readDataColor
         secondaryLineColor: root.writeDataColor
@@ -198,7 +200,7 @@ Item {
                 buttonHoverColor: Appearance.mix(root.leftColor, root.leftForeground, 0.88)
                 buttonPressedColor: Appearance.mix(root.leftColor, root.leftForeground, 0.76)
                 buttonTextColor: root.leftForeground
-                Accessible.name: qsTr("Select disk")
+                Accessible.name: I18n.tr("Select disk")
                 onValueSelected: value => {
                     return root.diskSelected(value);
                 }
@@ -208,7 +210,7 @@ Item {
                 width: parent.width
                 height: 36
                 visible: root.diskOptions.length === 0
-                text: qsTr("No disk detected")
+                text: I18n.tr("No disk detected")
                 color: root.rightForeground
                 verticalAlignment: Text.AlignVCenter
                 font.family: Fonts.expressive
@@ -221,7 +223,7 @@ Item {
                 width: parent.width
                 height: (parent.height - 36 - parent.spacing * 2) / 2
                 iconName: "input"
-                accessibilityLabel: qsTr("Read")
+                accessibilityLabel: I18n.tr("Read")
                 value: Format.bytesPerSecond(root.disk.readBytesPerSecond)
                 accentColor: root.readDataColor
             }
@@ -230,7 +232,7 @@ Item {
                 width: parent.width
                 height: (parent.height - 36 - parent.spacing * 2) / 2
                 iconName: "output"
-                accessibilityLabel: qsTr("Write")
+                accessibilityLabel: I18n.tr("Write")
                 value: Format.bytesPerSecond(root.disk.writeBytesPerSecond)
                 accentColor: root.writeDataColor
             }

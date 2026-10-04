@@ -10,6 +10,7 @@ import "../../systemcards/SystemCardGeometry.js" as CardGeometry
 import "../../systemcards/SystemCardPlacement.js" as Placement
 import "./drawer"
 import "./drawer/DrawerGridLayout.js" as GridLayout
+import qs.shared.i18n
 
 Item {
     id: root
@@ -386,17 +387,17 @@ Item {
             active: root.isForeground && !SystemMonitorService.error
             visible: !SystemMonitorService.hasData && !SystemMonitorService.error &&
                      !SystemMonitorService.reconnecting
-            message: qsTr("Connecting to system monitor")
+            message: I18n.tr("Connecting to system monitor")
         }
 
         SystemUnavailableState {
             visible: !SystemMonitorService.hasData && (SystemMonitorService.error
                                                        || SystemMonitorService.reconnecting)
-            title: SystemMonitorService.reconnecting ? qsTr("Reconnecting") : qsTr(
+            title: SystemMonitorService.reconnecting ? I18n.tr("Reconnecting") : I18n.tr(
                                                            "System monitoring is temporarily unavailable")
-            message: SystemMonitorService.error ? qsTr(
+            message: SystemMonitorService.error ? I18n.tr(
                                                       "Data is temporarily unavailable; the page will retry in the background with backoff.") :
-                                                  qsTr("The connection recovers automatically; existing data is never presented as current.")
+                                                  I18n.tr("The connection recovers automatically; existing data is never presented as current.")
             reconnecting: SystemMonitorService.reconnecting
             onRetryRequested: SystemMonitorService.retry()
 
@@ -432,9 +433,9 @@ Item {
             interactive: root.isForeground && root.draggingTileId.length === 0
             showVerticalScrollBar: contentHeight > height + 1
             activeFocusOnTab: contentHeight > height + 1
-            Accessible.name: contentHeight > height + 1 ? qsTr(
+            Accessible.name: contentHeight > height + 1 ? I18n.tr(
                                                               "Drawer grid; scrollable with draggable cards") :
-                                                          qsTr("Drawer grid with draggable cards")
+                                                          I18n.tr("Drawer grid with draggable cards")
             Keys.onPressed: event => {
                 if (root.draggingTileId.length > 0 && event.key === Qt.Key_Escape) {
                     root.cancelDrag();

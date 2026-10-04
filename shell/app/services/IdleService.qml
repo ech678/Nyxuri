@@ -6,6 +6,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import qs.shared.theme
 import qs.app
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -128,7 +129,7 @@ Singleton {
     function configureStage(stage, enabled, timeout, respectInhibitors = true) {
         const name = String(stage || "");
         if (["dim", "lock", "displayOff", "suspend"].indexOf(name) === -1) {
-            root.lastError = qsTr("Unknown idle stage: ") + name;
+            root.lastError = I18n.tr("Unknown idle stage: ") + name;
             root.operationFailed("configure-stage", root.lastError);
             return;
         }
@@ -284,7 +285,7 @@ Singleton {
             root.operationSucceeded("lock");
             return;
         }
-        root.lastError = qsTr("Lock-screen request failed: ") + String(result || "unknown");
+        root.lastError = I18n.tr("Lock-screen request failed: ") + String(result || "unknown");
         root.operationFailed("lock", root.lastError);
     }
 
@@ -411,7 +412,7 @@ Singleton {
                 root.displaysOff = root._displayCommandTargetOff;
                 root.operationSucceeded(operation);
             } else {
-                root.lastError = qsTr("niri display power action failed, exit code ") + exitCode;
+                root.lastError = I18n.tr("niri display power action failed, exit code ") + exitCode;
                 root.operationFailed(operation, root.lastError);
             }
 
@@ -428,7 +429,7 @@ Singleton {
                 root.operationSucceeded("suspend");
                 return;
             }
-            root.lastError = qsTr("systemd-logind suspend action failed, exit code ") + exitCode;
+            root.lastError = I18n.tr("systemd-logind suspend action failed, exit code ") + exitCode;
             root.operationFailed("suspend", root.lastError);
         }
     }

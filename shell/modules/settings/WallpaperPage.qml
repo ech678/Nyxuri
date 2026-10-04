@@ -9,6 +9,7 @@ import qs.shared.theme
 import qs.app.services
 import qs.modules.wallpaper
 import qs.shared.controls
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -34,7 +35,7 @@ StyledFlickable {
     readonly property var outputOptions: {
         const result = [({
                              "value": "",
-                             "label": qsTr("Global")
+                             "label": I18n.tr("Global")
                          })];
         for (let index = 0; index < Quickshell.screens.length; index += 1) {
             const name = String(Quickshell.screens[index].name);
@@ -236,15 +237,15 @@ StyledFlickable {
         model: [({
                      "value": "play",
                      "icon": group.playing ? "pause" : "play_arrow",
-                     "tooltip": group.playing ? qsTr("Pause") : qsTr("Play")
+                     "tooltip": group.playing ? I18n.tr("Pause") : I18n.tr("Play")
                  }), ({
                           "value": "replay",
                           "icon": "keyboard_double_arrow_left",
-                          "tooltip": qsTr("Reverse")
+                          "tooltip": I18n.tr("Reverse")
                       }), ({
                                "value": "flip",
                                "icon": "swap_vert",
-                               "tooltip": qsTr("Flip"),
+                               "tooltip": I18n.tr("Flip"),
                                "enabled": group.flipEnabled
                            })]
         onValueSelected: value => {
@@ -266,8 +267,8 @@ StyledFlickable {
 
         NiriSetupPrompt {
             Layout.fillWidth: true
-            title: qsTr("Overview integration")
-            description: qsTr(
+            title: I18n.tr("Overview integration")
+            description: I18n.tr(
                              "Create or connect backdrop rules and make the global workspace background transparent.")
             integrationState: NiriConfigService.state("layer-rules")
             busy: NiriConfigService.busy && NiriConfigService.activeFeature === "layer-rules"
@@ -280,7 +281,7 @@ StyledFlickable {
             Layout.fillWidth: true
             visible: NiriConfigService.snapshot.overviewSatisfied === true && !NiriConfigService.ready(
                          "layer-rules")
-            message: qsTr("Overview is already configured outside Clavis")
+            message: I18n.tr("Overview is already configured outside Clavis")
         }
 
         Component {
@@ -313,14 +314,15 @@ StyledFlickable {
                                                    && WallpaperService.canUseAwww,
                                         "tooltip": AwwwWallpaperService.available ? (
                                                                                         WallpaperService.canUseAwww
-                                                                                        ? "" : qsTr(
+                                                                                        ? "" : I18n.tr(
                                                                                               "Select an image wallpaper before switching to awww")) :
                                                                                     AwwwWallpaperService.probeComplete
-                                                                                    ? qsTr("The awww or awww-daemon command is missing") :
-                                                                                      qsTr("Detecting awww…")
+                                                                                    ? I18n.tr(
+                                                                                          "The awww or awww-daemon command is missing") :
+                                                                                      I18n.tr("Detecting awww…")
                                     })]
                     value: PersonalizationConfig.desktopWallpaperBackend
-                    Accessible.name: qsTr("Desktop wallpaper manager")
+                    Accessible.name: I18n.tr("Desktop wallpaper manager")
                     onAccepted: value => WallpaperService.setDesktopWallpaperBackend(value)
                 }
 
@@ -373,7 +375,7 @@ StyledFlickable {
                         Text {
                             Layout.fillWidth: true
                             text: root.currentWallpaperPath !== "" ? WallpaperService.basename(
-                                                                         root.currentWallpaperPath) : qsTr(
+                                                                         root.currentWallpaperPath) : I18n.tr(
                                                                          "No wallpaper selected")
                             color: Appearance.colors.colOnSurface
                             font.family: Fonts.ui
@@ -400,13 +402,13 @@ StyledFlickable {
                             Layout.alignment: Qt.AlignLeft
                             model: [({
                                          "value": "previous",
-                                         "label": qsTr("Previous")
+                                         "label": I18n.tr("Previous")
                                      }), ({
                                               "value": "random",
-                                              "label": qsTr("Random")
+                                              "label": I18n.tr("Random")
                                           }), ({
                                                    "value": "next",
-                                                   "label": qsTr("Next")
+                                                   "label": I18n.tr("Next")
                                                })]
                             currentValue: ""
                             onValueSelected: value => {
@@ -438,11 +440,11 @@ StyledFlickable {
                     SettingsRow {
                         Layout.fillWidth: true
                         iconName: "splitscreen"
-                        title: qsTr("Per-monitor wallpapers")
+                        title: I18n.tr("Per-monitor wallpapers")
 
                         trailing: StyledSwitch {
                             checked: PersonalizationConfig.perMonitorWallpaper
-                            Accessible.name: qsTr("Per-monitor wallpapers")
+                            Accessible.name: I18n.tr("Per-monitor wallpapers")
                             onToggled: PersonalizationConfig.setPerMonitorWallpaper(checked)
                         }
                     }
@@ -452,8 +454,8 @@ StyledFlickable {
                         Layout.fillWidth: true
                         options: root.outputOptions
                         value: root.selectedDesktopOutput
-                        placeholder: qsTr("Select output")
-                        Accessible.name: qsTr("Desktop wallpaper output")
+                        placeholder: I18n.tr("Select output")
+                        Accessible.name: I18n.tr("Desktop wallpaper output")
                         onAccepted: value => root.selectedDesktopOutput = value
                     }
                 }
@@ -487,7 +489,7 @@ StyledFlickable {
 
                 Text {
                     Layout.fillWidth: true
-                    text: qsTr("Transition type")
+                    text: I18n.tr("Transition type")
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.ui
                     font.pixelSize: 15
@@ -570,7 +572,7 @@ StyledFlickable {
 
                     Text {
                         Layout.fillWidth: true
-                        text: qsTr("awww FPS")
+                        text: I18n.tr("awww FPS")
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.ui
                         font.pixelSize: 15
@@ -578,7 +580,7 @@ StyledFlickable {
                     }
 
                     Text {
-                        text: qsTr("%1 FPS").arg(PersonalizationConfig.awwwTransitionFps)
+                        text: I18n.tr("%1 FPS").arg(PersonalizationConfig.awwwTransitionFps)
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.numeric
                         font.pixelSize: Typography.bodyMedium.pixelSize
@@ -594,7 +596,7 @@ StyledFlickable {
                     stepSize: 5
                     value: PersonalizationConfig.awwwTransitionFps
                     enabled: root.desktopUsesAwww && root.awwwStepSupported
-                    accessibleName: qsTr("awww transition FPS")
+                    accessibleName: I18n.tr("awww transition FPS")
                     valueFormatter: sliderValue => Math.round(sliderValue) + " FPS"
                     onMoved: PersonalizationConfig.setAwwwTransitionFps(Math.round(value))
                 }
@@ -602,7 +604,7 @@ StyledFlickable {
                 StyledToolTip {
                     extraVisibleCondition: fpsHover.hovered && (!root.desktopUsesAwww ||
                                                                 !root.awwwStepSupported)
-                    text: root.desktopUsesAwww ? qsTr("The none transition does not use FPS.") : qsTr(
+                    text: root.desktopUsesAwww ? I18n.tr("The none transition does not use FPS.") : I18n.tr(
                                                      "Independent FPS is available only with awww.")
                 }
             }
@@ -619,7 +621,7 @@ StyledFlickable {
 
                     Text {
                         Layout.fillWidth: true
-                        text: qsTr("Transition step")
+                        text: I18n.tr("Transition step")
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.ui
                         font.pixelSize: 15
@@ -627,7 +629,7 @@ StyledFlickable {
                     }
 
                     Text {
-                        text: qsTr("Step %1").arg(PersonalizationConfig.awwwTransitionStep)
+                        text: I18n.tr("Step %1").arg(PersonalizationConfig.awwwTransitionStep)
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.numeric
                         font.pixelSize: Typography.bodyMedium.pixelSize
@@ -643,7 +645,7 @@ StyledFlickable {
                     stepSize: 1
                     value: PersonalizationConfig.awwwTransitionStep
                     enabled: root.desktopUsesAwww && root.awwwStepSupported
-                    accessibleName: qsTr("awww transition step")
+                    accessibleName: I18n.tr("awww transition step")
                     valueFormatter: sliderValue => Math.round(sliderValue).toString()
                     onMoved: PersonalizationConfig.setAwwwTransitionStep(Math.round(value))
                 }
@@ -666,7 +668,7 @@ StyledFlickable {
 
                     Text {
                         Layout.fillWidth: true
-                        text: qsTr("Transition duration")
+                        text: I18n.tr("Transition duration")
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.ui
                         font.pixelSize: 15
@@ -692,14 +694,14 @@ StyledFlickable {
                     stepSize: 50
                     value: PersonalizationConfig.transitionDurationMs
                     enabled: root.sharedTransitionParametersEnabled
-                    accessibleName: qsTr("Wallpaper transition duration")
+                    accessibleName: I18n.tr("Wallpaper transition duration")
                     valueFormatter: sliderValue => Math.round(sliderValue).toString()
                     onMoved: value => WallpaperService.setTransitionDurationMs(Math.round(value))
                 }
 
                 StyledToolTip {
                     extraVisibleCondition: durationHover.hovered && !root.sharedTransitionParametersEnabled
-                    text: qsTr("The current transition does not use duration.")
+                    text: I18n.tr("The current transition does not use duration.")
                 }
             }
 
@@ -717,7 +719,7 @@ StyledFlickable {
 
                 Text {
                     Layout.fillWidth: true
-                    text: qsTr("Easing curve")
+                    text: I18n.tr("Easing curve")
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.ui
                     font.pixelSize: 15
@@ -776,12 +778,12 @@ StyledFlickable {
                             rippleColor: Appearance.colors.colOnPrimaryContainer
                             stateLayerColor: Appearance.colors.colPrimaryContainerHover
                             pressedStateLayerColor: Appearance.colors.colPrimaryContainerActive
-                            Accessible.name: qsTr("Edit Bézier curve")
+                            Accessible.name: I18n.tr("Edit Bézier curve")
                             onClicked: easingCurveEditor.openCoordinateEditor()
 
                             contentItem: ButtonLabel {
                                 iconName: "edit"
-                                primaryText: qsTr("Edit Bézier curve")
+                                primaryText: I18n.tr("Edit Bézier curve")
                                 spacing: 8
                                 iconSize: 19
                                 iconFill: 1
@@ -805,7 +807,7 @@ StyledFlickable {
 
                 StyledToolTip {
                     extraVisibleCondition: bezierHover.hovered && !root.sharedTransitionParametersEnabled
-                    text: qsTr("The current transition does not use an easing curve.")
+                    text: I18n.tr("The current transition does not use an easing curve.")
                 }
             }
         }
@@ -835,12 +837,12 @@ StyledFlickable {
                 SettingsRow {
                     Layout.fillWidth: true
                     iconName: "swap_vert"
-                    title: qsTr("Vertical parallax")
+                    title: I18n.tr("Vertical parallax")
 
                     trailing: StyledSwitch {
                         enabled: !root.desktopUsesAwww
                         checked: PersonalizationConfig.parallaxVerticalEnabled
-                        Accessible.name: qsTr("Vertical parallax")
+                        Accessible.name: I18n.tr("Vertical parallax")
                         onToggled: PersonalizationConfig.setParallaxVerticalEnabled(checked)
                     }
                 }
@@ -848,7 +850,7 @@ StyledFlickable {
                 SettingsRow {
                     Layout.fillWidth: true
                     iconName: "workspaces"
-                    title: qsTr("Follow workspaces")
+                    title: I18n.tr("Follow workspaces")
 
                     trailing: Item {
                         Layout.preferredWidth: workspaceParallaxSwitch.implicitWidth
@@ -865,14 +867,14 @@ StyledFlickable {
                             anchors.centerIn: parent
                             enabled: !root.desktopUsesAwww && PersonalizationConfig.parallaxVerticalEnabled
                             checked: PersonalizationConfig.parallaxFollowWorkspaces
-                            Accessible.name: qsTr("Follow workspaces")
+                            Accessible.name: I18n.tr("Follow workspaces")
                             onToggled: PersonalizationConfig.setParallaxFollowWorkspaces(checked)
                         }
 
                         StyledToolTip {
                             extraVisibleCondition: workspaceParallaxHover.hovered && !root.desktopUsesAwww &&
                                                    !PersonalizationConfig.parallaxVerticalEnabled
-                            text: qsTr("Enable vertical parallax first.")
+                            text: I18n.tr("Enable vertical parallax first.")
                         }
                     }
                 }
@@ -880,12 +882,12 @@ StyledFlickable {
                 SettingsRow {
                     Layout.fillWidth: true
                     iconName: "dock_to_left"
-                    title: qsTr("Follow sidebars")
+                    title: I18n.tr("Follow sidebars")
 
                     trailing: StyledSwitch {
                         enabled: !root.desktopUsesAwww
                         checked: PersonalizationConfig.parallaxFollowSidebars
-                        Accessible.name: qsTr("Follow sidebars")
+                        Accessible.name: I18n.tr("Follow sidebars")
                         onToggled: PersonalizationConfig.setParallaxFollowSidebars(checked)
                     }
                 }
@@ -893,12 +895,12 @@ StyledFlickable {
                 SettingsRow {
                     Layout.fillWidth: true
                     iconName: "view_column"
-                    title: qsTr("Follow tiled-window focus")
+                    title: I18n.tr("Follow tiled-window focus")
 
                     trailing: StyledSwitch {
                         enabled: !root.desktopUsesAwww
                         checked: PersonalizationConfig.parallaxFollowTiledColumns
-                        Accessible.name: qsTr("Follow tiled-window focus")
+                        Accessible.name: I18n.tr("Follow tiled-window focus")
                         onToggled: PersonalizationConfig.setParallaxFollowTiledColumns(checked)
                     }
                 }
@@ -909,7 +911,7 @@ StyledFlickable {
 
                     Text {
                         Layout.fillWidth: true
-                        text: qsTr("Wallpaper scale")
+                        text: I18n.tr("Wallpaper scale")
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.ui
                         font.pixelSize: Typography.bodyMedium.pixelSize
@@ -923,7 +925,7 @@ StyledFlickable {
                         to: 1.35
                         stepSize: 0.01
                         value: root.effectivePreferredScale
-                        accessibleName: qsTr("Wallpaper scale")
+                        accessibleName: I18n.tr("Wallpaper scale")
                         valueFormatter: sliderValue => Number(sliderValue).toFixed(2)
                         onMoved: PersonalizationConfig.setParallaxPreferredScale(value)
                     }
@@ -935,7 +937,7 @@ StyledFlickable {
 
                     Text {
                         Layout.fillWidth: true
-                        text: qsTr("Horizontal travel columns")
+                        text: I18n.tr("Horizontal travel columns")
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.ui
                         font.pixelSize: Typography.bodyMedium.pixelSize
@@ -949,7 +951,7 @@ StyledFlickable {
                         to: 12
                         stepSize: 1
                         value: PersonalizationConfig.parallaxTiledColumnSpan
-                        accessibleName: qsTr("Horizontal travel columns")
+                        accessibleName: I18n.tr("Horizontal travel columns")
                         valueFormatter: sliderValue => Math.round(sliderValue).toString()
                         onMoved: PersonalizationConfig.setParallaxTiledColumnSpan(Math.round(value))
                     }
@@ -957,7 +959,7 @@ StyledFlickable {
 
                 StyledToolTip {
                     extraVisibleCondition: parallaxHover.hovered && root.desktopUsesAwww
-                    text: qsTr("Desktop parallax is available only with Quickshell.")
+                    text: I18n.tr("Desktop parallax is available only with Quickshell.")
                 }
             }
         }
@@ -1003,11 +1005,11 @@ StyledFlickable {
                 SettingsRow {
                     Layout.fillWidth: true
                     iconName: "visibility"
-                    title: qsTr("Enable background")
+                    title: I18n.tr("Enable background")
 
                     trailing: StyledSwitch {
                         checked: PersonalizationConfig.overviewEnabled
-                        Accessible.name: qsTr("Enable background")
+                        Accessible.name: I18n.tr("Enable background")
                         onToggled: PersonalizationConfig.setOverviewEnabled(checked)
                     }
                 }
@@ -1015,11 +1017,11 @@ StyledFlickable {
                 SettingsRow {
                     Layout.fillWidth: true
                     iconName: "sync"
-                    title: qsTr("Use desktop wallpaper")
+                    title: I18n.tr("Use desktop wallpaper")
 
                     trailing: StyledSwitch {
                         checked: PersonalizationConfig.overviewUseDesktopWallpaper
-                        Accessible.name: qsTr("Use desktop wallpaper")
+                        Accessible.name: I18n.tr("Use desktop wallpaper")
                         onToggled: PersonalizationConfig.setOverviewUseDesktopWallpaper(checked)
                     }
                 }
@@ -1027,11 +1029,11 @@ StyledFlickable {
                 SettingsRow {
                     Layout.fillWidth: true
                     iconName: "splitscreen"
-                    title: qsTr("Per-monitor wallpapers")
+                    title: I18n.tr("Per-monitor wallpapers")
 
                     trailing: StyledSwitch {
                         checked: PersonalizationConfig.overviewPerMonitorWallpaper
-                        Accessible.name: qsTr("Per-monitor wallpapers")
+                        Accessible.name: I18n.tr("Per-monitor wallpapers")
                         onToggled: PersonalizationConfig.setOverviewPerMonitorWallpaper(checked)
                     }
                 }
@@ -1041,15 +1043,15 @@ StyledFlickable {
                     Layout.fillWidth: true
                     options: root.outputOptions
                     value: root.selectedOverviewOutput
-                    placeholder: qsTr("Select output")
-                    Accessible.name: qsTr("Overview wallpaper output")
+                    placeholder: I18n.tr("Select output")
+                    Accessible.name: I18n.tr("Overview wallpaper output")
                     onAccepted: value => root.selectedOverviewOutput = value
                 }
             }
 
             FlatSettingsSection {
                 Layout.fillWidth: true
-                title: qsTr("Transition type")
+                title: I18n.tr("Transition type")
 
                 StyledButtonGroup {
                     Layout.alignment: Qt.AlignHCenter
@@ -1068,7 +1070,7 @@ StyledFlickable {
 
             FlatSettingsSection {
                 Layout.fillWidth: true
-                title: qsTr("Image effects")
+                title: I18n.tr("Image effects")
                 opacity: PersonalizationConfig.overviewEnabled ? 1 : 0.45
 
                 ColumnLayout {
@@ -1076,7 +1078,7 @@ StyledFlickable {
                     spacing: 0
 
                     Text {
-                        text: qsTr("Blur")
+                        text: I18n.tr("Blur")
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.ui
                         font.pixelSize: Typography.bodyMedium.pixelSize
@@ -1089,7 +1091,7 @@ StyledFlickable {
                         to: 100
                         stepSize: 1
                         value: PersonalizationConfig.overviewBlurRadius
-                        accessibleName: qsTr("Overview blur")
+                        accessibleName: I18n.tr("Overview blur")
                         valueFormatter: value => Math.round(value) + "%"
                         onMoved: PersonalizationConfig.setOverviewBlurRadius(value)
                     }
@@ -1100,7 +1102,7 @@ StyledFlickable {
                     spacing: 0
 
                     Text {
-                        text: qsTr("Dim")
+                        text: I18n.tr("Dim")
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.ui
                         font.pixelSize: Typography.bodyMedium.pixelSize
@@ -1113,7 +1115,7 @@ StyledFlickable {
                         to: 1
                         stepSize: 0.01
                         value: PersonalizationConfig.overviewDim
-                        accessibleName: qsTr("Overview dimming")
+                        accessibleName: I18n.tr("Overview dimming")
                         valueFormatter: value => Math.round(value * 100) + "%"
                         onMoved: PersonalizationConfig.setOverviewDim(value)
                     }
@@ -1124,7 +1126,7 @@ StyledFlickable {
                     spacing: 0
 
                     Text {
-                        text: qsTr("Saturation")
+                        text: I18n.tr("Saturation")
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.ui
                         font.pixelSize: Typography.bodyMedium.pixelSize
@@ -1137,7 +1139,7 @@ StyledFlickable {
                         to: 2
                         stepSize: 0.05
                         value: PersonalizationConfig.overviewSaturation
-                        accessibleName: qsTr("Overview saturation")
+                        accessibleName: I18n.tr("Overview saturation")
                         valueFormatter: value => Number(value).toFixed(2)
                         onMoved: PersonalizationConfig.setOverviewSaturation(value)
                     }
@@ -1148,7 +1150,7 @@ StyledFlickable {
                     spacing: 0
 
                     Text {
-                        text: qsTr("Contrast")
+                        text: I18n.tr("Contrast")
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.ui
                         font.pixelSize: Typography.bodyMedium.pixelSize
@@ -1161,7 +1163,7 @@ StyledFlickable {
                         to: 2
                         stepSize: 0.05
                         value: PersonalizationConfig.overviewContrast
-                        accessibleName: qsTr("Overview contrast")
+                        accessibleName: I18n.tr("Overview contrast")
                         valueFormatter: value => Number(value).toFixed(2)
                         onMoved: PersonalizationConfig.setOverviewContrast(value)
                     }

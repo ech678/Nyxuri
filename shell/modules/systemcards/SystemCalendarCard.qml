@@ -1,5 +1,6 @@
 import QtQuick
 import qs.shared.theme
+import qs.shared.i18n
 
 Rectangle {
     id: root
@@ -7,13 +8,13 @@ Rectangle {
     property bool active: true
     property color surfaceColor: Appearance.colors.colSurfaceContainerHigh
     property date currentDate: new Date()
-    readonly property var monthNames: [qsTr("January"), qsTr("February"), qsTr("March"), qsTr("April"), qsTr(
-            "May"), qsTr("June"), qsTr("July"), qsTr("August"), qsTr("September"), qsTr("October"), qsTr(
-            "November"), qsTr("December")]
-    readonly property var weekdayNames: [qsTr("Sun"), qsTr("Mon"), qsTr("Tue"), qsTr("Wed"), qsTr("Thu"), qsTr(
-            "Fri"), qsTr("Sat")]
-    readonly property var accessibleWeekdayNames: [qsTr("Sunday"), qsTr("Monday"), qsTr("Tuesday"), qsTr("Wednesday"),
-        qsTr("Thursday"), qsTr("Friday"), qsTr("Saturday")]
+    readonly property var monthNames: [I18n.tr("January"), I18n.tr("February"), I18n.tr("March"), I18n.tr(
+            "April"), I18n.tr("May"), I18n.tr("June"), I18n.tr("July"), I18n.tr("August"), I18n.tr(
+            "September"), I18n.tr("October"), I18n.tr("November"), I18n.tr("December")]
+    readonly property var weekdayNames: [I18n.tr("Sun"), I18n.tr("Mon"), I18n.tr("Tue"), I18n.tr("Wed"),
+        I18n.tr("Thu"), I18n.tr("Fri"), I18n.tr("Sat")]
+    readonly property var accessibleWeekdayNames: [I18n.tr("Sunday"), I18n.tr("Monday"), I18n.tr("Tuesday"),
+        I18n.tr("Wednesday"), I18n.tr("Thursday"), I18n.tr("Friday"), I18n.tr("Saturday")]
     readonly property string calendarFamily: Fonts.expressive
     readonly property var calendarAxes: Fonts.bundledFamilyAvailable && Fonts.expressive
                                         === Fonts.bundledFamilyName ? ({
@@ -24,8 +25,8 @@ Rectangle {
     radius: Appearance.rounding.extraLarge
     color: root.surfaceColor
     clip: true
-    Accessible.name: currentDate.getFullYear() + qsTr(" ") + (currentDate.getMonth() + 1) + qsTr("/")
-                     + currentDate.getDate() + qsTr(", ") + accessibleWeekdayNames[currentDate.getDay()]
+    Accessible.name: currentDate.getFullYear() + I18n.tr(" ") + (currentDate.getMonth() + 1) + I18n.tr("/")
+                     + currentDate.getDate() + I18n.tr(", ") + accessibleWeekdayNames[currentDate.getDay()]
 
     Timer {
         interval: 30000

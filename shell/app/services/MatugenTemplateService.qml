@@ -6,6 +6,7 @@ import Quickshell.Io
 import qs.shared.theme
 import qs.app.services
 import qs.app
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -111,10 +112,10 @@ Singleton {
         onExited: exitCode => {
             try {
                 if (exitCode !== 0)
-                    throw new Error(listError.text.trim() || qsTr("Unable to read template"));
+                    throw new Error(listError.text.trim() || I18n.tr("Unable to read template"));
                 const result = JSON.parse(listOutput.text);
                 if (result.schemaVersion !== 1 || !Array.isArray(result.templates))
-                    throw new Error(qsTr("Invalid template data"));
+                    throw new Error(I18n.tr("Invalid template data"));
                 const next = result.templates.filter(t => t.id !== "quickshell");
                 if (JSON.stringify(next) !== JSON.stringify(root.templates))
                     root.templates = next;
@@ -146,9 +147,9 @@ Singleton {
             try {
                 const result = JSON.parse(mutationOutput.text);
                 if (result.schemaVersion !== 1)
-                    throw new Error(qsTr("Invalid template data"));
+                    throw new Error(I18n.tr("Invalid template data"));
                 ok = exitCode === 0 && result.ok === true;
-                root.operationError = ok ? "" : result.error || qsTr("Template operation failed");
+                root.operationError = ok ? "" : result.error || I18n.tr("Template operation failed");
             } catch (e) {
                 root.operationError = mutationError.text.trim() || String(e);
             }

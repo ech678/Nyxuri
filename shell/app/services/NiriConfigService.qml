@@ -6,6 +6,7 @@ import Quickshell.Io
 import qs.shared.theme
 import qs.app.services
 import qs.app
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -25,15 +26,17 @@ Singleton {
     property string error: ""
     property string readError: ""
     property string errorFeature: ""
-    readonly property string operationMessage: error === "" ? "" : qsTr("Unable to save changes")
+    readonly property string operationMessage: error === "" ? "" : I18n.tr("Unable to save changes")
     readonly property var diagnostics: snapshot.diagnostics || ({})
-    readonly property string configurationMessage: readError !== "" ? qsTr("Unable to check configuration") :
-                                                                      diagnostics.invalid ? qsTr(
+    readonly property string configurationMessage: readError !== "" ? I18n.tr(
+                                                                          "Unable to check configuration") :
+                                                                      diagnostics.invalid ? I18n.tr(
                                                                                                 "Configuration is invalid") :
                                                                                             diagnostics.writable
-                                                                                            === false ? qsTr(
-                                                                                                            "Configuration is not writable") :
-                                                                                                        ""
+                                                                                            === false
+                                                                                            ? I18n.tr(
+                                                                                                  "Configuration is not writable") :
+                                                                                              ""
 
     function clearEditError() {
         if (errorFeature === "binds" || errorFeature === "") {
@@ -165,7 +168,7 @@ Singleton {
                     throw new Error("Unsupported configuration response");
                 if (writing) {
                     if (code !== 0) {
-                        root.error = response.error || qsTr("Unable to save changes");
+                        root.error = response.error || I18n.tr("Unable to save changes");
                         root.errorFeature = root.activeFeature;
                     } else if (root.errorFeature === root.activeFeature) {
                         root.error = "";

@@ -6,6 +6,7 @@ import QtQuick.Effects
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 Item {
     id: root
@@ -100,9 +101,9 @@ Item {
         const physical = SystemIdentityService.physicalCoreCount;
         const logical = SystemIdentityService.logicalCpuCount;
         if (physical > 0 && logical > 0)
-            return physical + qsTr(" cores · ") + logical + qsTr(" threads");
+            return physical + I18n.tr(" cores · ") + logical + I18n.tr(" threads");
 
-        return qsTr("Overall utilization");
+        return I18n.tr("Overall utilization");
     }
 
     function cpuSupporting() {
@@ -115,7 +116,7 @@ Item {
 
     function gpuSupporting() {
         if (SystemMonitorService.selectedGpuId === "")
-            return qsTr("No graphics device detected");
+            return I18n.tr("No graphics device detected");
 
         const gpu = root.primaryGpu;
         if (Format.isNumber(gpu.vramUsedBytes) && Format.isNumber(gpu.vramTotalBytes))
@@ -223,7 +224,7 @@ Item {
         id: cpuComponent
 
         ExpressiveMetricTile {
-            label: qsTr("CPU")
+            label: I18n.tr("CPU")
             iconName: "memory"
             detailText: root.cpuDetail()
             valueText: Format.percent(SystemMonitorService.cpu.usagePercent, 0)
@@ -247,9 +248,9 @@ Item {
         id: gpuComponent
 
         ExpressiveMetricTile {
-            label: qsTr("GPU")
+            label: I18n.tr("GPU")
             iconName: "developer_board"
-            detailText: root.primaryGpu.name || qsTr("Graphics device")
+            detailText: root.primaryGpu.name || I18n.tr("Graphics device")
             valueText: SystemMonitorService.selectedGpuId !== "" ? Format.percent(
                                                                        root.primaryGpu.utilizationPercent, 0) :
                                                                    "—"
@@ -281,8 +282,8 @@ Item {
                                 SystemMonitorService.memory.totalBytes)
             level: root.normalizedPercent(SystemMonitorService.memory.usagePercent)
             valueAvailable: Format.isNumber(SystemMonitorService.memory.usagePercent)
-            accessibilityName: qsTr("Memory used ") + Format.percent(SystemMonitorService.memory.usagePercent,
-                                                                     0) + "，" + Format.bytes(
+            accessibilityName: I18n.tr("Memory used ") + Format.percent(
+                                   SystemMonitorService.memory.usagePercent, 0) + "，" + Format.bytes(
                                    SystemMonitorService.memory.usedBytes) + " / " + Format.bytes(
                                    SystemMonitorService.memory.totalBytes)
             shapeId: MaterialShape.Slanted
@@ -299,11 +300,12 @@ Item {
         SystemLiquidMetricCard {
             iconName: NetworkService.wifiConnected ? "wifi" : "wifi_off"
             valueText: NetworkService.wifiConnected ? Format.percent(NetworkService.signalStrength, 0) : "—"
-            supportingText: qsTr("Wi-Fi signal strength")
+            supportingText: I18n.tr("Wi-Fi signal strength")
             level: root.normalizedPercent(NetworkService.signalStrength)
             valueAvailable: NetworkService.wifiConnected
-            accessibilityName: NetworkService.wifiConnected ? qsTr("Wi-Fi signal strength ") + Format.percent(
-                                                                  NetworkService.signalStrength, 0) : qsTr(
+            accessibilityName: NetworkService.wifiConnected ? I18n.tr("Wi-Fi signal strength ")
+                                                              + Format.percent(NetworkService.signalStrength,
+                                                                               0) : I18n.tr(
                                                                   "Wi-Fi is not connected")
             shapeId: MaterialShape.Pentagon
             shapeColor: root.surfaceColor(Appearance.m3colors.m3tertiaryContainer,
@@ -364,15 +366,15 @@ Item {
             iconName: "data_usage"
             valueText: capacityAvailable ? Format.percent(root.capacityDisk.usagePercent, 0) : "—"
             supportingText: diskAvailable ? Format.bytes(root.capacityDisk.usedBytes) + " / " + Format.bytes(
-                                                root.capacityDisk.totalBytes) : qsTr("No disk detected")
+                                                root.capacityDisk.totalBytes) : I18n.tr("No disk detected")
             level: root.normalizedPercent(root.capacityDisk.usagePercent)
             valueAvailable: capacityAvailable
-            accessibilityName: diskAvailable ? qsTr("Disk %1, %2 of %3 used, %4 occupied").arg(String(
-                                                                                                   root.capacityDisk.device)).arg(
+            accessibilityName: diskAvailable ? I18n.tr("Disk %1, %2 of %3 used, %4 occupied").arg(String(
+                                                                                                      root.capacityDisk.device)).arg(
                                                    Format.bytes(root.capacityDisk.usedBytes)).arg(Format.bytes(
                                                                                                       root.capacityDisk.totalBytes)).arg(
-                                                   Format.percent(root.capacityDisk.usagePercent, 0)) : qsTr(
-                                                   "No disk detected")
+                                                   Format.percent(root.capacityDisk.usagePercent, 0)) :
+                                               I18n.tr("No disk detected")
             shapeId: MaterialShape.Cookie9Sided
             shapeColor: root.surfaceColor(Appearance.m3colors.m3secondaryContainer,
                                           Appearance.colors.colSecondaryContainer)

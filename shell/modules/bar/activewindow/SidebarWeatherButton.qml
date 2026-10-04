@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import qs.app.services
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -83,6 +84,6 @@ Item {
 
     PopupToolTip {
         extraVisibleCondition: button.pointerHovered
-        text: qsTr("Weather")
+        text: I18n.tr("Weather")
     }
 }

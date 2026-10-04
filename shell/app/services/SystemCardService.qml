@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import qs.app.services
+import qs.shared.i18n
 import "../../modules/systemcards/SystemCardCatalog.js" as Catalog
 import "../../modules/systemcards/SystemCardGeometry.js" as Geometry
 import "../../modules/systemcards/SystemCardState.js" as CardState
@@ -31,7 +32,7 @@ Singleton {
     }
 
     function cardName(cardId) {
-        return Catalog.nameFor(String(cardId));
+        return I18n.tr(Catalog.nameFor(String(cardId)));
     }
 
     function cardIcon(cardId) {

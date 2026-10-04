@@ -5,16 +5,16 @@ import Quickshell
 import Quickshell.Io
 import qs.app.services
 import "../../shared/utils/AwwwCommand.js" as AwwwCommand
+import qs.shared.i18n
 
 Singleton {
     id: root
 
     readonly property string namespaceName: "nyxuri-desktop"
-    readonly property string awwwCommand: Quickshell.env("NYXURI_AWWW_COMMAND")
-                                          || Quickshell.env("CLAVIS_AWWW_COMMAND") || "awww"
-    readonly property string daemonCommand: Quickshell.env("NYXURI_AWWW_DAEMON_COMMAND")
-                                            || Quickshell.env("CLAVIS_AWWW_DAEMON_COMMAND")
-                                            || "awww-daemon"
+    readonly property string awwwCommand: Quickshell.env("NYXURI_AWWW_COMMAND") || Quickshell.env(
+                                              "CLAVIS_AWWW_COMMAND") || "awww"
+    readonly property string daemonCommand: Quickshell.env("NYXURI_AWWW_DAEMON_COMMAND") || Quickshell.env(
+                                                "CLAVIS_AWWW_DAEMON_COMMAND") || "awww-daemon"
 
     property bool available: false
     property bool probeComplete: false
@@ -118,7 +118,7 @@ Singleton {
         }
 
         if (!root.available) {
-            root.lastError = qsTr("awww or awww-daemon was not found; fell back to Quickshell");
+            root.lastError = I18n.tr("awww or awww-daemon was not found; fell back to Quickshell");
             root.quickshellContentVisible = true;
             root.effectiveBackend = "quickshell";
             root.state = "error";
@@ -169,7 +169,7 @@ Singleton {
     }
 
     function failAwwwActivation(message) {
-        root.lastError = message || qsTr("Failed to start the awww desktop backend");
+        root.lastError = message || I18n.tr("Failed to start the awww desktop backend");
         root.quickshellContentVisible = true;
         root.effectiveBackend = "quickshell";
         root.state = "error";
@@ -209,7 +209,7 @@ Singleton {
     function validateSources() {
         if (WallpaperService.canUseAwww)
             return true;
-        root.failAwwwActivation(qsTr("Select an image wallpaper before switching to awww"));
+        root.failAwwwActivation(I18n.tr("Select an image wallpaper before switching to awww"));
         return false;
     }
 
@@ -279,7 +279,7 @@ Singleton {
         const output = target.output;
         const source = target.source;
         if (!WallpaperService.isImagePath(source)) {
-            root.failAwwwActivation(qsTr("No desktop wallpaper is available for %1").arg(output));
+            root.failAwwwActivation(I18n.tr("No desktop wallpaper is available for %1").arg(output));
             return;
         }
 
@@ -383,7 +383,7 @@ Singleton {
             if (root.state === "starting" || root.state === "waiting-socket" || root.state === "error") {
                 return;
             }
-            root.failAwwwActivation(qsTr("awww-daemon exited unexpectedly with code %1").arg(exitCode));
+            root.failAwwwActivation(I18n.tr("awww-daemon exited unexpectedly with code %1").arg(exitCode));
         }
     }
 
@@ -423,7 +423,7 @@ Singleton {
 
             root.queryAttempts += 1;
             if (root.queryAttempts >= 20) {
-                root.failAwwwActivation(qsTr(
+                root.failAwwwActivation(I18n.tr(
                                             "The nyxuri-desktop awww namespace did not become ready before timeout"));
                 return;
             }
@@ -456,7 +456,7 @@ Singleton {
             }
 
             if (exitCode !== 0) {
-                const message = qsTr("awww could not apply the desktop wallpaper to %1; exit code %2").arg(
+                const message = I18n.tr("awww could not apply the desktop wallpaper to %1; exit code %2").arg(
                           outputName).arg(exitCode);
                 WallpaperService.reportDesktopError(outputName, message);
                 root.failAwwwActivation(message);
@@ -475,7 +475,7 @@ Singleton {
         onExited: exitCode => {
             if (exitCode !== 0) {
                 root.daemonStopRequested = false;
-                root.lastError = qsTr("Failed to stop the nyxuri-desktop awww namespace; exit code %1").arg(
+                root.lastError = I18n.tr("Failed to stop the nyxuri-desktop awww namespace; exit code %1").arg(
                             exitCode);
                 root.state = "error";
                 return;

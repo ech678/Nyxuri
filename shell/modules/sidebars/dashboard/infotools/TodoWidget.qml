@@ -7,6 +7,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 Item {
     id: root
@@ -18,11 +19,11 @@ Item {
     readonly property var tabs: [
         {
             "icon": "checklist",
-            "name": qsTr("Unfinished")
+            "name": I18n.tr("Unfinished")
         },
         {
             "icon": "check_circle",
-            "name": qsTr("Completed")
+            "name": I18n.tr("Completed")
         }
     ]
 
@@ -107,7 +108,7 @@ Item {
             TaskList {
                 listBottomPadding: root.fabSize + root.fabMargins * 2
                 emptyPlaceholderIcon: "check_circle"
-                emptyPlaceholderText: qsTr("Nothing here yet")
+                emptyPlaceholderText: I18n.tr("Nothing here yet")
                 taskList: TodoService.list.map((item, index) => Object.assign({}, item, {
                                                                                   "originalIndex": index
                                                                               })).filter(item => !item.done)
@@ -116,7 +117,7 @@ Item {
             TaskList {
                 listBottomPadding: root.fabSize + root.fabMargins * 2
                 emptyPlaceholderIcon: "checklist"
-                emptyPlaceholderText: qsTr("Completed tasks will appear here")
+                emptyPlaceholderText: I18n.tr("Completed tasks will appear here")
                 taskList: TodoService.list.map((item, index) => Object.assign({}, item, {
                                                                                   "originalIndex": index
                                                                               })).filter(item => item.done)
@@ -146,7 +147,7 @@ Item {
         stateLayerColor: Appearance.colors.colPrimaryContainerHover
         pressedStateLayerColor: Appearance.colors.colPrimaryContainerActive
         rippleColor: Appearance.colors.colOnPrimaryContainer
-        Accessible.name: qsTr("Add task")
+        Accessible.name: I18n.tr("Add task")
         onClicked: root.showAddDialog = true
 
         contentItem: MaterialSymbol {
@@ -204,7 +205,7 @@ Item {
                     Layout.topMargin: 16
                     Layout.leftMargin: 16
                     Layout.rightMargin: 16
-                    text: qsTr("Add task")
+                    text: I18n.tr("Add task")
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.ui
                     font.pixelSize: 16
@@ -219,7 +220,7 @@ Item {
                     Layout.rightMargin: 16
                     implicitHeight: 56
                     focus: root.showAddDialog
-                    placeholderText: qsTr("Task description")
+                    placeholderText: I18n.tr("Task description")
                     font.family: Fonts.ui
                     font.pixelSize: 14
                     wrapMode: TextEdit.NoWrap
@@ -234,12 +235,12 @@ Item {
                     spacing: 5
 
                     ActionButton {
-                        text: qsTr("Cancel")
+                        text: I18n.tr("Cancel")
                         onClicked: root.showAddDialog = false
                     }
 
                     ActionButton {
-                        text: qsTr("Add")
+                        text: I18n.tr("Add")
                         filled: true
                         enabled: todoInput.text.trim().length > 0
                         opacity: enabled ? 1 : 0.38

@@ -3,6 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Networking
 import qs.app.services
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -189,8 +190,8 @@ Singleton {
         return activeWifi;
     }
     readonly property string activeSsid: activeWifi ? activeWifi.ssid : ""
-    readonly property string activeConnection: activeNetwork ? activeNetwork.name : qsTr("Disconnected")
-    readonly property string activeConnectionType: activeNetwork ? (activeNetwork.type === "wired" ? qsTr(
+    readonly property string activeConnection: activeNetwork ? activeNetwork.name : I18n.tr("Disconnected")
+    readonly property string activeConnectionType: activeNetwork ? (activeNetwork.type === "wired" ? I18n.tr(
                                                                                                          "Wired") :
                                                                                                      "Wi-Fi") :
                                                                    ""
@@ -297,7 +298,7 @@ Singleton {
 
     function _describeWiredNetwork(device, network) {
         return {
-            "name": String(network.name || device.name || qsTr("Wired network")),
+            "name": String(network.name || device.name || I18n.tr("Wired network")),
             "deviceName": String(device.name || ""),
             "address": String(device.address || ""),
             "type": "wired",
@@ -339,7 +340,7 @@ Singleton {
 
     function _beginOperation(operation, network, ssid) {
         if (root.busy) {
-            root.operationFailed(operation, qsTr("Another network operation is already in progress"));
+            root.operationFailed(operation, I18n.tr("Another network operation is already in progress"));
             return false;
         }
         root.lastError = "";
@@ -368,7 +369,7 @@ Singleton {
             return;
 
         const operation = root._pendingOperation;
-        root.lastError = String(message || qsTr("Network operation failed"));
+        root.lastError = String(message || I18n.tr("Network operation failed"));
         operationTimeout.stop();
         root._clearPendingOperation();
         root.operationFailed(operation, root.lastError);
@@ -395,12 +396,12 @@ Singleton {
     function setWifiEnabled(enabled) {
         const requested = !!enabled;
         if (!root.available) {
-            root.lastError = qsTr("NetworkManager is unavailable");
+            root.lastError = I18n.tr("NetworkManager is unavailable");
             root.operationFailed("set-wifi-enabled", root.lastError);
             return;
         }
         if (requested && !root.wifiHardwareEnabled) {
-            root.lastError = qsTr("Wi-Fi is blocked by hardware or rfkill");
+            root.lastError = I18n.tr("Wi-Fi is blocked by hardware or rfkill");
             root.operationFailed("set-wifi-enabled", root.lastError);
             return;
         }
@@ -450,17 +451,17 @@ Singleton {
 
     function requestScan() {
         if (!root.available) {
-            root.lastError = qsTr("NetworkManager is unavailable");
+            root.lastError = I18n.tr("NetworkManager is unavailable");
             root.operationFailed("scan", root.lastError);
             return;
         }
         if (!root.wifiAvailable) {
-            root.lastError = qsTr("No Wi-Fi device detected");
+            root.lastError = I18n.tr("No Wi-Fi device detected");
             root.operationFailed("scan", root.lastError);
             return;
         }
         if (!root.wifiEnabled) {
-            root.lastError = qsTr("Wi-Fi is off");
+            root.lastError = I18n.tr("Wi-Fi is off");
             root.operationFailed("scan", root.lastError);
             return;
         }
@@ -484,7 +485,7 @@ Singleton {
     function connectNetwork(network, credentials) {
         const nativeNetwork = root._resolveNativeNetwork(network);
         if (!nativeNetwork) {
-            root.lastError = qsTr("The target network is no longer available");
+            root.lastError = I18n.tr("The target network is no longer available");
             root.operationFailed("connect", root.lastError);
             return;
         }
@@ -499,7 +500,7 @@ Singleton {
                     root.openPasswordPrompt(network);
                     return;
                 }
-                root.lastError = qsTr(
+                root.lastError = I18n.tr(
                             "This authentication type requires the second-phase Secret Agent/Extras backend");
                 root.operationFailed("connect", root.lastError);
                 return;
@@ -516,7 +517,7 @@ Singleton {
         }
         if (password.length > 0) {
             if (!root._isPskSecurity(nativeNetwork.security)) {
-                root._finishOperationFailed(qsTr(
+                root._finishOperationFailed(I18n.tr(
                                                 "The current Quickshell API only supports WPA/WPA2-PSK and SAE password connections"));
                 return;
             }
@@ -574,7 +575,7 @@ Singleton {
     function disconnectNetwork(network) {
         let nativeNetwork = root._resolveNativeNetwork(network || root.activeNetwork);
         if (!nativeNetwork) {
-            root.lastError = qsTr("No active network to disconnect");
+            root.lastError = I18n.tr("No active network to disconnect");
             root.operationFailed("disconnect", root.lastError);
             return;
         }
@@ -591,7 +592,7 @@ Singleton {
     function forgetNetwork(network) {
         const nativeNetwork = root._resolveNativeNetwork(network);
         if (!nativeNetwork || !nativeNetwork.known) {
-            root.lastError = qsTr("No saved network configuration found");
+            root.lastError = I18n.tr("No saved network configuration found");
             root.operationFailed("forget", root.lastError);
             return;
         }
@@ -689,7 +690,7 @@ Singleton {
     function writeProfile(profile, values) {
         const settings = profile && profile.nativeSettings;
         if (!settings || root._pendingSettings) {
-            root.profileWriteFailed(profile ? profile.uuid : "", qsTr(
+            root.profileWriteFailed(profile ? profile.uuid : "", I18n.tr(
                                         "The network profile cannot currently be written"));
             return false;
         }
@@ -708,7 +709,7 @@ Singleton {
                                                                                                > 0 && dnsStrings.every(
                                                                                                    root._validIpv4));
         if (!current || !manualValid || !dnsValid) {
-            root.profileWriteFailed(String(profile.uuid || ""), qsTr("Invalid IPv4 configuration format"));
+            root.profileWriteFailed(String(profile.uuid || ""), I18n.tr("Invalid IPv4 configuration format"));
             return false;
         }
         const requested = {
@@ -722,7 +723,7 @@ Singleton {
               || requested.gateway !== current.gateway || root._normalizedDns(requested.dns).join(",")
               !== root._normalizedDns(current.dns).join(",");
         if (ipv4Changed && mode !== "auto" && mode !== "auto-dns" && mode !== "manual") {
-            root.profileWriteFailed(String(profile.uuid || ""), qsTr(
+            root.profileWriteFailed(String(profile.uuid || ""), I18n.tr(
                                         "The current IPv4 mode cannot be edited on this page"));
             return false;
         }
@@ -776,7 +777,7 @@ Singleton {
         const settings = profile && profile.nativeSettings;
         const uuid = String(profile ? profile.uuid || "" : "");
         if (!settings || root._pendingForgetSettings) {
-            root.profileForgetFailed(uuid, qsTr("The network profile cannot currently be deleted"));
+            root.profileForgetFailed(uuid, I18n.tr("The network profile cannot currently be deleted"));
             return false;
         }
         root._pendingForgetSettings = settings;
@@ -851,23 +852,23 @@ Singleton {
         const validSecret = !secure || (secret.length >= 8 && secret.length <= 63) || (/^[0-9A-Fa-f]{64}$/.test(
                                                                                            secret));
         if (root._addWifiPending) {
-            root.addWifiFinished(false, null, qsTr("Another add operation is already in progress"));
+            root.addWifiFinished(false, null, I18n.tr("Another add operation is already in progress"));
             return false;
         }
         if (normalizedSsid.length === 0 || normalizedSsid.indexOf("\0") >= 0 || root._utf8Length(
                     normalizedSsid) > 32) {
-            root.addWifiFinished(false, null, qsTr("SSID must be 1–32 UTF-8 bytes"));
+            root.addWifiFinished(false, null, I18n.tr("SSID must be 1–32 UTF-8 bytes"));
             return false;
         }
         if (!validSecret) {
-            root.addWifiFinished(false, null, qsTr("Invalid Wi-Fi password format"));
+            root.addWifiFinished(false, null, I18n.tr("Invalid Wi-Fi password format"));
             return false;
         }
         const matches = root.nearbyWifiNetworks.filter(network => {
             return network.ssid === normalizedSsid;
         });
         if (!hidden && matches.length > 1) {
-            root.addWifiFinished(false, null, qsTr(
+            root.addWifiFinished(false, null, I18n.tr(
                                      "Multiple Wi-Fi devices found networks with the same name; select a specific device from the nearby networks list"));
             return false;
         }
@@ -877,7 +878,7 @@ Singleton {
             const matchSecretValid = !match.isSecure || (secret.length >= 8 && secret.length <= 63) || (
                       /^[0-9A-Fa-f]{64}$/.test(secret));
             if (!matchSecretValid) {
-                root.addWifiFinished(false, null, qsTr("This network requires a valid Wi-Fi password"));
+                root.addWifiFinished(false, null, I18n.tr("This network requires a valid Wi-Fi password"));
                 return false;
             }
             root._addWifiUsesNative = true;
@@ -895,7 +896,7 @@ Singleton {
                                                                                       message);
                                                               });
         if (!started)
-            root._finishAddWifi(false, null, NetworkManagerExtras.lastError || qsTr(
+            root._finishAddWifi(false, null, NetworkManagerExtras.lastError || I18n.tr(
                                     "Unable to create Wi-Fi profile"));
 
         return started;
@@ -903,7 +904,7 @@ Singleton {
 
     function connectProfile(profile) {
         if (!profile || !profile.nativeNetwork || !profile.nativeSettings) {
-            root.lastError = qsTr("This NetworkManager profile cannot currently be connected");
+            root.lastError = I18n.tr("This NetworkManager profile cannot currently be connected");
             root.operationFailed("connect", root.lastError);
             return false;
         }
@@ -937,7 +938,7 @@ Singleton {
 
     function recheckConnectivity() {
         if (!root.canCheckConnectivity || !root.connectivityCheckEnabled) {
-            root.lastError = qsTr("NetworkManager connectivity checking is unavailable or disabled");
+            root.lastError = I18n.tr("NetworkManager connectivity checking is unavailable or disabled");
             root.operationFailed("check-connectivity", root.lastError);
             return;
         }
@@ -1029,8 +1030,8 @@ Singleton {
             let message = ConnectionFailReason.toString(reason);
             if (reason === ConnectionFailReason.NoSecrets || reason
                     === ConnectionFailReason.WifiAuthTimeout) {
-                message = root._pendingWithPsk ? qsTr("Incorrect password or authentication timed out") : qsTr(
-                                                     "Network password required");
+                message = root._pendingWithPsk ? I18n.tr("Incorrect password or authentication timed out") :
+                                                 I18n.tr("Network password required");
                 if (root._pendingSsid.length > 0) {
                     root.passwordRequestSsid = root._pendingSsid;
                     root.passwordRequestDeviceName = root.connectTargetDeviceName;
@@ -1083,7 +1084,7 @@ Singleton {
             if (root._pendingOperation === "connect" && root._pendingConnectPhase !== "disconnecting"
                     && root._pendingConnectPhase !== "waiting" && root._pendingStateWasChanging
                     && root._pendingNetwork.state === ConnectionState.Disconnected)
-                root._finishOperationFailed(qsTr("Connection did not complete"));
+                root._finishOperationFailed(I18n.tr("Connection did not complete"));
         }
 
         target: root._pendingNetwork
@@ -1117,7 +1118,7 @@ Singleton {
             root._pendingSettings = null;
             root._pendingProfileUuid = "";
             root._pendingProfileExpected = null;
-            root.profileWriteFailed(uuid, qsTr("NetworkManager did not confirm the profile update"));
+            root.profileWriteFailed(uuid, I18n.tr("NetworkManager did not confirm the profile update"));
         }
     }
 
@@ -1130,7 +1131,7 @@ Singleton {
             const uuid = root._pendingForgetUuid;
             root._pendingForgetSettings = null;
             root._pendingForgetUuid = "";
-            root.profileForgetFailed(uuid, qsTr("NetworkManager did not confirm profile deletion"));
+            root.profileForgetFailed(uuid, I18n.tr("NetworkManager did not confirm profile deletion"));
         }
     }
 
@@ -1150,6 +1151,6 @@ Singleton {
 
         interval: 60000
         repeat: false
-        onTriggered: root._finishOperationFailed(qsTr("Network operation timed out"))
+        onTriggered: root._finishOperationFailed(I18n.tr("Network operation timed out"))
     }
 }

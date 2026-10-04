@@ -6,6 +6,7 @@ import qs.app.services
 import "../../shared/utils/WallpaperSource.js" as Source
 import "../../shared/utils/ZenPalette.js" as Zen
 import "../../shared/utils/WallpaperPaletteScope.js" as Scope
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -109,7 +110,7 @@ Singleton {
         const success = PersonalizationConfig.commitPalette(root.scope, source);
         root.committing = false;
         if (!success) {
-            root.error = qsTr("Could not save the wallpaper. Try again.");
+            root.error = I18n.tr("Could not save the wallpaper. Try again.");
             return false;
         }
         root.capturedContext = root.context();

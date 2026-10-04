@@ -6,13 +6,14 @@ import Quickshell
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 Item {
     id: root
 
     required property var taskList
     property string emptyPlaceholderIcon: "check_circle"
-    property string emptyPlaceholderText: qsTr("Nothing here yet")
+    property string emptyPlaceholderText: I18n.tr("Nothing here yet")
     property int itemSpacing: 5
     property int itemPadding: 8
     property int listBottomPadding: 76
@@ -81,7 +82,7 @@ Item {
 
                         ActionButton {
                             iconName: taskItem.modelData.done ? "remove_done" : "check"
-                            accessibleName: taskItem.modelData.done ? qsTr("Mark unfinished") : qsTr(
+                            accessibleName: taskItem.modelData.done ? I18n.tr("Mark unfinished") : I18n.tr(
                                                                           "Mark complete")
                             onClicked: {
                                 if (taskItem.modelData.done)
@@ -93,7 +94,7 @@ Item {
 
                         ActionButton {
                             iconName: "delete_forever"
-                            accessibleName: qsTr("Delete task")
+                            accessibleName: I18n.tr("Delete task")
                             onClicked: TodoService.deleteItem(taskItem.modelData.originalIndex)
                         }
                     }

@@ -4,6 +4,7 @@ import Qt5Compat.GraphicalEffects
 import M3Shapes
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Rectangle {
     id: root
@@ -82,7 +83,7 @@ Rectangle {
         animationDuration: Appearance.animation.expressiveSlowSpatial.duration
         animationEasing: Easing.OutBack
         z: 4
-        Accessible.name: root.label + qsTr(" icon")
+        Accessible.name: root.label + I18n.tr(" icon")
 
         Behavior on implicitSize {
             NumberAnimation {
@@ -178,8 +179,8 @@ Rectangle {
             scaleHeadroom: 1.2
             showGuideLines: false
             active: root.chartActive
-            accessibilityName: root.label + qsTr(" trend over the last minute")
-            accessibilityDescription: qsTr("Current value ") + root.valueText
+            accessibilityName: root.label + I18n.tr(" trend over the last minute")
+            accessibilityDescription: I18n.tr("Current value ") + root.valueText
             lineColor: root.accentColor
             baselineColor: Appearance.applyAlpha(root.foregroundColor, 0.2)
             lineWidth: 2.2

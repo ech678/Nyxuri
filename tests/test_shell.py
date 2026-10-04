@@ -417,10 +417,10 @@ class TestShellManagement(unittest.TestCase):
         # 2. Pure QML directory modules/keystone does not have handwritten qmldir
         self.assertFalse(os.path.isfile(os.path.join(shell_dir, "modules", "keystone", "qmldir")), "Pure QML directory should not have handwritten qmldir")
 
-        # 3. shared layer strictly contains only theme, controls, utils
+        # 3. shared layer strictly contains only controls, i18n, theme, utils
         shared_dir = os.path.join(shell_dir, "shared")
         shared_entries = sorted(os.listdir(shared_dir))
-        self.assertEqual(shared_entries, ["controls", "theme", "utils"])
+        self.assertEqual(shared_entries, ["controls", "i18n", "theme", "utils"])
 
         # 4. Pure QML fallback stubs exist for external optional runtime modules (M3Shapes, Qt.labs.lottieqt)
         fallback_dir = os.path.join(shell_dir, "fallback")
@@ -1443,6 +1443,24 @@ class TestShellManagement(unittest.TestCase):
             toml_text = f.read()
         self.assertIn('"Desktop" = "桌面"', toml_text)
         self.assertIn('"Weather" = "天气"', toml_text)
+
+        # 4. Pure shared i18n module, Toml.js utility, and Translations.js exist with zero C++ requirement
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "shared", "i18n", "I18n.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "shared", "i18n", "Translations.js")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "shared", "i18n", "qmldir")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "shared", "utils", "Toml.js")))
+
+        # 5. Cleanliness: zh_CN.json and root toml.js do not exist (pure TOML single source)
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "assets", "i18n", "zh_CN.json")))
+        self.assertFalse(os.path.exists(os.path.join(repo_root, "toml.js")))
+
+        # 6. SystemCardCatalog.js has no .import and preserves raw static names for Qt.include stability
+        catalog_path = os.path.join(shell_dir, "modules", "systemcards", "SystemCardCatalog.js")
+        with open(catalog_path, "r", encoding="utf-8") as f:
+            cat_code = f.read()
+        self.assertNotIn(".import", cat_code)
+        self.assertNotIn("I18n.tr", cat_code)
+        self.assertIn('"Clock"', cat_code)
 
     def test_r4c_c06_domain_closure_and_single_state_source(self):
         """R4-C-06 Contract: Domain closure, single Niri state entry, pure shared tier, and roadmap completion."""

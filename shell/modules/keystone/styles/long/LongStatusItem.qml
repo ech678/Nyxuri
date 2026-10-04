@@ -5,6 +5,7 @@ import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
 import "../../../../shared/utils/SystemFormat.js" as Format
+import qs.shared.i18n
 
 Item {
     id: root
@@ -33,8 +34,8 @@ Item {
             return root.tooltipText;
         case "bluetooth":
             return connectedDeviceNames.length === 1 ? connectedDeviceNames[0] : connectedDeviceNames.length
-                                                       > 1 ? qsTr("%n device(s)", "",
-                                                                  connectedDeviceNames.length) : "";
+                                                       > 1 ? I18n.tr("%n device(s)",
+                                                                     connectedDeviceNames.length) : "";
         case "brightness":
             return Format.percent(brightness * 100, 0);
         case "volume":
@@ -102,49 +103,52 @@ Item {
                     root.displayText].filter(value => !!value).join("\n");
         case "media":
             return player ? [player.trackTitle, player.trackArtist, player.identity].filter(value => !!value).join(
-                                "\n") : qsTr("No media");
+                                "\n") : I18n.tr("No media");
         case "network":
-            return NetworkService.connected ? NetworkService.activeConnection || qsTr("Network connected") :
-                                              qsTr("Network disconnected");
+            return NetworkService.connected ? NetworkService.activeConnection || I18n.tr("Network connected") :
+                                              I18n.tr("Network disconnected");
         case "bluetooth":
             if (connectedDeviceNames.length > 0)
                 return connectedDeviceNames.join("\n");
-            return !BluetoothService.available ? qsTr("Bluetooth unavailable") : BluetoothService.enabled
-                                                 ? qsTr("Bluetooth on") : qsTr("Bluetooth off");
+            return !BluetoothService.available ? I18n.tr("Bluetooth unavailable") : BluetoothService.enabled
+                                                 ? I18n.tr("Bluetooth on") : I18n.tr("Bluetooth off");
         case "battery":
             if (!PowerService.ready)
-                return qsTr("Detecting battery");
+                return I18n.tr("Detecting battery");
             if (!PowerService.present)
-                return qsTr("No battery detected");
-            const state = PowerService.full ? qsTr("Fully charged") : PowerService.charging ? qsTr("Charging") :
-                                                                                              PowerService.discharging
-                                                                                              ? qsTr("Discharging") :
-                                                                                                qsTr("Plugged in");
-            return qsTr("Battery: %1% · %2").arg(Math.round(PowerService.percentage * 100)).arg(state);
+                return I18n.tr("No battery detected");
+            const state = PowerService.full ? I18n.tr("Fully charged") : PowerService.charging ? I18n.tr(
+                                                                                                     "Charging") :
+                                                                                                 PowerService.discharging
+                                                                                                 ? I18n.tr(
+                                                                                                       "Discharging") :
+                                                                                                   I18n.tr("Plugged in");
+            return I18n.tr("Battery: %1% · %2").arg(Math.round(PowerService.percentage * 100)).arg(state);
         case "brightness":
-            return qsTr("Brightness: %1%\n%2\nScroll to adjust").arg(Math.round(brightness * 100)).arg(screen
-                                                                                                       ? screen.name :
-                                                                                                         "");
+            return I18n.tr("Brightness: %1%\n%2\nScroll to adjust").arg(Math.round(brightness * 100)).arg(
+                        screen ? screen.name : "");
         case "volume":
-            return !VolumeService.outputAvailable ? qsTr("No audio output") : (VolumeService.sinkMuted ? qsTr(
-                                                                                                             "Volume: muted\n%1").arg(
-                                                                                                             VolumeService.sinkName) :
-                                                                                                         qsTr("Volume: %1%\n%2").arg(
-                                                                                                             Math.round(
-                                                                                                                 VolumeService.sinkVolume
-                                                                                                                 * 100)).arg(
-                                                                                                             VolumeService.sinkName));
+            return !VolumeService.outputAvailable ? I18n.tr("No audio output") : (VolumeService.sinkMuted
+                                                                                  ? I18n.tr(
+                                                                                        "Volume: muted\n%1").arg(
+                                                                                        VolumeService.sinkName) :
+                                                                                    I18n.tr("Volume: %1%\n%2").arg(
+                                                                                        Math.round(
+                                                                                            VolumeService.sinkVolume
+                                                                                            * 100)).arg(
+                                                                                        VolumeService.sinkName));
         case "microphone":
-            return !VolumeService.inputAvailable ? qsTr("No audio input") : (VolumeService.sourceMuted ? qsTr(
-                                                                                                             "Microphone: muted\n%1").arg(
-                                                                                                             VolumeService.sourceName) :
-                                                                                                         qsTr("Microphone: %1%\n%2").arg(
-                                                                                                             Math.round(
-                                                                                                                 VolumeService.sourceVolume
-                                                                                                                 * 100)).arg(
-                                                                                                             VolumeService.sourceName));
+            return !VolumeService.inputAvailable ? I18n.tr("No audio input") : (VolumeService.sourceMuted
+                                                                                ? I18n.tr(
+                                                                                      "Microphone: muted\n%1").arg(
+                                                                                      VolumeService.sourceName) :
+                                                                                  I18n.tr("Microphone: %1%\n%2").arg(
+                                                                                      Math.round(
+                                                                                          VolumeService.sourceVolume
+                                                                                          * 100)).arg(
+                                                                                      VolumeService.sourceName));
         default:
-            return [SystemMonitorService.statusText, qsTr(
+            return [SystemMonitorService.statusText, I18n.tr(
                         "CPU: %1\nMemory: %2\nDisk: %3\nTemperature: %4").arg(Format.percent(
                                                                                   SystemMonitorService.cpu.usagePercent)).arg(
                         Format.percent(SystemMonitorService.memory.usagePercent)).arg(Format.percent(

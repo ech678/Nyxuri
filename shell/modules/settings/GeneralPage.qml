@@ -4,6 +4,7 @@ import QtQuick
 import qs.shared.controls
 import qs.shared.theme
 import qs.app.services
+import qs.shared.i18n
 
 Item {
     id: root
@@ -95,7 +96,7 @@ Item {
                     return SpotlightCatalog.title(route.id);
                 if (section === "bluetooth-device") {
                     const device = root.selectedBluetoothDevice();
-                    return device ? device.name : qsTr("Bluetooth device");
+                    return device ? device.name : I18n.tr("Bluetooth device");
                 }
                 return SpotlightCatalog.title("general");
             }

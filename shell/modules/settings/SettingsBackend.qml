@@ -7,6 +7,7 @@ import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
 import qs.app
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -45,8 +46,9 @@ Singleton {
     function reportSearchError(message) {
         searchError = message;
         if (!visible) {
-            ActionGateway.execute(["notify-send", "-a", "Nyxuri Shell",
-                                   qsTranslate("ControlCenterWindow", "Settings"), message], "settings");
+            ActionGateway.execute(["notify-send", "-a", "Nyxuri Shell", I18n.tr("Settings",
+                                                                                "ControlCenterWindow"),
+                                   message], "settings");
         }
     }
 
@@ -55,7 +57,7 @@ Singleton {
         cancelSearch();
         searchError = "";
         if (!SpotlightCatalog.available(entry)) {
-            reportSearchError(qsTr("This setting is currently unavailable"));
+            reportSearchError(I18n.tr("This setting is currently unavailable"));
             return false;
         }
         searchTarget = entry;
@@ -63,7 +65,7 @@ Singleton {
         const accepted = open(entry.path[0], true);
         if (!accepted) {
             cancelSearch();
-            reportSearchError(qsTr("Settings could not be opened"));
+            reportSearchError(I18n.tr("Settings could not be opened"));
         }
         retrySearch();
         return accepted;
@@ -113,7 +115,7 @@ Singleton {
             if (!root.searchTarget)
                 return;
             root.cancelSearch();
-            root.reportSearchError(qsTr("This setting is currently unavailable"));
+            root.reportSearchError(I18n.tr("This setting is currently unavailable"));
         }
     }
 

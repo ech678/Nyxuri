@@ -8,6 +8,7 @@ import qs.app
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 FloatingWindow {
     id: root
@@ -780,25 +781,25 @@ FloatingWindow {
 
             EditorIconButton {
                 iconName: "content_copy"
-                tooltipText: qsTr("Copy")
+                tooltipText: I18n.tr("Copy")
                 onClicked: root.copyCurve()
             }
 
             EditorIconButton {
                 iconName: "save"
-                tooltipText: qsTr("Save")
+                tooltipText: I18n.tr("Save")
                 onClicked: root.saveCurve()
             }
 
             EditorIconButton {
                 iconName: "center_focus_strong"
-                tooltipText: qsTr("Reset view")
+                tooltipText: I18n.tr("Reset view")
                 onClicked: root.resetView()
             }
 
             EditorIconButton {
                 iconName: "close"
-                tooltipText: qsTr("Close")
+                tooltipText: I18n.tr("Close")
                 onClicked: root.dismiss()
             }
         }
@@ -859,7 +860,7 @@ FloatingWindow {
                     id: playMiniFab
 
                     iconName: root.playing ? "pause" : "play_arrow"
-                    labelText: root.playing ? qsTr("Pause") : qsTr("Play")
+                    labelText: root.playing ? I18n.tr("Pause") : I18n.tr("Play")
                     expanded: root.fabExpanded
                     order: 4
                     itemCount: fabMenu.actionCount
@@ -873,7 +874,7 @@ FloatingWindow {
                     id: reverseMiniFab
 
                     iconName: "keyboard_double_arrow_left"
-                    labelText: qsTr("Reverse")
+                    labelText: I18n.tr("Reverse")
                     expanded: root.fabExpanded
                     order: 3
                     itemCount: fabMenu.actionCount
@@ -887,7 +888,7 @@ FloatingWindow {
                     id: flipMiniFab
 
                     iconName: "swap_vert"
-                    labelText: qsTr("Flip")
+                    labelText: I18n.tr("Flip")
                     expanded: root.fabExpanded
                     order: 2
                     itemCount: fabMenu.actionCount
@@ -901,7 +902,7 @@ FloatingWindow {
                     id: manualMiniFab
 
                     iconName: "edit_note"
-                    labelText: qsTr("Enter manually")
+                    labelText: I18n.tr("Enter manually")
                     expanded: root.fabExpanded
                     order: 1
                     itemCount: fabMenu.actionCount
@@ -1144,7 +1145,7 @@ FloatingWindow {
 
             EditorIconButton {
                 iconName: "check"
-                tooltipText: qsTr("Apply to draft")
+                tooltipText: I18n.tr("Apply to draft")
                 onClicked: root.applyManualInput()
             }
         }

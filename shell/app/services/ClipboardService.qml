@@ -6,6 +6,7 @@ import Quickshell.Io
 import qs.shared.theme
 import qs.app.services
 import qs.app
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -80,27 +81,27 @@ Singleton {
     function normalizedError(value, fallbackCode, fallbackMessage) {
         const code = value && typeof value === "object" ? String(value.code || fallbackCode) : fallbackCode;
         const localized = {
-            cliphist_watcher_inactive: qsTr(
+            cliphist_watcher_inactive: I18n.tr(
                                            "The cliphist watcher is not running; enable the service and copy content again"),
-            cliphist_unavailable: qsTr("cliphist is missing; clipboard history cannot be read"),
-            wl_copy_unavailable: qsTr("wl-copy is missing; clipboard contents cannot be restored"),
-            clipboard_dependency_unavailable: qsTr(
+            cliphist_unavailable: I18n.tr("cliphist is missing; clipboard history cannot be read"),
+            wl_copy_unavailable: I18n.tr("wl-copy is missing; clipboard contents cannot be restored"),
+            clipboard_dependency_unavailable: I18n.tr(
                                                   "cliphist or wl-copy is missing; clipboard history is unavailable"),
-            cliphist_decode_failed: qsTr("Unable to decode this entry from cliphist"),
-            clipboard_inspect_failed: qsTr("Unable to inspect this clipboard entry"),
-            clipboard_preview_failed: qsTr("Unable to generate a clipboard preview"),
-            clipboard_payload_too_large: qsTr("This clipboard content exceeds the safe size limit"),
-            clipboard_image_decode_failed: qsTr("Image data is damaged or too large"),
-            clipboard_file_missing: qsTr("The file in the clipboard no longer exists"),
-            clipboard_mime_unsupported: qsTr("This clipboard format cannot be restored reliably"),
-            wl_copy_failed: qsTr("wl-copy failed to write the system clipboard"),
-            invalid_clipboard_response: qsTr("The clipboard service returned invalid data"),
-            clipboard_capability_missing: qsTr(
+            cliphist_decode_failed: I18n.tr("Unable to decode this entry from cliphist"),
+            clipboard_inspect_failed: I18n.tr("Unable to inspect this clipboard entry"),
+            clipboard_preview_failed: I18n.tr("Unable to generate a clipboard preview"),
+            clipboard_payload_too_large: I18n.tr("This clipboard content exceeds the safe size limit"),
+            clipboard_image_decode_failed: I18n.tr("Image data is damaged or too large"),
+            clipboard_file_missing: I18n.tr("The file in the clipboard no longer exists"),
+            clipboard_mime_unsupported: I18n.tr("This clipboard format cannot be restored reliably"),
+            wl_copy_failed: I18n.tr("wl-copy failed to write the system clipboard"),
+            invalid_clipboard_response: I18n.tr("The clipboard service returned invalid data"),
+            clipboard_capability_missing: I18n.tr(
                                               "The current key does not provide the required clipboard capability"),
-            clipboard_config_read_failed: qsTr("Unable to read clipboard settings"),
-            clipboard_config_write_failed: qsTr("Unable to save clipboard settings"),
-            invalid_clipboard_limit: qsTr("History limit must be from 50 to 750 in steps of 50"),
-            clipboard_action_busy: qsTr("A clipboard operation is already running")
+            clipboard_config_read_failed: I18n.tr("Unable to read clipboard settings"),
+            clipboard_config_write_failed: I18n.tr("Unable to save clipboard settings"),
+            invalid_clipboard_limit: I18n.tr("History limit must be from 50 to 750 in steps of 50"),
+            clipboard_action_busy: I18n.tr("A clipboard operation is already running")
         };
         return {
             code: code,
@@ -138,7 +139,7 @@ Singleton {
             root.canRestore = false;
             root.watcherRunning = false;
             root.entries = [];
-            root.error = root.normalizedError(null, "invalid_clipboard_response", qsTr(
+            root.error = root.normalizedError(null, "invalid_clipboard_response", I18n.tr(
                                                   "The clipboard service returned invalid data"));
             root.revision += 1;
             return;
@@ -151,7 +152,7 @@ Singleton {
             root.canRestore = false;
             root.watcherRunning = false;
             root.entries = [];
-            root.error = root.normalizedError(null, "invalid_clipboard_response", qsTr(
+            root.error = root.normalizedError(null, "invalid_clipboard_response", I18n.tr(
                                                   "The clipboard service returned invalid data"));
             root.revision += 1;
             return;
@@ -173,7 +174,7 @@ Singleton {
                 mimeAwareStore: false
             };
             root.entries = [];
-            root.error = root.normalizedError(null, "clipboard_capability_missing", qsTr(
+            root.error = root.normalizedError(null, "clipboard_capability_missing", I18n.tr(
                                                   "The current key does not support the required clipboard capabilities"));
             root.revision += 1;
             return;
@@ -193,7 +194,7 @@ Singleton {
         root.entries = nextEntries;
         root.pruneDetails(nextEntries);
         root.error = response.ok === true ? null : root.normalizedError(response.error, "clipboard_unavailable",
-                                                                        qsTr("Clipboard history is unavailable"));
+                                                                        I18n.tr("Clipboard history is unavailable"));
         root.revision += 1;
     }
 
@@ -262,7 +263,7 @@ Singleton {
             root.historyConfigLoaded = true;
         } else {
             root.historyConfigError = root.normalizedError(valid ? response.error : null,
-                                                           "invalid_clipboard_response", qsTr(
+                                                           "invalid_clipboard_response", I18n.tr(
                                                                "The clipboard service returned invalid data"));
         }
         root.historyConfigBusy = false;
@@ -299,7 +300,7 @@ Singleton {
     function runAction(action, id) {
         const normalizedId = id === undefined || id === null ? "" : String(id);
         if (actionProcess.running || root.actionRunning) {
-            const failure = root.normalizedError(null, "clipboard_action_busy", qsTr(
+            const failure = root.normalizedError(null, "clipboard_action_busy", I18n.tr(
                                                      "A clipboard operation is already running"));
             root.actionFailed(action, normalizedId, failure.code, failure.message);
             return false;
@@ -346,7 +347,7 @@ Singleton {
         if (root._actionExitCode !== 0 || !response || Array.isArray(response) || response.schemaVersion
                 !== 1 || response.command !== "clipboard." + root._actionName || response.ok !== true) {
             const failure = root.normalizedError(response ? response.error : null, response ? "clipboard_action_failed" : "invalid_clipboard_response",
-                                                 qsTr("Clipboard operation failed"));
+                                                 I18n.tr("Clipboard operation failed"));
             root.lastActionError = failure;
             root.actionFailed(root._actionName, root._actionId, failure.code, failure.message);
             return;
@@ -473,7 +474,7 @@ Singleton {
             }
         } else {
             const failure = root.normalizedError(response ? response.error : null, response ? "clipboard_inspect_failed" : "invalid_clipboard_response",
-                                                 qsTr("Unable to inspect clipboard entry"));
+                                                 I18n.tr("Unable to inspect clipboard entry"));
             root.inspectFailed(id, failure.code, failure.message);
         }
         root._inspectId = "";

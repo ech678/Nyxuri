@@ -1,4 +1,6 @@
 .pragma library
+.import "../i18n/Translations.js" as I18n
+
 
 function isNumber(value) {
     return typeof value === "number" && isFinite(value);
@@ -91,26 +93,26 @@ function duration(seconds) {
     const minutes = Math.floor((total % 3600) / 60);
 
     if (days > 0)
-        return qsTr("%1 d %2 h").arg(days).arg(hours);
+        return I18n.tr("%1 d %2 h").arg(days).arg(hours);
     if (hours > 0)
-        return qsTr("%1 h %2 min").arg(hours).arg(minutes);
+        return I18n.tr("%1 h %2 min").arg(hours).arg(minutes);
     if (minutes > 0)
-        return qsTr("%n minute(s)", "", minutes);
-    return qsTr("%n second(s)", "", total);
+        return I18n.tr("%n minute(s)", minutes);
+    return I18n.tr("%n second(s)", total);
 }
 
 function batteryStatus(value) {
     switch (String(value || "").toLowerCase()) {
     case "charging":
-        return qsTr("Charging");
+        return I18n.tr("Charging");
     case "discharging":
-        return qsTr("On battery");
+        return I18n.tr("On battery");
     case "full":
-        return qsTr("Fully charged");
+        return I18n.tr("Fully charged");
     case "not charging":
-        return qsTr("Not charging");
+        return I18n.tr("Not charging");
     case "unknown":
-        return qsTr("Status unknown");
+        return I18n.tr("Status unknown");
     default:
         return value ? String(value) : unavailable();
     }
@@ -119,5 +121,5 @@ function batteryStatus(value) {
 function yesNo(value) {
     if (value === null || value === undefined)
         return unavailable();
-    return value ? qsTr("Yes") : qsTr("No");
+    return value ? I18n.tr("Yes") : I18n.tr("No");
 }

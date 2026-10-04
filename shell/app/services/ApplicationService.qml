@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import qs.app.services
 import qs.app
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -20,7 +21,7 @@ Singleton {
     }
     readonly property var settingsApplication: ({
                                                     id: "org.clavis.Settings",
-                                                    name: qsTranslate("ControlCenterWindow", "Settings"),
+                                                    name: I18n.tr("Settings", "ControlCenterWindow"),
                                                     genericName: "Clavis",
                                                     keywords: ["Clavis", "settings", "preferences",
                                                         "control center"],
@@ -29,8 +30,8 @@ Singleton {
                                                 })
     readonly property var spaceApplication: ({
                                                  id: "org.clavis.Space",
-                                                 name: qsTr("Space"),
-                                                 genericName: qsTr("Drag to Dock to add a blank space"),
+                                                 name: I18n.tr("Space"),
+                                                 genericName: I18n.tr("Drag to Dock to add a blank space"),
                                                  keywords: ["space", "spacer", "blank", "dock"],
                                                  symbol: "check_box_outline_blank",
                                                  icon: "",
@@ -38,8 +39,9 @@ Singleton {
                                              })
     readonly property var smallSpaceApplication: ({
                                                       id: "org.clavis.SmallSpace",
-                                                      name: qsTr("Small Space"),
-                                                      genericName: qsTr("Drag to Dock to add a blank space"),
+                                                      name: I18n.tr("Small Space"),
+                                                      genericName: I18n.tr(
+                                                                       "Drag to Dock to add a blank space"),
                                                       keywords: ["space", "spacer", "blank", "dock", "small",
                                                           "narrow"],
                                                       symbol: "check_box_outline_blank",

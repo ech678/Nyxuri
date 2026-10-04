@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Io
 import qs.shared.theme
 import qs.app.services
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -16,8 +17,8 @@ Singleton {
 
     readonly property var roleDefinitions: [({
                                                  "id": "browser",
-                                                 "title": qsTr("Web browser"),
-                                                 "description": qsTr("Opens web pages and HTTP links"),
+                                                 "title": I18n.tr("Web browser"),
+                                                 "description": I18n.tr("Opens web pages and HTTP links"),
                                                  "icon": "language",
                                                  "group": "internet",
                                                  "category": "WebBrowser",
@@ -26,8 +27,8 @@ Singleton {
                                                      "text/html", "application/xhtml+xml"]
                                              }), ({
                                                       "id": "mail",
-                                                      "title": qsTr("Email"),
-                                                      "description": qsTr("Handles email links"),
+                                                      "title": I18n.tr("Email"),
+                                                      "description": I18n.tr("Handles email links"),
                                                       "icon": "mail",
                                                       "group": "internet",
                                                       "category": "",
@@ -35,8 +36,8 @@ Singleton {
                                                       "mimes": ["x-scheme-handler/mailto"]
                                                   }), ({
                                                            "id": "file-manager",
-                                                           "title": qsTr("File manager"),
-                                                           "description": qsTr(
+                                                           "title": I18n.tr("File manager"),
+                                                           "description": I18n.tr(
                                                                               "Opens folders and directories"),
                                                            "icon": "folder",
                                                            "group": "utilities",
@@ -46,8 +47,8 @@ Singleton {
                                                                "x-scheme-handler/file"]
                                                        }), ({
                                                                 "id": "terminal",
-                                                                "title": qsTr("Terminal"),
-                                                                "description": qsTr(
+                                                                "title": I18n.tr("Terminal"),
+                                                                "description": I18n.tr(
                                                                                    "System default terminal emulator"),
                                                                 "icon": "terminal",
                                                                 "group": "utilities",
@@ -56,8 +57,8 @@ Singleton {
                                                                 "mimes": []
                                                             }), ({
                                                                      "id": "text-editor",
-                                                                     "title": qsTr("Text editor"),
-                                                                     "description": qsTr(
+                                                                     "title": I18n.tr("Text editor"),
+                                                                     "description": I18n.tr(
                                                                                         "Opens plain-text files"),
                                                                      "icon": "edit_note",
                                                                      "group": "documents",
@@ -67,8 +68,8 @@ Singleton {
                                                                          "application/json"]
                                                                  }), ({
                                                                           "id": "pdf-reader",
-                                                                          "title": qsTr("PDF reader"),
-                                                                          "description": qsTr(
+                                                                          "title": I18n.tr("PDF reader"),
+                                                                          "description": I18n.tr(
                                                                                              "Opens PDF documents"),
                                                                           "icon": "picture_as_pdf",
                                                                           "group": "documents",
@@ -77,8 +78,9 @@ Singleton {
                                                                           "mimes": ["application/pdf"]
                                                                       }), ({
                                                                                "id": "image-viewer",
-                                                                               "title": qsTr("Image viewer"),
-                                                                               "description": qsTr(
+                                                                               "title": I18n.tr(
+                                                                                            "Image viewer"),
+                                                                               "description": I18n.tr(
                                                                                                   "Opens common image files"),
                                                                                "icon": "image",
                                                                                "group": "multimedia",
@@ -91,9 +93,9 @@ Singleton {
                                                                                    "image/svg+xml"]
                                                                            }), ({
                                                                                     "id": "video-player",
-                                                                                    "title": qsTr(
+                                                                                    "title": I18n.tr(
                                                                                                  "Video player"),
-                                                                                    "description": qsTr(
+                                                                                    "description": I18n.tr(
                                                                                                        "Plays video files"),
                                                                                     "icon": "smart_display",
                                                                                     "group": "multimedia",
@@ -107,10 +109,10 @@ Singleton {
                                                                                         "video/x-msvideo"]
                                                                                 }), ({
                                                                                          "id": "music-player",
-                                                                                         "title": qsTr(
+                                                                                         "title": I18n.tr(
                                                                                                       "Music player"),
-                                                                                         "description": qsTr(
-                                                                                                            "Plays audio files"),
+                                                                                         "description":
+                                                                                         I18n.tr("Plays audio files"),
                                                                                          "icon": "music_note",
                                                                                          "group": "multimedia",
                                                                                          "category": "",
@@ -354,7 +356,7 @@ Singleton {
     function rewriteTerminalList(content, selectedId) {
         const normalizedSelected = root.normalizeDesktopId(selectedId);
         if (normalizedSelected === "")
-            throw new Error(qsTr("Invalid terminal Desktop Entry ID"));
+            throw new Error(I18n.tr("Invalid terminal Desktop Entry ID"));
 
         const lines = String(content || "").split("\n");
         const result = [];
@@ -480,7 +482,7 @@ Singleton {
                                                              });
         if (!process) {
             root._activeCommand = null;
-            root.handleProcessExit(request, 1, "", qsTr("Could not start the system command"));
+            root.handleProcessExit(request, 1, "", I18n.tr("Could not start the system command"));
             return false;
         }
         process.command = request.argv;
@@ -497,11 +499,11 @@ Singleton {
                                   "candidates": root.withCurrentOption(state.candidates, currentId)
                               });
         } else {
-            const message = String(stderr || "").trim() || qsTr(
+            const message = String(stderr || "").trim() || I18n.tr(
                       "Could not query system default applications");
             if (exitCode === 127) {
                 root.xdgMimeAvailable = false;
-                root.reportError(qsTr("xdg-utils is missing; default applications cannot be managed"));
+                root.reportError(I18n.tr("xdg-utils is missing; default applications cannot be managed"));
             } else {
                 root.reportError(message);
             }
@@ -535,7 +537,7 @@ Singleton {
                               });
         } else {
             root.gioAvailable = false;
-            const message = qsTr("Could not read the application candidate list");
+            const message = I18n.tr("Could not read the application candidate list");
             root.reportError(message);
             root.setRoleState(request.roleId, {
                                   "candidates": root.withCurrentOption([], state.currentId),
@@ -577,8 +579,8 @@ Singleton {
         root.setRoleState(roleId, {
                               "busy": false
                           });
-        root.lastError = success ? "" : String(message || qsTr("Failed to set default applications"));
-        root.lastMessage = success ? qsTr("Default applications updated") : "";
+        root.lastError = success ? "" : String(message || I18n.tr("Failed to set default applications"));
+        root.lastMessage = success ? I18n.tr("Default applications updated") : "";
         root._operationRoleId = "";
         root._operationDesktopId = "";
         root._operationMimeIndex = 0;
@@ -592,12 +594,12 @@ Singleton {
         const definition = root.definitionFor(roleId);
         const normalized = root.normalizeDesktopId(desktopId);
         if (!definition || normalized === "") {
-            root.lastError = qsTr("Cannot set an unknown default application");
+            root.lastError = I18n.tr("Cannot set an unknown default application");
             return false;
         }
         const state = root.stateFor(roleId);
         if (!(state.candidates || []).some(option => option.value === normalized)) {
-            root.lastError = qsTr("The selected application is not a system-provided candidate");
+            root.lastError = I18n.tr("The selected application is not a system-provided candidate");
             return false;
         }
 
@@ -655,8 +657,8 @@ Singleton {
         root.setRoleState(roleId, {
                               "busy": false
                           });
-        root.lastError = success ? "" : String(message || qsTr("Failed to set the default terminal"));
-        root.lastMessage = success ? qsTr("Default terminal updated") : "";
+        root.lastError = success ? "" : String(message || I18n.tr("Failed to set the default terminal"));
+        root.lastMessage = success ? I18n.tr("Default terminal updated") : "";
         root._operationRoleId = "";
         root._operationDesktopId = "";
         root._pendingTerminalId = "";
@@ -694,13 +696,13 @@ Singleton {
                     if (uniqueFailures.indexOf(failure) < 0)
                         uniqueFailures.push(failure);
                 }
-                root.finishMimeOperation(false, qsTr("Could not set: %1").arg(uniqueFailures.join(", ")));
+                root.finishMimeOperation(false, I18n.tr("Could not set: %1").arg(uniqueFailures.join(", ")));
             } else {
                 root.finishMimeOperation(true, "");
             }
         } else if (request.kind === "mkdir-terminal") {
             if (exitCode !== 0) {
-                root.finishTerminalOperation(false, String(stderr || "").trim() || qsTr(
+                root.finishTerminalOperation(false, String(stderr || "").trim() || I18n.tr(
                                                  "Could not create the XDG configuration directory"));
             } else if (root._terminalFileReady) {
                 root.beginTerminalWrite();
@@ -729,7 +731,7 @@ Singleton {
             if (actualId === root._operationDesktopId)
                 root.finishTerminalOperation(true, "");
             else
-                root.finishTerminalOperation(false, qsTr(
+                root.finishTerminalOperation(false, I18n.tr(
                                                  "The system did not accept the new default terminal"));
         }
     }

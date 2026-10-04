@@ -2,21 +2,22 @@ import QtQuick
 import QtQuick.Layouts
 import qs.app.services
 import qs.shared.theme
+import qs.shared.i18n
 
 Rectangle {
     id: root
 
     property real availableHeight: height
     readonly property string temp: fmtTemp(WeatherService.currentTemperatureC, "--")
-    readonly property string cond: WeatherService.loading ? qsTr("Loading…") : (
-                                                                WeatherService.currentWeatherText || qsTr(
+    readonly property string cond: WeatherService.loading ? I18n.tr("Loading…") : (
+                                                                WeatherService.currentWeatherText || I18n.tr(
                                                                     "Unknown"))
-    readonly property string loc: WeatherService.locationName || qsTr("Location")
+    readonly property string loc: WeatherService.locationName || I18n.tr("Location")
     readonly property string iconName: WeatherService.currentIconName || "cloud"
-    readonly property string feelsLike: qsTr("Feels like: %1").arg(fmtTemp(WeatherService.currentFeelsLikeC,
-                                                                           "--"))
-    readonly property string humidity: qsTr("Humidity: %1").arg(fmtPercent(
-                                                                    WeatherService.currentRelativeHumidity))
+    readonly property string feelsLike: I18n.tr("Feels like: %1").arg(fmtTemp(WeatherService.currentFeelsLikeC,
+                                                                              "--"))
+    readonly property string humidity: I18n.tr("Humidity: %1").arg(fmtPercent(
+                                                                       WeatherService.currentRelativeHumidity))
     readonly property bool loadingState: WeatherService.loading || !WeatherService.hasValidData
     readonly property bool veryCompact: root.availableHeight < Metrics.lockVeryCompactBreakpoint
     readonly property bool showTitle: root.availableHeight >= Metrics.lockCompactBreakpoint
@@ -106,7 +107,7 @@ Rectangle {
 
         Text {
             visible: root.showTitle
-            text: qsTr("Weather")
+            text: I18n.tr("Weather")
             color: Appearance.colors.colPrimary
             font.family: Fonts.ui
             font.pixelSize: 36

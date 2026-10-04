@@ -5,6 +5,7 @@ import QtQuick.Layouts
 import qs.app.services
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -12,7 +13,7 @@ Item {
     property bool active: false
     property real latitude: 0
     property real longitude: 0
-    property string locationName: qsTr("Weather")
+    property string locationName: I18n.tr("Weather")
     property string currentTemp: "--"
     property string currentIcon: "cloud"
     property string currentDesc: "--"
@@ -41,27 +42,27 @@ Item {
 
     function updatedText() {
         if (WeatherService.loading)
-            return root.hasWeather ? qsTr("Refreshing") : qsTr("Locating");
+            return root.hasWeather ? I18n.tr("Refreshing") : I18n.tr("Locating");
 
         if (WeatherService.status === "stale")
-            return qsTr("Data may be stale");
+            return I18n.tr("Data may be stale");
 
         if (WeatherService.status === "partial")
-            return qsTr("Partially updated");
+            return I18n.tr("Partially updated");
 
         if (WeatherService.status === "error")
-            return qsTr("Update failed");
+            return I18n.tr("Update failed");
 
         if (WeatherService.lastUpdated) {
             const updated = new Date(WeatherService.lastUpdated);
             if (!isNaN(updated.getTime()))
-                return qsTr("Updated %1").arg(UiPreferences.shortTime(updated));
+                return I18n.tr("Updated %1").arg(UiPreferences.shortTime(updated));
         }
-        return qsTr("Live weather");
+        return I18n.tr("Live weather");
     }
 
     function weatherErrorText() {
-        return WeatherService.errorMessage || qsTr("Weather data unavailable");
+        return WeatherService.errorMessage || I18n.tr("Weather data unavailable");
     }
 
     function hourlyTemperatureBound(findMaximum) {
@@ -98,7 +99,7 @@ Item {
 
     function syncWeatherData() {
         if (!WeatherService.hasValidData) {
-            root.locationName = WeatherService.locationName || qsTr("Weather");
+            root.locationName = WeatherService.locationName || I18n.tr("Weather");
             root.currentTemp = "--";
             root.currentIcon = "cloud";
             root.currentDesc = "--";
@@ -112,11 +113,11 @@ Item {
         }
         root.latitude = Number(WeatherService.latitude);
         root.longitude = Number(WeatherService.longitude);
-        root.locationName = WeatherService.locationName || qsTr("Unknown");
+        root.locationName = WeatherService.locationName || I18n.tr("Unknown");
         root.currentTemp = Math.round(UiPreferences.weatherTemperature(WeatherService.currentTemperatureC))
                 + "°";
         root.currentIcon = WeatherService.currentIconName || "cloud";
-        root.currentDesc = WeatherService.currentWeatherText || qsTr("Unknown");
+        root.currentDesc = WeatherService.currentWeatherText || I18n.tr("Unknown");
         root.feelsLike = Math.round(UiPreferences.weatherTemperature(WeatherService.currentFeelsLikeC))
                 + UiPreferences.weatherTemperatureSymbol();
         root.humidity = Math.round(WeatherService.currentRelativeHumidity) + "%";
@@ -132,7 +133,7 @@ Item {
                                 "temp": Math.round(UiPreferences.weatherTemperature(Number(item.temperatureC
                                                                                            || 0))),
                                 "icon": item.iconName || "cloud",
-                                "description": item.weatherText || qsTr("Unknown"),
+                                "description": item.weatherText || I18n.tr("Unknown"),
                                 "isDaylight": item.isDaylight === undefined ? true : item.isDaylight
                             });
         }
@@ -145,10 +146,10 @@ Item {
                                                                                                || 0) * 1000);
             const dayPart = item.day || ({});
             nextDaily.push({
-                               "day": dayIndex === 0 ? qsTr("Today") : Qt.formatDate(dateObject, "ddd"),
+                               "day": dayIndex === 0 ? I18n.tr("Today") : Qt.formatDate(dateObject, "ddd"),
                                "date": Qt.formatDate(dateObject, "MMM d"),
                                "icon": dayPart.iconName || item.iconName || "cloud",
-                               "description": dayPart.weatherText || item.weatherText || qsTr("Unknown"),
+                               "description": dayPart.weatherText || item.weatherText || I18n.tr("Unknown"),
                                "maxTemp": Math.round(UiPreferences.weatherTemperature(Number(
                                                                                           item.temperatureMaxC
                                                                                           || dayPart.temperatureC
@@ -272,7 +273,7 @@ Item {
 
                         Text {
                             Layout.fillWidth: true
-                            text: WeatherService.loading ? qsTr("Loading weather") : qsTr(
+                            text: WeatherService.loading ? I18n.tr("Loading weather") : I18n.tr(
                                                                "Weather unavailable")
                             color: Appearance.colors.colOnSurface
                             font.family: Fonts.ui
@@ -283,7 +284,7 @@ Item {
 
                         Text {
                             Layout.fillWidth: true
-                            text: WeatherService.loading ? qsTr("Finding your local forecast…") :
+                            text: WeatherService.loading ? I18n.tr("Finding your local forecast…") :
                                                            root.weatherErrorText()
                             color: Appearance.colors.colOnSurfaceVariant
                             font.family: Fonts.ui

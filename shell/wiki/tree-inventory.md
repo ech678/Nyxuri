@@ -8,16 +8,16 @@
 
 ## 1. 统计概览
 
-- **现存文件总数**：508 个（基线 631 文件；R4-C-01 物理删除 2 个冗余代理，迁入 12 个服务；R4-C-02 物理删除 8 个僵尸代码与假桩，重命名 8 个服务/按钮/工具）
+- **现存文件总数**：512 个（基线 631 文件；R4-C-01 物理删除 2 个冗余代理，迁入 12 个服务；R4-C-02 物理删除 8 个僵尸代码与假桩，重命名 8 个服务/按钮/工具）
 - **分层分布**：
   - `app/`：43 个文件
   - `modules/`：366 个文件
-  - `shared/`：96 个文件
+  - `shared/`：100 个文件
   - `native/`：0 个文件
   - `bin/`：0 个文件
   - `packaging/`：3 个文件
 - **处置状态分布**：
-  - **保留**：478 个文件
+  - **保留**：482 个文件
   - **合并**：1 个文件
   - **移动**：21 个文件
   - **重命名**：8 个文件
@@ -92,7 +92,7 @@
 | `app/services/DockService.qml` | **保留** | `app` | modules/dock, modules/launcher, modules/settings | 属性(39)/信号(1)/方法(32) | Process, Timer, FileView, Env | 功能域自治代码 |
 | `app/services/FileActionService.qml` | **保留** | `app` | app | 属性(2)/信号(1)/方法(1) | Process | 功能域自治代码 |
 | `app/services/FontService.qml` | **保留** | `app` | app, modules/settings | 属性(20)/方法(8) | 无 | 功能域自治代码 |
-| `app/services/I18nService.qml` | **保留** | `app` | app, modules/keystone, modules/settings, modules/sidebars, modules/systemcards | 属性(5)/方法(5) | Env | 功能域自治代码 |
+| `app/services/I18nService.qml` | **保留** | `app` | app, modules/keystone, modules/settings, modules/sidebars, modules/systemcards | 属性(5)/方法(7) | FileView, Env | 功能域自治代码 |
 | `app/services/IdleInhibitorSurface.qml` | **保留** | `app` | app | - | 无 | 功能域自治代码 |
 | `app/services/IdleService.qml` | **保留** | `app` | app, modules/quicksettings, modules/sidebars | 属性(29)/信号(4)/方法(19) | GatewayExec, Process, FileView | 功能域自治代码 |
 | `app/services/KeyboardLockService.qml` | **保留** | `app` | app, modules/keystone, modules/lock, modules/settings | 属性(8)/信号(2)/方法(2) | Process, Timer | 功能域自治代码 |
@@ -492,7 +492,7 @@
 | `modules/wallpaper/WallpaperTransitionSurface.qml` | **保留** | `wallpaper` | modules/wallpaper | 属性(119)/信号(1)/方法(11) | Timer | 功能域自治代码 |
 | `modules/wallpaper/ZenPaletteRenderer.qml` | **保留** | `wallpaper` | modules/settings, modules/wallpaper | 属性(6) | 无 | 功能域自治代码 |
 
-### shared/ （共 96 文件）
+### shared/ （共 100 文件）
 
 | 文件路径 | 处置状态 | 归属 (Owner) | 消费者 (Consumers) | I/O | 副作用 | 目标路径 / 说明 |
 |---|---|---|---|---|---|---|
@@ -574,6 +574,9 @@
 | `shared/controls/WeatherBackground.qml` | **保留** | `shared/controls` | modules/keystone, modules/sidebars | 属性(32)/方法(65) | Timer | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/WheelScrollController.qml` | **保留** | `shared/controls` | modules/launcher, modules/settings, shared/controls | 属性(13)/方法(5) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/WidgetPanel.qml` | **保留** | `shared/controls` | modules/quicksettings, modules/sidebars | 属性(7) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
+| `shared/i18n/I18n.qml` | **保留** | `shared/i18n` | app, modules/bar, modules/desktopcards, modules/dock, modules/filepicker, modules/keystone, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/regionselector, modules/session, modules/settings, modules/sidebars, modules/systemcards, modules/wallpaper, shared/controls, shared/i18n, shared/utils | 属性(5)/方法(6) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
+| `shared/i18n/Translations.js` | **保留** | `shared/i18n` | modules/launcher, modules/settings, shared/i18n, shared/utils | 方法(5) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
+| `shared/i18n/qmldir` | **保留** | `shared/i18n` | 内部/自包含 | - | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/theme/Animations.qml` | **保留** | `shared/theme` | modules/lock, modules/settings, modules/sidebars, shared/controls, shared/theme | 属性(81) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/theme/Appearance.qml` | **保留** | `shared/theme` | app, modules/bar, modules/desktopcards, modules/dock, modules/filepicker, modules/keystone, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/regionselector, modules/session, modules/settings, modules/sidebars, modules/systemcards, modules/wallpaper, shared/controls | 属性(34)/方法(5) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/theme/Fonts.qml` | **保留** | `shared/theme` | app, modules/bar, modules/dock, modules/filepicker, modules/keystone, modules/launcher, modules/lock, modules/notifications, modules/regionselector, modules/session, modules/settings, modules/sidebars, modules/systemcards, shared/controls, shared/theme | 属性(9)/方法(1) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
@@ -588,6 +591,7 @@
 | `shared/utils/SidebarPolicy.js` | **保留** | `shared/utils` | app, modules/sidebars, modules/wallpaper | 方法(6) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/utils/SystemFormat.js` | **保留** | `shared/utils` | modules/bar, modules/keystone, modules/systemcards | 方法(14) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/utils/TimeUtils.js` | **保留** | `shared/utils` | 内部/自包含 | 方法(1) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
+| `shared/utils/Toml.js` | **保留** | `shared/utils` | app, shared/i18n | 方法(21) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/utils/WallpaperMath.js` | **保留** | `shared/utils` | modules/wallpaper | 方法(18) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/utils/WallpaperPaletteScope.js` | **保留** | `shared/utils` | modules/wallpaper | 方法(1) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/utils/WallpaperSource.js` | **保留** | `shared/utils` | app, modules/settings, modules/sidebars, modules/wallpaper, shared/utils | 方法(10) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |

@@ -1,4 +1,5 @@
 import QtQuick
+import qs.shared.i18n
 
 QtObject {
     function getFriendlyNotifTimeString(timestamp, currentTime) {
@@ -9,7 +10,7 @@ QtObject {
         const now = new Date(currentTime || Date.now());
         const diffMs = now.getTime() - messageTime.getTime();
         if (diffMs < 60000)
-            return qsTr("Just now");
+            return I18n.tr("Just now");
 
         if (messageTime.toDateString() === now.toDateString()) {
             const diffMinutes = Math.floor(diffMs / 60000);
@@ -17,7 +18,7 @@ QtObject {
             return diffHours > 0 ? `${diffHours}h` : `${diffMinutes}m`;
         }
         if (messageTime.toDateString() === new Date(now.getTime() - 8.64e+07).toDateString())
-            return qsTr("Yesterday");
+            return I18n.tr("Yesterday");
 
         if (messageTime.getFullYear() !== now.getFullYear())
             return Qt.formatDateTime(messageTime, "yyyy MMMM dd");

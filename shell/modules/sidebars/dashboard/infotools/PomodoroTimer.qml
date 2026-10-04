@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -39,8 +40,8 @@ Item {
 
                 Text {
                     Layout.alignment: Qt.AlignHCenter
-                    text: TimerService.pomodoroLongBreak ? qsTr("Long break") : TimerService.pomodoroBreak
-                                                           ? qsTr("Break") : qsTr("Focus")
+                    text: TimerService.pomodoroLongBreak ? I18n.tr("Long break") : TimerService.pomodoroBreak
+                                                           ? I18n.tr("Break") : I18n.tr("Focus")
                     color: Appearance.colors.colSubtext
                     font.family: Fonts.ui
                     font.pixelSize: 14
@@ -82,14 +83,15 @@ Item {
                                           Appearance.colors.colPrimaryActive
                 rippleColor: TimerService.pomodoroRunning ? Appearance.colors.colOnSecondaryContainer :
                                                             Appearance.colors.colOnPrimary
-                Accessible.name: TimerService.pomodoroRunning ? qsTr("Pause Pomodoro") : qsTr(
+                Accessible.name: TimerService.pomodoroRunning ? I18n.tr("Pause Pomodoro") : I18n.tr(
                                                                     "Start Pomodoro")
                 onClicked: TimerService.togglePomodoro()
 
                 contentItem: Text {
-                    text: TimerService.pomodoroRunning ? qsTr("Pause") : TimerService.pomodoroSecondsLeft
-                                                         === TimerService.pomodoroLapDuration ? qsTr("Start") :
-                                                                                                qsTr("Resume")
+                    text: TimerService.pomodoroRunning ? I18n.tr("Pause") : TimerService.pomodoroSecondsLeft
+                                                         === TimerService.pomodoroLapDuration ? I18n.tr(
+                                                                                                    "Start") :
+                                                                                                I18n.tr("Resume")
                     color: TimerService.pomodoroRunning ? Appearance.colors.colOnSecondaryContainer :
                                                           Appearance.colors.colOnPrimary
                     font.family: Fonts.ui
@@ -110,11 +112,11 @@ Item {
                 stateLayerColor: Appearance.colors.colErrorContainerHover
                 pressedStateLayerColor: Appearance.colors.colErrorContainerActive
                 rippleColor: Appearance.colors.colOnErrorContainer
-                Accessible.name: qsTr("Reset Pomodoro")
+                Accessible.name: I18n.tr("Reset Pomodoro")
                 onClicked: TimerService.resetPomodoro()
 
                 contentItem: Text {
-                    text: qsTr("Reset")
+                    text: I18n.tr("Reset")
                     color: Appearance.colors.colOnErrorContainer
                     font.family: Fonts.ui
                     font.pixelSize: 14

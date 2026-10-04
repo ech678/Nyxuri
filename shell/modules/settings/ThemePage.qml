@@ -6,6 +6,7 @@ import QtQuick.Window
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -454,8 +455,8 @@ StyledFlickable {
 
         NiriSetupPrompt {
             Layout.fillWidth: true
-            title: qsTr("Cursor integration")
-            description: qsTr("Create or connect the Clavis cursor configuration.")
+            title: I18n.tr("Cursor integration")
+            description: I18n.tr("Create or connect the Clavis cursor configuration.")
             integrationState: NiriConfigService.state("cursor")
             busy: NiriConfigService.busy && NiriConfigService.activeFeature === "cursor"
             blocked: NiriConfigService.busy
@@ -468,14 +469,14 @@ StyledFlickable {
             spacing: 16
 
             ThemePreviewCard {
-                title: qsTr("Light")
+                title: I18n.tr("Light")
                 mode: "light"
                 darkPreview: false
                 onClicked: ThemeService.setThemeMode("light")
             }
 
             ThemePreviewCard {
-                title: qsTr("Dark")
+                title: I18n.tr("Dark")
                 mode: "dark"
                 darkPreview: true
                 onClicked: ThemeService.setThemeMode("dark")
@@ -612,30 +613,30 @@ StyledFlickable {
 
             SliderSettingRow {
                 enabled: NiriConfigService.ready("cursor")
-                title: qsTr("Cursor size")
+                title: I18n.tr("Cursor size")
                 from: 12
                 to: 128
                 stepSize: 1
-                suffix: qsTr("pixels")
+                suffix: I18n.tr("pixels")
                 value: PersonalizationConfig.cursorSize
                 onMoved: value => ThemeService.setCursorSize(Math.round(value))
             }
 
             ToggleSettingRow {
                 enabled: NiriConfigService.ready("cursor")
-                title: qsTr("Hide while typing")
+                title: I18n.tr("Hide while typing")
                 checked: PersonalizationConfig.cursorHideWhenTyping
                 onToggled: checked => ThemeService.setCursorHideWhenTyping(checked)
             }
 
             SliderSettingRow {
                 enabled: NiriConfigService.ready("cursor")
-                title: qsTr("Hide after timeout")
-                description: qsTr("Hide the cursor after inactivity; 0 disables this")
+                title: I18n.tr("Hide after timeout")
+                description: I18n.tr("Hide the cursor after inactivity; 0 disables this")
                 from: 0
                 to: 5000
                 stepSize: 100
-                suffix: qsTr("milliseconds")
+                suffix: I18n.tr("milliseconds")
                 value: PersonalizationConfig.cursorHideAfterInactiveMs
                 onMoved: value => ThemeService.setCursorHideAfterInactiveMs(Math.round(value))
             }
@@ -653,10 +654,10 @@ StyledFlickable {
             iconName: "interests"
 
             SearchSelectSettingRow {
-                title: qsTr("Icon theme")
+                title: I18n.tr("Icon theme")
                 options: ThemeService.availableIconThemes
                 value: PersonalizationConfig.iconTheme
-                placeholder: qsTr("Choose icon theme")
+                placeholder: I18n.tr("Choose icon theme")
                 onAccepted: value => ThemeService.setIconTheme(value)
             }
         }
@@ -673,41 +674,41 @@ StyledFlickable {
             iconName: "text_format"
 
             SearchSelectSettingRow {
-                title: qsTr("UI font")
-                description: qsTr("Regular headings, body text, and controls")
+                title: I18n.tr("UI font")
+                description: I18n.tr("Regular headings, body text, and controls")
                 options: FontService.fontOptions
                 value: PersonalizationConfig.uiFontFamily
-                placeholder: qsTr("Select UI font")
+                placeholder: I18n.tr("Select UI font")
                 fieldWidth: 280
                 onAccepted: value => PersonalizationConfig.setFontFamily("ui", value)
             }
 
             SearchSelectSettingRow {
-                title: qsTr("Monospace font")
-                description: qsTr("Commands, paths, and technical information")
+                title: I18n.tr("Monospace font")
+                description: I18n.tr("Commands, paths, and technical information")
                 options: FontService.fontOptions
                 value: PersonalizationConfig.monoFontFamily
-                placeholder: qsTr("Select monospace font")
+                placeholder: I18n.tr("Select monospace font")
                 fieldWidth: 280
                 onAccepted: value => PersonalizationConfig.setFontFamily("mono", value)
             }
 
             SearchSelectSettingRow {
-                title: qsTr("Numeric font")
-                description: qsTr("Time, percentages, and system values")
+                title: I18n.tr("Numeric font")
+                description: I18n.tr("Time, percentages, and system values")
                 options: FontService.fontOptions
                 value: PersonalizationConfig.numericFontFamily
-                placeholder: qsTr("Select numeric font")
+                placeholder: I18n.tr("Select numeric font")
                 fieldWidth: 280
                 onAccepted: value => PersonalizationConfig.setFontFamily("numeric", value)
             }
 
             SearchSelectSettingRow {
-                title: qsTr("Expressive font")
-                description: qsTr("Expressive visual components such as weather")
+                title: I18n.tr("Expressive font")
+                description: I18n.tr("Expressive visual components such as weather")
                 options: FontService.fontOptions
                 value: PersonalizationConfig.expressiveFontFamily
-                placeholder: qsTr("Select expressive font")
+                placeholder: I18n.tr("Select expressive font")
                 fieldWidth: 280
                 onAccepted: value => PersonalizationConfig.setFontFamily("expressive", value)
             }

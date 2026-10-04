@@ -4,6 +4,7 @@ import Quickshell
 import qs.app.services
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -74,6 +75,8 @@ Item {
     PopupToolTip {
         id: tooltip
         extraVisibleCondition: mouseArea.pointerHovered
-        text: qsTr("Brightness: ") + Math.round(root.brightnessValue * 100) + qsTr("%\nScroll to adjust")
+        text: I18n.tr("Brightness: ") + Math.round(root.brightnessValue * 100) + I18n.tr(
+                  "%\nScroll to adjust")
+
     }
 }

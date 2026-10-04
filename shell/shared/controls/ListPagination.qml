@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.shared.theme
+import qs.shared.i18n
 
 RowLayout {
     id: root
@@ -21,16 +22,16 @@ RowLayout {
 
     IconButton {
         iconName: "chevron_left"
-        accessibleName: qsTr("Previous page")
+        accessibleName: I18n.tr("Previous page")
         enabled: root.currentPage > 0
         onClicked: root.page = root.currentPage - 1
     }
     Text {
         Layout.fillWidth: true
         horizontalAlignment: Text.AlignHCenter
-        text: qsTr("%1–%2 of %3").arg(root.currentPage * root.pageSize + 1).arg(Math.min(root.count, (
-                                                                                             root.currentPage
-                                                                                             + 1) * root.pageSize)).arg(
+        text: I18n.tr("%1–%2 of %3").arg(root.currentPage * root.pageSize + 1).arg(Math.min(root.count, (
+                                                                                                root.currentPage
+                                                                                                + 1) * root.pageSize)).arg(
                   root.count)
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.ui
@@ -38,7 +39,7 @@ RowLayout {
     }
     IconButton {
         iconName: "chevron_right"
-        accessibleName: qsTr("Next page")
+        accessibleName: I18n.tr("Next page")
         enabled: root.currentPage + 1 < root.pageCount
         onClicked: root.page = root.currentPage + 1
     }

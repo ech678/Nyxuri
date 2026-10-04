@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -81,10 +82,10 @@ StyledFlickable {
                 Layout.preferredHeight: Metrics.controlHeightM
                 options: settingRow.roleState.candidates || []
                 value: settingRow.roleState.currentId || ""
-                placeholder: DefaultApplicationsService.loading ? qsTr("Loading…") : settingRow.roleId
+                placeholder: DefaultApplicationsService.loading ? I18n.tr("Loading…") : settingRow.roleId
                                                                   === "terminal"
                                                                   && settingRow.roleState.currentId === ""
-                                                                  ? qsTr("System default") : qsTr(
+                                                                  ? I18n.tr("System default") : I18n.tr(
                                                                         "No available applications")
                 closeOnAccept: true
                 enabled: !DefaultApplicationsService.loading && !DefaultApplicationsService.busy && (
@@ -101,7 +102,7 @@ StyledFlickable {
             anchors.top: rowColumn.bottom
             visible: !DefaultApplicationsService.loading && (settingRow.roleState.candidates || []).length
                      === 0
-            text: qsTr("No available system applications were found")
+            text: I18n.tr("No available system applications were found")
             color: Appearance.colors.colError
             font.family: Typography.bodySmall.family
             font.pixelSize: Typography.bodySmall.pixelSize
@@ -151,13 +152,13 @@ StyledFlickable {
 
             DefaultAppSettingRow {
                 roleId: "browser"
-                title: qsTr("Web browser")
+                title: I18n.tr("Web browser")
                 iconName: "language"
             }
 
             DefaultAppSettingRow {
                 roleId: "mail"
-                title: qsTr("Email")
+                title: I18n.tr("Email")
                 iconName: "mail"
             }
         }
@@ -176,13 +177,13 @@ StyledFlickable {
 
             DefaultAppSettingRow {
                 roleId: "file-manager"
-                title: qsTr("File manager")
+                title: I18n.tr("File manager")
                 iconName: "folder"
             }
 
             DefaultAppSettingRow {
                 roleId: "terminal"
-                title: qsTr("Terminal")
+                title: I18n.tr("Terminal")
                 iconName: "terminal"
             }
         }
@@ -201,13 +202,13 @@ StyledFlickable {
 
             DefaultAppSettingRow {
                 roleId: "text-editor"
-                title: qsTr("Text editor")
+                title: I18n.tr("Text editor")
                 iconName: "edit_note"
             }
 
             DefaultAppSettingRow {
                 roleId: "pdf-reader"
-                title: qsTr("PDF reader")
+                title: I18n.tr("PDF reader")
                 iconName: "picture_as_pdf"
             }
         }
@@ -226,19 +227,19 @@ StyledFlickable {
 
             DefaultAppSettingRow {
                 roleId: "image-viewer"
-                title: qsTr("Image viewer")
+                title: I18n.tr("Image viewer")
                 iconName: "image"
             }
 
             DefaultAppSettingRow {
                 roleId: "video-player"
-                title: qsTr("Video player")
+                title: I18n.tr("Video player")
                 iconName: "smart_display"
             }
 
             DefaultAppSettingRow {
                 roleId: "music-player"
-                title: qsTr("Music player")
+                title: I18n.tr("Music player")
                 iconName: "music_note"
             }
         }
@@ -261,7 +262,7 @@ StyledFlickable {
             Layout.fillWidth: true
             visible: DefaultApplicationsService.loading
             iconName: "progress_activity"
-            message: qsTr("Reading system default applications…")
+            message: I18n.tr("Reading system default applications…")
         }
 
         Item {

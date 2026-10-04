@@ -4,6 +4,7 @@ import QtQuick.Controls
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 StyledMenu {
     id: root
@@ -195,14 +196,13 @@ StyledMenu {
     StyledMenuItem {
         visible: !!root.contents && root.contents.count === 0
         enabled: false
-        text: root.contents && !root.contents.available ? qsTranslate("DockFilePopup",
-                                                                      "Folder is unavailable") : qsTr(
-                                                              "Folder is empty")
+        text: root.contents && !root.contents.available ? I18n.tr("Folder is unavailable", "DockFilePopup") :
+                                                          I18n.tr("Folder is empty")
         implicitHeight: visible ? 34 : 0
     }
     MenuSeparator {}
     StyledMenuItem {
-        text: qsTr("Open in File Manager")
+        text: I18n.tr("Open in File Manager")
         implicitHeight: 34
         enabled: !!root.contents && root.contents.available
         onTriggered: root.fileActivated({

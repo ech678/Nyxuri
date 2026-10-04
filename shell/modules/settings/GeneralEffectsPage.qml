@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -22,8 +23,8 @@ StyledFlickable {
 
         NiriSetupPrompt {
             Layout.fillWidth: true
-            title: qsTr("Background effects")
-            description: qsTr("Create or connect the Clavis X-Ray rules.")
+            title: I18n.tr("Background effects")
+            description: I18n.tr("Create or connect the Clavis X-Ray rules.")
             integrationState: NiriConfigService.state("effects")
             busy: NiriConfigService.busy && NiriConfigService.activeFeature === "effects"
             blocked: NiriConfigService.busy
@@ -45,7 +46,7 @@ StyledFlickable {
             iconName: "wallpaper"
 
             GeneralSliderSetting {
-                title: qsTr("Background opacity")
+                title: I18n.tr("Background opacity")
                 from: 0
                 to: 100
                 stepSize: 1
@@ -57,12 +58,12 @@ StyledFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: "blur_on"
-                title: qsTr("Background blur")
+                title: I18n.tr("Background blur")
 
                 trailing: StyledSwitch {
                     enabled: BlurService.available
                     checked: PersonalizationConfig.shellBlurEnabled
-                    Accessible.name: qsTr("Background blur")
+                    Accessible.name: I18n.tr("Background blur")
                     onToggled: PersonalizationConfig.setShellBlurEnabled(checked)
                 }
             }
@@ -70,15 +71,15 @@ StyledFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: "filter_center_focus"
-                title: qsTr("Blur wallpaper only")
-                supportingText: BlurService.niriIntegrationReady ? qsTr(
+                title: I18n.tr("Blur wallpaper only")
+                supportingText: BlurService.niriIntegrationReady ? I18n.tr(
                                                                        "Turning this off also blurs windows and uses more resources") :
-                                                                   qsTr("Configure Niri blur integration first")
+                                                                   I18n.tr("Configure Niri blur integration first")
 
                 trailing: StyledSwitch {
                     enabled: BlurService.available && BlurService.niriIntegrationReady
                     checked: PersonalizationConfig.shellBlurXray
-                    Accessible.name: qsTr("Blur wallpaper only")
+                    Accessible.name: I18n.tr("Blur wallpaper only")
                     onToggled: PersonalizationConfig.setShellBlurXray(checked)
                 }
             }

@@ -5,6 +5,7 @@ import Quickshell
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 FloatingWindow {
     id: root
@@ -182,7 +183,7 @@ FloatingWindow {
 
                         Text {
                             Layout.fillWidth: true
-                            text: qsTr("Select application")
+                            text: I18n.tr("Select application")
                             color: Appearance.colors.colOnSurface
                             font.family: Fonts.ui
                             font.pixelSize: Typography.titleMedium.pixelSize
@@ -191,7 +192,7 @@ FloatingWindow {
 
                         Text {
                             Layout.fillWidth: true
-                            text: qsTr("Select an installed application to add to user autostart")
+                            text: I18n.tr("Select an installed application to add to user autostart")
                             color: Appearance.colors.colOnSurfaceVariant
                             font.family: Fonts.ui
                             font.pixelSize: Typography.bodySmall.pixelSize
@@ -200,7 +201,7 @@ FloatingWindow {
                     }
 
                     ActionButton {
-                        text: qsTr("Close")
+                        text: I18n.tr("Close")
                         onClicked: root.hide()
                     }
                 }
@@ -219,7 +220,7 @@ FloatingWindow {
                 id: searchField
 
                 Layout.fillWidth: true
-                placeholderText: qsTr("Search by application name, ID, or description")
+                placeholderText: I18n.tr("Search by application name, ID, or description")
                 leadingContent: Component {
                     MaterialSymbol {
                         anchors.centerIn: parent
@@ -332,7 +333,7 @@ FloatingWindow {
                     }
 
                     Text {
-                        text: qsTr("No matching applications")
+                        text: I18n.tr("No matching applications")
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.ui
                         font.pixelSize: Typography.bodyMedium.pixelSize

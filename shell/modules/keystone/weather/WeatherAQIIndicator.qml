@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import qs.app.services
 import qs.shared.theme
+import qs.shared.i18n
 
 Item {
     id: root
@@ -37,16 +38,16 @@ Item {
 
     function getAqiDescription(aqiValue) {
         if (aqiValue <= 50)
-            return qsTr("Excellent");
+            return I18n.tr("Excellent");
         if (aqiValue <= 100)
-            return qsTr("Good");
+            return I18n.tr("Good");
         if (aqiValue <= 150)
-            return qsTr("Unhealthy for sensitive groups");
+            return I18n.tr("Unhealthy for sensitive groups");
         if (aqiValue <= 200)
-            return qsTr("Unhealthy");
+            return I18n.tr("Unhealthy");
         if (aqiValue <= 300)
-            return qsTr("Very unhealthy");
-        return qsTr("Hazardous");
+            return I18n.tr("Very unhealthy");
+        return I18n.tr("Hazardous");
     }
 
     Connections {
@@ -74,7 +75,7 @@ Item {
             Layout.fillWidth: true
 
             Text {
-                text: qsTr("Air quality")
+                text: I18n.tr("Air quality")
                 color: Appearance.colors.colOnSurfaceVariant
                 font.family: Fonts.ui
                 font.pixelSize: 14

@@ -1,6 +1,7 @@
 import QtQuick
 import qs.app.services
 import "./SpotlightCommands.js" as Commands
+import qs.shared.i18n
 
 QtObject {
     id: root
@@ -20,11 +21,12 @@ QtObject {
             id: entry.id,
             title: SpotlightCatalog.commandTitle(entry),
             icon: entry.icon,
-            subtitle: Commands.available(entry, sessionState) ? "/" + entry.slashName : qsTr(
+            subtitle: Commands.available(entry, sessionState) ? "/" + entry.slashName : I18n.tr(
                                                                     "Available in %1 only").arg(entry.scope
                                                                                                 === "apps"
-                                                                                                ? qsTr("Apps") :
-                                                                                                  qsTr("Clipboard")),
+                                                                                                ? I18n.tr(
+                                                                                                      "Apps") : I18n.tr(
+                                                                                                      "Clipboard")),
             entry: entry
         }));
     }

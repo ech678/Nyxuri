@@ -5,6 +5,7 @@ import Quickshell.Services.Mpris
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -24,10 +25,10 @@ Item {
                                                                             ""
 
     property string title: (isActive && MediaService.active.trackTitle) ? MediaService.active.trackTitle :
-                                                                          qsTr("No media")
+                                                                          I18n.tr("No media")
 
     property string artist: (isActive && MediaService.active.trackArtist) ? MediaService.active.trackArtist :
-                                                                            qsTr("Unknown artist")
+                                                                            I18n.tr("Unknown artist")
 
     readonly property double currentPos: root.isActive ? MediaService.currentPosition : 0
 

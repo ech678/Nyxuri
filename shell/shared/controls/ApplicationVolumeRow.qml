@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -83,7 +84,7 @@ Item {
             stopIndicatorValues: []
             showTooltipOnHover: true
             tooltipContent: Math.round(value * 100) + "%"
-            Accessible.name: qsTr("%1 volume").arg(root.title)
+            Accessible.name: I18n.tr("%1 volume").arg(root.title)
 
             Binding {
                 target: volumeControl
@@ -107,8 +108,9 @@ Item {
             selectedContainerColor: Appearance.colors.colSecondaryContainer
             selectedHoverStateLayerColor: Appearance.colors.colSecondaryContainerHover
             selectedPressedStateLayerColor: Appearance.colors.colSecondaryContainerActive
-            accessibleName: root.muted ? qsTr("Unmute %1").arg(root.title) : qsTr("Mute %1").arg(root.title)
-            tooltipText: root.muted ? qsTr("Unmute") : qsTr("Mute")
+            accessibleName: root.muted ? I18n.tr("Unmute %1").arg(root.title) : I18n.tr("Mute %1").arg(
+                                             root.title)
+            tooltipText: root.muted ? I18n.tr("Unmute") : I18n.tr("Mute")
             hoverStateLayerColor: Appearance.colors.colLayer2Hover
             pressedStateLayerColor: Appearance.colors.colLayer2Active
             onClicked: root.muteRequested()

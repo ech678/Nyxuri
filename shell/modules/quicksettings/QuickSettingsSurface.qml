@@ -5,12 +5,13 @@ import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
 import qs.app
+import qs.shared.i18n
 
 WidgetPanel {
     id: root
 
     property var screen: null
-    title: qsTr("Quick Settings")
+    title: I18n.tr("Quick Settings")
     icon: "settings"
 
     property bool editMode: false
@@ -72,21 +73,21 @@ WidgetPanel {
     function titleForType(type) {
         switch (type) {
         case "night":
-            return qsTr("Night Mode");
+            return I18n.tr("Night Mode");
         case "network":
-            return qsTr("Network");
+            return I18n.tr("Network");
         case "bluetooth":
-            return qsTr("Bluetooth");
+            return I18n.tr("Bluetooth");
         case "caffeine":
-            return qsTr("Caffeine");
+            return I18n.tr("Caffeine");
         case "mic":
-            return qsTr("Microphone");
+            return I18n.tr("Microphone");
         case "audio":
-            return qsTr("Sound");
+            return I18n.tr("Sound");
         case "theme":
-            return qsTr("Appearance");
+            return I18n.tr("Appearance");
         case "dnd":
-            return qsTr("Do not disturb");
+            return I18n.tr("Do not disturb");
         default:
             return type;
         }
@@ -95,31 +96,32 @@ WidgetPanel {
     function subtitleForType(type) {
         switch (type) {
         case "night":
-            return !DisplayColor.available ? qsTr("Unavailable") : DisplayColor.preferences.nightEnabled
-                                             ? qsTr("%1 K").arg(DisplayColor.schedule.temperature) : "";
+            return !DisplayColor.available ? I18n.tr("Unavailable") : DisplayColor.preferences.nightEnabled
+                                             ? I18n.tr("%1 K").arg(DisplayColor.schedule.temperature) : "";
         case "network":
             if (!NetworkService.available)
-                return qsTr("Unavailable");
+                return I18n.tr("Unavailable");
             if (!NetworkService.wifiAvailable)
-                return qsTr("No Wi-Fi device");
-            return NetworkService.wifiEnabled ? NetworkService.activeConnection : qsTr("Off");
+                return I18n.tr("No Wi-Fi device");
+            return NetworkService.wifiEnabled ? NetworkService.activeConnection : I18n.tr("Off");
         case "bluetooth":
             if (!BluetoothService.available)
-                return qsTr("Unavailable");
+                return I18n.tr("Unavailable");
             if (!BluetoothService.enabled)
-                return qsTr("Off");
-            return BluetoothService.connected ? (BluetoothService.connectedName || qsTr("Connected")) : qsTr(
-                                                    "On");
+                return I18n.tr("Off");
+            return BluetoothService.connected ? (BluetoothService.connectedName || I18n.tr("Connected")) :
+                                                I18n.tr("On");
         case "caffeine":
-            return IdleService.inhibited ? qsTr("Keep awake") : qsTr("Normal sleep");
+            return IdleService.inhibited ? I18n.tr("Keep awake") : I18n.tr("Normal sleep");
         case "mic":
-            return VolumeService.sourceMuted ? qsTr("Muted") : qsTr("On");
+            return VolumeService.sourceMuted ? I18n.tr("Muted") : I18n.tr("On");
         case "audio":
-            return VolumeService.sinkMuted ? qsTr("Muted") : Math.round(VolumeService.sinkVolume * 100) + "%";
+            return VolumeService.sinkMuted ? I18n.tr("Muted") : Math.round(VolumeService.sinkVolume * 100)
+                                             + "%";
         case "theme":
-            return PersonalizationConfig.themeMode === "dark" ? qsTr("Dark") : qsTr("Light");
+            return PersonalizationConfig.themeMode === "dark" ? I18n.tr("Dark") : I18n.tr("Light");
         case "dnd":
-            return UiPreferences.dndEnabled ? qsTr("On") : qsTr("Off");
+            return UiPreferences.dndEnabled ? I18n.tr("On") : I18n.tr("Off");
         default:
             return "";
         }
@@ -239,9 +241,9 @@ WidgetPanel {
         const subtitle = subtitleForType(type);
         const base = titleForType(type) + (subtitle ? " | " + subtitle : "");
         if (root.editMode)
-            return base + qsTr("\nRight-click to change shape; scroll to reorder");
+            return base + I18n.tr("\nRight-click to change shape; scroll to reorder");
         if (root.hasAltActionForType(type))
-            return base + qsTr("\nRight-click to open the details panel");
+            return base + I18n.tr("\nRight-click to open the details panel");
         return base;
     }
 
@@ -262,9 +264,9 @@ WidgetPanel {
             padding: root.headerButtonPadding
             iconName: "edit"
             toggled: root.editMode
-            tooltipText: root.editMode ? qsTr(
+            tooltipText: root.editMode ? I18n.tr(
                                              "Edit quick actions\nRight-click to change shape; scroll to reorder") :
-                                         qsTr("Edit quick actions")
+                                         I18n.tr("Edit quick actions")
             onTriggered: root.editMode = !root.editMode
         }
 
@@ -273,7 +275,7 @@ WidgetPanel {
             cellSpacing: root.headerButtonSpacing
             padding: root.headerButtonPadding
             iconName: "restart_alt"
-            tooltipText: qsTr("Restart Quickshell")
+            tooltipText: I18n.tr("Restart Quickshell")
             onTriggered: Quickshell.reload(true)
         }
 
@@ -282,7 +284,7 @@ WidgetPanel {
             cellSpacing: root.headerButtonSpacing
             padding: root.headerButtonPadding
             iconName: "settings"
-            tooltipText: qsTr("Settings")
+            tooltipText: I18n.tr("Settings")
             onTriggered: root.openControlCenter()
         }
 
@@ -291,7 +293,7 @@ WidgetPanel {
             cellSpacing: root.headerButtonSpacing
             padding: root.headerButtonPadding
             iconName: "power_settings_new"
-            tooltipText: qsTr("Power menu")
+            tooltipText: I18n.tr("Power menu")
             onTriggered: ActionGateway.requestSessionOpen(root.screen)
         }
     }
@@ -434,7 +436,7 @@ WidgetPanel {
                 Layout.topMargin: sidebarScroll.gapFor(2, 1)
 
                 Layout.fillWidth: true
-                title: qsTr("Device settings")
+                title: I18n.tr("Device settings")
 
                 Repeater {
                     model: ["network", "bluetooth", "audio", "mic", "caffeine", "night"]
@@ -443,7 +445,7 @@ WidgetPanel {
                         required property string modelData
                         Layout.fillWidth: true
                         Layout.minimumHeight: 64
-                        title: modelData === "caffeine" ? qsTr("Idle management") : root.titleForType(
+                        title: modelData === "caffeine" ? I18n.tr("Idle management") : root.titleForType(
                                                               modelData)
                         iconName: root.iconForType(modelData)
                         supportingText: {
@@ -457,7 +459,7 @@ WidgetPanel {
                             case "mic":
                                 return VolumeService.sourceName;
                             case "night":
-                                return DisplayColor.preferences.nightEnabled ? qsTr("%1 K").arg(
+                                return DisplayColor.preferences.nightEnabled ? I18n.tr("%1 K").arg(
                                                                                    DisplayColor.schedule.temperature) :
                                                                                "";
                             default:

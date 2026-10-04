@@ -4,6 +4,7 @@ import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
 import "../../shared/utils/SystemFormat.js" as Format
+import qs.shared.i18n
 
 Item {
     id: root
@@ -46,12 +47,12 @@ Item {
         const options = [
                   {
                       "value": "",
-                      "label": root.defaultInterface !== "" ? qsTr("Default · %1").arg(root.defaultInterface) :
-                                                              qsTr("Default")
+                      "label": root.defaultInterface !== "" ? I18n.tr("Default · %1").arg(
+                                                                  root.defaultInterface) : I18n.tr("Default")
                   },
                   {
                       "value": "all",
-                      "label": qsTr("Total")
+                      "label": I18n.tr("Total")
                   }
               ];
         const names = [];
@@ -103,8 +104,8 @@ Item {
 
     clip: true
     layer.enabled: true
-    Accessible.name: qsTr("Network, download ") + Format.bytesPerSecond(
-                         root.selectedInterface.downloadBytesPerSecond) + qsTr(", upload ")
+    Accessible.name: I18n.tr("Network, download ") + Format.bytesPerSecond(
+                         root.selectedInterface.downloadBytesPerSecond) + I18n.tr(", upload ")
                      + Format.bytesPerSecond(root.selectedInterface.uploadBytesPerSecond)
 
     Rectangle {
@@ -114,7 +115,7 @@ Item {
     }
 
     Text {
-        text: qsTr("Network")
+        text: I18n.tr("Network")
         color: root.leftForeground
         renderType: Text.NativeRendering
         font.family: Fonts.expressive
@@ -166,9 +167,9 @@ Item {
         showGuideLines: false
         fillArea: true
         fillOpacity: 0.26
-        accessibilityName: qsTr("Recent network activity")
-        accessibilityDescription: qsTr("Download ") + Format.bytesPerSecond(
-                                      root.selectedInterface.downloadBytesPerSecond) + qsTr(", upload ")
+        accessibilityName: I18n.tr("Recent network activity")
+        accessibilityDescription: I18n.tr("Download ") + Format.bytesPerSecond(
+                                      root.selectedInterface.downloadBytesPerSecond) + I18n.tr(", upload ")
                                   + Format.bytesPerSecond(root.selectedInterface.uploadBytesPerSecond)
         lineColor: root.downloadChartColor
         secondaryLineColor: root.uploadChartColor
@@ -229,7 +230,7 @@ Item {
                 buttonHoverColor: Appearance.mix(root.leftColor, root.leftForeground, 0.88)
                 buttonPressedColor: Appearance.mix(root.leftColor, root.leftForeground, 0.76)
                 buttonTextColor: root.leftForeground
-                Accessible.name: qsTr("Select network interface")
+                Accessible.name: I18n.tr("Select network interface")
                 onValueSelected: value => {
                     return root.interfaceSelected(value);
                 }

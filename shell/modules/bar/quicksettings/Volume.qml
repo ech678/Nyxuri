@@ -5,6 +5,7 @@ import Quickshell
 import qs.app.services
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -94,8 +95,8 @@ Item {
     PopupToolTip {
         id: tooltip
         extraVisibleCondition: mouseArea.pointerHovered
-        text: (VolumeService.sinkMuted ? qsTr("Volume: muted") : qsTr("Volume: ") + Math.round(
-                                             VolumeService.sinkVolume * 100) + "%") + qsTr(
+        text: (VolumeService.sinkMuted ? I18n.tr("Volume: muted") : I18n.tr("Volume: ") + Math.round(
+                                             VolumeService.sinkVolume * 100) + "%") + I18n.tr(
                   "\nScroll to adjust; click to open sound")
     }
 }

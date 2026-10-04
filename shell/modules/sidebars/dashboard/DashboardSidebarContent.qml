@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 Item {
     id: root
@@ -37,17 +38,17 @@ Item {
                 {
                     id: "info",
                     icon: "info",
-                    label: qsTr("Information")
+                    label: I18n.tr("Information")
                 },
                 {
                     id: "drawer",
                     icon: "widgets",
-                    label: qsTr("Drawer")
+                    label: I18n.tr("Drawer")
                 },
                 {
                     id: "weather",
                     icon: "cloud",
-                    label: qsTr("Weather")
+                    label: I18n.tr("Weather")
                 }
             ]
             readonly property int currentIndex: Math.max(0, tabs.findIndex(tab => tab.id

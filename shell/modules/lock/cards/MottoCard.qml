@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.shared.theme
+import qs.shared.i18n
 
 Rectangle {
     id: root
@@ -29,7 +30,7 @@ Rectangle {
 
         // 中间正文
         Text {
-            text: qsTr("Take a break,\nwe’ll be right back.")
+            text: I18n.tr("Take a break,\nwe’ll be right back.")
             color: Appearance.colors.colOnSurface
             font.family: Fonts.ui
             font.pixelSize: 26

@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -71,7 +72,7 @@ StyledFlickable {
 
         SettingsSection {
             Layout.fillWidth: true
-            title: qsTr("Network information")
+            title: I18n.tr("Network information")
             iconName: "add_link"
             contentSpacing: Metrics.spacingL
 
@@ -83,15 +84,15 @@ StyledFlickable {
                     id: ssidField
 
                     Layout.fillWidth: true
-                    labelText: qsTr("SSID")
-                    errorText: root.ssidBytes > 32 ? qsTr("SSID can be at most 32 UTF-8 bytes") : ""
+                    labelText: I18n.tr("SSID")
+                    errorText: root.ssidBytes > 32 ? I18n.tr("SSID can be at most 32 UTF-8 bytes") : ""
                 }
             }
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Hidden network")
-                supportingText: qsTr("Try to connect even when this SSID is not in the scan results")
+                title: I18n.tr("Hidden network")
+                supportingText: I18n.tr("Try to connect even when this SSID is not in the scan results")
 
                 trailing: StyledSwitch {
                     id: hiddenSwitch
@@ -100,7 +101,7 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Security type")
+                title: I18n.tr("Security type")
 
                 trailing: SearchSelectMenuField {
                     id: securitySelect
@@ -111,11 +112,11 @@ StyledFlickable {
                     options: [
                         {
                             "value": "personal",
-                            "label": qsTr("WPA/WPA2 Personal")
+                            "label": I18n.tr("WPA/WPA2 Personal")
                         },
                         {
                             "value": "open",
-                            "label": qsTr("None / Open")
+                            "label": I18n.tr("None / Open")
                         }
                     ]
                     onAccepted: value => {
@@ -133,9 +134,9 @@ StyledFlickable {
                     id: passwordField
 
                     Layout.fillWidth: true
-                    labelText: qsTr("Password")
+                    labelText: I18n.tr("Password")
                     passwordToggle: true
-                    errorText: text.length > 0 && !root.validPassword ? qsTr(
+                    errorText: text.length > 0 && !root.validPassword ? I18n.tr(
                                                                             "Password must be 8–63 characters or a 64-digit hexadecimal PSK") :
                                                                         ""
                 }
@@ -165,7 +166,7 @@ StyledFlickable {
             }
 
             ActionButton {
-                text: qsTr("Connect and add")
+                text: I18n.tr("Connect and add")
                 iconName: "add_link"
                 filled: true
                 enabled: root.valid && !root.submitting

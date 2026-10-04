@@ -2,6 +2,7 @@ import QtQuick
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -36,7 +37,8 @@ Item {
     readonly property bool keyLineVisible: metric === "pressure" || metric === "uv"
     readonly property real keyLineValue: metric === "pressure" ? 1013.25 : 6
     readonly property string keyLineValueText: metric === "pressure" ? "1,013" : "6"
-    readonly property string keyLineLabel: metric === "pressure" ? qsTr("Standard") : qsTr("Alert level")
+    readonly property string keyLineLabel: metric === "pressure" ? I18n.tr("Standard") : I18n.tr(
+                                                                       "Alert level")
 
     function validNumber(value) {
         return value !== undefined && value !== null && !isNaN(value);
@@ -49,19 +51,19 @@ Item {
 
     function dayLabel(index, epoch) {
         if (index === 0)
-            return qsTr("Yesterday");
+            return I18n.tr("Yesterday");
 
         if (index === 1)
-            return qsTr("Today");
+            return I18n.tr("Today");
 
         if (index === 2)
-            return qsTr("Tomorrow");
+            return I18n.tr("Tomorrow");
 
         if (!epoch)
             return "--";
 
-        const week = [qsTr("Sun"), qsTr("Mon"), qsTr("Tue"), qsTr("Wed"), qsTr("Thu"), qsTr("Fri"), qsTr(
-                          "Sat")];
+        const week = [I18n.tr("Sun"), I18n.tr("Mon"), I18n.tr("Tue"), I18n.tr("Wed"), I18n.tr("Thu"), I18n.tr(
+                          "Fri"), I18n.tr("Sat")];
         return week[new Date(epoch * 1000).getDay()];
     }
 

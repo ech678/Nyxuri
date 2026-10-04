@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 WidgetPanel {
     id: root
@@ -13,13 +14,13 @@ WidgetPanel {
         if (VolumeService.lastError.length > 0)
             return VolumeService.lastError;
         if (!VolumeService.ready)
-            return qsTr("Connecting to the PipeWire audio service");
+            return I18n.tr("Connecting to the PipeWire audio service");
         if (VolumeService.inputDevices.length === 0 && !VolumeService.inputAvailable)
-            return qsTr("No microphone devices detected");
+            return I18n.tr("No microphone devices detected");
         return "";
     }
 
-    title: qsTr("Microphone")
+    title: I18n.tr("Microphone")
     icon: "mic"
     showBackButton: true
     backAction: () => WidgetState.quickSettingsView = "settings"
@@ -29,7 +30,7 @@ WidgetPanel {
         iconName: "open_in_new"
         iconSize: 20
         iconColor: Appearance.colors.colOnLayer2
-        accessibleName: qsTr("Open advanced sound settings")
+        accessibleName: I18n.tr("Open advanced sound settings")
         hoverStateLayerColor: Appearance.colors.colLayer2Hover
         pressedStateLayerColor: Appearance.colors.colLayer2Active
         onClicked: {
@@ -69,12 +70,12 @@ WidgetPanel {
 
                     Layout.fillWidth: true
                     visible: VolumeService.ready && VolumeService.inputAvailable
-                    title: qsTr("Input")
+                    title: I18n.tr("Input")
                     iconName: "mic"
 
                     VolumeSlider {
                         Layout.fillWidth: true
-                        title: VolumeService.sourceName || qsTr("Default input")
+                        title: VolumeService.sourceName || I18n.tr("Default input")
                         supportingText: VolumeService.nodeSupportingText(VolumeService.source)
                         iconName: VolumeService.nodeIconName(VolumeService.source)
                         volume: VolumeService.sourceVolume
@@ -92,7 +93,7 @@ WidgetPanel {
 
                     Layout.fillWidth: true
                     visible: VolumeService.ready && VolumeService.inputDevices.length > 0
-                    title: qsTr("Input devices")
+                    title: I18n.tr("Input devices")
                     iconName: "settings_voice"
                     contentSpacing: Metrics.spacingL
 
@@ -127,7 +128,7 @@ WidgetPanel {
                             VolumeSlider {
                                 Layout.fillWidth: true
                                 visible: !VolumeService.isDefaultInput(device.modelData)
-                                title: qsTr("Volume")
+                                title: I18n.tr("Volume")
                                 iconName: VolumeService.nodeIconName(device.modelData)
                                 volume: VolumeService.nodeVolume(device.modelData)
                                 muted: VolumeService.nodeMuted(device.modelData)

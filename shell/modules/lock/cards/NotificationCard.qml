@@ -4,6 +4,7 @@ import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
 import qs.app
+import qs.shared.i18n
 
 Rectangle {
     id: root
@@ -45,8 +46,9 @@ Rectangle {
 
         Text {
             Layout.fillWidth: true
-            text: root.notificationCount > 0 ? qsTr("%1 notifications").arg(root.notificationCount) : qsTr(
+            text: root.notificationCount > 0 ? I18n.tr("%1 notifications").arg(root.notificationCount) : I18n.tr(
                                                    "Notifications")
+
             color: Appearance.colors.colOutline
             font.family: Fonts.numeric
             font.pixelSize: 17
@@ -79,7 +81,7 @@ Rectangle {
 
                 Text {
                     Layout.alignment: Qt.AlignHCenter
-                    text: qsTr("No notifications")
+                    text: I18n.tr("No notifications")
                     color: Appearance.colors.colOutlineVariant
                     font.family: Fonts.numeric
                     font.pixelSize: 24
@@ -255,8 +257,9 @@ Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
             visible: root.veryCompact
-            text: root.notificationCount > 0 ? qsTr("%1 notifications").arg(root.notificationCount) : qsTr(
+            text: root.notificationCount > 0 ? I18n.tr("%1 notifications").arg(root.notificationCount) : I18n.tr(
                                                    "No notifications")
+
             color: Appearance.colors.colOnSurfaceVariant
             font.family: Fonts.numeric
             font.pixelSize: 20

@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import qs.app.services
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -94,7 +95,7 @@ Item {
                     Layout.alignment: Qt.AlignHCenter
                 }
                 Text {
-                    text: qsTr("Sunrise")
+                    text: I18n.tr("Sunrise")
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.ui
                     font.pixelSize: 16
@@ -114,7 +115,7 @@ Item {
                     Layout.alignment: Qt.AlignHCenter
                 }
                 Text {
-                    text: qsTr("Sunset")
+                    text: I18n.tr("Sunset")
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.ui
                     font.pixelSize: 16

@@ -3,6 +3,7 @@ import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
 import "./DockMotion.js" as DockMotion
+import qs.shared.i18n
 
 // This snapshot outlives the model row. The pointer owns its position during
 // a drag; only the short release/return transition interpolates that position.
@@ -147,7 +148,7 @@ Item {
         Text {
             id: label
             anchors.centerIn: parent
-            text: qsTranslate("DockSurface", "Remove from Dock")
+            text: I18n.tr("Remove from Dock", "DockSurface")
             font.family: Fonts.ui
             font.pixelSize: 12
             color: Appearance.colors.colOnSurface

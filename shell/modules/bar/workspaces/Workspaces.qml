@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 TopBarPill {
     id: root
@@ -102,8 +103,9 @@ TopBarPill {
 
                 PopupToolTip {
                     extraVisibleCondition: mouseArea.containsMouse
-                    text: qsTr("Workspace ") + model.id + (delegateRoot.hasWindows ? qsTr("\nWindows: ")
-                                                                                     + model.windowCount : "")
+                    text: I18n.tr("Workspace ") + model.id + (delegateRoot.hasWindows ? I18n.tr("\nWindows: ")
+                                                                                        + model.windowCount :
+                                                                                        "")
                 }
             }
         }

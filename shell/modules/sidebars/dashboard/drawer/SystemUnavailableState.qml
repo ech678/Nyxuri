@@ -5,12 +5,13 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 Rectangle {
     id: root
 
-    property string title: qsTr("System monitor service unavailable")
-    property string message: qsTr("Confirm that key is built and can run in the current environment.")
+    property string title: I18n.tr("System monitor service unavailable")
+    property string message: I18n.tr("Confirm that key is built and can run in the current environment.")
     property bool reconnecting: false
     signal retryRequested
 
@@ -62,17 +63,17 @@ Rectangle {
             visible: root.reconnecting
             indeterminate: true
             Material.accent: root.foregroundColor
-            Accessible.name: qsTr("Reconnecting to the system monitor service")
+            Accessible.name: I18n.tr("Reconnecting to the system monitor service")
         }
 
         Button {
             Layout.alignment: Qt.AlignHCenter
             Layout.minimumHeight: 48
             visible: !root.reconnecting
-            text: qsTr("Retry")
+            text: I18n.tr("Retry")
             highlighted: true
             Material.accent: Appearance.colors.colPrimary
-            Accessible.name: qsTr("Retry the system monitor connection")
+            Accessible.name: I18n.tr("Retry the system monitor connection")
             onClicked: root.retryRequested()
         }
     }

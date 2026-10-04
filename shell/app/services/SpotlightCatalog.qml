@@ -7,6 +7,7 @@ import qs.modules.wallpaper
 import qs.shared.theme
 import "../../modules/settings/generated/SearchCatalog.js" as Catalog
 import "../../modules/launcher/SpotlightCommands.js" as Commands
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -92,7 +93,7 @@ Singleton {
             return false;
         const accepted = available(entry) && actionExecutor && actionExecutor(entry) === true;
         if (!accepted)
-            ActionGateway.execute(["notify-send", "-a", "Nyxuri Shell", qsTr("Action unavailable"),
+            ActionGateway.execute(["notify-send", "-a", "Nyxuri Shell", I18n.tr("Action unavailable"),
                                    Catalog.title(id)], "spotlight:catalog-action");
         return accepted;
     }

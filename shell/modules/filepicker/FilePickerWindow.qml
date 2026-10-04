@@ -12,6 +12,7 @@ import Quickshell.Wayland
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 FloatingWindow {
     id: root
@@ -24,14 +25,14 @@ FloatingWindow {
 
     property var targetScreen: null
     property int selectionMode: FilePickerWindow.Files
-    property string description: qsTr("Choose an image for your user avatar")
-    property string dialogTitle: qsTr("Choose image")
+    property string description: I18n.tr("Choose an image for your user avatar")
+    property string dialogTitle: I18n.tr("Choose image")
     property string startPath: picturesDir
     property var nameFilters: ["*.jpg", "*.jpeg", "*.png", "*.webp", "*.bmp", "*.gif"]
     property string windowIconName: "add_photo_alternate"
-    property string emptyStateText: qsTr("No selectable images in this folder")
-    property string selectionPrompt: qsTr("Choose an image")
-    property string acceptLabel: qsTr("Choose")
+    property string emptyStateText: I18n.tr("No selectable images in this folder")
+    property string selectionPrompt: I18n.tr("Choose an image")
+    property string acceptLabel: I18n.tr("Choose")
     property string formatSummary: "JPG · PNG · WebP\nBMP · GIF"
     property var parentModal: null
     property bool requiresParentWindow: false
@@ -150,14 +151,14 @@ FloatingWindow {
 
         if (insideHome) {
             items.push({
-                           label: qsTr("Home"),
+                           label: I18n.tr("Home"),
                            path: normalizedHome,
                            iconName: "home"
                        });
             remainder = normalized.substring(normalizedHome.length);
         } else {
             items.push({
-                           label: qsTr("File system"),
+                           label: I18n.tr("File system"),
                            path: "/",
                            iconName: "hard_drive"
                        });
@@ -486,7 +487,7 @@ FloatingWindow {
 
                     PickerToolButton {
                         iconName: "close"
-                        tooltipText: qsTr("Close")
+                        tooltipText: I18n.tr("Close")
                         onClicked: root.dismiss()
                     }
                 }
@@ -521,7 +522,7 @@ FloatingWindow {
                             Layout.leftMargin: 12
                             Layout.topMargin: 4
                             Layout.bottomMargin: 6
-                            text: qsTr("Location")
+                            text: I18n.tr("Location")
                             color: Appearance.colors.colOnSurface
                             font.family: Fonts.ui
                             font.pixelSize: 15
@@ -529,42 +530,42 @@ FloatingWindow {
                         }
 
                         LocationButton {
-                            label: qsTr("Home")
+                            label: I18n.tr("Home")
                             iconName: "home"
                             path: root.homeDir
                         }
                         LocationButton {
-                            label: qsTr("Desktop")
+                            label: I18n.tr("Desktop")
                             iconName: "desktop_windows"
                             path: root.desktopDir
                             visible: path !== ""
                         }
                         LocationButton {
-                            label: qsTr("Documents")
+                            label: I18n.tr("Documents")
                             iconName: "description"
                             path: root.documentsDir
                             visible: path !== ""
                         }
                         LocationButton {
-                            label: qsTr("Music")
+                            label: I18n.tr("Music")
                             iconName: "music_note"
                             path: root.musicDir
                             visible: path !== ""
                         }
                         LocationButton {
-                            label: qsTr("Pictures")
+                            label: I18n.tr("Pictures")
                             iconName: "image"
                             path: root.picturesDir
                             visible: path !== ""
                         }
                         LocationButton {
-                            label: qsTr("Videos")
+                            label: I18n.tr("Videos")
                             iconName: "movie"
                             path: root.videosDir
                             visible: path !== ""
                         }
                         LocationButton {
-                            label: qsTr("Downloads")
+                            label: I18n.tr("Downloads")
                             iconName: "download"
                             path: root.downloadsDir
                             visible: path !== ""
@@ -617,7 +618,7 @@ FloatingWindow {
 
                             PickerToolButton {
                                 iconName: "arrow_upward"
-                                tooltipText: qsTr("Up one level")
+                                tooltipText: I18n.tr("Up one level")
                                 enabled: root.currentPath !== "/"
                                 onClicked: root.navigateUp()
                             }
@@ -750,7 +751,7 @@ FloatingWindow {
 
                             PickerToolButton {
                                 iconName: root.showHiddenFiles ? "visibility_off" : "visibility"
-                                tooltipText: root.showHiddenFiles ? qsTr("Hide hidden files") : qsTr(
+                                tooltipText: root.showHiddenFiles ? I18n.tr("Hide hidden files") : I18n.tr(
                                                                         "Show hidden files")
                                 active: root.showHiddenFiles
                                 onClicked: root.setHiddenFilesVisible(!root.showHiddenFiles)
@@ -1009,14 +1010,14 @@ FloatingWindow {
 
                                     Text {
                                         Layout.fillWidth: true
-                                        text: root.selectedPath === "" ? root.currentFolderIsSelection ? qsTr(
-                                                                                                             "Current folder: %1").arg(
-                                                                                                             root.currentPath) :
-                                                                                                         root.selectionPrompt :
-                                                                                                         root.selectedIsDir
-                                                                                                         ? qsTr("Double-click to open ")
-                                                                                                           + root.selectedName :
-                                                                                                           root.selectedName
+                                        text: root.selectedPath === "" ? root.currentFolderIsSelection
+                                                                         ? I18n.tr("Current folder: %1").arg(
+                                                                               root.currentPath) :
+                                                                           root.selectionPrompt :
+                                                                           root.selectedIsDir ? I18n.tr(
+                                                                                                    "Double-click to open ")
+                                                                                                + root.selectedName :
+                                                                                                root.selectedName
                                         color: Appearance.colors.colOnSurfaceVariant
                                         font.family: Fonts.ui
                                         font.pixelSize: 13
@@ -1026,7 +1027,7 @@ FloatingWindow {
                             }
 
                             PickerActionButton {
-                                label: qsTr("Cancel")
+                                label: I18n.tr("Cancel")
                                 iconName: "close"
                                 enabled: root.hasSelection
                                 onClicked: root.clearSelection()

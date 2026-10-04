@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Effects
 import qs.shared.theme
 import qs.app.services
+import qs.shared.i18n
 
 Item {
     id: root
@@ -20,11 +21,11 @@ Item {
                                                                          "ROND": 25,
                                                                          "wdth": 30
                                                                      }) : ({})
-    readonly property var dayNames: [qsTr("Sunday"), qsTr("Monday"), qsTr("Tuesday"), qsTr("Wednesday"), qsTr("Thursday"),
-        qsTr("Friday"), qsTr("Saturday")]
-    readonly property var monthNames: [qsTr("January"), qsTr("February"), qsTr("March"), qsTr("April"), qsTr(
-            "May"), qsTr("June"), qsTr("July"), qsTr("August"), qsTr("September"), qsTr("October"), qsTr(
-            "November"), qsTr("December")]
+    readonly property var dayNames: [I18n.tr("Sunday"), I18n.tr("Monday"), I18n.tr("Tuesday"), I18n.tr(
+            "Wednesday"), I18n.tr("Thursday"), I18n.tr("Friday"), I18n.tr("Saturday")]
+    readonly property var monthNames: [I18n.tr("January"), I18n.tr("February"), I18n.tr("March"), I18n.tr(
+            "April"), I18n.tr("May"), I18n.tr("June"), I18n.tr("July"), I18n.tr("August"), I18n.tr(
+            "September"), I18n.tr("October"), I18n.tr("November"), I18n.tr("December")]
     readonly property string dateText: I18nService.language.startsWith("zh") ? DateFormat.compactDate(
                                                                                    currentTime,
                                                                                    I18nService.language,

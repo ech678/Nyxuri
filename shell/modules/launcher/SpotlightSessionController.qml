@@ -2,6 +2,7 @@ import QtQuick
 import qs.app.services
 import "./SpotlightSession.js" as Session
 import "./SpotlightCommands.js" as Commands
+import qs.shared.i18n
 
 QtObject {
     id: root
@@ -79,10 +80,10 @@ QtObject {
             return false;
         const resolved = Commands.resolve(entry.slashName, args || "", state);
         if (resolved.error) {
-            error = resolved.error === "scope" ? qsTr("Available in %1 only").arg(entry.scope === "apps"
-                                                                                  ? qsTr("Apps") : qsTr(
-                                                                                        "Clipboard")) : qsTr(
-                                                     "This command does not accept arguments");
+            error = resolved.error === "scope" ? I18n.tr("Available in %1 only").arg(entry.scope === "apps"
+                                                                                     ? I18n.tr("Apps") :
+                                                                                       I18n.tr("Clipboard")) :
+                                                 I18n.tr("This command does not accept arguments");
             commandRejected();
             return false;
         }
@@ -108,7 +109,7 @@ QtObject {
             return false;
         const entry = Commands.exact(route.name);
         if (!entry) {
-            error = qsTr("Unknown command. Open Commands to browse available commands.");
+            error = I18n.tr("Unknown command. Open Commands to browse available commands.");
             commandRejected();
             return false;
         }

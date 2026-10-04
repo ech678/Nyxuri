@@ -2,6 +2,7 @@ import QtQuick
 import qs.shared.theme
 import qs.app.services
 import "cookieclock"
+import qs.shared.i18n
 
 Item {
     id: root
@@ -26,7 +27,7 @@ Item {
                                                                                                              "0")
     readonly property string centerMinuteText: String(root.minute).padStart(2, "0")
 
-    Accessible.name: qsTr("Cookie clock ") + root.centerHourText + ":" + root.centerMinuteText + (
+    Accessible.name: I18n.tr("Cookie clock ") + root.centerHourText + ":" + root.centerMinuteText + (
                          UiPreferences.useTwelveHourClock ? " " + root.periodText : "")
 
     Timer {

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Rectangle {
     id: root
@@ -38,12 +39,12 @@ Rectangle {
             return;
         }
         if (root.storeAction)
-            root.showResult(root.storeAction(value), qsTr("Could not save the API key"));
+            root.showResult(root.storeAction(value), I18n.tr("Could not save the API key"));
     }
 
     function clearApiKey() {
         if (root.clearAction)
-            root.showResult(root.clearAction(), qsTr("Could not clear the API key"));
+            root.showResult(root.clearAction(), I18n.tr("Could not clear the API key"));
     }
 
     function completeOperation(success, message) {
@@ -120,11 +121,12 @@ Rectangle {
                     }
 
                     Text {
-                        text: root.checking ? qsTr("Checking") : root.busy ? qsTr("Processing") : root.statusError
-                                                                             ? qsTr("Could not read key") :
-                                                                               root.configured ? qsTr(
-                                                                                                     "Key saved") :
-                                                                                                 qsTr("No key saved")
+                        text: root.checking ? I18n.tr("Checking") : root.busy ? I18n.tr("Processing") : root.statusError
+                                                                                ? I18n.tr(
+                                                                                      "Could not read key") :
+                                                                                  root.configured ? I18n.tr(
+                                                                                                        "Key saved") :
+                                                                                                    I18n.tr("No key saved")
                         color: root.statusError ? Appearance.colors.colOnErrorContainer : root.configured
                                                   ? Appearance.colors.colOnSecondaryContainer :
                                                     Appearance.colors.colOnSurfaceVariant
@@ -164,7 +166,7 @@ Rectangle {
             maximumLength: 128
             enabled: root.credentialsReady && !root.busy
             Accessible.name: root.fieldLabel
-            Accessible.description: qsTr("Save securely in the system keyring")
+            Accessible.description: I18n.tr("Save securely in the system keyring")
             onTextChanged: {
                 if (root.feedbackError) {
                     root.feedbackError = false;
@@ -179,7 +181,7 @@ Rectangle {
                     iconName: root.revealApiKey ? "visibility_off" : "visibility"
                     iconSize: Metrics.iconM
                     iconColor: Appearance.colors.colOnSurfaceVariant
-                    accessibleName: root.revealApiKey ? qsTr("Hide API key") : qsTr("Show API key")
+                    accessibleName: root.revealApiKey ? I18n.tr("Hide API key") : I18n.tr("Show API key")
                     hoverStateLayerColor: Appearance.colors.colLayer3Hover
                     pressedStateLayerColor: Appearance.colors.colLayer3Active
                     onClicked: root.revealApiKey = !root.revealApiKey
@@ -189,7 +191,8 @@ Rectangle {
 
         Text {
             Layout.fillWidth: true
-            text: qsTr("The key is stored in the system keyring and takes effect immediately after saving.")
+            text: I18n.tr(
+                      "The key is stored in the system keyring and takes effect immediately after saving.")
             color: Appearance.colors.colOnSurfaceVariant
             font.family: Typography.bodySmall.family
             font.pixelSize: Typography.bodySmall.pixelSize
@@ -245,7 +248,7 @@ Rectangle {
             }
 
             ActionButton {
-                text: qsTr("Clear key")
+                text: I18n.tr("Clear key")
                 iconName: "delete"
                 enabled: root.configured && !root.busy
                 contentColor: Appearance.colors.colPrimary
@@ -254,11 +257,11 @@ Rectangle {
             }
 
             ActionButton {
-                text: qsTr("Save key")
+                text: I18n.tr("Save key")
                 iconName: "save"
                 enabled: root.credentialsReady && !root.busy && apiKeyField.text.trim().length >= 16
                 contentColor: Appearance.colors.colPrimary
-                Accessible.description: qsTr("Save securely and apply immediately without restarting")
+                Accessible.description: I18n.tr("Save securely and apply immediately without restarting")
                 onClicked: root.applyApiKey()
             }
         }

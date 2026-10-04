@@ -8,6 +8,7 @@ import "../../shared/utils/WallpaperSource.js" as WallpaperSource
 import qs.app.services
 import qs.modules.wallpaper
 import qs.app
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -22,198 +23,200 @@ Singleton {
     }
     readonly property var fillModes: [({
                                            "value": "Stretch",
-                                           "label": qsTr("Stretch")
+                                           "label": I18n.tr("Stretch")
                                        }), ({
                                                 "value": "Fit",
-                                                "label": qsTr("Fit")
+                                                "label": I18n.tr("Fit")
                                             }), ({
                                                      "value": "Fill",
-                                                     "label": qsTr("Fill")
+                                                     "label": I18n.tr("Fill")
                                                  }), ({
                                                           "value": "Tile",
-                                                          "label": qsTr("Tile")
+                                                          "label": I18n.tr("Tile")
                                                       }), ({
                                                                "value": "TileVertically",
-                                                               "label": qsTr("Tile vertically")
+                                                               "label": I18n.tr("Tile vertically")
                                                            }), ({
                                                                     "value": "TileHorizontally",
-                                                                    "label": qsTr("Tile horizontally")
+                                                                    "label": I18n.tr("Tile horizontally")
                                                                 }), ({
                                                                          "value": "Pad",
-                                                                         "label": qsTr("Cover")
+                                                                         "label": I18n.tr("Cover")
                                                                      })]
     readonly property var desktopFillModes: root.fillModes.concat([({
                                                                         "value": "panorama",
-                                                                        "label": qsTr("Panorama")
+                                                                        "label": I18n.tr("Panorama")
                                                                     })])
     readonly property var transitionTypes: [({
                                                  "value": "random",
-                                                 "label": qsTr("Random")
+                                                 "label": I18n.tr("Random")
                                              }), ({
                                                       "value": "none",
-                                                      "label": qsTr("None")
+                                                      "label": I18n.tr("None")
                                                   }), ({
                                                            "value": "fade",
-                                                           "label": qsTr("Crossfade")
+                                                           "label": I18n.tr("Crossfade")
                                                        }), ({
                                                                 "value": "wipe",
-                                                                "label": qsTr("Wipe")
+                                                                "label": I18n.tr("Wipe")
                                                             }), ({
                                                                      "value": "disc",
-                                                                     "label": qsTr("Disc")
+                                                                     "label": I18n.tr("Disc")
                                                                  }), ({
                                                                           "value": "stripes",
-                                                                          "label": qsTr("Stripes")
+                                                                          "label": I18n.tr("Stripes")
                                                                       }), ({
                                                                                "value": "iris bloom",
-                                                                               "label": qsTr("Iris bloom")
+                                                                               "label": I18n.tr("Iris bloom")
                                                                            }), ({
                                                                                     "value": "pixelate",
-                                                                                    "label": qsTr("Pixelate")
+                                                                                    "label": I18n.tr(
+                                                                                                 "Pixelate")
                                                                                 }), ({
                                                                                          "value": "portal",
-                                                                                         "label": qsTr(
+                                                                                         "label": I18n.tr(
                                                                                                       "Portal")
                                                                                      })]
     readonly property var awwwTransitionTypes: [({
                                                      "value": "none",
-                                                     "label": qsTr("None")
+                                                     "label": I18n.tr("None")
                                                  }), ({
                                                           "value": "simple",
-                                                          "label": qsTr("Simple")
+                                                          "label": I18n.tr("Simple")
                                                       }), ({
                                                                "value": "fade",
-                                                               "label": qsTr("Crossfade")
+                                                               "label": I18n.tr("Crossfade")
                                                            }), ({
                                                                     "value": "left",
-                                                                    "label": qsTr("From left")
+                                                                    "label": I18n.tr("From left")
                                                                 }), ({
                                                                          "value": "right",
-                                                                         "label": qsTr("From right")
+                                                                         "label": I18n.tr("From right")
                                                                      }), ({
                                                                               "value": "top",
-                                                                              "label": qsTr("From top")
+                                                                              "label": I18n.tr("From top")
                                                                           }), ({
                                                                                    "value": "bottom",
-                                                                                   "label": qsTr(
+                                                                                   "label": I18n.tr(
                                                                                                 "From bottom")
                                                                                }), ({
                                                                                         "value": "wipe",
-                                                                                        "label": qsTr("Wipe")
+                                                                                        "label": I18n.tr(
+                                                                                                     "Wipe")
                                                                                     }), ({
                                                                                              "value": "wave",
-                                                                                             "label": qsTr(
+                                                                                             "label": I18n.tr(
                                                                                                           "Wave")
                                                                                          }), ({
                                                                                                   "value": "grow",
-                                                                                                  "label": qsTr(
+                                                                                                  "label": I18n.tr(
                                                                                                                "Grow")
                                                                                               }), ({
                                                                                                        "value": "center",
-                                                                                                       "label": qsTr(
+                                                                                                       "label": I18n.tr(
                                                                                                                     "Grow from center")
                                                                                                    }), ({
                                                                                                             "value": "any",
-                                                                                                            "label": qsTr(
+                                                                                                            "label": I18n.tr(
                                                                                                                          "Grow from random position")
                                                                                                         }), ({
                                                                                                                  "value": "outer",
-                                                                                                                 "label": qsTr(
+                                                                                                                 "label": I18n.tr(
                                                                                                                               "Shrink inward")
                                                                                                              }), ({
                                                                                                                       "value": "random",
-                                                                                                                      "label": qsTr(
+                                                                                                                      "label": I18n.tr(
                                                                                                                                    "Random")
                                                                                                                   })]
     readonly property var transitionEasingModes: [({
                                                        "value": "linear",
-                                                       "label": qsTr("Linear")
+                                                       "label": I18n.tr("Linear")
                                                    }), ({
                                                             "value": "quad",
-                                                            "label": qsTr("Quadratic")
+                                                            "label": I18n.tr("Quadratic")
                                                         }), ({
                                                                  "value": "cubic",
-                                                                 "label": qsTr("Cubic")
+                                                                 "label": I18n.tr("Cubic")
                                                              }), ({
                                                                       "value": "quart",
-                                                                      "label": qsTr("Quartic")
+                                                                      "label": I18n.tr("Quartic")
                                                                   }), ({
                                                                            "value": "quint",
-                                                                           "label": qsTr("Quintic")
+                                                                           "label": I18n.tr("Quintic")
                                                                        }), ({
                                                                                 "value": "sine",
-                                                                                "label": qsTr("Sine")
+                                                                                "label": I18n.tr("Sine")
                                                                             }), ({
                                                                                      "value": "expo",
-                                                                                     "label": qsTr(
+                                                                                     "label": I18n.tr(
                                                                                                   "Exponential")
                                                                                  }), ({
                                                                                           "value": "circ",
-                                                                                          "label": qsTr(
+                                                                                          "label": I18n.tr(
                                                                                                        "Circular")
                                                                                       }), ({
                                                                                                "value": "customBezier",
-                                                                                               "label": qsTr(
+                                                                                               "label": I18n.tr(
                                                                                                             "Custom Bézier")
                                                                                            })]
     readonly property var baseTransitions: ["fade", "wipe", "disc", "stripes", "iris bloom", "pixelate",
         "portal"]
     readonly property var matugenSchemes: [({
                                                 "value": "scheme-tonal-spot",
-                                                "label": qsTr("Tonal spot")
+                                                "label": I18n.tr("Tonal spot")
                                             }), ({
                                                      "value": "scheme-vibrant",
-                                                     "label": qsTr("Vibrant")
+                                                     "label": I18n.tr("Vibrant")
                                                  }), ({
                                                           "value": "scheme-content",
-                                                          "label": qsTr("Content")
+                                                          "label": I18n.tr("Content")
                                                       }), ({
                                                                "value": "scheme-expressive",
-                                                               "label": qsTr("Expressive")
+                                                               "label": I18n.tr("Expressive")
                                                            }), ({
                                                                     "value": "scheme-fidelity",
-                                                                    "label": qsTr("Fidelity")
+                                                                    "label": I18n.tr("Fidelity")
                                                                 }), ({
                                                                          "value": "scheme-fruit-salad",
-                                                                         "label": qsTr("Fruit salad")
+                                                                         "label": I18n.tr("Fruit salad")
                                                                      }), ({
                                                                               "value": "scheme-monochrome",
-                                                                              "label": qsTr("Monochrome")
+                                                                              "label": I18n.tr("Monochrome")
                                                                           }), ({
                                                                                    "value": "scheme-neutral",
-                                                                                   "label": qsTr("Neutral")
+                                                                                   "label": I18n.tr("Neutral")
                                                                                }), ({
                                                                                         "value": "scheme-rainbow",
-                                                                                        "label": qsTr(
+                                                                                        "label": I18n.tr(
                                                                                                      "Rainbow")
                                                                                     })]
     readonly property var keystoneStyles: [({
                                                 "value": "bangs",
-                                                "label": qsTr("Bangs")
+                                                "label": I18n.tr("Bangs")
                                             }), ({
                                                      "value": "pill",
-                                                     "label": qsTr("Pill")
+                                                     "label": I18n.tr("Pill")
                                                  }),
         {
             value: "long",
-            label: qsTr("Long")
+            label: I18n.tr("Long")
         }
     ]
     readonly property var edgePositions: [({
                                                "value": "top",
-                                               "label": qsTr("Top"),
+                                               "label": I18n.tr("Top"),
                                                "icon": "arrow_upward"
                                            }), ({
                                                     "value": "left",
-                                                    "label": qsTr("Left"),
+                                                    "label": I18n.tr("Left"),
                                                     "icon": "arrow_back"
                                                 }), ({
                                                          "value": "bottom",
-                                                         "label": qsTr("Bottom"),
+                                                         "label": I18n.tr("Bottom"),
                                                          "icon": "arrow_downward"
                                                      }), ({
                                                               "value": "right",
-                                                              "label": qsTr("Right"),
+                                                              "label": I18n.tr("Right"),
                                                               "icon": "arrow_forward"
                                                           })]
     property bool storeReady: false
@@ -350,12 +353,12 @@ Singleton {
     readonly property var keystoneKeyholeCardOptions: [
         {
             "value": "weather",
-            "label": qsTr("Weather"),
+            "label": I18n.tr("Weather"),
             "icon": "partly_cloudy_day"
         },
         {
             "value": "pomodoro",
-            "label": qsTr("Pomodoro"),
+            "label": I18n.tr("Pomodoro"),
             "icon": "timer"
         }
     ]
@@ -369,31 +372,32 @@ Singleton {
     readonly property var defaultBarTrailingComponents: ["tray", "systemMonitor", "quickSettings", "clock"]
     readonly property var barComponentOptions: [({
                                                      "value": "media",
-                                                     "label": qsTr("Media"),
+                                                     "label": I18n.tr("Media"),
                                                      "icon": "music_note"
                                                  }), ({
                                                           "value": "workspaces",
-                                                          "label": qsTr("Workspaces"),
+                                                          "label": I18n.tr("Workspaces"),
                                                           "icon": "grid_view"
                                                       }), ({
                                                                "value": "information",
-                                                               "label": qsTr("Information"),
+                                                               "label": I18n.tr("Information"),
                                                                "icon": "info"
                                                            }), ({
                                                                     "value": "activeWindow",
-                                                                    "label": qsTr("Active Window"),
+                                                                    "label": I18n.tr("Active Window"),
                                                                     "icon": "web_asset"
                                                                 }), ({
                                                                          "value": "tray",
-                                                                         "label": qsTr("Tray"),
+                                                                         "label": I18n.tr("Tray"),
                                                                          "icon": "inbox"
                                                                      }), ({
                                                                               "value": "systemMonitor",
-                                                                              "label": qsTr("System Monitor"),
+                                                                              "label": I18n.tr(
+                                                                                           "System Monitor"),
                                                                               "icon": "monitoring"
                                                                           }), ({
                                                                                    "value": "quickSettings",
-                                                                                   "label": qsTr(
+                                                                                   "label": I18n.tr(
                                                                                                 "Quick Settings"),
                                                                                    "icon": "tune"
                                                                                })]
@@ -402,37 +406,38 @@ Singleton {
     readonly property var defaultQuickSettingsComponents: root.quickSettingsComponentIds.slice()
     readonly property var quickSettingsComponentOptions: [({
                                                                "value": "network",
-                                                               "label": qsTr("Network"),
+                                                               "label": I18n.tr("Network"),
                                                                "icon": "wifi"
                                                            }), ({
                                                                     "value": "bluetooth",
-                                                                    "label": qsTr("Bluetooth"),
+                                                                    "label": I18n.tr("Bluetooth"),
                                                                     "icon": "bluetooth"
                                                                 }), ({
                                                                          "value": "brightness",
-                                                                         "label": qsTr("Brightness"),
+                                                                         "label": I18n.tr("Brightness"),
                                                                          "icon": "brightness_6"
                                                                      }), ({
                                                                               "value": "volume",
-                                                                              "label": qsTr("Volume"),
+                                                                              "label": I18n.tr("Volume"),
                                                                               "icon": "volume_up"
                                                                           }), ({
                                                                                    "value": "microphone",
-                                                                                   "label": qsTr("Microphone"),
+                                                                                   "label": I18n.tr(
+                                                                                                "Microphone"),
                                                                                    "icon": "mic"
                                                                                }), ({
                                                                                         "value": "battery",
-                                                                                        "label": qsTr(
+                                                                                        "label": I18n.tr(
                                                                                                      "Battery"),
                                                                                         "icon": "battery_full"
                                                                                     }), ({
                                                                                              "value": "settings",
-                                                                                             "label": qsTr(
+                                                                                             "label": I18n.tr(
                                                                                                           "Settings"),
                                                                                              "icon": "settings"
                                                                                          }), ({
                                                                                                   "value": "power",
-                                                                                                  "label": qsTr(
+                                                                                                  "label": I18n.tr(
                                                                                                                "Power"),
                                                                                                   "icon": "power_settings_new"
                                                                                               })]
@@ -457,35 +462,35 @@ Singleton {
     readonly property var keystoneMediaProgressOptions: [
         {
             value: "wave",
-            label: qsTr("Sine wave")
+            label: I18n.tr("Sine wave")
         },
         {
             value: "material",
-            label: qsTr("Material wave")
+            label: I18n.tr("Material wave")
         }
     ]
     readonly property var keystoneMediaCoverOptions: [
         {
             value: "rounded",
-            label: qsTr("Rounded cover")
+            label: I18n.tr("Rounded cover")
         },
         {
             value: "caelestia",
-            label: qsTr("Caelestia")
+            label: I18n.tr("Caelestia")
         },
         {
             value: "background",
-            label: qsTr("Cover background")
+            label: I18n.tr("Cover background")
         }
     ]
     readonly property var keystoneMediaColorOptions: [
         {
             value: "theme",
-            label: qsTr("Theme colors")
+            label: I18n.tr("Theme colors")
         },
         {
             value: "cover",
-            label: qsTr("Cover colors")
+            label: I18n.tr("Cover colors")
         }
     ]
 
@@ -515,57 +520,57 @@ Singleton {
     readonly property var keystoneLongItemOptions: [
         {
             value: "tray",
-            label: qsTr("System tray"),
+            label: I18n.tr("System tray"),
             icon: "apps"
         },
         {
             value: "workspaces",
-            label: qsTr("Workspaces"),
+            label: I18n.tr("Workspaces"),
             icon: "view_week"
         },
         {
             value: "media",
-            label: qsTr("Media"),
+            label: I18n.tr("Media"),
             icon: "music_note"
         },
         {
             value: "systemMonitor",
-            label: qsTr("System monitor"),
+            label: I18n.tr("System monitor"),
             icon: "monitor_heart"
         },
         {
             value: "weather",
-            label: qsTr("Weather"),
+            label: I18n.tr("Weather"),
             icon: "partly_cloudy_day"
         },
         {
             value: "network",
-            label: qsTr("Network"),
+            label: I18n.tr("Network"),
             icon: "wifi"
         },
         {
             value: "bluetooth",
-            label: qsTr("Bluetooth"),
+            label: I18n.tr("Bluetooth"),
             icon: "bluetooth"
         },
         {
             value: "brightness",
-            label: qsTr("Brightness"),
+            label: I18n.tr("Brightness"),
             icon: "brightness_medium"
         },
         {
             value: "volume",
-            label: qsTr("Volume"),
+            label: I18n.tr("Volume"),
             icon: "volume_up"
         },
         {
             value: "microphone",
-            label: qsTr("Microphone"),
+            label: I18n.tr("Microphone"),
             icon: "mic"
         },
         {
             value: "battery",
-            label: qsTr("Battery"),
+            label: I18n.tr("Battery"),
             icon: "battery_full"
         }
     ]
@@ -619,38 +624,38 @@ Singleton {
     readonly property var keystoneActionOptions: [
         {
             value: "none",
-            label: qsTr("Do not open")
+            label: I18n.tr("Do not open")
         },
         {
             value: "media",
-            label: qsTr("Media controls")
+            label: I18n.tr("Media controls")
         },
         {
             value: "lyrics",
-            label: qsTr("Lyrics")
+            label: I18n.tr("Lyrics")
         },
         {
             value: "dashboard",
-            label: qsTr("Dashboard")
+            label: I18n.tr("Dashboard")
         },
         {
             value: "upload",
-            label: qsTr("Upload")
+            label: I18n.tr("Upload")
         },
         {
             value: "weather",
-            label: qsTr("Weather")
+            label: I18n.tr("Weather")
         },
         {
             value: "tools",
-            label: qsTr("Tools")
+            label: I18n.tr("Tools")
         }
     ]
 
     readonly property var keystoneHoverActionOptions: [
         {
             value: "peak",
-            label: qsTr("Peak")
+            label: I18n.tr("Peak")
         }
     ].concat(root.keystoneActionOptions)
 

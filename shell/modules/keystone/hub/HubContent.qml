@@ -5,6 +5,7 @@ import qs.shared.theme
 import qs.shared.controls
 import qs.modules.keystone.dashboard
 import qs.modules.keystone.weather
+import qs.shared.i18n
 
 Item {
     id: root
@@ -50,13 +51,13 @@ Item {
 
         TabBtn {
             icon: "dashboard"
-            title: qsTr("Dashboard")
+            title: I18n.tr("Dashboard")
             index: 0
         }
 
         TabBtn {
             icon: "sunny"
-            title: qsTr("Weather")
+            title: I18n.tr("Weather")
             index: 1
         }
     }

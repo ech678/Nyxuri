@@ -8,6 +8,7 @@ import qs.app.services
 import "../../modules/dock/DockModel.js" as DockModel
 import qs.modules.dock
 import qs.app
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -185,9 +186,9 @@ Singleton {
                               key: key,
                               kind: pinned.kind,
                               desktopId: "",
-                              name: pinned.kind === "small-spacer" ? qsTranslate("ApplicationService",
-                                                                                 "Small Space") : qsTranslate(
-                                                                         "ApplicationService", "Space"),
+                              name: pinned.kind === "small-spacer" ? I18n.tr("Small Space",
+                                                                             "ApplicationService") : I18n.tr(
+                                                                         "Space", "ApplicationService"),
                               icon: "",
                               symbol: "",
                               pinned: true,
@@ -234,7 +235,7 @@ Singleton {
                       key: "trash",
                       kind: "trash",
                       desktopId: "",
-                      name: qsTr("Trash"),
+                      name: I18n.tr("Trash"),
                       icon: DesktopFiles.trashCount > 0 ? "user-trash-full" : "user-trash",
                       symbol: "",
                       pinned: false,
@@ -252,7 +253,7 @@ Singleton {
         const entry = root.entryFor(key);
         if (entry && (DockModel.isFile(entry) || entry.kind === "trash")) {
             if (entry.kind !== "trash" && !DesktopFiles.info(entry.url).available) {
-                root.fileError = qsTr("This file or folder is unavailable.");
+                root.fileError = I18n.tr("This file or folder is unavailable.");
                 return false;
             }
             return ApplicationService.openUrl(entry.kind === "trash" ? "trash:///" : entry.url);
@@ -458,7 +459,7 @@ Singleton {
         }
         function onFinished(action, succeeded, errors) {
             if (errors.length)
-                root.fileError = (succeeded > 0 ? qsTr("Some files could not be processed.") : qsTr(
+                root.fileError = (succeeded > 0 ? I18n.tr("Some files could not be processed.") : I18n.tr(
                                                       "The file operation failed.")) + "\n" + errors.join(
                             "\n");
         }
@@ -471,7 +472,7 @@ Singleton {
             if (exitCode === 0)
                 root._storeReady = true;
             else
-                root.loaded(null, false, qsTr(
+                root.loaded(null, false, I18n.tr(
                                 "Dock settings cannot be saved because the configuration directory is unavailable."));
         }
     }
@@ -488,7 +489,7 @@ Singleton {
         }
         onLoaded: {
             const config = DockModel.decodeConfig(configFile.text());
-            root.loaded(config, config !== null, config === null ? qsTr(
+            root.loaded(config, config !== null, config === null ? I18n.tr(
                                                                        "Dock settings could not be read. The existing file is preserved; changes apply to this session only.") :
                                                                    "");
         }
@@ -496,12 +497,13 @@ Singleton {
             if (!root._storeReady)
                 return;
             const missing = error === FileViewError.FileNotFound;
-            root.loaded(null, missing, missing ? "" : qsTr(
+            root.loaded(null, missing, missing ? "" : I18n.tr(
                                                      "Dock settings could not be opened. Changes apply to this session only."));
         }
         onSaveFailed: error => {
             root.writable = false;
-            root.configError = qsTr("Dock settings could not be saved. Changes apply to this session only.");
+            root.configError = I18n.tr(
+                        "Dock settings could not be saved. Changes apply to this session only.");
             console.warn("DockService: cannot save settings:", error);
         }
     }

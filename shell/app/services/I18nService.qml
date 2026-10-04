@@ -2,17 +2,24 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
+import qs.app
+import qs.shared.i18n
+import "../../shared/utils/Toml.js" as Toml
 
 Singleton {
     id: root
 
-    readonly property var supportedLanguages: [({
-                                                    code: "en_US",
-                                                    label: "English"
-                                                }), ({
-                                                         code: "zh_CN",
-                                                         label: "简体中文"
-                                                     })]
+    readonly property var supportedLanguages: [
+        {
+            code: "en_US",
+            label: "English"
+        },
+        {
+            code: "zh_CN",
+            label: "简体中文"
+        }
+    ]
     readonly property string language: UiPreferences.language || "en_US"
     property bool ready: true
     property string lastError: ""
@@ -22,22 +29,32 @@ Singleton {
         return l.startsWith("zh") ? "zh_CN" : "en_US";
     }
 
+    FileView {
+        id: tomlFileView
+        path: root.language === "en_US" ? "" : (Paths.assetsDir + "/i18n/" + root.language + ".toml")
+
+        onLoaded: {
+            if (root.language === "en_US")
+                return;
+            try {
+                const text = tomlFileView.text();
+                if (text && text.length > 0) {
+                    const parsed = Toml.parse(text);
+                    I18n.loadTranslations(root.language, parsed);
+                }
+            } catch (e) {
+                root.lastError = String(e);
+                console.warn("[I18nService] Failed to parse TOML translations for", root.language, e);
+            }
+        }
+    }
+
     function normalizeLanguage(lang) {
-        const s = String(lang || "").trim().toLowerCase();
-        return s.startsWith("zh") ? "zh_CN" : "en_US";
+        return I18n.normalizeLanguage(lang);
     }
 
     function preferredLanguage(languages) {
-        if (!languages || languages.length === 0)
-            return "en_US";
-        for (let i = 0; i < languages.length; ++i) {
-            const s = String(languages[i] || "").toLowerCase();
-            if (s.startsWith("zh"))
-                return "zh_CN";
-            if (s.startsWith("en"))
-                return "en_US";
-        }
-        return "en_US";
+        return I18n.preferredLanguage(languages);
     }
 
     function setLanguage(lang) {
@@ -46,6 +63,7 @@ Singleton {
             UiPreferences.setLanguage(normalized);
         else
             UiPreferences.language = normalized;
+        I18n.setLanguage(normalized);
         return root.initialize();
     }
 
@@ -53,10 +71,32 @@ Singleton {
         const lang = root.language || "en_US";
         root.ready = true;
         root.lastError = "";
+        I18n.setLanguage(lang);
+        if (lang !== "en_US") {
+            const targetPath = Paths.assetsDir + "/i18n/" + lang + ".toml";
+            if (tomlFileView.path !== targetPath) {
+                tomlFileView.path = targetPath;
+            } else if (tomlFileView.text().length > 0) {
+                try {
+                    const parsed = Toml.parse(tomlFileView.text());
+                    I18n.loadTranslations(lang, parsed);
+                } catch (e) {
+                    root.lastError = String(e);
+                }
+            }
+        }
         if (Qt.uiLanguage === lang)
             Qt.uiLanguage = lang + "_refresh";
         Qt.uiLanguage = lang;
         return true;
+    }
+
+    function tr(text, ctx, count) {
+        return I18n.tr(text, ctx, count);
+    }
+
+    function t(text, ctx, count) {
+        return I18n.t(text, ctx, count);
     }
 
     Component.onCompleted: initialize()

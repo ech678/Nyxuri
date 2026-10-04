@@ -11,6 +11,7 @@ import qs.app
 import "./DockLayout.js" as DockLayout
 import "./DockBubble.js" as DockBubble
 import "./DockMedia.js" as DockMedia
+import qs.shared.i18n
 
 Item {
     id: root
@@ -313,7 +314,7 @@ Item {
                 x: 8
                 visible: !!root.entry && root.entry.kind === "app" && !root.entry.available
                          && root.windows.length === 0
-                text: qsTr("Application is unavailable")
+                text: I18n.tr("Application is unavailable")
                 font.family: Fonts.ui
                 font.pixelSize: 12
                 color: Appearance.colors.colOnSurfaceVariant
@@ -328,7 +329,7 @@ Item {
                     leftPadding: 8
                     rightPadding: 8
                     visible: root.canLaunch
-                    text: qsTr("Open application")
+                    text: I18n.tr("Open application")
                     onTriggered: {
                         if (!root.canLaunch)
                             return;
@@ -342,7 +343,7 @@ Item {
                     leftPadding: 8
                     rightPadding: 8
                     visible: root.windows.length > 0
-                    text: qsTr("Close all windows")
+                    text: I18n.tr("Close all windows")
                     onTriggered: {
                         // Snapshot current IDs before close events can change the group.
                         const ids = DockService.windowsFor(root.entryKey).map(window => window.id);
@@ -357,7 +358,7 @@ Item {
                     leftPadding: 8
                     rightPadding: 8
                     visible: root.windows.length > 0
-                    text: qsTr("Force quit")
+                    text: I18n.tr("Force quit")
                     onTriggered: {
                         root.quitFailed = false;
                         const pids = DockService.windowsFor(root.entryKey).map(window => window.pid);
@@ -370,7 +371,7 @@ Item {
                     x: 8
                     width: parent.width - 16
                     visible: root.quitFailed
-                    text: qsTr("Unable to force quit this application.")
+                    text: I18n.tr("Unable to force quit this application.")
                     textFormat: Text.PlainText
                     wrapMode: Text.Wrap
                     font.family: Fonts.ui
@@ -390,7 +391,8 @@ Item {
                     leftPadding: 8
                     rightPadding: 8
                     visible: root.canChangePin
-                    text: root.entry && root.entry.pinned ? qsTr("Remove from Dock") : qsTr("Pin to Dock")
+                    text: root.entry && root.entry.pinned ? I18n.tr("Remove from Dock") : I18n.tr(
+                                                                "Pin to Dock")
                     onTriggered: {
                         const entry = DockService.entryFor(root.entryKey);
                         if (!entry)
@@ -407,7 +409,7 @@ Item {
                     implicitHeight: 32
                     leftPadding: 8
                     rightPadding: 8
-                    text: qsTr("Dock settings")
+                    text: I18n.tr("Dock settings")
                     onTriggered: {
                         ActionGateway.requestSettingsSearch("general.dock");
                         root.dismissed();

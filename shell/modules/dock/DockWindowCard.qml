@@ -4,6 +4,7 @@ import QtQuick.Controls
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 Button {
     id: root
@@ -85,7 +86,7 @@ Button {
                 buttonRadius: 5
                 buttonRadiusPressed: 5
                 normalHoverStateLayerColor: Appearance.applyAlpha(Appearance.m3colors.m3error, 0.2)
-                accessibleName: qsTr("Close window")
+                accessibleName: I18n.tr("Close window")
                 onClicked: root.closeRequested()
             }
             Rectangle {
@@ -102,7 +103,7 @@ Button {
                     anchors.fill: parent
                     anchors.margins: 4
                     visible: !root.hasFrame && !root.busy
-                    text: root.minimized ? qsTr("Minimized") : qsTr("Preview unavailable")
+                    text: root.minimized ? I18n.tr("Minimized") : I18n.tr("Preview unavailable")
                     textFormat: Text.PlainText
                     font.family: Fonts.ui
                     font.pixelSize: 11
@@ -139,7 +140,7 @@ Button {
                             controlSize: 32
                             iconSize: 20
                             iconName: "skip_previous"
-                            accessibleName: qsTr("Previous track")
+                            accessibleName: I18n.tr("Previous track")
                             enabled: !!root.mediaPlayer && root.mediaPlayer.canControl
                                      && root.mediaPlayer.canGoPrevious
                             onClicked: root.mediaPlayer.previous()
@@ -148,7 +149,7 @@ Button {
                             controlSize: 32
                             iconSize: 22
                             iconName: root.mediaPlayer?.isPlaying ? "pause" : "play_arrow"
-                            accessibleName: root.mediaPlayer?.isPlaying ? qsTr("Pause") : qsTr("Play")
+                            accessibleName: root.mediaPlayer?.isPlaying ? I18n.tr("Pause") : I18n.tr("Play")
                             enabled: !!root.mediaPlayer && root.mediaPlayer.canControl
                                      && root.mediaPlayer.canTogglePlaying
                             onClicked: root.mediaPlayer.togglePlaying()
@@ -157,7 +158,7 @@ Button {
                             controlSize: 32
                             iconSize: 20
                             iconName: "skip_next"
-                            accessibleName: qsTr("Next track")
+                            accessibleName: I18n.tr("Next track")
                             enabled: !!root.mediaPlayer && root.mediaPlayer.canControl
                                      && root.mediaPlayer.canGoNext
                             onClicked: root.mediaPlayer.next()

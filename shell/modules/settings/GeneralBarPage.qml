@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -37,27 +38,27 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Show bar")
+                title: I18n.tr("Show bar")
                 trailing: StyledSwitch {
                     checked: PersonalizationConfig.barEnabled
-                    Accessible.name: qsTr("Show bar")
+                    Accessible.name: I18n.tr("Show bar")
                     onToggled: PersonalizationConfig.setValue("barEnabled", checked)
                 }
             }
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Floating")
+                title: I18n.tr("Floating")
                 trailing: StyledSwitch {
                     checked: PersonalizationConfig.barOverlay
-                    Accessible.name: qsTr("Floating")
+                    Accessible.name: I18n.tr("Floating")
                     onToggled: PersonalizationConfig.setValue("barOverlay", checked)
                 }
             }
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Screen edge")
+                title: I18n.tr("Screen edge")
 
                 trailing: EdgePositionSelector {
                     position: PersonalizationConfig.barPosition
@@ -83,28 +84,28 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Show device names")
+                title: I18n.tr("Show device names")
                 trailing: StyledSwitch {
                     checked: PersonalizationConfig.barShowNames
-                    Accessible.name: qsTr("Show device names")
+                    Accessible.name: I18n.tr("Show device names")
                     onToggled: PersonalizationConfig.setBarShowNames(checked)
                 }
             }
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Show numeric values")
+                title: I18n.tr("Show numeric values")
                 trailing: StyledSwitch {
                     checked: PersonalizationConfig.barShowValues
-                    Accessible.name: qsTr("Show numeric values")
+                    Accessible.name: I18n.tr("Show numeric values")
                     onToggled: PersonalizationConfig.setBarShowValues(checked)
                 }
             }
-            supportingText: qsTr("Drag components to reorder them or move them to the other side.")
+            supportingText: I18n.tr("Drag components to reorder them or move them to the other side.")
 
             SettingsRow {
                 id: leadingFieldRow
                 Layout.fillWidth: true
-                title: root.horizontalBar ? qsTr("Left") : qsTr("Top")
+                title: root.horizontalBar ? I18n.tr("Left") : I18n.tr("Top")
 
                 trailing: SortableMultiSelectField {
                     id: leadingField
@@ -127,7 +128,7 @@ StyledFlickable {
             SettingsRow {
                 id: trailingFieldRow
                 Layout.fillWidth: true
-                title: root.horizontalBar ? qsTr("Right") : qsTr("Bottom")
+                title: root.horizontalBar ? I18n.tr("Right") : I18n.tr("Bottom")
 
                 trailing: SortableMultiSelectField {
                     id: trailingField
@@ -155,7 +156,7 @@ StyledFlickable {
 
                 Text {
                     Layout.fillWidth: true
-                    text: qsTr("Quick settings widgets")
+                    text: I18n.tr("Quick settings widgets")
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.ui
                     font.pixelSize: Typography.bodyLarge.pixelSize

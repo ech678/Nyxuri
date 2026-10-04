@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.shared.theme
 import qs.app
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -40,20 +41,20 @@ Singleton {
 
     function failure(code) {
         const messages = {
-            fd_unavailable: qsTr("Install fd to search files"),
-            file_capability_missing: qsTr("Update key-cli to enable file search"),
-            invalid_file_response: qsTr("The file service returned invalid data"),
-            file_missing: qsTr("The file or link target no longer exists"),
-            directory_missing: qsTr("The containing folder no longer exists"),
-            file_execution_blocked: qsTr("Use Apps to launch this item, or show it in the file manager"),
-            dependency_missing: qsTr("The system file opener is unavailable"),
-            file_action_timeout: qsTr("The system did not confirm the request in time"),
-            file_search_failed: qsTr("File search failed"),
-            file_action_failed: qsTr("Unable to open or show this item")
+            fd_unavailable: I18n.tr("Install fd to search files"),
+            file_capability_missing: I18n.tr("Update key-cli to enable file search"),
+            invalid_file_response: I18n.tr("The file service returned invalid data"),
+            file_missing: I18n.tr("The file or link target no longer exists"),
+            directory_missing: I18n.tr("The containing folder no longer exists"),
+            file_execution_blocked: I18n.tr("Use Apps to launch this item, or show it in the file manager"),
+            dependency_missing: I18n.tr("The system file opener is unavailable"),
+            file_action_timeout: I18n.tr("The system did not confirm the request in time"),
+            file_search_failed: I18n.tr("File search failed"),
+            file_action_failed: I18n.tr("Unable to open or show this item")
         };
         return {
             code: code,
-            message: messages[code] || qsTr("File operation failed")
+            message: messages[code] || I18n.tr("File operation failed")
         };
     }
 

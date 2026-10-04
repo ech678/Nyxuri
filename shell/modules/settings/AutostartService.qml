@@ -8,6 +8,7 @@ import Quickshell.Io
 import qs.shared.theme
 import qs.app.services
 import qs.app
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -128,9 +129,9 @@ Singleton {
     function safeField(value, field, required) {
         const text = String(value || "");
         if (text.indexOf("\u0000") >= 0 || text.indexOf("\n") >= 0 || text.indexOf("\r") >= 0)
-            throw new Error(qsTr("%1 contains invalid newline characters").arg(field));
+            throw new Error(I18n.tr("%1 contains invalid newline characters").arg(field));
         if (required && text.trim() === "")
-            throw new Error(qsTr("%1 cannot be empty").arg(field));
+            throw new Error(I18n.tr("%1 cannot be empty").arg(field));
         return text;
     }
 
@@ -145,7 +146,7 @@ Singleton {
     }
 
     function renderApplication(application) {
-        const name = root.safeField(application ? application.name || application.id : "", qsTr(
+        const name = root.safeField(application ? application.name || application.id : "", I18n.tr(
                                         "Application name"), true);
         const command = root.safeField(root.applicationCommand(application), "Exec", true);
         const icon = root.safeField(root.applicationIcon(application), "Icon", false);
@@ -155,11 +156,11 @@ Singleton {
 
     function beginWrite(operationName, path, content, context) {
         if (!root.isUserEntryPath(path)) {
-            root.lastError = qsTr("Refusing to modify files outside the user autostart directory");
+            root.lastError = I18n.tr("Refusing to modify files outside the user autostart directory");
             return false;
         }
         if (root.operationBusy || !root.initialized) {
-            root.lastError = qsTr("The user autostart directory is not ready");
+            root.lastError = I18n.tr("The user autostart directory is not ready");
             return false;
         }
 
@@ -187,9 +188,9 @@ Singleton {
             if (operationName === "add") {
                 if (context && context.content)
                     root.addOrUpdateEntry(root.parseDesktopFile(context.content, operationPath));
-                root.lastMessage = qsTr("Application added to autostart");
+                root.lastMessage = I18n.tr("Application added to autostart");
             } else if (operationName === "toggle") {
-                root.lastMessage = qsTr("Autostart status updated");
+                root.lastMessage = I18n.tr("Autostart status updated");
             }
             root.lastError = "";
         } else {
@@ -198,7 +199,7 @@ Singleton {
                                      "hidden": context.previousHidden,
                                      "content": context.previousContent
                                  });
-            root.lastError = errorMessage || qsTr("Failed to write the autostart file");
+            root.lastError = errorMessage || I18n.tr("Failed to write the autostart file");
         }
 
         root.operationFinished(success, operationName);
@@ -209,18 +210,18 @@ Singleton {
 
     function addApplication(application) {
         if (!root.ready) {
-            root.lastError = qsTr("The user autostart directory is loading; please wait");
+            root.lastError = I18n.tr("The user autostart directory is loading; please wait");
             return false;
         }
 
         const fileName = root.desktopId(application);
         if (fileName === "") {
-            root.lastError = qsTr("The selected application has no valid Desktop Entry ID");
+            root.lastError = I18n.tr("The selected application has no valid Desktop Entry ID");
             return false;
         }
         const path = root.autostartDir + "/" + fileName;
         if (root.entryExists(path)) {
-            root.lastError = qsTr("This application is already added to autostart");
+            root.lastError = I18n.tr("This application is already added to autostart");
             return false;
         }
 
@@ -270,7 +271,7 @@ Singleton {
         }
 
         if (!sectionFound)
-            throw new Error(qsTr("File is missing the [Desktop Entry] section"));
+            throw new Error(I18n.tr("File is missing the [Desktop Entry] section"));
         if (!hiddenFound) {
             const usesCarriageReturn = lines.some(line => line.endsWith("\r"));
             lines.splice(sectionIndex + 1, 0, value + (usesCarriageReturn ? "\r" : ""));
@@ -281,7 +282,7 @@ Singleton {
     function setEnabled(entry, enabled) {
         const path = String(entry ? entry.filePath || "" : "");
         if (!root.ready || !root.isUserEntryPath(path) || !entry || !entry.content) {
-            root.lastError = qsTr("This user autostart entry cannot be modified");
+            root.lastError = I18n.tr("This user autostart entry cannot be modified");
             return false;
         }
 
@@ -305,7 +306,7 @@ Singleton {
     function remove(entry) {
         const path = root.normalizeFolderPath(entry ? entry.filePath || "" : "");
         if (!root.ready || !root.isUserEntryPath(path)) {
-            root.lastError = qsTr("Refusing to delete files outside the user autostart directory");
+            root.lastError = I18n.tr("Refusing to delete files outside the user autostart directory");
             return false;
         }
         if (root.operationBusy)
@@ -321,7 +322,7 @@ Singleton {
                                                              "running": true
                                                          });
         if (!process) {
-            root.finishDelete(false, qsTr("Could not start the delete operation"));
+            root.finishDelete(false, I18n.tr("Could not start the delete operation"));
             return false;
         }
         return true;
@@ -332,10 +333,10 @@ Singleton {
         root.operationBusy = false;
         if (success) {
             root.removeEntryByPath(path);
-            root.lastMessage = qsTr("Autostart entry deleted");
+            root.lastMessage = I18n.tr("Autostart entry deleted");
             root.lastError = "";
         } else {
-            root.lastError = errorMessage || qsTr("Failed to delete the autostart entry");
+            root.lastError = errorMessage || I18n.tr("Failed to delete the autostart entry");
         }
         root.operationFinished(success, "delete");
         root.operationName = "";
@@ -370,7 +371,7 @@ Singleton {
         const fileName = path.substring(path.lastIndexOf("/") + 1);
         return {
             "id": fileName,
-            "name": fileName.replace(/\.desktop$/, "") || qsTr("Invalid startup entry"),
+            "name": fileName.replace(/\.desktop$/, "") || I18n.tr("Invalid startup entry"),
             "exec": "",
             "icon": "",
             "hidden": false,
@@ -378,7 +379,7 @@ Singleton {
             "filePath": path,
             "content": "",
             "valid": false,
-            "error": String(error || qsTr("Could not read Desktop Entry"))
+            "error": String(error || I18n.tr("Could not read Desktop Entry"))
         };
     }
 
@@ -413,14 +414,14 @@ Singleton {
         }
 
         if (!sectionFound)
-            return root.invalidEntry(path, qsTr("File is missing the [Desktop Entry] section"));
+            return root.invalidEntry(path, I18n.tr("File is missing the [Desktop Entry] section"));
 
         const name = String(values.Name || "").trim() || fileName.replace(/\.desktop$/, "");
         const command = String(values.Exec || "");
         const valid = command.trim() !== "";
         return {
             "id": fileName,
-            "name": name || qsTr("Invalid startup entry"),
+            "name": name || I18n.tr("Invalid startup entry"),
             "exec": command,
             "icon": String(values.Icon || "").trim() || root.lookupDesktopIcon(fileName, command),
             "hidden": root.hiddenValue(values.Hidden),
@@ -428,7 +429,7 @@ Singleton {
             "filePath": path,
             "content": String(content || ""),
             "valid": valid,
-            "error": valid ? "" : qsTr("Desktop Entry is missing the Exec field")
+            "error": valid ? "" : I18n.tr("Desktop Entry is missing the Exec field")
         };
     }
 
@@ -482,7 +483,7 @@ Singleton {
             if (exitCode !== 0) {
                 root.initialized = false;
                 root.initializationFailed = true;
-                root.lastError = initError.text.trim() || qsTr(
+                root.lastError = initError.text.trim() || I18n.tr(
                             "Could not create the user autostart directory");
                 folderModel.folder = "";
                 return;
@@ -567,7 +568,7 @@ Singleton {
             }
 
             onExited: exitCode => {
-                root.finishDelete(exitCode === 0, deleteError.text.trim() || qsTr(
+                root.finishDelete(exitCode === 0, deleteError.text.trim() || I18n.tr(
                                       "Could not delete the user autostart entry"));
                 destroy();
             }

@@ -6,6 +6,7 @@ import qs.modules.wallpaper
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -132,10 +133,10 @@ Item {
 
         property bool forAvatar: true
 
-        dialogTitle: forAvatar ? qsTranslate("AccountPage", "Choose avatar") : qsTranslate(
-                                     "AccountProfileHeader", "Choose banner image")
-        description: forAvatar ? qsTranslate("FilePickerWindow", "Choose an image for your user avatar") : ""
-        selectionPrompt: forAvatar ? qsTranslate("FilePickerWindow", "Choose an image") : dialogTitle
+        dialogTitle: forAvatar ? I18n.tr("Choose avatar", "AccountPage") : I18n.tr("Choose banner image",
+                                                                                   "AccountProfileHeader")
+        description: forAvatar ? I18n.tr("Choose an image for your user avatar", "FilePickerWindow") : ""
+        selectionPrompt: forAvatar ? I18n.tr("Choose an image", "FilePickerWindow") : dialogTitle
         windowIconName: forAvatar ? "add_photo_alternate" : "wallpaper"
 
         function chooseImage(avatar) {

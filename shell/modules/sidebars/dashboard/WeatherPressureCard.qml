@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Shapes
 import M3Shapes
 import qs.shared.theme
+import qs.shared.i18n
 
 Item {
     id: root
@@ -97,7 +98,7 @@ Item {
             }
 
             Text {
-                text: qsTr("Pressure")
+                text: I18n.tr("Pressure")
                 color: root.mutedInk
                 font.family: Fonts.expressive
                 font.pixelSize: 18

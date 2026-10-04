@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -37,7 +38,7 @@ Singleton {
     function queryRuntimeDetails(interfaceName, isWifi, callback) {
         if (root.busy || String(interfaceName || "").length === 0) {
             if (callback)
-                callback(false, {}, qsTr("Network details are currently unavailable"));
+                callback(false, {}, I18n.tr("Network details are currently unavailable"));
 
             return false;
         }
@@ -68,7 +69,8 @@ Singleton {
     function createHiddenWifi(ssid, hidden, secure, password, callback) {
         if (root.busy) {
             if (callback)
-                callback(false, null, qsTr("Another supplementary network operation is already in progress"));
+                callback(false, null, I18n.tr(
+                             "Another supplementary network operation is already in progress"));
 
             return false;
         }
@@ -96,7 +98,7 @@ Singleton {
                                       "id": root._connectionName,
                                       "ssid": root._ssid
                                   }) : null;
-        root.lastError = success ? "" : String(errorMessage || qsTr("Unable to create Wi-Fi profile"));
+        root.lastError = success ? "" : String(errorMessage || I18n.tr("Unable to create Wi-Fi profile"));
         root._addCallback = null;
         root._password = "";
         root._secure = false;
@@ -121,7 +123,7 @@ Singleton {
             if (!running && !root._runtimeStarted && root._runtimeCallback) {
                 const callback = root._runtimeCallback;
                 root._runtimeCallback = null;
-                root.lastError = qsTr("nmcli is unavailable; active IPv4 information cannot be read");
+                root.lastError = I18n.tr("nmcli is unavailable; active IPv4 information cannot be read");
                 callback(false, {}, root.lastError);
             }
         }
@@ -132,7 +134,7 @@ Singleton {
 
             if (exitCode !== 0) {
                 root._runtimeCallback = null;
-                root.lastError = root._error(runtimeError.text, qsTr(
+                root.lastError = root._error(runtimeError.text, I18n.tr(
                                                  "Unable to read active IPv4 information"));
                 callback(false, {}, root.lastError);
                 return;
@@ -229,12 +231,12 @@ Singleton {
         onStarted: root._addStarted = true
         onRunningChanged: {
             if (!running && !root._addStarted && root._addCallback)
-                root._finishAdd(false, qsTr(
+                root._finishAdd(false, I18n.tr(
                                     "nmcli is unavailable; a hidden network profile cannot be created"));
         }
         onExited: exitCode => {
             if (exitCode !== 0) {
-                root._finishAdd(false, root._error(addError.text, qsTr("Unable to create Wi-Fi profile")));
+                root._finishAdd(false, root._error(addError.text, I18n.tr("Unable to create Wi-Fi profile")));
                 return;
             }
             root._activateStarted = false;
@@ -264,7 +266,7 @@ Singleton {
         }
         onRunningChanged: {
             if (!running && !root._activateStarted && root._addCallback)
-                root._cleanupAdd(qsTr(
+                root._cleanupAdd(I18n.tr(
                                      "nmcli is unavailable; the hidden network profile cannot be activated"));
         }
         onExited: exitCode => {
@@ -272,7 +274,7 @@ Singleton {
             if (exitCode === 0)
                 root._finishAdd(true, "");
             else
-                root._cleanupAdd(root._error(activateError.text, qsTr(
+                root._cleanupAdd(root._error(activateError.text, I18n.tr(
                                                  "The Wi-Fi profile was created but could not be activated")));
         }
 

@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -101,7 +102,7 @@ StyledFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: BluetoothService.discovering ? "radar" : "search_off"
-                title: BluetoothService.discovering ? qsTr("Searching for nearby devices") : qsTr(
+                title: BluetoothService.discovering ? I18n.tr("Searching for nearby devices") : I18n.tr(
                                                           "Waiting for Bluetooth scan")
 
                 trailing: MaterialLoadingIndicator {
@@ -110,7 +111,7 @@ StyledFlickable {
                     Layout.preferredHeight: Metrics.controlHeightM
                     running: visible
                     contained: false
-                    accessibleName: qsTr("Searching for nearby Bluetooth devices")
+                    accessibleName: I18n.tr("Searching for nearby Bluetooth devices")
                 }
             }
 
@@ -125,7 +126,7 @@ StyledFlickable {
                     Layout.fillWidth: true
                     iconName: BluetoothDeviceIcon.iconName(availableDeviceRow.modelData)
                     title: availableDeviceRow.modelData.name
-                    supportingText: availableDeviceRow.modelData.pairing ? qsTr("Pairing…") :
+                    supportingText: availableDeviceRow.modelData.pairing ? I18n.tr("Pairing…") :
                                                                            availableDeviceRow.modelData.address
                     interactive: enabled
                     enabled: !BluetoothService.busy && !availableDeviceRow.modelData.blocked
@@ -140,7 +141,7 @@ StyledFlickable {
                         Layout.preferredHeight: Metrics.controlHeightM
                         running: visible
                         contained: false
-                        accessibleName: qsTr("Pairing %1").arg(availableDeviceRow.modelData.name)
+                        accessibleName: I18n.tr("Pairing %1").arg(availableDeviceRow.modelData.name)
                     }
                 }
             }
@@ -149,7 +150,7 @@ StyledFlickable {
                 Layout.fillWidth: true
                 visible: BluetoothService.availableDevices.length === 0
                 iconName: "devices_other"
-                title: qsTr("No nearby devices found yet")
+                title: I18n.tr("No nearby devices found yet")
             }
         }
     }

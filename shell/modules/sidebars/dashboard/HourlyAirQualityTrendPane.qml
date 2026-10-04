@@ -3,6 +3,7 @@ import QtQuick.Controls
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -38,8 +39,8 @@ Item {
     }
 
     function aqiLevelName(level) {
-        const names = [qsTr("Excellent"), qsTr("Good"), qsTr("Poor"), qsTr("Unhealthy"), qsTr(
-                           "Very unhealthy"), qsTr("Hazardous")];
+        const names = [I18n.tr("Excellent"), I18n.tr("Good"), I18n.tr("Poor"), I18n.tr("Unhealthy"), I18n.tr(
+                           "Very unhealthy"), I18n.tr("Hazardous")];
         return level >= 0 && level < names.length ? names[level] : "--";
     }
 
@@ -355,7 +356,7 @@ Item {
     Text {
         anchors.centerIn: parent
         visible: !root.hasData
-        text: qsTr("Air quality data is unavailable")
+        text: I18n.tr("Air quality data is unavailable")
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.ui
         font.pixelSize: 16

@@ -8,6 +8,7 @@ import Quickshell.Services.Notifications
 import qs.shared.theme
 import qs.app
 import qs.shared.controls
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -109,11 +110,11 @@ Singleton {
         target: FileActionService
         function onFinished(action, path, response) {
             if (!response || !response.ok)
-                root.addLocal(qsTr("File action failed"), qsTr(
+                root.addLocal(I18n.tr("File action failed"), I18n.tr(
                                   "Could not open the saved file or its location: %1").arg(path));
             else if (!response.fileExists)
-                root.addLocal(qsTr("File no longer exists"), qsTr("Opened the containing folder: %1").arg(
-                                  path));
+                root.addLocal(I18n.tr("File no longer exists"), I18n.tr(
+                                  "Opened the containing folder: %1").arg(path));
         }
     }
 
@@ -208,15 +209,15 @@ Singleton {
                                                                    "appIcon": notification.appIcon || "",
                                                                    "appName": notification.appName
                                                                               || notification.desktopEntry
-                                                                              || qsTr("System"),
+                                                                              || I18n.tr("System"),
                                                                    "body": notification.body || "",
                                                                    "desktopEntry": notification.desktopEntry
                                                                                    || "",
                                                                    "image": notification.image || "",
                                                                    "isTransient": notification.transient,
                                                                    "summary": notification.summary
-                                                                              || notification.appName || qsTr(
-                                                                                  "Notification"),
+                                                                              || notification.appName
+                                                                              || I18n.tr("Notification"),
                                                                    "receivedAt": now,
                                                                    "urgency": notification.urgency
                                                                });
@@ -273,12 +274,12 @@ Singleton {
                                                                        && notif.filePath.indexOf("\u0000")
                                                                        === -1 ? notif.filePath : "",
                                                            "appIcon": root.durableHistorySource(notif.appIcon),
-                                                           "appName": notif.appName || qsTr("System"),
+                                                           "appName": notif.appName || I18n.tr("System"),
                                                            "body": notif.body || "",
                                                            "desktopEntry": notif.desktopEntry || "",
                                                            "image": root.durableHistorySource(notif.image),
-                                                           "summary": notif.summary || notif.appName || qsTr(
-                                                                          "Notification"),
+                                                           "summary": notif.summary || notif.appName
+                                                                      || I18n.tr("Notification"),
                                                            "receivedAt": Number(notif.receivedAt
                                                                                 || notif.time) || Date.now(),
                                                            "urgency": notif.urgency
@@ -326,17 +327,17 @@ Singleton {
             return [
                         {
                             identifier: "default",
-                            text: qsTr("Show in folder"),
+                            text: I18n.tr("Show in folder"),
                             invoke: () => FileActionService.run("reveal", path)
                         },
                         {
                             identifier: "reveal",
-                            text: qsTr("Show in folder"),
+                            text: I18n.tr("Show in folder"),
                             invoke: () => FileActionService.run("reveal", path)
                         },
                         {
                             identifier: "open",
-                            text: qsTr("Open"),
+                            text: I18n.tr("Open"),
                             invoke: () => FileActionService.run("open", path)
                         }
                     ];
@@ -395,7 +396,7 @@ Singleton {
     function groupsForList(notifications) {
         const groups = {};
         notifications.forEach(notif => {
-            const appName = notif.appName || qsTr("System");
+            const appName = notif.appName || I18n.tr("System");
             if (!groups[appName]) {
                 groups[appName] = {
                     appName,

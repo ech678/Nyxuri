@@ -9,6 +9,7 @@ import qs.app.services
 import qs.app
 import "./DockLayout.js" as DockLayout
 import "./DockMotion.js" as DockMotion
+import qs.shared.i18n
 
 PanelWindow {
     id: root
@@ -1088,7 +1089,8 @@ PanelWindow {
                         onHoverLeft: key => root.leaveEntry(key)
                         dropTarget: root.dropTargetKey === key || !!root.dragKey && root.targetAt(root.dragPoint)
                                     ?.key === key && kind === "trash"
-                        dropHint: kind === "trash" ? qsTr("Move to Trash") : qsTr("Open with %1").arg(name)
+                        dropHint: kind === "trash" ? I18n.tr("Move to Trash") : I18n.tr("Open with %1").arg(
+                                                         name)
                         onActivated: key => {
                             root.dragCancelled = false;
                             if (kind === "folder") {
@@ -1192,7 +1194,7 @@ PanelWindow {
                             const ok = trash ? DesktopFiles.moveToTrash(urls) : DesktopFiles.openWith(
                                                    desktopId, urls);
                             if (!ok)
-                                DockService.fileError = qsTr("The file operation could not be started.");
+                                DockService.fileError = I18n.tr("The file operation could not be started.");
                         };
                         if (drop.source && typeof drop.source.deferDrop === "function")
                             drop.source.deferDrop(operation);
@@ -1243,7 +1245,7 @@ PanelWindow {
             Text {
                 anchors.centerIn: glass
                 visible: DockService.model.count === 0
-                text: qsTr("Drop apps here")
+                text: I18n.tr("Drop apps here")
                 font.family: Fonts.ui
                 font.pixelSize: 12
                 color: Appearance.colors.colOnSurfaceVariant

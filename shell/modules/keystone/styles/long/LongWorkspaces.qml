@@ -4,6 +4,7 @@ import QtQuick
 import qs.app.services
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -39,13 +40,16 @@ Item {
     component WorkspaceNumber: Item {
         id: workspace
         required property var model
-        readonly property bool belongsToScreen: !root.screen || model.output === root.screen.name || (
-                                                    (NiriService.outputs.count || 0) <= 1 && model.output === "")
+        readonly property bool belongsToScreen: !root.screen || model.output === root.screen.name || ((
+                                                                                                          NiriService.outputs.count
+                                                                                                          || 0) <= 1
+                                                                                                      && model.output
+                                                                                                      === "")
         visible: belongsToScreen
         width: visible ? 28 : 0
         height: visible ? 32 : 0
         Accessible.role: Accessible.Button
-        Accessible.name: qsTr("Workspace %1").arg(model.name || model.index)
+        Accessible.name: I18n.tr("Workspace %1").arg(model.name || model.index)
         Accessible.onPressAction: NiriService.focusWorkspaceById(model.id)
 
         Text {
@@ -68,7 +72,7 @@ Item {
 
         PopupToolTip {
             extraVisibleCondition: pointer.containsMouse
-            text: qsTr("Workspace %1").arg(workspace.model.name || workspace.model.index)
+            text: I18n.tr("Workspace %1").arg(workspace.model.name || workspace.model.index)
             textFormat: Text.PlainText
         }
     }

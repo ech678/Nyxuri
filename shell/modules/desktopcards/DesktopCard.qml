@@ -6,6 +6,7 @@ import qs.shared.theme
 import qs.app.services
 import qs.modules.systemcards
 import "./DesktopCardLayout.js" as DesktopCardLayout
+import qs.shared.i18n
 
 Item {
     id: root
@@ -153,7 +154,7 @@ Item {
 
         StyledMenuItem {
             iconName: "dock_to_right"
-            text: qsTr("Return to sidebar")
+            text: I18n.tr("Return to sidebar")
             onTriggered: SystemCardService.setContainer(root.tileId, "sidebar", "")
         }
     }

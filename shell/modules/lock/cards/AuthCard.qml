@@ -4,6 +4,7 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 FocusScope {
     id: root
@@ -156,7 +157,7 @@ FocusScope {
                     property bool animateOnNextShow: true
 
                     anchors.centerIn: parent
-                    text: root.busy ? qsTr("Loading…") : qsTr("Enter password")
+                    text: root.busy ? I18n.tr("Loading…") : I18n.tr("Enter password")
                     color: root.busy ? Appearance.colors.colSecondary : Appearance.colors.colOutline
                     font.family: Fonts.numeric
                     font.pixelSize: 17

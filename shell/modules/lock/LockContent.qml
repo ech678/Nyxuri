@@ -5,6 +5,7 @@ import qs.shared.theme
 import qs.app.services
 import "cards"
 import qs.app
+import qs.shared.i18n
 
 Item {
     id: root
@@ -196,7 +197,7 @@ Item {
                 Text {
                     id: errorMessage
 
-                    property string msg: root.context && root.context.showFailure ? qsTr(
+                    property string msg: root.context && root.context.showFailure ? I18n.tr(
                                                                                         "Incorrect password. Try again.") :
                                                                                     ""
                     property string pendingText: ""
@@ -382,13 +383,13 @@ Item {
                         if (!KeyboardLockService.available)
                             return "";
                         if (KeyboardLockService.capsLock && KeyboardLockService.numLock)
-                            return qsTr("Caps Lock and Num Lock are on.");
+                            return I18n.tr("Caps Lock and Num Lock are on.");
 
                         if (KeyboardLockService.capsLock)
-                            return qsTr("Caps Lock is on.");
+                            return I18n.tr("Caps Lock is on.");
 
                         if (KeyboardLockService.numLock)
-                            return qsTr("Num Lock is on.");
+                            return I18n.tr("Num Lock is on.");
 
                         return "";
                     }

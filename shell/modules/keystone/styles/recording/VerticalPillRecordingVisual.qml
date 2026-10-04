@@ -2,6 +2,7 @@ import QtQuick
 import qs.shared.theme
 import qs.shared.controls
 import "RecordingFormat.js" as RecordingFormat
+import qs.shared.i18n
 
 Item {
     id: root
@@ -191,7 +192,7 @@ Item {
 
         VerticalRecordingStatusLabel {
             anchors.horizontalCenter: parent.horizontalCenter
-            label: qsTr("Processing")
+            label: I18n.tr("Processing")
             edge: root.edge
         }
     }
@@ -243,7 +244,7 @@ Item {
 
         StyledToolTip {
             extraVisibleCondition: satelliteMouse.containsMouse && satelliteMouse.enabled
-            text: qsTr("Stop recording")
+            text: I18n.tr("Stop recording")
         }
     }
 }

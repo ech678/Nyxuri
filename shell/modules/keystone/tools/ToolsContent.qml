@@ -5,6 +5,7 @@ import qs.shared.theme
 import qs.shared.controls
 import qs.app
 import qs.app.services
+import qs.shared.i18n
 
 Item {
     id: toolsRoot
@@ -21,27 +22,27 @@ Item {
         {
             "action": "color-picker",
             "icon": "colorize",
-            "tip": qsTr("Color picker")
+            "tip": I18n.tr("Color picker")
         },
         {
             "action": "record-video",
             "icon": "videocam",
-            "tip": qsTr("Screen recording")
+            "tip": I18n.tr("Screen recording")
         },
         {
             "action": "record-gif",
             "icon": "gif",
-            "tip": qsTr("Record GIF")
+            "tip": I18n.tr("Record GIF")
         },
         {
             "action": "audio-mic",
             "icon": "mic",
-            "tip": qsTr("Record microphone")
+            "tip": I18n.tr("Record microphone")
         },
         {
             "action": "audio-system",
             "icon": "speaker",
-            "tip": qsTr("Record system audio")
+            "tip": I18n.tr("Record system audio")
         }
     ]
     property int selectedIndex: 0

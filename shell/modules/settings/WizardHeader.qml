@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 RowLayout {
     id: root
@@ -20,7 +21,7 @@ RowLayout {
         visible: root.showBack
         enabled: root.closeEnabled
         iconName: "arrow_back"
-        accessibleName: qsTr("Back")
+        accessibleName: I18n.tr("Back")
         onClicked: root.backRequested()
     }
 
@@ -53,7 +54,7 @@ RowLayout {
     IconButton {
         enabled: root.closeEnabled
         iconName: "close"
-        accessibleName: qsTr("Close")
+        accessibleName: I18n.tr("Close")
         onClicked: root.closeRequested()
     }
 }

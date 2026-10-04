@@ -4,6 +4,7 @@ import M3Shapes
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 Item {
     id: root
@@ -19,9 +20,9 @@ Item {
 
     implicitWidth: backgroundShape.implicitWidth
     implicitHeight: backgroundShape.implicitHeight
-    Accessible.name: qsTr("Weather,") + root.temperature + "，" + (root.dataAvailable
-                                                                  ? WeatherService.currentWeatherText : qsTr(
-                                                                        "Weather unavailable"))
+    Accessible.name: I18n.tr("Weather,") + root.temperature + "，" + (root.dataAvailable
+                                                                     ? WeatherService.currentWeatherText :
+                                                                       I18n.tr("Weather unavailable"))
 
     MaterialShape {
         id: backgroundShape

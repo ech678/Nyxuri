@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import qs.shared.i18n
 
 Item {
     id: root
@@ -125,44 +126,44 @@ Item {
         function weatherCodeToText(code) {
             switch (code) {
             case 0:
-                return qsTr("Clear sky");
+                return I18n.tr("Clear sky");
             case 1:
-                return qsTr("Mainly clear");
+                return I18n.tr("Mainly clear");
             case 2:
-                return qsTr("Partly cloudy");
+                return I18n.tr("Partly cloudy");
             case 3:
-                return qsTr("Overcast");
+                return I18n.tr("Overcast");
             case 45:
             case 48:
-                return qsTr("Fog");
+                return I18n.tr("Fog");
             case 51:
             case 53:
             case 55:
-                return qsTr("Drizzle");
+                return I18n.tr("Drizzle");
             case 61:
             case 63:
             case 65:
-                return qsTr("Rain");
+                return I18n.tr("Rain");
             case 71:
             case 73:
             case 75:
-                return qsTr("Snow");
+                return I18n.tr("Snow");
             case 77:
-                return qsTr("Snow grains");
+                return I18n.tr("Snow grains");
             case 80:
             case 81:
             case 82:
-                return qsTr("Rain showers");
+                return I18n.tr("Rain showers");
             case 85:
             case 86:
-                return qsTr("Snow showers");
+                return I18n.tr("Snow showers");
             case 95:
-                return qsTr("Thunderstorm");
+                return I18n.tr("Thunderstorm");
             case 96:
             case 99:
-                return qsTr("Thunderstorm with hail");
+                return I18n.tr("Thunderstorm with hail");
             default:
-                return qsTr("Cloudy");
+                return I18n.tr("Cloudy");
             }
         }
 

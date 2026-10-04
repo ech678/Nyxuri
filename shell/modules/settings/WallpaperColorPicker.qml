@@ -9,6 +9,7 @@ import qs.modules.wallpaper
 import qs.app.services
 import qs.shared.controls
 import "../../shared/utils/ZenPalette.js" as Zen
+import qs.shared.i18n
 
 Item {
     id: root
@@ -77,14 +78,14 @@ Item {
                     Layout.fillWidth: true
                     Text {
                         Layout.fillWidth: true
-                        text: qsTr("Wallpaper palette")
+                        text: I18n.tr("Wallpaper palette")
                         font.family: Fonts.ui
                         font.pixelSize: 20
                         color: Appearance.colors.colOnSurface
                     }
                     IconButton {
                         iconName: "close"
-                        tooltipText: qsTr("Close")
+                        tooltipText: I18n.tr("Close")
                         onClicked: root.close()
                     }
                 }
@@ -164,7 +165,7 @@ Item {
                         Layout.fillWidth: true
                     }
                     ActionButton {
-                        text: qsTr("Save")
+                        text: I18n.tr("Save")
                         onClicked: {
                             if (WallpaperPaletteSession.commit(root.sessionToken)) {
                                 root.shouldBeVisible = false;

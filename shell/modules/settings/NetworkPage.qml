@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -41,19 +42,19 @@ StyledFlickable {
 
     function connectivityException() {
         if (NetworkService.captivePortal)
-            return qsTr("Sign-in required");
+            return I18n.tr("Sign-in required");
 
         if (NetworkService.limitedConnectivity)
-            return qsTr("Limited connection");
+            return I18n.tr("Limited connection");
 
         if (NetworkService.connected && NetworkService.connectivityKnown && !NetworkService.internetAvailable)
-            return qsTr("No internet connection");
+            return I18n.tr("No internet connection");
 
         return "";
     }
 
     function activeWifiDetails() {
-        const details = [qsTr("Signal %1%").arg(NetworkService.signalStrength)];
+        const details = [I18n.tr("Signal %1%").arg(NetworkService.signalStrength)];
         const exception = root.activeNetwork && root.activeNetwork.type === "wifi"
               ? root.connectivityException() : "";
         if (exception.length > 0)
@@ -63,7 +64,7 @@ StyledFlickable {
     }
 
     function nearbyWifiDetails(network) {
-        const details = [qsTr("Signal %1%").arg(network.strength)];
+        const details = [I18n.tr("Signal %1%").arg(network.strength)];
         if (root.multipleWifiDevices)
             details.push(network.deviceName);
 
@@ -196,7 +197,7 @@ StyledFlickable {
             radius: Metrics.cornerM
             visible: !NetworkService.available || NetworkService.lastError.length > 0
             tone: "error"
-            message: NetworkService.lastError.length > 0 ? NetworkService.lastError : qsTr(
+            message: NetworkService.lastError.length > 0 ? NetworkService.lastError : I18n.tr(
                                                                "Network service unavailable")
         }
 
@@ -231,11 +232,11 @@ StyledFlickable {
                             return details.join(" · ");
 
                         if (!wiredRow.device.hasLink) {
-                            details.push(qsTr("Network cable unplugged"));
+                            details.push(I18n.tr("Network cable unplugged"));
                             return details.join(" · ");
                         }
                         if (wiredRow.device.connected && wiredRow.device.linkSpeed > 0)
-                            details.push(qsTr("%1 Mbps").arg(wiredRow.device.linkSpeed));
+                            details.push(I18n.tr("%1 Mbps").arg(wiredRow.device.linkSpeed));
 
                         if (wiredRow.device.connected && root.activeNetwork && root.activeNetwork.type
                                 === "wired" && root.activeNetwork.deviceName === wiredRow.device.deviceName) {
@@ -248,7 +249,8 @@ StyledFlickable {
 
                     Layout.fillWidth: true
                     iconName: wiredRow.device && wiredRow.device.connected ? "link" : "link_off"
-                    title: wiredRow.modelData.name || wiredRow.modelData.deviceName || qsTr("Wired network")
+                    title: wiredRow.modelData.name || wiredRow.modelData.deviceName || I18n.tr(
+                               "Wired network")
                     supportingText: wiredRow.detailText
                     interactive: true
                     highlighted: wiredRow.device ? wiredRow.device.connected : false
@@ -276,9 +278,10 @@ StyledFlickable {
 
                     Layout.fillWidth: true
                     iconName: unconfiguredWiredRow.modelData.connected ? "link" : "link_off"
-                    title: unconfiguredWiredRow.modelData.name || qsTr("Wired network")
-                    supportingText: unconfiguredWiredRow.modelData.hasLink ? qsTr("No editable connection") :
-                                                                             qsTr("Network cable unplugged")
+                    title: unconfiguredWiredRow.modelData.name || I18n.tr("Wired network")
+                    supportingText: unconfiguredWiredRow.modelData.hasLink ? I18n.tr(
+                                                                                 "No editable connection") :
+                                                                             I18n.tr("Network cable unplugged")
                     highlighted: unconfiguredWiredRow.modelData.connected
                 }
             }
@@ -299,11 +302,12 @@ StyledFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: NetworkService.wifiEnabled ? "wifi" : "wifi_off"
-                title: qsTr("Wi-Fi")
-                supportingText: !NetworkService.available ? "" : !NetworkService.wifiAvailable ? qsTr(
+                title: I18n.tr("Wi-Fi")
+                supportingText: !NetworkService.available ? "" : !NetworkService.wifiAvailable ? I18n.tr(
                                                                                                      "No wireless adapter detected") :
                                                                                                  !NetworkService.wifiHardwareEnabled
-                                                                                                 ? qsTr("Disabled by a hardware switch or rfkill") :
+                                                                                                 ? I18n.tr(
+                                                                                                       "Disabled by a hardware switch or rfkill") :
                                                                                                    ""
 
                 trailing: StyledSwitch {
@@ -348,7 +352,7 @@ StyledFlickable {
 
                     Text {
                         Layout.fillWidth: true
-                        text: qsTr("Nearby networks")
+                        text: I18n.tr("Nearby networks")
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Typography.labelLarge.family
                         font.pixelSize: Typography.labelLarge.pixelSize
@@ -433,12 +437,12 @@ StyledFlickable {
                             MaterialLoadingIndicator {
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 running: root.initialLoading
-                                accessibleName: qsTr("Searching for nearby networks")
+                                accessibleName: I18n.tr("Searching for nearby networks")
                             }
 
                             Text {
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                text: qsTr("Searching for nearby networks")
+                                text: I18n.tr("Searching for nearby networks")
                                 color: Appearance.colors.colOnLayer1
                                 font.family: Typography.bodyMedium.family
                                 font.pixelSize: Typography.bodyMedium.pixelSize
@@ -463,7 +467,7 @@ StyledFlickable {
 
                             Text {
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                text: qsTr("No nearby networks found")
+                                text: I18n.tr("No nearby networks found")
                                 color: Appearance.colors.colOnSurfaceVariant
                                 font.family: Typography.bodyMedium.family
                                 font.pixelSize: Typography.bodyMedium.pixelSize
@@ -480,10 +484,11 @@ StyledFlickable {
                             id: nearbyPassword
 
                             Layout.fillWidth: true
-                            labelText: root.passwordTarget ? qsTr("Password for %1").arg(
-                                                                 root.passwordTarget.ssid) : qsTr("Password")
+                            labelText: root.passwordTarget ? I18n.tr("Password for %1").arg(
+                                                                 root.passwordTarget.ssid) : I18n.tr(
+                                                                 "Password")
                             passwordToggle: true
-                            errorText: text.length > 0 && text.length < 8 ? qsTr(
+                            errorText: text.length > 0 && text.length < 8 ? I18n.tr(
                                                                                 "Password must be at least 8 characters") :
                                                                             ""
                         }
@@ -496,7 +501,7 @@ StyledFlickable {
                             }
 
                             ActionButton {
-                                text: qsTr("Cancel")
+                                text: I18n.tr("Cancel")
                                 onClicked: {
                                     nearbyPassword.text = "";
                                     root.passwordTarget = null;
@@ -504,7 +509,7 @@ StyledFlickable {
                             }
 
                             ActionButton {
-                                text: qsTr("Connect")
+                                text: I18n.tr("Connect")
                                 filled: true
                                 enabled: nearbyPassword.text.length >= 8 && !NetworkService.busy
                                 onClicked: {
@@ -538,7 +543,7 @@ StyledFlickable {
             SettingsActionRow {
                 Layout.fillWidth: true
                 iconName: "bookmark"
-                text: qsTr("Saved networks")
+                text: I18n.tr("Saved networks")
                 trailingIconName: "chevron_right"
                 onClicked: configWindow.openSavedNetworks()
             }
@@ -546,7 +551,7 @@ StyledFlickable {
             SettingsActionRow {
                 Layout.fillWidth: true
                 iconName: "add"
-                text: qsTr("Add network")
+                text: I18n.tr("Add network")
                 trailingIconName: "chevron_right"
                 onClicked: configWindow.openAddNetwork()
             }
@@ -575,47 +580,47 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Interface")
+                title: I18n.tr("Interface")
                 supportingText: root.activeNetwork ? root.activeNetwork.deviceName : "—"
             }
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("IP address")
+                title: I18n.tr("IP address")
                 supportingText: root.runtimeMatchesActive && NetworkService.runtimeDetails.addresses
                                 ? NetworkService.runtimeDetails.addresses.join(", ") : "—"
             }
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Gateway")
+                title: I18n.tr("Gateway")
                 supportingText: root.runtimeMatchesActive ? NetworkService.runtimeDetails.gateway || "—" : "—"
             }
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("DNS")
+                title: I18n.tr("DNS")
                 supportingText: root.runtimeMatchesActive && NetworkService.runtimeDetails.dns
                                 ? NetworkService.runtimeDetails.dns.join(", ") : "—"
             }
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("MAC")
+                title: I18n.tr("MAC")
                 supportingText: root.activeNetwork ? root.activeNetwork.address || "—" : "—"
             }
 
             SettingsRow {
                 Layout.fillWidth: true
                 visible: root.activeNetwork !== null && root.activeNetwork.type === "wifi"
-                title: qsTr("Security type")
-                supportingText: root.activeNetwork ? root.activeNetwork.security || qsTr("Unknown") : "—"
+                title: I18n.tr("Security type")
+                supportingText: root.activeNetwork ? root.activeNetwork.security || I18n.tr("Unknown") : "—"
             }
 
             SettingsRow {
                 Layout.fillWidth: true
                 visible: root.activeNetwork !== null && root.activeNetwork.type === "wifi"
-                title: qsTr("Frequency")
+                title: I18n.tr("Frequency")
                 supportingText: root.runtimeMatchesActive ? NetworkService.runtimeDetails.frequency || "—" :
                                                             "—"
             }
@@ -623,8 +628,8 @@ StyledFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 visible: root.activeNetwork !== null && root.activeNetwork.type === "wired"
-                title: qsTr("Link speed")
-                supportingText: root.activeNetwork && root.activeNetwork.linkSpeed > 0 ? qsTr("%1 Mbps").arg(
+                title: I18n.tr("Link speed")
+                supportingText: root.activeNetwork && root.activeNetwork.linkSpeed > 0 ? I18n.tr("%1 Mbps").arg(
                                                                                              root.activeNetwork.linkSpeed) :
                                                                                          "—"
             }

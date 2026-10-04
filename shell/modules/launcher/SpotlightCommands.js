@@ -1,3 +1,4 @@
+.import "../../shared/i18n/Translations.js" as I18n
 // One whitelist for palette navigation and slash dispatch. Existing settings and
 // IPC catalogs remain the owners of their own search results and activation.
 var entries = [
@@ -56,30 +57,30 @@ function resolve(name, args, state) {
 function title(entry) {
     if (!entry) return "";
     switch (entry.id) {
-    case "mode.search": return qsTranslate("SpotlightCommands", "Default search");
-    case "mode.apps": return qsTranslate("SpotlightCommands", "Apps");
-    case "mode.wallpapers": return qsTranslate("SpotlightCommands", "Wallpapers");
-    case "mode.clipboard": return qsTranslate("SpotlightCommands", "Clipboard");
-    case "mode.files": return qsTranslate("SpotlightCommands", "Files");
-    case "mode.commands": return qsTranslate("SpotlightCommands", "Commands");
-    case "tool.web": return qsTranslate("SpotlightCommands", "Web search");
-    case "tool.calculator": return qsTranslate("SpotlightCommands", "Calculator");
-    case "tool.currency": return qsTranslate("SpotlightCommands", "Currency");
-    case "tool.time": return qsTranslate("SpotlightCommands", "Time zone");
-    case "theme.light": return qsTranslate("SpotlightCommands", "Light theme");
-    case "theme.dark": return qsTranslate("SpotlightCommands", "Dark theme");
-    case "settings.open": return qsTranslate("SpotlightCommands", "Open settings");
-    case "tool.settings": return qsTranslate("SpotlightCommands", "Search settings");
-    case "tool.actions": return qsTranslate("SpotlightCommands", "Search IPC actions");
-    case "location.open": return qsTranslate("SpotlightCommands", "Location picker");
-    case "apps.list": return qsTranslate("SpotlightCommands", "List");
-    case "apps.grid": return qsTranslate("SpotlightCommands", "Grid");
-    case "apps.smart": return qsTranslate("SpotlightCommands", "Smart");
-    case "apps.most-used": return qsTranslate("SpotlightCommands", "Most used");
-    case "apps.recent": return qsTranslate("SpotlightCommands", "Recently used");
-    case "apps.name": return qsTranslate("SpotlightCommands", "Name");
-    case "clipboard.compact": return qsTranslate("SpotlightCommands", "Compact");
-    case "clipboard.detail": return qsTranslate("SpotlightCommands", "Details");
+    case "mode.search": return I18n.tr("Default search", "SpotlightCommands");
+    case "mode.apps": return I18n.tr("Apps", "SpotlightCommands");
+    case "mode.wallpapers": return I18n.tr("Wallpapers", "SpotlightCommands");
+    case "mode.clipboard": return I18n.tr("Clipboard", "SpotlightCommands");
+    case "mode.files": return I18n.tr("Files", "SpotlightCommands");
+    case "mode.commands": return I18n.tr("Commands", "SpotlightCommands");
+    case "tool.web": return I18n.tr("Web search", "SpotlightCommands");
+    case "tool.calculator": return I18n.tr("Calculator", "SpotlightCommands");
+    case "tool.currency": return I18n.tr("Currency", "SpotlightCommands");
+    case "tool.time": return I18n.tr("Time zone", "SpotlightCommands");
+    case "theme.light": return I18n.tr("Light theme", "SpotlightCommands");
+    case "theme.dark": return I18n.tr("Dark theme", "SpotlightCommands");
+    case "settings.open": return I18n.tr("Open settings", "SpotlightCommands");
+    case "tool.settings": return I18n.tr("Search settings", "SpotlightCommands");
+    case "tool.actions": return I18n.tr("Search IPC actions", "SpotlightCommands");
+    case "location.open": return I18n.tr("Location picker", "SpotlightCommands");
+    case "apps.list": return I18n.tr("List", "SpotlightCommands");
+    case "apps.grid": return I18n.tr("Grid", "SpotlightCommands");
+    case "apps.smart": return I18n.tr("Smart", "SpotlightCommands");
+    case "apps.most-used": return I18n.tr("Most used", "SpotlightCommands");
+    case "apps.recent": return I18n.tr("Recently used", "SpotlightCommands");
+    case "apps.name": return I18n.tr("Name", "SpotlightCommands");
+    case "clipboard.compact": return I18n.tr("Compact", "SpotlightCommands");
+    case "clipboard.detail": return I18n.tr("Details", "SpotlightCommands");
     default: return entry.title;
     }
 }

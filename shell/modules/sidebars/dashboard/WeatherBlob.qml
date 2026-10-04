@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Shapes
 import M3Shapes
 import qs.shared.theme
+import qs.shared.i18n
 
 Item {
     id: root
@@ -10,7 +11,7 @@ Item {
     property string level: "--"
     property int activeIndex: -1
     property string icon: "wb_sunny"
-    property string title: qsTr("UV index")
+    property string title: I18n.tr("UV index")
     property bool animationEnabled: false
     property bool animationActive: true
 

@@ -1,6 +1,7 @@
 import QtQuick
 import qs.app.services
 import "./SpotlightTemplates.js" as Templates
+import qs.shared.i18n
 
 QtObject {
     id: root
@@ -39,12 +40,12 @@ QtObject {
         if (choosingTemplate)
             return [
                         {
-                            text: qsTr("Now to a time zone"),
+                            text: I18n.tr("Now to a time zone"),
                             name: "",
                             kind: "now"
                         },
                         {
-                            text: qsTr("Convert between two time zones"),
+                            text: I18n.tr("Convert between two time zones"),
                             name: "",
                             kind: "pair"
                         }
@@ -78,7 +79,7 @@ QtObject {
     }
     function value(slot) {
         if (slot === 1)
-            return nowTemplate || !sourceZone ? qsTr("Local time") : sourceZone;
+            return nowTemplate || !sourceZone ? I18n.tr("Local time") : sourceZone;
         if (slot === 3)
             return targetZone;
         // Now is a display token; the pair keeps its captured local timestamp.

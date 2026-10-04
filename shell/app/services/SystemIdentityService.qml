@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -27,7 +28,7 @@ Singleton {
     readonly property string shellName: system.shellName || "unknown"
     readonly property string kernelRelease: system.kernel || "unknown"
     readonly property string architecture: system.architecture || "unknown"
-    readonly property string chassis: system.chassis || qsTr("Computer")
+    readonly property string chassis: system.chassis || I18n.tr("Computer")
     readonly property string vendor: system.vendor || ""
     readonly property string productName: system.productName || ""
     readonly property string boardName: system.boardName || ""
@@ -89,7 +90,7 @@ Singleton {
             root.ready = true;
             root.errorMessage = "";
         } catch (error) {
-            root.errorMessage = qsTr("Unable to read system identity");
+            root.errorMessage = I18n.tr("Unable to read system identity");
             console.warn("SystemIdentityService:", error);
         }
     }
@@ -109,12 +110,12 @@ Singleton {
         const hours = Math.floor((total % 86400) / 3600);
         const minutes = Math.floor((total % 3600) / 60);
         if (days > 0)
-            return qsTr("%1 days %2 hours").arg(days).arg(hours);
+            return I18n.tr("%1 days %2 hours").arg(days).arg(hours);
 
         if (hours > 0)
-            return qsTr("%1 hours %2 minutes").arg(hours).arg(minutes);
+            return I18n.tr("%1 hours %2 minutes").arg(hours).arg(minutes);
 
-        return qsTr("%1 minutes").arg(minutes);
+        return I18n.tr("%1 minutes").arg(minutes);
     }
 
     onUptimeActiveChanged: {
@@ -157,7 +158,7 @@ Singleton {
             if (exitCode === 0)
                 root._consumeIdentity();
             else
-                root.errorMessage = qsTr("Unable to read system identity");
+                root.errorMessage = I18n.tr("Unable to read system identity");
         }
 
         stdout: StdioCollector {

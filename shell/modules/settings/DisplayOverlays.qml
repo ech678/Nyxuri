@@ -5,6 +5,7 @@ import Quickshell.Wayland
 import qs.shared.controls
 import qs.shared.theme
 import qs.app.services
+import qs.shared.i18n
 
 Item {
     Variants {
@@ -105,7 +106,7 @@ Item {
                         spacing: Metrics.spacingL
                         Text {
                             Layout.fillWidth: true
-                            text: qsTr("Keep display changes?")
+                            text: I18n.tr("Keep display changes?")
                             wrapMode: Text.Wrap
                             font.family: Fonts.ui
                             font.pixelSize: Typography.titleLarge.pixelSize
@@ -113,7 +114,7 @@ Item {
                         }
                         Text {
                             Layout.fillWidth: true
-                            text: qsTr("Reverting in %n second(s)", "", DisplayConfigService.remaining)
+                            text: I18n.tr("Reverting in %n second(s)", DisplayConfigService.remaining)
                             wrapMode: Text.Wrap
                             font.family: Fonts.ui
                             color: Appearance.colors.colOnSurfaceVariant
@@ -122,11 +123,11 @@ Item {
                             Layout.fillWidth: true
                             spacing: Metrics.spacingS
                             ActionButton {
-                                text: qsTr("Revert")
+                                text: I18n.tr("Revert")
                                 onClicked: DisplayConfigService.revert()
                             }
                             ActionButton {
-                                text: qsTr("Keep Changes")
+                                text: I18n.tr("Keep Changes")
                                 filled: true
                                 onClicked: DisplayConfigService.keep()
                             }

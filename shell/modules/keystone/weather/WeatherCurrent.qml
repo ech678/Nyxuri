@@ -4,11 +4,12 @@ import QtQuick.Layouts
 import qs.app.services
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
 
-    property string locationName: qsTr("Weather")
+    property string locationName: I18n.tr("Weather")
     property string currentTemp: "--"
     property string currentIcon: "cloud"
     property string currentDesc: "--"
@@ -19,7 +20,7 @@ Item {
 
     function syncData() {
         if (!WeatherService.hasValidData) {
-            root.locationName = WeatherService.locationName || qsTr("Weather");
+            root.locationName = WeatherService.locationName || I18n.tr("Weather");
             root.currentTemp = "--";
             root.currentIcon = "cloud";
             root.currentDesc = "--";
@@ -27,11 +28,11 @@ Item {
             root.lowTemp = "--";
             return;
         }
-        root.locationName = WeatherService.locationName || qsTr("Unknown");
+        root.locationName = WeatherService.locationName || I18n.tr("Unknown");
         root.currentTemp = Math.round(UiPreferences.weatherTemperature(WeatherService.currentTemperatureC
                                                                        || 0)) + "°";
         root.currentIcon = WeatherService.currentIconName || "cloud";
-        root.currentDesc = WeatherService.currentWeatherText || qsTr("Unknown");
+        root.currentDesc = WeatherService.currentWeatherText || I18n.tr("Unknown");
         if (WeatherService.dailyForecast.count() > 0) {
             const today = WeatherService.dailyForecast.get(0);
             const dayPart = today.day || {};
@@ -124,7 +125,7 @@ Item {
             iconSize: 26
             iconColor: Appearance.colors.colOnSurface
             iconRotation: WeatherService.loading ? 360 : 0
-            accessibleName: qsTr("Refresh weather")
+            accessibleName: I18n.tr("Refresh weather")
             onClicked: root.refreshRequested()
 
             RotationAnimation on iconRotation {

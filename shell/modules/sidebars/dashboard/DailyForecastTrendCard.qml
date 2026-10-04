@@ -4,6 +4,7 @@ import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
 import "WeatherChartMath.js" as WeatherChartMath
+import qs.shared.i18n
 
 Rectangle {
     id: root
@@ -85,7 +86,8 @@ Rectangle {
     }
 
     function extraTabLabel() {
-        const labels = [qsTr("UV index"), qsTr("Precipitation"), qsTr("Sunshine"), qsTr("Feels like")];
+        const labels = [I18n.tr("UV index"), I18n.tr("Precipitation"), I18n.tr("Sunshine"), I18n.tr(
+                            "Feels like")];
         return currentTab >= 3 && currentTab < 7 ? labels[currentTab - 3] : "";
     }
 
@@ -111,19 +113,19 @@ Rectangle {
 
     function dayLabel(index, epoch) {
         if (index === 0)
-            return qsTr("Yesterday");
+            return I18n.tr("Yesterday");
 
         if (index === 1)
-            return qsTr("Today");
+            return I18n.tr("Today");
 
         if (index === 2)
-            return qsTr("Tomorrow");
+            return I18n.tr("Tomorrow");
 
         if (!epoch)
             return "--";
 
-        const week = [qsTr("Sun"), qsTr("Mon"), qsTr("Tue"), qsTr("Wed"), qsTr("Thu"), qsTr("Fri"), qsTr(
-                          "Sat")];
+        const week = [I18n.tr("Sun"), I18n.tr("Mon"), I18n.tr("Tue"), I18n.tr("Wed"), I18n.tr("Thu"), I18n.tr(
+                          "Fri"), I18n.tr("Sat")];
         return week[new Date(epoch * 1000).getDay()];
     }
 
@@ -205,7 +207,7 @@ Rectangle {
                 }
 
                 Text {
-                    text: qsTr("Daily forecast")
+                    text: I18n.tr("Daily forecast")
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.ui
                     font.bold: true
@@ -226,13 +228,13 @@ Rectangle {
                     currentValue: root.currentTab
                     model: [({
                                  "value": 0,
-                                 "label": qsTr("Conditions")
+                                 "label": I18n.tr("Conditions")
                              }), ({
                                       "value": 1,
-                                      "label": qsTr("Air quality")
+                                      "label": I18n.tr("Air quality")
                                   }), ({
                                            "value": 2,
-                                           "label": qsTr("Wind")
+                                           "label": I18n.tr("Wind")
                                        })]
                     onValueSelected: value => {
                         return root.currentTab = value;
@@ -263,7 +265,7 @@ Rectangle {
                     iconColor: Appearance.colors.colOnSurfaceVariant
                     selected: root.currentTab >= 3 || extraMenu.opened
                     selectedIconColor: Appearance.colors.colOnPrimaryContainer
-                    accessibleName: qsTr("More daily forecast options")
+                    accessibleName: I18n.tr("More daily forecast options")
                     normalContainerColor: Appearance.colors.colLayer2
                     selectedContainerColor: Appearance.colors.colPrimaryContainer
                     hoverStateLayerColor: Appearance.colors.colLayer4
@@ -278,22 +280,22 @@ Rectangle {
                         options: [
                             {
                                 "value": 3,
-                                "label": qsTr("UV index"),
+                                "label": I18n.tr("UV index"),
                                 "icon": "sunny"
                             },
                             {
                                 "value": 4,
-                                "label": qsTr("Precipitation"),
+                                "label": I18n.tr("Precipitation"),
                                 "icon": "water_drop"
                             },
                             {
                                 "value": 5,
-                                "label": qsTr("Sunshine"),
+                                "label": I18n.tr("Sunshine"),
                                 "icon": "wb_sunny"
                             },
                             {
                                 "value": 6,
-                                "label": qsTr("Feels like"),
+                                "label": I18n.tr("Feels like"),
                                 "icon": "thermostat"
                             }
                         ]

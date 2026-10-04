@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Services.Mpris
+import qs.shared.i18n
 
 Item {
     id: root
@@ -86,11 +87,11 @@ Item {
     // 辅助函数：将乱七八糟的底层进程名清洗为美观的名称
     function getIdentity(player) {
         if (!player || !player.identity)
-            return qsTr("No media");
+            return I18n.tr("No media");
         let name = player.identity.toLowerCase();
 
         if (name.includes("chrome") || name.includes("chromium"))
-            return qsTr("Browser");
+            return I18n.tr("Browser");
         if (name.includes("firefox"))
             return "Firefox";
         if (name.includes("spotify"))

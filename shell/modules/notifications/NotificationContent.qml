@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -184,7 +185,7 @@ Item {
                     focusStateLayerOpacity: 0.1
                     pressedStateLayerOpacity: 0.12
                     rippleColor: Appearance.colors.colOnSurfaceVariant
-                    Accessible.name: qsTr("Close")
+                    Accessible.name: I18n.tr("Close")
                     onClicked: root.manager.dismissPopup(delegateRoot.modelData.notificationId)
 
                     contentItem: Text {

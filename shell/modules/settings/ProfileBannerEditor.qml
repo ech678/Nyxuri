@@ -2,6 +2,7 @@ import QtQuick
 import qs.app.services
 import qs.modules.wallpaper
 import qs.modules.filepicker
+import qs.shared.i18n
 
 Item {
     id: root
@@ -28,7 +29,7 @@ Item {
         id: filePicker
         parentModal: root.parentModal
         selectionMode: FilePickerWindow.Files
-        dialogTitle: qsTranslate("AccountProfileHeader", "Choose banner image")
+        dialogTitle: I18n.tr("Choose banner image", "AccountProfileHeader")
         description: ""
         selectionPrompt: dialogTitle
         onFileSelected: path => PersonalizationConfig.setBannerSource(path)

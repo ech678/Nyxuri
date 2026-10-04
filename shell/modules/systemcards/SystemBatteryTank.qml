@@ -6,6 +6,7 @@ import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
 import "../../shared/utils/SystemFormat.js" as Format
+import qs.shared.i18n
 
 Item {
     id: root
@@ -84,39 +85,40 @@ Item {
             return "—";
 
         if (root.charging)
-            return Format.isNumber(PowerService.timeToFull) ? qsTr("Fully charged in ") + Format.duration(
-                                                                  PowerService.timeToFull) : qsTr(
+            return Format.isNumber(PowerService.timeToFull) ? I18n.tr("Fully charged in ") + Format.duration(
+                                                                  PowerService.timeToFull) : I18n.tr(
                                                                   "Time to full is unknown");
 
         if (PowerService.discharging || !root.powerConnected)
-            return Format.isNumber(PowerService.timeToEmpty) ? qsTr("Time remaining ") + Format.duration(
-                                                                   PowerService.timeToEmpty) : qsTr(
+            return Format.isNumber(PowerService.timeToEmpty) ? I18n.tr("Time remaining ") + Format.duration(
+                                                                   PowerService.timeToEmpty) : I18n.tr(
                                                                    "Remaining time is unknown");
 
-        return qsTr("Plugged in, not charging");
+        return I18n.tr("Plugged in, not charging");
     }
 
     function statusText() {
         if (!root.present)
-            return qsTr("Unavailable");
+            return I18n.tr("Unavailable");
 
         if (root.full)
-            return qsTr("Fully charged");
+            return I18n.tr("Fully charged");
 
         if (root.charging)
-            return qsTr("Charging");
+            return I18n.tr("Charging");
 
         if (PowerService.discharging)
-            return qsTr("Discharging");
+            return I18n.tr("Discharging");
 
-        return root.powerConnected ? qsTr("Plugged in") : qsTr("Status unknown");
+        return root.powerConnected ? I18n.tr("Plugged in") : I18n.tr("Status unknown");
     }
 
-    Accessible.name: qsTr("Battery,") + (root.present ? Format.percent(root.chargePercent, 0) + "，"
-                                                        + root.statusText() + "，" + (root.powerConnected
-                                                                                     ? qsTr("Plugged in") :
-                                                                                       qsTr("On battery")) :
-                                                        qsTr("No battery detected"))
+    Accessible.name: I18n.tr("Battery,") + (root.present ? Format.percent(root.chargePercent, 0) + "，"
+                                                           + root.statusText() + "，" + (root.powerConnected
+                                                                                        ? I18n.tr(
+                                                                                              "Plugged in") :
+                                                                                          I18n.tr("On battery")) :
+                                                           I18n.tr("No battery detected"))
 
     Rectangle {
         id: bodyShadow
@@ -274,7 +276,7 @@ Item {
         required property color foregroundColor
 
         Text {
-            text: qsTr("Battery")
+            text: I18n.tr("Battery")
             color: contents.foregroundColor
             font.family: Fonts.ui
             font.pixelSize: Typography.titleSmall.pixelSize
@@ -330,13 +332,14 @@ Item {
 
                 Text {
                     Layout.fillWidth: true
-                    text: Format.isNumber(PowerService.changeRate) ? (root.powerConnected ? (root.charging ? qsTr(
-                                                                                                                 "Charging ") :
-                                                                                                             qsTr("Power ")) :
-                                                                                            qsTr("Discharging "))
+                    text: Format.isNumber(PowerService.changeRate) ? (root.powerConnected ? (root.charging
+                                                                                             ? I18n.tr(
+                                                                                                   "Charging ") :
+                                                                                               I18n.tr("Power ")) :
+                                                                                            I18n.tr("Discharging "))
                                                                      + Format.watts(Math.abs(
                                                                                         PowerService.changeRate)) :
-                                                                     qsTr("Power unknown")
+                                                                     I18n.tr("Power unknown")
                     color: contents.foregroundColor
                     opacity: 0.78
                     font.family: Fonts.numeric
@@ -358,7 +361,7 @@ Item {
 
                 Text {
                     Layout.fillWidth: true
-                    text: qsTr("Health ") + Format.percent(PowerService.healthPercentage, 0)
+                    text: I18n.tr("Health ") + Format.percent(PowerService.healthPercentage, 0)
                     color: contents.foregroundColor
                     opacity: 0.78
                     font.family: Fonts.ui
@@ -371,7 +374,7 @@ Item {
         Text {
             anchors.centerIn: parent
             visible: !root.present
-            text: qsTr("No battery\ndetected")
+            text: I18n.tr("No battery\ndetected")
             color: contents.foregroundColor
             opacity: 0.76
             font.family: Fonts.ui
@@ -391,7 +394,7 @@ Item {
 
             Text {
                 Layout.alignment: Qt.AlignRight
-                text: root.present ? root.statusText() : qsTr("Unavailable")
+                text: root.present ? root.statusText() : I18n.tr("Unavailable")
                 color: contents.foregroundColor
                 opacity: 0.74
                 font.family: Fonts.ui

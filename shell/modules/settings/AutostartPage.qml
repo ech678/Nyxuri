@@ -6,6 +6,7 @@ import QtQuick.Window
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -96,14 +97,14 @@ StyledFlickable {
             Layout.fillWidth: true
             visible: AutostartService.initializing
             iconName: "progress_activity"
-            message: qsTr("Initializing the user autostart directory…")
+            message: I18n.tr("Initializing the user autostart directory…")
         }
 
         InlineStatusBanner {
             Layout.fillWidth: true
             visible: AutostartService.initialized && AutostartService.listing
             iconName: "progress_activity"
-            message: qsTr("Loading user autostart entries…")
+            message: I18n.tr("Loading user autostart entries…")
         }
 
         RowLayout {
@@ -118,7 +119,7 @@ StyledFlickable {
             }
 
             ActionButton {
-                text: qsTr("Retry")
+                text: I18n.tr("Retry")
                 filled: true
                 onClicked: AutostartService.initialize()
             }
@@ -145,11 +146,11 @@ StyledFlickable {
                 SettingsRow {
                     Layout.fillWidth: true
                     iconName: "apps"
-                    title: qsTr("Browse applications")
-                    supportingText: qsTr("Select an installed app to add to user-level startup")
+                    title: I18n.tr("Browse applications")
+                    supportingText: I18n.tr("Select an installed app to add to user-level startup")
 
                     trailing: ActionButton {
-                        text: qsTr("Browse applications")
+                        text: I18n.tr("Browse applications")
                         enabled: !AutostartService.busy
                         onClicked: root.openApplicationBrowser()
                     }
@@ -174,7 +175,7 @@ StyledFlickable {
                     spacing: Metrics.spacingS
 
                     ActionButton {
-                        text: qsTr("Refresh")
+                        text: I18n.tr("Refresh")
                         enabled: AutostartService.ready
                         onClicked: AutostartService.refresh()
                     }
@@ -218,8 +219,8 @@ StyledFlickable {
 
                                     Text {
                                         Layout.fillWidth: true
-                                        text: modelData.valid ? modelData.name : qsTr("Invalid entry: %1").arg(
-                                                                    modelData.name)
+                                        text: modelData.valid ? modelData.name : I18n.tr(
+                                                                    "Invalid entry: %1").arg(modelData.name)
                                         color: modelData.valid ? Appearance.colors.colOnSurface :
                                                                  Appearance.colors.colError
                                         font.family: Fonts.ui
@@ -247,7 +248,7 @@ StyledFlickable {
                                 }
 
                                 ActionButton {
-                                    text: qsTr("Delete")
+                                    text: I18n.tr("Delete")
                                     enabled: !AutostartService.busy
                                     onClicked: root.requestRemove(modelData)
                                 }
@@ -269,7 +270,7 @@ StyledFlickable {
 
                         Text {
                             Layout.fillWidth: true
-                            text: qsTr("No autostart applications")
+                            text: I18n.tr("No autostart applications")
                             horizontalAlignment: Text.AlignHCenter
                             color: Appearance.colors.colOnSurface
                             font.family: Fonts.ui
@@ -287,8 +288,8 @@ StyledFlickable {
 
         anchors.centerIn: Overlay.overlay
         width: Math.min(420, root.width - Metrics.spacingL * 2)
-        dialogTitle: qsTr("Delete autostart entry?")
-        messageText: root.pendingRemoveEntry ? qsTr("The autostart entry “%1” will be deleted.").arg(
+        dialogTitle: I18n.tr("Delete autostart entry?")
+        messageText: root.pendingRemoveEntry ? I18n.tr("The autostart entry “%1” will be deleted.").arg(
                                                    root.pendingRemoveEntry.name) : ""
 
         actionsComponent: Component {
@@ -300,12 +301,12 @@ StyledFlickable {
                 }
 
                 ActionButton {
-                    text: qsTr("Cancel")
+                    text: I18n.tr("Cancel")
                     onClicked: removeDialog.close()
                 }
 
                 ActionButton {
-                    text: qsTr("Delete")
+                    text: I18n.tr("Delete")
                     onClicked: root.removePendingEntry()
                 }
             }

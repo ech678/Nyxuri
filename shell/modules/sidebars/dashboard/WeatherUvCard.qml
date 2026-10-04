@@ -1,4 +1,5 @@
 import QtQuick
+import qs.shared.i18n
 
 Item {
     id: root
@@ -14,7 +15,7 @@ Item {
         value: root.value
         level: root.level
         activeIndex: root.activeIndex
-        title: qsTr("UV index")
+        title: I18n.tr("UV index")
         animationEnabled: root.animationEnabled
         animationActive: root.animationActive
     }

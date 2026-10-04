@@ -5,6 +5,7 @@ import Quickshell.Io
 import qs.shared.theme
 import qs.app
 import "./SpotlightToolResponse.js" as ToolResponse
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -37,18 +38,18 @@ Singleton {
         if (!value)
             return "";
         const messages = {
-            dependency_missing: qsTr("qalc is unavailable"),
-            invalid_expression: qsTr("Enter a supported expression"),
-            calculation_failed: qsTr("The expression could not be calculated"),
-            timeout: qsTr("Calculation timed out"),
-            cancelled: qsTr("Calculation cancelled"),
-            unsupported_currency: qsTr("Choose an ECB reference currency"),
-            rate_unavailable: qsTr("Exchange rate unavailable; try again later"),
-            nonexistent_time: qsTr("This local time does not exist"),
-            timezone_unavailable: qsTr("Time zone data is unavailable for this zone"),
-            invalid_time: qsTr("Enter a valid date and an unambiguous IANA time zone")
+            dependency_missing: I18n.tr("qalc is unavailable"),
+            invalid_expression: I18n.tr("Enter a supported expression"),
+            calculation_failed: I18n.tr("The expression could not be calculated"),
+            timeout: I18n.tr("Calculation timed out"),
+            cancelled: I18n.tr("Calculation cancelled"),
+            unsupported_currency: I18n.tr("Choose an ECB reference currency"),
+            rate_unavailable: I18n.tr("Exchange rate unavailable; try again later"),
+            nonexistent_time: I18n.tr("This local time does not exist"),
+            timezone_unavailable: I18n.tr("Time zone data is unavailable for this zone"),
+            invalid_time: I18n.tr("Enter a valid date and an unambiguous IANA time zone")
         };
-        return messages[value.code] || qsTr("Tool request failed");
+        return messages[value.code] || I18n.tr("Tool request failed");
     }
     function invalidate() {
         generation++;
@@ -82,7 +83,7 @@ Singleton {
         let action = !capabilityKnown ? "status" : !catalogs[tool] ? "catalog" : tool;
         if (capabilityKnown && (!capabilities || capabilities[tool] !== true)) {
             state = "unavailable";
-            error = capabilities ? qsTr("This tool's dependency is unavailable") : qsTr(
+            error = capabilities ? I18n.tr("This tool's dependency is unavailable") : I18n.tr(
                                        "Update key-cli to enable this tool");
             return;
         }
@@ -140,7 +141,8 @@ Singleton {
         } else if (current) {
             if (!value || timedOut) {
                 state = "error";
-                error = timedOut ? qsTr("Tool request timed out") : qsTr("The tool returned invalid data");
+                error = timedOut ? I18n.tr("Tool request timed out") : I18n.tr(
+                                       "The tool returned invalid data");
                 return;
             }
             result = value;
@@ -156,7 +158,7 @@ Singleton {
         }
         if (current && pending.action === "catalog" && !catalogs[pending.tool]) {
             state = "error";
-            error = qsTr("The tool returned invalid data");
+            error = I18n.tr("The tool returned invalid data");
             return;
         }
         if (active && !debounce.running)
@@ -226,7 +228,7 @@ Singleton {
         id: copier
         onExited: code => {
             if (root.active && root.copyGeneration === root.generation)
-                root.feedback = code === 0 ? qsTr("Copied") : qsTr("Could not copy the result");
+                root.feedback = code === 0 ? I18n.tr("Copied") : I18n.tr("Could not copy the result");
         }
     }
 

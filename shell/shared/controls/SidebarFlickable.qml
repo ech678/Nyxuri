@@ -1,4 +1,5 @@
 import QtQuick
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -96,7 +97,7 @@ StyledFlickable {
             opacity: scale
             running: root.refreshing && visible
             animationProgress: root.refreshing ? 0 : root.indicatorProgress * 0.25
-            accessibleName: qsTr("Refreshing")
+            accessibleName: I18n.tr("Refreshing")
         }
     }
 }

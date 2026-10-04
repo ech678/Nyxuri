@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -15,10 +16,10 @@ StyledFlickable {
             return BluetoothService.lastError;
 
         if (!BluetoothService.available)
-            return qsTr("No Bluetooth adapter detected or BlueZ is unavailable");
+            return I18n.tr("No Bluetooth adapter detected or BlueZ is unavailable");
 
         if (BluetoothService.blocked)
-            return qsTr("The Bluetooth adapter is blocked by rfkill");
+            return I18n.tr("The Bluetooth adapter is blocked by rfkill");
 
         return "";
     }
@@ -28,10 +29,10 @@ StyledFlickable {
 
     function deviceStatus(device) {
         if (device.blocked)
-            return qsTr("Blocked");
+            return I18n.tr("Blocked");
 
         if (device.connected)
-            return device.batteryAvailable ? qsTr("Connected · %1%").arg(device.batteryLevel) : qsTr(
+            return device.batteryAvailable ? I18n.tr("Connected · %1%").arg(device.batteryLevel) : I18n.tr(
                                                  "Connected");
 
         return "";
@@ -62,12 +63,12 @@ StyledFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: BluetoothService.enabled ? "bluetooth" : "bluetooth_disabled"
-                title: qsTr("Bluetooth")
+                title: I18n.tr("Bluetooth")
 
                 trailing: StyledSwitch {
                     checked: BluetoothService.enabled
                     enabled: BluetoothService.available && !BluetoothService.blocked && !BluetoothService.busy
-                    Accessible.name: qsTr("Bluetooth switch")
+                    Accessible.name: I18n.tr("Bluetooth switch")
                     onToggled: BluetoothService.setBluetoothEnabled(checked)
                 }
             }
@@ -114,7 +115,7 @@ StyledFlickable {
                 Layout.fillWidth: true
                 visible: root.savedDevices.length === 0
                 iconName: "devices_other"
-                title: qsTr("No saved devices")
+                title: I18n.tr("No saved devices")
             }
 
             SettingsActionRow {
@@ -122,7 +123,7 @@ StyledFlickable {
                 enabled: BluetoothService.available && BluetoothService.enabled && !BluetoothService.blocked
                          && !BluetoothService.busy
                 iconName: "add"
-                text: qsTr("Pair new device")
+                text: I18n.tr("Pair new device")
                 trailingIconName: "chevron_right"
                 onClicked: root.pairingRequested()
             }
@@ -151,16 +152,17 @@ StyledFlickable {
 
                     Layout.fillWidth: true
                     iconName: adapterRow.modelData.blocked ? "bluetooth_disabled" : "settings_bluetooth"
-                    title: adapterRow.modelData.name || adapterRow.modelData.id || qsTr("Bluetooth adapter")
-                    supportingText: adapterRow.modelData.blocked ? qsTr("%1 · Blocked by rfkill").arg(
+                    title: adapterRow.modelData.name || adapterRow.modelData.id || I18n.tr(
+                               "Bluetooth adapter")
+                    supportingText: adapterRow.modelData.blocked ? I18n.tr("%1 · Blocked by rfkill").arg(
                                                                        adapterRow.modelData.id) :
                                                                    adapterRow.modelData.id
 
                     trailing: StyledSwitch {
                         checked: adapterRow.modelData.enabled
                         enabled: !adapterRow.modelData.blocked && !BluetoothService.busy
-                        Accessible.name: qsTr("Toggle adapter %1").arg(adapterRow.modelData.name
-                                                                       || adapterRow.modelData.id)
+                        Accessible.name: I18n.tr("Toggle adapter %1").arg(adapterRow.modelData.name
+                                                                          || adapterRow.modelData.id)
                         onToggled: BluetoothService.setAdapterEnabled(adapterRow.modelData, checked)
                     }
                 }
@@ -182,12 +184,12 @@ StyledFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: "visibility"
-                title: qsTr("Allow discovery")
+                title: I18n.tr("Allow discovery")
 
                 trailing: StyledSwitch {
                     checked: BluetoothService.discoverable
                     enabled: BluetoothService.enabled && !BluetoothService.busy
-                    Accessible.name: qsTr("Allow discovery")
+                    Accessible.name: I18n.tr("Allow discovery")
                     onToggled: BluetoothService.setDiscoverable(checked)
                 }
             }
@@ -195,12 +197,12 @@ StyledFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: "handshake"
-                title: qsTr("Allow pairing")
+                title: I18n.tr("Allow pairing")
 
                 trailing: StyledSwitch {
                     checked: BluetoothService.pairable
                     enabled: BluetoothService.enabled && !BluetoothService.busy
-                    Accessible.name: qsTr("Allow pairing")
+                    Accessible.name: I18n.tr("Allow pairing")
                     onToggled: BluetoothService.setPairable(checked)
                 }
             }

@@ -3,6 +3,7 @@ import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
 import qs.app
+import qs.shared.i18n
 
 BarCircularButton {
     id: root
@@ -16,7 +17,7 @@ BarCircularButton {
     containerColor: "transparent"
     rippleColor: Appearance.colors.colOnSurface
     iconColor: Appearance.colors.colOnSurface
-    tooltipText: qsTr("Left click: Quick Settings\nRight click: Control Center")
+    tooltipText: I18n.tr("Left click: Quick Settings\nRight click: Control Center")
     onClicked: {
         if (root.screen && root.screen.name)
             WidgetState.quickSettingsScreenName = root.screen.name;

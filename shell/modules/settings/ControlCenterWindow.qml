@@ -9,6 +9,7 @@ import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
 import qs.app
+import qs.shared.i18n
 
 FloatingWindow {
     id: root
@@ -231,7 +232,7 @@ FloatingWindow {
 
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.verticalCenter: parent.verticalCenter
-                    text: qsTr("Settings")
+                    text: I18n.tr("Settings")
                     color: Appearance.colors.colOnLayer0
                     font.family: Fonts.ui
                     font.pixelSize: 24
@@ -315,7 +316,7 @@ FloatingWindow {
                             property bool justCopied: copiedTimer.running
 
                             iconText: justCopied ? "check" : "edit"
-                            buttonText: justCopied ? qsTr("Path copied") : qsTr("config file")
+                            buttonText: justCopied ? I18n.tr("Path copied") : I18n.tr("config file")
                             expanded: root.navExpanded
                             onClicked: root.openConfig()
                             onAltClicked: root.copyConfigPath()

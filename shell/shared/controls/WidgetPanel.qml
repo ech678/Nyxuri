@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Rectangle {
     id: root
@@ -30,7 +31,7 @@ Rectangle {
                 iconName: "arrow_back"
                 iconSize: 22
                 iconColor: Appearance.colors.colOnLayer2
-                accessibleName: qsTr("Back to Quick Settings")
+                accessibleName: I18n.tr("Back to Quick Settings")
                 hoverStateLayerColor: Appearance.colors.colLayer2Hover
                 pressedStateLayerColor: Appearance.colors.colLayer2Active
                 onClicked: root.backAction()

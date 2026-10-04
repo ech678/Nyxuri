@@ -3,6 +3,7 @@ import qs.app
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 BarLabelButton {
     id: root
@@ -18,9 +19,9 @@ BarLabelButton {
     enabled: BluetoothService.available
     label: BluetoothService.connectedName || ""
     showLabel: PersonalizationConfig.barShowNames
-    tooltipText: BluetoothService.connected ? (BluetoothService.connectedName || qsTr("Bluetooth connected")) :
-                                              BluetoothService.enabled ? qsTr("Bluetooth on") : qsTr(
-                                                                             "Bluetooth off")
+    tooltipText: BluetoothService.connected ? (BluetoothService.connectedName || I18n.tr(
+                                                   "Bluetooth connected")) : BluetoothService.enabled
+                                              ? I18n.tr("Bluetooth on") : I18n.tr("Bluetooth off")
     onClicked: {
         if (root.screen && root.screen.name)
             WidgetState.quickSettingsScreenName = root.screen.name;

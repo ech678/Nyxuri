@@ -4,6 +4,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import qs.app.services
+import qs.shared.i18n
 
 Item {
     id: root
@@ -12,11 +13,11 @@ Item {
 
     readonly property var tabs: [
         {
-            "name": qsTr("Pomodoro"),
+            "name": I18n.tr("Pomodoro"),
             "icon": "search_activity"
         },
         {
-            "name": qsTr("Stopwatch"),
+            "name": I18n.tr("Stopwatch"),
             "icon": "timer"
         }
     ]

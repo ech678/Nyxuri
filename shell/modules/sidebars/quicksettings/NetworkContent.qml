@@ -6,6 +6,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 WidgetPanel {
     id: root
@@ -27,16 +28,16 @@ WidgetPanel {
             return NetworkService.lastError;
 
         if (!NetworkService.available)
-            return qsTr("NetworkManager is currently unavailable");
+            return I18n.tr("NetworkManager is currently unavailable");
 
         if (!NetworkService.wifiAvailable)
-            return qsTr("No Wi-Fi device detected");
+            return I18n.tr("No Wi-Fi device detected");
 
         if (!NetworkService.wifiHardwareEnabled)
-            return qsTr("Wi-Fi is blocked by a hardware switch or rfkill");
+            return I18n.tr("Wi-Fi is blocked by a hardware switch or rfkill");
 
         if (!NetworkService.wifiEnabled)
-            return qsTr("Wi-Fi is off");
+            return I18n.tr("Wi-Fi is off");
 
         return "";
     }
@@ -85,18 +86,18 @@ WidgetPanel {
 
     function connectivityText() {
         if (NetworkService.captivePortal)
-            return qsTr("Network sign-in required");
+            return I18n.tr("Network sign-in required");
 
         if (NetworkService.limitedConnectivity)
-            return qsTr("Network connectivity is limited");
+            return I18n.tr("Network connectivity is limited");
 
         if (NetworkService.internetAvailable)
-            return qsTr("Internet is available");
+            return I18n.tr("Internet is available");
 
         if (NetworkService.connected)
-            return qsTr("Connected; internet access could not be confirmed");
+            return I18n.tr("Connected; internet access could not be confirmed");
 
-        return qsTr("No active connection");
+        return I18n.tr("No active connection");
     }
 
     function savedProfileDetails(profile) {
@@ -107,13 +108,13 @@ WidgetPanel {
             details.push(ssid);
 
         if (profile.ipv4Method === "manual")
-            details.push(qsTr("Manual IPv4"));
+            details.push(I18n.tr("Manual IPv4"));
         else if (profile.customDns)
-            details.push(qsTr("DHCP + custom DNS"));
+            details.push(I18n.tr("DHCP + custom DNS"));
         else
-            details.push(qsTr("Automatic (DHCP)"));
+            details.push(I18n.tr("Automatic (DHCP)"));
         if (profile.autoconnect)
-            details.push(qsTr("Connect automatically"));
+            details.push(I18n.tr("Connect automatically"));
 
         return details.join(" · ");
     }
@@ -130,7 +131,7 @@ WidgetPanel {
         return details.length > 0 ? name + " · " + details : name;
     }
 
-    title: qsTr("Network")
+    title: I18n.tr("Network")
     icon: "wifi"
     showBackButton: true
     backAction: () => {
@@ -230,7 +231,7 @@ WidgetPanel {
                         Layout.fillWidth: true
                         iconName: NetworkService.activeNetwork && NetworkService.activeNetwork.type
                                   === "wired" ? "lan" : NetworkService.wifiConnected ? "wifi" : "wifi_off"
-                        title: NetworkService.activeNetwork ? NetworkService.activeConnection : qsTr(
+                        title: NetworkService.activeNetwork ? NetworkService.activeConnection : I18n.tr(
                                                                   "Not connected")
                         supportingText: root.connectivityText()
                         highlighted: NetworkService.connected
@@ -260,7 +261,7 @@ WidgetPanel {
                     ActionButton {
                         Layout.fillWidth: true
                         visible: NetworkService.captivePortal
-                        text: qsTr("Open network portal")
+                        text: I18n.tr("Open network portal")
                         filled: true
                         onClicked: {
                             WidgetState.closeAllPopups();
@@ -282,7 +283,7 @@ WidgetPanel {
 
                     Layout.fillWidth: true
                     visible: NetworkService.wiredDevices.length > 0
-                    title: qsTr("Wired connections")
+                    title: I18n.tr("Wired connections")
                     iconName: "lan"
 
                     Repeater {
@@ -297,12 +298,13 @@ WidgetPanel {
                             title: modelData.name
                             iconName: "lan"
                             highlighted: modelData.connected
-                            supportingText: !modelData.hasLink ? qsTr("Network cable unplugged") :
-                                                                 modelData.linkSpeed > 0 ? qsTr("%1 Mbps").arg(
+                            supportingText: !modelData.hasLink ? I18n.tr("Network cable unplugged") :
+                                                                 modelData.linkSpeed > 0 ? I18n.tr(
+                                                                                               "%1 Mbps").arg(
                                                                                                modelData.linkSpeed) :
                                                                                            ""
                             trailing: ActionButton {
-                                text: modelData.connected ? qsTr("Disconnect") : qsTr("Connect")
+                                text: modelData.connected ? I18n.tr("Disconnect") : I18n.tr("Connect")
                                 enabled: modelData.hasLink && !NetworkService.busy
                                 onClicked: {
                                     if (modelData.connected)
@@ -325,28 +327,27 @@ WidgetPanel {
 
                     Layout.fillWidth: true
                     visible: NetworkService.activeWifi !== null
-                    title: qsTr("Connection details")
+                    title: I18n.tr("Connection details")
                     iconName: "wifi"
 
                     SettingsRow {
                         Layout.fillWidth: true
-                        title: qsTr("Signal strength")
-                        supportingText: qsTr("%1%").arg(NetworkService.signalStrength)
+                        title: I18n.tr("Signal strength")
+                        supportingText: I18n.tr("%1%").arg(NetworkService.signalStrength)
                     }
                     SettingsRow {
                         Layout.fillWidth: true
-                        title: qsTr("Security")
-                        supportingText: NetworkService.activeWifi && NetworkService.activeWifi.isSecure ? qsTr(
-                                                                                                              "Protected network") :
-                                                                                                          qsTr("Open network")
+                        title: I18n.tr("Security")
+                        supportingText: NetworkService.activeWifi && NetworkService.activeWifi.isSecure
+                                        ? I18n.tr("Protected network") : I18n.tr("Open network")
                     }
                     SettingsRow {
                         Layout.fillWidth: true
-                        title: qsTr("Network adapter")
+                        title: I18n.tr("Network adapter")
                         supportingText: NetworkService.activeWifi ? NetworkService.activeWifi.deviceName : ""
                     }
                     ActionButton {
-                        text: qsTr("Disconnect")
+                        text: I18n.tr("Disconnect")
                         enabled: !NetworkService.busy
                         onClicked: NetworkService.disconnectWifiNetwork()
                     }
@@ -358,7 +359,7 @@ WidgetPanel {
 
                     Layout.fillWidth: true
                     visible: root.networkUsable && root.savedWifiProfiles.length > 0
-                    title: qsTr("Saved networks")
+                    title: I18n.tr("Saved networks")
 
                     Repeater {
                         model: savedPages.items
@@ -383,9 +384,9 @@ WidgetPanel {
                     Layout.topMargin: sidebarScroll.gapFor(5, 1)
 
                     Layout.fillWidth: true
-                    title: qsTr("Available networks")
+                    title: I18n.tr("Available networks")
                     visible: root.networkUsable
-                    supportingText: qsTr("%n network(s)", "", NetworkService.availableWifiNetworks.length)
+                    supportingText: I18n.tr("%n network(s)", NetworkService.availableWifiNetworks.length)
 
                     Item {
                         Layout.fillWidth: true
@@ -401,12 +402,12 @@ WidgetPanel {
                             MaterialLoadingIndicator {
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 running: root.initialLoading
-                                accessibleName: qsTr("Searching for available networks")
+                                accessibleName: I18n.tr("Searching for available networks")
                             }
 
                             Text {
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                text: qsTr("Searching for available networks")
+                                text: I18n.tr("Searching for available networks")
                                 color: Appearance.colors.colOnLayer1
                                 font.family: Fonts.ui
                                 font.pixelSize: 12
@@ -442,7 +443,7 @@ WidgetPanel {
                         visible: !root.initialLoading && !root.refreshLoading
                                  && NetworkService.availableWifiNetworks.length === 0
                         iconName: "search_off"
-                        title: qsTr("No available networks found")
+                        title: I18n.tr("No available networks found")
                     }
                 }
 
@@ -462,8 +463,9 @@ WidgetPanel {
         width: Math.min(320, root.width - 48)
         x: Math.round((root.width - width) / 2)
         y: Math.round((root.height - height) / 2)
-        dialogTitle: qsTr("Forget network")
-        messageText: root.pendingForgetNetwork ? qsTr("This will delete the saved connection for “%1”.").arg(
+        dialogTitle: I18n.tr("Forget network")
+        messageText: root.pendingForgetNetwork ? I18n.tr(
+                                                     "This will delete the saved connection for “%1”.").arg(
                                                      root.forgetTargetLabel(root.pendingForgetNetwork)) : ""
 
         actionsComponent: Component {
@@ -475,7 +477,7 @@ WidgetPanel {
                 }
 
                 ActionButton {
-                    text: qsTr("Cancel")
+                    text: I18n.tr("Cancel")
                     onClicked: {
                         forgetDialog.close();
                         root.pendingForgetNetwork = null;
@@ -483,7 +485,7 @@ WidgetPanel {
                 }
 
                 ActionButton {
-                    text: qsTr("Forget")
+                    text: I18n.tr("Forget")
                     onClicked: {
                         const target = root.pendingForgetNetwork;
                         forgetDialog.close();
@@ -508,7 +510,7 @@ WidgetPanel {
             iconName: "refresh"
             iconSize: 21
             iconColor: Appearance.colors.colOnLayer2
-            accessibleName: qsTr("Refresh network list")
+            accessibleName: I18n.tr("Refresh network list")
             hoverStateLayerColor: Appearance.colors.colLayer2Hover
             pressedStateLayerColor: Appearance.colors.colLayer2Active
             onClicked: root.requestRefresh()
@@ -519,7 +521,7 @@ WidgetPanel {
             checked: NetworkService.wifiEnabled
             enabled: NetworkService.available && NetworkService.wifiAvailable
                      && NetworkService.wifiHardwareEnabled && !NetworkService.busy
-            Accessible.name: qsTr("Wi-Fi switch")
+            Accessible.name: I18n.tr("Wi-Fi switch")
             onToggled: NetworkService.setWifiEnabled(checked)
         }
     }
@@ -569,7 +571,7 @@ WidgetPanel {
                     iconName: "more_vert"
                     iconSize: 19
                     iconColor: Appearance.colors.colOnLayer2
-                    accessibleName: qsTr("Network action")
+                    accessibleName: I18n.tr("Network action")
                     hoverStateLayerColor: Appearance.colors.colLayer3Hover
                     pressedStateLayerColor: Appearance.colors.colLayer3Active
                     onClicked: profileMenu.open()
@@ -580,7 +582,7 @@ WidgetPanel {
                         StyledMenuItem {
                             iconName: "delete"
                             destructive: true
-                            text: qsTr("Forget network")
+                            text: I18n.tr("Forget network")
                             onTriggered: {
                                 root.pendingForgetNetwork = profileRoot.profile;
                                 forgetDialog.open();
@@ -636,11 +638,10 @@ WidgetPanel {
                                                   ? "network_wifi_3_bar" : wifiNetwork.strength > 25
                                                     ? "network_wifi_2_bar" : "signal_wifi_0_bar"
             title: wifiNetwork.ssid
-            supportingText: networkActive ? qsTr("Connected · ") + wifiNetwork.strength + "%" : (networkKnown
-                                                                                                 ? qsTr("Saved · ") :
-                                                                                                   "") + (networkSecure
-                                                                                                          ? wifiNetwork.security :
-                                                                                                            qsTr("Open network"))
+            supportingText: networkActive ? I18n.tr("Connected · ") + wifiNetwork.strength + "%" : (
+                                                networkKnown ? I18n.tr("Saved · ") : "") + (networkSecure
+                                                                                            ? wifiNetwork.security :
+                                                                                              I18n.tr("Open network"))
                                             + " · " + wifiNetwork.strength + "%"
             interactive: !NetworkService.busy && !networkAskingPassword
             highlighted: networkActive
@@ -684,7 +685,7 @@ WidgetPanel {
                     iconName: "more_vert"
                     iconSize: 19
                     iconColor: Appearance.colors.colOnLayer2
-                    accessibleName: qsTr("Network action")
+                    accessibleName: I18n.tr("Network action")
                     hoverStateLayerColor: Appearance.colors.colLayer3Hover
                     pressedStateLayerColor: Appearance.colors.colLayer3Active
                     onClicked: networkMenu.open()
@@ -695,14 +696,14 @@ WidgetPanel {
                         StyledMenuItem {
                             visible: itemRoot.networkActive
                             iconName: "link_off"
-                            text: qsTr("Disconnect")
+                            text: I18n.tr("Disconnect")
                             onTriggered: NetworkService.disconnectNetwork(itemRoot.wifiNetwork)
                         }
 
                         StyledMenuItem {
                             iconName: "delete"
                             destructive: true
-                            text: qsTr("Forget network")
+                            text: I18n.tr("Forget network")
                             onTriggered: {
                                 root.pendingForgetNetwork = itemRoot.wifiNetwork;
                                 forgetDialog.open();
@@ -743,7 +744,7 @@ WidgetPanel {
                     id: passwordField
 
                     Layout.fillWidth: true
-                    placeholderText: qsTr("Network password")
+                    placeholderText: I18n.tr("Network password")
                     echoMode: itemRoot.showPassword ? TextInput.Normal : TextInput.Password
                     inputMethodHints: Qt.ImhSensitiveData
                     enabled: !NetworkService.busy
@@ -756,7 +757,7 @@ WidgetPanel {
                             iconName: itemRoot.showPassword ? "visibility_off" : "visibility"
                             iconSize: 20
                             iconColor: Appearance.colors.colOnLayer1
-                            accessibleName: itemRoot.showPassword ? qsTr("Hide password") : qsTr(
+                            accessibleName: itemRoot.showPassword ? I18n.tr("Hide password") : I18n.tr(
                                                                         "Show password")
                             hoverStateLayerColor: Appearance.colors.colLayer1Hover
                             pressedStateLayerColor: Appearance.colors.colLayer1Active
@@ -774,12 +775,12 @@ WidgetPanel {
                     }
 
                     ActionButton {
-                        text: qsTr("Cancel")
+                        text: I18n.tr("Cancel")
                         onClicked: NetworkService.cancelPasswordRequest(itemRoot.wifiNetwork)
                     }
 
                     ActionButton {
-                        text: qsTr("Connect")
+                        text: I18n.tr("Connect")
                         filled: true
                         onClicked: itemRoot.submitPassword()
                     }

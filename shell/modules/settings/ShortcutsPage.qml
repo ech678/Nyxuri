@@ -7,6 +7,7 @@ import qs.shared.theme
 import "./NiriActionNames.js" as ActionNames
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -66,7 +67,7 @@ Item {
         property bool conflicting: false
         property bool removable: false
         property bool removalEnabled: true
-        property string removalLabel: qsTr("Delete")
+        property string removalLabel: I18n.tr("Delete")
         signal removeRequested
         implicitWidth: label.implicitWidth + leftPadding + rightPadding
         implicitHeight: Metrics.controlHeightS
@@ -221,13 +222,13 @@ Item {
         clearDraft();
         const group = {
             id: "draft",
-            name: qsTr("New action"),
+            name: I18n.tr("New action"),
             expression: "",
             supported: true,
             builtin: false,
             chips: [
                 {
-                    key: qsTr("Not configured"),
+                    key: I18n.tr("Not configured"),
                     draft: true,
                     effective: false,
                     managed: false
@@ -354,11 +355,11 @@ Item {
     function bindingWarning(binding) {
         binding = root.currentBinding(binding);
         if (binding.collision)
-            return qsTr("Shortcut conflicts");
+            return I18n.tr("Shortcut conflicts");
         if (binding.invalid)
-            return qsTr("Configuration validation failed");
+            return I18n.tr("Configuration validation failed");
         if (!binding.editable)
-            return qsTr("This binding is read-only");
+            return I18n.tr("This binding is read-only");
         return "";
     }
 
@@ -403,8 +404,8 @@ Item {
 
         NiriSetupPrompt {
             Layout.fillWidth: true
-            title: qsTr("Keyboard shortcuts")
-            description: qsTr(
+            title: I18n.tr("Keyboard shortcuts")
+            description: I18n.tr(
                              "Create or connect the shortcuts file. Your existing bindings stay in their original files.")
             integrationState: NiriConfigService.state("binds")
             busy: NiriConfigService.busy && NiriConfigService.activeFeature === "binds"
@@ -416,7 +417,7 @@ Item {
             Layout.fillWidth: true
             visible: !!NiriConfigService.diagnostics.conflicts
             tone: "error"
-            message: qsTr("Shortcut conflicts")
+            message: I18n.tr("Shortcut conflicts")
         }
         InlineStatusBanner {
             Layout.fillWidth: true
@@ -435,11 +436,11 @@ Item {
             Layout.fillWidth: true
             MaterialFilledTextField {
                 Layout.fillWidth: true
-                labelText: qsTr("Search actions")
+                labelText: I18n.tr("Search actions")
                 onTextChanged: root.query = text.toLowerCase()
             }
             ActionButton {
-                text: qsTr("Add action")
+                text: I18n.tr("Add action")
                 iconName: "add"
                 enabled: NiriConfigService.ready("binds") && !NiriConfigService.busy
                 onClicked: root.addAction()
@@ -453,19 +454,19 @@ Item {
             model: [
                 {
                     value: "all",
-                    label: qsTr("All")
+                    label: I18n.tr("All")
                 },
                 {
                     value: "assigned",
-                    label: qsTr("Assigned")
+                    label: I18n.tr("Assigned")
                 },
                 {
                     value: "managed",
-                    label: qsTr("Assigned by me")
+                    label: I18n.tr("Assigned by me")
                 },
                 {
                     value: "unassigned",
-                    label: qsTr("Unassigned")
+                    label: I18n.tr("Unassigned")
                 }
             ]
             onValueSelected: value => {
@@ -542,8 +543,8 @@ Item {
 
                         ShortcutChip {
                             visible: root.inlineRecording && root.draftGroup === row.modelData.id
-                            text: root.recording ? qsTr("Press shortcut...") : (root.draft ? root.draft.key :
-                                                                                             "")
+                            text: root.recording ? I18n.tr("Press shortcut...") : (root.draft
+                                                                                   ? root.draft.key : "")
 
                             recordingStyle: root.recording
                             focusPolicy: Qt.TabFocus
@@ -574,7 +575,8 @@ Item {
                                 removalEnabled: NiriConfigService.ready("binds") && (!root.draft
                                                                                      || root.draftRevision
                                                                                      === NiriConfigService.revision)
-                                removalLabel: modelData.override ? qsTr("Remove override") : qsTr("Delete")
+                                removalLabel: modelData.override ? I18n.tr("Remove override") : I18n.tr(
+                                                                       "Delete")
                                 onRemoveRequested: {
                                     root.recording = false;
                                     NiriConfigService.save({
@@ -595,7 +597,7 @@ Item {
                                                                            && root.draftGroup
                                                                            === row.modelData.id)
                             width: Math.min(implicitWidth, chips.width)
-                            text: row.modelData.supported ? qsTr("Not configured") : qsTr(
+                            text: row.modelData.supported ? I18n.tr("Not configured") : I18n.tr(
                                                                 "Unavailable in this niri version")
                             color: Appearance.colors.colSubtext
                             font.pixelSize: Typography.bodyMedium.pixelSize
@@ -612,7 +614,7 @@ Item {
                         iconSize: Metrics.iconS
                         visible: !row.modelData.builtin && row.modelData.chips.some(chip => chip.managed)
                         enabled: !root.draft && NiriConfigService.ready("binds") && !NiriConfigService.busy
-                        accessibleName: qsTr("Delete action")
+                        accessibleName: I18n.tr("Delete action")
                         onClicked: NiriConfigService.save({
                                                               operation: "delete-group",
                                                               group: row.modelData.identity,
@@ -625,7 +627,7 @@ Item {
                         iconSize: Metrics.iconS
                         enabled: row.modelData.supported && NiriConfigService.ready("binds") &&
                                  !NiriConfigService.busy
-                        accessibleName: qsTr("Add shortcut")
+                        accessibleName: I18n.tr("Add shortcut")
                         onClicked: root.addShortcut(row.modelData)
                     }
                 }
@@ -689,7 +691,7 @@ Item {
             InlineStatusBanner {
                 Layout.fillWidth: true
                 visible: root.draftRevision !== NiriConfigService.revision
-                message: qsTr(
+                message: I18n.tr(
                              "Configuration changed. Cancel and reload before saving; your draft has been kept.")
             }
             RowLayout {
@@ -697,7 +699,7 @@ Item {
                 MaterialFilledTextField {
                     id: keyField
                     Layout.fillWidth: true
-                    labelText: root.recording && !root.inlineRecording ? qsTr("Press shortcut...") : qsTr(
+                    labelText: root.recording && !root.inlineRecording ? I18n.tr("Press shortcut...") : I18n.tr(
                                                                              "Key")
                     text: editorContent.bindingDraft.key
                     readOnly: !editorContent.bindingDraft.managed || root.recording
@@ -717,7 +719,7 @@ Item {
                     }
                 }
                 ActionButton {
-                    text: root.recording ? qsTr("Cancel recording") : qsTr("Record key")
+                    text: root.recording ? I18n.tr("Cancel recording") : I18n.tr("Record key")
                     enabled: editorContent.bindingDraft.managed
                     onClicked: {
                         if (root.recording)
@@ -732,24 +734,24 @@ Item {
             InlineStatusBanner {
                 Layout.fillWidth: true
                 visible: editorContent.bindingDraft.parameters === true
-                message: qsTr("Fill in the action parameters before saving")
+                message: I18n.tr("Fill in the action parameters before saving")
             }
             MaterialFilledTextField {
                 id: actionField
                 Layout.fillWidth: true
-                labelText: qsTr("Action expression")
+                labelText: I18n.tr("Action expression")
                 text: editorContent.bindingDraft.action
             }
             MaterialFilledTextField {
                 Layout.fillWidth: true
-                labelText: qsTr("Title")
+                labelText: I18n.tr("Title")
                 text: typeof editorContent.bindingDraft.props["hotkey-overlay-title"] === "string"
                 ? editorContent.bindingDraft.props["hotkey-overlay-title"] : ""
                 onTextEdited: root.change("hotkey-overlay-title", text)
             }
             SettingsActionRow {
                 Layout.fillWidth: true
-                text: qsTr("Advanced options")
+                text: I18n.tr("Advanced options")
                 trailingIconName: root.advanced ? "expand_less" : "expand_more"
                 onClicked: root.advanced = !root.advanced
             }
@@ -770,7 +772,7 @@ Item {
                     width: parent.width
                     SettingsRow {
                         Layout.fillWidth: true
-                        title: qsTr("Repeat while held")
+                        title: I18n.tr("Repeat while held")
                         trailing: StyledSwitch {
                             checked: root.option("repeat", true)
                             onToggled: root.change("repeat", checked)
@@ -778,7 +780,7 @@ Item {
                     }
                     SettingsRow {
                         Layout.fillWidth: true
-                        title: qsTr("Allow while locked")
+                        title: I18n.tr("Allow while locked")
                         trailing: StyledSwitch {
                             enabled: /^\s*(spawn|spawn-sh)\s/.test(actionField.text)
                             checked: root.option("allow-when-locked", false)
@@ -787,12 +789,12 @@ Item {
                     }
                     ActionButton {
                         visible: root.option("allow-when-locked", undefined) !== undefined
-                        text: qsTr("Remove lock option")
+                        text: I18n.tr("Remove lock option")
                         onClicked: root.unset = root.unset.concat(["allow-when-locked"])
                     }
                     MaterialFilledTextField {
                         Layout.fillWidth: true
-                        labelText: qsTr("Minimum interval (ms)")
+                        labelText: I18n.tr("Minimum interval (ms)")
                         text: String(root.option("cooldown-ms", 0))
                         validator: IntValidator {
                             bottom: 0
@@ -803,7 +805,7 @@ Item {
                     }
                     SettingsRow {
                         Layout.fillWidth: true
-                        title: qsTr("Keep working when apps inhibit shortcuts")
+                        title: I18n.tr("Keep working when apps inhibit shortcuts")
                         trailing: StyledSwitch {
                             checked: !root.option("allow-inhibiting", true)
                             onToggled: root.change("allow-inhibiting", !checked)
@@ -816,7 +818,7 @@ Item {
                 spacing: Metrics.spacingS
                 layoutDirection: Qt.RightToLeft
                 ActionButton {
-                    text: qsTr("Save")
+                    text: I18n.tr("Save")
                     filled: true
                     enabled: NiriConfigService.ready("binds") && editorContent.bindingDraft.editable
                              && root.draftRevision === NiriConfigService.revision && keyField.text !== ""
@@ -837,11 +839,11 @@ Item {
                     }
                 }
                 ActionButton {
-                    text: qsTr("Cancel")
+                    text: I18n.tr("Cancel")
                     onClicked: root.cancel()
                 }
                 ActionButton {
-                    text: editorContent.bindingDraft.override ? qsTr("Remove override") : qsTr("Delete")
+                    text: editorContent.bindingDraft.override ? I18n.tr("Remove override") : I18n.tr("Delete")
                     visible: !!editorContent.bindingDraft.id && editorContent.bindingDraft.managed
                     enabled: root.draftRevision === NiriConfigService.revision
                     onClicked: NiriConfigService.save({

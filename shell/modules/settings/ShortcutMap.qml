@@ -9,6 +9,7 @@ import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
 import "./NiriActionNames.js" as ActionNames
+import qs.shared.i18n
 
 PanelWindow {
     id: root
@@ -43,19 +44,19 @@ PanelWindow {
         function category(expression) {
         const command = expression.split(/\s/)[0].replace(/;$/, "");
         if (command === "spawn" || command === "spawn-sh")
-        return /"(?:qs|key)".*"ipc".*"call"/.test(expression) ? qsTr("Shell") : qsTr(
+        return /"(?:qs|key)".*"ipc".*"call"/.test(expression) ? I18n.tr("Shell") : I18n.tr(
         "Applications and custom actions");
         if (/workspace/.test(command))
-        return qsTr("Workspaces");
+        return I18n.tr("Workspaces");
         if (/screenshot|cast/.test(command))
-        return qsTr("Screenshots and recording");
+        return I18n.tr("Screenshots and recording");
         if (/quit|suspend|power-off|power-on/.test(command))
-        return qsTr("Session");
+        return I18n.tr("Session");
         if (/monitor|output/.test(command))
-        return qsTr("Displays");
+        return I18n.tr("Displays");
         if (/debug|overlay|inhibit|layout/.test(command))
-        return qsTr("System");
-        return qsTr("Windows");
+        return I18n.tr("System");
+        return I18n.tr("Windows");
     }
 
         readonly property var sections: {
@@ -71,7 +72,7 @@ PanelWindow {
     }
         byCategory[entry.category].entries.push(entry);
     }
-        const custom = byCategory[qsTr("Applications and custom actions")];
+        const custom = byCategory[I18n.tr("Applications and custom actions")];
         return custom ? result.filter(section => section !== custom).concat([custom]) : result;
     }
 
@@ -84,11 +85,11 @@ PanelWindow {
         && action.expression.split(/\s/)[0] === command);
         if (entry) {
         const argumentsText = expression.substring(command.length).replace(/;\s*$/, "").trim();
-        return argumentsText ? qsTr("%1: %2").arg(ActionNames.translated(entry.name)).arg(argumentsText) :
+        return argumentsText ? I18n.tr("%1: %2").arg(ActionNames.translated(entry.name)).arg(argumentsText) :
         ActionNames.translated(entry.name);
     }
         const program = expression.match(/^spawn\s+"([^"]+)"/);
-        return program ? qsTr("Run %1").arg(program[1].split("/").pop()) : expression;
+        return program ? I18n.tr("Run %1").arg(program[1].split("/").pop()) : expression;
     }
 
         function keys(value) {
@@ -145,7 +146,7 @@ PanelWindow {
         anchors.centerIn: parent
         width: Math.max(0, parent.width - 96)
         horizontalAlignment: Text.AlignHCenter
-        text: qsTr("Shortcut map")
+        text: I18n.tr("Shortcut map")
         color: Appearance.colors.colOnSurface
         font.family: Fonts.ui
         font.pixelSize: 30
@@ -156,7 +157,7 @@ PanelWindow {
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
         iconName: "close"
-        accessibleName: qsTr("Close")
+        accessibleName: I18n.tr("Close")
         onClicked: root.dismissed()
     }
     }
@@ -168,7 +169,7 @@ PanelWindow {
     }
         Text {
         visible: root.entries.length === 0
-        text: qsTr("No shortcuts assigned")
+        text: I18n.tr("No shortcuts assigned")
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.ui
     }

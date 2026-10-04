@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 RoundButton {
     id: root
@@ -70,6 +71,6 @@ RoundButton {
 
     StyledToolTip {
         extraVisibleCondition: root.hovered
-        text: root.stopping ? qsTr("Finishing recording") : qsTr("Stop recording")
+        text: root.stopping ? I18n.tr("Finishing recording") : I18n.tr("Stop recording")
     }
 }

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Shapes
 import M3Shapes
 import qs.shared.theme
+import qs.shared.i18n
 
 Item {
     id: root
@@ -35,23 +36,23 @@ Item {
     function valueUnitText() {
         if (isNaN(root.visibilityMeters))
             return "";
-        return root.visibilityMeters >= 1000 ? qsTr("kilometers") : qsTr("meters");
+        return root.visibilityMeters >= 1000 ? I18n.tr("kilometers") : I18n.tr("meters");
     }
 
     function descriptionText() {
         if (isNaN(root.visibilityMeters))
             return "--";
         if (root.visibilityMeters < 1000)
-            return qsTr("Very poor");
+            return I18n.tr("Very poor");
         if (root.visibilityMeters < 4000)
-            return qsTr("Poor");
+            return I18n.tr("Poor");
         if (root.visibilityMeters < 10000)
-            return qsTr("Moderate");
+            return I18n.tr("Moderate");
         if (root.visibilityMeters < 20000)
-            return qsTr("Good");
+            return I18n.tr("Good");
         if (root.visibilityMeters < 40000)
-            return qsTr("Clear");
-        return qsTr("Excellent");
+            return I18n.tr("Clear");
+        return I18n.tr("Excellent");
     }
 
     MaterialShape {
@@ -110,7 +111,7 @@ Item {
         }
 
         Text {
-            text: qsTr("Visibility")
+            text: I18n.tr("Visibility")
             color: Appearance.colors.colOnWeatherCardSurfaceVariant
             font.family: Fonts.expressive
             font.pixelSize: 19

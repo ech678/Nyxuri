@@ -2,13 +2,14 @@ import QtQuick
 import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
 
     property string title: ""
     property string iconName: "settings"
-    property string backAccessibleName: qsTr("Back to General settings")
+    property string backAccessibleName: I18n.tr("Back to General settings")
     signal backRequested
 
     implicitHeight: 56

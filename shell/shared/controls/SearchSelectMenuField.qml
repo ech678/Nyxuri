@@ -4,6 +4,7 @@ import QtQuick.Window
 import Qt5Compat.GraphicalEffects
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 FocusScope {
     id: root
@@ -732,7 +733,7 @@ FocusScope {
                         anchors.leftMargin: 12
                         anchors.rightMargin: 12
                         visible: root.options.length === 0
-                        text: qsTr("No options available")
+                        text: I18n.tr("No options available")
                         color: Appearance.colors.colSubtext
                         font.family: Fonts.ui
                         font.pixelSize: 14

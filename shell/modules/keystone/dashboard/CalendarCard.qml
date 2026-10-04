@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 // Adapted from Caelestia Shell's dashboard calendar (GPL-3.0).
 Rectangle {
@@ -114,7 +115,7 @@ Rectangle {
                 iconName: "chevron_left"
                 iconSize: 21
                 iconColor: Appearance.colors.colOnSurface
-                accessibleName: qsTr("Previous month")
+                accessibleName: I18n.tr("Previous month")
                 hoverStateLayerColor: Appearance.colors.colLayer4Hover
                 pressedStateLayerColor: Appearance.colors.colLayer4Active
                 onClicked: root.navigateMonth(-1)
@@ -161,7 +162,7 @@ Rectangle {
                 iconName: "chevron_right"
                 iconSize: 21
                 iconColor: Appearance.colors.colOnSurface
-                accessibleName: qsTr("Next month")
+                accessibleName: I18n.tr("Next month")
                 hoverStateLayerColor: Appearance.colors.colLayer4Hover
                 pressedStateLayerColor: Appearance.colors.colLayer4Active
                 onClicked: root.navigateMonth(1)

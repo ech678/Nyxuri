@@ -5,6 +5,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 Rectangle {
     id: root
@@ -36,13 +37,13 @@ Rectangle {
             if (!root.service.canCopy || !value)
                 return "";
             if (root.timeMode && value.source && value.target)
-                return qsTr("UTC%1 → UTC%2 · Day difference: %3").arg(value.source.offset).arg(
+                return I18n.tr("UTC%1 → UTC%2 · Day difference: %3").arg(value.source.offset).arg(
                             value.target.offset).arg(value.dayDelta);
             if (!root.currencyMode || !value.approximate)
                 return "";
-            return qsTr("Approximate · ECB · %1 · %2").arg(value.date).arg(value.cache === "stale" ? qsTr(
-                                                                                                         "Older cached rate") :
-                                                                                                     qsTr("Reference rate"));
+            return I18n.tr("Approximate · ECB · %1 · %2").arg(value.date).arg(value.cache === "stale"
+                                                                              ? I18n.tr("Older cached rate") :
+                                                                                I18n.tr("Reference rate"));
         }
         textFormat: Text.PlainText
         elide: Text.ElideRight
@@ -114,23 +115,18 @@ Rectangle {
             Text {
                 Layout.fillWidth: true
                 text: root.currencyMode ? (root.currencyController.amountError || root.service.error || (
-                                               root.currencyController.choosing && !root.choices.length ? qsTr(
-                                                                                                              "No matching currencies") :
-                                                                                                          "")) : root.timeMode
-                                          && root.templateController.choosing && !root.choices.length ? qsTr(
-                                                                                                            "No matching time zones") :
-                                                                                                        root.service.state
-                                                                                                        === "loading"
-                                                                                                        ? qsTr("Calculating…") :
-                                                                                                          root.service.state
-                                                                                                          === "empty"
-                                                                                                          || root.service.state
-                                                                                                          === "incomplete"
-                                                                                                          ? qsTr("Enter an expression to begin") :
-                                                                                                            root.service.state
-                                                                                                            === "ambiguous"
-                                                                                                            ? qsTr("This time occurs twice. Choose a UTC offset.") :
-                                                                                                              root.service.error
+                                               root.currencyController.choosing && !root.choices.length
+                                               ? I18n.tr("No matching currencies") : "")) : root.timeMode
+                                          && root.templateController.choosing && !root.choices.length
+                                          ? I18n.tr("No matching time zones") : root.service.state
+                                            === "loading" ? I18n.tr("Calculating…") : root.service.state
+                                                            === "empty" || root.service.state
+                                                            === "incomplete" ? I18n.tr(
+                                                                                   "Enter an expression to begin") :
+                                                                               root.service.state
+                                                                               === "ambiguous" ? I18n.tr(
+                                                                                                     "This time occurs twice. Choose a UTC offset.") :
+                                                                                                 root.service.error
                 visible: text.length > 0 && (!root.templateController.active
                                              || root.templateController.choosing || (root.service.state
                                                                                      !== "empty"
@@ -170,7 +166,7 @@ Rectangle {
             Text {
                 Layout.fillWidth: true
                 visible: !root.structuredMode && text.length > 0
-                text: root.service.feedback || (root.service.canCopy ? qsTr("Enter to copy") : "")
+                text: root.service.feedback || (root.service.canCopy ? I18n.tr("Enter to copy") : "")
                 textFormat: Text.PlainText
                 color: Appearance.colors.colOnSurfaceVariant
                 font.family: Fonts.ui

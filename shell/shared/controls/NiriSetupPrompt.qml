@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.shared.theme
+import qs.shared.i18n
 
 ColumnLayout {
     id: root
@@ -16,13 +17,13 @@ ColumnLayout {
 
     SettingsRow {
         Layout.fillWidth: true
-        title: qsTr("First-time setup")
+        title: I18n.tr("First-time setup")
         iconName: "warning"
         color: Appearance.applyAlpha(Appearance.colors.colPrimary, 0.1)
-        supportingText: root.integrationState === "unsupported" ? qsTr("Available in a niri session") :
+        supportingText: root.integrationState === "unsupported" ? I18n.tr("Available in a niri session") :
                                                                   root.description || root.title
         trailing: ActionButton {
-            text: qsTr("Set up")
+            text: I18n.tr("Set up")
             enabled: !root.busy && !root.blocked && root.integrationState !== "unsupported"
                      && root.integrationState !== "loading"
 

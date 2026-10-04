@@ -6,6 +6,7 @@ import qs.shared.theme
 import qs.app
 import qs.app.services
 import "../../../shared/utils/RecordingState.js" as RecordingState
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -72,7 +73,7 @@ Singleton {
                 || response.command !== expectedCommand || typeof response.ok !== "boolean") {
             root.reportOperation({
                                      "code": "invalid_key_response",
-                                     "message": qsTr("key command failed")
+                                     "message": I18n.tr("key command failed")
                                  });
             return false;
         }
@@ -96,7 +97,7 @@ Singleton {
                 watchProcess.running = true;
             root.reportOperation(response.error || {
                                      "code": "invalid_key_state",
-                                     "message": qsTr("key command failed")
+                                     "message": I18n.tr("key command failed")
                                  });
             return false;
         }
@@ -127,7 +128,7 @@ Singleton {
         if (!snapshot && (newer || expectedCommand === "record.stop") && response.ok && response.state === "completed"
                 && response.outputPath && root._lastSavedKey !== savedKey) {
             root._lastSavedKey = savedKey;
-            NotificationService.fileSaved(root.recordingType === "gif" ? qsTr("GIF saved") : qsTr(
+            NotificationService.fileSaved(root.recordingType === "gif" ? I18n.tr("GIF saved") : I18n.tr(
                                                                              "Screen recording saved"),
                                           response.outputPath);
         }
@@ -201,7 +202,7 @@ Singleton {
                 root.transientState = "";
                 root.error = {
                     "code": "record_start_unavailable",
-                    "message": qsTr("Could not start the recording command")
+                    "message": I18n.tr("Could not start the recording command")
                 };
                 root.commandError(root.error.code, root.error.message);
             }
@@ -227,7 +228,7 @@ Singleton {
             if (exitCode !== 0 && !root.operationError && !root.error)
                 root.reportOperation({
                                          "code": "key_unavailable",
-                                         "message": qsTr("key command failed")
+                                         "message": I18n.tr("key command failed")
                                      });
             root.transientState = "";
             root.transientState = "";
@@ -246,7 +247,7 @@ Singleton {
             if (exitCode !== 0 && !root.operationError && !root.error)
                 root.reportOperation({
                                          "code": "key_unavailable",
-                                         "message": qsTr("key command failed")
+                                         "message": I18n.tr("key command failed")
                                      });
             root.transientState = "";
         }
@@ -265,7 +266,7 @@ Singleton {
             if (exitCode !== 0 && !root.operationError && !root.error)
                 root.reportOperation({
                                          "code": "key_unavailable",
-                                         "message": qsTr("Could not query recording status through key")
+                                         "message": I18n.tr("Could not query recording status through key")
                                      });
         }
         stdout: StdioCollector {

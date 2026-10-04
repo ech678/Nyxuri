@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 ColumnLayout {
     id: root
@@ -29,11 +30,11 @@ ColumnLayout {
                 options: [
                     {
                         value: "proportion",
-                        label: qsTr("Proportion")
+                        label: I18n.tr("Proportion")
                     },
                     {
                         value: "fixed",
-                        label: qsTr("Pixels")
+                        label: I18n.tr("Pixels")
                     }
                 ]
                 value: modelData.kind
@@ -50,7 +51,8 @@ ColumnLayout {
             }
             OutlinedTextField {
                 Layout.fillWidth: true
-                labelText: modelData.kind === "fixed" ? qsTr("Pixels") : qsTr("Proportion (1 = full width)")
+                labelText: modelData.kind === "fixed" ? I18n.tr("Pixels") : I18n.tr(
+                                                            "Proportion (1 = full width)")
                 text: String(modelData.value)
                 validator: DoubleValidator {
                     bottom: modelData.kind === "fixed" ? 1 : 0.01
@@ -69,7 +71,7 @@ ColumnLayout {
             }
             IconButton {
                 iconName: "delete"
-                accessibleName: qsTr("Remove column width")
+                accessibleName: I18n.tr("Remove column width")
                 onClicked: root.edited(root.widths.filter((_, i) => i !== index))
             }
         }
@@ -77,7 +79,7 @@ ColumnLayout {
     ActionButton {
         Layout.alignment: Qt.AlignRight
         visible: !root.single || root.widths.length === 0
-        text: root.single ? qsTr("Set custom width") : qsTr("Add column width")
+        text: root.single ? I18n.tr("Set custom width") : I18n.tr("Add column width")
         onClicked: root.edited(root.widths.concat([
                                                       {
                                                           kind: "proportion",

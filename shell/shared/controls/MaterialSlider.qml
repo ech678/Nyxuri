@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import qs.shared.theme
+import qs.shared.i18n
 
 Item {
     id: root
@@ -11,7 +12,7 @@ Item {
     property real value: 0
     property bool discrete: false
     property bool live: true
-    property string accessibleName: qsTr("Slider")
+    property string accessibleName: I18n.tr("Slider")
     property string valueSuffix: ""
     property int valueDecimals: 0
     property var valueFormatter: function (sliderValue) {

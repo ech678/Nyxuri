@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -44,13 +45,13 @@ StyledFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: "language"
-                title: qsTr("Interface language")
+                title: I18n.tr("Interface language")
 
                 trailing: SearchSelectMenuField {
                     Layout.preferredWidth: 190
                     options: I18nService.supportedLanguages
                     value: UiPreferences.language
-                    placeholder: qsTr("Select language")
+                    placeholder: I18n.tr("Select language")
                     textRole: "label"
                     valueRole: "code"
                     closeOnAccept: true
@@ -83,8 +84,6 @@ StyledFlickable {
             }
         }
 
-
-
         SettingsSection {
             id: searchSection3
             Layout.fillWidth: true
@@ -100,7 +99,7 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Weather temperature")
+                title: I18n.tr("Weather temperature")
 
                 trailing: StyledButtonGroup {
                     model: [({
@@ -120,7 +119,7 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Hardware temperature")
+                title: I18n.tr("Hardware temperature")
 
                 trailing: StyledButtonGroup {
                     model: [({
@@ -154,15 +153,15 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Clock format")
+                title: I18n.tr("Clock format")
 
                 trailing: StyledButtonGroup {
                     model: [({
                                  "value": "24",
-                                 "label": qsTr("24-hour")
+                                 "label": I18n.tr("24-hour")
                              }), ({
                                       "value": "12",
-                                      "label": qsTr("12-hour")
+                                      "label": I18n.tr("12-hour")
                                   })]
                     currentValue: UiPreferences.useTwelveHourClock ? "12" : "24"
                     buttonMinWidth: 78

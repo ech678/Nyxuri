@@ -4,6 +4,7 @@ import Qt5Compat.GraphicalEffects
 import qs.app.services
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Rectangle {
     id: root
@@ -50,29 +51,29 @@ Rectangle {
 
     function conditionText() {
         if (hasWeather)
-            return WeatherService.currentWeatherText || qsTr("Unknown");
+            return WeatherService.currentWeatherText || I18n.tr("Unknown");
 
         if (WeatherService.loading)
-            return qsTr("Getting weather");
+            return I18n.tr("Getting weather");
 
-        return qsTr("Weather is unavailable");
+        return I18n.tr("Weather is unavailable");
     }
 
     function updatedText() {
         if (WeatherService.loading)
-            return qsTr("Refreshing");
+            return I18n.tr("Refreshing");
 
         if (WeatherService.status === "stale")
-            return qsTr("Data is old");
+            return I18n.tr("Data is old");
 
         if (WeatherService.status === "error")
-            return qsTr("Update failed");
+            return I18n.tr("Update failed");
 
         if (WeatherService.lastUpdated) {
             const updated = new Date(WeatherService.lastUpdated);
             return UiPreferences.shortTime(updated);
         }
-        return qsTr("Update pending");
+        return I18n.tr("Update pending");
     }
 
     function syncWeatherData() {
@@ -137,7 +138,7 @@ Rectangle {
 
         Text {
             Layout.fillWidth: true
-            text: WeatherService.locationName || qsTr("Weather")
+            text: WeatherService.locationName || I18n.tr("Weather")
             color: root.night ? Qt.rgba(0.96, 0.98, 1, 0.96) : Qt.rgba(0.09, 0.14, 0.2, 0.9)
             font.family: Fonts.ui
             font.pixelSize: 15
@@ -208,7 +209,7 @@ Rectangle {
 
         Text {
             width: parent.width
-            text: qsTr("Feels like: ") + root.fmtTemp(WeatherService.currentFeelsLikeC)
+            text: I18n.tr("Feels like: ") + root.fmtTemp(WeatherService.currentFeelsLikeC)
             color: Appearance.colors.colOnImage
             font.family: Fonts.ui
             font.pixelSize: 16
@@ -218,8 +219,8 @@ Rectangle {
 
         Text {
             width: parent.width
-            text: qsTr("High ") + root.fmtTemp(root.today.temperatureMaxC) + qsTr(" · Low ") + root.fmtTemp(
-                      root.today.temperatureMinC)
+            text: I18n.tr("High ") + root.fmtTemp(root.today.temperatureMaxC) + I18n.tr(" · Low ")
+                  + root.fmtTemp(root.today.temperatureMinC)
             color: Appearance.colors.colOnImage
             font.family: Fonts.ui
             font.pixelSize: 16

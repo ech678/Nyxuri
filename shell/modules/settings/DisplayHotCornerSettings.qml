@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 ColumnLayout {
     id: root
@@ -12,69 +13,69 @@ ColumnLayout {
     readonly property var cornerOptions: [
         {
             value: "top-left",
-            label: qsTranslate("HotCornersPage", "Top left")
+            label: I18n.tr("Top left", "HotCornersPage")
         },
         {
             value: "top-right",
-            label: qsTranslate("HotCornersPage", "Top right")
+            label: I18n.tr("Top right", "HotCornersPage")
         },
         {
             value: "bottom-left",
-            label: qsTranslate("HotCornersPage", "Bottom left")
+            label: I18n.tr("Bottom left", "HotCornersPage")
         },
         {
             value: "bottom-right",
-            label: qsTranslate("HotCornersPage", "Bottom right")
+            label: I18n.tr("Bottom right", "HotCornersPage")
         }
     ]
     readonly property var actionOptions: [
         {
             value: "disabled",
-            label: qsTranslate("HotCornersPage", "Disabled")
+            label: I18n.tr("Disabled", "HotCornersPage")
         },
         {
             value: "overview",
-            label: qsTranslate("HotCornersPage", "Niri Overview")
+            label: I18n.tr("Niri Overview", "HotCornersPage")
         },
         {
             value: "dashboard:info",
-            label: qsTranslate("HotCornersPage", "Information")
+            label: I18n.tr("Information", "HotCornersPage")
         },
         {
             value: "dashboard:drawer",
-            label: qsTranslate("HotCornersPage", "Drawer")
+            label: I18n.tr("Drawer", "HotCornersPage")
         },
         {
             value: "dashboard:weather",
-            label: qsTranslate("HotCornersPage", "Weather")
+            label: I18n.tr("Weather", "HotCornersPage")
         },
         {
             value: "quicksettings:settings",
-            label: qsTranslate("HotCornersPage", "Quick settings")
+            label: I18n.tr("Quick settings", "HotCornersPage")
         },
         {
             value: "quicksettings:network",
-            label: qsTranslate("HotCornersPage", "Network")
+            label: I18n.tr("Network", "HotCornersPage")
         },
         {
             value: "quicksettings:bluetooth",
-            label: qsTranslate("HotCornersPage", "Bluetooth")
+            label: I18n.tr("Bluetooth", "HotCornersPage")
         },
         {
             value: "quicksettings:audio",
-            label: qsTranslate("HotCornersPage", "Audio output")
+            label: I18n.tr("Audio output", "HotCornersPage")
         },
         {
             value: "quicksettings:microphone",
-            label: qsTranslate("HotCornersPage", "Microphone")
+            label: I18n.tr("Microphone", "HotCornersPage")
         },
         {
             value: "quicksettings:idle",
-            label: qsTranslate("HotCornersPage", "Idle management")
+            label: I18n.tr("Idle management", "HotCornersPage")
         },
         {
             value: "quicksettings:night",
-            label: qsTranslate("HotCornersPage", "Night light")
+            label: I18n.tr("Night light", "HotCornersPage")
         }
     ]
 
@@ -82,9 +83,9 @@ ColumnLayout {
 
     NiriSetupPrompt {
         Layout.fillWidth: true
-        title: qsTranslate("HotCornersPage", "Hot corners")
-        description: qsTranslate("HotCornersPage",
-                                 "Let Clavis manage corner actions instead of the compositor's overview gesture.")
+        title: I18n.tr("Hot corners", "HotCornersPage")
+        description: I18n.tr("Let Clavis manage corner actions instead of the compositor's overview gesture.",
+                             "HotCornersPage")
         integrationState: NiriConfigService.state("hot-corners")
         busy: NiriConfigService.busy
         blocked: root.outputConflicts.length > 0
@@ -101,7 +102,7 @@ ColumnLayout {
 
             Layout.fillWidth: true
             tone: "warning"
-            message: qsTranslate("HotCornersPage", "Disable the compositor's hot corners for %1 in %2.").arg(
+            message: I18n.tr("Disable the compositor's hot corners for %1 in %2.", "HotCornersPage").arg(
                          modelData.identifier).arg(modelData.source)
         }
     }
@@ -110,7 +111,7 @@ ColumnLayout {
         Layout.fillWidth: true
         visible: NiriConfigService.state("hot-corners") === "conflict" && root.outputConflicts.length === 0
         tone: "warning"
-        message: qsTranslate("HotCornersPage", "Another compositor configuration enables hot corners: %1").arg(
+        message: I18n.tr("Another compositor configuration enables hot corners: %1", "HotCornersPage").arg(
                      root.nativeCornerStatus.globalSource || "")
     }
 
@@ -118,8 +119,8 @@ ColumnLayout {
         id: cornerSection
 
         Layout.fillWidth: true
-        title: qsTranslate("HotCornersPage", "Hot corners")
-        supportingText: qsTr("Actions apply to all displays.")
+        title: I18n.tr("Hot corners", "HotCornersPage")
+        supportingText: I18n.tr("Actions apply to all displays.")
         iconName: "open_in_full"
         enabled: NiriConfigService.ready("hot-corners")
 

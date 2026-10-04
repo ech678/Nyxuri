@@ -1,6 +1,7 @@
 import QtQuick
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Rectangle {
     id: root
@@ -66,7 +67,7 @@ Rectangle {
                                                                 "transparent"
         opacity: canChange ? 1 : 0.38
         Accessible.role: Accessible.Button
-        Accessible.name: increase ? qsTr("Increase") : qsTr("Decrease")
+        Accessible.name: increase ? I18n.tr("Increase") : I18n.tr("Decrease")
         Accessible.onPressAction: root.setValue(root.value + (increase ? root.stepSize : -root.stepSize))
 
         MaterialSymbol {

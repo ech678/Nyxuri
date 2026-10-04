@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -42,7 +43,7 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Layout")
+                title: I18n.tr("Layout")
                 iconName: "grid_view"
 
                 trailing: SearchSelectMenuField {
@@ -52,22 +53,22 @@ StyledFlickable {
                     options: [
                         {
                             value: "list",
-                            label: qsTr("List")
+                            label: I18n.tr("List")
                         },
                         {
                             value: "grid",
-                            label: qsTr("Grid")
+                            label: I18n.tr("Grid")
                         }
                     ]
                     value: UiPreferences.spotlightAppStyle
                     closeOnAccept: true
-                    Accessible.name: qsTr("Application layout")
+                    Accessible.name: I18n.tr("Application layout")
                     onAccepted: value => UiPreferences.setSpotlightAppStyle(value)
                 }
             }
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Application order")
+                title: I18n.tr("Application order")
                 iconName: "sort"
                 trailing: SearchSelectMenuField {
                     id: appOrderPicker
@@ -75,24 +76,24 @@ StyledFlickable {
                     options: [
                         {
                             value: "smart",
-                            label: qsTr("Smart")
+                            label: I18n.tr("Smart")
                         },
                         {
                             value: "most-used",
-                            label: qsTr("Most used")
+                            label: I18n.tr("Most used")
                         },
                         {
                             value: "recently-used",
-                            label: qsTr("Recently used")
+                            label: I18n.tr("Recently used")
                         },
                         {
                             value: "name",
-                            label: qsTr("Name")
+                            label: I18n.tr("Name")
                         }
                     ]
                     value: UiPreferences.spotlightAppOrder
                     closeOnAccept: true
-                    Accessible.name: qsTr("Application order")
+                    Accessible.name: I18n.tr("Application order")
                     onAccepted: value => UiPreferences.setSpotlightAppOrder(value)
                 }
             }
@@ -113,7 +114,7 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Search engine")
+                title: I18n.tr("Search engine")
                 iconName: "search"
 
                 trailing: SearchSelectMenuField {
@@ -126,7 +127,7 @@ StyledFlickable {
                     valueRole: "id"
                     closeOnAccept: true
                     leadingWidth: Metrics.iconM
-                    Accessible.name: qsTr("Search engine")
+                    Accessible.name: I18n.tr("Search engine")
                     onAccepted: value => {
                         return UiPreferences.setSpotlightSearchEngine(value);
                     }
@@ -157,7 +158,7 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Layout")
+                title: I18n.tr("Layout")
                 iconName: "view_sidebar"
                 trailing: SearchSelectMenuField {
                     id: clipboardStylePicker
@@ -165,24 +166,24 @@ StyledFlickable {
                     options: [
                         {
                             value: "default",
-                            label: qsTr("Default")
+                            label: I18n.tr("Default")
                         },
                         {
                             value: "details",
-                            label: qsTr("Details")
+                            label: I18n.tr("Details")
                         }
                     ]
                     value: UiPreferences.spotlightClipboardStyle
                     closeOnAccept: true
-                    Accessible.name: qsTr("Clipboard layout")
+                    Accessible.name: I18n.tr("Clipboard layout")
                     onAccepted: value => UiPreferences.setSpotlightClipboardStyle(value)
                 }
             }
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("History limit")
-                supportingText: qsTr("Oldest items are removed when new content is saved.")
+                title: I18n.tr("History limit")
+                supportingText: I18n.tr("Oldest items are removed when new content is saved.")
                 iconName: "history"
 
                 trailing: MaterialStepper {
@@ -192,7 +193,7 @@ StyledFlickable {
                     value: ClipboardService.historyLimit
                     enabled: ClipboardService.historyConfigLoaded
                     busy: ClipboardService.historyConfigBusy
-                    Accessible.name: qsTr("History limit")
+                    Accessible.name: I18n.tr("History limit")
                     onValueModified: value => ClipboardService.setHistoryLimit(value)
                 }
             }

@@ -4,6 +4,7 @@ import Qt5Compat.GraphicalEffects
 import M3Shapes
 import qs.shared.theme
 import qs.app
+import qs.shared.i18n
 
 WeatherInsightCard {
     id: root
@@ -114,7 +115,7 @@ WeatherInsightCard {
         }
 
         Text {
-            text: qsTr("Relative humidity")
+            text: I18n.tr("Relative humidity")
             color: Appearance.colors.colOnWeatherCardSurfaceVariant
             font.family: Fonts.expressive
             font.pixelSize: 18
@@ -189,7 +190,7 @@ WeatherInsightCard {
         }
 
         Text {
-            text: qsTr("Dew point")
+            text: I18n.tr("Dew point")
             color: Appearance.colors.colOnWeatherCardSurface
             font.family: Fonts.expressive
             font.pixelSize: 18

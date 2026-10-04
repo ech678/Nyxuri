@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Shapes
 import M3Shapes
 import qs.shared.theme
+import qs.shared.i18n
 
 WeatherInsightCard {
     id: root
@@ -69,10 +70,10 @@ WeatherInsightCard {
         if (label.indexOf("·") >= 0)
             label = label.split("·")[0].trim();
 
-        if (label.startsWith(qsTr("Gusts "))) {
-            label = qsTr("Gusts:") + label.slice(2).trim();
-        } else if (label.startsWith(qsTr("Gusts:"))) {
-            label = qsTr("Gusts:") + label.slice(3).trim();
+        if (label.startsWith(I18n.tr("Gusts "))) {
+            label = I18n.tr("Gusts:") + label.slice(2).trim();
+        } else if (label.startsWith(I18n.tr("Gusts:"))) {
+            label = I18n.tr("Gusts:") + label.slice(3).trim();
         }
 
         label = label.replace(/(\d)\.0(\s|$)/g, "$1$2");
@@ -159,7 +160,7 @@ WeatherInsightCard {
         }
 
         Text {
-            text: qsTr("Wind")
+            text: I18n.tr("Wind")
             color: root.mutedInk
             font.family: Fonts.expressive
             font.pixelSize: 18

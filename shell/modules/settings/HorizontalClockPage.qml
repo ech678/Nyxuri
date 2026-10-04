@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -84,17 +85,17 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Hide date")
+                title: I18n.tr("Hide date")
 
                 trailing: StyledSwitch {
                     checked: PersonalizationConfig.keystoneHideDate
-                    Accessible.name: qsTr("Hide date")
+                    Accessible.name: I18n.tr("Hide date")
                     onToggled: PersonalizationConfig.setKeystoneHideDate(checked)
                 }
             }
 
             ClockSliderSetting {
-                title: qsTr("Font size")
+                title: I18n.tr("Font size")
                 axisTag: "px"
                 from: 16
                 to: 28
@@ -109,7 +110,7 @@ StyledFlickable {
             }
 
             ClockSliderSetting {
-                title: qsTr("Weight")
+                title: I18n.tr("Weight")
                 axisTag: "wght"
                 from: 1
                 to: 1000
@@ -124,7 +125,7 @@ StyledFlickable {
             }
 
             ClockSliderSetting {
-                title: qsTr("Width")
+                title: I18n.tr("Width")
                 axisTag: "wdth"
                 from: 25
                 to: 151
@@ -139,7 +140,7 @@ StyledFlickable {
             }
 
             ClockSliderSetting {
-                title: qsTr("Optical size")
+                title: I18n.tr("Optical size")
                 axisTag: "opsz"
                 from: 6
                 to: 144
@@ -154,7 +155,7 @@ StyledFlickable {
             }
 
             ClockSliderSetting {
-                title: qsTr("Grade")
+                title: I18n.tr("Grade")
                 axisTag: "GRAD"
                 from: 0
                 to: 100
@@ -169,7 +170,7 @@ StyledFlickable {
             }
 
             ClockSliderSetting {
-                title: qsTr("Roundness")
+                title: I18n.tr("Roundness")
                 axisTag: "ROND"
                 from: 0
                 to: 100
@@ -184,7 +185,7 @@ StyledFlickable {
             }
 
             ClockSliderSetting {
-                title: qsTr("Slant")
+                title: I18n.tr("Slant")
                 discrete: true
                 axisTag: "slnt"
                 from: -10
@@ -201,7 +202,7 @@ StyledFlickable {
 
             Text {
                 Layout.fillWidth: true
-                text: qsTr("Current digit")
+                text: I18n.tr("Current digit")
                 color: Appearance.colors.colOnSecondaryContainer
                 font.family: Fonts.ui
                 font.pixelSize: 14
@@ -244,19 +245,19 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Color")
-                supportingText: qsTr("Default theme colors follow the Matugen theme")
+                title: I18n.tr("Color")
+                supportingText: I18n.tr("Default theme colors follow the Matugen theme")
 
                 trailing: StyledButtonGroup {
                     model: [({
                                  "value": "primary",
-                                 "label": qsTr("Primary")
+                                 "label": I18n.tr("Primary")
                              }), ({
                                       "value": "inversePrimary",
-                                      "label": qsTr("Inverse")
+                                      "label": I18n.tr("Inverse")
                                   }), ({
                                            "value": "custom",
-                                           "label": qsTr("Custom")
+                                           "label": I18n.tr("Custom")
                                        })]
                     currentValue: root.selectedDigitData().colorRole
                     buttonMinWidth: 64
@@ -277,8 +278,8 @@ StyledFlickable {
                 Layout.fillWidth: true
                 visible: root.selectedDigitData().colorRole === "custom"
                 text: root.customColorDraft
-                placeholderText: qsTr("#RRGGBB or #RRGGBBAA")
-                Accessible.name: qsTr("Custom color")
+                placeholderText: I18n.tr("#RRGGBB or #RRGGBBAA")
+                Accessible.name: I18n.tr("Custom color")
                 onTextChanged: {
                     if (activeFocus)
                         root.customColorDraft = text;
@@ -289,7 +290,7 @@ StyledFlickable {
 
             Text {
                 Layout.fillWidth: true
-                text: qsTr("Position: %1").arg(root.selectedDigit.toUpperCase())
+                text: I18n.tr("Position: %1").arg(root.selectedDigit.toUpperCase())
                 color: Appearance.colors.colOnSecondaryContainer
                 font.family: Fonts.ui
                 font.pixelSize: 14
@@ -297,7 +298,7 @@ StyledFlickable {
             }
 
             ClockSliderSetting {
-                title: qsTr("X offset")
+                title: I18n.tr("X offset")
                 discrete: true
                 axisTag: "x"
                 from: -8
@@ -315,7 +316,7 @@ StyledFlickable {
             }
 
             ClockSliderSetting {
-                title: qsTr("Y offset")
+                title: I18n.tr("Y offset")
                 discrete: true
                 axisTag: "y"
                 from: -6
@@ -333,7 +334,7 @@ StyledFlickable {
             }
 
             ClockSliderSetting {
-                title: qsTr("Rotation")
+                title: I18n.tr("Rotation")
                 discrete: true
                 axisTag: "°"
                 from: -12

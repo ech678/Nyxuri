@@ -1,6 +1,7 @@
 import QtQuick
 import qs.app.services
 import "./SpotlightCurrency.js" as Currency
+import qs.shared.i18n
 
 QtObject {
     id: root
@@ -27,7 +28,7 @@ QtObject {
                                    ? SpotlightToolService.result.rate : ""
     readonly property string answer: Currency.convert(driverAmount, rate, driverSide === 2)
     readonly property string amountError: driverAmount && !/^[+\-\.]$/.test(driverAmount) && !Currency.decimal(
-                                              driverAmount) ? qsTr("Enter a valid amount") : ""
+                                              driverAmount) ? I18n.tr("Enter a valid amount") : ""
     signal focusRequested(bool selectAll)
 
     function reset(seed) {

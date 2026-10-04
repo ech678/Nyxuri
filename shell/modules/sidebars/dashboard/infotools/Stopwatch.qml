@@ -6,6 +6,7 @@ import Quickshell
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 Item {
     id: root
@@ -179,14 +180,13 @@ Item {
                                           Appearance.colors.colPrimaryActive
                 rippleColor: TimerService.stopwatchRunning ? Appearance.colors.colOnSecondaryContainer :
                                                              Appearance.colors.colOnPrimary
-                Accessible.name: TimerService.stopwatchRunning ? qsTr("Pause stopwatch") : qsTr(
+                Accessible.name: TimerService.stopwatchRunning ? I18n.tr("Pause stopwatch") : I18n.tr(
                                                                      "Start stopwatch")
                 onClicked: TimerService.toggleStopwatch()
 
                 contentItem: Text {
-                    text: TimerService.stopwatchRunning ? qsTr("Pause") : TimerService.stopwatchTime === 0 ? qsTr(
-                                                                                                                 "Start") :
-                                                                                                             qsTr("Resume")
+                    text: TimerService.stopwatchRunning ? I18n.tr("Pause") : TimerService.stopwatchTime === 0
+                                                          ? I18n.tr("Start") : I18n.tr("Resume")
                     color: TimerService.stopwatchRunning ? Appearance.colors.colOnSecondaryContainer :
                                                            Appearance.colors.colOnPrimary
                     font.family: Fonts.ui
@@ -210,7 +210,8 @@ Item {
                                                                         Appearance.colors.colErrorContainerActive
                 rippleColor: TimerService.stopwatchRunning ? Appearance.colors.colOnLayer2 :
                                                              Appearance.colors.colOnErrorContainer
-                Accessible.name: TimerService.stopwatchRunning ? qsTr("Record lap") : qsTr("Reset stopwatch")
+                Accessible.name: TimerService.stopwatchRunning ? I18n.tr("Record lap") : I18n.tr(
+                                                                     "Reset stopwatch")
                 onClicked: {
                     if (TimerService.stopwatchRunning)
                         TimerService.stopwatchRecordLap();
@@ -219,7 +220,7 @@ Item {
                 }
 
                 contentItem: Text {
-                    text: TimerService.stopwatchRunning ? qsTr("Lap") : qsTr("Reset")
+                    text: TimerService.stopwatchRunning ? I18n.tr("Lap") : I18n.tr("Reset")
                     color: TimerService.stopwatchRunning ? Appearance.colors.colOnLayer2 :
                                                            Appearance.colors.colOnErrorContainer
                     font.family: Fonts.ui

@@ -3,6 +3,7 @@ import QtQuick.Shapes
 import M3Shapes
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 Rectangle {
     id: root
@@ -92,20 +93,20 @@ Rectangle {
     function phaseText(angle) {
         const a = ((angle % 360) + 360) % 360;
         if (a < 22.5 || a >= 337.5)
-            return qsTr("New moon");
+            return I18n.tr("New moon");
         if (a < 67.5)
-            return qsTr("Waxing crescent");
+            return I18n.tr("Waxing crescent");
         if (a < 112.5)
-            return qsTr("First quarter");
+            return I18n.tr("First quarter");
         if (a < 157.5)
-            return qsTr("Waxing gibbous");
+            return I18n.tr("Waxing gibbous");
         if (a < 202.5)
-            return qsTr("Full moon");
+            return I18n.tr("Full moon");
         if (a < 247.5)
-            return qsTr("Waning gibbous");
+            return I18n.tr("Waning gibbous");
         if (a < 292.5)
-            return qsTr("Last quarter");
-        return qsTr("Waning crescent");
+            return I18n.tr("Last quarter");
+        return I18n.tr("Waning crescent");
     }
 
     function pathAnimationDuration() {
@@ -309,7 +310,7 @@ Rectangle {
             fontSizeMode: Text.HorizontalFit
             minimumPixelSize: 14
             elide: Text.ElideRight
-            text: root.moon ? qsTr("Moon") : qsTr("Sun")
+            text: root.moon ? I18n.tr("Moon") : I18n.tr("Sun")
             color: root.titleInk
             font.family: Fonts.expressive
             font.pixelSize: 18

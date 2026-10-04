@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.shared.theme
 import qs.app
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -21,7 +22,7 @@ Singleton {
         const source = String(path || "");
         if (source === "" || busy) {
             if (source === "")
-                updateFinished(false, qsTr("No valid avatar file selected"));
+                updateFinished(false, I18n.tr("No valid avatar file selected"));
             return;
         }
 
@@ -38,12 +39,12 @@ Singleton {
             root.busy = false;
             if (exitCode === 0) {
                 root.revision += 1;
-                root.updateFinished(true, qsTr("Avatar updated"));
-                ActionGateway.execute(["notify-send", "-a", "quickshell", "-u", "low", qsTr("Avatar updated"),
-                                       root.pendingSource], "avatar:update-success");
+                root.updateFinished(true, I18n.tr("Avatar updated"));
+                ActionGateway.execute(["notify-send", "-a", "quickshell", "-u", "low", I18n.tr(
+                                           "Avatar updated"), root.pendingSource], "avatar:update-success");
             } else {
-                root.updateFinished(false, qsTr("Could not update avatar"));
-                ActionGateway.execute(["notify-send", "-a", "quickshell", "-u", "critical", qsTr(
+                root.updateFinished(false, I18n.tr("Could not update avatar"));
+                ActionGateway.execute(["notify-send", "-a", "quickshell", "-u", "critical", I18n.tr(
                                            "Avatar update failed"), root.pendingSource],
                                       "avatar:update-failed");
             }

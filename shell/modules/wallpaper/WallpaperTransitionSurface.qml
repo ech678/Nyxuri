@@ -2,6 +2,7 @@ import QtQuick
 import qs.shared.theme
 import qs.app
 import "../../shared/utils/WallpaperSource.js" as WallpaperSource
+import qs.shared.i18n
 
 Item {
     id: root
@@ -221,7 +222,7 @@ Item {
     }
 
     function handleViewportFailure(viewport, source) {
-        const message = qsTr("Could not decode wallpaper: ") + source;
+        const message = I18n.tr("Could not decode wallpaper: ") + source;
         root.lastError = message;
         if (viewport === root.nextViewport) {
             root.nextViewport.sourcePath = "";

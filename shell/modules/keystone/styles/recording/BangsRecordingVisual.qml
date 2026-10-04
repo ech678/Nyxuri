@@ -3,6 +3,7 @@ import QtQuick.Controls
 import qs.shared.theme
 import qs.shared.controls
 import "RecordingFormat.js" as RecordingFormat
+import qs.shared.i18n
 
 // The Pill presentation's contents, arranged inside one continuous surface.
 // The parent owns all geometry; the action never becomes a satellite.
@@ -94,7 +95,7 @@ Item {
             opacity: root.actionProgress
             enabled: root.recording && root.actionProgress > 0.55
             hoverEnabled: true
-            Accessible.name: qsTr("Stop recording")
+            Accessible.name: I18n.tr("Stop recording")
             Accessible.role: Accessible.Button
             onClicked: root.stopRequested()
             background: Item {}
@@ -126,7 +127,7 @@ Item {
             }
             StyledToolTip {
                 extraVisibleCondition: stopButton.hovered && stopButton.enabled
-                text: qsTr("Stop recording")
+                text: I18n.tr("Stop recording")
             }
         }
     }
@@ -164,7 +165,7 @@ Item {
             Text {
                 id: processingLabel
                 anchors.centerIn: parent
-                text: qsTr("Processing")
+                text: I18n.tr("Processing")
                 color: Appearance.colors.colOnLayer0
                 font.family: Fonts.ui
                 font.pixelSize: 15

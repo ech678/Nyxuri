@@ -4,6 +4,7 @@ import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
 import qs.modules.systemcards
+import qs.shared.i18n
 
 StyledFlickable {
     id: root
@@ -26,12 +27,12 @@ StyledFlickable {
         const options = [
                   {
                       "value": "auto",
-                      "label": qsTr("Auto")
+                      "label": I18n.tr("Auto")
                   }
               ];
         const names = ({});
         for (let index = 0; index < SystemMonitorService.gpus.length; index += 1) {
-            const name = String(SystemMonitorService.gpus[index].name || qsTr("Graphics device"));
+            const name = String(SystemMonitorService.gpus[index].name || I18n.tr("Graphics device"));
             names[name] = Number(names[name] || 0) + 1;
         }
         for (let index = 0; index < SystemMonitorService.gpus.length; index += 1) {
@@ -40,7 +41,7 @@ StyledFlickable {
             if (id === "")
                 continue;
 
-            const name = String(gpu.name || qsTr("Graphics device"));
+            const name = String(gpu.name || I18n.tr("Graphics device"));
             options.push({
                              "value": id,
                              "label": names[name] > 1 ? name + " · " + root.gpuPciLabel(gpu) : name
@@ -58,7 +59,7 @@ StyledFlickable {
             if (!found)
                 options.push({
                                  "value": preferred,
-                                 "label": preferred + " · " + qsTr("Currently unavailable")
+                                 "label": preferred + " · " + I18n.tr("Currently unavailable")
                              });
         }
         return options;
@@ -69,7 +70,7 @@ StyledFlickable {
         const options = [
                   {
                       "value": "follow-io",
-                      "label": qsTr("Follow Disk I/O card")
+                      "label": I18n.tr("Follow Disk I/O card")
                   }
               ];
         for (let index = 0; index < SystemMonitorService.disks.length; index += 1) {
@@ -92,7 +93,7 @@ StyledFlickable {
             if (!found)
                 options.push({
                                  "value": preferred,
-                                 "label": preferred + " · " + qsTr("Currently unavailable")
+                                 "label": preferred + " · " + I18n.tr("Currently unavailable")
                              });
         }
         return options;
@@ -132,17 +133,17 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Dashboard sidebar position")
+                title: I18n.tr("Dashboard sidebar position")
                 iconName: "dashboard"
                 trailing: StyledButtonGroup {
                     model: [
                         {
                             value: "left",
-                            label: qsTr("Left")
+                            label: I18n.tr("Left")
                         },
                         {
                             value: "right",
-                            label: qsTr("Right")
+                            label: I18n.tr("Right")
                         }
                     ]
                     currentValue: PersonalizationConfig.dashboardSidebarSide
@@ -152,17 +153,17 @@ StyledFlickable {
 
             SettingsRow {
                 Layout.fillWidth: true
-                title: qsTr("Quick settings sidebar position")
+                title: I18n.tr("Quick settings sidebar position")
                 iconName: "tune"
                 trailing: StyledButtonGroup {
                     model: [
                         {
                             value: "left",
-                            label: qsTr("Left")
+                            label: I18n.tr("Left")
                         },
                         {
                             value: "right",
-                            label: qsTr("Right")
+                            label: I18n.tr("Right")
                         }
                     ]
                     currentValue: PersonalizationConfig.quickSettingsSidebarSide
@@ -173,12 +174,12 @@ StyledFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: "side_navigation"
-                title: qsTr("Keep sidebar loaded")
-                supportingText: qsTr("Opens faster next time, but uses more memory")
+                title: I18n.tr("Keep sidebar loaded")
+                supportingText: I18n.tr("Opens faster next time, but uses more memory")
 
                 trailing: StyledSwitch {
                     checked: PersonalizationConfig.keepSidebarsLoaded
-                    Accessible.name: qsTr("Keep sidebar loaded")
+                    Accessible.name: I18n.tr("Keep sidebar loaded")
                     onToggled: PersonalizationConfig.setKeepSidebarsLoaded(checked)
                 }
             }
@@ -202,15 +203,15 @@ StyledFlickable {
                 model: [
                     {
                         "value": "free",
-                        "label": qsTr("Free drag")
+                        "label": I18n.tr("Free drag")
                     },
                     {
                         "value": "leastBusy",
-                        "label": qsTr("Least busy")
+                        "label": I18n.tr("Least busy")
                     },
                     {
                         "value": "mostBusy",
-                        "label": qsTr("Most busy")
+                        "label": I18n.tr("Most busy")
                     }
                 ]
                 currentValue: SystemCardService.globalDesktopLayoutMode
@@ -224,23 +225,23 @@ StyledFlickable {
                 model: [
                     {
                         "value": "screenTopLeft",
-                        "label": qsTr("Top left")
+                        "label": I18n.tr("Top left")
                     },
                     {
                         "value": "screenTopRight",
-                        "label": qsTr("Top right")
+                        "label": I18n.tr("Top right")
                     },
                     {
                         "value": "screenBottomLeft",
-                        "label": qsTr("Bottom left")
+                        "label": I18n.tr("Bottom left")
                     },
                     {
                         "value": "screenBottomRight",
-                        "label": qsTr("Bottom right")
+                        "label": I18n.tr("Bottom right")
                     },
                     {
                         "value": "screenCenter",
-                        "label": qsTr("Center")
+                        "label": I18n.tr("Center")
                     }
                 ]
                 currentValue: SystemCardService.globalDesktopLayoutMode
@@ -253,11 +254,11 @@ StyledFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: "grid_4x4"
-                title: qsTr("Snap desktop cards to grid")
+                title: I18n.tr("Snap desktop cards to grid")
 
                 trailing: StyledSwitch {
                     checked: PersonalizationConfig.desktopCardGridSnapEnabled
-                    Accessible.name: qsTr("Snap desktop cards to grid")
+                    Accessible.name: I18n.tr("Snap desktop cards to grid")
                     onToggled: PersonalizationConfig.setDesktopCardGridSnapEnabled(checked)
                 }
             }
@@ -265,11 +266,11 @@ StyledFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: "grid_on"
-                title: qsTr("Show desktop grid while dragging")
+                title: I18n.tr("Show desktop grid while dragging")
 
                 trailing: StyledSwitch {
                     checked: PersonalizationConfig.desktopCardGridVisibleWhileDragging
-                    Accessible.name: qsTr("Show desktop grid while dragging")
+                    Accessible.name: I18n.tr("Show desktop grid while dragging")
                     onToggled: PersonalizationConfig.setDesktopCardGridVisibleWhileDragging(checked)
                 }
             }
@@ -293,12 +294,12 @@ StyledFlickable {
                 model: [
                     {
                         "value": "digital",
-                        "label": qsTr("Digital"),
+                        "label": I18n.tr("Digital"),
                         "icon": "timer_10"
                     },
                     {
                         "value": "cookie",
-                        "label": qsTr("Cookie"),
+                        "label": I18n.tr("Cookie"),
                         "icon": "cookie"
                     }
                 ]
@@ -322,8 +323,8 @@ StyledFlickable {
                     Layout.fillWidth: true
                     enabled: root.cookieClockActive
                     iconName: "add_triangle"
-                    title: qsTr("Sides")
-                    supportingText: qsTr("0 or 1 produces a circle; up to 40 sides")
+                    title: I18n.tr("Sides")
+                    supportingText: I18n.tr("0 or 1 produces a circle; up to 40 sides")
 
                     trailing: MaterialStepper {
                         enabled: root.cookieClockActive
@@ -341,12 +342,12 @@ StyledFlickable {
                     Layout.fillWidth: true
                     enabled: root.cookieClockActive
                     iconName: "autoplay"
-                    title: qsTr("Constantly rotate")
+                    title: I18n.tr("Constantly rotate")
 
                     trailing: StyledSwitch {
                         enabled: root.cookieClockActive
                         checked: UiPreferences.sidebarCookieConstantlyRotate
-                        Accessible.name: qsTr("Constantly rotate")
+                        Accessible.name: I18n.tr("Constantly rotate")
                         onToggled: UiPreferences.setSidebarCookieConstantlyRotate(checked)
                     }
                 }
@@ -356,12 +357,12 @@ StyledFlickable {
                     enabled: root.cookieClockActive && (UiPreferences.sidebarCookieDialStyle === "dots"
                                                         || UiPreferences.sidebarCookieDialStyle === "full")
                     iconName: "brightness_7"
-                    title: qsTr("Hour marks")
-                    supportingText: qsTr("Available with Dots or Full dials")
+                    title: I18n.tr("Hour marks")
+                    supportingText: I18n.tr("Available with Dots or Full dials")
 
                     trailing: StyledSwitch {
                         checked: UiPreferences.sidebarCookieHourMarks
-                        Accessible.name: qsTr("Hour marks")
+                        Accessible.name: I18n.tr("Hour marks")
                         onToggled: UiPreferences.setSidebarCookieHourMarks(checked)
                     }
                 }
@@ -370,12 +371,12 @@ StyledFlickable {
                     Layout.fillWidth: true
                     enabled: root.cookieClockActive && UiPreferences.sidebarCookieDialStyle !== "numbers"
                     iconName: "timer_10"
-                    title: qsTr("Digits in the middle")
-                    supportingText: qsTr("Unavailable with the Numbers dial")
+                    title: I18n.tr("Digits in the middle")
+                    supportingText: I18n.tr("Unavailable with the Numbers dial")
 
                     trailing: StyledSwitch {
                         checked: UiPreferences.sidebarCookieTimeIndicators
-                        Accessible.name: qsTr("Digits in the middle")
+                        Accessible.name: I18n.tr("Digits in the middle")
                         onToggled: UiPreferences.setSidebarCookieTimeIndicators(checked)
                     }
                 }
@@ -383,7 +384,7 @@ StyledFlickable {
                 Text {
                     Layout.fillWidth: true
                     Layout.topMargin: Metrics.spacingXS
-                    text: qsTr("Dial style")
+                    text: I18n.tr("Dial style")
                     color: Appearance.colors.colOnSurface
                     font.family: Typography.labelLarge.family
                     font.pixelSize: Typography.labelLarge.pixelSize
@@ -396,22 +397,22 @@ StyledFlickable {
                     model: [
                         {
                             "value": "none",
-                            "label": qsTr("None"),
+                            "label": I18n.tr("None"),
                             "icon": "block"
                         },
                         {
                             "value": "dots",
-                            "label": qsTr("Dots"),
+                            "label": I18n.tr("Dots"),
                             "icon": "graph_6"
                         },
                         {
                             "value": "full",
-                            "label": qsTr("Full"),
+                            "label": I18n.tr("Full"),
                             "icon": "history_toggle_off"
                         },
                         {
                             "value": "numbers",
-                            "label": qsTr("Digital"),
+                            "label": I18n.tr("Digital"),
                             "icon": "counter_1"
                         }
                     ]
@@ -425,7 +426,7 @@ StyledFlickable {
                 Text {
                     Layout.fillWidth: true
                     Layout.topMargin: Metrics.spacingXS
-                    text: qsTr("Hour hand")
+                    text: I18n.tr("Hour hand")
                     color: Appearance.colors.colOnSurface
                     font.family: Typography.labelLarge.family
                     font.pixelSize: Typography.labelLarge.pixelSize
@@ -438,22 +439,22 @@ StyledFlickable {
                     model: [
                         {
                             "value": "hide",
-                            "label": qsTr("None"),
+                            "label": I18n.tr("None"),
                             "icon": "block"
                         },
                         {
                             "value": "classic",
-                            "label": qsTr("Classic"),
+                            "label": I18n.tr("Classic"),
                             "icon": "radio"
                         },
                         {
                             "value": "hollow",
-                            "label": qsTr("Hollow"),
+                            "label": I18n.tr("Hollow"),
                             "icon": "circle"
                         },
                         {
                             "value": "fill",
-                            "label": qsTr("Fill"),
+                            "label": I18n.tr("Fill"),
                             "icon": "eraser_size_5"
                         }
                     ]
@@ -467,7 +468,7 @@ StyledFlickable {
                 Text {
                     Layout.fillWidth: true
                     Layout.topMargin: Metrics.spacingXS
-                    text: qsTr("Minute hand")
+                    text: I18n.tr("Minute hand")
                     color: Appearance.colors.colOnSurface
                     font.family: Typography.labelLarge.family
                     font.pixelSize: Typography.labelLarge.pixelSize
@@ -480,27 +481,27 @@ StyledFlickable {
                     model: [
                         {
                             "value": "hide",
-                            "label": qsTr("None"),
+                            "label": I18n.tr("None"),
                             "icon": "block"
                         },
                         {
                             "value": "classic",
-                            "label": qsTr("Classic"),
+                            "label": I18n.tr("Classic"),
                             "icon": "radio"
                         },
                         {
                             "value": "thin",
-                            "label": qsTr("Thin"),
+                            "label": I18n.tr("Thin"),
                             "icon": "line_end"
                         },
                         {
                             "value": "medium",
-                            "label": qsTr("Medium"),
+                            "label": I18n.tr("Medium"),
                             "icon": "eraser_size_2"
                         },
                         {
                             "value": "bold",
-                            "label": qsTr("Bold"),
+                            "label": I18n.tr("Bold"),
                             "icon": "eraser_size_4"
                         }
                     ]
@@ -515,7 +516,7 @@ StyledFlickable {
                 Text {
                     Layout.fillWidth: true
                     Layout.topMargin: Metrics.spacingXS
-                    text: qsTr("Second hand")
+                    text: I18n.tr("Second hand")
                     color: Appearance.colors.colOnSurface
                     font.family: Typography.labelLarge.family
                     font.pixelSize: Typography.labelLarge.pixelSize
@@ -528,22 +529,22 @@ StyledFlickable {
                     model: [
                         {
                             "value": "hide",
-                            "label": qsTr("None"),
+                            "label": I18n.tr("None"),
                             "icon": "block"
                         },
                         {
                             "value": "classic",
-                            "label": qsTr("Classic"),
+                            "label": I18n.tr("Classic"),
                             "icon": "radio"
                         },
                         {
                             "value": "line",
-                            "label": qsTr("Line"),
+                            "label": I18n.tr("Line"),
                             "icon": "line_end"
                         },
                         {
                             "value": "dot",
-                            "label": qsTr("Dots"),
+                            "label": I18n.tr("Dots"),
                             "icon": "adjust"
                         }
                     ]
@@ -557,7 +558,7 @@ StyledFlickable {
                 Text {
                     Layout.fillWidth: true
                     Layout.topMargin: Metrics.spacingXS
-                    text: qsTr("Date style")
+                    text: I18n.tr("Date style")
                     color: Appearance.colors.colOnSurface
                     font.family: Typography.labelLarge.family
                     font.pixelSize: Typography.labelLarge.pixelSize
@@ -570,22 +571,22 @@ StyledFlickable {
                     model: [
                         {
                             "value": "hide",
-                            "label": qsTr("None"),
+                            "label": I18n.tr("None"),
                             "icon": "block"
                         },
                         {
                             "value": "bubble",
-                            "label": qsTr("Bubble"),
+                            "label": I18n.tr("Bubble"),
                             "icon": "bubble_chart"
                         },
                         {
                             "value": "border",
-                            "label": qsTr("Border"),
+                            "label": I18n.tr("Border"),
                             "icon": "rotate_right"
                         },
                         {
                             "value": "rect",
-                            "label": qsTr("Rect"),
+                            "label": I18n.tr("Rect"),
                             "icon": "rectangle"
                         }
                     ]
@@ -630,7 +631,8 @@ StyledFlickable {
                         supportingText: {
                             const cards = SystemCardService.cards;
                             const state = cards ? cards[modelData] : null;
-                            return state && state.container === "desktop" ? qsTr("Desktop") : qsTr("Sidebar");
+                            return state && state.container === "desktop" ? I18n.tr("Desktop") : I18n.tr(
+                                                                                "Sidebar");
                         }
 
                         trailing: StyledSwitch {
@@ -649,14 +651,14 @@ StyledFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: "developer_board"
-                title: qsTr("GPU")
-                supportingText: qsTr("Select the graphics device shown by the GPU card")
+                title: I18n.tr("GPU")
+                supportingText: I18n.tr("Select the graphics device shown by the GPU card")
 
                 trailing: SearchSelectMenuField {
                     Layout.preferredWidth: 220
                     options: root.gpuOptions
                     value: UiPreferences.systemMonitorGpuId
-                    placeholder: qsTr("Auto")
+                    placeholder: I18n.tr("Auto")
                     closeOnAccept: true
                     onAccepted: value => {
                         return UiPreferences.setSystemMonitorGpuId(value);
@@ -667,13 +669,13 @@ StyledFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: "speed"
-                title: qsTr("System monitor snapshot interval")
+                title: I18n.tr("System monitor snapshot interval")
 
                 trailing: MaterialFilledTextField {
                     id: intervalField
 
                     Layout.preferredWidth: 150
-                    labelText: qsTr("Interval")
+                    labelText: I18n.tr("Interval")
                     text: String(UiPreferences.systemMonitorIntervalMs)
                     error: text.length === 0 || !acceptableInput
                     inputMethodHints: Qt.ImhDigitsOnly
@@ -691,7 +693,7 @@ StyledFlickable {
                     trailingContent: Component {
                         Text {
                             anchors.fill: parent
-                            text: qsTr("ms")
+                            text: I18n.tr("ms")
                             color: Appearance.colors.colOnSurfaceVariant
                             font.family: Typography.bodyMedium.family
                             font.pixelSize: Typography.bodyMedium.pixelSize
@@ -705,14 +707,14 @@ StyledFlickable {
             SettingsRow {
                 Layout.fillWidth: true
                 iconName: "data_usage"
-                title: qsTr("Disk capacity")
-                supportingText: qsTr("Select the physical disk shown by the capacity card")
+                title: I18n.tr("Disk capacity")
+                supportingText: I18n.tr("Select the physical disk shown by the capacity card")
 
                 trailing: SearchSelectMenuField {
                     Layout.preferredWidth: 260
                     options: root.capacityDiskOptions
                     value: UiPreferences.storageCapacityDiskDevice
-                    placeholder: qsTr("Follow Disk I/O card")
+                    placeholder: I18n.tr("Follow Disk I/O card")
                     closeOnAccept: true
                     onAccepted: value => {
                         return UiPreferences.setStorageCapacityDiskDevice(value);

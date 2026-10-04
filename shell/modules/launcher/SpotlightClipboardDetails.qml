@@ -8,6 +8,7 @@ import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
 import "../../shared/utils/FileUtils.js" as FileUtils
+import qs.shared.i18n
 
 ColumnLayout {
     id: root
@@ -85,17 +86,17 @@ ColumnLayout {
 
     function fileStatus(file) {
         if (!file.local)
-            return qsTr("Remote location not read");
+            return I18n.tr("Remote location not read");
         if (file.metadataStatus === "missing" || (!file.metadataStatus && !file.exists))
-            return qsTr("File no longer exists");
+            return I18n.tr("File no longer exists");
         if (file.metadataStatus === "unreadable" || !file.readable)
-            return qsTr("Unable to read file");
+            return I18n.tr("Unable to read file");
         if (file.metadataStatus === "unavailable")
-            return qsTr("Metadata unavailable");
+            return I18n.tr("Metadata unavailable");
         return "";
     }
     function fileDescription(file) {
-        const parts = [file.directory ? qsTr("Folder") : (file.mimeType || qsTr("File"))];
+        const parts = [file.directory ? I18n.tr("Folder") : (file.mimeType || I18n.tr("File"))];
         if (file.sizeKnown === true && !file.directory)
             parts.push(FileUtils.humanReadableSize(file.byteSize));
         const status = fileStatus(file);
@@ -109,24 +110,24 @@ ColumnLayout {
         const parts = [];
         if (kind === "text") {
             if (typeof detail.characterCount === "number")
-                parts.push(qsTr("Characters: %1").arg(detail.characterCount));
+                parts.push(I18n.tr("Characters: %1").arg(detail.characterCount));
             if (typeof detail.textLineCount === "number")
-                parts.push(qsTr("Lines: %1").arg(detail.textLineCount));
+                parts.push(I18n.tr("Lines: %1").arg(detail.textLineCount));
             if (typeof detail.byteSize === "number")
-                parts.push(qsTr("Size: %1").arg(FileUtils.humanReadableSize(detail.byteSize)));
+                parts.push(I18n.tr("Size: %1").arg(FileUtils.humanReadableSize(detail.byteSize)));
         } else if (singleFile) {
             parts.push(fileDescription(singleFile));
             parts.push(singleFile.parent || singleFile.uri);
             if (typeof singleFile.modifiedTime === "number") {
                 const date = new Date(singleFile.modifiedTime * 1000);
-                parts.push(qsTr("Modified: %1 %2").arg(date.toLocaleDateString(Qt.locale(),
-                                                                               Locale.ShortFormat)).arg(
+                parts.push(I18n.tr("Modified: %1 %2").arg(date.toLocaleDateString(Qt.locale(),
+                                                                                  Locale.ShortFormat)).arg(
                                UiPreferences.shortTime(date)));
             }
         } else if (kind === "image" || kind === "binary") {
-            parts.push(detail.mimeType || qsTr("Binary clipboard content"));
+            parts.push(detail.mimeType || I18n.tr("Binary clipboard content"));
             if (detail.width > 0 && detail.height > 0)
-                parts.push(qsTr("%1 × %2").arg(detail.width).arg(detail.height));
+                parts.push(I18n.tr("%1 × %2").arg(detail.width).arg(detail.height));
             if (typeof detail.byteSize === "number")
                 parts.push(FileUtils.humanReadableSize(detail.byteSize));
         }
@@ -146,10 +147,10 @@ ColumnLayout {
             visible: root.entryId === "" || root.waiting || root.failure !== "" || !root.detail || (root.kind
                                                                                                     === "binary")
                      || (root.kind === "image" && root.imageUrl === "")
-            text: root.entryId === "" ? qsTr("Select an entry") : root.waiting ? qsTr("Reading…") :
-                                                                                 root.failure !== ""
-                                                                                 ? root.failure : qsTr(
-                                                                                       "Preview unavailable")
+            text: root.entryId === "" ? I18n.tr("Select an entry") : root.waiting ? I18n.tr("Reading…") :
+                                                                                    root.failure !== ""
+                                                                                    ? root.failure : I18n.tr(
+                                                                                          "Preview unavailable")
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
             horizontalAlignment: Text.AlignHCenter
@@ -251,7 +252,7 @@ ColumnLayout {
                 Text {
                     anchors.centerIn: parent
                     visible: picture.status === Image.Error
-                    text: qsTr("Preview unavailable")
+                    text: I18n.tr("Preview unavailable")
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.ui
                 }
@@ -302,7 +303,7 @@ ColumnLayout {
                 id: imageErrorLabel
                 width: parent.width
                 visible: root.imageFailed
-                text: qsTr("Preview unavailable")
+                text: I18n.tr("Preview unavailable")
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.Wrap
                 color: Appearance.colors.colOnSurfaceVariant
@@ -320,7 +321,7 @@ ColumnLayout {
                 width: ListView.view.width
                 visible: root.files.length > 1
                 height: visible ? implicitHeight + 12 : 0
-                text: qsTr("%n file(s)", "", root.files.length)
+                text: I18n.tr("%n file(s)", root.files.length)
                 color: Appearance.colors.colOnSurface
                 font.family: Fonts.ui
             }
@@ -356,10 +357,10 @@ ColumnLayout {
         Layout.fillWidth: true
         visible: root.kind === "text" && !root.waiting && root.failure === "" && (!root.detail || root.detail.textTruncated
                                                                                   !== false)
-        text: root.detail && root.detail.textTruncated === true ? qsTr(
+        text: root.detail && root.detail.textTruncated === true ? I18n.tr(
                                                                       "Showing the first %1 of %2 characters. Restoring copies the full content.").arg(
                                                                       root.detail.detailTextLimit).arg(
-                                                                      root.detail.characterCount) : qsTr(
+                                                                      root.detail.characterCount) : I18n.tr(
                                                                       "Preview")
         wrapMode: Text.Wrap
         textFormat: Text.PlainText
@@ -399,7 +400,7 @@ ColumnLayout {
             }
         }
         ActionButton {
-            text: qsTr("Restore to clipboard")
+            text: I18n.tr("Restore to clipboard")
             iconName: "content_paste"
             enabled: root.entryId !== "" && root.canRestore && !root.actionRunning && (!root.detail
                                                                                        || root.detail.restorable

@@ -5,6 +5,7 @@ import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
 import "../../../shared/utils/SystemFormat.js" as Format
+import qs.shared.i18n
 
 TopBarPill {
     id: root
@@ -20,9 +21,10 @@ TopBarPill {
     readonly property real memoryUsage: root.normalizedPercent(root.memory.usagePercent)
     readonly property real diskUsage: root.normalizedPercent(root.disk.usagePercent)
     readonly property real temperatureValue: Format.isNumber(root.cpu.packageTemperatureCelsius)
-                                             ? root.cpu.packageTemperatureCelsius :
-                                               (Format.isNumber(root.cpu.temperatureCelsius)
-                                                ? root.cpu.temperatureCelsius : 0)
+                                             ? root.cpu.packageTemperatureCelsius : (Format.isNumber(
+                                                                                         root.cpu.temperatureCelsius)
+                                                                                     ? root.cpu.temperatureCelsius :
+                                                                                       0)
     readonly property real temperatureUsage: root.normalizedTemperature(root.temperatureValue)
     readonly property real cpuUsage: root.normalizedPercent(root.cpu.usagePercent)
     readonly property bool useFahrenheit: UiPreferences.systemTemperatureUnit === "fahrenheit"
@@ -40,11 +42,10 @@ TopBarPill {
     readonly property real indicatorIconSize: 15
     readonly property real indicatorSpacing: Sizes.barItemSpacing + (root.showValues ? 0 : Metrics.spacingXXS)
 
-    readonly property string tooltipText: [qsTr("Memory") + "    " + root.bytesPair(root.memory), qsTr("Disk")
-        + "    " + root.bytesPair(root.disk), qsTr("Temperature") + "    " + Format.temperature(root.temperatureValue,
-                                                                                                UiPreferences.systemTemperatureUnit
-                                                                                                === "fahrenheit"),
-        qsTr("CPU") + "    " + Format.percent(root.cpu.usagePercent)].join("\n")
+    readonly property string tooltipText: [I18n.tr("Memory") + "    " + root.bytesPair(root.memory), I18n.tr(
+            "Disk") + "    " + root.bytesPair(root.disk), I18n.tr("Temperature") + "    " + Format.temperature(
+            root.temperatureValue, UiPreferences.systemTemperatureUnit === "fahrenheit"), I18n.tr("CPU")
+        + "    " + Format.percent(root.cpu.usagePercent)].join("\n")
 
     function clamp(value) {
         const numeric = Number(value);

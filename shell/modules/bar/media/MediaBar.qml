@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.app.services
 import qs.shared.controls
+import qs.shared.i18n
 
 TopBarPill {
     id: root
@@ -12,8 +13,8 @@ TopBarPill {
     property string edge: PersonalizationConfig.barPosition
     property real maximumTitleWidth: 180
     readonly property var player: MediaService.active
-    readonly property string title: player ? player.trackTitle || player.identity || qsTr("No media") : qsTr(
-                                                 "No media")
+    readonly property string title: player ? player.trackTitle || player.identity || I18n.tr("No media") :
+                                             I18n.tr("No media")
     implicitWidth: vertical ? Sizes.barPillThickness : layout.implicitWidth + 2
                               * Sizes.barPillHorizontalPadding
     implicitHeight: vertical ? layout.implicitHeight + 2 * Sizes.barPillHorizontalPadding :
@@ -41,14 +42,14 @@ TopBarPill {
 
         MediaButton {
             iconName: "skip_previous"
-            accessibleName: qsTr("Previous track")
+            accessibleName: I18n.tr("Previous track")
             enabled: root.player !== null && root.player.canGoPrevious
             onClicked: root.player.previous()
         }
 
         MediaButton {
             iconName: root.player && root.player.isPlaying ? "pause" : "play_arrow"
-            accessibleName: root.player && root.player.isPlaying ? qsTr("Pause") : qsTr("Play")
+            accessibleName: root.player && root.player.isPlaying ? I18n.tr("Pause") : I18n.tr("Play")
             enabled: root.player !== null && root.player.canTogglePlaying
             iconColor: Appearance.colors.colPrimary
             onClicked: root.player.togglePlaying()
@@ -56,7 +57,7 @@ TopBarPill {
 
         MediaButton {
             iconName: "skip_next"
-            accessibleName: qsTr("Next track")
+            accessibleName: I18n.tr("Next track")
             enabled: root.player !== null && root.player.canGoNext
             onClicked: root.player.next()
         }

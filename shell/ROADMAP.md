@@ -148,6 +148,8 @@
 | P1 | 隔离启动、基础界面、Shell 切换和开发闭环 | 历史里程碑；不能替代 R2 当前证据 |
 | P2 | 四层骨架、Action Gateway、按需加载和 native 解耦基础 | 历史架构交付；R4 重新验证边界和生命周期 |
 | R4-C | 已完成；全量交付 R4-C-01 至 R4-C-06 | 彻底移除 113 项自有 C++ 插件与 CMakeLists.txt；全库 0 Clavis 依赖与 0 C++ 编译要求；收敛为 app/ -> modules/ -> shared/ 3 级纯 QML 体系；Niri 确立单一运行时状态源（NiriService）；shared 层零副作用；生命周期审计 0 违规，全量单测与沙箱部署全绿 |
+| R5 | 已完成；全量交付 R5-01 至 R5-03 | 彻底盘点并消除死资产与无消费图标；修复 Zen 着色器断裂；重写 pure QML 调试指南；建立 5 分类独立测试套件集成至 check.sh 并全绿通过 |
+| 纯 QML 国际化 | 已完成；彻底淘汰 qsTr 隐式 Native 翻译器依赖 | 在 shared/i18n/ 设立 I18n 单例与 Translations.js，引入 Toml.js 纯脚本解析器直接读取 zh_CN.toml；全库 228 个 QML/JS 文件迁移至 I18n.tr，实现 0 C++ 编译与 0 .qm 依赖的多语言热切换 |
 | P3-R00/R01 | 参考树固定、恢复点和功能矩阵 | 资料保留；见 [恢复矩阵](wiki/recovery-matrix.md) |
 | P3-R02..R08 | Bar、通知、设置、锁屏、启动器和剪贴板恢复 | 历史恢复记录；证据由 R1/R2 重新归档 |
 | P3-R09 | 按需启动、动作收敛、生命周期和视觉门禁 | 仍有未完成门禁，不标为整体完成 |
@@ -160,7 +162,7 @@
 2. **[已拍板]** `references/` 与 `wiki/upstream-*` 处理：作者明确指示 `references/` 保持保留作为本地参考；`wiki/upstream-docs` 冲突文档清理，协议规约收敛至 upstream-specs，巨型比对档案移入 archive/，编制 references.md 固化提取指南。
 3. **[已拍板]** Keystone、天气、地图、歌词等能力的核心/可选边界：作者明确拍板放弃 Cava、地图、歌词、窗口预览；已在 R2 彻底物理移除相关 native 插件、fallback 与死 QML UI，相关消费者转化为零开销安全桩。
 4. **[已拍板]** 生成文件、qsb、vendor Python 包和测试 fixture 的版本控制策略：qsb 作为免编译运行资产保留；SearchCatalog.js 脚本生成入库由单测校验；vendor 清理缓存；fixtures 隔离在测试树。
-5. **[已拍板]** 翻译与对外兼容：废除 2.6 万行 XML，采用纯 TOML 双语字典；对外变量优先 NYXURI_*，兼容读取 CLAVIS_*。
+5. **[已拍板]** 翻译与对外兼容：废除 2.6 万行 XML，采用纯 TOML 双语字典；对外变量优先 NYXURI_*，兼容读取 CLAVIS_*。全库现已全面落地纯 QML/JS 动态国际化（`I18n.qml` + `Translations.js` + `Toml.js`），彻底切除对 Qt Linguist / QTranslator 的 C++ 运行时依赖。
 6. **[已拍板]** 目录极简与 `bin/` 处置：作者明确拍板砍掉 `shell/bin/` 目录，将 `nyxuri-shell` 提升至 `shell/` 根目录，与 `shell.qml` 并列构成一动一静、一外一内的极简双入口；全库命名统一遵循艺术级命名法典；C++ 构建链已于 R4-C-05 全量清除。
 
 ## 当前门禁

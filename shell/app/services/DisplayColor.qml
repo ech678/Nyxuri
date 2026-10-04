@@ -6,6 +6,7 @@ import Quickshell.Io
 import qs.shared.theme
 import qs.app
 import "../../modules/settings/DisplaySchedule.js" as Schedule
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -28,13 +29,13 @@ Singleton {
     readonly property string scheduleWarning: {
         switch (schedule.condition) {
         case "missing-location":
-            return qsTr("Set a location. Using the fixed night temperature.");
+            return I18n.tr("Set a location. Using the fixed night temperature.");
         case "polar-day":
-            return qsTr("Midnight sun: using the day temperature.");
+            return I18n.tr("Midnight sun: using the day temperature.");
         case "polar-night":
-            return qsTr("Polar night: using the night temperature.");
+            return I18n.tr("Polar night: using the night temperature.");
         case "equal-times":
-            return qsTr("Choose different start and end times. Using the fixed night temperature.");
+            return I18n.tr("Choose different start and end times. Using the fixed night temperature.");
         default:
             return "";
         }
@@ -113,7 +114,7 @@ Singleton {
                     longitude: data.longitude
                 };
             } catch (e) {
-                root.locationError = qsTr(
+                root.locationError = I18n.tr(
                             "Location lookup failed. Using the manual location or fixed night temperature.");
             }
             root.evaluate();
@@ -181,7 +182,7 @@ Singleton {
             if (request)
                 request.abort();
             root.locating = false;
-            root.locationError = qsTr(
+            root.locationError = I18n.tr(
                         "Location lookup timed out. Using the manual location or fixed night temperature.");
         }
     }
@@ -202,7 +203,7 @@ Singleton {
         running: true
         onExited: code => {
             if (code !== 0) {
-                root.error = qsTr("Unable to open display preferences");
+                root.error = I18n.tr("Unable to open display preferences");
                 return;
             }
             config.reload();
@@ -223,7 +224,7 @@ Singleton {
                 root.evaluate();
                 root.checkSystemEyecareSync();
             } catch (e) {
-                root.error = qsTr("Invalid display preferences: %1").arg(String(e));
+                root.error = I18n.tr("Invalid display preferences: %1").arg(String(e));
             }
         }
         onLoadFailed: error => {
@@ -232,9 +233,9 @@ Singleton {
                 root.evaluate();
                 root.checkSystemEyecareSync();
             } else
-                root.error = qsTr("Unable to read display preferences");
+                root.error = I18n.tr("Unable to read display preferences");
         }
-        onSaveFailed: root.error = qsTr("Unable to save display preferences")
+        onSaveFailed: root.error = I18n.tr("Unable to save display preferences")
     }
 
     Component.onDestruction: {

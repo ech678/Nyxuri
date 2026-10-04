@@ -2,6 +2,7 @@ import QtQuick
 import qs.app
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 BarCircularButton {
     id: root
@@ -25,6 +26,6 @@ BarCircularButton {
     containerColor: "transparent"
     rippleColor: Appearance.colors.colOnSurface
     iconColor: Appearance.colors.colOnSurface
-    tooltipText: root.viewName === "drawer" ? qsTr("Drawer") : qsTr("Notification center")
+    tooltipText: root.viewName === "drawer" ? I18n.tr("Drawer") : I18n.tr("Notification center")
     onClicked: root.toggleView()
 }

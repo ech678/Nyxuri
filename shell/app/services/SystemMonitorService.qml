@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.app.services
+import qs.shared.i18n
 
 Singleton {
     id: root
@@ -86,17 +87,17 @@ Singleton {
     readonly property string statusText: {
         switch (state) {
         case "loading":
-            return qsTr("Connecting");
+            return I18n.tr("Connecting");
         case "ready":
-            return partial ? qsTr("Some sensors cannot be read") : qsTr("Live");
+            return partial ? I18n.tr("Some sensors cannot be read") : I18n.tr("Live");
         case "stale":
-            return qsTr("Data is stale");
+            return I18n.tr("Data is stale");
         case "reconnecting":
-            return qsTr("Reconnecting");
+            return I18n.tr("Reconnecting");
         case "error":
-            return qsTr("Service unavailable");
+            return I18n.tr("Service unavailable");
         default:
-            return qsTr("Paused");
+            return I18n.tr("Paused");
         }
     }
 
@@ -297,8 +298,8 @@ Singleton {
         if (root.reconnectAttempt >= root.maximumReconnectAttempts) {
             root.state = "error";
             if (!root.errorMessage)
-                root.errorMessage = qsTr("System monitor service unavailable");
-            root.errorDetails = root.errorDetails || qsTr(
+                root.errorMessage = I18n.tr("System monitor service unavailable");
+            root.errorDetails = root.errorDetails || I18n.tr(
                         "The automatic reconnect limit was reached. Check the system monitor backend and try again.");
             return;
         }
@@ -307,9 +308,9 @@ Singleton {
         root._retryDelayMs = Math.min(16000, 1000 * Math.pow(2, root.reconnectAttempt - 1));
         root.state = "reconnecting";
         if (!root.errorMessage) {
-            root.errorMessage = reason === "failed_to_start" ? qsTr(
+            root.errorMessage = reason === "failed_to_start" ? I18n.tr(
                                                                    "Could not start the system monitoring service") :
-                                                               qsTr("The system monitor data stream was interrupted");
+                                                               I18n.tr("The system monitor data stream was interrupted");
         }
         reconnectTimer.interval = root._retryDelayMs;
         reconnectTimer.restart();
@@ -340,23 +341,22 @@ Singleton {
         }
 
         if (reason === "failed_to_start" || exitCode === 127) {
-            root.errorMessage = qsTr("The system monitor backend could not be started");
-            root.errorDetails = qsTr("Install key-cli with its native system monitor and try again.");
+            root.errorMessage = I18n.tr("The system monitor backend could not be started");
+            root.errorDetails = I18n.tr("Install key-cli with its native system monitor and try again.");
         } else if (reason === "data_timeout") {
-            root.errorMessage = qsTr("System monitor data has not updated for a long time");
-            root.errorDetails = qsTr(
+            root.errorMessage = I18n.tr("System monitor data has not updated for a long time");
+            root.errorDetails = I18n.tr(
                         "The data stream is not producing new snapshots at the expected interval.");
         } else if (reason === "first_snapshot_timeout") {
-            root.errorMessage = qsTr("The system monitor service did not return its first snapshot");
-            root.errorDetails = qsTr("The system monitor started but did not produce JSONL data in time.");
+            root.errorMessage = I18n.tr("The system monitor service did not return its first snapshot");
+            root.errorDetails = I18n.tr("The system monitor started but did not produce JSONL data in time.");
         } else if (reason === "invalid_json") {
-            root.errorMessage = qsTr("The system monitor keeps producing invalid JSONL");
-            root.errorDetails = qsTr("Several consecutive lines failed JSON v1 validation.");
+            root.errorMessage = I18n.tr("The system monitor keeps producing invalid JSONL");
+            root.errorDetails = I18n.tr("Several consecutive lines failed JSON v1 validation.");
         } else {
-            root.errorMessage = qsTr("The system monitor data stream exited unexpectedly");
-            root.errorDetails = exitCode >= 0 ? qsTr("System monitor exit code: %1").arg(exitCode) : qsTr(
+            root.errorMessage = I18n.tr("The system monitor data stream exited unexpectedly");
+            root.errorDetails = exitCode >= 0 ? I18n.tr("System monitor exit code: %1").arg(exitCode) : I18n.tr(
                                                     "The system monitor did not report an exit code");
-
         }
 
         root._scheduleReconnect(reason);
@@ -372,24 +372,24 @@ Singleton {
 
     function _validateSnapshot(snapshot, modules) {
         if (!root._isObject(snapshot))
-            return qsTr("The top-level JSON value must be an object");
+            return I18n.tr("The top-level JSON value must be an object");
         if (snapshot.schemaVersion !== root.supportedSchemaVersion)
             return "schemaVersion";
         if (!root._isFiniteNumber(snapshot.timestampMs) || !root._isFiniteNumber(snapshot.sequence) || !root._isFiniteNumber(
                     snapshot.intervalMs) || snapshot.intervalMs < 0)
-            return qsTr("The timestamp, sequence number, or sampling interval is invalid");
+            return I18n.tr("The timestamp, sequence number, or sampling interval is invalid");
         if (modules.indexOf("cpu") >= 0 && !root._isObject(snapshot.cpu))
-            return qsTr("Missing or invalid CPU data fields");
+            return I18n.tr("Missing or invalid CPU data fields");
         if (modules.indexOf("memory") >= 0 && !root._isObject(snapshot.memory))
-            return qsTr("Missing or invalid memory data fields");
+            return I18n.tr("Missing or invalid memory data fields");
         if (modules.indexOf("network") >= 0 && !root._isObject(snapshot.network))
-            return qsTr("Missing or invalid network data fields");
+            return I18n.tr("Missing or invalid network data fields");
         if (modules.indexOf("gpu") >= 0 && !Array.isArray(snapshot.gpus))
-            return qsTr("Missing or invalid GPU data fields");
+            return I18n.tr("Missing or invalid GPU data fields");
         if (modules.indexOf("disk") >= 0 && !Array.isArray(snapshot.disks))
-            return qsTr("Missing or invalid disk data fields");
+            return I18n.tr("Missing or invalid disk data fields");
         if (!Array.isArray(snapshot.errors))
-            return qsTr("The devices and errors fields must be arrays");
+            return I18n.tr("The devices and errors fields must be arrays");
         return "";
     }
 
@@ -567,7 +567,8 @@ Singleton {
         if (text.length === 0)
             return;
         if (text.indexOf("Unknown command") >= 0 || text.indexOf("Unknown subcommand") >= 0) {
-            root.errorMessage = qsTr("The backend does not support the current system monitoring interface");
+            root.errorMessage = I18n.tr(
+                        "The backend does not support the current system monitoring interface");
             root.errorDetails = text;
             root._terminateStream("invalid_json");
             return;
@@ -579,11 +580,11 @@ Singleton {
         } catch (exception) {
             root.malformedLineCount += 1;
             process.malformedLines += 1;
-            root.errorDetails = qsTr("Received a corrupt JSONL line");
+            root.errorDetails = I18n.tr("Received a corrupt JSONL line");
             if (!root.hasData)
-                root.errorMessage = qsTr("Could not parse system monitor data");
+                root.errorMessage = I18n.tr("Could not parse system monitor data");
             if (process.malformedLines >= 3 && root._streamProcess.running) {
-                root.errorMessage = qsTr("The system monitor keeps producing invalid JSONL");
+                root.errorMessage = I18n.tr("The system monitor keeps producing invalid JSONL");
                 root._terminateStream("invalid_json");
             }
             return;
@@ -593,8 +594,8 @@ Singleton {
         if (validationError === "schemaVersion") {
             root.schemaMismatchCount += 1;
             root._fatalError = true;
-            root.errorMessage = qsTr("System monitoring data schema is incompatible");
-            root.errorDetails = qsTr("Rebuild key-cli (schema v%1).").arg(root.supportedSchemaVersion);
+            root.errorMessage = I18n.tr("System monitoring data schema is incompatible");
+            root.errorDetails = I18n.tr("Rebuild key-cli (schema v%1).").arg(root.supportedSchemaVersion);
             root.state = "error";
             root._terminateStream("schema_mismatch");
             return;
@@ -602,7 +603,7 @@ Singleton {
         if (validationError !== "") {
             root.malformedLineCount += 1;
             process.malformedLines += 1;
-            root.errorMessage = root.hasData ? root.errorMessage : qsTr(
+            root.errorMessage = root.hasData ? root.errorMessage : I18n.tr(
                                                    "System monitor data returned by the backend is incomplete");
             root.errorDetails = validationError;
             if (process.malformedLines >= 3 && root._streamProcess.running) {
@@ -633,7 +634,8 @@ Singleton {
         if (text.length === 0)
             return;
         if (text.indexOf("Unknown command") >= 0 || text.indexOf("Unknown subcommand") >= 0) {
-            root.errorMessage = qsTr("The backend does not support the current system monitoring interface");
+            root.errorMessage = I18n.tr(
+                        "The backend does not support the current system monitoring interface");
             root.errorDetails = text;
             root._terminateStream("invalid_json");
             return;
@@ -679,8 +681,9 @@ Singleton {
             if (!root.hasData) {
                 const firstSnapshotAfter = Math.max(6000, root.configuredIntervalMs * 6);
                 if (now - root._streamStartedAtMs > firstSnapshotAfter && !root._terminationPending) {
-                    root.errorMessage = qsTr("The system monitor service did not return its first snapshot");
-                    root.errorDetails = qsTr("Restarting the system monitor data stream.");
+                    root.errorMessage = I18n.tr(
+                                "The system monitor service did not return its first snapshot");
+                    root.errorDetails = I18n.tr("Restarting the system monitor data stream.");
                     root._terminateStream("first_snapshot_timeout");
                 }
                 return;
@@ -693,8 +696,8 @@ Singleton {
                 root.state = "stale";
             if (age > restartAfter && root._streamProcess.running && !root._timeoutRestartIssued) {
                 root._timeoutRestartIssued = true;
-                root.errorMessage = qsTr("System monitor data has not updated for a long time");
-                root.errorDetails = qsTr("Reconnecting to the system monitor data stream.");
+                root.errorMessage = I18n.tr("System monitor data has not updated for a long time");
+                root.errorDetails = I18n.tr("Reconnecting to the system monitor data stream.");
                 root._terminateStream("data_timeout");
             }
         }
