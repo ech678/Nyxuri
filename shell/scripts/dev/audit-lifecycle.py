@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
-"""Nyxuri Shell Lifecycle and Side-Effect Auditor.
 
-Pure Python 3.11+ standard library static analyzer for QML/JS resources.
-Detects:
-  LIFE001: Missing resource owner
-  LIFE002: Missing destruction/teardown path
-  LIFE003: Shared layer side-effects
-  LIFE004: Direct external command execution
-  LIFE005: Optional dependency without fallback
-  LIFE006: Deactivation only via visible
-"""
 
 from __future__ import annotations
 
@@ -53,7 +43,6 @@ ALLOWED_OPTIONAL_IMPORTERS = {
 GATEWAY_FILE = "app/ActionGateway.qml"
 
 ALLOWED_MODULE_CROSS_IMPORTS = {
-    # host domain -> set of allowed target domains
     "desktopcards": {"systemcards", "wallpaper"},
     "sidebars": {"systemcards", "settings", "wallpaper", "filepicker", "quicksettings", "desktopcards"},
     "lock": {"wallpaper"},
@@ -209,7 +198,6 @@ def check_file_violations(
     is_gateway = rel_path.endswith(GATEWAY_FILE)
     has_destruction = ("Component.onDestruction" in content) or ("function closeChildWindows()" in content) or ("function unload()" in content and "Component.onDestruction: unload()" in content)
 
-    # 1. LIFE003: Shared layer side-effects
     if is_shared:
         for idx, line in enumerate(lines, 1):
             stripped = line.strip()
@@ -257,7 +245,6 @@ def check_file_violations(
                     AuditViolation("LIFE003", rel_path, idx, "Shared layer side-effect: native imports are prohibited in shared/")
                 )
 
-    # 2. LIFE004: Direct external command execution
     if not is_gateway:
         for idx, line in enumerate(lines, 1):
             stripped = line.strip()
@@ -283,8 +270,6 @@ def check_file_violations(
                     )
                 )
 
-    # 3. LIFE001: Missing resource owner
-    # Pattern: ActionGateway.execute(...) without owner or with empty owner
     for match in re.finditer(r"\bActionGateway\.execute\s*\(", content):
         open_pos = match.end() - 1
         close_pos = find_matching_paren(content, open_pos)
@@ -319,14 +304,12 @@ def check_file_violations(
                     )
                 )
 
-    # 4. LIFE005: Optional dependency without fallback
-    is_allowed_fallback = any(rel_path.endswith(allowed) for allowed in ALLOWED_OPTIONAL_IMPORTERS) or ("native/fallback" in rel_path)
+    is_allowed_fallback = any(rel_path.endswith(allowed) for allowed in ALLOWED_OPTIONAL_IMPORTERS)
     is_settings = "modules/settings" in rel_path and not rel_path.endswith("WeatherMapBackend.qml")
     for idx, line in enumerate(lines, 1):
         stripped = line.strip()
         if stripped.startswith("//") or stripped.startswith("/*") or stripped.startswith("*"):
             continue
-        # In modules/settings, static import of WeatherMap is prohibited
         if is_settings and re.search(r"\bimport\s+Clavis\.WeatherMap\b", line):
             violations.append(
                 AuditViolation(
@@ -336,7 +319,6 @@ def check_file_violations(
                     "Optional dependency without fallback: Static import of 'Clavis.WeatherMap' in settings requires WeatherMapBridge isolation",
                 )
             )
-        # Any import of un-fallback'd Clavis plugins (or in life005 test fixture)
         if not is_allowed_fallback:
             match_clavis = re.search(r"\bimport\s+Clavis\.([A-Za-z0-9_]+)\b", line)
             if match_clavis:
@@ -366,8 +348,6 @@ def check_file_violations(
                         )
                     )
 
-    # 5. LIFE002: Missing destruction/teardown path
-    # Look for Process, in-flight network request, or service-level / ungated recurring Timer
     has_process = False
     process_lines: List[int] = []
     for match in re.finditer(r"(?:component\s+\w+:\s*)?Process\s*\{", content):
@@ -389,7 +369,6 @@ def check_file_violations(
         start = match.start()
         end = find_matching_brace(content, match.end() - 1)
         block = content[start:end] if end != -1 else content[start:start + 400]
-        # In services/backends, any recurring timer must have teardown
         is_repeat = bool(re.search(r"\brepeat:\s*true\b", block))
         is_ungated = bool(re.search(r"\brunning:\s*true\b", block) and not re.search(r"\brepeat:\s*false\b", block))
         if (is_service_or_backend and is_repeat) or is_ungated or ("life002" in rel_path and is_repeat):
@@ -408,8 +387,6 @@ def check_file_violations(
             )
         )
 
-    # 6. LIFE006: Deactivation only via visible
-    # Detect Loader { active: true ... visible: ... } or PanelWindow with only visible and no active lifecycle
     for match in re.finditer(r"\bLoader\s*\{", content):
         start = match.start()
         end = find_matching_brace(content, match.end() - 1)
@@ -425,7 +402,6 @@ def check_file_violations(
                 )
             )
 
-    # 7. ARCH001: Forbidden cross-domain import in modules/
     parts = rel_path.split("/")
     if rel_path.startswith("modules/") or module_domain_override is not None:
         curr_domain = module_domain_override if module_domain_override is not None else (parts[1].lower() if len(parts) >= 3 else "")
@@ -471,7 +447,6 @@ def build_inventory_entry(
     lines = content.splitlines()
     has_destruction = "Component.onDestruction" in content
 
-    # Determine module domain
     parts = rel_path.split("/")
     if len(parts) >= 2 and parts[0] == "app":
         module = "app/" + parts[1].replace(".qml", "")
@@ -480,11 +455,10 @@ def build_inventory_entry(
     elif len(parts) >= 2 and parts[0] == "shared":
         module = "shared/" + parts[1]
     elif "fallback" in rel_path:
-        module = "native/fallback"
+        module = "shared/fallback"
     else:
         module = parts[0]
 
-    # 1. Timer
     for match in re.finditer(r"\bTimer\s*\{", content):
         start = match.start()
         end = find_matching_brace(content, match.end() - 1)
@@ -512,7 +486,6 @@ def build_inventory_entry(
             "risk_level": "medium" if repeat else "low",
         })
 
-    # 2. Process
     for match in re.finditer(r"(?:component\s+(\w+):\s*)?Process\s*\{", content):
         start = match.start()
         end = find_matching_brace(content, match.end() - 1)
@@ -541,7 +514,6 @@ def build_inventory_entry(
             "risk_level": "high" if is_stream else "medium",
         })
 
-    # 3. FileView
     for match in re.finditer(r"\bFileView\s*\{", content):
         start = match.start()
         end = find_matching_brace(content, match.end() - 1)
@@ -568,7 +540,6 @@ def build_inventory_entry(
             "risk_level": "low",
         })
 
-    # 4. Network (XMLHttpRequest)
     for match in re.finditer(r"\bnew\s+XMLHttpRequest\b", content):
         line_num = get_line_number(content, match.start())
         entries.append({
@@ -586,7 +557,6 @@ def build_inventory_entry(
             "risk_level": "medium",
         })
 
-    # 5. IPC Handlers
     for match in re.finditer(r"\bIpcHandler\s*\{", content):
         start = match.start()
         end = find_matching_brace(content, match.end() - 1)
@@ -611,7 +581,6 @@ def build_inventory_entry(
             "risk_level": "low",
         })
 
-    # 6. Native Consumers
     for match in re.finditer(r"\bimport\s+Clavis\.([A-Za-z0-9_]+)", content):
         plugin_name = match.group(1)
         line_num = get_line_number(content, match.start())
@@ -623,14 +592,13 @@ def build_inventory_entry(
             "module": module,
             "creation_condition": "qml-import",
             "resource_owner": module,
-            "stop_entry": "native teardown",
+            "stop_entry": "module teardown",
             "has_destruction": has_destruction,
             "visible_only_deactivation": False,
             "has_fallback": "fallback" in rel_path or plugin_name in ("Niri", "Runtime"),
             "risk_level": "high" if plugin_name in ("Cava", "WeatherMap") else "medium",
         })
 
-    # 7. External commands (ActionGateway.execute & Quickshell.execDetached)
     for match in re.finditer(r"\bActionGateway\.execute\s*\(", content):
         open_pos = match.end() - 1
         close_pos = find_matching_paren(content, open_pos)
@@ -678,7 +646,6 @@ def build_inventory_entry(
 def get_git_changed_files(repo_root: Path) -> List[Path]:
     result: List[Path] = []
     try:
-        # Changed files vs HEAD
         diff_out = subprocess.check_output(
             ["git", "diff", "--name-only", "-z", "HEAD", "--", "."],
             cwd=repo_root,
@@ -690,7 +657,6 @@ def get_git_changed_files(repo_root: Path) -> List[Path]:
                 if p.is_file():
                     result.append(p)
 
-        # Untracked files
         untracked_out = subprocess.check_output(
             ["git", "ls-files", "--others", "--exclude-standard", "-z", "--", "."],
             cwd=repo_root,
@@ -707,7 +673,7 @@ def get_git_changed_files(repo_root: Path) -> List[Path]:
 
 
 def get_all_target_files(repo_root: Path) -> List[Path]:
-    target_dirs = ["app", "modules", "shared", "native/fallback"]
+    target_dirs = ["app", "modules", "shared", "shared/fallback"]
     result: List[Path] = []
     for d in target_dirs:
         dir_path = repo_root / d
@@ -737,11 +703,9 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    # Determine shell root
     if args.root:
         root_path = Path(args.root).resolve()
     else:
-        # Check if current directory or script parent is shell root
         cwd = Path.cwd()
         if (cwd / "app").is_dir() and (cwd / "modules").is_dir():
             root_path = cwd
@@ -751,14 +715,12 @@ def main() -> int:
             script_dir = Path(__file__).resolve().parent
             root_path = script_dir.parent.parent
 
-    # Inventory mode
     if args.inventory:
         all_files = get_all_target_files(root_path)
         all_entries: List[Dict[str, Any]] = []
         for f in all_files:
             all_entries.extend(build_inventory_entry(f, root_path))
 
-        # Sort entries stably by (file, line, resource_type, name)
         all_entries.sort(key=lambda e: (e["file"], e["line"], e["resource_type"], e["name"]))
 
         inventory_doc = {
@@ -790,7 +752,6 @@ def main() -> int:
         print(f"Lifecycle inventory successfully written to {inv_path} ({len(all_entries)} items)")
         return 0
 
-    # Determine files to audit
     files_to_check: List[Path] = []
     if args.files:
         for f in args.files:
@@ -815,7 +776,6 @@ def main() -> int:
         violations = check_file_violations(file_path, root_path, force=force_audit)
         all_violations.extend(violations)
 
-    # Deterministic sorting: (file_path, line_number, code, message)
     all_violations.sort(key=lambda v: v.to_tuple())
 
     if args.format == "json":

@@ -6,7 +6,6 @@ import sys
 import unittest
 from pathlib import Path
 
-# Load audit-lifecycle module dynamically
 script_path = Path(__file__).resolve().parent.parent / "scripts" / "dev" / "audit-lifecycle.py"
 spec = importlib.util.spec_from_file_location("audit_lifecycle", script_path)
 audit = importlib.util.module_from_spec(spec)
@@ -102,7 +101,7 @@ class TestLifecycleAudit(unittest.TestCase):
         self.assertFalse(audit.is_path_excluded("app/services/SystemMonitorService.qml"))
         self.assertFalse(audit.is_path_excluded("modules/bar/Bar.qml"))
         self.assertFalse(audit.is_path_excluded("shared/controls/RippleButton.qml"))
-        self.assertFalse(audit.is_path_excluded("native/fallback/Clavis/Cava/CavaProvider.qml"))
+        self.assertFalse(audit.is_path_excluded("shared/fallback/Clavis/I18n/I18nManager.qml"))
 
         vendor_fixture = self.fixtures_dir / "excluded" / "vendor" / "IgnoredVendor.qml"
         violations = audit.check_file_violations(vendor_fixture, self.shell_root, force=False)

@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-# ==============================================================================
-# Nyxuri Shell Launcher & Gateway (nyxuri-shell)
-# Native wrapper for starting Nyxuri Shell and dispatching shell actions.
-# ==============================================================================
 
 set -euo pipefail
 
@@ -11,45 +7,11 @@ SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "${SOURCE_FILE}")" && pwd)
 SHELL_DIR="${SCRIPT_DIR}"
 REPO_ROOT=$(CDPATH='' cd -- "${SHELL_DIR}/.." && pwd)
 
-# Explicit build paths are authoritative; an invalid override must not
-# silently load an unrelated build. Existing QML search paths keep priority.
-NATIVE_PLUGIN_PATH=""
-if [ -n "${NYXURI_SHELL_QML_BUILD_DIR:-}" ]; then
-    NATIVE_PLUGIN_PATH="${NYXURI_SHELL_QML_BUILD_DIR}"
-elif [ -n "${CLAVIS_QML_BUILD_DIR:-}" ]; then
-    NATIVE_PLUGIN_PATH="${CLAVIS_QML_BUILD_DIR}"
-elif [ -n "${NYXURI_SHELL_BUILD_DIR:-}" ]; then
-    NATIVE_PLUGIN_PATH="${NYXURI_SHELL_BUILD_DIR}/qml"
-elif [ -n "${CLAVIS_BUILD_DIR:-}" ]; then
-    NATIVE_PLUGIN_PATH="${CLAVIS_BUILD_DIR}/qml"
-elif [ -d "${REPO_ROOT}/build/shell-test/qml" ]; then
-    NATIVE_PLUGIN_PATH="${REPO_ROOT}/build/shell-test/qml"
-elif [ -d "${SHELL_DIR}/build/qml" ]; then
-    NATIVE_PLUGIN_PATH="${SHELL_DIR}/build/qml"
-elif [ -d "${SHELL_DIR}/native/build/qml" ]; then
-    NATIVE_PLUGIN_PATH="${SHELL_DIR}/native/build/qml"
-fi
-
-if [ -n "${NATIVE_PLUGIN_PATH}" ]; then
-    if [ ! -d "${NATIVE_PLUGIN_PATH}" ]; then
-        printf 'Native QML build directory does not exist: %s\n' "${NATIVE_PLUGIN_PATH}" >&2
-        exit 1
-    fi
-    if [ -n "${NYXURI_SHELL_QML_BUILD_DIR:-}${CLAVIS_QML_BUILD_DIR:-}${NYXURI_SHELL_BUILD_DIR:-}${CLAVIS_BUILD_DIR:-}" ]; then
-        export QML_IMPORT_PATH="${NATIVE_PLUGIN_PATH}${QML_IMPORT_PATH:+:${QML_IMPORT_PATH}}"
-        export QML2_IMPORT_PATH="${NATIVE_PLUGIN_PATH}${QML2_IMPORT_PATH:+:${QML2_IMPORT_PATH}}"
-    else
-        export QML_IMPORT_PATH="${QML_IMPORT_PATH:+${QML_IMPORT_PATH}:}${NATIVE_PLUGIN_PATH}"
-        export QML2_IMPORT_PATH="${QML2_IMPORT_PATH:+${QML2_IMPORT_PATH}:}${NATIVE_PLUGIN_PATH}"
-    fi
-fi
-
-FALLBACK_QML_PATH="${SHELL_DIR}/native/fallback"
+FALLBACK_QML_PATH="${SHELL_DIR}/shared/fallback"
 if [ -d "${FALLBACK_QML_PATH}" ]; then
-    export QML_IMPORT_PATH="${QML_IMPORT_PATH:+${QML_IMPORT_PATH}:}${FALLBACK_QML_PATH}"
-    export QML2_IMPORT_PATH="${QML2_IMPORT_PATH:+${QML2_IMPORT_PATH}:}${FALLBACK_QML_PATH}"
+    export QML_IMPORT_PATH="${FALLBACK_QML_PATH}${QML_IMPORT_PATH:+:${QML_IMPORT_PATH}}"
+    export QML2_IMPORT_PATH="${FALLBACK_QML_PATH}${QML2_IMPORT_PATH:+:${QML2_IMPORT_PATH}}"
 fi
-
 ACTION=""
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -149,5 +111,4 @@ if [ -n "$ACTION" ]; then
     esac
 fi
 
-# Default: start Nyxuri Shell via quickshell
 exec qs -p "${SHELL_DIR}" --no-duplicate "$@"

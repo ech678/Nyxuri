@@ -8,8 +8,6 @@ script_dir=$(
 repo_root=$(
     CDPATH='' cd -- "${script_dir}/../.." && pwd
 )
-build_root=${CLAVIS_BUILD_DIR:-${repo_root}/build}
-qml_build_dir=${CLAVIS_QML_BUILD_DIR:-${build_root}/qml}
 qmlls_config=${repo_root}/.qmlls.ini
 tooling_timeout=${CLAVIS_QML_TOOLING_TIMEOUT:-5}
 
@@ -34,22 +32,6 @@ command -v qs >/dev/null 2>&1 || {
     printf 'error: Quickshell qs is required for QML tooling\n' >&2
     exit 127
 }
-
-native_build_ready() {
-    local module
-    for module in DesktopCards Niri Media Keyboard I18n Runtime Files Gamma; do
-        [[ -f "${qml_build_dir}/Clavis/${module}/qmldir" ]] || return 1
-    done
-}
-
-if ! native_build_ready; then
-    printf 'lint-qml: native QML modules are missing; configuring and building %s\n' \
-        "${build_root}"
-    cmake -S "${repo_root}" -B "${build_root}" -G Ninja \
-        -DCMAKE_BUILD_TYPE="${CLAVIS_BUILD_TYPE:-Debug}" \
-        -DCLAVIS_QML_BUILD_DIR="${qml_build_dir}"
-    cmake --build "${build_root}"
-fi
 
 read_ini_value() {
     local key=$1
@@ -90,13 +72,12 @@ refresh_tooling() {
     if [[ -L "${qmlls_config}" && ! -e "${qmlls_config}" ]]; then
         rm -f -- "${qmlls_config}"
     fi
-    # Quickshell replaces this ignored placeholder with its tooling VFS link.
     touch "${qmlls_config}"
 
     set +e
     QT_QPA_PLATFORM="${CLAVIS_QML_TOOLING_PLATFORM:-offscreen}" \
-    QML2_IMPORT_PATH="${qml_build_dir}${QML2_IMPORT_PATH:+:${QML2_IMPORT_PATH}}" \
-    QML_IMPORT_PATH="${qml_build_dir}${QML_IMPORT_PATH:+:${QML_IMPORT_PATH}}" \
+    QML2_IMPORT_PATH="${repo_root}/shared/fallback${QML2_IMPORT_PATH:+:${QML2_IMPORT_PATH}}" \
+    QML_IMPORT_PATH="${repo_root}/shared/fallback${QML_IMPORT_PATH:+:${QML_IMPORT_PATH}}" \
         timeout --kill-after=2s --signal=TERM "${tooling_timeout}s" qs -p "${repo_root}" -n \
         >"${log_file}" 2>&1
     qs_status=$?
@@ -108,7 +89,7 @@ refresh_tooling() {
         sed -n '1,60p' "${log_file}" >&2
         printf 'Full Quickshell log: %s\n' "${log_file}" >&2
         printf 'In a graphical session run: QML_IMPORT_PATH=%q qs -p %q\nThen rerun this script.\n' \
-            "${qml_build_dir}${QML_IMPORT_PATH:+:${QML_IMPORT_PATH}}" "${repo_root}" >&2
+            "${repo_root}/shared/fallback${QML_IMPORT_PATH:+:${QML_IMPORT_PATH}}" "${repo_root}" >&2
         return 1
     fi
 
@@ -119,8 +100,7 @@ refresh_tooling() {
     rm -f -- "${log_file}"
 }
 
-if ! tooling_config_valid \
-    || [[ -f "${build_root}/CMakeCache.txt" && "${qmlls_config}" -ot "${build_root}/CMakeCache.txt" ]]; then
+if ! tooling_config_valid; then
     printf 'lint-qml: creating or refreshing Quickshell tooling data\n'
     refresh_tooling
 fi
@@ -137,7 +117,6 @@ qml_import_args=(
     --max-warnings -1
     -I "${repo_root}"
     -I "${tooling_build_dir}"
-    -I "${qml_build_dir}"
 )
 IFS=':' read -r -a import_paths <<< "${import_paths_raw}"
 for path in "${import_paths[@]}"; do

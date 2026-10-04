@@ -14,7 +14,7 @@ import re
 from pathlib import Path
 from collections import defaultdict
 
-TARGET_DIRS = ["app", "modules", "shared", "native", "bin", "packaging"]
+TARGET_DIRS = ["app", "modules", "shared", "packaging"]
 
 MIGRATED_SERVICES = {
     "app/services/FileSearchService.qml": ("移动", "modules/launcher/FileSearchService.qml", "仅 launcher 消费的专属文件检索后台"),
@@ -70,16 +70,14 @@ def analyze_file(rel_path: str, content: str) -> dict:
         owner = parts[1] if len(parts) > 1 else "modules"
     elif layer == "shared":
         owner = f"shared/{parts[1]}" if len(parts) > 1 else "shared"
-    elif layer == "native":
-        owner = f"native/{parts[1]}" if len(parts) > 1 else "native"
+    elif layer == "fallback":
+        owner = f"shared/fallback/{parts[1]}" if len(parts) > 1 else "shared/fallback"
     elif layer == "bin":
         owner = "bin"
     elif layer == "packaging":
         owner = "packaging"
     else:
         owner = layer
-
-    # Check if this file was moved/renamed here
     moved_from = None
     action_type = None
     for orig, (act, tgt, rat) in MIGRATED_SERVICES.items():
@@ -106,7 +104,7 @@ def analyze_file(rel_path: str, content: str) -> dict:
         action = "保留"
         target = rel_path
         rationale = "系统打包与 systemd 单元元数据"
-    elif layer == "native":
+    elif layer == "fallback":
         if "fallback" in rel_path:
             action = "保留"
             target = rel_path
@@ -119,8 +117,6 @@ def analyze_file(rel_path: str, content: str) -> dict:
         action = "保留"
         target = rel_path
         rationale = "功能域自治代码"
-
-    # Side-effects
     side_effects = []
     if "Quickshell.execDetached" in content:
         side_effects.append("execDetached")
@@ -137,8 +133,6 @@ def analyze_file(rel_path: str, content: str) -> dict:
     if "Socket" in content or "WlSessionLock" in content:
         side_effects.append("IPC/Wayland")
     side_effects_str = ", ".join(side_effects) if side_effects else "无"
-
-    # Inputs / Outputs
     props = re.findall(r"property\s+(?:alias\s+|var\s+|bool\s+|string\s+|int\s+|real\s+)(\w+)", content)
     signals = re.findall(r"signal\s+(\w+)", content)
     funcs = re.findall(r"function\s+(\w+)\s*\(", content)
@@ -193,7 +187,7 @@ def generate_markdown(entries: list[dict], consumers: dict[str, list[str]]) -> s
     lines.append("# Nyxuri Shell 全树结构清单与迁移映射")
     lines.append("")
     lines.append("> 契约依据：[ROADMAP.md](../ROADMAP.md) R4-C 结构收敛与全面去 C++。")
-    lines.append("> 本清单覆盖 `app/`、`modules/`、`shared/`、`native/`、`bin/`、`packaging/` 六大代码分支。")
+    lines.append("> 本清单覆盖 `app/`、`modules/`、`shared/`、`packaging/` 四大代码分支。")
     lines.append("> 逐文件标定 `保留`、`移动`、`合并`、`删除`、`阻断` 处置动作，记录所有者、消费者、I/O 与副作用。")
     lines.append("")
     lines.append("---")

@@ -11,8 +11,6 @@ QtObject {
     }
     property string lastError: ""
 
-    signal languageChanged
-    signal lastErrorChanged
 
     function normalizeLanguage(lang) {
         return String(lang || "").toLowerCase().startsWith("zh") ? "zh_CN" : "en_US";
