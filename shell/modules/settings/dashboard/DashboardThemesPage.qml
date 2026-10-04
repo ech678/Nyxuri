@@ -282,8 +282,11 @@ Item {
                                 downAction: () => {
                                     const id = templateToggle.modelData.id;
                                     const next = !PersonalizationConfig.isMatugenTemplateEnabled(id);
-                                    Qt.callLater(() => PersonalizationConfig.setMatugenTemplateEnabled(id,
-                                                                                                       next));
+                                    // ThemeService, not PersonalizationConfig: writing the
+                                    // value alone leaves the generated palette on the
+                                    // previous scheme, so the gallery selection moves
+                                    // but nothing on screen changes.
+                                    Qt.callLater(() => ThemeService.setMatugenTemplateEnabled(id, next));
                                 }
 
                                 contentItem: Item {
@@ -426,7 +429,12 @@ Item {
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
                             const value = schemeCell.modelData.value;
-                            Qt.callLater(() => PersonalizationConfig.setMatugenScheme(value));
+                            // Same reason as the template toggle above: the
+                            // orchestrated setter is the one that re-derives the
+                            // palette. Calling PersonalizationConfig directly only
+                            // persists the value, which is why the settings grid
+                            // responded while this page did not.
+                            Qt.callLater(() => ThemeService.setMatugenScheme(value));
                         }
                     }
                 }
