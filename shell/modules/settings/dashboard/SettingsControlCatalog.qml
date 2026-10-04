@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import qs.app.services
+import qs.modules.wallpaper
 import qs.shared.i18n
 
 // Control registry for the dashboard settings grid. Plays the role end4-pC's
@@ -68,7 +69,7 @@ Singleton {
                                          // ── Interface ────────────────────────────────────────────────
                                          "interface:Theme mode": root.select(()
                                                                              => PersonalizationConfig.themeMode,
-                                                                             value => PersonalizationConfig.setThemeMode(
+                                                                             value => ThemeService.setThemeMode(
                                                                                           value), [
                                                                                  {
                                                                                      "value": "dark",
@@ -111,7 +112,7 @@ Singleton {
                                                                                                 value)),
                                          "interface:Matugen scheme": root.select(()
                                                                                  => PersonalizationConfig.matugenScheme,
-                                                                                 value => PersonalizationConfig.setMatugenScheme(
+                                                                                 value => ThemeService.setMatugenScheme(
                                                                                               value), PersonalizationConfig.matugenSchemes),
                                          "interface:Lock screen style": root.select(()
                                                                                     => PersonalizationConfig.lockScreenStyle,
@@ -141,24 +142,24 @@ Singleton {
                                                                                                     value)),
                                          "interface:Cursor theme": root.text(()
                                                                              => PersonalizationConfig.cursorTheme,
-                                                                             value => PersonalizationConfig.setCursorTheme(
+                                                                             value => ThemeService.setCursorTheme(
                                                                                           value)),
                                          "interface:Cursor size": root.spin(()
                                                                             => PersonalizationConfig.cursorSize,
-                                                                            value => PersonalizationConfig.setCursorSize(
+                                                                            value => ThemeService.setCursorSize(
                                                                                          value), 12, 128, 1),
                                          "interface:Hide cursor while typing": root.toggle(()
                                                                                            => PersonalizationConfig.cursorHideWhenTyping,
-                                                                                           value => PersonalizationConfig.setCursorHideWhenTyping(
+                                                                                           value => ThemeService.setCursorHideWhenTyping(
                                                                                                         value)),
                                          "interface:Cursor idle timeout (ms)": root.spin(()
                                                                                          => PersonalizationConfig.cursorHideAfterInactiveMs,
-                                                                                         value => PersonalizationConfig.setCursorHideAfterInactiveMs(
+                                                                                         value => ThemeService.setCursorHideAfterInactiveMs(
                                                                                                       value), 0,
                                                                                          5000, 100),
                                          "interface:Icon theme": root.text(()
                                                                            => PersonalizationConfig.iconTheme,
-                                                                           value => PersonalizationConfig.setIconTheme(
+                                                                           value => ThemeService.setIconTheme(
                                                                                         value)),
 
                                          // ── Bar ──────────────────────────────────────────────────────
@@ -258,11 +259,11 @@ Singleton {
                                          // ── Wallpaper ────────────────────────────────────────────────
                                          "wallpaper:Fill mode": root.select(()
                                                                             => PersonalizationConfig.wallpaperFillMode,
-                                                                            value => PersonalizationConfig.setWallpaperFillMode(
+                                                                            value => WallpaperService.setWallpaperFillMode(
                                                                                          value), PersonalizationConfig.fillModes),
                                          "wallpaper:Desktop backend": root.select(()
                                                                                   => PersonalizationConfig.desktopWallpaperBackend,
-                                                                                  value => PersonalizationConfig.setDesktopWallpaperBackend(
+                                                                                  value => WallpaperService.setDesktopWallpaperBackend(
                                                                                                value), [
                                                                                       {
                                                                                           "value": "quickshell",
@@ -303,16 +304,16 @@ Singleton {
                                                                                      1440, 5),
                                          "wallpaper:Transition": root.select(()
                                                                              => PersonalizationConfig.wallpaperTransitionType,
-                                                                             value => PersonalizationConfig.setWallpaperTransitionType(
+                                                                             value => WallpaperService.setWallpaperTransitionType(
                                                                                           value), PersonalizationConfig.transitionTypes),
                                          "wallpaper:Transition duration (ms)": root.spin(()
                                                                                          => PersonalizationConfig.transitionDurationMs,
-                                                                                         value => PersonalizationConfig.setTransitionDurationMs(
+                                                                                         value => WallpaperService.setTransitionDurationMs(
                                                                                                       value), 100,
                                                                                          5000, 100),
                                          "wallpaper:Transition easing": root.select(()
                                                                                     => PersonalizationConfig.transitionEasingMode,
-                                                                                    value => PersonalizationConfig.setTransitionEasingMode(
+                                                                                    value => WallpaperService.setTransitionEasingMode(
                                                                                                  value), PersonalizationConfig.transitionEasingModes),
                                          "wallpaper:Overview": root.toggle(()
                                                                            => PersonalizationConfig.overviewEnabled,

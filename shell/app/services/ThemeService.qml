@@ -349,6 +349,19 @@ Singleton {
         }
     }
 
+    Connections {
+        // startGeneration() also defers when PersonalizationConfig is still
+        // loading its JSON. Without this listener a generation deferred for that
+        // reason is only resumed if MatugenTemplateService happens to flip ready
+        // afterwards — and when the template service was already ready, nothing
+        // emits a change, so the palette is never generated at all.
+        target: PersonalizationConfig
+        function onReadyChanged() {
+            if (PersonalizationConfig.ready && root.pendingGeneration)
+                root.resumeGeneration();
+        }
+    }
+
     function opaqueHexFromColor(value) {
         const color = Qt.color(value);
         const r = Math.round(Math.max(0, Math.min(1, color.r)) * 255).toString(16).padStart(2, "0");
@@ -384,6 +397,12 @@ Singleton {
         root.applyConfigToAppearance();
         root.detectAvailableThemes();
         root.applyCursorSettings();
+        // The palette is generated, not read from config. If config.json says
+        // light while colors.json was last written for dark — or is missing on a
+        // fresh install — the shell renders the stale palette and switching the
+        // theme looks like it did nothing. Regenerate on startup so the two
+        // cannot drift apart.
+        root.regenerateFromCurrentWallpaper();
         // UiPreferences reads the system scheme on startup. The Matugen mode
         // is generation configuration, not a request to change the system theme.
     }

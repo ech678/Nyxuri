@@ -16,6 +16,16 @@ if [ -d "${FALLBACK_QML_PATH}" ]; then
     export QML2_IMPORT_PATH="${QML2_IMPORT_PATH:+${QML2_IMPORT_PATH}:}${FALLBACK_QML_PATH}"
 fi
 
+# The generated palette has to be written where the shell reads it. The two sides
+# defaulted to different places: scripts/lib/clavis-paths.sh resolves to
+# $XDG_STATE_HOME/quickshell/user/generated, while Paths.qml computed
+# <dataHome>/profiles/<profile>/generated. Whenever those disagree the palette is
+# written somewhere nothing reads, and every theme change looks inert. Pin both
+# to the same directory here, which is also the only place the deployer would set.
+GENERATED_HOME_DEFAULT="${XDG_STATE_HOME:-$HOME/.local/state}/quickshell/user/generated"
+export NYXURI_SHELL_GENERATED_HOME="${NYXURI_SHELL_GENERATED_HOME:-$GENERATED_HOME_DEFAULT}"
+export CLAVIS_GENERATED_HOME="${CLAVIS_GENERATED_HOME:-$GENERATED_HOME_DEFAULT}"
+
 ACTION=""
 while [ $# -gt 0 ]; do
     case "$1" in
