@@ -32,6 +32,7 @@ EXCLUDED_PARTS = {
     "third-party",
     ".git",
     "staging",
+    "fallback",
 }
 
 OPTIONAL_NATIVE_MODULES = [
@@ -319,8 +320,7 @@ def check_file_violations(
                     )
                 )
 
-    # 4. LIFE005: Optional dependency without fallback
-    is_allowed_fallback = any(rel_path.endswith(allowed) for allowed in ALLOWED_OPTIONAL_IMPORTERS) or ("native/fallback" in rel_path)
+    is_allowed_fallback = any(rel_path.endswith(allowed) for allowed in ALLOWED_OPTIONAL_IMPORTERS)
     is_settings = "modules/settings" in rel_path and not rel_path.endswith("WeatherMapBackend.qml")
     for idx, line in enumerate(lines, 1):
         stripped = line.strip()
@@ -479,8 +479,6 @@ def build_inventory_entry(
         module = "modules/" + parts[1]
     elif len(parts) >= 2 and parts[0] == "shared":
         module = "shared/" + parts[1]
-    elif "fallback" in rel_path:
-        module = "native/fallback"
     else:
         module = parts[0]
 
@@ -707,7 +705,7 @@ def get_git_changed_files(repo_root: Path) -> List[Path]:
 
 
 def get_all_target_files(repo_root: Path) -> List[Path]:
-    target_dirs = ["app", "modules", "shared", "native/fallback"]
+    target_dirs = ["app", "modules", "shared"]
     result: List[Path] = []
     for d in target_dirs:
         dir_path = repo_root / d

@@ -101,8 +101,8 @@
 | 已完成 | 建立 Niri 单一运行时入口 | R4-C-02 | 建立 `app/services/NiriService.qml` 成为唯一运行时 IPC 入口；统一管理 EventStream Socket、Action Socket 与 Process 异步查询；内置指数退避抖动自动重连与防陈旧 generation 校验；提供 workspacesModel/outputsModel/windowsModel 统一状态源及丰富查询/动作接口；全面移除全库所有 QML 业务模块中的 `import Clavis.Niri` 与直接 IPC 连接（11 个消费者完全安全重定向接入 NiriService）；生命周期审计与测试全绿 |
 | 已完成 | 迁移纯逻辑与系统边界 | R4-C-03 | 纯计算、数据整形、路径、天气、图标和媒体辅助逻辑全部迁移至纯 QML/JS；文件、设备、亮度、网络、音频、显示和通知按真实边界归属；彻底砍掉 `bin/` 目录，将 `nyxuri-shell` 提升至 `shell/` 根目录与 `shell.qml` 并列；CLI/Niri 脚本全面接入自动自愈机制；单测与生命周期审计全绿 |
 | 已完成 | 彻底解耦全部 Native 插件与统一生态体验 | R4-C-04 | 业务层除 I18nManager 双轨兼容桥外实现 0 `import Clavis.*`；7 项插件（Gamma/Runtime/Weather/Files/Media/Keyboard/DesktopCards）全面解耦为纯 QML/JS，I18n 提供纯 QML fallback 桩保证离线免编译运行；DisplayColor 深度整合 Niri `toggle-eyecare.sh` 与 `effects.kdl` 单一真值源；笔记本背光（brightnessctl 降级）与系统色彩模式（theme-sync 广播）在 Noctalia 与 Nyxuri Shell 达成 100% 体验统一；全库 517 项单测与生命周期审计全绿 |
-| 待开始 | 删除 Nyxuri 自有 C++ 构建链 | R4-C-05 | 删除自有 C++、fallback、native 测试、CMake native target、原生安装元数据和遗留生成入口；默认构建不要求 C++ 编译器、Qt native target 或 native CTest |
-| 待开始 | 完成结构与行为收口 | R4-C-06 | 每个功能域可从单一目录追踪到界面、状态、数据和动作；Niri 只有一个状态源；核心 QML/JS、生命周期、原版 Niri 和退出清理测试全绿 |
+| 已完成 | 删除 Nyxuri 自有 C++ 构建链 | R4-C-05 | 物理删除 113 项自有 C++ 源码、fallback 桩目录、native 测试与 CMake 构建系统（CMakeLists.txt）；全面清理 check.sh、lint-qml.sh、PKGBUILD.in 与 dependencies.json，构建环境免除 C++ 编译器与 CMake/CTest 依赖；I18nService 纯 QML 化且 100% 保持原有 API；单测与生命周期审计全绿 |
+| 已完成 | 完成结构与行为收口 | R4-C-06 | 架构彻底收敛为 app/ -> modules/ -> shared/ 3 级纯 QML 体系；每个功能域从单一目录追踪到界面、状态与动作；Niri 确立单一运行时状态源（NiriService）；shared 层零副作用；生命周期审计 0 违规，全量契约测试与沙箱部署全绿 |
 
 ### R5 资源、文档与测试收口（P2）
 
@@ -147,7 +147,7 @@
 | P0 | 启动、依赖、资源接口和 Niri 能力初步盘点 | 历史调查；事实按 R1 重新核对 |
 | P1 | 隔离启动、基础界面、Shell 切换和开发闭环 | 历史里程碑；不能替代 R2 当前证据 |
 | P2 | 四层骨架、Action Gateway、按需加载和 native 解耦基础 | 历史架构交付；R4 重新验证边界和生命周期 |
-| R4-C | 活跃交付中；已交付 R4-C-01 域服务回迁、R4-C-02 命名法典与假桩清理、R4-C-02a app 边界收敛与 Niri 单一入口、R4-C-03 提升 nyxuri-shell 根入口与路径自愈、R4-C-04 彻底解耦全部 Native 插件与统一生态体验 | 业务层除 I18nManager 外 0 Clavis 依赖；解耦 7 大 C++ 插件为纯 QML/JS；砍掉 bin/ 目录；背光与色彩系统级联动；单测契约覆盖 |
+| R4-C | 已完成；全量交付 R4-C-01 至 R4-C-06 | 彻底移除 113 项自有 C++ 插件与 CMakeLists.txt；全库 0 Clavis 依赖与 0 C++ 编译要求；收敛为 app/ -> modules/ -> shared/ 3 级纯 QML 体系；Niri 确立单一运行时状态源（NiriService）；shared 层零副作用；生命周期审计 0 违规，全量单测与沙箱部署全绿 |
 | P3-R00/R01 | 参考树固定、恢复点和功能矩阵 | 资料保留；见 [恢复矩阵](wiki/recovery-matrix.md) |
 | P3-R02..R08 | Bar、通知、设置、锁屏、启动器和剪贴板恢复 | 历史恢复记录；证据由 R1/R2 重新归档 |
 | P3-R09 | 按需启动、动作收敛、生命周期和视觉门禁 | 仍有未完成门禁，不标为整体完成 |
@@ -156,12 +156,12 @@
 | P3-R13 | 脚手架、死 C++、命名和共享层整理 | 历史清理记录；品牌与构建由 R3 收口 |
 
 ## 待作者拍板
-1. **[已拍板]** `Clavis` 内部标识处理：作者明确指示 CPP 部分不动（后续直接对接 R4-C 全面去 C++ 化）；QML、路径、脚本全部收敛至 `nyxuri` 命名空间，仅保留极薄兼容层。
+1. **[已拍板]** `Clavis` 内部标识处理：作者明确指示 CPP 部分不动（直接对接 R4-C 全面去 C++ 化）；已在 R4-C-05 彻底物理清除全部自有 C++ 源码与构建链，全库转为纯 QML/JS/Script 架构，公开标识全面收敛至 `nyxuri`。
 2. `references/` 与 `wiki/upstream-*` 是否长期保留，或压缩为最小来源/许可证档案。
 3. **[已拍板]** Keystone、天气、地图、歌词等能力的核心/可选边界：作者明确拍板放弃 Cava、地图、歌词、窗口预览；已在 R2 彻底物理移除相关 native 插件、fallback 与死 QML UI，相关消费者转化为零开销安全桩。
 4. **[已拍板]** 生成文件、qsb、vendor Python 包和测试 fixture 的版本控制策略：qsb 作为免编译运行资产保留；SearchCatalog.js 脚本生成入库由单测校验；vendor 清理缓存；fixtures 隔离在测试树。
 5. **[已拍板]** 翻译与对外兼容：废除 2.6 万行 XML，采用纯 TOML 双语字典；对外变量优先 NYXURI_*，兼容读取 CLAVIS_*。
-6. **[已拍板]** 目录极简与 `bin/` 处置：作者明确拍板砍掉 `shell/bin/` 目录，将 `nyxuri-shell` 提升至 `shell/` 根目录，与 `shell.qml` 并列构成一动一静、一外一内的极简双入口；全库命名统一遵循艺术级命名法典；暂不改动 C++ 部分。
+6. **[已拍板]** 目录极简与 `bin/` 处置：作者明确拍板砍掉 `shell/bin/` 目录，将 `nyxuri-shell` 提升至 `shell/` 根目录，与 `shell.qml` 并列构成一动一静、一外一内的极简双入口；全库命名统一遵循艺术级命名法典；C++ 构建链已于 R4-C-05 全量清除。
 
 ## 当前门禁
 

@@ -2,19 +2,17 @@
 set -euo pipefail
 script_dir=$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 repo_root=$(CDPATH='' cd -- "${script_dir}/../.." && pwd)
-build_root=${CLAVIS_BUILD_DIR:-${repo_root}/build}
 cd "${repo_root}"
 # shellcheck source=scripts/dev/files.sh
 source "${script_dir}/files.sh"
 
 scope=changed
-native=false
 case "${1:-}" in
     '') ;;
-    --full) scope=all; native=true ;;
-    --native) native=true ;;
+    --full) scope=all ;;
+    --native) scope=all ;;
     -h|--help)
-        printf 'Usage: %s [--native|--full]\nDefault: changed files; --native: also build/CTest; --full: all lint/build/CTest.\n' "$0"
+        printf 'Usage: %s [--full]\nDefault: changed files; --full: all lint/syntax/tests.\n' "$0"
         exit 0 ;;
     *) printf 'error: unknown option: %s\n' "$1" >&2; exit 2 ;;
 esac
@@ -57,14 +55,10 @@ step() {
 
 step whitespace git diff --check HEAD
 mapfile -d '' -t files < <(clavis_files "${scope}")
-cpp_files=() shell_files=() python_files=()
+shell_files=() python_files=()
 qml=false
 catalog=false
 for file in "${files[@]}"; do
-    # Include deletions when deciding whether native build/tests are affected.
-    case ${file} in
-        native/*|CMakeLists.txt|VERSION|*.cmake|tests/qml/*|packaging/*) native=true ;;
-    esac
     case ${file} in
         modules/settings/settings-routes.json|modules/settings/generated/SearchCatalog.js|modules/settings/*.qml|scripts/system/niri-actions.json|scripts/dev/generate-search-catalog.py|tests/test_search_catalog.py) catalog=true ;;
     esac
@@ -74,7 +68,6 @@ for file in "${files[@]}"; do
     esac
     case ${file} in
         *.qml) qml=true ;;
-        *.cpp|*.h|*.hpp) cpp_files+=("${file}") ;;
         *.sh|*.sh.in|*/PKGBUILD.in|*.install) shell_files+=("${file}") ;;
         *.py) python_files+=("${file}") ;;
     esac
@@ -82,10 +75,6 @@ done
 if ${qml}; then
     # Even --full avoids imposing a formatter migration on legacy QML.
     step qml-format "${script_dir}/format-qml.sh" --check
-fi
-if (( ${#cpp_files[@]} )); then
-    require clang-format clang
-    step cpp-format clang-format --dry-run --Werror "${cpp_files[@]}"
 fi
 if (( ${#shell_files[@]} )); then
     require shellcheck shellcheck
@@ -108,7 +97,7 @@ for test_name in niri_cursor_config manage_niri_effects matugen_registry; do
             *:scripts/lib/clavis-paths.sh|*:scripts/system/manage-niri-fragment.sh|*:tests/fixtures/mock-niri) run_test=true ;;
         esac
     done
-    if ${run_test} && ! ${native}; then
+    if ${run_test}; then
         if [[ ${test_name} == matugen_registry ]]; then
             require matugen matugen
             require jq jq
@@ -116,18 +105,9 @@ for test_name in niri_cursor_config manage_niri_effects matugen_registry; do
         step "${test_name}" bash "tests/test_${test_name}.sh"
     fi
 done
-if ${catalog} && ! ${native}; then
+if ${catalog}; then
     step search-catalog python3 "${script_dir}/generate-search-catalog.py"
     step search-catalog-contracts python3 tests/test_search_catalog.py
-fi
-if ${native}; then
-    require cmake cmake
-    require ninja ninja
-    step configure cmake -S "${repo_root}" -B "${build_root}" -G Ninja \
-        -DCMAKE_BUILD_TYPE="${CLAVIS_BUILD_TYPE:-Debug}" -DBUILD_TESTING=ON \
-        -DCLAVIS_QML_BUILD_DIR="${CLAVIS_QML_BUILD_DIR:-${build_root}/qml}"
-    step build cmake --build "${build_root}"
-    step tests ctest --test-dir "${build_root}" --output-on-failure --no-tests=error
 fi
 if ${qml}; then
     lint_args=()

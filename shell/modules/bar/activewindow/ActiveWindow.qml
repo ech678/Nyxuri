@@ -11,10 +11,10 @@ TopBarPill {
     property real maximumTitleWidth: 250
     readonly property string edge: PersonalizationConfig.barPosition
     readonly property var activeWindow: NiriService.focusedWindow
-    readonly property string activeTitle: activeWindow.title || qsTr("Desktop")
-    readonly property string activeIcon: activeWindow.iconPath || ""
-    readonly property string activeAppName: activeWindow.appName || activeWindow.appId || ""
-    readonly property bool isDesktop: !activeWindow.id
+    readonly property string activeTitle: activeWindow?.title || qsTr("Desktop")
+    readonly property string activeIcon: activeWindow?.iconPath || ""
+    readonly property string activeAppName: activeWindow?.appName || activeWindow?.appId || ""
+    readonly property bool isDesktop: !activeWindow?.id
     readonly property string verticalAppName: activeAppName || qsTr("Desktop")
     readonly property bool verticalAppNameIsCjk: root.containsCjk(verticalAppName)
     readonly property string detailedTooltipText: activeAppName && activeAppName !== activeTitle

@@ -316,14 +316,17 @@ class TestShellManagement(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "shared", "compositor")))
         self.assertTrue(os.path.isdir(os.path.join(shell_dir, "shared", "theme")))
         self.assertTrue(os.path.isdir(os.path.join(shell_dir, "shared", "utils")))
-        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "native")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "native")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "CMakeLists.txt")))
 
-        # Runner exports QML_IMPORT_PATH and QML2_IMPORT_PATH
+        # Runner directly launches quickshell
         runner_path = os.path.join(shell_dir, "nyxuri-shell")
         with open(runner_path, "r", encoding="utf-8") as f:
             runner_txt = f.read()
-        self.assertIn("QML_IMPORT_PATH=", runner_txt)
-        self.assertIn("QML2_IMPORT_PATH=", runner_txt)
+        self.assertIn('exec qs -p "${SHELL_DIR}"', runner_txt)
+        self.assertNotIn("NATIVE_PLUGIN_PATH", runner_txt)
+        self.assertNotIn("native/fallback", runner_txt)
+        self.assertIn("${SHELL_DIR}/fallback", runner_txt)
 
         # 2. AppShell encapsulated in app/
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "AppShell.qml")))
@@ -402,21 +405,14 @@ class TestShellManagement(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "bar", "quicksettings", "Microphone.qml")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "bar", "quicksettings", "BrightnessButton.qml")))
 
-    def test_p3_fallback_qml_modules_contract(self):
+    def test_r4c_c05_cpp_toolchain_elimination(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         shell_dir = os.path.join(repo_root, "shell")
-        fallback_dir = os.path.join(shell_dir, "native", "fallback")
 
-        # 1. Fallback directories: pruned features removed, kept ones present
-        self.assertFalse(os.path.exists(os.path.join(fallback_dir, "Clavis", "Lyrics")))
-        self.assertFalse(os.path.exists(os.path.join(fallback_dir, "Clavis", "Cava")))
-        self.assertFalse(os.path.exists(os.path.join(fallback_dir, "Clavis", "WeatherMap")))
-        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "M3Shapes", "qmldir")))
-        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "M3Shapes", "MaterialShape.qml")))
-        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "Weather", "qmldir")))
-        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Clavis", "Weather", "WeatherPlugin.qml")))
-        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Qt", "labs", "lottieqt", "qmldir")))
-        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Qt", "labs", "lottieqt", "LottieAnimation.qml")))
+        # 1. Native C++ source, CMake build system and native targets are completely eliminated
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "native")), "shell/native must be eliminated")
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "CMakeLists.txt")), "shell/CMakeLists.txt must be eliminated")
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "build")), "shell/build must not exist")
 
         # 2. Pure QML directory modules/keystone does not have handwritten qmldir
         self.assertFalse(os.path.isfile(os.path.join(shell_dir, "modules", "keystone", "qmldir")), "Pure QML directory should not have handwritten qmldir")
@@ -426,14 +422,32 @@ class TestShellManagement(unittest.TestCase):
         shared_entries = sorted(os.listdir(shared_dir))
         self.assertEqual(shared_entries, ["controls", "theme", "utils"])
 
-        # 4. nyxuri-shell exports FALLBACK_QML_PATH pointing to native/fallback
+        # 4. Pure QML fallback stubs exist for external optional runtime modules (M3Shapes, Qt.labs.lottieqt)
+        fallback_dir = os.path.join(shell_dir, "fallback")
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "M3Shapes", "qmldir")))
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "M3Shapes", "MaterialShape.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Qt", "labs", "lottieqt", "qmldir")))
+        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "Qt", "labs", "lottieqt", "LottieAnimation.qml")))
+
+        # 5. nyxuri-shell launcher mounts pure fallback but does not reference native plugins
         launcher_path = os.path.join(shell_dir, "nyxuri-shell")
         with open(launcher_path, "r", encoding="utf-8") as f:
             launcher_content = f.read()
         self.assertIn("FALLBACK_QML_PATH", launcher_content)
-        self.assertIn("native/fallback", launcher_content)
+        self.assertIn("${SHELL_DIR}/fallback", launcher_content)
+        self.assertNotIn("NATIVE_PLUGIN_PATH", launcher_content)
+        self.assertNotIn("native/fallback", launcher_content)
 
-    def test_p3_settings_wiring_and_weather_fallback_contracts(self):
+        # 6. dependencies.json build section contains zero C++ toolchain entries
+        deps_path = os.path.join(shell_dir, "packaging", "dependencies.json")
+        with open(deps_path, "r", encoding="utf-8") as f:
+            deps_content = f.read()
+        self.assertNotIn("cmake", deps_content.lower())
+        self.assertNotIn("ninja", deps_content.lower())
+        self.assertNotIn("gcc", deps_content.lower())
+        self.assertNotIn("clang", deps_content.lower())
+
+    def test_p3_settings_wiring_and_weather_backend_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         shell_dir = os.path.join(repo_root, "shell")
 
@@ -458,14 +472,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("return false;", sh_content)
         self.assertIn("return true;", sh_content)
 
-        # 4. Weather fallback provides safe count() and get() methods on forecast models
-        weather_fallback = os.path.join(shell_dir, "native", "fallback", "Clavis", "Weather", "WeatherPlugin.qml")
-        with open(weather_fallback, "r", encoding="utf-8") as f:
-            wf_content = f.read()
-        self.assertIn("count: () => 0", wf_content)
-        self.assertIn("get: () => ({})", wf_content)
-
-        # 5. Pure QML WeatherBackend provides makeForecastModel and air-quality support
+        # 4. Pure QML WeatherBackend provides makeForecastModel and air-quality support
         weather_backend = os.path.join(shell_dir, "app", "services", "weather", "WeatherBackend.qml")
         with open(weather_backend, "r", encoding="utf-8") as f:
             wb_content = f.read()
@@ -826,13 +833,9 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("readonly property bool available: false", wmb_content)
         self.assertIn("readonly property string status: \"unavailable\"", wmb_content)
 
-        # 6. Native CMakeLists.txt does not configure pruned options
-        cm_file = os.path.join(shell_dir, "native", "CMakeLists.txt")
-        with open(cm_file, "r", encoding="utf-8") as f:
-            cm_content = f.read()
-        self.assertNotIn("ENABLE_CAVA", cm_content)
-        self.assertNotIn("ENABLE_LYRICS", cm_content)
-        self.assertNotIn("ENABLE_WINDOWPREVIEW", cm_content)
+        # 6. Native directory and build files are completely eliminated
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "native")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "CMakeLists.txt")))
 
     def test_r2_startup_closure_and_lazy_hosts(self):
         """R2-01 Contract: Startup closure and lazy loading of heavy hosts."""
@@ -1407,7 +1410,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("| 已完成 | 建立 Niri 单一运行时入口 | R4-C-02 |", roadmap_content)
 
     def test_r4c_i18n_service_and_catalog_contracts(self):
-        """Assert I18nService binds to I18nManager (QTranslator), fallback exists, and catalogs are valid."""
+        """Assert I18nService is pure QML with zero C++ imports, preserves full public API, and catalogs are valid."""
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         shell_dir = os.path.join(repo_root, "shell")
         i18n_service_path = os.path.join(shell_dir, "app", "services", "I18nService.qml")
@@ -1416,16 +1419,22 @@ class TestShellManagement(unittest.TestCase):
         with open(i18n_service_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        # 1. I18nService imports Clavis.I18n and calls I18nManager.setLanguage
-        self.assertIn("import Clavis.I18n", content)
-        self.assertIn("I18nManager.setLanguage", content)
+        # 1. Pure QML with zero C++ plugin imports or legacy I18nManager invocations
+        self.assertNotIn("import Clavis", content)
+        self.assertNotIn("I18nManager", content)
+
+        # 2. Public API surface strictly preserved
+        self.assertIn("readonly property var supportedLanguages:", content)
+        self.assertIn("readonly property string language:", content)
+        self.assertIn("property bool ready:", content)
+        self.assertIn("property string lastError:", content)
+        self.assertIn("readonly property string systemLanguage:", content)
+        self.assertIn("function normalizeLanguage(lang)", content)
+        self.assertIn("function preferredLanguage(languages)", content)
+        self.assertIn("function setLanguage(lang)", content)
+        self.assertIn("function initialize()", content)
         self.assertIn('code: "zh_CN"', content)
         self.assertIn('code: "en_US"', content)
-
-        # 2. Fallback QML plugin exists for headless/uncompiled environments
-        fallback_dir = os.path.join(shell_dir, "native", "fallback", "Clavis", "I18n")
-        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "qmldir")))
-        self.assertTrue(os.path.isfile(os.path.join(fallback_dir, "I18nManager.qml")))
 
         # 3. Translation catalog zh_CN.toml exists and has core mappings
         zh_toml = os.path.join(shell_dir, "assets", "i18n", "zh_CN.toml")
@@ -1434,6 +1443,50 @@ class TestShellManagement(unittest.TestCase):
             toml_text = f.read()
         self.assertIn('"Desktop" = "桌面"', toml_text)
         self.assertIn('"Weather" = "天气"', toml_text)
+
+    def test_r4c_c06_domain_closure_and_single_state_source(self):
+        """R4-C-06 Contract: Domain closure, single Niri state entry, pure shared tier, and roadmap completion."""
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. NiriService is the sole runtime entry for Niri state & IPC
+        niri_service_path = os.path.join(shell_dir, "app", "services", "NiriService.qml")
+        self.assertTrue(os.path.isfile(niri_service_path))
+        with open(niri_service_path, "r", encoding="utf-8") as f:
+            ns_content = f.read()
+        self.assertIn("workspacesModel", ns_content)
+        self.assertIn("property var outputs:", ns_content)
+        self.assertIn("property var windows:", ns_content)
+        self.assertIn("property string currentOutput:", ns_content)
+
+        # 2. Modules tier self-containment: expected domains exist
+        modules_dir = os.path.join(shell_dir, "modules")
+        expected_domains = [
+            "bar", "desktopcards", "dock", "filepicker", "hotcorners",
+            "keystone", "launcher", "lock", "notifications", "quicksettings",
+            "regionselector", "session", "settings", "sidebars", "systemcards", "wallpaper"
+        ]
+        for domain in expected_domains:
+            self.assertTrue(os.path.isdir(os.path.join(modules_dir, domain)), f"Domain {domain} must exist in modules/")
+
+        # 3. Shared layer is strictly pure with no upward dependencies
+        shared_dir = os.path.join(shell_dir, "shared")
+        for root_dir, _, files in os.walk(shared_dir):
+            for file in files:
+                if file.endswith(".qml") or file.endswith(".js"):
+                    full_p = os.path.join(root_dir, file)
+                    with open(full_p, "r", encoding="utf-8") as f:
+                        code = f.read()
+                    self.assertNotIn("import qs.app", code, f"{file} must not import qs.app")
+                    self.assertNotIn("import qs.modules", code, f"{file} must not import qs.modules")
+                    self.assertNotIn("import Clavis", code, f"{file} must not import Clavis")
+
+        # 4. Roadmap status reflects R4-C-05 and R4-C-06 completion
+        roadmap_path = os.path.join(shell_dir, "ROADMAP.md")
+        with open(roadmap_path, "r", encoding="utf-8") as rf:
+            roadmap_content = rf.read()
+        self.assertIn("| 已完成 | 删除 Nyxuri 自有 C++ 构建链 | R4-C-05 |", roadmap_content)
+        self.assertIn("| 已完成 | 完成结构与行为收口 | R4-C-06 |", roadmap_content)
 
 
 if __name__ == "__main__":

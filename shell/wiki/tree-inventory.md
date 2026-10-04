@@ -8,18 +8,17 @@
 
 ## 1. 统计概览
 
-- **现存文件总数**：622 个（基线 631 文件；R4-C-01 物理删除 2 个冗余代理，迁入 12 个服务；R4-C-02 物理删除 8 个僵尸代码与假桩，重命名 8 个服务/按钮/工具；建立 Niri 单一运行时入口 NiriService.qml）
+- **现存文件总数**：508 个（R4-C-05/06 彻底物理删除 native/ 113 个 C++/fallback/CTest 文件及 CMakeLists.txt，实现 100% 纯 QML/JS/Script 纯净架构）
 - **分层分布**：
-  - `app/`：43 个文件
+  - `app/`：42 个文件
   - `modules/`：366 个文件
   - `shared/`：96 个文件
-  - `native/`：113 个文件
-  - `bin/`：1 个文件
-  - `packaging/`：3 个文件
+  - `native/`：0 个文件（已彻底物理删除）
+  - `packaging/`：2 个文件
 - **处置状态分布**：
-  - **保留**：592 个文件
-  - **合并**：1 个文件
-  - **移动**：21 个文件
+  - **保留**：506 个文件
+  - **删除**：123 个文件（含 native/ 113 文件、CMakeLists.txt、僵尸代码及测试）
+  - **移动/收敛**：21 个文件
   - **重命名**：8 个文件
 
 ---
@@ -594,18 +593,20 @@
 | `shared/utils/WallpaperSource.js` | **保留** | `shared/utils` | app, modules/settings, modules/sidebars, modules/wallpaper, shared/utils | 方法(10) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/utils/ZenPalette.js` | **保留** | `shared/utils` | modules/settings, modules/wallpaper, shared/utils | 方法(16) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 
-### native/ （共 113 文件）
+### fallback/ （共 4 文件）
+
+> **纯 QML 外部运行时优雅降级桩**：为可选 AUR 插件（`qt6-m3shapes-git`）及可选 Qt 动画插件（`qt6-lottie`）提供纯 QML 保底支持，零 C++ 原生代码。
 
 | 文件路径 | 处置状态 | 归属 (Owner) | 消费者 (Consumers) | I/O | 副作用 | 目标路径 / 说明 |
 |---|---|---|---|---|---|---|
-| `native/CMakeLists.txt` | **保留** | `native/CMakeLists.txt` | packaging | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/clavis_release.h.in` | **保留** | `native/clavis_release.h.in` | 内部/自包含 | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
-| `native/fallback/Clavis/Weather/WeatherPlugin.qml` | **保留** | `native/fallback` | app, native | 属性(20)/信号(2)/方法(6) | 无 | 纯 QML 零依赖降级安全桩 |
-| `native/fallback/Clavis/Weather/qmldir` | **保留** | `native/fallback` | native | - | 无 | 纯 QML 零依赖降级安全桩 |
-| `native/fallback/M3Shapes/MaterialShape.qml` | **保留** | `native/fallback` | modules/keystone, modules/sidebars, modules/systemcards, native | 属性(6)/方法(3) | 无 | 纯 QML 零依赖降级安全桩 |
-| `native/fallback/M3Shapes/qmldir` | **保留** | `native/fallback` | native | - | 无 | 纯 QML 零依赖降级安全桩 |
-| `native/fallback/Qt/labs/lottieqt/LottieAnimation.qml` | **保留** | `native/fallback` | native, shared/controls | 属性(3)/方法(2) | 无 | 纯 QML 零依赖降级安全桩 |
-| `native/fallback/Qt/labs/lottieqt/qmldir` | **保留** | `native/fallback` | native | - | 无 | 纯 QML 零依赖降级安全桩 |
+| `fallback/M3Shapes/qmldir` | **保留** | `fallback` | modules/keystone, modules/sidebars, modules/systemcards | - | 无 | 外部 M3Shapes QML 模块元数据 |
+| `fallback/M3Shapes/MaterialShape.qml` | **保留** | `fallback` | modules/keystone, modules/sidebars, modules/systemcards | 属性(6)/方法(3) | 无 | 纯 QML 零依赖降级安全桩 |
+| `fallback/Qt/labs/lottieqt/qmldir` | **保留** | `fallback` | shared/controls | - | 无 | 外部 Qt.labs.lottieqt 模块元数据 |
+| `fallback/Qt/labs/lottieqt/LottieAnimation.qml` | **保留** | `fallback` | shared/controls | 属性(3)/方法(2) | 无 | 纯 QML 零依赖降级安全桩 |
+
+### native/ （共 113 文件，已在 R4-C-05 彻底物理删除）
+
+> **已彻底移除**：本目录所有原生 C++ 源码、插件、CTest 测试套件及 CMake 构建配置已于 R4-C-05 全量删除，转入历史存档。Nyxuri Shell 现为 100% 纯 QML/JS/Script 纯净架构。
 | `native/plugin/desktopcards/CMakeLists.txt` | **保留** | `native/plugin` | packaging | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
 | `native/plugin/desktopcards/src/wallpaper_analyzer.cpp` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |
 | `native/plugin/desktopcards/src/wallpaper_analyzer.h` | **保留** | `native/plugin` | native | - | 无 | 待 R4-C-04/05 消除 C++ 依赖链时统一替换 |

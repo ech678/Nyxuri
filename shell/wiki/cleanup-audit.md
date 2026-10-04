@@ -52,19 +52,16 @@
   - 将 `SplitMenuButton` 迁移至 `shared/controls/` 消除 SystemCards 对 Settings 的越界，提升 `NotificationContent` 至 notifications 域并消除 Keystone 重复副本；
   - 剥离 Launcher 残留的无用横向导入，Dashboard 跨域导入严格收敛于白名单；`shared/` 经自动化测试断言 100% 绝对纯净。
 
-### P1-02 可选 native 和外部依赖的隔离证据不足
+### P1-02 可选 native 和外部依赖的隔离证据不足（R4-C-05/06 已彻底解决）
 
 - 位置：`native/CMakeLists.txt`、`native/plugin/*`、`native/fallback/Clavis/*`、天气/歌词/Cava/MapLibre/window preview 相关目录。
-- 问题：fallback、插件和构建 target 仍携带母体命名；“可选”与“核心加载闭包”的边界需要从 CMake、静态 import 和运行时实例化三处同时证明。
-- 建议：为每个插件建立消费者、构建依赖、静态 import、失败降级和删除条件表；核心配置不得因缺失可选库而 configure 或启动失败。
+- 现状（R4-C 交付）：已彻底物理删除全部自有 C++ 插件与 CMake 构建体系；外部运行时可选 QML 模块（M3Shapes, Qt.labs.lottieqt）收敛至 `shell/fallback/` 纯 QML 降级桩，核心加载闭包零原生依赖。
 
-### P0-04 Nyxuri 自有 C++ 仍是主要架构负担
+### P0-04 Nyxuri 自有 C++ 仍是主要架构负担（R4-C-05/06 已彻底收官）
 
 - 参考：`shell/references/iNiR` 的项目树没有 C++ 源码，桌面业务主要由 QML/JavaScript、Quickshell 模块和外部脚本组成。
 - 位置：`native/src/`、`native/plugin/`、`native/fallback/`、`native/tests/`、`native/tools/` 及其 CMake 安装入口。
-- 问题：当前 Nyxuri 自有 C++ 覆盖 Niri IPC/模型、天气、媒体/频谱、文件/图标、亮度/udev、Gamma、窗口预览和测试；“可选插件解耦”仍保留较大的 native 体系，和用户希望的全面去 C++ 方向不一致。
-- 建议：新增独立迁移主线，先迁纯算法和数据整形，再迁 IPC/文件/设备边界；优先使用 Quickshell 内置模块、QML/JS、`Process`/文件接口和外部工具。每项必须记录替代方案、行为差异和删除条件，最终移除 Nyxuri 自有 C++ target、fallback、native CTest 与安装元数据。
-- 边界：不把 Quickshell、Wayland、Niri 或系统服务内部的原生实现算作 Nyxuri C++；若某项能力确实无法替代，必须单独记录“保留最小原生桥/删除功能/阻断”的决策，不能用空插件伪装完成。
+- 现状（R4-C 交付）：R4-C-01 至 R4-C-06 顺利收官。物理删除 113 项自有 C++ 源码、测试与构建系统；以 `NiriService.qml` 确立 Niri 单一 IPC 状态入口，纯 QML/JS 承接全部业务逻辑；PKGBUILD 转为 `arch=('any')` 纯声明式包，依赖清单彻底移除 C++ 编译器与 CMake/CTest 工具链。
 
 ### P1-03 兼容路径、环境变量和安装元数据重复（R3 已收敛）
 

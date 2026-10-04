@@ -5,12 +5,10 @@
   "arch": "x86_64",
   "sourceRoots": [
     "VERSION",
-    "CMakeLists.txt",
-    "native",
     "app",
     "modules",
     "shared",
-    "bin",
+    "fallback",
     "shell.qml",
     "assets",
     "scripts",
@@ -19,84 +17,12 @@
     "LICENSE",
     "README.md",
     "AGENTS.md",
-    ".clang-format",
     ".qmlformat.ini"
   ],
   "build": [
     {
-      "package": "cmake",
-      "purpose": "Native configuration",
-      "defaultInstall": true
-    },
-    {
-      "package": "ninja",
-      "purpose": "Native build",
-      "defaultInstall": true
-    },
-    {
-      "package": "pkgconf",
-      "purpose": "Native dependency discovery",
-      "defaultInstall": true
-    },
-    {
-      "package": "qt6-base>=6.8",
-      "purpose": "Native Qt Core, GUI and DBus",
-      "defaultInstall": true
-    },
-    {
-      "package": "qt6-declarative",
-      "purpose": "Native QML modules",
-      "defaultInstall": true
-    },
-    {
-      "package": "qt6-wayland",
-      "purpose": "Gamma protocol client",
-      "defaultInstall": true
-    },
-    {
-      "package": "qt6-shadertools",
-      "purpose": "Shader compiler",
-      "defaultInstall": true
-    },
-    {
-      "package": "qt6-tools",
-      "purpose": "LinguistTools",
-      "defaultInstall": true
-    },
-    {
-      "package": "qtkeychain-qt6",
-      "purpose": "Keychain headers",
-      "defaultInstall": true
-    },
-    {
-      "package": "libpipewire",
-      "purpose": "PipeWire headers",
-      "defaultInstall": true
-    },
-    {
-      "package": "libcava",
-      "purpose": "Cava headers and shared library",
-      "defaultInstall": true,
-      "aur": "libcava"
-    },
-    {
-      "package": "systemd-libs",
-      "purpose": "libudev headers",
-      "defaultInstall": true
-    },
-    {
-      "package": "libxkbcommon",
-      "purpose": "Keyboard headers",
-      "defaultInstall": true
-    },
-    {
-      "package": "wayland",
-      "purpose": "Single-window capture client and protocol scanner",
-      "defaultInstall": true
-    },
-    {
-      "package": "wayland-protocols>=1.41",
-      "purpose": "Single-window capture protocol definitions",
+      "package": "python",
+      "purpose": "Search catalog generation and resource verification",
       "defaultInstall": true
     }
   ],
@@ -128,11 +54,6 @@
     }
   ],
   "ci": [
-    {
-      "package": "clang",
-      "purpose": "C++ formatting",
-      "defaultInstall": true
-    },
     {
       "package": "shellcheck",
       "purpose": "Shell quality checks",
@@ -191,37 +112,6 @@
     {
       "package": "qt6-positioning",
       "purpose": "Geographic coordinates",
-      "defaultInstall": true
-    },
-    {
-      "package": "maplibre-native-qt",
-      "purpose": "MapLibre 3.0 and maplibre location plugin",
-      "defaultInstall": true
-    },
-    {
-      "package": "qtkeychain-qt6",
-      "purpose": "Weather map credential storage",
-      "defaultInstall": true
-    },
-    {
-      "package": "libpipewire",
-      "purpose": "Live audio capture",
-      "defaultInstall": true
-    },
-    {
-      "package": "libcava",
-      "purpose": "Cava shared library, not the cava executable",
-      "defaultInstall": true,
-      "aur": "libcava"
-    },
-    {
-      "package": "systemd-libs",
-      "purpose": "libudev device notifications",
-      "defaultInstall": true
-    },
-    {
-      "package": "libxkbcommon",
-      "purpose": "Shortcut key names",
       "defaultInstall": true
     },
     {

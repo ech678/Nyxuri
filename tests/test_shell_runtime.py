@@ -48,46 +48,27 @@ class ShellLauncherTests(unittest.TestCase):
             capture_output=True, text=True, timeout=5,
         )
 
-    def test_development_build_and_argument_shape(self):
-        plugins = self.shell / "build/qml"
-        plugins.mkdir(parents=True)
+    def test_pure_qml_launcher_argument_shape(self):
         result = self.invoke("-v")
         self.assertEqual(result.returncode, 0, result.stderr)
         call = json.loads(result.stdout)
         self.assertEqual(call["argv"], ["-p", str(self.shell), "--no-duplicate", "-v"])
-        self.assertEqual(call["qml"], str(plugins))
-        self.assertEqual(call["qml2"], str(plugins))
 
-    def test_automatic_discovery_preserves_import_priority(self):
-        plugins = self.root / "build/shell-test/qml"
-        plugins.mkdir(parents=True)
-        (self.shell / "build/qml").mkdir(parents=True)
-        result = self.invoke(QML_IMPORT_PATH="/user/qt6", QML2_IMPORT_PATH="/user/legacy")
+    def test_pure_qml_launcher_preserves_environment_import_paths(self):
+        result = self.invoke("-v", QML_IMPORT_PATH="/user/qt6", QML2_IMPORT_PATH="/user/legacy")
+        self.assertEqual(result.returncode, 0, result.stderr)
         call = json.loads(result.stdout)
-        self.assertEqual(call["qml"], "/user/qt6:" + str(plugins))
-        self.assertEqual(call["qml2"], "/user/legacy:" + str(plugins))
+        self.assertEqual(call["qml"], "/user/qt6")
+        self.assertEqual(call["qml2"], "/user/legacy")
 
-    def test_explicit_paths_override_auto_discovery(self):
-        (self.root / "build/shell-test/qml").mkdir(parents=True)
-        build = self.ctx.home / "explicit build"
-        (build / "qml").mkdir(parents=True)
-        override = self.ctx.home / "explicit qml"
-        override.mkdir()
-        for environment, expected in [
-            ({"CLAVIS_BUILD_DIR": str(build)}, build / "qml"),
-            ({"CLAVIS_BUILD_DIR": str(build), "CLAVIS_QML_BUILD_DIR": str(override)}, override),
-        ]:
-            with self.subTest(environment=environment):
-                result = self.invoke(QML_IMPORT_PATH="/existing", **environment)
-                self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertEqual(json.loads(result.stdout)["qml"], str(expected) + ":/existing")
-
-    def test_missing_override_does_not_fall_back(self):
-        (self.root / "build/shell-test/qml").mkdir(parents=True)
-        result = self.invoke(CLAVIS_QML_BUILD_DIR=str(self.ctx.home / "missing"))
-        self.assertEqual(result.returncode, 1)
-        self.assertEqual(result.stdout, "")
-        self.assertIn("does not exist", result.stderr)
+    def test_pure_qml_launcher_mounts_fallback_path(self):
+        fallback = self.shell / "fallback"
+        fallback.mkdir()
+        result = self.invoke("-v", QML_IMPORT_PATH="/user/qt6", QML2_IMPORT_PATH="/user/legacy")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        call = json.loads(result.stdout)
+        self.assertEqual(call["qml"], f"/user/qt6:{fallback}")
+        self.assertEqual(call["qml2"], f"/user/legacy:{fallback}")
 
     def test_action_shape_and_missing_argument(self):
         for action, target, method, trailing in [

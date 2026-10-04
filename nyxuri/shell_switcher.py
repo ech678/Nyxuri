@@ -380,7 +380,7 @@ def hot_switch_shell(target: str, custom_bin_override: Optional[str] = None) -> 
         return False, f"Failed to spawn target shell: {e}"
 
     # Bounded readiness probe
-    is_ready = wait_shell_ready(target, new_proc, target_bin, timeout=3.0)
+    is_ready = wait_shell_ready(target, new_proc, target_bin, timeout=4.0)
     if not is_ready:
         # Target failed to report ready or crashed: cleanup target
         try:
@@ -396,11 +396,11 @@ def hot_switch_shell(target: str, custom_bin_override: Optional[str] = None) -> 
         if current_name != "none" and old_bin:
             try:
                 restore_proc = spawn_shell(current_name, old_bin)
-                restored = wait_shell_ready(current_name, restore_proc, old_bin, timeout=3.0)
+                restored = wait_shell_ready(current_name, restore_proc, old_bin, timeout=4.0)
             except Exception:
                 pass
 
-        fail_msg = f"Target shell {target} failed readiness probe within 3.0s."
+        fail_msg = f"Target shell {target} failed readiness probe within 4.0s."
         if restored:
             fail_msg += f" Successfully recovered and rolled back to {current_name}."
         else:

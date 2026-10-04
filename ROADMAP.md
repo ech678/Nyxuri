@@ -17,6 +17,7 @@
 - [x] **Shell 生命周期与动作响应网关对接**：打通与 `session-shell.sh` 的守护拉起及 `shell-action.sh` 的 6 大标准动作（`launcher` / `session` / `settings` / `clipboard` / `lock` / `wallpaper-random`）IPC/CLI 接口，外围快捷键零改动即刻响应。（已在 P1/P2 阶段完成对接，单测覆盖命令参数与守护脚本形状）
 - [x] **双 Shell 切换 (`nyxuri shell set`)**：支持 `nyxuri shell set <noctalia|custom>` 或快捷键切换 Noctalia 与自研 Shell；可靠即时切换提前在 Shell P1 交付，完整生态协同在 P5 验收。（CLI、热切换、异常安全回滚与状态落盘已全面交付并通过单测验证）
 - [x] **极简减负与负资产大清扫 (P3-R11 / P3-R12)**：彻底切除上游个人网盘（rclone）、3.9MB 内置变体字体（回退系统字体栈）、繁体中文字典（统一 zh_CN）、搜索引擎与死图片资产；shell/assets 体积缩减 75%（6.1MB → 1.5MB）；切除 paru 30m 查包与多项常驻后台轮询。
+- [x] **全面去 C++ 与纯 QML 架构收口 (R4-C-01 ~ R4-C-06)**：彻底移除 113 项自有 C++ 插件与 CMake 构建体系（免除 cmake/ninja/gcc/clang 编译依赖）；架构彻底收敛为 `app/` -> `modules/` -> `shared/` 三级纯 QML 体系；Niri 确立单一运行时状态源（`NiriService`）；生命周期审计 0 违规，全量单测与沙箱部署全绿。
 
 ---
 

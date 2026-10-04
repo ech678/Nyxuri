@@ -1,2 +1,0 @@
-module Clavis.Weather
-singleton WeatherPlugin 1.0 WeatherPlugin.qml
