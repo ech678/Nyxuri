@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 // Palette-style picker: the nine-way "how are colours derived from the
 // wallpaper" selector. Ported from end4-pC's DashboardPaletteCard.
@@ -145,7 +146,7 @@ DashboardCard {
 
                     StyledText {
                         Layout.fillWidth: true
-                        text: qsTr("How colors are made from your wallpaper")
+                        text: I18n.tr("How colors are made from your wallpaper")
                         font.pixelSize: Typography.bodyMedium.pixelSize
                         color: Appearance.colors.colOnSecondaryContainer
                         opacity: 0.75

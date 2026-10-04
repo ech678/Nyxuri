@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 // Panelled three-way picker for the settings-panel style. Ported from end4-pC's
 // DashboardStyleCard.
@@ -27,17 +28,17 @@ DashboardCard {
     // glyph and an empty detail line rather than disappearing from the picker.
     readonly property var decoration: ({
                                            "default": {
-                                               "detail": qsTr("Full overlay panel"),
+                                               "detail": I18n.tr("Full overlay panel"),
                                                "icon": "settings_panorama",
                                                "shape": MaterialShapeCanvas.Shape.Cookie9Sided
                                            },
                                            "minimal": {
-                                               "detail": qsTr("Compact overlay panel"),
+                                               "detail": I18n.tr("Compact overlay panel"),
                                                "icon": "settings_heart",
                                                "shape": MaterialShapeCanvas.Shape.Clover4Leaf
                                            },
                                            "dashboard": {
-                                               "detail": qsTr("Floating window with cards"),
+                                               "detail": I18n.tr("Floating window with cards"),
                                                "icon": "dashboard",
                                                "shape": MaterialShapeCanvas.Shape.SoftBurst
                                            }
@@ -68,14 +69,14 @@ DashboardCard {
                 spacing: 0
 
                 StyledText {
-                    text: qsTr("Settings panel")
+                    text: I18n.tr("Settings panel")
                     font.pixelSize: Typography.titleLarge.pixelSize
                     font.weight: Font.DemiBold
                     color: Appearance.colors.colOnLayer1
                 }
 
                 StyledText {
-                    text: qsTr("Choose how settings open")
+                    text: I18n.tr("Choose how settings open")
                     font.pixelSize: Typography.bodyMedium.pixelSize
                     color: Appearance.colors.colSubtext
                 }

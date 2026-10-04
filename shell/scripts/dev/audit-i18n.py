@@ -25,7 +25,11 @@ import tomllib
 SHELL_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 PACK_PATH = os.path.join(SHELL_ROOT, "assets", "i18n", "zh_CN.toml")
 
-# qsTr("literal") and qsTranslate("ctx", "literal").
+# Two call styles coexist: I18n.tr()/I18n.t() is what the tree uses since the
+# pure QML/JS runtime replaced QTranslator (R4-C-04), and qsTr() survives in a
+# few places even though nothing installs a translator any more. Both are
+# audited, otherwise the majority of keys would look unreferenced.
+I18N_TR_RE = re.compile(r'I18n\.t(?:r)?\(\s*"((?:[^"\\]|\\.)*)"')
 QS_TR_RE = re.compile(r'qsTr\(\s*"((?:[^"\\]|\\.)*)"')
 QS_TRANSLATE_RE = re.compile(r'qsTranslate\(\s*"(?:[^"\\]|\\.)*"\s*,\s*"((?:[^"\\]|\\.)*)"')
 
@@ -68,7 +72,7 @@ def collect_references(root: str):
         except (OSError, UnicodeDecodeError) as error:
             print("warn: unreadable {}: {}".format(path, error), file=sys.stderr)
             continue
-        raw_keys = QS_TR_RE.findall(text) + QS_TRANSLATE_RE.findall(text)
+        raw_keys = (I18N_TR_RE.findall(text) + QS_TR_RE.findall(text) + QS_TRANSLATE_RE.findall(text))
         if raw_keys:
             references[os.path.relpath(path, root)] = [decode_qml_literal(key) for key in raw_keys]
     return references

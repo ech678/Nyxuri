@@ -10,6 +10,7 @@ import qs.app
 import qs.modules.filepicker
 import "../../../shared/utils/SystemFormat.js" as Format
 import "./WeatherIcons.js" as WeatherIcons
+import qs.shared.i18n
 
 // Dashboard "Home" page. Layout ported 1:1 from end4-pC's DashboardHomePage:
 // header with greeting + uptime + four resource gauges, then a three-column card
@@ -49,7 +50,7 @@ Item {
         if (SystemIdentityService.gpuModelName !== "")
             return SystemIdentityService.gpuModelName;
         return SystemMonitorService.selectedGpuId !== "" ? String(SystemMonitorService.selectedGpu.name
-                                                                || "") : "";
+                                                                  || "") : "";
     }
     // Derived rather than inlined at the label: the interpolated expression is
     // long enough that qmlformat wraps the template literal onto a second
@@ -62,12 +63,12 @@ Item {
     readonly property string greeting: {
         const h = root.now.getHours();
         if (h < 6)
-            return qsTr("Good night");
+            return I18n.tr("Good night");
         if (h < 12)
-            return qsTr("Good morning");
+            return I18n.tr("Good morning");
         if (h < 19)
-            return qsTr("Good afternoon");
-        return qsTr("Good evening");
+            return I18n.tr("Good afternoon");
+        return I18n.tr("Good evening");
     }
 
     // The gauges mirror end4-pC's four-up row; each entry maps one nyxuri
@@ -79,8 +80,8 @@ Item {
                      ? SystemMonitorService.cpu.usagePercent / 100 : 0,
             "icon": "memory",
             "accent": Appearance.colors.colPrimary,
-            "label": root.cpuTemperature > 0 ? qsTr("CPU") + " · " + Math.round(root.cpuTemperature) + "°C" :
-                                               qsTr("CPU"),
+            "label": root.cpuTemperature > 0 ? I18n.tr("CPU") + " · " + Math.round(root.cpuTemperature)
+                                               + "°C" : I18n.tr("CPU"),
             "show": true
         },
         {
@@ -88,14 +89,14 @@ Item {
                      ? SystemMonitorService.memory.usagePercent / 100 : 0,
             "icon": "developer_board",
             "accent": Appearance.colors.colTertiary,
-            "label": qsTr("RAM") + " · " + Format.bytes(SystemMonitorService.memory.usedBytes),
+            "label": I18n.tr("RAM") + " · " + Format.bytes(SystemMonitorService.memory.usedBytes),
             "show": true
         },
         {
             "ratio": Format.isNumber(root.rootDisk.usagePercent) ? root.rootDisk.usagePercent / 100 : 0,
             "icon": "hard_drive",
             "accent": Appearance.colors.colSecondary,
-            "label": qsTr("Disk") + " · " + Format.bytes(root.rootDisk.usedBytes),
+            "label": I18n.tr("Disk") + " · " + Format.bytes(root.rootDisk.usedBytes),
             "show": true
         },
         {
@@ -103,7 +104,7 @@ Item {
             "icon": PowerService.charging ? "battery_charging_full" : "battery_full",
             "accent": PowerService.discharging && PowerService.percentage < 20 ? Appearance.colors.colError :
                                                                                  Appearance.colors.colPrimary,
-            "label": PowerService.charging ? qsTr("Charging") : qsTr("Battery"),
+            "label": PowerService.charging ? I18n.tr("Charging") : I18n.tr("Battery"),
             "show": PowerService.present
         }
     ]
@@ -202,7 +203,7 @@ Item {
                 }
 
                 StyledText {
-                    text: qsTr("Up since") + " • " + SystemIdentityService.uptimeText
+                    text: I18n.tr("Up since") + " • " + SystemIdentityService.uptimeText
                     font.pixelSize: 30
                     font.weight: Font.Light
                     color: Appearance.colors.colOnLayer0
@@ -424,7 +425,7 @@ Item {
 
                                         StyledText {
                                             Layout.fillWidth: true
-                                            text: qsTr("Profile")
+                                            text: I18n.tr("Profile")
                                             font.pixelSize: Typography.titleLarge.pixelSize
                                             font.weight: Font.DemiBold
                                             color: Appearance.colors.colOnSecondaryContainer
@@ -458,12 +459,12 @@ Item {
                                         model: [
                                             {
                                                 "icon": "badge",
-                                                "label": qsTr("User"),
+                                                "label": I18n.tr("User"),
                                                 "value": SystemIdentityService.accountName
                                             },
                                             {
                                                 "icon": "dns",
-                                                "label": qsTr("Host"),
+                                                "label": I18n.tr("Host"),
                                                 "value": SystemIdentityService.hostName
                                             }
                                         ]
@@ -538,7 +539,7 @@ Item {
                                             }
 
                                             StyledText {
-                                                text: qsTr("Choose avatar")
+                                                text: I18n.tr("Choose avatar")
                                                 font.weight: Font.Medium
                                                 color: Appearance.colors.colOnSecondaryContainer
                                             }
@@ -579,7 +580,7 @@ Item {
                             Layout.fillWidth: true
                             Layout.columnSpan: 2
                             icon: "memory"
-                            label: qsTr("CPU")
+                            label: I18n.tr("CPU")
                             value: SystemIdentityService.cpuModelName
                             accent: Appearance.colors.colTertiaryContainer
                             onAccent: Appearance.colors.colOnTertiaryContainer
@@ -589,7 +590,7 @@ Item {
                             Layout.fillWidth: true
                             Layout.columnSpan: 2
                             icon: "videocam"
-                            label: qsTr("GPU")
+                            label: I18n.tr("GPU")
                             value: root.gpuLabel
                             accent: Appearance.colors.colTertiaryContainer
                             onAccent: Appearance.colors.colOnTertiaryContainer
@@ -598,7 +599,7 @@ Item {
                         InfoTile {
                             Layout.fillWidth: true
                             icon: "deployed_code"
-                            label: qsTr("Kernel")
+                            label: I18n.tr("Kernel")
                             value: SystemIdentityService.kernelRelease
                             accent: Appearance.colors.colSecondaryContainer
                             onAccent: Appearance.colors.colOnSecondaryContainer
@@ -607,7 +608,7 @@ Item {
                         InfoTile {
                             Layout.fillWidth: true
                             icon: "terminal"
-                            label: qsTr("Shell")
+                            label: I18n.tr("Shell")
                             value: SystemIdentityService.shellName
                             accent: Appearance.colors.colSecondaryContainer
                             onAccent: Appearance.colors.colOnSecondaryContainer
@@ -644,7 +645,7 @@ Item {
                                 spacing: 0
 
                                 StyledText {
-                                    text: qsTr("Selected date")
+                                    text: I18n.tr("Selected date")
                                     font.pixelSize: Typography.bodySmall.pixelSize
                                     color: Appearance.colors.colSubtext
                                 }
@@ -694,7 +695,7 @@ Item {
                                         }
 
                                         StyledText {
-                                            text: qsTr("Today")
+                                            text: I18n.tr("Today")
                                             color: Appearance.colors.colOnPrimaryContainer
                                         }
                                     }
@@ -999,18 +1000,18 @@ Item {
                                 spacing: 0
 
                                 StyledText {
-                                    text: qsTr("Tasks")
+                                    text: I18n.tr("Tasks")
                                     font.pixelSize: Typography.titleLarge.pixelSize
                                     font.weight: Font.DemiBold
                                     color: Appearance.colors.colOnSecondaryContainer
                                 }
 
                                 StyledText {
-                                    text: root.todoList.length === 0 ? qsTr("Nothing to do") :
-                                                                       root.pendingTasks === 0 ? qsTr(
+                                    text: root.todoList.length === 0 ? I18n.tr("Nothing to do") :
+                                                                       root.pendingTasks === 0 ? I18n.tr(
                                                                                                      "All done") :
                                                                                                  root.pendingTasks
-                                                                                                 + " " + qsTr(
+                                                                                                 + " " + I18n.tr(
                                                                                                      "left")
                                     font.pixelSize: Typography.bodySmall.pixelSize
                                     color: Appearance.colors.colOnSecondaryContainer
@@ -1179,7 +1180,7 @@ Item {
         FilePickerWindow {
             id: avatarPicker
 
-            dialogTitle: qsTr("Choose avatar")
+            dialogTitle: I18n.tr("Choose avatar")
             onAccepted: (path, isDirectory) => {
                 if (!isDirectory)
                     AvatarService.setAvatar(path);

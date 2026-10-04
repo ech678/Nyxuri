@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import QtQuick.Effects
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 // On/off tile. Ported from end4-pC's DashboardToggleCard; the control comes from
 // SettingsControlCatalog instead of SettingsQuickControls.
@@ -122,7 +123,7 @@ DashboardCard {
         }
 
         StyledText {
-            text: root.checked ? qsTr("On") : qsTr("Off")
+            text: root.checked ? I18n.tr("On") : I18n.tr("Off")
             font.pixelSize: Typography.bodySmall.pixelSize
             color: root.checked ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colSubtext
             opacity: 0.8

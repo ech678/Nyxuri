@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
+import qs.shared.i18n
 
 // Wallpaper quick actions. Ported from end4-pC's DashboardWallpaperToolsCard.
 DashboardCard {
@@ -58,12 +59,12 @@ DashboardCard {
                 model: [
                     {
                         "icon": "shuffle",
-                        "label": qsTr("Random"),
+                        "label": I18n.tr("Random"),
                         "primary": true
                     },
                     {
                         "icon": "folder_open",
-                        "label": qsTr("More folders"),
+                        "label": I18n.tr("More folders"),
                         "primary": false
                     }
                 ]

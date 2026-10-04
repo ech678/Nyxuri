@@ -5,6 +5,7 @@ import Qt5Compat.GraphicalEffects
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 // Dashboard "Media" page. Layout ported from end4-pC's DashboardMediaPage: a
 // 46/54 split with album art, track info and transport controls on the left,
@@ -230,7 +231,7 @@ Item {
 
                     StyledText {
                         Layout.fillWidth: true
-                        text: root.shownTitle || qsTr("Nothing playing")
+                        text: root.shownTitle || I18n.tr("Nothing playing")
                         horizontalAlignment: Text.AlignHCenter
                         font.pixelSize: 34
                         font.weight: Font.Bold

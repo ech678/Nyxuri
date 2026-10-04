@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell.Io
 import qs.app
 import qs.app.services
+import qs.shared.i18n
 
 // Transport for lyric fetches: spawns the fetcher script, parses its JSON, and
 // reports back through a signal.
@@ -100,12 +101,12 @@ Item {
             timeoutTimer.stop();
             if (exitCode !== 0) {
                 const detail = (stderrCollector.text || "").trim().split("\n").pop() || "";
-                root._reportFailure(detail !== "" ? detail : qsTr("Lyric fetcher exited with code %1").arg(
+                root._reportFailure(detail !== "" ? detail : I18n.tr("Lyric fetcher exited with code %1").arg(
                                         exitCode));
             } else if (!root._settled) {
                 // Exit 0 but nothing was parsed: the script ran fine and simply
                 // had no payload shape we recognise.
-                root._reportFailure(qsTr("Lyric fetcher produced no output"));
+                root._reportFailure(I18n.tr("Lyric fetcher produced no output"));
             }
         }
     }
@@ -172,7 +173,7 @@ Item {
             if (!fetchProcess.running)
                 return;
             fetchProcess.running = false;
-            root._reportFailure(qsTr("Lyric fetch timed out"));
+            root._reportFailure(I18n.tr("Lyric fetch timed out"));
         }
     }
 

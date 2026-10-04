@@ -288,15 +288,15 @@ Singleton {
     readonly property var settingsPanelStyles: [
         {
             "value": "default",
-            "label": qsTr("Default")
+            "label": I18n.tr("Default")
         },
         {
             "value": "minimal",
-            "label": qsTr("Minimal")
+            "label": I18n.tr("Minimal")
         },
         {
             "value": "dashboard",
-            "label": qsTr("Dashboard")
+            "label": I18n.tr("Dashboard")
         }
     ]
     property string settingsPanelStyle: "default"
@@ -311,11 +311,11 @@ Singleton {
     readonly property var lyricSources: [
         {
             "value": "kugou",
-            "label": qsTr("Kugou (word timing)")
+            "label": I18n.tr("Kugou (word timing)")
         },
         {
             "value": "lrclib",
-            "label": qsTr("LRCLIB only")
+            "label": I18n.tr("LRCLIB only")
         }
     ]
     property string lyricSource: "kugou"

@@ -57,7 +57,7 @@ Item {
     // extractor has not produced one. The `a > 0` test is for the invalid
     // QColor the native plugin returns before its first palette.
     readonly property color artDominantColor: MediaPalette.primary.a > 0 ? MediaPalette.primary :
-                                                                            Appearance.colors.colPrimary
+                                                                           Appearance.colors.colPrimary
 
     // The derived palette. Declared unconditionally so the page can bind to its
     // properties without a null guard; `active` says whether to use it.

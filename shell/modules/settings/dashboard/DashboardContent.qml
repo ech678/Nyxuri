@@ -6,6 +6,7 @@ import Quickshell.Widgets
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 // Dashboard surface: toolbar, five-page nav, search, and the card grid.
 // Ported from end4-pC's modules/ii/settings/DashboardContent.qml.
@@ -96,27 +97,27 @@ Item {
     readonly property var pageNames: [
         {
             "id": "home",
-            "name": qsTr("Home"),
+            "name": I18n.tr("Home"),
             "icon": "home"
         },
         {
             "id": "wallpapers",
-            "name": qsTr("Wallpapers"),
+            "name": I18n.tr("Wallpapers"),
             "icon": "wallpaper"
         },
         {
             "id": "themes",
-            "name": qsTr("Themes"),
+            "name": I18n.tr("Themes"),
             "icon": "palette"
         },
         {
             "id": "media",
-            "name": qsTr("Media"),
+            "name": I18n.tr("Media"),
             "icon": "play_circle"
         },
         {
             "id": "settings",
-            "name": qsTr("Settings"),
+            "name": I18n.tr("Settings"),
             "icon": "settings"
         }
     ]
@@ -580,7 +581,7 @@ Item {
                         StyledText {
                             anchors.verticalCenter: parent.verticalCenter
                             visible: searchInput.text === ""
-                            text: qsTr("Search settings")
+                            text: I18n.tr("Search settings")
                             color: root.ui.subtext
                         }
                     }
@@ -725,7 +726,7 @@ Item {
 
                         StyledText {
                             Layout.alignment: Qt.AlignHCenter
-                            text: qsTr("Card") + " " + (boxDelegate.index + 1)
+                            text: I18n.tr("Card") + " " + (boxDelegate.index + 1)
                             color: boxDelegate.modelData.fg
                         }
                     }

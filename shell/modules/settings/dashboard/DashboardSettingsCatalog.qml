@@ -1,6 +1,7 @@
 pragma Singleton
 import QtQuick
 import Quickshell
+import qs.shared.i18n
 
 // Section layout for the dashboard settings grid. Mirrors end4-pC's
 // DashboardSettingsCatalog structure (sections -> cards, each card naming a
@@ -14,7 +15,7 @@ QtObject {
 
     readonly property var sections: [
         {
-            "title": qsTr("Interface"),
+            "title": I18n.tr("Interface"),
             "icon": "palette",
             "cards": [
                 {
@@ -23,14 +24,14 @@ QtObject {
                     // of Interface. Span comes from baseSpan("style").
                     "type": "style",
                     "key": "interface:Settings panel style",
-                    "title": qsTr("Settings panel style"),
+                    "title": I18n.tr("Settings panel style"),
                     "icon": "dashboard_customize",
                     "kw": "settings panel style default minimal dashboard window overlay"
                 },
                 {
                     "type": "select",
                     "key": "interface:Theme mode",
-                    "title": qsTr("Theme mode"),
+                    "title": I18n.tr("Theme mode"),
                     "icon": "contrast"
                 },
                 {
@@ -39,233 +40,233 @@ QtObject {
                     // grid has the room. Span comes from baseSpan("palette").
                     "type": "palette",
                     "key": "interface:Matugen scheme",
-                    "title": qsTr("Palette style"),
+                    "title": I18n.tr("Palette style"),
                     "icon": "auto_awesome",
                     "kw": "palette style scheme auto content expressive fidelity fruit salad monochrome neutral rainbow tonal spot vibrant matugen"
                 },
                 {
                     "type": "combo",
                     "key": "interface:Super key style",
-                    "title": qsTr("Super key style"),
+                    "title": I18n.tr("Super key style"),
                     "icon": "keyboard_command_key"
                 },
                 {
                     "type": "select",
                     "key": "interface:Lock screen style",
-                    "title": qsTr("Lock screen style"),
+                    "title": I18n.tr("Lock screen style"),
                     "icon": "lock"
                 },
                 {
                     "type": "slider",
                     "key": "interface:Shell background opacity",
-                    "title": qsTr("Shell background opacity"),
+                    "title": I18n.tr("Shell background opacity"),
                     "icon": "opacity"
                 },
                 {
                     "type": "toggle",
                     "key": "interface:Shell blur",
-                    "title": qsTr("Shell blur"),
+                    "title": I18n.tr("Shell blur"),
                     "icon": "blur_on"
                 },
                 {
                     "type": "toggle",
                     "key": "interface:Shell blur xray",
-                    "title": qsTr("Shell blur xray"),
+                    "title": I18n.tr("Shell blur xray"),
                     "icon": "blur_circular"
                 },
                 {
                     "type": "toggle",
                     "key": "interface:Keep sidebars loaded",
-                    "title": qsTr("Keep sidebars loaded"),
+                    "title": I18n.tr("Keep sidebars loaded"),
                     "icon": "vertical_split"
                 },
                 {
                     "type": "toggle",
                     "key": "interface:Hide cursor while typing",
-                    "title": qsTr("Hide cursor while typing"),
+                    "title": I18n.tr("Hide cursor while typing"),
                     "icon": "mouse"
                 },
                 {
                     "type": "spin",
                     "key": "interface:Cursor size",
-                    "title": qsTr("Cursor size"),
+                    "title": I18n.tr("Cursor size"),
                     "icon": "arrow_selector_tool"
                 },
                 {
                     "type": "spin",
                     "key": "interface:Cursor idle timeout (ms)",
-                    "title": qsTr("Cursor idle timeout"),
+                    "title": I18n.tr("Cursor idle timeout"),
                     "icon": "timer"
                 },
                 {
                     "type": "text",
                     "key": "interface:Cursor theme",
-                    "title": qsTr("Cursor theme"),
+                    "title": I18n.tr("Cursor theme"),
                     "icon": "mouse"
                 },
                 {
                     "type": "text",
                     "key": "interface:Icon theme",
-                    "title": qsTr("Icon theme"),
+                    "title": I18n.tr("Icon theme"),
                     "icon": "apps"
                 }
             ]
         },
         {
-            "title": qsTr("Bar"),
+            "title": I18n.tr("Bar"),
             "icon": "toolbar",
             "cards": [
                 {
                     "type": "select",
                     "key": "bar:Position",
-                    "title": qsTr("Position"),
+                    "title": I18n.tr("Position"),
                     "icon": "swap_horiz",
                     "w": 2
                 },
                 {
                     "type": "toggle",
                     "key": "bar:Show names",
-                    "title": qsTr("Show names"),
+                    "title": I18n.tr("Show names"),
                     "icon": "label"
                 },
                 {
                     "type": "toggle",
                     "key": "bar:Show values",
-                    "title": qsTr("Show values"),
+                    "title": I18n.tr("Show values"),
                     "icon": "123"
                 },
                 {
                     "type": "toggle",
                     "key": "bar:Overlay",
-                    "title": qsTr("Overlay"),
+                    "title": I18n.tr("Overlay"),
                     "icon": "layers"
                 }
             ]
         },
         {
-            "title": qsTr("Keystone"),
+            "title": I18n.tr("Keystone"),
             "icon": "toggle_off",
             "cards": [
                 {
                     "type": "combo",
                     "key": "keystone:Style",
-                    "title": qsTr("Style"),
+                    "title": I18n.tr("Style"),
                     "icon": "style",
                     "w": 2
                 },
                 {
                     "type": "select",
                     "key": "keystone:Position",
-                    "title": qsTr("Position"),
+                    "title": I18n.tr("Position"),
                     "icon": "swap_horiz",
                     "w": 2
                 },
                 {
                     "type": "combo",
                     "key": "keystone:Hover action",
-                    "title": qsTr("Hover action"),
+                    "title": I18n.tr("Hover action"),
                     "icon": "mouse"
                 },
                 {
                     "type": "combo",
                     "key": "keystone:Left click action",
-                    "title": qsTr("Left click action"),
+                    "title": I18n.tr("Left click action"),
                     "icon": "ads_click"
                 },
                 {
                     "type": "combo",
                     "key": "keystone:Middle click action",
-                    "title": qsTr("Middle click action"),
+                    "title": I18n.tr("Middle click action"),
                     "icon": "ads_click"
                 },
                 {
                     "type": "combo",
                     "key": "keystone:Keyhole card",
-                    "title": qsTr("Keyhole card"),
+                    "title": I18n.tr("Keyhole card"),
                     "icon": "door_front"
                 },
                 {
                     "type": "combo",
                     "key": "keystone:Media progress style",
-                    "title": qsTr("Media progress style"),
+                    "title": I18n.tr("Media progress style"),
                     "icon": "linear_scale"
                 },
                 {
                     "type": "combo",
                     "key": "keystone:Media cover style",
-                    "title": qsTr("Media cover style"),
+                    "title": I18n.tr("Media cover style"),
                     "icon": "album"
                 },
                 {
                     "type": "combo",
                     "key": "keystone:Media color style",
-                    "title": qsTr("Media color style"),
+                    "title": I18n.tr("Media color style"),
                     "icon": "palette"
                 },
                 {
                     "type": "spin",
                     "key": "keystone:Hover open delay (ms)",
-                    "title": qsTr("Hover open delay"),
+                    "title": I18n.tr("Hover open delay"),
                     "icon": "timer"
                 },
                 {
                     "type": "spin",
                     "key": "keystone:Hover close delay (ms)",
-                    "title": qsTr("Hover close delay"),
+                    "title": I18n.tr("Hover close delay"),
                     "icon": "timer_off"
                 },
                 {
                     "type": "toggle",
                     "key": "keystone:Overlay",
-                    "title": qsTr("Overlay"),
+                    "title": I18n.tr("Overlay"),
                     "icon": "layers"
                 },
                 {
                     "type": "toggle",
                     "key": "keystone:Show date",
-                    "title": qsTr("Show date"),
+                    "title": I18n.tr("Show date"),
                     "icon": "calendar_today"
                 },
                 {
                     "type": "toggle",
                     "key": "keystone:Caps lock OSD",
-                    "title": qsTr("Caps lock OSD"),
+                    "title": I18n.tr("Caps lock OSD"),
                     "icon": "keyboard_capslock"
                 },
                 {
                     "type": "toggle",
                     "key": "keystone:Num lock OSD",
-                    "title": qsTr("Num lock OSD"),
+                    "title": I18n.tr("Num lock OSD"),
                     "icon": "keyboard"
                 },
                 {
                     "type": "toggle",
                     "key": "keystone:Show names in long form",
-                    "title": qsTr("Long form names"),
+                    "title": I18n.tr("Long form names"),
                     "icon": "short_text"
                 },
                 {
                     "type": "toggle",
                     "key": "keystone:Show values in long form",
-                    "title": qsTr("Long form values"),
+                    "title": I18n.tr("Long form values"),
                     "icon": "numbers"
                 },
                 {
                     "type": "toggle",
                     "key": "keystone:Show monitor values in long form",
-                    "title": qsTr("Long form monitor values"),
+                    "title": I18n.tr("Long form monitor values"),
                     "icon": "monitor"
                 }
             ]
         },
         {
-            "title": qsTr("Media"),
+            "title": I18n.tr("Media"),
             "icon": "lyrics",
             "cards": [
                 {
                     "type": "select",
                     "key": "lyrics:Backend",
-                    "title": qsTr("Lyric source"),
+                    "title": I18n.tr("Lyric source"),
                     "icon": "cloud_download",
                     "w": 2,
                     "kw": "lyrics kugou lrclib source backend provider 歌词 来源"
@@ -273,148 +274,148 @@ QtObject {
                 {
                     "type": "spin",
                     "key": "lyrics:Timing offset (ms)",
-                    "title": qsTr("Timing offset"),
+                    "title": I18n.tr("Timing offset"),
                     "icon": "timer",
                     "kw": "lyrics offset delay timing sync 歌词 偏移 延迟"
                 },
                 {
                     "type": "spin",
                     "key": "lyrics:Font size",
-                    "title": qsTr("Font size"),
+                    "title": I18n.tr("Font size"),
                     "icon": "format_size",
                     "kw": "lyrics font size text 歌词 字号"
                 },
                 {
                     "type": "toggle",
                     "key": "lyrics:Tint from album art",
-                    "title": qsTr("Tint from album art"),
+                    "title": I18n.tr("Tint from album art"),
                     "icon": "palette",
                     "kw": "lyrics album art colour color palette extract 歌词 封面 取色"
                 }
             ]
         },
         {
-            "title": qsTr("Wallpaper"),
+            "title": I18n.tr("Wallpaper"),
             "icon": "wallpaper",
             "cards": [
                 {
                     "type": "combo",
                     "key": "wallpaper:Fill mode",
-                    "title": qsTr("Fill mode"),
+                    "title": I18n.tr("Fill mode"),
                     "icon": "fit_screen"
                 },
                 {
                     "type": "select",
                     "key": "wallpaper:Desktop backend",
-                    "title": qsTr("Desktop backend"),
+                    "title": I18n.tr("Desktop backend"),
                     "icon": "layers"
                 },
                 {
                     "type": "toggle",
                     "key": "wallpaper:Auto cycle",
-                    "title": qsTr("Auto cycle"),
+                    "title": I18n.tr("Auto cycle"),
                     "icon": "autorenew"
                 },
                 {
                     "type": "select",
                     "key": "wallpaper:Cycle mode",
-                    "title": qsTr("Cycle mode"),
+                    "title": I18n.tr("Cycle mode"),
                     "icon": "schedule"
                 },
                 {
                     "type": "spin",
                     "key": "wallpaper:Cycle interval (min)",
-                    "title": qsTr("Cycle interval"),
+                    "title": I18n.tr("Cycle interval"),
                     "icon": "timer"
                 },
                 {
                     "type": "combo",
                     "key": "wallpaper:Transition",
-                    "title": qsTr("Transition"),
+                    "title": I18n.tr("Transition"),
                     "icon": "animation"
                 },
                 {
                     "type": "spin",
                     "key": "wallpaper:Transition duration (ms)",
-                    "title": qsTr("Transition duration"),
+                    "title": I18n.tr("Transition duration"),
                     "icon": "speed"
                 },
                 {
                     "type": "combo",
                     "key": "wallpaper:Transition easing",
-                    "title": qsTr("Transition easing"),
+                    "title": I18n.tr("Transition easing"),
                     "icon": "show_chart"
                 },
                 {
                     "type": "toggle",
                     "key": "wallpaper:Overview",
-                    "title": qsTr("Overview"),
+                    "title": I18n.tr("Overview"),
                     "icon": "grid_view"
                 },
                 {
                     "type": "slider",
                     "key": "wallpaper:Overview blur radius",
-                    "title": qsTr("Overview blur radius"),
+                    "title": I18n.tr("Overview blur radius"),
                     "icon": "blur_on"
                 },
                 {
                     "type": "slider",
                     "key": "wallpaper:Overview dim",
-                    "title": qsTr("Overview dim"),
+                    "title": I18n.tr("Overview dim"),
                     "icon": "brightness_4"
                 },
                 {
                     "type": "slider",
                     "key": "wallpaper:Overview saturation",
-                    "title": qsTr("Overview saturation"),
+                    "title": I18n.tr("Overview saturation"),
                     "icon": "water_drop"
                 },
                 {
                     "type": "slider",
                     "key": "wallpaper:Overview contrast",
-                    "title": qsTr("Overview contrast"),
+                    "title": I18n.tr("Overview contrast"),
                     "icon": "contrast"
                 },
                 {
                     "type": "toggle",
                     "key": "wallpaper:Parallax",
-                    "title": qsTr("Parallax"),
+                    "title": I18n.tr("Parallax"),
                     "icon": "3d_rotation"
                 },
                 {
                     "type": "toggle",
                     "key": "wallpaper:Parallax follows workspaces",
-                    "title": qsTr("Parallax follows workspaces"),
+                    "title": I18n.tr("Parallax follows workspaces"),
                     "icon": "space_dashboard"
                 },
                 {
                     "type": "toggle",
                     "key": "wallpaper:Parallax follows sidebars",
-                    "title": qsTr("Parallax follows sidebars"),
+                    "title": I18n.tr("Parallax follows sidebars"),
                     "icon": "vertical_split"
                 },
                 {
                     "type": "slider",
                     "key": "wallpaper:Parallax preferred scale",
-                    "title": qsTr("Parallax preferred scale"),
+                    "title": I18n.tr("Parallax preferred scale"),
                     "icon": "zoom_in"
                 }
             ]
         },
         {
-            "title": qsTr("Desktop"),
+            "title": I18n.tr("Desktop"),
             "icon": "desktop_windows",
             "cards": [
                 {
                     "type": "toggle",
                     "key": "desktop:Grid snap",
-                    "title": qsTr("Grid snap"),
+                    "title": I18n.tr("Grid snap"),
                     "icon": "grid_on"
                 },
                 {
                     "type": "toggle",
                     "key": "desktop:Grid visible while dragging",
-                    "title": qsTr("Grid visible while dragging"),
+                    "title": I18n.tr("Grid visible while dragging"),
                     "icon": "grid_4x4"
                 }
             ]

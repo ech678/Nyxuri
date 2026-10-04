@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 // Three-way switch for how the settings panel presents itself. Ported 1:1 from
 // end4-pC's DashboardStyleCard: same option grid, same selected badge, same
@@ -18,22 +19,22 @@ Rectangle {
     readonly property var styleOptions: [
         {
             "value": "default",
-            "name": qsTr("Default"),
-            "detail": qsTr("Full rail and page layout"),
+            "name": I18n.tr("Default"),
+            "detail": I18n.tr("Full rail and page layout"),
             "icon": "settings_panorama",
             "shape": MaterialShapeCanvas.Shape.Cookie9Sided
         },
         {
             "value": "minimal",
-            "name": qsTr("Minimal"),
-            "detail": qsTr("Compact rail, tighter padding"),
+            "name": I18n.tr("Minimal"),
+            "detail": I18n.tr("Compact rail, tighter padding"),
             "icon": "settings_heart",
             "shape": MaterialShapeCanvas.Shape.Clover4Leaf
         },
         {
             "value": "dashboard",
-            "name": qsTr("Dashboard"),
-            "detail": qsTr("Floating card grid"),
+            "name": I18n.tr("Dashboard"),
+            "detail": I18n.tr("Floating card grid"),
             "icon": "dashboard",
             "shape": MaterialShapeCanvas.Shape.SoftBurst
         }
@@ -71,7 +72,7 @@ Rectangle {
                 spacing: 0
 
                 Text {
-                    text: qsTr("Settings panel")
+                    text: I18n.tr("Settings panel")
                     color: Appearance.colors.colOnLayer1
                     font.family: Fonts.ui
                     font.pixelSize: Typography.titleMedium.pixelSize
@@ -79,7 +80,7 @@ Rectangle {
                 }
 
                 Text {
-                    text: qsTr("Choose how settings open")
+                    text: I18n.tr("Choose how settings open")
                     color: Appearance.colors.colSubtext
                     font.family: Fonts.ui
                     font.pixelSize: Typography.bodySmall.pixelSize

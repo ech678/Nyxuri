@@ -5,6 +5,7 @@ import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
 import "../../../app/services/lyrics/LyricsParser.js" as LyricsParser
+import qs.shared.i18n
 
 // Lyrics pane for the dashboard's media page: a window of lines centred on the
 // one being sung.
@@ -109,7 +110,8 @@ Item {
             else if (progress <= 0)
                 html += text;
             else
-                html += '<font color="' + LyricsParser.blendHex(baseHex, accentHex, progress) + '">' + text + "</font>";
+                html += '<font color="' + LyricsParser.blendHex(baseHex, accentHex, progress) + '">' + text
+                        + "</font>";
         }
         return html;
     }
@@ -224,13 +226,13 @@ Item {
     function statusText() {
         switch (LyricsService.state) {
         case "loading":
-            return qsTr("Loading lyrics…");
+            return I18n.tr("Loading lyrics…");
         case "empty":
-            return qsTr("No lyrics found");
+            return I18n.tr("No lyrics found");
         case "error":
-            return LyricsService.errorMessage || qsTr("Lyrics unavailable");
+            return LyricsService.errorMessage || I18n.tr("Lyrics unavailable");
         default:
-            return LyricsService.title !== "" ? qsTr("Waiting for playback") : qsTr("Nothing playing");
+            return LyricsService.title !== "" ? I18n.tr("Waiting for playback") : I18n.tr("Nothing playing");
         }
     }
 }

@@ -5,6 +5,7 @@ import QtQuick.Layouts
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
+import qs.shared.i18n
 
 // Dashboard "Themes" page — replaces end4-pC's Presets tab.
 //
@@ -33,22 +34,22 @@ Item {
     readonly property var templates: [
         {
             "id": "kitty",
-            "label": qsTr("Kitty"),
+            "label": I18n.tr("Kitty"),
             "icon": "terminal"
         },
         {
             "id": "btop",
-            "label": qsTr("btop"),
+            "label": I18n.tr("btop"),
             "icon": "monitoring"
         },
         {
             "id": "cava",
-            "label": qsTr("Cava"),
+            "label": I18n.tr("Cava"),
             "icon": "graphic_eq"
         },
         {
             "id": "yazi",
-            "label": qsTr("Yazi"),
+            "label": I18n.tr("Yazi"),
             "icon": "folder"
         }
     ]
@@ -57,35 +58,35 @@ Item {
     // future page share the same reading of the palette.
     readonly property var paletteRoles: [
         {
-            "name": qsTr("Primary"),
+            "name": I18n.tr("Primary"),
             "color": Appearance.m3colors.m3primary
         },
         {
-            "name": qsTr("Primary container"),
+            "name": I18n.tr("Primary container"),
             "color": Appearance.m3colors.m3primaryContainer
         },
         {
-            "name": qsTr("Secondary"),
+            "name": I18n.tr("Secondary"),
             "color": Appearance.m3colors.m3secondary
         },
         {
-            "name": qsTr("Secondary container"),
+            "name": I18n.tr("Secondary container"),
             "color": Appearance.m3colors.m3secondaryContainer
         },
         {
-            "name": qsTr("Tertiary"),
+            "name": I18n.tr("Tertiary"),
             "color": Appearance.m3colors.m3tertiary
         },
         {
-            "name": qsTr("Tertiary container"),
+            "name": I18n.tr("Tertiary container"),
             "color": Appearance.m3colors.m3tertiaryContainer
         },
         {
-            "name": qsTr("Surface"),
+            "name": I18n.tr("Surface"),
             "color": Appearance.m3colors.m3surface
         },
         {
-            "name": qsTr("Outline"),
+            "name": I18n.tr("Outline"),
             "color": Appearance.m3colors.m3outline
         }
     ]
@@ -141,7 +142,7 @@ Item {
                             spacing: 0
 
                             StyledText {
-                                text: qsTr("Current palette")
+                                text: I18n.tr("Current palette")
                                 font.pixelSize: Typography.titleLarge.pixelSize
                                 font.weight: Font.DemiBold
                                 color: Appearance.colors.colOnPrimaryContainer
@@ -236,7 +237,7 @@ Item {
 
                         StyledText {
                             Layout.fillWidth: true
-                            text: qsTr("Matugen templates")
+                            text: I18n.tr("Matugen templates")
                             font.pixelSize: Typography.bodyLarge.pixelSize
                             font.weight: Font.DemiBold
                             color: Appearance.colors.colOnSecondaryContainer

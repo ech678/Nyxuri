@@ -8,6 +8,7 @@ import qs.shared.controls
 import qs.app.services
 import qs.modules.wallpaper
 import qs.modules.settings
+import qs.shared.i18n
 
 // Dashboard "Wallpapers" page. Layout ported from end4-pC's
 // DashboardWallpapersPage: a strip of control tiles over a wallpaper grid with
@@ -93,7 +94,7 @@ Item {
                 Layout.preferredWidth: 1
                 Layout.horizontalStretchFactor: 16
                 Layout.fillHeight: true
-                title: qsTr("Wallpaper tools")
+                title: I18n.tr("Wallpaper tools")
                 pager: root.pager
                 staggerMs: root.staggerMs
                 animIndex: 0
@@ -109,7 +110,7 @@ Item {
                 Layout.horizontalStretchFactor: 10
                 Layout.fillHeight: true
                 controlKey: "wallpaper:Transition duration (ms)"
-                title: qsTr("Transition (ms)")
+                title: I18n.tr("Transition (ms)")
                 icon: "speed"
                 tileShape: MaterialShapeCanvas.Shape.Gem
                 pager: root.pager
@@ -125,7 +126,7 @@ Item {
                 Layout.horizontalStretchFactor: 16
                 Layout.fillHeight: true
                 controlKey: "wallpaper:Transition"
-                title: qsTr("Transition")
+                title: I18n.tr("Transition")
                 icon: "animation"
                 tileShape: MaterialShapeCanvas.Shape.Puffy
                 pager: root.pager
@@ -141,7 +142,7 @@ Item {
                 Layout.horizontalStretchFactor: 10
                 Layout.fillHeight: true
                 controlKey: "wallpaper:Auto cycle"
-                title: qsTr("Auto cycle")
+                title: I18n.tr("Auto cycle")
                 icon: "autorenew"
                 tileShape: MaterialShapeCanvas.Shape.Cookie6Sided
                 pager: root.pager
@@ -321,7 +322,7 @@ Item {
                                         }
 
                                         StyledText {
-                                            text: qsTr("Apply")
+                                            text: I18n.tr("Apply")
                                             color: "white"
                                         }
                                     }

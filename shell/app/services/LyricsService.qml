@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import qs.app.services
 import "lyrics/LyricsParser.js" as LyricsParser
+import qs.shared.i18n
 
 // Drives lyric fetching for whatever MediaService currently has playing.
 //
@@ -172,7 +173,7 @@ Singleton {
         root._pendingGeneration = -1;
         if (!payload || typeof payload !== "object") {
             root.state = "error";
-            root.errorMessage = qsTr("Lyric fetch returned no data");
+            root.errorMessage = I18n.tr("Lyric fetch returned no data");
             return;
         }
 

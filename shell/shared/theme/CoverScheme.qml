@@ -58,10 +58,12 @@ QtObject {
 
     readonly property color colPrimary: Appearance.mix(root.adaptToAccent(Appearance.colors.colPrimary,
                                                                           root.color), root.color, 0.5)
-    readonly property color colPrimaryHover: Appearance.mix(root.adaptToAccent(Appearance.colors.colPrimaryHover,
-                                                                               root.color), root.color, 0.3)
-    readonly property color colPrimaryActive: Appearance.mix(root.adaptToAccent(Appearance.colors.colPrimaryActive,
-                                                                                root.color), root.color, 0.3)
+    readonly property color colPrimaryHover: Appearance.mix(root.adaptToAccent(
+                                                                Appearance.colors.colPrimaryHover, root.color),
+                                                            root.color, 0.3)
+    readonly property color colPrimaryActive: Appearance.mix(root.adaptToAccent(
+                                                                 Appearance.colors.colPrimaryActive,
+                                                                 root.color), root.color, 0.3)
     readonly property color colOnPrimary: Appearance.mix(root.adaptToAccent(Appearance.m3colors.m3onPrimary,
                                                                             root.color), root.color, 0.5)
 
@@ -69,10 +71,12 @@ QtObject {
                                                                             root.color), root.color, 0.5)
     readonly property color colSecondaryContainer: Appearance.mix(Appearance.m3colors.m3secondaryContainer,
                                                                   root.color, 0.15)
-    readonly property color colSecondaryContainerHover: Appearance.mix(Appearance.colors.colSecondaryContainerHover,
-                                                                       root.color, 0.3)
+    readonly property color colSecondaryContainerHover: Appearance.mix(
+                                                            Appearance.colors.colSecondaryContainerHover,
+                                                            root.color, 0.3)
     readonly property color colSecondaryContainerActive: Appearance.mix(
-        Appearance.colors.colSecondaryContainerActive, root.color, 0.5)
+                                                             Appearance.colors.colSecondaryContainerActive,
+                                                             root.color, 0.5)
     readonly property color colOnSecondaryContainer: Appearance.mix(Appearance.m3colors.m3onSecondaryContainer,
                                                                     root.color, 0.5)
 }

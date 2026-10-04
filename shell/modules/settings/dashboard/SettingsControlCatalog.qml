@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import qs.app.services
+import qs.shared.i18n
 
 // Control registry for the dashboard settings grid. Plays the role end4-pC's
 // SettingsQuickControls does: every card reads its control through
@@ -71,12 +72,12 @@ Singleton {
                                                                                           value), [
                                                                                  {
                                                                                      "value": "dark",
-                                                                                     "label": qsTr("Dark"),
+                                                                                     "label": I18n.tr("Dark"),
                                                                                      "icon": "dark_mode"
                                                                                  },
                                                                                  {
                                                                                      "value": "light",
-                                                                                     "label": qsTr("Light"),
+                                                                                     "label": I18n.tr("Light"),
                                                                                      "icon": "light_mode"
                                                                                  }
                                                                              ]),
@@ -265,7 +266,7 @@ Singleton {
                                                                                                value), [
                                                                                       {
                                                                                           "value": "quickshell",
-                                                                                          "label": qsTr(
+                                                                                          "label": I18n.tr(
                                                                                                        "Quickshell"),
                                                                                           "icon": "layers"
                                                                                       },
@@ -285,12 +286,12 @@ Singleton {
                                                                                           value), [
                                                                                  {
                                                                                      "value": "interval",
-                                                                                     "label": qsTr("Interval"),
+                                                                                     "label": I18n.tr("Interval"),
                                                                                      "icon": "timer"
                                                                                  },
                                                                                  {
                                                                                      "value": "time",
-                                                                                     "label": qsTr(
+                                                                                     "label": I18n.tr(
                                                                                                   "Daily time"),
                                                                                      "icon": "schedule"
                                                                                  }
