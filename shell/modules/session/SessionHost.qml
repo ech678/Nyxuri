@@ -64,6 +64,7 @@ Scope {
 
                 onActionTriggered: action => {
                     root.actionTriggered(action);
+                    root.close();
                     ActionGateway.powerAction(action, "session");
                 }
 

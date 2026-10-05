@@ -13,7 +13,7 @@ Scope {
     readonly property bool secure: sessionLock.secure
     property bool capturePending: false
     property int activeCaptureRequestId: 0
-    property string sessionStyle: "default"
+    property string sessionStyle: PersonalizationConfig.lockScreenStyle
 
     signal unlocked
     signal secured
@@ -23,7 +23,7 @@ Scope {
             return "ALREADY_LOCKED";
 
         sessionStyle = PersonalizationConfig.lockScreenStyle;
-        internalContext.authRevealed = false;
+        internalContext.authRevealed = false
         internalContext.currentText = "";
         internalContext.unlockInProgress = false;
         internalContext.showFailure = false;
@@ -72,6 +72,7 @@ Scope {
         property bool showFailure: false
 
         signal unlockFailed
+        signal shouldReFocus
 
         function tryUnlock() {
             if (currentText === "" || unlockInProgress)
@@ -109,6 +110,27 @@ Scope {
                     internalContext.unlockFailed();
                 }
                 internalContext.unlockInProgress = false;
+            }
+        }
+    }
+
+    // Heartbeat re-focus while locked. Niri sometimes drops keyboard focus on the
+    // ext-session-lock surface after suspend/resume — the surface stays visible but
+    // input goes nowhere until something forces a re-grab. We just nudge it back.
+    Timer {
+        id: lockFocusHeartbeat
+        interval: 1500
+        repeat: true
+        running: sessionLock.locked
+        onTriggered: internalContext.shouldReFocus()
+    }
+
+    // Re-focus immediately when monitor topology changes (a common signal of wake-up).
+    Connections {
+        target: Quickshell
+        function onScreensChanged() {
+            if (sessionLock.locked) {
+                Qt.callLater(() => internalContext.shouldReFocus());
             }
         }
     }

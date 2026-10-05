@@ -14,7 +14,7 @@ Singleton {
     Connections {
         target: root.sessionLocker
         function onSecured() {
-            root.runSecurePowerAction();
+            root.runSecurePowerAction(true);
         }
         function onActiveChanged() {
             if (root.sessionLocker && !root.sessionLocker.active)
@@ -96,11 +96,11 @@ Singleton {
         }
     }
 
-    function runSecurePowerAction() {
+    function runSecurePowerAction(force) {
         if (root.pendingSecurePowerAction === "")
             return;
 
-        if (root.sessionLocker && !root.sessionLocker.secure) {
+        if (!force && root.sessionLocker && !root.sessionLocker.secure) {
             console.warn("[ActionGateway] Waiting for session locker to secure before",
                          root.pendingSecurePowerAction);
             return;
@@ -108,12 +108,14 @@ Singleton {
 
         const action = root.pendingSecurePowerAction;
         root.pendingSecurePowerAction = "";
-        root.execute(["loginctl", action], "session:secure-power");
+        root.execute(["systemctl", action], "session:secure-power");
     }
 
     function requestSecurePowerAction(action) {
         if (root.pendingSecurePowerAction !== "")
             return;
+
+        root.requestSessionClose();
 
         if (root.sessionLocker) {
             const result = root.sessionLocker.open();
@@ -124,7 +126,9 @@ Singleton {
         }
 
         root.pendingSecurePowerAction = action;
-        root.runSecurePowerAction();
+        if (root.sessionLocker && root.sessionLocker.secure) {
+            root.runSecurePowerAction(true);
+        }
     }
 
     function powerAction(action, owner) {

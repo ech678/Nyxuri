@@ -35,7 +35,7 @@ class ShellLauncherTests(unittest.TestCase):
         qs.chmod(0o755)
         self.environment = {
             key: value for key, value in os.environ.items()
-            if key not in {"CLAVIS_BUILD_DIR", "CLAVIS_QML_BUILD_DIR", "QML_IMPORT_PATH", "QML2_IMPORT_PATH"}
+            if key not in {"CLAVIS_BUILD_DIR", "CLAVIS_QML_BUILD_DIR", "NYXURI_BUILD_DIR", "NYXURI_QML_BUILD_DIR", "QML_IMPORT_PATH", "QML2_IMPORT_PATH"}
         }
         self.environment["PATH"] = str(bin_dir) + os.pathsep + os.environ["PATH"]
 
@@ -152,7 +152,7 @@ class ShellPresentationTests(unittest.TestCase):
         fallback = str(SHELL / "fallback")
         self.environment = {
             key: value for key, value in os.environ.items()
-            if not key.startswith(("CLAVIS_", "QS_"))
+            if not key.startswith(("CLAVIS_", "QS_", "NYXURI_"))
             and key not in {"NIRI_SOCKET", "WAYLAND_DISPLAY", "DISPLAY", "DBUS_SESSION_BUS_ADDRESS"}
         }
         self.environment.update(

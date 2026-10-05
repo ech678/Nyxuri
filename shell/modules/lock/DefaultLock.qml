@@ -38,6 +38,37 @@ Item {
         content.forceAuthFocus();
     }
 
+    function forceAuthFocus() {
+        content.forceAuthFocus();
+    }
+
+    function focusAuth() {
+        forceAuthFocus();
+    }
+
+    Connections {
+        target: root.context
+        ignoreUnknownSignals: true
+        function onShouldReFocus() {
+            root.forceAuthFocus();
+        }
+    }
+
+    // Safety fallback: if snapshot or wallpaper stalls, force reveal within 500ms
+    Timer {
+        id: safetyFallbackTimer
+        interval: 500
+        running: !root.started
+        onTriggered: {
+            if (!root.started) {
+                console.warn("[Lock] Safety fallback triggered: forcing DefaultLock visible");
+                root.started = true;
+                root.reveal = 1;
+                root.forceAuthFocus();
+            }
+        }
+    }
+
     onScreenChanged: Qt.callLater(startReveal)
     Component.onCompleted: Qt.callLater(startReveal)
 

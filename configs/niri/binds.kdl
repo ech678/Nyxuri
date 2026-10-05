@@ -22,7 +22,7 @@ binds {
     Mod+Shift+R { spawn "niri" "msg" "action" "load-config-file"; }
 
     // 锁定屏幕 (外壳网关) / Lock screen using shell gateway
-    Mod+L { spawn "~/.config/niri/scripts/shell-action.sh" "lock"; }
+    Mod+L allow-when-locked=true { spawn "~/.config/niri/scripts/shell-action.sh" "lock"; }
 
     // 显示快捷键提示覆盖层 / Show interactive hotkey overlay
     Mod+Slash { show-hotkey-overlay; }

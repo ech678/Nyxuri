@@ -32,8 +32,8 @@ Item {
         if (!componentReady || snapshotResolved || !root.screen || !root.screen.name)
             return;
 
-        snapshotResult = snapshotProvider ? snapshotProvider.snapshot(root.screen) : null;
         snapshotResolved = true;
+        snapshotResult = snapshotProvider ? snapshotProvider.snapshot(root.screen) : null;
         maybeStartStartupAnimation();
     }
 
@@ -52,8 +52,11 @@ Item {
     }
 
     function focusAuth() {
-        if (lockContent.opacity > 0)
-            lockContent.forceAuthFocus();
+        lockContent.forceAuthFocus();
+    }
+
+    function forceAuthFocus() {
+        focusAuth();
     }
 
     function startExitAnimation() {
@@ -69,6 +72,26 @@ Item {
     Component.onCompleted: {
         componentReady = true;
         resolveSnapshot();
+    }
+
+    // Safety fallback: if snapshot or animation stalls, force lock UI visible within 500ms
+    Timer {
+        id: safetyFallbackTimer
+        interval: 500
+        running: root.containerScale < 1 || root.contentOpacity < 1
+        onTriggered: {
+            if (root.containerScale < 1 || root.contentOpacity < 1) {
+                console.warn("[Lock] Safety fallback triggered: forcing CaelestiaLock visible");
+                root.startupStarted = true;
+                root.containerScale = 1;
+                root.containerRotation = 360;
+                root.morphProgress = 1;
+                root.contentOpacity = 1;
+                root.contentScale = 1;
+                lockIcon.opacity = 0;
+                root.focusAuth();
+            }
+        }
     }
 
     Rectangle {
@@ -87,7 +110,7 @@ Item {
         asynchronous: false
         cache: true
         visible: source !== ""
-        layer.enabled: true
+        layer.enabled: visible && status === Image.Ready && root.backgroundBlur > 0
         onStatusChanged: root.maybeStartStartupAnimation()
 
         layer.effect: MultiEffect {
@@ -101,17 +124,29 @@ Item {
 
     MouseArea {
         anchors.fill: parent
+        hoverEnabled: true
+        acceptedButtons: Qt.LeftButton
+        onPressed: root.focusAuth()
+        onPositionChanged: root.focusAuth()
         onClicked: root.focusAuth()
     }
 
+    Keys.onPressed: event => {
+        root.focusAuth();
+    }
+
     Connections {
+        target: root.context
+        ignoreUnknownSignals: true
+
         function onUnlockFailed() {
             root.isExiting = false;
             root.focusAuth();
         }
 
-        target: root.context
-        ignoreUnknownSignals: true
+        function onShouldReFocus() {
+            root.focusAuth();
+        }
     }
 
     Connections {

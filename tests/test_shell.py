@@ -1678,6 +1678,82 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("| 已完成 | MPRIS DBus 频繁失效重连与位置轮询治理 | R5 |", roadmap_content)
         self.assertIn("| 已完成 | 根除 `interval: 0` 事件循环空转与高频定时器降频 | R5 |", roadmap_content)
 
+    def test_power_menu_and_secure_suspend_contracts(self):
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. SessionPanel actions and badges: 5 items (1~5), no hibernate
+        panel_path = os.path.join(shell_dir, "modules", "session", "SessionPanel.qml")
+        with open(panel_path, "r", encoding="utf-8") as f:
+            panel_content = f.read()
+        self.assertIn('"action": "lock"', panel_content)
+        self.assertIn('"action": "logout"', panel_content)
+        self.assertIn('"action": "suspend"', panel_content)
+        self.assertIn('"action": "reboot"', panel_content)
+        self.assertIn('"action": "poweroff"', panel_content)
+        self.assertNotIn('"action": "hibernate"', panel_content)
+        self.assertIn('"key": "1"', panel_content)
+        self.assertIn('"key": "5"', panel_content)
+        self.assertIn("Qt.Key_1", panel_content)
+        self.assertIn("Qt.Key_5", panel_content)
+        self.assertNotIn("Qt.Key_L:", panel_content)
+        self.assertNotIn("Qt.Key_E:", panel_content)
+        self.assertNotIn("Qt.Key_U:", panel_content)
+        self.assertNotIn("Qt.Key_S:", panel_content)
+        self.assertNotIn("Qt.Key_H:", panel_content)
+
+        # 2. SessionHost closes immediately before triggering action
+        host_path = os.path.join(shell_dir, "modules", "session", "SessionHost.qml")
+        with open(host_path, "r", encoding="utf-8") as f:
+            host_content = f.read()
+        self.assertIn("root.close();", host_content)
+
+        # 3. ActionGateway uses systemctl for power actions and requests session close
+        gateway_path = os.path.join(shell_dir, "app", "ActionGateway.qml")
+        with open(gateway_path, "r", encoding="utf-8") as f:
+            gateway_content = f.read()
+        self.assertIn('root.execute(["systemctl", action], "session:secure-power")', gateway_content)
+        self.assertNotIn('["loginctl", action]', gateway_content)
+        self.assertIn("root.requestSessionClose()", gateway_content)
+
+        # 4. Lock.qml has heartbeat timer, screensChanged listener, and uses PersonalizationConfig.lockScreenStyle
+        lock_path = os.path.join(shell_dir, "modules", "lock", "Lock.qml")
+        with open(lock_path, "r", encoding="utf-8") as f:
+            lock_content = f.read()
+        self.assertIn("property string sessionStyle: PersonalizationConfig.lockScreenStyle", lock_content)
+        self.assertIn("LockSurface {", lock_content)
+        self.assertIn("id: lockFocusHeartbeat", lock_content)
+        self.assertIn("signal shouldReFocus", lock_content)
+        self.assertIn("onScreensChanged", lock_content)
+
+        # 5. LockSurface does NOT gate loader on locked state (unconditional load) and has global focus re-grab
+        surface_path = os.path.join(shell_dir, "modules", "lock", "LockSurface.qml")
+        with open(surface_path, "r", encoding="utf-8") as f:
+            surface_content = f.read()
+        self.assertNotIn("active: root.lock && root.lock.locked", surface_content)
+        self.assertIn("function forceFieldFocus()", surface_content)
+        self.assertIn("onShouldReFocus", surface_content)
+
+        # 6. CaelestiaLock & DefaultLock have 500ms safety fallback timer and uninhibited focusAuth
+        caelestia_path = os.path.join(shell_dir, "modules", "lock", "CaelestiaLock.qml")
+        with open(caelestia_path, "r", encoding="utf-8") as f:
+            caelestia_content = f.read()
+        self.assertIn("layer.enabled: visible && status === Image.Ready && root.backgroundBlur > 0", caelestia_content)
+        self.assertIn("id: safetyFallbackTimer", caelestia_content)
+        self.assertIn("function focusAuth() {\n        lockContent.forceAuthFocus();", caelestia_content)
+
+        default_lock_path = os.path.join(shell_dir, "modules", "lock", "DefaultLock.qml")
+        with open(default_lock_path, "r", encoding="utf-8") as f:
+            default_lock_content = f.read()
+        self.assertIn("id: safetyFallbackTimer", default_lock_content)
+        self.assertIn("function forceAuthFocus()", default_lock_content)
+
+        # 7. Niri binds.kdl contains allow-when-locked=true for Mod+L
+        binds_path = os.path.join(repo_root, "configs", "niri", "binds.kdl")
+        with open(binds_path, "r", encoding="utf-8") as f:
+            binds_content = f.read()
+        self.assertIn('Mod+L allow-when-locked=true { spawn "~/.config/niri/scripts/shell-action.sh" "lock"; }', binds_content)
+
 
 if __name__ == "__main__":
     unittest.main()

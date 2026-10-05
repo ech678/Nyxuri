@@ -78,7 +78,17 @@ if [ -n "$ACTION" ]; then
             exec qs -p "${SHELL_DIR}" ipc call spotlight openMode clipboard
             ;;
         lock)
-            exec qs -p "${SHELL_DIR}" ipc call lock open
+            if ! qs -p "${SHELL_DIR}" ipc call lock open 2>/dev/null; then
+                qs -p "${SHELL_DIR}" --no-duplicate >/dev/null 2>&1 &
+                for _ in $(seq 1 30); do
+                    sleep 0.1
+                    if qs -p "${SHELL_DIR}" ipc call lock open 2>/dev/null; then
+                        exit 0
+                    fi
+                done
+                exit 1
+            fi
+            exit 0
             ;;
         wallpaper-random)
             exec qs -p "${SHELL_DIR}" ipc call wallpaper random

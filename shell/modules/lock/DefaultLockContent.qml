@@ -81,12 +81,34 @@ Item {
         onTriggered: root.now = new Date()
     }
 
+    Connections {
+        target: root.context
+        ignoreUnknownSignals: true
+        function onShouldReFocus() {
+            root.forceAuthFocus();
+        }
+    }
+
     MouseArea {
         anchors.fill: parent
+        hoverEnabled: true
+        acceptedButtons: Qt.LeftButton
+        onPressed: {
+            root.context.authRevealed = true;
+            root.forceAuthFocus();
+        }
+        onPositionChanged: {
+            root.forceAuthFocus();
+        }
         onClicked: {
             root.context.authRevealed = true;
             root.forceAuthFocus();
         }
+    }
+
+    Keys.onPressed: event => {
+        root.context.authRevealed = true;
+        root.forceAuthFocus();
     }
 
     DefaultLockStatus {

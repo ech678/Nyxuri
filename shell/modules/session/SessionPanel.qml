@@ -10,7 +10,7 @@ PanelWindow {
     id: root
 
     required property var targetScreen
-    readonly property real buttonSize: Math.max(72, Math.min(128, (width - 112 - actionRow.spacing * 5) / 6))
+    readonly property real buttonSize: Math.max(72, Math.min(128, (width - 112 - actionRow.spacing * 4) / 5))
 
     property int selectedIndex: 0
     property bool closing: false
@@ -27,8 +27,10 @@ PanelWindow {
     }
 
     function trigger(action) {
+        if (root.closing)
+            return;
+        root.closing = true;
         root.actionTriggered(action);
-        root.requestDismiss();
     }
 
     screen: targetScreen
@@ -128,23 +130,20 @@ PanelWindow {
             case Qt.Key_Escape:
                 root.requestDismiss();
                 break;
-            case Qt.Key_L:
-                root.trigger("lock");
+            case Qt.Key_1:
+                root.trigger(actionRepeater.itemAt(0).modelData.action);
                 break;
-            case Qt.Key_E:
-                root.trigger("logout");
+            case Qt.Key_2:
+                root.trigger(actionRepeater.itemAt(1).modelData.action);
                 break;
-            case Qt.Key_U:
-                root.trigger("suspend");
+            case Qt.Key_3:
+                root.trigger(actionRepeater.itemAt(2).modelData.action);
                 break;
-            case Qt.Key_S:
-                root.trigger("poweroff");
+            case Qt.Key_4:
+                root.trigger(actionRepeater.itemAt(3).modelData.action);
                 break;
-            case Qt.Key_H:
-                root.trigger("hibernate");
-                break;
-            case Qt.Key_R:
-                root.trigger("reboot");
+            case Qt.Key_5:
+                root.trigger(actionRepeater.itemAt(4).modelData.action);
                 break;
             default:
                 return;
@@ -182,32 +181,32 @@ PanelWindow {
                         {
                             "action": "lock",
                             "icon": "lock",
-                            "label": I18n.tr("Lock screen")
+                            "label": I18n.tr("Lock screen"),
+                            "key": "1"
                         },
                         {
                             "action": "logout",
                             "icon": "logout",
-                            "label": I18n.tr("Log out")
+                            "label": I18n.tr("Log out"),
+                            "key": "2"
                         },
                         {
                             "action": "suspend",
-                            "icon": "bedtime",
-                            "label": I18n.tr("Suspend")
-                        },
-                        {
-                            "action": "poweroff",
-                            "icon": "power_settings_new",
-                            "label": I18n.tr("Shut down")
-                        },
-                        {
-                            "action": "hibernate",
-                            "icon": "mode_night",
-                            "label": I18n.tr("Hibernate")
+                            "icon": "pause",
+                            "label": I18n.tr("Lock and suspend"),
+                            "key": "3"
                         },
                         {
                             "action": "reboot",
                             "icon": "restart_alt",
-                            "label": I18n.tr("Restart")
+                            "label": I18n.tr("Restart"),
+                            "key": "4"
+                        },
+                        {
+                            "action": "poweroff",
+                            "icon": "power_settings_new",
+                            "label": I18n.tr("Shut down"),
+                            "key": "5"
                         }
                     ]
 
@@ -230,6 +229,25 @@ PanelWindow {
                                                          actionButton.selected
                                                          ? Appearance.colors.colPrimaryHover :
                                                            Appearance.colors.colLayer1)
+
+                        Rectangle {
+                            anchors.top: parent.top
+                            anchors.right: parent.right
+                            anchors.margins: 8
+                            width: 18
+                            height: 18
+                            radius: Appearance.rounding.small
+                            color: actionButton.selected ? Appearance.colors.colPrimaryActive : Appearance.colors.colLayer2
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: actionButton.modelData.key
+                                font.family: Fonts.mono
+                                font.pixelSize: 11
+                                font.weight: Font.Bold
+                                color: actionButton.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSurfaceVariant
+                            }
+                        }
 
                         ColumnLayout {
                             anchors.centerIn: parent

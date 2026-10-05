@@ -21,6 +21,18 @@ FocusScope {
 
     Layout.fillWidth: true
     Layout.preferredHeight: Metrics.lockAuthHeight
+    function forceAuthFocus() {
+        input.forceActiveFocus();
+    }
+
+    Connections {
+        target: root.context
+        ignoreUnknownSignals: true
+        function onShouldReFocus() {
+            input.forceActiveFocus();
+        }
+    }
+
     Component.onCompleted: input.forceActiveFocus()
     onActiveFocusChanged: {
         if (activeFocus)
