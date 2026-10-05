@@ -58,9 +58,8 @@ Item {
     // animates the outgoing cards out while the incoming ones fly in, and
     // flipping the whole surface at the start of that overlap makes the
     // crossfade read as a colour glitch.
-    readonly property bool mediaVisible: mediaState.active
-                                          && root.currentPage === root.mediaPage
-                                          && root.pendingPage === root.mediaPage
+    readonly property bool mediaVisible: mediaState.active && root.currentPage === root.mediaPage
+                                         && root.pendingPage === root.mediaPage
 
     // The resolved palette, in the same shape end4-pC passes to its media page:
     // either the cover-derived scheme or a plain Appearance.colors. Both expose
@@ -76,6 +75,7 @@ Item {
         readonly property color surface: root.mediaColors.colLayer1
         readonly property color toolbar: root.mediaVisible ? root.mediaColors.colLayer1 :
                                                              Appearance.m3colors.m3surfaceContainer
+
         readonly property color fgSurface: root.mediaColors.colOnLayer1
         readonly property color subtext: root.mediaColors.colSubtext
         readonly property color hover: root.mediaVisible ? root.mediaColors.colSecondaryContainerHover :
@@ -92,12 +92,14 @@ Item {
 
     DashboardMediaState {
         id: mediaState
+
+        pageActive: root.mediaImplemented
     }
 
     readonly property var pageNames: [
         {
             "id": "home",
-            "name": I18n.tr("Home"),
+            "name": I18n.tr("Home", "DashboardContent"),
             "icon": "home"
         },
         {
@@ -467,10 +469,8 @@ Item {
                         toggled: root.pendingPage === index
                         onClicked: root.goToPage(index)
                         containerColor: navBtn.toggled ? root.ui.accent : "transparent"
-                        rippleColor: navBtn.toggled ? root.ui.fgAccent :
-                                                      root.ui.fgSurface
-                        stateLayerColor: navBtn.toggled ? root.ui.fgAccent :
-                                                          root.ui.fgSurface
+                        rippleColor: navBtn.toggled ? root.ui.fgAccent : root.ui.fgSurface
+                        stateLayerColor: navBtn.toggled ? root.ui.fgAccent : root.ui.fgSurface
                         // RippleButton draws its state layer at full opacity by
                         // default, which over a transparent container floods the
                         // button and swallows the label. Use the M3 hover/focus/
@@ -493,15 +493,13 @@ Item {
                                 MaterialSymbol {
                                     text: navBtn.modelData.icon
                                     iconSize: Typography.titleLarge.pixelSize
-                                    color: navBtn.toggled ? root.ui.fgAccent :
-                                                            root.ui.fgSurface
+                                    color: navBtn.toggled ? root.ui.fgAccent : root.ui.fgSurface
                                     fill: navBtn.toggled ? 1 : 0
                                 }
 
                                 StyledText {
                                     text: navBtn.modelData.name
-                                    color: navBtn.toggled ? root.ui.fgAccent :
-                                                            root.ui.fgSurface
+                                    color: navBtn.toggled ? root.ui.fgAccent : root.ui.fgSurface
                                     visible: navBtn.toggled
                                 }
                             }
@@ -776,6 +774,13 @@ Item {
             sourceComponent: DashboardMediaPage {
                 pager: root
                 staggerMs: root.staggerMs
+                // Drives the cava lifecycle. The item's own `visible` reads
+                // false at creation inside a Loader, so the wave must key off
+                // the page state instead.
+                pageActive: root.mediaImplemented
+                // Wave data comes from the shared state object; the page must
+                // not own the cava process (invalid-context trap in Loaders).
+                mediaState: mediaState
                 // The cover-derived scheme, or the theme's own colours when no
                 // palette is available. Same shape either way, so the page
                 // never branches on it.

@@ -132,6 +132,13 @@ if ! run_template "$core" > "$runtime_dir/log" 2>&1; then
     exit 1
 fi
 if [[ "$dry_run" == false ]]; then event core-ready; fi
+
+# Detached preview sweep: nine extra matugen runs must never sit on the
+# scheme-switch path the user is waiting on. Best effort; the picker falls back
+# to the live palette while the cache is missing or stale.
+if [[ "$dry_run" == false && -n "$generated_home" ]]; then
+    NYXURI_SHELL_GENERATED_HOME="$generated_home"         bash "$script_dir/generate-matugen-previews.sh"         ${image_path:+--image "$image_path"} ${source_color:+--color "$source_color"}         --mode "$mode" >/dev/null 2>&1 & disown
+fi
 external_failed=false
 report_external_error() {
     external_failed=true
