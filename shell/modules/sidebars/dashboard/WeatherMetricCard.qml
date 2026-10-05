@@ -31,7 +31,7 @@ Rectangle {
                 text: root.icon
                 color: root.accent
                 font.family: Fonts.materialSymbolsOutlined
-                font.pixelSize: 22
+                font.pixelSize: Appearance.scaledFont(22)
             }
         }
 
@@ -43,7 +43,7 @@ Rectangle {
                 text: root.label
                 color: Appearance.colors.colOnSurfaceVariant
                 font.family: Fonts.expressive
-                font.pixelSize: 11
+                font.pixelSize: Appearance.scaledFont(11)
                 elide: Text.ElideRight
                 Layout.fillWidth: true
             }
@@ -53,7 +53,7 @@ Rectangle {
                 color: Appearance.colors.colOnSurface
                 font.family: Fonts.expressive
                 font.bold: true
-                font.pixelSize: 14
+                font.pixelSize: Appearance.scaledFont(14)
                 elide: Text.ElideRight
                 Layout.fillWidth: true
             }
@@ -63,7 +63,7 @@ Rectangle {
                 visible: root.detail.length > 0
                 color: Appearance.colors.colOutline
                 font.family: Fonts.expressive
-                font.pixelSize: 10
+                font.pixelSize: Appearance.scaledFont(10)
                 elide: Text.ElideRight
                 Layout.fillWidth: true
             }

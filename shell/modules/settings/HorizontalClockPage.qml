@@ -36,8 +36,7 @@ StyledFlickable {
 
     function selectedDigitThemeColor() {
         const data = root.selectedDigitData();
-        return data && data.colorRole === "inversePrimary" ? Appearance.colors.colInversePrimary.toString() :
-                                                             Appearance.colors.colPrimary.toString();
+        return data && data.colorRole === "inversePrimary" ? Appearance.colors.colInversePrimary.toString() : Appearance.colors.colPrimary.toString();
     }
 
     clip: true
@@ -60,8 +59,7 @@ StyledFlickable {
             SettingsSearchAnchor {
                 id: searchAnchor0
                 target: searchSection0
-                declaration:
-                    '{"id":"keystone.horizontal-clock.section.horizontal-clock-style","route":"keystone.horizontal-clock","title":"Horizontal clock style","context":"HorizontalClockPage","icon":"schedule","aliases":[]}'
+                declaration: '{"id":"keystone.horizontal-clock.section.horizontal-clock-style","route":"keystone.horizontal-clock","title":"Horizontal clock style","context":"HorizontalClockPage","icon":"schedule","aliases":[]}'
             }
             iconName: "tune"
 
@@ -205,7 +203,7 @@ StyledFlickable {
                 text: I18n.tr("Current digit")
                 color: Appearance.colors.colOnSecondaryContainer
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: Appearance.scaledFont(14)
                 font.weight: Font.Medium
             }
 
@@ -214,27 +212,27 @@ StyledFlickable {
 
                 Layout.fillWidth: true
                 model: [({
-                             "value": "h0",
-                             "label": String(root.currentHourTens)
-                         }), ({
-                                  "value": "h1",
-                                  "label": String(root.currentHourOnes)
-                              }), ({
-                                       "value": "separator",
-                                       "label": ":"
-                                   }), ({
-                                            "value": "m0",
-                                            "label": String(root.currentMinuteTens)
-                                        }), ({
-                                                 "value": "m1",
-                                                 "label": String(root.currentMinuteOnes)
-                                             }), ({
-                                                      "value": "ap",
-                                                      "label": root.currentPeriodLead
-                                                  }), ({
-                                                           "value": "periodM",
-                                                           "label": "M"
-                                                       })]
+                            "value": "h0",
+                            "label": String(root.currentHourTens)
+                        }), ({
+                            "value": "h1",
+                            "label": String(root.currentHourOnes)
+                        }), ({
+                            "value": "separator",
+                            "label": ":"
+                        }), ({
+                            "value": "m0",
+                            "label": String(root.currentMinuteTens)
+                        }), ({
+                            "value": "m1",
+                            "label": String(root.currentMinuteOnes)
+                        }), ({
+                            "value": "ap",
+                            "label": root.currentPeriodLead
+                        }), ({
+                            "value": "periodM",
+                            "label": "M"
+                        })]
                 currentValue: root.selectedDigit
                 buttonMinWidth: 52
                 onValueSelected: value => {
@@ -250,24 +248,21 @@ StyledFlickable {
 
                 trailing: StyledButtonGroup {
                     model: [({
-                                 "value": "primary",
-                                 "label": I18n.tr("Primary")
-                             }), ({
-                                      "value": "inversePrimary",
-                                      "label": I18n.tr("Inverse")
-                                  }), ({
-                                           "value": "custom",
-                                           "label": I18n.tr("Custom")
-                                       })]
+                                "value": "primary",
+                                "label": I18n.tr("Primary")
+                            }), ({
+                                "value": "inversePrimary",
+                                "label": I18n.tr("Inverse")
+                            }), ({
+                                "value": "custom",
+                                "label": I18n.tr("Custom")
+                            })]
                     currentValue: root.selectedDigitData().colorRole
                     buttonMinWidth: 64
                     onValueSelected: value => {
                         const role = String(value);
-                        const color = role === "custom" ? root.selectedDigitCustomColor()
-                                                          || root.selectedDigitThemeColor() :
-                                                          root.selectedDigitCustomColor();
-                        PersonalizationConfig.setHorizontalClockDigitColor(root.selectedDigit, role, color,
-                                                                           true);
+                        const color = role === "custom" ? root.selectedDigitCustomColor() || root.selectedDigitThemeColor() : root.selectedDigitCustomColor();
+                        PersonalizationConfig.setHorizontalClockDigitColor(root.selectedDigit, role, color, true);
                     }
                 }
             }
@@ -284,8 +279,7 @@ StyledFlickable {
                     if (activeFocus)
                         root.customColorDraft = text;
                 }
-                onEditingFinished: PersonalizationConfig.setHorizontalClockDigitColor(root.selectedDigit,
-                                                                                      "custom", text, true)
+                onEditingFinished: PersonalizationConfig.setHorizontalClockDigitColor(root.selectedDigit, "custom", text, true)
             }
 
             Text {
@@ -293,7 +287,7 @@ StyledFlickable {
                 text: I18n.tr("Position: %1").arg(root.selectedDigit.toUpperCase())
                 color: Appearance.colors.colOnSecondaryContainer
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: Appearance.scaledFont(14)
                 font.weight: Font.Medium
             }
 
@@ -306,12 +300,10 @@ StyledFlickable {
                 stepSize: 1
                 value: root.selectedDigitData().x
                 onMoved: value => {
-                    return PersonalizationConfig.setHorizontalClockDigitValue(root.selectedDigit, "x", value,
-                                                                              false);
+                    return PersonalizationConfig.setHorizontalClockDigitValue(root.selectedDigit, "x", value, false);
                 }
                 onCommitted: value => {
-                    return PersonalizationConfig.setHorizontalClockDigitValue(root.selectedDigit, "x", value,
-                                                                              true);
+                    return PersonalizationConfig.setHorizontalClockDigitValue(root.selectedDigit, "x", value, true);
                 }
             }
 
@@ -324,12 +316,10 @@ StyledFlickable {
                 stepSize: 1
                 value: root.selectedDigitData().y
                 onMoved: value => {
-                    return PersonalizationConfig.setHorizontalClockDigitValue(root.selectedDigit, "y", value,
-                                                                              false);
+                    return PersonalizationConfig.setHorizontalClockDigitValue(root.selectedDigit, "y", value, false);
                 }
                 onCommitted: value => {
-                    return PersonalizationConfig.setHorizontalClockDigitValue(root.selectedDigit, "y", value,
-                                                                              true);
+                    return PersonalizationConfig.setHorizontalClockDigitValue(root.selectedDigit, "y", value, true);
                 }
             }
 
@@ -343,12 +333,10 @@ StyledFlickable {
                 value: root.selectedDigitData().rotation
                 suffix: "°"
                 onMoved: value => {
-                    return PersonalizationConfig.setHorizontalClockDigitValue(root.selectedDigit, "rotation",
-                                                                              value, false);
+                    return PersonalizationConfig.setHorizontalClockDigitValue(root.selectedDigit, "rotation", value, false);
                 }
                 onCommitted: value => {
-                    return PersonalizationConfig.setHorizontalClockDigitValue(root.selectedDigit, "rotation",
-                                                                              value, true);
+                    return PersonalizationConfig.setHorizontalClockDigitValue(root.selectedDigit, "rotation", value, true);
                 }
             }
         }

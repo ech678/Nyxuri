@@ -220,7 +220,9 @@ Rectangle {
 
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: 160
+                        duration: Appearance.motionDuration(160)
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Appearance.animationCurves.standard
                     }
                 }
 
@@ -287,7 +289,7 @@ Rectangle {
                     text: root.distroLogo()
                     color: Appearance.colors.colPrimary
                     font.family: Fonts.numeric
-                    font.pixelSize: 18
+                    font.pixelSize: Appearance.scaledFont(18)
                 }
 
                 Text {
@@ -331,9 +333,7 @@ Rectangle {
             focusStateLayerOpacity: 0.5
             pressedStateLayerOpacity: 0.7
             rippleColor: Appearance.colors.colPrimary
-            Accessible.name: root.networkStatusDetail.length > 0 ? root.networkStatusText + ", "
-                                                                   + root.networkStatusDetail :
-                                                                   root.networkStatusText
+            Accessible.name: root.networkStatusDetail.length > 0 ? root.networkStatusText + ", " + root.networkStatusDetail : root.networkStatusText
             onClicked: root.networkActivated()
 
             contentItem: ButtonLabel {

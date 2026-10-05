@@ -29,13 +29,9 @@ ColumnLayout {
     readonly property string imageUrl: {
         if (waiting || failure !== "")
             return "";
-        const candidate = kind === "image" ? String(detail.previewUrl || "") : singleFile
-                                             && singleFile.readable && singleFile.local ? String(
-                                                                                              singleFile.previewUrl
-                                                                                              || "") : "";
+        const candidate = kind === "image" ? String(detail.previewUrl || "") : singleFile && singleFile.readable && singleFile.local ? String(singleFile.previewUrl || "") : "";
         const mime = kind === "image" ? detail.mimeType : singleFile ? singleFile.mimeType : "";
-        return ["image/png", "image/jpeg", "image/gif", "image/webp"].indexOf(mime) >= 0 && candidate.indexOf(
-                    "file:///") === 0 ? candidate : "";
+        return ["image/png", "image/jpeg", "image/gif", "image/webp"].indexOf(mime) >= 0 && candidate.indexOf("file:///") === 0 ? candidate : "";
     }
     readonly property bool imageFailed: imagePreview.item ? imagePreview.item.loadFailed : false
     signal restoreRequested
@@ -49,8 +45,7 @@ ColumnLayout {
         requestedId = "";
         failure = "";
         const cached = ClipboardService.detail(entryId);
-        waiting = entryId !== "" && (!cached || cached.payloadKind === "file" || cached.payloadKind
-                                     === "file-list");
+        waiting = entryId !== "" && (!cached || cached.payloadKind === "file" || cached.payloadKind === "file-list");
         if (waiting)
             selectionDelay.restart();
     }
@@ -120,9 +115,7 @@ ColumnLayout {
             parts.push(singleFile.parent || singleFile.uri);
             if (typeof singleFile.modifiedTime === "number") {
                 const date = new Date(singleFile.modifiedTime * 1000);
-                parts.push(I18n.tr("Modified: %1 %2").arg(date.toLocaleDateString(Qt.locale(),
-                                                                                  Locale.ShortFormat)).arg(
-                               UiPreferences.shortTime(date)));
+                parts.push(I18n.tr("Modified: %1 %2").arg(date.toLocaleDateString(Qt.locale(), Locale.ShortFormat)).arg(UiPreferences.shortTime(date)));
             }
         } else if (kind === "image" || kind === "binary") {
             parts.push(detail.mimeType || I18n.tr("Binary clipboard content"));
@@ -144,13 +137,8 @@ ColumnLayout {
         Text {
             anchors.centerIn: parent
             width: Math.max(0, parent.width - 20)
-            visible: root.entryId === "" || root.waiting || root.failure !== "" || !root.detail || (root.kind
-                                                                                                    === "binary")
-                     || (root.kind === "image" && root.imageUrl === "")
-            text: root.entryId === "" ? I18n.tr("Select an entry") : root.waiting ? I18n.tr("Reading…") :
-                                                                                    root.failure !== ""
-                                                                                    ? root.failure : I18n.tr(
-                                                                                          "Preview unavailable")
+            visible: root.entryId === "" || root.waiting || root.failure !== "" || !root.detail || (root.kind === "binary") || (root.kind === "image" && root.imageUrl === "")
+            text: root.entryId === "" ? I18n.tr("Select an entry") : root.waiting ? I18n.tr("Reading…") : root.failure !== "" ? root.failure : I18n.tr("Preview unavailable")
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
             horizontalAlignment: Text.AlignHCenter
@@ -177,9 +165,7 @@ ColumnLayout {
                     id: body
                     width: Math.max(0, textScroll.width - 16)
                     height: Math.max(textScroll.height, contentHeight)
-                    text: root.detail ? String(root.detail.searchText !== undefined ? root.detail.searchText :
-                                                                                      root.detail.preview
-                                                                                      || "") : ""
+                    text: root.detail ? String(root.detail.searchText !== undefined ? root.detail.searchText : root.detail.preview || "") : ""
                     textFormat: TextEdit.PlainText
                     readOnly: true
                     selectByMouse: true
@@ -188,7 +174,7 @@ ColumnLayout {
                     selectedTextColor: Appearance.m3colors.m3onPrimary
                     selectionColor: Appearance.m3colors.m3primary
                     font.family: Fonts.ui
-                    font.pixelSize: 14
+                    font.pixelSize: Appearance.scaledFont(14)
                     // Text selection/copy stays local. Navigation and mode keys
                     // propagate to the existing Spotlight focus router.
                     Keys.priority: Keys.BeforeItem
@@ -233,9 +219,7 @@ ColumnLayout {
                             loadedSource = source.toString();
                     }
                     // Quantize and settle the decode budget after resize animations.
-                    property int decodeSize: Math.min(2048, Math.max(256, Math.ceil(Math.max(width, height)
-                                                                                    * Screen.devicePixelRatio
-                                                                                    / 256) * 256))
+                    property int decodeSize: Math.min(2048, Math.max(256, Math.ceil(Math.max(width, height) * Screen.devicePixelRatio / 256) * 256))
                     property int settledSize: 1024
                     onDecodeSizeChanged: resizeDelay.restart()
                     Component.onCompleted: resizeDelay.restart()
@@ -262,17 +246,14 @@ ColumnLayout {
             anchors.centerIn: parent
             width: Math.max(0, Math.min(parent.width - 24, 360))
             spacing: 12
-            visible: root.singleFile !== null && (root.imageUrl === "" || root.imageFailed) && !root.waiting
-                     && root.failure === ""
+            visible: root.singleFile !== null && (root.imageUrl === "" || root.imageFailed) && !root.waiting && root.failure === ""
 
             FileThemeIcon {
                 resolvedSources: ThemeService.resolveFileIcons(candidates)
                 active: parent.visible
                 category: root.singleFile ? String(root.singleFile.category || "") : ""
                 anchors.horizontalCenter: parent.horizontalCenter
-                iconSize: Math.max(0, Math.min(112, previewArea.height - fileNameLabel.height - (
-                                                   imageErrorLabel.visible ? imageErrorLabel.height : 0)
-                                               - 24))
+                iconSize: Math.max(0, Math.min(112, previewArea.height - fileNameLabel.height - (imageErrorLabel.visible ? imageErrorLabel.height : 0) - 24))
                 width: iconSize
                 height: iconSize
                 entryKey: root.entryId
@@ -292,7 +273,7 @@ ColumnLayout {
                 horizontalAlignment: Text.AlignHCenter
                 color: Appearance.colors.colOnSurface
                 font.family: Fonts.ui
-                font.pixelSize: 16
+                font.pixelSize: Appearance.scaledFont(16)
                 ToolTip.visible: truncated && fileNameHover.hovered
                 ToolTip.text: text
                 HoverHandler {
@@ -355,18 +336,13 @@ ColumnLayout {
     }
     Text {
         Layout.fillWidth: true
-        visible: root.kind === "text" && !root.waiting && root.failure === "" && (!root.detail || root.detail.textTruncated
-                                                                                  !== false)
-        text: root.detail && root.detail.textTruncated === true ? I18n.tr(
-                                                                      "Showing the first %1 of %2 characters. Restoring copies the full content.").arg(
-                                                                      root.detail.detailTextLimit).arg(
-                                                                      root.detail.characterCount) : I18n.tr(
-                                                                      "Preview")
+        visible: root.kind === "text" && !root.waiting && root.failure === "" && (!root.detail || root.detail.textTruncated !== false)
+        text: root.detail && root.detail.textTruncated === true ? I18n.tr("Showing the first %1 of %2 characters. Restoring copies the full content.").arg(root.detail.detailTextLimit).arg(root.detail.characterCount) : I18n.tr("Preview")
         wrapMode: Text.Wrap
         textFormat: Text.PlainText
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.ui
-        font.pixelSize: 12
+        font.pixelSize: Appearance.scaledFont(12)
     }
     Text {
         Layout.fillWidth: true
@@ -378,7 +354,7 @@ ColumnLayout {
         textFormat: Text.PlainText
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.ui
-        font.pixelSize: 12
+        font.pixelSize: Appearance.scaledFont(12)
     }
     RowLayout {
         Layout.fillWidth: true
@@ -402,9 +378,7 @@ ColumnLayout {
         ActionButton {
             text: I18n.tr("Restore to clipboard")
             iconName: "content_paste"
-            enabled: root.entryId !== "" && root.canRestore && !root.actionRunning && (!root.detail
-                                                                                       || root.detail.restorable
-                                                                                       !== false)
+            enabled: root.entryId !== "" && root.canRestore && !root.actionRunning && (!root.detail || root.detail.restorable !== false)
             onClicked: root.restoreRequested()
         }
     }

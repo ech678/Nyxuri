@@ -40,11 +40,7 @@ Item {
     component WorkspaceNumber: Item {
         id: workspace
         required property var model
-        readonly property bool belongsToScreen: !root.screen || model.output === root.screen.name || ((
-                                                                                                          NiriService.outputs.count
-                                                                                                          || 0) <= 1
-                                                                                                      && model.output
-                                                                                                      === "")
+        readonly property bool belongsToScreen: !root.screen || model.output === root.screen.name || ((NiriService.outputs.count || 0) <= 1 && model.output === "")
         visible: belongsToScreen
         width: visible ? 28 : 0
         height: visible ? 32 : 0
@@ -55,10 +51,17 @@ Item {
         Text {
             anchors.centerIn: parent
             text: workspace.model.index
-            color: workspace.model.isActive || pointer.containsMouse ? Appearance.colors.colPrimary :
-                                                                       Appearance.colors.colOnSurfaceVariant
+            color: workspace.model.isActive || pointer.containsMouse ? Appearance.colors.colPrimary : Appearance.colors.colOnSurfaceVariant
+
+            Behavior on color {
+                ColorAnimation {
+                    duration: Appearance.animation.expressiveFastEffects.duration
+                    easing.type: Appearance.animation.expressiveFastEffects.type
+                    easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
+                }
+            }
             font.family: Fonts.numeric
-            font.pixelSize: 13
+            font.pixelSize: Appearance.scaledFont(13)
             font.weight: workspace.model.isActive ? Font.Bold : Font.Normal
         }
 

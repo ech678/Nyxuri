@@ -1,4 +1,5 @@
 import QtQuick
+import qs.shared.theme
 import QtQuick.Shapes
 
 Item {
@@ -15,21 +16,21 @@ Item {
     property real y2: 0
     property real startRotation: 0
     property real endRotation: 0
-    property int duration: 2000
+    property int duration: Appearance.motionLoopDuration(2000)
     property real progress: 0
     property bool animationRunning: true
 
     signal finished(int leafId)
 
     readonly property real positionX: {
-        const t = progress
-        const inverse = 1 - t
-        return inverse * inverse * x0 + 2 * inverse * t * x1 + t * t * x2
+        const t = progress;
+        const inverse = 1 - t;
+        return inverse * inverse * x0 + 2 * inverse * t * x1 + t * t * x2;
     }
     readonly property real positionY: {
-        const t = progress
-        const inverse = 1 - t
-        return inverse * inverse * y0 + 2 * inverse * t * y1 + t * t * y2
+        const t = progress;
+        const inverse = 1 - t;
+        return inverse * inverse * y0 + 2 * inverse * t * y1 + t * t * y2;
     }
 
     width: 46

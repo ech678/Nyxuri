@@ -22,13 +22,10 @@ Item {
     property color secondaryColor: Appearance.colors.colSecondary
     property color outlineColor: Appearance.colors.colOutlineVariant
     property color labelColor: Appearance.colors.colOnSurfaceVariant
-    readonly property bool pureBarChart: metric === "uv" || metric === "sunshine" || metric === "cloud"
-                                         || metric === "precipitation"
+    readonly property bool pureBarChart: metric === "uv" || metric === "sunshine" || metric === "cloud" || metric === "precipitation"
     readonly property bool doublePrecipitation: daily && metric === "precipitation"
     readonly property bool hasHistogram: metric === "humidity" || metric === "feels"
-    readonly property bool showHourlyIcon: !daily && (metric === "precipitation" || metric === "feels"
-                                                      || metric === "humidity" || metric === "pressure"
-                                                      || metric === "visibility")
+    readonly property bool showHourlyIcon: !daily && (metric === "precipitation" || metric === "feels" || metric === "humidity" || metric === "pressure" || metric === "visibility")
     readonly property bool showDailyIcons: daily && (metric === "precipitation" || metric === "feels")
     readonly property real chartTop: daily ? showDailyIcons ? 116 : 72 : showHourlyIcon ? 76 : 48
     readonly property real chartBottom: daily ? showDailyIcons ? height - 94 : height - 40 : height - 32
@@ -37,8 +34,7 @@ Item {
     readonly property bool keyLineVisible: metric === "pressure" || metric === "uv"
     readonly property real keyLineValue: metric === "pressure" ? 1013.25 : 6
     readonly property string keyLineValueText: metric === "pressure" ? "1,013" : "6"
-    readonly property string keyLineLabel: metric === "pressure" ? I18n.tr("Standard") : I18n.tr(
-                                                                       "Alert level")
+    readonly property string keyLineLabel: metric === "pressure" ? I18n.tr("Standard") : I18n.tr("Alert level")
 
     function validNumber(value) {
         return value !== undefined && value !== null && !isNaN(value);
@@ -62,14 +58,12 @@ Item {
         if (!epoch)
             return "--";
 
-        const week = [I18n.tr("Sun"), I18n.tr("Mon"), I18n.tr("Tue"), I18n.tr("Wed"), I18n.tr("Thu"), I18n.tr(
-                          "Fri"), I18n.tr("Sat")];
+        const week = [I18n.tr("Sun"), I18n.tr("Mon"), I18n.tr("Tue"), I18n.tr("Wed"), I18n.tr("Thu"), I18n.tr("Fri"), I18n.tr("Sat")];
         return week[new Date(epoch * 1000).getDay()];
     }
 
     function timeLabel(index, epoch) {
-        return daily ? root.dayLabel(index, epoch) : epoch ? UiPreferences.hourTime(new Date(epoch * 1000)) :
-                                                             "--";
+        return daily ? root.dayLabel(index, epoch) : epoch ? UiPreferences.hourTime(new Date(epoch * 1000)) : "--";
     }
 
     function rounded(value, digits) {
@@ -78,10 +72,7 @@ Item {
 
         const factor = Math.pow(10, digits);
         const roundedValue = Math.round(value * factor) / factor;
-        return digits > 0 && Math.abs(roundedValue - Math.round(roundedValue)) >= 0.05 ? roundedValue.toFixed(
-                                                                                             digits) : Math.round(
-                                                                                             roundedValue).toString(
-                                                                                             );
+        return digits > 0 && Math.abs(roundedValue - Math.round(roundedValue)) >= 0.05 ? roundedValue.toFixed(digits) : Math.round(roundedValue).toString();
     }
 
     function formatTemperature(value) {
@@ -142,24 +133,17 @@ Item {
             return [root.numberAt(item, daily ? "uvIndexMax" : "uvIndex", NaN), NaN, NaN];
 
         if (metric === "precipitation")
-            return daily ? [root.numberAt(day, "precipitationMm", NaN), root.numberAt(night, "precipitationMm",
-                                                                                      NaN), NaN] :
-                           [root.numberAt(item, "precipitationMm", NaN), NaN, NaN];
+            return daily ? [root.numberAt(day, "precipitationMm", NaN), root.numberAt(night, "precipitationMm", NaN), NaN] : [root.numberAt(item, "precipitationMm", NaN), NaN, NaN];
 
         if (metric === "sunshine")
             return [root.numberAt(item, "sunshineDurationS", NaN) / 3600, NaN, NaN];
 
         if (metric === "feels") {
             if (daily) {
-                const probability = Math.max(root.numberAt(day, "precipitationProbability", 0), root.numberAt(night,
-                                                                                                              "precipitationProbability",
-                                                                                                              0));
-                return [root.numberAt(item, "apparentTemperatureMaxC", NaN), root.numberAt(item,
-                                                                                           "apparentTemperatureMinC",
-                                                                                           NaN), probability];
+                const probability = Math.max(root.numberAt(day, "precipitationProbability", 0), root.numberAt(night, "precipitationProbability", 0));
+                return [root.numberAt(item, "apparentTemperatureMaxC", NaN), root.numberAt(item, "apparentTemperatureMinC", NaN), probability];
             }
-            return [root.numberAt(item, "feelsLikeC", NaN), NaN, root.numberAt(item, "precipitationProbability",
-                                                                               NaN)];
+            return [root.numberAt(item, "feelsLikeC", NaN), NaN, root.numberAt(item, "precipitationProbability", NaN)];
         }
         if (metric === "humidity")
             return [root.numberAt(item, "dewPointC", NaN), NaN, root.numberAt(item, "relativeHumidity", NaN)];
@@ -196,9 +180,7 @@ Item {
         let pMax = -Infinity;
         let sMin = Infinity;
         let sMax = -Infinity;
-        const modelCount = sourceModel ? (typeof sourceModel.count === "function" ? sourceModel.count() :
-                                                                                    Number(sourceModel.count
-                                                                                           || 0)) : 0;
+        const modelCount = sourceModel ? (typeof sourceModel.count === "function" ? sourceModel.count() : Number(sourceModel.count || 0)) : 0;
         const count = Math.min(maxItems, modelCount);
         for (let i = 0; i < count; ++i) {
             const source = sourceModel.get(i) || ({});
@@ -214,28 +196,25 @@ Item {
                 sMax = Math.max(sMax, values[1]);
             }
             list.push({
-                          "time": source.time || 0,
-                          "timeText": root.timeLabel(i, source.time || 0),
-                          "dateText": daily && source.time ? Qt.formatDateTime(new Date(source.time * 1000),
-                                                                               "MM/dd") : "",
-                          "primary": values[0],
-                          "secondary": values[1],
-                          "histogram": values[2],
-                          "primaryText": root.formatValue(values[0]),
-                          "secondaryText": root.formatValue(values[1]),
-                          "histogramText": root.validNumber(values[2]) ? root.rounded(values[2], 0) + "%" : "--",
-
-
-                          "barColor": root.levelColor(values[0], metric),
-                          "secondaryBarColor": root.levelColor(values[1], metric),
-                          "weatherCode": root.numberAt(source, "weatherCode", -1),
-                          "iconName": source.iconName || "",
-                          "isDaylight": source.isDaylight === undefined ? true : !!source.isDaylight,
-                          "dayWeatherCode": root.numberAt(dayPart, "weatherCode", -1),
-                          "dayIconName": dayPart.iconName || "",
-                          "nightWeatherCode": root.numberAt(nightPart, "weatherCode", -1),
-                          "nightIconName": nightPart.iconName || ""
-                      });
+                "time": source.time || 0,
+                "timeText": root.timeLabel(i, source.time || 0),
+                "dateText": daily && source.time ? Qt.formatDateTime(new Date(source.time * 1000), "MM/dd") : "",
+                "primary": values[0],
+                "secondary": values[1],
+                "histogram": values[2],
+                "primaryText": root.formatValue(values[0]),
+                "secondaryText": root.formatValue(values[1]),
+                "histogramText": root.validNumber(values[2]) ? root.rounded(values[2], 0) + "%" : "--",
+                "barColor": root.levelColor(values[0], metric),
+                "secondaryBarColor": root.levelColor(values[1], metric),
+                "weatherCode": root.numberAt(source, "weatherCode", -1),
+                "iconName": source.iconName || "",
+                "isDaylight": source.isDaylight === undefined ? true : !!source.isDaylight,
+                "dayWeatherCode": root.numberAt(dayPart, "weatherCode", -1),
+                "dayIconName": dayPart.iconName || "",
+                "nightWeatherCode": root.numberAt(nightPart, "weatherCode", -1),
+                "nightIconName": nightPart.iconName || ""
+            });
         }
         if (metric === "pressure") {
             pMin = Math.min(pMin, root.keyLineValue);
@@ -280,8 +259,7 @@ Item {
     }
 
     function lineLabelY(value, secondary) {
-        const y = root.yFor(value, secondary ? secondaryMin : primaryMin, secondary ? secondaryMax :
-                                                                                      primaryMax);
+        const y = root.yFor(value, secondary ? secondaryMin : primaryMin, secondary ? secondaryMax : primaryMax);
         if (metric === "pressure" || metric === "visibility" || metric === "humidity")
             return Math.min(chartBottom - 17, y + 5);
 
@@ -311,7 +289,6 @@ Item {
     onSecondaryColorChanged: chartCanvas.requestPaint()
     onOutlineColorChanged: chartCanvas.requestPaint()
     Component.onCompleted: rebuild()
-
 
     Connections {
         function onModelReset() {
@@ -394,9 +371,9 @@ Item {
                         const value = root.items[i][key];
                         if (root.validNumber(value))
                             points.push({
-                                            "x": pointX(i),
-                                            "y": root.yFor(value, minimum, maximum)
-                                        });
+                                "x": pointX(i),
+                                "y": root.yFor(value, minimum, maximum)
+                            });
                     }
                     if (points.length === 0)
                         return;
@@ -459,22 +436,18 @@ Item {
                             const nightValue = root.items[d].secondary;
                             if (root.validNumber(dayValue) && dayValue > 0) {
                                 const dayHeight = dayValue / Math.max(1, root.primaryMax) * upperExtent;
-                                drawRoundedBar(ctx, pointX(d), upperBaseline - dayHeight, upperBaseline,
-                                               barWidth, root.items[d].barColor, 1);
+                                drawRoundedBar(ctx, pointX(d), upperBaseline - dayHeight, upperBaseline, barWidth, root.items[d].barColor, 1);
                             }
                             if (root.validNumber(nightValue) && nightValue > 0) {
                                 const nightHeight = nightValue / Math.max(1, root.secondaryMax) * lowerExtent;
-                                drawRoundedBar(ctx, pointX(d), lowerBaseline, lowerBaseline + nightHeight,
-                                               barWidth, root.items[d].secondaryBarColor, 0.5);
+                                drawRoundedBar(ctx, pointX(d), lowerBaseline, lowerBaseline + nightHeight, barWidth, root.items[d].secondaryBarColor, 0.5);
                             }
                         }
                     } else if (root.pureBarChart) {
                         for (let b = 0; b < root.items.length; ++b) {
                             const barValue = root.items[b].primary;
                             if (root.validNumber(barValue))
-                                drawRoundedBar(ctx, pointX(b), root.yFor(barValue, root.primaryMin,
-                                                                         root.primaryMax), root.chartBottom,
-                                               barWidth, root.items[b].barColor, 1);
+                                drawRoundedBar(ctx, pointX(b), root.yFor(barValue, root.primaryMin, root.primaryMax), root.chartBottom, barWidth, root.items[b].barColor, 1);
                         }
                     } else {
                         if (root.hasHistogram) {
@@ -483,20 +456,15 @@ Item {
                                 if (!root.validNumber(histogramValue))
                                     continue;
 
-                                const histogramTop = root.chartBottom - Math.max(3, histogramValue / 100 * (
-                                                                                     root.chartBottom
-                                                                                     - root.chartTop) * 0.72);
-                                drawRoundedBar(ctx, pointX(h), histogramTop, root.chartBottom, barWidth,
-                                               "#64b5f6", 0.5);
+                                const histogramTop = root.chartBottom - Math.max(3, histogramValue / 100 * (root.chartBottom - root.chartTop) * 0.72);
+                                drawRoundedBar(ctx, pointX(h), histogramTop, root.chartBottom, barWidth, "#64b5f6", 0.5);
                             }
                         }
-                        drawAreaLine(ctx, "primary", root.primaryMin, root.primaryMax, root.primaryColor,
-                                     0.23);
+                        drawAreaLine(ctx, "primary", root.primaryMin, root.primaryMax, root.primaryColor, 0.23);
                         if (root.items.some(function (item) {
                             return root.validNumber(item.secondary);
                         }))
-                            drawAreaLine(ctx, "secondary", root.secondaryMin, root.secondaryMax,
-                                         root.secondaryColor, 0.12);
+                            drawAreaLine(ctx, "secondary", root.secondaryMin, root.secondaryMax, root.secondaryColor, 0.12);
                     }
                 }
             }
@@ -521,7 +489,7 @@ Item {
                         text: metricColumn.modelData.timeText
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: root.daily ? Fonts.ui : Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: Appearance.scaledFont(12)
                         font.bold: root.daily && metricColumn.index === 1
                         horizontalAlignment: Text.AlignHCenter
                     }
@@ -533,7 +501,7 @@ Item {
                         text: metricColumn.modelData.dateText
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.numeric
-                        font.pixelSize: 11
+                        font.pixelSize: Appearance.scaledFont(11)
                         horizontalAlignment: Text.AlignHCenter
                     }
 
@@ -583,7 +551,7 @@ Item {
                         text: metricColumn.modelData.primaryText
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: Appearance.scaledFont(12)
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                     }
@@ -591,13 +559,11 @@ Item {
                     Text {
                         visible: !root.pureBarChart && root.validNumber(metricColumn.modelData.secondary)
                         width: parent.width
-                        y: Math.min(root.chartBottom - 15, root.yFor(metricColumn.modelData.secondary,
-                                                                     root.secondaryMin, root.secondaryMax)
-                                    + 5)
+                        y: Math.min(root.chartBottom - 15, root.yFor(metricColumn.modelData.secondary, root.secondaryMin, root.secondaryMax) + 5)
                         text: metricColumn.modelData.secondaryText
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: Appearance.scaledFont(12)
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                     }
@@ -609,34 +575,32 @@ Item {
                         text: metricColumn.modelData.primaryText
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: Appearance.scaledFont(12)
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                         elide: Text.ElideRight
                     }
 
                     Text {
-                        visible: root.doublePrecipitation && root.validNumber(metricColumn.modelData.primary)
-                                 && metricColumn.modelData.primary > 0
+                        visible: root.doublePrecipitation && root.validNumber(metricColumn.modelData.primary) && metricColumn.modelData.primary > 0
                         width: parent.width
                         y: root.chartTop + 2
                         text: metricColumn.modelData.primaryText
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: Appearance.scaledFont(12)
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                     }
 
                     Text {
-                        visible: root.doublePrecipitation && root.validNumber(
-                                     metricColumn.modelData.secondary) && metricColumn.modelData.secondary > 0
+                        visible: root.doublePrecipitation && root.validNumber(metricColumn.modelData.secondary) && metricColumn.modelData.secondary > 0
                         width: parent.width
                         y: root.chartBottom - 18
                         text: metricColumn.modelData.secondaryText
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: Appearance.scaledFont(12)
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                     }
@@ -648,7 +612,7 @@ Item {
                         text: metricColumn.modelData.histogramText
                         color: "#64b5f6"
                         font.family: Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: Appearance.scaledFont(12)
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                     }
@@ -680,7 +644,7 @@ Item {
             text: root.keyLineValueText
             color: root.labelColor
             font.family: Fonts.numeric
-            font.pixelSize: 11
+            font.pixelSize: Appearance.scaledFont(11)
         }
 
         Text {
@@ -691,7 +655,7 @@ Item {
             text: root.keyLineLabel
             color: root.labelColor
             font.family: Fonts.ui
-            font.pixelSize: 11
+            font.pixelSize: Appearance.scaledFont(11)
             font.bold: true
         }
     }

@@ -14,17 +14,13 @@ Item {
     property string error: ""
     property real layoutWidth: width
     readonly property var capacities: ({
-                                           apps: Math.max(2, Math.floor(layoutWidth
-                                                                        / style.searchAppCellWidth)),
-                                           wallpapers: Math.max(2, Math.floor(layoutWidth
-                                                                              / style.searchWallpaperCellWidth))
-                                       })
+            apps: Math.max(2, Math.floor(layoutWidth / style.searchAppCellWidth)),
+            wallpapers: Math.max(2, Math.floor(layoutWidth / style.searchWallpaperCellWidth))
+        })
     readonly property var rows: LocalSearch.visualRows(results, capacities)
     readonly property int currentRow: LocalSearch.visualRowIndex(rows, selectedIndex)
-    readonly property bool horizontalSelection: currentRow >= 0 && LocalSearch.horizontalGroup(
-                                                    rows[currentRow].kind)
-    readonly property real rowsHeight: rows.reduce((height, row) => height + rowHeight(row), 0) + (error ? 32 :
-                                                                                                           0)
+    readonly property bool horizontalSelection: currentRow >= 0 && LocalSearch.horizontalGroup(rows[currentRow].kind)
+    readonly property real rowsHeight: rows.reduce((height, row) => height + rowHeight(row), 0) + (error ? 32 : 0)
     signal selectionRequested(int index)
     signal activationRequested(string id)
 
@@ -36,8 +32,7 @@ Item {
         return style.searchListRowHeight;
     }
     function rowHeight(row) {
-        return contentHeight(row) + (row.groupTitle ? style.searchHeaderHeight : 0) + (row.separator ? 12 :
-                                                                                                       0);
+        return contentHeight(row) + (row.groupTitle ? style.searchHeaderHeight : 0) + (row.separator ? 12 : 0);
     }
     function navigationIndex(direction) {
         return LocalSearch.navigationIndex(rows, selectedIndex, direction);
@@ -52,7 +47,7 @@ Item {
         textFormat: Text.PlainText
         color: Appearance.colors.colError
         font.family: Fonts.ui
-        font.pixelSize: 13
+        font.pixelSize: Appearance.scaledFont(13)
         elide: Text.ElideRight
         verticalAlignment: Text.AlignVCenter
     }
@@ -91,7 +86,7 @@ Item {
                 textFormat: Text.PlainText
                 color: Appearance.colors.colOnSurfaceVariant
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: Appearance.scaledFont(12)
                 verticalAlignment: Text.AlignVCenter
                 elide: Text.ElideRight
             }
@@ -117,8 +112,7 @@ Item {
                     model: row.modelData.cells
                     SpotlightSearchTile {
                         required property var modelData
-                        width: row.width / (LocalSearch.horizontalGroup(row.modelData.kind)
-                                            ? root.capacities[row.modelData.kind] : 1)
+                        width: row.width / (LocalSearch.horizontalGroup(row.modelData.kind) ? root.capacities[row.modelData.kind] : 1)
                         height: root.contentHeight(row.modelData)
                         style: root.style
                         result: modelData.result

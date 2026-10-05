@@ -189,7 +189,7 @@ Rectangle {
             text: root.formattedDate(root.currentDate) + I18n.tr("   •   %1 tasks").arg(remainingTasks)
             color: Appearance.colors.colOnLayer1
             font.family: Fonts.ui
-            font.pixelSize: 15
+            font.pixelSize: Appearance.scaledFont(15)
             elide: Text.ElideRight
         }
     }
@@ -293,15 +293,13 @@ Rectangle {
                                     text: tabButton.modelData.icon
                                     iconSize: 24
                                     fill: tabButton.toggled ? 1 : 0
-                                    color: tabButton.toggled ? Appearance.colors.colOnSecondaryContainer :
-                                                               Appearance.colors.colOnLayer1
+                                    color: tabButton.toggled ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnLayer1
 
                                     Behavior on color {
                                         ColorAnimation {
                                             duration: Appearance.animation.expressiveDefaultEffects.duration
                                             easing.type: Appearance.animation.expressiveDefaultEffects.type
-                                            easing.bezierCurve:
-                                                Appearance.animation.expressiveDefaultEffects.bezierCurve
+                                            easing.bezierCurve: Appearance.animation.expressiveDefaultEffects.bezierCurve
                                         }
                                     }
                                 }
@@ -311,10 +309,9 @@ Rectangle {
                                     anchors.topMargin: 1
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     text: tabButton.modelData.name
-                                    color: tabButton.toggled ? Appearance.colors.colOnSecondaryContainer :
-                                                               Appearance.colors.colOnLayer1
+                                    color: tabButton.toggled ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnLayer1
                                     font.family: Fonts.ui
-                                    font.pixelSize: 12
+                                    font.pixelSize: Appearance.scaledFont(12)
                                 }
                             }
                         }
@@ -471,8 +468,7 @@ Rectangle {
     Component {
         id: timerComponent
         TimerWidget {
-            shortcutsEnabled: root.active && !root.collapsed && root.selectedTab === 2 && root.displayedTab
-                              === 2
+            shortcutsEnabled: root.active && !root.collapsed && root.selectedTab === 2 && root.displayedTab === 2
         }
     }
 }

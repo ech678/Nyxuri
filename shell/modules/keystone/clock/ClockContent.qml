@@ -13,18 +13,16 @@ Item {
     property string dateStr: ""
     property var verticalDateParts: []
     readonly property string clockFamily: Fonts.systemClock
-    readonly property var horizontalClockAxes: root.safeHorizontalClockAxes(
-                                                   PersonalizationConfig.horizontalClockAxes)
+    readonly property var horizontalClockAxes: root.safeHorizontalClockAxes(PersonalizationConfig.horizontalClockAxes)
     readonly property var verticalClockAxes: Fonts.bundledFamilyAvailable ? ({
-                                                                                 "wght": 900,
-                                                                                 "wdth": 85,
-                                                                                 "opsz": 24,
-                                                                                 "GRAD": 75,
-                                                                                 "ROND": 25,
-                                                                                 "slnt": 0
-                                                                             }) : ({})
-    readonly property real horizontalFontSize: root.boundedNumber(
-                                                   PersonalizationConfig.horizontalClockFontSize, 22, 16, 28)
+            "wght": 900,
+            "wdth": 85,
+            "opsz": 24,
+            "GRAD": 75,
+            "ROND": 25,
+            "slnt": 0
+        }) : ({})
+    readonly property real horizontalFontSize: root.boundedNumber(PersonalizationConfig.horizontalClockFontSize, 22, 16, 28)
     // 【核心变化1】把时间拆分成 4 个独立的整数型变量，绑定动画目标值
     property int h0: 0
     property int h1: 0
@@ -68,22 +66,17 @@ Item {
         const configured = PersonalizationConfig.horizontalClockDigits;
         const fallback = defaults[id] || {};
         const candidate = configured && configured[id] ? configured[id] : fallback;
-        if (candidate.colorRole === "custom" && /^#([0-9a-f]{6}|[0-9a-f]{8})$/i.test(String(
-                                                                                         candidate.customColor
-                                                                                         || "")))
+        if (candidate.colorRole === "custom" && /^#([0-9a-f]{6}|[0-9a-f]{8})$/i.test(String(candidate.customColor || "")))
             return candidate.customColor;
 
-        return candidate.colorRole === "inversePrimary" ? Appearance.colors.colInversePrimary :
-                                                          Appearance.colors.colPrimary;
+        return candidate.colorRole === "inversePrimary" ? Appearance.colors.colInversePrimary : Appearance.colors.colPrimary;
     }
 
     function formatDate(date) {
         if (DateFormat.isChinese(I18nService.language))
-            return String(date.getMonth() + 1).padStart(2, "0") + "月" + String(date.getDate()).padStart(2, "0")
-                    + "日" + DateFormat.shortWeekdays(I18nService.language)[date.getDay()];
+            return String(date.getMonth() + 1).padStart(2, "0") + "月" + String(date.getDate()).padStart(2, "0") + "日" + DateFormat.shortWeekdays(I18nService.language)[date.getDay()];
 
-        return DateFormat.compactDate(date, I18nService.language, Qt.locale(I18nService.language),
-                                      "ddd dd MMM");
+        return DateFormat.compactDate(date, I18nService.language, Qt.locale(I18nService.language), "ddd dd MMM");
     }
 
     // Side Keystone uses short horizontal rows: up to three Latin letters,
@@ -92,12 +85,10 @@ Item {
     function sideDateParts(date) {
         if (DateFormat.isChinese(I18nService.language)) {
             const weekday = DateFormat.shortWeekdays(I18nService.language)[date.getDay()];
-            return [String(date.getMonth() + 1).padStart(2, "0"), "月", String(date.getDate()).padStart(2, "0"),
-                    "日", weekday.slice(0, 1), weekday.slice(1, 2)];
+            return [String(date.getMonth() + 1).padStart(2, "0"), "月", String(date.getDate()).padStart(2, "0"), "日", weekday.slice(0, 1), weekday.slice(1, 2)];
         }
         const locale = Qt.locale(I18nService.language);
-        return [date.toLocaleDateString(locale, "ddd").slice(0, 3), String(date.getDate()).padStart(2, "0"),
-                date.toLocaleDateString(locale, "MMM").slice(0, 3)];
+        return [date.toLocaleDateString(locale, "ddd").slice(0, 3), String(date.getDate()).padStart(2, "0"), date.toLocaleDateString(locale, "MMM").slice(0, 3)];
     }
 
     Timer {
@@ -135,7 +126,7 @@ Item {
             width: root.hideDate ? 0 : implicitWidth
             color: Appearance.colors.colPrimary
             font.family: Fonts.ui
-            font.pixelSize: 13
+            font.pixelSize: Appearance.scaledFont(13)
             font.bold: true
             anchors.verticalCenter: parent.verticalCenter
         }
@@ -240,7 +231,7 @@ Item {
                     text: modelData
                     color: Appearance.colors.colPrimary
                     font.family: Fonts.ui
-                    font.pixelSize: 12
+                    font.pixelSize: Appearance.scaledFont(12)
                     font.bold: true
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
@@ -273,7 +264,7 @@ Item {
                 text: String(root.h0) + String(root.h1)
                 color: Appearance.colors.colPrimary
                 font.family: root.clockFamily
-                font.pixelSize: 20
+                font.pixelSize: Appearance.scaledFont(20)
                 font.weight: Font.Black
                 font.letterSpacing: -1.5
                 font.variableAxes: root.verticalClockAxes
@@ -310,7 +301,7 @@ Item {
                 text: String(root.m0) + String(root.m1)
                 color: Appearance.colors.colPrimary
                 font.family: root.clockFamily
-                font.pixelSize: 20
+                font.pixelSize: Appearance.scaledFont(20)
                 font.weight: Font.Black
                 font.letterSpacing: -1.5
                 font.variableAxes: root.verticalClockAxes
@@ -325,7 +316,7 @@ Item {
                 text: root.periodLead + "M"
                 color: Appearance.colors.colPrimary
                 font.family: root.clockFamily
-                font.pixelSize: 14
+                font.pixelSize: Appearance.scaledFont(14)
                 font.weight: Font.Black
                 font.letterSpacing: -2
                 font.variableAxes: root.verticalClockAxes
@@ -382,6 +373,7 @@ Item {
 
             // 弹性动画，带来带有惯性回弹的机械翻页感
             Behavior on y {
+                enabled: Appearance.animationsEnabled
                 SpringAnimation {
                     spring: 3.5
                     damping: 0.75

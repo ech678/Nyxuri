@@ -46,12 +46,11 @@ Rectangle {
 
         Text {
             Layout.fillWidth: true
-            text: root.notificationCount > 0 ? I18n.tr("%1 notifications").arg(root.notificationCount) : I18n.tr(
-                                                   "Notifications")
+            text: root.notificationCount > 0 ? I18n.tr("%1 notifications").arg(root.notificationCount) : I18n.tr("Notifications")
 
             color: Appearance.colors.colOutline
             font.family: Fonts.numeric
-            font.pixelSize: 17
+            font.pixelSize: Appearance.scaledFont(17)
             font.weight: 500
             elide: Text.ElideRight
         }
@@ -84,7 +83,7 @@ Rectangle {
                     text: I18n.tr("No notifications")
                     color: Appearance.colors.colOutlineVariant
                     font.family: Fonts.numeric
-                    font.pixelSize: 24
+                    font.pixelSize: Appearance.scaledFont(24)
                     font.weight: 500
                 }
 
@@ -156,7 +155,7 @@ Rectangle {
                                     text: delegateRoot.modelData ? delegateRoot.modelData.appName : ""
                                     color: Appearance.colors.colPrimary
                                     font.family: Fonts.numeric
-                                    font.pixelSize: 13
+                                    font.pixelSize: Appearance.scaledFont(13)
                                     font.bold: true
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
@@ -164,11 +163,10 @@ Rectangle {
 
                                 Text {
                                     Layout.alignment: Qt.AlignVCenter
-                                    text: delegateRoot.modelData ? root.formatTime(
-                                                                       delegateRoot.modelData.receivedAt) : ""
+                                    text: delegateRoot.modelData ? root.formatTime(delegateRoot.modelData.receivedAt) : ""
                                     color: Appearance.colors.colOnSurfaceVariant
                                     font.family: Fonts.numeric
-                                    font.pixelSize: 13
+                                    font.pixelSize: Appearance.scaledFont(13)
                                     opacity: 0.7
                                 }
                             }
@@ -177,19 +175,18 @@ Rectangle {
                                 text: delegateRoot.modelData ? delegateRoot.modelData.summary : ""
                                 color: Appearance.colors.colOnSurface
                                 font.family: Fonts.ui
-                                font.pixelSize: 17
+                                font.pixelSize: Appearance.scaledFont(17)
                                 font.bold: true
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
                             }
 
                             Text {
-                                text: delegateRoot.modelData ? root.sanitizedBody(
-                                                                   delegateRoot.modelData.body) : ""
+                                text: delegateRoot.modelData ? root.sanitizedBody(delegateRoot.modelData.body) : ""
                                 textFormat: Text.StyledText
                                 color: Appearance.colors.colOnSurfaceVariant
                                 font.family: Fonts.ui
-                                font.pixelSize: 16
+                                font.pixelSize: Appearance.scaledFont(16)
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
                                 maximumLineCount: 2
@@ -257,12 +254,11 @@ Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
             visible: root.veryCompact
-            text: root.notificationCount > 0 ? I18n.tr("%1 notifications").arg(root.notificationCount) : I18n.tr(
-                                                   "No notifications")
+            text: root.notificationCount > 0 ? I18n.tr("%1 notifications").arg(root.notificationCount) : I18n.tr("No notifications")
 
             color: Appearance.colors.colOnSurfaceVariant
             font.family: Fonts.numeric
-            font.pixelSize: 20
+            font.pixelSize: Appearance.scaledFont(20)
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
         }

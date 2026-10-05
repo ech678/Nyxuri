@@ -86,7 +86,7 @@ FocusScope {
                         text: "lock"
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.materialSymbolsRounded
-                        font.pixelSize: 24
+                        font.pixelSize: Appearance.scaledFont(24)
                         opacity: root.busy ? 0 : 1
 
                         Behavior on opacity {
@@ -160,7 +160,7 @@ FocusScope {
                     text: root.busy ? I18n.tr("Loading…") : I18n.tr("Enter password")
                     color: root.busy ? Appearance.colors.colSecondary : Appearance.colors.colOutline
                     font.family: Fonts.numeric
-                    font.pixelSize: 17
+                    font.pixelSize: Appearance.scaledFont(17)
                     opacity: root.hasText ? 0 : 1
                     scale: root.hasText ? 0.96 : 1
 
@@ -212,8 +212,7 @@ FocusScope {
                     }
 
                     anchors.centerIn: parent
-                    anchors.horizontalCenterOffset: implicitWidth > parent.width ? -(implicitWidth
-                                                                                     - parent.width) / 2 : 0
+                    anchors.horizontalCenterOffset: implicitWidth > parent.width ? -(implicitWidth - parent.width) / 2 : 0
                     implicitWidth: fullWidth
                     implicitHeight: dotSize
                     orientation: ListView.Horizontal
@@ -277,8 +276,7 @@ FocusScope {
                                         to: 1
                                         duration: Appearance.animation.expressiveFastSpatial.duration
                                         easing.type: Appearance.animation.expressiveFastSpatial.type
-                                        easing.bezierCurve:
-                                            Appearance.animation.expressiveFastSpatial.bezierCurve
+                                        easing.bezierCurve: Appearance.animation.expressiveFastSpatial.bezierCurve
                                     }
 
                                     NumberAnimation {
@@ -288,8 +286,7 @@ FocusScope {
                                         to: dotsList.dotSize * 1.3
                                         duration: Appearance.animation.expressiveDefaultSpatial.duration
                                         easing.type: Appearance.animation.expressiveDefaultSpatial.type
-                                        easing.bezierCurve:
-                                            Appearance.animation.expressiveDefaultSpatial.bezierCurve
+                                        easing.bezierCurve: Appearance.animation.expressiveDefaultSpatial.bezierCurve
                                     }
 
                                     PropertyAction {
@@ -310,8 +307,7 @@ FocusScope {
                                         to: 2 / 3
                                         duration: Appearance.animation.expressiveFastSpatial.duration
                                         easing.type: Appearance.animation.expressiveFastSpatial.type
-                                        easing.bezierCurve:
-                                            Appearance.animation.expressiveFastSpatial.bezierCurve
+                                        easing.bezierCurve: Appearance.animation.expressiveFastSpatial.bezierCurve
                                     }
 
                                     NumberAnimation {
@@ -320,8 +316,7 @@ FocusScope {
                                         to: dotsList.dotSize
                                         duration: Appearance.animation.expressiveDefaultSpatial.duration
                                         easing.type: Appearance.animation.expressiveDefaultSpatial.type
-                                        easing.bezierCurve:
-                                            Appearance.animation.expressiveDefaultSpatial.bezierCurve
+                                        easing.bezierCurve: Appearance.animation.expressiveDefaultSpatial.bezierCurve
                                     }
 
                                     PropertyAction {
@@ -357,8 +352,7 @@ FocusScope {
                                         to: 0.5
                                         duration: Appearance.animation.expressiveFastSpatial.duration
                                         easing.type: Appearance.animation.expressiveFastSpatial.type
-                                        easing.bezierCurve:
-                                            Appearance.animation.expressiveFastSpatial.bezierCurve
+                                        easing.bezierCurve: Appearance.animation.expressiveFastSpatial.bezierCurve
                                     }
                                 }
 
@@ -385,13 +379,10 @@ FocusScope {
                 id: enterButton
 
                 Layout.alignment: Qt.AlignVCenter
-                Layout.preferredWidth: implicitWidth + (root.enterPressed ? Metrics.lockOuterPadding * 2 :
-                                                                            root.hasText
-                                                                            ? Metrics.lockOuterPadding : 0)
+                Layout.preferredWidth: implicitWidth + (root.enterPressed ? Metrics.lockOuterPadding * 2 : root.hasText ? Metrics.lockOuterPadding : 0)
                 implicitWidth: enterIcon.implicitWidth + Metrics.lockOuterPadding * 2
                 implicitHeight: enterIcon.implicitHeight + Metrics.spacingM * 2
-                radius: root.hasText || root.enterPressed ? Metrics.cornerL : Math.min(implicitWidth,
-                                                                                       implicitHeight) / 2
+                radius: root.hasText || root.enterPressed ? Metrics.cornerL : Math.min(implicitWidth, implicitHeight) / 2
                 color: root.hasText ? Appearance.colors.colPrimary : Appearance.colors.colLayer3
 
                 Rectangle {
@@ -416,7 +407,7 @@ FocusScope {
                     text: "arrow_forward"
                     color: root.hasText ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSurface
                     font.family: Fonts.materialSymbolsRounded
-                    font.pixelSize: 24
+                    font.pixelSize: Appearance.scaledFont(24)
                     font.weight: 500
                 }
 

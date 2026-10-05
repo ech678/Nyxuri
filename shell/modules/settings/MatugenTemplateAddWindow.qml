@@ -122,11 +122,10 @@ FloatingWindow {
                     Text {
                         Layout.fillWidth: true
                         visible: root.advanced
-                        text: I18n.tr(
-                                  "This command runs every time Matugen regenerates the theme. Only enable trusted templates.")
+                        text: I18n.tr("This command runs every time Matugen regenerates the theme. Only enable trusted templates.")
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.ui
-                        font.pixelSize: 12
+                        font.pixelSize: Appearance.scaledFont(12)
                         wrapMode: Text.Wrap
                     }
                     InlineStatusBanner {
@@ -164,10 +163,8 @@ FloatingWindow {
                     ActionButton {
                         text: I18n.tr("Add")
                         filled: true
-                        enabled: !MatugenTemplateService.busy && root.sourcePath !== "" && idField.text !== ""
-                                 && !idField.error && outputField.text.trim() !== ""
-                        onClicked: MatugenTemplateService.add(idField.text, root.sourcePath, outputField.text,
-                                                              hookField.text)
+                        enabled: !MatugenTemplateService.busy && root.sourcePath !== "" && idField.text !== "" && !idField.error && outputField.text.trim() !== ""
+                        onClicked: MatugenTemplateService.add(idField.text, root.sourcePath, outputField.text, hookField.text)
                     }
                 }
             }

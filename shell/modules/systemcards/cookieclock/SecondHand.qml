@@ -26,7 +26,6 @@ Item {
             leftMargin: 10 + (root.style === "dot" ? root.dotSize : 0)
             verticalCenter: parent.verticalCenter
         }
-
     }
 
     Rectangle {
@@ -41,7 +40,6 @@ Item {
             leftMargin: 40
             verticalCenter: parent.verticalCenter
         }
-
     }
 
     Behavior on rotation {
@@ -49,10 +47,8 @@ Item {
 
         RotationAnimation {
             direction: RotationAnimation.Clockwise
-            duration: 1000
+            duration: Appearance.motionDuration(1000)
             easing.type: Easing.InOutQuad
         }
-
     }
-
 }

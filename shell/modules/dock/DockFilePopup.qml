@@ -29,9 +29,7 @@ Item {
     property var menuSurfaces: []
     readonly property bool fan: !contextMenu && !!entry && entry.view === "fan"
     readonly property bool list: !contextMenu && !!entry && entry.view === "list"
-    readonly property bool hovered: fan ? fanView.hovered : list ? menuSurfaces.some(item => item
-                                                                                             && item.menuHovered) :
-                                                                   hover.hovered
+    readonly property bool hovered: fan ? fanView.hovered : list ? menuSurfaces.some(item => item && item.menuHovered) : hover.hovered
     readonly property bool directoryAvailable: !!directory.item && directory.item.available
     readonly property int count: directory.item ? directory.item.count : 0
     property bool presented: false
@@ -57,12 +55,7 @@ Item {
     readonly property int gridRows: Math.max(1, Math.min(4, Math.ceil((count + 1) / gridColumns)))
     signal dismissed
     width: fan ? fanView.implicitWidth : Math.min(maximumWidth, contextMenu ? 300 : 360)
-    height: fan ? fanView.implicitHeight : list ? Math.min(480, maximumHeight, (Math.max(1, count) + 1) * 34
-                                                           + 28 + (edge === "bottom" ? 10 : 0)) : contextMenu
-                                                  ? Math.min(maximumHeight, menuColumn.height + 26) : Math.min(
-                                                        maximumHeight, 20 + (edge === "bottom"
-                                                                             ? bubble.tailSize : 0)
-                                                        + header.implicitHeight + gridRows * grid.cellHeight)
+    height: fan ? fanView.implicitHeight : list ? Math.min(480, maximumHeight, (Math.max(1, count) + 1) * 34 + 28 + (edge === "bottom" ? 10 : 0)) : contextMenu ? Math.min(maximumHeight, menuColumn.height + 26) : Math.min(maximumHeight, 20 + (edge === "bottom" ? bubble.tailSize : 0) + header.implicitHeight + gridRows * grid.cellHeight)
     onEntryKeyChanged: {
         browsingUrl = "";
         history = [];
@@ -86,8 +79,7 @@ Item {
         Qt.callLater(root.presentContent);
     }
     function presentContent() {
-        if (!root.visible || (root.list || root.contextMenu) || !directory.item || !directory.item.ready
-                || presented)
+        if (!root.visible || (root.list || root.contextMenu) || !directory.item || !directory.item.ready || presented)
             return;
         // Start once after a complete listing; live changes use ListView's
         // normal model updates and do not replay the opening animation.
@@ -128,8 +120,7 @@ Item {
         opening.start();
     }
     function presentList() {
-        if (root.visible && root.list && !root.closing && directory.item && directory.item.ready
-                && nativeList.item && !nativeList.item.visible)
+        if (root.visible && root.list && !root.closing && directory.item && directory.item.ready && nativeList.item && !nativeList.item.visible)
             nativeList.item.open();
     }
     NumberAnimation {
@@ -137,7 +128,7 @@ Item {
         target: root
         property: "progress"
         to: root.closing ? 0 : 1
-        duration: root.closing ? 180 : root.fan ? 260 : Appearance.animation.expressiveEffects.duration
+        duration: Appearance.motionDuration(root.closing ? 180 : root.fan ? 260 : Appearance.animation.expressiveEffects.duration)
         easing.type: root.fan ? Easing.OutCubic : Appearance.animation.expressiveEffects.type
         easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
         onFinished: {
@@ -225,10 +216,7 @@ Item {
         progress: root.progress
         canOpen: root.directoryAvailable
         canGoBack: root.history.length > 0
-        actionText: root.history.length && directory.item ? directory.item.info.name : !root.directoryAvailable
-                                                            ? I18n.tr("Folder is unavailable") : root.count
-                                                              ? I18n.tr("Open in File Manager") : I18n.tr(
-                                                                    "Folder is empty")
+        actionText: root.history.length && directory.item ? directory.item.info.name : !root.directoryAvailable ? I18n.tr("Folder is unavailable") : root.count ? I18n.tr("Open in File Manager") : I18n.tr("Folder is empty")
         onActivated: info => root.open(info)
         onOpenRequested: {
             ApplicationService.openUrl(root.currentUrl);
@@ -253,8 +241,7 @@ Item {
             id: bubble
             anchors.fill: parent
             edge: root.edge
-            anchorOffset: root.contextMenu ? root.anchorOffset : root.edge === "bottom" ? width / 2 : height
-                                                                                          / 2
+            anchorOffset: root.contextMenu ? root.anchorOffset : root.edge === "bottom" ? width / 2 : height / 2
         }
         Item {
             visible: !root.contextMenu && !root.fan && !root.list
@@ -298,16 +285,15 @@ Item {
                 clip: true
                 cellWidth: width / root.gridColumns
                 cellHeight: 112
-                model: root.visible && !root.contextMenu && !root.fan && !root.list && directory.item ? root.count
-                                                                                                        + 1 : 0
+                model: root.visible && !root.contextMenu && !root.fan && !root.list && directory.item ? root.count + 1 : 0
                 boundsBehavior: Flickable.StopAtBounds
                 ScrollBar.vertical: StyledScrollBar {}
                 delegate: DockFileTile {
                     required property int index
                     readonly property bool openFolder: index === root.count
                     fileInfo: openFolder ? ({
-                                                name: I18n.tr("Open in File Manager")
-                                            }) : directory.item ? directory.item.get(index) : ({})
+                            name: I18n.tr("Open in File Manager")
+                        }) : directory.item ? directory.item.get(index) : ({})
                     actionIcon: openFolder ? "open_in_new" : ""
                     enabled: !openFolder || root.directoryAvailable
                     width: grid.cellWidth
@@ -332,8 +318,7 @@ Item {
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                     visible: root.count === 0 && !(directory.item && directory.item.loading)
-                    text: root.directoryAvailable ? I18n.tr("Folder is empty") : I18n.tr(
-                                                        "Folder is unavailable")
+                    text: root.directoryAvailable ? I18n.tr("Folder is empty") : I18n.tr("Folder is unavailable")
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.ui
                 }
@@ -343,75 +328,71 @@ Item {
     readonly property var choices: {
         if (confirmEmpty)
             return [
-                        {
-                            heading: I18n.tr("Permanently delete all items in Trash?")
-                        },
-                        {
-                            label: I18n.tr("Cancel"),
-                            action: "cancel"
-                        },
-                        {
-                            label: I18n.tr("Empty Trash"),
-                            action: "empty",
-                            destructive: true
-                        }
-                    ];
+                {
+                    heading: I18n.tr("Permanently delete all items in Trash?")
+                },
+                {
+                    label: I18n.tr("Cancel"),
+                    action: "cancel"
+                },
+                {
+                    label: I18n.tr("Empty Trash"),
+                    action: "empty",
+                    destructive: true
+                }
+            ];
         let result = [];
         if (!entry)
             return result;
         if (entry.kind === "folder") {
             result.push({
-                            heading: I18n.tr("Sort by")
-                        });
-            const sorts = [["name", I18n.tr("Name")], ["modified", I18n.tr("Date Modified")], ["created",
-                                                                                               I18n.tr("Date Created")],
-                           ["kind", I18n.tr("Kind")], ["size", I18n.tr("Size")]];
+                heading: I18n.tr("Sort by")
+            });
+            const sorts = [["name", I18n.tr("Name")], ["modified", I18n.tr("Date Modified")], ["created", I18n.tr("Date Created")], ["kind", I18n.tr("Kind")], ["size", I18n.tr("Size")]];
             for (const option of sorts)
                 result.push({
-                                label: option[1],
-                                option: "sort",
-                                value: option[0]
-                            });
+                    label: option[1],
+                    option: "sort",
+                    value: option[0]
+                });
             result.push({
-                            heading: I18n.tr("Display as")
-                        });
+                heading: I18n.tr("Display as")
+            });
             result.push({
-                            label: I18n.tr("Folder"),
-                            option: "display",
-                            value: "folder"
-                        });
+                label: I18n.tr("Folder"),
+                option: "display",
+                value: "folder"
+            });
             result.push({
-                            label: I18n.tr("Stack"),
-                            option: "display",
-                            value: "stack"
-                        });
+                label: I18n.tr("Stack"),
+                option: "display",
+                value: "stack"
+            });
             result.push({
-                            heading: I18n.tr("View content as")
-                        });
-            for (const option of [["fan", I18n.tr("Fan")], ["grid", I18n.tr("Grid")], ["list", I18n.tr(
-                                                                                           "List")]])
+                heading: I18n.tr("View content as")
+            });
+            for (const option of [["fan", I18n.tr("Fan")], ["grid", I18n.tr("Grid")], ["list", I18n.tr("List")]])
                 result.push({
-                                label: option[1],
-                                option: "view",
-                                value: option[0]
-                            });
+                    label: option[1],
+                    option: "view",
+                    value: option[0]
+                });
         }
         result.push({
-                        label: entry.kind === "trash" ? I18n.tr("Open Trash") : entry.kind === "file"
-                                                        ? I18n.tr("Open") : I18n.tr("Open in File Manager"),
-                        action: "open"
-                    });
+            label: entry.kind === "trash" ? I18n.tr("Open Trash") : entry.kind === "file" ? I18n.tr("Open") : I18n.tr("Open in File Manager"),
+            action: "open"
+        });
         if (entry.kind === "trash")
             result.push({
-                            label: I18n.tr("Empty Trash…"),
-                            action: "confirm",
-                            destructive: true
-                        });
+                label: I18n.tr("Empty Trash…"),
+                action: "confirm",
+                destructive: true
+            });
         else
             result.push({
-                            label: I18n.tr("Remove from Dock"),
-                            action: "remove"
-                        });
+                label: I18n.tr("Remove from Dock"),
+                action: "remove"
+            });
         return result;
     }
     Flickable {
@@ -449,7 +430,7 @@ Item {
                 wrapMode: Text.Wrap
                 color: Appearance.colors.colOnSurfaceVariant
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: Appearance.scaledFont(12)
             }
             Repeater {
                 model: root.choices
@@ -458,8 +439,7 @@ Item {
                     required property int index
                     width: menuColumn.width
                     Rectangle {
-                        visible: !!modelData.heading && parent.index > 0 || modelData.action === "open"
-                                 && root.entry && root.entry.kind === "folder"
+                        visible: !!modelData.heading && parent.index > 0 || modelData.action === "open" && root.entry && root.entry.kind === "folder"
                         width: parent.width - 44
                         x: 32
                         height: 1
@@ -474,7 +454,7 @@ Item {
                         bottomPadding: 6
                         wrapMode: Text.Wrap
                         font.family: Fonts.ui
-                        font.pixelSize: 12
+                        font.pixelSize: Appearance.scaledFont(12)
                         color: Appearance.colors.colOnSurfaceVariant
                     }
                     StyledMenuItem {
@@ -507,18 +487,10 @@ Item {
                         }
                         background: Rectangle {
                             radius: 6
-                            color: Appearance.applyAlpha(choiceItem.foreground, choiceItem.down
-                                                         ? Appearance.interaction.pressedStateLayerOpacity :
-                                                           choiceItem.highlighted || choiceItem.activeFocus
-                                                           ? Appearance.interaction.focusStateLayerOpacity :
-                                                             choiceItem.hovered
-                                                             ? Appearance.interaction.hoverStateLayerOpacity :
-                                                               0)
+                            color: Appearance.applyAlpha(choiceItem.foreground, choiceItem.down ? Appearance.interaction.pressedStateLayerOpacity : choiceItem.highlighted || choiceItem.activeFocus ? Appearance.interaction.focusStateLayerOpacity : choiceItem.hovered ? Appearance.interaction.hoverStateLayerOpacity : 0)
                         }
                         destructive: !!choice.destructive
-                        enabled: choice.action !== "confirm" && choice.action !== "empty"
-                                 || DesktopFiles.trashAvailable && DesktopFiles.trashCount > 0 &&
-                                 !DesktopFiles.busy
+                        enabled: choice.action !== "confirm" && choice.action !== "empty" || DesktopFiles.trashAvailable && DesktopFiles.trashCount > 0 && !DesktopFiles.busy
                         onTriggered: {
                             if (choice.option) {
                                 DockService.folderOption(root.entryKey, choice.option, choice.value);

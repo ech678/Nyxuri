@@ -9,9 +9,7 @@ MenuItem {
 
     property string iconName: ""
     property bool destructive: false
-    readonly property color foreground: !enabled ? Appearance.applyAlpha(Appearance.colors.colOnSurface, 0.38) :
-                                                   destructive ? Appearance.m3colors.m3error :
-                                                                 Appearance.colors.colOnSurface
+    readonly property color foreground: !enabled ? Appearance.applyAlpha(Appearance.colors.colOnSurface, 0.38) : destructive ? Appearance.m3colors.m3error : Appearance.colors.colOnSurface
 
     implicitHeight: visible ? 48 : 0
     leftPadding: 12
@@ -29,10 +27,15 @@ MenuItem {
             anchors.fill: parent
             radius: parent.radius
             color: root.foreground
-            opacity: root.down ? Appearance.interaction.pressedStateLayerOpacity : root.highlighted
-                                 || root.activeFocus ? Appearance.interaction.focusStateLayerOpacity :
-                                                       root.hovered
-                                                       ? Appearance.interaction.hoverStateLayerOpacity : 0
+            opacity: root.down ? Appearance.interaction.pressedStateLayerOpacity : root.highlighted || root.activeFocus ? Appearance.interaction.focusStateLayerOpacity : root.hovered ? Appearance.interaction.hoverStateLayerOpacity : 0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: Appearance.animation.expressiveFastEffects.duration
+                    easing.type: Appearance.animation.expressiveFastEffects.type
+                    easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
+                }
+            }
         }
     }
 

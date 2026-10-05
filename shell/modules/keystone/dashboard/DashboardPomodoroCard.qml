@@ -11,13 +11,9 @@ Item {
 
     property bool active: false
 
-    readonly property real progress: TimerService.pomodoroLapDuration > 0 ? TimerService.pomodoroSecondsLeft
-                                                                            / TimerService.pomodoroLapDuration :
-                                                                            0
-    readonly property bool canReset: TimerService.pomodoroSecondsLeft < TimerService.pomodoroLapDuration
-                                     || TimerService.pomodoroCycle > 0 || TimerService.pomodoroBreak
-    readonly property color phaseColor: TimerService.pomodoroBreak ? Appearance.colors.colTertiary :
-                                                                     Appearance.colors.colPrimary
+    readonly property real progress: TimerService.pomodoroLapDuration > 0 ? TimerService.pomodoroSecondsLeft / TimerService.pomodoroLapDuration : 0
+    readonly property bool canReset: TimerService.pomodoroSecondsLeft < TimerService.pomodoroLapDuration || TimerService.pomodoroCycle > 0 || TimerService.pomodoroBreak
+    readonly property color phaseColor: TimerService.pomodoroBreak ? Appearance.colors.colTertiary : Appearance.colors.colPrimary
 
     function timeText() {
         const minutes = Math.floor(TimerService.pomodoroSecondsLeft / 60).toString().padStart(2, "0");
@@ -54,16 +50,15 @@ Item {
                 text: I18n.tr("Pomodoro")
                 color: Appearance.colors.colOnLayer0
                 font.family: Fonts.ui
-                font.pixelSize: 18
+                font.pixelSize: Appearance.scaledFont(18)
                 font.weight: Font.DemiBold
             }
 
             Text {
-                text: I18n.tr("Round %1 / %2").arg(TimerService.pomodoroCycle + 1).arg(
-                          TimerService.cyclesBeforeLongBreak)
+                text: I18n.tr("Round %1 / %2").arg(TimerService.pomodoroCycle + 1).arg(TimerService.cyclesBeforeLongBreak)
                 color: Appearance.colors.colSubtext
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: Appearance.scaledFont(12)
             }
         }
 
@@ -92,7 +87,7 @@ Item {
                         text: root.timeText()
                         color: Appearance.colors.colOnLayer0
                         font.family: Fonts.numeric
-                        font.pixelSize: 48
+                        font.pixelSize: Appearance.scaledFont(48)
                         font.weight: Font.DemiBold
                     }
 
@@ -101,7 +96,7 @@ Item {
                         text: root.phaseText()
                         color: Appearance.colors.colSubtext
                         font.family: Fonts.ui
-                        font.pixelSize: 15
+                        font.pixelSize: Appearance.scaledFont(15)
                         font.weight: Font.Medium
                     }
                 }
@@ -123,10 +118,7 @@ Item {
                     implicitWidth: cycleIndicator.index === TimerService.pomodoroCycle ? 24 : 8
                     implicitHeight: 8
                     radius: Appearance.rounding.full
-                    color: cycleIndicator.index <= TimerService.pomodoroCycle ? root.phaseColor :
-                                                                                Appearance.applyAlpha(
-                                                                                    Appearance.colors.colOnLayer0,
-                                                                                    0.18)
+                    color: cycleIndicator.index <= TimerService.pomodoroCycle ? root.phaseColor : Appearance.applyAlpha(Appearance.colors.colOnLayer0, 0.18)
 
                     Behavior on implicitWidth {
                         NumberAnimation {
@@ -147,17 +139,11 @@ Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 44
                 buttonRadius: Appearance.rounding.large
-                containerColor: TimerService.pomodoroRunning ? Appearance.colors.colSecondaryContainer :
-                                                               Appearance.colors.colPrimary
-                stateLayerColor: TimerService.pomodoroRunning ? Appearance.colors.colSecondaryContainerHover :
-                                                                Appearance.colors.colPrimaryHover
-                pressedStateLayerColor: TimerService.pomodoroRunning
-                                        ? Appearance.colors.colSecondaryContainerActive :
-                                          Appearance.colors.colPrimaryActive
-                rippleColor: TimerService.pomodoroRunning ? Appearance.colors.colOnSecondaryContainer :
-                                                            Appearance.colors.colOnPrimary
-                Accessible.name: TimerService.pomodoroRunning ? I18n.tr("Pause Pomodoro") : I18n.tr(
-                                                                    "Start Pomodoro")
+                containerColor: TimerService.pomodoroRunning ? Appearance.colors.colSecondaryContainer : Appearance.colors.colPrimary
+                stateLayerColor: TimerService.pomodoroRunning ? Appearance.colors.colSecondaryContainerHover : Appearance.colors.colPrimaryHover
+                pressedStateLayerColor: TimerService.pomodoroRunning ? Appearance.colors.colSecondaryContainerActive : Appearance.colors.colPrimaryActive
+                rippleColor: TimerService.pomodoroRunning ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnPrimary
+                Accessible.name: TimerService.pomodoroRunning ? I18n.tr("Pause Pomodoro") : I18n.tr("Start Pomodoro")
                 onClicked: TimerService.togglePomodoro()
 
                 contentItem: Item {
@@ -169,19 +155,14 @@ Item {
                             text: TimerService.pomodoroRunning ? "pause" : "play_arrow"
                             iconSize: 20
                             fill: 1
-                            color: TimerService.pomodoroRunning ? Appearance.colors.colOnSecondaryContainer :
-                                                                  Appearance.colors.colOnPrimary
+                            color: TimerService.pomodoroRunning ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnPrimary
                         }
 
                         Text {
-                            text: TimerService.pomodoroRunning ? I18n.tr("Pause") :
-                                                                 TimerService.pomodoroSecondsLeft
-                                                                 === TimerService.pomodoroLapDuration
-                                                                 ? I18n.tr("Start") : I18n.tr("Resume")
-                            color: TimerService.pomodoroRunning ? Appearance.colors.colOnSecondaryContainer :
-                                                                  Appearance.colors.colOnPrimary
+                            text: TimerService.pomodoroRunning ? I18n.tr("Pause") : TimerService.pomodoroSecondsLeft === TimerService.pomodoroLapDuration ? I18n.tr("Start") : I18n.tr("Resume")
+                            color: TimerService.pomodoroRunning ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnPrimary
                             font.family: Fonts.ui
-                            font.pixelSize: 14
+                            font.pixelSize: Appearance.scaledFont(14)
                             font.weight: Font.DemiBold
                         }
                     }
@@ -215,7 +196,7 @@ Item {
                             text: I18n.tr("Reset")
                             color: Appearance.colors.colOnErrorContainer
                             font.family: Fonts.ui
-                            font.pixelSize: 14
+                            font.pixelSize: Appearance.scaledFont(14)
                             font.weight: Font.DemiBold
                         }
                     }

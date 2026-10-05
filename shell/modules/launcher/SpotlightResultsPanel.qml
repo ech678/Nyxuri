@@ -60,8 +60,7 @@ Item {
     readonly property real wallpaperCellWidth: wallpaperGrid.width / Math.max(1, wallpaperColumnCount)
     readonly property real wallpaperPreviewWidth: Math.max(1, wallpaperCellWidth - style.wallpaperGridGap)
     readonly property real wallpaperPreviewHeight: wallpaperPreviewWidth / style.wallpaperPreviewAspectRatio
-    readonly property real wallpaperCellHeight: wallpaperPreviewHeight + style.wallpaperLabelGap
-                                                + style.wallpaperLabelHeight + style.wallpaperGridGap
+    readonly property real wallpaperCellHeight: wallpaperPreviewHeight + style.wallpaperLabelGap + style.wallpaperLabelHeight + style.wallpaperGridGap
     readonly property Item blurRegionItem: panelBlurRegion
     readonly property Item modalBlurRegionItem: clearDialog.blurRegionItem
     property bool fileMenuActive: false
@@ -74,23 +73,20 @@ Item {
         // Reserve the full clipboard viewport before history finishes loading.
         // Filtering, empty states and refreshes must not resize the panel.
         if (mode === "clipboard")
-            return Math.min(clipboardDetails ? style.clipboardDetailsHeight : style.resultMaxHeight, Math.max(
-                                0, availableHeight));
+            return Math.min(clipboardDetails ? style.clipboardDetailsHeight : style.resultMaxHeight, Math.max(0, availableHeight));
         if (loading || !providerAvailable || results.length === 0)
             return Math.min(availableHeight, style.emptyHeight + clipboardHeaderHeight + fileHeaderHeight);
         if (root.appGridActive)
-            return Math.min(availableHeight, style.appGridMaxHeight, Math.ceil(results.length
-                                                                               / appGrid.columns)
-                            * style.appGridCellHeight + style.resultPadding * 2);
+            return Math.min(availableHeight, style.appGridMaxHeight, Math.ceil(results.length / appGrid.columns) * style.appGridCellHeight + style.resultPadding * 2);
         if (mode === "wallpapers")
             return Math.min(style.wallpaperGridHeight, Math.max(0, availableHeight));
-        return Math.min(availableHeight, style.resultMaxHeight, results.length * style.resultRowHeight
-                        + style.resultPadding * 2 + clipboardHeaderHeight + fileHeaderHeight);
+        return Math.min(availableHeight, style.resultMaxHeight, results.length * style.resultRowHeight + style.resultPadding * 2 + clipboardHeaderHeight + fileHeaderHeight);
     }
 
     signal selectionRequested(int index)
     signal activationRequested(int index, bool keepOpen)
     signal deleteRequested(int index)
+    signal pinRequested(int index)
     signal clearRequested
     signal inspectionRequested(string id)
     signal inspectionReleased(string id)
@@ -164,9 +160,7 @@ Item {
     function navigationStep(direction) {
         if (mode === "search")
             return searchResults.navigationIndex(direction < 0 ? "up" : "down") - selectedIndex;
-        return mode === "wallpapers" ? direction * gridColumns() : (root.appGridActive ? direction
-                                                                                         * appGrid.columns :
-                                                                                         direction);
+        return mode === "wallpapers" ? direction * gridColumns() : (root.appGridActive ? direction * appGrid.columns : direction);
     }
 
     function searchNavigationIndex(direction) {
@@ -237,8 +231,7 @@ Item {
         // of the panel's width transition between launcher modes.
         readonly property real layoutWidth: Math.max(0, root.targetWidth - root.style.resultPadding * 2)
 
-        width: Math.min(layoutWidth, Math.max(1, Math.floor(layoutWidth / root.style.appGridCellWidth))
-                        * root.style.appGridCellWidth)
+        width: Math.min(layoutWidth, Math.max(1, Math.floor(layoutWidth / root.style.appGridCellWidth)) * root.style.appGridCellWidth)
         visible: root.appGridActive
         style: root.style
         results: root.appGridActive ? root.results : []
@@ -266,8 +259,7 @@ Item {
         visible: root.mode !== "search"
         anchors.fill: parent
         anchors.topMargin: root.fileHeaderHeight + root.style.resultPadding
-        anchors.margins: root.mode === "wallpapers" ? root.style.wallpaperPanelPadding :
-                                                      root.style.resultPadding
+        anchors.margins: root.mode === "wallpapers" ? root.style.wallpaperPanelPadding : root.style.resultPadding
         currentIndex: root.modeIndex
         opacity: root.contentOpacity
 
@@ -279,8 +271,7 @@ Item {
                 visible: !root.appGridActive
                 clip: true
                 spacing: 0
-                model: (root.mode === "apps" || root.fileMode || root.commandList) && !root.appGridActive ? root.results :
-                                                                                                            []
+                model: (root.mode === "apps" || root.fileMode || root.commandList) && !root.appGridActive ? root.results : []
                 currentIndex: root.selectedIndex
                 boundsBehavior: Flickable.StopAtBounds
                 keyNavigationEnabled: false
@@ -298,14 +289,29 @@ Item {
                     required property var modelData
                     width: ListView.view.width
                     height: root.style.resultRowHeight
+                    property real entranceOpacity: root.animationsEnabled ? 0 : 1
+                    opacity: root.contentOpacity * entranceOpacity
+                    transform: Translate {
+                        y: root.animationsEnabled ? (1 - appDelegate.entranceOpacity) * 8 : 0
+                    }
+                    Timer {
+                        interval: Math.min(8, appDelegate.index) * 22
+                        running: root.animationsEnabled
+                        onTriggered: appDelegate.entranceOpacity = 1
+                    }
+                    Behavior on entranceOpacity {
+                        enabled: root.animationsEnabled
+                        NumberAnimation {
+                            duration: root.style.panelDuration
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: root.style.effectsCurve
+                        }
+                    }
 
                     Rectangle {
                         anchors.fill: parent
                         radius: Appearance.rounding.large
-                        color: appDelegate.index === root.selectedIndex ? root.style.selectedColor : (
-                                                                              appMouse.containsMouse
-                                                                              ? root.style.hoverColor :
-                                                                                "transparent")
+                        color: appDelegate.index === root.selectedIndex ? root.style.selectedColor : (appMouse.containsMouse ? root.style.hoverColor : "transparent")
                     }
 
                     RowLayout {
@@ -332,8 +338,7 @@ Item {
                             visible: !root.fileMode && !root.commandList && !appDelegate.modelData.symbol
                             Layout.preferredWidth: root.style.resultIconSize
                             Layout.preferredHeight: root.style.resultIconSize
-                            iconSource: root.fileMode || root.commandList || appDelegate.modelData.symbol
-                                        ? "" : ApplicationService.iconSource(appDelegate.modelData.icon)
+                            iconSource: root.fileMode || root.commandList || appDelegate.modelData.symbol ? "" : ApplicationService.iconSource(appDelegate.modelData.icon)
                             sourceSize.width: root.style.resultIconSize * 2
                             sourceSize.height: root.style.resultIconSize * 2
                             asynchronous: true
@@ -361,29 +366,23 @@ Item {
                                 textFormat: Text.PlainText
                                 maximumLineCount: 1
                                 clip: true
-                                color: appDelegate.index === root.selectedIndex
-                                       ? root.style.selectedContentColor : Appearance.colors.colOnSurface
+                                color: appDelegate.index === root.selectedIndex ? root.style.selectedContentColor : Appearance.colors.colOnSurface
                                 font.family: Fonts.ui
-                                font.pixelSize: 17
+                                font.pixelSize: Appearance.scaledFont(17)
                                 font.weight: Font.Medium
                                 elide: Text.ElideRight
                             }
 
                             Text {
                                 Layout.fillWidth: true
-                                text: root.fileMode && root.controlHeld && appDelegate.index
-                                      === root.selectedIndex ? appDelegate.modelData.location :
-                                                               appDelegate.modelData.subtitle
+                                text: root.fileMode && root.controlHeld && appDelegate.index === root.selectedIndex ? appDelegate.modelData.location : appDelegate.modelData.subtitle
                                 textFormat: Text.PlainText
                                 maximumLineCount: 1
                                 clip: true
-                                color: appDelegate.index === root.selectedIndex
-                                       ? root.style.selectedContentColor :
-                                         Appearance.colors.colOnSurfaceVariant
+                                color: appDelegate.index === root.selectedIndex ? root.style.selectedContentColor : Appearance.colors.colOnSurfaceVariant
                                 font.family: Fonts.ui
-                                font.pixelSize: 13
-                                elide: root.fileMode && root.controlHeld && appDelegate.index
-                                       === root.selectedIndex ? Text.ElideMiddle : Text.ElideRight
+                                font.pixelSize: Appearance.scaledFont(13)
+                                elide: root.fileMode && root.controlHeld && appDelegate.index === root.selectedIndex ? Text.ElideMiddle : Text.ElideRight
                             }
                         }
 
@@ -418,9 +417,7 @@ Item {
                     SpotlightAppDrag {
                         id: appDrag
 
-                        desktopId: root.mode === "apps" && appDelegate.modelData.appObject ? String(
-                                                                                                 appDelegate.modelData.appObject.id) :
-                                                                                             ""
+                        desktopId: root.mode === "apps" && appDelegate.modelData.appObject ? String(appDelegate.modelData.appObject.id) : ""
                         iconItem: appDelegate.modelData.symbol ? appListSymbol : appListIcon
                     }
                     Menu {
@@ -468,11 +465,7 @@ Item {
                 required property int index
                 required property string wallpaperPath
                 readonly property var entry: root.results[wallpaperDelegate.index] || ({})
-                readonly property bool isCurrentWallpaper: WallpaperService.normalizedPath(
-                                                               wallpaperDelegate.entry.path)
-                                                           === WallpaperService.normalizedPath(
-                                                               WallpaperService.currentWallpaper
-                                                               || WallpaperService.wallpaperForScreen(""))
+                readonly property bool isCurrentWallpaper: WallpaperService.normalizedPath(wallpaperDelegate.entry.path) === WallpaperService.normalizedPath(WallpaperService.currentWallpaper || WallpaperService.wallpaperForScreen(""))
                 property bool appeared: false
                 readonly property real initialX: ((index * 37) % 3 - 1) * 24
                 readonly property real initialY: ((index * 53) % 5 - 2) * 10
@@ -488,7 +481,9 @@ Item {
 
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: 190
+                        duration: Appearance.motionDuration(190)
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Appearance.animationCurves.standard
                     }
                 }
 
@@ -509,11 +504,7 @@ Item {
                 }
 
                 Timer {
-                    interval: Math.min(260, (wallpaperDelegate.index % Math.max(1, root.wallpaperColumnCount
-                                                                                * 3)) * 18) + ((
-                                                                                                   wallpaperDelegate.index
-                                                                                                   * 29) % 5)
-                              * 8
+                    interval: Math.min(260, (wallpaperDelegate.index % Math.max(1, root.wallpaperColumnCount * 3)) * 18) + ((wallpaperDelegate.index * 29) % 5) * 8
                     running: root.mode === "wallpapers"
                     onTriggered: wallpaperDelegate.appeared = true
                 }
@@ -524,10 +515,7 @@ Item {
                     anchors.fill: parent
                     anchors.margins: root.style.wallpaperGridGap / 2
                     radius: Appearance.rounding.large
-                    color: wallpaperDelegate.index === root.selectedIndex ? root.style.selectedColor : (
-                                                                                wallpaperMouse.containsMouse
-                                                                                ? root.style.hoverColor :
-                                                                                  "transparent")
+                    color: wallpaperDelegate.index === root.selectedIndex ? root.style.selectedColor : (wallpaperMouse.containsMouse ? root.style.hoverColor : "transparent")
 
                     Item {
                         id: previewFrame
@@ -583,11 +571,7 @@ Item {
 
                         Rectangle {
                             anchors.fill: parent
-                            color: Appearance.applyAlpha(Appearance.colors.colOnSurface,
-                                                         wallpaperMouse.pressed
-                                                         ? root.style.wallpaperPressedOverlayOpacity : (
-                                                               wallpaperMouse.containsMouse
-                                                               ? root.style.wallpaperHoverOverlayOpacity : 0))
+                            color: Appearance.applyAlpha(Appearance.colors.colOnSurface, wallpaperMouse.pressed ? root.style.wallpaperPressedOverlayOpacity : (wallpaperMouse.containsMouse ? root.style.wallpaperHoverOverlayOpacity : 0))
 
                             Behavior on color {
                                 ColorAnimation {
@@ -629,8 +613,7 @@ Item {
                         anchors.rightMargin: 8
                         height: root.style.wallpaperLabelHeight
                         text: wallpaperDelegate.entry.title
-                        color: wallpaperDelegate.index === root.selectedIndex
-                               ? root.style.selectedContentColor : Appearance.colors.colOnSurface
+                        color: wallpaperDelegate.index === root.selectedIndex ? root.style.selectedContentColor : Appearance.colors.colOnSurface
                         font.family: Fonts.ui
                         font.pixelSize: root.style.wallpaperLabelFontSize
                         font.weight: Font.Medium
@@ -669,21 +652,17 @@ Item {
                     anchors.left: parent.left
                     anchors.leftMargin: 8
                     anchors.verticalCenter: parent.verticalCenter
-                    text: root.providerAvailable && !root.canRestore ? I18n.tr(
-                                                                           "wl-copy is missing: restore is unavailable") :
-                                                                       I18n.tr("Clipboard history")
-                    color: root.providerAvailable && !root.canRestore ? Appearance.colors.colError :
-                                                                        Appearance.colors.colOnSurfaceVariant
+                    text: root.providerAvailable && !root.canRestore ? I18n.tr("wl-copy is missing: restore is unavailable") : I18n.tr("Clipboard history")
+                    color: root.providerAvailable && !root.canRestore ? Appearance.colors.colError : Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.ui
-                    font.pixelSize: 14
+                    font.pixelSize: Appearance.scaledFont(14)
                     font.weight: Font.DemiBold
                 }
 
                 ActionButton {
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
-                    enabled: root.providerAvailable && !root.loading && !root.clipboardActionRunning
-                             && root.results.length > 0
+                    enabled: root.providerAvailable && !root.loading && !root.clipboardActionRunning && root.results.length > 0
                     filled: false
                     iconName: "delete_sweep"
                     text: I18n.tr("Clear")
@@ -703,11 +682,8 @@ Item {
 
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    Layout.preferredWidth: root.clipboardDetails ? (parent.columns === 2 ? parent.width / 3 :
-                                                                                           parent.width) :
-                                                                   parent.width
-                    Layout.preferredHeight: root.clipboardDetails && parent.columns === 1 ? parent.height
-                                                                                            * 0.32 : parent.height
+                    Layout.preferredWidth: root.clipboardDetails ? (parent.columns === 2 ? parent.width / 3 : parent.width) : parent.width
+                    Layout.preferredHeight: root.clipboardDetails && parent.columns === 1 ? parent.height * 0.32 : parent.height
                     Layout.minimumWidth: 0
                     Layout.minimumHeight: 0
                     clip: true
@@ -757,37 +733,48 @@ Item {
                             // dependency because dynamic object keys do not
                             // produce QML notifications.
                             const ignoredRevision = clipboardDelegate.detailsRevision;
-                            const detail = ClipboardService.detail(String(clipboardDelegate.clipboardEntry.id
-                                                                          || ""));
+                            const detail = ClipboardService.detail(String(clipboardDelegate.clipboardEntry.id || ""));
                             if (!detail)
                                 return clipboardDelegate.clipboardEntry;
                             return Object.assign({}, clipboardDelegate.clipboardEntry, detail);
                         }
-                        readonly property bool actionForThis: String(clipboardEntry.id)
-                                                              === root.clipboardActionEntryId
+                        readonly property bool actionForThis: String(clipboardEntry.id) === root.clipboardActionEntryId
                         readonly property alias activationArea: clipboardMouse
                         readonly property alias textArea: clipboardTextColumn
                         readonly property alias actionArea: clipboardActionArea
                         readonly property alias titleLabel: clipboardTitle
                         readonly property alias subtitleLabel: clipboardSubtitle
                         width: ListView.view.width
-                        height: root.clipboardDetails ? root.style.clipboardDetailsRowHeight :
-                                                        root.style.resultRowHeight
+                        height: root.clipboardDetails ? root.style.clipboardDetailsRowHeight : root.style.resultRowHeight
+                        property real entranceOpacity: root.animationsEnabled ? 0 : 1
+                        opacity: root.contentOpacity * entranceOpacity
+                        transform: Translate {
+                            y: root.animationsEnabled ? (1 - clipboardDelegate.entranceOpacity) * 8 : 0
+                        }
+                        Timer {
+                            interval: Math.min(8, clipboardDelegate.index) * 22
+                            running: root.animationsEnabled
+                            onTriggered: clipboardDelegate.entranceOpacity = 1
+                        }
+                        Behavior on entranceOpacity {
+                            enabled: root.animationsEnabled
+                            NumberAnimation {
+                                duration: root.style.panelDuration
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: root.style.effectsCurve
+                            }
+                        }
 
                         Component.onCompleted: {
                             if (!root.clipboardDetails)
                                 root.inspectionRequested(String(clipboardDelegate.clipboardEntry.id));
                         }
-                        Component.onDestruction: root.inspectionReleased(String(
-                                                                             clipboardDelegate.clipboardEntry.id))
+                        Component.onDestruction: root.inspectionReleased(String(clipboardDelegate.clipboardEntry.id))
 
                         Rectangle {
                             anchors.fill: parent
                             radius: Appearance.rounding.large
-                            color: clipboardDelegate.index === root.selectedIndex ? root.style.selectedColor :
-                                                                                    (clipboardMouse.containsMouse
-                                                                                     ? root.style.hoverColor :
-                                                                                       "transparent")
+                            color: clipboardDelegate.index === root.selectedIndex ? root.style.selectedColor : (clipboardMouse.containsMouse ? root.style.hoverColor : "transparent")
                         }
 
                         RowLayout {
@@ -826,9 +813,7 @@ Item {
 
                                     Image {
                                         anchors.fill: parent
-                                        source: root.clipboardDetails ? "" :
-                                                                        clipboardDelegate.displayData.previewUrl
-                                                                        || ""
+                                        source: root.clipboardDetails ? "" : clipboardDelegate.displayData.previewUrl || ""
                                         sourceSize.width: 96
                                         sourceSize.height: 96
                                         asynchronous: true
@@ -843,8 +828,7 @@ Item {
                                     visible: !clipboardPreviewFrame.visible
                                     text: clipboardDelegate.displayData.icon
                                     iconSize: 24
-                                    color: clipboardDelegate.index === root.selectedIndex
-                                           ? root.style.selectedContentColor : Appearance.colors.colPrimary
+                                    color: clipboardDelegate.index === root.selectedIndex ? root.style.selectedContentColor : Appearance.colors.colPrimary
                                 }
                             }
 
@@ -862,11 +846,10 @@ Item {
                                     Layout.fillWidth: true
                                     Layout.minimumWidth: 0
                                     text: clipboardDelegate.displayData.title
-                                    color: clipboardDelegate.index === root.selectedIndex
-                                           ? root.style.selectedContentColor : Appearance.colors.colOnSurface
+                                    color: clipboardDelegate.index === root.selectedIndex ? root.style.selectedContentColor : Appearance.colors.colOnSurface
                                     font.family: Fonts.ui
                                     textFormat: Text.PlainText
-                                    font.pixelSize: 16
+                                    font.pixelSize: Appearance.scaledFont(16)
                                     maximumLineCount: 1
                                     wrapMode: Text.NoWrap
                                     elide: Text.ElideRight
@@ -879,15 +862,11 @@ Item {
 
                                     Layout.fillWidth: true
                                     Layout.minimumWidth: 0
-                                    text: clipboardDelegate.actionForThis && root.clipboardActionState
-                                          === "error" && root.clipboardActionError !== ""
-                                          ? root.clipboardActionError : clipboardDelegate.displayData.subtitle
-                                    color: clipboardDelegate.index === root.selectedIndex
-                                           ? root.style.selectedContentColor :
-                                             Appearance.colors.colOnSurfaceVariant
+                                    text: clipboardDelegate.actionForThis && root.clipboardActionState === "error" && root.clipboardActionError !== "" ? root.clipboardActionError : clipboardDelegate.displayData.subtitle
+                                    color: clipboardDelegate.index === root.selectedIndex ? root.style.selectedContentColor : Appearance.colors.colOnSurfaceVariant
                                     font.family: Fonts.ui
                                     textFormat: Text.PlainText
-                                    font.pixelSize: 12
+                                    font.pixelSize: Appearance.scaledFont(12)
                                     maximumLineCount: 1
                                     wrapMode: Text.NoWrap
                                     elide: Text.ElideRight
@@ -898,19 +877,33 @@ Item {
                             Item {
                                 id: clipboardActionArea
 
-                                Layout.preferredWidth: 92
-                                Layout.minimumWidth: 92
-                                Layout.maximumWidth: 92
+                                Layout.preferredWidth: 132
+                                Layout.minimumWidth: 132
+                                Layout.maximumWidth: 132
                                 Layout.preferredHeight: 42
                                 Layout.minimumHeight: 42
                                 Layout.maximumHeight: 42
 
                                 IconButton {
+                                    anchors.right: pinButton.left
+                                    anchors.rightMargin: 4
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    controlSize: 42
+                                    visible: !clipboardDelegate.actionForThis || root.clipboardActionState === "idle"
+                                    enabled: !root.clipboardActionRunning
+                                    iconName: clipboardDelegate.displayData.pinned ? "keep" : "keep_off"
+                                    iconSize: 20
+                                    iconColor: clipboardDelegate.displayData.pinned ? Appearance.colors.colPrimary : Appearance.colors.colOnSurfaceVariant
+                                    accessibleName: clipboardDelegate.displayData.pinned ? I18n.tr("Unpin") : I18n.tr("Pin")
+                                    onClicked: root.pinRequested(clipboardDelegate.index)
+                                }
+
+                                IconButton {
+                                    id: pinButton
                                     anchors.right: parent.right
                                     anchors.verticalCenter: parent.verticalCenter
                                     controlSize: 42
-                                    visible: !clipboardDelegate.actionForThis || root.clipboardActionState
-                                             === "idle"
+                                    visible: !clipboardDelegate.actionForThis || root.clipboardActionState === "idle"
                                     enabled: !root.clipboardActionRunning
                                     iconName: "delete"
                                     iconSize: 20
@@ -923,8 +916,7 @@ Item {
                                     anchors.centerIn: parent
                                     width: 24
                                     height: 24
-                                    visible: clipboardDelegate.actionForThis && root.clipboardActionState
-                                             === "copying"
+                                    visible: clipboardDelegate.actionForThis && root.clipboardActionState === "copying"
                                     running: visible
                                     Material.accent: Appearance.colors.colPrimary
                                 }
@@ -932,28 +924,22 @@ Item {
                                 Row {
                                     anchors.centerIn: parent
                                     spacing: 5
-                                    visible: clipboardDelegate.actionForThis && (root.clipboardActionState
-                                                                                 === "copied"
-                                                                                 || root.clipboardActionState
-                                                                                 === "error")
+                                    visible: clipboardDelegate.actionForThis && (root.clipboardActionState === "copied" || root.clipboardActionState === "error")
 
                                     MaterialSymbol {
                                         anchors.verticalCenter: parent.verticalCenter
                                         text: root.clipboardActionState === "copied" ? "check" : "error"
                                         iconSize: 18
                                         fill: 1
-                                        color: root.clipboardActionState === "copied"
-                                               ? Appearance.colors.colPrimary : Appearance.colors.colError
+                                        color: root.clipboardActionState === "copied" ? Appearance.colors.colPrimary : Appearance.colors.colError
                                     }
 
                                     Text {
                                         anchors.verticalCenter: parent.verticalCenter
-                                        text: root.clipboardActionState === "copied" ? I18n.tr("Copied") :
-                                                                                       I18n.tr("Copy failed")
-                                        color: root.clipboardActionState === "copied"
-                                               ? Appearance.colors.colPrimary : Appearance.colors.colError
+                                        text: root.clipboardActionState === "copied" ? I18n.tr("Copied") : I18n.tr("Copy failed")
+                                        color: root.clipboardActionState === "copied" ? Appearance.colors.colPrimary : Appearance.colors.colError
                                         font.family: Fonts.ui
-                                        font.pixelSize: 12
+                                        font.pixelSize: Appearance.scaledFont(12)
                                     }
                                 }
                             }
@@ -972,9 +958,7 @@ Item {
                             onClicked: mouse => {
                                 root.selectionRequested(clipboardDelegate.index);
                                 if (!root.clipboardDetails)
-                                    root.activationRequested(clipboardDelegate.index, (mouse.modifiers
-                                                                                       & Qt.ControlModifier)
-                                                             !== 0);
+                                    root.activationRequested(clipboardDelegate.index, (mouse.modifiers & Qt.ControlModifier) !== 0);
                             }
                         }
                     }
@@ -987,15 +971,12 @@ Item {
                     Layout.minimumWidth: 0
                     Layout.minimumHeight: 0
                     visible: root.clipboardDetails
-                    active: root.clipboardDetails && root.previewActive && root.providerAvailable
-                            && root.results.length > 0
+                    active: root.clipboardDetails && root.previewActive && root.providerAvailable && root.results.length > 0
                     sourceComponent: SpotlightClipboardDetails {
                         entryId: root.selectedClipboardId
                         canRestore: root.canRestore
                         actionRunning: root.clipboardActionRunning
-                        actionError: root.clipboardActionError || (ClipboardService.lastActionError
-                                                                   ? ClipboardService.lastActionError.message :
-                                                                     "")
+                        actionError: root.clipboardActionError || (ClipboardService.lastActionError ? ClipboardService.lastActionError.message : "")
                         onRestoreRequested: root.activationRequested(root.selectedIndex, false)
                         onRoutedKey: event => root.previewKey(event)
                     }
@@ -1009,21 +990,18 @@ Item {
         x: 20
         y: 8
         width: parent.width - 40
-        text: root.fileError ? root.fileError.message : root.fileState === "limited" ? I18n.tr(
-                                                                                           "Limited results — refine your search") :
-                                                                                       I18n.tr("Enter — Open · Ctrl+Enter — Show in file manager")
+        text: root.fileError ? root.fileError.message : root.fileState === "limited" ? I18n.tr("Limited results — refine your search") : I18n.tr("Enter — Open · Ctrl+Enter — Show in file manager")
         textFormat: Text.PlainText
         elide: Text.ElideRight
         font.family: Fonts.ui
-        font.pixelSize: 12
+        font.pixelSize: Appearance.scaledFont(12)
         color: root.fileError ? Appearance.colors.colError : Appearance.colors.colOnSurfaceVariant
     }
 
     Item {
         anchors.fill: parent
         anchors.topMargin: root.clipboardHeaderHeight
-        visible: root.mode !== "search" && ((root.loading && (!root.clipboardDetails || root.results.length === 0))
-                                            || !root.providerAvailable || root.results.length === 0)
+        visible: root.mode !== "search" && ((root.loading && (!root.clipboardDetails || root.results.length === 0)) || !root.providerAvailable || root.results.length === 0)
         opacity: root.contentOpacity
 
         Column {
@@ -1037,39 +1015,12 @@ Item {
                 Material.accent: Appearance.colors.colPrimary
             }
 
-            MaterialSymbol {
-                anchors.horizontalCenter: parent.horizontalCenter
-                visible: !root.loading
-                text: root.fileMode ? "folder_search" : !root.providerAvailable ? "content_paste_off" :
-                                                                                  "search_off"
-                iconSize: 32
-                color: Appearance.colors.colOnSurfaceVariant
-            }
-
-            Text {
+            EmptyState {
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: Math.min(520, root.width - 48)
-                text: root.fileMode ? (root.fileError ? root.fileError.message : root.loading ? I18n.tr(
-                                                                                                    "Searching…") :
-                                                                                                root.fileState
-                                                                                                === "idle"
-                                                                                                ? I18n.tr(
-                                                                                                      "Search files and folders") :
-                                                                                                  root.fileState
-                                                                                                  === "limited"
-                                                                                                  ? I18n.tr(
-                                                                                                        "Search stopped before completion — refine your search") :
-                                                                                                    I18n.tr("No matching results")) :
-                                      root.loading ? I18n.tr("Reading…") : (!root.providerAvailable ? (
-                                                                                                          root.providerError
-                                                                                                          ? root.providerError.message :
-                                                                                                            I18n.tr("Current provider is unavailable")) :
-                                                                                                      I18n.tr("No matching results"))
-                color: Appearance.colors.colOnSurfaceVariant
-                font.family: Fonts.ui
-                font.pixelSize: 15
-                horizontalAlignment: Text.AlignHCenter
-                wrapMode: Text.Wrap
+                visible: !root.loading
+                iconName: root.fileMode ? "folder_search" : !root.providerAvailable ? "content_paste_off" : "search_off"
+                title: root.fileMode ? (root.fileError ? root.fileError.message : root.fileState === "idle" ? I18n.tr("Search files and folders") : root.fileState === "limited" ? I18n.tr("Search stopped before completion — refine your search") : I18n.tr("No matching results")) : (!root.providerAvailable ? (root.providerError ? root.providerError.message : I18n.tr("Current provider is unavailable")) : I18n.tr("No matching results"))
             }
         }
     }

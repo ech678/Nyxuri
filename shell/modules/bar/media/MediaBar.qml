@@ -13,12 +13,9 @@ TopBarPill {
     property string edge: PersonalizationConfig.barPosition
     property real maximumTitleWidth: 180
     readonly property var player: MediaService.active
-    readonly property string title: player ? player.trackTitle || player.identity || I18n.tr("No media") :
-                                             I18n.tr("No media")
-    implicitWidth: vertical ? Sizes.barPillThickness : layout.implicitWidth + 2
-                              * Sizes.barPillHorizontalPadding
-    implicitHeight: vertical ? layout.implicitHeight + 2 * Sizes.barPillHorizontalPadding :
-                               Sizes.barPillThickness
+    readonly property string title: player ? player.trackTitle || player.identity || I18n.tr("No media") : I18n.tr("No media")
+    implicitWidth: vertical ? Sizes.barPillThickness : layout.implicitWidth + 2 * Sizes.barPillHorizontalPadding
+    implicitHeight: vertical ? layout.implicitHeight + 2 * Sizes.barPillHorizontalPadding : Sizes.barPillThickness
 
     GridLayout {
         id: layout
@@ -65,8 +62,7 @@ TopBarPill {
         Item {
             id: titleSlot
 
-            readonly property real titleExtent: Math.min(Math.max(0, root.maximumTitleWidth),
-                                                         titleText.implicitWidth)
+            readonly property real titleExtent: Math.min(Math.max(0, root.maximumTitleWidth), titleText.implicitWidth)
             implicitWidth: root.vertical ? 28 : titleExtent
             implicitHeight: root.vertical ? titleExtent : 28
             Layout.alignment: Qt.AlignCenter
@@ -138,7 +134,7 @@ TopBarPill {
                         value: 0
                     }
                     PauseAnimation {
-                        duration: 1200
+                        duration: Appearance.motionLoopDuration(1200)
                     }
                     NumberAnimation {
                         target: titleStrip

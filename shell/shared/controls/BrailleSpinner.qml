@@ -1,4 +1,5 @@
 import QtQuick
+import qs.shared.theme
 
 Item {
     id: root
@@ -17,7 +18,6 @@ Item {
     onRunningChanged: {
         if (!running)
             frameIndex = 0;
-
     }
 
     Timer {
@@ -54,24 +54,18 @@ Item {
 
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: 90
+                        duration: Appearance.motionLoopDuration(90)
                         easing.type: Easing.OutCubic
                     }
-
                 }
 
                 Behavior on scale {
                     NumberAnimation {
-                        duration: 90
+                        duration: Appearance.motionLoopDuration(90)
                         easing.type: Easing.OutCubic
                     }
-
                 }
-
             }
-
         }
-
     }
-
 }

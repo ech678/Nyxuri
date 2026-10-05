@@ -1,4 +1,5 @@
 import QtQuick
+import qs.shared.theme
 import qs.shared.i18n
 
 StyledFlickable {
@@ -12,8 +13,7 @@ StyledFlickable {
     property real manualPullDistance: 0
     property bool manualDragging: false
     readonly property bool gestureDragging: dragging || manualDragging
-    readonly property real pullDistance: motionEnabled ? Math.max(0, -verticalOvershoot, manualPullDistance) :
-                                                         0
+    readonly property real pullDistance: motionEnabled ? Math.max(0, -verticalOvershoot, manualPullDistance) : 0
     // Track the pointer directly through a resistance curve. Restarting a
     // NumberAnimation for every input sample can prevent it from advancing.
     // After release, ignore Flickable's own overshoot rebound and settle once.
@@ -21,9 +21,7 @@ StyledFlickable {
     readonly property real sectionExpansion: pullOffset * 0.12
     readonly property real detailExpansion: pullOffset * 0.045
     property real refreshHeaderHeight: 0
-    readonly property real refreshHeaderTarget: motionEnabled && (refreshEnabled || refreshing) ? 80
-                                                                                                  * indicatorProgress :
-                                                                                                  0
+    readonly property real refreshHeaderTarget: motionEnabled && (refreshEnabled || refreshing) ? 80 * indicatorProgress : 0
     readonly property real contentTopInset: refreshHeaderHeight + pullOffset * 0.25
 
     function gapFor(order, strength = 1) {
@@ -35,14 +33,14 @@ StyledFlickable {
         target: root
         property: "pullOffset"
         to: 0
-        duration: 220
+        duration: Appearance.motionDuration(220)
         easing.type: Easing.OutCubic
     }
     NumberAnimation {
         id: headerReturn
         target: root
         property: "refreshHeaderHeight"
-        duration: 280
+        duration: Appearance.motionDuration(280)
         easing.type: Easing.OutCubic
     }
     onRefreshHeaderTargetChanged: {
@@ -54,9 +52,7 @@ StyledFlickable {
             headerReturn.start();
         }
     }
-    readonly property real indicatorProgress: refreshing ? 1 : gestureDragging ? Math.min(1, pullDistance
-                                                                                          / refreshThreshold) :
-                                                                                 0
+    readonly property real indicatorProgress: refreshing ? 1 : gestureDragging ? Math.min(1, pullDistance / refreshThreshold) : 0
     signal refreshRequested
 
     flickableDirection: Flickable.VerticalFlick
@@ -76,8 +72,7 @@ StyledFlickable {
     onPullDistanceChanged: {
         if (gestureDragging)
             pullOffset = 104 * (1 - Math.exp(-pullDistance / 104));
-        if (gestureDragging && refreshEnabled && !refreshing && !refreshTriggered && pullDistance
-                >= refreshThreshold) {
+        if (gestureDragging && refreshEnabled && !refreshing && !refreshTriggered && pullDistance >= refreshThreshold) {
             refreshTriggered = true;
             refreshRequested();
         }

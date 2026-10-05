@@ -29,16 +29,12 @@ Item {
     Rectangle {
         id: background
         y: root.verticalLabel ? parent.height - height : (parent.height - height) / 2
-        width: root.fan && !root.verticalLabel ? Math.min(parent.width - root.tileIconSize - 18, Math.ceil(
-                                                              label.implicitWidth) + 20) : parent.width
+        width: root.fan && !root.verticalLabel ? Math.min(parent.width - root.tileIconSize - 18, Math.ceil(label.implicitWidth) + 20) : parent.width
         height: root.fan ? 28 : parent.height
-        x: root.fan && !root.verticalLabel ? root.labelsLeft ? artwork.x - width - 12 : artwork.x
-                                                               + artwork.width + 12 : 0
+        x: root.fan && !root.verticalLabel ? root.labelsLeft ? artwork.x - width - 12 : artwork.x + artwork.width + 12 : 0
         opacity: root.labelReveal
         radius: 7
-        color: root.fan ? BlurService.backgroundColor(Appearance.colors.colBackgroundSurfaceContainer) :
-                          pointer.hovered ? Appearance.applyAlpha(Appearance.colors.colOnSurface, 0.12) :
-                                            "transparent"
+        color: root.fan ? BlurService.backgroundColor(Appearance.colors.colBackgroundSurfaceContainer) : pointer.hovered ? Appearance.applyAlpha(Appearance.colors.colOnSurface, 0.12) : "transparent"
         border.width: root.fan ? 1 : 0
         border.color: Appearance.applyAlpha(Appearance.colors.colOnSurface, 0.16)
     }
@@ -49,12 +45,7 @@ Item {
         info: root.fileInfo
         transformed: root.fan
         visible: root.actionIcon === ""
-        x: root.verticalLabel ? (parent.width - width) / 2 : root.compact ? 8 : root.fan ? (root.labelsLeft
-                                                                                            ? parent.width
-                                                                                              - width - 6 :
-                                                                                              6) : (parent.width
-                                                                                                    - width)
-                                                                                           / 2
+        x: root.verticalLabel ? (parent.width - width) / 2 : root.compact ? 8 : root.fan ? (root.labelsLeft ? parent.width - width - 6 : 6) : (parent.width - width) / 2
         y: root.verticalLabel ? 0 : root.compact || root.fan ? (parent.height - height) / 2 : 6
     }
     Rectangle {
@@ -82,14 +73,13 @@ Item {
         x: root.compact ? 38 : root.fan && !root.verticalLabel ? background.x + 10 : 10
 
         y: root.verticalLabel ? root.height - 28 : root.compact || root.fan ? 0 : root.tileIconSize + 12
-        width: root.compact ? parent.width - 62 : root.fan && !root.verticalLabel ? background.width - 20 :
-                                                                                    parent.width - 20
+        width: root.compact ? parent.width - 62 : root.fan && !root.verticalLabel ? background.width - 20 : parent.width - 20
         height: root.verticalLabel ? 28 : root.compact || root.fan ? parent.height : 32
         text: root.fileInfo.name || ""
         textFormat: Text.PlainText
         color: Appearance.colors.colOnSurface
         font.family: Fonts.ui
-        font.pixelSize: 12
+        font.pixelSize: Appearance.scaledFont(12)
         horizontalAlignment: root.compact || root.fan ? Text.AlignLeft : Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideMiddle
@@ -115,8 +105,7 @@ Item {
     StyledToolTip {
         text: root.fileInfo.name || ""
         textFormat: Text.PlainText
-        extraVisibleCondition: root.visible && root.opacity === 1 && root.labelReveal === 1 && pointer.hovered
-                               && label.truncated && !fileDrag.dragged && !DockService.fileDragActive
+        extraVisibleCondition: root.visible && root.opacity === 1 && root.labelReveal === 1 && pointer.hovered && label.truncated && !fileDrag.dragged && !DockService.fileDragActive
     }
     DockFileDrag {
         id: fileDrag

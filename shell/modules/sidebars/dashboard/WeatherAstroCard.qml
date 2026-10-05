@@ -80,14 +80,11 @@ Rectangle {
 
     function cubicPoint(t) {
         const curveInset = (root.trackRight - root.trackLeft) * 0.18;
-        return Qt.point(cubicAxis(t, root.trackLeft, root.trackLeft + curveInset, root.trackRight - curveInset,
-                                  root.trackRight), cubicAxis(t, root.trackBaseY, root.trackTopY,
-                                                              root.trackTopY, root.trackBaseY));
+        return Qt.point(cubicAxis(t, root.trackLeft, root.trackLeft + curveInset, root.trackRight - curveInset, root.trackRight), cubicAxis(t, root.trackBaseY, root.trackTopY, root.trackTopY, root.trackBaseY));
     }
 
     function cssColor(colorValue) {
-        return "rgba(" + Math.round(colorValue.r * 255) + "," + Math.round(colorValue.g * 255) + "," + Math.round(
-                    colorValue.b * 255) + "," + colorValue.a.toFixed(3) + ")";
+        return "rgba(" + Math.round(colorValue.r * 255) + "," + Math.round(colorValue.g * 255) + "," + Math.round(colorValue.b * 255) + "," + colorValue.a.toFixed(3) + ")";
     }
 
     function phaseText(angle) {
@@ -247,7 +244,7 @@ Rectangle {
         target: root
         property: "displayProgress"
         to: root.progressTarget
-        duration: 500
+        duration: Appearance.motionDuration(500)
         easing.type: Easing.BezierSpline
         easing.bezierCurve: Animations.curves.emphasizedDecel
     }
@@ -257,7 +254,7 @@ Rectangle {
         target: root
         property: "animatedPhaseAngle"
         to: root.phaseAngle
-        duration: 500
+        duration: Appearance.motionDuration(500)
         easing.type: Easing.BezierSpline
         easing.bezierCurve: Animations.curves.emphasizedDecel
     }
@@ -267,7 +264,7 @@ Rectangle {
         target: root
         property: "iconRotation"
         to: root.targetIconRotation()
-        duration: 500
+        duration: Appearance.motionDuration(500)
         easing.type: Easing.BezierSpline
         easing.bezierCurve: Animations.curves.emphasizedDecel
     }
@@ -313,7 +310,7 @@ Rectangle {
             text: root.moon ? I18n.tr("Moon") : I18n.tr("Sun")
             color: root.titleInk
             font.family: Fonts.expressive
-            font.pixelSize: 18
+            font.pixelSize: Appearance.scaledFont(18)
             font.bold: true
             anchors.verticalCenter: parent.verticalCenter
         }
@@ -366,8 +363,7 @@ Rectangle {
 
             ctx.beginPath();
             ctx.moveTo(root.trackLeft, root.trackBaseY);
-            ctx.bezierCurveTo(root.trackLeft + curveInset, root.trackTopY, root.trackRight - curveInset, root.trackTopY,
-                              root.trackRight, root.trackBaseY);
+            ctx.bezierCurveTo(root.trackLeft + curveInset, root.trackTopY, root.trackRight - curveInset, root.trackTopY, root.trackRight, root.trackBaseY);
             ctx.lineWidth = Math.max(2, root.width * 0.012);
             ctx.strokeStyle = root.cssColor(dashMutedColor);
             ctx.setLineDash([dashA, dashB]);
@@ -398,8 +394,7 @@ Rectangle {
                 traceSegment(progress);
                 ctx.setLineDash([dashA - 1, dashB - 2]);
                 ctx.lineWidth = Math.max(2, root.width * 0.010);
-                ctx.strokeStyle = root.cssColor(root.moon ? Qt.rgba(0.90, 0.88, 0.98, 0.48) : Qt.rgba(0.95, 0.80,
-                                                                                                      0.49, 0.56));
+                ctx.strokeStyle = root.cssColor(root.moon ? Qt.rgba(0.90, 0.88, 0.98, 0.48) : Qt.rgba(0.95, 0.80, 0.49, 0.56));
                 ctx.lineCap = "round";
                 ctx.stroke();
             }
@@ -516,23 +511,20 @@ Rectangle {
                 } else if (angle < 180) {
                     drawCircle(dark);
                     drawHalf(light, -Math.PI / 2, Math.PI / 2);
-                    drawScaledHemisphere(light, Math.sin((angle - 90) * Math.PI / 180), Math.PI / 2, Math.PI
-                                         * 1.5);
+                    drawScaledHemisphere(light, Math.sin((angle - 90) * Math.PI / 180), Math.PI / 2, Math.PI * 1.5);
                 } else if (angle === 180) {
                     drawCircle(light);
                 } else if (angle < 270) {
                     drawCircle(dark);
                     drawHalf(light, Math.PI / 2, Math.PI * 1.5);
-                    drawScaledHemisphere(light, Math.cos((angle - 180) * Math.PI / 180), -Math.PI / 2,
-                                         Math.PI / 2);
+                    drawScaledHemisphere(light, Math.cos((angle - 180) * Math.PI / 180), -Math.PI / 2, Math.PI / 2);
                 } else if (angle === 270) {
                     drawCircle(dark);
                     drawHalf(light, Math.PI / 2, Math.PI * 1.5);
                 } else {
                     drawCircle(light);
                     drawHalf(dark, -Math.PI / 2, Math.PI / 2);
-                    drawScaledHemisphere(dark, Math.cos((360 - angle) * Math.PI / 180), Math.PI / 2, Math.PI
-                                         * 1.5);
+                    drawScaledHemisphere(dark, Math.cos((360 - angle) * Math.PI / 180), Math.PI / 2, Math.PI * 1.5);
                 }
 
                 ctx.beginPath();
@@ -548,7 +540,7 @@ Rectangle {
             text: root.phaseText(root.phaseAngle)
             color: Appearance.colors.colOnWeatherCardSurfaceVariant
             font.family: Fonts.expressive
-            font.pixelSize: 11
+            font.pixelSize: Appearance.scaledFont(11)
         }
     }
 }

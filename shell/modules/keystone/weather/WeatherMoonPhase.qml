@@ -49,9 +49,7 @@ Item {
 
         root.currentPhaseIndex = index;
 
-        const phases = [I18n.tr("New moon"), I18n.tr("Waxing crescent"), I18n.tr("First quarter"), I18n.tr(
-                            "Waxing gibbous"), I18n.tr("Full moon"), I18n.tr("Waning gibbous"), I18n.tr(
-                            "Last quarter"), I18n.tr("Waning crescent")];
+        const phases = [I18n.tr("New moon"), I18n.tr("Waxing crescent"), I18n.tr("First quarter"), I18n.tr("Waxing gibbous"), I18n.tr("Full moon"), I18n.tr("Waning gibbous"), I18n.tr("Last quarter"), I18n.tr("Waning crescent")];
         root.moonPhaseName = phases[index];
     }
 
@@ -65,8 +63,7 @@ Item {
     Component.onCompleted: updateMoonPhase()
 
     function moonPhaseSymbolForIndex(index) {
-        const symbols = ["radio_button_unchecked", "brightness_2", "contrast", "tonality", "circle",
-                         "tonality", "contrast", "brightness_2"];
+        const symbols = ["radio_button_unchecked", "brightness_2", "contrast", "tonality", "circle", "tonality", "contrast", "brightness_2"];
         return symbols[Math.max(0, Math.min(7, index))];
     }
 
@@ -99,7 +96,7 @@ Item {
                     text: root.moonPhaseName
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.ui
-                    font.pixelSize: 24
+                    font.pixelSize: Appearance.scaledFont(24)
                     font.weight: Font.Medium
                     elide: Text.ElideRight
                 }
@@ -108,7 +105,7 @@ Item {
                     text: root.illumination + "% " + I18n.tr("Illumination")
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.numeric
-                    font.pixelSize: 16
+                    font.pixelSize: Appearance.scaledFont(16)
                 }
             }
 
@@ -131,15 +128,14 @@ Item {
                                 text: root.moonPhaseSymbolForIndex(index)
                                 iconSize: index === root.currentPhaseIndex ? 30 : 22
                                 fill: index === root.currentPhaseIndex ? 1 : 0
-                                color: index === root.currentPhaseIndex ? Appearance.colors.colPrimary :
-                                                                          Appearance.applyAlpha(
-                                                                              Appearance.colors.colOnSurfaceVariant,
-                                                                              0.5)
+                                color: index === root.currentPhaseIndex ? Appearance.colors.colPrimary : Appearance.applyAlpha(Appearance.colors.colOnSurfaceVariant, 0.5)
 
                                 Behavior on iconSize {
                                     enabled: Appearance.animationsEnabled
                                     NumberAnimation {
-                                        duration: 200
+                                        duration: Appearance.motionDuration(200)
+                                        easing.type: Easing.BezierSpline
+                                        easing.bezierCurve: Appearance.animationCurves.standard
                                     }
                                 }
                             }

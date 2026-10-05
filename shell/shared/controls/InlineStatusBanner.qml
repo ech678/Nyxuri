@@ -12,11 +12,7 @@ Rectangle {
 
     implicitHeight: statusRow.implicitHeight + Appearance.spacing.small * 2
     radius: Appearance.rounding.normal
-    color: tone === "error"
-        ? Appearance.colors.colErrorContainer
-        : tone === "warning"
-            ? Appearance.colors.colTertiaryContainer
-            : Appearance.colors.colLayer2
+    color: tone === "error" ? Appearance.colors.colErrorContainer : tone === "warning" ? Appearance.colors.colTertiaryContainer : Appearance.colors.colLayer2
 
     RowLayout {
         id: statusRow
@@ -30,23 +26,15 @@ Rectangle {
         MaterialSymbol {
             text: root.iconName
             iconSize: 20
-            color: root.tone === "error"
-                ? Appearance.colors.colOnErrorContainer
-                : root.tone === "warning"
-                    ? Appearance.colors.colOnTertiaryContainer
-                    : Appearance.colors.colOnLayer2
+            color: root.tone === "error" ? Appearance.colors.colOnErrorContainer : root.tone === "warning" ? Appearance.colors.colOnTertiaryContainer : Appearance.colors.colOnLayer2
         }
 
         Text {
             Layout.fillWidth: true
             text: root.message
-            color: root.tone === "error"
-                ? Appearance.colors.colOnErrorContainer
-                : root.tone === "warning"
-                    ? Appearance.colors.colOnTertiaryContainer
-                    : Appearance.colors.colOnLayer2
+            color: root.tone === "error" ? Appearance.colors.colOnErrorContainer : root.tone === "warning" ? Appearance.colors.colOnTertiaryContainer : Appearance.colors.colOnLayer2
             font.family: Fonts.ui
-            font.pixelSize: 12
+            font.pixelSize: Appearance.scaledFont(12)
             wrapMode: Text.Wrap
         }
     }

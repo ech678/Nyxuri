@@ -29,16 +29,14 @@ Item {
             shadowHorizontalOffset: 0
             autoPaddingEnabled: true
         }
-
     }
 
     RotationAnimation on rotation {
         running: root.active && root.constantlyRotate
         from: 360
         to: 0
-        duration: 30000
+        duration: Appearance.motionLoopDuration(30000)
         loops: Animation.Infinite
         easing.type: Easing.Linear
     }
-
 }

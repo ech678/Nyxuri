@@ -10,10 +10,8 @@ TabButton {
     required property string buttonIcon
 
     readonly property int tabMargin: 3
-    readonly property color transparentSurface: Appearance.transparentize(
-                                                    Appearance.colors.colSurfaceContainer, 1)
-    readonly property color hoverSurface: Appearance.applyAlpha(Appearance.colors.colOnSurface, checked ? 0 :
-                                                                                                          0.05)
+    readonly property color transparentSurface: Appearance.transparentize(Appearance.colors.colSurfaceContainer, 1)
+    readonly property color hoverSurface: Appearance.applyAlpha(Appearance.colors.colOnSurface, checked ? 0 : 0.05)
 
     implicitHeight: 48
     padding: 0
@@ -70,7 +68,7 @@ TabButton {
             text: root.buttonText
             color: root.checked ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer1
             font.family: Fonts.ui
-            font.pixelSize: 13
+            font.pixelSize: Appearance.scaledFont(13)
 
             Behavior on color {
                 ColorAnimation {

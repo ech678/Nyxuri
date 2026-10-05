@@ -135,6 +135,8 @@ Rectangle {
                 Behavior on opacity {
                     NumberAnimation {
                         duration: Appearance.animation.expressiveEffects.duration
+                        easing.type: Appearance.animation.expressiveEffects.type
+                        easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
                     }
                 }
 
@@ -162,9 +164,7 @@ Rectangle {
             anchors.fill: parent
             containmentMask: QtObject {
                 function contains(pt: point): bool {
-                    return avatarShape.contains(pt) && !distroBadge.contains(avatarMouse.mapToItem(distroBadge,
-                                                                                                   pt)) && !uptimeShape.contains(
-                                avatarMouse.mapToItem(uptimeShape, pt));
+                    return avatarShape.contains(pt) && !distroBadge.contains(avatarMouse.mapToItem(distroBadge, pt)) && !uptimeShape.contains(avatarMouse.mapToItem(uptimeShape, pt));
                 }
             }
             hoverEnabled: true
@@ -187,7 +187,7 @@ Rectangle {
             text: root.distroLogo()
             color: Appearance.colors.colOnPrimaryContainer
             font.family: Fonts.mono
-            font.pixelSize: 25
+            font.pixelSize: Appearance.scaledFont(25)
             font.bold: true
         }
     }
@@ -271,7 +271,7 @@ Rectangle {
                 text: root.wmName + "..."
                 color: Appearance.colors.colOnSecondaryContainer
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: Appearance.scaledFont(12)
                 font.weight: Font.Medium
                 font.italic: true
                 elide: Text.ElideRight
@@ -291,7 +291,7 @@ Rectangle {
         text: root.systemUser + " @ " + root.hostName
         color: Appearance.colors.colOnSurface
         font.family: Fonts.ui
-        font.pixelSize: 15
+        font.pixelSize: Appearance.scaledFont(15)
         font.weight: Font.DemiBold
         elide: Text.ElideRight
     }
@@ -305,7 +305,7 @@ Rectangle {
         text: root.distroName + " · " + root.chassis
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.ui
-        font.pixelSize: 12
+        font.pixelSize: Appearance.scaledFont(12)
         elide: Text.ElideRight
     }
 
@@ -318,7 +318,7 @@ Rectangle {
         text: I18n.tr("Up for ") + root.uptime
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.numeric
-        font.pixelSize: 12
+        font.pixelSize: Appearance.scaledFont(12)
         elide: Text.ElideRight
     }
 }

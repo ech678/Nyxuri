@@ -9,6 +9,8 @@ RippleButton {
     property string iconName: ""
     property string trailingIconName: "open_in_new"
     property string description: ""
+    Accessible.role: Accessible.ListItem
+    Accessible.name: root.text
 
     implicitHeight: description === "" ? Metrics.controlHeightXL : 68
     leftPadding: Metrics.spacingL
@@ -44,12 +46,9 @@ RippleButton {
                 Layout.fillWidth: true
                 text: root.text
                 color: Appearance.colors.colOnSurface
-                font.family: root.description === ""
-                    ? Typography.bodyLarge.family : Typography.bodyMedium.family
-                font.pixelSize: root.description === ""
-                    ? Typography.bodyLarge.pixelSize : Typography.bodyMedium.pixelSize
-                font.weight: root.description === ""
-                    ? Font.Medium : Typography.bodyMedium.weight
+                font.family: root.description === "" ? Typography.bodyLarge.family : Typography.bodyMedium.family
+                font.pixelSize: root.description === "" ? Typography.bodyLarge.pixelSize : Typography.bodyMedium.pixelSize
+                font.weight: root.description === "" ? Font.Medium : Typography.bodyMedium.weight
                 elide: Text.ElideRight
             }
 

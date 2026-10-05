@@ -15,7 +15,9 @@ Rectangle {
     property Component leading
     property alias trailing: trailingSlot.data
 
-    signal clicked()
+    signal clicked
+    Accessible.role: Accessible.ListItem
+    Accessible.name: root.title
 
     implicitHeight: Math.max(Metrics.controlHeightXL, rowLayout.implicitHeight + Metrics.spacingS * 2)
     radius: Metrics.cornerM
@@ -72,7 +74,6 @@ Rectangle {
                 fill: root.iconFill
                 color: root.highlighted ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colOnLayer2
             }
-
         }
 
         ColumnLayout {
@@ -96,12 +97,11 @@ Rectangle {
                 text: root.supportingText
                 color: Appearance.colors.colOnLayer1
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: Appearance.scaledFont(12)
                 wrapMode: Text.Wrap
                 elide: Text.ElideRight
                 maximumLineCount: 2
             }
-
         }
 
         RowLayout {
@@ -110,17 +110,33 @@ Rectangle {
             Layout.alignment: Qt.AlignVCenter
             spacing: Metrics.spacingXS
         }
-
     }
 
     MouseArea {
         id: pointer
-
         anchors.fill: parent
         enabled: root.enabled && root.interactive
         hoverEnabled: true
         cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
         onClicked: root.clicked()
+    }
+    activeFocusOnTab: root.interactive && root.enabled
+    Keys.onReturnPressed: if (root.interactive)
+        root.clicked()
+    Keys.onEnterPressed: if (root.interactive)
+        root.clicked()
+    Keys.onSpacePressed: if (root.interactive)
+        root.clicked()
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: 2
+        color: "transparent"
+        radius: root.radius
+        border.width: root.activeFocus ? 2 : 0
+        border.color: Appearance.colors.colPrimary
+        visible: root.activeFocus
+        z: 2
+        Accessible.ignored: true
     }
 
     Behavior on color {
@@ -129,7 +145,5 @@ Rectangle {
             easing.type: Appearance.animation.expressiveFastEffects.type
             easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
         }
-
     }
-
 }

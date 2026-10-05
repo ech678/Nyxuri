@@ -48,8 +48,7 @@ Item {
     }
 
     Keys.onPressed: event => {
-        if (event.modifiers === Qt.NoModifier && (event.key === Qt.Key_PageDown || event.key
-                                                  === Qt.Key_PageUp)) {
+        if (event.modifiers === Qt.NoModifier && (event.key === Qt.Key_PageDown || event.key === Qt.Key_PageUp)) {
             if (event.key === Qt.Key_PageDown)
                 tabBar.incrementCurrentIndex();
             else
@@ -110,8 +109,8 @@ Item {
                 emptyPlaceholderIcon: "check_circle"
                 emptyPlaceholderText: I18n.tr("Nothing here yet")
                 taskList: TodoService.list.map((item, index) => Object.assign({}, item, {
-                                                                                  "originalIndex": index
-                                                                              })).filter(item => !item.done)
+                        "originalIndex": index
+                    })).filter(item => !item.done)
             }
 
             TaskList {
@@ -119,8 +118,8 @@ Item {
                 emptyPlaceholderIcon: "checklist"
                 emptyPlaceholderText: I18n.tr("Completed tasks will appear here")
                 taskList: TodoService.list.map((item, index) => Object.assign({}, item, {
-                                                                                  "originalIndex": index
-                                                                              })).filter(item => item.done)
+                        "originalIndex": index
+                    })).filter(item => item.done)
             }
         }
     }
@@ -208,7 +207,7 @@ Item {
                     text: I18n.tr("Add task")
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.ui
-                    font.pixelSize: 16
+                    font.pixelSize: Appearance.scaledFont(16)
                     font.weight: Font.Medium
                 }
 
@@ -222,7 +221,7 @@ Item {
                     focus: root.showAddDialog
                     placeholderText: I18n.tr("Task description")
                     font.family: Fonts.ui
-                    font.pixelSize: 14
+                    font.pixelSize: Appearance.scaledFont(14)
                     wrapMode: TextEdit.NoWrap
                     onAccepted: root.addTask()
                 }

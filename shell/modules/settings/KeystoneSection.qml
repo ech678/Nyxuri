@@ -31,7 +31,7 @@ ColumnLayout {
             text: root.title
             color: Appearance.colors.colOnSecondaryContainer
             font.family: Fonts.ui
-            font.pixelSize: 18
+            font.pixelSize: Appearance.scaledFont(18)
             font.weight: Font.Medium
         }
     }

@@ -26,12 +26,8 @@ FocusScope {
     readonly property var availableOptions: options.filter(option => {
         return values.indexOf(optionValue(option)) === -1;
     })
-    readonly property int visibleMenuItemCount: Math.min(Math.max(1, maxVisibleItems), Math.max(1,
-                                                                                                availableOptions.length))
-    readonly property real listTargetHeight: Math.max(itemHeight + menuPadding * 2, Math.ceil(
-                                                          availableOptions.length / 2) * (itemHeight
-                                                                                          + menuItemSpacing)
-                                                      + menuPadding * 2)
+    readonly property int visibleMenuItemCount: Math.min(Math.max(1, maxVisibleItems), Math.max(1, availableOptions.length))
+    readonly property real listTargetHeight: Math.max(itemHeight + menuPadding * 2, Math.ceil(availableOptions.length / 2) * (itemHeight + menuItemSpacing) + menuPadding * 2)
     readonly property bool dragActive: dragCoordinator && dragCoordinator.dragActive
 
     signal toggled(string componentId)
@@ -42,8 +38,7 @@ FocusScope {
     }
 
     function optionLabel(option) {
-        return option && typeof option === "object" ? String(option.label || option.value || "") : String(
-                                                          option || "");
+        return option && typeof option === "object" ? String(option.label || option.value || "") : String(option || "");
     }
 
     function optionIcon(option) {
@@ -105,10 +100,10 @@ FocusScope {
         const source = Array.isArray(root.values) ? root.values : [];
         for (let index = 0; index < source.length; index += 1) {
             entries.push({
-                             "entryKey": source[index],
-                             "componentId": source[index],
-                             "placeholder": false
-                         });
+                "entryKey": source[index],
+                "componentId": source[index],
+                "placeholder": false
+            });
         }
         root.synchronizeEntries(entries);
     }
@@ -127,18 +122,18 @@ FocusScope {
                 continue;
 
             entries.push({
-                             "entryKey": value,
-                             "componentId": value,
-                             "placeholder": false
-                         });
+                "entryKey": value,
+                "componentId": value,
+                "placeholder": false
+            });
         }
         if (root.zone === targetZone) {
             const insertionIndex = Math.max(0, Math.min(entries.length, targetIndex));
             entries.splice(insertionIndex, 0, {
-                               "entryKey": componentId,
-                               "componentId": componentId,
-                               "placeholder": true
-                           });
+                "entryKey": componentId,
+                "componentId": componentId,
+                "placeholder": true
+            });
         }
         root.synchronizeEntries(entries);
     }
@@ -228,13 +223,10 @@ FocusScope {
         const margin = 12;
         optionsPopup.width = root.width;
         optionsPopup.height = root.listTargetHeight;
-        optionsPopup.x = Math.max(margin, Math.min(origin.x, root.popupParentItem.width - optionsPopup.width
-                                                   - margin));
+        optionsPopup.x = Math.max(margin, Math.min(origin.x, root.popupParentItem.width - optionsPopup.width - margin));
         const belowY = origin.y + root.fieldHeight + root.menuGap;
         const aboveY = origin.y - optionsPopup.height - root.menuGap;
-        optionsPopup.y = belowY + optionsPopup.height <= root.popupParentItem.height - margin ? belowY :
-                                                                                                Math.max(margin,
-                                                                                                         aboveY);
+        optionsPopup.y = belowY + optionsPopup.height <= root.popupParentItem.height - margin ? belowY : Math.max(margin, aboveY);
         return true;
     }
 
@@ -260,8 +252,7 @@ FocusScope {
         if (root.availableOptions.length === 0)
             return;
 
-        root.highlightedIndex = (root.highlightedIndex + delta + root.availableOptions.length)
-                % root.availableOptions.length;
+        root.highlightedIndex = (root.highlightedIndex + delta + root.availableOptions.length) % root.availableOptions.length;
     }
 
     function toggleHighlighted() {
@@ -273,8 +264,7 @@ FocusScope {
 
     function handleKey(event) {
         if (!root.expanded) {
-            if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space
-                    || event.key === Qt.Key_Down) {
+            if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space || event.key === Qt.Key_Down) {
                 root.openMenu();
                 event.accepted = true;
             }
@@ -318,9 +308,7 @@ FocusScope {
         anchors.top: parent.top
         height: root.fieldHeight
         clip: true
-        color: root.expanded || fieldTap.pressed ? Appearance.colors.colLayer2Active : fieldHover.hovered
-                                                   ? Appearance.colors.colLayer2Hover :
-                                                     Appearance.colors.colLayer2
+        color: root.expanded || fieldTap.pressed ? Appearance.colors.colLayer2Active : fieldHover.hovered ? Appearance.colors.colLayer2Hover : Appearance.colors.colLayer2
 
         Item {
             id: chipViewport
@@ -366,16 +354,11 @@ FocusScope {
                     required property string entryKey
                     required property string componentId
                     required property bool placeholder
-                    readonly property bool ownsActiveDrag: root.dragActive && root.dragCoordinator
-                                                           && root.dragCoordinator.componentId
-                                                           === chipDelegate.componentId
-                                                           && root.dragCoordinator.sourceZone === root.zone
-                    readonly property bool isDragged: root.dragActive && root.dragCoordinator.componentId
-                                                      === componentId && !placeholder
+                    readonly property bool ownsActiveDrag: root.dragActive && root.dragCoordinator && root.dragCoordinator.componentId === chipDelegate.componentId && root.dragCoordinator.sourceZone === root.zone
+                    readonly property bool isDragged: root.dragActive && root.dragCoordinator.componentId === componentId && !placeholder
                     readonly property real naturalWidth: Math.max(88, chipLabel.implicitWidth + 70)
 
-                    width: placeholder && root.dragCoordinator ? root.dragCoordinator.dragWidth : isDragged
-                                                                 ? 0 : naturalWidth
+                    width: placeholder && root.dragCoordinator ? root.dragCoordinator.dragWidth : isDragged ? 0 : naturalWidth
                     height: chipList.height
                     opacity: isDragged ? 0 : 1
 
@@ -386,10 +369,7 @@ FocusScope {
                         height: 30
                         anchors.centerIn: parent
                         radius: Appearance.rounding.small
-                        color: chipDelegate.placeholder ? Appearance.colors.colLayer2Active :
-                                                          chipHover.hovered
-                                                          ? Appearance.colors.colPrimaryContainerHover :
-                                                            Appearance.colors.colPrimaryContainer
+                        color: chipDelegate.placeholder ? Appearance.colors.colLayer2Active : chipHover.hovered ? Appearance.colors.colPrimaryContainerHover : Appearance.colors.colPrimaryContainer
                         opacity: chipDelegate.placeholder ? 0.45 : 1
 
                         MaterialSymbol {
@@ -411,7 +391,7 @@ FocusScope {
                             text: root.labelFor(chipDelegate.componentId)
                             color: Appearance.colors.colOnPrimaryContainer
                             font.family: Fonts.ui
-                            font.pixelSize: 13
+                            font.pixelSize: Appearance.scaledFont(13)
                             font.weight: Font.Medium
                             visible: !chipDelegate.placeholder
                             elide: Text.ElideRight
@@ -476,20 +456,13 @@ FocusScope {
                         DragHandler {
                             id: dragHandler
 
-                            enabled: root.dragCoordinator !== null && (!chipDelegate.placeholder
-                                                                       || chipDelegate.ownsActiveDrag) && (
-                                         !closeMouse.containsMouse || chipDelegate.ownsActiveDrag)
+                            enabled: root.dragCoordinator !== null && (!chipDelegate.placeholder || chipDelegate.ownsActiveDrag) && (!closeMouse.containsMouse || chipDelegate.ownsActiveDrag)
                             target: null
                             dragThreshold: 8
                             onActiveChanged: {
                                 if (active)
-                                    root.dragCoordinator.beginDrag(root, chipDelegate.componentId,
-                                                                   root.labelFor(chipDelegate.componentId),
-                                                                   root.iconFor(chipDelegate.componentId),
-                                                                   chipDelegate.naturalWidth,
-                                                                   centroid.scenePosition);
-                                else if (root.dragCoordinator && root.dragCoordinator.dragActive
-                                         && root.dragCoordinator.componentId === chipDelegate.componentId)
+                                    root.dragCoordinator.beginDrag(root, chipDelegate.componentId, root.labelFor(chipDelegate.componentId), root.iconFor(chipDelegate.componentId), chipDelegate.naturalWidth, centroid.scenePosition);
+                                else if (root.dragCoordinator && root.dragCoordinator.dragActive && root.dragCoordinator.componentId === chipDelegate.componentId)
                                     root.dragCoordinator.finishDrag();
                             }
                             onTranslationChanged: {
@@ -539,7 +512,7 @@ FocusScope {
             text: I18n.tr("No components selected")
             color: Appearance.colors.colSubtext
             font.family: Fonts.ui
-            font.pixelSize: 14
+            font.pixelSize: Appearance.scaledFont(14)
 
             anchors {
                 left: parent.left
@@ -658,10 +631,7 @@ FocusScope {
                             width: Math.min(optionFlow.width, Math.max(88, optionLabel.implicitWidth + 52))
                             height: 30
                             radius: Appearance.rounding.small
-                            color: optionTap.pressed ? Appearance.colors.colPrimaryContainerActive :
-                                                       optionHover.hovered || highlighted
-                                                       ? Appearance.colors.colPrimaryContainerHover :
-                                                         Appearance.colors.colPrimaryContainer
+                            color: optionTap.pressed ? Appearance.colors.colPrimaryContainerActive : optionHover.hovered || highlighted ? Appearance.colors.colPrimaryContainerHover : Appearance.colors.colPrimaryContainer
 
                             MaterialSymbol {
                                 id: optionIcon
@@ -686,7 +656,7 @@ FocusScope {
                                 text: root.optionLabel(optionChip.modelData)
                                 color: Appearance.colors.colOnPrimaryContainer
                                 font.family: Fonts.ui
-                                font.pixelSize: 13
+                                font.pixelSize: Appearance.scaledFont(13)
                                 font.weight: Font.Medium
                                 elide: Text.ElideRight
                             }
@@ -715,7 +685,7 @@ FocusScope {
                         text: I18n.tr("All widgets are in use")
                         color: Appearance.colors.colSubtext
                         font.family: Fonts.ui
-                        font.pixelSize: 13
+                        font.pixelSize: Appearance.scaledFont(13)
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }

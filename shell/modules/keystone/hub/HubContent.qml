@@ -79,28 +79,30 @@ Item {
                 text: parent.parent.icon
                 iconSize: 22
                 fill: parent.parent.active ? 1 : 0
-                color: parent.parent.active ? Appearance.colors.colOnLayer0 : Appearance.applyAlpha(
-                                                  Appearance.colors.colOnLayer0, 0.5)
+                color: parent.parent.active ? Appearance.colors.colOnLayer0 : Appearance.applyAlpha(Appearance.colors.colOnLayer0, 0.5)
                 anchors.horizontalCenter: parent.horizontalCenter
 
                 Behavior on color {
                     ColorAnimation {
-                        duration: 200
+                        duration: Appearance.motionDuration(200)
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Appearance.animationCurves.standard
                     }
                 }
             }
 
             Text {
                 text: parent.parent.title
-                font.pixelSize: 13
+                font.pixelSize: Appearance.scaledFont(13)
                 font.bold: parent.parent.active
-                color: parent.parent.active ? Appearance.colors.colOnLayer0 : Appearance.applyAlpha(
-                                                  Appearance.colors.colOnLayer0, 0.5)
+                color: parent.parent.active ? Appearance.colors.colOnLayer0 : Appearance.applyAlpha(Appearance.colors.colOnLayer0, 0.5)
                 anchors.horizontalCenter: parent.horizontalCenter
 
                 Behavior on color {
                     ColorAnimation {
-                        duration: 200
+                        duration: Appearance.motionDuration(200)
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Appearance.animationCurves.standard
                     }
                 }
             }
@@ -117,14 +119,17 @@ Item {
 
             Behavior on width {
                 NumberAnimation {
-                    duration: 300
-                    easing.type: Easing.OutBack
+                    duration: Appearance.animation.elementMoveFast.duration
+                    easing.type: Appearance.animation.elementMoveFast.type
+                    easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
                 }
             }
 
             Behavior on opacity {
                 NumberAnimation {
-                    duration: 200
+                    duration: Appearance.motionDuration(200)
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Appearance.animationCurves.standard
                 }
             }
         }
@@ -160,7 +165,9 @@ Item {
 
             Behavior on opacity {
                 NumberAnimation {
-                    duration: 300
+                    duration: Appearance.animation.expressiveEffects.duration
+                    easing.type: Appearance.animation.expressiveEffects.type
+                    easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
                 }
             }
         }
@@ -179,7 +186,9 @@ Item {
 
             Behavior on opacity {
                 NumberAnimation {
-                    duration: 300
+                    duration: Appearance.animation.expressiveEffects.duration
+                    easing.type: Appearance.animation.expressiveEffects.type
+                    easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
                 }
             }
         }

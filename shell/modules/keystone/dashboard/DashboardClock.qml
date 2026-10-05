@@ -11,13 +11,13 @@ Item {
     property string periodText: "A"
     readonly property string clockFamily: Fonts.systemClock
     readonly property var clockAxes: Fonts.bundledFamilyAvailable ? ({
-                                                                         "wght": 700,
-                                                                         "wdth": 75,
-                                                                         "opsz": 132,
-                                                                         "GRAD": 75,
-                                                                         "ROND": 25,
-                                                                         "slnt": 0
-                                                                     }) : ({})
+            "wght": 700,
+            "wdth": 75,
+            "opsz": 132,
+            "GRAD": 75,
+            "ROND": 25,
+            "slnt": 0
+        }) : ({})
 
     function updateTime() {
         const now = new Date();
@@ -46,7 +46,7 @@ Item {
             text: root.hourText
             color: Appearance.colors.colPrimary
             font.family: root.clockFamily
-            font.pixelSize: 132
+            font.pixelSize: Appearance.scaledFont(132)
             font.weight: Font.Bold
             font.variableAxes: root.clockAxes
             horizontalAlignment: Text.AlignHCenter
@@ -80,7 +80,7 @@ Item {
             text: root.minuteText
             color: Appearance.colors.colPrimary
             font.family: root.clockFamily
-            font.pixelSize: 132
+            font.pixelSize: Appearance.scaledFont(132)
             font.weight: Font.Bold
             font.variableAxes: root.clockAxes
             horizontalAlignment: Text.AlignHCenter
@@ -94,7 +94,7 @@ Item {
             text: root.periodText + "M"
             color: Appearance.colors.colPrimary
             font.family: root.clockFamily
-            font.pixelSize: 56
+            font.pixelSize: Appearance.scaledFont(56)
             font.weight: Font.Bold
             font.letterSpacing: -6
             font.variableAxes: root.clockAxes

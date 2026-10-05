@@ -21,8 +21,7 @@ Rectangle {
     property int selectedCandidate: 0
     signal inputFocusRequested
     readonly property var service: SpotlightToolService
-    height: visible ? Math.min(Math.max(root.structuredMode ? 40 : 120, content.implicitHeight + 48),
-                               root.structuredMode ? 360 : 320, Math.max(0, availableHeight)) : 0
+    height: visible ? Math.min(Math.max(root.structuredMode ? 40 : 120, content.implicitHeight + 48), root.structuredMode ? 360 : 320, Math.max(0, availableHeight)) : 0
     radius: style.resultRadius
     color: style.panelColor
     clip: true
@@ -37,18 +36,15 @@ Rectangle {
             if (!root.service.canCopy || !value)
                 return "";
             if (root.timeMode && value.source && value.target)
-                return I18n.tr("UTC%1 → UTC%2 · Day difference: %3").arg(value.source.offset).arg(
-                            value.target.offset).arg(value.dayDelta);
+                return I18n.tr("UTC%1 → UTC%2 · Day difference: %3").arg(value.source.offset).arg(value.target.offset).arg(value.dayDelta);
             if (!root.currencyMode || !value.approximate)
                 return "";
-            return I18n.tr("Approximate · ECB · %1 · %2").arg(value.date).arg(value.cache === "stale"
-                                                                              ? I18n.tr("Older cached rate") :
-                                                                                I18n.tr("Reference rate"));
+            return I18n.tr("Approximate · ECB · %1 · %2").arg(value.date).arg(value.cache === "stale" ? I18n.tr("Older cached rate") : I18n.tr("Reference rate"));
         }
         textFormat: Text.PlainText
         elide: Text.ElideRight
         font.family: Fonts.ui
-        font.pixelSize: 12
+        font.pixelSize: Appearance.scaledFont(12)
         color: Appearance.colors.colOnSurfaceVariant
     }
     StyledFlickable {
@@ -66,16 +62,14 @@ Rectangle {
             ListView {
                 id: templateList
                 Layout.fillWidth: true
-                Layout.preferredHeight: !visible ? 0 : Math.min(Math.min(root.choices.length, 6) * root.candidateRowHeight,
-                                                                Math.max(0, root.availableHeight - 48))
+                Layout.preferredHeight: !visible ? 0 : Math.min(Math.min(root.choices.length, 6) * root.candidateRowHeight, Math.max(0, root.availableHeight - 48))
                 visible: root.choices.length > 0
                 model: root.choices
-                currentIndex: root.currencyMode ? root.currencyController.selected :
-                                                  root.templateController.selected
+                currentIndex: root.currencyMode ? root.currencyController.selected : root.templateController.selected
                 clip: true
                 keyNavigationEnabled: false
                 onCurrentIndexChanged: if (currentIndex >= 0)
-                                           positionViewAtIndex(currentIndex, ListView.Contain)
+                    positionViewAtIndex(currentIndex, ListView.Contain)
                 ScrollBar.vertical: StyledScrollBar {}
                 delegate: Rectangle {
                     id: choiceRow
@@ -89,16 +83,12 @@ Rectangle {
                         anchors.fill: parent
                         anchors.margins: 14
                         verticalAlignment: Text.AlignVCenter
-                        text: choiceRow.modelData.text + (choiceRow.modelData.name
-                                                          && choiceRow.modelData.name
-                                                          !== choiceRow.modelData.text ? " · "
-                                                                                         + choiceRow.modelData.name :
-                                                                                         "")
+                        text: choiceRow.modelData.text + (choiceRow.modelData.name && choiceRow.modelData.name !== choiceRow.modelData.text ? " · " + choiceRow.modelData.name : "")
                         textFormat: Text.PlainText
                         elide: Text.ElideRight
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.ui
-                        font.pixelSize: 16
+                        font.pixelSize: Appearance.scaledFont(16)
                     }
                     MouseArea {
                         anchors.fill: parent
@@ -114,30 +104,13 @@ Rectangle {
             }
             Text {
                 Layout.fillWidth: true
-                text: root.currencyMode ? (root.currencyController.amountError || root.service.error || (
-                                               root.currencyController.choosing && !root.choices.length
-                                               ? I18n.tr("No matching currencies") : "")) : root.timeMode
-                                          && root.templateController.choosing && !root.choices.length
-                                          ? I18n.tr("No matching time zones") : root.service.state
-                                            === "loading" ? I18n.tr("Calculating…") : root.service.state
-                                                            === "empty" || root.service.state
-                                                            === "incomplete" ? I18n.tr(
-                                                                                   "Enter an expression to begin") :
-                                                                               root.service.state
-                                                                               === "ambiguous" ? I18n.tr(
-                                                                                                     "This time occurs twice. Choose a UTC offset.") :
-                                                                                                 root.service.error
-                visible: text.length > 0 && (!root.templateController.active
-                                             || root.templateController.choosing || (root.service.state
-                                                                                     !== "empty"
-                                                                                     && root.service.state
-                                                                                     !== "incomplete"))
+                text: root.currencyMode ? (root.currencyController.amountError || root.service.error || (root.currencyController.choosing && !root.choices.length ? I18n.tr("No matching currencies") : "")) : root.timeMode && root.templateController.choosing && !root.choices.length ? I18n.tr("No matching time zones") : root.service.state === "loading" ? I18n.tr("Calculating…") : root.service.state === "empty" || root.service.state === "incomplete" ? I18n.tr("Enter an expression to begin") : root.service.state === "ambiguous" ? I18n.tr("This time occurs twice. Choose a UTC offset.") : root.service.error
+                visible: text.length > 0 && (!root.templateController.active || root.templateController.choosing || (root.service.state !== "empty" && root.service.state !== "incomplete"))
                 textFormat: Text.PlainText
                 wrapMode: Text.Wrap
-                color: root.service.state === "error" || root.service.state === "unavailable"
-                       ? Appearance.colors.colError : Appearance.colors.colOnSurfaceVariant
+                color: root.service.state === "error" || root.service.state === "unavailable" ? Appearance.colors.colError : Appearance.colors.colOnSurfaceVariant
                 font.family: Fonts.ui
-                font.pixelSize: 16
+                font.pixelSize: Appearance.scaledFont(16)
             }
             Text {
                 Layout.fillWidth: true
@@ -147,11 +120,10 @@ Rectangle {
                 wrapMode: Text.WrapAnywhere
                 color: Appearance.colors.colOnSurface
                 font.family: Fonts.ui
-                font.pixelSize: 28
+                font.pixelSize: Appearance.scaledFont(28)
             }
             Repeater {
-                model: root.service.state === "ambiguous" && root.service.result ? root.service.result.candidates :
-                                                                                   []
+                model: root.service.state === "ambiguous" && root.service.result ? root.service.result.candidates : []
                 delegate: ActionButton {
                     required property var modelData
                     required property int index
@@ -170,7 +142,7 @@ Rectangle {
                 textFormat: Text.PlainText
                 color: Appearance.colors.colOnSurfaceVariant
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: Appearance.scaledFont(14)
             }
         }
     }

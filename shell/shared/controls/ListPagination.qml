@@ -12,8 +12,7 @@ RowLayout {
     readonly property int count: model ? model.length : 0
     readonly property int pageCount: Math.max(1, Math.ceil(count / pageSize))
     readonly property int currentPage: Math.max(0, Math.min(page, pageCount - 1))
-    readonly property var items: model ? model.slice(currentPage * pageSize, (currentPage + 1) * pageSize) :
-                                         []
+    readonly property var items: model ? model.slice(currentPage * pageSize, (currentPage + 1) * pageSize) : []
 
     onPageCountChanged: page = currentPage
     Layout.fillWidth: true
@@ -29,13 +28,10 @@ RowLayout {
     Text {
         Layout.fillWidth: true
         horizontalAlignment: Text.AlignHCenter
-        text: I18n.tr("%1–%2 of %3").arg(root.currentPage * root.pageSize + 1).arg(Math.min(root.count, (
-                                                                                                root.currentPage
-                                                                                                + 1) * root.pageSize)).arg(
-                  root.count)
+        text: I18n.tr("%1–%2 of %3").arg(root.currentPage * root.pageSize + 1).arg(Math.min(root.count, (root.currentPage + 1) * root.pageSize)).arg(root.count)
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.ui
-        font.pixelSize: 12
+        font.pixelSize: Appearance.scaledFont(12)
     }
     IconButton {
         iconName: "chevron_right"

@@ -11,11 +11,21 @@ Singleton {
     readonly property string effectiveMatugenMode: matugenMode.toLowerCase() === "light" ? "light" : "dark"
     property string currentWallpaperPreview: ""
     property bool reduceMotion: false
-    readonly property bool animationsEnabled: !reduceMotion
+    readonly property bool animationsEnabled: !effectiveReduceMotion
     readonly property real motionScale: reduceMotion ? 0 : 1
+    property real fontScale: 1
+    property bool highContrast: false
+    readonly property real minTextContrast: highContrast ? 7 : 4.5
     property real backgroundOpacity: 1
     property real backgroundTransparency: 0
     property real contentTransparency: 0.9
+    property bool reduceTransparency: false
+    property bool lowPowerMode: false
+    readonly property real effectiveBackgroundTransparency: (reduceTransparency || lowPowerMode) ? 0 : backgroundTransparency
+    readonly property real effectiveContentTransparency: (reduceTransparency || lowPowerMode) ? 0 : contentTransparency
+    readonly property bool effectiveReduceMotion: reduceMotion || lowPowerMode
+    readonly property bool effectiveAnimationsEnabled: !effectiveReduceMotion
+    readonly property real effectiveMotionScale: effectiveReduceMotion ? 0 : motionScale
     property QtObject m3colors
     property QtObject animationCurves
     property QtObject animation
@@ -29,12 +39,32 @@ Singleton {
         return Math.max(0, Math.min(1, value));
     }
 
+    function scaledFont(value) {
+        const numeric = Number(value);
+        if (!isFinite(numeric) || numeric <= 0)
+            return 0;
+        return Math.max(1, Math.round(numeric * root.fontScale));
+    }
+
+    function motionDuration(value) {
+        const numeric = Number(value);
+        if (!isFinite(numeric) || numeric <= 0)
+            return 0;
+        return Math.max(1, Math.round(numeric * root.effectiveMotionScale));
+    }
+
+    function motionLoopDuration(value) {
+        const numeric = Number(value);
+        if (!isFinite(numeric) || numeric <= 0)
+            return 0;
+        return Math.round(numeric);
+    }
+
     function mix(color1, color2, percentage) {
         const amount = percentage === undefined ? 0.5 : percentage;
         const c1 = Qt.color(color1);
         const c2 = Qt.color(color2);
-        return Qt.rgba(amount * c1.r + (1 - amount) * c2.r, amount * c1.g + (1 - amount) * c2.g, amount
-                       * c1.b + (1 - amount) * c2.b, amount * c1.a + (1 - amount) * c2.a);
+        return Qt.rgba(amount * c1.r + (1 - amount) * c2.r, amount * c1.g + (1 - amount) * c2.g, amount * c1.b + (1 - amount) * c2.b, amount * c1.a + (1 - amount) * c2.a);
     }
 
     function transparentize(color, percentage) {
@@ -56,9 +86,7 @@ Singleton {
         const base = Qt.color(baseColor);
         const target = Qt.color(targetColor);
         const invOpacity = 1 - opacity;
-        return Qt.rgba(clamp01((target.r - base.r * invOpacity) / opacity), clamp01((target.g - base.g
-                                                                                     * invOpacity) / opacity),
-                       clamp01((target.b - base.b * invOpacity) / opacity), opacity);
+        return Qt.rgba(clamp01((target.r - base.r * invOpacity) / opacity), clamp01((target.g - base.g * invOpacity) / opacity), clamp01((target.b - base.b * invOpacity) / opacity), opacity);
     }
 
     function relativeLuminance(color) {
@@ -93,120 +121,500 @@ Singleton {
         }
         return candidates[0];
     }
+    property bool colorTransitionEnabled: false
+
     m3colors: QtObject {
         property bool darkmode: root.effectiveMatugenMode === "dark"
         property color m3background: "#0f1416"
+        Behavior on m3background {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3error: "#ffb4ab"
+        Behavior on m3error {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3errorContainer: "#93000a"
+        Behavior on m3errorContainer {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3inverseOnSurface: "#2c3134"
+        Behavior on m3inverseOnSurface {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3inversePrimary: "#09677f"
+        Behavior on m3inversePrimary {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3inverseSurface: "#dee3e6"
+        Behavior on m3inverseSurface {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3onBackground: "#dee3e6"
+        Behavior on m3onBackground {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3onError: "#690005"
+        Behavior on m3onError {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3onErrorContainer: "#ffdad6"
+        Behavior on m3onErrorContainer {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3onPrimary: "#003544"
+        Behavior on m3onPrimary {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3onPrimaryContainer: "#b8eaff"
+        Behavior on m3onPrimaryContainer {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3onPrimaryFixed: "#001f28"
+        Behavior on m3onPrimaryFixed {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3onPrimaryFixedVariant: "#004d61"
+        Behavior on m3onPrimaryFixedVariant {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3onSecondary: "#1e333c"
+        Behavior on m3onSecondary {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3onSecondaryContainer: "#cfe6f1"
+        Behavior on m3onSecondaryContainer {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3onSecondaryFixed: "#071e26"
+        Behavior on m3onSecondaryFixed {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3onSecondaryFixedVariant: "#354a53"
+        Behavior on m3onSecondaryFixedVariant {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3onSurface: "#dee3e6"
+        Behavior on m3onSurface {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3onSurfaceVariant: "#bfc8cc"
+        Behavior on m3onSurfaceVariant {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3onTertiary: "#2c2d4d"
+        Behavior on m3onTertiary {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3onTertiaryContainer: "#e1e0ff"
+        Behavior on m3onTertiaryContainer {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3onTertiaryFixed: "#171837"
+        Behavior on m3onTertiaryFixed {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3onTertiaryFixedVariant: "#434465"
+        Behavior on m3onTertiaryFixedVariant {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3outline: "#8a9296"
+        Behavior on m3outline {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3outlineVariant: "#40484c"
+        Behavior on m3outlineVariant {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3primary: "#88d0ec"
+        Behavior on m3primary {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3primaryContainer: "#004d61"
+        Behavior on m3primaryContainer {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3primaryFixed: "#b8eaff"
+        Behavior on m3primaryFixed {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3primaryFixedDim: "#88d0ec"
+        Behavior on m3primaryFixedDim {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3scrim: "#000000"
+        Behavior on m3scrim {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3secondary: "#b3cad5"
+        Behavior on m3secondary {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3secondaryContainer: "#354a53"
+        Behavior on m3secondaryContainer {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3secondaryFixed: "#cfe6f1"
+        Behavior on m3secondaryFixed {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3secondaryFixedDim: "#b3cad5"
+        Behavior on m3secondaryFixedDim {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3shadow: "#000000"
+        Behavior on m3shadow {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3sourceColor: "#669cb1"
+        Behavior on m3sourceColor {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3surface: "#0f1416"
+        Behavior on m3surface {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3surfaceBright: "#353a3d"
+        Behavior on m3surfaceBright {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3surfaceContainer: "#1b2023"
+        Behavior on m3surfaceContainer {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3surfaceContainerHigh: "#252b2d"
+        Behavior on m3surfaceContainerHigh {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3surfaceContainerHighest: "#303638"
+        Behavior on m3surfaceContainerHighest {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3surfaceContainerLow: "#171c1f"
+        Behavior on m3surfaceContainerLow {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3surfaceContainerLowest: "#0a0f11"
+        Behavior on m3surfaceContainerLowest {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3surfaceDim: "#0f1416"
+        Behavior on m3surfaceDim {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3surfaceTint: "#88d0ec"
+        Behavior on m3surfaceTint {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3surfaceVariant: "#40484c"
+        Behavior on m3surfaceVariant {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3tertiary: "#c3c3eb"
+        Behavior on m3tertiary {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3tertiaryContainer: "#434465"
+        Behavior on m3tertiaryContainer {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3tertiaryFixed: "#e1e0ff"
+        Behavior on m3tertiaryFixed {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
         property color m3tertiaryFixedDim: "#c3c3eb"
     }
 
     colors: QtObject {
-        property color colSubtext: root.ensureContrast(root.m3colors.m3outline, root.m3colors.m3background, 3.5)
+        Behavior on m3tertiaryFixedDim {
+            ColorAnimation {
+                enabled: Appearance.colorTransitionEnabled
+                duration: Appearance.motionDuration(300)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Animations.curves.standard
+            }
+        }
+        property color colSubtext: root.ensureContrast(root.m3colors.m3outline, root.m3colors.m3background, root.highContrast ? 7 : 3.5)
 
         property color colLayer0Base: root.mix(root.m3colors.m3background, root.m3colors.m3primary, 0.99)
-        property color colLayer0: root.transparentize(colLayer0Base, root.backgroundTransparency)
+        property color colLayer0: root.transparentize(colLayer0Base, root.effectiveBackgroundTransparency)
         property color colOnLayer0: root.m3colors.m3onBackground
-        property color colLayer0Hover: root.transparentize(root.mix(colLayer0, colOnLayer0, 0.9),
-                                                           root.contentTransparency)
+        property color colLayer0Hover: root.transparentize(root.mix(colLayer0, colOnLayer0, 0.9), root.effectiveContentTransparency)
 
-        property color colLayer0Active: root.transparentize(root.mix(colLayer0, colOnLayer0, 0.8),
-                                                            root.contentTransparency)
+        property color colLayer0Active: root.transparentize(root.mix(colLayer0, colOnLayer0, 0.8), root.effectiveContentTransparency)
 
         property color colLayer0Border: root.mix(root.m3colors.m3outlineVariant, colLayer0, 0.4)
 
         property color colLayer1Base: root.m3colors.m3surfaceContainerLow
-        property color colLayer1: root.solveOverlayColor(colLayer0Base, colLayer1Base, 1
-                                                         - root.contentTransparency)
+        property color colLayer1: root.solveOverlayColor(colLayer0Base, colLayer1Base, 1 - root.effectiveContentTransparency)
         property color colOnLayer1: root.m3colors.m3onSurfaceVariant
         property color colOnLayer1Inactive: root.mix(colOnLayer1, colLayer1, 0.45)
-        property color colLayer1Hover: root.transparentize(root.mix(colLayer1, colOnLayer1, 0.92),
-                                                           root.contentTransparency)
+        property color colLayer1Hover: root.transparentize(root.mix(colLayer1, colOnLayer1, 0.92), root.effectiveContentTransparency)
 
-        property color colLayer1Active: root.transparentize(root.mix(colLayer1, colOnLayer1, 0.85),
-                                                            root.contentTransparency)
+        property color colLayer1Active: root.transparentize(root.mix(colLayer1, colOnLayer1, 0.85), root.effectiveContentTransparency)
 
         property color colLayer2Base: root.m3colors.m3surfaceContainer
-        property color colLayer2: root.solveOverlayColor(colLayer1Base, colLayer2Base, 1
-                                                         - root.contentTransparency)
-        property color colLayer2Hover: root.solveOverlayColor(colLayer1Base, root.mix(colLayer2Base,
-                                                                                      colOnLayer2, 0.90), 1
-                                                              - root.contentTransparency)
-        property color colLayer2Active: root.solveOverlayColor(colLayer1Base, root.mix(colLayer2Base,
-                                                                                       colOnLayer2, 0.80), 1
-                                                               - root.contentTransparency)
-        property color colLayer2Disabled: root.solveOverlayColor(colLayer1Base, root.mix(colLayer2Base,
-                                                                                         root.m3colors.m3background,
-                                                                                         0.8), 1 - root.contentTransparency)
+        property color colLayer2: root.solveOverlayColor(colLayer1Base, colLayer2Base, 1 - root.effectiveContentTransparency)
+        property color colLayer2Hover: root.solveOverlayColor(colLayer1Base, root.mix(colLayer2Base, colOnLayer2, 0.90), 1 - root.effectiveContentTransparency)
+        property color colLayer2Active: root.solveOverlayColor(colLayer1Base, root.mix(colLayer2Base, colOnLayer2, 0.80), 1 - root.effectiveContentTransparency)
+        property color colLayer2Disabled: root.solveOverlayColor(colLayer1Base, root.mix(colLayer2Base, root.m3colors.m3background, 0.8), 1 - root.effectiveContentTransparency)
         property color colOnLayer2: root.m3colors.m3onSurface
         property color colOnLayer2Disabled: root.mix(colOnLayer2, root.m3colors.m3background, 0.4)
 
         property color colLayer3Base: root.m3colors.m3surfaceContainerHigh
-        property color colLayer3: root.solveOverlayColor(colLayer2Base, colLayer3Base, 1
-                                                         - root.contentTransparency)
-        property color colLayer3Hover: root.solveOverlayColor(colLayer2Base, root.mix(colLayer3Base,
-                                                                                      colOnLayer3, 0.90), 1
-                                                              - root.contentTransparency)
-        property color colLayer3Active: root.solveOverlayColor(colLayer2Base, root.mix(colLayer3Base,
-                                                                                       colOnLayer3, 0.80), 1
-                                                               - root.contentTransparency)
+        property color colLayer3: root.solveOverlayColor(colLayer2Base, colLayer3Base, 1 - root.effectiveContentTransparency)
+        property color colLayer3Hover: root.solveOverlayColor(colLayer2Base, root.mix(colLayer3Base, colOnLayer3, 0.90), 1 - root.effectiveContentTransparency)
+        property color colLayer3Active: root.solveOverlayColor(colLayer2Base, root.mix(colLayer3Base, colOnLayer3, 0.80), 1 - root.effectiveContentTransparency)
         property color colOnLayer3: root.m3colors.m3onSurface
 
         property color colLayer4Base: root.m3colors.m3surfaceContainerHighest
-        property color colLayer4: root.solveOverlayColor(colLayer3Base, colLayer4Base, 1
-                                                         - root.contentTransparency)
-        property color colLayer4Hover: root.solveOverlayColor(colLayer3Base, root.mix(colLayer4Base,
-                                                                                      colOnLayer4, 0.90), 1
-                                                              - root.contentTransparency)
-        property color colLayer4Active: root.solveOverlayColor(colLayer3Base, root.mix(colLayer4Base,
-                                                                                       colOnLayer4, 0.80), 1
-                                                               - root.contentTransparency)
+        property color colLayer4: root.solveOverlayColor(colLayer3Base, colLayer4Base, 1 - root.effectiveContentTransparency)
+        property color colLayer4Hover: root.solveOverlayColor(colLayer3Base, root.mix(colLayer4Base, colOnLayer4, 0.90), 1 - root.effectiveContentTransparency)
+        property color colLayer4Active: root.solveOverlayColor(colLayer3Base, root.mix(colLayer4Base, colOnLayer4, 0.80), 1 - root.effectiveContentTransparency)
         property color colOnLayer4: root.m3colors.m3onSurface
 
         property color colPrimary: root.m3colors.m3primary
@@ -228,10 +636,8 @@ Singleton {
         property color colSecondaryActive: root.mix(colSecondary, colLayer1Active, 0.4)
         property color colSecondaryContainer: root.m3colors.m3secondaryContainer
         property color colOnSecondaryContainer: root.m3colors.m3onSecondaryContainer
-        property color colSecondaryContainerHover: root.mix(colSecondaryContainer, colOnSecondaryContainer,
-                                                            0.90)
-        property color colSecondaryContainerActive: root.mix(colSecondaryContainer, colOnSecondaryContainer,
-                                                             0.54)
+        property color colSecondaryContainerHover: root.mix(colSecondaryContainer, colOnSecondaryContainer, 0.90)
+        property color colSecondaryContainerActive: root.mix(colSecondaryContainer, colOnSecondaryContainer, 0.54)
         property color colSecondaryFixed: root.m3colors.m3secondaryFixed
         property color colSecondaryFixedDim: root.m3colors.m3secondaryFixedDim
         property color colOnSecondaryFixed: root.m3colors.m3onSecondaryFixed
@@ -250,24 +656,13 @@ Singleton {
         property color colOnTertiaryFixed: root.m3colors.m3onTertiaryFixed
         property color colOnTertiaryFixedVariant: root.m3colors.m3onTertiaryFixedVariant
 
-        property color colBackgroundSurfaceContainer: root.transparentize(root.m3colors.m3surfaceContainer,
-                                                                          root.backgroundTransparency)
-        property color colSurfaceContainerLow: root.solveOverlayColor(root.m3colors.m3background,
-                                                                      root.m3colors.m3surfaceContainerLow, 1
-                                                                      - root.contentTransparency)
-        property color colSurfaceContainer: root.solveOverlayColor(root.m3colors.m3surfaceContainerLow,
-                                                                   root.m3colors.m3surfaceContainer, 1
-                                                                   - root.contentTransparency)
-        property color colSurfaceContainerHigh: root.solveOverlayColor(root.m3colors.m3surfaceContainer,
-                                                                       root.m3colors.m3surfaceContainerHigh,
-                                                                       1 - root.contentTransparency)
-        property color colSurfaceContainerHighest: root.solveOverlayColor(root.m3colors.m3surfaceContainerHigh,
-                                                                          root.m3colors.m3surfaceContainerHighest,
-                                                                          1 - root.contentTransparency)
-        property color colSurfaceContainerHighestHover: root.mix(root.m3colors.m3surfaceContainerHighest,
-                                                                 root.m3colors.m3onSurface, 0.95)
-        property color colSurfaceContainerHighestActive: root.mix(root.m3colors.m3surfaceContainerHighest,
-                                                                  root.m3colors.m3onSurface, 0.85)
+        property color colBackgroundSurfaceContainer: root.transparentize(root.m3colors.m3surfaceContainer, root.effectiveBackgroundTransparency)
+        property color colSurfaceContainerLow: root.solveOverlayColor(root.m3colors.m3background, root.m3colors.m3surfaceContainerLow, 1 - root.effectiveContentTransparency)
+        property color colSurfaceContainer: root.solveOverlayColor(root.m3colors.m3surfaceContainerLow, root.m3colors.m3surfaceContainer, 1 - root.effectiveContentTransparency)
+        property color colSurfaceContainerHigh: root.solveOverlayColor(root.m3colors.m3surfaceContainer, root.m3colors.m3surfaceContainerHigh, 1 - root.effectiveContentTransparency)
+        property color colSurfaceContainerHighest: root.solveOverlayColor(root.m3colors.m3surfaceContainerHigh, root.m3colors.m3surfaceContainerHighest, 1 - root.effectiveContentTransparency)
+        property color colSurfaceContainerHighestHover: root.mix(root.m3colors.m3surfaceContainerHighest, root.m3colors.m3onSurface, 0.95)
+        property color colSurfaceContainerHighestActive: root.mix(root.m3colors.m3surfaceContainerHighest, root.m3colors.m3onSurface, 0.85)
         property color colOnSurface: root.m3colors.m3onSurface
         property color colOnSurfaceVariant: root.m3colors.m3onSurfaceVariant
         property color colInversePrimary: root.m3colors.m3inversePrimary
@@ -298,9 +693,9 @@ Singleton {
     animation: Animations.animation
 
     interaction: QtObject {
-        readonly property int rippleDuration: 700
+        readonly property int rippleDuration: Appearance.motionDuration(480)
         readonly property real rippleOpacity: 0.22
-        readonly property int stateLayerTransitionDuration: Animations.durations.expressiveFastEffects
+        readonly property int stateLayerTransitionDuration: Animations.animation.expressiveFastEffects.duration
         readonly property real hoverStateLayerOpacity: 0.08
         readonly property real focusStateLayerOpacity: 0.10
         readonly property real pressedStateLayerOpacity: 0.12

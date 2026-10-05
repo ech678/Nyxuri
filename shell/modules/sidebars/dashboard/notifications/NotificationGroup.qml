@@ -11,8 +11,7 @@ MouseArea {
 
     property int delegateIndex: -1
     property var notificationGroup
-    property var notifications: notificationGroup && notificationGroup.notifications
-                                ? notificationGroup.notifications : []
+    property var notifications: notificationGroup && notificationGroup.notifications ? notificationGroup.notifications : []
     property int notificationCount: notifications.length
     property bool multipleNotifications: notificationCount > 1
     property bool expanded: false
@@ -24,13 +23,8 @@ MouseArea {
     property int parentDragIndex: dragHost ? dragHost.dragIndex : -1
     property real parentDragDistance: dragHost ? dragHost.dragDistance : 0
     property int dragIndexDiff: Math.abs(parentDragIndex - delegateIndex)
-    property real xOffset: dragIndexDiff === 0 ? parentDragDistance : Math.abs(parentDragDistance)
-                                                 > dragConfirmThreshold ? 0 : dragIndexDiff === 1
-                                                                          ? parentDragDistance * 0.3 :
-                                                                            dragIndexDiff === 2
-                                                                            ? parentDragDistance * 0.1 : 0
-    readonly property bool latestNotificationHasImage: notificationCount > 0
-                                                       && notifications[notificationCount - 1].image !== ""
+    property real xOffset: dragIndexDiff === 0 ? parentDragDistance : Math.abs(parentDragDistance) > dragConfirmThreshold ? 0 : dragIndexDiff === 1 ? parentDragDistance * 0.3 : dragIndexDiff === 2 ? parentDragDistance * 0.1 : 0
+    readonly property bool latestNotificationHasImage: notificationCount > 0 && notifications[notificationCount - 1].image !== ""
 
     function isCriticalUrgency(urgency) {
         return urgency === NotificationUrgency.Critical || String(urgency).endsWith("Critical");
@@ -122,13 +116,10 @@ MouseArea {
         anchors.left: parent.left
         anchors.leftMargin: root.xOffset
         width: parent.width
-        color: root.popup ? Appearance.colors.colBackgroundSurfaceContainer :
-                            BlurService.opaqueBackgroundColor(Appearance.m3colors.m3surfaceContainer)
+        color: root.popup ? Appearance.colors.colBackgroundSurfaceContainer : BlurService.opaqueBackgroundColor(Appearance.m3colors.m3surfaceContainer)
         radius: Appearance.rounding.normal
         clip: true
-        implicitHeight: root.expanded ? row.implicitHeight + root.padding * 2 : Math.min(80,
-                                                                                         row.implicitHeight
-                                                                                         + root.padding * 2)
+        implicitHeight: root.expanded ? row.implicitHeight + root.padding * 2 : Math.min(80, row.implicitHeight + root.padding * 2)
 
         RowLayout {
             id: row
@@ -141,12 +132,10 @@ MouseArea {
 
             NotificationAppIcon {
                 Layout.alignment: Qt.AlignTop
-                image: root.multipleNotifications || root.notificationCount === 0 ? "" :
-                                                                                    root.notifications[0].image
+                image: root.multipleNotifications || root.notificationCount === 0 ? "" : root.notifications[0].image
 
                 appIcon: root.notificationGroup ? root.notificationGroup.appIcon : ""
-                summary: root.notificationCount > 0 ? root.notifications[root.notificationCount - 1].summary :
-                                                      ""
+                summary: root.notificationCount > 0 ? root.notifications[root.notificationCount - 1].summary : ""
                 urgency: root.notifications.some(notif => {
                     return root.isCriticalUrgency(notif.urgency);
                 }) ? NotificationUrgency.Critical : NotificationUrgency.Normal
@@ -155,8 +144,7 @@ MouseArea {
             ColumnLayout {
                 Layout.alignment: Qt.AlignTop
                 Layout.fillWidth: true
-                spacing: root.expanded ? (root.multipleNotifications ? (root.latestNotificationHasImage ? 35 :
-                                                                                                          5) : 0) : 0
+                spacing: root.expanded ? (root.multipleNotifications ? (root.latestNotificationHasImage ? 35 : 5) : 0) : 0
 
                 Item {
                     id: topRow
@@ -177,24 +165,18 @@ MouseArea {
 
                         Text {
                             Layout.fillWidth: true
-                            text: (topRow.showAppName ? (root.notificationGroup
-                                                         ? root.notificationGroup.appName : "") : (
-                                                            root.notificationCount > 0
-                                                            ? root.notifications[0].summary : "")) || ""
+                            text: (topRow.showAppName ? (root.notificationGroup ? root.notificationGroup.appName : "") : (root.notificationCount > 0 ? root.notifications[0].summary : "")) || ""
                             font.family: Fonts.ui
                             font.pixelSize: topRow.showAppName ? topRow.fontSize : 13
                             font.bold: !topRow.showAppName
-                            color: topRow.showAppName ? Appearance.colors.colSubtext :
-                                                        Appearance.colors.colOnLayer2
+                            color: topRow.showAppName ? Appearance.colors.colSubtext : Appearance.colors.colOnLayer2
                             elide: Text.ElideRight
                         }
 
                         Text {
                             Layout.rightMargin: 10
                             horizontalAlignment: Text.AlignLeft
-                            text: notifUtils.getFriendlyNotifTimeString(root.notificationGroup
-                                                                        ? root.notificationGroup.receivedAt :
-                                                                          0, TimeService.now)
+                            text: notifUtils.getFriendlyNotifTimeString(root.notificationGroup ? root.notificationGroup.receivedAt : 0, TimeService.now)
                             font.family: Fonts.numeric
                             font.pixelSize: topRow.fontSize
                             color: Appearance.colors.colSubtext
@@ -247,8 +229,7 @@ MouseArea {
                     }
 
                     model: ScriptModel {
-                        values: root.expanded ? root.notifications.slice().reverse() : root.notifications.slice(
-                                                    ).reverse().slice(0, 2)
+                        values: root.expanded ? root.notifications.slice().reverse() : root.notifications.slice().reverse().slice(0, 2)
                         objectProp: "notificationId"
                     }
 
@@ -263,7 +244,24 @@ MouseArea {
                         notificationObject: modelData
                         expanded: root.expanded
                         onlyNotification: root.notificationCount === 1
-                        opacity: (!root.expanded && index === 1 && root.notificationCount > 2) ? 0.5 : 1
+                        property real entranceOpacity: Appearance.animationsEnabled ? 0 : 1
+                        opacity: ((!root.expanded && index === 1 && root.notificationCount > 2) ? 0.5 : 1) * entranceOpacity
+                        transform: Translate {
+                            y: Appearance.animationsEnabled ? (1 - parent.entranceOpacity) * 6 : 0
+                        }
+                        Timer {
+                            interval: Math.min(6, index) * 26
+                            running: Appearance.animationsEnabled
+                            onTriggered: parent.entranceOpacity = 1
+                        }
+                        Behavior on entranceOpacity {
+                            enabled: Appearance.animationsEnabled
+                            NumberAnimation {
+                                duration: Appearance.animation.expressiveEffects.duration
+                                easing.type: Appearance.animation.expressiveEffects.type
+                                easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
+                            }
+                        }
                         visible: root.expanded || index < 2
                         onDismissGroup: left => {
                             return root.destroyWithAnimation(left);

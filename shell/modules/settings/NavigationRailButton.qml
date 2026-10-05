@@ -44,11 +44,7 @@ TabButton {
             anchors.bottom: itemIconBackground.bottom
             implicitWidth: root.visualWidth
             radius: Appearance.rounding.full
-            color: root.toggled
-                ? root.showToggledHighlight
-                    ? (root.down ? Appearance.colors.colSecondaryContainerActive : root.hovered ? Appearance.colors.colSecondaryContainerHover : Appearance.colors.colSecondaryContainer)
-                    : Appearance.transparentize(Appearance.colors.colSecondaryContainer, 1)
-                : (root.down ? Appearance.colors.colLayer1Active : root.hovered ? Appearance.colors.colLayer1Hover : Appearance.transparentize(Appearance.colors.colLayer1Hover, 1))
+            color: root.toggled ? root.showToggledHighlight ? (root.down ? Appearance.colors.colSecondaryContainerActive : root.hovered ? Appearance.colors.colSecondaryContainerHover : Appearance.colors.colSecondaryContainer) : Appearance.transparentize(Appearance.colors.colSecondaryContainer, 1) : (root.down ? Appearance.colors.colLayer1Active : root.hovered ? Appearance.colors.colLayer1Hover : Appearance.transparentize(Appearance.colors.colLayer1Hover, 1))
 
             states: State {
                 name: "expanded"
@@ -126,7 +122,7 @@ TabButton {
             text: root.buttonText
             color: root.toggled ? Appearance.m3colors.m3onSecondaryContainer : Appearance.colors.colOnLayer1
             font.family: Fonts.ui
-            font.pixelSize: 14
+            font.pixelSize: Appearance.scaledFont(14)
             verticalAlignment: Text.AlignVCenter
 
             states: State {

@@ -152,8 +152,7 @@ FloatingWindow {
             return current;
 
         function isValid(value) {
-            return movingFirst ? dimensionAllowed(value, fixed, requireFunction) : dimensionAllowed(fixed,
-                                                                                                    value, requireFunction);
+            return movingFirst ? dimensionAllowed(value, fixed, requireFunction) : dimensionAllowed(fixed, value, requireFunction);
         }
 
         if (isValid(target))
@@ -186,13 +185,11 @@ FloatingWindow {
 
     function curveText(curve) {
         const c = normalizeCurve(curve || workingCurve);
-        return formatNumber(c[0]) + ", " + formatNumber(c[1]) + ", " + formatNumber(c[2]) + ", " + formatNumber(
-                    c[3]);
+        return formatNumber(c[0]) + ", " + formatNumber(c[1]) + ", " + formatNumber(c[2]) + ", " + formatNumber(c[3]);
     }
 
     function copyCurve() {
-        ActionGateway.execute(["wl-copy", curveText([renderX1, renderY1, renderX2, renderY2, 1, 1])],
-                              "settings:bezier-layer-copy");
+        ActionGateway.execute(["wl-copy", curveText([renderX1, renderY1, renderX2, renderY2, 1, 1])], "settings:bezier-layer-copy");
     }
 
     function p1() {
@@ -319,8 +316,7 @@ FloatingWindow {
     function resetView() {
         if (editorCanvas.width <= 0 || editorCanvas.height <= 0)
             return;
-        pixelsPerUnit = Math.max(140, Math.min(280, Math.min(editorCanvas.width, editorCanvas.height)
-                                               * 0.46));
+        pixelsPerUnit = Math.max(140, Math.min(280, Math.min(editorCanvas.width, editorCanvas.height) * 0.46));
         panX = 0;
         panY = 0;
         editorCanvas.requestPaint();
@@ -429,8 +425,7 @@ FloatingWindow {
         property: "playhead"
         easing.type: Easing.Linear
         onStopped: {
-            if ((root.playbackDirection > 0 && root.playhead >= 1) || (root.playbackDirection < 0
-                                                                       && root.playhead <= 0))
+            if ((root.playbackDirection > 0 && root.playhead >= 1) || (root.playbackDirection < 0 && root.playhead <= 0))
                 root.playing = false;
         }
     }
@@ -547,18 +542,14 @@ FloatingWindow {
                 const maxX = root.worldX(w);
                 const minY = root.worldY(h);
                 const maxY = root.worldY(0);
-                const step = root.pixelsPerUnit >= 320 ? 0.1 : root.pixelsPerUnit >= 160 ? 0.25 :
-                                                                                           root.pixelsPerUnit
-                                                                                           >= 80 ? 0.5 : 1;
+                const step = root.pixelsPerUnit >= 320 ? 0.1 : root.pixelsPerUnit >= 160 ? 0.25 : root.pixelsPerUnit >= 80 ? 0.5 : 1;
 
                 function drawGridLines(gridStep, major) {
                     const xStart = Math.floor(minX / gridStep) * gridStep;
                     const xEnd = Math.ceil(maxX / gridStep) * gridStep;
                     const yStart = Math.floor(minY / gridStep) * gridStep;
                     const yEnd = Math.ceil(maxY / gridStep) * gridStep;
-                    ctx.strokeStyle = major ? Appearance.applyAlpha(Appearance.colors.colOnSurfaceVariant,
-                                                                    0.24) : Appearance.applyAlpha(
-                                                  Appearance.colors.colOnSurfaceVariant, 0.10);
+                    ctx.strokeStyle = major ? Appearance.applyAlpha(Appearance.colors.colOnSurfaceVariant, 0.24) : Appearance.applyAlpha(Appearance.colors.colOnSurfaceVariant, 0.10);
                     ctx.lineWidth = major ? 1.1 : 0.8;
                     ctx.beginPath();
                     for (let x = xStart; x <= xEnd + gridStep / 2; x += gridStep) {
@@ -649,8 +640,7 @@ FloatingWindow {
                 function drawControlPoint(x, y, selected) {
                     const side = selected ? 17 : 15;
                     ctx.fillStyle = Appearance.m3colors.m3surfaceContainerLowest;
-                    ctx.strokeStyle = selected ? Appearance.colors.colTertiary :
-                                                 Appearance.colors.colSecondary;
+                    ctx.strokeStyle = selected ? Appearance.colors.colTertiary : Appearance.colors.colSecondary;
                     ctx.lineWidth = selected ? 2.7 : 2.2;
                     ctx.beginPath();
                     ctx.rect(x - side / 2, y - side / 2, side, side);
@@ -672,10 +662,7 @@ FloatingWindow {
             acceptedButtons: Qt.LeftButton
             hoverEnabled: true
             preventStealing: true
-            cursorShape: root.activePoint >= 0 || root.panning ? Qt.ClosedHandCursor : root.hitTest(mouseX,
-                                                                                                    mouseY)
-                                                                 >= 0 ? Qt.PointingHandCursor :
-                                                                        Qt.OpenHandCursor
+            cursorShape: root.activePoint >= 0 || root.panning ? Qt.ClosedHandCursor : root.hitTest(mouseX, mouseY) >= 0 ? Qt.PointingHandCursor : Qt.OpenHandCursor
 
             onPressed: mouse => {
                 const hit = root.hitTest(mouse.x, mouse.y);
@@ -721,10 +708,8 @@ FloatingWindow {
                 const beforeY = root.worldY(wheel.y);
                 const factor = wheel.angleDelta.y > 0 ? 1.12 : 0.89;
                 root.pixelsPerUnit = Math.max(48, Math.min(720, root.pixelsPerUnit * factor));
-                root.panX = wheel.x - (editorCanvas.width / 2 - root.pixelsPerUnit / 2) - beforeX
-                        * root.pixelsPerUnit;
-                root.panY = wheel.y + beforeY * root.pixelsPerUnit - editorCanvas.height / 2
-                        - root.pixelsPerUnit / 2;
+                root.panX = wheel.x - (editorCanvas.width / 2 - root.pixelsPerUnit / 2) - beforeX * root.pixelsPerUnit;
+                root.panY = wheel.y + beforeY * root.pixelsPerUnit - editorCanvas.height / 2 - root.pixelsPerUnit / 2;
                 wheel.accepted = true;
                 editorCanvas.requestPaint();
             }
@@ -751,7 +736,7 @@ FloatingWindow {
                     text: "P1 " + root.formatNumber(root.renderX1) + ", " + root.formatNumber(root.renderY1)
                     color: Appearance.colors.colSubtext
                     font.family: Fonts.mono
-                    font.pixelSize: 12
+                    font.pixelSize: Appearance.scaledFont(12)
                     fontSizeMode: Text.HorizontalFit
                     minimumPixelSize: 9
                     elide: Text.ElideNone
@@ -763,7 +748,7 @@ FloatingWindow {
                     text: "P2 " + root.formatNumber(root.renderX2) + ", " + root.formatNumber(root.renderY2)
                     color: Appearance.colors.colSubtext
                     font.family: Fonts.mono
-                    font.pixelSize: 12
+                    font.pixelSize: Appearance.scaledFont(12)
                     fontSizeMode: Text.HorizontalFit
                     minimumPixelSize: 9
                     elide: Text.ElideNone
@@ -847,8 +832,7 @@ FloatingWindow {
             anchors.bottom: parent.bottom
             anchors.rightMargin: 18
             anchors.bottomMargin: 18
-            width: Math.max(collapsedMainSize, playMiniFab.implicitWidth, reverseMiniFab.implicitWidth,
-                            flipMiniFab.implicitWidth, manualMiniFab.implicitWidth)
+            width: Math.max(collapsedMainSize, playMiniFab.implicitWidth, reverseMiniFab.implicitWidth, flipMiniFab.implicitWidth, manualMiniFab.implicitWidth)
             height: expandedMainSize + mainGap + actionCount * actionSize + (actionCount - 1) * actionGap
 
             Item {
@@ -865,8 +849,7 @@ FloatingWindow {
                     order: 4
                     itemCount: fabMenu.actionCount
                     actionSize: fabMenu.actionSize
-                    expandedY: fabMenu.height - fabMenu.expandedMainSize - fabMenu.mainGap - order
-                               * fabMenu.actionSize - (order - 1) * fabMenu.actionGap
+                    expandedY: fabMenu.height - fabMenu.expandedMainSize - fabMenu.mainGap - order * fabMenu.actionSize - (order - 1) * fabMenu.actionGap
                     onClicked: root.togglePlayback()
                 }
 
@@ -879,8 +862,7 @@ FloatingWindow {
                     order: 3
                     itemCount: fabMenu.actionCount
                     actionSize: fabMenu.actionSize
-                    expandedY: fabMenu.height - fabMenu.expandedMainSize - fabMenu.mainGap - order
-                               * fabMenu.actionSize - (order - 1) * fabMenu.actionGap
+                    expandedY: fabMenu.height - fabMenu.expandedMainSize - fabMenu.mainGap - order * fabMenu.actionSize - (order - 1) * fabMenu.actionGap
                     onClicked: root.reversePlayback()
                 }
 
@@ -893,8 +875,7 @@ FloatingWindow {
                     order: 2
                     itemCount: fabMenu.actionCount
                     actionSize: fabMenu.actionSize
-                    expandedY: fabMenu.height - fabMenu.expandedMainSize - fabMenu.mainGap - order
-                               * fabMenu.actionSize - (order - 1) * fabMenu.actionGap
+                    expandedY: fabMenu.height - fabMenu.expandedMainSize - fabMenu.mainGap - order * fabMenu.actionSize - (order - 1) * fabMenu.actionGap
                     onClicked: root.flipCurve()
                 }
 
@@ -907,8 +888,7 @@ FloatingWindow {
                     order: 1
                     itemCount: fabMenu.actionCount
                     actionSize: fabMenu.actionSize
-                    expandedY: fabMenu.height - fabMenu.expandedMainSize - fabMenu.mainGap - order
-                               * fabMenu.actionSize - (order - 1) * fabMenu.actionGap
+                    expandedY: fabMenu.height - fabMenu.expandedMainSize - fabMenu.mainGap - order * fabMenu.actionSize - (order - 1) * fabMenu.actionGap
                     onClicked: root.toggleManualInput()
                 }
 
@@ -943,8 +923,7 @@ FloatingWindow {
         property real morphProgress: expanded ? 1 : 0
         readonly property QtObject spatialMotion: Appearance.animation.elementMoveFast
         readonly property real currentSize: collapsedSize + (expandedSize - collapsedSize) * morphProgress
-        readonly property real currentRadius: collapsedRadius + (expandedSize / 2 - collapsedRadius)
-                                              * morphProgress
+        readonly property real currentRadius: collapsedRadius + (expandedSize / 2 - collapsedRadius) * morphProgress
 
         signal clicked
 
@@ -1058,8 +1037,7 @@ FloatingWindow {
         radius: Appearance.rounding.normal
         color: Appearance.applyAlpha(Appearance.m3colors.m3surfaceContainerHigh, 0.92)
         border.width: 1
-        border.color: root.manualInputInvalid ? Appearance.colors.colError : Appearance.applyAlpha(
-                                                    Appearance.colors.colOnSurfaceVariant, 0.22)
+        border.color: root.manualInputInvalid ? Appearance.colors.colError : Appearance.applyAlpha(Appearance.colors.colOnSurfaceVariant, 0.22)
 
         function focusInput() {
             manualInput.forceActiveFocus();
@@ -1085,11 +1063,7 @@ FloatingWindow {
                     radius: Appearance.rounding.small
                     color: "transparent"
                     border.width: 1
-                    border.color: root.manualInputInvalid ? Appearance.colors.colError :
-                                                            manualInput.activeFocus
-                                                            ? Appearance.colors.colPrimary :
-                                                              Appearance.applyAlpha(
-                                                                  Appearance.colors.colOnSurfaceVariant, 0.32)
+                    border.color: root.manualInputInvalid ? Appearance.colors.colError : manualInput.activeFocus ? Appearance.colors.colPrimary : Appearance.applyAlpha(Appearance.colors.colOnSurfaceVariant, 0.32)
                 }
 
                 Rectangle {
@@ -1106,11 +1080,17 @@ FloatingWindow {
                     x: 14
                     y: 0
                     text: "x1, y1, x2, y2"
-                    color: root.manualInputInvalid ? Appearance.colors.colError : manualInput.activeFocus
-                                                     ? Appearance.colors.colPrimary :
-                                                       Appearance.colors.colSubtext
+                    color: root.manualInputInvalid ? Appearance.colors.colError : manualInput.activeFocus ? Appearance.colors.colPrimary : Appearance.colors.colSubtext
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: Appearance.animation.expressiveFastEffects.duration
+                            easing.type: Appearance.animation.expressiveFastEffects.type
+                            easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
+                        }
+                    }
                     font.family: Fonts.ui
-                    font.pixelSize: 12
+                    font.pixelSize: Appearance.scaledFont(12)
                 }
 
                 TextField {
@@ -1123,7 +1103,7 @@ FloatingWindow {
                     selectionColor: Appearance.colors.colPrimary
                     selectByMouse: true
                     font.family: Fonts.mono
-                    font.pixelSize: 13
+                    font.pixelSize: Appearance.scaledFont(13)
                     leftPadding: 16
                     rightPadding: 12
                     topPadding: 14

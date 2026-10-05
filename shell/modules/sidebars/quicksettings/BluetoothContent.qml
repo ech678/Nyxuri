@@ -36,8 +36,7 @@ WidgetPanel {
     }
 
     function beginInitialLoad() {
-        if (!root.isActive || !BluetoothService.available || !BluetoothService.enabled
-                || root.initialLoadAttempted)
+        if (!root.isActive || !BluetoothService.available || !BluetoothService.enabled || root.initialLoadAttempted)
             return;
 
         initialLoadTimer.stop();
@@ -174,8 +173,7 @@ WidgetPanel {
 
         SidebarFlickable {
             id: sidebarScroll
-            refreshEnabled: root.isActive && BluetoothService.available && BluetoothService.enabled &&
-                            !BluetoothService.busy
+            refreshEnabled: root.isActive && BluetoothService.available && BluetoothService.enabled && !BluetoothService.busy
             refreshing: root.refreshLoading
             onRefreshRequested: root.restartDiscoveryLease()
 
@@ -228,8 +226,7 @@ WidgetPanel {
 
                     Item {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: root.initialLoading
-                                                && BluetoothService.availableDevices.length === 0 ? 116 : 0
+                        Layout.preferredHeight: root.initialLoading && BluetoothService.availableDevices.length === 0 ? 116 : 0
                         opacity: root.initialLoading ? 1 : 0
                         clip: true
 
@@ -248,7 +245,7 @@ WidgetPanel {
                                 text: I18n.tr("Searching for nearby devices")
                                 color: Appearance.colors.colOnLayer1
                                 font.family: Fonts.ui
-                                font.pixelSize: 12
+                                font.pixelSize: Appearance.scaledFont(12)
                             }
                         }
 
@@ -279,8 +276,7 @@ WidgetPanel {
 
                     SettingsRow {
                         Layout.fillWidth: true
-                        visible: !root.initialLoading && !root.refreshLoading
-                                 && BluetoothService.availableDevices.length === 0
+                        visible: !root.initialLoading && !root.refreshLoading && BluetoothService.availableDevices.length === 0
                         iconName: "search_off"
                         title: I18n.tr("No available devices found")
                     }
@@ -292,10 +288,7 @@ WidgetPanel {
 
                     Layout.fillWidth: true
                     title: I18n.tr("Adapters")
-                    supportingText: BluetoothService.discovering ? I18n.tr("Searching for nearby devices") :
-                                                                   BluetoothService.enabled ? I18n.tr(
-                                                                                                  "Device discovery is paused") :
-                                                                                              I18n.tr("Turn on Bluetooth to start discovery")
+                    supportingText: BluetoothService.discovering ? I18n.tr("Searching for nearby devices") : BluetoothService.enabled ? I18n.tr("Device discovery is paused") : I18n.tr("Turn on Bluetooth to start discovery")
 
                     Repeater {
                         model: adapterPages.items
@@ -308,9 +301,7 @@ WidgetPanel {
                             Layout.fillWidth: true
                             iconName: modelData.blocked ? "bluetooth_disabled" : "settings_bluetooth"
                             title: modelData.name || modelData.id || I18n.tr("Bluetooth adapter")
-                            supportingText: modelData.blocked ? I18n.tr("Blocked by rfkill") :
-                                                                modelData.enabled ? modelData.state : I18n.tr(
-                                                                                        "Off")
+                            supportingText: modelData.blocked ? I18n.tr("Blocked by rfkill") : modelData.enabled ? modelData.state : I18n.tr("Off")
                             highlighted: modelData.enabled
 
                             trailing: StyledSwitch {
@@ -379,9 +370,7 @@ WidgetPanel {
         x: Math.round((root.width - width) / 2)
         y: Math.round((root.height - height) / 2)
         dialogTitle: I18n.tr("Forget Bluetooth device")
-        messageText: root.pendingForgetDevice ? I18n.tr(
-                                                    "This will delete the pairing information for “%1”.").arg(
-                                                    root.pendingForgetDevice.name) : ""
+        messageText: root.pendingForgetDevice ? I18n.tr("This will delete the pairing information for “%1”.").arg(root.pendingForgetDevice.name) : ""
 
         actionsComponent: Component {
             RowLayout {
@@ -417,8 +406,7 @@ WidgetPanel {
         spacing: Appearance.spacing.xSmall
 
         IconButton {
-            enabled: BluetoothService.available && BluetoothService.enabled && !BluetoothService.busy &&
-                     !root.refreshLoading
+            enabled: BluetoothService.available && BluetoothService.enabled && !BluetoothService.busy && !root.refreshLoading
             iconName: "refresh"
             iconSize: 21
             iconColor: Appearance.colors.colOnLayer2
@@ -485,8 +473,7 @@ WidgetPanel {
                     trailing: StyledSwitch {
                         checked: deviceDetails.modelData.wakeAllowed
                         enabled: !BluetoothService.busy
-                        Accessible.name: I18n.tr("Allow %1 to wake the computer").arg(
-                                             deviceDetails.modelData.name)
+                        Accessible.name: I18n.tr("Allow %1 to wake the computer").arg(deviceDetails.modelData.name)
                         onToggled: BluetoothService.setDeviceWakeAllowed(deviceDetails.modelData, checked)
                     }
                 }
@@ -515,9 +502,7 @@ WidgetPanel {
 
             MaterialSymbol {
                 visible: deviceRow.deviceData.batteryAvailable
-                text: deviceRow.deviceData.batteryLevel > 80 ? "battery_full" :
-                                                               deviceRow.deviceData.batteryLevel > 30
-                                                               ? "battery_4_bar" : "battery_1_bar"
+                text: deviceRow.deviceData.batteryLevel > 80 ? "battery_full" : deviceRow.deviceData.batteryLevel > 30 ? "battery_4_bar" : "battery_1_bar"
                 iconSize: 18
                 color: Appearance.colors.colOnLayer1
             }
@@ -525,9 +510,7 @@ WidgetPanel {
             ActionButton {
                 visible: !deviceRow.deviceData.blocked
                 enabled: !BluetoothService.busy
-                text: deviceRow.deviceCategory === "connected" ? I18n.tr("Disconnect") :
-                                                                 deviceRow.deviceCategory === "paired"
-                                                                 ? I18n.tr("Connect") : I18n.tr("Pair")
+                text: deviceRow.deviceCategory === "connected" ? I18n.tr("Disconnect") : deviceRow.deviceCategory === "paired" ? I18n.tr("Connect") : I18n.tr("Pair")
                 filled: false
                 onClicked: {
                     if (deviceRow.deviceCategory === "connected")
@@ -540,8 +523,7 @@ WidgetPanel {
             }
 
             IconButton {
-                visible: deviceRow.deviceData.paired || deviceRow.deviceData.bonded
-                         || deviceRow.deviceData.trusted
+                visible: deviceRow.deviceData.paired || deviceRow.deviceData.bonded || deviceRow.deviceData.trusted
                 controlSize: 34
                 enabled: !BluetoothService.busy
                 iconName: "more_vert"

@@ -28,7 +28,8 @@ Menu {
             from: 0
             to: 1
             duration: Appearance.animation.expressiveFastEffects.duration
-            easing.type: Easing.OutCubic
+            easing.type: Appearance.animation.expressiveFastEffects.type
+            easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
         }
     }
     exit: Transition {
@@ -37,7 +38,8 @@ Menu {
             from: 1
             to: 0
             duration: Appearance.animation.expressiveFastEffects.duration
-            easing.type: Easing.InCubic
+            easing.type: Appearance.animation.emphasizedAccel.type
+            easing.bezierCurve: Appearance.animation.emphasizedAccel.bezierCurve
         }
     }
 }

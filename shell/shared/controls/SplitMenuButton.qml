@@ -43,7 +43,6 @@ Item {
         for (let i = 0; i < model.length; i += 1) {
             if (model[i].value === value)
                 return model[i].label;
-
         }
         return value;
     }
@@ -54,7 +53,6 @@ Item {
             const label = model[i].label || model[i].value || "";
             if (String(label).length > longest.length)
                 longest = String(label);
-
         }
         return longest;
     }
@@ -118,29 +116,25 @@ Item {
     onXChanged: {
         if (optionsPopup.visible)
             root.updatePopupGeometry();
-
     }
     onYChanged: {
         if (optionsPopup.visible)
             root.updatePopupGeometry();
-
     }
     onWidthChanged: {
         if (optionsPopup.visible)
             root.updatePopupGeometry();
-
     }
     onHeightChanged: {
         if (optionsPopup.visible)
             root.updatePopupGeometry();
-
     }
 
     TextMetrics {
         id: labelMetrics
 
         font.family: Fonts.ui
-        font.pixelSize: 13
+        font.pixelSize: Appearance.scaledFont(13)
         font.weight: Font.Medium
         text: root.labelFor(root.currentValue)
     }
@@ -149,7 +143,7 @@ Item {
         id: menuLabelMetrics
 
         font.family: Fonts.ui
-        font.pixelSize: 14
+        font.pixelSize: Appearance.scaledFont(14)
         font.weight: Font.Normal
         text: root.longestLabel()
     }
@@ -158,13 +152,11 @@ Item {
         function onWidthChanged() {
             if (optionsPopup.visible)
                 root.updatePopupGeometry();
-
         }
 
         function onHeightChanged() {
             if (optionsPopup.visible)
                 root.updatePopupGeometry();
-
         }
 
         function onVisibleChanged() {
@@ -206,7 +198,6 @@ Item {
                         easing.type: Appearance.animation.elementMoveFast.type
                         easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
                     }
-
                 }
 
                 Behavior on bottomRightRadius {
@@ -215,7 +206,6 @@ Item {
                         easing.type: Appearance.animation.elementMoveFast.type
                         easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
                     }
-
                 }
 
                 Behavior on color {
@@ -224,9 +214,7 @@ Item {
                         easing.type: Appearance.animation.expressiveEffects.type
                         easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
                     }
-
                 }
-
             }
 
             RowLayout {
@@ -250,13 +238,12 @@ Item {
                     text: root.labelFor(root.currentValue)
                     color: root.buttonTextColor
                     font.family: Fonts.ui
-                    font.pixelSize: 13
+                    font.pixelSize: Appearance.scaledFont(13)
                     font.weight: Font.Medium
                     elide: Text.ElideRight
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
-
             }
 
             MouseArea {
@@ -267,7 +254,6 @@ Item {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: root.toggleMenu()
             }
-
         }
 
         Item {
@@ -295,7 +281,6 @@ Item {
                         easing.type: Appearance.animation.elementMoveFast.type
                         easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
                     }
-
                 }
 
                 Behavior on bottomLeftRadius {
@@ -304,7 +289,6 @@ Item {
                         easing.type: Appearance.animation.elementMoveFast.type
                         easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
                     }
-
                 }
 
                 Behavior on color {
@@ -313,9 +297,7 @@ Item {
                         easing.type: Appearance.animation.expressiveEffects.type
                         easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
                     }
-
                 }
-
             }
 
             MaterialSymbol {
@@ -333,9 +315,7 @@ Item {
                         easing.type: Appearance.animation.expressiveEffects.type
                         easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
                     }
-
                 }
-
             }
 
             MouseArea {
@@ -346,9 +326,7 @@ Item {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: root.toggleMenu()
             }
-
         }
-
     }
 
     Popup {
@@ -424,12 +402,11 @@ Item {
                             text: option.modelData.label
                             color: option.selected ? Appearance.m3colors.m3onSecondaryContainer : Appearance.m3colors.m3onSurface
                             font.family: Fonts.ui
-                            font.pixelSize: 14
+                            font.pixelSize: Appearance.scaledFont(14)
                             font.weight: option.selected ? Font.Medium : Font.Normal
                             elide: Text.ElideRight
                             verticalAlignment: Text.AlignVCenter
                         }
-
                     }
 
                     Behavior on color {
@@ -438,9 +415,7 @@ Item {
                             easing.type: Appearance.animation.expressiveEffects.type
                             easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
                         }
-
                     }
-
                 }
 
                 MouseArea {
@@ -454,11 +429,7 @@ Item {
                         optionsPopup.close();
                     }
                 }
-
             }
-
         }
-
     }
-
 }

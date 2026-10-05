@@ -26,10 +26,15 @@ Item {
 
             required property var modelData
             readonly property var normalActions: root.manager.normalActions(delegateRoot.modelData)
-            readonly property bool hasDefaultAction: root.manager.defaultAction(delegateRoot.modelData)
-                                                     !== null
-            readonly property bool hasExpiry: delegateRoot.modelData && delegateRoot.modelData.popupExpiresAt
-                                              > 0
+            readonly property bool hasDefaultAction: root.manager.defaultAction(delegateRoot.modelData) !== null
+            readonly property bool hasExpiry: delegateRoot.modelData && delegateRoot.modelData.popupExpiresAt > 0
+            readonly property bool replyable: root.manager.replyable(delegateRoot.modelData)
+            property bool replying: false
+            property string replyText: ""
+            onReplyingChanged: {
+                if (delegateRoot.modelData)
+                    delegateRoot.modelData.replyOpen = delegateRoot.replying;
+            }
             property real expiryProgress: 0
 
             function sanitizedBody() {
@@ -42,8 +47,7 @@ Item {
                     delegateRoot.expiryProgress = 0;
                     return;
                 }
-                const total = Math.max(1, delegateRoot.modelData.popupExpiresAt
-                                       - delegateRoot.modelData.popupStartedAt);
+                const total = Math.max(1, delegateRoot.modelData.popupExpiresAt - delegateRoot.modelData.popupStartedAt);
                 const remaining = Math.max(0, delegateRoot.modelData.popupExpiresAt - Date.now());
                 delegateRoot.expiryProgress = Math.min(1, remaining / total);
                 progressAnimation.duration = remaining;
@@ -51,7 +55,7 @@ Item {
             }
 
             width: ListView.view.width
-            height: normalActions.length > 0 ? 104 : 64
+            height: (normalActions.length > 0 ? 104 : 64) + (delegateRoot.replying ? 46 : 0)
             Component.onCompleted: restartProgress()
             onModelDataChanged: restartProgress()
 
@@ -102,7 +106,7 @@ Item {
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.ui
                         font.bold: true
-                        font.pixelSize: 14
+                        font.pixelSize: Appearance.scaledFont(14)
                         Layout.fillWidth: true
                         elide: Text.ElideRight
                     }
@@ -112,7 +116,7 @@ Item {
                         textFormat: Text.StyledText
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.ui
-                        font.pixelSize: 12
+                        font.pixelSize: Appearance.scaledFont(12)
                         Layout.fillWidth: true
                         elide: Text.ElideRight
                         maximumLineCount: delegateRoot.normalActions.length > 0 ? 1 : 2
@@ -163,7 +167,7 @@ Item {
                                         text: actionButton.modelData.text
                                         color: Appearance.colors.colOnSurfaceVariant
                                         font.family: Fonts.ui
-                                        font.pixelSize: 12
+                                        font.pixelSize: Appearance.scaledFont(12)
                                         font.weight: Font.Medium
                                         horizontalAlignment: Text.AlignHCenter
                                         verticalAlignment: Text.AlignVCenter
@@ -174,6 +178,33 @@ Item {
                     }
                 }
 
+                RippleButton {
+                    Layout.preferredWidth: 40
+                    Layout.preferredHeight: 40
+                    Layout.alignment: Qt.AlignTop
+                    visible: delegateRoot.replyable
+                    buttonRadius: Appearance.rounding.full
+                    containerColor: "transparent"
+                    stateLayerColor: Appearance.colors.colOnSurfaceVariant
+                    hoverStateLayerOpacity: 0.08
+                    focusStateLayerOpacity: 0.1
+                    pressedStateLayerOpacity: 0.12
+                    rippleColor: Appearance.colors.colOnSurfaceVariant
+                    Accessible.name: I18n.tr("Reply")
+                    onClicked: {
+                        delegateRoot.replying = !delegateRoot.replying;
+                        if (delegateRoot.replying)
+                            replyInput.forceActiveFocus(Qt.OtherFocusReason);
+                    }
+                    contentItem: Text {
+                        text: "reply"
+                        color: Appearance.colors.colOnSurfaceVariant
+                        font.family: Fonts.materialSymbolsRounded
+                        font.pixelSize: Appearance.scaledFont(20)
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
                 RippleButton {
                     Layout.preferredWidth: 40
                     Layout.preferredHeight: 40
@@ -192,13 +223,79 @@ Item {
                         text: "close"
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.materialSymbolsRounded
-                        font.pixelSize: 20
+                        font.pixelSize: Appearance.scaledFont(20)
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
                 }
             }
 
+            Rectangle {
+                id: replyBar
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: progressTrack.top
+                anchors.bottomMargin: 6
+                height: 40
+                visible: delegateRoot.replying
+                radius: Appearance.rounding.full
+                color: Appearance.colors.colLayer2
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 14
+                    anchors.rightMargin: 6
+                    spacing: 8
+                    TextInput {
+                        id: replyInput
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter
+                        color: Appearance.colors.colOnSurface
+                        font.family: Fonts.ui
+                        font.pixelSize: Appearance.scaledFont(12)
+                        clip: true
+                        selectByMouse: true
+                        Accessible.name: root.manager.inlineReplyPlaceholder(delegateRoot.modelData)
+                        onTextChanged: delegateRoot.replyText = text
+                        onAccepted: replySend.activate()
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: replyInput.text.length === 0
+                            text: root.manager.inlineReplyPlaceholder(delegateRoot.modelData)
+                            color: Appearance.colors.colOnSurfaceVariant
+                            font.family: Fonts.ui
+                            font.pixelSize: Appearance.scaledFont(12)
+                        }
+                    }
+                    RippleButton {
+                        id: replySend
+                        Layout.preferredWidth: 34
+                        Layout.preferredHeight: 34
+                        buttonRadius: Appearance.rounding.full
+                        containerColor: "transparent"
+                        stateLayerColor: Appearance.colors.colPrimary
+                        rippleColor: Appearance.colors.colPrimary
+                        Accessible.name: I18n.tr("Send")
+                        function activate() {
+                            if (delegateRoot.replyText.length === 0)
+                                return;
+                            if (root.manager.sendInlineReply(delegateRoot.modelData.notificationId, delegateRoot.replyText)) {
+                                delegateRoot.replying = false;
+                                delegateRoot.replyText = "";
+                                replyInput.text = "";
+                            }
+                        }
+                        onClicked: activate()
+                        contentItem: Text {
+                            text: "send"
+                            color: Appearance.colors.colPrimary
+                            font.family: Fonts.materialSymbolsRounded
+                            font.pixelSize: Appearance.scaledFont(18)
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+                }
+            }
             Rectangle {
                 id: progressTrack
 

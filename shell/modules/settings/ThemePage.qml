@@ -45,7 +45,7 @@ StyledFlickable {
                 text: section.title
                 color: Appearance.colors.colOnSecondaryContainer
                 font.family: Fonts.ui
-                font.pixelSize: 18
+                font.pixelSize: Appearance.scaledFont(18)
                 font.weight: Font.Medium
             }
         }
@@ -148,7 +148,7 @@ StyledFlickable {
 
         Behavior on scale {
             NumberAnimation {
-                duration: 120
+                duration: Appearance.motionDuration(120)
                 easing.type: Easing.OutSine
             }
         }
@@ -174,7 +174,7 @@ StyledFlickable {
                 text: themeCard.title
                 color: themeCard.labelText
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: Appearance.scaledFont(14)
                 font.weight: Font.Medium
             }
         }
@@ -294,7 +294,7 @@ StyledFlickable {
                     text: selectRow.title
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.ui
-                    font.pixelSize: 15
+                    font.pixelSize: Appearance.scaledFont(15)
                     font.weight: Font.Medium
                     elide: Text.ElideRight
                 }
@@ -304,7 +304,7 @@ StyledFlickable {
                     text: selectRow.description
                     color: Appearance.colors.colSubtext
                     font.family: Fonts.ui
-                    font.pixelSize: 12
+                    font.pixelSize: Appearance.scaledFont(12)
                     wrapMode: Text.WordWrap
                     visible: text !== ""
                 }
@@ -352,7 +352,7 @@ StyledFlickable {
                     text: toggleRow.title
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.ui
-                    font.pixelSize: 15
+                    font.pixelSize: Appearance.scaledFont(15)
                     font.weight: Font.Medium
                 }
 
@@ -361,7 +361,7 @@ StyledFlickable {
                     text: toggleRow.description
                     color: Appearance.colors.colSubtext
                     font.family: Fonts.ui
-                    font.pixelSize: 12
+                    font.pixelSize: Appearance.scaledFont(12)
                     wrapMode: Text.WordWrap
                     visible: text !== ""
                 }
@@ -405,7 +405,7 @@ StyledFlickable {
                 text: sliderRow.title
                 color: Appearance.colors.colOnSurface
                 font.family: Fonts.ui
-                font.pixelSize: 15
+                font.pixelSize: Appearance.scaledFont(15)
                 font.weight: Font.Medium
             }
 
@@ -426,7 +426,7 @@ StyledFlickable {
             text: sliderRow.description
             color: Appearance.colors.colSubtext
             font.family: Fonts.ui
-            font.pixelSize: 12
+            font.pixelSize: Appearance.scaledFont(12)
             wrapMode: Text.WordWrap
             visible: text !== ""
         }
@@ -489,8 +489,7 @@ StyledFlickable {
             SettingsSearchAnchor {
                 id: searchAnchor0
                 target: searchSection0
-                declaration:
-                    '{"id":"theme.section.matugen-color-scheme","route":"theme","title":"matugen color scheme","context":"ThemePage","icon":"palette","aliases":[]}'
+                declaration: '{"id":"theme.section.matugen-color-scheme","route":"theme","title":"matugen color scheme","context":"ThemePage","icon":"palette","aliases":[]}'
             }
             iconName: "colors"
 
@@ -522,8 +521,7 @@ StyledFlickable {
             SettingsSearchAnchor {
                 id: searchAnchor1
                 target: searchSection1
-                declaration:
-                    '{"id":"theme.section.super-key-appearance","route":"theme","title":"Super key appearance","context":"ThemePage","icon":"palette","aliases":[]}'
+                declaration: '{"id":"theme.section.super-key-appearance","route":"theme","title":"Super key appearance","context":"ThemePage","icon":"palette","aliases":[]}'
             }
             iconName: "keyboard"
             Flow {
@@ -537,9 +535,7 @@ StyledFlickable {
                         implicitWidth: 84
                         implicitHeight: 56
                         buttonRadius: Appearance.rounding.small
-                        containerColor: PersonalizationConfig.superKeyStyle === modelData.value
-                                        ? Appearance.colors.colSecondaryContainer :
-                                          Appearance.colors.colLayer2
+                        containerColor: PersonalizationConfig.superKeyStyle === modelData.value ? Appearance.colors.colSecondaryContainer : Appearance.colors.colLayer2
                         hoverStateLayerOpacity: 0.08
                         pressedStateLayerOpacity: 0.12
                         focusStateLayerOpacity: 0.12
@@ -569,8 +565,7 @@ StyledFlickable {
             SettingsSearchAnchor {
                 id: searchAnchor2
                 target: searchSection2
-                declaration:
-                    '{"id":"theme.section.lock-screen","route":"theme","title":"Lock screen","context":"ThemePage","icon":"palette","aliases":[]}'
+                declaration: '{"id":"theme.section.lock-screen","route":"theme","title":"Lock screen","context":"ThemePage","icon":"palette","aliases":[]}'
             }
             iconName: "lock"
 
@@ -592,8 +587,7 @@ StyledFlickable {
             SettingsSearchAnchor {
                 id: searchAnchor3
                 target: searchSection3
-                declaration:
-                    '{"id":"theme.section.cursor-theme","route":"theme","title":"Cursor theme","context":"ThemePage","icon":"palette","aliases":[]}'
+                declaration: '{"id":"theme.section.cursor-theme","route":"theme","title":"Cursor theme","context":"ThemePage","icon":"palette","aliases":[]}'
             }
             iconName: "mouse"
 
@@ -648,8 +642,7 @@ StyledFlickable {
             SettingsSearchAnchor {
                 id: searchAnchor4
                 target: searchSection4
-                declaration:
-                    '{"id":"theme.section.icon-theme","route":"theme","title":"Icon theme","context":"ThemePage","icon":"palette","aliases":[]}'
+                declaration: '{"id":"theme.section.icon-theme","route":"theme","title":"Icon theme","context":"ThemePage","icon":"palette","aliases":[]}'
             }
             iconName: "interests"
 
@@ -668,8 +661,7 @@ StyledFlickable {
             SettingsSearchAnchor {
                 id: searchAnchor5
                 target: searchSection5
-                declaration:
-                    '{"id":"theme.section.fonts","route":"theme","title":"Fonts","context":"ThemePage","icon":"palette","aliases":[]}'
+                declaration: '{"id":"theme.section.fonts","route":"theme","title":"Fonts","context":"ThemePage","icon":"palette","aliases":[]}'
             }
             iconName: "text_format"
 

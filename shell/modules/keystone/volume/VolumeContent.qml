@@ -14,7 +14,7 @@ Item {
     property string iconName: ""
     property bool vertical: false
     signal moved(real value)
-    signal iconActivated()
+    signal iconActivated
 
     readonly property bool usesAudioNode: audioNode !== null && audioNode !== undefined
     readonly property real controlValue: usesAudioNode ? audioNode.volume : externalValue
@@ -36,7 +36,7 @@ Item {
         id: hoverArea
         anchors.fill: parent
         hoverEnabled: true
-        acceptedButtons: Qt.NoButton 
+        acceptedButtons: Qt.NoButton
     }
 
     GridLayout {
@@ -65,7 +65,7 @@ Item {
 
             MouseArea {
                 anchors.fill: parent
-                anchors.margins: -10 
+                anchors.margins: -10
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
                     if (root.usesAudioNode)
@@ -103,16 +103,18 @@ Item {
             Rectangle {
                 id: fillRect
                 x: 0
-                y: root.vertical ? parent.height - height
-                    : (parent.height - height) / 2
+                y: root.vertical ? parent.height - height : (parent.height - height) / 2
                 width: root.vertical ? parent.width : track.leftWidth
                 height: root.vertical ? track.bottomHeight : parent.height
                 radius: 3
                 color: Appearance.colors.colOnLayer0
-                
-                Behavior on width { 
+
+                Behavior on width {
                     enabled: !dragArea.pressed
-                    NumberAnimation { duration: 150; easing.type: Easing.OutQuint } 
+                    NumberAnimation {
+                        duration: Appearance.motionDuration(150)
+                        easing.type: Easing.OutQuint
+                    }
                 }
             }
 
@@ -127,43 +129,54 @@ Item {
 
                 Behavior on x {
                     enabled: !dragArea.pressed
-                    NumberAnimation { duration: 150; easing.type: Easing.OutQuint }
+                    NumberAnimation {
+                        duration: Appearance.motionDuration(150)
+                        easing.type: Easing.OutQuint
+                    }
                 }
 
                 Behavior on width {
                     enabled: !dragArea.pressed
-                    NumberAnimation { duration: 150; easing.type: Easing.OutQuint }
+                    NumberAnimation {
+                        duration: Appearance.motionDuration(150)
+                        easing.type: Easing.OutQuint
+                    }
                 }
 
                 Behavior on height {
                     enabled: !dragArea.pressed
-                    NumberAnimation { duration: 150; easing.type: Easing.OutQuint }
+                    NumberAnimation {
+                        duration: Appearance.motionDuration(150)
+                        easing.type: Easing.OutQuint
+                    }
                 }
             }
 
             MouseArea {
                 id: dragArea
                 anchors.fill: parent
-                anchors.margins: -10 
+                anchors.margins: -10
                 cursorShape: Qt.PointingHandCursor
                 preventStealing: true
 
                 function setVol(position) {
-                    let p = root.vertical ? 1 - position / height : position / width
-                    if (p < 0) p = 0
-                    if (p > 1) p = 1
+                    let p = root.vertical ? 1 - position / height : position / width;
+                    if (p < 0)
+                        p = 0;
+                    if (p > 1)
+                        p = 1;
 
                     if (root.usesAudioNode) {
-                        root.audioNode.volume = p
+                        root.audioNode.volume = p;
                         if (root.isMuted)
-                            root.audioNode.muted = false
+                            root.audioNode.muted = false;
                     } else {
-                        root.moved(p)
+                        root.moved(p);
                     }
                 }
 
-                onPressed: (mouse) => setVol(root.vertical ? mouse.y : mouse.x)
-                onPositionChanged: (mouse) => setVol(root.vertical ? mouse.y : mouse.x)
+                onPressed: mouse => setVol(root.vertical ? mouse.y : mouse.x)
+                onPositionChanged: mouse => setVol(root.vertical ? mouse.y : mouse.x)
             }
         }
 
@@ -172,7 +185,7 @@ Item {
             Layout.column: root.vertical ? 0 : 2
             text: Math.round(root.displayVolume * 100)
             color: Appearance.colors.colOnLayer0
-            font.pixelSize: 15
+            font.pixelSize: Appearance.scaledFont(15)
             font.bold: true
             font.family: Fonts.numeric
             Layout.alignment: root.vertical ? Qt.AlignHCenter : Qt.AlignVCenter

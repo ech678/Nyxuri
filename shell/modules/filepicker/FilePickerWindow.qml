@@ -55,15 +55,8 @@ FloatingWindow {
     readonly property string videosDir: StandardPaths.writableLocation(StandardPaths.MoviesLocation)
     readonly property string downloadsDir: StandardPaths.writableLocation(StandardPaths.DownloadLocation)
     readonly property bool hasSelection: selectedPath !== ""
-    readonly property bool currentFolderIsSelection: allowCurrentFolderSelection && selectionMode
-                                                     !== FilePickerWindow.Files && selectedPath === ""
-    readonly property bool selectionValid: currentFolderIsSelection || (selectedPath !== "" && ((
-                                                                                                    selectedIsDir
-                                                                                                    && selectionMode
-                                                                                                    !== FilePickerWindow.Files)
-                                                                                                || (!selectedIsDir
-                                                                                                    && selectionMode
-                                                                                                    !== FilePickerWindow.Folders)))
+    readonly property bool currentFolderIsSelection: allowCurrentFolderSelection && selectionMode !== FilePickerWindow.Files && selectedPath === ""
+    readonly property bool selectionValid: currentFolderIsSelection || (selectedPath !== "" && ((selectedIsDir && selectionMode !== FilePickerWindow.Files) || (!selectedIsDir && selectionMode !== FilePickerWindow.Folders)))
     readonly property alias blurController: pickerBlurController
     readonly property alias blurBackground: outerBackground
     readonly property alias fileGridView: fileGrid
@@ -151,26 +144,26 @@ FloatingWindow {
 
         if (insideHome) {
             items.push({
-                           label: I18n.tr("Home"),
-                           path: normalizedHome,
-                           iconName: "home"
-                       });
+                label: I18n.tr("Home"),
+                path: normalizedHome,
+                iconName: "home"
+            });
             remainder = normalized.substring(normalizedHome.length);
         } else {
             items.push({
-                           label: I18n.tr("File system"),
-                           path: "/",
-                           iconName: "hard_drive"
-                       });
+                label: I18n.tr("File system"),
+                path: "/",
+                iconName: "hard_drive"
+            });
         }
 
         for (const part of remainder.split("/").filter(component => component !== "")) {
             cursor = cursor === "" ? "/" + part : cursor + "/" + part;
             items.push({
-                           label: part,
-                           path: cursor,
-                           iconName: ""
-                       });
+                label: part,
+                path: cursor,
+                iconName: ""
+            });
         }
         return items;
     }
@@ -213,8 +206,7 @@ FloatingWindow {
             console.warn("FilePickerWindow cannot open without parentModal");
             return;
         }
-        currentPath = normalizePath(path && path !== "" ? path : picturesDir) || normalizePath(picturesDir)
-                || "/";
+        currentPath = normalizePath(path && path !== "" ? path : picturesDir) || normalizePath(picturesDir) || "/";
         pathEditing = false;
         pathDraft = currentPath;
         refreshBreadcrumbs();
@@ -312,9 +304,7 @@ FloatingWindow {
 
     function isImageName(name) {
         const lower = String(name || "").toLowerCase();
-        return [".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif"].some(extension => lower.endsWith(
-                                                                                        extension));
-
+        return [".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif"].some(extension => lower.endsWith(extension));
     }
 
     FolderListModel {
@@ -422,8 +412,7 @@ FloatingWindow {
 
                 const topLeft = pathEditor.mapToItem(dialogFocus, 0, 0);
                 const position = eventPoint.position;
-                const insideEditor = position.x >= topLeft.x && position.x <= topLeft.x + pathEditor.width
-                      && position.y >= topLeft.y && position.y <= topLeft.y + pathEditor.height;
+                const insideEditor = position.x >= topLeft.x && position.x <= topLeft.x + pathEditor.width && position.y >= topLeft.y && position.y <= topLeft.y + pathEditor.height;
                 if (!insideEditor)
                     root.cancelPathEditing();
             }
@@ -470,7 +459,7 @@ FloatingWindow {
                             text: root.dialogTitle
                             color: Appearance.colors.colOnSurface
                             font.family: Fonts.ui
-                            font.pixelSize: 19
+                            font.pixelSize: Appearance.scaledFont(19)
                             font.weight: Font.DemiBold
                             elide: Text.ElideRight
                         }
@@ -480,7 +469,7 @@ FloatingWindow {
                             text: root.description
                             color: Appearance.colors.colSubtext
                             font.family: Fonts.ui
-                            font.pixelSize: 12
+                            font.pixelSize: Appearance.scaledFont(12)
                             elide: Text.ElideRight
                         }
                     }
@@ -525,7 +514,7 @@ FloatingWindow {
                             text: I18n.tr("Location")
                             color: Appearance.colors.colOnSurface
                             font.family: Fonts.ui
-                            font.pixelSize: 15
+                            font.pixelSize: Appearance.scaledFont(15)
                             font.weight: Font.DemiBold
                         }
 
@@ -590,7 +579,7 @@ FloatingWindow {
                                 text: root.formatSummary
                                 color: Appearance.colors.colOnSurfaceVariant
                                 font.family: Fonts.ui
-                                font.pixelSize: 11
+                                font.pixelSize: Appearance.scaledFont(11)
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
                                 wrapMode: Text.WordWrap
@@ -672,9 +661,7 @@ FloatingWindow {
                                                     required property string label
                                                     required property string path
                                                     required property string iconName
-                                                    readonly property bool current: index
-                                                                                    === breadcrumbModel.count
-                                                                                    - 1
+                                                    readonly property bool current: index === breadcrumbModel.count - 1
 
                                                     height: breadcrumbRow.height
                                                     spacing: 2
@@ -685,7 +672,7 @@ FloatingWindow {
                                                         text: "/"
                                                         color: Appearance.colors.colOnSurfaceVariant
                                                         font.family: Fonts.mono
-                                                        font.pixelSize: 13
+                                                        font.pixelSize: Appearance.scaledFont(13)
                                                     }
 
                                                     BreadcrumbButton {
@@ -728,7 +715,7 @@ FloatingWindow {
                                     color: Appearance.colors.colOnSurface
                                     verticalAlignment: TextInput.AlignVCenter
                                     font.family: Fonts.mono
-                                    font.pixelSize: 12
+                                    font.pixelSize: Appearance.scaledFont(12)
 
                                     background: Rectangle {
                                         radius: Appearance.rounding.full
@@ -751,8 +738,7 @@ FloatingWindow {
 
                             PickerToolButton {
                                 iconName: root.showHiddenFiles ? "visibility_off" : "visibility"
-                                tooltipText: root.showHiddenFiles ? I18n.tr("Hide hidden files") : I18n.tr(
-                                                                        "Show hidden files")
+                                tooltipText: root.showHiddenFiles ? I18n.tr("Hide hidden files") : I18n.tr("Show hidden files")
                                 active: root.showHiddenFiles
                                 onClicked: root.setHiddenFilesVisible(!root.showHiddenFiles)
                             }
@@ -782,7 +768,7 @@ FloatingWindow {
                                 text: root.emptyStateText
                                 color: Appearance.colors.colSubtext
                                 font.family: Fonts.ui
-                                font.pixelSize: 14
+                                font.pixelSize: Appearance.scaledFont(14)
                             }
                         }
 
@@ -816,8 +802,7 @@ FloatingWindow {
                                 required property bool fileIsDir
 
                                 property bool appeared: false
-                                readonly property bool selected: root.selectedPath === root.normalizePath(
-                                                                     filePath)
+                                readonly property bool selected: root.selectedPath === root.normalizePath(filePath)
                                 readonly property real initialX: ((index * 37) % 3 - 1) * 24
                                 readonly property real initialY: ((index * 53) % 5 - 2) * 10
 
@@ -829,13 +814,9 @@ FloatingWindow {
                                 rotation: appeared ? 0 : ((index % 3) - 1) * 3
                                 toggled: selected
                                 buttonRadius: Appearance.rounding.large
-                                containerColor: fileItem.selected ? Appearance.colors.colSecondaryContainer :
-                                                                    "transparent"
-                                stateLayerColor: fileItem.selected
-                                                 ? Appearance.colors.colSecondaryContainerHover :
-                                                   Appearance.colors.colLayer3Hover
-                                rippleColor: fileItem.selected ? Appearance.colors.colOnSecondaryContainer :
-                                                                 Appearance.colors.colOnSurface
+                                containerColor: fileItem.selected ? Appearance.colors.colSecondaryContainer : "transparent"
+                                stateLayerColor: fileItem.selected ? Appearance.colors.colSecondaryContainerHover : Appearance.colors.colLayer3Hover
+                                rippleColor: fileItem.selected ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnSurface
                                 releaseAction: () => {
                                     root.selectEntry(filePath, fileName, fileIsDir);
                                 }
@@ -847,29 +828,28 @@ FloatingWindow {
 
                                 Behavior on opacity {
                                     NumberAnimation {
-                                        duration: 190
+                                        duration: Appearance.motionDuration(190)
+                                        easing.type: Easing.BezierSpline
+                                        easing.bezierCurve: Appearance.animationCurves.standard
                                     }
                                 }
                                 Behavior on scale {
                                     NumberAnimation {
                                         duration: Appearance.animation.expressiveDefaultSpatial.duration
                                         easing.type: Appearance.animation.expressiveDefaultSpatial.type
-                                        easing.bezierCurve:
-                                            Appearance.animation.expressiveDefaultSpatial.bezierCurve
+                                        easing.bezierCurve: Appearance.animation.expressiveDefaultSpatial.bezierCurve
                                     }
                                 }
                                 Behavior on rotation {
                                     NumberAnimation {
                                         duration: Appearance.animation.expressiveDefaultSpatial.duration
                                         easing.type: Appearance.animation.expressiveDefaultSpatial.type
-                                        easing.bezierCurve:
-                                            Appearance.animation.expressiveDefaultSpatial.bezierCurve
+                                        easing.bezierCurve: Appearance.animation.expressiveDefaultSpatial.bezierCurve
                                     }
                                 }
 
                                 Timer {
-                                    interval: Math.min(260, fileItem.index * 18) + ((fileItem.index * 29)
-                                                                                    % 5) * 8
+                                    interval: Math.min(260, fileItem.index * 18) + ((fileItem.index * 29) % 5) * 8
                                     running: true
                                     repeat: false
                                     onTriggered: fileItem.appeared = true
@@ -887,9 +867,7 @@ FloatingWindow {
                                             id: previewImage
 
                                             anchors.fill: parent
-                                            source: !fileItem.fileIsDir && root.isImageName(
-                                                        fileItem.fileName) ? root.encodeFileUrl(
-                                                                                 fileItem.filePath) : ""
+                                            source: !fileItem.fileIsDir && root.isImageName(fileItem.fileName) ? root.encodeFileUrl(fileItem.filePath) : ""
                                             fillMode: Image.PreserveAspectCrop
                                             asynchronous: true
                                             cache: true
@@ -911,8 +889,7 @@ FloatingWindow {
                                             source: previewImage
                                             maskEnabled: true
                                             maskSource: previewMask
-                                            visible: !fileItem.fileIsDir && previewImage.status
-                                                     === Image.Ready
+                                            visible: !fileItem.fileIsDir && previewImage.status === Image.Ready
                                             maskThresholdMin: 0.5
                                             maskSpreadAtMin: 1
                                         }
@@ -925,13 +902,10 @@ FloatingWindow {
 
                                             MaterialSymbol {
                                                 anchors.centerIn: parent
-                                                text: fileItem.fileIsDir ? "folder" : root.isImageName(
-                                                                               fileItem.fileName) ? "image" :
-                                                                                                    "draft"
+                                                text: fileItem.fileIsDir ? "folder" : root.isImageName(fileItem.fileName) ? "image" : "draft"
                                                 iconSize: 38
                                                 fill: fileItem.fileIsDir ? 1 : 0
-                                                color: fileItem.fileIsDir ? Appearance.colors.colPrimary :
-                                                                            Appearance.colors.colOnSurfaceVariant
+                                                color: fileItem.fileIsDir ? Appearance.colors.colPrimary : Appearance.colors.colOnSurfaceVariant
                                             }
                                         }
 
@@ -962,10 +936,9 @@ FloatingWindow {
                                         anchors.rightMargin: 8
                                         anchors.bottomMargin: 9
                                         text: fileItem.fileName
-                                        color: fileItem.selected ? Appearance.colors.colOnSecondaryContainer :
-                                                                   Appearance.colors.colOnSurface
+                                        color: fileItem.selected ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnSurface
                                         font.family: Fonts.ui
-                                        font.pixelSize: 12
+                                        font.pixelSize: Appearance.scaledFont(12)
                                         font.weight: fileItem.selected ? Font.DemiBold : Font.Normal
                                         horizontalAlignment: Text.AlignHCenter
                                         elide: Text.ElideMiddle
@@ -1001,26 +974,17 @@ FloatingWindow {
                                     MaterialSymbol {
                                         Layout.preferredWidth: 22
                                         Layout.preferredHeight: 22
-                                        text: root.selectedIsDir ? "folder" : root.selectionValid ? "image" :
-                                                                                                    "info"
+                                        text: root.selectedIsDir ? "folder" : root.selectionValid ? "image" : "info"
                                         iconSize: 20
-                                        color: root.selectionValid ? Appearance.colors.colPrimary :
-                                                                     Appearance.colors.colOnSurfaceVariant
+                                        color: root.selectionValid ? Appearance.colors.colPrimary : Appearance.colors.colOnSurfaceVariant
                                     }
 
                                     Text {
                                         Layout.fillWidth: true
-                                        text: root.selectedPath === "" ? root.currentFolderIsSelection
-                                                                         ? I18n.tr("Current folder: %1").arg(
-                                                                               root.currentPath) :
-                                                                           root.selectionPrompt :
-                                                                           root.selectedIsDir ? I18n.tr(
-                                                                                                    "Double-click to open ")
-                                                                                                + root.selectedName :
-                                                                                                root.selectedName
+                                        text: root.selectedPath === "" ? root.currentFolderIsSelection ? I18n.tr("Current folder: %1").arg(root.currentPath) : root.selectionPrompt : root.selectedIsDir ? I18n.tr("Double-click to open ") + root.selectedName : root.selectedName
                                         color: Appearance.colors.colOnSurfaceVariant
                                         font.family: Fonts.ui
-                                        font.pixelSize: 13
+                                        font.pixelSize: Appearance.scaledFont(13)
                                         elide: Text.ElideMiddle
                                     }
                                 }
@@ -1092,7 +1056,7 @@ FloatingWindow {
                     text: breadcrumbButton.label
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.ui
-                    font.pixelSize: 12
+                    font.pixelSize: Appearance.scaledFont(12)
                     font.weight: breadcrumbButton.current ? Font.DemiBold : Font.Medium
                 }
             }
@@ -1112,17 +1076,14 @@ FloatingWindow {
         toggled: active
         buttonRadius: Appearance.rounding.full
         containerColor: toolButton.active ? Appearance.colors.colSecondaryContainer : "transparent"
-        stateLayerColor: toolButton.active ? Appearance.colors.colSecondaryContainerHover :
-                                             Appearance.colors.colLayer3Hover
-        rippleColor: toolButton.active ? Appearance.colors.colOnSecondaryContainer :
-                                         Appearance.colors.colOnSurface
+        stateLayerColor: toolButton.active ? Appearance.colors.colSecondaryContainerHover : Appearance.colors.colLayer3Hover
+        rippleColor: toolButton.active ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnSurface
 
         contentItem: MaterialSymbol {
             text: toolButton.iconName
             iconSize: 20
             fill: toolButton.active ? 1 : 0
-            color: toolButton.active ? Appearance.colors.colOnSecondaryContainer :
-                                       Appearance.colors.colOnSurface
+            color: toolButton.active ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnSurface
         }
 
         StyledToolTip {
@@ -1146,10 +1107,8 @@ FloatingWindow {
         toggled: active
         buttonRadius: Appearance.rounding.full
         containerColor: locationButton.active ? Appearance.colors.colSecondaryContainer : "transparent"
-        stateLayerColor: locationButton.active ? Appearance.colors.colSecondaryContainerHover :
-                                                 Appearance.colors.colLayer2Hover
-        rippleColor: locationButton.active ? Appearance.colors.colOnSecondaryContainer :
-                                             Appearance.colors.colOnSurface
+        stateLayerColor: locationButton.active ? Appearance.colors.colSecondaryContainerHover : Appearance.colors.colLayer2Hover
+        rippleColor: locationButton.active ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnSurface
         releaseAction: () => root.navigateTo(locationButton.normalizedPath)
 
         contentItem: RowLayout {
@@ -1165,17 +1124,15 @@ FloatingWindow {
                 text: locationButton.iconName
                 iconSize: 20
                 fill: locationButton.active ? 1 : 0
-                color: locationButton.active ? Appearance.colors.colOnSecondaryContainer :
-                                               Appearance.colors.colOnSurfaceVariant
+                color: locationButton.active ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnSurfaceVariant
             }
 
             Text {
                 Layout.fillWidth: true
                 text: locationButton.label
-                color: locationButton.active ? Appearance.colors.colOnSecondaryContainer :
-                                               Appearance.colors.colOnSurface
+                color: locationButton.active ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnSurface
                 font.family: Fonts.ui
-                font.pixelSize: 13
+                font.pixelSize: Appearance.scaledFont(13)
                 font.weight: locationButton.active ? Font.DemiBold : Font.Normal
                 elide: Text.ElideRight
             }
@@ -1198,8 +1155,7 @@ FloatingWindow {
         padding: 0
         buttonRadius: Appearance.rounding.full
         containerColor: primary ? Appearance.colors.colPrimary : Appearance.colors.colSurfaceContainerHighest
-        stateLayerColor: primary ? Appearance.colors.colPrimaryHover :
-                                   Appearance.colors.colSurfaceContainerHighestHover
+        stateLayerColor: primary ? Appearance.colors.colPrimaryHover : Appearance.colors.colSurfaceContainerHighestHover
         rippleColor: primary ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSurface
 
         contentItem: Item {
@@ -1215,17 +1171,15 @@ FloatingWindow {
                     visible: actionButton.iconName !== ""
                     text: actionButton.iconName
                     iconSize: 18
-                    color: actionButton.primary ? Appearance.colors.colOnPrimary :
-                                                  Appearance.colors.colOnSurface
+                    color: actionButton.primary ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSurface
                 }
 
                 Text {
                     Layout.alignment: Qt.AlignVCenter
                     text: actionButton.label
-                    color: actionButton.primary ? Appearance.colors.colOnPrimary :
-                                                  Appearance.colors.colOnSurface
+                    color: actionButton.primary ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSurface
                     font.family: Fonts.ui
-                    font.pixelSize: 13
+                    font.pixelSize: Appearance.scaledFont(13)
                     font.weight: Font.DemiBold
                 }
             }

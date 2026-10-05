@@ -41,8 +41,7 @@ Item {
             if (item instanceof Flickable) {
                 item.cancelFlick();
                 const point = target.mapToItem(item.contentItem, 0, 0);
-                item.contentY = Math.max(item.originY, Math.min(point.y - Metrics.spacingM, item.originY + Math.max(
-                                                                    0, item.contentHeight - item.height)));
+                item.contentY = Math.max(item.originY, Math.min(point.y - Metrics.spacingM, item.originY + Math.max(0, item.contentHeight - item.height)));
             }
         }
         highlightOpacity = 1;
@@ -104,6 +103,8 @@ Item {
             Behavior on opacity {
                 NumberAnimation {
                     duration: Appearance.animation.expressiveDefaultEffects.duration
+                    easing.type: Appearance.animation.expressiveDefaultEffects.type
+                    easing.bezierCurve: Appearance.animation.expressiveDefaultEffects.bezierCurve
                 }
             }
         }

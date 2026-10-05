@@ -24,8 +24,7 @@ Rectangle {
         if (!sourceModel)
             return 0;
 
-        const count = typeof sourceModel.count === "function" ? sourceModel.count() : Number(sourceModel.count
-                                                                                             || 0);
+        const count = typeof sourceModel.count === "function" ? sourceModel.count() : Number(sourceModel.count || 0);
         return Math.min(maxItems, count);
     }
 
@@ -39,9 +38,7 @@ Rectangle {
     }
 
     function fmtTemp(value) {
-        return value !== undefined && value !== null && !isNaN(value) ? Math.round(
-                                                                            UiPreferences.weatherTemperature(
-                                                                                value)) + "°" : "--";
+        return value !== undefined && value !== null && !isNaN(value) ? Math.round(UiPreferences.weatherTemperature(value)) + "°" : "--";
     }
 
     function fmtRain(value) {
@@ -56,11 +53,10 @@ Rectangle {
         if (!source || !source.normalsAvailable)
             return NaN;
 
-        const value = daytime ? source.normalDaytimeTemperatureC(root.normalMonth) :
-                                source.normalNighttimeTemperatureC(root.normalMonth);
+        const value = daytime ? source.normalDaytimeTemperatureC(root.normalMonth) : source.normalNighttimeTemperatureC(root.normalMonth);
         return root.valueAt({
-                                "value": value
-                            }, "value", NaN);
+            "value": value
+        }, "value", NaN);
     }
 
     function forecastTemperatures() {
@@ -75,9 +71,7 @@ Rectangle {
     }
 
     function updateTemperatureDomain() {
-        root.displayTemperatureDomain = WeatherChartMath.temperatureDomain(root.forecastTemperatures(),
-                                                                           root.normalDaytimeC,
-                                                                           root.normalNighttimeC);
+        root.displayTemperatureDomain = WeatherChartMath.temperatureDomain(root.forecastTemperatures(), root.normalDaytimeC, root.normalNighttimeC);
         trendCanvas.requestPaint();
     }
 
@@ -86,17 +80,14 @@ Rectangle {
     }
 
     function extraTabLabel() {
-        const labels = [I18n.tr("UV index"), I18n.tr("Precipitation"), I18n.tr("Feels like"), I18n.tr(
-                            "Relative humidity / Dew point"), I18n.tr("Pressure"), I18n.tr("Cloud cover"),
-                        I18n.tr("Visibility")];
+        const labels = [I18n.tr("UV index"), I18n.tr("Precipitation"), I18n.tr("Feels like"), I18n.tr("Relative humidity / Dew point"), I18n.tr("Pressure"), I18n.tr("Cloud cover"), I18n.tr("Visibility")];
         return currentTab >= 3 && currentTab < 10 ? labels[currentTab - 3] : "";
     }
 
     radius: 26
     color: Appearance.colors.colWeatherCardSurface
     border.width: 1
-    border.color: Qt.rgba(Appearance.colors.colOutlineVariant.r, Appearance.colors.colOutlineVariant.g,
-                          Appearance.colors.colOutlineVariant.b, 0.42)
+    border.color: Qt.rgba(Appearance.colors.colOutlineVariant.r, Appearance.colors.colOutlineVariant.g, Appearance.colors.colOutlineVariant.b, 0.42)
     clip: true
     onSourceModelChanged: updateTemperatureDomain()
     onCurrentTabChanged: {
@@ -149,7 +140,7 @@ Rectangle {
                     text: "schedule"
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.materialSymbolsOutlined
-                    font.pixelSize: 22
+                    font.pixelSize: Appearance.scaledFont(22)
                     Layout.alignment: Qt.AlignVCenter
                 }
 
@@ -158,7 +149,7 @@ Rectangle {
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.ui
                     font.bold: true
-                    font.pixelSize: 22
+                    font.pixelSize: Appearance.scaledFont(22)
                     Layout.alignment: Qt.AlignVCenter
                 }
 
@@ -174,15 +165,15 @@ Rectangle {
                 StyledButtonGroup {
                     currentValue: root.currentTab
                     model: [({
-                                 "value": 0,
-                                 "label": I18n.tr("Conditions")
-                             }), ({
-                                      "value": 1,
-                                      "label": I18n.tr("Air quality")
-                                  }), ({
-                                           "value": 2,
-                                           "label": I18n.tr("Wind")
-                                       })]
+                                "value": 0,
+                                "label": I18n.tr("Conditions")
+                            }), ({
+                                "value": 1,
+                                "label": I18n.tr("Air quality")
+                            }), ({
+                                "value": 2,
+                                "label": I18n.tr("Wind")
+                            })]
                     onValueSelected: value => {
                         return root.currentTab = value;
                     }
@@ -197,7 +188,7 @@ Rectangle {
                     text: root.extraTabLabel()
                     color: Appearance.colors.colPrimary
                     font.family: Fonts.ui
-                    font.pixelSize: 13
+                    font.pixelSize: Appearance.scaledFont(13)
                     font.bold: true
                     Layout.alignment: Qt.AlignVCenter
                 }
@@ -316,8 +307,7 @@ Rectangle {
                         }
 
                         function yAt(value, minValue, maxValue) {
-                            return chartBottom - (value - minValue) / (maxValue - minValue) * (chartBottom
-                                                                                               - chartTop);
+                            return chartBottom - (value - minValue) / (maxValue - minValue) * (chartBottom - chartTop);
                         }
 
                         anchors.fill: parent
@@ -347,14 +337,12 @@ Rectangle {
                             const minTemp = domain[0];
                             const maxTemp = domain[1];
                             const maxRain = WeatherChartMath.rainMaximum(rainValues);
-                            const rainBandHeight = Math.max(0, trendContent.rainBottomInset
-                                                            - trendContent.rainTopInset - 16);
+                            const rainBandHeight = Math.max(0, trendContent.rainBottomInset - trendContent.rainTopInset - 16);
                             if (maxRain > 0) {
                                 const barWidth = Math.max(7, Math.min(12, root.itemWidth * 0.16));
                                 for (let r = 0; r < count; ++r) {
                                     const rain = rainValues[r];
-                                    const barHeight = WeatherChartMath.rainBarHeight(rain, maxRain,
-                                                                                     rainBandHeight);
+                                    const barHeight = WeatherChartMath.rainBarHeight(rain, maxRain, rainBandHeight);
                                     if (barHeight <= 0)
                                         continue;
 
@@ -362,8 +350,7 @@ Rectangle {
                                     const rainY = trendContent.rainBottomInset - barHeight;
                                     ctx.fillStyle = Qt.rgba(rainColor.r, rainColor.g, rainColor.b, 0.62);
                                     ctx.beginPath();
-                                    ctx.roundedRect(rainX - barWidth / 2, rainY, barWidth, barHeight, barWidth
-                                                    / 2, barWidth / 2);
+                                    ctx.roundedRect(rainX - barWidth / 2, rainY, barWidth, barHeight, barWidth / 2, barWidth / 2);
                                     ctx.fill();
                                     ctx.fillStyle = rainColor;
                                     ctx.font = "bold 10px " + Fonts.cssFamily(Fonts.numeric);
@@ -372,10 +359,8 @@ Rectangle {
                                 }
                             }
                             const areaGradient = ctx.createLinearGradient(0, chartTop, 0, chartBottom);
-                            areaGradient.addColorStop(0, Qt.rgba(primaryColor.r, primaryColor.g,
-                                                                 primaryColor.b, 0.2));
-                            areaGradient.addColorStop(1, Qt.rgba(primaryColor.r, primaryColor.g,
-                                                                 primaryColor.b, 0.02));
+                            areaGradient.addColorStop(0, Qt.rgba(primaryColor.r, primaryColor.g, primaryColor.b, 0.2));
+                            areaGradient.addColorStop(1, Qt.rgba(primaryColor.r, primaryColor.g, primaryColor.b, 0.02));
                             ctx.fillStyle = areaGradient;
                             ctx.beginPath();
                             ctx.moveTo(pointX(0), chartBottom);
@@ -414,8 +399,7 @@ Rectangle {
                             ctx.font = "bold 13px " + Fonts.cssFamily(Fonts.numeric);
                             ctx.textAlign = "center";
                             for (let n = 0; n < count; ++n) {
-                                ctx.fillText(root.fmtTemp(values[n]), pointX(n), yAt(values[n], minTemp,
-                                                                                     maxTemp) - 10);
+                                ctx.fillText(root.fmtTemp(values[n]), pointX(n), yAt(values[n], minTemp, maxTemp) - 10);
                             }
                         }
                     }
@@ -436,7 +420,7 @@ Rectangle {
                                 text: root.hourLabel(hourItem.time)
                                 color: Appearance.colors.colOnSurfaceVariant
                                 font.family: Fonts.numeric
-                                font.pixelSize: 13
+                                font.pixelSize: Appearance.scaledFont(13)
                                 horizontalAlignment: Text.AlignHCenter
                             }
 
@@ -495,9 +479,7 @@ Rectangle {
                 temperatureText: root.fmtTemp(root.normalDaytimeC)
                 numericFontFamily: Fonts.numeric
                 uiFontFamily: Fonts.ui
-                lineColor: Qt.rgba(Appearance.colors.colOutlineVariant.r,
-                                   Appearance.colors.colOutlineVariant.g,
-                                   Appearance.colors.colOutlineVariant.b, 0.58)
+                lineColor: Qt.rgba(Appearance.colors.colOutlineVariant.r, Appearance.colors.colOutlineVariant.g, Appearance.colors.colOutlineVariant.b, 0.58)
                 labelColor: Appearance.colors.colOnSurfaceVariant
             }
 
@@ -513,9 +495,7 @@ Rectangle {
                 temperatureText: root.fmtTemp(root.normalNighttimeC)
                 numericFontFamily: Fonts.numeric
                 uiFontFamily: Fonts.ui
-                lineColor: Qt.rgba(Appearance.colors.colOutlineVariant.r,
-                                   Appearance.colors.colOutlineVariant.g,
-                                   Appearance.colors.colOutlineVariant.b, 0.58)
+                lineColor: Qt.rgba(Appearance.colors.colOutlineVariant.r, Appearance.colors.colOutlineVariant.g, Appearance.colors.colOutlineVariant.b, 0.58)
                 labelColor: Appearance.colors.colOnSurfaceVariant
             }
 

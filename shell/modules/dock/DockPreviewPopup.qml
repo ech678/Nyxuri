@@ -45,7 +45,7 @@ Item {
         quitFailed = false;
     }
     onVisibleChanged: if (!visible)
-                          resetQuit()
+        resetQuit()
     onEntryKeyChanged: resetQuit()
 
     required property string entryKey
@@ -66,35 +66,26 @@ Item {
     }
     readonly property bool hovered: popupHover.hovered
     readonly property bool thumbnails: DockService.showThumbnails && DockService.supportsThumbnails
-    readonly property var matchingPlayers: DockMedia.matchingPlayers(MediaService.list, entry
-                                                                     ? entry.desktopId : "")
+    readonly property var matchingPlayers: DockMedia.matchingPlayers(MediaService.list, entry ? entry.desktopId : "")
     property var mediaPlayer: null
     onMatchingPlayersChanged: mediaPlayer = DockMedia.selectPlayer(matchingPlayers, mediaPlayer)
     Component.onCompleted: {
         mediaPlayer = DockMedia.selectPlayer(matchingPlayers, mediaPlayer);
     }
     readonly property string entryName: entry ? String(entry.name || "") : ""
-    readonly property bool canLaunch: !!entry && entry.kind === "app" && entry.available && String(
-                                          entry.desktopId || "").length > 0
-    readonly property var desktopActions: contextMenu && canLaunch ? ApplicationService.actionsForApplication(
-                                                                         entry.desktopId) : []
-    readonly property bool canChangePin: !!entry && (entry.pinned || (DockService.contextPinning
-                                                                      && canLaunch))
+    readonly property bool canLaunch: !!entry && entry.kind === "app" && entry.available && String(entry.desktopId || "").length > 0
+    readonly property var desktopActions: contextMenu && canLaunch ? ApplicationService.actionsForApplication(entry.desktopId) : []
+    readonly property bool canChangePin: !!entry && (entry.pinned || (DockService.contextPinning && canLaunch))
 
-    readonly property var rowLayout: DockLayout.windowPreviewRow(windows.length, thumbnails
-                                                                 ? DockService.previewSize * 1.6 + 16 : 220,
-                                                                 maximumWidth)
+    readonly property var rowLayout: DockLayout.windowPreviewRow(windows.length, thumbnails ? DockService.previewSize * 1.6 + 16 : 220, maximumWidth)
     readonly property real contentMargin: contextMenu ? 6 : rowLayout.margin
 
     readonly property real tailSize: contextMenu ? 10 : 0
     readonly property real bodyX: contextMenu && edge === "left" ? tailSize : 0
     readonly property real bodyWidth: width - (edge === "bottom" ? 0 : tailSize)
-    readonly property real bodyHeight: contextMenu ? Math.min(menuContent.height + contentMargin * 2, Math.max(
-                                                                  0, maximumHeight - tailSize)) :
-                                                     windowRow.height + contentMargin * 2
+    readonly property real bodyHeight: contextMenu ? Math.min(menuContent.height + contentMargin * 2, Math.max(0, maximumHeight - tailSize)) : windowRow.height + contentMargin * 2
 
-    readonly property color surfaceColor: BlurService.backgroundColor(
-                                              Appearance.colors.colBackgroundSurfaceContainer)
+    readonly property color surfaceColor: BlurService.backgroundColor(Appearance.colors.colBackgroundSurfaceContainer)
     readonly property color outlineColor: Appearance.applyAlpha(Appearance.colors.colOnSurface, 0.18)
 
     signal dismissed
@@ -219,7 +210,7 @@ Item {
                 text: root.entryName
                 textFormat: Text.PlainText
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: Appearance.scaledFont(12)
                 color: Appearance.colors.colOnSurfaceVariant
                 elide: Text.ElideRight
                 verticalAlignment: Text.AlignVCenter
@@ -275,8 +266,7 @@ Item {
                                 Layout.preferredWidth: 20
                                 Layout.preferredHeight: 20
                                 visible: desktopActionItem.modelData.icon !== ""
-                                iconSource: visible ? ApplicationService.iconSource(
-                                                          desktopActionItem.modelData.icon) : ""
+                                iconSource: visible ? ApplicationService.iconSource(desktopActionItem.modelData.icon) : ""
                                 sourceSize: Qt.size(32, 32)
                                 fillMode: Image.PreserveAspectFit
                                 asynchronous: true
@@ -295,8 +285,7 @@ Item {
                         onTriggered: {
                             if (!root.canLaunch)
                                 return;
-                            if (ApplicationService.launchApplicationAction(root.entry.desktopId,
-                                                                           modelData.id))
+                            if (ApplicationService.launchApplicationAction(root.entry.desktopId, modelData.id))
                                 root.dismissed();
                         }
                     }
@@ -312,11 +301,10 @@ Item {
             Text {
                 width: parent.width - 16
                 x: 8
-                visible: !!root.entry && root.entry.kind === "app" && !root.entry.available
-                         && root.windows.length === 0
+                visible: !!root.entry && root.entry.kind === "app" && !root.entry.available && root.windows.length === 0
                 text: I18n.tr("Application is unavailable")
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: Appearance.scaledFont(12)
                 color: Appearance.colors.colOnSurfaceVariant
                 wrapMode: Text.Wrap
             }
@@ -375,7 +363,7 @@ Item {
                     textFormat: Text.PlainText
                     wrapMode: Text.Wrap
                     font.family: Fonts.ui
-                    font.pixelSize: 12
+                    font.pixelSize: Appearance.scaledFont(12)
                     color: Appearance.colors.colError
                 }
                 Rectangle {
@@ -391,8 +379,7 @@ Item {
                     leftPadding: 8
                     rightPadding: 8
                     visible: root.canChangePin
-                    text: root.entry && root.entry.pinned ? I18n.tr("Remove from Dock") : I18n.tr(
-                                                                "Pin to Dock")
+                    text: root.entry && root.entry.pinned ? I18n.tr("Remove from Dock") : I18n.tr("Pin to Dock")
                     onTriggered: {
                         const entry = DockService.entryFor(root.entryKey);
                         if (!entry)

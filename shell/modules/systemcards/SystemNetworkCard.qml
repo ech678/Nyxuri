@@ -24,15 +24,12 @@ Item {
     readonly property color rightColor: root.panelColor
     readonly property color rightForeground: Appearance.colors.colOnPrimaryContainer
     readonly property color downloadIconColor: Appearance.colors.colTertiary
-    readonly property color uploadIconColor: Appearance.mix(Appearance.colors.colPrimary,
-                                                            Appearance.colors.colOnPrimary, 0.76)
-    readonly property color downloadChartColor: Appearance.mix(root.downloadIconColor, root.leftForeground,
-                                                               0.64)
+    readonly property color uploadIconColor: Appearance.mix(Appearance.colors.colPrimary, Appearance.colors.colOnPrimary, 0.76)
+    readonly property color downloadChartColor: Appearance.mix(root.downloadIconColor, root.leftForeground, 0.64)
     readonly property color uploadChartColor: Appearance.mix(root.uploadIconColor, root.leftForeground, 0.58)
     readonly property var interfaces: Array.isArray(root.network.interfaces) ? root.network.interfaces : []
     readonly property string defaultInterface: String(root.network.defaultInterface || "")
-    readonly property string selectedInterfaceName: root.preferredInterface === "" ? root.defaultInterface :
-                                                                                     root.preferredInterface
+    readonly property string selectedInterfaceName: root.preferredInterface === "" ? root.defaultInterface : root.preferredInterface
     readonly property var selectedInterface: {
         if (root.preferredInterface === "all")
             return root.network;
@@ -45,16 +42,15 @@ Item {
     }
     readonly property var interfaceOptions: {
         const options = [
-                  {
-                      "value": "",
-                      "label": root.defaultInterface !== "" ? I18n.tr("Default · %1").arg(
-                                                                  root.defaultInterface) : I18n.tr("Default")
-                  },
-                  {
-                      "value": "all",
-                      "label": I18n.tr("Total")
-                  }
-              ];
+            {
+                "value": "",
+                "label": root.defaultInterface !== "" ? I18n.tr("Default · %1").arg(root.defaultInterface) : I18n.tr("Default")
+            },
+            {
+                "value": "all",
+                "label": I18n.tr("Total")
+            }
+        ];
         const names = [];
         for (let index = 0; index < root.interfaces.length; index += 1) {
             const networkInterface = root.interfaces[index];
@@ -65,18 +61,14 @@ Item {
         names.sort();
         for (let index = 0; index < names.length; index += 1) {
             options.push({
-                             "value": names[index],
-                             "label": names[index]
-                         });
+                "value": names[index],
+                "label": names[index]
+            });
         }
         return options;
     }
-    readonly property var downloadHistory: root.preferredInterface === "all" ? root.aggregateDownloadHistory :
-                                                                               root.downloadHistories[root.selectedInterfaceName]
-                                                                               || []
-    readonly property var uploadHistory: root.preferredInterface === "all" ? root.aggregateUploadHistory :
-                                                                             root.uploadHistories[root.selectedInterfaceName]
-                                                                             || []
+    readonly property var downloadHistory: root.preferredInterface === "all" ? root.aggregateDownloadHistory : root.downloadHistories[root.selectedInterfaceName] || []
+    readonly property var uploadHistory: root.preferredInterface === "all" ? root.aggregateUploadHistory : root.uploadHistories[root.selectedInterfaceName] || []
     readonly property real rightPanelX: Math.round(width * 0.53)
     readonly property int chartHistoryLength: 18
     readonly property real chartMaximum: {
@@ -93,20 +85,17 @@ Item {
         }
         return Math.max(1, maximum * 1.2);
     }
-    readonly property var expressiveBoldAxes: Fonts.bundledFamilyAvailable && Fonts.expressive
-                                              === Fonts.bundledFamilyName ? ({
-                                                                                 "GRAD": 100,
-                                                                                 "ROND": 35,
-                                                                                 "wdth": 85
-                                                                             }) : ({})
+    readonly property var expressiveBoldAxes: Fonts.bundledFamilyAvailable && Fonts.expressive === Fonts.bundledFamilyName ? ({
+            "GRAD": 100,
+            "ROND": 35,
+            "wdth": 85
+        }) : ({})
 
     signal interfaceSelected(string networkInterface)
 
     clip: true
     layer.enabled: true
-    Accessible.name: I18n.tr("Network, download ") + Format.bytesPerSecond(
-                         root.selectedInterface.downloadBytesPerSecond) + I18n.tr(", upload ")
-                     + Format.bytesPerSecond(root.selectedInterface.uploadBytesPerSecond)
+    Accessible.name: I18n.tr("Network, download ") + Format.bytesPerSecond(root.selectedInterface.downloadBytesPerSecond) + I18n.tr(", upload ") + Format.bytesPerSecond(root.selectedInterface.uploadBytesPerSecond)
 
     Rectangle {
         anchors.fill: parent
@@ -119,7 +108,7 @@ Item {
         color: root.leftForeground
         renderType: Text.NativeRendering
         font.family: Fonts.expressive
-        font.pixelSize: 34
+        font.pixelSize: Appearance.scaledFont(34)
         font.weight: Font.Black
         font.variableAxes: root.expressiveBoldAxes
 
@@ -168,9 +157,7 @@ Item {
         fillArea: true
         fillOpacity: 0.26
         accessibilityName: I18n.tr("Recent network activity")
-        accessibilityDescription: I18n.tr("Download ") + Format.bytesPerSecond(
-                                      root.selectedInterface.downloadBytesPerSecond) + I18n.tr(", upload ")
-                                  + Format.bytesPerSecond(root.selectedInterface.uploadBytesPerSecond)
+        accessibilityDescription: I18n.tr("Download ") + Format.bytesPerSecond(root.selectedInterface.downloadBytesPerSecond) + I18n.tr(", upload ") + Format.bytesPerSecond(root.selectedInterface.uploadBytesPerSecond)
         lineColor: root.downloadChartColor
         secondaryLineColor: root.uploadChartColor
         baselineColor: "transparent"
@@ -289,7 +276,7 @@ Item {
             color: root.rightForeground
             renderType: Text.NativeRendering
             font.family: Fonts.expressive
-            font.pixelSize: 27
+            font.pixelSize: Appearance.scaledFont(27)
             font.weight: Font.Black
             font.variableAxes: root.expressiveBoldAxes
             elide: Text.ElideRight

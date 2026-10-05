@@ -82,7 +82,6 @@ Rectangle {
                     font.pixelSize: root.headerFontSize
                     font.bold: true
                 }
-
             }
 
             Text {
@@ -95,7 +94,6 @@ Rectangle {
                 elide: Text.ElideRight
                 verticalAlignment: Text.AlignVCenter
             }
-
         }
 
         RowLayout {
@@ -119,7 +117,6 @@ Rectangle {
                     font.pixelSize: Math.floor(Math.min(parent.width, parent.height) * 0.94)
                     font.bold: true
                 }
-
             }
 
             ColumnLayout {
@@ -213,15 +210,10 @@ Rectangle {
                             radius: 7
                             color: modelData
                         }
-
                     }
-
                 }
-
             }
-
         }
-
     }
 
     component FetchLine: RowLayout {
@@ -240,7 +232,7 @@ Rectangle {
             text: line.icon
             color: line.accent
             font.family: Fonts.materialSymbolsOutlined
-            font.pixelSize: 24
+            font.pixelSize: Appearance.scaledFont(24)
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
         }
@@ -263,7 +255,5 @@ Rectangle {
             font.pixelSize: root.fetchFontSize
             elide: Text.ElideRight
         }
-
     }
-
 }

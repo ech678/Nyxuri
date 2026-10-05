@@ -162,7 +162,7 @@ Item {
                 text: RecordingFormat.elapsed(root.heldElapsedMs)
                 color: Appearance.colors.colOnLayer0
                 font.family: Fonts.numeric
-                font.pixelSize: 18
+                font.pixelSize: Appearance.scaledFont(18)
                 font.weight: Font.DemiBold
                 rotation: root.edge === "left" ? -90 : 90
             }
@@ -219,14 +219,14 @@ Item {
                 NumberAnimation {
                     from: 0.35
                     to: 1
-                    duration: 800
+                    duration: Appearance.motionLoopDuration(800)
                     easing.type: Easing.InOutSine
                 }
 
                 NumberAnimation {
                     from: 1
                     to: 0.35
-                    duration: 800
+                    duration: Appearance.motionLoopDuration(800)
                     easing.type: Easing.InOutSine
                 }
             }

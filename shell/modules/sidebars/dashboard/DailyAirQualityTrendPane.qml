@@ -38,8 +38,7 @@ Item {
     }
 
     function aqiLevelName(level) {
-        const names = [I18n.tr("Excellent"), I18n.tr("Good"), I18n.tr("Poor"), I18n.tr("Unhealthy"), I18n.tr(
-                           "Very unhealthy"), I18n.tr("Hazardous")];
+        const names = [I18n.tr("Excellent"), I18n.tr("Good"), I18n.tr("Poor"), I18n.tr("Unhealthy"), I18n.tr("Very unhealthy"), I18n.tr("Hazardous")];
         return level >= 0 && level < names.length ? names[level] : "--";
     }
 
@@ -70,13 +69,9 @@ Item {
     function dailyAqiValue(air) {
         if (!air)
             return NaN;
-        const values = [root.pollutantIndex(air.ozone, [0, 50, 100, 160, 240, 480]), root.pollutantIndex(
-                            air.nitrogenDioxide, [0, 10, 25, 200, 400, 1000]), root.pollutantIndex(air.pm10,
-                                                                                                   [0, 15, 45,
-                                                                                                    80, 160, 400]),
-                        root.pollutantIndex(air.pm25, [0, 5, 15, 30, 60, 150])].filter(function (v) {
-                            return !isNaN(v);
-                        });
+        const values = [root.pollutantIndex(air.ozone, [0, 50, 100, 160, 240, 480]), root.pollutantIndex(air.nitrogenDioxide, [0, 10, 25, 200, 400, 1000]), root.pollutantIndex(air.pm10, [0, 15, 45, 80, 160, 400]), root.pollutantIndex(air.pm25, [0, 5, 15, 30, 60, 150])].filter(function (v) {
+            return !isNaN(v);
+        });
         if (values.length === 0)
             return NaN;
         return Math.max.apply(Math, values);
@@ -91,8 +86,7 @@ Item {
             return I18n.tr("Tomorrow");
         if (!epoch)
             return "--";
-        const week = [I18n.tr("Sun"), I18n.tr("Mon"), I18n.tr("Tue"), I18n.tr("Wed"), I18n.tr("Thu"), I18n.tr(
-                          "Fri"), I18n.tr("Sat")];
+        const week = [I18n.tr("Sun"), I18n.tr("Mon"), I18n.tr("Tue"), I18n.tr("Wed"), I18n.tr("Thu"), I18n.tr("Fri"), I18n.tr("Sat")];
         return week[new Date(epoch * 1000).getDay()];
     }
 
@@ -125,9 +119,7 @@ Item {
         const list = [];
         let highest = 0;
         let validCount = 0;
-        const modelCount = root.sourceModel ? (typeof root.sourceModel.count === "function"
-                                               ? root.sourceModel.count() : Number(root.sourceModel.count
-                                                                                   || 0)) : 0;
+        const modelCount = root.sourceModel ? (typeof root.sourceModel.count === "function" ? root.sourceModel.count() : Number(root.sourceModel.count || 0)) : 0;
         const count = Math.min(root.maxDays, modelCount);
         for (let i = 0; i < count; ++i) {
             const day = root.sourceModel.get(i) || ({});
@@ -138,35 +130,35 @@ Item {
                 validCount += 1;
             }
             list.push({
-                          time: day.time || 0,
-                          dayText: root.dayLabel(i, day.time || 0),
-                          dateText: root.dateLabel(day.time || 0),
-                          aqi: aqi,
-                          aqiText: !isNaN(aqi) ? Math.round(aqi).toString() : "--",
-                          levelText: root.aqiLevelName(level),
-                          color: root.aqiPalette(level),
-                          emphasized: i !== 0
-                      });
+                time: day.time || 0,
+                dayText: root.dayLabel(i, day.time || 0),
+                dateText: root.dateLabel(day.time || 0),
+                aqi: aqi,
+                aqiText: !isNaN(aqi) ? Math.round(aqi).toString() : "--",
+                levelText: root.aqiLevelName(level),
+                color: root.aqiPalette(level),
+                emphasized: i !== 0
+            });
         }
         items = list;
         chartMax = root.chartUpperBound(highest);
         hasData = validCount > 0;
 
         const lines = [
-                  {
-                      value: 20,
-                      label: root.aqiLevelName(1)
-                  },
-                  {
-                      value: 100,
-                      label: root.aqiLevelName(3)
-                  }
-              ];
+            {
+                value: 20,
+                label: root.aqiLevelName(1)
+            },
+            {
+                value: 100,
+                label: root.aqiLevelName(3)
+            }
+        ];
         if (chartMax >= 250) {
             lines.push({
-                           value: 250,
-                           label: root.aqiLevelName(5)
-                       });
+                value: 250,
+                label: root.aqiLevelName(5)
+            });
         }
         keyLines = lines;
     }
@@ -213,8 +205,7 @@ Item {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 height: 1
-                color: Qt.rgba(Appearance.colors.colOutlineVariant.r, Appearance.colors.colOutlineVariant.g,
-                               Appearance.colors.colOutlineVariant.b, 0.44)
+                color: Qt.rgba(Appearance.colors.colOutlineVariant.r, Appearance.colors.colOutlineVariant.g, Appearance.colors.colOutlineVariant.b, 0.44)
             }
 
             Text {
@@ -223,11 +214,9 @@ Item {
                 anchors.leftMargin: 2
                 anchors.bottomMargin: 5
                 text: modelData.value
-                color: Qt.rgba(Appearance.colors.colOnSurfaceVariant.r,
-                               Appearance.colors.colOnSurfaceVariant.g,
-                               Appearance.colors.colOnSurfaceVariant.b, 0.72)
+                color: Qt.rgba(Appearance.colors.colOnSurfaceVariant.r, Appearance.colors.colOnSurfaceVariant.g, Appearance.colors.colOnSurfaceVariant.b, 0.72)
                 font.family: Fonts.numeric
-                font.pixelSize: 11
+                font.pixelSize: Appearance.scaledFont(11)
             }
 
             Text {
@@ -236,11 +225,9 @@ Item {
                 anchors.rightMargin: 2
                 anchors.bottomMargin: 5
                 text: modelData.label
-                color: Qt.rgba(Appearance.colors.colOnSurfaceVariant.r,
-                               Appearance.colors.colOnSurfaceVariant.g,
-                               Appearance.colors.colOnSurfaceVariant.b, 0.72)
+                color: Qt.rgba(Appearance.colors.colOnSurfaceVariant.r, Appearance.colors.colOnSurfaceVariant.g, Appearance.colors.colOnSurfaceVariant.b, 0.72)
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: Appearance.scaledFont(12)
             }
         }
     }
@@ -258,19 +245,9 @@ Item {
             height: root.height
 
             readonly property real barWidth: Math.max(14, Math.min(22, width * 0.26))
-            readonly property real barHeight: !isNaN(modelData.aqi) ? Math.max(10, root.chartBottom
-                                                                               - root.yForValue(
-                                                                                   modelData.aqi)) : 0
-            readonly property color weekColor: modelData.emphasized ? Appearance.colors.colOnSurface : Qt.rgba(
-                                                                          Appearance.colors.colOnSurfaceVariant.r,
-                                                                          Appearance.colors.colOnSurfaceVariant.g,
-                                                                          Appearance.colors.colOnSurfaceVariant.b,
-                                                                          0.78)
-            readonly property color dateColor: modelData.emphasized ? Appearance.colors.colOnSurfaceVariant :
-                                                                      Qt.rgba(Appearance.colors.colOnSurfaceVariant.r,
-                                                                              Appearance.colors.colOnSurfaceVariant.g,
-                                                                              Appearance.colors.colOnSurfaceVariant.b,
-                                                                              0.62)
+            readonly property real barHeight: !isNaN(modelData.aqi) ? Math.max(10, root.chartBottom - root.yForValue(modelData.aqi)) : 0
+            readonly property color weekColor: modelData.emphasized ? Appearance.colors.colOnSurface : Qt.rgba(Appearance.colors.colOnSurfaceVariant.r, Appearance.colors.colOnSurfaceVariant.g, Appearance.colors.colOnSurfaceVariant.b, 0.78)
+            readonly property color dateColor: modelData.emphasized ? Appearance.colors.colOnSurfaceVariant : Qt.rgba(Appearance.colors.colOnSurfaceVariant.r, Appearance.colors.colOnSurfaceVariant.g, Appearance.colors.colOnSurfaceVariant.b, 0.62)
 
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -278,7 +255,7 @@ Item {
                 text: modelData.dayText
                 color: parent.weekColor
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: Appearance.scaledFont(14)
                 font.bold: modelData.dayText === I18n.tr("Today")
             }
 
@@ -288,7 +265,7 @@ Item {
                 text: modelData.dateText
                 color: parent.dateColor
                 font.family: Fonts.numeric
-                font.pixelSize: 11
+                font.pixelSize: Appearance.scaledFont(11)
             }
 
             Rectangle {
@@ -298,8 +275,7 @@ Item {
                 x: (parent.width - width) / 2
                 y: root.chartBottom - height
                 radius: width / 2
-                color: Qt.rgba(Qt.color(modelData.color).r, Qt.color(modelData.color).g, Qt.color(
-                                   modelData.color).b, 0.58)
+                color: Qt.rgba(Qt.color(modelData.color).r, Qt.color(modelData.color).g, Qt.color(modelData.color).b, 0.58)
             }
 
             Text {
@@ -308,7 +284,7 @@ Item {
                 text: modelData.aqiText
                 color: Appearance.colors.colOnSurface
                 font.family: Fonts.numeric
-                font.pixelSize: 13
+                font.pixelSize: Appearance.scaledFont(13)
                 font.bold: modelData.dayText === I18n.tr("Today")
             }
         }
@@ -320,6 +296,6 @@ Item {
         text: I18n.tr("Air quality data is unavailable")
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.ui
-        font.pixelSize: 16
+        font.pixelSize: Appearance.scaledFont(16)
     }
 }

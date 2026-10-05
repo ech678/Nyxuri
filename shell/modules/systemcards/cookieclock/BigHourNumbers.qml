@@ -35,14 +35,10 @@ Item {
                     rotation: -numberItem.rotation
                     color: root.color
                     font.family: Fonts.expressive
-                    font.pixelSize: 80
+                    font.pixelSize: Appearance.scaledFont(80)
                     font.weight: Font.Black
                 }
-
             }
-
         }
-
     }
-
 }

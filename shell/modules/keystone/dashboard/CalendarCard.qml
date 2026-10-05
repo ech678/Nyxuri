@@ -62,6 +62,8 @@ Rectangle {
                 property: "monthOpacity"
                 to: 0
                 duration: Appearance.animation.expressiveEffects.duration
+                easing.type: Appearance.animation.expressiveEffects.type
+                easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
             }
         }
         ScriptAction {
@@ -84,6 +86,8 @@ Rectangle {
                 property: "monthOpacity"
                 to: 1
                 duration: Appearance.animation.expressiveEffects.duration
+                easing.type: Appearance.animation.expressiveEffects.type
+                easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
             }
         }
     }
@@ -128,10 +132,15 @@ Rectangle {
                 Rectangle {
                     anchors.fill: parent
                     radius: height / 2
-                    color: monthMouse.pressed ? Appearance.colors.colPrimaryContainerActive :
-                                                monthMouse.containsMouse
-                                                ? Appearance.colors.colPrimaryContainerHover :
-                                                  Appearance.colors.colPrimaryContainer
+                    color: monthMouse.pressed ? Appearance.colors.colPrimaryContainerActive : monthMouse.containsMouse ? Appearance.colors.colPrimaryContainerHover : Appearance.colors.colPrimaryContainer
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: Appearance.animation.expressiveFastEffects.duration
+                            easing.type: Appearance.animation.expressiveFastEffects.type
+                            easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
+                        }
+                    }
                 }
 
                 Text {
@@ -143,7 +152,7 @@ Rectangle {
                     text: calendarGrid.title
                     color: Appearance.colors.colOnPrimaryContainer
                     font.family: Fonts.ui
-                    font.pixelSize: 15
+                    font.pixelSize: Appearance.scaledFont(15)
                     font.weight: Font.DemiBold
                 }
 
@@ -178,11 +187,10 @@ Rectangle {
 
                 horizontalAlignment: Text.AlignHCenter
                 text: model.shortName
-                color: model.day === 0 || model.day === 6 ? Appearance.colors.colTertiary :
-                                                            Appearance.colors.colOnSurface
+                color: model.day === 0 || model.day === 6 ? Appearance.colors.colTertiary : Appearance.colors.colOnSurface
 
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: Appearance.scaledFont(12)
                 font.weight: Font.Medium
             }
         }
@@ -227,12 +235,11 @@ Rectangle {
                             if (dayItem.model.today)
                                 return Appearance.colors.colOnPrimary;
                             const dayOfWeek = dayItem.model.date.getDay();
-                            return dayOfWeek === 0 || dayOfWeek === 6 ? Appearance.colors.colTertiary :
-                                                                        Appearance.colors.colOnSurfaceVariant;
+                            return dayOfWeek === 0 || dayOfWeek === 6 ? Appearance.colors.colTertiary : Appearance.colors.colOnSurfaceVariant;
                         }
                         opacity: dayItem.model.today || dayItem.model.month === calendarGrid.month ? 1 : 0.38
                         font.family: Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: Appearance.scaledFont(12)
                         font.weight: dayItem.model.today ? Font.DemiBold : Font.Normal
                     }
                 }

@@ -62,7 +62,6 @@ Button {
         const action = root.releaseAction;
         if (action)
             action(null);
-
     }
 
     MouseArea {
@@ -73,49 +72,45 @@ Button {
         hoverEnabled: true
         cursorShape: root.pointingHandCursor ? Qt.PointingHandCursor : Qt.ArrowCursor
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-        onPressed: (event) => {
+        onPressed: event => {
             if (event.button === Qt.RightButton) {
                 if (root.altAction)
                     root.altAction(event);
 
-                return ;
+                return;
             }
             if (event.button === Qt.MiddleButton) {
                 if (root.middleClickAction)
                     root.middleClickAction(event);
 
-                return ;
+                return;
             }
             root.pointerPressActive = true;
             root.down = true;
             root.beginRipple(event.x, event.y);
             if (root.downAction)
                 root.downAction(event);
-
         }
-        onReleased: (event) => {
+        onReleased: event => {
             root.down = false;
             root.pointerPressActive = false;
             if (event.button === Qt.LeftButton)
                 root.finishRipple();
-
         }
-        onClicked: (event) => {
+        onClicked: event => {
             if (event.button === Qt.LeftButton)
                 root.clicked();
-
         }
-        onDoubleClicked: (event) => {
+        onDoubleClicked: event => {
             if (event.button === Qt.LeftButton && root.doubleClickAction)
                 root.doubleClickAction(event);
-
         }
         onCanceled: {
             root.down = false;
             root.pointerPressActive = false;
             root.finishRipple();
         }
-        onWheel: (wheel) => {
+        onWheel: wheel => {
             if (root.wheelAction) {
                 root.wheelAction(wheel);
             } else {
@@ -161,21 +156,28 @@ Button {
 
         RippleEffect {
             id: rippleEffect
-
             anchors.fill: parent
             z: 2
             color: root.rippleColor
             shapeRadius: root.buttonEffectiveRadius
         }
-
+        Rectangle {
+            anchors.fill: parent
+            z: 3
+            color: "transparent"
+            radius: root.buttonEffectiveRadius
+            border.width: root.visualFocus ? 2 : 0
+            border.color: Appearance.colors.colPrimary
+            visible: root.visualFocus
+            Accessible.ignored: true
+        }
     }
 
     contentItem: Text {
         text: root.buttonText.length > 0 ? root.buttonText : root.text
         color: Appearance.colors.colOnSurface
         font.family: Fonts.ui
-        font.pixelSize: 13
+        font.pixelSize: Appearance.scaledFont(13)
         verticalAlignment: Text.AlignVCenter
     }
-
 }

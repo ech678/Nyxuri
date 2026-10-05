@@ -37,7 +37,7 @@ Rectangle {
             visible: !root.logo && root.symbol.length === 0
             text: root.superKey ? (root.superStyle === "command" ? "⌘" : "Super") : root.keyText
             font.family: Fonts.mono
-            font.pixelSize: 16
+            font.pixelSize: Appearance.scaledFont(16)
             color: Appearance.colors.colOnSurface
         }
         MaterialSymbol {

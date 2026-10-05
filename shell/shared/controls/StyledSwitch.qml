@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import qs.shared.theme
+import qs.shared.i18n
 import QtQuick.Shapes
 
 Switch {
@@ -9,11 +10,16 @@ Switch {
     property real scale: 0.75
     property color activeColor: Appearance.colors.colPrimary
     property color inactiveColor: Appearance.colors.colSurfaceContainerHighest
+    Accessible.role: Accessible.CheckBox
+    Accessible.name: root.checked ? I18n.tr("On") : I18n.tr("Off")
+    Accessible.checked: root.checked
+    Accessible.focusable: true
 
     implicitWidth: 52 * root.scale
     implicitHeight: 32 * root.scale
 
     background: Rectangle {
+        id: switchBackground
         width: parent.width
         height: parent.height
         radius: Appearance.rounding.full
@@ -39,19 +45,13 @@ Switch {
     }
 
     indicator: Rectangle {
-        width: (root.pressed || root.down) ? (28 * root.scale) : root.checked ? (24 * root.scale) : (16
-                                                                                                     * root.scale)
-        height: (root.pressed || root.down) ? (28 * root.scale) : root.checked ? (24 * root.scale) : (16
-                                                                                                      * root.scale)
+        width: (root.pressed || root.down) ? (28 * root.scale) : root.checked ? (24 * root.scale) : (16 * root.scale)
+        height: (root.pressed || root.down) ? (28 * root.scale) : root.checked ? (24 * root.scale) : (16 * root.scale)
         radius: Appearance.rounding.full
         color: root.checked ? Appearance.colors.colOnPrimary : Appearance.colors.colOutline
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: parent.left
-        anchors.leftMargin: root.checked ? ((root.pressed || root.down) ? (22 * root.scale) : 24
-                                                                          * root.scale) : ((root.pressed
-                                                                                            || root.down) ? (
-                                                                                                                2 * root.scale) :
-                                                                                                            8 * root.scale)
+        anchors.leftMargin: root.checked ? ((root.pressed || root.down) ? (22 * root.scale) : 24 * root.scale) : ((root.pressed || root.down) ? (2 * root.scale) : 8 * root.scale)
 
         Shape {
             anchors.centerIn: parent
@@ -111,5 +111,16 @@ Switch {
                 easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
             }
         }
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: -3
+            color: "transparent"
+            radius: Appearance.rounding.full
+            border.width: root.visualFocus ? 2 : 0
+            border.color: Appearance.colors.colPrimary
+            visible: root.visualFocus
+            Accessible.ignored: true
+        }
     }
+    focusPolicy: Qt.StrongFocus
 }

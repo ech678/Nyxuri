@@ -40,8 +40,7 @@ Item {
                 Layout.preferredWidth: 40
                 Layout.preferredHeight: 40
                 radius: Appearance.rounding.full
-                color: root.muted ? Appearance.colors.colSecondaryContainer :
-                                    Appearance.colors.colPrimaryContainer
+                color: root.muted ? Appearance.colors.colSecondaryContainer : Appearance.colors.colPrimaryContainer
 
                 Behavior on color {
                     ColorAnimation {
@@ -70,8 +69,7 @@ Item {
                     text: root.muted ? root.mutedIconName : root.iconName
                     iconSize: 21
                     fill: root.muted ? 1 : 0
-                    color: root.muted ? Appearance.colors.colOnSecondaryContainer :
-                                        Appearance.colors.colOnPrimaryContainer
+                    color: root.muted ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnPrimaryContainer
                 }
             }
 
@@ -85,7 +83,7 @@ Item {
                     text: root.title
                     color: Appearance.colors.colOnLayer2
                     font.family: Fonts.ui
-                    font.pixelSize: 14
+                    font.pixelSize: Appearance.scaledFont(14)
                     font.weight: Font.Medium
                     elide: Text.ElideRight
                 }
@@ -96,7 +94,7 @@ Item {
                     text: root.supportingText
                     color: Appearance.colors.colOnLayer1
                     font.family: Fonts.ui
-                    font.pixelSize: 12
+                    font.pixelSize: Appearance.scaledFont(12)
                     elide: Text.ElideRight
                 }
             }
@@ -111,8 +109,7 @@ Item {
                 iconColor: Appearance.colors.colOnLayer2
                 selectedIconColor: Appearance.colors.colPrimary
                 selectedContainerColor: Appearance.colors.colLayer2Hover
-                accessibleName: root.muted ? I18n.tr("Unmute %1").arg(root.title) : I18n.tr("Mute %1").arg(
-                                                 root.title)
+                accessibleName: root.muted ? I18n.tr("Unmute %1").arg(root.title) : I18n.tr("Mute %1").arg(root.title)
                 tooltipText: root.muted ? I18n.tr("Unmute") : I18n.tr("Mute")
                 hoverStateLayerColor: Appearance.colors.colLayer2Hover
                 pressedStateLayerColor: Appearance.colors.colLayer2Active

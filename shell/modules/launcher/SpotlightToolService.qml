@@ -31,8 +31,7 @@ Singleton {
     property int copyGeneration: -1
     readonly property var candidates: catalogs[tool] || []
     property var resultRequest: null
-    readonly property bool canCopy: ToolResponse.copyable(result, resultRequest, active, state, generation,
-                                                          instance)
+    readonly property bool canCopy: ToolResponse.copyable(result, resultRequest, active, state, generation, instance)
 
     function errorMessage(value) {
         if (!value)
@@ -70,9 +69,7 @@ Singleton {
     function parse(text, command) {
         try {
             const value = JSON.parse(text);
-            return value && value.schemaVersion === 1 && value.command === command && typeof value.ok
-                    === "boolean" && (value.ok ? value.error === null : value.error && typeof value.error.code
-                                                 === "string") ? value : null;
+            return value && value.schemaVersion === 1 && value.command === command && typeof value.ok === "boolean" && (value.ok ? value.error === null : value.error && typeof value.error.code === "string") ? value : null;
         } catch (error) {
             return null;
         }
@@ -83,8 +80,7 @@ Singleton {
         let action = !capabilityKnown ? "status" : !catalogs[tool] ? "catalog" : tool;
         if (capabilityKnown && (!capabilities || capabilities[tool] !== true)) {
             state = "unavailable";
-            error = capabilities ? I18n.tr("This tool's dependency is unavailable") : I18n.tr(
-                                       "Update key-cli to enable this tool");
+            error = capabilities ? I18n.tr("This tool's dependency is unavailable") : I18n.tr("Update key-cli to enable this tool");
             return;
         }
         if (action === tool && !query.trim()) {
@@ -129,26 +125,19 @@ Singleton {
                 capabilityKnown = true;
                 capabilities = null;
             }
-        } else if (pending.action === "catalog" && value && value.ok && value.tool === pending.tool
-                   && Array.isArray(value.candidates)) {
+        } else if (pending.action === "catalog" && value && value.ok && value.tool === pending.tool && Array.isArray(value.candidates)) {
             catalogs = Object.assign({}, catalogs, {
-                                         [pending.tool]: value.candidates.filter(candidate
-                                                                                 => typeof candidate.text
-                                                                                    === "string"
-                                                                                    && typeof candidate.name
-                                                                                    === "string")
-                                     });
+                [pending.tool]: value.candidates.filter(candidate => typeof candidate.text === "string" && typeof candidate.name === "string")
+            });
         } else if (current) {
             if (!value || timedOut) {
                 state = "error";
-                error = timedOut ? I18n.tr("Tool request timed out") : I18n.tr(
-                                       "The tool returned invalid data");
+                error = timedOut ? I18n.tr("Tool request timed out") : I18n.tr("The tool returned invalid data");
                 return;
             }
             result = value;
             resultRequest = pending;
-            state = ["empty", "incomplete", "valid", "ambiguous", "error", "unavailable"].includes(value.state)
-                    ? value.state : "error";
+            state = ["empty", "incomplete", "valid", "ambiguous", "error", "unavailable"].includes(value.state) ? value.state : "error";
             if (state === "valid" && (!value.ok || exitCode !== 0 || typeof value.answer !== "string")) {
                 state = "error";
                 result = null;
@@ -165,8 +154,7 @@ Singleton {
             Qt.callLater(root.start);
     }
     function confirmFold(value) {
-        if (state !== "ambiguous" || !result || !result.candidates.some(candidate => candidate.fold
-                                                                                     === value))
+        if (state !== "ambiguous" || !result || !result.candidates.some(candidate => candidate.fold === value))
             return;
         fold = value;
     }
@@ -182,6 +170,17 @@ Singleton {
         copier.command = ["wl-copy", "--", value];
         copier.running = true;
         return true;
+    }
+    function writeClipboard(value) {
+        if (!value || typeof value !== "string" || value.length === 0 || clipboardWriter.running)
+            return false;
+        clipboardWriter.command = ["wl-copy", "--", value];
+        clipboardWriter.running = true;
+        return true;
+    }
+    Process {
+        id: clipboardWriter
+        running: false
     }
     onActiveChanged: invalidate()
     onToolChanged: {

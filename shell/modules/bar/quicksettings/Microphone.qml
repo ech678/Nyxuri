@@ -38,12 +38,10 @@ Item {
                     Layout.alignment: Qt.AlignCenter
 
                     value: VolumeService.sourceMuted ? 0 : VolumeService.sourceVolume
-                    progressColor: (VolumeService.sourceMuted || VolumeService.sourceVolume <= 0)
-                                   ? Appearance.colors.colError : Appearance.colors.colPrimary
+                    progressColor: (VolumeService.sourceMuted || VolumeService.sourceVolume <= 0) ? Appearance.colors.colError : Appearance.colors.colPrimary
                     trackColor: Appearance.colors.colLayer2Hover
                     handleColor: Appearance.colors.colOnSurface
-                    iconColor: (VolumeService.sourceMuted || VolumeService.sourceVolume <= 0)
-                               ? Appearance.colors.colError : Appearance.colors.colOnSurface
+                    iconColor: (VolumeService.sourceMuted || VolumeService.sourceVolume <= 0) ? Appearance.colors.colError : Appearance.colors.colOnSurface
                     icon: (VolumeService.sourceMuted || VolumeService.sourceVolume <= 0) ? "mic_off" : "mic"
                 }
 
@@ -52,7 +50,7 @@ Item {
                     visible: root.showValue
                     text: Math.round(VolumeService.sourceVolume * 100) + "%"
                     font.family: Fonts.numeric
-                    font.pixelSize: 12
+                    font.pixelSize: Appearance.scaledFont(12)
                     color: Appearance.colors.colOnSurface
                     Layout.alignment: Qt.AlignCenter
                 }
@@ -61,9 +59,7 @@ Item {
         Accessible.name: tooltip.text
 
         wheelAction: wheel => {
-            const delta = wheel.angleDelta.y || wheel.angleDelta.x || wheel.pixelDelta.y
-                  || wheel.pixelDelta.x;
-
+            const delta = wheel.angleDelta.y || wheel.angleDelta.x || wheel.pixelDelta.y || wheel.pixelDelta.x;
 
             if (!delta)
                 return;
@@ -86,8 +82,6 @@ Item {
     PopupToolTip {
         id: tooltip
         extraVisibleCondition: mouseArea.pointerHovered
-        text: (VolumeService.sourceMuted ? I18n.tr("Microphone: muted") : I18n.tr("Microphone: ") + Math.round(
-                                               VolumeService.sourceVolume * 100) + "%") + I18n.tr(
-                  "\nScroll to adjust; click to open microphone controls")
+        text: (VolumeService.sourceMuted ? I18n.tr("Microphone: muted") : I18n.tr("Microphone: ") + Math.round(VolumeService.sourceVolume * 100) + "%") + I18n.tr("\nScroll to adjust; click to open microphone controls")
     }
 }

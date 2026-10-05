@@ -17,10 +17,8 @@ Item {
     property bool presentationActive: false
     property var weatherSourceOverride: null
     readonly property string activeView: WidgetState.dashboardSidebarView
-    readonly property var activeViewLoader: activeView === "info" ? infoLoader : activeView === "drawer"
-                                                                    ? drawerLoader : weatherLoader
-    readonly property bool readyForPresentation: activeViewLoader.active && activeViewLoader.status
-                                                 === Loader.Ready && activeViewLoader.item !== null
+    readonly property var activeViewLoader: activeView === "info" ? infoLoader : activeView === "drawer" ? drawerLoader : weatherLoader
+    readonly property bool readyForPresentation: activeViewLoader.active && activeViewLoader.status === Loader.Ready && activeViewLoader.item !== null
     readonly property int instantiatedViewCount: {
         return (infoLoader.item ? 1 : 0) + (drawerLoader.item ? 1 : 0) + (weatherLoader.item ? 1 : 0);
     }
@@ -51,8 +49,7 @@ Item {
                     label: I18n.tr("Weather")
                 }
             ]
-            readonly property int currentIndex: Math.max(0, tabs.findIndex(tab => tab.id
-                                                                                  === WidgetState.dashboardSidebarView))
+            readonly property int currentIndex: Math.max(0, tabs.findIndex(tab => tab.id === WidgetState.dashboardSidebarView))
             readonly property real buttonWidth: 112
             readonly property real targetLeft: Appearance.spacing.small + currentIndex * buttonWidth
             readonly property real targetRight: targetLeft + buttonWidth
@@ -67,25 +64,25 @@ Item {
 
             Behavior on leftFast {
                 NumberAnimation {
-                    duration: 50
+                    duration: Appearance.motionDuration(50)
                     easing.type: Easing.OutSine
                 }
             }
             Behavior on rightFast {
                 NumberAnimation {
-                    duration: 50
+                    duration: Appearance.motionDuration(50)
                     easing.type: Easing.OutSine
                 }
             }
             Behavior on leftSlow {
                 NumberAnimation {
-                    duration: 220
+                    duration: Appearance.motionDuration(220)
                     easing.type: Easing.OutSine
                 }
             }
             Behavior on rightSlow {
                 NumberAnimation {
-                    duration: 220
+                    duration: Appearance.motionDuration(220)
                     easing.type: Easing.OutSine
                 }
             }
@@ -131,9 +128,15 @@ Item {
                         Rectangle {
                             anchors.fill: parent
                             radius: height / 2
-                            color: tabHover.containsMouse && !tabButton.active ? Appearance.applyAlpha(
-                                                                                     Appearance.colors.colOnSurface,
-                                                                                     0.05) : "transparent"
+                            color: tabHover.containsMouse && !tabButton.active ? Appearance.applyAlpha(Appearance.colors.colOnSurface, 0.05) : "transparent"
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: Appearance.animation.expressiveFastEffects.duration
+                                    easing.type: Appearance.animation.expressiveFastEffects.type
+                                    easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
+                                }
+                            }
                         }
 
                         Row {
@@ -145,15 +148,13 @@ Item {
                                 text: tabButton.modelData.icon
                                 iconSize: 22
                                 fill: tabButton.active ? 1 : 0
-                                color: tabButton.active ? Appearance.colors.colOnSecondaryContainer :
-                                                          Appearance.colors.colOnSurfaceVariant
+                                color: tabButton.active ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnSurfaceVariant
                             }
 
                             Text {
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: tabButton.modelData.label
-                                color: tabButton.active ? Appearance.colors.colOnSecondaryContainer :
-                                                          Appearance.colors.colOnSurfaceVariant
+                                color: tabButton.active ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnSurfaceVariant
                                 font.family: Fonts.ui
                                 font.pixelSize: Typography.bodyMedium.pixelSize
                                 font.weight: tabButton.active ? Font.DemiBold : Font.Medium
@@ -176,8 +177,7 @@ Item {
                 acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
                 onWheel: event => {
                     const delta = event.angleDelta.y < 0 ? 1 : -1;
-                    const next = (tabToolbar.currentIndex + delta + tabToolbar.tabs.length)
-                          % tabToolbar.tabs.length;
+                    const next = (tabToolbar.currentIndex + delta + tabToolbar.tabs.length) % tabToolbar.tabs.length;
                     WidgetState.dashboardSidebarView = tabToolbar.tabs[next].id;
                 }
             }

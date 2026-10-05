@@ -22,7 +22,7 @@ Item {
     property real handleInner: 1.5
     property real handleOuter: 3
     property bool showHandle: true
-    property int animDuration: 200
+    property int animDuration: Appearance.motionDuration(200)
 
     implicitWidth: 28
     implicitHeight: 28

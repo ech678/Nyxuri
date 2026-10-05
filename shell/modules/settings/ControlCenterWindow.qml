@@ -19,13 +19,9 @@ FloatingWindow {
     property int currentPage: 0
     property bool navExpanded: width > 900
     property string pendingPageSection: ""
-    readonly property var pages: SpotlightCatalog.routes.filter(entry => entry.path.length === 1).map(entry
-                                                                                                      => Object.assign(
-                                                                                                             {}, entry,
-                                                                                                             {
-                                                                                                                 title: SpotlightCatalog.title(
-                                                                                                                            entry.id)
-                                                                                                             }))
+    readonly property var pages: SpotlightCatalog.routes.filter(entry => entry.path.length === 1).map(entry => Object.assign({}, entry, {
+            title: SpotlightCatalog.title(entry.id)
+        }))
     property int searchRequestSerial: -1
     property var searchLeaf: null
     readonly property var searchPageAnchor: pageSearchAnchor
@@ -44,8 +40,7 @@ FloatingWindow {
         if (!pageLoader.ready || !pageLoader.item)
             return "loading";
         const page = pageLoader.item;
-        const state = typeof page.openSearchPath === "function" ? page.openSearchPath(entry.path.slice(1),
-                                                                                      serial) : "ready";
+        const state = typeof page.openSearchPath === "function" ? page.openSearchPath(entry.path.slice(1), serial) : "ready";
         searchLeaf = page.searchLeaf || page;
         return state;
     }
@@ -54,8 +49,8 @@ FloatingWindow {
         id: pageSearchAnchor
         registerAnchor: false
         declaration: JSON.stringify({
-                                        id: "page"
-                                    })
+            id: "page"
+        })
         target: root.searchLeaf
         wholePage: true
     }
@@ -115,9 +110,7 @@ FloatingWindow {
         if (!root.pendingPageSection || !pageLoader.item)
             return;
 
-        if (root.pages[root.currentPage].id !== "general" || typeof pageLoader.item.openSection
-                !== "function")
-
+        if (root.pages[root.currentPage].id !== "general" || typeof pageLoader.item.openSection !== "function")
             return;
 
         const section = root.pendingPageSection;
@@ -157,8 +150,7 @@ FloatingWindow {
         }
     }
     onCurrentPageChanged: {
-        if (SettingsBackend.searchTarget && !SettingsBackend.applyingSearch && searchRequestSerial
-                === SettingsBackend.searchSerial)
+        if (SettingsBackend.searchTarget && !SettingsBackend.applyingSearch && searchRequestSerial === SettingsBackend.searchSerial)
             SettingsBackend.cancelSearch();
         root.closeChildWindows();
         SettingsBackend.retrySearch();
@@ -235,7 +227,7 @@ FloatingWindow {
                     text: I18n.tr("Settings")
                     color: Appearance.colors.colOnLayer0
                     font.family: Fonts.ui
-                    font.pixelSize: 24
+                    font.pixelSize: Appearance.scaledFont(24)
                     font.weight: Font.DemiBold
                 }
 
@@ -247,8 +239,7 @@ FloatingWindow {
                     implicitWidth: 35
                     implicitHeight: 35
                     radius: Appearance.rounding.full
-                    color: closeMouse.pressed ? Appearance.colors.colLayer1Active : closeMouse.containsMouse
-                                                ? Appearance.colors.colLayer1Hover : "transparent"
+                    color: closeMouse.pressed ? Appearance.colors.colLayer1Active : closeMouse.containsMouse ? Appearance.colors.colLayer1Hover : "transparent"
 
                     MaterialSymbol {
                         anchors.centerIn: parent
@@ -402,8 +393,7 @@ FloatingWindow {
 
                     Connections {
                         function onNavigateRequested(pageId) {
-                            if (pageId === "connected-devices" || pageId === "network" || pageId
-                                    === "shortcuts") {
+                            if (pageId === "connected-devices" || pageId === "network" || pageId === "shortcuts") {
                                 root.openPageSection("general", pageId);
                                 return;
                             }

@@ -12,8 +12,7 @@ Item {
     required property var context
     property var snapshotProvider: null
     property var screen: null
-    readonly property var snapshotResult: snapshotProvider && screen ? snapshotProvider.snapshot(screen) :
-                                                                       null
+    readonly property var snapshotResult: snapshotProvider && screen ? snapshotProvider.snapshot(screen) : null
     readonly property bool snapshotReady: snapshotResult !== null && snapshot.status === Image.Ready
     property bool useSnapshot: true
     property bool started: false
@@ -136,7 +135,7 @@ Item {
         property: "reveal"
         from: 0
         to: 1
-        duration: 850
+        duration: Appearance.motionDuration(850)
         easing.type: Easing.BezierSpline
         easing.bezierCurve: [0.2, 0, 0, 1, 1, 1]
     }
@@ -146,7 +145,7 @@ Item {
         target: root
         property: "sceneOpacity"
         to: 0
-        duration: 300
+        duration: Appearance.animation.expressiveFastSpatial.duration
         easing.type: Easing.BezierSpline
         easing.bezierCurve: [0.3, 0, 1, 1, 1, 1]
         onFinished: root.context.finishUnlock()

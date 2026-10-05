@@ -20,13 +20,11 @@ Rectangle {
     }
 
     function fmtTemp(value) {
-        return hasWeather && validNumber(value) ? Math.round(UiPreferences.weatherTemperature(value)) + "°" :
-                                                  "--";
+        return hasWeather && validNumber(value) ? Math.round(UiPreferences.weatherTemperature(value)) + "°" : "--";
     }
 
     function fmtTempPlain(value) {
-        return hasWeather && validNumber(value) ? Math.round(UiPreferences.weatherTemperature(value)).toString(
-                                                      ) : "--";
+        return hasWeather && validNumber(value) ? Math.round(UiPreferences.weatherTemperature(value)).toString() : "--";
     }
 
     function currentIsNight() {
@@ -39,9 +37,7 @@ Rectangle {
         if (current && current.isDaylight !== undefined)
             return !current.isDaylight;
 
-        const hourly = (WeatherService.hourlyForecast && typeof WeatherService.hourlyForecast.count
-                        === "function" && WeatherService.hourlyForecast.count() > 0)
-              ? WeatherService.hourlyForecast.get(0) : ({});
+        const hourly = (WeatherService.hourlyForecast && typeof WeatherService.hourlyForecast.count === "function" && WeatherService.hourlyForecast.count() > 0) ? WeatherService.hourlyForecast.get(0) : ({});
         if (hourly.isDaylight !== undefined)
             return !hourly.isDaylight;
 
@@ -77,8 +73,7 @@ Rectangle {
     }
 
     function syncWeatherData() {
-        today = (WeatherService.dailyForecast && typeof WeatherService.dailyForecast.count === "function"
-                 && WeatherService.dailyForecast.count() > 0) ? WeatherService.dailyForecast.get(0) : ({});
+        today = (WeatherService.dailyForecast && typeof WeatherService.dailyForecast.count === "function" && WeatherService.dailyForecast.count() > 0) ? WeatherService.dailyForecast.get(0) : ({});
         currentEpoch = Math.floor(Date.now() / 1000);
     }
 
@@ -141,7 +136,7 @@ Rectangle {
             text: WeatherService.locationName || I18n.tr("Weather")
             color: root.night ? Qt.rgba(0.96, 0.98, 1, 0.96) : Qt.rgba(0.09, 0.14, 0.2, 0.9)
             font.family: Fonts.ui
-            font.pixelSize: 15
+            font.pixelSize: Appearance.scaledFont(15)
             font.bold: true
             elide: Text.ElideRight
             textFormat: Text.PlainText
@@ -151,7 +146,7 @@ Rectangle {
             text: root.updatedText()
             color: root.night ? Qt.rgba(0.87, 0.91, 0.98, 0.74) : Qt.rgba(0.2, 0.28, 0.38, 0.62)
             font.family: Fonts.numeric
-            font.pixelSize: 10
+            font.pixelSize: Appearance.scaledFont(10)
         }
     }
 
@@ -167,7 +162,7 @@ Rectangle {
             text: root.conditionText()
             color: Appearance.colors.colOnImage
             font.family: Fonts.ui
-            font.pixelSize: 24
+            font.pixelSize: Appearance.scaledFont(24)
             font.bold: true
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
@@ -187,7 +182,7 @@ Rectangle {
                 text: root.fmtTempPlain(WeatherService.currentTemperatureC)
                 color: Appearance.colors.colOnImage
                 font.family: Fonts.numeric
-                font.pixelSize: 92
+                font.pixelSize: Appearance.scaledFont(92)
                 font.bold: true
                 font.letterSpacing: 0
             }
@@ -213,18 +208,17 @@ Rectangle {
             text: I18n.tr("Feels like: ") + root.fmtTemp(WeatherService.currentFeelsLikeC)
             color: Appearance.colors.colOnImage
             font.family: Fonts.ui
-            font.pixelSize: 16
+            font.pixelSize: Appearance.scaledFont(16)
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
         }
 
         Text {
             width: parent.width
-            text: I18n.tr("High ") + root.fmtTemp(root.today.temperatureMaxC) + I18n.tr(" · Low ")
-                  + root.fmtTemp(root.today.temperatureMinC)
+            text: I18n.tr("High ") + root.fmtTemp(root.today.temperatureMaxC) + I18n.tr(" · Low ") + root.fmtTemp(root.today.temperatureMinC)
             color: Appearance.colors.colOnImage
             font.family: Fonts.ui
-            font.pixelSize: 16
+            font.pixelSize: Appearance.scaledFont(16)
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
         }

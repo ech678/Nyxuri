@@ -10,10 +10,7 @@ Item {
     id: root
 
     property int searchRequestSerial: -1
-    readonly property var searchLeaf: currentSection === "overview" ? overviewFlickable : pageLoader.item ? (
-                                                                                                                pageLoader.item.searchLeaf
-                                                                                                                || pageLoader.item) :
-                                                                                                            root
+    readonly property var searchLeaf: currentSection === "overview" ? overviewFlickable : pageLoader.item ? (pageLoader.item.searchLeaf || pageLoader.item) : root
     function openSearchPath(path, serial) {
         const section = path.length ? path[0] : "overview";
         if (searchRequestSerial !== serial) {
@@ -26,14 +23,12 @@ Item {
             return "ready";
         if (!(pageLoader.status === Loader.Ready) || !pageLoader.item)
             return "loading";
-        return typeof pageLoader.item.openSearchPath === "function" ? pageLoader.item.openSearchPath(
-                                                                          path.slice(1), serial) : "ready";
+        return typeof pageLoader.item.openSearchPath === "function" ? pageLoader.item.openSearchPath(path.slice(1), serial) : "ready";
     }
 
     property var parentModal: null
     onCurrentSectionChanged: {
-        if (SettingsBackend.searchTarget && !SettingsBackend.applyingSearch && searchRequestSerial
-                === SettingsBackend.searchSerial)
+        if (SettingsBackend.searchTarget && !SettingsBackend.applyingSearch && searchRequestSerial === SettingsBackend.searchSerial)
             SettingsBackend.cancelSearch();
         SettingsBackend.retrySearch();
     }
@@ -106,8 +101,7 @@ Item {
                 SettingsSearchAnchor {
                     id: searchAnchor0
                     target: searchSection0
-                    declaration:
-                        '{"id":"keystone.section.keystone-style","route":"keystone","title":"Keystone style","context":"KeystonePage","icon":"toggle_off","aliases":[]}'
+                    declaration: '{"id":"keystone.section.keystone-style","route":"keystone","title":"Keystone style","context":"KeystonePage","icon":"toggle_off","aliases":[]}'
                 }
                 iconName: "toggle_off"
 
@@ -160,8 +154,7 @@ Item {
                 SettingsSearchAnchor {
                     id: searchAnchor1
                     target: searchSection1
-                    declaration:
-                        '{"id":"keystone.section.mouse-actions","route":"keystone","title":"Mouse actions","context":"KeystonePage","icon":"toggle_off","aliases":[]}'
+                    declaration: '{"id":"keystone.section.mouse-actions","route":"keystone","title":"Mouse actions","context":"KeystonePage","icon":"toggle_off","aliases":[]}'
                 }
                 iconName: "mouse"
 
@@ -217,8 +210,7 @@ Item {
                 SettingsSearchAnchor {
                     id: mediaSearchAnchor
                     target: mediaSection
-                    declaration:
-                        '{"id":"keystone.section.media-controls","route":"keystone","title":"Media controls","context":"KeystonePage","icon":"music_note","aliases":[]}'
+                    declaration: '{"id":"keystone.section.media-controls","route":"keystone","title":"Media controls","context":"KeystonePage","icon":"music_note","aliases":[]}'
                 }
 
                 SearchSelectSettingRow {
@@ -281,14 +273,11 @@ Item {
                 SettingsRow {
                     id: longLeadingFieldRow
                     Layout.fillWidth: true
-                    title: PersonalizationConfig.keystonePosition === "top"
-                           || PersonalizationConfig.keystonePosition === "bottom" ? I18n.tr("Left") : I18n.tr(
-                                                                                        "Top")
+                    title: PersonalizationConfig.keystonePosition === "top" || PersonalizationConfig.keystonePosition === "bottom" ? I18n.tr("Left") : I18n.tr("Top")
                     trailing: SortableMultiSelectField {
                         id: longLeadingField
                         Layout.minimumWidth: 0
-                        Layout.preferredWidth: Math.max(0, longLeadingFieldRow.width - 96 - 3
-                                                        * Metrics.spacingS)
+                        Layout.preferredWidth: Math.max(0, longLeadingFieldRow.width - 96 - 3 * Metrics.spacingS)
                         values: PersonalizationConfig.keystoneLongLeading
                         options: PersonalizationConfig.keystoneLongItemOptions
                         zone: "leading"
@@ -301,14 +290,11 @@ Item {
                 SettingsRow {
                     id: longTrailingFieldRow
                     Layout.fillWidth: true
-                    title: PersonalizationConfig.keystonePosition === "top"
-                           || PersonalizationConfig.keystonePosition === "bottom" ? I18n.tr("Right") : I18n.tr(
-                                                                                        "Bottom")
+                    title: PersonalizationConfig.keystonePosition === "top" || PersonalizationConfig.keystonePosition === "bottom" ? I18n.tr("Right") : I18n.tr("Bottom")
                     trailing: SortableMultiSelectField {
                         id: longTrailingField
                         Layout.minimumWidth: 0
-                        Layout.preferredWidth: Math.max(0, longTrailingFieldRow.width - 96 - 3
-                                                        * Metrics.spacingS)
+                        Layout.preferredWidth: Math.max(0, longTrailingFieldRow.width - 96 - 3 * Metrics.spacingS)
                         values: PersonalizationConfig.keystoneLongTrailing
                         options: PersonalizationConfig.keystoneLongItemOptions
                         zone: "trailing"
@@ -326,8 +312,7 @@ Item {
                 SettingsSearchAnchor {
                     id: extraSearchAnchor0
                     target: extraSearchSection0
-                    declaration:
-                        '{"id":"keystone.section.keyboard-indicators","route":"keystone","title":"Keyboard indicators","context":"KeystonePage","icon":"settings","aliases":[],"availability":"keyboard-lock"}'
+                    declaration: '{"id":"keystone.section.keyboard-indicators","route":"keystone","title":"Keyboard indicators","context":"KeystonePage","icon":"settings","aliases":[],"availability":"keyboard-lock"}'
                 }
                 iconName: "keyboard"
 
@@ -358,8 +343,7 @@ Item {
                 SettingsSearchAnchor {
                     id: extraSearchAnchor1
                     target: extraSearchSection1
-                    declaration:
-                        '{"id":"keystone.section.keyhole","route":"keystone","title":"Keyhole","context":"KeystonePage","icon":"settings","aliases":[]}'
+                    declaration: '{"id":"keystone.section.keyhole","route":"keystone","title":"Keyhole","context":"KeystonePage","icon":"settings","aliases":[]}'
                 }
                 iconName: "dashboard"
 
@@ -378,8 +362,7 @@ Item {
                 SettingsSearchAnchor {
                     id: searchAnchor2
                     target: searchSection2
-                    declaration:
-                        '{"id":"keystone.section.horizontal-clock","route":"keystone","title":"Horizontal clock","context":"KeystonePage","icon":"toggle_off","aliases":[]}'
+                    declaration: '{"id":"keystone.section.horizontal-clock","route":"keystone","title":"Horizontal clock","context":"KeystonePage","icon":"toggle_off","aliases":[]}'
                 }
                 iconName: "schedule"
 
@@ -426,8 +409,7 @@ Item {
                 SettingsSearchAnchor {
                     id: searchAnchor3
                     target: searchSection3
-                    declaration:
-                        '{"id":"keystone.section.recording","route":"keystone","title":"Recording","context":"KeystonePage","icon":"toggle_off","aliases":[]}'
+                    declaration: '{"id":"keystone.section.recording","route":"keystone","title":"Recording","context":"KeystonePage","icon":"toggle_off","aliases":[]}'
                 }
                 iconName: "video_camera_front"
 
@@ -483,9 +465,7 @@ Item {
         anchors.fill: parent
         z: 1001
         fields: [longLeadingField, longTrailingField]
-        onDropped: (itemId, targetZone, targetIndex) => PersonalizationConfig.moveKeystoneLongItem(itemId,
-                                                                                                   targetZone,
-                                                                                                   targetIndex)
+        onDropped: (itemId, targetZone, targetIndex) => PersonalizationConfig.moveKeystoneLongItem(itemId, targetZone, targetIndex)
     }
 
     FilePickerWindow {
@@ -593,7 +573,7 @@ Item {
                     text: selectRow.title
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.ui
-                    font.pixelSize: 15
+                    font.pixelSize: Appearance.scaledFont(15)
                     font.weight: Font.Medium
                     elide: Text.ElideRight
                 }
@@ -603,7 +583,7 @@ Item {
                     text: selectRow.description
                     color: Appearance.colors.colSubtext
                     font.family: Fonts.ui
-                    font.pixelSize: 12
+                    font.pixelSize: Appearance.scaledFont(12)
                     wrapMode: Text.WordWrap
                 }
             }

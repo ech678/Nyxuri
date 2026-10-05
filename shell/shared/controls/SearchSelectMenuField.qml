@@ -37,8 +37,7 @@ FocusScope {
     readonly property color menuHoverColor: Appearance.m3colors.m3surfaceContainerHighest
     readonly property real menuGap: 6
     readonly property real menuPadding: 6
-    readonly property real listTargetHeight: Math.min(Math.max(1, maxVisibleItems) * itemHeight, Math.max(
-                                                          itemHeight, options.length * itemHeight))
+    readonly property real listTargetHeight: Math.min(Math.max(1, maxVisibleItems) * itemHeight, Math.max(itemHeight, options.length * itemHeight))
     readonly property Item popupParentItem: root.Window.window ? root.Window.window.contentItem : null
 
     property bool hasPendingAccepted: false
@@ -190,9 +189,7 @@ FocusScope {
             return;
         }
 
-        let nextIndex = highlightedIndex < 0 ? (delta >= 0 ? 0 : options.length - 1) : (highlightedIndex
-                                                                                        + delta + options.length)
-                                               % options.length;
+        let nextIndex = highlightedIndex < 0 ? (delta >= 0 ? 0 : options.length - 1) : (highlightedIndex + delta + options.length) % options.length;
 
         for (let attempts = 0; attempts < options.length; attempts += 1) {
             if (optionEnabled(options[nextIndex])) {
@@ -295,8 +292,7 @@ FocusScope {
     Keys.onPressed: event => {
         if (root.expanded) {
             root.handleMenuKey(event);
-        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space
-                   || event.key === Qt.Key_Down) {
+        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space || event.key === Qt.Key_Down) {
             root.openMenu();
             event.accepted = true;
         }
@@ -307,9 +303,7 @@ FocusScope {
 
         anchors.fill: parent
         radius: 0
-        color: root.expanded ? Appearance.colors.colLayer2Active : fieldMouse.pressed
-                               ? Appearance.colors.colLayer2Active : fieldMouse.containsMouse
-                                 ? Appearance.colors.colLayer2Hover : Appearance.colors.colLayer2
+        color: root.expanded ? Appearance.colors.colLayer2Active : fieldMouse.pressed ? Appearance.colors.colLayer2Active : fieldMouse.containsMouse ? Appearance.colors.colLayer2Hover : Appearance.colors.colLayer2
         clip: true
 
         Behavior on color {
@@ -332,7 +326,7 @@ FocusScope {
             text: root.displayText
             color: root.showingPlaceholder ? Appearance.colors.colSubtext : Appearance.colors.colOnLayer2
             font.family: Fonts.ui
-            font.pixelSize: 14
+            font.pixelSize: Appearance.scaledFont(14)
             elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
         }
@@ -575,17 +569,14 @@ FocusScope {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: Appearance.rounding.small
-                                color: optionItem.selected && optionItem.itemEnabled
-                                       ? Appearance.colors.colPrimaryContainer : optionItem.highlighted
-                                         ? root.menuHoverColor : root.menuSurfaceColor
+                                color: optionItem.selected && optionItem.itemEnabled ? Appearance.colors.colPrimaryContainer : optionItem.highlighted ? root.menuHoverColor : root.menuSurfaceColor
                                 opacity: optionItem.itemEnabled ? 1 : 0.5
 
                                 Behavior on color {
                                     ColorAnimation {
                                         duration: Appearance.animation.expressiveFastEffects.duration
                                         easing.type: Appearance.animation.expressiveFastEffects.type
-                                        easing.bezierCurve:
-                                            Appearance.animation.expressiveFastEffects.bezierCurve
+                                        easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
                                     }
                                 }
                             }
@@ -593,16 +584,14 @@ FocusScope {
                             Item {
                                 anchors.fill: parent
                                 anchors.leftMargin: 12
-                                anchors.rightMargin: 12 + Appearance.scrollBar.width
-                                                     + Appearance.scrollBar.margin
+                                anchors.rightMargin: 12 + Appearance.scrollBar.width + Appearance.scrollBar.margin
 
                                 Item {
                                     id: checkSlot
 
                                     width: 22
                                     height: parent.height
-                                    scale: optionItem.selected && optionItem.itemEnabled
-                                           && root.showCheckmark ? 1 : 0
+                                    scale: optionItem.selected && optionItem.itemEnabled && root.showCheckmark ? 1 : 0
                                     transformOrigin: Item.Left
 
                                     Behavior on scale {
@@ -627,8 +616,7 @@ FocusScope {
                                             NumberAnimation {
                                                 duration: Appearance.animation.expressiveFastEffects.duration
                                                 easing.type: Appearance.animation.expressiveFastEffects.type
-                                                easing.bezierCurve:
-                                                    Appearance.animation.expressiveFastEffects.bezierCurve
+                                                easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
                                             }
                                         }
 
@@ -636,8 +624,7 @@ FocusScope {
                                             NumberAnimation {
                                                 duration: Appearance.animation.clickBounce.duration
                                                 easing.type: Appearance.animation.clickBounce.type
-                                                easing.bezierCurve:
-                                                    Appearance.animation.clickBounce.bezierCurve
+                                                easing.bezierCurve: Appearance.animation.clickBounce.bezierCurve
                                             }
                                         }
                                     }
@@ -656,8 +643,7 @@ FocusScope {
                                         NumberAnimation {
                                             duration: Appearance.animation.expressiveFastSpatial.duration
                                             easing.type: Appearance.animation.expressiveFastSpatial.type
-                                            easing.bezierCurve:
-                                                Appearance.animation.expressiveFastSpatial.bezierCurve
+                                            easing.bezierCurve: Appearance.animation.expressiveFastSpatial.bezierCurve
                                         }
                                     }
                                     onLoaded: {
@@ -667,16 +653,13 @@ FocusScope {
                                 }
 
                                 Text {
-                                    x: (optionItem.selected && root.showCheckmark ? 32 : 0) + (
-                                           optionLeadingLoader.active ? root.leadingWidth + 10 : 0)
+                                    x: (optionItem.selected && root.showCheckmark ? 32 : 0) + (optionLeadingLoader.active ? root.leadingWidth + 10 : 0)
                                     width: parent.width - x
                                     height: parent.height
                                     text: optionItem.itemText
-                                    color: optionItem.selected && optionItem.itemEnabled
-                                           ? Appearance.colors.colOnPrimaryContainer :
-                                             Appearance.colors.colOnLayer3
+                                    color: optionItem.selected && optionItem.itemEnabled ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colOnLayer3
                                     font.family: Fonts.ui
-                                    font.pixelSize: 14
+                                    font.pixelSize: Appearance.scaledFont(14)
                                     font.weight: optionItem.selected ? Font.Medium : Font.Normal
                                     elide: Text.ElideRight
                                     verticalAlignment: Text.AlignVCenter
@@ -685,8 +668,7 @@ FocusScope {
                                         NumberAnimation {
                                             duration: Appearance.animation.expressiveFastSpatial.duration
                                             easing.type: Appearance.animation.expressiveFastSpatial.type
-                                            easing.bezierCurve:
-                                                Appearance.animation.expressiveFastSpatial.bezierCurve
+                                            easing.bezierCurve: Appearance.animation.expressiveFastSpatial.bezierCurve
                                         }
                                     }
 
@@ -694,8 +676,7 @@ FocusScope {
                                         ColorAnimation {
                                             duration: Appearance.animation.expressiveFastEffects.duration
                                             easing.type: Appearance.animation.expressiveFastEffects.type
-                                            easing.bezierCurve:
-                                                Appearance.animation.expressiveFastEffects.bezierCurve
+                                            easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
                                         }
                                     }
                                 }
@@ -712,9 +693,7 @@ FocusScope {
 
                             HoverHandler {
                                 id: optionHover
-                                cursorShape: root.forbiddenDisabledCursor && !optionItem.itemEnabled
-                                             ? Qt.ForbiddenCursor : (optionItem.itemEnabled
-                                                                     ? Qt.PointingHandCursor : Qt.ArrowCursor)
+                                cursorShape: root.forbiddenDisabledCursor && !optionItem.itemEnabled ? Qt.ForbiddenCursor : (optionItem.itemEnabled ? Qt.PointingHandCursor : Qt.ArrowCursor)
                                 enabled: optionItem.tooltipText !== ""
                             }
 
@@ -736,7 +715,7 @@ FocusScope {
                         text: I18n.tr("No options available")
                         color: Appearance.colors.colSubtext
                         font.family: Fonts.ui
-                        font.pixelSize: 14
+                        font.pixelSize: Appearance.scaledFont(14)
                         verticalAlignment: Text.AlignVCenter
                         horizontalAlignment: Text.AlignLeft
                         elide: Text.ElideRight

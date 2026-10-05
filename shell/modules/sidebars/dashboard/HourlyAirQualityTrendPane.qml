@@ -39,8 +39,7 @@ Item {
     }
 
     function aqiLevelName(level) {
-        const names = [I18n.tr("Excellent"), I18n.tr("Good"), I18n.tr("Poor"), I18n.tr("Unhealthy"), I18n.tr(
-                           "Very unhealthy"), I18n.tr("Hazardous")];
+        const names = [I18n.tr("Excellent"), I18n.tr("Good"), I18n.tr("Poor"), I18n.tr("Unhealthy"), I18n.tr("Very unhealthy"), I18n.tr("Hazardous")];
         return level >= 0 && level < names.length ? names[level] : "--";
     }
 
@@ -73,13 +72,9 @@ Item {
         if (!air)
             return NaN;
 
-        const values = [root.pollutantIndex(air.ozone, [0, 50, 100, 160, 240, 480]), root.pollutantIndex(
-                            air.nitrogenDioxide, [0, 10, 25, 200, 400, 1000]), root.pollutantIndex(air.pm10,
-                                                                                                   [0, 15, 45,
-                                                                                                    80, 160, 400]),
-                        root.pollutantIndex(air.pm25, [0, 5, 15, 30, 60, 150])].filter(function (v) {
-                            return !isNaN(v);
-                        });
+        const values = [root.pollutantIndex(air.ozone, [0, 50, 100, 160, 240, 480]), root.pollutantIndex(air.nitrogenDioxide, [0, 10, 25, 200, 400, 1000]), root.pollutantIndex(air.pm10, [0, 15, 45, 80, 160, 400]), root.pollutantIndex(air.pm25, [0, 5, 15, 30, 60, 150])].filter(function (v) {
+            return !isNaN(v);
+        });
         if (values.length === 0)
             return NaN;
 
@@ -121,9 +116,7 @@ Item {
         const list = [];
         let highest = 0;
         let validCount = 0;
-        const modelCount = root.sourceModel ? (typeof root.sourceModel.count === "function"
-                                               ? root.sourceModel.count() : Number(root.sourceModel.count
-                                                                                   || 0)) : 0;
+        const modelCount = root.sourceModel ? (typeof root.sourceModel.count === "function" ? root.sourceModel.count() : Number(root.sourceModel.count || 0)) : 0;
         const count = Math.min(root.maxHours, modelCount);
         for (let i = 0; i < count; ++i) {
             const hour = root.sourceModel.get(i) || ({});
@@ -134,32 +127,32 @@ Item {
                 validCount += 1;
             }
             list.push({
-                          "time": hour.time || 0,
-                          "hourText": root.hourLabel(hour.time || 0),
-                          "aqi": aqi,
-                          "aqiText": !isNaN(aqi) ? Math.round(aqi).toString() : "--",
-                          "color": root.aqiPalette(level),
-                          "emphasized": i !== 0
-                      });
+                "time": hour.time || 0,
+                "hourText": root.hourLabel(hour.time || 0),
+                "aqi": aqi,
+                "aqiText": !isNaN(aqi) ? Math.round(aqi).toString() : "--",
+                "color": root.aqiPalette(level),
+                "emphasized": i !== 0
+            });
         }
         items = list;
         chartMax = root.chartUpperBound(highest);
         hasData = validCount > 0;
         const lines = [
-                  {
-                      "value": 20,
-                      "label": root.aqiLevelName(1)
-                  },
-                  {
-                      "value": 100,
-                      "label": root.aqiLevelName(3)
-                  }
-              ];
+            {
+                "value": 20,
+                "label": root.aqiLevelName(1)
+            },
+            {
+                "value": 100,
+                "label": root.aqiLevelName(3)
+            }
+        ];
         if (chartMax >= 250)
             lines.push({
-                           "value": 250,
-                           "label": root.aqiLevelName(5)
-                       });
+                "value": 250,
+                "label": root.aqiLevelName(5)
+            });
 
         keyLines = lines;
     }
@@ -215,8 +208,7 @@ Item {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 height: 1
-                color: Qt.rgba(Appearance.colors.colOutlineVariant.r, Appearance.colors.colOutlineVariant.g,
-                               Appearance.colors.colOutlineVariant.b, 0.44)
+                color: Qt.rgba(Appearance.colors.colOutlineVariant.r, Appearance.colors.colOutlineVariant.g, Appearance.colors.colOutlineVariant.b, 0.44)
             }
 
             Text {
@@ -225,11 +217,9 @@ Item {
                 anchors.leftMargin: 2
                 anchors.bottomMargin: 5
                 text: modelData.value
-                color: Qt.rgba(Appearance.colors.colOnSurfaceVariant.r,
-                               Appearance.colors.colOnSurfaceVariant.g,
-                               Appearance.colors.colOnSurfaceVariant.b, 0.72)
+                color: Qt.rgba(Appearance.colors.colOnSurfaceVariant.r, Appearance.colors.colOnSurfaceVariant.g, Appearance.colors.colOnSurfaceVariant.b, 0.72)
                 font.family: Fonts.numeric
-                font.pixelSize: 11
+                font.pixelSize: Appearance.scaledFont(11)
             }
 
             Text {
@@ -238,11 +228,9 @@ Item {
                 anchors.rightMargin: 2
                 anchors.bottomMargin: 5
                 text: modelData.label
-                color: Qt.rgba(Appearance.colors.colOnSurfaceVariant.r,
-                               Appearance.colors.colOnSurfaceVariant.g,
-                               Appearance.colors.colOnSurfaceVariant.b, 0.72)
+                color: Qt.rgba(Appearance.colors.colOnSurfaceVariant.r, Appearance.colors.colOnSurfaceVariant.g, Appearance.colors.colOnSurfaceVariant.b, 0.72)
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: Appearance.scaledFont(12)
             }
         }
     }
@@ -272,14 +260,8 @@ Item {
                     required property var modelData
                     required property int index
                     readonly property real barWidth: Math.max(8, Math.min(12, width * 0.36))
-                    readonly property real barHeight: !isNaN(modelData.aqi) ? Math.max(8, root.chartBottom
-                                                                                       - root.yForValue(
-                                                                                           modelData.aqi)) : 0
-                    readonly property color hourColor: modelData.emphasized
-                                                       ? Appearance.colors.colOnSurfaceVariant : Qt.rgba(
-                                                             Appearance.colors.colOnSurfaceVariant.r,
-                                                             Appearance.colors.colOnSurfaceVariant.g,
-                                                             Appearance.colors.colOnSurfaceVariant.b, 0.64)
+                    readonly property real barHeight: !isNaN(modelData.aqi) ? Math.max(8, root.chartBottom - root.yForValue(modelData.aqi)) : 0
+                    readonly property color hourColor: modelData.emphasized ? Appearance.colors.colOnSurfaceVariant : Qt.rgba(Appearance.colors.colOnSurfaceVariant.r, Appearance.colors.colOnSurfaceVariant.g, Appearance.colors.colOnSurfaceVariant.b, 0.64)
 
                     x: index * root.itemWidth
                     width: root.itemWidth
@@ -291,7 +273,7 @@ Item {
                         text: modelData.hourText
                         color: parent.hourColor
                         font.family: Fonts.numeric
-                        font.pixelSize: 11
+                        font.pixelSize: Appearance.scaledFont(11)
                     }
 
                     Rectangle {
@@ -301,8 +283,7 @@ Item {
                         x: (parent.width - width) / 2
                         y: root.chartBottom - height
                         radius: width / 2
-                        color: Qt.rgba(Qt.color(modelData.color).r, Qt.color(modelData.color).g, Qt.color(
-                                           modelData.color).b, 0.58)
+                        color: Qt.rgba(Qt.color(modelData.color).r, Qt.color(modelData.color).g, Qt.color(modelData.color).b, 0.58)
                     }
 
                     Text {
@@ -311,7 +292,7 @@ Item {
                         text: modelData.aqiText
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.numeric
-                        font.pixelSize: 10
+                        font.pixelSize: Appearance.scaledFont(10)
                     }
                 }
             }
@@ -351,6 +332,6 @@ Item {
         text: I18n.tr("Air quality data is unavailable")
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.ui
-        font.pixelSize: 16
+        font.pixelSize: Appearance.scaledFont(16)
     }
 }

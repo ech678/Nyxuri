@@ -123,7 +123,7 @@ WeatherInsightCard {
             text: I18n.tr("Precipitation amount")
             color: root.mutedInk
             font.family: Fonts.expressive
-            font.pixelSize: 18
+            font.pixelSize: Appearance.scaledFont(18)
             font.bold: true
         }
     }
@@ -181,7 +181,7 @@ WeatherInsightCard {
         text: root.footerText
         color: root.ink
         font.family: Fonts.expressive
-        font.pixelSize: 16
+        font.pixelSize: Appearance.scaledFont(16)
         font.bold: true
         elide: Text.ElideRight
     }

@@ -20,8 +20,7 @@ Item {
     readonly property real centerScale: Math.min(1, root.screenHeight / 1440)
     readonly property real centerWidth: Metrics.lockCenterWidth * centerScale
     readonly property int clockHour24: clockTimer.now.getHours()
-    readonly property int clockHour: UiPreferences.useTwelveHourClock ? ((clockHour24 + 11) % 12) + 1 :
-                                                                        clockHour24
+    readonly property int clockHour: UiPreferences.useTwelveHourClock ? ((clockHour24 + 11) % 12) + 1 : clockHour24
 
     function forceAuthFocus() {
         authCard.forceActiveFocus();
@@ -197,9 +196,7 @@ Item {
                 Text {
                     id: errorMessage
 
-                    property string msg: root.context && root.context.showFailure ? I18n.tr(
-                                                                                        "Incorrect password. Try again.") :
-                                                                                    ""
+                    property string msg: root.context && root.context.showFailure ? I18n.tr("Incorrect password. Try again.") : ""
                     property string pendingText: ""
 
                     function showText(newText) {
@@ -237,7 +234,7 @@ Item {
                     scale: 0.7
                     color: Appearance.colors.colError
                     font.family: Fonts.numeric
-                    font.pixelSize: 15
+                    font.pixelSize: Appearance.scaledFont(15)
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                     lineHeight: 1.2
@@ -338,16 +335,18 @@ Item {
                             target: errorMessage
                             property: "opacity"
                             to: 0.3
-                            duration: Animations.durations.small
-                            easing.type: Easing.Linear
+                            duration: Appearance.motionDuration(Animations.durations.small)
+                            easing.type: Appearance.animation.standardSmall.type
+                            easing.bezierCurve: Appearance.animation.standardSmall.bezierCurve
                         }
 
                         NumberAnimation {
                             target: errorMessage
                             property: "opacity"
                             to: 1
-                            duration: Animations.durations.small
-                            easing.type: Easing.Linear
+                            duration: Appearance.motionDuration(Animations.durations.small)
+                            easing.type: Appearance.animation.standardSmall.type
+                            easing.bezierCurve: Appearance.animation.standardSmall.bezierCurve
                         }
                     }
 
@@ -435,7 +434,7 @@ Item {
                     scale: 0.7
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.numeric
-                    font.pixelSize: 16
+                    font.pixelSize: Appearance.scaledFont(16)
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                     lineHeight: 1.2

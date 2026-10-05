@@ -28,11 +28,7 @@ Slider {
     property color dotColorHighlighted: Appearance.colors.colOnPrimary
     property real unsharpenRadius: 2
     property real trackWidth: configuration
-    property real trackRadius: trackWidth >= MaterialSplitSlider.Configuration.XL ? 21
-        : trackWidth >= MaterialSplitSlider.Configuration.L ? 12
-        : trackWidth >= MaterialSplitSlider.Configuration.M ? 9
-        : trackWidth >= MaterialSplitSlider.Configuration.S ? 6
-        : height / 2
+    property real trackRadius: trackWidth >= MaterialSplitSlider.Configuration.XL ? 21 : trackWidth >= MaterialSplitSlider.Configuration.L ? 12 : trackWidth >= MaterialSplitSlider.Configuration.M ? 9 : trackWidth >= MaterialSplitSlider.Configuration.S ? 6 : height / 2
     property real handleHeight: configuration === MaterialSplitSlider.Configuration.Wavy ? 24 : Math.max(33, trackWidth + 9)
     property real handleWidth: pressed ? handlePressedWidth : handleDefaultWidth
     property real handleMargins: 4
@@ -58,6 +54,7 @@ Slider {
     Layout.fillWidth: true
 
     Behavior on value {
+        enabled: Appearance.animationsEnabled
         SmoothedAnimation {
             velocity: root.valueAnimationVelocity
         }

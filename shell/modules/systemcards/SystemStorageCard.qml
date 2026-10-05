@@ -30,9 +30,9 @@ Item {
             const device = String(root.disks[index].device || "");
             if (device !== "")
                 options.push({
-                                 "value": device,
-                                 "label": device
-                             });
+                    "value": device,
+                    "label": device
+                });
         }
         return options;
     }
@@ -43,10 +43,8 @@ Item {
     readonly property color leftForeground: Appearance.colors.colOnTertiary
     readonly property color rightColor: root.panelColor
     readonly property color rightForeground: Appearance.colors.colOnPrimaryContainer
-    readonly property color readDataColor: Appearance.mix(Appearance.colors.colPrimary, root.leftForeground,
-                                                          0.62)
-    readonly property color writeDataColor: Appearance.mix(Appearance.colors.colSecondary, root.leftForeground,
-                                                           0.58)
+    readonly property color readDataColor: Appearance.mix(Appearance.colors.colPrimary, root.leftForeground, 0.62)
+    readonly property color writeDataColor: Appearance.mix(Appearance.colors.colSecondary, root.leftForeground, 0.58)
     readonly property real rightPanelX: Math.round(width * 0.53)
     readonly property int chartHistoryLength: 18
     readonly property real chartMaximum: {
@@ -63,22 +61,17 @@ Item {
         }
         return Math.max(1, maximum * 1.2);
     }
-    readonly property var expressiveBoldAxes: Fonts.bundledFamilyAvailable && Fonts.expressive
-                                              === Fonts.bundledFamilyName ? ({
-                                                                                 "GRAD": 100,
-                                                                                 "ROND": 35,
-                                                                                 "wdth": 85
-                                                                             }) : ({})
+    readonly property var expressiveBoldAxes: Fonts.bundledFamilyAvailable && Fonts.expressive === Fonts.bundledFamilyName ? ({
+            "GRAD": 100,
+            "ROND": 35,
+            "wdth": 85
+        }) : ({})
 
     signal diskSelected(string device)
 
     clip: true
     layer.enabled: true
-    Accessible.name: root.disks.length > 0 ? I18n.tr("Disk %1, read %2, write %3").arg(
-                                                 root.selectedDevice).arg(Format.bytesPerSecond(
-                                                                              root.disk.readBytesPerSecond)).arg(
-                                                 Format.bytesPerSecond(root.disk.writeBytesPerSecond)) :
-                                             I18n.tr("No disk detected")
+    Accessible.name: root.disks.length > 0 ? I18n.tr("Disk %1, read %2, write %3").arg(root.selectedDevice).arg(Format.bytesPerSecond(root.disk.readBytesPerSecond)).arg(Format.bytesPerSecond(root.disk.writeBytesPerSecond)) : I18n.tr("No disk detected")
 
     Rectangle {
         anchors.fill: parent
@@ -91,7 +84,7 @@ Item {
         color: root.leftForeground
         renderType: Text.NativeRendering
         font.family: Fonts.expressive
-        font.pixelSize: 32
+        font.pixelSize: Appearance.scaledFont(32)
         font.weight: Font.Black
         font.variableAxes: root.expressiveBoldAxes
 
@@ -138,9 +131,7 @@ Item {
         fillArea: true
         fillOpacity: 0.26
         accessibilityName: I18n.tr("Recent disk throughput trend")
-        accessibilityDescription: I18n.tr("Read %1, write %2").arg(Format.bytesPerSecond(
-                                                                       root.disk.readBytesPerSecond)).arg(
-                                      Format.bytesPerSecond(root.disk.writeBytesPerSecond))
+        accessibilityDescription: I18n.tr("Read %1, write %2").arg(Format.bytesPerSecond(root.disk.readBytesPerSecond)).arg(Format.bytesPerSecond(root.disk.writeBytesPerSecond))
         lineColor: root.readDataColor
         secondaryLineColor: root.writeDataColor
         baselineColor: "transparent"
@@ -278,7 +269,7 @@ Item {
             color: root.rightForeground
             renderType: Text.NativeRendering
             font.family: Fonts.expressive
-            font.pixelSize: 27
+            font.pixelSize: Appearance.scaledFont(27)
             font.weight: Font.Black
             font.variableAxes: root.expressiveBoldAxes
             elide: Text.ElideRight

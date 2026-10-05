@@ -101,7 +101,10 @@
         "general",
         "dock"
       ],
-      "aliases": ["taskbar", "launcher"]
+      "aliases": [
+        "taskbar",
+        "launcher"
+      ]
     },
     {
       "id": "general.sidebar",
@@ -138,6 +141,23 @@
         "effects"
       ],
       "aliases": []
+    },
+    {
+      "id": "general.accessibility",
+      "title": "Accessibility",
+      "context": "GeneralPage",
+      "icon": "accessibility_new",
+      "source": "AccessibilityPage.qml",
+      "path": [
+        "general",
+        "accessibility"
+      ],
+      "aliases": [
+        "a11y",
+        "motion",
+        "contrast",
+        "font size"
+      ]
     },
     {
       "id": "general.shortcuts",

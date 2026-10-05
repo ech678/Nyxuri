@@ -65,7 +65,7 @@ Item {
                         text: taskItem.modelData.content
                         color: Appearance.colors.colOnLayer2
                         font.family: Fonts.ui
-                        font.pixelSize: 14
+                        font.pixelSize: Appearance.scaledFont(14)
                         wrapMode: Text.Wrap
                     }
 
@@ -82,8 +82,7 @@ Item {
 
                         ActionButton {
                             iconName: taskItem.modelData.done ? "remove_done" : "check"
-                            accessibleName: taskItem.modelData.done ? I18n.tr("Mark unfinished") : I18n.tr(
-                                                                          "Mark complete")
+                            accessibleName: taskItem.modelData.done ? I18n.tr("Mark unfinished") : I18n.tr("Mark complete")
                             onClicked: {
                                 if (taskItem.modelData.done)
                                     TodoService.markUnfinished(taskItem.modelData.originalIndex);
@@ -132,7 +131,7 @@ Item {
                 text: root.emptyPlaceholderText
                 color: Appearance.colors.colOutline
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: Appearance.scaledFont(14)
                 horizontalAlignment: Text.AlignHCenter
             }
         }

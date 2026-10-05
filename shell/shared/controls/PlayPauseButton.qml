@@ -30,42 +30,49 @@ Item {
     property real morphPressRadius: 12     // 按下时圆角
     property real pressedScale: 1.0
     property real hoverScale: 1.0
-    property int scaleAnimationDuration: 150
+    property int scaleAnimationDuration: Appearance.motionDuration(150)
     property real stateLayerPressedOpacity: 0.2
     property real stateLayerHoverOpacity: 0.12
-    property int spatialAnimationDuration: 350
-    property int colorAnimationDuration: 400
-    property int stateLayerAnimationDuration: 200
-    property int iconSwapHalfDuration: 200
+    property int spatialAnimationDuration: Appearance.motionDuration(350)
+    property int colorAnimationDuration: Appearance.motionDuration(400)
+    property int stateLayerAnimationDuration: Appearance.motionDuration(200)
+    property int iconSwapHalfDuration: Appearance.motionDuration(200)
     property var spatialCurve: [0.42, 1.67, 0.21, 0.9, 1, 1]
     property var colorCurve: [0.2, 0, 0, 1, 1, 1]
     property var iconOutCurve: [0.3, 0, 1, 1, 1, 1]
     property var iconInCurve: [0, 0, 0, 1, 1, 1]
 
     // === 信号 ===
-    signal clicked()
+    signal clicked
 
     implicitWidth: morphEnabled ? (buttonSize + morphExpandWidth + morphPressWidth) : buttonSize
     implicitHeight: buttonSize
     scale: playMa.pressed ? pressedScale : (playMa.containsMouse ? hoverScale : 1.0)
 
-    Behavior on scale { NumberAnimation { duration: root.scaleAnimationDuration } }
+    Behavior on scale {
+        enabled: Appearance.animationsEnabled
+        NumberAnimation {
+            duration: root.scaleAnimationDuration
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Appearance.animationCurves.standard
+        }
+    }
 
     Rectangle {
         id: btnRect
         anchors.centerIn: parent
 
         width: {
-            if (!root.morphEnabled) return root.buttonSize;
-            return root.buttonSize + (playMa.pressed ? root.morphPressWidth
-                : (root.isPlaying ? root.morphExpandWidth : 0));
+            if (!root.morphEnabled)
+                return root.buttonSize;
+            return root.buttonSize + (playMa.pressed ? root.morphPressWidth : (root.isPlaying ? root.morphExpandWidth : 0));
         }
         height: root.buttonSize
 
         radius: {
-            if (!root.morphEnabled) return root.buttonSize / 2;
-            return playMa.pressed ? root.morphPressRadius
-                : (root.isPlaying ? root.morphPlayingRadius : root.buttonSize / 2);
+            if (!root.morphEnabled)
+                return root.buttonSize / 2;
+            return playMa.pressed ? root.morphPressRadius : (root.isPlaying ? root.morphPlayingRadius : root.buttonSize / 2);
         }
 
         color: root.isPlaying ? root.playingBg : root.pausedBg
@@ -99,7 +106,13 @@ Item {
             color: root.isPlaying ? root.stateLayerPlaying : root.stateLayerPaused
             opacity: playMa.pressed ? root.stateLayerPressedOpacity : (playMa.containsMouse ? root.stateLayerHoverOpacity : 0.0)
             visible: opacity > 0
-            Behavior on opacity { NumberAnimation { duration: root.stateLayerAnimationDuration } }
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: root.stateLayerAnimationDuration
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Appearance.animationCurves.standard
+                }
+            }
         }
 
         // 播放/暂停图标
@@ -123,15 +136,22 @@ Item {
             Behavior on text {
                 SequentialAnimation {
                     NumberAnimation {
-                        target: playIcon; property: "scale"
-                        to: 0.0; duration: root.iconSwapHalfDuration
+                        target: playIcon
+                        property: "scale"
+                        to: 0.0
+                        duration: root.iconSwapHalfDuration
                         easing.type: Easing.BezierSpline
                         easing.bezierCurve: root.iconOutCurve
                     }
-                    PropertyAction { target: playIcon; property: "text" }
+                    PropertyAction {
+                        target: playIcon
+                        property: "text"
+                    }
                     NumberAnimation {
-                        target: playIcon; property: "scale"
-                        to: 1.0; duration: root.iconSwapHalfDuration
+                        target: playIcon
+                        property: "scale"
+                        to: 1.0
+                        duration: root.iconSwapHalfDuration
                         easing.type: Easing.BezierSpline
                         easing.bezierCurve: root.iconInCurve
                     }

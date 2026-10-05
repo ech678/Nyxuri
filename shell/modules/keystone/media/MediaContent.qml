@@ -21,39 +21,28 @@ Item {
     readonly property bool isActive: root.visible && MediaService.active
     property bool isPlaying: isActive && MediaService.active && MediaService.active.isPlaying
 
-    property string artUrl: (isActive && MediaService.active.trackArtUrl) ? MediaService.active.trackArtUrl :
-                                                                            ""
+    property string artUrl: (isActive && MediaService.active.trackArtUrl) ? MediaService.active.trackArtUrl : ""
 
-    property string title: (isActive && MediaService.active.trackTitle) ? MediaService.active.trackTitle :
-                                                                          I18n.tr("No media")
+    property string title: (isActive && MediaService.active.trackTitle) ? MediaService.active.trackTitle : I18n.tr("No media")
 
-    property string artist: (isActive && MediaService.active.trackArtist) ? MediaService.active.trackArtist :
-                                                                            I18n.tr("Unknown artist")
+    property string artist: (isActive && MediaService.active.trackArtist) ? MediaService.active.trackArtist : I18n.tr("Unknown artist")
 
     readonly property double currentPos: root.isActive ? MediaService.currentPosition : 0
 
-    readonly property bool hasDuration: isActive && Number.isFinite(MediaService.active.length)
-                                        && MediaService.active.length > 0
+    readonly property bool hasDuration: isActive && Number.isFinite(MediaService.active.length) && MediaService.active.length > 0
     readonly property bool canSeek: hasDuration && MediaService.active.canSeek
-    readonly property double progress: hasDuration && Number.isFinite(root.currentPos) ? Math.max(0, Math.min(1,
-                                                                                                              root.currentPos
-                                                                                                              / MediaService.active.length)) :
-                                                                                         0
+    readonly property double progress: hasDuration && Number.isFinite(root.currentPos) ? Math.max(0, Math.min(1, root.currentPos / MediaService.active.length)) : 0
     readonly property bool caelestiaCover: PersonalizationConfig.keystoneMediaCoverStyle === "caelestia"
     readonly property real panelWidth: caelestiaCover || backgroundCover ? 640 : 540
     readonly property real panelHeight: caelestiaCover || backgroundCover ? 240 : 210
     readonly property bool backgroundCover: PersonalizationConfig.keystoneMediaCoverStyle === "background"
-    readonly property bool coverColors: PersonalizationConfig.keystoneMediaColorStyle === "cover"
-                                        && root.artUrl !== ""
+    readonly property bool coverColors: PersonalizationConfig.keystoneMediaColorStyle === "cover" && root.artUrl !== ""
     readonly property string paletteArtUrl: root.isActive && root.coverColors ? root.artUrl : ""
     readonly property color themePrimary: Appearance.colors.colPrimary
     readonly property color accentColor: coverColors ? MediaPalette.primary : Appearance.colors.colPrimary
-    readonly property color onAccentColor: coverColors ? MediaPalette.onPrimary :
-                                                         Appearance.colors.colOnPrimary
+    readonly property color onAccentColor: coverColors ? MediaPalette.onPrimary : Appearance.colors.colOnPrimary
     readonly property color trackColor: coverColors ? MediaPalette.track : Appearance.colors.colLayer2Hover
-    readonly property color surfaceColor: coverColors ? Qt.tint(Appearance.colors.colLayer0,
-                                                                Appearance.applyAlpha(accentColor, 0.12)) :
-                                                        Appearance.colors.colLayer0
+    readonly property color surfaceColor: coverColors ? Qt.tint(Appearance.colors.colLayer0, Appearance.applyAlpha(accentColor, 0.12)) : Appearance.colors.colLayer0
 
     function updatePalette() {
         if (root.paletteArtUrl)
@@ -168,7 +157,7 @@ Item {
                         text: root.title
                         color: Appearance.colors.colOnSurface
                         font.bold: true
-                        font.pixelSize: 20
+                        font.pixelSize: Appearance.scaledFont(20)
                         Layout.fillWidth: true
                         elide: Text.ElideRight
                     }
@@ -176,7 +165,7 @@ Item {
                     Text {
                         text: root.artist
                         color: Appearance.colors.colOnSurfaceVariant
-                        font.pixelSize: 14
+                        font.pixelSize: Appearance.scaledFont(14)
                         Layout.fillWidth: true
                         elide: Text.ElideRight
                     }
@@ -198,8 +187,7 @@ Item {
                 Layout.preferredHeight: 36
                 active: root.visible
                 enabled: root.canSeek
-                sourceComponent: PersonalizationConfig.keystoneMediaProgressStyle === "material"
-                                 ? materialProgress : sineProgress
+                sourceComponent: PersonalizationConfig.keystoneMediaProgressStyle === "material" ? materialProgress : sineProgress
             }
 
             // 底部控制按钮区（填满右侧列宽度，与标题行对齐）
@@ -214,10 +202,7 @@ Item {
                 playPauseEnabled: MediaService.active
                 nextEnabled: MediaService.active
                 loopEnabled: MediaService.active && MediaService.active.loopSupported
-                loopMode: !MediaService.active || MediaService.active.loopState === MprisLoopState.None ? 0 : (
-                                                                                                              MediaService.active.loopState
-                                                                                                              === MprisLoopState.Track
-                                                                                                              ? 2 : 1)
+                loopMode: !MediaService.active || MediaService.active.loopState === MprisLoopState.None ? 0 : (MediaService.active.loopState === MprisLoopState.Track ? 2 : 1)
                 activeColor: root.accentColor
                 inactiveColor: Appearance.colors.colOnSurface
                 playingBg: root.accentColor
@@ -227,13 +212,13 @@ Item {
                 morphEnabled: true
 
                 onShuffleClicked: if (MediaService.active && MediaService.active.shuffleSupported)
-                                      MediaService.active.shuffle = !MediaService.active.shuffle
+                    MediaService.active.shuffle = !MediaService.active.shuffle
                 onPreviousClicked: if (MediaService.active)
-                                       MediaService.active.previous()
+                    MediaService.active.previous()
                 onPlayPauseClicked: if (MediaService.active)
-                                        MediaService.active.togglePlaying()
+                    MediaService.active.togglePlaying()
                 onNextClicked: if (MediaService.active)
-                                   MediaService.active.next()
+                    MediaService.active.next()
                 onLoopClicked: {
                     if (!MediaService.active || !MediaService.active.loopSupported)
                         return;
@@ -269,23 +254,23 @@ Item {
 
         Behavior on width {
             NumberAnimation {
-                duration: pillRect.menuExpanded ? 420 : 220
+                duration: Appearance.motionDuration(pillRect.menuExpanded ? 420 : 220)
                 easing.type: Easing.BezierSpline
-                easing.bezierCurve: pillRect.menuExpanded ? root.sourceOvershootCurve :
-                                                            root.sourceEaseOutCurve
+                easing.bezierCurve: pillRect.menuExpanded ? root.sourceOvershootCurve : root.sourceEaseOutCurve
             }
         }
         Behavior on height {
             NumberAnimation {
-                duration: pillRect.menuExpanded ? 420 : 220
+                duration: Appearance.motionDuration(pillRect.menuExpanded ? 420 : 220)
                 easing.type: Easing.BezierSpline
-                easing.bezierCurve: pillRect.menuExpanded ? root.sourceOvershootCurve :
-                                                            root.sourceEaseOutCurve
+                easing.bezierCurve: pillRect.menuExpanded ? root.sourceOvershootCurve : root.sourceEaseOutCurve
             }
         }
         Behavior on color {
             ColorAnimation {
-                duration: 120
+                duration: Appearance.motionDuration(120)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Appearance.animationCurves.standard
             }
         }
 
@@ -294,12 +279,14 @@ Item {
             anchors.centerIn: parent
             text: MediaService.getIdentity(MediaService.active)
             color: root.coverColors ? root.onAccentColor : Appearance.colors.colOnTertiary
-            font.pixelSize: 11
+            font.pixelSize: Appearance.scaledFont(11)
             font.weight: Font.DemiBold
             opacity: pillRect.menuExpanded ? 0.0 : 1.0
             Behavior on opacity {
                 NumberAnimation {
-                    duration: 150
+                    duration: Appearance.motionDuration(150)
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Appearance.animationCurves.standard
                 }
             }
         }
@@ -325,7 +312,7 @@ Item {
 
             Behavior on opacity {
                 NumberAnimation {
-                    duration: 250
+                    duration: Appearance.motionDuration(250)
                     easing.type: Easing.InQuad
                 }
             }
@@ -341,7 +328,9 @@ Item {
 
                     Behavior on color {
                         ColorAnimation {
-                            duration: 100
+                            duration: Appearance.motionDuration(100)
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: Appearance.animationCurves.standard
                         }
                     }
 
@@ -355,7 +344,7 @@ Item {
                             Layout.fillWidth: true
                             text: MediaService.getIdentity(modelData)
                             color: root.coverColors ? root.onAccentColor : Appearance.colors.colOnTertiary
-                            font.pixelSize: 11
+                            font.pixelSize: Appearance.scaledFont(11)
                             font.weight: Font.DemiBold
                             elide: Text.ElideRight
                         }

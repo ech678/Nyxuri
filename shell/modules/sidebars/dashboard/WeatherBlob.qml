@@ -116,7 +116,7 @@ Item {
             color: Appearance.colors.colOnWeatherCardSurfaceVariant
             font.family: Fonts.expressive
             font.bold: true
-            font.pixelSize: 19
+            font.pixelSize: Appearance.scaledFont(19)
             anchors.verticalCenter: parent.verticalCenter
         }
     }
@@ -128,7 +128,7 @@ Item {
         color: Appearance.colors.colOnWeatherCardSurface
         font.family: Fonts.expressive
         font.bold: true
-        font.pixelSize: 62
+        font.pixelSize: Appearance.scaledFont(62)
     }
 
     Text {
@@ -139,7 +139,7 @@ Item {
         text: root.level
         color: Appearance.colors.colOnWeatherCardSurface
         font.family: Fonts.expressive
-        font.pixelSize: 22
+        font.pixelSize: Appearance.scaledFont(22)
         font.bold: true
         horizontalAlignment: Text.AlignHCenter
         elide: Text.ElideRight

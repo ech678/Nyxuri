@@ -89,7 +89,7 @@ Rectangle {
             text: "music_note"
             color: Appearance.colors.colOnSurfaceVariant
             font.family: Fonts.materialSymbolsRounded
-            font.pixelSize: 48
+            font.pixelSize: Appearance.scaledFont(48)
             opacity: 0.2
         }
     }
@@ -110,7 +110,7 @@ Rectangle {
             text: I18n.tr("Now playing")
             color: Appearance.colors.colOnSurfaceVariant
             font.family: Fonts.numeric
-            font.pixelSize: 17
+            font.pixelSize: Appearance.scaledFont(17)
             font.weight: 500
             elide: Text.ElideRight
         }
@@ -120,7 +120,7 @@ Rectangle {
             text: root.artist
             color: Appearance.colors.colPrimary
             font.family: Fonts.numeric
-            font.pixelSize: 24
+            font.pixelSize: Appearance.scaledFont(24)
             font.weight: 600
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
@@ -131,7 +131,7 @@ Rectangle {
             text: root.title
             color: Appearance.colors.colOnSurface
             font.family: Fonts.numeric
-            font.pixelSize: 20
+            font.pixelSize: Appearance.scaledFont(20)
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
         }
@@ -224,15 +224,13 @@ Rectangle {
         implicitWidth: baseWidth
         implicitHeight: baseHeight
         color: active ? Appearance.colors[`col${colour}`] : Appearance.colors[`col${colour}Container`]
-        radius: active || controlState.pressed ? Appearance.rounding.normal : Math.min(implicitWidth,
-                                                                                       implicitHeight) / 2
+        radius: active || controlState.pressed ? Appearance.rounding.normal : Math.min(implicitWidth, implicitHeight) / 2
         opacity: canUse ? 1 : 0.45
 
         Rectangle {
             anchors.fill: parent
             radius: parent.radius
-            color: control.active ? Appearance.colors[`colOn${control.colour}`] : Appearance.colors[`colOn${control.colour
-                                                                                                    }Container`]
+            color: control.active ? Appearance.colors[`colOn${control.colour}`] : Appearance.colors[`colOn${control.colour}Container`]
             opacity: controlState.pressed ? 0.2 : controlState.containsMouse ? 0.12 : 0
 
             Behavior on opacity {
@@ -251,10 +249,9 @@ Rectangle {
             height: control.iconBoxSize
             anchors.centerIn: parent
             text: control.icon
-            color: control.active ? Appearance.colors[`colOn${control.colour}`] : Appearance.colors[`colOn${control.colour
-                                                                                                    }Container`]
+            color: control.active ? Appearance.colors[`colOn${control.colour}`] : Appearance.colors[`colOn${control.colour}Container`]
             font.family: Fonts.materialSymbolsRounded
-            font.pixelSize: 29
+            font.pixelSize: Appearance.scaledFont(29)
             font.weight: 500
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter

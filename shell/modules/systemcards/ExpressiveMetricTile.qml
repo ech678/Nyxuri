@@ -52,10 +52,9 @@ Rectangle {
             radius: root.radius
         }
     }
-    Accessible.name: [root.label, root.valueText, root.detailText, root.supportingText,
-        root.temperatureText].filter(function (value) {
-            return String(value || "").length > 0;
-        }).join("，")
+    Accessible.name: [root.label, root.valueText, root.detailText, root.supportingText, root.temperatureText].filter(function (value) {
+        return String(value || "").length > 0;
+    }).join("，")
 
     Behavior on color {
         ColorAnimation {
@@ -74,9 +73,7 @@ Rectangle {
             rightMargin: -implicitSize * 0.18
             bottomMargin: -implicitSize * 0.2
         }
-        implicitSize: Math.min(root.width * 0.38, root.height * 0.42, root.decorationSize * (1.08
-                                                                                             + root.normalizedUsage
-                                                                                             * 0.14))
+        implicitSize: Math.min(root.width * 0.38, root.height * 0.42, root.decorationSize * (1.08 + root.normalizedUsage * 0.14))
         rotation: 18
         shape: root.resolvedShape
         color: root.accentColor
@@ -144,13 +141,11 @@ Rectangle {
         spacing: root.dense ? 2 : Appearance.spacing.xSmall
 
         Text {
-            Layout.maximumWidth: Math.max(48, root.width - temperatureBadge.width - Appearance.spacing.large
-                                          * 1.5)
+            Layout.maximumWidth: Math.max(48, root.width - temperatureBadge.width - Appearance.spacing.large * 1.5)
             text: root.label
             color: root.foregroundColor
             font.family: Fonts.ui
-            font.pixelSize: root.dense ? Typography.titleMedium.pixelSize + 2 :
-                                         Typography.titleLarge.pixelSize
+            font.pixelSize: root.dense ? Typography.titleMedium.pixelSize + 2 : Typography.titleLarge.pixelSize
             font.weight: Font.Bold
             elide: Text.ElideRight
         }
@@ -209,6 +204,8 @@ Rectangle {
                 Behavior on color {
                     ColorAnimation {
                         duration: Appearance.animation.expressiveEffects.duration
+                        easing.type: Appearance.animation.expressiveEffects.type
+                        easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
                     }
                 }
             }

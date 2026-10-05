@@ -171,7 +171,7 @@ Item {
     NumberAnimation on animationProgress {
         from: 0
         to: 1
-        duration: 4800
+        duration: Appearance.motionLoopDuration(4800)
         loops: Animation.Infinite
         running: root.running
     }

@@ -31,6 +31,8 @@ TextField {
     selectByMouse: true
     wrapMode: TextInput.NoWrap
     activeFocusOnTab: true
+    Accessible.role: Accessible.EditableText
+    Accessible.name: root.placeholderText.length > 0 ? root.placeholderText : root.text
     // The native outlined field owns its height and content rectangle. Keeping
     // it unclipped avoids adding a top inset for the floating label, so text
     // and our leading/trailing content share the control's true centre.
@@ -78,5 +80,4 @@ TextField {
         sourceComponent: root.trailingContent
         z: 1
     }
-
 }

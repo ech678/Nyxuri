@@ -36,6 +36,8 @@ Singleton {
         return result;
     }
 
+    readonly property bool colorTransitionEnabled: Appearance.colorTransitionEnabled
+    property bool paletteInitialized: false
     function applyGeneratedColors(text) {
         const generatedColors = JSON.parse(text);
         if (!generatedColors || typeof generatedColors !== "object" || Array.isArray(generatedColors))
@@ -49,8 +51,18 @@ Singleton {
                 updates.push([propertyName, Qt.color(generatedColors[key])]);
             }
         }
+        const firstLoad = !root.paletteInitialized;
+        if (firstLoad) {
+            Appearance.colorTransitionEnabled = false;
+            root.paletteInitialized = true;
+        }
         for (const update of updates)
             Appearance.m3colors[update[0]] = update[1];
+        if (firstLoad) {
+            Qt.callLater(() => {
+                Appearance.colorTransitionEnabled = true;
+            });
+        }
     }
 
     function reloadColors() {
@@ -116,8 +128,7 @@ Singleton {
         const revision = root.iconThemeRevision;
         if (!player)
             return "";
-        const entry = DesktopEntries.heuristicLookup(player.desktopEntry || "")
-              || DesktopEntries.heuristicLookup(player.identity || "");
+        const entry = DesktopEntries.heuristicLookup(player.desktopEntry || "") || DesktopEntries.heuristicLookup(player.identity || "");
         return entry && entry.icon ? Quickshell.iconPath(entry.icon, true) : "";
     }
 
@@ -131,16 +142,15 @@ Singleton {
     property string lastSource: ""
     readonly property bool cursorIntegrationReady: NiriConfigService.ready("cursor")
     readonly property string cursorLastError: NiriConfigService.error
-    readonly property bool cursorSyncBusy: NiriConfigService.busy && NiriConfigService.activeFeature
-                                           === "cursor"
+    readonly property bool cursorSyncBusy: NiriConfigService.busy && NiriConfigService.activeFeature === "cursor"
     property var availableIconThemes: [({
-                                            "label": I18n.tr("System default"),
-                                            "value": ""
-                                        })]
+                "label": I18n.tr("System default"),
+                "value": ""
+            })]
     property var availableCursorThemes: [({
-                                              "label": I18n.tr("System default"),
-                                              "value": ""
-                                          })]
+                "label": I18n.tr("System default"),
+                "value": ""
+            })]
     readonly property string systemDefaultIconTheme: iconThemeController.systemThemeName
     readonly property int iconThemeRevision: iconThemeController.revision
     property string systemDefaultCursorTheme: ""
@@ -150,12 +160,36 @@ Singleton {
     function applyConfigToAppearance() {
         Appearance.matugenScheme = PersonalizationConfig.matugenScheme;
         Appearance.matugenMode = PersonalizationConfig.themeMode;
+        root.applyAccessibilityToAppearance();
+    }
+    function applyAccessibilityToAppearance() {
         Appearance.reduceMotion = UiPreferences.reduceMotion;
+        Appearance.fontScale = UiPreferences.fontScale;
+        Appearance.highContrast = UiPreferences.highContrast;
+        Appearance.reduceTransparency = UiPreferences.reduceTransparency;
+        Appearance.lowPowerMode = UiPreferences.lowPowerMode;
+        Animations.reduceMotion = Appearance.effectiveReduceMotion;
+        Animations.motionScale = Appearance.effectiveMotionScale;
     }
     Connections {
         target: UiPreferences
         function onReduceMotionChanged() {
-            Appearance.reduceMotion = UiPreferences.reduceMotion;
+            root.applyAccessibilityToAppearance();
+        }
+        function onFontScaleChanged() {
+            root.applyAccessibilityToAppearance();
+        }
+        function onHighContrastChanged() {
+            root.applyAccessibilityToAppearance();
+        }
+        function onReduceTransparencyChanged() {
+            root.applyAccessibilityToAppearance();
+        }
+        function onLowPowerModeChanged() {
+            root.applyAccessibilityToAppearance();
+        }
+        function onFollowSunChanged() {
+            root.applySolarTheme(Date.now() / 1000);
         }
     }
 
@@ -168,8 +202,7 @@ Singleton {
     function enabledMatugenTemplates() {
         const enabled = [];
         for (const template of MatugenTemplateService.templates) {
-            if (template.valid && PersonalizationConfig.isMatugenTemplateEnabled(template.id)
-                    && enabled.indexOf(template.id) === -1)
+            if (template.valid && PersonalizationConfig.isMatugenTemplateEnabled(template.id) && enabled.indexOf(template.id) === -1)
                 enabled.push(template.id);
         }
         return enabled;
@@ -214,8 +247,7 @@ Singleton {
     }
 
     function effectiveCursorTheme() {
-        return PersonalizationConfig.cursorTheme !== "" ? PersonalizationConfig.cursorTheme :
-                                                          root.systemDefaultCursorTheme;
+        return PersonalizationConfig.cursorTheme !== "" ? PersonalizationConfig.cursorTheme : root.systemDefaultCursorTheme;
     }
 
     function unique(values) {
@@ -275,15 +307,15 @@ Singleton {
         const sorted = root.unique(names).sort((a, b) => a.localeCompare(b));
         for (let j = 0; j < sorted.length; j += 1)
             options.push({
-                             "label": sorted[j],
-                             "value": sorted[j]
-                         });
+                "label": sorted[j],
+                "value": sorted[j]
+            });
 
         if (currentValue !== "" && !root.hasOption(options, currentValue))
             options.splice(1, 0, {
-                               "label": currentValue,
-                               "value": currentValue
-                           });
+                "label": currentValue,
+                "value": currentValue
+            });
 
         return options;
     }
@@ -316,9 +348,7 @@ Singleton {
 
         root.applyConfigToAppearance();
         root.lastSource = path;
-        const command = ["bash", Paths.scriptPath("theme", "generate-matugen-colors.sh"), "--image", path, "--scheme",
-                         PersonalizationConfig.matugenScheme, "--mode", PersonalizationConfig.themeMode,
-                         "--templates", root.enabledMatugenTemplates().join(",")];
+        const command = ["bash", Paths.scriptPath("theme", "generate-matugen-colors.sh"), "--image", path, "--scheme", PersonalizationConfig.matugenScheme, "--mode", PersonalizationConfig.themeMode, "--templates", root.enabledMatugenTemplates().join(",")];
         root.startGeneration(command, templateId);
     }
 
@@ -371,10 +401,7 @@ Singleton {
         const sourceColor = root.opaqueHexFromColor(value);
         root.applyConfigToAppearance();
         root.lastSource = value;
-        const command = ["bash", Paths.scriptPath("theme", "generate-matugen-colors.sh"), "--color",
-                         sourceColor, "--scheme", PersonalizationConfig.matugenScheme, "--mode",
-                         PersonalizationConfig.themeMode, "--templates", root.enabledMatugenTemplates().join(
-                             ",")];
+        const command = ["bash", Paths.scriptPath("theme", "generate-matugen-colors.sh"), "--color", sourceColor, "--scheme", PersonalizationConfig.matugenScheme, "--mode", PersonalizationConfig.themeMode, "--templates", root.enabledMatugenTemplates().join(",")];
         root.startGeneration(command, templateId);
     }
 
@@ -440,8 +467,7 @@ Singleton {
         id: detectIconThemesProcess
         stdout: StdioCollector {
             onStreamFinished: {
-                root.availableIconThemes = root.parseDetectedThemes(this.text, I18n.tr("System default"),
-                                                                    PersonalizationConfig.iconTheme, false);
+                root.availableIconThemes = root.parseDetectedThemes(this.text, I18n.tr("System default"), PersonalizationConfig.iconTheme, false);
             }
         }
     }
@@ -450,9 +476,7 @@ Singleton {
         id: detectCursorThemesProcess
         stdout: StdioCollector {
             onStreamFinished: {
-                root.availableCursorThemes = root.parseDetectedThemes(this.text, I18n.tr("System default"),
-                                                                      PersonalizationConfig.cursorTheme,
-                                                                      true);
+                root.availableCursorThemes = root.parseDetectedThemes(this.text, I18n.tr("System default"), PersonalizationConfig.cursorTheme, true);
             }
         }
     }
@@ -464,7 +488,7 @@ Singleton {
     Process {
         id: generateColorsProcess
         onRunningChanged: if (running)
-                              root.generating = true
+            root.generating = true
         stderr: StdioCollector {
             id: generationStderr
         }
@@ -478,8 +502,7 @@ Singleton {
                         root.coreReloaded = true;
                         root.reloadColors();
                     } else if (status.event === "external-error") {
-                        root.externalGenerationError += (root.externalGenerationError ? "\n" : "")
-                                + status.id + ": " + status.error;
+                        root.externalGenerationError += (root.externalGenerationError ? "\n" : "") + status.id + ": " + status.error;
                     } else if (status.event === "core-error") {
                         root.generationError = status.error;
                     }
@@ -494,17 +517,56 @@ Singleton {
             if ((exitCode === 0 || exitCode === 3) && !root.coreReloaded)
                 root.reloadColors();
             if (exitCode !== 0 && exitCode !== 3)
-                root.generationError = root.generationError || generationStderr.text.trim() || I18n.tr(
-                            "Failed to generate Matugen colors");
+                root.generationError = root.generationError || generationStderr.text.trim() || I18n.tr("Failed to generate Matugen colors");
             if (exitCode === 3 && !root.externalGenerationError)
-                root.externalGenerationError = generationStderr.text.trim() || I18n.tr(
-                            "Some Matugen templates failed to generate");
+                root.externalGenerationError = generationStderr.text.trim() || I18n.tr("Some Matugen templates failed to generate");
             if (root.pendingGeneration)
                 Qt.callLater(root.resumeGeneration);
         }
     }
 
+    property bool appliedSolarLight: false
+    property bool solarApplied: false
+    readonly property var solarToday: WeatherService.dailyForecast.length > 0 ? WeatherService.dailyForecast[0] : null
+    readonly property real solarSunriseEpoch: root.solarToday ? Number(root.solarToday.sunrise || 0) : 0
+    readonly property real solarSunsetEpoch: root.solarToday ? Number(root.solarToday.sunset || 0) : 0
+    readonly property bool solarScheduleAvailable: root.solarSunriseEpoch > 0 && root.solarSunsetEpoch > 0
+    function solarDesiredMode(epochSeconds) {
+        if (!root.solarScheduleAvailable)
+            return "";
+        const now = Number(epochSeconds);
+        if (!isFinite(now))
+            return "";
+        return now < root.solarSunriseEpoch || now >= root.solarSunsetEpoch ? "dark" : "light";
+    }
+    function applySolarTheme(epochSeconds) {
+        if (!UiPreferences.followSun)
+            return false;
+        const mode = root.solarDesiredMode(epochSeconds);
+        if (mode === "")
+            return false;
+        root.appliedSolarLight = mode === "light";
+        root.solarApplied = true;
+        if (PersonalizationConfig.themeMode !== mode)
+            root.setThemeMode(mode);
+        return true;
+    }
+    Timer {
+        id: solarThemeTimer
+        interval: 60000
+        repeat: true
+        running: UiPreferences.followSun
+        triggeredOnStart: true
+        onTriggered: root.applySolarTheme(Date.now() / 1000)
+    }
+    Connections {
+        target: WeatherService
+        function onDailyForecastChanged() {
+            root.applySolarTheme(Date.now() / 1000);
+        }
+    }
     Component.onDestruction: {
+        solarThemeTimer.stop();
         if (detectIconThemesProcess)
             detectIconThemesProcess.running = false;
         if (detectCursorThemesProcess)

@@ -34,8 +34,8 @@ Item {
     Variants {
         id: bars
         model: Array.from({
-                              length: root.barCount
-                          }, (_, i) => i)
+            length: root.barCount
+        }, (_, i) => i)
 
         ShapePath {
             id: bar
@@ -83,7 +83,7 @@ Item {
                     running: root.active && root.playing
                     from: 360
                     to: 0
-                    duration: 23500
+                    duration: Appearance.motionLoopDuration(23500)
                     loops: Animation.Infinite
                 }
             }

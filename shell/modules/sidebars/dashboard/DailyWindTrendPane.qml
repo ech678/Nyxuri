@@ -33,8 +33,7 @@ Item {
             return I18n.tr("Tomorrow");
         if (!epoch)
             return "--";
-        const week = [I18n.tr("Sun"), I18n.tr("Mon"), I18n.tr("Tue"), I18n.tr("Wed"), I18n.tr("Thu"), I18n.tr(
-                          "Fri"), I18n.tr("Sat")];
+        const week = [I18n.tr("Sun"), I18n.tr("Mon"), I18n.tr("Tue"), I18n.tr("Wed"), I18n.tr("Thu"), I18n.tr("Fri"), I18n.tr("Sat")];
         return week[new Date(epoch * 1000).getDay()];
     }
 
@@ -116,9 +115,7 @@ Item {
         const list = [];
         let highest = 0;
         let validCount = 0;
-        const modelCount = root.sourceModel ? (typeof root.sourceModel.count === "function"
-                                               ? root.sourceModel.count() : Number(root.sourceModel.count
-                                                                                   || 0)) : 0;
+        const modelCount = root.sourceModel ? (typeof root.sourceModel.count === "function" ? root.sourceModel.count() : Number(root.sourceModel.count || 0)) : 0;
         const count = Math.min(root.maxItems, modelCount);
         for (let i = 0; i < count; ++i) {
             const dayItem = root.sourceModel.get(i) || ({});
@@ -135,19 +132,19 @@ Item {
                 validCount += 1;
             }
             list.push({
-                          time: dayItem.time || 0,
-                          dayText: root.dayLabel(i, dayItem.time || 0),
-                          dateText: root.dateLabel(dayItem.time || 0),
-                          daySpeed: daySpeed,
-                          nightSpeed: nightSpeed,
-                          dayTextValue: root.formatSpeedValue(daySpeed),
-                          nightTextValue: root.formatSpeedValue(nightSpeed),
-                          dayDirection: Number(dayPart.windDirection),
-                          nightDirection: Number(nightPart.windDirection),
-                          dayColor: root.windColor(daySpeed),
-                          nightColor: root.windColor(nightSpeed),
-                          emphasized: i !== 0
-                      });
+                time: dayItem.time || 0,
+                dayText: root.dayLabel(i, dayItem.time || 0),
+                dateText: root.dateLabel(dayItem.time || 0),
+                daySpeed: daySpeed,
+                nightSpeed: nightSpeed,
+                dayTextValue: root.formatSpeedValue(daySpeed),
+                nightTextValue: root.formatSpeedValue(nightSpeed),
+                dayDirection: Number(dayPart.windDirection),
+                nightDirection: Number(nightPart.windDirection),
+                dayColor: root.windColor(daySpeed),
+                nightColor: root.windColor(nightSpeed),
+                emphasized: i !== 0
+            });
         }
         items = list;
         chartMax = root.chartUpperBound(highest);
@@ -211,16 +208,8 @@ Item {
                     width: root.itemWidth
                     height: root.height
 
-                    readonly property color weekColor: modelData.emphasized ? Appearance.colors.colOnSurface :
-                                                                              Qt.rgba(Appearance.colors.colOnSurfaceVariant.r,
-                                                                                      Appearance.colors.colOnSurfaceVariant.g,
-                                                                                      Appearance.colors.colOnSurfaceVariant.b,
-                                                                                      0.78)
-                    readonly property color dateColor: modelData.emphasized
-                                                       ? Appearance.colors.colOnSurfaceVariant : Qt.rgba(
-                                                             Appearance.colors.colOnSurfaceVariant.r,
-                                                             Appearance.colors.colOnSurfaceVariant.g,
-                                                             Appearance.colors.colOnSurfaceVariant.b, 0.62)
+                    readonly property color weekColor: modelData.emphasized ? Appearance.colors.colOnSurface : Qt.rgba(Appearance.colors.colOnSurfaceVariant.r, Appearance.colors.colOnSurfaceVariant.g, Appearance.colors.colOnSurfaceVariant.b, 0.78)
+                    readonly property color dateColor: modelData.emphasized ? Appearance.colors.colOnSurfaceVariant : Qt.rgba(Appearance.colors.colOnSurfaceVariant.r, Appearance.colors.colOnSurfaceVariant.g, Appearance.colors.colOnSurfaceVariant.b, 0.62)
                     readonly property real dayBarHeight: root.barHeight(modelData.daySpeed)
                     readonly property real nightBarHeight: root.barHeight(modelData.nightSpeed)
 
@@ -230,7 +219,7 @@ Item {
                         text: modelData.dayText
                         color: parent.weekColor
                         font.family: Fonts.ui
-                        font.pixelSize: 14
+                        font.pixelSize: Appearance.scaledFont(14)
                         font.bold: modelData.dayText === I18n.tr("Today")
                     }
 
@@ -240,7 +229,7 @@ Item {
                         text: modelData.dateText
                         color: parent.dateColor
                         font.family: Fonts.numeric
-                        font.pixelSize: 11
+                        font.pixelSize: Appearance.scaledFont(11)
                     }
 
                     WindDirectionGlyph {
@@ -260,7 +249,7 @@ Item {
                         text: modelData.dayTextValue
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.numeric
-                        font.pixelSize: 13
+                        font.pixelSize: Appearance.scaledFont(13)
                     }
 
                     Rectangle {
@@ -270,8 +259,7 @@ Item {
                         x: (parent.width - width) / 2
                         y: root.topBarBaseY - height
                         radius: width / 2
-                        color: Qt.rgba(Qt.color(modelData.dayColor).r, Qt.color(modelData.dayColor).g,
-                                       Qt.color(modelData.dayColor).b, 0.96)
+                        color: Qt.rgba(Qt.color(modelData.dayColor).r, Qt.color(modelData.dayColor).g, Qt.color(modelData.dayColor).b, 0.96)
                     }
 
                     Rectangle {
@@ -281,8 +269,7 @@ Item {
                         x: (parent.width - width) / 2
                         y: root.bottomBarBaseY
                         radius: width / 2
-                        color: Qt.rgba(Qt.color(modelData.nightColor).r, Qt.color(modelData.nightColor).g,
-                                       Qt.color(modelData.nightColor).b, 0.58)
+                        color: Qt.rgba(Qt.color(modelData.nightColor).r, Qt.color(modelData.nightColor).g, Qt.color(modelData.nightColor).b, 0.58)
                     }
 
                     Text {
@@ -292,7 +279,7 @@ Item {
                         text: modelData.nightTextValue
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.numeric
-                        font.pixelSize: 13
+                        font.pixelSize: Appearance.scaledFont(13)
                     }
 
                     WindDirectionGlyph {
@@ -342,6 +329,6 @@ Item {
         text: I18n.tr("Wind data is unavailable")
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.ui
-        font.pixelSize: 16
+        font.pixelSize: Appearance.scaledFont(16)
     }
 }

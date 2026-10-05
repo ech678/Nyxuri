@@ -17,8 +17,7 @@ Item {
     readonly property color ink: Appearance.colors.colOnWeatherCardSurface
     readonly property color mutedInk: Appearance.colors.colOnWeatherCardSurfaceVariant
     readonly property color cardFill: Appearance.colors.colWeatherCardSurface
-    readonly property color trackTint: Qt.rgba(Qt.darker(accent, 2.9).r, Qt.darker(accent, 2.9).g, Qt.darker(accent,
-                                                                                                             2.9).b, 0.58)
+    readonly property color trackTint: Qt.rgba(Qt.darker(accent, 2.9).r, Qt.darker(accent, 2.9).g, Qt.darker(accent, 2.9).b, 0.58)
 
     WeatherAnimatedValue {
         id: aqiAnimation
@@ -83,7 +82,7 @@ Item {
                 text: I18n.tr("Air quality")
                 color: root.mutedInk
                 font.family: Fonts.expressive
-                font.pixelSize: 18
+                font.pixelSize: Appearance.scaledFont(18)
                 font.bold: true
             }
         }
@@ -109,7 +108,7 @@ Item {
             text: root.levelText
             color: root.ink
             font.family: Fonts.expressive
-            font.pixelSize: 18
+            font.pixelSize: Appearance.scaledFont(18)
             font.bold: true
             elide: Text.ElideRight
             z: 2

@@ -33,7 +33,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             text: root.label
             font.family: Fonts.ui
-            font.pixelSize: 14
+            font.pixelSize: Appearance.scaledFont(14)
             font.weight: Font.Medium
             color: Appearance.colors.colOnLayer0
         }
@@ -42,7 +42,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             text: root.stateLabel
             font.family: Fonts.ui
-            font.pixelSize: 14
+            font.pixelSize: Appearance.scaledFont(14)
             font.weight: Font.DemiBold
             color: root.lockEnabled ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer0
         }

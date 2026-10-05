@@ -31,16 +31,15 @@ Item {
             if (maxTemp > globalMax)
                 globalMax = maxTemp;
 
-            const dateObject = item.date ? new Date(item.date + "T00:00:00") : new Date(Number(item.time
-                                                                                               || 0) * 1000);
+            const dateObject = item.date ? new Date(item.date + "T00:00:00") : new Date(Number(item.time || 0) * 1000);
             nextDaily.push({
-                               "dayIndex": dateObject.getDay(),
-                               "icon": dayPart.iconName || item.iconName || "cloud",
-                               "minTemp": Math.round(UiPreferences.weatherTemperature(minTemp)),
-                               "maxTemp": Math.round(UiPreferences.weatherTemperature(maxTemp)),
-                               "rawMin": minTemp,
-                               "rawMax": maxTemp
-                           });
+                "dayIndex": dateObject.getDay(),
+                "icon": dayPart.iconName || item.iconName || "cloud",
+                "minTemp": Math.round(UiPreferences.weatherTemperature(minTemp)),
+                "maxTemp": Math.round(UiPreferences.weatherTemperature(maxTemp)),
+                "rawMin": minTemp,
+                "rawMax": maxTemp
+            });
         }
         // Calculate offsets
         if (globalMax - globalMin < 1) {
@@ -85,8 +84,7 @@ Item {
             model: root.dailyData
 
             delegate: RowLayout {
-                property var week: [I18n.tr("Sun"), I18n.tr("Mon"), I18n.tr("Tue"), I18n.tr("Wed"), I18n.tr(
-                        "Thu"), I18n.tr("Fri"), I18n.tr("Sat")]
+                property var week: [I18n.tr("Sun"), I18n.tr("Mon"), I18n.tr("Tue"), I18n.tr("Wed"), I18n.tr("Thu"), I18n.tr("Fri"), I18n.tr("Sat")]
 
                 Layout.fillWidth: true
                 spacing: 8
@@ -94,10 +92,9 @@ Item {
                 Text {
                     Layout.preferredWidth: 40
                     text: index === 0 ? I18n.tr("Today") : week[modelData.dayIndex]
-                    color: index === 0 ? Appearance.colors.colOnSurface :
-                                         Appearance.colors.colOnSurfaceVariant
+                    color: index === 0 ? Appearance.colors.colOnSurface : Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.ui
-                    font.pixelSize: 16
+                    font.pixelSize: Appearance.scaledFont(16)
                     font.weight: index === 0 ? Font.Medium : Font.Normal
                 }
 
@@ -113,7 +110,7 @@ Item {
                     text: modelData.minTemp + "°"
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.numeric
-                    font.pixelSize: 16
+                    font.pixelSize: Appearance.scaledFont(16)
                     horizontalAlignment: Text.AlignRight
                 }
 
@@ -158,7 +155,7 @@ Item {
                     text: modelData.maxTemp + "°"
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.numeric
-                    font.pixelSize: 16
+                    font.pixelSize: Appearance.scaledFont(16)
                 }
             }
         }

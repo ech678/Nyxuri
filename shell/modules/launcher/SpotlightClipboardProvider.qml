@@ -19,8 +19,7 @@ Item {
     property string query: ""
     property var results: []
     readonly property bool loading: ClipboardService.loading
-    readonly property bool available: ClipboardService.canList && (ClipboardService.watcherRunning
-                                                                   || ClipboardService.entries.length > 0)
+    readonly property bool available: ClipboardService.canList && (ClipboardService.watcherRunning || ClipboardService.entries.length > 0)
     readonly property bool canRestore: ClipboardService.canRestore
     readonly property bool actionRunning: ClipboardService.actionRunning
     readonly property var error: ClipboardService.error
@@ -41,11 +40,7 @@ Item {
     }
 
     function textSummary(value) {
-        const lines = String(value || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n").map(line
-                                                                                                      => line.replace(
-                                                                                                             /\t/g, " ").trim(
-                                                                                                             )).filter(
-                  line => line !== "");
+        const lines = String(value || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n").map(line => line.replace(/\t/g, " ").trim()).filter(line => line !== "");
         return lines;
     }
 
@@ -157,8 +152,7 @@ Item {
         if (kind === "file" || kind === "file-list") {
             const files = Array.isArray(entry.files) ? entry.files : [];
             if (files.length > 1)
-                return files.slice(0, 3).map(file => String(file.name || "")).filter(name => name !== "").join(
-                            "、");
+                return files.slice(0, 3).map(file => String(file.name || "")).filter(name => name !== "").join("、");
             if (files.length === 1)
                 return root.singleFileSubtitle(files[0]);
             return I18n.tr("File");
@@ -198,8 +192,8 @@ Item {
         clipboardModel.clear();
         for (let index = 0; index < next.length; index += 1)
             clipboardModel.append({
-                                      clipboardEntryId: String(next[index].id || "")
-                                  });
+                clipboardEntryId: String(next[index].id || "")
+            });
     }
 
     function resultForEntry(entry, index, sourceLength, needle) {
@@ -207,10 +201,8 @@ Item {
         const searchText = String(entry.searchText || rawPreview);
         const title = root.displayTitle(entry, rawPreview);
         const subtitle = root.displaySubtitle(entry, rawPreview);
-        const fileNames = Array.isArray(entry.files) ? entry.files.map(file => String(file.name || "")).join(
-                                                           " ") : "";
-        const searchable = [title, subtitle, searchText, fileNames, String(entry.mimeType || "")].join("\n").toLocaleLowerCase(
-                  );
+        const fileNames = Array.isArray(entry.files) ? entry.files.map(file => String(file.name || "")).join(" ") : "";
+        const searchable = [title, subtitle, searchText, fileNames, String(entry.mimeType || "")].join("\n").toLocaleLowerCase();
         if (needle !== "" && searchable.indexOf(needle) < 0)
             return null;
 
@@ -253,8 +245,21 @@ Item {
             if (result)
                 next.push(result);
         }
-        root.results = next;
-        root.replaceModel(next);
+        UiPreferences.pruneClipboardPinned(next.map(entry => entry.id));
+        const pinned = [];
+        const rest = [];
+        for (const entry of next) {
+            if (UiPreferences.isClipboardPinned(entry.id)) {
+                entry.pinned = true;
+                pinned.push(entry);
+            } else {
+                entry.pinned = false;
+                rest.push(entry);
+            }
+        }
+        const ordered = pinned.concat(rest);
+        root.results = ordered;
+        root.replaceModel(ordered);
     }
 
     function updateResult(id) {
@@ -327,15 +332,12 @@ Item {
         if (!result)
             return false;
         if (!root.canRestore) {
-            const failure = ClipboardService.normalizedError(null, ClipboardService.dependencies.wlCopy
-                                                             ? "cliphist_unavailable" : "wl_copy_unavailable",
-                                                             I18n.tr("Clipboard restore is unavailable"));
+            const failure = ClipboardService.normalizedError(null, ClipboardService.dependencies.wlCopy ? "cliphist_unavailable" : "wl_copy_unavailable", I18n.tr("Clipboard restore is unavailable"));
             root.restoreFailed(result.id, failure.code, failure.message);
             return false;
         }
         if (result.restorable === false) {
-            root.restoreFailed(result.id, "clipboard_mime_unsupported", I18n.tr(
-                                   "This format cannot be restored reliably"));
+            root.restoreFailed(result.id, "clipboard_mime_unsupported", I18n.tr("This format cannot be restored reliably"));
             return false;
         }
         return ClipboardService.restore(result.id);

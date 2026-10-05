@@ -27,12 +27,10 @@ Item {
                 text: root.label.charAt(index)
                 color: Appearance.colors.colOnLayer0
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: Appearance.scaledFont(14)
                 font.weight: Font.DemiBold
             }
-
         }
-
     }
 
     Text {
@@ -43,9 +41,8 @@ Item {
         text: root.label
         color: Appearance.colors.colOnLayer0
         font.family: Fonts.ui
-        font.pixelSize: 14
+        font.pixelSize: Appearance.scaledFont(14)
         font.weight: Font.DemiBold
         rotation: root.edge === "left" ? -90 : 90
     }
-
 }

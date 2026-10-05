@@ -61,7 +61,7 @@ Item {
 
     Behavior on removalProgress {
         NumberAnimation {
-            duration: 100
+            duration: Appearance.motionDuration(100)
             easing.type: Easing.OutCubic
         }
     }
@@ -71,21 +71,21 @@ Item {
             target: root
             property: "x"
             to: root.destination.x - root.destinationSize / 2
-            duration: DockMotion.reflowDuration
+            duration: Appearance.motionDuration(DockMotion.reflowDuration)
             easing.type: Easing.OutCubic
         }
         NumberAnimation {
             target: root
             property: "y"
             to: root.destination.y - root.destinationSize / 2
-            duration: DockMotion.reflowDuration
+            duration: Appearance.motionDuration(DockMotion.reflowDuration)
             easing.type: Easing.OutCubic
         }
         NumberAnimation {
             target: root
             property: "width"
             to: root.destinationSize
-            duration: DockMotion.reflowDuration
+            duration: Appearance.motionDuration(DockMotion.reflowDuration)
             easing.type: Easing.OutCubic
         }
         onFinished: root.clear()
@@ -96,7 +96,7 @@ Item {
             target: root
             property: "fade"
             to: 0
-            duration: DockMotion.exitDuration
+            duration: Appearance.motionDuration(DockMotion.exitDuration)
             easing.type: Easing.OutCubic
         }
         onFinished: root.clear()
@@ -113,10 +113,10 @@ Item {
         anchors.fill: parent
         visible: !!root.entry && (root.entry.kind === "file" || root.entry.kind === "folder")
         info: ({
-                   url: root.entry ? root.entry.url : "",
-                   icon: root.entry ? root.entry.icon : "",
-                   isDirectory: !!root.entry && root.entry.kind === "folder"
-               })
+                url: root.entry ? root.entry.url : "",
+                icon: root.entry ? root.entry.icon : "",
+                isDirectory: !!root.entry && root.entry.kind === "folder"
+            })
     }
     MaterialSymbol {
         anchors.centerIn: parent
@@ -150,7 +150,7 @@ Item {
             anchors.centerIn: parent
             text: I18n.tr("Remove from Dock", "DockSurface")
             font.family: Fonts.ui
-            font.pixelSize: 12
+            font.pixelSize: Appearance.scaledFont(12)
             color: Appearance.colors.colOnSurface
         }
     }

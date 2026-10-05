@@ -13,6 +13,8 @@ import qs.modules.desktopcards
 import qs.modules.dock
 import qs.modules.regionselector
 import qs.modules.hotcorners
+import qs.modules.osd
+import qs.modules.switcher
 import qs.modules.sidebars
 import qs.shared.theme
 import qs.app.services
@@ -59,8 +61,7 @@ Item {
         ActionGateway.sessionLocker = sessionLocker;
         ActionGateway.settingsHost = settingsHost;
         SpotlightCatalog.actionExecutor = root.executeSearchAction;
-        SpotlightCatalog.keystoneAvailable = Qt.binding(() => keystone ? keystone.searchActionsAvailable :
-                                                                         false);
+        SpotlightCatalog.keystoneAvailable = Qt.binding(() => keystone ? keystone.searchActionsAvailable : false);
         ThemeService.reloadColors();
         FontService.refresh();
         I18nService.initialize();
@@ -96,6 +97,8 @@ Item {
     }
 
     RegionSelector {}
+    OsdSurface {}
+    WindowSwitcherSurface {}
 
     SidebarHostWindow {
         id: sidebarHost
@@ -315,6 +318,34 @@ Item {
     }
 
     IpcHandler {
+        target: "switcher"
+
+        function toggle(): string {
+            return WindowSwitcherService.toggle() ? "OK" : "EMPTY";
+        }
+
+        function next(): string {
+            WindowSwitcherService.step(1);
+            return "OK";
+        }
+
+        function previous(): string {
+            WindowSwitcherService.step(-1);
+            return "OK";
+        }
+
+        function activate(): string {
+            WindowSwitcherService.activate();
+            return "OK";
+        }
+
+        function close(): string {
+            WindowSwitcherService.close();
+            return "OK";
+        }
+    }
+
+    IpcHandler {
         target: "shell"
 
         function status(): string {
@@ -326,8 +357,7 @@ Item {
         }
 
         function isReady(): bool {
-            return ShellStartupService.currentStage === ShellStartupService.stageIpcReady
-                || ShellStartupService.currentStage === ShellStartupService.stageReady;
+            return ShellStartupService.currentStage === ShellStartupService.stageIpcReady || ShellStartupService.currentStage === ShellStartupService.stageReady;
         }
 
         function metrics(): string {

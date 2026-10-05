@@ -22,8 +22,7 @@ PanelWindow {
     // Geometry notifications arrive once per animated property, not once per
     // frame. Coalesce before walking the row and converting the IPC payload;
     // the native publisher's send throttle happens too late to save that work.
-    readonly property var animationTargetGeometry: [band.x, band.y, band.width, band.height, hideTranslation.x,
-        hideTranslation.y, scrollOffset, width, height, screen ? screen.name : "", edge]
+    readonly property var animationTargetGeometry: [band.x, band.y, band.width, band.height, hideTranslation.x, hideTranslation.y, scrollOffset, width, height, screen ? screen.name : "", edge]
     onAnimationTargetGeometryChanged: scheduleAnimationTargets()
 
     function scheduleAnimationTargets() {
@@ -41,17 +40,16 @@ PanelWindow {
             const artwork = item.artworkItem;
             const start = artwork.mapToItem(content, 0, 0);
             const end = artwork.mapToItem(content, artwork.width, artwork.height);
-            if (![start.x, start.y, end.x, end.y].every(value => isFinite(value)) || end.x <= start.x || end.y
-                    <= start.y)
+            if (![start.x, start.y, end.x, end.y].every(value => isFinite(value)) || end.x <= start.x || end.y <= start.y)
                 continue;
             for (const window of DockService.windowsFor(item.entryKey)) {
                 result.push({
-                                id: window.id,
-                                output: root.screen.name,
-                                layer_namespace: "nyxuri-shell-dock",
-                                edge: root.edge,
-                                rect: [start.x, start.y, end.x - start.x, end.y - start.y]
-                            });
+                    id: window.id,
+                    output: root.screen.name,
+                    layer_namespace: "nyxuri-shell-dock",
+                    edge: root.edge,
+                    rect: [start.x, start.y, end.x - start.x, end.y - start.y]
+                });
             }
         }
         NiriService.setWindowAnimationTargets(root.screen.name, result);
@@ -72,43 +70,24 @@ PanelWindow {
         return result;
     }
     readonly property real magnification: DockService.magnification ? DockService.magnificationScale : 1
-    readonly property var baseLayout: DockLayout.layout(kinds, DockService.iconSize, availableLength,
-                                                        magnification, 16, NaN, DockLayout.sectionBoundaries(
-                                                            kinds, DockService.pinnedAppCount))
-    readonly property real scrollOffset: horizontal ? icons.contentX - icons.originX : icons.contentY
-                                                      - icons.originY
-    readonly property real pointerInBase: pointerAxis - (axisLength - Math.min(baseLayout.baseLength,
-                                                                               availableLength)) / 2
-                                          + scrollOffset
+    readonly property var baseLayout: DockLayout.layout(kinds, DockService.iconSize, availableLength, magnification, 16, NaN, DockLayout.sectionBoundaries(kinds, DockService.pinnedAppCount))
+    readonly property real scrollOffset: horizontal ? icons.contentX - icons.originX : icons.contentY - icons.originY
+    readonly property real pointerInBase: pointerAxis - (axisLength - Math.min(baseLayout.baseLength, availableLength)) / 2 + scrollOffset
     readonly property bool dragInside: dragKey !== "" && insideDropBand(dragPoint)
-    readonly property int previewSource: dragKey ? DockService.rowIndex(dragKey) : externalOver &&
-                                                   !externalFiles && !dropTargetKey ? DockService.rowIndex(
-                                                                                          externalSourceKey) :
-                                                                                      -1
-    readonly property var preview: DockLayout.previewOrder(kinds, previewSource, (dragInside || externalOver
-                                                                                  && !externalFiles) &&
-                                                           !dropTargetKey ? insertion : -1, draggedEntry
-                                                           ? draggedEntry.kind : externalKind)
-    readonly property bool magnificationRequested: magnification > 1 && (dragInside || externalOver
-                                                                         || handoffKey !== "" || (!dragKey
-                                                                                                  && magnificationActive
-                                                                                                  && !DockService.externalDragActive))
+    readonly property int previewSource: dragKey ? DockService.rowIndex(dragKey) : externalOver && !externalFiles && !dropTargetKey ? DockService.rowIndex(externalSourceKey) : -1
+    readonly property var preview: DockLayout.previewOrder(kinds, previewSource, (dragInside || externalOver && !externalFiles) && !dropTargetKey ? insertion : -1, draggedEntry ? draggedEntry.kind : externalKind)
+    readonly property bool magnificationRequested: magnification > 1 && (dragInside || externalOver || handoffKey !== "" || (!dragKey && magnificationActive && !DockService.externalDragActive))
     // One continuous envelope for hover and drag, including an interrupted
     // entrance/exit. Never ease the moving centre or each derived icon slot.
     property real magnificationProgress: magnificationRequested ? 1 : 0
     Behavior on magnificationProgress {
         NumberAnimation {
-            duration: DockMotion.reflowDuration
+            duration: Appearance.motionDuration(DockMotion.reflowDuration)
             easing.type: Easing.OutCubic
         }
     }
     readonly property bool directMagnification: magnificationRequested || magnificationProgress > 0
-    readonly property var layout: DockLayout.layout(preview.kinds, baseLayout.size, availableLength,
-                                                    magnification, 16, pointerInBase,
-                                                    DockLayout.sectionBoundaries(preview.kinds,
-                                                                                 DockService.pinnedAppCount,
-                                                                                 preview.order),
-                                                    magnificationProgress)
+    readonly property var layout: DockLayout.layout(preview.kinds, baseLayout.size, availableLength, magnification, 16, pointerInBase, DockLayout.sectionBoundaries(preview.kinds, DockService.pinnedAppCount, preview.order), magnificationProgress)
     readonly property var slotsByIndex: {
         const result = [];
         for (let i = 0; i < preview.order.length; ++i) {
@@ -120,25 +99,15 @@ PanelWindow {
     readonly property real bandLength: Math.min(availableLength, Math.max(96, layout.length))
     readonly property real bandThickness: baseLayout.size * magnification + 36
     readonly property real restingThickness: baseLayout.size + 22
-    readonly property bool shown: !DockService.autoHide || revealed || DockService.externalDragActive
-                                  || dragKey !== "" || popupKey !== "" || dragGhost.active || handoffKey
-                                  !== ""
+    readonly property bool shown: !DockService.autoHide || revealed || DockService.externalDragActive || dragKey !== "" || popupKey !== "" || dragGhost.active || handoffKey !== ""
 
-    readonly property bool interacting: root.pointerOverDock || edgeHover.hovered || popup.hovered
-                                        || filePopup.hovered && filePopup.visible || dropArea.containsDrag
-                                        || dragKey !== "" || DockService.externalDragActive
-                                        || dragGhost.active || handoffKey !== ""
+    readonly property bool interacting: root.pointerOverDock || edgeHover.hovered || popup.hovered || filePopup.hovered && filePopup.visible || dropArea.containsDrag || dragKey !== "" || DockService.externalDragActive || dragGhost.active || handoffKey !== ""
     property bool revealed: false
     property real pointerAxis: 0
     property bool magnificationActive: false
     // Track the pointer above the popup/delegate hierarchy. Disabling a closing
     // fan must not look like leaving the Dock when the pointer hasn't moved.
-    readonly property bool pointerOverDock: shown && (pointerOverInteractiveArea || surfaceHover.hovered
-                                                      && surfaceHover.point.position.x >= dockInputArea.x
-                                                      && surfaceHover.point.position.x < dockInputArea.x
-                                                      + dockInputArea.width && surfaceHover.point.position.y
-                                                      >= dockInputArea.y && surfaceHover.point.position.y
-                                                      < dockInputArea.y + dockInputArea.height)
+    readonly property bool pointerOverDock: shown && (pointerOverInteractiveArea || surfaceHover.hovered && surfaceHover.point.position.x >= dockInputArea.x && surfaceHover.point.position.x < dockInputArea.x + dockInputArea.width && surfaceHover.point.position.y >= dockInputArea.y && surfaceHover.point.position.y < dockInputArea.y + dockInputArea.height)
     readonly property bool pointerOverInteractiveArea: {
         if (!shown)
             return false;
@@ -154,8 +123,7 @@ PanelWindow {
     onPointerOverInteractiveAreaChanged: {
         if (pointerOverInteractiveArea) {
             if (!trackingFileDrag)
-                pointerAxis = horizontal ? surfaceHover.point.scenePosition.x :
-                                           surfaceHover.point.scenePosition.y;
+                pointerAxis = horizontal ? surfaceHover.point.scenePosition.x : surfaceHover.point.scenePosition.y;
             magnificationExit.stop();
             magnificationActive = true;
         } else {
@@ -190,8 +158,7 @@ PanelWindow {
     property string externalSourceKey: ""
     property string dropTargetKey: ""
     property var externalEntries: []
-    readonly property bool externalFiles: externalEntries.some(entry => entry.kind === "file" || entry.kind
-                                                                        === "folder")
+    readonly property bool externalFiles: externalEntries.some(entry => entry.kind === "file" || entry.kind === "folder")
     readonly property bool trackingFileDrag: externalOver && externalFiles && DockService.magnification
     property bool fileDragPositionPending: false
     onTrackingFileDragChanged: {
@@ -220,17 +187,12 @@ PanelWindow {
     readonly property var draggedEntry: {
         return dragKey && dragGhost.entry ? dragGhost.entry : null;
     }
-    readonly property bool removeOnRelease: !!draggedEntry && draggedEntry.pinned
-                                            && DockLayout.removalDistance(edge, dragPoint.x, dragPoint.y,
-                                                                          width, height, edgeOffset)
-                                            > bandThickness + 48
+    readonly property bool removeOnRelease: !!draggedEntry && draggedEntry.pinned && DockLayout.removalDistance(edge, dragPoint.x, dragPoint.y, width, height, edgeOffset) > bandThickness + 48
 
     function targetAt(point) {
         if (!insideDropBand(point))
             return null;
-        const axis = (horizontal ? point.x : point.y) - (axisLength - Math.min(baseLayout.baseLength,
-                                                                               availableLength)) / 2
-              + scrollOffset;
+        const axis = (horizontal ? point.x : point.y) - (axisLength - Math.min(baseLayout.baseLength, availableLength)) / 2 + scrollOffset;
         for (let i = 0; i < baseLayout.slots.length; ++i) {
             const slot = baseLayout.slots[i];
             if (Math.abs(axis - slot.center) < slot.span * 0.3)
@@ -243,8 +205,7 @@ PanelWindow {
     function fileTargetAt(point) {
         for (let i = 0; i < iconItems.count; ++i) {
             const item = iconItems.itemAt(i) as DockItem;
-            if (!item || visualEntries.get(i).retiring || item.dragged || (item.kind !== "app" && item.kind
-                                                                           !== "trash"))
+            if (!item || visualEntries.get(i).retiring || item.dragged || (item.kind !== "app" && item.kind !== "trash"))
                 continue;
             const artwork = item.artworkItem;
             const local = artwork.mapFromItem(content, point.x, point.y);
@@ -255,12 +216,7 @@ PanelWindow {
     }
     function updateDropTarget() {
         const candidate = root.externalFiles ? root.fileTargetAt(root.dropPoint) : null;
-        root.dropTargetKey = candidate && !DesktopFiles.busy && (candidate.kind === "trash"
-                                                                 && DesktopFiles.trashAvailable
-                                                                 || candidate.kind === "app"
-                                                                 && DesktopFiles.canOpenWith(
-                                                                     candidate.desktopId)) ? candidate.key :
-                                                                                             "";
+        root.dropTargetKey = candidate && !DesktopFiles.busy && (candidate.kind === "trash" && DesktopFiles.trashAvailable || candidate.kind === "app" && DesktopFiles.canOpenWith(candidate.desktopId)) ? candidate.key : "";
         root.insertion = root.dropTargetKey ? -1 : root.insertionAt(root.dropPoint);
     }
     property var fileRegions: []
@@ -268,8 +224,8 @@ PanelWindow {
         for (const region of fileRegions)
             region.destroy();
         fileRegions = filePopup.inputItems.map(item => fileRegionComponent.createObject(fileInputRegion, {
-                                                                                            sourceItem: item
-                                                                                        }));
+                sourceItem: item
+            }));
         fileInputRegion.regions = fileRegions;
     }
     Component {
@@ -311,8 +267,7 @@ PanelWindow {
         }
     }
     function hoverEntry(key) {
-        if (dragKey || dragGhost.active || handoffKey || DockService.externalDragActive || contextMenu
-                || filePopupActive)
+        if (dragKey || dragGhost.active || handoffKey || DockService.externalDragActive || contextMenu || filePopupActive)
             return;
         hoverKey = key;
         closeTimer.stop();
@@ -348,18 +303,14 @@ PanelWindow {
         hoverTimer.stop();
         const slot = slotForKey(key);
         popupIconSize = slot ? slot.size : baseLayout.size;
-        popupAxis = slot ? (axisLength - bandLength) / 2 + slot.start + slot.span / 2 - scrollOffset :
-                           pointerAxis;
+        popupAxis = slot ? (axisLength - bandLength) / 2 + slot.start + slot.span / 2 - scrollOffset : pointerAxis;
         // Anchor to visible artwork / tray, not the oversized interaction band.
         // Snapshot the edge so the popup stays put when the pointer moves into
         // it and the dock's hover magnification subsequently settles down.
         const trayStart = glass.mapToItem(content, 0, 0);
         const trayEnd = glass.mapToItem(content, glass.width, glass.height);
         popupCross = horizontal ? trayStart.y : edge === "left" ? trayEnd.x : trayStart.x;
-        popupSourceCenter = horizontal ? Qt.point(popupAxis, (trayStart.y + trayEnd.y) / 2) : Qt.point((
-                                                                                                           trayStart.x
-                                                                                                           + trayEnd.x)
-                                                                                                       / 2, popupAxis);
+        popupSourceCenter = horizontal ? Qt.point(popupAxis, (trayStart.y + trayEnd.y) / 2) : Qt.point((trayStart.x + trayEnd.x) / 2, popupAxis);
         for (let i = 0; i < iconItems.count; ++i) {
             const item = iconItems.itemAt(i);
             if (!item || item.entryKey !== key)
@@ -370,10 +321,7 @@ PanelWindow {
             const end = artwork.mapToItem(content, artwork.width, artwork.height);
             popupSourceCenter = Qt.point((start.x + end.x) / 2, (start.y + end.y) / 2);
             popupAxis = horizontal ? (start.x + end.x) / 2 : (start.y + end.y) / 2;
-            popupCross = horizontal ? Math.min(popupCross, start.y) : edge === "left" ? Math.max(popupCross,
-                                                                                                 end.x) : Math.min(
-                                                                                            popupCross,
-                                                                                            start.x);
+            popupCross = horizontal ? Math.min(popupCross, start.y) : edge === "left" ? Math.max(popupCross, end.x) : Math.min(popupCross, start.x);
             break;
         }
         popupKey = key;
@@ -402,12 +350,7 @@ PanelWindow {
         const coordinate = (horizontal ? point.x : point.y) - origin + scrollOffset;
         const kind = draggedEntry ? draggedEntry.kind : externalKind;
         const files = kind === "file" || kind === "folder";
-        const candidate = Math.max(files ? DockService.fileStartIndex : 0, Math.min(files
-                                                                                    ? DockService.model.count
-                                                                                      - 1 : DockService.pinnedAppCount,
-                                                                                    DockLayout.insertionIndex(
-                                                                                        baseLayout.slots,
-                                                                                        coordinate)));
+        const candidate = Math.max(files ? DockService.fileStartIndex : 0, Math.min(files ? DockService.model.count - 1 : DockService.pinnedAppCount, DockLayout.insertionIndex(baseLayout.slots, coordinate)));
         if (insertion >= 0 && Math.abs(candidate - insertion) === 1) {
             const crossed = baseLayout.slots[Math.min(candidate, insertion)];
             if (crossed && Math.abs(coordinate - crossed.center) < 6)
@@ -417,9 +360,7 @@ PanelWindow {
     }
     function insideDropBand(point) {
         const major = horizontal ? point.x : point.y;
-        return major >= 0 && major <= axisLength && DockLayout.removalDistance(edge, point.x, point.y, width, height,
-                                                                               edgeOffset) <= bandThickness
-                + 24;
+        return major >= 0 && major <= axisLength && DockLayout.removalDistance(edge, point.x, point.y, width, height, edgeOffset) <= bandThickness + 24;
     }
     function slotForKey(key) {
         const revision = DockService.revision;
@@ -427,8 +368,7 @@ PanelWindow {
     }
     function copyEntry(entry) {
         const value = {};
-        for (const role of ["key", "kind", "name", "icon", "symbol", "pinned", "focused", "launching",
-                            "available", "windowCount"])
+        for (const role of ["key", "kind", "name", "icon", "symbol", "pinned", "focused", "launching", "available", "windowCount"])
             value[role] = entry[role];
         value.url = String(entry.url || "");
         return value;
@@ -547,12 +487,7 @@ PanelWindow {
             return;
         }
         const major = (axisLength - bandLength) / 2 + slot.start + slot.span / 2 - scrollOffset;
-        const cross = horizontal ? height - edgeOffset - 12 - slot.size / 2 : edge === "left" ? edgeOffset
-                                                                                                + 10 + slot.size
-                                                                                                / 2 : width
-                                                                                                - edgeOffset
-                                                                                                - 10 - slot.size
-                                                                                                / 2;
+        const cross = horizontal ? height - edgeOffset - 12 - slot.size / 2 : edge === "left" ? edgeOffset + 10 + slot.size / 2 : width - edgeOffset - 10 - slot.size / 2;
         dragGhost.land(horizontal ? Qt.point(major, cross) : Qt.point(cross, major), slot.size);
     }
     function cancelDrag() {
@@ -565,13 +500,9 @@ PanelWindow {
     }
     function scrollBy(amount) {
         if (horizontal)
-            icons.contentX = Math.max(icons.originX, Math.min(icons.originX + Math.max(0, icons.contentWidth
-                                                                                       - icons.width),
-                                                              icons.contentX + amount));
+            icons.contentX = Math.max(icons.originX, Math.min(icons.originX + Math.max(0, icons.contentWidth - icons.width), icons.contentX + amount));
         else
-            icons.contentY = Math.max(icons.originY, Math.min(icons.originY + Math.max(0, icons.contentHeight
-                                                                                       - icons.height),
-                                                              icons.contentY + amount));
+            icons.contentY = Math.max(icons.originY, Math.min(icons.originY + Math.max(0, icons.contentHeight - icons.height), icons.contentY + amount));
     }
 
     ListModel {
@@ -602,8 +533,7 @@ PanelWindow {
     WlrLayershell.namespace: "nyxuri-shell-dock"
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.exclusionMode: ExclusionMode.Normal
-    WlrLayershell.keyboardFocus: dragKey || contextMenu || filePopupActive ? WlrKeyboardFocus.Exclusive :
-                                                                             WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: dragKey || contextMenu || filePopupActive ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     onInteractingChanged: updateInteraction()
     onFilePopupActiveChanged: updateInteraction()
@@ -644,8 +574,7 @@ PanelWindow {
         id: hoverTimer
         interval: 450
         onTriggered: {
-            if (root.pendingPopupKey && root.pendingPopupKey === root.hoverKey && root.pointerOverDock &&
-                    !root.dragKey && !dragGhost.active)
+            if (root.pendingPopupKey && root.pendingPopupKey === root.hoverKey && root.pointerOverDock && !root.dragKey && !dragGhost.active)
                 root.showPopup(root.pendingPopupKey, false);
         }
     }
@@ -701,10 +630,8 @@ PanelWindow {
 
         Item {
             id: edgeTrigger
-            width: root.horizontal ? Math.max(96, Math.min(root.availableLength, root.baseLayout.baseLength)) :
-                                     3
-            height: root.horizontal ? 3 : Math.max(96, Math.min(root.availableLength,
-                                                                root.baseLayout.baseLength))
+            width: root.horizontal ? Math.max(96, Math.min(root.availableLength, root.baseLayout.baseLength)) : 3
+            height: root.horizontal ? 3 : Math.max(96, Math.min(root.availableLength, root.baseLayout.baseLength))
             x: root.horizontal ? (parent.width - width) / 2 : root.edge === "left" ? 0 : parent.width - width
             y: root.horizontal ? parent.height - height : (parent.height - height) / 2
             HoverHandler {
@@ -743,9 +670,7 @@ PanelWindow {
             id: band
             width: root.horizontal ? root.bandLength : root.bandThickness
             height: root.horizontal ? root.bandThickness : root.bandLength
-            x: root.horizontal ? (parent.width - width) / 2 : root.edge === "left" ? root.edgeOffset :
-                                                                                     parent.width - width
-                                                                                     - root.edgeOffset
+            x: root.horizontal ? (parent.width - width) / 2 : root.edge === "left" ? root.edgeOffset : parent.width - width - root.edgeOffset
             y: root.horizontal ? parent.height - height - root.edgeOffset : (parent.height - height) / 2
             opacity: root.shown ? 1 : 0
             // Keep effective visibility (and image sources/folder loaders)
@@ -757,39 +682,39 @@ PanelWindow {
             Behavior on width {
                 enabled: root.horizontal && !root.directMagnification
                 NumberAnimation {
-                    duration: DockMotion.reflowDuration
+                    duration: Appearance.motionDuration(DockMotion.reflowDuration)
                     easing.type: Easing.OutCubic
                 }
             }
             Behavior on height {
                 enabled: !root.horizontal && !root.directMagnification
                 NumberAnimation {
-                    duration: DockMotion.reflowDuration
+                    duration: Appearance.motionDuration(DockMotion.reflowDuration)
                     easing.type: Easing.OutCubic
                 }
             }
             transform: Translate {
                 id: hideTranslation
-                x: root.horizontal ? 0 : root.shown ? 0 : root.edge === "left" ? -band.width
-                                                                                 - root.edgeOffset :
-                                                                                 band.width + root.edgeOffset
+                x: root.horizontal ? 0 : root.shown ? 0 : root.edge === "left" ? -band.width - root.edgeOffset : band.width + root.edgeOffset
                 y: root.horizontal && !root.shown ? band.height + root.edgeOffset : 0
                 Behavior on x {
                     NumberAnimation {
-                        duration: 220
+                        duration: Appearance.motionDuration(220)
                         easing.type: Easing.OutCubic
                     }
                 }
                 Behavior on y {
                     NumberAnimation {
-                        duration: 220
+                        duration: Appearance.motionDuration(220)
                         easing.type: Easing.OutCubic
                     }
                 }
             }
             Behavior on opacity {
                 NumberAnimation {
-                    duration: 180
+                    duration: Appearance.motionDuration(180)
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Appearance.animationCurves.standard
                 }
             }
 
@@ -845,8 +770,7 @@ PanelWindow {
                     along: Sizes.notchCurveAlong
                     depth: Sizes.notchCurveDepth
                     fillColor: glass.color
-                    anchors.right: root.horizontal ? parent.left : root.edge === "right" ? parent.right :
-                                                                                           undefined
+                    anchors.right: root.horizontal ? parent.left : root.edge === "right" ? parent.right : undefined
                     anchors.left: !root.horizontal && root.edge === "left" ? parent.left : undefined
                     anchors.bottom: root.horizontal ? parent.bottom : parent.top
                 }
@@ -857,8 +781,7 @@ PanelWindow {
                     along: Sizes.notchCurveAlong
                     depth: Sizes.notchCurveDepth
                     fillColor: glass.color
-                    anchors.left: root.horizontal ? parent.right : root.edge === "left" ? parent.left :
-                                                                                          undefined
+                    anchors.left: root.horizontal ? parent.right : root.edge === "left" ? parent.left : undefined
 
                     anchors.right: !root.horizontal && root.edge === "right" ? parent.right : undefined
                     anchors.top: !root.horizontal ? parent.bottom : undefined
@@ -893,14 +816,14 @@ PanelWindow {
                         Behavior on x {
                             enabled: !root.directMagnification
                             NumberAnimation {
-                                duration: DockMotion.reflowDuration
+                                duration: Appearance.motionDuration(DockMotion.reflowDuration)
                                 easing.type: Easing.OutCubic
                             }
                         }
                         Behavior on y {
                             enabled: !root.directMagnification
                             NumberAnimation {
-                                duration: DockMotion.reflowDuration
+                                duration: Appearance.motionDuration(DockMotion.reflowDuration)
                                 easing.type: Easing.OutCubic
                             }
                         }
@@ -911,8 +834,7 @@ PanelWindow {
                     id: iconItems
                     property var inputRegions: []
                     onItemAdded: (index, item) => inputRegions = inputRegions.concat([item.inputRegion])
-                    onItemRemoved: (index, item) => inputRegions = inputRegions.filter(region => region
-                                                                                                 !== item.inputRegion)
+                    onItemRemoved: (index, item) => inputRegions = inputRegions.filter(region => region !== item.inputRegion)
                     model: visualEntries
                     onCountChanged: root.scheduleAnimationTargets()
                     delegate: DockItem {
@@ -925,9 +847,7 @@ PanelWindow {
                         property bool appeared: false
                         // mapToItem() does not track transform dependencies. Each
                         // delegate only invalidates the shared deferred snapshot.
-                        readonly property var animationTargetGeometry: [x, y, width, height, artworkItem.x,
-                            artworkItem.y, artworkItem.width, artworkItem.height, artworkItem.scale, kind, key,
-                            retiring, dragged]
+                        readonly property var animationTargetGeometry: [x, y, width, height, artworkItem.x, artworkItem.y, artworkItem.width, artworkItem.height, artworkItem.scale, kind, key, retiring, dragged]
                         onAnimationTargetGeometryChanged: root.scheduleAnimationTargets()
                         readonly property bool awaitingHandoff: root.handoffKey === key
                         property real retirementAxis: 0
@@ -943,10 +863,10 @@ PanelWindow {
                         // Position is keyed by application, never by the order
                         // in which presentation objects happened to be created.
                         property var lastSlot: ({
-                                                    start: 12,
-                                                    span: 0,
-                                                    size: root.baseLayout.size
-                                                })
+                                start: 12,
+                                span: 0,
+                                size: root.baseLayout.size
+                            })
                         readonly property int slotIndex: {
                             const revision = DockService.revision;
                             const index = DockService.rowIndex(key);
@@ -957,11 +877,10 @@ PanelWindow {
                         // restarts a coordinate animation or trails the cursor.
                         property real visualSlotIndex: Math.max(0, slotIndex)
                         Behavior on visualSlotIndex {
-                            enabled: dockItem.appeared && !dockItem.retiring && dockItem.slotIndex >= 0
-                                     && root.directMagnification
+                            enabled: dockItem.appeared && !dockItem.retiring && dockItem.slotIndex >= 0 && root.directMagnification
                             NumberAnimation {
                                 id: reorderAnimation
-                                duration: DockMotion.reflowDuration
+                                duration: Appearance.motionDuration(DockMotion.reflowDuration)
                                 easing.type: Easing.OutCubic
                             }
                         }
@@ -990,28 +909,18 @@ PanelWindow {
                         }
                         entryKey: key
                         edge: root.edge
-                        x: root.horizontal ? retiring ? retirementAxis - band.x + root.scrollOffset :
-                                                        slot.start : 0
-                        y: root.horizontal ? 0 : retiring ? retirementAxis - band.y + root.scrollOffset :
-                                                            slot.start
+                        x: root.horizontal ? retiring ? retirementAxis - band.x + root.scrollOffset : slot.start : 0
+                        y: root.horizontal ? 0 : retiring ? retirementAxis - band.y + root.scrollOffset : slot.start
                         width: root.horizontal ? retiring ? retirementSpan : slot.span : icons.width
                         height: root.horizontal ? icons.height : retiring ? retirementSpan : slot.span
                         iconSize: retiring ? retirementSize : slot.size
                         directMagnification: root.directMagnification
                         restingIconSize: root.baseLayout.size
-                        contextActive: root.popupKey === key && (root.contextMenu || kind === "folder"
-                                                                 && filePopup.list)
-                        folderExpanded: kind === "folder" && root.popupKey === key && !root.contextMenu &&
-                                        !filePopup.list && !filePopup.closing
+                        contextActive: root.popupKey === key && (root.contextMenu || kind === "folder" && filePopup.list)
+                        folderExpanded: kind === "folder" && root.popupKey === key && !root.contextMenu && !filePopup.list && !filePopup.closing
 
-                        showTooltip: !root.contextMenu && (kind === "app" ? root.popupKey === key && (
-                                                                                windowCount === 0 ||
-                                                                                !DockService.showThumbnails) :
-                                                                            !spacer && root.hoverKey === key
-                                                                            && root.popupKey !== key)
-                        dragged: key === root.dragKey || (dragGhost.entry && dragGhost.entry.key === key) || (
-                                     root.externalOver && !root.externalFiles && !root.dropTargetKey
-                                     && root.externalSourceKey === key)
+                        showTooltip: !root.contextMenu && (kind === "app" ? root.popupKey === key && (windowCount === 0 || !DockService.showThumbnails) : !spacer && root.hoverKey === key && root.popupKey !== key)
+                        dragged: key === root.dragKey || (dragGhost.entry && dragGhost.entry.key === key) || (root.externalOver && !root.externalFiles && !root.dropTargetKey && root.externalSourceKey === key)
                         enabled: !retiring && !awaitingHandoff
                         presence: 0
                         function animatePresence() {
@@ -1021,8 +930,7 @@ PanelWindow {
                                 return;
                             }
                             presenceAnimation.to = retiring ? 0 : 1;
-                            presenceAnimation.duration = retiring ? DockMotion.exitDuration :
-                                                                    DockMotion.enterDuration;
+                            presenceAnimation.duration = Appearance.motionDuration(retiring ? DockMotion.exitDuration : DockMotion.enterDuration);
                             presenceAnimation.start();
                         }
                         onAwaitingHandoffChanged: {
@@ -1052,31 +960,29 @@ PanelWindow {
                         Behavior on x {
                             enabled: dockItem.appeared && !dockItem.retiring && !root.directMagnification
                             NumberAnimation {
-                                duration: DockMotion.reflowDuration
+                                duration: Appearance.motionDuration(DockMotion.reflowDuration)
                                 easing.type: Easing.OutCubic
                             }
                         }
                         Behavior on y {
                             enabled: dockItem.appeared && !dockItem.retiring && !root.directMagnification
                             NumberAnimation {
-                                duration: DockMotion.reflowDuration
+                                duration: Appearance.motionDuration(DockMotion.reflowDuration)
                                 easing.type: Easing.OutCubic
                             }
                         }
                         Behavior on width {
-                            enabled: dockItem.appeared && !dockItem.retiring && root.horizontal &&
-                                     !root.directMagnification
+                            enabled: dockItem.appeared && !dockItem.retiring && root.horizontal && !root.directMagnification
 
                             NumberAnimation {
-                                duration: DockMotion.reflowDuration
+                                duration: Appearance.motionDuration(DockMotion.reflowDuration)
                                 easing.type: Easing.OutCubic
                             }
                         }
                         Behavior on height {
-                            enabled: dockItem.appeared && !dockItem.retiring && !root.horizontal &&
-                                     !root.directMagnification
+                            enabled: dockItem.appeared && !dockItem.retiring && !root.horizontal && !root.directMagnification
                             NumberAnimation {
-                                duration: DockMotion.reflowDuration
+                                duration: Appearance.motionDuration(DockMotion.reflowDuration)
                                 easing.type: Easing.OutCubic
                             }
                         }
@@ -1087,10 +993,8 @@ PanelWindow {
                         }
                         onHovered: key => root.hoverEntry(key)
                         onHoverLeft: key => root.leaveEntry(key)
-                        dropTarget: root.dropTargetKey === key || !!root.dragKey && root.targetAt(root.dragPoint)
-                                    ?.key === key && kind === "trash"
-                        dropHint: kind === "trash" ? I18n.tr("Move to Trash") : I18n.tr("Open with %1").arg(
-                                                         name)
+                        dropTarget: root.dropTargetKey === key || !!root.dragKey && root.targetAt(root.dragPoint)?.key === key && kind === "trash"
+                        dropHint: kind === "trash" ? I18n.tr("Move to Trash") : I18n.tr("Open with %1").arg(name)
                         onActivated: key => {
                             root.dragCancelled = false;
                             if (kind === "folder") {
@@ -1107,8 +1011,7 @@ PanelWindow {
                             }
                         }
                         onContextRequested: key => root.showPopup(key, true)
-                        onDragMoved: (key, position, offset, size) => root.moveDrag(key, position, offset,
-                                                                                    size)
+                        onDragMoved: (key, position, offset, size) => root.moveDrag(key, position, offset, size)
                         onDragReleased: (key, position) => root.finishDrag(key, position)
                         onDragCancelled: {
                             root.cancelDrag();
@@ -1125,8 +1028,7 @@ PanelWindow {
                 WheelHandler {
                     target: null
                     onWheel: event => {
-                        const delta = event.pixelDelta.y || event.pixelDelta.x || event.angleDelta.y
-                              || event.angleDelta.x;
+                        const delta = event.pixelDelta.y || event.pixelDelta.x || event.angleDelta.y || event.angleDelta.x;
                         root.scrollBy(-delta);
                         event.accepted = true;
                     }
@@ -1143,16 +1045,9 @@ PanelWindow {
                     if (!drag.accepted)
                         return;
                     root.cancelExternalHandoff(root.handoffSerial);
-                    root.externalEntries = DockService.dropEntries(drag.getDataAsString(
-                                                                       DockService.dragMimeType), drag.urls);
+                    root.externalEntries = DockService.dropEntries(drag.getDataAsString(DockService.dragMimeType), drag.urls);
                     root.externalKind = root.externalEntries.length ? root.externalEntries[0].kind : "app";
-                    root.externalSourceKey = root.externalEntries.length === 1 ? (root.externalKind === "app"
-                                                                                  ? "app:"
-                                                                                    + root.externalEntries[0].desktopId :
-                                                                                    root.externalFiles
-                                                                                    ? "file:"
-                                                                                      + root.externalEntries[0].url :
-                                                                                      "") : "";
+                    root.externalSourceKey = root.externalEntries.length === 1 ? (root.externalKind === "app" ? "app:" + root.externalEntries[0].desktopId : root.externalFiles ? "file:" + root.externalEntries[0].url : "") : "";
                     root.dropPoint = band.mapToItem(content, drag.x, drag.y);
                     root.externalOver = true;
                     root.pointerAxis = root.horizontal ? root.dropPoint.x : root.dropPoint.y;
@@ -1191,8 +1086,7 @@ PanelWindow {
                         const trash = target.kind === "trash";
                         const desktopId = String(target.desktopId);
                         const operation = () => {
-                            const ok = trash ? DesktopFiles.moveToTrash(urls) : DesktopFiles.openWith(
-                                                   desktopId, urls);
+                            const ok = trash ? DesktopFiles.moveToTrash(urls) : DesktopFiles.openWith(desktopId, urls);
                             if (!ok)
                                 DockService.fileError = I18n.tr("The file operation could not be started.");
                         };
@@ -1208,8 +1102,7 @@ PanelWindow {
                         root.insertion = -1;
                         return;
                     }
-                    const accepted = DockService.acceptDrop(text, drop.urls, DockService.pinIndexForSlot(
-                                                                root.insertion, root.externalKind));
+                    const accepted = DockService.acceptDrop(text, drop.urls, DockService.pinIndexForSlot(root.insertion, root.externalKind));
                     let landingEntry = null;
                     if (accepted && incoming.length === 1) {
                         if (incoming[0].kind === "app")
@@ -1247,38 +1140,24 @@ PanelWindow {
                 visible: DockService.model.count === 0
                 text: I18n.tr("Drop apps here")
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: Appearance.scaledFont(12)
                 color: Appearance.colors.colOnSurfaceVariant
             }
         }
 
         DockPreviewPopup {
             id: popup
-            visible: !root.filePopupActive && root.popupKey !== "" && !!entry && (root.contextMenu || (
-                                                                                      DockService.showThumbnails
-                                                                                      && windows.length > 0))
+            visible: !root.filePopupActive && root.popupKey !== "" && !!entry && (root.contextMenu || (DockService.showThumbnails && windows.length > 0))
             entryKey: root.popupKey
             outputName: root.screen.name
-            maximumWidth: root.horizontal ? Math.max(0, root.width - 32) : Math.max(0, (root.edge === "left"
-                                                                                        ? root.width
-                                                                                          - root.popupCross :
-                                                                                          root.popupCross)
-                                                                                    - 24)
+            maximumWidth: root.horizontal ? Math.max(0, root.width - 32) : Math.max(0, (root.edge === "left" ? root.width - root.popupCross : root.popupCross) - 24)
             contextMenu: root.contextMenu
             edge: root.edge
             anchorOffset: root.popupAxis - (root.horizontal ? x : y)
             readonly property real dockGap: root.contextMenu ? 4 : 8
-            maximumHeight: root.horizontal ? Math.max(0, root.popupCross - dockGap - 16) : Math.max(0, root.height
-                                                                                                    - 32)
-            x: root.horizontal ? Math.max(16, Math.min(root.width - width - 16, root.popupAxis - (
-                                                           root.contextMenu ? 26 : width / 2))) : root.edge
-                                 === "left" ? root.popupCross + dockGap : root.popupCross - width - dockGap
-            y: root.horizontal ? root.popupCross - height - dockGap : Math.max(16, Math.min(root.height
-                                                                                            - height - 16,
-                                                                                            root.popupAxis - (
-                                                                                                root.contextMenu
-                                                                                                ? 26 : height
-                                                                                                  / 2)))
+            maximumHeight: root.horizontal ? Math.max(0, root.popupCross - dockGap - 16) : Math.max(0, root.height - 32)
+            x: root.horizontal ? Math.max(16, Math.min(root.width - width - 16, root.popupAxis - (root.contextMenu ? 26 : width / 2))) : root.edge === "left" ? root.popupCross + dockGap : root.popupCross - width - dockGap
+            y: root.horizontal ? root.popupCross - height - dockGap : Math.max(16, Math.min(root.height - height - 16, root.popupAxis - (root.contextMenu ? 26 : height / 2)))
             onDismissed: root.dismissPopup()
         }
 
@@ -1294,17 +1173,10 @@ PanelWindow {
             iconSize: root.popupIconSize
             maximumFanOutset: labelsLeft ? root.width - root.popupAxis - 16 : root.popupAxis - 16
             readonly property real iconInset: fan ? fanIconInset : contextMenu || list ? 68 : width / 2
-            maximumWidth: root.horizontal ? root.width - 32 : (root.edge === "left" ? root.width
-                                                                                      - root.popupCross :
-                                                                                      root.popupCross) - 24
+            maximumWidth: root.horizontal ? root.width - 32 : (root.edge === "left" ? root.width - root.popupCross : root.popupCross) - 24
             maximumHeight: root.horizontal ? root.popupCross - 24 : root.height - 32
-            x: root.horizontal ? Math.max(16, Math.min(root.width - width - 16, root.popupAxis - (labelsLeft
-                                                                                                  ? width - iconInset :
-                                                                                                    iconInset))) :
-                                 root.edge === "left" ? root.popupCross + 6 : root.popupCross - width - 6
-            y: root.horizontal ? root.popupCross - height - 6 : Math.max(16, Math.min(root.height - height - 16,
-                                                                                      root.popupAxis - height
-                                                                                      / 2))
+            x: root.horizontal ? Math.max(16, Math.min(root.width - width - 16, root.popupAxis - (labelsLeft ? width - iconInset : iconInset))) : root.edge === "left" ? root.popupCross + 6 : root.popupCross - width - 6
+            y: root.horizontal ? root.popupCross - height - 6 : Math.max(16, Math.min(root.height - height - 16, root.popupAxis - height / 2))
             onDismissed: root.finishDismissPopup()
         }
 
@@ -1337,8 +1209,7 @@ PanelWindow {
     CompositorBlurRegion {
         targetWindow: root
         backgroundItem: glass
-        additionalBackgroundItems: (popup.visible ? popup.blurBackgroundItems : []).concat(
-                                       filePopup.blurBackgroundItems, root.folderButtonItems)
+        additionalBackgroundItems: (popup.visible ? popup.blurBackgroundItems : []).concat(filePopup.blurBackgroundItems, root.folderButtonItems)
         additionalRegions: filePopup.blurRegions
         blurEnabled: root.shown
         radius: 20

@@ -323,7 +323,7 @@ Item {
 
         SequentialAnimation {
             PauseAnimation {
-                duration: Animations.durations.small
+                duration: Appearance.motionDuration(Animations.durations.small)
             }
 
             NumberAnimation {

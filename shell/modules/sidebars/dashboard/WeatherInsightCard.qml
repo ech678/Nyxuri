@@ -51,7 +51,7 @@ Rectangle {
             text: root.icon
             color: root.iconColor
             font.family: Fonts.materialSymbolsOutlined
-            font.pixelSize: 18
+            font.pixelSize: Appearance.scaledFont(18)
             anchors.verticalCenter: parent.verticalCenter
         }
 
@@ -60,7 +60,7 @@ Rectangle {
             text: root.title
             color: root.titleColor
             font.family: Fonts.expressive
-            font.pixelSize: 13
+            font.pixelSize: Appearance.scaledFont(13)
             font.bold: true
             anchors.verticalCenter: parent.verticalCenter
         }

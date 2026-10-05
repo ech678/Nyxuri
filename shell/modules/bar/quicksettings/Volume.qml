@@ -38,12 +38,10 @@ Item {
                     Layout.alignment: Qt.AlignCenter
 
                     value: VolumeService.sinkVolume
-                    progressColor: (VolumeService.sinkMuted || VolumeService.sinkVolume <= 0)
-                                   ? Appearance.colors.colError : Appearance.colors.colPrimary
+                    progressColor: (VolumeService.sinkMuted || VolumeService.sinkVolume <= 0) ? Appearance.colors.colError : Appearance.colors.colPrimary
                     trackColor: Appearance.colors.colLayer2Hover
                     handleColor: Appearance.colors.colOnSurface
-                    iconColor: (VolumeService.sinkMuted || VolumeService.sinkVolume <= 0)
-                               ? Appearance.colors.colError : Appearance.colors.colOnSurface
+                    iconColor: (VolumeService.sinkMuted || VolumeService.sinkVolume <= 0) ? Appearance.colors.colError : Appearance.colors.colOnSurface
 
                     icon: {
                         if (VolumeService.isHeadphone)
@@ -61,7 +59,7 @@ Item {
                     visible: root.showValue
                     text: Math.round(VolumeService.sinkVolume * 100) + "%"
                     font.family: Fonts.numeric
-                    font.pixelSize: 12
+                    font.pixelSize: Appearance.scaledFont(12)
                     color: Appearance.colors.colOnSurface
                     Layout.alignment: Qt.AlignCenter
                 }
@@ -70,9 +68,7 @@ Item {
         Accessible.name: tooltip.text
 
         wheelAction: wheel => {
-            const delta = wheel.angleDelta.y || wheel.angleDelta.x || wheel.pixelDelta.y
-                  || wheel.pixelDelta.x;
-
+            const delta = wheel.angleDelta.y || wheel.angleDelta.x || wheel.pixelDelta.y || wheel.pixelDelta.x;
 
             if (!delta)
                 return;
@@ -95,8 +91,6 @@ Item {
     PopupToolTip {
         id: tooltip
         extraVisibleCondition: mouseArea.pointerHovered
-        text: (VolumeService.sinkMuted ? I18n.tr("Volume: muted") : I18n.tr("Volume: ") + Math.round(
-                                             VolumeService.sinkVolume * 100) + "%") + I18n.tr(
-                  "\nScroll to adjust; click to open sound")
+        text: (VolumeService.sinkMuted ? I18n.tr("Volume: muted") : I18n.tr("Volume: ") + Math.round(VolumeService.sinkVolume * 100) + "%") + I18n.tr("\nScroll to adjust; click to open sound")
     }
 }

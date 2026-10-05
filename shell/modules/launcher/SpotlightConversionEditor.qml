@@ -11,9 +11,9 @@ FocusScope {
     property bool railExpanded: false
     property bool allSelected: false
     onActiveFocusChanged: if (!activeFocus)
-                              allSelected = false
+        allSelected = false
     onVisibleChanged: if (!visible)
-                          allSelected = false
+        allSelected = false
 
     function completeText() {
         const values = [];
@@ -40,11 +40,7 @@ FocusScope {
         if (selectAll)
             item.input.selectAll();
         const left = item.x, right = left + item.width;
-        viewport.contentX = Math.max(0, Math.min(viewport.contentWidth - viewport.width, left
-                                                 < viewport.contentX ? left : right > viewport.contentX
-                                                                       + viewport.width ? right
-                                                                                          - viewport.width :
-                                                                                          viewport.contentX));
+        viewport.contentX = Math.max(0, Math.min(viewport.contentWidth - viewport.width, left < viewport.contentX ? left : right > viewport.contentX + viewport.width ? right - viewport.width : viewport.contentX));
     }
     Connections {
         target: root.controller
@@ -81,9 +77,7 @@ FocusScope {
                     property alias input: input
                     readonly property bool unit: index === 1 || index === 3
                     readonly property bool selected: root.controller.activeSlot === index
-                    readonly property real textWidth: Math.min(Math.max(12, input.implicitWidth), Math.max(100,
-                                                                                                           viewport.width
-                                                                                                           * 0.5))
+                    readonly property real textWidth: Math.min(Math.max(12, input.implicitWidth), Math.max(100, viewport.width * 0.5))
                     width: textWidth + (index === 1 ? 24 : 0)
                     height: row.height
                     Rectangle {
@@ -91,8 +85,7 @@ FocusScope {
                         y: (slot.height - height) / 2
                         width: Math.min(input.contentWidth, input.width)
                         height: input.font.pixelSize + 4
-                        visible: !root.allSelected && slot.selected && !input.selectedText.length
-                                 && input.text.length > 0
+                        visible: !root.allSelected && slot.selected && !input.selectedText.length && input.text.length > 0
                         color: Appearance.colors.colPrimary
                     }
                     Text {
@@ -100,23 +93,19 @@ FocusScope {
                         anchors.verticalCenter: parent.verticalCenter
                         visible: slot.index === 1
                         text: root.timeMode ? "→" : "≈"
-                        font.pixelSize: 20
-                        color: root.allSelected ? Appearance.colors.colOnPrimary :
-                                                  Appearance.colors.colOnSurfaceVariant
+                        font.pixelSize: Appearance.scaledFont(20)
+                        color: root.allSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSurfaceVariant
                     }
                     TextInput {
                         id: input
                         width: slot.textWidth
                         height: parent.height
-                        text: slot.selected && slot.unit && root.controller.choosing
-                              && root.controller.editingUnit ? root.controller.draft : root.controller.value(
-                                                                   slot.index)
-                        color: root.allSelected || slot.selected ? Appearance.colors.colOnPrimary :
-                                                                   Appearance.colors.colOnSurface
+                        text: slot.selected && slot.unit && root.controller.choosing && root.controller.editingUnit ? root.controller.draft : root.controller.value(slot.index)
+                        color: root.allSelected || slot.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSurface
                         selectionColor: Appearance.colors.colPrimary
                         selectedTextColor: Appearance.colors.colOnPrimary
                         font.family: Fonts.ui
-                        font.pixelSize: 20
+                        font.pixelSize: Appearance.scaledFont(20)
                         verticalAlignment: TextInput.AlignVCenter
                         horizontalAlignment: TextInput.AlignLeft
                         clip: true
@@ -124,32 +113,18 @@ FocusScope {
                         activeFocusOnTab: false
                         maximumLength: slot.unit ? 128 : 1024
                         readOnly: !root.controller.editable(slot.index)
-                        inputMethodHints: slot.unit || root.timeMode ? Qt.ImhNoPredictiveText :
-                                                                       Qt.ImhFormattedNumbersOnly
-                        Accessible.name: root.timeMode ? (slot.index === 0 ? I18n.tr("Source time") :
-                                                                             slot.index === 1 ? I18n.tr(
-                                                                                                    "Source time zone") :
-                                                                                                slot.index
-                                                                                                === 2 ? I18n.tr(
-                                                                                                            "Target time") :
-                                                                                                        I18n.tr("Target time zone")) :
-                                                         (slot.index === 0 ? I18n.tr("Source amount") :
-                                                                             slot.index === 1 ? I18n.tr(
-                                                                                                    "Source currency") :
-                                                                                                slot.index
-                                                                                                === 2 ? I18n.tr(
-                                                                                                            "Target amount") :
-                                                                                                        I18n.tr("Target currency"))
+                        inputMethodHints: slot.unit || root.timeMode ? Qt.ImhNoPredictiveText : Qt.ImhFormattedNumbersOnly
+                        Accessible.name: root.timeMode ? (slot.index === 0 ? I18n.tr("Source time") : slot.index === 1 ? I18n.tr("Source time zone") : slot.index === 2 ? I18n.tr("Target time") : I18n.tr("Target time zone")) : (slot.index === 0 ? I18n.tr("Source amount") : slot.index === 1 ? I18n.tr("Source currency") : slot.index === 2 ? I18n.tr("Target amount") : I18n.tr("Target currency"))
                         onTextEdited: {
                             root.allSelected = false;
                             root.controller.edit(slot.index, text);
                         }
                         TapHandler {
                             onPressedChanged: if (pressed)
-                                                  root.allSelected = false
+                                root.allSelected = false
                         }
                         onActiveFocusChanged: if (activeFocus && !slot.selected)
-                                                  root.controller.activate(slot.index)
+                            root.controller.activate(slot.index)
                         Keys.priority: Keys.BeforeItem
                         Keys.onPressed: event => {
                             if (preeditText.length) {
@@ -173,15 +148,12 @@ FocusScope {
                                 event.accepted = true;
                                 return;
                             }
-                            if (root.timeMode && root.allSelected && (event.key === Qt.Key_Backspace || event.key
-                                                                      === Qt.Key_Delete)) {
+                            if (root.timeMode && root.allSelected && (event.key === Qt.Key_Backspace || event.key === Qt.Key_Delete)) {
                                 root.controller.clearTemplate();
                                 event.accepted = true;
                                 return;
                             }
-                            if (root.allSelected && event.key !== Qt.Key_Control && event.key
-                                    !== Qt.Key_Shift) {
-
+                            if (root.allSelected && event.key !== Qt.Key_Control && event.key !== Qt.Key_Shift) {
                                 root.allSelected = false;
                                 if (!control && (event.text.length || event.key === Qt.Key_Backspace))
                                     selectAll();
@@ -194,9 +166,7 @@ FocusScope {
                             if (control && event.key === Qt.Key_C) {
                                 if (selectionStart !== selectionEnd)
                                     copy();
-                                else if (text.length && (slot.unit || slot.index
-                                                         === root.controller.driverSide
-                                                         || root.controller.answer)) {
+                                else if (text.length && (slot.unit || slot.index === root.controller.driverSide || root.controller.answer)) {
                                     const position = cursorPosition;
                                     selectAll();
                                     copy();
@@ -206,8 +176,7 @@ FocusScope {
                                 event.accepted = true;
                                 return;
                             }
-                            if (!control && event.key === Qt.Key_Backspace && !event.isAutoRepeat && !text.length
-                                    && (!slot.unit || root.timeMode)) {
+                            if (!control && event.key === Qt.Key_Backspace && !event.isAutoRepeat && !text.length && (!slot.unit || root.timeMode)) {
                                 if (root.timeMode)
                                     root.controller.clearTemplate();
                                 else
@@ -224,7 +193,7 @@ FocusScope {
                         visible: !slot.unit && !input.text.length && slot.index !== root.controller.driverSide
                         text: "…"
                         color: Appearance.colors.colOnSurfaceVariant
-                        font.pixelSize: 20
+                        font.pixelSize: Appearance.scaledFont(20)
                     }
                 }
             }

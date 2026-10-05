@@ -33,8 +33,7 @@ StyledFlickable {
                 id: searchAnchor0
 
                 target: searchSection0
-                declaration:
-                    '{"id":"general.section.interface","route":"general","title":"Interface","context":"GeneralOverviewPage","icon":"settings","aliases":[],"source":"GeneralOverviewPage.qml"}'
+                declaration: '{"id":"general.section.interface","route":"general","title":"Interface","context":"GeneralOverviewPage","icon":"settings","aliases":[],"source":"GeneralOverviewPage.qml"}'
             }
 
             SettingsActionRow {
@@ -76,6 +75,13 @@ StyledFlickable {
                 trailingIconName: "chevron_right"
                 onClicked: root.sectionRequested("effects")
             }
+            SettingsActionRow {
+                Layout.fillWidth: true
+                iconName: "accessibility_new"
+                text: SpotlightCatalog.title("general.accessibility")
+                trailingIconName: "chevron_right"
+                onClicked: root.sectionRequested("accessibility")
+            }
         }
 
         SettingsSection {
@@ -89,8 +95,7 @@ StyledFlickable {
                 id: searchAnchor1
 
                 target: searchSection1
-                declaration:
-                    '{"id":"general.section.system","route":"general","title":"System","context":"GeneralOverviewPage","icon":"settings","aliases":[],"source":"GeneralOverviewPage.qml"}'
+                declaration: '{"id":"general.section.system","route":"general","title":"System","context":"GeneralOverviewPage","icon":"settings","aliases":[],"source":"GeneralOverviewPage.qml"}'
             }
 
             SettingsActionRow {
@@ -121,8 +126,7 @@ StyledFlickable {
                 Layout.fillWidth: true
                 iconName: "wifi"
                 text: SpotlightCatalog.title("general.network")
-                description: NetworkService.available ? NetworkService.activeConnection : I18n.tr(
-                                                            "Network unavailable")
+                description: NetworkService.available ? NetworkService.activeConnection : I18n.tr("Network unavailable")
                 trailingIconName: "chevron_right"
                 onClicked: root.sectionRequested("network")
             }
@@ -162,8 +166,7 @@ StyledFlickable {
                 id: searchAnchor2
 
                 target: searchSection2
-                declaration:
-                    '{"id":"general.section.applications","route":"general","title":"Applications","context":"GeneralOverviewPage","icon":"settings","aliases":[],"source":"GeneralOverviewPage.qml"}'
+                declaration: '{"id":"general.section.applications","route":"general","title":"Applications","context":"GeneralOverviewPage","icon":"settings","aliases":[],"source":"GeneralOverviewPage.qml"}'
             }
 
             SettingsActionRow {

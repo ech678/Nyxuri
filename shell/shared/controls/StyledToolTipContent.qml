@@ -71,7 +71,7 @@ Item {
             color: Appearance.colors.colOnTooltip
             wrapMode: Text.Wrap
             font.family: Fonts.ui
-            font.pixelSize: 12
+            font.pixelSize: Appearance.scaledFont(12)
             font.hintingPreference: Font.PreferNoHinting
         }
     }

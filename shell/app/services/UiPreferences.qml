@@ -20,6 +20,12 @@ Singleton {
     property string spotlightClipboardStyle: "default"
     property bool dndEnabled: false
     property bool reduceMotion: false
+    property real fontScale: 1
+    property bool highContrast: false
+    property bool reduceTransparency: false
+    property var clipboardPinned: []
+    property bool lowPowerMode: false
+    property bool followSun: false
     property bool darkMode: false
     property string language: root.systemLanguage
     property string weatherTemperatureUnit: "celsius"
@@ -50,18 +56,10 @@ Singleton {
     property string systemThemeLastError: ""
     property var drawerGridLayout: ({})
     property var systemCards: ({})
-    readonly property string defaultRecordingVideoDirectory: root.standardDirectory(
-                                                                 StandardPaths.MoviesLocation, "Videos")
-                                                             + "/Recordings"
-    readonly property string defaultRecordingGifDirectory: root.standardDirectory(
-                                                               StandardPaths.PicturesLocation, "Pictures")
-                                                           + "/GIFs"
-    readonly property string defaultRecordingMicrophoneDirectory: root.standardDirectory(
-                                                                      StandardPaths.MusicLocation, "Music")
-                                                                  + "/Recordings/Microphone"
-    readonly property string defaultRecordingSystemAudioDirectory: root.standardDirectory(
-                                                                       StandardPaths.MusicLocation, "Music")
-                                                                   + "/Recordings/System"
+    readonly property string defaultRecordingVideoDirectory: root.standardDirectory(StandardPaths.MoviesLocation, "Videos") + "/Recordings"
+    readonly property string defaultRecordingGifDirectory: root.standardDirectory(StandardPaths.PicturesLocation, "Pictures") + "/GIFs"
+    readonly property string defaultRecordingMicrophoneDirectory: root.standardDirectory(StandardPaths.MusicLocation, "Music") + "/Recordings/Microphone"
+    readonly property string defaultRecordingSystemAudioDirectory: root.standardDirectory(StandardPaths.MusicLocation, "Music") + "/Recordings/System"
     property string recordingVideoDirectory: defaultRecordingVideoDirectory
     property string recordingGifDirectory: defaultRecordingGifDirectory
     property string recordingMicrophoneDirectory: defaultRecordingMicrophoneDirectory
@@ -125,6 +123,81 @@ Singleton {
     }
     function toggleReduceMotion() {
         root.setReduceMotion(!root.reduceMotion);
+    }
+    function setFontScale(value) {
+        const numeric = Number(value);
+        const clamped = isFinite(numeric) ? Math.max(0.85, Math.min(1.5, numeric)) : 1;
+        const snapped = Math.round(clamped * 20) / 20;
+        if (root.fontScale === snapped)
+            return;
+        root.fontScale = snapped;
+        root.save();
+    }
+    function setHighContrast(value) {
+        const next = value === true;
+        if (root.highContrast === next)
+            return;
+        root.highContrast = next;
+        root.save();
+    }
+    function toggleHighContrast() {
+        root.setHighContrast(!root.highContrast);
+    }
+    function setReduceTransparency(value) {
+        const next = value === true;
+        if (root.reduceTransparency === next)
+            return;
+        root.reduceTransparency = next;
+        root.save();
+    }
+    function toggleReduceTransparency() {
+        root.setReduceTransparency(!root.reduceTransparency);
+    }
+    function isClipboardPinned(id) {
+        return root.clipboardPinned.indexOf(String(id || "")) >= 0;
+    }
+    function setClipboardPinned(id, pinned) {
+        const key = String(id || "");
+        if (key === "")
+            return;
+        const next = root.clipboardPinned.filter(value => value !== key);
+        if (pinned === true)
+            next.unshift(key);
+        root.clipboardPinned = next;
+        root.save();
+    }
+    function toggleClipboardPinned(id) {
+        root.setClipboardPinned(id, !root.isClipboardPinned(id));
+    }
+    function pruneClipboardPinned(ids) {
+        const live = {};
+        for (const value of ids)
+            live[String(value)] = true;
+        const next = root.clipboardPinned.filter(key => live[key]);
+        if (next.length !== root.clipboardPinned.length) {
+            root.clipboardPinned = next;
+            root.save();
+        }
+    }
+    function setLowPowerMode(value) {
+        const next = value === true;
+        if (root.lowPowerMode === next)
+            return;
+        root.lowPowerMode = next;
+        root.save();
+    }
+    function toggleLowPowerMode() {
+        root.setLowPowerMode(!root.lowPowerMode);
+    }
+    function setFollowSun(value) {
+        const next = value === true;
+        if (root.followSun === next)
+            return;
+        root.followSun = next;
+        root.save();
+    }
+    function toggleFollowSun() {
+        root.setFollowSun(!root.followSun);
     }
 
     function setLanguage(value) {
@@ -311,26 +384,22 @@ Singleton {
     }
 
     function setSidebarCookieHourHandStyle(value) {
-        root.sidebarCookieHourHandStyle = root.allowedValue(value, ["hide", "classic", "hollow", "fill"],
-                                                            "fill");
+        root.sidebarCookieHourHandStyle = root.allowedValue(value, ["hide", "classic", "hollow", "fill"], "fill");
         root.save();
     }
 
     function setSidebarCookieMinuteHandStyle(value) {
-        root.sidebarCookieMinuteHandStyle = root.allowedValue(value, ["hide", "classic", "thin", "medium",
-                                                                      "bold"], "medium");
+        root.sidebarCookieMinuteHandStyle = root.allowedValue(value, ["hide", "classic", "thin", "medium", "bold"], "medium");
         root.save();
     }
 
     function setSidebarCookieSecondHandStyle(value) {
-        root.sidebarCookieSecondHandStyle = root.allowedValue(value, ["hide", "classic", "line", "dot"],
-                                                              "dot");
+        root.sidebarCookieSecondHandStyle = root.allowedValue(value, ["hide", "classic", "line", "dot"], "dot");
         root.save();
     }
 
     function setSidebarCookieDateStyle(value) {
-        root.sidebarCookieDateStyle = root.allowedValue(value, ["hide", "bubble", "border", "rect"],
-                                                        "bubble");
+        root.sidebarCookieDateStyle = root.allowedValue(value, ["hide", "bubble", "border", "rect"], "bubble");
         root.save();
     }
 
@@ -387,8 +456,7 @@ Singleton {
         }
         root.systemThemeWriteQueued = false;
         root.systemThemeLastError = "";
-        systemThemeWriter.command = ["bash", Paths.scriptPath("theme", "set-system-color-scheme.sh"),
-                                     root.requestedDarkMode ? "dark" : "light"];
+        systemThemeWriter.command = ["bash", Paths.scriptPath("theme", "set-system-color-scheme.sh"), root.requestedDarkMode ? "dark" : "light"];
         systemThemeWriter.running = true;
     }
 
@@ -466,43 +534,46 @@ Singleton {
         }
         root.savePending = false;
         prefsFile.setText(JSON.stringify({
-                                             "dndEnabled": root.dndEnabled,
-                                             "reduceMotion": root.reduceMotion,
-                                             "language": root.language,
-                                             "weatherTemperatureUnit": root.weatherTemperatureUnit,
-                                             "systemTemperatureUnit": root.systemTemperatureUnit,
-                                             "spotlightSearchEngine": root.spotlightSearchEngine,
-                                             "spotlightAppStyle": root.spotlightAppStyle,
-                                             "spotlightAppOrder": root.spotlightAppOrder,
-                                             "spotlightClipboardStyle": root.spotlightClipboardStyle,
-                                             "weatherMapBaseProvider": root.weatherMapBaseProvider,
-                                             "weatherMapOverlayProvider": root.weatherMapOverlayProvider,
-                                             "systemMonitorGpuId": root.systemMonitorGpuId,
-                                             "systemMonitorDiskDevice": root.systemMonitorDiskDevice,
-                                             "systemMonitorNetworkInterface":
-                                             root.systemMonitorNetworkInterface,
-                                             "storageCapacityDiskDevice": root.storageCapacityDiskDevice,
-                                             "systemMonitorIntervalMs": root.systemMonitorIntervalMs,
-                                             "useTwelveHourClock": root.useTwelveHourClock,
-                                             "sidebarClockStyle": root.sidebarClockStyle,
-                                             "sidebarCookieSides": root.sidebarCookieSides,
-                                             "sidebarCookieConstantlyRotate":
-                                             root.sidebarCookieConstantlyRotate,
-                                             "sidebarCookieHourMarks": root.sidebarCookieHourMarks,
-                                             "sidebarCookieTimeIndicators": root.sidebarCookieTimeIndicators,
-                                             "sidebarCookieDialStyle": root.sidebarCookieDialStyle,
-                                             "sidebarCookieHourHandStyle": root.sidebarCookieHourHandStyle,
-                                             "sidebarCookieMinuteHandStyle": root.sidebarCookieMinuteHandStyle,
-                                             "sidebarCookieSecondHandStyle": root.sidebarCookieSecondHandStyle,
-                                             "sidebarCookieDateStyle": root.sidebarCookieDateStyle,
-                                             "drawerGridLayout": root.drawerGridLayout,
-                                             "systemCards": root.systemCards,
-                                             "recordingVideoDirectory": root.recordingVideoDirectory,
-                                             "recordingGifDirectory": root.recordingGifDirectory,
-                                             "recordingMicrophoneDirectory": root.recordingMicrophoneDirectory,
-                                             "recordingSystemAudioDirectory":
-                                             root.recordingSystemAudioDirectory
-                                         }, null, 2));
+            "dndEnabled": root.dndEnabled,
+            "reduceMotion": root.reduceMotion,
+            "fontScale": root.fontScale,
+            "highContrast": root.highContrast,
+            "reduceTransparency": root.reduceTransparency,
+            "clipboardPinned": root.clipboardPinned,
+            "lowPowerMode": root.lowPowerMode,
+            "followSun": root.followSun,
+            "language": root.language,
+            "weatherTemperatureUnit": root.weatherTemperatureUnit,
+            "systemTemperatureUnit": root.systemTemperatureUnit,
+            "spotlightSearchEngine": root.spotlightSearchEngine,
+            "spotlightAppStyle": root.spotlightAppStyle,
+            "spotlightAppOrder": root.spotlightAppOrder,
+            "spotlightClipboardStyle": root.spotlightClipboardStyle,
+            "weatherMapBaseProvider": root.weatherMapBaseProvider,
+            "weatherMapOverlayProvider": root.weatherMapOverlayProvider,
+            "systemMonitorGpuId": root.systemMonitorGpuId,
+            "systemMonitorDiskDevice": root.systemMonitorDiskDevice,
+            "systemMonitorNetworkInterface": root.systemMonitorNetworkInterface,
+            "storageCapacityDiskDevice": root.storageCapacityDiskDevice,
+            "systemMonitorIntervalMs": root.systemMonitorIntervalMs,
+            "useTwelveHourClock": root.useTwelveHourClock,
+            "sidebarClockStyle": root.sidebarClockStyle,
+            "sidebarCookieSides": root.sidebarCookieSides,
+            "sidebarCookieConstantlyRotate": root.sidebarCookieConstantlyRotate,
+            "sidebarCookieHourMarks": root.sidebarCookieHourMarks,
+            "sidebarCookieTimeIndicators": root.sidebarCookieTimeIndicators,
+            "sidebarCookieDialStyle": root.sidebarCookieDialStyle,
+            "sidebarCookieHourHandStyle": root.sidebarCookieHourHandStyle,
+            "sidebarCookieMinuteHandStyle": root.sidebarCookieMinuteHandStyle,
+            "sidebarCookieSecondHandStyle": root.sidebarCookieSecondHandStyle,
+            "sidebarCookieDateStyle": root.sidebarCookieDateStyle,
+            "drawerGridLayout": root.drawerGridLayout,
+            "systemCards": root.systemCards,
+            "recordingVideoDirectory": root.recordingVideoDirectory,
+            "recordingGifDirectory": root.recordingGifDirectory,
+            "recordingMicrophoneDirectory": root.recordingMicrophoneDirectory,
+            "recordingSystemAudioDirectory": root.recordingSystemAudioDirectory
+        }, null, 2));
     }
 
     Process {
@@ -534,60 +605,48 @@ Singleton {
                     root.dndEnabled = parsed.dndEnabled;
                 if (typeof parsed.reduceMotion === "boolean")
                     root.reduceMotion = parsed.reduceMotion;
+                if (parsed.fontScale !== undefined) {
+                    const loadedScale = Number(parsed.fontScale);
+                    if (isFinite(loadedScale))
+                        root.fontScale = Math.round(Math.max(0.85, Math.min(1.5, loadedScale)) * 20) / 20;
+                }
+                if (typeof parsed.highContrast === "boolean")
+                    root.highContrast = parsed.highContrast;
+                if (typeof parsed.reduceTransparency === "boolean")
+                    root.reduceTransparency = parsed.reduceTransparency;
+                if (Array.isArray(parsed.clipboardPinned))
+                    root.clipboardPinned = parsed.clipboardPinned.filter(value => typeof value === "string");
+                if (typeof parsed.lowPowerMode === "boolean")
+                    root.lowPowerMode = parsed.lowPowerMode;
+                if (typeof parsed.followSun === "boolean")
+                    root.followSun = parsed.followSun;
 
                 root.language = root.normalizedLanguage(parsed.language || root.systemLanguage);
                 root.weatherTemperatureUnit = root.normalizedTemperatureUnit(parsed.weatherTemperatureUnit);
                 root.systemTemperatureUnit = root.normalizedTemperatureUnit(parsed.systemTemperatureUnit);
-                root.spotlightClipboardStyle = root.allowedValue(parsed.spotlightClipboardStyle, ["default",
-                                                                                                  "details"],
-                                                                 "default");
+                root.spotlightClipboardStyle = root.allowedValue(parsed.spotlightClipboardStyle, ["default", "details"], "default");
                 root.spotlightSearchEngine = SpotlightSearch.normalizedEngine(parsed.spotlightSearchEngine);
                 root.spotlightAppOrder = AppOrder.normalizedOrder(parsed.spotlightAppOrder);
-                root.spotlightAppStyle = root.allowedValue(parsed.spotlightAppStyle, ["list", "grid"],
-                                                           "list");
-                root.weatherMapBaseProvider = root.normalizedWeatherMapBaseProvider(
-                            parsed.weatherMapBaseProvider);
-                root.weatherMapOverlayProvider = root.normalizedWeatherMapOverlayProvider(
-                            parsed.weatherMapOverlayProvider);
+                root.spotlightAppStyle = root.allowedValue(parsed.spotlightAppStyle, ["list", "grid"], "list");
+                root.weatherMapBaseProvider = root.normalizedWeatherMapBaseProvider(parsed.weatherMapBaseProvider);
+                root.weatherMapOverlayProvider = root.normalizedWeatherMapOverlayProvider(parsed.weatherMapOverlayProvider);
                 root.systemMonitorGpuId = root.normalizedSystemMonitorGpuId(parsed.systemMonitorGpuId);
                 root.systemMonitorDiskDevice = root.normalizedDiskDevice(parsed.systemMonitorDiskDevice, "");
-                root.systemMonitorNetworkInterface = String(parsed.systemMonitorNetworkInterface || "").trim(
-                            );
-                root.storageCapacityDiskDevice = root.normalizedDiskDevice(parsed.storageCapacityDiskDevice,
-                                                                           "follow-io");
-                const monitorInterval = root.normalizedSystemMonitorIntervalMs(parsed.systemMonitorIntervalMs
-                                                                               === undefined ? 2000 :
-                                                                                               parsed.systemMonitorIntervalMs);
+                root.systemMonitorNetworkInterface = String(parsed.systemMonitorNetworkInterface || "").trim();
+                root.storageCapacityDiskDevice = root.normalizedDiskDevice(parsed.storageCapacityDiskDevice, "follow-io");
+                const monitorInterval = root.normalizedSystemMonitorIntervalMs(parsed.systemMonitorIntervalMs === undefined ? 2000 : parsed.systemMonitorIntervalMs);
                 root.systemMonitorIntervalMs = monitorInterval < 0 ? 2000 : monitorInterval;
-                root.useTwelveHourClock = typeof parsed.useTwelveHourClock === "boolean"
-                        ? parsed.useTwelveHourClock : true;
-                root.sidebarClockStyle = root.allowedValue(parsed.sidebarClockStyle, ["digital", "cookie"],
-                                                           "digital");
-                root.sidebarCookieSides = Math.max(0, Math.min(40, Math.round(Number(
-                                                                                  parsed.sidebarCookieSides
-                                                                                  === undefined ? 14 :
-                                                                                                  parsed.sidebarCookieSides)
-                                                                              || 0)));
+                root.useTwelveHourClock = typeof parsed.useTwelveHourClock === "boolean" ? parsed.useTwelveHourClock : true;
+                root.sidebarClockStyle = root.allowedValue(parsed.sidebarClockStyle, ["digital", "cookie"], "digital");
+                root.sidebarCookieSides = Math.max(0, Math.min(40, Math.round(Number(parsed.sidebarCookieSides === undefined ? 14 : parsed.sidebarCookieSides) || 0)));
                 root.sidebarCookieConstantlyRotate = !!parsed.sidebarCookieConstantlyRotate;
                 root.sidebarCookieHourMarks = !!parsed.sidebarCookieHourMarks;
-                root.sidebarCookieTimeIndicators = parsed.sidebarCookieTimeIndicators === undefined ? true : !
-                                                                                                      !parsed.sidebarCookieTimeIndicators;
-                root.sidebarCookieDialStyle = root.allowedValue(parsed.sidebarCookieDialStyle, ["none", "dots",
-                                                                                                "full", "numbers"],
-                                                                "full");
-                root.sidebarCookieHourHandStyle = root.allowedValue(parsed.sidebarCookieHourHandStyle, ["hide",
-                                                                                                        "classic",
-                                                                                                        "hollow", "fill"],
-                                                                    "fill");
-                root.sidebarCookieMinuteHandStyle = root.allowedValue(parsed.sidebarCookieMinuteHandStyle,
-                                                                      ["hide", "classic", "thin", "medium",
-                                                                       "bold"], "medium");
-                root.sidebarCookieSecondHandStyle = root.allowedValue(parsed.sidebarCookieSecondHandStyle,
-                                                                      ["hide", "classic", "line", "dot"],
-                                                                      "dot");
-                root.sidebarCookieDateStyle = root.allowedValue(parsed.sidebarCookieDateStyle, ["hide",
-                                                                                                "bubble", "border",
-                                                                                                "rect"], "bubble");
+                root.sidebarCookieTimeIndicators = parsed.sidebarCookieTimeIndicators === undefined ? true : !!parsed.sidebarCookieTimeIndicators;
+                root.sidebarCookieDialStyle = root.allowedValue(parsed.sidebarCookieDialStyle, ["none", "dots", "full", "numbers"], "full");
+                root.sidebarCookieHourHandStyle = root.allowedValue(parsed.sidebarCookieHourHandStyle, ["hide", "classic", "hollow", "fill"], "fill");
+                root.sidebarCookieMinuteHandStyle = root.allowedValue(parsed.sidebarCookieMinuteHandStyle, ["hide", "classic", "thin", "medium", "bold"], "medium");
+                root.sidebarCookieSecondHandStyle = root.allowedValue(parsed.sidebarCookieSecondHandStyle, ["hide", "classic", "line", "dot"], "dot");
+                root.sidebarCookieDateStyle = root.allowedValue(parsed.sidebarCookieDateStyle, ["hide", "bubble", "border", "rect"], "bubble");
                 if (root.sidebarCookieDialStyle !== "dots" && root.sidebarCookieDialStyle !== "full")
                     root.sidebarCookieHourMarks = false;
 
@@ -597,18 +656,13 @@ Singleton {
                 if (parsed.drawerGridLayout && typeof parsed.drawerGridLayout === "object")
                     root.drawerGridLayout = parsed.drawerGridLayout;
 
-                if (parsed.systemCards && typeof parsed.systemCards === "object" && !Array.isArray(
-                            parsed.systemCards))
+                if (parsed.systemCards && typeof parsed.systemCards === "object" && !Array.isArray(parsed.systemCards))
                     root.systemCards = parsed.systemCards;
 
-                root.recordingVideoDirectory = root.normalizedRecordingDirectory(
-                            parsed.recordingVideoDirectory, root.defaultRecordingVideoDirectory);
-                root.recordingGifDirectory = root.normalizedRecordingDirectory(parsed.recordingGifDirectory,
-                                                                               root.defaultRecordingGifDirectory);
-                root.recordingMicrophoneDirectory = root.normalizedRecordingDirectory(
-                            parsed.recordingMicrophoneDirectory, root.defaultRecordingMicrophoneDirectory);
-                root.recordingSystemAudioDirectory = root.normalizedRecordingDirectory(
-                            parsed.recordingSystemAudioDirectory, root.defaultRecordingSystemAudioDirectory);
+                root.recordingVideoDirectory = root.normalizedRecordingDirectory(parsed.recordingVideoDirectory, root.defaultRecordingVideoDirectory);
+                root.recordingGifDirectory = root.normalizedRecordingDirectory(parsed.recordingGifDirectory, root.defaultRecordingGifDirectory);
+                root.recordingMicrophoneDirectory = root.normalizedRecordingDirectory(parsed.recordingMicrophoneDirectory, root.defaultRecordingMicrophoneDirectory);
+                root.recordingSystemAudioDirectory = root.normalizedRecordingDirectory(parsed.recordingSystemAudioDirectory, root.defaultRecordingSystemAudioDirectory);
             } catch (error) {
                 console.warn("UiPreferences failed to load:", error);
             }
@@ -647,8 +701,7 @@ Singleton {
 
         onExited: exitCode => {
             if (exitCode !== 0) {
-                root.systemThemeLastError = systemThemeWriteError.text.trim() || I18n.tr(
-                            "Unable to sync the system color scheme");
+                root.systemThemeLastError = systemThemeWriteError.text.trim() || I18n.tr("Unable to sync the system color scheme");
                 console.warn("UiPreferences failed to set system color scheme:", root.systemThemeLastError);
             }
             if (root.systemThemeWriteQueued) {

@@ -32,13 +32,13 @@ ColumnLayout {
     readonly property var points: Zen.positions(paletteState)
     readonly property var colors: Zen.colors(paletteState)
     readonly property var algorithmNames: ({
-                                               floating: I18n.tr("Single color"),
-                                               complementary: I18n.tr("Complementary"),
-                                               singleAnalogous: I18n.tr("Analogous"),
-                                               splitComplementary: I18n.tr("Split complementary"),
-                                               analogous: I18n.tr("Analogous"),
-                                               triadic: I18n.tr("Triadic")
-                                           })
+            floating: I18n.tr("Single color"),
+            complementary: I18n.tr("Complementary"),
+            singleAnalogous: I18n.tr("Analogous"),
+            splitComplementary: I18n.tr("Split complementary"),
+            analogous: I18n.tr("Analogous"),
+            triadic: I18n.tr("Triadic")
+        })
     signal edited(var value)
     function change(key, value) {
         var next = Zen.copy(root.paletteState);
@@ -86,9 +86,7 @@ ColumnLayout {
             onPositionChanged: mouse => {
                 if (!pressed)
                     return;
-                if (!root.draggingPoints && Math.abs(mouse.x - pressPosition.x) + Math.abs(mouse.y
-                                                                                           - pressPosition.y)
-                        < 3)
+                if (!root.draggingPoints && Math.abs(mouse.x - pressPosition.x) + Math.abs(mouse.y - pressPosition.y) < 3)
                     return;
                 root.draggingPoints = true;
                 updatePosition(mouse);
@@ -139,11 +137,12 @@ ColumnLayout {
                     scale: drag.pressed ? 1.15 : 1
                     Behavior on scale {
                         NumberAnimation {
-                            duration: 120
+                            duration: Appearance.motionDuration(120)
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: Appearance.animationCurves.standard
                         }
                     }
-                    Accessible.name: index === 0 ? I18n.tr("Primary color") : I18n.tr("Color %1").arg(index
-                                                                                                      + 1)
+                    Accessible.name: index === 0 ? I18n.tr("Primary color") : I18n.tr("Color %1").arg(index + 1)
                     Accessible.role: Accessible.Button
                     HoverHandler {
                         cursorShape: Qt.OpenHandCursor
@@ -168,8 +167,7 @@ ColumnLayout {
                             moved = true;
                             root.draggingPoints = true;
                             const p = mapToItem(wheel, mouse.x, mouse.y);
-                            root.edited(Zen.move(root.paletteState, p.x / wheel.width, p.y / wheel.height,
-                                                 dot.index));
+                            root.edited(Zen.move(root.paletteState, p.x / wheel.width, p.y / wheel.height, dot.index));
                         }
                         onReleased: root.draggingPoints = false
                         onCanceled: root.draggingPoints = false
@@ -210,8 +208,7 @@ ColumnLayout {
                 tooltipText: root.algorithmNames[root.paletteState.algorithm]
                 onClicked: {
                     const choices = Zen.algorithms(root.paletteState.count);
-                    root.change("algorithm", choices[(choices.indexOf(root.paletteState.algorithm) + 1)
-                                                     % choices.length]);
+                    root.change("algorithm", choices[(choices.indexOf(root.paletteState.algorithm) + 1) % choices.length]);
                 }
             }
         }
@@ -268,7 +265,7 @@ ColumnLayout {
                                     scale: presetMouse.pressed ? 0.95 : presetMouse.containsMouse ? 1.05 : 1
                                     Behavior on scale {
                                         NumberAnimation {
-                                            duration: 100
+                                            duration: Appearance.motionDuration(100)
                                             easing.type: Easing.BezierSpline
                                             easing.bezierCurve: Animations.curves.standard
                                         }
@@ -284,17 +281,14 @@ ColumnLayout {
                                             ctx.fillRect(0, 0, width, height);
                                         } else {
                                             // CSS backgrounds paint last to first, with premultiplied alpha.
-                                            let gradient = ctx.createLinearGradient(0, height, 0, height
-                                                                                    * 0.4);
+                                            let gradient = ctx.createLinearGradient(0, height, 0, height * 0.4);
                                             gradient.addColorStop(0, colors[2]);
                                             gradient.addColorStop(1, "transparent");
                                             ctx.fillStyle = gradient;
                                             ctx.fillRect(0, 0, width, height);
                                             for (let i = 1; i >= 0; --i) {
                                                 const x = i === 0 ? 0 : width;
-                                                gradient = ctx.createRadialGradient(x, 0, 0, x, 0, Math.sqrt(
-                                                                                        width * width
-                                                                                        + height * height));
+                                                gradient = ctx.createRadialGradient(x, 0, 0, x, 0, Math.sqrt(width * width + height * height));
                                                 gradient.addColorStop(0, colors[i]);
                                                 gradient.addColorStop(1, "transparent");
                                                 ctx.fillStyle = gradient;
@@ -308,8 +302,7 @@ ColumnLayout {
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.edited(Zen.preset(presetItem.presetIndex,
-                                                                      root.paletteState))
+                                    onClicked: root.edited(Zen.preset(presetItem.presetIndex, root.paletteState))
                                 }
                                 Accessible.role: Accessible.Button
                                 Accessible.name: I18n.tr("Preset %1").arg(presetIndex + 1)
@@ -391,8 +384,7 @@ ColumnLayout {
                                 const x = start + i * span / 12;
                                 const segment = span / 12;
                                 const y = center + (i % 2 === 0 ? -amplitude : amplitude);
-                                ctx.bezierCurveTo(x + segment / 3, y, x + segment * 2 / 3, y, x + segment,
-                                                  center);
+                                ctx.bezierCurveTo(x + segment / 3, y, x + segment * 2 / 3, y, x + segment, center);
                             }
                             ctx.stroke();
                         }
@@ -415,14 +407,15 @@ ColumnLayout {
                 width: 10 + opacitySlider.progress * 15
                 height: 40 + opacitySlider.progress * 15
                 radius: width / 2
-                x: opacitySlider.leftPadding + opacitySlider.visualPosition * opacitySlider.availableWidth
-                   - width / 2
+                x: opacitySlider.leftPadding + opacitySlider.visualPosition * opacitySlider.availableWidth - width / 2
                 y: (opacitySlider.height - height) / 2
                 color: UiPreferences.darkMode ? "#ffffff" : "#000000"
                 scale: opacitySlider.pressed ? 1.06 : 1
                 Behavior on scale {
                     NumberAnimation {
-                        duration: 120
+                        duration: Appearance.motionDuration(120)
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Appearance.animationCurves.standard
                     }
                 }
             }
@@ -454,7 +447,9 @@ ColumnLayout {
                     opacity: index <= root.paletteState.grain * 16 ? 1 : 0.4
                     Behavior on opacity {
                         NumberAnimation {
-                            duration: 200
+                            duration: Appearance.motionDuration(200)
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: Appearance.animationCurves.standard
                         }
                     }
                 }
@@ -487,8 +482,7 @@ ColumnLayout {
                             hash = Math.imul(hash ^ (hash >>> 16), 0x7feb352d);
                             hash = Math.imul(hash ^ (hash >>> 15), 0x846ca68b);
                             const n = ((hash ^ (hash >>> 16)) >>> 8) / 16777216;
-                            ctx.fillStyle = Qt.rgba(blend(base.r, n), blend(base.g, n), blend(base.b, n),
-                                                    amount * 0.25);
+                            ctx.fillStyle = Qt.rgba(blend(base.r, n), blend(base.g, n), blend(base.b, n), amount * 0.25);
                             ctx.fillRect(x, y, 1, 1);
                         }
                     // Zen's subtle diagonal face shading is above the texture.
@@ -507,15 +501,15 @@ ColumnLayout {
                 width: 6
                 height: indicatorHover.hovered || knobMouse.pressed ? 14 : 12
                 radius: 2
-                x: knob.width / 2 + knob.ringRadius * Math.sin(root.paletteState.grain * Math.PI * 2) - width
-                   / 2
-                y: knob.height / 2 - knob.ringRadius * Math.cos(root.paletteState.grain * Math.PI * 2)
-                   - height / 2
+                x: knob.width / 2 + knob.ringRadius * Math.sin(root.paletteState.grain * Math.PI * 2) - width / 2
+                y: knob.height / 2 - knob.ringRadius * Math.cos(root.paletteState.grain * Math.PI * 2) - height / 2
                 rotation: root.paletteState.grain * 360
                 color: UiPreferences.darkMode ? "#d1d1d1" : "#757575"
                 Behavior on height {
                     NumberAnimation {
-                        duration: 100
+                        duration: Appearance.motionDuration(100)
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Appearance.animationCurves.standard
                     }
                 }
                 HoverHandler {
@@ -528,8 +522,7 @@ ColumnLayout {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 function updateValue(mouse) {
-                    let angle = (Math.atan2(mouse.y - knob.height / 2, mouse.x - knob.width / 2) * 180
-                                 / Math.PI + 450) % 360;
+                    let angle = (Math.atan2(mouse.y - knob.height / 2, mouse.x - knob.width / 2) * 180 / Math.PI + 450) % 360;
                     root.change("grain", (Math.round(angle / 360 * 16) % 16) / 16);
                 }
                 onPressed: mouse => updateValue(mouse)

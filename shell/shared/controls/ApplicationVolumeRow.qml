@@ -59,7 +59,7 @@ Item {
             text: root.title
             color: Appearance.colors.colOnLayer2
             font.family: Fonts.ui
-            font.pixelSize: 14
+            font.pixelSize: Appearance.scaledFont(14)
             font.weight: Font.Medium
             elide: Text.ElideRight
 
@@ -108,8 +108,7 @@ Item {
             selectedContainerColor: Appearance.colors.colSecondaryContainer
             selectedHoverStateLayerColor: Appearance.colors.colSecondaryContainerHover
             selectedPressedStateLayerColor: Appearance.colors.colSecondaryContainerActive
-            accessibleName: root.muted ? I18n.tr("Unmute %1").arg(root.title) : I18n.tr("Mute %1").arg(
-                                             root.title)
+            accessibleName: root.muted ? I18n.tr("Unmute %1").arg(root.title) : I18n.tr("Mute %1").arg(root.title)
             tooltipText: root.muted ? I18n.tr("Unmute") : I18n.tr("Mute")
             hoverStateLayerColor: Appearance.colors.colLayer2Hover
             pressedStateLayerColor: Appearance.colors.colLayer2Active

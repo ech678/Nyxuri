@@ -25,8 +25,7 @@ Item {
         text: root.month ? String(root.monthNumber).padStart(2, "0") : root.day
         color: root.month ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnTertiaryContainer
         font.family: Fonts.expressive
-        font.pixelSize: 30
+        font.pixelSize: Appearance.scaledFont(30)
         font.weight: Font.Black
     }
-
 }

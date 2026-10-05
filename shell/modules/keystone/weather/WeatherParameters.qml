@@ -27,8 +27,7 @@ Item {
             return;
         }
         root.uv = Math.round(WeatherService.currentUvIndex || 0).toString();
-        root.feelsLike = Math.round(UiPreferences.weatherTemperature(WeatherService.currentFeelsLikeC || 0))
-                + UiPreferences.weatherTemperatureSymbol();
+        root.feelsLike = Math.round(UiPreferences.weatherTemperature(WeatherService.currentFeelsLikeC || 0)) + UiPreferences.weatherTemperatureSymbol();
         root.humidity = Math.round(WeatherService.currentRelativeHumidity || 0) + "%";
         root.wind = Math.round((WeatherService.currentWindSpeedMs || 0) * 3.6) + " km/h";
         root.pressure = Math.round(WeatherService.currentPressureHpa || 0) + " hPa";
@@ -117,7 +116,7 @@ Item {
                         text: modelData.label
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.ui
-                        font.pixelSize: 16
+                        font.pixelSize: Appearance.scaledFont(16)
                         elide: Text.ElideRight
                     }
                 }
@@ -127,7 +126,7 @@ Item {
                     text: modelData.value
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.numeric
-                    font.pixelSize: 24
+                    font.pixelSize: Appearance.scaledFont(24)
                     font.weight: Font.Medium
                     elide: Text.ElideRight
                 }

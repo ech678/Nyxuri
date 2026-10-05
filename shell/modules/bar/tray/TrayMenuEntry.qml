@@ -22,7 +22,7 @@ RippleButton {
     readonly property color entryForeground: root.pointerHovered ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnLayer0
     readonly property color entrySubtleForeground: root.pointerHovered ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnSurfaceVariant
 
-    signal dismiss()
+    signal dismiss
     signal openSubmenu(var handle)
 
     containerColor: isSeparator ? Appearance.m3colors.m3outlineVariant : "transparent"
@@ -39,16 +39,16 @@ RippleButton {
     Layout.fillWidth: true
     releaseAction: () => {
         if (!root.entryAvailable)
-            return ;
+            return;
 
         if (root.hasChildren) {
             root.openSubmenu(root.menuEntry);
-            return ;
+            return;
         }
         root.menuEntry.triggered();
         root.dismiss();
     }
-    altAction: (event) => {
+    altAction: event => {
         event.accepted = false;
     }
 
@@ -100,7 +100,6 @@ RippleButton {
                                     easing.type: Appearance.animation.expressiveDefaultSpatial.type
                                     easing.bezierCurve: Appearance.animation.expressiveDefaultSpatial.bezierCurve
                                 }
-
                             }
 
                             Behavior on height {
@@ -109,7 +108,6 @@ RippleButton {
                                     easing.type: Appearance.animation.expressiveDefaultSpatial.type
                                     easing.bezierCurve: Appearance.animation.expressiveDefaultSpatial.bezierCurve
                                 }
-
                             }
 
                             Behavior on opacity {
@@ -118,15 +116,10 @@ RippleButton {
                                     easing.type: Appearance.animation.expressiveEffects.type
                                     easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
                                 }
-
                             }
-
                         }
-
                     }
-
                 }
-
             }
 
             Loader {
@@ -139,9 +132,7 @@ RippleButton {
                     iconSize: 20
                     color: root.entryForeground
                 }
-
             }
-
         }
 
         Item {
@@ -162,16 +153,14 @@ RippleButton {
                     height: 20
                     mipmap: true
                 }
-
             }
-
         }
 
         Text {
             text: root.entryAvailable ? (root.menuEntry.text || "") : ""
             color: root.entryForeground
             font.family: Fonts.ui
-            font.pixelSize: 13
+            font.pixelSize: Appearance.scaledFont(13)
             verticalAlignment: Text.AlignVCenter
             Layout.fillWidth: true
         }
@@ -185,9 +174,6 @@ RippleButton {
                 iconSize: 20
                 color: root.entryForeground
             }
-
         }
-
     }
-
 }

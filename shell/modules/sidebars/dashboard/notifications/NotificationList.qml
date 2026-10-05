@@ -69,7 +69,7 @@ Rectangle {
                     anchors.centerIn: parent
                     text: "notifications_active"
                     font.family: Fonts.materialSymbolsRounded
-                    font.pixelSize: 42
+                    font.pixelSize: Appearance.scaledFont(42)
                     color: Appearance.colors.colOnSecondaryContainer
                 }
             }
@@ -78,7 +78,7 @@ Rectangle {
                 Layout.alignment: Qt.AlignHCenter
                 text: I18n.tr("No notifications")
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: Appearance.scaledFont(14)
                 font.weight: Font.Medium
                 color: Appearance.colors.colOnSurfaceVariant
             }

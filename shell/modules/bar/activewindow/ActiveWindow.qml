@@ -18,12 +18,10 @@ TopBarPill {
     readonly property bool isDesktop: !activeWindow?.id
     readonly property string verticalAppName: activeAppName || I18n.tr("Desktop")
     readonly property bool verticalAppNameIsCjk: root.containsCjk(verticalAppName)
-    readonly property string detailedTooltipText: activeAppName && activeAppName !== activeTitle
-                                                  ? activeAppName + "\n" + activeTitle : activeTitle
+    readonly property string detailedTooltipText: activeAppName && activeAppName !== activeTitle ? activeAppName + "\n" + activeTitle : activeTitle
 
     function containsCjk(value) {
-        const cjkPattern =
-              /[\u2e80-\u2fff\u3040-\u30ff\u31f0-\u31ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af\uf900-\ufaff]/;
+        const cjkPattern = /[\u2e80-\u2fff\u3040-\u30ff\u31f0-\u31ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af\uf900-\ufaff]/;
         return cjkPattern.test(String(value || ""));
     }
 
@@ -40,10 +38,8 @@ TopBarPill {
         return Array.from(root.limitedVerticalTitle(value)).join("\n");
     }
 
-    implicitHeight: vertical ? layout.implicitHeight + 2 * Sizes.barPillHorizontalPadding :
-                               Sizes.barPillThickness
-    implicitWidth: vertical ? Sizes.barPillThickness : layout.implicitWidth + 2
-                              * Sizes.barPillHorizontalPadding
+    implicitHeight: vertical ? layout.implicitHeight + 2 * Sizes.barPillHorizontalPadding : Sizes.barPillThickness
+    implicitWidth: vertical ? Sizes.barPillThickness : layout.implicitWidth + 2 * Sizes.barPillHorizontalPadding
 
     GridLayout {
         id: layout
@@ -86,19 +82,15 @@ TopBarPill {
                 anchors.centerIn: parent
                 text: root.activeAppName.charAt(0).toUpperCase()
                 color: Appearance.colors.colPrimary
-                font.pixelSize: 13
+                font.pixelSize: Appearance.scaledFont(13)
                 font.bold: true
                 visible: !root.isDesktop && !appIcon.visible
             }
         }
 
         Item {
-            implicitWidth: root.vertical ? (root.verticalAppNameIsCjk ? verticalCjkTitle.implicitWidth :
-                                                                        verticalRotatedTitle.implicitHeight) :
-                                           horizontalTitle.implicitWidth
-            implicitHeight: root.vertical ? (root.verticalAppNameIsCjk ? verticalCjkTitle.implicitHeight :
-                                                                         verticalRotatedTitle.implicitWidth) :
-                                            horizontalTitle.implicitHeight
+            implicitWidth: root.vertical ? (root.verticalAppNameIsCjk ? verticalCjkTitle.implicitWidth : verticalRotatedTitle.implicitHeight) : horizontalTitle.implicitWidth
+            implicitHeight: root.vertical ? (root.verticalAppNameIsCjk ? verticalCjkTitle.implicitHeight : verticalRotatedTitle.implicitWidth) : horizontalTitle.implicitHeight
             Layout.maximumWidth: root.maximumTitleWidth
             Layout.alignment: Qt.AlignCenter
 

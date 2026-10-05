@@ -1,4 +1,5 @@
 import QtQuick
+import qs.shared.theme
 import qs.shared.i18n
 
 Item {
@@ -15,9 +16,7 @@ Item {
     property string normalText: I18n.tr("Normal")
     property color lineColor
     property color labelColor
-    readonly property real lineY: chartBottom - (temperatureC - domainMinimumC) / (domainMaximumC
-                                                                                   - domainMinimumC) * (
-                                      chartBottom - chartTop)
+    readonly property real lineY: chartBottom - (temperatureC - domainMinimumC) / (domainMaximumC - domainMinimumC) * (chartBottom - chartTop)
 
     y: lineY
     height: 1
@@ -39,7 +38,7 @@ Item {
         text: root.temperatureText
         color: root.labelColor
         font.family: root.numericFontFamily
-        font.pixelSize: 11
+        font.pixelSize: Appearance.scaledFont(11)
     }
 
     Text {
@@ -50,7 +49,7 @@ Item {
         text: root.normalText
         color: root.labelColor
         font.family: root.uiFontFamily
-        font.pixelSize: 11
+        font.pixelSize: Appearance.scaledFont(11)
         font.bold: true
     }
 }

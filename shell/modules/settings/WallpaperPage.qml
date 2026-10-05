@@ -22,56 +22,44 @@ StyledFlickable {
     property string selectedDesktopOutput: ""
     property string selectedOverviewOutput: ""
     readonly property bool desktopUsesAwww: PersonalizationConfig.desktopWallpaperBackend === "awww"
-    readonly property bool awwwStepSupported: AwwwWallpaperService.supportsStep(
-                                                  PersonalizationConfig.awwwDesktopTransitionType)
-    readonly property bool awwwDurationSupported: AwwwWallpaperService.supportsDuration(
-                                                      PersonalizationConfig.awwwDesktopTransitionType)
-    readonly property bool awwwBezierSupported: AwwwWallpaperService.supportsBezier(
-                                                    PersonalizationConfig.awwwDesktopTransitionType)
-    readonly property bool sharedTransitionParametersEnabled: desktopUsesAwww ? awwwDurationSupported
-                                                                                && awwwBezierSupported :
-                                                                                PersonalizationConfig.wallpaperTransitionType
-                                                                                !== "none"
+    readonly property bool awwwStepSupported: AwwwWallpaperService.supportsStep(PersonalizationConfig.awwwDesktopTransitionType)
+    readonly property bool awwwDurationSupported: AwwwWallpaperService.supportsDuration(PersonalizationConfig.awwwDesktopTransitionType)
+    readonly property bool awwwBezierSupported: AwwwWallpaperService.supportsBezier(PersonalizationConfig.awwwDesktopTransitionType)
+    readonly property bool sharedTransitionParametersEnabled: desktopUsesAwww ? awwwDurationSupported && awwwBezierSupported : PersonalizationConfig.wallpaperTransitionType !== "none"
     readonly property var outputOptions: {
         const result = [({
-                             "value": "",
-                             "label": I18n.tr("Global")
-                         })];
+                    "value": "",
+                    "label": I18n.tr("Global")
+                })];
         for (let index = 0; index < Quickshell.screens.length; index += 1) {
             const name = String(Quickshell.screens[index].name);
             result.push({
-                            "value": name,
-                            "label": name
-                        });
+                "value": name,
+                "label": name
+            });
         }
         return result;
     }
     readonly property string currentWallpaperPath: WallpaperService.wallpaperForScreen(selectedDesktopOutput)
-    readonly property string currentOverviewPath: WallpaperService.overviewWallpaperForScreen(
-                                                      selectedOverviewOutput)
+    readonly property string currentOverviewPath: WallpaperService.overviewWallpaperForScreen(selectedOverviewOutput)
     readonly property bool currentWallpaperIsColor: WallpaperService.isColorSource(currentWallpaperPath)
     readonly property bool currentWallpaperIsImage: WallpaperService.isImagePath(currentWallpaperPath)
-    readonly property string currentDesktopFillMode: selectedDesktopOutput !== ""
-                                                     ? PersonalizationConfig.monitorFillMode(
-                                                           selectedDesktopOutput) :
-                                                       PersonalizationConfig.wallpaperFillMode
+    readonly property string currentDesktopFillMode: selectedDesktopOutput !== "" ? PersonalizationConfig.monitorFillMode(selectedDesktopOutput) : PersonalizationConfig.wallpaperFillMode
     readonly property bool panoramaSelected: currentDesktopFillMode === "panorama"
-    readonly property real effectivePreferredScale: panoramaSelected ? 1 :
-                                                                       PersonalizationConfig.parallaxPreferredScale
+    readonly property real effectivePreferredScale: panoramaSelected ? 1 : PersonalizationConfig.parallaxPreferredScale
     readonly property bool preferredScaleControlEnabled: !desktopUsesAwww && !panoramaSelected
     readonly property var desktopFillModeOptions: PersonalizationConfig.desktopFillModes.map(option => ({
-        "value": option.value,
-        "label": option.label,
-        "enabled": root.desktopFillModeOptionEnabled(option.value, root.desktopUsesAwww)
-    }))
+                "value": option.value,
+                "label": option.label,
+                "enabled": root.desktopFillModeOptionEnabled(option.value, root.desktopUsesAwww)
+            }))
     readonly property real pageContentWidth: 600
     property real fillModeGroupRestingWidth: 0
 
     Component.onCompleted: WallpaperService.refreshOverviewBackdropRule()
 
     function chooseWallpaperFile() {
-        const base = root.currentWallpaperIsImage ? WallpaperService.parentFolder(root.currentWallpaperPath) :
-                                                    PersonalizationConfig.wallpaperFolder;
+        const base = root.currentWallpaperIsImage ? WallpaperService.parentFolder(root.currentWallpaperPath) : PersonalizationConfig.wallpaperFolder;
         wallpaperFileBrowser.openAt(base || PersonalizationConfig.wallpaperFolder);
     }
 
@@ -89,8 +77,7 @@ StyledFlickable {
 
     function chooseOverviewFile() {
         const source = root.currentOverviewPath;
-        const base = WallpaperService.isImagePath(source) ? WallpaperService.parentFolder(source) :
-                                                            PersonalizationConfig.wallpaperFolder;
+        const base = WallpaperService.isImagePath(source) ? WallpaperService.parentFolder(source) : PersonalizationConfig.wallpaperFolder;
         overviewFileBrowser.openAt(base || PersonalizationConfig.wallpaperFolder);
     }
 
@@ -131,7 +118,7 @@ StyledFlickable {
                 text: section.title
                 color: Appearance.colors.colOnSecondaryContainer
                 font.family: Fonts.ui
-                font.pixelSize: 18
+                font.pixelSize: Appearance.scaledFont(18)
                 font.weight: Font.Medium
             }
 
@@ -235,19 +222,19 @@ StyledFlickable {
         horizontalPadding: 23
         currentValue: group.playing ? "play" : ""
         model: [({
-                     "value": "play",
-                     "icon": group.playing ? "pause" : "play_arrow",
-                     "tooltip": group.playing ? I18n.tr("Pause") : I18n.tr("Play")
-                 }), ({
-                          "value": "replay",
-                          "icon": "keyboard_double_arrow_left",
-                          "tooltip": I18n.tr("Reverse")
-                      }), ({
-                               "value": "flip",
-                               "icon": "swap_vert",
-                               "tooltip": I18n.tr("Flip"),
-                               "enabled": group.flipEnabled
-                           })]
+                    "value": "play",
+                    "icon": group.playing ? "pause" : "play_arrow",
+                    "tooltip": group.playing ? I18n.tr("Pause") : I18n.tr("Play")
+                }), ({
+                    "value": "replay",
+                    "icon": "keyboard_double_arrow_left",
+                    "tooltip": I18n.tr("Reverse")
+                }), ({
+                    "value": "flip",
+                    "icon": "swap_vert",
+                    "tooltip": I18n.tr("Flip"),
+                    "enabled": group.flipEnabled
+                })]
         onValueSelected: value => {
             if (value === "play")
                 group.playClicked();
@@ -268,8 +255,7 @@ StyledFlickable {
         NiriSetupPrompt {
             Layout.fillWidth: true
             title: I18n.tr("Overview integration")
-            description: I18n.tr(
-                             "Create or connect backdrop rules and make the global workspace background transparent.")
+            description: I18n.tr("Create or connect backdrop rules and make the global workspace background transparent.")
             integrationState: NiriConfigService.state("layer-rules")
             busy: NiriConfigService.busy && NiriConfigService.activeFeature === "layer-rules"
             blocked: NiriConfigService.busy
@@ -279,8 +265,7 @@ StyledFlickable {
 
         InlineStatusBanner {
             Layout.fillWidth: true
-            visible: NiriConfigService.snapshot.overviewSatisfied === true && !NiriConfigService.ready(
-                         "layer-rules")
+            visible: NiriConfigService.snapshot.overviewSatisfied === true && !NiriConfigService.ready("layer-rules")
             message: I18n.tr("Overview is already configured outside Nyxuri")
         }
 
@@ -293,8 +278,7 @@ StyledFlickable {
                 SettingsSearchAnchor {
                     id: searchAnchor0
                     target: searchSection0
-                    declaration:
-                        '{"id":"wallpaper.section.desktop-wallpaper-manager","route":"wallpaper","title":"Desktop wallpaper manager","context":"WallpaperPage","icon":"wallpaper","aliases":[]}'
+                    declaration: '{"id":"wallpaper.section.desktop-wallpaper-manager","route":"wallpaper","title":"Desktop wallpaper manager","context":"WallpaperPage","icon":"wallpaper","aliases":[]}'
                 }
                 iconName: "display_settings"
 
@@ -304,23 +288,15 @@ StyledFlickable {
                     Layout.preferredWidth: 168
                     Layout.preferredHeight: Metrics.controlHeightM
                     options: [({
-                                   "value": "quickshell",
-                                   "label": "Quickshell",
-                                   "enabled": true
-                               }), ({
-                                        "value": "awww",
-                                        "label": "awww",
-                                        "enabled": AwwwWallpaperService.available
-                                                   && WallpaperService.canUseAwww,
-                                        "tooltip": AwwwWallpaperService.available ? (
-                                                                                        WallpaperService.canUseAwww
-                                                                                        ? "" : I18n.tr(
-                                                                                              "Select an image wallpaper before switching to awww")) :
-                                                                                    AwwwWallpaperService.probeComplete
-                                                                                    ? I18n.tr(
-                                                                                          "The awww or awww-daemon command is missing") :
-                                                                                      I18n.tr("Detecting awww…")
-                                    })]
+                                "value": "quickshell",
+                                "label": "Quickshell",
+                                "enabled": true
+                            }), ({
+                                "value": "awww",
+                                "label": "awww",
+                                "enabled": AwwwWallpaperService.available && WallpaperService.canUseAwww,
+                                "tooltip": AwwwWallpaperService.available ? (WallpaperService.canUseAwww ? "" : I18n.tr("Select an image wallpaper before switching to awww")) : AwwwWallpaperService.probeComplete ? I18n.tr("The awww or awww-daemon command is missing") : I18n.tr("Detecting awww…")
+                            })]
                     value: PersonalizationConfig.desktopWallpaperBackend
                     Accessible.name: I18n.tr("Desktop wallpaper manager")
                     onAccepted: value => WallpaperService.setDesktopWallpaperBackend(value)
@@ -330,8 +306,7 @@ StyledFlickable {
                     Layout.fillWidth: true
                     visible: AwwwWallpaperService.lastError !== "" || WallpaperService.lastDesktopError !== ""
                     tone: "error"
-                    message: AwwwWallpaperService.lastError !== "" ? AwwwWallpaperService.lastError :
-                                                                     WallpaperService.lastDesktopError
+                    message: AwwwWallpaperService.lastError !== "" ? AwwwWallpaperService.lastError : WallpaperService.lastDesktopError
                 }
             }
         }
@@ -345,8 +320,7 @@ StyledFlickable {
                 SettingsSearchAnchor {
                     id: searchAnchor1
                     target: searchSection1
-                    declaration:
-                        '{"id":"wallpaper.section.current-wallpaper","route":"wallpaper","title":"Current wallpaper","context":"WallpaperPage","icon":"wallpaper","aliases":[]}'
+                    declaration: '{"id":"wallpaper.section.current-wallpaper","route":"wallpaper","title":"Current wallpaper","context":"WallpaperPage","icon":"wallpaper","aliases":[]}'
                 }
                 iconName: "wallpaper"
 
@@ -360,8 +334,7 @@ StyledFlickable {
                         Layout.preferredHeight: 200
                         sourcePath: root.currentWallpaperPath
                         paletteEnabled: !root.desktopUsesAwww
-                        previewSource: WallpaperPaletteSession.previewForScreen("desktop",
-                                                                                root.selectedDesktopOutput)
+                        previewSource: WallpaperPaletteSession.previewForScreen("desktop", root.selectedDesktopOutput)
                         onChooseFile: root.chooseWallpaperFile()
                         onChooseColor: root.chooseWallpaperColor()
                         onClearWallpaper: WallpaperService.clearWallpaper(root.selectedDesktopOutput)
@@ -374,12 +347,10 @@ StyledFlickable {
 
                         Text {
                             Layout.fillWidth: true
-                            text: root.currentWallpaperPath !== "" ? WallpaperService.basename(
-                                                                         root.currentWallpaperPath) : I18n.tr(
-                                                                         "No wallpaper selected")
+                            text: root.currentWallpaperPath !== "" ? WallpaperService.basename(root.currentWallpaperPath) : I18n.tr("No wallpaper selected")
                             color: Appearance.colors.colOnSurface
                             font.family: Fonts.ui
-                            font.pixelSize: 22
+                            font.pixelSize: Appearance.scaledFont(22)
                             font.weight: Font.Medium
                             horizontalAlignment: Text.AlignLeft
                             elide: Text.ElideMiddle
@@ -387,12 +358,10 @@ StyledFlickable {
 
                         Text {
                             Layout.fillWidth: true
-                            text: WallpaperService.sourceKind(root.currentWallpaperPath) === "palette"
-                                  ? WallpaperService.primaryColor(root.currentWallpaperPath) :
-                                    root.currentWallpaperPath
+                            text: WallpaperService.sourceKind(root.currentWallpaperPath) === "palette" ? WallpaperService.primaryColor(root.currentWallpaperPath) : root.currentWallpaperPath
                             color: Appearance.colors.colSubtext
                             font.family: Fonts.mono
-                            font.pixelSize: 14
+                            font.pixelSize: Appearance.scaledFont(14)
                             horizontalAlignment: Text.AlignLeft
                             elide: Text.ElideMiddle
                             visible: root.currentWallpaperPath !== ""
@@ -401,15 +370,15 @@ StyledFlickable {
                         StyledButtonGroup {
                             Layout.alignment: Qt.AlignLeft
                             model: [({
-                                         "value": "previous",
-                                         "label": I18n.tr("Previous")
-                                     }), ({
-                                              "value": "random",
-                                              "label": I18n.tr("Random")
-                                          }), ({
-                                                   "value": "next",
-                                                   "label": I18n.tr("Next")
-                                               })]
+                                        "value": "previous",
+                                        "label": I18n.tr("Previous")
+                                    }), ({
+                                        "value": "random",
+                                        "label": I18n.tr("Random")
+                                    }), ({
+                                        "value": "next",
+                                        "label": I18n.tr("Next")
+                                    })]
                             currentValue: ""
                             onValueSelected: value => {
                                 if (value === "previous")
@@ -430,8 +399,7 @@ StyledFlickable {
                     model: root.desktopFillModeOptions
                     currentValue: root.currentDesktopFillMode
                     Component.onCompleted: root.fillModeGroupRestingWidth = implicitWidth
-                    onValueSelected: value => WallpaperService.setWallpaperFillModeForScreen(
-                                                  root.selectedDesktopOutput, value)
+                    onValueSelected: value => WallpaperService.setWallpaperFillModeForScreen(root.selectedDesktopOutput, value)
                 }
 
                 FlatSettingsSection {
@@ -478,8 +446,7 @@ StyledFlickable {
             SettingsSearchAnchor {
                 id: searchAnchor2
                 target: searchSection2
-                declaration:
-                    '{"id":"wallpaper.section.transition","route":"wallpaper","title":"Transition","context":"WallpaperPage","icon":"wallpaper","aliases":[]}'
+                declaration: '{"id":"wallpaper.section.transition","route":"wallpaper","title":"Transition","context":"WallpaperPage","icon":"wallpaper","aliases":[]}'
             }
             iconName: "animation"
 
@@ -492,14 +459,13 @@ StyledFlickable {
                     text: I18n.tr("Transition type")
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.ui
-                    font.pixelSize: 15
+                    font.pixelSize: Appearance.scaledFont(15)
                     font.weight: Font.Medium
                 }
 
                 Item {
                     Layout.alignment: Qt.AlignHCenter
-                    Layout.preferredWidth: root.fillModeGroupRestingWidth > 0
-                                           ? root.fillModeGroupRestingWidth : implicitWidth
+                    Layout.preferredWidth: root.fillModeGroupRestingWidth > 0 ? root.fillModeGroupRestingWidth : implicitWidth
                     Layout.preferredHeight: transitionButtonColumn.implicitHeight
 
                     ColumnLayout {
@@ -510,12 +476,8 @@ StyledFlickable {
 
                         StyledButtonGroup {
                             Layout.alignment: Qt.AlignHCenter
-                            model: root.desktopUsesAwww ? PersonalizationConfig.awwwTransitionTypes.slice(0,
-                                                                                                          5) : PersonalizationConfig.transitionTypes.slice(
-                                                              0, 5)
-                            currentValue: root.desktopUsesAwww
-                                          ? PersonalizationConfig.awwwDesktopTransitionType :
-                                            PersonalizationConfig.wallpaperTransitionType
+                            model: root.desktopUsesAwww ? PersonalizationConfig.awwwTransitionTypes.slice(0, 5) : PersonalizationConfig.transitionTypes.slice(0, 5)
+                            currentValue: root.desktopUsesAwww ? PersonalizationConfig.awwwDesktopTransitionType : PersonalizationConfig.wallpaperTransitionType
                             horizontalPadding: 24
                             onValueSelected: value => {
                                 if (root.desktopUsesAwww)
@@ -527,12 +489,8 @@ StyledFlickable {
 
                         StyledButtonGroup {
                             Layout.alignment: Qt.AlignHCenter
-                            model: root.desktopUsesAwww ? PersonalizationConfig.awwwTransitionTypes.slice(5,
-                                                                                                          10) : PersonalizationConfig.transitionTypes.slice(
-                                                              5, 9)
-                            currentValue: root.desktopUsesAwww
-                                          ? PersonalizationConfig.awwwDesktopTransitionType :
-                                            PersonalizationConfig.wallpaperTransitionType
+                            model: root.desktopUsesAwww ? PersonalizationConfig.awwwTransitionTypes.slice(5, 10) : PersonalizationConfig.transitionTypes.slice(5, 9)
+                            currentValue: root.desktopUsesAwww ? PersonalizationConfig.awwwDesktopTransitionType : PersonalizationConfig.wallpaperTransitionType
                             horizontalPadding: 24
                             onValueSelected: value => {
                                 if (root.desktopUsesAwww)
@@ -548,8 +506,7 @@ StyledFlickable {
                             model: PersonalizationConfig.awwwTransitionTypes.slice(10, 14)
                             currentValue: PersonalizationConfig.awwwDesktopTransitionType
                             horizontalPadding: 24
-                            onValueSelected: value => PersonalizationConfig.setAwwwDesktopTransitionType(
-                                                          value)
+                            onValueSelected: value => PersonalizationConfig.setAwwwDesktopTransitionType(value)
                         }
                     }
                 }
@@ -575,7 +532,7 @@ StyledFlickable {
                         text: I18n.tr("awww FPS")
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.ui
-                        font.pixelSize: 15
+                        font.pixelSize: Appearance.scaledFont(15)
                         font.weight: Font.Medium
                     }
 
@@ -602,10 +559,8 @@ StyledFlickable {
                 }
 
                 StyledToolTip {
-                    extraVisibleCondition: fpsHover.hovered && (!root.desktopUsesAwww ||
-                                                                !root.awwwStepSupported)
-                    text: root.desktopUsesAwww ? I18n.tr("The none transition does not use FPS.") : I18n.tr(
-                                                     "Independent FPS is available only with awww.")
+                    extraVisibleCondition: fpsHover.hovered && (!root.desktopUsesAwww || !root.awwwStepSupported)
+                    text: root.desktopUsesAwww ? I18n.tr("The none transition does not use FPS.") : I18n.tr("Independent FPS is available only with awww.")
                 }
             }
 
@@ -624,7 +579,7 @@ StyledFlickable {
                         text: I18n.tr("Transition step")
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.ui
-                        font.pixelSize: 15
+                        font.pixelSize: Appearance.scaledFont(15)
                         font.weight: Font.Medium
                     }
 
@@ -671,7 +626,7 @@ StyledFlickable {
                         text: I18n.tr("Transition duration")
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.ui
-                        font.pixelSize: 15
+                        font.pixelSize: Appearance.scaledFont(15)
                         font.weight: Font.Medium
                     }
 
@@ -722,7 +677,7 @@ StyledFlickable {
                     text: I18n.tr("Easing curve")
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.ui
-                    font.pixelSize: 15
+                    font.pixelSize: Appearance.scaledFont(15)
                     font.weight: Font.Medium
                 }
 
@@ -734,8 +689,7 @@ StyledFlickable {
                     enabled: root.sharedTransitionParametersEnabled
 
                     property real controlsWidth: 172
-                    property real chartSide: Math.min(420, Math.max(360, root.pageContentWidth
-                                                                    - controlsWidth - spacing))
+                    property real chartSide: Math.min(420, Math.max(360, root.pageContentWidth - controlsWidth - spacing))
 
                     BezierCurveEditor {
                         id: easingCurveEditor
@@ -747,8 +701,7 @@ StyledFlickable {
                         easingMode: PersonalizationConfig.transitionEasingMode
                         playDurationMs: Math.max(200, PersonalizationConfig.transitionDurationMs)
                         onControlsEdited: nextCurve => WallpaperService.setTransitionBezierCurve(nextCurve)
-                        onEditRequested: bezierCurveLayerEditor.openWithCurve(
-                                             PersonalizationConfig.transitionBezierCurve)
+                        onEditRequested: bezierCurveLayerEditor.openWithCurve(PersonalizationConfig.transitionBezierCurve)
                     }
 
                     ColumnLayout {
@@ -818,8 +771,7 @@ StyledFlickable {
             SettingsSearchAnchor {
                 id: searchAnchor3
                 target: searchSection3
-                declaration:
-                    '{"id":"wallpaper.section.parallax-effects","route":"wallpaper","title":"Parallax effects","context":"WallpaperPage","icon":"wallpaper","aliases":[]}'
+                declaration: '{"id":"wallpaper.section.parallax-effects","route":"wallpaper","title":"Parallax effects","context":"WallpaperPage","icon":"wallpaper","aliases":[]}'
             }
             iconName: "view_in_ar"
 
@@ -872,8 +824,7 @@ StyledFlickable {
                         }
 
                         StyledToolTip {
-                            extraVisibleCondition: workspaceParallaxHover.hovered && !root.desktopUsesAwww &&
-                                                   !PersonalizationConfig.parallaxVerticalEnabled
+                            extraVisibleCondition: workspaceParallaxHover.hovered && !root.desktopUsesAwww && !PersonalizationConfig.parallaxVerticalEnabled
                             text: I18n.tr("Enable vertical parallax first.")
                         }
                     }
@@ -970,8 +921,7 @@ StyledFlickable {
             SettingsSearchAnchor {
                 id: searchAnchor4
                 target: searchSection4
-                declaration:
-                    '{"id":"wallpaper.section.overview-background","route":"wallpaper","title":"Overview background","context":"WallpaperPage","icon":"wallpaper","aliases":[]}'
+                declaration: '{"id":"wallpaper.section.overview-background","route":"wallpaper","title":"Overview background","context":"WallpaperPage","icon":"wallpaper","aliases":[]}'
             }
             iconName: "overview"
 
@@ -983,8 +933,7 @@ StyledFlickable {
                     Layout.preferredWidth: 300
                     Layout.preferredHeight: 176
                     sourcePath: root.currentOverviewPath
-                    previewSource: WallpaperPaletteSession.previewForScreen("overview",
-                                                                            root.selectedOverviewOutput)
+                    previewSource: WallpaperPaletteSession.previewForScreen("overview", root.selectedOverviewOutput)
                     actionsEnabled: !PersonalizationConfig.overviewUseDesktopWallpaper
                     onChooseFile: root.chooseOverviewFile()
                     onChooseColor: root.chooseOverviewColor()
@@ -994,12 +943,8 @@ StyledFlickable {
                 StyledButtonGroup {
                     Layout.alignment: Qt.AlignHCenter
                     model: PersonalizationConfig.fillModes
-                    currentValue: root.selectedOverviewOutput !== ""
-                                  ? PersonalizationConfig.overviewMonitorFillMode(
-                                        root.selectedOverviewOutput) :
-                                    PersonalizationConfig.overviewWallpaperFillMode
-                    onValueSelected: value => WallpaperService.setOverviewFillModeForScreen(
-                                                  root.selectedOverviewOutput, value)
+                    currentValue: root.selectedOverviewOutput !== "" ? PersonalizationConfig.overviewMonitorFillMode(root.selectedOverviewOutput) : PersonalizationConfig.overviewWallpaperFillMode
+                    onValueSelected: value => WallpaperService.setOverviewFillModeForScreen(root.selectedOverviewOutput, value)
                 }
 
                 SettingsRow {

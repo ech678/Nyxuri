@@ -61,7 +61,7 @@ Item {
 
     Behavior on folderOpenProgress {
         NumberAnimation {
-            duration: 160
+            duration: Appearance.motionDuration(160)
             easing.type: Easing.OutCubic
         }
     }
@@ -69,7 +69,7 @@ Item {
     Behavior on iconSize {
         enabled: !root.directMagnification
         NumberAnimation {
-            duration: 100
+            duration: Appearance.motionDuration(100)
             easing.type: Easing.OutCubic
         }
     }
@@ -89,14 +89,14 @@ Item {
             property: "bounce"
             from: 0
             to: 19
-            duration: 220
+            duration: Appearance.motionDuration(220)
             easing.type: Easing.OutQuad
         }
         NumberAnimation {
             target: root
             property: "bounce"
             to: 0
-            duration: 340
+            duration: Appearance.motionDuration(340)
             easing.type: Easing.OutBounce
         }
         onStopped: root.bounce = 0
@@ -106,16 +106,16 @@ Item {
         id: artwork
         width: root.iconSize
         height: width
-        x: root.horizontal ? (root.width - width) / 2 : root.edge === "left" ? 10 + root.bounce : root.width
-                                                                               - width - 10 - root.bounce
+        x: root.horizontal ? (root.width - width) / 2 : root.edge === "left" ? 10 + root.bounce : root.width - width - 10 - root.bounce
         y: root.horizontal ? root.height - height - 12 - root.bounce : (root.height - height) / 2
         transformOrigin: Item.Center
         scale: DockMotion.iconScale(root.presence)
-        property real pressShade: (pointer.pressed && !root.moved) || root.contextActive || root.dropTarget
-                                  ? 0.3 : 0
+        property real pressShade: (pointer.pressed && !root.moved) || root.contextActive || root.dropTarget ? 0.3 : 0
         Behavior on pressShade {
             NumberAnimation {
-                duration: 90
+                duration: Appearance.motionDuration(90)
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Appearance.animationCurves.standard
             }
         }
         layer.enabled: pressShade > 0
@@ -157,8 +157,7 @@ Item {
             MaterialSymbol {
                 anchors.centerIn: parent
                 anchors.alignWhenCentered: false
-                text: root.edge === "bottom" ? "expand_more" : root.edge === "left" ? "chevron_left" :
-                                                                                      "chevron_right"
+                text: root.edge === "bottom" ? "expand_more" : root.edge === "left" ? "chevron_left" : "chevron_right"
 
                 // Magnify one glyph continuously instead of changing hinted
                 // pixel sizes and optical font variants during pointer motion.
@@ -171,8 +170,7 @@ Item {
         StyledToolTip {
             text: root.dropTarget ? root.dropHint : root.name
             textFormat: Text.PlainText
-            extraVisibleCondition: root.dropTarget || root.showTooltip && pointer.containsMouse &&
-                                   !pointer.pressed && !root.dragged && !root.contextActive
+            extraVisibleCondition: root.dropTarget || root.showTooltip && pointer.containsMouse && !pointer.pressed && !root.dragged && !root.contextActive
         }
     }
 
@@ -189,12 +187,9 @@ Item {
     MouseArea {
         id: pointer
         // Keep the tray clickable, but exclude the empty magnification headroom.
-        x: root.horizontal || root.edge === "left" ? 0 : Math.min(artwork.x, root.width - root.restingIconSize
-                                                                  - 22)
+        x: root.horizontal || root.edge === "left" ? 0 : Math.min(artwork.x, root.width - root.restingIconSize - 22)
         y: root.horizontal ? Math.min(artwork.y, root.height - root.restingIconSize - 22) : 0
-        width: root.horizontal ? root.width : root.edge === "left" ? Math.max(artwork.x + artwork.width,
-                                                                              root.restingIconSize + 22) :
-                                                                     root.width - x
+        width: root.horizontal ? root.width : root.edge === "left" ? Math.max(artwork.x + artwork.width, root.restingIconSize + 22) : root.width - x
         height: root.horizontal ? root.height - y : root.height
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
@@ -215,9 +210,7 @@ Item {
             if (root.kind === "trash" || !(pressedButtons & Qt.LeftButton))
                 return;
             const position = pointer.mapToItem(null, mouse.x, mouse.y);
-            if (!root.moved && Math.hypot(position.x - root.pressPoint.x, position.y - root.pressPoint.y)
-                    < 10)
-
+            if (!root.moved && Math.hypot(position.x - root.pressPoint.x, position.y - root.pressPoint.y) < 10)
                 return;
             root.moved = true;
             root.dragMoved(root.entryKey, position, root.grabOffset, root.iconSize);

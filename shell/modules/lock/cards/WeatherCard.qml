@@ -9,31 +9,22 @@ Rectangle {
 
     property real availableHeight: height
     readonly property string temp: fmtTemp(WeatherService.currentTemperatureC, "--")
-    readonly property string cond: WeatherService.loading ? I18n.tr("Loading…") : (
-                                                                WeatherService.currentWeatherText || I18n.tr(
-                                                                    "Unknown"))
+    readonly property string cond: WeatherService.loading ? I18n.tr("Loading…") : (WeatherService.currentWeatherText || I18n.tr("Unknown"))
     readonly property string loc: WeatherService.locationName || I18n.tr("Location")
     readonly property string iconName: WeatherService.currentIconName || "cloud"
-    readonly property string feelsLike: I18n.tr("Feels like: %1").arg(fmtTemp(WeatherService.currentFeelsLikeC,
-                                                                              "--"))
-    readonly property string humidity: I18n.tr("Humidity: %1").arg(fmtPercent(
-                                                                       WeatherService.currentRelativeHumidity))
+    readonly property string feelsLike: I18n.tr("Feels like: %1").arg(fmtTemp(WeatherService.currentFeelsLikeC, "--"))
+    readonly property string humidity: I18n.tr("Humidity: %1").arg(fmtPercent(WeatherService.currentRelativeHumidity))
     readonly property bool loadingState: WeatherService.loading || !WeatherService.hasValidData
     readonly property bool veryCompact: root.availableHeight < Metrics.lockVeryCompactBreakpoint
     readonly property bool showTitle: root.availableHeight >= Metrics.lockCompactBreakpoint
     readonly property bool allowForecast: root.availableHeight >= Metrics.lockForecastBreakpoint
     readonly property bool showSkeletonForecast: root.loadingState && root.allowForecast
-    readonly property bool showForecast: WeatherService.hasValidData && root.allowForecast
-                                         && WeatherService.hourlyForecast.count() > 0
-    readonly property int forecastCount: root.availableHeight < Metrics.lockFetchExpandedBreakpoint ? 3 :
-                                                                                                      root.width
-                                                                                                      < 360 ? 4 :
-                                                                                                              5
+    readonly property bool showForecast: WeatherService.hasValidData && root.allowForecast && WeatherService.hourlyForecast.count() > 0
+    readonly property int forecastCount: root.availableHeight < Metrics.lockFetchExpandedBreakpoint ? 3 : root.width < 360 ? 4 : 5
     readonly property int forecastSpacing: root.width < 400 ? Metrics.spacingM : Metrics.spacingXL
     readonly property int forecastFontSize: root.width < 400 ? 18 : 20
     readonly property int forecastIconSize: root.width < 400 ? 50 : 56
-    readonly property int contentMargin: root.veryCompact ? Metrics.lockOuterPadding :
-                                                            Metrics.lockOuterPadding * 2
+    readonly property int contentMargin: root.veryCompact ? Metrics.lockOuterPadding : Metrics.lockOuterPadding * 2
     property real skeletonPulse: 0
 
     function validNumber(value) {
@@ -82,9 +73,7 @@ Rectangle {
     }
 
     Layout.fillWidth: true
-    implicitHeight: Math.max(contentLayout.implicitHeight + contentLayout.anchors.topMargin
-                             + contentLayout.anchors.bottomMargin, skeletonLayout.implicitHeight
-                             + skeletonLayout.anchors.topMargin + skeletonLayout.anchors.bottomMargin)
+    implicitHeight: Math.max(contentLayout.implicitHeight + contentLayout.anchors.topMargin + contentLayout.anchors.bottomMargin, skeletonLayout.implicitHeight + skeletonLayout.anchors.topMargin + skeletonLayout.anchors.bottomMargin)
     color: Appearance.colors.colLayer2
     radius: Metrics.lockCardRadius
     clip: true
@@ -110,7 +99,7 @@ Rectangle {
             text: I18n.tr("Weather")
             color: Appearance.colors.colPrimary
             font.family: Fonts.ui
-            font.pixelSize: 36
+            font.pixelSize: Appearance.scaledFont(36)
             font.weight: 500
             Layout.alignment: Qt.AlignHCenter
             Layout.bottomMargin: -Metrics.lockOuterPadding
@@ -138,7 +127,7 @@ Rectangle {
                     text: root.width <= 320 ? root.temp + "  " + root.cond : root.cond
                     color: Appearance.colors.colSecondary
                     font.family: Fonts.ui
-                    font.pixelSize: 24
+                    font.pixelSize: Appearance.scaledFont(24)
                     font.weight: 500
                     elide: Text.ElideRight
                 }
@@ -148,7 +137,7 @@ Rectangle {
                     text: root.humidity
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.ui
-                    font.pixelSize: 17
+                    font.pixelSize: Appearance.scaledFont(17)
                     elide: Text.ElideRight
                 }
             }
@@ -164,7 +153,7 @@ Rectangle {
                     text: root.temp
                     color: Appearance.colors.colPrimary
                     font.family: Fonts.ui
-                    font.pixelSize: 38
+                    font.pixelSize: Appearance.scaledFont(38)
                     font.weight: 500
                     horizontalAlignment: Text.AlignRight
                     elide: Text.ElideLeft
@@ -176,7 +165,7 @@ Rectangle {
                     visible: !root.veryCompact
                     color: Appearance.colors.colOutline
                     font.family: Fonts.ui
-                    font.pixelSize: 16
+                    font.pixelSize: Appearance.scaledFont(16)
                     horizontalAlignment: Text.AlignRight
                     elide: Text.ElideLeft
                 }
@@ -263,8 +252,7 @@ Rectangle {
             anchors.leftMargin: root.contentMargin
             anchors.rightMargin: root.contentMargin
             anchors.topMargin: root.showTitle ? Metrics.lockOuterPadding * 2 : Metrics.lockOuterPadding
-            anchors.bottomMargin: root.showSkeletonForecast ? Metrics.lockOuterPadding * 2 :
-                                                              Metrics.lockOuterPadding
+            anchors.bottomMargin: root.showSkeletonForecast ? Metrics.lockOuterPadding * 2 : Metrics.lockOuterPadding
             spacing: 7
 
             SkeletonBlock {

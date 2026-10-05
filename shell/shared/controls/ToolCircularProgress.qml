@@ -12,7 +12,7 @@ Item {
     property color trackColor: Appearance.colors.colSecondaryContainer
     property real gapAngle: 20
     property bool enableAnimation: true
-    property int animationDuration: 800
+    property int animationDuration: Appearance.motionDuration(800)
 
     property real degree: Math.max(0, Math.min(1, value)) * 360
     readonly property real centerX: width / 2

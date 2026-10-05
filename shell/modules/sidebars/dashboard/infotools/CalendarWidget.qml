@@ -159,6 +159,7 @@ Item {
         Accessible.name: accessibleName
 
         Behavior on implicitWidth {
+            enabled: Appearance.animationsEnabled
             SmoothedAnimation {
                 velocity: 650
             }
@@ -176,7 +177,7 @@ Item {
                 text: headerButton.buttonText
                 color: Appearance.colors.colOnLayer1
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: Appearance.scaledFont(14)
             }
 
             MaterialSymbol {
@@ -209,22 +210,17 @@ Item {
         toggled: todayState === 1
         buttonRadius: Appearance.rounding.small
         containerColor: dayButton.todayState === 1 ? Appearance.colors.colPrimary : "transparent"
-        stateLayerColor: dayButton.todayState === 1 ? Appearance.colors.colPrimaryHover :
-                                                      Appearance.colors.colLayer1Hover
-        pressedStateLayerColor: dayButton.todayState === 1 ? Appearance.colors.colPrimaryActive :
-                                                             Appearance.colors.colLayer1Active
-        rippleColor: dayButton.todayState === 1 ? Appearance.colors.colOnPrimary :
-                                                  Appearance.colors.colOnLayer1
+        stateLayerColor: dayButton.todayState === 1 ? Appearance.colors.colPrimaryHover : Appearance.colors.colLayer1Hover
+        pressedStateLayerColor: dayButton.todayState === 1 ? Appearance.colors.colPrimaryActive : Appearance.colors.colLayer1Active
+        rippleColor: dayButton.todayState === 1 ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
 
         contentItem: Text {
             text: dayButton.day
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: dayButton.todayState === 1 ? Appearance.colors.colOnPrimary : dayButton.todayState === 0
-                                                ? Appearance.colors.colOnLayer1 :
-                                                  Appearance.colors.colOutlineVariant
+            color: dayButton.todayState === 1 ? Appearance.colors.colOnPrimary : dayButton.todayState === 0 ? Appearance.colors.colOnLayer1 : Appearance.colors.colOutlineVariant
             font.family: Fonts.ui
-            font.pixelSize: 14
+            font.pixelSize: Appearance.scaledFont(14)
             font.weight: dayButton.bold ? Font.DemiBold : Font.Normal
 
             Behavior on color {

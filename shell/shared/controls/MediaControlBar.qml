@@ -30,7 +30,7 @@ RowLayout {
     property real controlHitMargin: 10
     property real controlPressedScale: 0.8
     property real controlHoverScale: 1.1
-    property int controlScaleDuration: 150
+    property int controlScaleDuration: Appearance.motionDuration(150)
 
     // === PlayPauseButton 颜色 ===
     property color playingBg: Appearance.colors.colPrimary
@@ -47,16 +47,16 @@ RowLayout {
     property string playIconName: "play_arrow"
     property string pauseIconName: "pause"
 
-    signal shuffleClicked()
-    signal previousClicked()
-    signal playPauseClicked()
-    signal nextClicked()
-    signal loopClicked()
+    signal shuffleClicked
+    signal previousClicked
+    signal playPauseClicked
+    signal nextClicked
+    signal loopClicked
 
     spacing: 40
 
     // --- 内部控制按钮组件 ---
-    component CtrlBtn : Text {
+    component CtrlBtn: Text {
         property bool active: false
         font.family: root.iconFontFamily
         font.pixelSize: root.iconSize
@@ -64,7 +64,14 @@ RowLayout {
         opacity: !enabled ? root.disabledOpacity : (active ? 1.0 : root.inactiveOpacity)
         scale: enabled ? (ma.pressed ? root.controlPressedScale : (ma.containsMouse ? root.controlHoverScale : 1.0)) : 1.0
 
-        Behavior on scale { NumberAnimation { duration: root.controlScaleDuration } }
+        Behavior on scale {
+            enabled: Appearance.animationsEnabled
+            NumberAnimation {
+                duration: root.controlScaleDuration
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Appearance.animationCurves.standard
+            }
+        }
 
         MouseArea {
             id: ma
@@ -75,7 +82,7 @@ RowLayout {
             enabled: parent.enabled
             onClicked: parent.triggered()
         }
-        signal triggered()
+        signal triggered
     }
 
     // Shuffle

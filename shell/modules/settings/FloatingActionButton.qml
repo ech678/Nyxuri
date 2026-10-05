@@ -15,7 +15,7 @@ RippleButton {
     property color pressedStateColor: Appearance.colors.colPrimaryContainerActive
     property color contentColor: Appearance.colors.colOnPrimaryContainer
 
-    signal altClicked()
+    signal altClicked
 
     Layout.alignment: Qt.AlignLeft
     implicitWidth: root.expanded ? Math.max(contentRow.implicitWidth + 20, root.baseSize) : root.baseSize
@@ -41,7 +41,6 @@ RippleButton {
             easing.type: Appearance.animation.elementMoveFast.type
             easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
         }
-
     }
 
     contentItem: Row {
@@ -78,7 +77,7 @@ RippleButton {
                 text: root.buttonText
                 color: root.contentColor
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: Appearance.scaledFont(14)
                 font.weight: Font.Medium
             }
 
@@ -88,11 +87,7 @@ RippleButton {
                     easing.type: Appearance.animation.elementMoveFast.type
                     easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
                 }
-
             }
-
         }
-
     }
-
 }

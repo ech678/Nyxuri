@@ -27,18 +27,14 @@ Rectangle {
     property real padding: 6
 
     property var parentGroup: root.parent
-    readonly property int indexInParent: parentGroup && parentGroup.indexOfButton ? parentGroup.indexOfButton(
-                                                                                        root) : -1
-    readonly property int clickIndex: parentGroup && parentGroup.clickIndex !== undefined
-                                      ? parentGroup.clickIndex : -1
-    readonly property bool isAtSide: indexInParent === 0 || (parentGroup && indexInParent
-                                                             === parentGroup.childrenCount - 1)
+    readonly property int indexInParent: parentGroup && parentGroup.indexOfButton ? parentGroup.indexOfButton(root) : -1
+    readonly property int clickIndex: parentGroup && parentGroup.clickIndex !== undefined ? parentGroup.clickIndex : -1
+    readonly property bool isAtSide: indexInParent === 0 || (parentGroup && indexInParent === parentGroup.childrenCount - 1)
     readonly property bool expandedSplitStyle: expanded
     readonly property bool expandedAltAction: expandedSplitStyle && hasAltAction && !editMode
     property bool down: false
     property bool suppressRelease: false
-    property real baseWidth: (expanded && expandedWidth > 0) ? expandedWidth : baseCellWidth * cellSize
-                                                               + cellSpacing * (cellSize - 1)
+    property real baseWidth: (expanded && expandedWidth > 0) ? expandedWidth : baseCellWidth * cellSize + cellSpacing * (cellSize - 1)
     property real baseHeight: baseCellHeight
     property real clickedWidth: baseWidth + (isAtSide ? 10 : 20)
     property real clickedHeight: baseHeight
@@ -48,10 +44,8 @@ Rectangle {
     signal altTriggered
     signal wheelMoved(int delta)
 
-    Layout.fillWidth: bounce && clickIndex >= 0 && indexInParent >= clickIndex - 1 && indexInParent <= clickIndex
-                      + 1
-    Layout.fillHeight: bounce && clickIndex >= 0 && indexInParent >= clickIndex - 1 && indexInParent
-                       <= clickIndex + 1
+    Layout.fillWidth: bounce && clickIndex >= 0 && indexInParent >= clickIndex - 1 && indexInParent <= clickIndex + 1
+    Layout.fillHeight: bounce && clickIndex >= 0 && indexInParent >= clickIndex - 1 && indexInParent <= clickIndex + 1
 
     implicitWidth: down && bounce ? clickedWidth : baseWidth
     implicitHeight: down && bounce ? clickedHeight : baseHeight
@@ -60,19 +54,14 @@ Rectangle {
     clip: true
     enabled: available || editMode
 
-    readonly property color textColor: toggled && !expandedSplitStyle && enabled
-                                       ? Appearance.colors.colOnPrimary : Appearance.transparentize(
-                                             Appearance.colors.colOnLayer2, enabled ? 0 : 0.7)
-    readonly property color iconColor: expanded ? (toggled ? Appearance.colors.colOnPrimary :
-                                                             Appearance.colors.colOnLayer3) : textColor
+    readonly property color textColor: toggled && !expandedSplitStyle && enabled ? Appearance.colors.colOnPrimary : Appearance.transparentize(Appearance.colors.colOnLayer2, enabled ? 0 : 0.7)
+    readonly property color iconColor: expanded ? (toggled ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer3) : textColor
     readonly property color backgroundColor: {
         if (!root.enabled)
             return Appearance.colors.colLayer2Disabled;
         if (root.toggled && !root.expandedSplitStyle)
-            return root.down ? Appearance.colors.colPrimaryActive : buttonMouse.containsMouse
-                               ? Appearance.colors.colPrimaryHover : Appearance.colors.colPrimary;
-        return root.down ? Appearance.colors.colLayer2Active : buttonMouse.containsMouse
-                           ? Appearance.colors.colLayer2Hover : Appearance.colors.colLayer2;
+            return root.down ? Appearance.colors.colPrimaryActive : buttonMouse.containsMouse ? Appearance.colors.colPrimaryHover : Appearance.colors.colPrimary;
+        return root.down ? Appearance.colors.colLayer2Active : buttonMouse.containsMouse ? Appearance.colors.colLayer2Hover : Appearance.colors.colLayer2;
     }
 
     color: backgroundColor
@@ -157,8 +146,7 @@ Rectangle {
 
                 anchors.fill: parent
                 radius: Math.max(0, root.radius - root.padding)
-                color: root.expandedSplitStyle ? (root.toggled ? Appearance.colors.colPrimary :
-                                                                 Appearance.colors.colLayer3) : "transparent"
+                color: root.expandedSplitStyle ? (root.toggled ? Appearance.colors.colPrimary : Appearance.colors.colLayer3) : "transparent"
 
                 Behavior on radius {
                     NumberAnimation {
@@ -195,9 +183,7 @@ Rectangle {
                     anchors.fill: parent
                     visible: root.expandedAltAction
                     radius: iconBackground.radius
-                    color: Appearance.transparentize(root.iconColor, iconMouseArea.pressed ? 0.88 :
-                                                                                             iconMouseArea.containsMouse
-                                                                                             ? 0.95 : 1)
+                    color: Appearance.transparentize(root.iconColor, iconMouseArea.pressed ? 0.88 : iconMouseArea.containsMouse ? 0.95 : 1)
 
                     Behavior on color {
                         ColorAnimation {
@@ -222,7 +208,7 @@ Rectangle {
                 elide: Text.ElideRight
                 color: root.textColor
                 font.family: Fonts.ui
-                font.pixelSize: 13
+                font.pixelSize: Appearance.scaledFont(13)
                 font.weight: 600
             }
 
@@ -233,7 +219,7 @@ Rectangle {
                 elide: Text.ElideRight
                 color: root.textColor
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: Appearance.scaledFont(12)
                 font.weight: 100
             }
         }
@@ -295,9 +281,28 @@ Rectangle {
         }
     }
 
+    activeFocusOnTab: root.enabled && !root.editMode
+    Accessible.role: Accessible.Button
+    Accessible.name: root.title.length > 0 ? root.title : root.tooltipText
+    Accessible.checked: root.toggled
+    Accessible.focusable: true
+    Keys.onReturnPressed: root.triggered()
+    Keys.onEnterPressed: root.triggered()
+    Keys.onSpacePressed: root.triggered()
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: 2
+        z: 3
+        color: "transparent"
+        radius: root.radius
+        border.width: root.activeFocus ? 2 : 0
+        border.color: Appearance.colors.colPrimary
+        visible: root.activeFocus
+        Accessible.ignored: true
+    }
+
     StyledToolTip {
-        extraVisibleCondition: root.tooltipText.length > 0 && (buttonMouse.containsMouse
-                                                               || iconMouseArea.containsMouse)
+        extraVisibleCondition: root.tooltipText.length > 0 && (buttonMouse.containsMouse || iconMouseArea.containsMouse)
         text: root.tooltipText
     }
 }

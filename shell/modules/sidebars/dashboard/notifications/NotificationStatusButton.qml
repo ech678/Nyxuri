@@ -13,8 +13,7 @@ Button {
     property bool toggled: false
     readonly property real baseWidth: contentItem.implicitWidth + 46
     readonly property real targetRadius: down ? Appearance.rounding.small : height / 2
-    readonly property bool tabbedTo: activeFocus && (focusReason === Qt.TabFocusReason || focusReason
-                                                     === Qt.BacktabFocusReason)
+    readonly property bool tabbedTo: activeFocus && (focusReason === Qt.TabFocusReason || focusReason === Qt.BacktabFocusReason)
 
     implicitHeight: 36
     implicitWidth: down ? baseWidth + 6 : baseWidth
@@ -59,7 +58,7 @@ Button {
                 text: root.buttonText
                 verticalAlignment: Text.AlignVCenter
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: Appearance.scaledFont(12)
                 font.weight: Font.Medium
                 color: root.toggled ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer2
             }
@@ -74,13 +73,7 @@ Button {
         implicitWidth: root.implicitWidth
         implicitHeight: root.implicitHeight
         radius: animatedRadius
-        color: root.toggled ? (root.down ? Appearance.colors.colPrimaryActive : root.hovered
-                                           ? Appearance.colors.colPrimaryHover :
-                                             Appearance.colors.colPrimary) : (root.down
-                                                                              ? Appearance.colors.colLayer2Active :
-                                                                                root.hovered
-                                                                                ? Appearance.colors.colLayer2Hover :
-                                                                                  Appearance.colors.colLayer2)
+        color: root.toggled ? (root.down ? Appearance.colors.colPrimaryActive : root.hovered ? Appearance.colors.colPrimaryHover : Appearance.colors.colPrimary) : (root.down ? Appearance.colors.colLayer2Active : root.hovered ? Appearance.colors.colLayer2Hover : Appearance.colors.colLayer2)
         border.width: root.tabbedTo ? 2 : 0
         border.color: Appearance.colors.colSecondary
 

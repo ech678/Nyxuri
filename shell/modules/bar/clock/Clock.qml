@@ -9,10 +9,8 @@ TopBarPill {
 
     property bool vertical: false
 
-    implicitHeight: vertical ? layout.implicitHeight + 2 * Sizes.barPillHorizontalPadding :
-                               Sizes.barPillThickness
-    implicitWidth: vertical ? Sizes.barPillThickness : layout.implicitWidth + 2
-                              * Sizes.barPillHorizontalPadding
+    implicitHeight: vertical ? layout.implicitHeight + 2 * Sizes.barPillHorizontalPadding : Sizes.barPillThickness
+    implicitWidth: vertical ? Sizes.barPillThickness : layout.implicitWidth + 2 * Sizes.barPillHorizontalPadding
 
     readonly property string timeString: (TimeService.hours || "00") + ":" + (TimeService.minutes || "00")
     readonly property string dateString: (TimeService.month || "") + " " + (TimeService.day || "")
@@ -25,7 +23,7 @@ TopBarPill {
         Text {
             text: root.timeString
             font.family: Fonts.numeric
-            font.pixelSize: 13
+            font.pixelSize: Appearance.scaledFont(13)
             font.bold: true
             color: Appearance.colors.colOnSurface
             Layout.alignment: Qt.AlignCenter

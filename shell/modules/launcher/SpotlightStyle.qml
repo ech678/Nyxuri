@@ -3,18 +3,12 @@ import qs.shared.theme
 import qs.app.services
 
 QtObject {
-    readonly property color surfaceColor: BlurService.backgroundColor(
-                                              Appearance.m3colors.m3surfaceContainerHigh)
+    readonly property color surfaceColor: BlurService.backgroundColor(Appearance.m3colors.m3surfaceContainerHigh)
     readonly property color panelColor: BlurService.backgroundColor(Appearance.m3colors.m3surfaceContainer)
-    readonly property color selectedColor: Appearance.applyAlpha(Appearance.m3colors.m3primaryContainer,
-                                                                 Math.max(0.46,
-                                                                          PersonalizationConfig.shellBackgroundOpacity))
+    readonly property color selectedColor: Appearance.applyAlpha(Appearance.m3colors.m3primaryContainer, Math.max(0.46, PersonalizationConfig.shellBackgroundOpacity))
     readonly property color selectedContentColor: Appearance.m3colors.m3onPrimaryContainer
-    readonly property color hoverColor: Appearance.applyAlpha(Appearance.m3colors.m3surfaceContainerHighest,
-                                                              Math.max(0.30,
-                                                                       PersonalizationConfig.shellBackgroundOpacity))
-    readonly property color shadowColor: Appearance.applyAlpha(Appearance.m3colors.m3shadow,
-                                                               Appearance.m3colors.darkmode ? 0.34 : 0.20)
+    readonly property color hoverColor: Appearance.applyAlpha(Appearance.m3colors.m3surfaceContainerHighest, Math.max(0.30, PersonalizationConfig.shellBackgroundOpacity))
+    readonly property color shadowColor: Appearance.applyAlpha(Appearance.m3colors.m3shadow, Appearance.m3colors.darkmode ? 0.34 : 0.20)
 
     readonly property int canvasWidth: 1100
     readonly property int searchWidth: 760
@@ -38,7 +32,7 @@ QtObject {
     readonly property int resultMaxHeight: 440
     readonly property int resultRowHeight: 64
     readonly property int resultIconSize: 40
-    readonly property int resultScrollDuration: 240
+    readonly property int resultScrollDuration: Appearance.motionDuration(240)
     readonly property int searchAppCellWidth: 104
     readonly property int searchAppRowHeight: 88
     readonly property int searchWallpaperCellWidth: 156
@@ -69,7 +63,7 @@ QtObject {
     readonly property int wallpaperLabelHeight: 28
     readonly property int wallpaperLabelFontSize: 14
     readonly property real wallpaperHoverScale: 1.045
-    readonly property int wallpaperHoverDuration: 200
+    readonly property int wallpaperHoverDuration: Appearance.motionDuration(200)
     readonly property real wallpaperHoverOverlayOpacity: 0.08
     readonly property real wallpaperPressedOverlayOpacity: 0.14
     readonly property int wallpaperCurrentMarkSize: 30
@@ -77,11 +71,11 @@ QtObject {
     readonly property int windowBottomMargin: 40
     readonly property int emptyHeight: 150
     readonly property int enginePillHeight: 34
-    readonly property int windowOpenDuration: 210
-    readonly property int windowCloseDuration: 175
-    readonly property int railDuration: 620
-    readonly property int webDuration: 340
-    readonly property int panelDuration: 210
+    readonly property int windowOpenDuration: Appearance.motionDuration(210)
+    readonly property int windowCloseDuration: Appearance.motionDuration(175)
+    readonly property int railDuration: Appearance.motionDuration(620)
+    readonly property int webDuration: Appearance.motionDuration(340)
+    readonly property int panelDuration: Appearance.motionDuration(210)
     readonly property real initialScale: 0.96
     readonly property real initialYOffset: -8
     readonly property real railWidthContraction: modeRailReservedWidth

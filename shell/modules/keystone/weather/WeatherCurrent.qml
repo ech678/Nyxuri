@@ -29,19 +29,14 @@ Item {
             return;
         }
         root.locationName = WeatherService.locationName || I18n.tr("Unknown");
-        root.currentTemp = Math.round(UiPreferences.weatherTemperature(WeatherService.currentTemperatureC
-                                                                       || 0)) + "°";
+        root.currentTemp = Math.round(UiPreferences.weatherTemperature(WeatherService.currentTemperatureC || 0)) + "°";
         root.currentIcon = WeatherService.currentIconName || "cloud";
         root.currentDesc = WeatherService.currentWeatherText || I18n.tr("Unknown");
         if (WeatherService.dailyForecast.count() > 0) {
             const today = WeatherService.dailyForecast.get(0);
             const dayPart = today.day || {};
-            root.highTemp = Math.round(UiPreferences.weatherTemperature(Number(today.temperatureMaxC
-                                                                               || dayPart.temperatureC
-                                                                               || 0))) + "°";
-            root.lowTemp = Math.round(UiPreferences.weatherTemperature(Number(today.temperatureMinC || 0)))
-                    + "°";
-
+            root.highTemp = Math.round(UiPreferences.weatherTemperature(Number(today.temperatureMaxC || dayPart.temperatureC || 0))) + "°";
+            root.lowTemp = Math.round(UiPreferences.weatherTemperature(Number(today.temperatureMinC || 0))) + "°";
         } else {
             root.highTemp = "--";
             root.lowTemp = "--";
@@ -90,7 +85,7 @@ Item {
                 text: root.locationName
                 color: Appearance.colors.colOnSurfaceVariant
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: Appearance.scaledFont(14)
                 font.weight: Font.Medium
                 elide: Text.ElideRight
                 Layout.maximumWidth: 120
@@ -100,7 +95,7 @@ Item {
                 text: root.currentTemp
                 color: Appearance.colors.colOnSurface
                 font.family: Fonts.numeric
-                font.pixelSize: 42
+                font.pixelSize: Appearance.scaledFont(42)
                 font.weight: Font.Light
                 lineHeight: 0.95
             }
@@ -109,7 +104,7 @@ Item {
                 text: "↑" + root.highTemp + "  ↓" + root.lowTemp
                 color: Appearance.colors.colOnSurfaceVariant
                 font.family: Fonts.numeric
-                font.pixelSize: 12
+                font.pixelSize: Appearance.scaledFont(12)
             }
         }
 
@@ -131,7 +126,7 @@ Item {
             RotationAnimation on iconRotation {
                 from: 0
                 to: 360
-                duration: 800
+                duration: Appearance.motionLoopDuration(800)
                 loops: Animation.Infinite
                 running: root.visible && WeatherService.loading
             }

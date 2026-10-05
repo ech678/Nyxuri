@@ -18,8 +18,7 @@ Rectangle {
         text: String(root.day).padStart(2, "0")
         color: root.textColor
         font.family: Fonts.expressive
-        font.pixelSize: 20
+        font.pixelSize: Appearance.scaledFont(20)
         font.weight: Font.Black
     }
-
 }

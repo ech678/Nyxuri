@@ -22,12 +22,9 @@ Item {
         iconSize: 18
         iconFill: 1
         iconColor: action.darkOverlay ? "white" : Appearance.colors.colOnSurface
-        normalContainerColor: action.darkOverlay ? Appearance.applyAlpha("white", 0.18) :
-                                                   Appearance.colors.colSurfaceContainerHigh
-        hoverStateLayerColor: action.darkOverlay ? Appearance.applyAlpha("white", 0.28) :
-                                                   Appearance.colors.colSurfaceContainerHighest
-        pressedStateLayerColor: action.darkOverlay ? Appearance.applyAlpha("white", 0.36) :
-                                                     Appearance.colors.colLayer3Active
+        normalContainerColor: action.darkOverlay ? Appearance.applyAlpha("white", 0.18) : Appearance.colors.colSurfaceContainerHigh
+        hoverStateLayerColor: action.darkOverlay ? Appearance.applyAlpha("white", 0.28) : Appearance.colors.colSurfaceContainerHighest
+        pressedStateLayerColor: action.darkOverlay ? Appearance.applyAlpha("white", 0.36) : Appearance.colors.colLayer3Active
     }
 
     HoverHandler {
@@ -46,7 +43,7 @@ Item {
 
         Behavior on opacity {
             NumberAnimation {
-                duration: 160
+                duration: Appearance.motionDuration(160)
                 easing.type: Easing.OutSine
             }
         }
@@ -65,9 +62,7 @@ Item {
 
             HoverActionButton {
                 iconName: "palette"
-                tooltipText: root.paletteEnabled ? I18n.tr("Choose color", "WallpaperPage") : I18n.tr(
-                                                       "Color and gradient wallpapers require the Quickshell backend",
-                                                       "WallpaperPage")
+                tooltipText: root.paletteEnabled ? I18n.tr("Choose color", "WallpaperPage") : I18n.tr("Color and gradient wallpapers require the Quickshell backend", "WallpaperPage")
                 darkOverlay: true
                 enabled: root.actionsEnabled && root.paletteEnabled
                 disabledHoverFeedback: !root.paletteEnabled

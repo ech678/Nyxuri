@@ -26,7 +26,7 @@ Item {
             text: I18n.tr("Cursor theme")
             color: Appearance.colors.colOnSurface
             font.family: Fonts.ui
-            font.pixelSize: 15
+            font.pixelSize: Appearance.scaledFont(15)
             font.weight: Font.Medium
             elide: Text.ElideRight
         }

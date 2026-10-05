@@ -15,15 +15,16 @@ TabBar {
 
     Behavior on leadingIndex {
         NumberAnimation {
-            duration: 100
+            duration: Appearance.motionDuration(100)
             easing.type: Easing.OutSine
         }
     }
 
     Behavior on trailingIndex {
         NumberAnimation {
-            duration: 300
-            easing.type: Easing.OutSine
+            duration: Appearance.animation.elementMoveFast.duration
+            easing.type: Appearance.animation.elementMoveFast.type
+            easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
         }
     }
 
@@ -47,8 +48,7 @@ TabBar {
             anchors.bottom: parent.bottom
             height: 3
             x: Math.min(root.leadingIndex, root.trailingIndex) * baseWidth + root.indicatorPadding
-            width: ((Math.max(root.leadingIndex, root.trailingIndex) + 1) * baseWidth
-                    - root.indicatorPadding) - x
+            width: ((Math.max(root.leadingIndex, root.trailingIndex) + 1) * baseWidth - root.indicatorPadding) - x
             topLeftRadius: height
             topRightRadius: height
             color: Appearance.colors.colPrimary

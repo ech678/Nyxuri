@@ -22,7 +22,7 @@ Rectangle {
             text: "“"
             // 使用次级文字颜色，或者用 primary 强调色
             color: Appearance.colors.colOnSurfaceVariant
-            font.pixelSize: 60
+            font.pixelSize: Appearance.scaledFont(60)
             font.family: Fonts.ui
             Layout.alignment: Qt.AlignLeft | Qt.AlignTop
             Layout.preferredHeight: 40
@@ -33,7 +33,7 @@ Rectangle {
             text: I18n.tr("Take a break,\nwe’ll be right back.")
             color: Appearance.colors.colOnSurface
             font.family: Fonts.ui
-            font.pixelSize: 26
+            font.pixelSize: Appearance.scaledFont(26)
             font.bold: true
             font.italic: true
             Layout.fillWidth: true
@@ -47,7 +47,7 @@ Rectangle {
         Text {
             text: "”"
             color: Appearance.colors.colOnSurfaceVariant
-            font.pixelSize: 60
+            font.pixelSize: Appearance.scaledFont(60)
             font.family: Fonts.ui
             Layout.alignment: Qt.AlignRight | Qt.AlignBottom
             Layout.preferredHeight: 40

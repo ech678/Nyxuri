@@ -22,8 +22,15 @@ Item {
         anchors.fill: parent
         anchors.margins: root.horizontal ? 4 : 0
         radius: Metrics.cornerM
-        color: root.selected ? root.style.selectedColor : mouse.containsMouse ? root.style.hoverColor :
-                                                                                "transparent"
+        color: root.selected ? root.style.selectedColor : mouse.containsMouse ? root.style.hoverColor : "transparent"
+
+        Behavior on color {
+            ColorAnimation {
+                duration: Appearance.animation.expressiveFastEffects.duration
+                easing.type: Appearance.animation.expressiveFastEffects.type
+                easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
+            }
+        }
 
         Item {
             id: artworkFrame
@@ -47,12 +54,7 @@ Item {
             ThemeIcon {
                 id: artwork
                 anchors.fill: parent
-                iconSource: root.result.iconKind === "app" && !root.result.symbol ? ApplicationService.iconSource(
-                                                                                        root.result.appIcon) :
-                                                                                    root.result.iconKind
-                                                                                    === "wallpaper"
-                                                                                    ? root.result.previewUrl :
-                                                                                      ""
+                iconSource: root.result.iconKind === "app" && !root.result.symbol ? ApplicationService.iconSource(root.result.appIcon) : root.result.iconKind === "wallpaper" ? root.result.previewUrl : ""
                 sourceSize: Qt.size(width * Screen.devicePixelRatio, height * Screen.devicePixelRatio)
                 asynchronous: true
                 retainWhileLoading: false
@@ -67,8 +69,7 @@ Item {
                 iconSize: root.horizontal ? 32 : 24
                 transform: Scale {
                     origin.x: (root.horizontal ? 32 : 24) / 2
-                    xScale: root.result.appObject?.id === ApplicationService.smallSpaceApplication.id ? 0.5 :
-                                                                                                        1
+                    xScale: root.result.appObject?.id === ApplicationService.smallSpaceApplication.id ? 0.5 : 1
                 }
                 color: root.selected ? root.style.selectedContentColor : Appearance.colors.colOnSurfaceVariant
             }
@@ -98,7 +99,7 @@ Item {
                 text: root.result.subtitle || ""
                 textFormat: Text.PlainText
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: Appearance.scaledFont(12)
                 color: root.selected ? root.style.selectedContentColor : Appearance.colors.colOnSurfaceVariant
                 elide: Text.ElideMiddle
             }
@@ -133,9 +134,7 @@ Item {
         }
         StyledToolTip {
             extraVisibleCondition: false
-            alternativeVisibleCondition: mouse.containsMouse && (title.truncated || !!root.result.appObject
-                                                                 ?.dragOnly) &&
-                                         !DockService.externalDragActive
+            alternativeVisibleCondition: mouse.containsMouse && (title.truncated || !!root.result.appObject?.dragOnly) && !DockService.externalDragActive
             text: root.result.appObject?.dragOnly ? root.result.subtitle : root.result.title
             textFormat: Text.PlainText
         }

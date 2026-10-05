@@ -52,8 +52,7 @@ Rectangle {
                     text: root.iconName
                     iconSize: Metrics.iconM
                     fill: root.hasIconContainer ? 1 : 0
-                    color: root.hasIconContainer ? Appearance.colors.colOnSecondaryContainer :
-                                                   Appearance.colors.colOnSurfaceVariant
+                    color: root.hasIconContainer ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnSurfaceVariant
                 }
             }
 
@@ -75,7 +74,7 @@ Rectangle {
             text: root.supportingText
             color: root.flat ? Appearance.colors.colOnSurfaceVariant : Appearance.colors.colOnLayer1
             font.family: Fonts.ui
-            font.pixelSize: 12
+            font.pixelSize: Appearance.scaledFont(12)
             wrapMode: Text.Wrap
         }
 

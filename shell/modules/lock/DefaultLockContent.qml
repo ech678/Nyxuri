@@ -21,14 +21,14 @@ Item {
 
     Behavior on clockScale {
         NumberAnimation {
-            duration: 380
+            duration: Appearance.motionDuration(380)
             easing.type: Easing.BezierSpline
             easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1]
         }
     }
     Behavior on authScale {
         NumberAnimation {
-            duration: 460
+            duration: Appearance.motionDuration(460)
             easing.type: Easing.BezierSpline
             easing.bezierCurve: [0.16, 1, 0.3, 1, 1, 1]
         }
@@ -42,32 +42,47 @@ Item {
         input.forceActiveFocus();
     }
 
+    property real entranceProgress: Appearance.animationsEnabled ? 0 : 1
+    Behavior on entranceProgress {
+        enabled: Appearance.animationsEnabled
+        NumberAnimation {
+            duration: Appearance.motionDuration(520)
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: [0.16, 1, 0.3, 1, 1, 1]
+        }
+    }
+    Timer {
+        interval: 40
+        running: Appearance.animationsEnabled
+        onTriggered: root.entranceProgress = 1
+    }
+
     // Independent effects and spatial curves keep the incoming form legible
     // while the clock clears it. Reversing midway continues from current values.
     Behavior on clockOpacity {
         NumberAnimation {
-            duration: 240
+            duration: Appearance.motionDuration(240)
             easing.type: Easing.BezierSpline
             easing.bezierCurve: [0.3, 0, 0.8, 0.15, 1, 1]
         }
     }
     Behavior on clockOffset {
         NumberAnimation {
-            duration: 380
+            duration: Appearance.motionDuration(380)
             easing.type: Easing.BezierSpline
             easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1]
         }
     }
     Behavior on authOpacity {
         NumberAnimation {
-            duration: 360
+            duration: Appearance.motionDuration(360)
             easing.type: Easing.BezierSpline
             easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1]
         }
     }
     Behavior on authOffset {
         NumberAnimation {
-            duration: 460
+            duration: Appearance.motionDuration(460)
             easing.type: Easing.BezierSpline
             easing.bezierCurve: [0.16, 1, 0.3, 1, 1, 1]
         }
@@ -100,17 +115,18 @@ Item {
         anchors.verticalCenterOffset: -24 * root.uiScale + root.clockOffset
         width: parent.width - 48
         spacing: 12
-        opacity: root.clockOpacity
+        opacity: root.clockOpacity * root.entranceProgress
         scale: root.clockScale
+        transform: Translate {
+            y: Appearance.animationsEnabled ? (1 - root.entranceProgress) * 18 * root.uiScale : 0
+        }
 
         Row {
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 18
 
             Text {
-                text: (UiPreferences.useTwelveHourClock ? String((root.now.getHours() + 11) % 12 + 1) : String(
-                                                              root.now.getHours()).padStart(2, "0")) + ":"
-                      + Qt.formatTime(root.now, "mm")
+                text: (UiPreferences.useTwelveHourClock ? String((root.now.getHours() + 11) % 12 + 1) : String(root.now.getHours()).padStart(2, "0")) + ":" + Qt.formatTime(root.now, "mm")
                 color: "white"
                 font.family: Fonts.numeric
                 font.pixelSize: Math.min(root.width * 0.19, root.height * 0.24, 240)
@@ -122,8 +138,7 @@ Item {
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: parent.height * 0.18
                 visible: UiPreferences.useTwelveHourClock
-                text: root.now.getHours() < 12 ? Qt.locale(Qt.uiLanguage).amText : Qt.locale(
-                                                     Qt.uiLanguage).pmText
+                text: root.now.getHours() < 12 ? Qt.locale(Qt.uiLanguage).amText : Qt.locale(Qt.uiLanguage).pmText
                 color: "white"
                 font.family: Fonts.numeric
                 font.pixelSize: Math.min(root.width * 0.045, 48)
@@ -148,8 +163,11 @@ Item {
         anchors.verticalCenterOffset: -24 * root.uiScale + root.authOffset
         width: root.contentWidth
         spacing: 24 * root.uiScale
-        opacity: root.authOpacity
+        opacity: root.authOpacity * root.entranceProgress
         scale: root.authScale
+        transform: Translate {
+            y: Appearance.animationsEnabled ? (1 - root.entranceProgress) * 26 * root.uiScale : 0
+        }
 
         Rectangle {
             width: root.avatarSize
@@ -199,7 +217,7 @@ Item {
                 text: SystemIdentityService.accountName
                 color: "white"
                 font.family: Fonts.ui
-                font.pixelSize: 40 * root.uiScale
+                font.pixelSize: Appearance.scaledFont(40) * root.uiScale
                 font.weight: Font.Medium
                 elide: Text.ElideRight
             }
@@ -266,7 +284,7 @@ Item {
                     visible: input.text.length === 0 && !root.busy
                     text: I18n.tr("Password")
                     font.family: Fonts.ui
-                    font.pixelSize: 20 * root.uiScale
+                    font.pixelSize: Appearance.scaledFont(20) * root.uiScale
                     color: "#4D5861"
                 }
 
@@ -277,8 +295,7 @@ Item {
                 ListView {
                     id: dotsView
                     readonly property real availableWidth: field.width - 48 * root.uiScale
-                    readonly property real naturalWidth: count > 0 ? count * (26 * root.uiScale) - spacing + 8
-                                                                     * root.uiScale : 0
+                    readonly property real naturalWidth: count > 0 ? count * (26 * root.uiScale) - spacing + 8 * root.uiScale : 0
                     anchors.centerIn: parent
                     width: Math.min(availableWidth, naturalWidth)
                     leftMargin: 4 * root.uiScale
@@ -296,14 +313,14 @@ Item {
                     cacheBuffer: 52 * root.uiScale
                     Behavior on contentX {
                         NumberAnimation {
-                            duration: 160
+                            duration: Appearance.motionDuration(160)
                             easing.type: Easing.BezierSpline
                             easing.bezierCurve: [0.2, 0, 0, 1, 1, 1]
                         }
                     }
                     Behavior on width {
                         NumberAnimation {
-                            duration: 180
+                            duration: Appearance.motionDuration(180)
                             easing.type: Easing.BezierSpline
                             easing.bezierCurve: [0.2, 0, 0, 1, 1, 1]
                         }
@@ -312,13 +329,7 @@ Item {
                     delegate: Item {
                         id: dot
                         readonly property real viewportCenter: x + width / 2 - dotsView.contentX
-                        readonly property real edgeFade: dotsView.naturalWidth > dotsView.availableWidth
-                                                         ? Math.min(1, Math.max(0, viewportCenter / (14
-                                                                                                     * root.uiScale)),
-                                                                    Math.max(0, (dotsView.width
-                                                                                 - viewportCenter) / (14
-                                                                                                      * root.uiScale))) :
-                                                           1
+                        readonly property real edgeFade: dotsView.naturalWidth > dotsView.availableWidth ? Math.min(1, Math.max(0, viewportCenter / (14 * root.uiScale)), Math.max(0, (dotsView.width - viewportCenter) / (14 * root.uiScale))) : 1
                         opacity: edgeFade
                         width: 16 * root.uiScale
                         height: 28 * root.uiScale
@@ -341,7 +352,7 @@ Item {
                                 properties: "scale,opacity"
                                 from: 0
                                 to: 1
-                                duration: 220
+                                duration: Appearance.motionDuration(220)
                                 easing.type: Easing.BezierSpline
                                 easing.bezierCurve: [0.16, 1, 0.3, 1, 1, 1]
                             }
@@ -350,7 +361,7 @@ Item {
                                 target: circle
                                 properties: "scale,opacity"
                                 to: 0
-                                duration: 160
+                                duration: Appearance.motionDuration(160)
                                 easing.type: Easing.BezierSpline
                                 easing.bezierCurve: [0.3, 0, 1, 1, 1, 1]
                                 onFinished: dot.ListView.delayRemove = false
@@ -376,23 +387,23 @@ Item {
                             property: "opacity"
                             from: 0
                             to: 1
-                            duration: 120
+                            duration: Appearance.motionDuration(120)
                             easing.type: Easing.BezierSpline
                             easing.bezierCurve: [0.2, 0, 0, 1, 1, 1]
                         }
                         PauseAnimation {
-                            duration: 80
+                            duration: Appearance.motionDuration(80)
                         }
                         NumberAnimation {
                             target: errorBorder
                             property: "opacity"
                             to: 0
-                            duration: 180
+                            duration: Appearance.motionDuration(180)
                             easing.type: Easing.BezierSpline
                             easing.bezierCurve: [0.3, 0, 1, 1, 1, 1]
                         }
                         PauseAnimation {
-                            duration: 80
+                            duration: Appearance.motionDuration(80)
                         }
                     }
                 }

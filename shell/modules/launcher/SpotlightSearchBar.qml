@@ -32,9 +32,9 @@ Item {
         errorPulse.restart();
     }
     onPillErrorChanged: if (!pillError.length) {
-                            errorPulse.stop();
-                            errorStrength = 0;
-                        }
+        errorPulse.stop();
+        errorStrength = 0;
+    }
     SequentialAnimation {
         id: errorPulse
         NumberAnimation {
@@ -42,21 +42,23 @@ Item {
             property: "errorStrength"
             from: 0
             to: 1
-            duration: 90
+            duration: Appearance.motionDuration(90)
+            easing.type: Appearance.animation.standardDecel.type
+            easing.bezierCurve: Appearance.animation.standardDecel.bezierCurve
         }
         PauseAnimation {
-            duration: 500
+            duration: Appearance.motionDuration(500)
         }
         NumberAnimation {
             target: root
             property: "errorStrength"
             to: 0
-            duration: 240
+            duration: Appearance.motionDuration(240)
+            easing.type: Appearance.animation.emphasizedAccel.type
+            easing.bezierCurve: Appearance.animation.emphasizedAccel.bezierCurve
         }
     }
-    readonly property real pillWidth: Math.min(220, Math.max(64, root.mainWidth - 180),
-                                               pillLabel.implicitWidth + pillLabel.anchors.leftMargin
-                                               + pillLabel.anchors.rightMargin)
+    readonly property real pillWidth: Math.min(220, Math.max(64, root.mainWidth - 180), pillLabel.implicitWidth + pillLabel.anchors.leftMargin + pillLabel.anchors.rightMargin)
     signal pillClosed
     property string pillSignature: ""
     signal pillTransitionRequested(real target)
@@ -79,11 +81,8 @@ Item {
             displayedPills = [];
     }
     property real requestedMainWidth: style.searchWidth
-    readonly property real buttonDiameter: Math.min(style.modeButtonDiameter, Math.max(24, (requestedMainWidth
-                                                                                            - 160) / style.modeButtonCount
-                                                                                       - style.modeButtonGap))
-    readonly property real expandedMainWidth: Math.max(0, requestedMainWidth - style.modeButtonCount * (
-                                                           buttonDiameter + style.modeButtonGap))
+    readonly property real buttonDiameter: Math.min(style.modeButtonDiameter, Math.max(24, (requestedMainWidth - 160) / style.modeButtonCount - style.modeButtonGap))
+    readonly property real expandedMainWidth: Math.max(0, requestedMainWidth - style.modeButtonCount * (buttonDiameter + style.modeButtonGap))
     readonly property real stableMainLeft: (width - requestedMainWidth) / 2
     readonly property real mainCenterX: morphSurface.mainCenterX
     readonly property real mainWidth: morphSurface.mainWidth
@@ -96,15 +95,13 @@ Item {
     readonly property real pressScaleY: pressScaleYForProgress(webProgress)
     readonly property real pressShadowBlur: shadowBlurForProgress(webProgress)
     readonly property real pressShadowVerticalOffset: shadowVerticalOffsetForProgress(webProgress)
-    readonly property bool inputActiveFocus: structuredInput ? currencyEditor.activeFocus :
-                                                               searchInput.activeFocus
+    readonly property bool inputActiveFocus: structuredInput ? currencyEditor.activeFocus : searchInput.activeFocus
     readonly property var blurRegionItems: morphSurface.blurRegionItems
 
     // Qt also treats cursor/format-only input-method attributes as composing.
     // Fcitx5's Wayland commit can leave those attributes after preedit is empty;
     // only pending text should suspend Spotlight's key routing.
-    readonly property bool inputComposing: structuredInput ? currencyEditor.composing :
-                                                             searchInput.preeditText.length > 0
+    readonly property bool inputComposing: structuredInput ? currencyEditor.composing : searchInput.preeditText.length > 0
     signal releasedKey(var event)
     signal routedKey(var event)
     signal modeClicked(int index)
@@ -239,14 +236,12 @@ Item {
                 anchors.right: parent.right
                 anchors.rightMargin: 30
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.displayedPills.map(entry => entry && entry.value === "web"
-                                                       ? SpotlightSearchService.searchEngineName :
-                                                         SpotlightCatalog.commandTitle(entry)).join(" · ")
+                text: root.displayedPills.map(entry => entry && entry.value === "web" ? SpotlightSearchService.searchEngineName : SpotlightCatalog.commandTitle(entry)).join(" · ")
                 textFormat: Text.PlainText
                 elide: Text.ElideRight
                 color: Appearance.colors.colOnSecondaryContainer
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: Appearance.scaledFont(14)
                 font.weight: Font.DemiBold
                 opacity: root.webEngineProgress
             }
@@ -319,7 +314,7 @@ Item {
                 }
                 color: Appearance.applyAlpha(Appearance.colors.colOnSurfaceVariant, 0.72)
                 font.family: Fonts.ui
-                font.pixelSize: 20
+                font.pixelSize: Appearance.scaledFont(20)
                 verticalAlignment: Text.AlignVCenter
                 opacity: !root.structuredInput && searchInput.text.length === 0 ? 1 - root.webTextProgress : 0
                 elide: Text.ElideRight
@@ -327,19 +322,10 @@ Item {
 
             Text {
                 anchors.fill: parent
-                text: root.mode === "calculator" ? I18n.tr("Enter an expression") : root.mode === "currency"
-                                                   ? I18n.tr("Amount and currency") : root.mode === "time"
-                                                     ? I18n.tr("Choose a time conversion template") :
-                                                       root.mode === "settings" ? I18n.tr("Search settings") :
-                                                                                  root.mode === "actions"
-                                                                                  ? I18n.tr("Search actions") :
-                                                                                    root.mode === "web"
-                                                                                    ? I18n.tr(
-                                                                                          "Search the web") :
-                                                                                      I18n.tr("Search")
+                text: root.mode === "calculator" ? I18n.tr("Enter an expression") : root.mode === "currency" ? I18n.tr("Amount and currency") : root.mode === "time" ? I18n.tr("Choose a time conversion template") : root.mode === "settings" ? I18n.tr("Search settings") : root.mode === "actions" ? I18n.tr("Search actions") : root.mode === "web" ? I18n.tr("Search the web") : I18n.tr("Search")
                 color: Appearance.applyAlpha(Appearance.colors.colOnSurfaceVariant, 0.72)
                 font.family: Fonts.ui
-                font.pixelSize: 20
+                font.pixelSize: Appearance.scaledFont(20)
                 verticalAlignment: Text.AlignVCenter
                 opacity: !root.structuredInput && searchInput.text.length === 0 ? root.webTextProgress : 0
                 elide: Text.ElideRight
@@ -351,12 +337,11 @@ Item {
                 enabled: visible
 
                 anchors.fill: parent
-                color: Qt.tint(Appearance.colors.colOnSurface, Appearance.applyAlpha(
-                                   Appearance.colors.colError, root.errorStrength))
+                color: Qt.tint(Appearance.colors.colOnSurface, Appearance.applyAlpha(Appearance.colors.colError, root.errorStrength))
                 selectionColor: Appearance.colors.colPrimary
                 selectedTextColor: Appearance.colors.colOnPrimary
                 font.family: Fonts.ui
-                font.pixelSize: 20
+                font.pixelSize: Appearance.scaledFont(20)
                 verticalAlignment: TextInput.AlignVCenter
                 selectByMouse: true
                 clip: true
@@ -419,14 +404,8 @@ Item {
             required property var modelData
             readonly property real reveal: root.iconProgress(index)
             readonly property bool logicalFocus: root.modeRailExpanded && root.modeFocusIndex === index
-            readonly property bool iconSelected: root.modeRailExpanded && root.modeFocusIndex >= 0
-                                                 ? logicalFocus : activeMode
-            readonly property bool activeMode: (index === 0 && root.mode === "apps") || (index === 1
-                                                                                         && root.mode
-                                                                                         === "wallpapers") || (
-                                                   index === 2 && root.mode === "clipboard") || (index === 3
-                                                                                                 && root.mode
-                                                                                                 === "files")
+            readonly property bool iconSelected: root.modeRailExpanded && root.modeFocusIndex >= 0 ? logicalFocus : activeMode
+            readonly property bool activeMode: (index === 0 && root.mode === "apps") || (index === 1 && root.mode === "wallpapers") || (index === 2 && root.mode === "clipboard") || (index === 3 && root.mode === "files")
 
             x: root.buttonCenterX(index) - root.buttonDiameter / 2
             y: root.height / 2 - root.buttonDiameter / 2
@@ -438,9 +417,15 @@ Item {
             Rectangle {
                 anchors.fill: parent
                 radius: width / 2
-                color: modeMouse.pressed || modeMouse.containsMouse ? Appearance.applyAlpha(
-                                                                          root.style.hoverColor, 0.42) :
-                                                                      "transparent"
+                color: modeMouse.pressed || modeMouse.containsMouse ? Appearance.applyAlpha(root.style.hoverColor, 0.42) : "transparent"
+
+                Behavior on color {
+                    ColorAnimation {
+                        duration: Appearance.animation.expressiveFastEffects.duration
+                        easing.type: Appearance.animation.expressiveFastEffects.type
+                        easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
+                    }
+                }
             }
 
             MaterialSymbol {

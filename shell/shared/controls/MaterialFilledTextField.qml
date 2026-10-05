@@ -31,6 +31,8 @@ TextField {
     wrapMode: TextInput.NoWrap
     activeFocusOnTab: true
     hoverEnabled: true
+    Accessible.role: Accessible.EditableText
+    Accessible.name: root.placeholderText.length > 0 ? root.placeholderText : root.text
     color: root.enabled ? Appearance.colors.colOnSurface : Appearance.applyAlpha(Appearance.colors.colOnSurface, 0.38)
     selectedTextColor: Appearance.colors.colOnSecondaryContainer
     selectionColor: Appearance.colors.colSecondaryContainer
@@ -91,8 +93,14 @@ TextField {
             height: root.activeFocus || root.error ? 2 : 1
             opacity: root.enabled ? 1 : 0.38
             color: root.error ? Appearance.colors.colError : root.activeFocus ? root.effectiveAccent : root.hovered ? Appearance.colors.colOutline : Appearance.colors.colOutlineVariant
+
+            Behavior on color {
+                ColorAnimation {
+                    duration: Appearance.animation.expressiveFastEffects.duration
+                    easing.type: Appearance.animation.expressiveFastEffects.type
+                    easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
+                }
+            }
         }
-
     }
-
 }

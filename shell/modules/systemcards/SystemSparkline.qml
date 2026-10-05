@@ -73,14 +73,15 @@ Item {
         property: "transitionProgress"
         from: 0
         to: 1
-        duration: Math.max(250, root.updateInterval)
+        duration: Appearance.motionDuration(Math.max(250, root.updateInterval))
         easing.type: Easing.Linear
     }
 
     Behavior on scaleMaximum {
         NumberAnimation {
             duration: Appearance.animation.expressiveSlowEffects.duration
-            easing.type: Easing.Linear
+            easing.type: Appearance.animation.expressiveSlowEffects.type
+            easing.bezierCurve: Appearance.animation.expressiveSlowEffects.bezierCurve
         }
     }
 
@@ -135,9 +136,9 @@ Item {
                     const normalized = Math.max(0, Math.min(1, value / Math.max(1, root.scaleMaximum)));
                     const y = bottom - normalized * (bottom - top);
                     linePoints.push({
-                                        "x": x,
-                                        "y": y
-                                    });
+                        "x": x,
+                        "y": y
+                    });
                 }
                 if (linePoints.length === 0)
                     return;

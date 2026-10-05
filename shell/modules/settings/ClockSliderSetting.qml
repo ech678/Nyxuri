@@ -31,7 +31,7 @@ ColumnLayout {
             text: root.title
             color: Appearance.colors.colOnSecondaryContainer
             font.family: Fonts.ui
-            font.pixelSize: 14
+            font.pixelSize: Appearance.scaledFont(14)
             font.weight: Font.Medium
         }
 
@@ -39,7 +39,7 @@ ColumnLayout {
             text: root.axisTag + "  " + Number(root.value).toFixed(root.valueDecimals) + root.suffix
             color: Appearance.colors.colOnSecondaryContainer
             font.family: Fonts.numeric
-            font.pixelSize: 12
+            font.pixelSize: Appearance.scaledFont(12)
         }
     }
 

@@ -3,6 +3,7 @@ import qs.shared.theme
 import qs.app.services
 import qs.modules.wallpaper
 import "./SpotlightLocalSearch.js" as LocalSearch
+import "./SpotlightUnits.js" as Units
 import qs.app
 import qs.shared.i18n
 
@@ -14,9 +15,9 @@ Item {
     onFilterChanged: rebuild()
     property var results: []
     property var capacities: ({
-                                  apps: 6,
-                                  wallpapers: 4
-                              })
+            apps: 6,
+            wallpapers: 4
+        })
     property string retainedResultId: ""
     property string error: ""
     readonly property string language: Qt.uiLanguage
@@ -29,73 +30,79 @@ Item {
             return;
         if (filter === "settings" || filter === "actions") {
             const catalog = filter === "settings" ? SpotlightCatalog.settings : SpotlightCatalog.actions;
-            const matches = filter === "actions" && !query.trim() ? catalog : LocalSearch.matchCatalog(catalog,
-                                                                                                       query);
+            const matches = filter === "actions" && !query.trim() ? catalog : LocalSearch.matchCatalog(catalog, query);
             results = matches.map(entry => ({
-                id: filter + ":" + entry.id,
-                sourceId: entry.id,
-                provider: filter,
-                query: query,
-                title: entry.title,
-                icon: entry.icon,
-                symbol: entry.icon,
-                subtitle: SpotlightCatalog.available(entry) ? (entry.breadcrumb || entry.description || "") :
-                                                              I18n.tr("Currently unavailable")
-            }));
+                        id: filter + ":" + entry.id,
+                        sourceId: entry.id,
+                        provider: filter,
+                        query: query,
+                        title: entry.title,
+                        icon: entry.icon,
+                        symbol: entry.icon,
+                        subtitle: SpotlightCatalog.available(entry) ? (entry.breadcrumb || entry.description || "") : I18n.tr("Currently unavailable")
+                    }));
             return;
         }
         if (!query.trim()) {
             results = [];
             return;
         }
-        const apps = LocalSearch.appResults(ApplicationService.launcherApplications, query,
-                                            UiPreferences.spotlightAppOrder, SpotlightAppUsage.records,
-                                            Date.now()).map(entry => Object.assign({}, entry, {
-                                                                                       iconKind: entry.symbol
-                                                                                                 ? "symbol" :
-                                                                                                   "app",
-                                                                                       appIcon: entry.icon
-                                                                                   }));
-        const settings = LocalSearch.matchCatalog(SpotlightCatalog.settings.filter(SpotlightCatalog.available),
-                                                  query).map(entry => ({
-                                                      id: entry.id,
-                                                      title: entry.title,
-                                                      subtitle: I18n.tr("Settings · %1").arg(entry.breadcrumb),
-                                                      iconKind: "symbol",
-                                                      symbol: entry.icon
-                                                  }));
+        const apps = LocalSearch.appResults(ApplicationService.launcherApplications, query, UiPreferences.spotlightAppOrder, SpotlightAppUsage.records, Date.now()).map(entry => Object.assign({}, entry, {
+                iconKind: entry.symbol ? "symbol" : "app",
+                appIcon: entry.icon
+            }));
+        const settings = LocalSearch.matchCatalog(SpotlightCatalog.settings.filter(SpotlightCatalog.available), query).map(entry => ({
+                    id: entry.id,
+                    title: entry.title,
+                    subtitle: I18n.tr("Settings · %1").arg(entry.breadcrumb),
+                    iconKind: "symbol",
+                    symbol: entry.icon
+                }));
         const actions = LocalSearch.matchCatalog(SpotlightCatalog.actions, query).map(entry => ({
-            id: entry.id,
-            title: entry.title,
-            subtitle: SpotlightCatalog.available(entry) ? I18n.tr("Action · %1").arg(entry.description) : I18n.tr("Action · Currently unavailable"),
-
-
-            iconKind: "symbol",
-            symbol: entry.icon,
-            available: SpotlightCatalog.available(entry)
-        }));
-        const wallpapers = LocalSearch.wallpaperPaths(WallpaperService.wallpapers, query,
-                                                      WallpaperService.basename).map(path => ({
-                                                          id: path,
-                                                          title: WallpaperService.basename(path),
-                                                          subtitle: WallpaperService.parentFolder(path),
-                                                          iconKind: "wallpaper",
-                                                          previewUrl: Paths.fileUrl(path),
-                                                          symbol: "image"
-                                                      }));
+                    id: entry.id,
+                    title: entry.title,
+                    subtitle: SpotlightCatalog.available(entry) ? I18n.tr("Action · %1").arg(entry.description) : I18n.tr("Action · Currently unavailable"),
+                    iconKind: "symbol",
+                    symbol: entry.icon,
+                    available: SpotlightCatalog.available(entry)
+                }));
+        const wallpapers = LocalSearch.wallpaperPaths(WallpaperService.wallpapers, query, WallpaperService.basename).map(path => ({
+                    id: path,
+                    title: WallpaperService.basename(path),
+                    subtitle: WallpaperService.parentFolder(path),
+                    iconKind: "wallpaper",
+                    previewUrl: Paths.fileUrl(path),
+                    symbol: "image"
+                }));
         results = LocalSearch.groupedResults({
-                                                 apps: apps,
-                                                 settings: settings,
-                                                 actions: actions,
-                                                 wallpapers: wallpapers
-                                             }, query, {
-                                                 apps: I18n.tr("Apps"),
-                                                 settings: I18n.tr("Settings"),
-                                                 actions: I18n.tr("Actions"),
-                                                 wallpapers: I18n.tr("Wallpapers"),
-                                                 files: I18n.tr("Search files for “%1”").arg(query),
-                                                 web: I18n.tr("Search the web for “%1”").arg(query)
-                                             }, capacities, retainedResultId);
+            apps: apps,
+            settings: settings,
+            actions: actions,
+            wallpapers: wallpapers
+        }, query, {
+            apps: I18n.tr("Apps"),
+            settings: I18n.tr("Settings"),
+            actions: I18n.tr("Actions"),
+            wallpapers: I18n.tr("Wallpapers"),
+            files: I18n.tr("Search files for “%1”").arg(query),
+            web: I18n.tr("Search the web for “%1”").arg(query)
+        }, capacities, retainedResultId);
+        const conversion = Units.answer(query);
+        if (conversion) {
+            results = [
+                {
+                    id: "units:convert",
+                    sourceId: "convert",
+                    provider: "units",
+                    query: query,
+                    title: conversion.expression,
+                    subtitle: I18n.tr("Copy result"),
+                    iconKind: "symbol",
+                    symbol: "calculate",
+                    copyText: conversion.copyText
+                }
+            ].concat(results);
+        }
     }
     function activate(id) {
         if (!active)
@@ -105,6 +112,15 @@ Item {
             return false;
         error = "";
         switch (request.provider) {
+        case "units":
+            if (request.sourceId !== "convert")
+                break;
+            const conversion = Units.answer(query);
+            if (conversion && SpotlightToolService.writeClipboard(conversion.copyText)) {
+                closeRequested();
+                return true;
+            }
+            break;
         case "extension":
             if (request.sourceId === "files")
                 modeRequested("files", request.query);
@@ -120,8 +136,7 @@ Item {
             }
             break;
         case "wallpapers":
-            if (!WallpaperService.busy && WallpaperService.wallpapers.indexOf(request.sourceId) >= 0 && WallpaperService.setWallpaper(
-                        request.sourceId)) {
+            if (!WallpaperService.busy && WallpaperService.wallpapers.indexOf(request.sourceId) >= 0 && WallpaperService.setWallpaper(request.sourceId)) {
                 closeRequested();
                 return true;
             }

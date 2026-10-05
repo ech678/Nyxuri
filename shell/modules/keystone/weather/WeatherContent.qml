@@ -36,8 +36,7 @@ Item {
 
     function cssColor(colorValue, alphaMultiplier) {
         const alpha = alphaMultiplier === undefined ? colorValue.a : colorValue.a * alphaMultiplier;
-        return "rgba(" + Math.round(colorValue.r * 255) + "," + Math.round(colorValue.g * 255) + "," + Math.round(
-                    colorValue.b * 255) + "," + Math.max(0, Math.min(1, alpha)).toFixed(3) + ")";
+        return "rgba(" + Math.round(colorValue.r * 255) + "," + Math.round(colorValue.g * 255) + "," + Math.round(colorValue.b * 255) + "," + Math.max(0, Math.min(1, alpha)).toFixed(3) + ")";
     }
 
     function updatedText() {
@@ -114,12 +113,10 @@ Item {
         root.latitude = Number(WeatherService.latitude);
         root.longitude = Number(WeatherService.longitude);
         root.locationName = WeatherService.locationName || I18n.tr("Unknown");
-        root.currentTemp = Math.round(UiPreferences.weatherTemperature(WeatherService.currentTemperatureC))
-                + "°";
+        root.currentTemp = Math.round(UiPreferences.weatherTemperature(WeatherService.currentTemperatureC)) + "°";
         root.currentIcon = WeatherService.currentIconName || "cloud";
         root.currentDesc = WeatherService.currentWeatherText || I18n.tr("Unknown");
-        root.feelsLike = Math.round(UiPreferences.weatherTemperature(WeatherService.currentFeelsLikeC))
-                + UiPreferences.weatherTemperatureSymbol();
+        root.feelsLike = Math.round(UiPreferences.weatherTemperature(WeatherService.currentFeelsLikeC)) + UiPreferences.weatherTemperatureSymbol();
         root.humidity = Math.round(WeatherService.currentRelativeHumidity) + "%";
         root.windSpeed = Math.round(WeatherService.currentWindSpeedMs * 3.6) + " km/h";
         root.pressure = Math.round(WeatherService.currentPressureHpa) + " hPa";
@@ -129,35 +126,28 @@ Item {
             const item = WeatherService.hourlyForecast.get(hourIndex);
             const timeObject = new Date(Number(item.time || 0) * 1000);
             nextHourly.push({
-                                "time": UiPreferences.hourTime(timeObject),
-                                "temp": Math.round(UiPreferences.weatherTemperature(Number(item.temperatureC
-                                                                                           || 0))),
-                                "icon": item.iconName || "cloud",
-                                "description": item.weatherText || I18n.tr("Unknown"),
-                                "isDaylight": item.isDaylight === undefined ? true : item.isDaylight
-                            });
+                "time": UiPreferences.hourTime(timeObject),
+                "temp": Math.round(UiPreferences.weatherTemperature(Number(item.temperatureC || 0))),
+                "icon": item.iconName || "cloud",
+                "description": item.weatherText || I18n.tr("Unknown"),
+                "isDaylight": item.isDaylight === undefined ? true : item.isDaylight
+            });
         }
         root.hourlyData = nextHourly;
         const nextDaily = [];
         const dailyCount = Math.min(5, WeatherService.dailyForecast.count());
         for (let dayIndex = 0; dayIndex < dailyCount; ++dayIndex) {
             const item = WeatherService.dailyForecast.get(dayIndex);
-            const dateObject = item.date ? new Date(item.date + "T00:00:00") : new Date(Number(item.time
-                                                                                               || 0) * 1000);
+            const dateObject = item.date ? new Date(item.date + "T00:00:00") : new Date(Number(item.time || 0) * 1000);
             const dayPart = item.day || ({});
             nextDaily.push({
-                               "day": dayIndex === 0 ? I18n.tr("Today") : Qt.formatDate(dateObject, "ddd"),
-                               "date": Qt.formatDate(dateObject, "MMM d"),
-                               "icon": dayPart.iconName || item.iconName || "cloud",
-                               "description": dayPart.weatherText || item.weatherText || I18n.tr("Unknown"),
-                               "maxTemp": Math.round(UiPreferences.weatherTemperature(Number(
-                                                                                          item.temperatureMaxC
-                                                                                          || dayPart.temperatureC
-                                                                                          || 0))) + "°",
-                               "minTemp": Math.round(UiPreferences.weatherTemperature(Number(
-                                                                                          item.temperatureMinC
-                                                                                          || 0))) + "°"
-                           });
+                "day": dayIndex === 0 ? I18n.tr("Today") : Qt.formatDate(dateObject, "ddd"),
+                "date": Qt.formatDate(dateObject, "MMM d"),
+                "icon": dayPart.iconName || item.iconName || "cloud",
+                "description": dayPart.weatherText || item.weatherText || I18n.tr("Unknown"),
+                "maxTemp": Math.round(UiPreferences.weatherTemperature(Number(item.temperatureMaxC || dayPart.temperatureC || 0))) + "°",
+                "minTemp": Math.round(UiPreferences.weatherTemperature(Number(item.temperatureMinC || 0))) + "°"
+            });
         }
         root.dailyData = nextDaily;
     }
@@ -273,22 +263,20 @@ Item {
 
                         Text {
                             Layout.fillWidth: true
-                            text: WeatherService.loading ? I18n.tr("Loading weather") : I18n.tr(
-                                                               "Weather unavailable")
+                            text: WeatherService.loading ? I18n.tr("Loading weather") : I18n.tr("Weather unavailable")
                             color: Appearance.colors.colOnSurface
                             font.family: Fonts.ui
-                            font.pixelSize: 16
+                            font.pixelSize: Appearance.scaledFont(16)
                             font.weight: Font.Medium
                             horizontalAlignment: Text.AlignHCenter
                         }
 
                         Text {
                             Layout.fillWidth: true
-                            text: WeatherService.loading ? I18n.tr("Finding your local forecast…") :
-                                                           root.weatherErrorText()
+                            text: WeatherService.loading ? I18n.tr("Finding your local forecast…") : root.weatherErrorText()
                             color: Appearance.colors.colOnSurfaceVariant
                             font.family: Fonts.ui
-                            font.pixelSize: 12
+                            font.pixelSize: Appearance.scaledFont(12)
                             horizontalAlignment: Text.AlignHCenter
                             wrapMode: Text.Wrap
                             maximumLineCount: 3
@@ -348,7 +336,7 @@ Item {
                     text: parent.parent.parent.label
                     color: Appearance.applyAlpha(parent.parent.parent.contentColor, 0.72)
                     font.family: Fonts.ui
-                    font.pixelSize: 9
+                    font.pixelSize: Appearance.scaledFont(9)
                     elide: Text.ElideRight
                     textFormat: Text.PlainText
                 }
@@ -358,7 +346,7 @@ Item {
                     text: parent.parent.parent.value
                     color: parent.parent.parent.contentColor
                     font.family: Fonts.numeric
-                    font.pixelSize: 11
+                    font.pixelSize: Appearance.scaledFont(11)
                     font.weight: Font.Medium
                     elide: Text.ElideRight
                     textFormat: Text.PlainText

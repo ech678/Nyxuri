@@ -80,7 +80,7 @@ Item {
                         Layout.fillWidth: true
                         text: I18n.tr("Wallpaper palette")
                         font.family: Fonts.ui
-                        font.pixelSize: 20
+                        font.pixelSize: Appearance.scaledFont(20)
                         color: Appearance.colors.colOnSurface
                     }
                     IconButton {
@@ -100,8 +100,7 @@ Item {
                     Item {
                         id: editorFrame
                         Layout.fillWidth: !paletteBody.expanded
-                        Layout.preferredWidth: paletteBody.expanded ? Math.min(560, paletteBody.width * 0.4) :
-                                                                      434
+                        Layout.preferredWidth: paletteBody.expanded ? Math.min(560, paletteBody.width * 0.4) : 434
                         Layout.fillHeight: true
 
                         // Keep the compact editor's proportions, including its

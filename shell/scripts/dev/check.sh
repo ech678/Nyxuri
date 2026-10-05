@@ -105,15 +105,17 @@ for test_name in niri_cursor_config manage_niri_effects matugen_registry; do
         step "${test_name}" bash "tests/test_${test_name}.sh"
     fi
 done
-for test_name in i18n_catalog contrast_guard reduce_motion visual_tokens; do
+for test_name in i18n_catalog contrast_guard reduce_motion visual_tokens accessibility keyboard_navigation; do
     run_test=false
     [[ ${scope} != all ]] || run_test=true
     for file in "${files[@]}"; do
         case "${test_name}:${file}" in
             i18n_catalog:assets/i18n/*|i18n_catalog:shared/i18n/*|i18n_catalog:tests/test_i18n_catalog.py) run_test=true ;;
             contrast_guard:shared/theme/Appearance.qml|contrast_guard:tests/test_contrast_guard.py) run_test=true ;;
-            reduce_motion:shared/theme/Appearance.qml|reduce_motion:app/services/UiPreferences.qml|reduce_motion:app/services/ThemeService.qml|reduce_motion:tests/test_reduce_motion.py) run_test=true ;;
+            reduce_motion:shared/theme/Appearance.qml|reduce_motion:shared/theme/Animations.qml|reduce_motion:app/services/UiPreferences.qml|reduce_motion:app/services/ThemeService.qml|reduce_motion:tests/test_reduce_motion.py) run_test=true ;;
             visual_tokens:shared/theme/*|visual_tokens:tests/test_visual_tokens.py) run_test=true ;;
+            accessibility:shared/theme/*|accessibility:app/services/UiPreferences.qml|accessibility:app/services/ThemeService.qml|accessibility:modules/settings/AccessibilityPage.qml|accessibility:modules/settings/settings-routes.json|accessibility:tests/test_accessibility.py) run_test=true ;;
+            keyboard_navigation:shared/controls/*|keyboard_navigation:tests/test_keyboard_navigation.py) run_test=true ;;
         esac
     done
     if ${run_test}; then

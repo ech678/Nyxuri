@@ -28,7 +28,7 @@ MaterialSplitSlider {
         text: quickSlider.percentText
         color: nearEmpty ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnPrimary
         font.family: Fonts.numeric
-        font.pixelSize: 12
+        font.pixelSize: Appearance.scaledFont(12)
         font.weight: Font.Medium
         renderType: Text.NativeRendering
         z: 1
@@ -88,8 +88,7 @@ MaterialSplitSlider {
         id: secondaryIcon
 
         visible: quickSlider.secondaryMaterialSymbol.length > 0
-        property bool nearIcon: quickSlider.secondaryIconLocation - quickSlider.value <= 0.1
-            && quickSlider.secondaryIconLocation - quickSlider.value > (quickSlider.handleWidth + 8 - 14) / quickSlider.effectiveDraggingWidth
+        property bool nearIcon: quickSlider.secondaryIconLocation - quickSlider.value <= 0.1 && quickSlider.secondaryIconLocation - quickSlider.value > (quickSlider.handleWidth + 8 - 14) / quickSlider.effectiveDraggingWidth
 
         anchors {
             verticalCenter: quickSlider.verticalCenter

@@ -26,6 +26,15 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: visible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
+    property real revealProgress: RegionSelectionService.active ? 1 : 0
+    Behavior on revealProgress {
+        enabled: Appearance.animationsEnabled
+        NumberAnimation {
+            duration: Appearance.animation.expressiveFastSpatial.duration
+            easing.type: Appearance.animation.expressiveFastSpatial.type
+            easing.bezierCurve: Appearance.animation.expressiveFastSpatial.bezierCurve
+        }
+    }
     property real pointerX: width / 2
     property real pointerY: height / 2
     property real dragStartX: 0
@@ -52,8 +61,7 @@ PanelWindow {
     }
 
     function finishSelection() {
-        if (!RegionSelectionService.accept(root.targetScreen, root.selectionX, root.selectionY,
-                                           root.selectionWidth, root.selectionHeight)) {
+        if (!RegionSelectionService.accept(root.targetScreen, root.selectionX, root.selectionY, root.selectionWidth, root.selectionHeight)) {
             root.resetSelection();
         }
     }
@@ -86,6 +94,7 @@ PanelWindow {
         anchors.fill: parent
         color: Appearance.colors.colScrim
         visible: !root.hasSelection
+        opacity: root.revealProgress
     }
 
     Item {
@@ -157,9 +166,7 @@ PanelWindow {
     Rectangle {
         id: dimensionLabel
         readonly property real preferredX: root.selectionX + root.selectionWidth - width
-        readonly property real preferredY: root.selectionY > height + 20 ? root.selectionY - height - 8 :
-                                                                           root.selectionY
-                                                                           + root.selectionHeight + 8
+        readonly property real preferredY: root.selectionY > height + 20 ? root.selectionY - height - 8 : root.selectionY + root.selectionHeight + 8
 
         x: Math.max(12, Math.min(preferredX, root.width - width - 12))
         y: Math.max(12, Math.min(preferredY, root.height - height - 12))
@@ -177,14 +184,14 @@ PanelWindow {
             Text {
                 text: "crop_free"
                 font.family: Fonts.materialSymbolsRounded
-                font.pixelSize: 17
+                font.pixelSize: Appearance.scaledFont(17)
                 color: Appearance.colors.colPrimary
             }
 
             Text {
                 text: Math.round(root.selectionWidth) + " × " + Math.round(root.selectionHeight)
                 font.family: Fonts.numeric
-                font.pixelSize: 12
+                font.pixelSize: Appearance.scaledFont(12)
                 font.weight: Font.DemiBold
                 color: Appearance.colors.colOnSurface
             }
@@ -202,6 +209,10 @@ PanelWindow {
         height: 40
         radius: Appearance.rounding.full
         color: Appearance.colors.colPrimaryContainer
+        opacity: root.revealProgress
+        transform: Translate {
+            y: Appearance.animationsEnabled ? (1 - root.revealProgress) * -10 : 0
+        }
 
         RowLayout {
             id: instructionRow
@@ -211,14 +222,14 @@ PanelWindow {
             Text {
                 text: "drag_pan"
                 font.family: Fonts.materialSymbolsRounded
-                font.pixelSize: 18
+                font.pixelSize: Appearance.scaledFont(18)
                 color: Appearance.colors.colOnPrimaryContainer
             }
 
             Text {
                 text: I18n.tr("Drag to select a region  ·  Esc to cancel")
                 font.family: Fonts.ui
-                font.pixelSize: 13
+                font.pixelSize: Appearance.scaledFont(13)
                 color: Appearance.colors.colOnPrimaryContainer
             }
         }

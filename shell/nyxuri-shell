@@ -44,7 +44,7 @@ while [ $# -gt 0 ]; do
             shift 1
             ;;
         -h|--help)
-            echo "Usage: nyxuri-shell [--action <launcher|session|settings|clipboard|lock|wallpaper-random|wallpaper-picker|radial-launcher>|--check-ready|--stage|--status|--stop]"
+            echo "Usage: nyxuri-shell [--action <launcher|session|settings|clipboard|switcher|switcher-next|switcher-previous|lock|wallpaper-random|wallpaper-picker|radial-launcher>|--check-ready|--stage|--status|--stop]"
             exit 0
             ;;
         *)
@@ -66,6 +66,15 @@ if [ -n "$ACTION" ]; then
             ;;
         clipboard)
             exec qs -p "${SHELL_DIR}" ipc call spotlight openMode clipboard
+            ;;
+        switcher)
+            exec qs -p "${SHELL_DIR}" ipc call switcher toggle
+            ;;
+        switcher-next)
+            exec qs -p "${SHELL_DIR}" ipc call switcher next
+            ;;
+        switcher-previous)
+            exec qs -p "${SHELL_DIR}" ipc call switcher previous
             ;;
         lock)
             exec qs -p "${SHELL_DIR}" ipc call lock open

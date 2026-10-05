@@ -193,9 +193,7 @@ Item {
             return t < 0.5 ? Math.pow(2, 20 * t - 10) / 2 : (2 - Math.pow(2, -20 * t + 10)) / 2;
         }
         if (mode === "circ")
-            return t < 0.5 ? (1 - Math.sqrt(1 - Math.pow(2 * t, 2))) / 2 : (Math.sqrt(1 - Math.pow(-2 * t + 2,
-                                                                                                   2)) + 1)
-                             / 2;
+            return t < 0.5 ? (1 - Math.sqrt(1 - Math.pow(2 * t, 2))) / 2 : (Math.sqrt(1 - Math.pow(-2 * t + 2, 2)) + 1) / 2;
 
         return t;
     }
@@ -235,8 +233,7 @@ Item {
     }
 
     function pointFromMouse(mx, my) {
-        return [clamp01((mx - chart.plotLeft) / chart.plotSize), clamp01(1 - (my - chart.plotTop)
-                                                                         / chart.plotSize)];
+        return [clamp01((mx - chart.plotLeft) / chart.plotSize), clamp01(1 - (my - chart.plotTop) / chart.plotSize)];
     }
 
     function hitTest(mx, my) {
@@ -259,8 +256,7 @@ Item {
     function coordinateListText() {
         const p1 = rawP1();
         const p2 = rawP2();
-        return formatNumber(p1[0]) + ", " + formatNumber(p1[1]) + ", " + formatNumber(p2[0]) + ", " + formatNumber(
-                    p2[1]);
+        return formatNumber(p1[0]) + ", " + formatNumber(p1[1]) + ", " + formatNumber(p2[0]) + ", " + formatNumber(p2[1]);
     }
 
     function copyCoordinateList() {
@@ -393,8 +389,7 @@ Item {
 
     function animationReachedTarget() {
         const next = animationTargetCurve;
-        return Math.abs(renderX1 - next[0]) < 0.0001 && Math.abs(renderY1 - next[1]) < 0.0001 && Math.abs(
-                    renderX2 - next[2]) < 0.0001 && Math.abs(renderY2 - next[3]) < 0.0001;
+        return Math.abs(renderX1 - next[0]) < 0.0001 && Math.abs(renderY1 - next[1]) < 0.0001 && Math.abs(renderX2 - next[2]) < 0.0001 && Math.abs(renderY2 - next[3]) < 0.0001;
     }
 
     function repaintChart() {
@@ -435,8 +430,7 @@ Item {
         to: 1
         easing.type: Easing.Linear
         onStopped: {
-            if ((root.playbackDirection > 0 && root.playhead >= 1) || (root.playbackDirection < 0
-                                                                       && root.playhead <= 0))
+            if ((root.playbackDirection > 0 && root.playhead >= 1) || (root.playbackDirection < 0 && root.playhead <= 0))
                 root.playing = false;
         }
     }
@@ -622,8 +616,7 @@ Item {
                 enabled: root.editable
                 hoverEnabled: true
                 preventStealing: true
-                cursorShape: root.activePoint >= 0 || root.hitTest(mouseX, mouseY) >= 0
-                             ? Qt.PointingHandCursor : Qt.ArrowCursor
+                cursorShape: root.activePoint >= 0 || root.hitTest(mouseX, mouseY) >= 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
 
                 onPressed: mouse => {
                     if (mouse.button !== Qt.LeftButton) {
@@ -696,14 +689,14 @@ Item {
 
                 Repeater {
                     model: [({
-                                 "index": 0
-                             }), ({
-                                      "index": 1
-                                  }), ({
-                                           "index": 2
-                                       }), ({
-                                                "index": 3
-                                            })]
+                                "index": 0
+                            }), ({
+                                "index": 1
+                            }), ({
+                                "index": 2
+                            }), ({
+                                "index": 3
+                            })]
 
                     delegate: Item {
                         id: coordItem
@@ -719,10 +712,7 @@ Item {
                             radius: Appearance.rounding.extraSmall
                             color: coordItem.editing ? Appearance.colors.colLayer2 : "transparent"
                             border.width: coordItem.editing ? 1 : 0
-                            border.color: root.coordinateInvalid ? Appearance.colors.colError :
-                                                                   Appearance.applyAlpha(
-                                                                       Appearance.colors.colOnSurfaceVariant,
-                                                                       0.28)
+                            border.color: root.coordinateInvalid ? Appearance.colors.colError : Appearance.applyAlpha(Appearance.colors.colOnSurfaceVariant, 0.28)
                         }
 
                         Text {
@@ -731,10 +721,17 @@ Item {
                             anchors.centerIn: parent
                             visible: !coordItem.editing
                             text: root.coordinateText(coordItem.modelData.index)
-                            color: coordMouse.containsMouse ? Appearance.colors.colOnSurface :
-                                                              Appearance.colors.colOnSurfaceVariant
+                            color: coordMouse.containsMouse ? Appearance.colors.colOnSurface : Appearance.colors.colOnSurfaceVariant
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: Appearance.animation.expressiveFastEffects.duration
+                                    easing.type: Appearance.animation.expressiveFastEffects.type
+                                    easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
+                                }
+                            }
                             font.family: Fonts.mono
-                            font.pixelSize: 13
+                            font.pixelSize: Appearance.scaledFont(13)
                             font.weight: Font.Medium
                         }
 
@@ -751,7 +748,7 @@ Item {
                             verticalAlignment: Text.AlignVCenter
                             selectByMouse: true
                             font.family: Fonts.mono
-                            font.pixelSize: 13
+                            font.pixelSize: Appearance.scaledFont(13)
                             padding: 0
                             leftPadding: 0
                             rightPadding: 0

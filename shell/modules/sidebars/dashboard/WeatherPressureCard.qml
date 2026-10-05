@@ -18,8 +18,7 @@ Item {
     readonly property color ink: Appearance.colors.colOnWeatherCardSurface
     readonly property color mutedInk: Appearance.colors.colOnWeatherCardSurfaceVariant
     readonly property color cardFill: Appearance.colors.colWeatherCardSurface
-    readonly property color trackTint: Qt.rgba(Qt.darker(accent, 3.1).r, Qt.darker(accent, 3.1).g, Qt.darker(accent,
-                                                                                                             3.1).b, 0.58)
+    readonly property color trackTint: Qt.rgba(Qt.darker(accent, 3.1).r, Qt.darker(accent, 3.1).g, Qt.darker(accent, 3.1).b, 0.58)
 
     WeatherAnimatedValue {
         id: pressureAnimation
@@ -101,7 +100,7 @@ Item {
                 text: I18n.tr("Pressure")
                 color: root.mutedInk
                 font.family: Fonts.expressive
-                font.pixelSize: 18
+                font.pixelSize: Appearance.scaledFont(18)
                 font.bold: true
             }
         }
@@ -125,7 +124,7 @@ Item {
             text: root.unitText
             color: root.ink
             font.family: Fonts.expressive
-            font.pixelSize: 18
+            font.pixelSize: Appearance.scaledFont(18)
             font.bold: true
             z: 2
         }

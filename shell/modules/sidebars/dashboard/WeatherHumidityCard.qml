@@ -39,15 +39,11 @@ WeatherInsightCard {
     }
 
     function animatedHumidityText() {
-        return isNaN(humidityAnimation.currentValue) ? "--" : Math.round(humidityAnimation.currentValue)
-                                                       + "%";
-
+        return isNaN(humidityAnimation.currentValue) ? "--" : Math.round(humidityAnimation.currentValue) + "%";
     }
 
     function animatedDewPointText() {
-        return isNaN(dewPointAnimation.currentValue) ? "--" : Math.round(dewPointAnimation.currentValue)
-                                                       + "°";
-
+        return isNaN(dewPointAnimation.currentValue) ? "--" : Math.round(dewPointAnimation.currentValue) + "°";
     }
 
     WeatherAnimatedValue {
@@ -118,7 +114,7 @@ WeatherInsightCard {
             text: I18n.tr("Relative humidity")
             color: Appearance.colors.colOnWeatherCardSurfaceVariant
             font.family: Fonts.expressive
-            font.pixelSize: 18
+            font.pixelSize: Appearance.scaledFont(18)
             font.bold: true
         }
     }
@@ -161,7 +157,7 @@ WeatherInsightCard {
         text: root.animatedHumidityText()
         color: Appearance.colors.colOnWeatherCardSurface
         font.family: Fonts.expressive
-        font.pixelSize: 58
+        font.pixelSize: Appearance.scaledFont(58)
         font.bold: true
     }
 
@@ -184,7 +180,7 @@ WeatherInsightCard {
                 text: root.animatedDewPointText()
                 color: Appearance.colors.colOnPrimaryContainer
                 font.family: Fonts.expressive
-                font.pixelSize: 17
+                font.pixelSize: Appearance.scaledFont(17)
                 font.bold: true
             }
         }
@@ -193,7 +189,7 @@ WeatherInsightCard {
             text: I18n.tr("Dew point")
             color: Appearance.colors.colOnWeatherCardSurface
             font.family: Fonts.expressive
-            font.pixelSize: 18
+            font.pixelSize: Appearance.scaledFont(18)
             font.bold: true
             anchors.verticalCenter: parent.verticalCenter
         }

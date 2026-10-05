@@ -34,19 +34,15 @@ Item {
         }
         revealAnimation.from = revealProgress;
         revealAnimation.to = targetProgress;
-        revealAnimation.duration = Math.round((open ? Animations.durations.sidebarEnter :
-                                                      Animations.durations.sidebarExit) * Math.abs(
-                                                  targetProgress - revealProgress));
+        revealAnimation.duration = Appearance.motionDuration(Math.round((open ? Animations.durations.sidebarEnter : Animations.durations.sidebarExit) * Math.abs(targetProgress - revealProgress)));
         // Select before start(): an onOpenChanged handler can run before a
         // separate easing binding has observed the new direction.
-        revealAnimation.easing.bezierCurve = open ? Animations.curves.emphasizedDecel :
-                                                    Animations.curves.emphasizedAccel;
+        revealAnimation.easing.bezierCurve = open ? Animations.curves.emphasizedDecel : Animations.curves.emphasizedAccel;
         revealAnimation.start();
     }
 
     function containsVisiblePoint(localX, localY) {
-        return visible && revealViewport.width > 0 && localX >= revealViewport.x && localX < revealViewport.x
-                + revealViewport.width && localY >= 0 && localY < height;
+        return visible && revealViewport.width > 0 && localX >= revealViewport.x && localX < revealViewport.x + revealViewport.width && localY >= 0 && localY < height;
     }
 
     onOpenChanged: animateReveal()
@@ -106,8 +102,7 @@ Item {
                 }
                 GradientStop {
                     position: 0.5
-                    color: Qt.rgba(root.shadowColor.r, root.shadowColor.g, root.shadowColor.b,
-                                   root.shadowColor.a * 0.25)
+                    color: Qt.rgba(root.shadowColor.r, root.shadowColor.g, root.shadowColor.b, root.shadowColor.a * 0.25)
                 }
                 GradientStop {
                     position: 1

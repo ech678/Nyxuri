@@ -27,9 +27,7 @@ Item {
             text: root.dateText.charAt(index)
             color: root.color
             font.family: Fonts.expressive
-            font.pixelSize: 30
+            font.pixelSize: Appearance.scaledFont(30)
         }
-
     }
-
 }

@@ -78,7 +78,7 @@ Item {
                 text: I18n.tr("Air quality")
                 color: Appearance.colors.colOnSurfaceVariant
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: Appearance.scaledFont(14)
                 font.weight: Font.Medium
             }
 
@@ -90,7 +90,7 @@ Item {
                 text: getAqiDescription(root.aqi) + " " + root.aqi
                 color: Appearance.colors.colOnSurfaceVariant
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: Appearance.scaledFont(14)
                 font.weight: Font.Medium
             }
         }

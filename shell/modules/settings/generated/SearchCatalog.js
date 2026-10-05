@@ -523,6 +523,23 @@ var catalog = {
       "title": "Transparency and blur"
     },
     {
+      "aliases": [
+        "a11y",
+        "motion",
+        "contrast",
+        "font size"
+      ],
+      "context": "GeneralPage",
+      "icon": "accessibility_new",
+      "id": "general.accessibility",
+      "path": [
+        "general",
+        "accessibility"
+      ],
+      "source": "AccessibilityPage.qml",
+      "title": "Accessibility"
+    },
+    {
       "aliases": [],
       "context": "GeneralPage",
       "icon": "keyboard",
@@ -816,6 +833,25 @@ var catalog = {
       "title": "Transparency and blur"
     },
     {
+      "aliases": [
+        "a11y",
+        "motion",
+        "contrast",
+        "font size"
+      ],
+      "anchor": false,
+      "context": "GeneralPage",
+      "icon": "accessibility_new",
+      "id": "general.accessibility",
+      "path": [
+        "general",
+        "accessibility"
+      ],
+      "route": "general.accessibility",
+      "source": "AccessibilityPage.qml",
+      "title": "Accessibility"
+    },
+    {
       "aliases": [],
       "anchor": false,
       "context": "GeneralPage",
@@ -959,6 +995,20 @@ var catalog = {
       "route": "keystone.horizontal-clock",
       "source": "HorizontalClockPage.qml",
       "title": "Horizontal clock style"
+    },
+    {
+      "aliases": [],
+      "anchor": true,
+      "context": "AccessibilityPage",
+      "icon": "accessibility_new",
+      "id": "general.accessibility.section.motion",
+      "path": [
+        "general",
+        "accessibility"
+      ],
+      "route": "general.accessibility",
+      "source": "AccessibilityPage.qml",
+      "title": "Motion and readability"
     },
     {
       "aliases": [],
@@ -1877,6 +1927,7 @@ function title(id) {
     case "general.sidebar": return I18n.tr("Sidebars", "GeneralPage");
     case "general.spotlight": return I18n.tr("Spotlight", "GeneralPage");
     case "general.effects": return I18n.tr("Transparency and blur", "GeneralPage");
+    case "general.accessibility": return I18n.tr("Accessibility", "GeneralPage");
     case "general.shortcuts": return I18n.tr("Keyboard shortcuts", "GeneralPage");
     case "general.language-region": return I18n.tr("Language & region", "GeneralPage");
     case "general.autostart": return I18n.tr("Autostart", "GeneralPage");
@@ -1887,6 +1938,7 @@ function title(id) {
     case "general.displays.configuration": return I18n.tr("Display configuration", "DisplaysPage");
     case "general.displays.gamma": return I18n.tr("Gamma Control", "DisplaysPage");
     case "keystone.horizontal-clock": return I18n.tr("Horizontal clock style", "KeystonePage");
+    case "general.accessibility.section.motion": return I18n.tr("Motion and readability", "AccessibilityPage");
     case "account.section.language": return I18n.tr("Language", "AccountPage");
     case "account.section.bluetooth-devices": return I18n.tr("Bluetooth devices", "AccountPage");
     case "account.section.keyboard-shortcuts": return I18n.tr("Keyboard shortcuts", "AccountPage");

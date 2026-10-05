@@ -41,7 +41,7 @@ RippleButton {
             Text {
                 text: "keyboard_arrow_down"
                 font.family: Fonts.materialSymbolsRounded
-                font.pixelSize: 18
+                font.pixelSize: Appearance.scaledFont(18)
                 rotation: root.expanded ? 180 : 0
                 color: Appearance.colors.colOnLayer2
 

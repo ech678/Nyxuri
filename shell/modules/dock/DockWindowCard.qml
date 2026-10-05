@@ -16,8 +16,7 @@ Button {
     property var capture: null
     property var previewFrame: null
     property var mediaPlayer: null
-    readonly property string title: String(windowData && (windowData.title || windowData.appName
-                                                          || windowData.appId) || applicationName)
+    readonly property string title: String(windowData && (windowData.title || windowData.appName || windowData.appId) || applicationName)
     readonly property bool minimized: !!windowData && !!windowData.isMinimized
     readonly property bool hasFrame: !!previewFrame && previewFrame.hasFrame
     readonly property bool busy: !minimized && !!capture && !hasFrame && capture.error === ""
@@ -38,11 +37,17 @@ Button {
 
     background: Rectangle {
         radius: Math.min(8, root.height / 4)
-        color: Appearance.applyAlpha(Appearance.colors.colOnSurface, root.down ? 0.12 : root.hovered ? 0.07 :
-                                                                                                       0)
+        color: Appearance.applyAlpha(Appearance.colors.colOnSurface, root.down ? 0.12 : root.hovered ? 0.07 : 0)
 
         border.width: root.visualFocus ? 1 : 0
         border.color: Appearance.colors.colPrimary
+        Behavior on color {
+            ColorAnimation {
+                duration: Appearance.animation.expressiveFastEffects.duration
+                easing.type: Appearance.animation.expressiveFastEffects.type
+                easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
+            }
+        }
     }
 
     contentItem: Item {
@@ -71,7 +76,7 @@ Button {
                 text: root.title
                 textFormat: Text.PlainText
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: Appearance.scaledFont(12)
                 color: Appearance.colors.colOnSurface
                 elide: Text.ElideRight
                 verticalAlignment: Text.AlignVCenter
@@ -106,7 +111,7 @@ Button {
                     text: root.minimized ? I18n.tr("Minimized") : I18n.tr("Preview unavailable")
                     textFormat: Text.PlainText
                     font.family: Fonts.ui
-                    font.pixelSize: 11
+                    font.pixelSize: Appearance.scaledFont(11)
                     color: Appearance.colors.colOnSurfaceVariant
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
@@ -141,8 +146,7 @@ Button {
                             iconSize: 20
                             iconName: "skip_previous"
                             accessibleName: I18n.tr("Previous track")
-                            enabled: !!root.mediaPlayer && root.mediaPlayer.canControl
-                                     && root.mediaPlayer.canGoPrevious
+                            enabled: !!root.mediaPlayer && root.mediaPlayer.canControl && root.mediaPlayer.canGoPrevious
                             onClicked: root.mediaPlayer.previous()
                         }
                         IconButton {
@@ -150,8 +154,7 @@ Button {
                             iconSize: 22
                             iconName: root.mediaPlayer?.isPlaying ? "pause" : "play_arrow"
                             accessibleName: root.mediaPlayer?.isPlaying ? I18n.tr("Pause") : I18n.tr("Play")
-                            enabled: !!root.mediaPlayer && root.mediaPlayer.canControl
-                                     && root.mediaPlayer.canTogglePlaying
+                            enabled: !!root.mediaPlayer && root.mediaPlayer.canControl && root.mediaPlayer.canTogglePlaying
                             onClicked: root.mediaPlayer.togglePlaying()
                         }
                         IconButton {
@@ -159,8 +162,7 @@ Button {
                             iconSize: 20
                             iconName: "skip_next"
                             accessibleName: I18n.tr("Next track")
-                            enabled: !!root.mediaPlayer && root.mediaPlayer.canControl
-                                     && root.mediaPlayer.canGoNext
+                            enabled: !!root.mediaPlayer && root.mediaPlayer.canControl && root.mediaPlayer.canGoNext
                             onClicked: root.mediaPlayer.next()
                         }
                     }
@@ -172,8 +174,7 @@ Button {
     StyledToolTip {
         text: root.title
         textFormat: Text.PlainText
-        extraVisibleCondition: root.hovered && headerTitle.truncated && !closeButton.pointerHovered &&
-                               !mediaHover.hovered
+        extraVisibleCondition: root.hovered && headerTitle.truncated && !closeButton.pointerHovered && !mediaHover.hovered
     }
 
     HoverHandler {

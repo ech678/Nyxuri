@@ -226,10 +226,7 @@ PanelWindow {
                         Layout.preferredWidth: root.buttonSize
                         Layout.preferredHeight: root.buttonSize
                         radius: Appearance.rounding.large
-                        color: actionMouse.pressed ? Appearance.colors.colPrimaryActive : (
-                                                         actionButton.selected
-                                                         ? Appearance.colors.colPrimaryHover :
-                                                           Appearance.colors.colLayer1)
+                        color: actionMouse.pressed ? Appearance.colors.colPrimaryActive : (actionButton.selected ? Appearance.colors.colPrimaryHover : Appearance.colors.colLayer1)
 
                         ColumnLayout {
                             anchors.centerIn: parent
@@ -247,10 +244,8 @@ PanelWindow {
                                     text: actionButton.modelData.icon
                                     iconSize: 54
                                     fill: 0
-                                    color: actionButton.selected ? Appearance.colors.colOnPrimary :
-                                                                   Appearance.colors.colOnLayer1
-                                    scale: actionMouse.pressed ? 50 / 54 : (actionButton.selected ? 1 : 44
-                                                                                                    / 54)
+                                    color: actionButton.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
+                                    scale: actionMouse.pressed ? 50 / 54 : (actionButton.selected ? 1 : 44 / 54)
                                     transformOrigin: Item.Center
                                     smooth: true
                                     layer.enabled: true
@@ -261,8 +256,7 @@ PanelWindow {
                                         NumberAnimation {
                                             duration: Appearance.animation.expressiveSlowEffects.duration
                                             easing.type: Appearance.animation.expressiveSlowEffects.type
-                                            easing.bezierCurve:
-                                                Appearance.animation.expressiveSlowEffects.bezierCurve
+                                            easing.bezierCurve: Appearance.animation.expressiveSlowEffects.bezierCurve
                                         }
                                     }
 
@@ -270,8 +264,7 @@ PanelWindow {
                                         ColorAnimation {
                                             duration: Appearance.animation.expressiveFastEffects.duration
                                             easing.type: Appearance.animation.expressiveFastEffects.type
-                                            easing.bezierCurve:
-                                                Appearance.animation.expressiveFastEffects.bezierCurve
+                                            easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
                                         }
                                     }
                                 }
@@ -280,10 +273,9 @@ PanelWindow {
                             Text {
                                 Layout.alignment: Qt.AlignHCenter
                                 text: actionButton.modelData.label
-                                color: actionButton.selected ? Appearance.colors.colOnPrimary :
-                                                               Appearance.colors.colOnLayer1
+                                color: actionButton.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
                                 font.family: Fonts.ui
-                                font.pixelSize: 18
+                                font.pixelSize: Appearance.scaledFont(18)
                                 font.weight: Font.DemiBold
                             }
                         }

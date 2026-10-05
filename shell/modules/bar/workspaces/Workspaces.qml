@@ -13,10 +13,8 @@ TopBarPill {
     property bool vertical: false
     readonly property bool hasMultipleOutputs: (NiriService.outputs.count || 0) > 1
 
-    implicitHeight: vertical ? layout.implicitHeight + 2 * Sizes.barPillHorizontalPadding :
-                               Sizes.barPillThickness
-    implicitWidth: vertical ? Sizes.barPillThickness : layout.implicitWidth + 2
-                              * Sizes.barPillHorizontalPadding
+    implicitHeight: vertical ? layout.implicitHeight + 2 * Sizes.barPillHorizontalPadding : Sizes.barPillThickness
+    implicitWidth: vertical ? Sizes.barPillThickness : layout.implicitWidth + 2 * Sizes.barPillHorizontalPadding
 
     animateResize: {
         for (let index = 0; index < workspaceRepeater.count; ++index) {
@@ -63,15 +61,17 @@ TopBarPill {
                 Behavior on implicitWidth {
                     NumberAnimation {
                         id: widthAnimation
-                        duration: 300
-                        easing.type: Easing.OutCubic
+                        duration: Appearance.animation.elementMoveFast.duration
+                        easing.type: Appearance.animation.elementMoveFast.type
+                        easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
                     }
                 }
                 Behavior on implicitHeight {
                     NumberAnimation {
                         id: heightAnimation
-                        duration: 300
-                        easing.type: Easing.OutCubic
+                        duration: Appearance.animation.elementMoveFast.duration
+                        easing.type: Appearance.animation.elementMoveFast.type
+                        easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
                     }
                 }
 
@@ -81,14 +81,13 @@ TopBarPill {
                     height: parent.implicitHeight
                     radius: height / 2
 
-                    color: delegateRoot.active ? Appearance.colors.colPrimary : delegateRoot.hasWindows
-                                                 ? Appearance.colors.colOnSurface : delegateRoot.isHovered
-                                                   ? Appearance.colors.colLayer2Hover :
-                                                     Appearance.colors.colLayer4
+                    color: delegateRoot.active ? Appearance.colors.colPrimary : delegateRoot.hasWindows ? Appearance.colors.colOnSurface : delegateRoot.isHovered ? Appearance.colors.colLayer2Hover : Appearance.colors.colLayer4
 
                     Behavior on color {
                         ColorAnimation {
-                            duration: 200
+                            duration: Appearance.animation.expressiveFastEffects.duration
+                            easing.type: Appearance.animation.expressiveFastEffects.type
+                            easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
                         }
                     }
                 }
@@ -103,9 +102,7 @@ TopBarPill {
 
                 PopupToolTip {
                     extraVisibleCondition: mouseArea.containsMouse
-                    text: I18n.tr("Workspace ") + model.id + (delegateRoot.hasWindows ? I18n.tr("\nWindows: ")
-                                                                                        + model.windowCount :
-                                                                                        "")
+                    text: I18n.tr("Workspace ") + model.id + (delegateRoot.hasWindows ? I18n.tr("\nWindows: ") + model.windowCount : "")
                 }
             }
         }

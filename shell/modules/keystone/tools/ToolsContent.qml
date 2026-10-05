@@ -16,9 +16,14 @@ Item {
     property bool retainForRecording: false
     readonly property int buttonSize: 48
     readonly property int buttonSpacing: 40
-    readonly property int buttonsExtent: 480
+    readonly property int buttonsExtent: toolsModel.length * buttonSize + Math.max(0, toolsModel.length - 1) * buttonSpacing
     readonly property int crossExtent: 72
     property var toolsModel: [
+        {
+            "action": "screenshot",
+            "icon": "photo_camera",
+            "tip": I18n.tr("Screenshot")
+        },
         {
             "action": "color-picker",
             "icon": "colorize",
@@ -55,39 +60,41 @@ Item {
         if (!tool)
             return;
 
-        const recordingTool = tool.action === "record-video" || tool.action === "record-gif" || tool.action
-              === "audio-mic" || tool.action === "audio-system";
+        const recordingTool = tool.action === "record-video" || tool.action === "record-gif" || tool.action === "audio-mic" || tool.action === "audio-system";
         if (recordingTool && retainForRecording)
             toolsRoot.recordingRequested();
         else
             toolsRoot.requestHideKeystone();
         switch (tool.action) {
+        case "screenshot":
+            ActionGateway.execute(["niri", "msg", "action", "screenshot"], "keystone");
+            break;
         case "color-picker":
             ActionGateway.execute(["hyprpicker", "-a"], "keystone");
             break;
         case "record-video":
             RecordingService.start("video", {
-                                       "audio": "none",
-                                       "fps": 60,
-                                       "output": UiPreferences.recordingVideoDirectory
-                                   });
+                "audio": "none",
+                "fps": 60,
+                "output": UiPreferences.recordingVideoDirectory
+            });
             break;
         case "record-gif":
             RecordingService.start("gif", {
-                                       "audio": "none",
-                                       "fps": 60,
-                                       "output": UiPreferences.recordingGifDirectory
-                                   });
+                "audio": "none",
+                "fps": 60,
+                "output": UiPreferences.recordingGifDirectory
+            });
             break;
         case "audio-mic":
             AudioRecordingService.start("mic", {
-                                            "output": UiPreferences.recordingMicrophoneDirectory
-                                        });
+                "output": UiPreferences.recordingMicrophoneDirectory
+            });
             break;
         case "audio-system":
             AudioRecordingService.start("system", {
-                                            "output": UiPreferences.recordingSystemAudioDirectory
-                                        });
+                "output": UiPreferences.recordingSystemAudioDirectory
+            });
             break;
         default:
             console.warn("[Tools] backend unavailable", tool.action);

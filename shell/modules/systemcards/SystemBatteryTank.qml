@@ -16,18 +16,14 @@ Item {
     readonly property bool present: PowerService.present
     readonly property bool valueAvailable: root.present && Format.isNumber(PowerService.percentage)
     readonly property real chargePercent: root.valueAvailable ? PowerService.percentage * 100 : NaN
-    readonly property real targetLevel: root.valueAvailable ? Math.max(0, Math.min(1,
-                                                                                   PowerService.percentage)) :
-                                                              0
+    readonly property real targetLevel: root.valueAvailable ? Math.max(0, Math.min(1, PowerService.percentage)) : 0
     property real animatedLevel: targetLevel
     readonly property bool charging: PowerService.charging
-    readonly property bool full: PowerService.full || (root.valueAvailable && root.chargePercent >= 100 &&
-                                                       !root.charging)
+    readonly property bool full: PowerService.full || (root.valueAvailable && root.chargePercent >= 100 && !root.charging)
     readonly property bool powerConnected: PowerService.powerConnected
     readonly property bool lowBattery: root.valueAvailable && root.chargePercent <= 15 && !root.powerConnected
     readonly property real batteryIconCenterY: Appearance.spacing.medium + 18
-    readonly property bool batteryIconCovered: root.animatedLevel >= 1 - root.batteryIconCenterY / Math.max(1,
-                                                                                                            batteryBody.height)
+    readonly property bool batteryIconCovered: root.animatedLevel >= 1 - root.batteryIconCenterY / Math.max(1, batteryBody.height)
     readonly property real bodyRadius: Math.min(Appearance.rounding.extraLarge, batteryBody.width * 0.16)
 
     function batteryIconName() {
@@ -85,14 +81,10 @@ Item {
             return "—";
 
         if (root.charging)
-            return Format.isNumber(PowerService.timeToFull) ? I18n.tr("Fully charged in ") + Format.duration(
-                                                                  PowerService.timeToFull) : I18n.tr(
-                                                                  "Time to full is unknown");
+            return Format.isNumber(PowerService.timeToFull) ? I18n.tr("Fully charged in ") + Format.duration(PowerService.timeToFull) : I18n.tr("Time to full is unknown");
 
         if (PowerService.discharging || !root.powerConnected)
-            return Format.isNumber(PowerService.timeToEmpty) ? I18n.tr("Time remaining ") + Format.duration(
-                                                                   PowerService.timeToEmpty) : I18n.tr(
-                                                                   "Remaining time is unknown");
+            return Format.isNumber(PowerService.timeToEmpty) ? I18n.tr("Time remaining ") + Format.duration(PowerService.timeToEmpty) : I18n.tr("Remaining time is unknown");
 
         return I18n.tr("Plugged in, not charging");
     }
@@ -113,12 +105,7 @@ Item {
         return root.powerConnected ? I18n.tr("Plugged in") : I18n.tr("Status unknown");
     }
 
-    Accessible.name: I18n.tr("Battery,") + (root.present ? Format.percent(root.chargePercent, 0) + "，"
-                                                           + root.statusText() + "，" + (root.powerConnected
-                                                                                        ? I18n.tr(
-                                                                                              "Plugged in") :
-                                                                                          I18n.tr("On battery")) :
-                                                           I18n.tr("No battery detected"))
+    Accessible.name: I18n.tr("Battery,") + (root.present ? Format.percent(root.chargePercent, 0) + "，" + root.statusText() + "，" + (root.powerConnected ? I18n.tr("Plugged in") : I18n.tr("On battery")) : I18n.tr("No battery detected"))
 
     Rectangle {
         id: bodyShadow
@@ -258,6 +245,8 @@ Item {
         Behavior on color {
             ColorAnimation {
                 duration: Appearance.animation.expressiveEffects.duration
+                easing.type: Appearance.animation.expressiveEffects.type
+                easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
             }
         }
     }
@@ -332,14 +321,7 @@ Item {
 
                 Text {
                     Layout.fillWidth: true
-                    text: Format.isNumber(PowerService.changeRate) ? (root.powerConnected ? (root.charging
-                                                                                             ? I18n.tr(
-                                                                                                   "Charging ") :
-                                                                                               I18n.tr("Power ")) :
-                                                                                            I18n.tr("Discharging "))
-                                                                     + Format.watts(Math.abs(
-                                                                                        PowerService.changeRate)) :
-                                                                     I18n.tr("Power unknown")
+                    text: Format.isNumber(PowerService.changeRate) ? (root.powerConnected ? (root.charging ? I18n.tr("Charging ") : I18n.tr("Power ")) : I18n.tr("Discharging ")) + Format.watts(Math.abs(PowerService.changeRate)) : I18n.tr("Power unknown")
                     color: contents.foregroundColor
                     opacity: 0.78
                     font.family: Fonts.numeric

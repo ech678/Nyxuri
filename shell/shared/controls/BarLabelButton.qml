@@ -42,8 +42,7 @@ Item {
                     Layout.alignment: Qt.AlignCenter
                     text: root.iconName
                     iconSize: Sizes.barIconSize
-                    color: root.selected || pointer.visualFocus || pointer.pointerHovered
-                           ? Appearance.colors.colPrimary : Appearance.colors.colOnSurface
+                    color: root.selected || pointer.visualFocus || pointer.pointerHovered ? Appearance.colors.colPrimary : Appearance.colors.colOnSurface
                 }
                 Item {
                     visible: root.hasLabel
@@ -60,7 +59,7 @@ Item {
                         textFormat: Text.PlainText
                         elide: Text.ElideRight
                         font.family: Fonts.ui
-                        font.pixelSize: 12
+                        font.pixelSize: Appearance.scaledFont(12)
                         color: Appearance.colors.colOnSurface
                     }
                 }

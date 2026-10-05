@@ -17,9 +17,9 @@ Item {
     property string edge: "top"
     property real contentProgress: 0
 
-    signal stopRequested()
-    signal collapseRequested()
-    signal exitFinished()
+    signal stopRequested
+    signal collapseRequested
+    signal exitFinished
 
     function beginEntry() {
         exitSequence.stop();
@@ -83,14 +83,13 @@ Item {
                     horizontalAlignment: Text.AlignHCenter
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.numeric
-                    font.pixelSize: 14
+                    font.pixelSize: Appearance.scaledFont(14)
                     font.weight: Font.DemiBold
                     font.features: {
                         "tnum": 1
                     }
                     rotation: !root.vertical ? 0 : root.edge === "left" ? -90 : 90
                 }
-
             }
 
             AudioStopButton {
@@ -101,9 +100,7 @@ Item {
                 canStop: root.recording
                 onStopRequested: root.stopRequested()
             }
-
         }
-
     }
 
     NumberAnimation {
@@ -140,7 +137,5 @@ Item {
         ScriptAction {
             script: root.exitFinished()
         }
-
     }
-
 }

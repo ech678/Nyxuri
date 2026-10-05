@@ -114,7 +114,7 @@ Item {
             text: I18n.tr("Visibility")
             color: Appearance.colors.colOnWeatherCardSurfaceVariant
             font.family: Fonts.expressive
-            font.pixelSize: 19
+            font.pixelSize: Appearance.scaledFont(19)
             font.bold: true
             anchors.verticalCenter: parent.verticalCenter
         }
@@ -154,7 +154,7 @@ Item {
         text: root.descriptionText()
         color: Appearance.colors.colOnWeatherCardSurface
         font.family: Fonts.expressive
-        font.pixelSize: 22
+        font.pixelSize: Appearance.scaledFont(22)
         font.bold: true
         horizontalAlignment: Text.AlignHCenter
         elide: Text.ElideRight

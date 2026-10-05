@@ -1,10 +1,21 @@
 import QtQuick
+import qs.shared.theme
 
 Text {
     id: root
 
     property real iconSize: 22
     property real fill: 0
+    property bool fillAnimationEnabled: true
+
+    Behavior on fill {
+        enabled: root.fillAnimationEnabled && Appearance.animationsEnabled
+        NumberAnimation {
+            duration: Appearance.animation.expressiveDefaultEffects.duration
+            easing.type: Appearance.animation.expressiveDefaultEffects.type
+            easing.bezierCurve: Appearance.animation.expressiveDefaultEffects.bezierCurve
+        }
+    }
     property string symbolFamily: "Material Symbols Rounded"
     readonly property real roundedFill: Number(fill).toFixed(1)
     readonly property int renderedIconSize: Math.max(1, Math.round(root.iconSize))

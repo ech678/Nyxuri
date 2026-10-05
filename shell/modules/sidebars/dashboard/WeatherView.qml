@@ -24,13 +24,10 @@ Item {
     property int contentMargin: 16
     property int headerHeight: 62
     property bool lightHeaderPalette: currentIsNight()
-    property color headerInk: lightHeaderPalette ? Qt.rgba(0.96, 0.98, 1, 0.94) : Qt.rgba(0.09, 0.14, 0.2,
-                                                                                          0.88)
+    property color headerInk: lightHeaderPalette ? Qt.rgba(0.96, 0.98, 1, 0.94) : Qt.rgba(0.09, 0.14, 0.2, 0.88)
 
-    property color headerInkMuted: lightHeaderPalette ? Qt.rgba(0.87, 0.91, 0.98, 0.76) : Qt.rgba(0.2, 0.28,
-                                                                                                  0.38, 0.62)
-    property color headerErrorInk: lightHeaderPalette ? Qt.rgba(1, 0.79, 0.82, 0.96) : Qt.rgba(0.62, 0.14,
-                                                                                               0.18, 0.88)
+    property color headerInkMuted: lightHeaderPalette ? Qt.rgba(0.87, 0.91, 0.98, 0.76) : Qt.rgba(0.2, 0.28, 0.38, 0.62)
+    property color headerErrorInk: lightHeaderPalette ? Qt.rgba(1, 0.79, 0.82, 0.96) : Qt.rgba(0.62, 0.14, 0.18, 0.88)
     property real currentEpoch: Math.floor(Date.now() / 1000)
 
     function validNumber(value) {
@@ -305,8 +302,7 @@ Item {
     }
 
     function aqiLevelName(level) {
-        const names = [I18n.tr("Excellent"), I18n.tr("Good"), I18n.tr("Poor"), I18n.tr("Unhealthy"), I18n.tr(
-                           "Very unhealthy"), I18n.tr("Hazardous")];
+        const names = [I18n.tr("Excellent"), I18n.tr("Good"), I18n.tr("Poor"), I18n.tr("Unhealthy"), I18n.tr("Very unhealthy"), I18n.tr("Hazardous")];
         if (level < 0 || level >= names.length)
             return "--";
 
@@ -315,26 +311,21 @@ Item {
 
     function aqiSummary() {
         const air = root.weatherSource.currentAirQuality || ({});
-        const values = [pollutantIndex(air.ozone, [0, 50, 100, 160, 240, 480]), pollutantIndex(air.nitrogenDioxide,
-                                                                                               [0, 10, 25, 200,
-                                                                                                400, 1000]),
-                        pollutantIndex(air.pm10, [0, 15, 45, 80, 160, 400]), pollutantIndex(air.pm25, [0, 5, 15,
-                                                                                                       30, 60, 150])].filter(
-                  validNumber);
+        const values = [pollutantIndex(air.ozone, [0, 50, 100, 160, 240, 480]), pollutantIndex(air.nitrogenDioxide, [0, 10, 25, 200, 400, 1000]), pollutantIndex(air.pm10, [0, 15, 45, 80, 160, 400]), pollutantIndex(air.pm25, [0, 5, 15, 30, 60, 150])].filter(validNumber);
         if (values.length === 0)
             return ({
-                        "value": NaN,
-                        "level": "--",
-                        "color": "#00e59b"
-                    });
+                    "value": NaN,
+                    "level": "--",
+                    "color": "#00e59b"
+                });
 
         const value = Math.max.apply(Math, values);
         const level = aqiLevelIndex(value);
         return ({
-                    "value": value,
-                    "level": aqiLevelName(level),
-                    "color": aqiPalette(level)
-                });
+                "value": value,
+                "level": aqiLevelName(level),
+                "color": aqiPalette(level)
+            });
     }
 
     function pressureValueText(value) {
@@ -342,8 +333,7 @@ Item {
     }
 
     function today() {
-        return modelCount(root.weatherSource.dailyForecast) > 0 ? root.weatherSource.dailyForecast.get(0) : (
-                                                                      {});
+        return modelCount(root.weatherSource.dailyForecast) > 0 ? root.weatherSource.dailyForecast.get(0) : ({});
     }
 
     function currentIsNight() {
@@ -358,8 +348,7 @@ Item {
         if (current && current.isDaylight !== undefined)
             return !current.isDaylight;
 
-        const nextHour = modelCount(root.weatherSource.hourlyForecast) > 0
-              ? root.weatherSource.hourlyForecast.get(0) : ({});
+        const nextHour = modelCount(root.weatherSource.hourlyForecast) > 0 ? root.weatherSource.hourlyForecast.get(0) : ({});
         if (nextHour && nextHour.isDaylight !== undefined)
             return !nextHour.isDaylight;
 
@@ -457,7 +446,7 @@ Item {
                             text: "location_on"
                             color: root.headerInkMuted
                             font.family: Fonts.materialSymbolsOutlined
-                            font.pixelSize: 19
+                            font.pixelSize: Appearance.scaledFont(19)
                             Layout.preferredWidth: 20
                             Layout.alignment: Qt.AlignVCenter
                             horizontalAlignment: Text.AlignHCenter
@@ -467,7 +456,7 @@ Item {
                             text: root.weatherSource.locationName || I18n.tr("Weather")
                             color: root.headerInk
                             font.family: Fonts.ui
-                            font.pixelSize: 19
+                            font.pixelSize: Appearance.scaledFont(19)
                             font.bold: true
                             elide: Text.ElideRight
                             Layout.fillWidth: true
@@ -481,10 +470,8 @@ Item {
                         iconSize: 22
                         iconColor: root.headerInk
                         accessibleName: I18n.tr("Edit weather location")
-                        hoverStateLayerColor: Qt.rgba(root.headerInkMuted.r, root.headerInkMuted.g,
-                                                      root.headerInkMuted.b, 0.1)
-                        pressedStateLayerColor: Qt.rgba(root.headerInkMuted.r, root.headerInkMuted.g,
-                                                        root.headerInkMuted.b, 0.18)
+                        hoverStateLayerColor: Qt.rgba(root.headerInkMuted.r, root.headerInkMuted.g, root.headerInkMuted.b, 0.1)
+                        pressedStateLayerColor: Qt.rgba(root.headerInkMuted.r, root.headerInkMuted.g, root.headerInkMuted.b, 0.18)
                         onClicked: ActionGateway.requestSettingsOpen("language-region")
                     }
 
@@ -496,10 +483,8 @@ Item {
                         iconSize: 22
                         iconColor: root.headerInk
                         accessibleName: I18n.tr("Refresh weather")
-                        hoverStateLayerColor: Qt.rgba(root.headerInkMuted.r, root.headerInkMuted.g,
-                                                      root.headerInkMuted.b, 0.1)
-                        pressedStateLayerColor: Qt.rgba(root.headerInkMuted.r, root.headerInkMuted.g,
-                                                        root.headerInkMuted.b, 0.18)
+                        hoverStateLayerColor: Qt.rgba(root.headerInkMuted.r, root.headerInkMuted.g, root.headerInkMuted.b, 0.1)
+                        pressedStateLayerColor: Qt.rgba(root.headerInkMuted.r, root.headerInkMuted.g, root.headerInkMuted.b, 0.18)
                         onClicked: root.weatherSource.refresh()
                     }
                 }
@@ -510,10 +495,9 @@ Item {
 
                     Text {
                         text: "schedule"
-                        color: root.weatherSource.status === "stale" || root.weatherSource.status === "error"
-                               ? root.headerErrorInk : root.headerInkMuted
+                        color: root.weatherSource.status === "stale" || root.weatherSource.status === "error" ? root.headerErrorInk : root.headerInkMuted
                         font.family: Fonts.materialSymbolsOutlined
-                        font.pixelSize: 19
+                        font.pixelSize: Appearance.scaledFont(19)
                         Layout.preferredWidth: 20
                         Layout.alignment: Qt.AlignVCenter
                         horizontalAlignment: Text.AlignHCenter
@@ -521,10 +505,9 @@ Item {
 
                     Text {
                         text: updatedText()
-                        color: root.weatherSource.status === "stale" || root.weatherSource.status === "error"
-                               ? root.headerErrorInk : root.headerInk
+                        color: root.weatherSource.status === "stale" || root.weatherSource.status === "error" ? root.headerErrorInk : root.headerInk
                         font.family: Fonts.mono
-                        font.pixelSize: 12
+                        font.pixelSize: Appearance.scaledFont(12)
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
@@ -576,7 +559,7 @@ Item {
                             text: root.weatherSource.currentWeatherText || I18n.tr("Unknown")
                             color: Appearance.colors.colOnImage
                             font.family: Fonts.ui
-                            font.pixelSize: 26
+                            font.pixelSize: Appearance.scaledFont(26)
                             font.bold: true
                             horizontalAlignment: Text.AlignHCenter
                             elide: Text.ElideRight
@@ -613,9 +596,7 @@ Item {
                                 iconName: root.weatherSource.currentIconName
                                 night: root.currentIsNight()
                                 color: Appearance.colors.colOnImage
-                                playing: root.presentationActive && currentSummary.y + currentSummary.height
-                                         >= flick.contentY && currentSummary.y <= flick.contentY
-                                         + flick.height
+                                playing: root.presentationActive && currentSummary.y + currentSummary.height >= flick.contentY && currentSummary.y <= flick.contentY + flick.height
                             }
                         }
 
@@ -624,18 +605,17 @@ Item {
                             text: I18n.tr("Feels like: ") + fmtTemp(root.weatherSource.currentFeelsLikeC)
                             color: Appearance.colors.colOnImage
                             font.family: Fonts.ui
-                            font.pixelSize: 18
+                            font.pixelSize: Appearance.scaledFont(18)
                             horizontalAlignment: Text.AlignHCenter
                             elide: Text.ElideRight
                         }
 
                         Text {
                             width: parent.width
-                            text: I18n.tr("High ") + fmtTemp(today().temperatureMaxC) + I18n.tr(" · Low ")
-                                  + fmtTemp(today().temperatureMinC)
+                            text: I18n.tr("High ") + fmtTemp(today().temperatureMaxC) + I18n.tr(" · Low ") + fmtTemp(today().temperatureMinC)
                             color: Appearance.colors.colOnImage
                             font.family: Fonts.ui
-                            font.pixelSize: 18
+                            font.pixelSize: Appearance.scaledFont(18)
                             horizontalAlignment: Text.AlignHCenter
                             elide: Text.ElideRight
                         }
@@ -649,8 +629,7 @@ Item {
                     height: 452
                     sourceModel: root.weatherSource.dailyTrendForecast
                     normalsSource: root.weatherSource
-                    foreground: root.presentationActive && dailyForecastCard.y + dailyForecastCard.height
-                                >= flick.contentY && dailyForecastCard.y <= flick.contentY + flick.height
+                    foreground: root.presentationActive && dailyForecastCard.y + dailyForecastCard.height >= flick.contentY && dailyForecastCard.y <= flick.contentY + flick.height
                 }
 
                 HourlyForecastTrendCard {
@@ -660,8 +639,7 @@ Item {
                     height: 340
                     sourceModel: root.weatherSource.hourlyForecast
                     normalsSource: root.weatherSource
-                    foreground: root.presentationActive && hourlyForecastCard.y + hourlyForecastCard.height
-                                >= flick.contentY && hourlyForecastCard.y <= flick.contentY + flick.height
+                    foreground: root.presentationActive && hourlyForecastCard.y + hourlyForecastCard.height >= flick.contentY && hourlyForecastCard.y <= flick.contentY + flick.height
                 }
 
                 RowLayout {
@@ -705,8 +683,7 @@ Item {
                             anchors.fill: parent
                             directionDegrees: root.weatherSource.currentWindDirection
                             valueText: fmtSpeed(root.weatherSource.currentWindSpeedMs)
-                            detailText: I18n.tr("Gusts ") + fmtSpeed(root.weatherSource.currentWindGustsMs)
-                                        + " · " + directionLabel(root.weatherSource.currentWindDirection)
+                            detailText: I18n.tr("Gusts ") + fmtSpeed(root.weatherSource.currentWindGustsMs) + " · " + directionLabel(root.weatherSource.currentWindDirection)
                             accent: windAccent(root.weatherSource.currentWindSpeedMs)
                             animationEnabled: true
                             animationActive: windReveal.contentAnimationActive
@@ -912,8 +889,7 @@ Item {
         color: "transparent"
         radius: weatherPanel.radius
         border.width: 1 / root.effectiveDpr
-        border.color: Qt.rgba(Appearance.colors.colOutlineVariant.r, Appearance.colors.colOutlineVariant.g,
-                              Appearance.colors.colOutlineVariant.b, 0.34)
+        border.color: Qt.rgba(Appearance.colors.colOutlineVariant.r, Appearance.colors.colOutlineVariant.g, Appearance.colors.colOutlineVariant.b, 0.34)
     }
 
     component SectionCard: Rectangle {
@@ -926,8 +902,7 @@ Item {
         radius: 26
         color: BlurService.opaqueBackgroundColor(Appearance.m3colors.m3surfaceContainer)
         border.width: 1
-        border.color: Qt.rgba(Appearance.colors.colOutlineVariant.r, Appearance.colors.colOutlineVariant.g,
-                              Appearance.colors.colOutlineVariant.b, 0.55)
+        border.color: Qt.rgba(Appearance.colors.colOutlineVariant.r, Appearance.colors.colOutlineVariant.g, Appearance.colors.colOutlineVariant.b, 0.55)
 
         Row {
             anchors.left: parent.left
@@ -940,7 +915,7 @@ Item {
                 text: card.icon
                 color: Appearance.colors.colOnSurface
                 font.family: Fonts.materialSymbolsOutlined
-                font.pixelSize: 20
+                font.pixelSize: Appearance.scaledFont(20)
                 anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -949,7 +924,7 @@ Item {
                 color: Appearance.colors.colOnSurface
                 font.family: Fonts.ui
                 font.bold: true
-                font.pixelSize: 15
+                font.pixelSize: Appearance.scaledFont(15)
                 anchors.verticalCenter: parent.verticalCenter
             }
         }

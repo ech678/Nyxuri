@@ -20,11 +20,9 @@ PopupWindow {
     property real padding: 10
     property bool opened: false
     readonly property real verticalAnchorPadding: {
-        if (!root.anchorItem || !root.barVisualItem || (root.edge !== "left" && root.edge !== "right")
-                || root.barVisualItem.QsWindow.window !== root.anchorItem.QsWindow.window)
+        if (!root.anchorItem || !root.barVisualItem || (root.edge !== "left" && root.edge !== "right") || root.barVisualItem.QsWindow.window !== root.anchorItem.QsWindow.window)
             return 0;
-        return Math.max(0, (root.barVisualItem.width - root.anchorItem.width) / 2 + Sizes.barPopupGap
-                        - root.padding);
+        return Math.max(0, (root.barVisualItem.width - root.anchorItem.width) / 2 + Sizes.barPopupGap - root.padding);
     }
 
     signal menuClosed
@@ -71,18 +69,11 @@ PopupWindow {
         // cross-axis bounds to leave room between the pill and visible menu.
         rect.x: -root.verticalAnchorPadding
         rect.y: 0
-        rect.width: Math.max(1, (root.anchorItem ? root.anchorItem.width : 1) + root.verticalAnchorPadding
-                             * 2)
+        rect.width: Math.max(1, (root.anchorItem ? root.anchorItem.width : 1) + root.verticalAnchorPadding * 2)
         rect.height: Math.max(1, root.anchorItem ? root.anchorItem.height : 1)
-        edges: root.edge === "left" ? Edges.Right : root.edge === "right" ? Edges.Left : root.edge
-                                                                            === "bottom" ? Edges.Top :
-                                                                                           Edges.Bottom
-        gravity: root.edge === "left" ? Edges.Right : root.edge === "right" ? Edges.Left : root.edge
-                                                                              === "bottom" ? Edges.Top :
-                                                                                             Edges.Bottom
-        adjustment: root.edge === "left" || root.edge === "right" ? PopupAdjustment.SlideY :
-                                                                    PopupAdjustment.SlideX
-
+        edges: root.edge === "left" ? Edges.Right : root.edge === "right" ? Edges.Left : root.edge === "bottom" ? Edges.Top : Edges.Bottom
+        gravity: root.edge === "left" ? Edges.Right : root.edge === "right" ? Edges.Left : root.edge === "bottom" ? Edges.Top : Edges.Bottom
+        adjustment: root.edge === "left" || root.edge === "right" ? PopupAdjustment.SlideY : PopupAdjustment.SlideX
     }
 
     PanelWindow {
@@ -90,8 +81,7 @@ PopupWindow {
         screen: root.screen
         color: "transparent"
         exclusiveZone: 0
-        WlrLayershell.layer: root.anchorItem && root.anchorItem.QsWindow.window
-                             ? root.anchorItem.QsWindow.window.WlrLayershell.layer : WlrLayer.Top
+        WlrLayershell.layer: root.anchorItem && root.anchorItem.QsWindow.window ? root.anchorItem.QsWindow.window.WlrLayershell.layer : WlrLayer.Top
         WlrLayershell.namespace: "nyxuri-shell-tray-menu-backdrop"
         WlrLayershell.exclusionMode: ExclusionMode.Ignore
 
@@ -126,8 +116,7 @@ PopupWindow {
             anchors.fill: parent
             acceptedButtons: Qt.BackButton | Qt.RightButton
             onPressed: event => {
-                if ((event.button === Qt.BackButton || event.button === Qt.RightButton) && stackView.depth
-                        > 1) {
+                if ((event.button === Qt.BackButton || event.button === Qt.RightButton) && stackView.depth > 1) {
                     stackView.pop();
                     event.accepted = true;
                 } else {
@@ -224,7 +213,7 @@ PopupWindow {
 
     component NoAnimation: Transition {
         NumberAnimation {
-            duration: 0
+            duration: Appearance.motionDuration(0)
         }
     }
 
@@ -283,16 +272,14 @@ PopupWindow {
                     MaterialSymbol {
                         text: "chevron_left"
                         iconSize: 20
-                        color: backButton.pointerHovered ? Appearance.colors.colOnSecondaryContainer :
-                                                           Appearance.colors.colOnLayer0
+                        color: backButton.pointerHovered ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnLayer0
                     }
 
                     Text {
                         text: I18n.tr("Back")
-                        color: backButton.pointerHovered ? Appearance.colors.colOnSecondaryContainer :
-                                                           Appearance.colors.colOnLayer0
+                        color: backButton.pointerHovered ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnLayer0
                         font.family: Fonts.ui
-                        font.pixelSize: 13
+                        font.pixelSize: Appearance.scaledFont(13)
                         Layout.fillWidth: true
                     }
                 }
@@ -333,9 +320,9 @@ PopupWindow {
                 onDismiss: root.close()
                 onOpenSubmenu: handle => {
                     stackView.push(subMenuComponent, {
-                                       "handle": handle,
-                                       "isSubmenu": true
-                                   });
+                        "handle": handle,
+                        "isSubmenu": true
+                    });
                 }
             }
         }
@@ -345,7 +332,7 @@ PopupWindow {
             text: I18n.tr("No menu items")
             color: Appearance.colors.colSubtext
             font.family: Fonts.ui
-            font.pixelSize: 13
+            font.pixelSize: Appearance.scaledFont(13)
             leftPadding: 12
             rightPadding: 12
             topPadding: 8

@@ -7,8 +7,8 @@ QtObject {
     property real targetValue: NaN
     property bool enabled: false
     property bool active: true
-    property int initialDuration: 1000
-    property int updateDuration: 500
+    property int initialDuration: Appearance.motionDuration(1000)
+    property int updateDuration: Appearance.motionDuration(500)
 
     readonly property bool valid: !isNaN(targetValue) && isFinite(targetValue)
     property real currentValue: valid && !enabled ? targetValue : (valid ? 0 : NaN)

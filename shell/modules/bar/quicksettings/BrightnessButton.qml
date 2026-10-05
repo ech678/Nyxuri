@@ -51,7 +51,7 @@ Item {
                     visible: root.showValue
                     text: Math.round(root.brightnessValue * 100) + "%"
                     font.family: Fonts.numeric
-                    font.pixelSize: 12
+                    font.pixelSize: Appearance.scaledFont(12)
                     color: Appearance.colors.colOnSurface
                     Layout.alignment: Qt.AlignCenter
                 }
@@ -60,9 +60,7 @@ Item {
         Accessible.name: tooltip.text
 
         wheelAction: wheel => {
-            const delta = wheel.angleDelta.y || wheel.angleDelta.x || wheel.pixelDelta.y
-                  || wheel.pixelDelta.x;
-
+            const delta = wheel.angleDelta.y || wheel.angleDelta.x || wheel.pixelDelta.y || wheel.pixelDelta.x;
 
             if (!delta)
                 return;
@@ -75,8 +73,6 @@ Item {
     PopupToolTip {
         id: tooltip
         extraVisibleCondition: mouseArea.pointerHovered
-        text: I18n.tr("Brightness: ") + Math.round(root.brightnessValue * 100) + I18n.tr(
-                  "%\nScroll to adjust")
-
+        text: I18n.tr("Brightness: ") + Math.round(root.brightnessValue * 100) + I18n.tr("%\nScroll to adjust")
     }
 }

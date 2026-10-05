@@ -120,6 +120,10 @@ def build_category_suite(category: str) -> unittest.TestSuite:
         suite.addTests(loader.loadTestsFromTestCase(ReduceMotionContracts))
         from shell.tests.test_i18n_catalog import CatalogContracts
         suite.addTests(loader.loadTestsFromTestCase(CatalogContracts))
+        from shell.tests.test_accessibility import AccessibilityContracts
+        suite.addTests(loader.loadTestsFromTestCase(AccessibilityContracts))
+        from shell.tests.test_keyboard_navigation import KeyboardNavigationContracts
+        suite.addTests(loader.loadTestsFromTestCase(KeyboardNavigationContracts))
         from tests.test_shell import TestShellManagement
         static_test_names = [
             "test_p2_layer_structure_and_session_decoupling",

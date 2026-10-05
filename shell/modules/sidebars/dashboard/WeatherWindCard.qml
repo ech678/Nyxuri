@@ -24,8 +24,7 @@ WeatherInsightCard {
     readonly property bool hasDirection: directionDegrees >= 0 && directionDegrees <= 360
     readonly property color ink: Appearance.colors.colOnWeatherCardSurface
     readonly property color mutedInk: Appearance.colors.colOnWeatherCardSurfaceVariant
-    readonly property color arrowTint: Appearance.applyAlpha(Appearance.colors.colOnWeatherCardSurfaceVariant,
-                                                             0.18)
+    readonly property color arrowTint: Appearance.applyAlpha(Appearance.colors.colOnWeatherCardSurfaceVariant, 0.18)
     readonly property real speedNumberSize: Math.round(width * 0.27)
     readonly property real speedUnitSize: Math.round(width * 0.115)
 
@@ -163,7 +162,7 @@ WeatherInsightCard {
             text: I18n.tr("Wind")
             color: root.mutedInk
             font.family: Fonts.expressive
-            font.pixelSize: 18
+            font.pixelSize: Appearance.scaledFont(18)
             font.bold: true
         }
     }
@@ -189,9 +188,7 @@ WeatherInsightCard {
                 fillColor: root.arrowTint
 
                 PathSvg {
-                    path: root.hasDirection
-                          ? "M108.04,151.24C99.97,168.05 76.03,168.05 67.96,151.24L27.21,66.3C18.79,48.75 35.4,29.63 53.96,35.5L81.29,44.15C85.66,45.54 90.34,45.54 94.71,44.15L122.04,35.5C140.6,29.63 157.21,48.75 148.79,66.3L108.04,151.24Z" :
-                            "m88,164.15q-14.17,0 -26.65,-5.31 -12.48,-5.31 -21.78,-14.61 -9.3,-9.3 -14.61,-21.69 -5.31,-12.4 -5.31,-26.74 0,-3.54 2.39,-5.93 2.39,-2.39 5.93,-2.39 3.54,0 5.93,2.39 2.39,2.39 2.39,5.93 0,21.6 15.14,36.57 15.14,14.96 36.57,14.96 21.43,0 36.57,-15.05 15.14,-15.05 15.14,-36.48 0,-21.6 -14.7,-36.57Q110.31,44.26 88.71,44.26h-3.9l7.44,7.44q1.95,1.95 1.95,4.43 0,2.48 -1.95,4.43Q90.3,62.5 87.73,62.41 85.17,62.32 83.22,60.38L64.27,41.43q-2.66,-2.48 -2.66,-5.93 0,-3.45 2.66,-5.93L83.4,10.26q1.77,-1.59 4.43,-1.68 2.66,-0.09 4.43,1.68 1.77,1.77 1.68,4.52 -0.09,2.74 -1.86,4.34l-8.32,8.32h4.07q14.34,0 26.83,5.31 12.48,5.31 21.78,14.61 9.3,9.3 14.61,21.69 5.31,12.4 5.31,26.74 0,14.17 -5.31,26.65 -5.31,12.48 -14.61,21.78 -9.3,9.3 -21.78,14.61 -12.48,5.31 -26.65,5.31z"
+                    path: root.hasDirection ? "M108.04,151.24C99.97,168.05 76.03,168.05 67.96,151.24L27.21,66.3C18.79,48.75 35.4,29.63 53.96,35.5L81.29,44.15C85.66,45.54 90.34,45.54 94.71,44.15L122.04,35.5C140.6,29.63 157.21,48.75 148.79,66.3L108.04,151.24Z" : "m88,164.15q-14.17,0 -26.65,-5.31 -12.48,-5.31 -21.78,-14.61 -9.3,-9.3 -14.61,-21.69 -5.31,-12.4 -5.31,-26.74 0,-3.54 2.39,-5.93 2.39,-2.39 5.93,-2.39 3.54,0 5.93,2.39 2.39,2.39 2.39,5.93 0,21.6 15.14,36.57 15.14,14.96 36.57,14.96 21.43,0 36.57,-15.05 15.14,-15.05 15.14,-36.48 0,-21.6 -14.7,-36.57Q110.31,44.26 88.71,44.26h-3.9l7.44,7.44q1.95,1.95 1.95,4.43 0,2.48 -1.95,4.43Q90.3,62.5 87.73,62.41 85.17,62.32 83.22,60.38L64.27,41.43q-2.66,-2.48 -2.66,-5.93 0,-3.45 2.66,-5.93L83.4,10.26q1.77,-1.59 4.43,-1.68 2.66,-0.09 4.43,1.68 1.77,1.77 1.68,4.52 -0.09,2.74 -1.86,4.34l-8.32,8.32h4.07q14.34,0 26.83,5.31 12.48,5.31 21.78,14.61 9.3,9.3 14.61,21.69 5.31,12.4 5.31,26.74 0,14.17 -5.31,26.65 -5.31,12.48 -14.61,21.78 -9.3,9.3 -21.78,14.61 -12.48,5.31 -26.65,5.31z"
                 }
             }
         }
@@ -250,7 +247,7 @@ WeatherInsightCard {
         text: root.animatedDetailText()
         color: root.ink
         font.family: Fonts.expressive
-        font.pixelSize: 14
+        font.pixelSize: Appearance.scaledFont(14)
         font.bold: true
         elide: Text.ElideRight
         z: 2

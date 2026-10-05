@@ -18,8 +18,7 @@ WidgetPanel {
     property bool initialLoading: false
     property bool refreshLoading: false
     property var pendingForgetNetwork: null
-    readonly property bool networkUsable: NetworkService.available && NetworkService.wifiAvailable
-                                          && NetworkService.wifiEnabled
+    readonly property bool networkUsable: NetworkService.available && NetworkService.wifiAvailable && NetworkService.wifiEnabled
     readonly property var savedWifiProfiles: NetworkService.savedWifiProfiles
     readonly property var availableWifiNetworks: NetworkService.availableWifiNetworks
     readonly property bool linearLoading: NetworkService.busy && !refreshLoading
@@ -229,10 +228,8 @@ WidgetPanel {
 
                     SettingsRow {
                         Layout.fillWidth: true
-                        iconName: NetworkService.activeNetwork && NetworkService.activeNetwork.type
-                                  === "wired" ? "lan" : NetworkService.wifiConnected ? "wifi" : "wifi_off"
-                        title: NetworkService.activeNetwork ? NetworkService.activeConnection : I18n.tr(
-                                                                  "Not connected")
+                        iconName: NetworkService.activeNetwork && NetworkService.activeNetwork.type === "wired" ? "lan" : NetworkService.wifiConnected ? "wifi" : "wifi_off"
+                        title: NetworkService.activeNetwork ? NetworkService.activeConnection : I18n.tr("Not connected")
                         supportingText: root.connectivityText()
                         highlighted: NetworkService.connected
 
@@ -244,16 +241,13 @@ WidgetPanel {
                                 text: NetworkService.signalStrength + "%"
                                 color: Appearance.colors.colOnLayer1
                                 font.family: Fonts.numeric
-                                font.pixelSize: 12
+                                font.pixelSize: Appearance.scaledFont(12)
                             }
 
                             MaterialSymbol {
-                                text: NetworkService.internetAvailable ? "language" :
-                                                                         NetworkService.captivePortal
-                                                                         ? "captive_portal" : "public_off"
+                                text: NetworkService.internetAvailable ? "language" : NetworkService.captivePortal ? "captive_portal" : "public_off"
                                 iconSize: 19
-                                color: NetworkService.internetAvailable ? Appearance.colors.colPrimary :
-                                                                          Appearance.colors.colOnLayer1
+                                color: NetworkService.internetAvailable ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer1
                             }
                         }
                     }
@@ -298,11 +292,7 @@ WidgetPanel {
                             title: modelData.name
                             iconName: "lan"
                             highlighted: modelData.connected
-                            supportingText: !modelData.hasLink ? I18n.tr("Network cable unplugged") :
-                                                                 modelData.linkSpeed > 0 ? I18n.tr(
-                                                                                               "%1 Mbps").arg(
-                                                                                               modelData.linkSpeed) :
-                                                                                           ""
+                            supportingText: !modelData.hasLink ? I18n.tr("Network cable unplugged") : modelData.linkSpeed > 0 ? I18n.tr("%1 Mbps").arg(modelData.linkSpeed) : ""
                             trailing: ActionButton {
                                 text: modelData.connected ? I18n.tr("Disconnect") : I18n.tr("Connect")
                                 enabled: modelData.hasLink && !NetworkService.busy
@@ -338,8 +328,7 @@ WidgetPanel {
                     SettingsRow {
                         Layout.fillWidth: true
                         title: I18n.tr("Security")
-                        supportingText: NetworkService.activeWifi && NetworkService.activeWifi.isSecure
-                                        ? I18n.tr("Protected network") : I18n.tr("Open network")
+                        supportingText: NetworkService.activeWifi && NetworkService.activeWifi.isSecure ? I18n.tr("Protected network") : I18n.tr("Open network")
                     }
                     SettingsRow {
                         Layout.fillWidth: true
@@ -410,7 +399,7 @@ WidgetPanel {
                                 text: I18n.tr("Searching for available networks")
                                 color: Appearance.colors.colOnLayer1
                                 font.family: Fonts.ui
-                                font.pixelSize: 12
+                                font.pixelSize: Appearance.scaledFont(12)
                             }
                         }
 
@@ -440,8 +429,7 @@ WidgetPanel {
 
                     SettingsRow {
                         Layout.fillWidth: true
-                        visible: !root.initialLoading && !root.refreshLoading
-                                 && NetworkService.availableWifiNetworks.length === 0
+                        visible: !root.initialLoading && !root.refreshLoading && NetworkService.availableWifiNetworks.length === 0
                         iconName: "search_off"
                         title: I18n.tr("No available networks found")
                     }
@@ -464,9 +452,7 @@ WidgetPanel {
         x: Math.round((root.width - width) / 2)
         y: Math.round((root.height - height) / 2)
         dialogTitle: I18n.tr("Forget network")
-        messageText: root.pendingForgetNetwork ? I18n.tr(
-                                                     "This will delete the saved connection for “%1”.").arg(
-                                                     root.forgetTargetLabel(root.pendingForgetNetwork)) : ""
+        messageText: root.pendingForgetNetwork ? I18n.tr("This will delete the saved connection for “%1”.").arg(root.forgetTargetLabel(root.pendingForgetNetwork)) : ""
 
         actionsComponent: Component {
             RowLayout {
@@ -519,8 +505,7 @@ WidgetPanel {
         StyledSwitch {
             scale: 0.8
             checked: NetworkService.wifiEnabled
-            enabled: NetworkService.available && NetworkService.wifiAvailable
-                     && NetworkService.wifiHardwareEnabled && !NetworkService.busy
+            enabled: NetworkService.available && NetworkService.wifiAvailable && NetworkService.wifiHardwareEnabled && !NetworkService.busy
             Accessible.name: I18n.tr("Wi-Fi switch")
             onToggled: NetworkService.setWifiEnabled(checked)
         }
@@ -530,8 +515,7 @@ WidgetPanel {
         id: profileRoot
 
         required property var profile
-        readonly property bool targetBusy: NetworkService.connectTargetUuid.length > 0
-                                           && NetworkService.connectTargetUuid === String(profile.uuid || "")
+        readonly property bool targetBusy: NetworkService.connectTargetUuid.length > 0 && NetworkService.connectTargetUuid === String(profile.uuid || "")
 
         implicitHeight: 64
         radius: Appearance.rounding.normal
@@ -539,9 +523,7 @@ WidgetPanel {
 
         SettingsRow {
             anchors.fill: parent
-            iconName: profile.strength > 75 ? "signal_wifi_4_bar" : profile.strength > 50
-                                              ? "network_wifi_3_bar" : profile.strength > 25
-                                                ? "network_wifi_2_bar" : "signal_wifi_0_bar"
+            iconName: profile.strength > 75 ? "signal_wifi_4_bar" : profile.strength > 50 ? "network_wifi_3_bar" : profile.strength > 25 ? "network_wifi_2_bar" : "signal_wifi_0_bar"
             title: profile.name || profile.ssid
             supportingText: root.savedProfileDetails(profile)
             interactive: !NetworkService.busy
@@ -559,7 +541,7 @@ WidgetPanel {
                     RotationAnimation on rotation {
                         from: 0
                         to: 360
-                        duration: 850
+                        duration: Appearance.motionLoopDuration(850)
                         loops: Animation.Infinite
                         running: profileRoot.targetBusy
                     }
@@ -603,10 +585,8 @@ WidgetPanel {
         readonly property bool networkSecure: !!wifiNetwork.isSecure
         readonly property bool networkKnown: !!wifiNetwork.known
         readonly property bool networkAskingPassword: !!wifiNetwork.askingPassword
-        readonly property bool targetBusy: NetworkService.wifiConnectTarget
-                                           && NetworkService.wifiConnectTarget.ssid === wifiNetwork.ssid
-        readonly property real promptHeight: networkAskingPassword ? passwordContent.implicitHeight
-                                                                     + Appearance.spacing.medium : 0
+        readonly property bool targetBusy: NetworkService.wifiConnectTarget && NetworkService.wifiConnectTarget.ssid === wifiNetwork.ssid
+        readonly property real promptHeight: networkAskingPassword ? passwordContent.implicitHeight + Appearance.spacing.medium : 0
 
         function submitPassword() {
             const password = passwordField.text;
@@ -634,15 +614,9 @@ WidgetPanel {
 
         SettingsRow {
             height: 64
-            iconName: wifiNetwork.strength > 75 ? "signal_wifi_4_bar" : wifiNetwork.strength > 50
-                                                  ? "network_wifi_3_bar" : wifiNetwork.strength > 25
-                                                    ? "network_wifi_2_bar" : "signal_wifi_0_bar"
+            iconName: wifiNetwork.strength > 75 ? "signal_wifi_4_bar" : wifiNetwork.strength > 50 ? "network_wifi_3_bar" : wifiNetwork.strength > 25 ? "network_wifi_2_bar" : "signal_wifi_0_bar"
             title: wifiNetwork.ssid
-            supportingText: networkActive ? I18n.tr("Connected · ") + wifiNetwork.strength + "%" : (
-                                                networkKnown ? I18n.tr("Saved · ") : "") + (networkSecure
-                                                                                            ? wifiNetwork.security :
-                                                                                              I18n.tr("Open network"))
-                                            + " · " + wifiNetwork.strength + "%"
+            supportingText: networkActive ? I18n.tr("Connected · ") + wifiNetwork.strength + "%" : (networkKnown ? I18n.tr("Saved · ") : "") + (networkSecure ? wifiNetwork.security : I18n.tr("Open network")) + " · " + wifiNetwork.strength + "%"
             interactive: !NetworkService.busy && !networkAskingPassword
             highlighted: networkActive
             onClicked: NetworkService.connectToWifiNetwork(itemRoot.wifiNetwork)
@@ -672,7 +646,7 @@ WidgetPanel {
                     RotationAnimation on rotation {
                         from: 0
                         to: 360
-                        duration: 850
+                        duration: Appearance.motionLoopDuration(850)
                         loops: Animation.Infinite
                         running: itemRoot.targetBusy
                     }
@@ -757,8 +731,7 @@ WidgetPanel {
                             iconName: itemRoot.showPassword ? "visibility_off" : "visibility"
                             iconSize: 20
                             iconColor: Appearance.colors.colOnLayer1
-                            accessibleName: itemRoot.showPassword ? I18n.tr("Hide password") : I18n.tr(
-                                                                        "Show password")
+                            accessibleName: itemRoot.showPassword ? I18n.tr("Hide password") : I18n.tr("Show password")
                             hoverStateLayerColor: Appearance.colors.colLayer1Hover
                             pressedStateLayerColor: Appearance.colors.colLayer1Active
                             onClicked: itemRoot.showPassword = !itemRoot.showPassword
@@ -803,6 +776,8 @@ WidgetPanel {
         Behavior on color {
             ColorAnimation {
                 duration: Appearance.animation.expressiveFastEffects.duration
+                easing.type: Appearance.animation.expressiveFastEffects.type
+                easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
             }
         }
     }

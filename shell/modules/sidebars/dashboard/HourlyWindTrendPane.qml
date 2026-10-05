@@ -130,9 +130,7 @@ Item {
         const list = [];
         let highest = 0;
         let validCount = 0;
-        const modelCount = root.sourceModel ? (typeof root.sourceModel.count === "function"
-                                               ? root.sourceModel.count() : Number(root.sourceModel.count
-                                                                                   || 0)) : 0;
+        const modelCount = root.sourceModel ? (typeof root.sourceModel.count === "function" ? root.sourceModel.count() : Number(root.sourceModel.count || 0)) : 0;
         const count = Math.min(root.maxHours, modelCount);
         for (let i = 0; i < count; ++i) {
             const item = root.sourceModel.get(i) || ({});
@@ -143,14 +141,14 @@ Item {
                 validCount += 1;
             }
             list.push({
-                          "time": item.time || 0,
-                          "hourText": root.hourLabel(item.time || 0),
-                          "speed": speed,
-                          "speedText": root.formatSpeedValue(speed),
-                          "direction": direction,
-                          "color": root.windColor(speed),
-                          "emphasized": i !== 0
-                      });
+                "time": item.time || 0,
+                "hourText": root.hourLabel(item.time || 0),
+                "speed": speed,
+                "speedText": root.formatSpeedValue(speed),
+                "direction": direction,
+                "color": root.windColor(speed),
+                "emphasized": i !== 0
+            });
         }
         items = list;
         chartMax = root.chartUpperBound(highest);
@@ -216,11 +214,7 @@ Item {
                 Item {
                     required property var modelData
                     required property int index
-                    readonly property color hourColor: modelData.emphasized
-                                                       ? Appearance.colors.colOnSurfaceVariant : Qt.rgba(
-                                                             Appearance.colors.colOnSurfaceVariant.r,
-                                                             Appearance.colors.colOnSurfaceVariant.g,
-                                                             Appearance.colors.colOnSurfaceVariant.b, 0.64)
+                    readonly property color hourColor: modelData.emphasized ? Appearance.colors.colOnSurfaceVariant : Qt.rgba(Appearance.colors.colOnSurfaceVariant.r, Appearance.colors.colOnSurfaceVariant.g, Appearance.colors.colOnSurfaceVariant.b, 0.64)
                     readonly property real barTop: root.yForValue(modelData.speed)
                     readonly property real barWidth: Math.max(8, Math.min(12, width * 0.36))
 
@@ -234,7 +228,7 @@ Item {
                         text: modelData.hourText
                         color: parent.hourColor
                         font.family: Fonts.numeric
-                        font.pixelSize: 11
+                        font.pixelSize: Appearance.scaledFont(11)
                         horizontalAlignment: Text.AlignHCenter
                     }
 
@@ -255,8 +249,7 @@ Item {
                         x: (parent.width - width) / 2
                         y: parent.barTop
                         radius: width / 2
-                        color: Qt.rgba(Qt.color(modelData.color).r, Qt.color(modelData.color).g, Qt.color(
-                                           modelData.color).b, 0.96)
+                        color: Qt.rgba(Qt.color(modelData.color).r, Qt.color(modelData.color).g, Qt.color(modelData.color).b, 0.96)
                     }
 
                     Text {
@@ -266,7 +259,7 @@ Item {
                         text: modelData.speedText
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: Appearance.scaledFont(12)
                     }
                 }
             }
@@ -306,6 +299,6 @@ Item {
         text: I18n.tr("Wind data is unavailable")
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.ui
-        font.pixelSize: 16
+        font.pixelSize: Appearance.scaledFont(16)
     }
 }

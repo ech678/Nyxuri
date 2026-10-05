@@ -37,7 +37,7 @@ Item {
 
             Behavior on scale {
                 NumberAnimation {
-                    duration: 400
+                    duration: Appearance.motionDuration(400)
                     easing.type: Easing.OutQuint
                 }
             }
@@ -53,7 +53,7 @@ Item {
 
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: 400
+                        duration: Appearance.motionDuration(400)
                         easing.type: Easing.OutQuint
                     }
                 }
