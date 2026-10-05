@@ -45,6 +45,8 @@ Item {
             return [2, 2];
         if (type === "palette")
             return [4, 1];
+        if (type === "barlayout")
+            return [4, 3];
         if (type === "toggle" || type === "spin")
             return [1, 1];
         return [2, 1];
@@ -402,7 +404,8 @@ Item {
                                                         "slider": sliderComponent,
                                                         "spin": spinComponent,
                                                         "combo": comboComponent,
-                                                        "text": textComponent
+                                                        "text": textComponent,
+                                                        "barlayout": barLayoutComponent
                                                     })
 
                     active: slot.place !== null && (slot.modelData.kind === "header" || slot.inView)
@@ -458,6 +461,27 @@ Item {
                                     text: slot.modelData.count ?? ""
                                     font.pixelSize: Typography.bodySmall.pixelSize
                                     color: Appearance.colors.colSubtext
+                                }
+
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    implicitHeight: 2
+                                    radius: 1
+                                    gradient: Gradient {
+                                        orientation: Gradient.Horizontal
+                                        GradientStop {
+                                            position: 0
+                                            color: Appearance.colors.colPrimary
+                                        }
+                                        GradientStop {
+                                            position: 0.35
+                                            color: Appearance.colors.colOutlineVariant
+                                        }
+                                        GradientStop {
+                                            position: 1
+                                            color: "transparent"
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -604,6 +628,22 @@ Item {
                             icon: slot.modelData.icon
                             tileShape: slot.modelData.shape
                             placeholder: slot.modelData.placeholder ?? ""
+                            pager: root.pager
+                            staggerMs: root.staggerMs
+                            animIndex: slot.index % 6
+                            travelX: slot.modelData.travelX
+                            travelY: slot.modelData.travelY
+                        }
+                    }
+
+                    Component {
+                        id: barLayoutComponent
+
+                        DashboardBarLayoutCard {
+                            anchors.fill: parent
+                            title: slot.modelData.title
+                            icon: slot.modelData.icon
+                            tileShape: slot.modelData.shape
                             pager: root.pager
                             staggerMs: root.staggerMs
                             animIndex: slot.index % 6

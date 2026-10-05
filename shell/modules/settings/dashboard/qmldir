@@ -14,6 +14,7 @@ DashboardStyleCard 1.0 DashboardStyleCard.qml
 DashboardPaletteCard 1.0 DashboardPaletteCard.qml
 DashboardComboCard 1.0 DashboardComboCard.qml
 DashboardTextCard 1.0 DashboardTextCard.qml
+DashboardBarLayoutCard 1.0 DashboardBarLayoutCard.qml
 DashboardWallpapersPage 1.0 DashboardWallpapersPage.qml
 DashboardWallpaperToolsCard 1.0 DashboardWallpaperToolsCard.qml
 DashboardMediaPage 1.0 DashboardMediaPage.qml

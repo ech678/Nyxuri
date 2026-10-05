@@ -69,19 +69,20 @@ Item {
             id: componentLoader
 
             required property string modelData
-            readonly property int leadingIndex: PersonalizationConfig.barLeadingComponents.indexOf(modelData)
-            readonly property int trailingIndex: PersonalizationConfig.barTrailingComponents.indexOf(
-                                                     modelData)
-            readonly property int zoneIndex: leadingIndex >= 0 ? leadingIndex : trailingIndex
+            readonly property int leadingIndex: PersonalizationConfig.barLayoutLeft.indexOf(modelData)
+            readonly property int centerIndex: PersonalizationConfig.barLayoutMiddle.indexOf(modelData)
+            readonly property int trailingIndex: PersonalizationConfig.barLayoutRight.indexOf(modelData)
+            readonly property int zoneIndex: leadingIndex >= 0 ? leadingIndex : centerIndex >= 0 ? centerIndex :
+                                                                                                   trailingIndex
 
             componentId: modelData
             screen: root.screen
             axis: root.axis
             barVisualItem: root
             vertical: root.vertical
-            active: zoneIndex >= 0
+            active: leadingIndex >= 0 || centerIndex >= 0 || trailingIndex >= 0
             visible: active
-            parent: leadingIndex >= 0 ? leadingSection : trailingSection
+            parent: leadingIndex >= 0 ? leadingSection : centerIndex >= 0 ? centerSection : trailingSection
             Layout.row: root.vertical ? Math.max(0, zoneIndex) : 0
             Layout.column: root.vertical ? 0 : Math.max(0, zoneIndex)
             Layout.alignment: Qt.AlignCenter
