@@ -72,8 +72,14 @@ FloatingWindow {
     // — the compositor's placement, whether it floats, what size it actually
     // ends up — is the compositor's call, so the shell asks for the design size
     // and stops there.
+    //
+    // minimumSize is load-bearing, not a floor hint: the whole layout is fixed
+    // geometry (4 columns, rowHeight 140, gap 12), so below 900x600 the columns
+    // stop being able to hold the largest span and cards start clipping. Same
+    // reason the reference declares it.
     implicitWidth: 1100
     implicitHeight: 680
+    minimumSize: Qt.size(900, 600)
 
     visible: false
     Material.theme: PersonalizationConfig.themeMode === "light" ? Material.Light : Material.Dark
