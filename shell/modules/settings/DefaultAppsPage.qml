@@ -146,7 +146,7 @@ StyledFlickable {
                 id: extraSearchAnchor0
                 target: extraSearchSection0
                 declaration:
-                    '{"id":"general.default-apps.section.internet","route":"general.default-apps","title":"Internet","context":"DefaultAppsPage","icon":"settings","aliases":[]}'
+                    '{"id":"default-apps.section.internet","route":"default-apps","title":"Internet","context":"DefaultAppsPage","icon":"settings","aliases":["general.default-apps.section.internet"]}'
             }
             groupIcon: "public"
 
@@ -171,7 +171,7 @@ StyledFlickable {
                 id: extraSearchAnchor1
                 target: extraSearchSection1
                 declaration:
-                    '{"id":"general.default-apps.section.utilities","route":"general.default-apps","title":"Utilities","context":"DefaultAppsPage","icon":"settings","aliases":[]}'
+                    '{"id":"default-apps.section.utilities","route":"default-apps","title":"Utilities","context":"DefaultAppsPage","icon":"settings","aliases":["general.default-apps.section.utilities"]}'
             }
             groupIcon: "terminal"
 
@@ -196,7 +196,7 @@ StyledFlickable {
                 id: extraSearchAnchor2
                 target: extraSearchSection2
                 declaration:
-                    '{"id":"general.default-apps.section.documents","route":"general.default-apps","title":"Documents","context":"DefaultAppsPage","icon":"settings","aliases":[]}'
+                    '{"id":"default-apps.section.documents","route":"default-apps","title":"Documents","context":"DefaultAppsPage","icon":"settings","aliases":["general.default-apps.section.documents"]}'
             }
             groupIcon: "description"
 
@@ -221,7 +221,7 @@ StyledFlickable {
                 id: extraSearchAnchor3
                 target: extraSearchSection3
                 declaration:
-                    '{"id":"general.default-apps.section.multimedia","route":"general.default-apps","title":"Multimedia","context":"DefaultAppsPage","icon":"settings","aliases":[]}'
+                    '{"id":"default-apps.section.multimedia","route":"default-apps","title":"Multimedia","context":"DefaultAppsPage","icon":"settings","aliases":["general.default-apps.section.multimedia"]}'
             }
             groupIcon: "movie"
 

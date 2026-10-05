@@ -32,7 +32,7 @@ StyledFlickable {
                 id: searchAnchor0
                 target: searchSection0
                 declaration:
-                    '{"id":"general.bar.section.position","route":"general.bar","title":"Position","context":"GeneralBarPage","icon":"dock_to_bottom","aliases":[]}'
+                    '{"id":"bar.section.position","route":"bar","title":"Position","context":"GeneralBarPage","icon":"dock_to_bottom","aliases":["general.bar.section.position"]}'
             }
             iconName: "dock_to_bottom"
 
@@ -78,7 +78,7 @@ StyledFlickable {
                 id: searchAnchor1
                 target: searchSection1
                 declaration:
-                    '{"id":"general.bar.section.components","route":"general.bar","title":"Components","context":"GeneralBarPage","icon":"dock_to_bottom","aliases":[]}'
+                    '{"id":"bar.section.components","route":"bar","title":"Components","context":"GeneralBarPage","icon":"dock_to_bottom","aliases":["general.bar.section.components"]}'
             }
             iconName: "view_agenda"
 

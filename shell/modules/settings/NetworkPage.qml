@@ -210,7 +210,7 @@ StyledFlickable {
                 id: searchAnchor0
                 target: searchSection0
                 declaration:
-                    '{"id":"general.network.section.wired-connections","route":"general.network","title":"Wired connections","context":"NetworkPage","icon":"wifi","aliases":[]}'
+                    '{"id":"network.section.wired-connections","route":"network","title":"Wired connections","context":"NetworkPage","icon":"wifi","aliases":["general.network.section.wired-connections"]}'
             }
             iconName: "lan"
 
@@ -295,7 +295,7 @@ StyledFlickable {
                 id: searchAnchor1
                 target: searchSection1
                 declaration:
-                    '{"id":"general.network.section.wi-fi","route":"general.network","title":"Wi-Fi","context":"NetworkPage","icon":"wifi","aliases":[]}'
+                    '{"id":"network.section.wi-fi","route":"network","title":"Wi-Fi","context":"NetworkPage","icon":"wifi","aliases":["general.network.section.wi-fi"]}'
             }
             iconName: "wifi"
 
@@ -536,7 +536,7 @@ StyledFlickable {
                 id: searchAnchor2
                 target: searchSection2
                 declaration:
-                    '{"id":"general.network.section.other-settings","route":"general.network","title":"Other settings","context":"NetworkPage","icon":"wifi","aliases":[]}'
+                    '{"id":"network.section.other-settings","route":"network","title":"Other settings","context":"NetworkPage","icon":"wifi","aliases":["general.network.section.other-settings"]}'
             }
             iconName: "tune"
 
@@ -565,7 +565,7 @@ StyledFlickable {
                 id: searchAnchor3
                 target: searchSection3
                 declaration:
-                    '{"id":"general.network.section.connection-information","route":"general.network","title":"Connection information","context":"NetworkPage","icon":"wifi","aliases":[]}'
+                    '{"id":"network.section.connection-information","route":"network","title":"Connection information","context":"NetworkPage","icon":"wifi","aliases":["general.network.section.connection-information"]}'
             }
             iconName: root.activeNetwork ? (root.activeNetwork.type === "wired" ? "link" : "wifi") :
                                            "link_off"

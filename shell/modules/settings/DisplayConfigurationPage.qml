@@ -23,7 +23,7 @@ StyledFlickable {
             scaleDialog.dismiss();
     }
     function revealAdvancedSearch() {
-        if (SettingsBackend.searchTarget?.id === "general.displays.configuration.section.hot-corners")
+        if (SettingsBackend.searchTarget?.id === "displays.configuration.section.hot-corners" || SettingsBackend.searchTarget?.id === "general.displays.configuration.section.hot-corners")
             advanced = true;
     }
     Component.onCompleted: {
@@ -74,7 +74,7 @@ StyledFlickable {
                 id: searchAnchor0
                 target: searchSection0
                 declaration:
-                    '{"id":"general.displays.configuration.section.layout","route":"general.displays.configuration","title":"Layout","context":"DisplayConfigurationPage","icon":"monitor","aliases":[]}'
+                    '{"id":"displays.configuration.section.layout","route":"displays.configuration","title":"Layout","context":"DisplayConfigurationPage","icon":"monitor","aliases":["general.displays.configuration.section.layout"]}'
             }
             iconName: "monitor"
             flat: true
@@ -115,7 +115,7 @@ StyledFlickable {
                 id: searchAnchor1
                 target: searchSection1
                 declaration:
-                    '{"id":"general.displays.configuration.section.output-settings","route":"general.displays.configuration","title":"Output settings","context":"DisplayConfigurationPage","icon":"monitor","aliases":[]}'
+                    '{"id":"displays.configuration.section.output-settings","route":"displays.configuration","title":"Output settings","context":"DisplayConfigurationPage","icon":"monitor","aliases":["general.displays.configuration.section.output-settings"]}'
             }
             iconName: "tune"
             DisplayChoice {
@@ -302,7 +302,7 @@ StyledFlickable {
                     SettingsSearchAnchor {
                         target: hotCornerSettings
                         declaration:
-                            '{"id":"general.displays.configuration.section.hot-corners","route":"general.displays.configuration","title":"Hot corners","context":"HotCornersPage","icon":"open_in_full","aliases":["corner actions", "screen corners"]}'
+                            '{"id":"displays.configuration.section.hot-corners","route":"displays.configuration","title":"Hot corners","context":"HotCornersPage","icon":"open_in_full","aliases":["corner actions", "screen corners", "general.displays.configuration.section.hot-corners"]}'
                     }
                 }
                 ActionButton {

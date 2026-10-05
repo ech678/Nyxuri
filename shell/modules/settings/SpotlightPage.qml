@@ -37,7 +37,7 @@ StyledFlickable {
                 id: searchAnchor0
                 target: searchSection0
                 declaration:
-                    '{"id":"general.spotlight.section.applications","route":"general.spotlight","title":"Applications","context":"SpotlightPage","icon":"search","aliases":[]}'
+                    '{"id":"spotlight.section.applications","route":"spotlight","title":"Applications","context":"SpotlightPage","icon":"search","aliases":["general.spotlight.section.applications"]}'
             }
             iconName: "apps"
 
@@ -108,7 +108,7 @@ StyledFlickable {
                 id: searchAnchor1
                 target: searchSection1
                 declaration:
-                    '{"id":"general.spotlight.section.web-search","route":"general.spotlight","title":"Web search","context":"SpotlightPage","icon":"search","aliases":[]}'
+                    '{"id":"spotlight.section.web-search","route":"spotlight","title":"Web search","context":"SpotlightPage","icon":"search","aliases":["general.spotlight.section.web-search"]}'
             }
             iconName: "language"
 
@@ -121,7 +121,7 @@ StyledFlickable {
                     id: enginePicker
 
                     Layout.preferredWidth: 220
-                    options: SpotlightSearchService.searchEngines
+                    options: UiPreferences.searchEngines
                     value: UiPreferences.spotlightSearchEngine
                     textRole: "label"
                     valueRole: "id"
@@ -135,7 +135,7 @@ StyledFlickable {
                     leadingDelegate: Component {
                         MaterialSymbol {
                             text: "search"
-                            pixelSize: Metrics.iconM
+                            iconSize: Metrics.iconM
                             color: Appearance.colors.colOnSurface
                         }
                     }
@@ -152,7 +152,7 @@ StyledFlickable {
                 id: searchAnchor2
                 target: searchSection2
                 declaration:
-                    '{"id":"general.spotlight.section.clipboard","route":"general.spotlight","title":"Clipboard","context":"SpotlightPage","icon":"search","aliases":[]}'
+                    '{"id":"spotlight.section.clipboard","route":"spotlight","title":"Clipboard","context":"SpotlightPage","icon":"search","aliases":["general.spotlight.section.clipboard"]}'
             }
             iconName: "content_paste"
 

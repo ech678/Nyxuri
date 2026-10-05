@@ -1055,27 +1055,20 @@ class TestShellManagement(unittest.TestCase):
         spec.loader.exec_module(compile_i18n)
         contexts = compile_i18n.scan_source_strings(Path(shell_dir))
         self.assertIn("ControlCenterWindow", contexts)
-        self.assertIn("GeneralPage", contexts)
-        self.assertIn("GeneralOverviewPage", contexts)
         self.assertIn("Account", contexts["ControlCenterWindow"])
-        self.assertIn("Bar", contexts["GeneralPage"])
-        self.assertIn("Dock", contexts["GeneralPage"])
-        self.assertIn("Displays", contexts["GeneralPage"])
-        self.assertIn("System", contexts["GeneralOverviewPage"])
+        self.assertIn("Bar", contexts["ControlCenterWindow"])
+        self.assertIn("Dock", contexts["ControlCenterWindow"])
+        self.assertIn("Displays", contexts["ControlCenterWindow"])
 
         # Verify generate_ts produces translated entries for these contexts
         ts_zh_output = compile_i18n.generate_ts(Path(toml_zh), "zh_CN", contexts)
         self.assertIn("<name>ControlCenterWindow</name>", ts_zh_output)
         self.assertIn("<source>Account</source>\n        <translation>账户</translation>", ts_zh_output)
-        self.assertIn("<source>General</source>\n        <translation>通用</translation>", ts_zh_output)
         self.assertIn("<source>Keystone</source>\n        <translation>Keystone</translation>", ts_zh_output)
-        self.assertIn("<name>GeneralPage</name>", ts_zh_output)
         self.assertIn("<source>Bar</source>\n        <translation>Bar</translation>", ts_zh_output)
         self.assertIn("<source>Dock</source>\n        <translation>Dock</translation>", ts_zh_output)
         self.assertIn("<source>Spotlight</source>\n        <translation>Spotlight</translation>", ts_zh_output)
         self.assertIn("<source>Displays</source>\n        <translation>显示器</translation>", ts_zh_output)
-        self.assertIn("<name>GeneralOverviewPage</name>", ts_zh_output)
-        self.assertIn("<source>System</source>\n        <translation>系统</translation>", ts_zh_output)
 
     def test_r4_architecture_and_lifecycle_contracts(self):
         """R4 Contract: Four-layer boundaries, shared purity, cross-domain isolation, and lifecycle separation."""

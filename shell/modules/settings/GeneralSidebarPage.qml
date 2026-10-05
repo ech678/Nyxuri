@@ -127,7 +127,7 @@ StyledFlickable {
                 id: searchAnchor0
                 target: searchSection0
                 declaration:
-                    '{"id":"general.sidebar.section.sidebars","route":"general.sidebar","title":"Sidebars","context":"GeneralSidebarPage","icon":"side_navigation","aliases":[]}'
+                    '{"id":"sidebar.section.sidebars","route":"sidebar","title":"Sidebars","context":"GeneralSidebarPage","icon":"side_navigation","aliases":["general.sidebar.section.sidebars"]}'
             }
             iconName: "side_navigation"
 
@@ -194,7 +194,7 @@ StyledFlickable {
                 id: searchAnchor1
                 target: searchSection1
                 declaration:
-                    '{"id":"general.sidebar.section.desktop-card-layout","route":"general.sidebar","title":"Desktop card layout","context":"GeneralSidebarPage","icon":"side_navigation","aliases":[]}'
+                    '{"id":"sidebar.section.desktop-card-layout","route":"sidebar","title":"Desktop card layout","context":"GeneralSidebarPage","icon":"side_navigation","aliases":["general.sidebar.section.desktop-card-layout"]}'
             }
             iconName: "dashboard_customize"
 
@@ -285,7 +285,7 @@ StyledFlickable {
                 id: searchAnchor2
                 target: searchSection2
                 declaration:
-                    '{"id":"general.sidebar.section.clock-style","route":"general.sidebar","title":"Clock style","context":"GeneralSidebarPage","icon":"side_navigation","aliases":[]}'
+                    '{"id":"sidebar.section.clock-style","route":"sidebar","title":"Clock style","context":"GeneralSidebarPage","icon":"side_navigation","aliases":["general.sidebar.section.clock-style"]}'
             }
             iconName: "schedule"
 
@@ -608,7 +608,7 @@ StyledFlickable {
                 id: searchAnchor3
                 target: searchSection3
                 declaration:
-                    '{"id":"general.sidebar.section.system-cards","route":"general.sidebar","title":"System cards","context":"GeneralSidebarPage","icon":"side_navigation","aliases":[]}'
+                    '{"id":"sidebar.section.system-cards","route":"sidebar","title":"System cards","context":"GeneralSidebarPage","icon":"side_navigation","aliases":["general.sidebar.section.system-cards"]}'
             }
             iconName: "widgets"
 

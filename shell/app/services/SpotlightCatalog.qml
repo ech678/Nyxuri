@@ -39,10 +39,10 @@ Singleton {
         return Catalog.title(id);
     }
     function route(id) {
-        return routes.find(entry => entry.id === id) || null;
+        return routes.find(entry => entry.id === id || (entry.aliases && entry.aliases.includes(id))) || null;
     }
     function setting(id) {
-        return settings.find(entry => entry.id === id) || null;
+        return settings.find(entry => entry.id === id || (entry.aliases && entry.aliases.includes(id))) || null;
     }
     function action(id) {
         return actions.find(entry => entry.id === id) || null;

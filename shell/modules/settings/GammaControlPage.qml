@@ -55,7 +55,7 @@ SidebarFlickable {
                 registerAnchor: root.searchAnchorsEnabled
                 target: searchSection0
                 declaration:
-                    '{"id":"general.displays.gamma.section.color","route":"general.displays.gamma","title":"Color","context":"GammaControlPage","icon":"brightness_6","aliases":[]}'
+                    '{"id":"displays.gamma.section.color","route":"displays.gamma","title":"Color","context":"GammaControlPage","icon":"brightness_6","aliases":["general.displays.gamma.section.color"]}'
             }
             iconName: "contrast"
             flat: true
@@ -127,7 +127,7 @@ SidebarFlickable {
                 registerAnchor: root.searchAnchorsEnabled
                 target: searchSection1
                 declaration:
-                    '{"id":"general.displays.gamma.section.schedule","route":"general.displays.gamma","title":"Schedule","context":"GammaControlPage","icon":"brightness_6","aliases":[]}'
+                    '{"id":"displays.gamma.section.schedule","route":"displays.gamma","title":"Schedule","context":"GammaControlPage","icon":"brightness_6","aliases":["general.displays.gamma.section.schedule"]}'
             }
             iconName: "schedule"
             flat: true
@@ -292,7 +292,7 @@ SidebarFlickable {
                 registerAnchor: root.searchAnchorsEnabled
                 target: searchSection2
                 declaration:
-                    '{"id":"general.displays.gamma.section.current-status","route":"general.displays.gamma","title":"Current status","context":"GammaControlPage","icon":"brightness_6","aliases":[]}'
+                    '{"id":"displays.gamma.section.current-status","route":"displays.gamma","title":"Current status","context":"GammaControlPage","icon":"brightness_6","aliases":["general.displays.gamma.section.current-status"]}'
             }
             iconName: DisplayColor.schedule.period === "day" ? "light_mode" : "nightlight"
             flat: true

@@ -95,7 +95,7 @@ StyledFlickable {
                 id: searchAnchor0
                 target: searchSection0
                 declaration:
-                    '{"id":"general.bluetooth-pairing.section.nearby-devices","route":"general.bluetooth-pairing","title":"Nearby devices","context":"BluetoothPairingPage","icon":"bluetooth_searching","aliases":[]}'
+                    '{"id":"connected-devices.bluetooth-pairing.section.nearby-devices","route":"connected-devices.bluetooth-pairing","title":"Nearby devices","context":"BluetoothPairingPage","icon":"bluetooth_searching","aliases":["general.bluetooth-pairing.section.nearby-devices"]}'
             }
             iconName: "bluetooth_searching"
 

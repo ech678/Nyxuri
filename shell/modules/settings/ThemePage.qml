@@ -15,7 +15,21 @@ StyledFlickable {
     contentWidth: width
     contentHeight: contentColumn.y + contentColumn.implicitHeight + 24
 
+    Component.onCompleted: NiriConfigService.refresh()
+
     readonly property real pageContentWidth: 600
+    property var parentModal: null
+    property var pendingDeleteTemplate: null
+
+    function requestTemplateDeletion(template) {
+        root.pendingDeleteTemplate = template;
+        templateDialog.open();
+    }
+
+    function closeChildWindows() {
+        templateAddWindow.dismiss();
+        templateDialog.close();
+    }
 
     component Section: ColumnLayout {
         id: section
@@ -331,11 +345,13 @@ StyledFlickable {
         property string title: ""
         property string description: ""
         property bool checked: false
+        property bool enabled: true
 
         signal toggled(bool checked)
 
         Layout.fillWidth: true
         Layout.preferredHeight: Math.max(58, toggleLabelColumn.implicitHeight + 16)
+        opacity: toggleRow.enabled ? 1 : 0.45
 
         RowLayout {
             anchors.fill: parent
@@ -369,6 +385,7 @@ StyledFlickable {
 
             StyledSwitch {
                 Layout.alignment: Qt.AlignVCenter
+                enabled: toggleRow.enabled
                 checked: toggleRow.checked
                 onToggled: toggleRow.toggled(checked)
             }
@@ -529,6 +546,63 @@ StyledFlickable {
                     horizontalPadding: 24
                     onValueSelected: value => ThemeService.setMatugenScheme(value)
                 }
+            }
+        }
+
+        Section {
+            id: searchSectionEffects
+            title: searchAnchorEffects.title
+            SettingsSearchAnchor {
+                id: searchAnchorEffects
+                target: searchSectionEffects
+                declaration:
+                    '{"id":"theme.section.transparency-and-blur","route":"theme","title":"Transparency and blur","context":"ThemePage","icon":"blur_on","aliases":["effects.section.background","general.effects.section.background","effects","general.effects"]}'
+            }
+            iconName: "blur_on"
+
+            NiriSetupPrompt {
+                Layout.fillWidth: true
+                title: I18n.tr("Background effects")
+                description: I18n.tr("Create or connect the Clavis X-Ray rules.")
+                integrationState: NiriConfigService.state("effects")
+                busy: NiriConfigService.busy && NiriConfigService.activeFeature === "effects"
+                blocked: NiriConfigService.busy
+                error: NiriConfigService.error
+                onSetupRequested: NiriConfigService.setup("effects")
+            }
+
+            SliderSettingRow {
+                title: I18n.tr("Background opacity")
+                from: 0
+                to: 100
+                stepSize: 1
+                suffix: "%"
+                value: PersonalizationConfig.shellBackgroundOpacity * 100
+                onMoved: value => PersonalizationConfig.setShellBackgroundOpacity(value / 100)
+            }
+
+            ToggleSettingRow {
+                title: I18n.tr("Background blur")
+                enabled: BlurService.available
+                checked: PersonalizationConfig.shellBlurEnabled
+                onToggled: checked => PersonalizationConfig.setShellBlurEnabled(checked)
+            }
+
+            ToggleSettingRow {
+                title: I18n.tr("Blur wallpaper only")
+                description: BlurService.niriIntegrationReady ? I18n.tr(
+                                                                   "Turning this off also blurs windows and uses more resources") :
+                                                               I18n.tr("Configure Niri blur integration first")
+                enabled: BlurService.available && BlurService.niriIntegrationReady
+                checked: PersonalizationConfig.shellBlurXray
+                onToggled: checked => PersonalizationConfig.setShellBlurXray(checked)
+            }
+
+            InlineStatusBanner {
+                Layout.fillWidth: true
+                visible: BlurService.lastError !== ""
+                tone: "error"
+                message: BlurService.lastError
             }
         }
 
@@ -730,9 +804,205 @@ StyledFlickable {
             }
         }
 
+        Section {
+            id: searchSection6
+            title: searchAnchor6.title
+            SettingsSearchAnchor {
+                id: searchAnchor6
+                target: searchSection6
+                declaration:
+                    '{"id":"theme.section.matugen-template-generation","route":"theme","title":"Matugen template generation","context":"ThemePage","icon":"tune","aliases":["advanced.section.matugen-template-generation"]}'
+            }
+            iconName: "tune"
+
+            Item {
+                Layout.fillWidth: true
+                implicitHeight: templateActions.implicitHeight
+
+                InlineBusyIndicator {
+                    anchors.right: templateActions.left
+                    anchors.rightMargin: Metrics.spacingXS
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: implicitWidth
+                    height: implicitHeight
+                    busy: ThemeService.generating && ThemeService.generationTemplateId === ""
+                }
+
+                RowLayout {
+                    id: templateActions
+
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    IconButton {
+                        iconName: "refresh"
+                        tooltipText: I18n.tr("Refresh templates")
+                        onClicked: MatugenTemplateService.refresh()
+                    }
+                    ActionButton {
+                        text: I18n.tr("Add")
+                        iconName: "add"
+                        enabled: !MatugenTemplateService.busy && PersonalizationConfig.ready
+                        onClicked: templateAddWindow.showWindow()
+                    }
+                }
+            }
+
+            InlineStatusBanner {
+                Layout.fillWidth: true
+                visible: MatugenTemplateService.error !== ""
+                tone: "error"
+                message: MatugenTemplateService.error
+            }
+            InlineStatusBanner {
+                Layout.fillWidth: true
+                visible: !templateAddWindow.visible && MatugenTemplateService.operationError !== ""
+                tone: "error"
+                message: MatugenTemplateService.operationError
+            }
+            InlineStatusBanner {
+                Layout.fillWidth: true
+                visible: ThemeService.generationError !== "" || ThemeService.externalGenerationError !== ""
+                tone: "error"
+                message: ThemeService.generationError !== "" ? I18n.tr("Failed to generate Matugen colors") :
+                                                               I18n.tr("Some Matugen templates failed to generate")
+                StyledToolTip {
+                    extraVisibleCondition: errorHover.hovered
+                    text: ThemeService.generationError || ThemeService.externalGenerationError
+                }
+                HoverHandler {
+                    id: errorHover
+                }
+            }
+
+            Repeater {
+                model: MatugenTemplateService.templates
+
+                SettingsRow {
+                    id: templateRow
+                    required property var modelData
+
+                    Layout.fillWidth: true
+                    iconName: modelData.valid ? modelData.icon : "error"
+                    title: modelData.title
+                    supportingText: !modelData.valid ? modelData.error : modelData.origin === "user" ? I18n.tr("User templates") :
+                                                                                                       ""
+
+                    trailing: Item {
+                        implicitWidth: templateRowActions.implicitWidth
+                        implicitHeight: templateRowActions.implicitHeight
+
+                        InlineBusyIndicator {
+                            anchors.right: templateRowActions.left
+                            anchors.rightMargin: Metrics.spacingXS
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: implicitWidth
+                            height: implicitHeight
+                            busy: templateRow.modelData.valid && ThemeService.generating
+                                  && ThemeService.generationTemplateId === templateRow.modelData.id
+                        }
+
+                        RowLayout {
+                            id: templateRowActions
+
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Item {
+                                visible: templateRow.modelData.hasPostHook
+                                implicitWidth: Metrics.controlHeightM
+                                implicitHeight: Metrics.controlHeightM
+                                Accessible.role: Accessible.StaticText
+                                Accessible.name: I18n.tr("Run after each generation: %1").arg(
+                                                     templateRow.modelData.postHook)
+
+                                MaterialSymbol {
+                                    anchors.centerIn: parent
+                                    text: "terminal"
+                                    iconSize: Metrics.iconM
+                                    color: Appearance.colors.colOnSurfaceVariant
+                                }
+                                HoverHandler {
+                                    id: hookHover
+                                }
+                                StyledToolTip {
+                                    extraVisibleCondition: hookHover.hovered
+                                    text: I18n.tr("Run after each generation:\n%1").arg(
+                                              templateRow.modelData.postHook)
+                                }
+                            }
+                            IconButton {
+                                visible: templateRow.modelData.origin === "user"
+                                iconName: "folder_open"
+                                tooltipText: I18n.tr("Open template location") + "\n"
+                                             + templateRow.modelData.inputPath + "\n" + I18n.tr(
+                                                 "Output: %1").arg(templateRow.modelData.outputPath)
+                                onClicked: MatugenTemplateService.openLocation(templateRow.modelData)
+                            }
+                            IconButton {
+                                visible: templateRow.modelData.origin === "user"
+                                iconName: "delete"
+                                tooltipText: I18n.tr("Delete template")
+                                enabled: !MatugenTemplateService.busy && !ThemeService.generating
+                                         && PersonalizationConfig.ready
+                                onClicked: root.requestTemplateDeletion(templateRow.modelData)
+                            }
+                            StyledSwitch {
+                                enabled: templateRow.modelData.valid && !ThemeService.generating &&
+                                         !MatugenTemplateService.busy && PersonalizationConfig.ready
+                                checked: templateRow.modelData.valid
+                                         && PersonalizationConfig.isMatugenTemplateEnabled(
+                                             templateRow.modelData.id)
+                                Accessible.name: I18n.tr("Enable the %1 Matugen template").arg(
+                                                     templateRow.modelData.title)
+                                onToggled: ThemeService.setMatugenTemplateEnabled(templateRow.modelData.id,
+                                                                                  checked)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         Item {
             Layout.fillWidth: true
             Layout.preferredHeight: 24
+        }
+    }
+
+    MatugenTemplateAddWindow {
+        id: templateAddWindow
+        parentModal: root.parentModal
+    }
+
+    MaterialDialog {
+        id: templateDialog
+        anchors.centerIn: Overlay.overlay
+        width: Math.min(480, root.width - 32)
+        dialogTitle: root.pendingDeleteTemplate ? I18n.tr("Delete “%1”?").arg(
+                                                      root.pendingDeleteTemplate.title) : ""
+        messageText: I18n.tr("Delete the template and its registration. Keep generated output files.")
+        onClosed: root.pendingDeleteTemplate = null
+        actionsComponent: Component {
+            RowLayout {
+                Item {
+                    Layout.fillWidth: true
+                }
+                ActionButton {
+                    text: I18n.tr("Cancel")
+                    onClicked: templateDialog.close()
+                }
+                ActionButton {
+                    text: I18n.tr("Delete")
+                    enabled: !MatugenTemplateService.busy && !ThemeService.generating
+                             && PersonalizationConfig.ready
+                    onClicked: {
+                        if (root.pendingDeleteTemplate)
+                            MatugenTemplateService.remove(root.pendingDeleteTemplate.id);
+                        templateDialog.close();
+                    }
+                }
+            }
         }
     }
 }

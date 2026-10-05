@@ -9,9 +9,11 @@ Item {
     property bool expanded: false
     default property alias tabData: tabBarColumn.data
 
+    readonly property real itemHeight: activeIndicator.itemHeight
+    readonly property real currentItemY: activeIndicator.itemHeight * root.currentIndex
+
     implicitHeight: tabBarColumn.implicitHeight
     implicitWidth: tabBarColumn.implicitWidth
-    Layout.topMargin: 25
 
     function tabItem(index) {
         if (index < 0 || index >= tabBarColumn.children.length)
@@ -33,7 +35,7 @@ Item {
         radius: Appearance.rounding.full
         color: Appearance.colors.colSecondaryContainer
         implicitHeight: root.expanded ? activeIndicator.itemHeight : activeIndicator.baseHighlightHeight
-        implicitWidth: currentItem && currentItem.visualWidth !== undefined ? currentItem.visualWidth : 56
+        implicitWidth: currentItem && currentItem.visualWidth !== undefined ? currentItem.visualWidth : activeIndicator.itemHeight
 
         Behavior on anchors.topMargin {
             NumberAnimation {
@@ -63,7 +65,9 @@ Item {
     ColumnLayout {
         id: tabBarColumn
 
-        anchors.fill: parent
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
         spacing: 0
     }
 }

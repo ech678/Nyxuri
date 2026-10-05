@@ -20,11 +20,18 @@ TabButton {
 
     property real baseSize: 56
     property real baseHighlightHeight: 32
+    property real iconSize: root.baseSize >= 50 ? 24 : (root.baseSize >= 40 ? 22 : 20)
+    property real fontPixelSize: root.baseSize >= 50 ? 14 : (root.baseSize >= 40 ? 13 : 12)
 
     Layout.fillWidth: true
     implicitHeight: baseSize
     padding: 0
     background: null
+
+    StyledToolTip {
+        text: root.buttonText
+        extraVisibleCondition: !root.expanded && root.hovered && root.buttonText.length > 0
+    }
 
     contentItem: Item {
         id: buttonContent
@@ -32,16 +39,17 @@ TabButton {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         anchors.left: parent.left
+        anchors.right: parent.right
 
         implicitWidth: root.visualWidth
-        implicitHeight: root.expanded ? itemIconBackground.implicitHeight : itemIconBackground.implicitHeight + itemText.implicitHeight
+        implicitHeight: root.baseSize
 
         Rectangle {
             id: itemBackground
 
-            anchors.top: itemIconBackground.top
-            anchors.left: itemIconBackground.left
-            anchors.bottom: itemIconBackground.bottom
+            anchors.top: root.expanded ? buttonContent.top : itemIconBackground.top
+            anchors.left: root.expanded ? buttonContent.left : itemIconBackground.left
+            anchors.bottom: root.expanded ? buttonContent.bottom : itemIconBackground.bottom
             implicitWidth: root.visualWidth
             radius: Appearance.rounding.full
             color: root.toggled
@@ -50,32 +58,8 @@ TabButton {
                     : Appearance.transparentize(Appearance.colors.colSecondaryContainer, 1)
                 : (root.down ? Appearance.colors.colLayer1Active : root.hovered ? Appearance.colors.colLayer1Hover : Appearance.transparentize(Appearance.colors.colLayer1Hover, 1))
 
-            states: State {
-                name: "expanded"
-                when: root.expanded
-
-                AnchorChanges {
-                    target: itemBackground
-                    anchors.top: buttonContent.top
-                    anchors.left: buttonContent.left
-                    anchors.bottom: buttonContent.bottom
-                }
-
-                PropertyChanges {
-                    target: itemBackground
-                    implicitWidth: root.visualWidth
-                }
-            }
-
-            transitions: Transition {
-                AnchorAnimation {
-                    duration: Appearance.animation.elementMoveFast.duration
-                    easing.type: Appearance.animation.elementMoveFast.type
-                    easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
-                }
-
+            Behavior on implicitWidth {
                 NumberAnimation {
-                    property: "implicitWidth"
                     duration: Appearance.animation.expressiveDefaultSpatial.duration
                     easing.type: Appearance.animation.expressiveDefaultSpatial.type
                     easing.bezierCurve: Appearance.animation.expressiveDefaultSpatial.bezierCurve
@@ -102,7 +86,7 @@ TabButton {
             MaterialSymbol {
                 anchors.centerIn: parent
                 rotation: root.buttonIconRotation
-                iconSize: 24
+                iconSize: root.iconSize
                 fill: root.toggled ? 1 : 0
                 text: root.buttonIcon
                 color: root.toggled ? Appearance.m3colors.m3onSecondaryContainer : Appearance.colors.colOnLayer1
@@ -120,33 +104,24 @@ TabButton {
         Text {
             id: itemText
 
-            anchors.top: itemIconBackground.bottom
-            anchors.topMargin: 2
-            anchors.horizontalCenter: itemIconBackground.horizontalCenter
+            anchors.left: itemIconBackground.right
+            anchors.leftMargin: 8
+            anchors.right: buttonContent.right
+            anchors.rightMargin: 8
+            anchors.verticalCenter: itemIconBackground.verticalCenter
+            visible: root.expanded
+            opacity: root.expanded ? 1 : 0
             text: root.buttonText
             color: root.toggled ? Appearance.m3colors.m3onSecondaryContainer : Appearance.colors.colOnLayer1
             font.family: Fonts.ui
-            font.pixelSize: 14
+            font.pixelSize: root.fontPixelSize
+            font.weight: root.toggled ? Font.DemiBold : Font.Normal
+            elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
 
-            states: State {
-                name: "expanded"
-                when: root.expanded
-
-                AnchorChanges {
-                    target: itemText
-                    anchors.top: undefined
-                    anchors.horizontalCenter: undefined
-                    anchors.left: itemIconBackground.right
-                    anchors.verticalCenter: itemIconBackground.verticalCenter
-                }
-            }
-
-            transitions: Transition {
-                AnchorAnimation {
+            Behavior on opacity {
+                NumberAnimation {
                     duration: Appearance.animation.elementMoveFast.duration
-                    easing.type: Appearance.animation.elementMoveFast.type
-                    easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
                 }
             }
 

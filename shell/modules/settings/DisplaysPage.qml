@@ -56,11 +56,11 @@ ColumnLayout {
         model: [
             {
                 value: "configuration",
-                label: SpotlightCatalog.title("general.displays.configuration")
+                label: SpotlightCatalog.title("displays.configuration")
             },
             {
                 value: "gamma",
-                label: SpotlightCatalog.title("general.displays.gamma")
+                label: SpotlightCatalog.title("displays.gamma")
             }
         ]
         onValueSelected: value => root.section = value
@@ -75,7 +75,7 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.fillHeight: true
         source: {
-            const route = SpotlightCatalog.route("general.displays." + root.section);
+            const route = SpotlightCatalog.route("displays." + root.section);
             return route ? Qt.resolvedUrl(route.source) : "";
         }
     }

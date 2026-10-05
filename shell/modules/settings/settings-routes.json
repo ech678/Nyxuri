@@ -13,15 +13,22 @@
       "aliases": []
     },
     {
-      "id": "general",
-      "title": "General",
+      "id": "theme",
+      "title": "Theme",
       "context": "ControlCenterWindow",
-      "icon": "settings",
-      "source": "GeneralPage.qml",
+      "icon": "palette",
+      "source": "ThemePage.qml",
       "path": [
-        "general"
+        "theme"
       ],
-      "aliases": []
+      "aliases": [
+        "advanced",
+        "matugen",
+        "effects",
+        "general.effects",
+        "transparency",
+        "blur"
+      ]
     },
     {
       "id": "wallpaper",
@@ -35,15 +42,59 @@
       "aliases": []
     },
     {
-      "id": "theme",
-      "title": "Theme",
+      "id": "bar",
+      "title": "Bar",
       "context": "ControlCenterWindow",
-      "icon": "palette",
-      "source": "ThemePage.qml",
+      "icon": "dock_to_bottom",
+      "source": "GeneralBarPage.qml",
       "path": [
-        "theme"
+        "bar"
       ],
-      "aliases": []
+      "aliases": [
+        "general.bar"
+      ]
+    },
+    {
+      "id": "dock",
+      "title": "Dock",
+      "context": "ControlCenterWindow",
+      "icon": "dock_to_bottom",
+      "source": "DockPage.qml",
+      "path": [
+        "dock"
+      ],
+      "aliases": [
+        "general.dock",
+        "taskbar",
+        "launcher"
+      ]
+    },
+    {
+      "id": "sidebar",
+      "title": "Sidebars",
+      "context": "ControlCenterWindow",
+      "icon": "side_navigation",
+      "source": "GeneralSidebarPage.qml",
+      "path": [
+        "sidebar"
+      ],
+      "aliases": [
+        "general.sidebar",
+        "sidebars"
+      ]
+    },
+    {
+      "id": "displays",
+      "title": "Displays",
+      "context": "ControlCenterWindow",
+      "icon": "monitor",
+      "source": "DisplaysPage.qml",
+      "path": [
+        "displays"
+      ],
+      "aliases": [
+        "general.displays"
+      ]
     },
     {
       "id": "keystone",
@@ -57,197 +108,123 @@
       "aliases": []
     },
     {
-      "id": "advanced",
-      "title": "Advanced",
-      "context": "ControlCenterWindow",
-      "icon": "tune",
-      "source": "AdvancedPage.qml",
-      "path": [
-        "advanced"
-      ],
-      "aliases": []
-    },
-    {
-      "id": "general.displays",
-      "title": "Displays",
-      "context": "GeneralPage",
-      "icon": "monitor",
-      "source": "DisplaysPage.qml",
-      "path": [
-        "general",
-        "displays"
-      ],
-      "aliases": []
-    },
-    {
-      "id": "general.bar",
-      "title": "Bar",
-      "context": "GeneralPage",
-      "icon": "dock_to_bottom",
-      "source": "GeneralBarPage.qml",
-      "path": [
-        "general",
-        "bar"
-      ],
-      "aliases": []
-    },
-    {
-      "id": "general.dock",
-      "title": "Dock",
-      "context": "GeneralPage",
-      "icon": "dock_to_bottom",
-      "source": "DockPage.qml",
-      "path": [
-        "general",
-        "dock"
-      ],
-      "aliases": ["taskbar", "launcher"]
-    },
-    {
-      "id": "general.sidebar",
-      "title": "Sidebars",
-      "context": "GeneralPage",
-      "icon": "side_navigation",
-      "source": "GeneralSidebarPage.qml",
-      "path": [
-        "general",
-        "sidebar"
-      ],
-      "aliases": []
-    },
-    {
-      "id": "general.spotlight",
-      "title": "Spotlight",
-      "context": "GeneralPage",
-      "icon": "search",
-      "source": "SpotlightPage.qml",
-      "path": [
-        "general",
-        "spotlight"
-      ],
-      "aliases": []
-    },
-    {
-      "id": "general.effects",
-      "title": "Transparency and blur",
-      "context": "GeneralPage",
-      "icon": "blur_on",
-      "source": "GeneralEffectsPage.qml",
-      "path": [
-        "general",
-        "effects"
-      ],
-      "aliases": []
-    },
-    {
-      "id": "general.shortcuts",
+      "id": "shortcuts",
       "title": "Keyboard shortcuts",
-      "context": "GeneralPage",
+      "context": "ControlCenterWindow",
       "icon": "keyboard",
       "source": "ShortcutsPage.qml",
       "path": [
-        "general",
         "shortcuts"
       ],
-      "aliases": []
+      "aliases": [
+        "general.shortcuts"
+      ]
     },
     {
-      "id": "general.language-region",
-      "title": "Language & region",
-      "context": "GeneralPage",
-      "icon": "language",
-      "source": "LanguageAndRegionPage.qml",
+      "id": "spotlight",
+      "title": "Spotlight",
+      "context": "ControlCenterWindow",
+      "icon": "search",
+      "source": "SpotlightPage.qml",
       "path": [
-        "general",
-        "language-region"
+        "spotlight"
       ],
-      "aliases": []
+      "aliases": [
+        "general.spotlight"
+      ]
     },
     {
-      "id": "general.autostart",
-      "title": "Autostart",
-      "context": "GeneralPage",
-      "icon": "rocket_launch",
-      "source": "AutostartPage.qml",
-      "path": [
-        "general",
-        "autostart"
-      ],
-      "aliases": []
-    },
-    {
-      "id": "general.default-apps",
-      "title": "Default applications",
-      "context": "GeneralPage",
-      "icon": "apps",
-      "source": "DefaultAppsPage.qml",
-      "path": [
-        "general",
-        "default-apps"
-      ],
-      "aliases": []
-    },
-    {
-      "id": "general.network",
+      "id": "network",
       "title": "Network",
-      "context": "GeneralPage",
+      "context": "ControlCenterWindow",
       "icon": "wifi",
       "source": "NetworkPage.qml",
       "path": [
-        "general",
         "network"
       ],
-      "aliases": []
+      "aliases": [
+        "general.network"
+      ]
     },
     {
-      "id": "general.connected-devices",
+      "id": "connected-devices",
       "title": "Connected devices",
-      "context": "GeneralPage",
+      "context": "ControlCenterWindow",
       "icon": "devices_other",
       "source": "ConnectedDevicesPage.qml",
       "path": [
-        "general",
         "connected-devices"
       ],
-      "aliases": []
+      "aliases": [
+        "general.connected-devices",
+        "bluetooth"
+      ]
     },
     {
-      "id": "general.bluetooth-pairing",
-      "title": "Pair new device",
-      "context": "GeneralPage",
-      "icon": "bluetooth_searching",
-      "source": "BluetoothPairingPage.qml",
+      "id": "autostart",
+      "title": "Autostart",
+      "context": "ControlCenterWindow",
+      "icon": "rocket_launch",
+      "source": "AutostartPage.qml",
       "path": [
-        "general",
-        "bluetooth-pairing"
+        "autostart"
       ],
-      "aliases": []
+      "aliases": [
+        "general.autostart"
+      ]
     },
     {
-      "id": "general.displays.configuration",
+      "id": "default-apps",
+      "title": "Default applications",
+      "context": "ControlCenterWindow",
+      "icon": "apps",
+      "source": "DefaultAppsPage.qml",
+      "path": [
+        "default-apps"
+      ],
+      "aliases": [
+        "general.default-apps"
+      ]
+    },
+    {
+      "id": "language-region",
+      "title": "Language & region",
+      "context": "ControlCenterWindow",
+      "icon": "language",
+      "source": "LanguageAndRegionPage.qml",
+      "path": [
+        "language-region"
+      ],
+      "aliases": [
+        "general.language-region"
+      ]
+    },
+    {
+      "id": "displays.configuration",
       "title": "Display configuration",
       "context": "DisplaysPage",
       "icon": "monitor",
       "source": "DisplayConfigurationPage.qml",
       "path": [
-        "general",
         "displays",
         "configuration"
       ],
-      "aliases": []
+      "aliases": [
+        "general.displays.configuration"
+      ]
     },
     {
-      "id": "general.displays.gamma",
+      "id": "displays.gamma",
       "title": "Gamma Control",
       "context": "DisplaysPage",
       "icon": "brightness_6",
       "source": "GammaControlPage.qml",
       "path": [
-        "general",
         "displays",
         "gamma"
       ],
       "aliases": [
+        "general.displays.gamma",
         "night light",
         "temperature"
       ]
@@ -263,6 +240,20 @@
         "horizontal-clock"
       ],
       "aliases": []
+    },
+    {
+      "id": "connected-devices.bluetooth-pairing",
+      "title": "Pair new device",
+      "context": "ConnectedDevicesPage",
+      "icon": "bluetooth_searching",
+      "source": "BluetoothPairingPage.qml",
+      "path": [
+        "connected-devices",
+        "bluetooth-pairing"
+      ],
+      "aliases": [
+        "general.bluetooth-pairing"
+      ]
     }
   ]
 }

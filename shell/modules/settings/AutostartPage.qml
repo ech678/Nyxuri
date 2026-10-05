@@ -140,7 +140,7 @@ StyledFlickable {
                     id: searchAnchor0
                     target: searchSection0
                     declaration:
-                        '{"id":"general.autostart.section.add-application-to-autostart","route":"general.autostart","title":"Add application to autostart","context":"AutostartPage","icon":"rocket_launch","aliases":[]}'
+                        '{"id":"autostart.section.add-application-to-autostart","route":"autostart","title":"Add application to autostart","context":"AutostartPage","icon":"rocket_launch","aliases":["general.autostart.section.add-application-to-autostart"]}'
                 }
 
                 SettingsRow {
@@ -167,7 +167,7 @@ StyledFlickable {
                     id: searchAnchor1
                     target: searchSection1
                     declaration:
-                        '{"id":"general.autostart.section.user-autostart-applications","route":"general.autostart","title":"User autostart applications","context":"AutostartPage","icon":"rocket_launch","aliases":[]}'
+                        '{"id":"autostart.section.user-autostart-applications","route":"autostart","title":"User autostart applications","context":"AutostartPage","icon":"rocket_launch","aliases":["general.autostart.section.user-autostart-applications"]}'
                 }
 
                 RowLayout {

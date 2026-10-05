@@ -68,7 +68,7 @@ StyledFlickable {
 
                 target: appearanceSection
                 declaration:
-                    '{"id":"general.dock.section.appearance","route":"general.dock","title":"Appearance","context":"DockPage","icon":"dock_to_bottom","aliases":["size","position","magnification","surface style","notch"]}'
+                    '{"id":"dock.section.appearance","route":"dock","title":"Appearance","context":"DockPage","icon":"dock_to_bottom","aliases":["general.dock.section.appearance","size","position","magnification","surface style","notch"]}'
             }
 
             SettingsRow {
@@ -187,7 +187,7 @@ StyledFlickable {
 
                 target: behaviorSection
                 declaration:
-                    '{"id":"general.dock.section.behavior","route":"general.dock","title":"Behavior","context":"DockPage","icon":"touch_app","aliases":["auto hide","bounce","recent","indicators","pin","minimize","animation","genie","scale"]}'
+                    '{"id":"dock.section.behavior","route":"dock","title":"Behavior","context":"DockPage","icon":"touch_app","aliases":["general.dock.section.behavior","auto hide","bounce","recent","indicators","pin","minimize","animation","genie","scale"]}'
             }
 
             SettingsRow {
@@ -313,7 +313,7 @@ StyledFlickable {
                 id: previewsAnchor
                 target: previewsSection
                 declaration:
-                    '{"id":"general.dock.section.previews","route":"general.dock","title":"Window previews","context":"DockPage","icon":"preview","aliases":["thumbnails","hover"],"availability":"dock-previews"}'
+                    '{"id":"dock.section.previews","route":"dock","title":"Window previews","context":"DockPage","icon":"preview","aliases":["general.dock.section.previews","thumbnails","hover"],"availability":"dock-previews"}'
             }
             SettingsRow {
                 Layout.fillWidth: true

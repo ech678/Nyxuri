@@ -62,7 +62,7 @@ def compile_catalog(route_document, declarations, actions):
     for route in routes:
         if len(route['path']) > 1:
             parent = '.'.join(route['path'][:-1])
-            if parent not in by_id or parent not in {'general', 'keystone', 'general.displays'}:
+            if parent not in by_id or parent not in {'displays', 'keystone', 'connected-devices'}:
                 raise ValueError(f'Unknown navigation host: {route["id"]}')
     settings = [dict(r, route=r['id'], anchor=False) for r in routes]
     ids = set(by_id)
@@ -71,8 +71,7 @@ def compile_catalog(route_document, declarations, actions):
         if entry['id'] in ids or entry['route'] not in by_id:
             raise ValueError(f'Duplicate ID or unknown route: {entry["id"]}')
         route = by_id[entry['route']]
-        # The General overview lives in its explicitly declared nested host.
-        expected = 'GeneralOverviewPage.qml' if entry['route'] == 'general' else route['source']
+        expected = route['source']
         if source != expected:
             raise ValueError(f'Declaration belongs to {expected}, not {source}')
         ids.add(entry['id'])

@@ -134,23 +134,23 @@ R1–R7 是已交付基线。下一步从 R8 开始；P4 及之后保留在后�
 - `SettingsHost.qml` 实现无缝动态热切换与路由保留（Default / Minimal / Dashboard），热切换时完整卸载旧 UI 窗口及子窗口生命周期，杜绝常驻内存泄漏。
 - 全量契约测试（519 测试）、五大分类测试（105 测试）、生命周期审计（550 文件 0 违规）、i18n 完整度审计（0 缺失）与沙箱隔离部署全面通过。
 
-### R8 设置导航扁平化与信息架构
+### R8 设置导航纯一级分类扁平化与 M3 信息架构（已完成）
 
-参考实现：`shell/references/end4-pC`。重点参考其三层 Material Design 设置组件体系——原子控件层（`Styled*` / `Material*`）、设置复合控件层（`Config*`）、页面骨架层（`ContentPage` / `ContentSection` / `GroupedList` / `NavigationRail`）；以及 Default 与 Minimal 同一组件 `isMinimal` 模式开关的统一策略。不复制代码或未经验证的依赖。
-
-**目标：** 消除 General/Advanced 杂项容器，让设置导航扁平、分类按功能域可预测；Default 与 Minimal 统一为单一组件；设置 UI 全面采用 end4-pC 的 Material Design 组件族。
+**目标：** 消除 General 与 Advanced 杂项多级嵌套容器，将设置导航与页面选项彻底扁平化为纯一级分类（Flat Top-Level Categories）；保持 Nyxuri 原生纯 QML 架构与严谨规整的 Material 3（M3）设计语言（对齐规整、M3 色阶体系、容器圆角与几何精度）；Default 与 Minimal 统一外壳；保留搜索直达与历史路由别名兼容。不 1:1 复刻外部复杂控件族或移动端视觉元素，坚守低熵与秩序感。
 
 **实施：**
-- 盘点 `settings-routes.json` 全部路由与 `GeneralPage.qml`、`AdvancedPage.qml` 承载的真实设置项，确定每项唯一功能域归属。
-- 参照 end4-pC `SettingsPages.qml` 扁平注册模式，将路由从二级嵌套收敛为一级纯扁平列表；原 `general.*` 子页面提升为顶级路由，按功能域合并为与 end4-pC 同等规模的页面数量，不为凑分类建空页面。
-- Default 与 Minimal 合并为单一组件，通过 `isMinimal` 模式开关控制缩放（`sizeScale`）、导航栏尺寸（`baseSize`）、文字标签与装饰元素的显隐和信息密度。
-- 导航层复用 end4-pC 的 NavigationRail 单级导航 + Loader 切换模式（`SettingsContent.qml`）；NavigationRailButton 保持 M3 SecondaryContainer 色阶、filled/outlined icon 切换与 Appearance 动画曲线。
-- 页面骨架复用 end4-pC 的 `ContentPage`（含惯性滚动与搜索定位）、`ContentSection`（MaterialShape 图标标题 + 可折叠分组）、`GroupedList`（首尾大圆角卡片连续体）三层结构。
-- 设置控件全面采用 end4-pC 的 `ConfigSwitch`、`ConfigComboBox`、`ConfigSlider`、`ConfigSpinBox`、`ConfigTextArea`、`ConfigSelectionArray` 统一控件族，每个控件基于 Material Design 原子控件（`StyledSwitch`、`StyledSlider`、`StyledComboBox`、`MaterialSymbol`、`RippleButton` 等）组合而成，不自造平行控件体系。
-- 页面内设置项在同一可滚动页面内按 `ContentSection` 视觉分组，不建立子页面路由。
-- 迁移旧 route ID 时保留兼容映射，避免 Action Gateway、IPC 或搜索链接失效；同步重建 `SearchCatalog.js`，搜索元数据从扁平注册源单一派生。
+- **消除嵌套容器与返回堆栈**：彻底废弃多级包裹层（`GeneralPage.qml`、`AdvancedPage.qml`）与索引跳转瓦片（`GeneralOverviewPage.qml`），消除子页面内部“返回”（Back）跳转与多级路由状态。
+- **纯一级分类直达呈现**：将原有嵌套子页面（主题外观、壁纸、模糊与效果、状态栏、程序坞、显示器、Keystone、快捷键、Spotlight、网络、蓝牙与设备、自启动、默认应用、语言与区域、关于等）直接提升为左侧导航的一级直达列表，点击直接在右侧主视图渲染对应功能域页面，选项在页面内直接展开呈现。
+- **坚守 M3 设计语言与几何秩序感**：
+  - 严格保持 Material Design 3（M3）视觉体系：复用现有的 M3 色彩 Token（`m3colors.m3surfaceContainerLow`、`colSecondaryContainer`、`colOutlineVariant` 等）、M3 字体排版与圆角阶梯；
+  - 侧边栏（`NavigationRail`）采用规范的 M3 SecondaryContainer 胶囊高亮、Filled/Outlined 图标切换与微动效；
+  - 保持 Nyxuri 艺术秩序感（几何精度 + 做减法）：拒绝引入与桌面环境冲突的过度装饰（不引入 Android 式 FAB 悬浮操作按钮、复杂异形遮罩或抽屉拖拽手柄）；
+  - 控件全面采用 Nyxuri 既有的 M3 纯 QML 控件（`MaterialSymbol`、`StyledSwitch`、`MaterialSlider`、`SettingsRow`、`SettingsSection` 等），不自造或搬入未经验证的平行外来组件。
+- **统一外壳自适应**：Default 与 Minimal 维持单组件统一外壳呈现，通过 `isMinimal` 模式驱动窗口缩放（`styleScale`）、紧凑内边距与侧边栏精简，杜绝多套外壳维护成本。
+- **深链与别名兼容闭环**：`settings-routes.json` 重构为扁平一级路由，为原 `general.*` 等旧 route ID 保留别名（`aliases`）重定向映射，保证 Spotlight / Action Gateway / CLI（`nyxuri-shell settings <route>`）直达调用无缝兼容。
+- **派生重建搜索索引**：同步派生更新 `SearchCatalog.js`，通过搜索契约与漂移门禁测试。
 
-**验收：** 导航为一级纯扁平列表且分类按功能域可预测；General 和 Advanced 容器消除；Default 与 Minimal 为同一组件的两种模式且通过 `isMinimal` 开关切换；页面骨架与设置控件完整复用 end4-pC 三层 Material Design 组件族；导航、搜索、route 深链与页面归属一致；旧 route ID 兼容映射有效；`SearchCatalog.js` 从扁平注册源生成且漂移检查通过。
+**验收：** 侧边栏为纯一级分类列表且分类按功能域可预测；General 和 Advanced 多级容器与返回按钮彻底消除；视觉风格严谨符合 Material Design 3 规范与几何秩序感；Default 与 Minimal 为同一组件且自适应紧凑切换生效；旧 route ID 别名映射有效，Spotlight 搜索与 CLI 直达不中断；`SearchCatalog.js` 派生检查与契约测试全绿。
 
 ### R9 功能开关与真实生命周期
 

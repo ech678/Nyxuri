@@ -18,6 +18,7 @@ ScrollBar {
     // Wheel animations update contentX/contentY without setting Flickable.moving.
     // Track position changes as well as the attached scrollbar's native activity.
     property bool positionActive: false
+    readonly property bool engaged: root.hovered || root.pressed
 
     onPositionChanged: {
         if (visible && size < 1.0) {
@@ -35,15 +36,33 @@ ScrollBar {
     background: Item {}
 
     contentItem: Rectangle {
-        implicitWidth: root.orientation === Qt.Vertical ? Appearance.scrollBar.width : Math.max(
+        readonly property real restingWidth: 4
+        readonly property real engagedWidth: 8
+        readonly property real currentWidth: root.engaged ? engagedWidth : restingWidth
+
+        implicitWidth: root.orientation === Qt.Vertical ? currentWidth : Math.max(
                                                               Appearance.scrollBar.minLength, root.visualSize)
-        implicitHeight: root.orientation === Qt.Horizontal ? Appearance.scrollBar.width : Math.max(Appearance.scrollBar.minLength,
+        implicitHeight: root.orientation === Qt.Horizontal ? currentWidth : Math.max(Appearance.scrollBar.minLength,
                                                                                                    root.visualSize)
-        radius: Appearance.scrollBar.radius
-        color: Appearance.scrollBar.thumbColor
+        radius: width / 2
+        color: root.engaged ? Appearance.colors.colOnSurface : Appearance.scrollBar.thumbColor
         opacity: root.policy === ScrollBar.AlwaysOn || ((root.active || root.positionActive || root.hovered
                                                          || root.pressed) && root.size < 1.0)
-                 ? Appearance.scrollBar.activeOpacity : Appearance.scrollBar.inactiveOpacity
+                 ? (root.engaged ? 0.9 : Appearance.scrollBar.activeOpacity) : Appearance.scrollBar.inactiveOpacity
+
+        Behavior on implicitWidth {
+            NumberAnimation {
+                duration: Appearance.animation.elementMoveFast.duration
+                easing.type: Appearance.animation.elementMoveFast.type
+                easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
+            }
+        }
+
+        Behavior on color {
+            ColorAnimation {
+                duration: Appearance.animation.expressiveEffects.duration
+            }
+        }
 
         Behavior on opacity {
             NumberAnimation {

@@ -393,15 +393,22 @@ var catalog = {
       "title": "Account"
     },
     {
-      "aliases": [],
-      "context": "ControlCenterWindow",
-      "icon": "settings",
-      "id": "general",
-      "path": [
-        "general"
+      "aliases": [
+        "advanced",
+        "matugen",
+        "effects",
+        "general.effects",
+        "transparency",
+        "blur"
       ],
-      "source": "GeneralPage.qml",
-      "title": "General"
+      "context": "ControlCenterWindow",
+      "icon": "palette",
+      "id": "theme",
+      "path": [
+        "theme"
+      ],
+      "source": "ThemePage.qml",
+      "title": "Theme"
     },
     {
       "aliases": [],
@@ -415,15 +422,59 @@ var catalog = {
       "title": "Wallpaper"
     },
     {
-      "aliases": [],
-      "context": "ControlCenterWindow",
-      "icon": "palette",
-      "id": "theme",
-      "path": [
-        "theme"
+      "aliases": [
+        "general.bar"
       ],
-      "source": "ThemePage.qml",
-      "title": "Theme"
+      "context": "ControlCenterWindow",
+      "icon": "dock_to_bottom",
+      "id": "bar",
+      "path": [
+        "bar"
+      ],
+      "source": "GeneralBarPage.qml",
+      "title": "Bar"
+    },
+    {
+      "aliases": [
+        "general.dock",
+        "taskbar",
+        "launcher"
+      ],
+      "context": "ControlCenterWindow",
+      "icon": "dock_to_bottom",
+      "id": "dock",
+      "path": [
+        "dock"
+      ],
+      "source": "DockPage.qml",
+      "title": "Dock"
+    },
+    {
+      "aliases": [
+        "general.sidebar",
+        "sidebars"
+      ],
+      "context": "ControlCenterWindow",
+      "icon": "side_navigation",
+      "id": "sidebar",
+      "path": [
+        "sidebar"
+      ],
+      "source": "GeneralSidebarPage.qml",
+      "title": "Sidebars"
+    },
+    {
+      "aliases": [
+        "general.displays"
+      ],
+      "context": "ControlCenterWindow",
+      "icon": "monitor",
+      "id": "displays",
+      "path": [
+        "displays"
+      ],
+      "source": "DisplaysPage.qml",
+      "title": "Displays"
     },
     {
       "aliases": [],
@@ -437,182 +488,105 @@ var catalog = {
       "title": "Keystone"
     },
     {
-      "aliases": [],
-      "context": "ControlCenterWindow",
-      "icon": "tune",
-      "id": "advanced",
-      "path": [
-        "advanced"
-      ],
-      "source": "AdvancedPage.qml",
-      "title": "Advanced"
-    },
-    {
-      "aliases": [],
-      "context": "GeneralPage",
-      "icon": "monitor",
-      "id": "general.displays",
-      "path": [
-        "general",
-        "displays"
-      ],
-      "source": "DisplaysPage.qml",
-      "title": "Displays"
-    },
-    {
-      "aliases": [],
-      "context": "GeneralPage",
-      "icon": "dock_to_bottom",
-      "id": "general.bar",
-      "path": [
-        "general",
-        "bar"
-      ],
-      "source": "GeneralBarPage.qml",
-      "title": "Bar"
-    },
-    {
       "aliases": [
-        "taskbar",
-        "launcher"
+        "general.shortcuts"
       ],
-      "context": "GeneralPage",
-      "icon": "dock_to_bottom",
-      "id": "general.dock",
-      "path": [
-        "general",
-        "dock"
-      ],
-      "source": "DockPage.qml",
-      "title": "Dock"
-    },
-    {
-      "aliases": [],
-      "context": "GeneralPage",
-      "icon": "side_navigation",
-      "id": "general.sidebar",
-      "path": [
-        "general",
-        "sidebar"
-      ],
-      "source": "GeneralSidebarPage.qml",
-      "title": "Sidebars"
-    },
-    {
-      "aliases": [],
-      "context": "GeneralPage",
-      "icon": "search",
-      "id": "general.spotlight",
-      "path": [
-        "general",
-        "spotlight"
-      ],
-      "source": "SpotlightPage.qml",
-      "title": "Spotlight"
-    },
-    {
-      "aliases": [],
-      "context": "GeneralPage",
-      "icon": "blur_on",
-      "id": "general.effects",
-      "path": [
-        "general",
-        "effects"
-      ],
-      "source": "GeneralEffectsPage.qml",
-      "title": "Transparency and blur"
-    },
-    {
-      "aliases": [],
-      "context": "GeneralPage",
+      "context": "ControlCenterWindow",
       "icon": "keyboard",
-      "id": "general.shortcuts",
+      "id": "shortcuts",
       "path": [
-        "general",
         "shortcuts"
       ],
       "source": "ShortcutsPage.qml",
       "title": "Keyboard shortcuts"
     },
     {
-      "aliases": [],
-      "context": "GeneralPage",
-      "icon": "language",
-      "id": "general.language-region",
-      "path": [
-        "general",
-        "language-region"
+      "aliases": [
+        "general.spotlight"
       ],
-      "source": "LanguageAndRegionPage.qml",
-      "title": "Language & region"
+      "context": "ControlCenterWindow",
+      "icon": "search",
+      "id": "spotlight",
+      "path": [
+        "spotlight"
+      ],
+      "source": "SpotlightPage.qml",
+      "title": "Spotlight"
     },
     {
-      "aliases": [],
-      "context": "GeneralPage",
-      "icon": "rocket_launch",
-      "id": "general.autostart",
-      "path": [
-        "general",
-        "autostart"
+      "aliases": [
+        "general.network"
       ],
-      "source": "AutostartPage.qml",
-      "title": "Autostart"
-    },
-    {
-      "aliases": [],
-      "context": "GeneralPage",
-      "icon": "apps",
-      "id": "general.default-apps",
-      "path": [
-        "general",
-        "default-apps"
-      ],
-      "source": "DefaultAppsPage.qml",
-      "title": "Default applications"
-    },
-    {
-      "aliases": [],
-      "context": "GeneralPage",
+      "context": "ControlCenterWindow",
       "icon": "wifi",
-      "id": "general.network",
+      "id": "network",
       "path": [
-        "general",
         "network"
       ],
       "source": "NetworkPage.qml",
       "title": "Network"
     },
     {
-      "aliases": [],
-      "context": "GeneralPage",
+      "aliases": [
+        "general.connected-devices",
+        "bluetooth"
+      ],
+      "context": "ControlCenterWindow",
       "icon": "devices_other",
-      "id": "general.connected-devices",
+      "id": "connected-devices",
       "path": [
-        "general",
         "connected-devices"
       ],
       "source": "ConnectedDevicesPage.qml",
       "title": "Connected devices"
     },
     {
-      "aliases": [],
-      "context": "GeneralPage",
-      "icon": "bluetooth_searching",
-      "id": "general.bluetooth-pairing",
-      "path": [
-        "general",
-        "bluetooth-pairing"
+      "aliases": [
+        "general.autostart"
       ],
-      "source": "BluetoothPairingPage.qml",
-      "title": "Pair new device"
+      "context": "ControlCenterWindow",
+      "icon": "rocket_launch",
+      "id": "autostart",
+      "path": [
+        "autostart"
+      ],
+      "source": "AutostartPage.qml",
+      "title": "Autostart"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.default-apps"
+      ],
+      "context": "ControlCenterWindow",
+      "icon": "apps",
+      "id": "default-apps",
+      "path": [
+        "default-apps"
+      ],
+      "source": "DefaultAppsPage.qml",
+      "title": "Default applications"
+    },
+    {
+      "aliases": [
+        "general.language-region"
+      ],
+      "context": "ControlCenterWindow",
+      "icon": "language",
+      "id": "language-region",
+      "path": [
+        "language-region"
+      ],
+      "source": "LanguageAndRegionPage.qml",
+      "title": "Language & region"
+    },
+    {
+      "aliases": [
+        "general.displays.configuration"
+      ],
       "context": "DisplaysPage",
       "icon": "monitor",
-      "id": "general.displays.configuration",
+      "id": "displays.configuration",
       "path": [
-        "general",
         "displays",
         "configuration"
       ],
@@ -621,14 +595,14 @@ var catalog = {
     },
     {
       "aliases": [
+        "general.displays.gamma",
         "night light",
         "temperature"
       ],
       "context": "DisplaysPage",
       "icon": "brightness_6",
-      "id": "general.displays.gamma",
+      "id": "displays.gamma",
       "path": [
-        "general",
         "displays",
         "gamma"
       ],
@@ -646,6 +620,20 @@ var catalog = {
       ],
       "source": "HorizontalClockPage.qml",
       "title": "Horizontal clock style"
+    },
+    {
+      "aliases": [
+        "general.bluetooth-pairing"
+      ],
+      "context": "ConnectedDevicesPage",
+      "icon": "bluetooth_searching",
+      "id": "connected-devices.bluetooth-pairing",
+      "path": [
+        "connected-devices",
+        "bluetooth-pairing"
+      ],
+      "source": "BluetoothPairingPage.qml",
+      "title": "Pair new device"
     }
   ],
   "schemaVersion": 1,
@@ -664,33 +652,14 @@ var catalog = {
       "title": "Account"
     },
     {
-      "aliases": [],
-      "anchor": false,
-      "context": "ControlCenterWindow",
-      "icon": "settings",
-      "id": "general",
-      "path": [
-        "general"
+      "aliases": [
+        "advanced",
+        "matugen",
+        "effects",
+        "general.effects",
+        "transparency",
+        "blur"
       ],
-      "route": "general",
-      "source": "GeneralPage.qml",
-      "title": "General"
-    },
-    {
-      "aliases": [],
-      "anchor": false,
-      "context": "ControlCenterWindow",
-      "icon": "wallpaper",
-      "id": "wallpaper",
-      "path": [
-        "wallpaper"
-      ],
-      "route": "wallpaper",
-      "source": "WallpaperPage.qml",
-      "title": "Wallpaper"
-    },
-    {
-      "aliases": [],
       "anchor": false,
       "context": "ControlCenterWindow",
       "icon": "palette",
@@ -706,6 +675,82 @@ var catalog = {
       "aliases": [],
       "anchor": false,
       "context": "ControlCenterWindow",
+      "icon": "wallpaper",
+      "id": "wallpaper",
+      "path": [
+        "wallpaper"
+      ],
+      "route": "wallpaper",
+      "source": "WallpaperPage.qml",
+      "title": "Wallpaper"
+    },
+    {
+      "aliases": [
+        "general.bar"
+      ],
+      "anchor": false,
+      "context": "ControlCenterWindow",
+      "icon": "dock_to_bottom",
+      "id": "bar",
+      "path": [
+        "bar"
+      ],
+      "route": "bar",
+      "source": "GeneralBarPage.qml",
+      "title": "Bar"
+    },
+    {
+      "aliases": [
+        "general.dock",
+        "taskbar",
+        "launcher"
+      ],
+      "anchor": false,
+      "context": "ControlCenterWindow",
+      "icon": "dock_to_bottom",
+      "id": "dock",
+      "path": [
+        "dock"
+      ],
+      "route": "dock",
+      "source": "DockPage.qml",
+      "title": "Dock"
+    },
+    {
+      "aliases": [
+        "general.sidebar",
+        "sidebars"
+      ],
+      "anchor": false,
+      "context": "ControlCenterWindow",
+      "icon": "side_navigation",
+      "id": "sidebar",
+      "path": [
+        "sidebar"
+      ],
+      "route": "sidebar",
+      "source": "GeneralSidebarPage.qml",
+      "title": "Sidebars"
+    },
+    {
+      "aliases": [
+        "general.displays"
+      ],
+      "anchor": false,
+      "context": "ControlCenterWindow",
+      "icon": "monitor",
+      "id": "displays",
+      "path": [
+        "displays"
+      ],
+      "route": "displays",
+      "source": "DisplaysPage.qml",
+      "title": "Displays"
+    },
+    {
+      "aliases": [],
+      "anchor": false,
+      "context": "ControlCenterWindow",
       "icon": "toggle_off",
       "id": "keystone",
       "path": [
@@ -716,233 +761,142 @@ var catalog = {
       "title": "Keystone"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.shortcuts"
+      ],
       "anchor": false,
       "context": "ControlCenterWindow",
-      "icon": "tune",
-      "id": "advanced",
-      "path": [
-        "advanced"
-      ],
-      "route": "advanced",
-      "source": "AdvancedPage.qml",
-      "title": "Advanced"
-    },
-    {
-      "aliases": [],
-      "anchor": false,
-      "context": "GeneralPage",
-      "icon": "monitor",
-      "id": "general.displays",
-      "path": [
-        "general",
-        "displays"
-      ],
-      "route": "general.displays",
-      "source": "DisplaysPage.qml",
-      "title": "Displays"
-    },
-    {
-      "aliases": [],
-      "anchor": false,
-      "context": "GeneralPage",
-      "icon": "dock_to_bottom",
-      "id": "general.bar",
-      "path": [
-        "general",
-        "bar"
-      ],
-      "route": "general.bar",
-      "source": "GeneralBarPage.qml",
-      "title": "Bar"
-    },
-    {
-      "aliases": [
-        "taskbar",
-        "launcher"
-      ],
-      "anchor": false,
-      "context": "GeneralPage",
-      "icon": "dock_to_bottom",
-      "id": "general.dock",
-      "path": [
-        "general",
-        "dock"
-      ],
-      "route": "general.dock",
-      "source": "DockPage.qml",
-      "title": "Dock"
-    },
-    {
-      "aliases": [],
-      "anchor": false,
-      "context": "GeneralPage",
-      "icon": "side_navigation",
-      "id": "general.sidebar",
-      "path": [
-        "general",
-        "sidebar"
-      ],
-      "route": "general.sidebar",
-      "source": "GeneralSidebarPage.qml",
-      "title": "Sidebars"
-    },
-    {
-      "aliases": [],
-      "anchor": false,
-      "context": "GeneralPage",
-      "icon": "search",
-      "id": "general.spotlight",
-      "path": [
-        "general",
-        "spotlight"
-      ],
-      "route": "general.spotlight",
-      "source": "SpotlightPage.qml",
-      "title": "Spotlight"
-    },
-    {
-      "aliases": [],
-      "anchor": false,
-      "context": "GeneralPage",
-      "icon": "blur_on",
-      "id": "general.effects",
-      "path": [
-        "general",
-        "effects"
-      ],
-      "route": "general.effects",
-      "source": "GeneralEffectsPage.qml",
-      "title": "Transparency and blur"
-    },
-    {
-      "aliases": [],
-      "anchor": false,
-      "context": "GeneralPage",
       "icon": "keyboard",
-      "id": "general.shortcuts",
+      "id": "shortcuts",
       "path": [
-        "general",
         "shortcuts"
       ],
-      "route": "general.shortcuts",
+      "route": "shortcuts",
       "source": "ShortcutsPage.qml",
       "title": "Keyboard shortcuts"
     },
     {
-      "aliases": [],
-      "anchor": false,
-      "context": "GeneralPage",
-      "icon": "language",
-      "id": "general.language-region",
-      "path": [
-        "general",
-        "language-region"
+      "aliases": [
+        "general.spotlight"
       ],
-      "route": "general.language-region",
-      "source": "LanguageAndRegionPage.qml",
-      "title": "Language & region"
+      "anchor": false,
+      "context": "ControlCenterWindow",
+      "icon": "search",
+      "id": "spotlight",
+      "path": [
+        "spotlight"
+      ],
+      "route": "spotlight",
+      "source": "SpotlightPage.qml",
+      "title": "Spotlight"
     },
     {
-      "aliases": [],
-      "anchor": false,
-      "context": "GeneralPage",
-      "icon": "rocket_launch",
-      "id": "general.autostart",
-      "path": [
-        "general",
-        "autostart"
+      "aliases": [
+        "general.network"
       ],
-      "route": "general.autostart",
-      "source": "AutostartPage.qml",
-      "title": "Autostart"
-    },
-    {
-      "aliases": [],
       "anchor": false,
-      "context": "GeneralPage",
-      "icon": "apps",
-      "id": "general.default-apps",
-      "path": [
-        "general",
-        "default-apps"
-      ],
-      "route": "general.default-apps",
-      "source": "DefaultAppsPage.qml",
-      "title": "Default applications"
-    },
-    {
-      "aliases": [],
-      "anchor": false,
-      "context": "GeneralPage",
+      "context": "ControlCenterWindow",
       "icon": "wifi",
-      "id": "general.network",
+      "id": "network",
       "path": [
-        "general",
         "network"
       ],
-      "route": "general.network",
+      "route": "network",
       "source": "NetworkPage.qml",
       "title": "Network"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.connected-devices",
+        "bluetooth"
+      ],
       "anchor": false,
-      "context": "GeneralPage",
+      "context": "ControlCenterWindow",
       "icon": "devices_other",
-      "id": "general.connected-devices",
+      "id": "connected-devices",
       "path": [
-        "general",
         "connected-devices"
       ],
-      "route": "general.connected-devices",
+      "route": "connected-devices",
       "source": "ConnectedDevicesPage.qml",
       "title": "Connected devices"
     },
     {
-      "aliases": [],
-      "anchor": false,
-      "context": "GeneralPage",
-      "icon": "bluetooth_searching",
-      "id": "general.bluetooth-pairing",
-      "path": [
-        "general",
-        "bluetooth-pairing"
+      "aliases": [
+        "general.autostart"
       ],
-      "route": "general.bluetooth-pairing",
-      "source": "BluetoothPairingPage.qml",
-      "title": "Pair new device"
+      "anchor": false,
+      "context": "ControlCenterWindow",
+      "icon": "rocket_launch",
+      "id": "autostart",
+      "path": [
+        "autostart"
+      ],
+      "route": "autostart",
+      "source": "AutostartPage.qml",
+      "title": "Autostart"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.default-apps"
+      ],
+      "anchor": false,
+      "context": "ControlCenterWindow",
+      "icon": "apps",
+      "id": "default-apps",
+      "path": [
+        "default-apps"
+      ],
+      "route": "default-apps",
+      "source": "DefaultAppsPage.qml",
+      "title": "Default applications"
+    },
+    {
+      "aliases": [
+        "general.language-region"
+      ],
+      "anchor": false,
+      "context": "ControlCenterWindow",
+      "icon": "language",
+      "id": "language-region",
+      "path": [
+        "language-region"
+      ],
+      "route": "language-region",
+      "source": "LanguageAndRegionPage.qml",
+      "title": "Language & region"
+    },
+    {
+      "aliases": [
+        "general.displays.configuration"
+      ],
       "anchor": false,
       "context": "DisplaysPage",
       "icon": "monitor",
-      "id": "general.displays.configuration",
+      "id": "displays.configuration",
       "path": [
-        "general",
         "displays",
         "configuration"
       ],
-      "route": "general.displays.configuration",
+      "route": "displays.configuration",
       "source": "DisplayConfigurationPage.qml",
       "title": "Display configuration"
     },
     {
       "aliases": [
+        "general.displays.gamma",
         "night light",
         "temperature"
       ],
       "anchor": false,
       "context": "DisplaysPage",
       "icon": "brightness_6",
-      "id": "general.displays.gamma",
+      "id": "displays.gamma",
       "path": [
-        "general",
         "displays",
         "gamma"
       ],
-      "route": "general.displays.gamma",
+      "route": "displays.gamma",
       "source": "GammaControlPage.qml",
       "title": "Gamma Control"
     },
@@ -959,6 +913,22 @@ var catalog = {
       "route": "keystone.horizontal-clock",
       "source": "HorizontalClockPage.qml",
       "title": "Horizontal clock style"
+    },
+    {
+      "aliases": [
+        "general.bluetooth-pairing"
+      ],
+      "anchor": false,
+      "context": "ConnectedDevicesPage",
+      "icon": "bluetooth_searching",
+      "id": "connected-devices.bluetooth-pairing",
+      "path": [
+        "connected-devices",
+        "bluetooth-pairing"
+      ],
+      "route": "connected-devices.bluetooth-pairing",
+      "source": "BluetoothPairingPage.qml",
+      "title": "Pair new device"
     },
     {
       "aliases": [],
@@ -1013,208 +983,209 @@ var catalog = {
       "title": "Personalization"
     },
     {
-      "aliases": [],
-      "anchor": true,
-      "context": "AdvancedPage",
-      "icon": "tune",
-      "id": "advanced.section.matugen-template-generation",
-      "path": [
-        "advanced"
+      "aliases": [
+        "general.autostart.section.add-application-to-autostart"
       ],
-      "route": "advanced",
-      "source": "AdvancedPage.qml",
-      "title": "Matugen template generation"
-    },
-    {
-      "aliases": [],
       "anchor": true,
       "context": "AutostartPage",
       "icon": "rocket_launch",
-      "id": "general.autostart.section.add-application-to-autostart",
+      "id": "autostart.section.add-application-to-autostart",
       "path": [
-        "general",
         "autostart"
       ],
-      "route": "general.autostart",
+      "route": "autostart",
       "source": "AutostartPage.qml",
       "title": "Add application to autostart"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.autostart.section.user-autostart-applications"
+      ],
       "anchor": true,
       "context": "AutostartPage",
       "icon": "rocket_launch",
-      "id": "general.autostart.section.user-autostart-applications",
+      "id": "autostart.section.user-autostart-applications",
       "path": [
-        "general",
         "autostart"
       ],
-      "route": "general.autostart",
+      "route": "autostart",
       "source": "AutostartPage.qml",
       "title": "User autostart applications"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.bluetooth-pairing.section.nearby-devices"
+      ],
       "anchor": true,
       "context": "BluetoothPairingPage",
       "icon": "bluetooth_searching",
-      "id": "general.bluetooth-pairing.section.nearby-devices",
+      "id": "connected-devices.bluetooth-pairing.section.nearby-devices",
       "path": [
-        "general",
+        "connected-devices",
         "bluetooth-pairing"
       ],
-      "route": "general.bluetooth-pairing",
+      "route": "connected-devices.bluetooth-pairing",
       "source": "BluetoothPairingPage.qml",
       "title": "Nearby devices"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.connected-devices.section.saved-devices"
+      ],
       "anchor": true,
       "context": "ConnectedDevicesPage",
       "icon": "devices_other",
-      "id": "general.connected-devices.section.saved-devices",
+      "id": "connected-devices.section.saved-devices",
       "path": [
-        "general",
         "connected-devices"
       ],
-      "route": "general.connected-devices",
+      "route": "connected-devices",
       "source": "ConnectedDevicesPage.qml",
       "title": "Saved devices"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.connected-devices.section.bluetooth-adapter"
+      ],
       "anchor": true,
       "context": "ConnectedDevicesPage",
       "icon": "devices_other",
-      "id": "general.connected-devices.section.bluetooth-adapter",
+      "id": "connected-devices.section.bluetooth-adapter",
       "path": [
-        "general",
         "connected-devices"
       ],
-      "route": "general.connected-devices",
+      "route": "connected-devices",
       "source": "ConnectedDevicesPage.qml",
       "title": "Bluetooth adapter"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.connected-devices.section.advanced-settings"
+      ],
       "anchor": true,
       "context": "ConnectedDevicesPage",
       "icon": "devices_other",
-      "id": "general.connected-devices.section.advanced-settings",
+      "id": "connected-devices.section.advanced-settings",
       "path": [
-        "general",
         "connected-devices"
       ],
-      "route": "general.connected-devices",
+      "route": "connected-devices",
       "source": "ConnectedDevicesPage.qml",
       "title": "Advanced settings"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.default-apps.section.internet"
+      ],
       "anchor": true,
       "context": "DefaultAppsPage",
       "icon": "settings",
-      "id": "general.default-apps.section.internet",
+      "id": "default-apps.section.internet",
       "path": [
-        "general",
         "default-apps"
       ],
-      "route": "general.default-apps",
+      "route": "default-apps",
       "source": "DefaultAppsPage.qml",
       "title": "Internet"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.default-apps.section.utilities"
+      ],
       "anchor": true,
       "context": "DefaultAppsPage",
       "icon": "settings",
-      "id": "general.default-apps.section.utilities",
+      "id": "default-apps.section.utilities",
       "path": [
-        "general",
         "default-apps"
       ],
-      "route": "general.default-apps",
+      "route": "default-apps",
       "source": "DefaultAppsPage.qml",
       "title": "Utilities"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.default-apps.section.documents"
+      ],
       "anchor": true,
       "context": "DefaultAppsPage",
       "icon": "settings",
-      "id": "general.default-apps.section.documents",
+      "id": "default-apps.section.documents",
       "path": [
-        "general",
         "default-apps"
       ],
-      "route": "general.default-apps",
+      "route": "default-apps",
       "source": "DefaultAppsPage.qml",
       "title": "Documents"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.default-apps.section.multimedia"
+      ],
       "anchor": true,
       "context": "DefaultAppsPage",
       "icon": "settings",
-      "id": "general.default-apps.section.multimedia",
+      "id": "default-apps.section.multimedia",
       "path": [
-        "general",
         "default-apps"
       ],
-      "route": "general.default-apps",
+      "route": "default-apps",
       "source": "DefaultAppsPage.qml",
       "title": "Multimedia"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.displays.configuration.section.layout"
+      ],
       "anchor": true,
       "context": "DisplayConfigurationPage",
       "icon": "monitor",
-      "id": "general.displays.configuration.section.layout",
+      "id": "displays.configuration.section.layout",
       "path": [
-        "general",
         "displays",
         "configuration"
       ],
-      "route": "general.displays.configuration",
+      "route": "displays.configuration",
       "source": "DisplayConfigurationPage.qml",
       "title": "Layout"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.displays.configuration.section.output-settings"
+      ],
       "anchor": true,
       "context": "DisplayConfigurationPage",
       "icon": "monitor",
-      "id": "general.displays.configuration.section.output-settings",
+      "id": "displays.configuration.section.output-settings",
       "path": [
-        "general",
         "displays",
         "configuration"
       ],
-      "route": "general.displays.configuration",
+      "route": "displays.configuration",
       "source": "DisplayConfigurationPage.qml",
       "title": "Output settings"
     },
     {
       "aliases": [
         "corner actions",
-        "screen corners"
+        "screen corners",
+        "general.displays.configuration.section.hot-corners"
       ],
       "anchor": true,
       "context": "HotCornersPage",
       "icon": "open_in_full",
-      "id": "general.displays.configuration.section.hot-corners",
+      "id": "displays.configuration.section.hot-corners",
       "path": [
-        "general",
         "displays",
         "configuration"
       ],
-      "route": "general.displays.configuration",
+      "route": "displays.configuration",
       "source": "DisplayConfigurationPage.qml",
       "title": "Hot corners"
     },
     {
       "aliases": [
+        "general.dock.section.appearance",
         "size",
         "position",
         "magnification",
@@ -1224,17 +1195,17 @@ var catalog = {
       "anchor": true,
       "context": "DockPage",
       "icon": "dock_to_bottom",
-      "id": "general.dock.section.appearance",
+      "id": "dock.section.appearance",
       "path": [
-        "general",
         "dock"
       ],
-      "route": "general.dock",
+      "route": "dock",
       "source": "DockPage.qml",
       "title": "Appearance"
     },
     {
       "aliases": [
+        "general.dock.section.behavior",
         "auto hide",
         "bounce",
         "recent",
@@ -1248,17 +1219,17 @@ var catalog = {
       "anchor": true,
       "context": "DockPage",
       "icon": "touch_app",
-      "id": "general.dock.section.behavior",
+      "id": "dock.section.behavior",
       "path": [
-        "general",
         "dock"
       ],
-      "route": "general.dock",
+      "route": "dock",
       "source": "DockPage.qml",
       "title": "Behavior"
     },
     {
       "aliases": [
+        "general.dock.section.previews",
         "thumbnails",
         "hover"
       ],
@@ -1266,194 +1237,149 @@ var catalog = {
       "availability": "dock-previews",
       "context": "DockPage",
       "icon": "preview",
-      "id": "general.dock.section.previews",
+      "id": "dock.section.previews",
       "path": [
-        "general",
         "dock"
       ],
-      "route": "general.dock",
+      "route": "dock",
       "source": "DockPage.qml",
       "title": "Window previews"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.displays.gamma.section.color"
+      ],
       "anchor": true,
       "context": "GammaControlPage",
       "icon": "brightness_6",
-      "id": "general.displays.gamma.section.color",
+      "id": "displays.gamma.section.color",
       "path": [
-        "general",
         "displays",
         "gamma"
       ],
-      "route": "general.displays.gamma",
+      "route": "displays.gamma",
       "source": "GammaControlPage.qml",
       "title": "Color"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.displays.gamma.section.schedule"
+      ],
       "anchor": true,
       "context": "GammaControlPage",
       "icon": "brightness_6",
-      "id": "general.displays.gamma.section.schedule",
+      "id": "displays.gamma.section.schedule",
       "path": [
-        "general",
         "displays",
         "gamma"
       ],
-      "route": "general.displays.gamma",
+      "route": "displays.gamma",
       "source": "GammaControlPage.qml",
       "title": "Schedule"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.displays.gamma.section.current-status"
+      ],
       "anchor": true,
       "context": "GammaControlPage",
       "icon": "brightness_6",
-      "id": "general.displays.gamma.section.current-status",
+      "id": "displays.gamma.section.current-status",
       "path": [
-        "general",
         "displays",
         "gamma"
       ],
-      "route": "general.displays.gamma",
+      "route": "displays.gamma",
       "source": "GammaControlPage.qml",
       "title": "Current status"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.bar.section.position"
+      ],
       "anchor": true,
       "context": "GeneralBarPage",
       "icon": "dock_to_bottom",
-      "id": "general.bar.section.position",
+      "id": "bar.section.position",
       "path": [
-        "general",
         "bar"
       ],
-      "route": "general.bar",
+      "route": "bar",
       "source": "GeneralBarPage.qml",
       "title": "Position"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.bar.section.components"
+      ],
       "anchor": true,
       "context": "GeneralBarPage",
       "icon": "dock_to_bottom",
-      "id": "general.bar.section.components",
+      "id": "bar.section.components",
       "path": [
-        "general",
         "bar"
       ],
-      "route": "general.bar",
+      "route": "bar",
       "source": "GeneralBarPage.qml",
       "title": "Components"
     },
     {
-      "aliases": [],
-      "anchor": true,
-      "context": "GeneralEffectsPage",
-      "icon": "blur_on",
-      "id": "general.effects.section.background",
-      "path": [
-        "general",
-        "effects"
+      "aliases": [
+        "general.sidebar.section.sidebars"
       ],
-      "route": "general.effects",
-      "source": "GeneralEffectsPage.qml",
-      "title": "Background"
-    },
-    {
-      "aliases": [],
-      "anchor": true,
-      "context": "GeneralOverviewPage",
-      "icon": "settings",
-      "id": "general.section.interface",
-      "path": [
-        "general"
-      ],
-      "route": "general",
-      "source": "GeneralOverviewPage.qml",
-      "title": "Interface"
-    },
-    {
-      "aliases": [],
-      "anchor": true,
-      "context": "GeneralOverviewPage",
-      "icon": "settings",
-      "id": "general.section.system",
-      "path": [
-        "general"
-      ],
-      "route": "general",
-      "source": "GeneralOverviewPage.qml",
-      "title": "System"
-    },
-    {
-      "aliases": [],
-      "anchor": true,
-      "context": "GeneralOverviewPage",
-      "icon": "settings",
-      "id": "general.section.applications",
-      "path": [
-        "general"
-      ],
-      "route": "general",
-      "source": "GeneralOverviewPage.qml",
-      "title": "Applications"
-    },
-    {
-      "aliases": [],
       "anchor": true,
       "context": "GeneralSidebarPage",
       "icon": "side_navigation",
-      "id": "general.sidebar.section.sidebars",
+      "id": "sidebar.section.sidebars",
       "path": [
-        "general",
         "sidebar"
       ],
-      "route": "general.sidebar",
+      "route": "sidebar",
       "source": "GeneralSidebarPage.qml",
       "title": "Sidebars"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.sidebar.section.desktop-card-layout"
+      ],
       "anchor": true,
       "context": "GeneralSidebarPage",
       "icon": "side_navigation",
-      "id": "general.sidebar.section.desktop-card-layout",
+      "id": "sidebar.section.desktop-card-layout",
       "path": [
-        "general",
         "sidebar"
       ],
-      "route": "general.sidebar",
+      "route": "sidebar",
       "source": "GeneralSidebarPage.qml",
       "title": "Desktop card layout"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.sidebar.section.clock-style"
+      ],
       "anchor": true,
       "context": "GeneralSidebarPage",
       "icon": "side_navigation",
-      "id": "general.sidebar.section.clock-style",
+      "id": "sidebar.section.clock-style",
       "path": [
-        "general",
         "sidebar"
       ],
-      "route": "general.sidebar",
+      "route": "sidebar",
       "source": "GeneralSidebarPage.qml",
       "title": "Clock style"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.sidebar.section.system-cards"
+      ],
       "anchor": true,
       "context": "GeneralSidebarPage",
       "icon": "side_navigation",
-      "id": "general.sidebar.section.system-cards",
+      "id": "sidebar.section.system-cards",
       "path": [
-        "general",
         "sidebar"
       ],
-      "route": "general.sidebar",
+      "route": "sidebar",
       "source": "GeneralSidebarPage.qml",
       "title": "System cards"
     },
@@ -1564,158 +1490,182 @@ var catalog = {
       "title": "Recording"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.language-region.section.language"
+      ],
       "anchor": true,
       "context": "LanguageAndRegionPage",
       "icon": "language",
-      "id": "general.language-region.section.language",
+      "id": "language-region.section.language",
       "path": [
-        "general",
         "language-region"
       ],
-      "route": "general.language-region",
+      "route": "language-region",
       "source": "LanguageAndRegionPage.qml",
       "title": "Language"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.language-region.section.region-weather-location"
+      ],
       "anchor": true,
       "context": "LanguageAndRegionPage",
       "icon": "language",
-      "id": "general.language-region.section.region-weather-location",
+      "id": "language-region.section.region-weather-location",
       "path": [
-        "general",
         "language-region"
       ],
-      "route": "general.language-region",
+      "route": "language-region",
       "source": "LanguageAndRegionPage.qml",
       "title": "Region & weather location"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.language-region.section.units"
+      ],
       "anchor": true,
       "context": "LanguageAndRegionPage",
       "icon": "language",
-      "id": "general.language-region.section.units",
+      "id": "language-region.section.units",
       "path": [
-        "general",
         "language-region"
       ],
-      "route": "general.language-region",
+      "route": "language-region",
       "source": "LanguageAndRegionPage.qml",
       "title": "Units"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.language-region.section.time-date"
+      ],
       "anchor": true,
       "context": "LanguageAndRegionPage",
       "icon": "language",
-      "id": "general.language-region.section.time-date",
+      "id": "language-region.section.time-date",
       "path": [
-        "general",
         "language-region"
       ],
-      "route": "general.language-region",
+      "route": "language-region",
       "source": "LanguageAndRegionPage.qml",
       "title": "Time & date"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.network.section.wired-connections"
+      ],
       "anchor": true,
       "context": "NetworkPage",
       "icon": "wifi",
-      "id": "general.network.section.wired-connections",
+      "id": "network.section.wired-connections",
       "path": [
-        "general",
         "network"
       ],
-      "route": "general.network",
+      "route": "network",
       "source": "NetworkPage.qml",
       "title": "Wired connections"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.network.section.wi-fi"
+      ],
       "anchor": true,
       "context": "NetworkPage",
       "icon": "wifi",
-      "id": "general.network.section.wi-fi",
+      "id": "network.section.wi-fi",
       "path": [
-        "general",
         "network"
       ],
-      "route": "general.network",
+      "route": "network",
       "source": "NetworkPage.qml",
       "title": "Wi-Fi"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.network.section.other-settings"
+      ],
       "anchor": true,
       "context": "NetworkPage",
       "icon": "wifi",
-      "id": "general.network.section.other-settings",
+      "id": "network.section.other-settings",
       "path": [
-        "general",
         "network"
       ],
-      "route": "general.network",
+      "route": "network",
       "source": "NetworkPage.qml",
       "title": "Other settings"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.network.section.connection-information"
+      ],
       "anchor": true,
       "context": "NetworkPage",
       "icon": "wifi",
-      "id": "general.network.section.connection-information",
+      "id": "network.section.connection-information",
       "path": [
-        "general",
         "network"
       ],
-      "route": "general.network",
+      "route": "network",
       "source": "NetworkPage.qml",
       "title": "Connection information"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.spotlight.section.applications"
+      ],
       "anchor": true,
       "context": "SpotlightPage",
       "icon": "search",
-      "id": "general.spotlight.section.applications",
+      "id": "spotlight.section.applications",
       "path": [
-        "general",
         "spotlight"
       ],
-      "route": "general.spotlight",
+      "route": "spotlight",
       "source": "SpotlightPage.qml",
       "title": "Applications"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.spotlight.section.web-search"
+      ],
       "anchor": true,
       "context": "SpotlightPage",
       "icon": "search",
-      "id": "general.spotlight.section.web-search",
+      "id": "spotlight.section.web-search",
       "path": [
-        "general",
         "spotlight"
       ],
-      "route": "general.spotlight",
+      "route": "spotlight",
       "source": "SpotlightPage.qml",
       "title": "Web search"
     },
     {
-      "aliases": [],
+      "aliases": [
+        "general.spotlight.section.clipboard"
+      ],
       "anchor": true,
       "context": "SpotlightPage",
       "icon": "search",
-      "id": "general.spotlight.section.clipboard",
+      "id": "spotlight.section.clipboard",
       "path": [
-        "general",
         "spotlight"
       ],
-      "route": "general.spotlight",
+      "route": "spotlight",
       "source": "SpotlightPage.qml",
       "title": "Clipboard"
+    },
+    {
+      "aliases": [],
+      "anchor": true,
+      "context": "ThemePage",
+      "icon": "palette",
+      "id": "theme.section.settings-panel-style",
+      "path": [
+        "theme"
+      ],
+      "route": "theme",
+      "source": "ThemePage.qml",
+      "title": "Settings panel style"
     },
     {
       "aliases": [],
@@ -1729,6 +1679,24 @@ var catalog = {
       "route": "theme",
       "source": "ThemePage.qml",
       "title": "matugen color scheme"
+    },
+    {
+      "aliases": [
+        "effects.section.background",
+        "general.effects.section.background",
+        "effects",
+        "general.effects"
+      ],
+      "anchor": true,
+      "context": "ThemePage",
+      "icon": "blur_on",
+      "id": "theme.section.transparency-and-blur",
+      "path": [
+        "theme"
+      ],
+      "route": "theme",
+      "source": "ThemePage.qml",
+      "title": "Transparency and blur"
     },
     {
       "aliases": [],
@@ -1794,6 +1762,21 @@ var catalog = {
       "route": "theme",
       "source": "ThemePage.qml",
       "title": "Fonts"
+    },
+    {
+      "aliases": [
+        "advanced.section.matugen-template-generation"
+      ],
+      "anchor": true,
+      "context": "ThemePage",
+      "icon": "tune",
+      "id": "theme.section.matugen-template-generation",
+      "path": [
+        "theme"
+      ],
+      "route": "theme",
+      "source": "ThemePage.qml",
+      "title": "Matugen template generation"
     },
     {
       "aliases": [],
@@ -1866,61 +1849,53 @@ var catalog = {
 function title(id) {
     switch (id) {
     case "account": return I18n.tr("Account", "ControlCenterWindow");
-    case "general": return I18n.tr("General", "ControlCenterWindow");
-    case "wallpaper": return I18n.tr("Wallpaper", "ControlCenterWindow");
     case "theme": return I18n.tr("Theme", "ControlCenterWindow");
+    case "wallpaper": return I18n.tr("Wallpaper", "ControlCenterWindow");
+    case "bar": return I18n.tr("Bar", "ControlCenterWindow");
+    case "dock": return I18n.tr("Dock", "ControlCenterWindow");
+    case "sidebar": return I18n.tr("Sidebars", "ControlCenterWindow");
+    case "displays": return I18n.tr("Displays", "ControlCenterWindow");
     case "keystone": return I18n.tr("Keystone", "ControlCenterWindow");
-    case "advanced": return I18n.tr("Advanced", "ControlCenterWindow");
-    case "general.displays": return I18n.tr("Displays", "GeneralPage");
-    case "general.bar": return I18n.tr("Bar", "GeneralPage");
-    case "general.dock": return I18n.tr("Dock", "GeneralPage");
-    case "general.sidebar": return I18n.tr("Sidebars", "GeneralPage");
-    case "general.spotlight": return I18n.tr("Spotlight", "GeneralPage");
-    case "general.effects": return I18n.tr("Transparency and blur", "GeneralPage");
-    case "general.shortcuts": return I18n.tr("Keyboard shortcuts", "GeneralPage");
-    case "general.language-region": return I18n.tr("Language & region", "GeneralPage");
-    case "general.autostart": return I18n.tr("Autostart", "GeneralPage");
-    case "general.default-apps": return I18n.tr("Default applications", "GeneralPage");
-    case "general.network": return I18n.tr("Network", "GeneralPage");
-    case "general.connected-devices": return I18n.tr("Connected devices", "GeneralPage");
-    case "general.bluetooth-pairing": return I18n.tr("Pair new device", "GeneralPage");
-    case "general.displays.configuration": return I18n.tr("Display configuration", "DisplaysPage");
-    case "general.displays.gamma": return I18n.tr("Gamma Control", "DisplaysPage");
+    case "shortcuts": return I18n.tr("Keyboard shortcuts", "ControlCenterWindow");
+    case "spotlight": return I18n.tr("Spotlight", "ControlCenterWindow");
+    case "network": return I18n.tr("Network", "ControlCenterWindow");
+    case "connected-devices": return I18n.tr("Connected devices", "ControlCenterWindow");
+    case "autostart": return I18n.tr("Autostart", "ControlCenterWindow");
+    case "default-apps": return I18n.tr("Default applications", "ControlCenterWindow");
+    case "language-region": return I18n.tr("Language & region", "ControlCenterWindow");
+    case "displays.configuration": return I18n.tr("Display configuration", "DisplaysPage");
+    case "displays.gamma": return I18n.tr("Gamma Control", "DisplaysPage");
     case "keystone.horizontal-clock": return I18n.tr("Horizontal clock style", "KeystonePage");
+    case "connected-devices.bluetooth-pairing": return I18n.tr("Pair new device", "ConnectedDevicesPage");
     case "account.section.language": return I18n.tr("Language", "AccountPage");
     case "account.section.bluetooth-devices": return I18n.tr("Bluetooth devices", "AccountPage");
     case "account.section.keyboard-shortcuts": return I18n.tr("Keyboard shortcuts", "AccountPage");
     case "account.section.personalization": return I18n.tr("Personalization", "AccountPage");
-    case "advanced.section.matugen-template-generation": return I18n.tr("Matugen template generation", "AdvancedPage");
-    case "general.autostart.section.add-application-to-autostart": return I18n.tr("Add application to autostart", "AutostartPage");
-    case "general.autostart.section.user-autostart-applications": return I18n.tr("User autostart applications", "AutostartPage");
-    case "general.bluetooth-pairing.section.nearby-devices": return I18n.tr("Nearby devices", "BluetoothPairingPage");
-    case "general.connected-devices.section.saved-devices": return I18n.tr("Saved devices", "ConnectedDevicesPage");
-    case "general.connected-devices.section.bluetooth-adapter": return I18n.tr("Bluetooth adapter", "ConnectedDevicesPage");
-    case "general.connected-devices.section.advanced-settings": return I18n.tr("Advanced settings", "ConnectedDevicesPage");
-    case "general.default-apps.section.internet": return I18n.tr("Internet", "DefaultAppsPage");
-    case "general.default-apps.section.utilities": return I18n.tr("Utilities", "DefaultAppsPage");
-    case "general.default-apps.section.documents": return I18n.tr("Documents", "DefaultAppsPage");
-    case "general.default-apps.section.multimedia": return I18n.tr("Multimedia", "DefaultAppsPage");
-    case "general.displays.configuration.section.layout": return I18n.tr("Layout", "DisplayConfigurationPage");
-    case "general.displays.configuration.section.output-settings": return I18n.tr("Output settings", "DisplayConfigurationPage");
-    case "general.displays.configuration.section.hot-corners": return I18n.tr("Hot corners", "HotCornersPage");
-    case "general.dock.section.appearance": return I18n.tr("Appearance", "DockPage");
-    case "general.dock.section.behavior": return I18n.tr("Behavior", "DockPage");
-    case "general.dock.section.previews": return I18n.tr("Window previews", "DockPage");
-    case "general.displays.gamma.section.color": return I18n.tr("Color", "GammaControlPage");
-    case "general.displays.gamma.section.schedule": return I18n.tr("Schedule", "GammaControlPage");
-    case "general.displays.gamma.section.current-status": return I18n.tr("Current status", "GammaControlPage");
-    case "general.bar.section.position": return I18n.tr("Position", "GeneralBarPage");
-    case "general.bar.section.components": return I18n.tr("Components", "GeneralBarPage");
-    case "general.effects.section.background": return I18n.tr("Background", "GeneralEffectsPage");
-    case "general.section.interface": return I18n.tr("Interface", "GeneralOverviewPage");
-    case "general.section.system": return I18n.tr("System", "GeneralOverviewPage");
-    case "general.section.applications": return I18n.tr("Applications", "GeneralOverviewPage");
-    case "general.sidebar.section.sidebars": return I18n.tr("Sidebars", "GeneralSidebarPage");
-    case "general.sidebar.section.desktop-card-layout": return I18n.tr("Desktop card layout", "GeneralSidebarPage");
-    case "general.sidebar.section.clock-style": return I18n.tr("Clock style", "GeneralSidebarPage");
-    case "general.sidebar.section.system-cards": return I18n.tr("System cards", "GeneralSidebarPage");
+    case "autostart.section.add-application-to-autostart": return I18n.tr("Add application to autostart", "AutostartPage");
+    case "autostart.section.user-autostart-applications": return I18n.tr("User autostart applications", "AutostartPage");
+    case "connected-devices.bluetooth-pairing.section.nearby-devices": return I18n.tr("Nearby devices", "BluetoothPairingPage");
+    case "connected-devices.section.saved-devices": return I18n.tr("Saved devices", "ConnectedDevicesPage");
+    case "connected-devices.section.bluetooth-adapter": return I18n.tr("Bluetooth adapter", "ConnectedDevicesPage");
+    case "connected-devices.section.advanced-settings": return I18n.tr("Advanced settings", "ConnectedDevicesPage");
+    case "default-apps.section.internet": return I18n.tr("Internet", "DefaultAppsPage");
+    case "default-apps.section.utilities": return I18n.tr("Utilities", "DefaultAppsPage");
+    case "default-apps.section.documents": return I18n.tr("Documents", "DefaultAppsPage");
+    case "default-apps.section.multimedia": return I18n.tr("Multimedia", "DefaultAppsPage");
+    case "displays.configuration.section.layout": return I18n.tr("Layout", "DisplayConfigurationPage");
+    case "displays.configuration.section.output-settings": return I18n.tr("Output settings", "DisplayConfigurationPage");
+    case "displays.configuration.section.hot-corners": return I18n.tr("Hot corners", "HotCornersPage");
+    case "dock.section.appearance": return I18n.tr("Appearance", "DockPage");
+    case "dock.section.behavior": return I18n.tr("Behavior", "DockPage");
+    case "dock.section.previews": return I18n.tr("Window previews", "DockPage");
+    case "displays.gamma.section.color": return I18n.tr("Color", "GammaControlPage");
+    case "displays.gamma.section.schedule": return I18n.tr("Schedule", "GammaControlPage");
+    case "displays.gamma.section.current-status": return I18n.tr("Current status", "GammaControlPage");
+    case "bar.section.position": return I18n.tr("Position", "GeneralBarPage");
+    case "bar.section.components": return I18n.tr("Components", "GeneralBarPage");
+    case "sidebar.section.sidebars": return I18n.tr("Sidebars", "GeneralSidebarPage");
+    case "sidebar.section.desktop-card-layout": return I18n.tr("Desktop card layout", "GeneralSidebarPage");
+    case "sidebar.section.clock-style": return I18n.tr("Clock style", "GeneralSidebarPage");
+    case "sidebar.section.system-cards": return I18n.tr("System cards", "GeneralSidebarPage");
     case "keystone.horizontal-clock.section.horizontal-clock-style": return I18n.tr("Horizontal clock style", "HorizontalClockPage");
     case "keystone.section.keystone-style": return I18n.tr("Keystone style", "KeystonePage");
     case "keystone.section.mouse-actions": return I18n.tr("Mouse actions", "KeystonePage");
@@ -1929,23 +1904,26 @@ function title(id) {
     case "keystone.section.keyhole": return I18n.tr("Keyhole", "KeystonePage");
     case "keystone.section.horizontal-clock": return I18n.tr("Horizontal clock", "KeystonePage");
     case "keystone.section.recording": return I18n.tr("Recording", "KeystonePage");
-    case "general.language-region.section.language": return I18n.tr("Language", "LanguageAndRegionPage");
-    case "general.language-region.section.region-weather-location": return I18n.tr("Region & weather location", "LanguageAndRegionPage");
-    case "general.language-region.section.units": return I18n.tr("Units", "LanguageAndRegionPage");
-    case "general.language-region.section.time-date": return I18n.tr("Time & date", "LanguageAndRegionPage");
-    case "general.network.section.wired-connections": return I18n.tr("Wired connections", "NetworkPage");
-    case "general.network.section.wi-fi": return I18n.tr("Wi-Fi", "NetworkPage");
-    case "general.network.section.other-settings": return I18n.tr("Other settings", "NetworkPage");
-    case "general.network.section.connection-information": return I18n.tr("Connection information", "NetworkPage");
-    case "general.spotlight.section.applications": return I18n.tr("Applications", "SpotlightPage");
-    case "general.spotlight.section.web-search": return I18n.tr("Web search", "SpotlightPage");
-    case "general.spotlight.section.clipboard": return I18n.tr("Clipboard", "SpotlightPage");
+    case "language-region.section.language": return I18n.tr("Language", "LanguageAndRegionPage");
+    case "language-region.section.region-weather-location": return I18n.tr("Region & weather location", "LanguageAndRegionPage");
+    case "language-region.section.units": return I18n.tr("Units", "LanguageAndRegionPage");
+    case "language-region.section.time-date": return I18n.tr("Time & date", "LanguageAndRegionPage");
+    case "network.section.wired-connections": return I18n.tr("Wired connections", "NetworkPage");
+    case "network.section.wi-fi": return I18n.tr("Wi-Fi", "NetworkPage");
+    case "network.section.other-settings": return I18n.tr("Other settings", "NetworkPage");
+    case "network.section.connection-information": return I18n.tr("Connection information", "NetworkPage");
+    case "spotlight.section.applications": return I18n.tr("Applications", "SpotlightPage");
+    case "spotlight.section.web-search": return I18n.tr("Web search", "SpotlightPage");
+    case "spotlight.section.clipboard": return I18n.tr("Clipboard", "SpotlightPage");
+    case "theme.section.settings-panel-style": return I18n.tr("Settings panel style", "ThemePage");
     case "theme.section.matugen-color-scheme": return I18n.tr("matugen color scheme", "ThemePage");
+    case "theme.section.transparency-and-blur": return I18n.tr("Transparency and blur", "ThemePage");
     case "theme.section.super-key-appearance": return I18n.tr("Super key appearance", "ThemePage");
     case "theme.section.lock-screen": return I18n.tr("Lock screen", "ThemePage");
     case "theme.section.cursor-theme": return I18n.tr("Cursor theme", "ThemePage");
     case "theme.section.icon-theme": return I18n.tr("Icon theme", "ThemePage");
     case "theme.section.fonts": return I18n.tr("Fonts", "ThemePage");
+    case "theme.section.matugen-template-generation": return I18n.tr("Matugen template generation", "ThemePage");
     case "wallpaper.section.desktop-wallpaper-manager": return I18n.tr("Desktop wallpaper manager", "WallpaperPage");
     case "wallpaper.section.current-wallpaper": return I18n.tr("Current wallpaper", "WallpaperPage");
     case "wallpaper.section.transition": return I18n.tr("Transition", "WallpaperPage");

@@ -38,7 +38,7 @@ StyledFlickable {
                 id: searchAnchor0
                 target: searchSection0
                 declaration:
-                    '{"id":"general.language-region.section.language","route":"general.language-region","title":"Language","context":"LanguageAndRegionPage","icon":"language","aliases":[]}'
+                    '{"id":"language-region.section.language","route":"language-region","title":"Language","context":"LanguageAndRegionPage","icon":"language","aliases":["general.language-region.section.language"]}'
             }
             iconName: "translate"
 
@@ -71,7 +71,7 @@ StyledFlickable {
                 id: searchAnchor1
                 target: searchSection1
                 declaration:
-                    '{"id":"general.language-region.section.region-weather-location","route":"general.language-region","title":"Region & weather location","context":"LanguageAndRegionPage","icon":"language","aliases":[]}'
+                    '{"id":"language-region.section.region-weather-location","route":"language-region","title":"Region & weather location","context":"LanguageAndRegionPage","icon":"language","aliases":["general.language-region.section.region-weather-location"]}'
             }
             iconName: "map"
 
@@ -93,7 +93,7 @@ StyledFlickable {
                 id: searchAnchor3
                 target: searchSection3
                 declaration:
-                    '{"id":"general.language-region.section.units","route":"general.language-region","title":"Units","context":"LanguageAndRegionPage","icon":"language","aliases":[]}'
+                    '{"id":"language-region.section.units","route":"language-region","title":"Units","context":"LanguageAndRegionPage","icon":"language","aliases":["general.language-region.section.units"]}'
             }
             iconName: "thermostat"
 
@@ -147,7 +147,7 @@ StyledFlickable {
                 id: searchAnchor4
                 target: searchSection4
                 declaration:
-                    '{"id":"general.language-region.section.time-date","route":"general.language-region","title":"Time & date","context":"LanguageAndRegionPage","icon":"language","aliases":[]}'
+                    '{"id":"language-region.section.time-date","route":"language-region","title":"Time & date","context":"LanguageAndRegionPage","icon":"language","aliases":["general.language-region.section.time-date"]}'
             }
             iconName: "schedule"
 

@@ -92,12 +92,32 @@ FloatingWindow {
     }
 
     function openPage(pageId) {
-        if (pageId === "language-region")
-            return root.openPageSection("general", "language-region");
+        if (!pageId)
+            return false;
 
         for (let index = 0; index < pages.length; ++index) {
-            if (pages[index].id === pageId) {
+            const p = pages[index];
+            if (p.id === pageId || (p.aliases && p.aliases.includes(pageId))) {
                 currentPage = index;
+                return true;
+            }
+        }
+
+        const targetRoute = SpotlightCatalog.route(pageId);
+        if (targetRoute && targetRoute.path && targetRoute.path.length > 0) {
+            const topId = targetRoute.path[0];
+            for (let index = 0; index < pages.length; ++index) {
+                if (pages[index].id === topId) {
+                    currentPage = index;
+                    return true;
+                }
+            }
+        }
+
+        if (pageId === "general") {
+            const target = pages.findIndex(p => p.id === "bar" || p.id === "displays");
+            if (target >= 0) {
+                currentPage = target;
                 return true;
             }
         }
@@ -118,14 +138,11 @@ FloatingWindow {
         if (!root.pendingPageSection || !pageLoader.item)
             return;
 
-        if (root.pages[root.currentPage].id !== "general" || typeof pageLoader.item.openSection
-                !== "function")
-
-            return;
-
-        const section = root.pendingPageSection;
-        root.pendingPageSection = "";
-        pageLoader.item.openSection(section);
+        if (typeof pageLoader.item.openSection === "function") {
+            const section = root.pendingPageSection;
+            root.pendingPageSection = "";
+            pageLoader.item.openSection(section);
+        }
     }
 
     function closeChildWindows() {
@@ -164,6 +181,19 @@ FloatingWindow {
             SettingsBackend.cancelSearch();
         root.closeChildWindows();
         SettingsBackend.retrySearch();
+        root.ensureCurrentNavVisible();
+    }
+
+    function ensureCurrentNavVisible() {
+        if (!navFlickable || !navTabArray)
+            return;
+        const targetY = navTabArray.currentItemY;
+        const itemH = navTabArray.itemHeight;
+        if (targetY < navFlickable.contentY) {
+            navFlickable.contentY = targetY;
+        } else if (targetY + itemH > navFlickable.contentY + navFlickable.height) {
+            navFlickable.contentY = Math.max(0, targetY + itemH - navFlickable.height);
+        }
     }
     Component.onDestruction: root.closeChildWindows()
 
@@ -297,14 +327,12 @@ FloatingWindow {
 
                     Layout.fillHeight: true
                     Layout.margins: 5
-                    implicitWidth: root.navExpanded ? 150 : configButton.baseSize
+                    implicitWidth: root.navExpanded ? (root.isMinimal ? 180 : 220) : configButton.baseSize
 
                     ColumnLayout {
                         id: navRail
 
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
+                        anchors.fill: parent
                         spacing: 10
 
                         NavigationRailExpandButton {
@@ -317,6 +345,7 @@ FloatingWindow {
 
                             property bool justCopied: copiedTimer.running
 
+                            baseSize: root.isMinimal ? 36 : 56
                             iconText: justCopied ? "check" : "edit"
                             buttonText: justCopied ? I18n.tr("Path copied") : I18n.tr("config file")
                             expanded: root.navExpanded
@@ -324,29 +353,47 @@ FloatingWindow {
                             onAltClicked: root.copyConfigPath()
                         }
 
-                        NavigationRailTabArray {
-                            currentIndex: root.currentPage
-                            expanded: root.navExpanded
+                        Flickable {
+                            id: navFlickable
 
-                            Repeater {
-                                model: root.pages
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            clip: true
+                            contentWidth: width
+                            contentHeight: navTabArray.implicitHeight
+                            boundsBehavior: Flickable.StopAtBounds
 
-                                NavigationRailButton {
-                                    required property int index
-                                    required property var modelData
+                            ScrollBar.vertical: StyledScrollBar {
+                                policy: ScrollBar.AsNeeded
+                            }
 
-                                    active: root.currentPage === index
-                                    expanded: root.navExpanded
-                                    buttonIcon: modelData.icon
-                                    buttonText: modelData.title
-                                    showToggledHighlight: false
-                                    onPressed: root.currentPage = index
+                            NavigationRailTabArray {
+                                id: navTabArray
+
+                                width: navFlickable.width
+                                currentIndex: root.currentPage
+                                expanded: root.navExpanded
+
+                                Repeater {
+                                    model: root.pages
+
+                                    NavigationRailButton {
+                                        required property int index
+                                        required property var modelData
+
+                                        width: navTabArray.width
+                                        baseSize: root.isMinimal ? 36 : 56
+                                        baseHighlightHeight: root.isMinimal ? 28 : 32
+                                        active: root.currentPage === index
+                                        expanded: root.navExpanded
+                                        buttonIcon: modelData.icon
+                                        buttonText: modelData.title
+                                        showToggledHighlight: false
+                                        onPressed: root.currentPage = index
+                                        onClicked: root.currentPage = index
+                                    }
                                 }
                             }
-                        }
-
-                        Item {
-                            Layout.fillHeight: true
                         }
                     }
 
@@ -404,11 +451,6 @@ FloatingWindow {
 
                     Connections {
                         function onNavigateRequested(pageId) {
-                            if (pageId === "connected-devices" || pageId === "network" || pageId
-                                    === "shortcuts") {
-                                root.openPageSection("general", pageId);
-                                return;
-                            }
                             root.openPage(pageId);
                         }
 

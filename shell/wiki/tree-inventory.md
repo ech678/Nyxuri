@@ -264,7 +264,7 @@
 | `modules/launcher/SpotlightSearchBar.qml` | **保留** | `launcher` | modules/launcher | 属性(39)/信号(7)/方法(11) | 无 | 功能域自治代码 |
 | `modules/launcher/SpotlightSearchProvider.qml` | **保留** | `launcher` | modules/launcher | 属性(8)/信号(3)/方法(12) | 无 | 功能域自治代码 |
 | `modules/launcher/SpotlightSearchResults.qml` | **保留** | `launcher` | modules/launcher | 属性(11)/信号(2)/方法(3) | 无 | 功能域自治代码 |
-| `modules/launcher/SpotlightSearchService.qml` | **移动** | `launcher` | modules/launcher, modules/settings | 属性(6)/方法(7) | Process, Timer | 已由 app/services/SpotlightSearchService.qml 移动，遵循命名法典与内聚规范 |
+| `modules/launcher/SpotlightSearchService.qml` | **移动** | `launcher` | modules/launcher | 属性(6)/方法(7) | Process, Timer | 已由 app/services/SpotlightSearchService.qml 移动，遵循命名法典与内聚规范 |
 | `modules/launcher/SpotlightSearchTile.qml` | **保留** | `launcher` | modules/launcher | 属性(6)/信号(2) | 无 | 功能域自治代码 |
 | `modules/launcher/SpotlightSession.js` | **保留** | `launcher` | modules/launcher | 方法(10) | 无 | 功能域自治代码 |
 | `modules/launcher/SpotlightSessionController.qml` | **保留** | `launcher` | modules/launcher | 属性(14)/信号(5)/方法(9) | 无 | 功能域自治代码 |
@@ -304,7 +304,7 @@
 | `modules/session/SessionPanel.qml` | **保留** | `session` | modules/session | 属性(7)/信号(3)/方法(2) | 无 | 功能域自治代码 |
 | `modules/settings/AccountPage.qml` | **保留** | `settings` | modules/settings, modules/sidebars | 属性(14)/信号(1)/方法(8) | 无 | 功能域自治代码 |
 | `modules/settings/AddNetworkPage.qml` | **保留** | `settings` | modules/settings | 属性(6)/信号(1)/方法(4) | 无 | 功能域自治代码 |
-| `modules/settings/AdvancedPage.qml` | **保留** | `settings` | modules/settings | 属性(4)/方法(2) | 无 | 功能域自治代码 |
+| `modules/settings/AdvancedPage.qml` | **删除** | `settings` | - | - | - | R8 架构扁平化：Matugen 模板管理并入 ThemePage.qml，路由重定向 |
 | `modules/settings/AppBrowserPopup.qml` | **保留** | `settings` | modules/settings | 属性(8)/信号(1)/方法(7) | 无 | 功能域自治代码 |
 | `modules/settings/AutostartPage.qml` | **保留** | `settings` | modules/settings | 属性(4)/方法(5) | 无 | 功能域自治代码 |
 | `modules/settings/AutostartService.qml` | **移动** | `settings` | modules/settings | 属性(18)/信号(1)/方法(29) | Process, FileView | 已由 app/services/AutostartService.qml 移动，遵循命名法典与内聚规范 |
@@ -334,9 +334,9 @@
 | `modules/settings/FloatingActionButton.qml` | **保留** | `settings` | modules/settings | 属性(5)/信号(1) | 无 | 功能域自治代码 |
 | `modules/settings/GammaControlPage.qml` | **保留** | `settings` | modules/settings, modules/sidebars | 属性(5)/方法(2) | 无 | 功能域自治代码 |
 | `modules/settings/GeneralBarPage.qml` | **保留** | `settings` | modules/settings | 属性(1) | 无 | 功能域自治代码 |
-| `modules/settings/GeneralEffectsPage.qml` | **保留** | `settings` | modules/settings | - | 无 | 功能域自治代码 |
-| `modules/settings/GeneralOverviewPage.qml` | **保留** | `settings` | modules/settings | 信号(1) | 无 | 功能域自治代码 |
-| `modules/settings/GeneralPage.qml` | **保留** | `settings` | modules/settings | 属性(8)/信号(1)/方法(13) | 无 | 功能域自治代码 |
+| `modules/settings/GeneralEffectsPage.qml` | **删除** | `settings` | - | - | - | 合并入 ThemePage（透明与模糊分组合并至主题设置） |
+| `modules/settings/GeneralOverviewPage.qml` | **删除** | `settings` | - | - | - | R8 架构扁平化：平铺至 16 个一级分类，移除概览中间层 |
+| `modules/settings/GeneralPage.qml` | **删除** | `settings` | - | - | - | R8 架构扁平化：拆解为独立一级路由，移除多层嵌套容器 |
 | `modules/settings/GeneralSidebarPage.qml` | **保留** | `settings` | modules/settings | 属性(5)/方法(3) | 无 | 功能域自治代码 |
 | `modules/settings/GeneralSliderSetting.qml` | **保留** | `settings` | modules/settings | 属性(7)/信号(1) | 无 | 功能域自治代码 |
 | `modules/settings/GeneralSubpageHeader.qml` | **保留** | `settings` | modules/settings | 属性(3)/信号(1) | 无 | 功能域自治代码 |

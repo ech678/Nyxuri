@@ -15,6 +15,7 @@ Singleton {
     readonly property string configDir: Paths.configHome
     readonly property string filePath: configDir + "/ui-preferences.json"
     property string spotlightSearchEngine: "google"
+    readonly property var searchEngines: SpotlightSearch.engines
     property string spotlightAppOrder: "name"
     property string spotlightAppStyle: "list"
     property string spotlightClipboardStyle: "default"
