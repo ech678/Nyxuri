@@ -136,16 +136,21 @@ R1–R7 是已交付基线。下一步从 R8 开始；P4 及之后保留在后�
 
 ### R8 设置导航扁平化与信息架构
 
-**目标：** 让左侧导航更扁平、分类更直接，消除 General/Advanced 作为历史杂项容器的惯性；保留搜索直达和现有深链兼容。
+参考实现：`shell/references/end4-pC`。重点参考其三层 Material Design 设置组件体系——原子控件层（`Styled*` / `Material*`）、设置复合控件层（`Config*`）、页面骨架层（`ContentPage` / `ContentSection` / `GroupedList` / `NavigationRail`）；以及 Default 与 Minimal 同一组件 `isMinimal` 模式开关的统一策略。不复制代码或未经验证的依赖。
+
+**目标：** 消除 General/Advanced 杂项容器，让设置导航扁平、分类按功能域可预测；Default 与 Minimal 统一为单一组件；设置 UI 全面采用 end4-pC 的 Material Design 组件族。
 
 **实施：**
-- 盘点 `settings-routes.json`、`GeneralPage.qml`、`GeneralOverviewPage.qml`、`GeneralBarPage.qml`、`GeneralEffectsPage.qml`、`GeneralSidebarPage.qml`、`AdvancedPage.qml` 和真实设置项，确定每项唯一分类与 owner。
-- 将 Dock 从 General 移入桌面相关分类；壁纸、主题、调色和模板归于外观；显示器、网络、蓝牙等按实际用户意图归类。避免为凑分类而创建空页面。
-- 默认采用扁平一级导航；仅当页面数量或设备子项确有必要时保留一个二级层级，不建立多层目录树。
-- 三种 UI 共用单一导航/搜索元数据来源；同步重建 `SearchCatalog.js` 生成与漂移检查，不维护平行目录。
-- 迁移旧 route ID 时保留兼容映射，避免 Action Gateway、IPC、启动参数或搜索链接失效。
+- 盘点 `settings-routes.json` 全部路由与 `GeneralPage.qml`、`AdvancedPage.qml` 承载的真实设置项，确定每项唯一功能域归属。
+- 参照 end4-pC `SettingsPages.qml` 扁平注册模式，将路由从二级嵌套收敛为一级纯扁平列表；原 `general.*` 子页面提升为顶级路由，按功能域合并为与 end4-pC 同等规模的页面数量，不为凑分类建空页面。
+- Default 与 Minimal 合并为单一组件，通过 `isMinimal` 模式开关控制缩放（`sizeScale`）、导航栏尺寸（`baseSize`）、文字标签与装饰元素的显隐和信息密度。
+- 导航层复用 end4-pC 的 NavigationRail 单级导航 + Loader 切换模式（`SettingsContent.qml`）；NavigationRailButton 保持 M3 SecondaryContainer 色阶、filled/outlined icon 切换与 Appearance 动画曲线。
+- 页面骨架复用 end4-pC 的 `ContentPage`（含惯性滚动与搜索定位）、`ContentSection`（MaterialShape 图标标题 + 可折叠分组）、`GroupedList`（首尾大圆角卡片连续体）三层结构。
+- 设置控件全面采用 end4-pC 的 `ConfigSwitch`、`ConfigComboBox`、`ConfigSlider`、`ConfigSpinBox`、`ConfigTextArea`、`ConfigSelectionArray` 统一控件族，每个控件基于 Material Design 原子控件（`StyledSwitch`、`StyledSlider`、`StyledComboBox`、`MaterialSymbol`、`RippleButton` 等）组合而成，不自造平行控件体系。
+- 页面内设置项在同一可滚动页面内按 `ContentSection` 视觉分组，不建立子页面路由。
+- 迁移旧 route ID 时保留兼容映射，避免 Action Gateway、IPC 或搜索链接失效；同步重建 `SearchCatalog.js`，搜索元数据从扁平注册源单一派生。
 
-**验收：** 左侧导航层级减少且分类可预测；导航、搜索、route 深链与页面归属一致；每项设置记录配置键、写入 owner、即时生效/重启要求、依赖条件和失败反馈；三套 UI 结果一致。
+**验收：** 导航为一级纯扁平列表且分类按功能域可预测；General 和 Advanced 容器消除；Default 与 Minimal 为同一组件的两种模式且通过 `isMinimal` 开关切换；页面骨架与设置控件完整复用 end4-pC 三层 Material Design 组件族；导航、搜索、route 深链与页面归属一致；旧 route ID 兼容映射有效；`SearchCatalog.js` 从扁平注册源生成且漂移检查通过。
 
 ### R9 功能开关与真实生命周期
 
