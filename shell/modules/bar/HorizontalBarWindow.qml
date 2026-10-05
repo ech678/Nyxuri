@@ -67,6 +67,10 @@ PanelWindow {
         }
 
         Region {
+            item: content.centerInputRegionItem
+        }
+
+        Region {
             item: content.trailingInputRegionItem
         }
 

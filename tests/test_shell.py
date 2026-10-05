@@ -572,6 +572,31 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("VolumeService.setSourceVolume", long_content)
         self.assertIn("BrightnessService.setBrightnessForScreen", long_content)
 
+    def test_bar_layout_two_way_synchronization_contracts(self):
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. PersonalizationConfig maintains bidirectional sync between 2-zone and 3-lane
+        pc_path = os.path.join(shell_dir, "app", "services", "PersonalizationConfig.qml")
+        with open(pc_path, "r", encoding="utf-8") as f:
+            pc_content = f.read()
+
+        self.assertIn('"information"', pc_content)
+        self.assertIn("root.barLayoutLeft = root.normalizedBarLayoutIds(leading)", pc_content)
+        self.assertIn("root.barLayoutRight = root.normalizedBarLayoutIds(trailing)", pc_content)
+        self.assertIn("root.barLeadingComponents = nextLeft.slice()", pc_content)
+        self.assertIn("root.barTrailingComponents = combinedTrailing", pc_content)
+        self.assertIn("!root.arraysEqual(root.barLeadingComponents, root.barLayoutLeft)", pc_content)
+
+        # 2. BarContent delegates 3 lanes to Repeaters with BarComponentLoader
+        bc_path = os.path.join(shell_dir, "modules", "bar", "BarContent.qml")
+        with open(bc_path, "r", encoding="utf-8") as f:
+            bc_content = f.read()
+        self.assertIn("model: PersonalizationConfig.barLayoutLeft", bc_content)
+        self.assertIn("model: PersonalizationConfig.barLayoutMiddle", bc_content)
+        self.assertIn("model: PersonalizationConfig.barLayoutRight", bc_content)
+        self.assertIn("delegate: BarComponentLoader {", bc_content)
+
     def test_p3_notification_keystone_chain_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         shell_dir = os.path.join(repo_root, "shell")

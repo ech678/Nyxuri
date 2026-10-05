@@ -424,8 +424,8 @@ Singleton {
     property string barPosition: "top"
     readonly property var barComponentIds: ["workspaces", "information", "activeWindow", "media", "tray",
         "systemMonitor", "quickSettings", "clock"]
-    readonly property var defaultBarLeadingComponents: ["workspaces", "activeWindow"]
-    readonly property var defaultBarTrailingComponents: ["tray", "systemMonitor", "quickSettings", "clock"]
+    readonly property var defaultBarLeadingComponents: ["workspaces", "information", "activeWindow"]
+    readonly property var defaultBarTrailingComponents: ["tray", "systemMonitor", "quickSettings"]
     readonly property var barComponentOptions: [({
                                                      "value": "media",
                                                      "label": I18n.tr("Media"),
@@ -500,6 +500,17 @@ Singleton {
     property var barLeadingComponents: root.defaultBarLeadingComponents.slice()
     property var barTrailingComponents: root.defaultBarTrailingComponents.slice()
     property var quickSettingsComponents: root.defaultQuickSettingsComponents.slice()
+
+    // Three-lane drag layout for the status bar (left / middle / right). These
+    // mirror the leading/trailing model but let the user place widgets freely
+    // across three lanes. An empty array means "show nothing in that lane", so
+    // fresh configs fall back to a sensible default instead of a blank bar.
+    readonly property var defaultBarLayoutLeft: ["workspaces", "information", "activeWindow"]
+    readonly property var defaultBarLayoutMiddle: []
+    readonly property var defaultBarLayoutRight: ["tray", "systemMonitor", "quickSettings"]
+    property var barLayoutLeft: root.defaultBarLayoutLeft.slice()
+    property var barLayoutMiddle: root.defaultBarLayoutMiddle.slice()
+    property var barLayoutRight: root.defaultBarLayoutRight.slice()
     property string keystonePosition: "top"
     property bool keystoneCapsLockOsd: true
     property bool keystoneNumLockOsd: true
@@ -1632,6 +1643,11 @@ Singleton {
         target.splice(insertionIndex, 0, id);
         root.barLeadingComponents = leading;
         root.barTrailingComponents = trailing;
+        root.barLayoutLeft = root.normalizedBarLayoutIds(leading);
+        root.barLayoutRight = root.normalizedBarLayoutIds(trailing);
+        if (root.barLayoutMiddle.indexOf(id) !== -1) {
+            root.barLayoutMiddle = root.barLayoutMiddle.filter(item => item !== id);
+        }
         root.save();
         return true;
     }
@@ -1647,12 +1663,18 @@ Singleton {
         const trailing = root.barTrailingComponents.filter(value => {
             return value !== id;
         });
+        const inMiddle = root.barLayoutMiddle.indexOf(id) !== -1;
         if (leading.length === root.barLeadingComponents.length && trailing.length
-                === root.barTrailingComponents.length)
+                === root.barTrailingComponents.length && !inMiddle)
             return false;
 
         root.barLeadingComponents = root.normalizedBarComponents(leading, []);
         root.barTrailingComponents = root.normalizedBarComponents(trailing, root.barLeadingComponents);
+        root.barLayoutLeft = root.normalizedBarLayoutIds(root.barLeadingComponents);
+        root.barLayoutRight = root.normalizedBarLayoutIds(root.barTrailingComponents);
+        if (inMiddle) {
+            root.barLayoutMiddle = root.barLayoutMiddle.filter(item => item !== id);
+        }
         root.save();
         return true;
     }
@@ -1665,6 +1687,77 @@ Singleton {
             return root.removeBarComponent(componentId);
 
         return root.moveBarComponent(componentId, zone, root.barZoneComponents(zone).length);
+    }
+
+    // The drag layout only accepts widgets the bar actually renders. The set is
+    // exactly BarComponentLoader's dispatch table, so ids the project has not
+    // implemented are rejected rather than silently stored and ignored.
+    readonly property var barLayoutAllowedIds: root.barComponentIds
+
+    function arraysEqual(first, second) {
+        if (!Array.isArray(first) || !Array.isArray(second) || first.length !== second.length)
+            return false;
+
+        for (let i = 0; i < first.length; i += 1) {
+            if (first[i] !== second[i])
+                return false;
+        }
+        return true;
+    }
+
+    function normalizedBarLayoutIds(raw) {
+        if (!Array.isArray(raw))
+            return [];
+
+        const seen = {};
+        const out = [];
+        raw.forEach(id => {
+            const candidate = String(id || "");
+            if (root.barLayoutAllowedIds.indexOf(candidate) === -1 || seen[candidate])
+                return;
+
+            seen[candidate] = true;
+            out.push(candidate);
+        });
+        return out;
+    }
+
+    // Orchestrated write for the three-lane bar layout. The UI calls this instead
+    // of assigning the properties directly, so the schema change goes through the
+    // settings backend and only persists when an array actually changed.
+    function setBarLayouts(left, middle, right) {
+        const nextLeft = root.normalizedBarLayoutIds(left);
+        const nextMiddle = root.normalizedBarLayoutIds(middle);
+        const nextRight = root.normalizedBarLayoutIds(right);
+        let changed = false;
+        if (!root.arraysEqual(nextLeft, root.barLayoutLeft)) {
+            root.barLayoutLeft = nextLeft;
+            changed = true;
+        }
+        if (!root.arraysEqual(nextMiddle, root.barLayoutMiddle)) {
+            root.barLayoutMiddle = nextMiddle;
+            changed = true;
+        }
+        if (!root.arraysEqual(nextRight, root.barLayoutRight)) {
+            root.barLayoutRight = nextRight;
+            changed = true;
+        }
+        if (changed) {
+            root.barLeadingComponents = nextLeft.slice();
+            const combinedTrailing = [];
+            nextMiddle.forEach(id => {
+                if (id !== "clock" && combinedTrailing.indexOf(id) === -1 && nextLeft.indexOf(id) === -1)
+                    combinedTrailing.push(id);
+            });
+            nextRight.forEach(id => {
+                if (combinedTrailing.indexOf(id) === -1 && nextLeft.indexOf(id) === -1)
+                    combinedTrailing.push(id);
+            });
+            root.barTrailingComponents = combinedTrailing;
+            root.save();
+        }
+
+        return changed;
     }
 
     function normalizedQuickSettingsComponents(raw) {
@@ -1978,6 +2071,9 @@ Singleton {
                 "showNames": root.barShowNames,
                 "barLeadingComponents": root.barLeadingComponents.slice(),
                 "barTrailingComponents": root.barTrailingComponents.slice(),
+                "barLayoutLeft": root.barLayoutLeft.slice(),
+                "barLayoutMiddle": root.barLayoutMiddle.slice(),
+                "barLayoutRight": root.barLayoutRight.slice(),
                 "quickSettingsComponents": root.quickSettingsComponents.slice()
             },
             "sidebar": {
@@ -2141,6 +2237,33 @@ Singleton {
                                                    !hasBarLayout);
         root.barLeadingComponents = barLayout.leading;
         root.barTrailingComponents = barLayout.trailing;
+        const hasBarLayouts = "barLayoutLeft" in bar || "barLayoutMiddle" in bar || "barLayoutRight" in bar;
+        if (hasBarLayouts) {
+            root.barLayoutLeft = root.normalizedBarLayoutIds(bar.barLayoutLeft);
+            root.barLayoutMiddle = root.normalizedBarLayoutIds(bar.barLayoutMiddle).filter(id => id !== "clock");
+            root.barLayoutRight = root.normalizedBarLayoutIds(bar.barLayoutRight);
+            if (!root.arraysEqual(root.barLeadingComponents, root.barLayoutLeft) && hasBarLayout) {
+                root.barLayoutLeft = root.normalizedBarLayoutIds(root.barLeadingComponents);
+                root.barLayoutRight = root.normalizedBarLayoutIds(root.barTrailingComponents);
+            }
+            if (root.barLayoutLeft.indexOf("information") < 0 &&
+                root.barLayoutMiddle.indexOf("information") < 0 &&
+                root.barLayoutRight.indexOf("information") < 0) {
+                const wsIndex = root.barLayoutLeft.indexOf("workspaces");
+                if (wsIndex >= 0) {
+                    root.barLayoutLeft.splice(wsIndex + 1, 0, "information");
+                } else {
+                    root.barLayoutLeft.unshift("information");
+                }
+            }
+        } else {
+            // Legacy configs only had leading/trailing zones; map them 1:1 so an
+            // upgrade does not reshuffle the user's bar. middle starts empty.
+            root.barLayoutLeft = root.normalizedBarLayoutIds(root.barLeadingComponents);
+            root.barLayoutMiddle = [];
+            root.barLayoutRight = root.normalizedBarLayoutIds(root.barTrailingComponents);
+        }
+        root.barTrailingComponents = root.barTrailingComponents.filter(id => id !== "clock");
         root.quickSettingsComponents = root.normalizedQuickSettingsComponents(bar.quickSettingsComponents);
         root.keepSidebarsLoaded = sidebar.keepLoaded === undefined ? true : !!sidebar.keepLoaded;
         root.sidebarPositions = SidebarPolicy.restoredPositions(sidebar);

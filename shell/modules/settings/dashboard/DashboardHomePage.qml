@@ -114,6 +114,15 @@ Item {
                                            ? SystemMonitorService.cpu.packageTemperatureCelsius :
                                              SystemMonitorService.cpu.temperatureCelsius
 
+    // sysmon network is a per-interface map; sum it into one up/down rate.
+    readonly property var net: SystemMonitorService.network || ({})
+    readonly property real netDownBytes: (root.net.interfaces || []).reduce(function (sum, iface) {
+        return sum + (Format.isNumber(iface.downloadBytesPerSecond) ? iface.downloadBytesPerSecond : 0);
+    }, 0)
+    readonly property real netUpBytes: (root.net.interfaces || []).reduce(function (sum, iface) {
+        return sum + (Format.isNumber(iface.uploadBytesPerSecond) ? iface.uploadBytesPerSecond : 0);
+    }, 0)
+
     Timer {
         id: clockTimer
 
@@ -127,7 +136,20 @@ Item {
 
     // The clock tick is a long-lived repeating timer; stop it explicitly so the
     // page leaves nothing running when the dashboard tears down.
-    Component.onDestruction: clockTimer.stop()
+    Component.onDestruction: {
+        clockTimer.stop();
+        SystemMonitorService.clearConsumer("dashboard-home");
+        // Without a registered consumer the uptime reader never starts and the
+        // header would show "0 minutes" forever.
+        SystemIdentityService.setUptimeConsumer("dashboard-home", false);
+    }
+
+    // Subscribe to the shared sysmon stream so the status card has live data;
+    // the service unions owners into one process, so this never samples twice.
+    Component.onCompleted: {
+        SystemMonitorService.setConsumerModules("dashboard-home", ["cpu", "memory", "disk", "network"]);
+        SystemIdentityService.setUptimeConsumer("dashboard-home", true);
+    }
 
     function shiftMonth(delta) {
         root.viewMonth = new Date(root.viewMonth.getFullYear(), root.viewMonth.getMonth() + delta, 1);
@@ -624,11 +646,73 @@ Item {
 
                 DashboardCard {
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
+                    Layout.preferredHeight: Math.max(90, (homeGrid.height - 12) * 0.3)
+                    // Neutral on purpose: wallpaper-driven roles swing hue with
+                    // every wallpaper (this card has been purple and brown).
                     tint: Appearance.colors.colLayer1
                     pager: root.pager
                     staggerMs: root.staggerMs
                     animIndex: 2
+                    travelX: 0
+                    travelY: -260
+
+                    GridLayout {
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        columns: 2
+                        rowSpacing: 6
+                        columnSpacing: 10
+
+                        InfoTile {
+                            Layout.fillWidth: true
+                            icon: "network_speed"
+                            label: I18n.tr("Network")
+                            value: "↓ " + Format.bytesPerSecond(root.netDownBytes) + "   ↑ "
+                                   + Format.bytesPerSecond(root.netUpBytes)
+                            accent: Appearance.colors.colSecondaryContainer
+                            onAccent: Appearance.colors.colOnSecondaryContainer
+                        }
+
+                        InfoTile {
+                            Layout.fillWidth: true
+                            icon: "thermostat"
+                            label: I18n.tr("CPU temp")
+                            value: root.cpuTemperature > 0 ? Math.round(root.cpuTemperature) + " °C" : Format.unavailable(
+                                                                 )
+                            accent: Appearance.colors.colSecondaryContainer
+                            onAccent: Appearance.colors.colOnSecondaryContainer
+                        }
+
+                        InfoTile {
+                            Layout.fillWidth: true
+                            icon: "memory"
+                            label: I18n.tr("Memory")
+                            value: Format.bytes(SystemMonitorService.memory.usedBytes) + " / " + Format.bytes(
+                                       SystemMonitorService.memory.totalBytes)
+                            accent: Appearance.colors.colSecondaryContainer
+                            onAccent: Appearance.colors.colOnSecondaryContainer
+                        }
+
+                        InfoTile {
+                            Layout.fillWidth: true
+                            icon: "hard_drive"
+                            label: I18n.tr("Disk")
+                            value: Format.bytes(root.rootDisk.usedBytes) + " / " + Format.bytes(
+                                       root.rootDisk.totalBytes)
+
+                            accent: Appearance.colors.colSecondaryContainer
+                            onAccent: Appearance.colors.colOnSecondaryContainer
+                        }
+                    }
+                }
+
+                DashboardCard {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    tint: Appearance.colors.colLayer1
+                    pager: root.pager
+                    staggerMs: root.staggerMs
+                    animIndex: 3
                     travelX: 0
                     travelY: -260
 
@@ -828,7 +912,8 @@ Item {
                                         StyledText {
                                             anchors.centerIn: parent
                                             text: dayCell.cellDate.getDate()
-                                            font.pixelSize: Typography.bodyLarge.pixelSize
+                                            // 对齐上游 end4-pC 实际渲染值 15，跳过 0.85 缩放
+                                            font.pixelSize: 15
                                             font.weight: dayCell.isSelected || dayCell.isToday ? Font.Bold :
                                                                                                  Font.Normal
                                             color: dayCell.isSelected ? Appearance.colors.colOnPrimary :
@@ -870,7 +955,7 @@ Item {
                     tint: Appearance.colors.colPrimaryContainer
                     pager: root.pager
                     staggerMs: root.staggerMs
-                    animIndex: 3
+                    animIndex: 4
                     travelX: 300
                     travelY: -120
 
@@ -969,7 +1054,7 @@ Item {
                     tint: Appearance.colors.colSecondaryContainer
                     pager: root.pager
                     staggerMs: root.staggerMs
-                    animIndex: 4
+                    animIndex: 5
                     travelX: 300
                     travelY: 200
 

@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQml.Models
 import qs.app.services
 
 Item {
@@ -12,15 +11,21 @@ Item {
     property string popupEdge: axis.edge
     property int itemRevision: 0
     readonly property Item leadingInputRegionItem: leadingSection
+    readonly property Item centerInputRegionItem: centerSection
     readonly property Item trailingInputRegionItem: trailingSection
     readonly property var backgroundItems: {
         const revision = root.itemRevision;
         const items = [];
-        for (let index = 0; index < componentInstantiator.count; index += 1) {
-            const loader = componentInstantiator.objectAt(index);
-            if (loader && loader.item)
-                items.push(loader.item);
+        function collect(repeater) {
+            for (let index = 0; index < repeater.count; index += 1) {
+                const loader = repeater.itemAt(index);
+                if (loader && loader.item)
+                    items.push(loader.item);
+            }
         }
+        collect(leadingRepeater);
+        collect(centerRepeater);
+        collect(trailingRepeater);
         return items;
     }
 
@@ -29,7 +34,7 @@ Item {
 
         vertical: root.vertical
         compact: (root.vertical ? root.height : root.width) < 1000
-        componentCount: PersonalizationConfig.barLeadingComponents.length
+        componentCount: PersonalizationConfig.barLayoutLeft.length
 
         anchors {
             left: root.vertical ? undefined : parent.left
@@ -39,6 +44,65 @@ Item {
             verticalCenter: root.vertical ? undefined : parent.verticalCenter
             horizontalCenter: root.vertical ? parent.horizontalCenter : undefined
         }
+
+        Repeater {
+            id: leadingRepeater
+
+            model: PersonalizationConfig.barLayoutLeft
+            onItemAdded: root.itemRevision += 1
+            onItemRemoved: root.itemRevision += 1
+
+            delegate: BarComponentLoader {
+                required property string modelData
+                required property int index
+
+                componentId: modelData
+                screen: root.screen
+                axis: root.axis
+                barVisualItem: root
+                vertical: root.vertical
+                Layout.row: root.vertical ? index : 0
+                Layout.column: root.vertical ? 0 : index
+                Layout.alignment: Qt.AlignCenter
+                onItemChanged: root.itemRevision += 1
+            }
+        }
+    }
+
+    BarSection {
+        id: centerSection
+
+        vertical: root.vertical
+        compact: (root.vertical ? root.height : root.width) < 1000
+        componentCount: PersonalizationConfig.barLayoutMiddle.length
+
+        anchors {
+            verticalCenter: parent.verticalCenter
+            horizontalCenter: parent.horizontalCenter
+        }
+
+        Repeater {
+            id: centerRepeater
+
+            model: PersonalizationConfig.barLayoutMiddle
+            onItemAdded: root.itemRevision += 1
+            onItemRemoved: root.itemRevision += 1
+
+            delegate: BarComponentLoader {
+                required property string modelData
+                required property int index
+
+                componentId: modelData
+                screen: root.screen
+                axis: root.axis
+                barVisualItem: root
+                vertical: root.vertical
+                Layout.row: root.vertical ? index : 0
+                Layout.column: root.vertical ? 0 : index
+                Layout.alignment: Qt.AlignCenter
+                onItemChanged: root.itemRevision += 1
+            }
+        }
     }
 
     BarSection {
@@ -46,7 +110,7 @@ Item {
 
         vertical: root.vertical
         compact: (root.vertical ? root.height : root.width) < 1000
-        componentCount: PersonalizationConfig.barTrailingComponents.length
+        componentCount: PersonalizationConfig.barLayoutRight.length
 
         anchors {
             right: root.vertical ? undefined : parent.right
@@ -56,36 +120,28 @@ Item {
             verticalCenter: root.vertical ? undefined : parent.verticalCenter
             horizontalCenter: root.vertical ? parent.horizontalCenter : undefined
         }
-    }
 
-    Instantiator {
-        id: componentInstantiator
+        Repeater {
+            id: trailingRepeater
 
-        model: PersonalizationConfig.barComponentIds
-        onObjectAdded: root.itemRevision += 1
-        onObjectRemoved: root.itemRevision += 1
+            model: PersonalizationConfig.barLayoutRight
+            onItemAdded: root.itemRevision += 1
+            onItemRemoved: root.itemRevision += 1
 
-        delegate: BarComponentLoader {
-            id: componentLoader
+            delegate: BarComponentLoader {
+                required property string modelData
+                required property int index
 
-            required property string modelData
-            readonly property int leadingIndex: PersonalizationConfig.barLeadingComponents.indexOf(modelData)
-            readonly property int trailingIndex: PersonalizationConfig.barTrailingComponents.indexOf(
-                                                     modelData)
-            readonly property int zoneIndex: leadingIndex >= 0 ? leadingIndex : trailingIndex
-
-            componentId: modelData
-            screen: root.screen
-            axis: root.axis
-            barVisualItem: root
-            vertical: root.vertical
-            active: zoneIndex >= 0
-            visible: active
-            parent: leadingIndex >= 0 ? leadingSection : trailingSection
-            Layout.row: root.vertical ? Math.max(0, zoneIndex) : 0
-            Layout.column: root.vertical ? 0 : Math.max(0, zoneIndex)
-            Layout.alignment: Qt.AlignCenter
-            onItemChanged: root.itemRevision += 1
+                componentId: modelData
+                screen: root.screen
+                axis: root.axis
+                barVisualItem: root
+                vertical: root.vertical
+                Layout.row: root.vertical ? index : 0
+                Layout.column: root.vertical ? 0 : index
+                Layout.alignment: Qt.AlignCenter
+                onItemChanged: root.itemRevision += 1
+            }
         }
     }
 }

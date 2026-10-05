@@ -291,11 +291,12 @@ span `[2,2]`。本轮按第 7 节顺序把它作为第一块瓦片落地。
    `lint-qml.sh --all` 才知道该告警遍布全库（ToggleCard 16 / MediaPage 19 /
    MaterialSlider 60），根因是 `Appearance.colors` 声明为弱类型 `property QtObject`，
    qmllint 无法静态解析其成员。**属既有噪声，不是回归。**
-2. **i18n 改动必须重建 + 重启进程。** `.qm` 由 `native/plugin/i18n/CMakeLists.txt`
-   经 `compile-i18n.py` 生成，再经 `rcc` 编译进 `libClavisI18n.so`；
-   `i18n_manager.cpp:71` 从 Qt 资源 `:/i18n/clavis_<lang>.qm` 加载。
-   因此改 TOML 后：`cmake --build build/shell-test` → 重启 shell 实例，
-   **只热重载 QML 是不够的**。
+2. ~~**i18n 改动必须重建 + 重启进程。**~~ **（2026-10-05 作废）**
+   这条是纯 QML 迁移前的写法。`f31179e` 已切到 `shared/i18n/I18n.qml` +
+   `Translations.js` 内存字典，`shell/native/` 目录（`plugin/i18n/CMakeLists.txt`、
+   `i18n_manager.cpp`、`libClavisI18n.so`）**已不存在**，`.qm` / `rcc` 那条链
+   整条消失。现在的规则是：改 TOML 后热重载即可；只有改了 `I18n.qml` /
+   `Translations.js` 本身才需要重启进程。
 
 ### 10.3 视觉验证回路（替代 qsmcp）
 
@@ -334,26 +335,20 @@ QT_QPA_PLATFORM=offscreen QML_IMPORT_PATH=build/shell-test/qml \
 
 ### 10.5 遗留：`check.sh` 目前是红的
 
-`check: qml-format failed`。成因是**上一轮**遗留的 11 个文件未跑格式化，
-不是本轮引入。清单与影响行数：
+`check: qml-format failed`。
 
-```
-app/AppShell.qml                            398
-tests/qml/tst_LyricsParser.qml              111
-app/Paths.qml                                39
-modules/settings/dashboard/SettingsControlCatalog.qml   22
-modules/settings/dashboard/DashboardContent.qml         18
-shared/theme/CoverScheme.qml                 18
-app/services/PersonalizationConfig.qml        4
-app/services/lyrics/LyricsBackend.qml         2
-modules/keystone/media/MediaPalette.qml       2
-modules/settings/dashboard/DashboardMediaState.qml      2
-modules/settings/dashboard/DashboardLyricsPane.qml      3
-```
-
-本轮**没有**顺手修：`AppShell.qml` 的 398 行会把这批以「仪表盘重构」为题的改动
-diff 冲淡，属于应独立成 commit 的机械格式化。修复方式就是
-`shell/scripts/dev/format-qml.sh`（无参数，作用于 changed 范围）。
+> **（2026-10-05 修正）** 本文初稿写的是「11 个文件未格式化」，那是当时用
+> `format-qml.sh` 无参数（changed 范围）得到的结论，**是错的**。
+> 跑 `format-qml.sh --check-all` 的真实结果是 **92 个文件**未格式化，
+> 覆盖 `app/` `modules/` `shared/` 各域，差一个量级。
+>
+> 这意味着 qmlformat 从未被全量应用过——`--check-all` 会报出大量「既有文件
+> 与qmlformat 输出不一致」，包括一些从未被本次重构触碰的模块。
+>
+> **不要在仪表盘这条线上顺手格式化。** 92 个文件的机械格式化会把
+> 「仪表盘重构」的 diff 完全冲淡，且跨 6 个功能域，属于独立 commit 的工作。
+> 需要时：`shell/scripts/dev/format-qml.sh --all`（作用于全库），
+> 单独成 commit，不要与功能改动混在一起。
 
 ### 10.6 与上游的剩余视觉差异（对照截图逐项核过）
 
@@ -370,28 +365,64 @@ diff 冲淡，属于应独立成 commit 的机械格式化。修复方式就是
 来源是 nyxuri `zh_CN.toml:254` 的既有译文，不是本次新增。改它只需一行，但会牵动
 所有引用 `Choose how settings open` 的位置，故未擅自动。
 
-### 10.7 下一步
+---
 
-1. 按 §10.1 同一形状继续轻量瓦片：`DashboardSwatchDot` → `DashboardSwatchCard`
-   → `DashboardIconCard` → `DashboardShapeCard` → `DashboardDurationCard`。
-2. 再上重瓦片：`DashboardSchemeCard` + `DashboardPaletteCard`（对应「配置方案 /
-   调色板风格」两块），`DashboardBarPositionCard`，`DashboardBarLayoutCard`。
-3. `heroEntries` 必须**等 style / schemes / palette 三块瓦片就位后**再挂：
-   现在挂上去，这三项会解析成空卡片（`tileFor` 查不到对应组件），属未接线。
-4. `isVisibleEntry`（`when: "material"` / `requires:`）与搜索打分尚未做。
+## 11. 复现进度（PR #126 治理式合入成果）
 
+**目标：几何 1:1，行为契约严谨。** 功能走 nyxuri 自己的
+`PersonalizationConfig` / `ThemeService` / `MatugenTemplateService`，严守 R4（`app/` 43 文件）
+与零未声明依赖契约。
 
+### 11.1 几何与窗口
+
+| 项 | 上游 | nyxuri | 状态 |
+|---|---|---|---|
+| 窗口尺寸 | `1100×680` | `1100×680` | 对齐 |
+| 窗口下界 | `minimumSize: Qt.size(900, 600)` | `minimumSize: Qt.size(900, 600)` | **已合入** |
+| 栅格列数 / 间距 | `4` / 12 / 12 | `4` / 12 / 12 | 对齐 |
+| 卡片行高 / 表头高度 | `140` / `36` | `140` / `36` | 对齐 |
+
+整套布局采用固定几何，低于 900×600 时 4 列无法容纳最大 span 卡片（如 span `[4, 3]` 的 `barlayout`），
+`minimumSize` 确保浮窗在拖拽缩放时不破版。
+
+### 11.2 功能与瓦片合入清单
+
+1. **三段式状态栏布局（BarLayoutCard & 3-Lane Bar）**：
+   - 治理落地 `DashboardBarLayoutCard.qml` 与 `DashboardBarWidgets.qml`。
+   - `PersonalizationConfig.qml` 扩展 `barLayoutLeft/Middle/Right` 与 `setBarLayouts()`，并保持与旧版 2-lane 兼容回退与迁移序列化。
+   - `BarContent.qml` 补齐 `BarSection { id: centerSection }` 与 `centerInputRegionItem`，彻底修复 PR #126 原始代码在 `centerIndex >= 0` 时抛出的 `ReferenceError: centerSection is not defined` 运行时崩溃。
+   - `HorizontalBarWindow.qml` 与 `VerticalBarWindow.qml` 补充 `centerInputRegionItem` 进 `mask: Region`，修复居中段无法接收 Wayland 输入的遮罩穿透缺陷。
+   - 去除组件内调试 `console.warn`，修正内部命名规范（从混淆的 `tray` 统一为 `pool`）。
+
+2. **音频可视化与媒体页（WaveVisualizer & MediaPage）**：
+   - 新增 `WaveVisualizer.qml`，Canvas 30fps 节流自绘频谱波形，优雅降级（无音频时平滑静息线）。
+   - CAVA 配置 `shell/scripts/cava/raw_output_config.txt` 统一为 30fps、12 条柱、raw ascii。
+   - `DashboardMediaState.qml` 懒启动 CAVA 外部进程（受 `waveLive` 门控），页面离开时彻底回收。
+   - 歌词面板以 `DashboardCard` 规范容器包裹。
+   - 保留既有 `todoService`、`currentRouteId` 与 `closeChildWindows()`。
+
+3. **网络吞吐量计算（DashboardHomePage）**：
+   - 接入网卡瞬时上行/下行速率计算，挂入 Home 状态概览卡片，校准动画交错序列。
+
+4. **主题实时预览（Matugen Scheme Previews）**：
+   - 引入 `shell/scripts/theme/generate-matugen-previews.sh` 异步预渲染 9 款配色 scheme 样本。
+   - `DashboardThemesPage.qml` 修正 `FileView { watchChanges: true }`，支持预览生成后的热重载联动展示。
+
+5. **14 项新增仪表盘控制项（DashboardSettingsCatalog & SettingsControlCatalog）**：
+   - 覆盖左右侧边栏快速开关、系统/终端/代码 4 项字体设置、状态栏布局、8 项壁纸微调与多屏独立壁纸开关。
+   - `assets/i18n/zh_CN.toml` 同步补齐 25 条中英文字段，`audit-i18n.py` 0 遗漏。
 
 ---
 
-## 8. 验证口径
+## 12. 验证口径
 
 ```bash
-cd /home/xibie/dev/Nyxuri
-shell/scripts/dev/lint-qml.sh                     # 期望 lint-qml: passed
-python3 -m unittest discover -s tests -q          # 基线 4 个失败，不得新增
-shell/scripts/dev/audit-lifecycle.py              # 期望 clean
-python3 shell/scripts/dev/generate-tree-inventory.py   # 新增 QML 后必须重生成
+python3 -m compileall nyxuri tests
+shellcheck -e SC1091 shell/scripts/theme/generate-matugen-previews.sh
+python3 shell/scripts/dev/audit-lifecycle.py --scope all --check
+python3 shell/scripts/dev/audit-i18n.py
+python3 -m unittest discover -s tests -q
 ```
 
-新增 QML 会改变 `tree-inventory.md` 的计数，**不要手改，必须用生成器**。
+新增 QML 会改变 `tree-inventory.md` 的计数，必须使用 `python3 shell/scripts/dev/generate-tree-inventory.py` 重生成。
+

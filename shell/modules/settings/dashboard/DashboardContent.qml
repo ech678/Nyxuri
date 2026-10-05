@@ -94,12 +94,14 @@ Item {
 
     DashboardMediaState {
         id: mediaState
+
+        pageActive: root.mediaImplemented
     }
 
     readonly property var pageNames: [
         {
             "id": "home",
-            "name": I18n.tr("Home"),
+            "name": I18n.tr("Home", "DashboardContent"),
             "icon": "home"
         },
         {
@@ -782,6 +784,13 @@ Item {
             sourceComponent: DashboardMediaPage {
                 pager: root
                 staggerMs: root.staggerMs
+                // Drives the cava lifecycle. The item's own `visible` reads
+                // false at creation inside a Loader, so the wave must key off
+                // the page state instead.
+                pageActive: root.mediaImplemented
+                // Wave data comes from the shared state object; the page must
+                // not own the cava process (invalid-context trap in Loaders).
+                mediaState: mediaState
                 // The cover-derived scheme, or the theme's own colours when no
                 // palette is available. Same shape either way, so the page
                 // never branches on it.

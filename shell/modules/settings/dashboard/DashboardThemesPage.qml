@@ -2,6 +2,9 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Effects
+import Quickshell
+import Quickshell.Io
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
@@ -26,7 +29,6 @@ Item {
 
     readonly property var schemes: PersonalizationConfig.matugenSchemes
     readonly property string activeScheme: PersonalizationConfig.matugenScheme
-    readonly property int schemeColumns: Math.max(2, Math.round(width / 240))
 
     // The template ids nyxuri ships matugen templates for. MatugenTemplateService
     // resolves each one and refuses ids it does not know, so a wrong id here
@@ -56,6 +58,32 @@ Item {
 
     // Role swatches for the live preview. Kept in one place so the strip and any
     // future page share the same reading of the palette.
+    // True per-scheme preview palettes, written by generate-matugen-colors.sh
+    // (one matugen run per variant against the current source). Keyed by scheme
+    // value, values are the snake_case colors.json shape. Falls back to the
+    // live palette for any scheme missing from the cache.
+    property var schemePreviews: ({})
+
+    FileView {
+        path: Paths.generatedHome + "/clavis/scheme-previews.json"
+        watchChanges: true
+        onLoaded: {
+            try {
+                root.schemePreviews = JSON.parse(text());
+            } catch (e) {
+                root.schemePreviews = ({});
+            }
+        }
+        onLoadFailed: root.schemePreviews = ({})
+    }
+
+    function previewStrip(schemeValue) {
+        const preview = root.schemePreviews[schemeValue];
+        if (preview && preview.primary && preview.secondary && preview.tertiary)
+            return [preview.primary, preview.secondary, preview.tertiary];
+        return [Appearance.colors.colPrimary, Appearance.colors.colSecondary, Appearance.colors.colTertiary];
+    }
+
     readonly property var paletteRoles: [
         {
             "name": I18n.tr("Primary"),
@@ -322,121 +350,282 @@ Item {
             }
         }
 
-        GridView {
-            id: schemeGrid
-
+        // Scheme gallery, replaced from a colour-grid with a horizontal tile row.
+        // Nyxuri can't preview a scheme's colours from its name alone: matugen
+        // derives the palette from the wallpaper source, so the same scheme name
+        // yields different colours per wallpaper. The strips therefore show the
+        // live palette's three brand hues (primary/secondary/tertiary), not a
+        // per-scheme guess — honest, if less individually distinctive.
+        // Card wrapper gives the tile strip the same enter/exit choreography as
+        // every other card; without it the strip popped in and out instantly and
+        // the page switch read as a hitch.
+        DashboardCard {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            clip: true
-            boundsBehavior: Flickable.StopAtBounds
-            cellWidth: Math.floor(width / root.schemeColumns)
-            cellHeight: Math.round(cellWidth * 0.62)
-            model: root.schemes
-            cacheBuffer: 0
-            ScrollBar.vertical: StyledScrollBar {}
+            tint: Appearance.colors.colLayer1
+            pager: root.pager
+            staggerMs: root.staggerMs
+            animIndex: 2
+            travelX: 0
+            travelY: 90
 
-            WheelScrollController {
-                flickable: schemeGrid
-            }
+            Item {
+                id: schemeArea
 
-            delegate: Item {
-                id: schemeCell
+                anchors.fill: parent
+                anchors.margins: 12
 
-                required property int index
-                required property var modelData
+                function scrollBy(delta) {
+                    const max = Math.max(0, schemeScroller.contentWidth - schemeScroller.width);
+                    schemeScroller.contentX = Math.max(0, Math.min(max, schemeScroller.contentX + delta));
+                }
 
-                readonly property bool selected: root.activeScheme === schemeCell.modelData.value
-
-                width: schemeGrid.cellWidth
-                height: schemeGrid.cellHeight
-
-                DashboardCard {
-                    id: schemeCard
+                Flickable {
+                    id: schemeScroller
 
                     anchors.fill: parent
-                    anchors.margins: 6
-                    tint: schemeCell.selected ? Appearance.colors.colPrimaryContainer :
-                                                Appearance.colors.colLayer1
-                    pager: root.pager
-                    staggerMs: root.staggerMs
-                    animIndex: schemeCell.index % 8
-                    travelX: 0
-                    travelY: 80
-
-                    Behavior on tint {
-                        ColorAnimation {
-                            duration: 200
+                    contentWidth: schemeRow.implicitWidth
+                    contentHeight: height
+                    interactive: false
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
+                    Behavior on contentX {
+                        NumberAnimation {
+                            duration: 300
+                            easing.type: Easing.OutCubic
                         }
                     }
 
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 14
-                        spacing: 8
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 10
-
-                            MaterialShapeWrappedMaterialSymbol {
-                                wrappedShape: MaterialShapeCanvas.Shape.Cookie6Sided
-                                text: "palette"
-                                iconSize: 20
-                                fill: schemeCell.selected ? 1 : 0
-                                padding: 8
-                                color: schemeCell.selected ? Appearance.colors.colPrimary :
-                                                             Appearance.colors.colSecondaryContainer
-                                colSymbol: schemeCell.selected ? Appearance.colors.colOnPrimary :
-                                                                 Appearance.colors.colOnSecondaryContainer
+                    WheelHandler {
+                        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                        onWheel: event => {
+                            const step = event.angleDelta.y !== 0 ? event.angleDelta.y : event.pixelDelta.y;
+                            const max = Math.max(0, schemeScroller.contentWidth - schemeScroller.width);
+                            const desired = schemeScroller.contentX - step;
+                            if (desired >= 0 && desired <= max) {
+                                schemeScroller.contentX = desired;
+                                return;
                             }
+                            // Reached a horizontal edge: hand the gesture to the page
+                            // scroller when it exposes one.
+                            const p = root.pager;
+                            if (p && typeof p.scrollSettingsBy === "function")
+                                p.scrollSettingsBy(-step);
+                        }
+                    }
 
-                            StyledText {
-                                Layout.fillWidth: true
-                                text: schemeCell.modelData.label
-                                font.pixelSize: Typography.bodyLarge.pixelSize
-                                font.weight: Font.DemiBold
-                                color: schemeCell.selected ? Appearance.colors.colOnPrimaryContainer :
-                                                             Appearance.colors.colOnLayer1
-                                elide: Text.ElideRight
-                            }
+                    Row {
+                        id: schemeRow
 
-                            MaterialSymbol {
-                                visible: schemeCell.selected
-                                text: "check_circle"
-                                iconSize: 20
-                                fill: 1
-                                color: Appearance.colors.colPrimary
+                        spacing: 10
+                        height: schemeScroller.height
+
+                        Repeater {
+                            model: root.schemes
+
+                            delegate: Item {
+                                id: tileRoot
+
+                                required property var modelData
+
+                                readonly property bool selected: root.activeScheme
+                                                                 === tileRoot.modelData.value
+
+                                width: 118
+                                height: schemeScroller.height
+
+                                RippleButton {
+                                    id: tile
+
+                                    anchors.fill: parent
+                                    buttonRadius: 18
+                                    // Primary wash stands in for the scheme's main colour:
+                                    // the only honest single hue we have is the live one.
+                                    containerColor: Appearance.applyAlpha(Appearance.colors.colPrimary, 0.16)
+                                    stateLayerColor: Appearance.colors.colOnLayer1
+                                    hoverStateLayerColor: Qt.lighter(Appearance.applyAlpha(
+                                                                         Appearance.colors.colPrimary, 0.16),
+                                                                     1.1)
+                                    hoverStateLayerOpacity: 0.5
+                                    rippleColor: Appearance.colors.colOnLayer1
+                                    toggled: tileRoot.selected
+                                    selectedStateLayerEnabled: true
+                                    selectedStateLayerColor: Appearance.colors.colPrimary
+                                    selectedStateLayerOpacity: 0.22
+                                    downAction: () => {
+                                        const value = tileRoot.modelData.value;
+                                        // Orchestrated setter re-derives the palette;
+                                        // writing PersonalizationConfig alone leaves the
+                                        // screen on the previous scheme.
+                                        Qt.callLater(() => ThemeService.setMatugenScheme(value));
+                                    }
+
+                                    contentItem: Item {
+                                        anchors.fill: parent
+
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 10
+                                            spacing: 6
+
+                                            RowLayout {
+                                                id: strip
+
+                                                Layout.fillWidth: true
+                                                Layout.preferredHeight: 28
+                                                spacing: 5
+
+                                                Repeater {
+                                                    model: root.previewStrip(tileRoot.modelData.value)
+
+                                                    delegate: Rectangle {
+                                                        required property var modelData
+
+                                                        Layout.fillWidth: true
+                                                        Layout.fillHeight: true
+                                                        Layout.preferredWidth: 1
+                                                        radius: 11
+                                                        color: modelData
+                                                    }
+                                                }
+                                            }
+
+                                            Item {
+                                                Layout.fillHeight: true
+                                            }
+
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 4
+
+                                                StyledText {
+                                                    Layout.fillWidth: true
+                                                    text: tileRoot.modelData.label
+                                                    font.pixelSize: Appearance.font.pixelSize.small
+                                                    font.weight: tileRoot.selected ? Font.DemiBold :
+                                                                                     Font.Normal
+                                                    color: Appearance.colors.colOnLayer1
+                                                    elide: Text.ElideRight
+                                                }
+
+                                                MaterialSymbol {
+                                                    visible: tileRoot.selected
+                                                    text: "check_circle"
+                                                    iconSize: 18
+                                                    fill: 1
+                                                    color: Appearance.colors.colPrimary
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: 18
+                                    color: "transparent"
+                                    border.width: 2
+                                    border.color: tileRoot.selected ? Appearance.colors.colPrimary :
+                                                                      "transparent"
+                                    Behavior on border.color {
+                                        ColorAnimation {
+                                            duration: 200
+                                        }
+                                    }
+                                }
                             }
                         }
+                    }
+                }
 
-                        Item {
-                            Layout.fillHeight: true
-                        }
+                Rectangle {
+                    id: leftArrow
 
-                        StyledText {
-                            Layout.fillWidth: true
-                            text: schemeCell.modelData.value
-                            font.pixelSize: Typography.bodySmall.pixelSize
-                            color: schemeCell.selected ? Appearance.colors.colOnPrimaryContainer :
-                                                         Appearance.colors.colSubtext
-                            opacity: 0.75
-                            elide: Text.ElideRight
+                    width: 38
+                    height: 38
+                    radius: 19
+                    x: 6
+                    z: 2
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: Appearance.colors.colSecondaryContainer
+                    opacity: schemeScroller.contentX > 1 ? (leftHover.containsMouse ? 1 : 0.85) : 0
+                    visible: opacity > 0.01
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 150
                         }
+                    }
+
+                    MaterialSymbol {
+                        anchors.centerIn: parent
+                        text: "chevron_left"
+                        iconSize: 24
+                        color: Appearance.colors.colOnSecondaryContainer
                     }
 
                     MouseArea {
+                        id: leftHover
+
                         anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            const value = schemeCell.modelData.value;
-                            // Same reason as the template toggle above: the
-                            // orchestrated setter is the one that re-derives the
-                            // palette. Calling PersonalizationConfig directly only
-                            // persists the value, which is why the settings grid
-                            // responded while this page did not.
-                            Qt.callLater(() => ThemeService.setMatugenScheme(value));
+                        hoverEnabled: true
+                        onEntered: {
+                            hoverTimer.direction = -1;
+                            hoverTimer.restart();
+                        }
+                        onExited: hoverTimer.stop()
+                    }
+                }
+
+                Rectangle {
+                    id: rightArrow
+
+                    width: 38
+                    height: 38
+                    radius: 19
+                    x: parent.width - width - 6
+                    z: 2
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: Appearance.colors.colSecondaryContainer
+                    opacity: schemeScroller.contentX < Math.max(0, schemeScroller.contentWidth
+                                                                - schemeScroller.width) - 1 ? (
+                                                                                                  rightHover.containsMouse
+                                                                                                  ? 1 : 0.85) :
+                                                                                              0
+                    visible: opacity > 0.01
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 150
                         }
                     }
+
+                    MaterialSymbol {
+                        anchors.centerIn: parent
+                        text: "chevron_right"
+                        iconSize: 24
+                        color: Appearance.colors.colOnSecondaryContainer
+                    }
+
+                    MouseArea {
+                        id: rightHover
+
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onEntered: {
+                            hoverTimer.direction = 1;
+                            hoverTimer.restart();
+                        }
+                        onExited: hoverTimer.stop()
+                    }
+                }
+
+                Timer {
+                    id: hoverTimer
+
+                    interval: 360
+                    repeat: true
+                    triggeredOnStart: true
+                    property int direction: 0
+                    onTriggered: schemeArea.scrollBy(direction * (118 + 10))
                 }
             }
         }
