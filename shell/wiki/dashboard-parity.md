@@ -291,11 +291,12 @@ span `[2,2]`。本轮按第 7 节顺序把它作为第一块瓦片落地。
    `lint-qml.sh --all` 才知道该告警遍布全库（ToggleCard 16 / MediaPage 19 /
    MaterialSlider 60），根因是 `Appearance.colors` 声明为弱类型 `property QtObject`，
    qmllint 无法静态解析其成员。**属既有噪声，不是回归。**
-2. **i18n 改动必须重建 + 重启进程。** `.qm` 由 `native/plugin/i18n/CMakeLists.txt`
-   经 `compile-i18n.py` 生成，再经 `rcc` 编译进 `libClavisI18n.so`；
-   `i18n_manager.cpp:71` 从 Qt 资源 `:/i18n/clavis_<lang>.qm` 加载。
-   因此改 TOML 后：`cmake --build build/shell-test` → 重启 shell 实例，
-   **只热重载 QML 是不够的**。
+2. ~~**i18n 改动必须重建 + 重启进程。**~~ **（2026-10-05 作废）**
+   这条是纯 QML 迁移前的写法。`f31179e` 已切到`shared/i18n/I18n.qml` +
+   `Translations.js` 内存字典，`shell/native/` 目录（`plugin/i18n/CMakeLists.txt`、
+   `i18n_manager.cpp`、`libClavisI18n.so`）**已不存在**，`.qm` / `rcc` 那条链
+   整条消失。现在的规则是：改 TOML 后热重载即可；只有改了 `I18n.qml` /
+   `Translations.js` 本身才需要重启进程。
 
 ### 10.3 视觉验证回路（替代 qsmcp）
 
@@ -334,26 +335,28 @@ QT_QPA_PLATFORM=offscreen QML_IMPORT_PATH=build/shell-test/qml \
 
 ### 10.5 遗留：`check.sh` 目前是红的
 
-`check: qml-format failed`。成因是**上一轮**遗留的 11 个文件未跑格式化，
-不是本轮引入。清单与影响行数：
+`check: qml-format failed`。
 
-```
-app/AppShell.qml                            398
-tests/qml/tst_LyricsParser.qml              111
-app/Paths.qml                                39
-modules/settings/dashboard/SettingsControlCatalog.qml   22
-modules/settings/dashboard/DashboardContent.qml         18
-shared/theme/CoverScheme.qml                 18
-app/services/PersonalizationConfig.qml        4
-app/services/lyrics/LyricsBackend.qml         2
-modules/keystone/media/MediaPalette.qml       2
-modules/settings/dashboard/DashboardMediaState.qml      2
-modules/settings/dashboard/DashboardLyricsPane.qml      3
-```
-
-本轮**没有**顺手修：`AppShell.qml` 的 398 行会把这批以「仪表盘重构」为题的改动
-diff 冲淡，属于应独立成 commit 的机械格式化。修复方式就是
-`shell/scripts/dev/format-qml.sh`（无参数，作用于 changed 范围）。
+> **（2026-10-05 修正）** 本文初稿写的是「11 个文件未格式化」，那是当时用
+> `format-qml.sh` 无参数（changed 范围）得到的结论，**是错的**。
+> 跑 `format-qml.sh --check-all` 的真实结果是 **92 个文件**未格式化，
+> 覆盖 `app/` `modules/` `shared/` 各域，差一个量级。
+>
+> 这意味着 qmlformat 从未被全量应用过——`--check-all` 会报出大量「既有文件
+> 与qmlformat 输出不一致」，包括一些从未被本次重构触碰的模块。
+>
+> **不要在仪表盘这条线上顺手格式化。** 92 个文件的机械格式化会把
+> 「仪表盘重构」的 diff 完全冲淡，且跨 6 个功能域，属于独立 commit 的工作。
+> 需要时：`shell/scripts/dev/format-qml.sh --all`（作用于全库），
+> 单独成commit，不要与功能改动混在一起。
+>
+> 与本轮触碰链直接相关的未格式化文件（4 个）：
+> ```
+> app/AppShell.qml
+> app/Paths.qml
+> modules/settings/dashboard/DashboardContent.qml
+> modules/settings/dashboard/SettingsControlCatalog.qml
+> ```
 
 ### 10.6 与上游的剩余视觉差异（对照截图逐项核过）
 
@@ -379,6 +382,74 @@ diff 冲淡，属于应独立成 commit 的机械格式化。修复方式就是
 3. `heroEntries` 必须**等 style / schemes / palette 三块瓦片就位后**再挂：
    现在挂上去，这三项会解析成空卡片（`tileFor` 查不到对应组件），属未接线。
 4. `isVisibleEntry`（`when: "material"` / `requires:`）与搜索打分尚未做。
+
+---
+
+## 11. 复现进度（第三轮：几何层逐项验收）
+
+**目标：几何 1:1，行为按需。** 功能继续走 nyxuri 自己的
+`PersonalizationConfig` / `ThemeService` / `MatugenTemplateService`，不移植上游
+那套依赖 `Config.options` 嵌套点路径 + `ColorSchemes` 单例的瓦片。
+
+### 11.1 逐项核对结果：几何已全部对齐
+
+| 项 | 上游 | nyxuri | 状态 |
+|---|---|---|---|
+| 窗口尺寸 | `1100×680` | `1100×680` | 对齐 |
+| 窗口下界 | `minimumSize: Qt.size(900, 600)` | **无** | **本轮补上** |
+| 窗口底色 | `colLayer0` | `colLayer0` | 对齐 |
+| 外壳边距 / 间距 | `16` / `12` | `16` / `12` | 对齐 |
+| 工具栏行高 | `56` | `56` | 对齐 |
+| 发行版胶囊 | 高 44 · `radius h/2` · border 2 · 宽 `内容+28` · spacing 8 | 同 | 对齐 |
+| 导航按钮 | 高 38 · `radius h/2` · padding 14 · icon/文字 spacing 6 | 同 | 对齐 |
+| 搜索胶囊 | 高 44 · 宽 44↔280 · 220ms OutCubic · `radius h/2` | 同 | 对齐 |
+| 头像 | `44×44` · `radius w/2` | 同 | 对齐 |
+| 栅格列数 / 间距 | `4` / 12 / 12 | `4` / 12 / 12 | 对齐 |
+| `rowHeight/headerHeight/gap` | `140 / 36 / 12` | `140 / 36 / 12` | 对齐 |
+| 标题胶囊 | 高 32 · 宽 `内容+22` · icon 18 · spacing 8 | 同 | 对齐 |
+| 瓦片内边距 | 通用 14；Style/Palette 主12 | 同 | 对齐 |
+| 卡片基类 | `animScale 0.25` · spring 2.6/0.32 · 220 OutQuad · 260 InBack · 280 InQuad · `staggerMs-4` | 同 | 对齐 |
+
+**唯一差异是 `minimumSize`**，已补。理由写进代码注释：整套布局是固定几何，
+低于 900×600 时 4 列装不下最大 span 的卡片，开始裁切。
+
+### 11.2 差异的性质：不再是「视觉差距」，是「瓦片种数」
+
+几何对齐后，剩下的差异全部落在**组件种数**上，不落在视觉：
+
+| 组件 | 上游行数 | nyxuri | 裁决 |
+|---|---|---|---|
+| `BarLayoutCard` + `BarPositionCard` + `BarWidgets` | 492+152+87 | 无 | **砍** —依赖 `bar.layouts.{left,middle,right}Layout` 三段布局模型，nyxuri 无此模型，移植是假功能 |
+| `WeatherMapCard` | 107 | 无 | **砍** — 复杂天气地图已在 `shell/AGENTS.md` 红线 2 封存 |
+| `PresetsPage` + `PresetDetail` | 717+501 | `DashboardThemesPage` | **换** — 已有主题页承担同一职责，不重复实现 |
+| — | — | `DashboardLyricsPane` | nyxuri 独有（上游无歌词面板） |
+| `SwatchDot` / `SwatchCard` | 39 / 77 | 无 | 待补（零依赖，先补这两张） |
+| `IconCard` / `ShapeCard` / `DurationCard` | 103 / 104 / 172 | 无 | 待补（数据模型兼容） |
+| `SchemeCard` | 358 | 无 | 待补，但须适配 `ThemeService`，不照搬 `ColorSchemes` |
+
+**12 项缺失 → 砍 5、换 1、待补 6。**
+
+### 11.3 下一步（按依赖顺序，不是按行数）
+
+1. `SwatchDot`（39 行，零依赖）→ `SwatchCard` 依赖它，**必须先补**，
+   否则后面颜色类瓦片各自重复实现一遍色点。
+2. `IconCard` / `ShapeCard` / `DurationCard` —— 三张都是纯 card，只依赖
+   `control.get/set` 与形状枚举。
+3. `SchemeCard` —— 需先定数据适配层：`ColorSchemes.schemeOptions()` /
+   `currentAccent()` / `setAccent()` 三个API 要映射到
+   `ThemeService` / `MatugenTemplateService`。**这是本轮唯一需要设计决策的补齐项**，
+   先写清映射关系再动代码。
+4. `isVisibleEntry` + 搜索打分 —— 纯机制，不依赖新瓦片，可与上面并行。
+5. `heroEntries` 仍然**不挂**：style 与palette 已在位，但 `hero:schemes` 依赖
+   SchemeCard，挂上去会解析成空卡片。
+
+### 11.4 与 skill 的分工
+
+`~/.workbuddy/skills/dashboard-settings-panel/` 是**自包含的通用规格书**，
+面向「从零新建」与「移植裁决」。本文是**本项目的验收记录与裁决台账**，
+记录「为什么不做某些上游组件」——判据比规格活得久，两者不要合并。
+
+---
 
 
 
