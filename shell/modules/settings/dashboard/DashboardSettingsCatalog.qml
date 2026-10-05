@@ -109,6 +109,49 @@ QtObject {
                     "key": "interface:Icon theme",
                     "title": I18n.tr("Icon theme"),
                     "icon": "apps"
+                },
+                {
+                    // Two sidebars share one card shape; the options are left/right.
+                    "type": "select",
+                    "key": "interface:Dashboard sidebar side",
+                    "title": I18n.tr("Dashboard sidebar side"),
+                    "icon": "splitscreen_left"
+                },
+                {
+                    "type": "select",
+                    "key": "interface:Quick settings sidebar side",
+                    "title": I18n.tr("Quick settings sidebar side"),
+                    "icon": "splitscreen_right"
+                },
+                {
+                    // Font pickers are searchable combos: the option set is every
+                    // installed family, far too long for a flat select row.
+                    "type": "combo",
+                    "key": "font:UI family",
+                    "title": I18n.tr("UI family"),
+                    "icon": "text_fields",
+                    "kw": "font ui interface text family"
+                },
+                {
+                    "type": "combo",
+                    "key": "font:Mono family",
+                    "title": I18n.tr("Mono family"),
+                    "icon": "code",
+                    "kw": "font monospace mono terminal code family"
+                },
+                {
+                    "type": "combo",
+                    "key": "font:Numeric family",
+                    "title": I18n.tr("Numeric family"),
+                    "icon": "pin",
+                    "kw": "font numeric numbers tabular digits family"
+                },
+                {
+                    "type": "combo",
+                    "key": "font:Expressive family",
+                    "title": I18n.tr("Expressive family"),
+                    "icon": "brand_family",
+                    "kw": "font expressive display headline family"
                 }
             ]
         },
@@ -140,6 +183,13 @@ QtObject {
                     "key": "bar:Overlay",
                     "title": I18n.tr("Overlay"),
                     "icon": "layers"
+                },
+                {
+                    "type": "barlayout",
+                    "key": "bar:Layout",
+                    "title": I18n.tr("Bar layout"),
+                    "icon": "view_week",
+                    "kw": "bar layout widgets order drag reorder lanes"
                 }
             ]
         },
@@ -399,6 +449,62 @@ QtObject {
                     "key": "wallpaper:Parallax preferred scale",
                     "title": I18n.tr("Parallax preferred scale"),
                     "icon": "zoom_in"
+                },
+                {
+                    "type": "toggle",
+                    "key": "wallpaper:Per-monitor wallpaper",
+                    "title": I18n.tr("Per-monitor wallpaper"),
+                    "icon": "wallpaper_slideshow",
+                    "kw": "wallpaper per monitor screen independent"
+                },
+                {
+                    "type": "select",
+                    "key": "wallpaper:Desktop transition",
+                    "title": I18n.tr("Desktop transition"),
+                    "icon": "transition_fade",
+                    "kw": "wallpaper transition fade wipe swww awww"
+                },
+                {
+                    "type": "spin",
+                    "key": "wallpaper:Transition fps",
+                    "title": I18n.tr("Transition fps"),
+                    "icon": "speed",
+                    "kw": "wallpaper transition framerate fps"
+                },
+                {
+                    "type": "spin",
+                    "key": "wallpaper:Transition step",
+                    "title": I18n.tr("Transition step"),
+                    "icon": "stairs",
+                    "kw": "wallpaper transition step"
+                },
+                {
+                    "type": "select",
+                    "key": "wallpaper:Overview transition",
+                    "title": I18n.tr("Overview transition"),
+                    "icon": "grid_view",
+                    "kw": "overview wallpaper transition"
+                },
+                {
+                    "type": "toggle",
+                    "key": "wallpaper:Overview use desktop wallpaper",
+                    "title": I18n.tr("Overview use desktop wallpaper"),
+                    "icon": "wallpaper",
+                    "kw": "overview wallpaper desktop reuse"
+                },
+                {
+                    "type": "toggle",
+                    "key": "wallpaper:Parallax follow tiled columns",
+                    "title": I18n.tr("Parallax follow tiled columns"),
+                    "icon": "view_column",
+                    "kw": "parallax columns wallpaper scroll"
+                },
+                {
+                    "type": "spin",
+                    "key": "wallpaper:Parallax tiled column span",
+                    "title": I18n.tr("Parallax tiled column span"),
+                    "icon": "width",
+                    "kw": "parallax span columns wallpaper"
                 }
             ]
         },

@@ -91,21 +91,21 @@ Singleton {
                                          // The source choice is the only lever for "Kugou matched
                                          // the wrong recording": lrclib matches on exact names, so
                                          // it is the honest fallback rather than a re-rank.
-                                         "lyrics:Backend": root.select(()
-                                                                       => PersonalizationConfig.lyricSource,
-                                                                       value => PersonalizationConfig.setLyricSource(
-                                                                                    value), PersonalizationConfig.lyricSources),
-                                         "lyrics:Timing offset (ms)": root.spin(() => PersonalizationConfig.lyricOffsetMs,
+                                         "lyrics:Backend": root.select(() => PersonalizationConfig.lyricSource,
+                                         value => PersonalizationConfig.setLyricSource(value),
+                                         PersonalizationConfig.lyricSources),
+                                         "lyrics:Timing offset (ms)": root.spin(()
+                                                                                => PersonalizationConfig.lyricOffsetMs,
                                                                                 value => PersonalizationConfig.setLyricOffsetMs(
-                                                                                             value),
-                                                                                PersonalizationConfig.lyricOffsetMinMs,
+                                                                                             value), PersonalizationConfig.lyricOffsetMinMs,
                                                                                 PersonalizationConfig.lyricOffsetMaxMs,
                                                                                 50),
-                                         "lyrics:Font size": root.spin(() => PersonalizationConfig.lyricFontSize,
+                                         "lyrics:Font size": root.spin(()
+                                                                       => PersonalizationConfig.lyricFontSize,
                                                                        value => PersonalizationConfig.setLyricFontSize(
-                                                                                    value),
-                                                                       PersonalizationConfig.lyricFontSizeMin,
-                                                                       PersonalizationConfig.lyricFontSizeMax, 2),
+                                                                                    value), PersonalizationConfig.lyricFontSizeMin,
+                                                                       PersonalizationConfig.lyricFontSizeMax,
+                                                                       2),
                                          "lyrics:Tint from album art": root.toggle(()
                                                                                    => PersonalizationConfig.lyricAlbumArtTint,
                                                                                    value => PersonalizationConfig.setLyricAlbumArtTint(
@@ -128,6 +128,91 @@ Singleton {
                                                                                            value => PersonalizationConfig.setShellBackgroundOpacity(
                                                                                                         value), 0,
                                                                                            1, 0.01),
+                                         "interface:Dashboard sidebar side": root.select(()
+                                                                                         => PersonalizationConfig.dashboardSidebarSide,
+                                                                                         value => PersonalizationConfig.setDashboardSidebarSide(
+                                                                                                      value), [
+                                                                                             {
+                                                                                                 "value": "left",
+                                                                                                 "label": I18n.tr(
+                                                                                                              "Left")
+                                                                                             },
+                                                                                             {
+                                                                                                 "value": "right",
+                                                                                                 "label": I18n.tr(
+                                                                                                              "Right")
+                                                                                             }
+                                                                                         ]),
+                                         "interface:Quick settings sidebar side": root.select(()
+                                                                                              => PersonalizationConfig.quickSettingsSidebarSide,
+                                                                                              value => PersonalizationConfig.setQuickSettingsSidebarSide(
+                                                                                                           value), [
+                                                                                                  {
+                                                                                                      "value": "left",
+                                                                                                      "label": I18n.tr(
+                                                                                                                   "Left")
+                                                                                                  },
+                                                                                                  {
+                                                                                                      "value": "right",
+                                                                                                      "label": I18n.tr(
+                                                                                                                   "Right")
+                                                                                                  }
+                                                                                              ]),
+                                         "wallpaper:Per-monitor wallpaper": root.toggle(()
+                                                                                        => PersonalizationConfig.perMonitorWallpaper,
+                                                                                        value => PersonalizationConfig.setPerMonitorWallpaper(
+                                                                                                     value)),
+                                         "wallpaper:Desktop transition": root.select(()
+                                                                                     => PersonalizationConfig.awwwDesktopTransitionType,
+                                                                                     value => PersonalizationConfig.setAwwwDesktopTransitionType(
+                                                                                                  value), PersonalizationConfig.awwwTransitionTypes),
+                                         "wallpaper:Transition fps": root.spin(()
+                                                                               => PersonalizationConfig.awwwTransitionFps,
+                                                                               value => PersonalizationConfig.setAwwwTransitionFps(
+                                                                                            value), 10, 240,
+                                                                               5),
+                                         "wallpaper:Transition step": root.spin(()
+                                                                                => PersonalizationConfig.awwwTransitionStep,
+                                                                                value => PersonalizationConfig.setAwwwTransitionStep(
+                                                                                             value), 0, 255,
+                                                                                5),
+                                         "wallpaper:Overview transition": root.select(()
+                                                                                      => PersonalizationConfig.overviewTransitionType,
+                                                                                      value => PersonalizationConfig.setOverviewTransitionType(
+                                                                                                   value), PersonalizationConfig.awwwTransitionTypes),
+                                         "wallpaper:Overview use desktop wallpaper": root.toggle(()
+                                                                                                 => PersonalizationConfig.overviewUseDesktopWallpaper,
+                                                                                                 value => PersonalizationConfig.setOverviewUseDesktopWallpaper(
+                                                                                                              value)),
+                                         "wallpaper:Parallax follow tiled columns": root.toggle(()
+                                                                                                => PersonalizationConfig.parallaxFollowTiledColumns,
+                                                                                                value => PersonalizationConfig.setParallaxFollowTiledColumns(
+                                                                                                             value)),
+                                         "wallpaper:Parallax tiled column span": root.spin(()
+                                                                                           => PersonalizationConfig.parallaxTiledColumnSpan,
+                                                                                           value => PersonalizationConfig.setParallaxTiledColumnSpan(
+                                                                                                        value), 2,
+                                                                                           12, 1),
+                                         "font:UI family": root.select(()
+                                                                       => PersonalizationConfig.uiFontFamily,
+                                                                       value => PersonalizationConfig.setFontFamily(
+                                                                                    "ui", value),
+                                                                       FontService.fontOptions),
+                                         "font:Mono family": root.select(()
+                                                                         => PersonalizationConfig.monoFontFamily,
+                                                                         value => PersonalizationConfig.setFontFamily(
+                                                                                      "mono", value),
+                                                                         FontService.fontOptions),
+                                         "font:Numeric family": root.select(()
+                                                                            => PersonalizationConfig.numericFontFamily,
+                                                                            value => PersonalizationConfig.setFontFamily(
+                                                                                         "numeric", value),
+                                                                            FontService.fontOptions),
+                                         "font:Expressive family": root.select(()
+                                                                               => PersonalizationConfig.expressiveFontFamily,
+                                                                               value => PersonalizationConfig.setFontFamily(
+                                                                                            "expressive",
+                                                                                            value), FontService.fontOptions),
                                          "interface:Shell blur": root.toggle(()
                                                                              => PersonalizationConfig.shellBlurEnabled,
                                                                              value => PersonalizationConfig.setShellBlurEnabled(
@@ -287,7 +372,8 @@ Singleton {
                                                                                           value), [
                                                                                  {
                                                                                      "value": "interval",
-                                                                                     "label": I18n.tr("Interval"),
+                                                                                     "label": I18n.tr(
+                                                                                                  "Interval"),
                                                                                      "icon": "timer"
                                                                                  },
                                                                                  {
