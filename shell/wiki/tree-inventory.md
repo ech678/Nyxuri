@@ -8,16 +8,16 @@
 
 ## 1. 统计概览
 
-- **现存文件总数**：563 个（基线 631 文件；R4-C-01 物理删除 2 个冗余代理，迁入 12 个服务；R4-C-02 物理删除 8 个僵尸代码与假桩，重命名 8 个服务/按钮/工具）
+- **现存文件总数**：565 个（基线 631 文件；R4-C-01 物理删除 2 个冗余代理，迁入 12 个服务；R4-C-02 物理删除 8 个僵尸代码与假桩，重命名 8 个服务/按钮/工具）
 - **分层分布**：
   - `app/`：46 个文件
-  - `modules/`：388 个文件
-  - `shared/`：126 个文件
+  - `modules/`：389 个文件
+  - `shared/`：127 个文件
   - `native/`：0 个文件
   - `bin/`：0 个文件
   - `packaging/`：3 个文件
 - **处置状态分布**：
-  - **保留**：533 个文件
+  - **保留**：535 个文件
   - **合并**：1 个文件
   - **移动**：21 个文件
   - **重命名**：8 个文件
@@ -104,7 +104,7 @@
 | `app/services/NiriConfigService.qml` | **保留** | `app` | app, modules/bar, modules/hotcorners, modules/keystone, modules/settings, modules/sidebars, modules/wallpaper | 属性(21)/信号(1)/方法(10) | Process, FileView, Env | 功能域自治代码 |
 | `app/services/NiriService.qml` | **保留** | `app` | app, modules/bar, modules/dock, modules/hotcorners, modules/keystone, modules/settings, modules/wallpaper | 属性(35)/信号(6)/方法(73) | Process, Timer, Env, IPC/Wayland | 功能域自治代码 |
 | `app/services/NotificationService.qml` | **重命名** | `app` | modules/keystone, modules/lock, modules/notifications, modules/settings, modules/sidebars | 属性(28)/信号(5)/方法(34) | Process, Timer, FileView | 已由 app/services/NotificationManager.qml 重命名，遵循命名法典与内聚规范 |
-| `app/services/PersonalizationConfig.qml` | **保留** | `app` | app, modules/bar, modules/desktopcards, modules/hotcorners, modules/keystone, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/settings, modules/sidebars, modules/wallpaper | 属性(157)/信号(1)/方法(148) | Process, Timer, FileView, Env | 功能域自治代码 |
+| `app/services/PersonalizationConfig.qml` | **保留** | `app` | app, modules/bar, modules/desktopcards, modules/hotcorners, modules/keystone, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/settings, modules/sidebars, modules/wallpaper | 属性(164)/信号(1)/方法(151) | Process, Timer, FileView, Env | 功能域自治代码 |
 | `app/services/PopupInputRegionService.qml` | **保留** | `app` | modules/desktopcards, modules/settings, modules/systemcards | 属性(1)/方法(3) | 无 | 功能域自治代码 |
 | `app/services/PowerService.qml` | **保留** | `app` | modules/bar, modules/keystone, modules/lock, modules/settings, modules/systemcards | 属性(13)/方法(1) | 无 | 功能域自治代码 |
 | `app/services/RegionSelectionService.qml` | **保留** | `app` | modules/keystone, modules/regionselector | 属性(7)/信号(2)/方法(3) | Timer | 功能域自治代码 |
@@ -115,7 +115,7 @@
 | `app/services/SystemCardService.qml` | **保留** | `app` | app, modules/desktopcards, modules/settings, modules/sidebars | 属性(12)/信号(2)/方法(32) | 无 | 功能域自治代码 |
 | `app/services/SystemIdentityService.qml` | **保留** | `app` | app, modules/keystone, modules/lock, modules/settings, modules/sidebars, modules/systemcards | 属性(32)/方法(8) | Process, Timer, FileView, Env | 功能域自治代码 |
 | `app/services/SystemMonitorService.qml` | **保留** | `app` | app, modules/bar, modules/keystone, modules/lock, modules/settings, modules/sidebars, modules/systemcards | 属性(65)/方法(33) | Process, Timer, Env | 功能域自治代码 |
-| `app/services/ThemeService.qml` | **保留** | `app` | app, modules/bar, modules/dock, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/settings, modules/sidebars, modules/wallpaper | 属性(22)/信号(1)/方法(43) | Process, FileView, Env | 功能域自治代码 |
+| `app/services/ThemeService.qml` | **保留** | `app` | app, modules/bar, modules/dock, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/settings, modules/sidebars, modules/wallpaper | 属性(22)/信号(1)/方法(44) | Process, FileView, Env | 功能域自治代码 |
 | `app/services/TimeService.qml` | **重命名** | `app` | modules/bar, modules/settings, modules/sidebars | 属性(4)/方法(1) | Timer | 已由 app/services/Time.qml 重命名，遵循命名法典与内聚规范 |
 | `app/services/UiPreferences.qml` | **保留** | `app` | app, modules/bar, modules/keystone, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/settings, modules/sidebars, modules/systemcards, modules/wallpaper | 属性(46)/方法(52) | Process, Timer, FileView, Env | 功能域自治代码 |
 | `app/services/VolumeService.qml` | **重命名** | `app` | modules/bar, modules/keystone, modules/quicksettings, modules/sidebars | 属性(19)/信号(1)/方法(26) | 无 | 已由 app/services/Volume.qml 重命名，遵循命名法典与内聚规范 |
@@ -124,14 +124,14 @@
 | `app/services/lyrics/LyricsParser.js` | **保留** | `app` | app, modules/settings | 方法(16) | 无 | 功能域自治代码 |
 | `app/services/weather/WeatherBackend.qml` | **合并** | `app` | app, modules/settings | 属性(24)/信号(2)/方法(14) | Timer | 9 行纯 Loader 壳，待合并入天气组件或 R4-C-05 消除 |
 
-### modules/ （共 388 文件）
+### modules/ （共 389 文件）
 
 | 文件路径 | 处置状态 | 归属 (Owner) | 消费者 (Consumers) | I/O | 副作用 | 目标路径 / 说明 |
 |---|---|---|---|---|---|---|
 | `modules/bar/Bar.qml` | **保留** | `bar` | app, modules/keystone, modules/settings, shared/controls | 属性(4) | 无 | 功能域自治代码 |
 | `modules/bar/BarAxis.qml` | **保留** | `bar` | modules/bar | 属性(8) | 无 | 功能域自治代码 |
-| `modules/bar/BarComponentLoader.qml` | **保留** | `bar` | modules/bar | 属性(4) | 无 | 功能域自治代码 |
-| `modules/bar/BarContent.qml` | **保留** | `bar` | modules/bar | 属性(10) | 无 | 功能域自治代码 |
+| `modules/bar/BarComponentLoader.qml` | **保留** | `bar` | app, modules/bar, modules/settings, shared/controls | 属性(4) | 无 | 功能域自治代码 |
+| `modules/bar/BarContent.qml` | **保留** | `bar` | modules/bar | 属性(11) | 无 | 功能域自治代码 |
 | `modules/bar/BarSection.qml` | **保留** | `bar` | modules/bar | 属性(3) | 无 | 功能域自治代码 |
 | `modules/bar/HorizontalBarContent.qml` | **保留** | `bar` | modules/bar | - | 无 | 功能域自治代码 |
 | `modules/bar/HorizontalBarWindow.qml` | **保留** | `bar` | modules/bar | 属性(5) | 无 | 功能域自治代码 |
@@ -141,7 +141,7 @@
 | `modules/bar/activewindow/SidebarButton.qml` | **保留** | `bar` | modules/bar | 属性(1) | 无 | 功能域自治代码 |
 | `modules/bar/activewindow/SidebarPillButton.qml` | **保留** | `bar` | modules/bar | 属性(3)/方法(1) | 无 | 功能域自治代码 |
 | `modules/bar/activewindow/SidebarWeatherButton.qml` | **保留** | `bar` | modules/bar | 属性(7)/方法(1) | 无 | 功能域自治代码 |
-| `modules/bar/clock/Clock.qml` | **保留** | `bar` | modules/bar, modules/settings, modules/systemcards | 属性(3) | 无 | 功能域自治代码 |
+| `modules/bar/clock/Clock.qml` | **保留** | `bar` | modules/bar, modules/settings, modules/systemcards, shared/controls | 属性(3) | 无 | 功能域自治代码 |
 | `modules/bar/clock/qmldir` | **保留** | `bar` | 内部/自包含 | - | 无 | 功能域自治代码 |
 | `modules/bar/media/MediaBar.qml` | **保留** | `bar` | modules/bar, modules/keystone | 属性(7)/方法(2) | 无 | 功能域自治代码 |
 | `modules/bar/quicksettings/Battery.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, modules/settings, modules/sidebars, modules/systemcards | 属性(7)/方法(3) | 无 | 功能域自治代码 |
@@ -155,12 +155,12 @@
 | `modules/bar/quicksettings/Volume.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, modules/sidebars | 属性(3) | 无 | 功能域自治代码 |
 | `modules/bar/sysmonitor/ResourcePie.qml` | **保留** | `bar` | modules/bar | 属性(17) | 无 | 功能域自治代码 |
 | `modules/bar/sysmonitor/SysMonitor.qml` | **保留** | `bar` | modules/bar, modules/keystone | 属性(25)/方法(4) | 无 | 功能域自治代码 |
-| `modules/bar/tray/Tray.qml` | **保留** | `bar` | app, modules/bar, modules/keystone | 属性(19)/方法(7) | 无 | 功能域自治代码 |
+| `modules/bar/tray/Tray.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, shared/controls | 属性(19)/方法(7) | 无 | 功能域自治代码 |
 | `modules/bar/tray/TrayItem.qml` | **保留** | `bar` | modules/bar | 属性(4)/信号(2)/方法(3) | 无 | 功能域自治代码 |
 | `modules/bar/tray/TrayMenu.qml` | **保留** | `bar` | modules/bar | 属性(12)/信号(2)/方法(3) | 无 | 功能域自治代码 |
 | `modules/bar/tray/TrayMenuEntry.qml` | **保留** | `bar` | modules/bar | 属性(10)/信号(2) | 无 | 功能域自治代码 |
 | `modules/bar/tray/TrayService.qml` | **移动** | `bar` | modules/bar | 属性(12)/方法(7) | Process, FileView | 已由 app/services/TrayService.qml 移动，遵循命名法典与内聚规范 |
-| `modules/bar/workspaces/Workspaces.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, modules/settings | 属性(8)/方法(1) | 无 | 功能域自治代码 |
+| `modules/bar/workspaces/Workspaces.qml` | **保留** | `bar` | app, modules/bar, modules/keystone, modules/settings, shared/controls | 属性(8)/方法(1) | 无 | 功能域自治代码 |
 | `modules/desktopcards/DesktopCard.qml` | **保留** | `desktopcards` | modules/desktopcards, modules/sidebars | 属性(13)/方法(3) | 无 | 功能域自治代码 |
 | `modules/desktopcards/DesktopCardCanvas.qml` | **保留** | `desktopcards` | modules/desktopcards, modules/wallpaper | 属性(48)/信号(3)/方法(34) | 无 | 功能域自治代码 |
 | `modules/desktopcards/DesktopCardGridOverlay.qml` | **保留** | `desktopcards` | modules/desktopcards | 属性(4) | 无 | 功能域自治代码 |
@@ -208,7 +208,7 @@
 | `modules/keystone/media/MediaBackdrop.qml` | **保留** | `keystone` | modules/keystone | 属性(5) | 无 | 功能域自治代码 |
 | `modules/keystone/media/MediaContent.qml` | **保留** | `keystone` | modules/keystone | 属性(20)/方法(3) | 无 | 功能域自治代码 |
 | `modules/keystone/media/MediaCover.qml` | **保留** | `keystone` | modules/keystone | 属性(4) | 无 | 功能域自治代码 |
-| `modules/keystone/media/MediaPalette.qml` | **移动** | `keystone` | modules/keystone, modules/settings | 属性(2)/方法(3) | Process, Timer | 已由 app/services/MediaPalette.qml 移动，遵循命名法典与内聚规范 |
+| `modules/keystone/media/MediaPalette.qml` | **移动** | `keystone` | modules/keystone, modules/settings | 属性(2)/方法(5) | Process, Timer | 已由 app/services/MediaPalette.qml 移动，遵循命名法典与内聚规范 |
 | `modules/keystone/styles/bangs/Bangs.qml` | **保留** | `keystone` | app, modules/keystone | - | 无 | 功能域自治代码 |
 | `modules/keystone/styles/long/Long.qml` | **保留** | `keystone` | app, modules/keystone, modules/settings, modules/sidebars | - | 无 | 功能域自治代码 |
 | `modules/keystone/styles/long/LongIslandFrame.qml` | **保留** | `keystone` | modules/keystone | 属性(49)/信号(2)/方法(5) | 无 | 功能域自治代码 |
@@ -379,12 +379,13 @@
 | `modules/settings/WizardHeader.qml` | **保留** | `settings` | modules/settings | 属性(4)/信号(2) | 无 | 功能域自治代码 |
 | `modules/settings/ZenPaletteEditor.qml` | **保留** | `settings` | modules/settings | 属性(24)/信号(1)/方法(5) | 无 | 功能域自治代码 |
 | `modules/settings/dashboard/Dashboard.qml` | **保留** | `settings` | app, modules/keystone, modules/settings | 属性(3)/信号(1)/方法(5) | Timer | 功能域自治代码 |
+| `modules/settings/dashboard/DashboardBarLayoutCard.qml` | **保留** | `settings` | modules/settings | 属性(22)/方法(15) | 无 | 功能域自治代码 |
 | `modules/settings/dashboard/DashboardComboCard.qml` | **保留** | `settings` | modules/settings | 属性(8) | 无 | 功能域自治代码 |
 | `modules/settings/dashboard/DashboardContent.qml` | **保留** | `settings` | modules/keystone, modules/settings | 属性(31)/信号(3)/方法(9) | Timer | 功能域自治代码 |
-| `modules/settings/dashboard/DashboardHomePage.qml` | **保留** | `settings` | modules/settings | 属性(29)/方法(2) | Timer | 功能域自治代码 |
+| `modules/settings/dashboard/DashboardHomePage.qml` | **保留** | `settings` | modules/settings | 属性(32)/方法(2) | Timer | 功能域自治代码 |
 | `modules/settings/dashboard/DashboardLyricsPane.qml` | **保留** | `settings` | modules/settings | 属性(11)/方法(6) | 无 | 功能域自治代码 |
-| `modules/settings/dashboard/DashboardMediaPage.qml` | **保留** | `settings` | modules/settings | 属性(11)/方法(2) | 无 | 功能域自治代码 |
-| `modules/settings/dashboard/DashboardMediaState.qml` | **保留** | `settings` | modules/settings | 属性(5)/方法(2) | 无 | 功能域自治代码 |
+| `modules/settings/dashboard/DashboardMediaPage.qml` | **保留** | `settings` | modules/settings | 属性(13)/方法(2) | 无 | 功能域自治代码 |
+| `modules/settings/dashboard/DashboardMediaState.qml` | **保留** | `settings` | modules/settings | 属性(9)/方法(2) | Process | 功能域自治代码 |
 | `modules/settings/dashboard/DashboardPaletteCard.qml` | **保留** | `settings` | modules/settings | 属性(16) | 无 | 功能域自治代码 |
 | `modules/settings/dashboard/DashboardSelectCard.qml` | **保留** | `settings` | modules/settings | 属性(9) | 无 | 功能域自治代码 |
 | `modules/settings/dashboard/DashboardSettingsCatalog.qml` | **保留** | `settings` | modules/settings | 属性(2)/方法(1) | 无 | 功能域自治代码 |
@@ -393,7 +394,7 @@
 | `modules/settings/dashboard/DashboardSpinCard.qml` | **保留** | `settings` | modules/settings | 属性(8)/方法(1) | 无 | 功能域自治代码 |
 | `modules/settings/dashboard/DashboardStyleCard.qml` | **保留** | `settings` | modules/settings | 属性(8) | 无 | 功能域自治代码 |
 | `modules/settings/dashboard/DashboardTextCard.qml` | **保留** | `settings` | modules/settings | 属性(8) | Timer | 功能域自治代码 |
-| `modules/settings/dashboard/DashboardThemesPage.qml` | **保留** | `settings` | modules/settings | 属性(11)/方法(1) | 无 | 功能域自治代码 |
+| `modules/settings/dashboard/DashboardThemesPage.qml` | **保留** | `settings` | modules/settings | 属性(12)/方法(3) | Timer, FileView | 功能域自治代码 |
 | `modules/settings/dashboard/DashboardToggleCard.qml` | **保留** | `settings` | modules/settings | 属性(7) | 无 | 功能域自治代码 |
 | `modules/settings/dashboard/DashboardWallpaperToolsCard.qml` | **保留** | `settings` | modules/settings | 属性(4)/信号(2) | 无 | 功能域自治代码 |
 | `modules/settings/dashboard/DashboardWallpapersPage.qml` | **保留** | `settings` | modules/settings | 属性(13)/方法(4) | Timer | 功能域自治代码 |
@@ -517,7 +518,7 @@
 | `modules/wallpaper/WallpaperTransitionSurface.qml` | **保留** | `wallpaper` | modules/wallpaper | 属性(119)/信号(1)/方法(11) | Timer | 功能域自治代码 |
 | `modules/wallpaper/ZenPaletteRenderer.qml` | **保留** | `wallpaper` | modules/settings, modules/wallpaper | 属性(6) | 无 | 功能域自治代码 |
 
-### shared/ （共 126 文件）
+### shared/ （共 127 文件）
 
 | 文件路径 | 处置状态 | 归属 (Owner) | 消费者 (Consumers) | I/O | 副作用 | 目标路径 / 说明 |
 |---|---|---|---|---|---|---|
@@ -534,6 +535,7 @@
 | `shared/controls/ButtonLabel.qml` | **保留** | `shared/controls` | modules/settings, shared/controls | 属性(10) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/CircularProgress.qml` | **保留** | `shared/controls` | modules/settings | 属性(14) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/CompositorBlurRegion.qml` | **保留** | `shared/controls` | modules/bar, modules/desktopcards, modules/dock, modules/filepicker, modules/keystone, modules/launcher, modules/notifications, modules/session, modules/settings, modules/sidebars, shared/controls | 属性(24)/方法(14) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
+| `shared/controls/DashboardBarWidgets.qml` | **保留** | `shared/controls` | modules/settings | 属性(2)/方法(2) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/DashboardCard.qml` | **保留** | `shared/controls` | modules/settings | 属性(12)/方法(1) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/EdgeRevealSurface.qml` | **保留** | `shared/controls` | modules/sidebars | 属性(5)/信号(1)/方法(3) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/ElementMoveAnimation.qml` | **保留** | `shared/controls` | modules/settings, modules/sidebars, shared/controls | - | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
@@ -602,6 +604,7 @@
 | `shared/controls/VolumeSlider.qml` | **保留** | `shared/controls` | modules/sidebars | 属性(9)/信号(2) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/WallpaperActions.qml` | **保留** | `shared/controls` | modules/settings, shared/controls | 属性(7)/信号(3) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/WaveProgressBar.qml` | **保留** | `shared/controls` | modules/keystone | 属性(24)/信号(1)/方法(2) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
+| `shared/controls/WaveVisualizer.qml` | **保留** | `shared/controls` | modules/settings | 属性(4) | Timer | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/WavyLine.qml` | **保留** | `shared/controls` | shared/controls | 属性(4) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/WeatherBackground.qml` | **保留** | `shared/controls` | modules/keystone, modules/sidebars | 属性(32)/方法(65) | Timer | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/WheelScrollController.qml` | **保留** | `shared/controls` | modules/launcher, modules/settings, shared/controls | 属性(13)/方法(5) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
@@ -623,18 +626,17 @@
 | `shared/controls/shapes/shapes/rounded-corner.js` | **保留** | `shared/controls` | 内部/自包含 | - | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/shapes/shapes/rounded-polygon.js` | **保留** | `shared/controls` | 内部/自包含 | - | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/controls/shapes/shapes/utils.js` | **保留** | `shared/controls` | app, modules/bar, modules/keystone, modules/launcher, modules/settings, modules/sidebars, modules/systemcards, modules/wallpaper, packaging, shared/controls | 方法(8) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
-| `shared/i18n/I18n.qml` | **保留** | `shared/i18n` | app, modules/bar, modules/desktopcards, modules/dock, modules/filepicker, modules/keystone, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/regionselector, modules/session, modules/settings, modules/sidebars, modules/systemcards, modules/wallpaper, shared/controls, shared/i18n, shared/upstream, shared/utils | 属性(5)/方法(6) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
+| `shared/i18n/I18n.qml` | **保留** | `shared/i18n` | app, modules/bar, modules/desktopcards, modules/dock, modules/filepicker, modules/keystone, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/regionselector, modules/session, modules/settings, modules/sidebars, modules/systemcards, modules/wallpaper, shared/controls, shared/i18n, shared/utils | 属性(5)/方法(6) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/i18n/Translations.js` | **保留** | `shared/i18n` | app, modules/launcher, modules/settings, shared/i18n, shared/utils | 方法(5) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/i18n/qmldir` | **保留** | `shared/i18n` | 内部/自包含 | - | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/theme/Animations.qml` | **保留** | `shared/theme` | modules/lock, modules/settings, modules/sidebars, shared/controls, shared/theme | 属性(81) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/theme/Appearance.qml` | **保留** | `shared/theme` | app, modules/bar, modules/desktopcards, modules/dock, modules/filepicker, modules/keystone, modules/launcher, modules/lock, modules/notifications, modules/quicksettings, modules/regionselector, modules/session, modules/settings, modules/sidebars, modules/systemcards, modules/wallpaper, shared/controls, shared/theme | 属性(46)/方法(5) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
-| `shared/theme/CoverScheme.qml` | **保留** | `shared/theme` | modules/settings | 属性(2)/方法(1) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
+| `shared/theme/CoverScheme.qml` | **保留** | `shared/theme` | modules/keystone, modules/settings | 属性(2)/方法(1) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/theme/Fonts.qml` | **保留** | `shared/theme` | app, modules/bar, modules/dock, modules/filepicker, modules/keystone, modules/launcher, modules/lock, modules/notifications, modules/regionselector, modules/session, modules/settings, modules/sidebars, modules/systemcards, shared/controls, shared/theme | 属性(9)/方法(1) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/theme/Metrics.qml` | **保留** | `shared/theme` | modules/bar, modules/hotcorners, modules/launcher, modules/lock, modules/quicksettings, modules/settings, modules/sidebars, shared/controls, shared/theme | 属性(51) | IPC/Wayland | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/theme/Resources.qml` | **保留** | `shared/theme` | app, shared/controls | 属性(2) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/theme/Sizes.qml` | **保留** | `shared/theme` | modules/bar, modules/dock, modules/lock, modules/notifications, shared/controls | 属性(20) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/theme/Typography.qml` | **保留** | `shared/theme` | modules/bar, modules/dock, modules/quicksettings, modules/settings, modules/sidebars, modules/systemcards, shared/controls, shared/theme | 属性(49) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
-| `shared/upstream/Translation.qml` | **保留** | `shared/upstream` | app, shared/i18n | 属性(1)/方法(1) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/utils/AwwwCommand.js` | **保留** | `shared/utils` | modules/wallpaper | 方法(19) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/utils/DateFormat.js` | **保留** | `shared/utils` | modules/keystone, modules/sidebars, modules/systemcards | 方法(6) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
 | `shared/utils/FileUtils.js` | **保留** | `shared/utils` | modules/launcher | 方法(1) | 无 | 复用原子控件/设计Token/纯数学，零副作用 |
