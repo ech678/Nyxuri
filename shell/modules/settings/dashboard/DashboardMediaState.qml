@@ -1,4 +1,7 @@
 import QtQuick
+import Quickshell
+import Quickshell.Io
+import qs.app
 import qs.app.services
 import qs.modules.keystone.media
 import qs.shared.theme
@@ -39,6 +42,41 @@ Item {
     // URL directly.
     readonly property bool hasArt: root.artUrl !== ""
     readonly property string displayedArtFilePath: root.artUrl
+
+    // ---- Waveform feed --------------------------------------------------
+    // cava lives here, not inside the media page: the page is instantiated
+    // through a Loader sourceComponent and everything non-visual there can end
+    // up in an invalid evaluation context (QQmlVMEMetaObject internal error),
+    // silently killing handlers. This object is a direct child of
+    // DashboardContent, so the process is reliable and only needs the page
+    // state injected from outside to stay lazy.
+    property var visualizerPoints: []
+    property bool cavaAvailable: false
+    property bool pageActive: false
+    readonly property bool waveLive: root.pageActive && root.player && root.player.isPlaying
+
+    // Imperative start: the handlers drive the process explicitly, binding
+    // propagation for `running` proved unreliable in this tree.
+    onWaveLiveChanged: cavaProc.running = waveLive
+    Component.onDestruction: cavaProc.running = false
+
+    Process {
+        id: cavaProc
+
+        command: ["cava", "-p", Paths.scriptPath("cava", "raw_output_config.txt")]
+        onExited: code => root.cavaAvailable = code === 0
+        onRunningChanged: {
+            root.cavaAvailable = running;
+            if (!running)
+                root.visualizerPoints = [];
+        }
+
+        stdout: SplitParser {
+            onRead: data => root.visualizerPoints = data.split(";").map(p => parseFloat(p.trim())).filter(p
+                                                                                                          => !isNaN(
+                                                                                                                 p))
+        }
+    }
 
     // Whether the cover palette should replace the theme.
     //

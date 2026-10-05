@@ -34,6 +34,12 @@ Item {
 
     readonly property var player: MediaService.active
     readonly property bool playing: root.player ? root.player.isPlaying : false
+
+    // Waveform feed. cava only runs while this page is visible and a track is
+    // playing — it is a lazy consumer, never a background tenant. With cava
+    // missing from PATH the page renders fine with an empty wave.
+    property bool pageActive: false
+    property var mediaState: null
     readonly property bool hasShuffle: (root.player ? root.player.shuffleSupported ?? false : false) && (
                                            root.player ? root.player.canControl ?? false : false)
     readonly property bool hasLoop: (root.player ? root.player.loopSupported ?? false : false) && (
@@ -148,6 +154,21 @@ Item {
                 duration: 260
             }
         }
+    }
+
+    WaveVisualizer {
+        anchors {
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
+            margins: -12
+        }
+        height: parent.height * 0.35
+        z: -1
+        visible: root.mediaState && root.mediaState.cavaAvailable && root.playing
+        live: root.playing
+        points: root.mediaState ? root.mediaState.visualizerPoints : []
+        color: root.scheme.colPrimary
     }
 
     RowLayout {
@@ -493,12 +514,22 @@ Item {
 
         // Lyrics fill the right column, which is what the 46/54 split exists
         // for: the left column is the record, this is what is being sung.
-        Item {
+        //
+        // Card-wrapped like every other media element: bare mounting made the
+        // pane pop in and out with no page-exit choreography.
+        DashboardCard {
             Layout.fillWidth: true
             Layout.fillHeight: true
+            tint: "transparent"
+            pager: root.pager
+            staggerMs: root.staggerMs
+            animIndex: 3
+            travelX: 320
+            travelY: -60
 
             DashboardLyricsPane {
                 anchors.fill: parent
+                anchors.margins: 8
                 colors: root.colors
             }
         }
