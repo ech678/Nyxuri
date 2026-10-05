@@ -609,6 +609,39 @@ class TestShellManagement(unittest.TestCase):
         self.assertTrue(os.path.isfile(hist_list))
         self.assertTrue(os.path.isfile(hist_center))
 
+    def test_keystone_audio_osd_startup_suppression_contracts(self):
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+        surface_path = os.path.join(shell_dir, "modules", "keystone", "styles", "shared", "KeystoneSurface.qml")
+        with open(surface_path, "r", encoding="utf-8") as f:
+            surface_content = f.read()
+
+        # 1. State properties exist for baseline tracking
+        self.assertIn("readonly property var sinkNode: Pipewire.defaultAudioSink", surface_content)
+        self.assertIn("readonly property var sourceNode: Pipewire.defaultAudioSource", surface_content)
+        self.assertIn("property bool sinkInitialized:", surface_content)
+        self.assertIn("property bool sourceInitialized:", surface_content)
+
+        # 2. Handlers guard against unready state and verify value delta before triggering OSD
+        self.assertIn("function syncSinkState()", surface_content)
+        self.assertIn("function handleSinkVolumeChanged()", surface_content)
+        self.assertIn("function handleSinkMutedChanged()", surface_content)
+        self.assertIn("function syncSourceState()", surface_content)
+        self.assertIn("function handleSourceVolumeChanged()", surface_content)
+        self.assertIn("function handleSourceMutedChanged()", surface_content)
+
+        self.assertIn("!sinkNode || !sinkNode.ready || !audioNode", surface_content)
+        self.assertIn("Math.abs(currentVol - lastSinkVolume) > 0.0001", surface_content)
+        self.assertIn("currentMuted !== lastSinkMuted", surface_content)
+
+        # 3. Component.onCompleted initializes baseline state
+        self.assertIn("root.syncSinkState();", surface_content)
+        self.assertIn("root.syncSourceState();", surface_content)
+
+        # 4. Raw unshielded calls are replaced
+        self.assertNotIn('function onVolumeChanged() {\n                        root.triggerSliderOSD("volume");', surface_content)
+        self.assertNotIn('function onVolumeChanged() {\n                        root.triggerSliderOSD("mic");', surface_content)
+
     def test_p3_lock_screen_and_safety_switch_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         shell_dir = os.path.join(repo_root, "shell")

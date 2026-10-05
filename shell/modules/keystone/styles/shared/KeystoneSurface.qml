@@ -789,6 +789,16 @@ Variants {
                 property var audioNode: Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.audio : null
                 property var sourceAudioNode: Pipewire.defaultAudioSource ? Pipewire.defaultAudioSource.audio :
                                                                             null
+                readonly property var sinkNode: Pipewire.defaultAudioSink
+                readonly property var sourceNode: Pipewire.defaultAudioSource
+                property real lastSinkVolume: -1
+                property bool lastSinkMuted: false
+                property string lastSinkId: ""
+                property bool sinkInitialized: false
+                property real lastSourceVolume: -1
+                property bool lastSourceMuted: false
+                property string lastSourceId: ""
+                property bool sourceInitialized: false
                 property string sliderMode: "volume"
                 readonly property bool keyboardOsd: sliderMode === "capslock" || sliderMode === "numlock"
                 property bool locksInitialized: false
@@ -818,6 +828,90 @@ Variants {
                     previousCapsLock = caps;
                     previousNumLock = num;
                     locksInitialized = true;
+                }
+
+                function syncSinkState() {
+                    if (!sinkNode || !sinkNode.ready || !audioNode)
+                        return;
+                    const currentSinkId = String(sinkNode.id || "");
+                    if (!sinkInitialized || lastSinkId !== currentSinkId) {
+                        lastSinkId = currentSinkId;
+                        lastSinkVolume = audioNode.volume;
+                        lastSinkMuted = audioNode.muted;
+                        sinkInitialized = true;
+                    }
+                }
+
+                function handleSinkVolumeChanged() {
+                    if (!sinkNode || !sinkNode.ready || !audioNode)
+                        return;
+                    const currentSinkId = String(sinkNode.id || "");
+                    if (!sinkInitialized || lastSinkId !== currentSinkId) {
+                        syncSinkState();
+                        return;
+                    }
+                    const currentVol = audioNode.volume;
+                    if (Math.abs(currentVol - lastSinkVolume) > 0.0001) {
+                        lastSinkVolume = currentVol;
+                        root.triggerSliderOSD("volume");
+                    }
+                }
+
+                function handleSinkMutedChanged() {
+                    if (!sinkNode || !sinkNode.ready || !audioNode)
+                        return;
+                    const currentSinkId = String(sinkNode.id || "");
+                    if (!sinkInitialized || lastSinkId !== currentSinkId) {
+                        syncSinkState();
+                        return;
+                    }
+                    const currentMuted = audioNode.muted;
+                    if (currentMuted !== lastSinkMuted) {
+                        lastSinkMuted = currentMuted;
+                        root.triggerSliderOSD("volume");
+                    }
+                }
+
+                function syncSourceState() {
+                    if (!sourceNode || !sourceNode.ready || !sourceAudioNode)
+                        return;
+                    const currentSourceId = String(sourceNode.id || "");
+                    if (!sourceInitialized || lastSourceId !== currentSourceId) {
+                        lastSourceId = currentSourceId;
+                        lastSourceVolume = sourceAudioNode.volume;
+                        lastSourceMuted = sourceAudioNode.muted;
+                        sourceInitialized = true;
+                    }
+                }
+
+                function handleSourceVolumeChanged() {
+                    if (!sourceNode || !sourceNode.ready || !sourceAudioNode)
+                        return;
+                    const currentSourceId = String(sourceNode.id || "");
+                    if (!sourceInitialized || lastSourceId !== currentSourceId) {
+                        syncSourceState();
+                        return;
+                    }
+                    const currentVol = sourceAudioNode.volume;
+                    if (Math.abs(currentVol - lastSourceVolume) > 0.0001) {
+                        lastSourceVolume = currentVol;
+                        root.triggerSliderOSD("mic");
+                    }
+                }
+
+                function handleSourceMutedChanged() {
+                    if (!sourceNode || !sourceNode.ready || !sourceAudioNode)
+                        return;
+                    const currentSourceId = String(sourceNode.id || "");
+                    if (!sourceInitialized || lastSourceId !== currentSourceId) {
+                        syncSourceState();
+                        return;
+                    }
+                    const currentMuted = sourceAudioNode.muted;
+                    if (currentMuted !== lastSourceMuted) {
+                        lastSourceMuted = currentMuted;
+                        root.triggerSliderOSD("mic");
+                    }
                 }
 
                 readonly property var currentPlayer: MediaService.active
@@ -1006,6 +1100,8 @@ Variants {
                 }
                 Component.onCompleted: {
                     root.updateKeyboardLocks();
+                    root.syncSinkState();
+                    root.syncSourceState();
                     SystemIdentityService.setUptimeConsumer(root.dashboardUptimeOwner,
                                                             root.dashboardTabActive);
                     root.componentReady = true;
@@ -1442,12 +1538,34 @@ Variants {
                 }
 
                 Connections {
+                    target: root.sinkNode
+                    ignoreUnknownSignals: true
+                    function onReadyChanged() {
+                        root.syncSinkState();
+                    }
+                    function onIdChanged() {
+                        root.syncSinkState();
+                    }
+                }
+
+                Connections {
+                    target: root.sourceNode
+                    ignoreUnknownSignals: true
+                    function onReadyChanged() {
+                        root.syncSourceState();
+                    }
+                    function onIdChanged() {
+                        root.syncSourceState();
+                    }
+                }
+
+                Connections {
                     function onVolumeChanged() {
-                        root.triggerSliderOSD("volume");
+                        root.handleSinkVolumeChanged();
                     }
 
                     function onMutedChanged() {
-                        root.triggerSliderOSD("volume");
+                        root.handleSinkMutedChanged();
                     }
 
                     target: root.audioNode
@@ -1456,11 +1574,11 @@ Variants {
 
                 Connections {
                     function onVolumeChanged() {
-                        root.triggerSliderOSD("mic");
+                        root.handleSourceVolumeChanged();
                     }
 
                     function onMutedChanged() {
-                        root.triggerSliderOSD("mic");
+                        root.handleSourceMutedChanged();
                     }
 
                     target: root.sourceAudioNode
