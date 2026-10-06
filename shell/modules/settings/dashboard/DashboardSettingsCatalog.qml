@@ -198,6 +198,12 @@ QtObject {
             "icon": "toggle_off",
             "cards": [
                 {
+                    "type": "toggle",
+                    "key": "keystone:Enabled",
+                    "title": I18n.tr("Show Keystone"),
+                    "icon": "toggle_off"
+                },
+                {
                     "type": "combo",
                     "key": "keystone:Style",
                     "title": I18n.tr("Style"),
@@ -533,6 +539,180 @@ QtObject {
                     "key": "desktop:Grid visible while dragging",
                     "title": I18n.tr("Grid visible while dragging"),
                     "icon": "grid_4x4"
+                }
+            ]
+        },
+        {
+            "title": I18n.tr("Dock"),
+            "icon": "dock",
+            "cards": [
+                {
+                    "type": "toggle",
+                    "key": "dock:Show dock",
+                    "title": I18n.tr("Show dock"),
+                    "icon": "dock_to_bottom"
+                },
+                {
+                    "type": "select",
+                    "key": "dock:Screen edge",
+                    "title": I18n.tr("Screen edge"),
+                    "icon": "align_horizontal_left"
+                },
+                {
+                    "type": "select",
+                    "key": "dock:Surface style",
+                    "title": I18n.tr("Surface style"),
+                    "icon": "style"
+                },
+                {
+                    "type": "slider",
+                    "key": "dock:Icon size",
+                    "title": I18n.tr("Icon size"),
+                    "icon": "photo_size_select_large"
+                },
+                {
+                    "type": "toggle",
+                    "key": "dock:Magnify on hover",
+                    "title": I18n.tr("Magnify on hover"),
+                    "icon": "zoom_in"
+                },
+                {
+                    "type": "slider",
+                    "key": "dock:Magnification",
+                    "title": I18n.tr("Magnification"),
+                    "icon": "zoom_out_map"
+                },
+                {
+                    "type": "toggle",
+                    "key": "dock:Automatically hide",
+                    "title": I18n.tr("Automatically hide"),
+                    "icon": "visibility_off"
+                },
+                {
+                    "type": "toggle",
+                    "key": "dock:Bounce when launching",
+                    "title": I18n.tr("Bounce when launching"),
+                    "icon": "animation"
+                },
+                {
+                    "type": "toggle",
+                    "key": "dock:Show running indicators",
+                    "title": I18n.tr("Show running indicators"),
+                    "icon": "radio_button_checked"
+                },
+                {
+                    "type": "toggle",
+                    "key": "dock:Show recent applications",
+                    "title": I18n.tr("Show recent applications"),
+                    "icon": "history"
+                },
+                {
+                    "type": "toggle",
+                    "key": "dock:Show window thumbnails",
+                    "title": I18n.tr("Show window thumbnails"),
+                    "icon": "preview"
+                },
+                {
+                    "type": "slider",
+                    "key": "dock:Preview size",
+                    "title": I18n.tr("Preview size"),
+                    "icon": "aspect_ratio"
+                },
+                {
+                    "type": "toggle",
+                    "key": "dock:Pin applications from the menu",
+                    "title": I18n.tr("Pin applications from the menu"),
+                    "icon": "push_pin"
+                }
+            ]
+        },
+        {
+            "title": I18n.tr("Spotlight"),
+            "icon": "search",
+            "cards": [
+                {
+                    "type": "select",
+                    "key": "spotlight:Application order",
+                    "title": I18n.tr("Application order"),
+                    "icon": "sort"
+                },
+                {
+                    "type": "select",
+                    "key": "spotlight:Application layout",
+                    "title": I18n.tr("Application layout"),
+                    "icon": "view_list"
+                },
+                {
+                    "type": "select",
+                    "key": "spotlight:Search engine",
+                    "title": I18n.tr("Search engine"),
+                    "icon": "language"
+                },
+                {
+                    "type": "select",
+                    "key": "spotlight:Clipboard layout",
+                    "title": I18n.tr("Clipboard layout"),
+                    "icon": "content_paste"
+                }
+            ]
+        },
+        {
+            "title": I18n.tr("Language & region"),
+            "icon": "translate",
+            "cards": [
+                {
+                    "type": "toggle",
+                    "key": "language:Clock format",
+                    "title": I18n.tr("12-hour clock"),
+                    "icon": "schedule"
+                },
+                {
+                    "type": "select",
+                    "key": "language:Weather temperature",
+                    "title": I18n.tr("Weather temperature"),
+                    "icon": "thermostat"
+                },
+                {
+                    "type": "select",
+                    "key": "language:Hardware temperature",
+                    "title": I18n.tr("Hardware temperature"),
+                    "icon": "device_thermostat"
+                }
+            ]
+        },
+        {
+            "title": I18n.tr("Sidebar clock"),
+            "icon": "schedule",
+            "cards": [
+                {
+                    "type": "spin",
+                    "key": "sidebar:Sides",
+                    "title": I18n.tr("Sides"),
+                    "icon": "category"
+                },
+                {
+                    "type": "toggle",
+                    "key": "sidebar:Constantly rotate",
+                    "title": I18n.tr("Constantly rotate"),
+                    "icon": "rotate_right"
+                },
+                {
+                    "type": "toggle",
+                    "key": "sidebar:Hour marks",
+                    "title": I18n.tr("Hour marks"),
+                    "icon": "more_time"
+                },
+                {
+                    "type": "toggle",
+                    "key": "sidebar:Digits in the middle",
+                    "title": I18n.tr("Digits in the middle"),
+                    "icon": "looks_one"
+                },
+                {
+                    "type": "spin",
+                    "key": "sidebar:Snapshot interval (ms)",
+                    "title": I18n.tr("Snapshot interval (ms)"),
+                    "icon": "timer"
                 }
             ]
         }
