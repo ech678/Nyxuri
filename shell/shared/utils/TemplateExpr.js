@@ -18,7 +18,6 @@
 
 var BLOCK_MARKER = "<*";
 var FILTER_MARKER = "|";
-var PALETTES_MARKER = "palettes.";
 
 var MODES = ["default", "dark", "light"];
 var FORMATS = ["hex", "hex_stripped", "rgb", "rgb_csv", "rgba", "hsl", "hsla",
@@ -41,9 +40,10 @@ function render(templateName, text, colors, activeMode) {
         fail(templateName,
              "block directives (<* *>) are not supported by the expression subset");
     }
-    if (text.indexOf(PALETTES_MARKER) !== -1) {
-        fail(templateName, "tonal palette access (palettes.*) is not supported");
-    }
+    // palettes.* needs no file-level scan: the expression grammar below only
+    // accepts colors.<name>.<mode>.<format>, so a palettes access inside an
+    // expression fails there. Literal text like a TOML [palettes.x] section
+    // header is legitimate template content.
     let out = "";
     let index = 0;
     while (true) {

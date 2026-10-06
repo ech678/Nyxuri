@@ -204,8 +204,8 @@ TestCase {
         const colors = tokenModel();
         const cases = [["<* for x in y *>{{colors.primary.default.hex}}<* endfor *>", "block directives"],
                        ["{{colors.primary.default.hex | lighten 10}}", "filters"],
-                       ["{{palettes.primary.40.hex}}", "tonal palette"], ["{{colors.nonsense.default.hex}}",
-                                                                          "unknown color token"],
+                       ["{{palettes.primary.40.hex}}", "expected colors."], ["{{colors.nonsense.default.hex}}",
+                                                                             "unknown color token"],
                        ["{{colors.primary.default.hsl_plus}}", "unknown format"],
                        ["{{colors.primary.default.hex", "unclosed"], ["{{mode}}", "expected colors."]];
         for (let i = 0; i < cases.length; i++) {

@@ -237,6 +237,12 @@ Singleton {
     property string renderingId: ""
     property string renderingOutput: ""
     property string renderingHook: ""
+    // The output FileView rebinds per template; its path-change load (or the
+    // FileNotFound miss on first render) must settle before setText, or the
+    // async load can race the write. Both asset views report readiness and
+    // writeOutput fires once input text AND output path are settled.
+    property bool outputReady: false
+    property string pendingRendered: ""
 
     function renderNext() {
         if (root.renderingId !== "" || root.renderQueue.length === 0) {
@@ -248,9 +254,25 @@ Singleton {
             root.renderNext();
             return;
         }
+        if (!template.outputPath) {
+            // A render with no destination would stall the queue silently;
+            // surface it like any other per-template failure instead.
+            root.renderingId = id;
+            root.renderFailed("Template has no output path");
+            return;
+        }
         root.renderingId = id;
         root.renderingOutput = template.outputPath;
         root.renderingHook = template.postHook || "";
+        root.pendingRendered = "";
+        // Rebinding to the same path (repeat render of one template) starts no
+        // new load, so the settle wait only applies to a real rebind.
+        if (templateOutput.path === template.outputPath) {
+            root.outputReady = true;
+        } else {
+            root.outputReady = false;
+            templateOutput.path = template.outputPath;
+        }
         templateInput.path = template.inputPath;
         Qt.callLater(templateInput.reload);
     }
@@ -266,15 +288,15 @@ Singleton {
     }
 
     function renderLoaded(text) {
-        const id = root.renderingId;
         let rendered;
         try {
-            rendered = TemplateExpr.render(id, text, root.tokenColors, root.activeMode);
+            rendered = TemplateExpr.render(root.renderingId, text, root.tokenColors, root.activeMode);
         } catch (e) {
             root.renderFailed(String(e));
             return;
         }
-        templateOutput.setText(rendered);
+        root.pendingRendered = rendered;
+        root.writeOutput();
     }
 
     FileView {
@@ -284,8 +306,29 @@ Singleton {
         watchChanges: false
         atomicWrites: true
         printErrors: false
+        onLoaded: root.outputSettled()
+        onLoadFailed: root.outputSettled()
         onSaved: root.renderSaved()
         onSaveFailed: error => root.renderFailed("Unable to write output: " + FileViewError.toString(error))
+    }
+
+    function outputSettled() {
+        if (root.renderingId === "" || root.outputReady) {
+            return;
+        }
+        root.outputReady = true;
+        root.writeOutput();
+    }
+
+    function writeOutput() {
+        if (!root.outputReady || root.pendingRendered === "" || root.renderingId === "") {
+            return;
+        }
+        if (!root.renderingOutput) {
+            root.renderFailed("Template has no output path");
+            return;
+        }
+        templateOutput.setText(root.pendingRendered);
     }
 
     function renderSaved() {
@@ -300,14 +343,16 @@ Singleton {
         }
         // Hooks come from the registry (builtin or user-managed); they run as
         // one argument to bash -c with the template directory injected, never
-        // concatenated with other shell words.
+        // concatenated with other shell words. XDG_* values are the raw user
+        // homes — Paths.cacheHome already carries the nyxuri suffix and the
+        // vendored hooks append their own.
         const inputDir = templateInput.path.substring(0, templateInput.path.lastIndexOf("/"));
         hookProcess.command = ["bash", "-c", hook];
         hookProcess.environment = {
             "TEMPLATE_DIR": inputDir,
             "HOME": Paths.homeDir,
             "XDG_CONFIG_HOME": Paths.xdgConfigHome,
-            "XDG_CACHE_HOME": Paths.cacheHome
+            "XDG_CACHE_HOME": Quickshell.env("XDG_CACHE_HOME") || Paths.homeDir + "/.cache"
         };
         hookProcess.running = true;
     }
@@ -386,6 +431,10 @@ Singleton {
                 root.error = result.errors.join("\n");
                 root.ready = true;
                 PersonalizationConfig.discoverMatugenTemplates(root.templates);
+                // The palette-modes FileView usually loads before this listing
+                // process exits; its renderAll was gated on ready and skipped.
+                // Drive one pass now so a boot-time regeneration still renders.
+                root.renderAll();
             } catch (e) {
                 root.error = String(e);
             }

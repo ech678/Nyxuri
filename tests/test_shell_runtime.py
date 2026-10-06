@@ -178,6 +178,19 @@ class ShellPresentationTests(unittest.TestCase):
             time.sleep(0.05)
         self.palette = self.ctx.home / "data/nyxuri/profiles/default/generated/clavis/colors.json"
         self.palette.parent.mkdir(parents=True)
+        if self._testMethodName == "test_template_render_queue_writes_outputs_and_hooks":
+            # Builtin template hooks run pkill; shim it so a passing test can
+            # never signal the developer's session.
+            shim_dir = self.ctx.home / "bin"
+            shim_dir.mkdir(parents=True, exist_ok=True)
+            (shim_dir / "pkill").write_text(
+                '#!/bin/sh\nprintf "%%s\\n" "$*" >> "%s/hook-pkill"\n' % self.ctx.home)
+            (shim_dir / "pkill").chmod(0o755)
+            self.environment["PATH"] = str(shim_dir) + os.pathsep + self.environment["PATH"]
+            self.palette_modes = self.ctx.home / ("data/nyxuri/profiles/default/generated/nyxuri/"
+                                                  "palette-modes.json")
+            self.palette_modes.parent.mkdir(parents=True, exist_ok=True)
+            self.palette_modes.write_text(self._palette_modes_fixture())
         if self._testMethodName != "test_missing_palette_uses_defaults_then_watches_creation":
             self.palette.write_text('{"primary":"#123456"}')
         (self.shell / "shell.qml").write_text(self._harness_qml())
@@ -318,6 +331,19 @@ ShellRoot {
         function iconsReady(): string {
             return !steadyIcon.refreshing && steadyIcon.source === steadyIcon.iconSource ? "OK" : "pending";
         }
+        function templateState(): string {
+            return JSON.stringify({
+                "ready": TemplateService.ready,
+                "queue": TemplateService.renderQueue.length,
+                "rendering": TemplateService.renderingId,
+                "errors": TemplateService.renderErrors,
+                "activeMode": TemplateService.activeMode
+            });
+        }
+        function rerender(): string {
+            TemplateService.renderAll();
+            return "OK";
+        }
         function check(): string {
             const original = Appearance.m3colors.m3primary.toString();
             try {
@@ -441,6 +467,115 @@ ShellRoot {
         self.output.seek(0)
         log = self.output.read()
         for diagnostic in ("ReferenceError", "TypeError", "Binding loop", "Unable to assign", "Failed to load configuration"):
+            self.assertNotIn(diagnostic, log)
+
+    def _palette_modes_fixture(self):
+        """A full 50-token dual-mode palette, as generate-matugen-colors.sh writes."""
+        tokens = [
+            "background", "error", "error_container", "inverse_on_surface", "inverse_primary",
+            "inverse_surface", "on_background", "on_error", "on_error_container", "on_primary",
+            "on_primary_container", "on_primary_fixed", "on_primary_fixed_variant", "on_secondary",
+            "on_secondary_container", "on_secondary_fixed", "on_secondary_fixed_variant",
+            "on_surface", "on_surface_variant", "on_tertiary", "on_tertiary_container",
+            "on_tertiary_fixed", "on_tertiary_fixed_variant", "outline", "outline_variant",
+            "primary", "primary_container", "primary_fixed", "primary_fixed_dim", "scrim",
+            "secondary", "secondary_container", "secondary_fixed", "secondary_fixed_dim",
+            "shadow", "source_color", "surface", "surface_bright", "surface_container",
+            "surface_container_high", "surface_container_highest", "surface_container_low",
+            "surface_container_lowest", "surface_dim", "surface_tint", "surface_variant",
+            "tertiary", "tertiary_container", "tertiary_fixed", "tertiary_fixed_dim"
+        ]
+        dark = {name: "#%06x" % (0x010000 + index * 0x0301) for index, name in enumerate(tokens)}
+        light = {name: "#%06x" % (0x800000 + index * 0x0301) for index, name in enumerate(tokens)}
+        return json.dumps({
+            "schemaVersion": 1, "mode": "dark", "scheme": "scheme-tonal-spot",
+            "source_color": dark["primary"], "dark": dark, "light": light
+        })
+
+    def _template_outputs(self, generation):
+        """Rendered-output assertions for one fixture generation.
+
+        kitty renders color4 from terminal_normal_blue (derived from tertiary
+        in dark mode), btop renders main_fg from on_surface; the hook runs
+        after the writes (kitty include line). The "switched" generation swaps
+        the mode palettes, so dark-mode values come from the light set.
+        """
+        base = 0x010000 if generation == "first" else 0x800000
+        blue = "#%06x" % (base + 46 * 0x0301)      # tertiary -> terminal_normal_blue
+        on_surface = "#%06x" % (base + 17 * 0x0301)
+        kitty = self.ctx.home / ".config/kitty/themes/nyxuri.conf"
+        btop = self.ctx.home / ".config/btop/themes/nyxuri.theme"
+        kitty_conf = self.ctx.home / ".config/kitty/kitty.conf"
+        return {
+            "kitty_color4": (kitty, "color4 " + blue),
+            "btop_main_fg": (btop, 'theme[main_fg]="' + on_surface + '"'),
+            "kitty_include": (kitty_conf, "include themes/nyxuri.conf"),
+        }
+
+    def test_template_render_queue_writes_outputs_and_hooks(self):
+        """P4 behavior: palette-modes hot reload renders app templates and runs
+        their hooks — the wallpaper-switch path this phase replaced matugen
+        with, verified against the real QML owners."""
+        expected = self._template_outputs("first")
+
+        def outputs_ready():
+            for path, marker in expected.values():
+                if not path.is_file() or marker not in path.read_text(encoding="utf-8"):
+                    return False
+            return True
+
+        deadline = time.monotonic() + 30
+        while time.monotonic() < deadline and self.process.poll() is None:
+            if outputs_ready():
+                break
+            time.sleep(0.1)
+        else:
+            self.output.flush()
+            self.output.seek(0)
+            state = self.call("templateState").stdout.strip()
+            files = {name: (path.is_file(), marker in path.read_text(encoding="utf-8")
+                            if path.is_file() else False)
+                     for name, (path, marker) in expected.items()}
+            self.fail("template outputs never rendered:\nstate=%s\nfiles=%s\n%s"
+                      % (state, files, self.output.read()))
+        state = json.loads(self.call("templateState").stdout)
+        self.assertEqual(state["errors"], {}, state)
+        mirror = self.ctx.home / ".config/noctalia/palettes/nyxuri.json"
+        self.assertTrue(mirror.is_file(), "Noctalia palette mirror was not written")
+        mirror_body = json.loads(mirror.read_text(encoding="utf-8"))
+        self.assertIn("dark", mirror_body)
+        self.assertEqual(len(mirror_body["dark"]["terminal"]), 22)
+
+        # Wallpaper-switch equivalent: rewrite the dual-mode palette and watch
+        # every output follow, then re-render idempotently.
+        replacement = self.ctx.home / "data/nyxuri/profiles/default/generated/nyxuri/palette-modes.new"
+        light_generation = json.loads(self._palette_modes_fixture())
+        light_generation["mode"] = "light"
+        # Swap mode palettes so the rendered dark-mode values change.
+        light_generation["dark"], light_generation["light"] = (
+            light_generation["light"], light_generation["dark"])
+        replacement.write_text(json.dumps(light_generation))
+        replacement.replace(self.palette_modes)
+        switched = self._template_outputs("switched")
+
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline and self.process.poll() is None:
+            if all(path.is_file() and marker in path.read_text(encoding="utf-8")
+                   for path, marker in switched.values()):
+                break
+            time.sleep(0.1)
+        else:
+            self.output.flush()
+            self.output.seek(0)
+            self.fail("palette rewrite did not re-render template outputs:\n" + self.output.read())
+        self.assertEqual(json.loads(self.call("templateState").stdout)["errors"], {})
+        self.assertEqual(self.call("rerender").stdout.strip(), "OK")
+        for path, marker in switched.values():
+            self.assertIn(marker, path.read_text(encoding="utf-8"))
+        self.output.flush()
+        self.output.seek(0)
+        log = self.output.read()
+        for diagnostic in ("ReferenceError", "TypeError", "Binding loop", "Unable to assign"):
             self.assertNotIn(diagnostic, log)
 
     def test_missing_palette_uses_defaults_then_watches_creation(self):
