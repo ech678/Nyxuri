@@ -63,7 +63,7 @@ Item {
             toolsRoot.requestHideKeystone();
         switch (tool.action) {
         case "color-picker":
-            ActionGateway.execute(["hyprpicker", "-a"], "keystone");
+            ColorPickerService.launch();
             break;
         case "record-video":
             RecordingService.start("video", {

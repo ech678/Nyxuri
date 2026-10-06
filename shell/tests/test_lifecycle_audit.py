@@ -81,6 +81,20 @@ class TestLifecycleAudit(unittest.TestCase):
         self.assertEqual(v.line_number, 9)
         self.assertIn("Deactivation only via visible", v.message)
 
+    def test_life008_ui_layer_io(self):
+        target = self.fixtures_dir / "invalid" / "life008_ui_io.qml"
+        violations = audit.check_file_violations(target, self.shell_root, force=True, ui_layer_override=True)
+        codes = [v.code for v in violations]
+        self.assertIn("LIFE008", codes)
+        v = next(v for v in violations if v.code == "LIFE008")
+        self.assertIn("UI-layer direct I/O", v.message)
+
+    def test_life008_service_suffix_allowed(self):
+        target = self.fixtures_dir / "valid" / "CleanService.qml"
+        violations = audit.check_file_violations(target, self.shell_root, force=True, ui_layer_override=True)
+        codes = [v.code for v in violations]
+        self.assertNotIn("LIFE008", codes)
+
     def test_arch001_cross_domain(self):
         target = self.fixtures_dir / "invalid" / "arch001_cross_domain.qml"
         violations = audit.check_file_violations(

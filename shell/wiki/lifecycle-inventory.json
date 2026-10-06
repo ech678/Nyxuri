@@ -1,14 +1,14 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-10-03T14:40:00Z",
-  "totalResources": 228,
+  "totalResources": 231,
   "static_inventory": {
-    "total": 228,
+    "total": 231,
     "violations": 0,
     "resources": [
       {
         "file": "app/ActionGateway.qml",
-        "line": 39,
+        "line": 38,
         "resource_type": "Timer",
         "name": "pendingSecurePowerTimer",
         "module": "app/ActionGateway",
@@ -22,7 +22,7 @@
       },
       {
         "file": "app/ActionGateway.qml",
-        "line": 107,
+        "line": 111,
         "resource_type": "ExternalCommand",
         "name": "execDetached",
         "module": "app/ActionGateway",
@@ -36,7 +36,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 167,
+        "line": 156,
         "resource_type": "IPC",
         "name": "IpcHandler(power-menu)",
         "module": "app/AppShell",
@@ -50,7 +50,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 183,
+        "line": 172,
         "resource_type": "IPC",
         "name": "IpcHandler(shortcut-map)",
         "module": "app/AppShell",
@@ -64,7 +64,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 199,
+        "line": 188,
         "resource_type": "IPC",
         "name": "IpcHandler(lock)",
         "module": "app/AppShell",
@@ -78,7 +78,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 215,
+        "line": 204,
         "resource_type": "IPC",
         "name": "IpcHandler(spotlight)",
         "module": "app/AppShell",
@@ -92,7 +92,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 264,
+        "line": 253,
         "resource_type": "IPC",
         "name": "IpcHandler(wallpaper)",
         "module": "app/AppShell",
@@ -106,7 +106,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 300,
+        "line": 289,
         "resource_type": "IPC",
         "name": "IpcHandler(control-center)",
         "module": "app/AppShell",
@@ -120,7 +120,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 316,
+        "line": 305,
         "resource_type": "IPC",
         "name": "IpcHandler(settings)",
         "module": "app/AppShell",
@@ -134,7 +134,21 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 332,
+        "line": 321,
+        "resource_type": "IPC",
+        "name": "IpcHandler(theme)",
+        "module": "app/AppShell",
+        "creation_condition": "ipc:theme",
+        "resource_owner": "app/AppShell",
+        "stop_entry": "QObject destruction",
+        "has_destruction": false,
+        "visible_only_deactivation": false,
+        "has_fallback": true,
+        "risk_level": "low"
+      },
+      {
+        "file": "app/AppShell.qml",
+        "line": 341,
         "resource_type": "IPC",
         "name": "IpcHandler(shell)",
         "module": "app/AppShell",
@@ -708,9 +722,23 @@
       },
       {
         "file": "app/services/MatugenTemplateService.qml",
-        "line": 92,
+        "line": 40,
         "resource_type": "FileView",
-        "name": "fileview_L92",
+        "name": "previewsFile",
+        "module": "app/services",
+        "creation_condition": "Paths.generatedHome + (root.previewsLegacyFallback ? \"/clavis/scheme-previews.json\" :",
+        "resource_owner": "app/services",
+        "stop_entry": "QObject destruction",
+        "has_destruction": true,
+        "visible_only_deactivation": false,
+        "has_fallback": true,
+        "risk_level": "low"
+      },
+      {
+        "file": "app/services/MatugenTemplateService.qml",
+        "line": 125,
+        "resource_type": "FileView",
+        "name": "fileview_L125",
         "module": "app/services",
         "creation_condition": "Paths.userMatugenDir + \"/config.toml\"",
         "resource_owner": "app/services",
@@ -722,7 +750,7 @@
       },
       {
         "file": "app/services/MatugenTemplateService.qml",
-        "line": 98,
+        "line": 131,
         "resource_type": "Timer",
         "name": "refreshDebounce",
         "module": "app/services",
@@ -736,7 +764,7 @@
       },
       {
         "file": "app/services/MatugenTemplateService.qml",
-        "line": 103,
+        "line": 136,
         "resource_type": "Process",
         "name": "listing",
         "module": "app/services",
@@ -750,7 +778,7 @@
       },
       {
         "file": "app/services/MatugenTemplateService.qml",
-        "line": 137,
+        "line": 170,
         "resource_type": "Process",
         "name": "mutation",
         "module": "app/services",
@@ -1296,7 +1324,7 @@
       },
       {
         "file": "app/services/ThemeService.qml",
-        "line": 60,
+        "line": 67,
         "resource_type": "FileView",
         "name": "colorFile",
         "module": "app/services",
@@ -1310,7 +1338,7 @@
       },
       {
         "file": "app/services/ThemeService.qml",
-        "line": 451,
+        "line": 480,
         "resource_type": "Process",
         "name": "detectIconThemesProcess",
         "module": "app/services",
@@ -1324,7 +1352,7 @@
       },
       {
         "file": "app/services/ThemeService.qml",
-        "line": 461,
+        "line": 490,
         "resource_type": "Process",
         "name": "detectCursorThemesProcess",
         "module": "app/services",
@@ -1338,7 +1366,7 @@
       },
       {
         "file": "app/services/ThemeService.qml",
-        "line": 476,
+        "line": 505,
         "resource_type": "Process",
         "name": "generateColorsProcess",
         "module": "app/services",
@@ -1366,7 +1394,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 500,
+        "line": 506,
         "resource_type": "Process",
         "name": "ensureStoreDir",
         "module": "app/services",
@@ -1380,7 +1408,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 513,
+        "line": 519,
         "resource_type": "FileView",
         "name": "prefsFile",
         "module": "app/services",
@@ -1394,7 +1422,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 613,
+        "line": 619,
         "resource_type": "Timer",
         "name": "preferencesReloadDebounce",
         "module": "app/services",
@@ -1408,7 +1436,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 621,
+        "line": 627,
         "resource_type": "Process",
         "name": "themePoller",
         "module": "app/services",
@@ -1422,7 +1450,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 635,
+        "line": 643,
         "resource_type": "Process",
         "name": "systemThemeWriter",
         "module": "app/services",
@@ -1436,7 +1464,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 656,
+        "line": 664,
         "resource_type": "Timer",
         "name": "themePollTimer",
         "module": "app/services",
@@ -1450,7 +1478,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 667,
+        "line": 675,
         "resource_type": "Timer",
         "name": "themeDebounce",
         "module": "app/services",
@@ -1548,13 +1576,13 @@
       },
       {
         "file": "modules/dock/DockPreviewPopup.qml",
-        "line": 40,
-        "resource_type": "Process",
-        "name": "proc_L40",
+        "line": 36,
+        "resource_type": "ExternalCommand",
+        "name": "ActionGateway.execute(dock:force-quit)",
         "module": "modules/dock",
-        "creation_condition": "dynamic",
-        "resource_owner": "modules/dock",
-        "stop_entry": "proc_L40.running = false",
+        "creation_condition": "[\"kill\", \"-KILL\"].concat(targets.map(String))",
+        "resource_owner": "dock:force-quit",
+        "stop_entry": "ActionGateway.execute",
         "has_destruction": true,
         "visible_only_deactivation": false,
         "has_fallback": true,
@@ -1897,6 +1925,48 @@
         "risk_level": "medium"
       },
       {
+        "file": "modules/keystone/tools/ColorPickerService.qml",
+        "line": 21,
+        "resource_type": "ExternalCommand",
+        "name": "ActionGateway.execute(keystone:color-picker-degraded)",
+        "module": "modules/keystone",
+        "creation_condition": "[\"notify-send\", \"-a\", \"Nyxuri Shell\", \"-u\", \"critical\", I18n",
+        "resource_owner": "keystone:color-picker-degraded",
+        "stop_entry": "ActionGateway.execute",
+        "has_destruction": true,
+        "visible_only_deactivation": false,
+        "has_fallback": true,
+        "risk_level": "medium"
+      },
+      {
+        "file": "modules/keystone/tools/ColorPickerService.qml",
+        "line": 26,
+        "resource_type": "ExternalCommand",
+        "name": "ActionGateway.execute(keystone:color-picker)",
+        "module": "modules/keystone",
+        "creation_condition": "[\"hyprpicker\", \"-a\"]",
+        "resource_owner": "keystone:color-picker",
+        "stop_entry": "ActionGateway.execute",
+        "has_destruction": true,
+        "visible_only_deactivation": false,
+        "has_fallback": true,
+        "risk_level": "medium"
+      },
+      {
+        "file": "modules/keystone/tools/ColorPickerService.qml",
+        "line": 29,
+        "resource_type": "Process",
+        "name": "probe",
+        "module": "modules/keystone",
+        "creation_condition": "[\"bash\", Paths.scriptPath(\"theme\", \"probe-tool.sh\"), \"hyprpicker\"]",
+        "resource_owner": "modules/keystone",
+        "stop_entry": "probe.running = false",
+        "has_destruction": true,
+        "visible_only_deactivation": false,
+        "has_fallback": true,
+        "risk_level": "medium"
+      },
+      {
         "file": "modules/keystone/tools/RecordingService.qml",
         "line": 223,
         "resource_type": "Process",
@@ -1976,20 +2046,6 @@
         "resource_owner": "modules/keystone",
         "stop_entry": "running = false",
         "has_destruction": true,
-        "visible_only_deactivation": false,
-        "has_fallback": true,
-        "risk_level": "medium"
-      },
-      {
-        "file": "modules/keystone/tools/ToolsContent.qml",
-        "line": 66,
-        "resource_type": "ExternalCommand",
-        "name": "ActionGateway.execute(keystone)",
-        "module": "modules/keystone",
-        "creation_condition": "[\"hyprpicker\", \"-a\"]",
-        "resource_owner": "keystone",
-        "stop_entry": "ActionGateway.execute",
-        "has_destruction": false,
         "visible_only_deactivation": false,
         "has_fallback": true,
         "risk_level": "medium"
@@ -2654,21 +2710,7 @@
       },
       {
         "file": "modules/settings/dashboard/DashboardThemesPage.qml",
-        "line": 67,
-        "resource_type": "FileView",
-        "name": "fileview_L67",
-        "module": "modules/settings",
-        "creation_condition": "Paths.generatedHome + \"/clavis/scheme-previews.json\"",
-        "resource_owner": "modules/settings",
-        "stop_entry": "QObject destruction",
-        "has_destruction": false,
-        "visible_only_deactivation": false,
-        "has_fallback": true,
-        "risk_level": "low"
-      },
-      {
-        "file": "modules/settings/dashboard/DashboardThemesPage.qml",
-        "line": 621,
+        "line": 605,
         "resource_type": "Timer",
         "name": "hoverTimer",
         "module": "modules/settings",
@@ -3046,7 +3088,7 @@
       },
       {
         "file": "modules/wallpaper/WallpaperService.qml",
-        "line": 624,
+        "line": 643,
         "resource_type": "Timer",
         "name": "cycleTimer",
         "module": "modules/wallpaper",
@@ -3060,7 +3102,7 @@
       },
       {
         "file": "modules/wallpaper/WallpaperService.qml",
-        "line": 633,
+        "line": 652,
         "resource_type": "Timer",
         "name": "dailyTimer",
         "module": "modules/wallpaper",
@@ -3074,7 +3116,7 @@
       },
       {
         "file": "modules/wallpaper/WallpaperService.qml",
-        "line": 651,
+        "line": 670,
         "resource_type": "Process",
         "name": "scanProcess",
         "module": "modules/wallpaper",

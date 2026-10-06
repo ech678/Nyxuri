@@ -1,10 +1,18 @@
-"""Desktop theme synchronization without a shell-script dependency."""
+"""Desktop theme synchronization without a shell-script dependency.
+
+Propagation order: Noctalia IPC (when its daemon answers), then the Nyxuri
+Shell ``theme`` IPC (when a running instance is resolvable), then system-level
+sync only. Every child call captures stderr so a dead daemon can never leak a
+raw ``error:`` line into interactive output; the final summary line states the
+channel that received the change.
+"""
 
 import configparser
 import fcntl
 import os
 import shutil
 import sys
+import time
 from pathlib import Path
 
 from nyxuri.constants import get_compat_env
@@ -40,6 +48,100 @@ def _write_ini(path: Path, key: str, value: str) -> None:
     os.replace(tmp, path)
 
 
+def _noctalia_available() -> bool:
+    """True only when the Noctalia daemon answers, not merely installed."""
+    if not shutil.which("noctalia"):
+        return False
+    res = timed_run(["noctalia", "msg", "status"], 3, capture_output=True, text=True, check=False)
+    return res is not None and res.returncode == 0
+
+
+def _nyxuri_shell_dir() -> Path | None:
+    """Resolve the running Nyxuri Shell tree from its recorded binary."""
+    try:
+        from nyxuri.shell_switcher import resolve_custom_bin
+    except Exception:
+        return None
+    try:
+        resolved = resolve_custom_bin()
+    except Exception:
+        return None
+    if not resolved:
+        return None
+    binary = Path(resolved).resolve()
+    for candidate in (binary.parent, binary.parent.parent):
+        if (candidate / "shell.qml").is_file():
+            return candidate
+    return None
+
+
+def _nyxuri_shell_ipc(args: "list[str]", timeout: float = 3.0) -> "str | None":
+    """Call the Nyxuri Shell IPC; None when qs, the binary, or IPC is absent."""
+    if not shutil.which("qs"):
+        return None
+    shell_dir = _nyxuri_shell_dir()
+    if shell_dir is None:
+        return None
+    res = timed_run(["qs", "-p", str(shell_dir), "ipc", "call", *args], timeout,
+                    capture_output=True, text=True, check=False)
+    if res is not None and res.returncode == 0:
+        return res.stdout.strip()
+    return None
+
+
+def _propagate(mode: str, toggle: bool) -> str:
+    """Hand the mode change to the shell that owns the runtime theme.
+
+    Returns the channel name for feedback: "noctalia", "nyxuri-shell" or
+    "none". Toggle callers may read back the resulting mode afterwards.
+    """
+    if toggle:
+        if _noctalia_available():
+            timed_run(["noctalia", "msg", "theme-mode-toggle"], 3, capture_output=True, text=True, check=False)
+            time.sleep(0.3)
+            return "noctalia"
+        if _nyxuri_shell_ipc(["theme", "toggle"]) is not None:
+            time.sleep(0.2)
+            return "nyxuri-shell"
+        return "none"
+    if _noctalia_available():
+        timed_run(["noctalia", "msg", "theme-mode-set", mode], 3, capture_output=True, text=True, check=False)
+        return "noctalia"
+    if _nyxuri_shell_ipc(["theme", "set", mode]) is not None:
+        return "nyxuri-shell"
+    return "none"
+
+
+def _sync_glow_layout(current: str) -> None:
+    """Swap the fixed-glow niri layout for the active mode, then reload niri.
+
+    Mirrors theme-sync.sh: only runs when the glow preset is active and the
+    per-mode layout file exists; identical bytes are a no-op.
+    """
+    env = get_env()
+    active = env.presets_dir / "niri.active"
+    for legacy in (env.config_dir / "nyxniri" / "presets" / "niri.active",
+                   env.config_dir / "NyxNiri" / "presets" / "niri.active"):
+        if not active.is_file() and legacy.is_file():
+            active = legacy
+    if not active.is_file():
+        return
+    if active.read_text(encoding="utf-8").strip() != "glow":
+        return
+    niri_dir = env.config_dir / "niri"
+    source = niri_dir / f"layout-{current}.kdl"
+    dest = niri_dir / "layout.kdl"
+    if not source.is_file():
+        return
+    if dest.is_file() and dest.read_bytes() == source.read_bytes():
+        return
+    tmp = dest.with_name(f".layout.kdl.{os.getpid()}.tmp")
+    tmp.write_bytes(source.read_bytes())
+    os.replace(tmp, dest)
+    if shutil.which("niri"):
+        timed_run(["niri", "msg", "action", "load-config-file"], 3, capture_output=True, text=True, check=False)
+
+
 def status() -> int:
     scheme = "unknown"
     if shutil.which("gsettings"):
@@ -71,15 +173,23 @@ def sync(mode: str = "sync") -> int:
         except BlockingIOError:
             return 0
 
-        # If user explicitly requested toggle or set mode via CLI, propagate to Noctalia
-        if mode == "toggle" and shutil.which("noctalia"):
-            timed_run(["noctalia", "msg", "theme-mode-toggle"], 3, check=False)
-        elif mode in ("dark", "light") and shutil.which("noctalia"):
-            timed_run(["noctalia", "msg", "theme-mode-set", mode], 3, check=False)
-
-        current = _mode_from_system() if mode in ("toggle", "sync") else mode
+        channel = "none"
+        current: str
         if mode == "toggle":
+            channel = _propagate("", True)
+            if channel == "noctalia":
+                current = _mode_from_system()
+            elif channel == "nyxuri-shell":
+                readback = _nyxuri_shell_ipc(["theme", "status"])
+                current = readback if readback in ("dark", "light") else _mode_from_system()
+            else:
+                current = _mode_from_system()
             current = "light" if current == "dark" else "dark"
+        elif mode in ("dark", "light"):
+            current = mode
+            channel = _propagate(mode, False)
+        else:
+            current = _mode_from_system()
         current = "light" if current == "light" else "dark"
         dark = current == "dark"
         scheme_val = "prefer-dark" if dark else "prefer-light"
@@ -92,10 +202,22 @@ def sync(mode: str = "sync") -> int:
             _write_ini(path, "gtk-application-prefer-dark-theme", "true" if dark else "false")
             _write_ini(path, "gtk-theme-name", gtk)
 
+        # Qt/Kvantum applications follow only when the theme is installed.
+        kvantum = get_compat_env("KVANTUM_DARK" if dark else "KVANTUM_LIGHT",
+                                 "KvLibadwaitaDark" if dark else "KvLibadwaita")
+        kvantum_config = env.config_dir / "Kvantum" / "kvantum.kvconfig"
+        if kvantum and ((Path("/usr/share/Kvantum") / kvantum).is_dir() or (env.config_dir / "Kvantum" / kvantum).is_dir()):
+            _write_ini(kvantum_config, "theme", kvantum)
+
+        _sync_glow_layout(current)
+
         # Notify Kitty terminal
         if shutil.which("pkill"):
             timed_run(["pkill", "-SIGUSR1", "-x", "kitty"], 2, check=False)
 
         if sys.stdout.isatty() and mode != "sync":
-            print(f"Theme synced to: {current} (Scheme: {scheme_val}, GTK: {gtk})")
+            channel_label = {"noctalia": "shell: noctalia",
+                             "nyxuri-shell": "shell: nyxuri",
+                             "none": "shell: none running"}.get(channel, channel)
+            print(f"Theme synced to: {current} (Scheme: {scheme_val}, GTK: {gtk}, {channel_label})")
         return 0

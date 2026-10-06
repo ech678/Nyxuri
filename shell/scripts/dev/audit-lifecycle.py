@@ -47,10 +47,9 @@ OPTIONAL_NATIVE_MODULES = [
 ]
 
 ALLOWED_OPTIONAL_IMPORTERS = {
-    "app/services/cava/CavaBackend.qml",
-    "modules/settings/WeatherMapBridge.qml",
-    "modules/settings/backend/WeatherMapBackend.qml",
-    "modules/settings/backend/WeatherBackend.qml",
+    # Empty: R10 removed the last stubs (WeatherMapBridge) and R4-C removed all
+    # native plugin importers. Static Clavis.* imports are violations again;
+    # re-add an entry only together with a real fallback/bridge file.
 }
 
 GATEWAY_FILE = "app/ActionGateway.qml"
@@ -63,6 +62,26 @@ ALLOWED_MODULE_CROSS_IMPORTS = {
     "settings": {"wallpaper", "filepicker", "systemcards", "keystone"},
     "keystone": {"notifications", "filepicker", "bar", "sidebars"},
     "launcher": {"wallpaper"},
+}
+
+# LIFE008: UI-layer direct I/O. FileView/Process belong to domain services and
+# configs; view files must present state and route intent, not read files or
+# spawn processes themselves (R10 module autonomy).
+UI_IO_ALLOWED_SUFFIXES = (
+    "Service.qml",
+    "Config.qml",
+    "Backend.qml",
+    "State.qml",
+    "Catalog.qml",
+    "Session.qml",
+)
+UI_IO_ALLOWLIST = {
+    # lock domain root: owns its own session marker file (single FileView)
+    "modules/lock/Lock.qml",
+    # pre-lock screen capture session inside the lock domain
+    "modules/lock/PreLockCapture.qml",
+    # keystone cover-art palette extraction (domain singleton)
+    "modules/keystone/media/MediaPalette.qml",
 }
 
 
@@ -191,6 +210,7 @@ def check_file_violations(
     force: bool = False,
     is_shared_override: Optional[bool] = None,
     module_domain_override: Optional[str] = None,
+    ui_layer_override: Optional[bool] = None,
 ) -> List[AuditViolation]:
     try:
         rel_path = file_path.resolve().relative_to(repo_root.resolve()).as_posix()
@@ -286,6 +306,31 @@ def check_file_violations(
                     )
                 )
 
+    # 2b. LIFE008: UI-layer direct I/O (modules/ views and app/ top level).
+    # Domain services under app/services/ are exempt by layer definition.
+    is_ui_layer = ui_layer_override if ui_layer_override is not None else (
+        rel_path.startswith("modules/") or (rel_path.startswith("app/") and "app/services/" not in rel_path)
+    )
+    if is_ui_layer and not is_gateway:
+        declares_io = re.search(r"\b(FileView|Process)\s*\{|property\s+(Process|FileView)\b", content) is not None
+        if declares_io:
+            name_allowed = rel_path.endswith(UI_IO_ALLOWED_SUFFIXES)
+            list_allowed = rel_path in UI_IO_ALLOWLIST
+            if not (name_allowed or list_allowed):
+                first_io = next(
+                    (i for i, line in enumerate(lines, 1)
+                     if re.search(r"\b(FileView|Process)\s*\{|property\s+(Process|FileView)\b", line)),
+                    1,
+                )
+                violations.append(
+                    AuditViolation(
+                        "LIFE008",
+                        rel_path,
+                        first_io,
+                        "UI-layer direct I/O: FileView/Process belong to a domain service (*Service/*Config/*Backend/*State/*Catalog) or the explicit allowlist; views route intent via ActionGateway",
+                    )
+                )
+
     # 3. LIFE001: Missing resource owner
     # Pattern: ActionGateway.execute(...) without owner or with empty owner
     for match in re.finditer(r"\bActionGateway\.execute\s*\(", content):
@@ -335,7 +380,7 @@ def check_file_violations(
                     "LIFE005",
                     rel_path,
                     idx,
-                    "Optional dependency without fallback: Static import of 'Clavis.WeatherMap' in settings requires WeatherMapBridge isolation",
+                    "Optional dependency without fallback: Static import of 'Clavis.WeatherMap' in settings is prohibited (bridge stub removed in R10)",
                 )
             )
         # Any import of un-fallback'd Clavis plugins (or in life005 test fixture)

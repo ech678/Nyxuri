@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Per-scheme preview palettes for the dashboard theme picker. Runs one matugen
 # render per scheme variant against a fixed source and collects the results
-# into clavis/scheme-previews.json. Invoked detached by
+# into nyxuri/scheme-previews.json. Invoked detached by
 # generate-matugen-colors.sh so the scheme-switch path never waits on it; also
 # safe to run by hand. Best effort: any single-scheme failure is skipped, the
 # picker falls back to the live palette.
@@ -100,6 +100,6 @@ printf '\n}\n' >> "$previews"
 if ! jq -e . "$previews" >/dev/null 2>&1; then
     exit 0
 fi
-mkdir -p -- "$generated_home/clavis"
-jq -S . "$previews" > "$generated_home/clavis/.scheme-previews.tmp" \
-    && mv -f -- "$generated_home/clavis/.scheme-previews.tmp" "$generated_home/clavis/scheme-previews.json"
+mkdir -p -- "$generated_home/nyxuri"
+jq -S . "$previews" > "$generated_home/nyxuri/.scheme-previews.tmp" \
+    && mv -f -- "$generated_home/nyxuri/.scheme-previews.tmp" "$generated_home/nyxuri/scheme-previews.json"

@@ -3,8 +3,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Effects
-import Quickshell
-import Quickshell.Io
 import qs.shared.theme
 import qs.shared.controls
 import qs.app.services
@@ -58,24 +56,10 @@ Item {
 
     // Role swatches for the live preview. Kept in one place so the strip and any
     // future page share the same reading of the palette.
-    // True per-scheme preview palettes, written by generate-matugen-colors.sh
-    // (one matugen run per variant against the current source). Keyed by scheme
-    // value, values are the snake_case colors.json shape. Falls back to the
-    // live palette for any scheme missing from the cache.
-    property var schemePreviews: ({})
-
-    FileView {
-        path: Paths.generatedHome + "/clavis/scheme-previews.json"
-        watchChanges: true
-        onLoaded: {
-            try {
-                root.schemePreviews = JSON.parse(text());
-            } catch (e) {
-                root.schemePreviews = ({});
-            }
-        }
-        onLoadFailed: root.schemePreviews = ({})
-    }
+    // True per-scheme preview palettes, owned by MatugenTemplateService (keyed
+    // by scheme value, snake_case colors.json shape). Falls back to the live
+    // palette for any scheme missing from the cache.
+    readonly property var schemePreviews: MatugenTemplateService.schemePreviews
 
     function previewStrip(schemeValue) {
         const preview = root.schemePreviews[schemeValue];

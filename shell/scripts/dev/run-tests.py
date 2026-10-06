@@ -123,6 +123,7 @@ def build_category_suite(category: str) -> unittest.TestSuite:
             "test_r4c_naming_codex_and_dead_stub_elimination",
             "test_r4c_app_global_boundary_convergence",
             "test_r4c_c06_domain_closure_and_single_state_source",
+            "test_r10_action_gateway_and_module_autonomy",
         ]
         for name in static_test_names:
             if hasattr(TestShellManagement, name):

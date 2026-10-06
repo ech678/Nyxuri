@@ -3,7 +3,7 @@ version_check = false
 
 [templates.quickshell]
 input_path = "templates/quickshell-colors.json"
-output_path = "@CLAVIS_GENERATED_HOME@/clavis/colors.json"
+output_path = "@CLAVIS_GENERATED_HOME@/nyxuri/colors.json"
 
 [templates.btop]
 input_path = "templates/btop.theme"

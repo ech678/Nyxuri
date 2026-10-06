@@ -69,5 +69,18 @@
    - 涉及异步操作（如外部进程输出解析、网络获取）的 Backend，必须维护递增的 `generation` 计数器；异步回调触发时核对当前 generation，陈旧代次的回调必须丢弃。
 3. **参数数组执行（Argv Execution）**：
    - 所有外部进程派发必须通过 `ActionGateway.execute(args, owner)`，使用严格的参数数组（`["cmd", "arg1", ...]`），禁止拼接 Shell 字符串，禁止未经 Gateway 直接调用 `execDetached`。
+   - `execute` 的布尔返回值语义是「已受理派发」，不代表命令完成；需要向用户呈现结果的调用点自行反馈（notify-send 等）。
 4. **共享层无菌（Shared Layer Hygiene）**：
    - `shared/` 仅接收外部传入的数据、几何尺寸与颜色 Tokens；任何共享控件不得自行发起文件读写或读取宿主环境变量。
+5. **UI 层无直接 I/O（LIFE008，R10）**：
+   - `modules/` 视图与 `app/` 顶层装配禁止持有 `FileView`/`Process`；文件 I/O 与子进程归 `*Service/*Config/*Backend/*State/*Catalog` 域文件或显式 allowlist（lock 会话标记、PreLockCapture、MediaPalette）。
+   - 用户触发的桌面副作用（如 Dock 强杀进程）由视图发起意图、Gateway/域服务派发并登记 owner（`"dock:force-quit"` 模式）。
+6. **主题模式单一真值（R10）**：
+   - Shell 主题模式唯一业务入口为 `ThemeService.setThemeMode/toggleThemeMode`；对外经 `theme` IPC target（`set dark|light`/`toggle`/`status`）暴露。
+   - 系统色彩方案变化经 `UiPreferences.systemThemeModeObserved` 信号闭环回写 `PersonalizationConfig.themeMode` 并重跑 matugen（同值 no-op 防回环）；60s 轮询仅为无 IPC 环境的兜底通道。
+   - 生成的 M3 调色板与 scheme 预览位于 `<generated>/nyxuri/`；读取侧保留旧 `clavis/` 目录一次性回退。
+7. **切换器清场契约（R10 现场修复）**：
+   - 切换决策基于 `probe_running_shells()` 全量实例清单，而非首个匹配；"already active" 仅在 target 在场且对侧零实例时成立，否则先清残留并报告被清对象。
+   - spawn 前后双清场：`stop_all_shell_instances` 按类全量清扫（SIGTERM → 有界等待 → SIGKILL → 补等观察），`stop_shell_process` 返回真实死亡状态。
+   - readiness 探针必须指向真实存在的 IPC 子命令（noctalia 用 `theme-mode-get`）；"进程存活超时"不作为就绪证据，杜绝双 Shell 假成功。
+   - 回滚前全场清扫，恢复后必须单 Shell；清场失败向上返回失败而非假装成功。

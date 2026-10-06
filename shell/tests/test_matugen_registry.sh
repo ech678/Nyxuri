@@ -35,7 +35,7 @@ manage list > "$test_root/list.json"
 jq -e '.errors == [] and ([.templates[] | select(.origin == "builtin")] | length > 1) and all(.templates[]; .valid)' "$test_root/list.json" >/dev/null
 assert test ! -e "$CLAVIS_CONFIG_HOME/matugen"
 generate > "$test_root/generated.jsonl"
-assert test -s "$CLAVIS_GENERATED_HOME/clavis/colors.json"
+assert test -s "$CLAVIS_GENERATED_HOME/nyxuri/colors.json"
 assert test -s "$HOME/.config/kitty/current-theme.conf"
 assert test -s "$HOME/signals"
 assert test ! -e "$CLAVIS_CONFIG_HOME/matugen"
@@ -94,7 +94,7 @@ else
     assert test "$?" -eq 3
 fi
 jq -se 'any(.[]; .event == "core-ready") and any(.[]; .event == "external-error" and .id == "broken") and .[-1].event == "finished"' "$test_root/failure.jsonl" >/dev/null
-assert test -s "$CLAVIS_GENERATED_HOME/clavis/colors.json"
+assert test -s "$CLAVIS_GENERATED_HOME/nyxuri/colors.json"
 assert test -s "$HOME/editor/theme"
 
 # Unsupported syntax cannot silently become an active template.
@@ -124,7 +124,7 @@ mkdir -p "$installed/assets"
 cp -r "$repo_root/assets/matugen" "$installed/assets/matugen"
 bash "$installed/scripts/theme/manage-matugen-templates.sh" list | jq -e --arg prefix "$installed/assets/matugen/" 'all(.templates[] | select(.origin == "builtin"); .inputPath | startswith($prefix))' >/dev/null
 bash "$installed/scripts/theme/generate-matugen-colors.sh" --color '#aabbcc' --templates '' --mode light > /dev/null
-assert test -s "$CLAVIS_GENERATED_HOME/clavis/colors.json"
+assert test -s "$CLAVIS_GENERATED_HOME/nyxuri/colors.json"
 
 # Arbitrary newly registered IDs scale without app-specific code paths.
 for number in $(seq 1 100); do
@@ -135,7 +135,7 @@ generate --templates application-100 > /dev/null
 assert test -s "$HOME/application-100/theme"
 python3 -c "import base64, pathlib; pathlib.Path('$test_root/test.png').write_bytes(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='))"
 bash "$generator" --image "$test_root/test.png" --templates '' > /dev/null
-assert test -s "$CLAVIS_GENERATED_HOME/clavis/colors.json"
+assert test -s "$CLAVIS_GENERATED_HOME/nyxuri/colors.json"
 
 # A registration with no input can still be removed without touching output.
 cat >> "$CLAVIS_CONFIG_HOME/matugen/config.toml" <<'TOML'

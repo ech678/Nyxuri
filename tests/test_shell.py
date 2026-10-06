@@ -170,17 +170,18 @@ class TestShellManagement(unittest.TestCase):
         self.assertTrue(os.access(dest_dir / "session-shell.sh", os.X_OK))
         self.assertTrue(os.access(dest_dir / "shell-action.sh", os.X_OK))
 
+    @patch("nyxuri.shell_switcher.stop_all_shell_instances")
     @patch("nyxuri.shell_switcher.wait_shell_ready")
     @patch("nyxuri.shell_switcher.spawn_shell")
     @patch("nyxuri.shell_switcher.stop_shell_process")
-    @patch("nyxuri.shell_switcher.probe_running_shell")
-    def test_hot_switch_success(self, mock_probe, mock_stop, mock_spawn, mock_wait):
+    @patch("nyxuri.shell_switcher.probe_running_shells")
+    def test_hot_switch_success(self, mock_probe, mock_stop, mock_spawn, mock_wait, mock_sweep):
         import os
         from unittest.mock import MagicMock
         from nyxuri.shell_switcher import hot_switch_shell
 
         os.environ["WAYLAND_DISPLAY"] = "wayland-test"
-        mock_probe.return_value = ("noctalia", 1234)
+        mock_probe.return_value = [("noctalia", 1234)]
         mock_proc = MagicMock()
         mock_proc.pid = 5678
         mock_spawn.return_value = mock_proc
@@ -193,18 +194,23 @@ class TestShellManagement(unittest.TestCase):
         self.assertTrue(mock_stop.called)
         mock_spawn.assert_called_once_with("nyxuri-shell", "/bin/sh")
         mock_wait.assert_called_once()
+        # R10-fix: the field sweep must cover BOTH kinds before spawning.
+        swept = {call.args[0] for call in mock_sweep.call_args_list}
+        self.assertIn("nyxuri-shell", swept)
+        self.assertIn("noctalia", swept)
 
+    @patch("nyxuri.shell_switcher.stop_all_shell_instances")
     @patch("nyxuri.shell_switcher.wait_shell_ready")
     @patch("nyxuri.shell_switcher.spawn_shell")
     @patch("nyxuri.shell_switcher.stop_shell_process")
-    @patch("nyxuri.shell_switcher.probe_running_shell")
-    def test_hot_switch_failure_and_rollback(self, mock_probe, mock_stop, mock_spawn, mock_wait):
+    @patch("nyxuri.shell_switcher.probe_running_shells")
+    def test_hot_switch_failure_and_rollback(self, mock_probe, mock_stop, mock_spawn, mock_wait, mock_sweep):
         import os
         from unittest.mock import MagicMock
         from nyxuri.shell_switcher import hot_switch_shell
 
         os.environ["WAYLAND_DISPLAY"] = "wayland-test"
-        mock_probe.return_value = ("noctalia", 1234)
+        mock_probe.return_value = [("noctalia", 1234)]
         mock_new_proc = MagicMock()
         mock_new_proc.poll.return_value = None
         mock_restore_proc = MagicMock()
@@ -219,6 +225,110 @@ class TestShellManagement(unittest.TestCase):
         # Ledger must NOT have been changed to target
         self.assertEqual(active_shell(), "noctalia")
         mock_new_proc.terminate.assert_called()
+
+    @patch("nyxuri.shell_switcher.set_shell")
+    @patch("nyxuri.shell_switcher.stop_all_shell_instances")
+    @patch("nyxuri.shell_switcher.stop_shell_process")
+    @patch("nyxuri.shell_switcher.probe_running_shells")
+    def test_switch_cleans_lingering_side_when_target_already_running(
+            self, mock_probe, mock_stop, mock_sweep, mock_set_shell):
+        """R10-fix: target up + other shell lingering is residue, not success."""
+        from nyxuri.shell_switcher import hot_switch_shell
+        import os
+
+        os.environ["WAYLAND_DISPLAY"] = "wayland-test"
+        # First inventory: both alive. After the side sweep: target only.
+        mock_probe.side_effect = [
+            [("nyxuri-shell", 111), ("noctalia", 222)],
+            [("nyxuri-shell", 111)],
+        ]
+        mock_stop.return_value = True
+
+        ok, msg = hot_switch_shell("nyxuri-shell", "/bin/sh")
+        self.assertTrue(ok)
+        self.assertIn("cleaned lingering residue", msg)
+        self.assertIn("noctalia(222)", msg)
+        # The noctalia residue was the object of the stop, not the target.
+        stopped = [call.args[:2] for call in mock_stop.call_args_list]
+        self.assertIn(("noctalia", 222), stopped)
+        mock_set_shell.assert_called_once()
+
+    @patch("nyxuri.shell_switcher.stop_all_shell_instances")
+    @patch("nyxuri.shell_switcher.wait_shell_ready")
+    @patch("nyxuri.shell_switcher.spawn_shell")
+    @patch("nyxuri.shell_switcher.stop_shell_process")
+    @patch("nyxuri.shell_switcher.probe_running_shells")
+    def test_switch_towards_noctalia_sweeps_noctalia_residue(
+            self, mock_probe, mock_stop, mock_spawn, mock_wait, mock_sweep):
+        """R10-fix: the old code swept nyxuri-shell when targeting noctalia —
+        exactly how a surviving noctalia blocked every later attempt."""
+        import os
+        from unittest.mock import MagicMock
+        from nyxuri.shell_switcher import hot_switch_shell
+
+        os.environ["WAYLAND_DISPLAY"] = "wayland-test"
+        mock_probe.return_value = [("nyxuri-shell", 34529)]
+        mock_proc = MagicMock()
+        mock_proc.pid = 64899
+        mock_spawn.return_value = mock_proc
+        mock_wait.return_value = True
+
+        ok, msg = hot_switch_shell("noctalia", "")
+        self.assertTrue(ok)
+        swept = {call.args[0] for call in mock_sweep.call_args_list}
+        self.assertIn("noctalia", swept)
+        self.assertIn("nyxuri-shell", swept)
+
+    def test_noctalia_readiness_requires_ipc_answer(self):
+        """R10-fix: `noctalia msg` has no ping; the old alive-past-1s branch
+        reported ready while the previous shell was still running."""
+        import time
+        from unittest.mock import MagicMock, patch
+        from nyxuri.shell_switcher import wait_shell_ready
+
+        proc = MagicMock()
+        proc.poll.return_value = None
+
+        real_sleep = time.sleep
+        with patch("nyxuri.shell_switcher.subprocess.run", return_value=MagicMock(returncode=7)) as run_mock, \
+             patch("nyxuri.shell_switcher.time.sleep", side_effect=lambda *_: None):
+            start = time.time()
+            self.assertFalse(wait_shell_ready("noctalia", proc, "/usr/bin/noctalia", timeout=0.4))
+            self.assertLess(time.time() - start, 3.0)
+        probed = run_mock.call_args_list[0].args[0]
+        self.assertEqual(probed, ["noctalia", "msg", "theme-mode-get"])
+
+        with patch("nyxuri.shell_switcher.subprocess.run", return_value=MagicMock(returncode=0)):
+            self.assertTrue(wait_shell_ready("noctalia", proc, "/usr/bin/noctalia", timeout=2.0))
+        real_sleep(0)
+
+    def test_stop_shell_process_escalates_and_reports_survivor(self):
+        """R10-fix: SIGKILL delivery is observed, not assumed; a survivor
+        must surface as False so the switcher can re-sweep."""
+        import signal
+        from unittest.mock import patch
+        from nyxuri.shell_switcher import stop_shell_process
+
+        # PID checks always report alive: SIGTERM then SIGKILL both land, the
+        # process survives them all -> False.
+        def alive_kill(pid, sig):
+            if sig == signal.SIGTERM:
+                raise InterruptedError
+        with patch("nyxuri.shell_switcher.os.kill", side_effect=alive_kill), \
+             patch("nyxuri.shell_switcher.time.sleep", side_effect=lambda *_: None):
+            self.assertFalse(stop_shell_process("noctalia", 222, "", timeout=0.2))
+
+        # PID disappears after SIGTERM: bounded wait observes it -> True.
+        kills = []
+        def gone_after_term(pid, sig):
+            kills.append(sig)
+            if sig == signal.SIGTERM:
+                raise InterruptedError
+            raise ProcessLookupError
+        with patch("nyxuri.shell_switcher.os.kill", side_effect=gone_after_term), \
+             patch("nyxuri.shell_switcher.time.sleep", side_effect=lambda *_: None):
+            self.assertTrue(stop_shell_process("noctalia", 222, "", timeout=0.2))
+        self.assertEqual(kills[0], signal.SIGTERM)
 
     def test_p2_layer_structure_and_session_decoupling(self):
         import os
@@ -256,12 +366,14 @@ class TestShellManagement(unittest.TestCase):
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         settings_dir = os.path.join(repo_root, "shell", "modules", "settings")
 
-        # Verify modules/settings exists and contains required host/backend/bridge
+        # Verify modules/settings exists and contains required host/backend
         self.assertTrue(os.path.isdir(settings_dir))
         self.assertTrue(os.path.isfile(os.path.join(settings_dir, "SettingsHost.qml")))
         self.assertTrue(os.path.isfile(os.path.join(settings_dir, "SettingsBackend.qml")))
-        self.assertTrue(os.path.isfile(os.path.join(settings_dir, "WeatherMapBridge.qml")))
         self.assertTrue(os.path.isfile(os.path.join(settings_dir, "ControlCenterWindow.qml")))
+
+        # R10: the zero-consumer WeatherMapBridge stub is deleted
+        self.assertFalse(os.path.exists(os.path.join(settings_dir, "WeatherMapBridge.qml")))
 
         # Verify old ControlCenter directory and ControlCenterService are deleted
         self.assertFalse(os.path.exists(os.path.join(repo_root, "shell", "Modules", "ControlCenter")))
@@ -690,7 +802,7 @@ class TestShellManagement(unittest.TestCase):
         # 3. Hot switch refuses to switch when screen is locked (K06 invariant)
         from nyxuri.shell_switcher import hot_switch_shell, is_shell_locked
         with patch("nyxuri.shell_switcher.is_shell_locked", return_value=True), \
-             patch("nyxuri.shell_switcher.probe_running_shell", return_value=("custom", 9999)), \
+             patch("nyxuri.shell_switcher.probe_running_shells", return_value=[("nyxuri-shell", 9999)]), \
              patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-test"}):
             ok, msg = hot_switch_shell("noctalia")
             self.assertFalse(ok)
@@ -952,13 +1064,10 @@ class TestShellManagement(unittest.TestCase):
         wps_file = os.path.join(shell_dir, "app", "services", "WindowPreviewService.qml")
         self.assertFalse(os.path.exists(wps_file))
 
-        # 5. WeatherMapBridge is a zero-overhead stub
+        # 5. WeatherMapBridge is physically deleted (R10): zero consumers, the
+        # "not supported" stub answered no real call site
         wmb_file = os.path.join(shell_dir, "modules", "settings", "WeatherMapBridge.qml")
-        self.assertTrue(os.path.isfile(wmb_file))
-        with open(wmb_file, "r", encoding="utf-8") as f:
-            wmb_content = f.read()
-        self.assertIn("readonly property bool available: false", wmb_content)
-        self.assertIn("readonly property string status: \"unavailable\"", wmb_content)
+        self.assertFalse(os.path.exists(wmb_file))
 
         # 6. Native directory and build files are completely eliminated
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "native")))
@@ -1065,7 +1174,8 @@ class TestShellManagement(unittest.TestCase):
             mock_kill.assert_any_call(12345, signal.SIGTERM)
 
         # 3. Crash recovery rolls back ledger and restores old shell
-        with patch("nyxuri.shell_switcher.probe_running_shell", return_value=("noctalia", 1111)), \
+        with patch("nyxuri.shell_switcher.probe_running_shells", return_value=[("noctalia", 1111)]), \
+             patch("nyxuri.shell_switcher.stop_all_shell_instances", return_value=True), \
              patch("nyxuri.shell_switcher.stop_shell_process", return_value=True), \
              patch("nyxuri.shell_switcher.spawn_shell") as mock_spawn, \
              patch("nyxuri.shell_switcher.wait_shell_ready") as mock_wait, \
@@ -1864,6 +1974,97 @@ class TestShellManagement(unittest.TestCase):
         with open(roadmap_path, "r", encoding="utf-8") as f:
             roadmap_code = f.read()
         self.assertIn("### R9 功能开关与真实生命周期（已完成）", roadmap_code)
+
+    def test_r10_action_gateway_and_module_autonomy(self):
+        """R10 Contract: unified action boundary, domain autonomy, UI free of direct I/O.
+
+        - ActionGateway is the sole execDetached site and documents result semantics
+        - dead actionDispatched feedback signal removed
+        - AppShell keeps assembly/cross-module wiring/public IPC, no domain business
+        - LIFE008 registered: views carry no FileView/Process
+        - theme IPC target closes the CLI->shell propagation loop
+        - optional color picker degrades explicitly via its domain service
+        - generated palettes live under nyxuri/ with legacy clavis read fallback
+        """
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        def read(rel):
+            with open(os.path.join(shell_dir, rel), "r", encoding="utf-8") as f:
+                return f.read()
+
+        # 1. ActionGateway: result semantics documented, dead signal removed,
+        # argument shape validation in place.
+        gw = read("app/ActionGateway.qml")
+        self.assertNotIn("actionDispatched", gw)
+        self.assertIn("dispatch accepted", gw)
+        self.assertIn("Array.isArray(args)", gw)
+        self.assertIn("pendingSecurePowerAction", gw)
+
+        # 2. AppShell: assembly + public IPC only. The wallpaper catalog
+        # switch and pendingCycle fallback live in WallpaperService now.
+        app = read("app/AppShell.qml")
+        self.assertNotIn("pendingCycleAction", app)
+        self.assertIn("WallpaperService.runCatalogAction(action.method)", app)
+        self.assertIn("ActionGateway.requestSidebarToggle", app)
+        self.assertIn('target: "theme"', app)
+        self.assertIn("ThemeService.setThemeMode(mode)", app)
+        self.assertIn("ThemeService.toggleThemeMode()", app)
+        self.assertIn("PersonalizationConfig.themeMode;", app)
+
+        # 3. WallpaperService owns its catalog action surface.
+        self.assertIn("function runCatalogAction", read("modules/wallpaper/WallpaperService.qml"))
+
+        # 4. Theme truth closure: system scheme changes reach themeMode, the
+        # generated palette moved to nyxuri/ with legacy clavis read fallback.
+        theme_svc = read("app/services/ThemeService.qml")
+        self.assertIn("function toggleThemeMode", theme_svc)
+        self.assertIn("onSystemThemeModeObserved", theme_svc)
+        self.assertIn('"/nyxuri/colors.json"', theme_svc)
+        self.assertIn('"/clavis/colors.json"', theme_svc)
+        self.assertIn("systemThemeModeObserved", read("app/services/UiPreferences.qml"))
+        matugen_svc = read("app/services/MatugenTemplateService.qml")
+        self.assertIn('"/nyxuri/scheme-previews.json"', matugen_svc)
+        self.assertIn('"/clavis/scheme-previews.json"', matugen_svc)
+
+        # The previews FileView left the page: UI files carry no file I/O.
+        themes_page = read("modules/settings/dashboard/DashboardThemesPage.qml")
+        self.assertNotIn("FileView", themes_page)
+        self.assertNotIn("Quickshell.Io", themes_page)
+        self.assertIn("MatugenTemplateService.schemePreviews", themes_page)
+
+        # 5. Generator and matugen asset write the nyxuri/ path.
+        previews_script = read("scripts/theme/generate-matugen-previews.sh")
+        self.assertIn("$generated_home/nyxuri/scheme-previews.json", previews_script)
+        self.assertNotIn("$generated_home/clavis/", previews_script)
+        self.assertIn("@CLAVIS_GENERATED_HOME@/nyxuri/colors.json", read("assets/matugen/config.toml"))
+
+        # 6. LIFE008 registered with allowlist; auditor stays green.
+        audit_src = read("scripts/dev/audit-lifecycle.py")
+        self.assertIn("LIFE008", audit_src)
+        for allowlisted in ("modules/lock/Lock.qml", "modules/lock/PreLockCapture.qml",
+                            "modules/keystone/media/MediaPalette.qml"):
+            self.assertIn(allowlisted, audit_src)
+
+        # 7. Dock force-quit is a gateway action, not a popup-owned Process.
+        popup = read("modules/dock/DockPreviewPopup.qml")
+        self.assertNotIn("Process {", popup)
+        self.assertNotIn("property Process", popup)
+        self.assertIn('"dock:force-quit"', popup)
+
+        # 8. Color picker degrades explicitly through its domain service.
+        tools = read("modules/keystone/tools/ToolsContent.qml")
+        self.assertNotIn("hyprpicker", tools)
+        self.assertIn("ColorPickerService.launch()", tools)
+        picker = read("modules/keystone/tools/ColorPickerService.qml")
+        self.assertIn('"keystone:color-picker"', picker)
+        self.assertIn("hyprpicker is missing", picker)
+        probe_script = os.path.join(shell_dir, "scripts", "theme", "probe-tool.sh")
+        self.assertTrue(os.path.isfile(probe_script) and os.access(probe_script, os.X_OK),
+                        "probe-tool.sh missing or not executable")
+
+        # 9. The deleted map stub stays deleted.
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "modules", "settings", "WeatherMapBridge.qml")))
 
     def test_power_menu_and_secure_suspend_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

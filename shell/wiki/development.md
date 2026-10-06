@@ -109,6 +109,8 @@ python3 shell/scripts/dev/compile-i18n.py
 | `LIFE004` | 直接外部命令执行 | `app/` 与 `modules/` 严禁直接调用 `Quickshell.execDetached`，必须走 `ActionGateway` |
 | `LIFE005` | 可选依赖无降级 | 可选插件导入必须经由 fallback 隔离层，缺失时不崩溃、有降级提示 |
 | `LIFE006` | 仅通过 visible 隐藏 | 弹窗与面板停用时必须真实卸载或断开流（`active: false`），禁止仅用 `visible: false` |
+| `LIFE007` | 事件循环空转 | 禁止 `Timer interval: 0` 隐式空转；帧级批处理统一走 `Qt.callLater` |
+| `LIFE008` | UI 层直接 I/O | `modules/` 视图与 `app/` 顶层文件禁止持有 `FileView`/`Process`；I/O 归 `*Service/*Config/*Backend/*State/*Catalog` 域文件或显式 allowlist，用户意图经 `ActionGateway` 派发 |
 
 ```bash
 # 一键静态与生命周期集成检查

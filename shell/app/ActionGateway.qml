@@ -24,7 +24,6 @@ Singleton {
         }
     }
 
-    signal actionDispatched(string owner, string action, bool success)
     signal sessionOpenRequested(var screen)
     signal sessionCloseRequested
     signal sessionToggleRequested(var screen)
@@ -96,6 +95,11 @@ Singleton {
         return root.sidebarHost.toggleSidebar(target || "dashboard") !== "INVALID_SIDE";
     }
 
+    // Result semantics: the boolean return value means "dispatch accepted",
+    // not "command completed". execDetached is fire-and-forget; callers that
+    // need user-visible outcome report it themselves (notify-send etc.).
+    // Parameter shape: args must be a non-empty argument array (never a shell
+    // string); owner must be a non-empty identifier (audited as LIFE001).
     function execute(args, owner) {
         if (!args || !Array.isArray(args) || args.length === 0) {
             console.warn("[ActionGateway] Invalid execution args:", JSON.stringify(args), "from owner:",
@@ -105,11 +109,9 @@ Singleton {
 
         try {
             Quickshell.execDetached(args);
-            root.actionDispatched(owner || "unknown", args.join(" "), true);
             return true;
         } catch (err) {
             console.error("[ActionGateway] Failed to execute:", JSON.stringify(args), "Error:", err);
-            root.actionDispatched(owner || "unknown", args.join(" "), false);
             return false;
         }
     }
@@ -151,14 +153,18 @@ Singleton {
         }
     }
 
+    // Power actions: "lock" | "logout" | "suspend" | "poweroff" | "hibernate"
+    // | "reboot". Returns "dispatch accepted" (see execute()). suspend and
+    // hibernate are deferred behind the secure lock and fire only once the
+    // locker reports secured; an unsecured lock within 8s drops the pending
+    // action (see requestSecurePowerAction).
     function powerAction(action, owner) {
         owner = owner || "session";
         switch (action) {
         case "lock":
             if (root.sessionLocker) {
                 const res = root.sessionLocker.open();
-                root.actionDispatched(owner, "lock", res === "LOCKED" || res === "ALREADY_LOCKED");
-                return true;
+                return res === "LOCKED" || res === "ALREADY_LOCKED";
             }
             return false;
         case "logout":

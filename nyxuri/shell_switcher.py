@@ -138,12 +138,35 @@ def find_pids(pattern: str) -> list[int]:
     return pids
 
 
-def probe_running_shell() -> Tuple[str, Optional[int]]:
-    """Determine currently active running shell process and primary PID."""
+def probe_running_shells() -> "list[Tuple[str, int]]":
+    """Inventory every running shell instance of both kinds.
+
+    probe_running_shell() answers "what is running"; this answers "what is
+    ALL running". A crashed switch can leave both shells alive, and a switch
+    may only declare a clean field after removing every non-target instance.
+    """
+    instances: "list[Tuple[str, int]]" = []
     my_pids = {os.getpid(), os.getppid()}
 
-    # Check nyxuri-shell: accurately detect qs, quickshell, and nyxuri-shell daemons
-    candidate_pids = sorted(set(find_pids("qs") + find_pids("quickshell") + find_pids("nyxuri-shell")))
+    def classify(args: "list[str]") -> "str | None":
+        prog = Path(args[0]).name
+        cmd = " ".join(args)
+        if any(bad in cmd for bad in ["nyxuri shell", "test_shell", "pytest", "shell_switcher"]):
+            return None
+        if prog in ("qs", "quickshell", "nyxuri-shell"):
+            if any(sub in args for sub in ["ipc", "kill", "--stop", "--check-ready", "--status", "--stage"]):
+                return None
+            if any("shell" in a for a in args) or prog == "nyxuri-shell":
+                return "nyxuri-shell"
+            return None
+        if (prog == "noctalia" or args[0].endswith("/noctalia")) and "python" not in prog:
+            if "greeter" not in cmd:
+                return "noctalia"
+        return None
+
+    candidate_pids = sorted(set(
+        find_pids("qs") + find_pids("quickshell") + find_pids("nyxuri-shell") + find_pids("noctalia")
+    ))
     for pid in candidate_pids:
         if pid in my_pids:
             continue
@@ -152,42 +175,37 @@ def probe_running_shell() -> Tuple[str, Optional[int]]:
             args = [a.decode("utf-8", errors="ignore") for a in raw.split(b"\x00") if a]
             if not args:
                 continue
-            prog = Path(args[0]).name
-            cmd = " ".join(args)
-            if any(bad in cmd for bad in ["nyxuri shell", "test_shell", "pytest", "shell_switcher"]):
-                continue
-            if prog in ("qs", "quickshell", "nyxuri-shell"):
-                if not any(sub in args for sub in ["ipc", "kill", "--stop", "--check-ready", "--status", "--stage"]):
-                    if any("shell" in a for a in args) or prog == "nyxuri-shell":
-                        return "nyxuri-shell", pid
+            kind = classify(args)
+            if kind:
+                instances.append((kind, pid))
         except Exception:
             continue
+    return instances
 
-    # Check noctalia
-    noctalia_pids = find_pids("noctalia")
-    for pid in noctalia_pids:
-        if pid in my_pids:
-            continue
-        try:
-            raw = Path(f"/proc/{pid}/cmdline").read_bytes()
-            args = [a.decode("utf-8", errors="ignore") for a in raw.split(b"\x00") if a]
-            if not args:
-                continue
-            prog = Path(args[0]).name
-            cmd = " ".join(args)
-            if any(bad in cmd for bad in ["nyxuri shell", "test_shell", "pytest", "shell_switcher"]):
-                continue
-            if (prog == "noctalia" or args[0].endswith("/noctalia")) and "python" not in prog:
-                if "greeter" not in cmd:
-                    return "noctalia", pid
-        except Exception:
-            continue
 
+def probe_running_shell() -> Tuple[str, Optional[int]]:
+    """Determine currently active running shell process and primary PID.
+
+    Compatibility wrapper over probe_running_shells(); nyxuri-shell instances
+    win over noctalia, matching the historical probe order.
+    """
+    instances = probe_running_shells()
+    nyxuri = [pid for name, pid in instances if name == "nyxuri-shell"]
+    if nyxuri:
+        return "nyxuri-shell", nyxuri[0]
+    noctalia = [pid for name, pid in instances if name == "noctalia"]
+    if noctalia:
+        return "noctalia", noctalia[0]
     return "none", None
 
 
 def stop_shell_process(shell_name: str, pid: Optional[int], bin_path: str = "", timeout: float = 2.5) -> bool:
-    """Gracefully terminate a shell process with bounded timeout."""
+    """Gracefully terminate a shell process with bounded timeout.
+
+    Returns True only when the target PID is verifiably gone (or no PID was
+    given and only the bin-level stop ran). Callers that must guarantee a
+    clean field re-probe afterwards instead of trusting this alone.
+    """
     norm = normalize_shell_name(shell_name)
     if norm == "nyxuri-shell":
         effective_bin = bin_path or resolve_shell_bin()
@@ -220,7 +238,32 @@ def stop_shell_process(shell_name: str, pid: Optional[int], bin_path: str = "", 
         os.kill(pid, signal.SIGKILL)
     except Exception:
         pass
-    return True
+
+    # Bounded wait so SIGKILL delivery is observable, not assumed.
+    deadline = time.time() + 1.0
+    while time.time() < deadline:
+        try:
+            os.kill(pid, 0)
+            time.sleep(0.1)
+        except ProcessLookupError:
+            return True
+    return False
+
+
+def stop_all_shell_instances(shell_name: str, bin_path: str = "", timeout: float = 2.5) -> bool:
+    """Stop every running instance of the given shell kind.
+
+    True when none remain afterwards. This is the switcher's field-sweep
+    primitive: single-PID stops are how dual-shell residue happens.
+    """
+    norm = normalize_shell_name(shell_name)
+    clean = True
+    for kind, pid in probe_running_shells():
+        if kind != norm:
+            continue
+        if not stop_shell_process(kind, pid, bin_path, timeout=timeout):
+            clean = False
+    return clean
 
 
 def spawn_shell(shell_name: str, bin_path: str) -> subprocess.Popen:
@@ -256,16 +299,18 @@ def wait_shell_ready(shell_name: str, proc: subprocess.Popen, bin_path: str, tim
             except Exception:
                 pass
         elif norm == "noctalia":
-            # Probe noctalia ping/status
+            # Probe the daemon over its real IPC surface. `noctalia msg` has
+            # NO ping subcommand; theme-mode-get is the lightest query that
+            # returns 0 only when the daemon answers. A process merely alive
+            # past one second is NOT ready evidence: layer-shell conflicts
+            # can keep it dying slowly, and reporting ready then would leave
+            # both shells running.
             try:
-                res = subprocess.run(["noctalia", "msg", "ping"], timeout=0.5, capture_output=True, check=False)
+                res = subprocess.run(["noctalia", "msg", "theme-mode-get"], timeout=1.0, capture_output=True, check=False)
                 if res.returncode == 0:
                     return True
             except Exception:
                 pass
-            # If no msg ping, check if process is alive and running stably past initial second
-            if time.time() > deadline - (timeout - 1.0):
-                return True
 
         time.sleep(0.15)
 
@@ -364,12 +409,36 @@ def hot_switch_shell(target: str, custom_bin_override: Optional[str] = None) -> 
         set_shell(target, target_bin if target == "nyxuri-shell" else None)
         return True, f"Recorded preference for {target} (no graphical Wayland session active)"
 
-    # Probe current running shell
-    current_name, current_pid = probe_running_shell()
-    if current_name == target and current_pid is not None:
-        # Already running target shell
+    # Inventory every running instance of both shells.
+    instances = probe_running_shells()
+    target_pids = [pid for name, pid in instances if name == target]
+    other_instances = [(name, pid) for name, pid in instances if name != target]
+
+    # "Already active" requires a clean field: the target running AND zero
+    # instances of the other shell. A target-up-but-side-lingering state is
+    # crashed-switch residue, not success.
+    if target_pids and not other_instances:
         set_shell(target, target_bin if target == "nyxuri-shell" else None)
-        return True, f"{target} is already the active running shell (PID: {current_pid})"
+        return True, f"{target} is already the active running shell (PID: {target_pids[0]})"
+
+    if target_pids and other_instances:
+        removed = []
+        for name, pid in other_instances:
+            if stop_shell_process(name, pid, shutil.which(name) or "", timeout=2.5):
+                removed.append(f"{name}({pid})")
+        leftover = [(name, pid) for name, pid in probe_running_shells() if name != target]
+        if not leftover:
+            set_shell(target, target_bin if target == "nyxuri-shell" else None)
+            return True, (f"{target} is the active running shell (PID: {target_pids[0]}); "
+                          f"cleaned lingering residue: {', '.join(removed)}")
+        # Residue survived the sweep: fall through to a full switch with a
+        # fresh view instead of pretending the field is clean.
+        instances = probe_running_shells()
+        target_pids = [pid for name, pid in instances if name == target]
+        current_name, current_pid = (instances[0] if instances else ("none", None))
+        other_instances = [(name, pid) for name, pid in instances if name != target]
+    else:
+        current_name, current_pid = (instances[0] if instances else ("none", None))
 
     # Stop current running shell
     old_bin = ""
@@ -385,17 +454,20 @@ def hot_switch_shell(target: str, custom_bin_override: Optional[str] = None) -> 
     if current_pid:
         stop_shell_process(current_name, current_pid, old_bin, timeout=2.5)
 
-    # Ensure no lingering instances of target shell exist to prevent collision
-    if target == "nyxuri-shell":
-        stop_shell_process("nyxuri-shell", None, target_bin, timeout=1.0)
-    elif target == "noctalia":
-        stop_shell_process("nyxuri-shell", None, timeout=1.0)
+    # Field sweep: neither kind may keep a surviving instance before the
+    # target spawns. A target-side survivor would double the panels; a
+    # current-side survivor would rot into a zombie shell.
+    stop_all_shell_instances("nyxuri-shell", target_bin if target == "nyxuri-shell" else old_bin, timeout=1.5)
+    stop_all_shell_instances("noctalia", timeout=1.5)
 
     # Launch target shell
     try:
         new_proc = spawn_shell(target, target_bin)
     except Exception as e:
-        # Restore old shell immediately
+        # Restore old shell immediately; sweep first so the revival is the
+        # only instance on the field.
+        stop_all_shell_instances("nyxuri-shell", "", timeout=1.5)
+        stop_all_shell_instances("noctalia", timeout=1.5)
         if current_name != "none" and old_bin:
             spawn_shell(current_name, old_bin)
         return False, f"Failed to spawn target shell: {e}"
@@ -403,7 +475,9 @@ def hot_switch_shell(target: str, custom_bin_override: Optional[str] = None) -> 
     # Bounded readiness probe
     is_ready = wait_shell_ready(target, new_proc, target_bin, timeout=4.0)
     if not is_ready:
-        # Target failed to report ready or crashed: cleanup target
+        # Target failed to report ready or crashed: cleanup the whole field —
+        # this spawn AND any residue from earlier switches — so the rollback
+        # revives into a clean single-shell state.
         try:
             new_proc.terminate()
             time.sleep(0.2)
@@ -411,6 +485,8 @@ def hot_switch_shell(target: str, custom_bin_override: Optional[str] = None) -> 
                 new_proc.kill()
         except Exception:
             pass
+        stop_all_shell_instances("nyxuri-shell", "", timeout=1.5)
+        stop_all_shell_instances("noctalia", timeout=1.5)
 
         # Rollback: revive old shell
         restored = False

@@ -436,6 +436,25 @@ Singleton {
         return root.cycle("random");
     }
 
+    // Executes a Spotlight catalog wallpaper action ("clear" | "previous" |
+    // "next" | "random"). A queued scan counts as accepted: cycle() parks the
+    // action in pendingCycleAction and onScanFinished applies it once the
+    // wallpaper list is populated.
+    function runCatalogAction(method) {
+        switch (method) {
+        case "clear":
+            return root.clearWallpaper("");
+        case "previous":
+            return root.cyclePrevious() || root.pendingCycleAction === "previous";
+        case "next":
+            return root.cycleNext() || root.pendingCycleAction === "next";
+        case "random":
+            return root.cycleRandom() || root.pendingCycleAction === "random";
+        default:
+            return false;
+        }
+    }
+
     function refreshFromConfig() {
         root.currentWallpaper = root.wallpaperForScreen("");
         root.revision += 1;

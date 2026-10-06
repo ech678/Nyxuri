@@ -176,13 +176,22 @@ R1–R7 是已交付基线。下一步从 R8 开始；P4 及之后保留在后�
 
 **验收：** 静态生命周期审计全量覆盖 549 个文件零违规（`audit-lifecycle.py --scope full --check` clean）；五大分类测试套件全部 105 用例独立通过（STATIC 20, LOGIC 48, RESOURCE 9, NATIVE 26, GRAPHICS 2）；契约断言全面覆盖 R9 挂载语义与清理守卫。
 
-### R10 Action Gateway 与模块自治
+### R10 Action Gateway 与模块自治（待验收）
 
 **目标：** 桌面意图有统一边界，功能域拥有自身状态与副作用。
 
-**实施：** 审查全部外部进程、文件写入、剪贴板、Niri IPC、URL 打开及配置写入；UI 直接副作用迁到 Action Gateway 或领域服务。缩小 `AppShell.qml`，保留根装配、跨模块连接和公开 IPC，不承载领域业务。每项动作定义 owner、参数形状、成功/失败/取消结果和反馈；减少只转发的抽象与无必要全局单例。
+**实施与完成：**
+- **动作契约收口**：`ActionGateway.execute(args, owner)` 头注释固化为全库唯一结果语义——布尔返回值表示「已受理派发」，不追踪命令完成态，参数必须是纯数组、owner 非空（LIFE001/LIFE004 门禁保持）；删除零消费者的 `actionDispatched` 死信号（R11 控制面需要错误流时随真实消费者重建）；secure-power 8 秒未锁自动丢弃的取消路径保留并由契约测试覆盖。
+- **AppShell 瘦身至纯装配**：壁纸目录动作分发与 `pendingCycleAction` 兜底细节迁入 `WallpaperService.runCatalogAction(method)`（纯搬运，IPC 返回码与 PENDING 语义逐条不变）；sidebar 搜索动作复用 `ActionGateway.requestSidebarToggle` 消除第三份校验拷贝；`executeSearchAction` 收敛为单行委托映射；修复 IpcHandler 区三层错位缩进。AppShell 只保留根装配、跨模块连接与公开 IPC，不承载领域业务。
+- **UI 直接 I/O 归零（LIFE008 新门禁）**：`audit-lifecycle.py` 新增 LIFE008——`modules/` 视图与 `app/` 顶层文件禁止持有 `FileView`/`Process`（`*Service/*Config/*Backend/*State/*Catalog` 后缀与显式 allowlist 豁免）；Dock 预览弹层的强杀进程 `Process` 迁为 `ActionGateway.execute(["kill","-KILL",…], "dock:force-quit")`；主题页 scheme-previews `FileView` 迁入 `MatugenTemplateService`；allowlist 仅保留域自有 I/O（`lock/Lock.qml` 会话标记、`lock/PreLockCapture.qml` 抓屏、`keystone/media/MediaPalette.qml` 取色）。
+- **死代码与单例减法**：物理删除零消费者失败桩 `WeatherMapBridge.qml`，audit 豁免表清空并反转既有测试断言（必须不存在）。
+- **可选依赖显式降级**：新建 keystone 域 `ColorPickerService`（一次性 `probe-tool.sh` PATH 探活 → 缺失时 notify-send 明示 "hyprpicker is missing"，存在时走 Gateway 派发），消除 hyprpicker 静默失败；外部命令降级矩阵：硬依赖 `systemctl`/`niri`（目标环境必在），可选 `wl-copy`（ClipboardService/Spotlight 已有缺失提示）、`hyprpicker`（本轮补齐）、`notify-send`（缺失时通知渠道整体不可用，属环境级降级）。
+- **generated 路径去 clavis 化**：`assets/matugen/config.toml`、`generate-matugen-previews.sh`、`ThemeService.colorsPath` 全部改写 `<generated>/nyxuri/`，读取侧保留旧 `clavis/` 目录一次性回退（含显式 reload，杜绝 path 重绑不加载），改名不丢已生成调色板（GRAPHICS 行为测试以旧路径 fixture 实证回退成立）。
+- **双轨主题统一（T7）**：Shell 新增 `theme` IPC target（`set dark|light`/`toggle`/`status` → `ThemeService.setThemeMode` 唯一业务入口）；`nyxuri theme` CLI 传播链对齐 bash 版语义——`noctalia msg status` 探活 → Nyxuri Shell IPC → 两者皆无仅同步系统，全程捕获子进程 stderr，杜绝第三方 `error:` 裸漏，单行汇总注明传播去向（`shell: noctalia|nyxuri|none running`）；`theme.py` 补齐 Kvantum ini 切换（仅主题已安装时）与 niri glow layout 明暗 kdl 原子切换（preset active 为 glow 且字节有差异才写，reload 有 `niri` 探活守卫）；`UiPreferences` 轮询新增 `systemThemeModeObserved` 信号，`ThemeService` 闭环回写 `PersonalizationConfig.themeMode` 并重跑 matugen（同值 no-op 防回环，60s 轮询保留为兜底）。
 
-**验收：** UI 不直接启动桌面命令或写配置；动作有参数形状测试与失败清理测试；可选服务缺失时模块仍能装载并明确降级；架构 import/副作用契约通过。
+- **切换器多实例治理（R10 现场修复）**：`shell_switcher` 修复双 Shell 并存缺陷链——`probe_running_shells()` 全量清单化双端实例（旧 probe 单返回且 nyxuri 优先，对侧残留被无视）；"already active" 早退收紧为「target 在场且对侧零实例」，残留先清场并在成功消息中列出被清对象；`stop_shell_process` 返回真实死亡状态并在 SIGKILL 后补等观察，`stop_all_shell_instances` 按类全量清扫（原 lingering 分支在 target=noctalia 时方向写反，恰是残留 noctalia 阻断后续切换的根源）；`wait_shell_ready` 的 noctalia 探针由不存在的 `noctalia msg ping`（永不通过，靠"活过 1 秒即放行"兜底假成功）换为真实存在的 `noctalia msg theme-mode-get`（returncode 0 即 IPC 应答）；回滚与 spawn 失败路径先全场清扫再复活旧 shell，保证恢复后单 Shell。行为测试：残留清理、方向修正、readiness 双分支、SIGKILL 升级链共 6 项。
+
+**验收：** UI 不直接启动桌面命令或写配置（LIFE004 + LIFE008 双门禁，547 文件 0 违规）；动作有参数形状与失败清理契约测试（`test_r10_action_gateway_and_module_autonomy` + secure-power drop 路径断言）；可选服务缺失时模块仍装载并明示降级（ColorPickerService 探活模式）；架构 import/副作用契约通过（五分类 108 用例全绿，`test_shell.py` 45 用例全绿）；双轨主题跟随性矩阵——GTK3/4 ini、Libadwaita portal、Chromium prefer-dark、Kitty SIGUSR1+matugen 模板、Qt/Kvantum、niri glow、Shell M3 调色板、zen 着色器全部跟随且 `nyxuri theme` 三场景（noctalia 在 / 仅 nyxuri shell / 都不在）输出一致无裸 error；Noctalia 专属 wallpaper picker 不在迁移范围，双轨切换与部署链路零触碰。
 
 ### R11 Nyxuri Shell 控制面与透明度
 

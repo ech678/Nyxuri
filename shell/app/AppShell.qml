@@ -23,29 +23,18 @@ Item {
 
     // The catalog only supplies fixed, build-validated calls. Both IPC and
     // Search use the same existing business functions, without self-IPC.
+    // Pure delegation: each intent routes to its owning domain; no domain
+    // business lives here.
     function executeSearchAction(action) {
         switch (action.target) {
         case "lock":
             return ActionGateway.powerAction("lock", "launcher:search");
         case "wallpaper":
-            switch (action.method) {
-            case "clear":
-                return WallpaperService.clearWallpaper("");
-            case "previous":
-                return WallpaperService.cyclePrevious() || WallpaperService.pendingCycleAction === "previous";
-            case "next":
-                return WallpaperService.cycleNext() || WallpaperService.pendingCycleAction === "next";
-            case "random":
-                return WallpaperService.cycleRandom() || WallpaperService.pendingCycleAction === "random";
-            }
-            return false;
+            return WallpaperService.runCatalogAction(action.method);
         case "keystone":
             return keystone ? (keystone.invoke(action.method) !== "KEYSTONE_UNAVAILABLE") : false;
         case "sidebar":
-            if (sidebarHost) {
-                return sidebarHost.toggleSidebar(action.argument || "dashboard") !== "INVALID_SIDE";
-            }
-            return false;
+            return sidebarHost ? ActionGateway.requestSidebarToggle(action.argument || "dashboard") : false;
         case "shortcut-map":
             ShortcutMapService.open();
             return true;
@@ -326,6 +315,26 @@ Item {
 
                 function toggle(pageId: string): string {
                     return ActionGateway.requestSettingsToggle(pageId || "") ? "OPENING" : "CLOSING";
+                }
+            }
+
+            IpcHandler {
+                target: "theme"
+
+                function set(mode: string): string {
+                    if (mode !== "dark" && mode !== "light")
+                        return "INVALID_MODE";
+                    ThemeService.setThemeMode(mode);
+                    return "OK";
+                }
+
+                function toggle(): string {
+                    ThemeService.toggleThemeMode();
+                    return "OK";
+                }
+
+                function status(): string {
+                    return PersonalizationConfig.themeMode;
                 }
             }
 

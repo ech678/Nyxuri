@@ -2,8 +2,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Quickshell
-import Quickshell.Io
 import qs.shared.controls
 import qs.shared.theme
 import qs.app.services
@@ -16,6 +14,9 @@ import qs.shared.i18n
 Item {
     id: root
 
+    // Force-quit intent state. The kill itself routes through the Action
+    // Gateway: a UI popup must not own a Process (LIFE008), and dispatch
+    // acceptance is all the menu needs to decide its next step.
     QtObject {
         id: processQuit
         property var targets: []
@@ -32,12 +33,11 @@ Item {
         function confirm() {
             if (targets.length === 0)
                 return false;
-            killProc.command = ["kill", "-KILL"].concat(targets.map(String));
-            killProc.running = true;
+            const dispatched = ActionGateway.execute(["kill", "-KILL"].concat(targets.map(String)),
+                                                     "dock:force-quit");
             targets = [];
-            return true;
+            return dispatched;
         }
-        readonly property Process killProc: Process {}
     }
     property bool quitFailed: false
     function resetQuit() {

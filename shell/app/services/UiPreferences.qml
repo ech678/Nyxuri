@@ -21,6 +21,12 @@ Singleton {
     property string spotlightClipboardStyle: "default"
     property bool dndEnabled: false
     property bool darkMode: false
+
+    // Emitted when the system scheme poller observes an out-of-band mode
+    // change (nyxuri theme CLI without shell IPC). ThemeService closes the
+    // loop into PersonalizationConfig.themeMode; same-value emissions no-op
+    // there, so our own writes never loop back.
+    signal systemThemeModeObserved(string mode)
     property string language: root.systemLanguage
     property string weatherTemperatureUnit: "celsius"
     property string systemTemperatureUnit: "celsius"
@@ -626,8 +632,10 @@ Singleton {
 
         stdout: StdioCollector {
             onStreamFinished: {
-                if (!systemThemeWriter.running && !root.systemThemeWriteQueued)
+                if (!systemThemeWriter.running && !root.systemThemeWriteQueued) {
                     root.darkMode = this.text.toLowerCase().includes("prefer-dark");
+                    root.systemThemeModeObserved(root.darkMode ? "dark" : "light");
+                }
             }
         }
     }
