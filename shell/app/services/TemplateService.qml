@@ -237,12 +237,24 @@ Singleton {
     property string renderingId: ""
     property string renderingOutput: ""
     property string renderingHook: ""
+    // The current hook's Process, created per hook from hookProcessComponent.
+    property var hookProcess: null
+    // Diagnostic surface for the render queue: hookRunning distinguishes a
+    // wedged hook (stuck true) from a spawn request that never landed.
+    readonly property bool hookRunning: root.hookProcess !== null
     // The output FileView rebinds per template; its path-change load (or the
     // FileNotFound miss on first render) must settle before setText, or the
     // async load can race the write. Both asset views report readiness and
     // writeOutput fires once input text AND output path are settled.
     property bool outputReady: false
     property string pendingRendered: ""
+    // The output view's content, captured when its settle event fires and
+    // updated to the rendered text when a write completes. The identical-
+    // render check reads this instead of calling FileView.text(): a text()
+    // call in the settle window starts a second async read on the view, and
+    // the following save disowns it — Quickshell 0.3.1 then drops the save
+    // completion and the queue wedges.
+    property string outputContent: ""
 
     function renderNext() {
         if (root.renderingId !== "" || root.renderQueue.length === 0) {
@@ -265,6 +277,7 @@ Singleton {
         root.renderingOutput = template.outputPath;
         root.renderingHook = template.postHook || "";
         root.pendingRendered = "";
+        root.watchStep("Template read");
         // Rebinding to the same path (repeat render of one template) starts no
         // new load, so the settle wait only applies to a real rebind.
         if (templateOutput.path === template.outputPath) {
@@ -288,11 +301,21 @@ Singleton {
     }
 
     function renderLoaded(text) {
+        if (root.renderingId === "") {
+            // Late completion of a step the watchdog already failed.
+            return;
+        }
         let rendered;
         try {
             rendered = TemplateExpr.render(root.renderingId, text, root.tokenColors, root.activeMode);
         } catch (e) {
             root.renderFailed(String(e));
+            return;
+        }
+        if (rendered === "") {
+            // An empty render would silently stall writeOutput's non-empty
+            // gate; fail the template like any other render error instead.
+            root.renderFailed("Template rendered an empty result");
             return;
         }
         root.pendingRendered = rendered;
@@ -305,6 +328,11 @@ Singleton {
         path: ""
         watchChanges: false
         atomicWrites: true
+        // Synchronous saves: Quickshell 0.3.1 loses FileView operation
+        // completions under rapid interleaved reads and writes on one view
+        // (observed: async writers whose saved() never arrives), which would
+        // wedge the queue. An inline save has no async completion to lose.
+        blockWrites: true
         printErrors: false
         onLoaded: root.outputSettled()
         onLoadFailed: root.outputSettled()
@@ -316,6 +344,9 @@ Singleton {
         if (root.renderingId === "" || root.outputReady) {
             return;
         }
+        // The settle handler runs right after the view's updateState, so this
+        // text() is served from the loaded state and starts no new read.
+        root.outputContent = templateOutput.text();
         root.outputReady = true;
         root.writeOutput();
     }
@@ -328,6 +359,16 @@ Singleton {
             root.renderFailed("Template has no output path");
             return;
         }
+        if (root.outputContent === root.pendingRendered) {
+            // Quickshell FileView.setText no-ops when the text equals the
+            // loaded file content: nothing is written and onSaved never
+            // fires. An unchanged render is still a completed render —
+            // finish it here, or the queue stalls on this template forever
+            // and every later renderAll silently no-ops. Hooks still run;
+            // they are idempotent and kitty-apply reloads live instances.
+            root.renderSaved();
+            return;
+        }
         templateOutput.setText(root.pendingRendered);
     }
 
@@ -336,6 +377,7 @@ Singleton {
         const nextErrors = JSON.parse(JSON.stringify(root.renderErrors));
         delete nextErrors[id];
         root.renderErrors = nextErrors;
+        root.outputContent = root.pendingRendered;
         const hook = root.renderingHook;
         if (hook === "") {
             root.renderDone();
@@ -345,29 +387,68 @@ Singleton {
         // one argument to bash -c with the template directory injected, never
         // concatenated with other shell words. XDG_* values are the raw user
         // homes — Paths.cacheHome already carries the nyxuri suffix and the
-        // vendored hooks append their own.
+        // vendored hooks append their own. A fresh Process per hook: a reused
+        // instance was observed to silently drop a spawn request, and a lost
+        // exit would freeze the queue exactly like the setText no-op. The
+        // watchdog keeps that class of failure bounded either way.
         const inputDir = templateInput.path.substring(0, templateInput.path.lastIndexOf("/"));
-        hookProcess.command = ["bash", "-c", hook];
-        hookProcess.environment = {
+        const process = hookProcessComponent.createObject(root);
+        root.hookProcess = process;
+        process.command = ["bash", "-c", hook];
+        process.environment = {
             "TEMPLATE_DIR": inputDir,
             "HOME": Paths.homeDir,
             "XDG_CONFIG_HOME": Paths.xdgConfigHome,
             "XDG_CACHE_HOME": Quickshell.env("XDG_CACHE_HOME") || Paths.homeDir + "/.cache"
         };
-        hookProcess.running = true;
+        root.watchStep("Hook");
+        process.running = true;
     }
 
-    Process {
-        id: hookProcess
-
-        stderr: StdioCollector {}
-        onExited: exitCode => {
-            if (exitCode !== 0) {
-                root.renderFailed("Hook failed with exit code " + exitCode);
-                return;
-            }
-            root.renderDone();
+    function finishHook(failed, message) {
+        stepWatchdog.stop();
+        const process = root.hookProcess;
+        if (process) {
+            process.finished = true;
+            process.running = false;
+            process.destroy();
+            root.hookProcess = null;
         }
+        if (failed)
+            root.renderFailed(message);
+        else
+            root.renderDone();
+    }
+
+    Component {
+        id: hookProcessComponent
+
+        Process {
+            property bool finished: false
+
+            onExited: exitCode => {
+                if (this.finished)
+                    return;
+                root.finishHook(exitCode !== 0, "Hook failed with exit code " + exitCode);
+            }
+        }
+    }
+
+    // Bounds every async wait in the queue (template read, output settle,
+    // hook run): a lost FileView or Process event degrades to a recorded
+    // per-template failure instead of a permanently stuck renderingId, which
+    // would silently swallow every later renderAll.
+    property string watchStepLabel: ""
+    Timer {
+        id: stepWatchdog
+
+        interval: 10000
+        onTriggered: root.renderFailed(root.watchStepLabel + " timed out after 10 seconds")
+    }
+
+    function watchStep(step) {
+        root.watchStepLabel = step;
+        stepWatchdog.restart();
     }
 
     function renderFailed(message) {
@@ -380,6 +461,7 @@ Singleton {
     }
 
     function renderDone() {
+        stepWatchdog.stop();
         root.renderingId = "";
         root.renderingOutput = "";
         root.renderingHook = "";
@@ -487,7 +569,11 @@ Singleton {
             listing.running = false;
         if (mutation)
             mutation.running = false;
-        if (hookProcess)
-            hookProcess.running = false;
+        if (root.hookProcess) {
+            root.hookProcess.running = false;
+            root.hookProcess.destroy();
+            root.hookProcess = null;
+        }
+        hookWatchdog.stop();
     }
 }

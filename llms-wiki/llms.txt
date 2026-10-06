@@ -28,6 +28,7 @@
 - [shell-rules](../shell/AGENTS.md): 开发契约、原版 Niri 基线与三层/生命周期约束
 - [shell-roadmap](../shell/ROADMAP.md): 当前阶段、已交付台账、已确认决策与门禁
 - [shell-architecture-matrix](shell/architecture-matrix.md): 3 级纯 QML 架构边界分层、所有者与 import 白名单
+- [shell-theme-pipeline](shell/theme-pipeline.md): 取色→双模式色板→模板渲染队列→hook 的管线契约与 Quickshell 0.3.1 平台约束
 - [shell-development](shell/development.md): 纯 QML 调试循环、双 Shell 热切换与分类测试验证
 - [shell-references](shell/references.md): 上游 Clavis (15403b9) 与 iNiR 参考树说明与重现指令
 - [shell-lifecycle-inventory](shell/lifecycle-inventory.json): 机器可读生命周期与副作用审计清单 (Schema v2)

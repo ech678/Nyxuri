@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import signal
 import subprocess
@@ -187,6 +188,18 @@ class ShellPresentationTests(unittest.TestCase):
                 '#!/bin/sh\nprintf "%%s\\n" "$*" >> "%s/hook-pkill"\n' % self.ctx.home)
             (shim_dir / "pkill").chmod(0o755)
             self.environment["PATH"] = str(shim_dir) + os.pathsep + self.environment["PATH"]
+            # Trace hook STARTS separately from the pkill shim: btop-apply and
+            # starship-apply never pkill, so their invocations are invisible
+            # there and a stalled spawn would be indistinguishable from a
+            # stalled render.
+            trace = self.ctx.home / "hook-trace"
+            for hook in ["kitty-apply.sh", "btop-apply.sh", "starship-apply.sh"]:
+                path = self.shell / "assets/templates" / hook.split("-")[0] / hook
+                path.write_text('printf "%s\\n" "$0" >> "' + str(trace) + '"\n' + path.read_text(
+                    encoding="utf-8"))
+            # Trace FileView operation internals: a lost saved()/loaded() emit
+            # wedges the queue without any QML-level diagnostic.
+            self.environment["QT_LOGGING_RULES"] = "quickshell.io.fileview.debug=true"
             self.palette_modes = self.ctx.home / ("data/nyxuri/profiles/default/generated/nyxuri/"
                                                   "palette-modes.json")
             self.palette_modes.parent.mkdir(parents=True, exist_ok=True)
@@ -336,6 +349,10 @@ ShellRoot {
                 "ready": TemplateService.ready,
                 "queue": TemplateService.renderQueue.length,
                 "rendering": TemplateService.renderingId,
+                "renderingOutput": TemplateService.renderingOutput,
+                "outputReady": TemplateService.outputReady,
+                "pending": TemplateService.pendingRendered.length,
+                "hookRunning": TemplateService.hookRunning,
                 "errors": TemplateService.renderErrors,
                 "activeMode": TemplateService.activeMode
             });
@@ -438,6 +455,57 @@ ShellRoot {
         self.output.seek(0)
         self.fail(f"IPC {method} did not return {expected!r}:\n{self.output.read()}")
 
+    def dump_artifacts(self):
+        hook_log = self.ctx.home / "hook-pkill"
+        artifacts = {}
+        for path in [self.ctx.home / ".config/kitty/themes/nyxuri.conf",
+                     self.ctx.home / ".config/btop/themes/nyxuri.theme",
+                     self.ctx.home / ".cache/nyxuri/starship-palette.toml", hook_log]:
+            artifacts[str(path.relative_to(self.ctx.home))] = (
+                path.stat().st_size if path.exists() else None)
+        artifacts["hook-pkill lines"] = self.hook_invocation_count()
+        return artifacts
+
+    def qslog_dump(self):
+        """The preview log names the instance's qslog file; its FileView debug
+        trace is the only record of a lost saved()/loaded() emit."""
+        match = re.search(r"Saving logs to \"?([^\"]+)\"?", self.output.read())
+        self.output.seek(0)
+        if not match:
+            return "(no qslog path in preview log)"
+        result = subprocess.run([self.qs, "log", match.group(1)], capture_output=True,
+                                text=True, timeout=10)
+        return result.stdout + result.stderr
+
+    def wait_for_queue_idle(self):
+        """The render queue must drain: a stuck renderingId swallows every
+        later renderAll silently (FileView.setText no-ops on identical
+        content, so an onSaved-only completion never fires)."""
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline and self.process.poll() is None:
+            state = json.loads(self.call("templateState").stdout)
+            if state["rendering"] == "" and state["queue"] == 0:
+                return
+            time.sleep(0.05)
+        self.output.flush()
+        self.output.seek(0)
+        state = self.call("templateState").stdout.strip()
+        self.fail("render queue never drained:\nstate=%s\nartifacts=%s\nhookTrace=%s\nqslog=%s\n%s"
+                  % (state, self.dump_artifacts(), self.hook_trace(), self.qslog_dump(),
+                     self.output.read()))
+
+    def hook_invocation_count(self):
+        hook_log = self.ctx.home / "hook-pkill"
+        if not hook_log.exists():
+            return 0
+        return len(hook_log.read_text(encoding="utf-8").splitlines())
+
+    def hook_trace(self):
+        trace = self.ctx.home / "hook-trace"
+        if not trace.exists():
+            return []
+        return trace.read_text(encoding="utf-8").splitlines()
+
     def test_palette_watch_fallback_and_presentation_injection(self):
         self.wait_for("check", "OK")
         self.wait_for("opacity", "0.37")
@@ -533,13 +601,10 @@ ShellRoot {
             self.output.flush()
             self.output.seek(0)
             state = self.call("templateState").stdout.strip()
-            files = {name: (path.is_file(), marker in path.read_text(encoding="utf-8")
-                            if path.is_file() else False)
-                     for name, (path, marker) in expected.items()}
-            self.fail("template outputs never rendered:\nstate=%s\nfiles=%s\n%s"
-                      % (state, files, self.output.read()))
+            self.fail("template outputs never rendered:\nstate=%s\n%s" % (state, self.output.read()))
         state = json.loads(self.call("templateState").stdout)
         self.assertEqual(state["errors"], {}, state)
+        self.wait_for_queue_idle()
         mirror = self.ctx.home / ".config/noctalia/palettes/nyxuri.json"
         self.assertTrue(mirror.is_file(), "Noctalia palette mirror was not written")
         mirror_body = json.loads(mirror.read_text(encoding="utf-8"))
@@ -567,11 +632,45 @@ ShellRoot {
         else:
             self.output.flush()
             self.output.seek(0)
-            self.fail("palette rewrite did not re-render template outputs:\n" + self.output.read())
+            state = self.call("templateState").stdout.strip()
+            self.fail("palette rewrite did not re-render template outputs:\nstate=%s\n%s"
+                      % (state, self.output.read()))
         self.assertEqual(json.loads(self.call("templateState").stdout)["errors"], {})
+        self.wait_for_queue_idle()
+
+        # Identical re-render: the rendered content already matches what is on
+        # disk, which is exactly the boot-time regeneration case (same
+        # wallpaper, byte-comparable engine output). FileView.setText no-ops
+        # on identical content and never emits onSaved, so this pass must
+        # still drain and the hooks must still run — otherwise the queue dies
+        # here and every later wallpaper switch silently does nothing.
+        hooks_before = self.hook_invocation_count()
         self.assertEqual(self.call("rerender").stdout.strip(), "OK")
+        self.wait_for_queue_idle()
+        self.assertGreater(self.hook_invocation_count(), hooks_before,
+                           "identical re-render did not run the post hooks")
         for path, marker in switched.values():
             self.assertIn(marker, path.read_text(encoding="utf-8"))
+
+        # ...and a following palette rewrite must still be followed.
+        replacement.write_text(self._palette_modes_fixture())
+        replacement.replace(self.palette_modes)
+        restored = self._template_outputs("first")
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline and self.process.poll() is None:
+            if all(path.is_file() and marker in path.read_text(encoding="utf-8")
+                   for path, marker in restored.values()):
+                break
+            time.sleep(0.1)
+        else:
+            self.output.flush()
+            self.output.seek(0)
+            state = self.call("templateState").stdout.strip()
+            artifacts = self.dump_artifacts()
+            self.fail("identical re-render stalled the queue; later palette rewrite was ignored:\n"
+                      "state=%s\nartifacts=%s\n%s" % (state, artifacts, self.output.read()))
+        self.wait_for_queue_idle()
+        self.assertEqual(json.loads(self.call("templateState").stdout)["errors"], {})
         self.output.flush()
         self.output.seek(0)
         log = self.output.read()

@@ -148,15 +148,20 @@ Singleton {
             readonly property int fillMode: WallpaperService.qtFillMode(fillModeName)
             readonly property bool sourceIsColor: !WallpaperService.isImagePath(sourcePath)
             readonly property bool panoramaSelected: fillModeName === "panorama"
+            // External wallpaper daemons (awww) own the canvas outside this
+            // scene. Restored property: without it the analysis key binding
+            // below throws ReferenceError on every re-evaluation.
+            readonly property bool externalBackend: PersonalizationConfig.desktopWallpaperBackend === "awww"
             readonly property bool hasHorizontalDriver: PersonalizationConfig.parallaxFollowTiledColumns
                                                         || PersonalizationConfig.parallaxFollowSidebars
             readonly property bool hasVerticalDriver: PersonalizationConfig.parallaxVerticalEnabled
                                                       && PersonalizationConfig.parallaxFollowWorkspaces
             readonly property bool parallaxRequested: hasHorizontalDriver || hasVerticalDriver
-            readonly property bool parallaxSupported: WallpaperMath.supportsParallaxCanvas(
-                                                          !panoramaSelected && fillMode
-                                                          === Image.PreserveAspectCrop, sourcePath,
-                                                          sourceIsColor)
+            readonly property bool parallaxSupported: WallpaperMath.supportsParallaxCanvas(!panoramaSelected
+                                                                                           && fillMode
+                                                                                           === Image.PreserveAspectCrop,
+                                                                                           sourcePath,
+                                                                                           sourceIsColor)
             readonly property bool manualParallaxActive: parallaxRequested && parallaxSupported
             readonly property real preferredScale: panoramaSelected ? 1 : manualParallaxActive
                                                                       ? PersonalizationConfig.parallaxPreferredScale :
