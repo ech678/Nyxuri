@@ -179,7 +179,7 @@ Singleton {
                                          "wallpaper:Overview transition": root.select(()
                                                                                       => PersonalizationConfig.overviewTransitionType,
                                                                                       value => PersonalizationConfig.setOverviewTransitionType(
-                                                                                                   value), PersonalizationConfig.awwwTransitionTypes),
+                                                                                                   value), PersonalizationConfig.transitionTypes),
                                          "wallpaper:Overview use desktop wallpaper": root.toggle(()
                                                                                                  => PersonalizationConfig.overviewUseDesktopWallpaper,
                                                                                                  value => PersonalizationConfig.setOverviewUseDesktopWallpaper(

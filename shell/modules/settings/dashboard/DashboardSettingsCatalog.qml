@@ -458,7 +458,7 @@ QtObject {
                     "kw": "wallpaper per monitor screen independent"
                 },
                 {
-                    "type": "select",
+                    "type": "combo",
                     "key": "wallpaper:Desktop transition",
                     "title": I18n.tr("Desktop transition"),
                     "icon": "transition_fade",
@@ -479,7 +479,7 @@ QtObject {
                     "kw": "wallpaper transition step"
                 },
                 {
-                    "type": "select",
+                    "type": "combo",
                     "key": "wallpaper:Overview transition",
                     "title": I18n.tr("Overview transition"),
                     "icon": "grid_view",

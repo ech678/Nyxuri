@@ -69,8 +69,8 @@ DashboardCard {
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1
                     implicitHeight: 44
-                    leftPadding: 20
-                    rightPadding: 20
+                    leftPadding: 16
+                    rightPadding: 16
                     buttonRadius: 22
                     containerColor: option.selected ? Appearance.colors.colTertiary : Qt.rgba(1, 1, 1, 0.12)
                     rippleColor: Appearance.colors.colOnTertiary
@@ -86,14 +86,16 @@ DashboardCard {
                     contentItem: Item {
                         implicitWidth: contentRow.implicitWidth
                         implicitHeight: contentRow.implicitHeight
+                        clip: true
 
                         RowLayout {
                             id: contentRow
 
-                            anchors.centerIn: parent
+                            anchors.fill: parent
                             spacing: 6
 
                             MaterialSymbol {
+                                visible: !!(option.modelData && option.modelData.icon)
                                 text: option.modelData.icon ?? ""
                                 iconSize: 18
                                 fill: option.selected ? 1 : 0

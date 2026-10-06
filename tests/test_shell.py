@@ -1806,6 +1806,52 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn('Mod+L allow-when-locked=true { spawn "~/.config/niri/scripts/shell-action.sh" "lock"; }', binds_content)
 
 
+class TestDashboardTransitionCatalogContract(unittest.TestCase):
+    """Contract tests for Dashboard transition settings controls and catalogs."""
+
+    def test_transition_catalog_and_control_contract(self):
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        # 1. DashboardSettingsCatalog configures transition cards as 'combo'
+        catalog_path = os.path.join(shell_dir, "modules", "settings", "dashboard", "DashboardSettingsCatalog.qml")
+        with open(catalog_path, "r", encoding="utf-8") as f:
+            catalog_content = f.read()
+
+        # Desktop transition must be combo
+        desktop_match = re.search(r'\"type\":\s*\"([^\"]+)\",\s*\"key\":\s*\"wallpaper:Desktop transition\"', catalog_content)
+        self.assertIsNotNone(desktop_match, "wallpaper:Desktop transition must exist in DashboardSettingsCatalog")
+        self.assertEqual(desktop_match.group(1), "combo", "wallpaper:Desktop transition must be combo")
+
+        # Overview transition must be combo
+        overview_match = re.search(r'\"type\":\s*\"([^\"]+)\",\s*\"key\":\s*\"wallpaper:Overview transition\"', catalog_content)
+        self.assertIsNotNone(overview_match, "wallpaper:Overview transition must exist in DashboardSettingsCatalog")
+        self.assertEqual(overview_match.group(1), "combo", "wallpaper:Overview transition must be combo")
+
+        # 2. SettingsControlCatalog binds overview transition to PersonalizationConfig.transitionTypes
+        control_path = os.path.join(shell_dir, "modules", "settings", "dashboard", "SettingsControlCatalog.qml")
+        with open(control_path, "r", encoding="utf-8") as f:
+            control_content = f.read()
+
+        self.assertIn('"wallpaper:Overview transition"', control_content)
+        self.assertIn("PersonalizationConfig.setOverviewTransitionType", control_content)
+        self.assertIn("value), PersonalizationConfig.transitionTypes),", control_content,
+                      "Overview transition must use PersonalizationConfig.transitionTypes, not awwwTransitionTypes")
+
+        # Desktop transition must use awwwTransitionTypes
+        self.assertIn('"wallpaper:Desktop transition"', control_content)
+        self.assertIn("PersonalizationConfig.setAwwwDesktopTransitionType", control_content)
+        self.assertIn("value), PersonalizationConfig.awwwTransitionTypes),", control_content)
+
+        # 3. DashboardSelectCard hides MaterialSymbol when no icon is present
+        select_card_path = os.path.join(shell_dir, "modules", "settings", "dashboard", "DashboardSelectCard.qml")
+        with open(select_card_path, "r", encoding="utf-8") as f:
+            select_card_content = f.read()
+
+        self.assertIn("visible: !!(option.modelData && option.modelData.icon)", select_card_content,
+                      "DashboardSelectCard must guard MaterialSymbol visibility to avoid empty icon spacing")
+
+
 if __name__ == "__main__":
     unittest.main()
 
