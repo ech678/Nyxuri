@@ -1,26 +1,32 @@
 #!/usr/bin/env bash
+# Palette generation: matugen is a pure color-extraction slot (P4 contract).
+# One run emits every mode as JSON; this script assembles the two contract
+# files and does no template rendering — application templates are rendered
+# by the in-shell TemplateService from the written palettes.
+#
+# Outputs (under $generated_home/nyxuri/):
+#   colors.json         50-key snake_case M3 palette for the active mode
+#                       (the shell's hot-load contract, byte-compatible with
+#                       the retired internal Tera template)
+#   palette-modes.json  dark+light palettes plus source color; input for the
+#                       Noctalia palette mirror and template rendering
+#
+# Status protocol on stdout (schemaVersion 1): core-ready | core-error.
 set -euo pipefail
 
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-# shellcheck source=scripts/lib/matugen-registry.sh
-source "$script_dir/../lib/matugen-registry.sh"
-matugen_registry_init
 mode=dark
 scheme="scheme-tonal-spot"
 image_path=""
 source_color=""
 dry_run=false
-templates_requested=false
-templates_csv=""
-# assets/matugen/config.toml ships output_path as the literal placeholder
-# @CLAVIS_GENERATED_HOME@, which the Python deployer substitutes at install time.
-# Running straight from a checkout there is no deployer, so the path arrives here
-# unresolved and matugen writes somewhere the shell never reads. Callers pass
-# the real directory; the fallbacks keep the CLI usable by hand.
+# assets shipped with @CLAVIS_GENERATED_HOME@-style placeholders once; since the
+# Tera render path retired there is nothing to substitute — the shell always
+# passes the real directory and the fallbacks keep manual CLI use working.
 generated_home="${NYXURI_SHELL_GENERATED_HOME:-${CLAVIS_GENERATED_HOME:-}}"
 
 usage() {
-    printf 'Usage: %s (--image PATH | --color HEX) [--mode dark|light] [--scheme SCHEME] [--templates ID,...] [--generated-home DIR] [--dry-run]\n' "$0" >&2
+    printf 'Usage: %s (--image PATH | --color HEX) [--mode dark|light] [--scheme SCHEME] [--generated-home DIR] [--dry-run]\n' "$0" >&2
 }
 
 while [[ $# -gt 0 ]]; do
@@ -43,12 +49,6 @@ while [[ $# -gt 0 ]]; do
         --scheme)
             [[ $# -ge 2 ]] || { usage; exit 2; }
             scheme=$2
-            shift 2
-            ;;
-        --templates)
-            [[ $# -ge 2 ]] || { usage; exit 2; }
-            templates_requested=true
-            templates_csv=$2
             shift 2
             ;;
         --generated-home)
@@ -80,94 +80,87 @@ if [[ "$mode" != dark && "$mode" != light ]]; then
     usage
     exit 2
 fi
+if [[ -z "$generated_home" ]]; then
+    printf 'generated home is required (--generated-home or NYXURI_SHELL_GENERATED_HOME)\n' >&2
+    exit 2
+fi
 if ! command -v matugen >/dev/null 2>&1; then
-    printf 'matugen is required but was not found in PATH\n' >&2
+    printf 'matugen is required for palette extraction but was not found in PATH\n' >&2
     exit 1
 fi
-# Core generation is independent of external validation and execution.
-registry=$(matugen_registry_list)
-core=$(jq -c '[.templates[] | select(.origin == "builtin" and .id == "quickshell")] | if length == 1 then .[0] else null end' <<< "$registry")
-if ! jq -e '. != null and .valid' <<< "$core" >/dev/null; then
-    printf 'Missing or invalid internal quickshell template\n' >&2
+if ! command -v jq >/dev/null 2>&1; then
+    printf 'jq is required to assemble palettes but was not found in PATH\n' >&2
     exit 1
 fi
-mkdir -p -- "$CLAVIS_RUNTIME_HOME/temporary"
-runtime_dir=$(mktemp -d "$CLAVIS_RUNTIME_HOME/temporary/matugen.XXXXXX")
+
+runtime_dir=$(mktemp -d "${TMPDIR:-/tmp}/nyxuri-matugen.XXXXXX")
 cleanup() { rm -rf -- "$runtime_dir"; }
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' HUP TERM
-runtime_config="$runtime_dir/config.toml"
 
-run_template() {
-    local entry=$1 output
-    # Resolve the deploy-time placeholder before rendering, so matugen receives
-    # the directory the shell actually reads (Paths.generatedHome).
-    if [[ -n "$generated_home" && "$entry" == *"@CLAVIS_GENERATED_HOME@"* ]]; then
-        entry=${entry//@CLAVIS_GENERATED_HOME@/$generated_home}
-    fi
-    {
-        printf '[config]\nversion_check = false\n\n'
-        matugen_render_entry <<< "$entry"
-    } > "$runtime_config"
-    output=$(jq -r '.outputPath' <<< "$entry")
-    if [[ "$dry_run" == false ]]; then
-        mkdir -p -- "$(dirname -- "$output")" || return
-    fi
-    local common_args=(--mode "$mode" --type "$scheme" --config "$runtime_config")
-    if [[ "$dry_run" == true ]]; then common_args+=(--dry-run); fi
-    if [[ -n "$image_path" ]]; then
-        matugen --source-color-index 0 image "$image_path" "${common_args[@]}"
-    else
-        matugen color hex "$source_color" "${common_args[@]}"
-    fi
-}
+common_args=(--mode "$mode" --type "$scheme" --json hex -q)
+if [[ -n "$image_path" ]]; then
+    matugen --source-color-index 0 image "$image_path" "${common_args[@]}" \
+        > "$runtime_dir/palette.json" 2> "$runtime_dir/log"
+else
+    matugen color hex "$source_color" "${common_args[@]}" \
+        > "$runtime_dir/palette.json" 2> "$runtime_dir/log"
+fi
 
-event() {
-    jq -nc --arg event "$1" --arg id "${2:-}" --arg error "${3:-}" '{schemaVersion: 1, event: $event, id: $id, error: ($error | gsub("\u001b\\[[0-9;]*[A-Za-z]"; ""))}'
-}
-if ! run_template "$core" > "$runtime_dir/log" 2>&1; then
-    cat -- "$runtime_dir/log" >&2
-    event core-error quickshell "$(tail -c 3000 "$runtime_dir/log")"
+if ! jq -e '.colors | (type == "object" and (keys | length == 50) and .source_color)' \
+    "$runtime_dir/palette.json" >/dev/null 2>&1; then
+    printf 'matugen returned an unexpected palette shape\n' >&2
+    tail -c 2000 -- "$runtime_dir/log" >&2 || true
     exit 1
 fi
-if [[ "$dry_run" == false ]]; then event core-ready; fi
+
+event() {
+    jq -nc --arg event "$1" --arg error "${2:-}" '{schemaVersion: 1, event: $event, error: ($error | gsub("\u001b\\[[0-9;]*[A-Za-z]"; ""))}'
+}
+
+assemble() {
+    jq -S '.colors | with_entries(.value = .value.default.color)' "$runtime_dir/palette.json"
+}
+
+assemble_modes() {
+    jq -S --arg mode "$mode" --arg scheme "$scheme" '
+        {schemaVersion: 1,
+         mode: $mode,
+         scheme: $scheme,
+         source_color: .colors.source_color.default.color,
+         dark: (.colors | with_entries(.value = .value.dark.color)),
+         light: (.colors | with_entries(.value = .value.light.color))}' \
+        "$runtime_dir/palette.json"
+}
+
+if [[ "$dry_run" == true ]]; then
+    event core-ready
+    exit 0
+fi
+
+target_dir="$generated_home/nyxuri"
+mkdir -p -- "$target_dir"
+if ! assemble > "$target_dir/.colors.tmp" 2>"$runtime_dir/assemble.log"; then
+    rm -f -- "$target_dir/.colors.tmp"
+    event core-error "$(tail -c 2000 "$runtime_dir/assemble.log" 2>/dev/null || echo "palette assembly failed")"
+    exit 1
+fi
+if ! assemble_modes > "$target_dir/.palette-modes.tmp" 2>>"$runtime_dir/assemble.log"; then
+    rm -f -- "$target_dir/.colors.tmp" "$target_dir/.palette-modes.tmp"
+    event core-error "$(tail -c 2000 "$runtime_dir/assemble.log" 2>/dev/null || echo "palette assembly failed")"
+    exit 1
+fi
+mv -f -- "$target_dir/.colors.tmp" "$target_dir/colors.json"
+mv -f -- "$target_dir/.palette-modes.tmp" "$target_dir/palette-modes.json"
+event core-ready
 
 # Detached preview sweep: nine extra matugen runs must never sit on the
-# scheme-switch path the user is waiting on. Best effort; the picker falls back
-# to the live palette while the cache is missing or stale.
-if [[ "$dry_run" == false && -n "$generated_home" ]]; then
-    NYXURI_SHELL_GENERATED_HOME="$generated_home" \
-        bash "$script_dir/generate-matugen-previews.sh" \
-        ${image_path:+--image "$image_path"} ${source_color:+--color "$source_color"} \
-        --mode "$mode" >/dev/null 2>&1 & disown
-fi
-external_failed=false
-report_external_error() {
-    external_failed=true
-    event external-error "$1" "$2"
-    printf '%s: %s\n' "$1" "$2" >&2
-}
-registry_error=$(jq -r '.errors | join("; ")' <<< "$registry")
-if [[ -n "$registry_error" ]]; then report_external_error registry "$registry_error"; fi
-if [[ "$templates_requested" == false ]]; then
-    templates_csv=$(jq -r '[.templates[] | select(.origin == "builtin" and .id != "quickshell") | .id] | join(",")' <<< "$registry")
-fi
-IFS=',' read -r -a requested_templates <<< "$templates_csv"
-seen=,
-for template_id in "${requested_templates[@]}"; do
-    [[ -n "$template_id" && "$template_id" != quickshell ]] || continue
-    if [[ "$seen" == *",$template_id,"* ]]; then continue; fi
-    seen+="$template_id,"
-    entry=$(jq -c --arg id "$template_id" '[.templates[] | select(.id == $id)] | .[0] // null' <<< "$registry")
-    if ! jq -e '. != null and .valid' <<< "$entry" >/dev/null; then
-        report_external_error "$template_id" "$(jq -r '.error // "Unknown template"' <<< "$entry")"
-        continue
-    fi
-    if ! run_template "$entry" > "$runtime_dir/log" 2>&1; then
-        report_external_error "$template_id" "$(tail -c 3000 "$runtime_dir/log")"
-    fi
-done
+# scheme-switch path the user is waiting on. Best effort; the picker falls
+# back to the live palette while the cache is missing or stale.
+NYXURI_SHELL_GENERATED_HOME="$generated_home" \
+    bash "$script_dir/generate-matugen-previews.sh" \
+    ${image_path:+--image "$image_path"} ${source_color:+--color "$source_color"} \
+    --mode "$mode" >/dev/null 2>&1 & disown
+
 event finished
-# Exit 3 specifically means core succeeded but external work failed.
-if [[ "$external_failed" == true ]]; then exit 3; fi

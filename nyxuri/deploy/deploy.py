@@ -172,7 +172,7 @@ def run_user_hooks() -> List[str]:
 
 
 def _phase_post_install_services() -> None:
-    """Run built-in post-deployment work (theme-sync, mpvpaper, Fisher)."""
+    """Run built-in post-deployment work (mpvpaper, Fisher)."""
     try:
         from nyxuri.theme import sync
         sync()

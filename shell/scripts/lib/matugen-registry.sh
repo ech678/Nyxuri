@@ -7,7 +7,7 @@ matugen_registry_init() {
     # shellcheck source=scripts/lib/clavis-paths.sh
     source "$library_dir/clavis-paths.sh"
     clavis_paths_init
-    matugen_builtin_dir=$(cd -- "$library_dir/../.." && pwd)/assets/matugen
+    matugen_builtin_dir=$(cd -- "$library_dir/../.." && pwd)/assets/templates
     matugen_user_dir="$CLAVIS_CONFIG_HOME/matugen"
     matugen_parser="$library_dir/../theme/matugen-registry.jq"
 }
@@ -50,10 +50,10 @@ matugen_registry_list() {
     user=$(matugen_read_config user "$matugen_user_dir") || return
     jq -n --argjson builtin "$builtin" --argjson user "$user" '
         ($builtin.sections | map(.id)) as $ids |
-        ($user.sections | map(if .id == "quickshell" or (.id as $id | $ids | index($id)) != null
-            then .valid = false | .errors += ["Template ID is reserved by Clavis"] | .error = (.errors | unique | join("; ")) else . end)) as $users |
+        ($user.sections | map(if (.id as $id | $ids | index($id)) != null
+            then .valid = false | .errors += ["Template ID duplicates a builtin template"] | .error = (.errors | unique | join("; ")) else . end)) as $users |
         {schemaVersion: 1, templates: ($builtin.sections + $users),
-         errors: ($builtin.errors + $user.errors + [$users[] | select(.id == "quickshell") | .error])}'
+         errors: ($builtin.errors + $user.errors)}'
 }
 
 # JSON basic string escapes are also valid in the supported TOML subset.

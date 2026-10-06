@@ -391,15 +391,38 @@ Singleton {
         root.setDarkMode(!root.darkMode);
     }
 
+    // nyxuri theme is the only system-level writer (gsettings, GTK INI,
+    // Kvantum, kitty signal, glow layout, Noctalia IPC). The shell only
+    // delegates to it; when the CLI is absent the internal mode still
+    // switches and the gap is surfaced instead of silently skipped.
+    FileView {
+        id: cliProbe
+
+        path: ""
+        watchChanges: false
+        blockLoading: true
+        printErrors: false
+    }
+
     function writeSystemColorScheme() {
         if (systemThemeWriter.running) {
             root.systemThemeWriteQueued = true;
             return;
         }
+        cliProbe.path = Paths.binHome + "/nyxuri";
+        cliProbe.reload();
+        if (!cliProbe.loaded) {
+            root.systemThemeWriteQueued = false;
+            root.systemThemeLastError = I18n.tr(
+                        "nyxuri CLI not found; only the internal theme mode switched");
+            console.warn("UiPreferences:", root.systemThemeLastError);
+            themeDebounce.restart();
+            return;
+        }
         root.systemThemeWriteQueued = false;
         root.systemThemeLastError = "";
-        systemThemeWriter.command = ["bash", Paths.scriptPath("theme", "set-system-color-scheme.sh"),
-                                     root.requestedDarkMode ? "dark" : "light"];
+        systemThemeWriter.command = [Paths.binHome + "/nyxuri", "theme", root.requestedDarkMode ? "dark" :
+                                                                                                  "light"];
         systemThemeWriter.running = true;
     }
 

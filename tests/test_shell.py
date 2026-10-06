@@ -5,6 +5,7 @@ import io
 import json
 import os
 import re
+import shutil
 import signal
 import sys
 import time
@@ -423,8 +424,9 @@ class TestShellManagement(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "install.sh")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "i18n")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "matugen")))
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "assets", "matugen")))
         self.assertTrue(os.path.isdir(os.path.join(shell_dir, "assets", "i18n")))
-        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "assets", "matugen")))
+        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "assets", "templates")))
         self.assertTrue(os.path.isdir(os.path.join(shell_dir, "app", "services")))
         self.assertTrue(os.path.isdir(os.path.join(shell_dir, "shared", "controls")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "shared", "controls", "CompositorBlurRegion.qml")))
@@ -1446,13 +1448,16 @@ class TestShellManagement(unittest.TestCase):
         dock_preview_dir = os.path.join(shell_dir, "modules", "dock", "preview")
         self.assertFalse(os.path.exists(dock_preview_dir), "Dock preview directory must be deleted")
 
-        # 3. Deprecated Cava template deleted and removed from matugen config
-        cava_tpl = os.path.join(shell_dir, "assets", "matugen", "templates", "cava-colors.ini")
-        self.assertFalse(os.path.exists(cava_tpl), "cava-colors.ini template must be deleted")
-        matugen_cfg = os.path.join(shell_dir, "assets", "matugen", "config.toml")
-        with open(matugen_cfg, "r", encoding="utf-8") as f:
-            matugen_content = f.read()
-        self.assertNotIn("templates.cava", matugen_content)
+        # 3. Deprecated Cava template stays deleted; the Tera asset tree is
+        # fully replaced by the Noctalia-syntax builtin registry (P4).
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "assets", "matugen")),
+                         "the retired matugen Tera asset tree must stay deleted")
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "assets", "templates", "cava-colors.ini")),
+                         "cava-colors.ini template must stay deleted")
+        with open(os.path.join(shell_dir, "assets", "templates", "config.toml"), "r", encoding="utf-8") as f:
+            registry_content = f.read()
+        self.assertNotIn("cava", registry_content)
+        self.assertNotIn("yazi", registry_content)
 
         # 4. AudioSpectrum and WindowPreviewService stubs deleted
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "app", "services", "AudioSpectrum.qml")))
@@ -1499,9 +1504,9 @@ class TestShellManagement(unittest.TestCase):
 
         theme_scripts = [
             "generate-matugen-colors.sh",
+            "generate-matugen-previews.sh",
             "list-cursor-icon-themes.sh",
             "manage-matugen-templates.sh",
-            "set-system-color-scheme.sh",
             "write-niri-cursor-config.sh",
             "matugen-registry.jq",
         ]
@@ -1509,6 +1514,9 @@ class TestShellManagement(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(shell_dir, "scripts", "theme", s)), f"{s} must exist")
             old_s = s.replace("-", "_")
             self.assertFalse(os.path.exists(os.path.join(shell_dir, "scripts", "theme", old_s)), f"Old {old_s} must not exist")
+        # P4: the shell-side system writer is liquidated; nyxuri theme is the
+        # single system-level writer.
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "scripts", "theme", "set-system-color-scheme.sh")))
 
     def test_r4c_app_global_boundary_convergence(self):
         """R4-C-02a Contract: app/ global boundary convergence and domain state containment."""
@@ -2006,22 +2014,29 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("onSystemThemeModeObserved", theme_svc)
         self.assertIn('"/nyxuri/colors.json"', theme_svc)
         self.assertIn('"/clavis/colors.json"', theme_svc)
+        self.assertIn("--generated-home", theme_svc)
+        self.assertNotIn("--templates", theme_svc)
         self.assertIn("systemThemeModeObserved", read("app/services/UiPreferences.qml"))
-        matugen_svc = read("app/services/MatugenTemplateService.qml")
-        self.assertIn('"/nyxuri/scheme-previews.json"', matugen_svc)
-        self.assertIn('"/clavis/scheme-previews.json"', matugen_svc)
+        template_svc = read("app/services/TemplateService.qml")
+        self.assertIn('"/nyxuri/scheme-previews.json"', template_svc)
+        self.assertIn('"/clavis/scheme-previews.json"', template_svc)
+        self.assertIn('"/nyxuri/palette-modes.json"', template_svc)
 
         # The previews FileView left the page: UI files carry no file I/O.
         themes_page = read("modules/settings/dashboard/DashboardThemesPage.qml")
         self.assertNotIn("FileView", themes_page)
         self.assertNotIn("Quickshell.Io", themes_page)
-        self.assertIn("MatugenTemplateService.schemePreviews", themes_page)
+        self.assertIn("TemplateService.schemePreviews", themes_page)
 
-        # 5. Generator and matugen asset write the nyxuri/ path.
+        # 5. The generation script assembles palettes from matugen --json;
+        # the Tera render path is retired.
         previews_script = read("scripts/theme/generate-matugen-previews.sh")
         self.assertIn("$generated_home/nyxuri/scheme-previews.json", previews_script)
         self.assertNotIn("$generated_home/clavis/", previews_script)
-        self.assertIn("@CLAVIS_GENERATED_HOME@/nyxuri/colors.json", read("assets/matugen/config.toml"))
+        generator = read("scripts/theme/generate-matugen-colors.sh")
+        self.assertIn("--json hex", generator)
+        self.assertIn("palette-modes.json", generator)
+        self.assertNotIn("templates.", generator)
 
         # 6. LIFE008 registered with allowlist; auditor stays green.
         audit_src = read("scripts/dev/audit-lifecycle.py")
@@ -2351,6 +2366,141 @@ class TestDashboardSettingsCatalogIntegrity(unittest.TestCase):
             if tile_type in self.SELF_DRIVEN:
                 continue
             self.assertIn(":", key, f"card {key} must use a namespaced key")
+
+
+class TestP4ThemeEngineContract(unittest.TestCase):
+    """P4 theme contract: matugen as extraction slot, self-owned render engine.
+
+    - golden master (terminal derivation, 16-role mirror, expression subset)
+      runs through qmltestrunner against committed Noctalia reference outputs
+    - MD3 reference vectors pin matugen's palette to the engine-agreed values
+    - the extraction diff harness pins the known m3-content divergence
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        cls.shell_dir = os.path.join(cls.repo_root, "shell")
+        cls.fixtures = os.path.join(cls.shell_dir, "tests", "fixtures", "theme")
+
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+        self.addCleanup(self._ctx.__exit__, None, None)
+
+    def _matugen_json(self, image, scheme, mode):
+        import subprocess
+        res = subprocess.run(
+            ["matugen", "--source-color-index", "0", "image", image,
+             "--mode", mode, "--type", scheme, "--json", "hex", "-q"],
+            capture_output=True, text=True, timeout=60)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        return json.loads(res.stdout)["colors"]
+
+    def test_qml_golden_master(self):
+        runner = shutil.which("qmltestrunner") or "/usr/lib/qt6/bin/qmltestrunner"
+        if not os.path.exists(runner):
+            self.skipTest("qmltestrunner not available; theme engine golden master not executed")
+        env = dict(os.environ)
+        env.update({
+            "QT_QPA_PLATFORM": "offscreen",
+            "QML_XHR_ALLOW_FILE_READ": "1",
+            "QT_FORCE_STDERR_LOGGING": "1",
+            "QT_ASSUME_STDERR_HAS_CONSOLE": "1",
+        })
+        import subprocess
+        res = subprocess.run(
+            [runner, "-input", os.path.join(self.shell_dir, "tests", "qml", "tst_ThemeContract.qml")],
+            capture_output=True, text=True, timeout=120, env=env)
+        self.assertIn("Totals:", res.stdout + res.stderr, res.stderr[-2000:])
+        totals = self._totals_line(res.stdout)
+        self.assertRegex(totals, r"Totals: \d+ passed, 0 failed")
+        self.assertNotIn("FAIL!", res.stdout + res.stderr,
+                         "golden master failures:\n" + (res.stdout + res.stderr)[-4000:])
+
+    @staticmethod
+    def _totals_line(output):
+        for line in output.splitlines():
+            if line.startswith("Totals:"):
+                return line
+        return ""
+
+    def test_md3_reference_vectors(self):
+        """matugen output pinned to the engine-agreed MCU reference values.
+
+        The committed goldens carry Noctalia's deliberate container re-anchoring
+        (see test_extraction_diff_matrix); every non-container key is
+        byte-identical between the engines and therefore MCU-true.
+        """
+        if not shutil.which("matugen"):
+            self.skipTest("matugen not installed; MD3 reference vectors not executed")
+        divergence = {
+            ("dark", "scheme-tonal-spot"): set(),
+            ("light", "scheme-tonal-spot"): {"on_primary_container", "on_secondary_container",
+                                             "on_tertiary_container", "on_error_container"},
+            ("dark", "scheme-content"): {"on_primary_container", "on_secondary_container",
+                                         "on_tertiary_container"},
+            ("light", "scheme-content"): {"on_primary_container", "on_secondary_container",
+                                          "on_tertiary_container", "on_error_container"},
+        }
+        golden = json.load(open(os.path.join(self.fixtures, "golden", "solid-tonal-spot.json"),
+                                encoding="utf-8"))
+        for (mode, scheme), known in divergence.items():
+            if scheme != "scheme-tonal-spot":
+                continue
+            colors = self._matugen_json(os.path.join(self.fixtures, "images", "solid.png"),
+                                        scheme, mode)
+            self.assertEqual(len(colors), 50)
+            for token, reference in golden[mode].items():
+                if token.startswith("terminal") or token in ("hover", "on_hover") or token in known:
+                    continue
+                self.assertEqual(colors[token]["default"]["color"].lower(),
+                                 reference.lower(),
+                                 f"MD3 vector drift: {mode}/{token}")
+
+    def test_extraction_diff_matrix(self):
+        """matugen vs Noctalia reference: the divergence surface, pinned.
+
+        Noctalia re-anchors on_*_container tones (visible, dE00 ≈ 10) — that
+        is the measured cross-engine color diff this phase records. The mirror
+        palette + color-scheme-set is the documented alignment for it. A change
+        in the surface means the reference engine moved; re-measure.
+        """
+        if not shutil.which("matugen"):
+            self.skipTest("matugen not installed; extraction diff not executed")
+        expected = {
+            ("dark", "scheme-tonal-spot"): set(),
+            ("light", "scheme-tonal-spot"): {"on_primary_container", "on_secondary_container",
+                                             "on_tertiary_container", "on_error_container"},
+            ("dark", "scheme-content"): {"on_primary_container", "on_secondary_container",
+                                         "on_tertiary_container"},
+            ("light", "scheme-content"): {"on_primary_container", "on_secondary_container",
+                                          "on_tertiary_container", "on_error_container"},
+        }
+        goldens = {
+            "scheme-tonal-spot": json.load(open(
+                os.path.join(self.fixtures, "golden", "solid-tonal-spot.json"), encoding="utf-8")),
+            "scheme-content": json.load(open(
+                os.path.join(self.fixtures, "golden", "solid-content.json"), encoding="utf-8")),
+        }
+        for (mode, scheme), known in expected.items():
+            colors = self._matugen_json(os.path.join(self.fixtures, "images", "solid.png"),
+                                        scheme, mode)
+            drifted = set()
+            for token, reference in goldens[scheme][mode].items():
+                if token.startswith("terminal") or token in ("hover", "on_hover"):
+                    continue
+                if colors[token]["default"]["color"].lower() != reference.lower():
+                    drifted.add(token)
+            self.assertEqual(drifted, known,
+                             f"{scheme}/{mode} divergence surface changed; re-measure")
+
+    def test_theme_contract_files_exist(self):
+        for rel in ("shared/utils/ThemeColor.js", "shared/utils/ThemePalette.js",
+                    "shared/utils/TemplateExpr.js",
+                    "tests/qml/tst_ThemeContract.qml",
+                    "tests/fixtures/theme/README.md"):
+            self.assertTrue(os.path.isfile(os.path.join(self.shell_dir, rel)), rel)
 
 
 if __name__ == "__main__":

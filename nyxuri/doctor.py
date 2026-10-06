@@ -91,10 +91,21 @@ def _check_core_deps(env) -> None:
         tools = f"{MAIN_WM}, {THEME_ENGINE}, fish, starship"
         print(msg("doctor_ok", text(f"核心依赖已安装: {tools}", f"Core dependencies installed: {tools}")))
 
+def _check_matugen(env) -> None:
+    """Palette extraction engine — optional by contract, loud when absent."""
+    if shutil.which("matugen"):
+        res = timed_run(["matugen", "--version"], 5, capture_output=True, text=True, check=False)
+        version = res.stdout.strip() if res is not None and res.returncode == 0 else "unknown"
+        print(msg("doctor_ok", text(f"取色引擎: matugen {version}", f"Color engine: matugen {version}")))
+        return
+    print(msg("doctor_warn", text(
+        "取色引擎: 缺少 matugen — Shell 使用内置回退色，壁纸取色不可用（可选依赖）",
+        "Color engine: matugen is missing — the shell falls back to builtin colors; wallpaper extraction is unavailable (optional dependency)")))
+
+
 def _check_scripts(env) -> None:
     config_dir = env.config_dir
     scripts_info = [
-        (f"{THEME_ENGINE}/theme-sync.sh", "theme-sync.sh"),
         (f"{THEME_ENGINE}/wallpaper-hook.sh", "wallpaper-hook.sh"),
         (f"{THEME_ENGINE}/mpvpaper-sync.sh", "mpvpaper-sync.sh"),
         (f"{MAIN_WM}/scripts/session-shell.sh", "session-shell.sh"),
@@ -320,6 +331,7 @@ DOCTOR_SECTIONS = [
     ]),
     ("doctor_sec_core", [
         _check_core_deps,
+        _check_matugen,
         _check_scripts,
         _check_shell,
         _check_orbit,

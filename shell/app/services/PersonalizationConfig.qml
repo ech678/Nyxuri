@@ -1315,7 +1315,7 @@ Singleton {
     }
 
     function isMatugenTemplateEnabled(id) {
-        const template = MatugenTemplateService.templateById(id);
+        const template = TemplateService.templateById(id);
         if (!template || !template.valid)
             return false;
         if (Object.prototype.hasOwnProperty.call(root.matugenTemplates, id))
@@ -1324,7 +1324,7 @@ Singleton {
     }
 
     function setMatugenTemplateEnabled(id, enabled) {
-        const template = MatugenTemplateService.templateById(id);
+        const template = TemplateService.templateById(id);
         if (!root.ready || !template || !template.valid)
             return false;
         const nextEnabled = !!enabled;
@@ -2115,15 +2115,15 @@ Singleton {
         const hasBarLayouts = "barLayoutLeft" in bar || "barLayoutMiddle" in bar || "barLayoutRight" in bar;
         if (hasBarLayouts) {
             root.barLayoutLeft = root.normalizedBarLayoutIds(bar.barLayoutLeft);
-            root.barLayoutMiddle = root.normalizedBarLayoutIds(bar.barLayoutMiddle).filter(id => id !== "clock");
+            root.barLayoutMiddle = root.normalizedBarLayoutIds(bar.barLayoutMiddle).filter(id => id
+                                                                                                 !== "clock");
             root.barLayoutRight = root.normalizedBarLayoutIds(bar.barLayoutRight);
             if (!root.arraysEqual(root.barLeadingComponents, root.barLayoutLeft) && hasBarLayout) {
                 root.barLayoutLeft = root.normalizedBarLayoutIds(root.barLeadingComponents);
                 root.barLayoutRight = root.normalizedBarLayoutIds(root.barTrailingComponents);
             }
-            if (root.barLayoutLeft.indexOf("information") < 0 &&
-                root.barLayoutMiddle.indexOf("information") < 0 &&
-                root.barLayoutRight.indexOf("information") < 0) {
+            if (root.barLayoutLeft.indexOf("information") < 0 && root.barLayoutMiddle.indexOf("information")
+                    < 0 && root.barLayoutRight.indexOf("information") < 0) {
                 const wsIndex = root.barLayoutLeft.indexOf("workspaces");
                 if (wsIndex >= 0) {
                     root.barLayoutLeft.splice(wsIndex + 1, 0, "information");

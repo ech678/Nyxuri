@@ -265,6 +265,94 @@ R1–R7 是已交付基线。下一步从 R8 开始；P4 及之后保留在后�
 - 验收核心离线、缺插件/设备、锁屏、会话结束、SIGTERM、目标崩溃和失败恢复。
 - 完成视觉、行为、资源和文档证据后，才接纳封存功能或多合成器移植。
 
+## P4 实施记录（追加式，2026-10-06）
+
+**状态：实现完成、契约测试全绿；行为与视觉验收待作者实机确认（待验收）。**
+
+### M0 前置 spike（已完成）
+
+- matugen 4.2.0 实测：`--json hex` 一次输出全 mode，`.colors` 与退役的内部 Tera
+  模板 50 键同构（含 `source_color`）；`--source-color-index` 可用 → 采用
+  「纯取色 + 脚本组装」方案，Tera 渲染路径全量退役。
+- Noctalia 5.2.1 `noctalia theme <img> --scheme X --both -o` 离线可用，作为黄金参照；
+  golden fixtures（确定性 ffmpeg 图像 + 参照输出）入库
+  `shell/tests/fixtures/theme/`（再生命令见其 README）。
+- matugen↔Noctalia scheme 映射：m3-tonal-spot/fruit-salad/rainbow/monochrome ↔
+  scheme-* 全等；`m3-content ↔ scheme-content` 含已知 3 键分歧（见 M5）；
+  vibrant/faithful/soft/muted/dysfunctional 为 Noctalia 自有算法，无对等。
+
+### M1 契约层（已完成）
+
+- `generate-matugen-colors.sh` 重写：单次 matugen 提取 → 双写
+  `colors.json`（50 键热载契约不变）与 `palette-modes.json`（dark+light+source_color）；
+  `--generated-home` 改为显式必传（ThemeService 传 `Paths.generatedHome`），
+  消除旧 placeholder 依赖。`generate-matugen-previews.sh` 同步改 `--json`。
+- 16 角色 palette JSON（Noctalia 自定义色板 schema，dark/light + terminal 段）
+  由 `shared/utils/ThemePalette.js` 单点派生，TemplateService 原子写入
+  `~/.config/noctalia/palettes/nyxuri.json`（受管生成物，用户自建色板不触碰）。
+
+### M2 引擎收口（已完成）
+
+- matugen 注册表资产（`assets/matugen/`）删除；新内置注册表
+  `assets/templates/config.toml`（kitty/btop/starship vendor 自 Noctalia 5.2.1 MIT
+  并品牌化为 nyxuri；gtk3/gtk4/niri_glow/palette_toml 指向共享池
+  `~/.config/noctalia/templates/`——P4 不迁移池位置，留 P5 随部署接入处理）。
+- yazi 模板全链删除；cava 设置项死条目一并清除。
+- doctor 新增 `_check_matugen`：缺失报 WARN + 内置回退色说明，不阻断。
+- kitty 落地机制改为 Noctalia 式 include 行管理（`themes/nyxuri.conf`），
+  弃 `current-theme.conf` 整文件覆盖；starship apply 双向剥离 nyxuri/noctalia
+  托管块，保证双 Shell 交替写时文件不积累第二块。
+
+### M3 渲染层（已完成）
+
+- `shared/utils/ThemeColor.js`：material-color-utilities 0.3.0（Apache-2.0）
+  整合 vendor，往返精确；`ThemePalette.js`（terminal 22 token + 16 角色派生）、
+  `TemplateExpr.js`（表达式子集渲染，块/过滤器/`palettes.*` 显式拒绝）。
+- `MatugenTemplateService` 更名 `TemplateService`：注册表管理 + palette-modes
+  热载 + 镜像写入 + 串行渲染队列（读→渲→原子写→hook，参数数组 +
+  `TEMPLATE_DIR` 环境注入，失败按模板登记不阻塞队列）。
+- terminal 派生规则（逆向并 golden 验证）：黑=`surface_variant`、红=`error`、
+  绿=`primary`、黄=`secondary`、蓝=`tertiary`、magenta=`surface_tint`、
+  cyan=`secondary_fixed_dim`、白=`on_surface`、bright 黑=`outline`；
+  light 模式 magenta/cyan = dark 值在 tone 48.4 的 HCT 变体（参照引擎求解器
+  微差，契约容差 ΔE00 ≤ 1.5，实测最差 1.44）。
+
+### M4 深浅单一写手（已完成）
+
+- 删除 `set-system-color-scheme.sh` 与 `configs/noctalia/theme-sync.sh`
+  （manifest chmod、doctor 脚本清单、部署注释同步）；`configs/noctalia/README.md`
+  现行事实节改写、历史 Problem Log 加注。
+- `UiPreferences.writeSystemColorScheme` 改为代调 `nyxuri theme <mode>`
+  （binHome 探测，缺失 → 内部照切 + i18n 明示）；观察回路保持只读。
+- `ThemeService.setThemeMode` 加同值短路：CLI 经 IPC 回写时无回环。
+
+### M5 色差实测（已完成，矩阵钉值）
+
+- 分歧矩阵（solid fixture，matugen vs Noctalia golden）：dark tonal-spot 全等；
+  light tonal-spot 与双 mode content 在 `on_{primary,secondary,tertiary,error}_container`
+  分歧（Noctalia 将 container 前景色重锚定至 tone≈30，ΔE00 ≈ 10，可见）。
+- 钉在 `tests/test_shell.py::TestP4ThemeEngineContract.test_extraction_diff_matrix`；
+  对齐路径为镜像色板 + `noctalia msg color-scheme-set custom nyxuri`（文档化，
+  未自动接线——是否长期切换 Noctalia 至 custom 属策略决策，留验收时拍板）。
+
+### M6 验证（契约层全绿；行为证据待实机）
+
+- 契约测试：`TestP4ThemeEngineContract`（qmltestrunner golden master 6 项 +
+  MD3 向量 + 分歧矩阵）；`shell/tests/test_matugen_registry.sh` 重写为
+  --json 管线行为测试（真实 matugen，缺依赖 exit 77）；宿主 550 测试全绿；
+  `check.sh`（shellcheck/qml-lint/qml-format/lifecycle-audit）与分类测试
+  111 项全绿。
+- 行为证据（待实机）：壁纸切换→色板再生+模板渲染+镜像更新；深浅切换→CLI
+  代调链路（GTK/Kvantum/kitty/glow 跟随）；kitty include、btop 信号、starship
+  托管块；用户模板注册渲染与失败呈现。
+
+### P4 遗留与边界
+
+- 双 Shell 输出仲裁（ kitty 双 include、gtk.css 交替写）按「谁 active 谁写」
+  运行；切换残留清理归 P5 部署域。
+- 共享池位置迁移（`configs/theme/templates/` 中立化）需部署引擎配合，P5 处理。
+- 后置收口（不阻断 P5）：MCU 全量 vendor 替换取色位、matugen 资产与命名清算。
+
 ## 已交付基线
 
 以下只标记路线图改写前的历史基线，不替代后续行为验收：

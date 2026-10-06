@@ -28,9 +28,9 @@ Item {
     readonly property var schemes: PersonalizationConfig.matugenSchemes
     readonly property string activeScheme: PersonalizationConfig.matugenScheme
 
-    // The template ids nyxuri ships matugen templates for. MatugenTemplateService
-    // resolves each one and refuses ids it does not know, so a wrong id here
-    // simply does not render a working toggle.
+    // The template ids in the builtin registry. TemplateService resolves each
+    // one and refuses ids it does not know, so a wrong id here simply does not
+    // render a working toggle.
     readonly property var templates: [
         {
             "id": "kitty",
@@ -43,23 +43,38 @@ Item {
             "icon": "monitoring"
         },
         {
-            "id": "cava",
-            "label": I18n.tr("Cava"),
-            "icon": "graphic_eq"
+            "id": "starship",
+            "label": I18n.tr("Starship"),
+            "icon": "terminal"
         },
         {
-            "id": "yazi",
-            "label": I18n.tr("Yazi"),
-            "icon": "folder"
+            "id": "gtk3",
+            "label": I18n.tr("GTK 3"),
+            "icon": "palette"
+        },
+        {
+            "id": "gtk4",
+            "label": I18n.tr("GTK 4"),
+            "icon": "palette"
+        },
+        {
+            "id": "niri_glow",
+            "label": I18n.tr("Niri glow"),
+            "icon": "palette"
+        },
+        {
+            "id": "palette_toml",
+            "label": I18n.tr("Shared palette"),
+            "icon": "palette"
         }
     ]
 
     // Role swatches for the live preview. Kept in one place so the strip and any
     // future page share the same reading of the palette.
-    // True per-scheme preview palettes, owned by MatugenTemplateService (keyed
+    // True per-scheme preview palettes, owned by TemplateService (keyed
     // by scheme value, snake_case colors.json shape). Falls back to the live
     // palette for any scheme missing from the cache.
-    readonly property var schemePreviews: MatugenTemplateService.schemePreviews
+    readonly property var schemePreviews: TemplateService.schemePreviews
 
     function previewStrip(schemeValue) {
         const preview = root.schemePreviews[schemeValue];

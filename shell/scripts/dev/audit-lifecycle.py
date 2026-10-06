@@ -282,6 +282,10 @@ def check_file_violations(
 
     # 2. LIFE004: Direct external command execution
     if not is_gateway:
+        # Registry template hooks are shell command strings by contract (user
+        # managed, run verbatim with a parameter array and injected env); the
+        # shell-string ban targets concatenating runtime values into commands.
+        shell_hook_allowlist = {"app/services/TemplateService.qml"}
         for idx, line in enumerate(lines, 1):
             stripped = line.strip()
             if stripped.startswith("//") or stripped.startswith("/*") or stripped.startswith("*"):
@@ -296,7 +300,7 @@ def check_file_violations(
                         "Direct external command: Quickshell.execDetached must route through ActionGateway.execute(args, owner)",
                     )
                 )
-            if re.search(r'\[\s*"(sh|bash)"\s*,\s*"-c"\s*,', line):
+            if re.search(r'\[\s*"(sh|bash)"\s*,\s*"-c"\s*,', line) and rel_path not in shell_hook_allowlist:
                 violations.append(
                     AuditViolation(
                         "LIFE004",

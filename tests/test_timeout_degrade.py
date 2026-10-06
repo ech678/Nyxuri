@@ -72,10 +72,6 @@ class TestPostInstallHooksIndependence(unittest.TestCase):
     def test_sync_timeout_does_not_block_fisher(self):
         from nyxuri.deploy.deploy import _phase_post_install_services
 
-        sync_script = self._ctx.env.config_dir / "noctalia" / "theme-sync.sh"
-        sync_script.parent.mkdir(parents=True, exist_ok=True)
-        sync_script.touch()
-
         with patch("nyxuri.theme.sync", side_effect=RuntimeError("theme failure")), \
              patch("nyxuri.deploy.deploy.shutil.which", return_value=True), \
              patch("nyxuri.modules.fisher.fisher_install") as mock_fisher, \

@@ -13,7 +13,7 @@
 | 信号路径 | 机制 | 谁在用 | 时机 |
 |---|---|---|---|
 | Portal `color-scheme` | gsettings → xdg-desktop-portal → `AdwStyleManager` | Nautilus 等 GTK4/libadwaita | 实时（portal 信号） |
-| `settings.ini` `prefer-dark-theme` | `theme-sync.sh` 写入 → `GtkSettings` 读取 | Brave 等 Chromium | 启动时读一次 |
+| `settings.ini` `prefer-dark-theme` | `nyxuri theme`（CLI）写入 → `GtkSettings` 读取 | Brave 等 Chromium | 启动时读一次 |
 | `gtk-theme-name` 切换 | gsettings `gtk-theme` → `adw-gtk3(-dark)` | GTK3 老应用 | 启动时 + gsettings 信号 |
 
 此外还有 **gtk.css（M3 配色）**：由 Noctalia 渲染到 `~/.config/gtk-{3,4}.0/gtk.css`，
@@ -26,7 +26,6 @@ GTK3 热重载，GTK4 靠 `@media (prefers-color-scheme)` 实时切换。
 ```
 configs/noctalia/
 ├── README.md              ← 本文档
-├── theme-sync.sh          ← 调度中枢（深浅切换时运行）
 ├── noctalia-config.toml   ← hook + user template 注册
 ├── wallpaper-hook.sh      ← 壁纸切换 hook（视频缩略图）
 ├── mpvpaper-sync.sh       ← mpvpaper 视频壁纸同步
@@ -36,21 +35,24 @@ configs/noctalia/
     └── niri-glow-material-you.kdl ← Niri 动态聚焦光晕（跟随当前配色）
 ```
 
-### theme-sync.sh — 调度中枢
+### 系统级深浅同步 — `nyxuri theme`（CLI，唯一写手）
 
-`theme-sync.sh` 在深浅切换时运行，按 step 1-9 执行：
+深浅切换的系统级写入（gsettings、GTK INI、Kvantum、kitty 信号、glow 布局、
+Noctalia IPC）由 `nyxuri/theme.py` 唯一承担（P4 契约）。旧的
+`theme-sync.sh` 调度脚本已清算；Shell 侧只保留内部模式、色板再生、IPC
+端点与 gsettings 只读观察回路。本节列出它的职责（对应旧脚本 step 1-9）：
 
-| Step | 职责 | 说明 |
-|---|---|---|
-| 1 | 可覆盖变量 | `NYXURI_GTK_THEME_DARK` (兼顾 `NYXNIRI_*`) 等环境变量 |
-| 2 | 并发锁 | `flock` 防止快速 toggle 竞争 |
-| 3 | `atomic_update_ini` | 原子写 INI，含 regex 特殊字符转义 |
-| 4 | `set_system_theme` | gsettings / dconf 双路径降级 |
-| 5 | 模式解析 | `toggle` / `dark` / `light` / hook 环境变量 |
-| 6 | gsettings 广播 | `color-scheme` + `gtk-theme` 立即广播 |
-| 7 | settings.ini 同步 | 写入 `gtk-{3,4}.0/settings.ini` |
-| 8 | 热重载 | Kitty `SIGUSR1` + Kvantum |
-| 9 | 交互反馈 | 终端运行时打印结果 |
+| 职责 | 说明 |
+|---|---|
+| 可覆盖变量 | `NYXURI_GTK_THEME_DARK`（兼顾 `NYXNIRI_*`）等环境变量 |
+| 并发锁 | `flock` 防止快速 toggle 竞争 |
+| `atomic_update_ini` | 原子写 INI，含 regex 特殊字符转义 |
+| `set_system_theme` | gsettings / dconf 双路径降级 |
+| 模式解析 | `toggle` / `dark` / `light` / hook 环境变量 |
+| gsettings 广播 | `color-scheme` + `gtk-theme` 立即广播 |
+| settings.ini 同步 | 写入 `gtk-{3,4}.0/settings.ini` |
+| 热重载 | Kitty `SIGUSR1` + Kvantum |
+| 交互反馈 | 终端运行时打印结果 |
 
 ### noctalia-config.toml — 注册中心
 
@@ -97,21 +99,21 @@ portal `color-scheme` 选择。
 nyxuri theme toggle / dark / light
         │
         ▼
-theme-sync.sh
+nyxuri/theme.py（CLI，唯一系统写手）
         │
-        ├─ step 6: gsettings color-scheme + gtk-theme  ← 立即广播
+        ├─ gsettings color-scheme + gtk-theme  ← 立即广播
         │     │
         │     ├─ Brave (Chromium 114+): 读 portal color-scheme
         │     │    → 冷启动后需按钮唤醒（见 Problem 11），唤醒后实时跟随 ✅
         │     ├─ Firefox: 读 portal color-scheme → 秒跟 ✅
-        │     ├─ Kitty: 不读 gsettings，靠 step 8 SIGUSR1 → 秒跟 ✅
+        ├─ Kitty: 不读 gsettings，靠 SIGUSR1 → 秒跟 ✅
         │     └─ Nautilus (GTK4/libadwaita): 读 portal → AdwStyleManager
         │          → @media CSS 重求值 → 即时切换 ✅
         │
-        ├─ step 7: settings.ini 写入 (prefer-dark-theme + gtk-theme-name)
+        ├─ settings.ini 写入 (prefer-dark-theme + gtk-theme-name)
         │     └─ Brave (Chromium): 启动时读一次（冷启动兜底）
         │
-        ├─ step 8: pkill SIGUSR1 kitty + Kvantum
+        ├─ pkill SIGUSR1 kitty + Kvantum
         │
         └─ Noctalia 自动 (~6s)
               │
@@ -311,16 +313,17 @@ output_path = "/home/user/.config/gtk-4.0/gtk.css"
 `noctalia msg config-reload && noctalia msg templates-apply` 触发渲染；安装时
 `nyxuri/deploy/deploy.py:_phase_post_install_services()` 自动调用，手动触发用 `nyxuri gtk install`。
 
-### 6.7 theme-sync.sh 关系
+### 6.7 系统写手（原 theme-sync.sh）关系
 
-`theme-sync.sh`（深浅切换时运行，见 §3 信号流）做两件与 GTK 相关的事：
+`theme-sync.sh` 已于 P4 清算，职责并入 `nyxuri/theme.py`（见 §2）。它与
+GTK 相关的两件事不变：
 
 1. **gsettings / INI**：设 `gtk-theme = adw-gtk3(-dark)` 与 `color-scheme`。
    adw-gtk3 提供布局，`gtk.css` 覆盖颜色——结构基底，不需要改。
 2. **清理 legacy CSS**：删除含 `libadwaita.css` / `noctalia.css` / `iNiR theming`
    标记的 `gtk.css`。本目录模板生成的 CSS 不含这些标记，不会被误删（已确认）。
 
-壁纸切换时 Noctalia 重新渲染 `gtk.css`，`theme-sync.sh` 不运行——不需要，
+壁纸切换时 Noctalia 重新渲染 `gtk.css`，CLI 不运行——不需要，
 颜色更新由 Noctalia 模板引擎完成。
 
 ### 6.8 已知陷阱
@@ -563,7 +566,7 @@ M3 配色后，Qt 应用自动跟随，不需要 Kvantum（Kvantum 仅给走 Kva
 | Brave 启动时不跟深浅 | `gtk-4.0/settings.ini` 是否有 `gtk-application-prefer-dark-theme`？ |
 | Brave toggle 时不实时变色 | 去 `brave://settings/appearance` 切一次模式唤醒（Brave 冷启动 bug，见 Problem 11） |
 | 重启后 Nautilus 显示 adw（非 M3） | Noctalia 是否已渲染 gtk.css？等 ~8s 或手动 toggle 一次 |
-| 所有应用都不跟 | `gsettings get org.gnome.desktop.interface color-scheme` 是否正确？`theme-sync.sh` 是否运行？ |
+| 所有应用都不跟 | `gsettings get org.gnome.desktop.interface color-scheme` 是否正确？`nyxuri theme dark` 是否运行成功？ |
 | gtk.css 不更新 | `noctalia-config.toml` 是否注册了 `theme.templates.user.nyxuri_gtk4`？ |
 | gtk.css 渲染错色 | Noctalia 调色板是否已更新？（等 ~6s）`noctalia msg config-reload && noctalia msg templates-apply` |
 | Brave 报 Theme parsing error | `gtk-3.0.css` 是否含 GTK4 专有属性？ |
@@ -616,9 +619,9 @@ nyxuri theme light
 
 ## 11. 相关文件索引
 
-| 文件 | 职责 |
+| 文件 / 模块 | 职责 |
 |---|---|
-| `configs/noctalia/theme-sync.sh` | 深浅切换调度中枢 |
+| `nyxuri/theme.py` | 深浅切换系统写手（唯一） |
 | `configs/noctalia/noctalia-config.toml` | hook + user template 注册 |
 | `configs/noctalia/templates/gtk-3.0.css` | GTK3 M3 模板 |
 | `configs/noctalia/templates/gtk-4.0.css` | GTK4 M3 模板（双 @media） |
@@ -629,3 +632,4 @@ nyxuri theme light
 | `nyxuri/deploy/deploy.py` | 部署 + 模板渲染触发 |
 
 > 历史移植/排查笔记原在 `notes/`（本地开发笔记，不入库），内容已并入本文 §6 与 §7。
+> §7 Problem Log 中的 `theme-sync.sh` 引用是 P4 清算前的历史记录，现状见 §2。

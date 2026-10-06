@@ -115,8 +115,8 @@ def _propagate(mode: str, toggle: bool) -> str:
 def _sync_glow_layout(current: str) -> None:
     """Swap the fixed-glow niri layout for the active mode, then reload niri.
 
-    Mirrors theme-sync.sh: only runs when the glow preset is active and the
-    per-mode layout file exists; identical bytes are a no-op.
+    Only runs when the glow preset is active and the per-mode layout file
+    exists; identical bytes are a no-op.
     """
     env = get_env()
     active = env.presets_dir / "niri.active"

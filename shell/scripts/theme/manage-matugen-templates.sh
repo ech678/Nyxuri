@@ -22,7 +22,6 @@ fi
 [[ "$command_name" == validate || "$command_name" == add || "$command_name" == remove ]] || fail 'Unknown operation'
 template_id=${1:-}
 [[ "$template_id" =~ ^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$ ]] || fail 'Use letters, numbers, dots, hyphens or underscores for the template ID'
-[[ "$template_id" != quickshell ]] || fail 'This template ID is reserved by Clavis'
 
 # Serialize Clavis writers without creating the user registry just to inspect it.
 mkdir -p -- "$CLAVIS_RUNTIME_HOME/temporary"
@@ -104,14 +103,10 @@ jq -e '.sections | length == 1 and all(.[]; .valid)' <<< "$parsed" >/dev/null ||
 entry=$(jq -c '.sections[0]' <<< "$parsed")
 output=$(jq -r '.outputPath' <<< "$entry")
 [[ ! -d "$output" ]] || fail 'Output path points to a directory'
-# Matugen dry-run checks its config without executing hooks or writing outputs.
-# It does not guarantee template expressions will render; generation isolates failures.
-command -v matugen >/dev/null || fail 'Matugen is not installed'
-{
-    printf '[config]\nversion_check = false\n\n'
-    jq '.postHook = ""' <<< "$entry" | matugen_render_entry
-} > "$work_dir/config.toml"
-matugen color hex '#6750a4' --dry-run --config "$work_dir/config.toml" > "$work_dir/validation.log" 2>&1 || fail "Matugen validation failed: $(tail -c 2000 "$work_dir/validation.log")"
+# Expression rendering is validated by the shell's TemplateService against the
+# Noctalia-compatible subset; this registration path only guarantees the
+# registry entry and files are structurally sound. Render failures surface per
+# template in the settings UI instead of blocking registration.
 if [[ "$command_name" == validate ]]; then success; exit; fi
 
 filename=$(basename -- "$source_path")

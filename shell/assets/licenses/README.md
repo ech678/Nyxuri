@@ -93,3 +93,34 @@ Source: https://github.com/basmilius/meteocons, MIT © Bas Milius.
 The release bundles `@meteocons/svg@0.1.0` and `@meteocons/lottie@0.1.0` from npm.
 Their URLs and SHA-256 hashes are pinned in `packaging/dependencies.json`.
 The npm archives omit the license text; `Meteocons-MIT.txt` supplies it.
+
+## Material Color Utilities
+
+Source: [material-foundation/material-color-utilities](https://github.com/material-foundation/material-color-utilities),
+npm package `@material/material-color-utilities` 0.3.0, Apache-2.0 © Google LLC.
+
+| Upstream file | Nyxuri adaptation |
+| --- | --- |
+| `utils/math_utils.js`, `utils/color_utils.js`, `hct/viewing_conditions.js`, `hct/cam16.js`, `hct/hct_solver.js`, `hct/hct.js` | `shared/utils/ThemeColor.js`: consolidated into one `.pragma library`; ESM imports flattened, unused exports trimmed, math untouched. Additions at the bottom: `hexFromArgb`, `argbFromHex`, `hexToArgb`, `toneOf`, `hueChromaOf`, `hexFromHueChromaTone` |
+
+`M3Shapes-Apache-2.0.txt` carries the verbatim Apache-2.0 text for this file.
+The same math seeds the planned full material-color-utilities vendor that
+replaces the matugen extraction slot.
+
+## Noctalia (theme templates)
+
+Source: [Noctalia](https://noctalia.dev) 5.2.1, MIT © noctalia-dev
+(`noctalia-MIT.txt`).
+
+| Upstream file | Nyxuri adaptation |
+| --- | --- |
+| `assets/templates/kitty/kitty.conf` | `shell/assets/templates/kitty/kitty.conf`: header comment, otherwise verbatim |
+| `assets/templates/kitty/apply.sh` | `shell/assets/templates/kitty/kitty-apply.sh`: theme file and include line renamed to `nyxuri.conf` |
+| `assets/templates/btop/btop.theme` | `shell/assets/templates/btop/btop.theme`: header comment, otherwise verbatim |
+| `assets/templates/btop/apply.sh` | `shell/assets/templates/btop/btop-apply.sh`: `color_theme = "nyxuri"` |
+| `assets/templates/starship/starship.toml` | `shell/assets/templates/starship/starship.toml`: palette name `noctalia` → `nyxuri`, header comment |
+| `assets/templates/starship/apply.sh` | `shell/assets/templates/starship/starship-apply.sh`: cache path and markers renamed to nyxuri; also strips a previous Noctalia block so the co-managed `starship.toml` keeps a single palette block |
+
+The golden reference fixtures under `shell/tests/fixtures/theme/golden/` are
+unmodified `noctalia theme` outputs and remain covered by the same MIT notice.
+`undo.sh` scripts were not vendored: the P4 registry has no undo semantics yet.

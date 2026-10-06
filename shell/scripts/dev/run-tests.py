@@ -96,11 +96,13 @@ class ResourceIntegrityTests(unittest.TestCase):
             en_data = tomllib.load(f)
         self.assertIn("%n minute(s) ago", en_data)
 
-    def test_matugen_templates_exist(self):
-        """Assert all 4 Matugen template files exist."""
-        t_dir = SHELL_DIR / "assets" / "matugen" / "templates"
-        for t_file in ["btop.theme", "kitty-colors.conf", "quickshell-colors.json", "yazi-theme.toml"]:
-            self.assertTrue((t_dir / t_file).is_file(), f"Missing Matugen template: {t_file}")
+    def test_builtin_templates_exist(self):
+        """Assert the Noctalia-syntax builtin template pool is complete."""
+        t_dir = SHELL_DIR / "assets" / "templates"
+        for t_file in ["config.toml", "kitty/kitty.conf", "kitty/kitty-apply.sh",
+                       "btop/btop.theme", "btop/btop-apply.sh",
+                       "starship/starship.toml", "starship/starship-apply.sh"]:
+            self.assertTrue((t_dir / t_file).is_file(), f"Missing builtin template: {t_file}")
 
 
 def build_category_suite(category: str) -> unittest.TestSuite:

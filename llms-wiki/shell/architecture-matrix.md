@@ -75,10 +75,14 @@
 5. **UI 层无直接 I/O（LIFE008，R10）**：
    - `modules/` 视图与 `app/` 顶层装配禁止持有 `FileView`/`Process`；文件 I/O 与子进程归 `*Service/*Config/*Backend/*State/*Catalog` 域文件或显式 allowlist（lock 会话标记、PreLockCapture、MediaPalette）。
    - 用户触发的桌面副作用（如 Dock 强杀进程）由视图发起意图、Gateway/域服务派发并登记 owner（`"dock:force-quit"` 模式）。
-6. **主题模式单一真值（R10）**：
-   - Shell 主题模式唯一业务入口为 `ThemeService.setThemeMode/toggleThemeMode`；对外经 `theme` IPC target（`set dark|light`/`toggle`/`status`）暴露。
-   - 系统色彩方案变化经 `UiPreferences.systemThemeModeObserved` 信号闭环回写 `PersonalizationConfig.themeMode` 并重跑 matugen（同值 no-op 防回环）；60s 轮询仅为无 IPC 环境的兜底通道。
-   - 生成的 M3 调色板与 scheme 预览位于 `<generated>/nyxuri/`；读取侧保留旧 `clavis/` 目录一次性回退。
+6. **主题模式单一真值（R10 / P4 收口）**：
+   - Shell 主题模式唯一业务入口为 `ThemeService.setThemeMode/toggleThemeMode`（同值短路防回环）；对外经 `theme` IPC target（`set dark|light`/`toggle`/`status`）暴露。
+   - 深浅切换的系统级写入（gsettings、GTK INI、Kvantum、kitty 信号、glow 布局、Noctalia IPC）唯一归 `nyxuri/theme.py` CLI：Shell 切内部模式后代调 `nyxuri theme`，CLI 缺失时内部照切并经 `UiPreferences.systemThemeLastError` 明示；Shell 自带的 `set-system-color-scheme.sh` 与部署侧 `theme-sync.sh` 已清算。
+   - 系统色彩方案变化经 `UiPreferences.systemThemeModeObserved` 信号闭环回写 `PersonalizationConfig.themeMode` 并再生色板（同值 no-op 防回环）；60s 轮询仅为无 IPC 环境的兜底通道。
+   - 生成产物位于 `<generated>/nyxuri/`：`colors.json`（50 token 内部热载契约，读取侧保留旧 `clavis/` 一次性回退）、`palette-modes.json`（dark+light 双 mode，镜像与渲染的输入）、`scheme-previews.json`（scheme 画廊缓存）。
+   - **取色与渲染分层（P4）**：matugen 仅作取色位（`--json` 纯 stdout，一次输出全 mode）；模板渲染由 `app/services/TemplateService.qml` 经 `shared/utils/TemplateExpr.js`（Noctalia 兼容表达式子集，块/过滤器/`palettes.*` 显式拒绝）完成，matugen 不再渲染任何应用模板。
+   - **模板归属**：内置注册表 `shell/assets/templates/config.toml`（kitty/btop/starship vendor 自 Noctalia 5.2.1 MIT + 共享池 `~/.config/noctalia/templates/` 的 gtk/glow/palette.toml）；用户注册表机制不变。每次生成双写 16 角色 palette JSON 到 `~/.config/noctalia/palettes/nyxuri.json`（受管生成物，原子写）供 Noctalia `source = custom` 对齐选用；双 Shell 默认各自独立取色，谁 active 谁写全部输出。
+   - **派生契约**：terminal 22 token 与 16 角色映射单点实现在 `shared/utils/ThemePalette.js`（HCT 数学 vendor 自 material-color-utilities，Apache-2.0）；golden master 契约测试见 `shell/tests/qml/tst_ThemeContract.qml`，分歧矩阵（Noctalia 对 `on_*_container` 的 tone 重锚定）钉在 `tests/test_shell.py::TestP4ThemeEngineContract`。
 7. **切换器清场契约（R10 现场修复）**：
    - 切换决策基于 `probe_running_shells()` 全量实例清单，而非首个匹配；"already active" 仅在 target 在场且对侧零实例时成立，否则先清残留并报告被清对象。
    - spawn 前后双清场：`stop_all_shell_instances` 按类全量清扫（SIGTERM → 有界等待 → SIGKILL → 补等观察），`stop_shell_process` 返回真实死亡状态。

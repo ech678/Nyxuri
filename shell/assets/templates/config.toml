@@ -1,0 +1,49 @@
+# Nyxuri Shell builtin template registry.
+#
+# Rendered by app/services TemplateService through shared/utils TemplateExpr.js
+# (Noctalia-compatible expression subset). matugen takes no part in template
+# rendering: it only extracts the palettes (P4 contract).
+#
+# input_path resolves like the registry parser always did: relative to this
+# directory, or absolute, or ~/$HOME-prefixed. $TEMPLATE_DIR inside hooks
+# expands to the rendered template's directory at runtime.
+#
+# The gtk/niri/palette entries consume the shared template pool deployed to
+# ~/.config/noctalia/templates/ (both shells render the same files, so the two
+# engines stay byte-comparable); on a checkout without that pool these entries
+# surface as invalid instead of silently vanishing.
+
+[config]
+version_check = false
+
+[templates.kitty]
+input_path = "kitty/kitty.conf"
+output_path = "~/.config/kitty/themes/nyxuri.conf"
+post_hook = "bash \"$TEMPLATE_DIR/kitty-apply.sh\""
+
+[templates.btop]
+input_path = "btop/btop.theme"
+output_path = "~/.config/btop/themes/nyxuri.theme"
+post_hook = "bash \"$TEMPLATE_DIR/btop-apply.sh\""
+
+[templates.starship]
+input_path = "starship/starship.toml"
+output_path = "~/.cache/nyxuri/starship-palette.toml"
+post_hook = "bash \"$TEMPLATE_DIR/starship-apply.sh\""
+
+# Shared template pool (rendered for whichever shell is active).
+[templates.gtk3]
+input_path = "~/.config/noctalia/templates/gtk-3.0.css"
+output_path = "~/.config/gtk-3.0/gtk.css"
+
+[templates.gtk4]
+input_path = "~/.config/noctalia/templates/gtk-4.0.css"
+output_path = "~/.config/gtk-4.0/gtk.css"
+
+[templates.niri_glow]
+input_path = "~/.config/noctalia/templates/niri-glow-material-you.kdl"
+output_path = "~/.config/niri/colors.kdl"
+
+[templates.palette_toml]
+input_path = "~/.config/noctalia/templates/palette.toml"
+output_path = "~/.cache/nyxuri/palette.toml"

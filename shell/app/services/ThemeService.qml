@@ -135,7 +135,6 @@ Singleton {
     }
 
     property string generationError: ""
-    property string externalGenerationError: ""
     property string generationTemplateId: ""
     property string pendingGenerationTemplateId: ""
     property var pendingGeneration: null
@@ -171,23 +170,17 @@ Singleton {
         root.regenerateFromCurrentWallpaper();
     }
 
-    function enabledMatugenTemplates() {
-        const enabled = [];
-        for (const template of MatugenTemplateService.templates) {
-            if (template.valid && PersonalizationConfig.isMatugenTemplateEnabled(template.id)
-                    && enabled.indexOf(template.id) === -1)
-                enabled.push(template.id);
-        }
-        return enabled;
-    }
-
     function setMatugenTemplateEnabled(id, enabled) {
         let changed = PersonalizationConfig.setMatugenTemplateEnabled(id, enabled);
         if (changed && enabled)
-            root.regenerateFromCurrentWallpaper(id);
+            TemplateService.renderTemplate(id);
     }
 
     function setThemeMode(value) {
+        // Same-value no-op: the CLI delegates back over IPC after we spawn
+        // it, and without this guard that round trip would loop forever.
+        if (PersonalizationConfig.themeMode === value)
+            return;
         PersonalizationConfig.setThemeMode(value);
         root.applyConfigToAppearance();
         UiPreferences.setDarkMode(PersonalizationConfig.themeMode === "dark");
@@ -328,12 +321,12 @@ Singleton {
         root.lastSource = path;
         const command = ["bash", Paths.scriptPath("theme", "generate-matugen-colors.sh"), "--image", path, "--scheme",
                          PersonalizationConfig.matugenScheme, "--mode", PersonalizationConfig.themeMode,
-                         "--templates", root.enabledMatugenTemplates().join(",")];
+                         "--generated-home", Paths.generatedHome];
         root.startGeneration(command, templateId);
     }
 
     function startGeneration(command, templateId) {
-        if (generateColorsProcess.running || !MatugenTemplateService.ready || !PersonalizationConfig.ready) {
+        if (generateColorsProcess.running || !TemplateService.ready || !PersonalizationConfig.ready) {
             root.pendingGenerationTemplateId = templateId || "";
             root.pendingGeneration = command;
             return;
@@ -342,7 +335,6 @@ Singleton {
         root.pendingGenerationTemplateId = "";
         root.pendingGeneration = null;
         root.generationError = "";
-        root.externalGenerationError = "";
         root.coreReloaded = false;
         generateColorsProcess.command = command;
         generateColorsProcess.running = true;
@@ -352,16 +344,15 @@ Singleton {
         if (!root.pendingGeneration)
             return;
         const command = root.pendingGeneration.slice();
-        command[command.indexOf("--templates") + 1] = root.enabledMatugenTemplates().join(",");
         command[command.indexOf("--scheme") + 1] = PersonalizationConfig.matugenScheme;
         command[command.indexOf("--mode") + 1] = PersonalizationConfig.themeMode;
         root.startGeneration(command, root.pendingGenerationTemplateId);
     }
 
     Connections {
-        target: MatugenTemplateService
+        target: TemplateService
         function onReadyChanged() {
-            if (MatugenTemplateService.ready && root.pendingGeneration)
+            if (TemplateService.ready && root.pendingGeneration)
                 root.resumeGeneration();
         }
     }
@@ -369,7 +360,7 @@ Singleton {
     Connections {
         // startGeneration() also defers when PersonalizationConfig is still
         // loading its JSON. Without this listener a generation deferred for that
-        // reason is only resumed if MatugenTemplateService happens to flip ready
+        // reason is only resumed if TemplateService happens to flip ready
         // afterwards — and when the template service was already ready, nothing
         // emits a change, so the palette is never generated at all.
         target: PersonalizationConfig
@@ -396,8 +387,7 @@ Singleton {
         root.lastSource = value;
         const command = ["bash", Paths.scriptPath("theme", "generate-matugen-colors.sh"), "--color",
                          sourceColor, "--scheme", PersonalizationConfig.matugenScheme, "--mode",
-                         PersonalizationConfig.themeMode, "--templates", root.enabledMatugenTemplates().join(
-                             ",")];
+                         PersonalizationConfig.themeMode, "--generated-home", Paths.generatedHome];
         root.startGeneration(command, templateId);
     }
 
@@ -518,9 +508,6 @@ Singleton {
                     if (status.event === "core-ready") {
                         root.coreReloaded = true;
                         root.reloadColors();
-                    } else if (status.event === "external-error") {
-                        root.externalGenerationError += (root.externalGenerationError ? "\n" : "")
-                                + status.id + ": " + status.error;
                     } else if (status.event === "core-error") {
                         root.generationError = status.error;
                     }
@@ -532,14 +519,11 @@ Singleton {
         onExited: exitCode => {
             root.generating = false;
             root.generationTemplateId = "";
-            if ((exitCode === 0 || exitCode === 3) && !root.coreReloaded)
+            if (exitCode === 0 && !root.coreReloaded)
                 root.reloadColors();
-            if (exitCode !== 0 && exitCode !== 3)
+            if (exitCode !== 0)
                 root.generationError = root.generationError || generationStderr.text.trim() || I18n.tr(
                             "Failed to generate Matugen colors");
-            if (exitCode === 3 && !root.externalGenerationError)
-                root.externalGenerationError = generationStderr.text.trim() || I18n.tr(
-                            "Some Matugen templates failed to generate");
             if (root.pendingGeneration)
                 Qt.callLater(root.resumeGeneration);
         }

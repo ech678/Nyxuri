@@ -35,31 +35,38 @@
 | R9 | 功能开关与真实生命周期 | 已完成 |
 | R10 | Action Gateway 与模块自治 | 待验收 |
 | R11 | 控制面与透明度 | 已完成 |
+| R12 | 全局文档架构重塑 | 已完成 |
 
 「已完成」表示该阶段按当时验收标准交付并留有行为证据，明细见归档台账。
 R10 行为与契约测试全绿，待作者实机验收后改为已完成。
 
-## 当前阶段：R12 全局文档架构重塑（进行中）
+## 当前阶段：P4 主题契约、模板兼容与取色引擎分阶（实现完成，待验收）
 
-**目标：** 终结文档熵增，建立覆盖全局的单一真值体系：契约、知识、状态、历史四层各就其位，
-具备自愈与可检验能力，为后续 Agent 协作留出清晰边界。
+**目标：** 主题契约与渲染引擎自有、与 Noctalia v5 palette/template 规范兼容；
+matugen 降格为纯取色位；深浅模式系统级写入收敛为 `nyxuri theme` 单一实现。
 
-**实施：**
-- 真值拓扑分层（L0 源码与测试 / L1 AGENTS 契约 / L2 wiki 与 ROADMAP / L3 upstream 与 archive），
-  规则沉淀于 [docs-charter](../llms-wiki/docs-charter.md)，每处事实有且仅有一个权威层。
-- Shell 子 Wiki 解散：活契约并入 `llms-wiki/shell/`，上游参考并入 `llms-wiki/upstream/`，
-  时点审计与明细台账并入 `llms-wiki/archive/`；许可证文本按发行资产归 `shell/assets/licenses/`。
-- 双 ROADMAP 压缩：本页只留台账与当前阶段；根 ROADMAP 只留跨域待办，删除与 Shell 台账的复述。
-- `notes/`（gitignored）定性为免维护屎山并整体冻结；入 wiki 唯一方式是捞出草稿晋升为契约页。
-- 门禁固化：活区链接闭合与 llms.txt 双向闭包进入 `tests/test_ai_specs.py`。
+**实施（明细见台账 P4 实施记录）：**
+- 契约层：一次生成双写 `colors.json`（50 token 热载，schema 不变）与
+  `palette-modes.json`；16 角色 palette JSON 镜像至 Noctalia 自定义色板目录，
+  双 Shell 默认各自独立取色，谁 active 谁写全部输出。
+- 短期引擎：matugen 仅 `--json` 纯取色，Tera 渲染路径全量退役；纳入 doctor
+  可选依赖检查。
+- 渲染层：TemplateAdapter 落 `app/services/TemplateService.qml`，表达式子集
+  （块/过滤器/`palettes.*` 显式拒绝）；kitty/btop/starship vendor 入库（MIT
+  来源映射），yazi 取色模板删除。
+- 深浅模式：Shell 侧系统写入清算，代调 `nyxuri theme`（CLI 缺失时内部照切
+  并明示）；gsettings 只读观察回路保留。
+- 色差实测：分歧矩阵已钉值（`on_*_container` 系 Noctalia tone 重锚定，
+  ΔE00≈10）；对齐路径为镜像色板 + `color-scheme-set`。
 
-**验收：** 活区链接 100% 有效；llms.txt 双向闭包；全量单测与 compileall 全绿；
-活区无过期契约、无断链、无冒充现行事实的历史内容。
+**验收：** 契约测试全绿（golden master + MD3 向量 + 分歧矩阵 + 注册表行为测试，
+宿主 550 测试、分类 111 测试、check.sh 全绿）；壁纸切换/深浅代调链路/模板
+hooks 的实机行为证据与视觉验收待作者确认。镜像色板是否长期作为 Noctalia
+对齐策略（`source = custom`）留验收拍板。
 
 ## 后续阶段
 
-- **P4 壁纸、调色与模板兼容**（前置：R10–R12 完成）：核对 Noctalia 模板、变量、过滤器和 `palette.toml` 字段，不自行发明兼容语法；复用已验证的壁纸、M3 调色与模板算法；用户覆盖不被覆盖，写入失败可回滚。
-- **P5 完整宿主、部署与双轨生态**（前置：P4）：验收 launcher、session、settings、clipboard、lock、wallpaper-random 六动作；按原子复制、Dunder、manifest、快照、回滚和卸载契约接入部署；切换失败不损失配置、不留受管残留。
+- **P5 完整宿主、部署与双轨生态**（前置：P4）：验收 launcher、session、settings、clipboard、lock、wallpaper-random 六动作；按原子复制、Dunder、manifest、快照、回滚和卸载契约接入部署；共享池位置中立化与双 Shell 输出仲裁（kitty 双 include、gtk.css 交替写残留）随部署接入处理；切换失败不损失配置、不留受管残留。
 - **P6 整体验收与未来移植**（前置：P5）：固定机器与版本基线，验收离线、缺插件/设备、锁屏、SIGTERM、目标崩溃和失败恢复；视觉、行为、资源和文档证据齐备后才接纳封存功能或多合成器移植。
 
 ## 已确认的历史决策

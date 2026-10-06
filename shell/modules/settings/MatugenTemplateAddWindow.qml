@@ -23,7 +23,7 @@ FloatingWindow {
         outputField.text = "";
         hookField.text = "";
         root.advanced = false;
-        MatugenTemplateService.operationError = "";
+        TemplateService.operationError = "";
         root.visible = true;
     }
     function dismiss() {
@@ -42,7 +42,7 @@ FloatingWindow {
     onClosed: root.dismiss()
 
     Connections {
-        target: MatugenTemplateService
+        target: TemplateService
         function onAdded(templateId) {
             if (root.visible)
                 root.dismiss();
@@ -86,7 +86,7 @@ FloatingWindow {
                     id: form
                     width: parent.width
                     spacing: Metrics.spacingM
-                    enabled: !MatugenTemplateService.busy
+                    enabled: !TemplateService.busy
 
                     SettingsActionRow {
                         Layout.fillWidth: true
@@ -131,9 +131,9 @@ FloatingWindow {
                     }
                     InlineStatusBanner {
                         Layout.fillWidth: true
-                        visible: MatugenTemplateService.operationError !== ""
+                        visible: TemplateService.operationError !== ""
                         tone: "error"
-                        message: MatugenTemplateService.operationError
+                        message: TemplateService.operationError
                     }
                 }
             }
@@ -147,7 +147,7 @@ FloatingWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     width: implicitWidth
                     height: implicitHeight
-                    busy: MatugenTemplateService.adding
+                    busy: TemplateService.adding
                 }
 
                 RowLayout {
@@ -158,16 +158,16 @@ FloatingWindow {
 
                     ActionButton {
                         text: I18n.tr("Cancel")
-                        enabled: !MatugenTemplateService.adding
+                        enabled: !TemplateService.adding
                         onClicked: root.dismiss()
                     }
                     ActionButton {
                         text: I18n.tr("Add")
                         filled: true
-                        enabled: !MatugenTemplateService.busy && root.sourcePath !== "" && idField.text !== ""
-                                 && !idField.error && outputField.text.trim() !== ""
-                        onClicked: MatugenTemplateService.add(idField.text, root.sourcePath, outputField.text,
-                                                              hookField.text)
+                        enabled: !TemplateService.busy && root.sourcePath !== "" && idField.text !== "" &&
+                                 !idField.error && outputField.text.trim() !== ""
+                        onClicked: TemplateService.add(idField.text, root.sourcePath, outputField.text,
+                                                       hookField.text)
                     }
                 }
             }

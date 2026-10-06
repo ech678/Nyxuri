@@ -591,8 +591,8 @@ StyledFlickable {
             ToggleSettingRow {
                 title: I18n.tr("Blur wallpaper only")
                 description: BlurService.niriIntegrationReady ? I18n.tr(
-                                                                   "Turning this off also blurs windows and uses more resources") :
-                                                               I18n.tr("Configure Niri blur integration first")
+                                                                    "Turning this off also blurs windows and uses more resources") :
+                                                                I18n.tr("Configure Niri blur integration first")
                 enabled: BlurService.available && BlurService.niriIntegrationReady
                 checked: PersonalizationConfig.shellBlurXray
                 onToggled: checked => PersonalizationConfig.setShellBlurXray(checked)
@@ -837,12 +837,12 @@ StyledFlickable {
                     IconButton {
                         iconName: "refresh"
                         tooltipText: I18n.tr("Refresh templates")
-                        onClicked: MatugenTemplateService.refresh()
+                        onClicked: TemplateService.refresh()
                     }
                     ActionButton {
                         text: I18n.tr("Add")
                         iconName: "add"
-                        enabled: !MatugenTemplateService.busy && PersonalizationConfig.ready
+                        enabled: !TemplateService.busy && PersonalizationConfig.ready
                         onClicked: templateAddWindow.showWindow()
                     }
                 }
@@ -850,25 +850,25 @@ StyledFlickable {
 
             InlineStatusBanner {
                 Layout.fillWidth: true
-                visible: MatugenTemplateService.error !== ""
+                visible: TemplateService.error !== ""
                 tone: "error"
-                message: MatugenTemplateService.error
+                message: TemplateService.error
             }
             InlineStatusBanner {
                 Layout.fillWidth: true
-                visible: !templateAddWindow.visible && MatugenTemplateService.operationError !== ""
+                visible: !templateAddWindow.visible && TemplateService.operationError !== ""
                 tone: "error"
-                message: MatugenTemplateService.operationError
+                message: TemplateService.operationError
             }
             InlineStatusBanner {
                 Layout.fillWidth: true
-                visible: ThemeService.generationError !== "" || ThemeService.externalGenerationError !== ""
+                visible: ThemeService.generationError !== "" || TemplateService.mirrorError !== ""
                 tone: "error"
                 message: ThemeService.generationError !== "" ? I18n.tr("Failed to generate Matugen colors") :
-                                                               I18n.tr("Some Matugen templates failed to generate")
+                                                               I18n.tr("Failed to write the Noctalia palette mirror")
                 StyledToolTip {
                     extraVisibleCondition: errorHover.hovered
-                    text: ThemeService.generationError || ThemeService.externalGenerationError
+                    text: ThemeService.generationError || TemplateService.mirrorError
                 }
                 HoverHandler {
                     id: errorHover
@@ -876,7 +876,7 @@ StyledFlickable {
             }
 
             Repeater {
-                model: MatugenTemplateService.templates
+                model: TemplateService.templates
 
                 SettingsRow {
                     id: templateRow
@@ -937,19 +937,19 @@ StyledFlickable {
                                 tooltipText: I18n.tr("Open template location") + "\n"
                                              + templateRow.modelData.inputPath + "\n" + I18n.tr(
                                                  "Output: %1").arg(templateRow.modelData.outputPath)
-                                onClicked: MatugenTemplateService.openLocation(templateRow.modelData)
+                                onClicked: TemplateService.openLocation(templateRow.modelData)
                             }
                             IconButton {
                                 visible: templateRow.modelData.origin === "user"
                                 iconName: "delete"
                                 tooltipText: I18n.tr("Delete template")
-                                enabled: !MatugenTemplateService.busy && !ThemeService.generating
+                                enabled: !TemplateService.busy && !ThemeService.generating
                                          && PersonalizationConfig.ready
                                 onClicked: root.requestTemplateDeletion(templateRow.modelData)
                             }
                             StyledSwitch {
                                 enabled: templateRow.modelData.valid && !ThemeService.generating &&
-                                         !MatugenTemplateService.busy && PersonalizationConfig.ready
+                                         !TemplateService.busy && PersonalizationConfig.ready
                                 checked: templateRow.modelData.valid
                                          && PersonalizationConfig.isMatugenTemplateEnabled(
                                              templateRow.modelData.id)
@@ -994,11 +994,10 @@ StyledFlickable {
                 }
                 ActionButton {
                     text: I18n.tr("Delete")
-                    enabled: !MatugenTemplateService.busy && !ThemeService.generating
-                             && PersonalizationConfig.ready
+                    enabled: !TemplateService.busy && !ThemeService.generating && PersonalizationConfig.ready
                     onClicked: {
                         if (root.pendingDeleteTemplate)
-                            MatugenTemplateService.remove(root.pendingDeleteTemplate.id);
+                            TemplateService.remove(root.pendingDeleteTemplate.id);
                         templateDialog.close();
                     }
                 }

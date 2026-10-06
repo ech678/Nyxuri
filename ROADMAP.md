@@ -8,9 +8,9 @@
 ## 自研 Shell（当前：R12 文档架构重塑）
 
 - 阶段台账与当前进度：见 [shell/ROADMAP.md](shell/ROADMAP.md)，此处不复述。
-- [ ] **原生壁纸管理与 M3 调色直出**：Shell 模式下算法直出同构 `palette.toml`，无需外部 Python GUI 伴生脚本（P4 交付；启动器与壁纸域已在 R4-C 完成代码自治）。
+- [ ] **原生壁纸管理与 MD3 取色内生**：壁纸域自治之上取色引擎可插拔——短期经契约层走 matugen，长期以 material-color-utilities 纯 JS 移植替换并退役 matugen，直出色板契约、无外部取色二进制（P4 落契约、后置收口；启动器与壁纸域已在 R4-C 完成代码自治）。
 - [x] **六大标准动作与双 Shell 切换**：`launcher` / `session` / `settings` / `clipboard` / `lock` / `wallpaper-random` 经 `shell-action.sh` 零改动响应；`nyxuri shell set` 热切换与异常安全回滚已交付（P1/P2，证据见 Shell 台账）。
-- [ ] **Noctalia Template 兼容 (TemplateAdapter)**：支持 Jinja 风格模板规范与变量命名空间，GTK CSS、Fcitx SVG、Kitty、Starship 和用户模板无需重写（P4 交付）。
+- [ ] **Noctalia Template 兼容与主题契约 (TemplateAdapter)**：落地 palette JSON 色板契约与 Noctalia 模板规范（`{{ }}` 表达式、`<* *>` 块与过滤器）适配层，GTK CSS、Fcitx5、Kitty、Starship 和用户模板无需重写；深浅模式系统同步收敛到 `nyxuri theme` 单一实现；运行时不依赖 noctalia 二进制（P4 交付）。
 - [ ] **Noctalia + Wallpaper Picker 协同稳固验收**：双轨方案互不干扰、各自纯白（P5 验收）。
 
 ## Shell 后生态
