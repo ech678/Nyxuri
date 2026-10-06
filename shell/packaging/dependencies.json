@@ -418,11 +418,7 @@
           "purpose": "Color picker",
           "defaultInstall": true
         },
-        {
-          "package": "awww",
-          "purpose": "Optional wallpaper backend",
-          "defaultInstall": true
-        },
+
         {
           "package": "brightnessctl",
           "purpose": "Backlight control",

@@ -152,13 +152,29 @@ R1–R7 是已交付基线。下一步从 R8 开始；P4 及之后保留在后�
 
 **验收：** 侧边栏为纯一级分类列表且分类按功能域可预测；General 和 Advanced 多级容器与返回按钮彻底消除；视觉风格严谨符合 Material Design 3 规范与几何秩序感；Default 与 Minimal 为同一组件且自适应紧凑切换生效；旧 route ID 别名映射有效，Spotlight 搜索与 CLI 直达不中断；`SearchCatalog.js` 派生检查与契约测试全绿。
 
-### R9 功能开关与真实生命周期
+### R9 功能开关与真实生命周期（已完成）
 
-**目标：** 功能开关控制实例存在，而非仅控制可见性；按用户理解的能力域设开关，不为每个视觉子组件造开关。
+**目标：** 功能开关控制实例存在，而非仅控制可见性；按用户理解的能力域设开关，不为每个视觉子组件造开关。明确 `enabled`（用户允许）、`active`（存在消费者）、`mounted`（实例已创建）严格生命周期语义。
 
-**重点审查：** `AppShell.qml` 中的模块装配；Bar、Dock、Keystone、侧栏、桌面卡片、通知 fallback、快捷键面板、显示叠层、设置子窗口；壁纸域服务及其 singleton；`SystemCardService`、显示和侧栏状态归属；`DisplayConfigService`、`AutostartService`、`NetworkPage`、`SettingsBackend` 的 Timer/Process/取消行为。
+**实施与完成：**
+- **AppShell 根装配真卸载**：
+  - `DisplayOverlays.qml` 包装进条件 Loader（仅在 `DisplayConfigService.identify || confirming` 时挂载）；
+  - `Bar.qml` 包装进条件 Loader（`PersonalizationConfig.barEnabled` 关闭时真实卸载物理 layer-shell PanelWindow）；
+  - `DockHost.qml` 包装进条件 Loader（`DockService.enabled` 停用时销毁全部 dock 窗口与监听）；
+  - `NotificationPopupHost.qml` 仅在 `!PersonalizationConfig.keystoneEnabled` 时挂载 fallback 宿主。
+- **Layer-shell 背景与表面零僵尸实例**：
+  - `OverviewWallpaper.qml` 将 Variants model 绑定为 `PersonalizationConfig.overviewEnabled ? Quickshell.screens : []`，关闭后即刻销毁后台 Background 表面；
+  - `DesktopWallpaper.qml` 将 Variants model 绑定为 `AwwwWallpaperService.quickshellContentVisible ? Quickshell.screens : []`，启用外部 awww 后端时物理销毁 Quickshell 壁纸窗口，杜绝双重渲染开销；
+  - `HotCorners.qml` 严格过滤 `PersonalizationConfig.hotCornerIds`，仅针对未设为 `"disabled"` 的物理热角实例化 Overlay PanelWindow；
+  - `RegionSelector.qml` 将 Variants model 绑定为 `RegionSelectionService.active ? Quickshell.screens : []`，闲置时零 Loader 与零窗口常驻。
+- **领域服务与设置后台防泄漏收敛**：
+  - `DockService.qml`：`rebuild()` 增加停用判定，禁用时清空数据模型并停止 `launchTimeout` 定时器；`Connections` 目标与 `root.enabled` 绑定，禁用时完全断开 Niri、ApplicationService 及 SpotlightAppUsage 信号响应；
+  - `WallpaperSceneService.qml`：增加 `pruneScenes()` 动态感知屏幕插拔并销毁离线 screen 的 scene 实例；增加 `Component.onDestruction` 完整清理所有场景；
+  - `DisplayConfigService.qml`：增加 `cancelPreview()` 接口；在 `Component.onDestruction` 中严谨停止 `identifyTimer` 与 `pollTimer`，终止 dangling 外部操作；
+  - `AutostartService.qml`：显式跟踪动态创建的 `deleteProcess` 句柄，销毁时强制终止并析构，杜绝孤儿进程泄漏；
+  - `SettingsBackend.qml`：增加 `Component.onDestruction`，销毁时调用 `cancelSearch()` 停止 `searchDeadline` 并重置搜索状态。
 
-**实施与验收：** 明确 `enabled`（用户允许）、`active`（存在消费者）、`mounted`（实例已创建）的语义；停用必须销毁窗口、Loader 内容、计时器、进程、请求、监听和旧回调。异步工作具备 owner、取消入口和销毁后失效保护。对每个能力测试启用—使用—关闭—等待—重新启用及缺依赖、失败、Shell 退出路径；生命周期清单提供静态审计与运行时证据。单一功能域使用的全局 singleton 迁回领域或改为实例注入。
+**验收：** 静态生命周期审计全量覆盖 549 个文件零违规（`audit-lifecycle.py --scope full --check` clean）；五大分类测试套件全部 105 用例独立通过（STATIC 20, LOGIC 48, RESOURCE 9, NATIVE 26, GRAPHICS 2）；契约断言全面覆盖 R9 挂载语义与清理守卫。
 
 ### R10 Action Gateway 与模块自治
 

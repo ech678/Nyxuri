@@ -21,7 +21,7 @@ Item {
             required property var modelData
 
             Variants {
-                model: PersonalizationConfig.hotCornerIds
+                model: PersonalizationConfig.hotCornerIds.filter(id => (PersonalizationConfig.hotCornerActions[id] || "disabled") !== "disabled")
 
                 PanelWindow {
                     id: corner

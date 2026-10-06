@@ -74,7 +74,10 @@ Item {
         });
     }
 
-    DisplayOverlays {}
+    Loader {
+        active: DisplayConfigService.identify || DisplayConfigService.confirming
+        source: Qt.resolvedUrl("../modules/settings/DisplayOverlays.qml")
+    }
 
     WallpaperBackground {}
 
@@ -83,9 +86,15 @@ Item {
         source: Qt.resolvedUrl("../modules/desktopcards/DesktopCardHost.qml")
     }
 
-    Bar {}
+    Loader {
+        active: PersonalizationConfig.barEnabled
+        source: Qt.resolvedUrl("../modules/bar/Bar.qml")
+    }
 
-    DockHost {}
+    Loader {
+        active: DockService.enabled
+        source: Qt.resolvedUrl("../modules/dock/DockHost.qml")
+    }
 
     Keystone {
         id: keystone

@@ -239,4 +239,8 @@ Singleton {
         root._openRequested = false;
         root._pendingPage = "";
     }
+
+    Component.onDestruction: {
+        root.cancelSearch();
+    }
 }

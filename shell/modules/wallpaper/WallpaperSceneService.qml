@@ -67,6 +67,26 @@ Singleton {
         return resolved;
     }
 
+    function pruneScenes() {
+        const activeNames = {};
+        for (let i = 0; i < Quickshell.screens.length; i += 1) {
+            activeNames[String(Quickshell.screens[i].name)] = true;
+        }
+        let changed = false;
+        const next = {};
+        for (let name in root.scenes) {
+            if (activeNames[name]) {
+                next[name] = root.scenes[name];
+            } else {
+                if (root.scenes[name] && typeof root.scenes[name].destroy === "function")
+                    root.scenes[name].destroy();
+                changed = true;
+            }
+        }
+        if (changed)
+            root.scenes = next;
+    }
+
     function refreshAllScenes() {
         for (let key in root.scenes) {
             const scene = root.scenes[key];
@@ -127,14 +147,13 @@ Singleton {
                                                                                screenName) : "Fill"
             readonly property int fillMode: WallpaperService.qtFillMode(fillModeName)
             readonly property bool sourceIsColor: !WallpaperService.isImagePath(sourcePath)
-            readonly property bool externalBackend: AwwwWallpaperService.effectiveBackend === "awww"
-            readonly property bool panoramaSelected: fillModeName === "panorama" && !externalBackend
+            readonly property bool panoramaSelected: fillModeName === "panorama"
             readonly property bool hasHorizontalDriver: PersonalizationConfig.parallaxFollowTiledColumns
                                                         || PersonalizationConfig.parallaxFollowSidebars
             readonly property bool hasVerticalDriver: PersonalizationConfig.parallaxVerticalEnabled
                                                       && PersonalizationConfig.parallaxFollowWorkspaces
             readonly property bool parallaxRequested: hasHorizontalDriver || hasVerticalDriver
-            readonly property bool parallaxSupported: !externalBackend && WallpaperMath.supportsParallaxCanvas(
+            readonly property bool parallaxSupported: WallpaperMath.supportsParallaxCanvas(
                                                           !panoramaSelected && fillMode
                                                           === Image.PreserveAspectCrop, sourcePath,
                                                           sourceIsColor)
@@ -309,7 +328,25 @@ Singleton {
             root.refreshAllScenes();
         }
         function onOutputsChanged() {
+            root.pruneScenes();
             root.refreshAllScenes();
         }
+    }
+
+    Connections {
+        target: Quickshell
+
+        function onScreensChanged() {
+            root.pruneScenes();
+            root.refreshAllScenes();
+        }
+    }
+
+    Component.onDestruction: {
+        for (let key in root.scenes) {
+            if (root.scenes[key] && typeof root.scenes[key].destroy === "function")
+                root.scenes[key].destroy();
+        }
+        root.scenes = ({});
     }
 }

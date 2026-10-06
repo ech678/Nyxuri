@@ -6,7 +6,7 @@ import qs.shared.theme
 import qs.app.services
 
 Variants {
-    model: Quickshell.screens
+    model: PersonalizationConfig.overviewEnabled ? Quickshell.screens : []
 
     PanelWindow {
         id: overviewWindow

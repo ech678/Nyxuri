@@ -74,6 +74,7 @@ Singleton {
     }
     readonly property int revision: root._revision
     readonly property bool enabled: root._options.enabled
+    onEnabledChanged: root.rebuild()
     readonly property string position: root._options.position
     readonly property string surfaceStyle: root._options.surfaceStyle
     readonly property int iconSize: root._options.iconSize
@@ -158,6 +159,13 @@ Singleton {
     }
 
     function rebuild() {
+        if (!root.enabled) {
+            if (entries.count > 0)
+                entries.clear();
+            launchTimeout.stop();
+            return;
+        }
+
         const applications = ApplicationService.launcherApplications.filter(application =>
         !application.dragOnly);
         const windows = NiriService.connected ? NiriService.searchWindows("") : [];
@@ -516,7 +524,7 @@ Singleton {
     }
 
     Connections {
-        target: NiriService
+        target: root.enabled ? NiriService : null
         function onWindowsChanged() {
             root.rebuild();
         }
@@ -529,14 +537,14 @@ Singleton {
     }
 
     Connections {
-        target: ApplicationService
+        target: root.enabled ? ApplicationService : null
         function onLauncherApplicationsChanged() {
             root.rebuild();
         }
     }
 
     Connections {
-        target: SpotlightAppUsage
+        target: root.enabled ? SpotlightAppUsage : null
         function onRecordsChanged() {
             root.rebuild();
         }

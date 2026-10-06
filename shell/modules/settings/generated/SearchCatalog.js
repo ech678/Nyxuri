@@ -1783,19 +1783,6 @@ var catalog = {
       "anchor": true,
       "context": "WallpaperPage",
       "icon": "wallpaper",
-      "id": "wallpaper.section.desktop-wallpaper-manager",
-      "path": [
-        "wallpaper"
-      ],
-      "route": "wallpaper",
-      "source": "WallpaperPage.qml",
-      "title": "Desktop wallpaper manager"
-    },
-    {
-      "aliases": [],
-      "anchor": true,
-      "context": "WallpaperPage",
-      "icon": "wallpaper",
       "id": "wallpaper.section.current-wallpaper",
       "path": [
         "wallpaper"
@@ -1924,7 +1911,6 @@ function title(id) {
     case "theme.section.icon-theme": return I18n.tr("Icon theme", "ThemePage");
     case "theme.section.fonts": return I18n.tr("Fonts", "ThemePage");
     case "theme.section.matugen-template-generation": return I18n.tr("Matugen template generation", "ThemePage");
-    case "wallpaper.section.desktop-wallpaper-manager": return I18n.tr("Desktop wallpaper manager", "WallpaperPage");
     case "wallpaper.section.current-wallpaper": return I18n.tr("Current wallpaper", "WallpaperPage");
     case "wallpaper.section.transition": return I18n.tr("Transition", "WallpaperPage");
     case "wallpaper.section.parallax-effects": return I18n.tr("Parallax effects", "WallpaperPage");
