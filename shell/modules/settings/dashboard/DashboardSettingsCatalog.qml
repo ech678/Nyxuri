@@ -770,6 +770,54 @@ QtObject {
                     "icon": "format_italic"
                 }
             ]
+        },
+        {
+            "title": I18n.tr("Display colour"),
+            "icon": "brightness_6",
+            "cards": [
+                {
+                    "type": "slider",
+                    "key": "gamma:Gamma",
+                    "title": I18n.tr("Gamma"),
+                    "icon": "tonality"
+                },
+                {
+                    "type": "slider",
+                    "key": "gamma:Contrast",
+                    "title": I18n.tr("Contrast"),
+                    "icon": "contrast"
+                },
+                {
+                    "type": "toggle",
+                    "key": "gamma:Night mode",
+                    "title": I18n.tr("Night mode"),
+                    "icon": "nightlight"
+                },
+                {
+                    "type": "spin",
+                    "key": "gamma:Night temperature",
+                    "title": I18n.tr("Night temperature"),
+                    "icon": "thermostat"
+                },
+                {
+                    "type": "spin",
+                    "key": "gamma:Day temperature",
+                    "title": I18n.tr("Day temperature"),
+                    "icon": "wb_sunny"
+                },
+                {
+                    "type": "spin",
+                    "key": "gamma:Transition duration",
+                    "title": I18n.tr("Transition duration"),
+                    "icon": "av_timer"
+                },
+                {
+                    "type": "toggle",
+                    "key": "gamma:Automatic IP location",
+                    "title": I18n.tr("Automatic IP location"),
+                    "icon": "my_location"
+                }
+            ]
         }
     ]
 

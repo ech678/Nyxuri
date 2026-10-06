@@ -595,6 +595,35 @@ Singleton {
                                                                   value => PersonalizationConfig.setHorizontalClockAxis(
                                                                                "slnt", value), -10, 0, 1),
 
+                                         // ── Display colour ───────────────────────────────────────────
+                                         "gamma:Gamma": root.slider(() => DisplayColor.gamma,
+                                                                    value => DisplayColor.setPreference("gamma", value), 0.5, 2,
+                                                                    0.05),
+                                         "gamma:Contrast": root.slider(() => DisplayColor.contrast,
+                                                                       value => DisplayColor.setPreference("contrast", value),
+                                                                       0.5, 2, 0.05),
+                                         "gamma:Night mode": root.toggle(() => DisplayColor.preferences.nightEnabled,
+                                                                         value => DisplayColor.setPreference("nightEnabled",
+                                                                                                             value)),
+                                         "gamma:Night temperature": root.spin(()
+                                                                              => DisplayColor.preferences.nightTemperature,
+                                                                              value => DisplayColor.setPreference(
+                                                                                           "nightTemperature", value), 1000,
+                                                                              6500, 100),
+                                         "gamma:Day temperature": root.spin(()
+                                                                            => DisplayColor.preferences.dayTemperature,
+                                                                            value => DisplayColor.setPreference(
+                                                                                         "dayTemperature", value), 1000,
+                                                                            10000, 100),
+                                         "gamma:Transition duration": root.spin(()
+                                                                                => DisplayColor.preferences.transition,
+                                                                                value => DisplayColor.setPreference(
+                                                                                             "transition", value), 0, 180, 1),
+                                         "gamma:Automatic IP location": root.toggle(()
+                                                                                    => DisplayColor.preferences.useIP,
+                                                                                    value => DisplayColor.setPreference(
+                                                                                                 "useIP", value)),
+
                                          // ── Dock ─────────────────────────────────────────────────────
                                          "dock:Show dock": root.toggle(() => DockService.enabled,
                                                                        value => DockService.setOption("enabled", value)),
