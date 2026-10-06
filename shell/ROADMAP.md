@@ -193,7 +193,7 @@ R1–R7 是已交付基线。下一步从 R8 开始；P4 及之后保留在后�
 
 **验收：** UI 不直接启动桌面命令或写配置（LIFE004 + LIFE008 双门禁，547 文件 0 违规）；动作有参数形状与失败清理契约测试（`test_r10_action_gateway_and_module_autonomy` + secure-power drop 路径断言）；可选服务缺失时模块仍装载并明示降级（ColorPickerService 探活模式）；架构 import/副作用契约通过（五分类 108 用例全绿，`test_shell.py` 45 用例全绿）；双轨主题跟随性矩阵——GTK3/4 ini、Libadwaita portal、Chromium prefer-dark、Kitty SIGUSR1+matugen 模板、Qt/Kvantum、niri glow、Shell M3 调色板、zen 着色器全部跟随且 `nyxuri theme` 三场景（noctalia 在 / 仅 nyxuri shell / 都不在）输出一致无裸 error；Noctalia 专属 wallpaper picker 不在迁移范围，双轨切换与部署链路零触碰。
 
-### R11 Nyxuri Shell 控制面与透明度（待验收）
+### R11 Nyxuri Shell 控制面与透明度（已完成）
 
 **目标：** 提供按需加载、用户可理解且可行动的 Shell 管理页面，不做开发者对象检查器。
 
@@ -204,7 +204,7 @@ R1–R7 是已交付基线。下一步从 R8 开始；P4 及之后保留在后�
 - **NiriService 公开化**：补 `readonly property bool reconnecting` 与幂等 `reconnect()`（重置退避、按需重连，健康时 no-op），控制面展示「正在重新连接」并提供重连按钮。
 - **i18n 与既有债务**：zh_CN.toml 补 34 键（本阶段 24 键 + 修复 HEAD 上已存在的 10 个先存缺失——ColorPickerService 2 键、Dashboard 卡片 8 键，`audit-i18n` 在本轮之前即为 exit 1），并为 Niri 语境的 `Disconnected` 增加 `[ShellPage]` 上下文覆盖（全局键是「网络未连接」网络语义）；`audit-i18n: clean`。
 
-**验收：** `tests/test_shell.py` 53 用例全绿（新增 `test_r11_shell_control_plane_and_transparency` 静态契约：路由注册、页面零 I/O、双门控表达式、UiPreferences 默认 false 四处对称、IPC 薄委托、JS 纯净与掩码规则、搜索目录含 3 个 section）；五分类 111 用例（STATIC 24, LOGIC 48, RESOURCE 9, NATIVE 26, GRAPHICS 4）——GRAPHICS 新增 2 项真实行为测试：`test_r11_sampling_gate_lifecycle`（headless Weston 真实 QML：挂载未开关键是零采样 → 开关后 RSS>0 且第二次采样 CPU%>0 → 卸载即停且数值全清 → 关开关保持空闲）与 `test_r11_diagnostics_sanitized_and_exported`（毒化负载断言 `/home/nyxuser` 不泄漏、控制符折叠、512 截断、路径变 `~`；端到端负载 schema 键恰等于 allowlist 且无 `$HOME`/`NIRI_SOCKET`；导出文件真实落盘并复验脱敏）；生命周期审计 552 文件 0 违规，inventory 再生成（236 项）；搜索目录契约（16 个一级 id）通过。页面关闭零监控开销与状态-生命周期吻合由 Loader 卸载语义 + 门控行为测试共同背书；视觉与交互冒烟（M3 对齐、几何精度）留待实机确认后勾选「已完成」。
+**验收：** `tests/test_shell.py` 53 用例全绿（新增 `test_r11_shell_control_plane_and_transparency` 静态契约：路由注册、页面零 I/O、双门控表达式、UiPreferences 默认 false 四处对称、IPC 薄委托、JS 纯净与掩码规则、搜索目录含 3 个 section）；五分类 111 用例（STATIC 24, LOGIC 48, RESOURCE 9, NATIVE 26, GRAPHICS 4）——GRAPHICS 新增 2 项真实行为测试：`test_r11_sampling_gate_lifecycle`（headless Weston 真实 QML：挂载未开关键是零采样 → 开关后 RSS>0 且第二次采样 CPU%>0 → 卸载即停且数值全清 → 关开关保持空闲）与 `test_r11_diagnostics_sanitized_and_exported`（毒化负载断言 `/home/nyxuser` 不泄漏、控制符折叠、512 截断、路径变 `~`；端到端负载 schema 键恰等于 allowlist 且无 `$HOME`/`NIRI_SOCKET`；导出文件真实落盘并复验脱敏）；生命周期审计 552 文件 0 违规，inventory 再生成（236 项）；搜索目录契约（16 个一级 id）通过。页面关闭零监控开销与状态-生命周期吻合由 Loader 卸载语义 + 门控行为测试共同背书；视觉与交互冒烟（M3 对齐、几何精度）已经作者实机确认，随本段落定标记「已完成」。
 
 ### R12 Wiki 重置与新标准
 

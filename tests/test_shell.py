@@ -2168,7 +2168,7 @@ class TestShellManagement(unittest.TestCase):
 
         # 10. Roadmap reflects the R11 delivery state.
         roadmap = read("ROADMAP.md")
-        self.assertIn("### R11 Nyxuri Shell 控制面与透明度（待验收）", roadmap)
+        self.assertIn("### R11 Nyxuri Shell 控制面与透明度（已完成）", roadmap)
 
     def test_power_menu_and_secure_suspend_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
