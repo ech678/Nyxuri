@@ -668,6 +668,12 @@ QtObject {
             "icon": "translate",
             "cards": [
                 {
+                    "type": "select",
+                    "key": "language:Interface language",
+                    "title": I18n.tr("Interface language"),
+                    "icon": "translate"
+                },
+                {
                     "type": "toggle",
                     "key": "language:Clock format",
                     "title": I18n.tr("12-hour clock"),

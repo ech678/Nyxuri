@@ -514,6 +514,16 @@ Singleton {
                                                                                    ]),
 
                                          // ── Language ─────────────────────────────────────────────────
+                                         // I18nService.supportedLanguages uses code/label; the cards
+                                         // read value/label, so map it here.
+                                         "language:Interface language": root.select(()
+                                                                                    => UiPreferences.language,
+                                                                                    value => UiPreferences.setLanguage(
+                                                                                                 value), I18nService.supportedLanguages.map(
+                                                                                        entry => ({
+                                                                                                     "value": entry.code,
+                                                                                                     "label": entry.label
+                                                                                                 }))),
                                          "language:Clock format": root.toggle(()
                                                                               => UiPreferences.useTwelveHourClock,
                                                                               value => UiPreferences.setUseTwelveHourClock(
