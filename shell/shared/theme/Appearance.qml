@@ -13,6 +13,9 @@ Singleton {
     property real backgroundOpacity: 1
     property real backgroundTransparency: 0
     property real contentTransparency: 0.9
+    // Compositor blur capability, injected by app/services/BlurService. The
+    // shared layer cannot read config or probe the compositor itself.
+    property bool compositorBlurEnabled: true
     property QtObject m3colors
     property QtObject animationCurves
     property QtObject animation

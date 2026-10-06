@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import qs.shared.theme
 
 Item {
     id: root
@@ -13,7 +14,9 @@ Item {
     property var postSubtractionBackgroundItems: []
     property Item postSubtractionClipItem: null
     property bool blurEnabled: true
-    property bool compositorEnabled: true
+    // Gate on the shell's blur setting. `Appearance` carries the value because
+    // this layer may not read config or probe the compositor itself.
+    property bool compositorEnabled: Appearance.compositorBlurEnabled
     property real radius: 0
     property Item clipItem: null
 
