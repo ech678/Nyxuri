@@ -397,6 +397,16 @@ QtObject {
                     "icon": "show_chart"
                 },
                 {
+                    // Editor for the curve behind the "customBezier" option
+                    // above. The key is identity only — there is no control to
+                    // bind, the card drives PersonalizationConfig directly.
+                    "type": "bezier",
+                    "key": "wallpaper:Easing curve",
+                    "title": I18n.tr("Easing curve"),
+                    "icon": "gesture",
+                    "kw": "wallpaper easing bezier curve transition custom 缓动 贝塞尔 曲线"
+                },
+                {
                     "type": "toggle",
                     "key": "wallpaper:Overview",
                     "title": I18n.tr("Overview"),
