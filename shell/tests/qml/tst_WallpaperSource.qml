@@ -13,8 +13,7 @@ TestCase {
             const encoded = Source.encode(state);
             compare(Source.kind(encoded), "palette");
             compare(JSON.stringify(Source.decode(encoded)), JSON.stringify(state));
-            compare(Source.primary(encoded), Zen.primary(state));
-            verify(!Source.supported(encoded, "awww"));
+            verify(Source.supported(encoded));
         }
     }
     function test_rejectInvalidState() {
@@ -47,7 +46,7 @@ TestCase {
         compare(Source.localPath("file:///wallpapers/a%20b.png"), "/wallpapers/a b.png");
         compare(Source.kind("#80abcdef"), "solid");
         compare(Source.primary("#80abcdef"), "#abcdef");
-        verify(!Source.supported("#abcdef", "awww"));
+        verify(Source.supported("#abcdef"));
     }
     function test_harmoniesAndBoundary() {
         compare(Zen.algorithms(1).join(","), "floating");

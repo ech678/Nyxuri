@@ -55,5 +55,5 @@ function primary(source) {
 }
 function supported(source, backend) {
     var type = kind(source);
-    return backend === "awww" ? type === "image" : ["image","solid","palette"].indexOf(type) >= 0;
+    return ["image","solid","palette"].indexOf(type) >= 0;
 }

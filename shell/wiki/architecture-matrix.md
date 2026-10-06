@@ -52,7 +52,7 @@
 | **sidebars** | `modules/sidebars/` | 侧边栏（Dashboard、QuickSettings、内聚 `TodoService`、`TimerService`、`InfoDrawerState`） | `WidgetState`、`SystemStatusService`、`DesktopPresentationService` | 切换视图、系统快捷开关 |
 | **notifications** | `modules/notifications/` | 通知弹窗宿主（PopupHost）、通知卡片视图 | `NotificationService` | 点击通知动作、关闭通知 |
 | **lock** | `modules/lock/` | 锁屏界面、PAM/认证交互 | `WlSessionLock`、`WallpaperService` | 解锁会话、密码校验 |
-| **wallpaper** | `modules/wallpaper/` | 壁纸背景渲染、视差场景、调色盘提取与 awww 后端（内聚 `WallpaperService`、`WallpaperSceneService`、`WallpaperPaletteSession`、`AwwwWallpaperService`） | `PersonalizationConfig`、`NiriConfigService`、`ThemeService` | 请求壁纸重绘、分析通知 |
+| **wallpaper** | `modules/wallpaper/` | 壁纸背景渲染、视差场景与调色盘提取（内聚 `WallpaperService`、`WallpaperSceneService`、`WallpaperPaletteSession`） | `PersonalizationConfig`、`NiriConfigService`、`ThemeService` | 请求壁纸重绘、分析通知 |
 | **systemcards** | `modules/systemcards/` | 系统监控卡片（CPU, RAM, 存储, 网络与流量历史 `NetworkInterfaceHistoryService`） | `SystemMonitorService`、`Appearance` | 卡片拖放、切换监控视图 |
 | **desktopcards** | `modules/desktopcards/` | 桌面卡片宿主、画布网格吸附、布局与手势拖放呈现（内聚 `DesktopPresentationService`、`SystemCardDragSession`、`SystemCardDragState`） | `SystemCardService`、`WallpaperSceneService` | 卡片持久化排布 |
 | **hotcorners** | `modules/hotcorners/` | 屏幕热区感知与触发 | `Quickshell.screens`、`NiriConfigService` | 触发 Overview 或自定义动作 |

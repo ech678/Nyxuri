@@ -167,19 +167,9 @@ Singleton {
                                                                                                      value => PersonalizationConfig.setOverviewPerMonitorWallpaper(
                                                                                                                   value)),
                                          "wallpaper:Desktop transition": root.select(()
-                                                                                     => PersonalizationConfig.awwwDesktopTransitionType,
-                                                                                     value => PersonalizationConfig.setAwwwDesktopTransitionType(
-                                                                                                  value), PersonalizationConfig.awwwTransitionTypes),
-                                         "wallpaper:Transition fps": root.spin(()
-                                                                               => PersonalizationConfig.awwwTransitionFps,
-                                                                               value => PersonalizationConfig.setAwwwTransitionFps(
-                                                                                            value), 10, 240,
-                                                                               5),
-                                         "wallpaper:Transition step": root.spin(()
-                                                                                => PersonalizationConfig.awwwTransitionStep,
-                                                                                value => PersonalizationConfig.setAwwwTransitionStep(
-                                                                                             value), 0, 255,
-                                                                                5),
+                                                                                     => PersonalizationConfig.wallpaperTransitionType,
+                                                                                     value => WallpaperService.setWallpaperTransitionType(
+                                                                                                  value), PersonalizationConfig.transitionTypes),
                                          "wallpaper:Overview transition": root.select(()
                                                                                       => PersonalizationConfig.overviewTransitionType,
                                                                                       value => PersonalizationConfig.setOverviewTransitionType(
@@ -353,22 +343,7 @@ Singleton {
                                                                             => PersonalizationConfig.wallpaperFillMode,
                                                                             value => WallpaperService.setWallpaperFillMode(
                                                                                          value), PersonalizationConfig.fillModes),
-                                         "wallpaper:Desktop backend": root.select(()
-                                                                                  => PersonalizationConfig.desktopWallpaperBackend,
-                                                                                  value => WallpaperService.setDesktopWallpaperBackend(
-                                                                                               value), [
-                                                                                      {
-                                                                                          "value": "quickshell",
-                                                                                          "label": I18n.tr(
-                                                                                                       "Quickshell"),
-                                                                                          "icon": "layers"
-                                                                                      },
-                                                                                      {
-                                                                                          "value": "awww",
-                                                                                          "label": "awww",
-                                                                                          "icon": "animation"
-                                                                                      }
-                                                                                  ]),
+
                                          "wallpaper:Auto cycle": root.toggle(()
                                                                              => PersonalizationConfig.autoCycleEnabled,
                                                                              value => PersonalizationConfig.setAutoCycleEnabled(

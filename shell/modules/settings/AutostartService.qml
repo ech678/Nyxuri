@@ -26,6 +26,7 @@ Singleton {
     property var operationContext: null
     property string lastError: ""
     property string lastMessage: ""
+    property var deleteProcess: null
 
     readonly property bool initializing: initProcess.running
     readonly property bool listing: root.initialized && folderModel.status !== FolderListModel.Ready
@@ -325,6 +326,7 @@ Singleton {
             root.finishDelete(false, I18n.tr("Could not start the delete operation"));
             return false;
         }
+        root.deleteProcess = process;
         return true;
     }
 
@@ -568,6 +570,8 @@ Singleton {
             }
 
             onExited: exitCode => {
+                if (root.deleteProcess === this)
+                    root.deleteProcess = null;
                 root.finishDelete(exitCode === 0, deleteError.text.trim() || I18n.tr(
                                       "Could not delete the user autostart entry"));
                 destroy();
@@ -578,5 +582,10 @@ Singleton {
     Component.onDestruction: {
         if (initProcess)
             initProcess.running = false;
+        if (deleteProcess) {
+            deleteProcess.running = false;
+            deleteProcess.destroy();
+            deleteProcess = null;
+        }
     }
 }

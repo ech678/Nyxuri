@@ -77,57 +77,6 @@ Singleton {
                                                                                          "label": I18n.tr(
                                                                                                       "Portal")
                                                                                      })]
-    readonly property var awwwTransitionTypes: [({
-                                                     "value": "none",
-                                                     "label": I18n.tr("None")
-                                                 }), ({
-                                                          "value": "simple",
-                                                          "label": I18n.tr("Simple")
-                                                      }), ({
-                                                               "value": "fade",
-                                                               "label": I18n.tr("Crossfade")
-                                                           }), ({
-                                                                    "value": "left",
-                                                                    "label": I18n.tr("From left")
-                                                                }), ({
-                                                                         "value": "right",
-                                                                         "label": I18n.tr("From right")
-                                                                     }), ({
-                                                                              "value": "top",
-                                                                              "label": I18n.tr("From top")
-                                                                          }), ({
-                                                                                   "value": "bottom",
-                                                                                   "label": I18n.tr(
-                                                                                                "From bottom")
-                                                                               }), ({
-                                                                                        "value": "wipe",
-                                                                                        "label": I18n.tr(
-                                                                                                     "Wipe")
-                                                                                    }), ({
-                                                                                             "value": "wave",
-                                                                                             "label": I18n.tr(
-                                                                                                          "Wave")
-                                                                                         }), ({
-                                                                                                  "value": "grow",
-                                                                                                  "label": I18n.tr(
-                                                                                                               "Grow")
-                                                                                              }), ({
-                                                                                                       "value": "center",
-                                                                                                       "label": I18n.tr(
-                                                                                                                    "Grow from center")
-                                                                                                   }), ({
-                                                                                                            "value": "any",
-                                                                                                            "label": I18n.tr(
-                                                                                                                         "Grow from random position")
-                                                                                                        }), ({
-                                                                                                                 "value": "outer",
-                                                                                                                 "label": I18n.tr(
-                                                                                                                              "Shrink inward")
-                                                                                                             }), ({
-                                                                                                                      "value": "random",
-                                                                                                                      "label": I18n.tr(
-                                                                                                                                   "Random")
-                                                                                                                  })]
     readonly property var transitionEasingModes: [({
                                                        "value": "linear",
                                                        "label": I18n.tr("Linear")
@@ -244,12 +193,6 @@ Singleton {
     property int transitionDurationMs: 1000
     property string transitionEasingMode: "customBezier"
     property var transitionBezierCurve: [0.43, 1.19, 1, 0.4, 1, 1]
-    property string awwwDesktopTransitionType: "fade"
-    property int awwwTransitionFps: 60
-    property int awwwTransitionStep: 90
-    property real awwwTransitionAngle: 45
-    property string awwwTransitionPosition: "center"
-    property string awwwTransitionWave: "20,20"
     property bool overviewEnabled: true
     property bool overviewUseDesktopWallpaper: true
     property string overviewWallpaperPath: ""
@@ -930,10 +873,6 @@ Singleton {
         return normalizedOption(root.transitionTypes, value, "fade");
     }
 
-    function normalizedAwwwTransition(value) {
-        return normalizedOption(root.awwwTransitionTypes, value, "fade");
-    }
-
     function normalizedEasingMode(value) {
         return normalizedOption(root.transitionEasingModes, value, "customBezier");
     }
@@ -1072,9 +1011,7 @@ Singleton {
     }
 
     function setDesktopWallpaperBackend(value) {
-        if (value === "awww" && !WallpaperService.canUseAwww)
-            return;
-        setValue("desktopWallpaperBackend", value === "awww" ? "awww" : "quickshell");
+        setValue("desktopWallpaperBackend", "quickshell");
     }
 
     function setMonitorWallpaper(screenName, value) {
@@ -1273,53 +1210,6 @@ Singleton {
 
         return digit.colorRole === "inversePrimary" ? Appearance.colors.colInversePrimary :
                                                       Appearance.colors.colPrimary;
-    }
-
-    function normalizedAwwwPosition(value) {
-        const position = String(value || "").trim();
-        const aliases = ["center", "top", "left", "right", "bottom", "top-left", "top-right", "bottom-left",
-                         "bottom-right"];
-        if (aliases.indexOf(position) !== -1)
-            return position;
-
-        if (/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/.test(position))
-            return position;
-
-        return "center";
-    }
-
-    function normalizedAwwwWave(value) {
-        const match = String(value || "").trim().match(/^(\d+(\.\d+)?),(\d+(\.\d+)?)$/);
-        if (!match)
-            return "20,20";
-
-        const width = normalizedBoundedReal(match[1], 20, 1, 1000);
-        const height = normalizedBoundedReal(match[3], 20, 1, 1000);
-        return width + "," + height;
-    }
-
-    function setAwwwDesktopTransitionType(value) {
-        setValue("awwwDesktopTransitionType", normalizedAwwwTransition(value));
-    }
-
-    function setAwwwTransitionFps(value) {
-        setValue("awwwTransitionFps", normalizedBoundedInt(value, 60, 10, 240));
-    }
-
-    function setAwwwTransitionStep(value) {
-        setValue("awwwTransitionStep", normalizedBoundedInt(value, 90, 0, 255));
-    }
-
-    function setAwwwTransitionAngle(value) {
-        setValue("awwwTransitionAngle", normalizedBoundedReal(value, 45, 0, 360));
-    }
-
-    function setAwwwTransitionPosition(value) {
-        setValue("awwwTransitionPosition", normalizedAwwwPosition(value));
-    }
-
-    function setAwwwTransitionWave(value) {
-        setValue("awwwTransitionWave", normalizedAwwwWave(value));
     }
 
     function setOverviewEnabled(value) {
@@ -1972,14 +1862,6 @@ Singleton {
                     "easingMode": root.transitionEasingMode,
                     "bezierCurve": root.transitionBezierCurve
                 },
-                "awww": {
-                    "transitionType": root.awwwDesktopTransitionType,
-                    "transitionFps": root.awwwTransitionFps,
-                    "transitionStep": root.awwwTransitionStep,
-                    "transitionAngle": root.awwwTransitionAngle,
-                    "transitionPosition": root.awwwTransitionPosition,
-                    "transitionWave": root.awwwTransitionWave
-                },
                 "overview": {
                     "enabled": root.overviewEnabled,
                     "useDesktopWallpaper": root.overviewUseDesktopWallpaper,
@@ -2099,7 +1981,6 @@ Singleton {
         const sidebar = parsed.sidebar || {};
         const desktopCards = parsed.desktopCards || {};
         const transition = wallpaper.transition || {};
-        const awww = wallpaper.awww || {};
         const overview = wallpaper.overview || {};
         const parallax = wallpaper.parallax || {};
         const autoCycle = wallpaper.autoCycle || {};
@@ -2117,7 +1998,7 @@ Singleton {
         root.monitorWallpaperFillModes = normalizedFillModeMap(wallpaper.monitorFillModes);
         root.recentWallpaperColors = normalizedRecentColors(wallpaper.recentColors);
         root.wallpaperFillMode = normalizedOption(root.desktopFillModes, wallpaper.fillMode, "Fill");
-        root.desktopWallpaperBackend = wallpaper.desktopBackend === "awww" ? "awww" : "quickshell";
+        root.desktopWallpaperBackend = "quickshell";
         root.autoCycleEnabled = !!autoCycle.enabled;
         root.autoCycleMode = autoCycle.mode === "time" ? "time" : "interval";
         root.autoCycleInterval = Math.max(5, Math.round(Number(autoCycle.interval) || 300));
@@ -2129,12 +2010,6 @@ Singleton {
         root.transitionDurationMs = normalizedDurationMs(transition.durationMs, 1000);
         root.transitionEasingMode = normalizedEasingMode(transition.easingMode || "customBezier");
         root.transitionBezierCurve = normalizedBezier(transition.bezierCurve);
-        root.awwwDesktopTransitionType = normalizedAwwwTransition(awww.transitionType || "fade");
-        root.awwwTransitionFps = normalizedBoundedInt(awww.transitionFps, 60, 10, 240);
-        root.awwwTransitionStep = normalizedBoundedInt(awww.transitionStep, 90, 0, 255);
-        root.awwwTransitionAngle = normalizedBoundedReal(awww.transitionAngle, 45, 0, 360);
-        root.awwwTransitionPosition = normalizedAwwwPosition(awww.transitionPosition);
-        root.awwwTransitionWave = normalizedAwwwWave(awww.transitionWave);
         root.overviewEnabled = overview.enabled === undefined ? true : !!overview.enabled;
         root.overviewUseDesktopWallpaper = overview.useDesktopWallpaper === undefined ? true : !
                                                                                         !overview.useDesktopWallpaper;
@@ -2283,8 +2158,7 @@ Singleton {
         if (!wallpaper || typeof wallpaper !== "object")
             return true;
 
-        return wallpaper.desktopBackend === undefined || wallpaper.awww === undefined || wallpaper.overview
-                === undefined || wallpaper.parallax === undefined;
+        return wallpaper.overview === undefined || wallpaper.parallax === undefined;
     }
 
     function needsEffectsMigration(parsed) {
@@ -2314,9 +2188,7 @@ Singleton {
     function commitPalette(scope, source) {
         if (!scope || ["desktop", "overview", "banner"].indexOf(scope.target) < 0 || ["path", "pathLight",
                                                                                       "pathDark"].indexOf(
-                    scope.field) < 0 || (scope.target === "desktop" && root.desktopWallpaperBackend
-                                         === "awww") || !root.storeReady || root.loading ||
-                !WallpaperSource.decode(source))
+                    scope.field) < 0 || !root.storeReady || root.loading || !WallpaperSource.decode(source))
             return false;
         const candidate = JSON.parse(JSON.stringify(root.toJson()));
         const section = scope.target === "overview" ? candidate.wallpaper.overview : candidate.wallpaper;

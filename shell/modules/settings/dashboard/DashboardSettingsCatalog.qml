@@ -360,12 +360,7 @@ QtObject {
                     "title": I18n.tr("Fill mode"),
                     "icon": "fit_screen"
                 },
-                {
-                    "type": "select",
-                    "key": "wallpaper:Desktop backend",
-                    "title": I18n.tr("Desktop backend"),
-                    "icon": "layers"
-                },
+
                 {
                     "type": "toggle",
                     "key": "wallpaper:Auto cycle",
@@ -485,21 +480,7 @@ QtObject {
                     "key": "wallpaper:Desktop transition",
                     "title": I18n.tr("Desktop transition"),
                     "icon": "transition_fade",
-                    "kw": "wallpaper transition fade wipe swww awww"
-                },
-                {
-                    "type": "spin",
-                    "key": "wallpaper:Transition fps",
-                    "title": I18n.tr("Transition fps"),
-                    "icon": "speed",
-                    "kw": "wallpaper transition framerate fps"
-                },
-                {
-                    "type": "spin",
-                    "key": "wallpaper:Transition step",
-                    "title": I18n.tr("Transition step"),
-                    "icon": "stairs",
-                    "kw": "wallpaper transition step"
+                    "kw": "wallpaper transition fade wipe"
                 },
                 {
                     "type": "combo",

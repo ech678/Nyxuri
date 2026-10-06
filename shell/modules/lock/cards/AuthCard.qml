@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
+import ".."
 import qs.shared.theme
 import qs.shared.controls
 import qs.shared.i18n
@@ -11,7 +12,7 @@ FocusScope {
 
     property var context: null
     readonly property var passwordShapeQueue: ["circle"]
-    readonly property bool hasText: input.text.length > 0
+    readonly property bool hasText: context && context.currentText.length > 0
     readonly property bool busy: context && context.unlockInProgress
     readonly property bool enterEnabled: hasText && !busy
     readonly property bool enterHovered: frameMouse.containsMouse && frameMouse.mouseX >= enterButton.x
@@ -22,21 +23,21 @@ FocusScope {
     Layout.fillWidth: true
     Layout.preferredHeight: Metrics.lockAuthHeight
     function forceAuthFocus() {
-        input.forceActiveFocus();
+        capture.forceAuthFocus();
     }
 
     Connections {
         target: root.context
         ignoreUnknownSignals: true
         function onShouldReFocus() {
-            input.forceActiveFocus();
+            capture.forceActiveFocus();
         }
     }
 
-    Component.onCompleted: input.forceActiveFocus()
+    Component.onCompleted: capture.forceActiveFocus()
     onActiveFocusChanged: {
         if (activeFocus)
-            input.forceActiveFocus();
+            capture.forceActiveFocus();
     }
 
     Rectangle {
@@ -117,50 +118,34 @@ FocusScope {
                 Layout.fillHeight: true
                 clip: true
 
-                TextInput {
-                    id: input
-
+                PasswordCapture {
+                    id: capture
                     anchors.fill: parent
-                    color: "transparent"
-                    selectionColor: "transparent"
-                    selectedTextColor: "transparent"
-                    focus: true
-                    cursorVisible: false
-                    echoMode: TextInput.Password
-                    inputMethodHints: Qt.ImhSensitiveData
-                    onActiveFocusChanged: cursorVisible = false
-                    onCursorVisibleChanged: {
-                        if (cursorVisible)
-                            cursorVisible = false;
+                    context: root.context
+                    onKeyPressed: event => {
+                        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                            placeholder.animateOnNextShow = false;
+                            if (!root.busy)
+                                root.requestUnlock();
+                        }
                     }
-                    onAccepted: {
-                        placeholder.animateOnNextShow = false;
-                        if (!root.busy)
-                            root.requestUnlock();
-                    }
-                    onTextChanged: {
-                        if (root.context)
-                            root.context.currentText = text;
+                }
 
-                        if (text.length > dotsModel.count)
+                Connections {
+                    function onCurrentTextChanged() {
+                        const length = root.context ? root.context.currentText.length : 0;
+                        if (length > dotsModel.count)
                             dotsList.bindImplicitWidth();
-                        else if (text.length === 0)
+                        else if (length === 0)
                             placeholder.animateOnNextShow = true;
-                        while (dotsModel.count < text.length)
+                        while (dotsModel.count < length)
                             dotsModel.append({});
-                        while (dotsModel.count > text.length)
+                        while (dotsModel.count > length)
                             dotsModel.remove(dotsModel.count - 1);
                     }
 
-                    Connections {
-                        function onCurrentTextChanged() {
-                            if (root.context && input.text !== root.context.currentText)
-                                input.text = root.context.currentText;
-                        }
-
-                        target: root.context
-                        ignoreUnknownSignals: true
-                    }
+                    target: root.context
+                    ignoreUnknownSignals: true
                 }
 
                 Text {
@@ -467,10 +452,10 @@ FocusScope {
             cursorShape: root.enterEnabled && mouseX >= enterButton.x ? Qt.PointingHandCursor : Qt.IBeamCursor
             onPressed: mouse => {
                 rippleEffect.startAt(mouse.x, mouse.y);
-                input.forceActiveFocus();
+                capture.forceActiveFocus();
             }
             onClicked: mouse => {
-                input.forceActiveFocus();
+                capture.forceActiveFocus();
                 if (root.enterEnabled && mouse.x >= enterButton.x)
                     root.requestUnlock();
             }

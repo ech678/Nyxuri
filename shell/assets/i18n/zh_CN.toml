@@ -1668,6 +1668,7 @@
 "Surface" = "表面"
 "Surface style" = "表面样式"
 "Suspend" = "挂起"
+"Suspend request was rejected" = "挂起请求被拒绝"
 "Suspend system" = "挂起系统"
 "Swap window left" = "向左交换窗口"
 "Swap window right" = "向右交换窗口"

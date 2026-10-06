@@ -4,7 +4,7 @@ import qs.app.services
 
 Scope {
     Variants {
-        model: Quickshell.screens
+        model: RegionSelectionService.active ? Quickshell.screens : []
 
         delegate: Loader {
             id: selectorLoader

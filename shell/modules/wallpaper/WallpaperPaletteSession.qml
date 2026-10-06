@@ -28,9 +28,7 @@ Singleton {
                                p.monitorWallpapers, p.perMonitorWallpaper, p.perModeWallpaper,
                                p.overviewWallpaperPath, p.overviewMonitorWallpapers,
                                p.overviewPerMonitorWallpaper, p.overviewUseDesktopWallpaper,
-                               p.desktopWallpaperBackend, UiPreferences.darkMode, Quickshell.screens.map(s
-                                                                                                         => s.name).sort(
-                                   )]);
+                               UiPreferences.darkMode, Quickshell.screens.map(s => s.name).sort()]);
     }
     function begin(target, output) {
         if (root.active) {
@@ -38,8 +36,6 @@ Singleton {
             root.cancel(previous);
             root.invalidated(previous);
         }
-        if (target === "desktop" && PersonalizationConfig.desktopWallpaperBackend === "awww")
-            return 0;
         if (target === "overview" && PersonalizationConfig.overviewUseDesktopWallpaper)
             return 0;
         if (output && !Quickshell.screens.some(s => s.name === output))

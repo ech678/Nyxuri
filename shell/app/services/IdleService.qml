@@ -40,7 +40,7 @@ Singleton {
     property bool inhibited: false
     property bool dimmed: false
     property bool displaysOff: false
-    readonly property bool busy: lockPending || displayPowerProcess.running || suspendProcess.running
+    readonly property bool busy: lockPending || displayPowerProcess.running || suspendPending
     property string lastError: ""
 
     readonly property var stages: [
@@ -75,6 +75,7 @@ Singleton {
     ]
 
     property bool lockPending: false
+    property bool suspendPending: false
     property bool _desiredDisplaysOff: false
     property bool _displayCommandTargetOff: false
     property var _savedBrightness: ({})
@@ -83,6 +84,7 @@ Singleton {
     signal operationSucceeded(string operation)
     signal operationFailed(string operation, string message)
     signal lockRequested
+    signal suspendRequested
 
     function setInhibited(value) {
         const requested = !!value;
@@ -304,11 +306,24 @@ Singleton {
     }
 
     function _requestSuspend() {
-        if (suspendProcess.running)
+        if (root.suspendPending)
             return;
         root.lastError = "";
+        root.suspendPending = true;
         root.operationStarted("suspend");
-        suspendProcess.exec(["loginctl", "suspend"]);
+        root.suspendRequested();
+    }
+
+    function reportSuspendResult(success) {
+        if (!root.suspendPending)
+            return;
+        root.suspendPending = false;
+        if (success) {
+            root.operationSucceeded("suspend");
+            return;
+        }
+        root.lastError = I18n.tr("Suspend request was rejected");
+        root.operationFailed("suspend", root.lastError);
     }
 
     IdleInhibitorSurface {
@@ -421,19 +436,6 @@ Singleton {
         }
     }
 
-    Process {
-        id: suspendProcess
-
-        onExited: exitCode => {
-            if (exitCode === 0) {
-                root.operationSucceeded("suspend");
-                return;
-            }
-            root.lastError = I18n.tr("systemd-logind suspend action failed, exit code ") + exitCode;
-            root.operationFailed("suspend", root.lastError);
-        }
-    }
-
     onInhibitedChanged: {
         if (inhibited) {
             root._setDimmed(false);
@@ -447,8 +449,6 @@ Singleton {
             ActionGateway.execute(["niri", "msg", "action", "power-on-monitors"], "idle:power-on");
         if (displayPowerProcess)
             displayPowerProcess.running = false;
-        if (suspendProcess)
-            suspendProcess.running = false;
         if (ensurePolicyStore)
             ensurePolicyStore.running = false;
     }

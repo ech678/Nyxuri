@@ -34,7 +34,7 @@ Singleton {
                                                               === true
     readonly property bool overviewBackdropRuleProbeComplete: NiriConfigService.revision !== ""
 
-    readonly property bool busy: scanning || switching || ThemeService.generating || AwwwWallpaperService.busy
+    readonly property bool busy: scanning || switching || ThemeService.generating
     readonly property var imageExtensions: ["jpg", "jpeg", "png", "webp", "bmp", "gif"]
     readonly property bool overviewReady: {
         if (!PersonalizationConfig.overviewEnabled)
@@ -79,16 +79,6 @@ Singleton {
     }
     function primaryColor(value) {
         return WallpaperSource.primary(value);
-    }
-    readonly property bool canUseAwww: {
-        const revision = root.revision;
-        const screens = Quickshell.screens;
-        if (!screens.length)
-            return WallpaperSource.isImage(root.wallpaperForScreen(""));
-        for (let i = 0; i < screens.length; ++i)
-            if (!WallpaperSource.isImage(root.wallpaperForScreen(screens[i].name)))
-                return false;
-        return true;
     }
 
     function fillModeForScreen(screenName) {
@@ -347,13 +337,6 @@ Singleton {
         return true;
     }
 
-    function setDesktopWallpaperBackend(value) {
-        if (value === "awww" && !root.canUseAwww)
-            return false;
-        PersonalizationConfig.setDesktopWallpaperBackend(value);
-        return true;
-    }
-
     function setWallpaperTransitionType(value) {
         PersonalizationConfig.setWallpaperTransitionType(value);
         return true;
@@ -535,26 +518,6 @@ Singleton {
         }
 
         function onTransitionBezierCurveChanged() {
-            root.refreshSettingsFromConfig();
-        }
-
-        function onAwwwDesktopTransitionTypeChanged() {
-            root.refreshSettingsFromConfig();
-        }
-
-        function onAwwwTransitionFpsChanged() {
-            root.refreshSettingsFromConfig();
-        }
-
-        function onAwwwTransitionAngleChanged() {
-            root.refreshSettingsFromConfig();
-        }
-
-        function onAwwwTransitionPositionChanged() {
-            root.refreshSettingsFromConfig();
-        }
-
-        function onAwwwTransitionWaveChanged() {
             root.refreshSettingsFromConfig();
         }
 

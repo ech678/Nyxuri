@@ -117,6 +117,10 @@ Singleton {
             poll();
         }
     }
+    function cancelPreview() {
+        if (token)
+            revert();
+    }
     function poll() {
         if (!token || operation.running)
             return;
@@ -247,6 +251,7 @@ Singleton {
     }
 
     Component.onDestruction: {
+        identifyTimer.stop();
         pollTimer.stop();
         if (operation)
             operation.running = false;

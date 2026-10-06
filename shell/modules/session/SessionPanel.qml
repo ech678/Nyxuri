@@ -113,41 +113,38 @@ PanelWindow {
                 return;
             }
 
-            switch (event.key) {
-            case Qt.Key_Left:
-            case Qt.Key_Up:
+            if (event.key === Qt.Key_Left || event.key === Qt.Key_Up) {
                 root.selectedIndex = (root.selectedIndex + actionRepeater.count - 1) % actionRepeater.count;
-                break;
-            case Qt.Key_Right:
-            case Qt.Key_Down:
-                root.selectedIndex = (root.selectedIndex + 1) % actionRepeater.count;
-                break;
-            case Qt.Key_Return:
-            case Qt.Key_Enter:
-                if (!event.isAutoRepeat)
-                    root.trigger(actionRepeater.itemAt(root.selectedIndex).modelData.action);
-                break;
-            case Qt.Key_Escape:
-                root.requestDismiss();
-                break;
-            case Qt.Key_1:
-                root.trigger(actionRepeater.itemAt(0).modelData.action);
-                break;
-            case Qt.Key_2:
-                root.trigger(actionRepeater.itemAt(1).modelData.action);
-                break;
-            case Qt.Key_3:
-                root.trigger(actionRepeater.itemAt(2).modelData.action);
-                break;
-            case Qt.Key_4:
-                root.trigger(actionRepeater.itemAt(3).modelData.action);
-                break;
-            case Qt.Key_5:
-                root.trigger(actionRepeater.itemAt(4).modelData.action);
-                break;
-            default:
+                event.accepted = true;
                 return;
             }
+            if (event.key === Qt.Key_Right || event.key === Qt.Key_Down) {
+                root.selectedIndex = (root.selectedIndex + 1) % actionRepeater.count;
+                event.accepted = true;
+                return;
+            }
+            if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                if (!event.isAutoRepeat) {
+                    const selected = actionRepeater.itemAt(root.selectedIndex);
+                    if (selected)
+                        root.trigger(selected.modelData.action);
+                }
+                event.accepted = true;
+                return;
+            }
+            if (event.key === Qt.Key_Escape) {
+                root.requestDismiss();
+                event.accepted = true;
+                return;
+            }
+            // Number shortcuts 1..N map onto the visible actions; the mapping
+            // follows the model so the list can change without breaking keys.
+            const shortcutIndex = event.key - Qt.Key_1;
+            if (shortcutIndex < 0 || shortcutIndex >= actionRepeater.count)
+                return;
+            const shortcutItem = actionRepeater.itemAt(shortcutIndex);
+            if (shortcutItem)
+                root.trigger(shortcutItem.modelData.action);
             event.accepted = true;
         }
 
@@ -237,7 +234,8 @@ PanelWindow {
                             width: 18
                             height: 18
                             radius: Appearance.rounding.small
-                            color: actionButton.selected ? Appearance.colors.colPrimaryActive : Appearance.colors.colLayer2
+                            color: actionButton.selected ? Appearance.colors.colPrimaryActive :
+                                                           Appearance.colors.colLayer2
 
                             Text {
                                 anchors.centerIn: parent
@@ -245,7 +243,8 @@ PanelWindow {
                                 font.family: Fonts.mono
                                 font.pixelSize: 11
                                 font.weight: Font.Bold
-                                color: actionButton.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSurfaceVariant
+                                color: actionButton.selected ? Appearance.colors.colOnPrimary :
+                                                               Appearance.colors.colOnSurfaceVariant
                             }
                         }
 
