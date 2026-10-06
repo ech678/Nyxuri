@@ -474,6 +474,13 @@ QtObject {
                     "kw": "wallpaper per monitor screen independent"
                 },
                 {
+                    "type": "toggle",
+                    "key": "wallpaper:Overview per-monitor wallpaper",
+                    "title": I18n.tr("Per-monitor wallpaper in overview"),
+                    "icon": "wallpaper",
+                    "kw": "wallpaper overview per monitor screen independent"
+                },
+                {
                     "type": "combo",
                     "key": "wallpaper:Desktop transition",
                     "title": I18n.tr("Desktop transition"),
@@ -713,6 +720,54 @@ QtObject {
                     "key": "sidebar:Snapshot interval (ms)",
                     "title": I18n.tr("Snapshot interval (ms)"),
                     "icon": "timer"
+                }
+            ]
+        },
+        {
+            "title": I18n.tr("Horizontal clock"),
+            "icon": "schedule",
+            "cards": [
+                {
+                    "type": "spin",
+                    "key": "clock:Font size",
+                    "title": I18n.tr("Font size"),
+                    "icon": "format_size"
+                },
+                {
+                    "type": "spin",
+                    "key": "clock:Weight",
+                    "title": I18n.tr("Weight"),
+                    "icon": "format_bold"
+                },
+                {
+                    "type": "spin",
+                    "key": "clock:Width",
+                    "title": I18n.tr("Width"),
+                    "icon": "width"
+                },
+                {
+                    "type": "spin",
+                    "key": "clock:Optical size",
+                    "title": I18n.tr("Optical size"),
+                    "icon": "visibility"
+                },
+                {
+                    "type": "spin",
+                    "key": "clock:Grade",
+                    "title": I18n.tr("Grade"),
+                    "icon": "grade"
+                },
+                {
+                    "type": "spin",
+                    "key": "clock:Roundness",
+                    "title": I18n.tr("Roundness"),
+                    "icon": "radio_button_unchecked"
+                },
+                {
+                    "type": "spin",
+                    "key": "clock:Slant",
+                    "title": I18n.tr("Slant"),
+                    "icon": "format_italic"
                 }
             ]
         }

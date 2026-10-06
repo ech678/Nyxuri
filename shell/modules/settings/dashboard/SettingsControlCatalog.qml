@@ -162,6 +162,10 @@ Singleton {
                                                                                         => PersonalizationConfig.perMonitorWallpaper,
                                                                                         value => PersonalizationConfig.setPerMonitorWallpaper(
                                                                                                      value)),
+                                         "wallpaper:Overview per-monitor wallpaper": root.toggle(()
+                                                                                                     => PersonalizationConfig.overviewPerMonitorWallpaper,
+                                                                                                     value => PersonalizationConfig.setOverviewPerMonitorWallpaper(
+                                                                                                                  value)),
                                          "wallpaper:Desktop transition": root.select(()
                                                                                      => PersonalizationConfig.awwwDesktopTransitionType,
                                                                                      value => PersonalizationConfig.setAwwwDesktopTransitionType(
@@ -542,8 +546,7 @@ Singleton {
                                                                                        ]),
 
                                          // ── Sidebar clock ────────────────────────────────────────────
-                                         "sidebar:Sides": root.spin(() => UiPreferences.sidebarCookieSides,
-                                                                    value => UiPreferences.setSidebarCookieSides(
+                                         "sidebar:Sides": root.spin(() => UiPreferences.sidebarCookieSides,                                                                    value => UiPreferences.setSidebarCookieSides(
                                                                                  value), 0, 40, 1),
                                          "sidebar:Constantly rotate": root.toggle(()
                                                                                   => UiPreferences.sidebarCookieConstantlyRotate,
@@ -562,6 +565,35 @@ Singleton {
                                                                                      value => UiPreferences.setSystemMonitorIntervalMs(
                                                                                                   value), 500,
                                                                                      60000, 100),
+
+                                         // ── Horizontal clock ─────────────────────────────────────────
+                                         "clock:Font size": root.spin(() => PersonalizationConfig.horizontalClockFontSize,
+                                                                      value => PersonalizationConfig.setHorizontalClockFontSize(
+                                                                                   value), 16, 28, 1),
+                                         "clock:Weight": root.spin(()
+                                                                   => PersonalizationConfig.horizontalClockAxes.wght,
+                                                                   value => PersonalizationConfig.setHorizontalClockAxis(
+                                                                                "wght", value), 1, 1000, 1),
+                                         "clock:Width": root.spin(()
+                                                                  => PersonalizationConfig.horizontalClockAxes.wdth,
+                                                                  value => PersonalizationConfig.setHorizontalClockAxis(
+                                                                               "wdth", value), 25, 151, 1),
+                                         "clock:Optical size": root.spin(()
+                                                                         => PersonalizationConfig.horizontalClockAxes.opsz,
+                                                                         value => PersonalizationConfig.setHorizontalClockAxis(
+                                                                                      "opsz", value), 6, 144, 1),
+                                         "clock:Grade": root.spin(()
+                                                                  => PersonalizationConfig.horizontalClockAxes.GRAD,
+                                                                  value => PersonalizationConfig.setHorizontalClockAxis(
+                                                                               "GRAD", value), 0, 100, 1),
+                                         "clock:Roundness": root.spin(()
+                                                                      => PersonalizationConfig.horizontalClockAxes.ROND,
+                                                                      value => PersonalizationConfig.setHorizontalClockAxis(
+                                                                                   "ROND", value), 0, 100, 1),
+                                         "clock:Slant": root.spin(()
+                                                                  => PersonalizationConfig.horizontalClockAxes.slnt,
+                                                                  value => PersonalizationConfig.setHorizontalClockAxis(
+                                                                               "slnt", value), -10, 0, 1),
 
                                          // ── Dock ─────────────────────────────────────────────────────
                                          "dock:Show dock": root.toggle(() => DockService.enabled,
