@@ -39,7 +39,7 @@ Item {
     property real authOffset: authenticating ? 0 : 56 * uiScale
 
     function forceAuthFocus() {
-        input.forceActiveFocus();
+        capture.forceAuthFocus();
     }
 
     // Independent effects and spatial curves keep the incoming form legible
@@ -104,11 +104,6 @@ Item {
             root.context.authRevealed = true;
             root.forceAuthFocus();
         }
-    }
-
-    Keys.onPressed: event => {
-        root.context.authRevealed = true;
-        root.forceAuthFocus();
     }
 
     DefaultLockStatus {
@@ -236,56 +231,22 @@ Item {
                 border.width: 2 * root.uiScale
                 border.color: "#647078"
 
-                TextInput {
-                    id: input
+                PasswordCapture {
+                    id: capture
                     anchors.fill: parent
                     anchors.leftMargin: 24 * root.uiScale
                     anchors.rightMargin: 24 * root.uiScale
-                    color: "transparent"
-                    selectionColor: "transparent"
-                    selectedTextColor: "transparent"
-                    echoMode: TextInput.NoEcho
-                    inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoPredictiveText
-                    readOnly: root.busy
-                    focus: true
-                    activeFocusOnPress: true
-                    cursorVisible: false
-                    maximumLength: 4096
-                    Accessible.name: I18n.tr("Password")
-                    Accessible.description: root.context.showFailure ? I18n.tr("Incorrect password") : ""
-                    onCursorVisibleChanged: {
-                        if (cursorVisible)
-                            cursorVisible = false;
-                    }
-                    onTextChanged: {
-                        if (root.context.currentText !== text)
-                            root.context.currentText = text;
-                        if (text.length > 0) {
-                            root.context.authRevealed = true;
-                            root.context.showFailure = false;
-                        }
-                        while (dots.count < text.length)
-                            dots.append({});
-                        while (dots.count > text.length)
-                            dots.remove(dots.count - 1);
-                    }
-                    onAccepted: {
+                    context: root.context
+                    onKeyPressed: event => {
                         root.context.authRevealed = true;
-                        root.context.tryUnlock();
-                    }
-                    Keys.onEscapePressed: {
-                        if (!root.busy) {
-                            text = "";
-                            root.context.showFailure = false;
+                        if (event.key === Qt.Key_Escape)
                             root.context.authRevealed = false;
-                        }
                     }
-                    Component.onCompleted: text = root.context.currentText
                 }
 
                 Text {
                     anchors.centerIn: parent
-                    visible: input.text.length === 0 && !root.busy
+                    visible: root.context.currentText.length === 0 && !root.busy
                     text: I18n.tr("Password")
                     font.family: Fonts.ui
                     font.pixelSize: 20 * root.uiScale
@@ -421,7 +382,7 @@ Item {
 
                 InlineBusyIndicator {
                     anchors.centerIn: parent
-                    busy: root.busy && input.text.length === 0
+                    busy: root.busy && root.context.currentText.length === 0
                     spinnerColor: "#20252B"
                 }
             }
@@ -432,7 +393,7 @@ Item {
         anchors.top: authRow.bottom
         anchors.topMargin: 12 * root.uiScale
         anchors.horizontalCenter: parent.horizontalCenter
-        busy: root.busy && input.text.length > 0
+        busy: root.busy && root.context.currentText.length > 0
         spinnerColor: "#F5F7FA"
         opacity: root.authOpacity
     }
@@ -440,8 +401,13 @@ Item {
     Connections {
         target: root.context
         function onCurrentTextChanged() {
-            if (input.text !== root.context.currentText)
-                input.text = root.context.currentText;
+            const length = root.context.currentText.length;
+            if (length > 0)
+                root.context.authRevealed = true;
+            while (dots.count < length)
+                dots.append({});
+            while (dots.count > length)
+                dots.remove(dots.count - 1);
         }
         function onUnlockFailed() {
             failureFlash.restart();

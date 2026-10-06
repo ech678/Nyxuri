@@ -142,7 +142,7 @@ Shell 执行。Noctalia 伴生 GUI 在 Noctalia 模式按需使用，自研模�
    - 提取纯净共享层：`shared/theme/Appearance.qml`（纯设计系统 Token）、`shared/controls/StateLayer.qml`（状态交互层）、`shared/controls/MaterialSymbol.qml`（安全边界图标渲染）与 `shared/controls/CompositorBlurRegion.qml`（无 Services 耦合的高斯模糊），严守零 IO、零进程副作用底线。
 2. **意图收敛与命令安全**：
    - 实现全局单例 `shell/app/ActionGateway.qml`，所有系统电源动作（`poweroff`、`reboot`、`suspend`、`hibernate`、`logout`、`lock`）及应用启动全部收敛并使用纯参数数组调用外部命令（`Quickshell.execDetached`）；
-   - 继承安全锁屏挂起防御（挂起/休眠前确保 `sessionLocker.secure`）。
+   - 继承安全锁屏挂起防御（挂起/休眠前确保 `sessionLocker.secure`），挂起动作带 8 秒确认超时（secure 事件丢失即丢弃，防止悬挂动作在未来某次锁定时误触发）；空闲自动挂起经 `IdleService.suspendRequested` 由 `AppShell` 桥接进同一管道，禁止 `loginctl` 直连绕过锁屏。
 3. **功能域 1（Session）自治生命周期与去冗余**：
    - 构建 `shell/modules/session/SessionHost.qml` 与 `SessionPanel.qml`，彻底废弃旧母体常驻 `Loader { active: true }` 占用；
    - 实现面板打开时按需挂载、按键与鼠标交互、关闭动画结束后触发 `dismissFinished` 彻底销毁窗口并释放 Layer-shell 表面（`active: false`）；
@@ -174,7 +174,7 @@ shell/
 │   ├── settings/                 # 系统设置（P3-01）：SettingsHost, pages/, routes
 │   ├── bar/                      # 状态栏（P3-02）：BarHost, workspaces, clock, tray
 │   ├── notifications/            # 通知系统（P3-03）：常驻 D-Bus 监听与瞬态弹窗/抽屉
-│   ├── lock/                     # 真实锁屏（P3-04）：LockHost, PAM 上下文
+│   ├── lock/                     # 真实锁屏（P3-04）：LockHost, PAM 上下文；密码经 PasswordCapture 裸键盘直采（锁屏表面零 TextInput，绕开 Qt IME/fcitx5-qt 弹窗协议崩溃），lock-active 标记支持崩溃后接管恢复（详见 modules/lock/README.md）
 │   ├── launcher/                 # 应用启动器（P3-05）：LauncherHost, providers/
 │   ├── clipboard/                # 剪贴板历史（P3-05）：ClipboardHost, 数据源
 │   └── wallpaper/                # 原生壁纸与调色（P4）：渲染器与 palette.toml 导出

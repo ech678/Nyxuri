@@ -1,5 +1,6 @@
 """Contract tests for dual shell management and CLI (nyxuri shell)."""
 
+import glob
 import io
 import json
 import os
@@ -704,6 +705,62 @@ class TestShellManagement(unittest.TestCase):
                 ["qs", "-p", shell_dir, "ipc", "call", "lock", "isLocked"],
                 timeout=1.0, capture_output=True, text=True, check=False,
             )
+
+    def test_p3_lock_screen_ime_free_password_and_recovery_contracts(self):
+        """Lock screen password input bypasses the input method entirely, and a
+        shell that died while locked is taken over again on restart."""
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+        lock_dir = os.path.join(shell_dir, "modules", "lock")
+
+        # 1. The lock module must not instantiate text-input controls anywhere:
+        # with QT_IM_MODULE=fcitx a focused TextInput lets fcitx5-qt raise a
+        # parentless xdg_popup from the session-lock surface, which niri rejects
+        # with a fatal protocol error (red dead-locker screen afterwards).
+        lock_qml_files = glob.glob(os.path.join(lock_dir, "**", "*.qml"), recursive=True)
+        self.assertTrue(lock_qml_files)
+        for qml_path in lock_qml_files:
+            with open(qml_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertNotIn("TextInput {", content, f"IME-capable control in {qml_path}")
+            self.assertNotIn("TextField {", content, f"IME-capable control in {qml_path}")
+            self.assertNotIn("inputMethodHints", content, f"IME hints in {qml_path}")
+
+        # 2. PasswordCapture accumulates key events without any text-input control.
+        capture_path = os.path.join(lock_dir, "PasswordCapture.qml")
+        self.assertTrue(os.path.isfile(capture_path))
+        with open(capture_path, "r", encoding="utf-8") as f:
+            capture_content = f.read()
+        self.assertIn("FocusScope {", capture_content)
+        self.assertIn("Keys.onPressed", capture_content)
+        self.assertIn("currentText", capture_content)
+
+        # 3. Both lock styles drive the shared capture component.
+        with open(os.path.join(lock_dir, "DefaultLockContent.qml"), "r", encoding="utf-8") as f:
+            default_content = f.read()
+        with open(os.path.join(lock_dir, "cards", "AuthCard.qml"), "r", encoding="utf-8") as f:
+            auth_content = f.read()
+        self.assertIn("PasswordCapture {", default_content)
+        self.assertIn("PasswordCapture {", auth_content)
+
+        # 4. The dead legacy context is gone (its failure path lacked unlockFailed).
+        self.assertFalse(os.path.isfile(os.path.join(lock_dir, "LockContext.qml")))
+
+        # 5. Failure state clears as soon as the user types again.
+        lock_path = os.path.join(lock_dir, "Lock.qml")
+        with open(lock_path, "r", encoding="utf-8") as f:
+            lock_content = f.read()
+        self.assertIn("onCurrentTextChanged: showFailure = false", lock_content)
+
+        # 6. Crash recovery: the lock writes a session-scoped marker and a fresh
+        # instance takes the session lock over when the marker is fresh.
+        self.assertIn('lockMarkerPath: Paths.runtimeHome + "/lock-active"', lock_content)
+        self.assertIn("XDG_SESSION_ID", lock_content)
+        self.assertIn("previousInstanceDiedLocked", lock_content)
+        self.assertIn("sessionLock.locked = true", lock_content)
+        self.assertIn("writeLockMarker()", lock_content)
+        self.assertIn("clearLockMarker()", lock_content)
+        self.assertIn("FileView {", lock_content)
 
     def test_p3_notification_fallback_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -1824,8 +1881,11 @@ class TestShellManagement(unittest.TestCase):
         self.assertNotIn('"action": "hibernate"', panel_content)
         self.assertIn('"key": "1"', panel_content)
         self.assertIn('"key": "5"', panel_content)
+        # Digit shortcuts are derived from the model length, never hard-coded.
         self.assertIn("Qt.Key_1", panel_content)
-        self.assertIn("Qt.Key_5", panel_content)
+        self.assertNotIn("Qt.Key_5", panel_content)
+        self.assertIn("shortcutIndex >= actionRepeater.count", panel_content)
+        self.assertIn("if (selected)", panel_content)
         self.assertNotIn("Qt.Key_L:", panel_content)
         self.assertNotIn("Qt.Key_E:", panel_content)
         self.assertNotIn("Qt.Key_U:", panel_content)
@@ -1845,6 +1905,27 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn('root.execute(["systemctl", action], "session:secure-power")', gateway_content)
         self.assertNotIn('["loginctl", action]', gateway_content)
         self.assertIn("root.requestSessionClose()", gateway_content)
+        # Pending secure power actions expire, so a lost secured() event can
+        # never fire an unrelated suspend much later.
+        self.assertIn("pendingSecurePowerTimer", gateway_content)
+        self.assertIn("interval: 8000", gateway_content)
+        self.assertIn("pendingSecurePowerTimer.restart()", gateway_content)
+        self.assertIn("pendingSecurePowerTimer.stop()", gateway_content)
+
+        # 3.5 Idle suspend goes through the secure lock pipeline, not a direct
+        # loginctl call that would suspend without locking.
+        idle_path = os.path.join(shell_dir, "app", "services", "IdleService.qml")
+        with open(idle_path, "r", encoding="utf-8") as f:
+            idle_content = f.read()
+        self.assertNotIn("loginctl", idle_content)
+        self.assertNotIn("suspendProcess", idle_content)
+        self.assertIn("signal suspendRequested", idle_content)
+        self.assertIn("function reportSuspendResult", idle_content)
+        app_shell_path = os.path.join(shell_dir, "app", "AppShell.qml")
+        with open(app_shell_path, "r", encoding="utf-8") as f:
+            app_shell_content = f.read()
+        self.assertIn("onSuspendRequested", app_shell_content)
+        self.assertIn('ActionGateway.powerAction("suspend", "idle")', app_shell_content)
 
         # 4. Lock.qml has heartbeat timer, screensChanged listener, and uses PersonalizationConfig.lockScreenStyle
         lock_path = os.path.join(shell_dir, "modules", "lock", "Lock.qml")

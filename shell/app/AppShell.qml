@@ -147,6 +147,9 @@ Item {
         function onLockRequested() {
             IdleService.reportLockResult(sessionLocker.open());
         }
+        function onSuspendRequested() {
+            IdleService.reportSuspendResult(ActionGateway.powerAction("suspend", "idle"));
+        }
     }
 
     Loader {

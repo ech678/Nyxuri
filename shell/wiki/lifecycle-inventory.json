@@ -1,14 +1,28 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-10-03T14:40:00Z",
-  "totalResources": 227,
+  "totalResources": 228,
   "static_inventory": {
-    "total": 227,
+    "total": 228,
     "violations": 0,
     "resources": [
       {
         "file": "app/ActionGateway.qml",
-        "line": 89,
+        "line": 39,
+        "resource_type": "Timer",
+        "name": "pendingSecurePowerTimer",
+        "module": "app/ActionGateway",
+        "creation_condition": "false",
+        "resource_owner": "app/ActionGateway",
+        "stop_entry": "pendingSecurePowerTimer.stop()",
+        "has_destruction": false,
+        "visible_only_deactivation": false,
+        "has_fallback": true,
+        "risk_level": "low"
+      },
+      {
+        "file": "app/ActionGateway.qml",
+        "line": 107,
         "resource_type": "ExternalCommand",
         "name": "execDetached",
         "module": "app/ActionGateway",
@@ -22,7 +36,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 164,
+        "line": 167,
         "resource_type": "IPC",
         "name": "IpcHandler(power-menu)",
         "module": "app/AppShell",
@@ -36,7 +50,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 180,
+        "line": 183,
         "resource_type": "IPC",
         "name": "IpcHandler(shortcut-map)",
         "module": "app/AppShell",
@@ -50,7 +64,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 196,
+        "line": 199,
         "resource_type": "IPC",
         "name": "IpcHandler(lock)",
         "module": "app/AppShell",
@@ -64,7 +78,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 212,
+        "line": 215,
         "resource_type": "IPC",
         "name": "IpcHandler(spotlight)",
         "module": "app/AppShell",
@@ -78,7 +92,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 261,
+        "line": 264,
         "resource_type": "IPC",
         "name": "IpcHandler(wallpaper)",
         "module": "app/AppShell",
@@ -92,7 +106,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 297,
+        "line": 300,
         "resource_type": "IPC",
         "name": "IpcHandler(control-center)",
         "module": "app/AppShell",
@@ -106,7 +120,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 313,
+        "line": 316,
         "resource_type": "IPC",
         "name": "IpcHandler(settings)",
         "module": "app/AppShell",
@@ -120,7 +134,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 329,
+        "line": 332,
         "resource_type": "IPC",
         "name": "IpcHandler(shell)",
         "module": "app/AppShell",
@@ -610,7 +624,7 @@
       },
       {
         "file": "app/services/IdleService.qml",
-        "line": 366,
+        "line": 381,
         "resource_type": "Process",
         "name": "ensurePolicyStore",
         "module": "app/services",
@@ -624,7 +638,7 @@
       },
       {
         "file": "app/services/IdleService.qml",
-        "line": 377,
+        "line": 392,
         "resource_type": "FileView",
         "name": "policyFile",
         "module": "app/services",
@@ -638,7 +652,7 @@
       },
       {
         "file": "app/services/IdleService.qml",
-        "line": 406,
+        "line": 421,
         "resource_type": "Process",
         "name": "displayPowerProcess",
         "module": "app/services",
@@ -652,21 +666,7 @@
       },
       {
         "file": "app/services/IdleService.qml",
-        "line": 424,
-        "resource_type": "Process",
-        "name": "suspendProcess",
-        "module": "app/services",
-        "creation_condition": "dynamic",
-        "resource_owner": "app/services",
-        "stop_entry": "suspendProcess.running = false",
-        "has_destruction": true,
-        "visible_only_deactivation": false,
-        "has_fallback": true,
-        "risk_level": "medium"
-      },
-      {
-        "file": "app/services/IdleService.qml",
-        "line": 447,
+        "line": 449,
         "resource_type": "ExternalCommand",
         "name": "ActionGateway.execute(idle:power-on)",
         "module": "app/services",
@@ -2276,7 +2276,21 @@
       },
       {
         "file": "modules/lock/Lock.qml",
-        "line": 120,
+        "line": 113,
+        "resource_type": "FileView",
+        "name": "lockMarkerFile",
+        "module": "modules/lock",
+        "creation_condition": "root.lockMarkerPath",
+        "resource_owner": "modules/lock",
+        "stop_entry": "QObject destruction",
+        "has_destruction": true,
+        "visible_only_deactivation": false,
+        "has_fallback": true,
+        "risk_level": "low"
+      },
+      {
+        "file": "modules/lock/Lock.qml",
+        "line": 179,
         "resource_type": "Timer",
         "name": "lockFocusHeartbeat",
         "module": "modules/lock",

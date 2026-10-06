@@ -17,8 +17,10 @@ Singleton {
             root.runSecurePowerAction(true);
         }
         function onActiveChanged() {
-            if (root.sessionLocker && !root.sessionLocker.active)
+            if (root.sessionLocker && !root.sessionLocker.active) {
+                pendingSecurePowerTimer.stop();
                 root.pendingSecurePowerAction = "";
+            }
         }
     }
 
@@ -30,6 +32,22 @@ Singleton {
     signal settingsCloseRequested
     signal settingsToggleRequested(string pageId)
     signal settingsSearchRequested(string searchId)
+
+    // A secure power action must be confirmed by the session lock within this
+    // window. Otherwise it is dropped, so it can never fire on an unrelated
+    // secured() much later (e.g. the next idle lock).
+    Timer {
+        id: pendingSecurePowerTimer
+
+        interval: 8000
+        onTriggered: {
+            if (root.pendingSecurePowerAction === "")
+                return;
+            console.warn("[ActionGateway] Dropped secure power action, lock never secured:",
+                         root.pendingSecurePowerAction);
+            root.pendingSecurePowerAction = "";
+        }
+    }
 
     function requestSessionOpen(screen) {
         root.sessionOpenRequested(screen);
@@ -107,6 +125,7 @@ Singleton {
         }
 
         const action = root.pendingSecurePowerAction;
+        pendingSecurePowerTimer.stop();
         root.pendingSecurePowerAction = "";
         root.execute(["systemctl", action], "session:secure-power");
     }
@@ -126,6 +145,7 @@ Singleton {
         }
 
         root.pendingSecurePowerAction = action;
+        pendingSecurePowerTimer.restart();
         if (root.sessionLocker && root.sessionLocker.secure) {
             root.runSecurePowerAction(true);
         }
