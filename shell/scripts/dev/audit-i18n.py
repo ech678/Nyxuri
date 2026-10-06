@@ -33,7 +33,7 @@ I18N_TR_RE = re.compile(r'I18n\.t(?:r)?\(\s*"((?:[^"\\]|\\.)*)"')
 QS_TR_RE = re.compile(r'qsTr\(\s*"((?:[^"\\]|\\.)*)"')
 QS_TRANSLATE_RE = re.compile(r'qsTranslate\(\s*"(?:[^"\\]|\\.)*"\s*,\s*"((?:[^"\\]|\\.)*)"')
 
-SKIP_DIRS = {"build", ".git", "__pycache__", "references", "wiki"}
+SKIP_DIRS = {"build", ".git", "__pycache__", "references"}
 
 # A QML string literal stores \n as two characters; the pack stores the real
 # newline. Comparing the raw literal against the parsed TOML therefore reports

@@ -4,9 +4,10 @@
 > 三层叠加（默认 → 预设 → __custom__），三模式安装（curl|bash / git clone / AUR），
 > 纯 Python 标准库引擎（零 pip 依赖，需 3.11+ 因 tomllib）。
 
-这份 wiki 是项目的架构与设计决策参考：每页一主题、自包含、按需取。
-- **真值分工 (Source of Truth)**：运行时行为与实现细节以**源码（`configs/` + `nyxuri/`）与契约测试（`tests/`）**为准；本 wiki 负责记录**架构契约、设计决策与原因意图**。
+这份 wiki 是全项目唯一的架构与设计决策参考：每页一主题、自包含、按需取。
+- **真值分工 (Source of Truth)**：运行时行为与实现细节以**源码（`configs/` + `nyxuri/` + `shell/`）与契约测试（`tests/`）**为准；本 wiki 记录**架构契约、设计决策与原因意图**。
 - 根目录 [../AGENTS.md](../AGENTS.md) 仅保留全局不变量、命令路由与秒级验证契约。
+- 文档体系自身的规则（真值拓扑、生命周期、命名、链接）见 [docs-charter](docs-charter.md)。
 
 ## Architecture
 
@@ -24,13 +25,12 @@
 
 ## Nyxuri Shell
 
-- [shell-wiki](../shell/wiki/llms.txt): Nyxuri Shell 独立子 Wiki 导航与机器阅读索引
-- [shell-rules](../shell/AGENTS.md): 开发契约、原版 Niri 基线与四层/生命周期约束
-- [shell-roadmap](../shell/ROADMAP.md): 宣言目标、去臃肿化与架构迁移、启动检查点及分阶段验收
-- [shell-blueprint](../shell/wiki/blueprint.md): 已确定架构边界、启动/切换目标与待论证设计
-- [shell-audit](../shell/wiki/audit.md): Clavis 完整母体基准、启动/依赖/生命周期审计与资源接口索引
-- [shell-development](../shell/wiki/development.md): 当前 QS 工具与阻断、开发循环、单分支实验、隔离调试与验收证据
-- [shell-upstream](../shell/wiki/upstream.md): 上游 docs/ 22 篇历史文档状态分级与参考索引
+- [shell-rules](../shell/AGENTS.md): 开发契约、原版 Niri 基线与三层/生命周期约束
+- [shell-roadmap](../shell/ROADMAP.md): 当前阶段、已交付台账、已确认决策与门禁
+- [shell-architecture-matrix](shell/architecture-matrix.md): 3 级纯 QML 架构边界分层、所有者与 import 白名单
+- [shell-development](shell/development.md): 纯 QML 调试循环、双 Shell 热切换与分类测试验证
+- [shell-references](shell/references.md): 上游 Clavis (15403b9) 与 iNiR 参考树说明与重现指令
+- [shell-lifecycle-inventory](shell/lifecycle-inventory.json): 机器可读生命周期与副作用审计清单 (Schema v2)
 
 ## Decoupled modules
 
@@ -46,6 +46,7 @@
 
 ## Guidelines & Standards
 
+- [docs-charter](docs-charter.md): 文档宪章——真值拓扑、生命周期、命名与链接门禁（本体系唯一规则源）
 - [writing-voice](writing-voice.md): 文案风格、去 AI 味、清楚自然的人格语调
 - [changelog-spec](changelog-spec.md): Changelog 规范、真实净变更原则与中间态 Bug 拦截
 - [tui-charter](tui-charter.md): 宏观 TUI 设计宪章、减法降噪、控制感与 Pre-flight 清单
@@ -53,8 +54,24 @@
 
 ## Reference
 
-- [roadmap](../ROADMAP.md): 活跃待办与近期路线草案
+- [roadmap](../ROADMAP.md): 跨域活跃待办（Shell 阶段明细见 shell/ROADMAP.md）
 - [concept-glossary](concept-glossary.md): 路径 / 动作 / 内容术语表（repo_dir、nyx_dir、deploy、preset…）
 - [operation-map](operation-map.md): 全部 CLI 命令目录（install / snapshot / preset / …）
 - [testing](testing.md): 测试策略与形状、TempEnv 隔离、mock 层级
 - [delayed-decisions](delayed-decisions.md): 留待触发条件的事项与已落地的结构调整
+
+## Upstream（外部参考，冻结）
+
+上游母体与第三方资料，只作历史追溯与协议考据，不构成 Nyxuri 契约；本区免链接与内容维护。
+
+- [clavis-docs](upstream/clavis-docs.md): 母体 Clavis (91cdecb) 22 篇原版文档状态分级与索引
+- [clavis-docs/](upstream/clavis-docs/README.md): 上游原版文档本体
+- [quickshell](upstream/quickshell.md): Quickshell 0.3.1 完整官方参考手册
+- [noctalia/](upstream/noctalia/00_INDEX.md): Noctalia 上游 LLM 文档集
+
+## Archive（历史档案，冻结）
+
+已完成阶段的明细台账与时点审计，只进不改；现行契约请勿在此查找。
+
+- [shell-roadmap-ledger](archive/shell-roadmap-ledger.md): Shell R1–R12 详细任务分解与验收记录（追加式台账）
+- [roadmap-history](archive/roadmap-history.md): 全局路线历史全景与阶段 0–3 明细

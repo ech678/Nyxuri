@@ -11,10 +11,10 @@ Nyxuri Shell 以完整 Clavis 母体为起点，就地净化、重构；当前�
 - 设计依据：[issue #111](https://github.com/ech678/Nyxuri/issues/111)。宣言精神已融入本文件
   与 [ROADMAP.md](ROADMAP.md)，原文通过 Git 历史追溯，不要求维护逐字副本。
 - 当前实现以源码和行为测试为准；本文件是开发契约，ROADMAP 是阶段与验收计划。
-- 母体版本、审计证据和未验证事项见 [audit](wiki/audit.md)；
-  接口设计参考 [blueprint](wiki/blueprint.md)，实际工具与未来调试流程见
-  [development](wiki/development.md)。详细阶段以本目录 ROADMAP 为准。
-- `wiki/upstream-docs/` 中的 Clavis 文档属于上游参考，不能覆盖 Nyxuri 契约；上游安装命令、软链
+- 母体版本与重现指令见 [上游参考](../llms-wiki/shell/references.md)（历史时点审计已冻结于
+  [archive](../llms-wiki/archive/)）；日常调试循环与分类测试见
+  [开发与调试](../llms-wiki/shell/development.md)。详细阶段以本目录 ROADMAP 为准。
+- `llms-wiki/upstream/clavis-docs/` 中的 Clavis 文档属于上游参考，不能覆盖 Nyxuri 契约；上游安装命令、软链
   开发入口、key-cli 工作流不自动成为本项目要求。
 
 ## 设计精神
@@ -44,18 +44,6 @@ Nyxuri Shell 以完整 Clavis 母体为起点，就地净化、重构；当前�
    先保留并修整现有有效 native 模型/协议，新增 C++ 须说明能力缺口或实测性能理由。
 6. **干净可控**：不为审计或普通验证安装依赖、改用户配置、启动持久服务；不执行上游
    安装器。key-cli、冷门 native 插件与在线服务不绑架核心冷启动。
-
-## P3 恢复约束
-
-当前先执行 [母体复用与恢复计划](wiki/recovery.md)，暂停功能扩张与进一步清理。
-迁移前读取对应原始组件及完整依赖链，记录原路径、现路径、保留行为与必要适配；
-优先复用原有视图、输入、背景、几何与动画，只调整边界所需的路径和依赖注入。
-禁止凭效果描述另写简化版本；无法复用时先记录具体阻断和最小替代范围。
-原版参考树已固定保存于 `shell/references/clavis-15403b9/`，不进入运行 import、默认构建或部署，不形成第二套生产实现。
-参考树被 Git 忽略，检索原版须显式使用 `rg --no-ignore shell/references/clavis-15403b9/shell`，
-不得因普通 `rg` 未命中而判断原功能不存在。
-逐项复用与证据记录见 [恢复矩阵](wiki/recovery-matrix.md) 和 [输入入口附件](wiki/recovery-inputs.md)；适配导致体验损失时修正适配方式，不降低原行为与视觉标准。
-用户报告的问题只是盘点起点；未核对功能记为待核对，不能默认为已恢复或封存。
 
 ## 去臃肿化
 
@@ -125,7 +113,7 @@ UI 只呈现和响应输入；桌面意图经 Action Gateway 执行。命令、�
 先看 git status，运行宿主基线测试。只改请求范围，不主动 commit、不重排无关文件。
 文档修改只做相关一致性、链接和空白检查；运行代码修改按影响选择必要验证。
 日常循环、单开发分支实验与阶段合并规则见
-[开发与调试](wiki/development.md)。分支不改变真实配置与服务的隔离要求。
+[开发与调试](../llms-wiki/shell/development.md)。分支不改变真实配置与服务的隔离要求。
 
 - QML：只格式化改动文件，检查真实 import/类型和受影响消费者，按需做原版 Niri
   视觉/交互冒烟。普通布局不自动新增 QtTest。

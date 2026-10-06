@@ -405,12 +405,12 @@ class TestShellManagement(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(shell_dir, ".github")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, ".gitignore")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "docs")))
-        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "wiki", "upstream-docs")))
+        self.assertTrue(os.path.isdir(os.path.join(repo_root, "llms-wiki", "upstream", "clavis-docs")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "tools")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "core")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "native", "tools", "window-preview")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "licenses")))
-        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "wiki", "upstream-licenses")))
+        self.assertTrue(os.path.isdir(os.path.join(shell_dir, "assets", "licenses")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "Components")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "shared", "controls", "ThemeIcon.qml")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "shared", "controls", "FileThemeIcon.qml")))
@@ -1267,7 +1267,7 @@ class TestShellManagement(unittest.TestCase):
         shell_dir = os.path.join(repo_root, "shell")
 
         # 1. Architecture matrix contract document exists
-        matrix_file = os.path.join(shell_dir, "wiki", "architecture-matrix.md")
+        matrix_file = os.path.join(repo_root, "llms-wiki", "shell", "architecture-matrix.md")
         self.assertTrue(os.path.isfile(matrix_file), f"architecture-matrix.md must exist: {matrix_file}")
         with open(matrix_file, "r", encoding="utf-8") as f:
             matrix_content = f.read()
@@ -1348,7 +1348,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertTrue(os.path.isfile(notif_content), "NotificationContent must exist in modules/notifications")
 
         # 6. Lifecycle inventory schema separates static inventory and runtime evidence
-        inv_file = os.path.join(shell_dir, "wiki", "lifecycle-inventory.json")
+        inv_file = os.path.join(repo_root, "llms-wiki", "shell", "lifecycle-inventory.json")
         self.assertTrue(os.path.isfile(inv_file))
         import json
         with open(inv_file, "r", encoding="utf-8") as f:
@@ -1368,22 +1368,14 @@ class TestShellManagement(unittest.TestCase):
         )
         self.assertIn("lifecycle-audit: clean", audit_res.stdout)
 
-    def test_r4c_tree_inventory_and_domain_reorganization(self):
-        """R4-C Contract: Full tree inventory completeness and domain reorganization."""
+    def test_r4c_domain_reorganization_contract(self):
+        """R4-C Contract: Domain reorganization — services live in their functional domains."""
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         shell_dir = os.path.join(repo_root, "shell")
 
-        # 1. Tree inventory document exists and covers key sections
-        inv_path = os.path.join(shell_dir, "wiki", "tree-inventory.md")
-        self.assertTrue(os.path.isfile(inv_path), f"tree-inventory.md missing: {inv_path}")
-        with open(inv_path, "r", encoding="utf-8") as f:
-            inv_text = f.read()
-        self.assertIn("### app/ （共", inv_text)
-        self.assertIn("### modules/ （共", inv_text)
-        self.assertIn("### shared/ （共", inv_text)
-        self.assertIn("### native/ （共", inv_text)
-        self.assertIn("### bin/ （共", inv_text)
-        self.assertIn("### packaging/ （共", inv_text)
+        # 1. The hand-frozen tree-inventory snapshot is retired; the tree is answered by git + architecture-matrix.
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "wiki")), "shell/wiki must stay dissolved")
+        self.assertFalse(os.path.exists(os.path.join(repo_root, "shell", "scripts", "dev", "generate-tree-inventory.py")))
 
         # 2. Assert 12 single-module services relocated into their functional domains
         migrated_services = [
@@ -1565,12 +1557,6 @@ class TestShellManagement(unittest.TestCase):
                     app_files.append(os.path.join(root_dir, f))
         self.assertEqual(len(app_files), 43, f"app/ must strictly contain 43 files, found {len(app_files)}: {app_files}")
 
-        # 4. Tree inventory document matches 43 app files
-        inv_path = os.path.join(shell_dir, "wiki", "tree-inventory.md")
-        with open(inv_path, "r", encoding="utf-8") as f:
-            inv_text = f.read()
-        self.assertIn("### app/ （共 43 文件）", inv_text)
-
         # 5. Static lifecycle audit passes clean with zero violations
         import subprocess
         audit_res = subprocess.run(
@@ -1638,7 +1624,7 @@ class TestShellManagement(unittest.TestCase):
         roadmap_path = os.path.join(shell_dir, "ROADMAP.md")
         with open(roadmap_path, "r", encoding="utf-8") as rf:
             roadmap_content = rf.read()
-        self.assertIn("| 已完成 | 建立 Niri 单一运行时入口 | R4-C-02 |", roadmap_content)
+        self.assertIn("| R4-C | 结构收敛与全面去 C++ | 已完成 |", roadmap_content)
 
     def test_r4c_i18n_service_and_catalog_contracts(self):
         """Assert I18nService is pure QML with zero C++ imports, preserves full public API, and catalogs are valid."""
@@ -1734,8 +1720,8 @@ class TestShellManagement(unittest.TestCase):
         roadmap_path = os.path.join(shell_dir, "ROADMAP.md")
         with open(roadmap_path, "r", encoding="utf-8") as rf:
             roadmap_content = rf.read()
-        self.assertIn("| 已完成 | 删除 Nyxuri 自有 C++ 构建链 | R4-C-05 |", roadmap_content)
-        self.assertIn("| 已完成 | 完成结构与行为收口 | R4-C-06 |", roadmap_content)
+        self.assertIn("| R4-C | 结构收敛与全面去 C++ | 已完成 |", roadmap_content)
+        self.assertIn("| R4 | 架构、生命周期与结构收敛 | 已完成 |", roadmap_content)
 
     def test_r5_resource_doc_and_test_closure(self):
         """R5 Contract: Resource integrity, documentation hygiene, and categorized test runner."""
@@ -1761,17 +1747,17 @@ class TestShellManagement(unittest.TestCase):
 
         # 3. Conflicting upstream docs removed
         for doc in ["development.md", "installation.md", "releasing.md"]:
-            self.assertFalse(os.path.exists(os.path.join(shell_dir, "wiki", "upstream-docs", doc)))
+            self.assertFalse(os.path.exists(os.path.join(repo_root, "llms-wiki", "upstream", "clavis-docs", doc)))
 
         # 4. P3 recovery matrix archived
-        archive_dir = os.path.join(shell_dir, "wiki", "archive")
+        archive_dir = os.path.join(repo_root, "llms-wiki", "archive")
         self.assertTrue(os.path.isdir(archive_dir))
         for archived in ["recovery.md", "recovery-matrix.md", "recovery-inputs.md"]:
             self.assertTrue(os.path.isfile(os.path.join(archive_dir, archived)))
 
         # 5. References documentation and modern development guide
-        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "wiki", "references.md")))
-        dev_guide = os.path.join(shell_dir, "wiki", "development.md")
+        self.assertTrue(os.path.isfile(os.path.join(repo_root, "llms-wiki", "shell", "references.md")))
+        dev_guide = os.path.join(repo_root, "llms-wiki", "shell", "development.md")
         with open(dev_guide, "r", encoding="utf-8") as f:
             dev_text = f.read()
         self.assertNotIn("cmake -S", dev_text)
@@ -1786,9 +1772,8 @@ class TestShellManagement(unittest.TestCase):
         roadmap_path = os.path.join(shell_dir, "ROADMAP.md")
         with open(roadmap_path, "r", encoding="utf-8") as rf:
             roadmap_content = rf.read()
-        self.assertIn("| 已完成 | 盘点图标、翻译、shader、主题和第三方资源消费者 | R2/R3 |", roadmap_content)
-        self.assertIn("| 已完成 | 统一 README、wiki、注释和上游参考资料职责 | R1/R3 |", roadmap_content)
-        self.assertIn("| 已完成 | 按逻辑、运行时资源、native、图形环境和静态规则分类测试 | R4 |", roadmap_content)
+        self.assertIn("| R5 | 资源、文档与测试收口 | 已完成 |", roadmap_content)
+        self.assertIn("| R7 | 多套设置 UI 与 PR #120 前置审查 | 已完成 |", roadmap_content)
 
     def test_r6_performance_and_event_loop_governance(self):
         """R6 Contract: Weather icon subtraction, MPRIS DBus mitigation, and timer zero-interval prohibition."""
@@ -1892,9 +1877,8 @@ class TestShellManagement(unittest.TestCase):
         roadmap_path = os.path.join(shell_dir, "ROADMAP.md")
         with open(roadmap_path, "r", encoding="utf-8") as rf:
             roadmap_content = rf.read()
-        self.assertIn("| 已完成 | 天气资产做减法：淘汰 meteocons 臃肿依赖，原生化图标映射 | R5 |", roadmap_content)
-        self.assertIn("| 已完成 | MPRIS DBus 频繁失效重连与位置轮询治理 | R5 |", roadmap_content)
-        self.assertIn("| 已完成 | 根除 `interval: 0` 事件循环空转与高频定时器降频 | R5 |", roadmap_content)
+        self.assertIn("| R6 | 能耗基线、事件循环与稳态治理 | 已完成 |", roadmap_content)
+        self.assertIn("| R8 | 设置导航扁平化与 M3 信息架构 | 已完成 |", roadmap_content)
 
     def test_r9_feature_toggles_and_real_lifecycle(self):
         """R9 Contract: Feature toggles control physical existence, layer-shell surfaces unmount, services guard lifecycles."""
@@ -1973,7 +1957,7 @@ class TestShellManagement(unittest.TestCase):
         roadmap_path = os.path.join(shell_dir, "ROADMAP.md")
         with open(roadmap_path, "r", encoding="utf-8") as f:
             roadmap_code = f.read()
-        self.assertIn("### R9 功能开关与真实生命周期（已完成）", roadmap_code)
+        self.assertIn("| R9 | 功能开关与真实生命周期 | 已完成 |", roadmap_code)
 
     def test_r10_action_gateway_and_module_autonomy(self):
         """R10 Contract: unified action boundary, domain autonomy, UI free of direct I/O.
@@ -2168,7 +2152,7 @@ class TestShellManagement(unittest.TestCase):
 
         # 10. Roadmap reflects the R11 delivery state.
         roadmap = read("ROADMAP.md")
-        self.assertIn("### R11 Nyxuri Shell 控制面与透明度（已完成）", roadmap)
+        self.assertIn("| R11 | 控制面与透明度 | 已完成 |", roadmap)
 
     def test_power_menu_and_secure_suspend_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

@@ -1,7 +1,7 @@
 # 上游母体历史文档导引与状态清单
 
 > 本文档针对 `shell/docs/` 下由母体 [StatIndet/quickshell](https://github.com/StatIndet/quickshell)（Clavis，commit `91cdecb`）导入的 22 篇原版文档建立分级索引。
-> **免责声明**：上游文档属于历史设计参考，不具备 Nyxuri Shell 契约效力。当前架构契约见 [AGENTS](../AGENTS.md)，路线图见 [ROADMAP](../ROADMAP.md)，自研设计见 [子 Wiki 首页](index.md)。
+> **免责声明**：上游文档属于历史设计参考，不具备 Nyxuri Shell 契约效力。当前架构契约见 [shell/AGENTS](../../shell/AGENTS.md)，路线图见 [shell/ROADMAP](../../shell/ROADMAP.md)，知识库索引见 [llms.txt](../llms.txt)。
 
 ---
 

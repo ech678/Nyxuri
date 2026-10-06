@@ -26,5 +26,5 @@ build-*/
 .packaging/
 local/
 
-# Local, pinned upstream reference (recreate from the commit in shell/wiki/recovery.md)
+# Local, pinned upstream reference (recreate from the commit in llms-wiki/shell/references.md)
 /shell/references/

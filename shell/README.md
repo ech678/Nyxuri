@@ -9,14 +9,11 @@
 ## 核心导航与真值体系
 
 - **开发契约与红线**：[AGENTS.md](AGENTS.md)
-- **阶段推进与验收矩阵**：[ROADMAP.md](ROADMAP.md)
-- **专属子 Wiki 索引**：[wiki/llms.txt](wiki/llms.txt)
-- **子 Wiki 导读与总览**：[wiki/index.md](wiki/index.md)
-  - 核心架构矩阵：[wiki/architecture-matrix.md](wiki/architecture-matrix.md)
-  - 全树结构清单：[wiki/tree-inventory.md](wiki/tree-inventory.md)
-  - 开发调试指南：[wiki/development.md](wiki/development.md)
-  - 上游参考与重现：[wiki/references.md](wiki/references.md)
-  - 上游历史文档导引：[wiki/upstream.md](wiki/upstream.md)
+- **阶段台账与当前阶段**：[ROADMAP.md](ROADMAP.md)
+- **知识库索引**（全项目唯一）：[../llms-wiki/llms.txt](../llms-wiki/llms.txt)
+  - 架构矩阵：[../llms-wiki/shell/architecture-matrix.md](../llms-wiki/shell/architecture-matrix.md)
+  - 开发调试指南：[../llms-wiki/shell/development.md](../llms-wiki/shell/development.md)
+  - 上游参考与重现：[../llms-wiki/shell/references.md](../llms-wiki/shell/references.md)
 
 ---
 
@@ -43,15 +40,15 @@
 Nyxuri Shell takes inspiration from and integrates ideas or components from projects including:
 
 - [end-4/dots-hyprland](https://github.com/end-4/dots-hyprland)
-- [Zen Browser](https://github.com/zen-browser/desktop) — palette algorithms and editor; see [source and license mapping](wiki/upstream-licenses/README.md).
+- [Zen Browser](https://github.com/zen-browser/desktop) — palette algorithms and editor; see [source and license mapping](assets/licenses/README.md).
 - [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell)
 - [Caelestia Shell](https://github.com/caelestia-dots/shell)
 - [qml-niri](https://github.com/imiric/qml-niri)
 - [Breezy Weather](https://github.com/breezy-weather/breezy-weather)
-- [Animated Weather Cards](https://codepen.io/ste-vg/pen/GqaZbo) by Steve Gardner — the current-weather animation at the top of the sidebar weather view is a Qt/QML recreation of this web project. The original is licensed under MIT; see the [full license and copyright notice](wiki/upstream-licenses/AnimatedWeatherCards-MIT.txt).
+- [Animated Weather Cards](https://codepen.io/ste-vg/pen/GqaZbo) by Steve Gardner — the current-weather animation at the top of the sidebar weather view is a Qt/QML recreation of this web project. The original is licensed under MIT; see the [full license and copyright notice](assets/licenses/AnimatedWeatherCards-MIT.txt).
 - [m3shapes](https://github.com/soramanew/m3shapes)
 
-Third-party license notices are kept in [`wiki/upstream-licenses/`](wiki/upstream-licenses/).
+Third-party license notices are kept in [`assets/licenses/`](assets/licenses/).
 # License
 
 See [LICENSE](LICENSE).

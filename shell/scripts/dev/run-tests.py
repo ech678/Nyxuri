@@ -119,7 +119,7 @@ def build_category_suite(category: str) -> unittest.TestSuite:
             "test_shell_directory_hygiene_and_module_unification",
             "test_r4c_c05_cpp_toolchain_elimination",
             "test_r4_architecture_and_lifecycle_contracts",
-            "test_r4c_tree_inventory_and_domain_reorganization",
+            "test_r4c_domain_reorganization_contract",
             "test_r4c_naming_codex_and_dead_stub_elimination",
             "test_r4c_app_global_boundary_convergence",
             "test_r4c_c06_domain_closure_and_single_state_source",

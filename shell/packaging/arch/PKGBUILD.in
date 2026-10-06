@@ -29,5 +29,5 @@ package_nyxuri-shell() {
     install -Dm644 "nyxuri-shell-${pkgver}/packaging/systemd/user/nyxuri-shell.service" \
                    "${pkgdir}/usr/lib/systemd/user/nyxuri-shell.service"
     install -Dm644 "nyxuri-shell-${pkgver}/LICENSE" "${pkgdir}/usr/share/licenses/nyxuri-shell/LICENSE"
-    cp -r "nyxuri-shell-${pkgver}/wiki/upstream-licenses" "${pkgdir}/usr/share/licenses/nyxuri-shell/third-party"
+    cp -r "nyxuri-shell-${pkgver}/assets/licenses" "${pkgdir}/usr/share/licenses/nyxuri-shell/third-party"
 }

@@ -27,7 +27,8 @@
 | CLI 命令 / 流程编排 (`cli.py`, `workflows.py`, `menus.py`) | `operation-map.md`, `manifest-schema.md` | `python3 -m unittest tests/test_cli.py tests/test_ai_specs.py` |
 | 终端 UI / 交互流程 (`tui.py`, `menus.py`) | `tui-charter.md` | 交互冒烟，检查退出 trap |
 | 双语文案 / 提示信息 (`translations.toml`, `i18n.py`) | `i18n.md`, `writing-voice.md` | `python3 -m unittest tests/test_i18n.py` |
-| Nyxuri Shell (`shell/`, `shell/wiki/`) | `shell-rules`, `shell-roadmap`, `shell-wiki` | `python3 -m unittest tests/test_shell.py` + `compileall` |
+| 文档体系 (`llms-wiki/`, `notes/`, `ROADMAP*`) | `docs-charter` | `python3 -m unittest tests/test_ai_specs.py` |
+| Nyxuri Shell (`shell/`) | `shell-rules` (`shell/AGENTS.md`), `shell-roadmap`, `llms-wiki/shell/` | `python3 -m unittest tests/test_shell.py` + `compileall` |
 | 版本发布 / 变更记录 (`CHANGELOG.md`) | `changelog-spec.md` | `git log <last-release-tag>..HEAD` 对齐净变更 |
 
 ---

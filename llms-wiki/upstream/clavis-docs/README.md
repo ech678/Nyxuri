@@ -10,7 +10,7 @@
 
 ## 文档指引与真值导航
 
-- **Nyxuri Shell 专属子 Wiki**：[shell/wiki/](../wiki/index.md)
-- **上游 22 篇文档状态分级与参考索引**：[shell/wiki/upstream.md](../wiki/upstream.md)
-- **开发契约与红线**：[shell/AGENTS.md](../AGENTS.md)
-- **演进路线图**：[shell/ROADMAP.md](../ROADMAP.md)
+- **知识库索引**：[llms-wiki/llms.txt](../../llms-wiki/llms.txt)
+- **上游 22 篇文档状态分级与参考索引**：[clavis-docs 索引](../clavis-docs.md)
+- **开发契约与红线**：[shell/AGENTS.md](../../shell/AGENTS.md)
+- **演进路线图**：[shell/ROADMAP.md](../../shell/ROADMAP.md)
