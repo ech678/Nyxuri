@@ -19,3 +19,4 @@ DashboardWallpaperToolsCard 1.0 DashboardWallpaperToolsCard.qml
 DashboardMediaPage 1.0 DashboardMediaPage.qml
 DashboardThemesPage 1.0 DashboardThemesPage.qml
 DashboardBarLayoutCard 1.0 DashboardBarLayoutCard.qml
+DashboardBezierCard 1.0 DashboardBezierCard.qml

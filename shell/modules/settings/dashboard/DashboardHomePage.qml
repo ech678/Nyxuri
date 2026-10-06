@@ -646,7 +646,12 @@ Item {
 
                 DashboardCard {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: Math.max(90, (homeGrid.height - 12) * 0.3)
+                    // Hug the tile grid. The upstream 0.3 ratio sized a card
+                    // holding a 52px icon row plus a 38px button; two 30px tiles
+                    // leave that formula with ~60px of slack, which the grid
+                    // spreads into the row gap.
+                    Layout.preferredHeight: statusGrid.implicitHeight + 24
+                    Layout.maximumHeight: statusGrid.implicitHeight + 24
                     // Neutral on purpose: wallpaper-driven roles swing hue with
                     // every wallpaper (this card has been purple and brown).
                     tint: Appearance.colors.colLayer1
@@ -657,6 +662,8 @@ Item {
                     travelY: -260
 
                     GridLayout {
+                        id: statusGrid
+
                         anchors.fill: parent
                         anchors.margins: 12
                         columns: 2
@@ -665,6 +672,7 @@ Item {
 
                         InfoTile {
                             Layout.fillWidth: true
+                            Layout.preferredWidth: 1
                             icon: "network_speed"
                             label: I18n.tr("Network")
                             value: "↓ " + Format.bytesPerSecond(root.netDownBytes) + "   ↑ "
@@ -675,6 +683,7 @@ Item {
 
                         InfoTile {
                             Layout.fillWidth: true
+                            Layout.preferredWidth: 1
                             icon: "thermostat"
                             label: I18n.tr("CPU temp")
                             value: root.cpuTemperature > 0 ? Math.round(root.cpuTemperature) + " °C" : Format.unavailable(
@@ -685,6 +694,7 @@ Item {
 
                         InfoTile {
                             Layout.fillWidth: true
+                            Layout.preferredWidth: 1
                             icon: "memory"
                             label: I18n.tr("Memory")
                             value: Format.bytes(SystemMonitorService.memory.usedBytes) + " / " + Format.bytes(
@@ -695,6 +705,7 @@ Item {
 
                         InfoTile {
                             Layout.fillWidth: true
+                            Layout.preferredWidth: 1
                             icon: "hard_drive"
                             label: I18n.tr("Disk")
                             value: Format.bytes(root.rootDisk.usedBytes) + " / " + Format.bytes(
@@ -861,7 +872,9 @@ Item {
                                     horizontalAlignment: Text.AlignHCenter
                                     text: Qt.locale().dayName((root.firstDay + index) % 7,
                                                               Locale.ShortFormat).charAt(0).toUpperCase()
-                                    font.pixelSize: Typography.bodyLarge.pixelSize
+                                    // 15 matches the day numbers below and upstream's
+                                    // `small`; bodyLarge rounds down to 14.
+                                    font.pixelSize: 15
                                     font.weight: Font.Medium
                                     color: Appearance.colors.colSubtext
                                 }
@@ -1271,10 +1284,12 @@ Item {
                     AvatarService.setAvatar(path);
             }
         }
+    }
 
-        function closeChildWindows() {
-            if (avatarPicker)
-                avatarPicker.dismiss();
-        }
+    // Must live on the root item: DashboardContent calls this on the page item
+    // and silently skips it when the member is missing.
+    function closeChildWindows() {
+        if (avatarPicker)
+            avatarPicker.dismiss();
     }
 }

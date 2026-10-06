@@ -198,6 +198,12 @@ QtObject {
             "icon": "toggle_off",
             "cards": [
                 {
+                    "type": "toggle",
+                    "key": "keystone:Enabled",
+                    "title": I18n.tr("Show Keystone"),
+                    "icon": "toggle_off"
+                },
+                {
                     "type": "combo",
                     "key": "keystone:Style",
                     "title": I18n.tr("Style"),
@@ -392,6 +398,16 @@ QtObject {
                     "icon": "show_chart"
                 },
                 {
+                    // Editor for the curve behind the "customBezier" option
+                    // above. The key is identity only — there is no control to
+                    // bind, the card drives PersonalizationConfig directly.
+                    "type": "bezier",
+                    "key": "wallpaper:Easing curve",
+                    "title": I18n.tr("Easing curve"),
+                    "icon": "gesture",
+                    "kw": "wallpaper easing bezier curve transition custom 缓动 贝塞尔 曲线"
+                },
+                {
                     "type": "toggle",
                     "key": "wallpaper:Overview",
                     "title": I18n.tr("Overview"),
@@ -453,6 +469,13 @@ QtObject {
                     "kw": "wallpaper per monitor screen independent"
                 },
                 {
+                    "type": "toggle",
+                    "key": "wallpaper:Overview per-monitor wallpaper",
+                    "title": I18n.tr("Per-monitor wallpaper in overview"),
+                    "icon": "wallpaper",
+                    "kw": "wallpaper overview per monitor screen independent"
+                },
+                {
                     "type": "combo",
                     "key": "wallpaper:Desktop transition",
                     "title": I18n.tr("Desktop transition"),
@@ -504,6 +527,282 @@ QtObject {
                     "key": "desktop:Grid visible while dragging",
                     "title": I18n.tr("Grid visible while dragging"),
                     "icon": "grid_4x4"
+                }
+            ]
+        },
+        {
+            "title": I18n.tr("Dock"),
+            "icon": "dock",
+            "cards": [
+                {
+                    "type": "toggle",
+                    "key": "dock:Show dock",
+                    "title": I18n.tr("Show dock"),
+                    "icon": "dock_to_bottom"
+                },
+                {
+                    "type": "select",
+                    "key": "dock:Screen edge",
+                    "title": I18n.tr("Screen edge"),
+                    "icon": "align_horizontal_left"
+                },
+                {
+                    "type": "select",
+                    "key": "dock:Surface style",
+                    "title": I18n.tr("Surface style"),
+                    "icon": "style"
+                },
+                {
+                    "type": "slider",
+                    "key": "dock:Icon size",
+                    "title": I18n.tr("Icon size"),
+                    "icon": "photo_size_select_large"
+                },
+                {
+                    "type": "toggle",
+                    "key": "dock:Magnify on hover",
+                    "title": I18n.tr("Magnify on hover"),
+                    "icon": "zoom_in"
+                },
+                {
+                    "type": "slider",
+                    "key": "dock:Magnification",
+                    "title": I18n.tr("Magnification"),
+                    "icon": "zoom_out_map"
+                },
+                {
+                    "type": "toggle",
+                    "key": "dock:Automatically hide",
+                    "title": I18n.tr("Automatically hide"),
+                    "icon": "visibility_off"
+                },
+                {
+                    "type": "toggle",
+                    "key": "dock:Bounce when launching",
+                    "title": I18n.tr("Bounce when launching"),
+                    "icon": "animation"
+                },
+                {
+                    "type": "toggle",
+                    "key": "dock:Show running indicators",
+                    "title": I18n.tr("Show running indicators"),
+                    "icon": "radio_button_checked"
+                },
+                {
+                    "type": "toggle",
+                    "key": "dock:Show recent applications",
+                    "title": I18n.tr("Show recent applications"),
+                    "icon": "history"
+                },
+                {
+                    "type": "toggle",
+                    "key": "dock:Show window thumbnails",
+                    "title": I18n.tr("Show window thumbnails"),
+                    "icon": "preview"
+                },
+                {
+                    "type": "slider",
+                    "key": "dock:Preview size",
+                    "title": I18n.tr("Preview size"),
+                    "icon": "aspect_ratio"
+                },
+                {
+                    "type": "toggle",
+                    "key": "dock:Pin applications from the menu",
+                    "title": I18n.tr("Pin applications from the menu"),
+                    "icon": "push_pin"
+                }
+            ]
+        },
+        {
+            "title": I18n.tr("Spotlight"),
+            "icon": "search",
+            "cards": [
+                {
+                    "type": "select",
+                    "key": "spotlight:Application order",
+                    "title": I18n.tr("Application order"),
+                    "icon": "sort"
+                },
+                {
+                    "type": "select",
+                    "key": "spotlight:Application layout",
+                    "title": I18n.tr("Application layout"),
+                    "icon": "view_list"
+                },
+                {
+                    "type": "select",
+                    "key": "spotlight:Search engine",
+                    "title": I18n.tr("Search engine"),
+                    "icon": "language"
+                },
+                {
+                    "type": "select",
+                    "key": "spotlight:Clipboard layout",
+                    "title": I18n.tr("Clipboard layout"),
+                    "icon": "content_paste"
+                }
+            ]
+        },
+        {
+            "title": I18n.tr("Language & region"),
+            "icon": "translate",
+            "cards": [
+                {
+                    "type": "select",
+                    "key": "language:Interface language",
+                    "title": I18n.tr("Interface language"),
+                    "icon": "translate"
+                },
+                {
+                    "type": "toggle",
+                    "key": "language:Clock format",
+                    "title": I18n.tr("12-hour clock"),
+                    "icon": "schedule"
+                },
+                {
+                    "type": "select",
+                    "key": "language:Weather temperature",
+                    "title": I18n.tr("Weather temperature"),
+                    "icon": "thermostat"
+                },
+                {
+                    "type": "select",
+                    "key": "language:Hardware temperature",
+                    "title": I18n.tr("Hardware temperature"),
+                    "icon": "device_thermostat"
+                }
+            ]
+        },
+        {
+            "title": I18n.tr("Sidebar clock"),
+            "icon": "schedule",
+            "cards": [
+                {
+                    "type": "spin",
+                    "key": "sidebar:Sides",
+                    "title": I18n.tr("Sides"),
+                    "icon": "category"
+                },
+                {
+                    "type": "toggle",
+                    "key": "sidebar:Constantly rotate",
+                    "title": I18n.tr("Constantly rotate"),
+                    "icon": "rotate_right"
+                },
+                {
+                    "type": "toggle",
+                    "key": "sidebar:Hour marks",
+                    "title": I18n.tr("Hour marks"),
+                    "icon": "more_time"
+                },
+                {
+                    "type": "toggle",
+                    "key": "sidebar:Digits in the middle",
+                    "title": I18n.tr("Digits in the middle"),
+                    "icon": "looks_one"
+                },
+                {
+                    "type": "spin",
+                    "key": "sidebar:Snapshot interval (ms)",
+                    "title": I18n.tr("Snapshot interval (ms)"),
+                    "icon": "timer"
+                }
+            ]
+        },
+        {
+            "title": I18n.tr("Horizontal clock"),
+            "icon": "schedule",
+            "cards": [
+                {
+                    "type": "spin",
+                    "key": "clock:Font size",
+                    "title": I18n.tr("Font size"),
+                    "icon": "format_size"
+                },
+                {
+                    "type": "spin",
+                    "key": "clock:Weight",
+                    "title": I18n.tr("Weight"),
+                    "icon": "format_bold"
+                },
+                {
+                    "type": "spin",
+                    "key": "clock:Width",
+                    "title": I18n.tr("Width"),
+                    "icon": "width"
+                },
+                {
+                    "type": "spin",
+                    "key": "clock:Optical size",
+                    "title": I18n.tr("Optical size"),
+                    "icon": "visibility"
+                },
+                {
+                    "type": "spin",
+                    "key": "clock:Grade",
+                    "title": I18n.tr("Grade"),
+                    "icon": "grade"
+                },
+                {
+                    "type": "spin",
+                    "key": "clock:Roundness",
+                    "title": I18n.tr("Roundness"),
+                    "icon": "radio_button_unchecked"
+                },
+                {
+                    "type": "spin",
+                    "key": "clock:Slant",
+                    "title": I18n.tr("Slant"),
+                    "icon": "format_italic"
+                }
+            ]
+        },
+        {
+            "title": I18n.tr("Display colour"),
+            "icon": "brightness_6",
+            "cards": [
+                {
+                    "type": "slider",
+                    "key": "gamma:Gamma",
+                    "title": I18n.tr("Gamma"),
+                    "icon": "tonality"
+                },
+                {
+                    "type": "slider",
+                    "key": "gamma:Contrast",
+                    "title": I18n.tr("Contrast"),
+                    "icon": "contrast"
+                },
+                {
+                    "type": "toggle",
+                    "key": "gamma:Night mode",
+                    "title": I18n.tr("Night mode"),
+                    "icon": "nightlight"
+                },
+                {
+                    "type": "spin",
+                    "key": "gamma:Night temperature",
+                    "title": I18n.tr("Night temperature"),
+                    "icon": "thermostat"
+                },
+                {
+                    "type": "spin",
+                    "key": "gamma:Day temperature",
+                    "title": I18n.tr("Day temperature"),
+                    "icon": "wb_sunny"
+                },
+                {
+                    "type": "spin",
+                    "key": "gamma:Transition duration",
+                    "title": I18n.tr("Transition duration"),
+                    "icon": "av_timer"
+                },
+                {
+                    "type": "toggle",
+                    "key": "gamma:Automatic IP location",
+                    "title": I18n.tr("Automatic IP location"),
+                    "icon": "my_location"
                 }
             ]
         }

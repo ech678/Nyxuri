@@ -47,6 +47,9 @@ Item {
             return [4, 1];
         if (type === "barlayout")
             return [4, 3];
+        // Square chart plus a control row; one row is too short.
+        if (type === "bezier")
+            return [2, 2];
         if (type === "toggle" || type === "spin")
             return [1, 1];
         return [2, 1];
@@ -405,6 +408,7 @@ Item {
                                                         "spin": spinComponent,
                                                         "combo": comboComponent,
                                                         "text": textComponent,
+                                                        "bezier": bezierComponent,
                                                         "barlayout": barLayoutComponent
                                                     })
 
@@ -640,6 +644,22 @@ Item {
                         id: barLayoutComponent
 
                         DashboardBarLayoutCard {
+                            anchors.fill: parent
+                            title: slot.modelData.title
+                            icon: slot.modelData.icon
+                            tileShape: slot.modelData.shape
+                            pager: root.pager
+                            staggerMs: root.staggerMs
+                            animIndex: slot.index % 6
+                            travelX: slot.modelData.travelX
+                            travelY: slot.modelData.travelY
+                        }
+                    }
+
+                    Component {
+                        id: bezierComponent
+
+                        DashboardBezierCard {
                             anchors.fill: parent
                             title: slot.modelData.title
                             icon: slot.modelData.icon

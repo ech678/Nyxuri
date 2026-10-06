@@ -162,6 +162,10 @@ Singleton {
                                                                                         => PersonalizationConfig.perMonitorWallpaper,
                                                                                         value => PersonalizationConfig.setPerMonitorWallpaper(
                                                                                                      value)),
+                                         "wallpaper:Overview per-monitor wallpaper": root.toggle(()
+                                                                                                     => PersonalizationConfig.overviewPerMonitorWallpaper,
+                                                                                                     value => PersonalizationConfig.setOverviewPerMonitorWallpaper(
+                                                                                                                  value)),
                                          "wallpaper:Desktop transition": root.select(()
                                                                                      => PersonalizationConfig.wallpaperTransitionType,
                                                                                      value => WallpaperService.setWallpaperTransitionType(
@@ -253,6 +257,9 @@ Singleton {
                                                                                      value)),
 
                                          // ── Keystone ─────────────────────────────────────────────────
+                                         "keystone:Enabled": root.toggle(() => PersonalizationConfig.keystoneEnabled,
+                                                                         value => PersonalizationConfig.setValue(
+                                                                                      "keystoneEnabled", value)),
                                          "keystone:Style": root.select(()
                                                                        => PersonalizationConfig.keystoneStyle,
                                                                        value => PersonalizationConfig.setKeystoneStyle(
@@ -426,6 +433,248 @@ Singleton {
                                          "desktop:Grid visible while dragging": root.toggle(()
                                                                                             => PersonalizationConfig.desktopCardGridVisibleWhileDragging,
                                                                                             value => PersonalizationConfig.setDesktopCardGridVisibleWhileDragging(
+                                                                                                         value)),
+
+                                         // ── Spotlight ────────────────────────────────────────────────
+                                         "spotlight:Application order": root.select(()
+                                                                                    => UiPreferences.spotlightAppOrder,
+                                                                                    value => UiPreferences.setSpotlightAppOrder(
+                                                                                                 value), [
+                                                                                        {
+                                                                                            "value": "smart",
+                                                                                            "label": I18n.tr("Smart")
+                                                                                        },
+                                                                                        {
+                                                                                            "value": "most-used",
+                                                                                            "label": I18n.tr("Most used")
+                                                                                        },
+                                                                                        {
+                                                                                            "value": "recently-used",
+                                                                                            "label": I18n.tr("Recently used")
+                                                                                        },
+                                                                                        {
+                                                                                            "value": "name",
+                                                                                            "label": I18n.tr("Name")
+                                                                                        }
+                                                                                    ]),
+                                         "spotlight:Application layout": root.select(()
+                                                                                     => UiPreferences.spotlightAppStyle,
+                                                                                     value => UiPreferences.setSpotlightAppStyle(
+                                                                                                  value), [
+                                                                                         {
+                                                                                             "value": "list",
+                                                                                             "label": I18n.tr("List")
+                                                                                         },
+                                                                                         {
+                                                                                             "value": "grid",
+                                                                                             "label": I18n.tr("Grid")
+                                                                                         }
+                                                                                     ]),
+                                         "spotlight:Search engine": root.select(()
+                                                                                => UiPreferences.spotlightSearchEngine,
+                                                                                value => UiPreferences.setSpotlightSearchEngine(
+                                                                                             value), UiPreferences.searchEngines),
+                                         "spotlight:Clipboard layout": root.select(()
+                                                                                   => UiPreferences.spotlightClipboardStyle,
+                                                                                   value => UiPreferences.setSpotlightClipboardStyle(
+                                                                                                value), [
+                                                                                       {
+                                                                                           "value": "default",
+                                                                                           "label": I18n.tr("Default")
+                                                                                       },
+                                                                                       {
+                                                                                           "value": "details",
+                                                                                           "label": I18n.tr("Details")
+                                                                                       }
+                                                                                   ]),
+
+                                         // ── Language ─────────────────────────────────────────────────
+                                         // I18nService.supportedLanguages uses code/label; the cards
+                                         // read value/label, so map it here.
+                                         "language:Interface language": root.select(()
+                                                                                    => UiPreferences.language,
+                                                                                    value => UiPreferences.setLanguage(
+                                                                                                 value), I18nService.supportedLanguages.map(
+                                                                                        entry => ({
+                                                                                                     "value": entry.code,
+                                                                                                     "label": entry.label
+                                                                                                 }))),
+                                         "language:Clock format": root.toggle(()
+                                                                              => UiPreferences.useTwelveHourClock,
+                                                                              value => UiPreferences.setUseTwelveHourClock(
+                                                                                           value)),
+                                         "language:Weather temperature": root.select(()
+                                                                                      => UiPreferences.weatherTemperatureUnit,
+                                                                                      value => UiPreferences.setWeatherTemperatureUnit(
+                                                                                                   value), [
+                                                                                          {
+                                                                                              "value": "celsius",
+                                                                                              "label": "°C"
+                                                                                          },
+                                                                                          {
+                                                                                              "value": "fahrenheit",
+                                                                                              "label": "°F"
+                                                                                          }
+                                                                                      ]),
+                                         "language:Hardware temperature": root.select(()
+                                                                                       => UiPreferences.systemTemperatureUnit,
+                                                                                       value => UiPreferences.setSystemTemperatureUnit(
+                                                                                                    value), [
+                                                                                           {
+                                                                                               "value": "celsius",
+                                                                                               "label": "°C"
+                                                                                           },
+                                                                                           {
+                                                                                               "value": "fahrenheit",
+                                                                                               "label": "°F"
+                                                                                           }
+                                                                                       ]),
+
+                                         // ── Sidebar clock ────────────────────────────────────────────
+                                         "sidebar:Sides": root.spin(() => UiPreferences.sidebarCookieSides,                                                                    value => UiPreferences.setSidebarCookieSides(
+                                                                                 value), 0, 40, 1),
+                                         "sidebar:Constantly rotate": root.toggle(()
+                                                                                  => UiPreferences.sidebarCookieConstantlyRotate,
+                                                                                  value => UiPreferences.setSidebarCookieConstantlyRotate(
+                                                                                               value)),
+                                         "sidebar:Hour marks": root.toggle(()
+                                                                           => UiPreferences.sidebarCookieHourMarks,
+                                                                           value => UiPreferences.setSidebarCookieHourMarks(
+                                                                                        value)),
+                                         "sidebar:Digits in the middle": root.toggle(()
+                                                                                     => UiPreferences.sidebarCookieTimeIndicators,
+                                                                                     value => UiPreferences.setSidebarCookieTimeIndicators(
+                                                                                                  value)),
+                                         "sidebar:Snapshot interval (ms)": root.spin(()
+                                                                                     => UiPreferences.systemMonitorIntervalMs,
+                                                                                     value => UiPreferences.setSystemMonitorIntervalMs(
+                                                                                                  value), 500,
+                                                                                     60000, 100),
+
+                                         // ── Horizontal clock ─────────────────────────────────────────
+                                         "clock:Font size": root.spin(() => PersonalizationConfig.horizontalClockFontSize,
+                                                                      value => PersonalizationConfig.setHorizontalClockFontSize(
+                                                                                   value), 16, 28, 1),
+                                         "clock:Weight": root.spin(()
+                                                                   => PersonalizationConfig.horizontalClockAxes.wght,
+                                                                   value => PersonalizationConfig.setHorizontalClockAxis(
+                                                                                "wght", value), 1, 1000, 1),
+                                         "clock:Width": root.spin(()
+                                                                  => PersonalizationConfig.horizontalClockAxes.wdth,
+                                                                  value => PersonalizationConfig.setHorizontalClockAxis(
+                                                                               "wdth", value), 25, 151, 1),
+                                         "clock:Optical size": root.spin(()
+                                                                         => PersonalizationConfig.horizontalClockAxes.opsz,
+                                                                         value => PersonalizationConfig.setHorizontalClockAxis(
+                                                                                      "opsz", value), 6, 144, 1),
+                                         "clock:Grade": root.spin(()
+                                                                  => PersonalizationConfig.horizontalClockAxes.GRAD,
+                                                                  value => PersonalizationConfig.setHorizontalClockAxis(
+                                                                               "GRAD", value), 0, 100, 1),
+                                         "clock:Roundness": root.spin(()
+                                                                      => PersonalizationConfig.horizontalClockAxes.ROND,
+                                                                      value => PersonalizationConfig.setHorizontalClockAxis(
+                                                                                   "ROND", value), 0, 100, 1),
+                                         "clock:Slant": root.spin(()
+                                                                  => PersonalizationConfig.horizontalClockAxes.slnt,
+                                                                  value => PersonalizationConfig.setHorizontalClockAxis(
+                                                                               "slnt", value), -10, 0, 1),
+
+                                         // ── Display colour ───────────────────────────────────────────
+                                         "gamma:Gamma": root.slider(() => DisplayColor.gamma,
+                                                                    value => DisplayColor.setPreference("gamma", value), 0.5, 2,
+                                                                    0.05),
+                                         "gamma:Contrast": root.slider(() => DisplayColor.contrast,
+                                                                       value => DisplayColor.setPreference("contrast", value),
+                                                                       0.5, 2, 0.05),
+                                         "gamma:Night mode": root.toggle(() => DisplayColor.preferences.nightEnabled,
+                                                                         value => DisplayColor.setPreference("nightEnabled",
+                                                                                                             value)),
+                                         "gamma:Night temperature": root.spin(()
+                                                                              => DisplayColor.preferences.nightTemperature,
+                                                                              value => DisplayColor.setPreference(
+                                                                                           "nightTemperature", value), 1000,
+                                                                              6500, 100),
+                                         "gamma:Day temperature": root.spin(()
+                                                                            => DisplayColor.preferences.dayTemperature,
+                                                                            value => DisplayColor.setPreference(
+                                                                                         "dayTemperature", value), 1000,
+                                                                            10000, 100),
+                                         "gamma:Transition duration": root.spin(()
+                                                                                => DisplayColor.preferences.transition,
+                                                                                value => DisplayColor.setPreference(
+                                                                                             "transition", value), 0, 180, 1),
+                                         "gamma:Automatic IP location": root.toggle(()
+                                                                                    => DisplayColor.preferences.useIP,
+                                                                                    value => DisplayColor.setPreference(
+                                                                                                 "useIP", value)),
+
+                                         // ── Dock ─────────────────────────────────────────────────────
+                                         "dock:Show dock": root.toggle(() => DockService.enabled,
+                                                                       value => DockService.setOption("enabled", value)),
+                                         "dock:Screen edge": root.select(() => DockService.position,
+                                                                         value => DockService.setOption("position", value), [
+                                                                             {
+                                                                                 "value": "bottom",
+                                                                                 "label": I18n.tr("Bottom")
+                                                                             },
+                                                                             {
+                                                                                 "value": "left",
+                                                                                 "label": I18n.tr("Left")
+                                                                             },
+                                                                             {
+                                                                                 "value": "right",
+                                                                                 "label": I18n.tr("Right")
+                                                                             }
+                                                                         ]),
+                                         "dock:Surface style": root.select(() => DockService.surfaceStyle,
+                                                                           value => DockService.setOption("surfaceStyle",
+                                                                                                          value), [
+                                                                               {
+                                                                                   "value": "default",
+                                                                                   "label": I18n.tr("Default")
+                                                                               },
+                                                                               {
+                                                                                   "value": "notch",
+                                                                                   "label": I18n.tr("Notch")
+                                                                               }
+                                                                           ]),
+                                         "dock:Icon size": root.slider(() => DockService.iconSize,
+                                                                       value => DockService.setOption("iconSize", value), 24,
+                                                                       96, 1),
+                                         "dock:Magnify on hover": root.toggle(() => DockService.magnification,
+                                                                              value => DockService.setOption("magnification",
+                                                                                                             value)),
+                                         "dock:Magnification": root.slider(() => DockService.magnificationScale,
+                                                                           value => DockService.setOption("magnificationScale",
+                                                                                                          value), 1, 2.5,
+                                                                           0.05),
+                                         "dock:Automatically hide": root.toggle(() => DockService.autoHide,
+                                                                                value => DockService.setOption("autoHide",
+                                                                                                               value)),
+                                         "dock:Bounce when launching": root.toggle(()
+                                                                                   => DockService.launchBounce,
+                                                                                   value => DockService.setOption("launchBounce",
+                                                                                                                  value)),
+                                         "dock:Show running indicators": root.toggle(()
+                                                                                     => DockService.showIndicators,
+                                                                                     value => DockService.setOption("showIndicators",
+                                                                                                                    value)),
+                                         "dock:Show recent applications": root.toggle(()
+                                                                                      => DockService.showRecent,
+                                                                                      value => DockService.setOption("showRecent",
+                                                                                                                     value)),
+                                         "dock:Show window thumbnails": root.toggle(()
+                                                                                   => DockService.showThumbnails,
+                                                                                   value => DockService.setOption("showThumbnails",
+                                                                                                                  value)),
+                                         "dock:Preview size": root.slider(() => DockService.previewSize,
+                                                                          value => DockService.setOption("previewSize", value),
+                                                                          80, 400, 10),
+                                         "dock:Pin applications from the menu": root.toggle(()
+                                                                                            => DockService.contextPinning,
+                                                                                            value => DockService.setOption(
+                                                                                                         "contextPinning",
                                                                                                          value))
                                      })
 

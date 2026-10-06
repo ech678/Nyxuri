@@ -122,6 +122,16 @@ Item {
         id: sessionLocker
     }
 
+    // Hot reloading rebuilds the object tree, which would destroy the session
+    // lock while it is held. Niri treats that as a protocol violation and kills
+    // the client, then paints its red CLEAR_COLOR_LOCKED where the lock surface
+    // used to be. Freeze file watching for the duration of the lock.
+    Binding {
+        target: Quickshell
+        property: "watchFiles"
+        value: !sessionLocker.active
+    }
+
     SessionHost {
         id: sessionHost
     }

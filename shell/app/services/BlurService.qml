@@ -26,6 +26,14 @@ Singleton {
     signal integrationConfigured
     signal integrationFailed(string message)
 
+    // Publish the capability into the shared layer, which cannot read config or
+    // probe the compositor itself. CompositorBlurRegion gates submission on it.
+    Binding {
+        target: Appearance
+        property: "compositorBlurEnabled"
+        value: root.enabled
+    }
+
     function backgroundColor(baseColor) {
         return Appearance.applyAlpha(baseColor, PersonalizationConfig.shellBackgroundOpacity);
     }
