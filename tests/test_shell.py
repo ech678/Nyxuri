@@ -2066,6 +2066,110 @@ class TestShellManagement(unittest.TestCase):
         # 9. The deleted map stub stays deleted.
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "modules", "settings", "WeatherMapBridge.qml")))
 
+    def test_r11_shell_control_plane_and_transparency(self):
+        """R11 Contract: on-demand shell control page, gated self sampling,
+        allowlisted sanitized diagnostics.
+
+        - the control plane is a real settings route, auto-listed in the nav
+        - the page is a pure view: no FileView/Process/Timer of its own
+        - sampling lives in the domain service behind a double gate
+          (page mounted AND persisted opt-in switch, default off)
+        - diagnostics are built by allowlist in pure JS, masked and truncated
+        - IPC diagnostics() is a one-line delegation, no inline business
+        """
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        shell_dir = os.path.join(repo_root, "shell")
+
+        def read(rel):
+            with open(os.path.join(shell_dir, rel), "r", encoding="utf-8") as f:
+                return f.read()
+
+        # 1. Route registration: top-level entry, nav auto-derives from it.
+        with open(os.path.join(shell_dir, "modules", "settings", "settings-routes.json"),
+                  "r", encoding="utf-8") as f:
+            routes = json.load(f)
+        shell_routes = [r for r in routes["routes"] if r["id"] == "shell"]
+        self.assertEqual(len(shell_routes), 1)
+        self.assertEqual(shell_routes[0]["path"], ["shell"])
+        self.assertEqual(shell_routes[0]["source"], "ShellPage.qml")
+        self.assertIn("control-plane", shell_routes[0]["aliases"])
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "modules", "settings", "ShellPage.qml")))
+
+        # 2. The page is a pure view: mounting arms the sampler, unmounting
+        # disarms it; no I/O primitives in the view (LIFE008 spirit).
+        page = read("modules/settings/ShellPage.qml")
+        self.assertIn("Component.onCompleted: ShellControlService.setPageMounted(true)", page)
+        self.assertIn("Component.onDestruction: ShellControlService.setPageMounted(false)", page)
+        self.assertNotIn("FileView", page)
+        self.assertNotIn("Process {", page)
+        self.assertNotIn("Quickshell.Io", page)
+        self.assertNotIn("Timer {", page)
+
+        # 3. The service owns the only sampler and the only export writer.
+        service = read("modules/settings/ShellControlService.qml")
+        self.assertIn("import \"ShellDiagnostics.js\" as ShellDiagnostics", service)
+        self.assertIn("import \"ShellSamplerMath.js\" as SamplerMath", service)
+        self.assertIn("readonly property bool samplingActive: pageMounted && UiPreferences.controlPlaneResourceSampling",
+                      service)
+        self.assertIn("interval: root.sampleIntervalMs", service)
+        self.assertIn('path: "/proc/self/status"', service)
+        self.assertIn('path: "/proc/self/stat"', service)
+        self.assertIn("atomicWrites: true", service)
+        self.assertIn("Component.onDestruction:", service)
+        # External command only through the argv-array Process, never a shell
+        # string and never execDetached outside the gateway.
+        self.assertIn('["mkdir", "-p", root.diagnosticsDir]', service)
+        self.assertNotIn("execDetached", service)
+        self.assertNotIn('"sh"', service)
+        self.assertNotIn('"bash"', service)
+
+        # 4. Sampling math and diagnostics sanitization are pure JS seams.
+        sampler_math = read("modules/settings/ShellSamplerMath.js")
+        self.assertIn(".pragma library", sampler_math)
+        self.assertNotIn("Quickshell", sampler_math)
+        self.assertNotIn("XMLHttpRequest", sampler_math)
+        diagnostics_js = read("modules/settings/ShellDiagnostics.js")
+        self.assertIn(".pragma library", diagnostics_js)
+        self.assertNotIn("Quickshell", diagnostics_js)
+        self.assertNotIn("XMLHttpRequest", diagnostics_js)
+        self.assertIn("function sanitizeText(", diagnostics_js)
+        self.assertIn("function maskHome(", diagnostics_js)
+        self.assertIn('split(home).join("~")', diagnostics_js)
+        self.assertIn("/home/", diagnostics_js)
+
+        # 5. The opt-in switch is persisted and defaults to off.
+        prefs = read("app/services/UiPreferences.qml")
+        self.assertIn("property bool controlPlaneResourceSampling: false", prefs)
+        self.assertIn("function setControlPlaneResourceSampling(", prefs)
+        self.assertIn('"controlPlaneResourceSampling": root.controlPlaneResourceSampling', prefs)
+        self.assertIn("root.controlPlaneResourceSampling = parsed.controlPlaneResourceSampling === true;",
+                      prefs)
+
+        # 6. Compositor reconnection is publicly visible and recoverable.
+        niri = read("app/services/NiriService.qml")
+        self.assertIn("readonly property bool reconnecting: reconnectTimer.running", niri)
+        self.assertIn("function reconnect()", niri)
+
+        # 7. IPC diagnostics() delegates; the AppShell stays a thin assembler.
+        app = read("app/AppShell.qml")
+        self.assertIn("function diagnostics(): string", app)
+        self.assertIn("return ShellControlService.diagnosticsJson();", app)
+        self.assertNotIn("JSON.stringify(ShellControlService.buildDiagnostics()", app)
+
+        # 8. Dashboard-style routes land somewhere sensible.
+        dashboard = read("modules/settings/dashboard/DashboardContent.qml")
+        self.assertIn('"shell": "settings"', dashboard)
+
+        # 9. The shipped search catalog carries the new route and sections.
+        catalog = read("modules/settings/generated/SearchCatalog.js")
+        self.assertIn('"shell.section.modules"', catalog)
+        self.assertIn('"shell.section.sampling"', catalog)
+        self.assertIn('"shell.section.diagnostics"', catalog)
+
+        # 10. Roadmap reflects the R11 delivery state.
+        roadmap = read("ROADMAP.md")
+        self.assertIn("### R11 Nyxuri Shell 控制面与透明度（待验收）", roadmap)
+
     def test_power_menu_and_secure_suspend_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         shell_dir = os.path.join(repo_root, "shell")

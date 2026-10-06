@@ -136,7 +136,8 @@ Item {
                                             "general": "settings",
                                             "theme": "themes",
                                             "keystone": "settings",
-                                            "advanced": "settings"
+                                            "advanced": "settings",
+                                            "shell": "settings"
                                         })
 
     readonly property string currentRouteId: pageNames[currentPage] ? pageNames[currentPage].id : "home"

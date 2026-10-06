@@ -367,5 +367,11 @@ Item {
                 function metrics(): string {
                     return JSON.stringify(ShellStartupService.startupMetrics());
                 }
+
+                // R11: sanitized diagnostics (no env, no config contents,
+                // home paths masked) — same payload the settings page exports.
+                function diagnostics(): string {
+                    return ShellControlService.diagnosticsJson();
+                }
             }
         }

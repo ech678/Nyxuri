@@ -47,7 +47,7 @@
 | **dock** | `modules/dock/` | 应用停靠栏、常驻应用、活动窗口指示 | `DockService`、`ApplicationService` | 启动应用、激活/最小化窗口 |
 | **keystone** | `modules/keystone/` | 动态岛/多形态中枢、专属录制与辅助（内聚 `AudioRecordingService`、`RecordingService`、`MediaPalette`） | `MediaService`、`NotificationService`、`WidgetState`、`TimerService` | 媒体控制、快速操作、录制派发 |
 | **launcher** | `modules/launcher/` | Spotlight 聚焦启动器、专属检索与工具（内聚 `FileSearchService`、`SpotlightSearchService`、`SpotlightToolService`） | `ApplicationService`、`SearchCatalog`、`WallpaperService` | `ActionGateway.execute(args, "launcher")` |
-| **settings** | `modules/settings/` | 控制中心设置窗口与配置管理（内聚 `AutostartService`、`DisplayConfigService`） | `PersonalizationConfig`、`NiriConfigService`、`WallpaperService` | 更新用户配置、重启服务 |
+| **settings** | `modules/settings/` | 控制中心设置窗口与配置管理（内聚 `AutostartService`、`DisplayConfigService`、`ShellControlService`——控制面采样与脱敏诊断唯一 I/O 归属） | `PersonalizationConfig`、`NiriConfigService`、`WallpaperService`、`UiPreferences` | 更新用户配置、重启服务、按门控采样 Shell 自身占用 |
 | **quicksettings** | `modules/quicksettings/` | 快捷设置托板与开关配置（内聚 `QuickToggleConfig`） | `NetworkService`、`BluetoothService` | 快速开关网络/蓝牙/显示状态 |
 | **sidebars** | `modules/sidebars/` | 侧边栏（Dashboard、QuickSettings、内聚 `TodoService`、`TimerService`、`InfoDrawerState`） | `WidgetState`、`SystemStatusService`、`DesktopPresentationService` | 切换视图、系统快捷开关 |
 | **notifications** | `modules/notifications/` | 通知弹窗宿主（PopupHost）、通知卡片视图 | `NotificationService` | 点击通知动作、关闭通知 |

@@ -200,6 +200,20 @@
       ]
     },
     {
+      "id": "shell",
+      "title": "Nyxuri Shell",
+      "context": "ControlCenterWindow",
+      "icon": "monitor_heart",
+      "source": "ShellPage.qml",
+      "path": [
+        "shell"
+      ],
+      "aliases": [
+        "control-plane",
+        "diagnostics"
+      ]
+    },
+    {
       "id": "displays.configuration",
       "title": "Display configuration",
       "context": "DisplaysPage",

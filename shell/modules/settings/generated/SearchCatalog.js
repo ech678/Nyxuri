@@ -581,6 +581,20 @@ var catalog = {
     },
     {
       "aliases": [
+        "control-plane",
+        "diagnostics"
+      ],
+      "context": "ControlCenterWindow",
+      "icon": "monitor_heart",
+      "id": "shell",
+      "path": [
+        "shell"
+      ],
+      "source": "ShellPage.qml",
+      "title": "Nyxuri Shell"
+    },
+    {
+      "aliases": [
         "general.displays.configuration"
       ],
       "context": "DisplaysPage",
@@ -865,6 +879,22 @@ var catalog = {
       "route": "language-region",
       "source": "LanguageAndRegionPage.qml",
       "title": "Language & region"
+    },
+    {
+      "aliases": [
+        "control-plane",
+        "diagnostics"
+      ],
+      "anchor": false,
+      "context": "ControlCenterWindow",
+      "icon": "monitor_heart",
+      "id": "shell",
+      "path": [
+        "shell"
+      ],
+      "route": "shell",
+      "source": "ShellPage.qml",
+      "title": "Nyxuri Shell"
     },
     {
       "aliases": [
@@ -1611,6 +1641,63 @@ var catalog = {
     },
     {
       "aliases": [
+        "control-plane",
+        "modules",
+        "dependencies",
+        "degraded",
+        "errors"
+      ],
+      "anchor": true,
+      "context": "ShellPage",
+      "icon": "widgets",
+      "id": "shell.section.modules",
+      "path": [
+        "shell"
+      ],
+      "route": "shell",
+      "source": "ShellPage.qml",
+      "title": "Modules & dependencies"
+    },
+    {
+      "aliases": [
+        "sampling",
+        "cpu",
+        "memory",
+        "resource",
+        "rss"
+      ],
+      "anchor": true,
+      "context": "ShellPage",
+      "icon": "speed",
+      "id": "shell.section.sampling",
+      "path": [
+        "shell"
+      ],
+      "route": "shell",
+      "source": "ShellPage.qml",
+      "title": "Resource sampling"
+    },
+    {
+      "aliases": [
+        "diagnostics",
+        "export",
+        "paths",
+        "config folder",
+        "cache"
+      ],
+      "anchor": true,
+      "context": "ShellPage",
+      "icon": "bug_report",
+      "id": "shell.section.diagnostics",
+      "path": [
+        "shell"
+      ],
+      "route": "shell",
+      "source": "ShellPage.qml",
+      "title": "Diagnostics & paths"
+    },
+    {
+      "aliases": [
         "general.spotlight.section.applications"
       ],
       "anchor": true,
@@ -1850,6 +1937,7 @@ function title(id) {
     case "autostart": return I18n.tr("Autostart", "ControlCenterWindow");
     case "default-apps": return I18n.tr("Default applications", "ControlCenterWindow");
     case "language-region": return I18n.tr("Language & region", "ControlCenterWindow");
+    case "shell": return I18n.tr("Nyxuri Shell", "ControlCenterWindow");
     case "displays.configuration": return I18n.tr("Display configuration", "DisplaysPage");
     case "displays.gamma": return I18n.tr("Gamma Control", "DisplaysPage");
     case "keystone.horizontal-clock": return I18n.tr("Horizontal clock style", "KeystonePage");
@@ -1899,6 +1987,9 @@ function title(id) {
     case "network.section.wi-fi": return I18n.tr("Wi-Fi", "NetworkPage");
     case "network.section.other-settings": return I18n.tr("Other settings", "NetworkPage");
     case "network.section.connection-information": return I18n.tr("Connection information", "NetworkPage");
+    case "shell.section.modules": return I18n.tr("Modules & dependencies", "ShellPage");
+    case "shell.section.sampling": return I18n.tr("Resource sampling", "ShellPage");
+    case "shell.section.diagnostics": return I18n.tr("Diagnostics & paths", "ShellPage");
     case "spotlight.section.applications": return I18n.tr("Applications", "SpotlightPage");
     case "spotlight.section.web-search": return I18n.tr("Web search", "SpotlightPage");
     case "spotlight.section.clipboard": return I18n.tr("Clipboard", "SpotlightPage");

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-10-03T14:40:00Z",
-  "totalResources": 231,
+  "totalResources": 236,
   "static_inventory": {
-    "total": 231,
+    "total": 236,
     "violations": 0,
     "resources": [
       {
@@ -36,7 +36,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 156,
+        "line": 166,
         "resource_type": "IPC",
         "name": "IpcHandler(power-menu)",
         "module": "app/AppShell",
@@ -50,7 +50,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 172,
+        "line": 182,
         "resource_type": "IPC",
         "name": "IpcHandler(shortcut-map)",
         "module": "app/AppShell",
@@ -64,7 +64,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 188,
+        "line": 198,
         "resource_type": "IPC",
         "name": "IpcHandler(lock)",
         "module": "app/AppShell",
@@ -78,7 +78,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 204,
+        "line": 214,
         "resource_type": "IPC",
         "name": "IpcHandler(spotlight)",
         "module": "app/AppShell",
@@ -92,7 +92,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 253,
+        "line": 263,
         "resource_type": "IPC",
         "name": "IpcHandler(wallpaper)",
         "module": "app/AppShell",
@@ -106,7 +106,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 289,
+        "line": 299,
         "resource_type": "IPC",
         "name": "IpcHandler(control-center)",
         "module": "app/AppShell",
@@ -120,7 +120,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 305,
+        "line": 315,
         "resource_type": "IPC",
         "name": "IpcHandler(settings)",
         "module": "app/AppShell",
@@ -134,7 +134,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 321,
+        "line": 331,
         "resource_type": "IPC",
         "name": "IpcHandler(theme)",
         "module": "app/AppShell",
@@ -148,7 +148,7 @@
       },
       {
         "file": "app/AppShell.qml",
-        "line": 341,
+        "line": 351,
         "resource_type": "IPC",
         "name": "IpcHandler(shell)",
         "module": "app/AppShell",
@@ -246,7 +246,7 @@
       },
       {
         "file": "app/services/BlurService.qml",
-        "line": 77,
+        "line": 85,
         "resource_type": "Process",
         "name": "versionProcess",
         "module": "app/services",
@@ -974,7 +974,7 @@
       },
       {
         "file": "app/services/NiriService.qml",
-        "line": 148,
+        "line": 152,
         "resource_type": "Timer",
         "name": "reconnectTimer",
         "module": "app/services",
@@ -988,7 +988,7 @@
       },
       {
         "file": "app/services/NiriService.qml",
-        "line": 178,
+        "line": 195,
         "resource_type": "Process",
         "name": "fetchOutputsProcess",
         "module": "app/services",
@@ -1002,7 +1002,7 @@
       },
       {
         "file": "app/services/NiriService.qml",
-        "line": 195,
+        "line": 212,
         "resource_type": "Timer",
         "name": "fetchOutputsDebounce",
         "module": "app/services",
@@ -1016,7 +1016,7 @@
       },
       {
         "file": "app/services/NiriService.qml",
-        "line": 298,
+        "line": 315,
         "resource_type": "Timer",
         "name": "windowsUpdateTimer",
         "module": "app/services",
@@ -1394,7 +1394,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 506,
+        "line": 519,
         "resource_type": "Process",
         "name": "ensureStoreDir",
         "module": "app/services",
@@ -1408,7 +1408,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 519,
+        "line": 532,
         "resource_type": "FileView",
         "name": "prefsFile",
         "module": "app/services",
@@ -1422,7 +1422,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 619,
+        "line": 633,
         "resource_type": "Timer",
         "name": "preferencesReloadDebounce",
         "module": "app/services",
@@ -1436,7 +1436,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 627,
+        "line": 641,
         "resource_type": "Process",
         "name": "themePoller",
         "module": "app/services",
@@ -1450,7 +1450,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 643,
+        "line": 657,
         "resource_type": "Process",
         "name": "systemThemeWriter",
         "module": "app/services",
@@ -1464,7 +1464,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 664,
+        "line": 678,
         "resource_type": "Timer",
         "name": "themePollTimer",
         "module": "app/services",
@@ -1478,7 +1478,7 @@
       },
       {
         "file": "app/services/UiPreferences.qml",
-        "line": 675,
+        "line": 689,
         "resource_type": "Timer",
         "name": "themeDebounce",
         "module": "app/services",
@@ -2639,6 +2639,76 @@
         "risk_level": "low"
       },
       {
+        "file": "modules/settings/ShellControlService.qml",
+        "line": 88,
+        "resource_type": "FileView",
+        "name": "procStatus",
+        "module": "modules/settings",
+        "creation_condition": "\"/proc/self/status\"",
+        "resource_owner": "modules/settings",
+        "stop_entry": "QObject destruction",
+        "has_destruction": true,
+        "visible_only_deactivation": false,
+        "has_fallback": true,
+        "risk_level": "low"
+      },
+      {
+        "file": "modules/settings/ShellControlService.qml",
+        "line": 105,
+        "resource_type": "FileView",
+        "name": "procStat",
+        "module": "modules/settings",
+        "creation_condition": "\"/proc/self/stat\"",
+        "resource_owner": "modules/settings",
+        "stop_entry": "QObject destruction",
+        "has_destruction": true,
+        "visible_only_deactivation": false,
+        "has_fallback": true,
+        "risk_level": "low"
+      },
+      {
+        "file": "modules/settings/ShellControlService.qml",
+        "line": 128,
+        "resource_type": "Timer",
+        "name": "sampleTimer",
+        "module": "modules/settings",
+        "creation_condition": "false",
+        "resource_owner": "modules/settings",
+        "stop_entry": "sampleTimer.stop()",
+        "has_destruction": true,
+        "visible_only_deactivation": false,
+        "has_fallback": true,
+        "risk_level": "medium"
+      },
+      {
+        "file": "modules/settings/ShellControlService.qml",
+        "line": 304,
+        "resource_type": "Process",
+        "name": "ensureDiagnosticsDir",
+        "module": "modules/settings",
+        "creation_condition": "dynamic",
+        "resource_owner": "modules/settings",
+        "stop_entry": "ensureDiagnosticsDir.running = false",
+        "has_destruction": true,
+        "visible_only_deactivation": false,
+        "has_fallback": true,
+        "risk_level": "medium"
+      },
+      {
+        "file": "modules/settings/ShellControlService.qml",
+        "line": 310,
+        "resource_type": "FileView",
+        "name": "exportFile",
+        "module": "modules/settings",
+        "creation_condition": "unknown",
+        "resource_owner": "modules/settings",
+        "stop_entry": "QObject destruction",
+        "has_destruction": true,
+        "visible_only_deactivation": false,
+        "has_fallback": true,
+        "risk_level": "low"
+      },
+      {
         "file": "modules/settings/dashboard/Dashboard.qml",
         "line": 101,
         "resource_type": "Timer",
@@ -2654,7 +2724,7 @@
       },
       {
         "file": "modules/settings/dashboard/DashboardContent.qml",
-        "line": 346,
+        "line": 347,
         "resource_type": "Timer",
         "name": "switchTimer",
         "module": "modules/settings",

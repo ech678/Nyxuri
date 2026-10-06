@@ -180,7 +180,104 @@ class ShellPresentationTests(unittest.TestCase):
         self.palette.parent.mkdir(parents=True)
         if self._testMethodName != "test_missing_palette_uses_defaults_then_watches_creation":
             self.palette.write_text('{"primary":"#123456"}')
-        (self.shell / "shell.qml").write_text('''import QtQuick
+        (self.shell / "shell.qml").write_text(self._harness_qml())
+        self.output = open(self.ctx.home / "preview.log", "w+")
+        self.addCleanup(self.output.close)
+        self.process = subprocess.Popen(
+            [dbus, "--", self.qs, "-p", str(self.shell), "--no-duplicate"],
+            env=self.environment, stdout=self.output, stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+        self.addCleanup(self.stop_process, self.process)
+        initial_color = "#88d0ec" if not self.palette.exists() else "#123456"
+        if self._testMethodName.startswith("test_r11_"):
+            self.wait_for("parseRss", "2048")
+        else:
+            self.wait_for("palette", initial_color)
+
+    def _harness_qml(self):
+        if self._testMethodName.startswith("test_r11_"):
+            return '''import QtQuick
+import Quickshell
+import Quickshell.Io
+import qs.app.services
+import qs.modules.settings
+import "modules/settings/ShellDiagnostics.js" as ShellDiagnostics
+import "modules/settings/ShellSamplerMath.js" as SamplerMath
+
+ShellRoot {
+    IpcHandler {
+        target: "presentation-test"
+
+        function parseRss(): string {
+            return String(SamplerMath.parseVmRssKb("Name:\\tqs\\nVmRSS:\\t  2048 kB\\nVmPeak:\\t 4096 kB"));
+        }
+
+        function samplingPref(on: bool): string {
+            UiPreferences.setControlPlaneResourceSampling(on);
+            return "OK";
+        }
+
+        function samplingMount(mounted: bool): string {
+            ShellControlService.setPageMounted(mounted);
+            return "OK";
+        }
+
+        function samplingState(): string {
+            return JSON.stringify({
+                "active": ShellControlService.samplingActive,
+                "cpu": ShellControlService.cpuPercent,
+                "rss": ShellControlService.rssKb,
+                "last": ShellControlService.lastSampleMs,
+                "pref": UiPreferences.controlPlaneResourceSampling,
+                "mounted": ShellControlService.pageMounted
+            });
+        }
+
+        function diagSanitizeProbe(): string {
+            const poisoned = ShellDiagnostics.buildDiagnostics({
+                "homePath": "/home/nyxuser",
+                "generatedAtMs": 12,
+                "stage": "READY",
+                "uptimeMs": 3,
+                "firstFrameMs": 1,
+                "readyMs": 2,
+                "ipcReadyMs": 3,
+                "compositorPresent": true,
+                "compositorConnected": false,
+                "compositorReconnecting": true,
+                "samplingEnabled": false,
+                "samplingIntervalMs": 5000,
+                "samplingCpuPercent": -1,
+                "samplingRssKb": -1,
+                "samplingLastSampleMs": 0,
+                "modules": [{"id": "dock\\nsecret=1", "enabled": true, "state": "/home/nyxuser/x"}],
+                "dependencies": [{"id": "wl-copy", "available": true, "probed": true}],
+                "errors": [{"source": "test", "message": "boom at /home/nyxuser/secret.txt\\ttabbed\\nlines "
+                           + "x".repeat(2000)}],
+                "paths": {"config": "/home/nyxuser/.config/nyxuri", "data": "/tmp/data"}
+            });
+            return JSON.stringify(poisoned);
+        }
+
+        function diagJson(): string {
+            return ShellControlService.diagnosticsJson();
+        }
+
+        function diagExport(): string {
+            return ShellControlService.exportDiagnostics() ? "OK" : "BUSY";
+        }
+
+        function diagExportState(): string {
+            return JSON.stringify({
+                "path": ShellControlService.lastExportPath,
+                "error": ShellControlService.lastExportError
+            });
+        }
+    }
+}
+'''
+        return '''import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.app.services
@@ -274,7 +371,7 @@ ShellRoot {
         ThemeIcon { iconSource: "image://icon/application-x-executable" }
     }
 }
-''')
+'''
         self.output = open(self.ctx.home / "preview.log", "w+")
         self.addCleanup(self.output.close)
         self.process = subprocess.Popen(
@@ -298,9 +395,9 @@ ShellRoot {
                 os.killpg(process.pid, signal.SIGKILL)
                 process.wait(timeout=5)
 
-    def call(self, method):
+    def call(self, method, *args):
         return subprocess.run(
-            [self.qs, "-p", str(self.shell), "ipc", "call", "presentation-test", method],
+            [self.qs, "-p", str(self.shell), "ipc", "call", "presentation-test", method, *args],
             env=self.environment, capture_output=True, text=True, timeout=5,
         )
 
@@ -354,6 +451,107 @@ ShellRoot {
         self.wait_for("palette", "#456789")
         self.palette.write_text('{"primary":"#987654"}')
         self.wait_for("palette", "#987654")
+
+    def _sampling_state(self):
+        result = self.call("samplingState")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(result.stdout.strip())
+
+    def _wait_sampling(self, predicate, timeout=15):
+        deadline = time.monotonic() + timeout
+        state = {}
+        while time.monotonic() < deadline and self.process.poll() is None:
+            state = self._sampling_state()
+            if predicate(state):
+                return state
+            time.sleep(0.1)
+        self.output.flush()
+        self.output.seek(0)
+        self.fail(f"sampling state never matched: {state}\n{self.output.read()}")
+
+    def test_r11_sampling_gate_lifecycle(self):
+        """R11 behavior: the sampler only exists behind both gates, and a
+        closed page or a flipped switch stops it and clears every number."""
+        # Mounted but not opted in: the persisted default keeps everything off.
+        self.assertEqual(self.call("samplingMount", "true").stdout.strip(), "OK")
+        state = self._sampling_state()
+        self.assertTrue(state["mounted"])
+        self.assertFalse(state["pref"])
+        self.assertFalse(state["active"])
+        self.assertEqual(state["last"], 0)
+        self.assertEqual(state["rss"], -1)
+
+        # Opting in while mounted starts real sampling: RSS comes straight
+        # from /proc/self, CPU% arrives after the second sample builds the
+        # jiffies baseline.
+        self.assertEqual(self.call("samplingPref", "true").stdout.strip(), "OK")
+        state = self._wait_sampling(lambda s: s["active"] and s["last"] > 0 and s["rss"] > 0)
+        self.assertGreater(state["rss"], 0)
+        state = self._wait_sampling(lambda s: s["cpu"] >= 0, timeout=12)
+        self.assertGreater(state["cpu"], 0)
+
+        # Unmounting clears the numbers even though the switch stays on.
+        self.assertEqual(self.call("samplingMount", "false").stdout.strip(), "OK")
+        state = self._wait_sampling(lambda s: not s["active"] and s["last"] == 0 and s["rss"] == -1
+                                    and s["cpu"] == -1)
+        self.assertTrue(state["pref"])
+        time.sleep(0.5)
+        self.assertEqual(self._sampling_state()["last"], 0)
+
+        # Flipping the switch off while unmounted keeps everything idle.
+        self.assertEqual(self.call("samplingPref", "false").stdout.strip(), "OK")
+        self.assertFalse(self._sampling_state()["active"])
+
+    def test_r11_diagnostics_sanitized_and_exported(self):
+        """R11 behavior: diagnostics are allowlist-built, home-masked,
+        truncated, and the exported file carries the same guarantees."""
+        # 1. Pure sanitizer against a poisoned payload (assertions here, not
+        # in the harness, so the test owns the expectations).
+        probe = json.loads(self.call("diagSanitizeProbe").stdout.strip())
+        self.assertEqual(probe["schemaVersion"], 1)
+        self.assertEqual(probe["generatedAtMs"], 12)
+        message = probe["errors"][0]["message"]
+        self.assertNotIn("/home/nyxuser", message)
+        self.assertNotIn("\n", message)
+        self.assertNotIn("\t", message)
+        self.assertLessEqual(len(message), 512)
+        module = probe["modules"][0]
+        self.assertEqual(module["id"], "dock secret=1")
+        self.assertEqual(module["state"], "~/x")
+        self.assertEqual(probe["paths"]["config"], "~/.config/nyxuri")
+        self.assertEqual(probe["paths"]["data"], "/tmp/data")
+
+        # 2. End-to-end payload from the live singletons: schema keys are
+        # exactly the allowlist, no raw home path and no environment leaks.
+        raw = self.call("diagJson").stdout
+        payload = json.loads(raw.strip())
+        self.assertEqual(set(payload.keys()), {
+            "schemaVersion", "generatedAtMs", "shell", "compositor", "modules",
+            "dependencies", "errors", "sampling", "paths"
+        })
+        self.assertNotIn(str(self.ctx.home), raw)
+        self.assertNotIn("NIRI_SOCKET", raw)
+        self.assertIn("dock", {entry["id"] for entry in payload["modules"]})
+        self.assertIn("wl-copy", {entry["id"] for entry in payload["dependencies"]})
+
+        # 3. The export writes the same sanitized document into the cache.
+        self.assertEqual(self.call("diagExport").stdout.strip(), "OK")
+        deadline = time.monotonic() + 8
+        state = {"path": "", "error": ""}
+        while time.monotonic() < deadline:
+            result = self.call("diagExportState")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            state = json.loads(result.stdout.strip())
+            if state["path"] or state["error"]:
+                break
+            time.sleep(0.05)
+        self.assertEqual(state["error"], "", state)
+        self.assertTrue(state["path"], state)
+        exported = Path(state["path"])
+        self.assertTrue(exported.is_file(), state)
+        content = exported.read_text(encoding="utf-8")
+        self.assertNotIn(str(self.ctx.home), content)
+        self.assertEqual(json.loads(content)["schemaVersion"], 1)
 
 
 if __name__ == "__main__":

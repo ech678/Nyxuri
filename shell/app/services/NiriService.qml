@@ -14,6 +14,9 @@ Singleton {
     readonly property bool isNiri: socketPath.length > 0
     property bool connected: false
     readonly property bool actionReady: requestSocket.connected
+    // Public reconnection visibility for the shell control plane (R11); the
+    // backoff timer itself stays private.
+    readonly property bool reconnecting: reconnectTimer.running
 
     // Workspaces
     property var workspacesMap: ({})
@@ -23,8 +26,7 @@ Singleton {
     property var currentOutputWorkspaces: []
     property string currentOutput: ""
     property var focusedWorkspace: focusedWorkspaceIndex >= 0 && focusedWorkspaceIndex < allWorkspaces.length
-        ? allWorkspaces[focusedWorkspaceIndex]
-        : null
+                                   ? allWorkspaces[focusedWorkspaceIndex] : null
 
     ListModel {
         id: workspacesModel
@@ -32,7 +34,9 @@ Singleton {
     readonly property alias workspaces: workspacesModel
 
     // Outputs
-    property var outputs: ({ count: 0 })
+    property var outputs: ({
+                               count: 0
+                           })
     property var displayScales: ({})
     property int _fetchOutputsGen: 0
 
@@ -174,6 +178,19 @@ Singleton {
         root._reconnectAttempt++;
     }
 
+    // Recovery entry for the shell control plane: resets the backoff and
+    // cycles any dead socket. Idempotent when both sockets are healthy.
+    function reconnect() {
+        if (!root.isNiri)
+            return false;
+        root._reconnectAttempt = 0;
+        if (eventStreamSocket.connected && requestSocket.connected)
+            return true;
+        if (!reconnectTimer.running)
+            root._scheduleReconnect();
+        return true;
+    }
+
     // Process: Fetch outputs
     Process {
         id: fetchOutputsProcess
@@ -269,30 +286,30 @@ Singleton {
                 curModeStr = m.width + "x" + m.height + "@" + (Number(m.refresh_rate || 0) / 1000).toFixed(3);
             }
             result.push({
-                name: name,
-                make: out.make || "Unknown",
-                model: out.model || "Unknown",
-                serial: out.serial || "Unknown",
-                logicalX: logical.x !== undefined ? logical.x : 0,
-                logicalY: logical.y !== undefined ? logical.y : 0,
-                logicalWidth: logical.width !== undefined ? logical.width : 0,
-                logicalHeight: logical.height !== undefined ? logical.height : 0,
-                scale: logical.scale !== undefined ? logical.scale : 1.0,
-                transform: logical.transform || "normal",
-                currentMode: curModeStr,
-                modes: modes.map(m => ({
-                    width: m.width,
-                    height: m.height,
-                    refreshMilliHz: m.refresh_rate,
-                    preferred: !!m.is_preferred
-                })),
-                enabled: !out.disabled,
-                vrrSupported: !!out.vrr_supported,
-                vrrEnabled: !!out.vrr_enabled
-            });
-        }
-        return result;
+                            name: name,
+                            make: out.make || "Unknown",
+                            model: out.model || "Unknown",
+                            serial: out.serial || "Unknown",
+                            logicalX: logical.x !== undefined ? logical.x : 0,
+                            logicalY: logical.y !== undefined ? logical.y : 0,
+                            logicalWidth: logical.width !== undefined ? logical.width : 0,
+                            logicalHeight: logical.height !== undefined ? logical.height : 0,
+                            scale: logical.scale !== undefined ? logical.scale : 1.0,
+                            transform: logical.transform || "normal",
+                            currentMode: curModeStr,
+                            modes: modes.map(m => ({
+                                width: m.width,
+                                height: m.height,
+                                refreshMilliHz: m.refresh_rate,
+                                preferred: !!m.is_preferred
+                            })),
+            enabled: !out.disabled,
+            vrrSupported: !!out.vrr_supported,
+            vrrEnabled: !!out.vrr_enabled
+        });
     }
+    return result;
+}
 
     // Windows update batching
     Timer {
@@ -322,8 +339,10 @@ Singleton {
     function scheduleWindowsUpdate(newWindowsList) {
         const enriched = (newWindowsList || []).map(w => root._enrichWindow(w));
         const normalized = root._normalizeWindowFocus(enriched);
-        root._windowOrderDirty = root._windowOrderDirty
-            || root._windowOrderDiffers(root._windowsDirty ? root._pendingWindows : root.windows, normalized);
+        root._windowOrderDirty = root._windowOrderDirty || root._windowOrderDiffers(root._windowsDirty
+                                                                                    ? root._pendingWindows :
+                                                                                      root.windows,
+                                                                                    normalized);
         root._pendingWindows = normalized;
         root._windowsDirty = true;
         if (!windowsUpdateTimer.running) {
@@ -336,9 +355,9 @@ Singleton {
             return null;
         const appId = rawWindow.app_id || rawWindow.appId || "";
         const app = ApplicationService ? ApplicationService.findById(appId) : null;
-        const icon = app && app.icon
-            ? ApplicationService.iconSource(app.icon)
-            : (ApplicationService ? ApplicationService.iconSource(appId) : "");
+        const icon = app && app.icon ? ApplicationService.iconSource(app.icon) : (ApplicationService
+                                                                                  ? ApplicationService.iconSource(
+                                                                                        appId) : "");
         const appName = app ? (app.name || app.id) : (appId || rawWindow.title || "");
         const pos = rawWindow.layout?.pos_in_scrolling_layout;
         const col = (Array.isArray(pos) && pos.length >= 1) ? pos[0] : 999999;
@@ -374,7 +393,8 @@ Singleton {
 
         let changed = false;
         const normalized = windowList.map(window => {
-            const shouldBeFocused = root._latestFocusedWindowId !== null && window.id === root._latestFocusedWindowId;
+            const shouldBeFocused = root._latestFocusedWindowId !== null && window.id
+                  === root._latestFocusedWindowId;
             if (window.isFocused === shouldBeFocused)
                 return window;
             changed = true;
@@ -401,9 +421,8 @@ Singleton {
             const prev = prevMap.get(w.id);
             if (!prev)
                 return true;
-            if (prev.app_id !== w.app_id
-                || prev.workspace_id !== w.workspace_id
-                || !!prev.is_floating !== !!w.is_floating)
+            if (prev.app_id !== w.app_id || prev.workspace_id !== w.workspace_id || !!prev.is_floating !== !
+                    !w.is_floating)
                 return true;
 
             const prevPos = prev.layout?.pos_in_scrolling_layout;
@@ -451,11 +470,16 @@ Singleton {
         });
 
         enriched.sort((a, b) => {
-            if (a.outputX !== b.outputX) return a.outputX - b.outputX;
-            if (a.outputY !== b.outputY) return a.outputY - b.outputY;
-            if (a.wsIdx !== b.wsIdx) return a.wsIdx - b.wsIdx;
-            if (a.col !== b.col) return a.col - b.col;
-            if (a.row !== b.row) return a.row - b.row;
+            if (a.outputX !== b.outputX)
+                return a.outputX - b.outputX;
+            if (a.outputY !== b.outputY)
+                return a.outputY - b.outputY;
+            if (a.wsIdx !== b.wsIdx)
+                return a.wsIdx - b.wsIdx;
+            if (a.col !== b.col)
+                return a.col - b.col;
+            if (a.row !== b.row)
+                return a.row - b.row;
             return Number(a.window.id) - Number(b.window.id);
         });
 
@@ -515,23 +539,23 @@ Singleton {
         workspacesModel.clear();
         for (const ws of list) {
             workspacesModel.append({
-                id: ws.id,
-                idx: ws.idx,
-                index: ws.index,
-                name: ws.name || "",
-                output: ws.output || "",
-                isActive: ws.isActive,
-                is_active: ws.is_active,
-                isFocused: ws.isFocused,
-                is_focused: ws.is_focused,
-                isUrgent: ws.isUrgent,
-                is_urgent: ws.is_urgent,
-                activeWindowId: ws.activeWindowId || 0,
-                active_window_id: ws.active_window_id || 0,
-                windowCount: ws.windowCount || 0,
-                tiledWindowCount: ws.tiledWindowCount || 0,
-                tiledColumnCount: ws.tiledColumnCount || 0
-            });
+                                       id: ws.id,
+                                       idx: ws.idx,
+                                       index: ws.index,
+                                       name: ws.name || "",
+                                       output: ws.output || "",
+                                       isActive: ws.isActive,
+                                       is_active: ws.is_active,
+                                       isFocused: ws.isFocused,
+                                       is_focused: ws.is_focused,
+                                       isUrgent: ws.isUrgent,
+                                       is_urgent: ws.is_urgent,
+                                       activeWindowId: ws.activeWindowId || 0,
+                                       active_window_id: ws.active_window_id || 0,
+                                       windowCount: ws.windowCount || 0,
+                                       tiledWindowCount: ws.tiledWindowCount || 0,
+                                       tiledColumnCount: ws.tiledColumnCount || 0
+                                   });
         }
     }
 
@@ -650,7 +674,8 @@ Singleton {
                 updatedWs.activeWindowId = focusedWindowId;
                 const updatedWorkspaces = {};
                 for (const id in root.workspacesMap) {
-                    updatedWorkspaces[id] = id === String(focusedWindow.workspace_id) ? updatedWs : root.workspacesMap[id];
+                    updatedWorkspaces[id] = id === String(focusedWindow.workspace_id) ? updatedWs :
+                                                                                        root.workspacesMap[id];
                 }
                 root.workspacesMap = updatedWorkspaces;
             }
@@ -802,173 +827,273 @@ Singleton {
 
     // Actions
     function toggleOverview() {
-        return send({ "Action": { "ToggleOverview": {} } });
+        return send({
+                        "Action": {
+                            "ToggleOverview": {}
+                        }
+                    });
     }
 
     function focusWorkspaceById(workspaceId) {
         return send({
-            "Action": {
-                "FocusWorkspace": {
-                    "reference": { "Id": Number(workspaceId) }
-                }
-            }
-        });
+                        "Action": {
+                            "FocusWorkspace": {
+                                "reference": {
+                                    "Id": Number(workspaceId)
+                                }
+                            }
+                        }
+                    });
     }
 
     function focusWorkspaceByIndex(workspaceIndex) {
         return send({
-            "Action": {
-                "FocusWorkspace": {
-                    "reference": { "Index": Number(workspaceIndex) }
-                }
-            }
-        });
+                        "Action": {
+                            "FocusWorkspace": {
+                                "reference": {
+                                    "Index": Number(workspaceIndex)
+                                }
+                            }
+                        }
+                    });
     }
 
     function focusWorkspaceByName(name) {
         return send({
-            "Action": {
-                "FocusWorkspace": {
-                    "reference": { "Name": String(name) }
-                }
-            }
-        });
+                        "Action": {
+                            "FocusWorkspace": {
+                                "reference": {
+                                    "Name": String(name)
+                                }
+                            }
+                        }
+                    });
     }
 
     function focusWindow(windowId) {
         root.windowFocusRequested();
         return send({
-            "Action": {
-                "FocusWindow": { "id": Number(windowId) }
-            }
-        });
+                        "Action": {
+                            "FocusWindow": {
+                                "id": Number(windowId)
+                            }
+                        }
+                    });
     }
 
     function closeWindow(windowId) {
         return send({
-            "Action": {
-                "CloseWindow": { "id": Number(windowId) }
-            }
-        });
+                        "Action": {
+                            "CloseWindow": {
+                                "id": Number(windowId)
+                            }
+                        }
+                    });
     }
 
     function closeFocusedWindow() {
-        return send({ "Action": { "CloseWindow": {} } });
+        return send({
+                        "Action": {
+                            "CloseWindow": {}
+                        }
+                    });
     }
 
     function minimizeWindow(windowId) {
         if (!root.supportsMinimize)
             return false;
         return send({
-            "Action": {
-                "MinimizeWindow": { "id": Number(windowId) }
-            }
-        });
+                        "Action": {
+                            "MinimizeWindow": {
+                                "id": Number(windowId)
+                            }
+                        }
+                    });
     }
 
     function restoreWindow(windowId, output) {
         if (!root.supportsMinimize)
             return false;
-        const payload = { "id": Number(windowId) };
+        const payload = {
+            "id": Number(windowId)
+        };
         if (output)
             payload.output = String(output);
         return send({
-            "Action": {
-                "RestoreWindow": payload
-            }
-        });
+                        "Action": {
+                            "RestoreWindow": payload
+                        }
+                    });
     }
 
     function moveWindowToWorkspace(windowId, workspaceIndex, focus) {
         return send({
-            "Action": {
-                "MoveWindowToWorkspace": {
-                    "window_id": Number(windowId),
-                    "reference": { "Index": Number(workspaceIndex) },
-                    "focus": focus === undefined ? false : !!focus
-                }
-            }
-        });
+                        "Action": {
+                            "MoveWindowToWorkspace": {
+                                "window_id": Number(windowId),
+                                "reference": {
+                                    "Index": Number(workspaceIndex)
+                                },
+                                "focus": focus === undefined ? false : !!focus
+                            }
+                        }
+                    });
     }
 
     function moveWindowToWorkspaceById(windowId, workspaceId, focus) {
         return send({
-            "Action": {
-                "MoveWindowToWorkspace": {
-                    "window_id": Number(windowId),
-                    "reference": { "Id": Number(workspaceId) },
-                    "focus": focus === undefined ? false : !!focus
-                }
-            }
-        });
+                        "Action": {
+                            "MoveWindowToWorkspace": {
+                                "window_id": Number(windowId),
+                                "reference": {
+                                    "Id": Number(workspaceId)
+                                },
+                                "focus": focus === undefined ? false : !!focus
+                            }
+                        }
+                    });
     }
 
     function powerOffMonitors() {
-        return send({ "Action": { "PowerOffMonitors": {} } });
+        return send({
+                        "Action": {
+                            "PowerOffMonitors": {}
+                        }
+                    });
     }
 
     function powerOnMonitors() {
-        return send({ "Action": { "PowerOnMonitors": {} } });
+        return send({
+                        "Action": {
+                            "PowerOnMonitors": {}
+                        }
+                    });
     }
 
     function quit() {
-        return send({ "Action": { "Quit": { "skip_confirmation": true } } });
+        return send({
+                        "Action": {
+                            "Quit": {
+                                "skip_confirmation": true
+                            }
+                        }
+                    });
     }
 
     function focusWorkspaceUp() {
-        return send({ "Action": { "FocusWorkspaceUp": {} } });
+        return send({
+                        "Action": {
+                            "FocusWorkspaceUp": {}
+                        }
+                    });
     }
 
     function focusWorkspaceDown() {
-        return send({ "Action": { "FocusWorkspaceDown": {} } });
+        return send({
+                        "Action": {
+                            "FocusWorkspaceDown": {}
+                        }
+                    });
     }
 
     function focusColumnLeft() {
-        return send({ "Action": { "FocusColumnLeft": {} } });
+        return send({
+                        "Action": {
+                            "FocusColumnLeft": {}
+                        }
+                    });
     }
 
     function focusColumnRight() {
-        return send({ "Action": { "FocusColumnRight": {} } });
+        return send({
+                        "Action": {
+                            "FocusColumnRight": {}
+                        }
+                    });
     }
 
     function focusColumnFirst() {
-        return send({ "Action": { "FocusColumnFirst": {} } });
+        return send({
+                        "Action": {
+                            "FocusColumnFirst": {}
+                        }
+                    });
     }
 
     function focusColumnLast() {
-        return send({ "Action": { "FocusColumnLast": {} } });
+        return send({
+                        "Action": {
+                            "FocusColumnLast": {}
+                        }
+                    });
     }
 
     function moveColumnToFirst() {
-        return send({ "Action": { "MoveColumnToFirst": {} } });
+        return send({
+                        "Action": {
+                            "MoveColumnToFirst": {}
+                        }
+                    });
     }
 
     function moveColumnToLast() {
-        return send({ "Action": { "MoveColumnToLast": {} } });
+        return send({
+                        "Action": {
+                            "MoveColumnToLast": {}
+                        }
+                    });
     }
 
     function maximizeColumn() {
-        return send({ "Action": { "MaximizeColumn": {} } });
+        return send({
+                        "Action": {
+                            "MaximizeColumn": {}
+                        }
+                    });
     }
 
     function consumeWindowIntoColumn() {
-        return send({ "Action": { "ConsumeWindowIntoColumn": {} } });
+        return send({
+                        "Action": {
+                            "ConsumeWindowIntoColumn": {}
+                        }
+                    });
     }
 
     function expelWindowFromColumn() {
-        return send({ "Action": { "ExpelWindowFromColumn": {} } });
+        return send({
+                        "Action": {
+                            "ExpelWindowFromColumn": {}
+                        }
+                    });
     }
 
     function setColumnWidth(change) {
-        return send({ "Action": { "SetColumnWidth": change } });
+        return send({
+                        "Action": {
+                            "SetColumnWidth": change
+                        }
+                    });
     }
 
     function switchLayout() {
-        return send({ "Action": { "SwitchLayout": { "layout": "Next" } } });
+        return send({
+                        "Action": {
+                            "SwitchLayout": {
+                                "layout": "Next"
+                            }
+                        }
+                    });
     }
 
     function switchLayoutPrevious() {
-        return send({ "Action": { "SwitchLayout": { "layout": "Prev" } } });
+        return send({
+                        "Action": {
+                            "SwitchLayout": {
+                                "layout": "Prev"
+                            }
+                        }
+                    });
     }
 
     function setFloatingParallaxOffsets(offsets) {
@@ -1019,9 +1144,10 @@ Singleton {
             return root.windows.slice();
         const q = String(query).toLowerCase().trim();
         return root.windows.filter(w => {
-            return (w.title && w.title.toLowerCase().includes(q))
-                || (w.appName && w.appName.toLowerCase().includes(q))
-                || (w.appId && w.appId.toLowerCase().includes(q));
+            return (w.title && w.title.toLowerCase().includes(q)) || (w.appName && w.appName.toLowerCase().includes(
+                                                                          q)) || (w.appId
+                                                                                  && w.appId.toLowerCase(
+                                                                                      ).includes(q));
         });
     }
 
@@ -1071,7 +1197,8 @@ Singleton {
         if (niriWindow.title && toplevel.title) {
             if (toplevel.title === niriWindow.title) {
                 score = 3;
-            } else if (toplevel.title.includes(niriWindow.title) || niriWindow.title.includes(toplevel.title)) {
+            } else if (toplevel.title.includes(niriWindow.title) || niriWindow.title.includes(
+                           toplevel.title)) {
                 score = 2;
             }
         }
@@ -1080,7 +1207,8 @@ Singleton {
 
     function enrichToplevel(toplevel, niriWindow) {
         const workspace = root.workspacesMap[niriWindow.workspace_id];
-        const isFocused = niriWindow.is_focused ?? (workspace && workspace.active_window_id === niriWindow.id) ?? false;
+        const isFocused = niriWindow.is_focused ?? (workspace && workspace.active_window_id === niriWindow.id)
+              ?? false;
         const windowId = niriWindow.id;
 
         const enriched = {
@@ -1153,18 +1281,19 @@ Singleton {
     }
 
     function hasWindowsOnActiveWorkspace(outputName) {
-        const active = Object.values(root.workspacesMap || {}).filter(workspace =>
-            (workspace?.is_active || workspace?.isActive)
-            && (!outputName || workspace.output === outputName));
+        const active = Object.values(root.workspacesMap || {}).filter(workspace => (workspace?.is_active || workspace
+                                                                                   ?.isActive) && (
+                  !outputName || workspace.output === outputName));
         if (active.length === 0 || !Array.isArray(root.windows))
             return false;
-        return root.windows.some(window => !window?.is_minimized
-            && active.some(workspace => workspace.id === window.workspace_id));
+        return root.windows.some(window => !window?.is_minimized && active.some(workspace => workspace.id
+                                                                                             === window.workspace_id));
     }
 
     function activeWorkspaceCovers(outputName) {
-        const workspace = Object.values(root.workspacesMap || {}).find(entry =>
-            (entry?.is_active || entry?.isActive) && entry.output === outputName);
+        const workspace = Object.values(root.workspacesMap || {}).find(entry => (entry?.is_active || entry
+                                                                                ?.isActive) && entry.output
+              === outputName);
         const width = Number(root.outputs?.[outputName]?.logical?.width || 0);
         if (!workspace || width <= 0 || !Array.isArray(root.windows))
             return false;

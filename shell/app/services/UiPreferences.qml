@@ -37,6 +37,9 @@ Singleton {
     property string systemMonitorNetworkInterface: ""
     property string storageCapacityDiskDevice: "follow-io"
     property int systemMonitorIntervalMs: 2000
+    // R11 control-plane self sampling. Default off: the sampler only ever
+    // runs while the Shell page is mounted AND this flag is true.
+    property bool controlPlaneResourceSampling: false
     property bool useTwelveHourClock: true
     property string sidebarClockStyle: "digital"
     property int sidebarCookieSides: 14
@@ -257,6 +260,15 @@ Singleton {
             return;
 
         root.useTwelveHourClock = enabled;
+        root.save();
+    }
+
+    function setControlPlaneResourceSampling(value) {
+        const enabled = value === true;
+        if (root.controlPlaneResourceSampling === enabled)
+            return;
+
+        root.controlPlaneResourceSampling = enabled;
         root.save();
     }
 
@@ -481,6 +493,7 @@ Singleton {
                                              root.systemMonitorNetworkInterface,
                                              "storageCapacityDiskDevice": root.storageCapacityDiskDevice,
                                              "systemMonitorIntervalMs": root.systemMonitorIntervalMs,
+                                             "controlPlaneResourceSampling": root.controlPlaneResourceSampling,
                                              "useTwelveHourClock": root.useTwelveHourClock,
                                              "sidebarClockStyle": root.sidebarClockStyle,
                                              "sidebarCookieSides": root.sidebarCookieSides,
@@ -555,6 +568,7 @@ Singleton {
                                                                                === undefined ? 2000 :
                                                                                                parsed.systemMonitorIntervalMs);
                 root.systemMonitorIntervalMs = monitorInterval < 0 ? 2000 : monitorInterval;
+                root.controlPlaneResourceSampling = parsed.controlPlaneResourceSampling === true;
                 root.useTwelveHourClock = typeof parsed.useTwelveHourClock === "boolean"
                         ? parsed.useTwelveHourClock : true;
                 root.sidebarClockStyle = root.allowedValue(parsed.sidebarClockStyle, ["digital", "cookie"],

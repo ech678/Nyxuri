@@ -193,13 +193,18 @@ R1–R7 是已交付基线。下一步从 R8 开始；P4 及之后保留在后�
 
 **验收：** UI 不直接启动桌面命令或写配置（LIFE004 + LIFE008 双门禁，547 文件 0 违规）；动作有参数形状与失败清理契约测试（`test_r10_action_gateway_and_module_autonomy` + secure-power drop 路径断言）；可选服务缺失时模块仍装载并明示降级（ColorPickerService 探活模式）；架构 import/副作用契约通过（五分类 108 用例全绿，`test_shell.py` 45 用例全绿）；双轨主题跟随性矩阵——GTK3/4 ini、Libadwaita portal、Chromium prefer-dark、Kitty SIGUSR1+matugen 模板、Qt/Kvantum、niri glow、Shell M3 调色板、zen 着色器全部跟随且 `nyxuri theme` 三场景（noctalia 在 / 仅 nyxuri shell / 都不在）输出一致无裸 error；Noctalia 专属 wallpaper picker 不在迁移范围，双轨切换与部署链路零触碰。
 
-### R11 Nyxuri Shell 控制面与透明度
+### R11 Nyxuri Shell 控制面与透明度（待验收）
 
 **目标：** 提供按需加载、用户可理解且可行动的 Shell 管理页面，不做开发者对象检查器。
 
-**实施：** 展示模块启用/加载状态、可选依赖可用性、降级/最近错误、配置与诊断路径及安全关闭/恢复操作。允许展示资源占用数字，但必须提供独立设置开关；关闭时完全不采样、不留 Timer/Process，开启后才按需低频采样，并显示来源与更新时间。诊断导出过滤凭据、配置内容及敏感环境信息。
+**实施与完成：**
+- **控制面页面（一级路由 `shell`，导航末位）**：新建 `modules/settings/ShellPage.qml`（纯视图，零 `FileView`/`Process`/`Timer`），三个搜索锚点 section（模块与依赖 / 资源采样 / 诊断与路径）。模块行直接绑定 owner 单例——启动阶段（`ShellStartupService`）、Niri 集成、Bar/Dock/Keystone/概览壁纸（复用既有 setter 的真卸载开关）、网络/蓝牙可用性、剪贴板（cliphist/wl-copy/wl-paste 逐项）、取色器（hyprpicker 探活）、系统监视器（key-cli 状态 + 重试）；每条错误带行动按钮（重连/重试/开关/提示），notify-send 按既有决策如实标注为环境级不可探测。路由与别名进入 `settings-routes.json`（`control-plane`/`diagnostics`），Dashboard 风格补 `"shell": "settings"` 别名防路由落空，`SearchCatalog.js` 派生再生成。
+- **采样引擎（`ShellControlService.qml`，settings 域唯一 I/O 归属）**：采样对象为 Shell 自身进程——`Timer(5s 固定低频)` + 两个服务自有 `FileView` 重读 `/proc/self/status`（VmRSS）与 `/proc/self/stat`（CPU jiffies），不派生子进程、不依赖 `QML_XHR_ALLOW_FILE_READ` 环境变量（QML 默认禁止本地文件 XHR，采样不得依赖启动方式）。双重门控 `samplingActive = pageMounted && UiPreferences.controlPlaneResourceSampling`：开关默认 **false** 并持久化（`UiPreferences.controlPlaneResourceSampling` 四处对称：属性/setter/save/load）；门开立即首采、第二次采样起给 CPU% 基线差值；门关停 Timer、清全部数值，迟到的 /proc 回调在写状态前复查门控，无法复活已清数字。纯解析数学在 `ShellSamplerMath.js`（`.pragma library`，无 Qt 无 I/O）。
+- **诊断脱敏与导出**：`ShellDiagnostics.js` 纯函数按 **allowlist** 构造负载（schema 键固定：shell/compositor/modules/dependencies/errors/sampling/paths），每个字符串经 `maskHome`（`$HOME`→`~` + 残余 `/home/<user>` 正则兜底）、空白折叠、512 字符截断；零环境变量、零配置内容。导出经 `mkdir -p`（argv 数组）+ `FileView` 原子写 `cacheHome/diagnostics/nyxuri-shell-<时间戳>.json`，失败路径分「目录创建失败」与「写入失败」双提示。IPC `shell diagnostics()` 一行薄委托返回同一脱敏 JSON（`nyxuri-shell ipc call shell diagnostics` 即可无 UI 抓诊断）。
+- **NiriService 公开化**：补 `readonly property bool reconnecting` 与幂等 `reconnect()`（重置退避、按需重连，健康时 no-op），控制面展示「正在重新连接」并提供重连按钮。
+- **i18n 与既有债务**：zh_CN.toml 补 34 键（本阶段 24 键 + 修复 HEAD 上已存在的 10 个先存缺失——ColorPickerService 2 键、Dashboard 卡片 8 键，`audit-i18n` 在本轮之前即为 exit 1），并为 Niri 语境的 `Disconnected` 增加 `[ShellPage]` 上下文覆盖（全局键是「网络未连接」网络语义）；`audit-i18n: clean`。
 
-**验收：** 页面关闭后无监控开销；采样开关真实启停采样；展示状态与实际生命周期吻合；错误信息可采取行动；诊断内容经脱敏测试。
+**验收：** `tests/test_shell.py` 53 用例全绿（新增 `test_r11_shell_control_plane_and_transparency` 静态契约：路由注册、页面零 I/O、双门控表达式、UiPreferences 默认 false 四处对称、IPC 薄委托、JS 纯净与掩码规则、搜索目录含 3 个 section）；五分类 111 用例（STATIC 24, LOGIC 48, RESOURCE 9, NATIVE 26, GRAPHICS 4）——GRAPHICS 新增 2 项真实行为测试：`test_r11_sampling_gate_lifecycle`（headless Weston 真实 QML：挂载未开关键是零采样 → 开关后 RSS>0 且第二次采样 CPU%>0 → 卸载即停且数值全清 → 关开关保持空闲）与 `test_r11_diagnostics_sanitized_and_exported`（毒化负载断言 `/home/nyxuser` 不泄漏、控制符折叠、512 截断、路径变 `~`；端到端负载 schema 键恰等于 allowlist 且无 `$HOME`/`NIRI_SOCKET`；导出文件真实落盘并复验脱敏）；生命周期审计 552 文件 0 违规，inventory 再生成（236 项）；搜索目录契约（16 个一级 id）通过。页面关闭零监控开销与状态-生命周期吻合由 Loader 卸载语义 + 门控行为测试共同背书；视觉与交互冒烟（M3 对齐、几何精度）留待实机确认后勾选「已完成」。
 
 ### R12 Wiki 重置与新标准
 
