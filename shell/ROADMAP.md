@@ -68,8 +68,15 @@ hooks 的实机行为证据与视觉验收待作者确认。镜像色板是否�
 
 ## 后续阶段
 
-- **P5 完整宿主、部署与双轨生态**（前置：P4）：验收 launcher、session、settings、clipboard、lock、wallpaper-random 六动作；按原子复制、Dunder、manifest、快照、回滚和卸载契约接入部署；共享池位置中立化与双 Shell 输出仲裁（kitty 双 include、gtk.css 交替写残留）随部署接入处理；切换失败不损失配置、不留受管残留。
-- **P6 整体验收与未来移植**（前置：P5）：固定机器与版本基线，验收离线、缺插件/设备、锁屏、SIGTERM、目标崩溃和失败恢复；视觉、行为、资源和文档证据齐备后才接纳封存功能或多合成器移植。
+- **原 P5 完整宿主、部署与双轨生态 → 吸收为主线 KM4**（前置：KM0–KM3，见
+  [根 ROADMAP](../ROADMAP.md)「插件市场化改造」）：P5 验收标准原样平移——验收
+  launcher、session、settings、clipboard、lock、wallpaper-random 六动作；按原子复制、
+  Dunder、manifest、快照、回滚和卸载契约接入部署；共享池位置中立化与双 Shell 输出
+  仲裁（kitty 双 include、gtk.css 交替写残留）随部署接入处理；切换失败不损失配置、
+  不留受管残留。同时交付「Shell 彻底模块化 + 市场直通运行态」：内核（装配 / 生命周期 /
+  Action Gateway / IPC）零业务、一切功能域成模块、部署 → IPC → 热加载。
+  阶段状态在根 ROADMAP 台账，验收记录归本台账。
+- **P6 整体验收与未来移植**（前置：主线 KM5）：固定机器与版本基线，验收离线、缺插件/设备、锁屏、SIGTERM、目标崩溃和失败恢复；视觉、行为、资源和文档证据齐备后才接纳封存功能或多合成器移植。
 
 ## 已确认的历史决策
 
