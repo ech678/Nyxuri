@@ -74,6 +74,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertEqual(ret, 0)
         self.assertEqual(active_shell(), "nyxuri-shell")
         self.assertEqual(custom_shell_bin(), "/bin/sh")
+        self.assertIn("EXPERIMENTAL", f.getvalue())
 
         # Test backward-compatible alias 'custom'
         f = io.StringIO()
@@ -82,6 +83,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertEqual(ret, 0)
         self.assertEqual(active_shell(), "nyxuri-shell")
         self.assertEqual(custom_shell_bin(), "/bin/bash")
+        self.assertIn("EXPERIMENTAL", f.getvalue())
 
     def test_cmd_shell_switch(self):
         # 1. Switch with explicit target
@@ -90,6 +92,7 @@ class TestShellManagement(unittest.TestCase):
             ret = _cmd_shell(["switch", "noctalia"])
         self.assertEqual(ret, 0)
         self.assertEqual(active_shell(), "noctalia")
+        self.assertNotIn("EXPERIMENTAL", f.getvalue())
 
         # 2. Switch toggle: noctalia -> nyxuri-shell
         with patch("nyxuri.shell_switcher.hot_switch_shell", return_value=(True, "Switched successfully")) as mock_switch:
@@ -98,6 +101,7 @@ class TestShellManagement(unittest.TestCase):
                 ret = _cmd_shell(["switch"])
             self.assertEqual(ret, 0)
             mock_switch.assert_called_with("nyxuri-shell", None)
+            self.assertIn("EXPERIMENTAL", f.getvalue())
 
         # 3. Switch toggle: nyxuri-shell -> noctalia
         set_shell("nyxuri-shell", "/bin/sh")
@@ -123,6 +127,7 @@ class TestShellManagement(unittest.TestCase):
             ret = _cmd_shell(["status"])
         self.assertEqual(ret, 0)
         output = f.getvalue()
+        self.assertIn("EXPERIMENTAL", output)
         self.assertIn("Active Shell: nyxuri-shell", output)
         self.assertIn("Nyxuri Shell Binary: /bin/sh", output)
         self.assertIn("Nyxuri Shell Status: Ready", output)

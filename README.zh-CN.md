@@ -31,6 +31,8 @@
 </div>
 
 > 从原 **NyxNiri** 迁移？项目现已更名为 **Nyxuri**（/nɪkˈsuːri/），因为我们计划接入自研桌面 Shell 并支持更多窗口管理器。运行 `nyxuri` 会自动搬迁原有配置、历史快照与状态，并安全清理旧目录。
+>
+> **注意：** 自研的 **Nyxuri Shell** 目前是实验性功能——完全处于开发阶段、已知问题较多、外观尚未开发，暂不推荐日常使用。日常请留在 Noctalia，`nyxuri shell` 仅供测试。已知问题见 [shell/KNOWN-ISSUES.md](shell/KNOWN-ISSUES.md)。
 
 ## 特性
 

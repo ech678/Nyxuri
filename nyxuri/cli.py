@@ -259,9 +259,15 @@ def _cmd_theme(sub_args: List[str]) -> int:
     return sync(sub)
 
 
+_SHELL_EXPERIMENTAL_NOTE = (
+    "[EXPERIMENTAL] Nyxuri Shell is under active development: expect bugs and an "
+    "unfinished look. Not recommended for daily use yet."
+)
+
+
 def _cmd_shell(sub_args: List[str]) -> int:
     sub = sub_args[0] if sub_args else "status"
-    usage = f"{CLI_CMD} shell [get|set <noctalia|nyxuri-shell> [bin_path]|switch [<noctalia|nyxuri-shell> [bin_path]]|status]"
+    usage = f"{CLI_CMD} shell [get|set <noctalia|nyxuri-shell> [bin_path]|switch [<noctalia|nyxuri-shell> [bin_path]]|status] [EXPERIMENTAL]"
     from nyxuri.state.ledger import active_shell, nyxuri_shell_bin
     from nyxuri.shell_switcher import normalize_shell_name, probe_running_shell, resolve_custom_bin, hot_switch_shell
     if sub == "get":
@@ -274,6 +280,8 @@ def _cmd_shell(sub_args: List[str]) -> int:
             exit_usage(usage)
         current = active_shell()
         cbin = nyxuri_shell_bin()
+        if current == "nyxuri-shell":
+            print(_SHELL_EXPERIMENTAL_NOTE)
         effective_bin = resolve_custom_bin(cbin)
         running_name, running_pid = probe_running_shell()
         print(f"Active Shell: {current}")
@@ -299,6 +307,9 @@ def _cmd_shell(sub_args: List[str]) -> int:
             except ValueError:
                 exit_usage(usage)
             bin_path = sub_args[2] if len(sub_args) > 2 else None
+
+        if target == "nyxuri-shell":
+            print(_SHELL_EXPERIMENTAL_NOTE)
 
         success, message = hot_switch_shell(target, bin_path)
         if success:
@@ -411,7 +422,7 @@ COMMANDS = {
     "fisher":    (_module_handler("fisher", "fisher"),
                   f"{CLI_CMD} fisher [install|status|uninstall]"),
     "theme":     (_cmd_theme,     f"{CLI_CMD} theme [toggle|dark|light|sync|status]"),
-    "shell":     (_cmd_shell,     f"{CLI_CMD} shell [get|set <noctalia|nyxuri-shell> [bin_path]|switch [<noctalia|nyxuri-shell> [bin_path]]|status]"),
+    "shell":     (_cmd_shell,     f"{CLI_CMD} shell [get|set <noctalia|nyxuri-shell> [bin_path]|switch [<noctalia|nyxuri-shell> [bin_path]]|status] [EXPERIMENTAL]"),
     "update":    (_cmd_update,    f"{CLI_CMD} update [--force|--no-deploy] [--to <tag|commit>]"),
     "help":      (_cmd_help,      f"{CLI_CMD} help"),
     "-h":        (_cmd_help,      f"{CLI_CMD} help"),

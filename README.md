@@ -31,6 +31,8 @@
 </div>
 
 > Upgrading from **NyxNiri**? The project is rebranded to **Nyxuri** (/nɪkˈsuːri/) as we expand toward a custom desktop shell and multi-window manager support. Running `nyxuri` automatically migrates your existing configs, snapshots, and state, then safely cleans up legacy paths.
+>
+> **Note:** the built-in **Nyxuri Shell** is experimental — fully in development, known to be buggy, its look is unfinished, and it is not recommended for daily use yet. Stay on Noctalia; `nyxuri shell` is for testing only. Known issues: [shell/KNOWN-ISSUES.md](shell/KNOWN-ISSUES.md).
 
 ## Features
 

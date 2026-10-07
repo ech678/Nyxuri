@@ -28,7 +28,7 @@
 | `snapshot [note]`（alias `backup`） | 存档当前配置 |
 | `rollback [index]`（alias `restore`） | 从存档恢复 |
 | `list` | 看所有存档 |
-| `shell [get|set <noctalia|nyxuri-shell> [bin_path]|switch [<noctalia|nyxuri-shell> [bin_path]]|status]` | 查看或切换桌面外壳运行插槽（switch 无参在 noctalia 与 nyxuri-shell 间互切；兼容 custom/nyxuri 别名，记录于 state.json 账本） |
+| `shell [get|set <noctalia|nyxuri-shell> [bin_path]|switch [<noctalia|nyxuri-shell> [bin_path]]|status]` | 查看或切换桌面外壳运行插槽（switch 无参在 noctalia 与 nyxuri-shell 间互切；兼容 custom/nyxuri 别名，记录于 state.json 账本）。**[EXPERIMENTAL]** nyxuri-shell 完全在开发中、暂不推荐日常使用，切换与状态输出会带实验性警告；已知问题见 [shell/KNOWN-ISSUES.md](../shell/KNOWN-ISSUES.md) |
 | `doctor` | 体检（_check_* 列表） |
 | `clean [-n] [--only <任务>]` | 缓存清理；`-n` 只预览，Fish 的 `clean` 指向此入口 |
 | `uninstall [--all|standard|restore|purge]`（alias `remove`）/ `purge` | 卸载（勾选式） |

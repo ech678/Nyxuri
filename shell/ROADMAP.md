@@ -5,6 +5,8 @@
 > 阶段状态仅在有可复现证据时更新，不以目录、字符串、Loader 存在或隐藏 UI 作为完成证明。
 > 各阶段任务分解与逐项验收记录在追加式台账
 > [shell-roadmap-ledger](../llms-wiki/archive/shell-roadmap-ledger.md)。
+> 当前整体处于**实验性阶段**（BUG 多、外观未开发、暂不推荐日常使用）；
+> 已知 BUG 与暂缓的基础设施缺口见 [KNOWN-ISSUES.md](KNOWN-ISSUES.md)。
 
 ## 目标与边界
 
