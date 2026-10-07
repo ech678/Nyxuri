@@ -433,10 +433,12 @@ class TestPresetSwitchPreservesManifestFiles(unittest.TestCase):
         # Deploy niri defaults first so monitor.kdl + effects_*.kdl exist.
         from nyxuri.deploy.atomic import atomic_replace_item
         atomic_replace_item(self.env.configs_src / "niri", self.niri_dest)
-        # Create the runtime effects.kdl symlink (as deploy.py does on first install).
+        # The repo ships effects.kdl as a symlink; recreate it only when the
+        # variant under test dropped it, so the runtime link state is present.
         effects_normal = self.niri_dest / "effects_normal.kdl"
         self.effects_sym = self.niri_dest / "effects.kdl"
-        self.effects_sym.symlink_to(effects_normal)
+        if not self.effects_sym.is_symlink():
+            self.effects_sym.symlink_to(effects_normal)
         # Mark monitor.kdl so we can detect a wipe.
         self.monitor = self.niri_dest / "monitor.kdl"
         with self.monitor.open("a") as f:
