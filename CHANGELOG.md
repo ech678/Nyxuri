@@ -7,9 +7,11 @@
 
 ## [Unreleased]
 
+## [v4.0.0-alpha.1] - 2026-10-07
+
 ### Added
 - 新增划词翻译：`Alt+E` 在指针下方弹出 Material 3 译文浮窗，多渠道并行翻译；星环 System Tools 新增 Translate 入口打开渠道设置
-- 自研桌面外壳 Nyxuri Shell 作为实现性功能已经加入到main分支：仍在开发中、已知问题较多、外观尚未完成，暂不推荐日常使用；`nyxuri shell` 可随时一键切回 Noctalia，已知问题清单随仓库发布
+- 自研桌面外壳 Nyxuri Shell 作为实验性功能已经加入到main分支：仍在开发中、已知问题较多、外观尚未完成，暂不推荐日常使用；`nyxuri shell` 可随时一键切回 Noctalia，已知问题清单随仓库发布
 
 ## [v3.1.0] - 2026-09-26
 
@@ -483,7 +485,8 @@
 ### Added
 - 首次发布基于 Niri 与 Noctalia V5 的 NyxNiri 桌面配置。
 
-[Unreleased]: https://github.com/ech678/Nyxuri/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/ech678/Nyxuri/compare/v4.0.0-alpha.1...HEAD
+[v4.0.0-alpha.1]: https://github.com/ech678/Nyxuri/compare/v3.1.0...v4.0.0-alpha.1
 [v3.1.0]: https://github.com/ech678/Nyxuri/compare/v3.0.5...v3.1.0
 [v3.0.5]: https://github.com/ech678/Nyxuri/compare/v3.0.4...v3.0.5
 [v3.0.4]: https://github.com/ech678/Nyxuri/compare/v3.0.3...v3.0.4
