@@ -38,6 +38,7 @@
 | <kbd>Super</kbd> + <kbd>N</kbd> | 护眼模式 |
 | <kbd>Super</kbd> + <kbd>~</kbd> | 切换 Kitty Scratchpad 浮动终端 |
 | <kbd>Super</kbd> + <kbd>A</kbd> / <kbd>Super</kbd> + <kbd>鼠标前侧键</kbd> | Orbit 矢量星环启动器 |
+| <kbd>Alt</kbd> + <kbd>E</kbd> | 划词翻译（在指针下方弹出译文浮窗；设置入口：Orbit › System Tools › Translate） |
 | <kbd>Super</kbd> + <kbd>L</kbd> | 锁屏 |
 | <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> | 截图 |
 | <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>R</kbd> | 重载 Niri |

@@ -1,4 +1,4 @@
 # noctalia theme engine manifest
 [packages]
-repo = ["noctalia", "python-gobject", "gtk-layer-shell"]
+repo = ["noctalia", "python-gobject", "gtk-layer-shell", "wl-clipboard"]
 chmod = ["wallpaper-hook.sh", "mpvpaper-sync.sh", "tools/*.sh", "tools/*.py"]

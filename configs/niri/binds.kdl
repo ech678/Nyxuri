@@ -64,6 +64,9 @@ binds {
     Mod+A repeat=false { spawn "~/.config/niri/scripts/shell-action.sh" "radial-launcher"; }
     Mod+MouseForward repeat=false { spawn "~/.config/niri/scripts/shell-action.sh" "radial-launcher"; }
 
+    // 划词翻译 (读取 PRIMARY 选区，在指针下方弹出 M3 翻译浮窗) (外壳网关) / Translate the current selection below the pointer
+    Alt+E repeat=false cooldown-ms=500 hotkey-overlay-title="Translate selection" { spawn "~/.config/niri/scripts/shell-action.sh" "translate"; }
+
     // -------------------------------------------------------------------------
     // 3. 焦点导航与窗口移动 / Focus Navigation & Window Movement
     // -------------------------------------------------------------------------

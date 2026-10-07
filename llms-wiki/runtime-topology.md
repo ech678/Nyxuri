@@ -16,10 +16,11 @@
   │     └── toggle-eyecare.sh --sync ─► 同步护眼模式状态与色温
   │
   ├── 2. 交互脚本层 (Keybindings 触发)
-  │     ├── shell-action.sh    ───────► 统一动作网关 (8大动作: launcher/session/settings/clipboard/lock/wallpaper-random/wallpaper-picker/radial-launcher)
+  │     ├── shell-action.sh    ───────► 统一动作网关 (9大动作: launcher/session/settings/clipboard/lock/wallpaper-random/wallpaper-picker/radial-launcher/translate)
   │     │     ├── launcher (Mod+R)       ───────► Noctalia 面板: noctalia msg panel-toggle launcher
   │     │     ├── radial-launcher (Mod+A) ──────► Orbit 星环: orbit-launcher.py (~/.config/noctalia/tools/)
   │     │     ├── wallpaper-picker (Mod+W) ─────► 壁纸选择器: wallpaper-picker.py (~/.config/noctalia/tools/)
+  │     │     ├── translate (Alt+E) ───────────► 划词翻译: orbit-translate.py (~/.config/noctalia/tools/，一次性进程)
   │     │     └── session (Mod+X) / 等 ────────► 分发至 Shell IPC (noctalia msg / 未来自研 Shell)
   │     ├── Super + ~          ───────► niri-scratch-toggle.sh (Kitty 浮动终端切换)
   │     ├── Super + N          ───────► toggle-eyecare.sh (护眼色温与着色器切换)
@@ -80,6 +81,9 @@
    - 使用 `fcntl.flock` 锁定运行时文件（优先 `${XDG_RUNTIME_DIR}/nyxuri-${UID}-theme-sync.lock`），瞬时多次触发非阻塞快速丢弃，杜绝状态竞争。
 3. **Orbit 启动器单实例锁 (`orbit/lock.py` / `/proc` 检测)**：
    - 防止重复唤起创建多个重叠悬浮窗；再次触发时关闭现有窗口。
+4. **划词翻译有界退出 (`orbit-translate.py`)**：
+   - 选区捕获、每个渠道请求均带超时；闲置倒计时结束自动退出，不留常驻进程；
+   - niri 以 `repeat=false cooldown-ms=500` 限制连按，避免叠加多个浮窗。
 
 ---
 

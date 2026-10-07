@@ -110,6 +110,12 @@ case "$TARGET_APP" in
         fi
         ;;
 
+    translate|translate-settings|Translate)
+        # Settings TUI in the floating scratchpad Kitty; the popup itself is Alt+E.
+        niri msg action spawn -- kitty --app-id "scratchpad" --title "Translate" \
+            -e "$HOME/.config/noctalia/tools/orbit-translate.py" --settings
+        ;;
+
     clean|clean-cache.py|\~/.config/fish/clean-cache.py|"$HOME/.config/fish/clean-cache.py")
         # Older preserved Orbit menus still carry the former script path.
         niri msg action spawn -- kitty --app-id "scratchpad" -e nyxuri clean

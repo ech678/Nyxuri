@@ -77,6 +77,15 @@ class TestShellAction(unittest.TestCase):
                 f"Action '{verb}' did not produce expected arguments",
             )
 
+    def test_translate_runs_deployed_tool_without_arguments(self):
+        tool = self.home / ".config" / "noctalia" / "tools" / "orbit-translate.py"
+        tool.parent.mkdir(parents=True)
+        tool.write_text('#!/bin/sh\nprintf "translate:%s\\n" "$#" >>"$CALLS"\n', encoding="utf-8")
+        tool.chmod(0o755)
+        proc = self._run_action("translate")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(self.calls.read_text(encoding="utf-8").strip(), "translate:0")
+
     def test_unknown_action_refused(self):
         proc = self._run_action("invalid-verb")
         self.assertNotEqual(proc.returncode, 0)
@@ -281,6 +290,23 @@ class TestScratchToggle(unittest.TestCase):
                                         env={**os.environ, "PATH": f"{bindir}:/usr/bin:/bin", "CALLS": str(calls), "XDG_RUNTIME_DIR": str(env.home)})
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(calls.read_text().splitlines(), ["msg", "action", "spawn", "--", "kitty", "--app-id", "scratchpad", "-e", "nyxuri", "clean"])
+
+    def test_translate_opens_settings_in_scratchpad_kitty(self):
+        with TempEnv() as env:
+            bindir = env.home / "bin"
+            bindir.mkdir()
+            calls = env.home / "calls"
+            niri = bindir / "niri"
+            niri.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$CALLS"\n')
+            niri.chmod(0o755)
+            for target in ("translate", "translate-settings"):
+                result = subprocess.run(["bash", str(_TOGGLE), target], capture_output=True, text=True,
+                                        env={**os.environ, "PATH": f"{bindir}:/usr/bin:/bin", "CALLS": str(calls), "XDG_RUNTIME_DIR": str(env.home)})
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(calls.read_text().splitlines(), [
+                    "msg", "action", "spawn", "--", "kitty", "--app-id", "scratchpad", "--title", "Translate",
+                    "-e", str(env.home / ".config/noctalia/tools/orbit-translate.py"), "--settings",
+                ])
 
     def test_no_shell_string_execution_fallback(self):
         """Menu cmds are data, not shell input: no `bash -c` fallback may exist."""

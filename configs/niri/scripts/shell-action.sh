@@ -80,9 +80,16 @@ case "$action" in
         fi
         exec python3 "$tools_dir/orbit-launcher.py"
         ;;
+    translate)
+        tools_dir="${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/tools"
+        if [ -x "$tools_dir/orbit-translate.py" ]; then
+            exec "$tools_dir/orbit-translate.py"
+        fi
+        exec python3 "$tools_dir/orbit-translate.py"
+        ;;
     *)
         echo "Unknown shell action: $action" >&2
-        echo "Usage: $0 {launcher|session|settings|clipboard|lock|wallpaper-random|wallpaper-picker|radial-launcher}" >&2
+        echo "Usage: $0 {launcher|session|settings|clipboard|lock|wallpaper-random|wallpaper-picker|radial-launcher|translate}" >&2
         exit 1
         ;;
 esac

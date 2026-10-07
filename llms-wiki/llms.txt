@@ -12,7 +12,7 @@
 ## Architecture
 
 - [overview](overview.md): 精神、三概念（Configs / Presets / Customs）、叠加规则
-- [vision](vision.md): 纯白洁癖、做减法、反失控感与对称性设计哲学
+- [vision](vision.md): 五条简洁标准（透明/主权/包容/轻盈/自然）与桌面插件市场终态哲学
 - [preset-mechanism](preset-mechanism.md): active 状态文件、通用零件插槽体系（Parts Slots）、防覆盖自愈、写时序铁律、原子写
 - [file-preservation](file-preservation.md): Dunder __custom__ walk + manifest preserve（两套刻意不合并）
 - [install-modes](install-modes.md): standalone / repo / system 三模式、.system-install marker、软链、PATH 遮蔽、update 分支、AUR
@@ -21,6 +21,7 @@
 - [tui-switcher](tui-switcher.md): 双栏预设与零件工作台（Dual-Pane Studio）、apply 窄 deploy 路径
 - [declarative](declarative.md): 命令式 vs 声明式边界（啥该 / 不该声明式）
 - [orbit-launcher](orbit-launcher.md): 星环启动器设计规格（快捷键、状态机、极坐标防抖、弹簧参数、flick 判定）
+- [orbit-translate](orbit-translate.md): 划词翻译浮窗（Alt+E 一次性进程、指针下方定位、M3 色调面板、渠道协议、设置 TUI 与凭据边界）
 - [runtime-topology](runtime-topology.md): 运行时进程树与 IPC 拓扑（会话启动、守护进程、脚本层、信号广播流）
 
 ## Nyxuri Shell

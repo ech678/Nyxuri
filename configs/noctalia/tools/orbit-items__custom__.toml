@@ -69,7 +69,7 @@ color_key = "secondary"
 [[items]]
 id = "tools"
 name = "System Tools"
-desc = "Folder · 3 Tools"
+desc = "Folder · 4 Tools"
 icon = "󰘳"
 shortcut = "2"
 color_key = "secondary"
@@ -99,6 +99,15 @@ color_key = "secondary"
   icon = "󰃢"
   cmd = "clean"
   shortcut = "3"
+  color_key = "secondary"
+
+  [[items.children]]
+  id = "translate"
+  name = "Translate"
+  desc = "Translation Settings"
+  icon = "󰗊"
+  cmd = "translate"
+  shortcut = "4"
   color_key = "secondary"
 
 [[items]]

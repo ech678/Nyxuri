@@ -38,6 +38,7 @@ Quick reference: `nyxhelp keys`. For Niri's full overlay, press <kbd>Super</kbd>
 | <kbd>Super</kbd> + <kbd>N</kbd> | Toggle Eye Care Mode |
 | <kbd>Super</kbd> + <kbd>~</kbd> | Toggle Kitty scratchpad terminal |
 | <kbd>Super</kbd> + <kbd>A</kbd> / <kbd>Super</kbd> + <kbd>Mouse Forward</kbd> | Orbit vector radial launcher |
+| <kbd>Alt</kbd> + <kbd>E</kbd> | Translate selection (popup below the pointer; settings: Orbit › System Tools › Translate) |
 | <kbd>Super</kbd> + <kbd>L</kbd> | Lock screen |
 | <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> | Screenshot |
 | <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>R</kbd> | Reload Niri |

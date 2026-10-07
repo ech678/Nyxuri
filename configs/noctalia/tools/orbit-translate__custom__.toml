@@ -1,0 +1,98 @@
+# Orbit Translate — selection translator config (Alt+E).
+# Dunder file: deployed once as a template, then preserved across updates.
+# Edit here or run Orbit › System Tools › Translate (orbit-translate.py --settings).
+# Plain api_key is rejected: use api_key_env, or let the settings TUI store the
+# key in KWallet / Secret Service and write an api_key_secret reference.
+#
+# Free-service preset. MyMemory is a no-key public REST API. Its source
+# language must be explicit and its q parameter is limited to 500 bytes.
+
+capture_primary = true
+capture_timeout_ms = 350
+max_chars = 400
+max_parallel = 1
+request_timeout_ms = 6000
+dismiss_after_ms = 12000
+auto_copy = false
+source = "en"
+target = "zh-CN"
+
+[[providers]]
+id = "mymemory"
+name = "MyMemory 免费"
+type = "mymemory"
+enabled = true
+# Official endpoint: https://api.mymemory.translated.net/get
+
+[[providers]]
+id = "google"
+name = "Google"
+type = "google"
+enabled = false
+
+# Pot-compatible free/no-key adapters. Public mirrors and unofficial web
+# endpoints can rate-limit or disappear, so they are opt-in by default.
+[[providers]]
+id = "deepl-free"
+name = "DeepL 免费"
+type = "deepl"
+enabled = false
+
+[[providers]]
+id = "bing"
+name = "必应翻译"
+type = "bing"
+enabled = false
+
+[[providers]]
+id = "bing-dict"
+name = "必应词典"
+type = "bing_dict"
+enabled = false
+
+[[providers]]
+id = "cambridge-dict"
+name = "剑桥词典"
+type = "cambridge_dict"
+enabled = false
+
+[[providers]]
+id = "lingva"
+name = "Lingva"
+type = "lingva"
+enabled = false
+base_url = "https://lingva.ml"
+
+[[providers]]
+id = "yandex"
+name = "Yandex"
+type = "yandex"
+enabled = false
+
+[[providers]]
+id = "ecdict"
+name = "ECDICT 在线词典"
+type = "ecdict"
+enabled = false
+
+[[providers]]
+id = "transmart"
+name = "腾讯交互翻译"
+type = "transmart"
+enabled = false
+
+[[providers]]
+id = "tatoeba"
+name = "Tatoeba 例句"
+type = "tatoeba"
+enabled = false
+
+# Local, offline when the model is already installed. It requires Ollama
+# running locally and a pulled model, for example `ollama pull gemma:2b`.
+[[providers]]
+id = "ollama"
+name = "Ollama 本地"
+type = "ollama"
+enabled = false
+base_url = "http://127.0.0.1:11434"
+model = "gemma:2b"

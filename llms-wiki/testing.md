@@ -43,7 +43,7 @@ argv[0]（shebang 直启下是解释器名，不是脚本名），验证恒假�
 | Fcitx5 与输入法生态 | 雾凇方案挂载与预编译、皮肤解耦激活、深浅切换无损跟随、对等卸载 | `test_fcitx.py`, `test_fcitx_theme_assets.py` |
 | 登录器模块 | Noctalia Greeter 安装、状态侦测、Polkit 规则、对等卸载 | `test_greeter.py` |
 | 主题同步与模板中枢 | `nyxuri.theme` 动态同步 GTK3/4 与 Qt、TOML 模板原子管理 | `test_theme_sync.py`, `test_template_registry.py` |
-| 合成器与网关脚本 | `session-shell.sh`、`shell-action.sh` 8 大动作分发契约与回退行为 | `test_config_scripts.py` |
+| 合成器与网关脚本 | `session-shell.sh`、`shell-action.sh` 9 大动作分发契约与回退行为 | `test_config_scripts.py` |
 | 预设工作台双栏 TUI | Dual-Pane 分栏穿梭、左右键切栏、`●` 标记、窄 deploy 路径 | `test_preset.py` |
 | 原子部署与保留 | 文件/目录原子 swap、中断保护栈、`__custom__` 与 preserve 保留 | `test_deploy.py`, `test_manifest.py` |
 | 勾选卸载与安全清除 | 依赖按需清理、受管壁纸清单过滤（绝不误删私人壁纸）、孤儿清理 | `test_uninstall.py` |
@@ -51,6 +51,7 @@ argv[0]（shebang 直启下是解释器名，不是脚本名），验证恒假�
 | 硬件诊断与驱动中立 | PCI 设备分类、默认不强制 NVIDIA 环境变量、跨应用隔离 | `test_hardware.py` |
 | i18n 完整性约束 | AST 符号 vs `translations.toml`，无孤儿、无缺失，参数对齐 | `test_i18n.py` |
 | 包管理抽象与 Shelly 适配 | 后端分流、超时控制、取消不重试、Shelly 解析 | `test_pkg.py`, `test_deps.py` |
+| 划词翻译工具 | 渠道协议与解析、定位几何、ResultRelay、凭据脱敏、TUI（含 PTY）、Alt+E / Orbit 入口契约；经 `translate_support.py` 套 `TempEnv` | `test_translate_*.py` |
 | 网络弹性 | HTTP 超时、多镜像回退、网络中断软降级 | `test_network.py` |
 
 ## 必跑命令

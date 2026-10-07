@@ -7,8 +7,9 @@
 
 ## [Unreleased]
 
-### Changed
-- 自研桌面外壳 Nyxuri Shell 明确标注为实验性功能：仍在开发中、已知问题较多、外观尚未完成，暂不推荐日常使用；`nyxuri shell` 可随时一键切回 Noctalia，已知问题清单随仓库发布
+### Added
+- 新增划词翻译：`Alt+E` 在指针下方弹出 Material 3 译文浮窗，多渠道并行翻译；星环 System Tools 新增 Translate 入口打开渠道设置
+- 自研桌面外壳 Nyxuri Shell 作为实现性功能已经加入到main分支：仍在开发中、已知问题较多、外观尚未完成，暂不推荐日常使用；`nyxuri shell` 可随时一键切回 Noctalia，已知问题清单随仓库发布
 
 ## [v3.1.0] - 2026-09-26
 

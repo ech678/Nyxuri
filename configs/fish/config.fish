@@ -141,6 +141,7 @@ function nyxhelp --description "Nyxuri Cheatsheet速查手册"
             set_color -o blue; echo -n "    Mod + N                  "; set_color green; echo "-> 切换护眼暖色温模式"; set_color normal
             set_color -o blue; echo -n "    Mod + ~                  "; set_color green; echo "-> 切换 Kitty Scratchpad 浮动终端"; set_color normal
             set_color -o blue; echo -n "    Mod + A / Mod + 鼠标前侧键 "; set_color green; echo "-> 呼出 Orbit 矢量星环启动器"; set_color normal
+            set_color -o blue; echo -n "    Alt + E                  "; set_color green; echo "-> 划词翻译 (在指针下方弹出译文浮窗)"; set_color normal
             set_color -o blue; echo -n "    Mod + L                  "; set_color green; echo "-> 锁定屏幕 (Noctalia Lock)"; set_color normal
             set_color -o blue; echo -n "    Mod + Shift + S / Print  "; set_color green; echo "-> 交互式区域截图"; set_color normal
             set_color -o blue; echo -n "    Mod + Shift + R          "; set_color green; echo "-> 重载 Niri 桌面配置"; set_color normal
