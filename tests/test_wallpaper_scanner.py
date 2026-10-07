@@ -15,14 +15,37 @@ from unittest.mock import MagicMock, patch
 
 from tests.utils import TempEnv
 
-_SCRIPTS = Path(__file__).resolve().parent.parent / "configs" / "niri" / "scripts"
-if str(_SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(_SCRIPTS))
+_TOOLS = Path(__file__).resolve().parent.parent / "configs" / "noctalia" / "tools"
+_SCANNER = _TOOLS / "wallpaper_picker" / "scanner.py"
+if str(_TOOLS) not in sys.path:
+    sys.path.insert(0, str(_TOOLS))
 
-try:
+
+def _gdkpixbuf_available():
+    try:
+        import gi
+        gi.require_version("GLib", "2.0")
+        gi.require_version("GdkPixbuf", "2.0")
+        from gi.repository import GLib, GdkPixbuf  # noqa: F401
+    except (ImportError, ValueError):
+        return False
+    return True
+
+
+# Only a missing GI runtime may skip the contract suite. A moved or broken
+# scanner module must fail loudly: a blanket `except Exception` here once hid
+# a stale sys.path entry and silently skipped every test below.
+if _gdkpixbuf_available():
     from wallpaper_picker import scanner as scanner_mod
-except Exception:
+else:
     scanner_mod = None
+
+
+class TestScannerLocation(unittest.TestCase):
+    def test_scanner_module_exists_where_tests_import_it(self):
+        """Runs without GI too, so path drift cannot hide behind the GI skip."""
+        with TempEnv():
+            self.assertTrue(_SCANNER.is_file(), f"wallpaper scanner moved: {_SCANNER}")
 
 
 @unittest.skipUnless(scanner_mod is not None, "gi/GdkPixbuf not available")
