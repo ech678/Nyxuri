@@ -152,3 +152,11 @@ category = "system"
 repo = ["fcitx5", "fcitx5-gtk", "fcitx5-qt", "fcitx5-configtool", "fcitx5-rime"]
 aur = ["rime-ice-git"]
 post_install = "fcitx:setup_rime_ice"
+
+[[app]]
+name = "mango"
+label = "Mango WM"
+category = "system"
+repo = []
+aur = ["mangowm"]
+detect = "mango"

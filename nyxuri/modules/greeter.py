@@ -265,11 +265,14 @@ def greeter_status_label() -> str:
     return _GREETER_STATUS_CACHE
 
 def _greeter_session_arg() -> str:
-    """Check if niri session is discoverable by noctalia-greeter."""
+    """Check if session is discoverable by noctalia-greeter."""
     greeter_cli = _trusted_executable(shutil.which(GREETER_PKG))
     if greeter_cli:
         try:
             res = subprocess.run([greeter_cli, "sessions"], capture_output=True, text=True, check=False)
+            pref = "mango" if os.environ.get("XDG_CURRENT_DESKTOP", "").lower() == "mango" else MAIN_WM
+            if pref.lower() in res.stdout.lower():
+                return f"-- --session {pref}"
             if MAIN_WM.lower() in res.stdout.lower():
                 return f"-- --session {MAIN_WM}"
         except Exception:

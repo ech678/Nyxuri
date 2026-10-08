@@ -1,0 +1,11 @@
+# Mango Wayland Compositor manifest
+[packages]
+repo = []
+aur = ["mangowm"]
+preserve = ["monitors.conf", "noctalia.conf"]
+chmod = ["scripts/*.sh"]
+label = "Mango WM"
+detect = "mango"
+
+[presets]
+reload = ["mmsg", "dispatch", "reload_config"]

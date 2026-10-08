@@ -46,6 +46,13 @@ def _phase_render_templates(only_app: Optional[str] = None) -> None:
             content = re.sub(r'^\s*(//)?\s*screenshot-path\s+.*', screenshot_target, content, flags=re.MULTILINE)
             niri_conf.write_text(content, encoding="utf-8")
 
+    if only_app in (None, "mango"):
+        mango_conf = config_dir / "mango" / "config.conf"
+        if mango_conf.is_file():
+            content = mango_conf.read_text(encoding="utf-8", errors="replace")
+            content = content.replace("/home/user", str(home))
+            mango_conf.write_text(content, encoding="utf-8")
+
     if only_app in (None, "fish"):
         fish_vars = config_dir / "fish" / "fish_variables"
         if fish_vars.is_file():

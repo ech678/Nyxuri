@@ -211,6 +211,10 @@ def sync(mode: str = "sync") -> int:
 
         _sync_glow_layout(current)
 
+        # Reload Mango compositor if running
+        if shutil.which("mmsg"):
+            timed_run(["mmsg", "dispatch", "reload_config"], 2, check=False)
+
         # Notify Kitty terminal
         if shutil.which("pkill"):
             timed_run(["pkill", "-SIGUSR1", "-x", "kitty"], 2, check=False)

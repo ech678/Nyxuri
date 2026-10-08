@@ -24,8 +24,8 @@ from nyxuri.i18n import msg, text
 
 def _check_compositor(env) -> None:
     xdg_curr = os.environ.get("XDG_CURRENT_DESKTOP", "")
-    if xdg_curr.lower() == MAIN_WM.lower():
-        print(msg("doctor_ok", text(f"合成器: {MAIN_WM} 正在运行", f"Compositor: {MAIN_WM} is running")))
+    if xdg_curr.lower() in (MAIN_WM.lower(), "mango"):
+        print(msg("doctor_ok", text(f"合成器: {xdg_curr} 正在运行", f"Compositor: {xdg_curr} is running")))
     else:
         current = xdg_curr or text("未知", "Unknown")
         print(msg("doctor_warn", text(
@@ -34,9 +34,11 @@ def _check_compositor(env) -> None:
         )))
 
 def _check_wayland_session(env) -> None:
-    sess_file = Path(f"/usr/share/wayland-sessions/{MAIN_WM}.desktop")
+    xdg_curr = os.environ.get("XDG_CURRENT_DESKTOP", "").lower()
+    target_wm = "mango" if xdg_curr == "mango" else MAIN_WM
+    sess_file = Path(f"/usr/share/wayland-sessions/{target_wm}.desktop")
     if sess_file.is_file():
-        print(msg("doctor_ok", text(f"会话: {MAIN_WM} Wayland 入口已注册", f"Session: {MAIN_WM} Wayland entry is registered")))
+        print(msg("doctor_ok", text(f"会话: {target_wm} Wayland 入口已注册", f"Session: {target_wm} Wayland entry is registered")))
     else:
         print(msg("doctor_warn", text(f"会话: 缺少 {sess_file}", f"Session: {sess_file} is missing")))
 
@@ -223,10 +225,14 @@ def _check_portal_gtk(env) -> None:
             pass
 
 def _check_portal_config(env) -> None:
-    portal_conf = env.config_dir / "xdg-desktop-portal" / "niri-portals.conf"
+    xdg_curr = os.environ.get("XDG_CURRENT_DESKTOP", "").lower()
+    target = f"{xdg_curr}-portals.conf" if xdg_curr in ("mango", "niri") else "niri-portals.conf"
+    portal_conf = env.config_dir / "xdg-desktop-portal" / target
     portal_conf2 = env.config_dir / "xdg-desktop-portal" / "portals.conf"
-    if portal_conf.is_file() or portal_conf2.is_file():
-        print(msg("doctor_ok", text("桌面门户: niri-portals.conf 路由已配置", "Desktop Portal: niri-portals.conf routing is configured")))
+    if portal_conf.is_file():
+        print(msg("doctor_ok", text(f"桌面门户: {target} 路由已配置", f"Desktop Portal: {target} routing is configured")))
+    elif portal_conf2.is_file():
+        print(msg("doctor_ok", text("桌面门户: portals.conf 路由已配置", "Desktop Portal: portals.conf routing is configured")))
 
 _MIN_HOME_FREE_KIB = 10 * 1024 * 1024  # 10 GiB expressed in KiB
 _GIB_KIB = 1024 * 1024

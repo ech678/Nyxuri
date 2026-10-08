@@ -601,6 +601,7 @@ class CheckboxEntry:
     label: str
     checked: bool = False
     is_separator: bool = False
+    radio_group: Optional[str] = None
 
 
 class CheckboxList:
@@ -616,7 +617,16 @@ class CheckboxList:
             return []
         if not sys.stdin.isatty():
             if accept_defaults:
-                return [e.key for e in self.entries if not e.is_separator and e.checked]
+                radio_seen = set()
+                res = []
+                for e in self.entries:
+                    if not e.is_separator and e.checked:
+                        if e.radio_group:
+                            if e.radio_group in radio_seen:
+                                continue
+                            radio_seen.add(e.radio_group)
+                        res.append(e.key)
+                return res
             return None
 
         selectable = [idx for idx, entry in enumerate(self.entries) if not entry.is_separator]
@@ -650,11 +660,18 @@ class CheckboxList:
                         write_cleared(f"{entry.label}\n")
                         continue
 
-                    check_str = (
-                        f"{Colors.BOLD_GREEN}[✓]{Colors.RESET}"
-                        if entry.checked
-                        else f"{Colors.DARK_GRAY}[ ]{Colors.RESET}"
-                    )
+                    if entry.radio_group:
+                        check_str = (
+                            f"{Colors.BOLD_GREEN}(●){Colors.RESET}"
+                            if entry.checked
+                            else f"{Colors.DARK_GRAY}( ){Colors.RESET}"
+                        )
+                    else:
+                        check_str = (
+                            f"{Colors.BOLD_GREEN}[✓]{Colors.RESET}"
+                            if entry.checked
+                            else f"{Colors.DARK_GRAY}[ ]{Colors.RESET}"
+                        )
                     render_check_row(idx == focus, check_str, entry.label, cols)
                 if end < len(self.entries):
                     write_cleared(f"    {Colors.DARK_GRAY}...{Colors.RESET}\n")
@@ -685,10 +702,17 @@ class CheckboxList:
                 elif key in ("END", "G"):
                     focus_pos = len(selectable) - 1
                 elif key == "SPACE":
-                    self.entries[focus].checked = not self.entries[focus].checked
+                    target = self.entries[focus]
+                    if target.radio_group:
+                        for e in self.entries:
+                            if e.radio_group == target.radio_group and e != target:
+                                e.checked = False
+                        target.checked = not target.checked
+                    else:
+                        target.checked = not target.checked
                 elif key in ("a", "A"):
                     for e in self.entries:
-                        if not e.is_separator:
+                        if not e.is_separator and not e.radio_group:
                             e.checked = True
                 elif key in ("n", "N"):
                     for e in self.entries:
@@ -701,9 +725,25 @@ class CheckboxList:
                     if 0 <= num < len(selectable):
                         focus_pos = num
                         entry_idx = selectable[focus_pos]
-                        self.entries[entry_idx].checked = not self.entries[entry_idx].checked
+                        target = self.entries[entry_idx]
+                        if target.radio_group:
+                            for e in self.entries:
+                                if e.radio_group == target.radio_group and e != target:
+                                    e.checked = False
+                            target.checked = not target.checked
+                        else:
+                            target.checked = not target.checked
                 elif key == "ENTER":
-                    return [e.key for e in self.entries if not e.is_separator and e.checked]
+                    radio_seen = set()
+                    res = []
+                    for e in self.entries:
+                        if not e.is_separator and e.checked:
+                            if e.radio_group:
+                                if e.radio_group in radio_seen:
+                                    continue
+                                radio_seen.add(e.radio_group)
+                            res.append(e.key)
+                    return res
 
 # --- Component: Category Accordion Checklist ---
 @dataclass
