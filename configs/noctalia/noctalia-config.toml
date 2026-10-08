@@ -207,7 +207,7 @@ source = "wallpaper"
 wallpaper_scheme = "m3-content"
 
 [theme.templates]
-builtin_ids = ["kitty", "qt", "starship"]
+builtin_ids = ["kitty", "qt", "starship", "mango"]
 community_ids = []
 
 # NyxMellow 动态 fcitx5 皮肤（mellow 形状 + Material You 自动取色）
