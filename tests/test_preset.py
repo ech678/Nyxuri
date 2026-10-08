@@ -15,6 +15,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import nyxuri.deploy.preset as preset
+import nyxuri.deploy.manifest as manifest
 from nyxuri.deploy.atomic import atomic_replace_item
 from nyxuri.tui import PresetSwitcher
 from nyxuri.i18n import msg
@@ -459,6 +460,52 @@ class TestPresetSwitchPreservesManifestFiles(unittest.TestCase):
         normal_file.write_text("// USER-EFFECTS-MARKER\n")
         self.assertTrue(preset.apply_preset("niri", "default"))
         self.assertIn("// USER-EFFECTS-MARKER", normal_file.read_text())
+
+
+class TestKittyRuntimeThemeSurvivesPresetSwitch(unittest.TestCase):
+    """Kitty's palette is rendered at runtime; a preset switch must not reset it.
+
+    Noctalia owns ~/.config/kitty/themes/noctalia.conf (dark/light following the
+    wallpaper). The repo also ships a static copy in both the app root and the
+    transparent preset, so a switch would clobber the rendered palette unless
+    the manifest preserves it.
+    """
+
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+        self.env = self._ctx.env
+        self.kitty_dest = self.env.config_dir / "kitty"
+        from nyxuri.deploy.atomic import atomic_replace_item
+        atomic_replace_item(self.env.configs_src / "kitty", self.kitty_dest)
+
+    def tearDown(self):
+        self._ctx.__exit__()
+
+    def test_manifest_preserves_runtime_theme_files(self):
+        m = manifest.load_manifest(self.env.configs_src / "kitty")
+        self.assertIn("current-theme.conf", m.preserve)
+        self.assertIn("themes/noctalia.conf", m.preserve)
+
+    def test_rendered_palette_survives_preset_switch(self):
+        theme = self.kitty_dest / "themes" / "noctalia.conf"
+        rendered = theme.read_text(encoding="utf-8").replace("#131318", "#f5f0f7")
+        theme.write_text(rendered, encoding="utf-8")
+
+        self.assertTrue(preset.apply_preset("kitty", "transparent"))
+        self.assertIn("#f5f0f7", theme.read_text(encoding="utf-8"),
+                      "preset switch wiped the runtime-rendered palette")
+
+        self.assertTrue(preset.apply_preset("kitty", "default"))
+        self.assertIn("#f5f0f7", theme.read_text(encoding="utf-8"))
+
+    def test_theme_symlink_still_points_at_noctalia(self):
+        link = self.kitty_dest / "current-theme.conf"
+        self.assertTrue(link.is_symlink())
+        self.assertEqual(os.readlink(link), "themes/noctalia.conf")
+        self.assertTrue(preset.apply_preset("kitty", "transparent"))
+        self.assertTrue(link.is_symlink(), "current-theme.conf symlink was wiped")
+        self.assertEqual(os.readlink(link), "themes/noctalia.conf")
 
 
 class TestPresetPathBoundary(unittest.TestCase):
