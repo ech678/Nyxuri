@@ -5,7 +5,13 @@ import shutil
 import sys
 from typing import List, Optional
 
-from nyxuri.constants import CLI_CMD, PENDING_UPGRADE_ENV, PENDING_UPGRADE_MENU_ENV
+from nyxuri.constants import (
+    CLI_CMD,
+    PENDING_UPGRADE_ENV,
+    PENDING_UPGRADE_MENU_ENV,
+    SUPPORTED_WMS,
+    detect_preferred_wm,
+)
 from nyxuri.core import get_env, log_msg
 from nyxuri.deploy import (
     apply_preset,
@@ -71,23 +77,49 @@ def run_master_component_menu(is_update: bool = False, mode: str = "full") -> Op
     items = discover_config_items()
     entries: List[CheckboxEntry] = []
 
-    # 1. Configs — optional apps (listed in .optional-apps.toml) show install
-    #    status, so the user sees whether deploying this config is useful now.
-    #    An optional app whose package is missing defaults UNCHECKED — don't
-    #    litter ~/.config with config for an absent app. §6 / §8.4 path-display.
-    optional_set = set(discover_optional_apps())
-    manifests = dict(discover_manifest_apps())
-    for item in items:
-        label = msg("master_item_config", item)
-        checked = True
-        if item in optional_set:
-            m = manifests.get(item)
-            if m is not None:
-                is_inst = is_dep_installed(m.detect)
-                label = f"{label}  {msg('installed') if is_inst else msg('missing')}"
-                if not is_inst:
-                    checked = False
-        entries.append(CheckboxEntry(key=f"config_{item}", label=label, checked=checked))
+    wm_items = [i for i in items if i in SUPPORTED_WMS]
+    app_items = [i for i in items if i not in SUPPORTED_WMS]
+    preferred_wm = detect_preferred_wm()
+
+    # 1. Window Managers (Radio - Single Selection)
+    if wm_items:
+        entries.append(CheckboxEntry(key="sep_wm", label=msg("master_item_wm_section"), is_separator=True))
+        desktop_env = os.environ.get("XDG_CURRENT_DESKTOP", "").lower()
+        for wm in wm_items:
+            label = msg("master_item_config", wm)
+            is_running = (wm in desktop_env or desktop_env in wm) if desktop_env else False
+            is_inst = is_dep_installed(wm)
+            if is_running:
+                label = f"{label}  {msg('running')}"
+            elif is_inst:
+                label = f"{label}  {msg('installed')}"
+            else:
+                label = f"{label}  {msg('missing')}"
+
+            is_checked = (wm == preferred_wm)
+            entries.append(CheckboxEntry(
+                key=f"config_{wm}",
+                label=label,
+                checked=is_checked,
+                radio_group="wm",
+            ))
+
+    # 2. Desktop Apps & Components
+    if app_items:
+        entries.append(CheckboxEntry(key="sep_apps", label=msg("master_item_apps_section"), is_separator=True))
+        optional_set = set(discover_optional_apps())
+        manifests = dict(discover_manifest_apps())
+        for item in app_items:
+            label = msg("master_item_config", item)
+            checked = True
+            if item in optional_set:
+                m = manifests.get(item)
+                if m is not None:
+                    is_inst = is_dep_installed(m.detect)
+                    label = f"{label}  {msg('installed') if is_inst else msg('missing')}"
+                    if not is_inst:
+                        checked = False
+            entries.append(CheckboxEntry(key=f"config_{item}", label=label, checked=checked))
 
     if mode == "full" or is_update:
         # 2. Heavy assets (wallpapers)

@@ -6,6 +6,10 @@ en = "{Colors.BOLD_GREEN}[Installed]{Colors.RESET}"
 zh = "{Colors.BOLD_RED}[未安装]{Colors.RESET}"
 en = "{Colors.BOLD_RED}[Not installed]{Colors.RESET}"
 
+[running]
+zh = "{Colors.BOLD_CYAN}[运行中]{Colors.RESET}"
+en = "{Colors.BOLD_CYAN}[Running]{Colors.RESET}"
+
 [menu_title]
 zh = """\n  {Colors.BOLD_CYAN}── {PROJECT_NAME} 控制面板 ──{Colors.RESET}
 """
@@ -515,6 +519,14 @@ en = "Extension: {0}"
 [master_item_asset]
 zh = "壁纸包: {0}"
 en = "Wallpapers: {0}"
+
+[master_item_wm_section]
+zh = """\n  {Colors.BOLD_BLUE}── 窗口管理器 (单选) ──{Colors.RESET}"""
+en = """\n  {Colors.BOLD_BLUE}── Window Manager (Select One) ──{Colors.RESET}"""
+
+[master_item_apps_section]
+zh = """\n  {Colors.BOLD_BLUE}── 应用与组件配置 ──{Colors.RESET}"""
+en = """\n  {Colors.BOLD_BLUE}── Apps & Components ──{Colors.RESET}"""
 
 [master_item_behavior]
 zh = """\n  ── 选项 ──"""

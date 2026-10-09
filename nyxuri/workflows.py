@@ -5,7 +5,7 @@ import subprocess
 import sys
 from typing import List
 
-from nyxuri.constants import FCITX_THEME, GREETER_PKG
+from nyxuri.constants import FCITX_THEME, GREETER_PKG, SUPPORTED_WMS, detect_preferred_wm
 from nyxuri.core import get_env, log_msg
 from nyxuri.deploy import (
     deploy_selected_configs,
@@ -91,11 +91,23 @@ def install_configs_workflow(mode: str = "full") -> bool:
             print(msg("install_cancelled"))
             return True
     else:
-        chosen_configs = discover_config_items()
+        all_items = discover_config_items()
+        preferred_wm = detect_preferred_wm()
+        chosen_configs = [
+            item for item in all_items
+            if item not in SUPPORTED_WMS or item == preferred_wm
+        ]
         do_wallpapers = not wallpapers_pack_present()
         do_fcitx = fcitx_enabled()
         do_greeter = False
         do_backup = False
+
+    # Safety: ensure at most one WM is selected
+    selected_wms = [c for c in chosen_configs if c in SUPPORTED_WMS]
+    if len(selected_wms) > 1:
+        preferred = detect_preferred_wm()
+        chosen_wm = preferred if preferred in selected_wms else selected_wms[0]
+        chosen_configs = [c for c in chosen_configs if c not in SUPPORTED_WMS or c == chosen_wm]
 
     _phase_preflight_check(mode, chosen_configs, do_fcitx, do_greeter, do_wallpapers, do_backup)
 

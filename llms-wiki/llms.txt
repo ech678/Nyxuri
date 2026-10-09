@@ -43,6 +43,7 @@
 - [i18n](i18n.md): 双语文案引擎（msg/text 协议）、宏变量替换与 translations.toml 契约
 - [assets-deploy](assets-deploy.md): 壁纸与静态资产流水线、离线 fallback 与 WallpaperDeployResult
 - [backup-snapshot](backup-snapshot.md): 配置快照生命周期、上限 30 个自动 prune 与回滚防灾
+- [mango-adaptation](mango-adaptation.md): Mango WM (mangowm) 适配架构、脚本网关、Dunder 保护与主题同步管线
 - [packaging](packaging.md): AUR 打包与 gen-deps.py 自动汇聚 depends/optdepends
 - [theme-adaptation](../configs/noctalia/README.md): 主题中枢与 GTK/Brave 信号流全记录（GTK4 双 @media 块、settings.ini 兼容、Problem 1-12 证伪排查）
 

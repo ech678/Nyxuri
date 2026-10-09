@@ -11,6 +11,18 @@ LEGACY_PROJECT_NAMES = ("NyxNiri",)
 LEGACY_CLI_CMDS = ("nyxniri",)
 LEGACY_STORAGE_NAMES = ("NyxNiri", "nyxniri")
 MAIN_WM = "niri"
+SUPPORTED_WMS = ("niri", "mango")
+
+
+def detect_preferred_wm() -> str:
+    """Detect current running or preferred WM from environment."""
+    xdg = os.environ.get("XDG_CURRENT_DESKTOP", "").lower()
+    for wm in SUPPORTED_WMS:
+        if wm == xdg or wm in xdg:
+            return wm
+    return MAIN_WM
+
+
 THEME_ENGINE = "noctalia"
 GREETER_PKG = "noctalia-greeter"
 GREETER_SESSION_BIN = "noctalia-greeter-session"
