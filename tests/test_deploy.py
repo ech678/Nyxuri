@@ -4,6 +4,8 @@ Safety: all tests use tempfile.TemporaryDirectory for filesystem operations.
 No test touches the real ~/.config or the real repo configs/ directory.
 """
 
+import os
+import re
 import shutil
 import tempfile
 import unittest
@@ -192,6 +194,62 @@ class TestPreserveInjectionBeforeSwap(unittest.TestCase):
             self.assertTrue(result)
             self.assertFalse((dest / "monitor.kdl").exists(),
                              "No monitor.kdl in dest → repo's (absent) ships, no crash")
+
+
+class TestNiriRequiredIncludes(unittest.TestCase):
+    """Every non-optional include in niri's config.kdl must exist in the repo.
+
+    niri fails to load the whole config when a required include is missing, so a
+    fresh install would break on a file the repo never shipped.
+    """
+
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+        self.env = self._ctx.env
+        self.niri_src = self.env.configs_src / "niri"
+
+    def tearDown(self):
+        self._ctx.__exit__()
+
+    def _required_includes(self):
+        text = (self.niri_src / "config.kdl").read_text(encoding="utf-8")
+        return [
+            m.group(1)
+            for m in re.finditer(r'include\s+(?:optional=true\s+)?"([^"]+)"', text)
+            if "optional=true" not in m.group(0)
+        ]
+
+    def test_all_required_includes_exist_in_source(self):
+        required = self._required_includes()
+        self.assertIn("effects.kdl", required)
+        for name in required:
+            self.assertTrue(
+                (self.niri_src / name).exists(),
+                f"config.kdl requires {name} but the repo does not ship it",
+            )
+
+    def test_effects_kdl_is_eyecare_symlink(self):
+        link = self.niri_src / "effects.kdl"
+        self.assertTrue(link.is_symlink(), "effects.kdl must stay a runtime-managed symlink")
+        self.assertEqual(os.readlink(link), "effects_normal.kdl")
+        self.assertTrue(link.exists(), "symlink must resolve to a shipped file")
+
+    def test_required_includes_survive_fresh_deploy(self):
+        from nyxuri.deploy.deploy import deploy_selected_configs
+
+        with patch("builtins.print"):
+            deploy_selected_configs(do_backup=False, items_to_deploy=["niri"])
+
+        dest = self.env.config_dir / "niri"
+        for name in self._required_includes():
+            self.assertTrue(
+                (dest / name).exists(),
+                f"fresh deploy left {name} missing; niri would fail to load",
+            )
+        deployed = dest / "effects.kdl"
+        self.assertTrue(deployed.is_symlink())
+        self.assertEqual(os.readlink(deployed), "effects_normal.kdl")
 
 
 class TestWallpaperNoClobber(unittest.TestCase):
