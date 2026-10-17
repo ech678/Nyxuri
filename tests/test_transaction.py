@@ -147,6 +147,50 @@ class TestUnitOn(unittest.TestCase):
             with self.assertRaises(KeyError):
                 transaction.unit_off("ghost")
 
+    def test_declared_dependency_without_a_unit_is_ignored(self):
+        """A dependency on a not-yet-existing unit must not crash the enable.
+
+        The resolver contract ignores edges that leave the graph, so the
+        closure walk has to tolerate the same shape instead of indexing it.
+        """
+        with TempEnv() as ctx:
+            _stage(ctx, {
+                "shell": {"manifest": 'dependencies = ["ghostdep"]\n', "files": {"s.conf": "s"}},
+            })
+            steps = transaction.unit_on("shell")
+            self.assertTrue(all(s.ok for s in steps), str(steps))
+            self.assertEqual(ledger.get_unit("shell")["state"], "enabled")
+            self.assertTrue((ctx.home / ".config/shell/s.conf").is_file())
+
+    def test_preset_marker_follows_a_successful_swap(self):
+        """A failed deploy must not leave the preset marker pointing at the new form."""
+        with TempEnv() as ctx:
+            _stage(ctx, {"kitty": {"files": {"kitty.conf": "k"}}})
+            transaction.unit_on("kitty")
+            marker = _marker_path(ctx, "kitty")
+            before = marker.read_text(encoding="utf-8") if marker.is_file() else None
+            with mock.patch.object(
+                transaction, "_phase_atomic_deployment", return_value=["kitty"]
+            ):
+                steps = transaction.unit_on("kitty", preset="dark")
+            self.assertFalse(steps[0].ok, str(steps))
+            self.assertEqual(steps[0].detail, "deploy-failed")
+            after = marker.read_text(encoding="utf-8") if marker.is_file() else None
+            self.assertEqual(after, before)
+
+    def test_preset_marker_is_written_once_the_swap_lands(self):
+        with TempEnv() as ctx:
+            _stage(ctx, {"kitty": {"files": {"kitty.conf": "k"}}})
+            steps = transaction.unit_on("kitty", preset="dark")
+            self.assertTrue(all(s.ok for s in steps), str(steps))
+            marker = _marker_path(ctx, "kitty")
+            self.assertTrue(marker.is_file())
+            self.assertEqual(marker.read_text(encoding="utf-8").strip(), "dark")
+
+
+def _marker_path(ctx, unit_id):
+    return ctx.home / ".config/nyxuri/presets" / f"{unit_id}.active"
+
 
 class TestUnitOff(unittest.TestCase):
     """Disable transaction: guard → vault in → white-paper wipe → ledger."""

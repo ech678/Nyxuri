@@ -25,7 +25,7 @@ import hashlib
 import os
 import shutil
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Callable, Dict, List, Optional
 
 from nyxuri import ledger, registry
@@ -166,8 +166,8 @@ def _enable_closure(unit_id: str) -> List[str]:
         if cur in wanted:
             continue
         wanted.add(cur)
-        stack.extend(graph.get(cur, ()))
-    sub = {u: [d for d in graph[u] if d in wanted] for u in wanted}
+        stack.extend(d for d in graph.get(cur, ()) if d in graph)
+    sub = {u: [d for d in graph.get(u, ()) if d in wanted] for u in wanted}
     return resolve_order(sub)
 
 
@@ -236,7 +236,7 @@ def _vault_archive(unit_id: str, dest: Path, manifest: ModuleManifest) -> List[s
                 _move_into_vault(src, vault_dir(unit_id) / rel)
                 moved.append(rel)
     for rel in manifest.preserve:
-        if not rel or os.path.isabs(rel):
+        if not rel or os.path.isabs(rel) or ".." in PurePosixPath(rel.replace("\\", "/")).parts:
             continue
         src = dest / rel
         if src.exists() or src.is_symlink():
@@ -361,11 +361,11 @@ def unit_on(
             # unit's living area is one blueprint-managed file with no
             # user-owned layer to archive or restore.
             _vault_restore(uid, dest)
-        if preset is not None and uid == unit_id:
-            write_active_preset(uid, preset)
         if uid in _phase_atomic_deployment([uid]):
             results.append(Step(uid, False, "deploy-failed"))
             return results
+        if preset is not None and uid == unit_id:
+            write_active_preset(uid, preset)
         ledger.set_unit(
             uid,
             state="enabled",
