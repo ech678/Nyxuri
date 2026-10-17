@@ -908,6 +908,10 @@ en = "Mission Center (System Monitor)"
 zh = "Fcitx5 + 雾凇拼音 (输入法)"
 en = "Fcitx5 + Rime Ice (Input Method)"
 
+[app_mango]
+zh = "Mango (窗口管理器)"
+en = "Mango (Window Manager)"
+
 [installing_selected_apps]
 zh = """\n{Colors.BOLD_BLUE}:: 正在安装常用软件…{Colors.RESET}"""
 en = """\n{Colors.BOLD_BLUE}:: Installing recommended apps…{Colors.RESET}"""

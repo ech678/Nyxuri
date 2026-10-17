@@ -85,6 +85,29 @@ class TestKernelResolver(unittest.TestCase):
         order = resolve_order({"app": ["not-a-unit-yet"]})
         self.assertEqual(order, ["app"])
 
+    def test_repeated_dependency_is_one_obligation(self):
+        """Declaring the same dependency twice must not read as a cycle.
+
+        The in-degree side counts obligations, the decrement side fires once
+        per dependency id, so duplicates have to collapse to a single edge.
+        """
+        for graph in (
+            {"a": [], "b": ["a", "a"]},
+            {"a": [], "b": ["a", "a", "a"]},
+            {"a": [], "b": ["a"], "c": ["b", "b"]},
+        ):
+            with self.subTest(graph=graph):
+                order = resolve_order(graph)
+                self.assertEqual(sorted(order), sorted(graph))
+
+    def test_repeated_dependency_keeps_topological_use(self):
+        order = resolve_order({"niri": [], "waybar": ["niri", "niri"]})
+        self.assertLess(order.index("niri"), order.index("waybar"))
+
+    def test_repeated_dependency_does_not_mask_a_real_cycle(self):
+        with self.assertRaises(ValueError):
+            resolve_order({"a": ["b", "b"], "b": ["a", "a"]})
+
 
 class TestKernelRegistry(unittest.TestCase):
     """Blueprint domain: add a directory, get a unit — zero kernel code."""

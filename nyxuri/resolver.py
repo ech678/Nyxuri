@@ -11,15 +11,14 @@ def resolve_order(graph: dict[str, list[str]]) -> list[str]:
     """Return unit ids in dependency-safe enable order (Kahn's algorithm).
 
     Edges pointing at ids outside the graph are ignored (a unit may declare
-    a dependency on something that is not a directory unit yet). Raises
-    ValueError when the graph contains a cycle — the caller must surface
-    it instead of guessing an order.
+    a dependency on something that is not a directory unit yet), and so are
+    repeated edges: a dependency is one obligation however many times it is
+    written. Raises ValueError when the graph contains a cycle — the caller
+    must surface it instead of guessing an order.
     """
     in_degree = {u: 0 for u in graph}
     for u, deps in graph.items():
-        for d in deps:
-            if d in in_degree:
-                in_degree[u] += 1
+        in_degree[u] = len({d for d in deps if d in in_degree})
 
     queue = [u for u, deg in in_degree.items() if deg == 0]
     order: list[str] = []
