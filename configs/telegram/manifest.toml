@@ -2,3 +2,4 @@ optional = true
 packages = ["telegram-desktop"]
 label = "Telegram"
 category = "social"
+detect = "telegram-desktop"

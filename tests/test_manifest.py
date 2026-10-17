@@ -250,6 +250,21 @@ class TestRealRepoManifests(unittest.TestCase):
         self.assertEqual(m.packages_repo, ["mission-center"])
         self.assertTrue(m.is_optional)
 
+    def test_telegram_detect_matches_its_package(self):
+        """Arch ships the binary as /usr/bin/Telegram, so the unit name misses both paths."""
+        m = dict(manifest.discover_manifest_apps())["telegram"]
+        self.assertEqual(m.detect, "telegram-desktop")
+        self.assertEqual(m.packages_repo, ["telegram-desktop"])
+
+    def test_optional_units_all_have_a_menu_label(self):
+        """Every optional unit needs its own app_<name> entry or the menu shows the key."""
+        from nyxuri.i18n import msg
+
+        for name in manifest.discover_optional_apps():
+            key = "app_" + name.replace("-", "_")
+            with self.subTest(unit=name):
+                self.assertNotEqual(msg(key), key)
+
     def test_fcitx5_rime_aur_packages(self):
         manifests = dict(manifest.discover_manifest_apps())
         m = manifests["fcitx5-rime"]
