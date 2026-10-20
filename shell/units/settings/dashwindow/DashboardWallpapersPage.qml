@@ -275,60 +275,6 @@ Item {
                             }
                         }
 
-                        Row {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.bottom: parent.bottom
-                            anchors.bottomMargin: 10
-                            spacing: 6
-                            opacity: hover.containsMouse || cell.selected ? 1 : 0
-
-                            Behavior on opacity {
-                                NumberAnimation {
-                                    duration: 150
-                                }
-                            }
-
-                            RippleButton {
-                                implicitHeight: 34
-                                leftPadding: 14
-                                rightPadding: 14
-                                buttonRadius: 17
-                                containerColor: Qt.rgba(0, 0, 0, 0.55)
-                                rippleColor: "white"
-                                stateLayerColor: Appearance.colors.colOnPrimary
-                                stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
-                                hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
-                                pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
-                                downAction: () => {
-                                    const path = cell.modelData;
-                                    root.selectedIndex = cell.index;
-                                    Qt.callLater(() => root.applyTo(path));
-                                }
-
-                                contentItem: Item {
-                                    implicitWidth: contentRow.implicitWidth
-                                    implicitHeight: contentRow.implicitHeight
-
-                                    RowLayout {
-                                        id: contentRow
-
-                                        anchors.centerIn: parent
-                                        spacing: 6
-
-                                        MaterialSymbol {
-                                            text: "wallpaper"
-                                            iconSize: 16
-                                            color: "white"
-                                        }
-
-                                        StyledText {
-                                            text: I18n.tr("Apply")
-                                            color: "white"
-                                        }
-                                    }
-                                }
-                            }
-                        }
                     }
 
                     Rectangle {
