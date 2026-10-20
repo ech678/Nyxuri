@@ -767,6 +767,7 @@ Item {
             Layout.fillHeight: true
             visible: active
             active: root.themesImplemented
+            asynchronous: true
 
             sourceComponent: DashboardThemesPage {
                 pager: root
@@ -807,6 +808,7 @@ Item {
             Layout.fillHeight: true
             visible: active
             active: root.wallpapersImplemented
+            asynchronous: true
 
             sourceComponent: DashboardWallpapersPage {
                 pager: root
@@ -821,6 +823,7 @@ Item {
             Layout.fillHeight: true
             visible: active
             active: root.settingsImplemented
+            asynchronous: true
 
             sourceComponent: DashboardSettingsPage {
                 pager: root
