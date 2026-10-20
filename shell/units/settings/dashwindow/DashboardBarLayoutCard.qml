@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import qs.shared.theme
@@ -26,18 +27,15 @@ DashboardCard {
         id: barWidgets
     }
 
-    ListModel {
-        id: leftModel
-    }
-    ListModel {
-        id: middleModel
-    }
-    ListModel {
-        id: rightModel
-    }
-    ListModel {
-        id: poolModel
-    }
+    // JS arrays, not ListModel: dragging a pool chip rebuilds the pool (the
+    // dragged id must hide), and ListModel.clear() mid-drag destroys the
+    // delegate that owns the mouse grab — every other chip vanished with it.
+    // Array reassignment only re-evaluates bindings on the Repeater's model,
+    // so delegates that still exist keep their grabs.
+    property var leftItems: []
+    property var middleItems: []
+    property var rightItems: []
+    property var poolItems: []
 
     // Drag state shared across lanes and the pool.
     property var drag: null
@@ -46,12 +44,6 @@ DashboardCard {
     property real dragWidth: 90
     property real pointerX: 0
     property real pointerY: 0
-    property var lastSynced: ({
-                                  left: "",
-                                  middle: "",
-                                  right: "",
-                                  pool: ""
-                              })
 
     function baseItems(laneId) {
         if (laneId === "left")
@@ -82,9 +74,9 @@ DashboardCard {
     }
 
     function desiredItems(laneId) {
-        // No __gap__ row while dragging: inserting one changes the model
-        // signature mid-drag, syncModel then clear()/re-appends and destroys the
-        // delegate that owns the mouse grab — the drag dies and the card hangs.
+        // No __gap__ row while dragging: inserting one would rebuild the model
+        // mid-drag. The drop slot is drawn by each Chip instead (dropSlot below),
+        // so the model stays identical to the config for the whole drag.
         // The drop slot is drawn by each Chip instead (dropSlot below), so the
         // model stays identical to the config for the whole drag.
         return baseItems(laneId).map(id => ({
@@ -93,27 +85,18 @@ DashboardCard {
         }));
     }
 
-        function syncModel(model, items, key) {
-        const sig = items.map(it => it.id + (it.gap ? ":g" : "")).join(",");
-        if (root.lastSynced[key] === sig)
-        return;
-        root.lastSynced[key] = sig;
-        model.clear();
-        items.forEach(it => model.append(it));
+    function refreshLanes() {
+        leftItems = desiredItems("left");
+        middleItems = desiredItems("middle");
+        rightItems = desiredItems("right");
+        poolItems = availableItems();
     }
 
-        function refreshLanes() {
-        syncModel(leftModel, desiredItems("left"), "left");
-        syncModel(middleModel, desiredItems("middle"), "middle");
-        syncModel(rightModel, desiredItems("right"), "right");
-        syncModel(poolModel, availableItems(), "pool");
-    }
-
-        function laneHovered(laneId) {
+    function laneHovered(laneId) {
         return root.drag !== null && root.hoverLane === laneId;
     }
 
-        function beginDrag(widgetId, lane, slot, pos, width) {
+    function beginDrag(widgetId, lane, slot, pos, width) {
         root.drag = {
         id: widgetId,
         from: lane,
@@ -123,15 +106,14 @@ DashboardCard {
         root.pointerX = pos.x;
         root.pointerY = pos.y;
         root.updateHover();
-        root.refreshLanes();
     }
 
-        function containsPoint(lane, x, y) {
+    function containsPoint(lane, x, y) {
         const p = lane.mapFromItem(root, x, y);
         return p.x >= 0 && p.y >= 0 && p.x <= lane.width && p.y <= lane.height;
     }
 
-        function insertIndex(lane, x, y) {
+    function insertIndex(lane, x, y) {
         let before = 0;
         for (let i = 0; i < lane.chipRepeater.count; i += 1) {
         const chip = lane.chipRepeater.itemAt(i);
@@ -145,12 +127,12 @@ DashboardCard {
         return before;
     }
 
-        function updateHover() {
+    function updateHover() {
         root.hoverLane = "";
         root.hoverIndex = 0;
         for (let i = 0; i < laneRepeater.count; i += 1) {
         const lane = laneRepeater.itemAt(i);
-        if (root.containsPoint(lane, root.pointerX, root.pointerY)) {
+        if (lane && root.containsPoint(lane, root.pointerX, root.pointerY)) {
         root.hoverLane = lane.laneId;
         root.hoverIndex = root.insertIndex(lane, root.pointerX, root.pointerY);
         return;
@@ -160,7 +142,7 @@ DashboardCard {
         root.hoverLane = "pool";
     }
 
-        function removeWidget(lane, slot) {
+    function removeWidget(lane, slot) {
         if (lane === "pool" || lane === "")
         return;
         const cur = baseItems(lane).slice();
@@ -177,7 +159,7 @@ DashboardCard {
         root.refreshLanes();
     }
 
-        function finishDrag() {
+    function finishDrag() {
         if (root.drag === null)
         return;
         const d = root.drag;
@@ -211,7 +193,7 @@ DashboardCard {
 
         // ---- visual primitives -------------------------------------------------
 
-        component Chip: Rectangle {
+    component Chip: Rectangle {
         property string widgetId: ""
         property string lane: ""
         property int slot: -1
@@ -223,13 +205,15 @@ DashboardCard {
         readonly property bool beingDragged: !ghost && root.drag !== null && root.drag.id === widgetId
 
         implicitHeight: 34
-        implicitWidth: isGap ? root.dragWidth : (beingDragged ? 0 : chipRow.implicitWidth + 24)
+        implicitWidth: isGap ? root.dragWidth : Math.max(chipRow.implicitWidth, 16) + 24
         radius: height / 2
         color: isGap ? "transparent" : (lane === "pool" ? Qt.rgba(1, 1, 1, 0.1) :
         Appearance.colors.colSecondaryContainer)
 
         border.width: isGap ? 2 : 0
         border.color: Appearance.colors.colPrimary
+        // Keep the geometry while hiding the visual: collapsing the chip would
+        // reflow the lane and shift insertIndex targets mid-drag.
         opacity: beingDragged ? 0 : (isGap ? 0.7 : 1)
         Behavior on implicitWidth {
         NumberAnimation {
@@ -303,15 +287,17 @@ DashboardCard {
         const p = root.mapFromItem(mouseArea, mouse.x, mouse.y);
         root.pointerX = p.x;
         root.pointerY = p.y;
+        // No refreshLanes here: the model must stay untouched for the whole
+        // drag. Reassigning the array mid-drag re-evaluates the Repeater's
+        // model binding and can drop the delegate holding the mouse grab.
         root.updateHover();
-        root.refreshLanes();
     }
         onReleased: () => root.finishDrag()
         onCanceled: () => root.finishDrag()
     }
     }
 
-        component Lane: Rectangle {
+    component Lane: Rectangle {
         id: laneRoot
 
         property string laneId: ""
@@ -373,20 +359,20 @@ DashboardCard {
 
         model: laneRoot.model
         delegate: Chip {
-        // ListModel roles bind directly; modelData is
-        // undefined here and made every chip render the
-        // byId(undefined) fallback (icon only, no label).
-        widgetId: model.id
+        required property var modelData
+        required property int index
+
+        widgetId: modelData.id
         lane: laneRoot.laneId
         slot: index
-        isGap: model.gap === true
+        isGap: modelData.gap === true
     }
     }
     }
     }
 
         StyledText {
-        visible: laneRoot.model && laneRoot.model.count === 0
+        visible: laneRoot.model && laneRoot.model.length === 0
         text: I18n.tr("Drop here")
         font.pixelSize: 15
         color: Appearance.colors.colSubtext
@@ -422,7 +408,7 @@ DashboardCard {
 
         StyledText {
         text: root.title
-        font.pixelSize: 19
+        font.pixelSize: Typography.titleLarge.pixelSize
         font.weight: Font.DemiBold
         color: Appearance.colors.colOnLayer1
     }
@@ -461,9 +447,10 @@ DashboardCard {
         ]
 
         delegate: Lane {
+        required property var modelData
         laneId: modelData.id
         laneLabel: modelData.label
-        model: modelData.id === "left" ? leftModel : modelData.id === "middle" ? middleModel : rightModel
+        model: modelData.id === "left" ? root.leftItems : modelData.id === "middle" ? root.middleItems : root.rightItems
         Layout.fillWidth: true
         Layout.fillHeight: true
     }
@@ -512,11 +499,15 @@ DashboardCard {
         spacing: 6
 
         Repeater {
-        model: poolModel
+        model: root.poolItems
         delegate: Chip {
-        widgetId: model.id
+        required property var modelData
+        required property int index
+
+        widgetId: modelData.id
         lane: "pool"
         slot: index
+        isGap: false
     }
     }
     }
@@ -544,15 +535,15 @@ DashboardCard {
         Connections {
         target: PersonalizationConfig
 
-        function onBarLayoutLeftChanged() {
+    function onBarLayoutLeftChanged() {
         root.refreshLanes();
     }
 
-        function onBarLayoutMiddleChanged() {
+    function onBarLayoutMiddleChanged() {
         root.refreshLanes();
     }
 
-        function onBarLayoutRightChanged() {
+    function onBarLayoutRightChanged() {
         root.refreshLanes();
     }
     }
