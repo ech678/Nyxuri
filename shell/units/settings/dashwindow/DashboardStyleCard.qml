@@ -116,8 +116,14 @@ DashboardCard {
                     // settings host (the window swaps component), which would
                     // cancel the ripple before it is visible.
                     downAction: () => {
+                        const control = root.control;
+                        if (!control)
+                            return;
                         const value = option.modelData.value;
-                        Qt.callLater(() => root.control.set(value));
+                        Qt.callLater(() => {
+                            if (control)
+                                control.set(value);
+                        });
                     }
 
                     contentItem: ColumnLayout {

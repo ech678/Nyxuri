@@ -68,9 +68,14 @@ DashboardCard {
         hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
         pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
         downAction: () => {
-            const value = pill.option.value;
             const control = pill.card.control;
-            Qt.callLater(() => control.set(value));
+            if (!control)
+                return;
+            const value = pill.option.value;
+            Qt.callLater(() => {
+                if (control)
+                    control.set(value);
+            });
         }
 
         contentItem: Item {
