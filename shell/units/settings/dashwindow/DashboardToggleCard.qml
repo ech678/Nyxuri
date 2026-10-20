@@ -57,7 +57,7 @@ DashboardCard {
                 implicitWidth: 47
                 implicitHeight: 27
                 radius: height / 2
-                color: root.checked ? Appearance.colors.colPrimary : Appearance.m3colors.m3surfaceBright
+                color: root.checked ? Appearance.colors.colPrimary : Appearance.colors.colSurfaceContainerHighest
 
                 Behavior on color {
                     ColorAnimation {
@@ -69,8 +69,14 @@ DashboardCard {
                     anchors.fill: parent
                     radius: parent.radius
                     color: "transparent"
-                    border.width: 1
-                    border.color: Qt.rgba(1, 1, 1, 0.06)
+                    border.width: root.checked ? 0 : 2
+                    border.color: Appearance.colors.colOutline
+
+                    Behavior on border.width {
+                        NumberAnimation {
+                            duration: 180
+                        }
+                    }
                 }
 
                 Rectangle {
@@ -81,7 +87,7 @@ DashboardCard {
                     radius: width / 2
                     anchors.verticalCenter: parent.verticalCenter
                     x: root.checked ? track.width - width - 2 : 2
-                    color: root.checked ? Appearance.colors.colOnPrimary : Appearance.colors.colPrimary
+                    color: root.checked ? Appearance.colors.colOnPrimary : Appearance.colors.colOutline
 
                     layer.enabled: true
                     layer.effect: MultiEffect {
