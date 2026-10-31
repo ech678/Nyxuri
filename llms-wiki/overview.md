@@ -19,13 +19,13 @@ Nyxuri/
 │   ├─ deploy/        atomic（原子置换+Dunder）· manifest · templates ·
 │   │                 forms（引擎半：账本真相/槽位轴/继承/fd 安全）· hardware · deploy
 │   ├─ pkg/           包管理抽象（pacman/paru/shelly）+ 供给收编：deps · net ·
-│   │                 fzf · detection · catalog（根 catalog.toml 解析）
+│   │                 fzf · detection
 │   ├─ state/         backup（30 滚动快照）· uninstall（勾选式清理）
 │   ├─ desktop/       theme（深浅轴）· shell_switcher · clean · forms（流程半，渲染归 UI）
 │   ├─ installer/     workflows + menus（交互式主菜单与整装/更新编排，作者裁决保留为常驻产品面）
 │   └─ cli.py · core.py（环境+锁+日志+i18n 地基）· sysdoctor.py（系统体检）·
 │       tui.py · translations.toml（双语文案）
-├─ plugins/             蓝图 · 13 目录 = 12 真插件 + wallpapers（KM4 + theme 共享模板池；wallpapers/theme 为 merge 共享生活区）
+├─ plugins/             蓝图 · 13 目录 = 13 真插件（KM4 + theme 共享模板池；wallpapers/theme 为 merge 共享生活区）
 ├─ shell/             自研 Quickshell 桌面（契约见 shell/AGENTS.md；`shell/units/` 为
 │                     shell 命名空间蓝图，12 个 runtime 插件，KM4）
 ├─ tests/             镜像源码树：kernel/ deploy/ pkg/ state/ desktop/ installer/
@@ -33,13 +33,14 @@ Nyxuri/
 ├─ packaging/         AUR PKGBUILD + gen-deps.py（单包全量：引擎+插件+Shell；
 │                     depends=引擎运行时，optdepends 自动汇聚）+ .install 提示
 ├─ llms-wiki/ humans-wiki/
-├─ catalog.toml       包目录清单——「装但不部署」，不是插件
 └─ install.sh         一次性引导（KM5：无参数透传；常驻入口 = nyxuri/launcher.sh）
 ```
 
 每个目录一行「为什么在这」：kernel 是不可开关的底座；deploy 只管文件机械；
 pkg 管包与供给；state 管账本外的状态副本；desktop 管活桌面副作用；installer 是
-交互菜单与整装编排（作者裁决常驻）；packaging 是开发者工具不进运行时；catalog.toml 只喂 `deps apps` 菜单（T1 起与 PKGBUILD 脱钩）。
+交互菜单与整装编排（作者裁决常驻）；packaging 是开发者工具不进运行时。
+常用推荐软件供给面（catalog.toml → 18 个仅包声明插件 → `deps apps` 菜单）已随
+R0-2 步 5 处决：插件装包统一走 `nyxuri on <plugin>`。
 
 ## 三个概念（用户面）
 

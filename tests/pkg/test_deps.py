@@ -1,4 +1,5 @@
-"""Behavior contracts for deps: package name mapping, mpvpaper detection via pacman -Qi."""
+"""Behavior contracts for deps: package mapping via the transaction installer, mpvpaper detection via pacman -Qi."""
+
 
 import unittest
 from pathlib import Path
@@ -11,84 +12,6 @@ import io
 import subprocess
 import sys
 
-
-
-class TestOptionalAppPackageMapping(unittest.TestCase):
-    """Optional apps must map to correct package names before installation."""
-
-    def setUp(self):
-        self._ctx = TempEnv()
-        self._ctx.__enter__()
-
-    def tearDown(self):
-        self._ctx.__exit__()
-
-    def test_missioncenter_maps_to_mission_center(self):
-        """missioncenter key must install 'mission-center' package (hyphen difference)."""
-        from nyxuri.pkg.deps import install_optional_apps
-
-        captured_cmds = []
-
-        def fake_run(cmd, **kwargs):
-            captured_cmds.append(cmd)
-            return MagicMock(returncode=0)
-
-        with patch("subprocess.run", side_effect=fake_run):
-            with patch("nyxuri.pkg.preferred_manager", return_value="pacman"):
-                with patch("nyxuri.pkg.deps.aur_helper_usable", return_value=None):
-                    with patch("nyxuri.pkg.deps.ensure_aur_helper", return_value=None):
-                        with patch("shutil.which", return_value=None):
-                            with patch("builtins.print"):
-                                install_optional_apps(["missioncenter"])
-
-        # Should have installed mission-center (with hyphen), not missioncenter
-        install_cmd = captured_cmds[0]
-        self.assertIn("mission-center", install_cmd,
-                      "missioncenter must be mapped to 'mission-center' package")
-        self.assertNotIn("missioncenter", [a for a in install_cmd if a == "missioncenter"],
-                         "Raw 'missioncenter' key must not be passed to pacman")
-
-    def test_fcitx5_rime_installs_full_suite(self):
-        """fcitx5-rime must install fcitx5 core + gtk + qt + configtool + rime + rime-ice-git."""
-        from nyxuri.pkg.deps import install_optional_apps
-
-        captured_cmds = []
-
-        def fake_run(cmd, **kwargs):
-            captured_cmds.append(cmd)
-            return MagicMock(returncode=0)
-
-        with patch("subprocess.run", side_effect=fake_run):
-            with patch("nyxuri.pkg.preferred_manager", return_value="paru"):
-                with patch("nyxuri.pkg.deps.aur_helper_usable", return_value="paru"):
-                    with patch("shutil.which", return_value="/usr/bin/fcitx5"):
-                        with patch("builtins.print"):
-                            install_optional_apps(["fcitx5-rime"])
-
-        # Find the repo packages command
-        repo_cmd = captured_cmds[0]
-        for pkg in ["fcitx5", "fcitx5-gtk", "fcitx5-qt", "fcitx5-configtool", "fcitx5-rime"]:
-            self.assertIn(pkg, repo_cmd, f"{pkg} must be in the install command")
-
-        # Find the AUR packages command
-        aur_cmd = captured_cmds[1]
-        self.assertIn("rime-ice-git", aur_cmd, "rime-ice-git must be installed from AUR")
-
-    def test_installer_does_not_activate_units(self):
-        """Installing packages neither activates a plugin nor runs its hooks."""
-        from nyxuri.pkg.deps import install_optional_apps
-
-        with patch("subprocess.run", return_value=MagicMock(returncode=0)):
-            with patch("nyxuri.pkg.preferred_manager", return_value="paru"):
-                with patch("nyxuri.pkg.deps.aur_helper_usable", return_value="paru"):
-                    with patch("shutil.which", return_value="/usr/bin/fcitx5"):
-                        with patch("nyxuri.kernel.transaction._run_plugin_hook") as mock_hook, \
-                             patch("nyxuri.kernel.transaction.plugin_on") as mock_on:
-                            with patch("builtins.print"):
-                                install_optional_apps(["fcitx5-rime"])
-
-                        mock_hook.assert_not_called()
-                        mock_on.assert_not_called()
 
 
 class TestMpvpaperDetection(unittest.TestCase):
@@ -164,19 +87,30 @@ class TestMpvpaperDetection(unittest.TestCase):
 
 
 class TestFlatpakApps(unittest.TestCase):
-    """Flatpak apps must install via the flatpak CLI; IDs never touch pacman."""
+    """Flatpak apps must install via the flatpak CLI; IDs never touch pacman.
+
+    供给菜单已处决——契约走事务安装器 ``plugin_package_installer``（on 路径）。
+    """
 
     def setUp(self):
         self._ctx = TempEnv()
         self._ctx.__enter__()
-        import nyxuri.pkg.deps as deps_mod
+        configs = self._ctx.home / "configs-src"
+        configs.mkdir(exist_ok=True)
+        plugin = configs / "someflatpak"
+        plugin.mkdir()
+        (plugin / "manifest.toml").write_text(
+            'packages = []\npackages_flatpak = ["com.example.App"]\n', encoding="utf-8"
+        )
+        self._ctx.env.plugins_src = configs
 
     def tearDown(self):
         self._ctx.__exit__()
 
     def test_flatpak_ids_never_leak_into_pacman(self):
-        """Selecting qq+wechat: pacman gets only 'flatpak'; IDs go to the flatpak CLI."""
-        from nyxuri.pkg.deps import FLATHUB_REMOTE_URL, install_optional_apps
+        """pacman gets only 'flatpak'; the ID goes to the flatpak CLI."""
+        from nyxuri.pkg import FLATHUB_REMOTE_URL
+        from nyxuri.pkg.deps import plugin_package_installer
 
         captured_cmds = []
 
@@ -190,13 +124,12 @@ class TestFlatpakApps(unittest.TestCase):
                     with patch("nyxuri.pkg.deps.ensure_aur_helper", return_value=None):
                         with patch("shutil.which", side_effect=lambda x: "/usr/bin/flatpak" if x == "flatpak" else None):
                             with patch("builtins.print"):
-                                install_optional_apps(["qq", "wechat"])
+                                plugin_package_installer("someflatpak", ["com.example.App"])
 
         repo_cmds = [c for c in captured_cmds if c[:2] == ["sudo", "pacman"]]
         self.assertEqual(len(repo_cmds), 1, "exactly one repo batch expected")
         self.assertIn("flatpak", repo_cmds[0], "flatpak runtime must be provisioned")
-        for leaked in ("qq", "wechat", "com.qq.QQ", "com.tencent.WeChat"):
-            self.assertNotIn(leaked, repo_cmds[0], f"{leaked} must not reach pacman")
+        self.assertNotIn("com.example.App", repo_cmds[0], "flatpak ID must not reach pacman")
 
         remote_cmds = [c for c in captured_cmds if c[:2] == ["flatpak", "remote-add"]]
         self.assertEqual(
@@ -207,15 +140,15 @@ class TestFlatpakApps(unittest.TestCase):
         install_cmds = [c for c in captured_cmds if c[:2] == ["flatpak", "install"]]
         self.assertEqual(
             install_cmds,
-            [["flatpak", "install", "--system", "--noninteractive", "flathub", "com.qq.QQ", "com.tencent.WeChat"]],
+            [["flatpak", "install", "--system", "--noninteractive", "flathub", "com.example.App"]],
         )
 
-        import nyxuri.pkg.deps as deps_mod
-        self.assertFalse(hasattr(deps_mod, "_FLATPAK_LIST_CACHE"))
+        import nyxuri.pkg as pkg_mod
+        self.assertFalse(hasattr(pkg_mod, "_FLATPAK_LIST_CACHE"))
 
     def test_missing_flatpak_binary_skips_flatpak_cli(self):
         """Without the flatpak binary the runtime is still provisioned, but no CLI call."""
-        from nyxuri.pkg.deps import install_optional_apps
+        from nyxuri.pkg.deps import plugin_package_installer
 
         captured_cmds = []
 
@@ -229,7 +162,7 @@ class TestFlatpakApps(unittest.TestCase):
                     with patch("nyxuri.pkg.deps.ensure_aur_helper", return_value=None):
                         with patch("shutil.which", return_value=None):
                             with patch("builtins.print"):
-                                install_optional_apps(["spotify"])
+                                plugin_package_installer("someflatpak", ["com.example.App"])
 
         self.assertFalse(
             any(c[:2] == ["flatpak", "install"] for c in captured_cmds),

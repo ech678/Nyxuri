@@ -1,7 +1,6 @@
 """Interactive control panel and component selection."""
 
 import os
-import shutil
 import sys
 from typing import List, Optional
 
@@ -25,7 +24,7 @@ from nyxuri.desktop.forms import (
     save_form,
 )
 from nyxuri.deploy.deploy import wallpapers_pack_present
-from nyxuri.pkg.deps import is_dep_installed, run_dep_menu_loop, run_optional_apps_menu_loop
+from nyxuri.pkg.deps import is_dep_installed, run_dep_menu_loop
 from nyxuri.sysdoctor import generate_bug_report, run_doctor
 from nyxuri.state import (
     backup_configs,
@@ -90,7 +89,10 @@ def run_master_component_menu(is_update: bool = False, mode: str = "full") -> Op
             if item in optional_set:
                 m = manifests.get(item)
                 if m is not None:
-                    is_inst = is_dep_installed(m.detect)
+                    # 已装判定用声明包名（仓库包优先，退 AUR；flatpak 另有通道）
+                    probe = m.packages_repo[0] if m.packages_repo else (
+                        m.packages_aur[0] if m.packages_aur else item)
+                    is_inst = is_dep_installed(probe)
                     label = f"{label}  {msg('installed') if is_inst else msg('missing')}"
                     if not is_inst:
                         checked = False
@@ -156,29 +158,6 @@ def snapshot_menu_loop() -> None:
             press_any_key()
         elif choice == 4:
             break
-
-
-def deps_menu_loop() -> bool:
-    """Dependencies & Recommended apps submenu."""
-    if not sys.stdin.isatty():
-        print(msg("interactive_terminal_required"), file=sys.stderr)
-        return False
-    if not shutil.which("pacman"):
-        print(msg("deps_menu_unsupported"))
-        return False
-
-    while True:
-        items = [
-            MenuItem(label=msg("deps_sub_core")),
-            MenuItem(label=msg("deps_sub_apps")),
-            MenuItem(label=msg("deps_sub_back"), style="subtle"),
-        ]
-        menu = Menu("deps_menu_title", items, hint_key="submenu_hint", compact=True)
-        choice = menu.run()
-        if choice == 0: run_dep_menu_loop(); press_any_key()
-        elif choice == 1: run_optional_apps_menu_loop(); press_any_key()
-        elif choice == 2: break
-    return True
 
 
 def form_switcher_loop() -> None:
@@ -252,7 +231,8 @@ def main_menu_loop() -> None:
         elif choice == 1:
             form_switcher_loop()
         elif choice == 2:
-            deps_menu_loop()
+            run_dep_menu_loop()
+            press_any_key()
         elif choice == 3:
             snapshot_menu_loop()
         elif choice == 4:

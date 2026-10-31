@@ -57,7 +57,12 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
   插件（`deploy = false` 显式声明压过内容扫描，deps 菜单单源聚合 manifest）；
   保险库降级为 off 的内部机制、用户文案只剩「快照 / 收存」；`__custom__` 退出用户
   文档教学（模板作者文档保留冻结协议）；一条 apply 路径吃两轴
-  （`_reconcile_active_parts` 旁路退役为 `replay_active_forms` 同路径重放）。
+  （`_reconcile_active_parts` 旁路退役为 `replay_active_forms` 同路径重放）；
+  **步 5 供给面处决（已执法）**：常用推荐软件安装整体退役——18 个仅包声明插件目录、
+  `deploy = false` / `detect` 键（声明即解析报错）、`deps apps`（`opt`/`optional`）命令、
+  安装器菜单项与部署后「常用软件」入口、`CategoryCheckboxList` 手风琴、`app_*`/`apps_cat_*`
+  文案全数清除；插件装包统一走 `nyxuri on <plugin>` 单路径，`deps` 收敛为核心依赖勾选单，
+  greeter 形态仅声明单元（装包 + hooks + 落账）保留。
 - **R0-3 单一激活管线**：启用一个插件的步骤清单只留 transaction 一条——渲染
   phase 入事务、插件形态矩阵（runtime / merge / atomic / hook-only）manifest 化、
   安装器组件勾选改派发事务、壁纸包收编 wallpapers 声明式钩子。

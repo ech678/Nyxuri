@@ -34,7 +34,7 @@
 
 | 指令 | 作用 |
 | :--- | :--- |
-| `nyxuri deps [core\|apps]` | 核心依赖勾选单，或常用软件勾选单（Nautilus / Steam 等 18 款，同为插件声明） |
+| `nyxuri deps [core]` | 核心依赖勾选单（常用软件安装已退役——装插件统一走 `nyxuri on <插件>`） |
 | `nyxuri pkg <install\|upgrade\|remove\|search\|info\|installed>` | 包管理直通；搜索支持 `aur` / `pac` 前缀 |
 | `nyxuri clean [-n] [--only <任务>]` | 缓存清理；`-n` 只预览 |
 

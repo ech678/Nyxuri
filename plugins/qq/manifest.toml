@@ -1,7 +1,0 @@
-deploy = false
-
-# QQ（Flathub 官方通道，不走 AUR 第三方打包）。
-label = "QQ"
-category = "social"
-packages = []
-packages_flatpak = ["com.qq.QQ"]

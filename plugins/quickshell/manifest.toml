@@ -1,9 +1,0 @@
-deploy = false
-
-# Nyxuri Shell 的运行时底座：随 Noctalia AUR 传递引入，单独选用
-# nyxuri-shell 时由这里声明（shell/KNOWN-ISSUES 缺口清算）。
-label = "Quickshell"
-category = "shell-runtime"
-detect = "quickshell"
-packages = []
-packages_aur = ["quickshell"]

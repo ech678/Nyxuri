@@ -1,6 +1,0 @@
-deploy = false
-
-# 办公套件（fresh 分支；deps apps 推荐软件）。
-label = "LibreOffice"
-category = "office"
-packages = ["libreoffice-fresh"]

@@ -395,7 +395,6 @@ def render_completion_screen(
         return
 
     # Interactive Next Steps Menu
-    from nyxuri.pkg.deps import run_optional_apps_menu_loop
     focus = 0
     sys.stdout.write(Colors.CURSOR_HIDE)
     fd = sys.stdin.fileno()
@@ -410,28 +409,25 @@ def render_completion_screen(
 
             sys.stdout.write(msg("summary_action_title"))
             from nyxuri.tui import render_menu_item
-            render_menu_item(0, msg("summary_action_apps"), focus)
-            render_menu_item(1, msg("summary_action_star"), focus)
-            render_menu_item(2, msg("summary_action_exit"), focus, style="subtle")
+            render_menu_item(0, msg("summary_action_star"), focus)
+            render_menu_item(1, msg("summary_action_exit"), focus, style="subtle")
 
             sys.stdout.write(f"\n{responsive_hint('summary_action_hint')}\n")
             sys.stdout.flush()
 
             key = read_key()
             if key in ("UP", "k", "K"):
-                focus = 2 if focus <= 0 else focus - 1
+                focus = 1 if focus <= 0 else focus - 1
             elif key in ("DOWN", "j", "J"):
-                focus = 0 if focus >= 2 else focus + 1
+                focus = 0 if focus >= 1 else focus + 1
             elif key in ("ENTER", "SPACE"):
                 if focus == 0:
-                    run_optional_apps_menu_loop()
-                elif focus == 1:
                     star_url = REPO_URL.removesuffix(".git")
                     if shutil.which("xdg-open"):
                         timed_run(["xdg-open", star_url], 5, check=False)
                     print(msg("msg_star_opened", star_url))
                     time.sleep(1.2)
-                elif focus == 2:
+                elif focus == 1:
                     break
             elif key in ("0", "q", "Q", "ESC", "EXIT"):
                 break

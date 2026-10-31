@@ -48,11 +48,12 @@
 
 ### 严正排除项
 * **系统软件包（pacman / AUR / Flatpak 包）**：不是插件！它们只是插件声明书里写的 `dependencies`。
-* **仅包声明插件（packages-only，R0-2 catalog 并轨）**：是插件！`nautilus`、`qq` 这类
-  「装但不部署」的声明住各自 `plugins/<name>/manifest.toml`（`deploy = false` 显式声明 +
-  packages / label / category / detect，无部署物、无生活区）；`on` = 装包 + 落账，
-  `off` = 纯落账——与 runtime 插件同形，但拥有真实的包世界投影（deps apps 菜单与安装器）。
-  原 KM3.5 的根 `catalog.toml` 已随 R0-2 并轨处决（见 §7 死刑清单）。
+* **仅声明单元（declaration-only，greeter 形态）**：是插件！`greeter` 这类
+  「只声明副作用、无生活区」的可选单元（optional + packages + hooks + [privilege]，
+  磁盘上只有 manifest 与 hooks/）；`on` = 装包 + hooks + 落账，`off` = 纯落账，
+  doctor 恒 `Synced`。R0-2 的 packages-only 供给面（`deploy = false` × 18 个推荐软件
+  插件 + `deps apps` 菜单）已随 R0-2 步 5 处决：插件装包统一走 `nyxuri on <plugin>`
+  事务单路径；退役键 `deploy` / `detect` 在 manifest 解析层即报错（见 §7 死刑清单）。
 
 ### 内核分层契约（依赖方向冻结）
 
@@ -206,7 +207,7 @@ manifest 只声明上述字段，不追求覆盖一切。插件的外部副作�
 由 transaction 执行（KM3 契约，`<module>:<function>` 旧形态已随 `nyxuri/modules/`
 退役；详见 [manifest-schema](manifest-schema.md) 钩子契约）。systemd 服务启停等
 跨系统声明字段仍暂不进 manifest：属插件内部行为，出现真实需求再议（登记于
-[delayed-decisions](delayed-decisions.md)）。完整字段参考（含 `label` / `category` / `detect` / `optional` / `preserve_values` 等展示与包元数据字段）见 [manifest-schema](manifest-schema.md)。
+[delayed-decisions](delayed-decisions.md)）。完整字段参考（含 `label` / `category` / `optional` / `preserve_values` 等展示与包元数据字段）见 [manifest-schema](manifest-schema.md)。
 
 ---
 
@@ -292,6 +293,7 @@ deploy/deps 的包世界（`discover_manifest_apps`）只扫 `plugins/`，Shell 
 | `install.sh` 安装器职责（退役为一次性引导）→ `nyxuri/launcher.sh` 常驻启动器 + 无透传引导；同批清算：`nyxuri/migrations/` 整模块、nyxniri 别名与 `NYXNIRI_*` 兼容层 | KM5（已执法；`nyxuri/cli.py` 交互菜单经作者裁决保留为常驻产品面，登记撤销） |
 | 蓝图正名 `units/` → `plugins/`（账本键 `units` → `plugins` 一次性迁移 + 引擎标识符与文案 unit → plugin） | R0-1（已执法） |
 | 根 `catalog.toml`（包目录清单）+ `pkg/catalog.py` → 18 个 manifest-only 插件目录（`plugins/<name>/manifest.toml` 仅包声明，deps 菜单聚合 manifest） | R0-2（已执法） |
+| 常用推荐软件供给面：18 个仅包声明插件目录 + `deploy = false` / `detect` 键 + `deps apps`（`opt`/`optional`）命令与安装器菜单项 + `CategoryCheckboxList` 手风琴 + `app_*`/`apps_cat_*` 文案 → `nyxuri on <plugin>` 单路径装包（仅声明单元 greeter 形态保留） | R0-2 步 5（已执法） |
 | 预设/零件概念 → 插件形态字段（manifest `[presets]`/`[parts]` 并轨 `[forms]`、账本 `preset` 字段改名 `form` + 顶层 `forms` 槽位字典、`deploy/preset.py` → `forms.py`、`presets/<app>.active` 双写退役） | R0-2（已执法） |
 ---
 

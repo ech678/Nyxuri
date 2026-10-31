@@ -1,7 +1,0 @@
-deploy = false
-
-# 微信（Flathub 官方通道）。
-label = "微信 (WeChat)"
-category = "social"
-packages = []
-packages_flatpak = ["com.tencent.WeChat"]

@@ -14,9 +14,6 @@ Schema (all fields optional, flat at top level)::
                                # withdraws only laid files (never rm -rf)
     runtime = true             # ledger-only plugin: no living area, no deploy;
                                # the running host reacts to the plugin-changed event
-    deploy = false             # packages-only plugin: declares packages, never
-                               # deploys — the explicit flag wins over any scan
-                               # of directory contents (§6 declaration doctrine)
     packages        = ["mangowm"]       # default = [<plugin name>]
     packages_aur    = []                # default = []  (AUR helper installs)
     packages_flatpak = []               # default = []  (Flathub app IDs)
@@ -24,9 +21,8 @@ Schema (all fields optional, flat at top level)::
     preserve_values = {}                # default = {}  (kept keys inside value files)
     chmod           = ["scripts/*.sh"]  # default = []  (globs, relative to plugin dir)
     label           = "XDG Portals"     # default = <plugin name> (menu display name)
-    category        = "browser"         # default = ""  (apps menu grouping key)
-    detect          = "mission-center"  # default = <plugin name> (pkg/binary to detect)
-    optional        = true              # default = false (menu + optdepends, not hard dep)
+    category        = "browser"         # default = ""  (plugin detail grouping key)
+    optional        = true              # default = false (optdepends, not hard dep)
     post_install    = "setup-rime"      # default = "" (hook script: configs/<plugin>/hooks/<name>)
     post_remove     = "clean-skin"      # default = "" (off-side hook, same shape)
     dependencies    = []                # default = []  (other Nyxuri plugins)
@@ -75,10 +71,9 @@ class ModuleManifest:
     chmod: List[str]
     label: str
     category: str
-    detect: str
     dependencies: List[str]  # other Nyxuri plugins this plugin depends on
     is_deployable: bool
-    is_optional: bool = False  # True iff declared optional (menu + optdepends)
+    is_optional: bool = False  # True iff declared optional (optdepends, not hard dep)
     post_install: str = ""     # on-side hook: executable at configs/<plugin>/hooks/<spec>
     post_remove: str = ""      # off-side hook: same shape, run after the wipe
     requires_root: bool = False  # declared privilege escalation ([privilege])
@@ -87,8 +82,6 @@ class ModuleManifest:
     merge: bool = False        # Shared living area: no-clobber deploy, snapshot = laid files
     runtime: bool = False      # Ledger-only plugin (shell.*): no living area, the
                                # running host reacts to the plugin-changed event
-    deploy_declared: bool = True  # explicit ``deploy = false`` → packages-only plugin;
-                                  # never deployable no matter what the directory holds
     form_inherit: bool = False
     form_allow: List[str] = field(default_factory=list)
     form_standalone: List[str] = field(default_factory=list)
@@ -98,17 +91,12 @@ class ModuleManifest:
     forms: Dict[str, dict] = field(default_factory=dict)
 
 
-def _is_deployable(app_src: Path, *, deploy_declared: bool = True) -> bool:
+def _is_deployable(app_src: Path) -> bool:
     """A plugin is deployable iff it ships real config (more than just a manifest).
 
     ``hooks/`` is plugin-owned lifecycle behavior (KM3 contract) — it never
-    counts as deployable config and never ships to the living area. An
-    explicit ``deploy = false`` declaration vetoes deployability outright
-    (packages-only plugins, R0-2): the declaration wins over directory
-    contents, so a stray file can never turn one into a dotfile plugin.
+    counts as deployable config and never ships to the living area.
     """
-    if not deploy_declared:
-        return False
     try:
         for entry in app_src.iterdir():
             if entry.name in _METADATA_NAMES or entry.name in (_MANIFEST_NAME, "hooks"):
@@ -196,9 +184,16 @@ def load_manifest(app_src: Path) -> ModuleManifest:
 
     forms = data.get("forms", {}) or {}
     privilege = data.get("privilege", {}) or {}
-    # ``deploy = false`` (packages-only, R0-2) vetoes deployability before any
-    # content scan: the declaration is the contract, not the directory shape.
-    deploy_declared = bool(data.get("deploy", True))
+    # Executed declaration shapes must not resurface (KM1 doctrine: 删除不寄
+    # 生于新增). ``deploy`` was the packages-only veto (R0-2, supply surface
+    # removed), ``detect`` fed the removed optional-apps menu. Both now fail
+    # loudly instead of being silently ignored.
+    for dead_key in ("deploy", "detect"):
+        if dead_key in data:
+            raise ValueError(
+                f"manifest key '{dead_key}' is retired and must be removed "
+                f"(executed with the optional-apps supply surface)"
+            )
     # Absent packages → [<plugin name>]; an explicit empty list stays empty
     # (flatpak/AUR-only plugins must keep their name out of pacman).
     raw_repo = data.get("packages")
@@ -222,9 +217,8 @@ def load_manifest(app_src: Path) -> ModuleManifest:
         chmod=_as_str_list(data.get("chmod")),
         label=data.get("label", name),
         category=data.get("category", ""),
-        detect=data.get("detect", name),
         dependencies=_as_str_list(data.get("dependencies")),
-        is_deployable=_is_deployable(app_src, deploy_declared=deploy_declared),
+        is_deployable=_is_deployable(app_src),
         is_optional=bool(data.get("optional", False)),
         post_install=str(data.get("post_install", "")),
         post_remove=str(data.get("post_remove", "")),
@@ -240,7 +234,6 @@ def load_manifest(app_src: Path) -> ModuleManifest:
         form_exclude=_as_str_list(forms.get("exclude")),
         form_reload=_as_str_list(forms.get("reload")),
         forms=manifest_forms,
-        deploy_declared=deploy_declared,
     )
 
 
@@ -259,10 +252,9 @@ _MANIFEST_CACHE: Optional[List[Tuple[str, "ModuleManifest"]]] = None
 def discover_manifest_apps() -> List[Tuple[str, ModuleManifest]]:
     """Scan every plugin directory under configs/.
 
-    Every subdirectory is a plugin: deployable (ships config) or
-    optional-only (manifest declares packages, nothing to deploy). Sorted
-    by name for deterministic output. Result is cached per process
-    (manifest files cannot change under a running engine).
+    Every subdirectory is a plugin shipping real config (or a runtime
+    ledger-only unit). Sorted by name for deterministic output. Result is
+    cached per process (manifest files cannot change under a running engine).
     """
     global _MANIFEST_CACHE
     if _MANIFEST_CACHE is not None:
@@ -298,5 +290,5 @@ def discover_deployable_apps() -> List[str]:
 
 
 def discover_optional_apps() -> List[str]:
-    """Names of plugins declared optional (menu + optdepends axis)."""
+    """Names of plugins declared optional (optdepends axis)."""
     return [name for name, m in discover_manifest_apps() if m.is_optional]

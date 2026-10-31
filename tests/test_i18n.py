@@ -68,8 +68,6 @@ def _collect_prompt_confirm_calls() -> set:
 # Key prefixes built at runtime via f-strings (AST scan cannot see them).
 # Must point at the construction site when adding a new prefix.
 DYNAMIC_KEY_PREFIXES = (
-    "app_",         # nyxuri/deps.py: msg(f"app_{app.replace('-', '_')}")
-    "apps_cat_",    # nyxuri/deps.py: msg(f"apps_cat_{cat}")
     "preset_src_",  # nyxuri/deploy/preset.py: msg(f"preset_src_{source}")
 )
 
@@ -134,33 +132,6 @@ class TestI18nKeyIntegrity(unittest.TestCase):
 
         self.assertEqual(orphans, set(),
                          f"Orphan i18n keys (defined in TRANSLATIONS but never referenced): {sorted(orphans)}")
-
-    def test_dynamic_menu_keys_resolve(self):
-        """Dynamic keys exempted from orphan checks must still exist.
-
-        The reverse direction of the orphan check: every app_* / apps_cat_* key
-        the deps menu can construct at runtime (R0-2: catalog 并轨后全部来自
-        plugins/*/manifest.toml——packages-only 声明与 optional 插件) must have a
-        TRANSLATIONS entry, otherwise the menu renders the raw key. This is the
-        blind spot that once let app_greeter/app_mango/app_wallpapers show as
-        literal key names.
-        """
-        import tomllib
-
-        from nyxuri.pkg.deps import _supply_items
-
-        repo_root = Path(__file__).resolve().parents[1]
-        required = set()
-        with TempEnv() as ctx:
-            ctx.env.plugins_src = repo_root / "plugins"
-            for item in _supply_items():
-                required.add(f"app_{item['key'].replace('-', '_')}")
-                if item["category"]:
-                    required.add(f"apps_cat_{item['category']}")
-
-        missing = required - self.translation_keys
-        self.assertEqual(missing, set(),
-                         f"Menu keys without translations (raw key names would render): {sorted(missing)}")
 
 
 class TestTemplateSubstitution(unittest.TestCase):

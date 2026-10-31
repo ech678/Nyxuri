@@ -1,8 +1,0 @@
-deploy = false
-
-# Visual Studio Code（AUR official bin；detect 用 code）。
-label = "Visual Studio Code"
-category = "dev"
-detect = "code"
-packages = []
-packages_aur = ["visual-studio-code-bin"]

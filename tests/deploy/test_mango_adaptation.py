@@ -38,7 +38,6 @@ class TestMangoAdaptation(unittest.TestCase):
         self.assertEqual(m.name, "mango")
         self.assertEqual(m.packages_repo, ["mangowm"])
         self.assertEqual(m.packages_aur, [])
-        self.assertEqual(m.detect, "mango")
         self.assertEqual(m.label, "Mango WM")
         self.assertIn("monitors.conf", m.preserve)
         self.assertIn("noctalia.conf", m.preserve)

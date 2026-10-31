@@ -28,7 +28,7 @@
 | `use <plugin> …` | 见上「插件动词」表（形态轴唯一入口；`preset` 为 deprecated 别名） |
 | `theme [toggle\|dark\|light\|sync\|status]` | 原生切换/同步深浅主题（纯 Python 调度 gsettings、GTK settings.ini、Noctalia IPC 与 Kitty 信号） |
 | `shell [get\|set <noctalia\|nyxuri-shell> [bin_path]\|switch [\|bin_path]\|status]` | 查看或切换桌面外壳运行插槽。**[EXPERIMENTAL]** nyxuri-shell 开发中，输出带实验性警告 |
-| `deps [core\|apps]` | 装软件包：core = 核心依赖勾选单，apps = catalog.toml + 可选插件同源菜单 |
+| `deps [core]` | 装软件包：核心依赖勾选单（可选软件供给面已随 R0-2 步 5 处决，插件装包走 `on <plugin>`） |
 | `pkg <install\|upgrade\|remove\|search\|info\|installed>` | 包管理直通（Fish 与安装器共用）；搜索支持 `aur` / `pac` 前缀 |
 | `clean [-n] [--only <任务>]` | 缓存清理；`-n` 只预览，Fish 的 `clean` 指向此入口 |
 | `snapshot [note\|list\|delete [index]]` | 存档当前配置 / 列出 / 删除快照 |
@@ -48,6 +48,8 @@ KM3.5：`deploy` `backup` `restore` `remove` `purge` `recommended` `apps` `wp` `
 `report` `-h/--help`，以及幽灵指针 `greeter` `fcitx` `gtk` `fisher`。
 KM5：系统软链与用户端别名 `nyxniri`、`NYXNIRI_*` 环境变量回退（原「兼容别名」节随
 `migrations/` 清算一并处决——一个变量一个前缀 `NYXURI_*`）。
-替代能力：`on/off <plugin>`（插件能力）、`snapshot`/`rollback`/`uninstall`（状态域）、
-`deps apps`（可选软件）、`bug`（诊断）；壁纸能力 = `on wallpapers`
+替代能力：`on/off <plugin>`（插件能力，装包同路）、`snapshot`/`rollback`/`uninstall`（状态域）、
+`bug`（诊断）；壁纸能力 = `on wallpapers`
 （外部大包走 `plugins/wallpapers/hooks/install-pack`）。
+R0-2 步 5：`deps apps`（可选软件菜单）处决——推荐软件不再有专用安装入口，
+`deps` 收敛为核心依赖勾选单（`deps [core]`）。

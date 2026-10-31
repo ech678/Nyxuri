@@ -15,16 +15,14 @@
 | `packages_aur` | `[]` | AUR 包名 |
 | `packages_flatpak` | `[]` | Flathub app id——走 `flatpak install`，永不进 pacman/AUR/PKGBUILD |
 | `target` | `""` | 单文件插件例外：插件目录只 ship 一个文件 `plugins/<plugin>/<target>`，落点 `~/.config/<target>`（如 starship）。`~/` 前缀则声明 `~/.config` 外的**共享生活区**。`xdg:<KIND>/<rest>` 走 XDG 用户目录解析（当前仅 `xdg:PICTURES/<rest>`，经 `xdg-user-dir PICTURES`，中文系统即 `~/图片`；未知 KIND 直接拒绝——如壁纸 `xdg:PICTURES/Wallpapers`，R0-4 推广为完整映射）。target 插件不支持形态轴 |
-| `deploy` | `true` | 显式 `deploy = false` → 仅包声明插件（R0-2 catalog 并轨）：只声明 packages/label/category/detect，无生活区——`on` = 装包 + 落账，`off` 纯落账，doctor 恒 `Synced`。**声明压过目录内容扫描**：目录里意外掉进文件也不会变成可部署插件（与 `runtime = true` 同一教义） |
 | `merge` | `false` | 共享生活区声明：`on` 走 no-clobber 增量合流（已存在文件永不覆盖），快照只记部署落下的文件；`off` 只撤回快照文件，外来内容幸存并报告；doctor 对停用 merge 插件只把蓝图具名残留记 Ghost（见 [plugin-model](plugin-model.md) §3） |
 | `runtime` | `false` | 运行态插件声明（KM4，shell 命名空间专用，见 [plugin-model](plugin-model.md) §6）：无载荷、无生活区、无 Vault 进出、无形态轴——`on`/`off` 纯账本落记 + 一次 `plugin-changed` 事件，运行中的宿主（Shell）据事件装载/卸载该域。doctor 恒 `Synced`（实机无可对账之物）。物理承载 `shell/units/<domain>/manifest.toml` |
 | `preserve` | `[]` | 跨部署保留的路径（按名声明，如 `monitor.kdl`；与 Dunder 不同机制）。条目可以是**目录**：整目录归运行时管理（如 fish 的 `functions/`），部署前整树注入、off 入 Vault、目录下所有文件不入账不参与 Drifted。**禁令：preserve 目录不得混铺模板 payload**——声明即承诺"模板不在此目录铺设任何文件"，混居会把 payload 永久冻结在旧版 |
 | `preserve_values` | `{}` | 跨部署保留指定文本配置里的个别键，形如 `{ "noctalia-config.toml" = ["enable_ddcutil"] }`。旧文件里存在的键按原样带入新文件，缺失的键不携带，沿用新模板的值 |
 | `chmod` | `[]` | 部署后设 +x 的 glob（相对插件目录，如 `scripts/*.sh`） |
-| `label` | `<目录名>` | PKGBUILD optdepends 展示名（菜单显示名走 i18n `app_*` 键） |
-| `category` | `""` | 菜单分组键，显示名走 i18n `apps_cat_<key>` |
-| `detect` | `<目录名>` | 检测是否安装的命令名（纯名字，无 `binary:` 前缀 DSL） |
-| `optional` | `false` | 可选插件：进应用菜单与 PKGBUILD `optdepends`，不占硬依赖 |
+| `label` | `<目录名>` | PKGBUILD optdepends 展示名 + 插件详情视图显示名 |
+| `category` | `""` | 插件详情视图分组键 |
+| `optional` | `false` | 可选插件：进 PKGBUILD `optdepends`，不占硬依赖（应用菜单已随 R0-2 步 5 处决） |
 | `post_install` | `""` | on 侧生命周期钩子：`plugins/<plugin>/hooks/<名字>` 可执行脚本名（如 `"setup-rime"`），事务在蓝图部署后、账本快照前执行 |
 | `post_remove` | `""` | off 侧生命周期钩子：同形态，实机抹白之后执行，负责清理生活区**外**的产物（KM3） |
 | `[privilege]` | 无表 | 特权副作用声明：`requires_root = true` + `system_paths = [...]`（如 greeter 的 `/etc/greetd`）。只声明事实供展示与审计，不改变执行方式 |
@@ -107,39 +105,19 @@ target = "starship.toml"
 
 fastfetch **不写 manifest**（目录名 = 包名 = 二进制名 = 无例外），全默认即对。
 
-## 可选供给（全部来自插件 manifest，单源聚合）
+## 可选插件（optional 轴，全部来自插件 manifest）
 
-可选不再住 sidecar 登记簿，也不再有根 `catalog.toml`（R0-2 已并轨处决）——
-供给声明只有一种形状：`plugins/<name>/manifest.toml`。
-- 真插件声明 `optional = true`（菜单 + optdepends 轴）；
-- 「装但不部署」的软件声明 `deploy = false`（仅包声明插件：`on` = 装包 + 落账）。
-`deps apps` 菜单聚合两者（T1 依赖按需化后 gen-deps `optdepends` 有意与
-仅包声明脱钩，见 PKGBUILD 头注释）。
+可选不再住 sidecar 登记簿，也不再有根 `catalog.toml`（R0-2 已并轨处决）；
+packages-only 供给面（`deploy = false` × 18 个推荐软件插件 + `deps apps` 菜单）
+已随 R0-2 步 5 处决——供给声明只有一种形状：`plugins/<name>/manifest.toml`，
+插件装包统一走 `nyxuri on <plugin>` 事务路径。
+- 真插件声明 `optional = true`（optdepends 轴：进 PKGBUILD `optdepends`，
+  不占硬依赖；greeter 这类仅声明单元 = 装包 + hooks + 落账，无生活区）；
+- 退役键 `deploy`（仅包声明否决）与 `detect`（菜单检测）出现即解析报错。
 **zed / mango / greeter / fcitx5-rime 双轴共存**：既有配置目录又声明可选，
 两个事实同时为真。例外字段照旧只写差异：
 
 ```toml
-# plugins/brave-origin/manifest.toml — 仅包声明插件
-deploy = false                     # 显式声明：永不部署，目录内容扫描被否决
-label = "Brave Origin"             # 菜单显示名走 i18n app_* 键
-category = "browser"
-packages = []                      # 显式空 packages 防名字泄进 pacman
-packages_aur = ["brave-origin-bin"]
-
-# plugins/qq/manifest.toml — Flathub 通道
-deploy = false
-label = "QQ"
-category = "social"
-packages = []
-packages_flatpak = ["com.qq.QQ"]
-
-# plugins/missioncenter/manifest.toml — 包名连字符例外
-deploy = false
-label = "Mission Center"
-category = "system"
-detect = "mission-center"          # 目录名 missioncenter，包名连字符
-packages = ["mission-center"]
-
 # plugins/fcitx5-rime/manifest.toml — KM3 起皮肤入插件，配置整文件化
 optional = true
 packages = ["fcitx5", "fcitx5-gtk", "fcitx5-qt", "fcitx5-configtool", "fcitx5-rime"]
@@ -150,7 +128,7 @@ preserve = ["conf/classicui.conf", "profile"]   # 用户层随行：部署不倒
 post_install = "activate"       # → hooks/activate：皮肤落 ~/.local/share + rime patch
 post_remove = "deactivate"      # → hooks/deactivate：撤皮肤 + 按 owned 标记回滚 rime patch
 
-# plugins/greeter/manifest.toml — /etc + root + systemd 副作用全声明
+# plugins/greeter/manifest.toml — /etc + root + systemd 副作用全声明（仅声明单元）
 optional = true
 packages = ["greetd"]
 packages_aur = ["noctalia-greeter"]
@@ -164,13 +142,14 @@ requires_root = true
 system_paths = ["/etc/greetd/config.toml", "/etc/polkit-1/rules.d/50-noctalia-greeter.rules", "/var/lib/noctalia-greeter"]
 ```
 
-插件 id = 目录名；菜单显示名必须配 i18n `app_<name>`（zh/en 成对，`-` 换 `_`）。
-菜单排序为**全字母序**（类别与组内条目均是），无策展顺序需要维护。
+插件 id = 目录名；`label` 直接进 gen-deps `optdepends` 标签（PKGBUILD 轴），
+插件详情视图（`nyxuri list <plugin>`）展示 `label` 与 `category`。
 
 ## 发现规则
 
 - `plugins/` 顶层**只认目录**——每个子目录即一个插件；散落文件不是插件（死刑断言守卫顶层无文件）；
-- 「只有 manifest」的目录也是插件（仅包声明，`deploy = false`，R0-2 catalog 并轨）；
+- 「只有 manifest + hooks/」的目录也是插件（greeter 形态仅声明单元，R0-2 步 5 起
+  `deploy = false` 否决键已退役——目录内容即契约，多出的实文件即成为可部署插件）；
 - `manifest.toml`、`__pycache__`、`hooks/` 是仓库元数据，永不落进 `~/.config`。
 
 ## 边界（含声明式边界，原 declarative 页并入）

@@ -29,7 +29,7 @@ from nyxuri.desktop.forms import (
     list_forms,
     save_form,
 )
-from nyxuri.pkg.deps import ensure_aur_helper, run_dep_menu_loop, run_optional_apps_menu_loop
+from nyxuri.pkg.deps import run_dep_menu_loop
 from nyxuri.sysdoctor import generate_bug_report, run_doctor
 from nyxuri.kernel import ledger, registry, transaction
 from nyxuri.state import (
@@ -43,7 +43,7 @@ from nyxuri.core import msg
 from nyxuri.desktop import bridge
 from nyxuri.pkg.net import safe_git_checkout_ref, safe_git_pull
 from nyxuri.tui import press_any_key, prompt_confirm, select_language
-from nyxuri.installer.menus import deps_menu_loop, main_menu_loop
+from nyxuri.installer.menus import main_menu_loop
 from nyxuri.installer.workflows import (
     check_new_deps_post_update,
     install_configs_workflow,
@@ -311,16 +311,9 @@ def _cmd_uninstall(sub_args: List[str]) -> int:
 
 
 def _cmd_deps(sub_args: List[str]) -> int:
-    sub = sub_args[0].lower() if sub_args else ""
-    if len(sub_args) > 1 or sub not in ("", "core", "apps", "opt", "optional"):
-        exit_usage(f"{CLI_CMD} deps [core|apps]")
-    if sub == "core":
-        ok = run_dep_menu_loop()
-    elif sub in ("apps", "opt", "optional"):
-        ok = run_optional_apps_menu_loop()
-    else:
-        ok = deps_menu_loop()
-    return 0 if ok else 1
+    if sub_args and (len(sub_args) > 1 or sub_args[0].lower() != "core"):
+        exit_usage(f"{CLI_CMD} deps [core]")
+    return 0 if run_dep_menu_loop() else 1
 
 
 def _cmd_bug(sub_args: List[str]) -> int:
@@ -568,7 +561,7 @@ COMMANDS = {
     "rollback":  (_cmd_rollback,  f"{CLI_CMD} rollback [index]"),
     "uninstall": (_cmd_uninstall, f"{CLI_CMD} uninstall [--all|standard|restore|purge]"),
     "doctor":    (_cmd_doctor,    f"{CLI_CMD} doctor [plugin]"),
-    "deps":      (_cmd_deps,      f"{CLI_CMD} deps [core|apps]"),
+    "deps":      (_cmd_deps,      f"{CLI_CMD} deps [core]"),
     "bug":       (_cmd_bug,       f"{CLI_CMD} bug"),
     "test":      (_cmd_test,      f"{CLI_CMD} test"),
     "preset":    (_cmd_preset,    f"{CLI_CMD} preset <app> …  (deprecated alias of use, removed next release)"),

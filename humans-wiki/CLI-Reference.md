@@ -35,7 +35,7 @@ user-domain content installed via `plugins/wallpapers/hooks/install-pack`.
 
 | Command | Description |
 | :--- | :--- |
-| `nyxuri deps [core\|apps]` | Core dependency checklist, or the everyday-apps checklist (Nautilus / Steam and 16 more — all plugin declarations) |
+| `nyxuri deps [core]` | Core dependency checklist (the everyday-apps installer is retired — install plugins with `nyxuri on <plugin>` instead) |
 | `nyxuri pkg <install\|upgrade\|remove\|search\|info\|installed>` | Direct package management; search accepts `aur` / `pac` prefixes |
 | `nyxuri clean [-n] [--only <tasks>]` | Cache sweeper; `-n` previews only |
 

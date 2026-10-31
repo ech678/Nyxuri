@@ -720,12 +720,13 @@ class TestPluginHooks(unittest.TestCase):
             self.assertFalse(m.is_deployable, "manifest + hooks only must stay non-deployable")
 
 
-class TestPackagesOnlyPlugins(unittest.TestCase):
-    """R0-2 catalog 并轨: packages-only plugins (manifest ``deploy = false``).
+class TestDeclarationOnlyUnits(unittest.TestCase):
+    """Greeter 形态：仅声明（可选 + 装包 + hooks），无生活区。
 
-    ``on`` = 装包 + 落账（无生活区、无 Vault 进出）; ``off`` = 纯落账;
-    doctor 恒 Synced; a stray file in the dir must never turn one into a
-    dotfile plugin — the explicit declaration wins over the content scan.
+    R0-2 的 packages-only 供给面（``deploy = false``）已随常用推荐软件菜单
+    处决——剩下的 declaration-only 单元走同一条事务路径：``on`` = 装包 +
+    落账（无生活区、无 Vault 进出）; ``off`` = 纯落账; doctor 恒 Synced。
+    退役键 ``deploy`` 是解析错误（见 test_manifest）。
     """
 
     def setUp(self):
@@ -735,43 +736,50 @@ class TestPackagesOnlyPlugins(unittest.TestCase):
 
     def test_on_installs_packages_and_lands_ledger_without_living_area(self):
         with TempEnv() as ctx:
-            _stage(ctx, {"nautilus": {"manifest": 'deploy = false\npackages = ["nautilus"]\n'}})
+            _stage(ctx, {"declunit": {"manifest": 'optional = true\npackages = ["declunit"]\n'}})
             calls = []
             with mock.patch.object(transaction, "missing_packages",
-                                   side_effect=[["nautilus"], []]):
+                                   side_effect=[["declunit"], []]):
                 steps = transaction.plugin_on(
-                    "nautilus", install_packages=lambda uid, pkgs: calls.append((uid, pkgs)) or True)
+                    "declunit", install_packages=lambda uid, pkgs: calls.append((uid, pkgs)) or True)
             self.assertTrue(steps[0].ok, str(steps))
-            self.assertEqual(calls, [("nautilus", ["nautilus"])])
-            rec = ledger.get_plugin("nautilus")
+            self.assertEqual(calls, [("declunit", ["declunit"])])
+            rec = ledger.get_plugin("declunit")
             self.assertEqual(rec["state"], "enabled")
             self.assertEqual(rec["files"], {})
             self.assertIsNone(rec["vault"])
-            self.assertFalse((ctx.home / ".config/nautilus").exists(),
-                             "packages-only plugins ship no living area")
-            self.assertEqual(transaction.audit_plugins("nautilus"), {"nautilus": "Synced"})
-            steps = transaction.plugin_off("nautilus")
+            self.assertFalse((ctx.home / ".config/declunit").exists(),
+                             "declaration-only units ship no living area")
+            self.assertEqual(transaction.audit_plugins("declunit"), {"declunit": "Synced"})
+            steps = transaction.plugin_off("declunit")
             self.assertTrue(steps[0].ok)
-            rec = ledger.get_plugin("nautilus")
+            rec = ledger.get_plugin("declunit")
             self.assertEqual(rec["state"], "disabled")
             self.assertIsNone(rec["vault"], "nothing was archived — no phantom vault pointer")
 
-    def test_stray_file_cannot_make_it_deployable(self):
+    def test_stray_file_flips_content_scan_to_deployable(self):
+        # ``deploy = false`` 的声明否决已死：目录内容即契约，多出的文件会让
+        # 单元变成可部署插件（content scan wins, no veto anymore）。
         with TempEnv() as ctx:
-            _stage(ctx, {"nautilus": {
-                "manifest": 'deploy = false\npackages = ["nautilus"]\n',
+            _stage(ctx, {"declunit": {
+                "manifest": 'optional = true\npackages = ["declunit"]\n',
                 "files": {"accident.conf": "x"},
             }})
-            m = transaction.registry.load_plugin("nautilus")
-            self.assertFalse(m.deploy_declared)
-            self.assertFalse(m.is_deployable,
-                             "the declaration must veto deployability over directory contents")
+            m = transaction.registry.load_plugin("declunit")
+            self.assertTrue(m.is_deployable,
+                            "a real file makes the unit deployable — the veto key is gone")
             from nyxuri.deploy.manifest import discover_deployable_apps
-            self.assertNotIn("nautilus", discover_deployable_apps())
+            self.assertIn("declunit", discover_deployable_apps())
 
-            steps = transaction.plugin_on("nautilus", install_packages=lambda uid, pkgs: True)
-            self.assertTrue(steps[0].ok, str(steps))
-            self.assertFalse((ctx.home / ".config/nautilus").exists())
+    def test_deleted_plugin_ledger_record_audits_ghost(self):
+        # 供给面处决的升级路径：插件目录已从蓝图删除，但账本记录仍在——
+        # doctor 必须报 Ghost，而不是 KeyError 崩溃。
+        with TempEnv() as ctx:
+            ledger.set_plugin("ghostunit", state="enabled", files={}, vault=None)
+            self.assertEqual(transaction.audit_plugins("ghostunit"),
+                             {"ghostunit": "Ghost"})
+            report = transaction.audit_plugins()
+            self.assertEqual(report.get("ghostunit"), "Ghost")
 
 
 class TestLedgerResilience(unittest.TestCase):

@@ -1,7 +1,0 @@
-deploy = false
-
-# 任务管理器：包名带连字符（mission-center），manifest 只写例外。
-label = "Mission Center"
-category = "system"
-detect = "mission-center"
-packages = ["mission-center"]

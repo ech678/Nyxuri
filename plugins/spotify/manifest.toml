@@ -1,7 +1,0 @@
-deploy = false
-
-# Spotify（Flathub 官方通道，承载 SpoTUI 界面的客户端本体）。
-label = "Spotify"
-category = "media"
-packages = []
-packages_flatpak = ["com.spotify.Client"]

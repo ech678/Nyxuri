@@ -19,9 +19,7 @@ complete -c nyxuri -f -n "__fish_use_subcommand" -a pkg       -d "Shared package
 complete -c nyxuri -f -n "__fish_seen_subcommand_from pkg" -a "install upgrade remove search info installed"
 complete -c nyxuri -f -n "__fish_seen_subcommand_from clean" -s n -l dry-run -d "Preview without deleting"
 complete -c nyxuri -f -n "__fish_seen_subcommand_from clean" -l only -r -d "Run selected tasks"
-complete -c nyxuri -f -n "__fish_use_subcommand" -a deps      -d "Dependency management (core|apps)"
-complete -c nyxuri -f -n "__fish_use_subcommand" -a apps      -d "Recommended apps installer"
-complete -c nyxuri -f -n "__fish_use_subcommand" -a recommended -d "Alias: apps"
+complete -c nyxuri -f -n "__fish_use_subcommand" -a deps      -d "Dependency management (core)"
 complete -c nyxuri -f -n "__fish_use_subcommand" -a wallpapers -d "Download wallpaper pack"
 complete -c nyxuri -f -n "__fish_use_subcommand" -a wp        -d "Alias: wallpapers"
 complete -c nyxuri -f -n "__fish_use_subcommand" -a use       -d "Switch a plugin's form (whole axis or slot axis)"
@@ -59,9 +57,6 @@ complete -c nyxuri -f -n "__fish_seen_subcommand_from uninstall remove" -l all  
 complete -c nyxuri -f -n "__fish_seen_subcommand_from uninstall remove" -l safe     -d "Alias: standard"
 
 complete -c nyxuri -f -n "__fish_seen_subcommand_from deps" -a core      -d "Core dependencies menu"
-complete -c nyxuri -f -n "__fish_seen_subcommand_from deps" -a apps      -d "Recommended apps menu"
-complete -c nyxuri -f -n "__fish_seen_subcommand_from deps" -a opt       -d "Alias: apps"
-complete -c nyxuri -f -n "__fish_seen_subcommand_from deps" -a optional -d "Alias: apps"
 
 complete -c nyxuri -f -n "__fish_seen_subcommand_from shell" -a "get set switch status"
 complete -c nyxuri -f -n "__fish_seen_subcommand_from shell; and __fish_seen_subcommand_from set switch" -a "noctalia nyxuri-shell"

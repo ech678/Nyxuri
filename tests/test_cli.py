@@ -369,18 +369,31 @@ class TestDistroGuard(unittest.TestCase):
 
         self.assertTrue(result)  # cancelled-by-user path, not the distro guard
 
-    def test_deps_menu_blocked_without_pacman(self):
-        from nyxuri.installer.menus import deps_menu_loop
+    def test_component_menu_probes_declared_packages(self):
+        """组件菜单对可选插件做已装判定：走声明包名，不再读退役的 detect 字段。
 
-        with patch("sys.stdin.isatty", return_value=True), \
-             patch("nyxuri.installer.menus.shutil.which", return_value=None), \
-             patch("nyxuri.installer.menus.Menu") as menu, \
-             patch("builtins.print") as prn:
-            deps_menu_loop()
+        回归用例：R0-2 步 5 处决 ``detect`` 后，菜单曾因 ``m.detect`` 直接
+        AttributeError 崩溃（`nyxuri` 主菜单 → 应用配置）。
+        """
+        from nyxuri.installer.menus import run_master_component_menu
+        from nyxuri.deploy.manifest import discover_manifest_apps
 
-        menu.assert_not_called()
-        printed = " ".join(str(c.args[0]) for c in prn.call_args_list)
-        self.assertIn("pacman", printed)
+        probed = []
+
+        with patch("nyxuri.installer.menus.discover_optional_apps",
+                   return_value=["zed"]), \
+             patch("nyxuri.installer.menus.discover_config_items",
+                   return_value=["zed"]), \
+             patch("nyxuri.installer.menus.is_dep_installed",
+                   side_effect=lambda name: probed.append(name) or True), \
+             patch("nyxuri.installer.menus.CheckboxList") as chk, \
+             patch("nyxuri.installer.menus.discover_manifest_apps",
+                   return_value=[("zed", discover_manifest_apps() and
+                                  dict(discover_manifest_apps())["zed"])]):
+            chk.return_value.run.return_value = []
+            run_master_component_menu(is_update=False, mode="config")
+
+        self.assertIn("zed", probed)
 
 
 class TestPreflightSudo(unittest.TestCase):

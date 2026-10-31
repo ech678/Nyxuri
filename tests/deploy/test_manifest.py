@@ -56,19 +56,19 @@ class TestManifestDefaults(unittest.TestCase):
         self.assertEqual(m.preserve, [])
         self.assertEqual(m.chmod, [])
         self.assertEqual(m.label, "kitty")
-        self.assertEqual(m.detect, "kitty")
         self.assertFalse(m.is_optional)
         self.assertEqual(m.target, "")
         self.assertTrue(m.is_deployable)
 
     def test_manifest_only_dir_not_deployable(self):
-        # A dir whose only entry is manifest.toml → manifest-only (optional plugin).
-        plugin = self._mkdir("nautilus")
+        # A dir whose only entry is manifest.toml → declaration-only unit
+        # (greeter 形态：装包 + hooks + 落账，磁盘上没有生活区).
+        plugin = self._mkdir("someunit")
         (plugin / "manifest.toml").write_text('optional = true\n')
         m = manifest.load_manifest(plugin)
         self.assertFalse(m.is_deployable)
         self.assertTrue(m.is_optional)
-        self.assertEqual(m.packages_repo, ["nautilus"])
+        self.assertEqual(m.packages_repo, ["someunit"])
 
     def test_dir_with_manifest_plus_config_is_deployable(self):
         niri = self._mkdir("niri")
@@ -103,7 +103,6 @@ class TestManifestOverrides(unittest.TestCase):
             'preserve = ["portals.conf"]\n'
             'chmod = ["*.sh"]\n'
             'label = "XDG Portals"\n'
-            'detect = "xdg-desktop-portal"\n'
         )
         m = manifest.load_manifest(plugin)
         self.assertEqual(m.packages_repo, ["xdg-desktop-portal"])
@@ -111,7 +110,6 @@ class TestManifestOverrides(unittest.TestCase):
         self.assertEqual(m.preserve, ["portals.conf"])
         self.assertEqual(m.chmod, ["*.sh"])
         self.assertEqual(m.label, "XDG Portals")
-        self.assertEqual(m.detect, "xdg-desktop-portal")
 
     def test_optional_flag_parsed(self):
         plugin = self.root / "lutris"
@@ -123,6 +121,29 @@ class TestManifestOverrides(unittest.TestCase):
         self.assertTrue(m.is_optional)
         self.assertEqual(m.category, "game")
 
+    def test_retired_keys_raise_on_parse(self):
+        # 执法断言（KM1：删除不寄生于新增）：``deploy = false``（R0-2 仅包
+        # 声明）与 ``detect``（可选软件菜单检测）退役后，声明即解析错误。
+        for key, value in (("deploy", "false"), ("detect", '"foo"')):
+            plugin = self.root / f"dead-{key}"
+            plugin.mkdir()
+            (plugin / "manifest.toml").write_text(f"{key} = {value}\n")
+            with self.assertRaises(ValueError, msg=key):
+                manifest.load_manifest(plugin)
+
+    def test_flatpak_axis_survives_parsing(self):
+        # The Flathub channel is transaction-level schema (qq/wechat/spotify
+        # 供给面已处决，通道保留): an explicit empty repo list plus flatpak IDs
+        # must survive parsing, or pacman would be handed a nonexistent name.
+        plugin = self.root / "someflatpak"
+        plugin.mkdir()
+        (plugin / "manifest.toml").write_text(
+            'packages = []\npackages_flatpak = ["com.example.App"]\n'
+        )
+        m = manifest.load_manifest(plugin)
+        self.assertEqual(m.packages_repo, [])
+        self.assertEqual(m.packages_flatpak, ["com.example.App"])
+
     def test_target_single_file_unit(self):
         plugin = self.root / "starship"
         plugin.mkdir()
@@ -131,7 +152,6 @@ class TestManifestOverrides(unittest.TestCase):
         m = manifest.load_manifest(plugin)
         self.assertEqual(m.target, "starship.toml")
         self.assertEqual(m.packages_repo, ["starship"])
-        self.assertEqual(m.detect, "starship")
         self.assertTrue(m.is_deployable)
 
     def test_xdg_target_resolves_through_pics_dir(self):
@@ -237,19 +257,22 @@ class TestRealRepoManifests(unittest.TestCase):
         m = manifest.load_manifest(self.env.plugins_src / "starship")
         self.assertEqual(m.target, "starship.toml")
         self.assertEqual(m.packages_repo, ["starship"])
-        self.assertEqual(m.detect, "starship")
         self.assertTrue(m.is_deployable)
 
-    def test_packages_only_names_are_plugins_but_never_dotfiles(self):
-        # R0-2 catalog 并轨: packages-only software lives in the blueprint as
-        # manifest-only plugin dirs. They are registry-known plugins, yet
-        # never deployable — and the ``deploy = false`` declaration, not
-        # directory emptiness, is what keeps them out of the dotfile world.
-        manifests = dict(manifest.discover_manifest_apps())
-        for name in ("nautilus", "missioncenter", "brave-origin", "vscode", "wechat"):
-            m = manifests[name]
-            self.assertFalse(m.deploy_declared, f"{name} must declare deploy = false")
-            self.assertFalse(m.is_deployable, f"{name} must never become a dotfile plugin")
+    def test_retired_keys_are_dead_on_arrival(self):
+        # 执法断言（KM1：删除不寄生于新增）：``deploy = false``（R0-2 仅包
+        # 声明，随常用推荐软件面处决）与 ``detect``（可选软件菜单检测）退役
+        # 后，声明即解析错误，绝不静默忽略。快照：全部在库 manifest 不得再
+        # 携带退役键。
+        shipped = list(self.env.plugins_src.glob("*/manifest.toml"))
+        self.assertTrue(shipped)
+        for mpath in shipped:
+            text = mpath.read_text()
+            for dead in ("deploy", "detect"):
+                self.assertNotRegex(
+                    text, rf"^\s*{dead}\s*=",
+                    f"{mpath} still declares the retired key '{dead}'",
+                )
 
     def test_optional_units_keep_manifest_declaration(self):
         opts = manifest.discover_optional_apps()
@@ -258,8 +281,6 @@ class TestRealRepoManifests(unittest.TestCase):
 
     def test_deployable_excludes_manifest_only(self):
         deployable = manifest.discover_deployable_apps()
-        self.assertNotIn("nautilus", deployable)
-        self.assertNotIn("missioncenter", deployable)
         # The shipped config plugins are all present. `theme` is a merge plugin
         # (shared living area) — it deploys only through the transaction's
         # no-clobber path and never joins the atomic batch.
@@ -277,15 +298,6 @@ class TestRealRepoManifests(unittest.TestCase):
         self.assertFalse((src / ".optional-apps.toml").exists())
         self.assertFalse((src / "starship.toml").exists())
         self.assertEqual(list(src.glob("**/*.module.toml")), [])
-
-    def test_packages_only_manifest_detect_fixes_status_lookup(self):
-        # Package name "mission-center" differs from plugin name (R0-2:
-        # the old catalog row is now a manifest-only plugin dir).
-        manifests = dict(manifest.discover_manifest_apps())
-        m = manifests["missioncenter"]
-        self.assertEqual(m.detect, "mission-center")
-        self.assertEqual(m.packages_repo, ["mission-center"])
-        self.assertFalse(m.is_deployable, "packages-only plugin ships no living area")
 
     def test_fcitx5_rime_aur_packages(self):
         manifests = dict(manifest.discover_manifest_apps())
@@ -320,44 +332,14 @@ class TestRealRepoManifests(unittest.TestCase):
         self.assertTrue(m.is_deployable)
         self.assertEqual(m.category, "dev")
         self.assertEqual(m.packages_repo, ["zed"])
-        self.assertEqual(m.detect, "zed")
         self.assertIn("zed", manifest.discover_optional_apps())
         self.assertIn("zed", manifest.discover_deployable_apps())
 
-    def test_flatpak_only_manifests_have_no_pacman_packages(self):
-        # qq/wechat/spotify install via Flathub. Explicit empty repo list
-        # must survive parsing, or pacman would be handed a nonexistent name.
-        manifests = dict(manifest.discover_manifest_apps())
-        expected = {
-            "qq": ["com.qq.QQ"],
-            "wechat": ["com.tencent.WeChat"],
-            "spotify": ["com.spotify.Client"],
-        }
-        for name, ids in expected.items():
-            m = manifests[name]
-            self.assertEqual(m.packages_repo, [], f"{name} must keep packages empty")
-            self.assertEqual(m.packages_aur, [])
-            self.assertEqual(m.packages_flatpak, ids)
-
     def test_all_optional_units_categorized(self):
-        known = {"browser", "office", "dev", "social", "media", "game",
-                 "video", "download", "proxy", "terminal", "system"}
+        known = {"dev", "system"}
         for _name, m in manifest.discover_manifest_apps():
             if m.is_optional:
                 self.assertIn(m.category, known, f"{_name} has unknown category")
-
-    def test_full_optional_catalog(self):
-        """Optional surface = packages-only plugins + optional plugins, one supply."""
-        from nyxuri.pkg.deps import _supply_items
-
-        keys = {item["key"] for item in _supply_items()}
-        for name in ("brave-origin", "libreoffice", "vscode", "wechat", "qq",
-                     "telegram", "spotify", "steam", "lutris", "protonplus",
-                     "kdenlive", "obs", "motrix", "flclash", "shelly",
-                     "nautilus", "missioncenter"):
-            self.assertIn(name, keys, f"{name} must come from its packages-only manifest")
-        for name in ("fcitx5-rime", "greeter", "mango", "zed"):
-            self.assertIn(name, keys, f"{name} must come from its manifest")
 
     def test_merge_unit_excluded_from_atomic_batch(self):
         # The wallpapers plugin is a shared living area: it must never join

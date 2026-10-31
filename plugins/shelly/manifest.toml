@@ -1,8 +1,0 @@
-deploy = false
-
-# AUR 助手（deps 引导的 CachyOS 首选候选，paru 之前先试它）。
-label = "Shelly"
-category = "terminal"
-detect = "shelly"
-packages = []
-packages_aur = ["shelly-bin"]

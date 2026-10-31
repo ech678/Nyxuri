@@ -1,6 +1,0 @@
-deploy = false
-
-# Steam 游戏平台（deps apps 推荐软件）。
-label = "Steam"
-category = "game"
-packages = ["steam"]

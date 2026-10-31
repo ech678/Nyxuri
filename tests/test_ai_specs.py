@@ -355,28 +355,43 @@ class TestAISpecs(unittest.TestCase):
                          "R0-2 catalog 并轨：供给声明住各插件 manifest，根清单处决")
         self.assertFalse((root / "nyxuri" / "pkg" / "catalog.py").exists())
 
-        # 3. The 18 packages-only declarations live as manifest-only plugin
-        # dirs (R0-2 catalog 并轨 — the KM3.5 catalog relocation is superseded).
-        packages_only = {"brave-origin", "flclash", "kdenlive", "libreoffice", "lutris",
-                         "missioncenter", "motrix", "nautilus", "obs", "protonplus",
-                         "qq", "shelly", "spotify", "steam", "telegram", "vscode", "wechat",
-                         "quickshell"}
-        for name in packages_only:
-            self.assertTrue((plugins / name / "manifest.toml").is_file(),
-                            f"{name} must declare its packages in its own manifest.toml")
-        # 13 real plugins + wallpapers/theme + 18 packages-only = 31 dirs
-        self.assertEqual(len([d for d in plugins.iterdir() if d.is_dir()]), 31)
+        # 3. The packages-only supply surface is executed: the 18 manifest-only
+        # recommendation plugins are gone, no shipped manifest declares the
+        # retired keys, and the blueprint is 13 real plugins.
+        retired_keys = ("deploy", "detect")
+        shipped = [d for d in plugins.iterdir() if d.is_dir()]
+        for d in shipped:
+            mpath = d / "manifest.toml"
+            if mpath.is_file():
+                text = mpath.read_text(encoding="utf-8")
+                for dead in retired_keys:
+                    for line in text.splitlines():
+                        self.assertNotRegex(
+                            line, rf"^\s*{dead}\s*=",
+                            f"{d.name} still declares the retired key '{dead}'",
+                        )
+        self.assertEqual(len(shipped), 13, "supply execution must leave 13 real plugins")
+        for gone in ("telegram", "steam", "vscode", "nautilus", "shelly", "quickshell"):
+            self.assertFalse((plugins / gone).exists(), f"{gone} supply plugin must be gone")
 
         # 4. The engine holds zero references to the dead names.
         for py in sorted((root / "nyxuri").rglob("*.py")):
             text = py.read_text(encoding="utf-8")
             for dead in ("template_registry", "nyxuri.constants", "nyxuri.i18n",
                          "nyxuri.deps", "nyxuri.network", "deploy_wallpapers",
-                         "pkg.catalog"):
+                         "pkg.catalog", "install_optional_apps",
+                         "run_optional_apps_menu_loop", "deploy_declared"):
                 self.assertNotIn(dead, text, f"{py.relative_to(root)} still references {dead}")
+            # R0-2 步 5 追加：退役字段可能只剩「属性访问」消费者（字符串扫描
+            # 抓不到）——`m.detect` 漏网曾让组件菜单在真实运行中直接崩溃。
+            for dead_attr in (r"\.detect\b", r"\.deploy_declared\b"):
+                self.assertNotRegex(
+                    text, dead_attr,
+                    f"{py.relative_to(root)} still reads the retired attribute {dead_attr}",
+                )
 
-        # 5. Contract line: packages-only plugins ARE plugins — no living area.
-        self.assertIn("仅包声明插件", content)
+        # 5. Contract line: declaration-only units keep their install path.
+        self.assertIn("declaration-only", content)
 
         # 6. Test tree mirrors the source tree.
         tests = root / "tests"
