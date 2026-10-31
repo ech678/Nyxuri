@@ -93,8 +93,6 @@ Item {
             return;
 
         WeatherService.refresh();
-        if (weatherMapLoader.status === Loader.Ready && weatherMapLoader.item)
-            weatherMapLoader.item.refreshMap();
     }
 
     function syncWeatherData() {
