@@ -28,7 +28,9 @@
 完整事故溯源与回归映射见 [archive/agent-rules-provenance](archive/agent-rules-provenance.md)。
 经评估明确拒绝、不得反复提出的：用户 drop-in app 目录、manifest 声明 doctor 项/i18n 键、
 stable+git 双 AUR 包、Nix 式纯函数引擎、按 PCI 设备选驱动变量、`.nyxignore`、
-安装方式优先级表、`preset diff`、`detect` 前缀 DSL（详见 [manifest-schema](manifest-schema.md) 边界节）。
+安装方式优先级表、`preset diff`、`detect` 前缀 DSL（详见 [manifest-schema](manifest-schema.md) 边界节）、
+启动期 `Qt.createComponent` 预热救 qs-import 装载、以升级 Quickshell 修 qs-import 装载缺陷
+（S0-0 双证：预热 0/20、master 逐格同行为，详见 [shell/loader-form](shell/loader-form.md)）。
 
 ## 架构重塑卷定案与落选（2026-10-31，随 ROADMAP 重置登记）
 

@@ -21,7 +21,7 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 | --- | --- | --- |
 | G0 | 修复 GitHub 已知问题：可独立修的立即修，架构根因随 R0 兑现后关闭回填 | 可独立修落地（#144 #146）；根因修随 R0-3 落地（#143 #145 #147 #149）；#142 随 R0-5 转上游跟踪 |
 | R0 | 引擎收敛：概念定名 Plugin/插件 + 杀词并轨 + 单一激活管线 + 声明贯通 + 减法外迁 + 文档对齐 | 已收口（R0-1 ~ R0-6；R0-5 取消自带收口，launcher 暂留） |
-| S0 | Shell 骨架整抄 Omarchy：五件套 + 运行时插件注册表 + 设置去中心化（S0-0 装载 spike 门禁先行；manifest 协议 TOML 本站定稿） | 待开始 |
+| S0 | Shell 骨架整抄 Omarchy：五件套 + 运行时插件注册表 + 设置去中心化（S0-0 装载 spike 门禁先行；manifest 协议 TOML 本站定稿） | 进行中 |
 | S1 | 第三方插件生命周期：协议 1:1 + 四动词 + 所有权账本回植 | 待开始 |
 | T4 | Shell 可控性与透明化（开工时立细则） | 待开始 |
 | T5 | 多合成器解耦（门禁触发） | 待开始 |
@@ -126,9 +126,12 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
   `qs.commons.*` / `qs.ui.*`、`qs.app.services.*` → `qs.services.*`；收口标准是
   全库 grep 旧根零命中。
 - **分站（执行序即优先级，一站一收口）**：
-  - **S0-0 装载 spike（门禁先行）**：在 Quickshell 0.3.2 的 qs-import Loader 缺陷
-    （SlotHost 预热名单就是它的补丁）上验证注册表装载形态——升级 Quickshell 或
-    替代装载机制二选一，产出结论与证据；未过不得开工 S0-2（S0-1 不受限）。
+  - **S0-0 装载 spike（门禁先行）**（已收口）：在 Quickshell 0.3.2 的 qs-import Loader
+    缺陷（SlotHost 预热名单就是它的补丁）上验证注册表装载形态。结论：**file:// URL
+    装载形态定案**（Omarchy `entryPointUrl` 形态，release 0.3.2 与 master 9b0f339
+    双版本各 20/20）；「升级 Quickshell」不修（master 逐格同行为，0/20）、启动期
+    `createComponent` 预热无效（0/20）——根因是 qmldir 合成闭包不含动态装载面。
+    证据、矩阵与复跑命令见 [loader-form](llms-wiki/shell/loader-form.md)；S0-2 开工放行。
   - **S0-1 五件套机械迁移**：对照表全量执行 + import 机械扫 + 受影响定向测试
     改写绿；旧路径物理消失。
   - **S0-2 运行时注册表取代四件套**：手写 `UnitCatalog.qml` 镜像、`settings-routes.json`、
