@@ -213,7 +213,7 @@ class TestKernelLedger(unittest.TestCase):
             path = ctx.home / ".local/state/nyxuri/state.json"
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps({
-                "plugins": {
+                "units": {
                     "kitty": {"state": "enabled", "preset": "default", "files": {}, "vault": None,
                               "updated": "2026-01-01T00:00:00+00:00"},
                 },
@@ -224,7 +224,7 @@ class TestKernelLedger(unittest.TestCase):
             self.assertIsNone(ledger.get_plugin("kitty"))
             on_disk = json.loads(path.read_text(encoding="utf-8"))
             self.assertNotIn("plugins", on_disk)
-            self.assertIn("plugins", on_disk)
+            self.assertIn("units", on_disk)
 
     def test_fresh_ledger_only_carries_new_shape(self):
         """New installs never produce the legacy keys or field names."""
@@ -236,7 +236,7 @@ class TestKernelLedger(unittest.TestCase):
             )
             self.assertIn("plugins", on_disk)
             self.assertIn("forms", on_disk)
-            self.assertNotIn("plugins", on_disk)
+            self.assertNotIn("units", on_disk)
             self.assertNotIn("presets", on_disk)
             self.assertNotIn("parts", on_disk)
 

@@ -177,7 +177,10 @@ class TestNavPaneComposition(unittest.TestCase):
     def test_atom_pool_is_untouched_by_the_shell(self):
         # S0-1: the eleven M1 atoms live flat in ui/ beside the control
         # library; the standalone settings/controls pool must stay gone.
-        from test_preference_atoms import ATOMS
+        try:
+            from tests.shell.test_preference_atoms import ATOMS
+        except ImportError:
+            from test_preference_atoms import ATOMS
         for name in ATOMS:
             self.assertTrue((CONTROLS / name).is_file(), f"{name} missing from ui/")
         self.assertFalse((SETTINGS / "controls").exists(),

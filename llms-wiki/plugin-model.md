@@ -62,7 +62,7 @@
 ```
 transaction（编排：唯一可触碰副作用的模块）
  ├─► registry   唯一扫描插件蓝图与 manifest 的模块（蓝图域唯一入口；
- │              蓝图根：`plugins/` → 裸 ID，`shell/units/` → `shell.` 前缀，KM4）
+ │              蓝图根：`plugins/` → 裸 ID，`shell/plugins/` → `shell.` 前缀，KM4）
  ├─► resolver   纯函数：依赖图进，拓扑序出（零 I/O、零状态，表驱动可测）
  └─► ledger     唯一读写 state.json 的模块（状态域唯一入口）
 ```
@@ -258,7 +258,7 @@ Nyxuri Shell 绝非特权单体，其内部亦彻底插件化（宿主侧契约�
 **内核侧承载（KM4 落地，KM4.5 正名）**：Shell 插件物理住在 `shell/units/<domain>/`
 （文件树表达架构；KM4.5 后 `modules/` 已整体正名并入——manifest 与代码同目录，
 目录即插件，registry 仍只读 `iterdir` 的目录名，插件内文件布局对内核不可见），
-registry 以**命名空间根**解析——`plugins/` 产裸 ID，`shell/units/` 产 `shell.` 前缀 ID，
+registry 以**命名空间根**解析——`plugins/` 产裸 ID，`shell/plugins/` 产 `shell.` 前缀 ID，
 前缀属于根不属于逐 ID 特判；manifest `name` 一律补齐为全点分 ID（账本键、Vault 路径、
 报告所见即 registry ID）。Shell 插件以 `runtime = true` 声明**运行态插件**：无载荷、
 无生活区、无 Vault 进出，`on`/`off` = 账本落记 + 一次事件，运行中的 Shell 据事件
@@ -270,7 +270,7 @@ deploy/deps 的包世界（`discover_manifest_apps`）只扫 `plugins/`，Shell 
 ## 7. 深层防御与代码级死刑清单
 
 1. **包管理非对称**：`disable` 只撤回配置与桌面集成，绝不私自调用 sudo 卸载系统包，以避免打断和破坏系统依赖；结果在执行报告中如实写明。
-2. **单文件特例一律铲除**：全库 100% 目录平铺化。`configs/starship.toml` 升格为 `configs/starship/`（现 `units/starship/`），消灭 sidecar 机制。
+2. **单文件特例一律铲除**：全库 100% 目录平铺化。`configs/starship.toml` 升格为 `configs/starship/`（现 `plugins/starship/`），消灭 sidecar 机制。
 3. **Vault 纯文件平铺**：`~/.local/state/nyxuri/vault/<plugin>/` 保持目录镜像平铺，不建数据库，不打包压缩，用户肉眼直观可见。
 4. **死刑清单与两步执法**：所有过渡物登记在下方清单（名字 + 死刑阶段），契约测试分两步执法：
    - **登记步（KM0 已生效）**：`tests/test_ai_specs.py` 断言清单条目齐全；
@@ -279,17 +279,17 @@ deploy/deps 的包世界（`discover_manifest_apps`）只扫 `plugins/`，Shell 
 | 死刑对象 | 死刑阶段 |
 |---|---|
 | `.optional-apps.toml`（axis-B sidecar） | KM1（已执法） |
-| `configs/starship.toml` + `starship.toml.module.toml`（单文件特例） | KM1（已执法，升格为 `units/starship/` + `target`） |
+| `configs/starship.toml` + `starship.toml.module.toml`（单文件特例） | KM1（已执法，升格为 `plugins/starship/` + `target`） |
 | `*.module.toml` sidecar 机制（已统一收敛为目录内 `manifest.toml`） | KM1（已执法） |
 | `nyxuri/modules/` 专用业务模块（能力并入 `units/` 单元 + 钩子脚本） | KM3（已执法） |
 | 旧 CLI 命令兼容别名 ×12 与 `RETIREMENTS` 倒计时表（`deploy/backup/restore/remove/purge/recommended/wp/report` + 幽灵指针 `greeter/fcitx/gtk/fisher`） | KM3.5（已执法，旧名 = 普通 unknown command） |
 | `nyxuri/template_registry.py`（生产零引用）及其测试 | KM3.5（已执法） |
 | 17 个零文件假单元（`configs/` 下仅 manifest 的包目录）→ 根 `catalog.toml` | KM3.5（已执法，包目录清单不是单元） |
-| `assets/` + `nyxuri/deploy/assets.py`（壁纸旁路）→ `units/wallpapers/` 单元 + `hooks/install-pack` | KM3.5（已执法，`wallpapers` 动词处决 → `on wallpapers`） |
+| `assets/` + `nyxuri/deploy/assets.py`（壁纸旁路）→ `plugins/wallpapers/` 单元 + `hooks/install-pack` | KM3.5（已执法，`wallpapers` 动词处决 → `on wallpapers`） |
 | 蓝图正名 `configs/` → `units/`、引擎物理分层（`kernel/` `desktop/` `installer/` `pkg/` 收编、`sysdoctor` 正名、`packaging/` 迁仓库根、测试镜像树） | KM3.5（已执法，文件树即架构） |
 | Shell 私有开关状态（settings.json `bar.enabled`/`keystone.enabled`、dock.json `enabled`）→ 账本投影（`StateProjection`）+ `UnitControl` 派发内核动词 | KM4（已执法，单一开关真相） |
 | AppShell 硬编码单元组件 ×9 与宿主代管的单元 IPC（power-menu/lock/spotlight/control-center/settings）→ `SlotHost` 槽驱动 + 单元自有 IPC | KM4（已执法，微内核插槽架构） |
-| `~/.config/noctalia/templates/` 共享池（寄宿 noctalia 命名空间）→ `units/theme/` 单元 + `~/.config/nyxuri/templates/` | KM4（已执法，池位置中立化，merge 共享生活区） |
+| `~/.config/noctalia/templates/` 共享池（寄宿 noctalia 命名空间）→ `plugins/theme/` 单元 + `~/.config/nyxuri/templates/` | KM4（已执法，池位置中立化，merge 共享生活区） |
 | `install.sh` 安装器职责（退役为一次性引导）→ `nyxuri/launcher.sh` 常驻启动器 + 无透传引导；同批清算：`nyxuri/migrations/` 整模块、nyxniri 别名与 `NYXNIRI_*` 兼容层 | KM5（已执法；`nyxuri/cli.py` 交互菜单经作者裁决保留为常驻产品面，登记撤销） |
 | 蓝图正名 `units/` → `plugins/`（账本键 `units` → `plugins` 一次性迁移 + 引擎标识符与文案 unit → plugin） | R0-1（已执法） |
 | 根 `catalog.toml`（包目录清单）+ `pkg/catalog.py` → 18 个 manifest-only 插件目录（`plugins/<name>/manifest.toml` 仅包声明，deps 菜单聚合 manifest） | R0-2（已执法） |

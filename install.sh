@@ -108,7 +108,7 @@ engine_is_complete() {
     [ -d "$target_dir/plugins" ] \
         && [ -f "$target_dir/plugins/fish/config.fish" ] \
         && [ -f "$target_dir/plugins/wallpapers/hooks/install-pack" ] \
-        && [ -f "$target_dir/plugins/nautilus/manifest.toml" ]
+        && [ -f "$target_dir/plugins/theme/manifest.toml" ]
 }
 
 legacy_tree_detected() {

@@ -1,5 +1,5 @@
 .pragma library
-.import "../i18n/Translations.js" as I18n
+.import "i18n/Translations.js" as I18n
 
 
 function isNumber(value) {
