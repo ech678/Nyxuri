@@ -1,133 +1,175 @@
 # Nyxuri 活跃演进路线
 
 > 本页只保留跨域活跃待办与长期目标；Shell 阶段台账、当前阶段与门禁见
-> [shell/ROADMAP.md](shell/ROADMAP.md)。主线「插件市场化改造」KM0–KM5 已全数
+> [shell/ROADMAP.md](shell/ROADMAP.md)。上一卷「插件市场化改造」KM0–KM5 已全数
 > 落地收口，整卷台账冻结于 [archive/roadmap-history](llms-wiki/archive/roadmap-history.md)；
 > 设计哲学与五条简洁标准见 [vision](llms-wiki/vision.md)。
+> 本卷为「架构重塑卷」：先修已知问题、做减法收概念，再换 Shell 骨架，
+> 最后开第三方插件的大门。
 
-## 主线收口
+## 主线收口（上一卷地基）
 
 「桌面插件市场」产品形态成立：内核（registry · resolver · transaction · ledger）+
-目录（万物皆单元）+ 市场界面（4 动词 + TUI 工坊），安装器退役为一次性引导。
-术语四词（单元 / 内核 / 源 / manifest）与内核契约的唯一权威在
-[unit-model](llms-wiki/unit-model.md)，此处不复述。
+万物皆单元的 manifest 全声明目录 + 多前端界面，以账本为唯一开关真相、原子部署连接
+只读蓝图与用户生活区；安装器退役为一次性引导。术语与内核契约的唯一权威在
+[unit-model](llms-wiki/unit-model.md)，此处不复述。本卷在此地基上重塑；
+R0-1 落地时同步改写该页术语（单元 → 插件）。
 
 ## 活跃路线（执行序即优先级）
 
 | 站 | 交付 | 状态 |
 | --- | --- | --- |
-| T0 | 终端体验修复：复制粘贴终审 + 终端程序启动失败可见 | 进行中 |
-| T1 | 上架 AUR：单包全量 nyxuri-git | 进行中 |
-| T2 | TUI 重做：Textual 全量迁移（暂缓，分支已有雏形） | 待开始 |
-| T3 | 设置界面替换：Caelestia 安卓风味默认 + Dashboard 双轨 | 进行中 |
-| T4 | Shell 可控性与透明化 | 待开始 |
-| T5 | 多合成器 (Multi-WM) 架构解耦（门禁触发） | 待开始 |
+| G0 | 修复 GitHub 已知问题：可独立修的立即修，架构根因随 R0 兑现后关闭回填 | 待开始 |
+| R0 | 引擎收敛：概念定名 Plugin/插件 + 杀词并轨 + 单一激活管线 + 声明贯通 + 减法外迁 | 待开始 |
+| S0 | Shell 骨架整抄 Omarchy：小写五件套 + 运行时插件注册表 + 设置去中心化 | 待开始 |
+| S1 | 第三方插件生命周期：协议 1:1 + 四动词 + 所有权账本回植 | 待开始 |
+| T4 | Shell 可控性与透明化（开工时立细则） | 待开始 |
+| T5 | 多合成器解耦（门禁触发） | 待开始 |
+| T2 | TUI Textual 重做（暂缓，分支备用） | 待开始 |
 
-### T0 终端体验修复（复制粘贴最终之战）
+### G0 · 修复 GitHub 已知问题
 
-- **复制粘贴终审（已定案：正统方案）**：`Ctrl+Shift+C/V` 为唯一复制粘贴路径，
-  零劫持——kitty 三处 Windows 式劫持（`ctrl+c` 智能中断、`ctrl+v` 粘贴、
-  `ctrl+a` 全选复制）全部退役，右键粘贴随 `ctrl+v` 同块一并退役（定案扩充），
-  Ctrl+C/V 还给终端程序；`copy_on_select no` 保留为显式复制语义。
-  **已落地（2026-10-18）**：两份 kitty.conf + 回归护栏测试；剩 fish/vim/fzf/htop
-  全矩阵实机验收。一次定案，此后不再翻烧饼。
-- **终端程序启动失败可见**：msedit/micro 等 `Terminal=true` 桌面项当前无声失败
-  （从启动器/文件管理打开 → 什么都没有）。实机诊断根因（xdg-terminal-exec
-  在位性、默认终端登记、`gio open` 行为）→ 补终端桥与默认终端登记 →
-  Shell 侧启动失败给通知反馈。终态：任何文件要么打开，要么给得出
-  「为什么没打开」。**系统侧已修（2026-10-18）**：`xdg-terminal-exec` 入位
-  （extra 0.14.3-2），shell 启动器 / GLib（≥2.76）/ key-cli 三条打开路径的
-  汇合桥补齐；Shell 侧失败通知反馈降级为待办（现 `execDetached` 即发即忘，
-  非阻塞项，留待需要时或 T4 一并做）。
+> 原则：不在旧概念上做新架构；但症状能独立修的先修，用户不等重塑。
+> 每个修复在 issue 下回填路线引用与验收证据（GitHub CLI）。
 
-### T1 上架 AUR（已定案：单包全量）
+- **可独立修（不依赖 R0，前向兼容）**：
+  - #144 壁纸路径写死 `~/Pictures/Wallpapers`：manifest 目标与 `install-pack` 钩子
+    接 `core.get_pics_dir()`（XDG）；R0-4 的 `xdg:` 词汇是它的推广形态。
+  - #146 `adw-gtk-theme` 未声明：`units/theme/manifest.toml` 的 packages 补一行。
+- **根因修（随 R0-3，修后关闭）**：#143（事务缺渲染 phase）、#145（壁纸包收编
+  声明式钩子）、#147（hook-only 形态误判）、#149（安装器改派发事务）。
+- **随外迁处置**：#142 划词翻译 PDF——随 R0-5 orbit 外迁转上游仓库。
 
-- **已落地（2026-10-18，含实机冒烟）**：PKGBUILD 重构——source 加 `pkgname::` 重命名修复
-  克隆目录断裂（原 PKGBUILD 从未通过 makepkg，实测实锤）；单包全量
-  `shell/` 树同船（`shell.*` 单元包模式下激活，实机 `nyxuri list`/`doctor` 验证）
-  + 剪枝（tests、scripts/dev、过程文档；references/ 由 .gitignore 天然隔离）+
-  `CHANGELOG.md` 进包（系统模式 `get_version` 真实化）+ `/usr/bin/nyxuri-shell`
-  系统入口 + 双 LICENSE + `.install` 升级提示（升级不自动重部署，`nyxuri list`
-  对账、`nyxuri install full` 显式应用）。依赖策略翻转：`depends=('python')`
-  引擎运行时唯一，全部单元包 + CORE/AUR 会话工具链 + `ENGINE_OPTDEPENDS`
-  （quickshell）转 optdepends——pacman 不再强塞桌面，干净 chroot 从此可解；
-  catalog.toml 与 PKGBUILD 脱钩（只喂 `deps apps` 菜单）。
-  实机冒烟全过：`/usr/bin/nyxuri` 系统模式识别、update 拒 git pull 提示 pacman
-  （顺带修复系统包无 `.git` 时误报「更新失败」的短路顺序 bug）、doctor 三态对账、
-  包版 shell 冷启动 IPC ready + 零包目录写入 + qmlcache/.qsb 全落用户缓存、
-  `--stop` 干净退出不扰原会话。
-  key-cli 暂缓：Clavis 上游独立后端，登记 [shell/KNOWN-ISSUES](shell/KNOWN-ISSUES.md)，
-  待收回仓库内化后再落依赖。
-- 上架完成（2026-10-18）：AUR `nyxuri-git` 已上架（2026-10-20 更新），
-  README 安装段已回填。代码与验证全数收口：makepkg 实测、干净 chroot 构建、
-  namcap E 清零（假阳性定性见 [packaging/README](packaging/README.md)）。
-  遗留：humans-wiki Home 顶部 AUR 安装块回填（见 packaging/README 步骤 4）。
+### R0 · 引擎收敛（架构重塑地基）
 
-### T2 TUI 重做（已定案：Textual，一次全搬）
+- **R0-1 概念定名：Plugin / 插件**。「单元」退役，三词术语收敛为
+  **插件 · manifest · 账本**。`units/` → `plugins/`（引擎蓝图目录，机械改；
+  shell 侧随 S0）；账本键 `units.*` 提供一次性迁移（老安装升级路径）；
+  [unit-model](llms-wiki/unit-model.md) 随本站改写；术语权威表述见
+  [vision](llms-wiki/vision.md) §1。
+- **R0-2 杀词并轨**：预设 + 零件合并为插件的**形态字段**（`use` 动词承载；
+  `preset` 命令留一版本周期 deprecated 别名）；`presets/<app>.active` 双写退役
+  （只读兼容一版本周期后删除）；「源」概念删除（git URL 即源）；市场/工坊词退役；
+  `catalog.toml` 并入各插件 manifest `packages`（deps 菜单改聚合 manifest）；
+  保险库（Vault）降级为 off 的内部机制、用户文档不再教学——备份对名词只剩「快照」；
+  `__custom__` 保留为冻结协议、撤销概念地位（只在模板作者文档出现）。
+  一条 apply 路径替代 preset + part 两条（`_reconcile_active_parts` 旁路退役）。
+- **R0-3 单一激活管线**：启用一个插件的步骤清单只留 transaction 一条——渲染
+  phase 入事务、插件形态矩阵（runtime / merge / atomic / hook-only）manifest 化、
+  安装器组件勾选改派发事务、壁纸包收编 wallpapers 声明式钩子。
+  验收 = #143 / #145 / #147 / #149 关闭。
+- **R0-4 声明贯通与边界校验**：manifest 路径词汇 XDG 化（图片目录三处表达合一）；
+  theme 副作用的包依赖声明（#146 根因）；叶名 / containment 校验进引擎
+  （#48 的 `../../` 越界教训）；保留策略按操作参数化——回滚默认精确恢复（#56）、
+  更新尊重 Drifted 基线（#139 定案行为在此收编为契约）。
+- **R0-5 减法外迁**：`orbit_translate` + `orbit`（约 7K 行 + 3K 行测试）外迁
+  独立仓库（先例：key-cli → Clavis；#142 随迁上游）；`nyxuri/market/` 与
+  `tests/market/` 残留删除；本地脏区清理（qmlls.ini 悬空链、packaging 构建残留、
+  greeter hooks `__pycache__`）；本地 `pr-*` 分支清理，远端 `archive/*` 分支
+  随 T2 重启决策定去留。
+- **R0-6 文档对齐**：`unit-model` / `preset-mechanism` / `file-preservation`
+  三页随杀词合并改写；失实记录修正——旧卷「Cava/歌词/窗口预览死代码已清理」
+  与代码不符（实况：地图已清，Cava 与歌词活着），清算时以实况描述。
 
-- **暂缓说明（2026-10-24）**：选型 Textual 与一次全搬定案不变。原型雏形已在分支
-  `archive/t2-textual-market` 落地（已完成无参入口全量切入 Textual 市场 App 的验证）。
-  因当前阶段工作重心转向自研 Shell 桌面端核心交互演进（T3 设置界面替换），决定暂缓
-  该分支主线合并与后续分期，将精力集中于桌面端。分支归档备用，后续择机重启。
-- **定案（2026-10-24）**：选型 Textual，迁移范围一次全搬——市场三屏
-  （工坊 / 预设 / doctor）与全部过渡交互屏（组件清单 / deps / 快照回滚 /
-  卸载 / clean）进同一个 App；tui.py 手搓组件层（~1500 行）全数退役。
-  开工首日先做 spike：kitty 下跑 pacman 的终端交接、中文对齐、退出后
-  终端干净、测试可用性，有硬伤才回退 urwid。
-- **终态分层**：`nyxuri/ux.py` 零依赖基座（确认提示 / 步骤报告 / 宽度
-  工具）+ `nyxuri/market/` 唯一声明依赖层（全库唯一 `import textual`）。
-  CLI 四动词与非交互路径零依赖不变，装不装 textual 都完整可用。
-- **投影而非状态**：界面只读账本，开关照走 `transaction` 同一条事务
-  路径；pacman 等交互式子进程暂时交出终端、跑完收回；直达动词
-  （clean / uninstall / deps）复用同一 App。
-- **依赖策略**：否决 vendor（拖 6 个传递包，塞进仓库就是无主文件）；
-  python-textual 入 PKGBUILD `optdepends` + install.sh 引导装齐；缺席时
-  交互入口提示 `pacman -S python-textual`，不留旧界面兜底。
-- **契约修订**：AGENTS 不变量 3 收窄为「引擎核心零依赖，TUI 层为唯一
-  声明依赖」，vision §3、tui-charter、overview、operation-map、
-  testing 一并同步。
-- **分期**：M0 spike → M1 骨架+契约 → M2 工坊+首页（无参入口切 App）→
-  M3 预设+doctor → M4 过渡屏全迁 → M5 删旧收口。每期过全量单测、
-  沙箱部署与 kitty 实机冒烟。
+### S0 · Shell 骨架整抄（Omarchy 协议，小写命名）
 
-### T3 设置界面替换（Caelestia 安卓风味）
+- **整抄裁决**：作者定案——Omarchy 4 的插件系统、注册程序与骨架整包采纳；
+  目录名保持小写开头风格（`Commons/Ui/plugins` → `commons/ui/plugins`）；
+  不抄它的 `shell.json` 开关状态——单一开关真相继续留在引擎账本。
+- **终态五件套**：`shell.qml`（常驻宿主入口）+ `commons/`（现 shared 的
+  utils / theme / cards）+ `ui/`（现 shared/controls + T3 M1 积木，平面控件库）+
+  `services/`（现 app/services + PluginRegistry / PluginXxxApi）+
+  `plugins/`（现 shell/units/ 各域，每域 manifest + entryPoints）；`scripts/` 不动。
+- **运行时注册表取代四件套**：手写 `UnitCatalog.qml` 镜像、`settings-routes.json`、
+  `SearchCatalog.js` 生成器、`NexusNavPane.groupTable` 全部由 PluginRegistry
+  运行时读 manifest 取代——「新增插件 = 加目录 + manifest + 代码，零宿主改动」
+  从口号变成事实；shell/AGENTS.md 对应契约段随 S0 修订。
+- **设置去中心化**：设置页由插件自带（manifest settings schema / panel entry），
+  宿主用 ui/ 原子控件渲染；中央设置窗降级为聚合 panel 插件。
+  T3 双轨呈现（default / dashboard）去留随迁移由作者拍板。
+- **资产收编**：T3 M4 批 A–F 的积木原子控件与页面内容收编进 ui/ 与各插件，
+  M3 / M4 实机验收随迁移一并走；Quickshell import 根机械扫
+  （`qs.units.*` → `qs.plugins.*`），0.3.2 静态预热约束按新装载形态重估。
+- **适配点（唯一大改）**：宿主服务层的合成器面从 Hyprland 语义换 niri
+  （`niri msg` / key-cli）——顺带兑现 T5 的 CompositorDriver 收编前置。
 
-- **形态重构与双轨定案**：以 Caelestia Shell（https://github.com/caelestia-dots/shell）的
-  Nexus 设置界面形态，替换现 Default + Minimal 两个旧面板样式并成为默认；Dashboard（卡片网格）
-  保留为双轨之二——`settingsPanelStyle` 轴三值（default, minimal, dashboard）收敛为两值
-  （default, dashboard）。历史配置中的 `minimal` 自动平滑折叠为 `default`，消灭 0.75 缩放瑕疵。
-- **策略与单一事实**：先抽象原子控件全套拷入重构为纯 QML 标准库，拒绝散装拼凑（No picking）；
-  settings 模型、路由、搜索、动作与持久化（SettingsBackend / settings-routes.json）完全不动。
-- **详细台账**：偏好原子套件解构、NavPane 双行安卓卡片规范与 M0–M4 分期台账唯一见
-  [shell/ROADMAP.md](shell/ROADMAP.md#t3-设置界面替换caelestia-安卓风味当前进行中)。
+### S1 · 第三方插件生命周期
 
-### T4 Shell 可控性与透明化
+- **协议 1:1 Omarchy**：`schemaVersion`、reverse-DNS `id`（官方保留裸名与
+  `nyxuri.` 前缀）、`kinds`、`entryPoints`、settings schema、禁软链；安装绝不执行
+  包内代码、无 install hook、无 sudo；`validate` 与加载时同一套检查。
+- **动词终态八条**：`on / off / use / add / remove / update / doctor / list`。
+  `add <git-url>`（本地目录路径顺带支持）；`remove` = 停用 → 按所有权账本撤回 →
+  非管辖区时间戳备份；`update` = diff 预览、拒绝非 fast-forward、校验失败自动回退
+  （咬合引擎快照）。
+- **落位与消费**：第三方统一落 `~/.local/share/nyxuri/plugins/<id>/`
+  （H4 数据目录 + H8 复制不软链）；kinds 路由消费——引擎消费 config 类、
+  shell 注册表消费 ui 类。一个位置一份 manifest，两个注册表各取所需。
+- **扩展面边界**：钩子是引擎已有的语言无关扩展面（manifest 声明 + 任意可执行），
+  不是新发明；用户已有配置的「导入」走保留策略（carry / vault），与第三方插件
+  导入是两条线，语义永不混合。
+- **所有权账本回植**：PR #148 素材（文件归属记录）支撑 remove 的精确撤回。
+- **安全立场**：插件是用户信任的代码——明说不沙箱、不做安全剧场；第三方包
+  v1 拒绝钩子；能力声明 + `audit-lifecycle.py` 静态审计扩展。
+- **非目标（v1 明确不做）**：插件间依赖声明（包依赖走 manifest packages、运行冲突
+  走槽仲裁）；schemaVersion 迁移框架（只拒绝未知版本）。
+- **Python 侧不引框架（裁决）**：pluggy / stevedore 管的是 Python-import 式扩展，
+  与「声明 + 文件 + 钩子」形状不符；引擎即插件管理器本体，一套协议两个运行时。
+  entry points（stdlib）为预留通道，第二个真实用例出现才建；pkg 后端窄驱动
+  （pacman / apt，os-release 选择）随 #148 回植建立。
 
-- 开工时立细则。方向：单元运行态可观测（进程 / 资源 / 副作用）、doctor 对账
-  接入 Shell、日志与诊断直通——每样能力答得出「它为什么在这」。
+## 分支策略（PR #148 · Ubuntu 支持）
 
-### T5 多合成器解耦（门禁触发）
+- PR #148（138 文件，+10519/−2532）整包暂存：自 main 建立 `legacy/ubuntu-support`，
+  `gh pr edit 148 --base legacy/ubuntu-support` 后 merge（保署名）；该分支永不再
+  rebase，仅作参考实现。分支操作待作者点头执行。
+- **回植清单**（R0-3 / S1 落地后按图索骥）：包后端窄驱动（pacman/apt、os-release
+  探测）、文件所有权账本。生命周期统一部分不回植——R0 以自身设计重实现。
 
-- 第三个合成器（Hyprland/Sway）接入前必须执行：`CompositorDriver` 驱动抽象
-  收编过渡形态——`SUPPORTED_WMS` 硬编码元组、组件菜单 WM 特判、doctor 三处
-  合成器字面量（债务登记见 [delayed-decisions](llms-wiki/delayed-decisions.md)）。
-- 热重载、浮动便签与屏幕探测跨合成器适配，`doctor` 诊断与 `greeter` 会话自适应。
+## 冻结与挂起
+
+- **T2 TUI Textual 重做**：选型 Textual、一次全搬定案不变；分支
+  `archive/t2-textual-market` 备用，择机重启（M0 spike 先行：kitty 终端交接、
+  中文对齐、退出干净）。
+- **Shell 功能阉割档：整档挂起（作者裁决）**。候选清单留档备查：dashboard 双轨
+  合并（约 −5,900）、cookie 时钟链（约 −870）、lock 双风格链（约 −1,000）、
+  通知双渲染实现合一、regionselector（随 key-cli）、PersonalizationConfig 死函数
+  （约 −340）、mango 第二合成器去留、BezierCurveLayerEditor（1,153 行）、
+  WeatherBackground（1,226 行）；零风险小件（约 −490 行）若 S0 迁移触及则顺带
+  处置，不立项。
+- **T4 Shell 可控性与透明化**：待开工，开工时立细则；吸收 T0 让渡的 Shell 启动
+  失败通知反馈。
+- **T5 多合成器解耦**：门禁触发型；S0 的 niri 适配层兑现其前置——`SUPPORTED_WMS`
+  硬编码、组件菜单特判、doctor 三处合成器字面量收编（债务登记见
+  [delayed-decisions](llms-wiki/delayed-decisions.md)）。
+
+## 已收口（本卷前置）
+
+- **T0 终端体验**：复制粘贴终审落地（`Ctrl+Shift+C/V` 唯一路径，回归护栏在测试）；
+  终端桥系统侧已修（`xdg-terminal-exec` 入位）。Shell 侧失败通知转 T4。
+- **T1 上架 AUR**：`nyxuri-git` 上架（PKGBUILD 重构、依赖策略翻转、实机冒烟全过）；
+  key-cli 暂缓，登记见 [shell/KNOWN-ISSUES](shell/KNOWN-ISSUES.md)。
+- **T3 设置界面替换**：Caelestia 原子套件 M0–M2 完成；M3 待验收；M4 批 A–F 已落地
+  （状态对账见 [shell/ROADMAP.md](shell/ROADMAP.md)）。剩余验收与资产收编随 S0 兑现。
 
 ## Shell 侧
 
-阶段台账、P4 验收与 P6 整体验收门禁唯一见 [shell/ROADMAP.md](shell/ROADMAP.md)，
-此处不复述。未收口项（壁纸域取色内生、matugen 退役）随 Shell 阶段推进。
+阶段台账、P4 验收与门禁唯一见 [shell/ROADMAP.md](shell/ROADMAP.md)，此处不复述。
+未收口项（壁纸域取色内生、matugen 退役）随 S0/S1 推进。长期目标保留不减：
+启动器、壁纸/M3 调色、Noctalia TemplateAdapter、六大标准动作、双 Shell 切换与
+伴生套件协同（契约见 [shell/AGENTS.md](shell/AGENTS.md)）。
 
 ## 全局门禁（每阶段验收都过）
 
 1. 五原则验收给可复现证据（真诚透明 / 绝对主权 / 骨架包容 / 轻盈生长 /
    通用自然，见 [vision](llms-wiki/vision.md)）。
-2. 单一开关真相与单元边界不变量的唯一权威在
-   [unit-model](llms-wiki/unit-model.md) 与 [AGENTS.md](AGENTS.md)，
-   此处只链接不复述。
+2. 单一开关真相与插件边界不变量的唯一权威在
+   [unit-model](llms-wiki/unit-model.md) 与 [AGENTS.md](AGENTS.md)，此处只链接不复述。
 3. 架构 / 命令 / manifest 变更同步对应 wiki 页与台账（路由见 AGENTS.md）。
 
 ## 储备（不承诺）
 
-- 第三方源信任分级与签名。
+- 第三方目录站、信任分级与签名——git URL 即源成立后再议。
 - 安全 Downdate 体系：现场快照优先还原 + Git 逆向检出的安全版本回退。
+- i18n 三处（引擎 translations.toml / shell i18n / humans-wiki 双语页）受众不同，
+  低优登记不动；humans-wiki 与 operation-map 的受众重叠同理。

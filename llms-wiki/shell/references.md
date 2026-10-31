@@ -26,3 +26,15 @@
 - **基准提交**：`2e1c51f`
 - **检索方式**：参考树保持在本地 `shell/references/caelestia/`，由 `.gitignore` 排除。检索使用 `rg --no-ignore shell/references/caelestia`。
 - **核心价值**：T3 Nexus 安卓风味（Material Design 3 Master-Detail）视窗与分组卡片范式——双行信息流分类导航（NavPane）、连通偏好设置原件（`ConnectedRect` 几何派生 `InfoRow` / `ToggleRow` / `SliderRow`）、大标题头部与 Hero Banner 设计参考。Nyxuri 在此基础上坚持纯 QML/JS、无外部二进制插件绑定并兼容现有 `SettingsBackend` 统一状态。
+
+## 4. 插件系统与宿主骨架参考：Omarchy (`omarchy`)
+- **上游来源**：[basecamp/omarchy](https://github.com/basecamp/omarchy)
+- **重现命令**（浅克隆即可，本地树未就位时按此补拉）：
+  ```bash
+  git clone --depth 1 --single-branch https://github.com/basecamp/omarchy shell/references/omarchy
+  ```
+- **检索方式**：参考树由 `.gitignore` 排除，检索使用 `rg --no-ignore shell/references/omarchy/shell`。
+- **核心价值**：S0 骨架整抄的原始蓝本（根 [ROADMAP](../../ROADMAP.md) S0/S1）——`shell.qml` 常驻宿主 + `Commons/` `Ui/` `services/` `plugins/` 结构、`PluginRegistry` 运行时插件注册表、manifest 协议（`schemaVersion` / reverse-DNS `id` / `kinds` / `entryPoints`）的装载与校验实现、Quickshell 0.3.2 上插件动态加载的实跑解法。协议与骨架照抄、目录名小写化；其 `shell.json` 开关状态不抄（单一真相留在引擎账本）。
+
+## 5. 纯 QML 视觉参考：end-4 (`end4-pC`)
+- 本地已有 `shell/references/end4-pC/`（纯 QML 参考树，`.gitignore` 排除），历史上未单独立卷登记；来源与基准提交待考，检索用 `rg --no-ignore shell/references/end4-pC`。

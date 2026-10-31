@@ -29,3 +29,16 @@
 经评估明确拒绝、不得反复提出的：用户 drop-in app 目录、manifest 声明 doctor 项/i18n 键、
 stable+git 双 AUR 包、Nix 式纯函数引擎、按 PCI 设备选驱动变量、`.nyxignore`、
 安装方式优先级表、`preset diff`、`detect` 前缀 DSL（详见 [manifest-schema](manifest-schema.md) 边界节）。
+
+## 架构重塑卷定案与落选（2026-10-31，随 ROADMAP 重置登记）
+
+| 事项 | 裁决 | 理由与落选 |
+|---|---|---|
+| 插件概念定名 | **Plugin / 插件**；三词术语收敛为插件 · manifest · 账本 | 与 Omarchy 协议同词、中文零学习成本。落选：格/Cell（几何味足，输给同词红利）、Mod/模组（游戏味 + QML module 缩写撞词）、积木/Brick（物是活的，隐喻呆板）、星/Star（诗意越界）。「单元」中文语感不佳（作者裁决） |
+| 形态轴不命名 | 由 `use` 动词承载，不设名词 | 词越少越和谐；预设 + 零件合并为形态字段（ROADMAP R0-2） |
+| QML 侧插件协议 | 整包采纳 Omarchy 协议与骨架（目录小写化），不引任何第三方框架 | 同生态（Quickshell 0.3.2）实跑验证；pluggy / stevedore 管 Python-import 式扩展，与「声明 + 文件 + 钩子」形状不符；Caelestia C++ Blobs 延续不移植裁决 |
+| Python 侧插件框架 | 不建框架 | 引擎即插件管理器本体，一套协议两个运行时；entry points（stdlib）为预留通道，第二个真实用例出现才建；pkg 后端走窄驱动（pacman/apt） |
+| 插件沙箱 | 不做运行时沙箱 | 插件是用户信任的代码，明说不沙箱、不做安全剧场；替代 = 第三方 v1 拒绝钩子 + 能力声明静态审计 |
+| 开关状态存储 | 不抄 Omarchy `shell.json` | 单一开关真相已在本引擎账本，不留第二本账 |
+| v1 非目标 | 插件间依赖声明、schemaVersion 迁移框架均不做 | 包依赖走 manifest packages、运行冲突走槽仲裁已覆盖；未知版本直接拒绝 |
+| 导入语义 | 配置导入与插件导入两条线永不混合 | 用户已有配置走保留策略（carry / vault）；第三方插件走 add/validate/remove |

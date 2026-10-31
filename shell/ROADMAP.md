@@ -7,6 +7,8 @@
 > [shell-roadmap-ledger](../llms-wiki/archive/shell-roadmap-ledger.md)。
 > 当前整体处于**实验性阶段**（BUG 多、外观未开发、暂不推荐日常使用）；
 > 已知 BUG 与暂缓的基础设施缺口见 [KNOWN-ISSUES.md](KNOWN-ISSUES.md)。
+> 下一卷跨域骨架演进（Omarchy 插件协议整抄、小写五件套、设置去中心化）归根
+> [ROADMAP](../ROADMAP.md) 的 S0/S1 管；本页 T3 剩余验收与资产收编随其迁移一并走。
 
 ## 目标与边界
 
@@ -142,7 +144,7 @@ hooks 的实机行为证据与视觉验收待作者确认。镜像色板是否�
 | M1 | 偏好原子套件纯 QML 拷入与重构（`ConnectedRect`、`PreferenceToggle` 等 11 个原件落地并过原子单测） | 已完成 |
 | M2 | 视窗外壳与 NavPane 双行导航骨架落地，接入药丸搜索（原版占位形态）与胶囊高亮，处决旧 `NavigationRail*`；fidelity 修订对齐 Caelestia 实测值并新增 About 页 | 已完成 |
 | M3 | 核心页面首批积木化翻新（`AccountPage`、`ThemePage`、`WallpaperPage`、`DisplaysPage`） | 待验收 |
-| M4 | 全页面覆盖、废弃代码清算与全量测试冒烟验收 | 待开始 |
+| M4 | 全页面覆盖、废弃代码清算与全量测试冒烟验收（批 A–F 已落地；清算档作者裁决挂起，随迁移顺带） | 进行中 |
 
 ## 后续阶段
 
