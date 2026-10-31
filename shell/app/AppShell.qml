@@ -3,9 +3,9 @@ import Quickshell
 import Quickshell.Io
 import qs.app
 import qs.services
-import qs.plugins.settings
-import qs.plugins.sidebars.dashboard.infotools
-import qs.plugins.wallpaper
+import "../plugins/settings"
+import "../plugins/sidebars/dashboard/infotools"
+import "../plugins/wallpaper"
 import qs.commons
 
 // AppShell — the microkernel host (unit-model.md §6). It owns assembly

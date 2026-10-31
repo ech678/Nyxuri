@@ -6,7 +6,6 @@ import qs.commons
 import qs.ui
 import qs.services
 import qs.commons.i18n
-import qs.plugins.settings
 import qs.ui
 
 // Connected devices shell (T3 M4): overview on the Nexus scaffold, Bluetooth

@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Layouts
 import qs.services
 import qs.commons.i18n
-import qs.plugins.settings
 import qs.ui
 
 // Language & region page (T3 M4): NexusPageBase scaffold + M1 atom rows.

@@ -245,12 +245,18 @@ class TestWarmupAndI18n(unittest.TestCase):
     """KM4.6 rule + translation coverage for the atoms' own strings."""
 
     def test_controls_pool_is_in_the_slot_host_warmup(self):
-        source = (REPO_ROOT / "shell" / "app" / "SlotHost.qml").read_text(encoding="utf-8")
-        self.assertIn("import qs.ui", source,
-                      "new synthesized qs.* pool must warm up in SlotHost")
-        # The atoms now also reference the parent pool (NexusStyle).
-        self.assertIn("import qs.plugins.settings", source,
-                      "the unit root pool must stay warmed for the atoms' NexusStyle import")
+        # S0-2: the SlotHost preheat list retired with the runtime registry.
+        # Shared pools (qs.ui et al.) are guaranteed by shell.qml's top-level
+        # imports instead (loader-form rule 3); SlotHost stays pool-free.
+        root = (REPO_ROOT / "shell" / "shell.qml").read_text(encoding="utf-8")
+        for module in ("qs.commons", "qs.commons.cards", "qs.commons.i18n",
+                       "qs.services", "qs.ui"):
+            self.assertIn(f"import {module}", root,
+                          f"shared pool {module} must be guaranteed by shell.qml")
+        slot = (REPO_ROOT / "shell" / "app" / "SlotHost.qml").read_text(encoding="utf-8")
+        self.assertNotIn("import qs.plugins", slot,
+                         "the preheat list is retired; plugins speak relative imports")
+        self.assertNotIn("import qs.ui", slot)
 
     def test_atom_strings_are_translated(self):
         zh = (REPO_ROOT / "shell" / "commons" / "i18n" / "zh_CN.toml").read_text(encoding="utf-8")

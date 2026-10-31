@@ -1,6 +1,6 @@
 import QtQuick
 import qs.services
-import qs.plugins.wallpaper
+import "../wallpaper"
 import qs.commons.i18n
 
 Item {

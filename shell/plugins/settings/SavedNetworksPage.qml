@@ -6,7 +6,6 @@ import qs.commons
 import qs.ui
 import qs.services
 import qs.commons.i18n
-import qs.plugins.settings
 import qs.ui
 
 // Saved networks page (T3 M4): a connected-card list of the remembered Wi-Fi

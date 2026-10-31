@@ -1,0 +1,3 @@
+singleton WallpaperPaletteSession 1.0 WallpaperPaletteSession.qml
+singleton WallpaperSceneService 1.0 WallpaperSceneService.qml
+singleton WallpaperService 1.0 WallpaperService.qml

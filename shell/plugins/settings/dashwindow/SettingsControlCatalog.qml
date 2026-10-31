@@ -2,7 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import qs.services
-import qs.plugins.wallpaper
+import "../../wallpaper"
 import qs.commons.i18n
 
 // Control registry for the dashboard settings grid. Plays the role end4-pC's
@@ -583,8 +583,8 @@ Singleton {
 
 // ── Dock ─────────────────────────────────────────────────────
 // Unit existence routes through the kernel verb (unit-model.md §6).
-"dock:Show dock": root.toggle(() => StateProjection.isEnabled("dock"), value => UnitControlService.setUnit("dock",
-                                                                                                    value)),
+"dock:Show dock": root.toggle(() => StateProjection.isEnabled("dock"), value => UnitControlService.setUnit(
+                                                                                    "dock", value)),
 "dock:Screen edge": root.select(() => DockService.position, value => DockService.setOption("position", value),
 [
 

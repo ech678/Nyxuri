@@ -4,7 +4,6 @@ import qs.commons
 import qs.services
 import qs.ui
 import qs.commons.i18n
-import qs.plugins.settings
 
 ColumnLayout {
     id: root

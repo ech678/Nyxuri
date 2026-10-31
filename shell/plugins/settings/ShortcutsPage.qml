@@ -8,7 +8,6 @@ import "./NiriActionNames.js" as ActionNames
 import qs.services
 import qs.ui
 import qs.commons.i18n
-import qs.plugins.settings
 import qs.ui
 
 Item {

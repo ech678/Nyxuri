@@ -5,9 +5,9 @@ import Quickshell.Io
 import Quickshell.Wayland
 import qs.commons
 import "../../commons/SidebarPolicy.js" as SidebarPolicy
-import qs.plugins.sidebars.dashboard
-import qs.plugins.sidebars.quicksettings
-import qs.plugins.desktopcards
+import "dashboard"
+import "quicksettings"
+import "../desktopcards"
 import qs.services
 import qs.ui
 
@@ -68,12 +68,11 @@ PanelWindow {
     }
 
     function openOnScreen(role, view, screenName) {
-        const views = role === "dashboard" ? ["info", "weather"] : role === "quicksettings" ? ["settings",
-                                                                                                         "network",
-                                                                                                         "bluetooth",
-                                                                                                         "audio", "microphone",
-                                                                                                         "idle", "night"] :
-                                                                                                        [];
+        const views = role === "dashboard" ? ["info", "weather"] : role === "quicksettings" ? ["settings", "network",
+                                                                                               "bluetooth",
+                                                                                               "audio", "microphone",
+                                                                                               "idle", "night"] :
+                                                                                              [];
         if (views.indexOf(view) < 0)
             return "INVALID_VIEW";
         const requestedScreen = BrightnessService.getScreenByName(screenName);

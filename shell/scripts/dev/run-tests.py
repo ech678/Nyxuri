@@ -36,17 +36,17 @@ class ResourceIntegrityTests(unittest.TestCase):
         """Assert all required GLSL fragment shaders have precompiled .qsb assets."""
 
         required_qsbs = [
-            SHELL_DIR / "units" / "keystone" / "shaders" / "qsb" / "long_split.frag.qsb",
-            SHELL_DIR / "units" / "keystone" / "shaders" / "qsb" / "pill_morph.frag.qsb",
-            SHELL_DIR / "units" / "launcher" / "shaders" / "qsb" / "spotlight_mode_field.frag.qsb",
-            SHELL_DIR / "units" / "wallpaper" / "shaders" / "qsb" / "wp_disc.frag.qsb",
-            SHELL_DIR / "units" / "wallpaper" / "shaders" / "qsb" / "wp_fade.frag.qsb",
-            SHELL_DIR / "units" / "wallpaper" / "shaders" / "qsb" / "wp_iris_bloom.frag.qsb",
-            SHELL_DIR / "units" / "wallpaper" / "shaders" / "qsb" / "wp_pixelate.frag.qsb",
-            SHELL_DIR / "units" / "wallpaper" / "shaders" / "qsb" / "wp_portal.frag.qsb",
-            SHELL_DIR / "units" / "wallpaper" / "shaders" / "qsb" / "wp_stripes.frag.qsb",
-            SHELL_DIR / "units" / "wallpaper" / "shaders" / "qsb" / "wp_wipe.frag.qsb",
-            SHELL_DIR / "units" / "wallpaper" / "shaders" / "qsb" / "zen-palette.frag.qsb",
+            SHELL_DIR / "plugins" / "keystone" / "shaders" / "qsb" / "long_split.frag.qsb",
+            SHELL_DIR / "plugins" / "keystone" / "shaders" / "qsb" / "pill_morph.frag.qsb",
+            SHELL_DIR / "plugins" / "launcher" / "shaders" / "qsb" / "spotlight_mode_field.frag.qsb",
+            SHELL_DIR / "plugins" / "wallpaper" / "shaders" / "qsb" / "wp_disc.frag.qsb",
+            SHELL_DIR / "plugins" / "wallpaper" / "shaders" / "qsb" / "wp_fade.frag.qsb",
+            SHELL_DIR / "plugins" / "wallpaper" / "shaders" / "qsb" / "wp_iris_bloom.frag.qsb",
+            SHELL_DIR / "plugins" / "wallpaper" / "shaders" / "qsb" / "wp_pixelate.frag.qsb",
+            SHELL_DIR / "plugins" / "wallpaper" / "shaders" / "qsb" / "wp_portal.frag.qsb",
+            SHELL_DIR / "plugins" / "wallpaper" / "shaders" / "qsb" / "wp_stripes.frag.qsb",
+            SHELL_DIR / "plugins" / "wallpaper" / "shaders" / "qsb" / "wp_wipe.frag.qsb",
+            SHELL_DIR / "plugins" / "wallpaper" / "shaders" / "qsb" / "zen-palette.frag.qsb",
         ]
         for qsb in required_qsbs:
             self.assertTrue(qsb.is_file(), f"Missing required precompiled shader: {qsb}")
@@ -54,7 +54,7 @@ class ResourceIntegrityTests(unittest.TestCase):
 
     def test_zen_palette_renderer_has_no_dangling_qrc(self):
         """Assert ZenPaletteRenderer.qml loads the unit-owned precompiled qsb as a real file URL."""
-        renderer = SHELL_DIR / "units" / "wallpaper" / "ZenPaletteRenderer.qml"
+        renderer = SHELL_DIR / "plugins" / "wallpaper" / "ZenPaletteRenderer.qml"
         content = renderer.read_text(encoding="utf-8")
         self.assertNotIn("qrc:/", content)
         self.assertIn('Qt.resolvedUrl("shaders/qsb/zen-palette.frag.qsb")', content)
@@ -83,8 +83,8 @@ class ResourceIntegrityTests(unittest.TestCase):
     def test_toml_i18n_syntax_and_dead_section_purged(self):
         """Assert zh_CN.toml and en_US.toml parse cleanly with tomllib and have no dead sections."""
         import tomllib
-        zh_cn_path = SHELL_DIR / "app" / "i18n" / "zh_CN.toml"
-        en_us_path = SHELL_DIR / "app" / "i18n" / "en_US.toml"
+        zh_cn_path = SHELL_DIR / "commons" / "i18n" / "zh_CN.toml"
+        en_us_path = SHELL_DIR / "commons" / "i18n" / "en_US.toml"
 
         with open(zh_cn_path, "rb") as f:
             zh_data = tomllib.load(f)
@@ -141,11 +141,12 @@ def build_category_suite(category: str) -> unittest.TestSuite:
         # Lifecycle and boundary tests
         from shell.tests.test_lifecycle_audit import TestLifecycleAudit
         suite.addTests(loader.loadTestsFromTestCase(TestLifecycleAudit))
-        from shell.tests.test_unit_catalog import (TestUnitCatalogSync, TestHostClosure,
-                                                   TestEventLoop)
-        suite.addTests(loader.loadTestsFromTestCase(TestUnitCatalogSync))
+        from shell.tests.test_plugin_manifests import (TestPluginManifestSync, TestHostClosure,
+                                                       TestEventLoop, TestRetiredMirrors)
+        suite.addTests(loader.loadTestsFromTestCase(TestPluginManifestSync))
         suite.addTests(loader.loadTestsFromTestCase(TestHostClosure))
         suite.addTests(loader.loadTestsFromTestCase(TestEventLoop))
+        suite.addTests(loader.loadTestsFromTestCase(TestRetiredMirrors))
         from tests.shell.test_shell import TestShellManagement
         static_test_names = [
             "test_p2_layer_structure_and_session_decoupling",

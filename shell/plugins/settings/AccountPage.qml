@@ -4,14 +4,13 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Layouts
 import QtQuick.Window
-import qs.plugins.wallpaper
+import "../wallpaper"
 import "../../commons/WallpaperSource.js" as WallpaperSource
 import qs.commons
 import qs.ui
 import qs.services
 import qs.app
 import qs.commons.i18n
-import qs.plugins.settings
 import qs.ui
 
 // Account page (M3 rebuild): NexusPageBase scaffold + AccountProfileHeader

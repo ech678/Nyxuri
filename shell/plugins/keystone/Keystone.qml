@@ -2,9 +2,9 @@ import QtQuick
 import Quickshell.Io
 import qs.commons
 import qs.services
-import qs.plugins.keystone.styles.bangs
-import qs.plugins.keystone.styles.long
-import qs.plugins.keystone.styles.pill
+import "styles/bangs"
+import "styles/long"
+import "styles/pill"
 import qs.app
 import qs.commons.i18n
 

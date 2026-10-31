@@ -7,8 +7,8 @@ import qs.commons
 import qs.app
 import qs.ui
 import qs.services
-import qs.plugins.wallpaper
-import qs.plugins.settings
+import "../../wallpaper"
+import ".."
 import qs.commons.i18n
 
 // Dashboard "Wallpapers" page. Layout ported from end4-pC's
@@ -275,7 +275,6 @@ Item {
                                 root.applyTo(cell.modelData);
                             }
                         }
-
                     }
 
                     Rectangle {

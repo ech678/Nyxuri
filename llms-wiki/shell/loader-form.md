@@ -13,6 +13,10 @@
    禁用相对路径 source——它被 qs: URL 拦截器接管，落入缺陷区（见根因）。
 2. 插件内部组件互访用**同目录隐式类型 + 相对目录 import**（`import "tools"`）；
    **不得**用 `import qs.<自有模块根>` 引用自己或自己的子目录。
+   **单例例外**：`pragma Singleton` 文件靠目录内 `qmldir` 的 `singleton` 登记
+   才是真单例——隐式/相对解析没登记的 Singleton 文件只会拿到空壳类型对象
+   （全部方法调用死于 `TypeError: ... is not a function`，见「单例登记」节）。
+   qmldir 的唯一职责就是单例登记表，普通类型不列、继续隐式解析。
 3. `import qs.*` 模块 import 只指向启动扫描闭包内的共享层（`commons/` `ui/`
    `services/`）——这些目录由 `shell.qml` 顶层 import 保证 qmldir 合成。
 4. SlotHost 静态预热名单是本缺陷的补丁：S0-1 机械迁移期间保留（现状机制等价），
@@ -20,6 +24,24 @@
    代码，零宿主改动」不再受静态名单牵制）。
 5. config root 之外的插件（S1 第三方 `~/.local/share/nyxuri/plugins/<id>/`）与
    root 内插件同形态，实测同为 20/20——S1 接入清单的装载面由本定案覆盖。
+
+## 单例登记（S0-2 实机教训，2026-11-01）
+
+`pragma Singleton` 文件在三种解析形态下行为不同（最小复现：
+`qs -p` + file:// 装载探针，沙箱 XDG）：
+
+| 引用形态 | 无 qmldir | 有 qmldir `singleton` 登记 |
+| --- | --- | --- |
+| `import qs.<module>`（合成 qmldir） | ✓ 真单例（合成器代写 singleton 行） | —（模块面已退役） |
+| 同目录隐式类型 | ✗ 空壳（类型对象，方法全丢） | ✓ 真单例 |
+| `import "相对目录"` | ✗ 空壳 | ✓ 真单例 |
+
+S0-2 预热退役当天实机症状：launcher / settings（及 sidebars 局部）全部
+插件单例调用报 `Property 'x' of object Y is not a function`——同目录隐式
+引用拿到的是未登记的类型对象。修复 = 13 个插件目录补 `qmldir` 单例登记表
+（23 条），契约由 `shell/tests/test_plugin_manifests.py:TestSingletonRegistration`
+焊接（双向：pragma Singleton 必登记、登记必真单例、qmldir 只许单例行）。
+S1 第三方插件自带其目录的 qmldir 即同形态成立。
 
 ## 根因（源码 + 行为双证）
 

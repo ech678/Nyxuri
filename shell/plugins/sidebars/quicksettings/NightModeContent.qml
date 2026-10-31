@@ -3,7 +3,7 @@ import qs.app
 import QtQuick.Layouts
 import qs.commons
 import qs.ui
-import qs.plugins.settings
+import "../../settings"
 import qs.commons.i18n
 
 WidgetPanel {

@@ -4,9 +4,9 @@ import QtQuick.Layouts
 import QtQuick.Window
 import qs.commons
 import qs.ui
-import qs.plugins.settings
+import ".."
 import qs.services
-import qs.plugins.wallpaper
+import "../../wallpaper"
 import qs.commons.i18n
 
 // Interactive easing-curve tile. Reuses BezierCurveEditor from the flat

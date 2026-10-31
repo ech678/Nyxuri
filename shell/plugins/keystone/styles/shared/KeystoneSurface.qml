@@ -10,15 +10,15 @@ import Quickshell.Wayland
 import qs.services
 import qs.commons
 import qs.ui
-import qs.plugins.keystone.clock
-import qs.plugins.keystone.media
-import qs.plugins.notifications
-import qs.plugins.keystone.volume
-import qs.plugins.keystone.hub
-import qs.plugins.keystone.tools
-import qs.plugins.keystone.styles.recording
-import qs.plugins.keystone.styles.long
-import qs.plugins.keystone
+import "../../clock"
+import "../../media"
+import "../../../notifications"
+import "../../volume"
+import "../../hub"
+import "../../tools"
+import "../recording"
+import "../long"
+import "../.."
 
 Variants {
     id: styleSurface

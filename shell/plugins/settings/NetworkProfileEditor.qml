@@ -6,7 +6,6 @@ import qs.commons
 import qs.services
 import qs.ui
 import qs.commons.i18n
-import qs.plugins.settings
 import qs.ui
 
 // Connection profile editor (T3 M4): atom rows inside the network config

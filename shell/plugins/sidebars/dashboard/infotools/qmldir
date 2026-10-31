@@ -1,0 +1,3 @@
+singleton InfoDrawerState 1.0 InfoDrawerState.qml
+singleton TimerService 1.0 TimerService.qml
+singleton TodoService 1.0 TodoService.qml

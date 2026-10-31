@@ -1,6 +1,6 @@
 import QtQuick
 import qs.commons
-import qs.plugins.keystone
+import "../.."
 
 QtObject {
     required property bool recordingActive

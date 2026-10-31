@@ -7,7 +7,6 @@ import qs.commons
 import qs.services
 import qs.ui
 import qs.commons.i18n
-import qs.plugins.settings
 import qs.ui
 
 // Theme page (M3 rebuild): NexusPageBase scaffold + theme-mode preview cards,

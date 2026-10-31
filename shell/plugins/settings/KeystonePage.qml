@@ -6,7 +6,6 @@ import qs.commons
 import qs.services
 import qs.ui
 import qs.commons.i18n
-import qs.plugins.settings
 import qs.ui
 
 // Keystone page shell (T3 M4): overview renders as a NexusPageBase over the

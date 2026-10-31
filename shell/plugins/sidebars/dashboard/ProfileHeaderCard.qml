@@ -1,5 +1,5 @@
 import QtQuick
-import qs.plugins.wallpaper
+import "../../wallpaper"
 import "../../../commons/WallpaperSource.js" as WallpaperSource
 import qs.commons
 import qs.services

@@ -1,5 +1,5 @@
 import QtQuick
-import qs.plugins.keystone.styles.shared
+import "../shared"
 
 KeystoneSurface {
     detached: true

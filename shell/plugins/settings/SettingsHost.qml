@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Io
 import qs.app
 import qs.services
-import qs.plugins.settings.dashwindow
+import "dashwindow"
 
 Scope {
     id: root

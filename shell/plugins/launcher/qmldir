@@ -1,0 +1,3 @@
+singleton FileSearchService 1.0 FileSearchService.qml
+singleton SpotlightSearchService 1.0 SpotlightSearchService.qml
+singleton SpotlightToolService 1.0 SpotlightToolService.qml

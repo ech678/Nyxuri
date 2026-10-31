@@ -8,7 +8,7 @@ import Quickshell
 import qs.commons
 import qs.ui
 import qs.services
-import qs.plugins.wallpaper
+import "../wallpaper"
 import qs.commons.i18n
 
 Item {

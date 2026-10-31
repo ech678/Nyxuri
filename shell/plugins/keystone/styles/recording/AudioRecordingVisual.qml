@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.commons
-import qs.plugins.keystone
+import "../.."
 import "RecordingFormat.js" as RecordingFormat
 
 Item {

@@ -3,7 +3,7 @@ import QtQuick
 import Quickshell
 import qs.app
 import qs.services
-import qs.plugins.wallpaper
+import "../plugins/wallpaper"
 import qs.commons
 import "../plugins/settings/generated/SearchCatalog.js" as Catalog
 import "../plugins/launcher/SpotlightCommands.js" as Commands

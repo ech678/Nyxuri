@@ -1,7 +1,7 @@
 import QtQuick
 import qs.app
-import qs.plugins.settings
-import qs.plugins.wallpaper
+import "../../settings"
+import "../../wallpaper"
 import qs.commons
 import qs.services
 import qs.ui

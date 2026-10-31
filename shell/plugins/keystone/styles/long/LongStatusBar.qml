@@ -3,11 +3,11 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import qs.services
-import qs.plugins.keystone.clock
-import qs.plugins.bar.workspaces
-import qs.plugins.bar.tray
-import qs.plugins.bar.media
-import qs.plugins.bar.sysmonitor
+import "../../clock"
+import "../../../bar/workspaces"
+import "../../../bar/tray"
+import "../../../bar/media"
+import "../../../bar/sysmonitor"
 
 Item {
     id: root

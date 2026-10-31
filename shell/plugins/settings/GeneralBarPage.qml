@@ -4,7 +4,6 @@ import qs.commons
 import qs.services
 import qs.ui
 import qs.commons.i18n
-import qs.plugins.settings
 import qs.ui
 
 // Bar page (T3 M4): NexusPageBase scaffold + M1 atom rows. The drag-to-reorder

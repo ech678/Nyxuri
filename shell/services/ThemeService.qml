@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.commons
 import qs.services
-import qs.plugins.wallpaper
+import "../plugins/wallpaper"
 import qs.app
 import qs.commons.i18n
 

@@ -6,7 +6,6 @@ import qs.commons
 import qs.ui
 import qs.services
 import qs.commons.i18n
-import qs.plugins.settings
 import qs.ui
 
 // Network page (T3 M4): NexusPageBase scaffold + M1 atom rows. Wired and

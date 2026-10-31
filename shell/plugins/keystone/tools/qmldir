@@ -1,0 +1,3 @@
+singleton AudioRecordingService 1.0 AudioRecordingService.qml
+singleton ColorPickerService 1.0 ColorPickerService.qml
+singleton RecordingService 1.0 RecordingService.qml

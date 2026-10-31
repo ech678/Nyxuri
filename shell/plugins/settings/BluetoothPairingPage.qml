@@ -6,7 +6,6 @@ import qs.commons
 import qs.services
 import qs.ui
 import qs.commons.i18n
-import qs.plugins.settings
 import qs.ui
 
 // Pair new device subpage (T3 M4): NexusPageBase subpage with its own back

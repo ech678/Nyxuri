@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import posixpath
 import re
 import subprocess
 import sys
@@ -53,6 +54,15 @@ ALLOWED_OPTIONAL_IMPORTERS = {
 }
 
 GATEWAY_FILE = "app/ActionGateway.qml"
+
+
+def _plugins_domain_of(resolved: str) -> str:
+    """The plugins/<domain> a resolved relative path lands in ('' when none)."""
+    parts = resolved.split("/")
+    for i, segment in enumerate(parts):
+        if segment == "plugins" and i + 1 < len(parts):
+            return parts[i + 1].lower()
+    return ""
 
 ALLOWED_MODULE_CROSS_IMPORTS = {
     # host domain -> set of allowed target domains
@@ -535,15 +545,27 @@ def check_file_violations(
                 match_mod = re.search(r"\bimport\s+qs\.plugins\.([A-Za-z0-9_]+)\b", line)
                 if match_mod:
                     target_domain = match_mod.group(1).lower()
-                    if target_domain != curr_domain and target_domain not in allowed_targets:
-                        violations.append(
-                            AuditViolation(
-                                "ARCH001",
-                                rel_path,
-                                idx,
-                                f"Forbidden cross-domain import: Domain '{curr_domain}' cannot import domain '{target_domain}'; route via ActionGateway or the commons/ui layer",
-                            )
+                else:
+                    # S0-2: plugins speak relative directory imports
+                    # (loader-form rule 2/3) — a relative import crossing into
+                    # another plugins/<domain>/ tree is the same offence.
+                    match_rel = re.match(r'\s*import\s+"([^"]+)"', line)
+                    if not match_rel or match_rel.group(1).endswith(".js"):
+                        continue
+                    resolved = posixpath.normpath(
+                        posixpath.join(posixpath.dirname(rel_path), match_rel.group(1)))
+                    target_domain = _plugins_domain_of(resolved)
+                    if not target_domain:
+                        continue
+                if target_domain != curr_domain and target_domain not in allowed_targets:
+                    violations.append(
+                        AuditViolation(
+                            "ARCH001",
+                            rel_path,
+                            idx,
+                            f"Forbidden cross-domain import: Domain '{curr_domain}' cannot import domain '{target_domain}'; route via ActionGateway or the commons/ui layer",
                         )
+                    )
 
     return violations
 

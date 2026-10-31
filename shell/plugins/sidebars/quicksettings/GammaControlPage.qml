@@ -6,7 +6,7 @@ import qs.commons
 import qs.services
 import qs.ui
 import qs.commons.i18n
-import qs.plugins.settings
+import "../../settings"
 import qs.ui
 
 // Gamma control page (M3 rebuild): the whole form moves onto the M1 atoms —

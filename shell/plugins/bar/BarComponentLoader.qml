@@ -1,13 +1,13 @@
 import QtQuick
 import qs.services
 import QtQuick.Layouts
-import qs.plugins.bar.workspaces
-import qs.plugins.bar.activewindow
-import qs.plugins.bar.tray
-import qs.plugins.bar.sysmonitor
-import qs.plugins.bar.media
-import qs.plugins.bar.quickpanel
-import qs.plugins.bar.clock
+import "workspaces"
+import "activewindow"
+import "tray"
+import "sysmonitor"
+import "media"
+import "quickpanel"
+import "clock"
 
 Loader {
     id: root

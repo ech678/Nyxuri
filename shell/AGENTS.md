@@ -160,8 +160,11 @@ Shell 是极致精简的**微内核宿主**：宿主只保留装配（`SlotHost`
 
 ## QML、构建与文案
 
-- 保留 Quickshell root-relative import 语义，不给纯 QML 目录手写 qmldir。
-  native 的 qmldir、qmltypes 和 plugin 由 CMake/Qt 生成，不手改生成物或用户安装目录。
+- 保留 Quickshell root-relative import 语义。纯 QML 目录不写类型清单 qmldir；
+  **唯一例外**：含 `pragma Singleton` 文件的目录必须有 qmldir 单例登记表
+  （`singleton <名> 1.0 <文件>.qml`，只登记单例——隐式/相对解析没有登记就
+  拿到空壳类型对象，机制与证据见 [loader-form](../llms-wiki/shell/loader-form.md)，
+  契约由 test_plugin_manifests 焊接）。native 的 qmldir、qmltypes 和 plugin 由 CMake/Qt 生成，不手改生成物或用户安装目录。
 - 静态 import 不因 Loader inactive 自动变成可选。缺插件路径必须用真实独立组件
   验证隔离；默认构建不 require 封存依赖。
 - `ui/` 与 `commons/` 由设计 Token 与注入数据、原子控件与区域几何（`ui/`）、纯算法 JS 与 `i18n/`、纯展示卡片 `cards/`（均 `commons/`）构成，不读取环境、发现系统字体/图标或监听文件。主题 IO、字体加载与发现、图标解析归 `services/`，路径归 `app/Paths.qml`；`Resources` 与 `Fonts` 仅承载 app 注入的展示数据。设置搜索锚点归 settings，面板协调状态归 app；共享控件的 Connections 只能观察注入对象和自身几何。

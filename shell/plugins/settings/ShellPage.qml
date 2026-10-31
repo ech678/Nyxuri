@@ -3,10 +3,9 @@ import QtQuick.Layouts
 import qs.app
 import qs.commons
 import qs.services
-import qs.plugins.keystone.tools
+import "../keystone/tools"
 import qs.ui
 import qs.commons.i18n
-import qs.plugins.settings
 import qs.ui
 
 // Shell control plane (T3 M4): NexusPageBase scaffold + M1 atom rows. Every
@@ -72,11 +71,11 @@ NexusPageBase {
             }
         }
 
-        // The twelve Shell units, projected straight off the ledger
-        // (unit-model.md §6). Flipping dispatches `nyxuri on/off shell.<domain>`
+        // The Shell plugins, projected straight off the ledger
+        // (plugin-model.md §6). Flipping dispatches `nyxuri on/off shell.<id>`
         // via UnitControlService; this page mirrors nothing.
         Repeater {
-            model: UnitCatalog.units
+            model: PluginRegistry.toggles
 
             delegate: PreferenceToggle {
                 id: unitToggle

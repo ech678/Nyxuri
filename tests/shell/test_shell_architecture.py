@@ -267,12 +267,19 @@ class TestShellManagement(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "CMakeLists.txt")), "shell/CMakeLists.txt must be eliminated")
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "build")), "shell/build must not exist")
 
-        # 2. Pure QML directories carry no handwritten qmldir — pragma Singleton
-        #    resolves in qs synthetic pools (app/services precedent), so any
-        #    surviving qmldir outside the named M3Shapes module is drift.
-        self.assertFalse(os.path.isfile(os.path.join(shell_dir, "plugins", "keystone", "qmldir")), "Pure QML directory should not have handwritten qmldir")
-        self.assertFalse(os.path.isfile(os.path.join(shell_dir, "plugins", "settings", "dashwindow", "qmldir")), "dashwindow qmldir is redundant; delete it")
-        self.assertFalse(os.path.isfile(os.path.join(shell_dir, "plugins", "bar", "clock", "qmldir")), "bar/clock qmldir is redundant; delete it")
+        # 2. Pure QML directories carry no type-list qmldir. The ONE exception
+        #    (S0-2): a directory holding `pragma Singleton` files ships a
+        #    singleton-only registry qmldir — implicit/relative resolution
+        #    without it yields husk objects (loader-form.md 单例登记). The
+        #    singleton weld itself lives in shell/tests/test_plugin_manifests.
+        for qmldir in sorted((Path(shell_dir) / "plugins").rglob("qmldir")):
+            with open(qmldir, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#"):
+                        self.assertTrue(
+                            line.startswith("singleton "),
+                            f"{qmldir} must stay a singleton-only registry: {line}")
 
         # 3. pure-display layer strictly contains commons/ (cards + i18n + flat
         # tokens/js) and ui/ (flat controls + shapes/); nothing else.
@@ -854,7 +861,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("Repeater", slot_content)
         self.assertIn("Loader", slot_content)
         self.assertIn("StateProjection.isEnabled", slot_content)
-        self.assertIn("UnitCatalog.units", slot_content)
+        self.assertIn("PluginRegistry.units", slot_content)
 
         # 2b. DesktopCardHost gates its own windows on configured cards;
         # slot loading stays pure existence.
@@ -1077,8 +1084,9 @@ class TestShellManagement(unittest.TestCase):
         with open(dashboard_file, "r", encoding="utf-8") as f:
             sidebar_content = f.read()
             # DashboardSidebar legitimately requires settings & the app services pool
-            # for WallpaperColorPicker & FilePickerWindow (KM4.5: picker lives in app/services)
-            self.assertIn("import qs.plugins.settings", sidebar_content, "DashboardSidebar needs settings for WallpaperColorPicker")
+            # for WallpaperColorPicker & FilePickerWindow (KM4.5: picker lives in app/services).
+            # S0-2: plugin trees speak relative directory imports (loader-form rule 2).
+            self.assertIn('import "../../settings"', sidebar_content, "DashboardSidebar needs settings for WallpaperColorPicker")
             self.assertIn("import qs.services", sidebar_content, "DashboardSidebar needs app services for FilePickerWindow")
             self.assertNotIn("import qs.plugins.keystone", sidebar_content, "DashboardSidebar must not import keystone")
             self.assertNotIn("import qs.plugins.launcher", sidebar_content, "DashboardSidebar must not import launcher")
@@ -1103,7 +1111,9 @@ class TestShellManagement(unittest.TestCase):
         keystone_surface = os.path.join(shell_dir, "plugins", "keystone", "styles", "shared", "KeystoneSurface.qml")
         with open(keystone_surface, "r", encoding="utf-8") as f:
             keystone_content = f.read()
-            self.assertIn("import qs.plugins.notifications", keystone_content, "KeystoneSurface must import from qs.plugins.notifications")
+            # S0-2: relative directory import into the notifications plugin
+            # (loader-form rule 2; the old module form is retired).
+            self.assertIn('import "../../../notifications"', keystone_content, "KeystoneSurface must import from the notifications plugin")
             self.assertNotIn("import qs.plugins.keystone.notifications", keystone_content, "Legacy keystone.notifications import must be gone")
 
         # Keystone notifications directory must be removed to avoid duplication
@@ -1319,8 +1329,9 @@ class TestShellManagement(unittest.TestCase):
             old_file = os.path.join(services_dir, name)
             self.assertFalse(os.path.exists(old_file), f"Old service duplicate must not exist in app/services: {old_file}")
 
-        # 3. Assert app/ is pure assembly after S0-1: exactly the six host
-        # files (AppShell/SlotHost/UnitCatalog/Paths/WidgetState/ActionGateway).
+        # 3. Assert app/ is pure assembly after S0-2: exactly the five host
+        # files (AppShell/SlotHost/Paths/WidgetState/ActionGateway — the
+        # UnitCatalog mirror retired with the runtime plugin registry).
         # The former services/cards/i18n payload now lives in services/ and
         # commons/; icons/ and templates/ stay as host data.
         app_files = []
@@ -1328,7 +1339,7 @@ class TestShellManagement(unittest.TestCase):
             for f in files:
                 if f.endswith((".qml", ".js")):
                     app_files.append(os.path.join(root_dir, f))
-        self.assertEqual(len(app_files), 6, f"app/ must strictly contain 6 files, found {len(app_files)}: {app_files}")
+        self.assertEqual(len(app_files), 5, f"app/ must strictly contain 5 files, found {len(app_files)}: {app_files}")
 
         # 5. Static lifecycle audit passes clean with zero violations
         import subprocess

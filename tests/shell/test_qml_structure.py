@@ -9,6 +9,7 @@ import io
 import json
 import os
 import re
+import posixpath
 import subprocess
 import sys
 import tempfile
@@ -188,7 +189,9 @@ class TestShellPageSingletonImports(unittest.TestCase):
         self.assertIn("ColorPickerService.probeFinished", source)
         imports = [line.strip() for line in source.splitlines() if line.startswith("import ")]
         self.assertIn("import qs.app", imports)
-        self.assertIn("import qs.plugins.keystone.tools", imports)
+        # S0-2: plugin trees speak relative directory imports (loader-form
+        # rule 2); keystone.tools resolves via its qmldir singleton registry.
+        self.assertIn('import "../keystone/tools"', imports)
 
 class TestQmlSingletonImports(unittest.TestCase):
     """Every QML file must import the module that declares a singleton it reads.
@@ -227,6 +230,15 @@ class TestQmlSingletonImports(unittest.TestCase):
             source = path.read_text(encoding="utf-8", errors="ignore")
             code = "\n".join(line.split("//", 1)[0] for line in source.splitlines())
             imports = set(re.findall(r"^import\s+([\w.]+)", source, re.M))
+            # S0-2: a relative directory import that resolves into the
+            # singleton's own directory reads its qmldir registration — an
+            # equally valid resolution shape (loader-form rule 2 + 单例登记).
+            relative_dirs = set()
+            for rel_spec in re.findall(r'^import\s+"([^"]+)"', source, re.M):
+                if not rel_spec.endswith(".js"):
+                    resolved = posixpath.normpath(
+                        posixpath.join(relative.parent.as_posix(), rel_spec))
+                    relative_dirs.add(resolved)
             for name in sorted(set(re.findall(r"\b([A-Z][A-Za-z0-9_]*)\.", code))):
                 entry = singletons.get(name)
                 if entry is None:
@@ -236,6 +248,8 @@ class TestQmlSingletonImports(unittest.TestCase):
                     continue
                 if any(module == i or module.startswith(i + ".") or i.startswith(module + ".")
                        for i in imports):
+                    continue
+                if posixpath.normpath(parent.as_posix()) in relative_dirs:
                     continue
                 offenders.append("%s reads %s from %s" % (relative, name, module))
         self.assertEqual(offenders, [])

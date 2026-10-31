@@ -5,7 +5,7 @@ import Quickshell.Io
 import qs.app
 import qs.services
 import qs.commons.i18n
-import qs.plugins.keystone.tools
+import "../keystone/tools"
 import "ShellDiagnostics.js" as ShellDiagnostics
 import "ShellSamplerMath.js" as SamplerMath
 
@@ -141,10 +141,10 @@ Singleton {
     property string _pendingExportPath: ""
     property string _pendingExportJson: ""
 
-    // Shell units project straight off the ledger — the control plane
-    // mirrors no switch state (unit-model.md §6 single switch truth).
+    // Shell plugins project straight off the ledger — the control plane
+    // mirrors no switch state (plugin-model.md §6 single switch truth).
     function buildUnitRows() {
-        return UnitCatalog.units.map(unit => {
+        return PluginRegistry.toggles.map(unit => {
             const on = StateProjection.isEnabled(unit.id);
             return {
                 "id": unit.id,

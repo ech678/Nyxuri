@@ -1,0 +1,2 @@
+singleton SettingsBackend 1.0 SettingsBackend.qml
+singleton ShellControlService 1.0 ShellControlService.qml

@@ -6,7 +6,7 @@ import qs.commons
 import "../commons/SidebarPolicy.js" as SidebarPolicy
 import "../commons/WallpaperSource.js" as WallpaperSource
 import qs.services
-import qs.plugins.wallpaper
+import "../plugins/wallpaper"
 import qs.app
 import qs.commons.i18n
 

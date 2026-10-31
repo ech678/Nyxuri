@@ -3,8 +3,8 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import qs.commons
 import qs.ui
-import qs.plugins.keystone.dashboard
-import qs.plugins.keystone.weather
+import "../dashboard"
+import "../weather"
 import qs.commons.i18n
 
 Item {

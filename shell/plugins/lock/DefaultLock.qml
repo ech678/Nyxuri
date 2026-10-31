@@ -3,7 +3,7 @@ import QtQuick.Effects
 import Quickshell.Wayland
 import qs.commons
 import qs.services
-import qs.plugins.wallpaper
+import "../wallpaper"
 
 Item {
     id: root

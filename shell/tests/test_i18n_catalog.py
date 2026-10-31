@@ -41,7 +41,7 @@ _CORPUS_DIRS = (
     REPO_ROOT / "tests",
     REPO_ROOT / "nyxuri",
 )
-_CORPUS_SUFFIXES = (".qml", ".js", ".py", ".json", ".sh")
+_CORPUS_SUFFIXES = (".qml", ".js", ".py", ".json", ".sh", ".toml")
 
 _CALL_RE = re.compile(
     r'(?:I18n|Trans)\.(?:tr|t)\(\s*"((?:[^"\\]|\\.)*)"(?:\s*,\s*"((?:[^"\\]|\\.)*)")?'
@@ -71,6 +71,11 @@ def _corpus() -> str:
         for suffix in _CORPUS_SUFFIXES:
             for path in directory.rglob(f"*{suffix}"):
                 if "__pycache__" in path.parts or "references" in path.parts:
+                    continue
+                # The dictionaries themselves are not corpus: a key matching
+                # itself would void the dead-key contract. (manifest.toml IS
+                # corpus — labels/titles are i18n keys living in manifests.)
+                if path.parent == SHELL_DIR / "commons" / "i18n":
                     continue
                 chunks.append(path.read_text(encoding="utf-8", errors="replace"))
     return "\n".join(chunks)

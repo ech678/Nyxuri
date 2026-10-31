@@ -5,7 +5,7 @@ import qs.commons
 import qs.services
 import qs.ui
 import qs.commons.cards
-import qs.plugins.wallpaper
+import "../wallpaper"
 import "./DesktopCardLayout.js" as DesktopCardLayout
 import "../../commons/cards/SystemCardPlacement.js" as Placement
 
