@@ -78,7 +78,6 @@ window-rule {
     match app-id=r"^gnome-calculator$"
     match app-id=r"^galculator$"
     match app-id=r"^blueman-manager$"
-    match app-id=r"^org\.gnome\.Nautilus$"
     match app-id=r"^xdg-desktop-portal-(gnome|gtk)$"
     open-floating true
 }
@@ -162,8 +161,13 @@ window-rule {
 }
 
 
+// Nautilus 文件管理器（居中浮动 + 黄金矩形比例 1.618:1 + 背景模糊）
 window-rule {
     match app-id=r"^org\.gnome\.Nautilus$"
+    match app-id=r"^nautilus$"
+    open-floating true
+    default-column-width { proportion 0.40; }
+    default-window-height { proportion 0.44; }
     draw-border-with-background false
     background-effect { blur true; }
 }
@@ -279,14 +283,21 @@ window-rule {
     opacity 1.0
 }
 
-// 图片/视频查看器（中英文标题 + app-id 双保险）
+// 图片/视频查看器（中英文标题 + app-id 多重保障，适中展示尺寸）
 window-rule {
-    match title=r"(图片查看器|Image Viewer|图片和视频|Image and Video Viewer|视频播放器|Video Player|Videos)"
+    match title=r"(图像查看器|图片查看器|Image Viewer|图片和视频|Image and Video Viewer|视频播放器|Video Player|Videos)"
+    match title="图片查看器"
+    match title="图像查看器"
     match app-id="org.gnome.Loupe"
+    match app-id="org.gnome.eog"
     match app-id="org.gnome.Totem"
     match app-id="org.gnome.Photos"
     open-floating true
     opacity 1.0
+    default-column-width { proportion 0.65; }
+    default-window-height { proportion 0.70; }
+    min-width 1100
+    min-height 750
 }
 
 // steam 好友列表
@@ -309,10 +320,24 @@ window-rule {
     open-floating true
 }
 
+// QQ 图片查看器以浮动模式打开并放大尺寸
+window-rule {
+    match app-id="QQ" title="图片查看器"
+    open-floating true
+    default-column-width { proportion 0.65; }
+    default-window-height { proportion 0.70; }
+    min-width 1100
+    min-height 750
+}
+
 // imv 轻量图片查看器
 window-rule {
     match app-id="imv"
     open-floating true
+    default-column-width { proportion 0.65; }
+    default-window-height { proportion 0.70; }
+    min-width 1100
+    min-height 750
 }
 
 // Ente-Auth 适配
