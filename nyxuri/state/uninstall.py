@@ -82,7 +82,7 @@ def uninstall_nyxuri(mode: str = "") -> bool:
         CheckboxEntry(key="configs", label=msg("uninstall_item_configs", len(items)), checked=True),
         CheckboxEntry(key="nyx_dir", label=msg("uninstall_item_nyx_dir"), checked=False),
         CheckboxEntry(key="archives", label=msg("uninstall_item_archives"), checked=False),
-        CheckboxEntry(key="wallpapers", label=msg("uninstall_item_wallpapers"), checked=False),
+        CheckboxEntry(key="wallpapers", label=msg("uninstall_item_wallpapers", get_pics_dir()), checked=False),
         CheckboxEntry(key="__sep_self__", label=msg("uninstall_group_self"), is_separator=True),
         CheckboxEntry(key="cli", label=msg("uninstall_item_cli"), checked=True),
         CheckboxEntry(key="state", label=msg("uninstall_item_state"), checked=False),

@@ -1,11 +1,13 @@
 # 壁纸单元 — 离线 fallback 蓝图 + 共享生活区
 #
-# 生活区是 ~/Pictures/Wallpapers（merge 声明，共享空间）：on 只无碰合流
-# 蓝图文件（已存在的永不覆盖），off 只撤回蓝图具名文件；外部壁纸包是
-# 用户域内容，由 hooks/install-pack 手动安装，不入账本。
+# 生活区是 XDG 图片目录下的 Wallpapers（中文系统即 ~/图片/Wallpapers），
+# merge 声明（共享空间）：on 只无碰合流蓝图文件（已存在的永不覆盖），off
+# 只撤回蓝图具名文件；外部壁纸包是用户域内容，由 hooks/install-pack 手动
+# 安装，不入账本。目标走 `xdg:` 词汇（issue #144），与 Noctalia、壁纸选择器
+# 和 doctor 同源解析。
 optional = true
 packages = []
-target = "~/Pictures/Wallpapers"
+target = "xdg:PICTURES/Wallpapers"
 merge = true
 label = "Wallpapers"
 category = "system"

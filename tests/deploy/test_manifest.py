@@ -7,6 +7,7 @@ discovery filters.
 
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 import tomllib
@@ -132,6 +133,29 @@ class TestManifestOverrides(unittest.TestCase):
         self.assertEqual(m.packages_repo, ["starship"])
         self.assertEqual(m.detect, "starship")
         self.assertTrue(m.is_deployable)
+
+    def test_xdg_target_resolves_through_pics_dir(self):
+        """#144: `xdg:PICTURES/<rest>` resolves via the XDG Pictures dir."""
+        unit = self.root / "wallpapers"
+        unit.mkdir()
+        (unit / "fallback.webp").write_bytes(b"img")
+        (unit / "manifest.toml").write_text(
+            'target = "xdg:PICTURES/Wallpapers"\nmerge = true\n'
+        )
+        m = manifest.load_manifest(unit)
+        pics = self.root / "MyPictures"
+        with unittest.mock.patch("nyxuri.core.get_pics_dir", return_value=pics):
+            resolved = manifest.living_path(m, Path("/sandbox/.config"))
+        self.assertEqual(resolved, pics / "Wallpapers")
+
+    def test_xdg_target_rejects_unknown_kind(self):
+        """#144: an unknown xdg: category is refused, never guessed."""
+        unit = self.root / "weird"
+        unit.mkdir()
+        (unit / "manifest.toml").write_text('target = "xdg:MUSIC/Playlists"\n')
+        m = manifest.load_manifest(unit)
+        with self.assertRaises(ValueError):
+            manifest.living_path(m, Path("/sandbox/.config"))
 
     def test_preserve_values_parsed(self):
         unit = self.root / "noctalia"
@@ -337,6 +361,22 @@ class TestRealRepoManifests(unittest.TestCase):
         names = [name for name, _m in manifest.discover_manifest_apps()]
         self.assertIn("wallpapers", names)
         self.assertNotIn("wallpapers", manifest.discover_deployable_apps())
+
+    def test_wallpaper_target_and_hook_resolve_xdg(self):
+        """#144: manifest target and the pack hook share the XDG Pictures dir."""
+        m = manifest.load_manifest_for("wallpapers")
+        self.assertEqual(m.target, "xdg:PICTURES/Wallpapers")
+        self.assertTrue(m.merge)
+
+        hook = (self.env.units_src / "wallpapers" / "hooks" / "install-pack").read_text()
+        self.assertIn('NYXURI_UNIT_DEST', hook)
+        self.assertIn("xdg-user-dir PICTURES", hook)
+        self.assertNotIn("$HOME/Pictures/Wallpapers", hook)
+
+    def test_theme_declares_adw_gtk3_package(self):
+        """#146: the GTK3 theme Nyxuri sets must ship with its provider package."""
+        m = manifest.load_manifest_for("theme")
+        self.assertIn("adw-gtk-theme", m.packages_repo)
 
     def test_real_niri_manifest_has_parts(self):
         m = manifest.load_manifest_for("niri")

@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 # Wallpaper pack installer — clones the external collection into the unit's
-# shared living area (~/Pictures/Wallpapers). Existing files are never
-# overwritten; the pack is user-domain content, not ledger-tracked.
+# shared living area (XDG Pictures/Wallpapers, e.g. ~/图片/Wallpapers).
+# Existing files are never overwritten; the pack is user-domain content, not
+# ledger-tracked. The engine passes the resolved area via NYXURI_UNIT_DEST;
+# a manual run falls back to the XDG user dir itself.
 #
 # Manual:  units/wallpapers/hooks/install-pack   (or via the deployed copy)
 # Requires: git
 set -euo pipefail
 
-DEST="${NYXURI_UNIT_DEST:-$HOME/Pictures/Wallpapers}"
+DEST="${NYXURI_UNIT_DEST:-$(xdg-user-dir PICTURES 2>/dev/null || echo "$HOME/Pictures")/Wallpapers}"
 MIRRORS=(
     "https://github.com/ech678/wallpaper-collection.git"
     "https://gh-proxy.org/https://github.com/ech678/wallpaper-collection.git"

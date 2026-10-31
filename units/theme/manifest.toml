@@ -8,5 +8,7 @@
 # （用户已改的模板永不覆盖），off 只撤回蓝图具名文件。
 target = "~/.config/nyxuri/templates"
 merge = true
-packages = []
+# theme.py 把 GTK3 主题设成 adw-gtk3 / adw-gtk3-dark，主题本体由官方仓库的
+# adw-gtk-theme 提供——声明在此，缺包即由依赖安装补齐（issue #146）。
+packages = ["adw-gtk-theme"]
 label = "Theme Templates"

@@ -9,7 +9,7 @@ preserves ``monitor.kdl``; missioncenter's package is ``mission-center``).
 Schema (all fields optional, flat at top level)::
 
     target = "starship.toml"   # single-file unit: lands at ~/.config/<target>
-    target = "~/Pictures/Wallpapers"  # shared living area (implies merge use)
+    target = "xdg:PICTURES/Wallpapers"  # shared living area (implies merge use)
     merge = true               # shared living area: no-clobber deploy, off
                                # withdraws only laid files (never rm -rf)
     runtime = true             # ledger-only unit: no living area, no deploy;
@@ -35,10 +35,13 @@ Schema (all fields optional, flat at top level)::
     [presets]           # inherit / allow / standalone / include / exclude / reload
     [parts.<slot>]      # target / source_dir / default
 
-A ``target`` unit ships exactly one file (``configs/<unit>/<target>``) that
+A ``target`` unit ships exactly one file (``units/<unit>/<target>``) that
 lands at ``~/.config/<target>``; presets and parts are directory affordances
 and do not apply to it. A ``~/``-prefixed ``target`` declares a shared
-living area outside ``~/.config`` (implies ``merge`` semantics).
+living area outside ``~/.config`` (implies ``merge`` semantics); an
+``xdg:<KIND>/<rest>`` target resolves ``<KIND>`` through the XDG user dirs
+(``xdg-user-dir``), so a localised Pictures dir lands wallpapers where the
+desktop looks for them.
 
 This module is pure stdlib (``tomllib``, 3.11+). No hardcoded project unit names.
 """
@@ -138,14 +141,33 @@ def _as_str_map(value) -> Dict[str, List[str]]:
     return result
 
 
+# ``xdg:`` target vocabulary. Only categories with a real resolver are
+# accepted here; an unknown one is rejected rather than guessed (issue #144).
+_XDG_PREFIX = "xdg:"
+
+
+def _resolve_xdg_target(target: str) -> Path:
+    """Resolve ``xdg:<KIND>/<rest>`` against the XDG user dirs."""
+    from nyxuri.core import get_pics_dir
+
+    kind, _, rest = target[len(_XDG_PREFIX):].partition("/")
+    kind = kind.upper()
+    if kind != "PICTURES" or not rest:
+        raise ValueError(f"unsupported xdg: target '{target}'")
+    return get_pics_dir() / rest
+
+
 def living_path(m: ModuleManifest, config_dir: Path) -> Path:
     """A unit's living-area path (unit-model.md §4 target exception).
 
     A ``~/``-prefixed (or absolute) ``target`` declares a shared living area
-    outside ``~/.config`` — expanded against ``$HOME``. A bare ``target`` is
-    the single-file exception under ``~/.config``; no target means
-    ``~/.config/<unit>``.
+    outside ``~/.config`` — expanded against ``$HOME``. An ``xdg:<KIND>/<rest>``
+    target resolves through the XDG user dirs (R0-4 generalises the map).
+    A bare ``target`` is the single-file exception under ``~/.config``; no
+    target means ``~/.config/<unit>``.
     """
+    if m.target.startswith(_XDG_PREFIX):
+        return _resolve_xdg_target(m.target)
     if m.target.startswith(("~", "/")):
         return Path(os.path.expanduser(m.target))
     return config_dir / (m.target or m.name)

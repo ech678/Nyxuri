@@ -144,7 +144,9 @@ ISO 8601 时间戳。单元记录的读写只经 `nyxuri.ledger`，任何内核�
 其唯一实机文件若不在受管快照内同样幸存并上报。
 
 **merge 单元（KM3.5，共享生活区）**：manifest 声明 `merge = true` + `~/` 前缀
-`target`（如壁纸落 `~/Pictures/Wallpapers`）即声明「生活区是共享空间」——
+或 `xdg:<KIND>/…` 的 `target`（如壁纸落 `xdg:PICTURES/Wallpapers`，解析为
+XDG 图片目录下的 `Wallpapers`，与 Noctalia、壁纸选择器、doctor 同源）
+即声明「生活区是共享空间」——
 `on` 走 no-clobber 增量合流（已存在的文件永不覆盖、永不删除），快照只记部署实际
 落下的文件；`off` 只撤回快照文件，pack、用户自有壁纸等外来内容原地幸存并在报告
 列明（`foreign-left`），目录本身只在清空后消失；doctor 对停用 merge 单元的

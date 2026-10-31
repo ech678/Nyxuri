@@ -369,8 +369,8 @@ zh = "~/.config/{PROJECT_NAME}_archive_*  (历史归档)"
 en = "~/.config/{PROJECT_NAME}_archive_*  (past archives)"
 
 [uninstall_item_wallpapers]
-zh = "~/Pictures/Wallpapers/"
-en = "~/Pictures/Wallpapers/"
+zh = "{0}/Wallpapers/"
+en = "{0}/Wallpapers/"
 
 [uninstall_item_cli]
 zh = "~/.local/bin/{CLI_CMD}  (命令入口)"
