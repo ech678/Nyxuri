@@ -28,7 +28,7 @@
 - [shell-development](shell/development.md): 纯 QML 调试循环、双 Shell 热切换与分类测试验证
 - [shell-references](shell/references.md): 上游 Clavis (15403b9) 与 iNiR 参考树说明与重现指令
 - [orbit-launcher](shell/orbit-launcher.md): 星环启动器设计规格（快捷键、状态机、极坐标防抖、弹簧参数、flick 判定）
-- [orbit-translate](shell/orbit-translate.md): 划词翻译浮窗（Alt+E 一次性进程、指针下方定位、M3 色调面板、渠道协议、设置 TUI 与凭据边界）
+- [orbit-translate](shell/orbit-translate.md): 划词翻译外迁边界（上游自持、用户自装、S1 `add` 接管、Nyxuri 保留接线清单）
 
 ## Guidelines & Standards
 

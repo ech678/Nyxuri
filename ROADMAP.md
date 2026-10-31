@@ -19,8 +19,8 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 
 | 站 | 交付 | 状态 |
 | --- | --- | --- |
-| G0 | 修复 GitHub 已知问题：可独立修的立即修，架构根因随 R0 兑现后关闭回填 | 可独立修落地（#144 #146）；根因修随 R0-3 落地（#143 #145 #147 #149）；余项随 R0-5 |
-| R0 | 引擎收敛：概念定名 Plugin/插件 + 杀词并轨 + 单一激活管线 + 声明贯通 + 减法外迁 | 进行中（R0-1 ~ R0-4 收口：声明贯通与边界校验落地；下一站 R0-5 减法外迁） |
+| G0 | 修复 GitHub 已知问题：可独立修的立即修，架构根因随 R0 兑现后关闭回填 | 可独立修落地（#144 #146）；根因修随 R0-3 落地（#143 #145 #147 #149）；#142 随 R0-5 转上游跟踪 |
+| R0 | 引擎收敛：概念定名 Plugin/插件 + 杀词并轨 + 单一激活管线 + 声明贯通 + 减法外迁 | 进行中（R0-1 ~ R0-4 收口；R0-5 取消自带收口，launcher 暂留） |
 | S0 | Shell 骨架整抄 Omarchy：小写五件套 + 运行时插件注册表 + 设置去中心化 | 待开始 |
 | S1 | 第三方插件生命周期：协议 1:1 + 四动词 + 所有权账本回植 | 待开始 |
 | T4 | Shell 可控性与透明化（开工时立细则） | 待开始 |
@@ -38,7 +38,7 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
   - #146 `adw-gtk-theme` 未声明：`units/theme/manifest.toml` 的 packages 补一行。
 - **根因修（已随 R0-3 落地关闭）**：#143（事务渲染 phase 注入）、#145（壁纸包收编
   声明式钩子）、#147（hook-only 形态矩阵显式化）、#149（安装器组件勾选改派发事务）。
-- **随外迁处置**：#142 划词翻译 PDF——随 R0-5 orbit 外迁转上游仓库。
+- **随外迁处置**：#142 划词翻译 PDF——已随 R0-5 转上游 [orbit-translate#1](https://github.com/WALKERKILLER/orbit-translate/issues/1) 跟踪，本仓库 issue 保持原样。
 
 ### R0 · 引擎收敛（架构重塑地基）
 
@@ -74,11 +74,15 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
   theme 副作用的包依赖声明与医生巡检（#146 根因，sysdoctor 补齐 adw-gtk-theme 在位性诊断）；叶名 / containment 校验进引擎
   （#48 的 `../../` 越界教训，core/registry/manifest/transaction 严格阻断逃逸）；保留策略按操作参数化——回滚默认精确恢复，
   支持显式 `--keep-custom` 保留并报告（#56）、更新尊重 Drifted 基线（#139 定案行为在此收编为契约）。
-- **R0-5 减法外迁**：`orbit_translate` + `orbit`（约 7K 行 + 3K 行测试）外迁
-  独立仓库（先例：key-cli → Clavis；#142 随迁上游）；`nyxuri/market/` 与
-  `tests/market/` 残留删除；本地脏区清理（qmlls.ini 悬空链、packaging 构建残留、
-  greeter hooks `__pycache__`）；本地 `pr-*` 分支清理，远端 `archive/*` 分支
-  随 T2 重启决策定去留。
+- **R0-5 减法外迁**（已收口）：orbit-translate 彻底外迁上游
+  [WALKERKILLER/orbit-translate](https://github.com/WALKERKILLER/orbit-translate)
+  ——程序、测试（≈3K 行）、CI、issue 全部上游自持（#142 → 上游 #1）。Nyxuri
+  **取消自带**：`plugins/noctalia/tools/` 翻译器 payload 删除，用户经上游
+  `install.sh` 自装，S1 落地后 `nyxuri add` 接管（接入清单见 S1 节）；测试
+  `tests/tools/translate/` 删除（上游 CI 为测试权威）。`orbit` 星环启动器**暂留**。
+  `nyxuri/market/` 与 `tests/market/` 残留删除；本地脏区清理（qmlls.ini 悬空链、
+  packaging 构建残留、插件 hooks `__pycache__`）；本地 `pr-*` 分支清理，远端
+  `archive/*` 分支随 T2 重启决策定去留。
 - **R0-6 文档对齐**：`plugin-model` / `forms`（原 preset-mechanism）/ `manifest-schema`
   已随 R0-2 改写同步；剩余失实记录修正——旧卷「Cava/歌词/窗口预览死代码已清理」
   与代码不符（实况：地图已清，Cava 与歌词活着），清算时以实况描述。
@@ -117,6 +121,11 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 - **落位与消费**：第三方统一落 `~/.local/share/nyxuri/plugins/<id>/`
   （H4 数据目录 + H8 复制不软链）；kinds 路由消费——引擎消费 config 类、
   shell 注册表消费 ui 类。一个位置一份 manifest，两个注册表各取所需。
+- **首个真实用例 · orbit-translate 接入（R0-5 取消自带的彻底改）**：上游补插件
+  manifest（kinds / entryPoints，几行）；`add` 接管安装——落 share 目录后
+  config_path 随入口推导，配置不再混 noctalia 生活区；`shell-action` 的
+  `translate` / `radial-launcher` 动作与 sysdoctor 残留的 orbit 检查改按注册表
+  消费，写死 `~/.config/noctalia/tools/` 路径退役。
 - **扩展面边界**：钩子是引擎已有的语言无关扩展面（manifest 声明 + 任意可执行），
   不是新发明；用户已有配置的「导入」走保留策略（carry / vault），与第三方插件
   导入是两条线，语义永不混合。

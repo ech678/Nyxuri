@@ -29,7 +29,7 @@ Nyxuri/
 ├─ shell/             自研 Quickshell 桌面（契约见 shell/AGENTS.md；`shell/units/` 为
 │                     shell 命名空间蓝图，12 个 runtime 插件，KM4）
 ├─ tests/             镜像源码树：kernel/ deploy/ pkg/ state/ desktop/ installer/
-│                     tools/{orbit,wallpaper_picker,translate}/ shell/ + 契约测试置顶
+│                     tools/{orbit,wallpaper_picker}/ shell/ + 契约测试置顶
 ├─ packaging/         AUR PKGBUILD + gen-deps.py（单包全量：引擎+插件+Shell；
 │                     depends=引擎运行时，optdepends 自动汇聚）+ .install 提示
 ├─ llms-wiki/ humans-wiki/

@@ -92,27 +92,3 @@ class TestFetchCoverContract(unittest.TestCase):
             fallback = json.loads(self._run(url, "--refresh", cache_home=cache).stdout)
             self.assertEqual(fallback["source"], "cache")
             self.assertEqual(fallback["path"], first["path"])
-
-class TestTerminalStyleColorParsing(unittest.TestCase):
-
-    def _parse_rgb(self):
-        import importlib
-        tools = Path(__file__).resolve().parents[2] / "plugins" / "noctalia" / "tools"
-        if str(tools) not in sys.path:
-            sys.path.insert(0, str(tools))
-        return importlib.import_module("orbit_translate.tui_style")._parse_rgb
-
-    def test_valid_hex_is_decoded(self):
-        parse = self._parse_rgb()
-        self.assertEqual(parse("#1a2b3c"), (0x1A, 0x2B, 0x3C))
-        self.assertEqual(parse("#FFFFFF"), (255, 255, 255))
-
-    def test_signed_and_spaced_hex_digits_fall_back(self):
-        parse = self._parse_rgb()
-        fallback = (128, 136, 152)
-        for value in ("#+12345", "# 12345", "#-12345", "#12345 ", "#12g345", "nothex"):
-            self.assertEqual(parse(value), fallback, value)
-
-    def test_non_string_input_falls_back(self):
-        parse = self._parse_rgb()
-        self.assertEqual(parse(None), (128, 136, 152))

@@ -6,18 +6,11 @@ asserts the corrected behavior, so the defect cannot silently return.
 
 import contextlib
 import io
-import json
 import os
-import re
 import subprocess
-import sys
 import tempfile
-import time
 import unittest
 from pathlib import Path
-from unittest.mock import patch
-
-from tests.utils import TempEnv
 
 
 def _quiet(fn, *args, **kwargs):
@@ -31,7 +24,7 @@ class TestScriptContracts(unittest.TestCase):
         return Path(__file__).resolve().parents[2] / "plugins" / "niri" / "scripts"
 
     def test_scripts_read_the_config_root_the_deployer_writes(self):
-        for name in ("niri-brightness.sh", "shell-action.sh"):
+        for name in ("niri-brightness.sh", "niri-scratch-menu.py", "shell-action.sh"):
             source = (self._niri_scripts() / name).read_text(encoding="utf-8")
             self.assertNotIn("XDG_CONFIG_HOME", source, name)
 
@@ -60,27 +53,3 @@ class TestScriptContracts(unittest.TestCase):
                 result = subprocess.run(["bash", str(script), "set-temp", value],
                                         capture_output=True, text=True, env=env)
                 self.assertEqual(result.returncode, 2, value)
-
-class TestToolConfigRoot(unittest.TestCase):
-
-    def test_scratch_menu_wrapper_ignores_a_divergent_xdg_config_home(self):
-        script = (Path(__file__).resolve().parents[2] / "plugins" / "niri" / "scripts"
-                  / "niri-scratch-menu.py")
-        self.assertNotIn("XDG_CONFIG_HOME", script.read_text(encoding="utf-8"))
-
-    def test_translate_config_path_follows_the_deployer(self):
-        tools = Path(__file__).resolve().parents[2] / "plugins" / "noctalia" / "tools"
-        with tempfile.TemporaryDirectory() as temporary:
-            home = Path(temporary)
-            result = subprocess.run(
-                [sys.executable, "-c",
-                 'import sys; sys.path.insert(0, "%s")\n'
-                 'from orbit_translate.config import config_path\n'
-                 'print(config_path())' % tools],
-                capture_output=True, text=True,
-                env={"HOME": str(home), "XDG_CONFIG_HOME": str(home / "elsewhere"),
-                     "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
-                     "PYTHONDONTWRITEBYTECODE": "1"})
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(Path(result.stdout.strip()),
-                         home / ".config" / "noctalia" / "tools" / "orbit-translate__custom__.toml")
