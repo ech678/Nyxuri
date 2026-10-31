@@ -32,7 +32,8 @@ def _stage(ctx, spec):
         plugin = configs / uid
         plugin.mkdir(exist_ok=True)
         if entry.get("manifest") is not None:
-            (plugin / "manifest.toml").write_text(entry["manifest"], encoding="utf-8")
+            text = f'schemaVersion = 1\nid = "{uid}"\nkinds = ["config"]\n' + entry["manifest"]
+            (plugin / "manifest.toml").write_text(text, encoding="utf-8")
         for rel, content in entry.get("files", {}).items():
             p = plugin / rel
             p.parent.mkdir(parents=True, exist_ok=True)
@@ -884,7 +885,7 @@ class TestR03ActivationPipeline(unittest.TestCase):
                             return_value={"configs": ["demo_app"], "wallpapers": False, "backup": False}), \
                  mock.patch("nyxuri.installer.workflows._finish_successful_deploy"), \
                  mock.patch("nyxuri.installer.workflows.plugin_package_installer", side_effect=fake_installer), \
-                 mock.patch.object(transaction, "missing_packages", side_effect=lambda m: ["demo-pkg"] if m.name == "demo_app" and not installed_packages else []):
+                 mock.patch.object(transaction, "missing_packages", side_effect=lambda m: ["demo-pkg"] if m.id == "demo_app" and not installed_packages else []):
                 ok = install_configs_workflow(mode="config")
             self.assertTrue(ok)
             self.assertEqual(installed_packages, [("demo_app", ["demo-pkg"])])

@@ -1,4 +1,7 @@
 # fish shell — pinned Fisher plugin set rides on this unit
+schemaVersion = 1
+id = "fish"
+kinds = ["config"]
 post_install = "install-fisher"
 post_remove = "remove-fisher"
 

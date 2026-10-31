@@ -117,7 +117,8 @@ class TestKernelRegistry(unittest.TestCase):
             plugin = configs / uid
             plugin.mkdir()
             if toml_text is not None:
-                (plugin / "manifest.toml").write_text(toml_text, encoding="utf-8")
+                text = f'schemaVersion = 1\nid = "{uid}"\nkinds = ["config"]\n' + toml_text
+                (plugin / "manifest.toml").write_text(text, encoding="utf-8")
         ctx.env.plugins_src = configs
 
     def test_zero_config_discovery(self):
@@ -126,7 +127,7 @@ class TestKernelRegistry(unittest.TestCase):
             self._stage_configs(ctx, {"bare-plugin": None})
             self.assertIn("bare-plugin", registry.plugin_ids())
             m = registry.load_plugin("bare-plugin")
-            self.assertEqual(m.name, "bare-plugin")
+            self.assertEqual(m.id, "bare-plugin")
             self.assertEqual(m.packages_repo, ["bare-plugin"])
             self.assertEqual(m.preserve, [])
 
@@ -136,7 +137,7 @@ class TestKernelRegistry(unittest.TestCase):
             ctx.env.plugins_src = self.root_dir / "plugins"
             ids = registry.plugin_ids()
             self.assertIn("kitty", ids)
-            self.assertEqual(registry.load_plugin("kitty").name, "kitty")
+            self.assertEqual(registry.load_plugin("kitty").id, "kitty")
 
     def test_manifest_dependencies_parsed(self):
         """Top-level `dependencies` is the plugin-dependency declaration."""

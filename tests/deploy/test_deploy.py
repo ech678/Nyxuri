@@ -836,7 +836,8 @@ class TestDeployRobustness(unittest.TestCase):
             path = root / rel
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content, encoding="utf-8")
-        (root / "manifest.toml").write_text(manifest_toml, encoding="utf-8")
+        text = f'schemaVersion = 1\nid = "{name}"\nkinds = ["config"]\n' + manifest_toml
+        (root / "manifest.toml").write_text(text, encoding="utf-8")
         return root
 
     def test_unrealizable_part_variant_is_reported(self):

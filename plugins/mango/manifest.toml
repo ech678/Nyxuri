@@ -1,4 +1,7 @@
 # Mango Wayland Compositor manifest
+schemaVersion = 1
+id = "mango"
+kinds = ["config"]
 optional = true
 packages = ["mangowm"]
 label = "Mango WM"

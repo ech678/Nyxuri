@@ -1,4 +1,7 @@
 # Zed — ships config AND stays optional (apps menu + optdepends)
+schemaVersion = 1
+id = "zed"
+kinds = ["config"]
 optional = true
 label = "Zed"
 category = "dev"

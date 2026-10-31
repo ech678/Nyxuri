@@ -18,23 +18,31 @@ from tests.utils import TempEnv
 def _stage_shell(ctx, spec):
     """Create shell-namespace plugins under a temp root and point the env at it.
 
-    spec maps domain -> {"manifest": toml text | None} (runtime plugins carry
-    no payload files by definition).
+    spec maps domain -> {"manifest": toml body | None} (runtime plugins are
+    ui-kind plugins: their ledger form comes from kinds, and the staged entry
+    file stands in for the domain's QML root).
     """
     root = ctx.home / "shell-plugins-src"
     root.mkdir(exist_ok=True)
     for domain, entry in spec.items():
         plugin = root / domain
         plugin.mkdir(exist_ok=True)
+        (plugin / "Unit.qml").write_text("// entry\n", encoding="utf-8")
         if entry.get("manifest") is not None:
-            (plugin / "manifest.toml").write_text(entry["manifest"], encoding="utf-8")
+            text = (
+                'schemaVersion = 1\n'
+                f'id = "shell.{domain}"\n'
+                'kinds = ["overlay"]\n'
+                + entry["manifest"]
+                + '[entryPoints]\noverlay = "Unit.qml"\n'
+            )
+            (plugin / "manifest.toml").write_text(text, encoding="utf-8")
     ctx.env.shell_units_src = root
 
 
 def _runtime_manifest(**extra):
-    lines = ["runtime = true", "packages = []"]
-    lines += [f'{k} = "{v}"' for k, v in extra.items()]
-    return "\n".join(lines) + "\n"
+    lines = [f'{k} = "{v}"' for k, v in extra.items()]
+    return "\n".join(lines) + ("\n" if lines else "")
 
 
 class TestShellNamespaceRegistry(unittest.TestCase):
@@ -48,11 +56,11 @@ class TestShellNamespaceRegistry(unittest.TestCase):
             self.assertIn("kitty", ids)  # bare root still present
             self.assertIn("shell.bar", registry.dependency_graph())
 
-    def test_load_unit_patches_manifest_name_to_the_dotted_id(self):
+    def test_load_unit_sees_the_declared_dotted_id(self):
         with TempEnv() as ctx:
             _stage_shell(ctx, {"dock": {"manifest": _runtime_manifest()}})
             m = registry.load_plugin("shell.dock")
-            self.assertEqual(m.name, "shell.dock")
+            self.assertEqual(m.id, "shell.dock")
             self.assertTrue(m.runtime)
 
     def test_unknown_and_malformed_ids_never_resolve(self):
@@ -146,7 +154,9 @@ class TestRuntimePluginTransaction(unittest.TestCase):
             configs.mkdir(exist_ok=True)
             host = configs / "hostbase"
             host.mkdir()
-            (host / "manifest.toml").write_text("packages = []\n", encoding="utf-8")
+            (host / "manifest.toml").write_text(
+                'schemaVersion = 1\nid = "hostbase"\nkinds = ["config"]\npackages = []\n',
+                encoding="utf-8")
             (host / "h.conf").write_text("h\n", encoding="utf-8")
             ctx.env.plugins_src = configs
             events = []
@@ -159,7 +169,7 @@ class TestRuntimePluginTransaction(unittest.TestCase):
         with TempEnv() as ctx:
             _stage_shell(ctx, {
                 "bar": {"manifest": _runtime_manifest()},
-                "dock": {"manifest": 'runtime = true\npackages = []\ndependencies = ["shell.bar"]\n'},
+                "dock": {"manifest": 'dependencies = ["shell.bar"]\n'},
             })
             transaction.plugin_on("shell.bar")
             transaction.plugin_on("shell.dock")

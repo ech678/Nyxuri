@@ -17,7 +17,6 @@ Shell plugins declare ``runtime = true`` — a payload-less existence whose
 living area is the running host, never files under ~/.config.
 """
 
-from dataclasses import replace
 from pathlib import Path
 
 from nyxuri.core import get_env
@@ -76,16 +75,19 @@ def plugin_dir(plugin_id: str) -> Path | None:
 def load_plugin(plugin_id: str) -> ModuleManifest:
     """Load one plugin's resolved manifest; zero-config defaults applied.
 
-    The manifest ``name`` is patched to the full dotted id — every downstream
-    consumer (ledger key, vault path, reports) sees exactly the registry id.
+    The manifest ``id`` is the registry id itself — new-form manifests declare
+    it and ``load_manifest`` rejects any drift from the root-derived id.
     """
-    src = plugin_dir(plugin_id)
-    if src is None:
-        raise KeyError(f"unknown plugin: {plugin_id}")
-    manifest = load_manifest(src)
-    if manifest.name != plugin_id:
-        manifest = replace(manifest, name=plugin_id)
-    return manifest
+    from nyxuri.core import safe_child
+
+    for root, prefix in sorted(_namespace_roots(), key=lambda r: len(r[1]), reverse=True):
+        if not plugin_id.startswith(prefix):
+            continue
+        src = safe_child(root, plugin_id[len(prefix):])
+        if src is not None and src.is_dir():
+            return load_manifest(src, namespace=prefix)
+        break
+    raise KeyError(f"unknown plugin: {plugin_id}")
 
 
 def dependency_graph() -> dict[str, list[str]]:

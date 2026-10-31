@@ -1,4 +1,7 @@
 # kitty terminal emulator manifest
+schemaVersion = 1
+id = "kitty"
+kinds = ["config"]
 preserve = ["current-theme.conf", "themes/noctalia.conf", "themes/nyxuri.conf"]
 
 [forms]

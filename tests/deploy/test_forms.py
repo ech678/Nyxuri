@@ -97,6 +97,12 @@ class TestActiveFormLedger(unittest.TestCase):
             forms.write_active_form("kitty", "../victim")
 
 
+
+def _newform(plugin_id: str, body: str) -> str:
+    """New-form manifest text (S0-2): identity block + plugin body."""
+    return f'schemaVersion = 1\nid = "{plugin_id}"\nkinds = ["config"]\n' + body
+
+
 class TestResolveFormSrc(unittest.TestCase):
     """The four src branches — parameter-shape contract on src path."""
 
@@ -213,7 +219,7 @@ class TestCustomSurvivesFormSwitch(unittest.TestCase):
         root = self.env.plugins_src / app
         root.mkdir(parents=True)
         (root / "kitty.conf").write_text("# conf")
-        (root / "manifest.toml").write_text('packages = ["kitty"]\n')
+        (root / "manifest.toml").write_text(_newform("kitty", 'packages = ["kitty"]\n'))
         dest = self.env.config_dir / app
         atomic_replace_item(root, dest)
         self.assertFalse((dest / "manifest.toml").exists())
@@ -1106,12 +1112,12 @@ class TestFormInheritance(unittest.TestCase):
         self.assertEqual(exc, [])
 
     def test_inheritance_allow_whitelist(self):
-        (self.app_root / "manifest.toml").write_text("""
+        (self.app_root / "manifest.toml").write_text(_newform(self.app, """
 [forms]
 allow = ["glow"]
 include = ["scripts/**", "*.kdl"]
 exclude = ["*.bak"]
-""")
+"""))
         # 'glow' is allowed -> should inherit with whitelists/blacklists
         base_src, inc, exc = forms.resolve_form_inheritance(self.app, "glow")
         self.assertEqual(base_src, self.app_root)
@@ -1123,11 +1129,11 @@ exclude = ["*.bak"]
         self.assertIsNone(base_src_other)
 
     def test_inheritance_standalone_blacklist(self):
-        (self.app_root / "manifest.toml").write_text("""
+        (self.app_root / "manifest.toml").write_text(_newform(self.app, """
 [forms]
 inherit = true
 standalone = ["isolated"]
-""")
+"""))
         base_src, _, _ = forms.resolve_form_inheritance(self.app, "glow")
         self.assertEqual(base_src, self.app_root)
 
@@ -1135,13 +1141,13 @@ standalone = ["isolated"]
         self.assertIsNone(base_src_iso)
 
     def test_inheritance_simultaneous_whitelist_and_blacklist(self):
-        (self.app_root / "manifest.toml").write_text("""
+        (self.app_root / "manifest.toml").write_text(_newform(self.app, """
 [forms]
 allow = ["style-*"]
 standalone = ["style-dark"]
 include = ["scripts/**", "*.kdl"]
 exclude = ["scripts/debug.bak"]
-""")
+"""))
         # 1. Matches allow and not standalone -> inherits
         base_src, inc, exc = forms.resolve_form_inheritance(self.app, "style-light")
         self.assertEqual(base_src, self.app_root)
@@ -1177,14 +1183,14 @@ exclude = ["scripts/debug.bak"]
         self.assertFalse((self.dest / "unwanted.txt").exists())
 
     def test_apply_sparse_form_end_to_end(self):
-        (self.app_root / "manifest.toml").write_text("""
+        (self.app_root / "manifest.toml").write_text(_newform(self.app, """
 preserve = ["monitor.kdl"]
 
 [forms]
 allow = ["glow"]
 include = ["scripts/**", "*.kdl"]
 exclude = ["*.bak"]
-""")
+"""))
         # Pre-seed destination with Dunder and Preserved files
         self.dest.mkdir(parents=True)
         (self.dest / "monitor.kdl").write_text("// user monitor")
@@ -1221,14 +1227,14 @@ class TestSlotMechanism(unittest.TestCase):
         self.dest.mkdir(parents=True)
 
         # Setup manifest
-        (self.app_root / "manifest.toml").write_text("""
+        (self.app_root / "manifest.toml").write_text(_newform(self.app, """
 preserve = ["monitor.kdl"]
 
 [forms.effects]
 target = "effects_normal.kdl"
 source_dir = "effects"
 default = "default"
-""")
+"""))
 
         # Setup slot files under __forms__/effects
         effects_dir = self.app_root / "__forms__" / "effects"
@@ -1340,7 +1346,7 @@ class TestFormDurability(unittest.TestCase):
             path = root / rel
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content, encoding="utf-8")
-        (root / "manifest.toml").write_text(manifest_toml, encoding="utf-8")
+        (root / "manifest.toml").write_text(_newform(name, manifest_toml), encoding="utf-8")
         return root
 
     def test_failed_save_keeps_the_existing_form(self):

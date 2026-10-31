@@ -100,6 +100,7 @@ class TestFlatpakApps(unittest.TestCase):
         plugin = configs / "someflatpak"
         plugin.mkdir()
         (plugin / "manifest.toml").write_text(
+            'schemaVersion = 1\nid = "someflatpak"\nkinds = ["config"]\n'
             'packages = []\npackages_flatpak = ["com.example.App"]\n', encoding="utf-8"
         )
         self._ctx.env.plugins_src = configs

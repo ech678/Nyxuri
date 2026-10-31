@@ -133,7 +133,9 @@ class TestIssue139UpdateNeverClobbersUserFiles(unittest.TestCase):
         configs = ctx.home / "configs-src"
         plugin = configs / "app"
         plugin.mkdir(parents=True, exist_ok=True)
-        (plugin / "manifest.toml").write_text("packages = []\n", encoding="utf-8")
+        (plugin / "manifest.toml").write_text(
+            'schemaVersion = 1\nid = "app"\nkinds = ["config"]\npackages = []\n',
+            encoding="utf-8")
         (plugin / "a.conf").write_text("v1\n", encoding="utf-8")
         ctx.env.plugins_src = configs
         import nyxuri.deploy.deploy as _deploy_core

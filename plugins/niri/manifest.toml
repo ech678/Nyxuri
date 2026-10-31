@@ -8,6 +8,9 @@
 # effects_normal.kdl stores the active effects slot variant across deploys.
 # glow.kdl stores the active glow/focus-ring slot variant across deploys.
 # colors.kdl stores dynamic Material You palette rendered by Noctalia.
+schemaVersion = 1
+id = "niri"
+kinds = ["config"]
 preserve = ["monitor.kdl", "effects.kdl", "effects_normal.kdl", "glow.kdl", "colors.kdl", "noctalia.kdl", "eyecare_temp"]
 chmod = ["scripts/*.sh", "scripts/*.py"]
 

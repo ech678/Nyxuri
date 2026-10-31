@@ -4,10 +4,13 @@
 # config.toml）读同一批文件，输出字节可比。
 # 池位置中立：不再寄宿 noctalia 命名空间，脱离 noctalia 单元独立开关——
 # 单独使用 nyxuri-shell 时池随本单元部署，`off theme` 即撤回。
-# merge 声明（共享生活区）：池是用户可编辑的模板——on 只无碰合流蓝图文件
+# merge 形态（共享生活区）：池是用户可编辑的模板——on 只无碰合流蓝图文件
 # （用户已改的模板永不覆盖），off 只撤回蓝图具名文件。
+schemaVersion = 1
+id = "theme"
+kinds = ["config"]
 target = "~/.config/nyxuri/templates"
-merge = true
+morphology = "merge"
 # theme.py 把 GTK3 主题设成 adw-gtk3 / adw-gtk3-dark，主题本体由官方仓库的
 # adw-gtk-theme 提供——声明在此，缺包即由依赖安装补齐（issue #146）。
 packages = ["adw-gtk-theme"]

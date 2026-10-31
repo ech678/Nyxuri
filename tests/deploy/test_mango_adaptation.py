@@ -35,7 +35,7 @@ class TestMangoAdaptation(unittest.TestCase):
     def test_mango_manifest_contract(self):
         """Verify manifest.toml parameters for mango."""
         m = load_manifest(self.mango_src)
-        self.assertEqual(m.name, "mango")
+        self.assertEqual(m.id, "mango")
         self.assertEqual(m.packages_repo, ["mangowm"])
         self.assertEqual(m.packages_aur, [])
         self.assertEqual(m.label, "Mango WM")

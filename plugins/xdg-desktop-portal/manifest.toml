@@ -1,2 +1,5 @@
 # xdg-desktop-portal manifest — package = binary = dir name; menu label only.
+schemaVersion = 1
+id = "xdg-desktop-portal"
+kinds = ["config"]
 label = "XDG Portals"

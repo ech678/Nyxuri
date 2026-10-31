@@ -1,5 +1,10 @@
-# Shell unit (unit-model.md §6): runtime-only — the switch lives in the
-# ledger and the running shell projects it; no files ship from here.
-runtime = true
-packages = []
+# Shell ui plugin (plugin-model.md §6): runtime-only — the switch lives
+# in the ledger and the running shell projects it; no files ship from here.
+schemaVersion = 1
+id = "shell.keystone"
+kinds = ["island"]
 label = "Keystone Island"
+order = 50
+
+[entryPoints]
+island = "Keystone.qml"

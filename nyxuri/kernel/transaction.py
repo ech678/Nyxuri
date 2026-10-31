@@ -114,7 +114,7 @@ def _blueprint_rels(manifest: ModuleManifest) -> List[str]:
     For merge plugins these names ARE ownership: whatever matches them in the
     shared living area is ours to withdraw, nothing else.
     """
-    root = registry.plugin_dir(manifest.name)
+    root = registry.plugin_dir(manifest.id)
     if root is None:
         return []
     out: List[str] = []

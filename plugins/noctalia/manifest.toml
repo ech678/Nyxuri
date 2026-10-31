@@ -1,4 +1,7 @@
 # noctalia theme engine manifest
+schemaVersion = 1
+id = "noctalia"
+kinds = ["config"]
 packages = ["noctalia", "python-gobject", "gtk-layer-shell", "wl-clipboard", "python-cairo"]
 preserve_values = { "noctalia-config.toml" = ["enable_ddcutil"] }
 chmod = ["wallpaper-hook.sh", "mpvpaper-sync.sh", "tools/*.sh", "tools/*.py"]
