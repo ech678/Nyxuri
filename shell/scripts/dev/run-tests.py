@@ -142,11 +142,13 @@ def build_category_suite(category: str) -> unittest.TestSuite:
         from shell.tests.test_lifecycle_audit import TestLifecycleAudit
         suite.addTests(loader.loadTestsFromTestCase(TestLifecycleAudit))
         from shell.tests.test_plugin_manifests import (TestPluginManifestSync, TestHostClosure,
-                                                       TestEventLoop, TestRetiredMirrors)
+                                                       TestEventLoop, TestRetiredMirrors,
+                                                       TestZeroHostChangesDiscovery)
         suite.addTests(loader.loadTestsFromTestCase(TestPluginManifestSync))
         suite.addTests(loader.loadTestsFromTestCase(TestHostClosure))
         suite.addTests(loader.loadTestsFromTestCase(TestEventLoop))
         suite.addTests(loader.loadTestsFromTestCase(TestRetiredMirrors))
+        suite.addTests(loader.loadTestsFromTestCase(TestZeroHostChangesDiscovery))
         from tests.shell.test_shell import TestShellManagement
         static_test_names = [
             "test_p2_layer_structure_and_session_decoupling",

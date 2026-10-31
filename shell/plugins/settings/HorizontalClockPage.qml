@@ -89,8 +89,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: searchAnchor0
                 target: previewCard
-                declaration:
-                    '{"id":"keystone.horizontal-clock.section.horizontal-clock-style","route":"keystone.horizontal-clock","title":"Horizontal clock style","context":"HorizontalClockPage","icon":"schedule","aliases":[]}'
+                anchorId: "keystone.horizontal-clock.section.horizontal-clock-style"
             }
         }
 

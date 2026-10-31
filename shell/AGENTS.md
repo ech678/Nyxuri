@@ -59,7 +59,7 @@ Nyxuri Shell 以完整 Clavis 母体为起点，就地净化、重构；当前�
 
 目标运行代码严格分为 `app/`（纯装配与宿主数据）、`services/`、`plugins/`、`commons/`、`ui/` 五层（原 `native/` 层已于 R4-C 彻底解耦并物理删除，全库转为纯 QML/JS/Script 架构；原 `modules/` 层已于 KM4.5 整体正名为 `units/`，S0-1 随五件套迁移改 `plugins/`——代码与 `manifest.toml` 同目录，目录即插件，内核 registry 以目录名派生 `shell.<domain>` id；原 `shared/` 与 `units/` 于 S0-1 消解为 `commons/`、`ui/` 与 `plugins/`）。遗留母体结构 `Modules/`、`Components/`、`Widgets/`、`Common/`、`Services/` 与 `core/` 已全面清算归并。KM4.6 起 `assets/` Junk Drawer 解散——插件自有 shader 归 `plugins/<domain>/shaders/`，宿主数据（i18n 词典、icons、内置模板注册表）归 `app/`，第三方许可证与溯源记录折入 `LICENSE` 第三方附录；`fallback/`、`packaging/` 同阶段处决。所有插件与深层目录严格遵循全小写规范，根目录已消除上游独立发行残余（`install.sh`、`scripts/ci/`）。测试、资源、工具和许可证保留各自合理位置。
 
-- **app**：纯装配与宿主数据层（`AppShell`/`SlotHost`/`UnitCatalog`/`Paths`/`WidgetState`/`ActionGateway`/`icons`/`templates`）、环境与能力感知、IPC、全局快捷键意图、生命周期与存储协调；业务执行归明确 backend，不把 app 变成包揽所有业务的控制中心。
+- **app**：纯装配与宿主数据层（`AppShell`/`SlotHost`/`Paths`/`WidgetState`/`ActionGateway`/`icons`/`templates`）、环境与能力感知、IPC、全局快捷键意图、生命周期与存储协调；业务执行归明确 backend，不把 app 变成包揽所有业务的控制中心。
 - **services**：服务层——域服务与配置存储（`ThemeService`、`NotificationService`、`PersonalizationConfig`、`UiPreferences` 等）、宿主能力面（`HotCorners`、`FilePickerWindow`、`IdleInhibitorSurface`）与直读 app 单例的跨单元渲染边（`SystemCardContent`、`SystemClockCard`、`SidebarCookieClock` 等五个系统卡片）。
 - **plugins**：功能域自治，一插件一目录（`manifest.toml` + 视图、模型和专属 backend 内聚），通过显式属性注入依赖。禁止跨域随手调用全局 Service；跨插件协调由 app 的窄接口完成。新增插件 = 加目录 + manifest + 代码，零宿主代码改动。
 - **commons / ui**：纯展示层。`ui/` 为平面原子控件库（含 `shapes/` 具名模块桩）；`commons/` 为设计 Token 与注入数据、纯算法 JS、`i18n/`（词典 + I18n 单例）、纯展示系统卡片 `cards/`。不得读取配置/环境、写文件、发请求、起进程或持有业务连接；接收注入的色板、字体、尺寸与数据。凡需直读 app 单例的卡片不进 `commons/`，留 `services/`。
@@ -82,8 +82,9 @@ Shell 是极致精简的**微内核宿主**：宿主只保留装配（`SlotHost`
   向唯一的 6 种几何插槽声明挂载——`edge`（bar/dock）、`island`（keystone）、
   `overlay`（launcher/lock/session/settings/regionselector）、`drawer`（sidebars）、
   `surface:desktop`（desktopcards/wallpaper）、`popup:notification`（notifications）。
-  插槽归属数据在 `app/UnitCatalog.qml`，与 `shell/plugins/` 由
-  `shell/tests/test_unit_catalog.py` 强制同步。
+  插槽归属数据在插件自己的 `manifest.toml`（kinds + `[entryPoints]`），由
+  `services/PluginRegistry.qml` 运行时读取聚合（S0-2 四件套退役），与
+  `shell/plugins/` 的同步由 `shell/tests/test_plugin_manifests.py` 强制。
 - **数据驱动装载**：`AppShell.qml` 不按名实例化任何单元组件；`SlotHost` 以
   `Repeater + Loader` 依目录装配，`active` 只读 `StateProjection`。单元 `disabled`
   即 `Loader.active = false`：实例销毁，Process/Timer/Socket/回调全部注销；冷启动

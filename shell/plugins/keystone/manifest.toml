@@ -8,3 +8,71 @@ order = 50
 
 [entryPoints]
 island = "Keystone.qml"
+
+# Searchable fixed actions (manifest-schema.md): the search index's
+# include set for this plugin's IPC face.
+
+[[actions]]
+id = "nyxuri:keystone:closeAllOthers"
+target = "keystone"
+method = "closeAllOthers"
+availability = "keystone"
+
+[actions.search]
+title = "Close Keystone panels"
+description = "Dismiss open Keystone panels"
+context = "SpotlightActions"
+icon = "close"
+aliases = ["island"]
+
+[[actions]]
+id = "nyxuri:keystone:dashboard"
+target = "keystone"
+method = "dashboard"
+availability = "keystone"
+
+[actions.search]
+title = "Keystone dashboard"
+description = "Toggle the Keystone dashboard"
+context = "SpotlightActions"
+icon = "dashboard"
+aliases = ["island"]
+
+[[actions]]
+id = "nyxuri:keystone:hub"
+target = "keystone"
+method = "hub"
+availability = "keystone"
+
+[actions.search]
+title = "Keystone hub"
+description = "Toggle the Keystone hub"
+context = "SpotlightActions"
+icon = "hub"
+aliases = ["island"]
+
+[[actions]]
+id = "nyxuri:keystone:lyrics"
+target = "keystone"
+method = "lyrics"
+availability = "keystone"
+
+[actions.search]
+title = "Lyrics"
+description = "Toggle Keystone lyrics"
+context = "SpotlightActions"
+icon = "lyrics"
+aliases = ["music"]
+
+[[actions]]
+id = "nyxuri:keystone:tools"
+target = "keystone"
+method = "tools"
+availability = "keystone"
+
+[actions.search]
+title = "Keystone tools"
+description = "Toggle the Keystone tools panel"
+context = "SpotlightActions"
+icon = "handyman"
+aliases = ["record", "timer"]

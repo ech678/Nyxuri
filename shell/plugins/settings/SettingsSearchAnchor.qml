@@ -3,17 +3,13 @@ import QtQuick.Layouts
 import qs.commons
 import qs.services
 
-// An explicit declaration attached to the actual section. The build consumes
-// only this JSON literal; its ID is also the runtime registration key.
+// The runtime half of a manifest-declared search anchor: the section it is
+// attached to registers itself by anchor id (the title/context/icon data
+// lives in plugins/settings/manifest.toml, read by the plugin registry).
 Item {
     id: root
-    required property string declaration
+    required property string anchorId
     required property Item target
-    readonly property var entry: JSON.parse(declaration)
-    readonly property string title: {
-        const language = Qt.uiLanguage;
-        return SpotlightCatalog.title(entry.id);
-    }
     property bool registerAnchor: true
     property bool wholePage: false
     property int requestSerial: -1

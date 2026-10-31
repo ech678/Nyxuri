@@ -31,7 +31,6 @@ EXCLUDED_PARTS = {
     "fixtures",
     "tests",
     "build",
-    "generated",
     "third-party",
     ".git",
     "staging",

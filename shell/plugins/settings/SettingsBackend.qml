@@ -23,16 +23,16 @@ Singleton {
 
     function registerSearchAnchor(anchor) {
         const next = Object.assign({}, searchAnchors);
-        next[anchor.entry.id] = anchor;
+        next[anchor.anchorId] = anchor;
         searchAnchors = next;
         retrySearch();
     }
 
     function unregisterSearchAnchor(anchor) {
-        if (searchAnchors[anchor.entry.id] !== anchor)
+        if (searchAnchors[anchor.anchorId] !== anchor)
             return;
         const next = Object.assign({}, searchAnchors);
-        delete next[anchor.entry.id];
+        delete next[anchor.anchorId];
         searchAnchors = next;
     }
 

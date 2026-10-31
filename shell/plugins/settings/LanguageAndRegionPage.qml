@@ -79,8 +79,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: searchAnchor0
                 target: languageSelect
-                declaration:
-                    '{"id":"language-region.section.language","route":"language-region","title":"Language","context":"LanguageAndRegionPage","icon":"language","aliases":["general.language-region.section.language"]}'
+                anchorId: "language-region.section.language"
             }
         }
 
@@ -112,8 +111,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: searchAnchor1
                 target: locationCard
-                declaration:
-                    '{"id":"language-region.section.region-weather-location","route":"language-region","title":"Region & weather location","context":"LanguageAndRegionPage","icon":"language","aliases":["general.language-region.section.region-weather-location"]}'
+                anchorId: "language-region.section.region-weather-location"
             }
         }
 
@@ -139,8 +137,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: searchAnchor3
                 target: weatherUnitsSelect
-                declaration:
-                    '{"id":"language-region.section.units","route":"language-region","title":"Units","context":"LanguageAndRegionPage","icon":"language","aliases":["general.language-region.section.units"]}'
+                anchorId: "language-region.section.units"
             }
         }
 
@@ -180,8 +177,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: searchAnchor4
                 target: clockSelect
-                declaration:
-                    '{"id":"language-region.section.time-date","route":"language-region","title":"Time & date","context":"LanguageAndRegionPage","icon":"language","aliases":["general.language-region.section.time-date"]}'
+                anchorId: "language-region.section.time-date"
             }
         }
     }

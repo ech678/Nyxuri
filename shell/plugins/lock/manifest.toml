@@ -8,3 +8,18 @@ order = 90
 
 [entryPoints]
 overlay = "Lock.qml"
+
+# Searchable fixed actions (manifest-schema.md): the search index's
+# include set for this plugin's IPC face.
+
+[[actions]]
+id = "nyxuri:lock:open"
+target = "lock"
+method = "open"
+
+[actions.search]
+title = "Lock screen"
+description = "Lock the current session"
+context = "SpotlightActions"
+icon = "lock"
+aliases = ["lock", "secure"]

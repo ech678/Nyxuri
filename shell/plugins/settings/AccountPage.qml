@@ -310,8 +310,7 @@ NexusPageBase {
 
             SettingsSearchAnchor {
                 target: languageSelect
-                declaration:
-                    '{"id":"account.section.language","route":"account","title":"Language","context":"AccountPage","icon":"settings","aliases":[]}'
+                anchorId: "account.section.language"
             }
         }
 
@@ -332,8 +331,7 @@ NexusPageBase {
 
             SettingsSearchAnchor {
                 target: bluetoothToggle
-                declaration:
-                    '{"id":"account.section.bluetooth-devices","route":"account","title":"Bluetooth devices","context":"AccountPage","icon":"settings","aliases":[]}'
+                anchorId: "account.section.bluetooth-devices"
             }
         }
 
@@ -380,8 +378,7 @@ NexusPageBase {
 
             SettingsSearchAnchor {
                 target: shortcutsRow
-                declaration:
-                    '{"id":"account.section.keyboard-shortcuts","route":"account","title":"Keyboard shortcuts","context":"AccountPage","icon":"settings","aliases":[]}'
+                anchorId: "account.section.keyboard-shortcuts"
             }
         }
 
@@ -406,8 +403,7 @@ NexusPageBase {
 
             SettingsSearchAnchor {
                 target: wallpaperGridRow
-                declaration:
-                    '{"id":"account.section.personalization","route":"account","title":"Personalization","context":"AccountPage","icon":"settings","aliases":[]}'
+                anchorId: "account.section.personalization"
             }
 
             GridLayout {

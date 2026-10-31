@@ -245,8 +245,7 @@ NexusPageBase {
 
             SettingsSearchAnchor {
                 target: currentWallpaperCard
-                declaration:
-                    '{"id":"wallpaper.section.current-wallpaper","route":"wallpaper","title":"Current wallpaper","context":"WallpaperPage","icon":"wallpaper","aliases":[]}'
+                anchorId: "wallpaper.section.current-wallpaper"
             }
 
             ColumnLayout {
@@ -373,8 +372,7 @@ NexusPageBase {
 
             SettingsSearchAnchor {
                 target: transitionTypeCard
-                declaration:
-                    '{"id":"wallpaper.section.transition","route":"wallpaper","title":"Transition","context":"WallpaperPage","icon":"wallpaper","aliases":[]}'
+                anchorId: "wallpaper.section.transition"
             }
 
             ColumnLayout {
@@ -558,8 +556,7 @@ NexusPageBase {
 
             SettingsSearchAnchor {
                 target: verticalParallaxToggle
-                declaration:
-                    '{"id":"wallpaper.section.parallax-effects","route":"wallpaper","title":"Parallax effects","context":"WallpaperPage","icon":"wallpaper","aliases":[]}'
+                anchorId: "wallpaper.section.parallax-effects"
             }
         }
 
@@ -618,8 +615,7 @@ NexusPageBase {
 
             SettingsSearchAnchor {
                 target: overviewPreviewCard
-                declaration:
-                    '{"id":"wallpaper.section.overview-background","route":"wallpaper","title":"Overview background","context":"WallpaperPage","icon":"wallpaper","aliases":[]}'
+                anchorId: "wallpaper.section.overview-background"
             }
 
             ColumnLayout {

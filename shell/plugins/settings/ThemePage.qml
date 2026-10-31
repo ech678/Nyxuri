@@ -293,8 +293,7 @@ NexusPageBase {
 
             SettingsSearchAnchor {
                 target: panelStyleCard
-                declaration:
-                    '{"id":"theme.section.settings-panel-style","route":"theme","title":"Settings panel style","context":"ThemePage","icon":"palette","aliases":[]}'
+                anchorId: "theme.section.settings-panel-style"
             }
         }
 
@@ -313,8 +312,7 @@ NexusPageBase {
 
             SettingsSearchAnchor {
                 target: schemeRow
-                declaration:
-                    '{"id":"theme.section.matugen-color-scheme","route":"theme","title":"matugen color scheme","context":"ThemePage","icon":"palette","aliases":[]}'
+                anchorId: "theme.section.matugen-color-scheme"
             }
 
             ColumnLayout {
@@ -375,8 +373,7 @@ NexusPageBase {
 
             SettingsSearchAnchor {
                 target: opacitySlider
-                declaration:
-                    '{"id":"theme.section.transparency-and-blur","route":"theme","title":"Transparency and blur","context":"ThemePage","icon":"blur_on","aliases":["effects.section.background","general.effects.section.background","effects","general.effects"]}'
+                anchorId: "theme.section.transparency-and-blur"
             }
         }
 
@@ -420,8 +417,7 @@ NexusPageBase {
 
             SettingsSearchAnchor {
                 target: superKeyRow
-                declaration:
-                    '{"id":"theme.section.super-key-appearance","route":"theme","title":"Super key appearance","context":"ThemePage","icon":"palette","aliases":[]}'
+                anchorId: "theme.section.super-key-appearance"
             }
 
             Flow {
@@ -489,8 +485,7 @@ NexusPageBase {
 
             SettingsSearchAnchor {
                 target: lockStyleSelect
-                declaration:
-                    '{"id":"theme.section.lock-screen","route":"theme","title":"Lock screen","context":"ThemePage","icon":"palette","aliases":[]}'
+                anchorId: "theme.section.lock-screen"
             }
         }
 
@@ -509,8 +504,7 @@ NexusPageBase {
 
             SettingsSearchAnchor {
                 target: cursorThemeRow
-                declaration:
-                    '{"id":"theme.section.cursor-theme","route":"theme","title":"Cursor theme","context":"ThemePage","icon":"palette","aliases":[]}'
+                anchorId: "theme.section.cursor-theme"
             }
 
             CursorThemeSelect {
@@ -586,8 +580,7 @@ NexusPageBase {
 
             SettingsSearchAnchor {
                 target: iconThemeSelect
-                declaration:
-                    '{"id":"theme.section.icon-theme","route":"theme","title":"Icon theme","context":"ThemePage","icon":"palette","aliases":[]}'
+                anchorId: "theme.section.icon-theme"
             }
         }
 
@@ -609,8 +602,7 @@ NexusPageBase {
 
             SettingsSearchAnchor {
                 target: uiFontSelect
-                declaration:
-                    '{"id":"theme.section.fonts","route":"theme","title":"Fonts","context":"ThemePage","icon":"palette","aliases":[]}'
+                anchorId: "theme.section.fonts"
             }
         }
 
@@ -686,8 +678,7 @@ NexusPageBase {
 
             SettingsSearchAnchor {
                 target: templateCard
-                declaration:
-                    '{"id":"theme.section.matugen-template-generation","route":"theme","title":"Matugen template generation","context":"ThemePage","icon":"tune","aliases":["advanced.section.matugen-template-generation"]}'
+                anchorId: "theme.section.matugen-template-generation"
             }
 
             ColumnLayout {

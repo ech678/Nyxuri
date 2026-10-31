@@ -80,8 +80,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: appearanceAnchor
                 target: edgeSelect
-                declaration:
-                    '{"id":"dock.section.appearance","route":"dock","title":"Appearance","context":"DockPage","icon":"dock_to_bottom","aliases":["general.dock.section.appearance","size","position","magnification","surface style","notch"]}'
+                anchorId: "dock.section.appearance"
             }
         }
 
@@ -146,8 +145,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: behaviorAnchor
                 target: autoHideToggle
-                declaration:
-                    '{"id":"dock.section.behavior","route":"dock","title":"Behavior","context":"DockPage","icon":"touch_app","aliases":["general.dock.section.behavior","auto hide","bounce","recent","indicators","pin","minimize","animation","genie","scale"]}'
+                anchorId: "dock.section.behavior"
             }
         }
 
@@ -231,8 +229,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: previewsAnchor
                 target: thumbnailsToggle
-                declaration:
-                    '{"id":"dock.section.previews","route":"dock","title":"Window previews","context":"DockPage","icon":"preview","aliases":["general.dock.section.previews","thumbnails","hover"],"availability":"dock-previews"}'
+                anchorId: "dock.section.previews"
             }
         }
 

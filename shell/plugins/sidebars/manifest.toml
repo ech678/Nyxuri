@@ -8,3 +8,45 @@ order = 80
 
 [entryPoints]
 drawer = "SidebarHostWindow.qml"
+
+# Searchable fixed actions (manifest-schema.md): the search index's
+# include set for this plugin's IPC face.
+
+[[actions]]
+id = "nyxuri:sidebar:open:dashboard"
+target = "sidebar"
+method = "open"
+args = ["dashboard"]
+
+[actions.search]
+title = "Notifications"
+description = "Open the notifications sidebar"
+context = "SpotlightActions"
+icon = "notifications"
+aliases = ["sidebar"]
+
+[[actions]]
+id = "nyxuri:sidebar:open:quicksettings"
+target = "sidebar"
+method = "open"
+args = ["quicksettings"]
+
+[actions.search]
+title = "Quick settings"
+description = "Open the Quick settings sidebar"
+context = "SpotlightActions"
+icon = "tune"
+aliases = ["sidebar"]
+
+[[actions]]
+id = "nyxuri:sidebar:toggle:weather"
+target = "sidebar"
+method = "toggle"
+args = ["weather"]
+
+[actions.search]
+title = "Weather"
+description = "Toggle the weather sidebar"
+context = "SpotlightActions"
+icon = "weather_mix"
+aliases = ["forecast"]

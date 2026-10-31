@@ -191,8 +191,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: searchAnchor0
                 target: nearbyHeader
-                declaration:
-                    '{"id":"connected-devices.bluetooth-pairing.section.nearby-devices","route":"connected-devices.bluetooth-pairing","title":"Nearby devices","context":"BluetoothPairingPage","icon":"bluetooth_searching","aliases":["general.bluetooth-pairing.section.nearby-devices"]}'
+                anchorId: "connected-devices.bluetooth-pairing.section.nearby-devices"
             }
         }
 

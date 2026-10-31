@@ -8,3 +8,596 @@ order = 110
 
 [entryPoints]
 overlay = "SettingsHost.qml"
+
+# Settings schema (manifest-schema.md): navigation routes and search
+# anchors live here — the runtime registry (PluginRegistry) is the only
+# consumer; group keys drive the nav pane's geometric clustering only.
+
+[[settings]]
+id = "account"
+source = "AccountPage.qml"
+title = "Account"
+description = "Profile name, avatar, and banner"
+context = "ControlCenterWindow"
+icon = "account_circle"
+group = "personalization"
+order = 10
+
+[[settings]]
+id = "theme"
+source = "ThemePage.qml"
+title = "Theme"
+description = "Colors, effects, and palettes"
+context = "ControlCenterWindow"
+icon = "palette"
+group = "personalization"
+order = 20
+aliases = ["advanced", "matugen", "effects", "general.effects", "transparency", "blur"]
+
+[[settings]]
+id = "wallpaper"
+source = "WallpaperPage.qml"
+title = "Wallpaper"
+description = "Sources, auto-cycle, and switching"
+context = "ControlCenterWindow"
+icon = "wallpaper"
+group = "personalization"
+order = 30
+
+[[settings]]
+id = "bar"
+source = "GeneralBarPage.qml"
+title = "Bar"
+description = "Position, modules, and indicators"
+context = "ControlCenterWindow"
+icon = "dock_to_bottom"
+group = "surfaces"
+order = 40
+aliases = ["general.bar"]
+
+[[settings]]
+id = "dock"
+source = "DockPage.qml"
+title = "Dock"
+description = "Position, size, and behavior"
+context = "ControlCenterWindow"
+icon = "dock_to_bottom"
+group = "surfaces"
+order = 50
+aliases = ["general.dock", "taskbar", "launcher"]
+
+[[settings]]
+id = "sidebar"
+source = "GeneralSidebarPage.qml"
+title = "Sidebars"
+description = "Sides, cards, and monitoring"
+context = "ControlCenterWindow"
+icon = "side_navigation"
+group = "surfaces"
+order = 60
+aliases = ["general.sidebar", "sidebars"]
+
+[[settings]]
+id = "keystone"
+source = "KeystonePage.qml"
+title = "Keystone"
+description = "Style, clock, and media controls"
+context = "ControlCenterWindow"
+icon = "toggle_off"
+group = "surfaces"
+order = 70
+
+[[settings]]
+id = "shortcuts"
+source = "ShortcutsPage.qml"
+title = "Keyboard shortcuts"
+description = "Global shortcuts and actions"
+context = "ControlCenterWindow"
+icon = "keyboard"
+group = "keyboard"
+order = 100
+aliases = ["general.shortcuts"]
+
+[[settings]]
+id = "spotlight"
+source = "SpotlightPage.qml"
+title = "Spotlight"
+description = "Search modes, layout, and order"
+context = "ControlCenterWindow"
+icon = "search"
+group = "keyboard"
+order = 110
+aliases = ["general.spotlight"]
+
+[[settings]]
+id = "network"
+source = "NetworkPage.qml"
+title = "Network"
+description = "Wi-Fi and wired connections"
+context = "ControlCenterWindow"
+icon = "wifi"
+group = "connectivity"
+order = 80
+aliases = ["general.network"]
+
+[[settings]]
+id = "connected-devices"
+source = "ConnectedDevicesPage.qml"
+title = "Connected devices"
+description = "Bluetooth devices and pairing"
+context = "ControlCenterWindow"
+icon = "devices_other"
+group = "connectivity"
+order = 90
+aliases = ["general.connected-devices", "bluetooth"]
+
+[[settings]]
+id = "language-region"
+source = "LanguageAndRegionPage.qml"
+title = "Language & region"
+description = "Language, temperature, and clock"
+context = "ControlCenterWindow"
+icon = "language"
+group = "system"
+order = 120
+aliases = ["general.language-region"]
+
+[[settings]]
+id = "shell"
+source = "ShellPage.qml"
+title = "Nyxuri Shell"
+description = "Unit toggles and diagnostics"
+context = "ControlCenterWindow"
+icon = "monitor_heart"
+group = "system"
+order = 130
+aliases = ["control-plane", "diagnostics"]
+
+[[settings]]
+id = "keystone.horizontal-clock"
+source = "HorizontalClockPage.qml"
+title = "Horizontal clock style"
+description = "Horizontal clock appearance"
+context = "KeystonePage"
+icon = "schedule"
+group = "surfaces"
+order = 71
+
+[[settings]]
+id = "connected-devices.bluetooth-pairing"
+source = "BluetoothPairingPage.qml"
+title = "Pair new device"
+description = "Scan and pair nearby devices"
+context = "ConnectedDevicesPage"
+icon = "bluetooth_searching"
+group = "connectivity"
+order = 91
+aliases = ["general.bluetooth-pairing"]
+
+[[settings]]
+id = "about"
+source = "AboutPage.qml"
+title = "About"
+description = "System information and versions"
+context = "ControlCenterWindow"
+icon = "info"
+group = "about"
+order = 140
+
+# Search anchors: `route` welds to a route above; the page's
+# SettingsSearchAnchor registers itself by id at runtime.
+
+[[settings]]
+id = "account.section.bluetooth-devices"
+route = "account"
+title = "Bluetooth devices"
+context = "AccountPage"
+icon = "settings"
+
+[[settings]]
+id = "account.section.keyboard-shortcuts"
+route = "account"
+title = "Keyboard shortcuts"
+context = "AccountPage"
+icon = "settings"
+
+[[settings]]
+id = "account.section.language"
+route = "account"
+title = "Language"
+context = "AccountPage"
+icon = "settings"
+
+[[settings]]
+id = "account.section.personalization"
+route = "account"
+title = "Personalization"
+context = "AccountPage"
+icon = "settings"
+
+[[settings]]
+id = "bar.section.components"
+route = "bar"
+title = "Components"
+context = "GeneralBarPage"
+icon = "view_agenda"
+aliases = ["general.bar.section.components"]
+
+[[settings]]
+id = "bar.section.position"
+route = "bar"
+title = "Position"
+context = "GeneralBarPage"
+icon = "dock_to_bottom"
+aliases = ["general.bar.section.position"]
+
+[[settings]]
+id = "connected-devices.section.advanced-settings"
+route = "connected-devices"
+title = "Advanced settings"
+context = "ConnectedDevicesPage"
+icon = "devices_other"
+aliases = ["general.connected-devices.section.advanced-settings"]
+
+[[settings]]
+id = "connected-devices.section.bluetooth-adapter"
+route = "connected-devices"
+title = "Bluetooth adapter"
+context = "ConnectedDevicesPage"
+icon = "devices_other"
+aliases = ["general.connected-devices.section.bluetooth-adapter"]
+
+[[settings]]
+id = "connected-devices.section.saved-devices"
+route = "connected-devices"
+title = "Saved devices"
+context = "ConnectedDevicesPage"
+icon = "devices_other"
+aliases = ["general.connected-devices.section.saved-devices"]
+
+[[settings]]
+id = "connected-devices.bluetooth-pairing.section.nearby-devices"
+route = "connected-devices.bluetooth-pairing"
+title = "Nearby devices"
+context = "BluetoothPairingPage"
+icon = "bluetooth_searching"
+aliases = ["general.bluetooth-pairing.section.nearby-devices"]
+
+[[settings]]
+id = "dock.section.appearance"
+route = "dock"
+title = "Appearance"
+context = "DockPage"
+icon = "dock_to_bottom"
+aliases = ["general.dock.section.appearance", "size", "position", "magnification", "surface style", "notch"]
+
+[[settings]]
+id = "dock.section.behavior"
+route = "dock"
+title = "Behavior"
+context = "DockPage"
+icon = "touch_app"
+aliases = ["general.dock.section.behavior", "auto hide", "bounce", "recent", "indicators", "pin", "minimize", "animation", "genie", "scale"]
+
+[[settings]]
+id = "dock.section.previews"
+route = "dock"
+title = "Window previews"
+context = "DockPage"
+icon = "preview"
+aliases = ["general.dock.section.previews", "thumbnails", "hover"]
+
+[[settings]]
+id = "keystone.section.horizontal-clock"
+route = "keystone"
+title = "Horizontal clock"
+context = "KeystonePage"
+icon = "toggle_off"
+
+[[settings]]
+id = "keystone.section.keyboard-indicators"
+route = "keystone"
+title = "Keyboard indicators"
+context = "KeystonePage"
+icon = "settings"
+
+[[settings]]
+id = "keystone.section.keyhole"
+route = "keystone"
+title = "Keyhole"
+context = "KeystonePage"
+icon = "settings"
+
+[[settings]]
+id = "keystone.section.keystone-style"
+route = "keystone"
+title = "Keystone style"
+context = "KeystonePage"
+icon = "toggle_off"
+
+[[settings]]
+id = "keystone.section.media-controls"
+route = "keystone"
+title = "Media controls"
+context = "KeystonePage"
+icon = "music_note"
+
+[[settings]]
+id = "keystone.section.mouse-actions"
+route = "keystone"
+title = "Mouse actions"
+context = "KeystonePage"
+icon = "toggle_off"
+
+[[settings]]
+id = "keystone.section.recording"
+route = "keystone"
+title = "Recording"
+context = "KeystonePage"
+icon = "toggle_off"
+
+[[settings]]
+id = "keystone.horizontal-clock.section.horizontal-clock-style"
+route = "keystone.horizontal-clock"
+title = "Horizontal clock style"
+context = "HorizontalClockPage"
+icon = "schedule"
+
+[[settings]]
+id = "language-region.section.language"
+route = "language-region"
+title = "Language"
+context = "LanguageAndRegionPage"
+icon = "language"
+aliases = ["general.language-region.section.language"]
+
+[[settings]]
+id = "language-region.section.region-weather-location"
+route = "language-region"
+title = "Region & weather location"
+context = "LanguageAndRegionPage"
+icon = "language"
+aliases = ["general.language-region.section.region-weather-location"]
+
+[[settings]]
+id = "language-region.section.time-date"
+route = "language-region"
+title = "Time & date"
+context = "LanguageAndRegionPage"
+icon = "language"
+aliases = ["general.language-region.section.time-date"]
+
+[[settings]]
+id = "language-region.section.units"
+route = "language-region"
+title = "Units"
+context = "LanguageAndRegionPage"
+icon = "language"
+aliases = ["general.language-region.section.units"]
+
+[[settings]]
+id = "network.section.connection-information"
+route = "network"
+title = "Connection information"
+context = "NetworkPage"
+icon = "wifi"
+aliases = ["general.network.section.connection-information"]
+
+[[settings]]
+id = "network.section.other-settings"
+route = "network"
+title = "Other settings"
+context = "NetworkPage"
+icon = "wifi"
+aliases = ["general.network.section.other-settings"]
+
+[[settings]]
+id = "network.section.wi-fi"
+route = "network"
+title = "Wi-Fi"
+context = "NetworkPage"
+icon = "wifi"
+aliases = ["general.network.section.wi-fi"]
+
+[[settings]]
+id = "network.section.wired-connections"
+route = "network"
+title = "Wired connections"
+context = "NetworkPage"
+icon = "wifi"
+aliases = ["general.network.section.wired-connections"]
+
+[[settings]]
+id = "shell.section.diagnostics"
+route = "shell"
+title = "Diagnostics & paths"
+context = "ShellPage"
+icon = "bug_report"
+aliases = ["diagnostics", "export", "paths", "config folder", "cache"]
+
+[[settings]]
+id = "shell.section.log"
+route = "shell"
+title = "Session log"
+context = "ShellPage"
+icon = "receipt_long"
+aliases = ["log", "logs", "debug", "theme", "取色"]
+
+[[settings]]
+id = "shell.section.modules"
+route = "shell"
+title = "Modules & dependencies"
+context = "ShellPage"
+icon = "widgets"
+aliases = ["control-plane", "modules", "dependencies", "degraded", "errors"]
+
+[[settings]]
+id = "shell.section.sampling"
+route = "shell"
+title = "Resource sampling"
+context = "ShellPage"
+icon = "speed"
+aliases = ["sampling", "cpu", "memory", "resource", "rss"]
+
+[[settings]]
+id = "sidebar.section.clock-style"
+route = "sidebar"
+title = "Clock style"
+context = "GeneralSidebarPage"
+icon = "side_navigation"
+aliases = ["general.sidebar.section.clock-style"]
+
+[[settings]]
+id = "sidebar.section.desktop-card-layout"
+route = "sidebar"
+title = "Desktop card layout"
+context = "GeneralSidebarPage"
+icon = "side_navigation"
+aliases = ["general.sidebar.section.desktop-card-layout"]
+
+[[settings]]
+id = "sidebar.section.sidebars"
+route = "sidebar"
+title = "Sidebars"
+context = "GeneralSidebarPage"
+icon = "side_navigation"
+aliases = ["general.sidebar.section.sidebars"]
+
+[[settings]]
+id = "sidebar.section.system-cards"
+route = "sidebar"
+title = "System cards"
+context = "GeneralSidebarPage"
+icon = "side_navigation"
+aliases = ["general.sidebar.section.system-cards"]
+
+[[settings]]
+id = "spotlight.section.applications"
+route = "spotlight"
+title = "Applications"
+context = "SpotlightPage"
+icon = "search"
+aliases = ["general.spotlight.section.applications"]
+
+[[settings]]
+id = "spotlight.section.clipboard"
+route = "spotlight"
+title = "Clipboard"
+context = "SpotlightPage"
+icon = "search"
+aliases = ["general.spotlight.section.clipboard"]
+
+[[settings]]
+id = "spotlight.section.web-search"
+route = "spotlight"
+title = "Web search"
+context = "SpotlightPage"
+icon = "search"
+aliases = ["general.spotlight.section.web-search"]
+
+[[settings]]
+id = "theme.section.cursor-theme"
+route = "theme"
+title = "Cursor theme"
+context = "ThemePage"
+icon = "palette"
+
+[[settings]]
+id = "theme.section.fonts"
+route = "theme"
+title = "Fonts"
+context = "ThemePage"
+icon = "palette"
+
+[[settings]]
+id = "theme.section.icon-theme"
+route = "theme"
+title = "Icon theme"
+context = "ThemePage"
+icon = "palette"
+
+[[settings]]
+id = "theme.section.lock-screen"
+route = "theme"
+title = "Lock screen"
+context = "ThemePage"
+icon = "palette"
+
+[[settings]]
+id = "theme.section.matugen-color-scheme"
+route = "theme"
+title = "matugen color scheme"
+context = "ThemePage"
+icon = "palette"
+
+[[settings]]
+id = "theme.section.matugen-template-generation"
+route = "theme"
+title = "Matugen template generation"
+context = "ThemePage"
+icon = "tune"
+aliases = ["advanced.section.matugen-template-generation"]
+
+[[settings]]
+id = "theme.section.settings-panel-style"
+route = "theme"
+title = "Settings panel style"
+context = "ThemePage"
+icon = "palette"
+
+[[settings]]
+id = "theme.section.super-key-appearance"
+route = "theme"
+title = "Super key appearance"
+context = "ThemePage"
+icon = "palette"
+
+[[settings]]
+id = "theme.section.transparency-and-blur"
+route = "theme"
+title = "Transparency and blur"
+context = "ThemePage"
+icon = "blur_on"
+aliases = ["effects.section.background", "general.effects.section.background", "effects", "general.effects"]
+
+[[settings]]
+id = "wallpaper.section.current-wallpaper"
+route = "wallpaper"
+title = "Current wallpaper"
+context = "WallpaperPage"
+icon = "wallpaper"
+
+[[settings]]
+id = "wallpaper.section.overview-background"
+route = "wallpaper"
+title = "Overview background"
+context = "WallpaperPage"
+icon = "wallpaper"
+
+[[settings]]
+id = "wallpaper.section.parallax-effects"
+route = "wallpaper"
+title = "Parallax effects"
+context = "WallpaperPage"
+icon = "wallpaper"
+
+[[settings]]
+id = "wallpaper.section.transition"
+route = "wallpaper"
+title = "Transition"
+context = "WallpaperPage"
+icon = "wallpaper"
+
+# Searchable fixed actions owned by this plugin (ShortcutMap.qml).
+
+[[actions]]
+id = "nyxuri:shortcut-map:open"
+target = "shortcut-map"
+method = "open"
+
+[actions.search]
+title = "Shortcut map"
+description = "Show keyboard shortcuts"
+context = "SpotlightActions"
+icon = "keyboard"
+aliases = ["keys"]

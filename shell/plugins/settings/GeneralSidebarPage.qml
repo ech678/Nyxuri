@@ -155,8 +155,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: searchAnchor0
                 target: dashboardSideSelect
-                declaration:
-                    '{"id":"sidebar.section.sidebars","route":"sidebar","title":"Sidebars","context":"GeneralSidebarPage","icon":"side_navigation","aliases":["general.sidebar.section.sidebars"]}'
+                anchorId: "sidebar.section.sidebars"
             }
         }
 
@@ -261,8 +260,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: searchAnchor1
                 target: layoutBlock
-                declaration:
-                    '{"id":"sidebar.section.desktop-card-layout","route":"sidebar","title":"Desktop card layout","context":"GeneralSidebarPage","icon":"side_navigation","aliases":["general.sidebar.section.desktop-card-layout"]}'
+                anchorId: "sidebar.section.desktop-card-layout"
             }
         }
 
@@ -307,8 +305,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: searchAnchor2
                 target: clockStyleSelect
-                declaration:
-                    '{"id":"sidebar.section.clock-style","route":"sidebar","title":"Clock style","context":"GeneralSidebarPage","icon":"side_navigation","aliases":["general.sidebar.section.clock-style"]}'
+                anchorId: "sidebar.section.clock-style"
             }
         }
 
@@ -508,8 +505,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: searchAnchor3
                 target: cardGrid
-                declaration:
-                    '{"id":"sidebar.section.system-cards","route":"sidebar","title":"System cards","context":"GeneralSidebarPage","icon":"side_navigation","aliases":["general.sidebar.section.system-cards"]}'
+                anchorId: "sidebar.section.system-cards"
             }
 
             Repeater {

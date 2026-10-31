@@ -60,7 +60,7 @@ qml=false
 catalog=false
 for file in "${files[@]}"; do
     case ${file} in
-        plugins/settings/settings-routes.json|plugins/settings/generated/SearchCatalog.js|plugins/settings/*.qml|scripts/system/niri-actions.json|scripts/dev/generate-search-catalog.py|tests/test_search_catalog.py) catalog=true ;;
+        plugins/*/manifest.toml|plugins/settings/*.qml|scripts/system/niri-actions.json|services/PluginManifest.js|services/PluginRegistry.qml|tests/test_search_catalog.py) catalog=true ;;
     esac
     [[ -f ${file} ]] || continue
     case ${file} in
@@ -106,8 +106,7 @@ for test_name in niri_cursor_config manage_niri_effects matugen_registry; do
     fi
 done
 if ${catalog}; then
-    step search-catalog python3 "${script_dir}/generate-search-catalog.py"
-    step search-catalog-contracts python3 tests/test_search_catalog.py
+    step settings-schema python3 tests/test_search_catalog.py
 fi
 if ${qml}; then
     lint_args=()

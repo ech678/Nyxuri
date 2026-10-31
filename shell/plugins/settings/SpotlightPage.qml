@@ -97,8 +97,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: searchAnchor0
                 target: appStylePicker
-                declaration:
-                    '{"id":"spotlight.section.applications","route":"spotlight","title":"Applications","context":"SpotlightPage","icon":"search","aliases":["general.spotlight.section.applications"]}'
+                anchorId: "spotlight.section.applications"
             }
         }
 
@@ -136,8 +135,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: searchAnchor1
                 target: enginePicker
-                declaration:
-                    '{"id":"spotlight.section.web-search","route":"spotlight","title":"Web search","context":"SpotlightPage","icon":"search","aliases":["general.spotlight.section.web-search"]}'
+                anchorId: "spotlight.section.web-search"
             }
         }
 
@@ -160,8 +158,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: searchAnchor2
                 target: clipboardStylePicker
-                declaration:
-                    '{"id":"spotlight.section.clipboard","route":"spotlight","title":"Clipboard","context":"SpotlightPage","icon":"search","aliases":["general.spotlight.section.clipboard"]}'
+                anchorId: "spotlight.section.clipboard"
             }
         }
 

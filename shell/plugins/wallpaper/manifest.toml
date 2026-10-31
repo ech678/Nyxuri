@@ -8,3 +8,58 @@ order = 10
 
 [entryPoints]
 "surface:desktop" = "WallpaperBackground.qml"
+
+# Searchable fixed actions (manifest-schema.md): the search index's
+# include set for this plugin's IPC face.
+
+[[actions]]
+id = "nyxuri:wallpaper:clear"
+target = "wallpaper"
+method = "clear"
+availability = "wallpaper-idle"
+
+[actions.search]
+title = "Reset wallpaper"
+description = "Clear the global wallpaper selection"
+context = "SpotlightActions"
+icon = "hide_image"
+aliases = ["background"]
+
+[[actions]]
+id = "nyxuri:wallpaper:previous"
+target = "wallpaper"
+method = "previous"
+availability = "wallpaper-idle"
+
+[actions.search]
+title = "Previous wallpaper"
+description = "Apply the previous wallpaper"
+context = "SpotlightActions"
+icon = "skip_previous"
+aliases = ["background"]
+
+[[actions]]
+id = "nyxuri:wallpaper:next"
+target = "wallpaper"
+method = "next"
+availability = "wallpaper-idle"
+
+[actions.search]
+title = "Next wallpaper"
+description = "Apply the next wallpaper"
+context = "SpotlightActions"
+icon = "skip_next"
+aliases = ["background"]
+
+[[actions]]
+id = "nyxuri:wallpaper:random"
+target = "wallpaper"
+method = "random"
+availability = "wallpaper-idle"
+
+[actions.search]
+title = "Random wallpaper"
+description = "Apply a random wallpaper"
+context = "SpotlightActions"
+icon = "shuffle"
+aliases = ["background"]

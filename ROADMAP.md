@@ -138,11 +138,20 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
     `IPC_READY`、compiled empty 零）；全量 984 仅余 #149 预存在红（另案）。
     顺带清算：SearchCatalog 生成器模板旧路径止血（防重生成写回断链）、批量替换
     误伤断言恢复、install.sh 失效探测项换现存插件。
-  - **S0-2 运行时注册表取代四件套**：手写 `UnitCatalog.qml` 镜像、`settings-routes.json`、
-    `SearchCatalog.js` 生成器、`NexusNavPane.groupTable` 全部由 PluginRegistry 运行时读
-    `manifest.toml` 取代——「新增插件 = 加目录 + manifest + 代码，零宿主改动」从口号
-    变成事实；manifest 词表整批重写（杀词并轨 + 删冗余）随此落地，旧形态一处不留；
-    shell/AGENTS.md 对应契约段随站修订。
+  - **S0-2 运行时注册表取代四件套**（已收口）：手写 `UnitCatalog.qml` 镜像、
+    `settings-routes.json`、`SearchCatalog.js` 生成器、`NexusNavPane.groupTable`
+    全部由 PluginRegistry 运行时读 `manifest.toml` 取代——「新增插件 = 加目录 +
+    manifest + 代码，零宿主改动」从口号变成事实；manifest 词表整批重写（杀词并轨 +
+    删冗余）随此落地，旧形态一处不留；shell/AGENTS.md 对应契约段随站修订。
+    收口明细：16 路由 + 53 锚点 + 21 可搜索动作全部迁入 manifest（settings 路由带
+    `group`/`order`，导航几何分组连续性由测试钉死）；`SettingsSearchAnchor` 收窄为
+    `anchorId` 运行时注册（声明数据只住 manifest，页内 JSON 字面与 GammaControlPage
+    三条 `displays.gamma` 死锚点顺手处决）；`niri-actions.json` 剥离 `search` 块只剩
+    binds 真值，manifest 动作与 binds 表达式按 id 焊接（契约测试断言 argv 形状）；
+    对抗性门禁落地（testing.md 承诺）：临时插件塞入 → 发现 → 移除全程零宿主文件
+    改动。证据：`run-tests.py` 五分类 105+ 绿（含新增 settings-schema 契约与临时插件
+    往返）、`tests/deploy/test_manifest` 59 绿、隔离实机冒烟（独立路径防 IPC 串台）
+    sidebar visible 真实翻转 + `control-center open` OK + 加载零 compiled empty。
   - **S0-3 设置去中心化**：设置页由插件自带（manifest settings schema / panel entry），
     宿主用 ui/ 原子控件渲染；中央设置窗降级为聚合 panel 插件。T3 双轨呈现
     （default / dashboard）去留**开工前**拍板，不留到迁移中途当阻塞。

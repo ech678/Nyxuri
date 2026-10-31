@@ -120,8 +120,7 @@ Item {
                     SettingsSearchAnchor {
                         id: searchAnchor0
                         target: floatingToggle
-                        declaration:
-                            '{"id":"keystone.section.keystone-style","route":"keystone","title":"Keystone style","context":"KeystonePage","icon":"toggle_off","aliases":[]}'
+                        anchorId: "keystone.section.keystone-style"
                     }
                 }
 
@@ -160,8 +159,7 @@ Item {
                     SettingsSearchAnchor {
                         id: searchAnchor1
                         target: hoverSelect
-                        declaration:
-                            '{"id":"keystone.section.mouse-actions","route":"keystone","title":"Mouse actions","context":"KeystonePage","icon":"toggle_off","aliases":[]}'
+                        anchorId: "keystone.section.mouse-actions"
                     }
                 }
 
@@ -222,8 +220,7 @@ Item {
                     SettingsSearchAnchor {
                         id: mediaSearchAnchor
                         target: progressSelect
-                        declaration:
-                            '{"id":"keystone.section.media-controls","route":"keystone","title":"Media controls","context":"KeystonePage","icon":"music_note","aliases":[]}'
+                        anchorId: "keystone.section.media-controls"
                     }
                 }
 
@@ -373,8 +370,7 @@ Item {
                     SettingsSearchAnchor {
                         id: extraSearchAnchor0
                         target: capsLockToggle
-                        declaration:
-                            '{"id":"keystone.section.keyboard-indicators","route":"keystone","title":"Keyboard indicators","context":"KeystonePage","icon":"settings","aliases":[],"availability":"keyboard-lock"}'
+                        anchorId: "keystone.section.keyboard-indicators"
                     }
                 }
 
@@ -405,8 +401,7 @@ Item {
                     SettingsSearchAnchor {
                         id: extraSearchAnchor1
                         target: keyholeCardSelect
-                        declaration:
-                            '{"id":"keystone.section.keyhole","route":"keystone","title":"Keyhole","context":"KeystonePage","icon":"settings","aliases":[]}'
+                        anchorId: "keystone.section.keyhole"
                     }
                 }
 
@@ -436,8 +431,7 @@ Item {
                     SettingsSearchAnchor {
                         id: searchAnchor2
                         target: clockPreviewCard
-                        declaration:
-                            '{"id":"keystone.section.horizontal-clock","route":"keystone","title":"Horizontal clock","context":"KeystonePage","icon":"toggle_off","aliases":[]}'
+                        anchorId: "keystone.section.horizontal-clock"
                     }
                 }
 
@@ -506,8 +500,7 @@ Item {
                     SettingsSearchAnchor {
                         id: searchAnchor3
                         target: recordingCard
-                        declaration:
-                            '{"id":"keystone.section.recording","route":"keystone","title":"Recording","context":"KeystonePage","icon":"toggle_off","aliases":[]}'
+                        anchorId: "keystone.section.recording"
                     }
                 }
             }

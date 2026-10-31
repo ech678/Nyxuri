@@ -52,8 +52,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: modulesAnchor
                 target: startupRow
-                declaration:
-                    '{"id":"shell.section.modules","route":"shell","title":"Modules & dependencies","context":"ShellPage","icon":"widgets","aliases":["control-plane","modules","dependencies","degraded","errors"]}'
+                anchorId: "shell.section.modules"
             }
         }
 
@@ -242,8 +241,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: logAnchor
                 target: logCard
-                declaration:
-                    '{"id":"shell.section.log","route":"shell","title":"Session log","context":"ShellPage","icon":"receipt_long","aliases":["log","logs","debug","theme","取色"]}'
+                anchorId: "shell.section.log"
             }
         }
 
@@ -266,8 +264,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: samplingAnchor
                 target: samplingToggle
-                declaration:
-                    '{"id":"shell.section.sampling","route":"shell","title":"Resource sampling","context":"ShellPage","icon":"speed","aliases":["sampling","cpu","memory","resource","rss"]}'
+                anchorId: "shell.section.sampling"
             }
         }
 
@@ -321,8 +318,7 @@ NexusPageBase {
             SettingsSearchAnchor {
                 id: diagnosticsAnchor
                 target: configPathRow
-                declaration:
-                    '{"id":"shell.section.diagnostics","route":"shell","title":"Diagnostics & paths","context":"ShellPage","icon":"bug_report","aliases":["diagnostics","export","paths","config folder","cache"]}'
+                anchorId: "shell.section.diagnostics"
             }
         }
 

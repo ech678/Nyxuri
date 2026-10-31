@@ -247,5 +247,82 @@ class TestRetiredMirrors(unittest.TestCase):
         self.assertEqual(hits, [], f"UnitCatalog references left: {hits}")
 
 
+class TestZeroHostChangesDiscovery(unittest.TestCase):
+    """Adversarial gate (llms-wiki/testing.md): the "add a plugin = add a
+    directory + manifest + code, zero host changes" claim must hold for a
+    plugin the host has never seen — mount row, settings routes/anchors and
+    searchable actions all discovered from the dropped-in manifest alone
+    (PluginRegistry's find scan matches plugins/<domain>/manifest.toml at
+    depth 2), and the tree carries no residue once it is removed."""
+
+    TEMP_DOMAIN = "zz-adversarial"
+
+    TEMP_MANIFEST = """schemaVersion = 1
+id = "shell.zz-adversarial"
+kinds = ["overlay"]
+label = "Adversarial"
+order = 999
+
+[entryPoints]
+overlay = "AdversarialHost.qml"
+
+[[settings]]
+id = "adversarial"
+source = "AdversarialPage.qml"
+title = "Adversarial"
+description = "Round-trip probe"
+context = "AdversarialHost"
+icon = "science"
+group = "system"
+order = 999
+
+[[settings]]
+id = "adversarial.section.probe"
+route = "adversarial"
+title = "Probe"
+context = "AdversarialPage"
+icon = "science"
+
+[[actions]]
+id = "nyxuri:adversarial:ping"
+target = "adversarial"
+method = "ping"
+
+[actions.search]
+title = "Adversarial ping"
+description = "Round-trip probe action"
+context = "SpotlightActions"
+icon = "network_ping"
+"""
+
+    def test_temp_plugin_round_trip(self):
+        import shutil
+        plugin = os.path.join(PLUGINS_DIR, self.TEMP_DOMAIN)
+        self.assertFalse(os.path.exists(plugin), "fixture collision: temp plugin already exists")
+        try:
+            os.makedirs(plugin)
+            for name in ("AdversarialHost.qml", "AdversarialPage.qml"):
+                with open(os.path.join(plugin, name), "w", encoding="utf-8") as handle:
+                    handle.write("import QtQuick\nItem {}\n")
+            with open(os.path.join(plugin, "manifest.toml"), "w", encoding="utf-8") as handle:
+                handle.write(self.TEMP_MANIFEST)
+            m = engine_manifest.load_manifest(Path(plugin), namespace="shell.")
+            self.assertEqual(m.id, "shell." + self.TEMP_DOMAIN)
+            self.assertIn("overlay", m.entry_points)
+            routes = [s for s in m.settings if "source" in s]
+            anchors = [s for s in m.settings if "route" in s]
+            self.assertEqual(len(routes), 1, "settings route not discovered")
+            self.assertEqual(len(anchors), 1, "search anchor not discovered")
+            self.assertEqual(len(m.actions), 1, "searchable action not discovered")
+        finally:
+            shutil.rmtree(plugin, ignore_errors=True)
+        self.assertFalse(os.path.exists(plugin))
+        # Zero host knowledge: no host file mentions the temp domain.
+        for rel in (("app", "AppShell.qml"), ("app", "SlotHost.qml"),
+                    ("services", "PluginRegistry.qml"), ("services", "PluginManifest.js")):
+            self.assertNotIn(self.TEMP_DOMAIN, read(*rel),
+                             f"host file knows the temp plugin: {'/'.join(rel)}")
+
+
 if __name__ == "__main__":
     unittest.main()

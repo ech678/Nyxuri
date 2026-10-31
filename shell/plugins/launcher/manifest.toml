@@ -8,3 +8,81 @@ order = 120
 
 [entryPoints]
 overlay = "LauncherHost.qml"
+
+# Searchable fixed actions (manifest-schema.md): the search index's
+# include set for this plugin's IPC face.
+
+[[actions]]
+id = "nyxuri:spotlight:search"
+target = "spotlight"
+method = "search"
+
+[actions.search]
+title = "Search"
+description = "Open Spotlight Search"
+context = "SpotlightActions"
+icon = "search"
+aliases = ["find"]
+
+[[actions]]
+id = "nyxuri:spotlight:web"
+target = "spotlight"
+method = "web"
+
+[actions.search]
+title = "Web search"
+description = "Enter Spotlight Web search"
+context = "SpotlightActions"
+icon = "language"
+aliases = ["browser", "internet"]
+
+[[actions]]
+id = "nyxuri:spotlight:files"
+target = "spotlight"
+method = "files"
+
+[actions.search]
+title = "Find files"
+description = "Open Spotlight Files"
+context = "SpotlightActions"
+icon = "draft"
+aliases = ["folder"]
+
+[[actions]]
+id = "nyxuri:spotlight:openMode:apps"
+target = "spotlight"
+method = "openMode"
+args = ["apps"]
+
+[actions.search]
+title = "Applications"
+description = "Open the application launcher"
+context = "SpotlightActions"
+icon = "grid_view"
+aliases = ["launch", "apps"]
+
+[[actions]]
+id = "nyxuri:spotlight:openMode:clipboard"
+target = "spotlight"
+method = "openMode"
+args = ["clipboard"]
+
+[actions.search]
+title = "Clipboard history"
+description = "Open clipboard history"
+context = "SpotlightActions"
+icon = "content_paste"
+aliases = ["paste"]
+
+[[actions]]
+id = "nyxuri:spotlight:openMode:wallpapers"
+target = "spotlight"
+method = "openMode"
+args = ["wallpapers"]
+
+[actions.search]
+title = "Wallpaper picker"
+description = "Browse and apply wallpapers"
+context = "SpotlightActions"
+icon = "image"
+aliases = ["background"]

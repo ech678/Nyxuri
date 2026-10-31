@@ -125,7 +125,6 @@ class TestLifecycleAudit(unittest.TestCase):
         self.assertTrue(audit.is_path_excluded("vendor/somelib/Module.qml"))
         self.assertTrue(audit.is_path_excluded("tests/fixtures/lifecycle/invalid/life001.qml"))
         self.assertTrue(audit.is_path_excluded("build/qml/Module.qml"))
-        self.assertTrue(audit.is_path_excluded("generated/SearchCatalog.js"))
         self.assertFalse(audit.is_path_excluded("services/SystemMonitorService.qml"))
         self.assertFalse(audit.is_path_excluded("plugins/bar/Bar.qml"))
         self.assertFalse(audit.is_path_excluded("ui/RippleButton.qml"))

@@ -321,8 +321,7 @@ NexusPageBase {
                 SettingsSearchAnchor {
                     id: searchAnchor0
                     target: wiredHeader
-                    declaration:
-                        '{"id":"network.section.wired-connections","route":"network","title":"Wired connections","context":"NetworkPage","icon":"wifi","aliases":["general.network.section.wired-connections"]}'
+                    anchorId: "network.section.wired-connections"
                 }
             }
 
@@ -405,8 +404,7 @@ NexusPageBase {
                 SettingsSearchAnchor {
                     id: searchAnchor1
                     target: wifiHeader
-                    declaration:
-                        '{"id":"network.section.wi-fi","route":"network","title":"Wi-Fi","context":"NetworkPage","icon":"wifi","aliases":["general.network.section.wi-fi"]}'
+                    anchorId: "network.section.wi-fi"
                 }
             }
 
@@ -613,8 +611,7 @@ NexusPageBase {
                 SettingsSearchAnchor {
                     id: searchAnchor2
                     target: savedNetworksRow
-                    declaration:
-                        '{"id":"network.section.other-settings","route":"network","title":"Other settings","context":"NetworkPage","icon":"wifi","aliases":["general.network.section.other-settings"]}'
+                    anchorId: "network.section.other-settings"
                 }
             }
 
@@ -647,8 +644,7 @@ NexusPageBase {
                 SettingsSearchAnchor {
                     id: searchAnchor3
                     target: interfaceRow
-                    declaration:
-                        '{"id":"network.section.connection-information","route":"network","title":"Connection information","context":"NetworkPage","icon":"wifi","aliases":["general.network.section.connection-information"]}'
+                    anchorId: "network.section.connection-information"
                 }
             }
 

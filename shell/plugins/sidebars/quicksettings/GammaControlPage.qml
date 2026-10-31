@@ -17,7 +17,7 @@ import qs.ui
 NexusPageBase {
     id: root
 
-    title: SpotlightCatalog.title("displays.gamma")
+    title: I18n.tr("Color temperature")
 
     property real contentPadding: 0
     property bool searchAnchorsEnabled: true
@@ -75,11 +75,6 @@ NexusPageBase {
             enabled: DisplayColor.ready
             onMoved: value => DisplayColor.setPreference("gamma", value / 100)
 
-            SettingsSearchAnchor {
-                target: gammaSlider
-                declaration:
-                    '{"id":"displays.gamma.section.color","route":"displays.gamma","title":"Color","context":"GammaControlPage","icon":"brightness_6","aliases":["general.displays.gamma.section.color"]}'
-            }
         }
 
         PreferenceSlider {
@@ -163,11 +158,6 @@ NexusPageBase {
             inputRegionService: PopupInputRegionService
             onSelected: value => DisplayColor.setPreference("mode", value)
 
-            SettingsSearchAnchor {
-                target: modeSelect
-                declaration:
-                    '{"id":"displays.gamma.section.schedule","route":"displays.gamma","title":"Schedule","context":"GammaControlPage","icon":"brightness_6","aliases":["general.displays.gamma.section.schedule"]}'
-            }
         }
 
         PreferenceInput {
@@ -297,11 +287,6 @@ NexusPageBase {
             label: I18n.tr("Scheduled temperature")
             value: I18n.tr("%1 K").arg(DisplayColor.schedule.temperature)
 
-            SettingsSearchAnchor {
-                target: scheduledTemperatureInfo
-                declaration:
-                    '{"id":"displays.gamma.section.current-status","route":"displays.gamma","title":"Current status","context":"GammaControlPage","icon":"brightness_6","aliases":["general.displays.gamma.section.current-status"]}'
-            }
         }
 
         PreferenceInfo {

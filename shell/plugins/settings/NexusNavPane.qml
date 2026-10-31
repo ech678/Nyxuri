@@ -21,72 +21,23 @@ ColumnLayout {
 
     signal routeActivated(int index)
 
-    // Presentation-only category table over stable route ids: it drives the
-    // geometric grouping (extra gap + connected first/last rounding). Ids
-    // missing from the table join a trailing group so no page can be
-    // orphaned by a rename.
-    readonly property var groupTable: [
-        {
-            ids: ["account", "theme", "wallpaper"]
-        },
-        {
-            ids: ["bar", "dock", "sidebar", "keystone"]
-        },
-        {
-            ids: ["network", "connected-devices"]
-        },
-        {
-            ids: ["shortcuts", "spotlight"]
-        },
-        {
-            ids: ["language-region", "shell"]
-        },
-        {
-            ids: ["about"]
-        }
-    ]
-
-    function routeIndexById(id) {
-        for (let index = 0; index < root.routes.length; ++index) {
-            if (root.routes[index].id === id)
-                return index;
-        }
-        return -1;
-    }
-
+    // Routes arrive registry-sorted (manifest order, then id) and carry the
+    // manifest's `group` key: consecutive same-group rows form one geometric
+    // cluster (an extra gap plus connected first/last rounding). No section
+    // labels, exactly like the original NavLocations — and no host-side
+    // grouping table to keep in sync.
     readonly property var navModel: {
         const rows = [];
-        const grouped = [];
-        for (let g = 0; g < root.groupTable.length; ++g) {
-            const ids = root.groupTable[g].ids;
-            let groupStart = -1;
-            for (let i = 0; i < ids.length; ++i) {
-                const routeIndex = root.routeIndexById(ids[i]);
-                if (routeIndex < 0)
-                    continue;
-                if (groupStart < 0)
-                    groupStart = rows.length;
-                rows.push({
-                              route: root.routes[routeIndex],
-                              routeIndex: routeIndex
-                          });
-                grouped.push(routeIndex);
-            }
-            if (groupStart >= 0)
-                rows[groupStart].groupStart = true;
-        }
-        const leftovers = [];
+        let previousGroup = null;
         for (let index = 0; index < root.routes.length; ++index) {
-            if (grouped.indexOf(index) < 0)
-                leftovers.push(index);
-        }
-        if (leftovers.length > 0) {
-            for (let i = 0; i < leftovers.length; ++i)
-                rows.push({
-                              route: root.routes[leftovers[i]],
-                              routeIndex: leftovers[i]
-                          });
-            rows[rows.length - leftovers.length].groupStart = true;
+            const route = root.routes[index];
+            const groupStart = route.group !== previousGroup;
+            rows.push({
+                          route: route,
+                          routeIndex: index,
+                          groupStart: groupStart
+                      });
+            previousGroup = route.group;
         }
         for (let position = 0; position < rows.length; ++position) {
             const next = rows[position + 1];

@@ -69,9 +69,7 @@ FloatingWindow {
     SettingsSearchAnchor {
         id: pageSearchAnchor
         registerAnchor: false
-        declaration: JSON.stringify({
-                                        id: "page"
-                                    })
+        anchorId: "page"
         target: root.searchLeaf
         wholePage: true
     }

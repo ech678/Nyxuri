@@ -9,7 +9,7 @@
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                            app/                             │
-│  纯装配与宿主数据层：AppShell/SlotHost/UnitCatalog/Paths/     │
+│  纯装配与宿主数据层：AppShell/SlotHost/Paths/                │
 │  WidgetState/ActionGateway/icons/templates                   │
 └──────────────┬───────────────────────────────┬──────────────┘
                │ 依赖注入 / 动作派发            │
@@ -36,7 +36,7 @@
 
 | 层级 | 路径 | 核心职责 | 允许 Import | 严禁行为 / 副作用 |
 |---|---|---|---|---|
-| **app** | `shell/app/` | 纯装配与宿主数据层（`AppShell`/`SlotHost`/`UnitCatalog`/`Paths`/`WidgetState`/`ActionGateway`/`icons`/`templates`） | Qt 原语、`Quickshell`、`qs.commons.*`、`qs.ui`、`qs.services`、按需装配的 `qs.plugins.*` 插件 Host | 禁止在展示组件中写死命令或业务逻辑；禁止绕过 `ActionGateway` 随意执行外部进程；非 `NiriService` 严禁直接建立 Niri IPC 连接 |
+| **app** | `shell/app/` | 纯装配与宿主数据层（`AppShell`/`SlotHost`/`Paths`/`WidgetState`/`ActionGateway`/`icons`/`templates`） | Qt 原语、`Quickshell`、`qs.commons.*`、`qs.ui`、`qs.services`、按需装配的 `qs.plugins.*` 插件 Host | 禁止在展示组件中写死命令或业务逻辑；禁止绕过 `ActionGateway` 随意执行外部进程；非 `NiriService` 严禁直接建立 Niri IPC 连接 |
 | **services** | `shell/services/` | 服务层：域服务与配置存储（`ThemeService`、`NotificationService`、`PersonalizationConfig`、`UiPreferences` 等）、宿主能力面（`HotCorners`、`IdleInhibitorSurface`、`FilePickerWindow`）、跨单元服务态渲染边（`SystemCardContent` 等五个系统卡片） | Qt 原语、`Quickshell`、`qs.commons.*`、`qs.ui`、`qs.services`（同层）、`qs.app`（窄接口） | 副作用必须有 owner 登记与显式销毁；展示组件不得下沉为服务；不得反向 import `qs.plugins.*`（跨域协调走 app 窄接口） |
 | **plugins** | `shell/plugins/<domain>/`（`manifest.toml` + 代码同目录） | 十二个可开关插件：`bar`, `desktopcards`, `dock`, `keystone`, `launcher`, `lock`, `notifications`, `regionselector`, `session`, `settings`, `sidebars`, `wallpaper` | Qt 原语、`Quickshell`、`qs.commons.*`、`qs.ui`、`qs.services`、同域相对路径 `./*` 或 `qs.plugins.<domain>.*` | **严禁横向私自跨域导入**（如 `plugins/launcher` 直接导入 `qs.plugins.settings`）；跨域桌面意图必须路由至 `ActionGateway`；插件开关真相在 ledger，Shell 只投影（unit-model §6） |
 | **commons / ui** | `shell/commons/`、`shell/ui/` | 纯净原子复用层：`ui/`（原子按钮/卡片/滑动条/指示器等平面控件 + `shapes/` 具名模块桩）、`commons/`（设计代币与字体 token、数学/时间/格式化/TOML 解析纯算法 JS、纯 QML/JS 国际化单例与内存字典 `i18n/`、纯展示系统卡片 `cards/`） | Qt 原语、`qs.commons`、`qs.ui`、`qs.commons.i18n`、`qs.commons.cards` | **绝对零副作用**：严禁 `import qs.app`、`import qs.services`、`import qs.plugins.*`、`Quickshell.Io`、`Process`、`FileView`、`Socket`、`Quickshell.env`、`XMLHttpRequest`、文件写操作或 DBus 发送 |

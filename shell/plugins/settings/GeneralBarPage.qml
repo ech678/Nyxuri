@@ -55,8 +55,7 @@ NexusPageBase {
                 SettingsSearchAnchor {
                     id: searchAnchor0
                     target: floatingToggle
-                    declaration:
-                        '{"id":"bar.section.position","route":"bar","title":"Position","context":"GeneralBarPage","icon":"dock_to_bottom","aliases":["general.bar.section.position"]}'
+                    anchorId: "bar.section.position"
                 }
             }
 
@@ -96,8 +95,7 @@ NexusPageBase {
                 SettingsSearchAnchor {
                     id: searchAnchor1
                     target: namesToggle
-                    declaration:
-                        '{"id":"bar.section.components","route":"bar","title":"Components","context":"GeneralBarPage","icon":"view_agenda","aliases":["general.bar.section.components"]}'
+                    anchorId: "bar.section.components"
                 }
             }
 

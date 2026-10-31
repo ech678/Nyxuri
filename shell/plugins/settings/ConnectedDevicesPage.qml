@@ -168,8 +168,7 @@ Item {
                 SettingsSearchAnchor {
                     id: searchAnchor0
                     target: savedHeader
-                    declaration:
-                        '{"id":"connected-devices.section.saved-devices","route":"connected-devices","title":"Saved devices","context":"ConnectedDevicesPage","icon":"devices_other","aliases":["general.connected-devices.section.saved-devices"]}'
+                    anchorId: "connected-devices.section.saved-devices"
                 }
             }
 
@@ -222,8 +221,7 @@ Item {
                 SettingsSearchAnchor {
                     id: searchAnchor1
                     target: adapterHeader
-                    declaration:
-                        '{"id":"connected-devices.section.bluetooth-adapter","route":"connected-devices","title":"Bluetooth adapter","context":"ConnectedDevicesPage","icon":"devices_other","aliases":["general.connected-devices.section.bluetooth-adapter"]}'
+                    anchorId: "connected-devices.section.bluetooth-adapter"
                 }
             }
 
@@ -260,8 +258,7 @@ Item {
                 SettingsSearchAnchor {
                     id: searchAnchor2
                     target: advancedHeader
-                    declaration:
-                        '{"id":"connected-devices.section.advanced-settings","route":"connected-devices","title":"Advanced settings","context":"ConnectedDevicesPage","icon":"devices_other","aliases":["general.connected-devices.section.advanced-settings"]}'
+                    anchorId: "connected-devices.section.advanced-settings"
                 }
             }
 

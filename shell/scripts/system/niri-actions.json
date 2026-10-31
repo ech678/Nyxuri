@@ -951,21 +951,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"lock\" \"open\"",
     "parameters": false,
     "target": "lock",
-    "method": "open",
-    "search": {
-      "policy": "include",
-      "title": "Lock screen",
-      "description": "Lock the current session",
-      "context": "SpotlightActions",
-      "icon": "lock",
-      "args": [],
-      "aliases": [
-        "lock",
-        "secure"
-      ],
-      "availability": "always",
-      "confirmation": "none"
-    }
+    "method": "open"
   },
   {
     "id": "nyxuri:lock:isLocked",
@@ -974,10 +960,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"lock\" \"isLocked\"",
     "parameters": false,
     "target": "lock",
-    "method": "isLocked",
-    "search": {
-      "policy": "internal"
-    }
+    "method": "isLocked"
   },
   {
     "id": "nyxuri:spotlight:toggle",
@@ -986,10 +969,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"toggle\"",
     "parameters": false,
     "target": "spotlight",
-    "method": "toggle",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "toggle"
   },
   {
     "id": "nyxuri:spotlight:open",
@@ -998,10 +978,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"open\"",
     "parameters": false,
     "target": "spotlight",
-    "method": "open",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "open"
   },
   {
     "id": "nyxuri:spotlight:search",
@@ -1010,20 +987,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"search\"",
     "parameters": false,
     "target": "spotlight",
-    "method": "search",
-    "search": {
-      "policy": "include",
-      "title": "Search",
-      "description": "Open Spotlight Search",
-      "context": "SpotlightActions",
-      "icon": "search",
-      "args": [],
-      "aliases": [
-        "find"
-      ],
-      "availability": "always",
-      "confirmation": "none"
-    }
+    "method": "search"
   },
   {
     "id": "nyxuri:spotlight:close",
@@ -1032,10 +996,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"close\"",
     "parameters": false,
     "target": "spotlight",
-    "method": "close",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "close"
   },
   {
     "id": "nyxuri:spotlight:web",
@@ -1044,21 +1005,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"web\"",
     "parameters": false,
     "target": "spotlight",
-    "method": "web",
-    "search": {
-      "policy": "include",
-      "title": "Web search",
-      "description": "Enter Spotlight Web search",
-      "context": "SpotlightActions",
-      "icon": "language",
-      "args": [],
-      "aliases": [
-        "browser",
-        "internet"
-      ],
-      "availability": "always",
-      "confirmation": "none"
-    }
+    "method": "web"
   },
   {
     "id": "nyxuri:spotlight:commands",
@@ -1067,10 +1014,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"commands\"",
     "parameters": false,
     "target": "spotlight",
-    "method": "commands",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "commands"
   },
   {
     "id": "nyxuri:spotlight:command:calc",
@@ -1079,10 +1023,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"command\" \"calc\"",
     "parameters": false,
     "target": "spotlight",
-    "method": "command",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "command"
   },
   {
     "id": "nyxuri:spotlight:command:fx",
@@ -1091,10 +1032,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"command\" \"fx\"",
     "parameters": false,
     "target": "spotlight",
-    "method": "command",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "command"
   },
   {
     "id": "nyxuri:spotlight:command:time",
@@ -1103,10 +1041,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"command\" \"time\"",
     "parameters": false,
     "target": "spotlight",
-    "method": "command",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "command"
   },
   {
     "id": "nyxuri:spotlight:command:light",
@@ -1115,10 +1050,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"command\" \"light\"",
     "parameters": false,
     "target": "spotlight",
-    "method": "command",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "command"
   },
   {
     "id": "nyxuri:spotlight:command:dark",
@@ -1127,10 +1059,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"command\" \"dark\"",
     "parameters": false,
     "target": "spotlight",
-    "method": "command",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "command"
   },
   {
     "id": "nyxuri:spotlight:command:find-settings",
@@ -1139,10 +1068,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"command\" \"find-settings\"",
     "parameters": false,
     "target": "spotlight",
-    "method": "command",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "command"
   },
   {
     "id": "nyxuri:spotlight:command:actions",
@@ -1151,10 +1077,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"command\" \"actions\"",
     "parameters": false,
     "target": "spotlight",
-    "method": "command",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "command"
   },
   {
     "id": "nyxuri:spotlight:command:map",
@@ -1163,10 +1086,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"command\" \"map\"",
     "parameters": false,
     "target": "spotlight",
-    "method": "command",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "command"
   },
   {
     "id": "nyxuri:spotlight:openMode",
@@ -1175,10 +1095,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"openMode\" \"<mode>\"",
     "parameters": true,
     "target": "spotlight",
-    "method": "openMode",
-    "search": {
-      "policy": "parameters"
-    }
+    "method": "openMode"
   },
   {
     "id": "nyxuri:spotlight:files",
@@ -1187,20 +1104,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"files\"",
     "parameters": false,
     "target": "spotlight",
-    "method": "files",
-    "search": {
-      "policy": "include",
-      "title": "Find files",
-      "description": "Open Spotlight Files",
-      "context": "SpotlightActions",
-      "icon": "draft",
-      "args": [],
-      "aliases": [
-        "folder"
-      ],
-      "availability": "always",
-      "confirmation": "none"
-    }
+    "method": "files"
   },
   {
     "id": "nyxuri:spotlight:openMode:apps",
@@ -1209,23 +1113,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"openMode\" \"apps\"",
     "parameters": false,
     "target": "spotlight",
-    "method": "openMode",
-    "search": {
-      "policy": "include",
-      "title": "Applications",
-      "description": "Open the application launcher",
-      "context": "SpotlightActions",
-      "icon": "grid_view",
-      "args": [
-        "apps"
-      ],
-      "aliases": [
-        "launch",
-        "apps"
-      ],
-      "availability": "always",
-      "confirmation": "none"
-    }
+    "method": "openMode"
   },
   {
     "id": "nyxuri:spotlight:openMode:clipboard",
@@ -1234,22 +1122,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"openMode\" \"clipboard\"",
     "parameters": false,
     "target": "spotlight",
-    "method": "openMode",
-    "search": {
-      "policy": "include",
-      "title": "Clipboard history",
-      "description": "Open clipboard history",
-      "context": "SpotlightActions",
-      "icon": "content_paste",
-      "args": [
-        "clipboard"
-      ],
-      "aliases": [
-        "paste"
-      ],
-      "availability": "always",
-      "confirmation": "none"
-    }
+    "method": "openMode"
   },
   {
     "id": "nyxuri:spotlight:openMode:wallpapers",
@@ -1258,22 +1131,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"spotlight\" \"openMode\" \"wallpapers\"",
     "parameters": false,
     "target": "spotlight",
-    "method": "openMode",
-    "search": {
-      "policy": "include",
-      "title": "Wallpaper picker",
-      "description": "Browse and apply wallpapers",
-      "context": "SpotlightActions",
-      "icon": "image",
-      "args": [
-        "wallpapers"
-      ],
-      "aliases": [
-        "background"
-      ],
-      "availability": "always",
-      "confirmation": "none"
-    }
+    "method": "openMode"
   },
   {
     "id": "nyxuri:wallpaper:set",
@@ -1282,10 +1140,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"wallpaper\" \"set\" \"<path>\"",
     "parameters": true,
     "target": "wallpaper",
-    "method": "set",
-    "search": {
-      "policy": "parameters"
-    }
+    "method": "set"
   },
   {
     "id": "nyxuri:wallpaper:setForScreen",
@@ -1294,10 +1149,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"wallpaper\" \"setForScreen\" \"<path>\" \"<screenName>\"",
     "parameters": true,
     "target": "wallpaper",
-    "method": "setForScreen",
-    "search": {
-      "policy": "parameters"
-    }
+    "method": "setForScreen"
   },
   {
     "id": "nyxuri:wallpaper:clear",
@@ -1306,20 +1158,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"wallpaper\" \"clear\"",
     "parameters": false,
     "target": "wallpaper",
-    "method": "clear",
-    "search": {
-      "policy": "include",
-      "title": "Reset wallpaper",
-      "description": "Clear the global wallpaper selection",
-      "context": "SpotlightActions",
-      "icon": "hide_image",
-      "args": [],
-      "aliases": [
-        "background"
-      ],
-      "availability": "wallpaper-idle",
-      "confirmation": "none"
-    }
+    "method": "clear"
   },
   {
     "id": "nyxuri:wallpaper:clearForScreen",
@@ -1328,10 +1167,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"wallpaper\" \"clearForScreen\" \"<screenName>\"",
     "parameters": true,
     "target": "wallpaper",
-    "method": "clearForScreen",
-    "search": {
-      "policy": "parameters"
-    }
+    "method": "clearForScreen"
   },
   {
     "id": "nyxuri:wallpaper:previous",
@@ -1340,20 +1176,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"wallpaper\" \"previous\"",
     "parameters": false,
     "target": "wallpaper",
-    "method": "previous",
-    "search": {
-      "policy": "include",
-      "title": "Previous wallpaper",
-      "description": "Apply the previous wallpaper",
-      "context": "SpotlightActions",
-      "icon": "skip_previous",
-      "args": [],
-      "aliases": [
-        "background"
-      ],
-      "availability": "wallpaper-idle",
-      "confirmation": "none"
-    }
+    "method": "previous"
   },
   {
     "id": "nyxuri:wallpaper:next",
@@ -1362,20 +1185,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"wallpaper\" \"next\"",
     "parameters": false,
     "target": "wallpaper",
-    "method": "next",
-    "search": {
-      "policy": "include",
-      "title": "Next wallpaper",
-      "description": "Apply the next wallpaper",
-      "context": "SpotlightActions",
-      "icon": "skip_next",
-      "args": [],
-      "aliases": [
-        "background"
-      ],
-      "availability": "wallpaper-idle",
-      "confirmation": "none"
-    }
+    "method": "next"
   },
   {
     "id": "nyxuri:wallpaper:random",
@@ -1384,20 +1194,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"wallpaper\" \"random\"",
     "parameters": false,
     "target": "wallpaper",
-    "method": "random",
-    "search": {
-      "policy": "include",
-      "title": "Random wallpaper",
-      "description": "Apply a random wallpaper",
-      "context": "SpotlightActions",
-      "icon": "shuffle",
-      "args": [],
-      "aliases": [
-        "background"
-      ],
-      "availability": "wallpaper-idle",
-      "confirmation": "none"
-    }
+    "method": "random"
   },
   {
     "id": "nyxuri:wallpaper:setFolder",
@@ -1406,10 +1203,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"wallpaper\" \"setFolder\" \"<path>\"",
     "parameters": true,
     "target": "wallpaper",
-    "method": "setFolder",
-    "search": {
-      "policy": "parameters"
-    }
+    "method": "setFolder"
   },
   {
     "id": "nyxuri:control-center:open",
@@ -1418,10 +1212,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"open\" \"<pageId>\"",
     "parameters": true,
     "target": "control-center",
-    "method": "open",
-    "search": {
-      "policy": "parameters"
-    }
+    "method": "open"
   },
   {
     "id": "nyxuri:control-center:open:account",
@@ -1430,10 +1221,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"open\" \"account\"",
     "parameters": false,
     "target": "control-center",
-    "method": "open",
-    "search": {
-      "policy": "settings"
-    }
+    "method": "open"
   },
   {
     "id": "nyxuri:control-center:open:general",
@@ -1442,10 +1230,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"open\" \"general\"",
     "parameters": false,
     "target": "control-center",
-    "method": "open",
-    "search": {
-      "policy": "settings"
-    }
+    "method": "open"
   },
   {
     "id": "nyxuri:control-center:open:wallpaper",
@@ -1454,10 +1239,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"open\" \"wallpaper\"",
     "parameters": false,
     "target": "control-center",
-    "method": "open",
-    "search": {
-      "policy": "settings"
-    }
+    "method": "open"
   },
   {
     "id": "nyxuri:control-center:open:theme",
@@ -1466,10 +1248,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"open\" \"theme\"",
     "parameters": false,
     "target": "control-center",
-    "method": "open",
-    "search": {
-      "policy": "settings"
-    }
+    "method": "open"
   },
   {
     "id": "nyxuri:control-center:open:keystone",
@@ -1478,10 +1257,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"open\" \"keystone\"",
     "parameters": false,
     "target": "control-center",
-    "method": "open",
-    "search": {
-      "policy": "settings"
-    }
+    "method": "open"
   },
   {
     "id": "nyxuri:control-center:open:advanced",
@@ -1490,10 +1266,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"open\" \"advanced\"",
     "parameters": false,
     "target": "control-center",
-    "method": "open",
-    "search": {
-      "policy": "settings"
-    }
+    "method": "open"
   },
   {
     "id": "nyxuri:control-center:open:language-region",
@@ -1502,10 +1275,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"open\" \"language-region\"",
     "parameters": false,
     "target": "control-center",
-    "method": "open",
-    "search": {
-      "policy": "settings"
-    }
+    "method": "open"
   },
   {
     "id": "nyxuri:control-center:open:current",
@@ -1514,10 +1284,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"open\"",
     "parameters": false,
     "target": "control-center",
-    "method": "open",
-    "search": {
-      "policy": "settings"
-    }
+    "method": "open"
   },
   {
     "id": "nyxuri:control-center:close",
@@ -1526,10 +1293,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"close\"",
     "parameters": false,
     "target": "control-center",
-    "method": "close",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "close"
   },
   {
     "id": "nyxuri:control-center:toggle",
@@ -1538,10 +1302,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"toggle\" \"<pageId>\"",
     "parameters": true,
     "target": "control-center",
-    "method": "toggle",
-    "search": {
-      "policy": "parameters"
-    }
+    "method": "toggle"
   },
   {
     "id": "nyxuri:control-center:toggle:account",
@@ -1550,10 +1311,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"toggle\" \"account\"",
     "parameters": false,
     "target": "control-center",
-    "method": "toggle",
-    "search": {
-      "policy": "settings"
-    }
+    "method": "toggle"
   },
   {
     "id": "nyxuri:control-center:toggle:general",
@@ -1562,10 +1320,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"toggle\" \"general\"",
     "parameters": false,
     "target": "control-center",
-    "method": "toggle",
-    "search": {
-      "policy": "settings"
-    }
+    "method": "toggle"
   },
   {
     "id": "nyxuri:control-center:toggle:wallpaper",
@@ -1574,10 +1329,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"toggle\" \"wallpaper\"",
     "parameters": false,
     "target": "control-center",
-    "method": "toggle",
-    "search": {
-      "policy": "settings"
-    }
+    "method": "toggle"
   },
   {
     "id": "nyxuri:control-center:toggle:theme",
@@ -1586,10 +1338,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"toggle\" \"theme\"",
     "parameters": false,
     "target": "control-center",
-    "method": "toggle",
-    "search": {
-      "policy": "settings"
-    }
+    "method": "toggle"
   },
   {
     "id": "nyxuri:control-center:toggle:keystone",
@@ -1598,10 +1347,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"toggle\" \"keystone\"",
     "parameters": false,
     "target": "control-center",
-    "method": "toggle",
-    "search": {
-      "policy": "settings"
-    }
+    "method": "toggle"
   },
   {
     "id": "nyxuri:control-center:toggle:advanced",
@@ -1610,10 +1356,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"toggle\" \"advanced\"",
     "parameters": false,
     "target": "control-center",
-    "method": "toggle",
-    "search": {
-      "policy": "settings"
-    }
+    "method": "toggle"
   },
   {
     "id": "nyxuri:control-center:toggle:language-region",
@@ -1622,10 +1365,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"toggle\" \"language-region\"",
     "parameters": false,
     "target": "control-center",
-    "method": "toggle",
-    "search": {
-      "policy": "settings"
-    }
+    "method": "toggle"
   },
   {
     "id": "nyxuri:control-center:toggle:current",
@@ -1634,10 +1374,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"toggle\"",
     "parameters": false,
     "target": "control-center",
-    "method": "toggle",
-    "search": {
-      "policy": "settings"
-    }
+    "method": "toggle"
   },
   {
     "id": "nyxuri:keystone:cancelRecord",
@@ -1646,11 +1383,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"keystone\" \"cancelRecord\"",
     "parameters": false,
     "target": "keystone",
-    "method": "cancelRecord",
-    "search": {
-      "policy": "internal",
-      "reason": "Reserved no-op; does not cancel a recording"
-    }
+    "method": "cancelRecord"
   },
   {
     "id": "nyxuri:keystone:closeAllOthers",
@@ -1659,20 +1392,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"keystone\" \"closeAllOthers\"",
     "parameters": false,
     "target": "keystone",
-    "method": "closeAllOthers",
-    "search": {
-      "policy": "include",
-      "title": "Close Keystone panels",
-      "description": "Dismiss open Keystone panels",
-      "context": "SpotlightActions",
-      "icon": "close",
-      "args": [],
-      "aliases": [
-        "island"
-      ],
-      "availability": "keystone",
-      "confirmation": "none"
-    }
+    "method": "closeAllOthers"
   },
   {
     "id": "nyxuri:keystone:currentStyle",
@@ -1681,10 +1401,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"keystone\" \"currentStyle\"",
     "parameters": false,
     "target": "keystone",
-    "method": "currentStyle",
-    "search": {
-      "policy": "internal"
-    }
+    "method": "currentStyle"
   },
   {
     "id": "nyxuri:keystone:dashboard",
@@ -1693,20 +1410,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"keystone\" \"dashboard\"",
     "parameters": false,
     "target": "keystone",
-    "method": "dashboard",
-    "search": {
-      "policy": "include",
-      "title": "Keystone dashboard",
-      "description": "Toggle the Keystone dashboard",
-      "context": "SpotlightActions",
-      "icon": "dashboard",
-      "args": [],
-      "aliases": [
-        "island"
-      ],
-      "availability": "keystone",
-      "confirmation": "none"
-    }
+    "method": "dashboard"
   },
   {
     "id": "nyxuri:keystone:hub",
@@ -1715,20 +1419,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"keystone\" \"hub\"",
     "parameters": false,
     "target": "keystone",
-    "method": "hub",
-    "search": {
-      "policy": "include",
-      "title": "Keystone hub",
-      "description": "Toggle the Keystone hub",
-      "context": "SpotlightActions",
-      "icon": "hub",
-      "args": [],
-      "aliases": [
-        "island"
-      ],
-      "availability": "keystone",
-      "confirmation": "none"
-    }
+    "method": "hub"
   },
   {
     "id": "nyxuri:keystone:lyrics",
@@ -1737,20 +1428,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"keystone\" \"lyrics\"",
     "parameters": false,
     "target": "keystone",
-    "method": "lyrics",
-    "search": {
-      "policy": "include",
-      "title": "Lyrics",
-      "description": "Toggle Keystone lyrics",
-      "context": "SpotlightActions",
-      "icon": "lyrics",
-      "args": [],
-      "aliases": [
-        "music"
-      ],
-      "availability": "keystone",
-      "confirmation": "none"
-    }
+    "method": "lyrics"
   },
   {
     "id": "nyxuri:keystone:tools",
@@ -1759,21 +1437,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"keystone\" \"tools\"",
     "parameters": false,
     "target": "keystone",
-    "method": "tools",
-    "search": {
-      "policy": "include",
-      "title": "Keystone tools",
-      "description": "Toggle the Keystone tools panel",
-      "context": "SpotlightActions",
-      "icon": "handyman",
-      "args": [],
-      "aliases": [
-        "record",
-        "timer"
-      ],
-      "availability": "keystone",
-      "confirmation": "none"
-    }
+    "method": "tools"
   },
   {
     "id": "nyxuri:sidebar:open",
@@ -1782,10 +1446,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"sidebar\" \"open\" \"<target>\"",
     "parameters": true,
     "target": "sidebar",
-    "method": "open",
-    "search": {
-      "policy": "parameters"
-    }
+    "method": "open"
   },
   {
     "id": "nyxuri:sidebar:open:dashboard",
@@ -1794,22 +1455,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"sidebar\" \"open\" \"dashboard\"",
     "parameters": false,
     "target": "sidebar",
-    "method": "open",
-    "search": {
-      "policy": "include",
-      "title": "Notifications",
-      "description": "Open the notifications sidebar",
-      "context": "SpotlightActions",
-      "icon": "notifications",
-      "args": [
-        "dashboard"
-      ],
-      "aliases": [
-        "sidebar"
-      ],
-      "availability": "always",
-      "confirmation": "none"
-    }
+    "method": "open"
   },
   {
     "id": "nyxuri:sidebar:open:quicksettings",
@@ -1818,22 +1464,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"sidebar\" \"open\" \"quicksettings\"",
     "parameters": false,
     "target": "sidebar",
-    "method": "open",
-    "search": {
-      "policy": "include",
-      "title": "Quick settings",
-      "description": "Open the Quick settings sidebar",
-      "context": "SpotlightActions",
-      "icon": "tune",
-      "args": [
-        "quicksettings"
-      ],
-      "aliases": [
-        "sidebar"
-      ],
-      "availability": "always",
-      "confirmation": "none"
-    }
+    "method": "open"
   },
   {
     "id": "nyxuri:sidebar:toggle:weather",
@@ -1842,23 +1473,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"sidebar\" \"toggle\" \"weather\"",
     "parameters": false,
     "target": "sidebar",
-    "method": "toggle",
-    "search": {
-      "policy": "include",
-      "title": "Weather sidebar",
-      "description": "Toggle the weather sidebar",
-      "context": "SpotlightActions",
-      "icon": "partly_cloudy_day",
-      "args": [
-        "weather"
-      ],
-      "aliases": [
-        "weather",
-        "sidebar"
-      ],
-      "availability": "always",
-      "confirmation": "none"
-    }
+    "method": "toggle"
   },
   {
     "id": "nyxuri:sidebar:close",
@@ -1867,10 +1482,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"sidebar\" \"close\" \"<target>\"",
     "parameters": true,
     "target": "sidebar",
-    "method": "close",
-    "search": {
-      "policy": "parameters"
-    }
+    "method": "close"
   },
   {
     "id": "nyxuri:sidebar:close:dashboard",
@@ -1879,10 +1491,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"sidebar\" \"close\" \"dashboard\"",
     "parameters": false,
     "target": "sidebar",
-    "method": "close",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "close"
   },
   {
     "id": "nyxuri:sidebar:close:quicksettings",
@@ -1891,10 +1500,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"sidebar\" \"close\" \"quicksettings\"",
     "parameters": false,
     "target": "sidebar",
-    "method": "close",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "close"
   },
   {
     "id": "nyxuri:sidebar:toggle",
@@ -1903,10 +1509,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"sidebar\" \"toggle\" \"<target>\"",
     "parameters": true,
     "target": "sidebar",
-    "method": "toggle",
-    "search": {
-      "policy": "parameters"
-    }
+    "method": "toggle"
   },
   {
     "id": "nyxuri:sidebar:toggle:dashboard",
@@ -1915,10 +1518,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"sidebar\" \"toggle\" \"dashboard\"",
     "parameters": false,
     "target": "sidebar",
-    "method": "toggle",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "toggle"
   },
   {
     "id": "nyxuri:sidebar:toggle:quicksettings",
@@ -1927,10 +1527,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"sidebar\" \"toggle\" \"quicksettings\"",
     "parameters": false,
     "target": "sidebar",
-    "method": "toggle",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "toggle"
   },
   {
     "id": "nyxuri:shortcut-map:open",
@@ -1939,20 +1536,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"shortcut-map\" \"open\"",
     "parameters": false,
     "target": "shortcut-map",
-    "method": "open",
-    "search": {
-      "policy": "include",
-      "title": "Shortcut map",
-      "description": "Show keyboard shortcuts",
-      "context": "SpotlightActions",
-      "icon": "keyboard",
-      "args": [],
-      "aliases": [
-        "keys"
-      ],
-      "availability": "always",
-      "confirmation": "none"
-    }
+    "method": "open"
   },
   {
     "id": "nyxuri:shortcut-map:close",
@@ -1961,10 +1545,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"shortcut-map\" \"close\"",
     "parameters": false,
     "target": "shortcut-map",
-    "method": "close",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "close"
   },
   {
     "id": "nyxuri:shortcut-map:toggle",
@@ -1973,10 +1554,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"shortcut-map\" \"toggle\"",
     "parameters": false,
     "target": "shortcut-map",
-    "method": "toggle",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "toggle"
   },
   {
     "id": "nyxuri:power-menu:open",
@@ -1985,23 +1563,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"power-menu\" \"open\"",
     "parameters": false,
     "target": "power-menu",
-    "method": "open",
-    "search": {
-      "policy": "include",
-      "title": "Power menu",
-      "description": "Choose a session or power action",
-      "context": "SpotlightActions",
-      "icon": "power_settings_new",
-      "args": [],
-      "aliases": [
-        "shutdown",
-        "restart",
-        "logout",
-        "suspend"
-      ],
-      "availability": "always",
-      "confirmation": "power-menu"
-    }
+    "method": "open"
   },
   {
     "id": "nyxuri:power-menu:close",
@@ -2010,10 +1572,7 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"power-menu\" \"close\"",
     "parameters": false,
     "target": "power-menu",
-    "method": "close",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "close"
   },
   {
     "id": "nyxuri:power-menu:toggle",
@@ -2022,9 +1581,6 @@
     "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"power-menu\" \"toggle\"",
     "parameters": false,
     "target": "power-menu",
-    "method": "toggle",
-    "search": {
-      "policy": "alias"
-    }
+    "method": "toggle"
   }
 ]
