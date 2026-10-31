@@ -13,7 +13,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-_LOCK = Path(__file__).resolve().parents[3] / "units" / "noctalia" / "tools" / "orbit" / "lock.py"
+_LOCK = Path(__file__).resolve().parents[3] / "plugins" / "noctalia" / "tools" / "orbit" / "lock.py"
 
 
 def _load_lock():

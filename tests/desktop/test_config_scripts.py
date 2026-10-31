@@ -15,12 +15,12 @@ from pathlib import Path
 from tests.utils import TempEnv
 
 _REPO = Path(__file__).resolve().parents[2]
-_TOGGLE = _REPO / "units" / "niri" / "scripts" / "niri-scratch-toggle.sh"
+_TOGGLE = _REPO / "plugins" / "niri" / "scripts" / "niri-scratch-toggle.sh"
 _CLEAN_CACHE = _REPO / "nyxuri" / "desktop" / "clean.py"
-_START_NOCTALIA = _REPO / "units" / "niri" / "scripts" / "session-shell.sh"
-_SESSION_SHELL = _REPO / "units" / "niri" / "scripts" / "session-shell.sh"
-_SHELL_ACTION = _REPO / "units" / "niri" / "scripts" / "shell-action.sh"
-_BRIGHTNESS = _REPO / "units" / "niri" / "scripts" / "niri-brightness.sh"
+_START_NOCTALIA = _REPO / "plugins" / "niri" / "scripts" / "session-shell.sh"
+_SESSION_SHELL = _REPO / "plugins" / "niri" / "scripts" / "session-shell.sh"
+_SHELL_ACTION = _REPO / "plugins" / "niri" / "scripts" / "shell-action.sh"
+_BRIGHTNESS = _REPO / "plugins" / "niri" / "scripts" / "niri-brightness.sh"
 
 
 class TestShellAction(unittest.TestCase):

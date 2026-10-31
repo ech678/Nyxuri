@@ -58,7 +58,8 @@ PENDING_UPGRADE_ENV = "NYXURI_PENDING_UPGRADE"
 PENDING_UPGRADE_MENU_ENV = "NYXURI_PENDING_UPGRADE_MENU"
 
 # --- Directory Constants ---
-CONFIG_DIR_NAME = "units"
+# Blueprint root, renamed units/ → plugins/ at R0-1 (concept: Plugin).
+CONFIG_DIR_NAME = "plugins"
 
 # --- Repository & Network Mirrors ---
 REPO_URL = "https://github.com/ech678/Nyxuri.git"

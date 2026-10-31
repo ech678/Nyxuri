@@ -8,7 +8,7 @@ here — that is ledger's monopoly.
 
 Blueprint roots (KM4, unit-model.md §6)::
 
-    units/         → bare ids          (kitty, niri, ...)
+    plugins/       → bare ids          (kitty, niri, ...)
     shell/units/   → ``shell.`` ids    (shell.bar, shell.dock, ...)
 
 The prefix comes from the ROOT, not from per-id special-casing: the kernel
@@ -36,7 +36,7 @@ def _namespace_roots() -> "list[tuple[Path, str]]":
 def unit_ids() -> list[str]:
     """Sorted ids of every directory unit across all blueprint roots.
 
-    A unit is a directory: ``units/<unit>/`` or ``shell/units/<domain>/``.
+    A unit is a directory: ``plugins/<unit>/`` or ``shell/units/<domain>/``.
     Metadata entries are not units; the single-file degenerate
     (``starship.toml`` + sidecar) was physically deleted at KM1 ② and no
     longer exists.
@@ -56,8 +56,8 @@ def unit_ids() -> list[str]:
 def unit_dir(unit_id: str) -> Path | None:
     """On-disk blueprint directory for a unit, or None if it does not exist.
 
-    Prefixed namespaces are matched first; the bare ``units/`` root is the
-    fallback. A dotted id under the bare root (``units/shell.bar/``) is not
+    Prefixed namespaces are matched first; the bare ``plugins/`` root is the
+    fallback. A dotted id under the bare root (``plugins/shell.bar/``) is not
     a unit — namespaces are declared by roots, never by directory names.
     """
     for root, prefix in sorted(_namespace_roots(), key=lambda r: len(r[1]), reverse=True):

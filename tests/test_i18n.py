@@ -21,7 +21,7 @@ ENGINE_DIR = REPO_ROOT / "nyxuri"
 def _scan_targets():
     """Engine modules + unit hook scripts (KM3: hooks are product code)."""
     yield from ENGINE_DIR.rglob("*.py")
-    hooks = REPO_ROOT / "units"
+    hooks = REPO_ROOT / "plugins"
     for path in sorted(hooks.glob("*/hooks/*")):
         if path.is_file():
             yield path
@@ -155,7 +155,7 @@ class TestI18nKeyIntegrity(unittest.TestCase):
                 required.add(f"app_{entry_id.replace('-', '_')}")
                 if entry.get("category"):
                     required.add(f"apps_cat_{entry['category']}")
-        for manifest in sorted((repo_root / "units").glob("*/manifest.toml")):
+        for manifest in sorted((repo_root / "plugins").glob("*/manifest.toml")):
             with open(manifest, "rb") as f:
                 data = tomllib.load(f)
             if data.get("optional") is True:

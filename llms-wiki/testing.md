@@ -9,7 +9,7 @@
 TempEnv 把 HOME 指向 tmpdir、建目录骨架、override `XDG_*` 环境变量、reset `core._ENV` 和
 模块级缓存（core 的 `_PICS_DIR_CACHE`、deploy 的 `_CONFIG_ITEMS_CACHE`、
 manifest 的 `_MANIFEST_CACHE`、deps 的 pacman/fc-list/GI/AUR 助手缓存、greeter 状态缓存）
-防止跨测试泄漏。反例：早期测试把实仓库 `units/niri/config.kdl` 写成桩文件——已修。
+防止跨测试泄漏。反例：早期测试把实仓库 `plugins/niri/config.kdl` 写成桩文件——已修。
 
 ## 验证哲学：纯本地秒级收归，零云端 CI 依赖
 
@@ -61,7 +61,7 @@ argv[0]（shebang 直启下是解释器名，不是脚本名），验证恒假�
 - **发版或重大引擎重构全量把关**：
   ```bash
   python3 -m compileall nyxuri                                    # 语法/静态检查
-  bash -n install.sh units/noctalia/*.sh units/niri/scripts/*.sh
+  bash -n install.sh plugins/noctalia/*.sh plugins/niri/scripts/*.sh
   shellcheck install.sh
   python3 -m unittest discover -s tests -q                        # 全量行为契约
   HOME=$(mktemp -d) python3 -m nyxuri test                        # 沙箱隔离部署

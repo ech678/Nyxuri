@@ -2047,7 +2047,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("function forceAuthFocus()", default_lock_content)
 
         # 7. Niri binds.kdl contains allow-when-locked=true for Mod+L
-        binds_path = os.path.join(repo_root, "units", "niri", "binds.kdl")
+        binds_path = os.path.join(repo_root, "plugins", "niri", "binds.kdl")
         with open(binds_path, "r", encoding="utf-8") as f:
             binds_content = f.read()
         self.assertIn('Mod+L allow-when-locked=true { spawn "~/.config/niri/scripts/shell-action.sh" "lock"; }', binds_content)

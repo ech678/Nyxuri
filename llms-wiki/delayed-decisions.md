@@ -8,7 +8,7 @@
 |---|---|---|
 | **硬件适配 Overlay**（NVIDIA / AMD / 多显示器…） | 出现多个明确的硬件适配需求 | 当前无自动驱动补丁，不引入硬件 overlay；应用预设底版继承（Base Overlay）保持独立。历史案卷见 [archive/nvidia-patch](archive/nvidia-patch.md) |
 | **单元服务声明字段**（manifest 声明 systemd unit 等服务副作用） | 出现跨单元或系统级服务效果的真实需求 | **已部分落地（KM3）**：副作用走单元钩子（`post_install` / `post_remove`）+ `[privilege]` 声明（greeter 案例：服务启停在钩子内部，manifest 只声明事实）。独立服务字段仍不设，出现真实需求再议。详见 [unit-model](unit-model.md) §4 与 [manifest-schema](manifest-schema.md) |
-| **多合成器 (Multi-WM) 驱动抽象**（原 mango-adaptation 页的债务登记，KM3.5 并入） | 第三个合成器（Hyprland/Sway）接入前必须收编，禁止再往元组里加第三个字面量 | 现状为过渡形态：`SUPPORTED_WMS` 硬编码元组 + `detect_preferred_wm()`（`nyxuri/core.py`，原 constants）；组件菜单 WM radio 特判（`installer/menus.py`）；doctor 三处 `("mango", "niri")` 字面量（`sysdoctor.py`）。收编为 `CompositorDriver` 驱动抽象层（ROADMAP「T5 多合成器解耦」）。不属于债务：`units/mango/` 整目录（单元形态）、theme 的 `mmsg` 探针、`/home/user` 占位符渲染 |
+| **多合成器 (Multi-WM) 驱动抽象**（原 mango-adaptation 页的债务登记，KM3.5 并入） | 第三个合成器（Hyprland/Sway）接入前必须收编，禁止再往元组里加第三个字面量 | 现状为过渡形态：`SUPPORTED_WMS` 硬编码元组 + `detect_preferred_wm()`（`nyxuri/core.py`，原 constants）；组件菜单 WM radio 特判（`installer/menus.py`）；doctor 三处 `("mango", "niri")` 字面量（`sysdoctor.py`）。收编为 `CompositorDriver` 驱动抽象层（ROADMAP「T5 多合成器解耦」）。不属于债务：`plugins/mango/` 整目录（单元形态）、theme 的 `mmsg` 探针、`/home/user` 占位符渲染 |
 
 ## 这次重构已落地（主动覆盖延迟）
 

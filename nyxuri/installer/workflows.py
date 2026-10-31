@@ -200,7 +200,7 @@ def install_configs_workflow(mode: str = "full") -> bool:
 
     # 3. Wallpapers — the unit path: `on wallpapers` syncs the blueprint
     # fallback into the shared living area (no-clobber). The external pack
-    # is user-domain content (units/wallpapers/hooks/install-pack), never
+    # is user-domain content (plugins/wallpapers/hooks/install-pack), never
     # an install phase. The theme pool (shared template living area) rides
     # the same unit path: `on theme` no-clobber merges the blueprint
     # templates; user-edited templates are never clobbered.

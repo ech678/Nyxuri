@@ -49,4 +49,4 @@ KM5：系统软链与用户端别名 `nyxniri`、`NYXNIRI_*` 环境变量回退�
 `migrations/` 清算一并处决——一个变量一个前缀 `NYXURI_*`）。
 替代能力：`on/off <unit>`（单元能力）、`snapshot`/`rollback`/`uninstall`（状态域）、
 `deps apps`（可选软件）、`bug`（诊断）；壁纸能力 = `on wallpapers`
-（外部大包走 `units/wallpapers/hooks/install-pack`）。
+（外部大包走 `plugins/wallpapers/hooks/install-pack`）。

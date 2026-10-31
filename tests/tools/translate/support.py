@@ -1,6 +1,6 @@
 """Shared harness for the Orbit Translate tool tests.
 
-The tool ships as deployed files under units/noctalia/tools (entry
+The tool ships as deployed files under plugins/noctalia/tools (entry
 orbit-translate.py + package orbit_translate/), not as a nyxuri subpackage, so
 its directory goes on sys.path like test_wallpaper_scanner does. Test modules
 re-export setUpModule/tearDownModule from here: each module runs inside one
@@ -12,7 +12,7 @@ from pathlib import Path
 
 from tests.utils import TempEnv
 
-TOOLS = Path(__file__).resolve().parents[3] / "units" / "noctalia" / "tools"
+TOOLS = Path(__file__).resolve().parents[3] / "plugins" / "noctalia" / "tools"
 ENTRY = TOOLS / "orbit-translate.py"
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))

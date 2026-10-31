@@ -311,8 +311,8 @@ class TestInstallBootstrapCacheCopy(unittest.TestCase):
 
         with TempEnv() as env, tempfile.TemporaryDirectory() as raw:
             repo = Path(raw) / "repo"
-            (repo / "units").mkdir(parents=True)
-            (repo / "units" / "effects.kdl").symlink_to("/tmp/gone-niri-config/effects.kdl")
+            (repo / "plugins").mkdir(parents=True)
+            (repo / "plugins" / "effects.kdl").symlink_to("/tmp/gone-niri-config/effects.kdl")
             with patch.object(test_install_bootstrap, "REPO_ROOT", repo):
                 cache = test_install_bootstrap.TestInstallBootstrap()._prepare_cache(env, Path(raw))
-            self.assertFalse((cache / "units" / "effects.kdl").exists())
+            self.assertFalse((cache / "plugins" / "effects.kdl").exists())

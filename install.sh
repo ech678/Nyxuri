@@ -104,10 +104,10 @@ engine_is_complete() {
         [ -f "$target_dir/nyxuri/$sentinel.py" ] || return 1
     done
     [ -f "$target_dir/catalog.toml" ] || return 1
-    # 蓝图探测: fish 主配置 + 壁纸 merge hook
-    [ -d "$target_dir/units" ] \
-        && [ -f "$target_dir/units/fish/config.fish" ] \
-        && [ -f "$target_dir/units/wallpapers/hooks/install-pack" ]
+    # 蓝图探测: fish 主配置 + 壁纸 merge hook（R0-1: units/ → plugins/）
+    [ -d "$target_dir/plugins" ] \
+        && [ -f "$target_dir/plugins/fish/config.fish" ] \
+        && [ -f "$target_dir/plugins/wallpapers/hooks/install-pack" ]
 }
 
 legacy_tree_detected() {

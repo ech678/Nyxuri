@@ -7,7 +7,7 @@
 
 | 层 | 内容 | 位置 | 维护义务 |
 | --- | --- | --- | --- |
-| L0 | 运行与测试事实 | 源码（`nyxuri/` `units/` `shell/`）+ `tests/` | 唯一事实。文档引用它，永远不是相反 |
+| L0 | 运行与测试事实 | 源码（`nyxuri/` `plugins/` `shell/`）+ `tests/` | 唯一事实。文档引用它，永远不是相反 |
 | L1 | 行为契约与改动路由 | `AGENTS.md`（根 + `shell/`） | 常驻保鲜；根 AGENTS ≤150 行（测试门禁） |
 | L2 | 架构知识与演进状态 | `llms-wiki/`（除 `upstream/` `archive/`）+ 双层 `ROADMAP.md` | 活区。受链接与索引门禁约束 |
 | L3 | 外部参考与历史 | `llms-wiki/upstream/`、`llms-wiki/archive/`、`notes/` | 冻结。只进不改，豁免一切链接与内容维护 |

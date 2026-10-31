@@ -191,12 +191,12 @@ zh = "[!] 未检测到 pacman，当前系统不是 Arch 系发行版"
 en = "[!] pacman not found: this does not look like an Arch-based distribution"
 
 [distro_unsupported_hint]
-zh = "依赖安装通过 pacman 与 AUR 完成，在别的发行版上无法自动进行。配置文件仍可手动取用：仓库 units/ 目录下的内容按普通 dotfiles 复制到 ~/.config 即可，壁纸在 units/wallpapers。欢迎来仓库 Issue 说说你的发行版，人多了会考虑支持。"
-en = "{PROJECT_NAME} installs its dependencies through pacman and the AUR, which is not available here. You can still take the configs manually: copy whatever you need from the repository units/ directory into ~/.config like ordinary dotfiles, wallpapers live in units/wallpapers. Feel free to open an Issue and tell us your distro, support may come if there is demand."
+zh = "依赖安装通过 pacman 与 AUR 完成，在别的发行版上无法自动进行。配置文件仍可手动取用：仓库 plugins/ 目录下的内容按普通 dotfiles 复制到 ~/.config 即可，壁纸在 plugins/wallpapers。欢迎来仓库 Issue 说说你的发行版，人多了会考虑支持。"
+en = "{PROJECT_NAME} installs its dependencies through pacman and the AUR, which is not available here. You can still take the configs manually: copy whatever you need from the repository plugins/ directory into ~/.config like ordinary dotfiles, wallpapers live in plugins/wallpapers. Feel free to open an Issue and tell us your distro, support may come if there is demand."
 
 [deps_menu_unsupported]
-zh = "[!] 未检测到 pacman，依赖菜单仅适用于 Arch 系发行版。配置可以手动从仓库 units/ 复制到 ~/.config 使用。"
-en = "[!] pacman not found: the dependency menus only apply to Arch-based systems. You can still copy configs manually from the repository units/ directory into ~/.config."
+zh = "[!] 未检测到 pacman，依赖菜单仅适用于 Arch 系发行版。配置可以手动从仓库 plugins/ 复制到 ~/.config 使用。"
+en = "[!] pacman not found: the dependency menus only apply to Arch-based systems. You can still copy configs manually from the repository plugins/ directory into ~/.config."
 
 [summary_action_title]
 zh = """\n  {Colors.BOLD_CYAN}── 下一步 ──{Colors.RESET}
@@ -1090,8 +1090,8 @@ zh = "{Colors.BOLD}单元                          状态          预设{Colors
 en = "{Colors.BOLD}Unit                          State         Preset{Colors.RESET}"
 
 [cli_list_none]
-zh = "蓝图为空：units/ 下没有单元。"
-en = "Blueprint is empty: no units under units/."
+zh = "蓝图为空：plugins/ 下没有单元。"
+en = "Blueprint is empty: no units under plugins/."
 
 [cli_detail_label]
 zh = "标签"

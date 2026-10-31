@@ -12,7 +12,7 @@
 ```
 ┌────────────────────────────────┐
 │   空间 A：源码蓝图 (Blueprint)  │  只读，版本受控，平铺所有单元目录
-│   路径：units/<unit>/           │  （永不向此处写入运行时状态）
+│   路径：plugins/<unit>/          │  （永不向此处写入运行时状态）
 └───────────────┬────────────────┘
                 │
                 │  中轴：nyxuri.deploy.atomic
@@ -28,7 +28,7 @@
 ```
 
 ### 空间不变量
-1. **源码绝对只读**：`units/` 永远是只读蓝图。严禁在源码树建软链接，严禁向源码树写状态（单元钩子注入 `PYTHONDONTWRITEBYTECODE=1`，钩子引引擎代码也不得落 `__pycache__`）。
+1. **源码绝对只读**：`plugins/` 永远是只读蓝图。严禁在源码树建软链接，严禁向源码树写状态（单元钩子注入 `PYTHONDONTWRITEBYTECODE=1`，钩子引引擎代码也不得落 `__pycache__`）。
 2. **实机白纸洁癖**：未启用的单元在实机 `~/.config/<target>` 必须 100% 抹净，不留任何受管文件或幽灵残留。
 3. **心血零丢失**：单元停用时，用户的自定义文件（`__custom__` 与 `preserve`）原样存入空间 C 的 `vault/<unit>/`；实机还原纯白，心血在保险库有据可查。
 
@@ -40,17 +40,17 @@
 
 | 术语 | 英文 | 本质定义 | 物理承载 | 行为边界 |
 |---|---|---|---|---|
-| **单元** | `Unit` | 桌面上**一切可独立开关**的原子能力实体。 | `units/<unit>/` 目录 | 拥有独立的生命周期与状态，可声明依赖、文件与预设。 |
+| **单元** | `Unit` | 桌面上**一切可独立开关**的原子能力实体。 | `plugins/<unit>/` 目录 | 拥有独立的生命周期与状态，可声明依赖、文件与预设。 |
 | **内核** | `Kernel` | Nyxuri 常驻骨架，负责编排与记账（纯 Python 标库）。 | `nyxuri/kernel/{registry, resolver, transaction, ledger}` | **内核不是单元**，不可插件化、不可开关，是承载一切的物理底座。 |
-| **源** | `Source` | 单元的供给方与索引来源。 | 本地抽象 `local:builtin`（对应 `units/`） | 本阶段仅维持单一本地内置源，推迟网络多源。 |
-| **manifest** | `Manifest` | 单元的自描述规格书。全库统称 `manifest.toml`。 | `units/<unit>/manifest.toml` | 纯声明式静态元数据，**全字段可选，无文件 = 全默认**。 |
+| **源** | `Source` | 单元的供给方与索引来源。 | 本地抽象 `local:builtin`（对应 `plugins/`） | 本阶段仅维持单一本地内置源，推迟网络多源。 |
+| **manifest** | `Manifest` | 单元的自描述规格书。全库统称 `manifest.toml`。 | `plugins/<unit>/manifest.toml` | 纯声明式静态元数据，**全字段可选，无文件 = 全默认**。 |
 
 ### 严正排除项
 * **系统软件包（pacman / AUR / Flatpak 包）**：不是单元！它们只是单元声明书里写的 `dependencies`。
 * **预设与零件（Preset / Parts）**：不是单元！它们是单元内部的配置变体（Variants）。
 * **包目录清单（根 `catalog.toml`）**：不是单元！「装但不部署」的软件（brave-origin、
   missioncenter 这类无配置可 ship 的声明）住根 `catalog.toml`，供 `deps apps` 菜单与
-  gen-deps optdepends 同源消费；目录条目没有账本生命周期，永不进 `units/`（KM3.5 正名）。
+  gen-deps optdepends 同源消费；目录条目没有账本生命周期，永不进 `plugins/`（KM3.5 正名）。
 
 ### 内核分层契约（依赖方向冻结）
 
@@ -119,7 +119,8 @@ transaction（编排：唯一可触碰副作用的模块）
 | `vault` | `路径?` | 停用时自定义文件的 Vault 归档位置，`disabled` 时必填 |
 | `updated` | `ISO 时间戳` | 最近一次事务落账时间 |
 
-单元记录统一挂在 `state.json` 顶层的 `units` 键下，以单元 ID 为键；`updated` 为带时区的
+单元记录统一挂在 `state.json` 顶层的 `plugins` 键下，以单元 ID 为键（R0-1 前的老账本
+键名为 `units`，首次读取时一次性迁移改写）；`updated` 为带时区的
 ISO 8601 时间戳。单元记录的读写只经 `nyxuri.ledger`，任何内核模块不得绕过。
 
 `files` 快照口径（KM2 落地，KM3 扩展，#139 收敛）：只记**引擎铺设的模板产物**——
@@ -201,7 +202,7 @@ system_paths = []
 ### 声明边界
 
 manifest 只声明上述字段，不追求覆盖一切。单元的外部副作用走**单元本地钩子**：
-`post_install` / `post_remove` 指向 `units/<unit>/hooks/<名字>` 可执行脚本，
+`post_install` / `post_remove` 指向 `plugins/<unit>/hooks/<名字>` 可执行脚本，
 由 transaction 执行（KM3 契约，`<module>:<function>` 旧形态已随 `nyxuri/modules/`
 退役；详见 [manifest-schema](manifest-schema.md) 钩子契约）。systemd 服务启停等
 跨系统声明字段仍暂不进 manifest：属单元内部行为，出现真实需求再议（登记于
@@ -261,7 +262,7 @@ registry 以**命名空间根**解析——`units/` 产裸 ID，`shell/units/` �
 报告所见即 registry ID）。Shell 单元以 `runtime = true` 声明**运行态单元**：无载荷、
 无生活区、无 Vault 进出，`on`/`off` = 账本落记 + 一次事件，运行中的 Shell 据事件
 装载/卸载该域；`off` 永不触碰实机同名目录（无目标即无抹白），doctor 恒 `Synced`。
-deploy/deps 的包世界（`discover_manifest_apps`）只扫 `units/`，Shell 单元对包体系不可见。
+deploy/deps 的包世界（`discover_manifest_apps`）只扫 `plugins/`，Shell 单元对包体系不可见。
 
 ---
 

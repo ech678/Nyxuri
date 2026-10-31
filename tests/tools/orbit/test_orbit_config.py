@@ -34,7 +34,7 @@ class TestOrbitConfigValidation(unittest.TestCase):
 
     def _config(self):
         import importlib.util
-        path = Path(__file__).resolve().parents[3] / "units" / "noctalia" / "tools" / "orbit" / "config.py"
+        path = Path(__file__).resolve().parents[3] / "plugins" / "noctalia" / "tools" / "orbit" / "config.py"
         spec = importlib.util.spec_from_file_location("orbit_config_under_test", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)

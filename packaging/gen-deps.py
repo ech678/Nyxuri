@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate the AUR PKGBUILD depends/optdepends arrays from unit manifests.
 
-Single source of truth (§5.7): adding a unit only touches units/ (its
+Single source of truth (§5.7): adding a unit only touches plugins/ (its
 manifest.toml declares packages); this script regenerates the PKGBUILD's
 blocks. Run `python3 packaging/gen-deps.py --update` to rewrite the
 generated blocks, or without --update to print them.

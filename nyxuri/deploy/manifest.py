@@ -35,7 +35,7 @@ Schema (all fields optional, flat at top level)::
     [presets]           # inherit / allow / standalone / include / exclude / reload
     [parts.<slot>]      # target / source_dir / default
 
-A ``target`` unit ships exactly one file (``units/<unit>/<target>``) that
+A ``target`` unit ships exactly one file (``plugins/<unit>/<target>``) that
 lands at ``~/.config/<target>``; presets and parts are directory affordances
 and do not apply to it. A ``~/``-prefixed ``target`` declares a shared
 living area outside ``~/.config`` (implies ``merge`` semantics); an

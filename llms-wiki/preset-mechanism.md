@@ -24,7 +24,7 @@ deploy 时根据 active 选源目录，四条分支 + 一条冻结：
    **额外警告**（上游改名/删除信息不能被静默吞）。这是唯一 **write-before-deploy** 例外
    （dest 已空，reset 后下次自愈）。
 2. **active == "default"** → `src=app_root`（仓库默认配置）。
-3. **官方预设**（`units/<app>/__presets__/<active>/` 或 `presets/<active>/` 存在）→ `src=` 该目录。
+3. **官方预设**（`plugins/<app>/__presets__/<active>/` 或 `presets/<active>/` 存在）→ `src=` 该目录。
 4. **用户预设**（`~/.config/nyxuri/presets/<app>/<active>/` 存在）→ `src=` 该目录。
    官方优先：同名时先查仓库再查用户。
 5. **找不到** → `src=None`（冻结 dest + 警告），**绝不回 default**（会静默擦用户配置）。
@@ -55,8 +55,8 @@ theme-sync / gtk 重渲染）。切个 kitty 预设不该顺带跑 fisher，无�
 
 `update` 本身就是同步机制，不需要新命令。预设住在仓库里，仓库更新了预设源就更新了。
 
-- **情况 1（新增预设）**：开发者加 `units/kitty/__presets__/dark/` → 用户 update git pull 到 →
-  下次 `preset kitty list` 扫 `units/kitty/__presets__/*/` 直接看到。**零同步代码**，list 是 live 扫描。
+- **情况 1（新增预设）**：开发者加 `plugins/kitty/__presets__/dark/` → 用户 update git pull 到 →
+  下次 `preset kitty list` 扫 `plugins/kitty/__presets__/*/` 直接看到。**零同步代码**，list 是 live 扫描。
 - **情况 2（改预设内容）**：transparent 改了几行 → update pull 到新内容 →
   `offer_overwrite_upgrade` 触发 re-deploy → 读 active=transparent → src=新内容 → 部署。
   用户活动预设自动吃到最新版，`__custom__` 照常保留。
@@ -72,8 +72,8 @@ theme-sync / gtk 重渲染）。切个 kitty 预设不该顺带跑 fisher，无�
 
 - **通用零件插槽 (`preset <app> part <slot> <name>`)**：
   - 核心逻辑由 `nyxuri.deploy.preset` 提供（`list_parts`、`apply_part`、`get_active_part`）。
-  - 元数据在单元根目录 `units/<unit>/manifest.toml` 的 `[parts.<slot>]` 声明（如 Niri 声明了 `[parts.effects]` 与 `[parts.glow]`）。
-  - 零件源模板存放于 `units/<app>/__presets__/<source_dir>/`，目标为具体的配置零件（如 `target = "effects_normal.kdl"` 或 `target = "glow.kdl"`）。
+  - 元数据在单元根目录 `plugins/<unit>/manifest.toml` 的 `[parts.<slot>]` 声明（如 Niri 声明了 `[parts.effects]` 与 `[parts.glow]`）。
+  - 零件源模板存放于 `plugins/<app>/__presets__/<source_dir>/`，目标为具体的配置零件（如 `target = "effects_normal.kdl"` 或 `target = "glow.kdl"`）。
   - 声明在 `[parts.<slot>]` 的 `target` 在解析 manifest 时会自动追加至受保护清单（`preserve`），避免全量替换时被覆盖。
   - **防覆写自愈（commit `db289bd`）**：在部署与重载流水线中，`_reconcile_active_parts` 机制会自动读取 `state.json` 账本中已激活的非默认变体并对齐应用，确保配置重新应用时零件插槽目标不被默认模板回退。
 - **稀疏预设 (Sparse Presets)**：应用级整包预设目录仅存放与底版有差异的文件，未重写的文件自动从底版继承。

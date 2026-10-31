@@ -19,7 +19,7 @@ class TestMangoAdaptation(unittest.TestCase):
     def setUp(self):
         self.ctx = TempEnv()
         self.ctx.__enter__()
-        self.mango_src = _REPO / "units" / "mango"
+        self.mango_src = _REPO / "plugins" / "mango"
 
     def tearDown(self):
         self.ctx.__exit__()
@@ -57,7 +57,7 @@ class TestMangoAdaptation(unittest.TestCase):
 
     def test_mango_portals_conf_exists_and_routes_wlr(self):
         """Verify mango-portals.conf configures wlr screencast/screenshot."""
-        portal_conf = _REPO / "units" / "xdg-desktop-portal" / "mango-portals.conf"
+        portal_conf = _REPO / "plugins" / "xdg-desktop-portal" / "mango-portals.conf"
         self.assertTrue(portal_conf.is_file())
         content = portal_conf.read_text(encoding="utf-8")
         self.assertIn("org.freedesktop.impl.portal.ScreenCast=wlr;", content)

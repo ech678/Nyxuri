@@ -15,7 +15,7 @@ from unittest.mock import call, patch
 
 _LOCK = (
     Path(__file__).resolve().parents[3]
-    / "units" / "noctalia" / "tools" / "wallpaper_picker" / "lock.py"
+    / "plugins" / "noctalia" / "tools" / "wallpaper_picker" / "lock.py"
 )
 
 

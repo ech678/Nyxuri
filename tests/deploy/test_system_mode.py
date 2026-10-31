@@ -26,7 +26,7 @@ class TestDetectRunMode(unittest.TestCase):
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
             (root / ".system-install").touch()
-            (root / "units").mkdir()
+            (root / "plugins").mkdir()
             (root / "assets").mkdir()
             cache = Path("/nonexistent/cache")
             mode, label, repo = core._detect_run_mode(root, cache)
@@ -37,7 +37,7 @@ class TestDetectRunMode(unittest.TestCase):
     def test_repo_when_configs_and_assets_present(self):
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
-            (root / "units").mkdir()
+            (root / "plugins").mkdir()
             (root / "assets").mkdir()
             cache = Path("/nonexistent/cache")
             mode, label, repo = core._detect_run_mode(root, cache)

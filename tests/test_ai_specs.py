@@ -271,7 +271,7 @@ class TestAISpecs(unittest.TestCase):
         self.assertNotIn("modules.md", llms_txt)
 
         # 5. The unit-owned hook scripts took over.
-        hooks = self.root_dir / "units"
+        hooks = self.root_dir / "plugins"
         for unit, name in (
             ("fcitx5-rime", "activate"), ("fcitx5-rime", "deactivate"),
             ("fish", "install-fisher"), ("fish", "remove-fisher"),
@@ -295,7 +295,7 @@ class TestAISpecs(unittest.TestCase):
             )
 
         # 2. Physical absence in the blueprint.
-        configs = self.root_dir / "units"
+        configs = self.root_dir / "plugins"
         self.assertFalse((configs / ".optional-apps.toml").exists())
         self.assertFalse((configs / "starship.toml").exists())
         self.assertEqual(list(configs.glob("**/*.module.toml")), [])
@@ -330,7 +330,7 @@ class TestAISpecs(unittest.TestCase):
 
         # 2. Physical absence / presence.
         self.assertFalse((root / "configs").exists(), "blueprint must be renamed")
-        units = root / "units"
+        units = root / "plugins"
         self.assertTrue(units.is_dir())
         self.assertEqual(len([d for d in units.iterdir() if d.is_dir()]), 13,
                          "blueprint = 12 real units + wallpapers (KM4 adds theme)")
@@ -457,7 +457,7 @@ class TestAISpecs(unittest.TestCase):
         doc_files = [
             self.root_dir / "README.md",
             self.root_dir / "README.zh-CN.md",
-            self.root_dir / "units" / "noctalia" / "README.md",
+            self.root_dir / "plugins" / "noctalia" / "README.md",
         ] + list((self.root_dir / "humans-wiki").glob("*.md"))
 
         for doc in doc_files:

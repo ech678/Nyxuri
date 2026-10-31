@@ -16,7 +16,7 @@ import unittest
 from pathlib import Path
 
 
-_THEME = Path(__file__).resolve().parents[3] / "units" / "noctalia" / "tools" / "wallpaper_picker" / "theme.py"
+_THEME = Path(__file__).resolve().parents[3] / "plugins" / "noctalia" / "tools" / "wallpaper_picker" / "theme.py"
 
 
 def _load_theme():

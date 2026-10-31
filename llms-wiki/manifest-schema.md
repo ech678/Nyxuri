@@ -7,16 +7,16 @@
 
 ## 顶层字段（平铺，只写例外）
 
-`units/<unit>/manifest.toml`——只有需要覆盖默认时才写：
+`plugins/<unit>/manifest.toml`——只有需要覆盖默认时才写：
 
 | 字段 | 默认 | 作用 |
 |---|---|---|
 | `packages` | `[<目录名>]` | pacman 包名。**显式 `packages = []` 保持为空**（Flatpak/AUR-only 单元防名字泄进 pacman） |
 | `packages_aur` | `[]` | AUR 包名 |
 | `packages_flatpak` | `[]` | Flathub app id——走 `flatpak install`，永不进 pacman/AUR/PKGBUILD |
-| `target` | `""` | 单文件单元例外：单元目录只 ship 一个文件 `units/<unit>/<target>`，落点 `~/.config/<target>`（如 starship）。`~/` 前缀则声明 `~/.config` 外的**共享生活区**。`xdg:<KIND>/<rest>` 走 XDG 用户目录解析（当前仅 `xdg:PICTURES/<rest>`，经 `xdg-user-dir PICTURES`，中文系统即 `~/图片`；未知 KIND 直接拒绝——如壁纸 `xdg:PICTURES/Wallpapers`，R0-4 推广为完整映射）。target 单元不支持 presets/parts |
+| `target` | `""` | 单文件单元例外：单元目录只 ship 一个文件 `plugins/<unit>/<target>`，落点 `~/.config/<target>`（如 starship）。`~/` 前缀则声明 `~/.config` 外的**共享生活区**。`xdg:<KIND>/<rest>` 走 XDG 用户目录解析（当前仅 `xdg:PICTURES/<rest>`，经 `xdg-user-dir PICTURES`，中文系统即 `~/图片`；未知 KIND 直接拒绝——如壁纸 `xdg:PICTURES/Wallpapers`，R0-4 推广为完整映射）。target 单元不支持 presets/parts |
 | `merge` | `false` | 共享生活区声明：`on` 走 no-clobber 增量合流（已存在文件永不覆盖），快照只记部署落下的文件；`off` 只撤回快照文件，外来内容幸存并报告；doctor 对停用 merge 单元只把蓝图具名残留记 Ghost（见 [unit-model](unit-model.md) §3） |
-| `runtime` | `false` | 运行态单元声明（KM4，shell 命名空间专用，见 [unit-model](unit-model.md) §6）：无载荷、无生活区、无 Vault 进出、无 presets/parts——`on`/`off` 纯账本落记 + 一次 `unit-changed` 事件，运行中的宿主（Shell）据事件装载/卸载该域。doctor 恒 `Synced`（实机无可对账之物）。物理承载 `shell/units/<domain>/manifest.toml` |
+| `runtime` | `false` | 运行态单元声明（KM4，shell 命名空间专用，见 [unit-model](unit-model.md) §6）：无载荷、无生活区、无 Vault 进出、无 presets/parts——`on`/`off` 纯账本落记 + 一次 `unit-changed` 事件，运行中的宿主（Shell）据事件装载/卸载该域。doctor 恒 `Synced`（实机无可对账之物）。物理承载 `shell/plugins/<domain>/manifest.toml` |
 | `preserve` | `[]` | 跨部署保留的路径（按名声明，如 `monitor.kdl`；与 Dunder 不同机制）。条目可以是**目录**：整目录归运行时管理（如 fish 的 `functions/`），部署前整树注入、off 入 Vault、目录下所有文件不入账不参与 Drifted。**禁令：preserve 目录不得混铺模板 payload**——声明即承诺"模板不在此目录铺设任何文件"，混居会把 payload 永久冻结在旧版 |
 | `preserve_values` | `{}` | 跨部署保留指定文本配置里的个别键，形如 `{ "noctalia-config.toml" = ["enable_ddcutil"] }`。旧文件里存在的键按原样带入新文件，缺失的键不携带，沿用新模板的值 |
 | `chmod` | `[]` | 部署后设 +x 的 glob（相对单元目录，如 `scripts/*.sh`） |
@@ -24,7 +24,7 @@
 | `category` | `""` | 菜单分组键，显示名走 i18n `apps_cat_<key>` |
 | `detect` | `<目录名>` | 检测是否安装的命令名（纯名字，无 `binary:` 前缀 DSL） |
 | `optional` | `false` | 可选单元：进应用菜单与 PKGBUILD `optdepends`，不占硬依赖 |
-| `post_install` | `""` | on 侧生命周期钩子：`units/<unit>/hooks/<名字>` 可执行脚本名（如 `"setup-rime"`），事务在蓝图部署后、账本快照前执行 |
+| `post_install` | `""` | on 侧生命周期钩子：`plugins/<unit>/hooks/<名字>` 可执行脚本名（如 `"setup-rime"`），事务在蓝图部署后、账本快照前执行 |
 | `post_remove` | `""` | off 侧生命周期钩子：同形态，实机抹白之后执行，负责清理生活区**外**的产物（KM3） |
 | `[privilege]` | 无表 | 特权副作用声明：`requires_root = true` + `system_paths = [...]`（如 greeter 的 `/etc/greetd`）。只声明事实供展示与审计，不改变执行方式 |
 | `dependencies` | `[]` | 依赖的其他 Nyxuri 单元（内核 resolver 的输入） |
@@ -32,7 +32,7 @@
 ### 单元生命周期钩子（KM3 契约）
 
 钩子是**单元自己的行为**，不是内核业务代码——落点固定为单元目录内
-`units/<unit>/hooks/<名字>`（任意解释器，`#!/usr/bin/env python3` 或 `sh` 均可，
+`plugins/<unit>/hooks/<名字>`（任意解释器，`#!/usr/bin/env python3` 或 `sh` 均可，
 必须带可执行位）。`<module>:<function>` 旧形态随 `nyxuri/modules/` 退役（KM3 死刑）。
 
 - **执行归属**：只有 transaction 执行钩子（内核唯一副作用层），注入
@@ -51,10 +51,10 @@
 | 字段 | 默认 | 作用 |
 |---|---|---|
 | `target` | （必填） | 目标配置文件相对路径（如 `"effects_normal.kdl"`）。**引擎解析时会自动将其追加到 `preserve` 保护清单中**，无需重复手动声明。 |
-| `source_dir` | `<slot>` | 零件源文件目录名（位于 `units/<unit>/__presets__/<source_dir>/`） |
+| `source_dir` | `<slot>` | 零件源文件目录名（位于 `plugins/<unit>/__presets__/<source_dir>/`） |
 | `default` | `""` | 默认选用的零件名称 |
 
-零件文件存放于 `units/<unit>/__presets__/<source_dir>/` 目录（例如 `effects/default.kdl`）。
+零件文件存放于 `plugins/<unit>/__presets__/<source_dir>/` 目录（例如 `effects/default.kdl`）。
 
 ### 预设与继承控制（`[presets]` 表，可选）
 
@@ -72,7 +72,7 @@
 ### 实际 ship 的 manifest
 
 ```toml
-# units/niri/manifest.toml — monitor.kdl 被 include 引用；effects.kdl 为运行时护眼模式符号链接
+# plugins/niri/manifest.toml — monitor.kdl 被 include 引用；effects.kdl 为运行时护眼模式符号链接
 preserve = ["monitor.kdl", "effects.kdl", "effects_normal.kdl", "glow.kdl", "colors.kdl", "noctalia.kdl", "eyecare_temp"]
 chmod = ["scripts/*.sh", "scripts/*.py"]
 
@@ -86,21 +86,21 @@ target = "glow.kdl"
 source_dir = "glow"
 default = "default"
 
-# units/kitty/manifest.toml — 切换预设后发送 SIGUSR1 热重载
+# plugins/kitty/manifest.toml — 切换预设后发送 SIGUSR1 热重载
 preserve = ["current-theme.conf", "themes/noctalia.conf"]
 
 [presets]
 reload = ["pkill", "-SIGUSR1", "-x", "kitty"]
 
-# units/noctalia/manifest.toml
+# plugins/noctalia/manifest.toml
 packages = ["noctalia", "python-gobject", "gtk-layer-shell", "wl-clipboard"]
 preserve_values = { "noctalia-config.toml" = ["enable_ddcutil"] }
 chmod = ["wallpaper-hook.sh", "mpvpaper-sync.sh", "tools/*.sh", "tools/*.py"]
 
-# units/xdg-desktop-portal/manifest.toml — 只改菜单名
+# plugins/xdg-desktop-portal/manifest.toml — 只改菜单名
 label = "XDG Portals"
 
-# units/starship/manifest.toml — 单文件单元（target 例外）
+# plugins/starship/manifest.toml — 单文件单元（target 例外）
 target = "starship.toml"
 ```
 
@@ -116,7 +116,7 @@ gen-deps `optdepends` 有意与 catalog 脱钩，见 PKGBUILD 头注释）。
 两个事实同时为真。例外字段照旧只写差异：
 
 ```toml
-# catalog.toml（仓库根）— 装但不部署，永不进 units/
+# catalog.toml（仓库根）— 装但不部署，永不进 plugins/
 [brave-origin]
 label = "Brave Origin"          # optdepends 展示名；菜单显示名走 i18n app_* 键
 category = "browser"
@@ -133,7 +133,7 @@ category = "system"
 detect = "mission-center"          # 目录名 missioncenter，包名连字符
 packages = ["mission-center"]
 
-# units/fcitx5-rime/manifest.toml — KM3 起皮肤入单元，配置整文件化
+# plugins/fcitx5-rime/manifest.toml — KM3 起皮肤入单元，配置整文件化
 optional = true
 packages = ["fcitx5", "fcitx5-gtk", "fcitx5-qt", "fcitx5-configtool", "fcitx5-rime"]
 packages_aur = ["rime-ice-git"]
@@ -143,7 +143,7 @@ preserve = ["conf/classicui.conf", "profile"]   # 用户层随行：部署不倒
 post_install = "activate"       # → hooks/activate：皮肤落 ~/.local/share + rime patch
 post_remove = "deactivate"      # → hooks/deactivate：撤皮肤 + 按 owned 标记回滚 rime patch
 
-# units/greeter/manifest.toml — /etc + root + systemd 副作用全声明
+# plugins/greeter/manifest.toml — /etc + root + systemd 副作用全声明
 optional = true
 packages = ["greetd"]
 packages_aur = ["noctalia-greeter"]
@@ -162,7 +162,7 @@ system_paths = ["/etc/greetd/config.toml", "/etc/polkit-1/rules.d/50-noctalia-gr
 
 ## 发现规则
 
-- `units/` 顶层**只认目录**——每个子目录即一个单元；散落文件不是单元（死刑断言守卫顶层无文件）；
+- `plugins/` 顶层**只认目录**——每个子目录即一个单元；散落文件不是单元（死刑断言守卫顶层无文件）；
 - 「只有 manifest、无配置」的包目录不是单元——住根 `catalog.toml`（KM3.5 死刑断言守卫）；
 - `manifest.toml`、`__pycache__`、`hooks/` 是仓库元数据，永不落进 `~/.config`。
 
@@ -171,7 +171,7 @@ system_paths = ["/etc/greetd/config.toml", "/etc/polkit-1/rules.d/50-noctalia-gr
 不放进 manifest 的（会让它膨胀成小语言）：doctor 检查项、i18n 键、post-install 钩子
 以外的命令式副作用。这些是 `DOCTOR_CHECKS` 列表 / `translations.toml` 的事。
 
-声明式与命令式的分界：仓库 `units/` = 期望状态，`~/.config` = 当前状态，
+声明式与命令式的分界：仓库 `plugins/` = 期望状态，`~/.config` = 当前状态，
 `atomic_replace_item` = 对账器，Dunder = 增量保留，snapshot/rollback = 状态存取，
 active 预设名 = state 文件里的显式期望——这半边是声明式。依赖安装、主题同步、
 输入法重载是命令式副作用，由对应入口负责；安装可选软件只装包，不自动激活单元。

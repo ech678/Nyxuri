@@ -228,8 +228,8 @@ class TestP4ThemeEngineContract(unittest.TestCase):
         """T0 copy/paste verdict: no Windows-style hijacks; presets ship identical shortcuts."""
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         confs = [
-            os.path.join(repo_root, "units", "kitty", "kitty.conf"),
-            os.path.join(repo_root, "units", "kitty", "__presets__", "transparent", "kitty.conf"),
+            os.path.join(repo_root, "plugins", "kitty", "kitty.conf"),
+            os.path.join(repo_root, "plugins", "kitty", "__presets__", "transparent", "kitty.conf"),
         ]
         retired = (
             "copy_and_clear_or_interrupt",

@@ -24,7 +24,7 @@ def _load_hook(unit: str, name: str):
     """Import a unit hook script as a module (scripts guard on __main__)."""
     from importlib.machinery import SourceFileLoader
 
-    path = REPO / "units" / unit / "hooks" / name
+    path = REPO / "plugins" / unit / "hooks" / name
     name = f"hook_{unit}_{name}"
     spec = importlib.util.spec_from_file_location(name, path, loader=SourceFileLoader(name, str(path)))
     module = importlib.util.module_from_spec(spec)

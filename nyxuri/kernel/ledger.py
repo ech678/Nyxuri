@@ -4,15 +4,17 @@ The only kernel module that reads or writes ``state.json``. Generic
 key/value selections (active shell, migration level) and unit records
 share one atomic write path: flock, merge, tmp file, ``os.replace``.
 
-Unit records live under the top-level ``units`` key, keyed by unit id.
-Each record carries exactly five frozen fields (unit-model.md §3):
-``state`` / ``preset`` / ``files`` / ``vault`` / ``updated``. Kernel
-code must not invent a sixth.
+Unit records live under the top-level ``plugins`` key, keyed by unit id.
+Pre-R0-1 ledgers carried the key ``units``; the first read renames it
+in place (idempotent, one atomic write). Each record carries exactly
+five frozen fields (unit-model.md §3): ``state`` / ``preset`` / ``files``
+/ ``vault`` / ``updated``. Kernel code must not invent a sixth.
 """
 
 import fcntl
 import json
 import os
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -21,6 +23,11 @@ from nyxuri.core import get_env
 
 UNIT_STATES = ("enabled", "disabled")
 
+# Top-level key holding unit records. R0-1 renamed ``units`` → ``plugins``
+# alongside the blueprint directory; one-shot migration lives in read_ledger.
+UNITS_KEY = "plugins"
+_LEGACY_UNITS_KEY = "units"
+
 # --- generic ledger primitives -------------------------------------------
 
 
@@ -28,7 +35,7 @@ def ledger_path() -> Path:
     return get_env().state_dir / "state.json"
 
 
-def read_ledger() -> dict[str, Any]:
+def _read_raw() -> dict[str, Any]:
     try:
         data = json.loads(ledger_path().read_text(encoding="utf-8"))
         return data if isinstance(data, dict) else {}
@@ -36,9 +43,19 @@ def read_ledger() -> dict[str, Any]:
         return {}
 
 
-def update_ledger(**changes: Any) -> dict[str, Any]:
-    path = ledger_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
+def _legacy_units_replacement(data: dict[str, Any]) -> dict[str, Any] | None:
+    """Data with ``units`` renamed to ``plugins``, or None when no migration
+    is due (ledger already in the new shape, empty, or without records)."""
+    legacy = data.get(_LEGACY_UNITS_KEY)
+    if UNITS_KEY in data or not isinstance(legacy, dict):
+        return None
+    data[UNITS_KEY] = data.pop(_LEGACY_UNITS_KEY)
+    return data
+
+
+@contextmanager
+def _ledger_lock(path: Path):
+    """Hold the advisory flock; degrades to no-op when unopenable."""
     lock_handle = None
     try:
         lock_handle = open(path.with_name(f".{path.name}.lock"), "a+")
@@ -48,18 +65,54 @@ def update_ledger(**changes: Any) -> dict[str, Any]:
             lock_handle.close()
         lock_handle = None
     try:
-        data = read_ledger()
+        yield
+    finally:
+        if lock_handle is not None:
+            lock_handle.close()
+
+
+def _write_locked(path: Path, data: dict[str, Any]) -> None:
+    """Tmp file + ``os.replace``; caller must already hold the flock."""
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def read_ledger() -> dict[str, Any]:
+    """Read the ledger, migrating a pre-R0-1 ``units`` key on sight.
+
+    The rename rewrites state.json once (flock + atomic replace) so every
+    later reader — and the user's own eyes — see a single-shape file.
+    """
+    data = _read_raw()
+    migrated = _legacy_units_replacement(data)
+    if migrated is None:
+        return data
+    path = ledger_path()
+    with _ledger_lock(path):
+        # Re-read under the lock: a concurrent process may have migrated first.
+        data = _read_raw()
+        migrated = _legacy_units_replacement(data)
+        if migrated is not None:
+            _write_locked(path, migrated)
+            return migrated
+        return data
+
+
+def update_ledger(**changes: Any) -> dict[str, Any]:
+    path = ledger_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with _ledger_lock(path):
+        data = _read_raw()
+        migrated = _legacy_units_replacement(data)
+        if migrated is not None:
+            data = migrated
         for key, value in changes.items():
             if isinstance(value, dict) and isinstance(data.get(key), dict):
                 data[key] = {**data[key], **value}
             else:
                 data[key] = value
-        tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-        tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        os.replace(tmp, path)
-    finally:
-        if lock_handle is not None:
-            lock_handle.close()
+        _write_locked(path, data)
     return data
 
 
@@ -106,7 +159,7 @@ def set_shell(shell_name: str, bin_path: str | None = None) -> dict[str, Any]:
 
 def all_units() -> dict[str, dict[str, Any]]:
     """Every unit record in the ledger, keyed by unit id."""
-    units = read_ledger().get("units")
+    units = read_ledger().get(UNITS_KEY)
     if not isinstance(units, dict):
         return {}
     return {uid: dict(rec) for uid, rec in units.items() if isinstance(rec, dict)}
@@ -157,5 +210,5 @@ def set_unit(
         "vault": vault,
         "updated": updated,
     }
-    data = update_ledger(units={unit_id: record})
-    return dict(data["units"][unit_id])
+    data = update_ledger(**{UNITS_KEY: {unit_id: record}})
+    return dict(data[UNITS_KEY][unit_id])

@@ -97,7 +97,7 @@ class TestTerminalStyleColorParsing(unittest.TestCase):
 
     def _parse_rgb(self):
         import importlib
-        tools = Path(__file__).resolve().parents[2] / "units" / "noctalia" / "tools"
+        tools = Path(__file__).resolve().parents[2] / "plugins" / "noctalia" / "tools"
         if str(tools) not in sys.path:
             sys.path.insert(0, str(tools))
         return importlib.import_module("orbit_translate.tui_style")._parse_rgb

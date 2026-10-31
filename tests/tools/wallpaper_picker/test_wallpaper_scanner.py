@@ -21,7 +21,7 @@ import subprocess
 import time
 
 
-_TOOLS = Path(__file__).resolve().parents[3] / "units" / "noctalia" / "tools"
+_TOOLS = Path(__file__).resolve().parents[3] / "plugins" / "noctalia" / "tools"
 _SCANNER = _TOOLS / "wallpaper_picker" / "scanner.py"
 if str(_TOOLS) not in sys.path:
     sys.path.insert(0, str(_TOOLS))
@@ -188,7 +188,7 @@ class TestHexParsingRejectsMalformed(unittest.TestCase):
 
     def _module(self, relative, name):
         import importlib.util
-        path = Path(__file__).resolve().parents[3] / "units" / "noctalia" / "tools" / relative
+        path = Path(__file__).resolve().parents[3] / "plugins" / "noctalia" / "tools" / relative
         spec = importlib.util.spec_from_file_location(name, path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
@@ -210,7 +210,7 @@ class TestNaturalSort(unittest.TestCase):
 
     def test_numeric_runs_sort_numerically(self):
         import importlib.util
-        path = Path(__file__).resolve().parents[3] / "units" / "noctalia" / "tools" / "wallpaper_picker" / "scanner.py"
+        path = Path(__file__).resolve().parents[3] / "plugins" / "noctalia" / "tools" / "wallpaper_picker" / "scanner.py"
         source = path.read_text(encoding="utf-8")
         namespace = {"re": re}
         start = source.index("_NATURAL_SPLIT")

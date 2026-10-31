@@ -418,7 +418,7 @@ class TestTranslateConfigErrors(unittest.TestCase):
 
     def _module(self, name):
         import importlib
-        tools = Path(__file__).resolve().parents[4] / "units" / "noctalia" / "tools"
+        tools = Path(__file__).resolve().parents[4] / "plugins" / "noctalia" / "tools"
         if str(tools) not in sys.path:
             sys.path.insert(0, str(tools))
         return importlib.import_module(f"orbit_translate.{name}")

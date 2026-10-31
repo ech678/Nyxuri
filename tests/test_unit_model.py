@@ -130,7 +130,7 @@ class TestKernelRegistry(unittest.TestCase):
     def test_real_repo_units_discovered(self):
         """The repo blueprint is scanned through the same registry."""
         with TempEnv() as ctx:
-            ctx.env.units_src = self.root_dir / "units"
+            ctx.env.units_src = self.root_dir / "plugins"
             ids = registry.unit_ids()
             self.assertIn("kitty", ids)
             self.assertEqual(registry.load_unit("kitty").name, "kitty")
@@ -173,9 +173,9 @@ class TestKernelLedger(unittest.TestCase):
             self.assertEqual(rec["files"], {"kitty.conf": "abc123"})
             self.assertIsNone(rec["vault"])
             self.assertTrue(rec["updated"])
-            # persisted under the top-level `units` key
+            # persisted under the top-level `plugins` key (R0-1 rename)
             on_disk = json.loads((ctx.home / ".local/state/nyxuri/state.json").read_text())
-            self.assertEqual(on_disk["units"]["kitty"]["preset"], "default")
+            self.assertEqual(on_disk["plugins"]["kitty"]["preset"], "default")
             self.assertEqual(ledger.get_unit("kitty"), rec)
             self.assertEqual(ledger.all_units(), {"kitty": rec})
 
@@ -200,6 +200,37 @@ class TestKernelLedger(unittest.TestCase):
             ledger.set_unit("kitty", state="disabled", vault="/vault/kitty")
             self.assertEqual(ledger.get_unit("fish")["state"], "enabled")
             self.assertEqual(ledger.get_unit("kitty")["state"], "disabled")
+
+    def test_legacy_units_key_migrates_on_first_read(self):
+        """A pre-R0-1 ledger (top-level ``units`` key) is renamed to
+        ``plugins`` on first read, atomically and exactly once."""
+        with TempEnv() as ctx:
+            path = ctx.home / ".local/state/nyxuri/state.json"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                json.dumps({"units": {"kitty": {"state": "enabled"}}}, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            rec = ledger.get_unit("kitty")
+            self.assertEqual(rec["state"], "enabled")
+            on_disk = json.loads(path.read_text(encoding="utf-8"))
+            self.assertNotIn("units", on_disk, "legacy key must be gone after migration")
+            self.assertEqual(on_disk["plugins"]["kitty"]["state"], "enabled")
+            # idempotent: further reads neither duplicate nor resurrect the key
+            ledger.set_unit("kitty", state="disabled", vault="/vault/kitty")
+            on_disk = json.loads(path.read_text(encoding="utf-8"))
+            self.assertNotIn("units", on_disk)
+            self.assertEqual(on_disk["plugins"]["kitty"]["state"], "disabled")
+
+    def test_fresh_ledger_only_carries_plugins_key(self):
+        """New installs never produce the legacy ``units`` key."""
+        with TempEnv() as ctx:
+            ledger.set_unit("kitty", state="enabled")
+            on_disk = json.loads(
+                (ctx.home / ".local/state/nyxuri/state.json").read_text(encoding="utf-8")
+            )
+            self.assertIn("plugins", on_disk)
+            self.assertNotIn("units", on_disk)
 
 
 if __name__ == "__main__":

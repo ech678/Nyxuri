@@ -1,7 +1,7 @@
 # Overview — 一页仓库地图
 
 > Nyxuri 是精选桌面配置的原子部署引擎，正在收敛为「桌面插件市场」：
-> 单元（units/）× 内核（kernel/）× 市场界面（4 动词 + TUI 工坊）。
+> 单元（plugins/）× 内核（kernel/）× 市场界面（4 动词 + TUI 工坊）。
 > 本页是文件树与分层的一页地图；单元模型契约见 [unit-model](unit-model.md)。
 
 ## 精神
@@ -25,8 +25,8 @@ Nyxuri/
 │   ├─ installer/     workflows + menus（交互式主菜单与整装/更新编排，作者裁决保留为常驻产品面）
 │   └─ cli.py · core.py（环境+锁+日志+i18n 地基）· sysdoctor.py（系统体检）·
 │       tui.py · translations.toml（双语文案）
-├─ units/             蓝图 · 13 目录 = 12 真单元 + wallpapers（KM4 + theme 共享模板池；wallpapers/theme 为 merge 共享生活区）
-├─ shell/             自研 Quickshell 桌面（契约见 shell/AGENTS.md；`shell/units/` 为
+├─ plugins/             蓝图 · 13 目录 = 12 真单元 + wallpapers（KM4 + theme 共享模板池；wallpapers/theme 为 merge 共享生活区）
+├─ shell/             自研 Quickshell 桌面（契约见 shell/AGENTS.md；`shell/plugins/` 为
 │                     shell 命名空间蓝图，12 个 runtime 单元，KM4）
 ├─ tests/             镜像源码树：kernel/ deploy/ pkg/ state/ desktop/ installer/
 │                     tools/{orbit,wallpaper_picker,translate}/ shell/ + 契约测试置顶
@@ -48,8 +48,8 @@ pkg 管包与供给；state 管账本外的状态副本；desktop 管活桌面�
 （最低）         （中）            （最高，永远赢）
 ```
 
-- **Configs**：`units/<unit>/` ship 的默认配置，`nyxuri on <unit>` 原子部署到实机。
-- **Presets**：单元的风味变体（官方住 `units/<unit>/__presets__/`，用户住
+- **Configs**：`plugins/<unit>/` ship 的默认配置，`nyxuri on <unit>` 原子部署到实机。
+- **Presets**：单元的风味变体（官方住 `plugins/<unit>/__presets__/`，用户住
   `~/.config/nyxuri/presets/`），机制见 [preset-mechanism](preset-mechanism.md)。
 - **Customs**：`__custom__` 文件跨更新、跨预设切换保留，见 [file-preservation](file-preservation.md)。
 
@@ -66,7 +66,7 @@ pkg 管包与供给；state 管账本外的状态副本；desktop 管活桌面�
   `active_shell` 路由 Noctalia / 自研 Shell）+ fcitx5 + 护眼同步。
 - **动作网关**：快捷键 → `shell-action.sh`（launcher/session/settings/clipboard/
   lock/wallpaper-random 等标准动作）→ Noctalia IPC 或自研 Shell；
-  星环启动器 / 壁纸选择器 / 划词翻译是 `units/noctalia/tools/` 的一次性进程。
+  星环启动器 / 壁纸选择器 / 划词翻译是 `plugins/noctalia/tools/` 的一次性进程。
 - **主题调度**：`nyxuri theme` 单一实现——gsettings（portal→GTK4/Brave）、
   settings.ini、Noctalia IPC、Kitty SIGUSR1 四路同步，flock 排他。
 - **Shell 事件**：事务落账后发一次 `unit-changed` 事件（`quickshell ipc unit reload`，
@@ -74,6 +74,6 @@ pkg 管包与供给；state 管账本外的状态副本；desktop 管活桌面�
 
 ## 真值分工
 
-运行行为以源码（`nyxuri/` + `units/` + `shell/`）与契约测试（`tests/`）为准；
+运行行为以源码（`nyxuri/` + `plugins/` + `shell/`）与契约测试（`tests/`）为准；
 架构契约以本 wiki 为准；阶段状态只在 [ROADMAP](../ROADMAP.md)；历史在
 `llms-wiki/archive/`（冻结）。文档体系自身的规则见 [docs-charter](docs-charter.md)。

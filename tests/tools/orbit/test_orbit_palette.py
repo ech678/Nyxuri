@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 from tests.utils import TempEnv
 
-_PALETTE_PATH = Path(__file__).resolve().parents[3] / "units" / "noctalia" / "tools" / "orbit" / "palette.py"
+_PALETTE_PATH = Path(__file__).resolve().parents[3] / "plugins" / "noctalia" / "tools" / "orbit" / "palette.py"
 
 
 def _load_palette_module():

@@ -21,7 +21,7 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 def _load_hook(name: str):
-    path = REPO / "units" / "greeter" / "hooks" / name
+    path = REPO / "plugins" / "greeter" / "hooks" / name
     mod_name = f"greeter_hook_{name}"
     spec = importlib.util.spec_from_file_location(mod_name, path, loader=SourceFileLoader(mod_name, str(path)))
     module = importlib.util.module_from_spec(spec)
