@@ -72,7 +72,7 @@ theme-sync / gtk 重渲染）。切个 kitty 预设不该顺带跑 fisher，无�
 
 - **通用零件插槽 (`preset <app> part <slot> <name>`)**：
   - 核心逻辑由 `nyxuri.deploy.preset` 提供（`list_parts`、`apply_part`、`get_active_part`）。
-  - 元数据在单元根目录 `plugins/<unit>/manifest.toml` 的 `[parts.<slot>]` 声明（如 Niri 声明了 `[parts.effects]` 与 `[parts.glow]`）。
+  - 元数据在插件根目录 `plugins/<plugin>/manifest.toml` 的 `[parts.<slot>]` 声明（如 Niri 声明了 `[parts.effects]` 与 `[parts.glow]`）。
   - 零件源模板存放于 `plugins/<app>/__presets__/<source_dir>/`，目标为具体的配置零件（如 `target = "effects_normal.kdl"` 或 `target = "glow.kdl"`）。
   - 声明在 `[parts.<slot>]` 的 `target` 在解析 manifest 时会自动追加至受保护清单（`preserve`），避免全量替换时被覆盖。
   - **防覆写自愈（commit `db289bd`）**：在部署与重载流水线中，`_reconcile_active_parts` 机制会自动读取 `state.json` 账本中已激活的非默认变体并对齐应用，确保配置重新应用时零件插槽目标不被默认模板回退。

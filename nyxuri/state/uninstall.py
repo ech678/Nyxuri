@@ -69,9 +69,9 @@ def uninstall_nyxuri(mode: str = "") -> bool:
     # --- KM3: plugin switches replace the module checkboxes. Enabled plugins
     # with living-area side effects are offered through `off` (cascade off),
     # which vaults customs and wipes to white paper.
-    HOOK_UNITS = ("fcitx5-rime", "fish", "greeter", "noctalia")
+    HOOK_PLUGINS = ("fcitx5-rime", "fish", "greeter", "noctalia")
     enabled_hooked = [
-        uid for uid in HOOK_UNITS
+        uid for uid in HOOK_PLUGINS
         if uid in registry.plugin_ids()
         and (ledger.get_plugin(uid) or {}).get("state") == "enabled"
     ]

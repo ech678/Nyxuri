@@ -4,7 +4,7 @@ A ``configs/<plugin>/`` directory is Nyxuri's first-class plugin. By convention
 it is self-describing: the directory name drives every default. A sibling
 ``manifest.toml`` overrides defaults only when the plugin is exceptional (niri
 preserves ``monitor.kdl``; missioncenter's package is ``mission-center``).
-**No manifest file = full defaults** (unit-model.md §4: 只写例外).
+**No manifest file = full defaults** (plugin-model.md §4: 只写例外).
 
 Schema (all fields optional, flat at top level)::
 
@@ -158,7 +158,7 @@ def _resolve_xdg_target(target: str) -> Path:
 
 
 def living_path(m: ModuleManifest, config_dir: Path) -> Path:
-    """A plugin's living-area path (unit-model.md §4 target exception).
+    """A plugin's living-area path (plugin-model.md §4 target exception).
 
     A ``~/``-prefixed (or absolute) ``target`` declares a shared living area
     outside ``~/.config`` — expanded against ``$HOME``. An ``xdg:<KIND>/<rest>``

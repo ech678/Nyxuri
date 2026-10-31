@@ -60,11 +60,11 @@
   - **护眼模式**（`Super+N`）与 **Scratchpad**（`Super+~` Kitty 浮动终端）。
 - **NyxMellow 输入法**：跟随系统配色的动态 fcitx5 皮肤（mellow 圆角几何），附带开箱即用的 Rime 输入配置。
 - **现代终端体验**：Kitty 平滑光标轨迹与防冲快捷键，搭配 Fish 实用别名与 Starship 提示符。
-- **即插即用的原子单元**：Fastfetch 看板、Noctalia Greeter 登录界面、Zed 编辑器与壁纸包，单键启闭（`nyxuri on` / `nyxuri off`），未启用单元零常驻、零开销。
+- **即插即用的原子插件**：Fastfetch 看板、Noctalia Greeter 登录界面、Zed 编辑器与壁纸包，单键启闭（`nyxuri on` / `nyxuri off`），未启用插件零常驻、零开销。
 - **原子部署、预设与零臃肿安全网**：
   - **Dunder 保护协议**：任何文件名含 `__custom__`（如 `__custom__.kdl`、`__custom__.conf`）或 `monitor.kdl` 的文件跨更新与预设切换永久保留，绝不覆盖用户私有改动。
   - **分层预设**：支持 Kitty 透明度等风味预设一键切换，并支持用户私有预设制作。
-  - **零臃肿与白纸抹除**：引擎坚持纯 Python 标准库驱动，零 pip 依赖；停用单元即刻安全抹白无残留；30 轮滚动快照随时一键回退，`nyxuri doctor` 实时对账实机与声明状态。
+  - **零臃肿与白纸抹除**：引擎坚持纯 Python 标准库驱动，零 pip 依赖；停用插件即刻安全抹白无残留；30 轮滚动快照随时一键回退，`nyxuri doctor` 实时对账实机与声明状态。
 
 ## 安装
 
@@ -114,7 +114,7 @@ git clone https://aur.archlinux.org/nyxuri-git.git
 cd nyxuri-git && makepkg -si
 ```
 
-## 架构与单元
+## 架构与插件
 
 ```text
 Nyxuri
@@ -122,7 +122,7 @@ Nyxuri
 ├── catalog.toml                # 软件目录清单（18 款日常软件同源依赖）
 ├── nyxuri/                     # Python 核心引擎（零 pip 依赖）
 ├── shell/                      # Nyxuri Shell（自研 QML/Qt6 桌面外壳，实验性）
-└── units/                      # 13 个独立原子桌面能力单元
+└── plugins/                    # 13 个独立原子桌面能力插件
     ├── fastfetch/              # 系统信息展示
     ├── fcitx5-rime/            # 动态 Material You 输入法皮肤与配置
     ├── fish/                   # Shell 别名与实用函数
@@ -154,9 +154,9 @@ Nyxuri
 
 完整窗口控制、多屏漫游按键表与全屏覆盖层见 [快捷键全景图 (Wiki)](https://github.com/ech678/Nyxuri/wiki/Keybindings-zh)。
 
-## 单元能力
+## 插件能力
 
-桌面上一切能力皆为可独立开关的原子单元。可选单元包括动态取色 Fcitx5 皮肤（`fcitx5-rime`）、配套壁纸与视频包（`wallpapers`），以及一致视觉的 Noctalia Greeter 登录界面（`greeter`）。随时单键启闭：`nyxuri on <unit>` / `nyxuri off <unit>`。
+桌面上一切能力皆为可独立开关的原子插件。可选插件包括动态取色 Fcitx5 皮肤（`fcitx5-rime`）、配套壁纸与视频包（`wallpapers`），以及一致视觉的 Noctalia Greeter 登录界面（`greeter`）。随时单键启闭：`nyxuri on <plugin>` / `nyxuri off <plugin>`。
 
 单元生命周期管理详见 [CLI 命令手册 (Wiki)](https://github.com/ech678/Nyxuri/wiki/CLI-Reference-zh#单元市场动词)。
 

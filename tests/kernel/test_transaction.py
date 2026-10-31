@@ -577,7 +577,7 @@ def _imported_modules(text: str) -> set:
 
 
 class TestKernelLayering(unittest.TestCase):
-    """The frozen star layering (unit-model.md §2) holds on every commit."""
+    """The frozen star layering (plugin-model.md §2) holds on every commit."""
 
     def _source(self, name: str) -> str:
         kernel = Path(importlib.import_module("nyxuri").__file__).parent / "kernel"

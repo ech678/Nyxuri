@@ -63,7 +63,7 @@ def exit_usage(usage: str) -> None:
     sys.exit(2)
 
 
-# --- KM3 core verbs (unit-model.md §5) ----------------------------------------
+# --- KM3 core verbs (plugin-model.md §5) ----------------------------------------
 #
 # Four canonical verbs — list / on / off / doctor — are the market-facing
 # surface; every switch flip routes through nyxuri.transaction, and this
@@ -554,7 +554,7 @@ def main() -> None:
     acquire_lock()
     init_logger()
     get_env()
-    # The event delivery is the outer layer's job (unit-model.md §6): wire
+    # The event delivery is the outer layer's job (plugin-model.md §6): wire
     # the Shell bridge once so every verb (CLI, TUI, installer menus) that
     # lands a plugin transaction notifies the running shell over its own IPC.
     bridge.wire()

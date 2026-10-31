@@ -8,7 +8,7 @@ carry (#139): dest entries the engine cannot explain as its own template
 output are carried into the new directory verbatim — a swap never destroys
 what it cannot account for. The carry verdict is judged against the ledger
 baseline injected by the caller; this module never reads the ledger itself
-(star layering, unit-model.md §2).
+(star layering, plugin-model.md §2).
 """
 
 import fnmatch

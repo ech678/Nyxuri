@@ -1,4 +1,4 @@
-"""PluginResolver — pure dependency-graph resolution (unit-model.md §2).
+"""PluginResolver — pure dependency-graph resolution (plugin-model.md §2).
 
 Pure functions only: a dependency graph in, a topological order out.
 Zero I/O, zero state, and no sibling-kernel imports — the layering

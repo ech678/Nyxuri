@@ -1,4 +1,4 @@
-"""PluginLedger — the state domain's single entry (unit-model.md §2).
+"""PluginLedger — the state domain's single entry (plugin-model.md §2).
 
 The only kernel module that reads or writes ``state.json``. Generic
 key/value selections (active shell, migration level) and plugin records
@@ -7,7 +7,7 @@ share one atomic write path: flock, merge, tmp file, ``os.replace``.
 Plugin records live under the top-level ``plugins`` key, keyed by plugin id.
 Pre-R0-1 ledgers carried the key ``units``; the first read renames it
 in place (idempotent, one atomic write). Each record carries exactly
-five frozen fields (unit-model.md §3): ``state`` / ``preset`` / ``files``
+five frozen fields (plugin-model.md §3): ``state`` / ``preset`` / ``files``
 / ``vault`` / ``updated``. Kernel code must not invent a sixth.
 """
 
@@ -21,7 +21,7 @@ from typing import Any
 
 from nyxuri.core import get_env
 
-UNIT_STATES = ("enabled", "disabled")
+PLUGIN_STATES = ("enabled", "disabled")
 
 # Top-level key holding plugin records. R0-1 renamed ``units`` → ``plugins``
 # alongside the blueprint directory; one-shot migration lives in read_ledger.
@@ -187,7 +187,7 @@ def set_plugin(
     custom files — mandatory once the plugin is ``disabled``. ``updated``:
     ISO timestamp, defaulted to now (UTC).
     """
-    if state not in UNIT_STATES:
+    if state not in PLUGIN_STATES:
         raise ValueError(f"invalid plugin state '{state}' (must be 'enabled' or 'disabled')")
     if not isinstance(preset, str) or not preset:
         raise ValueError("preset must be a non-empty string")

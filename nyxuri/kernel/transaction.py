@@ -1,13 +1,13 @@
 """PluginTransaction — the kernel's only side-effect orchestration layer.
 
-The star layering (unit-model.md §2) freezes this module as the ONLY one
+The star layering (plugin-model.md §2) freezes this module as the ONLY one
 that composes registry + resolver + ledger with the deploy machinery, the
 Vault and the ``plugin-changed`` event port. Every interface (CLI verb, TUI,
 Shell settings) must route switch flips through :func:`plugin_on` /
 :func:`plugin_off` — they are the single transaction path that lands
 ``state.json``.
 
-Transaction shape (unit-model.md §3)::
+Transaction shape (plugin-model.md §3)::
 
     resolve (resolver) → preflight (declared packages) → vault restore
     → atomic swap (deploy) → ledger five-field record → one event
@@ -82,7 +82,7 @@ def _emit(plugin_id: str, state: str) -> None:
 
 
 def vault_dir(plugin_id: str) -> Path:
-    """Flat file-mirror archive root for one plugin (unit-model.md §7.3)."""
+    """Flat file-mirror archive root for one plugin (plugin-model.md §7.3)."""
     return get_env().state_dir / "vault" / plugin_id
 
 
@@ -91,7 +91,7 @@ def _plugin_dest(plugin_id: str, manifest: ModuleManifest) -> Path:
 
 
 def _is_runtime(manifest: ModuleManifest) -> bool:
-    """A payload-less plugin (manifest ``runtime = true``, unit-model.md §6).
+    """A payload-less plugin (manifest ``runtime = true``, plugin-model.md §6).
 
     Its existence is the ledger record plus the running host's reaction to
     the plugin-changed event — never files under ~/.config. The declaration
@@ -369,7 +369,7 @@ def _vault_archive(plugin_id: str, dest: Path, manifest: ModuleManifest) -> List
     """Move user-owned files (Dunder + manifest preserve) into the Vault.
 
     The vault stays a flat directory mirror of the plugin's living area —
-    no database, no compression (unit-model.md §7.3). Returns archived
+    no database, no compression (plugin-model.md §7.3). Returns archived
     relative paths (``/``-suffixed for directories).
     """
     moved: List[str] = []
@@ -444,7 +444,7 @@ def _wipe_plugin(plugin_id: str, dest: Path, rec: Optional[dict],
                manifest: ModuleManifest) -> List[str]:
     """Remove the plugin's managed files; return foreign survivors, if any.
 
-    White-paper rule (unit-model.md §1.2): a disabled plugin leaves nothing
+    White-paper rule (plugin-model.md §1.2): a disabled plugin leaves nothing
     managed behind. Foreign files the user dropped in are never eaten —
     they survive and are reported (doctor flags the plugin Ghost).
 
@@ -544,7 +544,7 @@ def _hook_script(plugin_id: str, spec: str):
 def _run_plugin_hook(plugin_id: str, manifest: ModuleManifest, spec: str) -> bool:
     """Execute a declared plugin hook: ``<plugin>/hooks/<spec>`` in its blueprint.
 
-    Hooks are the plugin's own behavior (KM3 contract, unit-model.md §4) —
+    Hooks are the plugin's own behavior (KM3 contract, plugin-model.md §4) —
     executable files living in the blueprint, never kernel business code.
     The transaction injects identity context (``NYXURI_UNIT`` / ``_SRC`` /
     ``_DEST``) and never interprets the hook's internals; a failing hook
@@ -757,7 +757,7 @@ def plugin_off(plugin_id: str, *, cascade: bool = False) -> List[Step]:
 
 def audit_plugins(plugin_id: Optional[str] = None) -> Dict[str, str]:
     """Reconcile declarations vs the living machine: ``Synced`` / ``Drifted``
-    / ``Ghost`` per plugin (unit-model.md §3). Read-only, never writes.
+    / ``Ghost`` per plugin (plugin-model.md §3). Read-only, never writes.
 
     Only plugins with something to reconcile are reported: a ledger record or
     living files. Never-switched white plugins are absent from the report.

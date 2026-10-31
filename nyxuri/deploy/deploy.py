@@ -54,7 +54,7 @@ def discover_config_items() -> List[str]:
 
 def config_item_dest(item: str) -> Path:
     """Living-space path for a plugin: ``~/.config/<target>`` for single-file
-    plugins, else ``~/.config/<item>`` (unit-model.md §4 target exception)."""
+    plugins, else ``~/.config/<item>`` (plugin-model.md §4 target exception)."""
     from nyxuri.core import get_env
     m = load_manifest(get_env().plugins_src / item)
     return living_path(m, get_env().config_dir)

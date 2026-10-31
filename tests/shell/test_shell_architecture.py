@@ -320,7 +320,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("property var settingsHost: null", gw_content)
         self.assertIn("root.settingsHost.toggle", gw_content)
 
-        # 2. SettingsHost self-registers on the gateway (unit-model.md §6):
+        # 2. SettingsHost self-registers on the gateway (plugin-model.md §6):
         # the host reference exists exactly while the unit is loaded, and
         # AppShell no longer wires it by id.
         sh_path = os.path.join(shell_dir, "units", "settings", "SettingsHost.qml")
@@ -636,7 +636,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("WlrLayershell.keyboardFocus: WlrKeyboardFocus.None", host_content)
 
         # 6. The popup:notification slot arbitrates keystone vs the standalone
-        # popup host in the slot host (unit-model.md §6, host-owned rule) —
+        # popup host in the slot host (plugin-model.md §6, host-owned rule) —
         # not a private config conditional in AppShell.
         slot_path = os.path.join(shell_dir, "app", "SlotHost.qml")
         with open(slot_path, "r", encoding="utf-8") as f:
@@ -816,7 +816,7 @@ class TestShellManagement(unittest.TestCase):
 
         KM4: lazy loading is slot-driven — AppShell instantiates zero units
         by name; SlotHost owns one Loader per UnitCatalog row keyed by
-        StateProjection (unit-model.md §6).
+        StateProjection (plugin-model.md §6).
         """
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         shell_dir = os.path.join(repo_root, "shell")
@@ -1654,7 +1654,7 @@ class TestShellManagement(unittest.TestCase):
 
         # 1. Slot-driven existence: unit gates live in SlotHost keyed by the
         # ledger projection; AppShell holds no per-unit conditionals and no
-        # private config switches (unit-model.md §6).
+        # private config switches (plugin-model.md §6).
         app_path = os.path.join(shell_dir, "app", "AppShell.qml")
         with open(app_path, "r", encoding="utf-8") as f:
             app_code = f.read()

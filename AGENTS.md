@@ -16,11 +16,11 @@
 
 ## 1. 真值体系与改动路由 (Task Routing)
 
-- **真值分工 (Source of Truth)**：运行时行为与实现细节以**源码（`units/` + `nyxuri/`）与契约测试（`tests/`）**为准；架构契约、设计决策与原因意图以 [llms-wiki/llms.txt](llms-wiki/llms.txt) 为准。
+- **真值分工 (Source of Truth)**：运行时行为与实现细节以**源码（`plugins/` + `nyxuri/`）与契约测试（`tests/`）**为准；架构契约、设计决策与原因意图以 [llms-wiki/llms.txt](llms-wiki/llms.txt) 为准。
 - **改动范围 ➔ 必读 Wiki 契约**：拒绝盲目全库勘探，按改动范围查阅对应契约：
 
-| 部署引擎 / 单元模型 (`nyxuri/deploy/`, `units/`) | `overview.md`, `unit-model.md`, `file-preservation.md` | `python3 -m unittest tests/deploy/test_deploy.py tests/test_unit_model.py` + 沙箱部署 |
-| 内核 / 单元事务 (`nyxuri/kernel/`) | `unit-model.md` | `python3 -m unittest tests/kernel/test_transaction.py` |
+| 部署引擎 / 插件模型 (`nyxuri/deploy/`, `plugins/`) | `overview.md`, `plugin-model.md`, `file-preservation.md` | `python3 -m unittest tests/deploy/test_deploy.py tests/test_plugin_model.py` + 沙箱部署 |
+| 内核 / 插件事务 (`nyxuri/kernel/`) | `plugin-model.md` | `python3 -m unittest tests/kernel/test_transaction.py` |
 | 包管理 / 供给 (`nyxuri/pkg/`, `catalog.toml`) | `manifest-schema.md`（catalog 同源）, `delayed-decisions.md` | `python3 -m unittest tests/pkg/` |
 | 状态 / 快照 (`nyxuri/state/`) | `state-ops.md` | `python3 -m unittest tests/state/` |
 | CLI 命令 / 流程编排 (`cli.py`, `nyxuri/installer/`) | `operation-map.md`, `manifest-schema.md` | `python3 -m unittest tests/test_cli.py tests/test_ai_specs.py` |
@@ -40,7 +40,7 @@
 2. **Dunder 保留协议**：文件或目录名含 `__custom__`（如 `__custom__.kdl`）在更新/预设切换时必须保留；`monitor.kdl` 等按名引用走 manifest `preserve`。
 3. **纯标库与无未声明依赖**：`nyxuri/` 引擎坚守 Python 纯标准库（零 pip 依赖，需 3.11+ 因 `tomllib`）。
 4. **权限防御**：`install.sh` / `nyxuri` 严禁以 root 权限运行（`id -u == 0` 直接拒绝，系统级维护除外）。
-5. **模板占位符**：`units/` 模板里的 `/home/user` 必须由部署引擎替换为目标 `$HOME`，禁止硬编码。
+5. **模板占位符**：`plugins/` 模板里的 `/home/user` 必须由部署引擎替换为目标 `$HOME`，禁止硬编码。
 6. **硬件中立**：默认配置不指定特定 GPU 驱动变量，部署不按 PCI 设备改写驱动（历史案卷见 `llms-wiki/archive/nvidia-patch.md`）。
 
 ---

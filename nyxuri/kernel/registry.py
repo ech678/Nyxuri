@@ -1,4 +1,4 @@
-"""PluginRegistry — the blueprint domain's single entry (unit-model.md §2).
+"""PluginRegistry — the blueprint domain's single entry (plugin-model.md §2).
 
 The only kernel module that scans plugin blueprints and reads manifests.
 Adding a plugin = adding a directory (plus an optional ``manifest.toml``) —
@@ -6,7 +6,7 @@ zero kernel code change. TOML parsing is delegated to
 ``nyxuri.deploy.manifest`` (pure stdlib); state.json is never touched
 here — that is ledger's monopoly.
 
-Blueprint roots (KM4, unit-model.md §6)::
+Blueprint roots (KM4, plugin-model.md §6)::
 
     plugins/       → bare ids          (kitty, niri, ...)
     shell/units/   → ``shell.`` ids    (shell.bar, shell.dock, ...)

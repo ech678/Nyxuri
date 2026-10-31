@@ -10,9 +10,9 @@
 ## 主线收口（上一卷地基）
 
 「桌面插件市场」产品形态成立：内核（registry · resolver · transaction · ledger）+
-万物皆单元的 manifest 全声明目录 + 多前端界面，以账本为唯一开关真相、原子部署连接
+万物皆插件的 manifest 全声明目录 + 多前端界面，以账本为唯一开关真相、原子部署连接
 只读蓝图与用户生活区；安装器退役为一次性引导。术语与内核契约的唯一权威在
-[unit-model](llms-wiki/unit-model.md)，此处不复述。本卷在此地基上重塑；
+[plugin-model](llms-wiki/plugin-model.md)，此处不复述。本卷在此地基上重塑；
 R0-1 落地时同步改写该页术语（单元 → 插件）。
 
 ## 活跃路线（执行序即优先级）
@@ -20,7 +20,7 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 | 站 | 交付 | 状态 |
 | --- | --- | --- |
 | G0 | 修复 GitHub 已知问题：可独立修的立即修，架构根因随 R0 兑现后关闭回填 | 可独立修已落地（#144 #146 关闭回填）；余项随 R0-3 / R0-5 |
-| R0 | 引擎收敛：概念定名 Plugin/插件 + 杀词并轨 + 单一激活管线 + 声明贯通 + 减法外迁 | 进行中（R0-1 步 1：蓝图目录与账本键已改名 plugins/，标识符与文案改写随后） |
+| R0 | 引擎收敛：概念定名 Plugin/插件 + 杀词并轨 + 单一激活管线 + 声明贯通 + 减法外迁 | 进行中（R0-1 收口：plugins/ 正名 + 标识符/文案换轨 + plugin-model 改写；下一站 R0-2 杀词并轨） |
 | S0 | Shell 骨架整抄 Omarchy：小写五件套 + 运行时插件注册表 + 设置去中心化 | 待开始 |
 | S1 | 第三方插件生命周期：协议 1:1 + 四动词 + 所有权账本回植 | 待开始 |
 | T4 | Shell 可控性与透明化（开工时立细则） | 待开始 |
@@ -45,7 +45,7 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 - **R0-1 概念定名：Plugin / 插件**。「单元」退役，三词术语收敛为
   **插件 · manifest · 账本**。`units/` → `plugins/`（引擎蓝图目录，机械改；
   shell 侧随 S0）；账本键 `units.*` 提供一次性迁移（老安装升级路径）；
-  [unit-model](llms-wiki/unit-model.md) 随本站改写；术语权威表述见
+  [plugin-model](llms-wiki/plugin-model.md) 随本站改写；术语权威表述见
   [vision](llms-wiki/vision.md) §1。
 - **R0-2 杀词并轨**：预设 + 零件合并为插件的**形态字段**（`use` 动词承载；
   `preset` 命令留一版本周期 deprecated 别名）；`presets/<app>.active` 双写退役
@@ -67,7 +67,7 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
   `tests/market/` 残留删除；本地脏区清理（qmlls.ini 悬空链、packaging 构建残留、
   greeter hooks `__pycache__`）；本地 `pr-*` 分支清理，远端 `archive/*` 分支
   随 T2 重启决策定去留。
-- **R0-6 文档对齐**：`unit-model` / `preset-mechanism` / `file-preservation`
+- **R0-6 文档对齐**：`plugin-model` / `preset-mechanism` / `file-preservation`
   三页随杀词合并改写；失实记录修正——旧卷「Cava/歌词/窗口预览死代码已清理」
   与代码不符（实况：地图已清，Cava 与歌词活着），清算时以实况描述。
 
@@ -164,7 +164,7 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 1. 五原则验收给可复现证据（真诚透明 / 绝对主权 / 骨架包容 / 轻盈生长 /
    通用自然，见 [vision](llms-wiki/vision.md)）。
 2. 单一开关真相与插件边界不变量的唯一权威在
-   [unit-model](llms-wiki/unit-model.md) 与 [AGENTS.md](AGENTS.md)，此处只链接不复述。
+   [plugin-model](llms-wiki/plugin-model.md) 与 [AGENTS.md](AGENTS.md)，此处只链接不复述。
 3. 架构 / 命令 / manifest 变更同步对应 wiki 页与台账（路由见 AGENTS.md）。
 
 ## 储备（不承诺）

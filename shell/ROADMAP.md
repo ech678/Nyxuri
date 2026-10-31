@@ -198,7 +198,7 @@ SidebarCookieClock、NetworkInterfaceHistoryService）→ `app/services/`，其�
 SlotHost 预热 12 行 + UnitCatalog source ×12 + 工具链与测试）。
 
 **契约同步**：shell/AGENTS 三层边界重写（app/units/shared + 支撑代码归宿规则）；
-architecture-matrix 重写（12 单元矩阵）；unit-model §6 承载修订；shell/development
+architecture-matrix 重写（12 单元矩阵）；plugin-model §6 承载修订；shell/development
 分层词表；audit-lifecycle / generate-search-catalog / run-tests / check.sh /
 test_unit_catalog 路径改判；契约测试改测新真相（test_shell 61 绿、
 test_bugfix_regressions 109 绿，含 app/ 56 文件收敛断言与 units/ 死刑断言：

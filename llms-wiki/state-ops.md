@@ -77,27 +77,27 @@ nyxuri rollback [index]         # 回滚到指定快照（回滚前自动生成�
 | 历史遗留问题 | 落在哪个勾选项 | 修复策略 |
 |---|---|---|
 | `~/.config/nyxuri_archive_*` 不清 | `[ ] archives` 独立项 | purge/全选时勾上，glob 清（只清预存的，保护当次新建的归档） |
-| `/var/lib/noctalia-greeter/` 残留 | `[✓] Noctalia Greeter` 单元项 | `greeter` 单元 `hooks/deactivate` 执行 `sudo rm -rf /var/lib/...` |
-| fisher + fish 插件谁都不清 | `[✓] fisher` 单元项 | `fish` 单元 `hooks/remove-fisher`：fish 在→`fisher remove --all`；不在→直接 rm conf.d/ 降级清理 |
-| standard 漏调 greeter 清理 | `[✓] Greeter` 默认勾 | standard 范围默认包含 greeter 单元项 |
-| 旧 quickphrase.conf 修改的清退 | `[✓] fcitx5-rime` 单元项 | `fcitx5-rime` 单元 `hooks/deactivate` 恢复热键并清理皮肤 |
+| `/var/lib/noctalia-greeter/` 残留 | `[✓] Noctalia Greeter` 插件项 | `greeter` 插件 `hooks/deactivate` 执行 `sudo rm -rf /var/lib/...` |
+| fisher + fish 插件谁都不清 | `[✓] fisher` 插件项 | `fish` 插件 `hooks/remove-fisher`：fish 在→`fisher remove --all`；不在→直接 rm conf.d/ 降级清理 |
+| standard 漏调 greeter 清理 | `[✓] Greeter` 默认勾 | standard 范围默认包含 greeter 插件项 |
+| 旧 quickphrase.conf 修改的清退 | `[✓] fcitx5-rime` 插件项 | `fcitx5-rime` 插件 `hooks/deactivate` 恢复热键并清理皮肤 |
 
-卸载时带钩子单元（`HOOK_UNITS = ("fcitx5-rime", "fish", "greeter", "noctalia")`）统一经 `transaction.unit_off(uid, cascade=True)` 调度执行其专属清理钩子。
+卸载时带钩子插件（`HOOK_PLUGINS = ("fcitx5-rime", "fish", "greeter", "noctalia")`）统一经 `transaction.plugin_off(uid, cascade=True)` 调度执行其专属清理钩子。
 
 ## 卸载执行顺序
 
 ```
-1. 单元钩子清理 FIRST   HOOK_UNITS (fcitx5-rime/greeter/fish/noctalia) 执行 unit_off
+1. 插件钩子清理 FIRST   HOOK_PLUGINS (fcitx5-rime/greeter/fish/noctalia) 执行 plugin_off
                         （fcitx 读 state_dir 的 .prev 备份；greeter 的 sudo 在这步）
 2. configs              归档后删（交互）/ 直接删（purge）
 3. nyx_dir              ~/.config/nyxuri/（快照 + 预设；连带清理历史小写 ~/.config/nyxniri）
 4. archives             只删预存的 Nyxuri_archive_*（保护 step 2 刚建的归档）
 5. wallpapers           <XDG 图片目录>/Wallpapers/（如 ~/图片/Wallpapers，经 get_pics_dir 解析；读 .nyxuri-managed.json / .nyxniri-managed.json 仅清理受管壁纸，绝不误伤用户私人壁纸）
 6. cli                  ~/.local/bin/nyxuri
-7. state                ~/.local/state/nyxuri/（AFTER 单元钩子；连带清理历史小写目录）
+7. state                ~/.local/state/nyxuri/（AFTER 插件钩子；连带清理历史小写目录）
 8. cache                ~/.cache/nyxuri/（连带清理历史小写目录 ~/.cache/nyxniri）
 ```
 
-**核心时序**：单元恢复先于 `~/.config/nyxuri/` 删除——fcitx 的 classicui/quickphrase 恢复要读 state_dir/nyx_dir 里的备份，备份目录必须活到单元恢复完成之后。删 Nyxuri dir 永远排在所有单元钩子之后。
+**核心时序**：插件恢复先于 `~/.config/nyxuri/` 删除——fcitx 的 classicui/quickphrase 恢复要读 state_dir/nyx_dir 里的备份，备份目录必须活到插件恢复完成之后。删 Nyxuri dir 永远排在所有插件钩子之后。
 
-> greeter（sudo / 系统领地）在 step 1（单元钩子阶段），技术上早于用户领地删除（step 2-8）。这优先满足钩子先于 nyx_dir 删除的原则；sudo 若失败时用户领地尚未删，反而更安全（未破坏用户环境，可重试）。
+> greeter（sudo / 系统领地）在 step 1（插件钩子阶段），技术上早于用户领地删除（step 2-8）。这优先满足钩子先于 nyx_dir 删除的原则；sudo 若失败时用户领地尚未删，反而更安全（未破坏用户环境，可重试）。

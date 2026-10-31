@@ -19,7 +19,7 @@ from unittest.mock import patch
 
 from tests.utils import TempEnv
 
-# Blueprint modules imported from units/ must never drop __pycache__ into the read-only source tree (unit-model §1).
+# Blueprint modules imported from units/ must never drop __pycache__ into the read-only source tree (plugin-model §1).
 sys.dont_write_bytecode = True
 
 

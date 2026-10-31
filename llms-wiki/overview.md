@@ -1,8 +1,8 @@
 # Overview — 一页仓库地图
 
 > Nyxuri 是精选桌面配置的原子部署引擎，正在收敛为「桌面插件市场」：
-> 单元（plugins/）× 内核（kernel/）× 市场界面（4 动词 + TUI 工坊）。
-> 本页是文件树与分层的一页地图；单元模型契约见 [unit-model](unit-model.md)。
+> 插件（plugins/）× 内核（kernel/）× 市场界面（4 动词 + TUI 工坊）。
+> 本页是文件树与分层的一页地图；插件模型契约见 [plugin-model](plugin-model.md)。
 
 ## 精神
 
@@ -25,15 +25,15 @@ Nyxuri/
 │   ├─ installer/     workflows + menus（交互式主菜单与整装/更新编排，作者裁决保留为常驻产品面）
 │   └─ cli.py · core.py（环境+锁+日志+i18n 地基）· sysdoctor.py（系统体检）·
 │       tui.py · translations.toml（双语文案）
-├─ plugins/             蓝图 · 13 目录 = 12 真单元 + wallpapers（KM4 + theme 共享模板池；wallpapers/theme 为 merge 共享生活区）
-├─ shell/             自研 Quickshell 桌面（契约见 shell/AGENTS.md；`shell/plugins/` 为
-│                     shell 命名空间蓝图，12 个 runtime 单元，KM4）
+├─ plugins/             蓝图 · 13 目录 = 12 真插件 + wallpapers（KM4 + theme 共享模板池；wallpapers/theme 为 merge 共享生活区）
+├─ shell/             自研 Quickshell 桌面（契约见 shell/AGENTS.md；`shell/units/` 为
+│                     shell 命名空间蓝图，12 个 runtime 插件，KM4）
 ├─ tests/             镜像源码树：kernel/ deploy/ pkg/ state/ desktop/ installer/
 │                     tools/{orbit,wallpaper_picker,translate}/ shell/ + 契约测试置顶
-├─ packaging/         AUR PKGBUILD + gen-deps.py（单包全量：引擎+单元+Shell；
+├─ packaging/         AUR PKGBUILD + gen-deps.py（单包全量：引擎+插件+Shell；
 │                     depends=引擎运行时，optdepends 自动汇聚）+ .install 提示
 ├─ llms-wiki/ humans-wiki/
-├─ catalog.toml       包目录清单——「装但不部署」，不是单元
+├─ catalog.toml       包目录清单——「装但不部署」，不是插件
 └─ install.sh         一次性引导（KM5：无参数透传；常驻入口 = nyxuri/launcher.sh）
 ```
 
@@ -48,8 +48,8 @@ pkg 管包与供给；state 管账本外的状态副本；desktop 管活桌面�
 （最低）         （中）            （最高，永远赢）
 ```
 
-- **Configs**：`plugins/<unit>/` ship 的默认配置，`nyxuri on <unit>` 原子部署到实机。
-- **Presets**：单元的风味变体（官方住 `plugins/<unit>/__presets__/`，用户住
+- **Configs**：`plugins/<plugin>/` ship 的默认配置，`nyxuri on <plugin>` 原子部署到实机。
+- **Presets**：插件的风味变体（官方住 `plugins/<plugin>/__presets__/`，用户住
   `~/.config/nyxuri/presets/`），机制见 [preset-mechanism](preset-mechanism.md)。
 - **Customs**：`__custom__` 文件跨更新、跨预设切换保留，见 [file-preservation](file-preservation.md)。
 
@@ -57,7 +57,7 @@ pkg 管包与供给；state 管账本外的状态副本；desktop 管活桌面�
 
 `list / on / off / doctor` 是市场面（语义等价长动词 enable/disable），任何开关
 只走 `transaction` 一条事务路径落账本；install/update/preset/theme 等是过渡期
-的领域动词（退役清单见 [unit-model](unit-model.md) §7）。全部命令表见
+的领域动词（退役清单见 [plugin-model](plugin-model.md) §7）。全部命令表见
 [operation-map](operation-map.md)。
 
 ## 运行时拓扑速览（原 runtime-topology 页，细节归档见 archive/）
@@ -69,8 +69,8 @@ pkg 管包与供给；state 管账本外的状态副本；desktop 管活桌面�
   星环启动器 / 壁纸选择器 / 划词翻译是 `plugins/noctalia/tools/` 的一次性进程。
 - **主题调度**：`nyxuri theme` 单一实现——gsettings（portal→GTK4/Brave）、
   settings.ini、Noctalia IPC、Kitty SIGUSR1 四路同步，flock 排他。
-- **Shell 事件**：事务落账后发一次 `unit-changed` 事件（`quickshell ipc unit reload`，
-  外层注入，内核不认识投递实现），见 [unit-model](unit-model.md) §6。
+- **Shell 事件**：事务落账后发一次 `plugin-changed` 事件（`quickshell ipc unit reload`，
+  外层注入，内核不认识投递实现），见 [plugin-model](plugin-model.md) §6。
 
 ## 真值分工
 

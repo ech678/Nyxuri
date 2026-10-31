@@ -1,11 +1,11 @@
 # Nyxuri
 
 > Nyxuri 是精选桌面配置的原子部署引擎，收敛为「桌面插件市场」：
-> 单元（units/）× 内核（nyxuri/kernel/）× 市场界面（4 动词 + TUI 工坊）。
+> 插件（plugins/）× 内核（nyxuri/kernel/）× 市场界面（4 动词 + TUI 工坊）。
 > 纯 Python 标准库引擎（零 pip 依赖，需 3.11+ 因 tomllib）。
 
 这份 wiki 是全项目唯一的架构与设计决策参考：每页一主题、自包含、按需取。
-- **真值分工 (Source of Truth)**：运行时行为与实现细节以**源码（`units/` + `nyxuri/` + `shell/`）与契约测试（`tests/`）**为准；本 wiki 记录**架构契约、设计决策与原因意图**。
+- **真值分工 (Source of Truth)**：运行时行为与实现细节以**源码（`plugins/` + `nyxuri/` + `shell/`）与契约测试（`tests/`）**为准；本 wiki 记录**架构契约、设计决策与原因意图**。
 - 根目录 [../AGENTS.md](../AGENTS.md) 仅保留全局不变量、命令路由与秒级验证契约。
 - 文档体系自身的规则（真值拓扑、生命周期、命名、链接）见 [docs-charter](docs-charter.md)。
 
@@ -13,7 +13,7 @@
 
 - [overview](overview.md): 一页仓库地图——文件树即架构、三概念叠加、运行时拓扑速览、真值分工
 - [vision](vision.md): 五条简洁标准（透明/主权/包容/轻盈/自然）与桌面插件市场终态哲学
-- [unit-model](unit-model.md): 单元模型、内核架构（nyxuri/kernel/）、正交状态机、merge 共享生活区、纯文件 Vault、极简 manifest 契约、死刑清单、路径术语表
+- [plugin-model](plugin-model.md): 插件模型、内核架构（nyxuri/kernel/）、正交状态机、merge 共享生活区、纯文件 Vault、极简 manifest 契约、死刑清单、路径术语表
 - [manifest-schema](manifest-schema.md): manifest.toml 字段参考（target ~/ / merge）、单元钩子契约、catalog.toml 同源规则、声明式边界
 - [preset-mechanism](preset-mechanism.md): active 状态文件、通用零件插槽体系（Parts Slots）、防覆盖自愈、写时序铁律、原子写
 - [file-preservation](file-preservation.md): Dunder __custom__ walk + manifest preserve（两套刻意不合并）

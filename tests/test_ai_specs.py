@@ -144,10 +144,10 @@ class TestAISpecs(unittest.TestCase):
                     f"{page.relative_to(self.root_dir)} still references retired path: {fragment}",
                 )
 
-        # Stricter checks for paths retired in KM3.5 (exempting unit-model.md §7 death registry and ROADMAP ledger)
+        # Stricter checks for paths retired in KM3.5 (exempting plugin-model.md §7 death registry and ROADMAP ledger)
         km35_banned = ("configs/", "template_registry")
         for page in self._live_md_files():
-            if page.name in ("unit-model.md", "ROADMAP.md"):
+            if page.name in ("plugin-model.md", "ROADMAP.md"):
                 continue
             text = page.read_text(encoding="utf-8")
             for fragment in km35_banned:
@@ -177,14 +177,14 @@ class TestAISpecs(unittest.TestCase):
             self.assertIn(status, allowed, f"Non-canonical status for {stage}: {status}")
 
     # ------------------------------------------------------------------
-    # Plugin-model death registry (unit-model.md §7, two-step enforcement)
+    # Plugin-model death registry (plugin-model.md §7, two-step enforcement)
     # ------------------------------------------------------------------
 
     def test_death_registry_cleared(self):
-        """KM5 gate: the death registry (unit-model.md §7) must be EMPTY of
+        """KM5 gate: the death registry (plugin-model.md §7) must be EMPTY of
         un-enforced rows — every registered object has reached its execution
         stage and carries the (已执法) mark. 退役清单不空，KM5 不算完成."""
-        content = (self.wiki_dir / "unit-model.md").read_text(encoding="utf-8")
+        content = (self.wiki_dir / "plugin-model.md").read_text(encoding="utf-8")
         death_table_started = False
         for line in content.splitlines():
             if line.startswith("| 死刑对象"):
@@ -209,11 +209,11 @@ class TestAISpecs(unittest.TestCase):
         withdrawn (see ROADMAP KM5)."""
         root = self.root_dir
         # 1. §7 install.sh row marked enforced; the withdrawn cli.py row is gone.
-        content = (self.wiki_dir / "unit-model.md").read_text(encoding="utf-8")
+        content = (self.wiki_dir / "plugin-model.md").read_text(encoding="utf-8")
         rows = [line for line in content.splitlines() if line.startswith("|")]
         self.assertTrue(
             any("`install.sh` 安装器职责" in row and "KM5（已执法" in row for row in rows),
-            "death-row object 'install.sh' must be marked KM5（已执法） in unit-model.md §7",
+            "death-row object 'install.sh' must be marked KM5（已执法） in plugin-model.md §7",
         )
         self.assertFalse(
             any("硬编码专用命令" in row for row in rows),
@@ -247,11 +247,11 @@ class TestAISpecs(unittest.TestCase):
         the engine holds zero references, and §7 marks the row enforced.
         """
         # 1. §7 row marked enforced.
-        content = (self.wiki_dir / "unit-model.md").read_text(encoding="utf-8")
+        content = (self.wiki_dir / "plugin-model.md").read_text(encoding="utf-8")
         rows = [line for line in content.splitlines() if line.startswith("|")]
         self.assertTrue(
             any("nyxuri/modules/" in row and "KM3（已执法" in row for row in rows),
-            "death-row object 'nyxuri/modules/' must be marked KM3（已执法） in unit-model.md §7",
+            "death-row object 'nyxuri/modules/' must be marked KM3（已执法） in plugin-model.md §7",
         )
 
         # 2. Physical absence of the package.
@@ -286,12 +286,12 @@ class TestAISpecs(unittest.TestCase):
         the blueprint carries no trace, and the engine holds zero references.
         """
         # 1. §7 rows marked enforced.
-        content = (self.wiki_dir / "unit-model.md").read_text(encoding="utf-8")
+        content = (self.wiki_dir / "plugin-model.md").read_text(encoding="utf-8")
         rows = [line for line in content.splitlines() if line.startswith("|")]
         for name in (".optional-apps.toml", "starship.toml.module.toml", "*.module.toml"):
             self.assertTrue(
                 any(name in row and "KM1（已执法" in row for row in rows),
-                f"death-row object '{name}' must be marked KM1（已执法） in unit-model.md §7",
+                f"death-row object '{name}' must be marked KM1（已执法） in plugin-model.md §7",
             )
 
         # 2. Physical absence in the blueprint.
@@ -319,13 +319,13 @@ class TestAISpecs(unittest.TestCase):
         catalog, template registry deleted, kernel physically layered."""
         root = self.root_dir
         # 1. §7 rows marked enforced.
-        content = (self.wiki_dir / "unit-model.md").read_text(encoding="utf-8")
+        content = (self.wiki_dir / "plugin-model.md").read_text(encoding="utf-8")
         rows = [line for line in content.splitlines() if line.startswith("|")]
         for name in ("RETIREMENTS", "template_registry", "17 个零文件假单元",
                      "`assets/` + `nyxuri/deploy/assets.py`", "蓝图正名 `configs/` → `units/`"):
             self.assertTrue(
                 any(name in row and "KM3.5（已执法" in row for row in rows),
-                f"death-row object '{name}' must be marked KM3.5（已执法） in unit-model.md §7",
+                f"death-row object '{name}' must be marked KM3.5（已执法） in plugin-model.md §7",
             )
 
         # 2. Physical absence / presence.

@@ -1,6 +1,6 @@
 """Market ↔ Shell event bridge — the plugin-changed delivery.
 
-The kernel freezes an abstract event port (unit-model.md §6): after every
+The kernel freezes an abstract event port (plugin-model.md §6): after every
 transaction lands, ONE ``plugin-changed`` event fires. This module is the
 outer layer's injection point: it delivers the event over the Shell's
 EXISTING Quickshell IPC channel (``qs -p <shell> ipc call unit reload``)

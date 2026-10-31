@@ -1,4 +1,4 @@
-"""Kernel — the resident skeleton (unit-model.md §2 physical carrying).
+"""Kernel — the resident skeleton (plugin-model.md §2 physical carrying).
 
 Four modules, star-layered with transaction as the only composer:
 registry (blueprint's sole reader) · resolver (pure dependency math) ·

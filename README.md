@@ -60,11 +60,11 @@ We are committed to long-term support for dual desktop shells (the polished **No
   - **Eye Care** (`Super+N`) & **Scratchpad** (`Super+~` drop-down Kitty floating terminal).
 - **NyxMellow Input Skin**: Dynamic theme-synced Fcitx5 skin with mellow geometry, bundled with a tuned Rime setup.
 - **Modern Terminal Experience**: Kitty terminal optimizations (smooth cursor trails, clipboard-preserving shortcuts), paired with Fish aliases and Starship prompt.
-- **Modular Capability Units**: Fastfetch, Noctalia Greeter login screen, Zed config, and wallpapers toggle independently anytime (`nyxuri on` / `nyxuri off`), incurring zero background overhead when inactive.
+- **Modular Plugins**: Fastfetch, Noctalia Greeter login screen, Zed config, and wallpapers toggle independently anytime (`nyxuri on` / `nyxuri off`), incurring zero background overhead when inactive.
 - **Atomic Deployment, Presets & Zero Bloat**:
   - **Dunder Protocol**: Any file or directory containing `__custom__` (e.g. `__custom__.kdl`, `__custom__.conf`) and `monitor.kdl` is permanently preserved across updates and preset swaps.
   - **Presets**: Easily switch application flavor presets (e.g. Kitty opacity variants) or create custom private presets.
-  - **Zero Bloat & Clean State**: Pure Python standard library with zero pip dependencies; disabling a unit wipes deployed files with zero residue; 30-roll automatic snapshots with instant rollback, and `nyxuri doctor` for status audits.
+  - **Zero Bloat & Clean State**: Pure Python standard library with zero pip dependencies; disabling a plugin wipes deployed files with zero residue; 30-roll automatic snapshots with instant rollback, and `nyxuri doctor` for status audits.
 
 ## Install
 
@@ -114,7 +114,7 @@ git clone https://aur.archlinux.org/nyxuri-git.git
 cd nyxuri-git && makepkg -si
 ```
 
-## Architecture & Units
+## Architecture & Plugins
 
 ```text
 Nyxuri
@@ -122,7 +122,7 @@ Nyxuri
 ├── catalog.toml                # package catalogue (18 standalone apps without dotfiles)
 ├── nyxuri/                     # Python core engine (zero pip dependencies)
 ├── shell/                      # Nyxuri Shell (QML/Qt6 desktop shell, experimental)
-└── units/                      # 13 modular desktop capability units
+└── plugins/                    # 13 modular desktop plugins
     ├── fastfetch/              # system information
     ├── fcitx5-rime/            # dynamic Material You input skin & Rime config
     ├── fish/                   # shell aliases & functions
@@ -154,9 +154,9 @@ Core keybindings dispatch through `shell-action.sh`. Quick reference: `nyxhelp k
 
 See complete window navigation and monitor moving shortcuts in [Keybindings (Wiki)](https://github.com/ech678/Nyxuri/wiki/Keybindings).
 
-## Units & Capabilities
+## Plugins & Capabilities
 
-Desktop capabilities are atomic, modular units. Optional units include dynamic Material You fcitx5 input skin (`fcitx5-rime`), companion wallpaper and video pack (`wallpapers`), and Noctalia Greeter login screen (`greeter`). Toggle them on or off anytime: `nyxuri on <unit>` / `nyxuri off <unit>`.
+Desktop capabilities are atomic, modular plugins. Optional plugins include dynamic Material You fcitx5 input skin (`fcitx5-rime`), companion wallpaper and video pack (`wallpapers`), and Noctalia Greeter login screen (`greeter`). Toggle them on or off anytime: `nyxuri on <plugin>` / `nyxuri off <plugin>`.
 
 For unit lifecycle commands, see [CLI Reference (Wiki)](https://github.com/ech678/Nyxuri/wiki/CLI-Reference#units-the-market-verbs).
 

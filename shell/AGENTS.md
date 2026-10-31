@@ -68,12 +68,12 @@ UI 只呈现和响应输入；桌面意图经 Action Gateway 执行。命令、�
 不 eval、不拼 shell 字符串；后台订阅也必须有归属，不能绕过生命周期管理。
 每个域迁移时同步检查旧路径，验收后移除被替代实现，避免新旧两套长期共存。
 
-## 微内核宿主与几何插槽（KM4 契约，迁自 unit-model §6）
+## 微内核宿主与几何插槽（KM4 契约，迁自 plugin-model §6）
 
 Shell 是极致精简的**微内核宿主**：宿主只保留装配（`SlotHost`）、动作网关
 （`ActionGateway`，含 `executeIntent` 跨域意图路由）、会话协议（`NiriService`）、
 主题代币（`ThemeTokens`/ThemeService）与账本投影（`StateProjection`）。内核侧
-三条（同一账本、单一事件通道、点分 ID）冻结在 unit-model §6，此处承载实现契约。
+三条（同一账本、单一事件通道、点分 ID）冻结在 plugin-model §6，此处承载实现契约。
 
 - **六大几何插槽**：所有 Shell 单元（`shell/units/<domain>/`，`runtime = true`，
   manifest 与代码同目录——目录即单元，KM4.5 后 modules/ 已正名并入）

@@ -1,6 +1,6 @@
 """Contract tests for the KM0 plugin model and the KM1 kernel modules.
 
-The Kahn reference copy is retired (unit-model.md §7, KM1 step ①):
+The Kahn reference copy is retired (plugin-model.md §7, KM1 step ①):
 dependency resolution is tested against the real ``nyxuri.kernel.resolver``,
 blueprint access against ``nyxuri.kernel.registry``, and the five-field plugin
 record shape against ``nyxuri.kernel.ledger``.
@@ -22,30 +22,30 @@ class TestPluginModelContract(unittest.TestCase):
 
     def setUp(self):
         self.root_dir = Path(__file__).resolve().parent.parent
-        self.unit_model_md = self.root_dir / "llms-wiki" / "unit-model.md"
+        self.plugin_model_md = self.root_dir / "llms-wiki" / "plugin-model.md"
 
     def test_unit_model_doc_exists_and_contains_canonical_terms(self):
-        """llms-wiki/unit-model.md must exist and contain the 4 canonical terms."""
-        self.assertTrue(self.unit_model_md.is_file(), "unit-model.md must exist")
-        content = self.unit_model_md.read_text(encoding="utf-8")
-        for term in ("单元", "内核", "源", "manifest"):
-            self.assertIn(term, content, f"Canonical term '{term}' missing in unit-model.md")
+        """llms-wiki/plugin-model.md must exist and contain the 4 canonical terms."""
+        self.assertTrue(self.plugin_model_md.is_file(), "plugin-model.md must exist")
+        content = self.plugin_model_md.read_text(encoding="utf-8")
+        for term in ("插件", "内核", "源", "manifest"):
+            self.assertIn(term, content, f"Canonical term '{term}' missing in plugin-model.md")
 
     def test_four_canonical_verbs_documented(self):
         """The 4 minimal verbs (list, on, off, doctor) must be documented."""
-        content = self.unit_model_md.read_text(encoding="utf-8")
+        content = self.plugin_model_md.read_text(encoding="utf-8")
         for verb in ("list", "on", "off", "doctor"):
             self.assertIn(f"`{verb}`", content, f"Core verb '{verb}' must be documented")
 
     def test_vault_path_invariants(self):
-        """Vault must point to ~/.local/state/nyxuri/vault/<unit>/ as flat directory."""
-        content = self.unit_model_md.read_text(encoding="utf-8")
-        self.assertIn("vault/<unit>/", content)
+        """Vault must point to ~/.local/state/nyxuri/vault/<plugin>/ as flat directory."""
+        content = self.plugin_model_md.read_text(encoding="utf-8")
+        self.assertIn("vault/<plugin>/", content)
         self.assertIn("纯文件平铺", content)
 
     def test_shell_coordination_invariants(self):
         """Kernel side keeps three facts; slot taxonomy lives in shell/AGENTS.md (KM4)."""
-        content = self.unit_model_md.read_text(encoding="utf-8")
+        content = self.plugin_model_md.read_text(encoding="utf-8")
         # The three kernel-side facts (§6, KM4 trim).
         self.assertIn("同一账本", content)
         self.assertIn("单一事件通道", content)
@@ -58,7 +58,7 @@ class TestPluginModelContract(unittest.TestCase):
         self.assertIn("StateProjection", content)
         self.assertIn("units/theme/", content)
         # The migrated microkernel taxonomy now lives on the shell side.
-        shell_agents = (self.unit_model_md.parent.parent / "shell" / "AGENTS.md").read_text(
+        shell_agents = (self.plugin_model_md.parent.parent / "shell" / "AGENTS.md").read_text(
             encoding="utf-8")
         for term in ("微内核宿主", "六大几何插槽", "SlotHost", "Loader", "ActionGateway"):
             self.assertIn(term, shell_agents,
@@ -157,7 +157,7 @@ class TestKernelRegistry(unittest.TestCase):
 
 
 class TestKernelLedger(unittest.TestCase):
-    """State domain: the five-field frozen plugin record (unit-model.md §3)."""
+    """State domain: the five-field frozen plugin record (plugin-model.md §3)."""
 
     def test_unit_record_frozen_shape(self):
         """A record carries exactly the five frozen fields and persists."""
