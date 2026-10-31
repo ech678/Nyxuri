@@ -29,9 +29,11 @@
 
 ## 4. 插件系统与宿主骨架参考：Omarchy (`omarchy`)
 - **上游来源**：[basecamp/omarchy](https://github.com/basecamp/omarchy)
-- **重现命令**（浅克隆即可，本地树未就位时按此补拉）：
+- **基准提交**：`0740d1b`（2026-10 浅克隆主干）
+- **重现命令**（浅克隆后仅保留 `shell/`，其余目录连同 `.git` 删除；本地树未就位时按此补拉再裁剪）：
   ```bash
   git clone --depth 1 --single-branch https://github.com/basecamp/omarchy shell/references/omarchy
+  cd shell/references/omarchy && find . -mindepth 1 -maxdepth 1 ! -name shell -exec rm -rf {} +
   ```
 - **检索方式**：参考树由 `.gitignore` 排除，检索使用 `rg --no-ignore shell/references/omarchy/shell`。
 - **核心价值**：S0 骨架整抄的原始蓝本（根 [ROADMAP](../../ROADMAP.md) S0/S1）——`shell.qml` 常驻宿主 + `Commons/` `Ui/` `services/` `plugins/` 结构、`PluginRegistry` 运行时插件注册表、manifest 协议（`schemaVersion` / reverse-DNS `id` / `kinds` / `entryPoints`）的装载与校验实现、Quickshell 0.3.2 上插件动态加载的实跑解法。协议与骨架照抄、目录名小写化；其 `shell.json` 开关状态不抄（单一真相留在引擎账本）。

@@ -21,7 +21,7 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 | --- | --- | --- |
 | G0 | 修复 GitHub 已知问题：可独立修的立即修，架构根因随 R0 兑现后关闭回填 | 可独立修落地（#144 #146）；根因修随 R0-3 落地（#143 #145 #147 #149）；#142 随 R0-5 转上游跟踪 |
 | R0 | 引擎收敛：概念定名 Plugin/插件 + 杀词并轨 + 单一激活管线 + 声明贯通 + 减法外迁 + 文档对齐 | 已收口（R0-1 ~ R0-6；R0-5 取消自带收口，launcher 暂留） |
-| S0 | Shell 骨架整抄 Omarchy：小写五件套 + 运行时插件注册表 + 设置去中心化 | 待开始 |
+| S0 | Shell 骨架整抄 Omarchy：五件套 + 运行时插件注册表 + 设置去中心化（S0-0 装载 spike 门禁先行；manifest 协议 TOML 本站定稿） | 待开始 |
 | S1 | 第三方插件生命周期：协议 1:1 + 四动词 + 所有权账本回植 | 待开始 |
 | T4 | Shell 可控性与透明化（开工时立细则） | 待开始 |
 | T5 | 多合成器解耦（门禁触发） | 待开始 |
@@ -94,26 +94,67 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 - **整抄裁决**：作者定案——Omarchy 4 的插件系统、注册程序与骨架整包采纳；
   目录名保持小写开头风格（`Commons/Ui/plugins` → `commons/ui/plugins`）；
   不抄它的 `shell.json` 开关状态——单一开关真相继续留在引擎账本。
-- **终态五件套**：`shell.qml`（常驻宿主入口）+ `commons/`（现 shared 的
-  utils / theme / cards）+ `ui/`（现 shared/controls + T3 M1 积木，平面控件库）+
-  `services/`（现 app/services + PluginRegistry / PluginXxxApi）+
-  `plugins/`（现 shell/units/ 各域，每域 manifest + entryPoints）；`scripts/` 不动。
-- **运行时注册表取代四件套**：手写 `UnitCatalog.qml` 镜像、`settings-routes.json`、
-  `SearchCatalog.js` 生成器、`NexusNavPane.groupTable` 全部由 PluginRegistry
-  运行时读 manifest 取代——「新增插件 = 加目录 + manifest + 代码，零宿主改动」
-  从口号变成事实；shell/AGENTS.md 对应契约段随 S0 修订。
-- **设置去中心化**：设置页由插件自带（manifest settings schema / panel entry），
-  宿主用 ui/ 原子控件渲染；中央设置窗降级为聚合 panel 插件。
-  T3 双轨呈现（default / dashboard）去留随迁移由作者拍板。
-- **资产收编**：T3 M4 批 A–F 的积木原子控件与页面内容收编进 ui/ 与各插件，
-  M3 / M4 实机验收随迁移一并走；Quickshell import 根机械扫
-  （`qs.units.*` → `qs.plugins.*`），0.3.2 静态预热约束按新装载形态重估。
-- **适配点（唯一大改）**：宿主服务层的合成器面从 Hyprland 语义换 niri
-  （`niri msg` / key-cli）——顺带兑现 T5 的 CompositorDriver 收编前置。
+- **manifest 载体定案（作者拍板）**：**TOML，彻底换代零兼容**。Omarchy 协议字段
+  语义 1:1、载体不跟——`schemaVersion` / `kinds` / `entryPoints` / settings schema
+  并轨进 `manifest.toml` 单文件，引擎 registry 与 shell PluginRegistry 同读一份。
+  并轨是整批重写不是追加兼容：两套词表撞概念的杀词并轨、冗余字段直接删，
+  仓库内全部 manifest 一次改写到新形态（`schemaVersion` 起步即新形态）；引擎与
+  注册表只认新形态，旧形态（含缺 `schemaVersion`）声明即解析报错——不设兼容期、
+  不做只读采纳、无迁移 shim。S0 即协议定稿（[manifest-schema](llms-wiki/manifest-schema.md)
+  随站同步），S1 只管对第三方开放与生命周期动词，不再动字段。
+- **`shell.json` 非开关部分不跟**：Omarchy 把 widget 设置值与 bar 布局也塞在
+  `shell.json`——设置值走设置去中心化的 schema + 现有状态投影存储，布局状态落点
+  随 S0-3 定稿登记；不引入第二份开关 / 状态真相。
+- **装配层留任**：五件套指 Omarchy 骨架对位的五层（`shell.qml` + `commons/` +
+  `ui/` + `services/` + `plugins/`），`app/` 不被吞并——瘦身为纯装配与宿主数据层
+  （AppShell / SlotHost / Paths / WidgetState / ActionGateway / icons / templates）。
+- **迁移对照表**（逐行核对，是机器验收的核对基准）：
+
+| 旧 | 新 |
+| --- | --- |
+| `shell.qml` | 不动（常驻宿主入口） |
+| `shared/utils` + `shared/theme` | `commons/` |
+| `shared/i18n` + `app/i18n` | `commons/i18n`（两份合一：词典 + I18n 单例） |
+| `shared/cards` + `app/cards` | `commons/cards`（两份合一） |
+| `shared/controls` + T3 M1 积木 | `ui/`（平面控件库） |
+| `app/services` | `services/`（+ PluginRegistry / PluginXxxApi） |
+| `shell/units/` | `plugins/`（每域 `manifest.toml` + entryPoints） |
+| `app/` 其余（AppShell / SlotHost / Paths / WidgetState / ActionGateway / icons / templates） | 不动（纯装配与宿主数据层） |
+| `scripts/` | 基本不动；例外：`generate-search-catalog.py` 与 catalog 门禁随四件套退役 |
+
+- **import 根随迁机械扫**：`qs.units.*` → `qs.plugins.*`、`qs.shared.*` →
+  `qs.commons.*` / `qs.ui.*`、`qs.app.services.*` → `qs.services.*`；收口标准是
+  全库 grep 旧根零命中。
+- **分站（执行序即优先级，一站一收口）**：
+  - **S0-0 装载 spike（门禁先行）**：在 Quickshell 0.3.2 的 qs-import Loader 缺陷
+    （SlotHost 预热名单就是它的补丁）上验证注册表装载形态——升级 Quickshell 或
+    替代装载机制二选一，产出结论与证据；未过不得开工 S0-2（S0-1 不受限）。
+  - **S0-1 五件套机械迁移**：对照表全量执行 + import 机械扫 + 受影响定向测试
+    改写绿；旧路径物理消失。
+  - **S0-2 运行时注册表取代四件套**：手写 `UnitCatalog.qml` 镜像、`settings-routes.json`、
+    `SearchCatalog.js` 生成器、`NexusNavPane.groupTable` 全部由 PluginRegistry 运行时读
+    `manifest.toml` 取代——「新增插件 = 加目录 + manifest + 代码，零宿主改动」从口号
+    变成事实；manifest 词表整批重写（杀词并轨 + 删冗余）随此落地，旧形态一处不留；
+    shell/AGENTS.md 对应契约段随站修订。
+  - **S0-3 设置去中心化**：设置页由插件自带（manifest settings schema / panel entry），
+    宿主用 ui/ 原子控件渲染；中央设置窗降级为聚合 panel 插件。T3 双轨呈现
+    （default / dashboard）去留**开工前**拍板，不留到迁移中途当阻塞。
+  - **S0-4 资产收编与实机验收**：T3 M4 批 A–F 的积木原子控件与页面内容收编进 ui/
+    与各插件；M3 / M4 实机验收证据在此产出。
+  - **S0-5 合成器面清理（唯一实质大改，措辞正名）**：shell 现状本就是 niri
+    （`NiriService` 直连 `NIRI_SOCKET`）——要清的是整抄代码里的 Hyprland 语义
+    （`Quickshell.Hyprland` import、lock corners、dock workspace-layout，散布多处）。
+    做法是抽 **CompositorDriver** 面 + niri 首驱动（socket / `niri msg` / key-cli
+    收敛进一个驱动），不硬译 niri 字面量——兑现 T5 前置一次做对。
+- **引擎侧波及（随站执行，不是顺手改）**：`nyxuri/kernel/registry.py` 的
+  `shell/units/` 扫描路径与 `shell.<domain>` id 派生随 S0-1 改写；
+  `test_unit_catalog` / `test_search_catalog` / catalog 门禁的新契约随 S0-2 定稿。
+- **验收纪律**：防幻觉按全局门禁 4 执行；本站额外断言 = 对照表逐行核对、旧路径
+  物理消失、import 全库 grep 零命中、受影响定向测试绿。
 
 ### S1 · 第三方插件生命周期
 
-- **协议 1:1 Omarchy**：`schemaVersion`、reverse-DNS `id`（官方保留裸名与
+- **协议语义 1:1 Omarchy（载体 TOML，S0 定稿）**：`schemaVersion`、reverse-DNS `id`（官方保留裸名与
   `nyxuri.` 前缀）、`kinds`、`entryPoints`、settings schema、禁软链；安装绝不执行
   包内代码、无 install hook、无 sudo；`validate` 与加载时同一套检查。
 - **动词终态八条**：`on / off / use / add / remove / update / doctor / list`。
@@ -189,6 +230,9 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 2. 单一开关真相与插件边界不变量的唯一权威在
    [plugin-model](llms-wiki/plugin-model.md) 与 [AGENTS.md](AGENTS.md)，此处只链接不复述。
 3. 架构 / 命令 / manifest 变更同步对应 wiki 页与台账（路由见 AGENTS.md）。
+4. 完成声明防幻觉：状态改「已完成」前必须有独立复核命令的原始输出作证，AI 转述
+   不算证据；迁移类验收只认机器可查断言（旧路径物理消失、全库 grep 零命中、
+   定向测试绿）。查不出证据就不算完成，发现假象状态立即回退。
 
 ## 储备（不承诺）
 
