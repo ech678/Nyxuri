@@ -86,8 +86,8 @@ class CatalogTests(unittest.TestCase):
         catalog = compiler.load(ROOT)
         self.assertEqual({entry['path'][0] for entry in catalog['settings']}, {
             'account', 'theme', 'wallpaper', 'bar', 'dock', 'sidebar',
-            'displays', 'keystone', 'shortcuts', 'spotlight', 'network',
-            'connected-devices', 'autostart', 'default-apps', 'language-region',
+            'keystone', 'shortcuts', 'spotlight', 'network',
+            'connected-devices', 'language-region',
             'shell', 'about'
         })
         self.assertNotIn(str(ROOT), json.dumps(catalog))

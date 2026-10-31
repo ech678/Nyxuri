@@ -7,7 +7,7 @@ function normalizeSide(value, fallback) {
 function normalizeTarget(value) {
     const target = String(value || "").trim().toLowerCase();
     // Compatibility aliases identify content, regardless of its configured edge.
-    if (target === "dashboard" || target === "left" || target === "weather" || target === "drawer")
+    if (target === "dashboard" || target === "left" || target === "weather")
         return "dashboard";
     if (target === "quicksettings" || target === "right")
         return "quicksettings";
@@ -38,6 +38,6 @@ function targetOpen(target, dashboard, quicksettings, view) {
     const role = normalizeTarget(target);
     const requested = String(target || "").trim().toLowerCase();
     if (role === "dashboard")
-        return dashboard && ((requested !== "weather" && requested !== "drawer") || view === requested);
+        return dashboard && (requested !== "weather" || view === requested);
     return role === "quicksettings" ? quicksettings : null;
 }

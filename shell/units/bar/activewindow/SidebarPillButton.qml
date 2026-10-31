@@ -26,6 +26,6 @@ BarCircularButton {
     containerColor: "transparent"
     rippleColor: Appearance.colors.colOnSurface
     iconColor: Appearance.colors.colOnSurface
-    tooltipText: root.viewName === "drawer" ? I18n.tr("Drawer") : I18n.tr("Notification center")
+    tooltipText: I18n.tr("Notification center")
     onClicked: root.toggleView()
 }

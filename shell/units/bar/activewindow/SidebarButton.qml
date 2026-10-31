@@ -20,16 +20,11 @@ TopBarPill {
         anchors.centerIn: parent
         rowSpacing: Sizes.barItemSpacing
         columnSpacing: Sizes.barItemSpacing
-        columns: root.vertical ? 1 : 3
+        columns: root.vertical ? 1 : 2
 
         SidebarPillButton {
             viewName: "info"
             sidebarIconName: "notifications"
-        }
-
-        SidebarPillButton {
-            viewName: "drawer"
-            sidebarIconName: "widgets"
         }
 
         SidebarWeatherButton {

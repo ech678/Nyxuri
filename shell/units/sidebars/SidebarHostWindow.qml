@@ -45,7 +45,7 @@ PanelWindow {
         if (role === "")
             return "INVALID_SIDE";
         const requestedView = String(target || "").trim().toLowerCase();
-        if (open && (requestedView === "weather" || requestedView === "drawer"))
+        if (open && requestedView === "weather")
             WidgetState.dashboardSidebarView = requestedView;
         if (role === "dashboard")
             WidgetState.dashboardSidebarOpen = open;
@@ -68,7 +68,7 @@ PanelWindow {
     }
 
     function openOnScreen(role, view, screenName) {
-        const views = role === "dashboard" ? ["info", "drawer", "weather"] : role === "quicksettings" ? ["settings",
+        const views = role === "dashboard" ? ["info", "weather"] : role === "quicksettings" ? ["settings",
                                                                                                          "network",
                                                                                                          "bluetooth",
                                                                                                          "audio", "microphone",

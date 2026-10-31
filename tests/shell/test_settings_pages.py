@@ -16,6 +16,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SETTINGS = REPO_ROOT / "shell" / "units" / "settings"
+ARCHIVE_SETTINGS = REPO_ROOT / "shell" / "archive" / "settings"
 
 ANCHOR_IDS = {
     "AccountPage.qml": (
@@ -129,7 +130,16 @@ LEGACY_VOCABULARY = (
 
 
 def _read(name):
-    return (SETTINGS / name).read_text(encoding="utf-8")
+    target = SETTINGS / name
+    if target.is_file():
+        return target.read_text(encoding="utf-8")
+    for match in (REPO_ROOT / "shell" / "units").rglob(name):
+        if match.is_file():
+            return match.read_text(encoding="utf-8")
+    for match in ARCHIVE_SETTINGS.rglob(name):
+        if match.is_file():
+            return match.read_text(encoding="utf-8")
+    return target.read_text(encoding="utf-8")
 
 
 class TestAccountPageRebuild(unittest.TestCase):

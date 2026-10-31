@@ -1861,31 +1861,6 @@
     }
   },
   {
-    "id": "nyxuri:sidebar:toggle:drawer",
-    "category": "nyxuri",
-    "name": "Sidebar drawer: toggle",
-    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"sidebar\" \"toggle\" \"drawer\"",
-    "parameters": false,
-    "target": "sidebar",
-    "method": "toggle",
-    "search": {
-      "policy": "include",
-      "title": "Sidebar drawer",
-      "description": "Toggle the sidebar drawer",
-      "context": "SpotlightActions",
-      "icon": "widgets",
-      "args": [
-        "drawer"
-      ],
-      "aliases": [
-        "drawer",
-        "sidebar"
-      ],
-      "availability": "always",
-      "confirmation": "none"
-    }
-  },
-  {
     "id": "nyxuri:sidebar:close",
     "category": "nyxuri",
     "name": "Sidebar: close",

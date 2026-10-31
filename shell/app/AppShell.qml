@@ -108,11 +108,6 @@ Item {
     }
 
     Loader {
-        active: DisplayConfigService.identify || DisplayConfigService.confirming
-        source: Qt.resolvedUrl("../units/settings/DisplayOverlays.qml")
-    }
-
-    Loader {
         active: ShortcutMapService.visible
         source: Qt.resolvedUrl("../units/settings/ShortcutMap.qml")
         onLoaded: {

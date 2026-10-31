@@ -30,7 +30,7 @@ ColumnLayout {
             ids: ["account", "theme", "wallpaper"]
         },
         {
-            ids: ["bar", "dock", "sidebar", "keystone", "displays"]
+            ids: ["bar", "dock", "sidebar", "keystone"]
         },
         {
             ids: ["network", "connected-devices"]
@@ -39,7 +39,7 @@ ColumnLayout {
             ids: ["shortcuts", "spotlight"]
         },
         {
-            ids: ["autostart", "default-apps", "language-region", "shell"]
+            ids: ["language-region", "shell"]
         },
         {
             ids: ["about"]

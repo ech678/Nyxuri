@@ -327,25 +327,6 @@ var catalog = {
     },
     {
       "aliases": [
-        "drawer",
-        "sidebar"
-      ],
-      "args": [
-        "drawer"
-      ],
-      "availability": "always",
-      "confirmation": "none",
-      "context": "SpotlightActions",
-      "description": "Toggle the sidebar drawer",
-      "icon": "widgets",
-      "id": "nyxuri:sidebar:toggle:drawer",
-      "method": "toggle",
-      "policy": "include",
-      "target": "sidebar",
-      "title": "Sidebar drawer"
-    },
-    {
-      "aliases": [
         "keys"
       ],
       "args": [],
@@ -470,20 +451,6 @@ var catalog = {
       "title": "Sidebars"
     },
     {
-      "aliases": [
-        "general.displays"
-      ],
-      "context": "ControlCenterWindow",
-      "description": "Monitor layout and night light",
-      "icon": "monitor",
-      "id": "displays",
-      "path": [
-        "displays"
-      ],
-      "source": "DisplaysPage.qml",
-      "title": "Displays"
-    },
-    {
       "aliases": [],
       "context": "ControlCenterWindow",
       "description": "Style, clock, and media controls",
@@ -554,34 +521,6 @@ var catalog = {
     },
     {
       "aliases": [
-        "general.autostart"
-      ],
-      "context": "ControlCenterWindow",
-      "description": "Session startup applications",
-      "icon": "rocket_launch",
-      "id": "autostart",
-      "path": [
-        "autostart"
-      ],
-      "source": "AutostartPage.qml",
-      "title": "Autostart"
-    },
-    {
-      "aliases": [
-        "general.default-apps"
-      ],
-      "context": "ControlCenterWindow",
-      "description": "Browser, terminal, and other defaults",
-      "icon": "apps",
-      "id": "default-apps",
-      "path": [
-        "default-apps"
-      ],
-      "source": "DefaultAppsPage.qml",
-      "title": "Default applications"
-    },
-    {
-      "aliases": [
         "general.language-region"
       ],
       "context": "ControlCenterWindow",
@@ -608,38 +547,6 @@ var catalog = {
       ],
       "source": "ShellPage.qml",
       "title": "Nyxuri Shell"
-    },
-    {
-      "aliases": [
-        "general.displays.configuration"
-      ],
-      "context": "DisplaysPage",
-      "description": "Resolution, refresh, and layout",
-      "icon": "monitor",
-      "id": "displays.configuration",
-      "path": [
-        "displays",
-        "configuration"
-      ],
-      "source": "DisplayConfigurationPage.qml",
-      "title": "Display configuration"
-    },
-    {
-      "aliases": [
-        "general.displays.gamma",
-        "night light",
-        "temperature"
-      ],
-      "context": "DisplaysPage",
-      "description": "Night light color temperature",
-      "icon": "brightness_6",
-      "id": "displays.gamma",
-      "path": [
-        "displays",
-        "gamma"
-      ],
-      "source": "GammaControlPage.qml",
-      "title": "Gamma Control"
     },
     {
       "aliases": [],
@@ -785,22 +692,6 @@ var catalog = {
       "title": "Sidebars"
     },
     {
-      "aliases": [
-        "general.displays"
-      ],
-      "anchor": false,
-      "context": "ControlCenterWindow",
-      "description": "Monitor layout and night light",
-      "icon": "monitor",
-      "id": "displays",
-      "path": [
-        "displays"
-      ],
-      "route": "displays",
-      "source": "DisplaysPage.qml",
-      "title": "Displays"
-    },
-    {
       "aliases": [],
       "anchor": false,
       "context": "ControlCenterWindow",
@@ -881,38 +772,6 @@ var catalog = {
     },
     {
       "aliases": [
-        "general.autostart"
-      ],
-      "anchor": false,
-      "context": "ControlCenterWindow",
-      "description": "Session startup applications",
-      "icon": "rocket_launch",
-      "id": "autostart",
-      "path": [
-        "autostart"
-      ],
-      "route": "autostart",
-      "source": "AutostartPage.qml",
-      "title": "Autostart"
-    },
-    {
-      "aliases": [
-        "general.default-apps"
-      ],
-      "anchor": false,
-      "context": "ControlCenterWindow",
-      "description": "Browser, terminal, and other defaults",
-      "icon": "apps",
-      "id": "default-apps",
-      "path": [
-        "default-apps"
-      ],
-      "route": "default-apps",
-      "source": "DefaultAppsPage.qml",
-      "title": "Default applications"
-    },
-    {
-      "aliases": [
         "general.language-region"
       ],
       "anchor": false,
@@ -943,42 +802,6 @@ var catalog = {
       "route": "shell",
       "source": "ShellPage.qml",
       "title": "Nyxuri Shell"
-    },
-    {
-      "aliases": [
-        "general.displays.configuration"
-      ],
-      "anchor": false,
-      "context": "DisplaysPage",
-      "description": "Resolution, refresh, and layout",
-      "icon": "monitor",
-      "id": "displays.configuration",
-      "path": [
-        "displays",
-        "configuration"
-      ],
-      "route": "displays.configuration",
-      "source": "DisplayConfigurationPage.qml",
-      "title": "Display configuration"
-    },
-    {
-      "aliases": [
-        "general.displays.gamma",
-        "night light",
-        "temperature"
-      ],
-      "anchor": false,
-      "context": "DisplaysPage",
-      "description": "Night light color temperature",
-      "icon": "brightness_6",
-      "id": "displays.gamma",
-      "path": [
-        "displays",
-        "gamma"
-      ],
-      "route": "displays.gamma",
-      "source": "GammaControlPage.qml",
-      "title": "Gamma Control"
     },
     {
       "aliases": [],
@@ -1080,36 +903,6 @@ var catalog = {
     },
     {
       "aliases": [
-        "general.autostart.section.add-application-to-autostart"
-      ],
-      "anchor": true,
-      "context": "AutostartPage",
-      "icon": "rocket_launch",
-      "id": "autostart.section.add-application-to-autostart",
-      "path": [
-        "autostart"
-      ],
-      "route": "autostart",
-      "source": "AutostartPage.qml",
-      "title": "Add application to autostart"
-    },
-    {
-      "aliases": [
-        "general.autostart.section.user-autostart-applications"
-      ],
-      "anchor": true,
-      "context": "AutostartPage",
-      "icon": "rocket_launch",
-      "id": "autostart.section.user-autostart-applications",
-      "path": [
-        "autostart"
-      ],
-      "route": "autostart",
-      "source": "AutostartPage.qml",
-      "title": "User autostart applications"
-    },
-    {
-      "aliases": [
         "general.bluetooth-pairing.section.nearby-devices"
       ],
       "anchor": true,
@@ -1168,116 +961,6 @@ var catalog = {
       "route": "connected-devices",
       "source": "ConnectedDevicesPage.qml",
       "title": "Advanced settings"
-    },
-    {
-      "aliases": [
-        "general.default-apps.section.internet"
-      ],
-      "anchor": true,
-      "context": "DefaultAppsPage",
-      "icon": "settings",
-      "id": "default-apps.section.internet",
-      "path": [
-        "default-apps"
-      ],
-      "route": "default-apps",
-      "source": "DefaultAppsPage.qml",
-      "title": "Internet"
-    },
-    {
-      "aliases": [
-        "general.default-apps.section.utilities"
-      ],
-      "anchor": true,
-      "context": "DefaultAppsPage",
-      "icon": "settings",
-      "id": "default-apps.section.utilities",
-      "path": [
-        "default-apps"
-      ],
-      "route": "default-apps",
-      "source": "DefaultAppsPage.qml",
-      "title": "Utilities"
-    },
-    {
-      "aliases": [
-        "general.default-apps.section.documents"
-      ],
-      "anchor": true,
-      "context": "DefaultAppsPage",
-      "icon": "settings",
-      "id": "default-apps.section.documents",
-      "path": [
-        "default-apps"
-      ],
-      "route": "default-apps",
-      "source": "DefaultAppsPage.qml",
-      "title": "Documents"
-    },
-    {
-      "aliases": [
-        "general.default-apps.section.multimedia"
-      ],
-      "anchor": true,
-      "context": "DefaultAppsPage",
-      "icon": "settings",
-      "id": "default-apps.section.multimedia",
-      "path": [
-        "default-apps"
-      ],
-      "route": "default-apps",
-      "source": "DefaultAppsPage.qml",
-      "title": "Multimedia"
-    },
-    {
-      "aliases": [
-        "general.displays.configuration.section.layout"
-      ],
-      "anchor": true,
-      "context": "DisplayConfigurationPage",
-      "icon": "monitor",
-      "id": "displays.configuration.section.layout",
-      "path": [
-        "displays",
-        "configuration"
-      ],
-      "route": "displays.configuration",
-      "source": "DisplayConfigurationPage.qml",
-      "title": "Layout"
-    },
-    {
-      "aliases": [
-        "general.displays.configuration.section.output-settings"
-      ],
-      "anchor": true,
-      "context": "DisplayConfigurationPage",
-      "icon": "monitor",
-      "id": "displays.configuration.section.output-settings",
-      "path": [
-        "displays",
-        "configuration"
-      ],
-      "route": "displays.configuration",
-      "source": "DisplayConfigurationPage.qml",
-      "title": "Output settings"
-    },
-    {
-      "aliases": [
-        "corner actions",
-        "screen corners",
-        "general.displays.configuration.section.hot-corners"
-      ],
-      "anchor": true,
-      "context": "HotCornersPage",
-      "icon": "open_in_full",
-      "id": "displays.configuration.section.hot-corners",
-      "path": [
-        "displays",
-        "configuration"
-      ],
-      "route": "displays.configuration",
-      "source": "DisplayConfigurationPage.qml",
-      "title": "Hot corners"
     },
     {
       "aliases": [
@@ -1340,54 +1023,6 @@ var catalog = {
       "route": "dock",
       "source": "DockPage.qml",
       "title": "Window previews"
-    },
-    {
-      "aliases": [
-        "general.displays.gamma.section.color"
-      ],
-      "anchor": true,
-      "context": "GammaControlPage",
-      "icon": "brightness_6",
-      "id": "displays.gamma.section.color",
-      "path": [
-        "displays",
-        "gamma"
-      ],
-      "route": "displays.gamma",
-      "source": "GammaControlPage.qml",
-      "title": "Color"
-    },
-    {
-      "aliases": [
-        "general.displays.gamma.section.schedule"
-      ],
-      "anchor": true,
-      "context": "GammaControlPage",
-      "icon": "brightness_6",
-      "id": "displays.gamma.section.schedule",
-      "path": [
-        "displays",
-        "gamma"
-      ],
-      "route": "displays.gamma",
-      "source": "GammaControlPage.qml",
-      "title": "Schedule"
-    },
-    {
-      "aliases": [
-        "general.displays.gamma.section.current-status"
-      ],
-      "anchor": true,
-      "context": "GammaControlPage",
-      "icon": "brightness_6",
-      "id": "displays.gamma.section.current-status",
-      "path": [
-        "displays",
-        "gamma"
-      ],
-      "route": "displays.gamma",
-      "source": "GammaControlPage.qml",
-      "title": "Current status"
     },
     {
       "aliases": [
@@ -2013,18 +1648,13 @@ function title(id) {
     case "bar": return I18n.tr("Bar", "ControlCenterWindow");
     case "dock": return I18n.tr("Dock", "ControlCenterWindow");
     case "sidebar": return I18n.tr("Sidebars", "ControlCenterWindow");
-    case "displays": return I18n.tr("Displays", "ControlCenterWindow");
     case "keystone": return I18n.tr("Keystone", "ControlCenterWindow");
     case "shortcuts": return I18n.tr("Keyboard shortcuts", "ControlCenterWindow");
     case "spotlight": return I18n.tr("Spotlight", "ControlCenterWindow");
     case "network": return I18n.tr("Network", "ControlCenterWindow");
     case "connected-devices": return I18n.tr("Connected devices", "ControlCenterWindow");
-    case "autostart": return I18n.tr("Autostart", "ControlCenterWindow");
-    case "default-apps": return I18n.tr("Default applications", "ControlCenterWindow");
     case "language-region": return I18n.tr("Language & region", "ControlCenterWindow");
     case "shell": return I18n.tr("Nyxuri Shell", "ControlCenterWindow");
-    case "displays.configuration": return I18n.tr("Display configuration", "DisplaysPage");
-    case "displays.gamma": return I18n.tr("Gamma Control", "DisplaysPage");
     case "keystone.horizontal-clock": return I18n.tr("Horizontal clock style", "KeystonePage");
     case "connected-devices.bluetooth-pairing": return I18n.tr("Pair new device", "ConnectedDevicesPage");
     case "about": return I18n.tr("About", "ControlCenterWindow");
@@ -2032,25 +1662,13 @@ function title(id) {
     case "account.section.bluetooth-devices": return I18n.tr("Bluetooth devices", "AccountPage");
     case "account.section.keyboard-shortcuts": return I18n.tr("Keyboard shortcuts", "AccountPage");
     case "account.section.personalization": return I18n.tr("Personalization", "AccountPage");
-    case "autostart.section.add-application-to-autostart": return I18n.tr("Add application to autostart", "AutostartPage");
-    case "autostart.section.user-autostart-applications": return I18n.tr("User autostart applications", "AutostartPage");
     case "connected-devices.bluetooth-pairing.section.nearby-devices": return I18n.tr("Nearby devices", "BluetoothPairingPage");
     case "connected-devices.section.saved-devices": return I18n.tr("Saved devices", "ConnectedDevicesPage");
     case "connected-devices.section.bluetooth-adapter": return I18n.tr("Bluetooth adapter", "ConnectedDevicesPage");
     case "connected-devices.section.advanced-settings": return I18n.tr("Advanced settings", "ConnectedDevicesPage");
-    case "default-apps.section.internet": return I18n.tr("Internet", "DefaultAppsPage");
-    case "default-apps.section.utilities": return I18n.tr("Utilities", "DefaultAppsPage");
-    case "default-apps.section.documents": return I18n.tr("Documents", "DefaultAppsPage");
-    case "default-apps.section.multimedia": return I18n.tr("Multimedia", "DefaultAppsPage");
-    case "displays.configuration.section.layout": return I18n.tr("Layout", "DisplayConfigurationPage");
-    case "displays.configuration.section.output-settings": return I18n.tr("Output settings", "DisplayConfigurationPage");
-    case "displays.configuration.section.hot-corners": return I18n.tr("Hot corners", "HotCornersPage");
     case "dock.section.appearance": return I18n.tr("Appearance", "DockPage");
     case "dock.section.behavior": return I18n.tr("Behavior", "DockPage");
     case "dock.section.previews": return I18n.tr("Window previews", "DockPage");
-    case "displays.gamma.section.color": return I18n.tr("Color", "GammaControlPage");
-    case "displays.gamma.section.schedule": return I18n.tr("Schedule", "GammaControlPage");
-    case "displays.gamma.section.current-status": return I18n.tr("Current status", "GammaControlPage");
     case "bar.section.position": return I18n.tr("Position", "GeneralBarPage");
     case "bar.section.components": return I18n.tr("Components", "GeneralBarPage");
     case "sidebar.section.sidebars": return I18n.tr("Sidebars", "GeneralSidebarPage");
@@ -2112,7 +1730,6 @@ function title(id) {
     case "nyxuri:sidebar:open:dashboard": return I18n.tr("Notifications", "SpotlightActions");
     case "nyxuri:sidebar:open:quicksettings": return I18n.tr("Quick settings", "SpotlightActions");
     case "nyxuri:sidebar:toggle:weather": return I18n.tr("Weather sidebar", "SpotlightActions");
-    case "nyxuri:sidebar:toggle:drawer": return I18n.tr("Sidebar drawer", "SpotlightActions");
     case "nyxuri:shortcut-map:open": return I18n.tr("Shortcut map", "SpotlightActions");
     case "nyxuri:power-menu:open": return I18n.tr("Power menu", "SpotlightActions");
     default: return "";
@@ -2127,18 +1744,13 @@ function description(id) {
     case "bar": return I18n.tr("Position, modules, and indicators", "ControlCenterWindow");
     case "dock": return I18n.tr("Position, size, and behavior", "ControlCenterWindow");
     case "sidebar": return I18n.tr("Sides, cards, and monitoring", "ControlCenterWindow");
-    case "displays": return I18n.tr("Monitor layout and night light", "ControlCenterWindow");
     case "keystone": return I18n.tr("Style, clock, and media controls", "ControlCenterWindow");
     case "shortcuts": return I18n.tr("Global shortcuts and actions", "ControlCenterWindow");
     case "spotlight": return I18n.tr("Search modes, layout, and order", "ControlCenterWindow");
     case "network": return I18n.tr("Wi-Fi and wired connections", "ControlCenterWindow");
     case "connected-devices": return I18n.tr("Bluetooth devices and pairing", "ControlCenterWindow");
-    case "autostart": return I18n.tr("Session startup applications", "ControlCenterWindow");
-    case "default-apps": return I18n.tr("Browser, terminal, and other defaults", "ControlCenterWindow");
     case "language-region": return I18n.tr("Language, temperature, and clock", "ControlCenterWindow");
     case "shell": return I18n.tr("Unit toggles and diagnostics", "ControlCenterWindow");
-    case "displays.configuration": return I18n.tr("Resolution, refresh, and layout", "DisplaysPage");
-    case "displays.gamma": return I18n.tr("Night light color temperature", "DisplaysPage");
     case "keystone.horizontal-clock": return I18n.tr("Horizontal clock appearance", "KeystonePage");
     case "connected-devices.bluetooth-pairing": return I18n.tr("Scan and pair nearby devices", "ConnectedDevicesPage");
     case "about": return I18n.tr("System information and versions", "ControlCenterWindow");
@@ -2161,7 +1773,6 @@ function description(id) {
     case "nyxuri:sidebar:open:dashboard": return I18n.tr("Open the notifications sidebar", "SpotlightActions");
     case "nyxuri:sidebar:open:quicksettings": return I18n.tr("Open the Quick settings sidebar", "SpotlightActions");
     case "nyxuri:sidebar:toggle:weather": return I18n.tr("Toggle the weather sidebar", "SpotlightActions");
-    case "nyxuri:sidebar:toggle:drawer": return I18n.tr("Toggle the sidebar drawer", "SpotlightActions");
     case "nyxuri:shortcut-map:open": return I18n.tr("Show keyboard shortcuts", "SpotlightActions");
     case "nyxuri:power-menu:open": return I18n.tr("Choose a session or power action", "SpotlightActions");
     default: return "";

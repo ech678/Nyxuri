@@ -35,6 +35,7 @@ _CORPUS_DIRS = (
     SHELL_DIR / "shared",
     SHELL_DIR / "scripts",
     SHELL_DIR / "tests",
+    SHELL_DIR / "archive",
     REPO_ROOT / "tests",
     REPO_ROOT / "nyxuri",
 )
@@ -75,7 +76,7 @@ def _corpus() -> str:
 
 def _type_stems() -> set:
     stems = set()
-    for sub in ("app", "units", "shared"):
+    for sub in ("app", "units", "shared", "archive"):
         for suffix in (".qml", ".js"):
             for path in (SHELL_DIR / sub).rglob(f"*{suffix}"):
                 if "__pycache__" not in path.parts:

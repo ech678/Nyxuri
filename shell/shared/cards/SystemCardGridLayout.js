@@ -1,7 +1,7 @@
 .pragma library
 
-Qt.include("../../../../shared/cards/SystemCardGeometry.js");
-Qt.include("../../../../shared/cards/SystemCardGrid.js");
+Qt.include("SystemCardGeometry.js");
+Qt.include("SystemCardGrid.js");
 
 var canvasWidth = 472;
 var schemaVersion = 8;

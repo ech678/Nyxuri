@@ -17,12 +17,11 @@ Item {
     property bool presentationActive: false
     property var weatherSourceOverride: null
     readonly property string activeView: WidgetState.dashboardSidebarView
-    readonly property var activeViewLoader: activeView === "info" ? infoLoader : activeView === "drawer"
-                                                                    ? drawerLoader : weatherLoader
+    readonly property var activeViewLoader: activeView === "weather" ? weatherLoader : infoLoader
     readonly property bool readyForPresentation: activeViewLoader.active && activeViewLoader.status
                                                  === Loader.Ready && activeViewLoader.item !== null
     readonly property int instantiatedViewCount: {
-        return (infoLoader.item ? 1 : 0) + (drawerLoader.item ? 1 : 0) + (weatherLoader.item ? 1 : 0);
+        return (infoLoader.item ? 1 : 0) + (weatherLoader.item ? 1 : 0);
     }
     readonly property var weatherView: weatherLoader.item
 
@@ -39,11 +38,6 @@ Item {
                     id: "info",
                     icon: "info",
                     label: I18n.tr("Information")
-                },
-                {
-                    id: "drawer",
-                    icon: "widgets",
-                    label: I18n.tr("Drawer")
                 },
                 {
                     id: "weather",
@@ -203,19 +197,6 @@ Item {
             }
 
             Loader {
-                id: drawerLoader
-
-                property bool loadedOnce: false
-
-                anchors.fill: parent
-                active: root.activeView === "drawer" || loadedOnce
-                visible: active && root.activeView === "drawer"
-                asynchronous: true
-                sourceComponent: drawerComponent
-                onLoaded: loadedOnce = true
-            }
-
-            Loader {
                 id: weatherLoader
 
                 property bool loadedOnce: false
@@ -236,15 +217,6 @@ Item {
                     onImageSelectionRequested: forAvatar => root.imageSelectionRequested(forAvatar)
                     screenName: root.screenName
                     foreground: root.foreground && root.activeView === "info"
-                }
-            }
-
-            Component {
-                id: drawerComponent
-
-                DrawerView {
-                    screenName: root.screenName
-                    foreground: root.foreground && root.activeView === "drawer"
                 }
             }
 

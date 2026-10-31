@@ -140,7 +140,7 @@ FloatingWindow {
         }
 
         if (pageId === "general") {
-            const target = pages.findIndex(p => p.id === "bar" || p.id === "displays");
+            const target = pages.findIndex(p => p.id === "bar");
             if (target >= 0) {
                 currentPage = target;
                 return true;

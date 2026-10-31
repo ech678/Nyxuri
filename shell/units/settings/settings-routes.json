@@ -90,20 +90,6 @@
       ]
     },
     {
-      "id": "displays",
-      "title": "Displays",
-      "description": "Monitor layout and night light",
-      "context": "ControlCenterWindow",
-      "icon": "monitor",
-      "source": "DisplaysPage.qml",
-      "path": [
-        "displays"
-      ],
-      "aliases": [
-        "general.displays"
-      ]
-    },
-    {
       "id": "keystone",
       "title": "Keystone",
       "description": "Style, clock, and media controls",
@@ -173,34 +159,6 @@
       ]
     },
     {
-      "id": "autostart",
-      "title": "Autostart",
-      "description": "Session startup applications",
-      "context": "ControlCenterWindow",
-      "icon": "rocket_launch",
-      "source": "AutostartPage.qml",
-      "path": [
-        "autostart"
-      ],
-      "aliases": [
-        "general.autostart"
-      ]
-    },
-    {
-      "id": "default-apps",
-      "title": "Default applications",
-      "description": "Browser, terminal, and other defaults",
-      "context": "ControlCenterWindow",
-      "icon": "apps",
-      "source": "DefaultAppsPage.qml",
-      "path": [
-        "default-apps"
-      ],
-      "aliases": [
-        "general.default-apps"
-      ]
-    },
-    {
       "id": "language-region",
       "title": "Language & region",
       "description": "Language, temperature, and clock",
@@ -227,38 +185,6 @@
       "aliases": [
         "control-plane",
         "diagnostics"
-      ]
-    },
-    {
-      "id": "displays.configuration",
-      "title": "Display configuration",
-      "description": "Resolution, refresh, and layout",
-      "context": "DisplaysPage",
-      "icon": "monitor",
-      "source": "DisplayConfigurationPage.qml",
-      "path": [
-        "displays",
-        "configuration"
-      ],
-      "aliases": [
-        "general.displays.configuration"
-      ]
-    },
-    {
-      "id": "displays.gamma",
-      "title": "Gamma Control",
-      "description": "Night light color temperature",
-      "context": "DisplaysPage",
-      "icon": "brightness_6",
-      "source": "GammaControlPage.qml",
-      "path": [
-        "displays",
-        "gamma"
-      ],
-      "aliases": [
-        "general.displays.gamma",
-        "night light",
-        "temperature"
       ]
     },
     {

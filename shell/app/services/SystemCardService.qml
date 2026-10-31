@@ -6,7 +6,7 @@ import qs.shared.i18n
 import "../../shared/cards/SystemCardCatalog.js" as Catalog
 import "../../shared/cards/SystemCardGeometry.js" as Geometry
 import "../../shared/cards/SystemCardState.js" as CardState
-import "../../units/sidebars/dashboard/drawer/DrawerGridLayout.js" as DrawerLayout
+import "../../shared/cards/SystemCardGridLayout.js" as DrawerLayout
 
 Singleton {
     id: root

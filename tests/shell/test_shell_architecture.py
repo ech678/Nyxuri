@@ -239,7 +239,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "units", "dock", "DockHost.qml")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "units", "regionselector", "RegionSelector.qml")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "app", "services", "HotCorners.qml")))
-        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "units", "settings", "DisplayOverlays.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "archive", "settings", "displays", "DisplayOverlays.qml")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "units", "sidebars", "SidebarHostWindow.qml")))
 
         # 2. NotificationContent and KeystoneSurface exist for native notification chain
@@ -868,7 +868,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("active: RegionSelectionService.active", reg_content)
 
         # 6. DisplayOverlays markers and confirmation dialog gated
-        disp_file = os.path.join(shell_dir, "units", "settings", "DisplayOverlays.qml")
+        disp_file = os.path.join(shell_dir, "archive", "settings", "displays", "DisplayOverlays.qml")
         with open(disp_file, "r", encoding="utf-8") as f:
             disp_content = f.read()
         self.assertIn("model: DisplayConfigService.identify ? Quickshell.screens : []", disp_content)
@@ -1009,7 +1009,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("Account", contexts["ControlCenterWindow"])
         self.assertIn("Bar", contexts["ControlCenterWindow"])
         self.assertIn("Dock", contexts["ControlCenterWindow"])
-        self.assertIn("Displays", contexts["ControlCenterWindow"])
+        self.assertIn("Theme", contexts["ControlCenterWindow"])
 
         # Verify generate_ts produces translated entries for these contexts
         ts_zh_output = compile_i18n.generate_ts(Path(toml_zh), "zh_CN", contexts)
@@ -1019,7 +1019,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("<source>Bar</source>\n        <translation>Bar</translation>", ts_zh_output)
         self.assertIn("<source>Dock</source>\n        <translation>Dock</translation>", ts_zh_output)
         self.assertIn("<source>Spotlight</source>\n        <translation>Spotlight</translation>", ts_zh_output)
-        self.assertIn("<source>Displays</source>\n        <translation>显示器</translation>", ts_zh_output)
+        self.assertIn("<source>Theme</source>\n        <translation>主题</translation>", ts_zh_output)
 
     def test_r4_architecture_and_lifecycle_contracts(self):
         """R4 Contract: Four-layer boundaries, shared purity, cross-domain isolation, and lifecycle separation."""
@@ -1136,8 +1136,8 @@ class TestShellManagement(unittest.TestCase):
             "units/bar/tray/TrayService.qml",
             "units/sidebars/quicksettings/QuickToggleConfig.qml",
             "units/sidebars/dashboard/infotools/TodoService.qml",
-            "units/settings/AutostartService.qml",
-            "units/settings/DisplayConfigService.qml",
+            "archive/settings/autostart/AutostartService.qml",
+            "archive/settings/displays/DisplayConfigService.qml",
         ]
         for rel in migrated_services:
             target_file = os.path.join(shell_dir, rel)
@@ -1374,7 +1374,7 @@ class TestShellManagement(unittest.TestCase):
             ("units/bar/activewindow/ActiveWindow.qml", "NiriService"),
             ("units/dock/DockSurface.qml", "NiriService"),
             ("app/services/HotCorners.qml", "NiriService"),
-            ("units/settings/DisplayConfigService.qml", "NiriService"),
+            ("archive/settings/displays/DisplayConfigService.qml", "NiriService"),
             ("units/wallpaper/WallpaperSceneService.qml", "NiriService"),
         ]
         for rel_path, pattern in consumer_samples:
@@ -1658,7 +1658,7 @@ class TestShellManagement(unittest.TestCase):
         app_path = os.path.join(shell_dir, "app", "AppShell.qml")
         with open(app_path, "r", encoding="utf-8") as f:
             app_code = f.read()
-        self.assertIn("active: DisplayConfigService.identify || DisplayConfigService.confirming", app_code)
+        self.assertIn("active: ShortcutMapService.visible", app_code)
         self.assertNotIn("PersonalizationConfig.barEnabled", app_code)
         self.assertNotIn("DockService.enabled", app_code)
         self.assertNotIn("keystoneEnabled", app_code)
@@ -1711,13 +1711,13 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("target: Quickshell", ws_code)
         self.assertIn("Component.onDestruction:", ws_code)
 
-        disp_path = os.path.join(shell_dir, "units", "settings", "DisplayConfigService.qml")
+        disp_path = os.path.join(shell_dir, "archive", "settings", "displays", "DisplayConfigService.qml")
         with open(disp_path, "r", encoding="utf-8") as f:
             disp_code = f.read()
         self.assertIn("function cancelPreview()", disp_code)
         self.assertIn("identifyTimer.stop();", disp_code)
 
-        auto_path = os.path.join(shell_dir, "units", "settings", "AutostartService.qml")
+        auto_path = os.path.join(shell_dir, "archive", "settings", "autostart", "AutostartService.qml")
         with open(auto_path, "r", encoding="utf-8") as f:
             auto_code = f.read()
         self.assertIn("property var deleteProcess: null", auto_code)

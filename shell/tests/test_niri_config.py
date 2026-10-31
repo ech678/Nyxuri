@@ -226,7 +226,7 @@ class ConfigurationContracts(unittest.TestCase):
         ids = ['nyxuri:spotlight:commands'] + [
             'nyxuri:spotlight:command:' + name for name in
             ['calc', 'fx', 'time', 'light', 'dark', 'find-settings', 'actions', 'map']] + [
-            'nyxuri:sidebar:toggle:weather', 'nyxuri:sidebar:toggle:drawer']
+            'nyxuri:sidebar:toggle:weather']
         actions = {entry['id']: entry for entry in catalog}
         state = self.run_config('setup')
         for action_id in ids:
