@@ -19,6 +19,9 @@ NexusPageBase {
 
     title: SpotlightCatalog.title("displays.gamma")
 
+    property real contentPadding: 0
+    property bool searchAnchorsEnabled: true
+
     readonly property Item searchLeaf: root.flickable
 
     readonly property var preferences: DisplayColor.preferences

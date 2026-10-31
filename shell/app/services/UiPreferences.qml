@@ -407,7 +407,7 @@ Singleton {
     FileView {
         id: cliProbe
 
-        path: ""
+        path: Paths.binHome + "/nyxuri"
         watchChanges: false
         blockLoading: true
         printErrors: false
@@ -416,16 +416,6 @@ Singleton {
     function writeSystemColorScheme() {
         if (systemThemeWriter.running) {
             root.systemThemeWriteQueued = true;
-            return;
-        }
-        cliProbe.path = Paths.binHome + "/nyxuri";
-        cliProbe.reload();
-        if (!cliProbe.loaded) {
-            root.systemThemeWriteQueued = false;
-            root.systemThemeLastError = I18n.tr(
-                        "nyxuri CLI not found; only the internal theme mode switched");
-            console.warn("UiPreferences:", root.systemThemeLastError);
-            themeDebounce.restart();
             return;
         }
         root.systemThemeWriteQueued = false;
@@ -699,6 +689,8 @@ Singleton {
                         }
                     }
                 }
+                if (prefersDark !== root.requestedDarkMode && (systemThemeWriter.running || root.systemThemeLastError !== ""))
+                    return;
                 root.darkMode = prefersDark;
                 root.systemThemeModeObserved(prefersDark ? "dark" : "light");
             }

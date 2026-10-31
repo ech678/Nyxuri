@@ -63,7 +63,12 @@ Item {
         }
     }
 
-    onSourceChanged: Qt.callLater(loadPage)
+    onSourceChanged: {
+        if (!root.animationsEnabled)
+            root.loadPage();
+        else
+            Qt.callLater(root.loadPage);
+    }
     clip: true
 
     Component {
@@ -133,7 +138,7 @@ Item {
 
                 anchors.fill: parent
                 anchors.topMargin: headerLoader.height
-                asynchronous: true
+                asynchronous: root.animationsEnabled
                 onLoaded: root.present(pageLayer)
             }
         }

@@ -320,7 +320,7 @@ FloatingWindow {
     FolderListModel {
         id: folderModel
 
-        folder: root.encodeFileUrl(root.currentPath)
+        folder: (root.visible && root._folderModelAttached) ? root.encodeFileUrl(root.currentPath) : ""
         showDirs: true
         showFiles: root.selectionMode !== FilePickerWindow.Folders
         showDirsFirst: true

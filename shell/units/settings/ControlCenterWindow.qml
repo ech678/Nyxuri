@@ -78,13 +78,25 @@ FloatingWindow {
 
     signal popoutClosed
 
+    function updatePageSource() {
+        const target = root.pageSource(root.currentPage);
+        if (pageLoader.source.toString() !== target.toString())
+            pageLoader.source = target;
+    }
+
     function showWindow() {
+        switchAnim.stop();
+        pageContainer.opacity = 1;
+        pageContainer.anchors.topMargin = 0;
+        pageContainer.anchors.bottomMargin = 0;
+        root.updatePageSource();
         root._wasShown = true;
         root.visible = true;
     }
 
     function hideWindow() {
         if (root.visible) {
+            switchAnim.stop();
             root.closeChildWindows();
             root.visible = false;
         }
@@ -192,12 +204,15 @@ FloatingWindow {
             SettingsBackend.cancelSearch();
         root.closeChildWindows();
         SettingsBackend.retrySearch();
-        if (root.visible) {
+        if (root.visible && root._wasShown) {
+            switchAnim.complete();
             // Direction-aware vertical slide (Caelestia Pages.qml): navigating
             // further down the list enters from below, going up enters from
             // above.
             root._animOffset = NexusStyle.padding.extraLarge * (root.currentPage > root._lastPage ? 1 : -1);
             switchAnim.restart();
+        } else {
+            root.updatePageSource();
         }
         root._lastPage = root.currentPage;
     }
@@ -370,8 +385,8 @@ FloatingWindow {
 
                             property var parentModal: root
 
-                            source: root.pageSource(root.currentPage)
                             presentationActive: root.visible
+                            Component.onCompleted: root.updatePageSource()
                             onLoaded: {
                                 if (item && "parentModal" in item)
                                     item.parentModal = parentModal;
@@ -410,9 +425,11 @@ FloatingWindow {
             target: pageContainer
             property: "opacity"
             to: 0
-            duration: Appearance.animation.expressiveDefaultEffects.duration
-            easing.type: Appearance.animation.expressiveDefaultEffects.type
-            easing.bezierCurve: Appearance.animation.expressiveDefaultEffects.bezierCurve
+            duration: 80
+            easing.type: Easing.OutCubic
+        }
+        ScriptAction {
+            script: root.updatePageSource()
         }
         PropertyAction {
             target: pageContainer.anchors
@@ -429,25 +446,22 @@ FloatingWindow {
                 target: pageContainer
                 property: "opacity"
                 to: 1
-                duration: Appearance.animation.expressiveSlowEffects.duration
-                easing.type: Appearance.animation.expressiveSlowEffects.type
-                easing.bezierCurve: Appearance.animation.expressiveSlowEffects.bezierCurve
+                duration: 140
+                easing.type: Easing.OutCubic
             }
             NumberAnimation {
                 target: pageContainer.anchors
                 property: "topMargin"
                 to: 0
-                duration: Appearance.animation.expressiveSlowEffects.duration
-                easing.type: Appearance.animation.expressiveSlowEffects.type
-                easing.bezierCurve: Appearance.animation.expressiveSlowEffects.bezierCurve
+                duration: 140
+                easing.type: Easing.OutCubic
             }
             NumberAnimation {
                 target: pageContainer.anchors
                 property: "bottomMargin"
                 to: 0
-                duration: Appearance.animation.expressiveSlowEffects.duration
-                easing.type: Appearance.animation.expressiveSlowEffects.type
-                easing.bezierCurve: Appearance.animation.expressiveSlowEffects.bezierCurve
+                duration: 140
+                easing.type: Easing.OutCubic
             }
         }
     }
