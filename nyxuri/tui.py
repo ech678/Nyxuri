@@ -168,7 +168,7 @@ def read_key() -> Any:
 
     Returns a ``str`` for keyboard events, or a ``MouseEvent`` when the caller
     has enabled SGR mouse tracking. Mouse tracking is off by default, so for
-    every component but PresetSwitcher(mouse=True) no mouse sequence ever
+    every component but FormSwitcher(mouse=True) no mouse sequence ever
     arrives and the mouse branch is inert.
     """
     fd = stdin_fd()
@@ -385,7 +385,7 @@ def write_cleared(text: str) -> None:
             sys.stdout.write(f"{line}\033[K\n")
 
 
-# --- Loop scaffold (shared by Menu / CheckboxList / PresetSwitcher / select_language) ---
+# --- Loop scaffold (shared by Menu / CheckboxList / FormSwitcher / select_language) ---
 RESERVED_ROWS = 18  # per-frame vertical budget: logo + title + hint
 
 
@@ -429,7 +429,7 @@ def show_logo(env: Optional[Environment] = None) -> int:
     """Render the official Nyxuri ASCII brand header.
 
     Returns the number of terminal rows written, so callers that track absolute
-    row positions (e.g. PresetSwitcher mouse hit-mapping) can account for the
+    row positions (e.g. FormSwitcher mouse hit-mapping) can account for the
     header height without re-deriving the layout branches here.
     """
     if env is None:
@@ -807,7 +807,7 @@ class CategoryGroup:
 
 
 class CategoryCheckboxList:
-    """Accordion checklist — PresetSwitcher's tree applied to multi-select.
+    """Accordion checklist — FormSwitcher's tree applied to multi-select.
 
     Category rows collapse/expand (`▸`/`▾`) with a picked/total counter;
     app rows underneath carry `[✓]/[ ]` checkboxes plus right-aligned
@@ -1020,7 +1020,7 @@ def show_header(title: str, env: Optional[Environment] = None) -> int:
     return 3
 
 # --- Component: Dual-Pane Preset Switcher (§9) ---
-class PresetSwitcher:
+class FormSwitcher:
     """Dual-Pane Accordion Preset Studio:
     Left: List of apps with active preset indicator.
     Right: Accordion panels for Presets and Parts with in-place action handling.
@@ -1029,24 +1029,24 @@ class PresetSwitcher:
     def __init__(
         self,
         apps: List[str],
-        presets_for: Callable[[str], List[Any]],
+        forms_for: Callable[[str], List[Any]],
         info_for: Optional[Callable[[str, str], Any]] = None,
         on_action: Optional[Callable[[str, str, str], Optional[str]]] = None,
         title_key: str = "preset_switcher_title",
         hint_key: str = "preset_switcher_hint",
-        parts_for: Optional[Callable[[str], Dict[str, Any]]] = None,
-        active_part_for: Optional[Callable[[str, str], str]] = None,
+        slots_for: Optional[Callable[[str], Dict[str, Any]]] = None,
+        active_slot_for: Optional[Callable[[str, str], str]] = None,
     ):
         self.apps = apps
-        self.presets_for = presets_for
+        self.forms_for = forms_for
         self.info_for = info_for
         self.on_action = on_action
         self.title_key = title_key
         self.hint_key = hint_key
-        self.parts_for = parts_for
-        self.active_part_for = active_part_for
+        self.slots_for = slots_for
+        self.active_slot_for = active_slot_for
 
-    def _normalize_presets(self, raw_list: List[Any]) -> List[Tuple[str, str, bool]]:
+    def _normalize_forms(self, raw_list: List[Any]) -> List[Tuple[str, str, bool]]:
         norm: List[Tuple[str, str, bool]] = []
         for item in raw_list:
             name, source, is_active = item[0], item[1], item[2]
@@ -1063,48 +1063,48 @@ class PresetSwitcher:
         show_inspector = False
         toast_msg: Optional[str] = None
 
-        right_cache: Dict[str, List[Tuple[str, str, bool]]] = {}
-        parts_cache: Dict[str, Dict[str, Any]] = {}
+        right_forms_cache: Dict[str, List[Tuple[str, str, bool]]] = {}
+        slots_cache: Dict[str, Dict[str, Any]] = {}
         expanded_slots: Dict[str, Set[str]] = {}
 
-        def get_presets(app: str) -> List[Tuple[str, str, bool]]:
-            if app not in right_cache:
-                right_cache[app] = self._normalize_presets(self.presets_for(app))
-            return right_cache[app]
+        def get_forms(app: str) -> List[Tuple[str, str, bool]]:
+            if app not in right_forms_cache:
+                right_forms_cache[app] = self._normalize_forms(self.forms_for(app))
+            return right_forms_cache[app]
 
-        def get_parts(app: str) -> Dict[str, Any]:
-            if not self.parts_for:
+        def get_slots(app: str) -> Dict[str, Any]:
+            if not self.slots_for:
                 return {}
-            if app not in parts_cache:
-                parts_cache[app] = self.parts_for(app)
-            return parts_cache[app]
+            if app not in slots_cache:
+                slots_cache[app] = self.slots_for(app)
+            return slots_cache[app]
 
-        def get_active_part(app: str, slot: str, default: str = "default") -> str:
-            if self.active_part_for:
-                return self.active_part_for(app, slot)
+        def get_active_slot(app: str, slot: str, default: str = "default") -> str:
+            if self.active_slot_for:
+                return self.active_slot_for(app, slot)
             return default
 
         def build_right_items(app: str) -> List[Dict[str, Any]]:
             items: List[Dict[str, Any]] = []
-            p_list = get_presets(app)
-            a_parts = get_parts(app)
+            p_list = get_forms(app)
+            a_slots = get_slots(app)
             slots = expanded_slots.setdefault(app, set())
 
             for p_n, src, is_act in p_list:
                 items.append({
-                    "type": "preset",
+                    "type": "form",
                     "app": app,
                     "name": p_n,
                     "source": src,
                     "is_active": is_act,
                 })
 
-            if a_parts:
-                for slot, s_info in a_parts.items():
+            if a_slots:
+                for slot, s_info in a_slots.items():
                     s_exp = slot in slots
-                    act_var = get_active_part(app, slot, s_info.get("default", "default"))
+                    act_var = get_active_slot(app, slot, s_info.get("default", "default"))
                     items.append({
-                        "type": "part_slot",
+                        "type": "slot_axis",
                         "app": app,
                         "slot": slot,
                         "slot_info": s_info,
@@ -1114,7 +1114,7 @@ class PresetSwitcher:
                     if s_exp:
                         for var in s_info.get("variants", []):
                             items.append({
-                                "type": "part_variant",
+                                "type": "slot_variant",
                                 "app": app,
                                 "slot": slot,
                                 "name": var,
@@ -1123,15 +1123,15 @@ class PresetSwitcher:
                             })
             return items
 
-        def get_active_preset_name(app: str) -> str:
-            for p_n, _, is_act in get_presets(app):
+        def get_active_form_name(app: str) -> str:
+            for p_n, _, is_act in get_forms(app):
                 if is_act:
                     return p_n
             return "default"
 
         def get_active_preset_focus(items: List[Dict[str, Any]]) -> int:
             for idx, it in enumerate(items):
-                if it["type"] == "preset" and it["is_active"]:
+                if it["type"] == "form" and it["is_active"]:
                     return idx
             return 0
 
@@ -1172,7 +1172,7 @@ class PresetSwitcher:
 
                 for idx in range(left_start, left_end):
                     a_name = self.apps[idx]
-                    p_list = get_presets(a_name)
+                    p_list = get_forms(a_name)
                     act_name = "default"
                     for p_n, _, is_act in p_list:
                         if is_act:
@@ -1219,16 +1219,16 @@ class PresetSwitcher:
                             right_lines.append(pad_display(f"{Colors.DARK_GRAY}{msg('preset_part_desc')}:{Colors.RESET} {desc}", right_w))
                         var_str = " · ".join(variants) if variants else msg("preset_info_none")
                         right_lines.append(pad_display(f"{Colors.DARK_GRAY}{msg('preset_part_variants')}:{Colors.RESET} {var_str}", right_w))
-                        if curr_item["type"] == "part_variant":
+                        if curr_item["type"] == "slot_variant":
                             st_txt = msg("preset_part_status_active") if curr_item["is_active"] else msg("preset_part_status_inactive")
                             right_lines.append(pad_display(f"{Colors.DARK_GRAY}{msg('preset_part_active')}:{Colors.RESET} {curr_item['name']} ({st_txt})", right_w))
                         else:
                             right_lines.append(pad_display(f"{Colors.DARK_GRAY}{msg('preset_part_active')}:{Colors.RESET} {curr_item['active']}", right_w))
                     else:
-                        cur_preset = "default"
-                        if curr_item and curr_item["type"] == "preset":
-                            cur_preset = curr_item["name"]
-                        info = self.info_for(cur_app, cur_preset) if self.info_for else None
+                        cur_form = "default"
+                        if curr_item and curr_item["type"] == "form":
+                            cur_form = curr_item["name"]
+                        info = self.info_for(cur_app, cur_form) if self.info_for else None
                         if info:
                             right_lines.append(pad_display(f"{Colors.DARK_GRAY}{msg('preset_info_source')}:{Colors.RESET} {info.path}", right_w))
                             right_lines.append(pad_display(f"{Colors.DARK_GRAY}{msg('preset_info_files')} ({len(info.files)}):{Colors.RESET}", right_w))
@@ -1253,7 +1253,7 @@ class PresetSwitcher:
                         r_ptr = f"{Colors.BOLD_CYAN}❯{Colors.RESET} " if is_r_focused else "  "
 
                         itype = r_item["type"]
-                        if itype == "preset":
+                        if itype == "form":
                             badge = f"{msg('preset_status_active')}" if r_item["is_active"] else ""
                             p_name = r_item["name"]
                             if is_r_focused:
@@ -1263,7 +1263,7 @@ class PresetSwitcher:
                                 p_display = f"{r_ptr}{p_color}{p_name}{Colors.RESET}"
                             avail = max(0, right_w - display_width(p_display) - display_width(badge))
                             r_text = f"{p_display}{' ' * avail}{badge}"
-                        elif itype == "part_slot":
+                        elif itype == "slot_axis":
                             arrow = "▾" if r_item["is_expanded"] else "▸"
                             s_label = f"{arrow} {msg('preset_part_slot_label')} · {r_item['slot']}"
                             act_tag = f"{Colors.DARK_GRAY}{r_item['active']}{Colors.RESET}"
@@ -1273,7 +1273,7 @@ class PresetSwitcher:
                                 s_display = f"{r_ptr}{Colors.DARK_GRAY}{s_label}{Colors.RESET}"
                             avail = max(0, right_w - display_width(s_display) - display_width(act_tag))
                             r_text = f"{s_display}{' ' * avail}{act_tag}"
-                        elif itype == "part_variant":
+                        elif itype == "slot_variant":
                             badge = f"{msg('preset_status_active')}" if r_item["is_active"] else ""
                             v_name = r_item["name"]
                             if is_r_focused:
@@ -1296,8 +1296,8 @@ class PresetSwitcher:
 
                 write_cleared(f"\n  {Colors.DARK_GRAY}{'─' * min(cols - 4, 76)}{Colors.RESET}\n")
                 if self.info_for and not show_inspector:
-                    act_preset = get_active_preset_name(cur_app)
-                    info = self.info_for(cur_app, act_preset)
+                    act_form = get_active_form_name(cur_app)
+                    info = self.info_for(cur_app, act_form)
                     if info:
                         f_count = len(info.files)
                         p_count = len(info.preserve)
@@ -1349,7 +1349,7 @@ class PresetSwitcher:
                                     cur_app = self.apps[left_focus]
                                     right_focus = get_active_preset_focus(build_right_items(cur_app))
                                     if not self.on_action:
-                                        return (cur_app, get_active_preset_name(cur_app))
+                                        return (cur_app, get_active_form_name(cur_app))
                                     else:
                                         active_pane = "left"
                             else:
@@ -1357,23 +1357,23 @@ class PresetSwitcher:
                                 if 0 <= target_r_idx < len(right_items):
                                     right_focus = target_r_idx
                                     r_it = right_items[right_focus]
-                                    if r_it["type"] == "preset":
+                                    if r_it["type"] == "form":
                                         if not self.on_action:
                                             return (cur_app, r_it["name"])
                                         else:
                                             toast_msg = self.on_action("apply", cur_app, r_it["name"])
-                                            if cur_app in right_cache:
-                                                del right_cache[cur_app]
-                                    elif r_it["type"] == "part_variant":
+                                            if cur_app in right_forms_cache:
+                                                del right_forms_cache[cur_app]
+                                    elif r_it["type"] == "slot_variant":
                                         slot_n = r_it["slot"]
                                         var_n = r_it["name"]
                                         if not self.on_action:
                                             return (cur_app, f"{slot_n}:{var_n}")
                                         else:
-                                            toast_msg = self.on_action("apply_part", cur_app, f"{slot_n}:{var_n}")
-                                            if cur_app in parts_cache:
-                                                del parts_cache[cur_app]
-                                    elif r_it["type"] == "part_slot":
+                                            toast_msg = self.on_action("apply_slot", cur_app, f"{slot_n}:{var_n}")
+                                            if cur_app in slots_cache:
+                                                del slots_cache[cur_app]
+                                    elif r_it["type"] == "slot_axis":
                                         slot_n = r_it["slot"]
                                         slots = expanded_slots.setdefault(cur_app, set())
                                         if slot_n in slots:
@@ -1387,11 +1387,11 @@ class PresetSwitcher:
                     save_name = self._read_line_raw(prompt)
                     if save_name and self.on_action:
                         toast_msg = self.on_action("save", cur_app, save_name)
-                        if cur_app in right_cache:
-                            del right_cache[cur_app]
+                        if cur_app in right_forms_cache:
+                            del right_forms_cache[cur_app]
                 elif key in ("e", "E"):
                     curr_item = right_items[right_focus] if (right_items and active_pane == "right") else None
-                    p_name = curr_item["name"] if (curr_item and curr_item["type"] == "preset") else get_active_preset_name(cur_app)
+                    p_name = curr_item["name"] if (curr_item and curr_item["type"] == "form") else get_active_form_name(cur_app)
                     if p_name:
                         if self.info_for:
                             info = self.info_for(cur_app, p_name)
@@ -1400,11 +1400,11 @@ class PresetSwitcher:
                                 continue
                         if self.on_action:
                             toast_msg = self.on_action("edit", cur_app, p_name)
-                            if cur_app in right_cache:
-                                del right_cache[cur_app]
+                            if cur_app in right_forms_cache:
+                                del right_forms_cache[cur_app]
                 elif key in ("d", "D"):
                     curr_item = right_items[right_focus] if (right_items and active_pane == "right") else None
-                    p_name = curr_item["name"] if (curr_item and curr_item["type"] == "preset") else get_active_preset_name(cur_app)
+                    p_name = curr_item["name"] if (curr_item and curr_item["type"] == "form") else get_active_form_name(cur_app)
                     if p_name:
                         if self.info_for:
                             info = self.info_for(cur_app, p_name)
@@ -1418,8 +1418,8 @@ class PresetSwitcher:
                         if confirm_key in ("y", "Y"):
                             if self.on_action:
                                 toast_msg = self.on_action("delete", cur_app, p_name)
-                                if cur_app in right_cache:
-                                    del right_cache[cur_app]
+                                if cur_app in right_forms_cache:
+                                    del right_forms_cache[cur_app]
                                 right_focus = max(0, right_focus - 1)
                         else:
                             toast_msg = msg("delete_cancelled")
@@ -1445,7 +1445,7 @@ class PresetSwitcher:
                         toast_msg = None
                     elif key in ("ENTER", "SPACE"):
                         if not self.on_action:
-                            return (cur_app, get_active_preset_name(cur_app))
+                            return (cur_app, get_active_form_name(cur_app))
                         else:
                             active_pane = "right"
                             toast_msg = None
@@ -1462,17 +1462,17 @@ class PresetSwitcher:
                             right_focus = (right_focus + 1) % len(right_items)
                         toast_msg = None
                     elif key in ("LEFT", "h", "H"):
-                        if curr_item and curr_item["type"] == "part_variant":
+                        if curr_item and curr_item["type"] == "slot_variant":
                             target_idx = None
                             for p_idx in range(right_focus - 1, -1, -1):
-                                if right_items[p_idx]["type"] == "part_slot" and right_items[p_idx]["slot"] == curr_item["slot"]:
+                                if right_items[p_idx]["type"] == "slot_axis" and right_items[p_idx]["slot"] == curr_item["slot"]:
                                     target_idx = p_idx
                                     break
                             if target_idx is not None:
                                 right_focus = target_idx
                             else:
                                 active_pane = "left"
-                        elif curr_item and curr_item["type"] == "part_slot":
+                        elif curr_item and curr_item["type"] == "slot_axis":
                             slot_name = curr_item["slot"]
                             slots = expanded_slots.setdefault(cur_app, set())
                             if slot_name in slots:
@@ -1483,7 +1483,7 @@ class PresetSwitcher:
                             active_pane = "left"
                         toast_msg = None
                     elif key in ("RIGHT", "l", "L"):
-                        if curr_item and curr_item["type"] == "part_slot":
+                        if curr_item and curr_item["type"] == "slot_axis":
                             slot_name = curr_item["slot"]
                             slots = expanded_slots.setdefault(cur_app, set())
                             if slot_name not in slots:
@@ -1491,7 +1491,7 @@ class PresetSwitcher:
                                 new_items = build_right_items(cur_app)
                                 act_var = curr_item["active"]
                                 for v_idx, v_it in enumerate(new_items):
-                                    if v_it["type"] == "part_variant" and v_it["slot"] == slot_name:
+                                    if v_it["type"] == "slot_variant" and v_it["slot"] == slot_name:
                                         right_focus = v_idx
                                         if v_it["name"] == act_var:
                                             break
@@ -1500,7 +1500,7 @@ class PresetSwitcher:
                         if not curr_item:
                             continue
                         itype = curr_item["type"]
-                        if itype == "part_slot":
+                        if itype == "slot_axis":
                             slot_name = curr_item["slot"]
                             slots = expanded_slots.setdefault(cur_app, set())
                             if slot_name in slots:
@@ -1510,25 +1510,25 @@ class PresetSwitcher:
                                 new_items = build_right_items(cur_app)
                                 act_var = curr_item["active"]
                                 for v_idx, v_it in enumerate(new_items):
-                                    if v_it["type"] == "part_variant" and v_it["slot"] == slot_name:
+                                    if v_it["type"] == "slot_variant" and v_it["slot"] == slot_name:
                                         right_focus = v_idx
                                         if v_it["name"] == act_var:
                                             break
-                        elif itype == "preset":
+                        elif itype == "form":
                             p_name = curr_item["name"]
                             if self.on_action:
                                 toast_msg = self.on_action("apply", cur_app, p_name)
-                                if cur_app in right_cache:
-                                    del right_cache[cur_app]
+                                if cur_app in right_forms_cache:
+                                    del right_forms_cache[cur_app]
                             else:
                                 return (cur_app, p_name)
-                        elif itype == "part_variant":
+                        elif itype == "slot_variant":
                             slot_name = curr_item["slot"]
                             v_name = curr_item["name"]
                             if self.on_action:
-                                toast_msg = self.on_action("apply_part", cur_app, f"{slot_name}:{v_name}")
-                                if cur_app in parts_cache:
-                                    del parts_cache[cur_app]
+                                toast_msg = self.on_action("apply_slot", cur_app, f"{slot_name}:{v_name}")
+                                if cur_app in slots_cache:
+                                    del slots_cache[cur_app]
                             else:
                                 return (cur_app, f"{slot_name}:{v_name}")
                     elif key in ("q", "Q", "ESC", "EXIT", "EOF"):
@@ -1635,7 +1635,7 @@ class PluginWorkshop:
             else Colors.DIM if state in ("disabled", "-") else Colors.BOLD_YELLOW
         )
         lines.append((msg("cli_detail_state"), f"{state_color}{state}{Colors.RESET}"))
-        lines.append((msg("cli_detail_preset"), rec.get("preset") or "-"))
+        lines.append((msg("cli_detail_form"), rec.get("form") or "-"))
         if uid in registry.plugin_ids():
             m = registry.load_plugin(uid)
             if m.label:

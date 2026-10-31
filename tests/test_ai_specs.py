@@ -497,27 +497,27 @@ class TestAISpecs(unittest.TestCase):
                     f"cli_help[{lang}] contains retired command reference: '{cmd}'",
                 )
 
-    def test_documented_presets_and_parts_contract(self):
-        """Presets and modular Parts must adhere to the documented contract."""
-        from nyxuri.desktop.presets import collect_presets
-        from nyxuri.deploy.preset import list_parts
+    def test_documented_forms_contract(self):
+        """Whole-axis forms and slot axes must adhere to the documented contract."""
+        from nyxuri.desktop.forms import collect_forms
+        from nyxuri.deploy.forms import list_slots
 
-        kitty_presets = [name for name, _, _ in collect_presets("kitty")]
-        self.assertIn("default", kitty_presets)
-        self.assertIn("transparent", kitty_presets)
+        kitty_forms = [name for name, _, _ in collect_forms("kitty")]
+        self.assertIn("default", kitty_forms)
+        self.assertIn("transparent", kitty_forms)
 
-        niri_presets = [name for name, _, _ in collect_presets("niri")]
-        self.assertEqual(niri_presets, ["default"])
+        niri_forms = [name for name, _, _ in collect_forms("niri")]
+        self.assertEqual(niri_forms, ["default"])
 
-        parts = list_parts("niri")
-        self.assertIn("glow", parts)
-        self.assertIn("effects", parts)
+        slots = list_slots("niri")
+        self.assertIn("glow", slots)
+        self.assertIn("effects", slots)
         self.assertEqual(
-            set(parts["glow"]["variants"]),
+            set(slots["glow"]["variants"]),
             {"default", "glow", "glow-material-you"},
         )
         self.assertEqual(
-            set(parts["effects"]["variants"]),
+            set(slots["effects"]["variants"]),
             {"default", "xray-blur"},
         )
 

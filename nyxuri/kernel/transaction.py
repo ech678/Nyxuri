@@ -39,7 +39,7 @@ from nyxuri.core import get_env, log_msg, remove_path
 from nyxuri.deploy.atomic import CarryPolicy
 from nyxuri.deploy.deploy import _phase_atomic_deployment, merge_deploy_plugin
 from nyxuri.deploy.manifest import ModuleManifest, living_path
-from nyxuri.deploy.preset import write_active_preset
+from nyxuri.deploy.forms import write_active_form
 from nyxuri.kernel.resolver import resolve_order
 
 STATE_SYNCED = "Synced"
@@ -200,7 +200,7 @@ def resnapshot_plugins(plugin_ids: List[str],
         ledger.set_plugin(
             uid,
             state="enabled",
-            preset=(rec.get("preset") or "default"),
+            form=(rec.get("form") or "default"),
             files=files,
             vault=None,
         )
@@ -218,7 +218,7 @@ def snapshot_files(dest: Path, manifest: ModuleManifest) -> Dict[str, str]:
     """``{rel path: sha256}`` of managed files under dest (user-owned excluded).
 
     Symlinks are recorded as ``link:<target>`` — their identity is the link
-    itself (e.g. a parts slot whose target encodes the active variant), not
+    itself (e.g. a slot axis whose target encodes the active variant), not
     the linked content. The result feeds both the ledger ``files`` snapshot
     and the ``Drifted`` half of :func:`audit_plugins`.
     """
@@ -256,11 +256,11 @@ def missing_packages(manifest: ModuleManifest) -> List[str]:
     return missing
 
 
-def _active_preset_name(plugin_id: str) -> str:
-    from nyxuri.deploy.preset import read_active_preset
+def _active_form_name(plugin_id: str) -> str:
+    from nyxuri.deploy.forms import read_active_form
 
     try:
-        return read_active_preset(plugin_id)
+        return read_active_form(plugin_id)
     except Exception:
         return "default"
 
@@ -591,7 +591,7 @@ def _run_plugin_hook(plugin_id: str, manifest: ModuleManifest, spec: str) -> boo
 def plugin_on(
     plugin_id: str,
     *,
-    preset: Optional[str] = None,
+    form: Optional[str] = None,
     install_packages: Optional[Callable[[str, List[str]], bool]] = None,
 ) -> List[Step]:
     """Enable a plugin: resolve → preflight → vault out → swap → ledger → event.
@@ -605,7 +605,7 @@ def plugin_on(
     """
     plan = _enable_closure(plugin_id)
     enabled = _enabled_set()
-    if plugin_id in enabled and preset is None:
+    if plugin_id in enabled and form is None:
         return [Step(plugin_id, True, "already-enabled")]
     results: List[Step] = []
     for uid in plan:
@@ -638,8 +638,8 @@ def plugin_on(
                 # user-owned layer to archive or restore, and a merge plugin's
                 # shared area preserves user content in place (no-clobber).
                 _vault_restore(uid, dest)
-            if preset is not None and uid == plugin_id and not manifest.merge:
-                write_active_preset(uid, preset)
+            if form is not None and uid == plugin_id and not manifest.merge:
+                write_active_form(uid, form)
             if manifest.merge:
                 laid = merge_deploy_plugin(uid, manifest)
                 if laid is None:
@@ -650,7 +650,7 @@ def plugin_on(
                 # `on` is adoption: the engine claims its payload names
                 # (carry_unknown=False), user-placed extras are carried and
                 # stay user-owned (#139). A previously-enabled record acts as
-                # the drift baseline so a preset switch never eats edits.
+                # the drift baseline so a form switch never eats edits.
                 rec = ledger.get_plugin(uid)
                 baseline = None
                 if rec and rec.get("state") == "enabled" and isinstance(rec.get("files"), dict):
@@ -683,7 +683,7 @@ def plugin_on(
         ledger.set_plugin(
             uid,
             state="enabled",
-            preset=_active_preset_name(uid),
+            form=_active_form_name(uid),
             # Merge plugins snapshot at deploy time (laid files only — the
             # shared area's other content is never ours); atomic plugins use
             # the post-hook snapshot minus carried user files (#139); runtime
@@ -743,7 +743,7 @@ def plugin_off(plugin_id: str, *, cascade: bool = False) -> List[Step]:
         ledger.set_plugin(
             uid,
             state="disabled",
-            preset=(rec or {}).get("preset") or "default",
+            form=(rec or {}).get("form") or "default",
             files={},
             vault=str(vault_dir(uid)),
         )

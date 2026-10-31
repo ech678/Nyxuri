@@ -5,10 +5,13 @@ key/value selections (active shell, migration level) and plugin records
 share one atomic write path: flock, merge, tmp file, ``os.replace``.
 
 Plugin records live under the top-level ``plugins`` key, keyed by plugin id.
-Pre-R0-1 ledgers carried the key ``units``; the first read renames it
-in place (idempotent, one atomic write). Each record carries exactly
-five frozen fields (plugin-model.md §3): ``state`` / ``preset`` / ``files``
-/ ``vault`` / ``updated``. Kernel code must not invent a sixth.
+Each record carries exactly five frozen fields (plugin-model.md §3):
+``state`` / ``form`` / ``files`` / ``vault`` / ``updated``. Kernel code must
+not invent a sixth. ``form`` is the plugin's whole-config axis choice; slot
+axis choices live under the top-level ``forms`` key (``{plugin: {slot:
+value}}``). Pre-R0-2 shapes (the ``units`` top key, the per-record ``preset``
+field, the ``presets``/``parts`` top dicts) are migrated on first read,
+idempotently, in one atomic write.
 """
 
 import fcntl
@@ -28,6 +31,13 @@ PLUGIN_STATES = ("enabled", "disabled")
 PLUGINS_KEY = "plugins"
 _LEGACY_UNITS_KEY = "units"
 
+# Top-level key holding slot-axis choices (R0-2 杀词并轨): {plugin: {slot: value}}.
+FORMS_KEY = "forms"
+_LEGACY_PRESETS_KEY = "presets"
+_LEGACY_PARTS_KEY = "parts"
+_LEGACY_RECORD_FORM_FIELD = "preset"
+_FORM_FIELD = "form"
+
 # --- generic ledger primitives -------------------------------------------
 
 
@@ -44,13 +54,70 @@ def _read_raw() -> dict[str, Any]:
 
 
 def _legacy_units_replacement(data: dict[str, Any]) -> dict[str, Any] | None:
-    """Data with ``units`` renamed to ``plugins``, or None when no migration
-    is due (ledger already in the new shape, empty, or without records)."""
-    legacy = data.get(_LEGACY_UNITS_KEY)
-    if PLUGINS_KEY in data or not isinstance(legacy, dict):
-        return None
-    data[PLUGINS_KEY] = data.pop(_LEGACY_UNITS_KEY)
-    return data
+    """Data with pre-R0-2 shapes converged, or None when no migration is due.
+
+    Handles, in order: the R0-1 ``units`` top key rename; the per-record
+    ``preset`` field rename to ``form``; the legacy ``presets`` top dict
+    (whole-axis mirrors of the retired ``<app>.active`` files) folded into
+    the records — synthesizing a ``disabled`` record when the plugin was
+    never switched (nothing archived, so ``vault`` stays null); and the
+    legacy ``parts`` top dict (``{app:slot: value}``) regrouped under the
+    ``forms`` key. Idempotent: a converged ledger returns None.
+    """
+    changed = False
+
+    legacy_units = data.get(_LEGACY_UNITS_KEY)
+    if PLUGINS_KEY not in data and isinstance(legacy_units, dict):
+        data[PLUGINS_KEY] = data.pop(_LEGACY_UNITS_KEY)
+        changed = True
+
+    records = data.get(PLUGINS_KEY)
+    if isinstance(records, dict):
+        for rec in records.values():
+            if isinstance(rec, dict) and _LEGACY_RECORD_FORM_FIELD in rec:
+                rec[_FORM_FIELD] = rec.pop(_LEGACY_RECORD_FORM_FIELD)
+                changed = True
+
+    legacy_presets = data.get(_LEGACY_PRESETS_KEY)
+    if isinstance(legacy_presets, dict) and legacy_presets:
+        if not isinstance(records, dict):
+            records = data.setdefault(PLUGINS_KEY, {})
+        now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        for app, name in legacy_presets.items():
+            if not (isinstance(app, str) and isinstance(name, str) and name):
+                continue
+            rec = records.get(app)
+            if isinstance(rec, dict):
+                rec[_FORM_FIELD] = name
+            else:
+                records[app] = {
+                    "state": "disabled",
+                    _FORM_FIELD: name,
+                    "files": {},
+                    "vault": None,
+                    "updated": now,
+                }
+            changed = True
+        data.pop(_LEGACY_PRESETS_KEY, None)
+
+    legacy_parts = data.get(_LEGACY_PARTS_KEY)
+    if isinstance(legacy_parts, dict) and legacy_parts:
+        forms = data.setdefault(FORMS_KEY, {})
+        if not isinstance(forms, dict):
+            forms = data[FORMS_KEY] = {}
+        for compound, value in legacy_parts.items():
+            if not (isinstance(compound, str) and isinstance(value, str) and value):
+                continue
+            app, _, slot = compound.partition(":")
+            if not app or not slot:
+                continue
+            slot_map = forms.setdefault(app, {})
+            if isinstance(slot_map, dict):
+                slot_map[slot] = value
+                changed = True
+        data.pop(_LEGACY_PARTS_KEY, None)
+
+    return data if changed else None
 
 
 @contextmanager
@@ -79,9 +146,9 @@ def _write_locked(path: Path, data: dict[str, Any]) -> None:
 
 
 def read_ledger() -> dict[str, Any]:
-    """Read the ledger, migrating a pre-R0-1 ``units`` key on sight.
+    """Read the ledger, converging any pre-R0-2 shape on sight.
 
-    The rename rewrites state.json once (flock + atomic replace) so every
+    The migration rewrites state.json once (flock + atomic replace) so every
     later reader — and the user's own eyes — see a single-shape file.
     """
     data = _read_raw()
@@ -174,7 +241,7 @@ def set_plugin(
     plugin_id: str,
     *,
     state: str,
-    preset: str = "default",
+    form: str = "default",
     files: dict[str, str] | None = None,
     vault: str | None = None,
     updated: str | None = None,
@@ -182,15 +249,15 @@ def set_plugin(
     """Upsert one plugin record, enforcing the frozen five-field shape.
 
     ``state``: ``enabled`` / ``disabled`` (the only switch axis).
-    ``preset``: current form-axis choice. ``files``: ``{relpath: sha256}``
+    ``form``: whole-config axis choice. ``files``: ``{relpath: sha256}``
     snapshot of managed files. ``vault``: archive location of the user's
-    custom files — mandatory once the plugin is ``disabled``. ``updated``:
-    ISO timestamp, defaulted to now (UTC).
+    custom files (null is honest when nothing was ever archived — a
+    ``use``-only record). ``updated``: ISO timestamp, defaulted to now (UTC).
     """
     if state not in PLUGIN_STATES:
         raise ValueError(f"invalid plugin state '{state}' (must be 'enabled' or 'disabled')")
-    if not isinstance(preset, str) or not preset:
-        raise ValueError("preset must be a non-empty string")
+    if not isinstance(form, str) or not form:
+        raise ValueError("form must be a non-empty string")
     if files is None:
         files = {}
     if not isinstance(files, dict) or not all(
@@ -199,16 +266,39 @@ def set_plugin(
         raise ValueError("files must map relative paths to hash strings")
     if vault is not None and not isinstance(vault, str):
         raise ValueError("vault must be an archive path string or None")
-    if state == "disabled" and not vault:
-        raise ValueError(f"disabled plugin '{plugin_id}' requires a vault archive path")
     if updated is None:
         updated = datetime.now(timezone.utc).isoformat(timespec="seconds")
     record: dict[str, Any] = {
         "state": state,
-        "preset": preset,
+        "form": form,
         "files": dict(files),
         "vault": vault,
         "updated": updated,
     }
     data = update_ledger(**{PLUGINS_KEY: {plugin_id: record}})
     return dict(data[PLUGINS_KEY][plugin_id])
+
+
+# --- slot-axis choices (R0-2 杀词并轨) ---------------------------------------
+
+
+def get_form_slots(plugin_id: str) -> dict[str, str]:
+    """The plugin's recorded slot-axis choices, ``{slot: value}``."""
+    forms = read_ledger().get(FORMS_KEY)
+    if not isinstance(forms, dict):
+        return {}
+    slot_map = forms.get(plugin_id)
+    if not isinstance(slot_map, dict):
+        return {}
+    return {k: v for k, v in slot_map.items() if isinstance(k, str) and isinstance(v, str)}
+
+
+def set_form_slot(plugin_id: str, slot: str, value: str) -> None:
+    """Record one slot-axis choice under the top-level ``forms`` key."""
+    if not slot or not isinstance(slot, str):
+        raise ValueError("slot must be a non-empty string")
+    if not value or not isinstance(value, str):
+        raise ValueError("value must be a non-empty string")
+    slot_map = get_form_slots(plugin_id)
+    slot_map[slot] = value
+    update_ledger(**{FORMS_KEY: {plugin_id: slot_map}})

@@ -222,8 +222,8 @@ class TestRealRepoManifests(unittest.TestCase):
         self.assertEqual(m.preserve, ["monitor.kdl", "effects.kdl", "effects_normal.kdl", "glow.kdl", "colors.kdl", "noctalia.kdl", "eyecare_temp"])
         self.assertEqual(m.chmod, ["scripts/*.sh", "scripts/*.py"])
         self.assertTrue(m.is_deployable)
-        self.assertIn("effects", m.parts)
-        self.assertIn("glow", m.parts)
+        self.assertIn("effects", m.forms)
+        self.assertIn("glow", m.forms)
         # dir name = package = binary → no packages override needed
         self.assertEqual(m.packages_repo, ["niri"])
 
@@ -378,12 +378,12 @@ class TestRealRepoManifests(unittest.TestCase):
         m = manifest.load_manifest_for("theme")
         self.assertIn("adw-gtk-theme", m.packages_repo)
 
-    def test_real_niri_manifest_has_parts(self):
+    def test_real_niri_manifest_has_slot_axes(self):
         m = manifest.load_manifest_for("niri")
-        self.assertIn("effects", m.parts)
-        self.assertEqual(m.parts["effects"]["target"], "effects_normal.kdl")
-        self.assertIn("glow", m.parts)
-        self.assertEqual(m.parts["glow"]["target"], "glow.kdl")
+        self.assertIn("effects", m.forms)
+        self.assertEqual(m.forms["effects"]["target"], "effects_normal.kdl")
+        self.assertIn("glow", m.forms)
+        self.assertEqual(m.forms["glow"]["target"], "glow.kdl")
 
 
 class TestManifestPresets(unittest.TestCase):
@@ -405,23 +405,23 @@ class TestManifestPresets(unittest.TestCase):
         d.mkdir(parents=True, exist_ok=True)
         return d
 
-    def test_no_presets_table_defaults_to_safe(self):
+    def test_no_forms_table_defaults_to_safe(self):
         plugin = self._mkdir("myapp")
         (plugin / "config.conf").write_text("# conf")
         m = manifest.load_manifest(plugin)
-        self.assertFalse(m.preset_inherit)
-        self.assertEqual(m.preset_allow, [])
-        self.assertEqual(m.preset_standalone, [])
-        self.assertEqual(m.preset_include, [])
-        self.assertEqual(m.preset_exclude, [])
+        self.assertFalse(m.form_inherit)
+        self.assertEqual(m.form_allow, [])
+        self.assertEqual(m.form_standalone, [])
+        self.assertEqual(m.form_include, [])
+        self.assertEqual(m.form_exclude, [])
 
-    def test_presets_table_parsed_correctly(self):
+    def test_forms_table_parsed_correctly(self):
         plugin = self._mkdir("niri_test")
         (plugin / "config.kdl").write_text("# conf")
         (plugin / "manifest.toml").write_text("""
 preserve = ["monitor.kdl"]
 
-[presets]
+[forms]
 inherit = true
 allow = ["glow", "compact"]
 standalone = ["isolated"]
@@ -429,22 +429,22 @@ include = ["scripts/**", "*.kdl"]
 exclude = ["scripts/debug.sh"]
 """)
         m = manifest.load_manifest(plugin)
-        self.assertTrue(m.preset_inherit)
-        self.assertEqual(m.preset_allow, ["glow", "compact"])
-        self.assertEqual(m.preset_standalone, ["isolated"])
-        self.assertEqual(m.preset_include, ["scripts/**", "*.kdl"])
-        self.assertEqual(m.preset_exclude, ["scripts/debug.sh"])
+        self.assertTrue(m.form_inherit)
+        self.assertEqual(m.form_allow, ["glow", "compact"])
+        self.assertEqual(m.form_standalone, ["isolated"])
+        self.assertEqual(m.form_include, ["scripts/**", "*.kdl"])
+        self.assertEqual(m.form_exclude, ["scripts/debug.sh"])
 
-    def test_parts_targets_auto_included_in_preserve(self):
+    def test_slot_targets_auto_included_in_preserve(self):
         plugin = self._mkdir("part_unit")
         (plugin / "config.kdl").write_text("# conf")
         (plugin / "manifest.toml").write_text("""
 preserve = ["explicit.kdl"]
 
-[parts.theme]
+[forms.theme]
 target = "theme.kdl"
 
-[parts.effects]
+[forms.effects]
 target = "effects.kdl"
 """)
         m = manifest.load_manifest(plugin)
@@ -455,7 +455,7 @@ target = "effects.kdl"
         (plugin / "manifest.toml").write_text("""
 preserve = ["theme.kdl"]
 
-[parts.theme]
+[forms.theme]
 target = "theme.kdl"
 """)
         m2 = manifest.load_manifest(plugin)
@@ -492,17 +492,17 @@ class TestManifestCoercion(unittest.TestCase):
             self.assertEqual(m.packages_aur, ["foo-bar"])
             self.assertEqual(m.preserve, ["single.conf"])
 
-    def test_scalar_parts_entry_is_dropped(self):
+    def test_scalar_forms_entry_is_dropped(self):
         from nyxuri.deploy.manifest import load_manifest
         with TempEnv() as ctx:
             src = self._sandbox(ctx) / "demo2"
             src.mkdir(parents=True)
             (src / "config.conf").write_text("# conf\n", encoding="utf-8")
             (src / "manifest.toml").write_text(
-                '[parts]\ngood = { target = "a.conf" }\nbad = "oops"\n', encoding="utf-8"
+                '[forms]\ngood = { target = "a.conf" }\nbad = "oops"\n', encoding="utf-8"
             )
             m = _quiet(load_manifest, src)
-            self.assertEqual(sorted(m.parts), ["good"])
+            self.assertEqual(sorted(m.forms), ["good"])
 
     def test_empty_packages_list_stays_empty(self):
         from nyxuri.deploy.manifest import load_manifest

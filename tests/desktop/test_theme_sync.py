@@ -120,10 +120,10 @@ class TestThemeSync(unittest.TestCase):
 
     def test_sync_swaps_glow_layout_and_reload_guards_on_niri(self):
         from nyxuri.desktop.theme import sync
+        from nyxuri.kernel.ledger import set_plugin
 
         config = self.ctx.home / ".config"
-        (config / "nyxuri" / "presets").mkdir(parents=True)
-        (config / "nyxuri" / "presets" / "niri.active").write_text("glow\n")
+        set_plugin("niri", state="disabled", form="glow")
         (config / "niri").mkdir()
         (config / "niri" / "layout-dark.kdl").write_text("// dark layout\n")
         (config / "niri" / "layout.kdl").write_text("// stale light layout\n")
@@ -137,12 +137,12 @@ class TestThemeSync(unittest.TestCase):
             self.assertEqual(sync("dark"), 0)
         self.assertEqual((config / "niri" / "layout.kdl").stat().st_mtime_ns, before)
 
-    def test_sync_skips_glow_layout_when_preset_inactive(self):
+    def test_sync_skips_glow_layout_when_form_inactive(self):
         from nyxuri.desktop.theme import sync
+        from nyxuri.kernel.ledger import set_plugin
 
         config = self.ctx.home / ".config"
-        (config / "nyxuri" / "presets").mkdir(parents=True)
-        (config / "nyxuri" / "presets" / "niri.active").write_text("plain\n")
+        set_plugin("niri", state="disabled", form="plain")
         (config / "niri").mkdir()
         (config / "niri" / "layout-dark.kdl").write_text("// dark layout\n")
         with patch("nyxuri.desktop.theme.shutil.which", return_value=None):

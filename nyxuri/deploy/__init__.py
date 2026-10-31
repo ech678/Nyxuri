@@ -1,4 +1,4 @@
-"""Deploy subpackage — atomic swap, manifest, templates, preset, and the
+"""Deploy subpackage — atomic swap, manifest, templates, forms, and the
 deploy orchestrator.
 
 Re-exports keep external imports shallow (§13). For test patching, address the
@@ -15,11 +15,11 @@ from nyxuri.deploy.manifest import (
     discover_optional_apps,
 )
 from nyxuri.deploy.templates import _phase_render_templates
-from nyxuri.deploy.preset import (
-    InvalidActivePresetError,
-    read_active_preset,
-    write_active_preset,
-    resolve_preset_src,
+from nyxuri.deploy.forms import (
+    InvalidActiveFormError,
+    read_active_form,
+    write_active_form,
+    resolve_form_src,
 )
 from nyxuri.deploy.deploy import (
     config_item_dest,
@@ -37,7 +37,7 @@ __all__ = [
     "atomic_replace_item", "discover_config_items", "deploy_selected_configs",
     "render_completion_screen",
     "run_user_hooks", "test_deploy",
-    "read_active_preset", "write_active_preset", "InvalidActivePresetError", "resolve_preset_src",
+    "read_active_form", "write_active_form", "InvalidActiveFormError", "resolve_form_src",
     "load_manifest", "load_manifest_for", "discover_manifest_apps",
     "discover_deployable_apps", "discover_optional_apps", "ModuleManifest",
 ]

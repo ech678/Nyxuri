@@ -43,7 +43,7 @@ class TestMangoAdaptation(unittest.TestCase):
         self.assertIn("monitors.conf", m.preserve)
         self.assertIn("noctalia.conf", m.preserve)
         self.assertIn("scripts/*.sh", m.chmod)
-        self.assertEqual(m.preset_reload, ["mmsg", "dispatch", "reload_config"])
+        self.assertEqual(m.form_reload, ["mmsg", "dispatch", "reload_config"])
         self.assertTrue(m.is_deployable)
         self.assertTrue(m.is_optional)
 

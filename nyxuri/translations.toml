@@ -1125,9 +1125,9 @@ en = "Privilege side effects"
 zh = "开关状态"
 en = "State"
 
-[cli_detail_preset]
-zh = "当前预设"
-en = "Preset"
+[cli_detail_form]
+zh = "当前形态"
+en = "Form"
 
 [cli_detail_vault]
 zh = "保险库"
@@ -1468,9 +1468,9 @@ en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Saved {0} user preset: {1}"
 zh = "  {Colors.BOLD_RED}[✗]{Colors.RESET} 保存 {0} 预设 '{1}' 失败（原有预设未被改动）"
 en = "  {Colors.BOLD_RED}[✗]{Colors.RESET} Failed to save preset '{1}' for {0} (existing preset left untouched)"
 
-[log_part_reconcile_failed]
-zh = "  {Colors.BOLD_RED}[✗]{Colors.RESET} {0}: 已记录的零件变体未能落盘（{1}）"
-en = "  {Colors.BOLD_RED}[✗]{Colors.RESET} {0}: recorded part variant could not be realized ({1})"
+[log_form_replay_failed]
+zh = "  {Colors.BOLD_RED}[✗]{Colors.RESET} {0}: 已记录的槽位变体未能落盘（{1}）"
+en = "  {Colors.BOLD_RED}[✗]{Colors.RESET} {0}: recorded slot variant could not be realized ({1})"
 
 [preset_delete_official_denied]
 zh = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} 预设 '{0}' 是官方预设，无法删除"
@@ -1494,19 +1494,15 @@ zh = """  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 已在编辑器打开 {0} 预�
 en = """  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Opened {0} preset {1} in editor
   {Colors.DIM}Re-run `{CLI_CMD} preset {0} apply {1}` to apply edits{Colors.RESET}"""
 
-[preset_warn_upstream_removed]
-zh = "{Colors.BOLD_YELLOW}[!] {0}: 原预设 '{1}' 已被上游移除，已回退默认配置{Colors.RESET}"
-en = "{Colors.BOLD_YELLOW}[!] {0}: preset '{1}' was removed upstream, fell back to defaults{Colors.RESET}"
+[form_warn_upstream_removed]
+zh = "{Colors.BOLD_YELLOW}[!] {0}: 活动形态 '{1}' 已不在上游（仓库与用户目录均无），回退为默认{Colors.RESET}"
+en = "{Colors.BOLD_YELLOW}[!] {0}: active form '{1}' is gone upstream (neither repo nor user dirs have it), resetting to default{Colors.RESET}"
 
-[preset_warn_frozen]
-zh = """{Colors.BOLD_YELLOW}[!] {0}: 活动预设 '{1}' 已不在仓库中，当前 ~/.config/{0} 内容保持冻结，未重新部署{Colors.RESET}
-    {Colors.BOLD_CYAN}运行 `{Colors.RESET}{CLI_CMD} preset {0} list{Colors.BOLD_CYAN}` 选新预设{Colors.RESET}"""
-en = """{Colors.BOLD_YELLOW}[!] {0}: active preset '{1}' is no longer in the repo; ~/.config/{0} is frozen, not redeployed{Colors.RESET}
-    {Colors.BOLD_CYAN}Run `{Colors.RESET}{CLI_CMD} preset {0} list{Colors.BOLD_CYAN}` to pick a new preset{Colors.RESET}"""
-
-[preset_warn_invalid_active]
-zh = "{Colors.BOLD_YELLOW}[!] {0}: 活动预设状态无效，当前 ~/.config/{0} 内容保持冻结，未重新部署{Colors.RESET}"
-en = "{Colors.BOLD_YELLOW}[!] {0}: active preset state is invalid; ~/.config/{0} is frozen, not redeployed{Colors.RESET}"
+[form_warn_frozen]
+zh = """{Colors.BOLD_YELLOW}[!] {0}: 活动形态 '{1}' 已不在仓库中，当前 ~/.config/{0} 内容保持冻结，未重新部署{Colors.RESET}
+    {Colors.BOLD_CYAN}运行 `{Colors.RESET}{CLI_CMD} use {0} list{Colors.BOLD_CYAN}` 选新形态{Colors.RESET}"""
+en = """{Colors.BOLD_YELLOW}[!] {0}: active form '{1}' is no longer in the repo; ~/.config/{0} is frozen, not redeployed{Colors.RESET}
+    {Colors.BOLD_CYAN}Run `{Colors.RESET}{CLI_CMD} use {0} list{Colors.BOLD_CYAN}` to pick a new form{Colors.RESET}"""
 
 [preset_switcher_title]
 zh = "预设管理"

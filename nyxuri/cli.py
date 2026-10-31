@@ -22,12 +22,12 @@ from nyxuri.core import (
 )
 
 from nyxuri.deploy import test_deploy
-from nyxuri.desktop.presets import (
-    apply_preset,
-    delete_preset,
-    edit_preset,
-    list_presets,
-    save_preset,
+from nyxuri.desktop.forms import (
+    apply_form,
+    delete_form,
+    edit_form,
+    list_forms,
+    save_form,
 )
 from nyxuri.pkg.deps import ensure_aur_helper, run_dep_menu_loop, run_optional_apps_menu_loop
 from nyxuri.sysdoctor import generate_bug_report, run_doctor
@@ -90,18 +90,23 @@ def _report_steps(steps) -> int:
 
 
 def _cmd_on(sub_args: List[str]) -> int:
-    """nyxuri on <plugin> [--preset <name>] — disclose, then transact."""
-    usage = f"{CLI_CMD} on <plugin> [--preset <name>]"
+    """nyxuri on <plugin> [--form <name>] — disclose, then transact.
+
+    ``--preset`` is the deprecated alias (one release cycle).
+    """
+    usage = f"{CLI_CMD} on <plugin> [--form <name>]"
     rest = list(sub_args)
     plugin = rest.pop(0) if rest and not rest[0].startswith("-") else ""
     if not plugin:
         exit_usage(usage)
-    preset = None
+    form = None
     while rest:
         cur = rest.pop(0)
-        if cur == "--preset":
-            preset = rest.pop(0) if rest else ""
-            if not preset:
+        if cur in ("--form", "--preset"):
+            if cur == "--preset":
+                print("[!] `--preset` 旗标已更名为 `--form`（deprecated，下一版本移除）", file=sys.stderr)
+            form = rest.pop(0) if rest else ""
+            if not form:
                 exit_usage(usage)
         else:
             exit_usage(usage)
@@ -124,7 +129,7 @@ def _cmd_on(sub_args: List[str]) -> int:
         print(msg("cli_aborted"), file=sys.stderr)
         return 1
     return _report_steps(
-        transaction.plugin_on(plugin, preset=preset, install_packages=_package_installer)
+        transaction.plugin_on(plugin, form=form, install_packages=_package_installer)
     )
 
 
@@ -181,7 +186,7 @@ def _cmd_list(sub_args: List[str]) -> int:
     print(msg("cli_list_header"))
     for uid in ids:
         rec = recs.get(uid) or {}
-        print(f"  {uid:<24}{_state_cell(rec.get('state', ''), 12)}{rec.get('preset', '-')}")
+        print(f"  {uid:<24}{_state_cell(rec.get('state', ''), 12)}{rec.get('form', '-')}")
     return 0
 
 
@@ -213,7 +218,7 @@ def _show_plugin_detail(plugin: str) -> int:
     rec = ledger.get_plugin(plugin)
     if rec:
         print(f"  {msg('cli_detail_state')}: {rec.get('state', '-')}")
-        print(f"  {msg('cli_detail_preset')}: {rec.get('preset', '-')}")
+        print(f"  {msg('cli_detail_form')}: {rec.get('form', '-')}")
         if rec.get("vault"):
             print(f"  {msg('cli_detail_vault')}: {rec['vault']}")
         if rec.get("updated"):
@@ -331,9 +336,13 @@ def _cmd_test(sub_args: List[str]) -> int:
     return 0 if test_deploy() else 1
 
 
-def _cmd_preset(sub_args: List[str]) -> int:
-    """nyxuri preset <app> [list|apply <name>|save <name>|edit <name>|delete <name>|parts|part <slot> <name>]"""
-    usage = f"{CLI_CMD} preset <app> [list|apply <name>|save <name>|edit <name>|delete <name>|parts|part <slot> <name>]"
+def _cmd_use(sub_args: List[str]) -> int:
+    """nyxuri use <plugin> [list|<name>|save <name>|edit <name>|delete <name>|slots|slot <axis> <name>]
+
+    The form verb (R0-2): whole-config axis when the value names a variant,
+    slot axis via the explicit ``slot`` subaction.
+    """
+    usage = f"{CLI_CMD} use <plugin> [list|<name>|save <name>|edit <name>|delete <name>|slots|slot <axis> <name>]"
     if len(sub_args) < 2:
         exit_usage(usage)
     app = sub_args[0]
@@ -341,46 +350,75 @@ def _cmd_preset(sub_args: List[str]) -> int:
     name = sub_args[2] if len(sub_args) > 2 else ""
     if action == "list":
         if len(sub_args) > 2:
-            exit_usage(f"{CLI_CMD} preset {app} list")
-        list_presets(app)
+            exit_usage(f"{CLI_CMD} use {app} list")
+        list_forms(app)
         return 0
-    if action == "parts":
+    if action == "slots":
         if len(sub_args) > 2:
-            exit_usage(f"{CLI_CMD} preset {app} parts")
-        from nyxuri.deploy.preset import list_parts
-        from nyxuri.kernel.ledger import read_ledger
-        slots = list_parts(app)
+            exit_usage(f"{CLI_CMD} use {app} slots")
+        from nyxuri.deploy.forms import list_slots
+        from nyxuri.kernel.ledger import get_form_slots
+        slots = list_slots(app)
         if not slots:
-            print(f"[!] {app} 暂无可用零件插槽")
+            print(f"[!] {app} 暂无可用槽位轴")
             return 0
-        current_parts = read_ledger().get("parts", {})
-        print(f"\n── {app} 零件插槽 ──\n")
+        current_slots = get_form_slots(app)
+        print(f"\n── {app} 槽位轴 ──\n")
         for slot, info in slots.items():
-            curr = current_parts.get(f"{app}:{slot}", info.get("default", "default"))
+            curr = current_slots.get(slot, info.get("default", "default"))
             print(f"  [{slot}] 目标: {info.get('target', '')} (当前: {curr})")
             for var in info.get("variants", []):
                 mark = "*" if var == curr else " "
                 print(f"    {mark} {var}")
         print()
         return 0
-    if action == "part":
+    if action == "slot":
         if len(sub_args) != 4:
-            exit_usage(f"{CLI_CMD} preset {app} part <slot> <name>")
+            exit_usage(f"{CLI_CMD} use {app} slot <axis> <name>")
         slot = sub_args[2]
         part_name = sub_args[3]
-        from nyxuri.deploy.preset import apply_part
-        if apply_part(app, slot, part_name):
-            print(f"[✓] 已切换 {app} 零件 [{slot}]: {part_name}")
+        from nyxuri.deploy.forms import use_form
+        if use_form(app, slot, part_name):
+            print(f"[✓] 已切换 {app} 槽位 [{slot}]: {part_name}")
             return 0
         else:
-            print(f"[✗] 切换 {app} 零件 [{slot}]: {part_name} 失败")
+            print(f"[✗] 切换 {app} 槽位 [{slot}]: {part_name} 失败")
             return 1
-    if action in ("apply", "save", "edit", "delete"):
+    if action in ("save", "edit", "delete"):
         if not name or len(sub_args) > 3:
-            exit_usage(f"{CLI_CMD} preset {app} {action} <name>")
-        fn = {"apply": apply_preset, "save": save_preset, "edit": edit_preset, "delete": delete_preset}[action]
+            exit_usage(f"{CLI_CMD} use {app} {action} <name>")
+        fn = {"save": save_form, "edit": edit_form, "delete": delete_form}[action]
         return 0 if fn(app, name) else 1
-    exit_usage(usage)
+    # bare value = switch the whole-config axis
+    if len(sub_args) > 2 or not _is_safe_component_arg(action):
+        exit_usage(usage)
+    return 0 if apply_form(app, action) else 1
+
+
+def _is_safe_component_arg(value: str) -> bool:
+    """Reject option-shaped tokens before they reach the form engine."""
+    return not value.startswith("-")
+
+
+def _cmd_preset(sub_args: List[str]) -> int:
+    """Deprecated alias of ``use`` — old syntax rides one release cycle (R0-2).
+
+    apply <name> → <name>; parts → slots; part <axis> <name> → slot <axis> <name>.
+    """
+    print("[!] `preset` 命令已并轨为 `use`（deprecated，下一版本移除）", file=sys.stderr)
+    print("[!] `preset` is now `use` (deprecated, removed next release)", file=sys.stderr)
+    mapped: List[str] = []
+    for i, arg in enumerate(sub_args):
+        if i == 1 and arg == "apply":
+            continue  # use switches a bare value directly
+        if i == 1 and arg == "parts":
+            mapped.append("slots")
+            continue
+        if i == 1 and arg == "part":
+            mapped.append("slot")
+            continue
+        mapped.append(arg)
+    return _cmd_use(mapped)
 
 
 def _cmd_theme(sub_args: List[str]) -> int:
@@ -517,10 +555,11 @@ def _cmd_help(sub_args: List[str]) -> int:
 
 
 COMMANDS = {
-    "on":        (_cmd_on,        f"{CLI_CMD} on <plugin> [--preset <name>]"),
-    "enable":    (_cmd_on,        f"{CLI_CMD} on <plugin> [--preset <name>]"),
+    "on":        (_cmd_on,        f"{CLI_CMD} on <plugin> [--form <name>]"),
+    "enable":    (_cmd_on,        f"{CLI_CMD} on <plugin> [--form <name>]"),
     "off":       (_cmd_off,       f"{CLI_CMD} off <plugin> [--cascade]"),
     "disable":   (_cmd_off,       f"{CLI_CMD} off <plugin> [--cascade]"),
+    "use":       (_cmd_use,       f"{CLI_CMD} use <plugin> [list|<name>|save <name>|edit <name>|delete <name>|slots|slot <axis> <name>]"),
     "list":      (_cmd_list,      f"{CLI_CMD} list [plugin]"),
     "pkg":       (_cmd_pkg,       f"{CLI_CMD} pkg <install|upgrade|remove|search|info|installed>"),
     "clean":     (_cmd_clean,     f"{CLI_CMD} clean [-n] [--only <tasks>]"),
@@ -532,7 +571,7 @@ COMMANDS = {
     "deps":      (_cmd_deps,      f"{CLI_CMD} deps [core|apps]"),
     "bug":       (_cmd_bug,       f"{CLI_CMD} bug"),
     "test":      (_cmd_test,      f"{CLI_CMD} test"),
-    "preset":    (_cmd_preset,    f"{CLI_CMD} preset <app> [list|apply <name>|save <name>|edit <name>|delete <name>|parts|part <slot> <name>]"),
+    "preset":    (_cmd_preset,    f"{CLI_CMD} preset <app> …  (deprecated alias of use, removed next release)"),
     "theme":     (_cmd_theme,     f"{CLI_CMD} theme [toggle|dark|light|sync|status]"),
     "shell":     (_cmd_shell,     f"{CLI_CMD} shell [get|set <noctalia|nyxuri-shell> [bin_path]|switch [<noctalia|nyxuri-shell> [bin_path]]|status] [EXPERIMENTAL]"),
     "update":    (_cmd_update,    f"{CLI_CMD} update [--force|--no-deploy] [--to <tag|commit>]"),

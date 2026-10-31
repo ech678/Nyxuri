@@ -229,7 +229,7 @@ class TestP4ThemeEngineContract(unittest.TestCase):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         confs = [
             os.path.join(repo_root, "plugins", "kitty", "kitty.conf"),
-            os.path.join(repo_root, "plugins", "kitty", "__presets__", "transparent", "kitty.conf"),
+            os.path.join(repo_root, "plugins", "kitty", "__forms__", "transparent", "kitty.conf"),
         ]
         retired = (
             "copy_and_clear_or_interrupt",

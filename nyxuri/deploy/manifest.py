@@ -32,12 +32,13 @@ Schema (all fields optional, flat at top level)::
     requires_root = true
     system_paths = ["/etc/greetd/config.toml"]
 
-    [presets]           # inherit / allow / standalone / include / exclude / reload
-    [parts.<slot>]      # target / source_dir / default
+    [forms]             # whole-config axis knobs: inherit / allow / standalone /
+                        # include / exclude / reload
+    [forms.<slot>]      # slot axes (target / source_dir / default)
 
 A ``target`` plugin ships exactly one file (``plugins/<plugin>/<target>``) that
-lands at ``~/.config/<target>``; presets and parts are directory affordances
-and do not apply to it. A ``~/``-prefixed ``target`` declares a shared
+lands at ``~/.config/<target>``; form axes are directory affordances and do
+not apply to it. A ``~/``-prefixed ``target`` declares a shared
 living area outside ``~/.config`` (implies ``merge`` semantics); an
 ``xdg:<KIND>/<rest>`` target resolves ``<KIND>`` through the XDG user dirs
 (``xdg-user-dir``), so a localised Pictures dir lands wallpapers where the
@@ -83,13 +84,13 @@ class ModuleManifest:
     merge: bool = False        # Shared living area: no-clobber deploy, snapshot = laid files
     runtime: bool = False      # Ledger-only plugin (shell.*): no living area, the
                                # running host reacts to the plugin-changed event
-    preset_inherit: bool = False
-    preset_allow: List[str] = field(default_factory=list)
-    preset_standalone: List[str] = field(default_factory=list)
-    preset_include: List[str] = field(default_factory=list)
-    preset_exclude: List[str] = field(default_factory=list)
-    preset_reload: List[str] = field(default_factory=list)
-    parts: Dict[str, dict] = field(default_factory=dict)
+    form_inherit: bool = False
+    form_allow: List[str] = field(default_factory=list)
+    form_standalone: List[str] = field(default_factory=list)
+    form_include: List[str] = field(default_factory=list)
+    form_exclude: List[str] = field(default_factory=list)
+    form_reload: List[str] = field(default_factory=list)
+    forms: Dict[str, dict] = field(default_factory=dict)
 
 
 def _is_deployable(app_src: Path) -> bool:
@@ -118,7 +119,8 @@ def _as_str_list(value) -> List[str]:
     return []
 
 
-def _as_parts_dict(value) -> Dict[str, dict]:
+def _as_forms_dict(value) -> Dict[str, dict]:
+    """Slot-axis declarations under ``[forms]``: every dict-valued entry."""
     if not isinstance(value, dict):
         return {}
     return {key: cfg for key, cfg in value.items() if isinstance(cfg, dict)}
@@ -182,7 +184,7 @@ def load_manifest(app_src: Path) -> ModuleManifest:
         with open(mpath, "rb") as f:
             data = tomllib.load(f)
 
-    presets = data.get("presets", {}) or {}
+    forms = data.get("forms", {}) or {}
     privilege = data.get("privilege", {}) or {}
     # Absent packages → [<plugin name>]; an explicit empty list stays empty
     # (flatpak/AUR-only plugins must keep their name out of pacman).
@@ -190,8 +192,8 @@ def load_manifest(app_src: Path) -> ModuleManifest:
     pkg_repo = _as_str_list(raw_repo) if raw_repo is not None else [name]
 
     manifest_preserve = _as_str_list(data.get("preserve"))
-    manifest_parts = _as_parts_dict(data.get("parts"))
-    for slot_cfg in manifest_parts.values():
+    manifest_forms = _as_forms_dict(data.get("forms"))
+    for slot_cfg in manifest_forms.values():
         if isinstance(slot_cfg, dict):
             target = slot_cfg.get("target")
             if target and target not in manifest_preserve:
@@ -218,13 +220,13 @@ def load_manifest(app_src: Path) -> ModuleManifest:
         target=str(data.get("target", "")),
         merge=bool(data.get("merge", False)),
         runtime=bool(data.get("runtime", False)),
-        preset_inherit=bool(presets.get("inherit")),
-        preset_allow=_as_str_list(presets.get("allow")),
-        preset_standalone=_as_str_list(presets.get("standalone")),
-        preset_include=_as_str_list(presets.get("include")),
-        preset_exclude=_as_str_list(presets.get("exclude")),
-        preset_reload=_as_str_list(presets.get("reload")),
-        parts=manifest_parts,
+        form_inherit=bool(forms.get("inherit")),
+        form_allow=_as_str_list(forms.get("allow")),
+        form_standalone=_as_str_list(forms.get("standalone")),
+        form_include=_as_str_list(forms.get("include")),
+        form_exclude=_as_str_list(forms.get("exclude")),
+        form_reload=_as_str_list(forms.get("reload")),
+        forms=manifest_forms,
     )
 
 

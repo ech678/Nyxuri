@@ -170,18 +170,15 @@ def _propagate(mode: str, toggle: bool) -> str:
 def _sync_glow_layout(current: str) -> None:
     """Swap the fixed-glow niri layout for the active mode, then reload niri.
 
-    Only runs when the glow preset is active and the per-mode layout file
-    exists; identical bytes are a no-op.
+    Only runs when the glow form is active (ledger truth) and the per-mode
+    layout file exists; identical bytes are a no-op.
     """
     env = get_env()
-    active = env.presets_dir / "niri.active"
-    for legacy in (env.config_dir / "nyxniri" / "presets" / "niri.active",
-                   env.config_dir / "NyxNiri" / "presets" / "niri.active"):
-        if not active.is_file() and legacy.is_file():
-            active = legacy
-    if not active.is_file():
-        return
-    if active.read_text(encoding="utf-8").strip() != "glow":
+    try:
+        from nyxuri.deploy.forms import read_active_form
+        if read_active_form("niri") != "glow":
+            return
+    except Exception:
         return
     niri_dir = env.config_dir / "niri"
     source = niri_dir / f"layout-{current}.kdl"

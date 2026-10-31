@@ -2,7 +2,7 @@
 services, completion screen, fisher uninstall, and the deploy/test entry points.
 
 Coordinates the deploy/ siblings: atomic (swap+preserve), templates (render),
-assets (wallpapers), manifest (app discovery), preset
+assets (wallpapers), manifest (app discovery), forms
 (active variant). Modules/state/deps are lazy-imported to avoid cycles.
 """
 
@@ -28,12 +28,12 @@ from nyxuri.deploy.manifest import (
     load_manifest,
     living_path,
 )
-from nyxuri.deploy.preset import (
-    InvalidActivePresetError,
-    PresetSrcResult,
-    read_active_preset,
-    resolve_preset_src,
-    write_active_preset,
+from nyxuri.deploy.forms import (
+    FormSrcResult,
+    read_active_form,
+    replay_active_forms,
+    resolve_form_src,
+    write_active_form,
 )
 from nyxuri.deploy.templates import _phase_render_templates
 
@@ -97,7 +97,7 @@ def _phase_atomic_deployment(
 
         if manifest.target:
             # Single-file plugin (§4 target exception): one file inside the
-            # plugin dir lands at ~/.config/<target>. Presets and parts are
+            # plugin dir lands at ~/.config/<target>. Form axes are
             # directory affordances and do not apply.
             src = env.plugins_src / item / manifest.target
             dest = config_dir / manifest.target
@@ -106,36 +106,31 @@ def _phase_atomic_deployment(
                 print(msg("log_deploy_config_failed", item), file=sys.stderr)
                 log_msg("ERROR", f"Missing target file for plugin '{item}': {src}")
                 continue
-            # No preset/base resolution applies; a concrete result keeps the
+            # No form/base resolution applies; a concrete result keeps the
             # atomic call below bound (a stale loop iteration must never leak).
-            result = PresetSrcResult(src=src, reset_active=None)
+            result = FormSrcResult(src=src, reset_form=None)
         else:
             dest = config_dir / item
 
             # Resolve which source tree to deploy: default config, an official
-            # preset, or a user preset — based on the app's active state file.
-            try:
-                active = read_active_preset(item)
-            except InvalidActivePresetError:
-                print(msg("preset_warn_invalid_active", item))
-                log_msg("WARN", f"Invalid active preset state for {item}; dest frozen, skipped")
-                continue
-            result = resolve_preset_src(item, active, dest)
+            # form, or a user form — based on the plugin's ledger record.
+            active = read_active_form(item)
+            result = resolve_form_src(item, active, dest)
             for w in result.warnings:
                 print(w)
             if result.src is None:
-                # Preset not found anywhere — freeze dest, do not fall back to
-                # default (would silently wipe the user's config). §3.2
-                log_msg("WARN", f"Preset '{active}' for {item} not found; dest frozen, skipped")
+                # Form not found anywhere — freeze dest, do not fall back to
+                # default (would silently wipe the user's config).
+                log_msg("WARN", f"Form '{active}' for {item} not found; dest frozen, skipped")
                 continue
             src = result.src
             # dest-missing reset: sanctioned write-before-deploy (dest is empty,
-            # so a half-written state self-heals next run). §3.2
-            if result.reset_active is not None:
+            # so a half-written state self-heals next run).
+            if result.reset_form is not None:
                 try:
-                    write_active_preset(item, result.reset_active)
+                    write_active_form(item, result.reset_form)
                 except Exception as e:
-                    log_msg("ERROR", f"Failed to write active preset for {item}: {e}")
+                    log_msg("ERROR", f"Failed to record form for {item}: {e}")
 
             if not src.exists():
                 failed_items.append(item)
@@ -182,10 +177,10 @@ def _phase_atomic_deployment(
                     except OSError:
                         pass
 
-        reconcile_failures = _reconcile_active_parts(item, manifest)
-        if reconcile_failures:
+        replay_failures = replay_active_forms(item, manifest)
+        if replay_failures:
             failed_items.append(item)
-            print(msg("log_part_reconcile_failed", item, ", ".join(reconcile_failures)), file=sys.stderr)
+            print(msg("log_form_replay_failed", item, ", ".join(replay_failures)), file=sys.stderr)
 
         print(msg("log_deploy_config_item", item))
         log_msg("INFO", f"Deployed config {dest.relative_to(config_dir).as_posix()} (plugin {item})")
@@ -199,7 +194,7 @@ def merge_deploy_plugin(item: str, manifest: ModuleManifest) -> Optional[List[st
     Blueprint files land in the living area only when missing — existing
     files (the user's own content, an external pack) are never touched and
     nothing is ever deleted. Returns the laid relative paths, or None on
-    failure. Presets, parts and Vault semantics do not apply to merge
+    failure. Form axes and Vault semantics do not apply to merge
     plugins; the transaction snapshots exactly these laid files.
     """
     import shutil
@@ -255,23 +250,6 @@ def wallpapers_pack_present() -> bool:
     except OSError:
         return False
 
-
-def _reconcile_active_parts(app: str, manifest: ModuleManifest) -> List[str]:
-    """Ensure ledger-recorded active parts are realized in dest."""
-    if not manifest.parts:
-        return []
-    from nyxuri.kernel.ledger import read_ledger
-    from nyxuri.deploy.preset import apply_part
-    parts_state = read_ledger().get("parts", {})
-    if not isinstance(parts_state, dict):
-        return []
-    failures: List[str] = []
-    for slot, cfg in manifest.parts.items():
-        var = parts_state.get(f"{app}:{slot}")
-        if var and var != cfg.get("default", "default"):
-            if not apply_part(app, slot, var):
-                failures.append(f"{app}:{slot}={var}")
-    return failures
 
 def run_user_hooks() -> List[str]:
     """Run user-owned scripts and return non-blocking diagnostics."""

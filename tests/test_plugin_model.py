@@ -162,11 +162,11 @@ class TestKernelLedger(unittest.TestCase):
     def test_unit_record_frozen_shape(self):
         """A record carries exactly the five frozen fields and persists."""
         with TempEnv() as ctx:
-            rec = ledger.set_plugin("kitty", state="enabled", preset="default",
+            rec = ledger.set_plugin("kitty", state="enabled", form="default",
                                   files={"kitty.conf": "abc123"})
             self.assertEqual(
                 set(rec),
-                {"state", "preset", "files", "vault", "updated"},
+                {"state", "form", "files", "vault", "updated"},
                 "plugin records must not grow a sixth field",
             )
             self.assertEqual(rec["state"], "enabled")
@@ -175,15 +175,18 @@ class TestKernelLedger(unittest.TestCase):
             self.assertTrue(rec["updated"])
             # persisted under the top-level `plugins` key (R0-1 rename)
             on_disk = json.loads((ctx.home / ".local/state/nyxuri/state.json").read_text())
-            self.assertEqual(on_disk["plugins"]["kitty"]["preset"], "default")
+            self.assertEqual(on_disk["plugins"]["kitty"]["form"], "default")
             self.assertEqual(ledger.get_plugin("kitty"), rec)
             self.assertEqual(ledger.all_plugins(), {"kitty": rec})
 
-    def test_disabled_requires_vault(self):
-        """A disabled plugin must name its vault archive — no silent loss."""
+    def test_disabled_record_holds_vault_only_when_archived(self):
+        """Amended rule (R0-2): a disabled record names its vault when — and
+        only when — an archive exists. A `use`-only record (never enabled,
+        nothing archived) is honest with vault=null; a real `off` always
+        names the archive dir."""
         with TempEnv():
-            with self.assertRaises(ValueError):
-                ledger.set_plugin("kitty", state="disabled")
+            rec = ledger.set_plugin("kitty", state="disabled")
+            self.assertIsNone(rec["vault"], "never-enabled records have nothing archived")
             rec = ledger.set_plugin("kitty", state="disabled",
                                   vault="/state/nyxuri/vault/kitty")
             self.assertEqual(rec["state"], "disabled")
@@ -201,36 +204,81 @@ class TestKernelLedger(unittest.TestCase):
             self.assertEqual(ledger.get_plugin("fish")["state"], "enabled")
             self.assertEqual(ledger.get_plugin("kitty")["state"], "disabled")
 
-    def test_legacy_units_key_migrates_on_first_read(self):
-        """A pre-R0-1 ledger (top-level ``units`` key) is renamed to
-        ``plugins`` on first read, atomically and exactly once."""
+    def test_legacy_shapes_migrate_on_first_read(self):
+        """A pre-R0-2 ledger converges in one atomic write, exactly once.
+
+        Covers all three legacy shapes: the R0-1 ``units`` top key, the
+        per-record ``preset`` field, and the ``presets``/``parts`` top dicts
+        (the whole-axis mirror folds into records — synthesizing a disabled
+        record for never-switched plugins — and slot choices regroup under
+        ``forms``).
+        """
         with TempEnv() as ctx:
             path = ctx.home / ".local/state/nyxuri/state.json"
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(
-                json.dumps({"units": {"kitty": {"state": "enabled"}}}, indent=2) + "\n",
-                encoding="utf-8",
-            )
+            path.write_text(json.dumps({
+                "units": {
+                    "kitty": {"state": "enabled", "preset": "default", "files": {}, "vault": None,
+                              "updated": "2026-01-01T00:00:00+00:00"},
+                    "fish": {"state": "enabled", "preset": "default", "files": {}, "vault": None,
+                             "updated": "2026-01-01T00:00:00+00:00"},
+                },
+                "presets": {"kitty": "transparent", "starship": "plain"},
+                "parts": {"niri:effects": "xray-blur", "niri:glow": "glow"},
+            }, indent=2) + "\n", encoding="utf-8")
+
             rec = ledger.get_plugin("kitty")
             self.assertEqual(rec["state"], "enabled")
+            self.assertEqual(rec["form"], "transparent",
+                             "the legacy whole-axis mirror lands in the record")
+            # never-switched plugins get an honest synthesized record
+            starship = ledger.get_plugin("starship")
+            self.assertEqual(starship["state"], "disabled")
+            self.assertEqual(starship["form"], "plain")
+            self.assertIsNone(starship["vault"])
+            # slot choices regroup under `forms`
+            self.assertEqual(ledger.get_form_slots("niri"),
+                             {"effects": "xray-blur", "glow": "glow"})
+
             on_disk = json.loads(path.read_text(encoding="utf-8"))
-            self.assertNotIn("units", on_disk, "legacy key must be gone after migration")
-            self.assertEqual(on_disk["plugins"]["kitty"]["state"], "enabled")
-            # idempotent: further reads neither duplicate nor resurrect the key
+            self.assertNotIn("units", on_disk)
+            self.assertNotIn("presets", on_disk, "legacy top dicts must be gone after migration")
+            self.assertNotIn("parts", on_disk)
+            self.assertEqual(on_disk["plugins"]["kitty"]["form"], "transparent")
+            self.assertIn("forms", on_disk)
+            for rec in on_disk["plugins"].values():
+                self.assertNotIn("preset", rec, "per-record preset field must be renamed")
+
+            # idempotent: further writes neither resurrect nor re-rename
             ledger.set_plugin("kitty", state="disabled", vault="/vault/kitty")
             on_disk = json.loads(path.read_text(encoding="utf-8"))
             self.assertNotIn("units", on_disk)
+            self.assertNotIn("presets", on_disk)
             self.assertEqual(on_disk["plugins"]["kitty"]["state"], "disabled")
+            self.assertEqual(ledger.get_form_slots("niri")["effects"], "xray-blur")
 
-    def test_fresh_ledger_only_carries_plugins_key(self):
-        """New installs never produce the legacy ``units`` key."""
+    def test_fresh_ledger_only_carries_new_shape(self):
+        """New installs never produce the legacy keys or field names."""
         with TempEnv() as ctx:
             ledger.set_plugin("kitty", state="enabled")
+            ledger.set_form_slot("kitty", "effects", "xray")
             on_disk = json.loads(
                 (ctx.home / ".local/state/nyxuri/state.json").read_text(encoding="utf-8")
             )
             self.assertIn("plugins", on_disk)
+            self.assertIn("forms", on_disk)
             self.assertNotIn("units", on_disk)
+            self.assertNotIn("presets", on_disk)
+            self.assertNotIn("parts", on_disk)
+
+    def test_form_slot_choices_round_trip(self):
+        with TempEnv():
+            ledger.set_form_slot("niri", "effects", "xray")
+            ledger.set_form_slot("niri", "glow", "glow")
+            ledger.set_form_slot("kitty", "effects", "off")
+            self.assertEqual(ledger.get_form_slots("niri"), {"effects": "xray", "glow": "glow"})
+            self.assertEqual(ledger.get_form_slots("kitty"), {"effects": "off"})
+            self.assertEqual(ledger.get_form_slots("ghost"), {})
 
 
 if __name__ == "__main__":

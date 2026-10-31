@@ -363,30 +363,22 @@ def _check_path_occlusion(env) -> None:
         check_path_occlusion()
 
 
-def _check_preset_drift(env) -> None:
-    """Warn if an app's active preset is no longer in repo or user presets.
+def _check_form_drift(env) -> None:
+    """Warn if a plugin's active whole-axis form is no longer in repo or user forms.
 
-    Lets users catch 'your kitty transparent preset was removed upstream' even
-    without running update — the dest is frozen, but doctor surfaces it. §11
+    Lets users catch 'your kitty transparent form was removed upstream' even
+    without running update — the dest is frozen, but doctor surfaces it.
     """
     from nyxuri.deploy import discover_config_items
-    from nyxuri.deploy import InvalidActivePresetError, read_active_preset
-    from nyxuri.deploy.preset import _find_preset_src
+    from nyxuri.deploy.forms import _find_form_src, read_active_form
     for app in discover_config_items():
-        try:
-            active = read_active_preset(app)
-        except InvalidActivePresetError:
-            print(msg("doctor_warn", text(
-                f"{app}: 活动预设状态无效，当前 ~/.config/{app} 已冻结，未重新部署",
-                f"{app}: active preset state is invalid; ~/.config/{app} is frozen, not redeployed",
-            )))
-            continue
+        active = read_active_form(app)
         if active == "default":
             continue
-        if _find_preset_src(app, active) is None:
+        if _find_form_src(app, active) is None:
             print(msg("doctor_warn", text(
-                f"{app}: 活动预设 '{active}' 已不在仓库（~/.config/{app} 已冻结，未重新部署）",
-                f"{app}: active preset '{active}' is gone from the repo (~/.config/{app} frozen, not redeployed)",
+                f"{app}: 活动形态 '{active}' 已不在仓库（~/.config/{app} 已冻结，未重新部署）",
+                f"{app}: active form '{active}' is gone from the repo (~/.config/{app} frozen, not redeployed)",
             )))
 
 
@@ -426,7 +418,7 @@ DOCTOR_SECTIONS = [
         _check_gtk_theme,
         _check_greeter,
         _check_path_occlusion,
-        _check_preset_drift,
+        _check_form_drift,
     ]),
 ]
 

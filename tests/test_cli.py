@@ -493,7 +493,11 @@ class TestCoreVerbs(unittest.TestCase):
         code, _, _ = self._run("on")
         self.assertEqual(code, 2)
 
-    def test_on_rejects_preset_without_value(self):
+    def test_on_rejects_form_flag_without_value(self):
+        code, _, _ = self._run("on", "kitty", "--form")
+        self.assertEqual(code, 2)
+
+    def test_on_rejects_deprecated_preset_flag_without_value(self):
         code, _, _ = self._run("on", "kitty", "--preset")
         self.assertEqual(code, 2)
 
@@ -517,23 +521,36 @@ class TestCoreVerbs(unittest.TestCase):
 
     # -- verb wiring ----------------------------------------------------
 
-    def test_on_forwards_preset_and_injected_installer(self):
+    def test_on_forwards_form_and_injected_installer(self):
         from nyxuri.cli import _package_installer
         from nyxuri.kernel.transaction import Step
         captured = {}
 
-        def fake_unit_on(plugin, *, preset=None, install_packages=None):
-            captured.update(plugin=plugin, preset=preset, installer=install_packages)
+        def fake_unit_on(plugin, *, form=None, install_packages=None):
+            captured.update(plugin=plugin, form=form, installer=install_packages)
             return [Step(plugin, True, "enabled")]
 
         with patch("nyxuri.cli.transaction.plugin_on", side_effect=fake_unit_on), \
              patch("nyxuri.cli.transaction.missing_packages", return_value=[]):
-            code, out, _ = self._run("on", "kitty", "--preset", "dark")
+            code, out, _ = self._run("on", "kitty", "--form", "dark")
         self.assertEqual(code, 0)
         self.assertEqual(captured["plugin"], "kitty")
-        self.assertEqual(captured["preset"], "dark")
+        self.assertEqual(captured["form"], "dark")
         self.assertIs(captured["installer"], _package_installer)
         self.assertIn("enabled", out)
+
+    def test_on_deprecated_preset_flag_still_forwards(self):
+        """One-cycle compat: --preset keeps working and says so on stderr."""
+        from nyxuri.kernel.transaction import Step
+
+        def fake_unit_on(plugin, *, form=None, install_packages=None):
+            return [Step(plugin, True, "enabled")]
+
+        with patch("nyxuri.cli.transaction.plugin_on", side_effect=fake_unit_on), \
+             patch("nyxuri.cli.transaction.missing_packages", return_value=[]):
+            code, _, err = self._run("on", "kitty", "--preset", "dark")
+        self.assertEqual(code, 0)
+        self.assertIn("--form", err)
 
     def test_on_reports_missing_packages_failure(self):
         from nyxuri.kernel.transaction import Step

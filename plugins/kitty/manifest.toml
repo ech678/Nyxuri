@@ -1,5 +1,5 @@
 # kitty terminal emulator manifest
 preserve = ["current-theme.conf", "themes/noctalia.conf", "themes/nyxuri.conf"]
 
-[presets]
+[forms]
 reload = ["pkill", "-SIGUSR1", "-x", "kitty"]

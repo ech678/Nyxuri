@@ -24,7 +24,8 @@ complete -c nyxuri -f -n "__fish_use_subcommand" -a apps      -d "Recommended ap
 complete -c nyxuri -f -n "__fish_use_subcommand" -a recommended -d "Alias: apps"
 complete -c nyxuri -f -n "__fish_use_subcommand" -a wallpapers -d "Download wallpaper pack"
 complete -c nyxuri -f -n "__fish_use_subcommand" -a wp        -d "Alias: wallpapers"
-complete -c nyxuri -f -n "__fish_use_subcommand" -a preset    -d "Manage config presets"
+complete -c nyxuri -f -n "__fish_use_subcommand" -a use       -d "Switch a plugin's form (whole axis or slot axis)"
+complete -c nyxuri -f -n "__fish_use_subcommand" -a preset    -d "Deprecated alias: use"
 complete -c nyxuri -f -n "__fish_use_subcommand" -a theme     -d "Switch theme (toggle|dark|light|sync|status)"
 complete -c nyxuri -f -n "__fish_use_subcommand" -a bug       -d "Generate bug report"
 complete -c nyxuri -f -n "__fish_use_subcommand" -a report    -d "Alias: bug"
@@ -47,7 +48,8 @@ complete -c nyxuri -f -n "__fish_seen_subcommand_from theme" -a status -d "Show 
 complete -c nyxuri -f -n "__fish_seen_subcommand_from snapshot backup" -a list   -d "List snapshots"
 complete -c nyxuri -f -n "__fish_seen_subcommand_from snapshot backup" -a delete -d "Delete a snapshot"
 
-complete -c nyxuri -f -n "__fish_seen_subcommand_from on enable; and not __fish_seen_subcommand_from --preset" -l preset -r -d "Enable with a specific preset"
+complete -c nyxuri -f -n "__fish_seen_subcommand_from on enable; and not __fish_seen_subcommand_from --form" -l form -r -d "Enable with a specific form"
+complete -c nyxuri -f -n "__fish_seen_subcommand_from on enable" -l preset -r -d "Deprecated alias: --form"
 complete -c nyxuri -f -n "__fish_seen_subcommand_from off disable" -l cascade -d "Also disable enabled dependents"
 
 complete -c nyxuri -f -n "__fish_seen_subcommand_from uninstall remove" -a standard -d "Standard uninstall"
@@ -69,47 +71,16 @@ complete -c nyxuri -f -n "__fish_seen_subcommand_from update" -l deploy     -d "
 complete -c nyxuri -f -n "__fish_seen_subcommand_from update" -l no-deploy  -d "Update source only"
 complete -c nyxuri -f -n "__fish_seen_subcommand_from update" -l to         -d "Update to specific tag or commit"
 
-complete -c nyxuri -f -n "__fish_seen_subcommand_from preset" -a list   -d "List presets"
-complete -c nyxuri -f -n "__fish_seen_subcommand_from preset" -a apply  -d "Apply a preset"
-complete -c nyxuri -f -n "__fish_seen_subcommand_from preset" -a save   -d "Save current as preset"
-complete -c nyxuri -f -n "__fish_seen_subcommand_from preset" -a edit   -d "Edit a preset"
-complete -c nyxuri -f -n "__fish_seen_subcommand_from preset" -a delete -d "Delete a preset"
+complete -c nyxuri -f -n "__fish_seen_subcommand_from use" -a list   -d "List forms (status)"
+complete -c nyxuri -f -n "__fish_seen_subcommand_from use" -a slots  -d "List slot axes and variants"
+complete -c nyxuri -f -n "__fish_seen_subcommand_from use" -a slot   -d "Switch a slot axis variant"
+complete -c nyxuri -f -n "__fish_seen_subcommand_from use" -a save   -d "Save current config as a user form"
+complete -c nyxuri -f -n "__fish_seen_subcommand_from use" -a edit   -d "Edit a user form"
+complete -c nyxuri -f -n "__fish_seen_subcommand_from use" -a delete -d "Delete a user form"
+complete -c nyxuri -f -n "__fish_seen_subcommand_from preset" -a list   -d "Deprecated alias: use list"
 
-function __nyxuri_preset_apps
-    set -l apps
-    for d in "$HOME/.config"/*/
-        test -d "$d/.presets"; or continue
-        set -a apps (basename "$d")
-    end
-    if test -z "$apps"
-        echo niri noctalia kitty fish
-    else
-        printf '%s\n' $apps
-    end
-end
-
-complete -c nyxuri -f -n "__fish_seen_subcommand_from preset; and __fish_seen_subcommand_from list" -a "(__nyxuri_preset_apps)" -d "App"
-
-complete -c nyxuri -f -n "__fish_seen_subcommand_from preset; and __fish_seen_subcommand_from apply" -a "(__nyxuri_preset_apps)" -d "App"
-complete -c nyxuri -f -n "__fish_seen_subcommand_from preset; and __fish_seen_subcommand_from apply" -a default -d "Reset to default"
-
-complete -c nyxuri -f -n "__fish_seen_subcommand_from preset; and __fish_seen_subcommand_from save" -a "(__nyxuri_preset_apps)" -d "App"
-complete -c nyxuri -f -n "__fish_seen_subcommand_from preset; and __fish_seen_subcommand_from edit" -a "(__nyxuri_preset_apps)" -d "App"
-complete -c nyxuri -f -n "__fish_seen_subcommand_from preset; and __fish_seen_subcommand_from delete" -a "(__nyxuri_preset_apps)" -d "App"
-
-function __nyxuri_preset_names
-    set -l app (commandline -t)
-    set -l dir "$HOME/.config/$app/.presets"
-    test -d "$dir"; or return
-    for f in "$dir"/*
-        test -f "$f"; or continue
-        basename "$f" | string replace -r '\\.conf$|\\.toml$|\\.kdl$' ''
-    end
-end
-
-complete -c nyxuri -f -n "__fish_seen_subcommand_from preset; and __fish_seen_subcommand_from apply" -a "(__nyxuri_preset_names)" -d "Preset"
-complete -c nyxuri -f -n "__fish_seen_subcommand_from preset; and __fish_seen_subcommand_from edit" -a "(__nyxuri_preset_names)" -d "Preset"
-complete -c nyxuri -f -n "__fish_seen_subcommand_from preset; and __fish_seen_subcommand_from delete" -a "(__nyxuri_preset_names)" -d "Preset"
+# whole-axis value always offers the reset target
+complete -c nyxuri -f -n "__fish_seen_subcommand_from use preset" -a default -d "Reset to default form"
 
 function __nyxuri_snapshot_indices
     set -l dirs

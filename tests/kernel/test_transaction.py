@@ -58,9 +58,9 @@ class TestPluginOn(unittest.TestCase):
             dest = ctx.home / ".config/kitty/kitty.conf"
             self.assertTrue(dest.is_file())
             rec = ledger.get_plugin("kitty")
-            self.assertEqual(set(rec), {"state", "preset", "files", "vault", "updated"})
+            self.assertEqual(set(rec), {"state", "form", "files", "vault", "updated"})
             self.assertEqual(rec["state"], "enabled")
-            self.assertEqual(rec["preset"], "default")
+            self.assertEqual(rec["form"], "default")
             self.assertIsNone(rec["vault"])
             self.assertEqual(
                 rec["files"], {"kitty.conf": hashlib.sha256(dest.read_bytes()).hexdigest()}

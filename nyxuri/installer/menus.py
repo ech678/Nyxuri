@@ -17,12 +17,12 @@ from nyxuri.deploy import (
     discover_manifest_apps,
     discover_optional_apps,
 )
-from nyxuri.desktop.presets import (
-    apply_preset,
-    collect_presets,
-    delete_preset,
-    edit_preset,
-    save_preset,
+from nyxuri.desktop.forms import (
+    apply_form,
+    collect_forms,
+    delete_form,
+    edit_form,
+    save_form,
 )
 from nyxuri.deploy.deploy import wallpapers_pack_present
 from nyxuri.pkg.deps import is_dep_installed, run_dep_menu_loop, run_optional_apps_menu_loop
@@ -41,7 +41,7 @@ from nyxuri.tui import (
     CheckboxList,
     MenuItem,
     Menu,
-    PresetSwitcher,
+    FormSwitcher,
     drain_stdin,
     pad_display,
     press_any_key,
@@ -181,43 +181,43 @@ def deps_menu_loop() -> bool:
     return True
 
 
-def preset_switcher_loop() -> None:
-    """Interactive Preset Studio (§9). Left = apps, right = presets + in-place actions."""
+def form_switcher_loop() -> None:
+    """Interactive Form Studio. Left = plugins, right = forms + in-place actions."""
     if not sys.stdin.isatty():
         print(msg("interactive_terminal_required"), file=sys.stderr)
         return
 
-    from nyxuri.desktop.presets import get_preset_info
-    from nyxuri.deploy.preset import list_parts, get_active_part, apply_part
+    from nyxuri.desktop.forms import get_form_info
+    from nyxuri.deploy.forms import list_slots, get_active_slot, use_form
 
     apps = discover_config_items()
 
     def on_action(action: str, app: str, name: str) -> Optional[str]:
         if action == "apply":
-            ok = apply_preset(app, name)
+            ok = apply_form(app, name)
             return msg("preset_toast_applied", app, name) if ok else msg("preset_apply_failed", app, name)
-        elif action == "apply_part":
+        elif action == "apply_slot":
             slot, variant = name.split(":", 1)
-            ok = apply_part(app, slot, variant)
+            ok = use_form(app, slot, variant)
             return msg("preset_part_toast_applied", app, slot, variant) if ok else msg("preset_apply_failed", app, f"{slot}:{variant}")
         elif action == "save":
-            ok = save_preset(app, name)
+            ok = save_form(app, name)
             return msg("preset_toast_saved", app, name) if ok else None
         elif action == "delete":
-            ok = delete_preset(app, name)
+            ok = delete_form(app, name)
             return msg("preset_toast_deleted", app, name) if ok else None
         elif action == "edit":
-            edit_preset(app, name)
+            edit_form(app, name)
             return msg("preset_edit_opened", app, name)
         return None
 
-    PresetSwitcher(
+    FormSwitcher(
         apps=apps,
-        presets_for=collect_presets,
-        info_for=get_preset_info,
+        forms_for=collect_forms,
+        info_for=get_form_info,
         on_action=on_action,
-        parts_for=list_parts,
-        active_part_for=get_active_part,
+        slots_for=list_slots,
+        active_slot_for=get_active_slot,
     ).run()
 
 
@@ -250,7 +250,7 @@ def main_menu_loop() -> None:
         if choice == 0:
             install_configs_workflow("full")
         elif choice == 1:
-            preset_switcher_loop()
+            form_switcher_loop()
         elif choice == 2:
             deps_menu_loop()
         elif choice == 3:

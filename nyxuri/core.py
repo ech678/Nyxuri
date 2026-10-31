@@ -340,6 +340,18 @@ def migrate_legacy_storage(env: "Environment") -> None:
             if is_nyxuri_cli_symlink(old_link, env):
                 old_link.unlink(missing_ok=True)
 
+    # 5. User forms storage rename (R0-2 杀词并轨): nyx_dir/presets -> nyx_dir/forms.
+    #    Same filesystem, so the directory rename is atomic; the dead <app>.active
+    #    marker files inside ride along and are consumed by the ledger adoption.
+    legacy_forms = env.nyx_dir / "presets"
+    if legacy_forms.is_dir() and not legacy_forms.is_symlink():
+        target = env.nyx_dir / "forms"
+        if not target.exists():
+            try:
+                legacy_forms.rename(target)
+            except OSError:
+                pass  # converged next run; the ledger stays authoritative meanwhile
+
 
 class Environment:
     def __init__(self):
@@ -371,10 +383,10 @@ class Environment:
         # Shell blueprint root (plugin-model.md §6): the shell namespace's plugin
         # manifests live inside the shell tree — file tree expresses architecture.
         self.shell_units_src = self.repo_dir / "shell" / "units"
-        # Nyxuri's own home under ~/.config: backups, presets, active state.
+        # Nyxuri's own home under ~/.config: backups, user forms, hooks.
         # (state_dir holds runtime transient; nyx_dir holds user data — §10.4)
         self.nyx_dir = self.config_dir / STORAGE_NAME
-        self.presets_dir = self.nyx_dir / "presets"
+        self.forms_dir = self.nyx_dir / "forms"
         self.version = get_version(self.repo_dir)
 
         # Migrate legacy storage if existing, then purge old directories

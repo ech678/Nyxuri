@@ -134,10 +134,10 @@ class TestRuntimePluginTransaction(unittest.TestCase):
     def test_preset_axis_does_not_apply_to_runtime_units(self):
         with TempEnv() as ctx:
             self._staged(ctx)
-            steps = transaction.plugin_on("shell.bar", preset="fancy")
+            steps = transaction.plugin_on("shell.bar", form="fancy")
             self.assertTrue(steps[0].ok, str(steps))
-            self.assertEqual(ledger.get_plugin("shell.bar")["preset"], "default")
-            self.assertFalse((ctx.home / ".config/nyxuri/presets/shell.bar").exists())
+            self.assertEqual(ledger.get_plugin("shell.bar")["form"], "default")
+            self.assertFalse((ctx.home / ".config/nyxuri/forms/shell.bar").exists())
 
     def test_dependency_closure_spans_namespaces(self):
         with TempEnv() as ctx:

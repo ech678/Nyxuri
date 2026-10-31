@@ -6,5 +6,5 @@ category = "system"
 preserve = ["monitors.conf", "noctalia.conf"]
 chmod = ["scripts/*.sh", "scripts/*.py"]
 
-[presets]
+[forms]
 reload = ["mmsg", "dispatch", "reload_config"]

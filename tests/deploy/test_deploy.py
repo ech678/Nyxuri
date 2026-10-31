@@ -846,14 +846,14 @@ class TestDeployRobustness(unittest.TestCase):
             src = self._sandbox(ctx)
             root = self._app(
                 src, "demo",
-                'preserve = ["part.kdl"]\n\n[parts.effects]\ntarget = "part.kdl"\n'
+                'preserve = ["part.kdl"]\n\n[forms.effects]\ntarget = "part.kdl"\n'
                 'source_dir = "effects"\ndefault = "default"\n',
                 {"part.kdl": "// default-part\n"},
             )
-            slot = root / "__presets__" / "effects"
+            slot = root / "__forms__" / "effects"
             slot.mkdir(parents=True)
             (slot / "default.kdl").write_text("// default-part\n", encoding="utf-8")
-            update_ledger(parts={"demo:effects": "ghost"})
+            update_ledger(forms={"demo": {"effects": "ghost"}})
             with patch.object(deploy, "_phase_post_install_services"):
                 failed = _quiet(deploy.deploy_selected_configs, items_to_deploy=["demo"], preserved_log=[])
             self.assertEqual(failed, ["demo"])
