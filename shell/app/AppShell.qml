@@ -2,11 +2,11 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.app
-import qs.app.services
-import qs.units.settings
-import qs.units.sidebars.dashboard.infotools
-import qs.units.wallpaper
-import qs.shared.theme
+import qs.services
+import qs.plugins.settings
+import qs.plugins.sidebars.dashboard.infotools
+import qs.plugins.wallpaper
+import qs.commons
 
 // AppShell — the microkernel host (unit-model.md §6). It owns assembly
 // (SlotHost), host-level intent sources (corner gestures), the generic IPC
@@ -109,7 +109,7 @@ Item {
 
     Loader {
         active: ShortcutMapService.visible
-        source: Qt.resolvedUrl("../units/settings/ShortcutMap.qml")
+        source: Qt.resolvedUrl("../plugins/settings/ShortcutMap.qml")
         onLoaded: {
             if (item) {
                 item.targetScreen = ShortcutMapService.targetScreen;

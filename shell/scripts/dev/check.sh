@@ -60,7 +60,7 @@ qml=false
 catalog=false
 for file in "${files[@]}"; do
     case ${file} in
-        units/settings/settings-routes.json|units/settings/generated/SearchCatalog.js|units/settings/*.qml|scripts/system/niri-actions.json|scripts/dev/generate-search-catalog.py|tests/test_search_catalog.py) catalog=true ;;
+        plugins/settings/settings-routes.json|plugins/settings/generated/SearchCatalog.js|plugins/settings/*.qml|scripts/system/niri-actions.json|scripts/dev/generate-search-catalog.py|tests/test_search_catalog.py) catalog=true ;;
     esac
     [[ -f ${file} ]] || continue
     case ${file} in

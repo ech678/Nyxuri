@@ -72,7 +72,7 @@ class TempEnv:
         env.mode_label = "Local Path"
         env.repo_dir = Path(__file__).resolve().parent.parent
         env.plugins_src = env.repo_dir / "plugins"
-        env.shell_units_src = env.repo_dir / "shell" / "units"
+        env.shell_units_src = env.repo_dir / "shell" / "plugins"
         self.env = env
 
         return self

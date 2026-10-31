@@ -1,6 +1,6 @@
 """T3 M1 contracts: the Caelestia-style preference atom suite.
 
-The atoms land in shell/units/settings/controls/ as a pure-QML presentation
+The atoms land in shell/ui/ as a pure-QML presentation
 library: every row extends ConnectedRect (the connected-card group form),
 theme colours come exclusively from the Nyxuri singletons (Appearance), and
 geometry, rhythm and type sizes come from NexusStyle — the unscaled 1:1 port
@@ -15,7 +15,7 @@ import unittest
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CONTROLS = REPO_ROOT / "shell" / "units" / "settings" / "controls"
+CONTROLS = REPO_ROOT / "shell" / "ui"
 
 ATOMS = (
     "ConnectedRect.qml",
@@ -40,9 +40,12 @@ class TestSuiteShape(unittest.TestCase):
     """The pool exists, is complete, and holds nothing else."""
 
     def test_exactly_the_eleven_atoms_ship(self):
-        self.assertTrue(CONTROLS.is_dir(), "controls/ directory missing")
-        shipped = sorted(p.name for p in CONTROLS.glob("*.qml"))
-        self.assertEqual(shipped, sorted(ATOMS), f"unexpected pool contents: {shipped}")
+        self.assertTrue(CONTROLS.is_dir(), "ui/ directory missing")
+        # S0-1: the atoms live flat in ui/ beside the control library, so the
+        # pool check is membership — all eleven present, none missing.
+        shipped = {p.name for p in CONTROLS.glob("*.qml")}
+        missing = [name for name in ATOMS if name not in shipped]
+        self.assertEqual(missing, [], f"missing atoms in ui/: {missing}")
 
     def test_no_upstream_or_sideeffect_imports(self):
         forbidden = (
@@ -60,7 +63,7 @@ class TestSuiteShape(unittest.TestCase):
     def test_theme_truth_is_the_nyxuri_singletons(self):
         for name in ATOMS:
             source = _source(name)
-            self.assertIn("qs.shared.theme", source, f"{name} does not bridge theme tokens")
+            self.assertIn("qs.commons", source, f"{name} does not bridge theme tokens")
             self.assertIsNone(re.search(r"#[0-9a-fA-F]{3,8}\b", source),
                               f"{name} hardcodes a hex color")
 
@@ -214,7 +217,7 @@ class TestNexusStyleParity(unittest.TestCase):
     """Every NexusStyle value is pinned against Caelestia tokens.hpp."""
 
     def test_token_values_match_the_upstream_header(self):
-        source = (REPO_ROOT / "shell" / "units" / "settings" / "NexusStyle.qml").read_text(encoding="utf-8")
+        source = (REPO_ROOT / "shell" / "ui" / "NexusStyle.qml").read_text(encoding="utf-8")
         pins = (
             "extraSmall: 4", "small: 8", "medium: 12", "large: 16",
             "largeIncreased: 20", "extraLarge: 28", "extraLargeIncreased: 32",
@@ -232,7 +235,7 @@ class TestNexusStyleParity(unittest.TestCase):
             self.assertIn(pin, source, f"token drifted from tokens.hpp: {pin}")
 
     def test_medium_and_large_weights_follow_the_upstream_styles(self):
-        source = (REPO_ROOT / "shell" / "units" / "settings" / "NexusStyle.qml").read_text(encoding="utf-8")
+        source = (REPO_ROOT / "shell" / "ui" / "NexusStyle.qml").read_text(encoding="utf-8")
         self.assertIn("titleWeight: Font.Medium", source)
         self.assertIn("headlineWeight: Font.Medium", source)
         self.assertIn("labelMediumWeight: Font.Medium", source)
@@ -243,14 +246,14 @@ class TestWarmupAndI18n(unittest.TestCase):
 
     def test_controls_pool_is_in_the_slot_host_warmup(self):
         source = (REPO_ROOT / "shell" / "app" / "SlotHost.qml").read_text(encoding="utf-8")
-        self.assertIn("import qs.units.settings.controls", source,
+        self.assertIn("import qs.ui", source,
                       "new synthesized qs.* pool must warm up in SlotHost")
         # The atoms now also reference the parent pool (NexusStyle).
-        self.assertIn("import qs.units.settings", source,
+        self.assertIn("import qs.plugins.settings", source,
                       "the unit root pool must stay warmed for the atoms' NexusStyle import")
 
     def test_atom_strings_are_translated(self):
-        zh = (REPO_ROOT / "shell" / "app" / "i18n" / "zh_CN.toml").read_text(encoding="utf-8")
+        zh = (REPO_ROOT / "shell" / "commons" / "i18n" / "zh_CN.toml").read_text(encoding="utf-8")
         for key in ("Go back", "Clear"):
             self.assertIn(f'"{key}"', zh)
 

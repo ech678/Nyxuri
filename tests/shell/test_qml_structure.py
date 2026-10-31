@@ -43,7 +43,7 @@ class TestShellModuleImports(unittest.TestCase):
 class TestDisabledOutputDetection(unittest.TestCase):
 
     def _service(self):
-        return (Path(__file__).resolve().parents[2] / "shell" / "app" / "services"
+        return (Path(__file__).resolve().parents[2] / "shell" / "services"
                 / "NiriService.qml")
 
     def test_enabled_state_is_derived_from_the_logical_output(self):
@@ -57,13 +57,13 @@ class TestDockFolderMenuModelAccess(unittest.TestCase):
         return Path(__file__).resolve().parents[2] / "shell"
 
     def test_list_view_reads_entries_through_the_folder_model_wrapper(self):
-        menu = (self._shell() / "units" / "dock" / "DockFolderMenu.qml").read_text(
+        menu = (self._shell() / "plugins" / "dock" / "DockFolderMenu.qml").read_text(
             encoding="utf-8")
         self.assertIn("root.contents.get(i)", menu)
         self.assertNotIn("root.contents.model.get(", menu)
 
     def test_the_wrapper_owns_the_model_alias_that_the_menu_must_not_index(self):
-        model = (self._shell() / "units" / "dock" / "DockFolderModel.qml").read_text(
+        model = (self._shell() / "plugins" / "dock" / "DockFolderModel.qml").read_text(
             encoding="utf-8")
         self.assertIn("function get(index)", model)
         self.assertIn("readonly property alias model: dirModel", model)
@@ -79,17 +79,17 @@ class TestFolderListModelRoleNames(unittest.TestCase):
         return (self._shell() / relative).read_text(encoding="utf-8")
 
     def test_the_wrapper_reads_the_role_the_plugin_exposes(self):
-        source = self._source("units/dock/DockFolderModel.qml")
+        source = self._source("plugins/dock/DockFolderModel.qml")
         self.assertIn('directory.get(index, "fileUrl")', source)
         self.assertNotIn("fileURL", source)
         self.assertNotIn("fileInfo", source)
 
     def test_the_fan_view_indexes_the_wrapper_instead_of_the_raw_model(self):
-        fan = self._source("units/dock/DockFolderFan.qml")
+        fan = self._source("plugins/dock/DockFolderFan.qml")
         self.assertIn("model: root.count", fan)
         self.assertIn("required property int index", fan)
         self.assertIn("readonly property var fileInfo: root.model ? root.model.get(index) : ({})", fan)
-        popup = self._source("units/dock/DockFilePopup.qml")
+        popup = self._source("plugins/dock/DockFilePopup.qml")
         self.assertIn("model: root.presented && directory.item ? directory.item : null", popup)
 
     def test_the_deployed_wrapper_returns_real_urls(self):
@@ -97,7 +97,7 @@ class TestFolderListModelRoleNames(unittest.TestCase):
         if not runner.exists():
             self.skipTest("qml runtime not available")
         probe = """import QtQuick
-import qs.units.dock
+import qs.plugins.dock
 Item {
     DockFolderModel { id: model; folder: "___FOLDER___" }
     Timer {
@@ -123,19 +123,20 @@ Item {
             (root / "dir" / "sub").mkdir(parents=True)
             (root / "dir" / "a.txt").write_text("x", encoding="utf-8")
             imports = root / "imports"
-            (imports / "qs" / "app" / "services").mkdir(parents=True)
-            (imports / "qs" / "units" / "dock").mkdir(parents=True)
+            (imports / "qs" / "app").mkdir(parents=True)
+            (imports / "qs" / "services").mkdir(parents=True)
+            (imports / "qs" / "plugins" / "dock").mkdir(parents=True)
             (imports / "qs" / "qmldir").write_text("module qs\n", encoding="utf-8")
             (imports / "qs" / "app" / "qmldir").write_text("module qs.app\n", encoding="utf-8")
-            (imports / "qs" / "units" / "qmldir").write_text("module qs.units\n", encoding="utf-8")
-            (imports / "qs" / "app" / "services" / "qmldir").write_text(
-                "module qs.app.services\nsingleton DesktopFiles 1.0 DesktopFiles.qml\n", encoding="utf-8")
-            (imports / "qs" / "units" / "dock" / "qmldir").write_text(
-                "module qs.units.dock\nDockFolderModel 1.0 DockFolderModel.qml\n", encoding="utf-8")
-            os.symlink(shell / "units" / "dock" / "DesktopFiles.qml",
-                       imports / "qs" / "app" / "services" / "DesktopFiles.qml")
-            os.symlink(shell / "units" / "dock" / "DockFolderModel.qml",
-                       imports / "qs" / "units" / "dock" / "DockFolderModel.qml")
+            (imports / "qs" / "plugins" / "qmldir").write_text("module qs.plugins\n", encoding="utf-8")
+            (imports / "qs" / "services" / "qmldir").write_text(
+                "module qs.services\nsingleton DesktopFiles 1.0 DesktopFiles.qml\n", encoding="utf-8")
+            (imports / "qs" / "plugins" / "dock" / "qmldir").write_text(
+                "module qs.plugins.dock\nDockFolderModel 1.0 DockFolderModel.qml\n", encoding="utf-8")
+            os.symlink(shell / "plugins" / "dock" / "DesktopFiles.qml",
+                       imports / "qs" / "services" / "DesktopFiles.qml")
+            os.symlink(shell / "plugins" / "dock" / "DockFolderModel.qml",
+                       imports / "qs" / "plugins" / "dock" / "DockFolderModel.qml")
             script = root / "probe.qml"
             script.write_text(probe.replace("___FOLDER___", "file://" + str(root / "dir")), encoding="utf-8")
             result = subprocess.run([str(runner), str(script)], capture_output=True, text=True, timeout=120,
@@ -151,7 +152,7 @@ Item {
 class TestDesktopCardHostStructure(unittest.TestCase):
 
     def _source(self):
-        return (Path(__file__).resolve().parents[2] / "shell" / "units" / "desktopcards"
+        return (Path(__file__).resolve().parents[2] / "shell" / "plugins" / "desktopcards"
                 / "DesktopCardHost.qml").read_text(encoding="utf-8")
 
     def test_no_property_change_signal_is_redeclared(self):
@@ -169,7 +170,7 @@ class TestDesktopCardHostStructure(unittest.TestCase):
 class TestTrayMenuScreenContract(unittest.TestCase):
 
     def test_tray_menu_does_not_shadow_the_window_screen(self):
-        source = (Path(__file__).resolve().parents[2] / "shell" / "units" / "bar" / "tray"
+        source = (Path(__file__).resolve().parents[2] / "shell" / "plugins" / "bar" / "tray"
                   / "TrayMenu.qml").read_text(encoding="utf-8")
         self.assertNotIn("property var screen", source)
         self.assertIn("screen: root.screen", source)
@@ -177,7 +178,7 @@ class TestTrayMenuScreenContract(unittest.TestCase):
 class TestShellPageSingletonImports(unittest.TestCase):
 
     def _page(self):
-        return (Path(__file__).resolve().parents[2] / "shell" / "units" / "settings"
+        return (Path(__file__).resolve().parents[2] / "shell" / "plugins" / "settings"
                 / "ShellPage.qml").read_text(encoding="utf-8")
 
     def test_the_control_page_imports_the_singletons_it_binds_to(self):
@@ -187,7 +188,7 @@ class TestShellPageSingletonImports(unittest.TestCase):
         self.assertIn("ColorPickerService.probeFinished", source)
         imports = [line.strip() for line in source.splitlines() if line.startswith("import ")]
         self.assertIn("import qs.app", imports)
-        self.assertIn("import qs.units.keystone.tools", imports)
+        self.assertIn("import qs.plugins.keystone.tools", imports)
 
 class TestQmlSingletonImports(unittest.TestCase):
     """Every QML file must import the module that declares a singleton it reads.
@@ -205,8 +206,8 @@ class TestQmlSingletonImports(unittest.TestCase):
         found = {}
         for path in shell.rglob("*.qml"):
             relative = path.relative_to(shell)
-            if "references" in relative.parts:
-                continue  # gitignored local upstream snapshots, not shipped QML
+            if "references" in relative.parts or "archive" in relative.parts:
+                continue  # gitignored upstream snapshots / frozen history, not shipped QML
             head = path.read_text(encoding="utf-8", errors="ignore").splitlines()[:4]
             if not any("pragma Singleton" in line for line in head):
                 continue
@@ -221,8 +222,8 @@ class TestQmlSingletonImports(unittest.TestCase):
         offenders = []
         for path in sorted(shell.rglob("*.qml")):
             relative = path.relative_to(shell)
-            if "references" in relative.parts:
-                continue  # gitignored local upstream snapshots, not shipped QML
+            if "references" in relative.parts or "archive" in relative.parts:
+                continue  # gitignored upstream snapshots / frozen history, not shipped QML
             source = path.read_text(encoding="utf-8", errors="ignore")
             code = "\n".join(line.split("//", 1)[0] for line in source.splitlines())
             imports = set(re.findall(r"^import\s+([\w.]+)", source, re.M))
@@ -242,7 +243,7 @@ class TestQmlSingletonImports(unittest.TestCase):
 class TestLockMarkerDirectory(unittest.TestCase):
 
     def test_lock_creates_the_runtime_directory_before_writing_the_marker(self):
-        lock = Path(__file__).resolve().parents[2] / "shell" / "units" / "lock" / "Lock.qml"
+        lock = Path(__file__).resolve().parents[2] / "shell" / "plugins" / "lock" / "Lock.qml"
         source = lock.read_text(encoding="utf-8")
         self.assertIn('command: ["mkdir", "-p", Paths.runtimeHome]', source)
         self.assertIn('path: root.markerReady ? root.lockMarkerPath : ""', source)

@@ -1,0 +1,875 @@
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
+import Quickshell
+import Quickshell.Wayland
+import qs.commons
+import "./NiriActionNames.js" as ActionNames
+import qs.services
+import qs.ui
+import qs.commons.i18n
+import qs.plugins.settings
+import qs.ui
+
+Item {
+    id: root
+
+    // Self-rendered Nexus-style title — the window route-title shim yields.
+    readonly property bool rendersPageTitle: true
+
+    component ShortcutRecorder: QtObject {
+        id: recorder
+        property var target: null
+        property bool enabled: false
+        property var keymap: ({})
+        signal captured(string key)
+        signal cancelled
+        signal failed(string reason)
+        function currentModifiers() {
+            return 0;
+        }
+        function captureMouse(button, modifiers) {
+        }
+    }
+    property var parentModal: null
+    property bool presentationActive: false
+    property var groups: []
+    property var draft: null
+    property string draftGroup: ""
+    property string draftRevision: ""
+    property var patch: ({})
+    property var unset: []
+    property bool advanced: false
+    property bool recording: false
+    property bool inlineRecording: false
+    property bool editorOpen: false
+    property string query: ""
+    property string category: "all"
+    clip: true
+    property var visibleGroups: []
+    onGroupsChanged: updateVisibleGroups()
+    onQueryChanged: updateVisibleGroups()
+    onCategoryChanged: updateVisibleGroups()
+    onDraftGroupChanged: updateVisibleGroups()
+
+    function updateVisibleGroups() {
+        const filtered = groups.filter(group => draftGroup === group.id || (matchesCategory(group) && (query
+                                                                                                       === "" || (
+                                                                                                           group.name
+                                                                                                           + " " + group.expression).toLowerCase(
+                                                                                                           ).indexOf(
+                                                                                                           query) >= 0)));
+        // Selecting another chip must not reset the list and destroy its open editor.
+        if (JSON.stringify(visibleGroups) !== JSON.stringify(filtered))
+            visibleGroups = filtered;
+        // ListView retains the current delegate even when it scrolls out of view.
+        results.currentIndex = visibleGroups.findIndex(group => group.id === draftGroup);
+    }
+
+    component ShortcutChip: RippleButton {
+        id: shortcutChip
+        property bool recordingStyle: false
+        property bool conflicting: false
+        property bool removable: false
+        property bool removalEnabled: true
+        property string removalLabel: I18n.tr("Delete")
+        signal removeRequested
+        implicitWidth: label.implicitWidth + leftPadding + rightPadding
+        implicitHeight: NexusStyle.icon.large
+        height: NexusStyle.icon.large
+        topInset: 0
+        bottomInset: 0
+        leftInset: 0
+        rightInset: 0
+        topPadding: 0
+        bottomPadding: 0
+        leftPadding: NexusStyle.padding.small
+        rightPadding: removable ? removeButton.width + NexusStyle.padding.extraSmall * 2 :
+                                  NexusStyle.padding.small
+
+        buttonRadius: Appearance.rounding.small
+        buttonRadiusPressed: buttonRadius
+        containerColor: conflicting ? Appearance.m3colors.m3errorContainer : recordingStyle
+                                      ? Appearance.colors.colPrimary : Appearance.colors.colLayer2
+        stateLayerColor: conflicting ? Appearance.m3colors.m3onErrorContainer : recordingStyle
+                                       ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0
+        rippleColor: stateLayerColor
+        stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
+        focusStateLayerOpacity: Appearance.interaction.focusStateLayerOpacity
+        pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
+        IconButton {
+            id: removeButton
+            z: 2
+            anchors.right: parent.right
+            anchors.rightMargin: NexusStyle.padding.extraSmall
+            anchors.verticalCenter: parent.verticalCenter
+            controlSize: NexusStyle.icon.medium
+            iconSize: NexusStyle.icon.small
+            iconName: "close"
+            iconColor: shortcutChip.stateLayerColor
+            visible: shortcutChip.removable
+            enabled: shortcutChip.removalEnabled
+            accessibleName: shortcutChip.removalLabel
+            showTooltip: false
+            onClicked: shortcutChip.removeRequested()
+        }
+        contentItem: Text {
+            id: label
+            text: shortcutChip.text
+            textFormat: Text.PlainText
+            elide: Text.ElideRight
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
+            color: shortcutChip.stateLayerColor
+            font.family: Fonts.ui
+            font.pixelSize: NexusStyle.font.labelMedium
+            font.weight: NexusStyle.font.labelMediumWeight
+        }
+    }
+
+    function matchesCategory(group) {
+        const assigned = group.chips.some(chip => !chip.draft);
+        switch (category) {
+        case "assigned":
+            return assigned;
+        case "managed":
+            return group.chips.some(chip => chip.managed && !chip.draft);
+        case "unassigned":
+            return !assigned;
+        default:
+            return true;
+        }
+    }
+
+    function rebuild() {
+        if (draft)
+            return;
+        const result = [];
+        const byAction = {};
+        NiriConfigService.actionCatalog.forEach(entry => {
+            const identity = entry.expression + ";";
+            const group = {
+                id: entry.id,
+                identity: identity,
+                name: ActionNames.translated(entry.name),
+                expression: entry.expression,
+                supported: entry.supported,
+                error: entry.error || "",
+                parameters: entry.parameters,
+                builtin: true,
+                chips: []
+            };
+            result.push(group);
+            byAction[identity] = group;
+        });
+        NiriConfigService.bindings.forEach(binding => {
+            let group = byAction[binding.group];
+            if (!group) {
+                group = {
+                    id: binding.group,
+                    identity: binding.group,
+                    name: ActionNames.commandName(binding.action) || binding.action,
+                    expression: binding.action,
+                    supported: true,
+                    builtin: false,
+                    chips: []
+                };
+                byAction[binding.group] = group;
+                result.push(group);
+            }
+            group.chips.push(binding);
+        });
+        result.forEach(group => {
+            const titled = group.chips.find(chip => typeof chip.props["hotkey-overlay-title"] === "string"
+                                                    && chip.props["hotkey-overlay-title"] !== "");
+            if (titled)
+                group.name = titled.props["hotkey-overlay-title"];
+        });
+        // Status notifications can carry an unchanged snapshot. Keep the delegates in that case.
+        if (JSON.stringify(groups) !== JSON.stringify(result))
+            groups = result;
+    }
+
+    function edit(group, binding, expand = true) {
+        if (editorOpen && draftGroup === group.id && draft && binding && draft.id === binding.id) {
+            cancel();
+            return;
+        }
+        recording = false;
+        inlineRecording = false;
+        editorOpen = expand;
+        draftGroup = group.id;
+        draftRevision = NiriConfigService.revision;
+        patch = {};
+        unset = [];
+        advanced = false;
+        draft = binding && !binding.draft ? Object.assign({}, binding) : {
+                                                key: "",
+                                                action: group.expression,
+                                                props: {},
+                                                parameters: group.parameters || false,
+                                                managed: true,
+                                                editable: true
+                                            };
+    }
+
+    function addShortcut(group) {
+        edit(group, null, false);
+        inlineRecording = true;
+        root.forceActiveFocus();
+        recording = true;
+    }
+
+    function stopRecording() {
+        recording = false;
+        if (inlineRecording)
+            cancel();
+    }
+
+    function addAction() {
+        clearDraft();
+        const group = {
+            id: "draft",
+            name: I18n.tr("New action"),
+            expression: "",
+            supported: true,
+            builtin: false,
+            chips: [
+                {
+                    key: I18n.tr("Not configured"),
+                    draft: true,
+                    effective: false,
+                    managed: false
+                }
+            ]
+        };
+        groups = [group].concat(groups);
+        edit(group, null);
+    }
+
+    function cancel(discardError = true) {
+        if (discardError)
+            NiriConfigService.clearEditError();
+        const wasOpen = editorOpen;
+        recording = false;
+        inlineRecording = false;
+        editorOpen = false;
+        if (!wasOpen)
+            clearDraft();
+    }
+
+    function clearDraft() {
+        recording = false;
+        inlineRecording = false;
+        editorOpen = false;
+        draft = null;
+        draftGroup = "";
+        rebuild();
+    }
+
+    function finishCollapse(groupId) {
+        if (!editorOpen && !inlineRecording && draftGroup === groupId)
+            clearDraft();
+    }
+
+    component CollapseAnimation: NumberAnimation {
+        // Start and finish at rest; the standard curve stays within the target bounds.
+        duration: Appearance.animation.standardSmall.duration
+        easing.type: Appearance.animation.standardSmall.type
+        easing.bezierCurve: Appearance.animation.standardSmall.bezierCurve
+    }
+
+    ShortcutRecorder {
+        id: inlineRecorder
+        target: root
+        enabled: root.inlineRecording && root.recording && inhibitor.active
+        keymap: NiriConfigService.snapshot.keymap || ({})
+        onCaptured: key => {
+            root.recording = false;
+            root.draft = Object.assign({}, root.draft, {
+                                           key: key
+                                       });
+            if (root.draft.parameters || !root.draft.action) {
+                root.inlineRecording = false;
+                root.editorOpen = true;
+            } else {
+                NiriConfigService.save({
+                                           operation: "save",
+                                           id: "",
+                                           revision: root.draftRevision,
+                                           key: key,
+                                           action: root.draft.action,
+                                           patch: {},
+                                           unset: []
+                                       });
+            }
+        }
+        onCancelled: root.stopRecording()
+        onFailed: reason => {
+            root.recording = false;
+            root.inlineRecording = false;
+            root.editorOpen = true;
+            NiriConfigService.error = reason;
+        }
+    }
+    // Observe complete taps without taking the grab from buttons or the list.
+    // A drag cancels the tap recognizer, so scrolling never discards a recording.
+    function isInteractiveAt(item, position) {
+        for (let child of item.children) {
+            if (!child.visible || !child.enabled)
+                continue;
+            const local = child.mapFromItem(root, position);
+            if (!child.contains(local))
+                continue;
+            if (child instanceof Control || (child instanceof MouseArea && child.cursorShape
+                                             === Qt.PointingHandCursor))
+                return true;
+            if (root.isInteractiveAt(child, position))
+                return true;
+        }
+        return false;
+    }
+
+    TapHandler {
+        acceptedButtons: Qt.LeftButton
+        acceptedModifiers: Qt.NoModifier
+        gesturePolicy: TapHandler.DragThreshold
+        onTapped: eventPoint => {
+            if (eventPoint.position.y < results.y && root.recording && !root.isInteractiveAt(root,
+                                                                                             eventPoint.position))
+                root.stopRecording();
+        }
+    }
+
+    function change(name, value) {
+        patch = Object.assign({}, patch, {
+                                  [name]: value
+                              });
+        unset = unset.filter(option => option !== name);
+    }
+
+    function option(name, fallback) {
+        if (unset.indexOf(name) >= 0)
+            return fallback;
+        if (patch[name] !== undefined)
+            return patch[name];
+        return draft && draft.props[name] !== undefined ? draft.props[name] : fallback;
+    }
+
+    function currentBinding(binding) {
+        return NiriConfigService.bindings.find(current => current.id === binding.id) || binding;
+    }
+
+    function bindingWarning(binding) {
+        binding = root.currentBinding(binding);
+        if (binding.collision)
+            return I18n.tr("Shortcut conflicts");
+        if (binding.invalid)
+            return I18n.tr("Configuration validation failed");
+        if (!binding.editable)
+            return I18n.tr("This binding is read-only");
+        return "";
+    }
+
+    function closeChildWindows() {
+        cancel(false);
+    }
+    onPresentationActiveChanged: if (!presentationActive)
+                                     cancel(false)
+    // The shared service loads once and watches the configuration files thereafter.
+    Component.onCompleted: rebuild()
+    Component.onDestruction: recording = false
+
+    Connections {
+        target: NiriConfigService
+        function onSnapshotChanged() {
+            root.rebuild();
+        }
+        function onActionCatalogChanged() {
+            root.rebuild();
+        }
+        function onSaved() {
+            if (root.draft && NiriConfigService.activeFeature === "binds")
+                root.cancel();
+        }
+    }
+
+    ShortcutInhibitor {
+        id: inhibitor
+        window: root.parentModal
+        enabled: root.recording && root.presentationActive
+        onCancelled: root.stopRecording()
+        onActiveChanged: if (!active && root.recording)
+                             root.stopRecording()
+    }
+
+    ColumnLayout {
+        id: column
+        y: NexusStyle.padding.largeIncreased
+        width: Math.min(640, Math.max(0, root.width - NexusStyle.padding.largeIncreased * 2))
+        x: Math.max(NexusStyle.padding.largeIncreased, (root.width - width) / 2)
+        spacing: NexusStyle.padding.small
+
+        // Self-rendered page title — pixel-matched to the NexusPageBase
+        // header typography.
+        StyledText {
+            Layout.fillWidth: true
+            text: SpotlightCatalog.title("shortcuts")
+            color: Appearance.m3colors.m3onSurface
+            font.pixelSize: NexusStyle.font.titleLarge
+            font.weight: NexusStyle.font.titleWeight
+            elide: Text.ElideRight
+        }
+
+        NiriSetupPrompt {
+            Layout.fillWidth: true
+            title: I18n.tr("Keyboard shortcuts")
+            description: I18n.tr(
+                             "Create or connect the shortcuts file. Your existing bindings stay in their original files.")
+            integrationState: NiriConfigService.state("binds")
+            busy: NiriConfigService.busy && NiriConfigService.activeFeature === "binds"
+            blocked: NiriConfigService.busy
+            error: NiriConfigService.error
+            onSetupRequested: NiriConfigService.setup("binds")
+        }
+        InlineStatusBanner {
+            Layout.fillWidth: true
+            visible: !!NiriConfigService.diagnostics.conflicts
+            tone: "error"
+            message: I18n.tr("Shortcut conflicts")
+        }
+        InlineStatusBanner {
+            Layout.fillWidth: true
+            visible: NiriConfigService.configurationMessage !== ""
+            tone: "error"
+            message: NiriConfigService.configurationMessage
+        }
+        InlineStatusBanner {
+            Layout.fillWidth: true
+            visible: NiriConfigService.ready("binds") && NiriConfigService.error !== ""
+            tone: "error"
+            message: NiriConfigService.errorFeature === "binds" ? NiriConfigService.operationMessage :
+                                                                  NiriConfigService.error
+        }
+        RowLayout {
+            Layout.fillWidth: true
+            MaterialFilledTextField {
+                Layout.fillWidth: true
+                labelText: I18n.tr("Search actions")
+                onTextChanged: root.query = text.toLowerCase()
+            }
+            ActionButton {
+                text: I18n.tr("Add action")
+                iconName: "add"
+                enabled: NiriConfigService.ready("binds") && !NiriConfigService.busy
+                onClicked: root.addAction()
+            }
+        }
+
+        StyledButtonGroup {
+            Layout.fillWidth: true
+            currentValue: root.category
+            enabled: !NiriConfigService.busy
+            model: [
+                {
+                    value: "all",
+                    label: I18n.tr("All")
+                },
+                {
+                    value: "assigned",
+                    label: I18n.tr("Assigned")
+                },
+                {
+                    value: "managed",
+                    label: I18n.tr("Assigned by me")
+                },
+                {
+                    value: "unassigned",
+                    label: I18n.tr("Unassigned")
+                }
+            ]
+            onValueSelected: value => {
+                if (root.category === value)
+                    return;
+                root.clearDraft();
+                root.category = value;
+            }
+        }
+    }
+
+    ListView {
+        id: results
+        TapHandler {
+            acceptedButtons: Qt.LeftButton
+            acceptedModifiers: Qt.NoModifier
+            gesturePolicy: TapHandler.DragThreshold
+            onTapped: eventPoint => {
+                const position = results.mapToItem(root, eventPoint.position);
+                if (root.recording && !root.isInteractiveAt(root, position))
+                    root.stopRecording();
+            }
+        }
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: column.bottom
+        anchors.topMargin: NexusStyle.padding.small
+        anchors.bottom: parent.bottom
+        clip: true
+        contentWidth: width
+        maximumFlickVelocity: 3500
+        boundsBehavior: Flickable.DragOverBounds
+        spacing: NexusStyle.padding.small
+        bottomMargin: NexusStyle.padding.large
+        model: root.visibleGroups
+        keyNavigationEnabled: false
+        ScrollBar.vertical: StyledScrollBar {}
+        delegate: Item {
+            id: rowContainer
+            required property var modelData
+            width: root.width
+            implicitHeight: row.implicitHeight
+
+            // ListView positions the delegate. Center the content inside it instead.
+            ColumnLayout {
+                id: row
+                readonly property var modelData: rowContainer.modelData
+                width: Math.min(640, Math.max(0, root.width - NexusStyle.padding.largeIncreased * 2))
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: NexusStyle.padding.small
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: NexusStyle.padding.small
+
+                    Text {
+                        Layout.fillWidth: true
+                        Layout.preferredWidth: row.width * 0.38
+                        Layout.minimumWidth: 0
+                        text: row.modelData.name
+                        textFormat: Text.PlainText
+                        wrapMode: Text.Wrap
+                        color: Appearance.colors.colOnLayer0
+                        font.family: Fonts.ui
+                        font.pixelSize: NexusStyle.font.bodyMedium
+                    }
+                    Flow {
+                        id: chips
+                        Layout.fillWidth: true
+                        Layout.preferredWidth: row.width * 0.62
+                        Layout.minimumWidth: 0
+                        spacing: NexusStyle.padding.extraSmall
+                        layoutDirection: Qt.RightToLeft
+
+                        ShortcutChip {
+                            visible: root.inlineRecording && root.draftGroup === row.modelData.id
+                            text: root.recording ? I18n.tr("Press shortcut...") : (root.draft
+                                                                                   ? root.draft.key : "")
+
+                            recordingStyle: root.recording
+                            focusPolicy: Qt.TabFocus
+                            implicitWidth: 128
+                            width: Math.min(implicitWidth, chips.width)
+                            enabled: !NiriConfigService.busy
+                            MouseArea {
+                                anchors.fill: parent
+                                enabled: root.recording
+                                acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+                                                 | Qt.BackButton | Qt.ForwardButton
+                                onClicked: mouse => inlineRecorder.captureMouse(mouse.button, mouse.modifiers)
+                            }
+                            onClicked: {
+                                root.recording = false;
+                                root.inlineRecording = false;
+                                root.editorOpen = true;
+                            }
+                        }
+                        Repeater {
+                            // Keep the stable binding order when right-aligning the chips.
+                            model: (root.category === "managed" ? row.modelData.chips.filter(binding => binding.managed) :
+                                                                  row.modelData.chips).slice().reverse()
+                            delegate: ShortcutChip {
+                                required property var modelData
+                                text: modelData.key
+                                removable: !!modelData.id && modelData.managed
+                                removalEnabled: NiriConfigService.ready("binds") && (!root.draft
+                                                                                     || root.draftRevision
+                                                                                     === NiriConfigService.revision)
+                                removalLabel: modelData.override ? I18n.tr("Remove override") : I18n.tr(
+                                                                       "Delete")
+                                onRemoveRequested: {
+                                    root.recording = false;
+                                    NiriConfigService.save({
+                                                               operation: "delete",
+                                                               id: modelData.id,
+                                                               revision: root.draft ? root.draftRevision :
+                                                                                      NiriConfigService.revision
+                                                           });
+                                }
+                                width: Math.min(implicitWidth, chips.width)
+                                enabled: !NiriConfigService.busy
+                                conflicting: !!root.currentBinding(modelData).collision
+                                onClicked: root.edit(row.modelData, modelData)
+                            }
+                        }
+                        Text {
+                            visible: row.modelData.chips.length === 0 && !(root.inlineRecording
+                                                                           && root.draftGroup
+                                                                           === row.modelData.id)
+                            width: Math.min(implicitWidth, chips.width)
+                            text: row.modelData.supported ? I18n.tr("Not configured") : I18n.tr(
+                                                                "Unavailable in this niri version")
+                            color: Appearance.colors.colSubtext
+                            font.pixelSize: NexusStyle.font.bodyMedium
+                            wrapMode: Text.Wrap
+                            horizontalAlignment: Text.AlignRight
+                            height: Math.max(implicitHeight, NexusStyle.icon.large)
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+                    IconButton {
+                        iconName: "delete"
+                        iconColor: Appearance.colors.colError
+                        controlSize: NexusStyle.icon.large
+                        iconSize: NexusStyle.icon.small
+                        visible: !row.modelData.builtin && row.modelData.chips.some(chip => chip.managed)
+                        enabled: !root.draft && NiriConfigService.ready("binds") && !NiriConfigService.busy
+                        accessibleName: I18n.tr("Delete action")
+                        onClicked: NiriConfigService.save({
+                                                              operation: "delete-group",
+                                                              group: row.modelData.identity,
+                                                              revision: NiriConfigService.revision
+                                                          })
+                    }
+                    IconButton {
+                        iconName: "add_circle"
+                        controlSize: NexusStyle.icon.large
+                        iconSize: NexusStyle.icon.small
+                        enabled: row.modelData.supported && NiriConfigService.ready("binds") &&
+                                 !NiriConfigService.busy
+                        accessibleName: I18n.tr("Add shortcut")
+                        onClicked: root.addShortcut(row.modelData)
+                    }
+                }
+                Item {
+                    id: editorHost
+                    readonly property bool expanded: root.editorOpen && root.draftGroup === row.modelData.id
+                    Layout.fillWidth: true
+                    // Animate the outer reveal only. Inner height animations must flow through
+                    // immediately so the footer never runs ahead of this clipping boundary.
+                    property real revealProgress: expanded ? 1 : 0
+                    Layout.preferredHeight: revealProgress * editorLoader.implicitHeight
+                    clip: true
+                    enabled: expanded
+                    opacity: revealProgress
+                    Behavior on revealProgress {
+                        CollapseAnimation {
+                            id: editorResize
+                            onRunningChanged: {
+                                if (!running && !editorHost.expanded)
+                                    Qt.callLater(root.finishCollapse, row.modelData.id);
+                            }
+                        }
+                    }
+                    Loader {
+                        id: editorLoader
+                        width: parent.width
+                        active: editorHost.expanded || editorResize.running || editorHost.height > 0
+                        property var bindingDraft: ({
+                                                        props: {}
+                                                    })
+                        Component.onCompleted: {
+                            if (root.draftGroup === row.modelData.id && root.draft)
+                                bindingDraft = root.draft;
+                        }
+                        Connections {
+                            target: root
+                            function onDraftChanged() {
+                                if (root.draftGroup === row.modelData.id && root.draft)
+                                    editorLoader.bindingDraft = root.draft;
+                            }
+                        }
+                        sourceComponent: editor
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: editor
+        ColumnLayout {
+            id: editorContent
+            readonly property var bindingDraft: parent.bindingDraft
+            spacing: NexusStyle.padding.small
+            enabled: !NiriConfigService.busy
+            InlineStatusBanner {
+                Layout.fillWidth: true
+                message: root.bindingWarning(editorContent.bindingDraft)
+                visible: !!editorContent.bindingDraft.id && message !== ""
+            }
+            InlineStatusBanner {
+                Layout.fillWidth: true
+                visible: root.draftRevision !== NiriConfigService.revision
+                message: I18n.tr(
+                             "Configuration changed. Cancel and reload before saving; your draft has been kept.")
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                MaterialFilledTextField {
+                    id: keyField
+                    Layout.fillWidth: true
+                    labelText: root.recording && !root.inlineRecording ? I18n.tr("Press shortcut...") : I18n.tr(
+                                                                             "Key")
+                    text: editorContent.bindingDraft.key
+                    readOnly: !editorContent.bindingDraft.managed || root.recording
+                }
+                ShortcutRecorder {
+                    target: keyField
+                    enabled: root.recording && !root.inlineRecording && inhibitor.active
+                    keymap: NiriConfigService.snapshot.keymap || ({})
+                    onCaptured: key => {
+                        keyField.text = key;
+                        root.recording = false;
+                    }
+                    onCancelled: root.stopRecording()
+                    onFailed: reason => {
+                        root.recording = false;
+                        NiriConfigService.error = reason;
+                    }
+                }
+                ActionButton {
+                    text: root.recording ? I18n.tr("Cancel recording") : I18n.tr("Record key")
+                    enabled: editorContent.bindingDraft.managed
+                    onClicked: {
+                        if (root.recording)
+                            root.recording = false;
+                        else {
+                            keyField.forceActiveFocus();
+                            root.recording = true;
+                        }
+                    }
+                }
+            }
+            InlineStatusBanner {
+                Layout.fillWidth: true
+                visible: editorContent.bindingDraft.parameters === true
+                message: I18n.tr("Fill in the action parameters before saving")
+            }
+            MaterialFilledTextField {
+                id: actionField
+                Layout.fillWidth: true
+                labelText: I18n.tr("Action expression")
+                text: editorContent.bindingDraft.action
+            }
+            MaterialFilledTextField {
+                Layout.fillWidth: true
+                labelText: I18n.tr("Title")
+                text: typeof editorContent.bindingDraft.props["hotkey-overlay-title"] === "string"
+                ? editorContent.bindingDraft.props["hotkey-overlay-title"] : ""
+                onTextEdited: root.change("hotkey-overlay-title", text)
+            }
+            PreferenceAction {
+                Layout.fillWidth: true
+                first: true
+                last: true
+                text: I18n.tr("Advanced options")
+                trailingIcon: root.advanced ? "expand_less" : "expand_more"
+                onClicked: root.advanced = !root.advanced
+            }
+            Item {
+                Layout.fillWidth: true
+                Layout.preferredHeight: root.advanced ? advancedContent.implicitHeight : 0
+                clip: true
+                enabled: root.advanced
+                opacity: root.advanced ? 1 : 0
+                Behavior on Layout.preferredHeight {
+                    CollapseAnimation {}
+                }
+                Behavior on opacity {
+                    CollapseAnimation {}
+                }
+                ColumnLayout {
+                    id: advancedContent
+                    width: parent.width
+                    PreferenceToggle {
+                        first: true
+                        Layout.fillWidth: true
+                        text: I18n.tr("Repeat while held")
+                        checked: root.option("repeat", true)
+                        onToggled: root.change("repeat", checked)
+                    }
+                    PreferenceToggle {
+                        Layout.fillWidth: true
+                        text: I18n.tr("Allow while locked")
+                        enabled: /^\s*(spawn|spawn-sh)\s/.test(actionField.text)
+                        checked: root.option("allow-when-locked", false)
+                        onToggled: root.change("allow-when-locked", checked)
+                    }
+                    ActionButton {
+                        visible: root.option("allow-when-locked", undefined) !== undefined
+                        text: I18n.tr("Remove lock option")
+                        onClicked: root.unset = root.unset.concat(["allow-when-locked"])
+                    }
+                    MaterialFilledTextField {
+                        Layout.fillWidth: true
+                        labelText: I18n.tr("Minimum interval (ms)")
+                        text: String(root.option("cooldown-ms", 0))
+                        validator: IntValidator {
+                            bottom: 0
+                            top: 2147483647
+                        }
+                        onTextEdited: if (acceptableInput)
+                                          root.change("cooldown-ms", Number(text))
+                    }
+                    PreferenceToggle {
+                        last: true
+                        Layout.fillWidth: true
+                        text: I18n.tr("Keep working when apps inhibit shortcuts")
+                        checked: !root.option("allow-inhibiting", true)
+                        onToggled: root.change("allow-inhibiting", !checked)
+                    }
+                }
+            }
+            Flow {
+                Layout.fillWidth: true
+                spacing: NexusStyle.padding.small
+                layoutDirection: Qt.RightToLeft
+                ActionButton {
+                    text: I18n.tr("Save")
+                    filled: true
+                    enabled: NiriConfigService.ready("binds") && editorContent.bindingDraft.editable
+                             && root.draftRevision === NiriConfigService.revision && keyField.text !== ""
+                             && actionField.text !== "" && (!editorContent.bindingDraft.parameters
+                                                            || actionField.text
+                                                            !== editorContent.bindingDraft.action)
+                    onClicked: {
+                        root.recording = false;
+                        NiriConfigService.save({
+                                                   operation: "save",
+                                                   id: editorContent.bindingDraft.id || "",
+                                                   revision: root.draftRevision,
+                                                   key: keyField.text,
+                                                   action: actionField.text,
+                                                   patch: root.patch,
+                                                   unset: root.unset
+                                               });
+                    }
+                }
+                ActionButton {
+                    text: I18n.tr("Cancel")
+                    onClicked: root.cancel()
+                }
+                ActionButton {
+                    text: editorContent.bindingDraft.override ? I18n.tr("Remove override") : I18n.tr("Delete")
+                    visible: !!editorContent.bindingDraft.id && editorContent.bindingDraft.managed
+                    enabled: root.draftRevision === NiriConfigService.revision
+                    onClicked: NiriConfigService.save({
+                                                          operation: "delete",
+                                                          id: editorContent.bindingDraft.id,
+                                                          revision: root.draftRevision
+                                                      })
+                }
+            }
+        }
+    }
+}

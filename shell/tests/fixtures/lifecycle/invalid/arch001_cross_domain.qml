@@ -1,5 +1,5 @@
 import QtQuick
-import qs.units.settings
+import qs.plugins.settings
 
 Item {
     id: root

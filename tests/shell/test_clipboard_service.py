@@ -24,7 +24,7 @@ class ClipboardContractTests(unittest.TestCase):
 
     def test_qml_error_codes_and_i18n(self):
         """Verify that ClipboardService.qml has all cliphist error codes mapped and localized in zh_CN.toml."""
-        qml_path = SHELL_DIR / "app" / "services" / "ClipboardService.qml"
+        qml_path = SHELL_DIR / "services" / "ClipboardService.qml"
         self.assertTrue(qml_path.exists(), "ClipboardService.qml must exist")
         qml_content = qml_path.read_text(encoding="utf-8")
 
@@ -44,7 +44,7 @@ class ClipboardContractTests(unittest.TestCase):
             )
 
         # Check zh_CN.toml translations
-        zh_toml_path = SHELL_DIR / "app" / "i18n" / "zh_CN.toml"
+        zh_toml_path = SHELL_DIR / "commons" / "i18n" / "zh_CN.toml"
         self.assertTrue(zh_toml_path.exists(), "zh_CN.toml must exist")
         zh_toml_content = zh_toml_path.read_text(encoding="utf-8")
 
@@ -63,7 +63,7 @@ class ClipboardContractTests(unittest.TestCase):
 
     def test_qml_empty_db_fallback_logic(self):
         """Verify that ClipboardService.qml contains fallback handling for empty database."""
-        qml_path = SHELL_DIR / "app" / "services" / "ClipboardService.qml"
+        qml_path = SHELL_DIR / "services" / "ClipboardService.qml"
         qml_content = qml_path.read_text(encoding="utf-8")
         self.assertIn("isEmptyDbFallback", qml_content)
         self.assertIn("cliphist_list_failed", qml_content)
@@ -120,7 +120,7 @@ class ClipboardContractTests(unittest.TestCase):
 
     def test_qml_process_environment(self):
         """Verify that ClipboardService.qml passes clean XDG_CACHE_HOME to child processes."""
-        qml_path = SHELL_DIR / "app" / "services" / "ClipboardService.qml"
+        qml_path = SHELL_DIR / "services" / "ClipboardService.qml"
         content = qml_path.read_text(encoding="utf-8")
         self.assertIn('"XDG_CACHE_HOME=" + Paths.xdgCacheHome', content)
         # Should be bound to multiple processes (config, list, action, inspect)

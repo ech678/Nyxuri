@@ -35,7 +35,7 @@ class TestConfigSectionHardening(unittest.TestCase):
     """
 
     def _source(self):
-        return (Path(__file__).resolve().parents[2] / "shell" / "app" / "services"
+        return (Path(__file__).resolve().parents[2] / "shell" / "services"
                 / "PersonalizationConfig.qml").read_text(encoding="utf-8")
 
     def _loader(self):
@@ -102,7 +102,7 @@ class TestConfigStoreFailureHandling(unittest.TestCase):
     """
 
     def _source(self, name="PersonalizationConfig.qml"):
-        return (Path(__file__).resolve().parents[2] / "shell" / "app" / "services"
+        return (Path(__file__).resolve().parents[2] / "shell" / "services"
                 / name).read_text(encoding="utf-8")
 
     def _handler(self, source, signal, following):
@@ -136,9 +136,9 @@ class TestConfigStoreFailureHandling(unittest.TestCase):
         self.assertIn("console.warn", handler)
 
     AUXILIARY_STORES = (
-        "app/services/IdleService.qml",
-        "units/bar/tray/TrayService.qml",
-        "units/sidebars/quicksettings/QuickToggleConfig.qml",
+        "services/IdleService.qml",
+        "plugins/bar/tray/TrayService.qml",
+        "plugins/sidebars/quicksettings/QuickToggleConfig.qml",
     )
 
     def _relative(self, relative):
@@ -177,8 +177,8 @@ class TestConfigStoreFailureHandling(unittest.TestCase):
             self.assertIn("onSaveFailed", source, relative)
 
     STATEFUL_STORES = (
-        "units/sidebars/dashboard/infotools/InfoDrawerState.qml",
-        "units/sidebars/dashboard/infotools/TodoService.qml",
+        "plugins/sidebars/dashboard/infotools/InfoDrawerState.qml",
+        "plugins/sidebars/dashboard/infotools/TodoService.qml",
     )
 
     def test_stateful_stores_only_seed_a_missing_file(self):
@@ -194,7 +194,7 @@ class TestConfigStoreFailureHandling(unittest.TestCase):
 
     def test_info_drawer_skips_the_rewrite_after_a_failed_parse(self):
         handler = self._handler(
-            self._relative("units/sidebars/dashboard/infotools/InfoDrawerState.qml"),
+            self._relative("plugins/sidebars/dashboard/infotools/InfoDrawerState.qml"),
             "onLoaded:", "onLoadFailed:")
         self.assertIn("let loaded = false;", handler)
         self.assertIn("loaded = true;", handler)
@@ -210,7 +210,7 @@ class TestSystemThemeProbeGuard(unittest.TestCase):
     """
 
     def _poller(self):
-        source = (Path(__file__).resolve().parents[2] / "shell" / "app" / "services"
+        source = (Path(__file__).resolve().parents[2] / "shell" / "services"
                   / "UiPreferences.qml").read_text(encoding="utf-8")
         start = source.index("id: themePoller")
         return source[start:source.index("id: systemThemeWriter", start)]
@@ -236,7 +236,7 @@ class TestUiPreferencesDarkModeMirror(unittest.TestCase):
     """
 
     def _source(self):
-        return (Path(__file__).resolve().parents[2] / "shell" / "app" / "services"
+        return (Path(__file__).resolve().parents[2] / "shell" / "services"
                 / "UiPreferences.qml").read_text(encoding="utf-8")
 
     def test_dark_mode_initializes_from_the_theme_mode(self):

@@ -1,29 +1,29 @@
 import QtQuick
 import qs.app
-import qs.app.services
+import qs.services
 // Unit module warm-up (see note below): registers every synthesized
-// qs.units.* import graph at engine startup, before any Loader fires.
-// qs.app.cards joins the warm-up for the same reason — it is a synthesized
+// qs.plugins.* import graph at engine startup, before any Loader fires.
+// qs.commons.cards joins the warm-up for the same reason — it is a synthesized
 // pool consumed by unit components (desktopcards); a pool that nothing at
 // the top level imports would otherwise get its FIRST resolution inside a
 // Loader-loaded component, which is exactly the 0.3.2 defect documented
 // below (KM4.6 实机验收案例：shell.desktopcards 永久 compiled empty).
-// qs.units.settings.controls (T3 preference atoms) joins for the same
+// qs.ui (T3 preference atoms) joins for the same
 // reason: consumed only by settings pages inside the unit's Loader tree.
-import qs.app.cards
-import qs.units.bar
-import qs.units.desktopcards
-import qs.units.dock
-import qs.units.keystone
-import qs.units.launcher
-import qs.units.lock
-import qs.units.notifications
-import qs.units.regionselector
-import qs.units.session
-import qs.units.settings
-import qs.units.settings.controls
-import qs.units.sidebars
-import qs.units.wallpaper
+import qs.commons.cards
+import qs.plugins.bar
+import qs.plugins.desktopcards
+import qs.plugins.dock
+import qs.plugins.keystone
+import qs.plugins.launcher
+import qs.plugins.lock
+import qs.plugins.notifications
+import qs.plugins.regionselector
+import qs.plugins.session
+import qs.plugins.settings
+import qs.ui
+import qs.plugins.sidebars
+import qs.plugins.wallpaper
 
 // SlotHost — the microkernel's geometric slot host (unit-model.md §6).
 //
@@ -97,7 +97,7 @@ Item {
     // passes (fresh compile, cache already cleared at launch); after the
     // second failure the unit stays dark — an unbounded retry would spam
     // the log every 4s forever (KM4.6 实机验收案例：desktopcards 因未预热
-    // 的 qs.app.cards 池永久 compiled empty，pass 计数刷到 11/2). Every
+    // 的 qs.commons.cards 池永久 compiled empty，pass 计数刷到 11/2). Every
     // retry and the final give-up are logged loudly — silent missing UI is
     // the failure mode that ate a debugging afternoon. A later unit-changed
     // (off → on) resets failedHeals and re-arms the heal timer.

@@ -1,6 +1,6 @@
 # Nyxuri Shell builtin template registry.
 #
-# Rendered by app/services TemplateService through shared/utils TemplateExpr.js
+# Rendered by services TemplateService through commons TemplateExpr.js
 # (Noctalia-compatible expression subset). matugen takes no part in template
 # rendering: it only extracts the palettes (P4 contract).
 #

@@ -13,7 +13,7 @@ SHELL_DIR="${SCRIPT_DIR}"
 # Named-module shim home: M3Shapes (the pure-QML stand-in for the retired
 # external shapes plugin) lives next to the vendored shape math it will
 # eventually absorb. The engine looks for <import-path>/<Module>/qmldir here.
-SHAPES_QML_PATH="${SHELL_DIR}/shared/controls/shapes"
+SHAPES_QML_PATH="${SHELL_DIR}/ui/shapes"
 if [ -d "${SHAPES_QML_PATH}" ]; then
     export QML_IMPORT_PATH="${QML_IMPORT_PATH:+${QML_IMPORT_PATH}:}${SHAPES_QML_PATH}"
     export QML2_IMPORT_PATH="${QML2_IMPORT_PATH:+${QML2_IMPORT_PATH}:}${SHAPES_QML_PATH}"

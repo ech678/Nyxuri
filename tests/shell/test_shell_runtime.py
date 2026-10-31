@@ -85,7 +85,7 @@ class ShellLauncherTests(unittest.TestCase):
         self.assertEqual(call["qml2"], "/user/legacy")
 
     def test_pure_qml_launcher_mounts_named_module_path(self):
-        module_root = self.shell / "shared" / "controls" / "shapes"
+        module_root = self.shell / "ui" / "shapes"
         module_root.mkdir(parents=True)
         result = self.invoke("-v", QML_IMPORT_PATH="/user/qt6", QML2_IMPORT_PATH="/user/legacy")
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -248,10 +248,10 @@ class ShellPresentationTests(unittest.TestCase):
             return '''import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.app.services
-import qs.units.settings
-import "units/settings/ShellDiagnostics.js" as ShellDiagnostics
-import "units/settings/ShellSamplerMath.js" as SamplerMath
+import qs.services
+import qs.plugins.settings
+import "plugins/settings/ShellDiagnostics.js" as ShellDiagnostics
+import "plugins/settings/ShellSamplerMath.js" as SamplerMath
 
 ShellRoot {
     IpcHandler {
@@ -328,12 +328,12 @@ ShellRoot {
         return '''import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.app.services
-import qs.shared.theme
-import qs.shared.controls
-import qs.units.settings
-import qs.units.dock
-import qs.units.wallpaper
+import qs.services
+import qs.commons
+import qs.ui
+import qs.plugins.settings
+import qs.plugins.dock
+import qs.plugins.wallpaper
 
 ShellRoot {
     Component.onCompleted: {
@@ -886,10 +886,10 @@ class ShellConfigStoreTests(unittest.TestCase):
 import Quickshell
 import Quickshell.Io
 import qs.app
-import qs.app.services
-import qs.units.bar.tray
-import qs.units.quicksettings
-import qs.units.sidebars.dashboard.infotools
+import qs.services
+import qs.plugins.bar.tray
+import qs.plugins.quicksettings
+import qs.plugins.sidebars.dashboard.infotools
 
 ShellRoot {
     IpcHandler {

@@ -15,7 +15,7 @@ import unittest
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SETTINGS = REPO_ROOT / "shell" / "units" / "settings"
+SETTINGS = REPO_ROOT / "shell" / "plugins" / "settings"
 ARCHIVE_SETTINGS = REPO_ROOT / "shell" / "archive" / "settings"
 
 ANCHOR_IDS = {
@@ -133,7 +133,7 @@ def _read(name):
     target = SETTINGS / name
     if target.is_file():
         return target.read_text(encoding="utf-8")
-    for match in (REPO_ROOT / "shell" / "units").rglob(name):
+    for match in (REPO_ROOT / "shell" / "plugins").rglob(name):
         if match.is_file():
             return match.read_text(encoding="utf-8")
     for match in ARCHIVE_SETTINGS.rglob(name):

@@ -149,8 +149,8 @@ class TestP4ThemeEngineContract(unittest.TestCase):
                              f"{scheme}/{mode} divergence surface changed; re-measure")
 
     def test_theme_contract_files_exist(self):
-        for rel in ("shared/utils/ThemeColor.js", "shared/utils/ThemePalette.js",
-                    "shared/utils/TemplateExpr.js",
+        for rel in ("commons/ThemeColor.js", "commons/ThemePalette.js",
+                    "commons/TemplateExpr.js",
                     "tests/qml/tst_ThemeContract.qml",
                     "tests/fixtures/theme/README.md"):
             self.assertTrue(os.path.isfile(os.path.join(self.shell_dir, rel)), rel)
@@ -167,7 +167,7 @@ class TestP4ThemeEngineContract(unittest.TestCase):
         self.assertIn("~/.local/share/fcitx5/themes/nyxmellow/templates/highlight.svg", content)
         self.assertIn("ReloadAddonConfig", content)
 
-        dashboard_page = os.path.join(self.shell_dir, "units", 'settings', 'dashwindow', "DashboardThemesPage.qml")
+        dashboard_page = os.path.join(self.shell_dir, "plugins", 'settings', 'dashwindow', "DashboardThemesPage.qml")
         with open(dashboard_page, "r", encoding="utf-8") as f:
             dash_content = f.read()
         self.assertIn('"id": "fcitx5"', dash_content)
@@ -252,7 +252,7 @@ class TestP4ThemeEngineContract(unittest.TestCase):
                          "kitty.conf and transparent preset must ship identical shortcut blocks")
 
     def test_template_service_avoids_double_reload_and_fixes_watchdog(self):
-        svc_path = os.path.join(self.shell_dir, "app", "services", "TemplateService.qml")
+        svc_path = os.path.join(self.shell_dir, "services", "TemplateService.qml")
         with open(svc_path, "r", encoding="utf-8") as f:
             content = f.read()
         self.assertNotIn("hookWatchdog", content)

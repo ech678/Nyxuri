@@ -3,9 +3,9 @@
 
 The catalog (shell/app/UnitCatalog.qml) is the host-side declaration of the
 twelve Shell units. These tests keep it welded to the physical blueprints
-(shell/units/) and to the kernel's event loop:
+(shell/plugins/) and to the kernel's event loop:
 
-  - catalog ids  == shell/units/ directory names (registry namespace root)
+  - catalog ids  == shell/plugins/ directory names (registry namespace root)
   - catalog labels == blueprint manifest labels
   - every slot is one of the six geometric slots (unit-model.md §6)
   - every component source exists on disk
@@ -20,7 +20,7 @@ import unittest
 
 REPO_ROOT = Path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SHELL_DIR = os.path.join(REPO_ROOT, "shell")
-UNITS_DIR = os.path.join(SHELL_DIR, "units")
+UNITS_DIR = os.path.join(SHELL_DIR, "plugins")
 
 SIX_SLOTS = {"edge", "island", "overlay", "drawer", "surface:desktop", "popup:notification"}
 
@@ -55,7 +55,7 @@ class TestUnitCatalogSync(unittest.TestCase):
                             if os.path.isdir(os.path.join(UNITS_DIR, d)))
         catalog_ids = sorted(row["id"] for row in catalog_rows())
         self.assertEqual(catalog_ids, blueprints,
-                         "UnitCatalog.qml must declare exactly the shell/units/ blueprints")
+                         "UnitCatalog.qml must declare exactly the shell/plugins/ blueprints")
 
     def test_labels_match_blueprints(self):
         for row in catalog_rows():
@@ -100,10 +100,10 @@ class TestHostClosure(unittest.TestCase):
 
     def test_unit_roots_self_register_on_gateway(self):
         expectations = {
-            os.path.join("units", "lock", "Lock.qml"): "ActionGateway.sessionLocker = root",
-            os.path.join("units", "settings", "SettingsHost.qml"):
+            os.path.join("plugins", "lock", "Lock.qml"): "ActionGateway.sessionLocker = root",
+            os.path.join("plugins", "settings", "SettingsHost.qml"):
                 "ActionGateway.settingsHost = root",
-            os.path.join("units", "keystone", "Keystone.qml"):
+            os.path.join("plugins", "keystone", "Keystone.qml"):
                 "ActionGateway.keystoneHost = root",
         }
         for rel, marker in expectations.items():
@@ -126,7 +126,7 @@ class TestEventLoop(unittest.TestCase):
         self.assertIn("StateProjection.reload()", app)
 
     def test_projection_is_readonly_and_defaults_enabled(self):
-        proj = read("app", "services", "StateProjection.qml")
+        proj = read("services", "StateProjection.qml")
         self.assertIn('Paths.stateHome + "/state.json"', proj)
         self.assertIn("watchChanges: false", proj,
                       "reload happens on the unit-changed event only")
@@ -135,7 +135,7 @@ class TestEventLoop(unittest.TestCase):
         self.assertNotIn("setText", proj, "the shell never writes the ledger")
 
     def test_switches_route_through_the_kernel_verb(self):
-        control = read("app", "services", "UnitControlService.qml")
+        control = read("services", "UnitControlService.qml")
         self.assertIn('Paths.binHome + "/nyxuri"', control)
         self.assertIn('"shell." + unitId', control)
         self.assertNotIn("state.json", control,

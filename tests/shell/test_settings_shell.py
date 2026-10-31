@@ -16,7 +16,7 @@ SHELL = REPO_ROOT / "shell"
 
 
 def _qml_sources():
-    for sub in ("app", "units", "shared"):
+    for sub in ("app", "commons", "ui", "services", "plugins"):
         for pattern in ("*.qml", "*.js"):
             for path in (SHELL / sub).rglob(pattern):
                 if "__pycache__" not in path.parts:
@@ -27,7 +27,7 @@ class TestPanelStyleAxisConvergence(unittest.TestCase):
     """settingsPanelStyles is a two-value axis; "minimal" folds, not special-cases."""
 
     def _config_source(self):
-        return (SHELL / "app" / "services" / "PersonalizationConfig.qml").read_text(encoding="utf-8")
+        return (SHELL / "services" / "PersonalizationConfig.qml").read_text(encoding="utf-8")
 
     def test_axis_is_exactly_default_and_dashboard(self):
         source = self._config_source()
@@ -61,9 +61,11 @@ class TestRouteDescriptions(unittest.TestCase):
 
     def test_every_route_has_a_nonempty_description(self):
         document = json.loads(
-            (SHELL / "units" / "settings" / "settings-routes.json").read_text(encoding="utf-8"))
+            (SHELL / "plugins" / "settings" / "settings-routes.json").read_text(encoding="utf-8"))
         routes = document["routes"]
-        self.assertGreaterEqual(len(routes), 20)
+        # 45361df 定向瘦身（删除抽屉/显示/自启动/默认应用页面）后的真实规模底线；
+        # 当时断言未随瘦身更新，S0-1 随测试清算对齐。
+        self.assertGreaterEqual(len(routes), 16)
         missing = [route["id"] for route in routes
                    if not str(route.get("description", "")).strip()]
         self.assertEqual(missing, [], f"routes without description: {missing}")

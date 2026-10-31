@@ -11,8 +11,8 @@ Singleton {
     // relative resource paths.
     readonly property string shareRoot: shellDir
     // Host-owned data directories (KM4.6: the assets/ junk drawer is dissolved —
-    // unit-owned shaders live in units/<domain>/shaders/, host data lives in app/).
-    readonly property string i18nDir: shareRoot + "/app/i18n"
+    // unit-owned shaders live in plugins/<domain>/shaders/, host data lives in app/).
+    readonly property string i18nDir: shareRoot + "/commons/i18n"
     readonly property string iconsDir: shareRoot + "/app/icons"
     readonly property string scriptsDir: shareRoot + "/scripts"
     readonly property string lyricsScriptsDir: scriptsDir + "/media"

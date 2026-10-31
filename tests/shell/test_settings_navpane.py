@@ -15,8 +15,8 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SHELL = REPO_ROOT / "shell"
-SETTINGS = SHELL / "units" / "settings"
-CONTROLS = SETTINGS / "controls"
+SETTINGS = SHELL / "plugins" / "settings"
+CONTROLS = SHELL / "ui"
 
 EXECUTED = (
     "NavigationRailButton.qml",
@@ -43,7 +43,7 @@ WINDOW_API = (
 
 
 def _runtime_sources():
-    for sub in ("app", "units", "shared"):
+    for sub in ("app", "commons", "ui", "services", "plugins"):
         for pattern in ("*.qml", "*.js"):
             yield from (SHELL / sub).rglob(pattern)
 
@@ -170,13 +170,18 @@ class TestNavPaneComposition(unittest.TestCase):
 
     def test_nav_files_live_in_the_settings_unit_root(self):
         for name in ("NexusNavPane.qml", "NexusNavRow.qml"):
-            self.assertTrue((SETTINGS / name).is_file(), f"{name} missing from units/settings")
+            self.assertTrue((SETTINGS / name).is_file(), f"{name} missing from plugins/settings")
             self.assertFalse((CONTROLS / name).exists(),
                              f"{name} must not leak into the atom pool")
 
     def test_atom_pool_is_untouched_by_the_shell(self):
-        shipped = sorted(p.name for p in CONTROLS.glob("*.qml"))
-        self.assertEqual(len(shipped), 11, f"atom pool must stay at eleven: {shipped}")
+        # S0-1: the eleven M1 atoms live flat in ui/ beside the control
+        # library; the standalone settings/controls pool must stay gone.
+        from test_preference_atoms import ATOMS
+        for name in ATOMS:
+            self.assertTrue((CONTROLS / name).is_file(), f"{name} missing from ui/")
+        self.assertFalse((SETTINGS / "controls").exists(),
+                         "the old settings/controls pool must stay gone (S0-1)")
 
     def test_pane_composes_the_atoms(self):
         source = _read("NexusNavPane.qml")
@@ -239,7 +244,7 @@ class TestNavPaneComposition(unittest.TestCase):
                               f"{name} hardcodes a hex color")
 
     def test_new_strings_resolve_in_zh_cn(self):
-        zh = (SHELL / "app" / "i18n" / "zh_CN.toml").read_text(encoding="utf-8")
+        zh = (SHELL / "commons" / "i18n" / "zh_CN.toml").read_text(encoding="utf-8")
         for key in ("Edit configuration file", "Copy configuration path", "About",
                     "Compositor", "System information and versions"):
             self.assertIn(f'"{key}"', zh)
@@ -282,7 +287,7 @@ class TestAboutPage(unittest.TestCase):
         # SystemIdentityService with a fixed argv.
         self.assertNotIn("Process {", _read("AboutPage.qml"),
                          "views route I/O through services, not their own processes")
-        service = (SHELL / "app" / "services" / "SystemIdentityService.qml").read_text(encoding="utf-8")
+        service = (SHELL / "services" / "SystemIdentityService.qml").read_text(encoding="utf-8")
         self.assertIn('command: ["quickshell", "--version"]', service)
 
 

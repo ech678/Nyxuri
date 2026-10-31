@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Compile every unit fragment shader (units/*/shaders/frag/*.frag) into its
+# Compile every unit fragment shader (plugins/*/shaders/frag/*.frag) into its
 # committed .qsb next to the source. Run after editing any .frag; the shell
 # loads precompiled qsb at runtime (see development.md).
 
@@ -51,7 +51,7 @@ while IFS= read -r -d '' frag; do
 done < <(find "${project_dir}/units" -path '*/shaders/frag/*.frag' -print0 | sort -z)
 
 if [[ "$built" -eq 0 ]]; then
-    echo "No fragment shaders found under units/*/shaders/frag" >&2
+    echo "No fragment shaders found under plugins/*/shaders/frag" >&2
     exit 1
 fi
 echo "Compiled ${built} shader(s)"

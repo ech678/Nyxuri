@@ -27,12 +27,14 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SHELL_DIR = REPO_ROOT / "shell"
-ZH_PATH = SHELL_DIR / "app" / "i18n" / "zh_CN.toml"
+ZH_PATH = SHELL_DIR / "commons" / "i18n" / "zh_CN.toml"
 
 _CORPUS_DIRS = (
     SHELL_DIR / "app",
-    SHELL_DIR / "units",
-    SHELL_DIR / "shared",
+    SHELL_DIR / "plugins",
+    SHELL_DIR / "commons",
+    SHELL_DIR / "ui",
+    SHELL_DIR / "services",
     SHELL_DIR / "scripts",
     SHELL_DIR / "tests",
     SHELL_DIR / "archive",
@@ -76,7 +78,7 @@ def _corpus() -> str:
 
 def _type_stems() -> set:
     stems = set()
-    for sub in ("app", "units", "shared", "archive"):
+    for sub in ("app", "commons", "ui", "services", "plugins", "archive"):
         for suffix in (".qml", ".js"):
             for path in (SHELL_DIR / sub).rglob(f"*{suffix}"):
                 if "__pycache__" not in path.parts:

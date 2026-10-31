@@ -9,7 +9,7 @@ here — that is ledger's monopoly.
 Blueprint roots (KM4, plugin-model.md §6)::
 
     plugins/       → bare ids          (kitty, niri, ...)
-    shell/units/   → ``shell.`` ids    (shell.bar, shell.dock, ...)
+    shell/plugins/ → ``shell.`` ids    (shell.bar, shell.dock, ...)
 
 The prefix comes from the ROOT, not from per-id special-casing: the kernel
 only ever sees dotted ids and resolves them back through the same table.
@@ -36,7 +36,7 @@ def _namespace_roots() -> "list[tuple[Path, str]]":
 def plugin_ids() -> list[str]:
     """Sorted ids of every directory plugin across all blueprint roots.
 
-    A plugin is a directory: ``plugins/<plugin>/`` or ``shell/units/<domain>/``.
+    A plugin is a directory: ``plugins/<plugin>/`` or ``shell/plugins/<domain>/``.
     Metadata entries are not plugins; the single-file degenerate
     (``starship.toml`` + sidecar) was physically deleted at KM1 ② and no
     longer exists.

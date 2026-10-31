@@ -31,7 +31,7 @@ class TestDashboardTransitionCatalogContract(unittest.TestCase):
         shell_dir = os.path.join(repo_root, "shell")
 
         # 1. DashboardSettingsCatalog configures transition cards as 'combo'
-        catalog_path = os.path.join(shell_dir, "units", 'settings', 'dashwindow', "DashboardSettingsCatalog.qml")
+        catalog_path = os.path.join(shell_dir, "plugins", 'settings', 'dashwindow', "DashboardSettingsCatalog.qml")
         with open(catalog_path, "r", encoding="utf-8") as f:
             catalog_content = f.read()
 
@@ -46,7 +46,7 @@ class TestDashboardTransitionCatalogContract(unittest.TestCase):
         self.assertEqual(overview_match.group(1), "combo", "wallpaper:Overview transition must be combo")
 
         # 2. SettingsControlCatalog binds overview transition to PersonalizationConfig.transitionTypes
-        control_path = os.path.join(shell_dir, "units", 'settings', 'dashwindow', "SettingsControlCatalog.qml")
+        control_path = os.path.join(shell_dir, "plugins", 'settings', 'dashwindow', "SettingsControlCatalog.qml")
         with open(control_path, "r", encoding="utf-8") as f:
             control_content = f.read()
 
@@ -61,7 +61,7 @@ class TestDashboardTransitionCatalogContract(unittest.TestCase):
         self.assertNotIn("awwwTransitionTypes", control_content)
 
         # 3. DashboardSelectCard hides MaterialSymbol when no icon is present
-        select_card_path = os.path.join(shell_dir, "units", 'settings', 'dashwindow', "DashboardSelectCard.qml")
+        select_card_path = os.path.join(shell_dir, "plugins", 'settings', 'dashwindow', "DashboardSelectCard.qml")
         with open(select_card_path, "r", encoding="utf-8") as f:
             select_card_content = f.read()
 
@@ -83,7 +83,7 @@ class TestDashboardSettingsCatalogIntegrity(unittest.TestCase):
 
     def _read(self, *parts):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        path = os.path.join(repo_root, "shell", "units", 'settings', 'dashwindow', *parts)
+        path = os.path.join(repo_root, "shell", "plugins", 'settings', 'dashwindow', *parts)
         with open(path, "r", encoding="utf-8") as f:
             return f.read()
 
