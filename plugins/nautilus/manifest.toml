@@ -1,0 +1,6 @@
+deploy = false
+
+# GNOME 文件管理器（deps apps 推荐软件）。
+label = "Nautilus"
+category = "system"
+packages = ["nautilus"]

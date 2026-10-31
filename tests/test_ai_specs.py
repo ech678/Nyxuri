@@ -315,25 +315,27 @@ class TestAISpecs(unittest.TestCase):
 
     def test_km3_5_death_row_enforced(self):
         """KM3.5 enforcement step: the old world is physically gone — blueprint
-        renamed, assets bypass executed, zero-file fake plugins replaced by the
-        catalog, template registry deleted, kernel physically layered."""
+        renamed, assets bypass executed, zero-file fake plugins relocated,
+        template registry deleted, kernel physically layered. R0-2 supersedes
+        the catalog relocation: the declarations moved back into the blueprint
+        as manifest-only plugin dirs."""
         root = self.root_dir
         # 1. §7 rows marked enforced.
         content = (self.wiki_dir / "plugin-model.md").read_text(encoding="utf-8")
         rows = [line for line in content.splitlines() if line.startswith("|")]
         for name in ("RETIREMENTS", "template_registry", "17 个零文件假单元",
-                     "`assets/` + `nyxuri/deploy/assets.py`", "蓝图正名 `configs/` → `units/`"):
+                     "`assets/` + `nyxuri/deploy/assets.py`", "蓝图正名 `configs/` → `units/`",
+                     "根 `catalog.toml`"):
+            stage = "KM3.5（已执法" if name != "根 `catalog.toml`" else "R0-2（已执法"
             self.assertTrue(
-                any(name in row and "KM3.5（已执法" in row for row in rows),
-                f"death-row object '{name}' must be marked KM3.5（已执法） in plugin-model.md §7",
+                any(name in row and stage in row for row in rows),
+                f"death-row object '{name}' must be marked enforced in plugin-model.md §7",
             )
 
         # 2. Physical absence / presence.
         self.assertFalse((root / "configs").exists(), "blueprint must be renamed")
         plugins = root / "plugins"
         self.assertTrue(plugins.is_dir())
-        self.assertEqual(len([d for d in plugins.iterdir() if d.is_dir()]), 13,
-                         "blueprint = 12 real plugins + wallpapers (KM4 adds theme)")
         self.assertFalse((root / "assets").exists())
         self.assertTrue((plugins / "wallpapers" / "hooks" / "install-pack").is_file())
         self.assertTrue((plugins / "wallpapers" / "manifest.toml").is_file())
@@ -349,32 +351,32 @@ class TestAISpecs(unittest.TestCase):
             self.assertTrue((root / "nyxuri" / sub).is_dir(), sub)
         self.assertTrue((root / "packaging" / "gen-deps.py").is_file())
         self.assertFalse((root / "nyxuri" / "packaging").exists())
-        self.assertTrue((root / "catalog.toml").is_file())
+        self.assertFalse((root / "catalog.toml").exists(),
+                         "R0-2 catalog 并轨：供给声明住各插件 manifest，根清单处决")
+        self.assertFalse((root / "nyxuri" / "pkg" / "catalog.py").exists())
 
-        # 3. The 17 fake plugins are catalog entries, never blueprint dirs.
-        # KM4 adds quickshell: the shell runtime base, declared for setups
-        # that pick nyxuri-shell without the Noctalia AUR transitively
-        # pulling it in (shell/KNOWN-ISSUES closure).
-        fake_names = {"brave-origin", "flclash", "kdenlive", "libreoffice", "lutris",
-                      "missioncenter", "motrix", "nautilus", "obs", "protonplus",
-                      "qq", "shelly", "spotify", "steam", "telegram", "vscode", "wechat",
-                      "quickshell"}
-        self.assertEqual(fake_names & {d.name for d in plugins.iterdir()}, set())
-        catalog = (root / "catalog.toml").read_text(encoding="utf-8")
-        import tomllib
-        data = tomllib.loads(catalog)
-        self.assertEqual(fake_names, set(data), "catalog must carry exactly the 18 declarations")
+        # 3. The 18 packages-only declarations live as manifest-only plugin
+        # dirs (R0-2 catalog 并轨 — the KM3.5 catalog relocation is superseded).
+        packages_only = {"brave-origin", "flclash", "kdenlive", "libreoffice", "lutris",
+                         "missioncenter", "motrix", "nautilus", "obs", "protonplus",
+                         "qq", "shelly", "spotify", "steam", "telegram", "vscode", "wechat",
+                         "quickshell"}
+        for name in packages_only:
+            self.assertTrue((plugins / name / "manifest.toml").is_file(),
+                            f"{name} must declare its packages in its own manifest.toml")
+        # 13 real plugins + wallpapers/theme + 18 packages-only = 31 dirs
+        self.assertEqual(len([d for d in plugins.iterdir() if d.is_dir()]), 31)
 
         # 4. The engine holds zero references to the dead names.
         for py in sorted((root / "nyxuri").rglob("*.py")):
             text = py.read_text(encoding="utf-8")
             for dead in ("template_registry", "nyxuri.constants", "nyxuri.i18n",
-                         "nyxuri.deps", "nyxuri.network", "deploy_wallpapers"):
+                         "nyxuri.deps", "nyxuri.network", "deploy_wallpapers",
+                         "pkg.catalog"):
                 self.assertNotIn(dead, text, f"{py.relative_to(root)} still references {dead}")
 
-        # 5. Contract line: the package catalog is not a plugin.
-        self.assertIn("catalog.toml", content)
-        self.assertIn("不是单元", content)
+        # 5. Contract line: packages-only plugins ARE plugins — no living area.
+        self.assertIn("仅包声明插件", content)
 
         # 6. Test tree mirrors the source tree.
         tests = root / "tests"

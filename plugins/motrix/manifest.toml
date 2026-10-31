@@ -1,0 +1,7 @@
+deploy = false
+
+# Tauri 2 跨协议下载管理器（AUR motrix）。
+label = "Motrix"
+category = "download"
+packages = []
+packages_aur = ["motrix"]

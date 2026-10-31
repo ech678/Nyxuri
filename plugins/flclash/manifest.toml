@@ -1,0 +1,8 @@
+deploy = false
+
+# 官方预编译 ClashMeta 多平台代理客户端（flclash-bin 规避 archlinuxcn strip 校验失配）。
+label = "FlClash"
+category = "proxy"
+detect = "flclash"
+packages = []
+packages_aur = ["flclash-bin"]

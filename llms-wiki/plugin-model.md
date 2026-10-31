@@ -47,10 +47,11 @@
 
 ### 严正排除项
 * **系统软件包（pacman / AUR / Flatpak 包）**：不是插件！它们只是插件声明书里写的 `dependencies`。
-* **预设与零件（Preset / Parts）**：不是插件！它们是插件内部的配置变体（Variants）。
-* **包目录清单（根 `catalog.toml`）**：不是插件！「装但不部署」的软件（brave-origin、
-  missioncenter 这类无配置可 ship 的声明）住根 `catalog.toml`，供 `deps apps` 菜单与
-  gen-deps optdepends 同源消费；目录条目没有账本生命周期，永不进 `plugins/`（KM3.5 正名）。
+* **仅包声明插件（packages-only，R0-2 catalog 并轨）**：是插件！`nautilus`、`qq` 这类
+  「装但不部署」的声明住各自 `plugins/<name>/manifest.toml`（只有 packages / label /
+  category / detect，无部署物、无生活区）；`on` = 装包 + 落账，`off` = 纯落账——
+  与 runtime 插件同形，但拥有真实的包世界投影（deps apps 菜单与安装器）。
+  原 KM3.5 的根 `catalog.toml` 已随 R0-2 并轨处决（见 §7 死刑清单）。
 
 ### 内核分层契约（依赖方向冻结）
 
@@ -291,6 +292,8 @@ deploy/deps 的包世界（`discover_manifest_apps`）只扫 `plugins/`，Shell 
 | `~/.config/noctalia/templates/` 共享池（寄宿 noctalia 命名空间）→ `units/theme/` 单元 + `~/.config/nyxuri/templates/` | KM4（已执法，池位置中立化，merge 共享生活区） |
 | `install.sh` 安装器职责（退役为一次性引导）→ `nyxuri/launcher.sh` 常驻启动器 + 无透传引导；同批清算：`nyxuri/migrations/` 整模块、nyxniri 别名与 `NYXNIRI_*` 兼容层 | KM5（已执法；`nyxuri/cli.py` 交互菜单经作者裁决保留为常驻产品面，登记撤销） |
 | 蓝图正名 `units/` → `plugins/`（账本键 `units` → `plugins` 一次性迁移 + 引擎标识符与文案 unit → plugin） | R0-1（已执法） |
+| 根 `catalog.toml`（包目录清单）+ `pkg/catalog.py` → 18 个 manifest-only 插件目录（`plugins/<name>/manifest.toml` 仅包声明，deps 菜单聚合 manifest） | R0-2（已执法） |
+| 预设/零件概念 → 插件形态字段（manifest `[presets]`/`[parts]` 并轨 `[forms]`、账本 `preset` 字段改名 `form` + 顶层 `forms` 槽位字典、`deploy/preset.py` → `forms.py`、`presets/<app>.active` 双写退役） | R0-2（已执法） |
 ---
 
 ## 8. 路径与环境术语表（原 concept-glossary，KM3.5 并入）

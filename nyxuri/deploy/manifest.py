@@ -14,6 +14,9 @@ Schema (all fields optional, flat at top level)::
                                # withdraws only laid files (never rm -rf)
     runtime = true             # ledger-only plugin: no living area, no deploy;
                                # the running host reacts to the plugin-changed event
+    deploy = false             # packages-only plugin: declares packages, never
+                               # deploys — the explicit flag wins over any scan
+                               # of directory contents (§6 declaration doctrine)
     packages        = ["mangowm"]       # default = [<plugin name>]
     packages_aur    = []                # default = []  (AUR helper installs)
     packages_flatpak = []               # default = []  (Flathub app IDs)
@@ -84,6 +87,8 @@ class ModuleManifest:
     merge: bool = False        # Shared living area: no-clobber deploy, snapshot = laid files
     runtime: bool = False      # Ledger-only plugin (shell.*): no living area, the
                                # running host reacts to the plugin-changed event
+    deploy_declared: bool = True  # explicit ``deploy = false`` → packages-only plugin;
+                                  # never deployable no matter what the directory holds
     form_inherit: bool = False
     form_allow: List[str] = field(default_factory=list)
     form_standalone: List[str] = field(default_factory=list)
@@ -93,12 +98,17 @@ class ModuleManifest:
     forms: Dict[str, dict] = field(default_factory=dict)
 
 
-def _is_deployable(app_src: Path) -> bool:
+def _is_deployable(app_src: Path, *, deploy_declared: bool = True) -> bool:
     """A plugin is deployable iff it ships real config (more than just a manifest).
 
     ``hooks/`` is plugin-owned lifecycle behavior (KM3 contract) — it never
-    counts as deployable config and never ships to the living area.
+    counts as deployable config and never ships to the living area. An
+    explicit ``deploy = false`` declaration vetoes deployability outright
+    (packages-only plugins, R0-2): the declaration wins over directory
+    contents, so a stray file can never turn one into a dotfile plugin.
     """
+    if not deploy_declared:
+        return False
     try:
         for entry in app_src.iterdir():
             if entry.name in _METADATA_NAMES or entry.name in (_MANIFEST_NAME, "hooks"):
@@ -186,6 +196,9 @@ def load_manifest(app_src: Path) -> ModuleManifest:
 
     forms = data.get("forms", {}) or {}
     privilege = data.get("privilege", {}) or {}
+    # ``deploy = false`` (packages-only, R0-2) vetoes deployability before any
+    # content scan: the declaration is the contract, not the directory shape.
+    deploy_declared = bool(data.get("deploy", True))
     # Absent packages → [<plugin name>]; an explicit empty list stays empty
     # (flatpak/AUR-only plugins must keep their name out of pacman).
     raw_repo = data.get("packages")
@@ -211,7 +224,7 @@ def load_manifest(app_src: Path) -> ModuleManifest:
         category=data.get("category", ""),
         detect=data.get("detect", name),
         dependencies=_as_str_list(data.get("dependencies")),
-        is_deployable=_is_deployable(app_src),
+        is_deployable=_is_deployable(app_src, deploy_declared=deploy_declared),
         is_optional=bool(data.get("optional", False)),
         post_install=str(data.get("post_install", "")),
         post_remove=str(data.get("post_remove", "")),
@@ -227,6 +240,7 @@ def load_manifest(app_src: Path) -> ModuleManifest:
         form_exclude=_as_str_list(forms.get("exclude")),
         form_reload=_as_str_list(forms.get("reload")),
         forms=manifest_forms,
+        deploy_declared=deploy_declared,
     )
 
 

@@ -139,29 +139,24 @@ class TestI18nKeyIntegrity(unittest.TestCase):
         """Dynamic keys exempted from orphan checks must still exist.
 
         The reverse direction of the orphan check: every app_* / apps_cat_* key
-        the deps menu can construct at runtime (catalog.toml entries plus
-        optional plugins) must have a TRANSLATIONS entry, otherwise the menu
-        renders the raw key. This is the blind spot that once let
-        app_greeter/app_mango/app_wallpapers show as literal key names.
+        the deps menu can construct at runtime (R0-2: catalog 并轨后全部来自
+        plugins/*/manifest.toml——packages-only 声明与 optional 插件) must have a
+        TRANSLATIONS entry, otherwise the menu renders the raw key. This is the
+        blind spot that once let app_greeter/app_mango/app_wallpapers show as
+        literal key names.
         """
         import tomllib
 
+        from nyxuri.pkg.deps import _supply_items
+
         repo_root = Path(__file__).resolve().parents[1]
         required = set()
-        with open(repo_root / "catalog.toml", "rb") as f:
-            catalog = tomllib.load(f)
-        for entry_id, entry in catalog.items():
-            if isinstance(entry, dict):
-                required.add(f"app_{entry_id.replace('-', '_')}")
-                if entry.get("category"):
-                    required.add(f"apps_cat_{entry['category']}")
-        for manifest in sorted((repo_root / "plugins").glob("*/manifest.toml")):
-            with open(manifest, "rb") as f:
-                data = tomllib.load(f)
-            if data.get("optional") is True:
-                required.add(f"app_{manifest.parent.name.replace('-', '_')}")
-                if data.get("category"):
-                    required.add(f"apps_cat_{data['category']}")
+        with TempEnv() as ctx:
+            ctx.env.plugins_src = repo_root / "plugins"
+            for item in _supply_items():
+                required.add(f"app_{item['key'].replace('-', '_')}")
+                if item["category"]:
+                    required.add(f"apps_cat_{item['category']}")
 
         missing = required - self.translation_keys
         self.assertEqual(missing, set(),

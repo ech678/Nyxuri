@@ -240,12 +240,16 @@ class TestRealRepoManifests(unittest.TestCase):
         self.assertEqual(m.detect, "starship")
         self.assertTrue(m.is_deployable)
 
-    def test_catalog_names_are_not_units(self):
-        # KM3.5: packages-only software lives in catalog.toml, not the
-        # blueprint. The plugin registry must not know these names at all.
+    def test_packages_only_names_are_plugins_but_never_dotfiles(self):
+        # R0-2 catalog 并轨: packages-only software lives in the blueprint as
+        # manifest-only plugin dirs. They are registry-known plugins, yet
+        # never deployable — and the ``deploy = false`` declaration, not
+        # directory emptiness, is what keeps them out of the dotfile world.
         manifests = dict(manifest.discover_manifest_apps())
         for name in ("nautilus", "missioncenter", "brave-origin", "vscode", "wechat"):
-            self.assertNotIn(name, manifests, f"{name} is a catalog entry, not a plugin")
+            m = manifests[name]
+            self.assertFalse(m.deploy_declared, f"{name} must declare deploy = false")
+            self.assertFalse(m.is_deployable, f"{name} must never become a dotfile plugin")
 
     def test_optional_units_keep_manifest_declaration(self):
         opts = manifest.discover_optional_apps()
@@ -274,13 +278,14 @@ class TestRealRepoManifests(unittest.TestCase):
         self.assertFalse((src / "starship.toml").exists())
         self.assertEqual(list(src.glob("**/*.module.toml")), [])
 
-    def test_catalog_entry_detect_fixes_status_lookup(self):
-        # Package name "mission-center" differs from catalog name.
-        from nyxuri.pkg.catalog import get_entry
-        entry = get_entry("missioncenter")
-        self.assertIsNotNone(entry)
-        self.assertEqual(entry.detect, "mission-center")
-        self.assertEqual(entry.packages_repo, ["mission-center"])
+    def test_packages_only_manifest_detect_fixes_status_lookup(self):
+        # Package name "mission-center" differs from plugin name (R0-2:
+        # the old catalog row is now a manifest-only plugin dir).
+        manifests = dict(manifest.discover_manifest_apps())
+        m = manifests["missioncenter"]
+        self.assertEqual(m.detect, "mission-center")
+        self.assertEqual(m.packages_repo, ["mission-center"])
+        self.assertFalse(m.is_deployable, "packages-only plugin ships no living area")
 
     def test_fcitx5_rime_aur_packages(self):
         manifests = dict(manifest.discover_manifest_apps())
@@ -319,21 +324,20 @@ class TestRealRepoManifests(unittest.TestCase):
         self.assertIn("zed", manifest.discover_optional_apps())
         self.assertIn("zed", manifest.discover_deployable_apps())
 
-    def test_flatpak_only_catalog_entries_have_no_pacman_packages(self):
+    def test_flatpak_only_manifests_have_no_pacman_packages(self):
         # qq/wechat/spotify install via Flathub. Explicit empty repo list
         # must survive parsing, or pacman would be handed a nonexistent name.
-        from nyxuri.pkg.catalog import get_entry
+        manifests = dict(manifest.discover_manifest_apps())
         expected = {
             "qq": ["com.qq.QQ"],
             "wechat": ["com.tencent.WeChat"],
             "spotify": ["com.spotify.Client"],
         }
         for name, ids in expected.items():
-            entry = get_entry(name)
-            self.assertIsNotNone(entry, name)
-            self.assertEqual(entry.packages_repo, [], f"{name} must keep packages empty")
-            self.assertEqual(entry.packages_aur, [])
-            self.assertEqual(entry.packages_flatpak, ids)
+            m = manifests[name]
+            self.assertEqual(m.packages_repo, [], f"{name} must keep packages empty")
+            self.assertEqual(m.packages_aur, [])
+            self.assertEqual(m.packages_flatpak, ids)
 
     def test_all_optional_units_categorized(self):
         known = {"browser", "office", "dev", "social", "media", "game",
@@ -343,7 +347,7 @@ class TestRealRepoManifests(unittest.TestCase):
                 self.assertIn(m.category, known, f"{_name} has unknown category")
 
     def test_full_optional_catalog(self):
-        """Optional surface = catalog entries + optional plugins, one supply."""
+        """Optional surface = packages-only plugins + optional plugins, one supply."""
         from nyxuri.pkg.deps import _supply_items
 
         keys = {item["key"] for item in _supply_items()}
@@ -351,7 +355,7 @@ class TestRealRepoManifests(unittest.TestCase):
                      "telegram", "spotify", "steam", "lutris", "protonplus",
                      "kdenlive", "obs", "motrix", "flclash", "shelly",
                      "nautilus", "missioncenter"):
-            self.assertIn(name, keys, f"{name} must come from catalog.toml")
+            self.assertIn(name, keys, f"{name} must come from its packages-only manifest")
         for name in ("fcitx5-rime", "greeter", "mango", "zed"):
             self.assertIn(name, keys, f"{name} must come from its manifest")
 

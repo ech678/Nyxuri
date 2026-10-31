@@ -101,6 +101,21 @@ def _is_runtime(manifest: ModuleManifest) -> bool:
     return manifest.runtime
 
 
+def _is_packages_only(manifest: ModuleManifest) -> bool:
+    """A plugin that only declares system packages, ships no living area.
+
+    R0-2 catalog 并轨产物：根 catalog.toml 的「装但不部署」声明升格为
+    manifest-only 插件目录。``on`` = 装包 + 落账（无生活区、无 Vault 进出），
+    与 runtime 插件同形——区别仅在它有真实的包世界投影（deps 菜单/安装器）。
+    """
+    return (
+        not manifest.runtime
+        and not manifest.target
+        and not manifest.merge
+        and not manifest.is_deployable
+    )
+
+
 def _blueprint_rels(manifest: ModuleManifest) -> List[str]:
     """The plugin's payload file names (manifest.toml and hooks/ excluded).
 
@@ -625,11 +640,13 @@ def plugin_on(
                 return results
         dest = _plugin_dest(uid, manifest)
         runtime = _is_runtime(manifest)
+        packages_only = _is_packages_only(manifest)
         files: Dict[str, str] = {}
         carried_rels: List[str] = []
-        if runtime:
-            # Runtime plugin (§6): no living area, no vault, no deploy. The
-            # ledger record plus the event below is the whole transaction.
+        if runtime or packages_only:
+            # Runtime (§6) and packages-only (R0-2) plugins: no living area,
+            # no vault, no deploy. The ledger record plus the event below is
+            # the whole transaction.
             pass
         else:
             if not manifest.target and not manifest.merge:
@@ -638,7 +655,7 @@ def plugin_on(
                 # user-owned layer to archive or restore, and a merge plugin's
                 # shared area preserves user content in place (no-clobber).
                 _vault_restore(uid, dest)
-            if form is not None and uid == plugin_id and not manifest.merge:
+            if form is not None and uid == plugin_id and not manifest.merge and not packages_only:
                 write_active_form(uid, form)
             if manifest.merge:
                 laid = merge_deploy_plugin(uid, manifest)
@@ -674,7 +691,7 @@ def plugin_on(
             # ``off`` wipes them through the normal white-paper path (KM3).
             if not _run_plugin_hook(uid, manifest, manifest.post_install):
                 hook_note = f"; hook-failed: {manifest.post_install}"
-        if not runtime and not manifest.merge:
+        if not runtime and not packages_only and not manifest.merge:
             # Post-hook snapshot (hook products are engine-laid), minus the
             # files the swap carried as user-owned (#139).
             files = snapshot_files(dest, manifest)
@@ -687,7 +704,8 @@ def plugin_on(
             # Merge plugins snapshot at deploy time (laid files only — the
             # shared area's other content is never ours); atomic plugins use
             # the post-hook snapshot minus carried user files (#139); runtime
-            # plugins keep the empty map (nothing on disk is theirs).
+            # and packages-only plugins keep the empty map (nothing on disk
+            # is theirs).
             files=files,
             vault=None,
         )
@@ -718,14 +736,15 @@ def plugin_off(plugin_id: str, *, cascade: bool = False) -> List[Step]:
         manifest = registry.load_plugin(uid)
         dest = _plugin_dest(uid, manifest)
         runtime = _is_runtime(manifest)
+        packages_only = _is_packages_only(manifest)
         if uid not in _enabled_set() and not (dest.exists() or dest.is_symlink()):
             results.append(Step(uid, True, "already-disabled"))
             continue
-        # Runtime plugins have no living area: nothing to archive, nothing to
-        # wipe — disabling is landing the ledger record and firing the event
-        # the running host unload on (§6).
-        archived = [] if (manifest.merge or runtime) else _vault_archive(uid, dest, manifest)
-        foreign = [] if runtime else _wipe_plugin(uid, dest, rec, manifest)
+        # Runtime and packages-only plugins have no living area: nothing to
+        # archive, nothing to wipe — disabling is landing the ledger record
+        # and firing the event the running host reacts to (§6 / R0-2).
+        archived = [] if (manifest.merge or runtime or packages_only) else _vault_archive(uid, dest, manifest)
+        foreign = [] if (runtime or packages_only) else _wipe_plugin(uid, dest, rec, manifest)
         detail = "disabled"
         if manifest.post_remove and not _run_plugin_hook(uid, manifest, manifest.post_remove):
             detail += f"; hook-failed: {manifest.post_remove}"
@@ -745,7 +764,9 @@ def plugin_off(plugin_id: str, *, cascade: bool = False) -> List[Step]:
             state="disabled",
             form=(rec or {}).get("form") or "default",
             files={},
-            vault=str(vault_dir(uid)),
+            # the archive path is named only when something was actually
+            # archived (R0-2 amended rule: no phantom vault pointers)
+            vault=str(vault_dir(uid)) if archived else None,
         )
         _emit(uid, "disabled")
         results.append(Step(uid, True, detail))
@@ -773,9 +794,10 @@ def audit_plugins(plugin_id: Optional[str] = None) -> Dict[str, str]:
     for uid in candidates:
         manifest = registry.load_plugin(uid)
         rec = ledger.get_plugin(uid)
-        if _is_runtime(manifest):
-            # Nothing on disk belongs to a runtime plugin — the ledger record
-            # is the whole existence, so there is nothing to drift or ghost.
+        if _is_runtime(manifest) or _is_packages_only(manifest):
+            # Nothing on disk belongs to a runtime or packages-only plugin —
+            # the ledger record is the whole existence, so there is nothing
+            # to drift or ghost.
             if rec is not None:
                 report[uid] = STATE_SYNCED
             continue

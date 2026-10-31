@@ -1,0 +1,6 @@
+deploy = false
+
+# 视频剪辑（deps apps 推荐软件，装但不部署）。
+label = "Kdenlive"
+category = "video"
+packages = ["kdenlive"]

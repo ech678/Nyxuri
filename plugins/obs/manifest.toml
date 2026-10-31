@@ -1,0 +1,7 @@
+deploy = false
+
+# 录屏/推流（obs-studio 包名例外，detect 用 obs）。
+label = "OBS Studio"
+category = "video"
+detect = "obs"
+packages = ["obs-studio"]

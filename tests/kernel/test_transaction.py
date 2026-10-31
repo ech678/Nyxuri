@@ -720,8 +720,58 @@ class TestPluginHooks(unittest.TestCase):
             self.assertFalse(m.is_deployable, "manifest + hooks only must stay non-deployable")
 
 
-if __name__ == "__main__":
-    unittest.main()
+class TestPackagesOnlyPlugins(unittest.TestCase):
+    """R0-2 catalog 并轨: packages-only plugins (manifest ``deploy = false``).
+
+    ``on`` = 装包 + 落账（无生活区、无 Vault 进出）; ``off`` = 纯落账;
+    doctor 恒 Synced; a stray file in the dir must never turn one into a
+    dotfile plugin — the explicit declaration wins over the content scan.
+    """
+
+    def setUp(self):
+        patcher = mock.patch.object(transaction, "missing_packages", return_value=[])
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_on_installs_packages_and_lands_ledger_without_living_area(self):
+        with TempEnv() as ctx:
+            _stage(ctx, {"nautilus": {"manifest": 'deploy = false\npackages = ["nautilus"]\n'}})
+            calls = []
+            with mock.patch.object(transaction, "missing_packages",
+                                   side_effect=[["nautilus"], []]):
+                steps = transaction.plugin_on(
+                    "nautilus", install_packages=lambda uid, pkgs: calls.append((uid, pkgs)) or True)
+            self.assertTrue(steps[0].ok, str(steps))
+            self.assertEqual(calls, [("nautilus", ["nautilus"])])
+            rec = ledger.get_plugin("nautilus")
+            self.assertEqual(rec["state"], "enabled")
+            self.assertEqual(rec["files"], {})
+            self.assertIsNone(rec["vault"])
+            self.assertFalse((ctx.home / ".config/nautilus").exists(),
+                             "packages-only plugins ship no living area")
+            self.assertEqual(transaction.audit_plugins("nautilus"), {"nautilus": "Synced"})
+            steps = transaction.plugin_off("nautilus")
+            self.assertTrue(steps[0].ok)
+            rec = ledger.get_plugin("nautilus")
+            self.assertEqual(rec["state"], "disabled")
+            self.assertIsNone(rec["vault"], "nothing was archived — no phantom vault pointer")
+
+    def test_stray_file_cannot_make_it_deployable(self):
+        with TempEnv() as ctx:
+            _stage(ctx, {"nautilus": {
+                "manifest": 'deploy = false\npackages = ["nautilus"]\n',
+                "files": {"accident.conf": "x"},
+            }})
+            m = transaction.registry.load_plugin("nautilus")
+            self.assertFalse(m.deploy_declared)
+            self.assertFalse(m.is_deployable,
+                             "the declaration must veto deployability over directory contents")
+            from nyxuri.deploy.manifest import discover_deployable_apps
+            self.assertNotIn("nautilus", discover_deployable_apps())
+
+            steps = transaction.plugin_on("nautilus", install_packages=lambda uid, pkgs: True)
+            self.assertTrue(steps[0].ok, str(steps))
+            self.assertFalse((ctx.home / ".config/nautilus").exists())
 
 
 class TestLedgerResilience(unittest.TestCase):
@@ -756,3 +806,7 @@ class TestLedgerResilience(unittest.TestCase):
                 os.waitpid(pid, 0)
             data = ledger.read_ledger()
             self.assertEqual([data.get(f"k{i}") for i in range(6)], list(range(6)))
+
+
+if __name__ == "__main__":
+    unittest.main()

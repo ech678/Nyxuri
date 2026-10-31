@@ -1,0 +1,6 @@
+deploy = false
+
+# Telegram 桌面端（deps apps 推荐软件）。
+label = "Telegram"
+category = "social"
+packages = ["telegram-desktop"]

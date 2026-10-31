@@ -15,7 +15,9 @@ T1 single-package policy — the package is a toolbox, not a desktop:
              ∪ CORE_DEPS ∪ AUR_DEPS (session toolchain)
              ∪ ENGINE_OPTDEPENDS (runtime bases the shipped code spawns)
 
-catalog.toml is deliberately absent: it is the `nyxuri deps apps` menu of
+catalog.toml (now superseded by packages-only plugin manifests) is
+deliberately absent from this file's inputs: the `nyxuri deps apps` menu owns
+those declarations, and
 recommended install shortcuts, never a package dependency.
 """
 
@@ -55,9 +57,12 @@ def compute_depends(repo_root: Path):
     """Return (depends: list[str], optdepends: list[tuple[pkg, label]]).
 
     Plugin manifests (deployable AND optional) feed optdepends labeled by
-    plugin; CORE_DEPS/AUR_DEPS follow as the session toolchain; ENGINE_*
-    constants close the list. First claim wins on package collisions
-    (sorted plugin iteration keeps output deterministic).
+    plugin; packages-only manifests (R0-2 catalog 并轨：nautilus/qq 这类
+    「装但不部署」声明) never do — the `deps apps` menu owns them, keeping
+    optdepends and the menu decoupled (T1 依赖按需化). CORE_DEPS/AUR_DEPS
+    follow as the session toolchain; ENGINE_* constants close the list.
+    First claim wins on package collisions (sorted plugin iteration keeps
+    output deterministic).
     """
     sys.path.insert(0, str(repo_root))
     from nyxuri.deploy.manifest import discover_manifest_apps
@@ -67,6 +72,8 @@ def compute_depends(repo_root: Path):
     optdepends = []
     seen = set()
     for _name, m in sorted(discover_manifest_apps(), key=lambda pair: pair[0]):
+        if not (m.is_deployable or m.is_optional):
+            continue  # packages-only declaration: menu territory, not optdepends
         for pkg in list(m.packages_repo) + list(m.packages_aur):
             if pkg not in seen:
                 seen.add(pkg)

@@ -1,0 +1,7 @@
+deploy = false
+
+# Brave 的 AUR 上游分支包：主仓库 brave 包不提供，deps apps 菜单按需选用。
+label = "Brave Origin"
+category = "browser"
+packages = []
+packages_aur = ["brave-origin-bin"]

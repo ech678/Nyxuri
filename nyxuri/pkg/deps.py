@@ -9,7 +9,6 @@ from nyxuri.core import AUR_DEPS, CORE_DEPS
 from nyxuri.core import log_msg
 from nyxuri.core import msg
 from nyxuri.deploy.manifest import discover_manifest_apps
-from nyxuri.pkg.catalog import CatalogEntry, catalog_entries, get_entry
 from nyxuri.tui import (
     CategoryAppEntry,
     CategoryCheckboxList,
@@ -202,18 +201,13 @@ def run_dep_menu_loop() -> bool:
 def install_optional_apps(selected_apps: List[str]) -> bool:
     """Install the package declarations of the selected supply items.
 
-    Items are catalog entries (packages-only software) or optional real
-    plugins. Plugin activation (and its declared hooks) belongs to
-    ``nyxuri on <plugin>`` via the transaction path (KM3)."""
+    Items are plugin manifests (R0-2: catalog.toml 并轨——「装但不部署」的
+    声明住各自的 manifest.toml). Plugin activation (and its declared hooks)
+    belongs to ``nyxuri on <plugin>`` via the transaction path (KM3)."""
     repo_pkgs, aur_pkgs, flatpak_ids = [], [], []
+    manifests = dict(discover_manifest_apps())
     for app in selected_apps:
-        entry = get_entry(app)
-        if entry is not None:
-            repo_pkgs.extend(entry.packages_repo)
-            aur_pkgs.extend(entry.packages_aur)
-            flatpak_ids.extend(entry.packages_flatpak)
-            continue
-        manifest = dict(discover_manifest_apps()).get(app)
+        manifest = manifests.get(app)
         if manifest is None:
             continue
         repo_pkgs.extend(manifest.packages_repo)
@@ -236,23 +230,14 @@ def install_optional_apps(selected_apps: List[str]) -> bool:
 
 
 def _supply_items() -> List[dict]:
-    """The optional software surface: catalog entries + optional real plugins.
+    """The optional software surface: every manifest that ships no living area
+    (packages-only plugins) or declares itself optional.
 
-    One shape for both sources so the menu and the installer never special-
-    case where a declaration came from."""
+    R0-2 catalog 并轨后单一来源——「装但不部署」的声明住各自 manifest.toml，
+    菜单与安装器不再特判声明来自哪里。"""
     items: List[dict] = []
-    for entry in catalog_entries():
-        items.append({
-            "key": entry.name,
-            "category": entry.category,
-            "repo": entry.packages_repo,
-            "aur": entry.packages_aur,
-            "flat": entry.packages_flatpak,
-            "detect": entry.detect,
-        })
-    manifests = dict(discover_manifest_apps())
-    for app, manifest in manifests.items():
-        if not manifest.is_optional:
+    for app, manifest in dict(discover_manifest_apps()).items():
+        if manifest.is_deployable and not manifest.is_optional:
             continue
         items.append({
             "key": app,

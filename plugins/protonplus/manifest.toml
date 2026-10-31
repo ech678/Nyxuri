@@ -1,0 +1,7 @@
+deploy = false
+
+# Proton 兼容层管理器（AUR protonplus）。
+label = "ProtonPlus"
+category = "game"
+packages = []
+packages_aur = ["protonplus"]

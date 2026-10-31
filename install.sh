@@ -100,14 +100,15 @@ engine_is_complete() {
     for module in cli core sysdoctor tui; do
         [ -f "$target_dir/nyxuri/$module.py" ] || return 1
     done
-    for sentinel in kernel/transaction deploy/atomic pkg/deps state/backup desktop/theme installer/menus; do
+    for sentinel in kernel/transaction deploy/atomic deploy/forms pkg/deps state/backup desktop/theme installer/menus; do
         [ -f "$target_dir/nyxuri/$sentinel.py" ] || return 1
     done
-    [ -f "$target_dir/catalog.toml" ] || return 1
-    # 蓝图探测: fish 主配置 + 壁纸 merge hook（R0-1: units/ → plugins/）
+    # 蓝图探测: fish 主配置 + 壁纸 merge hook + 一个 packages-only 插件声明
+    # （R0-2: catalog.toml 并轨，供给声明住 plugins/<name>/manifest.toml）
     [ -d "$target_dir/plugins" ] \
         && [ -f "$target_dir/plugins/fish/config.fish" ] \
-        && [ -f "$target_dir/plugins/wallpapers/hooks/install-pack" ]
+        && [ -f "$target_dir/plugins/wallpapers/hooks/install-pack" ] \
+        && [ -f "$target_dir/plugins/nautilus/manifest.toml" ]
 }
 
 legacy_tree_detected() {
