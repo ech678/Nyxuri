@@ -32,7 +32,7 @@ Item {
         property real blendRadius: root.blendRadius
         property real edgeSoftness: root.edgeSoftness
 
-        fragmentShader: Qt.resolvedUrl("../../../shaders/qsb/pill_morph.frag.qsb")
+        fragmentShader: Qt.resolvedUrl("../../shaders/qsb/pill_morph.frag.qsb")
     }
 
     MorphShader {

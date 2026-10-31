@@ -255,7 +255,7 @@ Nyxuri Shell 绝非特权单体，其内部亦彻底插件化（宿主侧契约�
    shell.dock`），统一挂入 `state.json` 与 4 大动词管辖。内核只认点分 ID 本身，
    不特判任何前缀。
 
-**内核侧承载（KM4 落地，KM4.5 正名）**：Shell 插件物理住在 `shell/units/<domain>/`
+**内核侧承载（KM4 落地，KM4.5 正名）**：Shell 插件物理住在 `shell/plugins/<domain>/`
 （文件树表达架构；KM4.5 后 `modules/` 已整体正名并入——manifest 与代码同目录，
 目录即插件，registry 仍只读 `iterdir` 的目录名，插件内文件布局对内核不可见），
 registry 以**命名空间根**解析——`plugins/` 产裸 ID，`shell/plugins/` 产 `shell.` 前缀 ID，

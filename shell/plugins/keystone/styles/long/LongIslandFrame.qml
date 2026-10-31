@@ -286,6 +286,6 @@ Item {
         property vector4d cutoutRect: Qt.vector4d(cutoutBlur.x + 24, cutoutBlur.y + 24, cutoutBlur.visible
                                                   ? cutoutBlur.width : 0, cutoutBlur.height)
         property real cutoutRadius: cutoutBlur.radius
-        fragmentShader: Qt.resolvedUrl("../../../shaders/qsb/long_split.frag.qsb")
+        fragmentShader: Qt.resolvedUrl("../../shaders/qsb/long_split.frag.qsb")
     }
 }

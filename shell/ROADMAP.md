@@ -100,7 +100,7 @@ hooks 的实机行为证据与视觉验收待作者确认。镜像色板是否�
 
 ### 3. 视窗与主从框架规范（对齐 Caelestia 实测值，NexusStyle 1:1）
 
-- **token 真相**：`units/settings/NexusStyle.qml` 为设置界面唯一几何/字号源——
+- **token 真相**：`units/settings/NexusStyle.qml`（S0-1 随五件套迁 `ui/NexusStyle.qml`）为设置界面唯一几何/字号源——
   tokens.hpp 值 1:1 移植（rounding 4/8/12/16/20/28/32/48、padding/spacing 同梯、
   字号 11–28 + Medium 权重表、图标 24/20、比例常量 0.7 / 16:9 / 600 / 800 / 800×500），
   **脱离全局 0.85 缩放**，契约测试逐值钉死；颜色仍归 `Appearance`。

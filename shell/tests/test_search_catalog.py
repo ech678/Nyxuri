@@ -94,6 +94,12 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(len({entry['id'] for entry in catalog['settings']}), len(catalog['settings']))
         self.assertTrue(all(entry['target'] != 'control-center' for entry in catalog['actions']))
         self.assertTrue(all(entry['policy'] == 'include' for entry in catalog['actions']))
+        # S0-1 回归护栏：生成器模板与生成物的 import 头不得回退旧根
+        shipped_head = "\n".join(
+            (ROOT / 'plugins/settings/generated/SearchCatalog.js')
+            .read_text(encoding='utf-8').splitlines()[:4])
+        self.assertIn('commons/i18n/Translations.js', shipped_head)
+        self.assertNotIn('shared/', shipped_head)
 
 
 if __name__ == '__main__':

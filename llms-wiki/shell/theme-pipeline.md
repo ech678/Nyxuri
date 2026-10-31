@@ -1,7 +1,7 @@
 # Shell 主题管线契约 (Theme Pipeline)
 
 > 本页是壁纸取色到应用模板渲染的管线契约与渲染队列不变量，以
-> `shell/scripts/theme/`、`shell/app/services/TemplateService.qml` 与
+> `shell/scripts/theme/`、`shell/services/TemplateService.qml` 与
 > `tests/shell/test_shell_runtime.py` 的真实行为为准。
 
 ## 管线

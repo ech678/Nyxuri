@@ -522,7 +522,7 @@ def check_file_violations(
                 )
             )
 
-    # 9. ARCH001: Forbidden cross-domain import in units/
+    # 9. ARCH001: Forbidden cross-domain import in plugins/
     parts = rel_path.split("/")
     if rel_path.startswith("plugins/") or module_domain_override is not None:
         curr_domain = module_domain_override if module_domain_override is not None else (parts[1].lower() if len(parts) >= 3 else "")

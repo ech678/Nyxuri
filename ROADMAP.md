@@ -132,8 +132,12 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
     双版本各 20/20）；「升级 Quickshell」不修（master 逐格同行为，0/20）、启动期
     `createComponent` 预热无效（0/20）——根因是 qmldir 合成闭包不含动态装载面。
     证据、矩阵与复跑命令见 [loader-form](llms-wiki/shell/loader-form.md)；S0-2 开工放行。
-  - **S0-1 五件套机械迁移**：对照表全量执行 + import 机械扫 + 受影响定向测试
-    改写绿；旧路径物理消失。
+  - **S0-1 五件套机械迁移**（已收口）：对照表全量执行 + import 机械扫（旧根零命中
+    升格常驻护栏）+ 引擎侧扫描路径随迁 + 受影响定向测试改写绿；旧路径物理消失、
+    相对 import 目标存在性全库零断链。实机验证四域复活（`shell status` →
+    `IPC_READY`、compiled empty 零）；全量 984 仅余 #149 预存在红（另案）。
+    顺带清算：SearchCatalog 生成器模板旧路径止血（防重生成写回断链）、批量替换
+    误伤断言恢复、install.sh 失效探测项换现存插件。
   - **S0-2 运行时注册表取代四件套**：手写 `UnitCatalog.qml` 镜像、`settings-routes.json`、
     `SearchCatalog.js` 生成器、`NexusNavPane.groupTable` 全部由 PluginRegistry 运行时读
     `manifest.toml` 取代——「新增插件 = 加目录 + manifest + 代码，零宿主改动」从口号
