@@ -295,6 +295,9 @@ deploy/deps 的包世界（`discover_manifest_apps`）只扫 `plugins/`，Shell 
 | 根 `catalog.toml`（包目录清单）+ `pkg/catalog.py` → 18 个 manifest-only 插件目录（`plugins/<name>/manifest.toml` 仅包声明，deps 菜单聚合 manifest） | R0-2（已执法） |
 | 常用推荐软件供给面：18 个仅包声明插件目录 + `deploy = false` / `detect` 键 + `deps apps`（`opt`/`optional`）命令与安装器菜单项 + `CategoryCheckboxList` 手风琴 + `app_*`/`apps_cat_*` 文案 → `nyxuri on <plugin>` 单路径装包（仅声明单元 greeter 形态保留） | R0-2 步 5（已执法） |
 | 预设/零件概念 → 插件形态字段（manifest `[presets]`/`[parts]` 并轨 `[forms]`、账本 `preset` 字段改名 `form` + 顶层 `forms` 槽位字典、`deploy/preset.py` → `forms.py`、`presets/<app>.active` 双写退役） | R0-2（已执法） |
+| `preset` 命令别名与 `on --preset` 旗标（形态切换入口收敛为 `use`，启用参数收敛为 `--form`） | R0-3（已执法） |
+| `.active` marker 只读采纳 shim（`~/.config/nyxuri/forms/<app>.active` 双写与兼容层彻底清除） | R0-3（已执法） |
+| `read_ledger` 遗留迁移代码（`units`→`plugins`、`preset`→`form`、`presets`/`parts`→`forms` 一次性迁移期满清除） | R0-3（已执法） |
 ---
 
 ## 8. 路径与环境术语表（原 concept-glossary，KM3.5 并入）

@@ -230,12 +230,14 @@ class TestRealRepoManifests(unittest.TestCase):
     """The shipped manifests in the real configs/ tree parse as designed."""
 
     def setUp(self):
+        manifest._MANIFEST_CACHE = None
         self._ctx = TempEnv()
         self._ctx.__enter__()
         self.env = self._ctx.env
 
     def tearDown(self):
         self._ctx.__exit__()
+        manifest._MANIFEST_CACHE = None
 
     def test_niri_manifest(self):
         m = manifest.load_manifest(self.env.plugins_src / "niri")
@@ -514,3 +516,65 @@ class TestManifestCoercion(unittest.TestCase):
             apps = _quiet(discover_manifest_apps)
             self.assertIsInstance(apps, list)
             self.assertEqual([n for n, _ in apps], ["good-plugin"])
+
+
+class TestMorphologyMatrix(unittest.TestCase):
+    """R0-3 morphology matrix: runtime / merge / atomic / hook-only."""
+
+    def test_morphology_auto_inference(self):
+        with TempEnv() as ctx:
+            sandbox = ctx.home / "plugins_sandbox"
+            # 1. atomic
+            p_atomic = sandbox / "p_atomic"
+            p_atomic.mkdir(parents=True)
+            (p_atomic / "config.conf").write_text("x = 1\n", encoding="utf-8")
+            m_atomic = manifest.load_manifest(p_atomic)
+            self.assertEqual(m_atomic.morphology, manifest.MORPHOLOGY_ATOMIC)
+            self.assertTrue(m_atomic.is_atomic)
+            self.assertFalse(m_atomic.is_hook_only)
+
+            # 2. hook-only (no deployable files, only hooks/ or manifest)
+            p_hook = sandbox / "p_hook"
+            p_hook.mkdir(parents=True)
+            (p_hook / "hooks").mkdir()
+            (p_hook / "hooks" / "activate").write_text("#!/bin/sh\n", encoding="utf-8")
+            (p_hook / "manifest.toml").write_text('optional = true\n', encoding="utf-8")
+            m_hook = manifest.load_manifest(p_hook)
+            self.assertEqual(m_hook.morphology, manifest.MORPHOLOGY_HOOK_ONLY)
+            self.assertTrue(m_hook.is_hook_only)
+            self.assertFalse(m_hook.is_atomic)
+
+            # 3. merge
+            p_merge = sandbox / "p_merge"
+            p_merge.mkdir(parents=True)
+            (p_merge / "manifest.toml").write_text('merge = true\n', encoding="utf-8")
+            m_merge = manifest.load_manifest(p_merge)
+            self.assertEqual(m_merge.morphology, manifest.MORPHOLOGY_MERGE)
+            self.assertTrue(m_merge.is_merge)
+
+            # 4. runtime
+            p_runtime = sandbox / "p_runtime"
+            p_runtime.mkdir(parents=True)
+            (p_runtime / "manifest.toml").write_text('runtime = true\n', encoding="utf-8")
+            m_runtime = manifest.load_manifest(p_runtime)
+            self.assertEqual(m_runtime.morphology, manifest.MORPHOLOGY_RUNTIME)
+            self.assertTrue(m_runtime.is_runtime)
+
+    def test_explicit_morphology_declaration(self):
+        with TempEnv() as ctx:
+            sandbox = ctx.home / "plugins_sandbox"
+            p = sandbox / "explicit"
+            p.mkdir(parents=True)
+            (p / "manifest.toml").write_text('morphology = "hook-only"\n', encoding="utf-8")
+            m = manifest.load_manifest(p)
+            self.assertEqual(m.morphology, "hook-only")
+            self.assertTrue(m.is_hook_only)
+
+    def test_unsupported_morphology_raises(self):
+        with TempEnv() as ctx:
+            sandbox = ctx.home / "plugins_sandbox"
+            p = sandbox / "bad_morph"
+            p.mkdir(parents=True)
+            (p / "manifest.toml").write_text('morphology = "alien"\n', encoding="utf-8")
+            with self.assertRaises(ValueError):
+                manifest.load_manifest(p)

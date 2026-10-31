@@ -19,8 +19,8 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 
 | 站 | 交付 | 状态 |
 | --- | --- | --- |
-| G0 | 修复 GitHub 已知问题：可独立修的立即修，架构根因随 R0 兑现后关闭回填 | 可独立修已落地（#144 #146 关闭回填）；余项随 R0-3 / R0-5 |
-| R0 | 引擎收敛：概念定名 Plugin/插件 + 杀词并轨 + 单一激活管线 + 声明贯通 + 减法外迁 | 进行中（R0-1 + R0-2 收口：正名 + 形态并轨 + use 动词 + catalog 并轨 + 文档同步；下一站 R0-3 单一激活管线） |
+| G0 | 修复 GitHub 已知问题：可独立修的立即修，架构根因随 R0 兑现后关闭回填 | 可独立修落地（#144 #146）；根因修随 R0-3 落地（#143 #145 #147 #149）；余项随 R0-5 |
+| R0 | 引擎收敛：概念定名 Plugin/插件 + 杀词并轨 + 单一激活管线 + 声明贯通 + 减法外迁 | 进行中（R0-1 + R0-2 + R0-3 收口：单一激活管线落地；下一站 R0-4 声明贯通与边界校验） |
 | S0 | Shell 骨架整抄 Omarchy：小写五件套 + 运行时插件注册表 + 设置去中心化 | 待开始 |
 | S1 | 第三方插件生命周期：协议 1:1 + 四动词 + 所有权账本回植 | 待开始 |
 | T4 | Shell 可控性与透明化（开工时立细则） | 待开始 |
@@ -36,8 +36,8 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
   - #144 壁纸路径写死 `~/Pictures/Wallpapers`：manifest 目标与 `install-pack` 钩子
     接 `core.get_pics_dir()`（XDG）；R0-4 的 `xdg:` 词汇是它的推广形态。
   - #146 `adw-gtk-theme` 未声明：`units/theme/manifest.toml` 的 packages 补一行。
-- **根因修（随 R0-3，修后关闭）**：#143（事务缺渲染 phase）、#145（壁纸包收编
-  声明式钩子）、#147（hook-only 形态误判）、#149（安装器改派发事务）。
+- **根因修（已随 R0-3 落地关闭）**：#143（事务渲染 phase 注入）、#145（壁纸包收编
+  声明式钩子）、#147（hook-only 形态矩阵显式化）、#149（安装器组件勾选改派发事务）。
 - **随外迁处置**：#142 划词翻译 PDF——随 R0-5 orbit 外迁转上游仓库。
 
 ### R0 · 引擎收敛（架构重塑地基）
@@ -63,13 +63,13 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
   安装器菜单项与部署后「常用软件」入口、`CategoryCheckboxList` 手风琴、`app_*`/`apps_cat_*`
   文案全数清除；插件装包统一走 `nyxuri on <plugin>` 单路径，`deps` 收敛为核心依赖勾选单，
   greeter 形态仅声明单元（装包 + hooks + 落账）保留。
-- **R0-3 单一激活管线**：启用一个插件的步骤清单只留 transaction 一条——渲染
-  phase 入事务、插件形态矩阵（runtime / merge / atomic / hook-only）manifest 化、
-  安装器组件勾选改派发事务、壁纸包收编 wallpapers 声明式钩子。
-  兼容清扫同站执法（R0-2 一版周期期满）：`preset` 命令别名与 `on --preset` 旗标、
-  `.active` marker 只读采纳 shim、read_ledger 遗留迁移代码（units→plugins、
-  preset→form、presets/parts→forms）。
-  验收 = #143 / #145 / #147 / #149 关闭。
+- **R0-3 单一激活管线**（已收口）：启用一个插件的步骤清单只留 transaction 一条——渲染
+  phase 入事务（Issue #143）、插件形态矩阵（runtime / merge / atomic / hook-only）manifest 化（Issue #147）、
+  安装器组件勾选改派发事务（Issue #149）、壁纸包收编 wallpapers 声明式钩子（Issue #145）。
+  兼容清扫同站执法（R0-2 一版周期期满）：`preset` 命令别名与 `on --preset` 旗标处决、
+  `.active` marker 只读采纳 shim 处决、read_ledger 遗留迁移代码（units→plugins、
+  preset→form、presets/parts→forms）处决。
+  验收 = #143 / #145 / #147 / #149 契约绿。
 - **R0-4 声明贯通与边界校验**：manifest 路径词汇 XDG 化（图片目录三处表达合一）；
   theme 副作用的包依赖声明（#146 根因）；叶名 / containment 校验进引擎
   （#48 的 `../../` 越界教训）；保留策略按操作参数化——回滚默认精确恢复（#56）、

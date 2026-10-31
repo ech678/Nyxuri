@@ -50,7 +50,7 @@ class TestRetiredModuleCommands(unittest.TestCase):
         self.assertNotIn("RETIREMENTS", source, "the alias table must stay dead")
         retired = ("deploy", "backup", "restore", "remove", "purge", "recommended",
                    "wp", "report", "apps", "wallpapers", "greeter", "fcitx",
-                   "gtk", "fisher", "-h", "--help")
+                   "gtk", "fisher", "preset", "-h", "--help")
         for name in retired:
             self.assertNotIn(name, COMMANDS, name)
             code, _, err = self._run(name, "extra")
@@ -552,18 +552,10 @@ class TestCoreVerbs(unittest.TestCase):
         self.assertIs(captured["installer"], _package_installer)
         self.assertIn("enabled", out)
 
-    def test_on_deprecated_preset_flag_still_forwards(self):
-        """One-cycle compat: --preset keeps working and says so on stderr."""
-        from nyxuri.kernel.transaction import Step
-
-        def fake_unit_on(plugin, *, form=None, install_packages=None):
-            return [Step(plugin, True, "enabled")]
-
-        with patch("nyxuri.cli.transaction.plugin_on", side_effect=fake_unit_on), \
-             patch("nyxuri.cli.transaction.missing_packages", return_value=[]):
-            code, _, err = self._run("on", "kitty", "--preset", "dark")
-        self.assertEqual(code, 0)
-        self.assertIn("--form", err)
+    def test_on_rejects_deprecated_preset_flag_at_r0_3(self):
+        """R0-3 sweep: --preset flag is retired, rejected with exit 2."""
+        code, _, _ = self._run("on", "kitty", "--preset", "dark")
+        self.assertEqual(code, 2)
 
     def test_on_reports_missing_packages_failure(self):
         from nyxuri.kernel.transaction import Step

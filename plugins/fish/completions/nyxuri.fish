@@ -23,7 +23,6 @@ complete -c nyxuri -f -n "__fish_use_subcommand" -a deps      -d "Dependency man
 complete -c nyxuri -f -n "__fish_use_subcommand" -a wallpapers -d "Download wallpaper pack"
 complete -c nyxuri -f -n "__fish_use_subcommand" -a wp        -d "Alias: wallpapers"
 complete -c nyxuri -f -n "__fish_use_subcommand" -a use       -d "Switch a plugin's form (whole axis or slot axis)"
-complete -c nyxuri -f -n "__fish_use_subcommand" -a preset    -d "Deprecated alias: use"
 complete -c nyxuri -f -n "__fish_use_subcommand" -a theme     -d "Switch theme (toggle|dark|light|sync|status)"
 complete -c nyxuri -f -n "__fish_use_subcommand" -a bug       -d "Generate bug report"
 complete -c nyxuri -f -n "__fish_use_subcommand" -a report    -d "Alias: bug"
@@ -47,7 +46,6 @@ complete -c nyxuri -f -n "__fish_seen_subcommand_from snapshot backup" -a list  
 complete -c nyxuri -f -n "__fish_seen_subcommand_from snapshot backup" -a delete -d "Delete a snapshot"
 
 complete -c nyxuri -f -n "__fish_seen_subcommand_from on enable; and not __fish_seen_subcommand_from --form" -l form -r -d "Enable with a specific form"
-complete -c nyxuri -f -n "__fish_seen_subcommand_from on enable" -l preset -r -d "Deprecated alias: --form"
 complete -c nyxuri -f -n "__fish_seen_subcommand_from off disable" -l cascade -d "Also disable enabled dependents"
 
 complete -c nyxuri -f -n "__fish_seen_subcommand_from uninstall remove" -a standard -d "Standard uninstall"

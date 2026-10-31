@@ -11,9 +11,9 @@
 | 命令 | 干啥 |
 |---|---|
 | `list [plugin]` | 插件全景（开关状态 × 当前形态），或单个插件详情（manifest 声明 × 账本记录 × 对账态） |
-| `on <plugin> [--form <name>]`（等价 `enable`） | 启用插件：依赖闭包披露 → 缺失包披露确认（repo/AUR/Flatpak 按 manifest 三方分流）→ 事务落账 + `plugin-changed` 事件；`--preset` 是 deprecated 别名（一版周期） |
+| `on <plugin> [--form <name>]`（等价 `enable`） | 启用插件：依赖闭包披露 → 缺失包披露确认（repo/AUR/Flatpak 按 manifest 三方分流）→ 事务落账 + `plugin-changed` 事件 |
 | `off <plugin> [--cascade]`（等价 `disable`） | 停用插件：反向依赖强阻断（显式 `--cascade` 才级联）→ 自定义入 Vault → 实机抹白；报告列明幸存外部文件与保留的包 |
-| `use <plugin> [list\|<name>\|save <name>\|edit <name>\|delete <name>\|slots\|slot <axis> <name>]` | 形态动词（R0-2 杀词并轨）：整型形态轴裸值直切，`slot` 子动作切槽位轴，`save`/`edit`/`delete` 管用户私有形态；`preset` 命令是 deprecated 别名（旧语法 `apply`/`parts`/`part` 同周期兼容，下一版删除） |
+| `use <plugin> [list\|<name>\|save <name>\|edit <name>\|delete <name>\|slots\|slot <axis> <name>]` | 形态动词（R0-2 杀词并轨）：整型形态轴裸值直切，`slot` 子动作切槽位轴，`save`/`edit`/`delete` 管用户私有形态 |
 | `doctor [plugin]` | 插件三态对账（`Synced` / `Drifted` / `Ghost`）；无参时在对账表后附加系统体检段（`sysdoctor`） |
 
 切换前披露、切换后交报告是产品定论：`plan_on` / `plan_off`（只读）供界面披露，
@@ -25,7 +25,7 @@
 |---|---|
 | `install [full\|config]` | 旧世界整装流水线（配置 + 壁纸插件 + 钩子重放）；后由 `on <plugin>` 接管 |
 | `update [--force\|--no-deploy] [--to <tag\|commit>]` | 拉新版本 + 重新部署（KM5：线性迁移机制已清算，账本即真相）；`--to` 锁到指定版本（system 模式 → 提示 pacman）。部署走所有权 carry（#139）：用户改动与自放文件原样搬入、Ghost 插件冻结并提示 `on` 收编；`--force` = 采纳模板侧（payload 名全部认领 + 账本重登记），不是清剿 |
-| `use <plugin> …` | 见上「插件动词」表（形态轴唯一入口；`preset` 为 deprecated 别名） |
+| `use <plugin> …` | 见上「插件动词」表（形态轴唯一入口） |
 | `theme [toggle\|dark\|light\|sync\|status]` | 原生切换/同步深浅主题（纯 Python 调度 gsettings、GTK settings.ini、Noctalia IPC 与 Kitty 信号） |
 | `shell [get\|set <noctalia\|nyxuri-shell> [bin_path]\|switch [\|bin_path]\|status]` | 查看或切换桌面外壳运行插槽。**[EXPERIMENTAL]** nyxuri-shell 开发中，输出带实验性警告 |
 | `deps [core]` | 装软件包：核心依赖勾选单（可选软件供给面已随 R0-2 步 5 处决，插件装包走 `on <plugin>`） |
@@ -42,7 +42,7 @@
 `nyxuri/launcher.sh`（`core.exec_cli`）——repo / standalone 模式下只有 launcher 会把
 引擎塞进 `sys.path`，自己拼 `python -m nyxuri` 离开仓库根目录就必炸（#138）。
 
-## 已处决（KM3.5 + KM5，调用即 unknown command）
+## 已处决（KM3.5 + KM5 + R0-2 + R0-3，调用即 unknown command）
 
 KM3.5：`deploy` `backup` `restore` `remove` `purge` `recommended` `apps` `wp` `wallpapers`
 `report` `-h/--help`，以及幽灵指针 `greeter` `fcitx` `gtk` `fisher`。
@@ -53,3 +53,4 @@ KM5：系统软链与用户端别名 `nyxniri`、`NYXNIRI_*` 环境变量回退�
 （外部大包走 `plugins/wallpapers/hooks/install-pack`）。
 R0-2 步 5：`deps apps`（可选软件菜单）处决——推荐软件不再有专用安装入口，
 `deps` 收敛为核心依赖勾选单（`deps [core]`）。
+R0-3：`preset` 命令别名与 `on --preset` 旗标处决——形态切换入口收敛为 `use`，启用形态参数收敛为 `--form`。

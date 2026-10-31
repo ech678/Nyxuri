@@ -7,8 +7,8 @@ Two axes, one verb (R0-2 杀词并轨：预设 + 零件并轨为形态轴)::
 
 The whole-axis choice lives in the plugin's ledger record (``form`` field,
 single truth); slot choices live under the ledger's top-level ``forms`` key.
-The retired ``~/.config/nyxuri/forms/<app>.active`` marker files are read-only
-compat: adopted into the ledger on sight, never written (R0-3 sweeps the shim).
+The retired ``~/.config/nyxuri/forms/<app>.active`` marker files were read-only
+compat swept at R0-3 (the ledger is the single truth).
 
 Write timing (iron law): apply flows deploy first, then land the ledger
 choice. The dest-missing reset is the only sanctioned write-before-deploy
@@ -151,68 +151,10 @@ def _remove_tree_at(parent_fd: int, name: str) -> None:
         os.close(child_fd)
 
 
-def _drop_legacy_active_file(app: str) -> None:
-    """Consume the retired ``<app>.active`` marker once the ledger owns the choice."""
-    try:
-        forms_fd = _open_forms_dir()
-    except OSError:
-        return
-    try:
-        info = os.stat(f"{app}.active", dir_fd=forms_fd, follow_symlinks=False)
-        if stat.S_ISREG(info.st_mode):
-            os.unlink(f"{app}.active", dir_fd=forms_fd)
-    except FileNotFoundError:
-        pass
-    except OSError as exc:
-        log_msg("WARN", f"could not remove legacy active marker for {app}: {exc}")
-    finally:
-        os.close(forms_fd)
-
-
-def _adopt_legacy_active_file(app: str) -> Optional[str]:
-    """One-cycle compat: adopt a legacy ``<app>.active`` marker into the ledger.
-
-    Returns the adopted name, or None when no usable marker exists. A
-    present-but-invalid marker is warned about and ignored — the ledger is
-    the single truth, so garbage can no longer freeze a deployment.
-    """
-    try:
-        forms_fd = _open_forms_dir()
-    except (FileNotFoundError, OSError):
-        return None
-    fd: Optional[int] = None
-    try:
-        fd = os.open(f"{app}.active", _READ_FLAGS, dir_fd=forms_fd)
-        if not stat.S_ISREG(os.fstat(fd).st_mode):
-            log_msg("WARN", f"ignoring non-regular legacy active marker for {app}")
-            return None
-        content = os.read(fd, 4097)
-    except FileNotFoundError:
-        return None
-    except OSError as exc:
-        log_msg("WARN", f"ignoring unreadable legacy active marker for {app}: {exc}")
-        return None
-    finally:
-        if fd is not None:
-            os.close(fd)
-        os.close(forms_fd)
-    try:
-        name = content.decode("utf-8")
-    except UnicodeDecodeError:
-        log_msg("WARN", f"ignoring undecodable legacy active marker for {app}")
-        return None
-    if len(content) > 4096 or not _is_safe_component(name):
-        log_msg("WARN", f"ignoring invalid legacy active marker for {app}")
-        return None
-    write_active_form(app, name)
-    return name
-
-
 def read_active_form(app: str) -> str:
     """Return the active whole-axis form, or ``"default"`` when unrecorded.
 
-    The ledger record is the single truth. A pre-R0-2 ``<app>.active``
-    marker is adopted on sight (one-cycle compat shim, swept at R0-3).
+    The ledger record is the single truth.
     """
     if not _is_deployable_app(app):
         raise InvalidActiveFormError("invalid form app")
@@ -221,8 +163,7 @@ def read_active_form(app: str) -> str:
     rec = get_plugin(app)
     if rec and isinstance(rec.get("form"), str) and rec["form"]:
         return rec["form"]
-    adopted = _adopt_legacy_active_file(app)
-    return adopted or "default"
+    return "default"
 
 
 def write_active_form(app: str, name: str) -> None:
@@ -230,8 +171,7 @@ def write_active_form(app: str, name: str) -> None:
 
     An existing record keeps its state/files/vault; a never-switched plugin
     gets a ``disabled`` record (nothing archived, so ``vault`` stays null —
-    the choice itself is the point). The retired ``<app>.active`` marker is
-    removed best-effort so only one truth survives on disk.
+    the choice itself is the point).
     """
     if not _is_deployable_app(app):
         raise ValueError("invalid form app")
@@ -251,7 +191,6 @@ def write_active_form(app: str, name: str) -> None:
         )
     else:
         set_plugin(app, state="disabled", form=name)
-    _drop_legacy_active_file(app)
 
 
 @dataclass

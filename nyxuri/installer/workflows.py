@@ -20,10 +20,10 @@ from nyxuri.deploy.deploy import (
     enable_wallpapers_plugin as _enable_wallpapers,
     wallpapers_pack_present,
 )
-from nyxuri.pkg.deps import get_missing_deps, install_selected_deps
+from nyxuri.pkg.deps import get_missing_deps, install_selected_deps, plugin_package_installer
 from nyxuri.kernel import transaction
 from nyxuri.core import msg
-from nyxuri.tui import MenuItem, Menu, prompt_confirm
+from nyxuri.tui import MenuItem, Menu, format_steps, prompt_confirm
 from nyxuri.installer.menus import run_master_component_menu
 from nyxuri.deploy.atomic import CarryPolicy
 
@@ -159,9 +159,10 @@ def install_configs_workflow(mode: str = "full") -> bool:
     _phase_preflight_check(mode, chosen_configs, do_wallpapers, do_backup)
 
     # Step counting
-    steps = 3 if do_wallpapers else 2  # configs [+ wallpapers] + plugin hooks
+    steps = 1
     if mode == "full":
         steps += 1  # deps
+    steps += 1  # component transactions
     cur_step = 0
 
     # 1. Deps
@@ -172,64 +173,46 @@ def install_configs_workflow(mode: str = "full") -> bool:
         if missing and not install_selected_deps(missing):
             return False
 
-    # 2. Configs
+    # 2. Component transactions (single activation pipeline)
     cur_step += 1
     print(msg("install_step_configs", f"{cur_step}/{steps}"))
-    preserved_log: List[str] = []
-    if chosen_configs:
-        # Install is adoption (#139): payload names are claimed, user-placed
-        # extras are carried. An already-enabled plugin's ledger record acts as
-        # the drift baseline so a re-install never eats edits.
-        carry_policy = CarryPolicy(
-            baselines=transaction.carry_baselines(chosen_configs), unknown=False
+    if do_backup:
+        from nyxuri.state.backup import backup_configs
+        backup_configs(note="auto_snapshot_before_deploy", interactive=False)
+
+    plugins_to_enable = list(chosen_configs)
+    if do_wallpapers and "wallpapers" not in plugins_to_enable:
+        plugins_to_enable.append("wallpapers")
+    known_plugins = set(transaction.registry.plugin_ids())
+    if "theme" in known_plugins and "theme" not in plugins_to_enable:
+        plugins_to_enable.append("theme")
+
+    failed_items: List[str] = []
+    wallpaper_ok: Optional[bool] = None
+    for uid in plugins_to_enable:
+        steps_res = transaction.plugin_on(uid, install_packages=plugin_package_installer)
+        if not steps_res or not all(s.ok for s in steps_res):
+            failed_items.append(uid)
+        for line in format_steps(steps_res):
+            print(f"  {line}")
+        if uid == "wallpapers":
+            wallpaper_ok = bool(steps_res) and all(s.ok for s in steps_res)
+
+    if failed_items:
+        render_completion_screen(
+            mode=mode,
+            chosen_items=chosen_configs,
+            preserved_lines=[],
+            wallpaper_ok=wallpaper_ok,
+            failed_items=failed_items,
         )
-        failed_items = deploy_selected_configs(
-            do_backup=do_backup,
-            items_to_deploy=chosen_configs,
-            preserved_log=preserved_log,
-            carry_policy=carry_policy,
-        )
-        if failed_items:
-            render_completion_screen(
-                mode=mode,
-                chosen_items=chosen_configs,
-                preserved_lines=preserved_log,
-                failed_items=failed_items,
-            )
-            return False
-
-    # 3. Wallpapers — the plugin path: `on wallpapers` syncs the blueprint
-    # fallback into the shared living area (no-clobber). The external pack
-    # is user-domain content (plugins/wallpapers/hooks/install-pack), never
-    # an install phase. The theme pool (shared template living area) rides
-    # the same plugin path: `on theme` no-clobber merges the blueprint
-    # templates; user-edited templates are never clobbered.
-    wallpaper_ok = None
-    if do_wallpapers:
-        cur_step += 1
-        print(msg("install_step_wallpapers", f"{cur_step}/{steps}"))
-        wallpaper_ok = _enable_wallpapers()
-    _enable_theme()
-
-    # 4. Plugin hook replay: already-enabled plugins re-run their declared
-    # on-side hooks (skins, renders). Activation of NEW plugins belongs to
-    # `nyxuri on <plugin>` — the installer never invents switch state.
-    cur_step += 1
-    print(msg("install_step_plugin_hooks", f"{cur_step}/{steps}"))
-    for step in transaction.replay_enabled_hooks():
-        if not step.ok:
-            log_msg("WARN", f"plugin hook replay failed for {step.plugin}: {step.detail}")
-
-    # Hook products and template renders changed the laid truth under any
-    # already-enabled plugin: re-baseline so the next audit stays honest (#139).
-    if chosen_configs:
-        _resnapshot_after_deploy(chosen_configs, carry_policy)
+        return False
 
     # Completion
     _finish_successful_deploy(
         mode=mode,
         chosen_items=chosen_configs,
-        preserved_lines=preserved_log,
+        preserved_lines=[],
         wallpaper_ok=wallpaper_ok,
     )
     return True

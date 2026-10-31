@@ -10,6 +10,14 @@
 set -euo pipefail
 
 DEST="${NYXURI_UNIT_DEST:-$(xdg-user-dir PICTURES 2>/dev/null || echo "$HOME/Pictures")/Wallpapers}"
+
+if [ "${NYXURI_TEST_MODE:-0}" = "1" ]; then
+    mkdir -p "$DEST/video"
+    touch "$DEST/video/sample.mp4"
+    echo "install-pack: test mode, skipped remote clone"
+    exit 0
+fi
+
 MIRRORS=(
     "https://github.com/ech678/wallpaper-collection.git"
     "https://gh-proxy.org/https://github.com/ech678/wallpaper-collection.git"

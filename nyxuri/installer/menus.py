@@ -48,7 +48,8 @@ from nyxuri.tui import (
 
 def run_master_component_menu(is_update: bool = False, mode: str = "full") -> Optional[dict]:
     """Interactive checklist for choosing configs, wallpapers, and backup behavior."""
-    items = discover_config_items()
+    manifests = dict(discover_manifest_apps())
+    items = [name for name, m in manifests.items() if not m.is_merge and not m.is_runtime]
     entries: List[CheckboxEntry] = []
 
     wm_items = [i for i in items if i in SUPPORTED_WMS]

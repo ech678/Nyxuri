@@ -90,10 +90,7 @@ def _report_steps(steps) -> int:
 
 
 def _cmd_on(sub_args: List[str]) -> int:
-    """nyxuri on <plugin> [--form <name>] — disclose, then transact.
-
-    ``--preset`` is the deprecated alias (one release cycle).
-    """
+    """nyxuri on <plugin> [--form <name>] — disclose, then transact."""
     usage = f"{CLI_CMD} on <plugin> [--form <name>]"
     rest = list(sub_args)
     plugin = rest.pop(0) if rest and not rest[0].startswith("-") else ""
@@ -102,9 +99,7 @@ def _cmd_on(sub_args: List[str]) -> int:
     form = None
     while rest:
         cur = rest.pop(0)
-        if cur in ("--form", "--preset"):
-            if cur == "--preset":
-                print("[!] `--preset` 旗标已更名为 `--form`（deprecated，下一版本移除）", file=sys.stderr)
+        if cur == "--form":
             form = rest.pop(0) if rest else ""
             if not form:
                 exit_usage(usage)
@@ -393,27 +388,6 @@ def _is_safe_component_arg(value: str) -> bool:
     return not value.startswith("-")
 
 
-def _cmd_preset(sub_args: List[str]) -> int:
-    """Deprecated alias of ``use`` — old syntax rides one release cycle (R0-2).
-
-    apply <name> → <name>; parts → slots; part <axis> <name> → slot <axis> <name>.
-    """
-    print("[!] `preset` 命令已并轨为 `use`（deprecated，下一版本移除）", file=sys.stderr)
-    print("[!] `preset` is now `use` (deprecated, removed next release)", file=sys.stderr)
-    mapped: List[str] = []
-    for i, arg in enumerate(sub_args):
-        if i == 1 and arg == "apply":
-            continue  # use switches a bare value directly
-        if i == 1 and arg == "parts":
-            mapped.append("slots")
-            continue
-        if i == 1 and arg == "part":
-            mapped.append("slot")
-            continue
-        mapped.append(arg)
-    return _cmd_use(mapped)
-
-
 def _cmd_theme(sub_args: List[str]) -> int:
     sub = sub_args[0] if sub_args else "toggle"
     if len(sub_args) > 1 or sub not in ("toggle", "dark", "light", "sync", "status"):
@@ -564,7 +538,6 @@ COMMANDS = {
     "deps":      (_cmd_deps,      f"{CLI_CMD} deps [core]"),
     "bug":       (_cmd_bug,       f"{CLI_CMD} bug"),
     "test":      (_cmd_test,      f"{CLI_CMD} test"),
-    "preset":    (_cmd_preset,    f"{CLI_CMD} preset <app> …  (deprecated alias of use, removed next release)"),
     "theme":     (_cmd_theme,     f"{CLI_CMD} theme [toggle|dark|light|sync|status]"),
     "shell":     (_cmd_shell,     f"{CLI_CMD} shell [get|set <noctalia|nyxuri-shell> [bin_path]|switch [<noctalia|nyxuri-shell> [bin_path]]|status] [EXPERIMENTAL]"),
     "update":    (_cmd_update,    f"{CLI_CMD} update [--force|--no-deploy] [--to <tag|commit>]"),

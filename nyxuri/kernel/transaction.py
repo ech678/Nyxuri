@@ -40,6 +40,7 @@ from nyxuri.deploy.atomic import CarryPolicy
 from nyxuri.deploy.deploy import _phase_atomic_deployment, merge_deploy_plugin
 from nyxuri.deploy.manifest import ModuleManifest, living_path
 from nyxuri.deploy.forms import write_active_form
+from nyxuri.deploy.templates import _phase_render_templates
 from nyxuri.kernel.resolver import resolve_order
 
 STATE_SYNCED = "Synced"
@@ -91,30 +92,13 @@ def _plugin_dest(plugin_id: str, manifest: ModuleManifest) -> Path:
 
 
 def _is_runtime(manifest: ModuleManifest) -> bool:
-    """A payload-less plugin (manifest ``runtime = true``, plugin-model.md §6).
-
-    Its existence is the ledger record plus the running host's reaction to
-    the plugin-changed event — never files under ~/.config. The declaration
-    is explicit: no scan of blueprint contents may silently turn a runtime
-    plugin into a deployable one (or vice versa).
-    """
-    return manifest.runtime
+    """A payload-less plugin (manifest ``runtime = true``, plugin-model.md §6)."""
+    return manifest.is_runtime
 
 
 def _is_declaration_only(manifest: ModuleManifest) -> bool:
-    """A plugin that only declares packages/hooks, ships no living area.
-
-    The packages-only supply surface (R0-2 catalog 并轨，``deploy = false``
-    声明) 已随常用推荐软件菜单处决——剩下的只有 greeter 式可选单元：
-    装包 + hooks + 落账，磁盘上没有生活区。退役的 ``deploy`` 键在
-    manifest 解析层直接报错，这个形态只能来自真实的声明式单元。
-    """
-    return (
-        not manifest.runtime
-        and not manifest.target
-        and not manifest.merge
-        and not manifest.is_deployable
-    )
+    """A hook-only plugin that declares packages/hooks, ships no living area."""
+    return manifest.is_hook_only
 
 
 def _blueprint_rels(manifest: ModuleManifest) -> List[str]:
@@ -205,7 +189,7 @@ def resnapshot_plugins(plugin_ids: List[str],
             manifest = registry.load_plugin(uid)
         except KeyError:
             continue
-        if _is_runtime(manifest) or manifest.merge:
+        if _is_runtime(manifest) or _is_declaration_only(manifest) or manifest.merge:
             continue
         dest = _plugin_dest(uid, manifest)
         if not (dest.exists() or dest.is_symlink()):
@@ -583,7 +567,7 @@ def _run_plugin_hook(plugin_id: str, manifest: ModuleManifest, spec: str) -> boo
         "PYTHONDONTWRITEBYTECODE": "1",
         "NYXURI_UNIT": plugin_id,
         "NYXURI_UNIT_SRC": str(plugin_src or ""),
-        "NYXURI_UNIT_DEST": "" if _is_runtime(manifest) else str(_plugin_dest(plugin_id, manifest)),
+        "NYXURI_UNIT_DEST": "" if (_is_runtime(manifest) or _is_declaration_only(manifest)) else str(_plugin_dest(plugin_id, manifest)),
     }
     root = Path(__import__("nyxuri").__file__).resolve().parent.parent
     hook_env["PYTHONPATH"] = str(root) + (
@@ -663,6 +647,7 @@ def plugin_on(
                 if laid is None:
                     results.append(Step(uid, False, "deploy-failed"))
                     return results
+                _phase_render_templates(only_app=uid)
                 files = {rel: _hash_file(dest / rel) for rel in laid}
             else:
                 # `on` is adoption: the engine claims its payload names
@@ -679,6 +664,7 @@ def plugin_on(
                 if uid in _phase_atomic_deployment([uid], carry_policy=policy):
                     results.append(Step(uid, False, "deploy-failed"))
                     return results
+                _phase_render_templates(only_app=uid)
                 files = snapshot_files(dest, manifest)
                 # Carried files stay user-owned: they must never enter the
                 # snapshot, or the next deploy would mistake them for

@@ -9,9 +9,7 @@ Each record carries exactly five frozen fields (plugin-model.md §3):
 ``state`` / ``form`` / ``files`` / ``vault`` / ``updated``. Kernel code must
 not invent a sixth. ``form`` is the plugin's whole-config axis choice; slot
 axis choices live under the top-level ``forms`` key (``{plugin: {slot:
-value}}``). Pre-R0-2 shapes (the ``units`` top key, the per-record ``preset``
-field, the ``presets``/``parts`` top dicts) are migrated on first read,
-idempotently, in one atomic write.
+value}}``).
 """
 
 import fcntl
@@ -26,16 +24,11 @@ from nyxuri.core import get_env
 
 PLUGIN_STATES = ("enabled", "disabled")
 
-# Top-level key holding plugin records. R0-1 renamed ``units`` → ``plugins``
-# alongside the blueprint directory; one-shot migration lives in read_ledger.
+# Top-level key holding plugin records.
 PLUGINS_KEY = "plugins"
-_LEGACY_UNITS_KEY = "units"
 
-# Top-level key holding slot-axis choices (R0-2 杀词并轨): {plugin: {slot: value}}.
+# Top-level key holding slot-axis choices: {plugin: {slot: value}}.
 FORMS_KEY = "forms"
-_LEGACY_PRESETS_KEY = "presets"
-_LEGACY_PARTS_KEY = "parts"
-_LEGACY_RECORD_FORM_FIELD = "preset"
 _FORM_FIELD = "form"
 
 # --- generic ledger primitives -------------------------------------------
@@ -51,73 +44,6 @@ def _read_raw() -> dict[str, Any]:
         return data if isinstance(data, dict) else {}
     except (OSError, ValueError, TypeError):
         return {}
-
-
-def _legacy_units_replacement(data: dict[str, Any]) -> dict[str, Any] | None:
-    """Data with pre-R0-2 shapes converged, or None when no migration is due.
-
-    Handles, in order: the R0-1 ``units`` top key rename; the per-record
-    ``preset`` field rename to ``form``; the legacy ``presets`` top dict
-    (whole-axis mirrors of the retired ``<app>.active`` files) folded into
-    the records — synthesizing a ``disabled`` record when the plugin was
-    never switched (nothing archived, so ``vault`` stays null); and the
-    legacy ``parts`` top dict (``{app:slot: value}``) regrouped under the
-    ``forms`` key. Idempotent: a converged ledger returns None.
-    """
-    changed = False
-
-    legacy_units = data.get(_LEGACY_UNITS_KEY)
-    if PLUGINS_KEY not in data and isinstance(legacy_units, dict):
-        data[PLUGINS_KEY] = data.pop(_LEGACY_UNITS_KEY)
-        changed = True
-
-    records = data.get(PLUGINS_KEY)
-    if isinstance(records, dict):
-        for rec in records.values():
-            if isinstance(rec, dict) and _LEGACY_RECORD_FORM_FIELD in rec:
-                rec[_FORM_FIELD] = rec.pop(_LEGACY_RECORD_FORM_FIELD)
-                changed = True
-
-    legacy_presets = data.get(_LEGACY_PRESETS_KEY)
-    if isinstance(legacy_presets, dict) and legacy_presets:
-        if not isinstance(records, dict):
-            records = data.setdefault(PLUGINS_KEY, {})
-        now = datetime.now(timezone.utc).isoformat(timespec="seconds")
-        for app, name in legacy_presets.items():
-            if not (isinstance(app, str) and isinstance(name, str) and name):
-                continue
-            rec = records.get(app)
-            if isinstance(rec, dict):
-                rec[_FORM_FIELD] = name
-            else:
-                records[app] = {
-                    "state": "disabled",
-                    _FORM_FIELD: name,
-                    "files": {},
-                    "vault": None,
-                    "updated": now,
-                }
-            changed = True
-        data.pop(_LEGACY_PRESETS_KEY, None)
-
-    legacy_parts = data.get(_LEGACY_PARTS_KEY)
-    if isinstance(legacy_parts, dict) and legacy_parts:
-        forms = data.setdefault(FORMS_KEY, {})
-        if not isinstance(forms, dict):
-            forms = data[FORMS_KEY] = {}
-        for compound, value in legacy_parts.items():
-            if not (isinstance(compound, str) and isinstance(value, str) and value):
-                continue
-            app, _, slot = compound.partition(":")
-            if not app or not slot:
-                continue
-            slot_map = forms.setdefault(app, {})
-            if isinstance(slot_map, dict):
-                slot_map[slot] = value
-                changed = True
-        data.pop(_LEGACY_PARTS_KEY, None)
-
-    return data if changed else None
 
 
 @contextmanager
@@ -146,24 +72,8 @@ def _write_locked(path: Path, data: dict[str, Any]) -> None:
 
 
 def read_ledger() -> dict[str, Any]:
-    """Read the ledger, converging any pre-R0-2 shape on sight.
-
-    The migration rewrites state.json once (flock + atomic replace) so every
-    later reader — and the user's own eyes — see a single-shape file.
-    """
-    data = _read_raw()
-    migrated = _legacy_units_replacement(data)
-    if migrated is None:
-        return data
-    path = ledger_path()
-    with _ledger_lock(path):
-        # Re-read under the lock: a concurrent process may have migrated first.
-        data = _read_raw()
-        migrated = _legacy_units_replacement(data)
-        if migrated is not None:
-            _write_locked(path, migrated)
-            return migrated
-        return data
+    """Read state.json (single-truth ledger)."""
+    return _read_raw()
 
 
 def update_ledger(**changes: Any) -> dict[str, Any]:
@@ -171,9 +81,6 @@ def update_ledger(**changes: Any) -> dict[str, Any]:
     path.parent.mkdir(parents=True, exist_ok=True)
     with _ledger_lock(path):
         data = _read_raw()
-        migrated = _legacy_units_replacement(data)
-        if migrated is not None:
-            data = migrated
         for key, value in changes.items():
             if isinstance(value, dict) and isinstance(data.get(key), dict):
                 data[key] = {**data[key], **value}

@@ -816,5 +816,80 @@ class TestLedgerResilience(unittest.TestCase):
             self.assertEqual([data.get(f"k{i}") for i in range(6)], list(range(6)))
 
 
+class TestR03ActivationPipeline(unittest.TestCase):
+    """R0-3 Single Activation Pipeline regressions (#143, #145, #147, #149)."""
+
+    def setUp(self):
+        patcher = mock.patch.object(transaction, "missing_packages", return_value=[])
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_on_renders_templates_into_transaction_issue_143(self):
+        """Issue #143: nyxuri on replaces /home/user templates and snapshots rendered content."""
+        with TempEnv() as ctx:
+            _stage(ctx, {
+                "noctalia": {
+                    "files": {
+                        "noctalia-config.toml": 'directory = "/home/user/图片/Wallpapers"\nvideo_directory = "/home/user/图片/Wallpapers/video"\n',
+                    }
+                }
+            })
+            steps = transaction.plugin_on("noctalia")
+            self.assertTrue(steps[0].ok, str(steps))
+            rendered_path = ctx.home / ".config/noctalia/noctalia-config.toml"
+            self.assertTrue(rendered_path.is_file())
+            content = rendered_path.read_text(encoding="utf-8")
+            self.assertNotIn("/home/user", content, "template placeholder must be rendered during on")
+            self.assertIn(str(ctx.home), content)
+            # Doctor must audit Synced (snapshot matches rendered file)
+            self.assertEqual(transaction.audit_plugins("noctalia"), {"noctalia": "Synced"})
+
+    def test_greeter_hook_only_avoids_invalid_form_warning_issue_147(self):
+        """Issue #147: hook-only units (like greeter) do not trigger invalid form warnings."""
+        with TempEnv() as ctx:
+            _stage(ctx, {
+                "greeter": {
+                    "manifest": 'morphology = "hook-only"\noptional = true\npackages = ["greetd"]\npost_install = "activate"\n',
+                    "hooks": {"activate": "#!/bin/sh\nexit 0\n"},
+                }
+            })
+            steps = transaction.plugin_on("greeter")
+            self.assertTrue(steps[0].ok, str(steps))
+            # No living area created
+            self.assertFalse((ctx.home / ".config/greeter").exists())
+            self.assertEqual(transaction.audit_plugins("greeter"), {"greeter": "Synced"})
+
+    def test_wallpapers_declares_install_pack_issue_145(self):
+        """Issue #145: wallpapers manifest declares install-pack post_install hook."""
+        from nyxuri.kernel import registry
+        m = registry.load_plugin("wallpapers")
+        self.assertEqual(m.post_install, "install-pack")
+
+    def test_installer_workflow_dispatches_transactions_issue_149(self):
+        """Issue #149: installer component selection dispatches transaction.plugin_on."""
+        from nyxuri.installer.workflows import install_configs_workflow
+        with TempEnv() as ctx:
+            _stage(ctx, {
+                "demo_app": {
+                    "manifest": 'packages = ["demo-pkg"]\n',
+                    "files": {"demo.conf": "hello = 1\n"},
+                }
+            })
+            installed_packages = []
+            def fake_installer(uid, pkgs):
+                installed_packages.append((uid, pkgs))
+                return True
+
+            with mock.patch("nyxuri.installer.workflows.run_master_component_menu",
+                            return_value={"configs": ["demo_app"], "wallpapers": False, "backup": False}), \
+                 mock.patch("nyxuri.installer.workflows._finish_successful_deploy"), \
+                 mock.patch("nyxuri.installer.workflows.plugin_package_installer", side_effect=fake_installer), \
+                 mock.patch.object(transaction, "missing_packages", side_effect=lambda m: ["demo-pkg"] if m.name == "demo_app" and not installed_packages else []):
+                ok = install_configs_workflow(mode="config")
+            self.assertTrue(ok)
+            self.assertEqual(installed_packages, [("demo_app", ["demo-pkg"])])
+            self.assertEqual(ledger.get_plugin("demo_app")["state"], "enabled")
+
+
 if __name__ == "__main__":
     unittest.main()

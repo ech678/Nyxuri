@@ -62,22 +62,15 @@ class TestActiveFormLedger(unittest.TestCase):
         self.assertEqual(rec["form"], "transparent")
         self.assertEqual(rec["files"], {"k.conf": "h1"})
 
-    def test_write_consumes_legacy_active_marker(self):
+    def test_legacy_marker_is_ignored_at_r0_3(self):
+        """R0-3 sweep: legacy .active markers are ignored and never adopted."""
         marker = self._ctx.env.forms_dir / "kitty.active"
         marker.parent.mkdir(parents=True, exist_ok=True)
         marker.write_text("transparent\n", encoding="utf-8")
-        forms.write_active_form("kitty", "transparent")
-        self.assertFalse(marker.exists(), "the retired marker must not survive a ledger write")
-
-    def test_legacy_marker_is_adopted_on_sight(self):
-        marker = self._ctx.env.forms_dir / "kitty.active"
-        marker.parent.mkdir(parents=True, exist_ok=True)
-        marker.write_text("transparent", encoding="utf-8")
-        self.assertEqual(forms.read_active_form("kitty"), "transparent")
+        # Ledger has no record: read_active_form defaults to "default", not "transparent"
+        self.assertEqual(forms.read_active_form("kitty"), "default")
         from nyxuri.kernel.ledger import get_plugin
-        self.assertEqual(get_plugin("kitty")["form"], "transparent",
-                         "adoption must land the choice in the ledger")
-        self.assertFalse(marker.exists(), "adoption consumes the marker")
+        self.assertIsNone(get_plugin("kitty"), "legacy marker must not be adopted into ledger")
 
     def test_invalid_legacy_marker_is_ignored_not_fatal(self):
         """Ledger is the single truth: a garbage marker can no longer freeze."""

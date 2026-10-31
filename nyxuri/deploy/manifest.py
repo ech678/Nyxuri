@@ -57,6 +57,17 @@ from nyxuri.core import get_env, log_msg
 _MANIFEST_NAME = "manifest.toml"
 _METADATA_NAMES = frozenset({"__pycache__"})
 
+MORPHOLOGY_RUNTIME = "runtime"
+MORPHOLOGY_MERGE = "merge"
+MORPHOLOGY_HOOK_ONLY = "hook-only"
+MORPHOLOGY_ATOMIC = "atomic"
+MORPHOLOGIES = (
+    MORPHOLOGY_RUNTIME,
+    MORPHOLOGY_MERGE,
+    MORPHOLOGY_HOOK_ONLY,
+    MORPHOLOGY_ATOMIC,
+)
+
 
 @dataclass(frozen=True)
 class ModuleManifest:
@@ -82,6 +93,7 @@ class ModuleManifest:
     merge: bool = False        # Shared living area: no-clobber deploy, snapshot = laid files
     runtime: bool = False      # Ledger-only plugin (shell.*): no living area, the
                                # running host reacts to the plugin-changed event
+    morphology: str = MORPHOLOGY_ATOMIC
     form_inherit: bool = False
     form_allow: List[str] = field(default_factory=list)
     form_standalone: List[str] = field(default_factory=list)
@@ -89,6 +101,22 @@ class ModuleManifest:
     form_exclude: List[str] = field(default_factory=list)
     form_reload: List[str] = field(default_factory=list)
     forms: Dict[str, dict] = field(default_factory=dict)
+
+    @property
+    def is_runtime(self) -> bool:
+        return self.morphology == MORPHOLOGY_RUNTIME
+
+    @property
+    def is_merge(self) -> bool:
+        return self.morphology == MORPHOLOGY_MERGE
+
+    @property
+    def is_hook_only(self) -> bool:
+        return self.morphology == MORPHOLOGY_HOOK_ONLY
+
+    @property
+    def is_atomic(self) -> bool:
+        return self.morphology == MORPHOLOGY_ATOMIC
 
 
 def _is_deployable(app_src: Path) -> bool:
@@ -207,6 +235,27 @@ def load_manifest(app_src: Path) -> ModuleManifest:
             if target and target not in manifest_preserve:
                 manifest_preserve.append(target)
 
+    deployable = _is_deployable(app_src)
+    target_str = str(data.get("target", ""))
+    explicit_runtime = bool(data.get("runtime", False))
+    explicit_merge = bool(data.get("merge", False))
+
+    raw_morphology = data.get("morphology")
+    if raw_morphology is not None:
+        if raw_morphology not in MORPHOLOGIES:
+            raise ValueError(
+                f"unsupported morphology: '{raw_morphology}' (must be one of {MORPHOLOGIES})"
+            )
+        morphology = raw_morphology
+    elif explicit_runtime:
+        morphology = MORPHOLOGY_RUNTIME
+    elif explicit_merge:
+        morphology = MORPHOLOGY_MERGE
+    elif not deployable and not target_str:
+        morphology = MORPHOLOGY_HOOK_ONLY
+    else:
+        morphology = MORPHOLOGY_ATOMIC
+
     return ModuleManifest(
         name=name,
         packages_repo=pkg_repo,
@@ -218,15 +267,16 @@ def load_manifest(app_src: Path) -> ModuleManifest:
         label=data.get("label", name),
         category=data.get("category", ""),
         dependencies=_as_str_list(data.get("dependencies")),
-        is_deployable=_is_deployable(app_src),
+        is_deployable=deployable,
         is_optional=bool(data.get("optional", False)),
         post_install=str(data.get("post_install", "")),
         post_remove=str(data.get("post_remove", "")),
         requires_root=bool(privilege.get("requires_root", False)),
         system_paths=_as_str_list(privilege.get("system_paths")),
-        target=str(data.get("target", "")),
-        merge=bool(data.get("merge", False)),
-        runtime=bool(data.get("runtime", False)),
+        target=target_str,
+        merge=explicit_merge or (morphology == MORPHOLOGY_MERGE),
+        runtime=explicit_runtime or (morphology == MORPHOLOGY_RUNTIME),
+        morphology=morphology,
         form_inherit=bool(forms.get("inherit")),
         form_allow=_as_str_list(forms.get("allow")),
         form_standalone=_as_str_list(forms.get("standalone")),

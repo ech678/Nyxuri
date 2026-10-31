@@ -12,3 +12,4 @@ merge = true
 label = "Wallpapers"
 category = "system"
 chmod = ["hooks/install-pack"]
+post_install = "install-pack"

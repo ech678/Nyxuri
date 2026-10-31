@@ -207,15 +207,8 @@ class TestKernelLedger(unittest.TestCase):
             self.assertEqual(ledger.get_plugin("fish")["state"], "enabled")
             self.assertEqual(ledger.get_plugin("kitty")["state"], "disabled")
 
-    def test_legacy_shapes_migrate_on_first_read(self):
-        """A pre-R0-2 ledger converges in one atomic write, exactly once.
-
-        Covers all three legacy shapes: the R0-1 ``units`` top key, the
-        per-record ``preset`` field, and the ``presets``/``parts`` top dicts
-        (the whole-axis mirror folds into records — synthesizing a disabled
-        record for never-switched plugins — and slot choices regroup under
-        ``forms``).
-        """
+    def test_legacy_shapes_migration_swept_at_r0_3(self):
+        """R0-3 sweep: legacy ledger migration shims (units/presets/parts) are gone."""
         with TempEnv() as ctx:
             path = ctx.home / ".local/state/nyxuri/state.json"
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -223,42 +216,15 @@ class TestKernelLedger(unittest.TestCase):
                 "units": {
                     "kitty": {"state": "enabled", "preset": "default", "files": {}, "vault": None,
                               "updated": "2026-01-01T00:00:00+00:00"},
-                    "fish": {"state": "enabled", "preset": "default", "files": {}, "vault": None,
-                             "updated": "2026-01-01T00:00:00+00:00"},
                 },
-                "presets": {"kitty": "transparent", "starship": "plain"},
-                "parts": {"niri:effects": "xray-blur", "niri:glow": "glow"},
+                "presets": {"kitty": "transparent"},
             }, indent=2) + "\n", encoding="utf-8")
 
-            rec = ledger.get_plugin("kitty")
-            self.assertEqual(rec["state"], "enabled")
-            self.assertEqual(rec["form"], "transparent",
-                             "the legacy whole-axis mirror lands in the record")
-            # never-switched plugins get an honest synthesized record
-            starship = ledger.get_plugin("starship")
-            self.assertEqual(starship["state"], "disabled")
-            self.assertEqual(starship["form"], "plain")
-            self.assertIsNone(starship["vault"])
-            # slot choices regroup under `forms`
-            self.assertEqual(ledger.get_form_slots("niri"),
-                             {"effects": "xray-blur", "glow": "glow"})
-
+            # Canonical reader finds no 'plugins' key, returns None without rewrites
+            self.assertIsNone(ledger.get_plugin("kitty"))
             on_disk = json.loads(path.read_text(encoding="utf-8"))
-            self.assertNotIn("units", on_disk)
-            self.assertNotIn("presets", on_disk, "legacy top dicts must be gone after migration")
-            self.assertNotIn("parts", on_disk)
-            self.assertEqual(on_disk["plugins"]["kitty"]["form"], "transparent")
-            self.assertIn("forms", on_disk)
-            for rec in on_disk["plugins"].values():
-                self.assertNotIn("preset", rec, "per-record preset field must be renamed")
-
-            # idempotent: further writes neither resurrect nor re-rename
-            ledger.set_plugin("kitty", state="disabled", vault="/vault/kitty")
-            on_disk = json.loads(path.read_text(encoding="utf-8"))
-            self.assertNotIn("units", on_disk)
-            self.assertNotIn("presets", on_disk)
-            self.assertEqual(on_disk["plugins"]["kitty"]["state"], "disabled")
-            self.assertEqual(ledger.get_form_slots("niri")["effects"], "xray-blur")
+            self.assertNotIn("plugins", on_disk)
+            self.assertIn("units", on_disk)
 
     def test_fresh_ledger_only_carries_new_shape(self):
         """New installs never produce the legacy keys or field names."""

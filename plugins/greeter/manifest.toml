@@ -1,4 +1,5 @@
 # Noctalia Greeter — greetd 登录界面（/etc + root + systemd 副作用全部声明）
+morphology = "hook-only"
 optional = true
 packages = ["greetd"]
 packages_aur = ["noctalia-greeter"]
