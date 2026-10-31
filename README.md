@@ -61,9 +61,10 @@ We are committed to long-term support for dual desktop shells (the polished **No
 - **NyxMellow Input Skin**: Dynamic theme-synced Fcitx5 skin with mellow geometry, bundled with a tuned Rime setup.
 - **Modern Terminal Experience**: Kitty terminal optimizations (smooth cursor trails, clipboard-preserving shortcuts), paired with Fish aliases and Starship prompt.
 - **Modular Plugins**: Fastfetch, Noctalia Greeter login screen, Zed config, and wallpapers toggle independently anytime (`nyxuri on` / `nyxuri off`), incurring zero background overhead when inactive.
-- **Atomic Deployment, Presets & Zero Bloat**:
-  - **Dunder Protocol**: Any file or directory containing `__custom__` (e.g. `__custom__.kdl`, `__custom__.conf`) and `monitor.kdl` is permanently preserved across updates and preset swaps.
-  - **Presets**: Easily switch application flavor presets (e.g. Kitty opacity variants) or create custom private presets.
+- **Atomic Deployment, Form Switching & Zero Bloat**:
+  - **Personal changes never lost**: your tweaks survive updates and form switches, never overwritten.
+  - **Layered forms**: switch flavor forms (e.g. Kitty opacity variants) with one `nyxuri use`, or create private ones.
+  - **Zero bloat & white-paper wipe**: pure Python stdlib engine, zero pip dependencies; disabling wipes clean; 30 rolling snapshots for one-key rollback, `nyxuri doctor` reconciles declaration vs machine.
   - **Zero Bloat & Clean State**: Pure Python standard library with zero pip dependencies; disabling a plugin wipes deployed files with zero residue; 30-roll automatic snapshots with instant rollback, and `nyxuri doctor` for status audits.
 
 ## Install
@@ -119,15 +120,15 @@ cd nyxuri-git && makepkg -si
 ```text
 Nyxuri
 ├── install.sh                  # lightweight bootstrap entrypoint
-├── catalog.toml                # package catalogue (18 standalone apps without dotfiles)
 ├── nyxuri/                     # Python core engine (zero pip dependencies)
 ├── shell/                      # Nyxuri Shell (QML/Qt6 desktop shell, experimental)
-└── plugins/                    # 13 modular desktop plugins
+└── plugins/                    # everything is a plugin: desktop capability ×
+    │                           # supply declaration, one model, one switch
     ├── fastfetch/              # system information
     ├── fcitx5-rime/            # dynamic Material You input skin & Rime config
     ├── fish/                   # shell aliases & functions
     ├── greeter/                # Noctalia Greeter login integration
-    ├── kitty/                  # terminal emulator & opacity presets
+    ├── kitty/                  # terminal emulator & opacity forms
     ├── mango/                  # MangoWM window manager & session scripts
     ├── niri/                   # window manager & session scripts
     ├── noctalia/               # desktop shell, theme sync, Orbit & wallpaper picker
@@ -135,18 +136,23 @@ Nyxuri
     ├── theme/                  # shared matugen theme template pool
     ├── wallpapers/             # companion wallpapers & video pack hooks
     ├── xdg-desktop-portal/     # portal routing (theme sync, screencast)
-    └── zed/                    # editor configuration
+    ├── zed/                    # editor configuration
+    ├── nautilus/               # packages-only: file manager (install, no deploy)
+    ├── qq/  steam/  telegram/  # packages-only: everyday apps, opt-in via deps apps
+    └── …                       # brave-origin flclash kdenlive libreoffice
+                                #  lutris missioncenter motrix obs protonplus
+                                #  quickshell shelly spotify vscode wechat
 ```
 
-Configs deploy atomically. Personal tweaks survive updates via the Dunder protocol: any file or folder containing `__custom__` (e.g. `__custom__.kdl`, `__custom__.conf`) and `monitor.kdl` are preserved.
+Configs deploy atomically, and your personal tweaks survive updates and form switches.
 
-For detailed customization rules and hooks, see [Configuration Guide (Wiki)](https://github.com/ech678/Nyxuri/wiki/Configuration).
+For deployment rules and hooks, see [Configuration Guide (Wiki)](https://github.com/ech678/Nyxuri/wiki/Configuration).
 
-## Presets
+## Forms
 
-Presets layer between defaults and your `__custom__` files, so switching never touches your own tweaks. Supports modular Parts slots.
+Forms layer between the defaults and your own tweaks — `nyxuri use <plugin> <form>` switches them without ever touching your content. Whole-config forms (Kitty opacity) and slot axes (Niri effects, glow) share one verb.
 
-See full official preset list, Parts architecture, and private preset setup in [Presets Guide (Wiki)](https://github.com/ech678/Nyxuri/wiki/Presets).
+See the full official form list, slot-axis mechanics, and private-form setup in [Forms Guide (Wiki)](https://github.com/ech678/Nyxuri/wiki/Forms).
 
 ## Keybindings
 
@@ -158,7 +164,7 @@ See complete window navigation and monitor moving shortcuts in [Keybindings (Wik
 
 Desktop capabilities are atomic, modular plugins. Optional plugins include dynamic Material You fcitx5 input skin (`fcitx5-rime`), companion wallpaper and video pack (`wallpapers`), and Noctalia Greeter login screen (`greeter`). Toggle them on or off anytime: `nyxuri on <plugin>` / `nyxuri off <plugin>`.
 
-For unit lifecycle commands, see [CLI Reference (Wiki)](https://github.com/ech678/Nyxuri/wiki/CLI-Reference#units-the-market-verbs).
+For plugin lifecycle commands, see [CLI Reference (Wiki)](https://github.com/ech678/Nyxuri/wiki/CLI-Reference#plugin-verbs).
 
 ## Tooling
 

@@ -1,7 +1,7 @@
 # Overview — 一页仓库地图
 
-> Nyxuri 是精选桌面配置的原子部署引擎，正在收敛为「桌面插件市场」：
-> 插件（plugins/）× 内核（kernel/）× 市场界面（4 动词 + TUI 工坊）。
+> Nyxuri 是精选桌面配置的原子部署引擎，收敛为「桌面插件引擎」：
+> 插件（plugins/）× 内核（kernel/）× 插件界面（动词面 + TUI 面板）。
 > 本页是文件树与分层的一页地图；插件模型契约见 [plugin-model](plugin-model.md)。
 
 ## 精神
@@ -17,11 +17,11 @@ Nyxuri/
 │   ├─ kernel/        registry（蓝图唯一读者）· resolver（纯依赖计算）·
 │   │                 ledger（state.json 唯一写者）· transaction（唯一副作用编排）
 │   ├─ deploy/        atomic（原子置换+Dunder）· manifest · templates ·
-│   │                 preset（引擎半：active/staging/继承/fd 安全）· hardware · deploy
+│   │                 forms（引擎半：账本真相/槽位轴/继承/fd 安全）· hardware · deploy
 │   ├─ pkg/           包管理抽象（pacman/paru/shelly）+ 供给收编：deps · net ·
 │   │                 fzf · detection · catalog（根 catalog.toml 解析）
 │   ├─ state/         backup（30 滚动快照）· uninstall（勾选式清理）
-│   ├─ desktop/       theme（深浅轴）· shell_switcher · clean · presets（流程半，渲染归 UI）
+│   ├─ desktop/       theme（深浅轴）· shell_switcher · clean · forms（流程半，渲染归 UI）
 │   ├─ installer/     workflows + menus（交互式主菜单与整装/更新编排，作者裁决保留为常驻产品面）
 │   └─ cli.py · core.py（环境+锁+日志+i18n 地基）· sysdoctor.py（系统体检）·
 │       tui.py · translations.toml（双语文案）
@@ -44,19 +44,19 @@ pkg 管包与供给；state 管账本外的状态副本；desktop 管活桌面�
 ## 三个概念（用户面）
 
 ```
-默认 config  ←  官方/用户预设  ←  __custom__ 文件
+默认 config  ←  官方/用户形态  ←  __custom__ 文件
 （最低）         （中）            （最高，永远赢）
 ```
 
 - **Configs**：`plugins/<plugin>/` ship 的默认配置，`nyxuri on <plugin>` 原子部署到实机。
-- **Presets**：插件的风味变体（官方住 `plugins/<plugin>/__presets__/`，用户住
-  `~/.config/nyxuri/presets/`），机制见 [preset-mechanism](preset-mechanism.md)。
-- **Customs**：`__custom__` 文件跨更新、跨预设切换保留，见 [file-preservation](file-preservation.md)。
+- **Forms**：插件的形态变体（整型形态 + 槽位轴；官方住 `plugins/<plugin>/__forms__/`，
+  用户住 `~/.config/nyxuri/forms/`），机制见 [forms](forms.md)。
+- **Customs**：`__custom__` 文件跨更新、跨形态切换保留，见 [file-preservation](file-preservation.md)。
 
 ## 四大动词与新旧命令的分界
 
-`list / on / off / doctor` 是市场面（语义等价长动词 enable/disable），任何开关
-只走 `transaction` 一条事务路径落账本；install/update/preset/theme 等是过渡期
+`list / on / off / use / doctor` 是插件动词面（语义等价长动词 enable/disable），任何开关
+只走 `transaction` 一条事务路径落账本；install/update/theme 等是过渡期
 的领域动词（退役清单见 [plugin-model](plugin-model.md) §7）。全部命令表见
 [operation-map](operation-map.md)。
 

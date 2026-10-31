@@ -90,7 +90,7 @@ nyxuri rollback [index]         # 回滚到指定快照（回滚前自动生成�
 1. 插件钩子清理 FIRST   HOOK_PLUGINS (fcitx5-rime/greeter/fish/noctalia) 执行 plugin_off
                         （fcitx 读 state_dir 的 .prev 备份；greeter 的 sudo 在这步）
 2. configs              归档后删（交互）/ 直接删（purge）
-3. nyx_dir              ~/.config/nyxuri/（快照 + 预设；连带清理历史小写 ~/.config/nyxniri）
+3. nyx_dir              ~/.config/nyxuri/（快照 + 用户形态；连带清理历史小写 ~/.config/nyxniri）
 4. archives             只删预存的 Nyxuri_archive_*（保护 step 2 刚建的归档）
 5. wallpapers           <XDG 图片目录>/Wallpapers/（如 ~/图片/Wallpapers，经 get_pics_dir 解析；读 .nyxuri-managed.json / .nyxniri-managed.json 仅清理受管壁纸，绝不误伤用户私人壁纸）
 6. cli                  ~/.local/bin/nyxuri

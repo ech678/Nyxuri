@@ -24,12 +24,15 @@ class TestPluginModelContract(unittest.TestCase):
         self.root_dir = Path(__file__).resolve().parent.parent
         self.plugin_model_md = self.root_dir / "llms-wiki" / "plugin-model.md"
 
-    def test_unit_model_doc_exists_and_contains_canonical_terms(self):
-        """llms-wiki/plugin-model.md must exist and contain the 4 canonical terms."""
+    def test_plugin_model_doc_exists_and_contains_canonical_terms(self):
+        """llms-wiki/plugin-model.md must exist and carry the 3 canonical terms
+        (vision §1 术语纪律: 插件 · manifest · 账本; the「源」concept is deleted)."""
         self.assertTrue(self.plugin_model_md.is_file(), "plugin-model.md must exist")
         content = self.plugin_model_md.read_text(encoding="utf-8")
-        for term in ("插件", "内核", "源", "manifest"):
+        for term in ("插件", "内核", "manifest", "账本"):
             self.assertIn(term, content, f"Canonical term '{term}' missing in plugin-model.md")
+        self.assertNotIn("| **源** |", content,
+                         "the Source concept must stay deleted (R0-2: git URL 即源)")
 
     def test_four_canonical_verbs_documented(self):
         """The 4 minimal verbs (list, on, off, doctor) must be documented."""

@@ -61,9 +61,9 @@
 - **NyxMellow 输入法**：跟随系统配色的动态 fcitx5 皮肤（mellow 圆角几何），附带开箱即用的 Rime 输入配置。
 - **现代终端体验**：Kitty 平滑光标轨迹与防冲快捷键，搭配 Fish 实用别名与 Starship 提示符。
 - **即插即用的原子插件**：Fastfetch 看板、Noctalia Greeter 登录界面、Zed 编辑器与壁纸包，单键启闭（`nyxuri on` / `nyxuri off`），未启用插件零常驻、零开销。
-- **原子部署、预设与零臃肿安全网**：
-  - **Dunder 保护协议**：任何文件名含 `__custom__`（如 `__custom__.kdl`、`__custom__.conf`）或 `monitor.kdl` 的文件跨更新与预设切换永久保留，绝不覆盖用户私有改动。
-  - **分层预设**：支持 Kitty 透明度等风味预设一键切换，并支持用户私有预设制作。
+- **原子部署、形态切换与零臃肿安全网**：
+  - **个人改动零丢失**：跨更新与形态切换，你的私有改动永久保留，绝不覆盖。
+  - **分层形态**：支持 Kitty 透明度等风味形态一键切换（`nyxuri use`），并支持用户私有形态制作。
   - **零臃肿与白纸抹除**：引擎坚持纯 Python 标准库驱动，零 pip 依赖；停用插件即刻安全抹白无残留；30 轮滚动快照随时一键回退，`nyxuri doctor` 实时对账实机与声明状态。
 
 ## 安装
@@ -119,15 +119,14 @@ cd nyxuri-git && makepkg -si
 ```text
 Nyxuri
 ├── install.sh                  # 极简引导入口
-├── catalog.toml                # 软件目录清单（18 款日常软件同源依赖）
 ├── nyxuri/                     # Python 核心引擎（零 pip 依赖）
 ├── shell/                      # Nyxuri Shell（自研 QML/Qt6 桌面外壳，实验性）
-└── plugins/                    # 13 个独立原子桌面能力插件
+└── plugins/                    # 一切皆插件：桌面能力 × 供给声明，同构同开关
     ├── fastfetch/              # 系统信息展示
     ├── fcitx5-rime/            # 动态 Material You 输入法皮肤与配置
     ├── fish/                   # Shell 别名与实用函数
     ├── greeter/                # Noctalia Greeter 登录界面集成
-    ├── kitty/                  # 终端模拟器与透明度预设
+    ├── kitty/                  # 终端模拟器与透明度形态
     ├── mango/                  # MangoWM 窗口管理器与动作调度脚本
     ├── niri/                   # 窗口管理器与动作调度脚本
     ├── noctalia/               # 桌面外壳、主题同步、Orbit 星环与壁纸选择器
@@ -135,18 +134,23 @@ Nyxuri
     ├── theme/                  # 共享 matugen 主题模板池
     ├── wallpapers/             # 配套壁纸与动态视频包下载钩子
     ├── xdg-desktop-portal/     # Portal 路由（主题与录屏分流）
-    └── zed/                    # 代码编辑器配置
+    ├── zed/                    # 代码编辑器配置
+    ├── nautilus/               # 仅包声明：文件管理器（装但不部署）
+    ├── qq/  steam/  telegram/  # 仅包声明：常用软件按需选用（deps apps 菜单）
+    └── …                       # brave-origin flclash kdenlive libreoffice
+                                #  lutris missioncenter motrix obs protonplus
+                                #  quickshell shelly spotify vscode wechat
 ```
 
-配置采用原子物理替换。个人改动通过 Dunder 协议保留：任何文件名或目录名含 `__custom__` 的文件（如 `__custom__.kdl`、`__custom__.conf`）与 `monitor.kdl` 在更新时自动保留。
+配置采用原子物理替换，你的私有改动跨更新与形态切换永久保留。
 
-自定义规则与部署后钩子见 [配置与自定义 (Wiki)](https://github.com/ech678/Nyxuri/wiki/Configuration-zh)。
+部署规则与部署后钩子见 [配置与自定义 (Wiki)](https://github.com/ech678/Nyxuri/wiki/Configuration-zh)。
 
-## 预设
+## 形态
 
-预设叠在默认配置和你的 `__custom__` 之间，切换不会碰你的自定义改动。支持零件插槽化组合。
+形态叠在默认配置和你的私有改动之间，`nyxuri use <插件> <形态>` 一键切换，不会碰你的自定义内容。Kitty 的透明度这类整型形态与 Niri 的特效、光晕这类槽位轴都是同一动词。
 
-官方预设清单、Parts 插槽机制与私有预设制作见 [预设手册 (Wiki)](https://github.com/ech678/Nyxuri/wiki/Presets-zh)。
+官方形态清单、槽位轴机制与私有形态制作见 [形态手册 (Wiki)](https://github.com/ech678/Nyxuri/wiki/Forms-zh)。
 
 ## 快捷键
 
@@ -156,9 +160,9 @@ Nyxuri
 
 ## 插件能力
 
-桌面上一切能力皆为可独立开关的原子插件。可选插件包括动态取色 Fcitx5 皮肤（`fcitx5-rime`）、配套壁纸与视频包（`wallpapers`），以及一致视觉的 Noctalia Greeter 登录界面（`greeter`）。随时单键启闭：`nyxuri on <plugin>` / `nyxuri off <plugin>`。
+桌面上一切能力皆为可独立开关的原子插件。可选插件包括动态取色 Fcitx5 皮肤（`fcitx5-rime`）、配套壁纸与视频包（`wallpapers`），以及一致视觉的 Noctalia Greeter 登录界面（`greeter`）。随时单键启闭：`nyxuri on <插件>` / `nyxuri off <插件>`；常用软件（Nautilus、Steam、Telegram 等 18 款）同为插件声明，`nyxuri deps apps` 按需勾选安装。
 
-单元生命周期管理详见 [CLI 命令手册 (Wiki)](https://github.com/ech678/Nyxuri/wiki/CLI-Reference-zh#单元市场动词)。
+插件生命周期与形态切换详见 [CLI 命令手册 (Wiki)](https://github.com/ech678/Nyxuri/wiki/CLI-Reference-zh#插件动词)。
 
 ## 工具
 

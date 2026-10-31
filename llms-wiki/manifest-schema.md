@@ -14,9 +14,10 @@
 | `packages` | `[<目录名>]` | pacman 包名。**显式 `packages = []` 保持为空**（Flatpak/AUR-only 插件防名字泄进 pacman） |
 | `packages_aur` | `[]` | AUR 包名 |
 | `packages_flatpak` | `[]` | Flathub app id——走 `flatpak install`，永不进 pacman/AUR/PKGBUILD |
-| `target` | `""` | 单文件插件例外：插件目录只 ship 一个文件 `plugins/<plugin>/<target>`，落点 `~/.config/<target>`（如 starship）。`~/` 前缀则声明 `~/.config` 外的**共享生活区**。`xdg:<KIND>/<rest>` 走 XDG 用户目录解析（当前仅 `xdg:PICTURES/<rest>`，经 `xdg-user-dir PICTURES`，中文系统即 `~/图片`；未知 KIND 直接拒绝——如壁纸 `xdg:PICTURES/Wallpapers`，R0-4 推广为完整映射）。target 插件不支持 presets/parts |
+| `target` | `""` | 单文件插件例外：插件目录只 ship 一个文件 `plugins/<plugin>/<target>`，落点 `~/.config/<target>`（如 starship）。`~/` 前缀则声明 `~/.config` 外的**共享生活区**。`xdg:<KIND>/<rest>` 走 XDG 用户目录解析（当前仅 `xdg:PICTURES/<rest>`，经 `xdg-user-dir PICTURES`，中文系统即 `~/图片`；未知 KIND 直接拒绝——如壁纸 `xdg:PICTURES/Wallpapers`，R0-4 推广为完整映射）。target 插件不支持形态轴 |
+| `deploy` | `true` | 显式 `deploy = false` → 仅包声明插件（R0-2 catalog 并轨）：只声明 packages/label/category/detect，无生活区——`on` = 装包 + 落账，`off` 纯落账，doctor 恒 `Synced`。**声明压过目录内容扫描**：目录里意外掉进文件也不会变成可部署插件（与 `runtime = true` 同一教义） |
 | `merge` | `false` | 共享生活区声明：`on` 走 no-clobber 增量合流（已存在文件永不覆盖），快照只记部署落下的文件；`off` 只撤回快照文件，外来内容幸存并报告；doctor 对停用 merge 插件只把蓝图具名残留记 Ghost（见 [plugin-model](plugin-model.md) §3） |
-| `runtime` | `false` | 运行态插件声明（KM4，shell 命名空间专用，见 [plugin-model](plugin-model.md) §6）：无载荷、无生活区、无 Vault 进出、无 presets/parts——`on`/`off` 纯账本落记 + 一次 `plugin-changed` 事件，运行中的宿主（Shell）据事件装载/卸载该域。doctor 恒 `Synced`（实机无可对账之物）。物理承载 `shell/units/<domain>/manifest.toml` |
+| `runtime` | `false` | 运行态插件声明（KM4，shell 命名空间专用，见 [plugin-model](plugin-model.md) §6）：无载荷、无生活区、无 Vault 进出、无形态轴——`on`/`off` 纯账本落记 + 一次 `plugin-changed` 事件，运行中的宿主（Shell）据事件装载/卸载该域。doctor 恒 `Synced`（实机无可对账之物）。物理承载 `shell/units/<domain>/manifest.toml` |
 | `preserve` | `[]` | 跨部署保留的路径（按名声明，如 `monitor.kdl`；与 Dunder 不同机制）。条目可以是**目录**：整目录归运行时管理（如 fish 的 `functions/`），部署前整树注入、off 入 Vault、目录下所有文件不入账不参与 Drifted。**禁令：preserve 目录不得混铺模板 payload**——声明即承诺"模板不在此目录铺设任何文件"，混居会把 payload 永久冻结在旧版 |
 | `preserve_values` | `{}` | 跨部署保留指定文本配置里的个别键，形如 `{ "noctalia-config.toml" = ["enable_ddcutil"] }`。旧文件里存在的键按原样带入新文件，缺失的键不携带，沿用新模板的值 |
 | `chmod` | `[]` | 部署后设 +x 的 glob（相对插件目录，如 `scripts/*.sh`） |
@@ -44,31 +45,31 @@
 - `hooks/` 是仓库元数据，永不部署进 `~/.config`，也不计入 `is_deployable`；
 - 钩子失败降级 WARN，Step detail 标 `hook-failed: <名字>`，不阻断事务。
 
-### 通用零件插槽（`[parts.<slot>]` 表，可选）
+### 形态轴（`[forms]` 单节，可选——R0-2 并轨）
 
-支持全系统通用零件化插槽体系，每个 `[parts.<slot>]` 定义一个可单独切换的配置零件（如视觉效果、发光边框）：
-
-| 字段 | 默认 | 作用 |
-|---|---|---|
-| `target` | （必填） | 目标配置文件相对路径（如 `"effects_normal.kdl"`）。**引擎解析时会自动将其追加到 `preserve` 保护清单中**，无需重复手动声明。 |
-| `source_dir` | `<slot>` | 零件源文件目录名（位于 `plugins/<plugin>/__presets__/<source_dir>/`） |
-| `default` | `""` | 默认选用的零件名称 |
-
-零件文件存放于 `plugins/<plugin>/__presets__/<source_dir>/` 目录（例如 `effects/default.kdl`）。
-
-### 预设与继承控制（`[presets]` 表，可选）
-
-针对预设较多、希望支持轻量差异化预设（如 Niri `glow` 仅修改 `layout.kdl`）或热重载信号的插件，可通过 `[presets]` 表精确配置：
+预设 + 零件已并轨为插件的**形态字段**（`use` 动词承载，见 [forms](forms.md)）。
+`[forms]` 单节同住两轴——顶层旋钮管整型轴，子表声明槽位轴：
 
 | 字段 | 默认 | 作用 |
 |---|---|---|
-| `reload` | `[]` | 预设切换后执行的热重载命令参数列表（如 `["pkill", "-SIGUSR1", "-x", "kitty"]`） |
-| `allow` | `[]` | **预设白名单**：仅列出的预设开启底版继承（未列出的保持 100% 独立） |
-| `standalone` | `[]` | **预设黑名单**：强制列出的预设独立部署，绝不继承底版 |
+| `[forms.<slot>]` 子表 | — | **槽位轴声明**：单文件热插拔（如视觉效果、发光边框），子字段见下 |
+| `reload` | `[]` | 形态切换后执行的热重载命令参数列表（如 `["pkill", "-SIGUSR1", "-x", "kitty"]`），两轴共用 |
+| `allow` | `[]` | **整型轴白名单**：仅列出的形态开启底版继承（未列出的保持 100% 独立） |
+| `standalone` | `[]` | **整型轴黑名单**：强制列出的形态独立部署，绝不继承底版 |
 | `inherit` | `false` | 全局继承开关（当 `allow` 与 `standalone` 均为空时的兜底策略） |
 | `include` | `[]` | **文件白名单**：仅从底版继承匹配这些 glob 的文件/目录（如 `["scripts/**", "*.kdl"]`） |
 | `exclude` | `[]` | **文件黑名单**：从底版继承时排除匹配这些 glob 的文件/目录 |
 
+`[forms.<slot>]` 子字段：
+
+| 字段 | 默认 | 作用 |
+|---|---|---|
+| `target` | （必填） | 目标配置文件相对路径（如 `"effects_normal.kdl"`）。**引擎解析时会自动将其追加到 `preserve` 保护清单中**，无需重复手动声明。 |
+| `source_dir` | `<slot>` | 槽位源文件目录名（位于 `plugins/<plugin>/__forms__/<source_dir>/`） |
+| `default` | `""` | 默认选用的变体名称 |
+
+槽位变体文件存放于 `plugins/<plugin>/__forms__/<source_dir>/` 目录（例如 `effects/default.kdl`）；
+整型形态目录为 `plugins/<plugin>/__forms__/<名>/`。
 ### 实际 ship 的 manifest
 
 ```toml
@@ -76,20 +77,20 @@
 preserve = ["monitor.kdl", "effects.kdl", "effects_normal.kdl", "glow.kdl", "colors.kdl", "noctalia.kdl", "eyecare_temp"]
 chmod = ["scripts/*.sh", "scripts/*.py"]
 
-[parts.effects]
+[forms.effects]
 target = "effects_normal.kdl"
 source_dir = "effects"
 default = "default"
 
-[parts.glow]
+[forms.glow]
 target = "glow.kdl"
 source_dir = "glow"
 default = "default"
 
-# plugins/kitty/manifest.toml — 切换预设后发送 SIGUSR1 热重载
+# plugins/kitty/manifest.toml — 切换形态后发送 SIGUSR1 热重载
 preserve = ["current-theme.conf", "themes/noctalia.conf"]
 
-[presets]
+[forms]
 reload = ["pkill", "-SIGUSR1", "-x", "kitty"]
 
 # plugins/noctalia/manifest.toml
@@ -106,28 +107,34 @@ target = "starship.toml"
 
 fastfetch **不写 manifest**（目录名 = 包名 = 二进制名 = 无例外），全默认即对。
 
-## 可选供给（`optional = true` 与根 `catalog.toml`，两源同汇）
+## 可选供给（全部来自插件 manifest，单源聚合）
 
-可选不再住 sidecar 登记簿——真插件在自己的 `manifest.toml` 里声明 `optional = true`；
-「装但不部署」的软件（无配置可 ship）住**根 `catalog.toml`**（KM3.5 正名：包目录清单
-不是插件，17 个零文件假目录已处决）。两源同汇进 `deps apps` 菜单（T1 依赖按需化后
-gen-deps `optdepends` 有意与 catalog 脱钩，见 PKGBUILD 头注释）。
+可选不再住 sidecar 登记簿，也不再有根 `catalog.toml`（R0-2 已并轨处决）——
+供给声明只有一种形状：`plugins/<name>/manifest.toml`。
+- 真插件声明 `optional = true`（菜单 + optdepends 轴）；
+- 「装但不部署」的软件声明 `deploy = false`（仅包声明插件：`on` = 装包 + 落账）。
+`deps apps` 菜单聚合两者（T1 依赖按需化后 gen-deps `optdepends` 有意与
+仅包声明脱钩，见 PKGBUILD 头注释）。
 **zed / mango / greeter / fcitx5-rime 双轴共存**：既有配置目录又声明可选，
 两个事实同时为真。例外字段照旧只写差异：
 
 ```toml
-# catalog.toml（仓库根）— 装但不部署，永不进 plugins/
-[brave-origin]
-label = "Brave Origin"          # optdepends 展示名；菜单显示名走 i18n app_* 键
+# plugins/brave-origin/manifest.toml — 仅包声明插件
+deploy = false                     # 显式声明：永不部署，目录内容扫描被否决
+label = "Brave Origin"             # 菜单显示名走 i18n app_* 键
 category = "browser"
+packages = []                      # 显式空 packages 防名字泄进 pacman
 packages_aur = ["brave-origin-bin"]
 
-[qq]
+# plugins/qq/manifest.toml — Flathub 通道
+deploy = false
 label = "QQ"
 category = "social"
-packages_flatpak = ["com.qq.QQ"]   # 显式空 packages 防名字泄进 pacman
+packages = []
+packages_flatpak = ["com.qq.QQ"]
 
-[missioncenter]
+# plugins/missioncenter/manifest.toml — 包名连字符例外
+deploy = false
 label = "Mission Center"
 category = "system"
 detect = "mission-center"          # 目录名 missioncenter，包名连字符
@@ -163,7 +170,7 @@ system_paths = ["/etc/greetd/config.toml", "/etc/polkit-1/rules.d/50-noctalia-gr
 ## 发现规则
 
 - `plugins/` 顶层**只认目录**——每个子目录即一个插件；散落文件不是插件（死刑断言守卫顶层无文件）；
-- 「只有 manifest、无配置」的包目录不是插件——住根 `catalog.toml`（KM3.5 死刑断言守卫）；
+- 「只有 manifest」的目录也是插件（仅包声明，`deploy = false`，R0-2 catalog 并轨）；
 - `manifest.toml`、`__pycache__`、`hooks/` 是仓库元数据，永不落进 `~/.config`。
 
 ## 边界（含声明式边界，原 declarative 页并入）
@@ -173,6 +180,6 @@ system_paths = ["/etc/greetd/config.toml", "/etc/polkit-1/rules.d/50-noctalia-gr
 
 声明式与命令式的分界：仓库 `plugins/` = 期望状态，`~/.config` = 当前状态，
 `atomic_replace_item` = 对账器，Dunder = 增量保留，snapshot/rollback = 状态存取，
-active 预设名 = state 文件里的显式期望——这半边是声明式。依赖安装、主题同步、
+账本里的活动形态 = 显式期望——这半边是声明式。依赖安装、主题同步、
 输入法重载是命令式副作用，由对应入口负责；安装可选软件只装包，不自动激活插件。
 明确拒绝的规则清单（避免熵增）详见 [delayed-decisions](delayed-decisions.md) 与 [archive/agent-rules-provenance](archive/agent-rules-provenance.md)。

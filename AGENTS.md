@@ -21,11 +21,11 @@
 
 | 部署引擎 / 插件模型 (`nyxuri/deploy/`, `plugins/`) | `overview.md`, `plugin-model.md`, `file-preservation.md` | `python3 -m unittest tests/deploy/test_deploy.py tests/test_plugin_model.py` + 沙箱部署 |
 | 内核 / 插件事务 (`nyxuri/kernel/`) | `plugin-model.md` | `python3 -m unittest tests/kernel/test_transaction.py` |
-| 包管理 / 供给 (`nyxuri/pkg/`, `catalog.toml`) | `manifest-schema.md`（catalog 同源）, `delayed-decisions.md` | `python3 -m unittest tests/pkg/` |
+| 包管理 / 供给 (`nyxuri/pkg/`, plugins-only 声明) | `manifest-schema.md`（可选供给节）, `delayed-decisions.md` | `python3 -m unittest tests/pkg/` |
 | 状态 / 快照 (`nyxuri/state/`) | `state-ops.md` | `python3 -m unittest tests/state/` |
 | CLI 命令 / 流程编排 (`cli.py`, `nyxuri/installer/`) | `operation-map.md`, `manifest-schema.md` | `python3 -m unittest tests/test_cli.py tests/test_ai_specs.py` |
 | 终端 UI / 桌面能力 (`tui.py`, `nyxuri/desktop/`) | `tui-charter.md` | 交互冒烟，检查退出 trap |
-| 预设机制 (`deploy/preset.py` + `desktop/presets.py`) | `preset-mechanism.md` | `python3 -m unittest tests/deploy/test_preset.py` |
+| 形态机制 (`deploy/forms.py` + `desktop/forms.py`) | `forms.md`, `plugin-model.md` | `python3 -m unittest tests/deploy/test_forms.py tests/kernel/test_transaction.py` |
 | 双语文案 / 提示信息 (`translations.toml`, `core.py`) | `i18n.md`, `writing-voice.md` | `python3 -m unittest tests/test_i18n.py` |
 | 文档体系 (`llms-wiki/`, `notes/`, `ROADMAP*`) | `docs-charter.md` | `python3 -m unittest tests/test_ai_specs.py` |
 | Nyxuri Shell (`shell/`) | `shell-rules` (`shell/AGENTS.md`), `shell/ROADMAP.md`, `llms-wiki/shell/` | `python3 -m unittest tests/shell/` + `compileall` |

@@ -1,6 +1,6 @@
 ### English
-- [Units & Configuration](Configuration)
-- [Presets & Parts](Presets)
+- [Plugins & Configuration](Configuration)
+- [Forms & Slot Axes](Forms)
 - [Keybindings](Keybindings)
 - [CLI Reference](CLI-Reference)
 - [Troubleshooting](Troubleshooting)
@@ -8,8 +8,8 @@
 ---
 
 ### 简体中文
-- [单元架构与自定义](Configuration-zh)
-- [预设与零件体系](Presets-zh)
+- [插件架构与自定义](Configuration-zh)
+- [形态与槽位轴](Forms-zh)
 - [快捷键全景图](Keybindings-zh)
 - [CLI 命令参考手册](CLI-Reference-zh)
 - [常见故障排除指南](Troubleshooting-zh)

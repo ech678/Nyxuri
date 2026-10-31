@@ -20,7 +20,7 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 | 站 | 交付 | 状态 |
 | --- | --- | --- |
 | G0 | 修复 GitHub 已知问题：可独立修的立即修，架构根因随 R0 兑现后关闭回填 | 可独立修已落地（#144 #146 关闭回填）；余项随 R0-3 / R0-5 |
-| R0 | 引擎收敛：概念定名 Plugin/插件 + 杀词并轨 + 单一激活管线 + 声明贯通 + 减法外迁 | 进行中（R0-1 收口：plugins/ 正名 + 标识符/文案换轨 + plugin-model 改写；下一站 R0-2 杀词并轨） |
+| R0 | 引擎收敛：概念定名 Plugin/插件 + 杀词并轨 + 单一激活管线 + 声明贯通 + 减法外迁 | 进行中（R0-1 + R0-2 收口：正名 + 形态并轨 + use 动词 + catalog 并轨 + 文档同步；下一站 R0-3 单一激活管线） |
 | S0 | Shell 骨架整抄 Omarchy：小写五件套 + 运行时插件注册表 + 设置去中心化 | 待开始 |
 | S1 | 第三方插件生命周期：协议 1:1 + 四动词 + 所有权账本回植 | 待开始 |
 | T4 | Shell 可控性与透明化（开工时立细则） | 待开始 |
@@ -47,16 +47,23 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
   shell 侧随 S0）；账本键 `units.*` 提供一次性迁移（老安装升级路径）；
   [plugin-model](llms-wiki/plugin-model.md) 随本站改写；术语权威表述见
   [vision](llms-wiki/vision.md) §1。
-- **R0-2 杀词并轨**：预设 + 零件合并为插件的**形态字段**（`use` 动词承载；
-  `preset` 命令留一版本周期 deprecated 别名）；`presets/<app>.active` 双写退役
-  （只读兼容一版本周期后删除）；「源」概念删除（git URL 即源）；市场/工坊词退役；
-  `catalog.toml` 并入各插件 manifest `packages`（deps 菜单改聚合 manifest）；
-  保险库（Vault）降级为 off 的内部机制、用户文档不再教学——备份对名词只剩「快照」；
-  `__custom__` 保留为冻结协议、撤销概念地位（只在模板作者文档出现）。
-  一条 apply 路径替代 preset + part 两条（`_reconcile_active_parts` 旁路退役）。
+- **R0-2 杀词并轨**（已收口）：预设 + 零件合并为插件的**形态字段**——manifest
+  `[presets]`/`[parts]` 并轨 `[forms]` 单节、账本 `preset` 字段改名 `form` + 顶层
+  `forms` 槽位字典（一次性迁移）、`deploy/preset.py` → `forms.py`、`use` 动词上位
+  （`preset` 命令与 `on --preset` 降级 deprecated 别名，一版周期）；`presets/<app>.active`
+  双写退役（只读采纳一版周期，用户形态目录 `nyx_dir/presets` → `forms` 一次性迁移）；
+  「源」概念删除（plugin-model §2 三词定案）；市场/工坊词退役（含 wiki 比喻改写
+  「桌面插件引擎」）；`catalog.toml` 并轨——18 条「装但不部署」声明升格 manifest-only
+  插件（`deploy = false` 显式声明压过内容扫描，deps 菜单单源聚合 manifest）；
+  保险库降级为 off 的内部机制、用户文案只剩「快照 / 收存」；`__custom__` 退出用户
+  文档教学（模板作者文档保留冻结协议）；一条 apply 路径吃两轴
+  （`_reconcile_active_parts` 旁路退役为 `replay_active_forms` 同路径重放）。
 - **R0-3 单一激活管线**：启用一个插件的步骤清单只留 transaction 一条——渲染
   phase 入事务、插件形态矩阵（runtime / merge / atomic / hook-only）manifest 化、
   安装器组件勾选改派发事务、壁纸包收编 wallpapers 声明式钩子。
+  兼容清扫同站执法（R0-2 一版周期期满）：`preset` 命令别名与 `on --preset` 旗标、
+  `.active` marker 只读采纳 shim、read_ledger 遗留迁移代码（units→plugins、
+  preset→form、presets/parts→forms）。
   验收 = #143 / #145 / #147 / #149 关闭。
 - **R0-4 声明贯通与边界校验**：manifest 路径词汇 XDG 化（图片目录三处表达合一）；
   theme 副作用的包依赖声明（#146 根因）；叶名 / containment 校验进引擎
@@ -67,8 +74,8 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
   `tests/market/` 残留删除；本地脏区清理（qmlls.ini 悬空链、packaging 构建残留、
   greeter hooks `__pycache__`）；本地 `pr-*` 分支清理，远端 `archive/*` 分支
   随 T2 重启决策定去留。
-- **R0-6 文档对齐**：`plugin-model` / `preset-mechanism` / `file-preservation`
-  三页随杀词合并改写；失实记录修正——旧卷「Cava/歌词/窗口预览死代码已清理」
+- **R0-6 文档对齐**：`plugin-model` / `forms`（原 preset-mechanism）/ `manifest-schema`
+  已随 R0-2 改写同步；剩余失实记录修正——旧卷「Cava/歌词/窗口预览死代码已清理」
   与代码不符（实况：地图已清，Cava 与歌词活着），清算时以实况描述。
 
 ### S0 · Shell 骨架整抄（Omarchy 协议，小写命名）

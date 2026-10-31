@@ -40,7 +40,7 @@ update 报告逐插件提示 `nyxuri on <plugin>` 收编。
 ## 机制 1：Dunder `__custom__`（模板预留槽的命名约定）
 
 `atomic_replace_item` 在 swap 前扫描 **dest** 里所有名字含 `__custom__` 的文件和目录
-（任意深度），把它们的当前内容继承进新部署的 tmp 目录。与 src 是哪个预设**无关**——
+（任意深度），把它们的当前内容继承进新部署的 tmp 目录。与 src 是哪个形态**无关**——
 不管切到 transparent 还是 default，dest 里的 `__custom__` 都原样保留。
 `preserve_custom=False` 是回滚的精确恢复模式，不继承当前配置的自定义内容。
 
@@ -102,7 +102,7 @@ carry 吞掉按名保留）。
 
 ## 存储路径与命名边界
 
-Nyxuri 元数据只许在 `~/.config/nyxuri/`（backups、presets、active 状态、hooks）。
+Nyxuri 元数据只许在 `~/.config/nyxuri/`（backups、用户形态、hooks）。
 `~/.config/<app>/` 里不塞 Nyxuri 自己的东西——`__custom__` 是约定保留名，属 app 配置一部分，
 不算"拉屎"。`manifest.toml` 是仓库元数据，deploy 时被 `_deploy_ignore_factory` 跳过，不进 dest。
 
@@ -114,6 +114,6 @@ Nyxuri 元数据只许在 `~/.config/nyxuri/`（backups、presets、active 状�
 | `update --force` | ✓ | 无 | False（模板认领 payload 名，自放文件仍搬入） |
 | `install` / `on` | ✓ | 账本 | False（收编：payload 名归引擎，自放文件搬入） |
 | `nyxuri test` | ✓ | 账本 | False（"对齐仓库"语义，含硬件中立清洗） |
-| 预设切换 / 零件切换 / 回滚 | ✗ | — | 原样模板替换（显式选择/精确还原；回滚另传 `preserve_custom=False`） |
+| 形态切换（整型轴 / 槽位轴）/ 回滚 | ✗ | — | 原样模板替换（显式选择/精确还原；回滚另传 `preserve_custom=False`） |
 
 原语默认 `carry=False`：裸调用保持纯模板替换语义，工作流显式选择立场。

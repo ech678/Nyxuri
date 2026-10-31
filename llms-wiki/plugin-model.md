@@ -30,27 +30,28 @@
 ### 空间不变量
 1. **源码绝对只读**：`plugins/` 永远是只读蓝图。严禁在源码树建软链接，严禁向源码树写状态（插件钩子注入 `PYTHONDONTWRITEBYTECODE=1`，钩子引引擎代码也不得落 `__pycache__`）。
 2. **实机白纸洁癖**：未启用的插件在实机 `~/.config/<target>` 必须 100% 抹净，不留任何受管文件或幽灵残留。
-3. **心血零丢失**：插件停用时，用户的自定义文件（`__custom__` 与 `preserve`）原样存入空间 C 的 `vault/<plugin>/`；实机还原纯白，心血在保险库有据可查。
+3. **心血零丢失**：插件停用时，用户的自定义文件（`__custom__` 与 `preserve`）原样存入空间 C 的 `vault/<plugin>/`；实机还原纯白，心血在归档区有据可查。
 
 ---
 
-## 2. 四大法定术语 (The 4 Canonical Primitives)
+## 2. 三词法定术语 (The 3 Canonical Primitives)
 
-全库统一且仅承认以下四个词：
+全库统一且仅承认以下三个词（vision §1 术语纪律，2026-10-31 架构重塑卷定案）：
 
 | 术语 | 英文 | 本质定义 | 物理承载 | 行为边界 |
 |---|---|---|---|---|
-| **插件** | `Plugin` | 桌面上**一切可独立开关**的原子能力实体。 | `plugins/<plugin>/` 目录 | 拥有独立的生命周期与状态，可声明依赖、文件与预设。 |
+| **插件** | `Plugin` | 桌面上**一切可独立开关**的原子能力实体。 | `plugins/<plugin>/` 目录 | 拥有独立的生命周期与状态，可声明依赖、文件与形态。 |
 | **内核** | `Kernel` | Nyxuri 常驻骨架，负责编排与记账（纯 Python 标库）。 | `nyxuri/kernel/{registry, resolver, transaction, ledger}` | **内核不是插件**，不可插件化、不可开关，是承载一切的物理底座。 |
-| **源** | `Source` | 插件的供给方与索引来源。 | 本地抽象 `local:builtin`（对应 `plugins/`） | 本阶段仅维持单一本地内置源，推迟网络多源。 |
 | **manifest** | `Manifest` | 插件的自描述规格书。全库统称 `manifest.toml`。 | `plugins/<plugin>/manifest.toml` | 纯声明式静态元数据，**全字段可选，无文件 = 全默认**。 |
+
+「源（Source）」概念已随 R0-2 删除——git URL 即源（S1 落地时兑现），引擎不设供给方抽象。
 
 ### 严正排除项
 * **系统软件包（pacman / AUR / Flatpak 包）**：不是插件！它们只是插件声明书里写的 `dependencies`。
 * **仅包声明插件（packages-only，R0-2 catalog 并轨）**：是插件！`nautilus`、`qq` 这类
-  「装但不部署」的声明住各自 `plugins/<name>/manifest.toml`（只有 packages / label /
-  category / detect，无部署物、无生活区）；`on` = 装包 + 落账，`off` = 纯落账——
-  与 runtime 插件同形，但拥有真实的包世界投影（deps apps 菜单与安装器）。
+  「装但不部署」的声明住各自 `plugins/<name>/manifest.toml`（`deploy = false` 显式声明 +
+  packages / label / category / detect，无部署物、无生活区）；`on` = 装包 + 落账，
+  `off` = 纯落账——与 runtime 插件同形，但拥有真实的包世界投影（deps apps 菜单与安装器）。
   原 KM3.5 的根 `catalog.toml` 已随 R0-2 并轨处决（见 §7 死刑清单）。
 
 ### 内核分层契约（依赖方向冻结）
@@ -76,19 +77,19 @@ transaction（编排：唯一可触碰副作用的模块）
 
 ## 3. 正交模型与状态机 (Orthogonal State Machine)
 
-插件与预设各管各的，两轴严格垂直正交：
+插件与形态各管各的，两轴严格垂直正交（形态由 `use` 动词承载，R0-2 杀词并轨）：
 * **开关状态（横轴，存在性）**：用不用该软件？（`enabled` ↔ `disabled`）
-* **外观形态（纵轴，呈现参数）**：软件长什么样？（`preset` / `parts`）
+* **外观形态（纵轴，呈现参数）**：软件长什么样？（整型形态 + 槽位轴，见 [forms](forms.md)）
 
 ```
-                [ Disabled ] (停用态：实机无文件，自定义配置存 Vault)
+                [ Disabled ] (停用态：实机无文件，自定义配置收存)
                      │
            on / enable       off / disable
          (预检清单与安装)   (归档抹净还原白纸)
                      ▼
                 [ Enabled ]  (启用态：实机存在配置，服务活跃)
                      │
-                     └── 内部形态切换：preset / parts（不改变 Enabled 状态）
+                     └── 内部形态切换：use（不改变 Enabled 状态）
 ```
 
 ### 迁移事务规则
@@ -115,9 +116,9 @@ transaction（编排：唯一可触碰副作用的模块）
 | 字段 | 类型 | 含义 |
 |---|---|---|
 | `state` | `enabled` / `disabled` | 开关轴唯一状态 |
-| `preset` | `string` | 形态轴当前选择（预设或零件） |
+| `form` | `string` | 整型形态轴当前选择（R0-2 由 `preset` 改名迁移） |
 | `files` | `map<相对路径, sha256>` | 受管文件哈希快照，`Drifted` 判定依据 |
-| `vault` | `路径?` | 停用时自定义文件的 Vault 归档位置，`disabled` 时必填 |
+| `vault` | `路径?` | 停用时自定义文件的归档位置；有归档物才落路径（R0-2 修订：`use`-only 记录为 null） |
 | `updated` | `ISO 时间戳` | 最近一次事务落账时间 |
 
 插件记录统一挂在 `state.json` 顶层的 `plugins` 键下，以插件 ID 为键（R0-1 前的老账本
@@ -153,7 +154,7 @@ XDG 图片目录下的 `Wallpapers`，与 Noctalia、壁纸选择器、doctor �
 落下的文件；`off` 只撤回快照文件，pack、用户自有壁纸等外来内容原地幸存并在报告
 列明（`foreign-left`），目录本身只在清空后消失；doctor 对停用 merge 插件的
 Ghost 判据 = 蓝图具名文件残留，共享目录因外来内容存在不构成 Ghost。merge 插件
-同样无 Vault 进出、不支持 presets/parts。
+同样无 Vault 进出、不支持形态轴。
 
 ---
 
@@ -183,13 +184,11 @@ dependencies = []
 preserve = ["monitor.kdl"]
 chmod = ["scripts/*.sh"]
 
-# 预设与重载命令
-[presets]
-default = "default"
+# 形态轴（整型轴旋钮 + 槽位轴声明，R0-2 并轨单节）
+[forms]
 reload = ["niri", "msg", "action", "reload-config"]
 
-# 通用零件插槽
-[parts.effects]
+[forms.effects]
 target = "effects_normal.kdl"
 source_dir = "effects"
 default = "default"
@@ -219,8 +218,8 @@ manifest 只声明上述字段，不追求覆盖一切。插件的外部副作�
 # 1. 查看全景清单或单个详情
 nyxuri list [plugin]
 
-# 2. 开启插件（支持指定预设）
-nyxuri on <plugin> [--preset <p>]     # 等价: enable
+# 2. 开启插件（支持指定形态）
+nyxuri on <plugin> [--form <f>]       # 等价: enable；--preset 为 deprecated 别名
 
 # 3. 关闭插件（默认拒绝级联，显式 --cascade 才级联关闭下游依赖）
 nyxuri off <plugin> [--cascade]       # 等价: disable
@@ -304,13 +303,13 @@ deploy/deps 的包世界（`discover_manifest_apps`）只扫 `plugins/`，Shell 
 |---|---|---|
 | `repo_dir` | 源码所在地（cache / clone / system 三选一，谁被跑谁赢） | `~/.cache/nyxuri` / clone 路径 / `/usr/share/nyxuri` |
 | `config_dir` | 部署目标，恒定 | `~/.config` |
-| `nyx_dir` | Nyxuri 自己的家：backups / presets / active / hooks | `~/.config/nyxuri` |
+| `nyx_dir` | Nyxuri 自己的家：backups / 用户形态 / hooks | `~/.config/nyxuri` |
 | `state_dir` | 运行时状态账本（`state.json`）与瞬态（lock + log） | `~/.local/state/nyxuri`（XDG_STATE_HOME） |
 | `plugins_src` | 仓库插件蓝图源（原 `configs_src`） | `repo_dir/plugins` |
-| `presets_dir` | 用户预设 + active 状态 | `nyx_dir/presets` |
+| `forms_dir` | 用户私有形态存储 | `nyx_dir/forms`（R0-2 从 `nyx_dir/presets` 一次性迁移） |
 | `hooks_dir` | 用户自定义部署后置钩子脚本 | `nyx_dir/hooks` |
 
 边界规则：Nyxuri 元数据**只许在 `~/.config/nyxuri/`**，不许往 `~/.config/<plugin>/`
 里塞 Nyxuri 自己的东西（`__custom__` 是约定保留名，属插件配置的一部分；`manifest.toml`
-是仓库元数据，部署时被跳过）。`~/.config/nyxuri/` 放用户数据（backups、presets）；
+是仓库元数据，部署时被跳过）。`~/.config/nyxuri/` 放用户数据（backups、forms）；
 `~/.local/state/nyxuri/` 放运行时账本与瞬态（lock、log）。不混用。

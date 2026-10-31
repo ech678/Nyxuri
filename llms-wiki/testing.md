@@ -37,7 +37,7 @@ argv[0]（shebang 直启下是解释器名，不是脚本名），验证恒假�
 
 | 功能领域 | 契约与测试形状 | 测试文件 |
 |---|---|---|
-| 预设与通用零件插槽 | 四分支解析、写时序、零件热插拔、`_reconcile_active_parts` 防覆写、账本写入 | `tests/deploy/test_preset.py` |
+| 形态机制（整型轴 + 槽位轴） | 四分支解析、写时序、槽位热插拔、单一 apply 路径重放、账本写入 | `tests/deploy/test_forms.py` |
 | 桌面外壳路由与网关 | `active_shell` 路由、自研 Shell 崩溃回退告警、账本记录 | `tests/shell/test_shell.py` |
 | 线性迁移与品牌重命名 | 历史 `NyxNiri` 小写迁移、静态 Tombstone 孤儿清理、软链接自愈 | `tests/deploy/test_migrations.py` |
 | Fcitx5 与输入法生态 | 雾凇方案挂载与预编译、皮肤解耦激活、深浅切换无损跟随、对等卸载 | `tests/desktop/test_fcitx.py` |
@@ -76,5 +76,5 @@ argv[0]（shebang 直启下是解释器名，不是脚本名），验证恒假�
   临时插件做端到端断言（塞入 → 发现 → 启用 → 移除，全程零宿主文件改动），
   不得以目录存在或字符串匹配充当证明。
 - **契约宣称配行为断言**：wiki 写明的账本字段语义、状态机分支，测试断到同一级别
-  （范式：`tests/test_ai_specs.py` 的 presets/parts 契约测试）——链接门禁查得出
+  （范式：`tests/test_ai_specs.py` 的形态契约测试）——链接门禁查得出
   死链，查不出语义失实。

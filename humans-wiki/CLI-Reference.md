@@ -4,18 +4,19 @@
 
 ---
 
-## Units (the market verbs)
+## Plugin verbs
 
 | Command | Description |
 | :--- | :--- |
-| `nyxuri list [unit]` | Every unit with its switch state and active preset, or one unit in detail |
-| `nyxuri on <unit> [--preset <name>]` | Enable a unit (dependencies and missing packages disclosed first); same as `enable` |
-| `nyxuri off <unit> [--cascade]` | Disable a unit — custom files go to the vault, managed files wiped; same as `disable` |
-| `nyxuri doctor [unit]` | Three-state reconciliation (`Synced` / `Drifted` / `Ghost`) plus a system checkup |
+| `nyxuri list [plugin]` | Every plugin with its switch state and active form, or one plugin in detail |
+| `nyxuri on <plugin> [--form <name>]` | Enable a plugin (dependencies and missing packages disclosed first); same as `enable`; `--preset` is the deprecated alias |
+| `nyxuri off <plugin> [--cascade]` | Disable a plugin — custom files archived, managed files wiped; same as `disable` |
+| `nyxuri use <plugin> [list\|<form>\|save\|edit\|delete\|slots\|slot <axis> <name>]` | Switch / manage forms (see [Forms & Slot Axes](Forms)); `preset` is the deprecated alias |
+| `nyxuri doctor [plugin]` | Three-state reconciliation (`Synced` / `Drifted` / `Ghost`) plus a system checkup |
 
-Everything on the desktop is a unit — including wallpapers: `nyxuri on wallpapers`
+Everything on the desktop is a plugin — including wallpapers: `nyxuri on wallpapers`
 deploys the built-in fallback into `~/Pictures/Wallpapers`; the full video pack is
-user-domain content installed via `units/wallpapers/hooks/install-pack`.
+user-domain content installed via `plugins/wallpapers/hooks/install-pack`.
 
 ---
 
@@ -23,10 +24,8 @@ user-domain content installed via `units/wallpapers/hooks/install-pack`.
 
 | Command | Description |
 | :--- | :--- |
-| `nyxuri install [full\|config]` | Legacy full pipeline (configs + wallpapers unit + hook replay), or configs only |
+| `nyxuri install [full\|config]` | Legacy full pipeline (configs + wallpapers plugin + hook replay), or configs only |
 | `nyxuri update [--force\|--no-deploy] [--to <tag\|commit>]` | Update source; force config deployment or skip it; pin a version |
-| `nyxuri preset <app> [list\|apply <name>\|save <name>\|edit <name>\|delete <name>]` | Switch / manage presets |
-| `nyxuri preset <app> [parts\|part <slot> <name>]` | Inspect / hot-swap component parts (effects, glow, …) |
 | `nyxuri theme [toggle\|dark\|light\|sync\|status]` | Switch or sync the dark/light axis |
 | `nyxuri shell [get\|set <noctalia\|nyxuri-shell> [bin_path]\|switch [<target> [bin_path]]\|status]` | Inspect or hot-switch the desktop shell slot (experimental) |
 
@@ -36,7 +35,7 @@ user-domain content installed via `units/wallpapers/hooks/install-pack`.
 
 | Command | Description |
 | :--- | :--- |
-| `nyxuri deps [core\|apps]` | Core dependency checklist, or the recommended-software menu (catalog + optional units) |
+| `nyxuri deps [core\|apps]` | Core dependency checklist, or the everyday-apps checklist (Nautilus / Steam and 16 more — all plugin declarations) |
 | `nyxuri pkg <install\|upgrade\|remove\|search\|info\|installed>` | Direct package management; search accepts `aur` / `pac` prefixes |
 | `nyxuri clean [-n] [--only <tasks>]` | Cache sweeper; `-n` previews only |
 
@@ -57,7 +56,7 @@ user-domain content installed via `units/wallpapers/hooks/install-pack`.
 
 | Command | Description |
 | :--- | :--- |
-| `nyxuri doctor [unit]` | Unit reconciliation + dependency and system health check |
+| `nyxuri doctor [plugin]` | Plugin reconciliation + dependency and system health check |
 | `nyxuri bug` | Export a diagnostic report |
 | `nyxuri test` | Developer sandbox deploy (no backup, keeps monitor.kdl) |
 | `nyxuri uninstall [--all\|standard\|restore\|purge]` | Checkbox uninstall — pick what gets cleaned (or run standard, restore, purge, --all directly) |
@@ -69,8 +68,8 @@ user-domain content installed via `units/wallpapers/hooks/install-pack`.
 
 `deploy` `backup` `restore` `remove` `purge` `recommended` `apps` `wp` `wallpapers`
 `report` and the module verbs `greeter` `fcitx` `gtk` `fisher` are gone — they are
-plain unknown commands now. Use the unit verbs (`on` / `off`) and the state verbs
-(`snapshot` / `rollback` / `uninstall`) instead.
+plain unknown commands now. Use the plugin verbs (`on` / `off` / `use`) and the state
+verbs (`snapshot` / `rollback` / `uninstall`) instead.
 
 ---
 

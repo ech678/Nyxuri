@@ -15,9 +15,9 @@
 | 事项 | 原触发 | 实际 |
 |---|---|---|
 | **CLI 菜单与流程分离** | 阶段二职责收束 | `cli.py` 保留命令路由，`menus.py` 管菜单，`workflows.py` 管安装与更新编排 |
-| **通用零件插槽与底版继承** | 预设差异细粒度化、按需局部替换 | **已落地**。`atomic_replace_item` 支持底版继承；`manifest.toml` 支持 `[parts.<slot>]` 声明通用零件插槽（如 Niri 的 `effects` 与 `glow` 均为独立热插拔零件，无需重载全部配置）。详见 [preset-mechanism](preset-mechanism.md) 与 [manifest-schema](manifest-schema.md) |
+| **形态槽位轴与底版继承** | 形态差异细粒度化、按需局部替换 | **已落地**（R0-2 并轨为形态字段）。`atomic_replace_item` 支持底版继承；`manifest.toml` 在 `[forms]` 单节声明槽位轴（如 Niri 的 `effects` 与 `glow` 均为独立热插拔轴，无需重载全部配置）。详见 [forms](forms.md) 与 [manifest-schema](manifest-schema.md) |
 | **子目录分组**（deploy/state/modules 子包） | >28 文件 或 某子领域 >5 文件 | **已做**。重构前 17 个 .py（< 28 触发未到），但为贯彻子包架构目标主动拆了四个子包。详见 [archive/subpackages](archive/subpackages.md) |
-| **doctor 预设漂移检查** | preset 系统落地后即加 | **已加** `_check_preset_drift`：扫所有 app 的 active 预设是否还在仓库/用户预设目录，给汇总。平时不 update 也能在 doctor 撞见"你的 kitty 透明预设已不在上游"。符合扩展指南（写 `_check_xxx` append 到 `DOCTOR_CHECKS`，不碰 `run_doctor`） |
+| **doctor 形态漂移检查** | 形态系统落地后即加 | **已加** `_check_form_drift`（R0-2 正名）：扫所有插件的活动形态是否还在仓库/用户形态目录，给汇总。平时不 update 也能在 doctor 撞见"你的 kitty transparent 形态已不在上游"。符合扩展指南（写 `_check_xxx` append 到 `DOCTOR_CHECKS`，不碰 `run_doctor`） |
 
 ## `manifest.toml` 字段契约
 

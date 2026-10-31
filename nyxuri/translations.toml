@@ -25,8 +25,8 @@ zh = "应用配置"
 en = "Apply configs"
 
 [menu_opt_preset]
-zh = "切换预设"
-en = "Switch preset"
+zh = "切换形态"
+en = "Switch form"
 
 [menu_opt2]
 zh = "软件与依赖"
@@ -361,8 +361,8 @@ zh = "~/.config/<{0} 个 app 配置>"
 en = "~/.config/<{0} app configs>"
 
 [uninstall_item_nyx_dir]
-zh = "~/.config/{STORAGE_NAME}/  (快照 + 预设)"
-en = "~/.config/{STORAGE_NAME}/  (snapshots + presets)"
+zh = "~/.config/{STORAGE_NAME}/  (快照 + 形态)"
+en = "~/.config/{STORAGE_NAME}/  (snapshots + forms)"
 
 [uninstall_item_archives]
 zh = "~/.config/{PROJECT_NAME}_archive_*  (历史归档)"
@@ -950,23 +950,23 @@ en = "{Colors.BOLD_RED}[✗] Invalid arguments. Usage: {0}{Colors.RESET}"
 
 
 [cli_help]
-zh = """{0} 桌面插件市场 ({1})
+zh = """{0} 桌面插件引擎 ({1})
 用法: {1} [命令] [参数]
 
 插件动词（插件 = 一切可独立开关的桌面能力）:
   list [插件]                        全景清单，或单个插件的详情
-  on <插件> [--preset <名称>]        启用插件（含依赖闭包与包披露，等价 enable）
-  off <插件> [--cascade]             停用插件（自定义入保险库，实机抹白，等价 disable）
+  on <插件> [--form <形态>]          启用插件（含依赖闭包与包披露，等价 enable）
+  off <插件> [--cascade]             停用插件（自定义文件收存，实机抹白，等价 disable）
+  use <插件> [list|<形态>|save|edit|delete|slots|slot <轴> <变体>]  切换或管理形态
   doctor [插件]                      三态对账（Synced/Drifted/Ghost）+ 系统体检
 
 系统与领域:
   install [full|config]              应用配置（full = 含壁纸与钩子重放）
   update [--force|--no-deploy] [--to <tag|commit>]  更新源码，并按需应用配置
-  preset <app> [list|apply <名>|save <名>|edit <名>|delete <名>]  切换或管理预设
-  preset <app> [parts|part <插槽> <名称>]  查看或切换零件插槽变体
+  use <插件> [list|<形态>|save|edit|delete|slots|slot <轴> <变体>]  切换或管理形态
   shell [get|set|switch|status]      查看或切换桌面外壳插槽（实验性）
   theme [toggle|dark|light|sync|status]  原生切换或同步深浅主题
-  deps [core|apps]                   核心依赖勾选单，或常用软件目录（catalog 同源）
+  deps [core|apps]                   核心依赖勾选单，或常用软件勾选单（插件声明聚合）
   pkg <install|upgrade|remove|search|info|installed>  包管理直通
   clean [-n] [--only <任务>]         缓存清理（-n 仅预览）
   snapshot [备注|list|delete [序号]] 创建、列出或删除配置快照
@@ -977,20 +977,19 @@ zh = """{0} 桌面插件市场 ({1})
   help                               显示本帮助
   无参数                             打开控制面板
 """
-en = """{0} desktop plugin market ({1})
+en = """{0} desktop plugin engine ({1})
 Usage: {1} [command] [args]
 
 Plugin verbs (a plugin = any independently switchable desktop capability):
   list [plugin]                        Full inventory, or one plugin in detail
-  on <plugin> [--preset <name>]        Enable a plugin (dependency closure + package disclosure, same as enable)
-  off <plugin> [--cascade]             Disable a plugin (customs to the Vault, living area wiped, same as disable)
+  on <plugin> [--form <name>]          Enable a plugin (dependency closure + package disclosure, same as enable)
+  off <plugin> [--cascade]             Disable a plugin (customs archived, living area wiped, same as disable)
   doctor [plugin]                      Three-state audit (Synced/Drifted/Ghost) + system checkup
 
 System & Domains:
   install [full|config]              Apply configs (full = wallpapers + hook replay)
   update [--force|--no-deploy] [--to <tag|commit>]  Update source, optionally apply configs
-  preset <app> [list|apply <n>|save <n>|edit <n>|delete <n>]  Switch or manage presets
-  preset <app> [parts|part <slot> <name>]  Inspect or hot-swap component parts
+  use <plugin> [list|<form>|save <n>|edit <n>|delete <n>|slots|slot <axis> <n>]  Switch or manage forms
   shell [get|set|switch|status]      Inspect or switch desktop shell slot (experimental)
   theme [toggle|dark|light|sync|status]  Switch or sync light/dark theme
   deps [core|apps]                   Core dependencies, or recommended apps (catalog-backed)
@@ -1006,8 +1005,8 @@ System & Domains:
 """
 
 [uninstall_group_plugins]
-zh = "插件停用（实机抹白，自定义入保险库）"
-en = "Plugin off (wipe to white, customs to Vault)"
+zh = "插件停用（实机抹白，自定义文件收存）"
+en = "Plugin off (wipe to white, customs to Archive)"
 
 [uninstall_item_plugin]
 zh = "nyxuri off {0}"
@@ -1074,8 +1073,8 @@ zh = "{0}: 被已启用的依赖方阻断: {1}"
 en = "{0}: blocked by enabled dependents: {1}"
 
 [cli_step_archived]
-zh = "归档 {0} 个自定义文件入保险库"
-en = "archived {0} custom file(s) to the Vault"
+zh = "收存 {0} 个自定义文件"
+en = "archived {0} custom file(s) to the Archive"
 
 [cli_step_foreign]
 zh = "外部文件幸存未吞: {0}"
@@ -1086,8 +1085,8 @@ zh = "包保留在系统: {0}"
 en = "package(s) kept on the system: {0}"
 
 [cli_list_header]
-zh = "{Colors.BOLD}插件                          状态          预设{Colors.RESET}"
-en = "{Colors.BOLD}Plugin                          State         Preset{Colors.RESET}"
+zh = "{Colors.BOLD}插件                          状态          形态{Colors.RESET}"
+en = "{Colors.BOLD}Plugin                          State         Form{Colors.RESET}"
 
 [cli_list_none]
 zh = "蓝图为空：plugins/ 下没有插件。"
@@ -1130,8 +1129,8 @@ zh = "当前形态"
 en = "Form"
 
 [cli_detail_vault]
-zh = "保险库"
-en = "Vault"
+zh = "归档"
+en = "Archive"
 
 [cli_detail_updated]
 zh = "最近事务"
@@ -1423,9 +1422,9 @@ zh = "{Colors.BOLD_YELLOW}[!] 检测到 ~/.local/bin/{CLI_CMD} 遮蔽了系统�
 en = "{Colors.BOLD_YELLOW}[!] ~/.local/bin/{CLI_CMD} is shadowing the system package (/usr/bin/{CLI_CMD}). Remove the stale link to use the package: rm ~/.local/bin/{CLI_CMD}{Colors.RESET}"
 
 [preset_list_title]
-zh = """\n  {Colors.BOLD_CYAN}── {Colors.RESET}{0} 预设{Colors.BOLD_CYAN} ──{Colors.RESET}  ({Colors.DIM}* = 当前活动{Colors.RESET})
+zh = """\n  {Colors.BOLD_CYAN}── {Colors.RESET}{0} 形态{Colors.BOLD_CYAN} ──{Colors.RESET}  ({Colors.DIM}* = 当前活动{Colors.RESET})
 """
-en = """\n  {Colors.BOLD_CYAN}── {Colors.RESET}{0} presets{Colors.BOLD_CYAN} ──{Colors.RESET}  ({Colors.DIM}* = active{Colors.RESET})
+en = """\n  {Colors.BOLD_CYAN}── {Colors.RESET}{0} forms{Colors.BOLD_CYAN} ──{Colors.RESET}  ({Colors.DIM}* = active{Colors.RESET})
 """
 
 [preset_src_official]
@@ -1437,62 +1436,62 @@ zh = "用户"
 en = "user"
 
 [preset_applied]
-zh = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 已切换 {0} 预设: {1}"
-en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Switched {0} to preset: {1}"
+zh = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 已切换 {0} 形态: {1}"
+en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Switched {0} to form: {1}"
 
 [preset_apply_failed]
-zh = "  {Colors.BOLD_RED}[✗]{Colors.RESET} 切换 {0} 预设 {1} 失败"
-en = "  {Colors.BOLD_RED}[✗]{Colors.RESET} Failed to apply preset '{1}' to {0}"
+zh = "  {Colors.BOLD_RED}[✗]{Colors.RESET} 切换 {0} 形态 {1} 失败"
+en = "  {Colors.BOLD_RED}[✗]{Colors.RESET} Failed to apply form '{1}' to {0}"
 
 [preset_not_found]
-zh = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} {0} 没有名为 '{1}' 的预设"
-en = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} No preset '{1}' for {0}"
+zh = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} {0} 没有名为 '{1}' 的形态"
+en = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} No form '{1}' for {0}"
 
 [preset_name_reserved]
-zh = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} 预设名 '{0}' 是保留字（apply default = 回默认）"
-en = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} Preset name '{0}' is reserved (apply default = reset)"
+zh = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} 形态名 '{0}' 是保留字（default = 回默认）"
+en = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} Form name '{0}' is reserved (default = reset)"
 
 [preset_official_name_collision]
-zh = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} 预设名 '{0}' 与官方预设重名，请改名"
-en = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} Preset name '{0}' collides with an official preset; rename it"
+zh = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} 形态名 '{0}' 与官方形态重名，请改名"
+en = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} Form name '{0}' collides with an official form; rename it"
 
 [preset_nothing_to_save]
 zh = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} {0} 尚无配置，无可保存"
 en = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} No {0} config to save yet"
 
 [preset_saved]
-zh = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 已保存 {0} 用户预设: {1}"
-en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Saved {0} user preset: {1}"
+zh = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 已保存 {0} 用户形态: {1}"
+en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Saved {0} user form: {1}"
 
 [preset_save_failed]
-zh = "  {Colors.BOLD_RED}[✗]{Colors.RESET} 保存 {0} 预设 '{1}' 失败（原有预设未被改动）"
-en = "  {Colors.BOLD_RED}[✗]{Colors.RESET} Failed to save preset '{1}' for {0} (existing preset left untouched)"
+zh = "  {Colors.BOLD_RED}[✗]{Colors.RESET} 保存 {0} 形态 '{1}' 失败（原有形态未被改动）"
+en = "  {Colors.BOLD_RED}[✗]{Colors.RESET} Failed to save form '{1}' for {0} (existing form left untouched)"
 
 [log_form_replay_failed]
 zh = "  {Colors.BOLD_RED}[✗]{Colors.RESET} {0}: 已记录的槽位变体未能落盘（{1}）"
 en = "  {Colors.BOLD_RED}[✗]{Colors.RESET} {0}: recorded slot variant could not be realized ({1})"
 
 [preset_delete_official_denied]
-zh = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} 预设 '{0}' 是官方预设，无法删除"
-en = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} Preset '{0}' is official, cannot be deleted"
+zh = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} 形态 '{0}' 是官方形态，无法删除"
+en = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} Form '{0}' is official, cannot be deleted"
 
 [preset_deleted]
-zh = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 已删除 {0} 用户预设: {1}"
-en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Deleted {0} user preset: {1}"
+zh = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 已删除 {0} 用户形态: {1}"
+en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Deleted {0} user form: {1}"
 
 [preset_edit_official_denied]
-zh = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} '{0}' 是官方预设，不能编辑（先 save 成用户预设再改）"
-en = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} '{0}' is an official preset, can't edit (save a copy first)"
+zh = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} '{0}' 是官方形态，不能编辑（先 save 成用户形态再改）"
+en = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} '{0}' is an official form, can't edit (save a copy first)"
 
 [preset_edit_notty]
-zh = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} 非交互终端，无法打开编辑器。预设目录: {0}"
-en = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} Non-interactive terminal, can't open editor. Preset dir: {0}"
+zh = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} 非交互终端，无法打开编辑器。形态目录: {0}"
+en = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} Non-interactive terminal, can't open editor. Form dir: {0}"
 
 [preset_edit_opened]
-zh = """  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 已在编辑器打开 {0} 预设 {1}
-  {Colors.DIM}改完重新 `{CLI_CMD} preset {0} apply {1}` 即生效{Colors.RESET}"""
-en = """  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Opened {0} preset {1} in editor
-  {Colors.DIM}Re-run `{CLI_CMD} preset {0} apply {1}` to apply edits{Colors.RESET}"""
+zh = """  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 已在编辑器打开 {0} 形态 {1}
+  {Colors.DIM}改完重新 `{CLI_CMD} use {0} {1}` 即生效{Colors.RESET}"""
+en = """  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Opened {0} form {1} in editor
+  {Colors.DIM}Re-run `{CLI_CMD} use {0} {1}` to apply edits{Colors.RESET}"""
 
 [form_warn_upstream_removed]
 zh = "{Colors.BOLD_YELLOW}[!] {0}: 活动形态 '{1}' 已不在上游（仓库与用户目录均无），回退为默认{Colors.RESET}"
@@ -1505,8 +1504,8 @@ en = """{Colors.BOLD_YELLOW}[!] {0}: active form '{1}' is no longer in the repo;
     {Colors.BOLD_CYAN}Run `{Colors.RESET}{CLI_CMD} use {0} list{Colors.BOLD_CYAN}` to pick a new form{Colors.RESET}"""
 
 [preset_switcher_title]
-zh = "预设管理"
-en = "Preset Management"
+zh = "形态管理"
+en = "Form Management"
 
 [preset_switcher_hint]
 zh = "  {Colors.DARK_GRAY}[Enter/→] 进入右栏   [←/Esc] 返回左栏   [Tab] 双栏切换   [s] 保存   [i] 详情   [q] 退出{Colors.RESET}"
@@ -1521,24 +1520,24 @@ zh = "{Colors.BOLD_GREEN}●{Colors.RESET}"
 en = "{Colors.BOLD_GREEN}●{Colors.RESET}"
 
 [preset_prompt_save_name]
-zh = "▸ 新预设名称 (Esc 取消): "
-en = "▸ New preset name (Esc to cancel): "
+zh = "▸ 新形态名称 (Esc 取消): "
+en = "▸ New form name (Esc to cancel): "
 
 [preset_prompt_delete_confirm]
-zh = "▸ 确认删除用户预设 '{0}'？[y/N]: "
-en = "▸ Delete user preset '{0}'? [y/N]: "
+zh = "▸ 确认删除用户形态 '{0}'？[y/N]: "
+en = "▸ Delete user form '{0}'? [y/N]: "
 
 [preset_toast_applied]
-zh = "{Colors.BOLD_GREEN}[✓] 已应用 {0} 预设: {1}{Colors.RESET}"
-en = "{Colors.BOLD_GREEN}[✓] Applied {0} preset: {1}{Colors.RESET}"
+zh = "{Colors.BOLD_GREEN}[✓] 已应用 {0} 形态: {1}{Colors.RESET}"
+en = "{Colors.BOLD_GREEN}[✓] Applied {0} form: {1}{Colors.RESET}"
 
 [preset_toast_saved]
-zh = "{Colors.BOLD_GREEN}[✓] 已保存 {0} 用户预设: {1}{Colors.RESET}"
-en = "{Colors.BOLD_GREEN}[✓] Saved {0} user preset: {1}{Colors.RESET}"
+zh = "{Colors.BOLD_GREEN}[✓] 已保存 {0} 用户形态: {1}{Colors.RESET}"
+en = "{Colors.BOLD_GREEN}[✓] Saved {0} user form: {1}{Colors.RESET}"
 
 [preset_toast_deleted]
-zh = "{Colors.BOLD_GREEN}[✓] 已删除 {0} 用户预设: {1}{Colors.RESET}"
-en = "{Colors.BOLD_GREEN}[✓] Deleted {0} user preset: {1}{Colors.RESET}"
+zh = "{Colors.BOLD_GREEN}[✓] 已删除 {0} 用户形态: {1}{Colors.RESET}"
+en = "{Colors.BOLD_GREEN}[✓] Deleted {0} user form: {1}{Colors.RESET}"
 
 [preset_info_source]
 zh = "源"
@@ -1556,11 +1555,11 @@ en = "Preserved Files"
 zh = "(无)"
 en = "(none)"
 [preset_part_toast_applied]
-zh = "{Colors.BOLD_GREEN}[✓] 已应用 {0} 零件 [{1}]: {2}{Colors.RESET}"
-en = "{Colors.BOLD_GREEN}[✓] Applied {0} part [{1}]: {2}{Colors.RESET}"
+zh = "{Colors.BOLD_GREEN}[✓] 已切换 {0} 槽位 [{1}]: {2}{Colors.RESET}"
+en = "{Colors.BOLD_GREEN}[✓] Applied {0} slot [{1}]: {2}{Colors.RESET}"
 
 [preset_part_slot_label]
-zh = "零件"
+zh = "槽位轴"
 en = "Part"
 
 [preset_part_target]
@@ -1592,16 +1591,16 @@ zh = "{Colors.BOLD_CYAN}::{Colors.RESET} 插件钩子重放 ({0})"
 en = "{Colors.BOLD_CYAN}::{Colors.RESET} Plugin hook replay ({0})"
 
 [menu_opt_workshop]
-zh = "插件工坊（开关 / 对账）"
-en = "Plugin Workshop (switch / audit)"
+zh = "插件（开关 / 对账）"
+en = "Plugins (switch / audit)"
 
 [menu_group_plugins]
 zh = "── 插件 ──"
 en = "── Plugins ──"
 
 [workshop_title]
-zh = "插件工坊 — 账本投影 · 单一事务路径"
-en = "Plugin Workshop — ledger projection · single transaction path"
+zh = "插件 — 账本投影 · 单一事务路径"
+en = "Plugins — ledger projection · single transaction path"
 
 [workshop_left_header]
 zh = "插件 (状态)"
@@ -1616,9 +1615,9 @@ zh = "[↑/↓] 选择  [o] 启用  [f] 停用  [r] 刷新对账  [q] 返回"
 en = "[↑/↓] Select  [o] On  [f] Off  [r] Refresh audit  [q] Back"
 
 [workshop_back_hint]
-zh = "按任意键返回工坊"
+zh = "按任意键返回插件"
 en = "Press any key to return to the bench"
 
 [workshop_confirm_off]
-zh = "停用该插件?（自定义入保险库，实机抹白）[y/N] "
-en = "Disable this plugin? (customs to Vault, living area wiped) [y/N] "
+zh = "停用该插件?（自定义文件收存，实机抹白）[y/N] "
+en = "Disable this plugin? (customs to Archive, living area wiped) [y/N] "

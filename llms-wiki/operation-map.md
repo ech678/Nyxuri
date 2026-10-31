@@ -23,7 +23,7 @@
 
 | 命令 | 干啥 |
 |---|---|
-| `install [full\|config]` | 旧世界整装流水线（配置 + 壁纸插件 + 钩子重放）；市场化后由 `on <plugin>` 接管 |
+| `install [full\|config]` | 旧世界整装流水线（配置 + 壁纸插件 + 钩子重放）；后由 `on <plugin>` 接管 |
 | `update [--force\|--no-deploy] [--to <tag\|commit>]` | 拉新版本 + 重新部署（KM5：线性迁移机制已清算，账本即真相）；`--to` 锁到指定版本（system 模式 → 提示 pacman）。部署走所有权 carry（#139）：用户改动与自放文件原样搬入、Ghost 插件冻结并提示 `on` 收编；`--force` = 采纳模板侧（payload 名全部认领 + 账本重登记），不是清剿 |
 | `use <plugin> …` | 见上「插件动词」表（形态轴唯一入口；`preset` 为 deprecated 别名） |
 | `theme [toggle\|dark\|light\|sync\|status]` | 原生切换/同步深浅主题（纯 Python 调度 gsettings、GTK settings.ini、Noctalia IPC 与 Kitty 信号） |
