@@ -21,16 +21,33 @@ say() { if _lang_is_zh; then printf '%s' "$1"; else printf '%s' "${2:-$1}"; fi; 
 CACHE_DIR="$HOME/.cache/nyxuri"
 BOOTSTRAP_URL="https://raw.githubusercontent.com/ech678/Nyxuri/main/install.sh"
 
-# Normalize XDG variables to prevent sandboxes (e.g. HOME=$(mktemp -d)) from leaking into the host
-if [ -n "${XDG_STATE_HOME:-}" ] && [[ "$XDG_STATE_HOME" != "$HOME/"* ]]; then
-    export XDG_STATE_HOME="$HOME/.local/state"
-fi
-if [ -n "${XDG_CONFIG_HOME:-}" ] && [[ "$XDG_CONFIG_HOME" != "$HOME/"* ]]; then
-    export XDG_CONFIG_HOME="$HOME/.config"
-fi
-if [ -n "${XDG_CACHE_HOME:-}" ] && [[ "$XDG_CACHE_HOME" != "$HOME/"* ]]; then
-    export XDG_CACHE_HOME="$HOME/.cache"
-fi
+# 尚未获取引擎源码时也必须拒绝不支持的 XDG 布局；校验在 main 中、缓存写入前执行。
+# 这里只使用 Python 标准库，语义与 core.validate_xdg_layout 保持一致。
+validate_bootstrap_xdg_layout() {
+    python3 -I -c '
+import os
+from pathlib import Path
+import sys
+home = Path(os.environ.get("HOME", str(Path.home())))
+defaults = {"XDG_CONFIG_HOME": ".config", "XDG_CACHE_HOME": ".cache",
+            "XDG_DATA_HOME": ".local/share", "XDG_STATE_HOME": ".local/state"}
+for key, suffix in defaults.items():
+    raw = os.environ.get(key, "")
+    if not raw:
+        continue
+    expected = home / suffix
+    try:
+        valid = Path(raw).is_absolute() and Path(raw).resolve() == expected.resolve()
+    except (OSError, RuntimeError, ValueError):
+        valid = False
+    if not valid:
+        print(f"Unsupported {key}={raw!r}. Nyxuri currently requires {str(expected)!r}; "
+              f"unset {key} or set it to this default before retrying.", file=sys.stderr)
+        print(f"不支持 {key}={raw!r}。Nyxuri 当前仅支持默认路径 {str(expected)!r}；"
+              f"请取消设置 {key} 或设为此默认路径后重试。", file=sys.stderr)
+        sys.exit(1)
+'
+}
 
 GIT_MIRROR_REGISTRY=(
     "Official|https://github.com/ech678/Nyxuri.git"
@@ -198,6 +215,9 @@ main() {
             "$OFF" >&2
         exit 1
     fi
+
+    # 布局门禁先于源码 chmod、缓存拉取和迁移；校验失败不尝试修改环境继续安装。
+    validate_bootstrap_xdg_layout || exit 1
 
     # 5. Local repository execution
     if [ -n "$script_dir" ] \

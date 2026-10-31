@@ -20,6 +20,7 @@ import os
 import re
 import subprocess
 import tempfile
+from unittest.mock import patch
 
 
 _GENDEPS = Path(__file__).resolve().parents[2] / "packaging" / "gen-deps.py"
@@ -117,6 +118,19 @@ class TestGenDeps(unittest.TestCase):
         self.assertEqual(len(self.opt_names), len(set(self.opt_names)))
         for pkg, label in self.optdepends:
             self.assertTrue(label, f"optdepends entry {pkg} needs a label")
+
+    def test_ubuntu_runtime_selection_does_not_rewrite_aur_package_metadata(self):
+        # AUR metadata is generated from source declarations, regardless of
+        # the host where the generator happens to run.
+        with patch("nyxuri.pkg.platform.current_platform", return_value="ubuntu"):
+            depends, optdepends = self.gendeps.compute_depends(self.repo_root)
+        names = {name for name, _ in optdepends}
+        self.assertEqual(depends, ["python"])
+        self.assertIn("python-gobject", names)
+        self.assertIn("rime-ice-git", names)
+        self.assertNotIn("python3-gi", names)
+        self.assertNotIn("python3-gi-cairo", names)
+        self.assertNotIn("qml6-module-qtquick-controls", names)
 
     def test_render_and_update_roundtrip(self):
         rendered = self.gendeps._render(self.depends, self.optdepends)

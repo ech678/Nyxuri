@@ -91,28 +91,16 @@ zh = "返回"
 en = "Back"
 
 [status_wallpapers_installed]
-zh = "{Colors.BOLD_GREEN}[已下载]{Colors.RESET}"
-en = "{Colors.BOLD_GREEN}[Downloaded]{Colors.RESET}"
+zh = "{Colors.BOLD_GREEN}[已启用]{Colors.RESET}"
+en = "{Colors.BOLD_GREEN}[Enabled]{Colors.RESET}"
 
 [status_wallpapers_missing]
-zh = "{Colors.BOLD_YELLOW}[未下载]{Colors.RESET}"
-en = "{Colors.BOLD_YELLOW}[Not downloaded]{Colors.RESET}"
+zh = "{Colors.BOLD_YELLOW}[未启用]{Colors.RESET}"
+en = "{Colors.BOLD_YELLOW}[Not enabled]{Colors.RESET}"
 
 [install_cancelled]
 zh = "{Colors.BOLD_BLUE}已取消，未写入配置{Colors.RESET}"
 en = "{Colors.BOLD_BLUE}Cancelled; no configs were written{Colors.RESET}"
-
-[install_step_configs]
-zh = """\n{Colors.BOLD_BLUE}:: [{Colors.BOLD_CYAN}{0}{Colors.BOLD_BLUE}] 安装配置…{Colors.RESET}"""
-en = """\n{Colors.BOLD_BLUE}:: [{Colors.BOLD_CYAN}{0}{Colors.BOLD_BLUE}] Installing configs…{Colors.RESET}"""
-
-[install_step_wallpapers]
-zh = """\n{Colors.BOLD_BLUE}:: [{Colors.BOLD_CYAN}{0}{Colors.BOLD_BLUE}] 安装壁纸…{Colors.RESET}"""
-en = """\n{Colors.BOLD_BLUE}:: [{Colors.BOLD_CYAN}{0}{Colors.BOLD_BLUE}] Installing wallpapers…{Colors.RESET}"""
-
-[install_step_deps]
-zh = """\n{Colors.BOLD_BLUE}:: [{Colors.BOLD_CYAN}{0}{Colors.BOLD_BLUE}] 安装依赖…{Colors.RESET}"""
-en = """\n{Colors.BOLD_BLUE}:: [{Colors.BOLD_CYAN}{0}{Colors.BOLD_BLUE}] Installing dependencies…{Colors.RESET}"""
 
 [summary_title_install]
 zh = "主人，{PROJECT_NAME} 装完了喵~"
@@ -147,16 +135,20 @@ zh = "配置:       安装失败 ({0})"
 en = "Configs:        Failed ({0})"
 
 [summary_item_wallpapers_existing]
-zh = "壁纸:       已就绪"
-en = "Wallpapers:     Ready"
+zh = "默认壁纸:   已启用"
+en = "Bundled wallpapers: Enabled"
 
 [summary_item_wallpapers_failed]
-zh = "壁纸:       启用失败"
-en = "Wallpapers:     Enable failed"
+zh = "默认壁纸:   部署失败"
+en = "Bundled wallpapers: Deploy failed"
 
 [summary_item_wallpapers_skip]
-zh = "壁纸:       已跳过"
-en = "Wallpapers:     Skipped"
+zh = "默认壁纸:   本次未选择"
+en = "Bundled wallpapers: Not selected"
+
+[summary_item_wallpapers_not_run]
+zh = "默认壁纸:   本次未执行"
+en = "Bundled wallpapers: Not run"
 
 [summary_item_deps_ok]
 zh = "系统依赖:   依赖已就绪"
@@ -187,16 +179,64 @@ zh = "控制面板 : 运行 {CLI_CMD}"
 en = "Control Panel : Run {CLI_CMD}"
 
 [distro_unsupported]
-zh = "[!] 未检测到 pacman，当前系统不是 Arch 系发行版"
-en = "[!] pacman not found: this does not look like an Arch-based distribution"
+zh = "[!] 当前发行版缺少受支持的包管理后端（Arch: pacman；Ubuntu: apt-get/dpkg-query）"
+en = "[!] No supported package backend is available (Arch: pacman; Ubuntu: apt-get/dpkg-query)"
 
 [distro_unsupported_hint]
-zh = "依赖安装通过 pacman 与 AUR 完成，在别的发行版上无法自动进行。配置文件仍可手动取用：仓库 units/ 目录下的内容按普通 dotfiles 复制到 ~/.config 即可，壁纸在 units/wallpapers。欢迎来仓库 Issue 说说你的发行版，人多了会考虑支持。"
-en = "{PROJECT_NAME} installs its dependencies through pacman and the AUR, which is not available here. You can still take the configs manually: copy whatever you need from the repository units/ directory into ~/.config like ordinary dotfiles, wallpapers live in units/wallpapers. Feel free to open an Issue and tell us your distro, support may come if there is demand."
+zh = "自动安装支持 Arch 系和 Ubuntu 的现有软件源。请先准备相应包管理器；只部署配置可运行 {CLI_CMD} install config，依赖需自行准备。"
+en = "Automatic installation supports configured sources on Arch-based systems and Ubuntu. Prepare the matching package manager first; use {CLI_CMD} install config to deploy configs with dependencies supplied separately."
 
 [deps_menu_unsupported]
-zh = "[!] 未检测到 pacman，依赖菜单仅适用于 Arch 系发行版。配置可以手动从仓库 units/ 复制到 ~/.config 使用。"
-en = "[!] pacman not found: the dependency menus only apply to Arch-based systems. You can still copy configs manually from the repository units/ directory into ~/.config."
+zh = "[!] 依赖菜单需要当前系统的包管理器（Arch: pacman；Ubuntu: apt-get/dpkg-query）。"
+en = "[!] The dependency menu needs the system package manager (Arch: pacman; Ubuntu: apt-get/dpkg-query)."
+
+[pkg_aur_unsupported]
+zh = "[!] AUR 仅适用于 Arch 系统；Ubuntu 不会安装 AUR 助手或自动编译这些包。"
+en = "[!] AUR is only supported on Arch-based systems; Ubuntu will not install an AUR helper or build these packages."
+
+[pkg_unit_unsupported]
+zh = "{0} 暂不支持当前平台：{1}"
+en = "{0} is unavailable on this platform: {1}"
+
+[pkg_undeclared]
+zh = "[!] 当前平台没有声明这些依赖：{0}"
+en = "[!] These dependencies are not declared for the current platform: {0}"
+
+[pkg_manual_missing]
+zh = "[!] 需要手动提供，已跳过自动安装：{0}。请参阅 Ubuntu 兼容指南中的依赖清单。"
+en = "[!] Supply these manually; automatic installation was skipped: {0}. See the dependency list in the Ubuntu compatibility guide."
+
+[pkg_manual_label]
+zh = "手动提供"
+en = "Manual"
+
+[pkg_source_hint]
+zh = "{0} 依赖来源：{1}"
+en = "{0} dependency source: {1}"
+
+[pkg_unsupported_label]
+zh = "当前平台不支持"
+en = "Unsupported platform"
+
+[pkg_version]
+zh = "{0} 软件包版本：{1}"
+en = "{0} package version: {1}"
+
+[cli_step_hook_failed]
+zh = "钩子未完成：{0}"
+en = "Hook incomplete: {0}"
+
+[pkg_deploy_incomplete]
+zh = "安装已停止；以下依赖尚未满足：{0}"
+en = "Installation stopped; dependencies still missing: {0}"
+
+[update_use_system_package]
+zh = "系统软件包管理器负责更新源码，已跳过 git 更新。请通过安装 Nyxuri 的包管理器升级，再显式部署配置。"
+en = "The system package manager owns this source tree; Git update was skipped. Upgrade Nyxuri with the package manager used to install it, then explicitly deploy configs."
+
+[uninstall_system_package_generic]
+zh = "系统安装的源码包仍然保留。如需删除，请通过安装 Nyxuri 的包管理器卸载。"
+en = "The system-installed source package remains. To remove it, use the package manager that installed Nyxuri."
 
 [summary_action_title]
 zh = """\n  {Colors.BOLD_CYAN}── 下一步 ──{Colors.RESET}
@@ -300,10 +340,6 @@ en = "Cache Cleaner — toggle tasks, Enter to run"
 zh = "  {Colors.DARK_GRAY}[↑/↓/j/k] 移动  [Space] 勾选  [a] 全选  [n] 清空  [Enter] 执行  [Esc/q] 取消{Colors.RESET}"
 en = "  {Colors.DARK_GRAY}[↑/↓/j/k] Move  [Space] Toggle  [a] All  [n] None  [Enter] Run  [Esc/q] Cancel{Colors.RESET}"
 
-[upgrading_selected]
-zh = """\n{Colors.BOLD_BLUE}:: 正在更新选中组件…{Colors.RESET}"""
-en = """\n{Colors.BOLD_BLUE}:: Updating selected components…{Colors.RESET}"""
-
 [master_menu_title]
 zh = """\n  {Colors.BOLD_CYAN}── 选择组件 ──{Colors.RESET}
 """
@@ -315,8 +351,8 @@ zh = "配置: {0}"
 en = "Config: {0}"
 
 [master_item_asset]
-zh = "壁纸包: {0}"
-en = "Wallpapers: {0}"
+zh = "默认壁纸: {0}"
+en = "Bundled wallpapers: {0}"
 
 [master_item_wm_section]
 zh = """\n  {Colors.BOLD_BLUE}── 窗口管理器 (单选) ──{Colors.RESET}"""
@@ -333,10 +369,6 @@ en = """\n  ── Options ──"""
 [master_item_backup]
 zh = "安装前自动创建快照"
 en = "Auto-create snapshot before install"
-
-[diff_viewer_title]
-zh = """\n{Colors.BOLD_CYAN}:: 配置改动（按 q 退出）{Colors.RESET}"""
-en = """\n{Colors.BOLD_CYAN}:: Changes (press q to quit){Colors.RESET}"""
 
 [uninstall_title]
 zh = """\n  {Colors.BOLD_CYAN}── 卸载 ──{Colors.RESET}
@@ -722,21 +754,13 @@ en = "{Colors.DARK_GRAY}No apps selected.{Colors.RESET}"
 zh = "{Colors.BOLD_YELLOW}[!] 需要交互式终端。{Colors.RESET}"
 en = "{Colors.BOLD_YELLOW}[!] An interactive terminal is required.{Colors.RESET}"
 
-[new_deps_detected]
-zh = """\n  {Colors.BOLD_YELLOW}[!] 检测到未安装的依赖:{Colors.RESET} {0}"""
-en = """\n  {Colors.BOLD_YELLOW}[!] Missing dependencies detected:{Colors.RESET} {0}"""
-
-[prompt_install_missing_deps]
-zh = "▸ 是否现在安装？[Y/n]: "
-en = "▸ Install now? [Y/n]: "
-
-[deps_install_skipped]
-zh = "{Colors.DARK_GRAY}已跳过安装。稍后可运行 {CLI_CMD} deps 安装。{Colors.RESET}"
-en = "{Colors.DARK_GRAY}Skipped installation. Run {CLI_CMD} deps to install anytime.{Colors.RESET}"
-
 [greeter_install_failed]
-zh = "{Colors.BOLD_RED}[!] noctalia-greeter 安装失败。稍后运行 {CLI_CMD} greeter install 重试。{Colors.RESET}"
-en = "{Colors.BOLD_RED}[!] Install failed. Retry later with: {CLI_CMD} greeter install{Colors.RESET}"
+zh = "{Colors.BOLD_RED}[!] 未找到可用的 Noctalia Greeter 会话入口。检查软件包后运行 {CLI_CMD} on greeter 重试。{Colors.RESET}"
+en = "{Colors.BOLD_RED}[!] No usable Noctalia Greeter session entry found. Check the packages and retry: {CLI_CMD} on greeter{Colors.RESET}"
+
+[greeter_package_invalid]
+zh = "{Colors.BOLD_RED}[!] Greeter 软件包配置未就绪：{0}。请检查软件包与服务覆盖配置，当前显示管理器未切换。{Colors.RESET}"
+en = "{Colors.BOLD_RED}[!] Greeter package configuration is not ready: {0}. Check the packages and service overrides; the display manager was not switched.{Colors.RESET}"
 
 [greeter_dm_conflict]
 zh = "{Colors.BOLD_YELLOW}[!] 检测到已启用的显示管理器（{0}），现在切换到 greetd{Colors.RESET}"
@@ -827,8 +851,8 @@ zh = "{Colors.BOLD_GREEN}[✓] 已清理状态目录: {0}{Colors.RESET}"
 en = "{Colors.BOLD_GREEN}[✓] Removed state directory: {0}{Colors.RESET}"
 
 [greeter_uninstall_done]
-zh = "{Colors.BOLD_GREEN}[✓] 登录界面已卸载。若需移除软件包: paru -R noctalia-greeter greetd{Colors.RESET}"
-en = "{Colors.BOLD_GREEN}[✓] Login screen uninstalled. To remove packages: paru -R noctalia-greeter greetd{Colors.RESET}"
+zh = "{Colors.BOLD_GREEN}[✓] 已恢复接管前的显示管理器设置，重启后生效。greetd 与 noctalia-greeter 软件包仍保留。{Colors.RESET}"
+en = "{Colors.BOLD_GREEN}[✓] Previous display manager settings restored; effective after reboot. The greetd and noctalia-greeter packages remain installed.{Colors.RESET}"
 
 [backing_up]
 zh = """\n{Colors.BOLD_BLUE}:: 正在创建配置快照…{Colors.RESET}"""
@@ -955,15 +979,16 @@ zh = """{0} 桌面插件市场 ({1})
 
 单元动词（单元 = 一切可独立开关的桌面能力）:
   list [单元]                        全景清单，或单个单元的详情
-  on <单元> [--preset <名称>]        启用单元（含依赖闭包与包披露，等价 enable）
-  off <单元> [--cascade]             停用单元（自定义入保险库，实机抹白，等价 disable）
-  doctor [单元]                      三态对账（Synced/Drifted/Ghost）+ 系统体检
+  on <单元> [--preset <名称>] [--force]        启用单元（含依赖闭包与包披露，等价 enable）
+  off <单元> [--cascade]             停用单元（保存修改并移除本单元配置，等价 disable）
+  doctor [单元]                      对账（Synced/Drifted/Ghost/Pending/Orphan）+ 系统体检
 
 系统与领域:
-  install [full|config]              应用配置（full = 含壁纸与钩子重放）
-  update [--force|--no-deploy] [--to <tag|commit>]  更新源码，并按需应用配置
+  install [full|config]              安装单元（config = 只复制配置，之后需用 on 完成启用）
+  update [--local] [--force|--deploy|--no-deploy] [--to <tag|commit>]  更新源码，并按需应用配置
   preset <app> [list|apply <名>|save <名>|edit <名>|delete <名>]  切换或管理预设
   preset <app> [parts|part <插槽> <名称>]  查看或切换零件插槽变体
+  apply / part 可加 --force，先备份再覆盖冲突
   shell [get|set|switch|status]      查看或切换桌面外壳插槽（实验性）
   theme [toggle|dark|light|sync|status]  原生切换或同步深浅主题
   deps [core|apps]                   核心依赖勾选单，或常用软件目录（catalog 同源）
@@ -982,15 +1007,16 @@ Usage: {1} [command] [args]
 
 Unit verbs (a unit = any independently switchable desktop capability):
   list [unit]                        Full inventory, or one unit in detail
-  on <unit> [--preset <name>]        Enable a unit (dependency closure + package disclosure, same as enable)
-  off <unit> [--cascade]             Disable a unit (customs to the Vault, living area wiped, same as disable)
-  doctor [unit]                      Three-state audit (Synced/Drifted/Ghost) + system checkup
+  on <unit> [--preset <name>] [--force]        Enable a unit (dependency closure + package disclosure, same as enable)
+  off <unit> [--cascade]             Disable a unit (save changes and remove its configuration, same as disable)
+  doctor [unit]                      Audit (Synced/Drifted/Ghost/Pending/Orphan) + system checkup
 
 System & Domains:
-  install [full|config]              Apply configs (full = wallpapers + hook replay)
-  update [--force|--no-deploy] [--to <tag|commit>]  Update source, optionally apply configs
+  install [full|config]              Install units (config = copy configuration only, then use on to finish enabling)
+  update [--local] [--force|--deploy|--no-deploy] [--to <tag|commit>]  Update source, optionally apply configs
   preset <app> [list|apply <n>|save <n>|edit <n>|delete <n>]  Switch or manage presets
   preset <app> [parts|part <slot> <name>]  Inspect or hot-swap component parts
+  apply / part accept --force to back up and replace conflicts
   shell [get|set|switch|status]      Inspect or switch desktop shell slot (experimental)
   theme [toggle|dark|light|sync|status]  Switch or sync light/dark theme
   deps [core|apps]                   Core dependencies, or recommended apps (catalog-backed)
@@ -1050,8 +1076,8 @@ zh = "{0}: 本已启用，无动作"
 en = "{0}: already enabled, no-op"
 
 [cli_step_disabled]
-zh = "{0}: 已停用，实机已抹白"
-en = "{0}: disabled, living area wiped"
+zh = "{0}: 已停用，已移除本单元安装的配置文件"
+en = "{0}: disabled; configuration files installed by this unit have been removed"
 
 [cli_step_already_disabled]
 zh = "{0}: 本已停用，无动作"
@@ -1074,8 +1100,8 @@ zh = "{0}: 被已启用的依赖方阻断: {1}"
 en = "{0}: blocked by enabled dependents: {1}"
 
 [cli_step_archived]
-zh = "归档 {0} 个自定义文件入保险库"
-en = "archived {0} custom file(s) to the Vault"
+zh = "归档 {0} 个修改或自定义文件入保险库"
+en = "archived {0} modified or custom file(s) to the Vault"
 
 [cli_step_foreign]
 zh = "外部文件幸存未吞: {0}"
@@ -1170,8 +1196,8 @@ zh = "  {Colors.BOLD_CYAN}- 配置:{Colors.RESET} {0} 项"
 en = "  {Colors.BOLD_CYAN}- Configs:{Colors.RESET} {0} item(s)"
 
 [preflight_comp_assets]
-zh = "  {Colors.BOLD_CYAN}- 下载:{Colors.RESET} 壁纸包"
-en = "  {Colors.BOLD_CYAN}- Download:{Colors.RESET} wallpaper pack"
+zh = "  {Colors.BOLD_CYAN}- 壁纸:{Colors.RESET} 部署仓库提供的默认静态壁纸"
+en = "  {Colors.BOLD_CYAN}- Wallpapers:{Colors.RESET} Deploy bundled static defaults"
 
 [preflight_comp_deps]
 zh = "  {Colors.BOLD_CYAN}- 依赖:{Colors.RESET} 检查并安装缺失项"
@@ -1245,10 +1271,6 @@ en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Kept your file: ~/.config/{0}"
 zh = "  {Colors.BOLD_YELLOW}[?]{Colors.RESET} 保留现有内容: ~/.config/{0}（单元未登记，来源不明；`nyxuri on` 后恢复模板更新）"
 en = "  {Colors.BOLD_YELLOW}[?]{Colors.RESET} Kept as-is: ~/.config/{0} (unregistered unit, origin unknown; `nyxuri on` restores template updates)"
 
-[update_ghost_hint]
-zh = "{0} 未登记：更新已原样保留现有内容；`nyxuri on {0}` 采纳模板并启用改动追踪"
-en = "{0} is not registered: the update kept existing content as-is; run `nyxuri on {0}` to adopt the template and enable change tracking"
-
 [summary_section_notice]
 zh = "提示"
 en = "Notices"
@@ -1274,10 +1296,6 @@ zh = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 初始化主题与 GTK 同步"
 en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Initialized theme & GTK sync"
 
 
-[log_no_components_selected]
-zh = "未选择任何组件"
-en = "No components selected"
-
 [log_config_deploy_skipped]
 zh = "已跳过配置部署"
 en = "Config deployment skipped"
@@ -1289,10 +1307,6 @@ en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Backed up: ~/.config/{0}"
 [log_restore_item]
 zh = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 已恢复: ~/.config/{0}"
 en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Restored: ~/.config/{0}"
-
-[log_remove_item]
-zh = "  {Colors.BOLD_RED}[✗]{Colors.RESET} 已移除: ~/.config/{0}"
-en = "  {Colors.BOLD_RED}[✗]{Colors.RESET} Removed: ~/.config/{0}"
 
 [log_restoring_origin_config]
 zh = ":: 正在恢复初始配置: {0}…"
@@ -1591,10 +1605,6 @@ en = "Active"
 zh = "未生效"
 en = "Inactive"
 
-[install_step_unit_hooks]
-zh = "{Colors.BOLD_CYAN}::{Colors.RESET} 单元钩子重放 ({0})"
-en = "{Colors.BOLD_CYAN}::{Colors.RESET} Unit hook replay ({0})"
-
 [menu_opt_workshop]
 zh = "单元工坊（开关 / 对账）"
 en = "Unit Workshop (switch / audit)"
@@ -1624,5 +1634,97 @@ zh = "按任意键返回工坊"
 en = "Press any key to return to the bench"
 
 [workshop_confirm_off]
-zh = "停用该单元?（自定义入保险库，实机抹白）[y/N] "
-en = "Disable this unit? (customs to Vault, living area wiped) [y/N] "
+zh = "停用该单元？（配置修改会存入保险库，本单元安装的文件会被移除）[y/N] "
+en = "Disable this unit? (save configuration changes to the Vault and remove files installed by this unit) [y/N] "
+
+[conflict_title]
+zh = "发现 {0} 个配置冲突"
+en = "Found {0} configuration conflicts"
+
+[conflict_force_backup]
+zh = "覆盖前会自动备份原有配置；如果备份失败，就不会覆盖。未列入替换范围的个人文件和需要保留的自定义配置会保留。"
+en = "Your existing configuration will be backed up before replacement. If the backup fails, nothing will be replaced. Personal files outside the replacement scope and preserved custom settings will be kept."
+
+[conflict_keep_notice]
+zh = "已保留现有内容。确认冲突范围后，可用 --force 备份并采用模板。"
+en = "Existing content is kept. After reviewing these paths, use --force to back it up and adopt the template."
+
+[conflict_choices]
+zh = "[1 / Enter] 保留现有内容    [2] 备份后采用模板    [3 / Esc] 取消操作"
+en = "[1 / Enter] Keep existing    [2] Back up and use template    [3 / Esc] Cancel"
+
+[conflict_scroll_hint]
+zh = "[↑ / ↓] 滚动查看全部冲突；默认保留现有内容。"
+en = "[↑ / ↓] Scroll through all conflicts; existing content is kept by default."
+
+[preset_requires_enabled]
+zh = "[!] {0} 尚未启用。请先执行 nyxuri on {1}，再切换预设或零件。"
+en = "[!] {0} is disabled. Run nyxuri on {1} before changing its preset or part."
+
+[preset_unsupported_unit]
+zh = "[!] {0} 不支持切换预设或零件。"
+en = "[!] {0} does not support switching presets or parts."
+
+[cli_transaction_error]
+zh = "无法完成此操作：{0}"
+en = "Could not complete this operation: {0}"
+
+[cli_step_refreshed]
+zh = "{0}: 已刷新"
+en = "{0}: refreshed"
+
+[cli_step_config_only]
+zh = "{0}: 配置已复制，尚未检查所需软件或完成启用设置"
+en = "{0}: configuration copied; required software has not been checked and activation setup is not yet complete"
+
+[cli_step_partial]
+zh = "{0}: 部分完成，请处理失败原因后重试"
+en = "{0}: partially completed; resolve the failure and retry"
+
+[cli_step_conflicts]
+zh = "冲突路径: {0}"
+en = "conflicting paths: {0}"
+
+[cli_step_backup]
+zh = "恢复快照: {0}"
+en = "recovery snapshot: {0}"
+
+[cli_detail_pending]
+zh = "待完成阶段"
+en = "Pending phase"
+
+[install_config_only_notice]
+zh = "配置已复制，但尚未安装所需软件或完成启用设置。请运行 nyxuri on <unit> 完成启用。"
+en = "Configuration copied, but required software has not been installed and activation setup is not yet complete. Run nyxuri on <unit> to finish enabling it."
+
+[update_skipped_local_hint]
+zh = "已跳过源码更新，现有配置未改动。若要使用本地源码中的配置，请运行 nyxuri update --local。"
+en = "Source update skipped; your existing configuration is unchanged. To apply configuration from the local source, run nyxuri update --local."
+
+[menu_apply_local]
+zh = "应用当前源码（不拉取）"
+en = "Apply current checkout (without pulling)"
+
+[preset_delete_active_denied]
+zh = "{0}: {1} 仍为当前预设，请先切换其他预设再删除。"
+en = "{0}: {1} is the active preset; switch to another preset before deleting it."
+
+[preset_reload_failed]
+zh = "{0}: 新配置已保存，但应用未能重新加载。请检查应用是否正常运行，再执行 preset {0} apply {1} 重试。"
+en = "{0}: the new configuration was saved, but the application could not reload it. Check that the application is running normally, then retry preset {0} apply {1}."
+
+[source_update_done]
+zh = "源码已更新，接下来检查哪些配置需要更新。"
+en = "Source updated. Next, checking which configuration files need updating."
+
+[cli_audit_pending_hint]
+zh = "Pending = 有待完成阶段；使用 nyxuri list <unit> 查看后，处理失败原因并重试原操作。"
+en = "Pending = an unfinished phase; inspect nyxuri list <unit>, resolve the cause, and retry the original operation."
+
+[cli_audit_orphan_hint]
+zh = "Orphan = 找不到该单元的来源文件。可先恢复来源文件，或运行 nyxuri off <unit> 停用；若没有记录原安装位置，会保留现有文件并提示你。"
+en = "Orphan = the unit source files are missing. Restore them or run nyxuri off <unit> to disable it. If the original installation location was not recorded, existing files will be kept and you will be notified."
+
+[app_mpvpaper]
+zh = "视频壁纸（mpvpaper，可选）"
+en = "Video wallpapers (mpvpaper, optional)"

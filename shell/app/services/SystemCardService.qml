@@ -6,6 +6,7 @@ import qs.shared.i18n
 import "../../shared/cards/SystemCardCatalog.js" as Catalog
 import "../../shared/cards/SystemCardGeometry.js" as Geometry
 import "../../shared/cards/SystemCardState.js" as CardState
+import "../../shared/cards/SystemCardPlacement.js" as Placement
 import "../../units/sidebars/dashboard/drawer/DrawerGridLayout.js" as DrawerLayout
 
 Singleton {
@@ -56,15 +57,15 @@ Singleton {
     }
 
     function isFreeLayoutMode(mode) {
-        return CardState.isFreeMode(mode);
+        return Placement.isFreeMode(mode);
     }
 
     function isScreenLayoutMode(mode) {
-        return CardState.isScreenLayoutMode(mode);
+        return Placement.isScreenLayoutMode(mode);
     }
 
     function isWallpaperLayoutMode(mode) {
-        return CardState.isWallpaperLayoutMode(mode);
+        return Placement.isWallpaperLayoutMode(mode);
     }
 
     function cardSize(cardId) {
@@ -166,7 +167,7 @@ Singleton {
     }
 
     function requestDesktopLayout() {
-        if (CardState.isAutomaticMode(root.globalDesktopLayoutMode))
+        if (Placement.isAutomaticMode(root.globalDesktopLayoutMode))
             root.desktopLayoutRequested();
     }
 

@@ -11,8 +11,9 @@
 ## 基础设施缺口（快速上线时跳过，回来先做这些）
 
 - [ ] **key-cli 依赖未登记**（2026-10-18，T1 定案暂缓）：Shell 系统监视
-  （`SystemMonitorService` spawn `key sysmon stream`）与 Spotlight 文件搜索/
-  工具能力依赖 Clavis 上游作者的独立 AUR 包 key-cli（github.com/StatIndet/key-cli，
+  （`SystemMonitorService` spawn `key sysmon stream`）、剪贴板
+  （`ClipboardService` 调用 `key clipboard`）与 Spotlight 文件搜索/工具能力
+  依赖 Clavis 上游作者的独立 AUR 包 key-cli（github.com/StatIndet/key-cli，
   本体不在本仓库——仓库里只有 spawn 命令与缺席降级文案）。缺席时相应卡片与
   工具明示报错降级，不影响启动与其余单元。暂不登记 PKGBUILD optdepends：
   计划由作者收回仓库内化自维护，届时再落依赖关系（gen-deps.py

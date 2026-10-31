@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-"""fish on-hook: install the reviewed, pinned Fisher plugin set.
+"""隔离安装固定 Fisher 插件，再按归属提交；个人插件清单和额外文件原样保留。
 
-Unit-owned behavior (KM3): everything lands inside this unit's living
-area (~/.config/fish), so the transaction snapshot picks the files up and
-`nyxuri off fish` wipes them — no ownership bookkeeping of its own.
-Refuses to touch a fisher it does not own (content-hash proof) and
-refuses a non-lockfile fish_plugins.
+固定集合由此脚本的不可变提交声明供给，不借用用户的 fish_plugins 或
+Fisher universal 状态做安装输入。这样个人插件可以继续由自己的 Fisher 管理。
 """
-import hashlib
 import os
 import shutil
 import subprocess
@@ -18,6 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))  # standalone runs
 
 from nyxuri.pkg.net import fetch_raw_with_fallback  # noqa: E402
+from nyxuri.desktop.owned_outputs import write_output_set  # noqa: E402
 
 BOOTSTRAP_COMMIT = "791da644d33d392216f6b1a9b5fc1e470db6d7f2"
 BOOTSTRAP_SHA256 = "0fb6c81ae3003e95b5671766fa6c25c3597066e29965b7772f6c1b007387356d"
@@ -26,81 +23,64 @@ PLUGINS = (
     "jorgebucaran/autopair.fish@4d1752ff5b39819ab58d7337c69220342e9de0e2",
     "PatrickF1/fzf.fish@6a6136998879dcc1f29a405dfdd6b92c5f229c39",
 )
-MARKER_FILES = (
-    "functions/fisher.fish", "completions/fisher.fish",
-    "conf.d/autopair.fish", "conf.d/fzf.fish",
-)
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with open(path, "rb") as fh:
-        for chunk in iter(lambda: fh.read(65536), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def main() -> int:
+    """下载已锁定的引导器，在临时HOME生成载荷，预检整组冲突后提交。"""
     if not shutil.which("fish"):
         print("[!] fish is not installed; refusing Fisher setup")
         return 1
-    fish_dir = Path.home() / ".config/fish"
-    lockfile = fish_dir / "fish_plugins"
-    try:
-        locked = lockfile.read_text(encoding="utf-8").splitlines()
-    except OSError:
-        locked = None
-    if locked != list(PLUGINS):
-        print("[✗] fish_plugins is not the reviewed lockfile; refusing Fisher install")
-        return 1
-
-    fisher_file = fish_dir / "functions" / "fisher.fish"
-    owned = False
-    if fisher_file.is_file():
-        owned = _sha256(fisher_file) == BOOTSTRAP_SHA256
-        # Legacy marker: machines installed by the retired module carry the
-        # ownership json — that record proves ownership just the same.
-        if not owned and (Path.home() / ".local/state/nyxuri/fisher.json").is_file():
-            owned = True
-        if not owned:
-            print("[!] an unowned fisher.fish already exists; refusing to touch it")
-            return 1
-
-    current = owned and all((fish_dir / rel).is_file() for rel in MARKER_FILES)
-    if current:
-        print("[•] pinned Fisher set already installed")
-        return 0
-
-    bootstrap = Path(tempfile.mkstemp(suffix=".fish")[1])
-    try:
+    fish_dir = Path(os.environ.get("NYXURI_UNIT_DEST") or Path.home() / ".config/fish")
+    force = os.environ.get("NYXURI_FORCE") == "1"
+    # Fisher插件安装脚本可能写universal变量和执行install事件，全部限制在临时HOME。
+    with tempfile.TemporaryDirectory(prefix="nyxuri-fisher-") as temporary:
+        root = Path(temporary)
+        bootstrap = root / "bootstrap.fish"
+        payload = root / "payload"
+        payload.mkdir()
         if not fetch_raw_with_fallback(
             "jorgebucaran/fisher", BOOTSTRAP_COMMIT, "functions/fisher.fish",
             bootstrap, BOOTSTRAP_SHA256,
         ):
-            print("[!] Fisher bootstrap download failed; skipped")
+            print("[!] Fisher bootstrap download failed; install remains pending")
             return 1
-        plugins = PLUGINS[1:] if fisher_file.is_file() else PLUGINS
-        temp_config = Path(tempfile.mkdtemp(prefix="fisher."))
         try:
             result = subprocess.run(
-                ["fish", "-c",
+                ["fish", "--no-config", "-c",
                  "set --global fisher_path $argv[2]; source -- $argv[1]; fisher install $argv[3..-1]",
-                 "--", str(bootstrap), str(fish_dir), *plugins],
+                 "--", str(bootstrap), str(payload), *PLUGINS],
                 check=False, timeout=60,
-                env={**os.environ, "XDG_CONFIG_HOME": str(temp_config)},
+                env={**os.environ, "HOME": str(root), "XDG_CONFIG_HOME": str(root / "config"),
+                     "XDG_DATA_HOME": str(root / "data"), "XDG_STATE_HOME": str(root / "state"),
+                     "XDG_CACHE_HOME": str(root / "cache")},
             )
         except (OSError, subprocess.TimeoutExpired) as exc:
             print(f"[!] pinned Fisher install failed: {exc}")
             return 1
-        finally:
-            shutil.rmtree(temp_config, ignore_errors=True)
         if result.returncode != 0:
-            print("[!] pinned Fisher install failed")
+            print("[!] pinned Fisher install failed; living files were not changed")
             return 1
-    finally:
-        bootstrap.unlink(missing_ok=True)
-
-    print("[✓] pinned Fisher plugin set installed")
+        outputs = {}
+        for path in payload.rglob("*"):
+            relative = path.relative_to(payload)
+            # fish_plugins只是隔离安装的输入记录；用户清单与universal变量不由固定集合接管。
+            if relative.parts[0] not in ("functions", "completions", "conf.d"):
+                continue
+            if path.is_symlink():
+                print(f"[!] unexpected symlink in pinned Fisher payload: {relative}")
+                return 1
+            if path.is_file():
+                outputs[fish_dir / relative] = path.read_bytes()
+        if not outputs or fish_dir / "functions/fisher.fish" not in outputs:
+            print("[!] pinned Fisher payload is incomplete")
+            return 1
+        conflicts = write_output_set("fish-plugins", "fish", outputs, force=force)
+        if conflicts:
+            for path in conflicts:
+                print(f"[!] Fisher output conflict; preserved: {path}")
+            print("[!] Fisher install remains partial; review conflicts before using --force")
+            return 1
+    print("[✓] pinned Fisher plugin set installed; personal plugins preserved")
     return 0
 
 

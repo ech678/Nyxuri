@@ -155,7 +155,8 @@
 
 .navigation-sidebar row:active {
     background-color: {{ colors.secondary_container.default.hex }};
-    background-color: color-mix(in srgb, {{ colors.secondary_container.default.hex }} 90%, {{ colors.on_secondary_container.default.hex }});
+    /* GTK3 的 mix() 参数是第二种颜色的权重，保留容器色 90%、前景色 10%。 */
+    background-color: mix({{ colors.secondary_container.default.hex }}, {{ colors.on_secondary_container.default.hex }}, 0.10);
 }
 
 .navigation-sidebar row:active label {
@@ -221,7 +222,8 @@ switch slider {
 
 switch:hover {
     background-color: {{ colors.surface_container_highest.default.hex }};
-    background-color: color-mix(in srgb, {{ colors.surface_container_highest.default.hex }} 92%, {{ colors.on_surface.default.hex }});
+    /* 保留表面色 92%、前景色 8%，使用 GTK3 支持的混色函数。 */
+    background-color: mix({{ colors.surface_container_highest.default.hex }}, {{ colors.on_surface.default.hex }}, 0.08);
 }
 
 switch:hover slider {

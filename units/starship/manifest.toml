@@ -2,3 +2,6 @@
 # the unit dir ships one file that lands at ~/.config/starship.toml.
 # "starship" is also the package/binary name, so every other default applies.
 target = "starship.toml"
+
+[platforms.ubuntu]
+packages = ["starship"]

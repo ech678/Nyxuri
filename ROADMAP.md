@@ -22,6 +22,10 @@
 | T3 | 设置界面替换：Caelestia 安卓风味默认 + Dashboard 双轨 | 进行中 |
 | T4 | Shell 可控性与透明化 | 待开始 |
 | T5 | 多合成器 (Multi-WM) 架构解耦（门禁触发） | 待开始 |
+| M1 | 单元生命周期、冲突保护与状态恢复统一 | 已完成 |
+| U1 | Ubuntu 26.04 包管理、依赖声明与桌面兼容 | 已完成 |
+| U2 | Ubuntu Greeter 登录与显示管理器恢复 | 已完成 |
+| U3 | Ubuntu 视频壁纸播放器自动构建与安装 | 待开始 |
 
 ### T0 终端体验修复（复制粘贴最终之战）
 
@@ -112,6 +116,39 @@
   收编过渡形态——`SUPPORTED_WMS` 硬编码元组、组件菜单 WM 特判、doctor 三处
   合成器字面量（债务登记见 [delayed-decisions](llms-wiki/delayed-decisions.md)）。
 - 热重载、浮动便签与屏幕探测跨合成器适配，`doctor` 诊断与 `greeter` 会话自适应。
+
+### M1 单元生命周期与状态恢复
+
+统一安装、更新、预设与单元事务；强制前备份、停用保护修改、失败待重试及生成文件归属。
+契约见 [单元模型](llms-wiki/unit-model.md)、[预设机制](llms-wiki/preset-mechanism.md)
+与 [状态操作](llms-wiki/state-ops.md)。
+
+### U1 Ubuntu 26.04 兼容
+
+- **已落地**：APT/dpkg 后端、平台依赖声明、Shell 运行时预检、默认 XDG 布局门禁，
+  以及 Fcitx 旧布局与 Portal 多会话规则迁移。
+- **已验收**：Ubuntu 26.04 GNOME/Niri 会话、个人配置首次部署、升级、恢复与卸载重装；
+  物理多屏及其他 GPU 不由单屏虚拟机结果代表。
+- **交付边界**：Niri 多输出截图及可选运行时仍有限制；普通安装不切换显示管理器或编译源码。
+- **实现与限制**：见 [Ubuntu 兼容指南](llms-wiki/ubuntu-compatibility.md)；平台字段见
+  [manifest-schema](llms-wiki/manifest-schema.md#平台依赖覆盖)。
+
+### U2 Ubuntu Greeter 适配
+
+- 使用现有 APT 源提供的 `greetd` 与 `noctalia-greeter`，适配包内会话入口、运行用户、
+  生效配置和外观同步权限；启用前保存原显示管理器，停用后恢复，保留包自带的配置与数据。
+- **已验收（2026-10-28）**：Ubuntu 26.04 虚拟机完成公开命令安装/启停、Greeter 登录
+  Niri、外观同步、配置错误拒绝切换及重启恢复 GDM；本机完成 Greeter 登录 Niri 与外观
+  同步写入。修正无关单元开关触发主题迁移的问题，保留已有内置主题并检查替代模板输入。
+
+### U3 Ubuntu 视频壁纸播放器供给
+
+- 用户选择视频壁纸后，明确提示安装构建依赖；固定已验证的 `mpvpaper` release/tag，
+  在临时目录以普通用户执行上游 Meson/Ninja 构建流程。
+- 将构建结果制成本地 `.deb`，由 APT 安装并管理版本与卸载；仅依赖安装与最终安装使用
+  sudo，不额外维护 APT 源。成功后清理源码和构建目录；失败保留诊断日志并清理临时目录。
+- 不顺带执行 `autoremove`，保留运行依赖；播放器、视频素材分别管理，静态壁纸不依赖
+  此流程。完成后同步 Ubuntu 当前手动供给契约，并验证播放、主题取色与静态壁纸切换。
 
 ## Shell 侧
 

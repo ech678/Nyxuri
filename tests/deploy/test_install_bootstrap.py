@@ -316,3 +316,67 @@ class TestInstallBootstrapCacheCopy(unittest.TestCase):
             with patch.object(test_install_bootstrap, "REPO_ROOT", repo):
                 cache = test_install_bootstrap.TestInstallBootstrap()._prepare_cache(env, Path(raw))
             self.assertFalse((cache / "units" / "effects.kdl").exists())
+
+
+class TestXdgEntryLayoutRejection(unittest.TestCase):
+    """真实入口拒绝非默认 XDG 路径，不拉取源码、不迁移目录、不写日志。"""
+
+    def setUp(self):
+        self.ctx = TempEnv()
+        self.ctx.__enter__()
+        self.addCleanup(self.ctx.__exit__, None, None, None)
+
+    def test_launcher_and_bootstrap_reject_custom_xdg_roots_before_writes(self):
+        # 独立 bootstrap 没有现成本地源码，漏掉门禁就会进入 git 拉取；用标记检测该副作用。
+        root = self.ctx.home / "entry-probes"
+        root.mkdir()
+        bootstrap = root / "install.sh"
+        shutil.copy2(REPO_ROOT / "install.sh", bootstrap)
+        bindir = root / "bin"
+        bindir.mkdir()
+        git_marker = root / "git-called"
+        (bindir / "git").write_text(
+            "#!/bin/sh\nprintf called > " + shlex.quote(str(git_marker)) + "\nexit 1\n", encoding="utf-8")
+        (bindir / "git").chmod(0o755)
+        legacy = self.ctx.env.config_dir / "NyxNiri"
+        legacy.mkdir()
+        sentinel = legacy / "keep.txt"
+        sentinel.write_text("original", encoding="utf-8")
+        log = self.ctx.env.state_dir / "install.log"
+        log.write_text("previous-log\n", encoding="utf-8")
+        for script, args in ((REPO_ROOT / "nyxuri/launcher.sh", ["help"]), (bootstrap, [])):
+            for key in ("XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME"):
+                for raw in (str(self.ctx.home / "custom-root"), "/outside-test-home/custom-root"):
+                    with self.subTest(script=script, key=key, raw=raw):
+                        command = ["bash", str(script), *args]
+                        env = {**os.environ, key: raw, "PATH": f"{bindir}:{os.environ['PATH']}"}
+                        with patch("subprocess.run", wraps=subprocess.run) as run:
+                            result = run(command, cwd=root, env=env, capture_output=True, text=True,
+                                         check=False, timeout=10)
+                        run.assert_called_once_with(command, cwd=root, env=env, capture_output=True,
+                                                    text=True, check=False, timeout=10)
+                        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                        self.assertIn(key, result.stderr)
+                        self.assertIn("Unsupported", result.stderr)
+                        self.assertIn("不支持", result.stderr)
+                        self.assertNotIn("Traceback", result.stderr)
+                        self.assertFalse(git_marker.exists())
+                        self.assertFalse(self.ctx.env.nyx_dir.exists())
+                        self.assertEqual(sentinel.read_text(), "original")
+                        self.assertEqual(log.read_text(), "previous-log\n")
+
+    def test_launcher_accepts_unset_and_empty_xdg_roots(self):
+        command = ["bash", str(REPO_ROOT / "nyxuri/launcher.sh"), "help"]
+        for empty in (False, True):
+            env = dict(os.environ)
+            for key in ("XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME"):
+                if empty:
+                    env[key] = ""
+                else:
+                    env.pop(key, None)
+            with self.subTest(empty=empty), patch("subprocess.run", wraps=subprocess.run) as run:
+                result = run(command, env=env, capture_output=True, text=True, check=False, timeout=10)
+                run.assert_called_once_with(command, env=env, capture_output=True, text=True,
+                                            check=False, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Nyxuri", result.stdout)

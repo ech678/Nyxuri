@@ -11,6 +11,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from tests.utils import TempEnv
 
@@ -329,16 +330,28 @@ class TestCleanCache(unittest.TestCase):
     """clean-cache v4 契约：围栏删除、干跑纯预览、--only 选择执行、sudo 参数形状。"""
 
     def setUp(self):
-        self._td = tempfile.TemporaryDirectory()
-        self.home = Path(self._td.name)
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+        self.addCleanup(self._ctx.__exit__, None, None, None)
+        self.home = self._ctx.home
         self.bin = self.home / "bin"
         self.bin.mkdir()
         self.calls = self.home / "calls"
         self._stubs()
         self._seed()
-
-    def tearDown(self):
-        self._td.cleanup()
+        # 本类原有用例验证 Arch 清理命令；显式固定平台与工具，避免由宿主发行版决定分支。
+        platform = patch("nyxuri.pkg.platform.current_platform", return_value="arch")
+        platform.start()
+        self.addCleanup(platform.stop)
+        home = patch("nyxuri.desktop.clean.HOME", self.home)
+        home.start()
+        self.addCleanup(home.stop)
+        original_which = shutil.which
+        tools = patch("shutil.which", side_effect=lambda name: (
+            str(self.bin / name) if (self.bin / name).is_file() else original_which(name)
+        ))
+        tools.start()
+        self.addCleanup(tools.stop)
 
     def _stubs(self):
         log = "printf '%s\\n' \"$*\" >>\"$CALLS\"\n"
@@ -387,9 +400,17 @@ class TestCleanCache(unittest.TestCase):
             "CALLS": str(self.calls),
         }
 
-    def _run(self, *args):
+    def _run(self, *args, platform="arch"):
+        # 子进程不继承 mock；只注入发行版身份，保留真实 main、任务构造及参数处理。
+        driver = (
+            "import sys\n"
+            "from unittest.mock import patch\n"
+            "from nyxuri.desktop.clean import main\n"
+            "with patch('nyxuri.pkg.platform._os_release', return_value={'ID': sys.argv[1]}):\n"
+            "    sys.exit(main(sys.argv[2:]))\n"
+        )
         return subprocess.run(
-            [sys.executable, "-m", "nyxuri.desktop.clean", *args],
+            [sys.executable, "-c", driver, platform, *args],
             capture_output=True, text=True, timeout=120,
             env=self._env(), stdin=subprocess.DEVNULL, cwd=_REPO,
         )
@@ -412,6 +433,34 @@ class TestCleanCache(unittest.TestCase):
         self.assertNotIn("-v", lines)
         self.assertNotIn("pacman -Scc --noconfirm", lines)
         self.assertNotIn("fstrim -av", lines)
+
+    def test_ubuntu_dry_run_does_not_clean_or_query_pacman(self):
+        """APT 干跑仅展示命令；即使 PATH 中有 pacman，也不查询孤立包或执行清理。"""
+        self._stub("apt-get", "printf 'apt-get %s\\n' \"$*\" >>\"$CALLS\"\n")
+        proc = self._run("-n", platform="ubuntu")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("sudo apt-get clean", proc.stdout)
+        calls = self._calls_text().splitlines()
+        self.assertNotIn("-Qdtq", calls)
+        self.assertNotIn("-v", calls)
+        self.assertFalse(any("apt-get" in command or "pacman" in command for command in calls))
+        self.assertTrue(all(marker.exists() for marker in self.markers))
+
+    def test_ubuntu_apt_cache_runs_only_download_cache_clean(self):
+        """选择 APT 缓存只允许 sudo apt-get clean，不夹带卸载或用户缓存删除。"""
+        self._stub("apt-get")
+        proc = self._run("--only", "apt-cache", platform="ubuntu")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(self._calls_text().splitlines(), ["-v", "apt-get clean"])
+        self.assertTrue(all(marker.exists() for marker in self.markers))
+
+    def test_ubuntu_does_not_offer_arch_package_cleanup(self):
+        """显式要求 Arch 缓存或孤立包任务时，Ubuntu 不生成可执行任务。"""
+        self._stub("apt-get")
+        proc = self._run("--only", "scc,orphans", platform="ubuntu")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("No matching tasks", proc.stdout)
+        self.assertEqual(self._calls_text(), "")
 
     def test_default_mode_requires_confirmation(self):
         """无 --only 且非交互 stdin：拒绝执行，零改动。"""
@@ -737,6 +786,35 @@ class TestBrightnessKeys(unittest.TestCase):
         self.assertEqual(proc.returncode, 2)
         self.assertIn("usage", proc.stderr)
         self.assertEqual(self._calls(), [])
+
+
+class TestKittyConfiguredMouseBindings(unittest.TestCase):
+    """用实际Kitty解析默认/transparent配置，确认无无效鼠标绑定且键盘缩放生效。"""
+
+    def test_templates_parse_without_wheel_binding_warnings(self):
+        executable = shutil.which("kitty")
+        if executable is None:
+            self.skipTest("Kitty parser is unavailable")
+        driver = (
+            "import sys\n"
+            "from kitty.config import load_config\n"
+            "from kitty.options.utils import parse_shortcut\n"
+            "bad = []\n"
+            "config = load_config(sys.argv[-1], accumulate_bad_lines=bad)\n"
+            "assert not bad, repr(bad)\n"
+            "for key, action in [('ctrl+equal','change_font_size all +1.0'),('ctrl+minus','change_font_size all -1.0'),('ctrl+0','change_font_size all 0')]:\n"
+            "    mappings = config.keyboard_modes[''].keymap[parse_shortcut(key)]\n"
+            "    assert mappings[-1].definition == action, (key, mappings[-1].definition)\n"
+        )
+        with TempEnv():
+            for relative in ("units/kitty/kitty.conf", "units/kitty/__presets__/transparent/kitty.conf"):
+                with self.subTest(config=relative):
+                    command = [executable, "+runpy", driver, str(_REPO / relative)]
+                    result = subprocess.run(command, capture_output=True, text=True, timeout=15)
+                    self.assertEqual(command[:2], [executable, "+runpy"])
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertNotIn("not recognized", result.stderr)
+                    self.assertNotIn("Ignoring invalid mouse action", result.stderr)
 
 
 if __name__ == "__main__":

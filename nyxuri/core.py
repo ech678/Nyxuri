@@ -98,6 +98,23 @@ AUR_DEPS = [
     "mpvpaper",
 ]
 
+# Ubuntu 会话工具链显式声明实际包名；CORE_DEPS/AUR_DEPS 保持 Arch 原始
+# 清单，供 PKGBUILD 生成器读取。manual 是运行能力或资源名，不能送入 APT；
+# 它们由依赖探测器识别，缺失时报告并跳过自动获取，不触发本机源码编译。
+CORE_DEP_PLATFORMS = {
+    "ubuntu": {
+        "packages": [
+            "wlsunset", "fish", "starship", "kitty", "fastfetch", "eza",
+            "ffmpeg", "jq", "tmux", "inotify-tools", "fzf",
+            "fonts-jetbrains-mono", "fonts-noto-cjk", "qt6-image-formats-plugins",
+            "cliphist",
+        ],
+        # 静态壁纸不需要视频播放器；mpvpaper 在 catalog 中作为可选能力单独供给。
+        # Nerd Font 仍由配置实际引用，缺失时不能把完整安装记为就绪。
+        "manual": ["jetbrains-mono-nerd-font"],
+    },
+}
+
 # --- ANSI Styling Palette (Nyxuri Native) ---
 class Colors:
     RESET = "\033[0m"
@@ -322,8 +339,7 @@ def migrate_legacy_storage(env: "Environment") -> None:
         _safe_migrate_storage_dir(env.config_dir / legacy_name, env.nyx_dir)
 
     # 2. State directory: ~/.local/state/NyxNiri / nyxniri -> ~/.local/state/nyxuri
-    raw_state = os.environ.get("XDG_STATE_HOME")
-    state_base = Path(raw_state) if raw_state else (env.home / ".local/state")
+    state_base = env.home / ".local/state"
     for legacy_name in LEGACY_STORAGE_NAMES:
         _safe_migrate_storage_dir(state_base / legacy_name, env.state_dir)
 
@@ -340,21 +356,44 @@ def migrate_legacy_storage(env: "Environment") -> None:
                 old_link.unlink(missing_ok=True)
 
 
+class XDGLayoutError(ValueError):
+    """当前尚未支持的目录布局；必须在迁移、锁与日志写入之前停止。"""
+
+
+def validate_xdg_layout(home: Optional[Path] = None) -> None:
+    """只读校验四个 XDG 根目录，拒绝引擎与外部应用使用不同位置。
+
+    1. 未设置或空值沿用 HOME 下的默认目录。
+    2. 非空值必须是绝对路径；解析点号、尾斜线与软链接后，仍须指向默认目录。
+    3. 不改写环境变量，也不把 HOME 外的位置静默替换成默认值。
+    """
+    home = home if home is not None else Path(os.environ.get("HOME", str(Path.home())))
+    defaults = {"XDG_CONFIG_HOME": ".config", "XDG_CACHE_HOME": ".cache",
+                "XDG_DATA_HOME": ".local/share", "XDG_STATE_HOME": ".local/state"}
+    for key, suffix in defaults.items():
+        raw = os.environ.get(key, "")
+        if not raw:
+            continue
+        expected = home / suffix
+        try:
+            valid = Path(raw).is_absolute() and Path(raw).resolve() == expected.resolve()
+        except (OSError, RuntimeError, ValueError):
+            valid = False
+        if not valid:
+            raise XDGLayoutError(
+                f"Unsupported {key}={raw!r}. Nyxuri currently requires {str(expected)!r}; "
+                f"unset {key} or set it to this default before retrying.\n"
+                f"不支持 {key}={raw!r}。Nyxuri 当前仅支持默认路径 {str(expected)!r}；"
+                f"请取消设置 {key} 或设为此默认路径后重试。"
+            )
+
+
 class Environment:
     def __init__(self):
         self.home = Path(os.environ.get("HOME", str(Path.home())))
-        raw_state = os.environ.get("XDG_STATE_HOME")
-        if raw_state:
-            state_path = Path(raw_state)
-            try:
-                if state_path.is_relative_to(self.home):
-                    self.state_dir = state_path / STORAGE_NAME
-                else:
-                    self.state_dir = self.home / ".local/state" / STORAGE_NAME
-            except (ValueError, AttributeError):
-                self.state_dir = self.home / ".local/state" / STORAGE_NAME
-        else:
-            self.state_dir = self.home / ".local/state" / STORAGE_NAME
+        # 目录不一致时必须在版本探测、旧目录迁移和任何落地操作之前明确拒绝。
+        validate_xdg_layout(self.home)
+        self.state_dir = self.home / ".local/state" / STORAGE_NAME
         self.cache_dir = self.home / ".cache" / STORAGE_NAME
         self.config_dir = self.home / ".config"
 

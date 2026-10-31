@@ -76,14 +76,17 @@ def _safe_child(root: Path, *parts: str) -> Optional[Path]:
 def _is_deployable_app(app: str) -> bool:
     if not _is_safe_component(app):
         return False
-    from nyxuri.deploy.manifest import discover_deployable_apps
+    from nyxuri.deploy.manifest import discover_deployable_apps, load_manifest_for
 
     source = _safe_child(get_env().units_src, app)
     try:
+        manifest = load_manifest_for(app)
+        if manifest.target or manifest.merge or manifest.runtime:
+            return False
         return source is not None and app in discover_deployable_apps() and (
             source.is_dir() or source.is_file()
         )
-    except OSError:
+    except (OSError, ValueError, KeyError):
         return False
 
 
@@ -151,10 +154,13 @@ def _ledger_active_preset(app: str) -> str:
 
 
 def read_active_preset(app: str) -> str:
-    """Return the active preset or raise instead of silently deploying defaults."""
+    """只读取得活动预设；旧 .active 文件的迁移由成功的写事务完成。
+
+    预检和冲突展示会调用此函数，读取不能创建或重写账本。无效状态应报错，
+    不能通过静默回退默认预设掩盖来源问题。
+    """
     if not _is_deployable_app(app):
         raise InvalidActivePresetError("invalid preset app")
-    from nyxuri.kernel.ledger import read_ledger
     presets_fd: Optional[int] = None
     try:
         presets_fd = _open_presets_dir()
@@ -184,10 +190,6 @@ def read_active_preset(app: str) -> str:
         raise InvalidActivePresetError("invalid active preset state") from exc
     if len(content) > 4096 or not _is_safe_component(name):
         raise InvalidActivePresetError("invalid active preset state")
-    from nyxuri.kernel.ledger import update_ledger
-    ledger = read_ledger()
-    presets = ledger.get("presets", {})
-    update_ledger(presets={**(presets if isinstance(presets, dict) else {}), app: name})
     return name
 
 
@@ -437,62 +439,95 @@ def list_parts(app: str) -> dict:
     return result
 
 
-def apply_part(app: str, slot: str, variant: str) -> bool:
-    """Hot-swap a specific declared component part of an app."""
-    from nyxuri.deploy.manifest import load_manifest_for
-    from nyxuri.deploy.atomic import atomic_replace_item
-    from nyxuri.kernel.ledger import read_ledger, update_ledger
+def apply_part(app: str, slot: str, variant: str, *, force: bool = False,
+               _preserve_conflicts: bool = False) -> bool:
+    """切换已启用单元的零件，保留未写路径，原子提交选择与实际部署基线。
+
+    普通冲突保留原件并取消本次切换；显式 force 在可恢复快照成功后采用模板。
+    内部刷新使用 _preserve_conflicts，只跳过已修改零件，不把个人版本重新认领。
+    """
+    from datetime import datetime, timezone
+    from nyxuri.kernel import ledger, registry, transaction
+    from nyxuri.deploy.atomic import atomic_replace_item, _path_identity
+    from nyxuri.tui import choose_conflict_policy
 
     try:
-        manifest = load_manifest_for(app)
-    except Exception as e:
-        log_msg("ERROR", f"Failed to load manifest for {app}: {e}")
+        with ledger.mutation_lock():
+            record = ledger.get_unit(app)
+            manifest = registry.load_unit(app)
+            if not record or record.get("state") != "enabled" or manifest.target or manifest.merge or manifest.runtime:
+                log_msg("WARN", f"Part switch requires an enabled directory unit: {app}")
+                return False
+            if slot not in manifest.parts or not _is_safe_component(variant):
+                return False
+            cfg = manifest.parts[slot]
+            relative = cfg.get("target")
+            source_dir = cfg.get("source_dir", slot)
+            if not isinstance(relative, str) or not relative or not _is_safe_component(source_dir):
+                return False
+            destination = transaction._safe_leaf(get_env().config_dir / app, relative)
+            official = _find_official_presets_dir(registry.unit_dir(app))
+            sources = _safe_child(official, source_dir) if official else None
+            candidate = next((p for p in sorted(sources.iterdir())
+                              if (p.name == variant or p.stem == variant) and not p.is_symlink()), None) if sources and sources.is_dir() else None
+            if candidate is None:
+                return False
+            is_file = candidate.is_file()
+            prefix = relative + "/"
+            baseline = {}
+            for rel, digest in record.get("files", {}).items():
+                if is_file and rel == relative:
+                    baseline[destination.name] = digest
+                elif not is_file and rel.startswith(prefix):
+                    baseline[rel[len(prefix):]] = digest
+            conflicts = []
+            for rel, src in transaction._leaves(candidate):
+                target = transaction._safe_leaf(destination, rel, single=is_file)
+                if target.exists() or target.is_symlink():
+                    identity = _path_identity(target)
+                    if identity != baseline.get(destination.name if is_file else rel) and identity != _path_identity(src):
+                        conflicts.append(relative if is_file else prefix + rel)
+            if conflicts and _preserve_conflicts and not force:
+                return True
+            decision = choose_conflict_policy([app], force=force, conflicts={app: conflicts})
+            if decision is None or (conflicts and not decision):
+                return False
+            if decision and conflicts:
+                backup = transaction.backup_conflicts(app, conflicts)
+                print(f"Backup: {backup}")
+            metadata = ledger.get_deployment(app) or transaction._metadata(manifest, get_env().config_dir / app)
+            ledger.set_deployment(app, **{**metadata, "pending": "part_deploy",
+                                          "pending_part": {"slot": slot, "variant": variant}})
+            carried = {}
+            if not atomic_replace_item(candidate, destination, carry=True,
+                    carry_baseline=None if decision else baseline,
+                    carry_unknown=not decision, carried_out=carried):
+                return False
+            files = dict(record.get("files", {}))
+            # 删除旧零件不再铺设的未修改项；carry 项保留旧hash，不用当前个人内容替换。
+            for rel in list(files):
+                if rel == relative or rel.startswith(prefix):
+                    del files[rel]
+            for rel, path in transaction._leaves(destination):
+                key = relative if is_file else prefix + rel
+                if rel in carried:
+                    if rel in baseline:
+                        files[key] = baseline[rel]
+                else:
+                    files[key] = _path_identity(path)
+            updated = {**record, "files": files,
+                       "updated": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+            ledger.update_ledger(units={app: updated}, parts={f"{app}:{slot}": variant})
+            ledger.set_deployment(app, pending="part_reload" if manifest.preset_reload else None)
+            if manifest.preset_reload:
+                from nyxuri.desktop.presets import _reload_preset
+                if not _reload_preset(manifest):
+                    return False
+            ledger.set_deployment(app, pending=None, pending_part=None)
+            return True
+    except (KeyError, OSError, ValueError, RuntimeError) as exc:
+        log_msg("ERROR", f"Part switch failed for {app}:{slot}: {exc}")
         return False
-    if slot not in manifest.parts:
-        log_msg("WARN", f"No part slot '{slot}' declared for {app}")
-        return False
-
-    cfg = manifest.parts[slot]
-    target_rel = cfg.get("target")
-    if not isinstance(target_rel, str) or not target_rel:
-        log_msg("WARN", f"Refused invalid part target for '{slot}' in {app}")
-        return False
-
-    env = get_env()
-    app_root = _safe_child(env.units_src, app)
-    official_dir = _find_official_presets_dir(app_root)
-    source_dir_name = cfg.get("source_dir", slot)
-
-    src_candidate = None
-    if official_dir:
-        src_slot_dir = _safe_child(official_dir, source_dir_name)
-        if src_slot_dir and src_slot_dir.is_dir():
-            for item in src_slot_dir.iterdir():
-                if item.name == variant or item.stem == variant:
-                    src_candidate = item
-                    break
-
-    if src_candidate is None or not src_candidate.exists():
-        log_msg("WARN", f"Part variant '{variant}' not found in {source_dir_name}")
-        return False
-
-    dest = _safe_child(env.config_dir / app, *Path(target_rel).parts)
-    if dest is None:
-        log_msg("WARN", f"Refused unsafe part target '{target_rel}' for {app}")
-        return False
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    if not atomic_replace_item(src_candidate, dest):
-        return False
-
-    current_parts = read_ledger().get("parts", {})
-    if not isinstance(current_parts, dict):
-        current_parts = {}
-    current_parts[f"{app}:{slot}"] = variant
-    update_ledger(parts=current_parts)
-
-    if manifest.preset_reload:
-        timed_run(manifest.preset_reload, 5, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
-    return True
 
 
 def get_active_part(app: str, slot: str) -> str:

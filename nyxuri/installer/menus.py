@@ -24,8 +24,8 @@ from nyxuri.desktop.presets import (
     edit_preset,
     save_preset,
 )
-from nyxuri.deploy.deploy import wallpapers_pack_present
-from nyxuri.pkg.deps import is_dep_installed, run_dep_menu_loop, run_optional_apps_menu_loop
+from nyxuri.installer.candidates import discover_install_config_items
+from nyxuri.pkg.deps import is_dep_installed, run_dep_menu_loop, run_optional_apps_menu_loop, supply_installed
 from nyxuri.sysdoctor import generate_bug_report, run_doctor
 from nyxuri.state import (
     backup_configs,
@@ -43,14 +43,22 @@ from nyxuri.tui import (
     Menu,
     PresetSwitcher,
     drain_stdin,
+    clear_screen,
     pad_display,
     press_any_key,
 )
 
 def run_master_component_menu(is_update: bool = False, mode: str = "full") -> Optional[dict]:
     """Interactive checklist for choosing configs, wallpapers, and backup behavior."""
-    items = discover_config_items()
+    items = discover_install_config_items()
+    from nyxuri.kernel import ledger, registry
+    enabled = {uid for uid, rec in ledger.all_units().items() if rec.get("state") == "enabled"}
+    if is_update:
+        items = [uid for uid in registry.unit_ids() if uid in enabled
+                 and not registry.load_unit(uid).runtime and uid != "wallpapers"]
     entries: List[CheckboxEntry] = []
+    from nyxuri.pkg.requirements import resolve_requirements
+    manifests = dict(discover_manifest_apps())
 
     wm_items = [i for i in items if i in SUPPORTED_WMS]
     app_items = [i for i in items if i not in SUPPORTED_WMS]
@@ -71,38 +79,47 @@ def run_master_component_menu(is_update: bool = False, mode: str = "full") -> Op
             else:
                 label = f"{label}  {msg('missing')}"
 
-            is_checked = (wm == preferred_wm)
+            is_checked = is_update or (wm == preferred_wm)
+            if mode == "full" and wm in manifests and not resolve_requirements(manifests[wm]).supported:
+                label = f"{label}  {msg('pkg_unsupported_label')}"
+                is_checked = False
             entries.append(CheckboxEntry(
                 key=f"config_{wm}",
                 label=label,
                 checked=is_checked,
-                radio_group="wm",
+                radio_group="" if is_update else "wm",
             ))
 
     # 2. Desktop Apps & Components
     if app_items:
         entries.append(CheckboxEntry(key="sep_apps", label=msg("master_item_apps_section"), is_separator=True))
         optional_set = set(discover_optional_apps())
-        manifests = dict(discover_manifest_apps())
         for item in app_items:
             label = msg("master_item_config", item)
             checked = True
             if item in optional_set:
                 m = manifests.get(item)
                 if m is not None:
-                    is_inst = is_dep_installed(m.detect)
+                    is_inst = supply_installed(m)
                     label = f"{label}  {msg('installed') if is_inst else msg('missing')}"
-                    if not is_inst:
+                    if not is_inst and not is_update:
                         checked = False
+            if mode == "full" and item in manifests:
+                requirements = resolve_requirements(manifests[item])
+                if not requirements.supported:
+                    label = f"{label}  {msg('pkg_unsupported_label')}"
+                    checked = False
+                elif requirements.manual:
+                    label = f"{label}  {msg('pkg_manual_label')}"
             entries.append(CheckboxEntry(key=f"config_{item}", label=label, checked=checked))
 
-    if mode == "full" or is_update:
-        # 2. Heavy assets (wallpapers)
-        wp_checked = not wallpapers_pack_present()
-        wp_status = msg("status_wallpapers_installed") if wallpapers_pack_present() else msg("status_wallpapers_missing")
+    if (mode == "full" and not is_update) or (is_update and "wallpapers" in enabled):
+        # 默认静态壁纸随仓库离线部署；外部视频/大包是独立手动工具，不决定本项状态。
+        wp_checked = True
+        wp_status = msg("status_wallpapers_installed") if "wallpapers" in enabled else msg("status_wallpapers_missing")
         entries.append(CheckboxEntry(
             key="assets_wallpapers",
-            label=msg("master_item_asset", f"Wallpapers & Videos {wp_status}"),
+            label=msg("master_item_asset", wp_status),
             checked=wp_checked,
         ))
 
@@ -163,7 +180,8 @@ def deps_menu_loop() -> bool:
     if not sys.stdin.isatty():
         print(msg("interactive_terminal_required"), file=sys.stderr)
         return False
-    if not shutil.which("pacman"):
+    from nyxuri.pkg.platform import backend_available
+    if not backend_available():
         print(msg("deps_menu_unsupported"))
         return False
 
@@ -190,21 +208,29 @@ def preset_switcher_loop() -> None:
     from nyxuri.desktop.presets import get_preset_info
     from nyxuri.deploy.preset import list_parts, get_active_part, apply_part
 
-    apps = discover_config_items()
+    from nyxuri.deploy.preset import _is_deployable_app
+    apps = [app for app in discover_config_items() if _is_deployable_app(app)]
 
     def on_action(action: str, app: str, name: str) -> Optional[str]:
         if action == "apply":
+            clear_screen()
             ok = apply_preset(app, name)
+            # 操作报告含冲突/快照位置；等待用户阅读，避免被预设列表重绘吞掉。
+            press_any_key()
             return msg("preset_toast_applied", app, name) if ok else msg("preset_apply_failed", app, name)
         elif action == "apply_part":
             slot, variant = name.split(":", 1)
+            clear_screen()
             ok = apply_part(app, slot, variant)
+            press_any_key()
             return msg("preset_part_toast_applied", app, slot, variant) if ok else msg("preset_apply_failed", app, f"{slot}:{variant}")
         elif action == "save":
             ok = save_preset(app, name)
             return msg("preset_toast_saved", app, name) if ok else None
         elif action == "delete":
+            clear_screen()
             ok = delete_preset(app, name)
+            press_any_key()
             return msg("preset_toast_deleted", app, name) if ok else None
         elif action == "edit":
             edit_preset(app, name)
@@ -235,6 +261,7 @@ def main_menu_loop() -> None:
             # 管理
             MenuItem(label=msg("menu_opt3"), group_header=msg("menu_group_maint")),
             MenuItem(label=msg("menu_opt4")),
+            MenuItem(label=msg("menu_apply_local")),
             MenuItem(label=msg("menu_opt7"), style="warn"),
             # 诊断
             MenuItem(label=msg("menu_opt5"), group_header=msg("menu_group_system")),
@@ -258,7 +285,7 @@ def main_menu_loop() -> None:
         elif choice == 4:
             update_result = safe_git_pull(env.repo_dir)
             if update_result is True:
-                print(msg("updating_done"))
+                print(msg("source_update_done"))
                 press_any_key()
                 # Re-exec first: the deploy offer must run on the freshly
                 # pulled code, not on modules loaded before the pull.
@@ -266,19 +293,24 @@ def main_menu_loop() -> None:
                                  PENDING_UPGRADE_MENU_ENV: "1"})
             elif update_result is False:
                 print(msg("updating_failed"), file=sys.stderr)
+            else:
+                print(msg("update_skipped_local_hint"))
             press_any_key()
         elif choice == 5:
-            uninstall_nyxuri("")
+            from nyxuri.installer.workflows import offer_overwrite_upgrade
+            offer_overwrite_upgrade()
             press_any_key()
         elif choice == 6:
-            run_doctor()
+            uninstall_nyxuri("")
             press_any_key()
         elif choice == 7:
-            generate_bug_report()
+            run_doctor()
             press_any_key()
         elif choice == 8:
+            generate_bug_report()
+            press_any_key()
+        elif choice == 9:
             from nyxuri.tui import UnitWorkshop
             UnitWorkshop().run()
-        elif choice == 9:
+        elif choice == 10:
             sys.exit(0)
-

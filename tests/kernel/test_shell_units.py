@@ -135,8 +135,10 @@ class TestRuntimeUnitTransaction(unittest.TestCase):
         with TempEnv() as ctx:
             self._staged(ctx)
             steps = transaction.unit_on("shell.bar", preset="fancy")
-            self.assertTrue(steps[0].ok, str(steps))
-            self.assertEqual(ledger.get_unit("shell.bar")["preset"], "default")
+            # runtime 没有预设轴，显式输入必须拒绝且不能写入单元状态。
+            self.assertFalse(steps[0].ok, str(steps))
+            self.assertIsNone(ledger.get_unit("shell.bar"))
+            self.assertFalse(ledger.ledger_path().exists())
             self.assertFalse((ctx.home / ".config/nyxuri/presets/shell.bar").exists())
 
     def test_dependency_closure_spans_namespaces(self):

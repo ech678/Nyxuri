@@ -83,7 +83,7 @@ curl -fsSL --connect-timeout 10 https://raw.githubusercontent.com/ech678/Nyxuri/
 ```
 
 > [!TIP]
-> 自动支持 Shelly、paru、yay；均未安装时，`nyxuri install full` 会自动装好 `paru`。
+> Arch 自动探测 Shelly、paru、yay；缺少助手时尝试从已配置的软件源安装。
 
 <details>
 <summary>国内镜像加速（gh-proxy / CDN）</summary>
@@ -171,6 +171,10 @@ Nyxuri
 遇到启动卡死、双显卡渲染异常或样式白屏时，优先运行 `nyxuri doctor`。
 
 详细排障步骤与完整清单见 [故障排除指南 (Wiki)](https://github.com/ech678/Nyxuri/wiki/Troubleshooting-zh)。
+
+## 其他发行版
+
+**Ubuntu 26.04**：已完成 APT 适配与 Niri 核心功能验证。
 
 ## 致谢与社区
 

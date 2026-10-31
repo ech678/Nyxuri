@@ -1,97 +1,25 @@
 #!/usr/bin/env python3
-"""fcitx5-rime off-hook: withdraw everything this unit placed outside ~/.config.
-
-The living area (~/.config/fcitx5) is handled by the transaction itself
-(vault + white-paper wipe). This hook reverts the side domains:
-- the rime_ice schema patch (only lines this unit owns, via the marker)
-- the NyxMellow skin tree under ~/.local/share/fcitx5/themes
-- the module-era state markers (superseded by the ledger + Vault)
-"""
-import shutil
-import subprocess
+"""撤回有完整归属记录的 Fcitx 产物，保留来源不明和用户后来修改的内容。"""
 import sys
 from pathlib import Path
 
-THEME = "nyxmellow"
-OWNED_MARKER = f"fcitx-{THEME}-rime.owned"
-LEGACY_MARKERS = (
-    f"fcitx-{THEME}.enabled",
-    f"fcitx-{THEME}-theme.prev",
-    f"fcitx-{THEME}-quickphrase.prev",
-)
-
-RELOAD_CLASSICUI = [
-    "busctl", "--user", "--auto-start=no", "call", "org.fcitx.Fcitx5", "/controller",
-    "org.fcitx.Fcitx.Controller1", "ReloadAddonConfig", "s", "classicui",
-]
-
-
-def _read_owned(marker: Path) -> set:
-    try:
-        return {n for n in marker.read_text(encoding="utf-8").split() if n}
-    except OSError:
-        return set()
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+from nyxuri.desktop.owned_outputs import withdraw_outputs
 
 
 def revert_rime(rime_dir: Path, marker: Path) -> None:
-    """Remove only the Rime Ice selection lines this unit owns."""
-    owned = _read_owned(marker)
-
-    if "default.custom.yaml" in owned:
-        custom = rime_dir / "default.custom.yaml"
-        if custom.is_file():
-            lines = custom.read_text(encoding="utf-8").splitlines()
-            kept = [line for line in lines if "schema: rime_ice" not in line]
-            while kept and not kept[-1].strip():
-                kept.pop()
-            if kept in (["patch:", "  schema_list:"], []) :
-                custom.unlink(missing_ok=True)
-            elif kept != lines:
-                custom.write_text("\n".join(kept) + "\n", encoding="utf-8")
-
-    if "user.yaml" in owned:
-        user = rime_dir / "user.yaml"
-        if user.is_file():
-            lines = user.read_text(encoding="utf-8").splitlines()
-            kept = [line for line in lines if "previously_selected_schema: rime_ice" not in line]
-            while kept and not kept[-1].strip():
-                kept.pop()
-            if kept:
-                user.write_text("\n".join(kept) + "\n", encoding="utf-8")
-            else:
-                user.unlink(missing_ok=True)
-
-    marker.unlink(missing_ok=True)
+    """按完整原值恢复；旧 marker 不能授权按行删除个人文件。"""
+    withdraw_outputs(producer="fcitx5-rime", ordinary_only=True)
 
 
 def withdraw_skin(theme_dir: Path) -> None:
-    """Remove shipped and rendered skin files; leave anything else in place."""
-    for directory in (theme_dir / "templates", theme_dir):
-        for name in ("theme.conf", "panel.svg", "highlight.svg"):
-            (directory / name).unlink(missing_ok=True)
-        try:
-            directory.rmdir()
-        except OSError:
-            pass
+    """按消费者记录清理皮肤，固定文件名不构成所有权。"""
+    withdraw_outputs(consumer="fcitx5-rime", ordinary_only=True)
 
 
 def main() -> int:
-    home = Path.home()
-    revert_rime(home / ".local/share/fcitx5/rime", home / ".local/state/nyxuri" / OWNED_MARKER)
-    withdraw_skin(home / ".local/share/fcitx5/themes" / THEME)
-
-    state_dir = home / ".local/state/nyxuri"
-    for name in LEGACY_MARKERS:
-        (state_dir / name).unlink(missing_ok=True)
-
-    if shutil.which("busctl"):
-        try:
-            subprocess.run(RELOAD_CLASSICUI, timeout=5, check=False,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except (OSError, subprocess.TimeoutExpired):
-            pass
-
-    print("[✓] NyxMellow skin withdrawn, rime patch reverted")
+    withdraw_outputs(consumer="fcitx5-rime", ordinary_only=True)
+    print("[✓] Tracked Fcitx outputs withdrawn; user changes preserved")
     return 0
 
 

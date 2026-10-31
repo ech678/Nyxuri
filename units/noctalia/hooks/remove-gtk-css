@@ -1,35 +1,15 @@
 #!/usr/bin/env python3
-"""noctalia off-hook: withdraw the GTK css this unit rendered.
-
-Ownership line: only files carrying this unit's M3 render marker are
-deleted — a hand-written ~/.config/gtk-*.0/gtk.css without the marker is
-the user's own and stays. Legacy gtk-dark.css symlinks that override M3
-colors are removed on sight.
-"""
+"""仅撤回 Noctalia 已登记且最后写入身份仍一致的外部产物。"""
 import sys
 from pathlib import Path
 
-M3_MARKER = "@define-color accent_bg_color"
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+from nyxuri.desktop.owned_outputs import withdraw_outputs
 
 
 def main() -> int:
-    home = Path.home()
-    for gtk_dir in (home / ".config/gtk-3.0", home / ".config/gtk-4.0"):
-        if not gtk_dir.is_dir():
-            continue
-        dark_css = gtk_dir / "gtk-dark.css"
-        if dark_css.is_symlink():
-            dark_css.unlink()
-            print(f"[✓] removed legacy symlink: {dark_css}")
-        css = gtk_dir / "gtk.css"
-        if css.is_file():
-            try:
-                rendered = M3_MARKER in css.read_text(encoding="utf-8", errors="ignore")
-            except OSError:
-                rendered = False
-            if rendered:
-                css.unlink()
-                print(f"[✓] withdrew rendered GTK css: {css}")
+    # 普通 CSS 文本和 gtk-dark.css 文件名均不构成归属证明。
+    withdraw_outputs(producer="noctalia", ordinary_only=True)
     return 0
 
 

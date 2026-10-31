@@ -19,8 +19,11 @@ class TestOptionalAppPackageMapping(unittest.TestCase):
     def setUp(self):
         self._ctx = TempEnv()
         self._ctx.__enter__()
+        self._arch = patch("nyxuri.pkg.platform.current_platform", return_value="arch")
+        self._arch.start()
 
     def tearDown(self):
+        self._arch.stop()
         self._ctx.__exit__()
 
     def test_missioncenter_maps_to_mission_center(self):
@@ -97,8 +100,11 @@ class TestMpvpaperDetection(unittest.TestCase):
     def setUp(self):
         self._ctx = TempEnv()
         self._ctx.__enter__()
+        self._arch = patch("nyxuri.pkg.platform.current_platform", return_value="arch")
+        self._arch.start()
 
     def tearDown(self):
+        self._arch.stop()
         self._ctx.__exit__()
 
     def test_uses_pacman_qi_not_binary_version(self):
@@ -169,9 +175,12 @@ class TestFlatpakApps(unittest.TestCase):
     def setUp(self):
         self._ctx = TempEnv()
         self._ctx.__enter__()
+        self._arch = patch("nyxuri.pkg.platform.current_platform", return_value="arch")
+        self._arch.start()
         import nyxuri.pkg.deps as deps_mod
 
     def tearDown(self):
+        self._arch.stop()
         self._ctx.__exit__()
 
     def test_flatpak_ids_never_leak_into_pacman(self):
@@ -268,8 +277,11 @@ class TestAurBootstrapFailsClosed(unittest.TestCase):
     def setUp(self):
         self._ctx = TempEnv()
         self._ctx.__enter__()
+        self._arch = patch("nyxuri.pkg.platform.current_platform", return_value="arch")
+        self._arch.start()
 
     def tearDown(self):
+        self._arch.stop()
         self._ctx.__exit__()
 
     def test_missing_repo_package_never_builds_from_aur(self):
@@ -303,10 +315,13 @@ class TestAurHelperCacheInvalidation(unittest.TestCase):
     def setUp(self):
         self._ctx = TempEnv()
         self._ctx.__enter__()
+        self._arch = patch("nyxuri.pkg.platform.current_platform", return_value="arch")
+        self._arch.start()
         import nyxuri.pkg.deps as deps_mod
 
     def tearDown(self):
         import nyxuri.pkg.deps as deps_mod
+        self._arch.stop()
         self._ctx.__exit__()
 
     def test_freshly_installed_paru_is_rediscovered_not_uninstalled(self):
@@ -345,10 +360,6 @@ class TestAurHelperCacheInvalidation(unittest.TestCase):
         self.assertEqual(removed, [], "freshly installed paru must not be removed")
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 def _quiet(fn, *args, **kwargs):
     with contextlib.redirect_stdout(io.StringIO()):
         return fn(*args, **kwargs)
@@ -370,3 +381,228 @@ class TestDepsMenuReportsFailure(unittest.TestCase):
             with patch.object(deps.CheckboxList, "run", return_value=[]), \
                  patch.object(deps.sys.stdin, "isatty", return_value=True):
                 self.assertTrue(_quiet(deps.run_dep_menu_loop))
+
+
+class TestUbuntuDependencyRouting(unittest.TestCase):
+    """Ubuntu 的单元和应用依赖按 APT、Flatpak 与手动资源分流。"""
+
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+        self.addCleanup(self._ctx.__exit__)
+        self._platform = patch("nyxuri.pkg.platform.current_platform", return_value="ubuntu")
+        self._platform.start()
+        self.addCleanup(self._platform.stop)
+        # 拒绝任何未在具体用例中声明的外部进程；回归误走其他安装分支也不能碰宿主。
+        process_guard = patch("subprocess.run", side_effect=AssertionError("Unexpected external process"))
+        process_guard.start()
+        self.addCleanup(process_guard.stop)
+
+    def test_unit_installer_uses_ubuntu_mapping_and_rejects_undeclared_names(self):
+        from nyxuri.pkg.deps import unit_package_installer
+        from nyxuri import pkg
+
+        with patch.object(pkg, "install", return_value=True) as install:
+            self.assertTrue(unit_package_installer("niri", ["niri"]))
+        install.assert_called_once_with(["niri"])
+
+        with patch.object(pkg, "install") as install:
+            self.assertFalse(unit_package_installer("niri", ["niri-aur-only-name"]))
+        install.assert_not_called()
+
+    def test_selected_core_dependencies_resolve_ubuntu_names(self):
+        from nyxuri.pkg.deps import install_selected_deps
+        from nyxuri import pkg
+
+        with patch.object(pkg, "install", return_value=True) as install:
+            self.assertTrue(install_selected_deps(["fish"]))
+        install.assert_called_once_with(["fish"])
+
+        with patch.object(pkg, "install") as install:
+            self.assertFalse(install_selected_deps(["not-declared-on-ubuntu"]))
+        install.assert_not_called()
+
+    def test_optional_video_player_reports_manual_missing_without_installing(self):
+        """显式选择视频能力仍须供给播放器；缺席时不能假报可用或转为 APT/编译。"""
+        from nyxuri.pkg import deps
+        from nyxuri.pkg.catalog import get_entry
+        from nyxuri import pkg
+
+        item = get_entry("mpvpaper")
+        self.assertIsNotNone(item)
+        with patch.object(deps.DependencyProbe, "installed", return_value=False), \
+             patch.object(pkg, "install") as install, \
+             patch.object(pkg, "install_flatpaks") as flatpak, \
+             contextlib.redirect_stdout(io.StringIO()) as output, \
+             contextlib.redirect_stderr(io.StringIO()) as error:
+            self.assertFalse(deps.supply_installed(item))
+            self.assertFalse(deps.install_optional_apps(["mpvpaper"]))
+        install.assert_not_called()
+        flatpak.assert_not_called()
+        self.assertIn("mpvpaper", error.getvalue())
+        self.assertIn("static wallpapers do not require", output.getvalue())
+        self.assertIn("provide the mpvpaper executable manually", output.getvalue())
+
+    def test_optional_app_installer_maps_ubuntu_repository_package(self):
+        from nyxuri.pkg.deps import install_optional_apps
+        from nyxuri import pkg
+
+        with patch.object(pkg, "install", return_value=True) as install, \
+             patch.object(pkg, "install_flatpaks") as flatpak:
+            self.assertTrue(install_optional_apps(["vscode"]))
+        install.assert_called_once_with(["code"])
+        flatpak.assert_not_called()
+
+    def _run_flatpak_app_supply(self, apt_runtime_result=0):
+        """只替换外部命令结果，保留依赖分流与包管理调用链。"""
+        from nyxuri.pkg.deps import install_optional_apps
+
+        commands = []
+
+        def fake_run(argv, **kwargs):
+            command = list(argv)
+            commands.append(command)
+            if command == [
+                "dpkg-query", "-W", "-f=${db:Status-Abbrev} ${binary:Package}\\n",
+            ]:
+                return subprocess.CompletedProcess(command, 0, "", "")
+            if command == ["apt-cache", "policy"]:
+                output = "Package files:\n 500 http://archive.example/ubuntu stable/main amd64 Packages\n"
+                return subprocess.CompletedProcess(command, 0, output, "")
+            if command == ["apt-cache", "policy", "flatpak"]:
+                output = (
+                    "flatpak:\n  Installed: (none)\n  Candidate: 1.0\n  Version table:\n"
+                    "     1.0 500\n        500 http://archive.example/ubuntu stable/main amd64 Packages\n"
+                )
+                return subprocess.CompletedProcess(command, 0, output, "")
+            if command[:3] == ["sudo", "apt-get", "install"]:
+                return subprocess.CompletedProcess(command, apt_runtime_result, "", "")
+            if command[:2] in (["flatpak", "remote-add"], ["flatpak", "install"]):
+                return subprocess.CompletedProcess(command, 0, "", "")
+            raise AssertionError(f"Unexpected package command: {command}")
+
+        with patch("shutil.which", side_effect=lambda name: f"/usr/bin/{name}" if name in {
+            "apt-get", "apt-cache", "dpkg-query", "flatpak",
+        } else None), \
+             patch("subprocess.run", side_effect=fake_run):
+            result = install_optional_apps(["qq", "wechat"])
+        return result, commands
+
+    def test_flatpak_apps_use_apt_only_for_runtime_and_flatpak_for_app_ids(self):
+        from nyxuri.pkg import FLATHUB_REMOTE_URL
+
+        result, commands = self._run_flatpak_app_supply()
+
+        self.assertTrue(result)
+        apt_installs = [cmd for cmd in commands if cmd[:3] == ["sudo", "apt-get", "install"]]
+        self.assertEqual(apt_installs, [[
+            "sudo", "apt-get", "install", "--yes", "--", "flatpak",
+        ]])
+        self.assertNotIn("com.qq.QQ", apt_installs[0])
+        self.assertNotIn("com.tencent.WeChat", apt_installs[0])
+
+        remote_adds = [cmd for cmd in commands if cmd[:2] == ["flatpak", "remote-add"]]
+        self.assertEqual(remote_adds, [[
+            "flatpak", "remote-add", "--system", "--if-not-exists", "flathub", FLATHUB_REMOTE_URL,
+        ]])
+        app_installs = [cmd for cmd in commands if cmd[:2] == ["flatpak", "install"]]
+        self.assertEqual(app_installs, [[
+            "flatpak", "install", "--system", "--noninteractive", "flathub",
+            "com.qq.QQ", "com.tencent.WeChat",
+        ]])
+        self.assertLess(commands.index(apt_installs[0]), commands.index(remote_adds[0]))
+        self.assertLess(commands.index(remote_adds[0]), commands.index(app_installs[0]))
+
+    def test_flatpak_apps_report_failure_when_runtime_apt_install_fails(self):
+        result, commands = self._run_flatpak_app_supply(apt_runtime_result=42)
+
+        self.assertFalse(result)
+        apt_installs = [cmd for cmd in commands if cmd[:3] == ["sudo", "apt-get", "install"]]
+        self.assertEqual(apt_installs, [[
+            "sudo", "apt-get", "install", "--yes", "--", "flatpak",
+        ]])
+
+    def test_manual_resources_are_never_sent_as_apt_packages(self):
+        from nyxuri.pkg.deps import install_optional_apps
+        from nyxuri import pkg
+
+        with patch("nyxuri.pkg.deps.DependencyProbe.installed", return_value=False), \
+             patch.object(pkg, "install", return_value=True) as install, \
+             patch.object(pkg, "install_flatpaks") as flatpak, \
+             contextlib.redirect_stderr(io.StringIO()) as stderr:
+            self.assertFalse(install_optional_apps(["quickshell"]))
+        install.assert_called_once_with([
+            "quickshell", "matugen", "jq", "qml6-module-qtquick-controls", "qml6-module-qtquick-effects",
+            "qml6-module-qtquick-layouts", "qml6-module-qtcore",
+            "qml6-module-qt-labs-folderlistmodel", "qml6-module-qt5compat-graphicaleffects",
+        ])
+        self.assertFalse(any("material-symbols" in name for name in install.call_args.args[0]))
+        self.assertIn("material-symbols-rounded-font", stderr.getvalue())
+        flatpak.assert_not_called()
+
+    def test_unsupported_optional_unit_never_reaches_a_package_installer(self):
+        from nyxuri.pkg.deps import install_optional_apps
+        from nyxuri import pkg
+
+        with patch.object(pkg, "install") as install, \
+             patch.object(pkg, "install_flatpaks") as flatpak, \
+             contextlib.redirect_stderr(io.StringIO()) as stderr:
+            self.assertFalse(install_optional_apps(["mango"]))
+        install.assert_not_called()
+        flatpak.assert_not_called()
+        self.assertIn("Ubuntu", stderr.getvalue())
+
+    def test_supply_installed_requires_every_declared_manual_font(self):
+        from types import SimpleNamespace
+        from nyxuri.pkg.catalog import get_entry
+        from nyxuri.pkg.deps import supply_installed
+
+        item = get_entry("quickshell")
+        self.assertIsNotNone(item)
+        probe = SimpleNamespace(
+            installed=lambda name: name != "material-symbols-rounded-font",
+            flatpaks=set(),
+        )
+        self.assertFalse(supply_installed(item, probe))
+
+        complete = SimpleNamespace(installed=lambda _name: True, flatpaks=set())
+        self.assertTrue(supply_installed(item, complete))
+
+    def test_supply_installed_builds_a_fresh_probe_for_each_inspection(self):
+        from nyxuri.pkg.catalog import get_entry
+        from nyxuri.pkg.deps import supply_installed
+        import nyxuri.pkg.deps as deps
+
+        item = get_entry("quickshell")
+        state = {"rounded_font": False}
+
+        class Probe:
+            def installed(self, name):
+                if name == "material-symbols-rounded-font":
+                    return state["rounded_font"]
+                return True
+
+            flatpaks = set()
+
+        with patch.object(deps, "DependencyProbe", side_effect=lambda: Probe()) as factory:
+            self.assertFalse(supply_installed(item))
+            state["rounded_font"] = True
+            self.assertTrue(supply_installed(item))
+        self.assertEqual(factory.call_count, 2)
+
+    def test_ubuntu_never_attempts_to_bootstrap_an_aur_helper(self):
+        import nyxuri.pkg.deps as deps
+        from nyxuri.pkg.deps import ensure_aur_helper
+
+        with patch.object(deps.pkg, "run") as run, \
+             patch.object(deps.pkg, "install") as install, \
+             patch.object(deps, "prompt_confirm") as confirm, \
+             contextlib.redirect_stderr(io.StringIO()):
+            self.assertIsNone(ensure_aur_helper())
+        run.assert_not_called()
+        install.assert_not_called()
+        confirm.assert_not_called()
+
+
+if __name__ == "__main__":
+    unittest.main()

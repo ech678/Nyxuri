@@ -3,3 +3,6 @@ preserve = ["current-theme.conf", "themes/noctalia.conf", "themes/nyxuri.conf"]
 
 [presets]
 reload = ["pkill", "-SIGUSR1", "-x", "kitty"]
+
+[platforms.ubuntu]
+packages = ["kitty"]

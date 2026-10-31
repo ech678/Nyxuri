@@ -122,9 +122,9 @@ function nyxhelp --description "Nyxuri Cheatsheet速查手册"
             return
         case pkg
             set_color -o magenta; echo "  包管理与清理"; set_color normal
-            set_color -o yellow; echo -n "    up / update              "; set_color green; echo "-> 运行 paru/yay/shelly 一键全量更新"; set_color normal
+            set_color -o yellow; echo -n "    up / update              "; set_color green; echo "-> 更新当前发行版软件源中的包"; set_color normal
             set_color -o yellow; echo -n "    in [包名]                "; set_color green; echo "-> 安装软件包 (无参时自动开启 se 模糊搜索)"; set_color normal
-            set_color -o yellow; echo -n "    se [关键字]              "; set_color green; echo "-> 模糊搜索软件包 (支持 aur/pac 前缀) 并 fzf 交互安装"; set_color normal
+            set_color -o yellow; echo -n "    se [关键字]              "; set_color green; echo "-> 模糊搜索软件包 (支持 repo/aur 前缀) 并 fzf 交互安装"; set_color normal
             set_color -o yellow; echo -n "    un [关键字]              "; set_color green; echo "-> 模糊搜索已安装包并 fzf 交互卸载"; set_color normal
             set_color -o yellow; echo -n "    clean [-n]               "; set_color green; echo "-> 扫描并清理缓存与日志，-n 只预览"; set_color normal
             return
@@ -225,7 +225,7 @@ if status is-interactive
     alias celar "printf '\033[2J\033[3J\033[1;1H'"
     alias claer "printf '\033[2J\033[3J\033[1;1H'"
 
-    function up --description "一键系统与软件包更新 (Arch / CachyOS)"
+    function up --description "Update packages through the active system package manager"
         nyxuri pkg upgrade $argv
     end
     alias update='up'
@@ -240,8 +240,8 @@ if status is-interactive
 
     alias clean='nyxuri clean'
 
-    # se：模糊搜索软件包 (支持 aur <kw> / pac <kw> 前缀) 并用 fzf 交互安装 (无 fzf 时自动降级)
-    function se --description "Fuzzy search & install packages (aur/pac prefix)"
+    # se：模糊搜索发行版软件源或 AUR，并用 fzf 交互安装（无 fzf 时自动降级）
+    function se --description "Fuzzy search & install packages (repo/aur prefix)"
         if not command -v fzf &>/dev/null
             nyxuri pkg search $argv
             return
@@ -255,7 +255,7 @@ if status is-interactive
 
         set -l preview_cmd "nyxuri pkg info {2}"
 
-        set -l header_str "aur <kw> → AUR | pac <kw> → repo | [Tab] multi-select"
+        set -l header_str "repo <kw> → system repository | aur <kw> → AUR (Arch) | [Tab] multi-select"
 
         set -l pkgs (nyxuri pkg search "$fzf_query" | fzf --multi --disabled --prompt='search > ' \
             --header="$header_str" \

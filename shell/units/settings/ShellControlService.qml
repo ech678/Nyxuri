@@ -219,17 +219,17 @@ Singleton {
                                                          {
                                                              "id": "wl-copy",
                                                              "available": deps.wlCopy === true,
-                                                             "probed": true
+                                                             "probed": ClipboardService.dependenciesProbed
                                                          },
                                                          {
                                                              "id": "wl-paste",
                                                              "available": deps.wlPaste === true,
-                                                             "probed": true
+                                                             "probed": ClipboardService.dependenciesProbed
                                                          },
                                                          {
                                                              "id": "cliphist",
                                                              "available": deps.cliphist === true,
-                                                             "probed": true
+                                                             "probed": ClipboardService.dependenciesProbed
                                                          },
                                                          {
                                                              "id": "hyprpicker",
@@ -245,6 +245,10 @@ Singleton {
                                                          }
                                                      ],
                                                      "errors": [
+                                                         {
+                                                             "source": "clipboard",
+                                                             "message": ClipboardService.error
+                                                         },
                                                          {
                                                              "source": "niri",
                                                              "message": NiriService.configError

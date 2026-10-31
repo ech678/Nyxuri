@@ -8,7 +8,7 @@
 `~/.config/nyxuri/presets/<app>.active`——一行，内容是预设名或 `default`。不占配置槽
 （这是扔掉 include 间接层、扔掉 `__preset__` 保留名的关键简化：一个概念减两份复杂度）。
 同时同步记录至 `~/.local/state/nyxuri/state.json` 账本（`presets` 字典）。
-`read_active_preset` 以**文件为权威**：读到合法值即回写账本自愈；文件（或其所在目录）
+`read_active_preset` 以**文件为权威**：读取不修改账本；文件（或其所在目录）
 缺失时兜底读账本，账本同样没有才回落 `"default"`。
 
 - `read_active_preset(app)` → 文件缺失走账本兜底，仍无则返回 `"default"`；空白、读失败或非法内容会抛出 `InvalidActivePresetError` 并冻结部署
@@ -32,24 +32,21 @@ deploy 时根据 active 选源目录，四条分支 + 一条冻结：
 
 官方/用户优先级在 `elif` 链里：先 official、再 user、都没命中才冻结。
 
-## 写时序铁律
+## 写入与事务边界
 
-**先 `atomic_replace_item` 成功，再写 `<app>.active`**。反过来（先写 active 再 deploy）一旦
-中途崩了，active 指向新预设但 dest 还是旧的，下次读到 active 以为切好了就不重写，用户卡在
-"显示新预设、实际旧配置"的错乱态。
+`apply_preset` 只接受已启用的目录单元；`target` 单文件、`merge` 和 `runtime` 单元不提供
+整包预设。选择无效或冲突界面取消时不修改文件、active 或账本。
 
-- **apply 流程**（`apply_preset`）：`atomic_replace` → `_phase_render_templates(only_app=app)`
-  → `write_active_preset`。deploy-then-write。write 失败（磁盘满/权限）会报错返回
-  False——deploy 已落地、active 未记录，下次 update 按 default 重新部署。
-- **dest-missing reset** 是 sanctioned write-before-deploy：dest 已空，reset 后下次自愈。
-- **update 流程**（`_phase_atomic_deployment`）：active 本就正确，只在 dest-missing 时重置
-  写 active；其余分支不重写 active。
+切换通过 `unit_on(..., preset=name, refresh=True, run_hooks=False)`：校验预设与依赖状态，
+披露冲突，必要时先建恢复快照，再原子复制、提交选择、渲染本次实际写入的模板、记录基线。
+保留的个人内容不参与渲染，不以当前内容重建基线；外来文件保留。文件提交后出错保留 pending，
+返回失败，不能把多处写入视作跨文件系统的原子提交。
 
-## apply 的窄路径
+切换不运行安装钩子，只执行该 manifest 的 `preset_reload`。删除用户预设时拒绝删除当前
+活动选择；先明确切换到其他预设，再删除原目录，避免界面显示与实机文件错位。
 
-`apply_preset` 只跑该 app 的 `atomic_replace` + 模板渲染，**不走**全流水线——不触发
-`_phase_post_install_services`（fisher update /
-theme-sync / gtk 重渲染）。切个 kitty 预设不该顺带跑 fisher，无关副作用违反"无熵"。
+`resolve_preset_src` 保留底层部署工具的 dest-missing 行为；单元事务显式解析活动预设，
+首次 `on --preset` 即使目标不存在也使用指定预设，不自动改为 default。
 
 ## update 同步语义（关键）
 
@@ -94,4 +91,4 @@ nyxuri preset <app> part <slot> <name>  # 切换通用零件插槽（如 nyxuri 
 
 `save` 拒 `default`（保留字）、拒官方同名（官方优先）。`delete` 同样拒这两类。`edit` 也拒这两类
 （官方预设只读）——想改官方预设的口味，先 `apply` 它再 `save` 成用户预设。也可跳过命令，直接
-编辑 `~/.config/nyxuri/presets/<app>/<name>/` 里的文件，`apply` 即部署。
+编辑 `~/.config/nyxuri/presets/<app>/<name>/` 里的文件，`apply` 即部署。冲突可用 `apply <name> --force` / `part <slot> <name> --force` 备份后覆盖。

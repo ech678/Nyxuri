@@ -83,7 +83,7 @@ curl -fsSL --connect-timeout 10 https://raw.githubusercontent.com/ech678/Nyxuri/
 ```
 
 > [!TIP]
-> Auto-detects Shelly, paru, and yay; if none are installed, `nyxuri install full` automatically bootstraps `paru`.
+> Arch auto-detects Shelly, paru, and yay, and can install a missing helper from configured repositories.
 
 <details>
 <summary>Mirrors for China (gh-proxy / CDN)</summary>
@@ -171,6 +171,10 @@ See full command matrix and options in [CLI Reference (Wiki)](https://github.com
 When encountering issues, run `nyxuri doctor` first.
 
 See full diagnostic guides and step-by-step solutions in [Troubleshooting (Wiki)](https://github.com/ech678/Nyxuri/wiki/Troubleshooting).
+
+## Other Distributions
+
+**Ubuntu 26.04**: APT integration and core Niri functionality have been verified.
 
 ## Credits
 

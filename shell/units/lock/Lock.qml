@@ -29,7 +29,8 @@ Scope {
     signal unlocked
     signal secured
 
-    function open() {
+    // 接受锁屏请求并开始抓取背景；LOCKED 表示请求已接收，安全锁定由 sessionLock.secure 确认。
+    function open(): string {
         if (sessionLock.locked || capturePending)
             return "ALREADY_LOCKED";
 
@@ -43,7 +44,8 @@ Scope {
         return "LOCKED";
     }
 
-    function isLocked() {
+    // 抓取期间也视为锁定，阻止切换 Shell 在安全锁定前的准备阶段销毁当前实例。
+    function isLocked(): bool {
         return sessionLock.locked || capturePending;
     }
 
@@ -137,11 +139,12 @@ Scope {
     IpcHandler {
         target: "lock"
 
-        function open() {
+        // IPC 需要显式返回类型才能导出正确方法与值；外部切换器依赖 bool 锁态守卫。
+        function open(): string {
             return root.open();
         }
 
-        function isLocked() {
+        function isLocked(): bool {
             return root.isLocked();
         }
     }

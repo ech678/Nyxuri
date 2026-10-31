@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""noctalia on-hook: ask the daemon to render the GTK Material You templates.
+"""请求 Noctalia 守护进程渲染本单元声明的 GTK 模板。
 
-Unit-owned behavior (KM3): the GTK template registration lives in this
-unit's noctalia-config.toml; rendering is this unit's declared side
-effect. Best-effort — without the noctalia binary the render stays
-pending until the next deploy.
+Plasma 中可能只有 Noctalia 软件包、没有运行中的守护进程；IPC 失败要返回
+未完成，交给单元事务显示钩子警告，不能把配置复制成功当作模板渲染成功。
 """
 import shutil
 import subprocess
@@ -16,17 +14,20 @@ BIN = "noctalia"
 def main() -> int:
     if not shutil.which(BIN):
         print("[!] noctalia CLI not in PATH; GTK render pending until next deploy")
-        return 0
+        return 1
     for argv, timeout in (
         ([BIN, "msg", "config-reload"], 15),
         ([BIN, "msg", "templates-apply"], 30),
     ):
         try:
-            subprocess.run(argv, timeout=timeout, check=False,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            result = subprocess.run(argv, timeout=timeout, check=False,
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if result.returncode != 0:
+                print("[!] noctalia daemon is unavailable or rejected the render; GTK templates remain pending")
+                return 1
         except (OSError, subprocess.TimeoutExpired):
             print("[!] noctalia render trigger failed; will retry on next deploy")
-            return 0
+            return 1
     print("[✓] GTK Material You templates rendered")
     return 0
 

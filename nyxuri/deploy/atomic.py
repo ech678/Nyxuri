@@ -496,7 +496,8 @@ def atomic_replace_item(
         # swap and the hook replay re-lays it (KM3 restored).
         if carry and dest.is_dir():
             exempt = {rel for rel in (preserve or []) if rel and not os.path.isabs(rel)}
-            exempt.update(rel for rel in (preserve_values or {}) if rel)
+            # 键级继承不能掩盖同一文件的其他个人修改。没有可还原的历史全文时，
+            # 哈希漂移一律整文件保留；只有确认未修改或显式force才采用新模板其余键。
             exempt_prefixes = tuple(entry + "/" for entry in exempt)
             for rel, src_p in _walk_rels(dest):
                 if rel in exempt or rel.startswith(exempt_prefixes):

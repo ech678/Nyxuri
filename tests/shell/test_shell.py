@@ -29,6 +29,10 @@ class TestShellManagement(unittest.TestCase):
     def setUp(self):
         self._ctx = TempEnv()
         self._ctx.__enter__()
+        # 本类验证管理状态机；真实runtime供给与QML探针由test_shell_switcher专项覆盖。
+        self.runtime_preflight = patch("nyxuri.desktop.shell_runtime.preflight_runtime", return_value="")
+        self.runtime_preflight.start()
+        self.addCleanup(self.runtime_preflight.stop)
 
     def tearDown(self):
         self._ctx.__exit__()
@@ -176,12 +180,22 @@ class TestShellManagement(unittest.TestCase):
         (dest_dir / "shell-action.sh").write_text("#!/bin/sh\necho action old\n", encoding="utf-8")
         (dest_dir / "session-shell.sh").chmod(0o644)
 
-        ensure_compositor_gateway_scripts()
+        # 切换入口只验证事务已经部署的网关，不复制较新的源码，也不偷偷修chmod。
+        with self.assertRaisesRegex(RuntimeError, "refresh niri"):
+            ensure_compositor_gateway_scripts()
+        self.assertEqual((dest_dir / "session-shell.sh").read_text(), "#!/bin/sh\necho session old\n")
+        self.assertEqual((dest_dir / "session-shell.sh").stat().st_mode & 0o777, 0o644)
 
-        self.assertEqual((dest_dir / "session-shell.sh").read_text(encoding="utf-8"), "#!/bin/sh\necho session new\n")
-        self.assertEqual((dest_dir / "shell-action.sh").read_text(encoding="utf-8"), "#!/bin/sh\necho action new\n")
-        self.assertTrue(os.access(dest_dir / "session-shell.sh", os.X_OK))
-        self.assertTrue(os.access(dest_dir / "shell-action.sh", os.X_OK))
+        for name in ("session-shell.sh", "shell-action.sh"):
+            (dest_dir / name).chmod(0o755)
+        ensure_compositor_gateway_scripts()
+        self.assertEqual((dest_dir / "shell-action.sh").read_text(), "#!/bin/sh\necho action old\n")
+
+        (dest_dir / "shell-action.sh").unlink()
+        with self.assertRaisesRegex(RuntimeError, "refresh niri"):
+            ensure_compositor_gateway_scripts()
+        self.assertFalse((dest_dir / "shell-action.sh").exists())
+        self.assertEqual((dest_dir / "session-shell.sh").read_text(), "#!/bin/sh\necho session old\n")
 
     @patch("nyxuri.desktop.shell_switcher.stop_all_shell_instances")
     @patch("nyxuri.desktop.shell_switcher.wait_shell_ready")
@@ -353,25 +367,48 @@ class TestIssue140NoctaliaTemplatesDoNotCauseUnitDrift(unittest.TestCase):
     """
 
     def test_units_remain_synced_after_noctalia_template_rendering(self):
-        from nyxuri.kernel import transaction
-        with TempEnv() as ctx:
+        from nyxuri.kernel import ledger, transaction
+        from nyxuri.desktop import owned_outputs
+        import tomllib
+
+        with TempEnv() as ctx, \
+             patch("nyxuri.pkg.platform.current_platform", return_value="arch"), \
+             patch("nyxuri.pkg.detection.DependencyProbe.installed", return_value=True) as installed:
+            # 本例只验证部署/渲染归属：完整声明的依赖视为已供应，不读取宿主包数据库。
+            # 真实daemon hook在专项测试中验收，这里通过实际暂存提交入口模拟其渲染结果。
             for uid in ("kitty", "starship", "niri", "noctalia"):
-                steps = transaction.unit_on(uid)
-                self.assertTrue(steps[0].ok, f"failed to enable {uid}: {steps}")
+                steps = transaction.unit_on(uid, run_hooks=False)
+                self.assertTrue(all(step.ok for step in steps), f"failed to enable {uid}: {steps}")
+            requested = {entry.args[0] for entry in installed.call_args_list}
+            self.assertTrue({"wl-clipboard", "python-cairo"}.issubset(requested))
+            self.assertEqual(ledger.get_unit("theme")["state"], "enabled")
 
-            # Simulate template outputs landing from Noctalia:
-            # 1. Kitty: themes/noctalia.conf rendered
-            theme_file = ctx.home / ".config/kitty/themes/noctalia.conf"
-            theme_file.parent.mkdir(parents=True, exist_ok=True)
-            theme_file.write_text("color0 #000000\n", encoding="utf-8")
+            config = ctx.env.config_dir / "noctalia/noctalia-config.toml"
+            templates = tomllib.loads(config.read_text())["theme"]["templates"]["user"]
+            self.assertIn("nyxuri_kitty", templates)
+            self.assertIn("nyxuri_niri_glow_material_you", templates)
+            self.assertNotIn("nyxuri_mango", templates)
+            self.assertNotIn("nyxmellow_theme", templates)
+            payloads = {
+                "nyxuri_kitty": b"color0 #000000\n",
+                "nyxuri_niri_glow_material_you": b'layout { focus-ring { active-color "#ffffff" } }\n',
+            }
+            for name, content in payloads.items():
+                stage = Path(templates[name]["output_path"])
+                self.assertTrue(stage.is_relative_to(ctx.env.state_dir))
+                stage.write_bytes(content)
+                self.assertTrue(owned_outputs.commit_template(name))
+            self.assertEqual((ctx.env.config_dir / "kitty/themes/noctalia.conf").read_bytes(), payloads["nyxuri_kitty"])
+            self.assertEqual((ctx.env.config_dir / "niri/colors.kdl").read_bytes(), payloads["nyxuri_niri_glow_material_you"])
+            self.assertIn(ctx.env.config_dir / "kitty/themes/noctalia.conf", owned_outputs.managed_paths())
 
-            # 2. Niri: noctalia.kdl rendered
-            niri_tpl = ctx.home / ".config/niri/noctalia.kdl"
-            niri_tpl.write_text("layout { focus-ring { active-color \"#ffffff\" } }\n", encoding="utf-8")
-
-            # Reconcile all units
             report = transaction.audit_units()
-            self.assertEqual(report.get("kitty"), "Synced")
-            self.assertEqual(report.get("starship"), "Synced")
-            self.assertEqual(report.get("niri"), "Synced")
-            self.assertEqual(report.get("noctalia"), "Synced")
+            for uid in ("kitty", "starship", "niri", "noctalia"):
+                self.assertEqual(report.get(uid), "Synced", uid)
+
+            # 停用后旧守护进程排队的渲染也不能重建消费者目录。
+            steps = transaction.unit_off("kitty")
+            self.assertTrue(all(step.ok for step in steps), steps)
+            self.assertTrue(owned_outputs.commit_template("nyxuri_kitty"))
+            self.assertFalse((ctx.env.config_dir / "kitty/themes/noctalia.conf").exists())
+            self.assertEqual(transaction.audit_units().get("noctalia"), "Synced")

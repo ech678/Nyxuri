@@ -19,6 +19,65 @@ import subprocess
 from pathlib import Path
 
 
+def _qt6_qmltestrunner(candidates=None):
+    """只返回可确认属于 Qt6 的 QML 测试运行器，避免 qtchooser 落到 Qt5。"""
+    if candidates is None:
+        candidates = ["/usr/lib/qt6/bin/qmltestrunner", shutil.which("qmltestrunner")]
+    for candidate in candidates:
+        if not candidate or not os.path.isfile(candidate) or not os.access(candidate, os.X_OK):
+            continue
+        resolved = os.path.realpath(candidate)
+        if "/qt6/" in resolved:
+            return candidate
+        # Arch 或发行版的 qtchooser 可能把 Qt6 工具直接暴露在 PATH；
+        # 读取 runner 自身版本，不能仅因命令同名就把 Qt5 当作有效测试器。
+        try:
+            result = subprocess.run(
+                [candidate, "-help"], capture_output=True, text=True,
+                timeout=10,
+                env={**os.environ, "QT_QPA_PLATFORM": "offscreen"},
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            continue
+        if re.search(r"\bQt\s+6(?:\.|\s)", result.stdout + result.stderr):
+            return candidate
+    return None
+
+
+class TestQt6ToolSelection(unittest.TestCase):
+    def test_qt6_path_is_preferred_over_qt5_chooser(self):
+        with TempEnv() as ctx:
+            qt5 = ctx.home / "qt5" / "bin" / "qmltestrunner"
+            qt6 = ctx.home / "qt6" / "bin" / "qmltestrunner"
+            qt5.parent.mkdir(parents=True)
+            qt6.parent.mkdir(parents=True)
+            qt5.write_text("#!/bin/sh\n", encoding="utf-8")
+            qt6.write_text("#!/bin/sh\n", encoding="utf-8")
+            qt5.chmod(0o755)
+            qt6.chmod(0o755)
+            chooser = ctx.home / "qmltestrunner-chooser"
+            chooser.symlink_to(qt5)
+
+            self.assertEqual(_qt6_qmltestrunner([str(chooser), str(qt6)]), str(qt6))
+
+    def test_path_runner_must_report_qt6_version(self):
+        with TempEnv() as ctx:
+            runner = ctx.home / "bin" / "qmltestrunner"
+            runner.parent.mkdir()
+            runner.write_text("#!/bin/sh\n", encoding="utf-8")
+            runner.chmod(0o755)
+            qt5 = subprocess.CompletedProcess([str(runner), "-help"], 0, "Config: Qt 5.15.2", "")
+            qt6 = subprocess.CompletedProcess([str(runner), "-help"], 0, "Config: Qt 6.10.2", "")
+
+            with patch("tests.desktop.test_theme_engine.subprocess.run", return_value=qt5) as run:
+                self.assertIsNone(_qt6_qmltestrunner([str(runner)]))
+            self.assertEqual(run.call_args.args[0], [str(runner), "-help"])
+            self.assertEqual(run.call_args.kwargs["env"]["QT_QPA_PLATFORM"], "offscreen")
+
+            with patch("tests.desktop.test_theme_engine.subprocess.run", return_value=qt6):
+                self.assertEqual(_qt6_qmltestrunner([str(runner)]), str(runner))
+
+
 
 
 class TestP4ThemeEngineContract(unittest.TestCase):
@@ -51,9 +110,9 @@ class TestP4ThemeEngineContract(unittest.TestCase):
         return json.loads(res.stdout)["colors"]
 
     def test_qml_golden_master(self):
-        runner = shutil.which("qmltestrunner") or "/usr/lib/qt6/bin/qmltestrunner"
-        if not os.path.exists(runner):
-            self.skipTest("qmltestrunner not available; theme engine golden master not executed")
+        runner = _qt6_qmltestrunner()
+        if runner is None:
+            self.skipTest("Qt6 qmltestrunner not available; theme engine golden master not executed")
         env = dict(os.environ)
         env.update({
             "QT_QPA_PLATFORM": "offscreen",
@@ -70,6 +129,26 @@ class TestP4ThemeEngineContract(unittest.TestCase):
         self.assertRegex(totals, r"Totals: \d+ passed, 0 failed")
         self.assertNotIn("FAIL!", res.stdout + res.stderr,
                          "golden master failures:\n" + (res.stdout + res.stderr)[-4000:])
+
+    def test_system_card_qml_imports_load_under_qt6(self):
+        runner = _qt6_qmltestrunner()
+        if runner is None:
+            self.skipTest("Qt6 qmltestrunner not available; SystemCard QML imports not executed")
+        env = dict(os.environ)
+        env.update({
+            "QT_QPA_PLATFORM": "offscreen",
+            "QT_FORCE_STDERR_LOGGING": "1",
+            "QT_ASSUME_STDERR_HAS_CONSOLE": "1",
+        })
+        test_file = os.path.join(self.shell_dir, "tests", "qml", "tst_SystemCardImports.qml")
+        result = subprocess.run(
+            [runner, "-input", test_file], capture_output=True, text=True,
+            timeout=30, env=env,
+        )
+        output = result.stdout + result.stderr
+        self.assertEqual(result.returncode, 0, output[-3000:])
+        totals = self._totals_line(output)
+        self.assertRegex(totals, r"Totals: \d+ passed, 0 failed")
 
     @staticmethod
     def _totals_line(output):

@@ -123,11 +123,7 @@ def _quiet(fn, *args, **kwargs):
 
 
 class TestIssue139UpdateNeverClobbersUserFiles(unittest.TestCase):
-    """Issue #139: `nyxuri update` silently overwrote user-edited managed
-    files (binds.kdl / config.kdl) and silently deleted user-placed files
-    (fish conf.d/zz-tools.fish). The ownership carry makes both impossible:
-    the swap judges every dest entry against the ledger baseline and carries
-    what the engine cannot explain. --force stays the explicit adopt verb."""
+    """更新保留个人修改与上次基线；显式 force 先备份再采用模板。"""
 
     def _stage_unit(self, ctx):
         configs = ctx.home / "configs-src"
@@ -147,8 +143,6 @@ class TestIssue139UpdateNeverClobbersUserFiles(unittest.TestCase):
 
         captured = {}
         with patch("sys.stdin.isatty", return_value=False), \
-             patch("nyxuri.installer.workflows._enable_wallpapers", return_value=True), \
-             patch("nyxuri.installer.workflows._enable_theme", return_value=True), \
              patch("nyxuri.installer.workflows.run_user_hooks", return_value=[]), \
              patch("nyxuri.installer.workflows.render_completion_screen") as screen:
             ok = offer_overwrite_upgrade(flag)
@@ -165,11 +159,10 @@ class TestIssue139UpdateNeverClobbersUserFiles(unittest.TestCase):
             unit = self._stage_unit(ctx)
             self.assertTrue(transaction.unit_on("app")[0].ok)
             dest = ctx.home / ".config/app"
-            # The user's two fatal moves from the issue: editing a managed
-            # file and dropping a personal file next to it.
+            # 同时覆盖受管文件修改与新放入的个人文件，两者均不能被普通更新吞掉。
             (dest / "a.conf").write_text("my binds\n", encoding="utf-8")
             (dest / "zz-tools.fish").write_text("atuin init\n", encoding="utf-8")
-            # The repo moves on.
+            # 使用真实模板内容变化，避免把重复部署当成升级。
             unit.joinpath("a.conf").write_text("v2\n", encoding="utf-8")
 
             ok, captured = _quiet(self._run_update, "")
@@ -178,14 +171,12 @@ class TestIssue139UpdateNeverClobbersUserFiles(unittest.TestCase):
                              "user edits must never be clobbered by an update")
             self.assertEqual((dest / "zz-tools.fish").read_text(), "atuin init\n",
                              "user-placed files must never be deleted by an update")
-            self.assertEqual(captured["groups"].get("modified"), ["~/.config/app/a.conf"])
-            self.assertTrue(any("zz-tools.fish" in line for line in captured["preserved"]))
             rec = ledger.get_unit("app")
-            self.assertNotIn("a.conf", rec["files"],
-                             "a carried file must never read as engine-laid")
-            self.assertEqual(transaction.audit_units("app"), {"app": "Synced"})
+            self.assertEqual(rec["files"]["a.conf"], __import__("hashlib").sha256(b"v1\n").hexdigest(),
+                             "保留上次成功部署基线，不把个人修改重记为模板")
+            self.assertEqual(transaction.audit_units("app"), {"app": "Drifted"})
 
-            # --force is the adopt verb: template side wins, baseline clears.
+            # 强制采用新模板，先生成可通过 rollback 使用的完整快照。
             ok, _ = _quiet(self._run_update, "--force")
             self.assertTrue(ok)
             self.assertEqual((dest / "a.conf").read_text(), "v2\n")
@@ -196,6 +187,12 @@ class TestIssue139UpdateNeverClobbersUserFiles(unittest.TestCase):
                 __import__("hashlib").sha256((dest / "a.conf").read_bytes()).hexdigest(),
             )
             self.assertEqual(transaction.audit_units("app"), {"app": "Synced"})
+            from nyxuri.state.backup import get_all_backups
+            snapshots = get_all_backups()
+            self.assertTrue(snapshots)
+            self.assertTrue(any((snapshot / "units/0/a.conf").is_file() and
+                                (snapshot / "units/0/a.conf").read_text() == "my binds\n"
+                                for snapshot in snapshots))
 
     def test_ghost_unit_update_freezes_and_hints_adoption(self):
         from nyxuri.kernel import ledger, transaction
@@ -211,13 +208,11 @@ class TestIssue139UpdateNeverClobbersUserFiles(unittest.TestCase):
             self.assertTrue(ok)
             self.assertEqual((dest / "a.conf").read_text(), "v3-era\n",
                              "an unregistered unit's content is never overwritten")
-            self.assertTrue(any("app" in line for line in captured["notices"]),
-                             "the update must point at `nyxuri on` adoption")
             self.assertIsNone(ledger.get_unit("app"),
-                              "the installer never invents switch state")
+                              "更新不为未启用单元创建开关状态")
 
-            # Adoption is the explicit way out: template claims its names.
-            self.assertTrue(transaction.unit_on("app")[0].ok)
+            # 明确要求采用模板才覆盖具名冲突，未知额外文件仍不归属引擎。
+            self.assertTrue(transaction.unit_on("app", force=True)[0].ok)
             self.assertEqual((dest / "a.conf").read_text(), "v1\n")
             self.assertEqual(transaction.audit_units("app"), {"app": "Synced"})
 

@@ -1,11 +1,12 @@
-"""System dependency management, package detection, AUR bootstrap, and optional software installer."""
+"""解析当前平台的依赖，统一供安装器、单元事务和应用菜单安装与检查。"""
 
 import re
 import shutil
 import sys
+from types import SimpleNamespace
 from typing import Dict, List, Optional
 
-from nyxuri.core import AUR_DEPS, CORE_DEPS
+from nyxuri.core import AUR_DEPS, CORE_DEPS, CORE_DEP_PLATFORMS
 from nyxuri.core import log_msg
 from nyxuri.core import msg
 from nyxuri.deploy.manifest import discover_manifest_apps
@@ -23,6 +24,16 @@ from nyxuri.tui import (
 from nyxuri import pkg
 from nyxuri.pkg import FLATHUB_REMOTE_URL
 from nyxuri.pkg.detection import DependencyProbe
+from nyxuri.pkg import platform
+from nyxuri.pkg.requirements import resolve_requirements
+
+
+def core_requirements():
+    """把会话工具链转换为与单元相同的依赖结构，保留 Arch 打包输入。"""
+    return resolve_requirements(SimpleNamespace(
+        name="session", packages_repo=[name for name in CORE_DEPS if name not in AUR_DEPS],
+        packages_aur=list(AUR_DEPS), packages_flatpak=[], platforms=CORE_DEP_PLATFORMS,
+    ))
 
 
 def is_dep_installed(cmd: str) -> bool:
@@ -30,12 +41,29 @@ def is_dep_installed(cmd: str) -> bool:
 
 
 def check_all_deps() -> Dict[str, bool]:
+    """一次查询当前平台的会话依赖；手动资源也显示真实缺失状态。"""
     probe = DependencyProbe()
-    return {dep: probe.installed(dep) for dep in CORE_DEPS}
+    requirements = core_requirements()
+    names = (*requirements.packages_repo, *requirements.packages_aur, *requirements.manual)
+    return {dep: probe.installed(dep) for dep in names}
 
 
 def get_missing_deps() -> List[str]:
     return [dep for dep, installed in check_all_deps().items() if not installed]
+
+
+def supply_installed(item, probe=None) -> bool:
+    """按完整平台依赖判断应用是否就绪；命令入口不能代替附属资源。"""
+    probe = probe or DependencyProbe()
+    requirements = resolve_requirements(item)
+    if not requirements.supported:
+        return False
+    names = (*requirements.packages_repo, *requirements.packages_aur, *requirements.manual)
+    if not names and not requirements.packages_flatpak:
+        return probe.installed(getattr(item, "detect", item.name))
+    return all(probe.installed(name) for name in names) and all(
+        app in probe.flatpaks for app in requirements.packages_flatpak
+    )
 
 
 def aur_helper_usable() -> Optional[str]:
@@ -43,7 +71,10 @@ def aur_helper_usable() -> Optional[str]:
 
 
 def ensure_aur_helper() -> Optional[str]:
-    """Bootstrap an AUR helper from official repositories only."""
+    """仅在 Arch 上从已配置的仓库准备 AUR 助手，不运行源码构建。"""
+    if platform.current_platform() != "arch":
+        print(msg("pkg_aur_unsupported"), file=sys.stderr)
+        return None
     helper = aur_helper_usable()
     if helper:
         return helper
@@ -75,7 +106,12 @@ def ensure_aur_helper() -> Optional[str]:
     return None
 
 def check_mpvpaper_leak() -> None:
-    """Check mpvpaper version for the OpenGL memory leak bug (< 1.9) and offer upgrade."""
+    """读取发行版包版本检查 mpvpaper；Ubuntu 不提供 AUR 升级操作。"""
+    if platform.current_platform() != "arch":
+        version = platform.native_package_version("mpvpaper")
+        if version:
+            print(msg("pkg_version", "mpvpaper", version))
+        return
     if not shutil.which("pacman"):
         return
     # Already on git version?
@@ -132,22 +168,42 @@ def check_mpvpaper_leak() -> None:
             print(msg("mpvpaper_upgrade_skip"))
 
 def unit_package_installer(unit_id: str, missing: List[str]) -> bool:
-    """Installer injected into the transaction by every surface (CLI/TUI): the
-    unit's own manifest declares the three-way split, this layer owns the
-    package-manager calls (AUR via an ensured helper, Flatpak via its own
-    channel)."""
-    repo = missing
-    aur: List[str] = []
-    flat: List[str] = []
+    """按当前平台声明安装缺失包；未知单元或未声明的名字不能进入包管理器。"""
     try:
         from nyxuri.kernel import registry
+        requirements = resolve_requirements(registry.load_unit(unit_id))
+    except (KeyError, OSError, ValueError) as error:
+        log_msg("WARN", f"Cannot resolve packages for {unit_id}: {error}")
+        return False
+    if not requirements.supported:
+        print(msg("pkg_unit_unsupported", unit_id, requirements.reason), file=sys.stderr)
+        return False
+    declared = set((*requirements.packages_repo, *requirements.packages_aur,
+                    *requirements.packages_flatpak, *requirements.manual))
+    if any(name not in declared for name in missing):
+        print(msg("pkg_undeclared", ", ".join(name for name in missing if name not in declared)), file=sys.stderr)
+        return False
+    if requirements.reason:
+        print(msg("pkg_source_hint", unit_id, requirements.reason))
+    return _install_groups(
+        [p for p in missing if p in requirements.packages_repo],
+        [p for p in missing if p in requirements.packages_aur],
+        [p for p in missing if p in requirements.packages_flatpak],
+        [p for p in missing if p in requirements.manual],
+    )
 
-        manifest = registry.load_unit(unit_id)
-        repo = [p for p in missing if p in manifest.packages_repo]
-        aur = [p for p in missing if p in manifest.packages_aur]
-        flat = [p for p in missing if p in manifest.packages_flatpak]
-    except Exception:
-        pass  # no manifest context → treat every name as a repo package
+
+def _install_groups(repo, aur, flat, manual=()) -> bool:
+    """分渠道安装可获取的依赖，并报告手动资源；任何未解决项都返回失败。
+
+    手动资源不对应包管理器的包名。即使同批普通包能够安装，也不能把仍
+    缺少手动资源的单元记为依赖齐全；事务层会在部署前再次检查。
+    """
+    repo = list(repo)
+    probe = DependencyProbe()
+    pending_manual = [name for name in manual if not probe.installed(name)]
+    if pending_manual:
+        print(msg("pkg_manual_missing", ", ".join(pending_manual)), file=sys.stderr)
     if flat:
         repo = repo + ["flatpak"]
     ok = pkg.install(repo) if repo else True
@@ -155,24 +211,30 @@ def unit_package_installer(unit_id: str, missing: List[str]) -> bool:
         helper = ensure_aur_helper()
         if not helper:
             print(msg("aur_skip", ", ".join(aur)), file=sys.stderr)
-            return False
-        ok = pkg.install(aur, source="aur", manager=helper) and ok
+            ok = False
+        else:
+            ok = pkg.install(aur, source="aur", manager=helper) and ok
     if flat:
         ok = pkg.install_flatpaks(flat) and ok
-    return bool(ok)
+    return bool(ok and not pending_manual)
 
 
 def install_selected_deps(selected_deps: List[str]) -> bool:
-    repo_pkgs = [name for name in selected_deps if name not in AUR_DEPS]
-    aur_pkgs = [name for name in selected_deps if name in AUR_DEPS]
-    ok = pkg.install(repo_pkgs)
-    if aur_pkgs:
-        helper = ensure_aur_helper()
-        if helper:
-            ok = pkg.install(aur_pkgs, source="aur", manager=helper) and ok
-        else:
-            print(msg("aur_skip", ", ".join(aur_pkgs)))
-            ok = False
+    """只接受当前平台工具链中的依赖名，避免把 Arch 名字送给 APT。"""
+    requirements = core_requirements()
+    if not requirements.supported:
+        print(msg("distro_unsupported"), file=sys.stderr)
+        return False
+    declared = set((*requirements.packages_repo, *requirements.packages_aur, *requirements.manual))
+    unknown = [name for name in selected_deps if name not in declared]
+    if unknown:
+        print(msg("pkg_undeclared", ", ".join(unknown)), file=sys.stderr)
+        return False
+    ok = _install_groups(
+        [name for name in selected_deps if name in requirements.packages_repo],
+        [name for name in selected_deps if name in requirements.packages_aur], [],
+        [name for name in selected_deps if name in requirements.manual],
+    )
     if "mpvpaper" in selected_deps:
         check_mpvpaper_leak()
     return ok
@@ -186,11 +248,14 @@ def run_dep_menu_loop() -> bool:
 
     status_map = check_all_deps()
     entries = []
-    for dep in CORE_DEPS:
+    manual = set(core_requirements().manual)
+    for dep in status_map:
         is_inst = status_map[dep]
         status_tag = msg("installed") if is_inst else msg("missing")
+        if dep in manual and not is_inst:
+            status_tag = msg("pkg_manual_label")
         label = f"{pad_display(dep, 24)} {status_tag}"
-        entries.append(CheckboxEntry(key=dep, label=label, checked=not is_inst))
+        entries.append(CheckboxEntry(key=dep, label=label, checked=not is_inst and dep not in manual))
 
     chk = CheckboxList("dep_menu_title", entries, hint_key="dep_menu_hint")
     chosen = chk.run()
@@ -200,37 +265,32 @@ def run_dep_menu_loop() -> bool:
     return bool(install_selected_deps(chosen))
 
 def install_optional_apps(selected_apps: List[str]) -> bool:
-    """Install the package declarations of the selected supply items.
-
-    Items are catalog entries (packages-only software) or optional real
-    units. Unit activation (and its declared hooks) belongs to
-    ``nyxuri on <unit>`` via the transaction path (KM3)."""
-    repo_pkgs, aur_pkgs, flatpak_ids = [], [], []
+    """安装目录应用或可选单元的当前平台依赖，不改变单元启用状态。"""
+    repo_pkgs, aur_pkgs, flatpak_ids, manual = [], [], [], []
+    supported = True
+    manifests = dict(discover_manifest_apps())
     for app in selected_apps:
-        entry = get_entry(app)
-        if entry is not None:
-            repo_pkgs.extend(entry.packages_repo)
-            aur_pkgs.extend(entry.packages_aur)
-            flatpak_ids.extend(entry.packages_flatpak)
+        item = get_entry(app) or manifests.get(app)
+        if item is None:
+            print(msg("pkg_undeclared", app), file=sys.stderr)
+            supported = False
             continue
-        manifest = dict(discover_manifest_apps()).get(app)
-        if manifest is None:
+        requirements = resolve_requirements(item)
+        if not requirements.supported:
+            print(msg("pkg_unit_unsupported", app, requirements.reason), file=sys.stderr)
+            supported = False
             continue
-        repo_pkgs.extend(manifest.packages_repo)
-        aur_pkgs.extend(manifest.packages_aur)
-        flatpak_ids.extend(manifest.packages_flatpak)
-    if not repo_pkgs and not aur_pkgs and not flatpak_ids:
+        if requirements.reason:
+            print(msg("pkg_source_hint", app, requirements.reason))
+        repo_pkgs.extend(requirements.packages_repo)
+        aur_pkgs.extend(requirements.packages_aur)
+        flatpak_ids.extend(requirements.packages_flatpak)
+        manual.extend(requirements.manual)
+    if not repo_pkgs and not aur_pkgs and not flatpak_ids and not manual:
         print(msg("opt_apps_none_selected"))
-        return True
+        return supported
     print(msg("installing_selected_apps"))
-    if flatpak_ids:
-        repo_pkgs.append("flatpak")
-    ok = pkg.install(repo_pkgs)
-    if aur_pkgs:
-        helper = ensure_aur_helper()
-        ok = bool(helper and pkg.install(aur_pkgs, source="aur", manager=helper)) and ok
-    if flatpak_ids:
-        ok = pkg.install_flatpaks(flatpak_ids) and ok
+    ok = _install_groups(repo_pkgs, aur_pkgs, flatpak_ids, manual) and supported
     print(msg("opt_apps_install_done" if ok else "log_official_pkgs_partial_fail"))
     return ok
 
@@ -242,24 +302,30 @@ def _supply_items() -> List[dict]:
     case where a declaration came from."""
     items: List[dict] = []
     for entry in catalog_entries():
+        requirements = resolve_requirements(entry)
         items.append({
             "key": entry.name,
             "category": entry.category,
-            "repo": entry.packages_repo,
-            "aur": entry.packages_aur,
-            "flat": entry.packages_flatpak,
+            "repo": requirements.packages_repo,
+            "aur": requirements.packages_aur,
+            "flat": requirements.packages_flatpak,
+            "manual": requirements.manual,
+            "supported": requirements.supported,
             "detect": entry.detect,
         })
     manifests = dict(discover_manifest_apps())
     for app, manifest in manifests.items():
         if not manifest.is_optional:
             continue
+        requirements = resolve_requirements(manifest)
         items.append({
             "key": app,
             "category": manifest.category,
-            "repo": manifest.packages_repo,
-            "aur": manifest.packages_aur,
-            "flat": manifest.packages_flatpak,
+            "repo": requirements.packages_repo,
+            "aur": requirements.packages_aur,
+            "flat": requirements.packages_flatpak,
+            "manual": requirements.manual,
+            "supported": requirements.supported,
             "detect": manifest.detect,
         })
     return items
@@ -274,15 +340,24 @@ def run_optional_apps_menu_loop() -> bool:
     probe = DependencyProbe()
     grouped: Dict[str, List[CategoryAppEntry]] = {}
     for item in _supply_items():
-        is_inst = probe.installed(item["detect"])
-        if not is_inst and item["flat"]:
-            is_inst = all(fid in probe.flatpaks for fid in item["flat"])
+        # 以整个依赖集合判断是否齐全；仅找到入口命令不能证明输入法插件、
+        # 字体或 schema 等附属资源已经就绪。
+        declared = (*item["repo"], *item["aur"], *item["manual"])
+        is_inst = item["supported"] and all(probe.installed(name) for name in declared)
+        is_inst = is_inst and all(fid in probe.flatpaks for fid in item["flat"])
+        if not declared and not item["flat"]:
+            is_inst = item["supported"] and probe.installed(item["detect"])
+        source_tag = "Flatpak" if item["flat"] else ""
+        if not item["supported"]:
+            source_tag = msg("pkg_unsupported_label")
+        elif item["manual"]:
+            source_tag = msg("pkg_manual_label")
         entry = CategoryAppEntry(
             key=item["key"],
             label=msg(f"app_{item['key'].replace('-', '_')}"),
             checked=False,
             installed=is_inst,
-            source_tag="Flatpak" if item["flat"] else "",
+            source_tag=source_tag,
         )
         grouped.setdefault(item["category"] or "other", []).append(entry)
 
@@ -298,7 +373,7 @@ def run_optional_apps_menu_loop() -> bool:
     chk = CategoryCheckboxList("opt_apps_menu_title", cat_groups, hint_key="opt_apps_menu_hint")
     chosen = chk.run()
     if chosen:
-        install_optional_apps(chosen)
+        return install_optional_apps(chosen)
     else:
         print(msg("opt_apps_none_selected"))
     return True

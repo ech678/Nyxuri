@@ -20,3 +20,7 @@ default = "default"
 target = "glow.kdl"
 source_dir = "glow"
 default = "default"
+
+[platforms.ubuntu]
+packages = ["niri"]
+reason = "Niri requires a separately configured APT source."

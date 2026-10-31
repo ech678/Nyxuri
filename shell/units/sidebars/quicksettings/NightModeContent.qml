@@ -15,7 +15,6 @@ WidgetPanel {
     GammaControlPage {
         Layout.fillWidth: true
         Layout.fillHeight: true
-        contentPadding: 0
         searchAnchorsEnabled: false
     }
 }

@@ -26,6 +26,8 @@ def _load_hook(name: str):
     spec = importlib.util.spec_from_file_location(mod_name, path, loader=SourceFileLoader(mod_name, str(path)))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    # 本文件既有用例验证 Arch 的配置生成/撤回协议，不随运行测试的宿主发行版切换。
+    module.current_platform = lambda: "arch"
     return module
 
 

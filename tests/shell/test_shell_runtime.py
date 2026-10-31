@@ -53,7 +53,9 @@ class ShellLauncherTests(unittest.TestCase):
             "#!/usr/bin/env python3\nimport json, os, sys\n"
             "print(json.dumps({'argv': sys.argv[1:], "
             "'qml': os.getenv('QML_IMPORT_PATH', ''), "
-            "'qml2': os.getenv('QML2_IMPORT_PATH', '')}))\n"
+            "'qml2': os.getenv('QML2_IMPORT_PATH', ''), "
+            "'cache': os.getenv('XDG_CACHE_HOME', ''), "
+            "'qml_cache': os.getenv('QML_DISK_CACHE_PATH', '')}))\n"
         )
         qs.chmod(0o755)
         self.environment = {
@@ -92,6 +94,203 @@ class ShellLauncherTests(unittest.TestCase):
         call = json.loads(result.stdout)
         self.assertEqual(call["qml"], f"/user/qt6:{module_root}")
         self.assertEqual(call["qml2"], f"/user/legacy:{module_root}")
+
+    def test_status_keeps_the_shell_qml_cache(self):
+        """状态 IPC 不清理正在运行实例可能使用的编译缓存。"""
+        cache_home = self.ctx.home / "cache"
+        cache = cache_home / "nyxuri-shell" / "quickshell" / "qmlcache"
+        cache.mkdir(parents=True)
+        marker = cache / "compiled.qmlc"
+        marker.write_text("cached", encoding="utf-8")
+
+        result = self.invoke("--status", XDG_CACHE_HOME=str(cache_home))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        call = json.loads(result.stdout)
+        self.assertEqual(call["argv"], ["-p", str(self.shell), "ipc", "call", "shell", "status"])
+        self.assertTrue(marker.is_file())
+
+    def test_ipc_call_keeps_the_shell_qml_cache(self):
+        """通用 IPC 查询复用正在运行的 Shell，不清理其 QML 缓存。"""
+        cache_home = self.ctx.home / "cache"
+        cache = cache_home / "nyxuri-shell" / "quickshell" / "qmlcache"
+        cache.mkdir(parents=True)
+        marker = cache / "compiled.qmlc"
+        marker.write_text("cached", encoding="utf-8")
+
+        result = self.invoke("--ipc", "lock", "isLocked", XDG_CACHE_HOME=str(cache_home))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["argv"],
+                         ["-p", str(self.shell), "ipc", "call", "lock", "isLocked"])
+        self.assertTrue(marker.is_file())
+
+    def test_stop_keeps_the_shell_qml_cache(self):
+        """停止命令不执行启动前缓存清理。"""
+        call_log = self.ctx.home / "qs-call.json"
+        qs = self.ctx.home / "bin" / "qs"
+        qs.write_text(
+            "#!/usr/bin/env python3\nimport json, os, sys\n"
+            "with open(os.environ['NYXURI_QS_CALL_LOG'], 'w', encoding='utf-8') as stream:\n"
+            "    json.dump(sys.argv[1:], stream)\n"
+            "print(json.dumps({'argv': sys.argv[1:]}))\n",
+            encoding="utf-8",
+        )
+        qs.chmod(0o755)
+        cache_home = self.ctx.home / "cache"
+        cache = cache_home / "nyxuri-shell" / "quickshell" / "qmlcache"
+        cache.mkdir(parents=True)
+        marker = cache / "compiled.qmlc"
+        marker.write_text("cached", encoding="utf-8")
+
+        result = self.invoke("--stop", XDG_CACHE_HOME=str(cache_home),
+                             NYXURI_QS_CALL_LOG=str(call_log))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(call_log.read_text(encoding="utf-8")),
+                         ["kill", "-p", str(self.shell)])
+        self.assertTrue(marker.is_file())
+
+    def test_real_start_clears_only_the_shell_qml_cache(self):
+        """新启动先清理自研 Shell 缓存，再调用 Quickshell。"""
+        cache_home = self.ctx.home / "cache"
+        cache = cache_home / "nyxuri-shell" / "quickshell" / "qmlcache"
+        cache.mkdir(parents=True)
+        (cache / "compiled.qmlc").write_text("stale", encoding="utf-8")
+        unrelated = cache_home / "other-app" / "keep"
+        unrelated.parent.mkdir(parents=True)
+        unrelated.write_text("user data", encoding="utf-8")
+        other_qml = cache_home / "quickshell/qmlcache/other-config.qmlc"
+        other_qml.parent.mkdir(parents=True)
+        other_qml.write_text("other Quickshell cache", encoding="utf-8")
+
+        result = self.invoke("-v", XDG_CACHE_HOME=str(cache_home), QML_DISK_CACHE_PATH=str(other_qml.parent))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse(cache.exists())
+        self.assertEqual(unrelated.read_text(encoding="utf-8"), "user data")
+        self.assertEqual(other_qml.read_text(encoding="utf-8"), "other Quickshell cache")
+        self.assertEqual(json.loads(result.stdout)["cache"], str(cache_home))
+        self.assertEqual(json.loads(result.stdout)["qml_cache"], str(cache))
+
+    def _engine_probe_runtime(self):
+        """用 qs 进程边界承接 wrapper 环境，内部真实运行引擎 API 和永久 CLI。"""
+        api_code = (
+            "import json, os, sys\n"
+            "sys.path.insert(0, sys.argv[1])\n"
+            "from nyxuri.core import get_env, XDGLayoutError\n"
+            "try:\n"
+            "    env = get_env()\n"
+            "except XDGLayoutError as exc:\n"
+            "    print(str(exc), file=sys.stderr)\n"
+            "    sys.exit(1)\n"
+            "print(json.dumps({'config': str(env.config_dir), 'cache': str(env.cache_dir), "
+            "'state': str(env.state_dir), 'xdg_cache': os.environ.get('XDG_CACHE_HOME', ''), "
+            "'qml_cache': os.environ.get('QML_DISK_CACHE_PATH', '')}))\n"
+        )
+        repo = SHELL.parent
+        qs = self.ctx.home / "bin/qs"
+        qs.write_text(
+            "#!" + sys.executable + "\n"
+            "import json, os, subprocess, sys\n"
+            f"api_code = {api_code!r}\n"
+            f"repo = {str(repo)!r}\n"
+            "commands = {'api': [sys.executable, '-I', '-B', '-c', api_code, repo], "
+            "'cli': ['bash', repo + '/nyxuri/launcher.sh', 'help']}\n"
+            "results = {}\n"
+            "for name, argv in commands.items():\n"
+            "    completed = subprocess.run(argv, capture_output=True, text=True, check=False, timeout=10)\n"
+            "    results[name] = {'argv': argv, 'returncode': completed.returncode, "
+            "'stdout': completed.stdout, 'stderr': completed.stderr}\n"
+            "print(json.dumps(results))\n",
+            encoding="utf-8",
+        )
+        qs.chmod(0o755)
+        return api_code
+
+    def test_wrapper_children_use_default_xdg_for_real_engine_api_and_cli(self):
+        """UI 派生进程的真实引擎调用不能把 QML 专属缓存误认为用户 XDG 布局。"""
+        api_code = self._engine_probe_runtime()
+        result = self.invoke("-v")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        children = json.loads(result.stdout)
+        self.assertEqual(children["api"]["argv"], [sys.executable, "-I", "-B", "-c", api_code, str(SHELL.parent)])
+        self.assertEqual(children["cli"]["argv"], ["bash", str(SHELL.parent / "nyxuri/launcher.sh"), "help"])
+        for name, child in children.items():
+            self.assertEqual(child["returncode"], 0, f"{name}: {child['stderr']}")
+            self.assertNotIn("Unsupported XDG", child["stderr"])
+        api = json.loads(children["api"]["stdout"])
+        self.assertEqual(api["config"], str(self.ctx.home / ".config"))
+        self.assertEqual(api["cache"], str(self.ctx.home / ".cache/nyxuri"))
+        self.assertEqual(api["state"], str(self.ctx.home / ".local/state/nyxuri"))
+        self.assertEqual(api["xdg_cache"], str(self.ctx.home / ".cache"))
+        self.assertEqual(api["qml_cache"], str(self.ctx.home / ".cache/nyxuri-shell/quickshell/qmlcache"))
+        self.assertIn("Nyxuri", children["cli"]["stdout"])
+
+    def test_wrapper_does_not_bypass_custom_xdg_rejection_for_engine_children(self):
+        """内部缓存改为 Qt 专用设置后，真正的自定义 XDG 仍须由引擎拒绝。"""
+        self._engine_probe_runtime()
+        log = self.ctx.env.state_dir / "install.log"
+        log.write_text("previous-log\n", encoding="utf-8")
+        for cache_home in (self.ctx.home / "custom-cache", Path("/outside-test-home/cache")):
+            with self.subTest(cache_home=cache_home):
+                result = self.invoke("--status", XDG_CACHE_HOME=str(cache_home),
+                                     NYXURI_ORIGINAL_CACHE_HOME=str(self.ctx.home / ".cache"))
+                self.assertEqual(result.returncode, 0, result.stderr)
+                for child in json.loads(result.stdout).values():
+                    self.assertEqual(child["returncode"], 1)
+                    self.assertIn("Unsupported XDG_CACHE_HOME", child["stderr"])
+                self.assertEqual(log.read_text(encoding="utf-8"), "previous-log\n")
+                self.assertFalse(self.ctx.env.nyx_dir.exists())
+
+    def test_missing_quickshell_preserves_cache_and_fails_before_start(self):
+        """没有 qs 时报告缺少运行时，并保留可能仍有用的缓存。"""
+        cache_home = self.ctx.home / "cache"
+        cache = cache_home / "nyxuri-shell" / "quickshell" / "qmlcache"
+        cache.mkdir(parents=True)
+        marker = cache / "compiled.qmlc"
+        marker.write_text("cached", encoding="utf-8")
+        restricted_path = self.ctx.home / "path without quickshell"
+        restricted_path.mkdir()
+        for command in ("bash", "dirname", "readlink", "realpath"):
+            source = shutil.which(command)
+            if source:
+                (restricted_path / command).symlink_to(source)
+        self.assertIsNone(shutil.which("qs", path=str(restricted_path)))
+
+        result = self.invoke("-v", PATH=str(restricted_path), XDG_CACHE_HOME=str(cache_home))
+
+        self.assertEqual(result.returncode, 127)
+        self.assertIn("requires 'qs'", result.stderr)
+        self.assertTrue(marker.is_file())
+
+    def test_lock_action_restarts_missing_shell_and_retries_ipc(self):
+        """锁屏请求遇到已退出的 Shell 时先补启动，再重试 IPC。"""
+        # 伪造的 qs 让首次锁屏 IPC 失败，等 wrapper 启动新实例后再成功；
+        # 调用计数文件放在私有 HOME 中，测试结束时随临时目录一并清除。
+        qs = self.ctx.home / "bin" / "qs"
+        counter = self.ctx.home / "lock-call-count"
+        qs.write_text(
+            "#!/usr/bin/env python3\nimport json, os, pathlib, sys\n"
+            "args = sys.argv[1:]\n"
+            f"counter = pathlib.Path({str(counter)!r})\n"
+            "if args[-2:] == ['lock', 'open']:\n"
+            "    count = int(counter.read_text()) if counter.exists() else 0\n"
+            "    counter.write_text(str(count + 1))\n"
+            "    sys.exit(1 if count == 0 else 0)\n"
+            "print(json.dumps({'argv': args, 'cache': os.getenv('XDG_CACHE_HOME', '')}))\n"
+        )
+        qs.chmod(0o755)
+        cache_home = self.ctx.home / "cache"
+        cache = cache_home / "nyxuri-shell" / "quickshell" / "qmlcache"
+        cache.mkdir(parents=True)
+        (cache / "compiled.qmlc").write_text("stale", encoding="utf-8")
+
+        result = self.invoke("--action", "lock", XDG_CACHE_HOME=str(cache_home))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(counter.read_text(encoding="utf-8"), "2")
+        self.assertFalse(cache.exists())
 
     def test_action_shape_and_missing_argument(self):
         for action, target, method, trailing in [
@@ -155,6 +354,24 @@ class ShellLauncherTests(unittest.TestCase):
                          {b"changed.qml", b"deleted.qml", b"untracked.qml"})
 
 
+class TestKeystoneShaderResource(unittest.TestCase):
+    def test_pill_morph_shader_url_resolves_to_the_compiled_unit_asset(self):
+        """着色器 URL 必须从 recording 子目录解析到 keystone 单元资源。"""
+        with TempEnv():
+            component = SHELL / "units/keystone/styles/recording/PillMorphSurface.qml"
+            source = component.read_text(encoding="utf-8")
+            match = re.search(
+                r'fragmentShader\s*:\s*Qt\.resolvedUrl\("([^"]+)"\)', source,
+            )
+            self.assertIsNotNone(match, "PillMorphSurface must resolve its shader relative to its QML file")
+            shader = (component.parent / match.group(1)).resolve()
+            self.assertEqual(
+                shader,
+                (SHELL / "units/keystone/shaders/qsb/pill_morph.frag.qsb").resolve(),
+            )
+            self.assertTrue(shader.is_file(), "the compiled Qt shader asset must ship with the unit")
+
+
 class ShellPresentationTests(unittest.TestCase):
     """Run real QML owners under a private HOME, D-Bus and headless Wayland."""
 
@@ -162,11 +379,14 @@ class ShellPresentationTests(unittest.TestCase):
         self.ctx = TempEnv()
         self.ctx.__enter__()
         self.addCleanup(self.ctx.__exit__)
-        self.qs = shutil.which("qs")
+        self.qs = shutil.which("qs") or shutil.which("quickshell")
         dbus = shutil.which("dbus-run-session")
         weston = shutil.which("weston")
-        if not self.qs or not dbus or not weston:
-            self.skipTest("Quickshell, Weston, and private D-Bus required for presentation tests")
+        missing = [name for name, path in (("Quickshell", self.qs),
+                                            ("Weston", weston),
+                                            ("private D-Bus", dbus)) if not path]
+        if missing:
+            self.skipTest(", ".join(missing) + " required for presentation tests")
         self.shell = self.ctx.home / "preview"
         shutil.copytree(SHELL, self.shell, ignore=shutil.ignore_patterns(
             "native", "build", "wiki", "tests", ".qmlls.ini", "__pycache__"))
@@ -238,12 +458,123 @@ class ShellPresentationTests(unittest.TestCase):
         )
         self.addCleanup(self.stop_process, self.process)
         initial_color = "#88d0ec" if not self.palette.exists() else "#123456"
-        if self._testMethodName.startswith("test_r11_"):
+        if self._testMethodName == "test_lock_state_ipc_returns_a_boolean_value":
+            self.wait_for("ready", "ready")
+        elif self._testMethodName == "test_night_mode_loads_gamma_control_page":
+            self.wait_for("ready", "ready")
+        elif self._testMethodName == "test_pill_morph_surface_loads_its_compiled_shader":
+            self.wait_for("ready", "ready")
+        elif self._testMethodName.startswith("test_r11_"):
             self.wait_for("parseRss", "2048")
         else:
             self.wait_for("palette", initial_color)
 
     def _harness_qml(self):
+        if self._testMethodName == "test_lock_state_ipc_returns_a_boolean_value":
+            return '''import QtQuick
+import Quickshell
+import Quickshell.Io
+import qs.units.lock
+
+ShellRoot {
+    Lock { id: lock }
+
+    IpcHandler {
+        target: "presentation-test"
+        function ready(): string { return "ready"; }
+    }
+}
+'''
+        if self._testMethodName == "test_night_mode_loads_gamma_control_page":
+            return '''import QtQuick
+import QtQuick.Window
+import Quickshell
+import Quickshell.Io
+import qs.units.sidebars.quicksettings
+
+ShellRoot {
+    Window {
+        id: preview
+        visible: true
+        width: 720
+        height: 640
+
+        NightModeContent {
+            id: nightMode
+            anchors.fill: parent
+        }
+    }
+
+    IpcHandler {
+        target: "presentation-test"
+
+        function ready(): string { return "ready"; }
+
+        function gammaState(): string {
+            const pages = nightMode.content;
+            if (!pages || pages.length !== 1)
+                return JSON.stringify({"contentCount": pages ? pages.length : 0});
+            const page = pages[0];
+            return JSON.stringify({
+                "title": nightMode.title,
+                "contentCount": pages.length,
+                "searchAnchorsEnabled": page.searchAnchorsEnabled,
+                "hasSearchLeaf": page.searchLeaf !== null,
+                "rendersPageTitle": page.rendersPageTitle
+            });
+        }
+    }
+}
+'''
+        if self._testMethodName == "test_pill_morph_surface_loads_its_compiled_shader":
+            return '''import QtQuick
+import QtQuick.Window
+import Quickshell
+import Quickshell.Io
+import qs.units.keystone.styles.recording
+
+ShellRoot {
+    Window {
+        visible: true
+        width: 320
+        height: 120
+
+        PillMorphSurface {
+            id: surface
+            anchors.fill: parent
+            mainCenter: Qt.vector2d(100, 60)
+            mainSize: Qt.vector2d(150, 56)
+            mainRadius: 28
+            satelliteCenter: Qt.vector2d(230, 60)
+            satelliteSize: Qt.vector2d(90, 56)
+            satelliteRadius: 28
+            blendRadius: 18
+        }
+    }
+
+    IpcHandler {
+        target: "presentation-test"
+
+        function ready(): string { return "ready"; }
+
+        function shaderState(): string {
+            const urls = [];
+            for (let index = 0; index < surface.children.length; ++index) {
+                const child = surface.children[index];
+                if ("fragmentShader" in child)
+                    urls.push(String(child.fragmentShader));
+            }
+            return JSON.stringify({
+                "childCount": surface.children.length,
+                "shaderUrls": urls,
+                "mainRadius": surface.mainRadius,
+                "blendRadius": surface.blendRadius,
+                "shadowEnabled": surface.shadowEnabled
+            });
+        }
+    }
+}
+'''
         if self._testMethodName.startswith("test_r11_"):
             return '''import QtQuick
 import Quickshell
@@ -358,9 +689,9 @@ ShellRoot {
             return SettingsBackend.searchAnchors["test.anchor"] ? "registered" : "OK";
         }
         function refreshIcons(): string {
-            const transient = iconFactory.createObject(scroll);
+            const iconProbe = iconFactory.createObject(scroll);
             Resources.iconThemeRevision += 1;
-            transient.destroy();
+            iconProbe.destroy();
             return steadyIcon.refreshing ? "OK" : "icon did not refresh";
         }
         function iconsReady(): string {
@@ -537,6 +868,42 @@ ShellRoot {
         if not trace.exists():
             return []
         return trace.read_text(encoding="utf-8").splitlines()
+
+    def test_lock_state_ipc_returns_a_boolean_value(self):
+        """加载真实 Lock 单元并从 Quickshell IPC 读取其 bool 锁态。"""
+        result = subprocess.run(
+            [self.qs, "-p", str(self.shell), "ipc", "call", "lock", "isLocked"],
+            env=self.environment, capture_output=True, text=True,
+            timeout=presentation_budget(5),
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "false")
+
+    def test_night_mode_loads_gamma_control_page(self):
+        """通过真实宿主加载夜间模式面板及其嵌入的 Gamma 页面。"""
+        result = self.call("gammaState")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        state = json.loads(result.stdout)
+        self.assertEqual(state["contentCount"], 1)
+        self.assertTrue(state["title"])
+        self.assertFalse(state["searchAnchorsEnabled"])
+        self.assertTrue(state["hasSearchLeaf"])
+        self.assertTrue(state["rendersPageTitle"])
+
+    def test_pill_morph_surface_loads_its_compiled_shader(self):
+        """实例化 pill 形变组件并确认它解析了随 Keystone 单元发布的 QSB 资源。"""
+        result = self.call("shaderState")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        state = json.loads(result.stdout)
+        expected_suffix = "/units/keystone/shaders/qsb/pill_morph.frag.qsb"
+        self.assertEqual(len(state["shaderUrls"]), 2)
+        for url in state["shaderUrls"]:
+            self.assertTrue(url.startswith("file://"), url)
+            self.assertTrue(url.endswith(expected_suffix), url)
+            self.assertTrue(Path(url.removeprefix("file://")).is_file(), url)
+        self.assertEqual(state["mainRadius"], 28)
+        self.assertEqual(state["blendRadius"], 18)
+        self.assertTrue(state["shadowEnabled"])
 
     def test_palette_watch_fallback_and_presentation_injection(self):
         self.wait_for("check", "OK")
@@ -888,7 +1255,7 @@ import Quickshell.Io
 import qs.app
 import qs.app.services
 import qs.units.bar.tray
-import qs.units.quicksettings
+import qs.units.sidebars.quicksettings
 import qs.units.sidebars.dashboard.infotools
 
 ShellRoot {

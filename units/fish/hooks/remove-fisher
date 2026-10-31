@@ -1,36 +1,15 @@
 #!/usr/bin/env python3
-"""fish off-hook: retire the legacy module-era ownership record.
-
-Since KM3 the Fisher files live in this unit's managed snapshot — the
-transaction wipe already removed them. Only machines installed by the
-retired module still carry ~/.local/state/nyxuri/fisher.json listing
-exact paths; those leftovers are cleaned here, nothing else is touched.
-"""
-import json
+"""只撤回有原值和最后写入身份的固定插件；旧文件名清单不授权删除。"""
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+from nyxuri.desktop.owned_outputs import withdraw_outputs
+
 
 def main() -> int:
-    record = Path.home() / ".local/state/nyxuri/fisher.json"
-    try:
-        state = json.loads(record.read_text(encoding="utf-8"))
-        files = state.get("files")
-    except (OSError, ValueError, AttributeError):
-        return 0
-    if not isinstance(files, list):
-        return 0
-    fish_dir = Path.home() / ".config/fish"
-    removed = 0
-    for relative in files:
-        if not isinstance(relative, str) or relative.startswith("/") or ".." in relative.split("/"):
-            continue
-        path = fish_dir / relative
-        if (path.is_file() or path.is_symlink()) and fish_dir.resolve() in path.resolve().parents:
-            path.unlink(missing_ok=True)
-            removed += 1
-    record.unlink(missing_ok=True)
-    print(f"[✓] legacy Fisher record retired ({removed} file(s) cleaned)")
+    """恢复未被个人改动的原值；保留旧fisher.json及来源不明的插件文件。"""
+    withdraw_outputs(producer="fish-plugins", ordinary_only=True)
     return 0
 
 

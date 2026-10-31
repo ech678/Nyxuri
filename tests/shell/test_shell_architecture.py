@@ -150,11 +150,11 @@ class TestShellManagement(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "native")))
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "CMakeLists.txt")))
 
-        # Runner directly launches quickshell
+        # 包装脚本使用预检解析出的同一个 Quickshell 可执行文件启动。
         runner_path = os.path.join(shell_dir, "nyxuri-shell")
         with open(runner_path, "r", encoding="utf-8") as f:
             runner_txt = f.read()
-        self.assertIn('exec qs -p "${SHELL_DIR}"', runner_txt)
+        self.assertIn('exec "$QS_BIN" -p "${SHELL_DIR}"', runner_txt)
         self.assertNotIn("NATIVE_PLUGIN_PATH", runner_txt)
         self.assertNotIn("native/fallback", runner_txt)
         self.assertNotIn("FALLBACK_QML_PATH", runner_txt)
@@ -527,7 +527,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("WlSessionLock {", lock_content)
         self.assertIn("PreLockCapture {", lock_content)
         self.assertIn("function open()", lock_content)
-        self.assertIn("function isLocked()", lock_content)
+        self.assertIn("function isLocked(): bool", lock_content)
         self.assertIn("password.conf", lock_content)
 
         # 2. Lock cards exist
@@ -935,6 +935,7 @@ class TestShellManagement(unittest.TestCase):
 
         # 3. Crash recovery rolls back ledger and restores old shell
         with patch("nyxuri.desktop.shell_switcher.probe_running_shells", return_value=[("noctalia", 1111)]), \
+             patch("nyxuri.desktop.shell_runtime.preflight_runtime", return_value=""), \
              patch("nyxuri.desktop.shell_switcher.stop_all_shell_instances", return_value=True), \
              patch("nyxuri.desktop.shell_switcher.stop_shell_process", return_value=True), \
              patch("nyxuri.desktop.shell_switcher.spawn_shell") as mock_spawn, \

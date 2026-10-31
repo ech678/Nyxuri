@@ -1,8 +1,11 @@
-# fish shell — pinned Fisher plugin set rides on this unit
+# Fish 与固定 Fisher 插件由同一单元供给；下载和解包工具也是钩子的实际依赖。
+packages = ["fish", "curl", "tar"]
 post_install = "install-fisher"
 post_remove = "remove-fisher"
 
-# Runtime exemptions: fish_variables is fish's own universal-variable store;
-# functions/ is entirely Fisher's territory (the template lays nothing there
-# — a preserve directory must never mix payload, it would freeze forever).
-preserve = ["fish_variables", "functions"]
+# 保留 fish 通用变量、个人插件清单和 Fisher 插件目录；强制更新也不重置个人插件集合。
+# functions/ 不承载模板文件；目录级 preserve 会保留整树，不能混放需要更新的蓝图。
+preserve = ["fish_variables", "fish_plugins", "functions"]
+
+[platforms.ubuntu]
+packages = ["fish", "curl", "tar"]

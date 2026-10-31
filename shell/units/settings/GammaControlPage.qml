@@ -19,6 +19,9 @@ NexusPageBase {
 
     title: SpotlightCatalog.title("displays.gamma")
 
+    // 同一页面也嵌入快捷侧栏；侧栏实例不注册设置窗口的搜索锚点。
+    property bool searchAnchorsEnabled: true
+
     readonly property Item searchLeaf: root.flickable
 
     readonly property var preferences: DisplayColor.preferences
@@ -73,6 +76,7 @@ NexusPageBase {
             onMoved: value => DisplayColor.setPreference("gamma", value / 100)
 
             SettingsSearchAnchor {
+                registerAnchor: root.searchAnchorsEnabled
                 target: gammaSlider
                 declaration:
                     '{"id":"displays.gamma.section.color","route":"displays.gamma","title":"Color","context":"GammaControlPage","icon":"brightness_6","aliases":["general.displays.gamma.section.color"]}'
@@ -161,6 +165,7 @@ NexusPageBase {
             onSelected: value => DisplayColor.setPreference("mode", value)
 
             SettingsSearchAnchor {
+                registerAnchor: root.searchAnchorsEnabled
                 target: modeSelect
                 declaration:
                     '{"id":"displays.gamma.section.schedule","route":"displays.gamma","title":"Schedule","context":"GammaControlPage","icon":"brightness_6","aliases":["general.displays.gamma.section.schedule"]}'
@@ -295,6 +300,7 @@ NexusPageBase {
             value: I18n.tr("%1 K").arg(DisplayColor.schedule.temperature)
 
             SettingsSearchAnchor {
+                registerAnchor: root.searchAnchorsEnabled
                 target: scheduledTemperatureInfo
                 declaration:
                     '{"id":"displays.gamma.section.current-status","route":"displays.gamma","title":"Current status","context":"GammaControlPage","icon":"brightness_6","aliases":["general.displays.gamma.section.current-status"]}'

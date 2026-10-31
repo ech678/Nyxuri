@@ -51,7 +51,7 @@ def get_preset_info(app: str, name: str) -> PresetInfo:
     """Inspect detailed metadata and key files for an app preset."""
     from nyxuri.deploy.manifest import load_manifest_for
 
-    valid = _is_deployable_app(app) and _is_safe_component(name)
+    valid = _is_safe_component(name) and _is_deployable_app(app)
     try:
         active = read_active_preset(app) if valid else None
     except InvalidActivePresetError:
@@ -75,7 +75,7 @@ def get_preset_info(app: str, name: str) -> PresetInfo:
         else:
             source = "user"
             is_editable = True
-            is_deletable = True
+            is_deletable = not is_active
             rel_path = f"~/.config/{STORAGE_NAME}/presets/{app}/{name}"
     else:
         rel_path = f"configs/{app}/{dir_name}/{name} (not found)"
@@ -182,95 +182,53 @@ def _render_preset_result(app: str, name: str, preserved_lines: List[str], faile
             print(f"    {pline}")
 
 
-def apply_preset(app: str, name: str) -> bool:
-    """Switch an app to a named preset (narrow deploy path).
+def _reload_preset(manifest) -> bool:
+    """按 manifest 重载应用，区分没有运行实例与真正的命令失败。"""
+    if not manifest.preset_reload:
+        return True
+    result = timed_run(manifest.preset_reload, 2, stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL, check=False)
+    # pkill 的 1 表示没有匹配进程；配置已落地，下次启动会直接读取它。
+    return result is not None and (result.returncode == 0 or (
+        manifest.preset_reload[0] == "pkill" and result.returncode == 1))
 
-    Runs only atomic_replace + template render for this app, without
-    post-install services (§9: switching kitty must not rerun
-    fisher). Writes the active file AFTER deploy succeeds (iron law, §3.2).
 
-    The manifest ``preserve`` list (e.g. niri/monitor.kdl, niri/effects.kdl) is
-    honoured just like the full-deploy path: a preset switch must not wipe
-    runtime-managed files the new variant doesn't ship.
+def apply_preset(app: str, name: str, *, force: bool = False) -> bool:
+    """切换已启用目录单元的预设，并由同一事务提交文件、基线和活动选择。
+
+    只处理本单元；外来文件默认保留。交互选择强制覆盖时，内核先备份受影响内容，
+    备份失败则停止。停用单元必须先显式启用，不能通过外观操作绕过开关状态。
     """
-    from nyxuri.deploy.templates import _phase_render_templates
-    from nyxuri.deploy.atomic import atomic_replace_item
-    from nyxuri.deploy.manifest import load_manifest_for
+    from nyxuri.kernel import ledger, registry, transaction
+    from nyxuri.tui import choose_conflict_policy, format_steps
 
-    env = get_env()
-    dest = _safe_child(env.config_dir, app)
-    if not _is_deployable_app(app) or not _is_safe_component(name) or dest is None:
+    if not _is_safe_component(name) or not _is_deployable_app(app):
         print(msg("preset_not_found", app, name))
         return False
-    src = _find_preset_src(app, name)
-    if src is None:
+    manifest = registry.load_unit(app)
+    if manifest.target or manifest.merge or manifest.runtime:
+        print(msg("preset_unsupported_unit", app))
+        return False
+    if (ledger.get_unit(app) or {}).get("state") != "enabled":
+        print(msg("preset_requires_enabled", app, app))
+        return False
+    if _find_preset_src(app, name) is None:
         print(msg("preset_not_found", app, name))
         return False
-
-    # Preserve the same manifest-declared files the full deploy would; a preset
-    # switch is otherwise indistinguishable to runtime state like effects.kdl.
-    preserve = None
-    preserve_values = None
-    try:
-        preset_manifest = load_manifest_for(app)
-        preserve = preset_manifest.preserve or None
-        preserve_values = preset_manifest.preserve_values or None
-    except Exception:
-        pass
-
-    base_src, base_inc, base_exc = resolve_preset_inheritance(app, name)
-    preserved_log: List[str] = []
-    if not atomic_replace_item(
-        src,
-        dest,
-        preserved_log=preserved_log,
-        preserve=preserve,
-        preserve_values=preserve_values,
-        base_src=base_src,
-        base_include=base_inc,
-        base_exclude=base_exc,
-    ):
-        _render_preset_result(app, name, preserved_log, failed=True)
+    decision = choose_conflict_policy([app], presets={app: name}, force=force)
+    if decision is None:
         return False
-
-    _phase_render_templates(only_app=app)
-    manifest = None
-    try:
-        manifest = load_manifest_for(app)
-    except Exception:
-        manifest = None
-    if manifest is not None:
-        for pattern in manifest.chmod:
-            for path in dest.glob(pattern):
-                if path.is_file():
-                    try:
-                        path.chmod(0o755)
-                    except OSError:
-                        pass
-        try:
-            from nyxuri.deploy.deploy import _reconcile_active_parts
-            for failure in _reconcile_active_parts(app, manifest):
-                log_msg("WARN", f"Failed to reconcile active part {failure}")
-        except Exception as e:
-            log_msg("WARN", f"Failed to reconcile active parts for {app}: {e}")
-    # deploy-then-write: a crash mid-flow must not leave active pointing at a
-    # preset whose deploy didn't complete (would skip re-deploy next run). §3.2
-    try:
-        write_active_preset(app, name)
-    except OSError as e:
-        # Deploy landed but the choice was not recorded — say so loudly instead
-        # of a bare traceback; next update would otherwise redeploy defaults.
-        print(msg("preset_apply_failed", app, name))
-        log_msg("ERROR", f"Deployed preset '{name}' to {app} but recording active state failed: {e}")
+    steps = transaction.unit_on(app, preset=name, force=decision, refresh=True, run_hooks=False)
+    for line in format_steps(steps):
+        print(line)
+    if not steps or not all(step.ok for step in steps):
         return False
-    _render_preset_result(app, name, preserved_log)
-    try:
-        from nyxuri.deploy.manifest import load_manifest_for
-        manifest = load_manifest_for(app)
-        if manifest.preset_reload:
-            timed_run(manifest.preset_reload, 2, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
-    except Exception as e:
-        log_msg("WARN", f"Failed to reload preset for {app}: {e}")
+    # 文件已提交后，重载仍可能失败；记录可重试阶段，不提前显示完成。
+    if not _reload_preset(manifest):
+        ledger.set_deployment(app, pending="preset_reload")
+        print(msg("preset_reload_failed", app, name))
+        return False
+    print(msg("preset_applied", app, name))
     return True
 
 
@@ -303,7 +261,7 @@ def save_preset(app: str, name: str) -> bool:
     if name == "default":
         print(msg("preset_name_reserved", name))
         return False
-    if not _is_deployable_app(app) or not _is_safe_component(name):
+    if not _is_safe_component(name) or not _is_deployable_app(app):
         print(msg("preset_not_found", app, name))
         return False
     env = get_env()
@@ -363,8 +321,12 @@ def delete_preset(app: str, name: str) -> bool:
     if name == "default":
         print(msg("preset_name_reserved", name))
         return False
-    if not _is_deployable_app(app) or not _is_safe_component(name):
+    if not _is_safe_component(name) or not _is_deployable_app(app):
         print(msg("preset_not_found", app, name))
+        return False
+    # 当前选择仍依赖此目录；先显式切换其他预设才能删除，避免显示与文件错位。
+    if read_active_preset(app) == name:
+        print(msg("preset_delete_active_denied", app, name))
         return False
     env = get_env()
     official_dir = _find_official_presets_dir(_safe_child(env.units_src, app))
@@ -385,11 +347,6 @@ def delete_preset(app: str, name: str) -> bool:
     except OSError:
         print(msg("preset_not_found", app, name))
         return False
-    try:
-        if read_active_preset(app) == name:
-            write_active_preset(app, "default")
-    except (OSError, ValueError):
-        pass
     print(msg("preset_deleted", app, name))
     return True
 
@@ -403,7 +360,7 @@ def edit_preset(app: str, name: str) -> bool:
     if name == "default":
         print(msg("preset_name_reserved", name))
         return False
-    if not _is_deployable_app(app) or not _is_safe_component(name):
+    if not _is_safe_component(name) or not _is_deployable_app(app):
         print(msg("preset_not_found", app, name))
         return False
     env = get_env()

@@ -29,6 +29,26 @@ import sys
 
 
 
+def _managed_fixture(test, *apps):
+    """为预设专项样例提供已启用状态，包探测不依赖宿主；不改动真实配置。"""
+    from nyxuri.kernel import ledger, transaction
+    from nyxuri.core import get_env
+    if not getattr(test, "_package_fixture", False):
+        for name, value in (("nyxuri.kernel.transaction.missing_packages", []),
+                            ("nyxuri.pkg.platform.current_platform", "arch"),
+                            ("nyxuri.desktop.presets.timed_run", subprocess.CompletedProcess([], 0)),
+                            ("nyxuri.deploy.preset.timed_run", subprocess.CompletedProcess([], 0))):
+            guard = patch(name, return_value=value)
+            guard.start()
+            test.addCleanup(guard.stop)
+        test._package_fixture = True
+    for app in apps:
+        manifest = transaction.registry.load_unit(app)
+        target = transaction._unit_dest(app, manifest)
+        ledger.set_unit(app, state="enabled", files=transaction.snapshot_files(target, manifest))
+
+
+
 class TestActiveStateFile(unittest.TestCase):
     def setUp(self):
         self._ctx = TempEnv()
@@ -210,6 +230,7 @@ class TestPresetOperations(unittest.TestCase):
         self._ctx = TempEnv()
         self._ctx.__enter__()
         self.env = self._ctx.env
+        _managed_fixture(self, "kitty", "niri")
 
     def tearDown(self):
         self._ctx.__exit__()
@@ -276,27 +297,27 @@ class TestPresetOperations(unittest.TestCase):
         self.assertIn("{{ colors.primary_container.default.hex }}", content)
         self.assertNotIn("#1a73e8", content)
         noctalia = (self.env.units_src / "noctalia" / "noctalia-config.toml").read_text(encoding="utf-8")
-        self.assertIn('output_path = "/home/user/.config/niri/colors.kdl"', noctalia)
+        self.assertNotIn('output_path = "/home/user/.config/niri/colors.kdl"', noctalia)
         self.assertNotIn('output_path = "/home/user/.config/niri/layout.kdl"', noctalia)
         parsed = tomllib.loads(noctalia)
         niri_tpl = parsed.get("theme", {}).get("templates", {}).get("user", {}).get("nyxuri_niri_glow_material_you", {})
         self.assertNotIn("post_hook", niri_tpl)
 
-    @unittest.mock.patch("nyxuri.desktop.presets.timed_run")
+    @unittest.mock.patch("nyxuri.desktop.presets.timed_run", return_value=subprocess.CompletedProcess([], 0))
     def test_apply_niri_glow_material_you_has_no_daemon_side_effect(self, mock_timed_run):
         with patch("shutil.which", side_effect=lambda command: f"/usr/bin/{command}"):
             self.assertTrue(preset.apply_part("niri", "glow", "glow-material-you"))
 
         mock_timed_run.assert_not_called()
 
-    @unittest.mock.patch("nyxuri.desktop.presets.timed_run")
+    @unittest.mock.patch("nyxuri.desktop.presets.timed_run", return_value=subprocess.CompletedProcess([], 0))
     @unittest.mock.patch("shutil.which", return_value="/usr/bin/niri")
     def test_apply_preset_niri_has_no_daemon_side_effect(self, mock_which, mock_timed_run):
         ok = preset.apply_part("niri", "glow", "glow")
         self.assertTrue(ok)
         mock_timed_run.assert_not_called()
 
-    @unittest.mock.patch("nyxuri.desktop.presets.timed_run")
+    @unittest.mock.patch("nyxuri.desktop.presets.timed_run", return_value=subprocess.CompletedProcess([], 0))
     @unittest.mock.patch("shutil.which", return_value="/usr/bin/pkill")
     def test_apply_preset_kitty_reloads(self, mock_which, mock_timed_run):
         ok = presets.apply_preset("kitty", "transparent")
@@ -325,7 +346,7 @@ class TestPresetOperations(unittest.TestCase):
     def test_apply_then_write_timing_atomic_fail_leaves_active(self):
         # B2 (§14): if atomic_replace fails, active must NOT be written.
         preset.write_active_preset("kitty", "default")
-        with patch("nyxuri.deploy.atomic.atomic_replace_item", return_value=False):
+        with patch("nyxuri.deploy.deploy.atomic_replace_item", return_value=False):
             ok = presets.apply_preset("kitty", "transparent")
         self.assertFalse(ok)
         # active still default — deploy-then-write held back the write.
@@ -413,6 +434,7 @@ class TestApplyNarrowPath(unittest.TestCase):
     def setUp(self):
         self._ctx = TempEnv()
         self._ctx.__enter__()
+        _managed_fixture(self, "kitty")
 
     def tearDown(self):
         self._ctx.__exit__()
@@ -451,6 +473,7 @@ class TestPresetSwitchPreservesManifestFiles(unittest.TestCase):
         self.monitor = self.niri_dest / "monitor.kdl"
         with self.monitor.open("a") as f:
             f.write("# USER-MARKER\n")
+        _managed_fixture(self, "niri")
 
     def tearDown(self):
         self._ctx.__exit__()
@@ -487,6 +510,7 @@ class TestKittyRuntimeThemeSurvivesPresetSwitch(unittest.TestCase):
         self.kitty_dest = self.env.config_dir / "kitty"
         from nyxuri.deploy.atomic import atomic_replace_item
         atomic_replace_item(self.env.units_src / "kitty", self.kitty_dest)
+        _managed_fixture(self, "kitty")
 
     def tearDown(self):
         self._ctx.__exit__()
@@ -522,6 +546,7 @@ class TestPresetPathBoundary(unittest.TestCase):
         self._ctx = TempEnv()
         self._ctx.__enter__()
         self.env = self._ctx.env
+        _managed_fixture(self, "kitty")
 
     def tearDown(self):
         self._ctx.__exit__()
@@ -661,6 +686,8 @@ class TestPresetPathBoundary(unittest.TestCase):
 
         self.assertTrue(presets.save_preset("kitty", name))
         self.assertTrue(presets.apply_preset("kitty", name))
+        self.assertFalse(presets.delete_preset("kitty", name))
+        self.assertTrue(presets.apply_preset("kitty", "default", force=True))
         self.assertTrue(presets.delete_preset("kitty", name))
 
     def test_delete_rejects_directory_swap_after_lookup(self):
@@ -1098,6 +1125,7 @@ class TestPresetInheritance(unittest.TestCase):
         (self.isolated / "isolated.kdl").write_text("// isolated only")
 
         self.dest = self.env.config_dir / self.app
+        _managed_fixture(self, self.app)
 
     def tearDown(self):
         self._sandbox.cleanup()
@@ -1238,10 +1266,45 @@ default = "default"
         effects_dir.mkdir(parents=True)
         (effects_dir / "default.kdl").write_text("// default blur")
         (effects_dir / "xray.kdl").write_text("// xray blur")
+        _managed_fixture(self, self.app)
 
     def tearDown(self):
         self._sandbox.cleanup()
         self._ctx.__exit__()
+
+    def test_part_switch_doctor_refresh_preserves_modified_content_and_baseline(self):
+        """零件切换后doctor同步，个人修改经刷新保留，force备份后重新对齐。"""
+        from nyxuri.kernel import ledger, transaction
+        self.assertTrue(preset.apply_part(self.app, "effects", "xray"))
+        target = self.dest / "effects_normal.kdl"
+        original = ledger.get_unit(self.app)["files"]["effects_normal.kdl"]
+        self.assertEqual(transaction.audit_units(self.app), {self.app: "Synced"})
+        target.write_text("// personal")
+        self.assertFalse(preset.apply_part(self.app, "effects", "default"))
+        self.assertEqual(preset.get_active_part(self.app, "effects"), "xray")
+        self.assertTrue(transaction.unit_refresh(self.app, run_hooks=False)[0].ok)
+        self.assertEqual(target.read_text(), "// personal")
+        self.assertEqual(ledger.get_unit(self.app)["files"]["effects_normal.kdl"], original)
+        self.assertEqual(transaction.audit_units(self.app), {self.app: "Drifted"})
+        self.assertTrue(preset.apply_part(self.app, "effects", "default", force=True))
+        self.assertEqual(transaction.audit_units(self.app), {self.app: "Synced"})
+        from nyxuri.state.backup import get_all_backups
+        self.assertTrue(get_all_backups())
+
+    def test_part_disabled_and_cancel_leave_content_and_state_untouched(self):
+        """停用态和冲突取消都不得借外观操作落地配置或变更选择。"""
+        from nyxuri.kernel import ledger, transaction
+        target = self.dest / "effects_normal.kdl"
+        target.write_text("// personal")
+        before = ledger.read_ledger()
+        with patch("nyxuri.tui.choose_conflict_policy", return_value=None):
+            self.assertFalse(preset.apply_part(self.app, "effects", "xray"))
+        self.assertEqual(target.read_text(), "// personal")
+        self.assertEqual(ledger.read_ledger(), before)
+        transaction.unit_off(self.app)
+        after = ledger.read_ledger()
+        self.assertFalse(preset.apply_part(self.app, "effects", "xray", force=True))
+        self.assertEqual(ledger.read_ledger(), after)
 
     def test_list_parts(self):
         parts_info = preset.list_parts(self.app)
@@ -1256,7 +1319,7 @@ default = "default"
         target_file = self.dest / "effects_normal.kdl"
         target_file.write_text("// initial")
 
-        ok = preset.apply_part(self.app, "effects", "xray")
+        ok = preset.apply_part(self.app, "effects", "xray", force=True)
         self.assertTrue(ok)
         self.assertEqual(target_file.read_text(), "// xray blur")
         self.assertEqual(read_ledger().get("parts", {}).get(f"{self.app}:effects"), "xray")
@@ -1280,6 +1343,7 @@ default = "default"
         with patch("sys.stdin.isatty", return_value=True), \
              patch("nyxuri.installer.menus.discover_config_items", return_value=["niri"]), \
              patch("nyxuri.deploy.preset.apply_part", return_value=True) as mock_apply, \
+             patch("nyxuri.installer.menus.press_any_key") as read_report, \
              patch("nyxuri.installer.menus.PresetSwitcher") as mock_switcher_cls:
             preset_switcher_loop()
             mock_switcher_cls.assert_called_once()
@@ -1290,6 +1354,7 @@ default = "default"
             toast = on_action("apply_part", "niri", "effects:xray-blur")
             mock_apply.assert_called_once_with("niri", "effects", "xray-blur")
             self.assertIn("xray-blur", toast)
+            read_report.assert_called_once_with()
 
     def test_deploy_reconciles_active_parts_end_to_end(self):
         from nyxuri.deploy.deploy import deploy_selected_configs
@@ -1311,7 +1376,7 @@ default = "default"
         self.assertEqual(target_file.read_text(), "// xray blur")
         self.assertEqual(preset.get_active_part(self.app, "effects"), "xray")
 
-        # 2. Desync healing: disk was reset to default, but ledger records xray
+        # 2. 用户修改与历史基线不同，刷新保留当前内容和旧的最后部署基线。
         target_file.write_text("// default blur")
         self.assertEqual(target_file.read_text(), "// default blur")
 
@@ -1320,7 +1385,7 @@ default = "default"
             failed = deploy_selected_configs(items_to_deploy=[self.app])
             self.assertEqual(failed, [])
 
-        self.assertEqual(target_file.read_text(), "// xray blur")
+        self.assertEqual(target_file.read_text(), "// default blur")
         self.assertEqual(preset.get_active_part(self.app, "effects"), "xray")
 
 
@@ -1348,6 +1413,7 @@ class TestPresetDurability(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content, encoding="utf-8")
         (root / "manifest.toml").write_text(manifest_toml, encoding="utf-8")
+        _managed_fixture(self, name)
         return root
 
     def test_failed_save_keeps_the_existing_preset(self):
@@ -1366,7 +1432,7 @@ class TestPresetDurability(unittest.TestCase):
             self.assertEqual((old / "old.conf").read_text(encoding="utf-8"), "OLD-PRESET")
             self.assertEqual(sorted(p.name for p in (ctx.env.presets_dir / "kitty").iterdir()), ["mine"])
 
-    def test_deleting_the_active_preset_resets_to_default(self):
+    def test_deleting_the_active_preset_is_rejected(self):
         from nyxuri.desktop import presets as preset
         with TempEnv() as ctx:
             src = self._sandbox(ctx)
@@ -1376,8 +1442,8 @@ class TestPresetDurability(unittest.TestCase):
             (user / "kitty.conf").write_text("# mine", encoding="utf-8")
             self.assertTrue(_quiet(preset.apply_preset, "kitty", "mine"))
             self.assertEqual(preset.read_active_preset("kitty"), "mine")
-            self.assertTrue(_quiet(preset.delete_preset, "kitty", "mine"))
-            self.assertEqual(preset.read_active_preset("kitty"), "default")
+            self.assertFalse(_quiet(preset.delete_preset, "kitty", "mine"))
+            self.assertEqual(preset.read_active_preset("kitty"), "mine")
 
     def test_official_guard_uses_the_resolved_official_dir(self):
         from nyxuri.desktop import presets as preset
@@ -1394,7 +1460,7 @@ class TestPresetDurability(unittest.TestCase):
             self.assertFalse(_quiet(preset.edit_preset, "kitty", "shared"))
             self.assertTrue(shadow.is_dir())
 
-    def test_active_file_is_authoritative_and_syncs_the_ledger(self):
+    def test_active_file_read_is_authoritative_without_writing_ledger(self):
         import nyxuri.deploy.preset as preset
         from nyxuri.kernel.ledger import read_ledger
         with TempEnv() as ctx:
@@ -1404,7 +1470,7 @@ class TestPresetDurability(unittest.TestCase):
             self.assertEqual(preset.read_active_preset("demo"), "A")
             (ctx.env.presets_dir / "demo.active").write_text("B", encoding="utf-8")
             self.assertEqual(preset.read_active_preset("demo"), "B")
-            self.assertEqual(read_ledger().get("presets", {}).get("demo"), "B")
+            self.assertEqual(read_ledger().get("presets", {}).get("demo"), "A")
 
     def test_non_string_part_target_returns_false(self):
         import nyxuri.deploy.preset as preset

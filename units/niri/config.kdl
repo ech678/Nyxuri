@@ -25,13 +25,19 @@ overview {
 environment {
     XDG_CURRENT_DESKTOP "niri"
     XDG_SESSION_TYPE "wayland"
-    GTK_IM_MODULE ""
+    // Niri 启动的 GTK 应用使用 Fcitx 模块；Ubuntu 26.04 实测可提交 Rime 中文。
+    // 这里只设置子进程环境，不改 GNOME 会话或 systemd 的全局输入法选择。
+    GTK_IM_MODULE "fcitx"
     QT_QPA_PLATFORM "wayland;xcb"
     QT_QPA_PLATFORMTHEME "gtk3"
     QT_WAYLAND_DISABLE_WINDOWDECORATION "1"
 }
 
 spawn-at-startup "~/.config/niri/scripts/session-shell.sh"
+// 登录后直接启动 GTK portal，解除上一会话退出时可能遗留的 D-Bus 激活等待。
+// niri --session 已导入显示环境；服务自行等待 graphical-session.target，
+// --no-block 只提交启动任务，已运行的服务不会重启，也不阻塞 Shell 启动。
+spawn-at-startup "systemctl" "--user" "--no-block" "start" "xdg-desktop-portal-gtk.service"
 // niri does not consume /etc/xdg/autostart entries on its own.
 spawn-at-startup "sh" "-c" "command -v fcitx5 >/dev/null 2>&1 && exec fcitx5 -d"
 spawn-at-startup "~/.config/niri/scripts/toggle-eyecare.sh" "--sync"

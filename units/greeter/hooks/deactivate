@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
-"""greeter off-hook: restore the previous display manager and withdraw /etc.
+"""恢复原显示管理器并撤回 Greeter 授权，软件包保持安装。
 
-Unit-owned behavior (KM3): executed by the transaction from
-`nyxuri off greeter`. Restores the recorded previous DM, the `.nyxuri.bak`
-copies of /etc/greetd/config.toml and the polkit rule (or removes our
-rule when no backup exists), and clears the greeter state dir and DM
-record. Packages stay installed (asymmetric off, unit-model §7.1).
+Arch 恢复原配置并清理单元创建的状态目录；Ubuntu 的配置和状态属于软件包，
+停用时原样保留。恢复服务失败时不继续清理恢复材料，允许重试。
 """
 import shutil
 import subprocess
@@ -22,8 +19,10 @@ from nyxuri.core import (  # noqa: E402
     GREETER_STATE_DIR,
 )
 from nyxuri.core import msg  # noqa: E402
+from nyxuri.pkg.platform import current_platform  # noqa: E402
 
-CONFLICT_DMS = ["sddm", "lightdm", "gdm", "ly"]
+# Ubuntu 的 gdm3 可能只是 gdm 的别名；两种名称均可出现在已有恢复记录中。
+CONFLICT_DMS = ["sddm", "lightdm", "gdm3", "gdm", "ly"]
 
 
 def _backup_path(path: Path) -> Path:
@@ -40,7 +39,8 @@ def _recorded_display_manager():
     except OSError:
         return False, None
     dm = result.stdout.strip()
-    if result.returncode != 0 or dm not in CONFLICT_DMS:
+    allowed = CONFLICT_DMS + (["greetd", "none"] if current_platform() == "ubuntu" else [])
+    if result.returncode != 0 or dm not in allowed:
         return False, None
     return True, dm
 
@@ -64,6 +64,8 @@ def _clear_display_manager_record() -> bool:
 
 
 def main() -> int:
+    """先恢复服务，再清理本单元的授权；Ubuntu 保留包内配置与外观数据。"""
+    ubuntu = current_platform() == "ubuntu"
     valid_record, previous_dm = _recorded_display_manager()
     if not shutil.which("systemctl"):
         print(msg("greeter_enable_failed"))
@@ -75,10 +77,32 @@ def main() -> int:
     except OSError:
         print(msg("greeter_enable_failed"))
         return 1
-    if not valid_record or (greetd_enabled and not previous_dm):
+    if not valid_record or ((greetd_enabled or ubuntu) and not previous_dm):
         print(msg("greeter_dm_record_invalid"))
         return 1
-    if previous_dm or greetd_enabled:
+    # Ubuntu 的 rules.d 对普通用户不可遍历，必须先以特权区分规则缺失和读取失败。
+    polkit_backup = _backup_path(GREETER_POLKIT_RULE)
+    if ubuntu:
+        from nyxuri.desktop.greeter import read_root_file
+        rule_ok, rule_content = read_root_file(GREETER_POLKIT_RULE)
+        backup_ok, backup_content = read_root_file(polkit_backup)
+        if not rule_ok or not backup_ok:
+            print(msg("greeter_cmd_failed", str(GREETER_POLKIT_RULE)))
+            return 1
+        has_rule, has_backup = rule_content is not None, backup_content is not None
+    else:
+        has_rule, has_backup = GREETER_POLKIT_RULE.is_file(), polkit_backup.is_file()
+    # Ubuntu 的接管前状态可以是 greetd 或无显示管理器，不能把标记当服务名执行。
+    keep_greetd = ubuntu and previous_dm == "greetd"
+    if ubuntu and previous_dm == "none":
+        previous_dm = None
+    if keep_greetd:
+        disabled = greetd_disabled = True
+        previous_dm = None
+        if not _enable_greetd():
+            print(msg("greeter_greetd_restore_failed"))
+            return 1
+    elif previous_dm or greetd_enabled:
         try:
             disabled = subprocess.run(["sudo", "systemctl", "disable", "greetd"], check=False).returncode == 0
             greetd_disabled = subprocess.run(
@@ -110,30 +134,30 @@ def main() -> int:
         print(msg("greeter_dm_restored", previous_dm))
 
     bak = _backup_path(GREETER_ETC_CFG)
-    if bak.is_file():
+    if not ubuntu and bak.is_file():
         if subprocess.run(["sudo", "mv", "-f", str(bak), str(GREETER_ETC_CFG)], check=False).returncode != 0:
             print(msg("greeter_cmd_failed", str(GREETER_ETC_CFG)))
             return 1
         print(msg("greeter_uninstall_restored", str(GREETER_ETC_CFG)))
-    else:
+    elif not ubuntu:
         print(msg("greeter_uninstall_nobackup"))
 
-    polkit_backup = _backup_path(GREETER_POLKIT_RULE)
-    if polkit_backup.is_file():
+    if has_backup:
         if subprocess.run(["sudo", "mv", "-f", str(polkit_backup), str(GREETER_POLKIT_RULE)], check=False).returncode != 0:
             print(msg("greeter_cmd_failed", str(GREETER_POLKIT_RULE)))
             return 1
         print(msg("greeter_uninstall_polkit_restored"))
-    elif GREETER_POLKIT_RULE.is_file():
+    elif has_rule:
         if subprocess.run(["sudo", "rm", "-f", str(GREETER_POLKIT_RULE)], check=False).returncode != 0:
             print(msg("greeter_cmd_failed", str(GREETER_POLKIT_RULE)))
             return 1
         print(msg("greeter_uninstall_polkit"))
 
-    if subprocess.run(["sudo", "rm", "-rf", str(GREETER_STATE_DIR)], check=False).returncode != 0:
-        print(msg("greeter_cmd_failed", str(GREETER_STATE_DIR)))
-        return 1
-    print(msg("greeter_uninstall_state_dir", str(GREETER_STATE_DIR)))
+    if not ubuntu:
+        if subprocess.run(["sudo", "rm", "-rf", str(GREETER_STATE_DIR)], check=False).returncode != 0:
+            print(msg("greeter_cmd_failed", str(GREETER_STATE_DIR)))
+            return 1
+        print(msg("greeter_uninstall_state_dir", str(GREETER_STATE_DIR)))
     if not _clear_display_manager_record():
         print(msg("greeter_cmd_failed", str(GREETER_DM_STATE)))
         return 1

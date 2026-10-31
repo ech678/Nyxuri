@@ -1,10 +1,8 @@
 .pragma library
+.import "SystemCardCatalog.js" as Catalog
+.import "SystemCardPlacement.js" as Placement
 
-// QML JavaScript files cannot use ES-module imports from another JS file.
-// Include the catalog here so CardState and DrawerGridLayout still consume
-// the same metadata source when they are run directly by qmltestrunner.
-Qt.include("SystemCardCatalog.js");
-Qt.include("SystemCardPlacement.js");
+// 显式导入目录与布局模式，保证 Quickshell 的虚拟文件路径在解析时建立依赖。
 
 var schemaVersion = 4;
 var placementSpaces = ["screen", "wallpaper"];
@@ -16,7 +14,7 @@ function isObject(value) {
 }
 
 function validDesktopLayoutMode(value) {
-    return desktopLayoutModes.indexOf(String(value || "")) !== -1;
+    return Placement.desktopLayoutModes.indexOf(String(value || "")) !== -1;
 }
 
 function validPlacementSpace(value) {
@@ -64,7 +62,7 @@ function defaultState() {
         globalDesktopLayoutMode: "free",
         cards: {}
     };
-    all().forEach(function(definition) {
+    Catalog.all().forEach(function(definition) {
         state.cards[definition.id] = defaultCard(definition);
     });
     return state;
@@ -85,7 +83,7 @@ function normalize(raw) {
         cards: {}
     };
 
-    all().forEach(function(definition) {
+    Catalog.all().forEach(function(definition) {
         var fallback = defaultCard(definition);
         var rawCard = isObject(sourceCards[definition.id])
             ? sourceCards[definition.id] : {};
@@ -197,10 +195,8 @@ function setDesktopScreenPosition(state, id, xNorm, yNorm) {
     });
 }
 
-// Apply a set of screen-space placements as one pure state operation.  The
-// service persists the returned state once, after all cards have been
-// normalized.  This is also used by collision resolution so intermediate
-// overlapping states never become observable or durable.
+// 一次纯状态操作应用全部屏幕坐标，服务在所有卡片归一化后只持久化一次。
+// 碰撞处理也复用此操作，避免中间重叠位置成为可见或已保存的状态。
 function setDesktopScreenPositions(state, positions) {
     var normalized = normalize(state);
     var next = copy(normalized);
@@ -284,7 +280,7 @@ function setGlobalMode(state, mode) {
 
 function activeSidebarIds(state) {
     var normalized = normalize(state);
-    return ids().filter(function(id) {
+    return Catalog.ids().filter(function(id) {
         var item = normalized.cards[id];
         return item.enabled && item.container === "sidebar";
     });
@@ -292,7 +288,7 @@ function activeSidebarIds(state) {
 
 function activeDesktopIds(state) {
     var normalized = normalize(state);
-    return ids().filter(function(id) {
+    return Catalog.ids().filter(function(id) {
         var item = normalized.cards[id];
         return item.enabled && item.container === "desktop";
     });
@@ -317,7 +313,7 @@ function desktopIdsForScreen(state, screenName, screenNames) {
 
 function requiresMonitor(state, id) {
     var item = card(state, id);
-    var definition = definitionFor(id);
+    var definition = Catalog.definitionFor(id);
     return !!item && item.enabled && item.container === "desktop"
         && !!definition && (definition.monitorModules || []).length > 0;
 }

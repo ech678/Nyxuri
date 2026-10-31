@@ -35,7 +35,7 @@ from nyxuri.deploy.preset import (
     resolve_preset_src,
     write_active_preset,
 )
-from nyxuri.deploy.templates import _phase_render_templates
+from nyxuri.deploy.templates import _phase_render_templates, prepare_screenshot_directory
 
 _CONFIG_ITEMS_CACHE: List[str] = []
 USER_HOOK_TIMEOUT = 30
@@ -74,6 +74,8 @@ def _phase_atomic_deployment(
     preserved_log: Optional[List[str]] = None,
     test_mode: bool = False,
     carry_policy: Optional[CarryPolicy] = None,
+    preset_overrides: Optional[dict] = None,
+    reconcile_parts: bool = True,
 ) -> List[str]:
     """Execute atomic copy for selected configuration units.
 
@@ -119,14 +121,25 @@ def _phase_atomic_deployment(
             except InvalidActivePresetError:
                 print(msg("preset_warn_invalid_active", item))
                 log_msg("WARN", f"Invalid active preset state for {item}; dest frozen, skipped")
+                failed_items.append(item)
                 continue
-            result = resolve_preset_src(item, active, dest)
+            if preset_overrides and item in preset_overrides:
+                # 显式选择已在事务预检；缺失生活区不能把选择静默改回 default。
+                from nyxuri.deploy.preset import _find_preset_src, resolve_preset_inheritance
+                active = preset_overrides[item]
+                selected = _find_preset_src(item, active)
+                base, include, exclude = resolve_preset_inheritance(item, active)
+                result = PresetSrcResult(src=selected, reset_active=None,
+                    base_src=base, base_include=include, base_exclude=exclude)
+            else:
+                result = resolve_preset_src(item, active, dest)
             for w in result.warnings:
                 print(w)
             if result.src is None:
                 # Preset not found anywhere — freeze dest, do not fall back to
                 # default (would silently wipe the user's config). §3.2
                 log_msg("WARN", f"Preset '{active}' for {item} not found; dest frozen, skipped")
+                failed_items.append(item)
                 continue
             src = result.src
             # dest-missing reset: sanctioned write-before-deploy (dest is empty,
@@ -182,7 +195,7 @@ def _phase_atomic_deployment(
                     except OSError:
                         pass
 
-        reconcile_failures = _reconcile_active_parts(item, manifest)
+        reconcile_failures = _reconcile_active_parts(item, manifest) if reconcile_parts else []
         if reconcile_failures:
             failed_items.append(item)
             print(msg("log_part_reconcile_failed", item, ", ".join(reconcile_failures)), file=sys.stderr)
@@ -193,42 +206,49 @@ def _phase_atomic_deployment(
     return failed_items
 
 
-def merge_deploy_unit(item: str, manifest: ModuleManifest) -> Optional[List[str]]:
-    """No-clobber merge for shared living areas (manifest ``merge = true``).
-
-    Blueprint files land in the living area only when missing — existing
-    files (the user's own content, an external pack) are never touched and
-    nothing is ever deleted. Returns the laid relative paths, or None on
-    failure. Presets, parts and Vault semantics do not apply to merge
-    units; the transaction snapshots exactly these laid files.
-    """
-    import shutil
-
+def merge_deploy_unit(item: str, manifest: ModuleManifest, *,
+                      baseline: Optional[dict] = None, force: bool = False,
+                      include_rels: Optional[set[str]] = None) -> Optional[List[str]]:
+    """共享目录逐文件刷新；只更新未修改受管文件，新文件落地，外来内容保留。"""
+    from nyxuri.deploy.atomic import _path_identity
     env = get_env()
     src_root = env.units_src / item
     dest = living_path(manifest, env.config_dir)
-    laid: List[str] = []
+    baseline = baseline or {}
+    laid = []
+    incoming = set()
     try:
         for path in sorted(src_root.rglob("*")):
             rel = path.relative_to(src_root)
-            if path.is_dir() or path.name == "manifest.toml" or "hooks" in rel.parts:
+            if path.is_dir() or path.name == "manifest.toml" or any(p in ("hooks", "presets", "__presets__", "__pycache__") for p in rel.parts):
                 continue
+            name = rel.as_posix()
+            if include_rels is not None and name not in include_rels:
+                continue
+            if "__custom__" in name or any(name == p or name.startswith(p + "/") for p in manifest.preserve):
+                if (dest / rel).exists():
+                    continue
+            incoming.add(name)
             target = dest / rel
+            if not target.parent.resolve().is_relative_to(dest.resolve()):
+                raise ValueError(f"Merge path escapes target: {target}")
             if target.exists() or target.is_symlink():
-                continue
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(path, target, follow_symlinks=False)
-            laid.append(rel.as_posix())
+                if not force and baseline.get(name) != _path_identity(target):
+                    continue
+            if not atomic_replace_item(path, target):
+                return None
+            laid.append(name)
+        # 源码删除只撤回内容仍与历史基线一致的文件，修改过的旧文件仍留给用户。
+        for rel, digest in baseline.items():
+            target = dest / rel
+            if rel not in incoming and _path_identity(target) == digest:
+                target.unlink()
         for pattern in manifest.chmod:
-            if not pattern or os.path.isabs(pattern):
-                continue
-            for p in dest.glob(pattern):
-                if p.is_file():
-                    try:
-                        p.chmod(0o755)
-                    except OSError:
-                        pass
-    except OSError as exc:
+            if pattern and not os.path.isabs(pattern):
+                for path in dest.glob(pattern):
+                    if path.is_file():
+                        path.chmod(0o755)
+    except (OSError, ValueError) as exc:
         log_msg("ERROR", f"Merge deploy failed for '{item}': {exc}")
         return None
     return laid
@@ -269,7 +289,7 @@ def _reconcile_active_parts(app: str, manifest: ModuleManifest) -> List[str]:
     for slot, cfg in manifest.parts.items():
         var = parts_state.get(f"{app}:{slot}")
         if var and var != cfg.get("default", "default"):
-            if not apply_part(app, slot, var):
+            if not apply_part(app, slot, var, _preserve_conflicts=True):
                 failures.append(f"{app}:{slot}={var}")
     return failures
 
@@ -322,8 +342,12 @@ def render_completion_screen(
     hook_diagnostics: Optional[List[str]] = None,
     notice_lines: Optional[List[str]] = None,
     carried_groups: Optional[Dict[str, List[str]]] = None,
+    wallpaper_selected: Optional[bool] = None,
 ) -> None:
     """Render completion state, including non-blocking hook diagnostics.
+
+    壁纸状态来自本轮选择及事务结果：未选择与已选择但尚未执行分开显示，
+    不用外部手动视频包的存在情况推断成功。
 
     ``carried_groups`` (#139): carried files keyed by verdict — "modified"
     (user edits, template has newer), "user" (user-placed), "unknown"
@@ -332,6 +356,8 @@ def render_completion_screen(
     """
     if chosen_items is None:
         chosen_items = discover_config_items()
+    if wallpaper_selected is None:
+        wallpaper_selected = "wallpapers" in chosen_items or wallpaper_ok is not None
     if preserved_lines is None:
         preserved_lines = []
     if failed_items is None:
@@ -361,14 +387,14 @@ def render_completion_screen(
             sys.stdout.write(f"    {Colors.BOLD_YELLOW}[!]{Colors.RESET} {msg('summary_item_configs_skip')}\n")
 
         if mode in ("full", "update", "test"):
-            if wallpaper_ok:
+            if not wallpaper_selected:
+                wallpaper_key, wallpaper_color, wallpaper_icon = "summary_item_wallpapers_skip", Colors.BOLD_YELLOW, "[!]"
+            elif wallpaper_ok is True:
                 wallpaper_key, wallpaper_color, wallpaper_icon = "summary_item_wallpapers_existing", Colors.BOLD_GREEN, "[✓]"
             elif wallpaper_ok is False:
                 wallpaper_key, wallpaper_color, wallpaper_icon = "summary_item_wallpapers_failed", Colors.BOLD_RED, "[✗]"
-            elif wallpapers_pack_present():
-                wallpaper_key, wallpaper_color, wallpaper_icon = "summary_item_wallpapers_existing", Colors.BOLD_GREEN, "[✓]"
             else:
-                wallpaper_key, wallpaper_color, wallpaper_icon = "summary_item_wallpapers_skip", Colors.BOLD_YELLOW, "[!]"
+                wallpaper_key, wallpaper_color, wallpaper_icon = "summary_item_wallpapers_not_run", Colors.BOLD_YELLOW, "[!]"
             sys.stdout.write(f"    {wallpaper_color}{wallpaper_icon}{Colors.RESET} {msg(wallpaper_key)}\n")
 
         if mode == "full":
@@ -493,7 +519,9 @@ def deploy_selected_configs(
         print(msg("deploy_failed", ", ".join(failed_items)), file=sys.stderr)
         return failed_items
     for item in items_to_deploy:
-        _phase_render_templates(only_app=item)
+        excluded = set(carry_policy.carried.get(item, {})) if carry_policy else set()
+        _phase_render_templates(only_app=item, exclude=excluded)
+        prepare_screenshot_directory(only_app=item, exclude=excluded)
     _phase_post_install_services()
     print(msg("copy_done"))
     return []
@@ -550,6 +578,7 @@ def test_deploy() -> bool:
         render_completion_screen(mode="test", chosen_items=items, preserved_lines=preserved_log, failed_items=failed_items)
         return False
     _phase_render_templates()
+    prepare_screenshot_directory()
     wallpaper_ok = enable_wallpapers_unit()
     enable_theme_unit()
     render_completion_screen(

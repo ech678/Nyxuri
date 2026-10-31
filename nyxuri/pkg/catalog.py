@@ -28,6 +28,7 @@ class CatalogEntry:
     packages_aur: List[str] = field(default_factory=list)
     packages_flatpak: List[str] = field(default_factory=list)
     detect: str = ""  # empty at load time → first declared package, else the name
+    platforms: dict = field(default_factory=dict)
 
 
 def catalog_path() -> Path:
@@ -43,6 +44,17 @@ def _as_list(value) -> List[str]:
     if isinstance(value, (list, tuple)):
         return [item for item in value if isinstance(item, str)]
     return []
+
+
+def _as_platforms_map(value) -> dict:
+    """保留平台专属供给表，具体解释集中在包需求解析器。"""
+    if not isinstance(value, dict):
+        return {}
+    return {
+        name: details
+        for name, details in value.items()
+        if isinstance(name, str) and isinstance(details, dict)
+    }
 
 
 def catalog_entries() -> List[CatalogEntry]:
@@ -68,6 +80,7 @@ def catalog_entries() -> List[CatalogEntry]:
             packages_aur=aur,
             packages_flatpak=_as_list(row.get("packages_flatpak")),
             detect=detect or ((repo + aur)[0] if (repo or aur) else name),
+            platforms=_as_platforms_map(row.get("platforms")),
         ))
     return entries
 

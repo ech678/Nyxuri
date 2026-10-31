@@ -23,13 +23,20 @@ python3 shell/scripts/dev/run-tests.py --all
 python3 shell/scripts/dev/audit-lifecycle.py --root shell --scope all --check
 ```
 
-### 2. 隔离进程预览与 IPC 交互（不影响当前运行的桌面会话）
+### 2. 独立进程预览与 IPC 交互
 
-当前运行 Noctalia 时，无需关闭桌面，可直接拉起独立 Nyxuri Shell 进程进行预览：
+独立进程不等于独立桌面：直接运行会使用当前用户配置、写入主题模板和 Noctalia 色板，
+还会参与通知服务注册。当前运行 Noctalia 时，先用临时 HOME/XDG 目录和私有 D-Bus 会话
+隔离这些写入与服务；Wayland 和 Niri 仍是当前桌面，面板占位、窗口和用户触发的桌面动作仍可见。
 
 ```bash
-# 隔离前台启动（详细日志流，自动挂载 fallback QML 桩）
-shell/nyxuri-shell -v
+# 从仓库根目录启动预览；保留真实 XDG_RUNTIME_DIR 以连接当前 Wayland
+preview_root=$(mktemp -d /tmp/nyxuri-shell-preview.XXXXXX)
+env HOME="$preview_root" \
+    XDG_CONFIG_HOME="$preview_root/.config" XDG_DATA_HOME="$preview_root/.local/share" \
+    XDG_STATE_HOME="$preview_root/.local/state" XDG_CACHE_HOME="$preview_root/.cache" \
+    NYXURI_SHELL_RUNTIME_HOME="$preview_root/runtime" \
+    dbus-run-session -- shell/nyxuri-shell -v
 
 # 观察实时日志流（另一终端）
 qs log --path ./shell --follow
@@ -40,11 +47,31 @@ qs ipc --path ./shell show
 # 向调试实例派发动作（观察面板弹起与按需析构）
 qs ipc --path ./shell call power-menu toggle
 qs ipc --path ./shell call spotlight toggle
-qs ipc --path ./shell call lock open
 
 # 结束调试实例
 qs kill --path ./shell
 ```
+
+预览前检查没有同路径的 Nyxuri Shell 实例：wrapper 使用 `--no-duplicate`，重复调用会复用
+现有实例。上例未覆盖主动设置的 `NYXURI_SHELL_*` 路径变量，若会话设置过这些变量，先核对
+并将它们指向临时目录。锁屏单独人工验收，确认 PAM 认证与恢复手段后再执行 `lock open`。
+
+wrapper 使用 Qt 官方支持的 [QML_DISK_CACHE_PATH](https://doc.qt.io/qt-6.10/qmldiskcache.html)
+把编译缓存放入 `<用户缓存根>/nyxuri-shell/quickshell/qmlcache`，不更改 `XDG_CACHE_HOME`。
+派生的 Python 引擎 API、CLI 和外部工具继承真实用户目录；不靠特殊标记绕过引擎的布局校验。
+wrapper 只在真实启动路径（含锁屏补启动）清空这个专属 QML 缓存；`--status`、`--check-ready`、
+普通 `--ipc` 和 `--stop` 不清缓存。`shell isReady` 只表示宿主 IPC 阶段已到达，不能代替
+单元装载、Niri 连接、视觉及认证验收；结合 `shell diagnostics`、`shell log` 和实际窗口检查。
+
+剪贴板和系统监测的工具后端是独立的 `key-cli`（默认命令 `key`，也可由
+`NYXURI_KEY` 指向实际绝对路径），不在本仓库中；这项供给边界见
+[已知问题](../../shell/KNOWN-ISSUES.md)。`wl-copy`、`wl-paste`、`cliphist` 可用
+不能代替 `key clipboard` 的 JSON 接口，系统监测还要求 `key sysmon stream`。
+后端未返回合法探测结果时，剪贴板依赖在诊断中为 `probed=false`、设置页显示 `?`，
+不能把默认值误报为三个工具均未安装。启动失败可从 `shell log` 和 `qs log` 读取，
+默认持久日志为 `~/.local/state/nyxuri/logs/shell.log`；设置了
+`NYXURI_SHELL_STATE_HOME` 时使用覆盖路径。缺少这个外部可选后端时只降级相应能力，
+Shell 的其他功能仍可使用。
 
 ### 3. 真实会话双 Shell 平滑热切换（全桌面接管与即时切回）
 
@@ -54,9 +81,12 @@ qs kill --path ./shell
 # 检查当前双轨状态
 nyxuri shell status
 
-# 平滑切换至 Nyxuri Shell（停止旧端 -> 启动新端 -> 3.0s 探测就绪 -> 失败回滚）
-nyxuri shell set custom "$PWD/shell/nyxuri-shell"
-nyxuri shell switch nyxuri-shell
+# 先确认仓库自带 wrapper 需要的运行时已在 PATH
+command -v qs
+qs --version
+
+# 平滑切换（停止旧端 -> 启动新端 -> 按目标预算探测就绪 -> 失败回滚）
+nyxuri shell switch nyxuri-shell "$PWD/shell/nyxuri-shell"
 
 # 验证六大标准动作（快捷键或命令行）
 nyxuri-shell --action session        # 呼出会话菜单
@@ -66,6 +96,29 @@ nyxuri-shell --action lock           # 锁屏
 # 随时一键平滑切回 Noctalia
 nyxuri shell switch noctalia
 ```
+
+`shell set` 与 `shell switch` 使用同一切换流程：有 `WAYLAND_DISPLAY` 时都会立即切换，
+没有 Wayland 会话时才只记录偏好。不要用 `set` 登记路径后再执行一次 `switch`。
+切换前先验证入口及其 `--runtime-path` 查询返回的实际 `qs` executable，再按
+`catalog.toml` 的 Quickshell 平台声明检查依赖及两套 Material Symbols 字体。
+入口需属于含 `shell.qml` 的 Shell 目录，并支持该查询；不能把任意可执行文件
+登记为已就绪的 Nyxuri Shell。wrapper 的查询、IPC 与实际启动使用同一运行时路径。
+
+预检随后用真实 `qs -p <临时目录>` 加载无窗口的外部 QML 导入探针，导入范围来自
+`shell.qml` 与 app、units、shared，包含预热代码的必需模块和 M3Shapes。探针使用
+临时 HOME/XDG、离屏 Qt 平台及不可连接的会话 bus；不会实例化现有 app 或业务域。
+只有 FileView 写出明确的组件完成标记才通过，日志中的源码文字不能作为就绪证据。
+导入探针最多等待 8 秒，结束后回收其独立进程组；缺运行时、依赖、字体、QML 或
+超时均在停止旧实例之前返回失败。此预检证明基础加载能力，真实业务行为及视觉仍需
+会话验收。实际启动后的就绪预算为 Nyxuri Shell 4 秒、Noctalia 30 秒；Noctalia 的
+D-Bus 服务初始化可能等待单次约 25 秒，预算另留启动余量。失败回滚
+恢复旧 Shell 时使用它自己的同一预算。只有真实 IPC 回应才算就绪，进程存活不能
+代替就绪探测。
+等待使用单调时钟；每次 IPC 超时及轮询间隔都不超过总预算剩余时间，预算耗尽
+明确返回失败。切换及回滚报告显示实际采用的预算。
+
+`--runtime-path` 纯查询及所有预检不清理现有 Shell 的缓存。wrapper 的 IPC 与启动
+使用该查询解析出的同一个 `qs`；独立的 Orbit 工具不要求 Quickshell。
 
 ## 日常开发循环
 

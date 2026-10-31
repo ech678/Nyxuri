@@ -90,7 +90,11 @@ Singleton {
         watchChanges: false
         atomicWrites: true
         printErrors: false
-        onSaved: root.mirrorError = ""
+        onSaved: {
+            root.mirrorError = "";
+            const process = mirrorCommitComponent.createObject(root);
+            process.running = true;
+        }
         onSaveFailed: error => root.mirrorError = FileViewError.toString(error)
     }
 
@@ -121,9 +125,22 @@ Singleton {
         root.renderAll();
     }
 
-    // Managed artifact: the Noctalia custom palette directory only receives
-    // this one generated file; user-created palettes next to it are never
-    // touched. Atomic write keeps the previous copy readable on failure.
+    // Noctalia 镜像也先写状态区；Noctalia停用时，提交帮助程序不会重建其目录。
+    Component {
+        id: mirrorCommitComponent
+        Process {
+            command: ["python3", Paths.scriptPath("theme", "commit-output.py"), "noctalia_mirror", root.mirrorPath]
+            environment: { "HOME": Paths.homeDir, "XDG_CONFIG_HOME": Paths.xdgConfigHome,
+                "XDG_CACHE_HOME": Paths.xdgCacheHome,
+                "XDG_STATE_HOME": Quickshell.env("XDG_STATE_HOME") || Paths.homeDir + "/.local/state" }
+            onExited: exitCode => {
+                if (exitCode !== 0)
+                    root.mirrorError = "Unable to commit Noctalia palette mirror";
+                this.destroy();
+            }
+        }
+    }
+
     function writeMirror(darkPalette, lightPalette) {
         const body = ThemePalette.noctaliaPaletteJson(darkPalette, lightPalette);
         mirrorFile.setText(JSON.stringify(body, null, 2) + "\n");
@@ -238,6 +255,16 @@ Singleton {
     // the following save disowns it — Quickshell 0.3.1 then drops the save
     // completion and the queue wedges.
     property string outputContent: ""
+    property bool managedOutput: false
+    property string managedTemplateId: ""
+
+    // 内置模板先写状态区，再由Python核对消费者开关、原值与最后写入身份。
+    // 用户显式添加的模板保留原有输出契约。
+    function isManagedTemplate(template) {
+        return template.origin === "builtin" && ["kitty", "btop", "starship", "gtk3", "gtk4",
+            "niri_glow", "palette_toml", "fcitx5_theme", "fcitx5_panel", "fcitx5_highlight"].indexOf(template.id) >= 0;
+    }
+
 
     function renderNext() {
         if (root.renderingId !== "" || root.renderQueue.length === 0) {
@@ -256,18 +283,21 @@ Singleton {
             root.renderFailed("Template has no output path");
             return;
         }
+        root.managedOutput = root.isManagedTemplate(template);
+        root.managedTemplateId = id;
+        const outputPath = root.managedOutput ? Paths.stateHome + "/template-staging/nyxuri-shell/" + id : template.outputPath;
         root.renderingId = id;
-        root.renderingOutput = template.outputPath;
+        root.renderingOutput = outputPath;
         root.renderingHook = template.postHook || "";
         root.pendingRendered = "";
         root.watchStep("Template read");
         // Rebinding to the same path (repeat render of one template) starts no
         // new load, so the settle wait only applies to a real rebind.
-        if (templateOutput.path === template.outputPath) {
+        if (templateOutput.path === outputPath) {
             root.outputReady = true;
         } else {
             root.outputReady = false;
-            templateOutput.path = template.outputPath;
+            templateOutput.path = outputPath;
         }
         if (templateInput.path === template.inputPath) {
             templateInput.reload();
@@ -367,7 +397,7 @@ Singleton {
         root.outputContent = root.pendingRendered;
         LogService.info("template", "rendered " + id + " → " + root.renderingOutput);
         const hook = root.renderingHook;
-        if (hook === "") {
+        if (!root.managedOutput && hook === "") {
             root.renderDone();
             return;
         }
@@ -382,12 +412,15 @@ Singleton {
         const inputDir = templateInput.path.substring(0, templateInput.path.lastIndexOf("/"));
         const process = hookProcessComponent.createObject(root);
         root.hookProcess = process;
-        process.command = ["bash", "-c", hook];
+        process.command = root.managedOutput
+            ? ["python3", Paths.scriptPath("theme", "commit-output.py"), root.managedTemplateId, root.renderingOutput]
+            : ["bash", "-c", hook];
         process.environment = {
             "TEMPLATE_DIR": inputDir,
             "HOME": Paths.homeDir,
             "XDG_CONFIG_HOME": Paths.xdgConfigHome,
-            "XDG_CACHE_HOME": Paths.xdgCacheHome
+            "XDG_CACHE_HOME": Paths.xdgCacheHome,
+            "XDG_STATE_HOME": Quickshell.env("XDG_STATE_HOME") || Paths.homeDir + "/.local/state"
         };
         root.watchStep("Hook");
         LogService.info("template", "hook: " + hook.substring(0, 80));

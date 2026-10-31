@@ -20,6 +20,7 @@ Singleton {
     property bool _configExited: false
     property bool _configStdoutFinished: false
     property int _configExitCode: -1
+    property bool _configStarted: false
     property bool loading: false
     property bool actionRunning: false
     property bool inspecting: false
@@ -27,11 +28,9 @@ Singleton {
     property bool canList: false
     property bool canRestore: false
     property bool watcherRunning: false
-    property var dependencies: ({
-                                    cliphist: false,
-                                    wlCopy: false,
-                                    wlPaste: false
-                                })
+    // 后端尚未返回合法探测结果时是unknown，不能据此声称wl-copy等工具缺失。
+    property bool dependenciesProbed: false
+    property var dependencies: root.unknownDependencies()
     property var capabilities: ({
                                     inspect: false,
                                     preview: false,
@@ -54,6 +53,7 @@ Singleton {
     property bool _listExited: false
     property bool _listStdoutFinished: false
     property int _listExitCode: -1
+    property bool _listStarted: false
 
     property string _actionOutput: ""
     property string _actionErrorOutput: ""
@@ -77,6 +77,23 @@ Singleton {
     signal inspected(string id)
     signal inspectFailed(string id, string code, string message)
     signal actionFailed(string action, string id, string code, string message)
+
+    function unknownDependencies() {
+        return { cliphist: null, wlCopy: null, wlPaste: null };
+    }
+
+    function dependencyStatus(response) {
+        const dependencies = response && response.dependencies;
+        const valid = response && response.schemaVersion === 1 && response.command === "clipboard.list"
+            && dependencies && ["cliphist", "wlCopy", "wlPaste"].every(function (key) {
+                return typeof dependencies[key] === "boolean";
+            });
+        return {
+            probed: !!valid,
+            dependencies: valid ? { cliphist: dependencies.cliphist, wlCopy: dependencies.wlCopy,
+                                   wlPaste: dependencies.wlPaste } : root.unknownDependencies()
+        };
+    }
 
     function normalizedError(value, fallbackCode, fallbackMessage) {
         const code = value && typeof value === "object" ? String(value.code || fallbackCode) : fallbackCode;
@@ -137,6 +154,9 @@ Singleton {
 
     function applyListResponse(text) {
         const response = root.parseResponse(text);
+        const status = root.dependencyStatus(response);
+        root.dependenciesProbed = status.probed;
+        root.dependencies = status.dependencies;
         if (!response) {
             root.available = false;
             root.canList = false;
@@ -166,11 +186,7 @@ Singleton {
             root.canList = false;
             root.canRestore = false;
             root.watcherRunning = response.watcherRunning === true;
-            root.dependencies = response.dependencies || {
-                cliphist: false,
-                wlCopy: false,
-                wlPaste: false
-            };
+            root.dependencies = status.dependencies;
             root.capabilities = response.capabilities || {
                 inspect: false,
                 preview: false,
@@ -184,11 +200,7 @@ Singleton {
             return;
         }
 
-        const deps = response.dependencies || {
-            cliphist: false,
-            wlCopy: false,
-            wlPaste: false
-        };
+        const deps = status.dependencies;
         const nextEntries = Array.isArray(response.entries) ? response.entries : [];
         const isListError = response.ok !== true && response.error && response.error.code === "cliphist_list_failed";
         const isEmptyDbFallback = isListError && deps.cliphist !== false && nextEntries.length === 0;
@@ -249,6 +261,7 @@ Singleton {
         root._configExited = false;
         root._configStdoutFinished = false;
         root._configExitCode = -1;
+        root._configStarted = false;
         const command = [root.commandName, "clipboard", "config", "--format", "json"];
         if (value !== null)
             command.push("--max-items", String(value));
@@ -256,6 +269,7 @@ Singleton {
             root.historyConfigLoaded = false;
         configProcess.command = command;
         configProcess.running = true;
+        Qt.callLater(root.finishConfigStartFailure);
         return true;
     }
 
@@ -270,9 +284,10 @@ Singleton {
             root.historyLimit = value;
             root.historyConfigLoaded = true;
         } else {
-            root.historyConfigError = root.normalizedError(valid ? response.error : null,
-                                                           "invalid_clipboard_response", I18n.tr(
-                                                               "The clipboard service returned invalid data"));
+            root.historyConfigError = !valid && root._configExitCode !== 0
+                ? root.backendCommandError(root._configExitCode)
+                : root.normalizedError(valid ? response.error : null, "invalid_clipboard_response",
+                                       I18n.tr("The clipboard service returned invalid data"));
         }
         root.historyConfigBusy = false;
     }
@@ -288,9 +303,11 @@ Singleton {
         root._listExited = false;
         root._listStdoutFinished = false;
         root._listExitCode = -1;
+        root._listStarted = false;
         listProcess.command = [root.commandName, "clipboard", "list", "--format", "json", "--limit", String(
                                    safeLimit)];
         listProcess.running = true;
+        Qt.callLater(root.finishListStartFailure);
         return true;
     }
 
@@ -303,6 +320,33 @@ Singleton {
             return;
         }
         root.applyListResponse(root._listOutput);
+        if (!root.dependenciesProbed && root._listExitCode !== 0)
+            root.error = root.backendCommandError(root._listExitCode);
+    }
+
+    function backendCommandError(exitCode) {
+        LogService.warn("clipboard", "backend command failed: " + root.commandName + " (exit " + exitCode + ")");
+        return { code: "clipboard_backend_failed",
+                 message: I18n.tr("Clipboard backend command failed: %1").arg(root.commandName) };
+    }
+
+    function finishListStartFailure() {
+        // Process启动失败可能不发onExited；在下一事件循环确认后端没启动并完成错误状态。
+        if (!root.loading || listProcess.running || root._listStarted || root._listExited)
+            return;
+        root._listExitCode = 127;
+        root._listExited = true;
+        root._listStdoutFinished = true;
+        root.finalizeListIfReady();
+    }
+
+    function finishConfigStartFailure() {
+        if (!root.historyConfigBusy || configProcess.running || root._configStarted || root._configExited)
+            return;
+        root._configExitCode = 127;
+        root._configExited = true;
+        root._configStdoutFinished = true;
+        root.finalizeConfigIfReady();
     }
 
     function runAction(action, id) {
@@ -492,6 +536,11 @@ Singleton {
 
     Process {
         id: configProcess
+        onStarted: root._configStarted = true
+        onRunningChanged: {
+            if (!running)
+                Qt.callLater(root.finishConfigStartFailure);
+        }
 
         environment: [
             "XDG_CACHE_HOME=" + Paths.xdgCacheHome
@@ -513,6 +562,11 @@ Singleton {
 
     Process {
         id: listProcess
+        onStarted: root._listStarted = true
+        onRunningChanged: {
+            if (!running)
+                Qt.callLater(root.finishListStartFailure);
+        }
 
         environment: [
             "XDG_CACHE_HOME=" + Paths.xdgCacheHome

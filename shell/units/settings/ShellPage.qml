@@ -118,7 +118,7 @@ NexusPageBase {
             label: I18n.tr("Clipboard history")
             subtext: {
                 const deps = ClipboardService.dependencies || ({});
-                const mark = value => value === true ? "✓" : "✗";
+                const mark = value => value === true ? "✓" : value === false ? "✗" : "?";
                 return "cliphist " + mark(deps.cliphist) + " · wl-copy " + mark(deps.wlCopy) + " · wl-paste "
                         + mark(deps.wlPaste);
             }

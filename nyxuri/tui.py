@@ -1409,7 +1409,9 @@ class PresetSwitcher:
                         if self.info_for:
                             info = self.info_for(cur_app, p_name)
                             if info and not info.is_deletable:
-                                toast_msg = msg("preset_delete_official_denied", p_name)
+                                toast_msg = (msg("preset_delete_active_denied", cur_app, p_name)
+                                             if info.is_active and info.source == "user"
+                                             else msg("preset_delete_official_denied", p_name))
                                 continue
                         prompt = f"  {Colors.BOLD_YELLOW}{msg('preset_prompt_delete_confirm', p_name)}{Colors.RESET}"
                         sys.stdout.write(f"\r\033[K{prompt}")
@@ -1557,6 +1559,67 @@ class PresetSwitcher:
 
 # --- Component: Unit Workshop (KM3 dual-pane parts bench) --------------------
 
+def choose_conflict_policy(
+    unit_ids: List[str], *, presets: Optional[Dict[str, str]] = None,
+    force: bool = False, conflicts: Optional[Dict[str, List[str]]] = None,
+) -> Optional[bool]:
+    """先展示冲突路径，再返回保留、强制覆盖或取消的选择。
+
+    返回 False 表示保留现有内容，True 表示明确采用模板，None 表示取消。
+    非交互执行默认保留；AUTO_YES 不会替用户同意覆盖。强制备份由事务执行，
+    这里仅披露影响，不修改文件。长列表支持滚动，避免确认时看不到实际范围。
+    """
+    from nyxuri.kernel import transaction
+
+    presets = presets or {}
+    if conflicts is None:
+        try:
+            conflicts = {
+                uid: transaction.plan_conflicts(uid, preset=presets.get(uid))
+                for uid in dict.fromkeys(unit_ids)
+            }
+        except (OSError, ValueError, RuntimeError) as exc:
+            print(msg("cli_transaction_error", str(exc)), file=sys.stderr)
+            return None
+    paths = [f"{uid}: {rel}" for uid, rels in conflicts.items() for rel in rels]
+    if not paths:
+        return force
+    print(msg("conflict_title", len(paths)))
+    for path in paths:
+        print(f"  {path}")
+    if force:
+        print(msg("conflict_force_backup"))
+        return True
+    if not sys.stdin.isatty():
+        print(msg("conflict_keep_notice"))
+        return False
+
+    offset = 0
+    with interactive_screen():
+        while True:
+            cols, rows = shutil.get_terminal_size((80, 24))
+            capacity = max(1, rows - 10)
+            offset = min(offset, max(0, len(paths) - capacity))
+            sys.stdout.write("\033[H\033[J")
+            write_cleared(msg("conflict_title", len(paths)) + "\n\n")
+            for path in paths[offset:offset + capacity]:
+                write_cleared("  " + truncate_display(path, max(10, cols - 4)) + "\n")
+            write_cleared("\n" + msg("conflict_force_backup") + "\n\n")
+            write_cleared(msg("conflict_choices") + "\n" + msg("conflict_scroll_hint") + "\n")
+            sys.stdout.flush()
+            key = read_key()
+            if key in ("1", "ENTER"):
+                return False
+            if key == "2":
+                return True
+            if key in ("3", "q", "Q", "ESC", "EXIT", "EOF"):
+                return None
+            if key in ("DOWN", "j"):
+                offset += 1
+            elif key in ("UP", "k"):
+                offset = max(0, offset - 1)
+
+
 def format_steps(steps) -> List[str]:
     """Transaction Steps → bilingual prose lines (shared by CLI and TUI)."""
     out: List[str] = []
@@ -1567,6 +1630,12 @@ def format_steps(steps) -> List[str]:
         arg = ""
         if head == "enabled":
             key = "cli_step_enabled"
+        elif head == "refreshed":
+            key = "cli_step_refreshed"
+        elif head == "config-only":
+            key, color = "cli_step_config_only", Colors.BOLD_YELLOW
+        elif head == "partial":
+            key, color, mark = "cli_step_partial", Colors.BOLD_YELLOW, "[!]"
         elif head == "already-enabled":
             key, color, mark = "cli_step_already_enabled", Colors.DIM, "[•]"
         elif head == "disabled":
@@ -1577,11 +1646,17 @@ def format_steps(steps) -> List[str]:
             key, color, mark = "cli_step_deploy_failed", Colors.BOLD_RED, "[✗]"
         elif head.startswith("missing-packages: "):
             key, arg = "cli_step_missing_packages", head.split(": ", 1)[1]
+        elif head.startswith("unsupported-platform: "):
+            key, arg = "pkg_unit_unsupported", head.split(": ", 1)[1]
         elif head.startswith("blocked-by-enabled-dependents: "):
             key, arg = "cli_step_blocked", head.split(": ", 1)[1]
         else:
             key, color, mark = "cli_step_failed", Colors.BOLD_RED, "[✗]"
         notes = []
+        if key == "cli_step_failed":
+            notes.append(head)
+        if not step.ok:
+            color, mark = Colors.BOLD_RED, "[✗]"
         for part in extra:
             if part.startswith("archived: "):
                 notes.append(msg("cli_step_archived", part.split(": ", 1)[1]))
@@ -1589,7 +1664,13 @@ def format_steps(steps) -> List[str]:
                 notes.append(msg("cli_step_foreign", part.split(": ", 1)[1]))
             elif part.startswith("packages-left: "):
                 notes.append(msg("cli_step_packages_left", part.split(": ", 1)[1]))
+            elif part.startswith("hook-failed: "):
+                notes.append(msg("cli_step_hook_failed", part.split(": ", 1)[1]))
         line = msg(key, step.unit, arg) if arg else msg(key, step.unit)
+        if getattr(step, "conflicts", ()):
+            notes.append(msg("cli_step_conflicts", ", ".join(step.conflicts)))
+        if getattr(step, "backup", ""):
+            notes.append(msg("cli_step_backup", step.backup))
         if notes:
             line += " (" + "; ".join(notes) + ")"
         out.append(f"{color}{mark}{Colors.RESET} {line}")
@@ -1625,7 +1706,7 @@ class UnitWorkshop:
         return self._audit.get(uid, "")
 
     def _detail_lines(self, uid: str, recs: dict, width: int):
-        from nyxuri.kernel import registry
+        from nyxuri.kernel import ledger, registry
 
         lines = []
         rec = recs.get(uid) or {}
@@ -1636,15 +1717,26 @@ class UnitWorkshop:
         )
         lines.append((msg("cli_detail_state"), f"{state_color}{state}{Colors.RESET}"))
         lines.append((msg("cli_detail_preset"), rec.get("preset") or "-"))
+        pending = ledger.get_deployment(uid).get("pending")
+        if pending:
+            lines.append((msg("cli_detail_pending"), str(pending)))
         if uid in registry.unit_ids():
             m = registry.load_unit(uid)
             if m.label:
                 lines.append((msg("cli_detail_label"), truncate_display(m.label, width)))
             if m.category:
                 lines.append((msg("cli_detail_category"), m.category))
-            pkgs = (*m.packages_repo, *m.packages_aur, *m.packages_flatpak)
+            # 详情和启用事务读取同一份平台依赖，避免 Ubuntu 界面展示 AUR 名字。
+            from nyxuri.pkg.requirements import resolve_requirements
+            requirements = resolve_requirements(m)
+            pkgs = (*requirements.packages_repo, *requirements.packages_aur,
+                    *requirements.packages_flatpak)
             if pkgs:
                 lines.append((msg("cli_detail_packages"), truncate_display(", ".join(pkgs), width)))
+            if requirements.manual:
+                lines.append((msg("pkg_manual_label"), truncate_display(", ".join(requirements.manual), width)))
+            if not requirements.supported:
+                lines.append((msg("pkg_unsupported_label"), truncate_display(requirements.reason, width)))
             if m.dependencies:
                 lines.append((msg("cli_detail_dependencies"), truncate_display(", ".join(m.dependencies), width)))
             if m.requires_root or m.system_paths:
@@ -1668,7 +1760,16 @@ class UnitWorkshop:
 
         self._audit.clear()
         if on:
-            steps = transaction.unit_on(uid, install_packages=unit_package_installer)
+            try:
+                plan = transaction.plan_on(uid)
+            except KeyError:
+                self._report = [msg("cli_unknown_unit", uid)]
+                return
+            decision = choose_conflict_policy(plan)
+            if decision is None:
+                self._report = [msg("cli_aborted")]
+                return
+            steps = transaction.unit_on(uid, force=decision, install_packages=unit_package_installer)
         else:
             steps = transaction.unit_off(uid, cascade=False)
         self._report = format_steps(steps)

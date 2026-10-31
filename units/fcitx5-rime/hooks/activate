@@ -1,22 +1,14 @@
 #!/usr/bin/env python3
-"""fcitx5-rime on-hook: deploy the NyxMellow skin and mount rime_ice.
-
-Unit-owned behavior (KM3): executed by the transaction from
-`nyxuri on fcitx5-rime`. The living-area files (classicui.conf, profile)
-are blueprint+preserve owned — this hook only touches the side domains
-(~/.local/share skin assets, rime schema patch) and triggers renders.
-May use the nyxuri kernel only — never nyxuri.modules (retired at KM3).
-"""
+"""部署带归属记录的皮肤模板与 Rime 补丁，重试时保护后续个人修改。"""
 import os
 import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))  # standalone runs
 
-from nyxuri.deploy.atomic import atomic_replace_item  # noqa: E402
+from nyxuri.desktop.owned_outputs import write_output  # noqa: E402
 
 THEME = "nyxmellow"
 SCHEMA = "rime_ice"
@@ -33,87 +25,53 @@ RELOAD_CONFIG = [
 
 
 def _timed(argv, timeout, **kwargs):
-    """Best-effort run: missing binary / timeout / nonzero are all non-fatal."""
+    """有界执行运行时重载；缺命令或超时由调用方按可选动作处理。"""
     try:
         return subprocess.run(argv, timeout=timeout, check=False, **kwargs)
     except (OSError, subprocess.TimeoutExpired):
         return None
 
 
-def _atomic_write(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=".tmp-")
-    with os.fdopen(fd, "w", encoding="utf-8") as fh:
-        fh.write(content)
-    os.replace(tmp, path)
-
-
-def _read_owned(marker: Path) -> set:
-    try:
-        return {n for n in marker.read_text(encoding="utf-8").split() if n}
-    except OSError:
-        return set()
-
-
 def deploy_skin(unit_src: Path) -> bool:
-    """Copy the pinned skin templates into the fcitx5 data domain."""
+    """逐文件部署皮肤模板，记录原值并保护部署后的个人修改。"""
     source = unit_src / "hooks" / "skin" / "templates"
     if not source.is_dir():
         print(f"[!] skin payload missing in unit blueprint: {source}")
         return False
     theme_dir = Path.home() / ".local/share/fcitx5/themes" / THEME
-    if not atomic_replace_item(source, theme_dir / "templates"):
-        print("[!] skin template deploy failed")
-        return False
+    for item in source.iterdir():
+        if item.is_file() and not write_output("fcitx5-rime", "fcitx5-rime",
+                                              theme_dir / "templates" / item.name, item.read_bytes(),
+                                              force=os.environ.get("NYXURI_FORCE") == "1"):
+            print(f"[!] skin template has user changes: {item.name}")
+            return False
     return True
 
 
 def mount_rime(rime_dir: Path, marker: Path) -> None:
-    """Idempotently patch default.custom.yaml toward rime_ice, then precompile."""
+    """声明可用的 Rime schema，原值与提交身份交给统一产物清单保存。
+
+    marker 参数保留调用兼容；旧文件名清单缺少原值和hash，不能升级成清理凭据。
+    user.yaml 的上次方案、开关与构建时间由 Rime 维护，不由部署钩子创建或认领。
+    """
     rime_dir.mkdir(parents=True, exist_ok=True)
     custom_yaml = rime_dir / "default.custom.yaml"
-    owned = set()
-
-    if not (custom_yaml.is_file() and SCHEMA in custom_yaml.read_text(encoding="utf-8")):
-        patched = False
-        if shutil.which("rime_deployer"):
-            res = _timed(["rime_deployer", "--add-schema", SCHEMA], 15, cwd=str(rime_dir))
-            patched = bool(res and res.returncode == 0)
-            if patched:
-                owned.add(custom_yaml.name)
-        if not patched:
-            if custom_yaml.is_file() and custom_yaml.read_text(encoding="utf-8").strip():
-                content = custom_yaml.read_text(encoding="utf-8")
-                if "patch:" in content and "schema_list:" in content:
-                    content = content.replace("schema_list:\n", "schema_list:\n    - schema: rime_ice\n", 1)
-                elif "patch:" in content:
-                    content = content.rstrip() + "\n  schema_list:\n    - schema: rime_ice\n"
-                else:
-                    content = content.rstrip() + "\n\npatch:\n  schema_list:\n    - schema: rime_ice\n"
-            else:
-                content = "patch:\n  schema_list:\n    - schema: rime_ice\n"
-            _atomic_write(custom_yaml, content)
-            owned.add(custom_yaml.name)
-
+    content = custom_yaml.read_text(encoding="utf-8") if custom_yaml.is_file() else ""
+    if SCHEMA not in content:
+        if "patch:" in content and "schema_list:" in content:
+            content = content.replace("schema_list:\n", "schema_list:\n    - schema: rime_ice\n", 1)
+        elif "patch:" in content:
+            content = content.rstrip() + "\n  schema_list:\n    - schema: rime_ice\n"
+        else:
+            content = content.rstrip() + ("\n\n" if content.strip() else "") + "patch:\n  schema_list:\n    - schema: rime_ice\n"
+        if not write_output("fcitx5-rime", "fcitx5-rime", custom_yaml, content.encode(),
+                            force=os.environ.get("NYXURI_FORCE") == "1"):
+            raise RuntimeError("Rime patch has user changes")
+    # default.custom.yaml 负责可用方案；Rime 会在构建和使用时更新 user.yaml。
+    # 若把后者整体登记为模板产物，构建时间变化就会被误当成部署后的个人修改。
     shared = Path("/usr/share/rime-data")
     if shutil.which("rime_deployer") and shared.is_dir():
         _timed(["rime_deployer", "--build", str(rime_dir), str(shared), str(rime_dir / "build")], 45)
-        _timed(["rime_deployer", "--set-active-schema", SCHEMA], 15, cwd=str(rime_dir))
-    else:
-        user_yaml = rime_dir / "user.yaml"
-        if not user_yaml.is_file():
-            _atomic_write(user_yaml, "var:\n  previously_selected_schema: rime_ice\n")
-            owned.add(user_yaml.name)
-
-    try:
-        marker.parent.mkdir(parents=True, exist_ok=True)
-        previous = _read_owned(marker)
-        marker.write_text(
-            "\n".join(sorted(previous | owned)) + ("\n" if previous or owned else ""),
-            encoding="utf-8",
-        )
-    except OSError:
-        pass
 
 
 def main() -> int:

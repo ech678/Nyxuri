@@ -206,16 +206,15 @@ def fetch_raw_with_fallback(user_repo: str, branch: str, file_path: str, output_
 
 
 def safe_git_pull(target_dir: Path) -> Optional[bool]:
-    """Pull upstream changes: True=updated, None=skipped, False=failed.
+    """拉取源码更新：True 表示成功，None 表示跳过，False 表示失败。
 
-    System package mode short-circuits FIRST — a pacman-owned tree ships no
-    .git at all (code without history), so the repo-shape guards below must
-    never run before it (§5.6: honest "pacman manages updates" over a bogus
-    network/git failure).
+    系统包源码不一定带 .git，因此必须先按运行模式交还系统包管理器，
+    再对普通仓库检查 Git 状态；不能将包管理器拥有的目录误报为损坏仓库。
     """
     if get_env().run_mode == "system":
-        print(msg("update_use_pacman"))
-        log_msg("INFO", "System package mode: refusing git pull (pacman manages updates)")
+        from nyxuri.pkg.platform import current_platform
+        print(msg("update_use_pacman" if current_platform() == "arch" else "update_use_system_package"))
+        log_msg("INFO", "System package mode: refusing git pull (native package manager owns updates)")
         return None
 
     if not shutil.which("git"):
@@ -323,19 +322,15 @@ def safe_git_pull(target_dir: Path) -> Optional[bool]:
 
 
 def safe_git_checkout_ref(target_dir: Path, ref: str) -> Optional[bool]:
-    """Pin the repository to an explicit ref: fetch it, then hard reset to FETCH_HEAD.
+    """取得用户指定的 ref 后切到 FETCH_HEAD，返回值与 safe_git_pull 相同。
 
-    Same contract as safe_git_pull (True=updated, None=skipped, False=failed),
-    but the target is a user-specified tag/commit instead of the branch tip.
-    Dirty trees are refused outright: a pinned reset is destructive, and
-    silently skipping would defeat the point of asking for an exact version.
-
-    Like safe_git_pull, the system-package short-circuit precedes the repo
-    guards: a pacman-owned tree has no .git to probe.
+    带未提交改动的源码拒绝切换，防止 reset 丢弃用户工作；系统包目录则
+    在 Git 探测前直接跳过，由安装它的系统包管理器负责版本切换。
     """
     if get_env().run_mode == "system":
-        print(msg("update_use_pacman"))
-        log_msg("INFO", "System package mode: refusing pinned checkout (pacman manages updates)")
+        from nyxuri.pkg.platform import current_platform
+        print(msg("update_use_pacman" if current_platform() == "arch" else "update_use_system_package"))
+        log_msg("INFO", "System package mode: refusing pinned checkout (native package manager owns updates)")
         return None
 
     if not shutil.which("git"):

@@ -1,6 +1,13 @@
 # noctalia theme engine manifest
+dependencies = ["theme"]
 packages = ["noctalia", "python-gobject", "gtk-layer-shell", "wl-clipboard", "python-cairo"]
-preserve_values = { "noctalia-config.toml" = ["enable_ddcutil"] }
+# 已有内置模板的撤回脚本会删除应用主题和 include；更新时保留用户的启用选择。
+preserve_values = { "noctalia-config.toml" = ["enable_ddcutil", "builtin_ids"] }
 chmod = ["wallpaper-hook.sh", "mpvpaper-sync.sh", "tools/*.sh", "tools/*.py"]
 post_install = "render-gtk"
 post_remove = "remove-gtk-css"
+
+[platforms.ubuntu]
+# Orbit 的 GTK draw 信号需要 GI 的 Cairo 转换器；python3-cairo 本身只提供绘图模块。
+packages = ["noctalia", "python3-gi", "gir1.2-gtklayershell-0.1", "wl-clipboard", "python3-cairo", "python3-gi-cairo"]
+reason = "Noctalia requires its configured APT source."

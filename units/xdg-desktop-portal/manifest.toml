@@ -1,2 +1,9 @@
-# xdg-desktop-portal manifest — package = binary = dir name; menu label only.
+# 按已启用且平台受支持的桌面部署专用路由，保留其他桌面与个人规则。
+merge = true
+legacy_targets = { "xdg-desktop-portal" = "directory" }
+when_units = { "niri-portals.conf" = ["niri"], "mango-portals.conf" = ["mango"] }
+retired_files = ["portals.conf"]
 label = "XDG Portals"
+
+[platforms.ubuntu]
+packages = ["xdg-desktop-portal", "xdg-desktop-portal-gtk", "xdg-desktop-portal-gnome"]

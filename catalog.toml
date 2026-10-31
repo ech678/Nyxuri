@@ -9,23 +9,53 @@ label = "Brave Origin"
 category = "browser"
 packages_aur = ["brave-origin-bin"]
 
+[brave-origin.platforms.ubuntu]
+packages = ["brave-origin"]
+reason = "Requires the official Brave APT source to be configured already."
+
 [flclash]
 label = "FlClash"
 category = "proxy"
 detect = "flclash"
 packages_aur = ["flclash-bin"]
 
+[flclash.platforms.ubuntu]
+manual = ["flclash"]
+reason = "Official releases include a prebuilt Linux .deb package; install it manually."
+
 [quickshell]
-# Nyxuri Shell 的运行时底座：随 Noctalia AUR 传递引入，单独选用
-# nyxuri-shell 时由这里声明（shell/KNOWN-ISSUES 缺口清算）。
+# Nyxuri Shell 的独立运行时底座；Noctalia v5 不再提供 Quickshell。
 label = "Quickshell"
 category = "shell-runtime"
 detect = "quickshell"
+packages = ["matugen", "jq"]
 packages_aur = ["quickshell"]
+
+[quickshell.platforms.ubuntu]
+# Ubuntu 的 Quickshell DEB 只拉取 Qt 共享库，QML 模块需要单独声明。
+# Controls 传递提供 QtQuick、QtQml、Shapes、Templates、Window；其余按 Shell 的 import 补齐。
+packages = [
+    "quickshell",
+    # Shell 从壁纸提取色板并组装模板数据，启动 QML 本身不代表这条链路可用。
+    "matugen",
+    "jq",
+    "qml6-module-qtquick-controls",
+    "qml6-module-qtquick-effects",
+    "qml6-module-qtquick-layouts",
+    "qml6-module-qtcore",
+    "qml6-module-qt-labs-folderlistmodel",
+    "qml6-module-qt5compat-graphicaleffects",
+]
+# Shell 的图标使用 Material Symbols 字族；旧 Material Icons 不能提供同一套字形。
+manual = ["material-symbols-rounded-font", "material-symbols-outlined-font"]
+reason = "Quickshell requires a separately configured APT source; provide Google's prebuilt Material Symbols Rounded and Outlined fonts manually."
 
 [kdenlive]
 label = "Kdenlive"
 category = "video"
+packages = ["kdenlive"]
+
+[kdenlive.platforms.ubuntu]
 packages = ["kdenlive"]
 
 [libreoffice]
@@ -33,9 +63,15 @@ label = "LibreOffice"
 category = "office"
 packages = ["libreoffice-fresh"]
 
+[libreoffice.platforms.ubuntu]
+packages = ["libreoffice"]
+
 [lutris]
 label = "Lutris"
 category = "game"
+packages = ["lutris"]
+
+[lutris.platforms.ubuntu]
 packages = ["lutris"]
 
 [missioncenter]
@@ -44,14 +80,37 @@ category = "system"
 detect = "mission-center"
 packages = ["mission-center"]
 
+[missioncenter.platforms.ubuntu]
+packages = []
+packages_flatpak = ["io.missioncenter.MissionCenter"]
+
 [motrix]
 label = "Motrix"
 category = "download"
 packages_aur = ["motrix"]
+detect = "motrix"
+
+[motrix.platforms.ubuntu]
+manual = ["motrix"]
+reason = "Official releases include a prebuilt Linux .deb package; install it manually."
+
+[mpvpaper]
+# 视频壁纸的可选播放器；Ubuntu 静态壁纸安装不依赖它，Arch 工具链声明保持原样。
+label = "mpvpaper"
+category = "video"
+detect = "mpvpaper"
+packages_aur = ["mpvpaper"]
+
+[mpvpaper.platforms.ubuntu]
+manual = ["mpvpaper"]
+reason = "Optional video wallpaper player; static wallpapers do not require it. No automatic Ubuntu supply is configured: provide the mpvpaper executable manually. Nyxuri does not download or build it."
 
 [nautilus]
 label = "Nautilus"
 category = "system"
+packages = ["nautilus"]
+
+[nautilus.platforms.ubuntu]
 packages = ["nautilus"]
 
 [obs]
@@ -60,10 +119,17 @@ category = "video"
 detect = "obs"
 packages = ["obs-studio"]
 
+[obs.platforms.ubuntu]
+packages = ["obs-studio"]
+
 [protonplus]
 label = "ProtonPlus"
 category = "game"
 packages_aur = ["protonplus"]
+
+[protonplus.platforms.ubuntu]
+packages = []
+packages_flatpak = ["com.vysp3r.ProtonPlus"]
 
 [qq]
 label = "QQ"
@@ -86,16 +152,27 @@ label = "Steam"
 category = "game"
 packages = ["steam"]
 
+[steam.platforms.ubuntu]
+packages = ["steam"]
+
 [telegram]
 label = "Telegram"
 category = "social"
 packages = ["telegram-desktop"]
+
+[telegram.platforms.ubuntu]
+packages = []
+packages_flatpak = ["org.telegram.desktop"]
 
 [vscode]
 label = "Visual Studio Code"
 category = "dev"
 detect = "code"
 packages_aur = ["visual-studio-code-bin"]
+
+[vscode.platforms.ubuntu]
+packages = ["code"]
+reason = "Requires the Microsoft APT source to be configured already."
 
 [wechat]
 label = "微信 (WeChat)"

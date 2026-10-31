@@ -16,11 +16,17 @@ import re
 import unittest
 from pathlib import Path
 
+from tests.utils import TempEnv
+
 
 class TestAISpecs(unittest.TestCase):
     """Ensure AI directives, architecture wiki, and index links stay unbroken."""
 
     def setUp(self):
+        # 预设读取会同步账本；文档契约检查也必须使用临时 HOME，不能改用户状态。
+        self.ctx = TempEnv()
+        self.ctx.__enter__()
+        self.addCleanup(self.ctx.__exit__, None, None, None)
         self.root_dir = Path(__file__).resolve().parent.parent
         self.wiki_dir = self.root_dir / "llms-wiki"
         self.llms_txt = self.wiki_dir / "llms.txt"
@@ -351,19 +357,17 @@ class TestAISpecs(unittest.TestCase):
         self.assertFalse((root / "nyxuri" / "packaging").exists())
         self.assertTrue((root / "catalog.toml").is_file())
 
-        # 3. The 17 fake units are catalog entries, never blueprint dirs.
-        # KM4 adds quickshell: the shell runtime base, declared for setups
-        # that pick nyxuri-shell without the Noctalia AUR transitively
-        # pulling it in (shell/KNOWN-ISSUES closure).
+        # 3. 原有 17 个纯包声明迁入 catalog；Quickshell 与可选视频壁纸播放器
+        # 同样只有供给职责，不应为菜单条目创建没有配置的单元目录。
         fake_names = {"brave-origin", "flclash", "kdenlive", "libreoffice", "lutris",
                       "missioncenter", "motrix", "nautilus", "obs", "protonplus",
                       "qq", "shelly", "spotify", "steam", "telegram", "vscode", "wechat",
-                      "quickshell"}
+                      "quickshell", "mpvpaper"}
         self.assertEqual(fake_names & {d.name for d in units.iterdir()}, set())
         catalog = (root / "catalog.toml").read_text(encoding="utf-8")
         import tomllib
         data = tomllib.loads(catalog)
-        self.assertEqual(fake_names, set(data), "catalog must carry exactly the 18 declarations")
+        self.assertEqual(fake_names, set(data), "catalog must match declared package-only applications")
 
         # 4. The engine holds zero references to the dead names.
         for py in sorted((root / "nyxuri").rglob("*.py")):

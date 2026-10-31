@@ -1,10 +1,12 @@
 """Tests for clipboard service and key-cli clipboard contract."""
 
 import json
+import re
 import os
 import shutil
 import subprocess
 import sys
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -60,6 +62,34 @@ class ClipboardContractTests(unittest.TestCase):
                 zh_toml_content,
                 f"zh_CN.toml must provide translation for '{text}'",
             )
+
+    def test_backend_dependency_status_distinguishes_unknown_from_missing(self):
+        """执行交付JS：缺key/无效响应保持未知，只有真实bool结果才可声称依赖缺席。"""
+        node = shutil.which("node")
+        if node is None:
+            self.skipTest("Node.js unavailable for the pure backend status test")
+        # 直接执行交付QML中的两个纯函数；不在测试中复制依赖判定实现。
+        qml = (SHELL_DIR / "app/services/ClipboardService.qml").read_text()
+        helper = ""
+        for name in ("unknownDependencies", "dependencyStatus"):
+            function = re.search(r"    function " + name + r"\(([^)]*)\) \{([\s\S]*?)\n    \}", qml)
+            self.assertIsNotNone(function)
+            helper += "function " + name + "(" + function[1] + ") {" + function[2] + "\n}\n"
+        driver = helper + "\nconst root = { unknownDependencies };\n" + """
+const assert = require('node:assert/strict');
+for (const response of [null, {}, {schemaVersion: 1, command:'clipboard.list', dependencies:{cliphist:true,wlCopy:true}}]) {
+    assert.deepEqual(dependencyStatus(response), {probed:false,dependencies:{cliphist:null,wlCopy:null,wlPaste:null}});
+}
+const actual = {schemaVersion:1,command:'clipboard.list',dependencies:{cliphist:true,wlCopy:false,wlPaste:true}};
+assert.deepEqual(dependencyStatus(actual), {probed:true,dependencies:actual.dependencies});
+assert.equal(dependencyStatus({...actual,schemaVersion:2}).probed, false);
+"""
+        command = [node, "-e", driver]
+        result = subprocess.run(command, capture_output=True, text=True, timeout=10)
+        self.assertEqual(command[:2], [node, "-e"])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        translations = tomllib.loads((SHELL_DIR / "app/i18n/zh_CN.toml").read_text())
+        self.assertIn("Clipboard backend command failed: %1", translations)
 
     def test_qml_empty_db_fallback_logic(self):
         """Verify that ClipboardService.qml contains fallback handling for empty database."""

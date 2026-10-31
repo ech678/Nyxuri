@@ -753,8 +753,8 @@ class TestOwnershipCarry(unittest.TestCase):
                              ["~/.config/dest/functions"],
                              "a preserved tree reports once, not per file")
 
-    def test_preserve_and_values_targets_exempt_from_carry(self):
-        """preserve / preserve_values files ride their own mechanisms."""
+    def test_preserve_values_does_not_hide_whole_file_drift(self):
+        """键级保留不能成为丢弃同文件其他个人修改的理由。"""
         with tempfile.TemporaryDirectory() as wd:
             wd = Path(wd)
             src = self._stage(wd, {
@@ -776,7 +776,7 @@ class TestOwnershipCarry(unittest.TestCase):
                                 "settings.toml": self._hash("old\n")},
                 carry_unknown=True, carried_out=carried,
             ))
-            self.assertEqual(carried, {}, "exempt files never enter the carry map")
+            self.assertEqual(carried, {"settings.toml": "modified"})
             self.assertEqual((dest / "monitor.kdl").read_text(), "user monitor layout\n")
             self.assertIn("enable_ddcutil = true", (dest / "settings.toml").read_text())
 

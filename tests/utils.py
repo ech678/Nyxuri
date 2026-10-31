@@ -36,14 +36,15 @@ class TempEnv:
         (home / ".cache").mkdir(parents=True, exist_ok=True)
         (home / "Pictures").mkdir(parents=True, exist_ok=True)
 
-        # Save and override environment variables
-        for key in ("HOME", "XDG_STATE_HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "WAYLAND_DISPLAY"):
+        # 保存并覆盖四个 XDG 根目录，避免宿主的数据目录变量泄漏进临时 HOME。
+        for key in ("HOME", "XDG_STATE_HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME", "WAYLAND_DISPLAY"):
             self._old_env[key] = os.environ.get(key)
         os.environ.pop("WAYLAND_DISPLAY", None)
         os.environ["HOME"] = str(home)
         os.environ["XDG_STATE_HOME"] = str(home / ".local" / "state")
         os.environ["XDG_CONFIG_HOME"] = str(home / ".config")
         os.environ["XDG_CACHE_HOME"] = str(home / ".cache")
+        os.environ["XDG_DATA_HOME"] = str(home / ".local" / "share")
 
         # Default sandbox protections: intercept external host-mutating runners
         import subprocess

@@ -249,16 +249,69 @@ class TestCliLinkOwnership(unittest.TestCase):
         self._uninstall_cli()
         self.assertFalse(self.target.is_symlink())
 
-    def test_xdg_state_home_outside_home_is_isolated(self):
+    def test_xdg_state_home_outside_home_is_rejected(self):
         import os
         from nyxuri.core import Environment
         with patch.dict(os.environ, {"XDG_STATE_HOME": "/some/foreign/home/.local/state"}):
-            env = Environment()
-            self.assertEqual(
-                env.state_dir,
-                env.home / ".local/state" / "nyxuri",
-                "XDG_STATE_HOME outside home must not be used",
-            )
+            with self.assertRaises(core.XDGLayoutError):
+                Environment()
+
+
+class TestXdgLayoutGate(unittest.TestCase):
+    """不完整支持的 XDG 布局必须在迁移、锁与日志写入之前拒绝。"""
+
+    def setUp(self):
+        self.ctx = TempEnv()
+        self.ctx.__enter__()
+        self.addCleanup(self.ctx.__exit__, None, None, None)
+
+    def test_default_unset_empty_and_normalized_paths_are_supported(self):
+        defaults = {"XDG_CONFIG_HOME": ".config", "XDG_CACHE_HOME": ".cache",
+                    "XDG_DATA_HOME": ".local/share", "XDG_STATE_HOME": ".local/state"}
+        for key, suffix in defaults.items():
+            for value in (None, "", str(self.ctx.home / suffix), str(self.ctx.home / suffix) + "/unused/..//"):
+                with self.subTest(key=key, value=value), patch.dict(os.environ):
+                    if value is None:
+                        os.environ.pop(key, None)
+                    else:
+                        os.environ[key] = value
+                    core.validate_xdg_layout()
+
+    def test_custom_paths_inside_outside_and_relative_fail_before_migration(self):
+        legacy = self.ctx.env.config_dir / "NyxNiri"
+        legacy.mkdir()
+        sentinel = legacy / "personal.txt"
+        sentinel.write_text("original", encoding="utf-8")
+        for key in ("XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME"):
+            for value in (str(self.ctx.home / "custom-root"), "/outside-test-home/custom", "relative-root"):
+                with self.subTest(key=key, value=value), patch.dict(os.environ, {key: value}), \
+                     patch.object(core, "migrate_legacy_storage") as migrate:
+                    with self.assertRaises(core.XDGLayoutError) as caught:
+                        core.Environment()
+                    self.assertIn(key, str(caught.exception))
+                    self.assertIn("Unsupported", str(caught.exception))
+                    self.assertIn("不支持", str(caught.exception))
+                    migrate.assert_not_called()
+                    self.assertEqual(sentinel.read_text(), "original")
+                    self.assertFalse(self.ctx.env.nyx_dir.exists())
+
+    def test_cli_rejects_before_lock_logger_or_cached_environment_use(self):
+        from nyxuri import cli
+        for key in ("XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME"):
+            with self.subTest(key=key), patch.dict(os.environ, {key: str(self.ctx.home / "custom-root")}), \
+                 patch("sys.argv", ["nyxuri", "help"]), \
+                 patch.object(cli, "acquire_lock") as lock, \
+                 patch.object(cli, "init_logger") as logger, \
+                 patch.object(cli, "get_env") as env, \
+                 patch("sys.stderr", new=io.StringIO()) as error:
+                with self.assertRaises(SystemExit) as caught:
+                    cli.main()
+                self.assertEqual(caught.exception.code, 1)
+                self.assertIn(key, error.getvalue())
+                self.assertNotIn("Traceback", error.getvalue())
+                lock.assert_not_called()
+                logger.assert_not_called()
+                env.assert_not_called()
 
 
 class TestSafeGitPullSystemBranch(unittest.TestCase):

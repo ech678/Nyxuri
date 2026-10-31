@@ -1,13 +1,12 @@
-"""Dual shell runtime management, readiness probe, and hot-switching state machine.
+"""管理双 Shell 运行态、就绪探测和 Wayland 会话中的热切换。
 
-Ensures safe transitions between Noctalia and Nyxuri Shell (custom) under Wayland.
-Strictly follows the P0-06 state machine:
-1. Target preflight
-2. Lock safety check
-3. Graceful stop of old instance (bounded 2.5s)
-4. Background spawn of new instance
-5. Bounded readiness probe (3.0s)
-6. Commit ledger on success; rollback and restore old shell on failure.
+按 P0-06 状态机完成 Noctalia 与 Nyxuri Shell 的交接：
+1. 预检目标入口、平台运行依赖、字体与 QML 导入。
+2. 检查锁屏状态。
+3. 请求旧实例优雅退出，等待上限 2.5s，超时后强制终止。
+4. 在后台启动新实例。
+5. 按目标预算探测就绪：Noctalia 30s，Nyxuri Shell 4s。
+6. 成功后提交账本；失败时回滚并恢复旧 Shell。
 """
 
 import os
@@ -32,8 +31,9 @@ def normalize_shell_name(name: str) -> str:
 
 
 def find_default_custom_bin() -> str:
-    """Discover default nyxuri-shell binary from repo or PATH."""
-    repo_root = Path(__file__).resolve().parent.parent
+    """先从仓库根目录查找 Shell 入口，再回退到 PATH。"""
+    # 本文件位于 nyxuri/desktop/，向上三层才是包含 shell/ 的仓库根目录。
+    repo_root = Path(__file__).resolve().parents[2]
     local_script = repo_root / "shell" / "nyxuri-shell"
     if local_script.is_file() and os.access(local_script, os.X_OK):
         return str(local_script)
@@ -88,10 +88,10 @@ resolve_shell_bin = resolve_custom_bin
 
 
 def preflight_shell(target: str, bin_path: Optional[str] = None) -> Tuple[bool, str, str]:
-    """Validate target shell readiness without acquiring shared desktop resources.
+    """验证目标入口与实际运行能力；失败时调用方尚未停止旧Shell。
 
-    Returns:
-        (ok, resolved_binary, error_reason)
+    返回 (ok, resolved_binary, error_reason)。Nyxuri Shell会执行隔离的无窗口
+    QML导入探针；Noctalia仍在实际切换后通过IPC就绪探测确认桌面实例。
     """
     target = normalize_shell_name(target)
     if target not in ("noctalia", "nyxuri-shell"):
@@ -112,6 +112,10 @@ def preflight_shell(target: str, bin_path: Optional[str] = None) -> Tuple[bool, 
     if not os.access(resolved, os.X_OK):
         return False, resolved, f"Nyxuri Shell binary is not executable: {resolved}"
 
+    from nyxuri.desktop.shell_runtime import preflight_runtime
+    error = preflight_runtime(Path(resolved))
+    if error:
+        return False, resolved, error
     return True, resolved, ""
 
 
@@ -158,7 +162,8 @@ def probe_running_shells() -> "list[Tuple[str, int]]":
 
     def nyxuri_shell_dirs() -> "set[Path]":
         dirs: "set[Path]" = set()
-        for raw in (resolve_custom_bin(), str(Path(__file__).resolve().parent.parent / "shell")):
+        # 同时识别显式配置入口和当前源码树，避免源码启动实例漏出切换清理范围。
+        for raw in (resolve_custom_bin(), str(Path(__file__).resolve().parents[2] / "shell")):
             if not raw:
                 continue
             path = Path(raw)
@@ -311,8 +316,8 @@ def stop_all_shell_instances(shell_name: str, bin_path: str = "", timeout: float
 def spawn_shell(shell_name: str, bin_path: str) -> subprocess.Popen:
     """Launch target shell in an independent session with logging."""
     norm = normalize_shell_name(shell_name)
-    # Honor XDG_STATE_HOME (TempEnv sandbox relies on it); same pattern as doctor.py.
-    state_base = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local" / "state")))
+    # 空 XDG 值与未设置相同；日志不能因空字符串而写入当前工作目录。
+    state_base = Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local" / "state")
     log_dir = state_base / "nyxuri"
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file = open(log_dir / f"{norm}-session.log", "a", encoding="utf-8")
@@ -325,38 +330,46 @@ def spawn_shell(shell_name: str, bin_path: str) -> subprocess.Popen:
     )
 
 
-def wait_shell_ready(shell_name: str, proc: subprocess.Popen, bin_path: str, timeout: float = 3.5) -> bool:
-    """Poll for target shell readiness within bounded timeout."""
+def _shell_ready_timeout(shell_name: str) -> float:
+    """目标与回滚共用预算；为 Noctalia 约 25 秒的单次 D-Bus 初始化等待留出启动余量。"""
+    return 30.0 if normalize_shell_name(shell_name) == "noctalia" else 4.0
+
+
+def wait_shell_ready(shell_name: str, proc: subprocess.Popen, bin_path: str,
+                     timeout: Optional[float] = None) -> bool:
+    """在单调时钟总预算内等待真实 IPC 响应，进程存活本身不代表就绪。
+
+    每次 IPC 的超时和轮询间隔都受剩余预算限制；不会在最后一次探测额外等待
+    完整的 0.5/1 秒。进程退出、未知目标或预算耗尽均明确返回 False。
+    """
     norm = normalize_shell_name(shell_name)
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        # Check if process crashed immediately
-        poll_res = proc.poll()
-        if poll_res is not None:
+    if norm == "nyxuri-shell":
+        command, probe_limit = [bin_path, "--check-ready"], 0.5
+    elif norm == "noctalia":
+        # Noctalia 没有 ping；theme-mode-get 必须由真正运行的服务回应。
+        command, probe_limit = ["noctalia", "msg", "theme-mode-get"], 1.0
+    else:
+        return False
+    budget = _shell_ready_timeout(norm) if timeout is None else timeout
+    deadline = time.monotonic() + max(0.0, budget)
+    while time.monotonic() < deadline:
+        if proc.poll() is not None:
             return False
-
-        if norm == "nyxuri-shell":
-            try:
-                res = subprocess.run([bin_path, "--check-ready"], timeout=0.5, capture_output=True, check=False)
-                if res.returncode == 0:
-                    return True
-            except Exception:
-                pass
-        elif norm == "noctalia":
-            # Probe the daemon over its real IPC surface. `noctalia msg` has
-            # NO ping subcommand; theme-mode-get is the lightest query that
-            # returns 0 only when the daemon answers. A process merely alive
-            # past one second is NOT ready evidence: layer-shell conflicts
-            # can keep it dying slowly, and reporting ready then would leave
-            # both shells running.
-            try:
-                res = subprocess.run(["noctalia", "msg", "theme-mode-get"], timeout=1.0, capture_output=True, check=False)
-                if res.returncode == 0:
-                    return True
-            except Exception:
-                pass
-
-        time.sleep(0.15)
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return False
+        try:
+            res = subprocess.run(command, timeout=min(probe_limit, remaining),
+                                 capture_output=True, check=False)
+            if res.returncode == 0:
+                return time.monotonic() <= deadline
+        except (OSError, subprocess.SubprocessError):
+            pass
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return False
+        time.sleep(min(0.15, remaining))
+    return False
 
 
 def is_shell_locked(shell_name: str, bin_path: str = "") -> bool:
@@ -396,42 +409,20 @@ def is_shell_locked(shell_name: str, bin_path: str = "") -> bool:
 
 
 def ensure_compositor_gateway_scripts() -> None:
-    """Ensure compositor gateway scripts in niri/scripts match the repository source."""
+    """只检查网关是否已经由 Niri 事务部署，不在 Shell 切换时改写配置。
+
+    网关升级属于 Niri 的 refresh；切换 Shell 不能先对齐源码再发现启动失败，
+    也不能把用户编辑的脚本当成旧版本覆盖。
+    """
     from nyxuri.core import get_env
     env = get_env()
     dest_dir = env.config_dir / "niri" / "scripts"
-    src_dir = env.units_src / "niri" / "scripts"
-    if not dest_dir.is_dir() or not src_dir.is_dir():
+    if not dest_dir.is_dir():
         return
-
     for script_name in ("session-shell.sh", "shell-action.sh"):
-        src = src_dir / script_name
-        dest = dest_dir / script_name
-        if not src.is_file():
-            continue
-        need_copy = False
-        if not dest.is_file():
-            need_copy = True
-        else:
-            try:
-                if src.read_bytes() != dest.read_bytes():
-                    need_copy = True
-            except OSError:
-                need_copy = True
-
-        if need_copy:
-            temp_dest = dest.with_name(f".{script_name}.tmp.{os.getpid()}")
-            temp_dest.write_bytes(src.read_bytes())
-            temp_dest.chmod(0o755)
-            temp_dest.replace(dest)
-        elif not os.access(dest, os.X_OK):
-            dest.chmod(0o755)
-
-    try:
-        from nyxuri.core import ensure_nyxuri_shell_symlink
-        ensure_nyxuri_shell_symlink()
-    except Exception:
-        pass
+        script = dest_dir / script_name
+        if not script.is_file() or not os.access(script, os.X_OK):
+            raise RuntimeError(f"Compositor gateway unavailable; refresh niri: {script}")
 
 
 def capture_active_theme_state(current_name: str) -> Tuple[Optional[str], Optional[str]]:
@@ -644,13 +635,22 @@ def hot_switch_shell(target: str, custom_bin_override: Optional[str] = None) -> 
         stop_all_shell_instances("noctalia", timeout=1.5)
         if current_name != "none" and old_bin:
             try:
-                spawn_shell(current_name, old_bin)
+                restore_proc = spawn_shell(current_name, old_bin)
+                restore_timeout = _shell_ready_timeout(current_name)
+                restored = wait_shell_ready(current_name, restore_proc, old_bin, timeout=restore_timeout)
+                if not restored:
+                    return False, (f"Failed to spawn target shell: {e}; restore of {current_name} "
+                                   f"failed readiness probe within {restore_timeout:.1f}s.")
+                handoff_theme_state(current_name, captured_mode, captured_wallpaper)
+                return False, (f"Failed to spawn target shell: {e}; successfully recovered {current_name} "
+                               f"(readiness budget: {restore_timeout:.1f}s).")
             except Exception as restore_error:
                 return False, f"Failed to spawn target shell: {e}; restore of {current_name} also failed: {restore_error}"
         return False, f"Failed to spawn target shell: {e}"
 
-    # Bounded readiness probe
-    is_ready = wait_shell_ready(target, new_proc, target_bin, timeout=4.0)
+    # 新目标与失败回滚都按各自 Shell 的预算等待，不能把慢启动误判成崩溃。
+    ready_timeout = _shell_ready_timeout(target)
+    is_ready = wait_shell_ready(target, new_proc, target_bin, timeout=ready_timeout)
     if not is_ready:
         # Target failed to report ready or crashed: cleanup the whole field —
         # this spawn AND any residue from earlier switches — so the rollback
@@ -667,22 +667,23 @@ def hot_switch_shell(target: str, custom_bin_override: Optional[str] = None) -> 
 
         # Rollback: revive old shell
         restored = False
+        restore_timeout = _shell_ready_timeout(current_name)
         if current_name != "none" and old_bin:
             try:
                 restore_proc = spawn_shell(current_name, old_bin)
-                restored = wait_shell_ready(current_name, restore_proc, old_bin, timeout=4.0)
+                restored = wait_shell_ready(current_name, restore_proc, old_bin, timeout=restore_timeout)
             except Exception:
                 pass
 
-        fail_msg = f"Target shell {target} failed readiness probe within 4.0s."
+        fail_msg = f"Target shell {target} failed readiness probe within {ready_timeout:.1f}s."
         if restored:
             handoff_theme_state(current_name, captured_mode, captured_wallpaper)
-            fail_msg += f" Successfully recovered and rolled back to {current_name}."
+            fail_msg += f" Successfully recovered and rolled back to {current_name} (readiness budget: {restore_timeout:.1f}s)."
         else:
-            fail_msg += f" Critical: Failed to restore previous shell {current_name}!"
+            fail_msg += f" Critical: Failed to restore previous shell {current_name} within {restore_timeout:.1f}s!"
         return False, fail_msg
 
     # Successfully verified: commit ledger state and hand off theme state
     set_shell(target, target_bin if target == "nyxuri-shell" else None)
     handoff_theme_state(target, captured_mode, captured_wallpaper)
-    return True, f"Successfully switched to {target} (PID: {new_proc.pid})"
+    return True, f"Successfully switched to {target} (PID: {new_proc.pid}, readiness budget: {ready_timeout:.1f}s)"

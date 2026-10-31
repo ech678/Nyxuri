@@ -5,12 +5,14 @@ No test may call real fcitx_uninstall, greeter_uninstall, or touch real ~/.confi
 """
 
 import sys
+import json
 import shutil
 import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 from tests.utils import TempEnv
+from nyxuri.core import remove_path
 
 
 class TestUninstallNonInteractive(unittest.TestCase):
@@ -29,16 +31,15 @@ class TestUninstallNonInteractive(unittest.TestCase):
     def test_non_interactive_uninstall_uses_standard_scope_and_archives(self):
         """Non-interactive uninstall archives configs without removing user data."""
         from nyxuri.state.uninstall import uninstall_nyxuri
-        from nyxuri.core import PROJECT_NAME
+        from nyxuri.state.backup import get_all_backups
 
         with patch("sys.stdin.isatty", return_value=False), patch("builtins.print"):
             result = uninstall_nyxuri("")
 
         self.assertTrue(result, "Non-interactive uninstall uses standard scope")
-        archives = list(self.env.config_dir.glob(f"{PROJECT_NAME}_archive_*"))
-        self.assertTrue(archives, "Configs should be archived (non-interactive default = archive)")
-        self.assertTrue((archives[0] / "niri" / "config.kdl").exists())
-        self.assertFalse((self.env.config_dir / "niri").exists(), "Original removed after archiving")
+        # 没有账本的同名目录属于来源不明配置；卸载只备份，不擅自接管删除。
+        self.assertTrue(get_all_backups())
+        self.assertEqual((self.env.config_dir / "niri" / "config.kdl").read_text(), "test")
 
     def test_non_interactive_uninstall_purge_still_works(self):
         """Explicit purge mode should still execute even non-interactively."""
@@ -48,7 +49,7 @@ class TestUninstallNonInteractive(unittest.TestCase):
             with patch("builtins.print"):
                 with patch("nyxuri.state.uninstall.prompt_confirm", return_value=True):
                     with patch("nyxuri.state.uninstall.get_all_backups", return_value=[]):
-                        with patch("nyxuri.state.uninstall.remove_path"):
+                        with patch("nyxuri.state.uninstall.remove_path", wraps=remove_path):
                             with patch("nyxuri.state.uninstall.get_pics_dir", return_value=self.env.home / "Pictures"):
                                 result = uninstall_nyxuri("purge")
 
@@ -71,7 +72,7 @@ class TestModeAliases(unittest.TestCase):
         from nyxuri.state.uninstall import uninstall_nyxuri
 
         with patch("sys.stdin.isatty", return_value=False), patch("builtins.print"), \
-             patch("nyxuri.state.uninstall.copy_path"), patch("nyxuri.state.uninstall.remove_path"):
+             patch("nyxuri.state.uninstall.copy_path"), patch("nyxuri.state.uninstall.remove_path", wraps=remove_path):
             result = uninstall_nyxuri("safe")
 
         self.assertTrue(result)
@@ -84,7 +85,7 @@ class TestModeAliases(unittest.TestCase):
             with patch("builtins.print"):
                 with patch("nyxuri.state.uninstall.prompt_confirm", return_value=True):
                     with patch("nyxuri.state.uninstall.get_all_backups", return_value=[]):
-                        with patch("nyxuri.state.uninstall.remove_path"):
+                        with patch("nyxuri.state.uninstall.remove_path", wraps=remove_path):
                             with patch("nyxuri.state.uninstall.get_pics_dir", return_value=self.env.home / "Pictures"):
                                 result = uninstall_nyxuri("3")
                                 self.assertTrue(result)
@@ -300,6 +301,145 @@ class TestRollbackSafety(unittest.TestCase):
         with patch("nyxuri.deploy.deploy.discover_config_items", return_value=["niri"]), \
              patch("builtins.print"):
             self.assertFalse(rollback_configs(str(snapshot)))
+
+
+class TestManagedSnapshotLifecycle(unittest.TestCase):
+    """覆盖已确认的快照、个人修改、新增单元与回滚对账场景。"""
+
+    def setUp(self):
+        self.ctx = TempEnv()
+        self.ctx.__enter__()
+        self.env = self.ctx.env
+
+    def tearDown(self):
+        self.ctx.__exit__()
+
+    def stage(self, uid, content):
+        from nyxuri.kernel import ledger
+        import hashlib
+        dest = self.env.config_dir / uid
+        dest.mkdir(parents=True, exist_ok=True)
+        (dest / "config").write_text(content)
+        ledger.set_unit(uid, state="enabled", preset="default",
+                        files={"config": hashlib.sha256(content.encode()).hexdigest()})
+        ledger.set_deployment(uid, target=str(dest), shape="directory", preserve=[], pending=None)
+        return dest
+
+    def test_rollback_restores_unit_state_with_content_and_disables_new_unit(self):
+        from nyxuri.state.backup import backup_configs, rollback_configs, get_all_backups
+        from nyxuri.kernel import ledger, transaction
+        dest = self.stage("kitty", "baseline")
+        ledger.update_ledger(active_shell="noctalia", unrelated={"keep": 1},
+                             presets={"kitty": "default"}, parts={"kitty:colors": "old", "other:slot": "old"})
+        with patch("builtins.print"):
+            snap = backup_configs(interactive=False)
+        self.assertIsNotNone(snap)
+        (dest / "config").write_text("personal edit")
+        (dest / "foreign").write_text("new personal file")
+        newer = self.stage("snapshot-new", "new payload")
+        ledger.update_ledger(active_shell="nyxuri-shell", unrelated={"keep": 2},
+                             parts={"kitty:colors": "new", "other:slot": "new"})
+        with patch("builtins.print"):
+            self.assertTrue(rollback_configs(str(snap)))
+        self.assertEqual((dest / "config").read_text(), "baseline")
+        self.assertEqual((dest / "foreign").read_text(), "new personal file")
+        self.assertFalse((newer / "config").exists())
+        self.assertEqual(ledger.get_unit("snapshot-new")["state"], "disabled")
+        self.assertEqual(ledger.read_ledger()["unrelated"], {"keep": 2})
+        self.assertEqual(ledger.active_shell(), "nyxuri-shell")
+        self.assertEqual(ledger.read_ledger()["parts"], {"kitty:colors": "old", "other:slot": "new"})
+        self.assertEqual(transaction.audit_units("kitty"), {"kitty": "Synced"})
+        safety = next(p for p in get_all_backups() if p != snap)
+        self.assertEqual((safety / "units" / "0" / "config").read_text(), "personal edit")
+
+    def test_failed_safety_backup_blocks_rollback_before_content_changes(self):
+        from nyxuri.state.backup import backup_configs, rollback_configs
+        dest = self.stage("kitty", "baseline")
+        with patch("builtins.print"):
+            snap = backup_configs(interactive=False)
+        (dest / "config").write_text("personal edit")
+        with patch("builtins.print"), patch("nyxuri.state.backup.backup_configs", return_value=None):
+            self.assertFalse(rollback_configs(str(snap)))
+        self.assertEqual((dest / "config").read_text(), "personal edit")
+
+    def test_snapshot_restores_protected_ownership_without_claiming_foreign_paths(self):
+        """快照带回来源集合；同目录个人保留文件仍无撤回权限。"""
+        from nyxuri.kernel import ledger, transaction
+        from nyxuri.state.backup import backup_configs, rollback_configs
+        dest = self.stage("app", "baseline")
+        (dest / "owned__custom__.conf").write_text("personal owned")
+        (dest / "foreign__custom__.conf").write_text("personal foreign")
+        ledger.set_deployment("app", protected_paths=["owned__custom__.conf"])
+        with patch("builtins.print"):
+            snap = backup_configs(interactive=False)
+            self.assertTrue(transaction.unit_off("app")[0].ok)
+            self.assertTrue(rollback_configs(str(snap)))
+        self.assertEqual(ledger.get_deployment("app")["protected_paths"], ["owned__custom__.conf"])
+        self.assertTrue(transaction.unit_off("app")[0].ok)
+        self.assertFalse((dest / "owned__custom__.conf").exists())
+        self.assertEqual((dest / "foreign__custom__.conf").read_text(), "personal foreign")
+
+    def test_snapshot_rejects_unsafe_protected_paths_before_withdrawal(self):
+        """撤回现状之前验证来源字段，防止非法路径到写账本阶段才被拒绝。"""
+        from nyxuri.kernel import ledger
+        from nyxuri.state.backup import backup_configs, rollback_configs
+        dest = self.stage("app", "baseline")
+        with patch("builtins.print"):
+            snap = backup_configs(interactive=False)
+        metadata = json.loads((snap / "snapshot.json").read_text())
+        metadata["deployments"]["app"]["protected_paths"] = ["../foreign"]
+        (snap / "snapshot.json").write_text(json.dumps(metadata))
+        with patch("builtins.print"), patch("sys.stderr"):
+            self.assertFalse(rollback_configs(str(snap)))
+        self.assertEqual((dest / "config").read_text(), "baseline")
+        self.assertEqual(ledger.get_unit("app")["state"], "enabled")
+
+    def legacy_rime_state(self):
+        """模拟旧钩子写入 seed 后，Rime 正常构建更新同一运行时文件。"""
+        from nyxuri.desktop import owned_outputs
+        path = self.env.home / ".local/share/fcitx5/rime/user.yaml"
+        owned_outputs.write_output("fcitx5-rime", "fcitx5-rime", path,
+                                   b"var:\n  previously_selected_schema: rime_ice\n")
+        claim = json.loads(owned_outputs.metadata_path().read_text())["outputs"][str(path)]
+        path.write_bytes(b"var:\n  last_build_time: 1793089092\n  previously_selected_schema: rime_ice")
+        return path, claim
+
+    def test_rollback_accepts_unchanged_rime_runtime_and_keeps_legacy_baseline(self):
+        from nyxuri.desktop import owned_outputs
+        from nyxuri.state.backup import backup_configs, rollback_configs
+        dest = self.stage("kitty", "baseline")
+        runtime, claim = self.legacy_rime_state()
+        runtime_bytes = runtime.read_bytes()
+        with patch("builtins.print"):
+            snap = backup_configs(interactive=False)
+        (dest / "config").write_text("personal edit")
+        self.stage("snapshot-new", "new payload")
+
+        with patch("builtins.print"):
+            self.assertTrue(rollback_configs(str(snap)))
+
+        self.assertEqual((dest / "config").read_text(), "baseline")
+        self.assertEqual(runtime.read_bytes(), runtime_bytes)
+        # 无写入恢复不能把 Rime 更新后的内容重基成 Nyxuri 的最后写入身份。
+        self.assertEqual(json.loads(owned_outputs.metadata_path().read_text())["outputs"][str(runtime)], claim)
+
+    def test_rollback_still_preserves_rime_changes_after_snapshot(self):
+        from nyxuri.state.backup import backup_configs, rollback_configs, get_all_backups
+        self.stage("kitty", "baseline")
+        runtime, _claim = self.legacy_rime_state()
+        with patch("builtins.print"):
+            snap = backup_configs(interactive=False)
+        personal = b"var:\n  previously_selected_schema: personal\n"
+        runtime.write_bytes(personal)
+
+        with patch("builtins.print"), patch("sys.stderr"):
+            self.assertFalse(rollback_configs(str(snap)))
+
+        self.assertEqual(runtime.read_bytes(), personal)
+        safety = next(path for path in get_all_backups() if path != snap)
+        external = json.loads((safety / "external/outputs.json").read_text())
+        import base64
+        self.assertEqual(base64.b64decode(external["targets"][str(runtime)]["value"]), personal)
 
 
 if __name__ == "__main__":

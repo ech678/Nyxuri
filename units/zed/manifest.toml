@@ -2,3 +2,7 @@
 optional = true
 label = "Zed"
 category = "dev"
+
+[platforms.ubuntu]
+manual = ["zed"]
+reason = "Install Zed from its official prebuilt Linux installer; the native install uses the declared config path."

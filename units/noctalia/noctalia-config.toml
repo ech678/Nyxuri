@@ -207,57 +207,10 @@ source = "wallpaper"
 wallpaper_scheme = "m3-content"
 
 [theme.templates]
-builtin_ids = ["kitty", "qt"]
+builtin_ids = []
 community_ids = []
 
-# NyxMellow 动态 fcitx5 皮肤（mellow 形状 + Material You 自动取色）
-# 路径中的 /home/user 为占位符，由 nyxuri.deploy 在部署时替换为实际 $HOME
-[theme.templates.user.nyxmellow_theme]
-index = 0
-input_path = "/home/user/.local/share/fcitx5/themes/nyxmellow/templates/theme.conf"
-output_path = "/home/user/.local/share/fcitx5/themes/nyxmellow/theme.conf"
-
-[theme.templates.user.nyxmellow_panel]
-index = 1
-input_path = "/home/user/.local/share/fcitx5/themes/nyxmellow/templates/panel.svg"
-output_path = "/home/user/.local/share/fcitx5/themes/nyxmellow/panel.svg"
-
-[theme.templates.user.nyxmellow_highlight]
-index = 2
-input_path = "/home/user/.local/share/fcitx5/themes/nyxmellow/templates/highlight.svg"
-output_path = "/home/user/.local/share/fcitx5/themes/nyxmellow/highlight.svg"
-post_hook = "busctl --user --auto-start=no call org.fcitx.Fcitx5 /controller org.fcitx.Fcitx.Controller1 ReloadAddonConfig s classicui >/dev/null 2>&1 || true"
-
-# GTK Material You 主题（移植自 HyprYou，由 Noctalia 动态渲染到 gtk.css）
-# 路径中的 /home/user 为占位符，由 nyxuri.deploy 在部署时替换为实际 $HOME
-[theme.templates.user.nyxuri_gtk3]
-index = 3
-input_path = "/home/user/.config/nyxuri/templates/gtk-3.0.css"
-output_path = "/home/user/.config/gtk-3.0/gtk.css"
-
-[theme.templates.user.nyxuri_gtk4]
-index = 4
-input_path = "/home/user/.config/nyxuri/templates/gtk-4.0.css"
-output_path = "/home/user/.config/gtk-4.0/gtk.css"
-
-# Niri glow-material-you: Noctalia is the only writer of the rendered layout.
-[theme.templates.user.nyxuri_niri_glow_material_you]
-index = 5
-input_path = "/home/user/.config/nyxuri/templates/niri-glow-material-you.kdl"
-output_path = "/home/user/.config/niri/colors.kdl"
-
-# Material You 动态色板（由 Noctalia 渲染到 ~/.cache/nyxuri/palette.toml，供周边组件直接读取）
-[theme.templates.user.palette]
-index = 6
-input_path = "/home/user/.config/nyxuri/templates/palette.toml"
-output_path = "/home/user/.cache/nyxuri/palette.toml"
-
-# Mango Material You 主题配色（适配 MangoWM >= 0.18.0 snake_case 语法）
-[theme.templates.user.nyxuri_mango]
-index = 7
-input_path = "/home/user/.config/nyxuri/templates/mango.conf"
-output_path = "/home/user/.config/mango/noctalia.conf"
-post_hook = "mmsg dispatch reload_config 2>/dev/null || true"
+# 内置输出由单元事务按消费者开关生成；渲染先进入状态区，提交时核对归属。
 
 [wallpaper]
 directory = "/home/user/图片/Wallpapers"

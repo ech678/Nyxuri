@@ -10,6 +10,20 @@ SOURCE_FILE="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || realpath "${BASH_S
 SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "${SOURCE_FILE}")" && pwd)
 SHELL_DIR="${SCRIPT_DIR}"
 
+# 查询与实际启动固定使用同一个runtime；预检不靠包装脚本存在来推断qs可用。
+QS_BIN="$(command -v qs || true)"
+require_runtime() {
+    if [ -z "$QS_BIN" ] || [ ! -x "$QS_BIN" ]; then
+        printf "Nyxuri Shell requires 'qs' (Quickshell) in PATH.\n" >&2
+        return 127
+    fi
+}
+if [ "${1:-}" = "--runtime-path" ]; then
+    require_runtime
+    printf '%s\n' "$QS_BIN"
+    exit 0
+fi
+
 # Named-module shim home: M3Shapes (the pure-QML stand-in for the retired
 # external shapes plugin) lives next to the vendored shape math it will
 # eventually absorb. The engine looks for <import-path>/<Module>/qmldir here.
@@ -19,17 +33,19 @@ if [ -d "${SHAPES_QML_PATH}" ]; then
     export QML2_IMPORT_PATH="${QML2_IMPORT_PATH:+${QML2_IMPORT_PATH}:}${SHAPES_QML_PATH}"
 fi
 
-# The Quickshell QML disk cache lives in a nyxuri-shell-private cache
-# namespace: 0.3.2 serves stale compilation units after source edits, and
-# multiple quickshell instances share (and stomp) the default cache dir.
-# It is cleared on every launch — a cold compile with the unit warm-up
-# imports is verified clean, and freshness beats cold-start milliseconds.
-# Do NOT set QML_DISABLE_DISK_CACHE instead: without the cache write, every
-# Loader load re-hits the 0.3.2 qs-import defect and units die at cold
-# compile.
-export NYXURI_ORIGINAL_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
-export XDG_CACHE_HOME="${NYXURI_ORIGINAL_CACHE_HOME}/nyxuri-shell"
-rm -rf "${XDG_CACHE_HOME}/quickshell/qmlcache"
+# Qt 通过专用变量把 QML 编译缓存放入 nyxuri-shell 目录，保持 XDG 根目录原样，
+# 避免 Shell 派生的引擎 CLI、桥与普通应用误把内部缓存命名空间当成用户布局。
+# 0.3.2 编辑源码后可能读取旧编译结果，因此只在实际启动前清空本 Shell 的 qmlcache；
+# 状态查询、IPC 和停止不能删除运行实例的缓存，也不清理其他 Quickshell 配置的缓存。
+# 不设置 QML_DISABLE_DISK_CACHE：禁写缓存会再次触发 Loader 内 qs import 解析缺陷。
+QML_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/nyxuri-shell/quickshell/qmlcache"
+export QML_DISK_CACHE_PATH="$QML_CACHE_DIR"
+
+prepare_startup_cache() {
+    # 普通启动与锁屏缺席时的补启动共用此步骤；缺运行时则先报错，保留旧缓存。
+    require_runtime
+    rm -rf "$QML_CACHE_DIR"
+}
 
 # The generated palette has to be written where the shell reads it. The two sides
 # defaulted to different places: scripts/lib/nyxuri-paths.sh resolves to
@@ -77,7 +93,7 @@ while [ $# -gt 0 ]; do
             shift 1
             ;;
         -h|--help)
-            echo "Usage: nyxuri-shell [--action <launcher|session|settings|clipboard|lock|wallpaper-random|wallpaper-picker|radial-launcher|translate>|--ipc <target> <method> [args...]|--check-ready|--stage|--status|--stop]"
+            echo "Usage: nyxuri-shell [--action <launcher|session|settings|clipboard|lock|wallpaper-random|wallpaper-picker|radial-launcher|translate>|--ipc <target> <method> [args...]|--runtime-path|--check-ready|--stage|--status|--stop]"
             exit 0
             ;;
         *)
@@ -86,32 +102,40 @@ while [ $# -gt 0 ]; do
     esac
 done
 
+# Orbit工具独立调用已部署的程序，不需要qs；其余Shell动作在执行前统一验证。
+case "$ACTION" in
+    translate|radial-launcher) ;;
+    ""|launcher|session|settings|clipboard|lock|wallpaper-random|wallpaper-picker|stage|status|check-ready|stop)
+        require_runtime ;;
+esac
+
 if [ -n "$IPC_CALL" ]; then
     # Generic unit-IPC passthrough for compositor bindings: binds reference
     # this PATH-stable gateway instead of a quickshell config name.
-    exec qs -p "${SHELL_DIR}" ipc call "$@"
+    exec "$QS_BIN" -p "${SHELL_DIR}" ipc call "$@"
 fi
 
 if [ -n "$ACTION" ]; then
     case "$ACTION" in
         launcher)
-            exec qs -p "${SHELL_DIR}" ipc call spotlight toggle
+            exec "$QS_BIN" -p "${SHELL_DIR}" ipc call spotlight toggle
             ;;
         session)
-            exec qs -p "${SHELL_DIR}" ipc call power-menu toggle
+            exec "$QS_BIN" -p "${SHELL_DIR}" ipc call power-menu toggle
             ;;
         settings)
-            exec qs -p "${SHELL_DIR}" ipc call control-center toggle ""
+            exec "$QS_BIN" -p "${SHELL_DIR}" ipc call control-center toggle ""
             ;;
         clipboard)
-            exec qs -p "${SHELL_DIR}" ipc call spotlight openMode clipboard
+            exec "$QS_BIN" -p "${SHELL_DIR}" ipc call spotlight openMode clipboard
             ;;
         lock)
-            if ! qs -p "${SHELL_DIR}" ipc call lock open 2>/dev/null; then
-                qs -p "${SHELL_DIR}" --no-duplicate >/dev/null 2>&1 &
+            if ! "$QS_BIN" -p "${SHELL_DIR}" ipc call lock open 2>/dev/null; then
+                prepare_startup_cache
+                "$QS_BIN" -p "${SHELL_DIR}" --no-duplicate >/dev/null 2>&1 &
                 for _ in $(seq 1 30); do
                     sleep 0.1
-                    if qs -p "${SHELL_DIR}" ipc call lock open 2>/dev/null; then
+                    if "$QS_BIN" -p "${SHELL_DIR}" ipc call lock open 2>/dev/null; then
                         exit 0
                     fi
                 done
@@ -120,10 +144,10 @@ if [ -n "$ACTION" ]; then
             exit 0
             ;;
         wallpaper-random)
-            exec qs -p "${SHELL_DIR}" ipc call wallpaper random
+            exec "$QS_BIN" -p "${SHELL_DIR}" ipc call wallpaper random
             ;;
         wallpaper-picker)
-            exec qs -p "${SHELL_DIR}" ipc call control-center toggle "wallpaper"
+            exec "$QS_BIN" -p "${SHELL_DIR}" ipc call control-center toggle "wallpaper"
             ;;
         radial-launcher)
             tools_dir="${HOME}/.config/noctalia/tools"
@@ -146,26 +170,26 @@ if [ -n "$ACTION" ]; then
             exit 0
             ;;
         stage)
-            exec qs -p "${SHELL_DIR}" ipc call shell stage
+            exec "$QS_BIN" -p "${SHELL_DIR}" ipc call shell stage
             ;;
         status)
-            exec qs -p "${SHELL_DIR}" ipc call shell status
+            exec "$QS_BIN" -p "${SHELL_DIR}" ipc call shell status
             ;;
         check-ready)
-            if res=$(qs -p "${SHELL_DIR}" ipc call shell isReady 2>/dev/null); then
+            if res=$("$QS_BIN" -p "${SHELL_DIR}" ipc call shell isReady 2>/dev/null); then
                 if [ "${res}" = "true" ]; then
                     exit 0
                 fi
                 exit 1
             fi
-            if qs -p "${SHELL_DIR}" ipc show >/dev/null 2>&1; then
+            if "$QS_BIN" -p "${SHELL_DIR}" ipc show >/dev/null 2>&1; then
                 exit 0
             else
                 exit 1
             fi
             ;;
         stop)
-            exec qs kill -p "${SHELL_DIR}" >/dev/null 2>&1 || true
+            exec "$QS_BIN" kill -p "${SHELL_DIR}" >/dev/null 2>&1 || true
             ;;
         *)
             echo "Unknown action: ${ACTION}" >&2
@@ -174,5 +198,6 @@ if [ -n "$ACTION" ]; then
     esac
 fi
 
-# Default: start Nyxuri Shell via quickshell
-exec qs -p "${SHELL_DIR}" --no-duplicate "$@"
+# 默认入口实际启动 Shell，此时才清理旧编译缓存。
+prepare_startup_cache
+exec "$QS_BIN" -p "${SHELL_DIR}" --no-duplicate "$@"

@@ -3,29 +3,28 @@
 import shutil
 import subprocess
 import sys
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from nyxuri.core import SUPPORTED_WMS, detect_preferred_wm
 from nyxuri.core import get_env, log_msg
 from nyxuri.deploy import (
     config_item_dest,
     config_item_src,
-    deploy_selected_configs,
-    discover_config_items,
     render_completion_screen,
     run_user_hooks,
 )
-from nyxuri.deploy.deploy import (
-    enable_theme_unit as _enable_theme,
-    enable_wallpapers_unit as _enable_wallpapers,
-    wallpapers_pack_present,
+from nyxuri.pkg.deps import (
+    core_requirements, get_missing_deps, install_selected_deps, unit_package_installer,
+    supply_installed,
 )
-from nyxuri.pkg.deps import get_missing_deps, install_selected_deps
-from nyxuri.kernel import transaction
+from nyxuri.pkg.platform import backend_available, current_platform
+from nyxuri.pkg.requirements import resolve_requirements
+from nyxuri.pkg.detection import DependencyProbe
+from nyxuri.kernel import registry, transaction
 from nyxuri.core import msg
 from nyxuri.tui import MenuItem, Menu, prompt_confirm
 from nyxuri.installer.menus import run_master_component_menu
-from nyxuri.deploy.atomic import CarryPolicy
+from nyxuri.installer.candidates import discover_install_config_items
 
 def _phase_preflight_check(
     mode: str,
@@ -68,311 +67,168 @@ def _finish_successful_deploy(mode: str, **completion_args) -> None:
     render_completion_screen(mode, **completion_args)
 
 
-def _update_carry_policy(items: List[str]) -> "CarryPolicy":
-    """Update-grade ownership carry (#139): ledger baselines, 宁可错保.
-
-    ``unknown=True``: a unit without an enabled record (Ghost) has every
-    dest entry carried — the update must never guess wrong about files it
-    cannot attribute. Adoption paths (install/``on``) use ``unknown=False``.
-    """
-    return CarryPolicy(baselines=transaction.carry_baselines(items), unknown=True)
+def _enabled_update_items() -> List[str]:
+    """从账本选择仍有蓝图的已启用单元；不借更新认领外来配置。"""
+    from nyxuri.kernel import ledger
+    known = set(registry.unit_ids())
+    return [uid for uid, rec in ledger.all_units().items()
+            if rec.get("state") == "enabled" and uid in known]
 
 
-def _resnapshot_after_deploy(items: List[str], policy: Optional[CarryPolicy]) -> None:
-    """Re-baseline enabled units after an out-of-band deploy + hook replay."""
-    if policy is None:
-        transaction.resnapshot_units(items, carried={})
+def _ordered_units(items: List[str]) -> List[str]:
+    """按依赖拓扑排列所选单元；只返回调用方允许处理的集合。"""
+    selected = set(items)
+    result = []
+    for uid in items:
+        for dep in transaction.plan_on(uid):
+            if dep in selected and dep not in result:
+                result.append(dep)
+    return result
+
+
+def _deploy_units(items: List[str], *, update: bool, mode: str = "full",
+                  force: bool = False, backup: bool = False,
+                  conflict_decision: Optional[bool] = None) -> bool:
+    """先披露全部冲突并建立快照，再逐个执行统一事务并汇总真实结果。"""
+    from nyxuri.tui import choose_conflict_policy, format_steps
+    from nyxuri.state import backup_configs
+
+    items = _ordered_units(items)
+    decision = (choose_conflict_policy(items, force=force)
+                if conflict_decision is None else conflict_decision)
+    if decision is None:
+        print(msg("cli_aborted"))
+        return False
+    if backup and items and backup_configs(note="before-update" if update else "before-install",
+                                           interactive=False) is None:
+        return False
+    failed = []
+    wallpaper_selected = "wallpapers" in items
+    wallpaper_ok = None
+    for uid in items:
+        if update:
+            steps = transaction.unit_refresh(uid, force=decision, install_packages=unit_package_installer)
+        else:
+            steps = transaction.unit_on(uid, force=decision,
+                install_packages=unit_package_installer if mode == "full" else None,
+                run_hooks=mode == "full", check_packages=mode == "full")
+        for line in format_steps(steps):
+            print(line)
+        step_failed = any(not step.ok for step in steps)
+        if uid == "wallpapers":
+            # 只报告本轮壁纸事务结果；外部手动大包或既存视频不能冒充部署成功。
+            wallpaper_ok = bool(steps) and not step_failed
+            step_failed = not wallpaper_ok
+        if step_failed:
+            failed.append(uid)
+            # 已完成单元保留真实状态，失败后不再触发后续消费者或用户钩子。
+            break
+    if failed:
+        render_completion_screen("update" if update else mode, chosen_items=items,
+                                 failed_items=failed, wallpaper_selected=wallpaper_selected,
+                                 wallpaper_ok=wallpaper_ok)
+        return False
+    if mode == "config":
+        print(msg("install_config_only_notice"))
+        render_completion_screen(mode, chosen_items=items, wallpaper_selected=wallpaper_selected,
+                                 wallpaper_ok=wallpaper_ok)
     else:
-        transaction.resnapshot_units(items, carried=policy.carried)
-
-
-def _ghost_notices(items: List[str], policy: Optional[CarryPolicy]) -> List[str]:
-    """Per-unit notices for deployed-but-unregistered (Ghost) units (#139)."""
-    baselines = policy.baselines if policy is not None else transaction.carry_baselines(items)
-    notices = []
-    for item in items:
-        if baselines.get(item) is not None:
-            continue
-        try:
-            dest = config_item_dest(item)
-        except Exception:
-            continue
-        if dest.exists() or dest.is_symlink():
-            notices.append(msg("update_ghost_hint", item))
-    return notices
-
-
-def _carried_groups(items: List[str], policy: Optional[CarryPolicy]) -> Dict[str, List[str]]:
-    """Carried display paths grouped by kind, for the completion screen.
-
-    Report credibility (#139 field report): "your changes", "your files" and
-    "unknown origin" are different verdicts — they must not share one bucket.
-    """
-    if policy is None:
-        return {}
-    config_dir = get_env().config_dir
-    groups: Dict[str, List[str]] = {}
-    for item in items:
-        for rel, kind in policy.carried.get(item, {}).items():
-            dest = config_item_dest(item)
-            disp = rel if dest == config_dir / rel else f"{item}/{rel}"
-            groups.setdefault(kind, []).append(f"~/.config/{disp}")
-    return groups
+        _finish_successful_deploy("update" if update else mode, chosen_items=items,
+                                 wallpaper_selected=wallpaper_selected, wallpaper_ok=wallpaper_ok)
+    return True
 
 
 def install_configs_workflow(mode: str = "full") -> bool:
-    """Full execution pipeline for dotfiles, dependencies, wallpapers, and hooks."""
-    if mode == "full" and not shutil.which("pacman"):
+    """安装先检查供应范围，再通过单元事务部署、登记和执行钩子。"""
+    if mode == "full" and not backend_available():
         print(msg("distro_unsupported"))
         print(msg("distro_unsupported_hint"))
         return False
     if sys.stdin.isatty():
-        chosen_dict = run_master_component_menu(is_update=False, mode=mode)
-        if not chosen_dict:
+        chosen = run_master_component_menu(is_update=False, mode=mode)
+        if not chosen:
             print(msg("install_cancelled"))
             return True
-
-        chosen_configs = chosen_dict["configs"]
-        do_wallpapers = chosen_dict["wallpapers"]
-        do_backup = chosen_dict["backup"]
-
-        if not chosen_configs and not do_wallpapers:
-            print(msg("install_cancelled"))
-            return True
+        items = list(chosen["configs"])
+        wallpapers, backup = chosen["wallpapers"], chosen["backup"]
     else:
-        all_items = discover_config_items()
-        preferred_wm = detect_preferred_wm()
-        chosen_configs = [
-            item for item in all_items
-            if item not in SUPPORTED_WMS or item == preferred_wm
-        ]
-        do_wallpapers = not wallpapers_pack_present()
-        do_backup = False
-
-    # Safety: ensure at most one WM is selected
-    selected_wms = [c for c in chosen_configs if c in SUPPORTED_WMS]
-    if len(selected_wms) > 1:
         preferred = detect_preferred_wm()
-        chosen_wm = preferred if preferred in selected_wms else selected_wms[0]
-        chosen_configs = [c for c in chosen_configs if c not in SUPPORTED_WMS or c == chosen_wm]
-
-    _phase_preflight_check(mode, chosen_configs, do_wallpapers, do_backup)
-
-    # Step counting
-    steps = 3 if do_wallpapers else 2  # configs [+ wallpapers] + unit hooks
+        items = [uid for uid in discover_install_config_items()
+                 if uid not in SUPPORTED_WMS or uid == preferred]
+        # 非交互full同样选择随仓库提供的默认壁纸，不触发外部大包下载。
+        wallpapers, backup = mode == "full", False
+        if mode == "full" and current_platform() == "ubuntu":
+            probe = DependencyProbe()
+            items = [uid for uid in items if not registry.load_unit(uid).is_optional
+                     or supply_installed(registry.load_unit(uid), probe)]
+    if wallpapers:
+        items.append("wallpapers")
+    if not items:
+        print(msg("install_cancelled"))
+        return True
+    # 依赖也纳入冲突披露和供应检查，避免先写消费者再发现上游不可用。
+    closure = []
+    for uid in items:
+        for dep in transaction.plan_on(uid):
+            if dep not in closure:
+                closure.append(dep)
+    for uid in closure:
+        requirements = resolve_requirements(registry.load_unit(uid))
+        if not requirements.supported:
+            print(msg("pkg_unit_unsupported", uid, requirements.reason), file=sys.stderr)
+            return False
+    from nyxuri.tui import choose_conflict_policy
+    decision = choose_conflict_policy(closure)
+    if decision is None:
+        print(msg("cli_aborted"))
+        return False
+    _phase_preflight_check(mode, closure, wallpapers, backup)
     if mode == "full":
-        steps += 1  # deps
-    cur_step = 0
-
-    # 1. Deps
-    if mode == "full":
-        cur_step += 1
-        print(msg("install_step_deps", f"{cur_step}/{steps}"))
         missing = get_missing_deps()
         if missing and not install_selected_deps(missing):
+            print(msg("pkg_deploy_incomplete", ", ".join(get_missing_deps())), file=sys.stderr)
             return False
-
-    # 2. Configs
-    cur_step += 1
-    print(msg("install_step_configs", f"{cur_step}/{steps}"))
-    preserved_log: List[str] = []
-    if chosen_configs:
-        # Install is adoption (#139): payload names are claimed, user-placed
-        # extras are carried. An already-enabled unit's ledger record acts as
-        # the drift baseline so a re-install never eats edits.
-        carry_policy = CarryPolicy(
-            baselines=transaction.carry_baselines(chosen_configs), unknown=False
-        )
-        failed_items = deploy_selected_configs(
-            do_backup=do_backup,
-            items_to_deploy=chosen_configs,
-            preserved_log=preserved_log,
-            carry_policy=carry_policy,
-        )
-        if failed_items:
-            render_completion_screen(
-                mode=mode,
-                chosen_items=chosen_configs,
-                preserved_lines=preserved_log,
-                failed_items=failed_items,
-            )
-            return False
-
-    # 3. Wallpapers — the unit path: `on wallpapers` syncs the blueprint
-    # fallback into the shared living area (no-clobber). The external pack
-    # is user-domain content (units/wallpapers/hooks/install-pack), never
-    # an install phase. The theme pool (shared template living area) rides
-    # the same unit path: `on theme` no-clobber merges the blueprint
-    # templates; user-edited templates are never clobbered.
-    wallpaper_ok = None
-    if do_wallpapers:
-        cur_step += 1
-        print(msg("install_step_wallpapers", f"{cur_step}/{steps}"))
-        wallpaper_ok = _enable_wallpapers()
-    _enable_theme()
-
-    # 4. Unit hook replay: already-enabled units re-run their declared
-    # on-side hooks (skins, renders). Activation of NEW units belongs to
-    # `nyxuri on <unit>` — the installer never invents switch state.
-    cur_step += 1
-    print(msg("install_step_unit_hooks", f"{cur_step}/{steps}"))
-    for step in transaction.replay_enabled_hooks():
-        if not step.ok:
-            log_msg("WARN", f"unit hook replay failed for {step.unit}: {step.detail}")
-
-    # Hook products and template renders changed the laid truth under any
-    # already-enabled unit: re-baseline so the next audit stays honest (#139).
-    if chosen_configs:
-        _resnapshot_after_deploy(chosen_configs, carry_policy)
-
-    # Completion
-    _finish_successful_deploy(
-        mode=mode,
-        chosen_items=chosen_configs,
-        preserved_lines=preserved_log,
-        wallpaper_ok=wallpaper_ok,
-    )
-    return True
+        for uid in closure:
+            manifest = registry.load_unit(uid)
+            missing = transaction.missing_packages(manifest)
+            if missing and (not unit_package_installer(uid, missing)
+                            or transaction.missing_packages(manifest)):
+                return False
+    return _deploy_units(closure, update=False, mode=mode, backup=backup, conflict_decision=decision)
 
 
 def offer_overwrite_upgrade(flag: str = "") -> bool:
-    """Handle update flow: ask to deploy changes, view diff, or code update only.
-
-    Every deploy path rides the ownership carry (#139): user-modified and
-    user-placed files are carried, never clobbered. ``--force`` is the one
-    template-wins verb for DRIFT — the template claims its payload names and
-    re-baselines the ledger ("I reviewed the drift, adopt the template side")
-    — but it is not a purge: user-placed extras are still carried.
-    """
-    if flag in ("--force", "--deploy"):
-        # Force = adopt: no baselines, payload names claimed, extras carried.
-        items = discover_config_items()
-        force_policy = CarryPolicy(baselines={}, unknown=False, carried={})
-        failed_items = deploy_selected_configs(
-            do_backup=True, items_to_deploy=items, carry_policy=force_policy
-        )
-        if failed_items:
-            render_completion_screen("update", failed_items=failed_items)
-            return False
-        wallpaper_ok = _enable_wallpapers()
-        _enable_theme()
-        transaction.replay_enabled_hooks()
-        # Re-baseline every deployed unit so the drift the user just
-        # reviewed clears instead of haunting doctor forever.
-        _resnapshot_after_deploy(items, force_policy)
-        _finish_successful_deploy("update", wallpaper_ok=wallpaper_ok)
+    """刷新账本中已启用的单元；--force 仅覆盖已披露冲突并强制备份。"""
+    if flag == "--no-deploy":
         return True
-    elif flag == "--no-deploy":
-        return True
-
-    if not sys.stdin.isatty():
-        # Updates must always create a protected snapshot before replacing
-        # configuration; a failed update must have a concrete rollback point.
-        items = discover_config_items()
-        carry_policy = _update_carry_policy(items)
-        preserved: List[str] = []
-        failed_items = deploy_selected_configs(
-            do_backup=True, preserved_log=preserved, carry_policy=carry_policy
-        )
-        if failed_items:
-            render_completion_screen("update", failed_items=failed_items)
-            return False
-        wallpaper_ok = _enable_wallpapers()
-        _enable_theme()
-        transaction.replay_enabled_hooks()
-        _resnapshot_after_deploy(items, carry_policy)
-        _finish_successful_deploy(
-            "update",
-            preserved_lines=preserved,
-            wallpaper_ok=wallpaper_ok,
-            notice_lines=_ghost_notices(items, carry_policy),
-            carried_groups=_carried_groups(items, carry_policy),
-        )
-        return True
-
-    # Interactive choice menu
-    items = [
-        MenuItem(label=msg("overwrite_opt1")),
-        MenuItem(label=msg("overwrite_opt2")),
-        MenuItem(label=msg("overwrite_opt3"), style="subtle"),
-    ]
-    menu = Menu("overwrite_title", items, hint_key="submenu_hint")
-    choice = menu.run()
-
+    items = _enabled_update_items()
+    if flag in ("--force", "--deploy") or not sys.stdin.isatty():
+        return _deploy_units(items, update=True, force=flag == "--force", backup=True)
+    options = [MenuItem(label=msg("overwrite_opt1")),
+               MenuItem(label=msg("overwrite_opt2")),
+               MenuItem(label=msg("overwrite_opt3"), style="subtle")]
+    choice = Menu("overwrite_title", options, hint_key="submenu_hint").run()
     if choice == 0:
         chosen = run_master_component_menu(is_update=True, mode="full")
-        if chosen:
-            if not chosen["configs"] and not chosen["wallpapers"]:
-                print(msg("log_no_components_selected"))
-                return True
-            print(msg("upgrading_selected"))
-            carry_policy = _update_carry_policy(chosen["configs"])
-            preserved: List[str] = []
-            if chosen["configs"]:
-                failed_items = deploy_selected_configs(
-                    do_backup=chosen["backup"],
-                    items_to_deploy=chosen["configs"],
-                    preserved_log=preserved,
-                    carry_policy=carry_policy,
-                )
-                if failed_items:
-                    render_completion_screen("update", chosen_items=chosen["configs"], preserved_lines=preserved, failed_items=failed_items)
-                    return False
-            wallpaper_ok = None
-            if chosen["wallpapers"]:
-                wallpaper_ok = _enable_wallpapers()
-            transaction.replay_enabled_hooks()
-            _resnapshot_after_deploy(chosen["configs"], carry_policy)
-            _finish_successful_deploy(
-                "update",
-                chosen_items=chosen["configs"],
-                preserved_lines=preserved,
-                wallpaper_ok=wallpaper_ok,
-                notice_lines=_ghost_notices(chosen["configs"], carry_policy),
-                carried_groups=_carried_groups(chosen["configs"], carry_policy),
-            )
+        if not chosen:
             return True
-    elif choice == 1:
-        print(msg("diff_viewer_title"))
-        config_items = discover_config_items()
-        diff_cmds = []
-        for it in config_items:
-            src = config_item_src(it)
-            dest = config_item_dest(it)
+        selected = list(chosen["configs"])
+        if chosen["wallpapers"]:
+            selected.append("wallpapers")
+        return _deploy_units([uid for uid in selected if uid in items], update=True,
+                             backup=chosen["backup"])
+    if choice == 1:
+        # 比较视图只读取本次可更新单元；merge/单文件目标由统一路径解析器处理。
+        for uid in items:
+            if registry.load_unit(uid).runtime:
+                continue
+            src, dest = config_item_src(uid), config_item_dest(uid)
             if src.exists() and dest.exists():
-                diff_cmds.append(["diff", "-urN", "--color=always", str(dest), str(src)])
-        if diff_cmds:
-            if shutil.which("less"):
-                pager = subprocess.Popen(["less", "-R"], stdin=subprocess.PIPE, text=True)
-                for cmd in diff_cmds:
-                    if pager.poll() is not None:
-                        break
-                    subprocess.run(cmd, stdout=pager.stdin, stderr=subprocess.STDOUT, check=False)
-                if pager.stdin:
-                    try:
-                        pager.stdin.close()
-                    except (BrokenPipeError, OSError):
-                        pass
-                pager.wait()
-            else:
-                for cmd in diff_cmds:
-                    subprocess.run(cmd, check=False)
+                subprocess.run(["diff", "-urN", "--color=always", str(dest), str(src)], check=False)
     else:
         print(msg("log_config_deploy_skipped"))
     return True
 
 
 def check_new_deps_post_update() -> None:
-    """Check for newly introduced core dependencies after a repository update."""
-    missing = get_missing_deps()
-    if not missing:
-        return
-    print(msg("new_deps_detected", " ".join(missing)))
-    if not sys.stdin.isatty():
-        log_msg("INFO", f"Auto-installing new deps non-interactively: {' '.join(missing)}")
-        install_selected_deps(missing)
-        return
-    if prompt_confirm("prompt_install_missing_deps", "y"):
-        install_selected_deps(missing)
-    else:
-        print(msg("deps_install_skipped"))
+    """兼容旧入口；依赖已由各个刷新事务在写文件前检查。"""

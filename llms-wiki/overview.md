@@ -18,8 +18,8 @@ Nyxuri/
 │   │                 ledger（state.json 唯一写者）· transaction（唯一副作用编排）
 │   ├─ deploy/        atomic（原子置换+Dunder）· manifest · templates ·
 │   │                 preset（引擎半：active/staging/继承/fd 安全）· hardware · deploy
-│   ├─ pkg/           包管理抽象（pacman/paru/shelly）+ 供给收编：deps · net ·
-│   │                 fzf · detection · catalog（根 catalog.toml 解析）
+│   ├─ pkg/           包管理抽象（Arch/AUR 与 Ubuntu APT）+ 平台依赖解析：
+│   │                 platform · requirements · deps · net · fzf · detection · catalog
 │   ├─ state/         backup（30 滚动快照）· uninstall（勾选式清理）
 │   ├─ desktop/       theme（深浅轴）· shell_switcher · clean · presets（流程半，渲染归 UI）
 │   ├─ installer/     workflows + menus（交互式主菜单与整装/更新编排，作者裁决保留为常驻产品面）

@@ -22,7 +22,7 @@ from nyxuri.tui import CheckboxEntry, CheckboxList, display_width, pad_display, 
 VERSION = "4.1"
 
 TASK_KEYS = ("cache", "nv", "flatpak-cache", "steam", "thumbnails", "npm", "cargo",
-             "trash", "scc", "orphans", "journal", "coredump", "var-tmp",
+             "trash", "scc", "apt-cache", "orphans", "journal", "coredump", "var-tmp",
              "flatpak", "drop-caches", "trim")
 DEFAULT_OFF = ("trim", "nv")  # TRIM 慢且日常非必需，nv 重编译耗性能，默认不勾
 
@@ -99,7 +99,7 @@ def tilde(path):
 
 
 def probe(cmd, timeout=600):
-    """只读探测：即使干跑也照常执行（du / pacman -Qdtq / pacdiff -o）。"""
+    """只读探测：即使干跑也照常执行（du / 包数据库 / pacdiff -o）。"""
     try:
         return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
     except (subprocess.TimeoutExpired, OSError):
@@ -239,7 +239,8 @@ def _measured_roots(flat_roots):
         ".var/app", ".local/share/flatpak",
     )]
     roots += flat_roots
-    roots += [Path("/var/cache/pacman/pkg"), Path("/var/log/journal"),
+    roots += [Path("/var/cache/pacman/pkg"), Path("/var/cache/apt/archives"),
+              Path("/var/log/journal"),
               Path("/var/lib/systemd/coredump"), Path("/var/tmp")]
     return [p for p in roots if p.is_dir() and not p.is_symlink()]
 
@@ -288,13 +289,16 @@ def build_tasks(sizes, flat_roots):
             fn = lambda live=live: [fence_clear(r) for r in live]
         add(key, label, target, group_size(live), False, fn)
 
+    from nyxuri.pkg.platform import current_platform
+
+    distro = current_platform()
     orphans = []
-    if shutil.which("pacman"):
+    if distro == "arch" and shutil.which("pacman"):
         r = probe(["pacman", "-Qdtq"])
         if r and r.returncode == 0:
             orphans = r.stdout.split()
 
-    if shutil.which("pacman"):
+    if distro == "arch" and shutil.which("pacman"):
         # --noconfirm 会按默认值答 N，包缓存反而清不掉；两问都必须显式喂 y。
         def _scc():
             pkg_cache = Path("/var/cache/pacman/pkg")
@@ -308,6 +312,11 @@ def build_tasks(sizes, flat_roots):
         add("scc", t("清空 pacman 包缓存", "Wipe pacman package cache"),
             "/var/cache/pacman/pkg (-Scc)", sizes.get(Path("/var/cache/pacman/pkg")),
             True, _scc)
+    elif distro == "ubuntu" and shutil.which("apt-get"):
+        # APT 只清除已下载的 deb 缓存；不在清理器里调用 autoremove。
+        add("apt-cache", t("清空 APT 下载缓存", "Wipe downloaded APT package cache"),
+            "/var/cache/apt/archives (apt-get clean)", sizes.get(Path("/var/cache/apt/archives")),
+            True, lambda: act(["apt-get", "clean"], sudo=True))
     if orphans:
         names = " ".join(orphans[:6]) + (" …" if len(orphans) > 6 else "")
         add("orphans", t(f"移除 {len(orphans)} 个孤立包", f"Remove {len(orphans)} orphan package(s)"),

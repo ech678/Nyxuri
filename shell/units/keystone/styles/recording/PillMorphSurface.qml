@@ -32,7 +32,8 @@ Item {
         property real blendRadius: root.blendRadius
         property real edgeSoftness: root.edgeSoftness
 
-        fragmentShader: Qt.resolvedUrl("../../../shaders/qsb/pill_morph.frag.qsb")
+        // shader 归 keystone 单元所有，从 styles/recording 返回单元根目录。
+        fragmentShader: Qt.resolvedUrl("../../shaders/qsb/pill_morph.frag.qsb")
     }
 
     MorphShader {

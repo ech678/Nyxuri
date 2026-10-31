@@ -7,6 +7,10 @@ category = "system"
 post_install = "activate"
 post_remove = "deactivate"
 
+[platforms.ubuntu]
+packages = ["greetd", "noctalia-greeter"]
+reason = "Noctalia Greeter requires the configured Noctalia APT source."
+
 [privilege]
 requires_root = true
 system_paths = [

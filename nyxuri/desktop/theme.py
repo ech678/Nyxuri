@@ -274,9 +274,8 @@ def sync(mode: str = "sync") -> int:
         if shutil.which("mmsg"):
             timed_run(["mmsg", "dispatch", "reload_config"], 2, check=False)
 
-        # Notify Kitty terminal
-        if shutil.which("pkill"):
-            timed_run(["pkill", "-SIGUSR1", "-x", "kitty"], 2, check=False)
+        # Kitty由owned_outputs在受管色板实际提交后通知；这里的主题事件早于异步
+        # 模板写入，不能提前重载旧色板，也不能绕过消费者停用门控通知现有实例。
 
         if sys.stdout.isatty() and mode != "sync":
             channel_label = {"noctalia": "shell: noctalia",

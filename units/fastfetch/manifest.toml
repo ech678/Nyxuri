@@ -1,0 +1,3 @@
+# Ubuntu 仓库使用同名包；保留其他平台的目录名默认约定。
+[platforms.ubuntu]
+packages = ["fastfetch"]

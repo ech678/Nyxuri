@@ -203,10 +203,32 @@ class TestRealRepoManifests(unittest.TestCase):
         # dir name = package = binary → no packages override needed
         self.assertEqual(m.packages_repo, ["niri"])
 
+    def test_platform_override_table_is_preserved_with_arch_source_fields(self):
+        # 平台解析夹具必须位于临时 HOME，不能覆盖真实 units/ 蓝图。
+        unit = self.env.home / "fixtures" / "kitty"
+        unit.mkdir(parents=True)
+        (unit / "manifest.toml").write_text(
+            'packages = ["kitty"]\n'
+            'packages_aur = ["kitty-git"]\n'
+            '[platforms.ubuntu]\n'
+            'packages = ["kitty"]\n'
+            'manual = ["material-symbols-rounded-font"]\n'
+            'reason = "configured APT source required"\n',
+            encoding="utf-8",
+        )
+        parsed = manifest.load_manifest(unit)
+        self.assertEqual(parsed.packages_repo, ["kitty"])
+        self.assertEqual(parsed.packages_aur, ["kitty-git"])
+        self.assertEqual(parsed.platforms["ubuntu"], {
+            "packages": ["kitty"],
+            "manual": ["material-symbols-rounded-font"],
+            "reason": "configured APT source required",
+        })
+
     def test_noctalia_manifest_preserves_ddcutil(self):
         m = manifest.load_manifest(self.env.units_src / "noctalia")
         self.assertEqual(m.preserve_values,
-                         {"noctalia-config.toml": ["enable_ddcutil"]})
+                         {"noctalia-config.toml": ["enable_ddcutil", "builtin_ids"]})
         self.assertEqual(m.preserve, [])
 
     def test_starship_target_unit(self):
@@ -232,16 +254,14 @@ class TestRealRepoManifests(unittest.TestCase):
         deployable = manifest.discover_deployable_apps()
         self.assertNotIn("nautilus", deployable)
         self.assertNotIn("missioncenter", deployable)
-        # The shipped config units are all present. `theme` is a merge unit
-        # (shared living area) — it deploys only through the transaction's
-        # no-clobber path and never joins the atomic batch.
+        # 独占目录进入原子批次；Fcitx、Portal、主题和壁纸共享目录走逐文件事务。
         for name in ("fastfetch", "fish", "kitty", "niri", "noctalia",
-                     "starship", "xdg-desktop-portal", "zed", "mango",
-                     "fcitx5-rime"):
+                     "starship", "zed", "mango"):
             self.assertIn(name, deployable)
-        self.assertNotIn("theme", deployable)
         merge_units = {name for name, m in manifest.discover_manifest_apps() if m.merge}
-        self.assertIn("theme", merge_units)
+        for name in ("theme", "fcitx5-rime", "xdg-desktop-portal", "wallpapers"):
+            self.assertNotIn(name, deployable)
+            self.assertIn(name, merge_units)
 
     def test_stray_sidecar_files_are_gone(self):
         # KM1 ② enforcement: configs/ is a flat unit directory — no sidecars.

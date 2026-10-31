@@ -8,3 +8,7 @@ chmod = ["scripts/*.sh", "scripts/*.py"]
 
 [presets]
 reload = ["mmsg", "dispatch", "reload_config"]
+
+[platforms.ubuntu]
+supported = false
+reason = "Upstream does not provide an Ubuntu prebuilt package; its Ubuntu route requires building Mango from source."

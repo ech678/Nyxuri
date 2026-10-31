@@ -1,103 +1,95 @@
 # State Ops — 快照生命周期与勾选式卸载
 
-> 状态域两件事：snapshot（30 个滚动快照，防灾回滚点）与 uninstall（勾选式清理）。
-> 源码：`nyxuri/state/backup.py`、`nyxuri/state/uninstall.py`；CLI 动词见
+> 本页是快照、回滚与卸载的行为契约，以 `nyxuri/state/backup.py`、
+> `nyxuri/state/uninstall.py` 及对应定向测试为准；CLI 动词见
 > [operation-map](operation-map.md)。
 
----
+## 快照存储与版本
 
-# 快照（snapshot / rollback）
+普通快照位于 `~/.config/nyxuri/backups/snapshot_<timestamp>/`。
+每次成功发布后最多保留 30 个普通快照，按名称时间排序修剪；正在恢复的目标快照受保护。
+创建过程先写临时目录，全部复制成功后才发布；失败不返回可用快照路径。
 
-## 快照存储拓扑
+版本 2 的 `snapshot.json` 将以下内容绑定到同一份恢复点：
 
-所有状态信息严格收拢在 Nyxuri 独立状态目录内，禁止向 `~/.config/` 根目录倾倒元数据：
+- 已登记单元的五字段记录，以及独立版本化的历史部署目标、形状和未完成阶段。
+- 单元生效目标的实际内容与缺失状态，包括当时的个人修改；目录逐文件保存。
+- 相应 Vault、active 预设文件与账本预设、零件映射，以及单位钩子的恢复辅助记录。
+- 外部产物清单、覆盖前原值、最后写入身份与登记目标内容。
 
-```
-~/.config/nyxuri/backups/
-├── snapshot_20260912_140000/
-│   ├── niri/
-│   ├── kitty/
-│   └── noctalia/
-└── pre_rollback_20260912_143000/
-```
+首次安装前尚无单元账本时，快照仍保存已发现的配置目录，但不将这些文件登记为受管文件。
+旧布局的顶层配置副本继续保留，供兼容工具或手工恢复使用；版本 2 的自动恢复以元数据为准。
+不会恢复整份 `state.json`，因此当前 Shell 选择、自定义 Shell 可执行文件等全局无关状态保留。
 
-## 核心机制
+没有 `snapshot.json` 的旧快照在列表中标为 `files only (legacy)`，只恢复当时的文件，
+不推断其缺失的账本、历史归属、Vault 或预设状态；版本 2 标为 `state+files`。
+不支持的版本、缺失的载荷与越出当前 HOME 的目标在撤回前拒绝恢复。
 
-### 1. 自动容量修剪 (Prune)
-- **硬限制**：`MAX_SNAPSHOTS = 30`。
-- 每次创建新快照后，按时间戳升序排序，自动删除最旧的历史快照，防止磁盘无限膨胀。
-- **保护机制**：支持传入 `protected_snapshot`，当前正在操作的目标快照绝不被意外 prune。
+## 回滚顺序与保护
 
-### 2. 回滚前自保 (Pre-rollback Safety)
-执行 `rollback_configs()` 从历史快照还原配置之前，引擎会**强制为当前实机配置生成一份 `pre_rollback_` 快照**。即使用户回滚错了版本，也能再次反向恢复，杜绝数据丢失。
+1. 校验选中快照的全部文件与目标路径，强制创建当前状态的安全快照；失败则零撤回。
+2. 再次校验源快照，按账本逐个停用当前启用或待重试的单元，撤回阶段沿用单元事务。
+   快照后新增的单元也停用；有历史目标的 orphan 可以撤回，缺少足够归属信息则拒绝。
+3. 逐文件恢复快照内容；调用 `atomic_replace_item(..., preserve_custom=False)`，
+   将快照字节作为恢复值。当前不在受管集合中的新增个人文件保留原位。
+4. 恢复快照中的 Vault、active 预设与外部产物，再原子提交对应的单位域账本映射。
+   快照后新增单元保留其已停用记录，当前全局设置不被旧快照覆盖。
+   零件选择与其单位文件一起恢复，其他单位的零件键保持当前值。
+5. 按恢复后的开关状态刷新外部模板消费者，避免已停用消费者被守护进程重新写入。
 
-### 3. 精确恢复模式 (Preserve Custom Contract)
-调用 `atomic_replace_item` 执行回滚还原时，传入 `preserve_custom=False`：
-- 回滚要还原快照当时的状态，不混入之后新增的自定义文件。
-- 若继承当前实机后期产生的 `__custom__` 文件，将导致回滚产生脏数据污染。因此回滚模式下不进行 Dunder 继承，确保还原一致性。
-- 回滚同样不走所有权 carry（#139）：裸调用默认 `carry=False`，受管文件精确还原快照内容，不保留实机侧偏离快照的改动（回滚前已有 `pre_rollback_` 快照兜底）。
+安全快照保存回滚前的个人修改；快照内容覆盖同名当前文件时也有恢复依据。
+中途失败返回失败并显示安全快照位置，不打印完整恢复成功。已经完成的撤回步骤可能保留，
+使用相同快照重试；不会把一部分文件恢复解释成整个事务成功。
+撤回后仍保留的外部产物与快照目标完全相同（包括类型与权限）时，无需写入即可恢复对应清单；
+即使旧清单的最后写入身份已经过期，也保留快照中的原值与身份，不将当前内容重新认领为模板输出。
+若撤回后仍有漂移的归属项，且内容不同于快照目标，仍按外部产物冲突保留原位并返回失败。
+回滚不执行任意单元安装钩子，也不代替真实桌面服务或系统级资源的重新激活验收。
 
-## CLI 接口
+Fcitx 的 Rime 集成只声明 `default.custom.yaml` 中的可用方案，不创建或认领 `user.yaml`。
+后者的最近方案、开关与构建时间由 Rime 维护，不进入新的预声明产物恢复集合。
+已有旧清单仍按其快照与实际内容校验，不因文件名是 `user.yaml` 而放宽个人修改保护。
+此边界对应 librime 的[构建时间更新](https://github.com/rime/librime/blob/master/src/rime/lever/deployment_tasks.cc)
+与[方案和开关状态保存](https://github.com/rime/librime/blob/master/src/rime/switcher.cc)。
 
 ```bash
-nyxuri snapshot [note]          # 创建新快照（alias: backup）
-nyxuri snapshot delete [index]  # 删除指定序号的快照
-nyxuri list                     # 列出所有可用快照（带序号与时间）
-nyxuri rollback [index]         # 回滚到指定快照（回滚前自动生成安全快照，alias: restore）
+nyxuri snapshot [note]
+nyxuri snapshot delete [index]
+nyxuri list
+nyxuri rollback [index]
 ```
 
+## 卸载候选范围
 
----
+交互清单沿用用户配置、Nyxuri 自身、单元三组；配置项计数与单元项来自账本中
+启用或待重试的单元，不以蓝图存在、目录同名或旧 marker 推断归属。
+单元项不再限制为四个带钩子的单元，普通配置、共享目录和 runtime 单元使用同一停用事务。
 
-# 卸载（uninstall）
-
-## 勾选清单
-
-默认勾选 = 原 standard 范围（归档配置 + 删 CLI + 已装模块）。其余默认不勾。
-
-```
-用户配置          Nyxuri 自身        可选模块（已装的才显示）
-[✓] configs       [✓] cli             [✓] fcitx  (~/.local/share/fcitx5/themes/nyxmellow/)
-[ ] nyx_dir       [ ] state           [✓] gtk    (~/.config/gtk-3.0,4.0/gtk.css)
-[ ] archives      [ ] cache           [✓] greeter [sudo]  (/etc/greetd, /etc/polkit-1, /var/lib/)
-[ ] wallpapers                        [✓] fisher (~/.config/fish/functions/fisher.fish, conf.d/)
-```
-
-模块项只显示已装的（`fcitx5_installed` / `gtktheme_registered` / `greeter_installed` / fisher.fish 存在），旁边显示实际路径。
-
-## CLI 适配
-
-- `nyxuri uninstall`（无参）→ 交互勾选清单（默认 standard 范围）
-- `nyxuri purge` / `uninstall --all` → 跳过勾选、全选 + 确认（等价完全卸载但补全历史遗留）
-- 非交互式（管道，非 TTY）→ 默认全选 + 归档配置
-- 检测到 system 模式 → 清单末尾提示"源码包归 pacman 管，完全卸载请再跑 `sudo pacman -R nyxuri-git`"
-
-## 5 处历史 [gap]（已修复）
-
-| 历史遗留问题 | 落在哪个勾选项 | 修复策略 |
-|---|---|---|
-| `~/.config/nyxuri_archive_*` 不清 | `[ ] archives` 独立项 | purge/全选时勾上，glob 清（只清预存的，保护当次新建的归档） |
-| `/var/lib/noctalia-greeter/` 残留 | `[✓] Noctalia Greeter` 单元项 | `greeter` 单元 `hooks/deactivate` 执行 `sudo rm -rf /var/lib/...` |
-| fisher + fish 插件谁都不清 | `[✓] fisher` 单元项 | `fish` 单元 `hooks/remove-fisher`：fish 在→`fisher remove --all`；不在→直接 rm conf.d/ 降级清理 |
-| standard 漏调 greeter 清理 | `[✓] Greeter` 默认勾 | standard 范围默认包含 greeter 单元项 |
-| 旧 quickphrase.conf 修改的清退 | `[✓] fcitx5-rime` 单元项 | `fcitx5-rime` 单元 `hooks/deactivate` 恢复热键并清理皮肤 |
-
-卸载时带钩子单元（`HOOK_UNITS = ("fcitx5-rime", "fish", "greeter", "noctalia")`）统一经 `transaction.unit_off(uid, cascade=True)` 调度执行其专属清理钩子。
+默认勾选配置、CLI 与账本确认的单元，快照、归档、状态和缓存的删除仍需对应选择。
+非 TTY 使用相同默认范围；`purge` / `uninstall --all` 选择全部，TTY 下仍有破坏性确认。
+选择 `configs` 停用其计数内的配置单元，选择 `unit:<id>` 停用该单元及启用依赖者；
+选择 `state` 或 `nyx_dir` 时，必须先成功停用全部当前单元，不能删除归属后留下假启用状态。
 
 ## 卸载执行顺序
 
-```
-1. 单元钩子清理 FIRST   HOOK_UNITS (fcitx5-rime/greeter/fish/noctalia) 执行 unit_off
-                        （fcitx 读 state_dir 的 .prev 备份；greeter 的 sudo 在这步）
-2. configs              归档后删（交互）/ 直接删（purge）
-3. nyx_dir              ~/.config/nyxuri/（快照 + 预设；连带清理历史小写 ~/.config/nyxniri）
-4. archives             只删预存的 Nyxuri_archive_*（保护 step 2 刚建的归档）
-5. wallpapers           ~/Pictures/Wallpapers/（读 .nyxuri-managed.json / .nyxniri-managed.json 仅清理受管壁纸，绝不误伤用户私人壁纸）
-6. cli                  ~/.local/bin/nyxuri
-7. state                ~/.local/state/nyxuri/（AFTER 单元钩子；连带清理历史小写目录）
-8. cache                ~/.cache/nyxuri/（连带清理历史小写目录 ~/.cache/nyxniri）
-```
+1. 在任何停用或清理前创建安全快照，再将其保全到
+   `~/.local/state/nyxuri/uninstall-backups/<snapshot>/`；任一步失败立即停止。
+   强制保险不能由 purge 或普通备份选项关闭。
+2. 对选中的账本单元调用 `transaction.unit_off(..., cascade=True)`，归档修改、撤回受管文件、
+   执行移除钩子并记账。任一阶段失败停止后续清理，保留状态供重试。
+3. 按选择删除 Nyxuri 配置区、预存归档和有归属证明的 CLI 入口，再清理状态及缓存。
+   本轮 `uninstall-backups` 保险始终保留，可由 `nyxuri list` / `rollback` 发现，
+   完全卸载也不会静默销毁最后恢复点。
 
-**核心时序**：单元恢复先于 `~/.config/nyxuri/` 删除——fcitx 的 classicui/quickphrase 恢复要读 state_dir/nyx_dir 里的备份，备份目录必须活到单元恢复完成之后。删 Nyxuri dir 永远排在所有单元钩子之后。
+配置清理不再整目录移动或删除 `~/.config/<app>`。不属于账本的同名目录和外来文件保留原位；
+壁纸只由 `wallpapers` 单元的账本路径撤回，`.nyxuri-managed.json` / `.nyxniri-managed.json`
+不能单独授予删除权限。系统软件包由原包管理器维护，卸载只提示，不自动删除软件包。
+旧 `restore` 卸载别名仍转入最早快照的回滚，失败如实返回失败。
 
-> greeter（sudo / 系统领地）在 step 1（单元钩子阶段），技术上早于用户领地删除（step 2-8）。这优先满足钩子先于 nyx_dir 删除的原则；sudo 若失败时用户领地尚未删，反而更安全（未破坏用户环境，可重试）。
+## 定向验证
+
+使用 `TempEnv` 隔离 HOME，覆盖快照后修改与新增单元的回滚对账、无关全局状态保留、
+安全备份失败零撤回、受管卸载与个人文件保留、旧壁纸 marker 不授予删除权限。
+
+```bash
+python3 -m unittest tests/state/test_backup.py tests/state/test_uninstall.py
+```

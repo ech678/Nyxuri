@@ -6,6 +6,8 @@ the hooks only touch the side domains, which is what these tests pin.
 """
 
 import importlib.util
+import json
+import os
 import configparser
 import shutil
 import unittest
@@ -14,6 +16,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from tests.utils import TempEnv
+from nyxuri.desktop.owned_outputs import metadata_path, write_output
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -69,8 +72,24 @@ class TestRimeMount(unittest.TestCase):
 
         custom = self.rime_dir / "default.custom.yaml"
         self.assertEqual(custom.read_text(encoding="utf-8"), "patch:\n  schema_list:\n    - schema: rime_ice\n")
-        self.assertTrue(self.marker.is_file())
-        self.assertIn("default.custom.yaml", self.marker.read_text(encoding="utf-8"))
+        self.assertFalse(self.marker.exists())
+        self.assertIn("default.custom.yaml", metadata_path().read_text(encoding="utf-8"))
+        # 运行时状态交给 Rime 创建，不能被钩子的模板归属清单接管。
+        self.assertFalse((self.rime_dir / "user.yaml").exists())
+        self.assertNotIn(str(self.rime_dir / "user.yaml"),
+                         json.loads(metadata_path().read_text())["outputs"])
+
+    def test_mount_preserves_rime_runtime_state_without_claiming_it(self):
+        self.rime_dir.mkdir(parents=True)
+        runtime = self.rime_dir / "user.yaml"
+        content = b"var:\n  last_build_time: 1793089092\n  previously_selected_schema: personal\n"
+        runtime.write_bytes(content)
+
+        with patch.object(self.activate.shutil, "which", return_value=None), patch("builtins.print"):
+            self.activate.mount_rime(self.rime_dir, self.marker)
+
+        self.assertEqual(runtime.read_bytes(), content)
+        self.assertNotIn(str(runtime), json.loads(metadata_path().read_text())["outputs"])
 
     def test_mount_is_idempotent(self):
         self.rime_dir.mkdir(parents=True)
@@ -94,7 +113,12 @@ class TestRimeMount(unittest.TestCase):
 
         with patch.object(self.activate.shutil, "which", return_value=None), \
              patch("builtins.print"):
-            self.activate.mount_rime(self.rime_dir, self.marker)
+            with self.assertRaisesRegex(RuntimeError, "user changes"):
+                self.activate.mount_rime(self.rime_dir, self.marker)
+            self.assertEqual(custom.read_text(), "patch:\n  schema_list:\n")
+            # force由单元事务完成完整快照后注入；hook只处理已披露的具名文件。
+            with patch.dict(os.environ, {"NYXURI_FORCE": "1"}):
+                self.activate.mount_rime(self.rime_dir, self.marker)
 
         content = custom.read_text(encoding="utf-8")
         self.assertIn("schema: rime_ice", content)
@@ -118,7 +142,10 @@ class TestRimeRevert(unittest.TestCase):
         (self.rime_dir / "default.custom.yaml").write_text(
             "patch:\n  schema_list:\n    - schema: rime_ice\n", encoding="utf-8"
         )
-        self.marker.write_text("default.custom.yaml\n", encoding="utf-8")
+        custom = self.rime_dir / "default.custom.yaml"
+        content = custom.read_bytes()
+        custom.unlink()
+        write_output("fcitx5-rime", "fcitx5-rime", custom, content)
 
         self.deactivate.revert_rime(self.rime_dir, self.marker)
 
@@ -129,13 +156,14 @@ class TestRimeRevert(unittest.TestCase):
         (self.rime_dir / "default.custom.yaml").write_text(
             "patch:\n  schema_list:\n    - schema: lunar\n    - schema: rime_ice\n", encoding="utf-8"
         )
+        # 旧marker没有hash和原值，不能据此删掉任何当前行。
         self.marker.write_text("default.custom.yaml\n", encoding="utf-8")
 
         self.deactivate.revert_rime(self.rime_dir, self.marker)
 
         content = (self.rime_dir / "default.custom.yaml").read_text(encoding="utf-8")
         self.assertIn("schema: lunar", content)
-        self.assertNotIn("schema: rime_ice", content)
+        self.assertIn("schema: rime_ice", content)
 
     def test_unowned_file_is_never_touched(self):
         custom = self.rime_dir / "default.custom.yaml"
@@ -158,13 +186,13 @@ class TestSkinWithdraw(unittest.TestCase):
 
     def test_known_files_removed_user_files_survive(self):
         (self.theme_dir / "templates").mkdir(parents=True)
-        (self.theme_dir / "templates" / "theme.conf").write_text("t")
-        (self.theme_dir / "theme.conf").write_text("rendered")
+        write_output("fcitx5-rime", "fcitx5-rime", self.theme_dir / "templates/theme.conf", b"t")
+        write_output("noctalia", "fcitx5-rime", self.theme_dir / "theme.conf", b"rendered")
         (self.theme_dir / "user-notes.txt").write_text("mine")
 
         self.deactivate.withdraw_skin(self.theme_dir)
 
-        self.assertFalse((self.theme_dir / "templates").exists())
+        self.assertFalse((self.theme_dir / "templates/theme.conf").exists())
         self.assertFalse((self.theme_dir / "theme.conf").exists())
         self.assertTrue((self.theme_dir / "user-notes.txt").is_file())
 

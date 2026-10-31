@@ -139,3 +139,38 @@ class TestMouseEventsDoNotBreakTextPrompts(unittest.TestCase):
         source = (Path(__file__).resolve().parent.parent / "nyxuri" / "tui.py").read_text(encoding="utf-8")
         self.assertIn("elif isinstance(k, str) and len(k) == 1 and k.isprintable():", source)
         self.assertNotIn("elif len(k) == 1 and k.isprintable():", source)
+
+
+class TestLifecycleConflictPrompt(unittest.TestCase):
+    """已批准的生命周期验收：冲突取消不进入事务，普通确认不等于覆盖。"""
+
+    def test_noninteractive_auto_yes_preserves_conflicts(self):
+        from nyxuri import tui
+        with TempEnv(), patch("sys.stdin.isatty", return_value=False), \
+             patch.dict(os.environ, {"NYXURI_AUTO_YES": "1"}):
+            result = _quiet(tui.choose_conflict_policy, ["fish"],
+                            conflicts={"fish": ["config.fish"]})
+        self.assertIs(result, False)
+
+    def test_scroll_then_eof_cancels_before_unit_transaction(self):
+        from nyxuri import tui
+        with TempEnv() as temp, patch("sys.stdin.isatty", return_value=True), \
+             patch.object(tui, "interactive_screen", side_effect=contextlib.nullcontext), \
+             patch.object(tui, "read_key", side_effect=["DOWN", "EOF"]), \
+             patch("nyxuri.kernel.transaction.plan_on", return_value=["fish"]), \
+             patch("nyxuri.kernel.transaction.plan_conflicts", return_value=[f"file-{i}" for i in range(100)]), \
+             patch("nyxuri.kernel.transaction.unit_on") as transact:
+            workshop = tui.UnitWorkshop()
+            _quiet(workshop._switch, "fish", True)
+            transact.assert_not_called()
+            self.assertFalse((temp.env.state_dir / "state.json").exists())
+            self.assertIsNotNone(workshop._report)
+
+    def test_orphan_enable_reports_without_leaving_workshop(self):
+        from nyxuri import tui
+        with TempEnv(), patch("nyxuri.kernel.transaction.plan_on", side_effect=KeyError("removed")), \
+             patch("nyxuri.kernel.transaction.unit_on") as transact:
+            workshop = tui.UnitWorkshop()
+            workshop._switch("removed", True)
+            self.assertIn("removed", " ".join(workshop._report))
+            transact.assert_not_called()

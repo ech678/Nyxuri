@@ -16,8 +16,13 @@ class TestThemeSync(unittest.TestCase):
     def test_sync_writes_both_gtk_settings_files(self):
         from nyxuri.desktop.theme import sync
 
-        with patch("nyxuri.desktop.theme.shutil.which", return_value=None):
-            self.assertEqual(sync("light"), 0)
+        # 即使pkill可用，主题同步也不能抢在异步色板提交前通知Kitty。
+        with patch("nyxuri.desktop.theme.shutil.which",
+                   side_effect=lambda name: "/usr/bin/pkill" if name == "pkill" else None), \
+             patch("nyxuri.desktop.theme.timed_run") as runner:
+            for mode in ("sync", "light"):
+                self.assertEqual(sync(mode), 0)
+            runner.assert_not_called()
         for version in ("gtk-3.0", "gtk-4.0"):
             parser = configparser.ConfigParser()
             parser.read(self.ctx.home / ".config" / version / "settings.ini")

@@ -10,8 +10,14 @@
 （matugen 仅做纯取色）→ 一次运行双写 `colors.json`（Shell 热载）与
 `palette-modes.json`（dark+light 双模式）。TemplateService 监听
 `palette-modes.json`：写 Noctalia 色板镜像，然后对全部启用模板执行渲染
-队列；队列按表达式子集（`TemplateExpr.js`）渲染每个模板，原子写输出，
-再跑注册表里的 post hook（kitty include、btop 信号、starship 托管块）。
+队列；队列按表达式子集（`TemplateExpr.js`）渲染每个模板。内置模板先写状态区，
+再由 `desktop.owned_outputs` 持锁核对消费者开关、原值及最后写入身份后提交；
+btop 和 Starship 的配置接线也按同样方式登记，后续个人修改会阻断自动覆盖。
+用户自建模板仍按其显式输出与 post hook 执行。Kitty 的主要受管色板实际提交到
+`themes/noctalia.conf` 后，再通知同 UID 的现有 GUI Kitty 实例重载；`theme sync`
+不发送 Kitty 重载，因为当时异步渲染可能还未写出新色板。停用门控会阻止通知，
+没有实例是正常情况，信号发送失败则让模板 post hook 返回未完成以便重试。
+归属与停用规则见 [Manifest Schema](../manifest-schema.md#跨单元模板消费者)。
 
 ## 渲染队列不变量
 
@@ -19,7 +25,7 @@
 - **内容相同的渲染也是完成的渲染**：Quickshell `FileView.setText` 在新文本
   等于已加载内容时静默 no-op、不发射 `saved()`。启动再生成与同壁纸重渲染
   必然命中，因此队列用 settle 时捕获的 `outputContent` 判等，命中即走完成
-  路径；hook 照常运行（hook 全部幂等，kitty-apply 结尾无条件重载实例）。
+  路径；hook 照常运行，Kitty 提交后的通知仍检查消费者开关与现有实例。
 - **输出视图写同步**（`blockWrites: true`）：0.3.1 的 FileView 在同一视图
   上快速交错 read/write 会丢失操作完成事件（实测 writer 启动后 `saved()`
   永不到达）。同步保存没有可丢的异步完成。
@@ -31,7 +37,7 @@
 - **输入模板加载防重入**：只有路径相同时才调用 `reload()`，路径变更由 `FileView.path` 赋值自发启动加载，杜绝多重 `onLoaded` 触发并发重复 hook 进程。
 - **队列推进跨帧解耦**（`Qt.callLater(root.renderNext)`）：在 `renderDone` 中推进下一个模板必须通过 `Qt.callLater` 投递至下一事件循环。Quickshell 0.3.1 的 `FileView` 在 `onSaved` 信号处理期间如果在同一调用栈内同步改变 `path`，底层 C++ `FileViewOperation` 会发生状态竞争并丢弃后续读操作（`got operation finished from dropped operation`），导致连续无 hook 模板（如 `fcitx5_theme` ➔ `fcitx5_panel`）后者读取超时。
 - **深浅模式即时重载**：`PersonalizationConfig.onThemeModeChanged` 触发时，利用内存中已加载的 `tokenColors` 双模式映射即刻调用 `renderAll()`，避免依赖磁盘写盘延迟。
-- **Hook 执行环境隔离与原始缓存路径透传**：`shell/nyxuri-shell` 启动时将 `XDG_CACHE_HOME` 定向至 `$HOME/.cache/nyxuri-shell` 以隔离 Quickshell QML 磁盘缓存，同时导出 `NYXURI_ORIGINAL_CACHE_HOME`。`TemplateService` 创建 hook 子进程时必须显式注入宿主真实用户目录（`XDG_CACHE_HOME: Paths.xdgCacheHome` 即 `$HOME/.cache`），确保外部脚本（如 `starship-apply.sh`）准确寻址到 `~/.cache/nyxuri/` 下的色板中间件，不被 Shell 私有缓存污染。
+- **QML 编译缓存与业务路径分离**：`shell/nyxuri-shell` 只通过 Qt 的 `QML_DISK_CACHE_PATH` 隔离编译缓存，保留 `XDG_CACHE_HOME` 原值，不再导出 `NYXURI_ORIGINAL_CACHE_HOME`。`Paths.xdgCacheHome` 直接读取用户缓存根，不反推或裁去目录后缀。`TemplateService` 创建 hook 子进程时继续显式传递 `XDG_CACHE_HOME: Paths.xdgCacheHome`，外部脚本、Python 引擎桥与 CLI 因而使用同一业务缓存位置；QML 的私有编译目录不成为用户布局。具体清理范围见 [Shell 开发约定](../../shell/AGENTS.md)。
 - 空渲染结果按失败处理，不进入写入门控。
 
 ## Quickshell 0.3.1 平台约束（原因记录）

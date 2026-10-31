@@ -269,6 +269,7 @@
 "Click to open network settings" = "点击打开网络设置"
 "Clipboard" = "剪贴板"
 "Clipboard history" = "剪贴板历史"
+"Clipboard backend command failed: %1" = "剪贴板后端命令失败：%1"
 "Clipboard history is unavailable" = "剪贴板历史不可用"
 "Clipboard image" = "图片剪贴板"
 "Clipboard layout" = "剪贴板布局"
