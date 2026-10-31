@@ -31,19 +31,19 @@
 ### 2. 回滚前自保 (Pre-rollback Safety)
 执行 `rollback_configs()` 从历史快照还原配置之前，引擎会**强制为当前实机配置生成一份 `pre_rollback_` 快照**。即使用户回滚错了版本，也能再次反向恢复，杜绝数据丢失。
 
-### 3. 精确恢复模式 (Preserve Custom Contract)
-调用 `atomic_replace_item` 执行回滚还原时，传入 `preserve_custom=False`：
-- 回滚要还原快照当时的状态，不混入之后新增的自定义文件。
-- 若继承当前实机后期产生的 `__custom__` 文件，将导致回滚产生脏数据污染。因此回滚模式下不进行 Dunder 继承，确保还原一致性。
+### 3. 精确恢复与参数化保留模式 (Preserve Custom Contract, #56)
+调用 `atomic_replace_item` 执行回滚还原时，默认传入 `preserve_custom=False`：
+- 回滚默认还原快照当时的状态，不混入之后新增的自定义文件，确保还原一致性。
+- 参数化显式保留（#56）：若用户显式指定 `--keep-custom`，则保留当前实机侧产生的 `*__custom__*` 自定义文件并在终端明确提示，兼顾灵活性与安全性。
 - 回滚同样不走所有权 carry（#139）：裸调用默认 `carry=False`，受管文件精确还原快照内容，不保留实机侧偏离快照的改动（回滚前已有 `pre_rollback_` 快照兜底）。
 
 ## CLI 接口
 
 ```bash
-nyxuri snapshot [note]          # 创建新快照（alias: backup）
-nyxuri snapshot delete [index]  # 删除指定序号的快照
-nyxuri list                     # 列出所有可用快照（带序号与时间）
-nyxuri rollback [index]         # 回滚到指定快照（回滚前自动生成安全快照，alias: restore）
+nyxuri snapshot [note]                  # 创建新快照（alias: backup）
+nyxuri snapshot delete [index]          # 删除指定序号的快照
+nyxuri list                             # 列出所有可用快照（带序号与时间）
+nyxuri rollback [index] [--keep-custom] # 回滚到指定快照（默认精确恢复，可选显式保留自定义配置）
 ```
 
 

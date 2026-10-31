@@ -260,7 +260,7 @@ output_path = "/home/user/.config/mango/noctalia.conf"
 post_hook = "mmsg dispatch reload_config 2>/dev/null || true"
 
 [wallpaper]
-directory = "/home/user/图片/Wallpapers"
+directory = "/home/user/Pictures/Wallpapers"
 fill_mode = "crop"
 
 
@@ -295,4 +295,4 @@ type = "noctalia/mpvpaper:mpvpaper"
 [plugin_settings."noctalia/mpvpaper"]
 mpv_options = "--config=no --load-scripts=no --script=~/.config/noctalia/mpv-hook.lua"
 picker_placement = "floating"
-video_directory = "/home/user/图片/Wallpapers/video"
+video_directory = "/home/user/Pictures/Wallpapers/video"

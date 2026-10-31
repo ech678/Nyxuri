@@ -60,14 +60,16 @@ def plugin_dir(plugin_id: str) -> Path | None:
     fallback. A dotted id under the bare root (``plugins/shell.bar/``) is not
     a plugin — namespaces are declared by roots, never by directory names.
     """
+    from nyxuri.core import safe_child
+
     for root, prefix in sorted(_namespace_roots(), key=lambda r: len(r[1]), reverse=True):
         if not plugin_id.startswith(prefix):
             continue
         rel = plugin_id[len(prefix):]
-        if not rel or "/" in rel:
-            return None
-        src = root / rel
-        return src if src.is_dir() else None
+        src = safe_child(root, rel)
+        if src is not None and src.is_dir():
+            return src
+        return None
     return None
 
 

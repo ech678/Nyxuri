@@ -14,7 +14,7 @@
 | `packages` | `[<目录名>]` | pacman 包名。**显式 `packages = []` 保持为空**（Flatpak/AUR-only 插件防名字泄进 pacman） |
 | `packages_aur` | `[]` | AUR 包名 |
 | `packages_flatpak` | `[]` | Flathub app id——走 `flatpak install`，永不进 pacman/AUR/PKGBUILD |
-| `target` | `""` | 单文件插件例外：插件目录只 ship 一个文件 `plugins/<plugin>/<target>`，落点 `~/.config/<target>`（如 starship）。`~/` 前缀则声明 `~/.config` 外的**共享生活区**。`xdg:<KIND>/<rest>` 走 XDG 用户目录解析（当前仅 `xdg:PICTURES/<rest>`，经 `xdg-user-dir PICTURES`，中文系统即 `~/图片`；未知 KIND 直接拒绝——如壁纸 `xdg:PICTURES/Wallpapers`，R0-4 推广为完整映射）。target 插件不支持形态轴 |
+| `target` | `""` | 单文件插件例外：插件目录只 ship 一个文件 `plugins/<plugin>/<target>`，落点 `~/.config/<target>`（如 starship）。`~/` 前缀则声明 `~/.config` 外的**共享生活区**。`xdg:<KIND>/<rest>` 走 XDG 用户目录解析（支持 8 大标准用户目录：`DESKTOP`、`DOWNLOAD`、`TEMPLATES`、`PUBLICSHARE`、`DOCUMENTS`、`MUSIC`、`PICTURES`、`VIDEOS`；未知 KIND 直接拒绝，严禁 `..` 越界——如壁纸 `xdg:PICTURES/Wallpapers`，R0-4 推广为完整映射）。target 插件不支持形态轴 |
 | `merge` | `false` | 共享生活区声明：`on` 走 no-clobber 增量合流（已存在文件永不覆盖），快照只记部署落下的文件；`off` 只撤回快照文件，外来内容幸存并报告；doctor 对停用 merge 插件只把蓝图具名残留记 Ghost（见 [plugin-model](plugin-model.md) §3） |
 | `runtime` | `false` | 运行态插件声明（KM4，shell 命名空间专用，见 [plugin-model](plugin-model.md) §6）：无载荷、无生活区、无 Vault 进出、无形态轴——`on`/`off` 纯账本落记 + 一次 `plugin-changed` 事件，运行中的宿主（Shell）据事件装载/卸载该域。doctor 恒 `Synced`（实机无可对账之物）。物理承载 `shell/units/<domain>/manifest.toml` |
 | `morphology` | `""` | 插件形态矩阵（R0-3 显式契约，四选一：`"atomic"` / `"merge"` / `"runtime"` / `"hook-only"`）。缺省留空时由引擎根据 payload、`merge`、`runtime` 自动推导（零配置）。显式声明时校验合法性；`"hook-only"` 插件（如 greeter）无生活区目录，事务仅执行装包、特权钩子与落账，跳过 Vault 与形态轴 |

@@ -106,10 +106,6 @@ en = "{Colors.BOLD_BLUE}Cancelled; no configs were written{Colors.RESET}"
 zh = """\n{Colors.BOLD_BLUE}:: [{Colors.BOLD_CYAN}{0}{Colors.BOLD_BLUE}] 安装配置…{Colors.RESET}"""
 en = """\n{Colors.BOLD_BLUE}:: [{Colors.BOLD_CYAN}{0}{Colors.BOLD_BLUE}] Installing configs…{Colors.RESET}"""
 
-[install_step_wallpapers]
-zh = """\n{Colors.BOLD_BLUE}:: [{Colors.BOLD_CYAN}{0}{Colors.BOLD_BLUE}] 安装壁纸…{Colors.RESET}"""
-en = """\n{Colors.BOLD_BLUE}:: [{Colors.BOLD_CYAN}{0}{Colors.BOLD_BLUE}] Installing wallpapers…{Colors.RESET}"""
-
 [install_step_deps]
 zh = """\n{Colors.BOLD_BLUE}:: [{Colors.BOLD_CYAN}{0}{Colors.BOLD_BLUE}] 安装依赖…{Colors.RESET}"""
 en = """\n{Colors.BOLD_BLUE}:: [{Colors.BOLD_CYAN}{0}{Colors.BOLD_BLUE}] Installing dependencies…{Colors.RESET}"""
@@ -476,6 +472,10 @@ en = "{Colors.DARK_GRAY}[✓] Auto-saved pre-rollback snapshot: {0}{Colors.RESET
 zh = "{Colors.BOLD_GREEN}[✓] 已恢复至快照: {0}{Colors.RESET}"
 en = "{Colors.BOLD_GREEN}[✓] Restored to snapshot: {0}{Colors.RESET}"
 
+[log_rollback_keep_custom]
+zh = "{Colors.CYAN}[ℹ] 显式保留当前自定义配置 (*__custom__*){Colors.RESET}"
+en = "{Colors.CYAN}[ℹ] Explicitly retained current custom configurations (*__custom__*){Colors.RESET}"
+
 [snapshot_note_prompt]
 zh = "▸ 请输入快照备注（直接回车跳过）: "
 en = "▸ Enter snapshot note (press Enter to skip): "
@@ -782,7 +782,7 @@ zh = """{0} 桌面插件引擎 ({1})
   pkg <install|upgrade|remove|search|info|installed>  包管理直通
   clean [-n] [--only <任务>]         缓存清理（-n 仅预览）
   snapshot [备注|list|delete [序号]] 创建、列出或删除配置快照
-  rollback [序号]                    恢复历史配置快照
+  rollback [序号] [--keep-custom]     恢复历史配置快照（可选保留自定义配置）
   uninstall [--all|standard|restore|purge]  勾选式卸载（或直达指定范围）
   bug                                导出诊断报告
   test                               开发者沙箱部署测试
@@ -808,7 +808,7 @@ System & Domains:
   pkg <install|upgrade|remove|search|info|installed>  Direct package management
   clean [-n] [--only <tasks>]        Cache cleanup (-n for preview)
   snapshot [note|list|delete [idx]]  Create, list, or delete config snapshots
-  rollback [index]                   Restore a config snapshot
+  rollback [index] [--keep-custom]     Restore a config snapshot (optionally keeping customs)
   uninstall [--all|standard|restore|purge]  Checkbox uninstall (or direct mode)
   bug                                Export a diagnostic report
   test                               Run the developer sandbox deploy
@@ -1393,10 +1393,6 @@ en = "Active"
 [preset_part_status_inactive]
 zh = "未生效"
 en = "Inactive"
-
-[install_step_plugin_hooks]
-zh = "{Colors.BOLD_CYAN}::{Colors.RESET} 插件钩子重放 ({0})"
-en = "{Colors.BOLD_CYAN}::{Colors.RESET} Plugin hook replay ({0})"
 
 [menu_opt_workshop]
 zh = "插件（开关 / 对账）"

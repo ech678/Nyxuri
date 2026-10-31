@@ -60,6 +60,7 @@ class TempEnv:
         # _PICS_DIR_CACHE especially: get_pics_dir() otherwise returns a path
         # from a previously-deleted temp HOME, breaking wallpaper assertions.
         core._PICS_DIR_CACHE = None
+        core._XDG_DIR_CACHE.clear()
         import nyxuri.deploy.deploy as _deploy_core
         import nyxuri.deploy.manifest as _deploy_manifest
         _deploy_core._CONFIG_ITEMS_CACHE = []

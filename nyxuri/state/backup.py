@@ -181,8 +181,12 @@ def list_backups() -> List[Path]:
     return backups
 
 
-def rollback_configs(target_arg: str = "") -> bool:
-    """Restore configuration from a selected historical snapshot."""
+def rollback_configs(target_arg: str = "", keep_custom: bool = False) -> bool:
+    """Restore configuration from a selected historical snapshot.
+
+    Default restores exact historical bytes (preserve_custom=False, issue #56).
+    Passing keep_custom=True explicitly retains current *__custom__* files.
+    """
     from nyxuri.deploy.atomic import atomic_replace_item
     from nyxuri.deploy.deploy import config_item_dest, discover_config_items
 
@@ -246,10 +250,13 @@ def rollback_configs(target_arg: str = "") -> bool:
             log_msg("ERROR", f"Selected rollback snapshot item disappeared: {snap_item}")
             return False
 
+    if keep_custom:
+        print(msg("log_rollback_keep_custom"))
+
     for item in expected_items:
         snap_item = chosen_backup / item
         dest_item = config_item_dest(item)
-        if not atomic_replace_item(snap_item, dest_item, preserve_custom=False):
+        if not atomic_replace_item(snap_item, dest_item, preserve_custom=keep_custom):
             print(msg("log_deploy_config_failed", item), file=sys.stderr)
             log_msg("ERROR", f"Failed to restore snapshot item {snap_item}")
             return False

@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import tomllib
+import unicodedata
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -401,28 +402,102 @@ def get_env() -> Environment:
         _ENV = Environment()
     return _ENV
 
+# --- XDG User Directories ---
+XDG_USER_DIR_DEFAULTS: Dict[str, str] = {
+    "DESKTOP": "Desktop",
+    "DOWNLOAD": "Downloads",
+    "TEMPLATES": "Templates",
+    "PUBLICSHARE": "Public",
+    "DOCUMENTS": "Documents",
+    "MUSIC": "Music",
+    "PICTURES": "Pictures",
+    "VIDEOS": "Videos",
+}
+
+_XDG_DIR_CACHE: Dict[str, Path] = {}
 _PICS_DIR_CACHE: Optional[Path] = None
 
-def get_pics_dir() -> Path:
-    global _PICS_DIR_CACHE
-    if _PICS_DIR_CACHE is not None:
-        return _PICS_DIR_CACHE
+
+def get_xdg_user_dir(kind: str) -> Path:
+    """Resolve an XDG user directory (e.g. PICTURES -> ~/Pictures or ~/图片)."""
+    kind = kind.upper()
+    if kind not in XDG_USER_DIR_DEFAULTS:
+        raise ValueError(f"unsupported xdg category: '{kind}'")
+    if kind in _XDG_DIR_CACHE:
+        return _XDG_DIR_CACHE[kind]
     home = get_env().home
     try:
         res = subprocess.run(
-            ["xdg-user-dir", "PICTURES"],
+            ["xdg-user-dir", kind],
             capture_output=True, text=True, check=False,
             timeout=5,
             env={**os.environ, "LC_ALL": "C"}
         )
         d = res.stdout.strip()
         if d and d != str(home):
-            _PICS_DIR_CACHE = Path(d)
-            return _PICS_DIR_CACHE
+            p = Path(d)
+            _XDG_DIR_CACHE[kind] = p
+            return p
     except Exception:
         pass
-    _PICS_DIR_CACHE = home / "Pictures"
+    fallback = home / XDG_USER_DIR_DEFAULTS[kind]
+    _XDG_DIR_CACHE[kind] = fallback
+    return fallback
+
+
+def get_pics_dir() -> Path:
+    global _PICS_DIR_CACHE
+    if _PICS_DIR_CACHE is not None:
+        return _PICS_DIR_CACHE
+    _PICS_DIR_CACHE = get_xdg_user_dir("PICTURES")
     return _PICS_DIR_CACHE
+
+
+# --- Path Security & Containment (Issue #48 lesson) ---
+
+
+def is_safe_leaf_name(value: str) -> bool:
+    """True iff value is a single safe leaf filename (no traversal, no control chars)."""
+    if not isinstance(value, str) or not value or value != value.strip():
+        return False
+    if value in (".", "..") or Path(value).is_absolute():
+        return False
+    if os.sep in value or (os.altsep and os.altsep in value):
+        return False
+    try:
+        return len(os.fsencode(value)) <= 255 and all(
+            unicodedata.category(char) not in ("Cc", "Cs") for char in value
+        )
+    except UnicodeEncodeError:
+        return False
+
+
+def safe_child(root: Path, *parts: str) -> Optional[Path]:
+    """Return a non-symlink child contained below root, or None if unsafe."""
+    if not all(is_safe_leaf_name(part) for part in parts):
+        return None
+    try:
+        if root.exists() and root.is_symlink():
+            return None
+        candidate = root.joinpath(*parts)
+        candidate.resolve(strict=False).relative_to(root.resolve(strict=False))
+        current = root
+        for part in parts:
+            current /= part
+            if current.exists() and current.is_symlink():
+                return None
+        return candidate
+    except (OSError, RuntimeError, ValueError):
+        return None
+
+
+def assert_contained(child: Path, root: Path) -> Path:
+    """Raise ValueError if child does not resolve strictly within root."""
+    try:
+        child.resolve(strict=False).relative_to(root.resolve(strict=False))
+        return child
+    except (ValueError, RuntimeError) as exc:
+        raise ValueError(f"Path escape detected: {child} outside {root}") from exc
 
 # --- Dynamic Version Extractor ---
 _VERSION_CACHE: str = ""

@@ -168,14 +168,54 @@ class TestManifestOverrides(unittest.TestCase):
             resolved = manifest.living_path(m, Path("/sandbox/.config"))
         self.assertEqual(resolved, pics / "Wallpapers")
 
-    def test_xdg_target_rejects_unknown_kind(self):
-        """#144: an unknown xdg: category is refused, never guessed."""
-        plugin = self.root / "weird"
+    def test_xdg_target_resolves_all_standard_categories(self):
+        """R0-4: xdg:<KIND>/<rest> resolves against any standard XDG user dir."""
+        plugin = self.root / "media"
         plugin.mkdir()
         (plugin / "manifest.toml").write_text('target = "xdg:MUSIC/Playlists"\n')
         m = manifest.load_manifest(plugin)
+        music = self.root / "MyMusic"
+        with unittest.mock.patch("nyxuri.core.get_xdg_user_dir", return_value=music):
+            resolved = manifest.living_path(m, Path("/sandbox/.config"))
+        self.assertEqual(resolved, music / "Playlists")
+
+    def test_xdg_target_rejects_unknown_kind(self):
+        """R0-4: an unknown xdg: category is refused, never guessed."""
+        plugin = self.root / "weird"
+        plugin.mkdir()
+        (plugin / "manifest.toml").write_text('target = "xdg:UNKNOWN_CAT/Playlists"\n')
+        m = manifest.load_manifest(plugin)
         with self.assertRaises(ValueError):
             manifest.living_path(m, Path("/sandbox/.config"))
+
+    def test_xdg_target_rejects_path_traversal(self):
+        """R0-4: xdg: targets attempting path traversal are rejected."""
+        plugin = self.root / "escaped"
+        plugin.mkdir()
+        (plugin / "manifest.toml").write_text('target = "xdg:PICTURES/../../etc/shadow"\n')
+        m = manifest.load_manifest(plugin)
+        with self.assertRaises(ValueError):
+            manifest.living_path(m, Path("/sandbox/.config"))
+
+    def test_living_path_rejects_relative_containment_violation(self):
+        """R0-4: target escaping ~/.config is rejected."""
+        plugin = self.root / "escaped"
+        plugin.mkdir()
+        (plugin / "manifest.toml").write_text('target = "../../escaped"\n')
+        with self.assertRaises(ValueError):
+            manifest.load_manifest(plugin)
+
+    def test_manifest_rejects_unsafe_preserve_and_hooks(self):
+        """R0-4: preserve paths and hook filenames cannot traverse outside boundaries."""
+        plugin = self.root / "bad"
+        plugin.mkdir()
+        (plugin / "manifest.toml").write_text('preserve = ["../../victim"]\n')
+        with self.assertRaises(ValueError):
+            manifest.load_manifest(plugin)
+
+        (plugin / "manifest.toml").write_text('post_install = "../bad_hook"\n')
+        with self.assertRaises(ValueError):
+            manifest.load_manifest(plugin)
 
     def test_preserve_values_parsed(self):
         plugin = self.root / "noctalia"

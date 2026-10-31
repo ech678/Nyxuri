@@ -317,6 +317,20 @@ def _check_gtk_theme(env) -> None:
     else:
         print(msg("doctor_warn", text("GTK 主题: 未注册", "GTK theme: not registered")))
 
+    adw_installed = Path("/usr/share/themes/adw-gtk3").is_dir() or Path("/usr/share/themes/adw-gtk3-dark").is_dir()
+    gtk3_ini = env.config_dir / "gtk-3.0" / "settings.ini"
+    targets_adw = False
+    if gtk3_ini.is_file():
+        try:
+            targets_adw = "adw-gtk3" in gtk3_ini.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            pass
+    if (targets_adw or rendered or registered) and not adw_installed:
+        print(msg("doctor_warn", text(
+            "GTK 主题: 缺少 adw-gtk-theme（GTK3 应用将回退原生 Adwaita，运行 nyxuri on theme 补齐）",
+            "GTK theme: adw-gtk-theme is missing (GTK3 apps fallback to default Adwaita; run nyxuri on theme)",
+        )))
+
 def _check_vm(env) -> None:
     if shutil.which("lspci"):
         try:

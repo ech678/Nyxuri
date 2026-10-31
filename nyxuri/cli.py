@@ -290,10 +290,17 @@ def _cmd_snapshot(sub_args: List[str]) -> int:
 
 
 def _cmd_rollback(sub_args: List[str]) -> int:
-    if len(sub_args) > 1:
-        exit_usage(f"{CLI_CMD} rollback [index]")
-    target = sub_args[0] if sub_args else ""
-    return 0 if rollback_configs(target) else 1
+    usage = f"{CLI_CMD} rollback [index] [--keep-custom]"
+    keep_custom = False
+    target = ""
+    for arg in sub_args:
+        if arg == "--keep-custom":
+            keep_custom = True
+        elif not target and not arg.startswith("-"):
+            target = arg
+        else:
+            exit_usage(usage)
+    return 0 if rollback_configs(target, keep_custom=keep_custom) else 1
 
 
 def _cmd_uninstall(sub_args: List[str]) -> int:
@@ -532,7 +539,7 @@ COMMANDS = {
     "clean":     (_cmd_clean,     f"{CLI_CMD} clean [-n] [--only <tasks>]"),
     "install":   (_cmd_install,   f"{CLI_CMD} install [full|config]"),
     "snapshot":  (_cmd_snapshot,  f"{CLI_CMD} snapshot [note|list|delete [index]]"),
-    "rollback":  (_cmd_rollback,  f"{CLI_CMD} rollback [index]"),
+    "rollback":  (_cmd_rollback,  f"{CLI_CMD} rollback [index] [--keep-custom]"),
     "uninstall": (_cmd_uninstall, f"{CLI_CMD} uninstall [--all|standard|restore|purge]"),
     "doctor":    (_cmd_doctor,    f"{CLI_CMD} doctor [plugin]"),
     "deps":      (_cmd_deps,      f"{CLI_CMD} deps [core]"),

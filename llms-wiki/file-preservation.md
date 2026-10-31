@@ -108,12 +108,14 @@ Nyxuri 元数据只许在 `~/.config/nyxuri/`（backups、用户形态、hooks�
 
 ## 动词语义表（谁传什么立场）
 
-| 调用方 | carry | 基线 | unknown 立场 |
-|---|---|---|---|
-| `update`（普通） | ✓ | 账本 | True（宁可错保，Ghost 冻结 + 提示） |
-| `update --force` | ✓ | 无 | False（模板认领 payload 名，自放文件仍搬入） |
-| `install` / `on` | ✓ | 账本 | False（收编：payload 名归引擎，自放文件搬入） |
-| `nyxuri test` | ✓ | 账本 | False（"对齐仓库"语义，含硬件中立清洗） |
-| 形态切换（整型轴 / 槽位轴）/ 回滚 | ✗ | — | 原样模板替换（显式选择/精确还原；回滚另传 `preserve_custom=False`） |
+| 调用方 | carry | 基线 | unknown 立场 | Dunder 保留 (`preserve_custom`) |
+|---|---|---|---|---|
+| `update`（普通） | ✓ | 账本 | True（宁可错保，Ghost 冻结 + 提示） | ✓ |
+| `update --force` | ✓ | 无 | False（模板认领 payload 名，自放文件仍搬入） | ✓ |
+| `install` / `on` | ✓ | 账本 | False（收编：payload 名归引擎，自放文件搬入） | ✓ |
+| `nyxuri test` | ✓ | 账本 | False（"对齐仓库"语义，含硬件中立清洗） | ✓ |
+| `rollback`（默认精确恢复，#56） | ✗ | — | 纯快照还原 | ✗（历史快照覆盖实机，零穿透） |
+| `rollback --keep-custom`（显式保留，#56） | ✗ | — | 快照还原 + 显式保留 | ✓（当前 `__custom__` 搬入新树并报告） |
+| 形态切换（整型轴 / 槽位轴） | ✗ | — | 原样模板替换（显式选择形态） | ✓ |
 
 原语默认 `carry=False`：裸调用保持纯模板替换语义，工作流显式选择立场。

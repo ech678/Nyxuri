@@ -176,13 +176,18 @@ _XDG_PREFIX = "xdg:"
 
 def _resolve_xdg_target(target: str) -> Path:
     """Resolve ``xdg:<KIND>/<rest>`` against the XDG user dirs."""
-    from nyxuri.core import get_pics_dir
+    from nyxuri.core import get_pics_dir, get_xdg_user_dir, is_safe_leaf_name, assert_contained
 
     kind, _, rest = target[len(_XDG_PREFIX):].partition("/")
     kind = kind.upper()
-    if kind != "PICTURES" or not rest:
+    if not rest:
         raise ValueError(f"unsupported xdg: target '{target}'")
-    return get_pics_dir() / rest
+    parts = [p for p in rest.replace("\\", "/").split("/") if p]
+    if not parts or not all(is_safe_leaf_name(p) for p in parts):
+        raise ValueError(f"unsafe xdg: target path '{target}'")
+    base = get_pics_dir() if kind == "PICTURES" else get_xdg_user_dir(kind)
+    candidate = base.joinpath(*parts)
+    return assert_contained(candidate, base)
 
 
 def living_path(m: ModuleManifest, config_dir: Path) -> Path:
@@ -198,7 +203,13 @@ def living_path(m: ModuleManifest, config_dir: Path) -> Path:
         return _resolve_xdg_target(m.target)
     if m.target.startswith(("~", "/")):
         return Path(os.path.expanduser(m.target))
-    return config_dir / (m.target or m.name)
+    raw = m.target or m.name
+    parts = [p for p in raw.replace("\\", "/").split("/") if p]
+    from nyxuri.core import is_safe_leaf_name, assert_contained
+    if not parts or not all(is_safe_leaf_name(p) for p in parts):
+        raise ValueError(f"unsafe plugin target '{raw}'")
+    candidate = config_dir.joinpath(*parts)
+    return assert_contained(candidate, config_dir)
 
 
 def load_manifest(app_src: Path) -> ModuleManifest:
@@ -235,8 +246,33 @@ def load_manifest(app_src: Path) -> ModuleManifest:
             if target and target not in manifest_preserve:
                 manifest_preserve.append(target)
 
+    from nyxuri.core import is_safe_leaf_name
+
+    for p in manifest_preserve:
+        parts = [part for part in p.replace("\\", "/").split("/") if part]
+        if not parts or not all(is_safe_leaf_name(part) for part in parts) or Path(p).is_absolute():
+            raise ValueError(f"unsafe preserve path in manifest: '{p}'")
+
+    raw_preserve_values = _as_str_map(data.get("preserve_values"))
+    for k in raw_preserve_values:
+        parts = [part for part in k.replace("\\", "/").split("/") if part]
+        if not parts or not all(is_safe_leaf_name(part) for part in parts) or Path(k).is_absolute():
+            raise ValueError(f"unsafe preserve_values key in manifest: '{k}'")
+
+    post_install_str = str(data.get("post_install", ""))
+    if post_install_str and not is_safe_leaf_name(post_install_str):
+        raise ValueError(f"unsafe post_install hook in manifest: '{post_install_str}'")
+
+    post_remove_str = str(data.get("post_remove", ""))
+    if post_remove_str and not is_safe_leaf_name(post_remove_str):
+        raise ValueError(f"unsafe post_remove hook in manifest: '{post_remove_str}'")
+
     deployable = _is_deployable(app_src)
     target_str = str(data.get("target", ""))
+    if target_str and not target_str.startswith(_XDG_PREFIX) and not target_str.startswith(("~", "/")):
+        parts = [part for part in target_str.replace("\\", "/").split("/") if part]
+        if not parts or not all(is_safe_leaf_name(part) for part in parts):
+            raise ValueError(f"unsafe target path in manifest: '{target_str}'")
     explicit_runtime = bool(data.get("runtime", False))
     explicit_merge = bool(data.get("merge", False))
 

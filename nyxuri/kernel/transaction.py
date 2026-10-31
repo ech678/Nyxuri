@@ -84,7 +84,14 @@ def _emit(plugin_id: str, state: str) -> None:
 
 def vault_dir(plugin_id: str) -> Path:
     """Flat file-mirror archive root for one plugin (plugin-model.md §7.3)."""
-    return get_env().state_dir / "vault" / plugin_id
+    from nyxuri.core import is_safe_leaf_name, assert_contained
+
+    parts = plugin_id.split(".")
+    if not all(is_safe_leaf_name(p) for p in parts):
+        raise ValueError(f"unsafe plugin id for vault: '{plugin_id}'")
+    v_root = get_env().state_dir / "vault"
+    candidate = v_root / plugin_id
+    return assert_contained(candidate, v_root)
 
 
 def _plugin_dest(plugin_id: str, manifest: ModuleManifest) -> Path:
@@ -532,13 +539,13 @@ def _wipe_plugin(plugin_id: str, dest: Path, rec: Optional[dict],
 
 def _hook_script(plugin_id: str, spec: str):
     """Resolve ``<blueprint>/<plugin>/hooks/<spec>``; None when absent/malformed."""
-    if not spec or "/" in spec or spec.startswith("."):
-        return None
+    from nyxuri.core import safe_child
+
     root = registry.plugin_dir(plugin_id)
-    if root is None:
+    if root is None or not spec:
         return None
-    script = root / "hooks" / spec
-    return script if script.is_file() else None
+    script = safe_child(root / "hooks", spec)
+    return script if script is not None and script.is_file() else None
 
 
 def _run_plugin_hook(plugin_id: str, manifest: ModuleManifest, spec: str) -> bool:

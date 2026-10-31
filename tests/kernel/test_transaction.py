@@ -890,6 +890,31 @@ class TestR03ActivationPipeline(unittest.TestCase):
             self.assertEqual(installed_packages, [("demo_app", ["demo-pkg"])])
             self.assertEqual(ledger.get_plugin("demo_app")["state"], "enabled")
 
+    def test_registry_and_vault_reject_unsafe_ids_r0_4(self):
+        """R0-4: registry and transaction reject traversal or unsafe plugin ids (#48 lesson)."""
+        from nyxuri.kernel import registry
+        with TempEnv() as ctx:
+            _stage(ctx, {"valid": {"files": {"v.conf": "1"}}})
+            self.assertIsNone(registry.plugin_dir(".."))
+            self.assertIsNone(registry.plugin_dir("../../escaped"))
+            self.assertIsNone(registry.plugin_dir("shell/bar"))
+            with self.assertRaises(KeyError):
+                registry.load_plugin("..")
+            with self.assertRaises(KeyError):
+                registry.load_plugin("../../escaped")
+            with self.assertRaises(ValueError):
+                transaction.vault_dir("..")
+            with self.assertRaises(ValueError):
+                transaction.vault_dir("../../escaped")
+
+    def test_hook_script_rejects_unsafe_spec_r0_4(self):
+        """R0-4: plugin hook resolution rejects path traversal."""
+        with TempEnv() as ctx:
+            _stage(ctx, {"app": {"files": {"a.conf": "1"}}})
+            self.assertIsNone(transaction._hook_script("app", "../outside.sh"))
+            self.assertIsNone(transaction._hook_script("app", "/bin/sh"))
+            self.assertIsNone(transaction._hook_script("app", ""))
+
 
 if __name__ == "__main__":
     unittest.main()

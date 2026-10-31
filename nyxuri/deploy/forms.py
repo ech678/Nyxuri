@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from nyxuri.core import STORAGE_NAME
-from nyxuri.core import get_env, log_msg, timed_run
+from nyxuri.core import get_env, is_safe_leaf_name, log_msg, safe_child, timed_run
 from nyxuri.core import msg
 
 
@@ -47,38 +47,8 @@ class InvalidActiveFormError(ValueError):
     """The form choice is present but cannot be safely used."""
 
 
-def _is_safe_component(value: str) -> bool:
-    if not isinstance(value, str) or not value or value != value.strip():
-        return False
-    if value in (".", "..") or Path(value).is_absolute():
-        return False
-    if os.sep in value or (os.altsep and os.altsep in value):
-        return False
-    try:
-        return len(os.fsencode(value)) <= 255 and all(
-            unicodedata.category(char) not in ("Cc", "Cs") for char in value
-        )
-    except UnicodeEncodeError:
-        return False
-
-
-def _safe_child(root: Path, *parts: str) -> Optional[Path]:
-    """Return a non-symlink child contained below root, if it is safe."""
-    if not all(_is_safe_component(part) for part in parts):
-        return None
-    try:
-        if root.exists() and root.is_symlink():
-            return None
-        candidate = root.joinpath(*parts)
-        candidate.resolve(strict=False).relative_to(root.resolve(strict=False))
-        current = root
-        for part in parts:
-            current /= part
-            if current.exists() and current.is_symlink():
-                return None
-        return candidate
-    except (OSError, RuntimeError, ValueError):
-        return None
+_is_safe_component = is_safe_leaf_name
+_safe_child = safe_child
 
 
 def _is_deployable_app(app: str) -> bool:

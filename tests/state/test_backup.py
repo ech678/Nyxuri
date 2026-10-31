@@ -226,6 +226,25 @@ class TestRollbackSafety(unittest.TestCase):
         self.assertEqual((current / "__custom__.kdl").read_text(), "historical custom")
         self.assertEqual((current / "__custom__" / "rule.kdl").read_text(), "historical rule")
 
+    def test_rollback_with_keep_custom_preserves_current_custom_bytes(self):
+        """#56: rollback with keep_custom=True explicitly retains current custom files."""
+        from nyxuri.state.backup import rollback_configs
+
+        snapshot = self.base_dir / "snapshot_20260101_000000"
+        (snapshot / "niri").mkdir(parents=True)
+        (snapshot / "niri" / "__custom__.kdl").write_text("historical custom")
+        (snapshot / "niri" / "config.kdl").write_text("historical main")
+        current = self.env.config_dir / "niri"
+        current.mkdir()
+        (current / "__custom__.kdl").write_text("current custom")
+        (current / "config.kdl").write_text("current main")
+
+        with patch("nyxuri.deploy.deploy.discover_config_items", return_value=["niri"]):
+            self.assertTrue(rollback_configs(str(snapshot), keep_custom=True))
+
+        self.assertEqual((current / "config.kdl").read_text(), "historical main")
+        self.assertEqual((current / "__custom__.kdl").read_text(), "current custom")
+
     def test_rollback_fails_when_selected_source_disappears(self):
         """A selected snapshot removed during the safety backup is a hard failure."""
         from nyxuri.state.backup import rollback_configs
