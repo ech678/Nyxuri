@@ -4,8 +4,8 @@ The AUR package is a toolbox, not a desktop:
 
   depends    = ENGINE_DEPENDS only ('python') — pacman must not force a
                desktop onto the user
-  optdepends = every unit's manifest packages (deployable + optional,
-               labeled by unit) ∪ CORE_DEPS ∪ AUR_DEPS ∪ ENGINE_OPTDEPENDS
+  optdepends = every plugin's manifest packages (deployable + optional,
+               labeled by plugin) ∪ CORE_DEPS ∪ AUR_DEPS ∪ ENGINE_OPTDEPENDS
   catalog.toml never reaches the PKGBUILD — it only feeds the
   `nyxuri deps apps` menu of recommended install shortcuts.
 """
@@ -33,7 +33,7 @@ def _load_gendeps():
 
 
 class TestGenDeps(unittest.TestCase):
-    """T1 policy: depends=engine-only; optdepends=units ∪ session ∪ engine bases."""
+    """T1 policy: depends=engine-only; optdepends=plugins ∪ session ∪ engine bases."""
 
     def setUp(self):
         self._ctx = TempEnv()
@@ -48,13 +48,13 @@ class TestGenDeps(unittest.TestCase):
 
     def test_depends_is_engine_runtime_only(self):
         # The whole tree is pure Python + QML + scripts: pacman installs the
-        # toolbox, the desktop is assembled later via `nyxuri on <unit>`.
+        # toolbox, the desktop is assembled later via `nyxuri on <plugin>`.
         self.assertEqual(self.depends, ["python"])
 
     def test_unit_packages_land_in_optdepends_labeled_by_unit(self):
-        # Deployable units' packages (kitty/niri/fish/...), companion libs
+        # Deployable plugins' packages (kitty/niri/fish/...), companion libs
         # (noctalia's python-gobject/gtk-layer-shell/wl-clipboard) and the
-        # portal unit all surface as optdepends with their unit label.
+        # portal plugin all surface as optdepends with their plugin label.
         for pkg in ("kitty", "niri", "fish", "fastfetch", "noctalia",
                     "python-gobject", "gtk-layer-shell", "wl-clipboard",
                     "xdg-desktop-portal", "starship"):
@@ -85,7 +85,7 @@ class TestGenDeps(unittest.TestCase):
         self.assertNotIn("key-cli", self.opt_names)
 
     def test_optional_unit_packages_stay_optdepends(self):
-        # Optional units (zed/fcitx5-rime/greeter/mango) are optdepends —
+        # Optional plugins (zed/fcitx5-rime/greeter/mango) are optdepends —
         # nothing they declare may re-enter hard depends.
         for pkg in ("zed", "rime-ice-git", "greetd", "noctalia-greeter", "mangowm"):
             self.assertNotIn(pkg, self.depends)
@@ -112,7 +112,7 @@ class TestGenDeps(unittest.TestCase):
             self.assertNotIn(leaked, self.opt_names, leaked)
 
     def test_optdepends_is_deduplicated_and_labeled(self):
-        # Several units may declare the same package (e.g. CORE_DEPS ∩ unit
+        # Several plugins may declare the same package (e.g. CORE_DEPS ∩ plugin
         # manifests) — first claim wins, no duplicates may survive.
         self.assertEqual(len(self.opt_names), len(set(self.opt_names)))
         for pkg, label in self.optdepends:

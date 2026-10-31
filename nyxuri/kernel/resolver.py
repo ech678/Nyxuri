@@ -1,4 +1,4 @@
-"""UnitResolver — pure dependency-graph resolution (unit-model.md §2).
+"""PluginResolver — pure dependency-graph resolution (unit-model.md §2).
 
 Pure functions only: a dependency graph in, a topological order out.
 Zero I/O, zero state, and no sibling-kernel imports — the layering
@@ -8,10 +8,10 @@ contract freezes this module as the stateless computation transaction
 
 
 def resolve_order(graph: dict[str, list[str]]) -> list[str]:
-    """Return unit ids in dependency-safe enable order (Kahn's algorithm).
+    """Return plugin ids in dependency-safe enable order (Kahn's algorithm).
 
-    Edges pointing at ids outside the graph are ignored (a unit may declare
-    a dependency on something that is not a directory unit yet). Raises
+    Edges pointing at ids outside the graph are ignored (a plugin may declare
+    a dependency on something that is not a directory plugin yet). Raises
     ValueError when the graph contains a cycle — the caller must surface
     it instead of guessing an order.
     """
@@ -33,5 +33,5 @@ def resolve_order(graph: dict[str, list[str]]) -> list[str]:
                     queue.append(u)
 
     if len(order) != len(graph):
-        raise ValueError("Cyclic dependency detected in units")
+        raise ValueError("Cyclic dependency detected in plugins")
     return order

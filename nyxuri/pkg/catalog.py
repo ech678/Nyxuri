@@ -1,6 +1,6 @@
 """Package catalog (``catalog.toml``) — declared software that ships no config.
 
-Catalog entries are NOT units (unit-model.md §2 严正排除项): they carry no
+Catalog entries are NOT plugins (unit-model.md §2 严正排除项): they carry no
 deployable files and have no ledger life. The catalog exists so the deps
 menu and the AUR ``optdepends`` generator read one declaration of
 "installable but not deployable" software.

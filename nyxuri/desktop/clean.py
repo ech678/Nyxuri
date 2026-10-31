@@ -84,9 +84,9 @@ HELP = f"""{PROJECT_NAME} — {t("缓存清理", "Cache sweeper")}
 
 def human(n):
     x = float(n)
-    for unit in ("B", "KiB", "MiB", "GiB", "TiB"):
-        if x < 1024 or unit == "TiB":
-            return f"{int(x)} B" if unit == "B" else f"{x:.1f} {unit}"
+    for plugin in ("B", "KiB", "MiB", "GiB", "TiB"):
+        if x < 1024 or plugin == "TiB":
+            return f"{int(x)} B" if plugin == "B" else f"{x:.1f} {plugin}"
         x /= 1024
 
 

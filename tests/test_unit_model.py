@@ -1,8 +1,8 @@
-"""Contract tests for the KM0 unit model and the KM1 kernel modules.
+"""Contract tests for the KM0 plugin model and the KM1 kernel modules.
 
 The Kahn reference copy is retired (unit-model.md §7, KM1 step ①):
 dependency resolution is tested against the real ``nyxuri.kernel.resolver``,
-blueprint access against ``nyxuri.kernel.registry``, and the five-field unit
+blueprint access against ``nyxuri.kernel.registry``, and the five-field plugin
 record shape against ``nyxuri.kernel.ledger``.
 """
 
@@ -17,8 +17,8 @@ from nyxuri.kernel.resolver import resolve_order
 from tests.utils import TempEnv
 
 
-class TestUnitModelContract(unittest.TestCase):
-    """KM0 contract integrity: ensures the unit model invariants are verified."""
+class TestPluginModelContract(unittest.TestCase):
+    """KM0 contract integrity: ensures the plugin model invariants are verified."""
 
     def setUp(self):
         self.root_dir = Path(__file__).resolve().parent.parent
@@ -81,7 +81,7 @@ class TestKernelResolver(unittest.TestCase):
         self.assertLess(order.index("wl-clipboard"), order.index("orbit-translate"))
 
     def test_dependency_resolver_detects_cycles(self):
-        """Cyclic unit dependencies must raise ValueError."""
+        """Cyclic plugin dependencies must raise ValueError."""
         cyclic_graph = {
             "a": ["b"],
             "b": ["a"],
@@ -91,56 +91,56 @@ class TestKernelResolver(unittest.TestCase):
 
     def test_foreign_dependency_is_ignored(self):
         """Frozen behavior: deps pointing outside the graph don't stall resolution."""
-        order = resolve_order({"app": ["not-a-unit-yet"]})
+        order = resolve_order({"app": ["not-a-plugin-yet"]})
         self.assertEqual(order, ["app"])
 
 
 class TestKernelRegistry(unittest.TestCase):
-    """Blueprint domain: add a directory, get a unit — zero kernel code."""
+    """Blueprint domain: add a directory, get a plugin — zero kernel code."""
 
     def setUp(self):
         self.root_dir = Path(__file__).resolve().parent.parent
 
     def _stage_configs(self, ctx, spec: dict[str, str | None]) -> None:
-        """Create unit dirs under a temp units_src and point the env at it.
+        """Create plugin dirs under a temp plugins_src and point the env at it.
 
-        spec maps unit id -> manifest TOML text (None = bare dir, no manifest).
+        spec maps plugin id -> manifest TOML text (None = bare dir, no manifest).
         The manifest name is ``manifest.toml`` (KM1 step-② cutover: the
         ``.module.toml`` sidecar is physically gone).
         """
         configs = ctx.home / "configs-src"
         configs.mkdir()
         for uid, toml_text in spec.items():
-            unit = configs / uid
-            unit.mkdir()
+            plugin = configs / uid
+            plugin.mkdir()
             if toml_text is not None:
-                (unit / "manifest.toml").write_text(toml_text, encoding="utf-8")
-        ctx.env.units_src = configs
+                (plugin / "manifest.toml").write_text(toml_text, encoding="utf-8")
+        ctx.env.plugins_src = configs
 
     def test_zero_config_discovery(self):
-        """A bare directory with no manifest is a first-class unit."""
+        """A bare directory with no manifest is a first-class plugin."""
         with TempEnv() as ctx:
-            self._stage_configs(ctx, {"bare-unit": None})
-            self.assertIn("bare-unit", registry.unit_ids())
-            m = registry.load_unit("bare-unit")
-            self.assertEqual(m.name, "bare-unit")
-            self.assertEqual(m.packages_repo, ["bare-unit"])
+            self._stage_configs(ctx, {"bare-plugin": None})
+            self.assertIn("bare-plugin", registry.plugin_ids())
+            m = registry.load_plugin("bare-plugin")
+            self.assertEqual(m.name, "bare-plugin")
+            self.assertEqual(m.packages_repo, ["bare-plugin"])
             self.assertEqual(m.preserve, [])
 
     def test_real_repo_units_discovered(self):
         """The repo blueprint is scanned through the same registry."""
         with TempEnv() as ctx:
-            ctx.env.units_src = self.root_dir / "plugins"
-            ids = registry.unit_ids()
+            ctx.env.plugins_src = self.root_dir / "plugins"
+            ids = registry.plugin_ids()
             self.assertIn("kitty", ids)
-            self.assertEqual(registry.load_unit("kitty").name, "kitty")
+            self.assertEqual(registry.load_plugin("kitty").name, "kitty")
 
     def test_manifest_dependencies_parsed(self):
-        """Top-level `dependencies` is the unit-dependency declaration."""
+        """Top-level `dependencies` is the plugin-dependency declaration."""
         with TempEnv() as ctx:
             self._stage_configs(ctx, {"shell": 'dependencies = ["base"]\n', "base": None})
-            self.assertEqual(registry.load_unit("shell").dependencies, ["base"])
-            self.assertEqual(registry.load_unit("base").dependencies, [])
+            self.assertEqual(registry.load_plugin("shell").dependencies, ["base"])
+            self.assertEqual(registry.load_plugin("base").dependencies, [])
 
     def test_dependency_graph_feeds_resolver(self):
         """Kernel integration: registry graph -> resolver order, no coupling."""
@@ -153,21 +153,21 @@ class TestKernelRegistry(unittest.TestCase):
         with TempEnv() as ctx:
             self._stage_configs(ctx, {})
             with self.assertRaises(KeyError):
-                registry.load_unit("ghost")
+                registry.load_plugin("ghost")
 
 
 class TestKernelLedger(unittest.TestCase):
-    """State domain: the five-field frozen unit record (unit-model.md §3)."""
+    """State domain: the five-field frozen plugin record (unit-model.md §3)."""
 
     def test_unit_record_frozen_shape(self):
         """A record carries exactly the five frozen fields and persists."""
         with TempEnv() as ctx:
-            rec = ledger.set_unit("kitty", state="enabled", preset="default",
+            rec = ledger.set_plugin("kitty", state="enabled", preset="default",
                                   files={"kitty.conf": "abc123"})
             self.assertEqual(
                 set(rec),
                 {"state", "preset", "files", "vault", "updated"},
-                "unit records must not grow a sixth field",
+                "plugin records must not grow a sixth field",
             )
             self.assertEqual(rec["state"], "enabled")
             self.assertEqual(rec["files"], {"kitty.conf": "abc123"})
@@ -176,30 +176,30 @@ class TestKernelLedger(unittest.TestCase):
             # persisted under the top-level `plugins` key (R0-1 rename)
             on_disk = json.loads((ctx.home / ".local/state/nyxuri/state.json").read_text())
             self.assertEqual(on_disk["plugins"]["kitty"]["preset"], "default")
-            self.assertEqual(ledger.get_unit("kitty"), rec)
-            self.assertEqual(ledger.all_units(), {"kitty": rec})
+            self.assertEqual(ledger.get_plugin("kitty"), rec)
+            self.assertEqual(ledger.all_plugins(), {"kitty": rec})
 
     def test_disabled_requires_vault(self):
-        """A disabled unit must name its vault archive — no silent loss."""
+        """A disabled plugin must name its vault archive — no silent loss."""
         with TempEnv():
             with self.assertRaises(ValueError):
-                ledger.set_unit("kitty", state="disabled")
-            rec = ledger.set_unit("kitty", state="disabled",
+                ledger.set_plugin("kitty", state="disabled")
+            rec = ledger.set_plugin("kitty", state="disabled",
                                   vault="/state/nyxuri/vault/kitty")
             self.assertEqual(rec["state"], "disabled")
 
     def test_invalid_state_rejected(self):
         with TempEnv():
             with self.assertRaises(ValueError):
-                ledger.set_unit("kitty", state="half-open")
+                ledger.set_plugin("kitty", state="half-open")
 
     def test_upsert_keeps_sibling_records(self):
         with TempEnv():
-            ledger.set_unit("kitty", state="enabled")
-            ledger.set_unit("fish", state="enabled")
-            ledger.set_unit("kitty", state="disabled", vault="/vault/kitty")
-            self.assertEqual(ledger.get_unit("fish")["state"], "enabled")
-            self.assertEqual(ledger.get_unit("kitty")["state"], "disabled")
+            ledger.set_plugin("kitty", state="enabled")
+            ledger.set_plugin("fish", state="enabled")
+            ledger.set_plugin("kitty", state="disabled", vault="/vault/kitty")
+            self.assertEqual(ledger.get_plugin("fish")["state"], "enabled")
+            self.assertEqual(ledger.get_plugin("kitty")["state"], "disabled")
 
     def test_legacy_units_key_migrates_on_first_read(self):
         """A pre-R0-1 ledger (top-level ``units`` key) is renamed to
@@ -211,13 +211,13 @@ class TestKernelLedger(unittest.TestCase):
                 json.dumps({"units": {"kitty": {"state": "enabled"}}}, indent=2) + "\n",
                 encoding="utf-8",
             )
-            rec = ledger.get_unit("kitty")
+            rec = ledger.get_plugin("kitty")
             self.assertEqual(rec["state"], "enabled")
             on_disk = json.loads(path.read_text(encoding="utf-8"))
             self.assertNotIn("units", on_disk, "legacy key must be gone after migration")
             self.assertEqual(on_disk["plugins"]["kitty"]["state"], "enabled")
             # idempotent: further reads neither duplicate nor resurrect the key
-            ledger.set_unit("kitty", state="disabled", vault="/vault/kitty")
+            ledger.set_plugin("kitty", state="disabled", vault="/vault/kitty")
             on_disk = json.loads(path.read_text(encoding="utf-8"))
             self.assertNotIn("units", on_disk)
             self.assertEqual(on_disk["plugins"]["kitty"]["state"], "disabled")
@@ -225,7 +225,7 @@ class TestKernelLedger(unittest.TestCase):
     def test_fresh_ledger_only_carries_plugins_key(self):
         """New installs never produce the legacy ``units`` key."""
         with TempEnv() as ctx:
-            ledger.set_unit("kitty", state="enabled")
+            ledger.set_plugin("kitty", state="enabled")
             on_disk = json.loads(
                 (ctx.home / ".local/state/nyxuri/state.json").read_text(encoding="utf-8")
             )

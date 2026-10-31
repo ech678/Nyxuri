@@ -118,7 +118,7 @@ class TestGpuContracts(unittest.TestCase):
 
     def test_test_deploy_removes_variables(self):
         target = self._old_config()
-        with patch("nyxuri.kernel.transaction.unit_on", return_value=[]), \
+        with patch("nyxuri.kernel.transaction.plugin_on", return_value=[]), \
              patch("nyxuri.deploy.deploy.render_completion_screen"):
             self.assertTrue(test_deploy())
         for variable in REMOVED_VARIABLES:

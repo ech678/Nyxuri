@@ -75,15 +75,15 @@ class TestOptionalAppPackageMapping(unittest.TestCase):
         self.assertIn("rime-ice-git", aur_cmd, "rime-ice-git must be installed from AUR")
 
     def test_installer_does_not_activate_units(self):
-        """Installing packages neither activates a unit nor runs its hooks."""
+        """Installing packages neither activates a plugin nor runs its hooks."""
         from nyxuri.pkg.deps import install_optional_apps
 
         with patch("subprocess.run", return_value=MagicMock(returncode=0)):
             with patch("nyxuri.pkg.preferred_manager", return_value="paru"):
                 with patch("nyxuri.pkg.deps.aur_helper_usable", return_value="paru"):
                     with patch("shutil.which", return_value="/usr/bin/fcitx5"):
-                        with patch("nyxuri.kernel.transaction._run_unit_hook") as mock_hook, \
-                             patch("nyxuri.kernel.transaction.unit_on") as mock_on:
+                        with patch("nyxuri.kernel.transaction._run_plugin_hook") as mock_hook, \
+                             patch("nyxuri.kernel.transaction.plugin_on") as mock_on:
                             with patch("builtins.print"):
                                 install_optional_apps(["fcitx5-rime"])
 

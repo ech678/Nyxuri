@@ -1,10 +1,10 @@
-"""UnitLedger — the state domain's single entry (unit-model.md §2).
+"""PluginLedger — the state domain's single entry (unit-model.md §2).
 
 The only kernel module that reads or writes ``state.json``. Generic
-key/value selections (active shell, migration level) and unit records
+key/value selections (active shell, migration level) and plugin records
 share one atomic write path: flock, merge, tmp file, ``os.replace``.
 
-Unit records live under the top-level ``plugins`` key, keyed by unit id.
+Plugin records live under the top-level ``plugins`` key, keyed by plugin id.
 Pre-R0-1 ledgers carried the key ``units``; the first read renames it
 in place (idempotent, one atomic write). Each record carries exactly
 five frozen fields (unit-model.md §3): ``state`` / ``preset`` / ``files``
@@ -23,9 +23,9 @@ from nyxuri.core import get_env
 
 UNIT_STATES = ("enabled", "disabled")
 
-# Top-level key holding unit records. R0-1 renamed ``units`` → ``plugins``
+# Top-level key holding plugin records. R0-1 renamed ``units`` → ``plugins``
 # alongside the blueprint directory; one-shot migration lives in read_ledger.
-UNITS_KEY = "plugins"
+PLUGINS_KEY = "plugins"
 _LEGACY_UNITS_KEY = "units"
 
 # --- generic ledger primitives -------------------------------------------
@@ -47,9 +47,9 @@ def _legacy_units_replacement(data: dict[str, Any]) -> dict[str, Any] | None:
     """Data with ``units`` renamed to ``plugins``, or None when no migration
     is due (ledger already in the new shape, empty, or without records)."""
     legacy = data.get(_LEGACY_UNITS_KEY)
-    if UNITS_KEY in data or not isinstance(legacy, dict):
+    if PLUGINS_KEY in data or not isinstance(legacy, dict):
         return None
-    data[UNITS_KEY] = data.pop(_LEGACY_UNITS_KEY)
+    data[PLUGINS_KEY] = data.pop(_LEGACY_UNITS_KEY)
     return data
 
 
@@ -154,24 +154,24 @@ def set_shell(shell_name: str, bin_path: str | None = None) -> dict[str, Any]:
     return update_ledger(**changes)
 
 
-# --- unit records (KM0 frozen five-field shape) ---------------------------
+# --- plugin records (KM0 frozen five-field shape) ---------------------------
 
 
-def all_units() -> dict[str, dict[str, Any]]:
-    """Every unit record in the ledger, keyed by unit id."""
-    units = read_ledger().get(UNITS_KEY)
-    if not isinstance(units, dict):
+def all_plugins() -> dict[str, dict[str, Any]]:
+    """Every plugin record in the ledger, keyed by plugin id."""
+    plugins = read_ledger().get(PLUGINS_KEY)
+    if not isinstance(plugins, dict):
         return {}
-    return {uid: dict(rec) for uid, rec in units.items() if isinstance(rec, dict)}
+    return {uid: dict(rec) for uid, rec in plugins.items() if isinstance(rec, dict)}
 
 
-def get_unit(unit_id: str) -> dict[str, Any] | None:
-    """One unit record, or None when the unit was never switched."""
-    return all_units().get(unit_id)
+def get_plugin(plugin_id: str) -> dict[str, Any] | None:
+    """One plugin record, or None when the plugin was never switched."""
+    return all_plugins().get(plugin_id)
 
 
-def set_unit(
-    unit_id: str,
+def set_plugin(
+    plugin_id: str,
     *,
     state: str,
     preset: str = "default",
@@ -179,16 +179,16 @@ def set_unit(
     vault: str | None = None,
     updated: str | None = None,
 ) -> dict[str, Any]:
-    """Upsert one unit record, enforcing the frozen five-field shape.
+    """Upsert one plugin record, enforcing the frozen five-field shape.
 
     ``state``: ``enabled`` / ``disabled`` (the only switch axis).
     ``preset``: current form-axis choice. ``files``: ``{relpath: sha256}``
     snapshot of managed files. ``vault``: archive location of the user's
-    custom files — mandatory once the unit is ``disabled``. ``updated``:
+    custom files — mandatory once the plugin is ``disabled``. ``updated``:
     ISO timestamp, defaulted to now (UTC).
     """
     if state not in UNIT_STATES:
-        raise ValueError(f"invalid unit state '{state}' (must be 'enabled' or 'disabled')")
+        raise ValueError(f"invalid plugin state '{state}' (must be 'enabled' or 'disabled')")
     if not isinstance(preset, str) or not preset:
         raise ValueError("preset must be a non-empty string")
     if files is None:
@@ -200,7 +200,7 @@ def set_unit(
     if vault is not None and not isinstance(vault, str):
         raise ValueError("vault must be an archive path string or None")
     if state == "disabled" and not vault:
-        raise ValueError(f"disabled unit '{unit_id}' requires a vault archive path")
+        raise ValueError(f"disabled plugin '{plugin_id}' requires a vault archive path")
     if updated is None:
         updated = datetime.now(timezone.utc).isoformat(timespec="seconds")
     record: dict[str, Any] = {
@@ -210,5 +210,5 @@ def set_unit(
         "vault": vault,
         "updated": updated,
     }
-    data = update_ledger(**{UNITS_KEY: {unit_id: record}})
-    return dict(data[UNITS_KEY][unit_id])
+    data = update_ledger(**{PLUGINS_KEY: {plugin_id: record}})
+    return dict(data[PLUGINS_KEY][plugin_id])

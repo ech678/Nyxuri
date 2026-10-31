@@ -53,19 +53,19 @@ def discover_config_items() -> List[str]:
 
 
 def config_item_dest(item: str) -> Path:
-    """Living-space path for a unit: ``~/.config/<target>`` for single-file
-    units, else ``~/.config/<item>`` (unit-model.md §4 target exception)."""
+    """Living-space path for a plugin: ``~/.config/<target>`` for single-file
+    plugins, else ``~/.config/<item>`` (unit-model.md §4 target exception)."""
     from nyxuri.core import get_env
-    m = load_manifest(get_env().units_src / item)
+    m = load_manifest(get_env().plugins_src / item)
     return living_path(m, get_env().config_dir)
 
 
 def config_item_src(item: str) -> Path:
-    """Blueprint payload path for a unit: the target file itself for
-    single-file units, else the unit directory."""
+    """Blueprint payload path for a plugin: the target file itself for
+    single-file plugins, else the plugin directory."""
     from nyxuri.core import get_env
-    m = load_manifest(get_env().units_src / item)
-    src = get_env().units_src / item
+    m = load_manifest(get_env().plugins_src / item)
+    src = get_env().plugins_src / item
     return src / m.target if m.target else src
 
 def _phase_atomic_deployment(
@@ -75,14 +75,14 @@ def _phase_atomic_deployment(
     test_mode: bool = False,
     carry_policy: Optional[CarryPolicy] = None,
 ) -> List[str]:
-    """Execute atomic copy for selected configuration units.
+    """Execute atomic copy for selected configuration plugins.
 
     Per-app manifest drives: the preserve list (files kept across deploys,
     e.g. niri/monitor.kdl), and the chmod globs (executable scripts). The
     Dunder __custom__ walk inside atomic_replace_item is untouched.
 
     ``carry_policy`` (issue #139) threads the transaction layer's ownership
-    verdict per unit: baselines from the ledger, the unknown-provenance
+    verdict per plugin: baselines from the ledger, the unknown-provenance
     stance, and the out-map of carried files. None = plain template swap.
     """
     env = get_env()
@@ -93,18 +93,18 @@ def _phase_atomic_deployment(
     for item in items_to_deploy:
         # Manifest always loaded from the app root (not the preset dir):
         # preserve/chmod describe the app, independent of which variant ships.
-        manifest = load_manifest(env.units_src / item)
+        manifest = load_manifest(env.plugins_src / item)
 
         if manifest.target:
-            # Single-file unit (§4 target exception): one file inside the
-            # unit dir lands at ~/.config/<target>. Presets and parts are
+            # Single-file plugin (§4 target exception): one file inside the
+            # plugin dir lands at ~/.config/<target>. Presets and parts are
             # directory affordances and do not apply.
-            src = env.units_src / item / manifest.target
+            src = env.plugins_src / item / manifest.target
             dest = config_dir / manifest.target
             if not src.is_file():
                 failed_items.append(item)
                 print(msg("log_deploy_config_failed", item), file=sys.stderr)
-                log_msg("ERROR", f"Missing target file for unit '{item}': {src}")
+                log_msg("ERROR", f"Missing target file for plugin '{item}': {src}")
                 continue
             # No preset/base resolution applies; a concrete result keeps the
             # atomic call below bound (a stale loop iteration must never leak).
@@ -188,24 +188,24 @@ def _phase_atomic_deployment(
             print(msg("log_part_reconcile_failed", item, ", ".join(reconcile_failures)), file=sys.stderr)
 
         print(msg("log_deploy_config_item", item))
-        log_msg("INFO", f"Deployed config {dest.relative_to(config_dir).as_posix()} (unit {item})")
+        log_msg("INFO", f"Deployed config {dest.relative_to(config_dir).as_posix()} (plugin {item})")
 
     return failed_items
 
 
-def merge_deploy_unit(item: str, manifest: ModuleManifest) -> Optional[List[str]]:
+def merge_deploy_plugin(item: str, manifest: ModuleManifest) -> Optional[List[str]]:
     """No-clobber merge for shared living areas (manifest ``merge = true``).
 
     Blueprint files land in the living area only when missing — existing
     files (the user's own content, an external pack) are never touched and
     nothing is ever deleted. Returns the laid relative paths, or None on
     failure. Presets, parts and Vault semantics do not apply to merge
-    units; the transaction snapshots exactly these laid files.
+    plugins; the transaction snapshots exactly these laid files.
     """
     import shutil
 
     env = get_env()
-    src_root = env.units_src / item
+    src_root = env.plugins_src / item
     dest = living_path(manifest, env.config_dir)
     laid: List[str] = []
     try:
@@ -241,7 +241,7 @@ def wallpapers_pack_present() -> bool:
     """Whether the external wallpaper pack lives in the shared living area.
 
     Validated by requiring at least one deployed video file. The pack is
-    user-domain content (installed via the unit's ``install-pack`` script),
+    user-domain content (installed via the plugin's ``install-pack`` script),
     never ledger-tracked.
     """
     from nyxuri.core import get_pics_dir
@@ -302,7 +302,7 @@ def run_user_hooks() -> List[str]:
 def _phase_post_install_services() -> None:
     """Run built-in post-deployment work (theme sync).
 
-    Unit activation is user policy, not a deploy side effect: enabled units
+    Plugin activation is user policy, not a deploy side effect: enabled plugins
     replay their declared hooks via ``transaction.replay_enabled_hooks()``
     in the workflow; the retired module direct-calls are gone (KM3).
     """
@@ -327,7 +327,7 @@ def render_completion_screen(
 
     ``carried_groups`` (#139): carried files keyed by verdict — "modified"
     (user edits, template has newer), "user" (user-placed), "unknown"
-    (unregistered unit). Different verdicts, different sections: one bucket
+    (unregistered plugin). Different verdicts, different sections: one bucket
     would read as "all of this is yours" and erode trust in the report.
     """
     if chosen_items is None:
@@ -498,29 +498,29 @@ def deploy_selected_configs(
     print(msg("copy_done"))
     return []
 
-def enable_wallpapers_unit() -> Optional[bool]:
+def enable_wallpapers_plugin() -> Optional[bool]:
     """Best-effort ``on wallpapers`` for deploy flows: True / False / None
     (skipped). The pack itself is user-domain (install-pack script); only
     the blueprint fallback goes through the transaction."""
     try:
         from nyxuri.kernel import transaction
-        steps = transaction.unit_on("wallpapers")
+        steps = transaction.plugin_on("wallpapers")
         return bool(steps) and all(s.ok for s in steps)
     except Exception as exc:
-        log_msg("WARN", f"wallpapers unit enable failed: {exc}")
+        log_msg("WARN", f"wallpapers plugin enable failed: {exc}")
         return False
 
 
-def enable_theme_unit() -> Optional[bool]:
+def enable_theme_plugin() -> Optional[bool]:
     """Best-effort ``on theme`` for deploy flows: the shared template pool is
     load-bearing for both shells' gtk/niri/palette renders (KM4/P5 neutral
     pool). No-clobber merge — user-edited templates survive redeploys."""
     try:
         from nyxuri.kernel import transaction
-        steps = transaction.unit_on("theme")
+        steps = transaction.plugin_on("theme")
         return bool(steps) and all(s.ok for s in steps)
     except Exception as exc:
-        log_msg("WARN", f"theme unit enable failed: {exc}")
+        log_msg("WARN", f"theme plugin enable failed: {exc}")
         return False
 
 
@@ -550,8 +550,8 @@ def test_deploy() -> bool:
         render_completion_screen(mode="test", chosen_items=items, preserved_lines=preserved_log, failed_items=failed_items)
         return False
     _phase_render_templates()
-    wallpaper_ok = enable_wallpapers_unit()
-    enable_theme_unit()
+    wallpaper_ok = enable_wallpapers_plugin()
+    enable_theme_plugin()
     render_completion_screen(
         mode="test",
         chosen_items=items,

@@ -239,8 +239,8 @@ def main_menu_loop() -> None:
             # 诊断
             MenuItem(label=msg("menu_opt5"), group_header=msg("menu_group_system")),
             MenuItem(label=msg("menu_opt6")),
-            # 单元
-            MenuItem(label=msg("menu_opt_workshop"), group_header=msg("menu_group_units")),
+            # 插件
+            MenuItem(label=msg("menu_opt_workshop"), group_header=msg("menu_group_plugins")),
             # 退出
             MenuItem(label=msg("menu_opt0"), style="subtle"),
         ]
@@ -277,8 +277,8 @@ def main_menu_loop() -> None:
             generate_bug_report()
             press_any_key()
         elif choice == 8:
-            from nyxuri.tui import UnitWorkshop
-            UnitWorkshop().run()
+            from nyxuri.tui import PluginWorkshop
+            PluginWorkshop().run()
         elif choice == 9:
             sys.exit(0)
 

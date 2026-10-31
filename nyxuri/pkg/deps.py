@@ -131,9 +131,9 @@ def check_mpvpaper_leak() -> None:
         else:
             print(msg("mpvpaper_upgrade_skip"))
 
-def unit_package_installer(unit_id: str, missing: List[str]) -> bool:
+def plugin_package_installer(plugin_id: str, missing: List[str]) -> bool:
     """Installer injected into the transaction by every surface (CLI/TUI): the
-    unit's own manifest declares the three-way split, this layer owns the
+    plugin's own manifest declares the three-way split, this layer owns the
     package-manager calls (AUR via an ensured helper, Flatpak via its own
     channel)."""
     repo = missing
@@ -142,7 +142,7 @@ def unit_package_installer(unit_id: str, missing: List[str]) -> bool:
     try:
         from nyxuri.kernel import registry
 
-        manifest = registry.load_unit(unit_id)
+        manifest = registry.load_plugin(plugin_id)
         repo = [p for p in missing if p in manifest.packages_repo]
         aur = [p for p in missing if p in manifest.packages_aur]
         flat = [p for p in missing if p in manifest.packages_flatpak]
@@ -203,8 +203,8 @@ def install_optional_apps(selected_apps: List[str]) -> bool:
     """Install the package declarations of the selected supply items.
 
     Items are catalog entries (packages-only software) or optional real
-    units. Unit activation (and its declared hooks) belongs to
-    ``nyxuri on <unit>`` via the transaction path (KM3)."""
+    plugins. Plugin activation (and its declared hooks) belongs to
+    ``nyxuri on <plugin>`` via the transaction path (KM3)."""
     repo_pkgs, aur_pkgs, flatpak_ids = [], [], []
     for app in selected_apps:
         entry = get_entry(app)
@@ -236,7 +236,7 @@ def install_optional_apps(selected_apps: List[str]) -> bool:
 
 
 def _supply_items() -> List[dict]:
-    """The optional software surface: catalog entries + optional real units.
+    """The optional software surface: catalog entries + optional real plugins.
 
     One shape for both sources so the menu and the installer never special-
     case where a declaration came from."""

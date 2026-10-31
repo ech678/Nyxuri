@@ -61,7 +61,7 @@ def get_preset_info(app: str, name: str) -> PresetInfo:
     source = "official"
     is_editable = False
     is_deletable = False
-    app_root = _safe_child(get_env().units_src, app) if valid else None
+    app_root = _safe_child(get_env().plugins_src, app) if valid else None
     official_dir = _find_official_presets_dir(app_root)
     dir_name = official_dir.name if official_dir else "presets"
     if not valid:
@@ -140,7 +140,7 @@ def collect_presets(app: str) -> List[Tuple[str, str, bool]]:
     entries: List[Tuple[str, str, bool]] = [("default", "official", active == "default")]
 
     env = get_env()
-    app_root = _safe_child(env.units_src, app)
+    app_root = _safe_child(env.plugins_src, app)
     official_dir = _find_official_presets_dir(app_root)
     if official_dir is not None and official_dir.is_dir() and not official_dir.is_symlink():
         for p in sorted(official_dir.iterdir(), key=lambda x: x.name):
@@ -311,7 +311,7 @@ def save_preset(app: str, name: str) -> bool:
     if dest is None or not dest.is_dir() or dest.is_symlink():
         print(msg("preset_nothing_to_save", app))
         return False
-    official_dir = _find_official_presets_dir(_safe_child(env.units_src, app))
+    official_dir = _find_official_presets_dir(_safe_child(env.plugins_src, app))
     official = _safe_child(official_dir, name) if official_dir else None
     if official is not None and official.is_dir() and not official.is_symlink():
         print(msg("preset_official_name_collision", name))
@@ -367,7 +367,7 @@ def delete_preset(app: str, name: str) -> bool:
         print(msg("preset_not_found", app, name))
         return False
     env = get_env()
-    official_dir = _find_official_presets_dir(_safe_child(env.units_src, app))
+    official_dir = _find_official_presets_dir(_safe_child(env.plugins_src, app))
     official = _safe_child(official_dir, name) if official_dir else None
     if official is not None and official.is_dir() and not official.is_symlink():
         print(msg("preset_delete_official_denied", name))
@@ -407,7 +407,7 @@ def edit_preset(app: str, name: str) -> bool:
         print(msg("preset_not_found", app, name))
         return False
     env = get_env()
-    official_dir = _find_official_presets_dir(_safe_child(env.units_src, app))
+    official_dir = _find_official_presets_dir(_safe_child(env.plugins_src, app))
     official = _safe_child(official_dir, name) if official_dir else None
     if official is not None and official.is_dir() and not official.is_symlink():
         print(msg("preset_edit_official_denied", name))

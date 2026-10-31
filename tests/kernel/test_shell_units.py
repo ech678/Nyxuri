@@ -1,6 +1,6 @@
-"""KM4 shell-namespace tests: dotted-id registry roots, runtime units
+"""KM4 shell-namespace tests: dotted-id registry roots, runtime plugins
 (ledger-only existence, no living area), the event bridge delivery, and
-doctor reconciliation for payload-less units.
+doctor reconciliation for payload-less plugins.
 
 Every test runs inside TempEnv — the real ~/.config is never touched.
 """
@@ -16,18 +16,18 @@ from tests.utils import TempEnv
 
 
 def _stage_shell(ctx, spec):
-    """Create shell-namespace units under a temp root and point the env at it.
+    """Create shell-namespace plugins under a temp root and point the env at it.
 
-    spec maps domain -> {"manifest": toml text | None} (runtime units carry
+    spec maps domain -> {"manifest": toml text | None} (runtime plugins carry
     no payload files by definition).
     """
-    root = ctx.home / "shell-units-src"
+    root = ctx.home / "shell-plugins-src"
     root.mkdir(exist_ok=True)
     for domain, entry in spec.items():
-        unit = root / domain
-        unit.mkdir(exist_ok=True)
+        plugin = root / domain
+        plugin.mkdir(exist_ok=True)
         if entry.get("manifest") is not None:
-            (unit / "manifest.toml").write_text(entry["manifest"], encoding="utf-8")
+            (plugin / "manifest.toml").write_text(entry["manifest"], encoding="utf-8")
     ctx.env.shell_units_src = root
 
 
@@ -43,7 +43,7 @@ class TestShellNamespaceRegistry(unittest.TestCase):
     def test_shell_units_get_dotted_ids_from_the_root(self):
         with TempEnv() as ctx:
             _stage_shell(ctx, {"bar": {"manifest": _runtime_manifest(label="Bar")}})
-            ids = registry.unit_ids()
+            ids = registry.plugin_ids()
             self.assertIn("shell.bar", ids)
             self.assertIn("kitty", ids)  # bare root still present
             self.assertIn("shell.bar", registry.dependency_graph())
@@ -51,20 +51,20 @@ class TestShellNamespaceRegistry(unittest.TestCase):
     def test_load_unit_patches_manifest_name_to_the_dotted_id(self):
         with TempEnv() as ctx:
             _stage_shell(ctx, {"dock": {"manifest": _runtime_manifest()}})
-            m = registry.load_unit("shell.dock")
+            m = registry.load_plugin("shell.dock")
             self.assertEqual(m.name, "shell.dock")
             self.assertTrue(m.runtime)
 
     def test_unknown_and_malformed_ids_never_resolve(self):
         with TempEnv() as ctx:
             _stage_shell(ctx, {"bar": {"manifest": _runtime_manifest()}})
-            self.assertIsNone(registry.unit_dir("shell.nope"))
-            self.assertIsNone(registry.unit_dir("shell."))
+            self.assertIsNone(registry.plugin_dir("shell.nope"))
+            self.assertIsNone(registry.plugin_dir("shell."))
             with self.assertRaises(KeyError):
-                registry.load_unit("shell.nope")
+                registry.load_plugin("shell.nope")
 
     def test_shell_manifests_are_invisible_to_deploy_discovery(self):
-        """Deploy/deps menus scan the bare root only — packages ≠ units."""
+        """Deploy/deps menus scan the bare root only — packages ≠ plugins."""
         from nyxuri.deploy.manifest import discover_manifest_apps
 
         with TempEnv() as ctx:
@@ -73,8 +73,8 @@ class TestShellNamespaceRegistry(unittest.TestCase):
             self.assertIn("kitty", [name for name, _ in discover_manifest_apps()])
 
 
-class TestRuntimeUnitTransaction(unittest.TestCase):
-    """on/off for runtime units: pure ledger + one event, zero disk touch."""
+class TestRuntimePluginTransaction(unittest.TestCase):
+    """on/off for runtime plugins: pure ledger + one event, zero disk touch."""
 
     def setUp(self):
         patcher = mock.patch.object(transaction, "missing_packages", return_value=[])
@@ -90,9 +90,9 @@ class TestRuntimeUnitTransaction(unittest.TestCase):
             events = []
             transaction.set_event_sink(lambda uid, st: events.append((uid, st)))
             self.addCleanup(transaction.set_event_sink, None)
-            steps = transaction.unit_on("shell.bar")
+            steps = transaction.plugin_on("shell.bar")
             self.assertEqual([s.ok for s in steps], [True], str(steps))
-            rec = ledger.get_unit("shell.bar")
+            rec = ledger.get_plugin("shell.bar")
             self.assertEqual(rec["state"], "enabled")
             self.assertEqual(rec["files"], {})
             self.assertIsNone(rec["vault"])
@@ -104,19 +104,19 @@ class TestRuntimeUnitTransaction(unittest.TestCase):
 
     def test_off_is_ledger_only_and_never_eats_same_named_dirs(self):
         """The deadly case: ~/.config/bar belongs to some other app — an off
-        of the runtime unit must not wipe it (runtime units have no target)."""
+        of the runtime plugin must not wipe it (runtime plugins have no target)."""
         with TempEnv() as ctx:
             self._staged(ctx)
             stranger = ctx.home / ".config/bar"
             stranger.mkdir()
             (stranger / "unrelated.conf").write_text("keep me", encoding="utf-8")
-            transaction.unit_on("shell.bar")
+            transaction.plugin_on("shell.bar")
             events = []
             transaction.set_event_sink(lambda uid, st: events.append((uid, st)))
             self.addCleanup(transaction.set_event_sink, None)
-            steps = transaction.unit_off("shell.bar")
+            steps = transaction.plugin_off("shell.bar")
             self.assertTrue(steps[0].ok, str(steps))
-            rec = ledger.get_unit("shell.bar")
+            rec = ledger.get_plugin("shell.bar")
             self.assertEqual(rec["state"], "disabled")
             self.assertTrue((stranger / "unrelated.conf").is_file())
             self.assertEqual(events, [("shell.bar", "disabled")])
@@ -127,16 +127,16 @@ class TestRuntimeUnitTransaction(unittest.TestCase):
             events = []
             transaction.set_event_sink(lambda uid, st: events.append((uid, st)))
             self.addCleanup(transaction.set_event_sink, None)
-            steps = transaction.unit_off("shell.bar")
+            steps = transaction.plugin_off("shell.bar")
             self.assertEqual(steps[0].detail, "already-disabled")
             self.assertEqual(events, [])
 
     def test_preset_axis_does_not_apply_to_runtime_units(self):
         with TempEnv() as ctx:
             self._staged(ctx)
-            steps = transaction.unit_on("shell.bar", preset="fancy")
+            steps = transaction.plugin_on("shell.bar", preset="fancy")
             self.assertTrue(steps[0].ok, str(steps))
-            self.assertEqual(ledger.get_unit("shell.bar")["preset"], "default")
+            self.assertEqual(ledger.get_plugin("shell.bar")["preset"], "default")
             self.assertFalse((ctx.home / ".config/nyxuri/presets/shell.bar").exists())
 
     def test_dependency_closure_spans_namespaces(self):
@@ -148,11 +148,11 @@ class TestRuntimeUnitTransaction(unittest.TestCase):
             host.mkdir()
             (host / "manifest.toml").write_text("packages = []\n", encoding="utf-8")
             (host / "h.conf").write_text("h\n", encoding="utf-8")
-            ctx.env.units_src = configs
+            ctx.env.plugins_src = configs
             events = []
             transaction.set_event_sink(lambda uid, st: events.append(uid))
             self.addCleanup(transaction.set_event_sink, None)
-            steps = transaction.unit_on("shell.bar")  # bar has no deps: solo
+            steps = transaction.plugin_on("shell.bar")  # bar has no deps: solo
             self.assertTrue(all(s.ok for s in steps), str(steps))
 
     def test_cascade_disables_enabled_dependents(self):
@@ -161,34 +161,34 @@ class TestRuntimeUnitTransaction(unittest.TestCase):
                 "bar": {"manifest": _runtime_manifest()},
                 "dock": {"manifest": 'runtime = true\npackages = []\ndependencies = ["shell.bar"]\n'},
             })
-            transaction.unit_on("shell.bar")
-            transaction.unit_on("shell.dock")
-            blocked = transaction.unit_off("shell.bar")
+            transaction.plugin_on("shell.bar")
+            transaction.plugin_on("shell.dock")
+            blocked = transaction.plugin_off("shell.bar")
             self.assertFalse(blocked[0].ok)
             self.assertIn("blocked-by-enabled-dependents", blocked[0].detail)
-            cascaded = transaction.unit_off("shell.bar", cascade=True)
+            cascaded = transaction.plugin_off("shell.bar", cascade=True)
             self.assertTrue(all(s.ok for s in cascaded), str(cascaded))
-            self.assertEqual(ledger.get_unit("shell.dock")["state"], "disabled")
-            self.assertEqual(ledger.get_unit("shell.bar")["state"], "disabled")
+            self.assertEqual(ledger.get_plugin("shell.dock")["state"], "disabled")
+            self.assertEqual(ledger.get_plugin("shell.bar")["state"], "disabled")
 
 
-class TestRuntimeUnitDoctor(unittest.TestCase):
-    """Payload-less units: the ledger record is the whole existence."""
+class TestRuntimePluginDoctor(unittest.TestCase):
+    """Payload-less plugins: the ledger record is the whole existence."""
 
     def test_audit_synced_both_ways_and_never_ghost(self):
         with TempEnv() as ctx:
             _stage_shell(ctx, {"bar": {"manifest": _runtime_manifest()}})
-            transaction.unit_on("shell.bar")
-            self.assertEqual(transaction.audit_units("shell.bar"),
+            transaction.plugin_on("shell.bar")
+            self.assertEqual(transaction.audit_plugins("shell.bar"),
                              {"shell.bar": transaction.STATE_SYNCED})
-            transaction.unit_off("shell.bar")
-            self.assertEqual(transaction.audit_units("shell.bar"),
+            transaction.plugin_off("shell.bar")
+            self.assertEqual(transaction.audit_plugins("shell.bar"),
                              {"shell.bar": transaction.STATE_SYNCED})
             # Foreign junk where a target would be is still not our Ghost.
             junk = ctx.home / ".config/bar"
             junk.mkdir()
             (junk / "x.conf").write_text("x\n", encoding="utf-8")
-            self.assertEqual(transaction.audit_units("shell.bar"),
+            self.assertEqual(transaction.audit_plugins("shell.bar"),
                              {"shell.bar": transaction.STATE_SYNCED})
 
 
@@ -198,13 +198,13 @@ class TestEventBridge(unittest.TestCase):
     def test_wire_injects_the_sink(self):
         self.addCleanup(transaction.set_event_sink, None)
         bridge.wire()
-        self.assertIs(transaction._event_sink, bridge.notify_unit_changed)
+        self.assertIs(transaction._event_sink, bridge.notify_plugin_changed)
 
     def test_no_running_shell_spawns_nothing(self):
         with TempEnv() as ctx:
             with mock.patch.object(bridge, "probe_running_shells", return_value=[]), \
                  mock.patch.object(bridge.subprocess, "run") as run:
-                bridge.notify_unit_changed("shell.bar", "enabled")
+                bridge.notify_plugin_changed("shell.bar", "enabled")
             run.assert_not_called()
 
     def test_delivery_uses_exact_ipc_shape(self):
@@ -221,7 +221,7 @@ class TestEventBridge(unittest.TestCase):
                  mock.patch.object(bridge, "resolve_custom_bin",
                                    return_value=str(bin_link)), \
                  mock.patch.object(bridge.subprocess, "run") as run:
-                bridge.notify_unit_changed("shell.bar", "disabled")
+                bridge.notify_plugin_changed("shell.bar", "disabled")
             run.assert_called_once()
             args, kwargs = run.call_args
             self.assertEqual(
@@ -237,7 +237,7 @@ class TestEventBridge(unittest.TestCase):
                                    return_value=[("nyxuri-shell", 1)]), \
                  mock.patch.object(bridge, "resolve_custom_bin", return_value=""), \
                  mock.patch.object(bridge.subprocess, "run") as run:
-                bridge.notify_unit_changed("shell.bar", "enabled")  # must not raise
+                bridge.notify_plugin_changed("shell.bar", "enabled")  # must not raise
             run.assert_not_called()
 
 

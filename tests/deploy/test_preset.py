@@ -74,10 +74,10 @@ class TestResolvePresetSrc(unittest.TestCase):
         self._ctx.__enter__()
         self.env = self._ctx.env
         self._sandbox = tempfile.TemporaryDirectory()
-        self.env.units_src = Path(self._sandbox.name)
+        self.env.plugins_src = Path(self._sandbox.name)
 
         self.app = "kitty"
-        self.app_root = self.env.units_src / self.app
+        self.app_root = self.env.plugins_src / self.app
         self.app_root.mkdir(parents=True)
         (self.app_root / "kitty.conf").write_text("# default")
 
@@ -149,7 +149,7 @@ class TestCustomSurvivesPresetSwitch(unittest.TestCase):
         self._ctx.__enter__()
         self.env = self._ctx.env
         self._sandbox = tempfile.TemporaryDirectory()
-        self.env.units_src = Path(self._sandbox.name)
+        self.env.plugins_src = Path(self._sandbox.name)
 
     def tearDown(self):
         self._sandbox.cleanup()
@@ -157,7 +157,7 @@ class TestCustomSurvivesPresetSwitch(unittest.TestCase):
 
     def test_custom_file_retained_across_two_presets(self):
         app = "kitty"
-        root = self.env.units_src / app
+        root = self.env.plugins_src / app
         root.mkdir(parents=True)
         transparent = root / "presets" / "transparent"
         transparent.mkdir(parents=True)
@@ -180,7 +180,7 @@ class TestCustomSurvivesPresetSwitch(unittest.TestCase):
     def test_manifest_not_shipped_to_dest(self):
         # §10.4 boundary: manifest.toml is repo metadata, must not land in dest.
         app = "kitty"
-        root = self.env.units_src / app
+        root = self.env.plugins_src / app
         root.mkdir(parents=True)
         (root / "kitty.conf").write_text("# conf")
         (root / "manifest.toml").write_text('packages = ["kitty"]\n')
@@ -193,7 +193,7 @@ class TestCustomSurvivesPresetSwitch(unittest.TestCase):
     def test_presets_subdir_not_shipped_to_dest(self):
         # presets/ stays in repo, not deployed into ~/.config/<app>/presets/
         app = "kitty"
-        root = self.env.units_src / app
+        root = self.env.plugins_src / app
         root.mkdir(parents=True)
         (root / "kitty.conf").write_text("# conf")
         (root / "presets" / "transparent").mkdir(parents=True)
@@ -269,13 +269,13 @@ class TestPresetOperations(unittest.TestCase):
         self.assertNotIn("colors.kdl", def_content)
 
     def test_niri_glow_material_you_template_is_dynamic(self):
-        template = self.env.units_src / "theme" / "niri-glow-material-you.kdl"
+        template = self.env.plugins_src / "theme" / "niri-glow-material-you.kdl"
         content = template.read_text(encoding="utf-8")
         self.assertIn("{{ colors.primary.default.hex }}", content)
         self.assertIn("{{ colors.error.default.hex }}", content)
         self.assertIn("{{ colors.primary_container.default.hex }}", content)
         self.assertNotIn("#1a73e8", content)
-        noctalia = (self.env.units_src / "noctalia" / "noctalia-config.toml").read_text(encoding="utf-8")
+        noctalia = (self.env.plugins_src / "noctalia" / "noctalia-config.toml").read_text(encoding="utf-8")
         self.assertIn('output_path = "/home/user/.config/niri/colors.kdl"', noctalia)
         self.assertNotIn('output_path = "/home/user/.config/niri/layout.kdl"', noctalia)
         parsed = tomllib.loads(noctalia)
@@ -440,7 +440,7 @@ class TestPresetSwitchPreservesManifestFiles(unittest.TestCase):
         self.niri_dest = self.env.config_dir / "niri"
         # Deploy niri defaults first so monitor.kdl + effects_*.kdl exist.
         from nyxuri.deploy.atomic import atomic_replace_item
-        atomic_replace_item(self.env.units_src / "niri", self.niri_dest)
+        atomic_replace_item(self.env.plugins_src / "niri", self.niri_dest)
         # The repo ships effects.kdl as a symlink; recreate it only when the
         # variant under test dropped it, so the runtime link state is present.
         effects_normal = self.niri_dest / "effects_normal.kdl"
@@ -486,13 +486,13 @@ class TestKittyRuntimeThemeSurvivesPresetSwitch(unittest.TestCase):
         self.env = self._ctx.env
         self.kitty_dest = self.env.config_dir / "kitty"
         from nyxuri.deploy.atomic import atomic_replace_item
-        atomic_replace_item(self.env.units_src / "kitty", self.kitty_dest)
+        atomic_replace_item(self.env.plugins_src / "kitty", self.kitty_dest)
 
     def tearDown(self):
         self._ctx.__exit__()
 
     def test_manifest_preserves_runtime_theme_files(self):
-        m = manifest.load_manifest(self.env.units_src / "kitty")
+        m = manifest.load_manifest(self.env.plugins_src / "kitty")
         self.assertIn("current-theme.conf", m.preserve)
         self.assertIn("themes/noctalia.conf", m.preserve)
 
@@ -1074,10 +1074,10 @@ class TestPresetInheritance(unittest.TestCase):
         self._ctx.__enter__()
         self.env = self._ctx.env
         self._sandbox = tempfile.TemporaryDirectory()
-        self.env.units_src = Path(self._sandbox.name)
+        self.env.plugins_src = Path(self._sandbox.name)
 
         self.app = "niri_test"
-        self.app_root = self.env.units_src / self.app
+        self.app_root = self.env.plugins_src / self.app
         self.app_root.mkdir(parents=True)
         (self.app_root / "config.kdl").write_text("// base config")
         (self.app_root / "layout.kdl").write_text("// base layout")
@@ -1215,10 +1215,10 @@ class TestPartsMechanism(unittest.TestCase):
         self._ctx.__enter__()
         self.env = self._ctx.env
         self._sandbox = tempfile.TemporaryDirectory()
-        self.env.units_src = Path(self._sandbox.name)
+        self.env.plugins_src = Path(self._sandbox.name)
 
         self.app = "niri_parts_test"
-        self.app_root = self.env.units_src / self.app
+        self.app_root = self.env.plugins_src / self.app
         self.app_root.mkdir(parents=True)
         self.dest = self.env.config_dir / self.app
         self.dest.mkdir(parents=True)
@@ -1336,10 +1336,10 @@ def _quiet(fn, *args, **kwargs):
 class TestPresetDurability(unittest.TestCase):
 
     def _sandbox(self, ctx):
-        ctx.env.units_src = Path(tempfile.mkdtemp())
+        ctx.env.plugins_src = Path(tempfile.mkdtemp())
         import nyxuri.deploy.manifest as manifest
         manifest._MANIFEST_CACHE = None
-        return ctx.env.units_src
+        return ctx.env.plugins_src
 
     def _app(self, src, name, manifest_toml, files):
         root = src / name

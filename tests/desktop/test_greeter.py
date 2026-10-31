@@ -1,4 +1,4 @@
-"""Behavior contracts for the Noctalia Greeter unit hooks (KM3).
+"""Behavior contracts for the Noctalia Greeter plugin hooks (KM3).
 
 The hooks live at configs/greeter/hooks/{activate,deactivate} and are
 imported as modules — same helper names as the retired nyxuri.modules

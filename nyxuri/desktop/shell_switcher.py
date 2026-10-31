@@ -147,9 +147,9 @@ def probe_running_shells() -> "list[Tuple[str, int]]":
     """
     instances: "list[Tuple[str, int]]" = []
     # Exclude only this process — never the parent. When the RUNNING shell
-    # dispatches a unit switch (UnitControlService), this CLI's parent IS
+    # dispatches a plugin switch (PluginControlService), this CLI's parent IS
     # the qs instance the bridge must notify; excluding getppid() turned
-    # every shell-originated unit-changed delivery into a silent no-op
+    # every shell-originated plugin-changed delivery into a silent no-op
     # (2026-10-17 acceptance regression: toggles landed the ledger but the
     # desktop never re-projected). The wrapper exec's into qs, so a parent
     # is never a lingering wrapper script, and non-shell parents (terminals,
@@ -400,7 +400,7 @@ def ensure_compositor_gateway_scripts() -> None:
     from nyxuri.core import get_env
     env = get_env()
     dest_dir = env.config_dir / "niri" / "scripts"
-    src_dir = env.units_src / "niri" / "scripts"
+    src_dir = env.plugins_src / "niri" / "scripts"
     if not dest_dir.is_dir() or not src_dir.is_dir():
         return
 

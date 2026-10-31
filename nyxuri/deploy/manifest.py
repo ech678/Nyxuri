@@ -1,32 +1,32 @@
-"""Unit manifests (``manifest.toml``) — the unit model's self-description.
+"""Plugin manifests (``manifest.toml``) — the plugin model's self-description.
 
-A ``configs/<unit>/`` directory is Nyxuri's first-class unit. By convention
+A ``configs/<plugin>/`` directory is Nyxuri's first-class plugin. By convention
 it is self-describing: the directory name drives every default. A sibling
-``manifest.toml`` overrides defaults only when the unit is exceptional (niri
+``manifest.toml`` overrides defaults only when the plugin is exceptional (niri
 preserves ``monitor.kdl``; missioncenter's package is ``mission-center``).
 **No manifest file = full defaults** (unit-model.md §4: 只写例外).
 
 Schema (all fields optional, flat at top level)::
 
-    target = "starship.toml"   # single-file unit: lands at ~/.config/<target>
+    target = "starship.toml"   # single-file plugin: lands at ~/.config/<target>
     target = "xdg:PICTURES/Wallpapers"  # shared living area (implies merge use)
     merge = true               # shared living area: no-clobber deploy, off
                                # withdraws only laid files (never rm -rf)
-    runtime = true             # ledger-only unit: no living area, no deploy;
-                               # the running host reacts to the unit-changed event
-    packages        = ["mangowm"]       # default = [<unit name>]
+    runtime = true             # ledger-only plugin: no living area, no deploy;
+                               # the running host reacts to the plugin-changed event
+    packages        = ["mangowm"]       # default = [<plugin name>]
     packages_aur    = []                # default = []  (AUR helper installs)
     packages_flatpak = []               # default = []  (Flathub app IDs)
     preserve        = ["monitor.kdl"]   # default = []  (files kept across deploys)
     preserve_values = {}                # default = {}  (kept keys inside value files)
-    chmod           = ["scripts/*.sh"]  # default = []  (globs, relative to unit dir)
-    label           = "XDG Portals"     # default = <unit name> (menu display name)
+    chmod           = ["scripts/*.sh"]  # default = []  (globs, relative to plugin dir)
+    label           = "XDG Portals"     # default = <plugin name> (menu display name)
     category        = "browser"         # default = ""  (apps menu grouping key)
-    detect          = "mission-center"  # default = <unit name> (pkg/binary to detect)
+    detect          = "mission-center"  # default = <plugin name> (pkg/binary to detect)
     optional        = true              # default = false (menu + optdepends, not hard dep)
-    post_install    = "setup-rime"      # default = "" (hook script: configs/<unit>/hooks/<name>)
+    post_install    = "setup-rime"      # default = "" (hook script: configs/<plugin>/hooks/<name>)
     post_remove     = "clean-skin"      # default = "" (off-side hook, same shape)
-    dependencies    = []                # default = []  (other Nyxuri units)
+    dependencies    = []                # default = []  (other Nyxuri plugins)
 
     [privilege]         # declared root-level side effects (gate: 边界必须声明)
     requires_root = true
@@ -35,7 +35,7 @@ Schema (all fields optional, flat at top level)::
     [presets]           # inherit / allow / standalone / include / exclude / reload
     [parts.<slot>]      # target / source_dir / default
 
-A ``target`` unit ships exactly one file (``plugins/<unit>/<target>``) that
+A ``target`` plugin ships exactly one file (``plugins/<plugin>/<target>``) that
 lands at ``~/.config/<target>``; presets and parts are directory affordances
 and do not apply to it. A ``~/``-prefixed ``target`` declares a shared
 living area outside ``~/.config`` (implies ``merge`` semantics); an
@@ -43,7 +43,7 @@ living area outside ``~/.config`` (implies ``merge`` semantics); an
 (``xdg-user-dir``), so a localised Pictures dir lands wallpapers where the
 desktop looks for them.
 
-This module is pure stdlib (``tomllib``, 3.11+). No hardcoded project unit names.
+This module is pure stdlib (``tomllib``, 3.11+). No hardcoded project plugin names.
 """
 
 import os
@@ -60,7 +60,7 @@ _METADATA_NAMES = frozenset({"__pycache__"})
 
 @dataclass(frozen=True)
 class ModuleManifest:
-    """Resolved manifest for one unit. Every field has a real value (defaults applied)."""
+    """Resolved manifest for one plugin. Every field has a real value (defaults applied)."""
 
     name: str
     packages_repo: List[str]
@@ -72,17 +72,17 @@ class ModuleManifest:
     label: str
     category: str
     detect: str
-    dependencies: List[str]  # other Nyxuri units this unit depends on
+    dependencies: List[str]  # other Nyxuri plugins this plugin depends on
     is_deployable: bool
     is_optional: bool = False  # True iff declared optional (menu + optdepends)
-    post_install: str = ""     # on-side hook: executable at configs/<unit>/hooks/<spec>
+    post_install: str = ""     # on-side hook: executable at configs/<plugin>/hooks/<spec>
     post_remove: str = ""      # off-side hook: same shape, run after the wipe
     requires_root: bool = False  # declared privilege escalation ([privilege])
     system_paths: List[str] = field(default_factory=list)  # declared /etc etc. touchpoints
-    target: str = ""           # Single-file unit: deployed file name under ~/.config
+    target: str = ""           # Single-file plugin: deployed file name under ~/.config
     merge: bool = False        # Shared living area: no-clobber deploy, snapshot = laid files
-    runtime: bool = False      # Ledger-only unit (shell.*): no living area, the
-                               # running host reacts to the unit-changed event
+    runtime: bool = False      # Ledger-only plugin (shell.*): no living area, the
+                               # running host reacts to the plugin-changed event
     preset_inherit: bool = False
     preset_allow: List[str] = field(default_factory=list)
     preset_standalone: List[str] = field(default_factory=list)
@@ -93,9 +93,9 @@ class ModuleManifest:
 
 
 def _is_deployable(app_src: Path) -> bool:
-    """A unit is deployable iff it ships real config (more than just a manifest).
+    """A plugin is deployable iff it ships real config (more than just a manifest).
 
-    ``hooks/`` is unit-owned lifecycle behavior (KM3 contract) — it never
+    ``hooks/`` is plugin-owned lifecycle behavior (KM3 contract) — it never
     counts as deployable config and never ships to the living area.
     """
     try:
@@ -158,13 +158,13 @@ def _resolve_xdg_target(target: str) -> Path:
 
 
 def living_path(m: ModuleManifest, config_dir: Path) -> Path:
-    """A unit's living-area path (unit-model.md §4 target exception).
+    """A plugin's living-area path (unit-model.md §4 target exception).
 
     A ``~/``-prefixed (or absolute) ``target`` declares a shared living area
     outside ``~/.config`` — expanded against ``$HOME``. An ``xdg:<KIND>/<rest>``
     target resolves through the XDG user dirs (R0-4 generalises the map).
     A bare ``target`` is the single-file exception under ``~/.config``; no
-    target means ``~/.config/<unit>``.
+    target means ``~/.config/<plugin>``.
     """
     if m.target.startswith(_XDG_PREFIX):
         return _resolve_xdg_target(m.target)
@@ -174,7 +174,7 @@ def living_path(m: ModuleManifest, config_dir: Path) -> Path:
 
 
 def load_manifest(app_src: Path) -> ModuleManifest:
-    """Load a manifest for a unit directory; defaults derived from the name."""
+    """Load a manifest for a plugin directory; defaults derived from the name."""
     name = app_src.name
     mpath = app_src / _MANIFEST_NAME
     data = {}
@@ -184,8 +184,8 @@ def load_manifest(app_src: Path) -> ModuleManifest:
 
     presets = data.get("presets", {}) or {}
     privilege = data.get("privilege", {}) or {}
-    # Absent packages → [<unit name>]; an explicit empty list stays empty
-    # (flatpak/AUR-only units must keep their name out of pacman).
+    # Absent packages → [<plugin name>]; an explicit empty list stays empty
+    # (flatpak/AUR-only plugins must keep their name out of pacman).
     raw_repo = data.get("packages")
     pkg_repo = _as_str_list(raw_repo) if raw_repo is not None else [name]
 
@@ -229,21 +229,21 @@ def load_manifest(app_src: Path) -> ModuleManifest:
 
 
 def _app_src(app_name: str) -> Path:
-    """Resolve the on-disk source path for a unit name under configs/."""
-    return get_env().units_src / app_name
+    """Resolve the on-disk source path for a plugin name under configs/."""
+    return get_env().plugins_src / app_name
 
 
 def load_manifest_for(app_name: str) -> ModuleManifest:
-    """Convenience: load manifest by unit name (resolves configs/<name> path)."""
+    """Convenience: load manifest by plugin name (resolves configs/<name> path)."""
     return load_manifest(_app_src(app_name))
 
 
 _MANIFEST_CACHE: Optional[List[Tuple[str, "ModuleManifest"]]] = None
 
 def discover_manifest_apps() -> List[Tuple[str, ModuleManifest]]:
-    """Scan every unit directory under configs/.
+    """Scan every plugin directory under configs/.
 
-    Every subdirectory is a unit: deployable (ships config) or
+    Every subdirectory is a plugin: deployable (ships config) or
     optional-only (manifest declares packages, nothing to deploy). Sorted
     by name for deterministic output. Result is cached per process
     (manifest files cannot change under a running engine).
@@ -252,18 +252,18 @@ def discover_manifest_apps() -> List[Tuple[str, ModuleManifest]]:
     if _MANIFEST_CACHE is not None:
         return _MANIFEST_CACHE
     env = get_env()
-    if not env.units_src.is_dir():
+    if not env.plugins_src.is_dir():
         return []
 
     apps: List[Tuple[str, ModuleManifest]] = []
-    for p in sorted(env.units_src.iterdir(), key=lambda x: x.name):
+    for p in sorted(env.plugins_src.iterdir(), key=lambda x: x.name):
         if not p.is_dir() or p.is_symlink() or p.name in _METADATA_NAMES:
             continue
         try:
             m = load_manifest(p)
         except Exception as exc:
-            # A malformed manifest must not break discovery of other units.
-            log_msg("WARN", f"Skipping unit '{p.name}': malformed manifest ({exc})")
+            # A malformed manifest must not break discovery of other plugins.
+            log_msg("WARN", f"Skipping plugin '{p.name}': malformed manifest ({exc})")
             continue
         apps.append((p.name, m))
 
@@ -272,9 +272,9 @@ def discover_manifest_apps() -> List[Tuple[str, ModuleManifest]]:
 
 
 def discover_deployable_apps() -> List[str]:
-    """Names of units that ship real config AND go through the atomic swap.
+    """Names of plugins that ship real config AND go through the atomic swap.
 
-    Merge units (declared shared living areas) deploy only through the
+    Merge plugins (declared shared living areas) deploy only through the
     transaction's no-clobber path — they never join the atomic batch,
     where a swap would clobber user content.
     """
@@ -282,5 +282,5 @@ def discover_deployable_apps() -> List[str]:
 
 
 def discover_optional_apps() -> List[str]:
-    """Names of units declared optional (menu + optdepends axis)."""
+    """Names of plugins declared optional (menu + optdepends axis)."""
     return [name for name, m in discover_manifest_apps() if m.is_optional]

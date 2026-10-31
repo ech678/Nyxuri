@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Generate the AUR PKGBUILD depends/optdepends arrays from unit manifests.
+"""Generate the AUR PKGBUILD depends/optdepends arrays from plugin manifests.
 
-Single source of truth (§5.7): adding a unit only touches plugins/ (its
+Single source of truth (§5.7): adding a plugin only touches plugins/ (its
 manifest.toml declares packages); this script regenerates the PKGBUILD's
 blocks. Run `python3 packaging/gen-deps.py --update` to rewrite the
 generated blocks, or without --update to print them.
@@ -10,8 +10,8 @@ T1 single-package policy — the package is a toolbox, not a desktop:
 
   depends    = ENGINE_DEPENDS (engine runtime only; pacman must not force
                a desktop onto the user)
-  optdepends = every unit's packages (deployable + optional, labeled by
-             unit — `nyxuri on <unit>` discloses and installs them)
+  optdepends = every plugin's packages (deployable + optional, labeled by
+             plugin — `nyxuri on <plugin>` discloses and installs them)
              ∪ CORE_DEPS ∪ AUR_DEPS (session toolchain)
              ∪ ENGINE_OPTDEPENDS (runtime bases the shipped code spawns)
 
@@ -54,10 +54,10 @@ ENGINE_OPTDEPENDS = [
 def compute_depends(repo_root: Path):
     """Return (depends: list[str], optdepends: list[tuple[pkg, label]]).
 
-    Unit manifests (deployable AND optional) feed optdepends labeled by
-    unit; CORE_DEPS/AUR_DEPS follow as the session toolchain; ENGINE_*
+    Plugin manifests (deployable AND optional) feed optdepends labeled by
+    plugin; CORE_DEPS/AUR_DEPS follow as the session toolchain; ENGINE_*
     constants close the list. First claim wins on package collisions
-    (sorted unit iteration keeps output deterministic).
+    (sorted plugin iteration keeps output deterministic).
     """
     sys.path.insert(0, str(repo_root))
     from nyxuri.deploy.manifest import discover_manifest_apps
@@ -118,7 +118,7 @@ def update_pkgbuild(depends, optdepends) -> bool:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Generate AUR depends from unit manifests")
+    ap = argparse.ArgumentParser(description="Generate AUR depends from plugin manifests")
     ap.add_argument("--update", action="store_true", help="rewrite PKGBUILD in place")
     args = ap.parse_args()
 

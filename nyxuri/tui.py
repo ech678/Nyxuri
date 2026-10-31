@@ -1555,7 +1555,7 @@ class PresetSwitcher:
                 sys.stdout.write(k)
                 sys.stdout.flush()
 
-# --- Component: Unit Workshop (KM3 dual-pane parts bench) --------------------
+# --- Component: Plugin Workshop (KM3 dual-pane parts bench) --------------------
 
 def format_steps(steps) -> List[str]:
     """Transaction Steps → bilingual prose lines (shared by CLI and TUI)."""
@@ -1589,15 +1589,15 @@ def format_steps(steps) -> List[str]:
                 notes.append(msg("cli_step_foreign", part.split(": ", 1)[1]))
             elif part.startswith("packages-left: "):
                 notes.append(msg("cli_step_packages_left", part.split(": ", 1)[1]))
-        line = msg(key, step.unit, arg) if arg else msg(key, step.unit)
+        line = msg(key, step.plugin, arg) if arg else msg(key, step.plugin)
         if notes:
             line += " (" + "; ".join(notes) + ")"
         out.append(f"{color}{mark}{Colors.RESET} {line}")
     return out
 
 
-class UnitWorkshop:
-    """Dual-pane parts bench (KM3): left = the unit ledger, right = one unit's
+class PluginWorkshop:
+    """Dual-pane parts bench (KM3): left = the plugin ledger, right = one plugin's
     declarations + reconciliation. Every switch routes through the same
     transaction path as the CLI verbs — the bench is only a projection."""
 
@@ -1611,15 +1611,15 @@ class UnitWorkshop:
     def _rows(self):
         from nyxuri.kernel import ledger, registry
 
-        recs = ledger.all_units()
-        return sorted(set(registry.unit_ids()) | set(recs)), recs
+        recs = ledger.all_plugins()
+        return sorted(set(registry.plugin_ids()) | set(recs)), recs
 
     def _audit_for(self, uid: str) -> str:
         from nyxuri.kernel import transaction
 
         if uid not in self._audit:
             try:
-                self._audit.update(transaction.audit_units(uid))
+                self._audit.update(transaction.audit_plugins(uid))
             except Exception:
                 self._audit[uid] = ""
         return self._audit.get(uid, "")
@@ -1636,8 +1636,8 @@ class UnitWorkshop:
         )
         lines.append((msg("cli_detail_state"), f"{state_color}{state}{Colors.RESET}"))
         lines.append((msg("cli_detail_preset"), rec.get("preset") or "-"))
-        if uid in registry.unit_ids():
-            m = registry.load_unit(uid)
+        if uid in registry.plugin_ids():
+            m = registry.load_plugin(uid)
             if m.label:
                 lines.append((msg("cli_detail_label"), truncate_display(m.label, width)))
             if m.category:
@@ -1664,13 +1664,13 @@ class UnitWorkshop:
 
     def _switch(self, uid: str, on: bool) -> None:
         from nyxuri.kernel import transaction
-        from nyxuri.pkg.deps import unit_package_installer
+        from nyxuri.pkg.deps import plugin_package_installer
 
         self._audit.clear()
         if on:
-            steps = transaction.unit_on(uid, install_packages=unit_package_installer)
+            steps = transaction.plugin_on(uid, install_packages=plugin_package_installer)
         else:
-            steps = transaction.unit_off(uid, cascade=False)
+            steps = transaction.plugin_off(uid, cascade=False)
         self._report = format_steps(steps)
 
     # -- rendering ------------------------------------------------------
@@ -1715,10 +1715,10 @@ class UnitWorkshop:
                 for i in range(rows_height):
                     idx = start + i
                     if idx < len(ids):
-                        unit_id = ids[idx]
-                        state = (recs.get(unit_id) or {}).get("state") or "-"
+                        plugin_id = ids[idx]
+                        state = (recs.get(plugin_id) or {}).get("state") or "-"
                         mark = f"{Colors.BOLD_CYAN}▸{Colors.RESET} " if idx == self.focus else "  "
-                        cell = f"{mark}{truncate_display(unit_id, left_w - 10)}{Colors.DIM}{state:<10}{Colors.RESET}"
+                        cell = f"{mark}{truncate_display(plugin_id, left_w - 10)}{Colors.DIM}{state:<10}{Colors.RESET}"
                         if idx == self.focus:
                             left = f"{Colors.BOLD_CYAN}{cell}\033[K{Colors.RESET}"
                         else:

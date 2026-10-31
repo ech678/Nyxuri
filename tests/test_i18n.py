@@ -19,7 +19,7 @@ ENGINE_DIR = REPO_ROOT / "nyxuri"
 
 
 def _scan_targets():
-    """Engine modules + unit hook scripts (KM3: hooks are product code)."""
+    """Engine modules + plugin hook scripts (KM3: hooks are product code)."""
     yield from ENGINE_DIR.rglob("*.py")
     hooks = REPO_ROOT / "plugins"
     for path in sorted(hooks.glob("*/hooks/*")):
@@ -140,7 +140,7 @@ class TestI18nKeyIntegrity(unittest.TestCase):
 
         The reverse direction of the orphan check: every app_* / apps_cat_* key
         the deps menu can construct at runtime (catalog.toml entries plus
-        optional units) must have a TRANSLATIONS entry, otherwise the menu
+        optional plugins) must have a TRANSLATIONS entry, otherwise the menu
         renders the raw key. This is the blind spot that once let
         app_greeter/app_mango/app_wallpapers show as literal key names.
         """

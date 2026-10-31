@@ -201,7 +201,7 @@ main() {
 
     # 5. Local repository execution
     if [ -n "$script_dir" ] \
-        && { [ -d "$script_dir/nyxuri" ] || [ -d "$script_dir/units" ]; }; then
+        && { [ -d "$script_dir/nyxuri" ] || [ -d "$script_dir/plugins" ]; }; then
         if ! engine_is_complete "$script_dir"; then
             printf '%s[✗] %s: %s%s\n' "$RED" "$(say "Nyxuri 源码不完整" "Nyxuri source is incomplete")" "$script_dir" "$OFF" >&2
             printf '    %s\n' "$(say "请恢复或重新克隆仓库后再运行 ./install.sh。" "Restore or clone the repository again, then rerun ./install.sh.")" >&2

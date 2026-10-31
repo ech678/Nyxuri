@@ -1,10 +1,10 @@
-"""UnitTransaction — the kernel's only side-effect orchestration layer.
+"""PluginTransaction — the kernel's only side-effect orchestration layer.
 
 The star layering (unit-model.md §2) freezes this module as the ONLY one
 that composes registry + resolver + ledger with the deploy machinery, the
-Vault and the ``unit-changed`` event port. Every interface (CLI verb, TUI,
-Shell settings) must route switch flips through :func:`unit_on` /
-:func:`unit_off` — they are the single transaction path that lands
+Vault and the ``plugin-changed`` event port. Every interface (CLI verb, TUI,
+Shell settings) must route switch flips through :func:`plugin_on` /
+:func:`plugin_off` — they are the single transaction path that lands
 ``state.json``.
 
 Transaction shape (unit-model.md §3)::
@@ -16,10 +16,10 @@ Disable reverses it: reverse-dependency guard → vault archive → managed
 wipe to a white living area → ledger record → event. Package management is
 asymmetric (§7.1): ``off`` only reports the packages it leaves behind.
 
-Runtime units (KM4, §6) are the third shape: ``runtime = true`` in the
+Runtime plugins (KM4, §6) are the third shape: ``runtime = true`` in the
 manifest declares a payload-less existence — no living area, no vault
 in/out, no wipe, empty ``files`` snapshot. The ledger record plus one
-``unit-changed`` event IS the whole transaction; the running host (the
+``plugin-changed`` event IS the whole transaction; the running host (the
 Shell) reacts by unloading or loading the domain.
 
 The event sink is injected via :func:`set_event_sink`; the kernel never
@@ -37,7 +37,7 @@ from typing import Callable, Dict, List, Optional
 from nyxuri.kernel import ledger, registry
 from nyxuri.core import get_env, log_msg, remove_path
 from nyxuri.deploy.atomic import CarryPolicy
-from nyxuri.deploy.deploy import _phase_atomic_deployment, merge_deploy_unit
+from nyxuri.deploy.deploy import _phase_atomic_deployment, merge_deploy_plugin
 from nyxuri.deploy.manifest import ModuleManifest, living_path
 from nyxuri.deploy.preset import write_active_preset
 from nyxuri.kernel.resolver import resolve_order
@@ -52,62 +52,62 @@ _event_sink: Optional[EventSink] = None
 
 @dataclass(frozen=True)
 class Step:
-    """One unit's transaction outcome; KM3 CLI turns these into prose."""
+    """One plugin's transaction outcome; KM3 CLI turns these into prose."""
 
-    unit: str
+    plugin: str
     ok: bool
     detail: str = ""
 
 
-# --- unit-changed event port ----------------------------------------------
+# --- plugin-changed event port ----------------------------------------------
 
 
 def set_event_sink(sink: Optional[EventSink]) -> None:
-    """Inject the unit-changed delivery (outer layer's job, e.g. Shell IPC)."""
+    """Inject the plugin-changed delivery (outer layer's job, e.g. Shell IPC)."""
     global _event_sink
     _event_sink = sink
 
 
-def _emit(unit_id: str, state: str) -> None:
-    """Deliver one unit-changed event; a failing sink never fails the unit."""
+def _emit(plugin_id: str, state: str) -> None:
+    """Deliver one plugin-changed event; a failing sink never fails the plugin."""
     if _event_sink is None:
         return
     try:
-        _event_sink(unit_id, state)
+        _event_sink(plugin_id, state)
     except Exception as exc:
-        log_msg("WARN", f"unit-changed sink failed for {unit_id}: {exc}")
+        log_msg("WARN", f"plugin-changed sink failed for {plugin_id}: {exc}")
 
 
 # --- shared helpers ---------------------------------------------------------
 
 
-def vault_dir(unit_id: str) -> Path:
-    """Flat file-mirror archive root for one unit (unit-model.md §7.3)."""
-    return get_env().state_dir / "vault" / unit_id
+def vault_dir(plugin_id: str) -> Path:
+    """Flat file-mirror archive root for one plugin (unit-model.md §7.3)."""
+    return get_env().state_dir / "vault" / plugin_id
 
 
-def _unit_dest(unit_id: str, manifest: ModuleManifest) -> Path:
+def _plugin_dest(plugin_id: str, manifest: ModuleManifest) -> Path:
     return living_path(manifest, get_env().config_dir)
 
 
 def _is_runtime(manifest: ModuleManifest) -> bool:
-    """A payload-less unit (manifest ``runtime = true``, unit-model.md §6).
+    """A payload-less plugin (manifest ``runtime = true``, unit-model.md §6).
 
     Its existence is the ledger record plus the running host's reaction to
-    the unit-changed event — never files under ~/.config. The declaration
+    the plugin-changed event — never files under ~/.config. The declaration
     is explicit: no scan of blueprint contents may silently turn a runtime
-    unit into a deployable one (or vice versa).
+    plugin into a deployable one (or vice versa).
     """
     return manifest.runtime
 
 
 def _blueprint_rels(manifest: ModuleManifest) -> List[str]:
-    """The unit's payload file names (manifest.toml and hooks/ excluded).
+    """The plugin's payload file names (manifest.toml and hooks/ excluded).
 
-    For merge units these names ARE ownership: whatever matches them in the
+    For merge plugins these names ARE ownership: whatever matches them in the
     shared living area is ours to withdraw, nothing else.
     """
-    root = registry.unit_dir(manifest.name)
+    root = registry.plugin_dir(manifest.name)
     if root is None:
         return []
     out: List[str] = []
@@ -122,7 +122,7 @@ def _blueprint_rels(manifest: ModuleManifest) -> List[str]:
 
 
 def _merge_managed_view(dest: Path, manifest: ModuleManifest) -> Dict[str, str]:
-    """Hashes of blueprint-named files present in a merge unit's shared area."""
+    """Hashes of blueprint-named files present in a merge plugin's shared area."""
     view: Dict[str, str] = {}
     if not dest.is_dir() or dest.is_symlink():
         return view
@@ -134,7 +134,7 @@ def _merge_managed_view(dest: Path, manifest: ModuleManifest) -> Dict[str, str]:
 
 
 def _enabled_set() -> set:
-    return {uid for uid, rec in ledger.all_units().items() if rec.get("state") == "enabled"}
+    return {uid for uid, rec in ledger.all_plugins().items() if rec.get("state") == "enabled"}
 
 
 def _is_user_owned(rel: str, manifest: ModuleManifest) -> bool:
@@ -152,52 +152,52 @@ def _is_user_owned(rel: str, manifest: ModuleManifest) -> bool:
     return False
 
 
-def carry_baselines(unit_ids: List[str]) -> Dict[str, Optional[Dict[str, str]]]:
-    """Ledger ``files`` maps for enabled units among ``unit_ids`` (#139).
+def carry_baselines(plugin_ids: List[str]) -> Dict[str, Optional[Dict[str, str]]]:
+    """Ledger ``files`` maps for enabled plugins among ``plugin_ids`` (#139).
 
     The baseline is what the engine last laid: a dest file hashing equal to
     its baseline entry is untouched and follows the new template; anything
-    else is the user's and is carried. Units without an enabled record map
+    else is the user's and is carried. Plugins without an enabled record map
     to None (Ghost — provenance unknown).
     """
     out: Dict[str, Optional[Dict[str, str]]] = {}
-    for uid in unit_ids:
-        rec = ledger.get_unit(uid)
+    for uid in plugin_ids:
+        rec = ledger.get_plugin(uid)
         files = (rec or {}).get("files")
         out[uid] = dict(files) if rec and rec.get("state") == "enabled" and isinstance(files, dict) else None
     return out
 
 
-def resnapshot_units(unit_ids: List[str],
+def resnapshot_plugins(plugin_ids: List[str],
                      carried: Optional[Dict[str, Dict[str, str]]] = None) -> None:
     """Re-baseline ledger snapshots after an out-of-band deploy (update path).
 
     The ledger means "hashes of what the engine last laid". After an update
     the laid truth changed under the enabled records, so every deployed
-    enabled unit is re-recorded from its living area — minus the files the
+    enabled plugin is re-recorded from its living area — minus the files the
     swap carried as user-owned. A carried file must never enter the
     snapshot: it would read as engine-laid and be clobbered by the next
     template change. Ownership only ever grows through ``on`` (adoption),
     never through an update.
     """
     carried = carried or {}
-    for uid in unit_ids:
-        rec = ledger.get_unit(uid)
+    for uid in plugin_ids:
+        rec = ledger.get_plugin(uid)
         if not rec or rec.get("state") != "enabled":
             continue
         try:
-            manifest = registry.load_unit(uid)
+            manifest = registry.load_plugin(uid)
         except KeyError:
             continue
         if _is_runtime(manifest) or manifest.merge:
             continue
-        dest = _unit_dest(uid, manifest)
+        dest = _plugin_dest(uid, manifest)
         if not (dest.exists() or dest.is_symlink()):
             continue
         files = snapshot_files(dest, manifest)
         for rel in carried.get(uid, {}):
             files.pop(rel, None)
-        ledger.set_unit(
+        ledger.set_plugin(
             uid,
             state="enabled",
             preset=(rec.get("preset") or "default"),
@@ -220,7 +220,7 @@ def snapshot_files(dest: Path, manifest: ModuleManifest) -> Dict[str, str]:
     Symlinks are recorded as ``link:<target>`` — their identity is the link
     itself (e.g. a parts slot whose target encodes the active variant), not
     the linked content. The result feeds both the ledger ``files`` snapshot
-    and the ``Drifted`` half of :func:`audit_units`.
+    and the ``Drifted`` half of :func:`audit_plugins`.
     """
     if dest.is_symlink():
         return {}
@@ -256,11 +256,11 @@ def missing_packages(manifest: ModuleManifest) -> List[str]:
     return missing
 
 
-def _active_preset_name(unit_id: str) -> str:
+def _active_preset_name(plugin_id: str) -> str:
     from nyxuri.deploy.preset import read_active_preset
 
     try:
-        return read_active_preset(unit_id)
+        return read_active_preset(plugin_id)
     except Exception:
         return "default"
 
@@ -268,13 +268,13 @@ def _active_preset_name(unit_id: str) -> str:
 # --- dependency plans (pure composition of registry + resolver) -------------
 
 
-def _enable_closure(unit_id: str) -> List[str]:
-    """The unit plus its transitive dependencies, dependency-first order."""
+def _enable_closure(plugin_id: str) -> List[str]:
+    """The plugin plus its transitive dependencies, dependency-first order."""
     graph = registry.dependency_graph()
-    if unit_id not in graph:
-        raise KeyError(f"unknown unit: {unit_id}")
+    if plugin_id not in graph:
+        raise KeyError(f"unknown plugin: {plugin_id}")
     wanted = set()
-    stack = [unit_id]
+    stack = [plugin_id]
     while stack:
         cur = stack.pop()
         if cur in wanted:
@@ -285,29 +285,29 @@ def _enable_closure(unit_id: str) -> List[str]:
     return resolve_order(sub)
 
 
-def _disable_plan(unit_id: str) -> List[str]:
-    """The unit plus its ENABLED transitive dependents, dependents-first.
+def _disable_plan(plugin_id: str) -> List[str]:
+    """The plugin plus its ENABLED transitive dependents, dependents-first.
 
     The target always comes last: flipping it off is only safe once
     everything that declares it as a dependency has been switched off.
     """
     graph = registry.dependency_graph()
-    if unit_id not in graph:
-        raise KeyError(f"unknown unit: {unit_id}")
+    if plugin_id not in graph:
+        raise KeyError(f"unknown plugin: {plugin_id}")
     reverse: Dict[str, set] = {}
     for u, deps in graph.items():
         for d in deps:
             reverse.setdefault(d, set()).add(u)
     enabled = _enabled_set()
     wanted = set()
-    stack = [unit_id]
+    stack = [plugin_id]
     while stack:
         cur = stack.pop()
         if cur in wanted:
             continue
         wanted.add(cur)
         stack.extend(reverse.get(cur, ()))
-    nodes = {unit_id} | {u for u in wanted if u in enabled}
+    nodes = {plugin_id} | {u for u in wanted if u in enabled}
     sub = {u: [d for d in graph.get(u, ()) if d in nodes] for u in nodes}
     return list(reversed(resolve_order(sub)))
 
@@ -316,10 +316,10 @@ def _disable_plan(unit_id: str) -> List[str]:
 
 
 def replay_enabled_hooks() -> List[Step]:
-    """Re-run the on-side hooks of every ledger-enabled unit.
+    """Re-run the on-side hooks of every ledger-enabled plugin.
 
     Deploy pipelines use this after a base deploy: hook products inside a
-    living area re-enter that unit's snapshot when the unit is next switched,
+    living area re-enter that plugin's snapshot when the plugin is next switched,
     and side-domain effects (skins, renders) are replayed idempotently.
     Fresh machines with an empty ledger get a no-op — activation belongs to
     an explicit ``on``.
@@ -327,32 +327,32 @@ def replay_enabled_hooks() -> List[Step]:
     results: List[Step] = []
     for uid in sorted(_enabled_set()):
         try:
-            manifest = registry.load_unit(uid)
+            manifest = registry.load_plugin(uid)
         except KeyError:
             continue
         if not manifest.post_install:
             continue
-        ok = _run_unit_hook(uid, manifest, manifest.post_install)
+        ok = _run_plugin_hook(uid, manifest, manifest.post_install)
         results.append(Step(uid, ok, "hook-replayed" if ok else f"hook-failed: {manifest.post_install}"))
     return results
 
 
-def plan_on(unit_id: str) -> List[str]:
-    """The enable closure (unit plus dependencies, dependency-first).
+def plan_on(plugin_id: str) -> List[str]:
+    """The enable closure (plugin plus dependencies, dependency-first).
 
     Disclosure input for the outer layers ("what would this switch turn on");
     computing it touches nothing and writes nothing.
     """
-    return _enable_closure(unit_id)
+    return _enable_closure(plugin_id)
 
 
-def plan_off(unit_id: str) -> List[str]:
-    """The disable plan: the unit plus its ENABLED dependents (they first).
+def plan_off(plugin_id: str) -> List[str]:
+    """The disable plan: the plugin plus its ENABLED dependents (they first).
 
-    Every member besides ``unit_id`` is a dependent that would block the
+    Every member besides ``plugin_id`` is a dependent that would block the
     transaction unless the caller opts into ``cascade``.
     """
-    return _disable_plan(unit_id)
+    return _disable_plan(plugin_id)
 
 
 # --- vault in/out ------------------------------------------------------------
@@ -365,10 +365,10 @@ def _move_into_vault(src: Path, dst: Path) -> None:
     shutil.move(str(src), str(dst))
 
 
-def _vault_archive(unit_id: str, dest: Path, manifest: ModuleManifest) -> List[str]:
+def _vault_archive(plugin_id: str, dest: Path, manifest: ModuleManifest) -> List[str]:
     """Move user-owned files (Dunder + manifest preserve) into the Vault.
 
-    The vault stays a flat directory mirror of the unit's living area —
+    The vault stays a flat directory mirror of the plugin's living area —
     no database, no compression (unit-model.md §7.3). Returns archived
     relative paths (``/``-suffixed for directories).
     """
@@ -381,7 +381,7 @@ def _vault_archive(unit_id: str, dest: Path, manifest: ModuleManifest) -> List[s
             if "__custom__" in name:
                 src = Path(root) / name
                 rel = src.relative_to(dest).as_posix()
-                _move_into_vault(src, vault_dir(unit_id) / rel)
+                _move_into_vault(src, vault_dir(plugin_id) / rel)
                 moved.append(rel + "/")
             else:
                 keep.append(name)
@@ -390,19 +390,19 @@ def _vault_archive(unit_id: str, dest: Path, manifest: ModuleManifest) -> List[s
             if "__custom__" in name:
                 src = Path(root) / name
                 rel = src.relative_to(dest).as_posix()
-                _move_into_vault(src, vault_dir(unit_id) / rel)
+                _move_into_vault(src, vault_dir(plugin_id) / rel)
                 moved.append(rel)
     for rel in manifest.preserve:
         if not rel or os.path.isabs(rel):
             continue
         src = dest / rel
         if src.exists() or src.is_symlink():
-            _move_into_vault(src, vault_dir(unit_id) / rel)
+            _move_into_vault(src, vault_dir(plugin_id) / rel)
             moved.append(rel)
     return moved
 
 
-def _vault_restore(unit_id: str, dest: Path) -> int:
+def _vault_restore(plugin_id: str, dest: Path) -> int:
     """Move archived user files back into the living area (Vault Out).
 
     Entries land in ``dest`` BEFORE the atomic swap so the Dunder walk and
@@ -410,7 +410,7 @@ def _vault_restore(unit_id: str, dest: Path) -> int:
     archive is consumed (moved, not copied): a file the user deleted from
     the living area must not resurrect on the next enable.
     """
-    vault = vault_dir(unit_id)
+    vault = vault_dir(plugin_id)
     if not vault.is_dir():
         return 0
     count = 0
@@ -440,15 +440,15 @@ def _prune_empty_dirs(root: Path) -> None:
             pass
 
 
-def _wipe_unit(unit_id: str, dest: Path, rec: Optional[dict],
+def _wipe_plugin(plugin_id: str, dest: Path, rec: Optional[dict],
                manifest: ModuleManifest) -> List[str]:
-    """Remove the unit's managed files; return foreign survivors, if any.
+    """Remove the plugin's managed files; return foreign survivors, if any.
 
-    White-paper rule (unit-model.md §1.2): a disabled unit leaves nothing
+    White-paper rule (unit-model.md §1.2): a disabled plugin leaves nothing
     managed behind. Foreign files the user dropped in are never eaten —
-    they survive and are reported (doctor flags the unit Ghost).
+    they survive and are reported (doctor flags the plugin Ghost).
 
-    Merge units (shared living areas) never remove the directory itself:
+    Merge plugins (shared living areas) never remove the directory itself:
     ownership = exactly the files the transaction laid (the ledger
     snapshot). Without a snapshot, ownership falls back to blueprint names:
     engine payload files are withdrawn, everything else survives and is
@@ -458,7 +458,7 @@ def _wipe_unit(unit_id: str, dest: Path, rec: Optional[dict],
     if not (dest.exists() or dest.is_symlink()):
         return []
     if dest.is_file() or dest.is_symlink():
-        # Single-file unit (target=): the file is the whole living area.
+        # Single-file plugin (target=): the file is the whole living area.
         # A file outside the managed snapshot is user-owned (carried at
         # deploy, or dropped in) — never eaten (#139).
         if dest.name not in set((rec or {}).get("files") or {}):
@@ -527,47 +527,47 @@ def _wipe_unit(unit_id: str, dest: Path, rec: Optional[dict],
     return sorted(remaining - managed)
 
 
-# --- unit lifecycle hooks (declared side effects, unit-owned) -----------------
+# --- plugin lifecycle hooks (declared side effects, plugin-owned) -----------------
 
 
-def _hook_script(unit_id: str, spec: str):
-    """Resolve ``<blueprint>/<unit>/hooks/<spec>``; None when absent/malformed."""
+def _hook_script(plugin_id: str, spec: str):
+    """Resolve ``<blueprint>/<plugin>/hooks/<spec>``; None when absent/malformed."""
     if not spec or "/" in spec or spec.startswith("."):
         return None
-    root = registry.unit_dir(unit_id)
+    root = registry.plugin_dir(plugin_id)
     if root is None:
         return None
     script = root / "hooks" / spec
     return script if script.is_file() else None
 
 
-def _run_unit_hook(unit_id: str, manifest: ModuleManifest, spec: str) -> bool:
-    """Execute a declared unit hook: ``<unit>/hooks/<spec>`` in its blueprint.
+def _run_plugin_hook(plugin_id: str, manifest: ModuleManifest, spec: str) -> bool:
+    """Execute a declared plugin hook: ``<plugin>/hooks/<spec>`` in its blueprint.
 
-    Hooks are the unit's own behavior (KM3 contract, unit-model.md §4) —
+    Hooks are the plugin's own behavior (KM3 contract, unit-model.md §4) —
     executable files living in the blueprint, never kernel business code.
     The transaction injects identity context (``NYXURI_UNIT`` / ``_SRC`` /
     ``_DEST``) and never interprets the hook's internals; a failing hook
     degrades to WARN and the caller surfaces it in the step detail.
     """
-    script = _hook_script(unit_id, spec)
+    script = _hook_script(plugin_id, spec)
     if script is None:
-        log_msg("WARN", f"unit '{unit_id}' declares a missing hook: {spec}")
+        log_msg("WARN", f"plugin '{plugin_id}' declares a missing hook: {spec}")
         return False
     if not os.access(script, os.X_OK):
-        log_msg("WARN", f"hook for '{unit_id}' is not executable: {script}")
+        log_msg("WARN", f"hook for '{plugin_id}' is not executable: {script}")
         return False
     import subprocess
 
-    unit_src = registry.unit_dir(unit_id)
+    plugin_src = registry.plugin_dir(plugin_id)
     hook_env = {
         **os.environ,
         # Blueprint is source-absolute read-only: hooks importing engine code
         # must never drop __pycache__ into the source tree (P0 invariant).
         "PYTHONDONTWRITEBYTECODE": "1",
-        "NYXURI_UNIT": unit_id,
-        "NYXURI_UNIT_SRC": str(unit_src or ""),
-        "NYXURI_UNIT_DEST": "" if _is_runtime(manifest) else str(_unit_dest(unit_id, manifest)),
+        "NYXURI_UNIT": plugin_id,
+        "NYXURI_UNIT_SRC": str(plugin_src or ""),
+        "NYXURI_UNIT_DEST": "" if _is_runtime(manifest) else str(_plugin_dest(plugin_id, manifest)),
     }
     root = Path(__import__("nyxuri").__file__).resolve().parent.parent
     hook_env["PYTHONPATH"] = str(root) + (
@@ -575,43 +575,43 @@ def _run_unit_hook(unit_id: str, manifest: ModuleManifest, spec: str) -> bool:
     )
     try:
         # Hooks own their runtime (network fetches, schema compilers) — no
-        # timeout here; the hook itself is the declared unit boundary.
+        # timeout here; the hook itself is the declared plugin boundary.
         result = subprocess.run(
             [str(script)], env=hook_env, cwd=str(script.parent.parent), check=False
         )
         return result.returncode == 0
     except Exception as exc:
-        log_msg("WARN", f"hook '{spec}' failed for '{unit_id}': {exc}")
+        log_msg("WARN", f"hook '{spec}' failed for '{plugin_id}': {exc}")
         return False
 
 
 # --- the two verbs of the transaction path -----------------------------------
 
 
-def unit_on(
-    unit_id: str,
+def plugin_on(
+    plugin_id: str,
     *,
     preset: Optional[str] = None,
     install_packages: Optional[Callable[[str, List[str]], bool]] = None,
 ) -> List[Step]:
-    """Enable a unit: resolve → preflight → vault out → swap → ledger → event.
+    """Enable a plugin: resolve → preflight → vault out → swap → ledger → event.
 
-    The dependency closure is enabled in resolver order; a unit missing
+    The dependency closure is enabled in resolver order; a plugin missing
     declared packages aborts the transaction with the missing list disclosed
     (nothing has been touched beyond earlier closure members). Installation
-    itself is injected as ``installer(unit_id, missing)`` — the outer layer
+    itself is injected as ``installer(plugin_id, missing)`` — the outer layer
     owns the package-manager call (it also owns the manifest context needed
     to split repo / AUR / Flatpak names); the kernel never shells out.
     """
-    plan = _enable_closure(unit_id)
+    plan = _enable_closure(plugin_id)
     enabled = _enabled_set()
-    if unit_id in enabled and preset is None:
-        return [Step(unit_id, True, "already-enabled")]
+    if plugin_id in enabled and preset is None:
+        return [Step(plugin_id, True, "already-enabled")]
     results: List[Step] = []
     for uid in plan:
-        if uid in enabled and uid != unit_id:
+        if uid in enabled and uid != plugin_id:
             continue
-        manifest = registry.load_unit(uid)
+        manifest = registry.load_plugin(uid)
         missing = missing_packages(manifest)
         if missing:
             installed = False
@@ -623,25 +623,25 @@ def unit_on(
             if not installed or missing_packages(manifest):
                 results.append(Step(uid, False, "missing-packages: " + ", ".join(missing)))
                 return results
-        dest = _unit_dest(uid, manifest)
+        dest = _plugin_dest(uid, manifest)
         runtime = _is_runtime(manifest)
         files: Dict[str, str] = {}
         carried_rels: List[str] = []
         if runtime:
-            # Runtime unit (§6): no living area, no vault, no deploy. The
+            # Runtime plugin (§6): no living area, no vault, no deploy. The
             # ledger record plus the event below is the whole transaction.
             pass
         else:
             if not manifest.target and not manifest.merge:
-                # Vault in/out is a directory-unit affordance; a single-file
-                # unit's living area is one blueprint-managed file with no
-                # user-owned layer to archive or restore, and a merge unit's
+                # Vault in/out is a directory-plugin affordance; a single-file
+                # plugin's living area is one blueprint-managed file with no
+                # user-owned layer to archive or restore, and a merge plugin's
                 # shared area preserves user content in place (no-clobber).
                 _vault_restore(uid, dest)
-            if preset is not None and uid == unit_id and not manifest.merge:
+            if preset is not None and uid == plugin_id and not manifest.merge:
                 write_active_preset(uid, preset)
             if manifest.merge:
-                laid = merge_deploy_unit(uid, manifest)
+                laid = merge_deploy_plugin(uid, manifest)
                 if laid is None:
                     results.append(Step(uid, False, "deploy-failed"))
                     return results
@@ -651,7 +651,7 @@ def unit_on(
                 # (carry_unknown=False), user-placed extras are carried and
                 # stay user-owned (#139). A previously-enabled record acts as
                 # the drift baseline so a preset switch never eats edits.
-                rec = ledger.get_unit(uid)
+                rec = ledger.get_plugin(uid)
                 baseline = None
                 if rec and rec.get("state") == "enabled" and isinstance(rec.get("files"), dict):
                     baseline = dict(rec["files"])
@@ -670,9 +670,9 @@ def unit_on(
         hook_note = ""
         if manifest.post_install:
             # Runs BEFORE the ledger snapshot: a hook that lands files inside
-            # the unit's own living area makes them transaction-managed, so
+            # the plugin's own living area makes them transaction-managed, so
             # ``off`` wipes them through the normal white-paper path (KM3).
-            if not _run_unit_hook(uid, manifest, manifest.post_install):
+            if not _run_plugin_hook(uid, manifest, manifest.post_install):
                 hook_note = f"; hook-failed: {manifest.post_install}"
         if not runtime and not manifest.merge:
             # Post-hook snapshot (hook products are engine-laid), minus the
@@ -680,14 +680,14 @@ def unit_on(
             files = snapshot_files(dest, manifest)
             for rel in carried_rels:
                 files.pop(rel, None)
-        ledger.set_unit(
+        ledger.set_plugin(
             uid,
             state="enabled",
             preset=_active_preset_name(uid),
-            # Merge units snapshot at deploy time (laid files only — the
-            # shared area's other content is never ours); atomic units use
+            # Merge plugins snapshot at deploy time (laid files only — the
+            # shared area's other content is never ours); atomic plugins use
             # the post-hook snapshot minus carried user files (#139); runtime
-            # units keep the empty map (nothing on disk is theirs).
+            # plugins keep the empty map (nothing on disk is theirs).
             files=files,
             vault=None,
         )
@@ -696,38 +696,38 @@ def unit_on(
     return results
 
 
-def unit_off(unit_id: str, *, cascade: bool = False) -> List[Step]:
-    """Disable a unit: guard → vault in → managed wipe → post_remove → ledger.
+def plugin_off(plugin_id: str, *, cascade: bool = False) -> List[Step]:
+    """Disable a plugin: guard → vault in → managed wipe → post_remove → ledger.
 
     Enabled dependents block the transaction unless ``cascade`` is set, in
     which case they are switched off first (dependents-first order). The
     report keeps the package asymmetry honest: declared packages stay on
-    the machine, only the unit's config presence is withdrawn. A declared
+    the machine, only the plugin's config presence is withdrawn. A declared
     ``post_remove`` hook cleans effects that live outside the living area
     (running after the wipe, before the ledger lands).
     """
-    plan = _disable_plan(unit_id)
-    dependents = [uid for uid in plan if uid != unit_id]
+    plan = _disable_plan(plugin_id)
+    dependents = [uid for uid in plan if uid != plugin_id]
     if dependents and not cascade:
         return [
-            Step(unit_id, False, "blocked-by-enabled-dependents: " + ", ".join(dependents))
+            Step(plugin_id, False, "blocked-by-enabled-dependents: " + ", ".join(dependents))
         ]
     results: List[Step] = []
     for uid in plan:
-        rec = ledger.get_unit(uid)
-        manifest = registry.load_unit(uid)
-        dest = _unit_dest(uid, manifest)
+        rec = ledger.get_plugin(uid)
+        manifest = registry.load_plugin(uid)
+        dest = _plugin_dest(uid, manifest)
         runtime = _is_runtime(manifest)
         if uid not in _enabled_set() and not (dest.exists() or dest.is_symlink()):
             results.append(Step(uid, True, "already-disabled"))
             continue
-        # Runtime units have no living area: nothing to archive, nothing to
+        # Runtime plugins have no living area: nothing to archive, nothing to
         # wipe — disabling is landing the ledger record and firing the event
         # the running host unload on (§6).
         archived = [] if (manifest.merge or runtime) else _vault_archive(uid, dest, manifest)
-        foreign = [] if runtime else _wipe_unit(uid, dest, rec, manifest)
+        foreign = [] if runtime else _wipe_plugin(uid, dest, rec, manifest)
         detail = "disabled"
-        if manifest.post_remove and not _run_unit_hook(uid, manifest, manifest.post_remove):
+        if manifest.post_remove and not _run_plugin_hook(uid, manifest, manifest.post_remove):
             detail += f"; hook-failed: {manifest.post_remove}"
         if archived:
             detail += f"; archived: {len(archived)}"
@@ -740,7 +740,7 @@ def unit_off(unit_id: str, *, cascade: bool = False) -> List[Step]:
         )
         if pkgs:
             detail += "; packages-left: " + ", ".join(pkgs)
-        ledger.set_unit(
+        ledger.set_plugin(
             uid,
             state="disabled",
             preset=(rec or {}).get("preset") or "default",
@@ -755,31 +755,31 @@ def unit_off(unit_id: str, *, cascade: bool = False) -> List[Step]:
 # --- doctor reconciliation (read-only) ---------------------------------------
 
 
-def audit_units(unit_id: Optional[str] = None) -> Dict[str, str]:
+def audit_plugins(plugin_id: Optional[str] = None) -> Dict[str, str]:
     """Reconcile declarations vs the living machine: ``Synced`` / ``Drifted``
-    / ``Ghost`` per unit (unit-model.md §3). Read-only, never writes.
+    / ``Ghost`` per plugin (unit-model.md §3). Read-only, never writes.
 
-    Only units with something to reconcile are reported: a ledger record or
-    living files. Never-switched white units are absent from the report.
+    Only plugins with something to reconcile are reported: a ledger record or
+    living files. Never-switched white plugins are absent from the report.
     """
-    known = registry.unit_ids()
-    if unit_id is not None:
-        if unit_id not in known and unit_id not in ledger.all_units():
-            raise KeyError(f"unknown unit: {unit_id}")
-        candidates = [unit_id]
+    known = registry.plugin_ids()
+    if plugin_id is not None:
+        if plugin_id not in known and plugin_id not in ledger.all_plugins():
+            raise KeyError(f"unknown plugin: {plugin_id}")
+        candidates = [plugin_id]
     else:
-        candidates = sorted(set(known) | set(ledger.all_units()))
+        candidates = sorted(set(known) | set(ledger.all_plugins()))
     report: Dict[str, str] = {}
     for uid in candidates:
-        manifest = registry.load_unit(uid)
-        rec = ledger.get_unit(uid)
+        manifest = registry.load_plugin(uid)
+        rec = ledger.get_plugin(uid)
         if _is_runtime(manifest):
-            # Nothing on disk belongs to a runtime unit — the ledger record
+            # Nothing on disk belongs to a runtime plugin — the ledger record
             # is the whole existence, so there is nothing to drift or ghost.
             if rec is not None:
                 report[uid] = STATE_SYNCED
             continue
-        dest = _unit_dest(uid, manifest)
+        dest = _plugin_dest(uid, manifest)
         if rec is not None and rec.get("state") == "enabled":
             if manifest.merge:
                 synced = _merge_managed_view(dest, manifest) == (rec.get("files") or {})

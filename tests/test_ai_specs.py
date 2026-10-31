@@ -177,7 +177,7 @@ class TestAISpecs(unittest.TestCase):
             self.assertIn(status, allowed, f"Non-canonical status for {stage}: {status}")
 
     # ------------------------------------------------------------------
-    # Unit-model death registry (unit-model.md §7, two-step enforcement)
+    # Plugin-model death registry (unit-model.md §7, two-step enforcement)
     # ------------------------------------------------------------------
 
     def test_death_registry_cleared(self):
@@ -243,7 +243,7 @@ class TestAISpecs(unittest.TestCase):
 
     def test_km3_module_death_row_enforced(self):
         """KM3 enforcement step: nyxuri/modules/ is physically deleted — the
-        dedicated business modules live on as configs/<unit>/hooks/ scripts,
+        dedicated business modules live on as configs/<plugin>/hooks/ scripts,
         the engine holds zero references, and §7 marks the row enforced.
         """
         # 1. §7 row marked enforced.
@@ -270,15 +270,15 @@ class TestAISpecs(unittest.TestCase):
         llms_txt = (self.wiki_dir / "llms.txt").read_text(encoding="utf-8")
         self.assertNotIn("modules.md", llms_txt)
 
-        # 5. The unit-owned hook scripts took over.
+        # 5. The plugin-owned hook scripts took over.
         hooks = self.root_dir / "plugins"
-        for unit, name in (
+        for plugin, name in (
             ("fcitx5-rime", "activate"), ("fcitx5-rime", "deactivate"),
             ("fish", "install-fisher"), ("fish", "remove-fisher"),
             ("greeter", "activate"), ("greeter", "deactivate"),
             ("noctalia", "render-gtk"), ("noctalia", "remove-gtk-css"),
         ):
-            self.assertTrue((hooks / unit / "hooks" / name).is_file(), f"{unit}/hooks/{name}")
+            self.assertTrue((hooks / plugin / "hooks" / name).is_file(), f"{plugin}/hooks/{name}")
 
     def test_km1_death_row_enforced(self):
         """KM1 enforcement step: the three sidecar mechanisms are physically
@@ -299,7 +299,7 @@ class TestAISpecs(unittest.TestCase):
         self.assertFalse((configs / ".optional-apps.toml").exists())
         self.assertFalse((configs / "starship.toml").exists())
         self.assertEqual(list(configs.glob("**/*.module.toml")), [])
-        # The single-file degenerate was upgraded to a proper unit directory.
+        # The single-file degenerate was upgraded to a proper plugin directory.
         self.assertTrue((configs / "starship" / "starship.toml").is_file())
         self.assertTrue((configs / "starship" / "manifest.toml").is_file())
 
@@ -315,7 +315,7 @@ class TestAISpecs(unittest.TestCase):
 
     def test_km3_5_death_row_enforced(self):
         """KM3.5 enforcement step: the old world is physically gone — blueprint
-        renamed, assets bypass executed, zero-file fake units replaced by the
+        renamed, assets bypass executed, zero-file fake plugins replaced by the
         catalog, template registry deleted, kernel physically layered."""
         root = self.root_dir
         # 1. §7 rows marked enforced.
@@ -330,13 +330,13 @@ class TestAISpecs(unittest.TestCase):
 
         # 2. Physical absence / presence.
         self.assertFalse((root / "configs").exists(), "blueprint must be renamed")
-        units = root / "plugins"
-        self.assertTrue(units.is_dir())
-        self.assertEqual(len([d for d in units.iterdir() if d.is_dir()]), 13,
-                         "blueprint = 12 real units + wallpapers (KM4 adds theme)")
+        plugins = root / "plugins"
+        self.assertTrue(plugins.is_dir())
+        self.assertEqual(len([d for d in plugins.iterdir() if d.is_dir()]), 13,
+                         "blueprint = 12 real plugins + wallpapers (KM4 adds theme)")
         self.assertFalse((root / "assets").exists())
-        self.assertTrue((units / "wallpapers" / "hooks" / "install-pack").is_file())
-        self.assertTrue((units / "wallpapers" / "manifest.toml").is_file())
+        self.assertTrue((plugins / "wallpapers" / "hooks" / "install-pack").is_file())
+        self.assertTrue((plugins / "wallpapers" / "manifest.toml").is_file())
         self.assertFalse((root / "nyxuri" / "template_registry.py").exists())
         self.assertFalse((root / "nyxuri" / "deps.py").exists(), "supply must live in pkg/")
         self.assertFalse((root / "nyxuri" / "network.py").exists())
@@ -351,7 +351,7 @@ class TestAISpecs(unittest.TestCase):
         self.assertFalse((root / "nyxuri" / "packaging").exists())
         self.assertTrue((root / "catalog.toml").is_file())
 
-        # 3. The 17 fake units are catalog entries, never blueprint dirs.
+        # 3. The 17 fake plugins are catalog entries, never blueprint dirs.
         # KM4 adds quickshell: the shell runtime base, declared for setups
         # that pick nyxuri-shell without the Noctalia AUR transitively
         # pulling it in (shell/KNOWN-ISSUES closure).
@@ -359,7 +359,7 @@ class TestAISpecs(unittest.TestCase):
                       "missioncenter", "motrix", "nautilus", "obs", "protonplus",
                       "qq", "shelly", "spotify", "steam", "telegram", "vscode", "wechat",
                       "quickshell"}
-        self.assertEqual(fake_names & {d.name for d in units.iterdir()}, set())
+        self.assertEqual(fake_names & {d.name for d in plugins.iterdir()}, set())
         catalog = (root / "catalog.toml").read_text(encoding="utf-8")
         import tomllib
         data = tomllib.loads(catalog)
@@ -372,7 +372,7 @@ class TestAISpecs(unittest.TestCase):
                          "nyxuri.deps", "nyxuri.network", "deploy_wallpapers"):
                 self.assertNotIn(dead, text, f"{py.relative_to(root)} still references {dead}")
 
-        # 5. Contract line: the package catalog is not a unit.
+        # 5. Contract line: the package catalog is not a plugin.
         self.assertIn("catalog.toml", content)
         self.assertIn("不是单元", content)
 
@@ -452,7 +452,7 @@ class TestAISpecs(unittest.TestCase):
                     )
 
     def test_docs_banned_dissolved_paths(self):
-        """Humans-wiki, READMEs, and unit READMEs must not reference dissolved paths."""
+        """Humans-wiki, READMEs, and plugin READMEs must not reference dissolved paths."""
         banned = ("configs/", "assets/wallpapers", "template_registry", "modules/gtktheme")
         doc_files = [
             self.root_dir / "README.md",

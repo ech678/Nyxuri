@@ -1,7 +1,7 @@
-"""Contract tests for manifest.toml unit manifests and unit discovery.
+"""Contract tests for manifest.toml plugin manifests and plugin discovery.
 
 Covers §4 shapes: schema defaults (no file), flat field overrides, bad-toml
-error, single-file target units, manifest-only (non-deployable) units, and
+error, single-file target plugins, manifest-only (non-deployable) plugins, and
 discovery filters.
 """
 
@@ -21,7 +21,7 @@ import io
 
 
 class TestManifestDefaults(unittest.TestCase):
-    """No manifest file → every default derived from the unit dir name."""
+    """No manifest file → every default derived from the plugin dir name."""
 
     def setUp(self):
         self._ctx = TempEnv()
@@ -29,20 +29,20 @@ class TestManifestDefaults(unittest.TestCase):
         self.env = self._ctx.env
         # Synthetic configs tree so we control layout precisely.
         self._sandbox = tempfile.TemporaryDirectory()
-        self.env.units_src = Path(self._sandbox.name)
+        self.env.plugins_src = Path(self._sandbox.name)
 
     def tearDown(self):
         self._sandbox.cleanup()
         self._ctx.__exit__()
 
     def _write(self, rel: str, content: str = "") -> Path:
-        p = self.env.units_src / rel
+        p = self.env.plugins_src / rel
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(content)
         return p
 
     def _mkdir(self, rel: str) -> Path:
-        d = self.env.units_src / rel
+        d = self.env.plugins_src / rel
         d.mkdir(parents=True, exist_ok=True)
         return d
 
@@ -62,10 +62,10 @@ class TestManifestDefaults(unittest.TestCase):
         self.assertTrue(m.is_deployable)
 
     def test_manifest_only_dir_not_deployable(self):
-        # A dir whose only entry is manifest.toml → manifest-only (optional unit).
-        unit = self._mkdir("nautilus")
-        (unit / "manifest.toml").write_text('optional = true\n')
-        m = manifest.load_manifest(unit)
+        # A dir whose only entry is manifest.toml → manifest-only (optional plugin).
+        plugin = self._mkdir("nautilus")
+        (plugin / "manifest.toml").write_text('optional = true\n')
+        m = manifest.load_manifest(plugin)
         self.assertFalse(m.is_deployable)
         self.assertTrue(m.is_optional)
         self.assertEqual(m.packages_repo, ["nautilus"])
@@ -79,7 +79,7 @@ class TestManifestDefaults(unittest.TestCase):
         self.assertEqual(m.preserve, ["monitor.kdl"])
 
     def test_stray_top_level_file_is_not_a_unit(self):
-        # configs/ is flat: every unit is a directory. Stray files are ignored.
+        # configs/ is flat: every plugin is a directory. Stray files are ignored.
         self._write("stray.toml", "# junk")
         names = [n for n, _ in manifest.discover_manifest_apps()]
         self.assertNotIn("stray.toml", names)
@@ -96,16 +96,16 @@ class TestManifestOverrides(unittest.TestCase):
         self._sandbox.cleanup()
 
     def test_full_override(self):
-        unit = self.root / "xdp"
-        unit.mkdir()
-        (unit / "manifest.toml").write_text(
+        plugin = self.root / "xdp"
+        plugin.mkdir()
+        (plugin / "manifest.toml").write_text(
             'packages = ["xdg-desktop-portal"]\n'
             'preserve = ["portals.conf"]\n'
             'chmod = ["*.sh"]\n'
             'label = "XDG Portals"\n'
             'detect = "xdg-desktop-portal"\n'
         )
-        m = manifest.load_manifest(unit)
+        m = manifest.load_manifest(plugin)
         self.assertEqual(m.packages_repo, ["xdg-desktop-portal"])
         self.assertEqual(m.packages_aur, [])
         self.assertEqual(m.preserve, ["portals.conf"])
@@ -114,21 +114,21 @@ class TestManifestOverrides(unittest.TestCase):
         self.assertEqual(m.detect, "xdg-desktop-portal")
 
     def test_optional_flag_parsed(self):
-        unit = self.root / "lutris"
-        unit.mkdir()
-        (unit / "manifest.toml").write_text(
+        plugin = self.root / "lutris"
+        plugin.mkdir()
+        (plugin / "manifest.toml").write_text(
             'optional = true\npackages = ["lutris"]\nlabel = "Lutris"\ncategory = "game"\n'
         )
-        m = manifest.load_manifest(unit)
+        m = manifest.load_manifest(plugin)
         self.assertTrue(m.is_optional)
         self.assertEqual(m.category, "game")
 
     def test_target_single_file_unit(self):
-        unit = self.root / "starship"
-        unit.mkdir()
-        (unit / "starship.toml").write_text("# conf")
-        (unit / "manifest.toml").write_text('target = "starship.toml"\n')
-        m = manifest.load_manifest(unit)
+        plugin = self.root / "starship"
+        plugin.mkdir()
+        (plugin / "starship.toml").write_text("# conf")
+        (plugin / "manifest.toml").write_text('target = "starship.toml"\n')
+        m = manifest.load_manifest(plugin)
         self.assertEqual(m.target, "starship.toml")
         self.assertEqual(m.packages_repo, ["starship"])
         self.assertEqual(m.detect, "starship")
@@ -136,13 +136,13 @@ class TestManifestOverrides(unittest.TestCase):
 
     def test_xdg_target_resolves_through_pics_dir(self):
         """#144: `xdg:PICTURES/<rest>` resolves via the XDG Pictures dir."""
-        unit = self.root / "wallpapers"
-        unit.mkdir()
-        (unit / "fallback.webp").write_bytes(b"img")
-        (unit / "manifest.toml").write_text(
+        plugin = self.root / "wallpapers"
+        plugin.mkdir()
+        (plugin / "fallback.webp").write_bytes(b"img")
+        (plugin / "manifest.toml").write_text(
             'target = "xdg:PICTURES/Wallpapers"\nmerge = true\n'
         )
-        m = manifest.load_manifest(unit)
+        m = manifest.load_manifest(plugin)
         pics = self.root / "MyPictures"
         with unittest.mock.patch("nyxuri.core.get_pics_dir", return_value=pics):
             resolved = manifest.living_path(m, Path("/sandbox/.config"))
@@ -150,60 +150,60 @@ class TestManifestOverrides(unittest.TestCase):
 
     def test_xdg_target_rejects_unknown_kind(self):
         """#144: an unknown xdg: category is refused, never guessed."""
-        unit = self.root / "weird"
-        unit.mkdir()
-        (unit / "manifest.toml").write_text('target = "xdg:MUSIC/Playlists"\n')
-        m = manifest.load_manifest(unit)
+        plugin = self.root / "weird"
+        plugin.mkdir()
+        (plugin / "manifest.toml").write_text('target = "xdg:MUSIC/Playlists"\n')
+        m = manifest.load_manifest(plugin)
         with self.assertRaises(ValueError):
             manifest.living_path(m, Path("/sandbox/.config"))
 
     def test_preserve_values_parsed(self):
-        unit = self.root / "noctalia"
-        unit.mkdir()
-        (unit / "manifest.toml").write_text(
+        plugin = self.root / "noctalia"
+        plugin.mkdir()
+        (plugin / "manifest.toml").write_text(
             'preserve_values = { "noctalia-config.toml" = ["enable_ddcutil"] }\n'
         )
-        m = manifest.load_manifest(unit)
+        m = manifest.load_manifest(plugin)
         self.assertEqual(m.preserve_values, {"noctalia-config.toml": ["enable_ddcutil"]})
         self.assertEqual(m.preserve, [])
 
     def test_preserve_values_defaults_to_empty(self):
-        unit = self.root / "kitty"
-        unit.mkdir()
-        (unit / "kitty.conf").write_text("conf")
-        self.assertEqual(manifest.load_manifest(unit).preserve_values, {})
+        plugin = self.root / "kitty"
+        plugin.mkdir()
+        (plugin / "kitty.conf").write_text("conf")
+        self.assertEqual(manifest.load_manifest(plugin).preserve_values, {})
 
     def test_preserve_values_rejects_hostile_shapes(self):
-        unit = self.root / "weird"
-        unit.mkdir()
-        (unit / "manifest.toml").write_text(
+        plugin = self.root / "weird"
+        plugin.mkdir()
+        (plugin / "manifest.toml").write_text(
             'preserve_values = { "a.toml" = [], "b.toml" = "k", "c.toml" = [1, "k"] }\n'
         )
-        self.assertEqual(manifest.load_manifest(unit).preserve_values,
+        self.assertEqual(manifest.load_manifest(plugin).preserve_values,
                          {"b.toml": ["k"], "c.toml": ["k"]})
 
     def test_preserve_values_non_table_falls_back(self):
-        unit = self.root / "odd"
-        unit.mkdir()
-        (unit / "manifest.toml").write_text('preserve_values = "nope"\n')
-        self.assertEqual(manifest.load_manifest(unit).preserve_values, {})
+        plugin = self.root / "odd"
+        plugin.mkdir()
+        (plugin / "manifest.toml").write_text('preserve_values = "nope"\n')
+        self.assertEqual(manifest.load_manifest(plugin).preserve_values, {})
 
     def test_aur_packages(self):
-        unit = self.root / "fcitx5-rime"
-        unit.mkdir()
-        (unit / "manifest.toml").write_text(
+        plugin = self.root / "fcitx5-rime"
+        plugin.mkdir()
+        (plugin / "manifest.toml").write_text(
             'packages = ["fcitx5", "fcitx5-rime"]\npackages_aur = ["rime-ice-git"]\n'
         )
-        m = manifest.load_manifest(unit)
+        m = manifest.load_manifest(plugin)
         self.assertEqual(m.packages_repo, ["fcitx5", "fcitx5-rime"])
         self.assertEqual(m.packages_aur, ["rime-ice-git"])
 
     def test_bad_toml_raises(self):
-        unit = self.root / "bad"
-        unit.mkdir()
-        (unit / "manifest.toml").write_text("this is = = not toml [[[\n")
+        plugin = self.root / "bad"
+        plugin.mkdir()
+        (plugin / "manifest.toml").write_text("this is = = not toml [[[\n")
         with self.assertRaises(tomllib.TOMLDecodeError):
-            manifest.load_manifest(unit)
+            manifest.load_manifest(plugin)
 
 
 class TestRealRepoManifests(unittest.TestCase):
@@ -218,7 +218,7 @@ class TestRealRepoManifests(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_niri_manifest(self):
-        m = manifest.load_manifest(self.env.units_src / "niri")
+        m = manifest.load_manifest(self.env.plugins_src / "niri")
         self.assertEqual(m.preserve, ["monitor.kdl", "effects.kdl", "effects_normal.kdl", "glow.kdl", "colors.kdl", "noctalia.kdl", "eyecare_temp"])
         self.assertEqual(m.chmod, ["scripts/*.sh", "scripts/*.py"])
         self.assertTrue(m.is_deployable)
@@ -228,13 +228,13 @@ class TestRealRepoManifests(unittest.TestCase):
         self.assertEqual(m.packages_repo, ["niri"])
 
     def test_noctalia_manifest_preserves_ddcutil(self):
-        m = manifest.load_manifest(self.env.units_src / "noctalia")
+        m = manifest.load_manifest(self.env.plugins_src / "noctalia")
         self.assertEqual(m.preserve_values,
                          {"noctalia-config.toml": ["enable_ddcutil"]})
         self.assertEqual(m.preserve, [])
 
     def test_starship_target_unit(self):
-        m = manifest.load_manifest(self.env.units_src / "starship")
+        m = manifest.load_manifest(self.env.plugins_src / "starship")
         self.assertEqual(m.target, "starship.toml")
         self.assertEqual(m.packages_repo, ["starship"])
         self.assertEqual(m.detect, "starship")
@@ -242,10 +242,10 @@ class TestRealRepoManifests(unittest.TestCase):
 
     def test_catalog_names_are_not_units(self):
         # KM3.5: packages-only software lives in catalog.toml, not the
-        # blueprint. The unit registry must not know these names at all.
+        # blueprint. The plugin registry must not know these names at all.
         manifests = dict(manifest.discover_manifest_apps())
         for name in ("nautilus", "missioncenter", "brave-origin", "vscode", "wechat"):
-            self.assertNotIn(name, manifests, f"{name} is a catalog entry, not a unit")
+            self.assertNotIn(name, manifests, f"{name} is a catalog entry, not a plugin")
 
     def test_optional_units_keep_manifest_declaration(self):
         opts = manifest.discover_optional_apps()
@@ -256,7 +256,7 @@ class TestRealRepoManifests(unittest.TestCase):
         deployable = manifest.discover_deployable_apps()
         self.assertNotIn("nautilus", deployable)
         self.assertNotIn("missioncenter", deployable)
-        # The shipped config units are all present. `theme` is a merge unit
+        # The shipped config plugins are all present. `theme` is a merge plugin
         # (shared living area) — it deploys only through the transaction's
         # no-clobber path and never joins the atomic batch.
         for name in ("fastfetch", "fish", "kitty", "niri", "noctalia",
@@ -268,8 +268,8 @@ class TestRealRepoManifests(unittest.TestCase):
         self.assertIn("theme", merge_units)
 
     def test_stray_sidecar_files_are_gone(self):
-        # KM1 ② enforcement: configs/ is a flat unit directory — no sidecars.
-        src = self.env.units_src
+        # KM1 ② enforcement: configs/ is a flat plugin directory — no sidecars.
+        src = self.env.plugins_src
         self.assertFalse((src / ".optional-apps.toml").exists())
         self.assertFalse((src / "starship.toml").exists())
         self.assertEqual(list(src.glob("**/*.module.toml")), [])
@@ -302,8 +302,8 @@ class TestRealRepoManifests(unittest.TestCase):
         self.assertTrue(any(p.startswith("/etc/greetd") for p in m.system_paths))
         self.assertEqual(m.post_install, "activate")
         self.assertEqual(m.post_remove, "deactivate")
-        self.assertFalse(m.is_deployable, "manifest-only unit stays non-deployable")
-        # Units without the table default to unprivileged.
+        self.assertFalse(m.is_deployable, "manifest-only plugin stays non-deployable")
+        # Plugins without the table default to unprivileged.
         self.assertFalse(manifests["kitty"].requires_root)
         self.assertEqual(manifests["kitty"].system_paths, [])
 
@@ -343,7 +343,7 @@ class TestRealRepoManifests(unittest.TestCase):
                 self.assertIn(m.category, known, f"{_name} has unknown category")
 
     def test_full_optional_catalog(self):
-        """Optional surface = catalog entries + optional units, one supply."""
+        """Optional surface = catalog entries + optional plugins, one supply."""
         from nyxuri.pkg.deps import _supply_items
 
         keys = {item["key"] for item in _supply_items()}
@@ -356,7 +356,7 @@ class TestRealRepoManifests(unittest.TestCase):
             self.assertIn(name, keys, f"{name} must come from its manifest")
 
     def test_merge_unit_excluded_from_atomic_batch(self):
-        # The wallpapers unit is a shared living area: it must never join
+        # The wallpapers plugin is a shared living area: it must never join
         # the atomic swap batch (a swap would clobber user content).
         names = [name for name, _m in manifest.discover_manifest_apps()]
         self.assertIn("wallpapers", names)
@@ -368,7 +368,7 @@ class TestRealRepoManifests(unittest.TestCase):
         self.assertEqual(m.target, "xdg:PICTURES/Wallpapers")
         self.assertTrue(m.merge)
 
-        hook = (self.env.units_src / "wallpapers" / "hooks" / "install-pack").read_text()
+        hook = (self.env.plugins_src / "wallpapers" / "hooks" / "install-pack").read_text()
         self.assertIn('NYXURI_UNIT_DEST', hook)
         self.assertIn("xdg-user-dir PICTURES", hook)
         self.assertNotIn("$HOME/Pictures/Wallpapers", hook)
@@ -394,21 +394,21 @@ class TestManifestPresets(unittest.TestCase):
         self._ctx.__enter__()
         self.env = self._ctx.env
         self._sandbox = tempfile.TemporaryDirectory()
-        self.env.units_src = Path(self._sandbox.name)
+        self.env.plugins_src = Path(self._sandbox.name)
 
     def tearDown(self):
         self._sandbox.cleanup()
         self._ctx.__exit__()
 
     def _mkdir(self, rel: str) -> Path:
-        d = self.env.units_src / rel
+        d = self.env.plugins_src / rel
         d.mkdir(parents=True, exist_ok=True)
         return d
 
     def test_no_presets_table_defaults_to_safe(self):
-        unit = self._mkdir("myapp")
-        (unit / "config.conf").write_text("# conf")
-        m = manifest.load_manifest(unit)
+        plugin = self._mkdir("myapp")
+        (plugin / "config.conf").write_text("# conf")
+        m = manifest.load_manifest(plugin)
         self.assertFalse(m.preset_inherit)
         self.assertEqual(m.preset_allow, [])
         self.assertEqual(m.preset_standalone, [])
@@ -416,9 +416,9 @@ class TestManifestPresets(unittest.TestCase):
         self.assertEqual(m.preset_exclude, [])
 
     def test_presets_table_parsed_correctly(self):
-        unit = self._mkdir("niri_test")
-        (unit / "config.kdl").write_text("# conf")
-        (unit / "manifest.toml").write_text("""
+        plugin = self._mkdir("niri_test")
+        (plugin / "config.kdl").write_text("# conf")
+        (plugin / "manifest.toml").write_text("""
 preserve = ["monitor.kdl"]
 
 [presets]
@@ -428,7 +428,7 @@ standalone = ["isolated"]
 include = ["scripts/**", "*.kdl"]
 exclude = ["scripts/debug.sh"]
 """)
-        m = manifest.load_manifest(unit)
+        m = manifest.load_manifest(plugin)
         self.assertTrue(m.preset_inherit)
         self.assertEqual(m.preset_allow, ["glow", "compact"])
         self.assertEqual(m.preset_standalone, ["isolated"])
@@ -436,9 +436,9 @@ exclude = ["scripts/debug.sh"]
         self.assertEqual(m.preset_exclude, ["scripts/debug.sh"])
 
     def test_parts_targets_auto_included_in_preserve(self):
-        unit = self._mkdir("part_unit")
-        (unit / "config.kdl").write_text("# conf")
-        (unit / "manifest.toml").write_text("""
+        plugin = self._mkdir("part_unit")
+        (plugin / "config.kdl").write_text("# conf")
+        (plugin / "manifest.toml").write_text("""
 preserve = ["explicit.kdl"]
 
 [parts.theme]
@@ -447,18 +447,18 @@ target = "theme.kdl"
 [parts.effects]
 target = "effects.kdl"
 """)
-        m = manifest.load_manifest(unit)
+        m = manifest.load_manifest(plugin)
         self.assertIn("explicit.kdl", m.preserve)
         self.assertIn("theme.kdl", m.preserve)
         self.assertIn("effects.kdl", m.preserve)
         # Ensure no duplicates if target was already explicitly declared
-        (unit / "manifest.toml").write_text("""
+        (plugin / "manifest.toml").write_text("""
 preserve = ["theme.kdl"]
 
 [parts.theme]
 target = "theme.kdl"
 """)
-        m2 = manifest.load_manifest(unit)
+        m2 = manifest.load_manifest(plugin)
         self.assertEqual(m2.preserve, ["theme.kdl"])
 
 
@@ -474,8 +474,8 @@ def _quiet(fn, *args, **kwargs):
 class TestManifestCoercion(unittest.TestCase):
 
     def _sandbox(self, ctx):
-        ctx.env.units_src = Path(tempfile.mkdtemp())
-        return ctx.env.units_src
+        ctx.env.plugins_src = Path(tempfile.mkdtemp())
+        return ctx.env.plugins_src
 
     def test_scalar_package_fields_become_single_element_lists(self):
         from nyxuri.deploy.manifest import load_manifest
@@ -519,12 +519,12 @@ class TestManifestCoercion(unittest.TestCase):
         from nyxuri.deploy.manifest import discover_manifest_apps
         with TempEnv() as ctx:
             sandbox = self._sandbox(ctx)
-            bad = sandbox / "bad-unit"
+            bad = sandbox / "bad-plugin"
             bad.mkdir()
             (bad / "manifest.toml").write_text("not = = toml\n", encoding="utf-8")
-            good = sandbox / "good-unit"
+            good = sandbox / "good-plugin"
             good.mkdir()
             (good / "config.conf").write_text("# conf\n", encoding="utf-8")
             apps = _quiet(discover_manifest_apps)
             self.assertIsInstance(apps, list)
-            self.assertEqual([n for n, _ in apps], ["good-unit"])
+            self.assertEqual([n for n, _ in apps], ["good-plugin"])

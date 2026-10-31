@@ -953,11 +953,11 @@ en = "{Colors.BOLD_RED}[✗] Invalid arguments. Usage: {0}{Colors.RESET}"
 zh = """{0} 桌面插件市场 ({1})
 用法: {1} [命令] [参数]
 
-单元动词（单元 = 一切可独立开关的桌面能力）:
-  list [单元]                        全景清单，或单个单元的详情
-  on <单元> [--preset <名称>]        启用单元（含依赖闭包与包披露，等价 enable）
-  off <单元> [--cascade]             停用单元（自定义入保险库，实机抹白，等价 disable）
-  doctor [单元]                      三态对账（Synced/Drifted/Ghost）+ 系统体检
+插件动词（插件 = 一切可独立开关的桌面能力）:
+  list [插件]                        全景清单，或单个插件的详情
+  on <插件> [--preset <名称>]        启用插件（含依赖闭包与包披露，等价 enable）
+  off <插件> [--cascade]             停用插件（自定义入保险库，实机抹白，等价 disable）
+  doctor [插件]                      三态对账（Synced/Drifted/Ghost）+ 系统体检
 
 系统与领域:
   install [full|config]              应用配置（full = 含壁纸与钩子重放）
@@ -980,11 +980,11 @@ zh = """{0} 桌面插件市场 ({1})
 en = """{0} desktop plugin market ({1})
 Usage: {1} [command] [args]
 
-Unit verbs (a unit = any independently switchable desktop capability):
-  list [unit]                        Full inventory, or one unit in detail
-  on <unit> [--preset <name>]        Enable a unit (dependency closure + package disclosure, same as enable)
-  off <unit> [--cascade]             Disable a unit (customs to the Vault, living area wiped, same as disable)
-  doctor [unit]                      Three-state audit (Synced/Drifted/Ghost) + system checkup
+Plugin verbs (a plugin = any independently switchable desktop capability):
+  list [plugin]                        Full inventory, or one plugin in detail
+  on <plugin> [--preset <name>]        Enable a plugin (dependency closure + package disclosure, same as enable)
+  off <plugin> [--cascade]             Disable a plugin (customs to the Vault, living area wiped, same as disable)
+  doctor [plugin]                      Three-state audit (Synced/Drifted/Ghost) + system checkup
 
 System & Domains:
   install [full|config]              Apply configs (full = wallpapers + hook replay)
@@ -1005,17 +1005,17 @@ System & Domains:
   no arguments                       Open the control panel
 """
 
-[uninstall_group_units]
-zh = "单元停用（实机抹白，自定义入保险库）"
-en = "Unit off (wipe to white, customs to Vault)"
+[uninstall_group_plugins]
+zh = "插件停用（实机抹白，自定义入保险库）"
+en = "Plugin off (wipe to white, customs to Vault)"
 
-[uninstall_item_unit]
+[uninstall_item_plugin]
 zh = "nyxuri off {0}"
 en = "nyxuri off {0}"
 
-[cli_unknown_unit]
-zh = "{Colors.BOLD_RED}[✗]{Colors.RESET} 未知单元: {0}（{CLI_CMD} list 查看全景）"
-en = "{Colors.BOLD_RED}[✗]{Colors.RESET} Unknown unit: {0} (see {CLI_CMD} list)"
+[cli_unknown_plugin]
+zh = "{Colors.BOLD_RED}[✗]{Colors.RESET} 未知插件: {0}（{CLI_CMD} list 查看全景）"
+en = "{Colors.BOLD_RED}[✗]{Colors.RESET} Unknown plugin: {0} (see {CLI_CMD} list)"
 
 [cli_plan_on]
 zh = "{Colors.BOLD_CYAN}::{Colors.RESET} 将启用: {0}"
@@ -1086,12 +1086,12 @@ zh = "包保留在系统: {0}"
 en = "package(s) kept on the system: {0}"
 
 [cli_list_header]
-zh = "{Colors.BOLD}单元                          状态          预设{Colors.RESET}"
-en = "{Colors.BOLD}Unit                          State         Preset{Colors.RESET}"
+zh = "{Colors.BOLD}插件                          状态          预设{Colors.RESET}"
+en = "{Colors.BOLD}Plugin                          State         Preset{Colors.RESET}"
 
 [cli_list_none]
-zh = "蓝图为空：plugins/ 下没有单元。"
-en = "Blueprint is empty: no units under plugins/."
+zh = "蓝图为空：plugins/ 下没有插件。"
+en = "Blueprint is empty: no plugins under plugins/."
 
 [cli_detail_label]
 zh = "标签"
@@ -1106,11 +1106,11 @@ zh = "部署目标"
 en = "Target"
 
 [cli_detail_runtime]
-zh = "运行态单元：开关落在账本，由运行中的 Shell 投影，无部署目标"
-en = "Runtime unit: the switch lives in the ledger, projected by the running shell — no deploy target"
+zh = "运行态插件：开关落在账本，由运行中的 Shell 投影，无部署目标"
+en = "Runtime plugin: the switch lives in the ledger, projected by the running shell — no deploy target"
 
 [cli_detail_dependencies]
-zh = "依赖单元"
+zh = "依赖插件"
 en = "Dependencies"
 
 [cli_detail_packages]
@@ -1146,8 +1146,8 @@ zh = "对账"
 en = "Audit"
 
 [cli_audit_header]
-zh = "{Colors.BOLD}单元对账（声明 vs 实机）:{Colors.RESET}"
-en = "{Colors.BOLD}Unit audit (declared vs living):{Colors.RESET}"
+zh = "{Colors.BOLD}插件对账（声明 vs 实机）:{Colors.RESET}"
+en = "{Colors.BOLD}Plugin audit (declared vs living):{Colors.RESET}"
 
 [cli_audit_clean]
 zh = "{Colors.BOLD_GREEN}[✓]{Colors.RESET} 对账干净：无漂移、无幽灵。"
@@ -1158,8 +1158,8 @@ zh = "{Colors.BOLD_YELLOW}[!]{Colors.RESET} Drifted = 存在你的改动，更�
 en = "{Colors.BOLD_YELLOW}[!]{Colors.RESET} Drifted = your changes are present; updates keep them — `nyxuri update --force` adopts the template side"
 
 [cli_audit_ghost_hint]
-zh = "{Colors.BOLD_RED}[✗]{Colors.RESET} Ghost = 目录存在但未登记：更新不会覆盖它；`nyxuri on <unit>` 收编并开始追踪"
-en = "{Colors.BOLD_RED}[✗]{Colors.RESET} Ghost = living files without a ledger record: updates never clobber them — `nyxuri on <unit>` adopts and starts tracking"
+zh = "{Colors.BOLD_RED}[✗]{Colors.RESET} Ghost = 目录存在但未登记：更新不会覆盖它；`nyxuri on <plugin>` 收编并开始追踪"
+en = "{Colors.BOLD_RED}[✗]{Colors.RESET} Ghost = living files without a ledger record: updates never clobber them — `nyxuri on <plugin>` adopts and starts tracking"
 
 [preflight_express_summary]
 zh = """\n{Colors.BOLD_BLUE}:: 即将执行以下更改:{Colors.RESET}"""
@@ -1242,8 +1242,8 @@ zh = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 保留用户文件: ~/.config/{0}
 en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Kept your file: ~/.config/{0}"
 
 [log_keep_unresolved_file]
-zh = "  {Colors.BOLD_YELLOW}[?]{Colors.RESET} 保留现有内容: ~/.config/{0}（单元未登记，来源不明；`nyxuri on` 后恢复模板更新）"
-en = "  {Colors.BOLD_YELLOW}[?]{Colors.RESET} Kept as-is: ~/.config/{0} (unregistered unit, origin unknown; `nyxuri on` restores template updates)"
+zh = "  {Colors.BOLD_YELLOW}[?]{Colors.RESET} 保留现有内容: ~/.config/{0}（插件未登记，来源不明；`nyxuri on` 后恢复模板更新）"
+en = "  {Colors.BOLD_YELLOW}[?]{Colors.RESET} Kept as-is: ~/.config/{0} (unregistered plugin, origin unknown; `nyxuri on` restores template updates)"
 
 [update_ghost_hint]
 zh = "{0} 未登记：更新已原样保留现有内容；`nyxuri on {0}` 采纳模板并启用改动追踪"
@@ -1262,8 +1262,8 @@ zh = "用户文件"
 en = "Your files"
 
 [summary_section_unknown]
-zh = "来源不明（单元未登记；`nyxuri on <unit>` 收编后恢复模板更新）"
-en = "Unresolved origin (unit not registered; `nyxuri on <unit>` restores template updates)"
+zh = "来源不明（插件未登记；`nyxuri on <plugin>` 收编后恢复模板更新）"
+en = "Unresolved origin (plugin not registered; `nyxuri on <plugin>` restores template updates)"
 
 [log_deploy_config_item]
 zh = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 安装配置: ~/.config/{0}"
@@ -1591,25 +1591,25 @@ en = "Active"
 zh = "未生效"
 en = "Inactive"
 
-[install_step_unit_hooks]
-zh = "{Colors.BOLD_CYAN}::{Colors.RESET} 单元钩子重放 ({0})"
-en = "{Colors.BOLD_CYAN}::{Colors.RESET} Unit hook replay ({0})"
+[install_step_plugin_hooks]
+zh = "{Colors.BOLD_CYAN}::{Colors.RESET} 插件钩子重放 ({0})"
+en = "{Colors.BOLD_CYAN}::{Colors.RESET} Plugin hook replay ({0})"
 
 [menu_opt_workshop]
-zh = "单元工坊（开关 / 对账）"
-en = "Unit Workshop (switch / audit)"
+zh = "插件工坊（开关 / 对账）"
+en = "Plugin Workshop (switch / audit)"
 
-[menu_group_units]
-zh = "── 单元 ──"
-en = "── Units ──"
+[menu_group_plugins]
+zh = "── 插件 ──"
+en = "── Plugins ──"
 
 [workshop_title]
-zh = "单元工坊 — 账本投影 · 单一事务路径"
-en = "Unit Workshop — ledger projection · single transaction path"
+zh = "插件工坊 — 账本投影 · 单一事务路径"
+en = "Plugin Workshop — ledger projection · single transaction path"
 
 [workshop_left_header]
-zh = "单元 (状态)"
-en = "Unit (state)"
+zh = "插件 (状态)"
+en = "Plugin (state)"
 
 [workshop_right_header]
 zh = "详情"
@@ -1624,5 +1624,5 @@ zh = "按任意键返回工坊"
 en = "Press any key to return to the bench"
 
 [workshop_confirm_off]
-zh = "停用该单元?（自定义入保险库，实机抹白）[y/N] "
-en = "Disable this unit? (customs to Vault, living area wiped) [y/N] "
+zh = "停用该插件?（自定义入保险库，实机抹白）[y/N] "
+en = "Disable this plugin? (customs to Vault, living area wiped) [y/N] "

@@ -47,7 +47,7 @@ class TestTimedRun(unittest.TestCase):
         self.assertEqual(r.returncode, 0)
 
     def test_child_interpreters_never_write_bytecode(self):
-        """Blueprint-tree hook execution must not litter __pycache__ (unit-model §1)."""
+        """Blueprint-tree hook execution must not litter __pycache__ (plugin-model §1)."""
         import os
 
         from nyxuri.core import timed_run

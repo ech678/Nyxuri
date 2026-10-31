@@ -158,7 +158,7 @@ def _check_orbit(env) -> None:
     if active_shell() != "noctalia":
         return
     launcher = env.config_dir / THEME_ENGINE / "tools" / "orbit-launcher.py"
-    src_launcher = env.units_src / THEME_ENGINE / "tools" / "orbit-launcher.py"
+    src_launcher = env.plugins_src / THEME_ENGINE / "tools" / "orbit-launcher.py"
     if not launcher.is_file() and not src_launcher.is_file():
         return
     try:
@@ -271,16 +271,16 @@ def _check_disk_space(env) -> None:
     except Exception:
         pass
 
-def _unit_state(uid: str) -> str:
-    """Ledger state of one unit ('enabled' / 'disabled' / '' when never switched)."""
+def _plugin_state(uid: str) -> str:
+    """Ledger state of one plugin ('enabled' / 'disabled' / '' when never switched)."""
     from nyxuri.kernel import ledger
-    rec = ledger.get_unit(uid)
+    rec = ledger.get_plugin(uid)
     return (rec or {}).get("state", "")
 
 
 def _check_fcitx_skin(env) -> None:
     if shutil.which("fcitx5") or (env.config_dir / "fcitx5" / "conf" / "classicui.conf").is_file():
-        if _unit_state("fcitx5-rime") == "enabled":
+        if _plugin_state("fcitx5-rime") == "enabled":
             print(msg("doctor_ok", text("Fcitx5: NyxMellow 皮肤已启用", "Fcitx5: NyxMellow skin is enabled")))
         else:
             print(msg("doctor_warn", text(
@@ -601,7 +601,7 @@ def generate_bug_report() -> Optional[Path]:
         if len(lines) >= 2:
             health_lines.append(f"home free space: {lines[1].split()[3]}")
     if shutil.which("fcitx5") or (env.config_dir / "fcitx5" / "conf" / "classicui.conf").is_file():
-        health_lines.append(f"fcitx5 nyxmellow: {'enabled' if _unit_state('fcitx5-rime') == 'enabled' else 'NOT enabled'}")
+        health_lines.append(f"fcitx5 nyxmellow: {'enabled' if _plugin_state('fcitx5-rime') == 'enabled' else 'NOT enabled'}")
     health_checks = "\n".join(health_lines)
 
     # Noctalia Hook Log

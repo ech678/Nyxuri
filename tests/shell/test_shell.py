@@ -164,7 +164,7 @@ class TestShellManagement(unittest.TestCase):
         from nyxuri.desktop.shell_switcher import ensure_compositor_gateway_scripts
         env = get_env()
         fake_configs = self._ctx.home / "fake_configs"
-        env.units_src = fake_configs
+        env.plugins_src = fake_configs
         src_dir = fake_configs / "niri" / "scripts"
         src_dir.mkdir(parents=True, exist_ok=True)
         (src_dir / "session-shell.sh").write_text("#!/bin/sh\necho session new\n", encoding="utf-8")
@@ -356,7 +356,7 @@ class TestIssue140NoctaliaTemplatesDoNotCauseUnitDrift(unittest.TestCase):
         from nyxuri.kernel import transaction
         with TempEnv() as ctx:
             for uid in ("kitty", "starship", "niri", "noctalia"):
-                steps = transaction.unit_on(uid)
+                steps = transaction.plugin_on(uid)
                 self.assertTrue(steps[0].ok, f"failed to enable {uid}: {steps}")
 
             # Simulate template outputs landing from Noctalia:
@@ -370,7 +370,7 @@ class TestIssue140NoctaliaTemplatesDoNotCauseUnitDrift(unittest.TestCase):
             niri_tpl.write_text("layout { focus-ring { active-color \"#ffffff\" } }\n", encoding="utf-8")
 
             # Reconcile all units
-            report = transaction.audit_units()
+            report = transaction.audit_plugins()
             self.assertEqual(report.get("kitty"), "Synced")
             self.assertEqual(report.get("starship"), "Synced")
             self.assertEqual(report.get("niri"), "Synced")

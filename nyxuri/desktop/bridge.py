@@ -1,11 +1,15 @@
-"""Market ↔ Shell event bridge — the unit-changed delivery.
+"""Market ↔ Shell event bridge — the plugin-changed delivery.
 
 The kernel freezes an abstract event port (unit-model.md §6): after every
-transaction lands, ONE ``unit-changed`` event fires. This module is the
+transaction lands, ONE ``plugin-changed`` event fires. This module is the
 outer layer's injection point: it delivers the event over the Shell's
 EXISTING Quickshell IPC channel (``qs -p <shell> ipc call unit reload``)
 and never opens a second channel. No subscriber (tests, headless machines,
-Noctalia sessions) → plain no-op; a failing delivery never fails the unit.
+Noctalia sessions) → plain no-op; a failing delivery never fails the plugin.
+
+Wire note: the IPC channel name stays the literal ``unit`` until S0 renames
+the QML-side IpcHandler with the shell namespace — the wire protocol is
+frozen even though every Python identifier now says plugin (R0-1).
 """
 
 import subprocess
@@ -32,8 +36,8 @@ def _shell_ipc_dir() -> Optional[Path]:
     return None
 
 
-def notify_unit_changed(unit_id: str, state: str) -> None:
-    """Deliver one unit-changed event; best-effort by contract (§6).
+def notify_plugin_changed(plugin_id: str, state: str) -> None:
+    """Deliver one plugin-changed event; best-effort by contract (§6).
 
     The event carries no payload — the Shell re-reads the ledger as the
     single source of truth and projects it. Without a running nyxuri-shell
@@ -44,7 +48,7 @@ def notify_unit_changed(unit_id: str, state: str) -> None:
         return
     shell_dir = _shell_ipc_dir()
     if shell_dir is None:
-        log_msg("WARN", f"unit-changed for {unit_id}: shell dir not resolvable")
+        log_msg("WARN", f"plugin-changed for {plugin_id}: shell dir not resolvable")
         return
     subprocess.run(
         ["qs", "-p", str(shell_dir), "ipc", "call", "unit", "reload"],
@@ -54,4 +58,4 @@ def notify_unit_changed(unit_id: str, state: str) -> None:
 
 def wire() -> None:
     """Inject the delivery into the kernel's event port (outer layer's job)."""
-    transaction.set_event_sink(notify_unit_changed)
+    transaction.set_event_sink(notify_plugin_changed)

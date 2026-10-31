@@ -78,7 +78,7 @@ def _is_deployable_app(app: str) -> bool:
         return False
     from nyxuri.deploy.manifest import discover_deployable_apps
 
-    source = _safe_child(get_env().units_src, app)
+    source = _safe_child(get_env().plugins_src, app)
     try:
         return source is not None and app in discover_deployable_apps() and (
             source.is_dir() or source.is_file()
@@ -259,7 +259,7 @@ def resolve_preset_inheritance(
         return None, [], []
 
     env = get_env()
-    app_root = _safe_child(env.units_src, app)
+    app_root = _safe_child(env.plugins_src, app)
     if app_root is None or not (app_root.is_dir() and not app_root.is_symlink()):
         return None, [], []
 
@@ -302,7 +302,7 @@ def resolve_preset_src(app: str, active: str, dest: Path) -> PresetSrcResult:
     silently fall back to default, which would wipe the user's frozen state.
     """
     env = get_env()
-    app_root = _safe_child(env.units_src, app)
+    app_root = _safe_child(env.plugins_src, app)
     repo_presets = _find_official_presets_dir(app_root)
     user_presets = _safe_child(env.presets_dir, app)
     expected_dest = _safe_child(env.config_dir, app)
@@ -393,7 +393,7 @@ def _find_preset_src(app: str, name: str) -> Optional[Path]:
     except Exception:
         pass
     env = get_env()
-    app_root = _safe_child(env.units_src, app)
+    app_root = _safe_child(env.plugins_src, app)
     repo_presets = _find_official_presets_dir(app_root)
     user_presets = _safe_child(env.presets_dir, app)
     if app_root is None or repo_presets is None or user_presets is None:
@@ -419,7 +419,7 @@ def list_parts(app: str) -> dict:
     if not manifest.parts:
         return {}
     env = get_env()
-    app_root = _safe_child(env.units_src, app)
+    app_root = _safe_child(env.plugins_src, app)
     official_dir = _find_official_presets_dir(app_root)
     result = {}
     for slot, cfg in manifest.parts.items():
@@ -459,7 +459,7 @@ def apply_part(app: str, slot: str, variant: str) -> bool:
         return False
 
     env = get_env()
-    app_root = _safe_child(env.units_src, app)
+    app_root = _safe_child(env.plugins_src, app)
     official_dir = _find_official_presets_dir(app_root)
     source_dir_name = cfg.get("source_dir", slot)
 

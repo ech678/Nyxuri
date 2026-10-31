@@ -349,7 +349,7 @@ class TestNiriRequiredIncludes(unittest.TestCase):
         self._ctx = TempEnv()
         self._ctx.__enter__()
         self.env = self._ctx.env
-        self.niri_src = self.env.units_src / "niri"
+        self.niri_src = self.env.plugins_src / "niri"
 
     def tearDown(self):
         self._ctx.__exit__()
@@ -396,7 +396,7 @@ class TestNiriRequiredIncludes(unittest.TestCase):
 
 
 class TestWallpapersUnit(unittest.TestCase):
-    """The wallpapers unit: merge semantics over a shared living area.
+    """The wallpapers plugin: merge semantics over a shared living area.
 
     on = no-clobber blueprint fallback; off = withdraw only laid files;
     the pack and the user's own wallpapers are never eaten, never tracked.
@@ -416,11 +416,11 @@ class TestWallpapersUnit(unittest.TestCase):
     def test_on_lays_fallback_and_records_ledger(self):
         from nyxuri.kernel import ledger, transaction
 
-        steps = transaction.unit_on("wallpapers")
+        steps = transaction.plugin_on("wallpapers")
         self.assertTrue(all(s.ok for s in steps), steps)
         dest = self._wp_dest()
         self.assertTrue((dest / "lawson_fuji.webp").is_file())
-        rec = ledger.get_unit("wallpapers")
+        rec = ledger.get_plugin("wallpapers")
         self.assertEqual(rec["state"], "enabled")
         self.assertIn("lawson_fuji.webp", rec["files"])
 
@@ -432,12 +432,12 @@ class TestWallpapersUnit(unittest.TestCase):
         user_wp = dest / "lawson_fuji.webp"
         user_wp.write_bytes(b"USER OWN IMAGE")
 
-        steps = transaction.unit_on("wallpapers")
+        steps = transaction.plugin_on("wallpapers")
         self.assertTrue(all(s.ok for s in steps), steps)
         self.assertEqual(user_wp.read_bytes(), b"USER OWN IMAGE",
                          "merge deploy must never overwrite existing files")
         # The blocked file is not ours: not in the laid snapshot.
-        self.assertNotIn("lawson_fuji.webp", ledger.get_unit("wallpapers")["files"])
+        self.assertNotIn("lawson_fuji.webp", ledger.get_plugin("wallpapers")["files"])
 
     def test_off_withdraws_only_laid_files(self):
         from nyxuri.kernel import transaction
@@ -445,10 +445,10 @@ class TestWallpapersUnit(unittest.TestCase):
         dest = self._wp_dest()
         dest.mkdir(parents=True, exist_ok=True)
         (dest / "my_own.webp").write_bytes(b"USER")
-        transaction.unit_on("wallpapers")
+        transaction.plugin_on("wallpapers")
         (dest / "pack_video.mp4").write_bytes(b"PACK")  # arrives after on
 
-        steps = transaction.unit_off("wallpapers")
+        steps = transaction.plugin_off("wallpapers")
         self.assertTrue(all(s.ok for s in steps), steps)
         self.assertFalse((dest / "lawson_fuji.webp").exists(),
                          "laid fallback must be withdrawn")
@@ -464,10 +464,10 @@ class TestWallpapersUnit(unittest.TestCase):
         dest = self._wp_dest()
         dest.mkdir(parents=True, exist_ok=True)
         (dest / "my_own.webp").write_bytes(b"USER")
-        transaction.unit_on("wallpapers")
-        transaction.unit_off("wallpapers")
+        transaction.plugin_on("wallpapers")
+        transaction.plugin_off("wallpapers")
 
-        report = transaction.audit_units("wallpapers")
+        report = transaction.audit_plugins("wallpapers")
         self.assertEqual(report.get("wallpapers"), transaction.STATE_SYNCED,
                          "user content in a shared area is not residue")
 
@@ -478,7 +478,7 @@ class TestWallpapersUnit(unittest.TestCase):
         dest.mkdir(parents=True, exist_ok=True)
         (dest / "lawson_fuji.webp").write_bytes(b"OLD FALLBACK RESIDUE")
 
-        report = transaction.audit_units("wallpapers")
+        report = transaction.audit_plugins("wallpapers")
         self.assertEqual(report.get("wallpapers"), transaction.STATE_GHOST)
 
 
@@ -813,22 +813,22 @@ class TestWallpaperPackProbe(unittest.TestCase):
             wp.mkdir(parents=True)
             user_file = wp / "lawson_fuji.webp"
             user_file.write_text("USER", encoding="utf-8")
-            _quiet(transaction.unit_on, "wallpapers")
+            _quiet(transaction.plugin_on, "wallpapers")
             # No tracking marker exists at all — the pack era is over.
             self.assertFalse((wp / ".nyxuri-managed.json").exists())
             self.assertEqual(user_file.read_text(encoding="utf-8"), "USER")
             # The user's same-named file blocked the layout: not ours.
-            self.assertNotIn("lawson_fuji.webp", ledger.get_unit("wallpapers")["files"])
+            self.assertNotIn("lawson_fuji.webp", ledger.get_plugin("wallpapers")["files"])
 
 class TestDeployRobustness(unittest.TestCase):
 
     def _sandbox(self, ctx):
-        ctx.env.units_src = Path(tempfile.mkdtemp())
+        ctx.env.plugins_src = Path(tempfile.mkdtemp())
         import nyxuri.deploy.manifest as manifest
         import nyxuri.deploy.deploy as deploy
         manifest._MANIFEST_CACHE = None
         deploy._CONFIG_ITEMS_CACHE = []
-        return ctx.env.units_src
+        return ctx.env.plugins_src
 
     def _app(self, src, name, manifest_toml, files):
         root = src / name

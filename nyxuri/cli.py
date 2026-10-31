@@ -71,16 +71,16 @@ def exit_usage(usage: str) -> None:
 # was executed at KM3.5: old names are plain unknown commands.
 
 
-def _package_installer(unit_id: str, missing: List[str]) -> bool:
+def _package_installer(plugin_id: str, missing: List[str]) -> bool:
     """Thin alias: the shared transaction installer lives in deps (CLI and
     TUI must inject the exact same package-manager behavior)."""
-    from nyxuri.pkg.deps import unit_package_installer
+    from nyxuri.pkg.deps import plugin_package_installer
 
-    return unit_package_installer(unit_id, missing)
+    return plugin_package_installer(plugin_id, missing)
 
 
 def _report_steps(steps) -> int:
-    """Turn transaction Steps into bilingual prose; 0 only if every unit won."""
+    """Turn transaction Steps into bilingual prose; 0 only if every plugin won."""
     from nyxuri.tui import format_steps
 
     lines = format_steps(steps)
@@ -90,11 +90,11 @@ def _report_steps(steps) -> int:
 
 
 def _cmd_on(sub_args: List[str]) -> int:
-    """nyxuri on <unit> [--preset <name>] — disclose, then transact."""
-    usage = f"{CLI_CMD} on <unit> [--preset <name>]"
+    """nyxuri on <plugin> [--preset <name>] — disclose, then transact."""
+    usage = f"{CLI_CMD} on <plugin> [--preset <name>]"
     rest = list(sub_args)
-    unit = rest.pop(0) if rest and not rest[0].startswith("-") else ""
-    if not unit:
+    plugin = rest.pop(0) if rest and not rest[0].startswith("-") else ""
+    if not plugin:
         exit_usage(usage)
     preset = None
     while rest:
@@ -106,17 +106,17 @@ def _cmd_on(sub_args: List[str]) -> int:
         else:
             exit_usage(usage)
     try:
-        plan = transaction.plan_on(unit)
+        plan = transaction.plan_on(plugin)
     except KeyError:
-        print(msg("cli_unknown_unit", unit), file=sys.stderr)
+        print(msg("cli_unknown_plugin", plugin), file=sys.stderr)
         return 2
-    enabled = {u for u, rec in ledger.all_units().items() if rec.get("state") == "enabled"}
+    enabled = {u for u, rec in ledger.all_plugins().items() if rec.get("state") == "enabled"}
     incoming = [u for u in plan if u not in enabled]
     if incoming:
         print(msg("cli_plan_on", " → ".join(incoming)))
     need_install: List[str] = []
     for uid in incoming:
-        missing = transaction.missing_packages(registry.load_unit(uid))
+        missing = transaction.missing_packages(registry.load_plugin(uid))
         if missing:
             need_install.extend(missing)
             print(msg("cli_plan_packages", uid, ", ".join(missing)))
@@ -124,16 +124,16 @@ def _cmd_on(sub_args: List[str]) -> int:
         print(msg("cli_aborted"), file=sys.stderr)
         return 1
     return _report_steps(
-        transaction.unit_on(unit, preset=preset, install_packages=_package_installer)
+        transaction.plugin_on(plugin, preset=preset, install_packages=_package_installer)
     )
 
 
 def _cmd_off(sub_args: List[str]) -> int:
-    """nyxuri off <unit> [--cascade] — guard, disclose, then transact."""
-    usage = f"{CLI_CMD} off <unit> [--cascade]"
+    """nyxuri off <plugin> [--cascade] — guard, disclose, then transact."""
+    usage = f"{CLI_CMD} off <plugin> [--cascade]"
     rest = list(sub_args)
-    unit = rest.pop(0) if rest and not rest[0].startswith("-") else ""
-    if not unit:
+    plugin = rest.pop(0) if rest and not rest[0].startswith("-") else ""
+    if not plugin:
         exit_usage(usage)
     cascade = False
     while rest:
@@ -143,17 +143,17 @@ def _cmd_off(sub_args: List[str]) -> int:
         else:
             exit_usage(usage)
     try:
-        plan = transaction.plan_off(unit)
+        plan = transaction.plan_off(plugin)
     except KeyError:
-        print(msg("cli_unknown_unit", unit), file=sys.stderr)
+        print(msg("cli_unknown_plugin", plugin), file=sys.stderr)
         return 2
-    dependents = [u for u in plan if u != unit]
+    dependents = [u for u in plan if u != plugin]
     if dependents and not cascade:
-        print(msg("cli_off_blocked", unit, ", ".join(dependents)), file=sys.stderr)
+        print(msg("cli_off_blocked", plugin, ", ".join(dependents)), file=sys.stderr)
         return 1
     if dependents:
         print(msg("cli_plan_off_cascade", ", ".join(dependents)))
-    return _report_steps(transaction.unit_off(unit, cascade=cascade))
+    return _report_steps(transaction.plugin_off(plugin, cascade=cascade))
 
 
 def _state_cell(state: str, width: int) -> str:
@@ -168,13 +168,13 @@ def _state_cell(state: str, width: int) -> str:
 
 
 def _cmd_list(sub_args: List[str]) -> int:
-    """nyxuri list [unit] — the whole blueprint, or one unit in detail."""
+    """nyxuri list [plugin] — the whole blueprint, or one plugin in detail."""
     if len(sub_args) > 1:
-        exit_usage(f"{CLI_CMD} list [unit]")
+        exit_usage(f"{CLI_CMD} list [plugin]")
     if sub_args:
-        return _show_unit_detail(sub_args[0])
-    recs = ledger.all_units()
-    ids = sorted(set(registry.unit_ids()) | set(recs))
+        return _show_plugin_detail(sub_args[0])
+    recs = ledger.all_plugins()
+    ids = sorted(set(registry.plugin_ids()) | set(recs))
     if not ids:
         print(msg("cli_list_none"))
         return 0
@@ -185,15 +185,15 @@ def _cmd_list(sub_args: List[str]) -> int:
     return 0
 
 
-def _show_unit_detail(unit: str) -> int:
-    """One unit: manifest declarations joined with its ledger record."""
-    known = unit in registry.unit_ids()
-    if not known and unit not in ledger.all_units():
-        print(msg("cli_unknown_unit", unit), file=sys.stderr)
+def _show_plugin_detail(plugin: str) -> int:
+    """One plugin: manifest declarations joined with its ledger record."""
+    known = plugin in registry.plugin_ids()
+    if not known and plugin not in ledger.all_plugins():
+        print(msg("cli_unknown_plugin", plugin), file=sys.stderr)
         return 2
-    print(f"{Colors.BOLD}{unit}{Colors.RESET}")
+    print(f"{Colors.BOLD}{plugin}{Colors.RESET}")
     if known:
-        m = registry.load_unit(unit)
+        m = registry.load_plugin(plugin)
         if m.label:
             print(f"  {msg('cli_detail_label')}: {m.label}")
         if m.category:
@@ -201,7 +201,7 @@ def _show_unit_detail(unit: str) -> int:
         if m.runtime:
             print(f"  {msg('cli_detail_runtime')}")
         else:
-            print(f"  {msg('cli_detail_target')}: {get_env().config_dir / (m.target or unit)}")
+            print(f"  {msg('cli_detail_target')}: {get_env().config_dir / (m.target or plugin)}")
         if m.dependencies:
             print(f"  {msg('cli_detail_dependencies')}: {', '.join(m.dependencies)}")
         pkgs = (*m.packages_repo, *m.packages_aur, *m.packages_flatpak)
@@ -210,7 +210,7 @@ def _show_unit_detail(unit: str) -> int:
         if m.requires_root or m.system_paths:
             paths = f" ({', '.join(m.system_paths)})" if m.system_paths else ""
             print(f"  {msg('cli_detail_privilege')}: root{paths}")
-    rec = ledger.get_unit(unit)
+    rec = ledger.get_plugin(plugin)
     if rec:
         print(f"  {msg('cli_detail_state')}: {rec.get('state', '-')}")
         print(f"  {msg('cli_detail_preset')}: {rec.get('preset', '-')}")
@@ -221,11 +221,11 @@ def _show_unit_detail(unit: str) -> int:
     else:
         print(f"  {msg('cli_detail_never_switched')}")
     try:
-        audit = transaction.audit_units(unit)
+        audit = transaction.audit_plugins(plugin)
     except KeyError:
         audit = {}
-    if audit.get(unit):
-        print(f"  {msg('cli_detail_audit')}: {audit[unit]}")
+    if audit.get(plugin):
+        print(f"  {msg('cli_detail_audit')}: {audit[plugin]}")
     return 0
 
 
@@ -244,7 +244,7 @@ def _print_audit(report: dict) -> None:
         color, mark = marks.get(report[uid], (Colors.DIM, "[•]"))
         print(f"  {color}{mark}{Colors.RESET} {uid:<24}{report[uid]}")
     # The three states are verdicts with an action now (#139): drift is a
-    # protected user change, a ghost is an adoptable unit — say so.
+    # protected user change, a ghost is an adoptable plugin — say so.
     if transaction.STATE_DRIFTED in report.values():
         print(msg("cli_audit_drifted_hint"))
     if transaction.STATE_GHOST in report.values():
@@ -252,17 +252,17 @@ def _print_audit(report: dict) -> None:
 
 
 def _cmd_doctor(sub_args: List[str]) -> int:
-    """nyxuri doctor [unit] — audit first, system checkup as the annex."""
+    """nyxuri doctor [plugin] — audit first, system checkup as the annex."""
     if len(sub_args) > 1:
-        exit_usage(f"{CLI_CMD} doctor [unit]")
-    unit = sub_args[0] if sub_args else None
+        exit_usage(f"{CLI_CMD} doctor [plugin]")
+    plugin = sub_args[0] if sub_args else None
     try:
-        report = transaction.audit_units(unit)
+        report = transaction.audit_plugins(plugin)
     except KeyError:
-        print(msg("cli_unknown_unit", unit), file=sys.stderr)
+        print(msg("cli_unknown_plugin", plugin), file=sys.stderr)
         return 2
     _print_audit(report)
-    if unit is None:
+    if plugin is None:
         run_doctor()
     return 0
 
@@ -517,18 +517,18 @@ def _cmd_help(sub_args: List[str]) -> int:
 
 
 COMMANDS = {
-    "on":        (_cmd_on,        f"{CLI_CMD} on <unit> [--preset <name>]"),
-    "enable":    (_cmd_on,        f"{CLI_CMD} on <unit> [--preset <name>]"),
-    "off":       (_cmd_off,       f"{CLI_CMD} off <unit> [--cascade]"),
-    "disable":   (_cmd_off,       f"{CLI_CMD} off <unit> [--cascade]"),
-    "list":      (_cmd_list,      f"{CLI_CMD} list [unit]"),
+    "on":        (_cmd_on,        f"{CLI_CMD} on <plugin> [--preset <name>]"),
+    "enable":    (_cmd_on,        f"{CLI_CMD} on <plugin> [--preset <name>]"),
+    "off":       (_cmd_off,       f"{CLI_CMD} off <plugin> [--cascade]"),
+    "disable":   (_cmd_off,       f"{CLI_CMD} off <plugin> [--cascade]"),
+    "list":      (_cmd_list,      f"{CLI_CMD} list [plugin]"),
     "pkg":       (_cmd_pkg,       f"{CLI_CMD} pkg <install|upgrade|remove|search|info|installed>"),
     "clean":     (_cmd_clean,     f"{CLI_CMD} clean [-n] [--only <tasks>]"),
     "install":   (_cmd_install,   f"{CLI_CMD} install [full|config]"),
     "snapshot":  (_cmd_snapshot,  f"{CLI_CMD} snapshot [note|list|delete [index]]"),
     "rollback":  (_cmd_rollback,  f"{CLI_CMD} rollback [index]"),
     "uninstall": (_cmd_uninstall, f"{CLI_CMD} uninstall [--all|standard|restore|purge]"),
-    "doctor":    (_cmd_doctor,    f"{CLI_CMD} doctor [unit]"),
+    "doctor":    (_cmd_doctor,    f"{CLI_CMD} doctor [plugin]"),
     "deps":      (_cmd_deps,      f"{CLI_CMD} deps [core|apps]"),
     "bug":       (_cmd_bug,       f"{CLI_CMD} bug"),
     "test":      (_cmd_test,      f"{CLI_CMD} test"),
@@ -556,7 +556,7 @@ def main() -> None:
     get_env()
     # The event delivery is the outer layer's job (unit-model.md §6): wire
     # the Shell bridge once so every verb (CLI, TUI, installer menus) that
-    # lands a unit transaction notifies the running shell over its own IPC.
+    # lands a plugin transaction notifies the running shell over its own IPC.
     bridge.wire()
     ensure_nyxuri_symlink()
 

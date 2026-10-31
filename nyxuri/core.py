@@ -367,8 +367,8 @@ class Environment:
         root_dir = pkg_dir.parent
         self.run_mode, self.mode_label, self.repo_dir = _detect_run_mode(root_dir, self.cache_dir)
 
-        self.units_src = self.repo_dir / CONFIG_DIR_NAME
-        # Shell blueprint root (unit-model.md §6): the shell namespace's unit
+        self.plugins_src = self.repo_dir / CONFIG_DIR_NAME
+        # Shell blueprint root (unit-model.md §6): the shell namespace's plugin
         # manifests live inside the shell tree — file tree expresses architecture.
         self.shell_units_src = self.repo_dir / "shell" / "units"
         # Nyxuri's own home under ~/.config: backups, presets, active state.
@@ -577,7 +577,7 @@ def timed_run(cmd: list, timeout: float, **kw) -> Optional[subprocess.CompletedP
     Child interpreters never write bytecode (PYTHONDONTWRITEBYTECODE=1):
     hooks and tools frequently execute straight from the read-only blueprint
     tree, and a stray __pycache__ there pierces the source/config isolation
-    invariant (unit-model §1).
+    invariant (plugin-model §1).
     """
     env = kw.get("env")
     if env is None:

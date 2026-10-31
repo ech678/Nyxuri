@@ -1,8 +1,8 @@
-"""Contract tests for the checkbox uninstall (KM3 unit-model edition).
+"""Contract tests for the checkbox uninstall (KM3 plugin-model edition).
 
-Covers: only ledger-enabled hook units are offered and switched off; execution
-order (unit off before state_dir deletion); archive glob cleanup; the fish
-unit's pinned Fisher hooks (lockfile guard, pin argv, unowned-fisher refusal,
+Covers: only ledger-enabled hook plugins are offered and switched off; execution
+order (plugin off before state_dir deletion); archive glob cleanup; the fish
+plugin's pinned Fisher hooks (lockfile guard, pin argv, unowned-fisher refusal,
 legacy ownership record cleanup).
 """
 
@@ -20,20 +20,20 @@ from tests.utils import TempEnv
 REPO = Path(__file__).resolve().parents[2]
 
 
-def _load_hook(unit: str, name: str):
-    """Import a unit hook script as a module (scripts guard on __main__)."""
+def _load_hook(plugin: str, name: str):
+    """Import a plugin hook script as a module (scripts guard on __main__)."""
     from importlib.machinery import SourceFileLoader
 
-    path = REPO / "plugins" / unit / "hooks" / name
-    name = f"hook_{unit}_{name}"
+    path = REPO / "plugins" / plugin / "hooks" / name
+    name = f"hook_{plugin}_{name}"
     spec = importlib.util.spec_from_file_location(name, path, loader=SourceFileLoader(name, str(path)))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 
-class TestUninstallUnitVisibility(unittest.TestCase):
-    """KM3: only ledger-enabled hook units are offered and switched off."""
+class TestUninstallPluginVisibility(unittest.TestCase):
+    """KM3: only ledger-enabled hook plugins are offered and switched off."""
 
     def setUp(self):
         self._ctx = TempEnv()
@@ -48,7 +48,7 @@ class TestUninstallUnitVisibility(unittest.TestCase):
         dest = self.env.config_dir / uid
         dest.mkdir(parents=True, exist_ok=True)
         (dest / "marker.conf").write_text("x", encoding="utf-8")
-        ledger.set_unit(uid, state="enabled", files={}, vault=None)
+        ledger.set_plugin(uid, state="enabled", files={}, vault=None)
 
     def test_only_enabled_units_are_switched_off(self):
         from nyxuri.state.uninstall import uninstall_nyxuri
@@ -58,11 +58,11 @@ class TestUninstallUnitVisibility(unittest.TestCase):
         with patch("sys.stdin.isatty", return_value=False), patch("builtins.print"), \
              patch("nyxuri.state.uninstall.copy_path"), patch("nyxuri.state.uninstall.remove_path"), \
              patch("nyxuri.state.uninstall.get_pics_dir", return_value=self.env.home / "Pictures"), \
-             patch("nyxuri.kernel.transaction.unit_off", side_effect=off):
+             patch("nyxuri.kernel.transaction.plugin_off", side_effect=off):
             result = uninstall_nyxuri("")
 
         self.assertTrue(result)
-        # Only the enabled hook unit goes through the transaction; greeter is
+        # Only the enabled hook plugin goes through the transaction; greeter is
         # not enabled → never offered, never switched.
         self.assertEqual([c.args[0] for c in off.call_args_list], ["fish"])
 
@@ -73,15 +73,15 @@ class TestUninstallUnitVisibility(unittest.TestCase):
         with patch("sys.stdin.isatty", return_value=False), patch("builtins.print"), \
              patch("nyxuri.state.uninstall.copy_path"), patch("nyxuri.state.uninstall.remove_path"), \
              patch("nyxuri.state.uninstall.get_pics_dir", return_value=self.env.home / "Pictures"), \
-             patch("nyxuri.kernel.transaction.unit_off",
-                   return_value=[MagicMock(ok=False, unit="greeter", detail="boom")]):
+             patch("nyxuri.kernel.transaction.plugin_off",
+                   return_value=[MagicMock(ok=False, plugin="greeter", detail="boom")]):
             result = uninstall_nyxuri("")
 
         self.assertFalse(result)
 
 
 class TestUninstallExecutionOrder(unittest.TestCase):
-    """Unit offs run BEFORE nyx_dir/state_dir deletion."""
+    """Plugin offs run BEFORE nyx_dir/state_dir deletion."""
 
     def setUp(self):
         self._ctx = TempEnv()
@@ -99,7 +99,7 @@ class TestUninstallExecutionOrder(unittest.TestCase):
 
         dest = self.env.config_dir / "fish"
         dest.mkdir(parents=True, exist_ok=True)
-        ledger.set_unit("fish", state="enabled", files={}, vault=None)
+        ledger.set_plugin("fish", state="enabled", files={}, vault=None)
 
         state_at_off = {}
 
@@ -110,10 +110,10 @@ class TestUninstallExecutionOrder(unittest.TestCase):
         with patch("sys.stdin.isatty", return_value=False), patch("builtins.print"), \
              patch("nyxuri.state.uninstall.copy_path"), \
              patch("nyxuri.state.uninstall.get_pics_dir", return_value=self.env.home / "Pictures"), \
-             patch("nyxuri.kernel.transaction.unit_off", side_effect=off_side):
+             patch("nyxuri.kernel.transaction.plugin_off", side_effect=off_side):
             uninstall_nyxuri("")
 
-        self.assertTrue(state_at_off.get("exists"), "state_dir must outlive unit offs")
+        self.assertTrue(state_at_off.get("exists"), "state_dir must outlive plugin offs")
 
 
 class TestUninstallArchiveGlob(unittest.TestCase):
@@ -176,7 +176,7 @@ class TestUninstallHookPreservation(unittest.TestCase):
 
 
 class TestFisherHookLockfile(unittest.TestCase):
-    """The fish unit's install hook refuses anything but the reviewed lockfile."""
+    """The fish plugin's install hook refuses anything but the reviewed lockfile."""
 
     def setUp(self):
         self._ctx = TempEnv()
@@ -268,7 +268,7 @@ class TestFisherHookLockfile(unittest.TestCase):
 
 
 class TestFisherHookLegacyCleanup(unittest.TestCase):
-    """The fish unit's off-hook retires the module-era ownership record only."""
+    """The fish plugin's off-hook retires the module-era ownership record only."""
 
     def setUp(self):
         self._ctx = TempEnv()

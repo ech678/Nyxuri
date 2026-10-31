@@ -131,16 +131,16 @@ class TestIssue139UpdateNeverClobbersUserFiles(unittest.TestCase):
 
     def _stage_unit(self, ctx):
         configs = ctx.home / "configs-src"
-        unit = configs / "app"
-        unit.mkdir(parents=True, exist_ok=True)
-        (unit / "manifest.toml").write_text("packages = []\n", encoding="utf-8")
-        (unit / "a.conf").write_text("v1\n", encoding="utf-8")
-        ctx.env.units_src = configs
+        plugin = configs / "app"
+        plugin.mkdir(parents=True, exist_ok=True)
+        (plugin / "manifest.toml").write_text("packages = []\n", encoding="utf-8")
+        (plugin / "a.conf").write_text("v1\n", encoding="utf-8")
+        ctx.env.plugins_src = configs
         import nyxuri.deploy.deploy as _deploy_core
         import nyxuri.deploy.manifest as _deploy_manifest
         _deploy_core._CONFIG_ITEMS_CACHE = []
         _deploy_manifest._MANIFEST_CACHE = None
-        return unit
+        return plugin
 
     def _run_update(self, flag=""):
         from nyxuri.installer.workflows import offer_overwrite_upgrade
@@ -162,15 +162,15 @@ class TestIssue139UpdateNeverClobbersUserFiles(unittest.TestCase):
         from nyxuri.kernel import ledger, transaction
 
         with TempEnv() as ctx:
-            unit = self._stage_unit(ctx)
-            self.assertTrue(transaction.unit_on("app")[0].ok)
+            plugin = self._stage_unit(ctx)
+            self.assertTrue(transaction.plugin_on("app")[0].ok)
             dest = ctx.home / ".config/app"
             # The user's two fatal moves from the issue: editing a managed
             # file and dropping a personal file next to it.
             (dest / "a.conf").write_text("my binds\n", encoding="utf-8")
             (dest / "zz-tools.fish").write_text("atuin init\n", encoding="utf-8")
             # The repo moves on.
-            unit.joinpath("a.conf").write_text("v2\n", encoding="utf-8")
+            plugin.joinpath("a.conf").write_text("v2\n", encoding="utf-8")
 
             ok, captured = _quiet(self._run_update, "")
             self.assertTrue(ok)
@@ -180,10 +180,10 @@ class TestIssue139UpdateNeverClobbersUserFiles(unittest.TestCase):
                              "user-placed files must never be deleted by an update")
             self.assertEqual(captured["groups"].get("modified"), ["~/.config/app/a.conf"])
             self.assertTrue(any("zz-tools.fish" in line for line in captured["preserved"]))
-            rec = ledger.get_unit("app")
+            rec = ledger.get_plugin("app")
             self.assertNotIn("a.conf", rec["files"],
                              "a carried file must never read as engine-laid")
-            self.assertEqual(transaction.audit_units("app"), {"app": "Synced"})
+            self.assertEqual(transaction.audit_plugins("app"), {"app": "Synced"})
 
             # --force is the adopt verb: template side wins, baseline clears.
             ok, _ = _quiet(self._run_update, "--force")
@@ -192,34 +192,34 @@ class TestIssue139UpdateNeverClobbersUserFiles(unittest.TestCase):
             self.assertEqual((dest / "zz-tools.fish").read_text(), "atuin init\n",
                              "force adopts the template, it is not a purge")
             self.assertEqual(
-                ledger.get_unit("app")["files"]["a.conf"],
+                ledger.get_plugin("app")["files"]["a.conf"],
                 __import__("hashlib").sha256((dest / "a.conf").read_bytes()).hexdigest(),
             )
-            self.assertEqual(transaction.audit_units("app"), {"app": "Synced"})
+            self.assertEqual(transaction.audit_plugins("app"), {"app": "Synced"})
 
     def test_ghost_unit_update_freezes_and_hints_adoption(self):
         from nyxuri.kernel import ledger, transaction
 
         with TempEnv() as ctx:
-            unit = self._stage_unit(ctx)
+            plugin = self._stage_unit(ctx)
             dest = ctx.home / ".config/app"
             dest.mkdir(parents=True)
             (dest / "a.conf").write_text("v3-era\n", encoding="utf-8")
-            self.assertIsNone(ledger.get_unit("app"), "precondition: Ghost")
+            self.assertIsNone(ledger.get_plugin("app"), "precondition: Ghost")
 
             ok, captured = _quiet(self._run_update, "")
             self.assertTrue(ok)
             self.assertEqual((dest / "a.conf").read_text(), "v3-era\n",
-                             "an unregistered unit's content is never overwritten")
+                             "an unregistered plugin's content is never overwritten")
             self.assertTrue(any("app" in line for line in captured["notices"]),
                              "the update must point at `nyxuri on` adoption")
-            self.assertIsNone(ledger.get_unit("app"),
+            self.assertIsNone(ledger.get_plugin("app"),
                               "the installer never invents switch state")
 
             # Adoption is the explicit way out: template claims its names.
-            self.assertTrue(transaction.unit_on("app")[0].ok)
+            self.assertTrue(transaction.plugin_on("app")[0].ok)
             self.assertEqual((dest / "a.conf").read_text(), "v1\n")
-            self.assertEqual(transaction.audit_units("app"), {"app": "Synced"})
+            self.assertEqual(transaction.audit_plugins("app"), {"app": "Synced"})
 
 
 if __name__ == "__main__":

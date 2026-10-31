@@ -66,14 +66,14 @@ def uninstall_nyxuri(mode: str = "") -> bool:
     elif mode in ("3", "--purge", "purge", "--all", "all"):
         mode = "all"
 
-    # --- KM3: unit switches replace the module checkboxes. Enabled units
+    # --- KM3: plugin switches replace the module checkboxes. Enabled plugins
     # with living-area side effects are offered through `off` (cascade off),
     # which vaults customs and wipes to white paper.
     HOOK_UNITS = ("fcitx5-rime", "fish", "greeter", "noctalia")
     enabled_hooked = [
         uid for uid in HOOK_UNITS
-        if uid in registry.unit_ids()
-        and (ledger.get_unit(uid) or {}).get("state") == "enabled"
+        if uid in registry.plugin_ids()
+        and (ledger.get_plugin(uid) or {}).get("state") == "enabled"
     ]
 
     # --- Build checkbox entries (defaults = standard scope) ---
@@ -88,13 +88,13 @@ def uninstall_nyxuri(mode: str = "") -> bool:
         CheckboxEntry(key="state", label=msg("uninstall_item_state"), checked=False),
         CheckboxEntry(key="cache", label=msg("uninstall_item_cache"), checked=False),
     ]
-    unit_entries = [
-        CheckboxEntry(key=f"unit:{uid}", label=msg("uninstall_item_unit", uid), checked=True)
+    plugin_entries = [
+        CheckboxEntry(key=f"plugin:{uid}", label=msg("uninstall_item_plugin", uid), checked=True)
         for uid in enabled_hooked
     ]
-    if unit_entries:
-        entries.append(CheckboxEntry(key="__sep_mod__", label=msg("uninstall_group_units"), is_separator=True))
-        entries.extend(unit_entries)
+    if plugin_entries:
+        entries.append(CheckboxEntry(key="__sep_mod__", label=msg("uninstall_group_plugins"), is_separator=True))
+        entries.extend(plugin_entries)
 
     all_keys = [e.key for e in entries if not e.is_separator]
     default_keys = [e.key for e in entries if not e.is_separator and e.checked]
@@ -139,20 +139,20 @@ def uninstall_nyxuri(mode: str = "") -> bool:
     # read_key), so stale \r would feed its password prompt as bad input.
     drain_stdin()
 
-    # 1. Enabled hook units FIRST — `off` vaults customs and wipes to white
-    #    paper (side-domain cleanup via each unit's post_remove hook).
+    # 1. Enabled hook plugins FIRST — `off` vaults customs and wipes to white
+    #    paper (side-domain cleanup via each plugin's post_remove hook).
     #    nyx_dir/state must outlive these.
     for uid in enabled_hooked:
-        if f"unit:{uid}" in selected:
+        if f"plugin:{uid}" in selected:
             try:
-                steps = transaction.unit_off(uid, cascade=True)
+                steps = transaction.plugin_off(uid, cascade=True)
                 if not all(s.ok for s in steps):
-                    log_msg("WARN", f"unit off reported failure: {uid}")
+                    log_msg("WARN", f"plugin off reported failure: {uid}")
                     print(msg("uninstall_failed", uid))
                     return False
                 print(msg("uninstall_module_done", uid))
             except Exception as e:
-                log_msg("WARN", f"unit off failed for {uid}: {e}")
+                log_msg("WARN", f"plugin off failed for {uid}: {e}")
                 print(msg("uninstall_failed", uid))
                 return False
 

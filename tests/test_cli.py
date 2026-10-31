@@ -16,7 +16,7 @@ from tests.utils import TempEnv
 
 class TestRetiredModuleCommands(unittest.TestCase):
     """KM3 execution: module verbs are physically gone; invoking them still
-    points at their unit-verb replacements instead of dying silently."""
+    points at their plugin-verb replacements instead of dying silently."""
 
     def setUp(self):
         self._ctx = TempEnv()
@@ -59,7 +59,7 @@ class TestRetiredModuleCommands(unittest.TestCase):
 
 
 class TestUpdateForcePath(unittest.TestCase):
-    """update --force deploys wallpapers and replays enabled-unit hooks."""
+    """update --force deploys wallpapers and replays enabled-plugin hooks."""
 
     def setUp(self):
         self._ctx = TempEnv()
@@ -98,12 +98,12 @@ class TestUserHookEntrypoints(unittest.TestCase):
         with patch("nyxuri.installer.workflows.deploy_selected_configs", side_effect=lambda **_: events.append("configs") or []), \
              patch("nyxuri.installer.workflows._enable_wallpapers", side_effect=lambda: events.append("wallpapers") or True), \
              patch("nyxuri.installer.workflows.transaction.replay_enabled_hooks",
-                   side_effect=lambda: events.append("unit-hooks")), \
+                   side_effect=lambda: events.append("plugin-hooks")), \
              patch("nyxuri.installer.workflows.run_user_hooks", side_effect=lambda: events.append("hooks") or []), \
              patch("nyxuri.installer.workflows.render_completion_screen", side_effect=lambda *_, **__: events.append("completion")):
             self.assertTrue(offer_overwrite_upgrade("--force"))
 
-        self.assertEqual(events, ["configs", "wallpapers", "unit-hooks", "hooks", "completion"])
+        self.assertEqual(events, ["configs", "wallpapers", "plugin-hooks", "hooks", "completion"])
 
     def test_failed_and_code_only_updates_skip_hooks(self):
         from nyxuri.installer.workflows import offer_overwrite_upgrade
@@ -502,14 +502,14 @@ class TestCoreVerbs(unittest.TestCase):
         self.assertEqual(code, 2)
 
     def test_on_unknown_unit_exits_2_with_hint(self):
-        code, _, err = self._run("on", "no-such-unit")
+        code, _, err = self._run("on", "no-such-plugin")
         self.assertEqual(code, 2)
-        self.assertIn("Unknown unit", err)
+        self.assertIn("Unknown plugin", err)
 
     def test_list_detail_unknown_unit_exits_2(self):
-        code, _, err = self._run("list", "no-such-unit")
+        code, _, err = self._run("list", "no-such-plugin")
         self.assertEqual(code, 2)
-        self.assertIn("Unknown unit", err)
+        self.assertIn("Unknown plugin", err)
 
     def test_doctor_rejects_second_argument(self):
         code, _, _ = self._run("doctor", "kitty", "extra")
@@ -522,15 +522,15 @@ class TestCoreVerbs(unittest.TestCase):
         from nyxuri.kernel.transaction import Step
         captured = {}
 
-        def fake_unit_on(unit, *, preset=None, install_packages=None):
-            captured.update(unit=unit, preset=preset, installer=install_packages)
-            return [Step(unit, True, "enabled")]
+        def fake_unit_on(plugin, *, preset=None, install_packages=None):
+            captured.update(plugin=plugin, preset=preset, installer=install_packages)
+            return [Step(plugin, True, "enabled")]
 
-        with patch("nyxuri.cli.transaction.unit_on", side_effect=fake_unit_on), \
+        with patch("nyxuri.cli.transaction.plugin_on", side_effect=fake_unit_on), \
              patch("nyxuri.cli.transaction.missing_packages", return_value=[]):
             code, out, _ = self._run("on", "kitty", "--preset", "dark")
         self.assertEqual(code, 0)
-        self.assertEqual(captured["unit"], "kitty")
+        self.assertEqual(captured["plugin"], "kitty")
         self.assertEqual(captured["preset"], "dark")
         self.assertIs(captured["installer"], _package_installer)
         self.assertIn("enabled", out)
@@ -538,7 +538,7 @@ class TestCoreVerbs(unittest.TestCase):
     def test_on_reports_missing_packages_failure(self):
         from nyxuri.kernel.transaction import Step
         steps = [Step("kitty", False, "missing-packages: kitty, fish")]
-        with patch("nyxuri.cli.transaction.unit_on", return_value=steps), \
+        with patch("nyxuri.cli.transaction.plugin_on", return_value=steps), \
              patch("nyxuri.cli.transaction.missing_packages", return_value=[]):
             code, out, _ = self._run("on", "kitty")
         self.assertEqual(code, 1)
@@ -547,7 +547,7 @@ class TestCoreVerbs(unittest.TestCase):
     def test_off_forwards_cascade_flag(self):
         from nyxuri.kernel.transaction import Step
         with patch("nyxuri.cli.transaction.plan_off", return_value=["kitty"]) as plan, \
-             patch("nyxuri.cli.transaction.unit_off",
+             patch("nyxuri.cli.transaction.plugin_off",
                    return_value=[Step("kitty", True, "disabled")]) as off:
             code, out, _ = self._run("off", "kitty", "--cascade")
         plan.assert_called_once_with("kitty")
@@ -557,7 +557,7 @@ class TestCoreVerbs(unittest.TestCase):
 
     def test_off_blocked_without_cascade_never_transacts(self):
         with patch("nyxuri.cli.transaction.plan_off", return_value=["kitty", "bar"]) as plan, \
-             patch("nyxuri.cli.transaction.unit_off") as off:
+             patch("nyxuri.cli.transaction.plugin_off") as off:
             code, _, err = self._run("off", "kitty")
         plan.assert_called_once_with("kitty")
         off.assert_not_called()
@@ -573,7 +573,7 @@ class TestCoreVerbs(unittest.TestCase):
         self.assertIn("niri", out)
 
     def test_doctor_bare_prints_audit_then_checkup(self):
-        with patch("nyxuri.cli.transaction.audit_units",
+        with patch("nyxuri.cli.transaction.audit_plugins",
                    return_value={"kitty": "Synced", "fish": "Ghost"}) as audit, \
              patch("nyxuri.cli.run_doctor", return_value=True) as checkup:
             code, out, _ = self._run("doctor")
@@ -584,7 +584,7 @@ class TestCoreVerbs(unittest.TestCase):
         self.assertIn("Ghost", out)
 
     def test_doctor_unit_arg_skips_system_checkup(self):
-        with patch("nyxuri.cli.transaction.audit_units", return_value={}) as audit, \
+        with patch("nyxuri.cli.transaction.audit_plugins", return_value={}) as audit, \
              patch("nyxuri.cli.run_doctor", return_value=True) as checkup:
             code, _, _ = self._run("doctor", "kitty")
         audit.assert_called_once_with("kitty")
