@@ -54,12 +54,13 @@ R0-2 步 5 处决：插件装包统一走 `nyxuri on <plugin>`。
   用户住 `~/.config/nyxuri/forms/`），机制见 [forms](forms.md)。
 - **Customs**：`__custom__` 文件跨更新、跨形态切换保留，见 [file-preservation](file-preservation.md)。
 
-## 四大动词与新旧命令的分界
+## 生命周期动词与新旧命令的分界
 
-`list / on / off / use / doctor` 是插件动词面（语义等价长动词 enable/disable），任何开关
-只走 `transaction` 一条事务路径落账本；install/update/theme 等是过渡期
-的领域动词（退役清单见 [plugin-model](plugin-model.md) §7）。全部命令表见
-[operation-map](operation-map.md)。
+`list / on / off / use / doctor` 是已落地的插件动词面（语义等价长动词
+enable/disable），任何开关只走 `transaction` 一条事务路径落账本；`add / remove /
+update`（第三方生命周期）随 S1 落地，契约已定稿（[plugin-model](plugin-model.md)
+§5 终态八条）。install/update（引擎自更新）/theme 等是过渡期的领域动词（退役清单见
+[plugin-model](plugin-model.md) §7）。全部命令表见 [operation-map](operation-map.md)。
 
 ## 运行时拓扑速览（原 runtime-topology 页，细节归档见 archive/）
 
@@ -67,7 +68,8 @@ R0-2 步 5 处决：插件装包统一走 `nyxuri on <plugin>`。
   `active_shell` 路由 Noctalia / 自研 Shell）+ fcitx5 + 护眼同步。
 - **动作网关**：快捷键 → `shell-action.sh`（launcher/session/settings/clipboard/
   lock/wallpaper-random 等标准动作）→ Noctalia IPC 或自研 Shell；
-  星环启动器 / 壁纸选择器 / 划词翻译是 `plugins/noctalia/tools/` 的一次性进程。
+  星环启动器 / 壁纸选择器是 `plugins/noctalia/tools/` 的一次性进程；划词翻译已外迁
+  上游（S1 起经 `nyxuri add` 以第三方插件回归）。
 - **主题调度**：`nyxuri theme` 单一实现——gsettings（portal→GTK4/Brave）、
   settings.ini、Noctalia IPC、Kitty SIGUSR1 四路同步，flock 排他。
 - **Shell 事件**：事务落账后发一次 `plugin-changed` 事件（`quickshell ipc unit reload`，

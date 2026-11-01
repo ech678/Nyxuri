@@ -2,7 +2,7 @@
 
 > **战略定调：留我们的皮，换 Omarchy 的心**。
 > - **皮（The Skin，誓死守护）**：Clavis / Caelestia 的现代视觉、MD3 几何精度、流体动画、NexusStyle Token、Niri 原版合成器驱动（`CompositorDriver` + `NiriDriver`）、Python 引擎与账本（单一开关真相）。
-> - **心（The Heart，代码物理整抄）**：Omarchy 经过实战检验的插件微内核调度中枢——806 行 `PluginRegistry.qml`（进程守护、inotify 实时热监听、分段输出解析流）、7 个 `Plugin*Api.qml` 安全隔离门面、`BarWidgetRegistry.qml` 二级挂载、按需召唤（summon/hide）生命周期。
+> - **心（The Heart，代码物理整抄）**：Omarchy 经过实战检验的插件微内核调度中枢——806 行 `PluginRegistry.qml`（进程守护、inotify 实时热监听、分段输出解析流）、7 个 `Plugin*Api.qml` 安全隔离门面、`BarWidgetRegistry.qml` 二级挂载、按需召唤（summon/hide）生命周期（S1-0 改裁：门面与二级挂载按消费者落度，见下文裁决变更登记）。
 > - **缝合切口（最小侵入适配）**：
 >   1. **插件目录**：Omarchy `~/.config/omarchy/plugins` ➔ Nyxuri `~/.local/share/nyxuri/plugins/<id>/`（XDG 数据物理隔离，守住不变量 1）；
 >   2. **清单载体**：Omarchy `manifest.json` ➔ Nyxuri `manifest.toml`（单文件、已走通的 `Toml.parse` 与 `PluginManifest.js`）；
@@ -27,14 +27,14 @@ S1 开工执行以本页裁决为机器验收基准（全局门禁 4）。
 | 资产 | 规模 | 内容 | 服务站点 | 裁决 | 理由与落地动作 |
 | --- | --- | --- | --- | --- | --- |
 | `services/PluginRegistry.qml` | 806 行 | 三方目录扫描、enable/disable 经 shell.json、trust/capabilities、clone/卸载、本地变更热重载（inotifywait + 150ms timer）、`pluginLoadFailed` 信号、`watcherReaper` | S1 核心中枢 | **改造（以原版为基准物理拷入）** | 物理复制至 `shell/services/` 作为基线，保留 `localPluginWatcher`、`watcherReaper`、`parseScanOutput` 与能力标记；剪裁点：扫描路径换 `~/.local/share/nyxuri/plugins/<id>/`，调用已定稿的 `PluginManifest.js` (TOML)，开关改读 `StateProjection`，删除原版 `shell.json` 写入代码。 |
-| `services/PluginRegistryApi.qml` | 32 行 | 注册表暴露给插件的 API 面（installedPlugins、entryPointUrl） | S1 门面 | **照抄** | 物理复制至 `shell/services/`，为插件提供只读安全门面，隔绝宿主私有方法与未授权操作。 |
-| `services/PluginShellApi.qml` | 70 行 | 宿主 API（summon / hide / toggle / isPluginOpen 等） | S1 门面 | **改造（原版整抄后对接）** | 物理复制至 `shell/services/`，暴露受限宿主召唤与控制门面，底层动作桥接 `ActionGateway`。 |
-| `services/PluginBarStateApi.qml` | 23 行 | bar 状态 API（只读状态投影） | S1 门面 | **照抄** | 物理复制至 `shell/services/`，状态栏状态只读门面，供小部件安全感知桌面状态。 |
-| `services/PluginAppLibraryApi.qml` | 46 行 | 应用库 API | S1 门面 | **照抄** | 物理复制至 `shell/services/`，应用库搜索门面，供启动器/菜单类插件调用。 |
-| `services/PluginBarWidgetRegistryApi.qml` | 24 行 | bar widget 注册 API | S1 门面 | **照抄** | 物理复制至 `shell/services/`，向状态栏小部件暴露注册接口。 |
-| `services/PluginFirstPartyServiceApi.qml` | 53 行 | 一方服务 API | S1 门面 | **照抄** | 物理复制至 `shell/services/`，一方插件受信任服务访问门面。 |
-| `services/BarWidgetRegistry.qml` | 49 行 | widget 级二级注册表（widget 也是插件） | S1 小部件 | **照抄** | 物理复制至 `shell/services/`，管理小部件二级注册与槽位映射。 |
-| `Ui/PluginBarApi.qml` | 100 行 | widget 侧持有的 bar API 对象（property 注入，非单例） | S1 小部件 | **照抄（入 `ui/`）** | 物理复制至 `shell/ui/PluginBarApi.qml`，状态栏注入对象。 |
+| `services/PluginRegistryApi.qml` | 32 行 | 注册表暴露给插件的 API 面（installedPlugins、entryPointUrl） | S1 门面 | **推迟（S1-0 改裁）** | 消费者 = 三方 ui 插件本体；v1 零三方 ui 插件，抄入即死代码。触发条件见节尾裁决变更登记。 |
+| `services/PluginShellApi.qml` | 70 行 | 宿主 API（summon / hide / toggle / isPluginOpen 等） | S1 门面 | **推迟（S1-0 改裁）** | 同上；宿主侧注入工厂（参考树 `shell.qml` L432–818 约 390 行）随门面同批，不提前搬。 |
+| `services/PluginBarStateApi.qml` | 23 行 | bar 状态 API（只读状态投影） | S1 门面 | **推迟（S1-0 改裁）** | 同上。 |
+| `services/PluginAppLibraryApi.qml` | 46 行 | 应用库 API | S1 门面 | **推迟（S1-0 改裁）** | 只服务 menu kind——S0 定稿词表无此 kind，永久无消费者，除非词表扩容（走 delayed-decisions）。 |
+| `services/PluginBarWidgetRegistryApi.qml` | 24 行 | bar widget 注册 API | S1 门面 | **推迟（S1-0 改裁）** | 只服务 bar-widget kind——同上。 |
+| `services/PluginFirstPartyServiceApi.qml` | 53 行 | 一方服务 API | S1 门面 | **推迟（S1-0 改裁）** | 消费者 = bar widget；widget 生态不存在。 |
+| `services/BarWidgetRegistry.qml` | 49 行 | widget 级二级注册表（widget 也是插件） | S1 小部件 | **推迟（S1-0 改裁）** | widget 二级注册在 `edge` 单插件形状下无消费者。 |
+| `Ui/PluginBarApi.qml` | 100 行 | widget 侧持有的 bar API 对象（property 注入，非单例） | S1 小部件 | **推迟（S1-0 改裁）** | 同上；实勘修正：物理位置在参考树 `Ui/` 而非 `services/`（原裁决行写 services/ 会照抄漏件）。 |
 | `Commons/IpcRegistry.qml` + `Commons/ShellIpc.qml` | 77+12 行 | IPC 面注册与分发骨架 | S1 IPC | **改造** | 物理复制至 `shell/commons/`，与 Nyxuri 既有 `shell --action` 通道核对对齐，支持插件自带 IPC target 动态注册。 |
 | `plugins/*/manifest.json` + `widgets/*.manifest.json` | — | 协议字段实样全集；widget 微 manifest 形态 | S1 协议校验 | **改造（换载体 TOML）** | 字段语义 1:1 对位，载体统一使用 `manifest.toml`，S0-2/S0-3 已定稿。 |
 | `shell.qml` 宿主装配模式 | 1959 行 | property 注入服务实例、`summon` / `hide` 按需召唤机制、`reloadPlugins` | S1 宿主装配 | **改造** | `SlotHost.qml` 吸收其 Loader 门面属性注入模式（`item.pluginRegistry = ...`, `item.shell = ...`）与按需 summon 装载，取代当前无脑全量静态 Loader。 |
@@ -122,6 +122,36 @@ FileSearch/Spotlight tool/Recording 等)是各自域的流管理与生命周期,
 | widget 设置值与 bar 布局塞 shell.json | **拒绝**：settings schema 进 manifest（S0-3b 已定稿 controls 词表）+ 值落宿主 PluginSettings 存储；bar 布局落点已定稿（PersonalizationConfig 外观轴，见 delayed-decisions「开关状态存储」） | ROADMAP S0「shell.json 非开关部分不跟」+ S0-3 收口 |
 | Hyprland 合成器耦合（workspace/lock corners/dock 布局） | **拒绝**：CompositorDriver 面 + niri 首驱动 | ROADMAP S0-5 |
 | 安装执行包内代码 / install hook / sudo | **拒绝**（S1 安全立场：明说不沙箱但不做安全剧场；三方 v1 拒钩子） | ROADMAP S1 |
+
+## S1-0 裁决变更登记（2026-11-01，作者拍板）
+
+本页 A 节门面各行写于 S0 定稿之前。S0-2 定稿 kinds 封闭词表（`config` / `edge` /
+`island` / `overlay` / `drawer` / `surface:desktop` / `popup:notification` /
+`service`）后，Omarchy 词表里的 `bar-widget` / `bar` / `panel` / `menu` 四类 kind
+在本站不存在——服务它们的门面与 `BarWidgetRegistry`（A 节已改标**推迟**）抄入即
+死代码，违反零消费者处决原则。按消费者落度改裁：
+
+- **照旧整抄**：`PluginRegistry.qml` 心脏——进程守护三件套（scanProcess /
+  watcherReaper / inotifywait）、分段流解析、安全检查原样保留，S1-3 物理拷入 806
+  行原件建基线再剪裁；约 460 行 shell.json 开关与 bar 布局逻辑本就被 D 节预裁决
+  拒绝，不在保留范围。
+- **推迟（触发条件 = 首个三方 ui 插件真实样例出现）**：6 门面 + BarWidgetRegistry
+  + 宿主注入工厂（参考树 `shell.qml` L432–818 约 390 行）。届时按样例消费的 kind
+  按需引入对应门面，仍走「原版物理拷入建基线 → 定向剪裁」。
+- **永久推迟（词表扩容才复活）**：只服务 `menu` / `bar-widget` kind 的
+  PluginAppLibraryApi / PluginBarWidgetRegistryApi / PluginBarApi /
+  BarWidgetRegistry——kinds 词表是 S0 定稿契约，S1 不动字段；扩容诉求登记
+  [delayed-decisions](../delayed-decisions.md)。
+
+同轮裁决（动词与引擎契约，权威表述在 [plugin-model](../plugin-model.md) §5 与
+[manifest-schema](../manifest-schema.md) 第三方章）：
+
+| 裁决项 | 定案 |
+| --- | --- |
+| `update` 与引擎自更新撞名 | 参数分派：无参 = 引擎自更新（现状不动）；`nyxuri update <插件id>` = 第三方插件更新 |
+| `add` 默认态 | off（账本唯一开关真相），`--enable` 顺带启用 |
+| 来源真相 | 账本顶层 `sources` 键 `{id: {url, commit, added}}`，与 `forms` 键同模式，不碰五字段冻结 |
+| orbit-launcher 去留 | 留一方（noctalia manifest 声明）；`radial-launcher` 动作从一方注册表推导路径，与 translate 走三方注册表同一消费模式 |
 
 ## S1 动词 ↔ 资产映射（开工首日按此过堂）
 

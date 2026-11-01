@@ -12,7 +12,7 @@
 | 字段 | 默认 | 作用 |
 |---|---|---|
 | `schemaVersion` | 无 | 必须为 `1`。缺或异 → 解析报错（旧形态的判别式） |
-| `id` | 无 | 插件 id，必须等于 **蓝图根前缀 + 目录名**（`plugins/` 根无前缀：`kitty`；`shell/plugins/` 根前缀 `shell.`：`shell.bar`）。漂移即报错。官方保留裸名、`shell.` 与 `nyxuri.` 前缀；第三方 reverse-DNS（S1 执法）。账本键 = 此 id |
+| `id` | 无 | 插件 id，必须等于 **所在根的前缀 + 目录名**（`plugins/` 根无前缀：`kitty`；`shell/plugins/` 根前缀 `shell.`：`shell.bar`；第三方根无前缀、目录名 = id 全名：`io.github.upstream.orbit-translate`）。漂移即报错。官方保留裸名、`shell.` 与 `nyxuri.` 前缀；第三方必须 reverse-DNS。账本键 = 此 id |
 | `kinds` | 无 | 非空数组，枚举封闭：`config`（引擎部署的配置插件）+ 六几何插槽 `edge` / `island` / `overlay` / `drawer` / `surface:desktop` / `popup:notification`（壳装载，见 [plugin-model](plugin-model.md) §6）+ `service`（保留位，暂无消费者）。**消费路由**：引擎消费 config 类，壳注册表消费插槽类 |
 | `label` | `<id>` | 展示名（PKGBUILD optdepends 标签 + 插件详情视图 + 壳设置/开关页） |
 | `order` | `0` | ui 堆叠序（bottom → top），替代手写镜像里的数组序 |
@@ -107,7 +107,9 @@ path 不进 v1 词表）：
   插件文件无需自记账）；
 - **生活区外**（`~/.local/share`、`/etc` 等）的产物 `post_remove` 自清；
 - `hooks/` 是仓库元数据，永不部署进 `~/.config`，也不计入 `is_deployable`；
-- 钩子失败降级 WARN，Step detail 标 `hook-failed: <名字>`，不阻断事务。
+- 钩子失败降级 WARN，Step detail 标 `hook-failed: <名字>`，不阻断事务；
+- **第三方 v1 拒绝钩子**（S1 安全立场：安装一步绝不执行包内代码）——第三方
+  manifest 声明 `post_install` / `post_remove` 在 add / validate 即拒绝。
 
 ### 形态轴（`[forms]` 单节，可选——R0-2 并轨）
 
@@ -228,7 +230,29 @@ system_paths = ["/etc/greetd/config.toml", "/etc/polkit-1/rules.d/50-noctalia-gr
   `deploy = false` 否决键已退役——目录内容即契约，多出的实文件即成为可部署插件）；
 - `manifest.toml`、`__pycache__`、`hooks/` 是仓库元数据，永不落进 `~/.config`；
 - id 由蓝图根前缀派生（不从目录名字面猜命名空间）：`plugins/<id>/` 出裸 id，
-  `shell/plugins/<domain>/` 出 `shell.<domain>`。
+  `shell/plugins/<domain>/` 出 `shell.<domain>`；
+- 第三方根 `~/.local/share/nyxuri/plugins/`（S1）：只认一级目录，目录名 = manifest
+  id 全名（reverse-DNS，无前缀派生）；软链拒绝统一在扫描层，与 manifest 校验同一套
+  检查。落位与生命周期语义见下节。
+
+## 第三方插件（S1 生命周期）
+
+第三方插件不住仓库蓝图，物理落位数据域（H4）：`~/.local/share/nyxuri/plugins/<id>/`
+（复制不软链，H8；`<id>` = manifest id 全名 reverse-DNS，官方保留裸名、`shell.` 与
+`nyxuri.` 前缀）。一个位置一份 manifest，两个注册表各取所需——引擎消费 config 类、
+壳注册表消费插槽类（消费路由见身份字段 `kinds` 行）。
+
+- **安装**：`nyxuri add <git-url>`（本地目录顺带）——clone 到 staging、校验（与加载
+  同一套检查）、id 冲突检查、移入落位目录、来源记账。绝不执行包内代码、无 install
+  hook、无 sudo。默认 off，`--enable` 顺带启用（动词契约见 [plugin-model](plugin-model.md) §5）。
+- **来源真相**：账本顶层 `sources` 键 `{id: {url, commit, added}}`——与 `forms` 键同
+  模式，不碰插件记录五字段冻结；目录里不藏 sidecar。
+- **移除**：`nyxuri remove <id>` = 停用 → 按所有权账本精确撤回 → 非管辖区（用户自有、
+  来源不明）内容时间戳备份。绝不整目录抹白。
+- **更新**：`nyxuri update <id>` = diff 预览、拒绝非 fast-forward、校验失败自动回退
+  （咬合引擎快照重基线）。无参 `update` 仍是引擎自更新（参数分派裁决）。
+- **所有权账本**：PR #148 素材回植（文件归属与保护路径记录）支撑 remove 的精确撤回；
+  启用中插件的文件归属本就住在账本 `files` 字段（快照口径），remove 复用同一记录。
 
 ## 边界（含声明式边界，原 declarative 页并入）
 

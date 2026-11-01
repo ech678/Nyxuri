@@ -22,7 +22,7 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 | G0 | 修复 GitHub 已知问题：可独立修的立即修，架构根因随 R0 兑现后关闭回填 | 可独立修落地（#144 #146）；根因修随 R0-3 落地（#143 #145 #147 #149）；#142 随 R0-5 转上游跟踪 |
 | R0 | 引擎收敛：概念定名 Plugin/插件 + 杀词并轨 + 单一激活管线 + 声明贯通 + 减法外迁 + 文档对齐 | 已收口（R0-1 ~ R0-6；R0-5 取消自带收口，launcher 暂留） |
 | S0 | Shell 骨架整抄 Omarchy：五件套 + 运行时插件注册表 + 设置去中心化 + 合成器驱动面（S0-0 ~ S0-5 全数收口；manifest 协议 TOML 本站定稿） | 已收口 |
-| S1 | 第三方插件生命周期：协议 1:1 + 四动词 + 所有权账本回植 | 待开始 |
+| S1 | 第三方插件生命周期：协议 1:1 + 生命周期动词 + Shell 心脏整抄 + 所有权账本回植 | 进行中（S1-0 已收口） |
 | T4 | Shell 可控性与透明化（开工时立细则） | 待开始 |
 | T5 | 多合成器解耦（门禁触发） | 待开始 |
 | T2 | TUI Textual 重做（暂缓，分支备用） | 待开始 |
@@ -234,38 +234,48 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 
 ### S1 · 第三方插件生命周期
 
-> 逐资产「照抄 / 改造 / 拒绝」过堂台账见 [omarchy-parity](llms-wiki/shell/omarchy-parity.md)。
-> **战略定调：留我们的皮，换 Omarchy 的心**——
+> 逐资产「照抄 / 改造 / 推迟 / 拒绝」过堂台账见 [omarchy-parity](llms-wiki/shell/omarchy-parity.md)
+> （含 S1-0 裁决变更登记）。**战略定调：留我们的皮，换 Omarchy 的心**——
 > - **皮（誓死守护）**：Clavis/Caelestia 现代视觉原子、流体动画、Niri 合成器驱动、引擎账本单一开关真相；
 > - **心（代码物理整抄）**：Omarchy 经过实战检验的 806 行 `PluginRegistry.qml`（进程守护、inotify 实时监听、流解析）
->   与 7 个 `Plugin*Api.qml` 隔离门面全量物理拷入；
-> - **缝合切口**：三方落位改 `~/.local/share/nyxuri/plugins/<id>/`（物理隔离）、清单接入现成 `Toml.parse`、
->   `SlotHost.qml` 补齐 Loader 门面属性注入（`item.pluginRegistry/shell`）、开关读取对接账本。
+>   物理整抄；`Plugin*Api.qml` 门面与宿主注入工厂按消费者落度（S1-0 改裁，触发条件 =
+>   首个三方 ui 插件真实样例）；
+> - **缝合切口**：三方落位 `~/.local/share/nyxuri/plugins/<id>/`（物理隔离）、清单接入现成 `Toml.parse`、
+>   开关读取对接账本。
 > **执行铁律：代码物理整抄（Fork & Trim），严禁从零自研！**
-> S0 仅完成骨架对位与存量搬迁，S1 才是 Omarchy 源码整抄的主战场。Shell 侧必须直接复制
-> `shell/references/omarchy/shell/services/` 下的 `PluginRegistry.qml` 与 7 个
-> `Plugin*Api.qml` 门面原件至生产目录建立基线，保留其进程守护与安全检查逻辑，再定向剪裁；
-> Python 引擎侧严格按 Omarchy 契约 1:1 实现命令流与快照咬合。
+> S0 已完成骨架对位与存量搬迁，S1 是 Omarchy 源码整抄的主战场。Shell 侧直接复制
+> `shell/references/omarchy/shell/services/PluginRegistry.qml` 原件至生产目录建立基线，
+> 保留其进程守护与安全检查逻辑，再定向剪裁；Python 引擎侧严格按 Omarchy 契约 1:1 实现
+> 命令流与快照咬合。动词契约唯一权威：[plugin-model](llms-wiki/plugin-model.md) §5；
+> manifest 第三方词表与落位：[manifest-schema](llms-wiki/manifest-schema.md) 第三方章。
 
-- **协议语义 1:1 Omarchy（载体 TOML，S0 定稿）**：`schemaVersion`、reverse-DNS `id`（官方保留裸名与
-  `nyxuri.` 前缀）、`kinds`、`entryPoints`、settings schema、禁软链；安装绝不执行
-  包内代码、无 install hook、无 sudo；`validate` 与加载时同一套检查。
-- **动词终态八条**：`on / off / use / add / remove / update / doctor / list`。
-  `add <git-url>`（本地目录路径顺带支持）；`remove` = 停用 → 按所有权账本撤回 →
-  非管辖区时间戳备份；`update` = diff 预览、拒绝非 fast-forward、校验失败自动回退
-  （咬合引擎快照）。
-- **落位与消费**：第三方统一落 `~/.local/share/nyxuri/plugins/<id>/`
-  （H4 数据目录 + H8 复制不软链）；kinds 路由消费——引擎消费 config 类、
-  shell 注册表消费 ui 类。一个位置一份 manifest，两个注册表各取所需。
-- **首个真实用例 · orbit-translate 接入（R0-5 取消自带的彻底改）**：上游补插件
-  manifest（kinds / entryPoints，几行）；`add` 接管安装——落 share 目录后
-  config_path 随入口推导，配置不再混 noctalia 生活区；`shell-action` 的
-  `translate` / `radial-launcher` 动作与 sysdoctor 残留的 orbit 检查改按注册表
-  消费，写死 `~/.config/noctalia/tools/` 路径退役。
+- **S1-0 裁决定案（2026-11-01，作者拍板）**：
+  ① `update` 撞名 → **参数分派**：无参 = 引擎自更新（现状不动），`update <插件id>` =
+     第三方插件更新；
+  ② 7 门面 → **按消费者落度**：S0 定稿 kinds 词表无 bar-widget/menu/panel，5 门面 +
+     BarWidgetRegistry 无 kind 消费者——PluginRegistry 心脏整抄照旧，门面与宿主注入
+     工厂推迟（触发 = 首个三方 ui 插件真实样例），menu/bar-widget 专属件永久推迟登记
+     delayed-decisions；
+  ③ 来源真相 → **账本顶层 `sources` 键**（`{id: {url, commit, added}}`，与 `forms`
+     键同模式，不碰五字段冻结）；
+  ④ `add` 默认态 → **off**，`on` 启用，`--enable` 顺带；
+  ⑤ orbit-launcher → **留一方**（noctalia manifest 声明），`radial-launcher` 动作从
+     一方注册表推导路径，写死 `~/.config/noctalia/tools/` 全部退役。
+
+- **分站（执行序即优先级，一站一收口）**：
+
+| 站 | 交付 | 状态 |
+| --- | --- | --- |
+| S1-0 裁决过堂 | 五裁决落 wiki：plugin-model §5 八动词终态、manifest-schema 第三方章（落位 / reverse-DNS / 禁软链 / sources / 拒钩子）、omarchy-parity 改裁登记、overview 动词面与划词翻译失实句修正 | 已收口 |
+| S1-1 落位与注册 | `Environment.data_dir`（XDG_DATA_HOME）+ registry 第三根 + 软链拒绝统一进扫描层 + TempEnv 补 `XDG_DATA_HOME` + `_MANIFEST_CACHE` 失效处理 | 待开始 |
+| S1-2 生命周期动词 | `add`（clone → staging → 校验=加载同一套 → id 冲突 → 落位 → 记 sources）/ `remove`（停用 → 按所有权账本撤回 → 非管辖时间戳备份）/ `update <id>`（diff 预览 → 拒绝非 ff → 校验失败自动回退咬合快照重基线）；所有权账本回植（PR #148 素材剪裁）；`pkg/net.py` 补 clone/diff；三方 v1 拒钩子 + `audit-lifecycle.py` 审计扩展；CLI / translations / operation-map 三闸门同批 | 待开始 |
+| S1-3 Shell 心脏整抄 | 806 行原件物理拷入 `shell/services/` 建基线（守护三件套 / 流解析 / 安全检查原样保留）；剪裁：二根扫描、开关读 StateProjection、删 shell.json 写入、走既有 `PluginManifest.js` TOML 通路；自研 192 行的 S0-2 投影（units / toggles / settingsRoutes / anchors / actions）并轨不丢失；首日 spike = 三方 ui kind 在 SlotHost 槽模型的落座规则；对抗门禁 = 手工塞临时三方插件 → 发现 → 移除全程零宿主文件改动 | 待开始 |
+| S1-4 首个用例贯通 | 上游 orbit-translate 补 manifest.toml（几行）；实机 `add <url>` → `on` → `shell-action translate` 全链路；`shell-action.sh` / `niri-scratch-toggle.sh` / sysdoctor `_check_orbit` + `_check_scripts` 改按注册表消费，配置不再混 noctalia 生活区 | 待开始 |
+| S1-5 收口 | ROADMAP 回填、wiki 清算、全局门禁 4 过堂 | 待开始 |
+
 - **扩展面边界**：钩子是引擎已有的语言无关扩展面（manifest 声明 + 任意可执行），
   不是新发明；用户已有配置的「导入」走保留策略（carry / vault），与第三方插件
   导入是两条线，语义永不混合。
-- **所有权账本回植**：PR #148 素材（文件归属记录）支撑 remove 的精确撤回。
 - **安全立场**：插件是用户信任的代码——明说不沙箱、不做安全剧场；第三方包
   v1 拒绝钩子；能力声明 + `audit-lifecycle.py` 静态审计扩展。
 - **非目标（v1 明确不做）**：插件间依赖声明（包依赖走 manifest packages、运行冲突
@@ -273,7 +283,7 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 - **Python 侧不引框架（裁决）**：pluggy / stevedore 管的是 Python-import 式扩展，
   与「声明 + 文件 + 钩子」形状不符；引擎即插件管理器本体，一套协议两个运行时。
   entry points（stdlib）为预留通道，第二个真实用例出现才建；pkg 后端窄驱动
-  （pacman / apt，os-release 选择）随 #148 回植建立。
+  （pacman / apt，os-release 选择）随 #148 回植建立——不进 S1 主线，挂回植清单尾。
 
 ## 分支策略（PR #148 · Ubuntu 支持）
 

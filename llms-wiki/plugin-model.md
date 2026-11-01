@@ -211,23 +211,44 @@ manifest 只声明上述字段，不追求覆盖一切。插件的外部副作�
 
 ---
 
-## 5. 四大核心命令
+## 5. 生命周期动词（终态八条）
 
-命令行只保留 4 个通用动词（`list`、`on`、`off`、`doctor`），`on` / `off` 另有语义等价长动词（`enable` / `disable`）。不设更短的缩写别名——动词已经够短，别名只是要供养的表面：
+命令行动词终态八条：`list` / `on` / `off` / `use` / `add` / `remove` / `update` / `doctor`。
+`on` / `off` 另有语义等价长动词（`enable` / `disable`）。不设更短的缩写别名——动词
+已经够短，别名只是要供养的表面：
 
 ```bash
 # 1. 查看全景清单或单个详情
 nyxuri list [plugin]
 
 # 2. 开启插件（支持指定形态）
-nyxuri on <plugin> [--form <f>]       # 等价: enable；--preset 为 deprecated 别名
+nyxuri on <plugin> [--form <f>]       # 等价: enable
 
 # 3. 关闭插件（默认拒绝级联，显式 --cascade 才级联关闭下游依赖）
 nyxuri off <plugin> [--cascade]       # 等价: disable
 
-# 4. 对账检查（实机文件 vs 账本三态审计）
+# 4. 形态轴切换（整型轴 + 槽位轴，机制见 forms.md）
+nyxuri use <plugin> [list|<name>|save <name>|...]
+
+# 5. 安装第三方插件（git URL；本地目录路径顺带支持）
+nyxuri add <git-url> [--enable]
+
+# 6. 移除第三方插件（停用 → 按所有权账本撤回 → 非管辖区时间戳备份）
+nyxuri remove <plugin>
+
+# 7. 更新第三方插件（diff 预览、拒绝非 fast-forward、校验失败自动回退）
+nyxuri update <plugin>                # 无参 update = 引擎自更新（参数分派，撞名裁决 S1-0）
+
+# 8. 对账检查（实机文件 vs 账本三态审计）
 nyxuri doctor [plugin]
 ```
+
+安装语义（S1 契约）：`add` 绝不执行包内代码、无 install hook、无 sudo——clone 到
+staging、校验（与加载同一套检查）、id 冲突检查、落位第三方根
+`~/.local/share/nyxuri/plugins/<id>/`、来源记账（账本顶层 `sources` 键），默认
+off（`--enable` 顺带启用）。`remove` 撤回只认所有权记录；非管辖区（用户自有、
+来源不明）内容时间戳备份，绝不抹白。第三方落位、reverse-DNS id 与禁软链词表见
+[manifest-schema](manifest-schema.md) 第三方章。
 
 单源阶段**不设独立 `refresh` 动词**：账本即真相，无缓存可刷。
 
@@ -252,7 +273,8 @@ Nyxuri Shell 绝非特权单体，其内部亦彻底插件化（宿主侧契约�
    import、不 subprocess quickshell；无订阅者时为 no-op（测试与无 Shell 环境
    零负担）。
 3. **点分 ID 约定**：Shell 域插件以 `shell.<domain>` 命名（如 `nyxuri off
-   shell.dock`），统一挂入 `state.json` 与 4 大动词管辖。内核只认点分 ID 本身，
+   shell.dock`），统一挂入 `state.json` 与生命周期动词管辖（§5 终态八条）。内核只认
+   点分 ID 本身，
    不特判任何前缀。
 
 **内核侧承载（KM4 落地，KM4.5 正名）**：Shell 插件物理住在 `shell/plugins/<domain>/`
@@ -310,6 +332,7 @@ deploy/deps 的包世界（`discover_manifest_apps`）只扫 `plugins/`，Shell 
 | `config_dir` | 部署目标，恒定 | `~/.config` |
 | `nyx_dir` | Nyxuri 自己的家：backups / 用户形态 / hooks | `~/.config/nyxuri` |
 | `state_dir` | 运行时状态账本（`state.json`）与瞬态（lock + log） | `~/.local/state/nyxuri`（XDG_STATE_HOME） |
+| `data_dir` | 第三方插件物理落位根（数据域，H4；复制不软链，H8） | `~/.local/share/nyxuri`（XDG_DATA_HOME）；插件住 `data_dir/plugins/<id>/` |
 | `plugins_src` | 仓库插件蓝图源（原 `configs_src`） | `repo_dir/plugins` |
 | `forms_dir` | 用户私有形态存储 | `nyx_dir/forms`（R0-2 从 `nyx_dir/presets` 一次性迁移） |
 | `hooks_dir` | 用户自定义部署后置钩子脚本 | `nyx_dir/hooks` |
@@ -317,4 +340,6 @@ deploy/deps 的包世界（`discover_manifest_apps`）只扫 `plugins/`，Shell 
 边界规则：Nyxuri 元数据**只许在 `~/.config/nyxuri/`**，不许往 `~/.config/<plugin>/`
 里塞 Nyxuri 自己的东西（`__custom__` 是约定保留名，属插件配置的一部分；`manifest.toml`
 是仓库元数据，部署时被跳过）。`~/.config/nyxuri/` 放用户数据（backups、forms）；
-`~/.local/state/nyxuri/` 放运行时账本与瞬态（lock、log）。不混用。
+`~/.local/state/nyxuri/` 放运行时账本与瞬态（lock、log）。第三方插件是数据不是配置
+（H4），住 `data_dir/plugins/`；来源（url / commit / added）记账本顶层 `sources`
+键——账本仍是唯一真相，不在插件目录里藏 sidecar。不混用。
