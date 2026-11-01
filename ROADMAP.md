@@ -178,8 +178,10 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
     预热产物，非本站回归）。M3/M4 视觉过目仍归作者。执行序调整：S0-4（收窄版）
     先行、S0-3 随后，站号不动。
   - **S0-5 合成器面清理（唯一实质大改，措辞正名）**：shell 现状本就是 niri
-    （`NiriService` 直连 `NIRI_SOCKET`）——要清的是整抄代码里的 Hyprland 语义
-    （`Quickshell.Hyprland` import、lock corners、dock workspace-layout，散布多处）。
+    （`NiriService` 直连 `NIRI_SOCKET`，本库 grep 证实零 `Quickshell.Hyprland`
+    import）——要清的是**整抄对象（Omarchy）代码里的** Hyprland 语义
+    （`Quickshell.Hyprland` import、lock corners、dock workspace-layout，其
+    `shell/` 内 30 文件命中，清单见 [omarchy-parity](llms-wiki/shell/omarchy-parity.md) §C）。
     做法是抽 **CompositorDriver** 面 + niri 首驱动（socket / `niri msg` / key-cli
     收敛进一个驱动），不硬译 niri 字面量——兑现 T5 前置一次做对。
 - **引擎侧波及（随站执行，不是顺手改）**：`nyxuri/kernel/registry.py` 的
@@ -189,6 +191,9 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
   物理消失、import 全库 grep 零命中、受影响定向测试绿。
 
 ### S1 · 第三方插件生命周期
+
+> 逐资产「照抄 / 改造 / 拒绝」过堂台账见 [omarchy-parity](llms-wiki/shell/omarchy-parity.md)，
+> 开工首日按其动词映射逐项填裁决。
 
 - **协议语义 1:1 Omarchy（载体 TOML，S0 定稿）**：`schemaVersion`、reverse-DNS `id`（官方保留裸名与
   `nyxuri.` 前缀）、`kinds`、`entryPoints`、settings schema、禁软链；安装绝不执行
