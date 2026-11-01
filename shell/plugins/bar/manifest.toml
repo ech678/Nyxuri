@@ -8,3 +8,34 @@ order = 30
 
 [entryPoints]
 edge = "Bar.qml"
+
+# Settings schema (manifest-schema.md): navigation routes and search
+# anchors live here — the runtime registry (PluginRegistry) is the only
+# consumer; group keys drive the nav pane's geometric clustering only.
+
+[[settings]]
+id = "bar"
+source = "GeneralBarPage.qml"
+title = "Bar"
+description = "Position, modules, and indicators"
+context = "ControlCenterWindow"
+icon = "dock_to_bottom"
+group = "surfaces"
+order = 40
+aliases = ["general.bar"]
+
+[[settings]]
+id = "bar.section.components"
+route = "bar"
+title = "Components"
+context = "GeneralBarPage"
+icon = "view_agenda"
+aliases = ["general.bar.section.components"]
+
+[[settings]]
+id = "bar.section.position"
+route = "bar"
+title = "Position"
+context = "GeneralBarPage"
+icon = "dock_to_bottom"
+aliases = ["general.bar.section.position"]

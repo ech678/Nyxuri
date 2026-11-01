@@ -139,7 +139,13 @@ Item {
                 anchors.fill: parent
                 anchors.topMargin: headerLoader.height
                 asynchronous: root.animationsEnabled
-                onLoaded: root.present(pageLayer)
+                onLoaded: {
+                    // Schema pages (S0-3b) receive their route id by injection;
+                    // panel pages ignore the property entirely.
+                    if (item && item.settingsRoute !== undefined)
+                        item.settingsRoute = pageLayer.route;
+                    root.present(pageLayer);
+                }
             }
         }
     }

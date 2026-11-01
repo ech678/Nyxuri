@@ -9,6 +9,86 @@ order = 50
 [entryPoints]
 island = "Keystone.qml"
 
+# Settings schema (manifest-schema.md): navigation routes and search
+# anchors live here — the runtime registry (PluginRegistry) is the only
+# consumer; group keys drive the nav pane's geometric clustering only.
+
+[[settings]]
+id = "keystone"
+source = "KeystonePage.qml"
+title = "Keystone"
+description = "Style, clock, and media controls"
+context = "ControlCenterWindow"
+icon = "toggle_off"
+group = "surfaces"
+order = 70
+
+[[settings]]
+id = "keystone.horizontal-clock"
+source = "HorizontalClockPage.qml"
+title = "Horizontal clock style"
+description = "Horizontal clock appearance"
+context = "KeystonePage"
+icon = "schedule"
+group = "surfaces"
+order = 71
+
+[[settings]]
+id = "keystone.section.horizontal-clock"
+route = "keystone"
+title = "Horizontal clock"
+context = "KeystonePage"
+icon = "toggle_off"
+
+[[settings]]
+id = "keystone.section.keyboard-indicators"
+route = "keystone"
+title = "Keyboard indicators"
+context = "KeystonePage"
+icon = "settings"
+
+[[settings]]
+id = "keystone.section.keyhole"
+route = "keystone"
+title = "Keyhole"
+context = "KeystonePage"
+icon = "settings"
+
+[[settings]]
+id = "keystone.section.keystone-style"
+route = "keystone"
+title = "Keystone style"
+context = "KeystonePage"
+icon = "toggle_off"
+
+[[settings]]
+id = "keystone.section.media-controls"
+route = "keystone"
+title = "Media controls"
+context = "KeystonePage"
+icon = "music_note"
+
+[[settings]]
+id = "keystone.section.mouse-actions"
+route = "keystone"
+title = "Mouse actions"
+context = "KeystonePage"
+icon = "toggle_off"
+
+[[settings]]
+id = "keystone.section.recording"
+route = "keystone"
+title = "Recording"
+context = "KeystonePage"
+icon = "toggle_off"
+
+[[settings]]
+id = "keystone.horizontal-clock.section.horizontal-clock-style"
+route = "keystone.horizontal-clock"
+title = "Horizontal clock style"
+context = "HorizontalClockPage"
+icon = "schedule"
+
 # Searchable fixed actions (manifest-schema.md): the search index's
 # include set for this plugin's IPC face.
 

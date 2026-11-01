@@ -8,3 +8,42 @@ order = 40
 
 [entryPoints]
 edge = "DockHost.qml"
+
+# Settings schema (manifest-schema.md): navigation routes and search
+# anchors live here — the runtime registry (PluginRegistry) is the only
+# consumer; group keys drive the nav pane's geometric clustering only.
+
+[[settings]]
+id = "dock"
+source = "DockPage.qml"
+title = "Dock"
+description = "Position, size, and behavior"
+context = "ControlCenterWindow"
+icon = "dock_to_bottom"
+group = "surfaces"
+order = 50
+aliases = ["general.dock", "taskbar", "launcher"]
+
+[[settings]]
+id = "dock.section.appearance"
+route = "dock"
+title = "Appearance"
+context = "DockPage"
+icon = "dock_to_bottom"
+aliases = ["general.dock.section.appearance", "size", "position", "magnification", "surface style", "notch"]
+
+[[settings]]
+id = "dock.section.behavior"
+route = "dock"
+title = "Behavior"
+context = "DockPage"
+icon = "touch_app"
+aliases = ["general.dock.section.behavior", "auto hide", "bounce", "recent", "indicators", "pin", "minimize", "animation", "genie", "scale"]
+
+[[settings]]
+id = "dock.section.previews"
+route = "dock"
+title = "Window previews"
+context = "DockPage"
+icon = "preview"
+aliases = ["general.dock.section.previews", "thumbnails", "hover"]

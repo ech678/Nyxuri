@@ -563,7 +563,7 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
         source = _read("GeneralBarPage.qml")
         self.assertEqual(source.count("SortableMultiSelectField {"), 3,
                          "two bar zones + the quick settings field stay drag-enabled")
-        self.assertEqual(source.count("BarLayoutDragCoordinator {"), 2,
+        self.assertEqual(source.count("LayoutDragCoordinator {"), 2,
                          "one coordinator per drag surface (zones / quick settings)")
         self.assertIn("fields: [leadingField, trailingField]", source)
         self.assertIn("fields: [quickSettingsField]", source)
@@ -573,7 +573,7 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
         wrapper = source.index("implicitHeight: contentColumn.implicitHeight")
         self.assertIn("id: content", source[:wrapper],
                       "the content wrapper must precede the coordinators")
-        self.assertGreater(source.index("BarLayoutDragCoordinator {"), wrapper,
+        self.assertGreater(source.index("LayoutDragCoordinator {"), wrapper,
                            "drag coordinators must live inside the content wrapper")
 
     def test_business_owners_unchanged(self):
@@ -795,7 +795,7 @@ class TestKeystonePageRebuild(unittest.TestCase):
         # The coordinator must ride inside the overview content wrapper, not
         # on the shell root.
         wrapper = source.index("implicitHeight: overviewColumn.implicitHeight")
-        self.assertGreater(source.index("BarLayoutDragCoordinator {"), wrapper,
+        self.assertGreater(source.index("LayoutDragCoordinator {"), wrapper,
                            "the drag overlay must live inside the content wrapper")
         self.assertIn("FilePickerWindow {", source)
         self.assertIn("openDirectoryPicker(", source)

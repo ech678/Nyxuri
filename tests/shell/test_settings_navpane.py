@@ -236,10 +236,13 @@ class TestNavPaneComposition(unittest.TestCase):
         # (consecutive same-group rows form one connected cluster) — there is
         # no host-side table left to keep in sync, so the contract is every
         # top-level route declaring a group plus the table staying dead.
+        # S0-3a: the route set is the union of every plugin manifest.
         pane = _read("NexusNavPane.qml")
         self.assertNotIn("groupTable", pane, "the host-side grouping table must stay dead")
-        manifest = tomllib.loads((SETTINGS / "manifest.toml").read_text(encoding="utf-8"))
-        top_level = [entry for entry in manifest["settings"] if "route" not in entry]
+        top_level = []
+        for domain in sorted(d.name for d in SETTINGS.parent.iterdir() if d.is_dir()):
+            manifest = tomllib.loads((SETTINGS.parent / domain / "manifest.toml").read_text(encoding="utf-8"))
+            top_level.extend(entry for entry in manifest.get("settings", []) if "route" not in entry)
         self.assertGreaterEqual(len(top_level), 16)
         missing = [entry["id"] for entry in top_level if not str(entry.get("group", "")).strip()]
         self.assertEqual(missing, [], f"routes without a manifest group: {missing}")

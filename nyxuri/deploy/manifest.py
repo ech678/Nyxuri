@@ -115,11 +115,19 @@ _RETIRED_KEYS = {
 }
 
 _ID_RE = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9.:-]*")
-_ENTRY_KEYS = {"id", "title", "context", "icon", "source", "description",
+_ENTRY_KEYS = {"id", "title", "context", "icon", "source", "controls", "description",
                "aliases", "group", "order", "route"}
 _ACTION_KEYS = {"id", "target", "method", "args", "confirmation",
                 "availability", "search"}
 _ACTION_SEARCH_KEYS = {"title", "description", "context", "icon", "aliases"}
+
+# Settings schema value controls (S0-3b): a route declares `controls`
+# instead of `source` and the host renders it from the atoms — Omarchy's
+# schema form (boolean/enum/integer/string), TOML carrier, own vocabulary.
+_SETTING_CONTROL_TYPES = ("switch", "select", "slider", "spin", "text")
+_SETTING_CONTROL_KEYS = {"key", "type", "title", "description", "icon", "default",
+                         "options", "min", "max", "step"}
+_SETTING_CONTROL_OPTION_KEYS = {"value", "label", "icon"}
 _CONFIRMATIONS = ("none", "power-menu")
 AVAILABILITY = ("always", "awww", "nyxuri-wallpaper", "wallpaper-idle",
                 "keystone", "keyboard-lock", "dock-previews")
@@ -287,8 +295,104 @@ def _validate_entry_points(raw, ui_kinds: List[str], app_src: Path) -> Dict[str,
     return out
 
 
+def _require_number(value, label: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{label} must be a number")
+    return value
+
+
+def _validate_setting_controls(settings_id: str, raw) -> List[dict]:
+    """``controls`` — value-control schema rendered by the host (S0-3b)."""
+    if not isinstance(raw, list) or not raw:
+        raise ValueError(f"settings '{settings_id}' controls must be a non-empty array")
+    out: List[dict] = []
+    seen_keys: set = set()
+    for control in raw:
+        if not isinstance(control, dict):
+            raise ValueError(f"settings '{settings_id}' controls entries must be tables")
+        unknown = sorted(set(control) - _SETTING_CONTROL_KEYS)
+        if unknown:
+            raise ValueError(
+                f"settings '{settings_id}' control key '{unknown[0]}' is not in the vocabulary")
+        key = _require_stable_id(control.get("key"), f"settings '{settings_id}' control.key")
+        if "." in key or ":" in key:
+            raise ValueError(
+                f"settings '{settings_id}' control key '{key}' must be a leaf name "
+                "(the storage namespace is plugin.key)")
+        if key in seen_keys:
+            raise ValueError(f"settings '{settings_id}' duplicate control key '{key}'")
+        seen_keys.add(key)
+        ctype = control.get("type")
+        if ctype not in _SETTING_CONTROL_TYPES:
+            raise ValueError(
+                f"settings '{settings_id}' control '{key}' type must be one of "
+                f"{'/'.join(_SETTING_CONTROL_TYPES)}")
+        normalized = {
+            "key": key,
+            "type": ctype,
+            "title": _require_str(control.get("title"), f"control '{key}' title"),
+        }
+        if control.get("description") is not None:
+            normalized["description"] = _require_str(
+                control.get("description"), f"control '{key}' description")
+        if control.get("icon") is not None:
+            normalized["icon"] = _require_str(control.get("icon"), f"control '{key}' icon")
+        default_provided = "default" in control
+        if ctype == "select":
+            options = control.get("options")
+            if not isinstance(options, list) or not options:
+                raise ValueError(f"control '{key}' (select) needs a non-empty options array")
+            values: list = []
+            for option in options:
+                if not isinstance(option, dict):
+                    raise ValueError(f"control '{key}' options entries must be tables")
+                unknown_option = sorted(set(option) - _SETTING_CONTROL_OPTION_KEYS)
+                if unknown_option:
+                    raise ValueError(
+                        f"control '{key}' option key '{unknown_option[0]}' is not in the vocabulary")
+                value = _require_str(option.get("value"), f"control '{key}' option value")
+                if value in values:
+                    raise ValueError(f"control '{key}' duplicate option value '{value}'")
+                values.append(value)
+            normalized["options"] = [{
+                "value": option["value"],
+                "label": _require_str(option.get("label"), f"control '{key}' option label"),
+                **({"icon": option["icon"]} if "icon" in option else {}),
+            } for option in options]
+            if default_provided:
+                default = _require_str(control["default"], f"control '{key}' default")
+                if default not in values:
+                    raise ValueError(f"control '{key}' default '{default}' is not an option value")
+                normalized["default"] = default
+        elif ctype in ("slider", "spin"):
+            low = _require_number(control.get("min"), f"control '{key}' min")
+            high = _require_number(control.get("max"), f"control '{key}' max")
+            if not low < high:
+                raise ValueError(f"control '{key}' min must be below max")
+            step = 0.0 if ctype == "slider" else 1.0
+            if "step" in control:
+                step = _require_number(control["step"], f"control '{key}' step")
+                if step < 0:
+                    raise ValueError(f"control '{key}' step must not be negative")
+            normalized.update({"min": low, "max": high, "step": step})
+            if default_provided:
+                default = _require_number(control["default"], f"control '{key}' default")
+                if not low <= default <= high:
+                    raise ValueError(f"control '{key}' default is outside [min, max]")
+                normalized["default"] = default
+        elif default_provided:
+            if ctype == "switch":
+                if not isinstance(control["default"], bool):
+                    raise ValueError(f"control '{key}' default must be a boolean")
+                normalized["default"] = control["default"]
+            else:
+                normalized["default"] = _require_str(control["default"], f"control '{key}' default")
+        out.append(normalized)
+    return out
+
+
 def _validate_settings(raw, app_src: Path) -> List[dict]:
-    """``[[settings]]`` — settings routes (source) and search anchors (route)."""
+    """``[[settings]]`` — settings routes (source or controls) and search anchors."""
     if raw is None:
         return []
     if not isinstance(raw, list):
@@ -306,10 +410,11 @@ def _validate_settings(raw, app_src: Path) -> List[dict]:
         if entry_id in seen_ids:
             raise ValueError(f"duplicate settings id: '{entry_id}'")
         seen_ids.add(entry_id)
-        has_source = "source" in entry
-        if has_source == ("route" in entry):
+        forms = [name for name in ("source", "controls", "route") if name in entry]
+        if len(forms) != 1:
             raise ValueError(
-                f"settings '{entry_id}' must declare exactly one of source (route) or route (anchor)"
+                f"settings '{entry_id}' must declare exactly one of "
+                "source (panel page), controls (schema page) or route (anchor)"
             )
         out.append({
             "id": entry_id,
@@ -318,18 +423,21 @@ def _validate_settings(raw, app_src: Path) -> List[dict]:
             "icon": _require_str(entry.get("icon"), f"settings '{entry_id}' icon"),
             "aliases": _as_str_list(entry.get("aliases")),
         })
-        if has_source:
-            source = entry["source"]
-            if not isinstance(source, str) or not source.endswith(".qml"):
-                raise ValueError(f"settings '{entry_id}' source must be a local QML filename")
-            parts = _safe_rel_parts(source, f"settings '{entry_id}' source")
-            if not (app_src / Path(*parts)).is_file():
-                raise ValueError(f"settings '{entry_id}' source does not exist: '{source}'")
+        if forms[0] in ("source", "controls"):
+            if forms[0] == "source":
+                source = entry["source"]
+                if not isinstance(source, str) or not source.endswith(".qml"):
+                    raise ValueError(f"settings '{entry_id}' source must be a local QML filename")
+                parts = _safe_rel_parts(source, f"settings '{entry_id}' source")
+                if not (app_src / Path(*parts)).is_file():
+                    raise ValueError(f"settings '{entry_id}' source does not exist: '{source}'")
+                out[-1]["source"] = source
+            else:
+                out[-1]["controls"] = _validate_setting_controls(entry_id, entry["controls"])
             order = entry.get("order", 0)
             if isinstance(order, bool) or not isinstance(order, int):
                 raise ValueError(f"settings '{entry_id}' order must be an integer")
             out[-1].update({
-                "source": source,
                 "description": _require_str(entry.get("description"), f"settings '{entry_id}' description"),
                 "group": _require_str(entry.get("group"), f"settings '{entry_id}' group"),
                 "order": order,
@@ -337,7 +445,7 @@ def _validate_settings(raw, app_src: Path) -> List[dict]:
             route_ids.add(entry_id)
     # Anchors point at routes of the same manifest; nesting stays one deep.
     for entry, normalized in zip(raw, out):
-        if "source" in entry:
+        if "source" in entry or "controls" in entry:
             path = entry["id"].split(".")
             if len(path) > 2:
                 raise ValueError(f"settings '{entry['id']}' nests deeper than one level")

@@ -9,6 +9,7 @@
 | **硬件适配 Overlay**（NVIDIA / AMD / 多显示器…） | 出现多个明确的硬件适配需求 | 当前无自动驱动补丁，不引入硬件 overlay；应用预设底版继承（Base Overlay）保持独立。历史案卷见 [archive/nvidia-patch](archive/nvidia-patch.md) |
 | **插件服务声明字段**（manifest 声明 systemd unit 等服务副作用） | 出现跨插件或系统级服务效果的真实需求 | **已部分落地（KM3）**：副作用走插件钩子（`post_install` / `post_remove`）+ `[privilege]` 声明（greeter 案例：服务启停在钩子内部，manifest 只声明事实）。独立服务字段仍不设，出现真实需求再议。详见 [plugin-model](plugin-model.md) §4 与 [manifest-schema](manifest-schema.md) |
 | **多合成器 (Multi-WM) 驱动抽象**（原 mango-adaptation 页的债务登记，KM3.5 并入） | 第三个合成器（Hyprland/Sway）接入前必须收编，禁止再往元组里加第三个字面量 | 现状为过渡形态：`SUPPORTED_WMS` 硬编码元组 + `detect_preferred_wm()`（`nyxuri/core.py`，原 constants）；组件菜单 WM radio 特判（`installer/menus.py`）；doctor 三处 `("mango", "niri")` 字面量（`sysdoctor.py`）。收编为 `CompositorDriver` 驱动抽象层（ROADMAP「T5 多合成器解耦」）。不属于债务：`plugins/mango/` 整目录（插件形态）、theme 的 `mmsg` 探针、`/home/user` 占位符渲染 |
+| **dashwindow 手写目录接注册表**（S0-3 拍板暂缓） | S1 第三方插件实际携带 settings schema 入场，或 schema 通用渲染器（S0-3b）验证成熟后重估收益 | dashboard 轨的 `DashboardSettingsCatalog`（版面）与 `SettingsControlCatalog`（控件 get/set 注册表）保持手写真值：它们是 dashboard 轨对 PersonalizationConfig 外观轴的**表现层编排**，与 manifest 路由表不同源不同义；在 schema 渲染器刚落地、存量零转换时先行迁移顺序颠倒。收敛方向：简单控件逐步改由 manifest `controls` 声明、dashboard 卡片从注册表取值 |
 
 ## 这次重构已落地（主动覆盖延迟）
 
@@ -41,6 +42,6 @@ stable+git 双 AUR 包、Nix 式纯函数引擎、按 PCI 设备选驱动变量�
 | QML 侧插件协议 | 整包采纳 Omarchy 协议与骨架（目录小写化），不引任何第三方框架 | 同生态（Quickshell 0.3.2）实跑验证；pluggy / stevedore 管 Python-import 式扩展，与「声明 + 文件 + 钩子」形状不符；Caelestia C++ Blobs 延续不移植裁决 |
 | Python 侧插件框架 | 不建框架 | 引擎即插件管理器本体，一套协议两个运行时；entry points（stdlib）为预留通道，第二个真实用例出现才建；pkg 后端走窄驱动（pacman/apt） |
 | 插件沙箱 | 不做运行时沙箱 | 插件是用户信任的代码，明说不沙箱、不做安全剧场；替代 = 第三方 v1 拒绝钩子 + 能力声明静态审计 |
-| 开关状态存储 | 不抄 Omarchy `shell.json` | 单一开关真相已在本引擎账本，不留第二本账 |
+| **开关状态存储** | 不抄 Omarchy `shell.json` | 单一开关真相已在本引擎账本，不留第二本账。widget 设置值与 bar 布局的落点随 S0-3 定稿（2026-11-01）：**bar 三轨布局 = PersonalizationConfig 外观轴（现状即终态）**；**schema 控件值 = 宿主 `PluginSettings` 存储（`~/.config/nyxuri/plugin-settings.json`，键 `<pluginId>.<key>`）**；dashboard 网格版面（Catalog 分区/卡序）= dashwindow 表现层数据，非用户状态 |
 | v1 非目标 | 插件间依赖声明、schemaVersion 迁移框架均不做 | 包依赖走 manifest packages、运行冲突走槽仲裁已覆盖；未知版本直接拒绝 |
 | 导入语义 | 配置导入与插件导入两条线永不混合 | 用户已有配置走保留策略（carry / vault）；第三方插件走 add/validate/remove |

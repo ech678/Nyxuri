@@ -60,9 +60,13 @@ class TestRouteDescriptions(unittest.TestCase):
     """Every route carries a non-empty top-level description."""
 
     def test_every_route_has_a_nonempty_description(self):
-        manifest = tomllib.loads(
-            (SHELL / "plugins" / "settings" / "manifest.toml").read_text(encoding="utf-8"))
-        routes = [entry for entry in manifest["settings"] if "route" not in entry]
+        # S0-3a: domain pages live in their owning plugins' manifests; the
+        # route set is the union of every plugin manifest's [[settings]].
+        routes = []
+        plugins = SHELL / "plugins"
+        for domain in sorted(d.name for d in plugins.iterdir() if d.is_dir()):
+            manifest = tomllib.loads((plugins / domain / "manifest.toml").read_text(encoding="utf-8"))
+            routes.extend(entry for entry in manifest.get("settings", []) if "route" not in entry)
         # 45361df 定向瘦身（删除抽屉/显示/自启动/默认应用页面）后的真实规模底线；
         # S0-2 起路由声明住 manifest.toml（[[settings]] 无 route 键 = 顶层路由）。
         self.assertGreaterEqual(len(routes), 16)

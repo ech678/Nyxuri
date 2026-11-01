@@ -73,7 +73,7 @@ Omarchy 是 Hyprland 宿主，其合成器耦合点即「插件化 shell 里合�
 | --- | --- | --- |
 | 开关状态记在 shell.json（`plugins[]` / `disabledPlugins[]` / bar layout 引用） | **拒绝**：单一开关真相在引擎账本 | delayed-decisions「开关状态存储」 |
 | manifest 载体 JSON | **拒绝**：TOML 单文件，彻底换代零兼容 | ROADMAP S0「manifest 载体定案」 |
-| widget 设置值与 bar 布局塞 shell.json | **拒绝**：settings schema 进 manifest + 状态投影存储；布局落点随 S0-3 定稿登记 | ROADMAP S0「shell.json 非开关部分不跟」 |
+| widget 设置值与 bar 布局塞 shell.json | **拒绝**：settings schema 进 manifest（S0-3b 已定稿 controls 词表）+ 值落宿主 PluginSettings 存储；bar 布局落点已定稿（PersonalizationConfig 外观轴，见 delayed-decisions「开关状态存储」） | ROADMAP S0「shell.json 非开关部分不跟」+ S0-3 收口 |
 | Hyprland 合成器耦合（workspace/lock corners/dock 布局） | **拒绝**：CompositorDriver 面 + niri 首驱动 | ROADMAP S0-5 |
 | 安装执行包内代码 / install hook / sudo | **拒绝**（S1 安全立场：明说不沙箱但不做安全剧场；三方 v1 拒钩子） | ROADMAP S1 |
 

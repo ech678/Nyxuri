@@ -43,10 +43,10 @@ Item {
 
     property var parentModal: null
     onCurrentSectionChanged: {
-        if (SettingsBackend.searchTarget && !SettingsBackend.applyingSearch && searchRequestSerial
-                === SettingsBackend.searchSerial)
-            SettingsBackend.cancelSearch();
-        SettingsBackend.retrySearch();
+        if (SettingsSearch.searchTarget && !SettingsSearch.applyingSearch && searchRequestSerial
+                === SettingsSearch.searchSerial)
+            SettingsSearch.cancelSearch();
+        SettingsSearch.retrySearch();
     }
     property string currentSection: "overview"
     property string editingDirectoryKey: ""
@@ -505,7 +505,7 @@ Item {
                 }
             }
 
-            BarLayoutDragCoordinator {
+            LayoutDragCoordinator {
                 id: longDragCoordinator
 
                 anchors.fill: parent
@@ -521,7 +521,7 @@ Item {
         id: pageLoader
 
         onLoaded: {
-            SettingsBackend.retrySearch();
+            SettingsSearch.retrySearch();
             if (item && "parentModal" in item)
                 item.parentModal = Qt.binding(() => root.parentModal);
             if (item && item.backRequested !== undefined)

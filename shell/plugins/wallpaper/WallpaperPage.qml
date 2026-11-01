@@ -6,7 +6,6 @@ import QtQuick.Layouts
 import Quickshell
 import qs.commons
 import qs.services
-import "../wallpaper"
 import qs.ui
 import qs.commons.i18n
 import qs.ui

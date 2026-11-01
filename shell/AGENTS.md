@@ -61,7 +61,7 @@ Nyxuri Shell 以完整 Clavis 母体为起点，就地净化、重构；当前�
 
 - **app**：纯装配与宿主数据层（`AppShell`/`SlotHost`/`Paths`/`WidgetState`/`ActionGateway`/`icons`/`templates`）、环境与能力感知、IPC、全局快捷键意图、生命周期与存储协调；业务执行归明确 backend，不把 app 变成包揽所有业务的控制中心。
 - **services**：服务层——域服务与配置存储（`ThemeService`、`NotificationService`、`PersonalizationConfig`、`UiPreferences` 等）、宿主能力面（`HotCorners`、`FilePickerWindow`、`IdleInhibitorSurface`）与直读 app 单例的跨单元渲染边（`SystemCardContent`、`SystemClockCard`、`SidebarCookieClock` 等五个系统卡片）。
-- **plugins**：功能域自治，一插件一目录（`manifest.toml` + 视图、模型和专属 backend 内聚），通过显式属性注入依赖。禁止跨域随手调用全局 Service；跨插件协调由 app 的窄接口完成。新增插件 = 加目录 + manifest + 代码，零宿主代码改动。
+- **plugins**：功能域自治，一插件一目录（`manifest.toml` + 视图、模型和专属 backend 内聚），通过显式属性注入依赖。禁止跨域随手调用全局 Service；跨插件协调由 app 的窄接口完成。新增插件 = 加目录 + manifest + 代码，零宿主代码改动。**设置页随插件**（S0-3a）：域插件在自身 manifest 声明 `[[settings]]` 路由并携带页面文件，聚合窗按注册表 `sourceUrl` 跨插件装载（file:// URL）；无 owning 域的宿主级页面（account/theme/connectivity/language/shortcuts/shell/about）留守聚合插件。**schema 形态**（S0-3b）：路由声明 `controls` 控件词表（五型封闭，见 [manifest-schema](../llms-wiki/manifest-schema.md)）而无页面文件时，宿主用 ui/ 原子通用渲染，值落 `PluginSettings` 存储——与 panel 形态并存，第三方插件几行声明即有设置页。
 - **commons / ui**：纯展示层。`ui/` 为平面原子控件库（含 `shapes/` 具名模块桩）；`commons/` 为设计 Token 与注入数据、纯算法 JS、`i18n/`（词典 + I18n 单例）、纯展示系统卡片 `cards/`。不得读取配置/环境、写文件、发请求、起进程或持有业务连接；接收注入的色板、字体、尺寸与数据。凡需直读 app 单例的卡片不进 `commons/`，留 `services/`。
 - **支撑代码归宿**（KM4.5 裁决，S0-1 路径对位）：宿主能力面归 `services/`；单消费者组件并入唯一消费单元（如 `sidebars/quicksettings/`）；跨单元纯展示组件归 `commons/cards|ui/`。
 
@@ -168,7 +168,7 @@ Shell 是极致精简的**微内核宿主**：宿主只保留装配（`SlotHost`
   契约由 test_plugin_manifests 焊接）。native 的 qmldir、qmltypes 和 plugin 由 CMake/Qt 生成，不手改生成物或用户安装目录。
 - 静态 import 不因 Loader inactive 自动变成可选。缺插件路径必须用真实独立组件
   验证隔离；默认构建不 require 封存依赖。
-- `ui/` 与 `commons/` 由设计 Token 与注入数据、原子控件与区域几何（`ui/`）、纯算法 JS 与 `i18n/`、纯展示卡片 `cards/`（均 `commons/`）构成，不读取环境、发现系统字体/图标或监听文件。主题 IO、字体加载与发现、图标解析归 `services/`，路径归 `app/Paths.qml`；`Resources` 与 `Fonts` 仅承载 app 注入的展示数据。设置搜索锚点归 settings，面板协调状态归 app；共享控件的 Connections 只能观察注入对象和自身几何。
+- `ui/` 与 `commons/` 由设计 Token 与注入数据、原子控件与区域几何（`ui/`）、纯算法 JS 与 `i18n/`、纯展示卡片 `cards/`（均 `commons/`）构成，不读取环境、发现系统字体/图标或监听文件。主题 IO、字体加载与发现、图标解析归 `services/`，路径归 `app/Paths.qml`；`Resources` 与 `Fonts` 仅承载 app 注入的展示数据。设置搜索锚点归 `services/`（S0-3a 升格：`SettingsSearchAnchor` 原子 + `SettingsSearch` 状态机、`PluginSettings` schema 值存储均为宿主-页面契约面，任何插件的页面经 `qs.services` 使用，不 import 聚合插件），面板协调状态归 app；共享控件的 Connections 只能观察注入对象和自身几何。
 - 删除内嵌字体时同步处理 family、时钟、图标与排版回退，禁止启动时联网下载。
 - UI 文案沿用 qsTr/qsTranslate、占位符与 Qt numerus；修改时同步相关翻译。
   语言切换不改变地区、单位或用户数据。宿主文案遵循 writing-voice 与 i18n 契约。

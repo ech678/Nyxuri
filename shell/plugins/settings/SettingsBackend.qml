@@ -3,121 +3,19 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import qs.commons
-import qs.ui
 import qs.services
 import qs.app
 import qs.commons.i18n
 
+// SettingsBackend — the settings window lifecycle (S0-3a slimmed): open /
+// close / focus / pending-page orchestration for whichever window style is
+// active. The deep-search state machine and the runtime anchor registry
+// live on the SettingsSearch service so pages owned by other plugins never
+// import this aggregator plugin.
 Singleton {
     id: root
 
     property var controlCenterWindow: null
-
-    property bool applyingSearch: false
-    property int searchSerial: 0
-    property var searchTarget: null
-    property var searchAnchors: ({})
-    property string searchError: ""
-    property string settledGeometry: ""
-
-    function registerSearchAnchor(anchor) {
-        const next = Object.assign({}, searchAnchors);
-        next[anchor.anchorId] = anchor;
-        searchAnchors = next;
-        retrySearch();
-    }
-
-    function unregisterSearchAnchor(anchor) {
-        if (searchAnchors[anchor.anchorId] !== anchor)
-            return;
-        const next = Object.assign({}, searchAnchors);
-        delete next[anchor.anchorId];
-        searchAnchors = next;
-    }
-
-    function cancelSearch() {
-        searchSerial += 1;
-        searchTarget = null;
-        settledGeometry = "";
-        searchDeadline.stop();
-    }
-
-    function reportSearchError(message) {
-        searchError = message;
-        if (!visible) {
-            ActionGateway.execute(["notify-send", "-a", "Nyxuri Shell", I18n.tr("Settings",
-                                                                                "ControlCenterWindow"),
-                                   message], "settings");
-        }
-    }
-
-    function openSearch(id) {
-        const entry = SpotlightCatalog.setting(id);
-        cancelSearch();
-        searchError = "";
-        if (!SpotlightCatalog.available(entry)) {
-            reportSearchError(I18n.tr("This setting is currently unavailable"));
-            return false;
-        }
-        searchTarget = entry;
-        searchDeadline.restart();
-        const accepted = open(entry.path[0], true);
-        if (!accepted) {
-            cancelSearch();
-            reportSearchError(I18n.tr("Settings could not be opened"));
-        }
-        retrySearch();
-        return accepted;
-    }
-
-    function retrySearch() {
-        if (searchTarget)
-            Qt.callLater(trySearch);
-    }
-
-    function trySearch() {
-        if (!searchTarget || !visible || !controlCenterWindow)
-            return;
-        applyingSearch = true;
-        const state = controlCenterWindow.advanceSearchTarget(searchTarget, searchSerial);
-        applyingSearch = false;
-        if (state === "cancelled") {
-            cancelSearch();
-            return;
-        }
-        if (state !== "ready")
-            return;
-        const anchor = searchTarget.anchor ? searchAnchors[searchTarget.id] :
-                                             controlCenterWindow.searchPageAnchor;
-        if (anchor)
-            anchor.polishTarget();
-        if (!anchor || !anchor.target || !anchor.target.visible || anchor.target.width <= 0
-                || anchor.target.height <= 0)
-            return;
-        const geometry = [searchSerial, anchor.target.x, anchor.target.y, anchor.target.width,
-                          anchor.target.height].join(":");
-        if (settledGeometry !== geometry) {
-            settledGeometry = geometry;
-            Qt.callLater(trySearch);
-            return;
-        }
-        if (anchor.reveal(searchSerial)) {
-            searchTarget = null;
-            searchDeadline.stop();
-        }
-    }
-
-    Timer {
-        id: searchDeadline
-        interval: 4000
-        onTriggered: {
-            if (!root.searchTarget)
-                return;
-            root.cancelSearch();
-            root.reportSearchError(I18n.tr("This setting is currently unavailable"));
-        }
-    }
 
     property bool _openRequested: false
     property string _pendingPage: ""
@@ -130,6 +28,7 @@ Singleton {
             return;
 
         root.controlCenterWindow = window;
+        SettingsSearch.searchWindow = window;
         if (root._openRequested)
             root.presentWindow(window);
     }
@@ -138,7 +37,7 @@ Singleton {
         if (!window)
             return;
 
-        root.applyingSearch = true;
+        SettingsSearch.applyingSearch = true;
         const page = root._pendingPage;
         root._pendingPage = "";
         if (page !== "" && window.openPage)
@@ -148,10 +47,10 @@ Singleton {
             window.showWindow();
         else
             window.visible = true;
-        if (root.searchTarget)
-            window.prepareSearchTarget(root.searchTarget, root.searchSerial);
-        root.applyingSearch = false;
-        root.retrySearch();
+        if (SettingsSearch.searchTarget)
+            window.prepareSearchTarget(SettingsSearch.searchTarget, SettingsSearch.searchSerial);
+        SettingsSearch.applyingSearch = false;
+        SettingsSearch.retrySearch();
         root.focusWindow();
     }
 
@@ -164,8 +63,8 @@ Singleton {
         try {
             WidgetState.closeAllPopups();
             if (!preserveSearch) {
-                cancelSearch();
-                searchError = "";
+                SettingsSearch.cancelSearch();
+                SettingsSearch.searchError = "";
             }
             root._openRequested = true;
             if (pageId !== undefined && pageId !== null && String(pageId) !== "") {
@@ -182,6 +81,24 @@ Singleton {
         } finally {
             root._inOpen = false;
         }
+    }
+
+    function openSearch(id) {
+        const entry = SpotlightCatalog.setting(id);
+        SettingsSearch.cancelSearch();
+        SettingsSearch.searchError = "";
+        if (!SpotlightCatalog.available(entry)) {
+            SettingsSearch.reportSearchError(I18n.tr("This setting is currently unavailable"));
+            return false;
+        }
+        SettingsSearch.beginSearch(entry);
+        const accepted = root.open(entry.path[0], true);
+        if (!accepted) {
+            SettingsSearch.cancelSearch();
+            SettingsSearch.reportSearchError(I18n.tr("Settings could not be opened"));
+        }
+        SettingsSearch.retrySearch();
+        return accepted;
     }
 
     function focusWindow() {
@@ -207,7 +124,7 @@ Singleton {
     }
 
     function close() {
-        root.cancelSearch();
+        SettingsSearch.cancelSearch();
         root._openRequested = false;
         root._pendingPage = "";
 
@@ -231,16 +148,18 @@ Singleton {
     }
 
     function windowClosed(window) {
-        root.cancelSearch();
+        SettingsSearch.cancelSearch();
         if (root.controlCenterWindow && root.controlCenterWindow !== window)
             return;
 
         root.controlCenterWindow = null;
+        if (SettingsSearch.searchWindow === window)
+            SettingsSearch.searchWindow = null;
         root._openRequested = false;
         root._pendingPage = "";
     }
 
     Component.onDestruction: {
-        root.cancelSearch();
+        SettingsSearch.cancelSearch();
     }
 }

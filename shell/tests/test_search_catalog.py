@@ -1,12 +1,14 @@
 """S0-2 settings schema & searchable action contracts.
 
 The plugin manifests are the only declaration surface left: settings routes
-and search anchors live in plugins/settings/manifest.toml, searchable fixed
-actions live in each owning plugin's manifest, and the runtime registry reads
-them directly (SpotlightCatalog is a thin index over PluginRegistry). The
-generated chain — settings-routes.json + generate-search-catalog.py +
-generated/SearchCatalog.js — is retired for good; these tests keep it that
-way and weld the manifest data to the page registrations and the binds truth.
+and search anchors live in each owning plugin's manifest.toml (S0-3a: domain
+pages moved to their plugins; the settings aggregator keeps the host-level
+pages), searchable fixed actions live in each owning plugin's manifest, and
+the runtime registry reads them directly (SpotlightCatalog is a thin index
+over PluginRegistry). The generated chain — settings-routes.json +
+generate-search-catalog.py + generated/SearchCatalog.js — is retired for
+good; these tests keep it that way and weld the manifest data to the page
+registrations and the binds truth.
 """
 import json
 import os
@@ -42,14 +44,24 @@ RETIRED_FILES = [
 ]
 
 
-def load_settings_manifest():
-    return engine_manifest.load_manifest(PLUGINS_DIR / "settings", namespace="shell.")
+def plugin_domains():
+    return sorted(d.name for d in PLUGINS_DIR.iterdir()
+                  if d.is_dir() and d.name != "__pycache__")
+
+
+def load_all_settings():
+    """Every manifest's [[settings]] rows, tagged with the owning plugin."""
+    rows = []
+    for domain in plugin_domains():
+        m = engine_manifest.load_manifest(PLUGINS_DIR / domain, namespace="shell.")
+        for entry in m.settings:
+            rows.append((f"shell.{domain}", entry))
+    return rows
 
 
 def load_all_actions():
     actions = []
-    for domain in sorted(d.name for d in PLUGINS_DIR.iterdir()
-                         if d.is_dir() and d.name != "__pycache__"):
+    for domain in plugin_domains():
         m = engine_manifest.load_manifest(PLUGINS_DIR / domain, namespace="shell.")
         for action in m.actions:
             actions.append((f"shell.{domain}", action))
@@ -69,8 +81,8 @@ class CatalogTests(unittest.TestCase):
                                      f"page anchors register by anchorId now: {name}")
 
     def test_settings_routes_pin_the_nav_order_and_groups(self):
-        m = load_settings_manifest()
-        routes = [s for s in m.settings if "source" in s]
+        rows = load_all_settings()
+        routes = [entry for _plugin, entry in rows if "source" in entry]
         by_id = {s["id"]: s for s in routes}
         top = sorted((s for s in routes if "." not in s["id"]), key=lambda s: s["order"])
         self.assertEqual([s["id"] for s in top], NAV_ORDER)
@@ -83,15 +95,17 @@ class CatalogTests(unittest.TestCase):
             if not runs or runs[-1] != group:
                 runs.append(group)
         self.assertEqual(len(runs), len(set(runs)), f"groups interleave in the nav order: {runs}")
-        # Nested pages weld to a parent route of the same manifest.
-        for entry in routes:
-            if "." in entry["id"]:
-                parent = entry["id"].split(".")[0]
-                self.assertIn(parent, by_id, f"nested route {entry['id']} has no parent")
+        # Nested pages and anchors weld to a parent route of the same manifest.
+        routes_by_plugin = {}
+        for plugin, entry in rows:
+            routes_by_plugin.setdefault(plugin, set()).add(entry["id"])
+        for plugin, entry in rows:
+            parent = entry["id"].split(".")[0]
+            self.assertIn(parent, routes_by_plugin[plugin],
+                          f"{entry['id']} has no parent route in {plugin}'s manifest")
 
     def test_page_anchor_registrations_match_manifest_anchors(self):
-        m = load_settings_manifest()
-        anchors = {s["id"]: s for s in m.settings if "route" in s}
+        anchors = {entry["id"]: entry for _plugin, entry in load_all_settings() if "route" in entry}
         self.assertGreater(len(anchors), 40)
         registered = set()
         for base, _dirs, files in os.walk(ROOT / "plugins"):
@@ -110,6 +124,43 @@ class CatalogTests(unittest.TestCase):
         for anchor in anchors.values():
             self.assertTrue(anchor.get("title") and anchor.get("context") and anchor.get("icon"),
                             f"anchor {anchor['id']} lost its declaration data")
+
+    def test_aggregator_loads_pages_from_registry_urls(self):
+        # S0-3a: pages are owned by their plugins; the aggregator resolves
+        # every route through the registry's absolute file:// sourceUrl
+        # (PluginManifest computes it per plugin directory), never a URL
+        # relative to the aggregator's own directory.
+        window = (PLUGINS_DIR / "settings" / "ControlCenterWindow.qml").read_text(encoding="utf-8")
+        self.assertIn("pages[index].sourceUrl", window,
+                      "the settings window must load pages by registry sourceUrl")
+        self.assertNotIn("Qt.resolvedUrl(pages[", window,
+                         "page sources must not resolve against the aggregator directory")
+
+    def test_route_sources_exist_in_their_owning_plugin(self):
+        for plugin, entry in load_all_settings():
+            if "source" not in entry:
+                continue
+            domain = plugin.removeprefix("shell.")
+            path = PLUGINS_DIR / domain / entry["source"]
+            self.assertTrue(path.is_file(),
+                            f"{entry['id']}: source missing in its owning plugin at {path}")
+
+    def test_domain_plugins_never_import_the_aggregator(self):
+        # S0-3a: settings pages owned by domain plugins talk to the host
+        # contract (the SettingsSearch service), never to the settings
+        # aggregator plugin — the aggregator is a consumer, not a dependency.
+        for domain in plugin_domains():
+            if domain == "settings":
+                continue
+            for path in sorted((PLUGINS_DIR / domain).rglob("*.qml")):
+                if "__pycache__" in path.parts:
+                    continue
+                with path.open(encoding="utf-8") as handle:
+                    text = handle.read()
+                self.assertNotIn("qs.plugins.settings", text,
+                                 f"{path.name} imports the settings aggregator")
+                self.assertNotRegex(text, r'"\.\.(/\.\.)*/settings"',
+                                    f"{path.name} relatively imports the settings aggregator")
 
     def test_actions_weld_to_the_binds_truth(self):
         binds = json.loads((ROOT / "scripts/system/niri-actions.json").read_text())

@@ -9,6 +9,48 @@ order = 10
 [entryPoints]
 "surface:desktop" = "WallpaperBackground.qml"
 
+# Settings schema (manifest-schema.md): navigation routes and search
+# anchors live here — the runtime registry (PluginRegistry) is the only
+# consumer; group keys drive the nav pane's geometric clustering only.
+
+[[settings]]
+id = "wallpaper"
+source = "WallpaperPage.qml"
+title = "Wallpaper"
+description = "Sources, auto-cycle, and switching"
+context = "ControlCenterWindow"
+icon = "wallpaper"
+group = "personalization"
+order = 30
+
+[[settings]]
+id = "wallpaper.section.current-wallpaper"
+route = "wallpaper"
+title = "Current wallpaper"
+context = "WallpaperPage"
+icon = "wallpaper"
+
+[[settings]]
+id = "wallpaper.section.overview-background"
+route = "wallpaper"
+title = "Overview background"
+context = "WallpaperPage"
+icon = "wallpaper"
+
+[[settings]]
+id = "wallpaper.section.parallax-effects"
+route = "wallpaper"
+title = "Parallax effects"
+context = "WallpaperPage"
+icon = "wallpaper"
+
+[[settings]]
+id = "wallpaper.section.transition"
+route = "wallpaper"
+title = "Transition"
+context = "WallpaperPage"
+icon = "wallpaper"
+
 # Searchable fixed actions (manifest-schema.md): the search index's
 # include set for this plugin's IPC face.
 

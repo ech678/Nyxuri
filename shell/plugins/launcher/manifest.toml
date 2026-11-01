@@ -9,6 +9,45 @@ order = 120
 [entryPoints]
 overlay = "LauncherHost.qml"
 
+# Settings schema (manifest-schema.md): navigation routes and search
+# anchors live here — the runtime registry (PluginRegistry) is the only
+# consumer; group keys drive the nav pane's geometric clustering only.
+
+[[settings]]
+id = "spotlight"
+source = "SpotlightPage.qml"
+title = "Spotlight"
+description = "Search modes, layout, and order"
+context = "ControlCenterWindow"
+icon = "search"
+group = "keyboard"
+order = 110
+aliases = ["general.spotlight"]
+
+[[settings]]
+id = "spotlight.section.applications"
+route = "spotlight"
+title = "Applications"
+context = "SpotlightPage"
+icon = "search"
+aliases = ["general.spotlight.section.applications"]
+
+[[settings]]
+id = "spotlight.section.clipboard"
+route = "spotlight"
+title = "Clipboard"
+context = "SpotlightPage"
+icon = "search"
+aliases = ["general.spotlight.section.clipboard"]
+
+[[settings]]
+id = "spotlight.section.web-search"
+route = "spotlight"
+title = "Web search"
+context = "SpotlightPage"
+icon = "search"
+aliases = ["general.spotlight.section.web-search"]
+
 # Searchable fixed actions (manifest-schema.md): the search index's
 # include set for this plugin's IPC face.
 

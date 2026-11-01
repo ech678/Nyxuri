@@ -111,7 +111,15 @@ FloatingWindow {
         if (index < 0 || index >= pages.length)
             return Qt.resolvedUrl("AccountPage.qml");
 
-        return Qt.resolvedUrl(pages[index].source);
+        // Registry-resolved absolute file:// URL (loader-form.md): settings
+        // pages are owned by their plugins (S0-3a), so the source resolves
+        // against the owning plugin's directory, not this aggregator's.
+        if (pages[index].sourceUrl !== undefined)
+            return pages[index].sourceUrl;
+
+        // Schema routes (S0-3b) declare `controls` instead of a source: the
+        // host renders them from the generic atom page.
+        return Qt.resolvedUrl("SchemaSettingsPage.qml");
     }
 
     function openPage(pageId) {
@@ -190,18 +198,18 @@ FloatingWindow {
     Material.accent: Appearance.colors.colPrimary
     onVisibleChanged: {
         if (!root.visible && root._wasShown) {
-            SettingsBackend.cancelSearch();
+            SettingsSearch.cancelSearch();
             root.closeChildWindows();
             root._wasShown = false;
             root.popoutClosed();
         }
     }
     onCurrentPageChanged: {
-        if (SettingsBackend.searchTarget && !SettingsBackend.applyingSearch && searchRequestSerial
-                === SettingsBackend.searchSerial)
-            SettingsBackend.cancelSearch();
+        if (SettingsSearch.searchTarget && !SettingsSearch.applyingSearch && searchRequestSerial
+                === SettingsSearch.searchSerial)
+            SettingsSearch.cancelSearch();
         root.closeChildWindows();
-        SettingsBackend.retrySearch();
+        SettingsSearch.retrySearch();
         if (root.visible && root._wasShown) {
             switchAnim.complete();
             // Direction-aware vertical slide (Caelestia Pages.qml): navigating
@@ -320,9 +328,9 @@ FloatingWindow {
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 anchors.margins: Metrics.spacingM
-                visible: SettingsBackend.searchError !== ""
+                visible: SettingsSearch.searchError !== ""
                 tone: "error"
-                message: SettingsBackend.searchError
+                message: SettingsSearch.searchError
             }
 
             ColumnLayout {
@@ -396,7 +404,7 @@ FloatingWindow {
                                     });
 
                                 root.applyPendingPageSection();
-                                SettingsBackend.retrySearch();
+                                SettingsSearch.retrySearch();
                             }
                         }
 

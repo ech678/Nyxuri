@@ -8,7 +8,7 @@ import qs.ui
 
 // Bar page (T3 M4): NexusPageBase scaffold + M1 atom rows. The drag-to-reorder
 // component fields stay the sanctioned custom shape (SortableMultiSelectField
-// + BarLayoutDragCoordinator overlay); the drag overlay must not be a root
+// + LayoutDragCoordinator overlay); the drag overlay must not be a root
 // child — NexusPageBase takes a single content child, so it rides inside it.
 NexusPageBase {
     id: root
@@ -221,7 +221,7 @@ NexusPageBase {
             }
         }
 
-        BarLayoutDragCoordinator {
+        LayoutDragCoordinator {
             id: dragCoordinator
 
             anchors.fill: parent
@@ -231,7 +231,7 @@ NexusPageBase {
                                                                      componentId, targetZone, targetIndex)
         }
 
-        BarLayoutDragCoordinator {
+        LayoutDragCoordinator {
             id: quickSettingsDragCoordinator
 
             anchors.fill: parent

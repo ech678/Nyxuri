@@ -230,7 +230,74 @@ class TestSchemaGate(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "nests deeper"):
             manifest.load_manifest(plugin)
 
-    def test_actions_declarations_carry_search_metadata(self):
+    def test_settings_controls_render_a_schema_route(self):
+        body = (
+            '[[settings]]\n'
+            'id = "tuning"\ntitle = "Tuning"\ncontext = "TuningPage"\nicon = "tune"\n'
+            'description = "Schema-declared controls"\ngroup = "shell-ui"\norder = 10\n'
+            'controls = [\n'
+            '  { key = "labels", type = "switch", title = "Labels", default = true },\n'
+            '  { key = "mode", type = "select", title = "Mode", default = "fast", options = [{ value = "fast", label = "Fast" }, { value = "slow", label = "Slow" }] },\n'
+            '  { key = "size", type = "slider", title = "Size", min = 0.0, max = 10.0, step = 0.5 },\n'
+            '  { key = "count", type = "spin", title = "Count", min = 1, max = 9, default = 3 },\n'
+            '  { key = "name", type = "text", title = "Name", description = "Shown in the bar" },\n'
+            ']\n'
+        )
+        plugin = self._plugin("tuning", _newform("tuning", body))
+        m = manifest.load_manifest(plugin)
+        route = m.settings[0]
+        self.assertNotIn("source", route)
+        self.assertEqual(len(route["controls"]), 5)
+        by_key = {c["key"]: c for c in route["controls"]}
+        self.assertEqual(by_key["labels"]["default"], True)
+        self.assertEqual(by_key["mode"]["default"], "fast")
+        self.assertEqual([o["value"] for o in by_key["mode"]["options"]], ["fast", "slow"])
+        self.assertEqual(by_key["size"]["step"], 0.5)
+        self.assertEqual(by_key["count"]["default"], 3)
+        self.assertEqual(by_key["size"]["min"], 0.0)
+
+    def test_settings_controls_reject_vocabulary_violations(self):
+        def rejects(label: str, controls: str, pattern: str):
+            body = (
+                '[[settings]]\n'
+                'id = "tuning"\ntitle = "T"\ncontext = "C"\nicon = "i"\n'
+                'description = "d"\ngroup = "g"\n'
+                f'controls = [{controls}]\n'
+            )
+            plugin = self._plugin("tuning-" + label, _newform("tuning-" + label, body))
+            with self.assertRaisesRegex(ValueError, pattern):
+                manifest.load_manifest(plugin)
+
+        rejects("unknown-key", '{ key = "a", type = "switch", title = "A", bogus = 1 }',
+                "not in the vocabulary")
+        rejects("bad-type", '{ key = "a", type = "dial", title = "A" }', "type must be one of")
+        rejects("no-options", '{ key = "a", type = "select", title = "A" }', "non-empty options")
+        rejects("bad-select-default",
+                '{ key = "a", type = "select", title = "A", default = "x",'
+                ' options = [{ value = "y", label = "Y" }] }',
+                "not an option value")
+        rejects("range-inverted", '{ key = "a", type = "slider", title = "A", min = 5, max = 1 }',
+                "min must be below max")
+        rejects("default-out-of-range",
+                '{ key = "a", type = "spin", title = "A", min = 0, max = 5, default = 9 }',
+                "outside")
+        rejects("dotted-key", '{ key = "a.b", type = "switch", title = "A" }', "leaf name")
+        rejects("switch-default-type", '{ key = "a", type = "switch", title = "A", default = "on" }',
+                "wrong type|boolean")
+        rejects("empty-controls", '', "non-empty array")
+
+        both = (
+            '[[settings]]\n'
+            'id = "t"\ntitle = "T"\ncontext = "C"\nicon = "i"\n'
+            'description = "d"\ngroup = "g"\n'
+            'source = "A.qml"\n'
+            'controls = [{ key = "a", type = "switch", title = "A" }]\n'
+        )
+        plugin = self._plugin("both-forms", _newform("both-forms", both), entry="A.qml")
+        with self.assertRaisesRegex(ValueError, "exactly one of"):
+            manifest.load_manifest(plugin)
+
+
         body = (
             '[[actions]]\n'
             'id = "nyxuri:panel:open"\ntarget = "panel"\nmethod = "open"\n'

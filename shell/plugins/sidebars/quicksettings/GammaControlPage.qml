@@ -6,7 +6,6 @@ import qs.commons
 import qs.services
 import qs.ui
 import qs.commons.i18n
-import "../../settings"
 import qs.ui
 
 // Gamma control page (M3 rebuild): the whole form moves onto the M1 atoms —
@@ -74,7 +73,6 @@ NexusPageBase {
             stepSize: 1
             enabled: DisplayColor.ready
             onMoved: value => DisplayColor.setPreference("gamma", value / 100)
-
         }
 
         PreferenceSlider {
@@ -157,7 +155,6 @@ NexusPageBase {
             currentValue: root.preferences.mode
             inputRegionService: PopupInputRegionService
             onSelected: value => DisplayColor.setPreference("mode", value)
-
         }
 
         PreferenceInput {
@@ -286,7 +283,6 @@ NexusPageBase {
             visible: root.preferences.nightEnabled && root.preferences.mode !== "fixed"
             label: I18n.tr("Scheduled temperature")
             value: I18n.tr("%1 K").arg(DisplayColor.schedule.temperature)
-
         }
 
         PreferenceInfo {

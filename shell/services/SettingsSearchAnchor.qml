@@ -5,7 +5,9 @@ import qs.services
 
 // The runtime half of a manifest-declared search anchor: the section it is
 // attached to registers itself by anchor id (the title/context/icon data
-// lives in plugins/settings/manifest.toml, read by the plugin registry).
+// lives in the owning plugin's manifest.toml, read by the plugin registry).
+// Host-page contract (S0-3a): pages from any plugin embed this atom; the
+// anchor registry itself is the SettingsSearch service singleton.
 Item {
     id: root
     required property string anchorId
@@ -47,31 +49,31 @@ Item {
     }
     Component.onCompleted: {
         if (registerAnchor)
-            SettingsBackend.registerSearchAnchor(root);
+            SettingsSearch.registerSearchAnchor(root);
     }
     Component.onDestruction: {
         if (registerAnchor)
-            SettingsBackend.unregisterSearchAnchor(root);
+            SettingsSearch.unregisterSearchAnchor(root);
     }
     Connections {
         target: root.target
         function onWidthChanged() {
-            SettingsBackend.retrySearch();
+            SettingsSearch.retrySearch();
         }
         function onHeightChanged() {
-            SettingsBackend.retrySearch();
+            SettingsSearch.retrySearch();
         }
         function onYChanged() {
-            SettingsBackend.retrySearch();
+            SettingsSearch.retrySearch();
         }
         function onVisibleChanged() {
-            SettingsBackend.retrySearch();
+            SettingsSearch.retrySearch();
         }
     }
     Connections {
-        target: SettingsBackend
+        target: SettingsSearch
         function onSearchSerialChanged() {
-            if (root.requestSerial !== SettingsBackend.searchSerial) {
+            if (root.requestSerial !== SettingsSearch.searchSerial) {
                 hold.stop();
                 root.highlightOpacity = 0;
             }

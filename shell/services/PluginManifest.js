@@ -16,11 +16,17 @@ var UI_KINDS = KINDS.filter(function (kind) {
     return kind !== "config";
 });
 
-var SETTINGS_KEYS = ["id", "title", "context", "icon", "source", "description",
+var SETTINGS_KEYS = ["id", "title", "context", "icon", "source", "controls", "description",
                      "group", "order", "route", "aliases"];
 var ACTION_KEYS = ["id", "target", "method", "args", "confirmation",
                    "availability", "search"];
 var ACTION_SEARCH_KEYS = ["title", "description", "context", "icon", "aliases"];
+
+// Settings schema value controls (S0-3b) — mirrors the engine validator.
+var CONTROL_TYPES = ["switch", "select", "slider", "spin", "text"];
+var CONTROL_KEYS = ["key", "type", "title", "description", "icon", "default",
+                    "options", "min", "max", "step"];
+var CONTROL_OPTION_KEYS = ["value", "label", "icon"];
 var CONFIRMATIONS = ["none", "power-menu"];
 var AVAILABILITY = ["always", "awww", "nyxuri-wallpaper", "wallpaper-idle",
                     "keystone", "keyboard-lock", "dock-previews"];
@@ -116,6 +122,145 @@ function _validateEntryPoints(raw, uiKinds, warn) {
     return out;
 }
 
+function isNumber(value) {
+    return typeof value === "number" && isFinite(value);
+}
+
+function _validateControls(settingsId, raw, warn) {
+    if (!Array.isArray(raw) || raw.length === 0) {
+        warn("settings '" + settingsId + "' controls must be a non-empty array");
+        return null;
+    }
+    var out = [];
+    var seen = {};
+    for (var i = 0; i < raw.length; i++) {
+        var control = raw[i];
+        if (!control || typeof control !== "object" || Array.isArray(control)) {
+            warn("settings '" + settingsId + "' controls entries must be tables");
+            return null;
+        }
+        var keys = Object.keys(control);
+        for (var k = 0; k < keys.length; k++) {
+            if (CONTROL_KEYS.indexOf(keys[k]) === -1) {
+                warn("settings '" + settingsId + "' control key '" + keys[k]
+                     + "' is not in the vocabulary");
+                return null;
+            }
+        }
+        var key = control.key;
+        if (!isString(key) || !_ID_RE.test(key) || key.indexOf(".") !== -1
+                || key.indexOf(":") !== -1) {
+            warn("settings '" + settingsId + "' control key '" + key
+                 + "' must be a leaf stable id");
+            return null;
+        }
+        if (seen[key]) {
+            warn("settings '" + settingsId + "' duplicate control key '" + key + "'");
+            return null;
+        }
+        seen[key] = true;
+        var type = control.type;
+        if (CONTROL_TYPES.indexOf(type) === -1) {
+            warn("settings '" + settingsId + "' control '" + key + "' type must be one of "
+                 + CONTROL_TYPES.join("/"));
+            return null;
+        }
+        if (!isString(control.title)) {
+            warn("control '" + key + "' needs a title");
+            return null;
+        }
+        var normalized = {
+            key: key,
+            type: type,
+            title: control.title
+        };
+        if (control.description !== undefined && control.description !== null)
+            normalized.description = control.description;
+        if (control.icon !== undefined && control.icon !== null)
+            normalized.icon = control.icon;
+        var hasDefault = control.default !== undefined && control.default !== null;
+        if (type === "select") {
+            var options = control.options;
+            if (!Array.isArray(options) || options.length === 0) {
+                warn("control '" + key + "' (select) needs a non-empty options array");
+                return null;
+            }
+            var values = [];
+            var normalizedOptions = [];
+            for (var o = 0; o < options.length; o++) {
+                var option = options[o];
+                if (!option || typeof option !== "object" || Array.isArray(option)) {
+                    warn("control '" + key + "' options entries must be tables");
+                    return null;
+                }
+                var optionKeys = Object.keys(option);
+                for (var ok = 0; ok < optionKeys.length; ok++) {
+                    if (CONTROL_OPTION_KEYS.indexOf(optionKeys[ok]) === -1) {
+                        warn("control '" + key + "' option key '" + optionKeys[ok]
+                             + "' is not in the vocabulary");
+                        return null;
+                    }
+                }
+                if (!isString(option.value) || !isString(option.label)) {
+                    warn("control '" + key + "' options need value and label");
+                    return null;
+                }
+                if (values.indexOf(option.value) !== -1) {
+                    warn("control '" + key + "' duplicate option value '" + option.value + "'");
+                    return null;
+                }
+                values.push(option.value);
+                normalizedOptions.push(option.icon !== undefined && option.icon !== null
+                                       ? option : {
+                                           value: option.value,
+                                           label: option.label
+                                       });
+            }
+            normalized.options = normalizedOptions;
+            if (hasDefault) {
+                if (typeof control.default !== "string" || values.indexOf(control.default) === -1) {
+                    warn("control '" + key + "' default must be one of the option values");
+                    return null;
+                }
+                normalized.default = control.default;
+            }
+        } else if (type === "slider" || type === "spin") {
+            var min = control.min;
+            var max = control.max;
+            if (!isNumber(min) || !isNumber(max) || !(min < max)) {
+                warn("control '" + key + "' needs numeric min below max");
+                return null;
+            }
+            var step = type === "slider" ? 0 : 1;
+            if (control.step !== undefined && control.step !== null) {
+                step = control.step;
+                if (!isNumber(step) || step < 0) {
+                    warn("control '" + key + "' step must be a non-negative number");
+                    return null;
+                }
+            }
+            normalized.min = min;
+            normalized.max = max;
+            normalized.step = step;
+            if (hasDefault) {
+                if (!isNumber(control.default) || control.default < min || control.default > max) {
+                    warn("control '" + key + "' default must be a number inside [min, max]");
+                    return null;
+                }
+                normalized.default = control.default;
+            }
+        } else if (hasDefault) {
+            if (typeof control.default !== (type === "switch" ? "boolean" : "string")) {
+                warn("control '" + key + "' default has the wrong type");
+                return null;
+            }
+            normalized.default = control.default;
+        }
+        out.push(normalized);
+    }
+    return out;
+}
+
 function _validateSettings(raw, warn) {
     if (raw === undefined || raw === null)
         return [];
@@ -153,9 +298,16 @@ function _validateSettings(raw, warn) {
             warn("settings '" + id + "' needs title, context and icon");
             return null;
         }
-        var hasSource = entry.source !== undefined;
-        if (hasSource === (entry.route !== undefined)) {
-            warn("settings '" + id + "' must declare exactly one of source (route) or route (anchor)");
+        var forms = [];
+        if (entry.source !== undefined)
+            forms.push("source");
+        if (entry.controls !== undefined)
+            forms.push("controls");
+        if (entry.route !== undefined)
+            forms.push("route");
+        if (forms.length !== 1) {
+            warn("settings '" + id + "' must declare exactly one of source (panel page), "
+                 + "controls (schema page) or route (anchor)");
             return null;
         }
         var normalized = {
@@ -165,10 +317,19 @@ function _validateSettings(raw, warn) {
             icon: entry.icon,
             aliases: _strList(entry.aliases)
         };
-        if (hasSource) {
-            if (!isSafeRelPath(entry.source) || !/\.qml$/.test(entry.source)) {
-                warn("settings '" + id + "' source must be a local QML filename");
-                return null;
+        var isRoute = forms[0] === "source" || forms[0] === "controls";
+        if (isRoute) {
+            if (forms[0] === "source") {
+                if (!isSafeRelPath(entry.source) || !/\.qml$/.test(entry.source)) {
+                    warn("settings '" + id + "' source must be a local QML filename");
+                    return null;
+                }
+                normalized.source = entry.source;
+            } else {
+                var controls = _validateControls(id, entry.controls, warn);
+                if (!controls)
+                    return null;
+                normalized.controls = controls;
             }
             if (!isString(entry.description) || !isString(entry.group)) {
                 warn("settings route '" + id + "' needs description and group");
@@ -179,7 +340,6 @@ function _validateSettings(raw, warn) {
                 warn("settings '" + id + "' order must be an integer");
                 return null;
             }
-            normalized.source = entry.source;
             normalized.description = entry.description;
             normalized.group = entry.group;
             normalized.order = order;
@@ -357,6 +517,10 @@ function validate(raw, expectedId, sourceDir) {
         var entry = settings[j];
         if (entry.source !== undefined) {
             entry.sourceUrl = fileUrl(String(sourceDir).replace(/\/$/, "") + "/" + entry.source);
+            settingsRoutes.push(entry);
+        } else if (entry.controls !== undefined) {
+            // Schema routes (S0-3b) render from the controls; the host owns
+            // the generic page, so no per-plugin source URL is needed.
             settingsRoutes.push(entry);
         } else {
             settingsAnchors.push(entry);

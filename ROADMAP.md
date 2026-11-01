@@ -152,12 +152,32 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
     改动。证据：`run-tests.py` 五分类 105+ 绿（含新增 settings-schema 契约与临时插件
     往返）、`tests/deploy/test_manifest` 59 绿、隔离实机冒烟（独立路径防 IPC 串台）
     sidebar visible 真实翻转 + `control-center open` OK + 加载零 compiled empty。
-  - **S0-3 设置去中心化**：设置页由插件自带（manifest settings schema / panel entry），
-    宿主用 ui/ 原子控件渲染；中央设置窗降级为聚合 panel 插件；「页面内容收编进
-    各插件」自 S0-4 收窄版挪入本站，随去中心化落位一并执行。T3 双轨呈现
-    （default / dashboard）去留**已拍板（2026-11-01）：双轨保留**——dashboard 是
-    正式呈现而非过渡形态；dashwindow 手写目录（DashboardSettingsCatalog /
-    SettingsControlCatalog）接不接注册表随本站设计定夺。
+  - **S0-3 设置去中心化**（已收口）：设置页由插件自带（panel entry / schema 两种形态），
+    中央设置窗降级为聚合 panel 插件；「页面内容收编进各插件」自 S0-4 收窄版挪入
+    本站执行完毕。T3 双轨呈现（default / dashboard）**已拍板（2026-11-01）：双轨
+    保留**——dashboard 是正式呈现而非过渡形态。收口明细：①契约升格——
+    `SettingsSearchAnchor` + `SettingsSearch` 状态机 + `PluginSettings` 值存储
+    升 `services/`（宿主-页面契约面，任何插件经 `qs.services` 使用），
+    `SettingsBackend` 瘦身为聚合窗私有生命周期；②7 组域页面外迁（wallpaper 6 件 /
+    bar 2 件 / dock / keystone 3 件 / sidebars / launcher）+ 对应 `[[settings]]`
+    路由锚点块随迁各域 manifest，聚合窗按注册表 `sourceUrl` 跨插件 file:// 装载
+    （`Qt.resolvedUrl` 相对解析退役）；`WallpaperColorPicker` 随 wallpaper 落位后
+    `DashboardSidebar` 等三处 `../../settings` import 处决（两处死 import）；
+    `BarLayoutDragCoordinator` 被 bar/keystone 双消费正名 `ui/LayoutDragCoordinator`；
+    ③值域 schema 词表定稿（S0-3b，协议冻结义务）：`[[settings]]` 第三形态 `controls`
+    五型封闭词表（switch/select/slider/spin/text，语义对位 Omarchy
+    boolean/enum/integer/string），引擎 `manifest.py` 与壳 `PluginManifest.js` 同一套
+    检查、未知键即报错；`SchemaSettingsPage` 通用渲染页（ui/ Preference 原子）+
+    值落 `PluginSettings` 存储（键 `<pluginId>.<key>`）——第三方插件几行声明即有
+    设置页，存量页面零转换；④悬案登记：dashwindow 手写目录本站不接注册表
+    （受控债务，触发条件见 delayed-decisions）；bar 布局落点定稿
+    （PersonalizationConfig 外观轴 = 终态）。证据：`tests/shell` 282 绿（11 跳过
+    =基线）、`run-tests.py --all` 五分类 106 绿（5 跳过=基线）、
+    `tests/deploy/test_manifest` 60 绿（含 controls 词表正反用例）、对抗门禁扩展
+    （临时插件 schema 路由发现 + 聚合器吃注册表 URL + 域插件零聚合器 import
+    三条焊点）、隔离实机 16 路由 `settings open` 全 OK + dashboard 轨经新
+    registerWindow 路径 wallpaper OK + 副本树注入 schema 路由（wallpaper-probe
+    五控件）打开 OK 且渲染零告警 + 三次冒烟均零 compiled empty。
   - **S0-4 资产收编与实机验收（收窄版，2026-11-01 拍板先行，已收口）**：原任务里
     「页面内容收编进各插件」依赖 S0-3 的去中心化落位，挪入 S0-3；本站先行收口剩余
     三件。①清算：`ui/MaterialCard`、`ui/SidebarStagger` 零消费者处决，

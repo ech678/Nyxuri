@@ -46,19 +46,40 @@
 | 字段 | 默认 | 作用 |
 |---|---|---|
 | `[entryPoints]` | 无 | 一个 ui kind 一条：`<kind> = "<插件内相对路径>.qml"`，键必须**恰好覆盖** kinds 里的 ui 类。禁绝对路径、`..` 越界与软链（containment 校验），文件必须真实存在。壳注册表以 file:// URL 装载（[loader-form](shell/loader-form.md) 定案） |
-| `[[settings]]` | `[]` | settings schema：设置路由与搜索锚点同一张表（原 `settings-routes.json` + 页内 JSON 字面已收编于此） |
+| `[[settings]]` | `[]` | settings schema：设置路由（panel 页 / schema 控件）与搜索锚点同一张表（原 `settings-routes.json` + 页内 JSON 字面已收编于此；S0-3a 起路由随 owning 插件声明，聚合窗只聚合） |
 | `[[actions]]` | `[]` | 可搜索固定动作（搜索索引的 include 全集；见下） |
 
 `[[settings]]` 条目（键表封闭：`id` / `title` / `context` / `icon` / `source` /
-`description` / `group` / `order` / `route` / `aliases`）：
+`controls` / `description` / `group` / `order` / `route` / `aliases`），
+三形态恰好取一（`source` / `controls` / `route`）：
 
-- **路由条目**（有 `source`）：`source` 为插件内相对 QML 页面文件（存在性校验）；
+- **panel 路由条目**（有 `source`）：`source` 为插件内相对 QML 页面文件（存在性校验）；
   `description`、`group`（导航几何分组键）必填，`order`（导航序，默认 0）可选。
   路由路径由 `id` 派生（`id.split('.')`，`path` 字段已删——恒等冗余）；
   嵌套路由（`keystone.horizontal-clock`）只许一层，父路由必须同 manifest 存在。
+- **schema 路由条目**（有 `controls`，S0-3b）：无页面文件——宿主用 ui/ 原子
+  （Preference 五件套）按控件描述通用渲染，值存宿主 `PluginSettings` 存储
+  （键 `<pluginId>.<key>`）。`description` / `group` / `order` 语义同 panel 路由。
+  控件词表见下（封闭，未声明键即报错）。
 - **锚点条目**（有 `route`）：搜索锚点，`route` 指向同 manifest 的路由条目；
   运行时揭示（滚动定位 + 高亮）由页面的 `SettingsSearchAnchor` 按 id 注册，
   声明数据只住 manifest。
+
+`controls` 控件描述词表（Omarchy schema 形态的语义对位：`switch`↔boolean、
+`select`↔enum、`slider`/`spin`↔integer 的两种呈现、`text`↔string；multiselect /
+path 不进 v1 词表）：
+
+| 字段 | 必填 | 作用 |
+|---|---|---|
+| `key` | ✓ | 叶名（禁 `.` / `:`——存储命名空间是 `<pluginId>.<key>`），路由内唯一 |
+| `type` | ✓ | `switch` / `select` / `slider` / `spin` / `text` 五型封闭 |
+| `title` | ✓ | 展示名（i18n 键，context 取路由 `context`） |
+| `description` | | 副标描述（i18n 键） |
+| `icon` | | Material Symbols 图标名 |
+| `default` | | 缺省值——switch 为布尔、select 必须是选项值、slider/spin 落在 `[min, max]`、text 为字符串 |
+| `options` | select 必填 | 选项数组：`{ value, label, icon? }`，value 唯一 |
+| `min` / `max` | slider/spin 必填 | 数值范围，`min < max` |
+| `step` | | 步进——slider 缺省 0（连续），spin 缺省 1 |
 
 `[[actions]]` 条目（键表封闭：`id` / `target` / `method` / `args` /
 `confirmation` / `availability` / `search`）：

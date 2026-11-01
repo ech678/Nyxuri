@@ -1,6 +1,5 @@
 import QtQuick
 import qs.app
-import "../../settings"
 import "../../wallpaper"
 import qs.commons
 import qs.services

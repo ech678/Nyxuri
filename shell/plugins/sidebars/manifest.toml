@@ -9,6 +9,53 @@ order = 80
 [entryPoints]
 drawer = "SidebarHostWindow.qml"
 
+# Settings schema (manifest-schema.md): navigation routes and search
+# anchors live here — the runtime registry (PluginRegistry) is the only
+# consumer; group keys drive the nav pane's geometric clustering only.
+
+[[settings]]
+id = "sidebar"
+source = "GeneralSidebarPage.qml"
+title = "Sidebars"
+description = "Sides, cards, and monitoring"
+context = "ControlCenterWindow"
+icon = "side_navigation"
+group = "surfaces"
+order = 60
+aliases = ["general.sidebar", "sidebars"]
+
+[[settings]]
+id = "sidebar.section.clock-style"
+route = "sidebar"
+title = "Clock style"
+context = "GeneralSidebarPage"
+icon = "side_navigation"
+aliases = ["general.sidebar.section.clock-style"]
+
+[[settings]]
+id = "sidebar.section.desktop-card-layout"
+route = "sidebar"
+title = "Desktop card layout"
+context = "GeneralSidebarPage"
+icon = "side_navigation"
+aliases = ["general.sidebar.section.desktop-card-layout"]
+
+[[settings]]
+id = "sidebar.section.sidebars"
+route = "sidebar"
+title = "Sidebars"
+context = "GeneralSidebarPage"
+icon = "side_navigation"
+aliases = ["general.sidebar.section.sidebars"]
+
+[[settings]]
+id = "sidebar.section.system-cards"
+route = "sidebar"
+title = "System cards"
+context = "GeneralSidebarPage"
+icon = "side_navigation"
+aliases = ["general.sidebar.section.system-cards"]
+
 # Searchable fixed actions (manifest-schema.md): the search index's
 # include set for this plugin's IPC face.
 

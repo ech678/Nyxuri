@@ -126,6 +126,25 @@ class TestHostClosure(unittest.TestCase):
         self.assertIn("Manifest.validate", registry)
         self.assertIn("entryUrl: record.entryUrls[kind]", registry)
 
+    def test_schema_routes_render_through_the_generic_page(self):
+        # S0-3b: routes with `controls` carry no sourceUrl; the aggregator
+        # loads its generic atom page and injects the route id.
+        window = read("plugins", "settings", "ControlCenterWindow.qml")
+        self.assertIn("SchemaSettingsPage.qml", window,
+                      "schema routes must land on the generic renderer")
+        host = read("plugins", "settings", "SettingsPageHost.qml")
+        self.assertIn("item.settingsRoute = pageLayer.route", host,
+                      "the page host must inject the route id")
+        page = read("plugins", "settings", "SchemaSettingsPage.qml")
+        for atom in ("PreferenceToggle", "PreferenceSelect", "PreferenceSlider",
+                     "PreferenceStepper", "PreferenceInput"):
+            self.assertIn(atom, page, f"the schema renderer must use {atom}")
+        self.assertIn("PluginSettings.setValue", page,
+                      "schema values persist through the host store")
+        helper = read("services", "PluginManifest.js")
+        self.assertIn('entry.controls !== undefined', helper,
+                      "the registry must route controls entries as routes, not anchors")
+
     def test_unit_roots_self_register_on_gateway(self):
         expectations = {
             os.path.join("plugins", "lock", "Lock.qml"): "ActionGateway.sessionLocker = root",
@@ -283,6 +302,19 @@ title = "Probe"
 context = "AdversarialPage"
 icon = "science"
 
+[[settings]]
+id = "adversarial.tuning"
+title = "Adversarial tuning"
+description = "Schema-declared controls"
+context = "AdversarialHost"
+icon = "tune"
+group = "system"
+order = 998
+controls = [
+  { key = "probe-enabled", type = "switch", title = "Probe enabled", default = false },
+  { key = "probe-depth", type = "spin", title = "Probe depth", min = 1, max = 9, default = 3 },
+]
+
 [[actions]]
 id = "nyxuri:adversarial:ping"
 target = "adversarial"
@@ -310,10 +342,17 @@ icon = "network_ping"
             self.assertEqual(m.id, "shell." + self.TEMP_DOMAIN)
             self.assertIn("overlay", m.entry_points)
             routes = [s for s in m.settings if "source" in s]
+            schema_routes = [s for s in m.settings if "controls" in s]
             anchors = [s for s in m.settings if "route" in s]
             self.assertEqual(len(routes), 1, "settings route not discovered")
             self.assertEqual(len(anchors), 1, "search anchor not discovered")
             self.assertEqual(len(m.actions), 1, "searchable action not discovered")
+            # S0-3b: schema routes (controls, no source) are discovered as
+            # routes with their control descriptors normalised.
+            self.assertEqual(len(schema_routes), 1, "schema route not discovered")
+            self.assertEqual(schema_routes[0]["id"], "adversarial.tuning")
+            self.assertEqual([c["key"] for c in schema_routes[0]["controls"]],
+                             ["probe-enabled", "probe-depth"])
         finally:
             shutil.rmtree(plugin, ignore_errors=True)
         self.assertFalse(os.path.exists(plugin))

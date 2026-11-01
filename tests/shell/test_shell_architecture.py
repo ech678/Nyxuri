@@ -1098,10 +1098,13 @@ class TestShellManagement(unittest.TestCase):
         dashboard_file = os.path.join(shell_dir, "plugins", "sidebars", "dashboard", "DashboardSidebar.qml")
         with open(dashboard_file, "r", encoding="utf-8") as f:
             sidebar_content = f.read()
-            # DashboardSidebar legitimately requires settings & the app services pool
-            # for WallpaperColorPicker & FilePickerWindow (KM4.5: picker lives in app/services).
+            # DashboardSidebar legitimately requires the app services pool for
+            # FilePickerWindow (KM4.5: picker lives in app/services) and the
+            # wallpaper plugin for WallpaperColorPicker (S0-3a: the picker moved
+            # to its owning domain plugin; the settings import died with it).
             # S0-2: plugin trees speak relative directory imports (loader-form rule 2).
-            self.assertIn('import "../../settings"', sidebar_content, "DashboardSidebar needs settings for WallpaperColorPicker")
+            self.assertIn('import "../../wallpaper"', sidebar_content, "DashboardSidebar needs wallpaper for WallpaperColorPicker")
+            self.assertNotIn('import "../../settings"', sidebar_content, "DashboardSidebar must not import the settings aggregator")
             self.assertIn("import qs.services", sidebar_content, "DashboardSidebar needs app services for FilePickerWindow")
             self.assertNotIn("import qs.plugins.keystone", sidebar_content, "DashboardSidebar must not import keystone")
             self.assertNotIn("import qs.plugins.launcher", sidebar_content, "DashboardSidebar must not import launcher")
@@ -1762,7 +1765,9 @@ class TestShellManagement(unittest.TestCase):
         with open(sb_path, "r", encoding="utf-8") as f:
             sb_code = f.read()
         self.assertIn("Component.onDestruction:", sb_code)
-        self.assertIn("root.cancelSearch();", sb_code)
+        # S0-3a: the search state machine moved to the SettingsSearch service;
+        # the backend still cancels it on teardown.
+        self.assertIn("SettingsSearch.cancelSearch();", sb_code)
 
         # 5. Roadmap reflects R9 completion
         roadmap_path = os.path.join(shell_dir, "ROADMAP.md")
