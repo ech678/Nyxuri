@@ -54,15 +54,38 @@ _safe_child = safe_child
 def _is_deployable_app(app: str) -> bool:
     if not _is_safe_component(app):
         return False
-    from nyxuri.deploy.manifest import discover_deployable_apps
+    from nyxuri.deploy.manifest import KIND_CONFIG, discover_deployable_apps
+    from nyxuri.kernel import registry
 
     source = _safe_child(get_env().plugins_src, app)
     try:
-        return source is not None and app in discover_deployable_apps() and (
+        if source is not None and app in discover_deployable_apps() and (
             source.is_dir() or source.is_file()
-        )
+        ):
+            return True
     except OSError:
         return False
+    # S1: a third-party plugin is form-deployable when it ships config
+    # payload — the same payload rule as the official root, resolved
+    # through the registry instead of discovery (package-world stays
+    # official-only, plugin-model.md §6).
+    try:
+        m = registry.load_plugin(app)
+    except Exception:
+        return False
+    return registry.plugin_origin(app) == "third-party" and KIND_CONFIG in m.kinds
+
+
+def _plugin_root(app: str) -> Optional[Path]:
+    """Blueprint root for a plugin id: official root first, then the
+    third-party data root (S1). Resolution belongs to the registry; forms
+    only ever need the resolved path."""
+    from nyxuri.kernel import registry
+
+    src = registry.plugin_dir(app)
+    if src is not None:
+        return src
+    return _safe_child(get_env().plugins_src, app)
 
 
 def _open_dir(path: Path, *, create: bool = False) -> int:
@@ -188,7 +211,7 @@ def resolve_form_inheritance(
         return None, [], []
 
     env = get_env()
-    app_root = _safe_child(env.plugins_src, app)
+    app_root = _plugin_root(app)
     if app_root is None or not (app_root.is_dir() and not app_root.is_symlink()):
         return None, [], []
 
@@ -232,7 +255,7 @@ def resolve_form_src(app: str, active: str, dest: Path) -> FormSrcResult:
     silently fall back to default, which would wipe the user's frozen state.
     """
     env = get_env()
-    app_root = _safe_child(env.plugins_src, app)
+    app_root = _plugin_root(app)
     repo_forms = _find_official_forms_dir(app_root)
     user_forms = _safe_child(env.forms_dir, app)
     expected_dest = _safe_child(env.config_dir, app)
@@ -317,7 +340,7 @@ def list_slots(app: str) -> dict:
     if not manifest.forms:
         return {}
     env = get_env()
-    app_root = _safe_child(env.plugins_src, app)
+    app_root = _plugin_root(app)
     official_dir = _find_official_forms_dir(app_root)
     result = {}
     for slot, cfg in manifest.forms.items():
@@ -373,7 +396,7 @@ def _apply_slot(app: str, slot: str, variant: str) -> bool:
         return False
 
     env = get_env()
-    app_root = _safe_child(env.plugins_src, app)
+    app_root = _plugin_root(app)
     official_dir = _find_official_forms_dir(app_root)
     source_dir_name = cfg.get("source_dir", slot)
 
@@ -506,7 +529,7 @@ def _find_form_src(app: str, name: str) -> Optional[Path]:
     except Exception:
         pass
     env = get_env()
-    app_root = _safe_child(env.plugins_src, app)
+    app_root = _plugin_root(app)
     repo_forms = _find_official_forms_dir(app_root)
     user_forms = _safe_child(env.forms_dir, app)
     if app_root is None or repo_forms is None or user_forms is None:

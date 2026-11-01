@@ -702,7 +702,14 @@ def load_manifest(app_src: Path, *, namespace: str = "") -> ModuleManifest:
 
 
 def _app_src(app_name: str) -> Path:
-    """Resolve the on-disk source path for a plugin name under configs/."""
+    """Resolve the on-disk source path for a plugin name: official root
+    first, then the third-party data root (S1). Root ownership lives in
+    the registry; manifest loading only needs the resolved path."""
+    from nyxuri.kernel import registry
+
+    src = registry.plugin_dir(app_name)
+    if src is not None:
+        return src
     return get_env().plugins_src / app_name
 
 

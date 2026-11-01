@@ -110,18 +110,44 @@ def plugin_dir(plugin_id: str) -> Path | None:
     return None
 
 
+def plugin_origin(plugin_id: str) -> str:
+    """Which root the plugin resolves from: ``official`` / ``shell`` / ``third-party``.
+
+    The hook gate (v1 三方拒钩子) and the lifecycle verbs both key off this —
+    origin is a property of the resolving root, never of the manifest content.
+    """
+    src = plugin_dir(plugin_id)
+    if src is None:
+        return ""
+    env = get_env()
+    if src.is_relative_to(env.data_dir / "plugins"):
+        return "third-party"
+    if src.is_relative_to(env.shell_units_src):
+        return "shell"
+    return "official"
+
+
 def load_plugin(plugin_id: str) -> ModuleManifest:
     """Load one plugin's resolved manifest; zero-config defaults applied.
 
     The manifest ``id`` is the registry id itself — new-form manifests declare
     it and ``load_manifest`` rejects any drift from the root-derived id.
+    Third-party plugins additionally reject lifecycle hooks at load time
+    (v1 安全立场: 安装一步绝不执行包内代码, manifest-schema.md 钩子章) —
+    the same check the add verb runs, because this IS the loader.
     """
     from nyxuri.core import safe_child
 
     for root, prefix in _decisive_roots(plugin_id):
         src = safe_child(root, plugin_id[len(prefix):])
         if src is not None and src.is_dir():
-            return load_manifest(src, namespace=prefix)
+            m = load_manifest(src, namespace=prefix)
+            if root == get_env().data_dir / "plugins" and (m.post_install or m.post_remove):
+                raise ValueError(
+                    f"third-party plugin '{plugin_id}' declares lifecycle hooks "
+                    "(post_install / post_remove) — not accepted in v1"
+                )
+            return m
     raise KeyError(f"unknown plugin: {plugin_id}")
 
 

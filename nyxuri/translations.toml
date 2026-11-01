@@ -770,12 +770,14 @@ zh = """{0} 桌面插件引擎 ({1})
   on <插件> [--form <形态>]          启用插件（含依赖闭包与包披露，等价 enable）
   off <插件> [--cascade]             停用插件（自定义文件收存，实机抹白，等价 disable）
   use <插件> [list|<形态>|save|edit|delete|slots|slot <轴> <变体>]  切换或管理形态
+  add <git-url|本地目录> [--enable]  安装第三方插件（绝不执行包内代码，默认停用）
+  remove <插件> [-y]                 移除第三方插件（停用 → 撤回 → 时间戳备份）
+  update <插件> [-y]                 更新第三方插件（diff 预览，拒绝非快进）
   doctor [插件]                      三态对账（Synced/Drifted/Ghost）+ 系统体检
 
 系统与领域:
   install [full|config]              应用配置（full = 含壁纸与钩子重放）
-  update [--force|--no-deploy] [--to <tag|commit>]  更新源码，并按需应用配置
-  use <插件> [list|<形态>|save|edit|delete|slots|slot <轴> <变体>]  切换或管理形态
+  update [--force|--no-deploy] [--to <tag|commit>]  更新引擎源码，并按需应用配置
   shell [get|set|switch|status]      查看或切换桌面外壳插槽（实验性）
   theme [toggle|dark|light|sync|status]  原生切换或同步深浅主题
   deps [core]                        核心依赖勾选单
@@ -796,12 +798,15 @@ Plugin verbs (a plugin = any independently switchable desktop capability):
   list [plugin]                        Full inventory, or one plugin in detail
   on <plugin> [--form <name>]          Enable a plugin (dependency closure + package disclosure, same as enable)
   off <plugin> [--cascade]             Disable a plugin (customs archived, living area wiped, same as disable)
+  use <plugin> [list|<form>|save <n>|edit <n>|delete <n>|slots|slot <axis> <n>]  Switch or manage forms
+  add <git-url|local-dir> [--enable]   Install a third-party plugin (never runs package code, stays off by default)
+  remove <plugin> [-y]                 Remove a third-party plugin (off → withdraw → timestamped backup)
+  update <plugin> [-y]                 Update a third-party plugin (diff preview, refuses non-fast-forward)
   doctor [plugin]                      Three-state audit (Synced/Drifted/Ghost) + system checkup
 
 System & Domains:
   install [full|config]              Apply configs (full = wallpapers + hook replay)
-  update [--force|--no-deploy] [--to <tag|commit>]  Update source, optionally apply configs
-  use <plugin> [list|<form>|save <n>|edit <n>|delete <n>|slots|slot <axis> <n>]  Switch or manage forms
+  update [--force|--no-deploy] [--to <tag|commit>]  Update the engine source, optionally apply configs
   shell [get|set|switch|status]      Inspect or switch desktop shell slot (experimental)
   theme [toggle|dark|light|sync|status]  Switch or sync light/dark theme
   deps [core]                        Core dependencies checklist
@@ -851,6 +856,70 @@ en = "{Colors.BOLD_RED}[✗]{Colors.RESET} {0} is blocked by enabled dependents:
 [cli_plan_off_cascade]
 zh = "{Colors.BOLD_CYAN}::{Colors.RESET} 将级联关闭: {0}"
 en = "{Colors.BOLD_CYAN}::{Colors.RESET} Will cascade off: {0}"
+
+[cli_add_done]
+zh = "{Colors.BOLD_GREEN}[✓]{Colors.RESET} 已安装第三方插件: {0}（落位 {1}）"
+en = "{Colors.BOLD_GREEN}[✓]{Colors.RESET} Third-party plugin installed: {0} (at {1})"
+
+[cli_add_refused]
+zh = "{Colors.BOLD_RED}[✗]{Colors.RESET} 拒绝安装 {0}: {1}"
+en = "{Colors.BOLD_RED}[✗]{Colors.RESET} Refused to install {0}: {1}"
+
+[cli_add_enabling]
+zh = "{Colors.BOLD_CYAN}::{Colors.RESET} 启用 {0} …"
+en = "{Colors.BOLD_CYAN}::{Colors.RESET} Enabling {0}…"
+
+[cli_add_off_hint]
+zh = "插件默认停用，{CLI_CMD} on {0} 启用"
+en = "Installed disabled; run {CLI_CMD} on {0} to enable"
+
+[cli_remove_official]
+zh = "{Colors.BOLD_RED}[✗]{Colors.RESET} {0} 不是第三方插件，remove 不适用: {1}"
+en = "{Colors.BOLD_RED}[✗]{Colors.RESET} {0} is not a third-party plugin, remove does not apply: {1}"
+
+[cli_confirm_remove]
+zh = "确认移除 {0}？（配置已收存的将被撤回，插件目录删除）[y/N]"
+en = "Remove {0}? (deployed files withdrawn, plugin tree deleted) [y/N]"
+
+[cli_remove_off_failed]
+zh = "{Colors.BOLD_RED}[✗]{Colors.RESET} 停用失败，移除中止: {0}"
+en = "{Colors.BOLD_RED}[✗]{Colors.RESET} Disable failed, removal aborted: {0}"
+
+[cli_remove_done]
+zh = "{Colors.BOLD_GREEN}[✓]{Colors.RESET} 已移除: {0}"
+en = "{Colors.BOLD_GREEN}[✓]{Colors.RESET} Removed: {0}"
+
+[cli_remove_backup]
+zh = "非原始插件目录已备份: {0}"
+en = "Non-pristine plugin tree backed up: {0}"
+
+[cli_update_preview]
+zh = "{Colors.BOLD_CYAN}::{Colors.RESET} {0} 更新预览（origin/{1}）:"
+en = "{Colors.BOLD_CYAN}::{Colors.RESET} {0} update preview (origin/{1}):"
+
+[cli_update_no_diff]
+zh = "已是最新，无变更"
+en = "Already up to date, no changes"
+
+[cli_confirm_update]
+zh = "应用以上更新？[Y/n]"
+en = "Apply this update? [Y/n]"
+
+[cli_update_refused]
+zh = "{Colors.BOLD_RED}[✗]{Colors.RESET} 更新 {0} 被拒绝: {1}"
+en = "{Colors.BOLD_RED}[✗]{Colors.RESET} Update of {0} refused: {1}"
+
+[cli_update_done]
+zh = "{Colors.BOLD_GREEN}[✓]{Colors.RESET} 已更新: {0}"
+en = "{Colors.BOLD_GREEN}[✓]{Colors.RESET} Updated: {0}"
+
+[cli_update_redeployed]
+zh = "插件处于启用状态，已通过事务重新应用"
+en = "Plugin was enabled; re-applied through the transaction"
+
+[cli_update_disabled_hint]
+zh = "插件处于停用状态，下次 {CLI_CMD} on {0} 时生效"
+en = "Plugin is disabled; takes effect on the next {CLI_CMD} on {0}"
 
 [cli_step_enabled]
 zh = "{0}: 已启用"

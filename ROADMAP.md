@@ -22,7 +22,7 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 | G0 | 修复 GitHub 已知问题：可独立修的立即修，架构根因随 R0 兑现后关闭回填 | 可独立修落地（#144 #146）；根因修随 R0-3 落地（#143 #145 #147 #149）；#142 随 R0-5 转上游跟踪 |
 | R0 | 引擎收敛：概念定名 Plugin/插件 + 杀词并轨 + 单一激活管线 + 声明贯通 + 减法外迁 + 文档对齐 | 已收口（R0-1 ~ R0-6；R0-5 取消自带收口，launcher 暂留） |
 | S0 | Shell 骨架整抄 Omarchy：五件套 + 运行时插件注册表 + 设置去中心化 + 合成器驱动面（S0-0 ~ S0-5 全数收口；manifest 协议 TOML 本站定稿） | 已收口 |
-| S1 | 第三方插件生命周期：协议 1:1 + 生命周期动词 + Shell 心脏整抄 + 所有权账本回植 | 进行中（S1-0 ~ S1-1 已收口） |
+| S1 | 第三方插件生命周期：协议 1:1 + 生命周期动词 + Shell 心脏整抄 + 所有权账本回植 | 进行中（S1-0 ~ S1-2 已收口） |
 | T4 | Shell 可控性与透明化（开工时立细则） | 待开始 |
 | T5 | 多合成器解耦（门禁触发） | 待开始 |
 | T2 | TUI Textual 重做（暂缓，分支备用） | 待开始 |
@@ -268,7 +268,7 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 | --- | --- | --- |
 | S1-0 裁决过堂 | 五裁决落 wiki：plugin-model §5 八动词终态、manifest-schema 第三方章（落位 / reverse-DNS / 禁软链 / sources / 拒钩子）、omarchy-parity 改裁登记、overview 动词面与划词翻译失实句修正 | 已收口 |
 | S1-1 落位与注册 | `Environment.data_dir`（XDG_DATA_HOME）+ registry 第三根 + 软链拒绝统一进扫描层 + TempEnv 补 `XDG_DATA_HOME` + `_MANIFEST_CACHE` 失效处理 | 已收口 |
-| S1-2 生命周期动词 | `add`（clone → staging → 校验=加载同一套 → id 冲突 → 落位 → 记 sources）/ `remove`（停用 → 按所有权账本撤回 → 非管辖时间戳备份）/ `update <id>`（diff 预览 → 拒绝非 ff → 校验失败自动回退咬合快照重基线）；所有权账本回植（PR #148 素材剪裁）；`pkg/net.py` 补 clone/diff；三方 v1 拒钩子 + `audit-lifecycle.py` 审计扩展；CLI / translations / operation-map 三闸门同批 | 待开始 |
+| S1-2 生命周期动词 | `add`（clone → staging → 校验=加载同一套 → id 冲突 → 落位 → 记 sources）/ `remove`（停用 → 按所有权账本撤回 → 非管辖时间戳备份）/ `update <id>`（diff 预览 → 拒绝非 ff → 校验失败自动回退咬合快照重基线）；所有权账本回植（PR #148 素材剪裁）；`pkg/net.py` 补 clone/diff；三方 v1 拒钩子 + `audit-lifecycle.py` 审计扩展；CLI / translations / operation-map 三闸门同批 | 已收口（audit 扩展改裁随 S1-3：该脚本审计 shell 树，三方 shell 面尚不存在；引擎侧静觉得等价物 = 加载时钩子门 + 词表封闭，已测。部署管线开缝 `registry.plugin_dir`——`_item_src` / `_app_src` / `_plugin_root` / `_is_deployable_app` 四点，第三方 config 类从此可过唯一事务管线） |
 | S1-3 Shell 心脏整抄 | 806 行原件物理拷入 `shell/services/` 建基线（守护三件套 / 流解析 / 安全检查原样保留）；剪裁：二根扫描、开关读 StateProjection、删 shell.json 写入、走既有 `PluginManifest.js` TOML 通路；自研 192 行的 S0-2 投影（units / toggles / settingsRoutes / anchors / actions）并轨不丢失；首日 spike = 三方 ui kind 在 SlotHost 槽模型的落座规则；对抗门禁 = 手工塞临时三方插件 → 发现 → 移除全程零宿主文件改动 | 待开始 |
 | S1-4 首个用例贯通 | 上游 orbit-translate 补 manifest.toml（几行）；实机 `add <url>` → `on` → `shell-action translate` 全链路；`shell-action.sh` / `niri-scratch-toggle.sh` / sysdoctor `_check_orbit` + `_check_scripts` 改按注册表消费，配置不再混 noctalia 生活区 | 待开始 |
 | S1-5 收口 | ROADMAP 回填、wiki 清算、全局门禁 4 过堂 | 待开始 |

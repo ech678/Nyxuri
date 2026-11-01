@@ -52,11 +52,23 @@ def discover_config_items() -> List[str]:
     return _CONFIG_ITEMS_CACHE
 
 
+def _item_src(item: str) -> Path:
+    """Blueprint source for a plugin id: official root first, then the
+    third-party data root (S1). Root ownership lives in the registry;
+    deployment only ever needs the resolved path."""
+    from nyxuri.kernel import registry
+
+    src = registry.plugin_dir(item)
+    if src is not None:
+        return src
+    return get_env().plugins_src / item
+
+
 def config_item_dest(item: str) -> Path:
     """Living-space path for a plugin: ``~/.config/<target>`` for single-file
     plugins, else ``~/.config/<item>`` (plugin-model.md §4 target exception)."""
     from nyxuri.core import get_env
-    m = load_manifest(get_env().plugins_src / item)
+    m = load_manifest(_item_src(item))
     return living_path(m, get_env().config_dir)
 
 
@@ -64,8 +76,8 @@ def config_item_src(item: str) -> Path:
     """Blueprint payload path for a plugin: the target file itself for
     single-file plugins, else the plugin directory."""
     from nyxuri.core import get_env
-    m = load_manifest(get_env().plugins_src / item)
-    src = get_env().plugins_src / item
+    src = _item_src(item)
+    m = load_manifest(src)
     return src / m.target if m.target else src
 
 def _phase_atomic_deployment(
@@ -93,13 +105,13 @@ def _phase_atomic_deployment(
     for item in items_to_deploy:
         # Manifest always loaded from the app root (not the preset dir):
         # preserve/chmod describe the app, independent of which variant ships.
-        manifest = load_manifest(env.plugins_src / item)
+        manifest = load_manifest(_item_src(item))
 
         if manifest.target:
             # Single-file plugin (§4 target exception): one file inside the
             # plugin dir lands at ~/.config/<target>. Form axes are
             # directory affordances and do not apply.
-            src = env.plugins_src / item / manifest.target
+            src = _item_src(item) / manifest.target
             dest = config_dir / manifest.target
             if not src.is_file():
                 failed_items.append(item)
@@ -200,7 +212,7 @@ def merge_deploy_plugin(item: str, manifest: ModuleManifest) -> Optional[List[st
     import shutil
 
     env = get_env()
-    src_root = env.plugins_src / item
+    src_root = _item_src(item)
     dest = living_path(manifest, env.config_dir)
     laid: List[str] = []
     try:

@@ -29,6 +29,7 @@ from nyxuri.desktop.forms import (
     list_forms,
     save_form,
 )
+from nyxuri import sources as lifecycle
 from nyxuri.pkg.deps import run_dep_menu_loop
 from nyxuri.sysdoctor import generate_bug_report, run_doctor
 from nyxuri.kernel import ledger, registry, transaction
@@ -154,6 +155,69 @@ def _cmd_off(sub_args: List[str]) -> int:
     if dependents:
         print(msg("cli_plan_off_cascade", ", ".join(dependents)))
     return _report_steps(transaction.plugin_off(plugin, cascade=cascade))
+
+
+def _cmd_add(sub_args: List[str]) -> int:
+    """nyxuri add <git-url|local-dir> [--enable] — install a third-party plugin."""
+    usage = f"{CLI_CMD} add <git-url|local-dir> [--enable]"
+    rest = list(sub_args)
+    source = rest.pop(0) if rest and not rest[0].startswith("-") else ""
+    enable = False
+    while rest:
+        cur = rest.pop(0)
+        if cur == "--enable":
+            enable = True
+        else:
+            exit_usage(usage)
+    if not source:
+        exit_usage(usage)
+    try:
+        result = lifecycle.add(source)
+    except ValueError as exc:
+        print(msg("cli_add_refused", source, str(exc)), file=sys.stderr)
+        return 2
+    print(msg("cli_add_done", result["id"], result["dir"]))
+    if enable:
+        print(msg("cli_add_enabling", result["id"]))
+        return _cmd_on([result["id"]])
+    print(msg("cli_add_off_hint", result["id"]))
+    return 0
+
+
+def _cmd_remove(sub_args: List[str]) -> int:
+    """nyxuri remove <plugin> [-y] — uninstall a third-party plugin."""
+    usage = f"{CLI_CMD} remove <plugin> [-y]"
+    rest = list(sub_args)
+    plugin = rest.pop(0) if rest and not rest[0].startswith("-") else ""
+    yes = False
+    while rest:
+        cur = rest.pop(0)
+        if cur in ("-y", "--yes"):
+            yes = True
+        else:
+            exit_usage(usage)
+    if not plugin:
+        exit_usage(usage)
+    try:
+        lifecycle.require_third_party(plugin)
+    except KeyError:
+        print(msg("cli_unknown_plugin", plugin), file=sys.stderr)
+        return 2
+    except ValueError as exc:
+        print(msg("cli_remove_official", plugin, str(exc)), file=sys.stderr)
+        return 2
+    if not yes and sys.stdin.isatty():
+        if not prompt_confirm("cli_confirm_remove", "n", destructive=True):
+            print(msg("cli_aborted"), file=sys.stderr)
+            return 1
+    result = lifecycle.remove(plugin)
+    if result.get("off_failed"):
+        print(msg("cli_remove_off_failed", plugin), file=sys.stderr)
+        return 1
+    print(msg("cli_remove_done", plugin))
+    if result.get("backup"):
+        print(msg("cli_remove_backup", result["backup"]))
+    return 0
 
 
 def _state_cell(state: str, width: int) -> str:
@@ -469,7 +533,67 @@ def _cmd_shell(sub_args: List[str]) -> int:
         exit_usage(usage)
 
 
+def _cmd_update_plugin(sub_args: List[str]) -> int:
+    """nyxuri update <plugin> [-y] — third-party plugin update (参数分派)."""
+    usage = f"{CLI_CMD} update <plugin> [-y]"
+    rest = list(sub_args)
+    plugin = rest.pop(0) if rest and not rest[0].startswith("-") else ""
+    yes = False
+    while rest:
+        cur = rest.pop(0)
+        if cur in ("-y", "--yes"):
+            yes = True
+        else:
+            exit_usage(usage)
+    if not plugin:
+        exit_usage(usage)
+    try:
+        preview = lifecycle.update(plugin)
+    except KeyError:
+        print(msg("cli_unknown_plugin", plugin), file=sys.stderr)
+        return 2
+    except ValueError as exc:
+        print(msg("cli_update_refused", plugin, str(exc)), file=sys.stderr)
+        return 1
+    print(msg("cli_update_preview", plugin, preview["ref"]))
+    diff = preview.get("diff") or ""
+    if diff:
+        print(diff)
+    else:
+        print(msg("cli_update_no_diff"))
+        return 0
+    if not yes and sys.stdin.isatty():
+        if not prompt_confirm("cli_confirm_update", "y"):
+            print(msg("cli_aborted"), file=sys.stderr)
+            return 1
+    try:
+        applied = lifecycle.update_apply(plugin, preview)
+    except ValueError as exc:
+        print(msg("cli_update_refused", plugin, str(exc)), file=sys.stderr)
+        return 1
+    print(msg("cli_update_done", plugin))
+    if applied.get("redeployed"):
+        print(msg("cli_update_redeployed", plugin))
+    else:
+        print(msg("cli_update_disabled_hint", plugin))
+    return 0
+
+
 def _cmd_update(sub_args: List[str]) -> int:
+    # 参数分派（S1-0 裁决）: a positional token that names a REGISTERED
+    # plugin routes to the third-party lifecycle; anything else (bare
+    # flags, --to values, unknown tokens) keeps the engine self-update
+    # untouched. `update --to kitty` stays an engine checkout.
+    skip_next = False
+    for cur in sub_args:
+        if skip_next:
+            skip_next = False
+            continue
+        if cur == "--to":
+            skip_next = True
+            continue
+        if not cur.startswith("-") and registry.plugin_dir(cur) is not None:
+            return _cmd_update_plugin(sub_args)
     usage = f"{CLI_CMD} update [--force|--no-deploy] [--to <tag|commit>]"
     flag = ""
     to_ref = ""
@@ -534,6 +658,8 @@ COMMANDS = {
     "off":       (_cmd_off,       f"{CLI_CMD} off <plugin> [--cascade]"),
     "disable":   (_cmd_off,       f"{CLI_CMD} off <plugin> [--cascade]"),
     "use":       (_cmd_use,       f"{CLI_CMD} use <plugin> [list|<name>|save <name>|edit <name>|delete <name>|slots|slot <axis> <name>]"),
+    "add":       (_cmd_add,       f"{CLI_CMD} add <git-url|local-dir> [--enable]"),
+    "remove":    (_cmd_remove,    f"{CLI_CMD} remove <plugin> [-y]"),
     "list":      (_cmd_list,      f"{CLI_CMD} list [plugin]"),
     "pkg":       (_cmd_pkg,       f"{CLI_CMD} pkg <install|upgrade|remove|search|info|installed>"),
     "clean":     (_cmd_clean,     f"{CLI_CMD} clean [-n] [--only <tasks>]"),
@@ -547,7 +673,7 @@ COMMANDS = {
     "test":      (_cmd_test,      f"{CLI_CMD} test"),
     "theme":     (_cmd_theme,     f"{CLI_CMD} theme [toggle|dark|light|sync|status]"),
     "shell":     (_cmd_shell,     f"{CLI_CMD} shell [get|set <noctalia|nyxuri-shell> [bin_path]|switch [<noctalia|nyxuri-shell> [bin_path]]|status] [EXPERIMENTAL]"),
-    "update":    (_cmd_update,    f"{CLI_CMD} update [--force|--no-deploy] [--to <tag|commit>]"),
+    "update":    (_cmd_update,    f"{CLI_CMD} update [<plugin> [-y] | --force|--no-deploy] [--to <tag|commit>]"),
     "help":      (_cmd_help,      f"{CLI_CMD} help"),
 }
 

@@ -48,7 +48,7 @@ class TestRetiredModuleCommands(unittest.TestCase):
         with open("nyxuri/cli.py", encoding="utf-8") as fh:
             source = fh.read()
         self.assertNotIn("RETIREMENTS", source, "the alias table must stay dead")
-        retired = ("deploy", "backup", "restore", "remove", "purge", "recommended",
+        retired = ("deploy", "backup", "restore", "purge", "recommended",
                    "wp", "report", "apps", "wallpapers", "greeter", "fcitx",
                    "gtk", "fisher", "preset", "-h", "--help")
         for name in retired:
@@ -56,6 +56,10 @@ class TestRetiredModuleCommands(unittest.TestCase):
             code, _, err = self._run(name, "extra")
             self.assertEqual(code, 2, name)
             self.assertNotIn("KM5", err, name)
+        # "remove" left the KM3.5 grave: S1 resurrected it with third-party
+        # plugin lifecycle semantics (operation-map 插件动词表) — a new
+        # surface, not a ghost pointer of the old config-removal verb.
+        self.assertIn("remove", COMMANDS)
 
 
 class TestUpdateForcePath(unittest.TestCase):

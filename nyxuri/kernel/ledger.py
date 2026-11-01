@@ -31,6 +31,11 @@ PLUGINS_KEY = "plugins"
 FORMS_KEY = "forms"
 _FORM_FIELD = "form"
 
+# Top-level key holding third-party origin records (S1):
+# {plugin: {url, ref, commit, added}} — the origin truth, never a sidecar
+# inside the plugin directory (manifest-schema.md 第三方章).
+SOURCES_KEY = "sources"
+
 # --- generic ledger primitives -------------------------------------------
 
 
@@ -209,3 +214,59 @@ def set_form_slot(plugin_id: str, slot: str, value: str) -> None:
     slot_map = get_form_slots(plugin_id)
     slot_map[slot] = value
     update_ledger(**{FORMS_KEY: {plugin_id: slot_map}})
+
+
+# --- third-party origin records (S1) -----------------------------------------
+
+
+def get_source(plugin_id: str) -> dict[str, Any] | None:
+    """The plugin's origin record (``{url, ref, commit, added}``), or None.
+
+    Official blueprint plugins never have one; a third-party plugin without
+    one was installed from a local directory (git-transport verbs refuse).
+    """
+    sources = read_ledger().get(SOURCES_KEY)
+    if not isinstance(sources, dict):
+        return None
+    rec = sources.get(plugin_id)
+    return dict(rec) if isinstance(rec, dict) else None
+
+
+def set_source(plugin_id: str, *, url: str, ref: str, commit: str) -> dict[str, Any]:
+    """Upsert one origin record; ``added`` stamps only the first install."""
+    if not plugin_id or not isinstance(plugin_id, str):
+        raise ValueError("plugin id must be a non-empty string")
+    for field, val in (("url", url), ("ref", ref), ("commit", commit)):
+        if not isinstance(val, str):
+            raise ValueError(f"source {field} must be a string")
+    existing = get_source(plugin_id) or {}
+    rec = {
+        "url": url,
+        "ref": ref,
+        "commit": commit,
+        "added": existing.get("added")
+        or datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    data = update_ledger(**{SOURCES_KEY: {plugin_id: rec}})
+    return dict(data[SOURCES_KEY][plugin_id])
+
+
+def forget_plugin(plugin_id: str) -> None:
+    """Erase every ledger trace of a third-party plugin.
+
+    ``remove`` 专属清扫：插件记录、来源记录与形态槽位选择一并抹除——
+    移除即无痕，不留下需要供养的残骸。官方插件永不进入此路径
+    （uninstall 只停用不抹账，remove 才是存在的反面）。
+    """
+    path = ledger_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with _ledger_lock(path):
+        data = _read_raw()
+        changed = False
+        for key in (PLUGINS_KEY, SOURCES_KEY, FORMS_KEY):
+            section = data.get(key)
+            if isinstance(section, dict) and plugin_id in section:
+                section.pop(plugin_id)
+                changed = True
+        if changed:
+            _write_locked(path, data)
