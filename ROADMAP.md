@@ -234,8 +234,18 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 
 ### S1 · 第三方插件生命周期
 
-> 逐资产「照抄 / 改造 / 拒绝」过堂台账见 [omarchy-parity](llms-wiki/shell/omarchy-parity.md)，
-> 开工首日按其动词映射逐项填裁决。
+> 逐资产「照抄 / 改造 / 拒绝」过堂台账见 [omarchy-parity](llms-wiki/shell/omarchy-parity.md)。
+> **战略定调：留我们的皮，换 Omarchy 的心**——
+> - **皮（誓死守护）**：Clavis/Caelestia 现代视觉原子、流体动画、Niri 合成器驱动、引擎账本单一开关真相；
+> - **心（代码物理整抄）**：Omarchy 经过实战检验的 806 行 `PluginRegistry.qml`（进程守护、inotify 实时监听、流解析）
+>   与 7 个 `Plugin*Api.qml` 隔离门面全量物理拷入；
+> - **缝合切口**：三方落位改 `~/.local/share/nyxuri/plugins/<id>/`（物理隔离）、清单接入现成 `Toml.parse`、
+>   `SlotHost.qml` 补齐 Loader 门面属性注入（`item.pluginRegistry/shell`）、开关读取对接账本。
+> **执行铁律：代码物理整抄（Fork & Trim），严禁从零自研！**
+> S0 仅完成骨架对位与存量搬迁，S1 才是 Omarchy 源码整抄的主战场。Shell 侧必须直接复制
+> `shell/references/omarchy/shell/services/` 下的 `PluginRegistry.qml` 与 7 个
+> `Plugin*Api.qml` 门面原件至生产目录建立基线，保留其进程守护与安全检查逻辑，再定向剪裁；
+> Python 引擎侧严格按 Omarchy 契约 1:1 实现命令流与快照咬合。
 
 - **协议语义 1:1 Omarchy（载体 TOML，S0 定稿）**：`schemaVersion`、reverse-DNS `id`（官方保留裸名与
   `nyxuri.` 前缀）、`kinds`、`entryPoints`、settings schema、禁软链；安装绝不执行
