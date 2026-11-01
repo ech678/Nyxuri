@@ -73,7 +73,10 @@ UI 只呈现和响应输入；桌面意图经 Action Gateway 执行。命令、�
 ## 微内核宿主与几何插槽（KM4 契约，迁自 plugin-model §6）
 
 Shell 是极致精简的**微内核宿主**：宿主只保留装配（`SlotHost`）、动作网关
-（`ActionGateway`，含 `executeIntent` 跨域意图路由）、会话协议（`NiriService`）、
+（`ActionGateway`，含 `executeIntent` 跨域意图路由）、合成器驱动面
+（`CompositorDriver` 单例投影 + `NiriDriver` 实现——S0-5 起 niri 方言
+（socket env、`niri msg` argv、版本探针）只许活在 `NiriDriver.qml` 一个文件，
+消费者一律绑 `CompositorDriver`），
 主题代币（`ThemeTokens`/ThemeService）与账本投影（`StateProjection`）。内核侧
 三条（同一账本、单一事件通道、点分 ID）冻结在 plugin-model §6，此处承载实现契约。
 

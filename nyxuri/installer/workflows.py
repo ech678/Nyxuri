@@ -5,7 +5,7 @@ import subprocess
 import sys
 from typing import Dict, List
 
-from nyxuri.core import SUPPORTED_WMS, detect_preferred_wm
+from nyxuri.compositors import COMPOSITORS, detect_preferred_wm
 from nyxuri.core import get_env, log_msg
 from nyxuri.deploy import (
     config_item_dest,
@@ -144,17 +144,17 @@ def install_configs_workflow(mode: str = "full") -> bool:
         preferred_wm = detect_preferred_wm()
         chosen_configs = [
             item for item in all_items
-            if item not in SUPPORTED_WMS or item == preferred_wm
+            if item not in COMPOSITORS or item == preferred_wm
         ]
         do_wallpapers = not wallpapers_pack_present()
         do_backup = False
 
     # Safety: ensure at most one WM is selected
-    selected_wms = [c for c in chosen_configs if c in SUPPORTED_WMS]
+    selected_wms = [c for c in chosen_configs if c in COMPOSITORS]
     if len(selected_wms) > 1:
         preferred = detect_preferred_wm()
         chosen_wm = preferred if preferred in selected_wms else selected_wms[0]
-        chosen_configs = [c for c in chosen_configs if c not in SUPPORTED_WMS or c == chosen_wm]
+        chosen_configs = [c for c in chosen_configs if c not in COMPOSITORS or c == chosen_wm]
 
     _phase_preflight_check(mode, chosen_configs, do_wallpapers, do_backup)
 
@@ -180,10 +180,15 @@ def install_configs_workflow(mode: str = "full") -> bool:
         from nyxuri.state.backup import backup_configs
         backup_configs(note="auto_snapshot_before_deploy", interactive=False)
 
-    plugins_to_enable = list(chosen_configs)
-    if do_wallpapers and "wallpapers" not in plugins_to_enable:
-        plugins_to_enable.append("wallpapers")
     known_plugins = set(transaction.registry.plugin_ids())
+    plugins_to_enable = [uid for uid in chosen_configs if uid in known_plugins]
+    for uid in chosen_configs:
+        if uid not in known_plugins:
+            log_msg("WARN", f"unknown plugin skipped: {uid}")
+    # Optional blueprint assists: only when their plugin is actually present
+    # in this install (manifest-only supplies may have retired the directory).
+    if do_wallpapers and "wallpapers" in known_plugins and "wallpapers" not in plugins_to_enable:
+        plugins_to_enable.append("wallpapers")
     if "theme" in known_plugins and "theme" not in plugins_to_enable:
         plugins_to_enable.append("theme")
 

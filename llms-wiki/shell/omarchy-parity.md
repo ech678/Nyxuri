@@ -50,22 +50,66 @@
 | `docs/testing.md` | 测试套件契约（base-test.sh） | S1 `audit-lifecycle.py` 扩展 | 待裁 | — |
 | `docs/update-process.md` | 更新流程（状态协调、迁移、回退护栏） | S1 update（diff 预览 / 拒非 ff / 自动回退） | 待裁 | — |
 
-## C. Hyprland 负空间地图（S0-5 专用）
+## C. Hyprland 负空间地图(S0-5 核对完毕,2026-11-01)
 
-Omarchy 是 Hyprland 宿主，其合成器耦合点即「插件化 shell 里合成器假设藏在哪」
-的全集地图。S0-5 抽 CompositorDriver 面时按此清单核对 NiriService 覆盖度，
-缺口即驱动接口。**本站代码经 grep 证实零 `Quickshell.Hyprland` import**
-（`hypr` 字样仅剩 `hyprpicker` 外部取色工具依赖与 end-4 出处注释）。
+Omarchy 是 Hyprland 宿主,其合成器耦合点即「插件化 shell 里合成器假设藏在哪」
+的全集地图。S0-5 已按此清单逐组核对完毕,落 **CompositorDriver 面 +
+NiriDriver 首驱动**(`services/CompositorDriver.qml` 单例投影 +
+`services/NiriDriver.qml` 实现)。**本站代码经 grep 证实零
+`Quickshell.Hyprland` import**(`hypr` 字样仅剩 `hyprpicker` 外部取色工具
+依赖与 end-4 出处注释)。
 
-触点 30 文件（`shell/` 内 `hypr` 命中，按层分组）：
+触点 30 文件(`shell/` 内 `hypr` 命中,按层分组)与核对判定:
 
-- **Commons**：`Border` `InputDevices` `Style`
-- **Ui**：`KeyboardPanel` `OverlayWindow` `PopupCard` `ScreenMoveRemap` `Toggle` `ToggleSwitch`
-- **plugins**：bar（`Bar` `BarModel` + widgets `KeyboardLayout(.qml/Model)` `Workspaces`）、
-  dock（`Dock` `DockWindow`）、lock（`LockView` `Service`）、menu（`MenuModel`）、
-  notifications（`Service`）、panels/monitor（`Panel`）、
-  services（`media` `nightlight` `remote-session(.qml/Model)`）
-- **services + 宿主**：`BackgroundIntro` `BackgroundSwitch` `BrightnessKeys` `shell.qml`
+| Omarchy 触点组 | 本站对位 | 判定 |
+| --- | --- | --- |
+| Commons:`Border` `InputDevices` `Style` | `commons/` 纯展示层,色板/尺寸全注入 | 不适用(纯展示无触达) |
+| Ui:`KeyboardPanel` `OverlayWindow` `PopupCard` `ScreenMoveRemap` `Toggle` `ToggleSwitch` | `ui/` 原子控件库,不触合成器 | 不适用(同上) |
+| bar `Workspaces` / `Bar` `BarModel` | `CompositorDriver.workspaces`(socket 事件流) | **覆盖** |
+| bar `KeyboardLayout(.qml/Model)` | 本站无键盘布局 widget | 不适用(事件链零消费,随 S0-5 处决) |
+| dock `Dock` `DockWindow` | `DockService`/`DockSurface` → 驱动 windows/searchWindows | **覆盖**;minimize 走能力位**降级**(`supportsMinimize: false`,上游 niri 无此 IPC) |
+| lock `LockView` `Service` | session-lock Wayland 协议,不经合成器 IPC;idle 电源走 `setMonitorsPower` | **覆盖**(电源路径) |
+| menu `MenuModel` | 全局菜单走 niri binds(`niri-actions.json`)与 keystone | 不适用 |
+| notifications `Service` | Wayland notification 协议 | 不适用 |
+| panels/monitor `Panel` | 驱动 `outputs` / `outputSnapshot()` | **覆盖** |
+| services `media` `nightlight` `remote-session` | MPRIS / wlr-gamma / 无此功能 | 不适用(非合成器协议) |
+| 宿主 `BackgroundIntro` `BackgroundSwitch` | `WallpaperSceneService` → 驱动工作区/窗口状态 | **覆盖**;视差走 `setFloatingParallaxOffsets` 桩**降级**(上游 niri 无此 IPC) |
+| 宿主 `BrightnessKeys` | `BrightnessService.currentOutput` ← 驱动 | **覆盖** |
+| `shell.qml` 宿主 | `AppShell` overview 意图 → `toggleOverview()`;logout → `quitSession()`(execDetached,niri msg 真相在驱动) | **覆盖** |
+
+**驱动接口缺口(本次勘察暴露并补齐)**:
+- `setMonitorsPower(off, callback)` —— 带 exit-code 回调的受管执行
+  (IdleService 原先绕过协议单例直接起 `niri msg` 进程);无回调形态 =
+  execDetached(teardown 时必须脱离宿主存活)
+- `quitSession()` —— 原 ActionGateway 硬编码 argv 收编
+- `compositorVersion/Ready/Error` —— 原 BlurService 私有 `niri --version`
+  探针收编(版本**解释**留在消费域:blur 需要 ≥ 26.4 是 blur 的知识)
+
+**S0-5 处决面**(零消费者,搬家时处决而非搬运):工作区导航动词全家
+(focusColumn*/moveColumn*/maximizeColumn/consume/expel/setColumnWidth/
+switchLayout 等——合成器 binds 直接执行 `niri msg`,不经 shell)、键盘布局
+状态链、foreign-toplevel 映射全家(sortToplevels 等)、MRU、displayScales、
+socket 版 quit/powerOff/powerOn(被进程版动词取代)。
+
+**key-cli 收敛判定(实勘修正)**:ROADMAP 原句「key-cli 收敛进一个驱动」,
+实勘后判定——key-cli 命令真相已单源于 `app/Paths.qml` 的 `stableKey`
+(`NYXURI_KEY` 重定向),9 个消费文件(SystemMonitor/KeyboardLock/
+FileSearch/Spotlight tool/Recording 等)是各自域的流管理与生命周期,
+塞进合成器驱动会造上帝对象、违反「新抽象必须减少复杂度」门禁。收敛点
+= `Paths.stableKey` 唯一命令源(既有事实),驱动不重复登记;此判定如需
+翻案,出入口在本页。
+
+**登记例外(niri 字面量允许存在,非驱动面)**:
+`scripts/system/niri_config.py` + `display_preview.py`(合成器**配置管理**
+域,直连 socket 是其本职)、`niri-actions.json`(binds 真值,S0-2 定稿)、
+词典/文案中的事实陈述(如 "Niri session not detected")。
+契约焊接:`tests/shell/test_shell_architecture.py`
+`test_r4c_niri_single_runtime_entry`(NiriService 死刑 + argv 白名单 +
+双文件契约)与 `shell/scripts/dev/audit-lifecycle.py`(驱动 argv 豁免)。
+
+引擎侧(Python)同站收编:`nyxuri/compositors.py` 注册表吃掉
+`SUPPORTED_WMS` 元组、安装器 WM radio 特判与 doctor 三处字面量
+(T5 前置兑现,见 delayed-decisions)。
 
 ## D. 预裁决项（作者已拍板，出处可溯）
 

@@ -21,7 +21,7 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 | --- | --- | --- |
 | G0 | 修复 GitHub 已知问题：可独立修的立即修，架构根因随 R0 兑现后关闭回填 | 可独立修落地（#144 #146）；根因修随 R0-3 落地（#143 #145 #147 #149）；#142 随 R0-5 转上游跟踪 |
 | R0 | 引擎收敛：概念定名 Plugin/插件 + 杀词并轨 + 单一激活管线 + 声明贯通 + 减法外迁 + 文档对齐 | 已收口（R0-1 ~ R0-6；R0-5 取消自带收口，launcher 暂留） |
-| S0 | Shell 骨架整抄 Omarchy：五件套 + 运行时插件注册表 + 设置去中心化（S0-0 装载 spike 门禁先行；manifest 协议 TOML 本站定稿） | 进行中 |
+| S0 | Shell 骨架整抄 Omarchy：五件套 + 运行时插件注册表 + 设置去中心化 + 合成器驱动面（S0-0 ~ S0-5 全数收口；manifest 协议 TOML 本站定稿） | 已收口 |
 | S1 | 第三方插件生命周期：协议 1:1 + 四动词 + 所有权账本回植 | 待开始 |
 | T4 | Shell 可控性与透明化（开工时立细则） | 待开始 |
 | T5 | 多合成器解耦（门禁触发） | 待开始 |
@@ -197,13 +197,35 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
     相位 + 零 compiled empty；启动告警与 HEAD 对照实例逐条一致（0.3.2 冷编译
     预热产物，非本站回归）。M3/M4 视觉过目仍归作者。执行序调整：S0-4（收窄版）
     先行、S0-3 随后，站号不动。
-  - **S0-5 合成器面清理（唯一实质大改，措辞正名）**：shell 现状本就是 niri
-    （`NiriService` 直连 `NIRI_SOCKET`，本库 grep 证实零 `Quickshell.Hyprland`
-    import）——要清的是**整抄对象（Omarchy）代码里的** Hyprland 语义
-    （`Quickshell.Hyprland` import、lock corners、dock workspace-layout，其
-    `shell/` 内 30 文件命中，清单见 [omarchy-parity](llms-wiki/shell/omarchy-parity.md) §C）。
-    做法是抽 **CompositorDriver** 面 + niri 首驱动（socket / `niri msg` / key-cli
-    收敛进一个驱动），不硬译 niri 字面量——兑现 T5 前置一次做对。
+  - **S0-5 合成器面清理（已收口）**：shell 现状本就是 niri（原 `NiriService`
+    直连 `NIRI_SOCKET`，本库 grep 证实零 `Quickshell.Hyprland` import）——清的是
+    **整抄对象（Omarchy）代码里的** Hyprland 语义（lock corners、dock
+    workspace-layout 等），按 [omarchy-parity](llms-wiki/shell/omarchy-parity.md) §C
+    逐组核对落判定。收口形态：**`CompositorDriver` 面（单例投影）+ `NiriDriver`
+    首驱动**——niri 方言（`NIRI_SOCKET`、`niri msg` argv、`niri --version` 探针）
+    锁死单文件，13 处消费者（app 1 / services 4 / plugins 7 / archive 1）全部改绑
+    `CompositorDriver`，`isNiri` 语义正名 `available`。**散点收编**：ActionGateway
+    logout 的硬编码 argv → `quitSession()`（execDetached，脱离宿主存活）；
+    IdleService 的 `niri msg power-*` 进程 → `setMonitorsPower(off, callback)`
+    （受管回调 / 无回调即 detached teardown 形态）；BlurService 私有版本探针 →
+    `compositorVersion/Ready/Error`（版本**解释**留在 blur 域）。**处决**零消费者
+    死面：工作区导航动词全家（合成器 binds 直接执行，shell 不经手）、键盘布局状态
+    链、foreign-toplevel 映射、MRU、displayScales、socket 版 quit/power（1321 →
+    约 830 行）。**引擎侧随站收编**：`nyxuri/compositors.py` 注册表吃掉
+    `SUPPORTED_WMS` 元组 + `detect_preferred_wm()`、`menus.py` WM radio 特判、
+    `sysdoctor.py` 三处 `("mango","niri")` 字面量、`theme.py` reload argv；
+    `MAIN_WM` 单源化。**key-cli 实勘修正**：命令真相已单源于 `Paths.stableKey`，
+    9 个消费文件是域流管理（塞进驱动即上帝对象），驱动不重复登记（判定入 §C）。
+    证据：`tests/shell` 282 绿（11 跳过=基线）；`run-tests.py --all` 五分类 110 绿
+    （5 跳过=基线）；`check.sh` 全过（format/lint/lifecycle-audit，驱动获 argv
+    白名单豁免）；全量 Python 991 测试全绿（#149 的 `unknown plugin:
+    wallpapers` 非交互崩溃一并修掉：目标列表只纳入注册表已知插件，未知 id
+    降级为 WARN 而非 `plugin_on` 抛 KeyError 半途炸在已部署之后；新增
+    `test_installer_skips_absent_optional_plugins_instead_of_crashing` 回滚
+    即红坐实）；定向 `test_mango_adaptation` / `test_forms` / `test_theme_sync`
+    / `test_ai_specs` 全绿；隔离实机（独立 XDG 路径 + 按 pid IPC）`IPC_READY`
+    + `settings open wallpaper` OK + `compositor.present/connected=true`
+    （驱动实时会话坐实）+ 零 compiled empty + 零 ERROR。
 - **引擎侧波及（随站执行，不是顺手改）**：`nyxuri/kernel/registry.py` 的
   `shell/units/` 扫描路径与 `shell.<domain>` id 派生随 S0-1 改写；
   `test_unit_catalog` / `test_search_catalog` / catalog 门禁的新契约随 S0-2 定稿。

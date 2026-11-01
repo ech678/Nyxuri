@@ -8,7 +8,8 @@ on already-deployed config files.
 import re
 from typing import Optional
 
-from nyxuri.core import MAIN_WM, THEME_ENGINE
+from nyxuri.compositors import MAIN_WM
+from nyxuri.core import THEME_ENGINE
 from nyxuri.core import get_env, get_pics_dir
 
 

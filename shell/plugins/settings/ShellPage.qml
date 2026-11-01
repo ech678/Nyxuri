@@ -59,14 +59,15 @@ NexusPageBase {
         PreferenceAction {
             icon: "hub"
             text: I18n.tr("Niri integration")
-            subtext: !NiriService.isNiri ? I18n.tr("Niri session not detected") : NiriService.connected
-                                           ? I18n.tr("Connected") : NiriService.reconnecting ? I18n.tr(
-                                                                                                   "Reconnecting") :
-                                                                                               I18n.tr("Disconnected")
-            trailingIcon: NiriService.isNiri && !NiriService.connected ? "restart_alt" : ""
+            subtext: !CompositorDriver.available ? I18n.tr("Niri session not detected") :
+                                                   CompositorDriver.connected ? I18n.tr("Connected") :
+                                                                                CompositorDriver.reconnecting
+                                                                                ? I18n.tr("Reconnecting") :
+                                                                                  I18n.tr("Disconnected")
+            trailingIcon: CompositorDriver.available && !CompositorDriver.connected ? "restart_alt" : ""
             onClicked: {
-                if (NiriService.isNiri && !NiriService.connected)
-                    NiriService.reconnect();
+                if (CompositorDriver.available && !CompositorDriver.connected)
+                    CompositorDriver.reconnect();
             }
         }
 
@@ -143,9 +144,9 @@ NexusPageBase {
 
         InlineStatusBanner {
             Layout.fillWidth: true
-            visible: NiriService.configLoadFailed && NiriService.configError.length > 0
+            visible: CompositorDriver.configLoadFailed && CompositorDriver.configError.length > 0
             tone: "error"
-            message: NiriService.configError
+            message: CompositorDriver.configError
         }
 
         InlineStatusBanner {

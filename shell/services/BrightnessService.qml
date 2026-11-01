@@ -14,7 +14,7 @@ Singleton {
     property var pendingDdcMonitors: []
     property real fallbackBrightnessValue: 0.5
     property var monitors: []
-    readonly property string focusedScreenName: NiriService.currentOutput
+    readonly property string focusedScreenName: CompositorDriver.currentOutput
     readonly property var activeScreen: root.getScreenByName(root.focusedScreenName) || (
                                             Quickshell.screens.length > 0 ? Quickshell.screens[0] : null)
     readonly property var activeMonitor: root.getMonitorByName(root.focusedScreenName) || (

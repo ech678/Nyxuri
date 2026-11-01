@@ -7,9 +7,8 @@ from typing import List, Optional
 from nyxuri.core import (
     PENDING_UPGRADE_ENV,
     PENDING_UPGRADE_MENU_ENV,
-    SUPPORTED_WMS,
-    detect_preferred_wm,
 )
+from nyxuri.compositors import COMPOSITORS, detect_preferred_wm
 from nyxuri.core import exec_cli, get_env
 from nyxuri.deploy import (
     discover_config_items,
@@ -52,8 +51,8 @@ def run_master_component_menu(is_update: bool = False, mode: str = "full") -> Op
     items = [name for name, m in manifests.items() if not m.is_merge and not m.is_runtime]
     entries: List[CheckboxEntry] = []
 
-    wm_items = [i for i in items if i in SUPPORTED_WMS]
-    app_items = [i for i in items if i not in SUPPORTED_WMS]
+    wm_items = [i for i in items if i in COMPOSITORS]
+    app_items = [i for i in items if i not in COMPOSITORS]
     preferred_wm = detect_preferred_wm()
 
     # 1. Window Managers (Radio - Single Selection)

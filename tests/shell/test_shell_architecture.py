@@ -694,6 +694,11 @@ class TestShellManagement(unittest.TestCase):
                         rel_p = os.path.relpath(full_p, shell_dir)
                         if rel_p == "app/ActionGateway.qml":
                             continue
+                        # S0-5: the compositor driver is the sole argv truth
+                        # for the niri dialect; its exec calls are the
+                        # confined channel, not a gateway bypass.
+                        if rel_p == "services/NiriDriver.qml":
+                            continue
                         with open(full_p, "r", encoding="utf-8") as f:
                             c = f.read()
                         self.assertNotIn(
@@ -1368,30 +1373,101 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("lifecycle-audit: clean", audit_res.stdout)
 
     def test_r4c_niri_single_runtime_entry(self):
-        """R4-C-02: Assert NiriService is the sole runtime IPC entry point and no Clavis.Niri imports remain in QML."""
+        """R4-C-02 (S0-5 form): CompositorDriver is the sole compositor surface;
+        NiriDriver is the only live file allowed to speak niri's dialect."""
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         shell_dir = os.path.join(repo_root, "shell")
-        niri_service_path = os.path.join(shell_dir, "services", "NiriService.qml")
-        self.assertTrue(os.path.isfile(niri_service_path), f"NiriService.qml must exist at {niri_service_path}")
+        driver_path = os.path.join(shell_dir, "services", "NiriDriver.qml")
+        surface_path = os.path.join(shell_dir, "services", "CompositorDriver.qml")
+        self.assertTrue(os.path.isfile(driver_path), f"NiriDriver.qml must exist at {driver_path}")
+        self.assertTrue(os.path.isfile(surface_path), f"CompositorDriver.qml must exist at {surface_path}")
 
-        with open(niri_service_path, "r", encoding="utf-8") as f:
-            niri_service_content = f.read()
+        with open(driver_path, "r", encoding="utf-8") as f:
+            driver_content = f.read()
+        with open(surface_path, "r", encoding="utf-8") as f:
+            surface_content = f.read()
 
-        # 1. Assert NiriService contract invariants
-        self.assertIn("pragma Singleton", niri_service_content)
-        self.assertIn("Component.onDestruction", niri_service_content)
-        self.assertIn("eventStreamSocket", niri_service_content)
-        self.assertIn("requestSocket", niri_service_content)
-        self.assertIn("fetchOutputsProcess", niri_service_content)
-        self.assertIn("workspacesModel", niri_service_content)
-        self.assertIn("property var outputs:", niri_service_content)
-        self.assertIn("property var windows:", niri_service_content)
-        self.assertIn("supportsMinimize: false", niri_service_content)
-        self.assertIn("supportsMinimizeAnimation: false", niri_service_content)
+        # 1. Driver contract invariants: the niri dialect (socket env, argv)
+        # and the IPC machinery are confined to this one file.
+        self.assertIn("pragma Singleton", driver_content)
+        self.assertIn("Component.onDestruction", driver_content)
+        self.assertIn("eventStreamSocket", driver_content)
+        self.assertIn("requestSocket", driver_content)
+        self.assertIn("fetchOutputsProcess", driver_content)
+        self.assertIn("workspacesModel", driver_content)
+        self.assertIn("property var outputs:", driver_content)
+        self.assertIn("property var windows:", driver_content)
+        self.assertIn("property string currentOutput:", driver_content)
+        self.assertIn("supportsMinimize: false", driver_content)
+        self.assertIn("supportsMinimizeAnimation: false", driver_content)
+        self.assertIn('Quickshell.env("NIRI_SOCKET")', driver_content)
+        self.assertIn("setMonitorsPower", driver_content)
+        self.assertIn("quitSession", driver_content)
 
-        # 2. Assert zero imports of Clavis.Niri in app/, plugins/, commons/ui
+        # 2. Surface contract: the singleton facade projects the driver and
+        # carries no niri dialect of its own.
+        self.assertIn("pragma Singleton", surface_content)
+        self.assertIn("NiriDriver.isNiri", surface_content)
+        self.assertNotIn("niri msg", surface_content)
+        self.assertNotIn("NIRI_SOCKET", surface_content)
+        self.assertIn("readonly property bool available:", surface_content)
+        self.assertIn("function quitSession()", surface_content)
+        self.assertIn("function setMonitorsPower(", surface_content)
+
+        # 2a. Only the surface may reference the driver (single dial point).
+        driver_referrers = []
+        for scope_dir in ["app", "plugins", "services", "ui", "commons"]:
+            target_path = os.path.join(shell_dir, scope_dir)
+            for root_dir, _, files in os.walk(target_path):
+                for f in files:
+                    if not f.endswith((".qml", ".js")):
+                        continue
+                    full_path = os.path.join(root_dir, f)
+                    rel = os.path.relpath(full_path, shell_dir)
+                    if rel in ("services/NiriDriver.qml", "services/CompositorDriver.qml"):
+                        continue
+                    with open(full_path, "r", encoding="utf-8") as qml_f:
+                        if "NiriDriver" in qml_f.read():
+                            driver_referrers.append(rel)
+        self.assertEqual(driver_referrers, [], f"Only CompositorDriver may reach the driver: {driver_referrers}")
+
+        # 2b. S0-5 death sentence: the NiriService name must stay dead across
+        # the live tree (references/ is a read-only upstream mirror).
+        stragglers = []
+        for scope_dir in ["app", "plugins", "services", "ui", "commons", "archive"]:
+            target_path = os.path.join(shell_dir, scope_dir)
+            for root_dir, _, files in os.walk(target_path):
+                for f in files:
+                    if not f.endswith((".qml", ".js")):
+                        continue
+                    full_path = os.path.join(root_dir, f)
+                    with open(full_path, "r", encoding="utf-8") as qml_f:
+                        if "NiriService" in qml_f.read():
+                            stragglers.append(os.path.relpath(full_path, shell_dir))
+        self.assertEqual(stragglers, [], f"NiriService must not resurface: {stragglers}")
+
+        # 2c. niri argv literals are driver-only in QML. (The Python config
+        # tools scripts/system/niri_config.py + display_preview.py are the
+        # registered exception: compositor config management, not runtime.)
+        argv_offenders = []
+        for scope_dir in ["app", "plugins", "services", "ui", "commons", "archive"]:
+            target_path = os.path.join(shell_dir, scope_dir)
+            for root_dir, _, files in os.walk(target_path):
+                for f in files:
+                    if not f.endswith((".qml", ".js")):
+                        continue
+                    full_path = os.path.join(root_dir, f)
+                    rel = os.path.relpath(full_path, shell_dir)
+                    if rel == "services/NiriDriver.qml":
+                        continue
+                    with open(full_path, "r", encoding="utf-8") as qml_f:
+                        if '["niri"' in qml_f.read():
+                            argv_offenders.append(rel)
+        self.assertEqual(argv_offenders, [], f"niri argv belongs to NiriDriver only: {argv_offenders}")
+
+        # 3. Assert zero imports of Clavis.Niri across the live layers
         violating_files = []
-        for scope_dir in ["app", "plugins", "shared"]:
+        for scope_dir in ["app", "plugins", "services", "commons", "ui"]:
             target_path = os.path.join(shell_dir, scope_dir)
             for root_dir, _, files in os.walk(target_path):
                 for f in files:
@@ -1402,18 +1478,18 @@ class TestShellManagement(unittest.TestCase):
                             if "import Clavis.Niri" in content:
                                 violating_files.append(os.path.relpath(full_path, shell_dir))
 
-        self.assertEqual(violating_files, [], f"No QML file in app/, plugins/, commons/ui may import Clavis.Niri: {violating_files}")
+        self.assertEqual(violating_files, [], f"No QML file may import Clavis.Niri: {violating_files}")
 
-        # 3. Assert former consumers reference NiriService
+        # 4. Assert former consumers reference CompositorDriver
         consumer_samples = [
-            ("app/AppShell.qml", "NiriService"),
-            ("services/DockService.qml", "NiriService"),
-            ("plugins/bar/workspaces/Workspaces.qml", "NiriService"),
-            ("plugins/bar/activewindow/ActiveWindow.qml", "NiriService"),
-            ("plugins/dock/DockSurface.qml", "NiriService"),
-            ("services/HotCorners.qml", "NiriService"),
-            ("archive/settings/displays/DisplayConfigService.qml", "NiriService"),
-            ("plugins/wallpaper/WallpaperSceneService.qml", "NiriService"),
+            ("app/AppShell.qml", "CompositorDriver"),
+            ("services/DockService.qml", "CompositorDriver"),
+            ("plugins/bar/workspaces/Workspaces.qml", "CompositorDriver"),
+            ("plugins/bar/activewindow/ActiveWindow.qml", "CompositorDriver"),
+            ("plugins/dock/DockSurface.qml", "CompositorDriver"),
+            ("services/HotCorners.qml", "CompositorDriver"),
+            ("archive/settings/displays/DisplayConfigService.qml", "CompositorDriver"),
+            ("plugins/wallpaper/WallpaperSceneService.qml", "CompositorDriver"),
         ]
         for rel_path, pattern in consumer_samples:
             target_f = os.path.join(shell_dir, rel_path)
@@ -1421,7 +1497,7 @@ class TestShellManagement(unittest.TestCase):
             with open(target_f, "r", encoding="utf-8") as cf:
                 self.assertIn(pattern, cf.read(), f"{rel_path} must reference {pattern}")
 
-        # 4. Assert ROADMAP status updated
+        # 5. Assert ROADMAP status updated
         roadmap_path = os.path.join(shell_dir, "ROADMAP.md")
         with open(roadmap_path, "r", encoding="utf-8") as rf:
             roadmap_content = rf.read()
@@ -1486,8 +1562,9 @@ class TestShellManagement(unittest.TestCase):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         shell_dir = os.path.join(repo_root, "shell")
 
-        # 1. NiriService is the sole runtime entry for Niri state & IPC
-        niri_service_path = os.path.join(shell_dir, "services", "NiriService.qml")
+        # 1. The compositor driver is the sole runtime entry for compositor
+        # state & IPC (S0-5: NiriDriver behind the CompositorDriver surface)
+        niri_service_path = os.path.join(shell_dir, "services", "NiriDriver.qml")
         self.assertTrue(os.path.isfile(niri_service_path))
         with open(niri_service_path, "r", encoding="utf-8") as f:
             ns_content = f.read()
@@ -1737,7 +1814,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("if (!root.enabled) {", dock_code)
         self.assertIn("entries.clear();", dock_code)
         self.assertIn("launchTimeout.stop();", dock_code)
-        self.assertIn("target: root.enabled ? NiriService : null", dock_code)
+        self.assertIn("target: root.enabled ? CompositorDriver : null", dock_code)
         self.assertIn("target: root.enabled ? ApplicationService : null", dock_code)
         self.assertIn("target: root.enabled ? SpotlightAppUsage : null", dock_code)
 
@@ -1970,7 +2047,7 @@ class TestShellManagement(unittest.TestCase):
                       prefs)
 
         # 6. Compositor reconnection is publicly visible and recoverable.
-        niri = read("services/NiriService.qml")
+        niri = read("services/NiriDriver.qml")
         self.assertIn("readonly property bool reconnecting: reconnectTimer.running", niri)
         self.assertIn("function reconnect()", niri)
 

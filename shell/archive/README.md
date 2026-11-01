@@ -10,7 +10,8 @@
 - 无运行时消费者；但 `tests/shell/test_shell_architecture.py` 的迁移落位契约
   钉住 `archive/settings/autostart/AutostartService.qml` 与
   `archive/settings/displays/DisplayConfigService.qml` 的存在性，且后者作为
-  NiriService 单例引用样本被点名——删除或搬动需同步改契约。
+  `CompositorDriver` 单例引用样本被点名（S0-5 前为 `NiriService`）——删除或搬动
+  需同步改契约。
 - 复活或处决一律从 live 树外操作：迁回 `plugins/`（随 S0-3 去中心化落位）或
   整目录删除，禁止就地解封（archive 内文件不得被 live 树 import）。
 

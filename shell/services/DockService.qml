@@ -18,9 +18,9 @@ Singleton {
     readonly property bool supportsThumbnails: false
     readonly property bool showThumbnails: root._options.showThumbnails
     readonly property int previewSize: root._options.previewSize
-    readonly property bool supportsMinimize: NiriService.supportsMinimize
-    readonly property bool supportsMinimizeEffects: NiriService.minimizeEffects.indexOf("scale") >= 0
-                                                    && NiriService.minimizeEffects.indexOf("genie") >= 0
+    readonly property bool supportsMinimize: CompositorDriver.supportsMinimize
+    readonly property bool supportsMinimizeEffects: CompositorDriver.minimizeEffects.indexOf("scale") >= 0
+                                                    && CompositorDriver.minimizeEffects.indexOf("genie") >= 0
     property alias model: entries
     readonly property var pinnedEntries: root._pinned
     readonly property int pinnedAppCount: root._pinned.filter(entry => !DockModel.isFile(entry)).length
@@ -171,7 +171,7 @@ Singleton {
 
         const applications = ApplicationService.launcherApplications.filter(application =>
         !application.dragOnly);
-        const windows = NiriService.connected ? NiriService.searchWindows("") : [];
+        const windows = CompositorDriver.connected ? CompositorDriver.searchWindows("") : [];
         const focusOrder = Object.create(null);
         for (const window of windows)
             focusOrder[window.id] = root._focusOrder[window.id] || 0;
@@ -303,26 +303,26 @@ Singleton {
     }
 
     function focusWindow(id, outputName) {
-        if (!NiriService.connected)
+        if (!CompositorDriver.connected)
             return false;
-        const window = NiriService.windowById(id);
+        const window = CompositorDriver.windowById(id);
         if (!window || !window.id)
             return false;
-        return window.isMinimized ? NiriService.restoreWindow(id, String(outputName || "")) :
-                                    NiriService.focusWindow(id);
+        return window.isMinimized ? CompositorDriver.restoreWindow(id, String(outputName || "")) :
+                                    CompositorDriver.focusWindow(id);
     }
 
     function minimizeWindow(id) {
         if (!root.supportsMinimize)
             return false;
-        const window = NiriService.windowById(id);
+        const window = CompositorDriver.windowById(id);
         if (!window || !window.id || window.isMinimized)
             return false;
-        return NiriService.minimizeWindow(id);
+        return CompositorDriver.minimizeWindow(id);
     }
 
     function closeWindow(id) {
-        return NiriService.connected && NiriService.closeWindow(id);
+        return CompositorDriver.connected && CompositorDriver.closeWindow(id);
     }
 
     function setOption(name, value) {
@@ -527,7 +527,7 @@ Singleton {
     }
 
     Connections {
-        target: root.enabled ? NiriService : null
+        target: root.enabled ? CompositorDriver : null
         function onWindowsChanged() {
             root.rebuild();
         }

@@ -11,7 +11,7 @@ TopBarPill {
 
     property string screenName: ""
     property bool vertical: false
-    readonly property bool hasMultipleOutputs: (NiriService.outputs.count || 0) > 1
+    readonly property bool hasMultipleOutputs: (CompositorDriver.outputs.count || 0) > 1
 
     implicitHeight: vertical ? layout.implicitHeight + 2 * Sizes.barPillHorizontalPadding :
                                Sizes.barPillThickness
@@ -40,11 +40,11 @@ TopBarPill {
         anchors.centerIn: parent
         rowSpacing: Sizes.barItemSpacing
         columnSpacing: Sizes.barItemSpacing
-        columns: root.vertical ? 1 : Math.max(1, NiriService.workspaces.count)
+        columns: root.vertical ? 1 : Math.max(1, CompositorDriver.workspaces.count)
 
         Repeater {
             id: workspaceRepeater
-            model: NiriService.workspaces
+            model: CompositorDriver.workspaces
 
             delegate: Item {
                 id: delegateRoot
@@ -98,7 +98,7 @@ TopBarPill {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: NiriService.focusWorkspaceById(model.id)
+                    onClicked: CompositorDriver.focusWorkspaceById(model.id)
                 }
 
                 PopupToolTip {

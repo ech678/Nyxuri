@@ -167,9 +167,9 @@ Singleton {
                                                      "firstFrameMs": metrics.first_frame_ms,
                                                      "readyMs": metrics.ready_ms,
                                                      "ipcReadyMs": metrics.ipc_ready_ms,
-                                                     "compositorPresent": NiriService.isNiri,
-                                                     "compositorConnected": NiriService.connected,
-                                                     "compositorReconnecting": NiriService.reconnecting,
+                                                     "compositorPresent": CompositorDriver.available,
+                                                     "compositorConnected": CompositorDriver.connected,
+                                                     "compositorReconnecting": CompositorDriver.reconnecting,
                                                      "samplingEnabled": root.samplingActive,
                                                      "samplingIntervalMs": root.sampleIntervalMs,
                                                      "samplingCpuPercent": root.cpuPercent,
@@ -246,8 +246,8 @@ Singleton {
                                                      ],
                                                      "errors": [
                                                          {
-                                                             "source": "niri",
-                                                             "message": NiriService.configError
+                                                             "source": "compositor",
+                                                             "message": CompositorDriver.configError
                                                          },
                                                          {
                                                              "source": "dock",

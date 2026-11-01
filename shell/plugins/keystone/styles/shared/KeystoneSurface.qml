@@ -36,7 +36,7 @@ Variants {
         if (instances.length === 0)
             return null;
 
-        const outputName = String(NiriService.currentOutput || "");
+        const outputName = String(CompositorDriver.currentOutput || "");
         if (outputName.length > 0) {
             for (let index = 0; index < instances.length; ++index) {
                 const instance = instances[index];

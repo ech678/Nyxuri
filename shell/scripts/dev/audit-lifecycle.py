@@ -53,6 +53,10 @@ ALLOWED_OPTIONAL_IMPORTERS = {
 }
 
 GATEWAY_FILE = "app/ActionGateway.qml"
+# S0-5: the compositor driver is the sole argv truth for the niri dialect
+# (`niri msg` / `niri --version`). Its exec calls are the confined channel
+# itself, not a bypass of the gateway.
+COMPOSITOR_DRIVER_FILE = "services/NiriDriver.qml"
 
 
 def _plugins_domain_of(resolved: str) -> str:
@@ -238,7 +242,7 @@ def check_file_violations(
     lines = content.splitlines()
 
     is_shared = is_shared_override if is_shared_override is not None else (rel_path.startswith(("commons/", "ui/")) or file_path.name.startswith("shared") or "shared_sideeffect" in file_path.name)
-    is_gateway = rel_path.endswith(GATEWAY_FILE)
+    is_gateway = rel_path.endswith(GATEWAY_FILE) or rel_path.endswith(COMPOSITOR_DRIVER_FILE)
     has_destruction = ("Component.onDestruction" in content) or ("function closeChildWindows()" in content) or ("function unload()" in content and "Component.onDestruction: unload()" in content)
 
     # 1. LIFE003: Shared layer side-effects

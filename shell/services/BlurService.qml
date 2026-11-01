@@ -10,7 +10,7 @@ import qs.commons.i18n
 Singleton {
     id: root
 
-    readonly property bool runningOnNiri: ThemeService.isNiriSession
+    readonly property bool runningOnNiri: CompositorDriver.available
     property bool compositorSupported: false
     readonly property bool available: root.runningOnNiri && root.compositorSupported
     readonly property bool enabled: root.available && PersonalizationConfig.shellBlurEnabled
@@ -21,7 +21,7 @@ Singleton {
     readonly property bool niriIntegrationReady: NiriConfigService.ready("effects")
     property string versionErrorText: ""
     readonly property string lastError: versionErrorText || NiriConfigService.error
-    property string niriVersion: ""
+    readonly property string niriVersion: CompositorDriver.compositorVersion
 
     signal integrationConfigured
     signal integrationFailed(string message)
@@ -70,6 +70,35 @@ Singleton {
         NiriConfigService.setup("effects");
     }
 
+    // The version probe lives in the compositor driver (S0-5); this service
+    // only interprets the reported version against its own requirement.
+    function _evaluateCompositorVersion() {
+        if (!CompositorDriver.compositorVersionReady)
+            return;
+        const version = CompositorDriver.compositorVersion;
+        root.compositorSupported = version.length > 0 && root.supportsVersion(version);
+        if (!root.compositorSupported) {
+            root.versionErrorText = version.length > 0 ? I18n.tr(
+                                                             "The current Niri version does not support background blur") :
+                                                         (CompositorDriver.compositorVersionError || I18n.tr(
+                                                              "Unable to detect the Niri version"));
+            return;
+        }
+
+        root.versionErrorText = "";
+        root.refreshIntegrationState();
+    }
+
+    Component.onCompleted: root._evaluateCompositorVersion()
+
+    Connections {
+        target: CompositorDriver
+
+        function onCompositorVersionReadyChanged() {
+            root._evaluateCompositorVersion();
+        }
+    }
+
     Connections {
         target: PersonalizationConfig
 
@@ -80,40 +109,5 @@ Singleton {
         function onShellBlurEnabledChanged() {
             root.writeEffectsConfig();
         }
-    }
-
-    Process {
-        id: versionProcess
-
-        command: ["niri", "--version"]
-        running: root.runningOnNiri
-
-        stdout: StdioCollector {
-            id: versionOutput
-        }
-
-        stderr: StdioCollector {
-            id: versionError
-        }
-
-        onExited: exitCode => {
-            root.niriVersion = versionOutput.text.trim();
-            root.compositorSupported = exitCode === 0 && root.supportsVersion(root.niriVersion);
-            if (!root.compositorSupported) {
-                root.versionErrorText = exitCode === 0 ? I18n.tr(
-                                                             "The current Niri version does not support background blur") :
-                                                         (versionError.text.trim() || I18n.tr(
-                                                              "Unable to detect the Niri version"));
-                return;
-            }
-
-            root.versionErrorText = "";
-            root.refreshIntegrationState();
-        }
-    }
-
-    Component.onDestruction: {
-        if (versionProcess)
-            versionProcess.running = false;
     }
 }

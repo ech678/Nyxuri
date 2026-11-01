@@ -71,13 +71,13 @@ Item {
         onTriggered: (action, screenName) => {
             if (action === "overview") {
                 WidgetState.closeAllPopups();
-                NiriService.toggleOverview();
+                CompositorDriver.toggleOverview();
                 return;
             }
             const target = action.split(":");
             if (target.length === 2) {
-                if (NiriService.inOverview)
-                    NiriService.toggleOverview();
+                if (CompositorDriver.inOverview)
+                    CompositorDriver.toggleOverview();
                 ActionGateway.requestSidebarOpenOnScreen(target[0], target[1], screenName);
             }
         }

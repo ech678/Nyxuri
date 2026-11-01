@@ -21,7 +21,7 @@ Singleton {
 
     function publishFloatingParallax() {
         // A live QML reload can still be using the previous native plugin.
-        if (!NiriService.connected || typeof NiriService.setFloatingParallaxOffsets !== "function")
+        if (!CompositorDriver.connected || typeof CompositorDriver.setFloatingParallaxOffsets !== "function")
             return;
         const offsets = {};
         for (let key in root.scenes) {
@@ -32,12 +32,12 @@ Singleton {
         }
         // Publish targets, never the per-frame wallpaper transform. Niri owns
         // the window animation and tracks which windows actually moved.
-        NiriService.setFloatingParallaxOffsets(offsets);
+        CompositorDriver.setFloatingParallaxOffsets(offsets);
     }
 
     function rememberFocusedWindow() {
         const next = WallpaperMath.rememberFocusedHorizontalColumn(root.lastFocusedHorizontalColumnByWorkspace,
-                                                                   NiriService.focusedWindow);
+                                                                   CompositorDriver.focusedWindow);
         if (next !== root.lastFocusedHorizontalColumnByWorkspace)
             root.lastFocusedHorizontalColumnByWorkspace = next;
     }
@@ -51,7 +51,7 @@ Singleton {
         const workspaceKey = String(workspaceId);
         let preferred = Number(root.lastFocusedHorizontalColumnByWorkspace[workspaceKey]);
         if (!isFinite(preferred) || preferred <= 0) {
-            const activeWindow = NiriService.windowById(workspace.activeWindowId || 0);
+            const activeWindow = CompositorDriver.windowById(workspace.activeWindowId || 0);
             if (WallpaperMath.isHorizontalTiledWindow(activeWindow))
                 preferred = Number(activeWindow.layoutColumn);
         }
@@ -305,11 +305,11 @@ Singleton {
             }
 
             function refreshNiriState() {
-                scene.outputWorkspaces = NiriService.workspacesForOutput(scene.screenName);
-                scene.activeWorkspace = NiriService.activeWorkspaceForOutput(scene.screenName);
+                scene.outputWorkspaces = CompositorDriver.workspacesForOutput(scene.screenName);
+                scene.activeWorkspace = CompositorDriver.activeWorkspaceForOutput(scene.screenName);
                 const workspaceId = scene.activeWorkspace && scene.activeWorkspace.id
                       ? scene.activeWorkspace.id : 0;
-                const windows = workspaceId ? NiriService.windowsForWorkspace(workspaceId) : [];
+                const windows = workspaceId ? CompositorDriver.windowsForWorkspace(workspaceId) : [];
                 scene.horizontalColumns = WallpaperMath.horizontalColumns(windows);
                 scene.focusedHorizontalColumn = root.resolveHorizontalColumn(scene.activeWorkspace,
                                                                              scene.horizontalColumns);
@@ -320,7 +320,7 @@ Singleton {
     }
 
     Connections {
-        target: NiriService
+        target: CompositorDriver
 
         function onConnectedChanged() {
             root.refreshAllScenes();

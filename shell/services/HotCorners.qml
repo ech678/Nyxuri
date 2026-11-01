@@ -30,7 +30,7 @@ Item {
                     required property string modelData
                     readonly property string action: PersonalizationConfig.hotCornerActions[modelData]
                                                      || "disabled"
-                    readonly property bool blocked: !NiriService.connected || root.locked
+                    readonly property bool blocked: !CompositorDriver.connected || root.locked
 
                     screen: output.modelData
                     implicitWidth: Metrics.hotCornerSize

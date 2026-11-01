@@ -11,7 +11,7 @@ TopBarPill {
     property bool vertical: false
     property real maximumTitleWidth: 250
     readonly property string edge: PersonalizationConfig.barPosition
-    readonly property var activeWindow: NiriService.focusedWindow
+    readonly property var activeWindow: CompositorDriver.focusedWindow
     readonly property string activeTitle: activeWindow?.title || I18n.tr("Desktop")
     readonly property string activeIcon: activeWindow?.iconPath || ""
     readonly property string activeAppName: activeWindow?.appName || activeWindow?.appId || ""

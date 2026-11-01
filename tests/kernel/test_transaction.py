@@ -891,6 +891,29 @@ class TestR03ActivationPipeline(unittest.TestCase):
             self.assertEqual(installed_packages, [("demo_app", ["demo-pkg"])])
             self.assertEqual(ledger.get_plugin("demo_app")["state"], "enabled")
 
+    def test_installer_skips_absent_optional_plugins_instead_of_crashing(self):
+        """#149 follow-up: a non-interactive run must not dispatch an optional
+        plugin (wallpapers) that this install does not ship.
+
+        The non-TTY path derives wallpaper intent from the pack's presence on
+        disk, so the target list can name a plugin the registry has never
+        heard of; dispatching it used to raise KeyError mid-install, after the
+        configs were already deployed.
+        """
+        from nyxuri.installer.workflows import install_configs_workflow
+        with TempEnv() as ctx:
+            _stage(ctx, {"demo_app": {"manifest": "", "files": {"demo.conf": "hello = 1\n"}}})
+            self.assertNotIn("wallpapers", transaction.registry.plugin_ids())
+
+            with mock.patch("nyxuri.installer.workflows.wallpapers_pack_present", return_value=False), \
+                 mock.patch("nyxuri.installer.workflows._finish_successful_deploy"), \
+                 mock.patch.object(transaction, "missing_packages", return_value=[]):
+                ok = install_configs_workflow(mode="config")
+
+            self.assertTrue(ok)
+            self.assertEqual(ledger.get_plugin("demo_app")["state"], "enabled")
+            self.assertIsNone(ledger.get_plugin("wallpapers"))
+
     def test_registry_and_vault_reject_unsafe_ids_r0_4(self):
         """R0-4: registry and transaction reject traversal or unsafe plugin ids (#48 lesson)."""
         from nyxuri.kernel import registry

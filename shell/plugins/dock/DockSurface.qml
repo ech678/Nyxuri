@@ -16,7 +16,7 @@ PanelWindow {
 
     required property string edge
 
-    readonly property bool animationTargetsEnabled: NiriService.supportsMinimizeAnimation && root.visible
+    readonly property bool animationTargetsEnabled: CompositorDriver.supportsMinimizeAnimation && root.visible
     onAnimationTargetsEnabledChanged: root.updateAnimationTargets()
 
     // Geometry notifications arrive once per animated property, not once per
@@ -54,7 +54,7 @@ PanelWindow {
                             });
             }
         }
-        NiriService.setWindowAnimationTargets(root.screen.name, result);
+        CompositorDriver.setWindowAnimationTargets(root.screen.name, result);
     }
     readonly property bool horizontal: edge === "bottom"
     readonly property real axisLength: horizontal ? width : height

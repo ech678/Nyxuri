@@ -190,8 +190,12 @@ def _sync_glow_layout(current: str) -> None:
     tmp = dest.with_name(f".layout.kdl.{os.getpid()}.tmp")
     tmp.write_bytes(source.read_bytes())
     os.replace(tmp, dest)
-    if shutil.which("niri"):
-        timed_run(["niri", "msg", "action", "load-config-file"], 3, capture_output=True, text=True, check=False)
+    # Reload argv is the compositor registry's truth (S0-5), not a local
+    # literal; this glow-layout path is niri-specific by ledger form.
+    from nyxuri.compositors import COMPOSITORS
+    argv = COMPOSITORS["niri"].reload_argv
+    if shutil.which(argv[0]):
+        timed_run(list(argv), 3, capture_output=True, text=True, check=False)
 
 
 def status() -> int:

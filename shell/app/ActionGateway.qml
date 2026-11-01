@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import qs.services
 
 Singleton {
     id: root
@@ -211,7 +212,7 @@ Singleton {
             }
             return false;
         case "logout":
-            return root.execute(["niri", "msg", "action", "quit", "--skip-confirmation"], owner);
+            return CompositorDriver.quitSession();
         case "suspend":
             root.requestSecurePowerAction("suspend");
             return true;

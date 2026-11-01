@@ -13,18 +13,18 @@ from typing import List, Optional
 
 from nyxuri.core import (
     FCITX_THEME,
-    MAIN_WM,
     PROJECT_NAME,
     THEME_ENGINE,
     get_env_var,
 )
+from nyxuri.compositors import COMPOSITORS, MAIN_WM, portal_conf_name, session_wm
 from nyxuri.core import get_env, get_pics_dir, log_msg, timed_run
 from nyxuri.core import msg, text
 
 
 def _check_compositor(env) -> None:
     xdg_curr = os.environ.get("XDG_CURRENT_DESKTOP", "")
-    if xdg_curr.lower() in (MAIN_WM.lower(), "mango"):
+    if xdg_curr.lower() in COMPOSITORS:
         print(msg("doctor_ok", text(f"合成器: {xdg_curr} 正在运行", f"Compositor: {xdg_curr} is running")))
     else:
         current = xdg_curr or text("未知", "Unknown")
@@ -35,7 +35,7 @@ def _check_compositor(env) -> None:
 
 def _check_wayland_session(env) -> None:
     xdg_curr = os.environ.get("XDG_CURRENT_DESKTOP", "").lower()
-    target_wm = "mango" if xdg_curr == "mango" else MAIN_WM
+    target_wm = session_wm(xdg_curr)
     sess_file = Path(f"/usr/share/wayland-sessions/{target_wm}.desktop")
     if sess_file.is_file():
         print(msg("doctor_ok", text(f"会话: {target_wm} Wayland 入口已注册", f"Session: {target_wm} Wayland entry is registered")))
@@ -237,7 +237,7 @@ def _check_portal_gtk(env) -> None:
 
 def _check_portal_config(env) -> None:
     xdg_curr = os.environ.get("XDG_CURRENT_DESKTOP", "").lower()
-    target = f"{xdg_curr}-portals.conf" if xdg_curr in ("mango", "niri") else "niri-portals.conf"
+    target = portal_conf_name(xdg_curr)
     portal_conf = env.config_dir / "xdg-desktop-portal" / target
     portal_conf2 = env.config_dir / "xdg-desktop-portal" / "portals.conf"
     if portal_conf.is_file():

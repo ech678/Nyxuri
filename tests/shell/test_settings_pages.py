@@ -514,7 +514,7 @@ class TestShellPageRebuild(unittest.TestCase):
             "UnitControlService.canToggle(",
             "UnitControlService.pendingUnitId",
             "StateProjection.isEnabled(",
-            "NiriService.reconnect()",
+            "CompositorDriver.reconnect()",
             "PersonalizationConfig.setOverviewEnabled(",
             "UiPreferences.setControlPlaneResourceSampling(",
             "SystemMonitorService.retry()",

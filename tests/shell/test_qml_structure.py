@@ -45,7 +45,7 @@ class TestDisabledOutputDetection(unittest.TestCase):
 
     def _service(self):
         return (Path(__file__).resolve().parents[2] / "shell" / "services"
-                / "NiriService.qml")
+                / "NiriDriver.qml")
 
     def test_enabled_state_is_derived_from_the_logical_output(self):
         source = self._service().read_text(encoding="utf-8")

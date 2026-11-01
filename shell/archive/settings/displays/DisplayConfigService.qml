@@ -12,7 +12,7 @@ import qs.shared.i18n
 Singleton {
     id: root
 
-    property var live: NiriService.outputSnapshot()
+    property var live: CompositorDriver.outputSnapshot()
     property var draft: []
     property var baseline: []
     property string revision: ""
@@ -49,7 +49,7 @@ Singleton {
         completionNotice = "";
     }
     function refresh() {
-        NiriService.refreshOutputs();
+        CompositorDriver.refreshOutputs();
         NiriConfigService.refresh();
     }
     function reload(clearError) {
@@ -146,9 +146,9 @@ Singleton {
         }
     }
     Connections {
-        target: NiriService
+        target: CompositorDriver
         function onOutputsChanged() {
-            const next = NiriService.outputSnapshot();
+            const next = CompositorDriver.outputSnapshot();
             root.recordCollisions(next);
             const combination = Config.combination(next, root.identityCollisions);
             const changed = root.previousCombination !== "" && combination !== root.previousCombination;

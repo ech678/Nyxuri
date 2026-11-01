@@ -92,7 +92,7 @@ python3 shell/scripts/dev/compile-i18n.py \
 | --- | --- | --- |
 | QML 布局/动画/文案 | 真实 Niri 预览、日志、保存热重载 | 对照上游几何与动画；只格式化改动文件 |
 | 跨层引用/边界违规 | `audit-lifecycle.py --check` | 严禁 shared 层包含副作用，严禁 units 交叉越界 |
-| Niri IPC 与通信 | `test_display_preview.py` / `NiriService.qml` | 必须通过单一运行时入口 NiriService，禁止直接连接底层 Socket |
+| Niri IPC 与通信 | `test_display_preview.py` / `NiriDriver.qml` | 必须通过 `CompositorDriver` → `NiriDriver` 单一运行时入口，禁止直接连接底层 Socket（`niri` argv 字面量仅许存在于 `NiriDriver.qml`；配置域 Python 工具 `niri_config.py`/`display_preview.py` 为登记例外） |
 | 后台/关闭/切换 | 完整退出/重启、进程与连接观察 | 退出限时 2.5s 优雅终止，停用必须真实销毁 Process / Timer |
 | 锁屏/多屏/通知 | 真实原版 Niri 会话验收 | 遵循 Wayland 安全锁屏与会话互斥契约 |
 | 宿主命令/部署 | TempEnv 行为测试、参数数组断言、沙箱部署 | 不写真实 ~/.config，不通过源码字面匹配冒充行为测试 |
