@@ -7,7 +7,8 @@ import qs.app
 import qs.services
 
 // UnitControl — the only route settings surfaces may take to flip a Shell
-// unit: dispatch `nyxuri on/off shell.<domain>` and let the kernel
+// unit: dispatch `nyxuri on/off <unitId>` (the full ledger key: "shell.<domain>"
+// first-party, the reverse-DNS id third-party) and let the kernel
 // transaction land the ledger record (unit-model.md §6 single switch
 // truth). The UI never flips optimistically; switches re-project when the
 // kernel's unit-changed event arrives via StateProjection.
@@ -20,9 +21,10 @@ Singleton {
     property bool _pendingEnable: false
 
     // A held session lock refuses to be turned off (shell AGENTS: 锁屏中
-    // 禁止停用 lock); the switch disables itself instead.
+    // 禁止停用 lock); the switch disables itself instead. `unitId` is the
+    // full ledger key ("shell.<domain>" first-party, reverse-DNS third-party).
     function canToggle(unitId) {
-        return !(unitId === "lock" && ActionGateway.lockEngaged);
+        return !(unitId === "shell.lock" && ActionGateway.lockEngaged);
     }
 
     function setUnit(unitId, enable) {
@@ -32,21 +34,21 @@ Singleton {
         root.pendingUnitId = unitId;
         root._pendingEnable = enable;
         // Parameter array, never a shell string (LIFE004).
-        proc.command = [Paths.binHome + "/nyxuri", enable ? "on" : "off", "shell." + unitId];
+        proc.command = [Paths.binHome + "/nyxuri", enable ? "on" : "off", unitId];
         proc.running = true;
         watchdog.restart();
-        LogService.info("units", "dispatch: nyxuri " + (enable ? "on" : "off") + " shell." + unitId);
+        LogService.info("units", "dispatch: nyxuri " + (enable ? "on" : "off") + " " + unitId);
         return true;
     }
 
     function _finish(code) {
         watchdog.stop();
         if (code !== 0) {
-            root.lastError = "nyxuri " + (root._pendingEnable ? "on" : "off") + " shell."
-                    + root.pendingUnitId + " failed (exit " + code + ")";
+            root.lastError = "nyxuri " + (root._pendingEnable ? "on" : "off") + " " + root.pendingUnitId
+                    + " failed (exit " + code + ")";
             LogService.error("units", root.lastError);
         } else {
-            LogService.info("units", "unit switch done: shell." + root.pendingUnitId);
+            LogService.info("units", "unit switch done: " + root.pendingUnitId);
         }
         root.pendingUnitId = "";
     }

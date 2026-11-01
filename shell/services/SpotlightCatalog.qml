@@ -65,8 +65,8 @@ Singleton {
         for (let i = 0; i < PluginRegistry.settingsRoutes.length; ++i) {
             const entry = PluginRegistry.settingsRoutes[i];
             const route = Object.assign({}, entry, {
-                                             path: String(entry.id).split(".")
-                                         });
+                                            path: String(entry.id).split(".")
+                                        });
             nextRoutes.push(route);
             index[entry.id] = {
                 title: entry.title,
@@ -77,26 +77,27 @@ Singleton {
 
         const routeById = {};
         nextRoutes.forEach(route => routeById[route.id] = route);
-        const breadcrumb = path => path.map((part, i) => root.title(path.slice(0, i + 1).join("."))).join(" → ");
+        const breadcrumb = path => path.map((part, i) => root.title(path.slice(0, i + 1).join("."))).join(
+                                       " → ");
         const nextSettings = nextRoutes.map(route => Object.assign({}, route, {
-                                                                            route: route.id,
-                                                                            anchor: false,
-                                                                            title: root.title(route.id),
-                                                                            sourceTitle: route.title,
-                                                                            breadcrumb: breadcrumb(route.path)
-                                                                        }));
+                                                                       route: route.id,
+                                                                       anchor: false,
+                                                                       title: root.title(route.id),
+                                                                       sourceTitle: route.title,
+                                                                       breadcrumb: breadcrumb(route.path)
+                                                                   }));
         for (let a = 0; a < PluginRegistry.settingsAnchors.length; ++a) {
             const anchor = PluginRegistry.settingsAnchors[a];
             const parent = routeById[anchor.route];
             if (!parent)
                 continue;
             nextSettings.push(Object.assign({}, anchor, {
-                                                 anchor: true,
-                                                 path: parent.path,
-                                                 title: root.title(anchor.id),
-                                                 sourceTitle: anchor.title,
-                                                 breadcrumb: breadcrumb(parent.path)
-                                             }));
+                                                anchor: true,
+                                                path: parent.path,
+                                                title: root.title(anchor.id),
+                                                sourceTitle: anchor.title,
+                                                breadcrumb: breadcrumb(parent.path)
+                                            }));
             index[anchor.id] = {
                 title: anchor.title,
                 description: "",
@@ -162,6 +163,11 @@ Singleton {
     Connections {
         target: PluginRegistry
         function onReadyChanged() {
+            root.rebuild();
+        }
+        // A third-party plugin landed, changed or left (inotify hot reload):
+        // the views were re-derived, so the search index follows.
+        function onPluginsChanged() {
             root.rebuild();
         }
     }

@@ -657,11 +657,12 @@ class TestShellManagement(unittest.TestCase):
 
         # 6. The popup:notification slot arbitrates keystone vs the standalone
         # popup host in the slot host (plugin-model.md §6, host-owned rule) —
-        # not a private config conditional in AppShell.
+        # not a private config conditional in AppShell. The rule is kind-keyed
+        # (S1-3): a third-party popup host yields exactly the same way.
         slot_path = os.path.join(shell_dir, "app", "SlotHost.qml")
         with open(slot_path, "r", encoding="utf-8") as f:
             slot_content = f.read()
-        self.assertIn('unit.id === "notifications"', slot_content)
+        self.assertIn('unit.kind === "popup:notification"', slot_content)
         self.assertIn('StateProjection.isEnabled("keystone")', slot_content)
 
     def test_p3_r10_lifecycle_and_sideeffect_contracts(self):
@@ -1780,8 +1781,8 @@ class TestShellManagement(unittest.TestCase):
         slot_path = os.path.join(shell_dir, "app", "SlotHost.qml")
         with open(slot_path, "r", encoding="utf-8") as f:
             slot_code = f.read()
-        self.assertIn("StateProjection.isEnabled(unit.id)", slot_code)
-        self.assertIn("active: root.slotActive(modelData)", slot_code)
+        self.assertIn("StateProjection.isEnabledUnit(unit.unitId)", slot_code)
+        self.assertIn("StateProjection.primed && root.slotActive(modelData)", slot_code)
 
         # 2. Layer-shell surfaces physically unmount when disabled or inactive
         ov_path = os.path.join(shell_dir, "plugins", "wallpaper", "OverviewWallpaper.qml")

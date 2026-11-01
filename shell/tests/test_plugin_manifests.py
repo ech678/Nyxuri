@@ -98,10 +98,17 @@ class TestHostClosure(unittest.TestCase):
         slot = read("app", "SlotHost.qml")
         self.assertIn("Repeater", slot)
         self.assertIn("PluginRegistry.units", slot)
-        self.assertIn("StateProjection.isEnabled(unit.id)", slot)
+        self.assertIn("StateProjection.isEnabledUnit(unit.unitId)", slot)
+        # Cold-start gate: nothing mounts before the ledger's first absorb —
+        # a disabled unit never flash-mounts (S1-3 probe find).
+        self.assertIn("StateProjection.primed && root.slotActive(modelData)", slot)
         self.assertIn("source: modelData.entryUrl", slot)
         # The safety rule: a held session lock is never torn down mid-lock.
         self.assertIn('unit.id === "lock" && ActionGateway.lockEngaged', slot)
+        # Slot arbitration is kind-keyed (S1-3 seating rule): a third-party
+        # popup:notification host yields to keystone exactly like the
+        # first-party one.
+        self.assertIn('unit.kind === "popup:notification"', slot)
 
     def test_slothost_carries_no_preheat_imports(self):
         """loader-form.md: the preheat list retires with the registry. Plugin
@@ -179,12 +186,19 @@ class TestEventLoop(unittest.TestCase):
                       "reload happens on the unit-changed event only")
         self.assertIn('record.state === "enabled"', proj)
         self.assertIn("return true;", proj, "no ledger record must project as enabled")
+        self.assertIn("primed", proj, "assembly waits for the first absorb")
+        # The ledger's top-level key is `plugins` (R0-1); the retired `units`
+        # key silently blanked the projection (S1-3 probe find).
+        self.assertIn("parsed.plugins", proj)
+        self.assertNotIn("parsed.units", proj)
         self.assertNotIn("setText", proj, "the shell never writes the ledger")
 
     def test_switches_route_through_the_kernel_verb(self):
         control = read("services", "UnitControlService.qml")
         self.assertIn('Paths.binHome + "/nyxuri"', control)
-        self.assertIn('"shell." + unitId', control)
+        # The full ledger key travels with the row: "shell.<domain>" for
+        # first-party units, the reverse-DNS id for third-party plugins.
+        self.assertIn('enable ? "on" : "off", unitId]', control)
         self.assertNotIn("state.json", control,
                          "no shell-side ledger writes, ever")
 
@@ -242,6 +256,94 @@ class TestSingletonRegistration(unittest.TestCase):
                     name = line.split()[3] if len(line.split()) >= 4 else ""
                     self.assertIn(name, singletons.get(base, []),
                                   f"{base}/qmldir registers a non-singleton file: {name}")
+
+
+class TestThirdPartyHeart(unittest.TestCase):
+    """S1-3: the Omarchy heart, physically copied (commit c91fc6a) then trimmed.
+
+    The guard is two-sided, auditable against the baseline diff. Organs: the
+    process-guard trio, the segmented stream parser and the startup chain
+    must stay in the file — losing them would be a residual stub, not a
+    Fork & Trim. Scars: the shell.json switch and bar-layout machinery must
+    stay gone — the ledger is the single switch truth and the registry is a
+    read-only projection (unit-model.md §6).
+    """
+
+    ORGANS = [
+        "scanProcess", "initProcess", "watcherReaper", "localPluginWatcher",
+        "localPluginWatcherRestart", "parseScanOutput", "ensureUserDir",
+        "reapOrphanedPluginWatchers", "localPluginIdForPath", "localPluginChanged",
+        "pluginsChanged", "scanFinished", "pluginLoadFailed", "rescan",
+    ]
+
+    SCARS = [
+        "shell.json", "shellConfigProvider", "shellConfigMutator", "setEnabled",
+        "disabledPlugins", "canonicalWidgetId", "barSections", "Util.",
+        "stampHostCapabilities", "trustedCapabilities", "moveBarEntry",
+        "putBarWidget", "manifest.json",
+    ]
+
+    def test_heart_organs_survived_the_trim(self):
+        heart = read("services", "PluginRegistry.qml")
+        for organ in self.ORGANS:
+            self.assertIn(organ, heart, f"heart organ missing: {organ}")
+
+    def test_shell_json_machinery_stays_gone(self):
+        heart = read("services", "PluginRegistry.qml")
+        # The guard audits code, not prose — the trim-map comment names what
+        # was cut on purpose.
+        code = "\n".join(line for line in heart.splitlines()
+                         if not line.strip().startswith("//"))
+        for scar in self.SCARS:
+            self.assertNotIn(scar, code, f"trimmed machinery came back: {scar}")
+
+    def test_two_roots_and_reserved_namespaces(self):
+        heart = read("services", "PluginRegistry.qml")
+        self.assertIn("Paths.shareRoot", heart, "the repo root must stay scanned")
+        self.assertIn("Paths.dataHome", heart, "the third-party root must be scanned")
+        self.assertIn('idPrefix: "shell."', heart)
+        self.assertIn("isReverseDns", heart, "third-party ids must be reverse-DNS gated")
+        self.assertIn('"nyxuri."', heart, "reserved namespaces stay unclaimable")
+
+    def test_views_still_feed_every_s0_consumer(self):
+        heart = read("services", "PluginRegistry.qml")
+        for view in ("units", "toggles", "settingsRoutes", "settingsAnchors", "actions"):
+            self.assertIn(f"registry.{view} =", heart, f"S0-2 view lost: {view}")
+        # Rows carry the full ledger key beside the domain id (S1-3 id 并轨).
+        self.assertIn("unitId: record.id", heart)
+        self.assertIn("entryUrl: record.entryUrls[kind]", heart)
+
+    def test_third_party_drop_is_discovered_without_host_changes(self):
+        """Adversarial gate, third-party form: a reverse-DNS plugin dropped
+        into the data root loads through the same loader the shell registry
+        mirrors (id = directory name, no prefix), and removing it leaves zero
+        host-file knowledge behind."""
+        import shutil
+
+        from nyxuri.kernel import registry as kernel_registry
+        from tests.utils import TempEnv
+
+        pid = "zz.adversarial.probe"
+        with TempEnv() as ctx:
+            plugin = ctx.env.data_dir / "plugins" / pid
+            plugin.mkdir(parents=True)
+            (plugin / "Probe.qml").write_text("import QtQuick\nItem {}\n", encoding="utf-8")
+            (plugin / "manifest.toml").write_text(
+                f'schemaVersion = 1\nid = "{pid}"\nkinds = ["overlay"]\n'
+                f'\n[entryPoints]\noverlay = "Probe.qml"\n',
+                encoding="utf-8",
+            )
+            self.assertEqual(kernel_registry.plugin_origin(pid), "third-party")
+            m = kernel_registry.load_plugin(pid)
+            self.assertEqual(m.id, pid, "third-party id derives from the directory name")
+            self.assertIn("overlay", m.entry_points)
+            shutil.rmtree(plugin)
+            self.assertIsNone(kernel_registry.plugin_dir(pid))
+        # Zero host knowledge: no host file knows the drop-in id.
+        for rel in (("app", "SlotHost.qml"), ("services", "PluginRegistry.qml"),
+                    ("services", "PluginManifest.js")):
+            self.assertNotIn(pid, read(*rel),
+                             f"host file knows the temp plugin: {'/'.join(rel)}")
 
 
 class TestRetiredMirrors(unittest.TestCase):

@@ -57,6 +57,10 @@ GATEWAY_FILE = "app/ActionGateway.qml"
 # (`niri msg` / `niri --version`). Its exec calls are the confined channel
 # itself, not a bypass of the gateway.
 COMPOSITOR_DRIVER_FILE = "services/NiriDriver.qml"
+# S1-3: the plugin heart (Omarchy Fork & Trim) runs its guard trio (scan /
+# init / watcher-reaper) through `bash -c` with static script literals;
+# runtime paths travel as positional argv ($0/$1), never concatenated.
+PLUGIN_HEART_FILE = "services/PluginRegistry.qml"
 
 
 def _plugins_domain_of(resolved: str) -> str:
@@ -298,7 +302,7 @@ def check_file_violations(
         # Registry template hooks are shell command strings by contract (user
         # managed, run verbatim with a parameter array and injected env); the
         # shell-string ban targets concatenating runtime values into commands.
-        shell_hook_allowlist = {"services/TemplateService.qml"}
+        shell_hook_allowlist = {"services/TemplateService.qml", PLUGIN_HEART_FILE}
         for idx, line in enumerate(lines, 1):
             stripped = line.strip()
             if stripped.startswith("//") or stripped.startswith("/*") or stripped.startswith("*"):

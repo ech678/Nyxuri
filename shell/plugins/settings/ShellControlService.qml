@@ -145,10 +145,10 @@ Singleton {
     // mirrors no switch state (plugin-model.md §6 single switch truth).
     function buildUnitRows() {
         return PluginRegistry.toggles.map(unit => {
-            const on = StateProjection.isEnabled(unit.id);
+            const on = StateProjection.isEnabledUnit(unit.unitId);
             return {
                 "id": unit.id,
-                "unit": "shell." + unit.id,
+                "unit": unit.unitId,
                 "enabled": on,
                 "state": on ? "loaded" : "unloaded"
             };

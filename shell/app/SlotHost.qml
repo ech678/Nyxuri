@@ -27,10 +27,13 @@ Item {
     signal unitLoaded(string unitId, var item)
 
     function slotActive(unit) {
-        if (!StateProjection.isEnabled(unit.id)) {
+        if (!StateProjection.isEnabledUnit(unit.unitId)) {
             return unit.id === "lock" && ActionGateway.lockEngaged;
         }
-        if (unit.id === "notifications" && StateProjection.isEnabled("keystone"))
+        // Slot contract: keystone owns popup:notification while enabled.
+        // The rule is kind-keyed, so a third-party popup host yields exactly
+        // like the first-party one (S1-3 seating rule).
+        if (unit.kind === "popup:notification" && StateProjection.isEnabled("keystone"))
             return false;
         return true;
     }
@@ -52,7 +55,7 @@ Item {
             property bool suppressed: false
             property int failedHeals: 0
 
-            active: root.slotActive(modelData) && !suppressed
+            active: StateProjection.primed && root.slotActive(modelData) && !suppressed
             source: modelData.entryUrl
             onLoaded: {
                 failedHeals = 0;
@@ -104,11 +107,11 @@ Item {
                 loader.failedHeals += 1;
                 retried += 1;
                 if (loader.failedHeals >= root.healPassLimit)
-                    LogService.error("host", "unit shell." + unit.id + " still compiled empty after "
+                    LogService.error("host", "unit " + unit.unitId + " still compiled empty after "
                                      + root.healPassLimit
                                      + " heal passes — giving up; toggle the unit to retry");
                 else
-                    LogService.error("host", "unit shell." + unit.id
+                    LogService.error("host", "unit " + unit.unitId
                                      + " enabled but compiled empty — reloading (pass " + loader.failedHeals
                                      + "/" + root.healPassLimit + ")");
                 loader.suppressed = true;

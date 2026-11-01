@@ -513,7 +513,7 @@ class TestShellPageRebuild(unittest.TestCase):
             "UnitControlService.setUnit(",
             "UnitControlService.canToggle(",
             "UnitControlService.pendingUnitId",
-            "StateProjection.isEnabled(",
+            "StateProjection.isEnabledUnit(",
             "CompositorDriver.reconnect()",
             "PersonalizationConfig.setOverviewEnabled(",
             "UiPreferences.setControlPlaneResourceSampling(",

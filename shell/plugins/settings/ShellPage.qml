@@ -82,13 +82,14 @@ NexusPageBase {
 
                 required property var modelData
 
-                readonly property bool pending: UnitControlService.pendingUnitId === unitToggle.modelData.id
+                readonly property bool pending: UnitControlService.pendingUnitId
+                                                === unitToggle.modelData.unitId
 
                 text: I18n.tr(unitToggle.modelData.label)
                 subtext: unitToggle.pending ? I18n.tr("Applying…") : ""
-                checked: StateProjection.isEnabled(unitToggle.modelData.id)
-                enabled: !unitToggle.pending && UnitControlService.canToggle(unitToggle.modelData.id)
-                onToggled: UnitControlService.setUnit(unitToggle.modelData.id, checked)
+                checked: StateProjection.isEnabledUnit(unitToggle.modelData.unitId)
+                enabled: !unitToggle.pending && UnitControlService.canToggle(unitToggle.modelData.unitId)
+                onToggled: UnitControlService.setUnit(unitToggle.modelData.unitId, checked)
             }
         }
 

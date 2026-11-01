@@ -24,13 +24,25 @@ Singleton {
     // the desktop over a corrupt file would be the wrong failure mode.
     property bool degraded: false
 
+    // True once the first absorb landed (records, not-found or degraded).
+    // SlotHost gates assembly on this: a disabled unit must never
+    // flash-mount in the window before the ledger read completes
+    // (冷启动未启用域零实例化, shell AGENTS).
+    property bool primed: false
+
     property var _units: ({})
 
-    function isEnabled(id) {
-        const record = root._units["shell." + id];
+    // Full-ledger-key lookup: first-party units key as "shell.<domain>",
+    // third-party plugins key as their reverse-DNS id (S1-3).
+    function isEnabledUnit(unitId) {
+        const record = root._units[unitId];
         if (!record)
             return true;
         return record.state === "enabled";
+    }
+
+    function isEnabled(id) {
+        return root.isEnabledUnit("shell." + id);
     }
 
     function reload() {
@@ -41,11 +53,16 @@ Singleton {
         root.degraded = false;
         try {
             const parsed = JSON.parse(String(text || "").trim() || "{}");
-            root._units = parsed.units && typeof parsed.units === "object" ? parsed.units : {};
+            // The ledger's top-level key is `plugins` (R0-1: units.* retired).
+            // Reading the retired key silently blanked the projection — every
+            // unit projected as enabled no matter what the ledger said (found
+            // by the S1-3 third-party probe).
+            root._units = parsed.plugins && typeof parsed.plugins === "object" ? parsed.plugins : {};
         } catch (error) {
             root.degraded = true;
             console.warn("[StateProjection] ledger unreadable; projecting every unit as enabled:", error);
         }
+        root.primed = true;
     }
 
     FileView {
