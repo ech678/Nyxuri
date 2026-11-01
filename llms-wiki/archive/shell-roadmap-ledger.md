@@ -848,3 +848,48 @@ GridLayout 拉伸、比例失真且两侧空洞。改自适应满宽条：列数
 恒定，`wallpaperPreviewMaximumWidth` 处决；当前壁纸叠 2px primary 内缩
 描边选中态；空态占位 `columnSpan` 跨全列。列数公式与 152 上限死刑钉
 进 test_settings_pages（207 绿）。
+
+### S0-4 资产收编与实机验收·收窄版（已收口，2026-11-01）
+
+> 拍板：dashboard 双轨**终局保留**（退出功能阉割档候选）；「页面内容收编进各
+> 插件」依赖 S0-3 去中心化落位，挪入 S0-3；本站先行收口清算 + 收编核查 + M3/M4
+> 机器验收证据。执行序调整为 S0-4（收窄版）→ S0-3，站号不动。`shell/archive/`
+> 作者裁决保留，补 README 封存登记（引用关系：test_shell_architecture 落位契约
+> 钉住两份服务文件存在性，动 archive 必须先动测试）。
+
+**清算**：`ui/MaterialCard.qml`（M3 后零消费者，LEGACY_VOCABULARY 死刑词表
+保留防复活）、`ui/SidebarStagger.qml`（抽屉删除后零消费者）处决；
+`plugins/settings/AppBrowserPopup.qml`（autostart 页伴生弹窗，唯一消费者在
+archive）迁 `archive/settings/autostart/` 与家族同放。零消费者扫描（词边界，
+含 manifest source 与脚本引用）覆盖 ui/ 平面池、settings 根、dashwindow、
+commons、services——其余全部有真实消费者。扫描升格常驻契约
+`tests/shell/test_asset_placement.py`：消费者语料 = 运行时树（qml/js/py/sh/toml），
+测试源不算消费者；处决名单防回流断言。
+
+**测试对齐（S0-1/S0-2 遗留 22 处预存在红全数改写绿）**：
+- 锚点词表：`"id":"…"` JSON 字面 → `anchorId: "…"` 运行时注册（test_settings_pages
+  全量跟词；Displays/DefaultApps 封存页测试类处决，archive fallback 退役）。
+- 四件套尸体：settings-routes.json / SearchCatalog.js 读取点全部改读
+  `manifest.toml`（test_settings_navpane 路由+分组、test_settings_shell 描述、
+  test_shell_architecture p3/r11）；生成器 generate-search-catalog.py 升格死刑
+  断言（必须保持退役）。
+- i18n：r3 的 qsTranslate 词表断言（Account/Bar/Dock/Theme）随 S0-2 词表进
+  manifest 失实——新契约为「manifest 全部 settings 词条（16 路由 + 53 锚点的
+  title/description）必须在 zh_CN.toml 经 context-or-default 可解析」，翻译桥
+  真相是 SpotlightCatalog `I18n.tr(title, context)`。
+
+**实机验收证据（隔离实例：独立路径防 IPC 串台，账本预置 11 单元 disabled 只开
+settings）**：`shell status` → `IPC_READY`、零 compiled empty；16 路由
+`settings open` 全 OK；双轨 default↔dashboard 经 config watcher 翻转后以合成器
+toplevel 标题作证（`nyxuri-settings` ↔ `nyxuri-settings-dashboard`，窗口粒度
+切换如 SettingsHost 设计）；spotlight 单元临时启用 + `unit reload` 后
+`spotlight search` → `SEARCH` 相位（深链点击属 UI 面，归作者视觉验收）。
+启动告警（QQmlVMEMetaObject invalid context / Tray barVisualBounds /
+FilePickerWindow buildBreadcrumbItems）与 HEAD 干净副本对照实例逐条一致——
+0.3.2 冷编译预热闭包预存在产物，非本站回归。
+
+**验证**：`tests/shell` 282 绿（11 跳过=基线，净变化 +2 契约、−2 封存页类）；
+`run-tests.py --all` 五分类 106 绿（5 跳过=基线）。
+
+**待办归位**：M3/M4 视觉过目归作者（过目后 shell/ROADMAP M3/M4 转已完成）；
+dashwindow 手写目录接不接 PluginRegistry 随 S0-3 设计定夺。

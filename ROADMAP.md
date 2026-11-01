@@ -153,10 +153,30 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
     往返）、`tests/deploy/test_manifest` 59 绿、隔离实机冒烟（独立路径防 IPC 串台）
     sidebar visible 真实翻转 + `control-center open` OK + 加载零 compiled empty。
   - **S0-3 设置去中心化**：设置页由插件自带（manifest settings schema / panel entry），
-    宿主用 ui/ 原子控件渲染；中央设置窗降级为聚合 panel 插件。T3 双轨呈现
-    （default / dashboard）去留**开工前**拍板，不留到迁移中途当阻塞。
-  - **S0-4 资产收编与实机验收**：T3 M4 批 A–F 的积木原子控件与页面内容收编进 ui/
-    与各插件；M3 / M4 实机验收证据在此产出。
+    宿主用 ui/ 原子控件渲染；中央设置窗降级为聚合 panel 插件；「页面内容收编进
+    各插件」自 S0-4 收窄版挪入本站，随去中心化落位一并执行。T3 双轨呈现
+    （default / dashboard）去留**已拍板（2026-11-01）：双轨保留**——dashboard 是
+    正式呈现而非过渡形态；dashwindow 手写目录（DashboardSettingsCatalog /
+    SettingsControlCatalog）接不接注册表随本站设计定夺。
+  - **S0-4 资产收编与实机验收（收窄版，2026-11-01 拍板先行，已收口）**：原任务里
+    「页面内容收编进各插件」依赖 S0-3 的去中心化落位，挪入 S0-3；本站先行收口剩余
+    三件。①清算：`ui/MaterialCard`、`ui/SidebarStagger` 零消费者处决，
+    `AppBrowserPopup` 归档与 autostart 封存家族同放，`shell/archive/` 补封存登记
+    README（作者裁决保留）；零消费者扫描升格常驻契约
+    （`tests/shell/test_asset_placement`，含处决名单防回流）。②收编核查：11 件
+    Preference/Nexus 原子件钉死 ui/（`test_preference_atoms` 既有契约复核）。③测试
+    对齐与验收证据：S0-1/S0-2 遗留的 22 处预存在红全数改写绿——锚点词表跟
+    `anchorId` 运行时注册、路由/分组/描述/i18n 契约改读 `manifest.toml`（新增
+    manifest 词条词典可解析契约：16 路由 + 53 锚点 title/description 全部经
+    context-or-default 解析）、Displays/DefaultApps 封存页测试类处决（archive
+    fallback 一并退役）、SearchCatalog 生成器死刑断言钉住。证据：`tests/shell`
+    282 绿（11 跳过=基线）、`run-tests.py --all` 五分类 106 绿（5 跳过=基线）、
+    隔离实机（独立路径防 IPC 串台）`IPC_READY` + 16 路由 `settings open` 全 OK +
+    双轨 default↔dashboard 以合成器 toplevel 真实翻转作证
+    （`nyxuri-settings` / `nyxuri-settings-dashboard`）+ spotlight `SEARCH`
+    相位 + 零 compiled empty；启动告警与 HEAD 对照实例逐条一致（0.3.2 冷编译
+    预热产物，非本站回归）。M3/M4 视觉过目仍归作者。执行序调整：S0-4（收窄版）
+    先行、S0-3 随后，站号不动。
   - **S0-5 合成器面清理（唯一实质大改，措辞正名）**：shell 现状本就是 niri
     （`NiriService` 直连 `NIRI_SOCKET`）——要清的是整抄代码里的 Hyprland 语义
     （`Quickshell.Hyprland` import、lock corners、dock workspace-layout，散布多处）。
@@ -211,8 +231,9 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 - **T2 TUI Textual 重做**：选型 Textual、一次全搬定案不变；分支
   `archive/t2-textual-market` 备用，择机重启（M0 spike 先行：kitty 终端交接、
   中文对齐、退出干净）。
-- **Shell 功能阉割档：整档挂起（作者裁决）**。候选清单留档备查：dashboard 双轨
-  合并（约 −5,900）、cookie 时钟链（约 −870）、lock 双风格链（约 −1,000）、
+- **Shell 功能阉割档：整档挂起（作者裁决）**。dashboard 双轨合并（约 −5,900）已于
+  2026-11-01 作者裁决**划掉——双轨终局保留**，退出候选。其余候选清单留档备查：
+  cookie 时钟链（约 −870）、lock 双风格链（约 −1,000）、
   通知双渲染实现合一、regionselector（随 key-cli）、PersonalizationConfig 死函数
   （约 −340）、mango 第二合成器去留、BezierCurveLayerEditor（1,153 行）、
   WeatherBackground（1,226 行）；零风险小件（约 −490 行）若 S0 迁移触及则顺带

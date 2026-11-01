@@ -8,8 +8,8 @@ exactly like the original, and every new user-visible string resolves in zh_CN.
 Geometry and type come from NexusStyle (unscaled Caelestia token parity).
 """
 
-import json
 import re
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -232,14 +232,17 @@ class TestNavPaneComposition(unittest.TestCase):
         self.assertIn("signal activated", source)
 
     def test_grouping_covers_every_top_level_route(self):
+        # S0-2: the grouping geometry derives from the manifest `group` key
+        # (consecutive same-group rows form one connected cluster) — there is
+        # no host-side table left to keep in sync, so the contract is every
+        # top-level route declaring a group plus the table staying dead.
         pane = _read("NexusNavPane.qml")
-        table = pane[pane.index("readonly property var groupTable"):pane.index("readonly property var navModel")]
-        grouped = set(re.findall(r'"([a-z.-]+)"', table))
-        document = json.loads((SETTINGS / "settings-routes.json").read_text(encoding="utf-8"))
-        top_level = {route["id"] for route in document["routes"] if len(route["path"]) == 1}
-        self.assertTrue(top_level <= grouped,
-                        f"routes missing from the grouping table (they would join the "
-                        f"trailing leftovers group): {sorted(top_level - grouped)}")
+        self.assertNotIn("groupTable", pane, "the host-side grouping table must stay dead")
+        manifest = tomllib.loads((SETTINGS / "manifest.toml").read_text(encoding="utf-8"))
+        top_level = [entry for entry in manifest["settings"] if "route" not in entry]
+        self.assertGreaterEqual(len(top_level), 16)
+        missing = [entry["id"] for entry in top_level if not str(entry.get("group", "")).strip()]
+        self.assertEqual(missing, [], f"routes without a manifest group: {missing}")
 
     def test_no_hardcoded_colors_in_the_new_chrome(self):
         for name in ("ControlCenterWindow.qml", "NexusNavPane.qml", "NexusNavRow.qml"):
@@ -257,8 +260,8 @@ class TestAboutPage(unittest.TestCase):
     """The About page is the first page built entirely from the atom suite."""
 
     def test_route_is_registered(self):
-        document = json.loads((SETTINGS / "settings-routes.json").read_text(encoding="utf-8"))
-        route = next((r for r in document["routes"] if r["id"] == "about"), None)
+        manifest = tomllib.loads((SETTINGS / "manifest.toml").read_text(encoding="utf-8"))
+        route = next((entry for entry in manifest["settings"] if entry["id"] == "about"), None)
         self.assertIsNotNone(route, "about route missing")
         self.assertEqual(route["icon"], "info")
         self.assertEqual(route["source"], "AboutPage.qml")

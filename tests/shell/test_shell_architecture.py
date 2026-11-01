@@ -7,13 +7,13 @@ milestone architecture frozen in shell/ROADMAP.md, not runtime switching.
 
 import glob
 import io
-import json
 import os
 import re
 import shutil
 import signal
 import sys
 import time
+import tomllib
 import unittest
 from contextlib import redirect_stdout
 from unittest.mock import patch, MagicMock
@@ -98,10 +98,11 @@ class TestShellManagement(unittest.TestCase):
                         content = f.read()
                     self.assertNotIn("import Clavis.WeatherMap", content, f"Static import Clavis.WeatherMap found in {full_path}")
 
-        # Verify no script references deleted Modules/ControlCenter
+        # Verify no script references deleted Modules/ControlCenter.
+        # S0-2: the catalog generator itself retired with the four-piece set
+        # (PluginRegistry reads manifest.toml at runtime) — it must stay gone.
         gen_script = os.path.join(repo_root, "shell", "scripts", "dev", "generate-search-catalog.py")
-        with open(gen_script, "r", encoding="utf-8") as f:
-            self.assertNotIn("Modules/ControlCenter", f.read())
+        self.assertFalse(os.path.exists(gen_script), "the search-catalog generator must stay retired")
         check_script = os.path.join(repo_root, "shell", "scripts", "dev", "check.sh")
         with open(check_script, "r", encoding="utf-8") as f:
             self.assertNotIn("Modules/ControlCenter", f.read())
@@ -1026,20 +1027,34 @@ class TestShellManagement(unittest.TestCase):
         spec.loader.exec_module(compile_i18n)
         contexts = compile_i18n.scan_source_strings(Path(shell_dir))
         self.assertIn("ControlCenterWindow", contexts)
-        self.assertIn("Account", contexts["ControlCenterWindow"])
-        self.assertIn("Bar", contexts["ControlCenterWindow"])
-        self.assertIn("Dock", contexts["ControlCenterWindow"])
-        self.assertIn("Theme", contexts["ControlCenterWindow"])
 
-        # Verify generate_ts produces translated entries for these contexts
+        # S0-2: the route/anchor vocabulary lives in the plugin manifest, not
+        # in qsTranslate literals. The translation bridge (SpotlightCatalog ->
+        # I18n.tr(title, context)) must resolve every manifest settings entry
+        # from its context section or the default dictionary.
+        with open(os.path.join(shell_dir, "plugins", "settings", "manifest.toml"), "rb") as f:
+            manifest = tomllib.load(f)
+        with open(toml_zh, "rb") as f:
+            zh = tomllib.load(f)
+        default_strings = {k for k, v in zh.items() if isinstance(v, str)}
+        unresolved = []
+        for entry in manifest["settings"]:
+            context_table = zh.get(entry["context"], {})
+            if not isinstance(context_table, dict):
+                context_table = {}
+            for field in ("title", "description"):
+                source_string = str(entry.get(field, ""))
+                if not source_string:
+                    continue
+                if source_string not in context_table and source_string not in default_strings:
+                    unresolved.append(f"{entry['id']}.{field}: {source_string!r}")
+        self.assertEqual(unresolved, [],
+                         f"manifest settings strings missing from zh_CN.toml: {unresolved}")
+
+        # generate_ts still emits the window strings under their context.
         ts_zh_output = compile_i18n.generate_ts(Path(toml_zh), "zh_CN", contexts)
         self.assertIn("<name>ControlCenterWindow</name>", ts_zh_output)
-        self.assertIn("<source>Account</source>\n        <translation>账户</translation>", ts_zh_output)
-        self.assertIn("<source>Keystone</source>\n        <translation>Keystone</translation>", ts_zh_output)
-        self.assertIn("<source>Bar</source>\n        <translation>Bar</translation>", ts_zh_output)
-        self.assertIn("<source>Dock</source>\n        <translation>Dock</translation>", ts_zh_output)
-        self.assertIn("<source>Spotlight</source>\n        <translation>Spotlight</translation>", ts_zh_output)
-        self.assertIn("<source>Theme</source>\n        <translation>主题</translation>", ts_zh_output)
+        self.assertIn("<source>Settings</source>", ts_zh_output)
 
     def test_r4_architecture_and_lifecycle_contracts(self):
         """R4 Contract: Four-layer boundaries, shared purity, cross-domain isolation, and lifecycle separation."""
@@ -1886,13 +1901,15 @@ class TestShellManagement(unittest.TestCase):
             with open(os.path.join(shell_dir, rel), "r", encoding="utf-8") as f:
                 return f.read()
 
-        # 1. Route registration: top-level entry, nav auto-derives from it.
-        with open(os.path.join(shell_dir, "plugins", "settings", "settings-routes.json"),
-                  "r", encoding="utf-8") as f:
-            routes = json.load(f)
-        shell_routes = [r for r in routes["routes"] if r["id"] == "shell"]
+        # 1. Route registration: top-level manifest entry, nav auto-derives
+        #    from it. S0-2: routes live in [[settings]] blocks; a top-level
+        #    route carries no `route` parent key.
+        with open(os.path.join(shell_dir, "plugins", "settings", "manifest.toml"),
+                  "rb") as f:
+            manifest = tomllib.load(f)
+        shell_routes = [e for e in manifest["settings"]
+                        if e["id"] == "shell" and "route" not in e]
         self.assertEqual(len(shell_routes), 1)
-        self.assertEqual(shell_routes[0]["path"], ["shell"])
         self.assertEqual(shell_routes[0]["source"], "ShellPage.qml")
         self.assertIn("control-plane", shell_routes[0]["aliases"])
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "settings", "ShellPage.qml")))
@@ -1962,11 +1979,15 @@ class TestShellManagement(unittest.TestCase):
         dashboard = read("plugins/settings/dashwindow/DashboardContent.qml")
         self.assertIn('"shell": "settings"', dashboard)
 
-        # 9. The shipped search catalog carries the new route and sections.
-        catalog = read("plugins/settings/generated/SearchCatalog.js")
-        self.assertIn('"shell.section.modules"', catalog)
-        self.assertIn('"shell.section.sampling"', catalog)
-        self.assertIn('"shell.section.diagnostics"', catalog)
+        # 9. The manifest search anchors carry the new route and sections
+        #    (S0-2: SearchCatalog.js retired — [[settings]] blocks with a
+        #    `route` key are the searchable section truth).
+        with open(os.path.join(shell_dir, "plugins", "settings", "manifest.toml"), "rb") as f:
+            anchor_ids = {entry["id"] for entry in tomllib.load(f)["settings"]
+                          if "route" in entry}
+        for anchor in ("shell.section.modules", "shell.section.sampling",
+                       "shell.section.diagnostics"):
+            self.assertIn(anchor, anchor_ids)
 
         # 10. Roadmap reflects the R11 delivery state.
         roadmap = read("ROADMAP.md")

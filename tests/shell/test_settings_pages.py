@@ -1,12 +1,16 @@
-"""T3 M3 contracts: the first-batch Nexus page rebuilds.
+"""T3 M3/M4 contracts: the Nexus page rebuilds.
 
-AccountPage, ThemePage, WallpaperPage and DisplaysPage move onto the
-NexusPageBase scaffold and the M1 atom suite. The contracts below pin, per
-page: the scaffold + self-rendered title (the window shim yields), the
-window-facing API surface staying alive (search leaf, parent modal,
-presentation, navigation, child windows), the search-anchor registrations
-compiling to the same catalog ids, business truths keeping their owners, and
-the pre-M3 card chrome (MaterialCard / SettingsActionRow / inline private row
+The M3 batch (AccountPage, ThemePage, WallpaperPage) and the M4 batches A-F
+move onto the NexusPageBase scaffold and the M1 atom suite. The Displays and
+DefaultApps families left the settings plugin with the 45361df slimming
+(displays shell/config archived, gamma panel homed in quicksettings), so they
+carry no rebuild contracts here. The contracts below pin, per page: the
+scaffold + self-rendered title (the window shim yields), the window-facing
+API surface staying alive (search leaf, parent modal, presentation,
+navigation, child windows), the SettingsSearchAnchor ids staying stable
+(S0-2: pages register a bare anchorId at runtime — the declarative data
+lives in manifest.toml), business truths keeping their owners, and the
+pre-M3 card chrome (MaterialCard / SettingsActionRow / inline private row
 components) staying out of the rebuilt pages.
 """
 
@@ -16,7 +20,6 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SETTINGS = REPO_ROOT / "shell" / "plugins" / "settings"
-ARCHIVE_SETTINGS = REPO_ROOT / "shell" / "archive" / "settings"
 
 ANCHOR_IDS = {
     "AccountPage.qml": (
@@ -42,27 +45,11 @@ ANCHOR_IDS = {
         "wallpaper.section.parallax-effects",
         "wallpaper.section.overview-background",
     ),
-    "GammaControlPage.qml": (
-        "displays.gamma.section.color",
-        "displays.gamma.section.schedule",
-        "displays.gamma.section.current-status",
-    ),
-    "DisplayConfigurationPage.qml": (
-        "displays.configuration.section.layout",
-        "displays.configuration.section.output-settings",
-        "displays.configuration.section.hot-corners",
-    ),
     "LanguageAndRegionPage.qml": (
         "language-region.section.language",
         "language-region.section.region-weather-location",
         "language-region.section.units",
         "language-region.section.time-date",
-    ),
-    "DefaultAppsPage.qml": (
-        "default-apps.section.internet",
-        "default-apps.section.utilities",
-        "default-apps.section.documents",
-        "default-apps.section.multimedia",
     ),
     "SpotlightPage.qml": (
         "spotlight.section.applications",
@@ -136,9 +123,6 @@ def _read(name):
     for match in (REPO_ROOT / "shell" / "plugins").rglob(name):
         if match.is_file():
             return match.read_text(encoding="utf-8")
-    for match in ARCHIVE_SETTINGS.rglob(name):
-        if match.is_file():
-            return match.read_text(encoding="utf-8")
     return target.read_text(encoding="utf-8")
 
 
@@ -167,7 +151,7 @@ class TestAccountPageRebuild(unittest.TestCase):
     def test_search_anchor_ids_are_stable(self):
         source = _read("AccountPage.qml")
         for anchor_id in ANCHOR_IDS["AccountPage.qml"]:
-            self.assertIn(f'"id":"{anchor_id}"', source,
+            self.assertIn(f'anchorId: "{anchor_id}"', source,
                           f"anchor missing or rewritten: {anchor_id}")
 
     def test_atom_groups_present(self):
@@ -241,7 +225,7 @@ class TestThemePageRebuild(unittest.TestCase):
     def test_search_anchor_ids_are_stable(self):
         source = _read("ThemePage.qml")
         for anchor_id in ANCHOR_IDS["ThemePage.qml"]:
-            self.assertIn(f'"id":"{anchor_id}"', source,
+            self.assertIn(f'anchorId: "{anchor_id}"', source,
                           f"anchor missing or rewritten: {anchor_id}")
 
     def test_atom_groups_present(self):
@@ -320,7 +304,7 @@ class TestWallpaperPageRebuild(unittest.TestCase):
     def test_search_anchor_ids_are_stable(self):
         source = _read("WallpaperPage.qml")
         for anchor_id in ANCHOR_IDS["WallpaperPage.qml"]:
-            self.assertIn(f'"id":"{anchor_id}"', source,
+            self.assertIn(f'anchorId: "{anchor_id}"', source,
                           f"anchor missing or rewritten: {anchor_id}")
 
     def test_atom_groups_present(self):
@@ -378,63 +362,6 @@ class TestWallpaperPageRebuild(unittest.TestCase):
             self.assertNotIn(token, source, f"legacy token re-entered WallpaperPage: {token}")
 
 
-class TestDisplaysPagesRebuild(unittest.TestCase):
-    """Displays shell + both subpages: row-level atoms, machinery kept."""
-
-    def test_shell_claims_title_and_keeps_routing(self):
-        source = _read("DisplaysPage.qml")
-        self.assertIn("readonly property bool rendersPageTitle: true", source,
-                      "subpages render titles; the window shim must yield")
-        for token in ("function openSearchPath(", "searchLeaf", "closeChildWindows",
-                      "DisplayConfigService.clearCompletionNotice()",
-                      'SpotlightCatalog.route("displays." + root.section)'):
-            self.assertIn(token, source, f"DisplaysPage lost routing token: {token}")
-
-    def test_subpages_are_nexus_scaffolded(self):
-        for name, title_route in (("DisplayConfigurationPage.qml", "displays.configuration"),
-                                  ("GammaControlPage.qml", "displays.gamma")):
-            source = _read(name)
-            self.assertIn("NexusPageBase {", source, name)
-            self.assertIn(f'title: SpotlightCatalog.title("{title_route}")', source, name)
-            self.assertIn("property Item searchLeaf", source, name)
-
-    def test_search_anchor_ids_are_stable(self):
-        for name in ("GammaControlPage.qml", "DisplayConfigurationPage.qml"):
-            source = _read(name)
-            for anchor_id in ANCHOR_IDS[name]:
-                self.assertIn(f'"id":"{anchor_id}"', source,
-                              f"{name}: anchor missing or rewritten: {anchor_id}")
-
-    def test_gamma_form_is_fully_atomized(self):
-        source = _read("GammaControlPage.qml")
-        for atom in ("PreferenceHeader", "PreferenceToggle", "PreferenceSlider", "PreferenceSelect",
-                     "PreferenceInput", "PreferenceInfo", "PreferenceAction"):
-            self.assertIn(atom, source, f"GammaControlPage must use the atom: {atom}")
-        for owner in ("DisplayColor.setPreference", "DisplayColor.setDimming", "DisplayColor.locate()",
-                      "DisplayColor.useWeatherLocation()"):
-            self.assertIn(owner, source, f"business owner dropped: {owner}")
-        for dead in ("SidebarFlickable", "SettingsSection", "SettingsRow", "GeneralSliderSetting",
-                     "DisplayChoice", "OutlinedTextField", "StyledSwitch"):
-            self.assertNotIn(dead, source, f"pre-M3 vocabulary survived in GammaControlPage: {dead}")
-        for token in LEGACY_VOCABULARY:
-            self.assertNotIn(token, source, f"legacy token re-entered GammaControlPage: {token}")
-
-    def test_display_configuration_keeps_machinery_and_atomizes_rows(self):
-        source = _read("DisplayConfigurationPage.qml")
-        for atom in ("PreferenceToggle", "PreferenceSelect", "PreferenceInput", "PreferenceAction",
-                     "PreferenceHeader"):
-            self.assertIn(atom, source, f"DisplayConfigurationPage must use the atom: {atom}")
-        # The transaction flow and custom editors survive.
-        for kept in ("DisplayConfigService.apply()", "DisplayConfigService.reload()",
-                     "DisplayConfigService.forget(", "DisplayLayoutCanvas", "DisplayAdvancedSettings",
-                     "DisplayHotCornerSettings", "FloatingWindow", "CompositorBlurRegion"):
-            self.assertIn(kept, source, f"machinery dropped: {kept}")
-        # Mechanical rows left the old vocabulary (the kept-custom scale
-        # dialog still hosts one OutlinedTextField of its own).
-        for dead in ("DisplayChoice", "SettingsRow", "SettingsActionRow", "GridLayout"):
-            self.assertNotIn(dead, source, f"pre-M3 row survived: {dead}")
-
-
 class TestLanguageAndRegionPageRebuild(unittest.TestCase):
     """Language & region: atom rows, functional location editor kept."""
 
@@ -457,7 +384,7 @@ class TestLanguageAndRegionPageRebuild(unittest.TestCase):
     def test_search_anchor_ids_are_stable(self):
         source = _read("LanguageAndRegionPage.qml")
         for anchor_id in ANCHOR_IDS["LanguageAndRegionPage.qml"]:
-            self.assertIn(f'"id":"{anchor_id}"', source,
+            self.assertIn(f'anchorId: "{anchor_id}"', source,
                           f"anchor missing or rewritten: {anchor_id}")
 
     def test_atom_groups_present(self):
@@ -489,58 +416,6 @@ class TestLanguageAndRegionPageRebuild(unittest.TestCase):
             self.assertNotIn(token, source, f"legacy token re-entered LanguageAndRegionPage: {token}")
 
 
-class TestDefaultAppsPageRebuild(unittest.TestCase):
-    """Default applications: Caelestia DefaultRow shape on the select atom."""
-
-    def test_nexus_scaffold_with_self_rendered_title(self):
-        source = _read("DefaultAppsPage.qml")
-        self.assertIn("NexusPageBase {", source)
-        self.assertIn('title: SpotlightCatalog.title("default-apps")', source)
-
-    def test_window_contract_surface_survives(self):
-        source = _read("DefaultAppsPage.qml")
-        for token in (
-            "property var parentModal: null",
-            "property bool presentationActive: false",
-            "property Item searchLeaf",
-        ):
-            self.assertIn(token, source, f"DefaultAppsPage lost window contract token: {token}")
-
-    def test_search_anchor_ids_are_stable(self):
-        source = _read("DefaultAppsPage.qml")
-        for anchor_id in ANCHOR_IDS["DefaultAppsPage.qml"]:
-            self.assertIn(f'"id":"{anchor_id}"', source,
-                          f"anchor missing or rewritten: {anchor_id}")
-
-    def test_rows_reuse_the_select_atom(self):
-        source = _read("DefaultAppsPage.qml")
-        self.assertIn("component DefaultAppRow: PreferenceSelect", source,
-                      "default-app rows must reuse the select atom (Caelestia DefaultRow shape)")
-        self.assertIn("required property string roleId", source)
-        self.assertIn("required property string roleTitle", source)
-        self.assertIn("required property string roleIcon", source)
-        self.assertIn("fallbackText:", source, "empty selections keep the Caelestia fallback")
-        self.assertIn("inputRegionService: PopupInputRegionService", source)
-
-    def test_business_owners_unchanged(self):
-        source = _read("DefaultAppsPage.qml")
-        for owner in (
-            "DefaultApplicationsService.refresh()",
-            "DefaultApplicationsService.stateFor(",
-            "DefaultApplicationsService.setRole(",
-            "DefaultApplicationsService.loading",
-            "DefaultApplicationsService.busy",
-            "DefaultApplicationsService.lastError",
-            "DefaultApplicationsService.lastMessage",
-        ):
-            self.assertIn(owner, source, f"business owner dropped: {owner}")
-
-    def test_legacy_chrome_stays_out(self):
-        source = _read("DefaultAppsPage.qml")
-        for token in LEGACY_VOCABULARY + ("SettingsSection", "SettingsRow", "ThemeIcon"):
-            self.assertNotIn(token, source, f"legacy token re-entered DefaultAppsPage: {token}")
-
-
 class TestSpotlightPageRebuild(unittest.TestCase):
     """Spotlight: selects and stepper atoms, clipboard lifecycle kept."""
 
@@ -562,7 +437,7 @@ class TestSpotlightPageRebuild(unittest.TestCase):
     def test_search_anchor_ids_are_stable(self):
         source = _read("SpotlightPage.qml")
         for anchor_id in ANCHOR_IDS["SpotlightPage.qml"]:
-            self.assertIn(f'"id":"{anchor_id}"', source,
+            self.assertIn(f'anchorId: "{anchor_id}"', source,
                           f"anchor missing or rewritten: {anchor_id}")
 
     def test_atom_groups_present(self):
@@ -619,7 +494,7 @@ class TestShellPageRebuild(unittest.TestCase):
     def test_search_anchor_ids_are_stable(self):
         source = _read("ShellPage.qml")
         for anchor_id in ANCHOR_IDS["ShellPage.qml"]:
-            self.assertIn(f'"id":"{anchor_id}"', source,
+            self.assertIn(f'anchorId: "{anchor_id}"', source,
                           f"anchor missing or rewritten: {anchor_id}")
 
     def test_atom_groups_present(self):
@@ -674,7 +549,7 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
     def test_search_anchor_ids_are_stable(self):
         source = _read("GeneralBarPage.qml")
         for anchor_id in ANCHOR_IDS["GeneralBarPage.qml"]:
-            self.assertIn('"id":"%s"' % anchor_id, source,
+            self.assertIn('anchorId: "%s"' % anchor_id, source,
                           f"anchor missing or rewritten: {anchor_id}")
 
     def test_atom_groups_present(self):
@@ -748,7 +623,7 @@ class TestDockPageRebuild(unittest.TestCase):
     def test_search_anchor_ids_are_stable(self):
         source = _read("DockPage.qml")
         for anchor_id in ANCHOR_IDS["DockPage.qml"]:
-            self.assertIn('"id":"%s"' % anchor_id, source,
+            self.assertIn('anchorId: "%s"' % anchor_id, source,
                           f"anchor missing or rewritten: {anchor_id}")
 
     def test_atom_groups_present(self):
@@ -816,7 +691,7 @@ class TestGeneralSidebarPageRebuild(unittest.TestCase):
     def test_search_anchor_ids_are_stable(self):
         source = _read("GeneralSidebarPage.qml")
         for anchor_id in ANCHOR_IDS["GeneralSidebarPage.qml"]:
-            self.assertIn('"id":"%s"' % anchor_id, source,
+            self.assertIn('anchorId: "%s"' % anchor_id, source,
                           f"anchor missing or rewritten: {anchor_id}")
 
     def test_atom_groups_present(self):
@@ -900,7 +775,7 @@ class TestKeystonePageRebuild(unittest.TestCase):
     def test_search_anchor_ids_are_stable(self):
         source = _read("KeystonePage.qml")
         for anchor_id in ANCHOR_IDS["KeystonePage.qml"]:
-            self.assertIn('"id":"%s"' % anchor_id, source,
+            self.assertIn('anchorId: "%s"' % anchor_id, source,
                           f"anchor missing or rewritten: {anchor_id}")
 
     def test_atom_groups_present(self):
@@ -984,7 +859,7 @@ class TestHorizontalClockPageRebuild(unittest.TestCase):
     def test_search_anchor_ids_are_stable(self):
         source = _read("HorizontalClockPage.qml")
         for anchor_id in ANCHOR_IDS["HorizontalClockPage.qml"]:
-            self.assertIn('"id":"%s"' % anchor_id, source,
+            self.assertIn('anchorId: "%s"' % anchor_id, source,
                           f"anchor missing or rewritten: {anchor_id}")
 
     def test_slider_rows_keep_commit_semantics(self):
@@ -1047,7 +922,7 @@ class TestNetworkPageRebuild(unittest.TestCase):
     def test_search_anchor_ids_are_stable(self):
         source = _read("NetworkPage.qml")
         for anchor_id in ANCHOR_IDS["NetworkPage.qml"]:
-            self.assertIn('"id":"%s"' % anchor_id, source,
+            self.assertIn('anchorId: "%s"' % anchor_id, source,
                           f"anchor missing or rewritten: {anchor_id}")
 
     def test_atom_groups_present(self):
@@ -1168,7 +1043,7 @@ class TestConnectedDevicesPageRebuild(unittest.TestCase):
     def test_search_anchor_ids_are_stable(self):
         source = _read("ConnectedDevicesPage.qml")
         for anchor_id in ANCHOR_IDS["ConnectedDevicesPage.qml"]:
-            self.assertIn('"id":"%s"' % anchor_id, source,
+            self.assertIn('anchorId: "%s"' % anchor_id, source,
                           f"anchor missing or rewritten: {anchor_id}")
 
     def test_business_owners_unchanged(self):
@@ -1214,7 +1089,7 @@ class TestBluetoothSubpagesRebuild(unittest.TestCase):
         self.assertIn("BluetoothService.pairDevice(", source)
         self.assertIn("root.pendingAddress", source)
         for anchor_id in ANCHOR_IDS["BluetoothPairingPage.qml"]:
-            self.assertIn('"id":"%s"' % anchor_id, source)
+            self.assertIn('anchorId: "%s"' % anchor_id, source)
 
     def test_device_page_uses_atoms_and_keeps_flow(self):
         source = _read("BluetoothDevicePage.qml")

@@ -6,8 +6,8 @@ existing normalizedOption fallbacks, and every settings route carries a
 top-level description for the upcoming two-line NavPane (T3 M2 consumer).
 """
 
-import json
 import re
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -60,14 +60,14 @@ class TestRouteDescriptions(unittest.TestCase):
     """Every route carries a non-empty top-level description."""
 
     def test_every_route_has_a_nonempty_description(self):
-        document = json.loads(
-            (SHELL / "plugins" / "settings" / "settings-routes.json").read_text(encoding="utf-8"))
-        routes = document["routes"]
+        manifest = tomllib.loads(
+            (SHELL / "plugins" / "settings" / "manifest.toml").read_text(encoding="utf-8"))
+        routes = [entry for entry in manifest["settings"] if "route" not in entry]
         # 45361df 定向瘦身（删除抽屉/显示/自启动/默认应用页面）后的真实规模底线；
-        # 当时断言未随瘦身更新，S0-1 随测试清算对齐。
+        # S0-2 起路由声明住 manifest.toml（[[settings]] 无 route 键 = 顶层路由）。
         self.assertGreaterEqual(len(routes), 16)
-        missing = [route["id"] for route in routes
-                   if not str(route.get("description", "")).strip()]
+        missing = [entry["id"] for entry in routes
+                   if not str(entry.get("description", "")).strip()]
         self.assertEqual(missing, [], f"routes without description: {missing}")
 
 
