@@ -82,23 +82,30 @@ Shell 是极致精简的**微内核宿主**：宿主只保留装配（`SlotHost`
 主题代币（`ThemeTokens`/ThemeService）与账本投影（`StateProjection`）。内核侧
 三条（同一账本、单一事件通道、点分 ID）冻结在 plugin-model §6，此处承载实现契约。
 
-- **六大几何插槽**：所有 Shell 插件（`shell/plugins/<domain>/`，`runtime = true`，
-  manifest 与代码同目录——目录即单元，KM4.5 后 modules/ 已正名并入）
-  向唯一的 6 种几何插槽声明挂载——`edge`（bar/dock）、`island`（keystone）、
+- **六大几何插槽**：所有 Shell 插件（一方 `shell/plugins/<domain>/`，三方
+  `~/.local/share/nyxuri/plugins/<id>/`——S1-3 起二根扫描）向唯一的 6 种几何插槽
+  声明挂载——`edge`（bar/dock）、`island`（keystone）、
   `overlay`（launcher/lock/session/settings/regionselector）、`drawer`（sidebars）、
   `surface:desktop`（desktopcards/wallpaper）、`popup:notification`（notifications）。
   插槽归属数据在插件自己的 `manifest.toml`（kinds + `[entryPoints]`），由
-  `services/PluginRegistry.qml` 运行时读取聚合（S0-2 四件套退役），与
+  `services/PluginRegistry.qml` 运行时读取聚合（S1-3 心脏 = Omarchy 806 行
+  `PluginRegistry.qml` 物理整抄后定向剪裁，基线 commit `c91fc6a`：守护三件套与
+  分段流解析原样保留，shell.json 开关机器删除——开关真相唯一留在引擎账本；
+  三方 id 必须 reverse-DNS、`shell.` / `nyxuri.` 命名空间保留），与
   `shell/plugins/` 的同步由 `shell/tests/test_plugin_manifests.py` 强制。
 - **数据驱动装载**：`AppShell.qml` 不按名实例化任何单元组件；`SlotHost` 以
-  `Repeater + Loader` 依目录装配，`active` 只读 `StateProjection`。单元 `disabled`
+  `Repeater + Loader` 依目录装配，`active` 只读 `StateProjection`，且以投影
+  `primed`（首次账本吸收落定）为闸门——禁用单元冷启动零实例化、不闪挂（S1-3
+  探针撞出的竞态）。单元 `disabled`
   即 `Loader.active = false`：实例销毁，Process/Timer/Socket/回调全部注销；冷启动
-  未启用域零读文件、零实例化。槽仲裁归宿主：lock 持有期间禁卸载（延迟至解锁）；
-  keystone 在场时独占 `popup:notification` 槽。
+  未启用域零读文件、零实例化。槽仲裁归宿主且按 kind 判定：lock 持有期间禁卸载
+  （延迟至解锁）；keystone 在场时独占 `popup:notification` 槽——任意非 keystone 的
+  popup:notification 行（三方同规）让位。
 - **单一开关真相**：Shell 永不直写账本。开关只经 `UnitControlService` 派发
-  `nyxuri on/off shell.<domain>`，UI 不乐观翻转——`unit-changed` 事件
+  `nyxuri on/off <unitId>`（完整账本键：一方 `shell.<domain>`，三方 reverse-DNS
+  全名），UI 不乐观翻转——`unit-changed` 事件
   （`qs ipc call unit reload`，宿主 `IpcHandler target: "unit"` 接收）到达后由
-  `StateProjection` 重投影。账本无记录 = 默认启用；账本损坏 = 全启用降级 + 诊断
+  `StateProjection` 重投影（读账本顶层 `plugins` 键）。账本无记录 = 默认启用；账本损坏 = 全启用降级 + 诊断
   横幅。外观轴（位置/样式/覆盖等）仍归 PersonalizationConfig，与开关轴正交。
 - **单元自有 IPC**：单元的 IPC surface 属单元（lock/spotlight/power-menu/
   control-center/settings/keystone），随单元装载生死；宿主只保留通用面

@@ -26,7 +26,7 @@ S1 开工执行以本页裁决为机器验收基准（全局门禁 4）。
 
 | 资产 | 规模 | 内容 | 服务站点 | 裁决 | 理由与落地动作 |
 | --- | --- | --- | --- | --- | --- |
-| `services/PluginRegistry.qml` | 806 行 | 三方目录扫描、enable/disable 经 shell.json、trust/capabilities、clone/卸载、本地变更热重载（inotifywait + 150ms timer）、`pluginLoadFailed` 信号、`watcherReaper` | S1 核心中枢 | **改造（以原版为基准物理拷入）** | 物理复制至 `shell/services/` 作为基线，保留 `localPluginWatcher`、`watcherReaper`、`parseScanOutput` 与能力标记；剪裁点：扫描路径换 `~/.local/share/nyxuri/plugins/<id>/`，调用已定稿的 `PluginManifest.js` (TOML)，开关改读 `StateProjection`，删除原版 `shell.json` 写入代码。 |
+| `services/PluginRegistry.qml` | 806 行 | 三方目录扫描、enable/disable 经 shell.json、trust/capabilities、clone/卸载、本地变更热重载（inotifywait + 150ms timer）、`pluginLoadFailed` 信号、`watcherReaper` | S1 核心中枢 | **已落地（S1-3，改造）** | 基线 commit `c91fc6a` 纯拷贝（cmp 字节一致），剪裁后 429 行。保留原样：守护三件套、`parseScanOutput` 分段流解析、`ensureUserDir`、`localPluginIdForPath`、启动链、四信号。实况剪裁：shell.json 开关与 bar 布局机器按 D 节预裁决删除（开关真相 = 账本，`UnitControlService → nyxuri on/off`）；**能力标记随门面一并推迟**（2026-11-01 作者拍板，见裁决登记补遗）；containment 安全检查单实现化迁入 `PluginManifest.js`，registry 层新增 reverse-DNS + 保留命名空间拒绝（镜像引擎 `sources.py`）。二根扫描（`shareRoot/plugins` + `dataHome/plugins`，find 不跟软链 = 禁软链扫描层形态）；S0-2 五视图并轨回植，行增 `unitId` 完整账本键；热重扫 150ms 去抖入心脏（原版接线在宿主注入工厂）。整抄护栏 = `tests/test_plugin_manifests.py:TestThirdPartyHeart`（器官必在 / 疤疤零命中）。实机证据：探针冷启动零实例化 → on 挂载 → off 析构 → 热改 manifest 重扫重挂 → `shell.evil` 拒绝 → 移除零残留，全程零宿主文件改动、零 ERROR。 |
 | `services/PluginRegistryApi.qml` | 32 行 | 注册表暴露给插件的 API 面（installedPlugins、entryPointUrl） | S1 门面 | **推迟（S1-0 改裁）** | 消费者 = 三方 ui 插件本体；v1 零三方 ui 插件，抄入即死代码。触发条件见节尾裁决变更登记。 |
 | `services/PluginShellApi.qml` | 70 行 | 宿主 API（summon / hide / toggle / isPluginOpen 等） | S1 门面 | **推迟（S1-0 改裁）** | 同上；宿主侧注入工厂（参考树 `shell.qml` L432–818 约 390 行）随门面同批，不提前搬。 |
 | `services/PluginBarStateApi.qml` | 23 行 | bar 状态 API（只读状态投影） | S1 门面 | **推迟（S1-0 改裁）** | 同上。 |
@@ -152,6 +152,14 @@ FileSearch/Spotlight tool/Recording 等)是各自域的流管理与生命周期,
 | `add` 默认态 | off（账本唯一开关真相），`--enable` 顺带启用 |
 | 来源真相 | 账本顶层 `sources` 键 `{id: {url, commit, added}}`，与 `forms` 键同模式，不碰五字段冻结 |
 | orbit-launcher 去留 | 留一方（noctalia manifest 声明）；`radial-launcher` 动作从一方注册表推导路径，与 translate 走三方注册表同一消费模式 |
+
+**补遗（S1-3 落地日，同日拍板）**：能力标记 `trustedCapabilities` /
+`stampHostCapabilities`（~25 行）**随门面一并推迟**——其唯一消费者是门面系统，
+一方 manifest 亦无 capabilities 词表，抄入即零消费者死代码；触发条件与门面相同。
+原 A 节该行「保留能力标记」按此改读。同轮核对：`Commons/IpcRegistry.qml` +
+`ShellIpc.qml`（A 节「改造」行）**无需拷入**——Nyxuri 单元 IPC 面本就随单元装载
+生死、由单元根自注册（`ActionGateway` + `--ipc` 网关），三方插件装载即获同一
+通道，Omarchy 的注册分发骨架在此无增量价值。
 
 ## S1 动词 ↔ 资产映射（开工首日按此过堂）
 

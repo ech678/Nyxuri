@@ -24,6 +24,9 @@
    代码，零宿主改动」不再受静态名单牵制）。
 5. config root 之外的插件（S1 第三方 `~/.local/share/nyxuri/plugins/<id>/`）与
    root 内插件同形态，实测同为 20/20——S1 接入清单的装载面由本定案覆盖。
+   S1-3 对抗探针补全池覆盖面：`qs.commons` / `qs.commons.i18n` / `qs.services` /
+   `qs.ui` 四池 import 从树外 file:// 全部解析，ui 原子类型实例化成功
+   （共享层 qmldir 合成由 shell.qml 顶层 import 保证，与装载来源无关）。
 
 ## 单例登记（S0-2 实机教训，2026-11-01）
 
