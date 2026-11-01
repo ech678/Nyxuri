@@ -713,6 +713,16 @@ def load_manifest_for(app_name: str) -> ModuleManifest:
 
 _MANIFEST_CACHE: Optional[List[Tuple[str, "ModuleManifest"]]] = None
 
+def invalidate_manifest_cache() -> None:
+    """Drop the process-wide discovery cache.
+
+    Third-party lifecycle verbs (S1 ``add``/``remove``) mutate the blueprint
+    tree mid-process; the next ``discover_manifest_apps`` must see the new
+    truth instead of a stale snapshot.
+    """
+    global _MANIFEST_CACHE
+    _MANIFEST_CACHE = None
+
 def discover_manifest_apps() -> List[Tuple[str, ModuleManifest]]:
     """Scan every plugin directory under configs/.
 

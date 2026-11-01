@@ -360,6 +360,20 @@ class Environment:
                 self.state_dir = self.home / ".local/state" / STORAGE_NAME
         else:
             self.state_dir = self.home / ".local/state" / STORAGE_NAME
+        # Third-party plugin data root (H4: data lives in share, not config;
+        # plugin-model.md §8). Same home-contained policy as state_dir.
+        raw_data = os.environ.get("XDG_DATA_HOME")
+        if raw_data:
+            data_path = Path(raw_data)
+            try:
+                if data_path.is_relative_to(self.home):
+                    self.data_dir = data_path / STORAGE_NAME
+                else:
+                    self.data_dir = self.home / ".local/share" / STORAGE_NAME
+            except (ValueError, AttributeError):
+                self.data_dir = self.home / ".local/share" / STORAGE_NAME
+        else:
+            self.data_dir = self.home / ".local/share" / STORAGE_NAME
         self.cache_dir = self.home / ".cache" / STORAGE_NAME
         self.config_dir = self.home / ".config"
 

@@ -7,12 +7,19 @@ record shape against ``nyxuri.kernel.ledger``.
 """
 
 import json
+import os
 import tomllib
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
+import nyxuri.core as core
 from nyxuri.kernel import ledger, registry
-from nyxuri.deploy.manifest import load_manifest
+from nyxuri.deploy.manifest import (
+    discover_manifest_apps,
+    invalidate_manifest_cache,
+    load_manifest,
+)
 from nyxuri.kernel.resolver import resolve_order
 from tests.utils import TempEnv
 
@@ -158,6 +165,133 @@ class TestKernelRegistry(unittest.TestCase):
             self._stage_configs(ctx, {})
             with self.assertRaises(KeyError):
                 registry.load_plugin("ghost")
+
+
+class TestThirdPartyRoot(unittest.TestCase):
+    """S1 third-party data root: ~/.local/share/nyxuri/plugins/<id>/ (H4/H8).
+
+    plugin-model.md §8 + manifest-schema.md 第三方章: ids derive from the raw
+    directory name (full reverse-DNS), official blueprints shadow third-party
+    ones, reserved namespaces are unclaimable, symlinks are rejected at the
+    scan layer.
+    """
+
+    def setUp(self):
+        self.root_dir = Path(__file__).resolve().parent.parent
+
+    def _stage_third_party(self, ctx, spec: dict[str, str | None]) -> Path:
+        """Create plugin dirs under the temp third-party data root.
+
+        spec maps plugin id -> manifest TOML body (None = bare dir).
+        """
+        data_plugins = ctx.env.data_dir / "plugins"
+        data_plugins.mkdir(parents=True, exist_ok=True)
+        for uid, toml_text in spec.items():
+            plugin = data_plugins / uid
+            plugin.mkdir()
+            if toml_text is not None:
+                text = f'schemaVersion = 1\nid = "{uid}"\nkinds = ["config"]\n' + toml_text
+                (plugin / "manifest.toml").write_text(text, encoding="utf-8")
+        return data_plugins
+
+    def test_data_dir_xdg_policy(self):
+        """data_dir follows XDG_DATA_HOME under home; outside-home falls back."""
+        with TempEnv() as ctx:
+            self.assertEqual(
+                ctx.env.data_dir, ctx.home / ".local" / "share" / "nyxuri"
+            )
+            with patch.dict(
+                os.environ, {"XDG_DATA_HOME": str(ctx.home / "xdg-data")}
+            ):
+                self.assertEqual(
+                    core.Environment().data_dir, ctx.home / "xdg-data" / "nyxuri"
+                )
+            with patch.dict(os.environ, {"XDG_DATA_HOME": "/opt/elsewhere"}):
+                self.assertEqual(
+                    core.Environment().data_dir,
+                    ctx.home / ".local" / "share" / "nyxuri",
+                )
+
+    def test_third_party_discovered_and_loaded(self):
+        """A directory under the data root is a registry plugin, id = dirname."""
+        with TempEnv() as ctx:
+            data_plugins = self._stage_third_party(
+                ctx, {"io.github.test.cool": None}
+            )
+            self.assertIn("io.github.test.cool", registry.plugin_ids())
+            self.assertEqual(registry.load_plugin("io.github.test.cool").id,
+                             "io.github.test.cool")
+            self.assertEqual(
+                registry.plugin_dir("io.github.test.cool"),
+                data_plugins / "io.github.test.cool",
+            )
+
+    def test_third_party_manifest_id_must_match_dir(self):
+        """Same root-derived id rule as official roots: drift is a parse error."""
+        with TempEnv() as ctx:
+            self._stage_third_party(ctx, {"io.github.test.cool": None})
+            mpath = (ctx.env.data_dir / "plugins" / "io.github.test.cool"
+                     / "manifest.toml")
+            mpath.write_text(
+                'schemaVersion = 1\nid = "someone.else"\nkinds = ["config"]\n',
+                encoding="utf-8",
+            )
+            with self.assertRaises(ValueError):
+                registry.load_plugin("io.github.test.cool")
+
+    def test_official_blueprint_wins_shadow(self):
+        """A same-named official blueprint shadows the third-party entry."""
+        with TempEnv() as ctx:
+            self._stage_third_party(ctx, {"kitty": None})
+            self.assertEqual(
+                registry.plugin_dir("kitty"), ctx.env.plugins_src / "kitty"
+            )
+
+    def test_symlinked_plugin_is_invisible(self):
+        """禁软链 at the scan layer: a symlinked plugin dir does not exist."""
+        with TempEnv() as ctx:
+            real = ctx.home / "outside-real-plugin"
+            real.mkdir()
+            (real / "manifest.toml").write_text(
+                'schemaVersion = 1\nid = "io.github.test.link"\nkinds = ["config"]\n',
+                encoding="utf-8",
+            )
+            link = self._stage_third_party(ctx, {}) / "io.github.test.link"
+            link.symlink_to(real)
+            self.assertNotIn("io.github.test.link", registry.plugin_ids())
+            self.assertIsNone(registry.plugin_dir("io.github.test.link"))
+            with self.assertRaises(KeyError):
+                registry.load_plugin("io.github.test.link")
+
+    def test_reserved_prefix_invisible_in_data_root(self):
+        """Reserved namespaces are unclaimable from the third-party root."""
+        with TempEnv() as ctx:
+            self._stage_third_party(ctx, {"shell.evil": None, "nyxuri.evil": None})
+            self.assertNotIn("shell.evil", registry.plugin_ids())
+            self.assertNotIn("nyxuri.evil", registry.plugin_ids())
+
+    def test_shell_namespace_still_decisive(self):
+        """Regression: longest-prefix rule survives the third root."""
+        with TempEnv() as ctx:
+            self._stage_third_party(ctx, {"shell.fake": None})
+            self.assertEqual(registry.load_plugin("shell.bar").id, "shell.bar")
+            self.assertNotIn("shell.fake", registry.plugin_ids())
+
+    def test_manifest_cache_invalidation(self):
+        """invalidate_manifest_cache() makes the next discovery see new truth."""
+        with TempEnv() as ctx:
+            src = ctx.home / "cache-probe-src"
+            src.mkdir()
+            ctx.env.plugins_src = src
+            # Populate the cache on an empty root, then add the plugin: the
+            # second discovery must still serve the stale snapshot.
+            self.assertEqual(discover_manifest_apps(), [])
+            (src / "cache-probe").mkdir()
+            self.assertEqual(discover_manifest_apps(), [])
+            invalidate_manifest_cache()
+            self.assertIn(
+                "cache-probe", [name for name, _ in discover_manifest_apps()]
+            )
 
 
 class TestKernelLedger(unittest.TestCase):
