@@ -422,6 +422,7 @@ Item {
         groups: root.railGroups
         current: root.activeGroup
         dimmed: root.railDimmed
+        staggerMs: root.staggerMs
         onPicked: id => {
             root.activeGroup = id;
         }
