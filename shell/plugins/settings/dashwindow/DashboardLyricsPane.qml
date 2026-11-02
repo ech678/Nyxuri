@@ -8,12 +8,11 @@ import "lyrics" as Lyrics
 import "lyrics/LyricsParser.js" as LyricsParser
 import qs.commons.i18n
 
-// Lyric pane. The sweep follows dux-shell's LyricsVocal: the line is drawn
-// twice — a base layer with every word in the body colour and an overlay that
-// renders only the words already sung, tinted toward the accent by an alpha
-// that advances with the audio. Rebuilding a rich-text string per frame (the
-// earlier approach) allocates on every tick; two static layers plus one animated
-// alpha does not.
+// Lyric transcript. Follows dux-shell's LyricsOverlay: the whole song is a
+// scrolling ListView with a third-of-viewport header and footer so the first
+// and last lines can still reach the centre, rather than a fixed window of
+// seven rows. Rows scale and dim by distance from the active line, and clicking
+// one seeks there.
 Item {
     id: root
 
@@ -29,39 +28,22 @@ Item {
     readonly property color textColor: root.scheme.colOnLayer0
     readonly property color dimColor: root.scheme.colSubtext
 
-    // dux's opacity ladder: the neighbours stay legible rather than fading to
-    // near-invisible, which keeps the pane from reading as a single line.
     readonly property real nearOpacity: 0.55
     readonly property real farOpacity: 0.3
     readonly property real lineHeight: 1.25
 
-    readonly property int radius: 3
-    readonly property int slotCount: root.radius * 2 + 1
-
     readonly property var lines: lyricsService.lines
     readonly property int currentIndex: lyricsService.currentLineIndex
     readonly property bool ready: lyricsService.state === "ready" && lyricsService.hasLyrics
-                                  && root.currentIndex >= 0
 
-    readonly property real leadFontSize: Math.max(15, Math.min(34, Math.min(root.height / 12, root.width
-                                                                            / 11)))
-
-    function lineIndexFor(slot) {
-        const index = root.currentIndex + (slot - root.radius);
-        return index >= 0 && index < root.lines.length ? index : -1;
+    // Distance to the active line drives both scale and dimming. Unbounded
+    // rather than clamped to a window, because the list shows the whole song.
+    function distanceFor(index) {
+        return root.currentIndex < 0 ? 99 : Math.abs(index - root.currentIndex);
     }
 
-    function lineAt(slot) {
-        const index = root.lineIndexFor(slot);
-        return index >= 0 ? root.lines[index] : null;
-    }
-
-    function distanceFor(slot) {
-        return Math.abs(slot - root.radius);
-    }
-
-    function scaleFor(slot) {
-        const d = root.distanceFor(slot);
+    function scaleFor(index) {
+        const d = root.distanceFor(index);
         if (d === 0)
             return 1;
         if (d === 1)
@@ -69,8 +51,8 @@ Item {
         return 0.56;
     }
 
-    function opacityFor(slot) {
-        const d = root.distanceFor(slot);
+    function opacityFor(index) {
+        const d = root.distanceFor(index);
         if (d === 0)
             return 1;
         if (d === 1)
@@ -78,18 +60,19 @@ Item {
         return root.farOpacity;
     }
 
-    // Index of the word being sung, or -1 when the line has no word timings.
+    readonly property real leadFontSize: Math.round(Math.max(15, Math.min(36, Math.min(root.height / 12,
+                                                                                       root.width / 11))))
+
     readonly property int activeWordIndex: {
-        if (!root.ready)
+        if (!root.ready || root.currentIndex < 0)
             return -1;
         const line = root.lines[root.currentIndex];
         return line ? LyricsParser.wordIndexAt(line, lyricsService.positionMs) : -1;
     }
 
-    // Overlay text for the active line: sung words in the accent, everything
-    // after them kept in the layout but drawn transparent. Omitting the tail
-    // instead would let the overlay re-wrap from the line start and collide
-    // with the base layer underneath.
+    // Overlay text for the active line: sung words in the accent, the rest kept
+    // in the layout but transparent. Omitting the tail would let the overlay
+    // re-wrap from the line start and collide with the base layer.
     function sungText(line, uptoWord) {
         if (!line || !line.words || line.words.length === 0)
             return "";
@@ -103,8 +86,6 @@ Item {
         return html;
     }
 
-    // Progress through the word currently being sung, 0..1. Drives the overlay's
-    // alpha so the boundary moves with the audio between word starts.
     readonly property real wordProgress: {
         if (!root.ready || root.activeWordIndex < 0)
             return 0;
@@ -114,125 +95,172 @@ Item {
         return LyricsParser.wordProgress(line.words[root.activeWordIndex], lyricsService.positionMs);
     }
 
-    ColumnLayout {
+    // Follow the active line while playing. `following` turns off as soon as the
+    // reader scrolls, so the list does not yank itself back mid-read.
+    property bool following: true
+
+    function scrollToCurrent() {
+        if (root.currentIndex >= 0)
+            transcript.positionViewAtIndex(root.currentIndex, ListView.Center);
+    }
+
+    onCurrentIndexChanged: {
+        if (root.following)
+            root.scrollToCurrent();
+    }
+
+    onReadyChanged: {
+        if (root.ready)
+            Qt.callLater(() => root.scrollToCurrent());
+    }
+
+    Component.onCompleted: {
+        if (root.ready)
+            Qt.callLater(() => root.scrollToCurrent());
+    }
+
+    ListView {
+        id: transcript
+
         anchors.fill: parent
-        spacing: 4
+        clip: true
         visible: root.ready
+        model: root.lines
+        spacing: 4
+        reuseItems: true
+        boundsBehavior: Flickable.StopAtBounds
+        // A third of the viewport at each end lets the first and last lines
+        // reach the centre instead of stopping at the edge.
+        header: Item {
+            width: transcript.width
+            height: transcript.height / 3
+        }
+        footer: Item {
+            width: transcript.width
+            height: transcript.height / 3
+        }
 
-        Repeater {
-            model: root.slotCount
+        onMovementEnded: root.following = false
+        onDraggingChanged: {
+            if (transcript.dragging)
+                root.following = false;
+        }
 
-            delegate: Item {
-                id: slotRoot
+        delegate: Item {
+            id: lyricRow
 
-                required property int index
+            required property int index
+            required property var modelData
 
-                readonly property var line: root.lineAt(slotRoot.index)
-                readonly property bool active: root.distanceFor(slotRoot.index) === 0
-                readonly property bool timed: slotRoot.active && slotRoot.line && slotRoot.line.words
-                                              && slotRoot.line.words.length > 0
-                readonly property string translation: slotRoot.line ? (slotRoot.line.translation ?? "") : ""
+            width: transcript.width
+            height: column.implicitHeight + 10
 
-                Layout.fillWidth: true
-                Layout.fillHeight: true
+            readonly property bool active: index === root.currentIndex
+            readonly property bool timed: root.ready && root.lines[index] && root.lines[index].words
+                                          && root.lines[index].words.length > 0
+            readonly property string translation: modelData ? (modelData.translation ?? "") : ""
 
-                ColumnLayout {
-                    anchors.fill: parent
-                    spacing: 2
+            Column {
+                id: column
 
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 2
 
-                        Item {
-                            id: lineBox
+                Item {
+                    id: textSlot
 
-                            readonly property real scaleValue: root.scaleFor(slotRoot.index)
-                            readonly property real opacityValue: root.opacityFor(slotRoot.index)
+                    width: parent.width
+                    height: baseLine.implicitHeight
+                    scale: root.scaleFor(lyricRow.index)
+                    opacity: root.opacityFor(lyricRow.index)
+                    transformOrigin: Item.Center
 
-                            anchors.centerIn: parent
-                            width: parent.width
-                            height: Math.ceil(baseLine.implicitHeight * lineBox.scaleValue)
-                            scale: lineBox.scaleValue
-                            transformOrigin: Item.Center
-                            opacity: lineBox.opacityValue
-
-                            Behavior on scale {
-                                NumberAnimation {
-                                    duration: 500
-                                    easing.type: Easing.BezierSpline
-                                    // M3 expressive default-spatial: overshoots,
-                                    // which is what makes the lead line settle.
-                                    easing.bezierCurve: [0.38, 1.21, 0.22, 1, 1, 1]
-                                }
-                            }
-
-                            Behavior on opacity {
-                                NumberAnimation {
-                                    duration: 200
-                                    easing.type: Easing.BezierSpline
-                                    easing.bezierCurve: [0.34, 0.8, 0.34, 1, 1, 1]
-                                }
-                            }
-
-                            StyledText {
-                                id: baseLine
-
-                                anchors.centerIn: parent
-                                width: parent.width / Math.max(0.01, lineBox.scale)
-                                text: slotRoot.line ? (slotRoot.line.text ?? "") : ""
-                                wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-                                maximumLineCount: 3
-                                elide: Text.ElideRight
-                                horizontalAlignment: Text.AlignHCenter
-                                font.pixelSize: root.leadFontSize
-                                font.weight: slotRoot.active ? Font.Bold : Font.Medium
-                                color: root.textColor
-                                lineHeight: root.lineHeight
-                            }
-
-                            // Sung overlay. Only the active timed line gets one;
-                            // its alpha is the word progress, so the accent
-                            // sweeps across rather than switching on per word.
-                            StyledText {
-                                anchors.fill: baseLine
-                                visible: slotRoot.timed
-                                textFormat: Text.RichText
-                                text: slotRoot.timed ? root.sungText(slotRoot.line, root.activeWordIndex) : ""
-                                wrapMode: baseLine.wrapMode
-                                maximumLineCount: 3
-                                elide: Text.ElideRight
-                                horizontalAlignment: Text.AlignHCenter
-                                font: baseLine.font
-                                lineHeight: baseLine.lineHeight
-                                color: Qt.tint(root.textColor, Qt.rgba(root.accent.r, root.accent.g,
-                                                                       root.accent.b, root.wordProgress))
-
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: 120
-                                        easing.type: Easing.Linear
-                                    }
-                                }
-                            }
+                    Behavior on scale {
+                        NumberAnimation {
+                            duration: 500
+                            easing.type: Easing.BezierSpline
+                            // M3 expressive default-spatial: overshoots, which
+                            // is what makes the lead line settle into place.
+                            easing.bezierCurve: [0.38, 1.21, 0.22, 1, 1, 1]
                         }
                     }
 
-                    // Translation under the active line only; translated
-                    // neighbours would compete with the lyric for attention.
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 200
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: [0.34, 0.8, 0.34, 1, 1, 1]
+                        }
+                    }
+
                     StyledText {
-                        Layout.fillWidth: true
-                        visible: slotRoot.active && slotRoot.translation !== ""
-                        text: slotRoot.translation
-                        wrapMode: Text.Wrap
-                        maximumLineCount: 2
+                        id: baseLine
+
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        text: lyricRow.modelData ? (lyricRow.modelData.text ?? "") : ""
+                        wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+                        maximumLineCount: 3
                         elide: Text.ElideRight
                         horizontalAlignment: Text.AlignHCenter
-                        font.pixelSize: Math.max(11, root.leadFontSize * 0.5)
-                        font.weight: Font.Medium
-                        color: root.dimColor
-                        opacity: 0.8
+                        font.pixelSize: root.leadFontSize
+                        font.weight: lyricRow.active ? Font.Bold : Font.Medium
+                        color: root.textColor
+                        lineHeight: root.lineHeight
                     }
+
+                    StyledText {
+                        anchors.fill: baseLine
+                        visible: lyricRow.timed
+                        textFormat: Text.RichText
+                        text: lyricRow.timed ? root.sungText(lyricRow.modelData, root.activeWordIndex) : ""
+                        wrapMode: baseLine.wrapMode
+                        maximumLineCount: 3
+                        elide: Text.ElideRight
+                        horizontalAlignment: Text.AlignHCenter
+                        font: baseLine.font
+                        lineHeight: baseLine.lineHeight
+                        color: Qt.tint(root.textColor, Qt.rgba(root.accent.r, root.accent.g, root.accent.b,
+                                                               root.wordProgress))
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 120
+                                easing.type: Easing.Linear
+                            }
+                        }
+                    }
+                }
+
+                StyledText {
+                    width: parent.width
+                    visible: lyricRow.active && lyricRow.translation !== ""
+                    text: lyricRow.translation
+                    wrapMode: Text.Wrap
+                    maximumLineCount: 2
+                    elide: Text.ElideRight
+                    horizontalAlignment: Text.AlignHCenter
+                    font.pixelSize: Math.max(11, root.leadFontSize * 0.5)
+                    font.weight: Font.Medium
+                    color: root.dimColor
+                    opacity: 0.8
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                enabled: root.ready
+                onClicked: {
+                    const line = root.lines[lyricRow.index];
+                    if (!line)
+                        return;
+                    root.following = true;
+                    const player = MediaService.active;
+                    if (player && player.position !== undefined)
+                        player.position = line.startMs / 1000;
                 }
             }
         }
