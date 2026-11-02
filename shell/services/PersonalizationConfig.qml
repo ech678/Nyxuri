@@ -1913,6 +1913,7 @@ Singleton {
                 "lyricOffsetMs": root.lyricOffsetMs,
                 "lyricFontSize": root.lyricFontSize,
                 "lyricAlbumArtTint": root.lyricAlbumArtTint,
+                "lyricShowTranslation": root.lyricShowTranslation,
                 "cursorTheme": root.cursorTheme,
                 "cursorSize": root.cursorSize,
                 "cursorHideWhenTyping": root.cursorHideWhenTyping,
@@ -2063,6 +2064,9 @@ Singleton {
         root.lyricFontSize = normalizedBoundedInt(theme.lyricFontSize, 26, root.lyricFontSizeMin,
                                                   root.lyricFontSizeMax);
         root.lyricAlbumArtTint = theme.lyricAlbumArtTint === true;
+        // Absent in older configs; default to on rather than mirroring the
+        // `=== true` pattern used above, which would read a missing key as off.
+        root.lyricShowTranslation = theme.lyricShowTranslation !== false;
         root.themeMode = theme.mode === "light" ? "light" : "dark";
         root.superKeyStyle = root.superKeyStyles.some(style => style.value === theme.superKeyStyle)
                 ? theme.superKeyStyle : "text";

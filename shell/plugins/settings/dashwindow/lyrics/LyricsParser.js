@@ -235,7 +235,7 @@ function parse(text, translationLines) {
     var source = String(text || "").trim();
     if (source === "")
         return [];
-    var rows = Array.isArray(translationLines) ? translationLines : [];
+    var rows = (translationLines && typeof translationLines.length === "number") ? translationLines : [];
     if (looksLikeKrc(source))
         return parseKrc(source, rows);
     return parseLrc(source);
