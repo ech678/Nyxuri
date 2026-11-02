@@ -32,6 +32,8 @@ Item {
     readonly property real farOpacity: 0.3
     readonly property real lineHeight: 1.25
 
+    readonly property bool showTranslation: PersonalizationConfig.lyricShowTranslation
+
     readonly property var lines: lyricsService.lines
     readonly property int currentIndex: lyricsService.currentLineIndex
     readonly property bool ready: lyricsService.state === "ready" && lyricsService.hasLyrics
@@ -268,16 +270,26 @@ Item {
 
                 StyledText {
                     width: parent.width
-                    visible: lyricRow.active && lyricRow.translation !== ""
+                    visible: root.showTranslation && lyricRow.translation.trim() !== ""
                     text: lyricRow.translation
                     wrapMode: Text.Wrap
                     maximumLineCount: 2
                     elide: Text.ElideRight
                     horizontalAlignment: Text.AlignHCenter
-                    font.pixelSize: Math.max(11, root.leadFontSize * 0.5)
-                    font.weight: Font.Medium
+                    font.pixelSize: Math.max(10, root.leadFontSize * (lyricRow.active ? 0.48 : 0.38))
+                    font.weight: lyricRow.active ? Font.Medium : Font.Normal
                     color: root.dimColor
-                    opacity: 0.8
+                    // Dim the translation with its line so a wall of translated
+                    // neighbours does not compete with the lyric being sung.
+                    opacity: lyricRow.active ? 0.9 : root.opacityFor(lyricRow.index) * 0.8
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 200
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: [0.34, 0.8, 0.34, 1, 1, 1]
+                        }
+                    }
                 }
             }
 

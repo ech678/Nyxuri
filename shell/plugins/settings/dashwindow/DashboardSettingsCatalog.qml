@@ -357,6 +357,13 @@ QtObject {
                     "title": I18n.tr("Tint from album art"),
                     "icon": "palette",
                     "kw": "lyrics album art colour color palette extract 歌词 封面 取色"
+                },
+                {
+                    "type": "toggle",
+                    "key": "lyrics:Show translation",
+                    "title": I18n.tr("Show translation"),
+                    "icon": "translate",
+                    "kw": "lyrics translation translate subtitle 歌词 翻译 译文"
                 }
             ]
         },

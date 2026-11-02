@@ -16,7 +16,7 @@ Item {
         } else {
             trackDebounce.stop();
             positionSyncTimer.stop();
-            interpolationTimer.stop();
+            tickTimer.stop();
             if (backend && typeof backend.cancel === "function")
                 backend.cancel();
         }
@@ -29,9 +29,15 @@ Item {
     readonly property string artist: player && player.trackArtist ? String(player.trackArtist) : ""
     // MPRIS reports microseconds; the fetcher and every timestamp in this
     // service work in seconds.
+    // MPRIS reports track length in microseconds, but Quickshell's MprisPlayer
+    // hands it over already divided by 1e6 for some backends and raw for
+    // others. A real track is minutes long, so anything under ~100k is already
+    // in seconds and anything above is microseconds — no track is 27 hours.
     readonly property real durationSeconds: {
-        const micros = player && player.length ? Number(player.length) : 0;
-        return micros > 0 ? micros / 1000000 : 0;
+        const raw = player && player.length ? Number(player.length) : 0;
+        if (raw <= 0)
+            return 0;
+        return raw > 100000 ? raw / 1000000 : raw;
     }
 
     // --- Fetch state --------------------------------------------------------
@@ -70,11 +76,29 @@ Item {
             PersonalizationConfig.setLyricOffsetMs(root.offsetMs);
     }
 
-    // Locally interpolated playback clock, in seconds, pre-offset. Advanced by
-    // the 20Hz timer and corrected against MPRIS by the 350ms timer. Kept
-    // separate from MediaService.currentPosition so this service can run a
-    // finer clock without changing what every other media surface consumes.
-    property real _interpolatedSeconds: 0
+    // Playback clock as an anchor plus wall-clock extrapolation, following
+    // dux-shell's LyricsController. Accumulating a delta every tick drifts: each
+    // tick carries its own scheduling error and nothing ever cancels it, so the
+    // lyric creeps ahead of the audio over a few minutes. An anchor is re-set
+    // only on the events that actually move the clock — play/pause, seek, track
+    // change — and the position is recomputed from Date.now() in between.
+    property real _anchorSeconds: 0
+    property double _anchorWallMs: 0
+    property bool _anchorPlaying: false
+
+    // Re-seat the anchor on the player's reported position.
+    function _anchorTo(positionSeconds) {
+        root._anchorSeconds = Math.max(0, Number(positionSeconds) || 0);
+        root._anchorWallMs = Date.now();
+        root._anchorPlaying = root._isPlaying;
+    }
+
+    // Clock reading, pre-offset, in seconds.
+    readonly property real _clockSeconds: {
+        if (!root._anchorPlaying || root._anchorWallMs <= 0)
+            return root._anchorSeconds;
+        return root._anchorSeconds + (Date.now() - root._anchorWallMs) / 1000;
+    }
 
     readonly property bool hasLyrics: lines.length > 0
     readonly property bool available: backendLoader.status === Loader.Ready && backendLoader.item !== null
@@ -86,12 +110,17 @@ Item {
         return player !== null && player.isPlaying === true;
     }
 
-    // Snaps the interpolated clock to the player's real position. Called on
-    // track change and on completion, where easing in from a stale value would
-    // briefly show the wrong lyric.
+    // Pausing must freeze the clock at the position it reached, and resuming
+    // must restart from the player's position rather than from wherever the
+    // wall-clock extrapolation had drifted to.
+    on_IsPlayingChanged: root._resetClock()
+
+    // Snap the anchor to the player's real position. Called on track change and
+    // on completion, where easing in from a stale value would briefly show the
+    // wrong lyric.
     function _resetClock() {
         const player = MediaService.active;
-        root._interpolatedSeconds = player ? Math.max(0, Number(player.position) || 0) : 0;
+        root._anchorTo(player ? Number(player.position) || 0 : 0);
     }
 
     // Exposed as a named property rather than reaching through
@@ -124,15 +153,18 @@ Item {
         root._syncLineIndex();
     }
 
-    // Playback position in ms, offset already applied. Rounded to avoid
-    // re-evaluating the bindings above on sub-millisecond noise.
+    // Playback position in ms, offset already applied.
     //
-    // Driven by `_interpolatedSeconds` rather than MediaService.currentPosition
-    // directly. That shared tick runs at 250ms, which is fine for a progress
-    // bar but not for word-level highlighting: KRC words are often 300-500ms,
-    // so a 4Hz source skips words entirely and the sweep looks like a stutter.
-    // The interpolation timers below advance this at 20Hz and re-sync.
-    readonly property real positionMs: Math.round((root._interpolatedSeconds + root.offsetMs / 1000) * 1000)
+    // Derived from the anchored clock rather than MediaService.currentPosition,
+    // whose shared tick runs at 250ms — fine for a progress bar, too coarse for
+    // word highlighting, where KRC words are often 300-500ms. Re-reading the
+    // anchor is free, so the tick timer only exists to invalidate this binding.
+    readonly property real positionMs: {
+        // Reading the revision is what makes this re-evaluate; the clock itself
+        // is a pure function of the anchor and the wall clock.
+        const _ = tickTimer.revision;
+        return Math.round((root._clockSeconds + root.offsetMs / 1000) * 1000);
+    }
 
     function _clear() {
         root._rawLyrics = "";
@@ -245,6 +277,11 @@ Item {
         onTriggered: root._startFetch()
     }
 
+    // Corrects the anchor against MPRIS. Only a large disagreement re-seats it:
+    // a small one is usually the player echoing a stale or floored position, and
+    // following that would drag the lyric backwards. dux calls this the
+    // "floored echo" case — some players floor Position to whole seconds on
+    // pause and resume.
     Timer {
         id: positionSyncTimer
 
@@ -259,28 +296,33 @@ Item {
             const real = Math.max(0, Number(player.position) || 0);
             if (real <= 0)
                 return;
-            const drift = real - root._interpolatedSeconds;
-            if (Math.abs(drift) > 0.5)
-                root._interpolatedSeconds = real;
-            else if (Math.abs(drift) > 0.05)
-                root._interpolatedSeconds += drift * 0.4;
+            // Within a second of a whole number and behind the clock: this is a
+            // floored echo, not a seek. Ignore it.
+            const lead = root._clockSeconds - real;
+            const wholeSecond = Math.abs(real - Math.round(real)) < 0.05;
+            if (wholeSecond && lead >= 0 && lead < 1.2)
+                return;
+            if (Math.abs(lead) > 0.5)
+                root._anchorTo(real);
         }
     }
 
+    // Invalidates the positionMs binding at 20Hz. The clock itself is derived
+    // from the anchor, so this timer carries no state and cannot drift.
     Timer {
-        id: interpolationTimer
+        id: tickTimer
 
         interval: 50
         repeat: true
         running: root.active && root._isPlaying && root.hasLyrics
-
-        onTriggered: root._interpolatedSeconds += interval / 1000
+        property int revision: 0
+        onTriggered: tickTimer.revision++
     }
 
     Component.onDestruction: {
         trackDebounce.stop();
         positionSyncTimer.stop();
-        interpolationTimer.stop();
+        tickTimer.stop();
         if (backend && typeof backend.cancel === "function")
             backend.cancel();
     }
@@ -289,22 +331,23 @@ Item {
         id: backendLoader
 
         source: "LyricsBackend.qml"
+    }
 
-        // Signals are wired here rather than declared inside the loaded file so
-        // LyricsService stays the single owner of fetch state. A backend that
-        // is not ready simply drops the connection; nothing is fetched before
-        // LyricsService decides to.
-        Connections {
-            target: backendLoader.item
-            ignoreUnknownSignals: true
+    // Declared as a sibling of the Loader, not inside it: a Connections nested
+    // in a Loader is created with the loaded item, so its `target` binding is
+    // evaluated before `backendLoader.item` is assigned and never re-evaluates.
+    // The result was a backend that fetched correctly and reported into
+    // nothing.
+    Connections {
+        target: backendLoader.item
+        ignoreUnknownSignals: true
 
-            function onLyrics(generation, payload) {
-                root._onLyrics(generation, payload);
-            }
+        function onLyrics(generation, payload) {
+            root._onLyrics(generation, payload);
+        }
 
-            function onFetchFailed(generation, message) {
-                root._onFetchError(generation, message);
-            }
+        function onFetchFailed(generation, message) {
+            root._onFetchError(generation, message);
         }
     }
 }

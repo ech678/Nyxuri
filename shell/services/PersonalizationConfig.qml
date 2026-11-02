@@ -259,8 +259,14 @@ Singleton {
 
     property bool lyricAlbumArtTint: true
 
+    property bool lyricShowTranslation: true
+
     function setLyricSource(value) {
         setValue("lyricSource", normalizedOption(root.lyricSources, value, "kugou"));
+    }
+
+    function setLyricShowTranslation(value) {
+        setValue("lyricShowTranslation", value === true);
     }
 
     function setLyricOffsetMs(value) {
