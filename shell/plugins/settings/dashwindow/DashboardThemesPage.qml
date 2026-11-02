@@ -134,9 +134,11 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 200
-            Layout.minimumHeight: 200
-            Layout.maximumHeight: 200
+            // Height follows the taller of the two cards. The template list
+            // grows with however many templates are registered, so a fixed
+            // 200px row let the buttons spill past the card and over the
+            // gallery below.
+            Layout.preferredHeight: Math.max(200, templatesCard.implicitContentHeight + 28)
             spacing: 12
 
             DashboardCard {
@@ -237,10 +239,17 @@ Item {
             }
 
             DashboardCard {
+                id: templatesCard
+
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1
                 Layout.horizontalStretchFactor: 10
                 Layout.fillHeight: true
+                // Header row plus one 26px button per template, four pixels
+                // apart, with the card's own 14px margins on both sides.
+                readonly property real implicitContentHeight: 56 + root.templates.length * 26 + Math.max(0,
+                                                                                                         root.templates.length
+                                                                                                         - 1) * 4
                 tint: Appearance.colors.colLayer1
                 pager: root.pager
                 staggerMs: root.staggerMs
@@ -422,7 +431,13 @@ Item {
                         id: schemeRow
 
                         spacing: 10
-                        height: schemeScroller.height
+                        // The scroller takes the remaining page height, so tying
+                        // the strip row to it made each tile as tall as the
+                        // window and the colour strips stretched with it. Give
+                        // the row a working height and let the tile grid inside
+                        // it stay square-ish.
+                        height: Math.min(schemeScroller.height, 190)
+                        anchors.verticalCenter: parent.verticalCenter
 
                         Repeater {
                             model: root.schemes
@@ -436,7 +451,7 @@ Item {
                                                                  === tileRoot.modelData.value
 
                                 width: 118
-                                height: schemeScroller.height
+                                height: schemeRow.height
 
                                 RippleButton {
                                     id: tile
@@ -486,9 +501,13 @@ Item {
                                                         required property var modelData
 
                                                         Layout.fillWidth: true
-                                                        Layout.fillHeight: true
+                                                        // Height comes from the
+                                                        // strip row. A fillHeight
+                                                        // here lets the strips grow
+                                                        // to the card instead.
                                                         Layout.preferredWidth: 1
-                                                        radius: 11
+                                                        Layout.preferredHeight: 28
+                                                        radius: 8
                                                         color: modelData
                                                     }
                                                 }
