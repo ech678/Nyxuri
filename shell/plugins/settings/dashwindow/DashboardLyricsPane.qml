@@ -36,12 +36,9 @@ Item {
     readonly property int currentIndex: lyricsService.currentLineIndex
     readonly property bool ready: lyricsService.state === "ready" && lyricsService.hasLyrics
 
-    // Distance to the active line drives both scale and dimming. Unbounded
-    // rather than clamped to a window, because the list shows the whole song.
-    function distanceFor(index) {
-        return root.currentIndex < 0 ? 99 : Math.abs(index - root.currentIndex);
-    }
-
+    // Distance by list position. Safe only because `active` is decided from
+    // startMs below: a reused delegate's index always matches its slot, so the
+    // scale is right even though the row it renders may have changed.
     function scaleFor(index) {
         const d = root.distanceFor(index);
         if (d === 0)
@@ -49,6 +46,10 @@ Item {
         if (d === 1)
             return 0.68;
         return 0.56;
+    }
+
+    function distanceFor(index) {
+        return root.currentIndex < 0 ? 99 : Math.abs(index - root.currentIndex);
     }
 
     function opacityFor(index) {
@@ -63,25 +64,55 @@ Item {
     readonly property real leadFontSize: Math.round(Math.max(15, Math.min(36, Math.min(root.height / 12,
                                                                                        root.width / 11))))
 
+    // Word boundary for the sweep. wordIndexAt returns -1 in the gaps between
+    // words, and a -1 here would make the overlay fully transparent mid-line —
+    // the active line would read as dimmer than its neighbours. Fall back to the
+    // last word that has already started, so the highlight holds through gaps.
     readonly property int activeWordIndex: {
         if (!root.ready || root.currentIndex < 0)
             return -1;
         const line = root.lines[root.currentIndex];
-        return line ? LyricsParser.wordIndexAt(line, lyricsService.positionMs) : -1;
+        if (!line || !line.words || line.words.length === 0)
+            return -1;
+        const direct = LyricsParser.wordIndexAt(line, lyricsService.positionMs);
+        if (direct >= 0)
+            return direct;
+        const position = lyricsService.positionMs;
+        let last = -1;
+        for (let i = 0; i < line.words.length; i++) {
+            if (line.words[i].startMs <= position)
+                last = i;
+            else
+                break;
+        }
+        return last;
     }
 
-    // Overlay text for the active line: sung words in the accent, the rest kept
-    // in the layout but transparent. Omitting the tail would let the overlay
-    // re-wrap from the line start and collide with the base layer.
+    // Overlay text for the active line: words already finished take the accent,
+    // the word under the playhead blends from body colour toward accent by its
+    // own progress, and the rest stay in the layout but transparent. Omitting
+    // the tail would let the overlay re-wrap from the line start and collide
+    // with the base layer.
     function sungText(line, uptoWord) {
         if (!line || !line.words || line.words.length === 0)
             return "";
+        const accentHex = String(root.accent);
+        const baseHex = String(root.textColor);
+        const position = lyricsService.positionMs;
         let html = "";
         for (let i = 0; i < line.words.length; i++) {
             const word = line.words[i];
             const text = String(word.text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            html += i <= uptoWord ? '<font color="' + String(root.accent) + '">' + text + "</font>" :
-                                    '<font color="transparent">' + text + "</font>";
+            if (i < uptoWord) {
+                html += '<font color="' + accentHex + '">' + text + "</font>";
+            } else if (i === uptoWord) {
+                const progress = LyricsParser.wordProgress(word, position);
+                const colour = progress >= 1 ? accentHex : progress <= 0 ? baseHex : LyricsParser.blendHex(
+                                                                               baseHex, accentHex, progress);
+                html += '<font color="' + colour + '">' + text + "</font>";
+            } else {
+                html += '<font color="transparent">' + text + "</font>";
+            }
         }
         return html;
     }
@@ -155,10 +186,16 @@ Item {
             width: transcript.width
             height: column.implicitHeight + 10
 
+            // Identity comes from the line's own start time, not the delegate
+            // index: ListView reuses delegates, so `index` follows the slot while
+            // `modelData` still points at whatever row it was created for. Using
+            // `index` here highlighted the wrong row after a scroll.
+            readonly property var activeLine: root.currentIndex >= 0 ? root.lines[root.currentIndex] : null
             readonly property bool active: index === root.currentIndex
-            readonly property bool timed: root.ready && root.lines[index] && root.lines[index].words
-                                          && root.lines[index].words.length > 0
+            readonly property bool timed: !!(root.ready && modelData && modelData.words
+                                             && modelData.words.length > 0)
             readonly property string translation: modelData ? (modelData.translation ?? "") : ""
+            readonly property int distance: root.distanceFor(index)
 
             Column {
                 id: column
@@ -215,22 +252,17 @@ Item {
                         anchors.fill: baseLine
                         visible: lyricRow.timed
                         textFormat: Text.RichText
-                        text: lyricRow.timed ? root.sungText(lyricRow.modelData, root.activeWordIndex) : ""
+                        text: lyricRow.timed ? root.sungText(root.activeLine, root.activeWordIndex) : ""
                         wrapMode: baseLine.wrapMode
                         maximumLineCount: 3
                         elide: Text.ElideRight
                         horizontalAlignment: Text.AlignHCenter
                         font: baseLine.font
                         lineHeight: baseLine.lineHeight
-                        color: Qt.tint(root.textColor, Qt.rgba(root.accent.r, root.accent.g, root.accent.b,
-                                                               root.wordProgress))
-
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: 120
-                                easing.type: Easing.Linear
-                            }
-                        }
+                        // Colours come from the inline <font> tags in sungText;
+                        // tinting the whole layer would wash out the per-word
+                        // boundary the sweep depends on.
+                        color: root.accent
                     }
                 }
 
