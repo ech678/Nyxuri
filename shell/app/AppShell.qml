@@ -61,6 +61,13 @@ Item {
         onUnitLoaded: (unitId, item) => {
             if (unitId === "settings" && item)
                 item.todoService = TodoService;
+            // The dashboard's notification button toggles the drawer unit, and
+            // ActionGateway is the only thing that may reach across domains.
+            // The drawer is loaded dynamically, so the gateway cannot hold a
+            // static reference — it is handed the instance once the slot host
+            // reports it. Without this the button is inert.
+            if (unitId === "sidebars" && item)
+                ActionGateway.sidebarHost = item;
         }
     }
 

@@ -98,11 +98,18 @@ ColumnLayout {
 
                         StyledText {
                             Layout.alignment: Qt.AlignHCenter
+                            Layout.fillWidth: true
+                            Layout.leftMargin: 2
+                            Layout.rightMargin: 2
                             Layout.bottomMargin: 6
                             text: box.modelData.name
                             font.pixelSize: Appearance.font.pixelSize.smallest
                             font.weight: Font.DemiBold
                             color: box.on ? box.modelData.onAccent : box.modelData.onContainer
+                            horizontalAlignment: Text.AlignHCenter
+                            wrapMode: Text.Wrap
+                            maximumLineCount: 2
+                            elide: Text.ElideRight
                         }
                     }
                 }
