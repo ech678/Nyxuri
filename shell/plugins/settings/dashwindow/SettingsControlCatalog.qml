@@ -110,6 +110,10 @@ Singleton {
                                                                                    => PersonalizationConfig.lyricAlbumArtTint,
                                                                                    value => PersonalizationConfig.setLyricAlbumArtTint(
                                                                                                 value)),
+                                         "lyrics:Show translation": root.toggle(()
+                                                                                => PersonalizationConfig.lyricShowTranslation,
+                                                                                value => PersonalizationConfig.setLyricShowTranslation(
+                                                                                             value)),
                                          "interface:Matugen scheme": root.select(()
                                                                                  => PersonalizationConfig.matugenScheme,
                                                                                  value => ThemeService.setMatugenScheme(
