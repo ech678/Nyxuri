@@ -241,7 +241,7 @@ Item {
                 Layout.preferredWidth: 1
                 Layout.horizontalStretchFactor: 10
                 Layout.fillHeight: true
-                tint: Appearance.colors.colSecondaryContainer
+                tint: Appearance.colors.colLayer1
                 pager: root.pager
                 staggerMs: root.staggerMs
                 animIndex: 1
@@ -272,7 +272,7 @@ Item {
                             text: I18n.tr("Matugen templates")
                             font.pixelSize: Typography.bodyLarge.pixelSize
                             font.weight: Font.DemiBold
-                            color: Appearance.colors.colOnSecondaryContainer
+                            color: Appearance.colors.colOnLayer1
                             elide: Text.ElideRight
                         }
                     }
@@ -336,13 +336,13 @@ Item {
                                             iconSize: 16
                                             fill: PersonalizationConfig.isMatugenTemplateEnabled(
                                                       templateToggle.modelData.id) ? 1 : 0
-                                            color: Appearance.colors.colOnSecondaryContainer
+                                            color: Appearance.colors.colOnLayer1
                                         }
 
                                         StyledText {
                                             Layout.fillWidth: true
                                             text: templateToggle.modelData.label
-                                            color: Appearance.colors.colOnSecondaryContainer
+                                            color: Appearance.colors.colOnLayer1
                                             elide: Text.ElideRight
                                         }
                                     }
