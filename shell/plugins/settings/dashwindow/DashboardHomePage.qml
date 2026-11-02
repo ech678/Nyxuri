@@ -304,7 +304,7 @@ Item {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     Layout.minimumHeight: 100
-                    tint: Appearance.colors.colPrimaryContainer
+                    tint: Appearance.colors.colLayer1
                     pager: root.pager
                     staggerMs: root.staggerMs
                     animIndex: 0
@@ -354,7 +354,7 @@ Item {
                                     text: "account_circle"
                                     fill: 1
                                     iconSize: 120
-                                    color: Appearance.colors.colOnPrimaryContainer
+                                    color: Appearance.colors.colOnLayer1
                                 }
 
                                 Rectangle {
@@ -449,7 +449,7 @@ Item {
                                             text: I18n.tr("Profile")
                                             font.pixelSize: Typography.titleLarge.pixelSize
                                             font.weight: Font.DemiBold
-                                            color: Appearance.colors.colOnSecondaryContainer
+                                            color: Appearance.colors.colOnLayer1
                                         }
 
                                         RippleButton {
@@ -501,7 +501,7 @@ Item {
                                             MaterialSymbol {
                                                 text: fieldRow.modelData.icon
                                                 iconSize: 18
-                                                color: Appearance.colors.colOnSecondaryContainer
+                                                color: Appearance.colors.colOnLayer1
                                             }
 
                                             ColumnLayout {
@@ -511,7 +511,7 @@ Item {
                                                 StyledText {
                                                     text: fieldRow.modelData.label
                                                     font.pixelSize: 10
-                                                    color: Appearance.colors.colOnSecondaryContainer
+                                                    color: Appearance.colors.colOnLayer1
                                                     opacity: 0.6
                                                 }
 
@@ -519,7 +519,7 @@ Item {
                                                     Layout.fillWidth: true
                                                     text: fieldRow.modelData.value
                                                     font.pixelSize: Typography.bodyLarge.pixelSize
-                                                    color: Appearance.colors.colOnSecondaryContainer
+                                                    color: Appearance.colors.colOnLayer1
                                                     elide: Text.ElideRight
                                                 }
                                             }
@@ -539,7 +539,7 @@ Item {
                                         implicitHeight: 38
                                         buttonRadius: 19
                                         containerColor: Qt.rgba(1, 1, 1, 0.12)
-                                        stateLayerColor: Appearance.colors.colOnSecondaryContainer
+                                        stateLayerColor: Appearance.colors.colOnLayer1
                                         stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                         hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                         pressedStateLayerOpacity:
@@ -556,13 +556,13 @@ Item {
                                             MaterialSymbol {
                                                 text: "image"
                                                 iconSize: 18
-                                                color: Appearance.colors.colOnSecondaryContainer
+                                                color: Appearance.colors.colOnLayer1
                                             }
 
                                             StyledText {
                                                 text: I18n.tr("Choose avatar")
                                                 font.weight: Font.Medium
-                                                color: Appearance.colors.colOnSecondaryContainer
+                                                color: Appearance.colors.colOnLayer1
                                             }
 
                                             Item {
@@ -1063,7 +1063,7 @@ Item {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     Layout.minimumHeight: tasksContent.implicitHeight + 28
-                    tint: Appearance.colors.colSecondaryContainer
+                    tint: Appearance.colors.colLayer1
                     pager: root.pager
                     staggerMs: root.staggerMs
                     animIndex: 5
@@ -1100,7 +1100,7 @@ Item {
                                     text: I18n.tr("Tasks")
                                     font.pixelSize: Typography.titleLarge.pixelSize
                                     font.weight: Font.DemiBold
-                                    color: Appearance.colors.colOnSecondaryContainer
+                                    color: Appearance.colors.colOnLayer1
                                 }
 
                                 StyledText {
@@ -1111,7 +1111,7 @@ Item {
                                                                                                  + " " + I18n.tr(
                                                                                                      "left")
                                     font.pixelSize: Typography.bodySmall.pixelSize
-                                    color: Appearance.colors.colOnSecondaryContainer
+                                    color: Appearance.colors.colOnLayer1
                                     opacity: 0.75
                                 }
                             }
@@ -1124,7 +1124,7 @@ Item {
                                 text: root.taskProgressText
                                 font.pixelSize: Typography.titleLarge.pixelSize
                                 font.weight: Font.Light
-                                color: Appearance.colors.colOnSecondaryContainer
+                                color: Appearance.colors.colOnLayer1
                             }
                         }
 
@@ -1181,7 +1181,7 @@ Item {
                                 implicitHeight: 40
                                 buttonRadius: 20
                                 containerColor: Qt.rgba(1, 1, 1, taskDelegate.modelData.done ? 0.05 : 0.1)
-                                stateLayerColor: Appearance.colors.colOnSecondaryContainer
+                                stateLayerColor: Appearance.colors.colOnLayer1
                                 stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                 hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                 pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
@@ -1218,7 +1218,7 @@ Item {
                                             color: taskDelegate.modelData.done
                                                    ? Appearance.colors.colSecondary : "transparent"
                                             border.width: taskDelegate.modelData.done ? 0 : 2
-                                            border.color: Appearance.colors.colOnSecondaryContainer
+                                            border.color: Appearance.colors.colOnLayer1
 
                                             MaterialSymbol {
                                                 anchors.centerIn: parent
@@ -1233,7 +1233,7 @@ Item {
                                             text: taskDelegate.modelData.content
                                             font.pixelSize: Typography.bodyLarge.pixelSize
                                             font.strikeout: taskDelegate.modelData.done
-                                            color: Appearance.colors.colOnSecondaryContainer
+                                            color: Appearance.colors.colOnLayer1
                                             opacity: taskDelegate.modelData.done ? 0.5 : 1
                                             elide: Text.ElideRight
                                         }
@@ -1244,7 +1244,7 @@ Item {
                                             buttonRadius: 14
                                             Layout.rightMargin: 6
                                             containerColor: "transparent"
-                                            stateLayerColor: Appearance.colors.colOnSecondaryContainer
+                                            stateLayerColor: Appearance.colors.colOnLayer1
                                             stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                             hoverStateLayerOpacity:
                                                 Appearance.interaction.hoverStateLayerOpacity
@@ -1260,7 +1260,7 @@ Item {
                                                     anchors.centerIn: parent
                                                     text: "close"
                                                     iconSize: 18
-                                                    color: Appearance.colors.colOnSecondaryContainer
+                                                    color: Appearance.colors.colOnLayer1
                                                     opacity: 0.6
                                                 }
                                             }
