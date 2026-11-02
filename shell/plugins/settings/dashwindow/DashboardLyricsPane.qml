@@ -8,6 +8,9 @@ import "lyrics" as Lyrics
 import "lyrics/LyricsParser.js" as LyricsParser
 import qs.commons.i18n
 
+// Lyric pane: word-level sweep for KRC, translated sub-line, and a scrolling
+// window of neighbours. The parser and service are the ones already in
+// lyrics/; this file owns only presentation.
 Item {
     id: root
 
@@ -16,8 +19,6 @@ Item {
         active: root.visible
     }
 
-    // Cover-derived palette, or null to use the theme. Same contract as
-    // DashboardMediaPage: both expose the same colour names.
     property var colors: null
     readonly property var scheme: root.colors ?? Appearance.colors
 
@@ -25,9 +26,6 @@ Item {
     readonly property color textColor: root.scheme.colOnLayer0
     readonly property color dimColor: root.scheme.colSubtext
 
-    // Half the window. Seven slots total (three either side of the active one),
-    // which is what fits at the sizes below without the outermost lines landing
-    // under the transport controls.
     readonly property int radius: 3
     readonly property int slotCount: root.radius * 2 + 1
 
@@ -38,9 +36,6 @@ Item {
 
     readonly property real baseFontSize: Math.max(14, Math.min(22, root.height * 0.055))
 
-    // Position of the lyric line shown in a given slot, or -1 when the slot
-    // falls outside the song. Returned rather than computed inline so the
-    // delegate can test one value instead of repeating the arithmetic.
     function lineIndexFor(slot) {
         const index = root.currentIndex + (slot - root.radius);
         return index >= 0 && index < root.lines.length ? index : -1;
@@ -49,6 +44,11 @@ Item {
     function lineText(slot) {
         const index = root.lineIndexFor(slot);
         return index >= 0 ? root.lines[index].text : "";
+    }
+
+    function lineTranslation(slot) {
+        const index = root.lineIndexFor(slot);
+        return index >= 0 ? (root.lines[index].translation ?? "") : "";
     }
 
     function distanceFor(slot) {
@@ -77,18 +77,15 @@ Item {
         return 0.16;
     }
 
-    // Rich text for the active line: sung words in the accent, unsung in the
-    // body colour, and the word being sung blended between the two by how far
-    // playback has reached into it. The blend is what produces a sweep — a
-    // binary on/off highlight snaps from word to word, which at KRC's 300-500ms
-    // word lengths reads as a stutter.
+    // Word-level rich text for the active line. Sung words take the accent,
+    // unsung stay in the body colour, and the word currently being sung is a
+    // blend of the two so the highlight sweeps rather than snapping.
     readonly property string richLine: {
         if (!root.ready)
             return "";
         const line = root.lines[root.currentIndex];
         if (!line || !line.words || line.words.length === 0)
             return "";
-
         const accentHex = String(root.accent);
         const baseHex = String(root.textColor);
         const position = lyricsService.positionMs;
@@ -108,6 +105,20 @@ Item {
         return html;
     }
 
+    // Fraction of the active line already sung, for the progress hairline.
+    readonly property real lineProgress: {
+        if (!root.ready)
+            return 0;
+        const line = root.lines[root.currentIndex];
+        if (!line)
+            return 0;
+        const span = line.endMs - line.startMs;
+        if (span <= 0)
+            return 0;
+        const ratio = (lyricsService.positionMs - line.startMs) / span;
+        return Math.max(0, Math.min(1, ratio));
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 4
@@ -122,72 +133,118 @@ Item {
                 required property int index
 
                 readonly property real distance: root.distanceFor(slotRoot.index)
+                readonly property bool active: slotRoot.distance === 0
+                readonly property string translation: root.lineTranslation(slotRoot.index)
 
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-                // Word-timed path (KRC): only the active line has word runs.
-                Text {
+                ColumnLayout {
                     anchors.fill: parent
-                    visible: slotRoot.distance === 0 && root.richLine !== ""
-                    textFormat: Text.RichText
-                    text: slotRoot.distance === 0 ? root.richLine : ""
-                    wrapMode: Text.WordWrap
-                    maximumLineCount: 3
-                    elide: Text.ElideRight
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    font.family: Fonts.ui
-                    font.pixelSize: root.fontSizeFor(slotRoot.index)
-                    font.weight: slotRoot.distance === 0 ? Font.Bold : Font.Medium
-                    color: root.textColor
-                    opacity: root.opacityFor(slotRoot.index)
+                    spacing: 2
 
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: 250
-                            easing.type: Easing.OutCubic
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        Text {
+                            anchors.fill: parent
+                            visible: slotRoot.active && root.richLine !== ""
+                            textFormat: Text.RichText
+                            text: slotRoot.active ? root.richLine : ""
+                            wrapMode: Text.WordWrap
+                            maximumLineCount: 3
+                            elide: Text.ElideRight
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            font.family: Fonts.ui
+                            font.pixelSize: root.fontSizeFor(slotRoot.index)
+                            font.weight: Font.Bold
+                            color: root.textColor
+                            opacity: root.opacityFor(slotRoot.index)
+                        }
+
+                        StyledText {
+                            anchors.fill: parent
+                            visible: !(slotRoot.active && root.richLine !== "")
+                            text: root.lineText(slotRoot.index)
+                            wrapMode: Text.WordWrap
+                            maximumLineCount: 3
+                            elide: Text.ElideRight
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            font.pixelSize: root.fontSizeFor(slotRoot.index)
+                            font.weight: slotRoot.active ? Font.Bold : Font.Medium
+                            color: slotRoot.active ? root.accent : root.textColor
+                            opacity: root.opacityFor(slotRoot.index)
+
+                            Behavior on font.pixelSize {
+                                NumberAnimation {
+                                    duration: 300
+                                    easing.type: Easing.OutCubic
+                                }
+                            }
+
+                            Behavior on opacity {
+                                NumberAnimation {
+                                    duration: 250
+                                    easing.type: Easing.OutCubic
+                                }
+                            }
+                        }
+
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: 250
+                                easing.type: Easing.OutCubic
+                            }
                         }
                     }
-                }
 
-                // Line-timed path: everything without word runs, including the
-                // neighbours of a KRC line.
-                StyledText {
-                    anchors.fill: parent
-                    visible: !(slotRoot.distance === 0 && root.richLine !== "")
-                    text: root.lineText(slotRoot.index)
-                    wrapMode: Text.WordWrap
-                    maximumLineCount: 3
-                    elide: Text.ElideRight
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    font.pixelSize: root.fontSizeFor(slotRoot.index)
-                    font.weight: slotRoot.distance === 0 ? Font.Bold : Font.Medium
-                    color: slotRoot.distance === 0 ? root.accent : root.textColor
-                    opacity: root.opacityFor(slotRoot.index)
-
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: 250
-                            easing.type: Easing.OutCubic
-                        }
-                    }
-
-                    Behavior on font.pixelSize {
-                        NumberAnimation {
-                            duration: 300
-                            easing.type: Easing.OutCubic
-                        }
+                    // Translation sits under the active line only; a wall of
+                    // translated neighbours would fight the lyric for attention.
+                    StyledText {
+                        Layout.fillWidth: true
+                        visible: slotRoot.active && slotRoot.translation !== ""
+                        text: slotRoot.translation
+                        wrapMode: Text.WordWrap
+                        maximumLineCount: 2
+                        elide: Text.ElideRight
+                        horizontalAlignment: Text.AlignHCenter
+                        font.pixelSize: Math.max(11, root.baseFontSize * 0.72)
+                        font.weight: Font.Medium
+                        color: root.dimColor
+                        opacity: 0.85
                     }
                 }
             }
         }
     }
 
-    // Status block, shown instead of the lines whenever there is nothing to
-    // sing along to. Centred as one unit so the icon and the message stay
-    // together at any pane height.
+    // Hairline progress for the active line, pinned to the bottom of the pane.
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: 2
+        visible: root.ready
+        color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.18)
+
+        Rectangle {
+            width: parent.width * root.lineProgress
+            height: parent.height
+            radius: 1
+            color: root.accent
+
+            Behavior on width {
+                NumberAnimation {
+                    duration: 120
+                    easing.type: Easing.Linear
+                }
+            }
+        }
+    }
+
     ColumnLayout {
         anchors.centerIn: parent
         width: Math.min(parent.width * 0.8, 320)

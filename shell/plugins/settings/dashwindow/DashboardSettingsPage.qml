@@ -4,6 +4,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import qs.commons
 import qs.ui
+import qs.commons.i18n
 
 // Dashboard "Settings" page: a packed grid of setting tiles.
 //
@@ -55,21 +56,139 @@ Item {
         return [2, 1];
     }
 
+    // Group rail. The catalog tags each section with a `page`; the rail is the
+    // deduplicated set of those, plus an "All" entry. Kept as a derived array so
+    // adding a section to the catalog cannot leave the rail out of sync.
+    readonly property var groupNames: {
+        const seen = [];
+        DashboardSettingsCatalog.sections.forEach(section => {
+            const name = section.page ?? "";
+            if (name !== "" && seen.indexOf(name) < 0)
+                seen.push(name);
+        });
+        return seen;
+    }
+
+    property string activeGroup: ""
+
+    readonly property var railGroups: {
+        const c = Appearance.colors;
+        // QML has no built-in colour mixer and nyxuri does not vendor one, so
+        // the blend is done per channel here.
+        const mix = (a, b) => Qt.rgba((a.r + b.r) / 2, (a.g + b.g) / 2, (a.b + b.b) / 2, (a.a + b.a) / 2);
+        const palette = [
+                  {
+                      container: c.colPrimaryContainer,
+                      onContainer: c.colOnPrimaryContainer,
+                      accent: c.colPrimary,
+                      onAccent: c.colOnPrimary
+                  },
+                  {
+                      container: c.colSecondaryContainer,
+                      onContainer: c.colOnSecondaryContainer,
+                      accent: c.colSecondary,
+                      onAccent: c.colOnSecondary
+                  },
+                  {
+                      container: c.colTertiaryContainer,
+                      onContainer: c.colOnTertiaryContainer,
+                      accent: c.colTertiary,
+                      onAccent: c.colOnTertiary
+                  },
+                  {
+                      container: mix(c.colPrimaryContainer, c.colTertiaryContainer),
+                      onContainer: mix(c.colOnPrimaryContainer, c.colOnTertiaryContainer),
+                      accent: mix(c.colPrimary, c.colTertiary),
+                      onAccent: mix(c.colOnPrimary, c.colOnTertiary)
+                  },
+                  {
+                      container: mix(c.colPrimaryContainer, c.colSecondaryContainer),
+                      onContainer: mix(c.colOnPrimaryContainer, c.colOnSecondaryContainer),
+                      accent: mix(c.colPrimary, c.colSecondary),
+                      onAccent: mix(c.colOnPrimary, c.colOnSecondary)
+                  },
+                  {
+                      container: mix(c.colSecondaryContainer, c.colTertiaryContainer),
+                      onContainer: mix(c.colOnSecondaryContainer, c.colOnTertiaryContainer),
+                      accent: mix(c.colSecondary, c.colTertiary),
+                      onAccent: mix(c.colOnSecondary, c.colOnTertiary)
+                  }
+              ];
+        const icons = ({
+                           "Interface": "bottom_app_bar",
+                           "Bar & dock": "toast",
+                           "Keystone & media": "music_note",
+                           "Desktop": "texture",
+                           "Clocks": "schedule",
+                           "Display": "contrast"
+                       });
+        const list = [
+                  {
+                      "id": "",
+                      "name": I18n.tr("All"),
+                      "icon": "apps",
+                      "count": 0,
+                      "container": c.colSurfaceContainerHighest,
+                      "onContainer": c.colOnSurface,
+                      "accent": c.colOnSurface,
+                      "onAccent": c.colLayer0
+                  }
+              ];
+        root.groupNames.forEach((name, index) => {
+            let count = 0;
+            DashboardSettingsCatalog.sections.forEach(section => {
+                if ((section.page ?? "") === name)
+                    count += section.cards.length;
+            });
+            list.push(Object.assign({
+                                        "id": name,
+                                        "name": name,
+                                        "icon": icons[name] ?? "tune",
+                                        "count": count
+                                    }, palette[index % palette.length]));
+        });
+        return list;
+    }
+
+    readonly property var railDimmed: {
+        const dim = ({});
+        if (root.tokens.length > 0) {
+            const hit = ({});
+            (root.matches(root.tokens) ?? []).forEach(e => {
+                if (e.page)
+                    hit[e.page] = true;
+            });
+            root.railGroups.forEach(g => {
+                if (g.id !== "")
+                    dim[g.id] = !hit[g.id];
+            });
+        }
+        return dim;
+    }
+
+    readonly property var tokens: root.normalized(root.query).split(/\s+/).filter(t => t.length > 0)
+
+    onActiveGroupChanged: flick.contentY = 0
+
     readonly property var allEntries: {
         const list = [];
         DashboardSettingsCatalog.sections.forEach((section, si) => {
+            if (root.activeGroup !== "" && (section.page ?? "") !== root.activeGroup)
+                return;
             list.push({
                           "id": "section:" + si,
                           "kind": "header",
                           "title": section.title,
                           "icon": section.icon,
                           "section": section.title,
+                          "page": section.page ?? "",
                           "count": section.cards.length
                       });
             section.cards.forEach(card => list.push(Object.assign({
                                                                       "id": card.key,
                                                                       "kind": "card",
-                                                                      "section": section.title
+                                                                      "section": section.title,
+                                                                      "page": section.page ?? ""
                                                                   }, card)));
         });
         return list.map(e => Object.assign(e, {
@@ -100,7 +219,13 @@ Item {
     // sections never interleave. The literal 4s are end4-pC's: the grid has no
     // breakpoints upstream and this port does not add any.
     function computeLayout(tokens) {
-        const filtered = matches(tokens);
+        const source = root.allEntries;
+        const filtered = tokens.length === 0 ? null : source.filter(e => {
+            if (e.kind !== "card")
+                return false;
+            const haystack = normalized([e.title, e.section, e.kw ?? "", e.key ?? ""].join(" "));
+            return tokens.every(token => haystack.indexOf(token) >= 0);
+        });
         const items = [];
         if (filtered) {
             filtered.forEach(e => {
@@ -113,8 +238,8 @@ Item {
             });
         } else {
             let i = 0;
-            while (i < allEntries.length) {
-                const e = allEntries[i];
+            while (i < source.length) {
+                const e = source[i];
                 if (e.kind === "header") {
                     items.push({
                                    "entry": e,
@@ -124,8 +249,8 @@ Item {
                                });
                     const cards = [];
                     i++;
-                    while (i < allEntries.length && allEntries[i].kind === "card") {
-                        cards.push(allEntries[i]);
+                    while (i < source.length && source[i].kind === "card") {
+                        cards.push(source[i]);
                         i++;
                     }
                     packRows(cards, 4).forEach(p => items.push(p));
@@ -266,7 +391,6 @@ Item {
         return placed;
     }
 
-    readonly property var tokens: normalized(query).split(/\s+/).filter(t => t.length > 0)
     readonly property var layoutResult: computeLayout(tokens)
     readonly property var layoutMap: layoutResult.map
 
@@ -277,10 +401,29 @@ Item {
                                               + delta));
     }
 
+    DashboardGroupRail {
+        id: rail
+
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        width: 70
+        groups: root.railGroups
+        current: root.activeGroup
+        dimmed: root.railDimmed
+        onPicked: id => {
+            root.activeGroup = id;
+        }
+    }
+
     Flickable {
         id: flick
 
-        anchors.fill: parent
+        anchors.left: rail.right
+        anchors.leftMargin: 16
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
         clip: true
         contentWidth: width
         contentHeight: root.layoutResult.total
