@@ -86,18 +86,19 @@ Item {
         return line ? LyricsParser.wordIndexAt(line, lyricsService.positionMs) : -1;
     }
 
-    // Words already sung on the active line. The overlay renders exactly these,
-    // which is what makes the sweep read as a wipe rather than a recolour.
+    // Overlay text for the active line: sung words in the accent, everything
+    // after them kept in the layout but drawn transparent. Omitting the tail
+    // instead would let the overlay re-wrap from the line start and collide
+    // with the base layer underneath.
     function sungText(line, uptoWord) {
         if (!line || !line.words || line.words.length === 0)
             return "";
         let html = "";
-        for (let i = 0; i < line.words.length && i <= uptoWord; i++) {
+        for (let i = 0; i < line.words.length; i++) {
             const word = line.words[i];
             const text = String(word.text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            // A word with no span (KRC emits dur <= 0) is either fully sung or
-            // not started; the overlay must not split it.
-            html += '<font color="' + String(root.accent) + '">' + text + "</font>";
+            html += i <= uptoWord ? '<font color="' + String(root.accent) + '">' + text + "</font>" :
+                                    '<font color="transparent">' + text + "</font>";
         }
         return html;
     }

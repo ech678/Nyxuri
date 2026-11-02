@@ -46,6 +46,40 @@ DashboardCard {
                                        "scheme-vibrant": "color_lens"
                                    })
 
+    // Per-scheme chroma multiplier applied to the live primary/secondary/tertiary
+    // to preview what the scheme does. Generating the real palette for each of
+    // the nine options costs ~2s apiece, which is too slow for a picker; the
+    // relative character (vivid vs muted vs greyscale) is what a reader actually
+    // needs to tell the options apart.
+    readonly property var chroma: ({
+                                       "auto": 1,
+                                       "scheme-tonal-spot": 0.85,
+                                       "scheme-vibrant": 1.45,
+                                       "scheme-content": 1.1,
+                                       "scheme-expressive": 1.25,
+                                       "scheme-fidelity": 1.2,
+                                       "scheme-fruit-salad": 1.6,
+                                       "scheme-monochrome": 0,
+                                       "scheme-neutral": 0.25,
+                                       "scheme-rainbow": 1.35
+                                   })
+
+    function previewColor(base, schemeValue) {
+        const k = root.chroma[schemeValue] ?? 1;
+        if (k === 1)
+            return base;
+        // Pull toward the colour's own grey at k < 1, away from it at k > 1.
+        const grey = (base.r + base.g + base.b) / 3;
+        const ch = v => Math.max(0, Math.min(1, grey + (v - grey) * k));
+        return Qt.rgba(ch(base.r), ch(base.g), ch(base.b), base.a);
+    }
+
+    function previewDots(schemeValue) {
+        const c = Appearance.colors;
+        return [root.previewColor(c.colPrimary, schemeValue), root.previewColor(c.colSecondary, schemeValue), root.previewColor(
+                    c.colTertiary, schemeValue)];
+    }
+
     tint: Appearance.colors.colSecondaryContainer
 
     component Pill: RippleButton {
@@ -60,8 +94,9 @@ DashboardCard {
         leftPadding: 16
         rightPadding: 16
         buttonRadius: 14
-        containerColor: pill.selected ? Appearance.colors.colSecondary : Qt.rgba(1, 1, 1, 0.12)
-        rippleColor: Qt.rgba(1, 1, 1, 0.3)
+        containerColor: pill.selected ? Appearance.colors.colSecondary :
+                                        Appearance.colors.colSurfaceContainerHigh
+        rippleColor: Appearance.colors.colOnSecondaryContainer
         stateLayerColor: pill.selected ? Appearance.colors.colOnSecondary :
                                          Appearance.colors.colOnSecondaryContainer
         stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
@@ -86,14 +121,27 @@ DashboardCard {
                 id: contentRow
 
                 anchors.centerIn: parent
-                spacing: 6
+                spacing: 8
 
-                MaterialSymbol {
-                    text: pill.card.glyphs[pill.option.value] ?? "palette"
-                    iconSize: 18
-                    fill: pill.selected ? 1 : 0
-                    color: pill.selected ? Appearance.colors.colOnSecondary :
-                                           Appearance.colors.colOnSecondaryContainer
+                // Three dots in the scheme's own character. Reading the label
+                // alone cannot tell "Vibrant" from "Neutral"; the dots can.
+                Row {
+                    spacing: 3
+
+                    Repeater {
+                        model: pill.card.previewDots(pill.option.value)
+
+                        delegate: Rectangle {
+                            required property var modelData
+
+                            width: 9
+                            height: 9
+                            radius: 4.5
+                            color: modelData
+                            border.width: 1
+                            border.color: Qt.rgba(0, 0, 0, 0.12)
+                        }
+                    }
                 }
 
                 StyledText {
