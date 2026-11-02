@@ -21,7 +21,9 @@ Singleton {
     property string _pendingPage: ""
 
     readonly property bool loaded: controlCenterWindow !== null
-    readonly property bool visible: loaded && controlCenterWindow.visible
+    // A torn-down window can leave the reference non-null for a frame, during
+    // which `visible` reads as undefined and the bool binding logs a type error.
+    readonly property bool visible: root.loaded && (root.controlCenterWindow.visible === true)
 
     function registerWindow(window) {
         if (!window)

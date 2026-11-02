@@ -114,6 +114,17 @@ Item {
                       onAccent: mix(c.colOnSecondary, c.colOnTertiary)
                   }
               ];
+        // Rail labels are deliberately shorter than the group ids: a 70px rail
+        // cannot hold "Keystone & media" at a readable size, and the rail is a
+        // glance target, not a heading.
+        const labels = ({
+                            "Interface": I18n.tr("Interface"),
+                            "Bar & dock": I18n.tr("Bar"),
+                            "Keystone & media": I18n.tr("Media"),
+                            "Desktop": I18n.tr("Desktop"),
+                            "Clocks": I18n.tr("Clocks"),
+                            "Display": I18n.tr("Display")
+                        });
         const icons = ({
                            "Interface": "bottom_app_bar",
                            "Bar & dock": "toast",
@@ -142,7 +153,7 @@ Item {
             });
             list.push(Object.assign({
                                         "id": name,
-                                        "name": name,
+                                        "name": labels[name] ?? name,
                                         "icon": icons[name] ?? "tune",
                                         "count": count
                                     }, palette[index % palette.length]));
