@@ -218,7 +218,13 @@ Item {
         root.source = String(payload.source || "none");
         root.matched = !!payload.matched;
         root._rawLyrics = text;
-        root._translationLines = Array.isArray(payload.translationLines) ? payload.translationLines : [];
+        // `Array.isArray` is not reliable across the process boundary: a value
+        // that survived JSON.parse inside the QML engine is not necessarily a
+        // JS Array by the time it reaches a different component. Duck-type on
+        // length instead.
+        const rawLines = payload.translationLines;
+        root._translationLines = (rawLines && typeof rawLines.length === "number" && rawLines.length >= 0)
+                ? rawLines : [];
         root.lines = LyricsParser.parse(text, root._translationLines);
         root.state = root.lines.length > 0 ? "ready" : "empty";
     }

@@ -64,6 +64,26 @@ Item {
         root.player.position = Math.max(0, Math.min(length, root.player.position + seconds));
     }
 
+    // MPRIS Previous is "restart the track if past the first few seconds, else
+    // go back one" — the convention players inherit from CD decks, which is why
+    // the button reads as seek-to-zero. Seeking to the start first and then
+    // asking for Previous lands in the second branch, so the button always
+    // moves one track.
+    function previousTrack() {
+        if (!root.player)
+            return;
+        const restartWindowSeconds = 3;
+        if (root.canSeek && (root.player.position ?? 0) > restartWindowSeconds) {
+            root.player.position = 0;
+            Qt.callLater(() => {
+                if (root.player)
+                    root.player.previous();
+            });
+            return;
+        }
+        root.player.previous();
+    }
+
     function formatTime(seconds) {
         const total = Math.max(0, Math.floor(seconds || 0));
         const m = Math.floor(total / 60);
@@ -407,15 +427,12 @@ Item {
                             stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                             hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                             pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
-                            downAction: () => {
-                                if (root.player)
-                                    root.player.previous();
-                            }
+                            downAction: () => root.previousTrack()
 
                             contentItem: Item {
                                 MaterialSymbol {
                                     anchors.centerIn: parent
-                                    text: "fast_rewind"
+                                    text: "skip_previous"
                                     iconSize: 26
                                     fill: 1
                                     color: root.fg
@@ -467,7 +484,7 @@ Item {
                             contentItem: Item {
                                 MaterialSymbol {
                                     anchors.centerIn: parent
-                                    text: "fast_forward"
+                                    text: "skip_next"
                                     iconSize: 26
                                     fill: 1
                                     color: root.fg
