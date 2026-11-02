@@ -134,11 +134,13 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            // Height follows the taller of the two cards. The template list
-            // grows with however many templates are registered, so a fixed
-            // 200px row let the buttons spill past the card and over the
-            // gallery below.
-            Layout.preferredHeight: Math.max(200, templatesCard.implicitContentHeight + 28)
+            // Height follows the template list, which grows with the registry.
+            // Pinned all three ways: a preferred-only height still gets
+            // stretched by the ColumnLayout when the page has slack.
+            readonly property real rowHeight: Math.max(200, templatesCard.implicitContentHeight + 28)
+            Layout.preferredHeight: rowHeight
+            Layout.minimumHeight: rowHeight
+            Layout.maximumHeight: rowHeight
             spacing: 12
 
             DashboardCard {
@@ -286,12 +288,9 @@ Item {
                         }
                     }
 
-                    Item {
-                        Layout.fillHeight: true
-                    }
-
                     ColumnLayout {
                         Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignTop
                         spacing: 4
 
                         Repeater {
@@ -312,11 +311,16 @@ Item {
                                 leftPadding: 8
                                 rightPadding: 8
                                 buttonRadius: 13
+                                // Off state uses a theme surface rather than a
+                                // white wash: on a light palette the wash reads
+                                // as the same tone as the label and the button
+                                // looks empty.
                                 containerColor: PersonalizationConfig.isMatugenTemplateEnabled(
                                                     templateToggle.modelData.id)
-                                                ? Appearance.colors.colSecondary : Qt.rgba(1, 1, 1, 0.12)
-                                rippleColor: Appearance.colors.colOnSecondary
-                                stateLayerColor: Appearance.colors.colOnSecondary
+                                                ? Appearance.colors.colSecondary :
+                                                  Appearance.colors.colSurfaceContainerHigh
+                                rippleColor: Appearance.colors.colOnLayer1
+                                stateLayerColor: Appearance.colors.colOnLayer1
                                 stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                 hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                 pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
@@ -341,17 +345,26 @@ Item {
                                         spacing: 6
 
                                         MaterialSymbol {
+                                            readonly property bool on:
+                                                PersonalizationConfig.isMatugenTemplateEnabled(
+                                                    templateToggle.modelData.id)
                                             text: templateToggle.modelData.icon
                                             iconSize: 16
-                                            fill: PersonalizationConfig.isMatugenTemplateEnabled(
-                                                      templateToggle.modelData.id) ? 1 : 0
-                                            color: Appearance.colors.colOnLayer1
+                                            fill: on ? 1 : 0
+                                            // On-state sits on colSecondary, so its
+                                            // label has to be colOnSecondary — the
+                                            // layer colour is near-white and vanishes.
+                                            color: on ? Appearance.colors.colOnSecondary :
+                                                        Appearance.colors.colOnLayer1
                                         }
 
                                         StyledText {
                                             Layout.fillWidth: true
                                             text: templateToggle.modelData.label
-                                            color: Appearance.colors.colOnLayer1
+                                            color: PersonalizationConfig.isMatugenTemplateEnabled(
+                                                       templateToggle.modelData.id)
+                                                   ? Appearance.colors.colOnSecondary :
+                                                     Appearance.colors.colOnLayer1
                                             elide: Text.ElideRight
                                         }
                                     }
@@ -374,7 +387,9 @@ Item {
         // the page switch read as a hitch.
         DashboardCard {
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            Layout.preferredHeight: 230
+            Layout.minimumHeight: 230
+            Layout.maximumHeight: 230
             tint: Appearance.colors.colLayer1
             pager: root.pager
             staggerMs: root.staggerMs
@@ -431,12 +446,9 @@ Item {
                         id: schemeRow
 
                         spacing: 10
-                        // The scroller takes the remaining page height, so tying
-                        // the strip row to it made each tile as tall as the
-                        // window and the colour strips stretched with it. Give
-                        // the row a working height and let the tile grid inside
-                        // it stay square-ish.
-                        height: Math.min(schemeScroller.height, 190)
+                        // Fixed working height. Tying this to the scroller made
+                        // every tile as tall as the page.
+                        height: 170
                         anchors.verticalCenter: parent.verticalCenter
 
                         Repeater {
