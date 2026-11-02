@@ -22,7 +22,7 @@ DashboardCard {
     property string icon: "gesture"
     property var tileShape: MaterialShapeCanvas.Shape.Clover8Leaf
 
-    tint: Appearance.colors.colTertiaryContainer
+    tint: Appearance.colors.colLayer1
 
     readonly property string easingMode: PersonalizationConfig.transitionEasingMode
     readonly property bool editable: root.easingMode === "customBezier"
@@ -55,7 +55,7 @@ DashboardCard {
                 text: root.title
                 font.pixelSize: Typography.titleLarge.pixelSize
                 font.weight: Font.DemiBold
-                color: Appearance.colors.colOnTertiaryContainer
+                color: Appearance.colors.colOnLayer1
                 elide: Text.ElideRight
             }
         }
@@ -79,10 +79,10 @@ DashboardCard {
                 // that reads as a hole on the container tile; re-seat the chart
                 // on this card's own palette.
                 chartSurfaceColor: Appearance.applyAlpha(Appearance.colors.colTertiary, 0.10)
-                chartAxisColor: Appearance.applyAlpha(Appearance.colors.colOnTertiaryContainer, 0.38)
+                chartAxisColor: Appearance.applyAlpha(Appearance.colors.colOnLayer1, 0.38)
                 chartPrimaryColor: Appearance.colors.colTertiary
-                chartSecondaryColor: Appearance.colors.colOnTertiaryContainer
-                chartTertiaryColor: Appearance.colors.colOnTertiaryContainer
+                chartSecondaryColor: Appearance.colors.colOnLayer1
+                chartTertiaryColor: Appearance.colors.colOnLayer1
                 onControlsEdited: nextCurve => WallpaperService.setTransitionBezierCurve(nextCurve)
                 onEditRequested: root.openEditor()
             }
@@ -94,7 +94,7 @@ DashboardCard {
             buttonRadius: 18
             enabled: root.editable
             opacity: root.editable ? 1 : 0.45
-            containerColor: Qt.rgba(1, 1, 1, 0.12)
+            containerColor: Appearance.colors.colSurfaceContainerHigh
             rippleColor: Appearance.colors.colOnTertiary
             stateLayerColor: Appearance.colors.colOnTertiary
             stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
@@ -113,13 +113,13 @@ DashboardCard {
                 MaterialSymbol {
                     text: "edit"
                     iconSize: 18
-                    color: Appearance.colors.colOnTertiaryContainer
+                    color: Appearance.colors.colOnLayer1
                 }
 
                 StyledText {
                     text: root.editable ? I18n.tr("Edit Bézier curve") : I18n.tr("Preset easing")
                     font.weight: Font.Medium
-                    color: Appearance.colors.colOnTertiaryContainer
+                    color: Appearance.colors.colOnLayer1
                 }
 
                 Item {

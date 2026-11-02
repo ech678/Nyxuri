@@ -18,7 +18,7 @@ DashboardCard {
     readonly property var control: root.override ?? SettingsControlCatalog.controlFor(root.controlKey)
     readonly property string current: root.control ? String(root.control.get() ?? "") : ""
 
-    tint: Appearance.colors.colSecondaryContainer
+    tint: Appearance.colors.colLayer1
 
     onCurrentChanged: {
         if (!field.activeFocus)
@@ -61,7 +61,7 @@ DashboardCard {
                 text: root.title
                 font.pixelSize: Typography.bodyLarge.pixelSize
                 font.weight: Font.DemiBold
-                color: Appearance.colors.colOnSecondaryContainer
+                color: Appearance.colors.colOnLayer1
                 wrapMode: Text.WordWrap
                 maximumLineCount: 2
                 elide: Text.ElideRight
@@ -76,7 +76,7 @@ DashboardCard {
             Layout.fillWidth: true
             implicitHeight: 40
             radius: 20
-            color: Qt.rgba(1, 1, 1, 0.12)
+            color: Appearance.colors.colSurfaceContainerHigh
             border.width: field.activeFocus ? 2 : 0
             border.color: Appearance.colors.colSecondary
 
@@ -90,7 +90,7 @@ DashboardCard {
                 clip: true
                 font.pixelSize: Typography.bodyLarge.pixelSize
                 font.family: Fonts.ui
-                color: Appearance.colors.colOnSecondaryContainer
+                color: Appearance.colors.colOnLayer1
                 selectionColor: Appearance.colors.colSecondary
                 onTextEdited: debounce.restart()
                 onEditingFinished: {
@@ -108,7 +108,7 @@ DashboardCard {
                     anchors.verticalCenter: parent.verticalCenter
                     visible: field.text === "" && !field.activeFocus && root.placeholder !== ""
                     text: root.placeholder
-                    color: Appearance.colors.colOnSecondaryContainer
+                    color: Appearance.colors.colOnLayer1
                     opacity: 0.5
                 }
             }
