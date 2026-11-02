@@ -19,7 +19,7 @@ DashboardCard {
     readonly property var options: root.control ? root.control.options ?? [] : []
     readonly property var currentValue: root.control ? root.control.get() : null
 
-    tint: Appearance.colors.colPrimaryContainer
+    tint: Appearance.colors.colLayer1
 
     ColumnLayout {
         anchors.fill: parent
@@ -45,7 +45,7 @@ DashboardCard {
                 text: root.title
                 font.pixelSize: Typography.titleLarge.pixelSize
                 font.weight: Font.DemiBold
-                color: Appearance.colors.colOnPrimaryContainer
+                color: Appearance.colors.colOnLayer1
                 elide: Text.ElideRight
             }
         }

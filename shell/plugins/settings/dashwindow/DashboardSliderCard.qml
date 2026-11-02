@@ -20,13 +20,15 @@ DashboardCard {
     readonly property real current: root.control ? root.control.get() : 0
     readonly property real fromValue: root.control && root.control.from !== undefined ? root.control.from : 0
     readonly property real toValue: root.control && root.control.to !== undefined ? root.control.to : 1
-    readonly property real step: root.control && root.control.stepSize !== undefined ? root.control.stepSize : 0
+    readonly property real step: root.control && root.control.stepSize !== undefined ? root.control.stepSize :
+                                                                                       0
+
     // Integer steps display whole numbers; fractional steps get two decimals so
     // 1.15 does not collapse to "1".
-    readonly property string displayValue: root.step > 0 && root.step < 1
-                                           ? Number(root.current).toFixed(2) : Math.round(root.current)
+    readonly property string displayValue: root.step > 0 && root.step < 1 ? Number(root.current).toFixed(2) :
+                                                                            Math.round(root.current)
 
-    tint: Appearance.colors.colSecondaryContainer
+    tint: Appearance.colors.colLayer1
 
     ColumnLayout {
         anchors.fill: parent
@@ -52,7 +54,7 @@ DashboardCard {
                 text: root.title
                 font.pixelSize: Typography.titleLarge.pixelSize
                 font.weight: Font.DemiBold
-                color: Appearance.colors.colOnSecondaryContainer
+                color: Appearance.colors.colOnLayer1
                 elide: Text.ElideRight
             }
 
@@ -63,7 +65,7 @@ DashboardCard {
                                                     * 100) + "%" : root.displayValue
                 font.pixelSize: 28
                 font.weight: Font.Light
-                color: Appearance.colors.colOnSecondaryContainer
+                color: Appearance.colors.colOnLayer1
             }
         }
 

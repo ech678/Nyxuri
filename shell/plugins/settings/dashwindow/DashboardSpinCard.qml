@@ -17,7 +17,7 @@ DashboardCard {
     readonly property var control: root.override ?? SettingsControlCatalog.controlFor(root.controlKey)
     readonly property real current: root.control ? root.control.get() : 0
 
-    tint: Appearance.colors.colPrimaryContainer
+    tint: Appearance.colors.colLayer1
 
     function step(direction) {
         if (!root.control)
@@ -52,7 +52,7 @@ DashboardCard {
                 text: root.title
                 font.pixelSize: Typography.bodyLarge.pixelSize
                 font.weight: Font.DemiBold
-                color: Appearance.colors.colOnPrimaryContainer
+                color: Appearance.colors.colOnLayer1
                 wrapMode: Text.WordWrap
                 maximumLineCount: 2
                 elide: Text.ElideRight
@@ -84,8 +84,8 @@ DashboardCard {
                         implicitWidth: 40
                         implicitHeight: 40
                         buttonRadius: 20
-                        containerColor: Qt.rgba(1, 1, 1, 0.14)
-                        stateLayerColor: Appearance.colors.colOnPrimaryContainer
+                        containerColor: Appearance.colors.colSurfaceContainerHigh
+                        stateLayerColor: Appearance.colors.colOnLayer1
                         stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                         hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                         pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
@@ -96,7 +96,7 @@ DashboardCard {
                                 anchors.centerIn: parent
                                 text: stepSlot.modelData === 1 ? "add" : "remove"
                                 iconSize: 22
-                                color: Appearance.colors.colOnPrimaryContainer
+                                color: Appearance.colors.colOnLayer1
                             }
                         }
                     }
@@ -112,6 +112,6 @@ DashboardCard {
         text: Math.round(root.current)
         font.pixelSize: 28
         font.weight: Font.Light
-        color: Appearance.colors.colOnPrimaryContainer
+        color: Appearance.colors.colOnLayer1
     }
 }

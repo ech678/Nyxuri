@@ -16,7 +16,7 @@ DashboardCard {
     signal randomRequested
     signal foldersRequested
 
-    tint: Appearance.colors.colPrimaryContainer
+    tint: Appearance.colors.colLayer1
 
     ColumnLayout {
         anchors.fill: parent
@@ -42,7 +42,7 @@ DashboardCard {
                 text: root.title
                 font.pixelSize: Typography.titleLarge.pixelSize
                 font.weight: Font.DemiBold
-                color: Appearance.colors.colOnPrimaryContainer
+                color: Appearance.colors.colOnLayer1
                 elide: Text.ElideRight
             }
         }
@@ -78,11 +78,11 @@ DashboardCard {
                     Layout.preferredWidth: 1
                     implicitHeight: 40
                     buttonRadius: 20
-                    containerColor: tool.modelData.primary ? Appearance.colors.colPrimary : Qt.rgba(1, 1, 1,
-                                                                                                    0.14)
+                    containerColor: tool.modelData.primary ? Appearance.colors.colPrimary :
+                                                             Appearance.colors.colSurfaceContainerHigh
                     rippleColor: Appearance.colors.colOnPrimary
                     stateLayerColor: tool.modelData.primary ? Appearance.colors.colOnPrimary :
-                                                              Appearance.colors.colOnPrimaryContainer
+                                                              Appearance.colors.colOnLayer1
                     stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                     hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                     pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
@@ -107,14 +107,14 @@ DashboardCard {
                             text: tool.modelData.icon
                             iconSize: 18
                             color: tool.modelData.primary ? Appearance.colors.colOnPrimary :
-                                                            Appearance.colors.colOnPrimaryContainer
+                                                            Appearance.colors.colOnLayer1
                         }
 
                         StyledText {
                             text: tool.modelData.label
                             font.weight: Font.Medium
                             color: tool.modelData.primary ? Appearance.colors.colOnPrimary :
-                                                            Appearance.colors.colOnPrimaryContainer
+                                                            Appearance.colors.colOnLayer1
                         }
 
                         Item {
