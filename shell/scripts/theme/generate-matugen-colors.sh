@@ -100,15 +100,26 @@ trap 'exit 130' INT
 trap 'exit 143' HUP TERM
 
 common_args=(--mode "$mode" --type "$scheme" --json hex -q)
+# matugen runs the user's post-hooks (Kvantum, compositor reload) after writing
+# the palette, and those scripts log to stdout. `-q` only silences matugen's own
+# logging, so the hook output lands after the JSON and breaks the parse. Run
+# through a subshell whose stdout is the palette file and redirect the hooks to
+# the log by way of a pipe that strips the JSON payload.
 if [[ -n "$image_path" ]]; then
     matugen --source-color-index 0 image "$image_path" "${common_args[@]}" \
-        > "$runtime_dir/palette.json" 2> "$runtime_dir/log"
+        > "$runtime_dir/raw.json" 2> "$runtime_dir/log"
 else
     matugen color hex "$source_color" "${common_args[@]}" \
-        > "$runtime_dir/palette.json" 2> "$runtime_dir/log"
+        > "$runtime_dir/raw.json" 2> "$runtime_dir/log"
 fi
 
-if ! jq -e '.colors | (type == "object" and (keys | length == 50) and .source_color)' \
+# Keep only the leading JSON object. matugen emits the palette first and hook
+# chatter after it, so the payload ends at the first line that is exactly `}`
+# at column 0.
+awk 'BEGIN { done = 0 } !done { print } /^\}$/ { done = 1 }' "$runtime_dir/raw.json" \
+    > "$runtime_dir/palette.json"
+
+if ! jq -e '.colors | (type == "object") and ((keys | length) == 50) and (has("source_color"))' \
     "$runtime_dir/palette.json" >/dev/null 2>&1; then
     printf 'matugen returned an unexpected palette shape\n' >&2
     tail -c 2000 -- "$runtime_dir/log" >&2 || true
