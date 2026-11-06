@@ -12,6 +12,11 @@
 > 的 `startup_valid`、`sample_valid`、`controlled_shutdown` 均为 100%，但因容器内
 > 若干可选外部命令缺失，`process_start_failures=9`，兼容性矩阵和失败日志归因仍未
 > 完成，因此本计划整体仍未完成。
+>
+> 后续执行记录：兼容性探针已改为自带隔离 Weston，长稳态/回收参数、old/new channel
+> 和 live telemetry 已合并；最新短 smoke 曾因合并时参数/生命周期冲突失败，修复已
+> 提交但尚未生成新的完整 raw/report。旧 channel、10 分钟稳态、100-cycle 回收和
+> QML live census 仍不得标记为已验证。
 
 ## 0. 硬约束
 
