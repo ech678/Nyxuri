@@ -87,7 +87,11 @@ def _score_matrix(scores: object) -> str:
             group = "执行"
         elif any(token in name for token in ("rss", "pss", "memory", "vm_")):
             group = "内存"
-        elif name in {"log_errors", "log_warnings", "compiled_empty", "process_start_failures", "success"}:
+        elif name in {
+            "log_errors", "log_warnings", "compiled_empty", "process_start_failures",
+            "optional_process_start_failures", "required_process_start_failures",
+            "unattributed_process_start_failures", "success",
+        }:
             group = "可靠性"
         else:
             group = "系统"

@@ -13,7 +13,10 @@ import time
 from dataclasses import asdict
 from pathlib import Path
 
-from benchmark_runtime import IPC_METHODS, RunResult, _process_tree, _quantile, _run_process, _terminate
+from benchmark_runtime import (
+    IPC_METHODS, OPTIONAL_PROCESS_COMMANDS, RunResult, _process_tree, _quantile,
+    _run_process, _terminate,
+)
 
 LOCK_PATH = Path(__file__).with_name("benchmark-lock.json")
 
@@ -247,7 +250,7 @@ def main() -> int:
             "runs": args.runs,
             "warmup_discarded": 1,
             "ipc_runs": args.ipc_runs,
-            "optional_process_commands": ["key", "lspci", "inotifywait", "ddcutil"],
+            "optional_process_commands": sorted(OPTIONAL_PROCESS_COMMANDS),
         },
         "baseline": [numeric_run(run) for run in baseline], "cold_start": [numeric_run(run) for run in cold],
         "warm_start": [numeric_run(run) for run in warm],
