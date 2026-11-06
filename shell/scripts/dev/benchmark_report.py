@@ -24,7 +24,8 @@ FIELDS: Final[tuple[str, ...]] = (
     "peak.minor_page_faults", "peak.major_page_faults", "peak.io_read_bytes", "peak.io_write_bytes",
     "peak.io_rchar_bytes", "peak.io_wchar_bytes", "peak.io_syscr", "peak.io_syscw",
     "peak.io_cancelled_write_bytes", "peak.process_count", "peak.thread_count", "peak.fd_count",
-    "log_errors", "log_warnings", "compiled_empty", "process_start_failures", "success",
+    "log_errors", "log_warnings", "fatal_log_count", "compiled_empty", "process_start_failures",
+    "startup_valid", "sample_valid", "controlled_shutdown", "success",
 )
 
 
@@ -84,11 +85,15 @@ def score(overhead: float | None) -> float | None:
 
 
 def build_report(raw: dict[str, object]) -> dict[str, object]:
-    baseline = raw["baseline"]
-    cold = raw["cold_start"]
-    warm = raw["warm_start"]
-    if not isinstance(baseline, list) or not isinstance(cold, list) or not isinstance(warm, list):
-        raise ValueError("raw benchmark schema has invalid run arrays")
+    def records(name: str) -> list[dict[str, object]]:
+        value = raw.get(name, [])
+        if not isinstance(value, list):
+            return []
+        return [item for item in value if isinstance(item, dict)]
+
+    baseline = records("baseline")
+    cold = records("cold_start")
+    warm = records("warm_start")
     base_summary = summarize(baseline)
     cold_summary = summarize(cold)
     warm_summary = summarize(warm)
@@ -121,8 +126,12 @@ def build_report(raw: dict[str, object]) -> dict[str, object]:
         "io_cancelled_write": ("peak.io_cancelled_write_bytes", "peak.io_cancelled_write_bytes"),
         "log_errors": ("log_errors", "log_errors"),
         "log_warnings": ("log_warnings", "log_warnings"),
+        "fatal_log_count": ("fatal_log_count", "fatal_log_count"),
         "compiled_empty": ("compiled_empty", "compiled_empty"),
         "process_start_failures": ("process_start_failures", "process_start_failures"),
+        "startup_valid": ("startup_valid", "startup_valid"),
+        "sample_valid": ("sample_valid", "sample_valid"),
+        "controlled_shutdown": ("controlled_shutdown", "controlled_shutdown"),
         "success": ("success", "success"),
     }
     ratios: dict[str, float | None] = {}
@@ -175,7 +184,7 @@ def build_report(raw: dict[str, object]) -> dict[str, object]:
                 action_scores[f"action.{name}"] = score(overhead)
     ratios.update(action_ratios)
     return {
-        "schema": 1,
+        "schema": 2,
         "runtime": raw.get("runtime", {}),
         "raw": {
             "baseline": base_summary,
@@ -510,12 +519,23 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--html", action="store_true", help="Kept for compatibility; HTML is always generated")
     args = parser.parse_args()
-    report = build_report(json.loads(args.raw.read_text(encoding="utf-8")))
+    input_error: str | None = None
+    try:
+        loaded = json.loads(args.raw.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        loaded = {}
+        input_error = f"invalid raw benchmark JSON: {error}"
+    if not isinstance(loaded, dict):
+        loaded = {}
+        input_error = input_error or "invalid raw benchmark root: expected object"
+    report = build_report(loaded)
+    if input_error:
+        report["input_error"] = input_error
     args.output.mkdir(parents=True, exist_ok=True)
     (args.output / "benchmark.json").write_text(json.dumps(report, ensure_ascii=True, indent=2), encoding="utf-8")
     (args.output / "benchmark.md").write_text(markdown(report), encoding="utf-8")
     (args.output / "benchmark.html").write_text(
-        render_html(json.loads(args.raw.read_text(encoding="utf-8")), report),
+        render_html(loaded, report),
         encoding="utf-8",
     )
     return 0
