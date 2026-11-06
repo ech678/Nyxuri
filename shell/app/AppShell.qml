@@ -39,14 +39,18 @@ Item {
         SpotlightCatalog.keystoneAvailable = Qt.binding(() => ActionGateway.keystoneHost
                                                               ? ActionGateway.keystoneHost.searchActionsAvailable :
                                                                 false);
-        ThemeService.reloadColors();
-        FontService.refresh();
-        I18nService.initialize();
-        SystemIdentityService.initialize();
         ShellStartupService.recordCoreReady();
         Qt.callLater(() => {
             ShellStartupService.recordFirstFrame();
             ShellStartupService.recordIpcReady();
+            // These services are useful immediately after the first frame,
+            // but none is part of CORE or the IPC gate.  Serialize them so a
+            // slow font scan, translation parse, or identity probe cannot
+            // monopolize the first event-loop batch.
+            ShellStartupService.scheduleBackground("theme-colors", () => ThemeService.reloadColors());
+            ShellStartupService.scheduleBackground("fonts", () => FontService.refresh());
+            ShellStartupService.scheduleBackground("i18n", () => I18nService.initialize());
+            ShellStartupService.scheduleBackground("system-identity", () => SystemIdentityService.initialize());
         });
     }
 
