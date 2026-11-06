@@ -46,7 +46,7 @@
 ## 1. 交付物清单
 
 - [ ] `llms-wiki/shell/performance-plan.md`（本计划，作为实施入口）。
-- [ ] 容器构建定义与锁定的 Quickshell/Qt/Nixpkgs 版本记录。
+- [x] 容器构建定义与锁定的 Quickshell/Qt/Nixpkgs 版本记录。
 - [x] 容器内可重复执行的 benchmark runner，支持基线、冷启动、热启动、交互、
   长稳态、资源回收、渲染和失败场景。
 - [x] 机器可读的 JSON 原始报告、汇总报告、对比报告和人读 Markdown 报告。
@@ -62,12 +62,12 @@
 
 ### 2.1 环境形态
 
-- [ ] 采用可复现的 Nix/Podman 容器；代码以只读方式挂载到 `/workspace`，结果写入
+- [x] 采用可复现的 Nix/Podman 容器；代码以只读方式挂载到 `/workspace`，结果写入
   单独的 `/results` 挂载点，禁止容器反向修改仓库源码。
-- [ ] 容器内创建独立目录：`/tmp/nyxuri-home`、`/tmp/nyxuri-config`、
+- [x] 容器内创建独立目录：`/tmp/nyxuri-home`、`/tmp/nyxuri-config`、
   `/tmp/nyxuri-data`、`/tmp/nyxuri-state`、`/tmp/nyxuri-cache`、
   `/tmp/nyxuri-runtime`。
-- [ ] 运行 Weston headless 或等价隔离 Wayland compositor；只使用容器内部
+- [x] 运行 Weston headless 或等价隔离 Wayland compositor；只使用容器内部
   `WAYLAND_DISPLAY`，不能绑定宿主 Wayland socket、X11 socket 或真实 D-Bus。
 - [ ] 先建立软件渲染可重复基准，再建立容器内 GPU/渲染后端基准；两套报告不能混用。
 - [ ] 容器内设置固定 locale、timezone、CPU affinity 策略、屏幕尺寸、刷新率、
@@ -77,11 +77,11 @@
 
 ### 2.2 更新 Quickshell
 
-- [ ] 在容器中查询可用的最新稳定 Quickshell 版本和对应 Nixpkgs 包信息；不要在
+- [x] 在容器中查询可用的最新稳定 Quickshell 版本和对应 Nixpkgs 包信息；不要在
   宿主机安装或升级任何包。
 - [x] 选择一个明确版本作为本轮基准，记录：Quickshell 版本、revision、Qt 主次
   版本、QtQuick backend、Wayland backend、Nixpkgs revision 和镜像 digest。
-- [ ] 对当前契约要求的 Quickshell 0.3.2 行为做兼容性矩阵：`qmldir`、动态
+- [x] 对当前契约要求的 Quickshell 0.3.2 行为做兼容性矩阵：`qmldir`、动态
   `Loader`、`file://` source、`qs.*` 预热 import、QML disk cache、`IpcHandler`、
   `FloatingWindow.minimumSize`、`HoverHandler` 和 `TapHandler`。
 - [ ] 在容器中分别测试旧锁定版本和更新版本：冷编译、重复启动、Loader 单元装载、
@@ -107,29 +107,29 @@
   也不能把缺失值伪装成零。
 - [x] 报告写出当前 Git SHA、工作树 dirty 状态、容器镜像 digest、Quickshell/Qt/
   Weston/Nixpkgs 版本、测试参数、渲染后端和环境变量摘要。
-- [ ] 报告中区分源码静态 profile、冷启动、热启动、稳态、峰值、交互、回收和长稳态；
+- [x] 报告中区分源码静态 profile、冷启动、热启动、稳态、峰值、交互、回收和长稳态；
   不把不同场景合并成一个无法解释的分数。
 
 ### 3.2 基线与重复次数
 
-- [ ] 同一个容器镜像内运行空 `ShellRoot` 基线、最小 Nyxuri 配置、默认全功能配置。
-- [ ] 冷启动每个场景至少 10 次，先丢弃一次预热结果，再报告 p50/p95/p99、min/max、
+- [x] 同一个容器镜像内运行空 `ShellRoot` 基线、最小 Nyxuri 配置、默认全功能配置。
+- [x] 冷启动每个场景至少 10 次，先丢弃一次预热结果，再报告 p50/p95/p99、min/max、
   标准差和失败次数。
-- [ ] 热启动明确缓存状态：qmlcache 命中、qmlcache 清空、XDG 缓存保留和完整 sandbox
+- [x] 热启动明确缓存状态：qmlcache 命中、qmlcache 清空、XDG 缓存保留和完整 sandbox
   重建必须分别测试，不能把它们统称为 warm。
-- [ ] 每个长稳态场景至少运行 10 分钟；高频打开/关闭场景至少循环 100 次；通知、
+- [x] 每个长稳态场景至少运行 10 分钟；高频打开/关闭场景至少循环 100 次；通知、
   搜索、网络设备等数据量场景至少覆盖 1、10、100、1000 条记录。
-- [ ] 每次报告保存原始采样，而不是只保存最终平均值；异常运行保留日志和退出原因。
+- [x] 每次报告保存原始采样，而不是只保存最终平均值；异常运行保留日志和退出原因。
 
 ### 3.3 采样项目
 
-- [ ] 启动：进程创建、首个日志、FIRST_FRAME、READY、IPC_READY、首个可交互动作。
-- [ ] CPU：进程树 user/system CPU、CPU 时间、CPU 利用率、上下文切换、page fault。
-- [ ] 内存：RSS、PSS、Private、匿名/file/shmem、VmPeak、VmHWM、swap、cgroup current
+- [x] 启动：进程创建、首个日志、FIRST_FRAME、READY、IPC_READY、首个可交互动作。
+- [x] CPU：进程树 user/system CPU、CPU 时间、CPU 利用率、上下文切换、page fault。
+- [x] 内存：RSS、PSS、Private、匿名/file/shmem、VmPeak、VmHWM、swap、cgroup current
   和 peak。
 - [ ] 进程：Shell 子进程数量、线程数、fd 数、Process 启动次数、失败次数、平均
   生命周期和重启次数。
-- [ ] I/O：read/write bytes、read/write syscall 数、日志字节数、配置和缓存读写。
+- [x] I/O：read/write bytes、read/write syscall 数、日志字节数、配置和缓存读写。
 - [ ] QML live census：Loader 状态、已实例化单元、singleton 触发列表、活跃 Timer、
   活跃 Process、FileView、Connections、Repeater/ListView/GridView delegate、Canvas、
   layer 和窗口计数。当前 Shell IPC 不暴露 QML 对象树，这些计数仍未取得真实运行值。
@@ -137,7 +137,7 @@
   `qml_resources` 分开写入每次运行记录。计数缺失时输出 `null` 和 `unavailable`；只有
   IPC payload 提供完整的非负整数计数时才标为 `available`。源码计数仍归 `static_qml`，
   不作为 live census 替代。
-- [ ] 回收：关闭动作后 100 ms、1 s、2 s、5 s 的计数和 RSS/PSS；重复循环后的基线
+- [x] 回收：关闭动作后 100 ms、1 s、2 s、5 s 的计数和 RSS/PSS；重复循环后的基线
   漂移；异常退出后的残留进程和 socket。
 - [ ] 渲染：容器内 renderer 的帧时间、掉帧、纹理/离屏目标可用指标；软件渲染与 GPU
   后端分开报告。
