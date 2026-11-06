@@ -8,13 +8,14 @@ import json
 import os
 import re
 import shutil
-import signal
 import subprocess
 import time
 from dataclasses import asdict
 from pathlib import Path
 
 from benchmark_runtime import IPC_METHODS, RunResult, _process_tree, _quantile, _run_process, _terminate
+
+LOCK_PATH = Path(__file__).with_name("benchmark-lock.json")
 
 ACTION_CASES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("spotlight_toggle", ("spotlight", "toggle")),
@@ -94,10 +95,7 @@ def source_profile() -> dict[str, int]:
 
 def numeric_run(run: RunResult) -> dict[str, object]:
     data = asdict(run)
-    data.pop("log_path", None)
-    data["marker"] = int(bool(data["marker"]))
-    data["expected_exit"] = int(data["exit_code"] in (0, -signal.SIGTERM))
-    data["success"] = int(data["marker"] == 1 and data["expected_exit"] == 1)
+    data["log_path"] = str(Path(str(data["log_path"])).relative_to(Path("/results")))
     return data
 
 
@@ -193,6 +191,8 @@ def main() -> int:
             if socket.exists(): break
             time.sleep(0.05)
         if not socket.exists(): raise RuntimeError("private Weston socket did not appear")
+        _run_process(kind="baseline", run_number=0, environment=env, baseline_dir=baseline_dir, log_dir=log_dir)
+        _run_process(kind="shell", run_number=0, environment=env, baseline_dir=baseline_dir, log_dir=log_dir)
         baseline = [_run_process(kind="baseline", run_number=i, environment=env, baseline_dir=baseline_dir, log_dir=log_dir) for i in range(1, args.runs + 1)]
         cold = [_run_process(kind="shell", run_number=i, environment=env, baseline_dir=baseline_dir, log_dir=log_dir) for i in range(1, args.runs + 1)]
         warm = [_run_process(kind="shell", run_number=i, environment=env, baseline_dir=baseline_dir, log_dir=log_dir, warm=True) for i in range(1, max(2, args.runs // 2) + 1)]
@@ -207,11 +207,47 @@ def main() -> int:
         actions = action_benchmark(env, log_dir, max(5, args.ipc_runs // 3))
     finally:
         _terminate(weston); weston_log.close()
-        shutil.rmtree(log_dir, ignore_errors=True)
         shutil.rmtree(baseline_dir, ignore_errors=True)
+
+    def command_output(*command: str) -> str:
+        result = subprocess.run(command, capture_output=True, text=True, check=False)
+        return result.stdout.strip() or result.stderr.strip()
+
+    lock = json.loads(LOCK_PATH.read_text(encoding="utf-8"))
+    git_sha = os.environ.get("NYXURI_BENCHMARK_GIT_SHA", "") or command_output(
+        "git", "-C", "/workspace", "rev-parse", "HEAD"
+    )
+    dirty_value = os.environ.get("NYXURI_BENCHMARK_GIT_DIRTY")
+    git_dirty = (dirty_value == "1") if dirty_value is not None else bool(
+        command_output("git", "-C", "/workspace", "status", "--porcelain")
+    )
+    environment_summary = {
+        key: env.get(key) for key in (
+            "HOME", "XDG_RUNTIME_DIR", "XDG_CACHE_HOME", "XDG_CONFIG_HOME",
+            "XDG_DATA_HOME", "XDG_STATE_HOME", "WAYLAND_DISPLAY",
+            "QT_QPA_PLATFORM", "QT_QUICK_BACKEND", "QSG_RHI_BACKEND",
+            "DBUS_SESSION_BUS_ADDRESS",
+        )
+    }
     result = {
-        "schema": 1,
-        "runtime": {"quickshell": subprocess.run(["qs", "--version"], capture_output=True, text=True, check=False).stdout.strip(), "wayland_backend": "weston-headless", "renderer": "pixman", "qt_quick_backend": "software", "runs": args.runs, "ipc_runs": args.ipc_runs},
+        "schema": 2,
+        "runtime": {
+            "quickshell": command_output("qs", "--version"),
+            "qt": command_output("qtpaths", "--qt-version"),
+            "weston": command_output("weston", "--version"),
+            "wayland_backend": lock.get("weston_backend"),
+            "renderer": lock.get("renderer"),
+            "qt_quick_backend": lock.get("qt_quick_backend"),
+            "container_image": lock.get("container_image"),
+            "container_digest": lock.get("container_digest"),
+            "nixpkgs_revision": lock.get("nixpkgs_revision"),
+            "git_sha": git_sha or None,
+            "git_dirty": git_dirty,
+            "environment": environment_summary,
+            "runs": args.runs,
+            "warmup_discarded": 1,
+            "ipc_runs": args.ipc_runs,
+        },
         "baseline": [numeric_run(run) for run in baseline], "cold_start": [numeric_run(run) for run in cold],
         "warm_start": [numeric_run(run) for run in warm],
         "ipc": {"baseline": ipc_baseline, "shell": ipc_shell},
