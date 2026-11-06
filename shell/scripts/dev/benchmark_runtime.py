@@ -9,6 +9,7 @@ than a mock or an offscreen QML fixture.
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import signal
@@ -17,18 +18,32 @@ import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Final
+from typing import Final, Literal
 
 IPC_METHODS: Final[tuple[str, ...]] = ("stage", "isReady", "status", "metrics")
 IPC_MARKER: Final[re.Pattern[str]] = re.compile(
     r"Stage transition -> IPC_READY .*elapsed:\s*(\d+)ms"
 )
+PROCESS_FAILURE_MARKER: Final[re.Pattern[str]] = re.compile(
+    r"Process failed to start", re.IGNORECASE
+)
 PROCESS_FAILURE_COMMAND: Final[re.Pattern[str]] = re.compile(
-    r"Process failed to start.*?Command:\s*QList\(\"([^\"]+)\""
+    r"Command:\s*QList\(\s*\"([^\"]+)\"", re.IGNORECASE
 )
 OPTIONAL_PROCESS_COMMANDS: Final[frozenset[str]] = frozenset({
     "key", "lspci", "inotifywait", "ddcutil",
 })
+RUNTIME_QML_RESOURCE_KEYS: Final[tuple[str, ...]] = (
+    "loaders", "timers", "processes", "fileviews", "connections", "delegates",
+    "canvas", "layers", "windows",
+)
+
+
+@dataclass(frozen=True, slots=True)
+class ProcessStartFailure:
+    command: str | None
+    category: Literal["optional", "required", "unattributed"]
+    reason: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,12 +98,141 @@ class RunResult:
     process_start_failures: int
     optional_process_start_failures: int
     required_process_start_failures: int
+    unattributed_process_start_failures: int
+    process_start_failure_details: tuple[ProcessStartFailure, ...]
+    live_telemetry: dict[str, object] | None
     exit_code: int | None
     startup_valid: bool
     sample_valid: bool
     controlled_shutdown: bool
     success: bool
     log_path: str
+
+
+def classify_process_start_failures(text: str) -> tuple[ProcessStartFailure, ...]:
+    """Classify each failed spawn; unknown commands remain required for gating."""
+    markers = list(PROCESS_FAILURE_MARKER.finditer(text))
+    failures: list[ProcessStartFailure] = []
+    for index, marker in enumerate(markers):
+        next_start = markers[index + 1].start() if index + 1 < len(markers) else len(text)
+        block = text[marker.start():next_start]
+        command_match = PROCESS_FAILURE_COMMAND.search(block)
+        if command_match is None:
+            failures.append(ProcessStartFailure(
+                command=None, category="unattributed", reason="command_not_logged"
+            ))
+            continue
+
+        command = command_match.group(1).strip().rsplit("/", 1)[-1]
+        if command in OPTIONAL_PROCESS_COMMANDS:
+            failures.append(ProcessStartFailure(
+                command=command, category="optional", reason="optional_dependency_unavailable"
+            ))
+        elif command:
+            failures.append(ProcessStartFailure(
+                command=command, category="required", reason="required_process_unavailable"
+            ))
+        else:
+            failures.append(ProcessStartFailure(
+                command=None, category="unattributed", reason="command_not_logged"
+            ))
+    return tuple(failures)
+
+
+def process_failure_counts(
+    failures: tuple[ProcessStartFailure, ...],
+) -> dict[str, int]:
+    """Return fail-closed counts; unattributed failures are included as required."""
+    optional = sum(failure.category == "optional" for failure in failures)
+    unattributed = sum(failure.category == "unattributed" for failure in failures)
+    return {
+        "process_start_failures": len(failures),
+        "optional_process_start_failures": optional,
+        "required_process_start_failures": len(failures) - optional,
+        "unattributed_process_start_failures": unattributed,
+    }
+
+
+def has_required_process_failures(failures: tuple[ProcessStartFailure, ...]) -> bool:
+    """Unknown and required command failures block success; optional ones do not."""
+    return any(failure.category != "optional" for failure in failures)
+
+
+def _unavailable_live_telemetry(sampled_at_ms: int, reason: str) -> dict[str, object]:
+    return {
+        "schema": 1,
+        "source": "qs-ipc-shell-metrics",
+        "sampled_at_ms": sampled_at_ms,
+        "status": "unavailable",
+        "reason": reason,
+        "startup_metrics": None,
+        "qml_resources": {
+            "status": "unavailable",
+            "reason": "resource_counts_not_exposed_by_shell_metrics",
+            "counts": {key: None for key in RUNTIME_QML_RESOURCE_KEYS},
+        },
+    }
+
+
+def parse_live_telemetry(reply: str, *, sampled_at_ms: int) -> dict[str, object]:
+    """Parse shell IPC metrics while keeping absent QML counts explicitly unknown."""
+    try:
+        payload = json.loads(reply)
+    except json.JSONDecodeError:
+        return _unavailable_live_telemetry(sampled_at_ms, "invalid_json_reply")
+    if not isinstance(payload, dict):
+        return _unavailable_live_telemetry(sampled_at_ms, "non_object_reply")
+
+    raw_resources = payload.get("qml_resources")
+    counts: dict[str, int | None] = {key: None for key in RUNTIME_QML_RESOURCE_KEYS}
+    resource_status = "unavailable"
+    resource_reason = "resource_counts_not_exposed_by_shell_metrics"
+    if isinstance(raw_resources, dict):
+        valid_values = 0
+        for key in RUNTIME_QML_RESOURCE_KEYS:
+            value = raw_resources.get(key)
+            if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+                counts[key] = value
+                valid_values += 1
+        if valid_values == len(RUNTIME_QML_RESOURCE_KEYS):
+            resource_status = "available"
+            resource_reason = ""
+        elif valid_values > 0:
+            resource_status = "partial"
+            resource_reason = "incomplete_resource_counts"
+        else:
+            resource_status = "invalid"
+            resource_reason = "invalid_resource_counts"
+
+    return {
+        "schema": 1,
+        "source": "qs-ipc-shell-metrics",
+        "sampled_at_ms": sampled_at_ms,
+        "status": "available",
+        "reason": "",
+        "startup_metrics": payload,
+        "qml_resources": {
+            "status": resource_status,
+            "reason": resource_reason,
+            "counts": counts,
+        },
+    }
+
+
+def _capture_live_telemetry(environment: dict[str, str], config_path: str) -> dict[str, object]:
+    """Query metrics over the private benchmark IPC after performance sampling."""
+    sampled_at_ms = int(time.time() * 1000)
+    try:
+        result = subprocess.run(
+            ["qs", "-p", config_path, "ipc", "call", "shell", "metrics"],
+            env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            text=True, check=False, timeout=2,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return _unavailable_live_telemetry(sampled_at_ms, "ipc_call_failed")
+    if result.returncode != 0:
+        return _unavailable_live_telemetry(sampled_at_ms, "ipc_call_failed")
+    return parse_live_telemetry(result.stdout, sampled_at_ms=sampled_at_ms)
 
 
 def _quantile(values: list[float], probability: float) -> float | None:
@@ -353,6 +497,14 @@ def _run_process(
             if marker_time is not None and now - marker_time >= 2:
                 break
             time.sleep(0.05)
+        if kind == "shell":
+            live_telemetry = (
+                _capture_live_telemetry(child_env, "/workspace/shell")
+                if process.poll() is None
+                else _unavailable_live_telemetry(int(time.time() * 1000), "shell_not_running")
+            )
+        else:
+            live_telemetry = None
         _terminate(process)
         hz = os.sysconf("SC_CLK_TCK")
         cpu_ms = None
@@ -378,15 +530,11 @@ def _run_process(
         startup_valid = marker_time is not None
         sample_valid = bool(samples) and bool(steady_samples)
         compiled_empty = len(re.findall(r"compiled empty", text, re.IGNORECASE))
-        process_start_failures = len(re.findall(r"Process failed to start", text, re.IGNORECASE))
-        failed_commands = PROCESS_FAILURE_COMMAND.findall(text)
-        optional_process_start_failures = sum(
-            command in OPTIONAL_PROCESS_COMMANDS for command in failed_commands
-        )
-        required_process_start_failures = process_start_failures - optional_process_start_failures
+        process_failures = classify_process_start_failures(text)
+        failure_counts = process_failure_counts(process_failures)
         success = all((startup_valid, sample_valid, controlled_shutdown,
                        fatal_log_count == 0, compiled_empty == 0,
-                       required_process_start_failures == 0))
+                       not has_required_process_failures(process_failures)))
         return RunResult(
             marker=marker_time is not None,
             startup_ms=(marker_time - started) * 1000 if marker_time is not None else None,
@@ -401,9 +549,12 @@ def _run_process(
             log_warnings=len(re.findall(r"\bWARN\b", text)),
             fatal_log_count=fatal_log_count,
             compiled_empty=compiled_empty,
-            process_start_failures=process_start_failures,
-            optional_process_start_failures=optional_process_start_failures,
-            required_process_start_failures=required_process_start_failures,
+            process_start_failures=failure_counts["process_start_failures"],
+            optional_process_start_failures=failure_counts["optional_process_start_failures"],
+            required_process_start_failures=failure_counts["required_process_start_failures"],
+            unattributed_process_start_failures=failure_counts["unattributed_process_start_failures"],
+            process_start_failure_details=process_failures,
+            live_telemetry=live_telemetry,
             exit_code=exit_code,
             startup_valid=startup_valid,
             sample_valid=sample_valid,

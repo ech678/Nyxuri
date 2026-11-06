@@ -95,8 +95,9 @@
 - [x] 修复 benchmark 的成功语义：采样后受控 SIGTERM 是正常结束，不得被记为失败。
 - [x] 将 `marker`、`startup_valid`、`sample_valid`、`controlled_shutdown`、
   `fatal_log_count`、`compiled_empty`、`process_start_failures` 和 `success` 分开。
-- [ ] `success` 只在启动标记有效、采样有效、无 compiled empty、无启动失败和无
-  fatal 错误时成立，与退出码是否为 0 解耦。
+- [x] `success` 只在启动标记有效、采样有效、无 compiled empty、无 required 或
+  无法归因的进程启动失败、无 fatal 错误时成立，与退出码是否为 0 解耦。已确认的
+  optional dependency 失败单独计数，不阻断成功；未知命令和缺失命令详情按失败处理。
 - [x] 所有缺失、无效、空集合和零分母指标均输出 `null`/`N/A`，报告生成不能抛异常，
   也不能把缺失值伪装成零。
 - [x] 报告写出当前 Git SHA、工作树 dirty 状态、容器镜像 digest、Quickshell/Qt/
@@ -124,9 +125,13 @@
 - [ ] 进程：Shell 子进程数量、线程数、fd 数、Process 启动次数、失败次数、平均
   生命周期和重启次数。
 - [ ] I/O：read/write bytes、read/write syscall 数、日志字节数、配置和缓存读写。
-- [ ] QML：Loader 状态、已实例化单元、singleton 触发列表、活跃 Timer、活跃 Process、
-  FileView、Connections、Repeater delegate、ListView/GridView delegate、Canvas、
-  layer 和窗口计数。
+- [ ] QML live census：Loader 状态、已实例化单元、singleton 触发列表、活跃 Timer、
+  活跃 Process、FileView、Connections、Repeater/ListView/GridView delegate、Canvas、
+  layer 和窗口计数。当前 Shell IPC 不暴露 QML 对象树，这些计数仍未取得真实运行值。
+- [x] 容器 runner 在进程树性能采样结束后读取 `shell metrics`，把 startup metrics 与
+  `qml_resources` 分开写入每次运行记录。计数缺失时输出 `null` 和 `unavailable`；只有
+  IPC payload 提供完整的非负整数计数时才标为 `available`。源码计数仍归 `static_qml`，
+  不作为 live census 替代。
 - [ ] 回收：关闭动作后 100 ms、1 s、2 s、5 s 的计数和 RSS/PSS；重复循环后的基线
   漂移；异常退出后的残留进程和 socket。
 - [ ] 渲染：容器内 renderer 的帧时间、掉帧、纹理/离屏目标可用指标；软件渲染与 GPU

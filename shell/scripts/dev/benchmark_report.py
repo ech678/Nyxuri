@@ -26,6 +26,7 @@ FIELDS: Final[tuple[str, ...]] = (
     "peak.io_cancelled_write_bytes", "peak.process_count", "peak.thread_count", "peak.fd_count",
     "log_errors", "log_warnings", "fatal_log_count", "compiled_empty", "process_start_failures",
     "optional_process_start_failures", "required_process_start_failures",
+    "unattributed_process_start_failures",
     "startup_valid", "sample_valid", "controlled_shutdown", "success",
 )
 
@@ -132,6 +133,7 @@ def build_report(raw: dict[str, object]) -> dict[str, object]:
         "process_start_failures": ("process_start_failures", "process_start_failures"),
         "optional_process_start_failures": ("optional_process_start_failures", "optional_process_start_failures"),
         "required_process_start_failures": ("required_process_start_failures", "required_process_start_failures"),
+        "unattributed_process_start_failures": ("unattributed_process_start_failures", "unattributed_process_start_failures"),
         "startup_valid": ("startup_valid", "startup_valid"),
         "sample_valid": ("sample_valid", "sample_valid"),
         "controlled_shutdown": ("controlled_shutdown", "controlled_shutdown"),
@@ -421,7 +423,9 @@ def html_report(
         ('系统', ['process_count', 'fd_count', 'context_switches',
                    'page_faults', 'io_read', 'io_write']),
         ('可靠性', ['log_errors', 'log_warnings', 'compiled_empty',
-                     'process_start_failures', 'success']),
+                     'process_start_failures', 'optional_process_start_failures',
+                     'required_process_start_failures', 'unattributed_process_start_failures',
+                     'success']),
         ('IPC', sorted(k for k in scores if isinstance(k, str) and k.startswith('ipc.'))),
         ('交互', sorted(k for k in scores if isinstance(k, str) and k.startswith('action.'))),
     ]
