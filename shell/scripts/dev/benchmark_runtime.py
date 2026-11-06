@@ -264,6 +264,12 @@ def _terminate(process: subprocess.Popen[str]) -> None:
     try:
         os.killpg(process.pid, signal.SIGTERM)
     except ProcessLookupError:
+        # Reap a process that exited just before the signal, otherwise
+        # Popen.returncode stays unset and a normal exit is misclassified.
+        try:
+            process.wait(timeout=0)
+        except (subprocess.TimeoutExpired, ChildProcessError):
+            pass
         return
     try:
         process.wait(timeout=3)
