@@ -13,7 +13,7 @@ import time
 from dataclasses import asdict
 from pathlib import Path
 
-from benchmark_runtime import IPC_METHODS, RunResult, _process_tree, _quantile, _run_process, _terminate
+from benchmark_runtime import IPC_METHODS, ProcessSample, RunResult, _process_tree, _quantile, _run_process, _terminate
 
 LOCK_PATH = Path(__file__).with_name("benchmark-lock.json")
 
@@ -144,6 +144,120 @@ def action_benchmark(environment: dict[str, str], log_dir: Path, count: int) -> 
             _terminate(process)
 
 
+def _sample_dict(sample: ProcessSample | None) -> dict[str, object] | None:
+    return asdict(sample) if sample is not None else None
+
+
+def _wait_for_marker(log_path: Path, marker: str, process: subprocess.Popen[str], timeout: float) -> float | None:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        log_path.touch(exist_ok=True)
+        text = log_path.read_text(errors="replace")
+        if marker in text:
+            return time.monotonic()
+        if process.poll() is not None:
+            return None
+        time.sleep(0.05)
+    return None
+
+
+def steady_state_benchmark(
+    environment: dict[str, str], log_dir: Path, duration_seconds: float, interval_seconds: float = 1.0,
+) -> dict[str, object]:
+    """Keep the real shell alive and preserve every process-tree sample."""
+    if duration_seconds <= 0 or interval_seconds <= 0:
+        raise ValueError("duration and interval must be positive")
+    log_path = log_dir / "steady-state-host.log"
+    samples: list[dict[str, object]] = []
+    with log_path.open("w", encoding="utf-8") as log:
+        process = subprocess.Popen(
+            ["/workspace/shell/nyxuri-shell", "-v"], env=environment,
+            stdout=log, stderr=subprocess.STDOUT, start_new_session=True, text=True,
+        )
+        started = time.monotonic()
+        marker_time = _wait_for_marker(log_path, "IPC_READY", process, timeout=20.0)
+        if marker_time is None:
+            _terminate(process)
+            return {
+                "scenario": "long_steady_state", "requested_seconds": duration_seconds,
+                "elapsed_seconds": max(time.monotonic() - started, 0.0), "startup_valid": False,
+                "sample_valid": False, "controlled_shutdown": process.returncode in (0, -15),
+                "samples": [], "log_path": str(log_path),
+            }
+        deadline = marker_time + duration_seconds
+        while time.monotonic() < deadline and process.poll() is None:
+            sample = _process_tree(process.pid)
+            if sample is not None:
+                samples.append({"elapsed_seconds": time.monotonic() - marker_time, "sample": asdict(sample)})
+            time.sleep(interval_seconds)
+        _terminate(process)
+    elapsed = max(time.monotonic() - marker_time, 0.0)
+    rss: list[int] = []
+    for row in samples:
+        sample = row.get("sample")
+        if isinstance(sample, dict) and isinstance(sample.get("rss_kb"), int):
+            rss.append(sample["rss_kb"])
+    return {
+        "scenario": "long_steady_state", "requested_seconds": duration_seconds,
+        "elapsed_seconds": elapsed, "startup_valid": True, "sample_valid": bool(samples),
+        "controlled_shutdown": process.returncode in (0, -15), "sample_count": len(samples),
+        "rss_kb": {"first": rss[0] if rss else None, "last": rss[-1] if rss else None,
+                   "min": min(rss) if rss else None, "max": max(rss) if rss else None,
+                   "delta": (rss[-1] - rss[0]) if len(rss) >= 2 else None},
+        "samples": samples, "log_path": str(log_path),
+    }
+
+
+def reclamation_benchmark(
+    environment: dict[str, str], log_dir: Path, cycles: int, close_wait_seconds: float = 0.1,
+) -> dict[str, object]:
+    """Open and close a real unit repeatedly, retaining post-close observations."""
+    if cycles < 1 or close_wait_seconds < 0:
+        raise ValueError("cycles must be >= 1 and close wait must be >= 0")
+    log_path = log_dir / "reclamation-host.log"
+    rows: list[dict[str, object]] = []
+    with log_path.open("w", encoding="utf-8") as log:
+        process = subprocess.Popen(
+            ["/workspace/shell/nyxuri-shell", "-v"], env=environment,
+            stdout=log, stderr=subprocess.STDOUT, start_new_session=True, text=True,
+        )
+        marker_time = _wait_for_marker(log_path, "IPC_READY", process, timeout=20.0)
+        if marker_time is None:
+            _terminate(process)
+            return {"scenario": "reclamation", "requested_cycles": cycles, "completed_cycles": 0,
+                    "startup_valid": False, "sample_valid": False, "controlled_shutdown": process.returncode in (0, -15),
+                    "cycles": [], "horizon_samples": {}, "log_path": str(log_path)}
+        for cycle in range(1, cycles + 1):
+            opened = subprocess.run(
+                ["qs", "-p", "/workspace/shell", "ipc", "call", "spotlight", "open"],
+                env=environment, capture_output=True, text=True, check=False,
+            )
+            closed = subprocess.run(
+                ["qs", "-p", "/workspace/shell", "ipc", "call", "spotlight", "close"],
+                env=environment, capture_output=True, text=True, check=False,
+            )
+            time.sleep(close_wait_seconds)
+            sample = _process_tree(process.pid)
+            rows.append({
+                "cycle": cycle, "open_returncode": opened.returncode, "close_returncode": closed.returncode,
+                "open_value": opened.stdout.strip(), "close_value": closed.stdout.strip(),
+                "sample_after_close": _sample_dict(sample),
+            })
+        horizon: dict[str, dict[str, object] | None] = {}
+        for delay in (0.1, 1.0, 2.0, 5.0):
+            time.sleep(delay if delay == 0.1 else delay - (0.1 if delay > 0.1 else 0))
+            horizon[str(delay)] = _sample_dict(_process_tree(process.pid))
+        _terminate(process)
+    successful = [row for row in rows if row["open_returncode"] == 0 and row["close_returncode"] == 0]
+    return {
+        "scenario": "reclamation", "requested_cycles": cycles, "completed_cycles": len(rows),
+        "successful_cycles": len(successful), "startup_valid": True, "sample_valid": any(
+            row["sample_after_close"] is not None for row in rows),
+        "controlled_shutdown": process.returncode in (0, -15), "cycles": rows,
+        "horizon_samples": horizon, "log_path": str(log_path),
+    }
+
+
 def environment() -> dict[str, str]:
     runtime = Path("/tmp/nyxuri-runtime")
     runtime.mkdir(parents=True, exist_ok=True)
@@ -171,7 +285,16 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--runs", type=int, default=6)
     parser.add_argument("--ipc-runs", type=int, default=20)
+    parser.add_argument("--steady-seconds", type=float, default=600.0)
+    parser.add_argument("--reclaim-cycles", type=int, default=100)
+    parser.add_argument("--reclaim-close-wait", type=float, default=0.1)
     args = parser.parse_args()
+    if args.steady_seconds <= 0:
+        parser.error("--steady-seconds must be > 0")
+    if args.reclaim_cycles < 1:
+        parser.error("--reclaim-cycles must be >= 1")
+    if args.reclaim_close_wait < 0:
+        parser.error("--reclaim-close-wait must be >= 0")
     output = args.output; output.parent.mkdir(parents=True, exist_ok=True)
     log_dir = output.parent / "logs"; log_dir.mkdir(exist_ok=True)
     env = environment(); weston_log = (log_dir / "weston.log").open("w")
@@ -205,6 +328,8 @@ def main() -> int:
             "IPC_READY", ["/workspace/shell/nyxuri-shell", "-v"]
         )
         actions = action_benchmark(env, log_dir, max(5, args.ipc_runs // 3))
+        steady_state = steady_state_benchmark(env, log_dir, args.steady_seconds)
+        reclamation = reclamation_benchmark(env, log_dir, args.reclaim_cycles, args.reclaim_close_wait)
     finally:
         _terminate(weston); weston_log.close()
         shutil.rmtree(baseline_dir, ignore_errors=True)
@@ -247,12 +372,17 @@ def main() -> int:
             "runs": args.runs,
             "warmup_discarded": 1,
             "ipc_runs": args.ipc_runs,
+            "steady_seconds": args.steady_seconds,
+            "reclaim_cycles": args.reclaim_cycles,
+            "reclaim_close_wait": args.reclaim_close_wait,
             "optional_process_commands": ["key", "lspci", "inotifywait", "ddcutil"],
         },
         "baseline": [numeric_run(run) for run in baseline], "cold_start": [numeric_run(run) for run in cold],
         "warm_start": [numeric_run(run) for run in warm],
         "ipc": {"baseline": ipc_baseline, "shell": ipc_shell},
         "actions": actions,
+        "long_steady_state": steady_state,
+        "reclamation": reclamation,
         "source_profile": source_profile(),
     }
     output.write_text(json.dumps(result, ensure_ascii=True, indent=2), encoding="utf-8")

@@ -18,6 +18,10 @@ def main() -> int:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--runs", type=int, default=10)
     parser.add_argument("--ipc-runs", type=int, default=20)
+    parser.add_argument("--steady-seconds", type=float, default=600.0)
+    parser.add_argument("--reclaim-cycles", type=int, default=100)
+    parser.add_argument("--reclaim-close-wait", type=float, default=0.1)
+    parser.add_argument("--quickshell-channel", choices=("old", "new"), default="new")
     parser.add_argument("--keep-volume", action="store_true")
     parser.add_argument("--nix-volume")
     args = parser.parse_args()
@@ -53,18 +57,23 @@ def main() -> int:
             "--tmpfs", "/tmp", "--tmpfs", "/run", "--tmpfs", "/root",
             "-e", f"NYXURI_BENCHMARK_GIT_SHA={git_sha}",
             "-e", f"NYXURI_BENCHMARK_GIT_DIRTY={'1' if git_dirty else '0'}",
+            "-e", f"NYXURI_QUICKSHELL_CHANNEL={args.quickshell_channel}",
             "-v", f"{volume}:/nix", "-v", f"{repo}:/workspace:ro",
             "-v", f"{output}:/results", "-w", "/workspace",
             "docker.io/nixos/nix@sha256:d078d7153763895fce17c5fbbdeb86fcfcac414ca0ba875d413c1df57be19931",
             "sh", "-lc",
             "nix-shell /workspace/shell/scripts/dev/benchmark-shell.nix "
+            f"--argstr quickshellChannel {args.quickshell_channel} "
             "--run 'mkdir -p /tmp/nyxuri-runtime && chmod 700 /tmp/nyxuri-runtime && "
             "export XDG_RUNTIME_DIR=/tmp/nyxuri-runtime && "
             "dbus-run-session --config-file=/workspace/shell/scripts/dev/benchmark-dbus-session.conf -- "
             "python3 /workspace/shell/scripts/dev/benchmark_scenarios.py "
-            f"--output /results/raw.json --runs {args.runs} --ipc-runs {args.ipc_runs} && "
+            f"--output /results/raw.json --runs {args.runs} --ipc-runs {args.ipc_runs} "
+            f"--steady-seconds {args.steady_seconds} --reclaim-cycles {args.reclaim_cycles} "
+            f"--reclaim-close-wait {args.reclaim_close_wait} && "
             "python3 /workspace/shell/scripts/dev/benchmark_compatibility.py "
-            "--output /results/compatibility.json --runs 1'",
+            f"--output /results/compatibility-{args.quickshell_channel}.json "
+            f"--channel {args.quickshell_channel} --runs 1'",
         ]
         subprocess.run(command, check=True)
     finally:
@@ -73,6 +82,9 @@ def main() -> int:
     raw = output / "raw.json"
     if not raw.exists():
         raise SystemExit(f"benchmark did not produce {raw}")
+    channel_compatibility = output / f"compatibility-{args.quickshell_channel}.json"
+    if channel_compatibility.exists():
+        shutil.copy2(channel_compatibility, output / "compatibility.json")
     subprocess.run([
         "python3", str(repo / "shell/scripts/dev/benchmark_report.py"),
         str(raw), "--output", str(output),
