@@ -60,7 +60,10 @@ Item {
             onLoaded: {
                 failedHeals = 0;
                 root.unitLoaded(modelData.id, item);
+                root.armHealTimer();
             }
+            onItemChanged: root.armHealTimer()
+            onStatusChanged: root.armHealTimer()
         }
     }
 
@@ -82,7 +85,25 @@ Item {
             if (loader)
                 loader.failedHeals = 0;
         }
-        healTimer.restart();
+        root.armHealTimer();
+    }
+
+    function hasPendingHeals() {
+        for (let i = 0; i < PluginRegistry.units.length; i++) {
+            const unit = PluginRegistry.units[i];
+            const loader = slotRepeater.itemAt(i);
+            if (loader && !loader.suppressed && root.slotActive(unit) && loader.status === Loader.Error
+                    && loader.item === null && loader.failedHeals < root.healPassLimit)
+                return true;
+        }
+        return false;
+    }
+
+    function armHealTimer() {
+        if (root.hasPendingHeals())
+            healTimer.restart();
+        else
+            healTimer.stop();
     }
 
     Timer {
@@ -90,7 +111,7 @@ Item {
 
         interval: 4000
         repeat: true
-        running: true
+        running: false
 
         onTriggered: {
             root._healPasses += 1;
@@ -100,7 +121,7 @@ Item {
                 const loader = slotRepeater.itemAt(i);
                 if (!loader || loader.suppressed)
                     continue;
-                if (!root.slotActive(unit) || loader.item !== null)
+                if (!root.slotActive(unit) || loader.status !== Loader.Error || loader.item !== null)
                     continue;
                 if (loader.failedHeals >= root.healPassLimit)
                     continue; // given up — stays dark until unit-changed
@@ -135,6 +156,7 @@ Item {
                 if (loader)
                     loader.suppressed = false;
             }
+            root.armHealTimer();
         }
     }
 
