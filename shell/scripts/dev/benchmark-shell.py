@@ -46,6 +46,10 @@ def main() -> int:
         command = [
             "podman", "run", "--rm", "--name", "nyxuri-shell-benchmark",
             "--security-opt=no-new-privileges", "--cap-drop=all",
+            # Rootless Nix populates the persistent /nix volume by changing
+            # ownership and mode bits. Keep the default-deny profile and add
+            # only the capabilities needed for that bootstrap operation.
+            "--cap-add=CHOWN", "--cap-add=FOWNER", "--cap-add=DAC_OVERRIDE",
             "--tmpfs", "/tmp", "--tmpfs", "/run", "--tmpfs", "/root",
             "-e", f"NYXURI_BENCHMARK_GIT_SHA={git_sha}",
             "-e", f"NYXURI_BENCHMARK_GIT_DIRTY={'1' if git_dirty else '0'}",
