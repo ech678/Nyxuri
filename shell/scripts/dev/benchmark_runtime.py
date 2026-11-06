@@ -72,9 +72,14 @@ class RunResult:
     cpu_util_percent: float | None
     log_errors: int
     log_warnings: int
+    fatal_log_count: int
     compiled_empty: int
     process_start_failures: int
     exit_code: int | None
+    startup_valid: bool
+    sample_valid: bool
+    controlled_shutdown: bool
+    success: bool
     log_path: str
 
 
@@ -347,6 +352,22 @@ def _run_process(
             elapsed_ms = max((time.monotonic() - started) * 1000, 1)
             cpu_util_percent = cpu_ms / elapsed_ms * 100
         text = log_path.read_text(errors="replace")
+        exit_code = process.returncode
+        # SIGTERM is the runner's normal teardown request. Some Quickshell builds
+        # handle it and return zero, so success must not depend on one exit code.
+        controlled_shutdown = exit_code in (0, -signal.SIGTERM)
+        fatal_log_count = len(re.findall(
+            r"\b(?:FATAL|CRITICAL)\b|QQmlApplicationEngine failed|Segmentation fault",
+            text,
+            re.IGNORECASE,
+        ))
+        startup_valid = marker_time is not None
+        sample_valid = bool(samples) and bool(steady_samples)
+        compiled_empty = len(re.findall(r"compiled empty", text, re.IGNORECASE))
+        process_start_failures = len(re.findall(r"Process failed to start", text, re.IGNORECASE))
+        success = all((startup_valid, sample_valid, controlled_shutdown,
+                       fatal_log_count == 0, compiled_empty == 0,
+                       process_start_failures == 0))
         return RunResult(
             marker=marker_time is not None,
             startup_ms=(marker_time - started) * 1000 if marker_time is not None else None,
@@ -359,8 +380,13 @@ def _run_process(
             cpu_util_percent=cpu_util_percent,
             log_errors=len(re.findall(r"\bERROR\b", text)),
             log_warnings=len(re.findall(r"\bWARN\b", text)),
-            compiled_empty=len(re.findall(r"compiled empty", text)),
-            process_start_failures=len(re.findall(r"Process failed to start", text)),
-            exit_code=process.returncode,
+            fatal_log_count=fatal_log_count,
+            compiled_empty=compiled_empty,
+            process_start_failures=process_start_failures,
+            exit_code=exit_code,
+            startup_valid=startup_valid,
+            sample_valid=sample_valid,
+            controlled_shutdown=controlled_shutdown,
+            success=success,
             log_path=str(log_path),
         )
