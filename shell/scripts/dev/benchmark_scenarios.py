@@ -247,6 +247,7 @@ def main() -> int:
             "runs": args.runs,
             "warmup_discarded": 1,
             "ipc_runs": args.ipc_runs,
+            "optional_process_commands": ["key", "lspci", "inotifywait", "ddcutil"],
         },
         "baseline": [numeric_run(run) for run in baseline], "cold_start": [numeric_run(run) for run in cold],
         "warm_start": [numeric_run(run) for run in warm],

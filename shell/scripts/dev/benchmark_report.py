@@ -25,6 +25,7 @@ FIELDS: Final[tuple[str, ...]] = (
     "peak.io_rchar_bytes", "peak.io_wchar_bytes", "peak.io_syscr", "peak.io_syscw",
     "peak.io_cancelled_write_bytes", "peak.process_count", "peak.thread_count", "peak.fd_count",
     "log_errors", "log_warnings", "fatal_log_count", "compiled_empty", "process_start_failures",
+    "optional_process_start_failures", "required_process_start_failures",
     "startup_valid", "sample_valid", "controlled_shutdown", "success",
 )
 
@@ -129,6 +130,8 @@ def build_report(raw: dict[str, object]) -> dict[str, object]:
         "fatal_log_count": ("fatal_log_count", "fatal_log_count"),
         "compiled_empty": ("compiled_empty", "compiled_empty"),
         "process_start_failures": ("process_start_failures", "process_start_failures"),
+        "optional_process_start_failures": ("optional_process_start_failures", "optional_process_start_failures"),
+        "required_process_start_failures": ("required_process_start_failures", "required_process_start_failures"),
         "startup_valid": ("startup_valid", "startup_valid"),
         "sample_valid": ("sample_valid", "sample_valid"),
         "controlled_shutdown": ("controlled_shutdown", "controlled_shutdown"),

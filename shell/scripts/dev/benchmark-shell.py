@@ -62,7 +62,9 @@ def main() -> int:
             "export XDG_RUNTIME_DIR=/tmp/nyxuri-runtime && "
             "dbus-run-session --config-file=/workspace/shell/scripts/dev/benchmark-dbus-session.conf -- "
             "python3 /workspace/shell/scripts/dev/benchmark_scenarios.py "
-            f"--output /results/raw.json --runs {args.runs} --ipc-runs {args.ipc_runs}'",
+            f"--output /results/raw.json --runs {args.runs} --ipc-runs {args.ipc_runs} && "
+            "python3 /workspace/shell/scripts/dev/benchmark_compatibility.py "
+            "--output /results/compatibility.json --runs 1'",
         ]
         subprocess.run(command, check=True)
     finally:
