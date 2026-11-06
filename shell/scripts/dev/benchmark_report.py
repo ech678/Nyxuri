@@ -195,6 +195,8 @@ def build_report(raw: dict[str, object]) -> dict[str, object]:
             "warm_start": warm_summary,
             "ipc": ipc,
             "actions": raw.get("actions", {}),
+            "long_steady_state": raw.get("long_steady_state", {}),
+            "reclamation": raw.get("reclamation", {}),
             "source_profile": raw.get("source_profile", {}),
         },
         "normalized": {

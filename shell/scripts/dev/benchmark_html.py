@@ -124,6 +124,8 @@ def render_html(raw: Mapping[str, object], report: Mapping[str, object]) -> str:
         _table("暖启动运行明细", raw.get("warm_start", []), "复用 QML cache 的每次暖启动运行和全部数值字段。"),
         _table("IPC 测量明细", raw.get("ipc", {}), "全部 IPC 分位数和错误计数。"),
         _table("动作测量明细", raw.get("actions", {}), "全部动作延迟、错误数和资源峰值。"),
+        _table("长稳态明细", raw.get("long_steady_state", {}), "容器内连续运行期间的逐样本进程树采样。"),
+        _table("回收循环明细", raw.get("reclamation", {}), "容器内显式 open/close 循环及关闭后资源观察。"),
         _score_table("冷启动归一化分数", scores, normalized.get("ratios_shell_over_baseline", {})),
         _score_table("暖启动归一化分数", normalized.get("warm_scores_0_100", {}), normalized.get("warm_ratios_shell_over_baseline", {})),
         _table("Shell 内部时间点", normalized.get("internal_shell_ms", {})),
