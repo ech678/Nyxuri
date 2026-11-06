@@ -54,16 +54,34 @@ Item {
             // timer).
             property bool suppressed: false
             property int failedHeals: 0
+            readonly property string censusUnitId: modelData ? modelData.unitId : ""
+            readonly property string censusKind: modelData ? modelData.kind : ""
+            readonly property string statusName: {
+                if (status === Loader.Ready)
+                    return "ready";
+                if (status === Loader.Loading)
+                    return "loading";
+                if (status === Loader.Error)
+                    return "error";
+                return "null";
+            }
 
             active: StateProjection.primed && root.slotActive(modelData) && !suppressed
             source: modelData.entryUrl
+            Component.onCompleted: ShellStartupService.registerQmlLoader(censusUnitId, censusKind, delegate)
+            Component.onDestruction: ShellStartupService.unregisterQmlLoader(censusUnitId, censusKind)
+            onActiveChanged: ShellStartupService.updateQmlLoader(censusUnitId, censusKind, delegate)
+            onItemChanged: ShellStartupService.updateQmlLoader(censusUnitId, censusKind, delegate)
             onLoaded: {
                 failedHeals = 0;
+                ShellStartupService.updateQmlLoader(censusUnitId, censusKind, delegate);
                 root.unitLoaded(modelData.id, item);
                 root.armHealTimer();
             }
-            onItemChanged: root.armHealTimer()
-            onStatusChanged: root.armHealTimer()
+            onStatusChanged: {
+                ShellStartupService.updateQmlLoader(censusUnitId, censusKind, delegate);
+                root.armHealTimer();
+            }
         }
     }
 

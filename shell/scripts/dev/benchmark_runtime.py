@@ -175,7 +175,7 @@ def _unavailable_live_telemetry(sampled_at_ms: int, reason: str) -> dict[str, ob
 
 
 def parse_live_telemetry(reply: str, *, sampled_at_ms: int) -> dict[str, object]:
-    """Parse shell IPC metrics while keeping absent QML counts explicitly unknown."""
+    """Parse shell IPC metrics and preserve partial live QML census honestly."""
     try:
         payload = json.loads(reply)
     except json.JSONDecodeError:
@@ -183,14 +183,20 @@ def parse_live_telemetry(reply: str, *, sampled_at_ms: int) -> dict[str, object]
     if not isinstance(payload, dict):
         return _unavailable_live_telemetry(sampled_at_ms, "non_object_reply")
 
+    census = payload.get("qml_census")
     raw_resources = payload.get("qml_resources")
+    if not isinstance(raw_resources, dict) and isinstance(census, dict):
+        raw_resources = census.get("qml_resources") or census.get("resources")
     counts: dict[str, int | None] = {key: None for key in RUNTIME_QML_RESOURCE_KEYS}
     resource_status = "unavailable"
     resource_reason = "resource_counts_not_exposed_by_shell_metrics"
     if isinstance(raw_resources, dict):
+        raw_counts = raw_resources.get("counts", raw_resources)
+        if not isinstance(raw_counts, dict):
+            raw_counts = {}
         valid_values = 0
         for key in RUNTIME_QML_RESOURCE_KEYS:
-            value = raw_resources.get(key)
+            value = raw_counts.get(key)
             if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
                 counts[key] = value
                 valid_values += 1
@@ -198,11 +204,15 @@ def parse_live_telemetry(reply: str, *, sampled_at_ms: int) -> dict[str, object]
             resource_status = "available"
             resource_reason = ""
         elif valid_values > 0:
-            resource_status = "partial"
-            resource_reason = "incomplete_resource_counts"
+            resource_status = str(raw_resources.get("status") or "partial")
+            if resource_status not in {"available", "partial", "unavailable", "invalid"}:
+                resource_status = "partial"
+            resource_reason = str(raw_resources.get("reason") or "incomplete_resource_counts")
         else:
-            resource_status = "invalid"
-            resource_reason = "invalid_resource_counts"
+            resource_status = str(raw_resources.get("status") or "invalid")
+            if resource_status not in {"available", "partial", "unavailable", "invalid"}:
+                resource_status = "invalid"
+            resource_reason = str(raw_resources.get("reason") or "invalid_resource_counts")
 
     return {
         "schema": 1,
@@ -211,6 +221,7 @@ def parse_live_telemetry(reply: str, *, sampled_at_ms: int) -> dict[str, object]
         "status": "available",
         "reason": "",
         "startup_metrics": payload,
+        "qml_census": census if isinstance(census, dict) else None,
         "qml_resources": {
             "status": resource_status,
             "reason": resource_reason,

@@ -30,6 +30,108 @@ Singleton {
     property bool _backgroundPumpScheduled: false
     property bool _destroyed: false
 
+    // Live QML census.  The host registers one record per Loader/delegate;
+    // records are removed when the delegate is destroyed so the snapshot
+    // reflects the current object tree rather than a startup estimate.
+    property var _qmlLoaderRecords: ({})
+
+    function _loaderKey(unitId, kind) {
+        return String(unitId || "") + "::" + String(kind || "");
+    }
+
+    function registerQmlLoader(unitId, kind, loader) {
+        if (!loader)
+            return;
+        const next = Object.assign({}, root._qmlLoaderRecords);
+        next[root._loaderKey(unitId, kind)] = {
+            "unit": String(unitId || ""),
+            "kind": String(kind || ""),
+            "active": !!loader.active,
+            "loaded": !!loader.item,
+            "status": String(loader.statusName || "unknown")
+        };
+        root._qmlLoaderRecords = next;
+    }
+
+    function updateQmlLoader(unitId, kind, loader) {
+        if (!loader)
+            return;
+        const key = root._loaderKey(unitId, kind);
+        if (root._qmlLoaderRecords[key] === undefined) {
+            root.registerQmlLoader(unitId, kind, loader);
+            return;
+        }
+        const next = Object.assign({}, root._qmlLoaderRecords);
+        next[key] = {
+            "unit": String(unitId || ""),
+            "kind": String(kind || ""),
+            "active": !!loader.active,
+            "loaded": !!loader.item,
+            "status": String(loader.statusName || "unknown")
+        };
+        root._qmlLoaderRecords = next;
+    }
+
+    function unregisterQmlLoader(unitId, kind) {
+        const key = root._loaderKey(unitId, kind);
+        if (root._qmlLoaderRecords[key] === undefined)
+            return;
+        const next = Object.assign({}, root._qmlLoaderRecords);
+        delete next[key];
+        root._qmlLoaderRecords = next;
+    }
+
+    function qmlCensus(): var {
+        const records = Object.keys(root._qmlLoaderRecords).map(key => root._qmlLoaderRecords[key]);
+        const active = records.filter(record => record.active);
+        const loaded = records.filter(record => record.loaded);
+        const loading = records.filter(record => record.status === "loading");
+        const errors = records.filter(record => record.status === "error");
+        const units = {};
+        const loadedUnits = {};
+        records.forEach(record => units[record.unit] = true);
+        loaded.forEach(record => loadedUnits[record.unit] = true);
+        const unitIds = Object.keys(units).sort();
+        const loadedUnitIds = Object.keys(loadedUnits).sort();
+        const counts = {
+            "loaders": records.length,
+            "timers": null,
+            "processes": null,
+            "fileviews": null,
+            "connections": null,
+            "delegates": loaded.length,
+            "canvas": null,
+            "layers": null,
+            "windows": null
+        };
+        return {
+            "schema": 1,
+            "status": "partial",
+            "reason": "SlotHost loader and unit census is live; other QML resource categories are not centrally instrumented",
+            "loaders": {
+                "declared": records.length,
+                "active": active.length,
+                "loaded": loaded.length,
+                "loading": loading.length,
+                "errors": errors.length
+            },
+            "units": {
+                "declared": unitIds.length,
+                "active": active.map(record => record.unit)
+                    .filter((value, index, values) => values.indexOf(value) === index).sort().length,
+                "loaded": loadedUnitIds.length,
+                "ids": unitIds,
+                "loaded_ids": loadedUnitIds
+            },
+            "resources": counts,
+            "qml_resources": {
+                "status": "partial",
+                "reason": "only loaders and delegates are instrumented",
+                "counts": counts
+            }
+        };
+    }
+
     signal stageChanged(string stage)
 
     function scheduleBackground(name, callback): void {
@@ -126,6 +228,7 @@ Singleton {
     }
 
     function startupMetrics(): var {
+        const census = root.qmlCensus();
         return {
             "stage": root.currentStage,
             "elapsed_ms": Date.now() - root.initTimestampMs,
@@ -135,7 +238,9 @@ Singleton {
             "failure_reason": root.failureReason,
             "background_running": root.backgroundRunning,
             "background_queue": root._backgroundQueue.length,
-            "background_tasks": root.backgroundMetrics
+            "background_tasks": root.backgroundMetrics,
+            "qml_census": census,
+            "qml_resources": census.qml_resources
         };
     }
 

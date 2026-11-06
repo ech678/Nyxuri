@@ -31,6 +31,15 @@ _REPORT_SPEC.loader.exec_module(report)
 
 
 class BenchmarkRuntimeTests(unittest.TestCase):
+    def test_qml_census_contract_is_live_and_tears_down_loader_records(self):
+        startup = (ROOT / "services" / "ShellStartupService.qml").read_text(encoding="utf-8")
+        slot = (ROOT / "app" / "SlotHost.qml").read_text(encoding="utf-8")
+        self.assertIn("function registerQmlLoader", startup)
+        self.assertIn("function unregisterQmlLoader", startup)
+        self.assertIn('"qml_census": census', startup)
+        self.assertIn("Component.onDestruction: ShellStartupService.unregisterQmlLoader", slot)
+        self.assertIn("onItemChanged: ShellStartupService.updateQmlLoader", slot)
+
     def test_live_telemetry_marks_unexposed_qml_counts_unavailable(self):
         with TempEnv():
             snapshot = runtime.parse_live_telemetry(
@@ -58,6 +67,24 @@ class BenchmarkRuntimeTests(unittest.TestCase):
         self.assertEqual(snapshot["qml_resources"]["counts"]["loaders"], 4)
         self.assertEqual(snapshot["qml_resources"]["counts"]["delegates"], 9)
         self.assertEqual(snapshot["qml_resources"]["counts"]["windows"], 1)
+
+    def test_live_telemetry_preserves_partial_loader_census_and_unknown_categories(self):
+        with TempEnv():
+            snapshot = runtime.parse_live_telemetry(
+                '{"stage":"IPC_READY","qml_census":{"schema":1,"status":"partial",'
+                '"units":{"loaded":2,"ids":["shell.bar","shell.keystone"]},'
+                '"qml_resources":{"status":"partial","reason":"only loaders and delegates are instrumented",'
+                '"counts":{"loaders":12,"delegates":5,"timers":null,"processes":null,'
+                '"fileviews":null,"connections":null,"canvas":null,"layers":null,"windows":null}}}}',
+                sampled_at_ms=9012,
+            )
+
+        self.assertEqual(snapshot["status"], "available")
+        self.assertEqual(snapshot["qml_census"]["units"]["loaded"], 2)
+        self.assertEqual(snapshot["qml_resources"]["status"], "partial")
+        self.assertEqual(snapshot["qml_resources"]["counts"]["loaders"], 12)
+        self.assertEqual(snapshot["qml_resources"]["counts"]["delegates"], 5)
+        self.assertIsNone(snapshot["qml_resources"]["counts"]["timers"])
 
     def test_process_failures_are_classified_per_command_and_fail_closed(self):
         with TempEnv():
