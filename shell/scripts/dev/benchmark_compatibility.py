@@ -14,6 +14,8 @@ import tempfile
 import time
 from pathlib import Path
 
+LOCK_PATH = Path(__file__).with_name("benchmark-lock.json")
+
 
 def _ipc_probe(qs: str, root: Path, environment: dict[str, str]) -> dict[str, object]:
     root.mkdir(parents=True, exist_ok=True)
@@ -113,6 +115,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--runs", type=int, default=1)
+    parser.add_argument("--channel", choices=("old", "new"), default=os.environ.get("NYXURI_QUICKSHELL_CHANNEL", "new"))
     args = parser.parse_args()
     if args.runs < 1:
         parser.error("--runs must be >= 1")
@@ -151,8 +154,12 @@ def main() -> int:
             "external_file_url": "SUMMARY external:" in loader_text and "OK 1/1" in loader_text,
             "output": loader_text,
         }
+        lock = json.loads(LOCK_PATH.read_text(encoding="utf-8"))
+        channel_info = lock.get("quickshell_old" if args.channel == "old" else "quickshell_new", {})
         output = {
             "schema": 1,
+            "channel": args.channel,
+            "locked_package": channel_info,
             "quickshell": subprocess.run([qs, "--version"], capture_output=True, text=True, check=False).stdout.strip(),
             "loader_matrix": loader_matrix,
             "ipc": ipc,
