@@ -58,7 +58,10 @@ def main() -> int:
             "docker.io/nixos/nix@sha256:d078d7153763895fce17c5fbbdeb86fcfcac414ca0ba875d413c1df57be19931",
             "sh", "-lc",
             "nix-shell /workspace/shell/scripts/dev/benchmark-shell.nix "
-            "--run 'dbus-run-session -- python3 /workspace/shell/scripts/dev/benchmark_scenarios.py "
+            "--run 'mkdir -p /tmp/nyxuri-runtime && chmod 700 /tmp/nyxuri-runtime && "
+            "export XDG_RUNTIME_DIR=/tmp/nyxuri-runtime && "
+            "dbus-run-session --config-file=/workspace/shell/scripts/dev/benchmark-dbus-session.conf -- "
+            "python3 /workspace/shell/scripts/dev/benchmark_scenarios.py "
             f"--output /results/raw.json --runs {args.runs} --ipc-runs {args.ipc_runs}'",
         ]
         subprocess.run(command, check=True)
