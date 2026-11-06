@@ -23,6 +23,24 @@ python3 shell/scripts/dev/run-tests.py --all
 python3 shell/scripts/dev/audit-lifecycle.py --root shell --scope all --check
 ```
 
+资源探针只在一次性隔离容器内运行。它把 `/proc` 进程树采样与 QML/JS 静态资源
+清单分开记录；宿主机不要直接调用 Shell、`qs`、Weston 或其它桌面入口。容器内的
+入口示例（`/workspace` 为只读仓库挂载，`/results` 为独立结果挂载）：
+
+```bash
+python3 /workspace/shell/scripts/dev/resource_probe.py \
+  --pid "$SHELL_PID" --qml-root /workspace/shell --samples 6 --interval 1 \
+  --output /results/resource-probe.json
+python3 /workspace/shell/scripts/dev/resource_report.py \
+  /results/resource-probe.json --output /results/resource-report
+```
+
+`resource-probe.json` 的 `runtime.samples` 是容器内实时观察（RSS/PSS/Private、进程、
+线程、fd、CPU ticks、page fault、I/O 和 cgroup memory）；`static_qml` 仅是源码计数，
+不能替代 Loader/Timer/Process 的运行态证据。`resource-summary.json` 保留首末样本与
+增量，缺失值为 `null`，不会伪装成零；`resource-summary.md` 供人工审阅。长稳态和
+100 次开关循环应在同一容器中多次调用探针，并保留原始 JSON 与日志。
+
 ### 2. 隔离进程预览与 IPC 交互（不影响当前运行的桌面会话）
 
 当前运行 Noctalia 时，无需关闭桌面，可直接拉起独立 Nyxuri Shell 进程进行预览：
