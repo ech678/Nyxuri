@@ -6,14 +6,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import signal
 import shutil
 import subprocess
 import sys
 import tempfile
 import time
 from pathlib import Path
-
-LOCK_PATH = Path(__file__).with_name("benchmark-lock.json")
 
 
 def _ipc_probe(qs: str, root: Path, environment: dict[str, str]) -> dict[str, object]:
@@ -79,11 +78,41 @@ def _calls_ok(probe: dict[str, object]) -> bool:
     )
 
 
+def _start_compositor(environment: dict[str, str], root: Path) -> tuple[subprocess.Popen[str], Path]:
+    runtime = Path(environment["XDG_RUNTIME_DIR"])
+    runtime.mkdir(parents=True, exist_ok=True)
+    os.chmod(runtime, 0o700)
+    display = "nyxuri-compat-wayland"
+    environment["WAYLAND_DISPLAY"] = display
+    socket = runtime / display
+    log_path = root / "weston.log"
+    log = log_path.open("w", encoding="utf-8")
+    process = subprocess.Popen(
+        ["weston", "--backend=headless", "--renderer=pixman", "--no-config",
+         "--socket=" + display, "--idle-time=0"],
+        env=environment, stdout=log, stderr=subprocess.STDOUT,
+        start_new_session=True, text=True,
+    )
+    for _ in range(200):
+        if socket.exists():
+            log.close()
+            return process, socket
+        if process.poll() is not None:
+            break
+        time.sleep(0.05)
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    process.wait(timeout=3)
+    log.close()
+    raise RuntimeError(f"private compatibility Weston did not start; see {log_path}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--runs", type=int, default=1)
-    parser.add_argument("--channel", choices=("old", "new"), default=os.environ.get("NYXURI_QUICKSHELL_CHANNEL", "new"))
     args = parser.parse_args()
     if args.runs < 1:
         parser.error("--runs must be >= 1")
@@ -100,7 +129,9 @@ def main() -> int:
     environment.setdefault("QT_QUICK_BACKEND", "software")
     environment.setdefault("QSG_RHI_BACKEND", "software")
     root = Path(tempfile.mkdtemp(prefix="nyxuri-compat-"))
+    compositor: subprocess.Popen[str] | None = None
     try:
+        compositor, _ = _start_compositor(environment, root)
         ipc = _ipc_probe(qs, root / "ipc", environment)
         cache_root = Path(environment["XDG_CACHE_HOME"]) / "quickshell" / "qmlcache"
         cache_root.parent.mkdir(parents=True, exist_ok=True)
@@ -110,7 +141,7 @@ def main() -> int:
         warm = _ipc_probe(qs, root / "qmlcache-warm", environment)
         loader_script = Path(__file__).with_name("spike-loader-registry.py")
         loader = subprocess.run(
-            [sys.executable, str(loader_script), "--all", "--runs", str(args.runs)],
+            [sys.executable, str(loader_script), "--all", "--runs", "1"],
             env=environment, capture_output=True, text=True, check=False,
         )
         loader_text = loader.stdout + loader.stderr
@@ -120,12 +151,8 @@ def main() -> int:
             "external_file_url": "SUMMARY external:" in loader_text and "OK 1/1" in loader_text,
             "output": loader_text,
         }
-        lock = json.loads(LOCK_PATH.read_text(encoding="utf-8"))
-        channel_info = lock.get("quickshell_old" if args.channel == "old" else "quickshell_new", {})
         output = {
             "schema": 1,
-            "channel": args.channel,
-            "locked_package": channel_info,
             "quickshell": subprocess.run([qs, "--version"], capture_output=True, text=True, check=False).stdout.strip(),
             "loader_matrix": loader_matrix,
             "ipc": ipc,
@@ -149,6 +176,15 @@ def main() -> int:
         print(json.dumps(output, ensure_ascii=True, indent=2))
         return 0 if output["success"] else 1
     finally:
+        if compositor is not None:
+            try:
+                os.killpg(compositor.pid, signal.SIGTERM)
+                compositor.wait(timeout=3)
+            except (ProcessLookupError, subprocess.TimeoutExpired):
+                try:
+                    os.killpg(compositor.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
         shutil.rmtree(root, ignore_errors=True)
 
 
