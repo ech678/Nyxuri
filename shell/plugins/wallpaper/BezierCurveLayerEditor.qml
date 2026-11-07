@@ -487,7 +487,6 @@ FloatingWindow {
             id: dialogBackground
 
             anchors.fill: parent
-            radius: Appearance.rounding.normal
             color: BlurService.backgroundColor(Appearance.m3colors.m3surfaceContainerLow)
             antialiasing: true
         }

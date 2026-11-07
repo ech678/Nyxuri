@@ -86,12 +86,12 @@ class TestWindowShellIsReskinnedNotRewired(unittest.TestCase):
 
     def test_two_zone_chrome_matches_the_original(self):
         source = re.sub(r"\s+", " ", _read("ControlCenterWindow.qml"))
-        # Left nav zone: nav width + 16px margins, window-left corner rounding,
-        # sharing the surface-container-low fill with the frame and the chip.
+        # Left nav zone: nav width + 16px margins, full height.
+        # Window corner radius belongs to the compositor, not QML.
         self.assertIn("width: root.navPaneWidth + NexusStyle.navMargin * 2", source)
-        self.assertIn("topLeftRadius: NexusStyle.rounding.large", source)
+        self.assertNotIn("topLeftRadius: NexusStyle.rounding.large", source)
         self.assertIn("color: Appearance.colors.colSurfaceContainerLow", source)
-        self.assertIn("radius: NexusStyle.rounding.large", source)
+        self.assertNotIn("radius: NexusStyle.rounding.large", source)
         # Pages region: 16px clear of the 12px frame band on three sides and
         # of the nav zone on the left (Pages.qml anchors).
         self.assertIn("anchors.leftMargin: NexusStyle.frameBand + NexusStyle.chromeInset", source)

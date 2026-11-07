@@ -55,7 +55,6 @@ Item {
         Rectangle {
             id: background
             anchors.fill: parent
-            radius: Appearance.rounding.large
             color: BlurService.backgroundColor(Appearance.m3colors.m3surfaceContainerLow)
             border.width: 1
             border.color: Appearance.colors.colOutlineVariant
@@ -63,7 +62,6 @@ Item {
         CompositorBlurRegion {
             targetWindow: window
             backgroundItem: background
-            radius: background.radius
         }
         FocusScope {
             anchors.fill: parent

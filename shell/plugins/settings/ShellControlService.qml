@@ -233,6 +233,7 @@ Singleton {
                                                              "id": "hyprpicker",
                                                              "available": ColorPickerService.available,
                                                              "probed": ColorPickerService.probeFinished
+                                                         }
                                                      ],
                                                      "errors": [
                                                          {

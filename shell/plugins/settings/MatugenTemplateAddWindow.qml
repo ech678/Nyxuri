@@ -50,13 +50,11 @@ FloatingWindow {
     Rectangle {
         id: background
         anchors.fill: parent
-        radius: Appearance.rounding.extraLarge
         color: BlurService.backgroundColor(Appearance.m3colors.m3surfaceContainerHigh)
     }
     CompositorBlurRegion {
         targetWindow: root
         backgroundItem: background
-        radius: background.radius
     }
     FocusScope {
         anchors.fill: parent

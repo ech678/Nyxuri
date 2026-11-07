@@ -233,14 +233,12 @@ FloatingWindow {
         id: outerBackground
 
         anchors.fill: parent
-        radius: NexusStyle.rounding.large
         color: BlurService.backgroundColor(Appearance.m3colors.m3background)
     }
 
     CompositorBlurRegion {
         targetWindow: root
         backgroundItem: outerBackground
-        radius: outerBackground.radius
     }
 
     Item {
@@ -272,10 +270,9 @@ FloatingWindow {
             onWheel: wheel => wheel.accepted = false
         }
 
-        // Left nav zone: nav pane width plus its 16px margins, full height,
-        // sharing the window's left corner rounding. Same fill as the frame
-        // band and the close chip — the original fuses all three from one
-        // blob colour.
+        // Left nav zone: nav pane width plus its 16px margins, full height.
+        // Same fill as the frame band and the close chip — the original fuses
+        // all three from one blob colour.
         Rectangle {
             id: navZone
 
@@ -283,8 +280,6 @@ FloatingWindow {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             width: root.navPaneWidth + NexusStyle.navMargin * 2
-            topLeftRadius: NexusStyle.rounding.large
-            bottomLeftRadius: NexusStyle.rounding.large
             color: Appearance.colors.colSurfaceContainerLow
 
             DragHandler {
