@@ -383,6 +383,21 @@ def _renderer_profile(log_text: str, environment: dict[str, str]) -> dict[str, o
     }
 
 
+def _frame_profile_payload(log_text: str) -> dict[str, object] | None:
+    marker = "FRAME_PROFILE "
+    for line in reversed(log_text.splitlines()):
+        marker_index = line.find(marker)
+        if marker_index < 0:
+            continue
+        try:
+            payload = json.loads(line[marker_index + len(marker):])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(payload, dict):
+            return payload
+    return None
+
+
 def frame_profile_benchmark(
     environment: dict[str, str], log_dir: Path, duration_seconds: float = 5.0,
     target_fps: float = 60.0,
@@ -406,7 +421,6 @@ def frame_profile_benchmark(
         "QSG_INFO": "1",
         "QT_LOGGING_RULES": "qt.scenegraph.general=true;qt.rhi.*=true",
     })
-    payload: dict[str, object] | None = None
     with log_path.open("w+", encoding="utf-8") as log:
         process = subprocess.Popen(
             ["qs", "-p", str(root), "--no-duplicate", "-v"],
@@ -417,15 +431,7 @@ def frame_profile_benchmark(
         while time.monotonic() < deadline:
             log.flush()
             text = log_path.read_text(errors="replace")
-            for line in reversed(text.splitlines()):
-                if line.startswith("FRAME_PROFILE "):
-                    try:
-                        parsed = json.loads(line.removeprefix("FRAME_PROFILE "))
-                    except json.JSONDecodeError:
-                        continue
-                    if isinstance(parsed, dict):
-                        payload = parsed
-                        break
+            payload = _frame_profile_payload(text)
             if payload is not None or process.poll() is not None:
                 break
             time.sleep(0.05)
@@ -435,7 +441,7 @@ def frame_profile_benchmark(
         "scenario": "frame_profile",
         "requested_seconds": duration_seconds,
         "target_fps": target_fps,
-        "probe": payload or {
+        "probe": _frame_profile_payload(text) or {
             "schema": 1,
             "status": "partial",
             "source": "Qt QQuickWindow.frameSwapped",

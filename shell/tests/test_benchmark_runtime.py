@@ -28,9 +28,25 @@ if _REPORT_SPEC is None or _REPORT_SPEC.loader is None:
 report = importlib.util.module_from_spec(_REPORT_SPEC)
 sys.modules["benchmark_report"] = report
 _REPORT_SPEC.loader.exec_module(report)
+_SCENARIOS_SPEC = importlib.util.spec_from_file_location(
+    "benchmark_scenarios", ROOT / "scripts" / "dev" / "benchmark_scenarios.py"
+)
+if _SCENARIOS_SPEC is None or _SCENARIOS_SPEC.loader is None:
+    raise RuntimeError("cannot load benchmark_scenarios")
+scenarios = importlib.util.module_from_spec(_SCENARIOS_SPEC)
+sys.modules["benchmark_scenarios"] = scenarios
+_SCENARIOS_SPEC.loader.exec_module(scenarios)
 
 
 class BenchmarkRuntimeTests(unittest.TestCase):
+    def test_frame_profile_payload_accepts_qt_prefixed_debug_log(self):
+        log = '\x1b[34m DEBUG\\x1b[97m qml\\x1b[0m: FRAME_PROFILE {"status":"available","frames":301}'
+
+        self.assertEqual(
+            scenarios._frame_profile_payload(log),
+            {"status": "available", "frames": 301},
+        )
+
     def test_frame_profile_probe_is_container_only_and_declares_partial_metrics(self):
         scenarios = (ROOT / "scripts" / "dev" / "benchmark_scenarios.py").read_text(encoding="utf-8")
         self.assertIn("def frame_profile_benchmark", scenarios)
