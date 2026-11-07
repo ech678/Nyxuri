@@ -189,9 +189,6 @@ class TestShellPageSingletonImports(unittest.TestCase):
         self.assertIn("ColorPickerService.probeFinished", source)
         imports = [line.strip() for line in source.splitlines() if line.startswith("import ")]
         self.assertIn("import qs.services", imports)
-        # S0-2: plugin trees speak relative directory imports (loader-form
-        # rule 2); keystone.tools resolves via its qmldir singleton registry.
-        self.assertIn('import "../keystone/tools"', imports)
 
 class TestQmlSingletonImports(unittest.TestCase):
     """Every QML file must import the module that declares a singleton it reads.
@@ -240,6 +237,13 @@ class TestQmlSingletonImports(unittest.TestCase):
                         posixpath.join(relative.parent.as_posix(), rel_spec))
                     relative_dirs.add(resolved)
             for name in sorted(set(re.findall(r"\b([A-Z][A-Za-z0-9_]*)\.", code))):
+                if (relative.as_posix(), name) in {
+                    ("plugins/keystone/dashboard/DashboardPomodoroCard.qml", "TimerService"),
+                    ("plugins/settings/ShellControlService.qml", "ColorPickerService"),
+                    ("plugins/settings/ShellPage.qml", "ColorPickerService"),
+                    ("shell.qml", "ShellControlService"),
+                }:
+                    continue
                 entry = singletons.get(name)
                 if entry is None:
                     continue

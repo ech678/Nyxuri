@@ -221,9 +221,9 @@ class TestIssue139UpdateNeverClobbersUserFiles(unittest.TestCase):
                               "the installer never invents switch state")
 
             # Adoption is the explicit way out: template claims its names.
-            self.assertTrue(transaction.plugin_on("app")[0].ok)
+            self.assertTrue(engine.plugin_on("app")[0].ok)
             self.assertEqual((dest / "a.conf").read_text(), "v1\n")
-            self.assertEqual(transaction.audit_plugins("app"), {"app": "Synced"})
+            self.assertEqual(engine.audit_plugins("app"), {"app": "Synced"})
 
 
 if __name__ == "__main__":

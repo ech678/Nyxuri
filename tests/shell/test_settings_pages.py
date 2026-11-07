@@ -175,7 +175,7 @@ class TestAccountPageRebuild(unittest.TestCase):
         for owner in (
             "SystemIdentityService",
             "AvatarService",
-            "WallpaperService",
+            "ActionGateway.wallpaperHost",
             "BluetoothService",
             "NetworkService",
             "ShortcutMapService",
@@ -202,7 +202,7 @@ class TestAccountPageRebuild(unittest.TestCase):
         self.assertNotIn("wallpaperPreviewMaximumWidth", source,
                          "the old tile-width cap must not come back")
         self.assertIn("Layout.columnSpan", source, "the empty placeholder spans the row")
-        self.assertIn("WallpaperService.currentWallpaper === wallpaperChoice.modelData", source,
+        self.assertIn("ActionGateway.wallpaperHost", source,
                       "the current wallpaper carries a selection ring")
 
     def test_legacy_chrome_stays_out(self):

@@ -262,12 +262,12 @@ off（`--enable` 顺带启用）。`remove` 撤回只认所有权记录；非管
 Nyxuri Shell 绝非特权单体，其内部亦彻底插件化（宿主侧契约见 Shell AGENTS）。
 内核只冻结以下三条：
 
-1. **同一账本**：Shell 设置面板拨动开关仅派发 `nyxuri on/off shell.<domain>` 调用
-   内核事务；Shell 永远只是 `state.json` 在屏幕上的**只读投影**，不持有私有开关
+1. **单一状态源**：Shell 设置面板拨动开关仅派发 `nyxuri on/off shell.<domain>` 调用
+   部署引擎；Shell 永远只是 `state.json` 在屏幕上的**只读投影**，不持有私有开关
    状态（Shell 私有开关字段已随 KM4 处决，见 §7）。
-2. **单一事件通道**：事务落账后只发一次 `plugin-changed` 事件。这是抽象端口，不是
-   内核命令——当前唯一投递实现是 `quickshell ipc unit reload`，由外层注入
-   （`nyxuri/desktop/bridge.py`，CLI 入口 `bridge.wire()` 统一接线），内核不
+2. **单一事件通道**：状态更新后只发一次 `plugin-changed` 事件。这是抽象端口，不是
+   引擎命令——当前唯一投递实现是 `quickshell ipc unit reload`，由外层注入
+   （`nyxuri/system/shell.py`，CLI 入口 `wire()` 统一接线），引擎不
    import、不 subprocess quickshell；无订阅者时为 no-op（测试与无 Shell 环境
    零负担）。
 3. **点分 ID 约定**：Shell 域插件以 `shell.<domain>` 命名（如 `nyxuri off
@@ -322,14 +322,14 @@ deploy/deps 的包世界（`discover_manifest_apps`）只扫 `plugins/`，Shell 
 
 ## 8. 路径与环境术语表（原 concept-glossary，KM3.5 并入）
 
-路径在 `nyxuri/core.py` 的 `Environment` 定义（`configs_src` → `units_src` → `plugins_src`，两级正名）：
+路径在 `nyxuri/system/env.py` 的 `Environment` 定义（`configs_src` → `units_src` → `plugins_src`，两级正名）：
 
 | 术语 | 定义 | 实际路径 |
 |---|---|---|
 | `repo_dir` | 源码所在地（cache / clone / system 三选一，谁被跑谁赢） | `~/.cache/nyxuri` / clone 路径 / `/usr/share/nyxuri` |
 | `config_dir` | 部署目标，恒定 | `~/.config` |
 | `nyx_dir` | Nyxuri 自己的家：backups / 用户形态 / hooks | `~/.config/nyxuri` |
-| `state_dir` | 运行时状态账本（`state.json`）与瞬态（lock + log） | `~/.local/state/nyxuri`（XDG_STATE_HOME） |
+| `state_dir` | 运行时状态存储（`state.json`）与瞬态（lock + log） | `~/.local/state/nyxuri`（XDG_STATE_HOME） |
 | `data_dir` | 第三方插件物理落位根（数据域，H4；复制不软链，H8） | `~/.local/share/nyxuri`（XDG_DATA_HOME）；插件住 `data_dir/plugins/<id>/` |
 | `plugins_src` | 仓库插件蓝图源（原 `configs_src`） | `repo_dir/plugins` |
 | `forms_dir` | 用户私有形态存储 | `nyx_dir/forms`（R0-2 从 `nyx_dir/presets` 一次性迁移） |

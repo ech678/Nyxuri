@@ -32,7 +32,7 @@ def _read_raw() -> dict[str, Any]:
         if not isinstance(data, dict):
             return {}
         # Clean legacy ghost keys if present
-        for legacy_key in ("modules", "shell_package"):
+        for legacy_key in ("modules", "shell_package", "units"):
             data.pop(legacy_key, None)
         return data
     except (OSError, ValueError, TypeError):

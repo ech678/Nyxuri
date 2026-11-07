@@ -12,13 +12,13 @@
 | 字段 | 默认 | 作用 |
 |---|---|---|
 | `schemaVersion` | 无 | 必须为 `1`。缺或异 → 解析报错（旧形态的判别式） |
-| `id` | 无 | 插件 id，必须等于 **所在根的前缀 + 目录名**（`plugins/` 根无前缀：`kitty`；`shell/plugins/` 根前缀 `shell.`：`shell.bar`；第三方根无前缀、目录名 = id 全名：简洁裸名如 `orbit-translate` 或 reverse-DNS）。漂移即报错。官方保留 `shell.` 前缀。账本键 = 此 id |
+| `id` | 无 | 插件 id，必须等于 **所在根的前缀 + 目录名**（`plugins/` 根无前缀：`kitty`；`shell/plugins/` 根前缀 `shell.`：`shell.bar`；第三方根无前缀、目录名 = id 全名：简洁裸名如 `orbit-translate` 或 reverse-DNS）。漂移即报错。官方保留 `shell.` 前缀。状态键 = 此 id |
 | `kinds` | 无 | 非空数组，枚举封闭：`config`（引擎部署的配置插件）+ 六几何插槽 `edge` / `island` / `overlay` / `drawer` / `surface:desktop` / `popup:notification`（壳装载，见 [plugin-model](plugin-model.md) §6）+ `service`（保留位，暂无消费者）。**消费路由**：引擎消费 config 类，壳注册表消费插槽类 |
 | `label` | `<id>` | 展示名（PKGBUILD optdepends 标签 + 插件详情视图 + 壳设置/开关页） |
 | `order` | `0` | ui 堆叠序（bottom → top），替代手写镜像里的数组序 |
 
-**形态由 kinds 表达**：kinds 不含 `config` ⇒ 账本形态（runtime——无载荷部署、
-无生活区、无 Vault、无形态轴，`on`/`off` 纯落账 + 一次 `plugin-changed` 事件）。
+**形态由 kinds 表达**：kinds 不含 `config` ⇒ 运行态（runtime——无载荷部署、
+无生活区、无 Vault、无形态轴，`on`/`off` 纯记录状态 + 一次 `plugin-changed` 事件）。
 含 `config` 才谈部署形态，见 `morphology`。`runtime = true` / `merge = true`
 布尔键已杀词并轨，出现即报错。
 
@@ -27,7 +27,7 @@
 | 字段 | 默认 | 作用 |
 |---|---|---|
 | `target` | `""` | 单文件插件例外：插件目录只 ship 一个文件 `plugins/<plugin>/<target>`，落点 `~/.config/<target>`（如 starship）。`~/` 前缀则声明 `~/.config` 外的**共享生活区**。`xdg:<KIND>/<rest>` 走 XDG 用户目录解析（支持 8 大标准用户目录：`DESKTOP`、`DOWNLOAD`、`TEMPLATES`、`PUBLICSHARE`、`DOCUMENTS`、`MUSIC`、`PICTURES`、`VIDEOS`；未知 KIND 直接拒绝，严禁 `..` 越界——如壁纸 `xdg:PICTURES/Wallpapers`，R0-4 推广为完整映射）。target 插件不支持形态轴 |
-| `morphology` | 推导 | 插件形态矩阵（R0-3 显式契约，config 类三选一：`"atomic"` / `"merge"` / `"hook-only"`；runtime 形态由 kinds 表达，不进此字段）。缺省推导：无可部署内容且无 target → `hook-only`，否则 `atomic`。`"merge"` = 共享生活区：`on` 走 no-clobber 增量合流（已存在文件永不覆盖），快照只记部署落下的文件；`off` 只撤回快照文件，外来内容幸存并报告（见 [plugin-model](plugin-model.md) §3）。`"hook-only"` 插件（如 greeter）无生活区目录，事务仅执行装包、特权钩子与落账，跳过 Vault 与形态轴 |
+| `morphology` | 推导 | 插件形态矩阵（R0-3 显式契约，config 类三选一：`"atomic"` / `"merge"` / `"hook-only"`；runtime 形态由 kinds 表达，不进此字段）。缺省推导：无可部署内容且无 target → `hook-only`，否则 `atomic`。`"merge"` = 共享生活区：`on` 走 no-clobber 增量合流（已存在文件永不覆盖），快照只记部署落下的文件；`off` 只撤回快照文件，外来内容幸存并报告（见 [plugin-model](plugin-model.md) §3）。`"hook-only"` 插件（如 greeter）无生活区目录，引擎仅执行装包、特权钩子与记录状态，跳过 Vault 与形态轴 |
 | `packages` | `[<目录名>]`（ui 类为 `[]`） | pacman 包名。**显式 `packages = []` 保持为空**（Flatpak/AUR-only 插件防名字泄进 pacman） |
 | `packages_aur` | `[]` | AUR 包名 |
 | `packages_flatpak` | `[]` | Flathub app id——走 `flatpak install`，永不进 pacman/AUR/PKGBUILD |
@@ -36,7 +36,7 @@
 | `chmod` | `[]` | 部署后设 +x 的 glob（相对插件目录，如 `scripts/*.sh`） |
 | `category` | `""` | 插件详情视图分组键 |
 | `optional` | `false` | 可选插件：进 PKGBUILD `optdepends`，不占硬依赖（应用菜单已随 R0-2 步 5 处决） |
-| `post_install` | `""` | on 侧生命周期钩子：`plugins/<plugin>/hooks/<名字>` 可执行脚本名（如 `"setup-rime"`），事务在蓝图部署后、账本快照前执行 |
+| `post_install` | `""` | on 侧生命周期钩子：`plugins/<plugin>/hooks/<名字>` 可执行脚本名（如 `"setup-rime"`），执行流在蓝图部署后、状态记录前执行 |
 | `post_remove` | `""` | off 侧生命周期钩子：同形态，实机抹白之后执行，负责清理生活区**外**的产物（KM3） |
 | `[privilege]` | 无表 | 特权副作用声明：`requires_root = true` + `system_paths = [...]`（如 greeter 的 `/etc/greetd`）。只声明事实供展示与审计，不改变执行方式 |
 | `dependencies` | `[]` | 依赖的其他 Nyxuri 插件（内核 resolver 的输入） |
@@ -100,14 +100,14 @@ path 不进 v1 词表）：
 `plugins/<plugin>/hooks/<名字>`（任意解释器，`#!/usr/bin/env python3` 或 `sh` 均可，
 必须带可执行位）。`<module>:<function>` 旧形态随 `nyxuri/modules/` 退役（KM3 死刑）。
 
-- **执行归属**：只有 transaction 执行钩子（内核唯一副作用层），注入
+- **执行归属**：只有 engine 执行钩子（引擎唯一副作用层），注入
   `NYXURI_UNIT` / `NYXURI_UNIT_SRC` / `NYXURI_UNIT_DEST` 环境变量，不解释钩子内部；
-- **快照口径**：`post_install` 在账本快照**之前**运行——钩子落进插件自身生活区的
+- **快照口径**：`post_install` 在状态快照**之前**运行——钩子落进插件自身生活区的
   文件自动进入 `files` 快照，`off` 走正常抹白（如 fisher 装进 `~/.config/fish` 的
-  插件文件无需自记账）；
+  插件文件无需自记录）；
 - **生活区外**（`~/.local/share`、`/etc` 等）的产物 `post_remove` 自清；
 - `hooks/` 是仓库元数据，永不部署进 `~/.config`，也不计入 `is_deployable`；
-- 钩子失败降级 WARN，Step detail 标 `hook-failed: <名字>`，不阻断事务；
+- 钩子失败降级 WARN，Step detail 标 `hook-failed: <名字>`，不阻断部署；
 - **第三方 v1 拒绝钩子**（S1 安全立场：安装一步绝不执行包内代码）——第三方
   manifest 声明 `post_install` / `post_remove` 在 add / validate 即拒绝。
 
@@ -180,7 +180,7 @@ fastfetch **不写 manifest**（目录名 = 包名 = 二进制名 = 无例外）
 可选不再住 sidecar 登记簿，也不再有根 `catalog.toml`（R0-2 已并轨处决）；
 packages-only 供给面（`deploy = false` × 18 个推荐软件插件 + `deps apps` 菜单）
 已随 R0-2 步 5 处决——供给声明只有一种形状：`plugins/<name>/manifest.toml`，
-插件装包统一走 `nyxuri on <plugin>` 事务路径。
+插件装包统一走 `nyxuri on <plugin>` 部署路径。
 - 真插件声明 `optional = true`（optdepends 轴：进 PKGBUILD `optdepends`，
   不占硬依赖；greeter 这类仅声明单元 = 装包 + hooks + 落账，无生活区）；
 - 退役键 `deploy` / `detect`（供给面）、`runtime` / `merge`（杀词并轨）
@@ -244,14 +244,14 @@ system_paths = ["/etc/greetd/config.toml", "/etc/polkit-1/rules.d/50-noctalia-gr
 - **安装**：`nyxuri add <git-url>`（本地目录顺带）——clone 到 staging、校验（与加载
   同一套检查）、id 冲突检查、移入落位目录、来源记账。绝不执行包内代码、无 install
   hook、无 sudo。默认 off，`--enable` 顺带启用（动词契约见 [plugin-model](plugin-model.md) §5）。
-- **来源真相**：账本顶层 `sources` 键 `{id: {url, commit, added}}`——与 `forms` 键同
+- **来源真相**：状态顶层 `sources` 键 `{id: {url, commit, added}}`——与 `forms` 键同
   模式，不碰插件记录五字段冻结；目录里不藏 sidecar。
-- **移除**：`nyxuri remove <id>` = 停用 → 按所有权账本精确撤回 → 非管辖区（用户自有、
+- **移除**：`nyxuri remove <id>` = 停用 → 按文件归属记录精确撤回 → 非管辖区（用户自有、
   来源不明）内容时间戳备份。绝不整目录抹白。
 - **更新**：`nyxuri update <id>` = diff 预览、拒绝非 fast-forward、校验失败自动回退
   （咬合引擎快照重基线）。无参 `update` 仍是引擎自更新（参数分派裁决）。
-- **所有权账本**：PR #148 素材回植（文件归属与保护路径记录）支撑 remove 的精确撤回；
-  启用中插件的文件归属本就住在账本 `files` 字段（快照口径），remove 复用同一记录。
+- **文件归属记录**：PR #148 素材回植（文件归属与保护路径记录）支撑 remove 的精确撤回；
+  启用中插件的文件归属本就住在状态 `files` 字段（快照口径），remove 复用同一记录。
 
 ## 边界（含声明式边界，原 declarative 页并入）
 
@@ -261,7 +261,7 @@ system_paths = ["/etc/greetd/config.toml", "/etc/polkit-1/rules.d/50-noctalia-gr
 译文住 `commons/i18n/` 词典，manifest 只持键。
 
 声明式与命令式的分界：仓库 `plugins/` = 期望状态，`~/.config` = 当前状态，
-`atomic_replace_item` = 对账器，Dunder = 增量保留，snapshot/rollback = 状态存取，
-账本里的活动形态 = 显式期望——这半边是声明式。依赖安装、主题同步、
+`atomic_replace_item` = 一致性比对器，Dunder = 增量保留，snapshot/rollback = 状态存取，
+状态里的活动形态 = 显式期望——这半边是声明式。依赖安装、主题同步、
 输入法重载是命令式副作用，由对应入口负责；安装可选软件只装包，不自动激活插件。
 明确拒绝的规则清单（避免熵增）详见 [delayed-decisions](delayed-decisions.md) 与 [archive/agent-rules-provenance](archive/agent-rules-provenance.md)。

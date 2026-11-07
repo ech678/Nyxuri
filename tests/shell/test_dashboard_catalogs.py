@@ -57,7 +57,7 @@ class TestDashboardTransitionCatalogContract(unittest.TestCase):
 
         # Desktop transition must use native transitionTypes
         self.assertIn('"wallpaper:Desktop transition"', control_content)
-        self.assertIn("WallpaperService.setWallpaperTransitionType", control_content)
+        self.assertIn("PersonalizationConfig.setWallpaperTransitionType", control_content)
         self.assertNotIn("awwwTransitionTypes", control_content)
 
         # 3. DashboardSelectCard hides MaterialSymbol when no icon is present

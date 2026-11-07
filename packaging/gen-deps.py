@@ -37,7 +37,7 @@ ENGINE_DEPENDS = ["python"]
 # Runtime bases the shipped code directly spawns (optdepends: optional
 # functionality degrades with an explicit message when absent).
 # key-cli (Clavis upstream system monitor / Spotlight backend) is a known
-# gap — see shell/KNOWN-ISSUES.md; register here only after it is brought
+# gap — see llms-wiki/shell/known-issues.md; register here only after it is brought
 # in-repo or formally adopted.
 ENGINE_OPTDEPENDS = [
     ("quickshell", "Nyxuri Shell runtime"),

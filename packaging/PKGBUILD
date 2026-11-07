@@ -1,14 +1,14 @@
 # Maintainer: Echoes678 <echoes678@example.com>
-# nyxuri-git — rolling AUR package: engine + unit blueprints + Nyxuri Shell
+# nyxuri-git — rolling AUR package: engine + plugin blueprints + Nyxuri Shell
 # in one ship. Dependency policy (T1): `depends` is the engine runtime only;
-# every unit's packages are `optdepends` — `nyxuri on <unit>` discloses and
-# installs what it needs. catalog.toml never reaches this file (menu-only).
+# every plugin's packages are `optdepends` — `nyxuri on <plugin>` discloses and
+# installs what it needs.
 # Regenerate the generated blocks: python3 packaging/gen-deps.py --update
 
 pkgname=nyxuri-git
 pkgver=v4.0.0.alpha.2
 pkgrel=1
-pkgdesc="Material You desktop suite — atomic deploy engine, unit blueprints and Nyxuri Shell"
+pkgdesc="Material You desktop suite — atomic deploy engine, plugin blueprints and Nyxuri Shell"
 arch=('any')
 url="https://github.com/ech678/Nyxuri"
 license=('GPL-3.0-only')
@@ -94,7 +94,6 @@ package() {
     rm -rf "$pkgdir/usr/share/nyxuri/shell/scripts/dev" \
            "$pkgdir/usr/share/nyxuri/shell/AGENTS.md" \
            "$pkgdir/usr/share/nyxuri/shell/ROADMAP.md" \
-           "$pkgdir/usr/share/nyxuri/shell/KNOWN-ISSUES.md" \
            "$pkgdir/usr/share/nyxuri/shell/README.md"
 
     # .system-install marker → run_mode="system" (§5.2). Must exist before the

@@ -29,107 +29,7 @@ if str(SHELL_DIR) not in sys.path:
     sys.path.insert(0, str(SHELL_DIR))
 
 
-class ResourceIntegrityTests(unittest.TestCase):
-    """Runtime resource integrity contracts for R5."""
-
-    def test_all_shader_binaries_exist(self):
-        """Assert all required GLSL fragment shaders have precompiled .qsb assets."""
-
-        required_qsbs = [
-            SHELL_DIR / "plugins" / "keystone" / "shaders" / "qsb" / "long_split.frag.qsb",
-            SHELL_DIR / "plugins" / "keystone" / "shaders" / "qsb" / "pill_morph.frag.qsb",
-            SHELL_DIR / "plugins" / "launcher" / "shaders" / "qsb" / "spotlight_mode_field.frag.qsb",
-            SHELL_DIR / "plugins" / "wallpaper" / "shaders" / "qsb" / "wp_disc.frag.qsb",
-            SHELL_DIR / "plugins" / "wallpaper" / "shaders" / "qsb" / "wp_fade.frag.qsb",
-            SHELL_DIR / "plugins" / "wallpaper" / "shaders" / "qsb" / "wp_iris_bloom.frag.qsb",
-            SHELL_DIR / "plugins" / "wallpaper" / "shaders" / "qsb" / "wp_pixelate.frag.qsb",
-            SHELL_DIR / "plugins" / "wallpaper" / "shaders" / "qsb" / "wp_portal.frag.qsb",
-            SHELL_DIR / "plugins" / "wallpaper" / "shaders" / "qsb" / "wp_stripes.frag.qsb",
-            SHELL_DIR / "plugins" / "wallpaper" / "shaders" / "qsb" / "wp_wipe.frag.qsb",
-            SHELL_DIR / "plugins" / "wallpaper" / "shaders" / "qsb" / "zen-palette.frag.qsb",
-        ]
-        for qsb in required_qsbs:
-            self.assertTrue(qsb.is_file(), f"Missing required precompiled shader: {qsb}")
-            self.assertGreater(qsb.stat().st_size, 0, f"Shader file is empty: {qsb}")
-
-    def test_zen_palette_renderer_has_no_dangling_qrc(self):
-        """Assert ZenPaletteRenderer.qml loads the unit-owned precompiled qsb as a real file URL."""
-        renderer = SHELL_DIR / "plugins" / "wallpaper" / "ZenPaletteRenderer.qml"
-        content = renderer.read_text(encoding="utf-8")
-        self.assertNotIn("qrc:/", content)
-        self.assertIn('Qt.resolvedUrl("shaders/qsb/zen-palette.frag.qsb")', content)
-
-    def test_dead_icons_and_svg_icon_eliminated(self):
-        """Assert dead unconsumed Font Awesome icons and SvgIcon.qml are removed."""
-        icons_dir = SHELL_DIR / "app" / "icons"
-        for dead_icon in ["play.svg", "pause.svg", "previous.svg", "next.svg"]:
-            self.assertFalse((icons_dir / dead_icon).exists(), f"Dead icon must be removed: {dead_icon}")
-        svg_icon = SHELL_DIR / "shared" / "controls" / "SvgIcon.qml"
-        self.assertFalse(svg_icon.exists(), "SvgIcon.qml must be removed as zero-consumer dead code")
-
-    def test_active_icons_complete(self):
-        """Assert humidity and keyboard icons are intact."""
-        icons_dir = SHELL_DIR / "app" / "icons"
-        for pct in [7, 30, 50, 75, 90]:
-            self.assertTrue((icons_dir / f"humidity_percent_{pct}.svg").is_file())
-
-        kb_dir = icons_dir / "keyboard"
-        expected_kb = ["apple.svg", "arch.svg", "debian.svg", "fedora.svg", "gentoo.svg",
-                       "googlechrome.svg", "linux.svg", "linuxmint.svg", "nixos.svg",
-                       "steam.svg", "ubuntu.svg", "windows.svg"]
-        for kb in expected_kb:
-            self.assertTrue((kb_dir / kb).is_file(), f"Missing keyboard logo: {kb}")
-
-    def test_toml_i18n_syntax_and_dead_section_purged(self):
-        """Assert zh_CN.toml and en_US.toml parse cleanly with tomllib and have no dead sections."""
-        import tomllib
-        zh_cn_path = SHELL_DIR / "commons" / "i18n" / "zh_CN.toml"
-        en_us_path = SHELL_DIR / "commons" / "i18n" / "en_US.toml"
-
-        with open(zh_cn_path, "rb") as f:
-            zh_data = tomllib.load(f)
-        self.assertNotIn("VerticalLyricsLayout", zh_data, "Dead lyrics section must not be in zh_CN.toml")
-        self.assertIn("WallpaperPage", zh_data)
-
-        with open(en_us_path, "rb") as f:
-            en_data = tomllib.load(f)
-        self.assertIn("%n second(s)", en_data)
-
-    def test_builtin_templates_exist(self):
-        """Assert the Noctalia-syntax builtin template pool is complete."""
-        t_dir = SHELL_DIR / "commons" / "assets" / "templates"
-        for t_file in ["config.toml", "kitty/kitty.conf", "kitty/kitty-apply.sh",
-                       "btop/btop.theme", "btop/btop-apply.sh",
-                       "starship/starship.toml", "starship/starship-apply.sh"]:
-            self.assertTrue((t_dir / t_file).is_file(), f"Missing builtin template: {t_file}")
-
-    def test_all_qml_files_parse(self):
-        """Every tracked .qml file must pass qmllint's syntax pass.
-
-        Root cause gate: a glued newline once merged two property declarations
-        into one line; brace balance stayed even and every Python-side test
-        stayed green while the settings unit compiled empty at runtime, killing
-        its IPC targets. Only qmllint's syntax pass catches this class. Import
-        resolution noise from qs.* synthetic pools is deliberately ignored —
-        only [syntax] diagnostics fail this test. qmllint lives outside PATH on
-        Arch (/usr/lib/qt6/bin); a missing tool fails the test loudly rather
-        than silently skipping.
-        """
-        import subprocess
-        candidates = ["/usr/lib/qt6/bin/qmllint", "qmllint"]
-        qmllint = next((c for c in candidates if subprocess.run(
-            ["bash", "-c", f"command -v {c}"], capture_output=True).returncode == 0), None)
-        self.assertIsNotNone(qmllint, "qmllint (qt6-declarative tools) is required by this test")
-
-        qml_files = sorted((SHELL_DIR).rglob("*.qml"))
-        qml_files = [p for p in qml_files if "references" not in p.parts]
-        self.assertGreater(len(qml_files), 500, "QML file discovery collapsed")
-        broken = []
-        for path in qml_files:
-            result = subprocess.run([qmllint, str(path)], capture_output=True, text=True)
-            if "[syntax]" in result.stderr or "[syntax]" in result.stdout:
-                broken.append(str(path.relative_to(REPO_ROOT)))
-        self.assertEqual(broken, [], f"QML syntax errors (units compile empty at runtime): {broken}")
+from tests.shell.test_resource_integrity import TestResourceIntegrity
 
 
 def build_category_suite(category: str) -> unittest.TestSuite:
@@ -139,9 +39,9 @@ def build_category_suite(category: str) -> unittest.TestSuite:
 
     if category == "STATIC":
         # Lifecycle and boundary tests
-        from shell.tests.test_lifecycle_audit import TestLifecycleAudit
+        from tests.shell.test_lifecycle_audit import TestLifecycleAudit
         suite.addTests(loader.loadTestsFromTestCase(TestLifecycleAudit))
-        from shell.tests.test_plugin_manifests import (TestPluginManifestSync, TestHostClosure,
+        from tests.shell.test_plugin_manifests import (TestPluginManifestSync, TestHostClosure,
                                                        TestEventLoop, TestRetiredMirrors,
                                                        TestZeroHostChangesDiscovery)
         suite.addTests(loader.loadTestsFromTestCase(TestPluginManifestSync))
@@ -169,10 +69,10 @@ def build_category_suite(category: str) -> unittest.TestSuite:
 
     elif category == "LOGIC":
         # Pure logic, KDL parsing, search catalog, state machines
-        from shell.tests.test_niri_config import ConfigurationContracts, OutputContracts
+        from tests.shell.test_niri_config import ConfigurationContracts, OutputContracts
         suite.addTests(loader.loadTestsFromTestCase(ConfigurationContracts))
         suite.addTests(loader.loadTestsFromTestCase(OutputContracts))
-        from shell.tests.test_search_catalog import CatalogTests
+        from tests.shell.test_search_catalog import CatalogTests
         suite.addTests(loader.loadTestsFromTestCase(CatalogTests))
         from tests.shell.test_shell import TestShellManagement
         logic_test_names = [
@@ -185,7 +85,7 @@ def build_category_suite(category: str) -> unittest.TestSuite:
 
     elif category == "RESOURCE":
         # Resource integrity, shaders, icons, i18n
-        suite.addTests(loader.loadTestsFromTestCase(ResourceIntegrityTests))
+        suite.addTests(loader.loadTestsFromTestCase(TestResourceIntegrity))
         from tests.shell.test_shell import TestShellManagement
         resource_test_names = [
             "test_r3_brand_paths_and_toml_i18n_contracts",
@@ -198,7 +98,7 @@ def build_category_suite(category: str) -> unittest.TestSuite:
 
     elif category == "NATIVE":
         # Native IPC, command line arguments, process lifecycle
-        from shell.tests.test_display_preview import PreviewContracts
+        from tests.shell.test_display_preview import PreviewContracts
         suite.addTests(loader.loadTestsFromTestCase(PreviewContracts))
         from tests.shell.test_shell_runtime import ShellLauncherTests
         suite.addTests(loader.loadTestsFromTestCase(ShellLauncherTests))

@@ -22,8 +22,8 @@
 ## 已修复
 
 - [x] **settings 开关全部无反应**（2026-10-17，同日复核发现）：开关派发本身正常
-  （账本落记录、`unit switch done`），但桌面纹丝不动——`nyxuri/desktop/
-  shell_switcher.py` 的 `probe_running_shells()` 把 `os.getppid()` 一并排除，
+  （状态落记录、`unit switch done`），但桌面纹丝不动——`nyxuri/system/
+  shell.py` 的 `probe_running_shells()` 把 `os.getppid()` 一并排除，
   而 shell 的 UnitControlService 派生 nyxuri 时父进程恰是待通知的 qs 实例，
   bridge 探测永远扑空、unit-changed 静默丢失。修为只排除自身（wrapper 以
   `exec qs` 收尾，父进程不可能是 wrapper 脚本残留；非 shell 父进程由

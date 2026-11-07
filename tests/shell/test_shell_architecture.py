@@ -2041,7 +2041,7 @@ class TestShellManagement(unittest.TestCase):
         prefs = read("services/UiPreferences.qml")
         self.assertIn("property bool controlPlaneResourceSampling: false", prefs)
         self.assertIn("function setControlPlaneResourceSampling(", prefs)
-        self.assertIn('"controlPlaneResourceSampling": root.controlPlaneResourceSampling', prefs)
+        self.assertIn('controlPlaneResourceSampling: root.controlPlaneResourceSampling', prefs)
         self.assertIn("root.controlPlaneResourceSampling = parsed.controlPlaneResourceSampling === true;",
                       prefs)
 

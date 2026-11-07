@@ -77,11 +77,11 @@ hooks 的实机行为证据与视觉验收待作者确认。镜像色板是否�
 ### 1. 核心策略：全套抽象再改，拒绝东拼西凑（No picking）
 
 绝不在各页面打散装补丁。先从本地参考树 `shell/references/caelestia/modules/nexus/` 将经过实战检验、
-比例协调的偏好输入原件全套抽象并拷入至 `shell/units/settings/controls/`；彻底斩断外部 C++ / 插件依赖
+比例协调的偏好输入原件全套抽象并拷入至 `shell/ui/controls/`；彻底斩断外部 C++ / 插件依赖
 （100% 纯 QML/JS），全面桥接 Nyxuri 真相（`Appearance.m3colors`、`rounding`、`spacing`、`Fonts`、
 `I18n`），形成一套自洽、有单元测试保障的偏好设置标准库，再自顶向下积木式翻新。
 
-### 2. 偏好原子套件解构（落盘至 `shell/units/settings/controls/`）
+### 2. 偏好原子套件解构（落盘至 `shell/ui/controls/`）
 
 - **`ConnectedRect` 连通基座**：首项 `first: true`（顶部大圆角）、末项 `last: true`（底部大圆角）、
   中间平直衔接。驱动所有偏好卡片的分组连通形态（`Appearance.m3colors.m3surfaceContainer`）。
@@ -155,7 +155,7 @@ hooks 的实机行为证据与视觉验收待作者确认。镜像色板是否�
 - **原 P5 完整宿主、部署与双轨生态 → 已吸收为主线 KM4，已交付**（2026-10-17，
   明细见 [roadmap-history](../llms-wiki/archive/roadmap-history.md) KM 存档与本台账追加节）：P5 验收标准原样
   平移——六动作经 `nyxuri-shell --action` 通路保持零改动（单元 off 时 IPC 目标
-  消失 = 真实失败明示）；部署契约经 `units/theme`（merge 共享生活区）与部署流程
+  消失 = 真实失败明示）；部署契约经 `plugins/theme`（merge 共享生活区）与部署流程
   自动 `on theme` 接入；共享池位置中立化（`~/.config/nyxuri/templates/`）与双
   Shell 输出仲裁（kitty include 去重 + noctalia 主题块剥离已有；切换后活动 Shell
   启动即全量重渲）随部署落地；切换失败不损失配置、不留受管残留由既有

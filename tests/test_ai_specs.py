@@ -157,6 +157,19 @@ class TestAISpecs(unittest.TestCase):
                     f"{page.relative_to(self.root_dir)} still references retired path: {fragment}",
                 )
 
+        # Stricter checks for paths retired in P4 (exempting ROADMAP.md changelog)
+        p4_banned = ("nyxuri/kernel", "nyxuri/desktop", "nyxuri/pkg", "nyxuri/installer", "nyxuri/core.py")
+        for page in self._live_md_files():
+            if page.name in ("ROADMAP.md",):
+                continue
+            text = page.read_text(encoding="utf-8")
+            for fragment in p4_banned:
+                self.assertNotIn(
+                    fragment,
+                    text,
+                    f"{page.relative_to(self.root_dir)} still references dissolved P4 path: {fragment}",
+                )
+
     # ------------------------------------------------------------------
     # ROADMAP status vocabulary (docs-charter: canonical status words)
     # ------------------------------------------------------------------
@@ -172,7 +185,7 @@ class TestAISpecs(unittest.TestCase):
 
         # 2. root ROADMAP.md
         root_roadmap = (self.root_dir / "ROADMAP.md").read_text(encoding="utf-8")
-        for match in re.findall(r"^\| (KM[^|*]+) \| ([^|]+) \| ([^|]+) \|$", root_roadmap, re.MULTILINE):
+        for match in re.findall(r"^\| ([PTKM][^|*]+) \| ([^|]+) \| ([^|]+) \|$", root_roadmap, re.MULTILINE):
             stage, _, status = (part.strip() for part in match)
             self.assertIn(status, allowed, f"Non-canonical status for {stage}: {status}")
 

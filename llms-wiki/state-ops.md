@@ -82,7 +82,7 @@ nyxuri rollback [index] [--keep-custom] # 回滚到指定快照（默认精确�
 | standard 漏调 greeter 清理 | `[✓] Greeter` 默认勾 | standard 范围默认包含 greeter 插件项 |
 | 旧 quickphrase.conf 修改的清退 | `[✓] fcitx5-rime` 插件项 | `fcitx5-rime` 插件 `hooks/deactivate` 恢复热键并清理皮肤 |
 
-卸载时带钩子插件（`HOOK_PLUGINS = ("fcitx5-rime", "fish", "greeter", "noctalia")`）统一经 `transaction.plugin_off(uid, cascade=True)` 调度执行其专属清理钩子。
+卸载时带钩子插件（`HOOK_PLUGINS = ("fcitx5-rime", "fish", "greeter", "noctalia")`）统一经 `engine.plugin_off(uid, cascade=True)` 调度执行其专属清理钩子。
 
 ## 卸载执行顺序
 

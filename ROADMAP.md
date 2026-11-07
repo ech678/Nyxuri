@@ -21,8 +21,8 @@
 | P1 | 插件专属控制面与动态导航：独立 `PluginsPage` 插件管理 + 切除设置中心幽灵 Tab 根因 + Spotlight 联动 | 已完成 |
 | P2 | 真 Omarchy 解耦与容错：切除 70 处跨插件静态引用 + 焚毁伪合规白名单 + 拔插容错（任意删插件宿主不崩） | 已完成 |
 | P3 | 统一配置 TOML 化：升级 `Toml.js` 导出 `stringify` + 废除 7 个碎片 JSON，归拢为带注释的单一 `config.toml` | 已完成 |
-| P4 | 引擎散文化与去企味重塑：处决 `ledger.py`/`transaction.py` 银行黑话 + 解构 913 行 `core.py`，消除 `kernel/core` 分裂人格 | 待开始 |
-| P5 | **Sub-agents 全景深度审查与巡检验收（作为本卷最终检查任务，就像启动并发审查一样）** | 待开始 |
+| P4 | 引擎散文化与去企味重塑：处决 `ledger.py`/`transaction.py` 银行黑话 + 解构 913 行 `core.py`，消除 `kernel/core` 分裂人格 | 已完成 |
+| P5 | **Sub-agents 全景深度审查与巡检验收（作为本卷最终检查任务，就像启动并发审查一样）** | 已完成 |
 | T4 | Shell 可控性与透明化（开工时立细则） | 待开始 |
 | T5 | 多合成器解耦（门禁触发） | 待开始 |
 | T2 | TUI Textual 重做（暂缓，分支备用） | 待开始 |
@@ -55,8 +55,8 @@
   - **单一物理重心与配置大一统**：实现 `shell/services/ConfigService.qml`，以单个原子 `FileView` 管理 `~/.config/nyxuri/config.toml`；废除 7 个碎片化 JSON（`config.json`, `dock.json`, `tray.json`, `quick-toggles.json`, `display-color.json`, `idle-policy.json`, `ui-preferences.json`）；
   - **领域服务全面解耦与收口**：`PersonalizationConfig`, `DockService`, `TrayService`, `QuickToggleConfig`, `DisplayColor`, `IdleService`, `UiPreferences` 彻底剥离独立 FileView 与散乱写回，通过 `ConfigService` 统一分发与防抖落盘；
   - **无感迁移与零残留**：通过 `shell/scripts/system/migrate_config.py` 在首次加载时自动吸收遗留 JSON 配置归拢入 `config.toml` 并安全解链清理旧文件；双语 i18n 词条同步净化死键；
-  - **桌面 Python 生态无缝对接**：`nyxuri/desktop/theme.py` 与 `shell_switcher.py` 优先使用 Python 3.11+ 标准库 `tomllib` 读取 `config.toml`（保留 `config.json` 降级兜底）。
-- **P4 引擎散文化与去企味重塑 (Prose Architecture & De-Enterprization)** [已完成]：
+  - **桌面 Python 生态无缝对接**：`nyxuri/system/theme.py` 与 `nyxuri/system/shell.py` 优先使用 Python 3.11+ 标准库 `tomllib` 读取 `config.toml`（保留 `config.json` 降级兜底）。
+- **P4 引擎散文化与去企味重塑 (Prose Architecture & De-Enterprization) · 已完成**：
   - **处决过度工程命名与银行黑话**：
     - `nyxuri/kernel/ledger.py` → `nyxuri/state/store.py`；
     - `nyxuri/kernel/transaction.py` → `nyxuri/deploy/engine.py`；
@@ -66,13 +66,14 @@
     - 彻底解散 `nyxuri/kernel/`、`pkg/`、`desktop/`、`installer/` 与伪代理 `nyxuri/core.py`；
     - 引擎核心收敛为 4 个职责正交的清晰领域：`deploy/`（部署与蓝图）、`state/`（状态与快照）、`system/`（环境、包供给、桌面集成）、`ui/`（终端 UI 与整装交互）；根目录净空仅保留主入口与文案资源；
   - **散文化审美审查与机器状态纯化**：代码行文遵循散文韵律与左对齐扁平几何（Guard Clauses Over Pyramids），彻底清理 `state.json` 历史死键（`modules`/`shell_package`/`units` 等）与冗余元数据，收敛纯粹机器状态。
-- **P5 Sub-agents 全景深度审查与巡检验收 (Final Deep Verification Task)**：
-  - **整卷最终检查任务**：由 4 个并发 Sub-agent 进行深度穿透交叉审计（非单一 AI 转述），全员出具无保留合格结论并附原始输出作证：
-    - **Agent 1（空间纯度与根面）**：检查根目录与包目录有无散落实现脚本、死代码或未被隔离的巨型杂物；
-    - **Agent 2（解耦与真实可拔插）**：全库扫描 `import "../plugins/"`，严禁跨插件静态导入；测试随机物理删除/移动某个插件目录，宿主是否优雅容错绝不发生编译崩溃；
-    - **Agent 3（状态机与视图联动）**：在后台切换插件启闭，检查 UI 视图、设置导航 Tab、全局搜索索引是否即时同步消失与出现，杜绝幽灵残留；
-    - **Agent 4（命名去企味与散文化审美）**：审查代码圈复杂度、金字塔嵌套（强制 Guard Clauses），彻底清除非法企业黑话（如 ledger/transaction），配置坚守平坦纯洁的 TOML。
-  - 查出任何一处硬编码、伪解耦或黑话违背，该阶段立即阻断，全部合格后方可收口第三卷。
+- **P5 Sub-agents 全景深度审查与巡检验收 (Final Deep Verification Task) · 已完成**：
+  - **整卷最终检查任务**：由 5 个并发 Sub-agent 进行深度穿透交叉审计（非单一 AI 转述），全员出具无保留合格结论并附原始输出作证：
+    - **Agent 1（空间纯度与根面）**：工作区净空零临时垃圾，修齐 `run-tests.py` 与 `check.sh` 开发门禁，`ResourceIntegrityTests` 抽离合流至根单测；清理死文档索引与打包陈旧注释；
+    - **Agent 2（解耦与真实可拔插）**：全库扫描零跨插件静态导入；`ActionGateway` 动态注册完全对称；热拔插 12 域遍历沙箱测试 100% 容错无崩溃；`audit-lifecycle.py` 伪合规白名单彻底焚毁；
+    - **Agent 3（状态机与视图联动）**：验证停用插件设置 Tab 秒级动态剥除与越界保护；Spotlight 动作拦截与壁纸联动正常；TOML 单重心读写防抖落盘稳定；`state.json` 净化历史死键；
+    - **Agent 4（命名去企味与散文化审美）**：核心引擎 0 银行黑话残留、0 假别名垫片；修齐 `fish` 速查手册与更新测试用例中残留字样；代码圈复杂度与 Guard Clauses 几何规整；原生 Python 3.11+ `tomllib` 纯正对接；
+    - **Agent 5（全局契约与路线图一致性）**：同步更新 `ROADMAP.md`、`shell/ROADMAP.md` 与 `llms-wiki/` 活跃页面，彻底清除解散包路径；`test_ai_specs.py` 增设防复辟硬门禁；双语 i18n 349 键 100% 契约合规。
+  - **第三卷「散文化与架构优雅化卷（P0 ~ P5）」全卷正式圆满闭环收口**。
 
 ## 分支策略（PR #148 · Ubuntu 支持）
 
