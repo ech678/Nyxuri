@@ -184,7 +184,7 @@ def inventory(root: Path) -> dict[str, object]:
             entries.append(ResourceEntry(
                 kind=match.group(1),
                 file=path.relative_to(root).as_posix(),
-                line=source.count("\n", 0, match.start()) + 1,
+                line=source.count("\n", 0, match.start(1)) + 1,
                 owner=path.stem,
                 identifier=props.get("id"),
                 default_running=_expression(props.get("running")),

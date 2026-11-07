@@ -52,7 +52,7 @@ class ResourceInventoryTests(unittest.TestCase):
         rows = document["resources"]
         timer = next(row for row in rows if row["kind"] == "Timer")
         self.assertEqual(timer["file"], "services/DemoService.qml")
-        self.assertEqual(timer["line"], 2)
+        self.assertEqual(timer["line"], 3)
         self.assertEqual(timer["owner"], "DemoService")
         self.assertEqual(timer["identifier"], "refreshTimer")
         self.assertEqual(timer["interval"], 250)
