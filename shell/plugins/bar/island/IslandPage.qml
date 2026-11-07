@@ -19,6 +19,11 @@ Item {
 
     readonly property bool rendersPageTitle: true
 
+    // B1 tab merge: the island rides the Bar tab as a subpage, so the
+    // scaffold's back arrow (isSubPage) must reach the hosting page through
+    // this re-exposed signal — GeneralBarPage connects it to its overview.
+    signal backRequested
+
     property int searchRequestSerial: -1
     readonly property var searchLeaf: currentSection === "overview" ? overviewPage.flickable :
                                                                       pageLoader.item ? (
@@ -89,6 +94,7 @@ Item {
         visible: root.currentSection === "overview"
         isSubPage: true
         title: SpotlightCatalog.title("bar.island")
+        onBackRequested: root.backRequested()
 
         Item {
             id: overviewContent

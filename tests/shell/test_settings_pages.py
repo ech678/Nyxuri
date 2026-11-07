@@ -833,6 +833,16 @@ class TestIslandPageRebuild(unittest.TestCase):
         self.assertIn("readonly property bool rendersPageTitle: true", source)
         self.assertIn("function openSearchPath(path, serial)", source)
         self.assertIn("currentSection === \"overview\" ? overviewPage.flickable", source)
+
+    def test_back_button_reaches_the_bar_page_host(self):
+        """B1 tab merge: the island rides the Bar tab as a subpage — the
+        scaffold's back arrow (isSubPage) must reach the host through a
+        re-exposed backRequested signal; a dead arrow means the host's
+        connect probe found nothing to wire."""
+        source = _read("IslandPage.qml")
+        self.assertIn("signal backRequested", source)
+        self.assertIn("isSubPage: true", source)
+        self.assertIn("onBackRequested: root.backRequested()", source)
         self.assertIn("function closeChildWindows()", source)
         self.assertIn("directoryPicker.dismiss()", source)
 
