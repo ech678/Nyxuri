@@ -208,6 +208,8 @@
 
 - [ ] 在容器中记录 85 个 singleton 的实际实例化集合，按空 Shell、bar、wallpaper、
   Spotlight、Settings、Quick Settings、Dock、lock、media、network、bluetooth 分类。
+- [x] 已生成 85-singleton 的静态声明/消费者/资源引用 inventory；工件明确
+  `runtime_claims=false`，不能替代上面的实际实例化矩阵。
 - [ ] 对每个 singleton 标注：是否必须常驻、消费者、创建时机、文件读取、Process、
   Timer、Socket、Connections、模型大小、析构路径和可降级行为。
 - [ ] 将纯 token/快照与带 I/O 的 service/config/backend 分离，避免页面读取一个属性
@@ -252,6 +254,9 @@
 
 - [ ] 对所有常驻和按需模型记录数量、每项大小、完整对象/摘要对象、图片引用和关闭后
   生命周期。
+- [x] 已生成静态 model/image/cache inventory（508 QML、ListModel/Repeater/ListView/
+  Image/Canvas/layer、cache hints 和淘汰信号）；工件明确 `runtime_claims=false`，
+  不能替代运行时大小/驻留/回收证据。
 - [ ] 为 Notification、Clipboard、Spotlight、Dock、FilePicker、Network、Bluetooth、
   Settings search 建立明确上限、分页或淘汰策略；不得为了降 RSS 静默丢失用户明确
   需要的历史，必须提供可解释的保留规则。
