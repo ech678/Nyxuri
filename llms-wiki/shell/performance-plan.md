@@ -23,6 +23,9 @@
 > 五种 rootless/privileged 变体重试，均在 Qt 6.12 头文件兼容性错误处失败，已按
 > 环境/工具链原因记录跳过。Loader/unit live census 已接入，其他 QML 资源类别仍以
 > partial/null 明示。
+>
+> 进程采样已增加 lower-bound lifecycle 聚合（PID/starttime/command/首次与末次观测、
+> launch/restart 估计和失败启动分类），owner 与真实 kernel exit 仍明确标为不可得。
 
 ## 0. 硬约束
 
@@ -217,6 +220,8 @@
 - [ ] 将同一领域多个周期采样合并为一个调度点；时钟、系统指标、网络状态、Niri 状态
   和天气不允许各自重复唤醒完成相同探测。
 - [ ] 对每个 `Process` 记录启动次数、生命周期、输出大小、CPU、失败和重启原因。
+  已有容器级采样 lower-bound telemetry；QML owner、真实退出时间、逐进程 CPU/输出
+  归因仍未完成。
 - [ ] 将可合并的短命令改为一次批量查询或缓存快照，但保留参数数组、错误上下文和
   可诊断输出；不把多个业务拼成不可维护的 shell 字符串。
 - [ ] 对 Niri、Network、Bluetooth、Theme、Template、DefaultApplications、DisplayColor、
