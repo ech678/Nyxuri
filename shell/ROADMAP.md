@@ -7,8 +7,8 @@
 > [shell-roadmap-ledger](../llms-wiki/archive/shell-roadmap-ledger.md)。
 > 当前整体处于**实验性阶段**（BUG 多、外观未开发、暂不推荐日常使用）；
 > 已知 BUG 与暂缓的基础设施缺口见 [known-issues](../llms-wiki/shell/known-issues.md)。
-> 下一卷跨域骨架与架构重塑演进（S0/S1 插件生命周期，以及 P0~P4 架构散文化与优雅化专项）归根
-> [ROADMAP](../ROADMAP.md) 管；包含消解 shell/app/ 恢复纯正 5 层、切除跨插件静态引用、独立 PluginsPage 插件管理与 TOML 统一配置。本页 T3 剩余验收与资产收编随其一并走。
+> 跨域骨架与架构重塑演进（S0/S1 插件生命周期，以及 P0~P4 架构散文化与优雅化专项）归根
+> [ROADMAP](../ROADMAP.md) 管。本页承载 P4/T3 收尾验收与 B 卷（Bar & Island 统一）计划。
 
 ## 目标与边界
 
@@ -22,6 +22,15 @@
 ## 状态规则
 
 任务状态只使用 `待开始`、`进行中`、`阻断`、`待验收`、`已完成`。合并前置、实现、行为验证和视觉验收分别记录；测试失败、环境跳过与未验证不得混为通过。每项任务明确旧实现的保留、迁移、归档或删除方式。
+
+## 卷宗总览
+
+| 卷 | 内容 | 状态 |
+| --- | --- | --- |
+| P4 | 主题契约、模板兼容与取色引擎分阶 | 待验收（契约测试全绿；实机行为与视觉证据待作者） |
+| T3 | 设置界面替换：Caelestia 安卓风味 | M3/M4 待验收（机器证据齐；视觉过目待作者） |
+| B | Bar & Island 统一（keystone 并入 bar） | 规划定案，B0 待开工 |
+| P6 | 整体验收与未来移植 | 排队（前置主线 KM5） |
 
 ## 已交付基线台账
 
@@ -40,11 +49,12 @@
 | R10 | Action Gateway 与模块自治 | 待验收 |
 | R11 | 控制面与透明度 | 已完成 |
 | R12 | 全局文档架构重塑 | 已完成 |
+| KM4.5/4.6 | 随主线结构收敛：modules→units 拆迁正名、packaging/fallback/assets 处决、quicksettings→quickpanel 正名（明细见台账） | 已完成 |
 
 「已完成」表示该阶段按当时验收标准交付并留有行为证据，明细见归档台账。
 R10 行为与契约测试全绿，待作者实机验收后改为已完成。
 
-## 当前阶段：P4 主题契约、模板兼容与取色引擎分阶（待验收）
+## P4 主题契约、模板兼容与取色引擎分阶（待验收）
 
 **目标：** 主题契约与渲染引擎自有、与 Noctalia v5 palette/template 规范兼容；
 matugen 降格为纯取色位；深浅模式系统级写入收敛为 `nyxuri theme` 单一实现。
@@ -55,7 +65,7 @@ matugen 降格为纯取色位；深浅模式系统级写入收敛为 `nyxuri the
   双 Shell 默认各自独立取色，谁 active 谁写全部输出。
 - 短期引擎：matugen 仅 `--json` 纯取色，Tera 渲染路径全量退役；纳入 doctor
   可选依赖检查。
-- 渲染层：TemplateAdapter 落 `app/services/TemplateService.qml`，表达式子集
+- 渲染层：TemplateAdapter 落 `services/TemplateService.qml`，表达式子集
   （块/过滤器/`palettes.*` 显式拒绝）；kitty/btop/starship vendor 入库（MIT
   来源映射），yazi 取色模板删除。
 - 深浅模式：Shell 侧系统写入清算，代调 `nyxuri theme`（CLI 缺失时内部照切
@@ -68,75 +78,22 @@ matugen 降格为纯取色位；深浅模式系统级写入收敛为 `nyxuri the
 hooks 的实机行为证据与视觉验收待作者确认。镜像色板是否长期作为 Noctalia
 对齐策略（`source = custom`）留验收拍板。
 
-## T3 设置界面替换：Caelestia 安卓风味（当前进行中）
+## T3 设置界面替换：Caelestia 安卓风味（收尾验收中）
 
-> 对应主线跨域活跃路线 T3 站。本阶段彻底替换旧 Default + Minimal 设置中心外壳，以 Caelestia Nexus
-> 视觉范式重塑为完全安卓风味（Material Design 3 Master-Detail 连通卡片与双行导航）的现代化设置视窗；
-> 保持与 Dashboard（端景网格）双轨并存，坚守“换皮不换骨、只换呈现不碰业务”底线。
+> 对应主线跨域活跃路线 T3 站。旧 Default + Minimal 设置中心外壳已替换为 Caelestia Nexus
+> 视觉范式（Material Design 3 Master-Detail 连通卡片与双行导航）；与 Dashboard（端景网格）
+> 双轨并存，坚守“换皮不换骨、只换呈现不碰业务”底线。
 
-### 1. 核心策略：全套抽象再改，拒绝东拼西凑（No picking）
-
-绝不在各页面打散装补丁。先从本地参考树 `shell/references/caelestia/modules/nexus/` 将经过实战检验、
-比例协调的偏好输入原件全套抽象并拷入至 `shell/ui/controls/`；彻底斩断外部 C++ / 插件依赖
-（100% 纯 QML/JS），全面桥接 Nyxuri 真相（`Appearance.m3colors`、`rounding`、`spacing`、`Fonts`、
-`I18n`），形成一套自洽、有单元测试保障的偏好设置标准库，再自顶向下积木式翻新。
-
-### 2. 偏好原子套件解构（落盘至 `shell/ui/controls/`）
-
-- **`ConnectedRect` 连通基座**：首项 `first: true`（顶部大圆角）、末项 `last: true`（底部大圆角）、
-  中间平直衔接。驱动所有偏好卡片的分组连通形态（`Appearance.m3colors.m3surfaceContainer`）。
-- **`PreferenceToggle` 开关行**：双行文本（主标题 + 副标描述）+ 右侧 Material 3 药丸式平滑滑动开关（`StyledSwitch`），
-  整行支持按压涟漪。
-- **`PreferenceSlider` 滑块行**：左侧图标 + 主标签 + 当前数值 + 下方全宽精致滑块，集成滚轮微调。
-- **`PreferenceInput` 文本框行**：双行标签 + 右侧内嵌圆角输入框（带焦点呼吸边框与清除按钮）。
-- **`PreferenceSelect` 下拉选择行**：主标题 + 当前选定值的药丸按钮，点击展开 MD3 菜单或对话框。
-- **`PreferenceStepper` 步进数值行**：紧凑数值微调控件（包含 `-`、数值文本、`+`）。
-- **`PreferenceAction` 操作/跳转行**：左侧图标 + 双行文本 + 右侧 `chevron_right` 箭头，用于进入二级子页或执行动作。
-- **`PreferenceInfo` 属性信息行**：左侧图标 + 属性名 + 右侧居右对齐的只读属性值。
-- **`PreferenceHeader` 小节标**：轻量辅助色标题，位于卡片组上方。
-- **`NexusSearchBar` 药丸搜索框**：全圆角胶囊搜索栏 `[ 🔍 Search settings ]`，无边框、
-  带清除按钮（`clear` 图标）；与原版一致为**视觉占位**，设置内搜索（过滤+深层直通）后续单独立项。
-- **`NexusPageBase` 详情页脚手架**：大标题（titleLarge）、子页面返回箭头（`arrow_back`）与滚动列封顶。
-
-### 3. 视窗与主从框架规范（对齐 Caelestia 实测值，NexusStyle 1:1）
-
-- **token 真相**：`units/settings/NexusStyle.qml`（S0-1 随五件套迁 `ui/NexusStyle.qml`）为设置界面唯一几何/字号源——
-  tokens.hpp 值 1:1 移植（rounding 4/8/12/16/20/28/32/48、padding/spacing 同梯、
-  字号 11–28 + Medium 权重表、图标 24/20、比例常量 0.7 / 16:9 / 600 / 800 / 800×500），
-  **脱离全局 0.85 缩放**，契约测试逐值钉死；颜色仍归 `Appearance`。
-- **无边框双色分区视窗**（Nexus.qml 复刻）：左区导航面板（导航宽+32px、左角
-  `large(16)` 圆角）与 12px 框带、右上角关闭钮同用 `surfaceContainerLow` 系填充
-  （同色融合，无需 blob）；中部透明承载页面；`CompositorBlurRegion` 保留。
-  窗口尺寸 = 屏高×0.7、宽=高×16:9、下限 800×500 由 `Math.max` 承担——
-  **禁止赋值显式 size minimums**（Quickshell 0.3.2 会把窗口钉死在下限）。
-- **关闭钮**（windowBtn 复刻）：贴右上角零边距、36×32、`medium(12)` 圆角、24px
-  图标、hover 变 `m3error`、按压仅图标 scale 0.8、无 StateLayer。
-- **左侧 NavPane（安卓 Master 列表）**：
-  - 顶部嵌入 `NexusSearchBar`（占位）；
-  - 单列扁平列表，分类**纯几何表达**（组间 +12px 间隙 + `ConnectedRect` 首尾连通圆角），
-    无分组文字标签——对齐原版 NavLocations；
-  - 双行图文排布：圆形强调色图标徽章（激活 primary / 常态 secondaryContainer，24px
-    grade 25 图标）+ 主标 bodyMedium(14) + 副标 labelSmall(11)（路由 `description`
-    经 catalog 翻译桥）；
-  - 激活项：整行 `secondaryContainer` 填充 + `extraLargeIncreased(32)` 胶囊形变，按压收缩
-    `medium(12)`；文字恒定静止色（不加粗不变色，同原版）；
-  - 列表上下渐隐遮罩（`VerticalFadeFlickable`），无滚动条；
-  - 底部保留「配置文件编辑 / 路径复制」快捷动作（Nyxuri 扩展）。
-- **右侧 Detail 承载区**：内容距框带 16px（窗边 28px）、距左区 28px（Pages.qml 锚位）；
-  路由大标题（titleLarge 22 Medium）；切页为**容器级**方向感知动画（淡出 200ms →
-  上下 28px 滑入 300ms，导航方向决定进出轴向），页面宿主层动画关闭。
-- **轴二值收敛与向后兼容**：
-  - `PersonalizationConfig.qml` 中 `settingsPanelStyles` 收敛为 `default` 与 `dashboard`；
-  - 历史配置中的 `"minimal"` 自动折叠为 `"default"`；
-  - `SettingsPanelStyleCard` 与 `DashboardStyleCard` 选项收缩；
-  - 处决零消费者的旧 `NavigationRailButton.qml`、`NavigationRailExpandButton.qml`、`NavigationRailTabArray.qml`。
-- **About 页**（对齐 Caelestia AboutPage）：路由 `about`（导航底部独立分组），hero 连通卡 +
-  System 段（Hostname/Device/Distro/Kernel/Firmware ← `SystemIdentityService`）+
-  Software 段（Quickshell/Qt/合成器；版本探针按需归服务层）；首个纯 M1 原子页面，M3 打样。
-- **不移植声明**：blob C++ 形状系统（含果冻物理回弹）与 transparency layer 调色系统不进
-  Nyxuri（纯 QML 红线），以同色矩形融合 + blur/实色近似——这是与原版仅剩的刻意差异。
-
-### 4. 分期台账（M0–M4）
+- **策略（No picking）**：偏好原子原件从本地参考树 `shell/references/caelestia/modules/nexus/`
+  全套拷入（100% 纯 QML/JS，斩断外部 C++/插件依赖，桥接 Nyxuri 真相
+  `Appearance.m3colors`/`rounding`/`spacing`/`Fonts`/`I18n`），落 `shell/ui/` 平面原子库
+  （`ConnectedRect`、`Preference*` 八行原子、`NexusSearchBar`、`NexusPageBase`；
+  几何/字号唯一源 `ui/NexusStyle.qml`，tokens.hpp 值 1:1 移植、脱离全局 0.85 缩放、
+  契约测试逐值钉死），再自顶向下积木式翻新。
+- **不移植声明**：blob C++ 形状系统（含果冻物理回弹）与 transparency layer 调色系统
+  不进 Nyxuri（纯 QML 红线），以同色矩形融合 + blur/实色近似——这是与原版仅剩的刻意差异。
+- **轴收敛**：`settingsPanelStyles` 收敛为 `default`/`dashboard` 两态，历史 `minimal`
+  自动折叠为 `default`；搜索框对齐原版**纯视觉占位**形态。
 
 | 阶段 | 交付目标 | 状态 |
 | --- | --- | --- |
@@ -146,23 +103,80 @@ hooks 的实机行为证据与视觉验收待作者确认。镜像色板是否�
 | M3 | 核心页面首批积木化翻新（`AccountPage`、`ThemePage`、`WallpaperPage`、`DisplaysPage`） | 待验收（机器证据已随 S0-4 收窄版产出；视觉过目待作者） |
 | M4 | 全页面覆盖、废弃代码清算与全量测试冒烟验收（批 A–F 已落地；清算档 dashboard 双轨合并已划掉——双轨终局保留，其余候选整档挂起；冒烟证据随 S0-4 收窄版产出） | 待验收 |
 
+**待验收**：M3 核心四页与 M4 全页面覆盖的实机视觉过目。fidelity 三轮修订与
+S0-4 资产收编明细见台账 T3 实施记录。
+
+## B 卷：Bar & Island 统一（keystone 并入 bar，规划定案未开工）
+
+> 起因（2026-11-07 定案）：bar 与 keystone 实为同一形态的两个单元——账本双开、同抢顶边，
+> bar 中段布局靠人工清空给岛腾位，属结构性重复。本卷把岛降格为 bar 的布局部件，
+> bar 换 end4 视觉语言，自由度对齐 dux-shell。开工不依赖 P4 验收（不同域），
+> 但 B1 的 manifest 契约改动不与 P4 收尾并线。
+
+### 0. 方法论红线：先物理整抄，再定向裁剪（No picking）
+
+本卷一切上游能力一律走 Fork & Trim：**全量 `cp` 原件进树建立基线 → 保留原版防崩溃、
+动画与几何细节 → 定向剪裁适配**。严禁从零手写极简残卷冒充整抄，严禁打散东拼西凑。
+三个能力源：
+
+- **皮肤源** `references/end4-pC/modules/ii/bar/`：cornerStyle 体系（平面/浮动/材质/
+  材质贴合/面板）、BarGroup/Divisor、材质胶囊、center-only 模式、屏幕圆角衔接。
+- **机制源** `references/dux-shell/quickshell/Modules/DBar/` 与
+  `Common/settings/`：WidgetModel 注册表、DensityPresets 密度预设、每部件默认值模式。
+- **树内范式**：`plugins/bar/quickpanel/QuickSettings.qml`（锚定弹窗）与 keystone
+  morph 引擎（本卷**保护对象**，不是砍的对象）。
+
+裁剪只做四类，超出即为私改：① 外部依赖桥接（Hyprland/Qt5Compat →
+CompositorDriver / 树内效果件）；② 配色与尺寸接 ThemeTokens/Sizes；③ 文案接 I18n；
+④ 砍上游死路径。整抄件文件头保留来源与许可证标注。B0 入库基线件的消费者由后继
+阶段接续，「每文件有真实消费者」门禁统一挪到 B5 结账清算——这是本卷显式豁免，
+不是默认口径。
+
+### 1. 决策记录（已与作者定案，不再重开）
+
+| # | 决策 | 结论 |
+| --- | --- | --- |
+| D1 | 单元归属 | `shell.keystone` 退场，岛并入 `shell.bar` 成为布局部件（`componentId: "island"`）；插槽 6 → 5，`island` 种类删除（唯一消费者合并后空置即熵增） |
+| D2 | 命名 | keystone → **island**：IPC target、`nyxuri:keystone:*` 动作、`islandHost`、配置键、文件名全链路；Keyhole 系命名随迁审计 |
+| D3 | 岛拓扑 | **inline 进 bar 窗口**，三档：小变形（胶囊↔媒体↔通知）inline；中变形（媒体展开/歌词/录音，≤~200px）走 bar 画布下探 + 输入遮罩仍 inline；大面板（dashboard/hub/tools）锚定弹窗 + 从胶囊 bounds 生长的入场动画。bangs 贴顶形态保留（bar 背景挖洞让位）；bar 悬浮/贴底/竖排时岛语义改为「从 bar 带长出」 |
+| D4 | long 样式 | 换皮实机验收（B3）通过后处死；B1 起冻结（配置键不迁移、标记 deprecated、保持可用作逃生通道） |
+| D5 | Fork 来源 | 即 §0 三源；数据部件（workspaces/clock/tray/media/sysmonitor/quickpanel）保留 Nyxuri niri 原生实现，只换外壳 |
+| D6 | 高度与自由度 | `barThickness`/`islandThickness` 可调键（Sizes 降为默认值）；4 级密度预设 + 自定义；封闭 switch → widget 注册表 |
+
+### 2. 目标终态
+
+一个单元 `shell.bar`（edge 槽）：岛是布局表一等部件（默认中段、可拖拽移动），
+左右清空即 center-only 纯岛形态，完整继承「只要岛不要 bar」场景；高度/密度自由
+调节；加部件 = 注册表加一行；keystone 名字从全库消失（归档与 CHANGELOG 历史除外）。
+
+### 3. 分期台账（B0–B5）
+
+| 阶段 | 交付目标 | 状态 |
+| --- | --- | --- |
+| B0 | 契约定案 + 整抄基线：end4 皮肤件与 dux 机制件全量 `cp` 入 `plugins/bar/` 目标位（inert、带来源标注），裁剪清单成文；shell 运行零变化，`tests/shell/` 全绿，git 检查点可回滚 | 待开始 |
+| B1 | 合并与正名（行为等价）：`plugins/keystone/` → `plugins/bar/island/`，`Keystone*` → `Island*`；manifest 合并、账本迁移（disabled keystone → `islandEnabled=false`）、配置键 `keystone*` → `island*`（long 系冻结除外）；IPC/动作/`keystoneHost`/niri-actions.json 正名；插槽 6→5（manifest.py 枚举、PluginRegistry、manifest-schema、AGENTS、architecture-matrix、popup:notification 仲裁键改绑 bar）。岛此阶段仍独立窗口居顶（过渡态）。验收：bangs 视觉逐像素等价、`off shell.bar` 连带岛消失、全库无 keystone 残留 | 待开始 |
+| B2 | 拓扑手术：岛 inline 进 bar。bar 画布下探 + 输入遮罩机制；IslandSurface 宿主改写为 inline 部件，morph 引擎（弹簧/provider/形态面）原样保留；键盘焦点与预约窗路径改道；大面板整抄 `QuickSettings.qml` 范式转锚定弹窗 + 生长入场；布局表注册 island 部件。风险探针：画布下探若在 niri/Quickshell 实测有输入遮罩或层级缺陷，中变形降级为锚定弹窗，不阻塞主线。竖排 bar × 岛单独裁决（初案：竖排禁入布局表，转角部按钮 + 弹窗）。验收：作者实机验收 morph 手感等价、透明区点击穿透、多屏热插拔、锁屏不降级 | 待开始 |
+| B3 | bar 换皮（end4 皮肤）：B0 基线件定向裁剪四类后上岗——cornerStyle 体系、BarGroup/Divisor/材质胶囊、屏幕圆角衔接；弹窗（托盘菜单/快捷面板）同语言重皮；竖排同步换装。验收：作者实机视觉验收、部件功能零回退、无裁切错位（红线 3）、60fps。**本阶段通过 = D4 处死闸门放行** | 待开始 |
+| B4 | 高度与自由度（dux 机制）：B0 机制件上岗——厚度可调键 + 设置页滑杆；密度预设 4 级 + 自定义（含 transition() 语义：切预设不覆盖用户已自定的键）；switch → widget 注册表（含 island 条目）。验收：高度实时生效、预设切换保留自定义值、新部件零宿主改动接入有实测 | 待开始 |
+| B5 | 清偿收尾：处死 long（文件/冻结键/设置段/i18n/测试全链路）；删被替代路径（旧 bar 外壳、KeystoneSurface 死窗口路径、deprecated 别名）；文档同步（architecture-matrix/plugin-model/manifest-schema/operation-map）+ CHANGELOG；消费者门禁统一清算。验收：audit-lifecycle clean、无 keystone/long 残留字符串、全量回归 + 沙箱部署 + 能耗 sanity（无多余 Timer/订阅） | 待开始 |
+
+**停车场**（明确不承诺，触发条件到了再立项）：溢出滚动（dux OverflowLayout）、
+每部件深度设置全集、岛卫星与自由悬浮模式（dux DIsland）、end4 Di* provider 扩展。
+
+**用户侧断裂提醒**：B1 后 niri 配置中绑定 `--ipc keystone` 的快捷键需改 `island`
+（实验期干净断裂，不留别名）。
+
 ## 后续阶段
 
-- **设置内搜索（过滤 + 深层直通）单独立项**（2026-10-25 定案）：M2 fidelity 修订查明原版 Nexus
-  设置搜索框为纯视觉占位（`searchOpen` 全树零消费者），已对齐为占位形态；过滤+深层条目
-  建议弹层作为 Nyxuri 原创扩展暂缓，待独立设计（含结果呈现、键盘导航与深链语义）后实施，
-  深链机器（`SettingsBackend.openSearch`）保留由 Spotlight 通达。
-- **原 P5 完整宿主、部署与双轨生态 → 已吸收为主线 KM4，已交付**（2026-10-17，
-  明细见 [roadmap-history](../llms-wiki/archive/roadmap-history.md) KM 存档与本台账追加节）：P5 验收标准原样
-  平移——六动作经 `nyxuri-shell --action` 通路保持零改动（单元 off 时 IPC 目标
-  消失 = 真实失败明示）；部署契约经 `plugins/theme`（merge 共享生活区）与部署流程
-  自动 `on theme` 接入；共享池位置中立化（`~/.config/nyxuri/templates/`）与双
-  Shell 输出仲裁（kitty include 去重 + noctalia 主题块剥离已有；切换后活动 Shell
-  启动即全量重渲）随部署落地；切换失败不损失配置、不留受管残留由既有
-  `shell set` 回滚契约承担。「Shell 内部完全单元化 + 微内核插槽架构」交付：
-  `AppShell` 零按名实例化、`SlotHost` 槽驱动、`StateProjection` 单一开关投影、
-  单元自有 IPC、lock 安全守护、12 单元全景开关页。行为、视觉实机验收待作者
-  确认后转「已完成」。
+- **设置内搜索（过滤 + 深层直通）单独立项**（2026-10-25 定案）：原版 Nexus 搜索框为
+  纯视觉占位（`searchOpen` 全树零消费者），已对齐；过滤+深层弹层作为 Nyxuri 原创扩展
+  暂缓，待独立设计（结果呈现、键盘导航、深链语义）后实施；深链机器
+  （`SettingsBackend.openSearch`）保留由 Spotlight 通达。
+- **原 P5 完整宿主、部署与双轨生态 → 已吸收为主线 KM4，已交付**（明细见
+  [roadmap-history](../llms-wiki/archive/roadmap-history.md) 与台账 KM 存档）：六动作
+  `nyxuri-shell --action` 通路、部署契约（`plugins/theme` merge + 自动 `on theme`）、
+  共享池中立化与双 Shell 输出仲裁、切换失败回滚；「Shell 内部完全单元化 + 微内核插槽
+  架构」一并交付，实机验收待作者确认。
 - **P6 整体验收与未来移植**（前置：主线 KM5）：固定机器与版本基线，验收离线、缺插件/设备、锁屏、SIGTERM、目标崩溃和失败恢复；视觉、行为、资源和文档证据齐备后才接纳封存功能或多合成器移植。
 
 ## 已确认的历史决策
@@ -178,78 +192,6 @@ hooks 的实机行为证据与视觉验收待作者确认。镜像色板是否�
   拉取，冷启动不拉起、无常驻后台。归档台账同句按冻结条款不改，以本条为准。
 - 资源策略区分运行时资产、生成文件、缓存和测试 fixture；天气图标采用 Material Symbols。
 - 文档体系按 [docs-charter](../llms-wiki/docs-charter.md) 分层治理；归档只进不改。
-
-## KM4.5 拆迁与正名（2026-10-17，随主线 KM4.5）
-
-> 起因：`modules/`（16 域，混居 4 个非单元支撑目录）与 `units/`（12 个纯 manifest
-> 存根）两棵树表达同一概念且数目对不上，"bar 在哪"要查三处——文件树不表达架构，
-> KM3.5 的成果在 Shell 侧未兑现。本阶段模仿 KM3.5：先处决、再正名、一次契约同步。
-> 单元 ID（`shell.<domain>`）不变，ledger/state/IPC 零影响；实机验收与 KM4 合并。
-
-**处决清单（全部落地）**：
-`hotcorners/` → `app/services/HotCorners.qml`（唯一消费者 AppShell，宿主能力面）；
-`filepicker/` → `app/services/FilePickerWindow.qml`（keystone + settings 共用对话框
-能力）；`quicksettings/` → 并入 `sidebars/quicksettings/`（唯一消费者）；`systemcards/`
-拆分——纯展示 27 文件 → `shared/cards/`，直读 app 单例的 6 文件
-（SystemCardContent、SystemWeatherCard、SystemBatteryTank、SystemClockCard、
-SidebarCookieClock、NetworkInterfaceHistoryService）→ `app/services/`，其中两时钟卡
-按 LIFE002 服务层规则补齐 `Component.onDestruction` teardown；SlotHost 重复注释块、
-全树 `__pycache__` 清除。
-
-**正名**：`modules/<12 域>` 物理并入 `units/<域>/`，manifest.toml 与代码同目录——
-目录即单元，兑现内核「Adding a unit = adding a directory」承诺；顶层目录 10 → 8，
-`shell/modules/` 消失；`qs.modules.*` → `qs.units.*` 全量正名（实树 96 行 import +
-SlotHost 预热 12 行 + UnitCatalog source ×12 + 工具链与测试）。
-
-**契约同步**：shell/AGENTS 三层边界重写（app/units/shared + 支撑代码归宿规则）；
-architecture-matrix 重写（12 单元矩阵）；plugin-model §6 承载修订；shell/development
-分层词表；audit-lifecycle / generate-search-catalog / run-tests / check.sh /
-test_unit_catalog 路径改判；契约测试改测新真相（test_shell 61 绿、
-test_bugfix_regressions 109 绿，含 app/ 56 文件收敛断言与 units/ 死刑断言：
-`shell/modules/` 必须不存在、4 个已处决支撑目录不得复辟）。
-
-**验证**：全量引擎 970 测试绿（14 跳过 = 基线）+ Shell 分类 118 测试绿 +
-audit-lifecycle clean（560 文件）+ 单例纯度扫描零 offender。实机行为/视觉验收与
-KM4 合并进行。
-- **KM4.6 Shell 结构微整**（2026-10-17，结构层不碰行为；先行提交 KM4.5 后开工）：
-  处决——`packaging/`（死独立发行管线：release.py 已不存在，gen-deps 只写仓库根
-  packaging/，dependencies.json 引用旧 modules 树）整目录处决；`fallback/` 解散
-  （lottieqt 桩零消费者删除；M3Shapes 具名模块桩以真身份迁
-  `shared/controls/shapes/M3Shapes/`，wrapper `FALLBACK_QML_PATH` →
-  `SHAPES_QML_PATH` 指向 shapes 目录——桩紧邻其未来要吸收的 vendored 数学）；
-  `assets/` Junk Drawer 解散——shaders 按域归 `units/{keystone,launcher,wallpaper}/
-  shaders/`（frag+qsb 同迁，消费改 unit 相对 `Qt.resolvedUrl`），i18n 词典 →
-  `app/i18n/`，icons → `app/icons/`，内置模板注册表 → `app/templates/`
-  （matugen-registry.sh builtin 根同步），第三方许可证 12 件折入 `LICENSE`
-  第三方附录（逐字保留）；Paths 死属性清算（builtinMatugenDir/audioScriptsDir/
-  weatherIconsDir/weatherScriptsDir/scriptsDir 旁挂）。
-  分池——`app/cards/` 新建：SystemCardContent/SystemWeatherCard/SystemBatteryTank/
-  SystemClockCard/SidebarCookieClock 5 个直读单例的 UI 渲染件出 `services/`
-  （services 50 → 45 只剩服务+配置+能力面；NetworkInterfaceHistoryService 留列）。
-  scripts 收拢 9 → 5（dev/lib/media/system/theme）：build→dev、lyrics+cava→media、
-  capture 解散（LockSnapshot.qml + lock-snapshot.sh 一体归 `units/lock/`——
-  QML 混居 scripts 的错位纠正）。
-  正名——`settings/dashboard` → `settings/dashwindow`（语义钉死：它是
-  settingsPanelStyle==="dashboard" 的卡片窗变体，非页面）；`bar/quicksettings` →
-  `bar/quickpanel`；`sidebars/{dashboard,quicksettings}` 保留（对齐
-  `WidgetState.dashboardSidebarView` 的运行时 view id）。
-  验证：全量引擎 970 + Shell 分类 118 + audit-lifecycle clean（562 文件）+
-  单例纯度零 offender + check.sh + 沙箱部署绿。终态顶层：app/units/shared/scripts/
-  tests 五目录 + 8 根文件。
-  实机验收修正（同日）：settings 窗口 on/off 实测暴露 `shell.desktopcards`
-  永久 compiled empty 刷屏——`qs.app.cards` 新池无顶层 import、首次解析落在
-  Loader 内（0.3.2 约束①），SlotHost 预热名单补行；顺带坐实自愈上限（原 "/2"
-  为写死字符串，无限重试刷到 pass 11/2）——per-unit `failedHeals` 计数、超限
-  给决断性日志、unit-changed 清零重新武装。登记 KNOWN-ISSUES 已修复段；
-  AGENTS 约束①增补推广条款：新 qs.* 池必须进预热名单。
-  同日复核：上述修正未根治 compiled empty——真因是重构残留的失效相对 import
-  （DesktopCardCanvas import `../systemcards/…`、SystemCardContent import
-  `../shared/cards/…` 少一级 `../`，SystemCards 模块解散后真身在 `shared/cards/`），
-  文件不存在属硬错误；两处正名后恢复，settings ShellPage 误引 `UnitControl`
-  一并正名 `UnitControlService`（预热与自愈上限修正独立成立，保留）。
-  开关无反应同场根治——`probe_running_shells` 误排 `getppid()`，shell 派生的
-  nyxuri 探测不到自己的 qs 父进程，bridge 静默丢 unit-changed；修为只排除
-  自身，真实进程拓扑回归测试坐实（tests/test_bugfix_regressions）。
 
 ## 当前门禁
 

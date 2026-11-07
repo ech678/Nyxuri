@@ -61,7 +61,7 @@
 
 已完成阶段的明细台账与时点审计，只进不改；现行契约请勿在此查找。
 
-- [shell-roadmap-ledger](archive/shell-roadmap-ledger.md): Shell R1–R12 详细任务分解与验收记录（追加式台账）
+- [shell-roadmap-ledger](archive/shell-roadmap-ledger.md): Shell 各阶段（R1–R12、P4、KM4、T3、KM4.5/4.6）任务分解与验收记录（追加式台账）
 - [roadmap-history](archive/roadmap-history.md): 全局路线历史全景、阶段 0–3 与主线 KM0–KM5 存档
 - [install-modes](archive/install-modes.md): standalone / repo / system 三模式与 update 分支（KM3.5 冻结，现行入口见 overview）
 - [assets-deploy](archive/assets-deploy.md): 壁纸旧旁路流水线（KM3.5 冻结，现为 wallpapers 单元）
