@@ -73,7 +73,9 @@ def main() -> int:
             f"--reclaim-close-wait {args.reclaim_close_wait} && "
             "python3 /workspace/shell/scripts/dev/benchmark_compatibility.py "
             f"--output /results/compatibility-{args.quickshell_channel}.json "
-            f"--channel {args.quickshell_channel} --runs 1'",
+            f"--channel {args.quickshell_channel} --runs 1 && "
+            "NYXURI_CONTAINER=1 python3 /workspace/shell/scripts/dev/feature_matrix.py "
+            "--output /results/feature-matrix.json --repo /workspace --shell /workspace/shell'",
         ]
         subprocess.run(command, check=True)
     finally:
