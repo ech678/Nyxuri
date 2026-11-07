@@ -121,8 +121,13 @@ Singleton {
         const unitIds = Object.keys(units).sort();
         const loadedUnitIds = Object.keys(loadedUnits).sort();
         const resourceCounts = {};
+        const resourceOwners = {};
         root._qmlResourceRecords.forEach(record => {
             resourceCounts[record.kind] = (resourceCounts[record.kind] || 0) + 1;
+            const owner = String(record.owner || "unknown");
+            if (!resourceOwners[owner])
+                resourceOwners[owner] = {};
+            resourceOwners[owner][record.kind] = (resourceOwners[owner][record.kind] || 0) + 1;
         });
         const counts = {
             "loaders": records.length,
@@ -155,10 +160,12 @@ Singleton {
                 "loaded_ids": loadedUnitIds
             },
             "resources": counts,
+            "resource_owners": resourceOwners,
             "qml_resources": {
                 "status": "partial",
                 "reason": "loaders plus explicitly registered service resources; Canvas/layer remain unsupported",
-                "counts": counts
+                "counts": counts,
+                "owners": resourceOwners
             }
         };
     }
