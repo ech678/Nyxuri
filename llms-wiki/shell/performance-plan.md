@@ -35,6 +35,10 @@
 > 进程采样已增加 lower-bound lifecycle 聚合（PID/starttime/command/首次与末次观测、
 > launch/restart 估计和失败启动分类），owner 与真实 kernel exit 仍明确标为不可得。
 
+> 最新 owner smoke 已在当前代码中确认：StateProjection/FilePickerWindow/NiriDriver/
+> SystemMonitorService/NetworkService 的 owner 分类和资源计数可从容器 IPC 读取；
+> Canvas/layer 与未注册服务仍明确 partial。
+
 ## 0. 硬约束
 
 - 禁止在宿主机真实启动 Nyxuri Shell、Quickshell、Weston、Niri 或任何会创建桌面
