@@ -8,7 +8,6 @@ import Quickshell.Wayland
 import qs.commons
 import qs.services
 import qs.ui
-import qs.app
 
 // Caelestia-flavoured master-detail shell (Nexus.qml, window mode): a
 // two-zone frame — the left nav panel plus a 12px frame band share the

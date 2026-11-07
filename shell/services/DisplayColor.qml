@@ -4,7 +4,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.commons
-import qs.app
 import "../commons/DisplaySchedule.js" as Schedule
 import qs.commons.i18n
 

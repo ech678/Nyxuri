@@ -5,7 +5,6 @@ import "../plugins/launcher/SpotlightAppOrder.js" as AppOrder
 import Quickshell
 import Quickshell.Io
 import qs.commons
-import qs.app
 import "../plugins/launcher/SpotlightSearch.js" as SpotlightSearch
 import qs.commons.i18n
 

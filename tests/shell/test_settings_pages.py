@@ -123,6 +123,9 @@ def _read(name):
     for match in (REPO_ROOT / "shell" / "plugins").rglob(name):
         if match.is_file():
             return match.read_text(encoding="utf-8")
+    for match in (REPO_ROOT / "llms-wiki" / "archive" / "shell").rglob(name):
+        if match.is_file():
+            return match.read_text(encoding="utf-8")
     return target.read_text(encoding="utf-8")
 
 

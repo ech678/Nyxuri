@@ -97,7 +97,7 @@ class ResourceIntegrityTests(unittest.TestCase):
 
     def test_builtin_templates_exist(self):
         """Assert the Noctalia-syntax builtin template pool is complete."""
-        t_dir = SHELL_DIR / "app" / "templates"
+        t_dir = SHELL_DIR / "commons" / "assets" / "templates"
         for t_file in ["config.toml", "kitty/kitty.conf", "kitty/kitty-apply.sh",
                        "btop/btop.theme", "btop/btop-apply.sh",
                        "starship/starship.toml", "starship/starship-apply.sh"]:

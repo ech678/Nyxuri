@@ -3,7 +3,6 @@ import QtQuick.Layouts
 import QtQuick.Window
 import qs.commons
 import qs.ui
-import qs.app
 import qs.services
 import qs.commons.i18n
 

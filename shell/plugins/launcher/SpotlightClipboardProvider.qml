@@ -2,7 +2,6 @@ import QtQuick
 import qs.commons
 import "../../commons/FileUtils.js" as FileUtils
 import qs.services
-import qs.app
 import qs.commons.i18n
 
 Item {

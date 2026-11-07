@@ -5,7 +5,6 @@ import qs.services
 import "styles/bangs"
 import "styles/long"
 import "styles/pill"
-import qs.app
 import qs.commons.i18n
 
 Item {

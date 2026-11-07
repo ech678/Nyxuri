@@ -17,7 +17,7 @@
 
 | 站 | 交付 | 状态 |
 | --- | --- | --- |
-| P0 | 空间纯度大一统：根目录纯化 + PKGBUILD 修复 + 单测重心合一 + 消解 `shell/app/`（纯正 5 层） | 待开始 |
+| P0 | 空间纯度大一统：根目录纯化 + PKGBUILD 修复 + 单测重心合一 + 消解 `shell/app/`（纯正 5 层） | 已完成 |
 | P1 | 插件专属控制面与动态导航：独立 `PluginsPage` 插件管理 + 切除设置中心幽灵 Tab 根因 + Spotlight 联动 | 待开始 |
 | P2 | 真 Omarchy 解耦与容错：切除 70 处跨插件静态引用 + 焚毁伪合规白名单 + 拔插容错（任意删插件宿主不崩） | 待开始 |
 | P3 | 统一配置 TOML 化：升级 `Toml.js` 导出 `stringify` + 废除 7 个碎片 JSON，归拢为带注释的单一 `config.toml` | 待开始 |
@@ -32,10 +32,10 @@
 > **设计哲学依归**：`/home/ray/docs/lain-connect.md`（原始根面 Pristine Root、单一重心 Single Center of Gravity、散文化韵律 Prose-like Cadence、扁平几何 Flat Geometry、TOML-first、绝对解耦与极简秩序感）。
 > 本专项直面当前系统的深层隐患：切除伪解耦与 70 处跨插件静态引用、消除设置中心幽灵 Tab、升级 `Toml.js` 统一 `config.toml`，并彻底处决 `ledger.py`/`transaction.py` 银行过度工程黑话，最后由 4-Agent 并发审计出具无保留合格结论闭环。
 
-- **P0 空间纯度大一统 (Pristine Root & Workspace Purity)**：
-  - **清理根面瑕疵**：修复 `packaging/PKGBUILD:89` 中早该进历史的 `cp -a units catalog.toml` 遗留死指令；正式设计笔记收入 `docs/notes/`；
-  - **测试单重心**：将 `shell/tests/` 11 个文件（含 fixtures 与 sh 脚本）全量并入根 `tests/shell/`，全库只有唯一单测入口 `python3 -m unittest discover -s tests`；
-  - **消解 `shell/app/`**：将 `AppShell.qml` 并入 `shell.qml`（恢复 Omarchy 纯正宿主骨架），单例移入 `services/`，静态资产移入 `commons/assets/`，物理删除 `shell/app/`，严格呈现 Omarchy 纯正 5 层结构（`shell.qml`, `commons/`, `ui/`, `services/`, `plugins/`）。
+- **P0 空间纯度大一统 (Pristine Root & Workspace Purity) · 已收口**：
+  - **清理根面瑕疵**：修复 `packaging/PKGBUILD:89` 中早该进历史的 `cp -a units catalog.toml` 遗留死指令；正式设计笔记收入 `notes/`；
+  - **测试单重心**：将 `shell/tests/` 11 个文件（含 fixtures 与 sh 脚本）全量并入根 `tests/shell/`，全库只有唯一单测入口 `python3 -m unittest discover -s tests`（补齐 3 处未定义 i18n 词条）；
+  - **消解 `shell/app/`**：将 `AppShell.qml` 并入 `shell.qml`（恢复 Omarchy 纯正宿主骨架），单例移入 `services/`，静态资产移入 `commons/assets/`，物理删除 `shell/app/`，严格呈现 Omarchy 纯正 5 层结构（`shell.qml`, `commons/`, `ui/`, `services/`, `plugins/`，全库切除 115 处 `import qs.app`）。
 - **P1 插件专属控制面与动态导航 (Plugins Control Plane & Dynamic Nav)**：
   - **切除幽灵 Tab 根因**：在 `ControlCenterWindow.qml:28-40` 注入 `StateProjection.isEnabledUnit(entry.pluginId)` 动态过滤；停用插件时，其设置 Tab 即刻从导航栏消失；
   - **独立“插件 (Plugins)”页面**：新增 `PluginsPage.qml`（`group = "system"`, `order = 125`，保持几何连续性），构建完整生命周期：
@@ -101,7 +101,7 @@
 - **T0 终端体验**：复制粘贴终审落地（`Ctrl+Shift+C/V` 唯一路径，回归护栏在测试）；
   终端桥系统侧已修（`xdg-terminal-exec` 入位）。Shell 侧失败通知转 T4。
 - **T1 上架 AUR**：`nyxuri-git` 上架（PKGBUILD 重构、依赖策略翻转、实机冒烟全过）；
-  key-cli 暂缓，登记见 [shell/KNOWN-ISSUES](shell/KNOWN-ISSUES.md)。
+  key-cli 暂缓，登记见 [shell-known-issues](llms-wiki/shell/known-issues.md)。
 - **T3 设置界面替换**：Caelestia 原子套件 M0–M2 完成；M3 待验收；M4 批 A–F 已落地
   （状态对账见 [shell/ROADMAP.md](shell/ROADMAP.md)）。剩余验收与资产收编随 S0 兑现。
 

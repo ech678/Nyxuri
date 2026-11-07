@@ -30,6 +30,7 @@ fi
 export NYXURI_ORIGINAL_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 export XDG_CACHE_HOME="${NYXURI_ORIGINAL_CACHE_HOME}/nyxuri-shell"
 rm -rf "${XDG_CACHE_HOME}/quickshell/qmlcache"
+rm -f "${SHELL_DIR}/.qmlls.ini"
 
 # The generated palette has to be written where the shell reads it. The two sides
 # defaulted to different places: scripts/lib/nyxuri-paths.sh resolves to

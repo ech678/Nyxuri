@@ -1,7 +1,6 @@
 pragma Singleton
 import QtQuick
 import Quickshell
-import qs.app
 import qs.services
 import "../plugins/wallpaper"
 import qs.commons

@@ -253,10 +253,9 @@ class TestWarmupAndI18n(unittest.TestCase):
                        "qs.services", "qs.ui"):
             self.assertIn(f"import {module}", root,
                           f"shared pool {module} must be guaranteed by shell.qml")
-        slot = (REPO_ROOT / "shell" / "app" / "SlotHost.qml").read_text(encoding="utf-8")
-        self.assertNotIn("import qs.plugins", slot,
+        self.assertNotIn("import qs.plugins", root,
                          "the preheat list is retired; plugins speak relative imports")
-        self.assertNotIn("import qs.ui", slot)
+        self.assertNotIn("import qs.app", root)
 
     def test_atom_strings_are_translated(self):
         zh = (REPO_ROOT / "shell" / "commons" / "i18n" / "zh_CN.toml").read_text(encoding="utf-8")

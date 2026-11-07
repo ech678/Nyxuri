@@ -188,7 +188,7 @@ class TestShellPageSingletonImports(unittest.TestCase):
         self.assertIn("Paths.fileUrl", source)
         self.assertIn("ColorPickerService.probeFinished", source)
         imports = [line.strip() for line in source.splitlines() if line.startswith("import ")]
-        self.assertIn("import qs.app", imports)
+        self.assertIn("import qs.services", imports)
         # S0-2: plugin trees speak relative directory imports (loader-form
         # rule 2); keystone.tools resolves via its qmldir singleton registry.
         self.assertIn('import "../keystone/tools"', imports)

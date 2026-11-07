@@ -6,7 +6,6 @@ import Quickshell.Wayland
 import qs.commons
 import qs.ui
 import qs.services
-import qs.app
 import "./DockLayout.js" as DockLayout
 import "./DockMotion.js" as DockMotion
 import qs.commons.i18n

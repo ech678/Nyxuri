@@ -3,7 +3,6 @@ import qs.commons
 import qs.services
 import "../wallpaper"
 import "./SpotlightLocalSearch.js" as LocalSearch
-import qs.app
 import qs.commons.i18n
 
 Item {

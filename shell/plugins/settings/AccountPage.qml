@@ -9,7 +9,6 @@ import "../../commons/WallpaperSource.js" as WallpaperSource
 import qs.commons
 import qs.ui
 import qs.services
-import qs.app
 import qs.commons.i18n
 import qs.ui
 
@@ -373,20 +372,15 @@ NexusPageBase {
             id: shortcutsRow
 
             first: true
-            text: I18n.tr("Configure shortcuts")
-            onClicked: root.navigateRequested("shortcuts")
+            last: true
+            text: I18n.tr("Shortcut map")
+            trailingIcon: "open_in_new"
+            onClicked: ShortcutMapService.open(root.parentModal ? root.parentModal.screen : null)
 
             SettingsSearchAnchor {
                 target: shortcutsRow
                 anchorId: "account.section.keyboard-shortcuts"
             }
-        }
-
-        PreferenceAction {
-            last: true
-            text: I18n.tr("Shortcut map")
-            trailingIcon: "open_in_new"
-            onClicked: ShortcutMapService.open(root.parentModal ? root.parentModal.screen : null)
         }
 
         // Personalization

@@ -4,7 +4,6 @@ import Quickshell
 import Quickshell.Services.Pipewire
 import QtQuick
 import qs.services
-import qs.app
 import qs.commons.i18n
 
 Singleton {

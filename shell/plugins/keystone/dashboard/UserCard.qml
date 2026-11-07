@@ -4,7 +4,6 @@ import M3Shapes
 import qs.commons
 import qs.ui
 import qs.services
-import qs.app
 import qs.commons.i18n
 
 // Adapted from Caelestia Shell's dashboard user card (GPL-3.0).

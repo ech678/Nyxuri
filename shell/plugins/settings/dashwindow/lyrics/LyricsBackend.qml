@@ -1,6 +1,5 @@
 import QtQuick
 import Quickshell.Io
-import qs.app
 import qs.services
 import qs.commons.i18n
 

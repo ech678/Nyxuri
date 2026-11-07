@@ -67,9 +67,9 @@ class TestRouteDescriptions(unittest.TestCase):
         for domain in sorted(d.name for d in plugins.iterdir() if d.is_dir()):
             manifest = tomllib.loads((plugins / domain / "manifest.toml").read_text(encoding="utf-8"))
             routes.extend(entry for entry in manifest.get("settings", []) if "route" not in entry)
-        # 45361df 定向瘦身（删除抽屉/显示/自启动/默认应用页面）后的真实规模底线；
+        # 45361df 定向瘦身（删除抽屉/显示/自启动/默认应用页面）与 ShortcutsPage 封存后的真实规模底线；
         # S0-2 起路由声明住 manifest.toml（[[settings]] 无 route 键 = 顶层路由）。
-        self.assertGreaterEqual(len(routes), 16)
+        self.assertGreaterEqual(len(routes), 15)
         missing = [entry["id"] for entry in routes
                    if not str(entry.get("description", "")).strip()]
         self.assertEqual(missing, [], f"routes without description: {missing}")

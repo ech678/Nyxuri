@@ -3,7 +3,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.commons
-import qs.app
 import qs.services
 import "../../../commons/RecordingState.js" as RecordingState
 import qs.commons.i18n

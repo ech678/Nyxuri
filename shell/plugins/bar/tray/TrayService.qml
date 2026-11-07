@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Services.SystemTray
 import qs.commons
-import qs.app
+import qs.services
 import qs.commons.i18n
 
 Singleton {

@@ -164,7 +164,7 @@ class TestAISpecs(unittest.TestCase):
     def test_roadmap_status_vocabulary(self):
         """ROADMAP.md ledger rows may only use the five canonical statuses."""
         allowed = {"待开始", "进行中", "阻断", "待验收", "已完成"}
-        # 1. shell/ROADMAP.md
+        # 1. shell roadmap
         shell_roadmap = (self.root_dir / "shell" / "ROADMAP.md").read_text(encoding="utf-8")
         for match in re.findall(r"^\| (R[^|*]+) \| ([^|]+) \| ([^|]+) \|$", shell_roadmap, re.MULTILINE):
             stage, _, status = (part.strip() for part in match)

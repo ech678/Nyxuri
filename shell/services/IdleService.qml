@@ -6,7 +6,6 @@ import Quickshell.Io
 import Quickshell.Wayland
 import qs.commons
 import qs.services
-import qs.app
 import qs.commons.i18n
 
 Singleton {

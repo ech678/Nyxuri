@@ -3,7 +3,6 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.app
 import qs.services
 
 // UnitControl — the only route settings surfaces may take to flip a Shell

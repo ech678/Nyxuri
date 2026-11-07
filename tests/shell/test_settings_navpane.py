@@ -243,7 +243,7 @@ class TestNavPaneComposition(unittest.TestCase):
         for domain in sorted(d.name for d in SETTINGS.parent.iterdir() if d.is_dir()):
             manifest = tomllib.loads((SETTINGS.parent / domain / "manifest.toml").read_text(encoding="utf-8"))
             top_level.extend(entry for entry in manifest.get("settings", []) if "route" not in entry)
-        self.assertGreaterEqual(len(top_level), 16)
+        self.assertGreaterEqual(len(top_level), 15)
         missing = [entry["id"] for entry in top_level if not str(entry.get("group", "")).strip()]
         self.assertEqual(missing, [], f"routes without a manifest group: {missing}")
 

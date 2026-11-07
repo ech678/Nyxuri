@@ -42,7 +42,7 @@
 S0-2 预热退役当天实机症状：launcher / settings（及 sidebars 局部）全部
 插件单例调用报 `Property 'x' of object Y is not a function`——同目录隐式
 引用拿到的是未登记的类型对象。修复 = 13 个插件目录补 `qmldir` 单例登记表
-（23 条），契约由 `shell/tests/test_plugin_manifests.py:TestSingletonRegistration`
+（23 条），契约由 `tests/shell/test_plugin_manifests.py:TestSingletonRegistration`
 焊接（双向：pragma Singleton 必登记、登记必真单例、qmldir 只许单例行）。
 S1 第三方插件自带其目录的 qmldir 即同形态成立。
 

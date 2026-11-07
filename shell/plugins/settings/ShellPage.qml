@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import qs.app
 import qs.commons
 import qs.services
 import "../keystone/tools"

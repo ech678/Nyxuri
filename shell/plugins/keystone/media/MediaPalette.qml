@@ -2,7 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.app
+import qs.services
 import qs.commons
 
 // Cover-art colour extraction, entirely in QML.

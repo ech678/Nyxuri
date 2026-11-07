@@ -7,7 +7,6 @@ import "../commons/SidebarPolicy.js" as SidebarPolicy
 import "../commons/WallpaperSource.js" as WallpaperSource
 import qs.services
 import "../plugins/wallpaper"
-import qs.app
 import qs.commons.i18n
 
 Singleton {
@@ -290,56 +289,8 @@ Singleton {
             "label": "Super"
         },
         {
-            "value": "windows",
-            "label": "Windows"
-        },
-        {
-            "value": "arch",
-            "label": "Arch"
-        },
-        {
-            "value": "linux",
-            "label": "Linux"
-        },
-        {
-            "value": "ubuntu",
-            "label": "Ubuntu"
-        },
-        {
-            "value": "debian",
-            "label": "Debian"
-        },
-        {
-            "value": "fedora",
-            "label": "Fedora"
-        },
-        {
-            "value": "nixos",
-            "label": "NixOS"
-        },
-        {
-            "value": "linuxmint",
-            "label": "Linux Mint"
-        },
-        {
-            "value": "gentoo",
-            "label": "Gentoo"
-        },
-        {
-            "value": "steam",
-            "label": "Steam"
-        },
-        {
-            "value": "apple",
-            "label": "Apple"
-        },
-        {
-            "value": "googlechrome",
-            "label": "Chrome"
-        },
-        {
             "value": "command",
-            "label": "Command"
+            "label": "⌘ Command"
         }
     ]
     property string cursorTheme: ""

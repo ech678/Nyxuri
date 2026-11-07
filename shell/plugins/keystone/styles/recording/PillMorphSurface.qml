@@ -1,7 +1,7 @@
 import QtQuick
 import Qt5Compat.GraphicalEffects
 import qs.commons
-import qs.app
+import qs.services
 
 Item {
     id: root

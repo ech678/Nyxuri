@@ -3,7 +3,6 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.app
 
 // LogService — the shell's single logging front door. Every domain logs
 // through here instead of bare console.*: callers get level + domain tags,

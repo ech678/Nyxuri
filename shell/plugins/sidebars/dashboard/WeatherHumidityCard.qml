@@ -3,7 +3,7 @@ import QtQuick.Shapes
 import Qt5Compat.GraphicalEffects
 import M3Shapes
 import qs.commons
-import qs.app
+import qs.services
 import qs.commons.i18n
 
 WeatherInsightCard {
@@ -80,7 +80,7 @@ WeatherInsightCard {
     }
 
     function waveSource() {
-        return Paths.icon("humidity_percent_" + waveBucket() + ".svg");
+        return Qt.resolvedUrl("../assets/icons/humidity_percent_" + waveBucket() + ".svg");
     }
 
     Row {

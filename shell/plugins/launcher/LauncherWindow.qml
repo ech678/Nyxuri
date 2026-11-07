@@ -7,7 +7,6 @@ import Quickshell.Wayland
 import qs.commons
 import qs.services
 import qs.ui
-import qs.app
 import "./SpotlightCommands.js" as Commands
 import qs.commons.i18n
 

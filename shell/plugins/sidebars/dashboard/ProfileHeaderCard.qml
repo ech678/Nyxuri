@@ -4,7 +4,6 @@ import "../../../commons/WallpaperSource.js" as WallpaperSource
 import qs.commons
 import qs.services
 import qs.ui
-import qs.app
 
 AccountProfileHeader {
     id: root

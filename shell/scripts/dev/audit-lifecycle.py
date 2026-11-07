@@ -52,7 +52,7 @@ ALLOWED_OPTIONAL_IMPORTERS = {
     # re-add an entry only together with a real fallback/bridge file.
 }
 
-GATEWAY_FILE = "app/ActionGateway.qml"
+GATEWAY_FILE = "services/ActionGateway.qml"
 # S0-5: the compositor driver is the sole argv truth for the niri dialect
 # (`niri msg` / `niri --version`). Its exec calls are the confined channel
 # itself, not a bypass of the gateway.
@@ -327,10 +327,10 @@ def check_file_violations(
                     )
                 )
 
-    # 2b. LIFE008: UI-layer direct I/O (plugins/ views and app/ top level).
+    # 2b. LIFE008: UI-layer direct I/O (plugins/ views and shell.qml top level).
     # services/ is exempt by layer definition.
     is_ui_layer = ui_layer_override if ui_layer_override is not None else (
-        rel_path.startswith(("plugins/", "app/"))
+        rel_path.startswith("plugins/") or rel_path == "shell.qml"
     )
     if is_ui_layer and not is_gateway:
         declares_io = re.search(r"\b(FileView|Process)\s*\{|property\s+(Process|FileView)\b", content) is not None
@@ -831,8 +831,11 @@ def get_git_changed_files(repo_root: Path) -> List[Path]:
 
 
 def get_all_target_files(repo_root: Path) -> List[Path]:
-    target_dirs = ["app", "commons", "ui", "services", "plugins"]
+    target_dirs = ["commons", "ui", "services", "plugins"]
     result: List[Path] = []
+    root_shell = repo_root / "shell.qml"
+    if root_shell.is_file():
+        result.append(root_shell)
     for d in target_dirs:
         dir_path = repo_root / d
         if not dir_path.is_dir():
@@ -867,9 +870,9 @@ def main() -> int:
     else:
         # Check if current directory or script parent is shell root
         cwd = Path.cwd()
-        if (cwd / "app").is_dir() and (cwd / "units").is_dir():
+        if (cwd / "services").is_dir() and (cwd / "plugins").is_dir():
             root_path = cwd
-        elif (cwd / "shell" / "app").is_dir():
+        elif (cwd / "shell" / "services").is_dir() and (cwd / "shell" / "plugins").is_dir():
             root_path = cwd / "shell"
         else:
             script_dir = Path(__file__).resolve().parent

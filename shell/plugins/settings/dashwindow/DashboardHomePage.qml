@@ -6,7 +6,6 @@ import Qt5Compat.GraphicalEffects
 import qs.commons
 import qs.ui
 import qs.services
-import qs.app
 import "../../../commons/SystemFormat.js" as Format
 import "./WeatherIcons.js" as WeatherIcons
 import qs.commons.i18n

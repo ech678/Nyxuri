@@ -3,7 +3,6 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.app
 
 // StateProjection — the running shell is a read-only projection of the unit
 // ledger (unit-model.md §6). state.json is the single switch truth; the

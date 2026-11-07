@@ -1,5 +1,4 @@
 import QtQuick
-import qs.app
 import QtQuick.Effects
 import Qt5Compat.GraphicalEffects
 import Quickshell

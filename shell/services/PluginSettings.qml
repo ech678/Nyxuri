@@ -3,7 +3,6 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.app
 
 // PluginSettings — the host-owned value store for schema-declared settings
 // controls (S0-3b). A route that declares `controls` instead of `source`

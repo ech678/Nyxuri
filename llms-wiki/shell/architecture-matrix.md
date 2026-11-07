@@ -87,7 +87,7 @@
    - 生成产物位于 `<generated>/nyxuri/`：`colors.json`（50 token 内部热载契约）、`palette-modes.json`（dark+light 双 mode，镜像与渲染的输入）、`scheme-previews.json`（scheme 画廊缓存）。
    - **取色与渲染分层（P4）**：matugen 仅作取色位（`--json` 纯 stdout，一次输出全 mode）；模板渲染由 `services/TemplateService.qml` 经 `commons/TemplateExpr.js`（Noctalia 兼容表达式子集，块/过滤器/`palettes.*` 显式拒绝）完成，matugen 不再渲染任何应用模板。
    - **模板归属**：内置注册表 `shell/app/templates/config.toml`（kitty/btop/starship vendor 自 Noctalia 5.2.1 MIT + 共享池 `~/.config/nyxuri/templates/` 的 gtk/glow/palette.toml + Fcitx5 NyxMellow 皮肤三模板 `fcitx5_theme/panel/highlight`——随 `fcitx5-rime` 单元激活）；用户注册表机制不变。kitty include 管理脚本 `kitty-apply.sh` 双向剥离 `noctalia.conf` 与 `current-theme.conf` 并置于 `__custom__.conf` 之前，彻底解决双 Shell include 顺序覆盖导致的配色失效。每次生成双写 16 角色 palette JSON 到 `~/.config/noctalia/palettes/nyxuri.json`（受管生成物，原子写）供 Noctalia `source = custom` 对齐选用；双 Shell 默认各自独立取色，谁 active 谁写全部输出。
-   - **派生契约**：terminal 22 token 与 16 角色映射单点实现在 `commons/ThemePalette.js`（HCT 数学 vendor 自 material-color-utilities，Apache-2.0）；golden master 契约测试见 `shell/tests/qml/tst_ThemeContract.qml`，分歧矩阵（Noctalia 对 `on_*_container` 的 tone 重锚定）钉在 `tests/shell/test_shell.py::TestP4ThemeEngineContract`。
+   - **派生契约**：terminal 22 token 与 16 角色映射单点实现在 `commons/ThemePalette.js`（HCT 数学 vendor 自 material-color-utilities，Apache-2.0）；golden master 契约测试见 `tests/shell/qml/tst_ThemeContract.qml`，分歧矩阵（Noctalia 对 `on_*_container` 的 tone 重锚定）钉在 `tests/shell/test_shell.py::TestP4ThemeEngineContract`。
 7. **切换器清场契约（R10 现场修复）**：
    - 切换决策基于 `probe_running_shells()` 全量实例清单，而非首个匹配；"already active" 仅在 target 在场且对侧零实例时成立，否则先清残留并报告被清对象。
    - spawn 前后双清场：`stop_all_shell_instances` 按类全量清扫（SIGTERM → 有界等待 → SIGKILL → 补等观察），`stop_shell_process` 返回真实死亡状态。

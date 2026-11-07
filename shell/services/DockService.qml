@@ -7,7 +7,6 @@ import qs.commons
 import qs.services
 import "../plugins/dock/DockModel.js" as DockModel
 import "../plugins/dock"
-import qs.app
 import qs.commons.i18n
 
 Singleton {

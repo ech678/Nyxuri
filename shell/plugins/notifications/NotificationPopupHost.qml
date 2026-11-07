@@ -3,7 +3,6 @@ import Quickshell
 import Quickshell.Wayland
 import qs.commons
 import qs.ui
-import qs.app
 import qs.services
 
 Scope {

@@ -72,17 +72,6 @@ order = 91
 aliases = ["general.bluetooth-pairing"]
 
 [[settings]]
-id = "shortcuts"
-source = "ShortcutsPage.qml"
-title = "Keyboard shortcuts"
-description = "Global shortcuts and actions"
-context = "ControlCenterWindow"
-icon = "keyboard"
-group = "keyboard"
-order = 100
-aliases = ["general.shortcuts"]
-
-[[settings]]
 id = "language-region"
 source = "LanguageAndRegionPage.qml"
 title = "Language & region"

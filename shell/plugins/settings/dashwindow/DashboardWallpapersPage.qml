@@ -4,7 +4,6 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell.Widgets
 import qs.commons
-import qs.app
 import qs.ui
 import qs.services
 import "../../wallpaper"

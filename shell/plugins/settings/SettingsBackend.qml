@@ -4,7 +4,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.services
-import qs.app
 import qs.commons.i18n
 
 // SettingsBackend — the settings window lifecycle (S0-3a slimmed): open /

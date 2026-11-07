@@ -216,7 +216,7 @@ class ShellPresentationTests(unittest.TestCase):
             # stalled render.
             trace = self.ctx.home / "hook-trace"
             for hook in ["kitty-apply.sh", "btop-apply.sh", "starship-apply.sh"]:
-                path = self.shell / "app/templates" / hook.split("-")[0] / hook
+                path = self.shell / "commons/assets/templates" / hook.split("-")[0] / hook
                 path.write_text('printf "%s\\n" "$0" >> "' + str(trace) + '"\n' + path.read_text(
                     encoding="utf-8"))
             # Trace FileView operation internals: a lost saved()/loaded() emit

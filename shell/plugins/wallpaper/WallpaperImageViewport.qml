@@ -1,6 +1,6 @@
 import QtQuick
 import qs.commons
-import qs.app
+import qs.services
 import "../../commons/WallpaperSource.js" as WallpaperSource
 import "../../commons/WallpaperMath.js" as WallpaperMath
 
