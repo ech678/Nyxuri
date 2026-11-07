@@ -81,17 +81,17 @@ Singleton {
 
     // ---------------------------------------------------------------- helpers
 
-    // Third-party id shape, mirroring nyxuri/sources.py is_reverse_dns:
-    // ≥2 clean labels; the reserved namespaces are never third-party.
+    // Third-party id shape, mirroring nyxuri/sources.py is_valid_plugin_id:
+    // safe leaf name (bare or dotted); reserved namespaces are never third-party.
     function isReverseDns(name) {
         var key = String(name || "");
         if (!key || key !== key.trim())
             return false;
         if (key.indexOf("shell.") === 0 || key.indexOf("nyxuri.") === 0)
             return false;
-        var labels = key.split(".");
-        if (labels.length < 2)
+        if (key.indexOf("/") !== -1 || key.indexOf("\\") !== -1 || key === "." || key === "..")
             return false;
+        var labels = key.split(".");
         for (var i = 0; i < labels.length; i++) {
             if (!labels[i] || labels[i].charAt(0) === "-")
                 return false;
@@ -196,8 +196,8 @@ Singleton {
                         firstParty[record.id] = record;
                     } else if (!registry.isReverseDns(record.id)) {
                         console.warn("PluginRegistry: plugin " + record.id
-                                     + " rejected: third-party ids must be reverse-DNS shaped");
-                        registry.pluginLoadFailed(record.id, "id is not reverse-DNS shaped");
+                                     + " rejected: third-party ids must be safe leaf names and not reserved");
+                        registry.pluginLoadFailed(record.id, "id is not safe or reserved");
                     } else {
                         thirdParty[record.id] = record;
                     }

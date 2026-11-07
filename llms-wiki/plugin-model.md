@@ -247,7 +247,7 @@ nyxuri doctor [plugin]
 staging、校验（与加载同一套检查）、id 冲突检查、落位第三方根
 `~/.local/share/nyxuri/plugins/<id>/`、来源记账（账本顶层 `sources` 键），默认
 off（`--enable` 顺带启用）。`remove` 撤回只认所有权记录；非管辖区（用户自有、
-来源不明）内容时间戳备份，绝不抹白。第三方落位、reverse-DNS id 与禁软链词表见
+来源不明）内容时间戳备份，绝不抹白。第三方落位、id 规则（简洁裸名或 reverse-DNS）与禁软链词表见
 [manifest-schema](manifest-schema.md) 第三方章。
 
 单源阶段**不设独立 `refresh` 动词**：账本即真相，无缓存可刷。

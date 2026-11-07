@@ -314,36 +314,36 @@ class TestThirdPartyHeart(unittest.TestCase):
         self.assertIn("entryUrl: record.entryUrls[kind]", heart)
 
     def test_third_party_drop_is_discovered_without_host_changes(self):
-        """Adversarial gate, third-party form: a reverse-DNS plugin dropped
-        into the data root loads through the same loader the shell registry
-        mirrors (id = directory name, no prefix), and removing it leaves zero
+        """Adversarial gate, third-party form: both bare and reverse-DNS plugins
+        dropped into the data root load through the same loader the shell registry
+        mirrors (id = directory name, no prefix), and removing them leaves zero
         host-file knowledge behind."""
         import shutil
 
         from nyxuri.kernel import registry as kernel_registry
         from tests.utils import TempEnv
 
-        pid = "zz.adversarial.probe"
-        with TempEnv() as ctx:
-            plugin = ctx.env.data_dir / "plugins" / pid
-            plugin.mkdir(parents=True)
-            (plugin / "Probe.qml").write_text("import QtQuick\nItem {}\n", encoding="utf-8")
-            (plugin / "manifest.toml").write_text(
-                f'schemaVersion = 1\nid = "{pid}"\nkinds = ["overlay"]\n'
-                f'\n[entryPoints]\noverlay = "Probe.qml"\n',
-                encoding="utf-8",
-            )
-            self.assertEqual(kernel_registry.plugin_origin(pid), "third-party")
-            m = kernel_registry.load_plugin(pid)
-            self.assertEqual(m.id, pid, "third-party id derives from the directory name")
-            self.assertIn("overlay", m.entry_points)
-            shutil.rmtree(plugin)
-            self.assertIsNone(kernel_registry.plugin_dir(pid))
-        # Zero host knowledge: no host file knows the drop-in id.
-        for rel in (("app", "SlotHost.qml"), ("services", "PluginRegistry.qml"),
-                    ("services", "PluginManifest.js")):
-            self.assertNotIn(pid, read(*rel),
-                             f"host file knows the temp plugin: {'/'.join(rel)}")
+        for pid in ("probe-bare-plugin", "zz.adversarial.probe"):
+            with TempEnv() as ctx:
+                plugin = ctx.env.data_dir / "plugins" / pid
+                plugin.mkdir(parents=True)
+                (plugin / "Probe.qml").write_text("import QtQuick\nItem {}\n", encoding="utf-8")
+                (plugin / "manifest.toml").write_text(
+                    f'schemaVersion = 1\nid = "{pid}"\nkinds = ["overlay"]\n'
+                    f'\n[entryPoints]\noverlay = "Probe.qml"\n',
+                    encoding="utf-8",
+                )
+                self.assertEqual(kernel_registry.plugin_origin(pid), "third-party")
+                m = kernel_registry.load_plugin(pid)
+                self.assertEqual(m.id, pid, "third-party id derives from the directory name")
+                self.assertIn("overlay", m.entry_points)
+                shutil.rmtree(plugin)
+                self.assertIsNone(kernel_registry.plugin_dir(pid))
+            # Zero host knowledge: no host file knows the drop-in id.
+            for rel in (("app", "SlotHost.qml"), ("services", "PluginRegistry.qml"),
+                        ("services", "PluginManifest.js")):
+                self.assertNotIn(pid, read(*rel),
+                                 f"host file knows the temp plugin: {'/'.join(rel)}")
 
 
 class TestRetiredMirrors(unittest.TestCase):

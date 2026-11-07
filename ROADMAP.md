@@ -22,7 +22,7 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 | G0 | 修复 GitHub 已知问题：可独立修的立即修，架构根因随 R0 兑现后关闭回填 | 可独立修落地（#144 #146）；根因修随 R0-3 落地（#143 #145 #147 #149）；#142 随 R0-5 转上游跟踪 |
 | R0 | 引擎收敛：概念定名 Plugin/插件 + 杀词并轨 + 单一激活管线 + 声明贯通 + 减法外迁 + 文档对齐 | 已收口（R0-1 ~ R0-6；R0-5 取消自带收口，launcher 暂留） |
 | S0 | Shell 骨架整抄 Omarchy：五件套 + 运行时插件注册表 + 设置去中心化 + 合成器驱动面（S0-0 ~ S0-5 全数收口；manifest 协议 TOML 本站定稿） | 已收口 |
-| S1 | 第三方插件生命周期：协议 1:1 + 生命周期动词 + Shell 心脏整抄 + 所有权账本回植 | 进行中（S1-0 ~ S1-4 已收口） |
+| S1 | 第三方插件生命周期：协议 1:1 + 生命周期动词 + Shell 心脏整抄 + 所有权账本回植（S1-0 ~ S1-5 全数收口） | 已收口 |
 | T4 | Shell 可控性与透明化（开工时立细则） | 待开始 |
 | T5 | 多合成器解耦（门禁触发） | 待开始 |
 | T2 | TUI Textual 重做（暂缓，分支备用） | 待开始 |
@@ -271,7 +271,7 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
 | S1-2 生命周期动词 | `add`（clone → staging → 校验=加载同一套 → id 冲突 → 落位 → 记 sources）/ `remove`（停用 → 按所有权账本撤回 → 非管辖时间戳备份）/ `update <id>`（diff 预览 → 拒绝非 ff → 校验失败自动回退咬合快照重基线）；所有权账本回植（PR #148 素材剪裁）；git 传输原语（clone/fetch/ff 判定/diff/reset）落 `sources.py`（`timed_run` 直驱，不进 pkg/net 引擎自更新领地）；三方 v1 拒钩子 + `audit-lifecycle.py` 审计扩展；CLI / translations / operation-map 三闸门同批 | 已收口（audit 扩展改裁随 S1-3：该脚本审计 shell 树，三方 shell 面尚不存在；引擎侧静觉得等价物 = 加载时钩子门 + 词表封闭，已测。部署管线开缝 `registry.plugin_dir`——`_item_src` / `_app_src` / `_plugin_root` / `_is_deployable_app` 四点，第三方 config 类从此可过唯一事务管线） |
 | S1-3 Shell 心脏整抄 | 806 行原件物理拷入 `shell/services/` 建基线（守护三件套 / 流解析 / 安全检查原样保留）；剪裁：二根扫描、开关读 StateProjection、删 shell.json 写入、走既有 `PluginManifest.js` TOML 通路；自研 192 行的 S0-2 投影（units / toggles / settingsRoutes / anchors / actions）并轨不丢失；首日 spike = 三方 ui kind 在 SlotHost 槽模型的落座规则；对抗门禁 = 手工塞临时三方插件 → 发现 → 移除全程零宿主文件改动 | 已收口（基线 `c91fc6a` cmp 字节一致 → 剪裁 429 行，整抄护栏 `TestThirdPartyHeart` 器官/疤痕双向钉死；S0-2 五视图并轨 + `unitId` 完整账本键贯通，槽仲裁改 kind 判定；能力标记随门面推迟、IpcRegistry 核对为既有通道覆盖，均入 omarchy-parity 补遗。首日 spike：S0-0 `external` case 20/20 已覆盖树外装载，S1-3 探针补四池取证入 loader-form §5。实机（沙箱 XDG + 三方探针）：冷启动零实例化 → `on` 挂载 → `off` 真实析构 → 热改 manifest 重扫重挂 → `shell.evil` 响亮拒绝 → 移除零残留，全程零宿主改动、零 ERROR。对抗门禁撞出两个预存在缺陷顺手清算：投影读退役账本键 `units`（S0-1 起开关轴空转，正名 `plugins`）+ 冷启动装配竞态（`primed` 闸门，禁用单元不闪挂）。门禁：tests/shell 282 绿（11 跳过=基线）、test_plugin_manifests 25 绿、五分类 110 绿、check.sh 过、lifecycle-audit 14 绿） |
 | S1-4 首个用例贯通 | 上游 orbit-translate 补 manifest.toml（PR #5 已合入，纯裸名 id）；sources.py 支持安全裸名；网关（shell-action.sh / niri-scratch-toggle.sh / nyxuri-shell）接入 find_action_tool 动态发现，彻底消除 orbit-translate 硬编码，优先从 Nyxuri 插件数据域唤醒；sysdoctor 动态巡检脚本与 GtkLayerShell；端到端全链路 test_orbit_translate_pipeline 绿，实测在线 add WALKERKILLER/orbit-translate 成功 | 已收口 |
-| S1-5 收口 | ROADMAP 回填、wiki 清算、全局门禁 4 过堂 | 待开始 |
+| S1-5 收口 | 运行时对齐（PluginRegistry 裸名/点分校验与 sources.py 1:1 对齐）+ Wiki 清算（plugin-model / operation-map / omarchy-parity / AGENTS 事实修正）+ 全局门禁 4 过堂（test_ai_specs / test_sources / test_orbit_translate_pipeline / test_plugin_manifests 全绿）+ ROADMAP 回填闭环 | 已收口 |
 
 - **扩展面边界**：钩子是引擎已有的语言无关扩展面（manifest 声明 + 任意可执行），
   不是新发明；用户已有配置的「导入」走保留策略（carry / vault），与第三方插件
@@ -305,8 +305,10 @@ R0-1 落地时同步改写该页术语（单元 → 插件）。
   （约 −340）、mango 第二合成器去留、BezierCurveLayerEditor（1,153 行）、
   WeatherBackground（1,226 行）；零风险小件（约 −490 行）若 S0 迁移触及则顺带
   处置，不立项。
-- **T4 Shell 可控性与透明化**：待开工，开工时立细则；吸收 T0 让渡的 Shell 启动
-  失败通知反馈。
+- **T4 Shell 可控性与透明化**：架构重塑卷收敛后的首个用户体验与观测性专项。立项三件套：
+  - **T4-1 启动可见性（吸收 T0 让渡）**：`Terminal=true` 与桌面应用通过 `xdg-terminal-exec` / `gio open` 启动失败时，Shell 侧由发后即忘（`execDetached`）升级为状态捕获与用户通知反馈（`notify-send` / Shell 告警），终态消除「点击无声无息失败」；
+  - **T4-2 运行时透明度与生命周期诊断**：`nyxuri doctor` 与 `shell status` 输出插件挂载几何插槽状态、IPC 连通性与事件延迟指标；
+  - **T4-3 异常隔离与弹性守护**：UI 插件或脚本发生运行时语法/渲染崩溃时局部熔断隔离并上报错误横幅，确保主 Shell 宿主与其它常驻插槽不瓦解。
 - **T5 多合成器解耦**：门禁触发型；S0 的 niri 适配层兑现其前置——`SUPPORTED_WMS`
   硬编码、组件菜单特判、doctor 三处合成器字面量收编（债务登记见
   [delayed-decisions](llms-wiki/delayed-decisions.md)）。

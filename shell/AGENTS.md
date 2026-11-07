@@ -91,7 +91,7 @@ Shell 是极致精简的**微内核宿主**：宿主只保留装配（`SlotHost`
   `services/PluginRegistry.qml` 运行时读取聚合（S1-3 心脏 = Omarchy 806 行
   `PluginRegistry.qml` 物理整抄后定向剪裁，基线 commit `c91fc6a`：守护三件套与
   分段流解析原样保留，shell.json 开关机器删除——开关真相唯一留在引擎账本；
-  三方 id 必须 reverse-DNS、`shell.` / `nyxuri.` 命名空间保留），与
+  三方 id 必须为合法叶名（简洁裸名或 reverse-DNS，`shell.` / `nyxuri.` 命名空间保留），与
   `shell/plugins/` 的同步由 `shell/tests/test_plugin_manifests.py` 强制。
 - **数据驱动装载**：`AppShell.qml` 不按名实例化任何单元组件；`SlotHost` 以
   `Repeater + Loader` 依目录装配，`active` 只读 `StateProjection`，且以投影
@@ -102,7 +102,7 @@ Shell 是极致精简的**微内核宿主**：宿主只保留装配（`SlotHost`
   （延迟至解锁）；keystone 在场时独占 `popup:notification` 槽——任意非 keystone 的
   popup:notification 行（三方同规）让位。
 - **单一开关真相**：Shell 永不直写账本。开关只经 `UnitControlService` 派发
-  `nyxuri on/off <unitId>`（完整账本键：一方 `shell.<domain>`，三方 reverse-DNS
+  `nyxuri on/off <unitId>`（完整账本键：一方 `shell.<domain>`，三方 id
   全名），UI 不乐观翻转——`unit-changed` 事件
   （`qs ipc call unit reload`，宿主 `IpcHandler target: "unit"` 接收）到达后由
   `StateProjection` 重投影（读账本顶层 `plugins` 键）。账本无记录 = 默认启用；账本损坏 = 全启用降级 + 诊断
