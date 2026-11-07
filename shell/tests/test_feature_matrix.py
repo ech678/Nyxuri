@@ -27,6 +27,23 @@ class FeatureMatrixTests(unittest.TestCase):
         self.assertTrue(feature_matrix._matches("", "any"))
         self.assertFalse(feature_matrix._matches("INVALID", "one_of:OK,DEGRADED"))
 
+    def test_missing_ipc_target_is_unavailable_not_a_pass(self):
+        result = subprocess.CompletedProcess(
+            ["qs"], 0, stdout=feature_matrix.TARGET_NOT_FOUND + "\n", stderr=""
+        )
+        row = feature_matrix.classify_ipc("control_center.open", result, "OK", 1.25)
+        self.assertEqual(row["status"], "UNAVAILABLE")
+        self.assertEqual(row["target_result"]["stdout"], feature_matrix.TARGET_NOT_FOUND)
+
+    def test_unknown_ipc_target_rejection_accepts_target_not_found_reply(self):
+        result = subprocess.CompletedProcess(
+            ["qs"], 0, stdout=feature_matrix.TARGET_NOT_FOUND + "\n", stderr=""
+        )
+        self.assertTrue(feature_matrix._unknown_target_rejected(result))
+
+        succeeded = subprocess.CompletedProcess(["qs"], 0, stdout="pong\n", stderr="")
+        self.assertFalse(feature_matrix._unknown_target_rejected(succeeded))
+
     def test_host_invocation_is_unavailable_and_never_starts_shell(self):
         with tempfile.TemporaryDirectory(prefix="nyxuri-feature-matrix-test-") as directory:
             process = subprocess.run(

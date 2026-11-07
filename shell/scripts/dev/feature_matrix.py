@@ -21,6 +21,7 @@ from typing import Any
 
 
 STATUS = ("PASS", "PARTIAL", "UNAVAILABLE")
+TARGET_NOT_FOUND = "Target not found."
 OPTIONAL_COMMANDS = ("key", "lspci", "inotifywait", "ddcutil")
 STANDARD_CASES = (
     ("shell.status", "shell", "status", (), "json"),
@@ -74,6 +75,14 @@ def _matches(value: str, expected: str) -> bool:
 
 def classify_ipc(case_id: str, result: subprocess.CompletedProcess[str], expected: str, elapsed_ms: float) -> dict[str, Any]:
     value = result.stdout.strip()
+    if result.returncode == 0 and value == TARGET_NOT_FOUND:
+        return _result(
+            case_id,
+            "UNAVAILABLE",
+            reason="IPC target is not loaded in this runtime",
+            target_result={"returncode": result.returncode, "stdout": value, "stderr": result.stderr.strip()},
+            elapsed_ms=round(elapsed_ms, 3),
+        )
     valid = result.returncode == 0 and _matches(value, expected)
     return _result(
         case_id,
@@ -82,6 +91,11 @@ def classify_ipc(case_id: str, result: subprocess.CompletedProcess[str], expecte
         target_result={"returncode": result.returncode, "stdout": value, "stderr": result.stderr.strip()},
         elapsed_ms=round(elapsed_ms, 3),
     )
+
+
+def _unknown_target_rejected(result: subprocess.CompletedProcess[str]) -> bool:
+    """Quickshell may reject a missing IPC target via exit status or stdout."""
+    return result.returncode != 0 or result.stdout.strip() == TARGET_NOT_FOUND
 
 
 def _ipc(qs: str, shell_dir: str, target: str, method: str, args: tuple[str, ...], env: dict[str, str]) -> tuple[subprocess.CompletedProcess[str], float]:
@@ -194,9 +208,15 @@ def run_matrix(args: argparse.Namespace) -> dict[str, Any]:
                     rows.append(_result(case_id, "PARTIAL", reason=f"IPC invocation failed: {exc}"))
             try:
                 result, elapsed = _ipc(qs, shell_dir, "missing-target", "ping", (), env)
-                rows.append(_result("negative.unknown_ipc_target", "PASS" if result.returncode != 0 else "PARTIAL",
-                                    reason="unknown target unexpectedly succeeded" if result.returncode == 0 else "",
-                                    target_result={"returncode": result.returncode, "stderr": result.stderr.strip()}, elapsed_ms=round(elapsed, 3)))
+                value = result.stdout.strip()
+                rejected = _unknown_target_rejected(result)
+                rows.append(_result(
+                    "negative.unknown_ipc_target",
+                    "PASS" if rejected else "PARTIAL",
+                    reason="unknown target unexpectedly succeeded" if not rejected else "",
+                    target_result={"returncode": result.returncode, "stdout": value, "stderr": result.stderr.strip()},
+                    elapsed_ms=round(elapsed, 3),
+                ))
             except (OSError, subprocess.TimeoutExpired) as exc:
                 rows.append(_result("negative.unknown_ipc_target", "PARTIAL", reason=str(exc)))
             for case_id, target, method, ipc_args, expected in (
