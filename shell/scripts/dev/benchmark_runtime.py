@@ -37,6 +37,10 @@ RUNTIME_QML_RESOURCE_KEYS: Final[tuple[str, ...]] = (
     "loaders", "timers", "processes", "fileviews", "connections", "delegates",
     "canvas", "layers", "windows",
 )
+RUNTIME_QML_RESOURCE_STATE_KEYS: Final[tuple[str, ...]] = ("timer", "process")
+RUNTIME_QML_RESOURCE_STATE_FIELDS: Final[tuple[str, ...]] = (
+    "total", "running", "stopped", "unknown",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -259,6 +263,10 @@ def _unavailable_live_telemetry(sampled_at_ms: int, reason: str) -> dict[str, ob
             "status": "unavailable",
             "reason": "resource_counts_not_exposed_by_shell_metrics",
             "counts": {key: None for key in RUNTIME_QML_RESOURCE_KEYS},
+            "states": {key: None for key in RUNTIME_QML_RESOURCE_STATE_KEYS},
+            "state_owners": {},
+            "states_status": "unavailable",
+            "states_reason": "resource_running_states_not_exposed_by_shell_metrics",
         },
     }
 
@@ -277,8 +285,14 @@ def parse_live_telemetry(reply: str, *, sampled_at_ms: int) -> dict[str, object]
     if not isinstance(raw_resources, dict) and isinstance(census, dict):
         raw_resources = census.get("qml_resources") or census.get("resources")
     counts: dict[str, int | None] = {key: None for key in RUNTIME_QML_RESOURCE_KEYS}
+    states: dict[str, dict[str, int] | None] = {
+        key: None for key in RUNTIME_QML_RESOURCE_STATE_KEYS
+    }
+    state_owners: dict[str, dict[str, dict[str, int]]] = {}
     resource_status = "unavailable"
     resource_reason = "resource_counts_not_exposed_by_shell_metrics"
+    states_status = "unavailable"
+    states_reason = "resource_running_states_not_exposed_by_shell_metrics"
     if isinstance(raw_resources, dict):
         raw_counts = raw_resources.get("counts", raw_resources)
         if not isinstance(raw_counts, dict):
@@ -303,6 +317,72 @@ def parse_live_telemetry(reply: str, *, sampled_at_ms: int) -> dict[str, object]
                 resource_status = "invalid"
             resource_reason = str(raw_resources.get("reason") or "invalid_resource_counts")
 
+        if "states" in raw_resources:
+            raw_states = raw_resources.get("states")
+            valid_states = 0
+
+            def parse_state_bucket(value: object) -> dict[str, int] | None:
+                if not isinstance(value, dict):
+                    return None
+                parsed: dict[str, int] = {}
+                for field in RUNTIME_QML_RESOURCE_STATE_FIELDS:
+                    field_value = value.get(field)
+                    if (not isinstance(field_value, int) or isinstance(field_value, bool)
+                            or field_value < 0):
+                        return None
+                    parsed[field] = field_value
+                if parsed["total"] != parsed["running"] + parsed["stopped"] + parsed["unknown"]:
+                    return None
+                return parsed
+
+            if isinstance(raw_states, dict):
+                for key in RUNTIME_QML_RESOURCE_STATE_KEYS:
+                    parsed = parse_state_bucket(raw_states.get(key))
+                    if parsed is not None:
+                        states[key] = parsed
+                        valid_states += 1
+                if valid_states == len(RUNTIME_QML_RESOURCE_STATE_KEYS):
+                    states_status = "available"
+                    states_reason = ""
+                elif valid_states > 0:
+                    states_status = "partial"
+                    states_reason = "incomplete_resource_running_states"
+                else:
+                    states_status = "invalid"
+                    states_reason = "invalid_resource_running_states"
+            else:
+                states_status = "invalid"
+                states_reason = "invalid_resource_running_states"
+
+            raw_state_owners = raw_resources.get("state_owners")
+            if raw_state_owners is not None:
+                owners_valid = isinstance(raw_state_owners, dict)
+                if owners_valid:
+                    for owner, owner_states in raw_state_owners.items():
+                        if not isinstance(owner, str) or not isinstance(owner_states, dict):
+                            owners_valid = False
+                            break
+                        parsed_owner_states: dict[str, dict[str, int]] = {}
+                        for key, value in owner_states.items():
+                            if key not in RUNTIME_QML_RESOURCE_STATE_KEYS:
+                                owners_valid = False
+                                break
+                            parsed = parse_state_bucket(value)
+                            if parsed is None:
+                                owners_valid = False
+                                break
+                            parsed_owner_states[key] = parsed
+                        if not owners_valid:
+                            break
+                        state_owners[owner] = parsed_owner_states
+                if not owners_valid:
+                    states_status = "invalid"
+                    states_reason = "invalid_resource_running_state_owners"
+
+            if resource_status == "available" and states_status != "available":
+                resource_status = "invalid" if states_status == "invalid" else "partial"
+                resource_reason = states_reason
+
     return {
         "schema": 1,
         "source": "qs-ipc-shell-metrics",
@@ -315,6 +395,10 @@ def parse_live_telemetry(reply: str, *, sampled_at_ms: int) -> dict[str, object]
             "status": resource_status,
             "reason": resource_reason,
             "counts": counts,
+            "states": states,
+            "state_owners": state_owners,
+            "states_status": states_status,
+            "states_reason": states_reason,
         },
     }
 

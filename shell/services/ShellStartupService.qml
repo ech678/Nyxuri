@@ -109,6 +109,17 @@ Singleton {
         });
     }
 
+    function _emptyResourceState() {
+        return {"total": 0, "running": 0, "stopped": 0, "unknown": 0};
+    }
+
+    function _resourceRunningState(object) {
+        const running = object ? object.running : undefined;
+        if (typeof running !== "boolean")
+            return "unknown";
+        return running ? "running" : "stopped";
+    }
+
     function qmlCensus(): var {
         const records = Object.keys(root._qmlLoaderRecords).map(key => root._qmlLoaderRecords[key]);
         const active = records.filter(record => record.active);
@@ -123,12 +134,25 @@ Singleton {
         const loadedUnitIds = Object.keys(loadedUnits).sort();
         const resourceCounts = {};
         const resourceOwners = {};
+        const resourceStates = {"timer": root._emptyResourceState(), "process": root._emptyResourceState()};
+        const resourceStateOwners = {};
         root._qmlResourceRecords.forEach(record => {
             resourceCounts[record.kind] = (resourceCounts[record.kind] || 0) + 1;
             const owner = String(record.owner || "unknown");
             if (!resourceOwners[owner])
                 resourceOwners[owner] = {};
             resourceOwners[owner][record.kind] = (resourceOwners[owner][record.kind] || 0) + 1;
+            if (record.kind !== "timer" && record.kind !== "process")
+                return;
+            const state = root._resourceRunningState(record.object);
+            resourceStates[record.kind].total++;
+            resourceStates[record.kind][state]++;
+            if (!resourceStateOwners[owner])
+                resourceStateOwners[owner] = {};
+            if (!resourceStateOwners[owner][record.kind])
+                resourceStateOwners[owner][record.kind] = root._emptyResourceState();
+            resourceStateOwners[owner][record.kind].total++;
+            resourceStateOwners[owner][record.kind][state]++;
         });
         const counts = {
             "loaders": records.length,
@@ -162,11 +186,15 @@ Singleton {
             },
             "resources": counts,
             "resource_owners": resourceOwners,
+            "resource_states": resourceStates,
+            "resource_state_owners": resourceStateOwners,
             "qml_resources": {
                 "status": "partial",
-                "reason": "loaders plus explicitly registered service resources; Canvas/layer remain unsupported",
+                "reason": "loaders plus explicitly registered service resources; Timer/Process running state is live; Canvas/layer remain unsupported",
                 "counts": counts,
-                "owners": resourceOwners
+                "owners": resourceOwners,
+                "states": resourceStates,
+                "state_owners": resourceStateOwners
             }
         };
     }

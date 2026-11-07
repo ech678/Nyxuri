@@ -185,6 +185,45 @@ class BenchmarkRuntimeTests(unittest.TestCase):
         self.assertEqual(snapshot["qml_resources"]["counts"]["delegates"], 9)
         self.assertEqual(snapshot["qml_resources"]["counts"]["windows"], 1)
 
+    def test_live_telemetry_preserves_registered_timer_process_running_states(self):
+        with TempEnv():
+            snapshot = runtime.parse_live_telemetry(
+                '{"stage":"READY","qml_resources":{"counts":{"loaders":1,"timers":1,'
+                '"processes":1,"fileviews":0,"connections":0,"delegates":1,'
+                '"canvas":2,"layers":1,"windows":0},"states":{'
+                '"timer":{"total":1,"running":1,"stopped":0,"unknown":0},'
+                '"process":{"total":1,"running":0,"stopped":1,"unknown":0}},'
+                '"state_owners":{"ResourceProbe":{"timer":{"total":1,"running":1,'
+                '"stopped":0,"unknown":0},"process":{"total":1,"running":0,'
+                '"stopped":1,"unknown":0}}}}}',
+                sampled_at_ms=6789,
+            )
+
+        resources = snapshot["qml_resources"]
+        self.assertEqual(resources["status"], "available")
+        self.assertEqual(resources["states_status"], "available")
+        self.assertEqual(resources["states"]["timer"]["running"], 1)
+        self.assertEqual(resources["states"]["process"]["stopped"], 1)
+        self.assertEqual(resources["state_owners"]["ResourceProbe"]["timer"]["total"], 1)
+
+    def test_live_telemetry_does_not_upgrade_invalid_running_states_to_available(self):
+        with TempEnv():
+            snapshot = runtime.parse_live_telemetry(
+                '{"qml_resources":{"counts":{"loaders":1,"timers":1,'
+                '"processes":1,"fileviews":0,"connections":0,"delegates":1,'
+                '"canvas":2,"layers":1,"windows":0},"states":{'
+                '"timer":{"total":1,"running":2,"stopped":0,"unknown":0},'
+                '"process":{"total":1,"running":0,"stopped":0,"unknown":2}}}}',
+                sampled_at_ms=6790,
+            )
+
+        resources = snapshot["qml_resources"]
+        self.assertEqual(resources["states_status"], "invalid")
+        self.assertEqual(resources["status"], "invalid")
+        self.assertEqual(resources["reason"], "invalid_resource_running_states")
+        self.assertIsNone(resources["states"]["timer"])
+        self.assertIsNone(resources["states"]["process"])
+
     def test_live_telemetry_preserves_partial_loader_census_and_unknown_categories(self):
         with TempEnv():
             snapshot = runtime.parse_live_telemetry(
