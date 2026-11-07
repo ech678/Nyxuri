@@ -32,6 +32,10 @@ FCITX_THEME = "nyxmellow"
 CONFIG_DIR_NAME = "plugins"
 REPO_URL = "https://github.com/ech678/Nyxuri.git"
 
+CONTAINER_MARKERS = ("/.dockerenv", "/run/.containerenv", "/.singularity.d/env/99-base.sh")
+CONTAINER_ENV_VARS = ("container", "PROOT_L2S_DIR", "PROOT_LOADER", "PROOT_TMP_DIR")
+
+
 RAW_MIRROR_TEMPLATES = [
     ("Official", "https://raw.githubusercontent.com/{USER_REPO}/{BRANCH}/{FILE_PATH}"),
     ("Ghproxy", "https://ghfast.top/https://raw.githubusercontent.com/{USER_REPO}/{BRANCH}/{FILE_PATH}"),
@@ -77,6 +81,15 @@ PENDING_UPGRADE_MENU_ENV = "NYXURI_PENDING_UPGRADE_MENU"
 def get_env_var(suffix: str, default: str | None = None) -> str | None:
     """Retrieve the NYXURI_<suffix> environment variable."""
     return os.environ.get(f"NYXURI_{suffix}", default)
+
+
+def in_container() -> bool:
+    """True when running as a container guest rather than on a real host."""
+    if get_env_var("ALLOW_ROOT") == "1":
+        return True
+    if any(os.environ.get(name) for name in CONTAINER_ENV_VARS):
+        return True
+    return any(Path(marker).exists() for marker in CONTAINER_MARKERS)
 
 
 # --- ANSI Styling Palette ---

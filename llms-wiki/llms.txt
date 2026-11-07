@@ -15,6 +15,7 @@
 - [vision](vision.md): 五条简洁标准（透明/主权/包容/轻盈/自然）与桌面插件引擎终态哲学
 - [plugin-model](plugin-model.md): 插件模型、引擎架构（nyxuri/）、正交状态机、merge 共享生活区、纯文件 Vault、极简 manifest 契约、死刑清单、路径术语表
 - [manifest-schema](manifest-schema.md): manifest.toml 字段参考（target ~/ / merge）、单元钩子契约、optional 轴与 optdepends、声明式边界
+- [package-backend](package-backend.md): 发行版家族判定（arch/fedora）、Arch→Fedora 包名映射、缺包语义、容器内 root 放行
 - [forms](forms.md): 形态轴（整型轴 + 槽位轴）、use 动词、状态单真相、防覆写自愈、写时序铁律、原子写
 - [file-preservation](file-preservation.md): Dunder __custom__ walk + manifest preserve（两套刻意不合并）
 - [state-ops](state-ops.md): 快照生命周期（30 个滚动 prune）与勾选式卸载、执行时序铁律

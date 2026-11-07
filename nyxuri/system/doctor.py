@@ -35,6 +35,7 @@ from nyxuri.system.env import (
     get_env_var,
 )
 from nyxuri.system.compositors import COMPOSITORS, MAIN_WM, portal_conf_name, session_wm
+from nyxuri.system import backend
 from nyxuri.system.env import get_env, get_pics_dir, log_msg, timed_run
 from nyxuri.system.i18n import msg, text
 
@@ -275,15 +276,15 @@ def _check_portal_active(env) -> None:
         print(msg("doctor_warn", text("桌面门户: xdg-desktop-portal 未运行", "Desktop Portal: xdg-desktop-portal is not active")))
 
 def _check_portal_gtk(env) -> None:
-    if shutil.which("pacman"):
-        try:
-            res = subprocess.run(["pacman", "-Qq", "xdg-desktop-portal-gtk"], capture_output=True, check=False, timeout=10)
-            if res.returncode == 0:
-                print(msg("doctor_ok", text("桌面门户: xdg-desktop-portal-gtk 后端已安装", "Desktop Portal: xdg-desktop-portal-gtk backend is installed")))
-            else:
-                print(msg("doctor_warn", text("桌面门户: 缺少 xdg-desktop-portal-gtk", "Desktop Portal: xdg-desktop-portal-gtk is missing")))
-        except Exception:
-            pass
+    from nyxuri.system.pkg import DependencyProbe
+
+    try:
+        if DependencyProbe().installed("xdg-desktop-portal-gtk"):
+            print(msg("doctor_ok", text("桌面门户: xdg-desktop-portal-gtk 后端已安装", "Desktop Portal: xdg-desktop-portal-gtk backend is installed")))
+        else:
+            print(msg("doctor_warn", text("桌面门户: 缺少 xdg-desktop-portal-gtk", "Desktop Portal: xdg-desktop-portal-gtk is missing")))
+    except Exception:
+        pass
 
 def _check_portal_config(env) -> None:
     xdg_curr = os.environ.get("XDG_CURRENT_DESKTOP", "").lower()
@@ -563,7 +564,7 @@ def generate_bug_report() -> Optional[Path]:
         if cmd == "wpctl":
             version_cmds[cmd] = ["wireplumber", "--version"]
         elif cmd == "mpvpaper":
-            version_cmds[cmd] = ["pacman", "-Q", "mpvpaper", "mpvpaper-git"]
+            version_cmds[cmd] = backend.version_argv(["mpvpaper", "mpvpaper-git"])
         else:
             version_cmds[cmd] = [cmd, "--version"]
 
@@ -575,7 +576,7 @@ def generate_bug_report() -> Optional[Path]:
             "noctalia_status": pool.submit(_run_cmd, [THEME_ENGINE, "msg", "status"]),
             "portal_status": pool.submit(_run_cmd, ["systemctl", "--user", "status", "xdg-desktop-portal"]),
             "df_home": pool.submit(_run_cmd, ["df", "-h", str(env.home)]),
-            "portal_gtk": pool.submit(_run_cmd, ["pacman", "-Qq", "xdg-desktop-portal-gtk"]),
+            "portal_gtk": pool.submit(_run_cmd, backend.version_argv(["xdg-desktop-portal-gtk"])),
         }
         version_futures = {cmd: pool.submit(_run_cmd, vc) for cmd, vc in version_cmds.items()}
         results = {key: fut.result() for key, fut in futures.items()}
@@ -625,7 +626,7 @@ def generate_bug_report() -> Optional[Path]:
         if cmd == "wpctl":
             ver = next((l for l in res.stdout.splitlines() if "libwireplumber" in l.lower()), "")
             if not ver:
-                wp_fallback = _run_cmd(["pacman", "-Q", "wireplumber"])
+                wp_fallback = _run_cmd(backend.version_argv(["wireplumber"]))
                 ver = wp_fallback.stdout.strip() if wp_fallback else "installed"
         elif cmd == "mpvpaper":
             ver = res.stdout.splitlines()[0] if res.stdout.strip() else "installed"

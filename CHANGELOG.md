@@ -8,6 +8,7 @@
 ## [Unreleased]
 
 ### Fixed
+- 检出目录里 `nyxuri shell status` 永远报 `Running Instance: none`、`nyxuri shell switch` 无从下手：`system/shell.py` 的仓库相对定位少算一级（找的是 `<repo>/nyxuri/shell/`），且 `~/.local/bin/nyxuri-shell` 只在特权钩子执行时才建；现在统一走 `repo_shell_dir()`，CLI 启动即补链接
 - 从仓库或缓存副本运行时，`nyxuri update` 重启后报 `No module named nyxuri`、更新后的部署被跳过：重启现在回到常驻入口 `launcher.sh`，不再自己拼 `python -m nyxuri`
 - `nyxuri deps apps` 菜单显示裸键名：补齐 `greeter` / `mango` / `wallpapers` / `shell-runtime` 分类缺失的双语词条，并新增目录↔词典反向校验堵住同类缺口
 - Niri 托管快捷键片段生成的 `spawn qs -c clavis …` 指向不存在的配置名：合成器快捷键统一经 `nyxuri-shell --ipc` 网关分发；layer-rule 命名空间与实际窗口对齐（overview 背景、shell 表面效果）
@@ -17,6 +18,7 @@
 - zen-palette 着色器的三个高位 uint 常量触发 Qt shader baker 缺陷（"negative int conversion"）：改为运行时等价拼装，11 个 .qsb 全量可重编
 
 ### Changed
+- root 拒绝只对真机生效：容器（docker/podman/proot）内以 root 运行 `install.sh` / `nyxuri` / `clean` 不再直接退出，改为提示一行后继续；真机行为不变。root 下装包也不再拼 `sudo` 前缀
 - 上游 Clavis 残留全面单轨化：`CLAVIS_*` 环境变量兼容层、`clavis-*` 临时前缀、托盘/图钉内部 id、`clavis-palette:` 壁纸源前缀全部退役，统一 `NYXURI` / `nyxuri` 命名；`~/.config/niri/clavis/` 托管片段目录自动迁移至 `nyxuri/`
 - AUR 状态对齐：ROADMAP T1 从「阻断/搁置」改为「已上架」，packaging/README 与 humans-wiki Home 安装块同步回填
 - 文档计数修正：软件目录 18 条、单元 13 个（`theme/` 共享模板池此前在目录树中失踪）
@@ -28,6 +30,8 @@
 - 移除引擎 TUI 幽灵兼容分支与死变量（`DOCTOR_CHECKS`、2 元组预设形状、冗余异常元组）
 
 ### Added
+- Fedora 系（`dnf`）包后端：`system/backend.py` 按 `/etc/os-release` 判定发行版家族，并把 Arch 包名映射到 Fedora 名（`ffmpeg→ffmpeg-free`、`python-gobject→python3-gobject`、`ttf-jetbrains-mono→jetbrains-mono-fonts` 等）；源里没有的声明包明确提示后跳过而不阻断部署，`starship` 走 `atim/starship` COPR 通道自动启用；`pkg` / `clean` / `doctor` 全部按家族切换原生命令（`rpm -qa`、`dnf repoquery`、`dnf clean packages`）
+- Nyxuri Shell 可在无 DRM 的容器/CI 里跑起来并可视化验证：嵌套 wlroots 合成器（sway headless/X11）+ `wayvnc` 提供 VNC 端点，软件渲染下即可看到 bar/dock/lock/sidebar 真实表面，`grim` 出像素证据；前置是 quickshell ≥ 0.3.2（老版本缺 `Region.radius`/`intersection`，整条模糊链编译成空）
 - AUR 上架 `nyxuri-git`：`paru -S nyxuri-git` 一条命令安装完整 Nyxuri（管理引擎、全部配置单元与 Nyxuri Shell），此后更新交给 pacman
 - `nyxuri-shell --ipc <target> <method> [args…]`：PATH 稳定的单元 IPC 通用网关，供合成器绑定与外部脚本调用
 

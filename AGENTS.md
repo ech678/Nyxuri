@@ -22,7 +22,7 @@
 
 | 部署引擎 / 插件模型 (`nyxuri/deploy/`, `plugins/`) | `overview.md`, `plugin-model.md`, `file-preservation.md` | `python3 -m unittest tests/deploy/test_deploy.py tests/test_plugin_model.py` + 沙箱部署 |
 | 部署执行 / 状态校验 (`nyxuri/deploy/engine.py`, `nyxuri/state/`) | `plugin-model.md` | `python3 -m unittest tests/kernel/test_transaction.py` |
-| 环境与系统供给 (`nyxuri/system/`, plugins-only 声明) | `manifest-schema.md`, `overview.md` | `python3 -m unittest tests/pkg/` |
+| 环境与系统供给 (`nyxuri/system/`, plugins-only 声明) | `package-backend.md`（家族与包名映射）, `manifest-schema.md`, `overview.md` | `python3 -m unittest tests/pkg/` |
 | 状态与快照 (`nyxuri/state/`) | `state-ops.md` | `python3 -m unittest tests/state/` |
 | CLI 入口与编排 (`nyxuri/cli.py`, `nyxuri/ui/workflows.py`) | `operation-map.md`, `manifest-schema.md` | `python3 -m unittest tests/test_cli.py tests/test_ai_specs.py` |
 | 终端 UI 与交互 (`nyxuri/ui/`) | `tui-charter.md` | 交互冒烟，检查退出 trap |
@@ -40,7 +40,7 @@
 1. **物理隔离**：仓库源码与 `~/.config/` 物理隔离，只能走 `nyxuri.deploy.atomic` 的 `atomic_replace_item` 机制原子复制，严禁 `ln -s` 软链接进 `~/.config/`。
 2. **Dunder 保留协议**：文件或目录名含 `__custom__`（如 `__custom__.kdl`）在更新/预设切换时必须保留；`monitor.kdl` 等按名引用走 manifest `preserve`。
 3. **纯标库与无未声明依赖**：`nyxuri/` 引擎坚守 Python 纯标准库（零 pip 依赖，需 3.11+ 因 `tomllib`）。
-4. **权限防御**：`install.sh` / `nyxuri` 严禁以 root 权限运行（`id -u == 0` 直接拒绝，系统级维护除外）。
+4. **权限防御**：`install.sh` / `nyxuri` / `clean` 严禁以 root 权限运行（`id -u == 0` 直接拒绝）；容器环境（`system.env.in_container()` 命中 docker/podman/proot 标记，或 `NYXURI_ALLOW_ROOT=1`）里 root 是运行时唯一的身份，放行并提示（契约见 `package-backend.md`）。
 5. **模板占位符**：`plugins/` 模板里的 `/home/user` 必须由部署引擎替换为目标 `$HOME`，禁止硬编码。
 6. **硬件中立**：默认配置不指定特定 GPU 驱动变量，部署不按 PCI 设备改写驱动（历史案卷见 `llms-wiki/archive/nvidia-patch.md`）。
 

@@ -20,6 +20,7 @@ Runtime plugins declare payload-less existence (living area absent, no vault):
 import hashlib
 import os
 import shutil
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
@@ -28,6 +29,7 @@ from nyxuri.state import store
 from nyxuri.deploy import catalog
 from nyxuri.deploy.catalog import resolve_order
 from nyxuri.system.env import get_env, log_msg, remove_path
+from nyxuri.system.i18n import msg
 from nyxuri.deploy.atomic import CarryPolicy
 from nyxuri.deploy.deploy import _phase_atomic_deployment, merge_deploy_plugin
 from nyxuri.deploy.manifest import ModuleManifest, living_path
@@ -241,17 +243,34 @@ def snapshot_files(dest: Path, manifest: ModuleManifest) -> Dict[str, str]:
 
 def missing_packages(manifest: ModuleManifest) -> List[str]:
     """Declared system packages absent from the machine (repo+AUR via the
-    pacman database, Flatpak via its app list). Empty = preflight green."""
+    native package database, Flatpak via its app list). Empty = preflight green.
+    A name this distribution cannot supply at all is out of scope here: it is
+    reported once as a warning instead of blocking the deploy forever."""
     from nyxuri.system.pkg import DependencyProbe
 
     probe = DependencyProbe()
-    missing = [
+    absent = [
         name
         for name in (*manifest.packages_repo, *manifest.packages_aur)
         if not probe.installed(name)
     ]
+    missing = [name for name in absent if probe.available(name)]
+    for name in absent:
+        if name not in missing:
+            _report_absent(manifest.id, name)
     missing.extend(app for app in manifest.packages_flatpak if app not in probe.flatpaks)
     return missing
+
+
+_REPORTED_ABSENT: set = set()
+
+
+def _report_absent(plugin_id: str, name: str) -> None:
+    if (plugin_id, name) in _REPORTED_ABSENT:
+        return
+    _REPORTED_ABSENT.add((plugin_id, name))
+    print(msg("package_absent_here", name), file=sys.stderr)
+    log_msg("WARN", f"{plugin_id}: no package for {name} on this distribution; skipped")
 
 
 def _active_form_name(plugin_id: str) -> str:

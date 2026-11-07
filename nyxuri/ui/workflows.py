@@ -20,6 +20,7 @@ from nyxuri.deploy.deploy import (
     enable_wallpapers_plugin as _enable_wallpapers,
     wallpapers_pack_present,
 )
+from nyxuri.system import backend
 from nyxuri.system.pkg import get_missing_deps, install_selected_deps, plugin_package_installer
 from nyxuri.deploy import catalog, engine
 from nyxuri.system.i18n import msg
@@ -34,7 +35,7 @@ def _phase_preflight_check(
     do_backup: bool,
 ) -> None:
     """Pre-flight checklist & upfront sudo access validation."""
-    needs_sudo = mode == "full"
+    needs_sudo = mode == "full" and backend.needs_superuser_prefix()
 
     print(msg("preflight_express_summary"))
     print(msg("preflight_comp_config", len(chosen_configs)))
@@ -122,7 +123,7 @@ def _carried_groups(items: List[str], policy: Optional[CarryPolicy]) -> Dict[str
 
 def install_configs_workflow(mode: str = "full") -> bool:
     """Full execution pipeline for dotfiles, dependencies, wallpapers, and hooks."""
-    if mode == "full" and not shutil.which("pacman"):
+    if mode == "full" and not shutil.which(backend.native_manager()):
         print(msg("distro_unsupported"))
         print(msg("distro_unsupported_hint"))
         return False

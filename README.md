@@ -100,6 +100,31 @@ git clone https://aur.archlinux.org/nyxuri-git.git
 cd nyxuri-git && makepkg -si
 ```
 
+### Fedora & Containers
+
+Fedora is a first-class package backend (`dnf`, no AUR): package names are translated by the
+engine, and a name Fedora cannot supply is reported and skipped instead of blocking the deploy.
+Root is accepted only inside containers (docker/podman/proot), so a proot-distro guest works as-is:
+
+```bash
+git clone --depth 1 https://github.com/ech678/Nyxuri.git ~/Nyxuri
+cd ~/Nyxuri && ./install.sh
+```
+
+What runs where: config deployment, `list`/`on`/`off`, `doctor`, `pkg`, `clean` and snapshots all
+work inside a container. The compositor (niri) still needs GPU/DRM access a container cannot give,
+but Nyxuri Shell itself only needs a Wayland session — a nested wlroots compositor plus a VNC
+server is enough to see it and drive it (quickshell 0.3.2 or newer is required; distro packages
+older than that compile the shell's surfaces empty):
+
+```bash
+sudo dnf install -y sway wayvnc        # nested compositor + VNC endpoint
+sway & export WAYLAND_DISPLAY=wayland-1
+wayvnc 127.0.0.1 5900 &                # connect a VNC viewer to localhost:5900
+nyxuri-shell                           # Nyxuri Shell draws into that session
+nyxuri shell status                    # Active Shell / Running Instance / Ready
+```
+
 ## Directory Structure
 
 ```text

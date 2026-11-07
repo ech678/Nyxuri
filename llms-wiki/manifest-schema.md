@@ -28,7 +28,7 @@
 |---|---|---|
 | `target` | `""` | 单文件插件例外：插件目录只 ship 一个文件 `plugins/<plugin>/<target>`，落点 `~/.config/<target>`（如 starship）。`~/` 前缀则声明 `~/.config` 外的**共享生活区**。`xdg:<KIND>/<rest>` 走 XDG 用户目录解析（支持 8 大标准用户目录：`DESKTOP`、`DOWNLOAD`、`TEMPLATES`、`PUBLICSHARE`、`DOCUMENTS`、`MUSIC`、`PICTURES`、`VIDEOS`；未知 KIND 直接拒绝，严禁 `..` 越界——如壁纸 `xdg:PICTURES/Wallpapers`，R0-4 推广为完整映射）。target 插件不支持形态轴 |
 | `morphology` | 推导 | 插件形态矩阵（R0-3 显式契约，config 类三选一：`"atomic"` / `"merge"` / `"hook-only"`；runtime 形态由 kinds 表达，不进此字段）。缺省推导：无可部署内容且无 target → `hook-only`，否则 `atomic`。`"merge"` = 共享生活区：`on` 走 no-clobber 增量合流（已存在文件永不覆盖），快照只记部署落下的文件；`off` 只撤回快照文件，外来内容幸存并报告（见 [plugin-model](plugin-model.md) §3）。`"hook-only"` 插件（如 greeter）无生活区目录，引擎仅执行装包、特权钩子与记录状态，跳过 Vault 与形态轴 |
-| `packages` | `[<目录名>]`（ui 类为 `[]`） | pacman 包名。**显式 `packages = []` 保持为空**（Flatpak/AUR-only 插件防名字泄进 pacman） |
+| `packages` | `[<目录名>]`（ui 类为 `[]`） | pacman 包名（Arch 名是唯一书写口径，其它家族由引擎映射，见 [package-backend](package-backend.md)）。**显式 `packages = []` 保持为空**（Flatpak/AUR-only 插件防名字泄进 pacman） |
 | `packages_aur` | `[]` | AUR 包名 |
 | `packages_flatpak` | `[]` | Flathub app id——走 `flatpak install`，永不进 pacman/AUR/PKGBUILD |
 | `preserve` | `[]` | 跨部署保留的路径（按名声明，如 `monitor.kdl`；与 Dunder 不同机制）。条目可以是**目录**：整目录归运行时管理（如 fish 的 `functions/`），部署前整树注入、off 入 Vault、目录下所有文件不入账不参与 Drifted。**禁令：preserve 目录不得混铺模板 payload**——声明即承诺"模板不在此目录铺设任何文件"，混居会把 payload 永久冻结在旧版 |

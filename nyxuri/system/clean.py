@@ -16,7 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from nyxuri.system.env import CLI_CMD, Colors, PROJECT_NAME
+from nyxuri.system.env import CLI_CMD, Colors, PROJECT_NAME, in_container
 from nyxuri.system.i18n import text
 from nyxuri.ui.tui import CheckboxEntry, CheckboxList, display_width, pad_display, stdin_fd
 
@@ -110,7 +110,7 @@ def probe(cmd, timeout=600):
 def act(cmd, sudo=False, input_text=None, quiet=False):
     """变更型动作的唯一出口：干跑只打印，绝不执行。"""
     global ACT_WARNED
-    full = (["sudo"] if sudo else []) + cmd
+    full = (["sudo"] if sudo and os.geteuid() != 0 else []) + cmd
     if DRY:
         print(t("  [干跑] 将执行: ", "  [dry-run] would run: ") + " ".join(full))
         return None
@@ -240,7 +240,8 @@ def _measured_roots(flat_roots):
         ".var/app", ".local/share/flatpak",
     )]
     roots += flat_roots
-    roots += [Path("/var/cache/pacman/pkg"), Path("/var/log/journal"),
+    roots += [Path("/var/cache/pacman/pkg"), Path("/var/cache/dnf"), Path("/var/cache/libdnf5"),
+              Path("/var/log/journal"),
               Path("/var/lib/systemd/coredump"), Path("/var/tmp")]
     return [p for p in roots if p.is_dir() and not p.is_symlink()]
 
@@ -309,12 +310,21 @@ def build_tasks(sizes, flat_roots):
         add("scc", t("清空 pacman 包缓存", "Wipe pacman package cache"),
             "/var/cache/pacman/pkg (-Scc)", sizes.get(Path("/var/cache/pacman/pkg")),
             True, _scc)
+    elif shutil.which("dnf"):
+        r = probe(["dnf", "-q", "repoquery", "--unneeded", "--qf", "%{name}\n"], timeout=300)
+        if r and r.returncode == 0:
+            orphans = sorted({name for name in r.stdout.split() if name})
+        dnf_roots = [p for p in (Path("/var/cache/dnf"), Path("/var/cache/libdnf5")) if p.is_dir()]
+        add("scc", t("清空 dnf 包缓存", "Wipe dnf package cache"),
+            "/var/cache/dnf (dnf clean packages)", group_size(dnf_roots), True,
+            lambda: act(["dnf", "clean", "packages"], sudo=True))
     if orphans:
         names = " ".join(orphans[:6]) + (" …" if len(orphans) > 6 else "")
+        remover = (["pacman", "-Rns", "--noconfirm", *orphans] if shutil.which("pacman")
+                   else ["dnf", "-y", "remove", *orphans])
         add("orphans", t(f"移除 {len(orphans)} 个孤立包", f"Remove {len(orphans)} orphan package(s)"),
             names, None, True,
-            lambda orphans=orphans: act(["pacman", "-Rns", "--noconfirm", *orphans],
-                                        sudo=True))
+            lambda remover=remover: act(remover, sudo=True))
     if shutil.which("journalctl"):
         add("journal", t("日志压缩至 3 天 / 100M", "Vacuum journal to 3 days / 100M"),
             "/var/log/journal", sizes.get(Path("/var/log/journal")), True,
@@ -533,7 +543,7 @@ def _parse_args(argv):
 
 def main(argv):
     _parse_args(argv)
-    if os.geteuid() == 0:
+    if os.geteuid() == 0 and not in_container():
         print(t("请勿以 root 运行。", "Do not run as root."), file=sys.stderr)
         return 1
     _print_title()

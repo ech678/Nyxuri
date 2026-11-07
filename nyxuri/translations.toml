@@ -183,12 +183,36 @@ zh = "控制面板 : 运行 {CLI_CMD}"
 en = "Control Panel : Run {CLI_CMD}"
 
 [distro_unsupported]
-zh = "[!] 未检测到 pacman，当前系统不是 Arch 系发行版"
-en = "[!] pacman not found: this does not look like an Arch-based distribution"
+zh = "[!] 未检测到可用的包管理器（pacman / dnf），无法自动安装依赖"
+en = "[!] No supported package manager found (pacman / dnf); dependencies cannot be installed automatically"
 
 [distro_unsupported_hint]
-zh = "依赖安装通过 pacman 与 AUR 完成，在别的发行版上无法自动进行。配置文件仍可手动取用：仓库 plugins/ 目录下的内容按普通 dotfiles 复制到 ~/.config 即可，壁纸在 plugins/wallpapers。欢迎来仓库 Issue 说说你的发行版，人多了会考虑支持。"
-en = "{PROJECT_NAME} installs its dependencies through pacman and the AUR, which is not available here. You can still take the configs manually: copy whatever you need from the repository plugins/ directory into ~/.config like ordinary dotfiles, wallpapers live in plugins/wallpapers. Feel free to open an Issue and tell us your distro, support may come if there is demand."
+zh = "依赖安装依赖发行版自带的包管理器（Arch 系的 pacman 或 Fedora 系的 dnf）。配置文件仍可手动取用：仓库 plugins/ 目录下的内容按普通 dotfiles 复制到 ~/.config 即可，壁纸在 plugins/wallpapers。欢迎来仓库 Issue 说说你的发行版，人多了会考虑支持。"
+en = "{PROJECT_NAME} installs its dependencies through the distribution package manager (pacman on Arch, dnf on Fedora). You can still take the configs manually: copy whatever you need from the repository plugins/ directory into ~/.config like ordinary dotfiles, wallpapers live in plugins/wallpapers. Feel free to open an Issue and tell us your distro, support may come if there is demand."
+
+[package_absent_here]
+zh = "[!] {0}：当前发行版的软件源里没有这个包，已跳过"
+en = "[!] {0}: no package of that name in this distribution's repositories, skipped"
+
+[copr_enabling]
+zh = ":: 启用 COPR 源 {0}…"
+en = ":: Enabling COPR repository {0}…"
+
+[copr_failed]
+zh = "[!] COPR 源 {0} 启用失败，相关软件包未安装"
+en = "[!] Could not enable the COPR repository {0}; its packages were not installed"
+
+[aur_unavailable_here]
+zh = "AUR 只在 Arch 系发行版上可用，当前发行版没有 AUR"
+en = "The AUR only exists on Arch-based distributions; this distribution has none"
+
+[dnf_scriptlet_ignored]
+zh = "[!] dnf 事务因系统脚本（systemd/sysusers 等）报错，但目标包已全部落地；容器环境里这类脚本通常无法运行，已按装成处理"
+en = "[!] The dnf transaction reported failing scriptlets (systemd/sysusers and friends) but every requested package landed; such scriptlets cannot run inside a container, so the install counts as done"
+
+[root_container_notice]
+zh = """\n{Colors.BOLD_YELLOW}[!] 检测到容器环境，以 root 身份继续运行（{CLI_CMD} 在真机上仍拒绝 root）。{Colors.RESET}"""
+en = """\n{Colors.BOLD_YELLOW}[!] Container detected; continuing as root ({CLI_CMD} still refuses root on a real host).{Colors.RESET}"""
 
 [summary_action_title]
 zh = """\n  {Colors.BOLD_CYAN}── 下一步 ──{Colors.RESET}

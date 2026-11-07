@@ -19,7 +19,7 @@ Nyxuri/
 │   │                 manifest · templates · sources · deploy
 │   ├─ state/         状态与快照：store（state.json 状态存储）· backup（快照）· uninstall（清理）
 │   ├─ system/        系统与桌面集成：env（环境+进程锁+日志）· i18n（双语引擎）·
-│   │                 pkg（包管理器与依赖检测）· net（网络与镜像下载）·
+│   │                 backend（发行版家族与包名映射）· pkg（包管理器与依赖检测）· net（网络与镜像下载）·
 │   │                 compositors（合成器契约）· theme（深浅主题）· shell（切壳网关）·
 │   │                 doctor（体检诊断）· clean（缓存清理）
 │   ├─ ui/            终端交互：tui（交互组件与样式）· menus（菜单路由）· workflows（整装编排）

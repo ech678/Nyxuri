@@ -13,9 +13,11 @@ from nyxuri.system.env import (
     PROJECT_NAME,
     acquire_lock,
     check_path_occlusion,
+    ensure_nyxuri_shell_symlink,
     ensure_nyxuri_symlink,
     exec_cli,
     get_env,
+    in_container,
     init_logger,
 )
 from nyxuri.system.i18n import msg
@@ -679,8 +681,11 @@ COMMANDS = {
 def main() -> None:
     """Main CLI entrypoint."""
     if os.geteuid() == 0 or os.getuid() == 0:
-        print(msg("err_root_denied"), file=sys.stderr)
-        sys.exit(1)
+        if not in_container():
+            print(msg("err_root_denied"), file=sys.stderr)
+            sys.exit(1)
+        if sys.stderr.isatty():
+            print(msg("root_container_notice"), file=sys.stderr)
 
     # These tools own no deployment state; fzf probes and clean previews stay read-only.
     args = sys.argv[1:]
@@ -695,6 +700,7 @@ def main() -> None:
     # lands a plugin update notifies the running shell over its own IPC.
     bridge.wire()
     ensure_nyxuri_symlink()
+    ensure_nyxuri_shell_symlink()
 
     # Post-update handoff: a previous run pulled new code and re-execed into
     # us, so the deploy offer runs on the updated engine instead of the stale

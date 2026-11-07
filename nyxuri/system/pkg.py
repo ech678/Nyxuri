@@ -10,6 +10,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from nyxuri.system import backend
 from nyxuri.system.env import AUR_DEPS, CORE_DEPS, log_msg, timed_run
 from nyxuri.system.i18n import msg
 from nyxuri.ui.tui import (
@@ -56,7 +57,26 @@ def aur_helper() -> str | None:
 
 
 def preferred_manager() -> str:
-    return aur_helper() or "pacman"
+    return aur_helper() or backend.native_manager()
+
+
+def aur_supported() -> bool:
+    return backend.supports_aur()
+
+
+def privileged(argv: list[str]) -> list[str]:
+    if backend.needs_superuser_prefix() and shutil.which("sudo"):
+        return ["sudo", *argv]
+    return argv
+
+
+def _dnf_command(action: str, packages, *, automatic: bool) -> list[str]:
+    verb = {"install": "install", "remove": "remove", "upgrade": "upgrade"}[action]
+    argv = privileged(["dnf", verb])
+    if automatic:
+        argv.append("-y")
+    argv.extend(backend.rename(name) for name in packages)
+    return argv
 
 
 def command(action: str, packages=(), *, source: str = "repo", automatic: bool = False,
@@ -67,6 +87,10 @@ def command(action: str, packages=(), *, source: str = "repo", automatic: bool =
     if action not in ("install", "remove", "upgrade") or source not in ("repo", "aur"):
         raise ValueError("Unsupported package operation")
     manager = manager or preferred_manager()
+    if manager == "dnf":
+        if source == "aur":
+            raise ValueError("AUR is not available on this distribution")
+        return _dnf_command(action, packages, automatic=automatic)
     if manager not in ("paru", "yay", "shelly", "pacman"):
         raise ValueError("Unsupported package manager")
     if source == "aur" and manager == "pacman":
@@ -88,14 +112,62 @@ def command(action: str, packages=(), *, source: str = "repo", automatic: bool =
     return argv
 
 
+def _enable_copr(project: str) -> bool:
+    print(msg("copr_enabling", project))
+    result = run(privileged(["dnf", "-y", "copr", "enable", project]), capture=True)
+    if result.returncode != 0:
+        print(msg("copr_failed", project), file=sys.stderr)
+        return False
+    return True
+
+
+def _rpm_installed(name: str) -> bool:
+    if not shutil.which("rpm"):
+        return False
+    return run(["rpm", "-q", name], capture=True, timeout=QUERY_TIMEOUT).returncode == 0
+
+
+def _install_fedora(packages) -> bool:
+    index = repo_packages()
+    wanted: list[str] = []
+    channels: list[str] = []
+    for name in packages:
+        native = backend.rename(name)
+        if native in index:
+            wanted.append(native)
+            continue
+        project = backend.copr(name)
+        if project:
+            wanted.append(native)
+            if project not in channels:
+                channels.append(project)
+            continue
+        print(msg("package_absent_here", name), file=sys.stderr)
+    for project in channels:
+        if not _enable_copr(project):
+            return False
+    if not wanted:
+        return True
+    result = run(_dnf_command("install", wanted, automatic=True))
+    if result.returncode == 0:
+        return True
+    absent = [name for name in wanted if not _rpm_installed(name)]
+    if absent:
+        return False
+    print(msg("dnf_scriptlet_ignored"), file=sys.stderr)
+    return True
+
+
 def install(packages, *, source="repo", manager=None, automatic=True) -> bool:
     if isinstance(packages, str):
         packages = [packages]
     if not packages:
         return True
+    unique = list(dict.fromkeys(packages))
+    if manager is None and backend.family() == backend.FEDORA:
+        return _install_fedora(unique)
     try:
-        argv = command("install", list(dict.fromkeys(packages)), source=source,
-                       manager=manager, automatic=automatic)
+        argv = command("install", unique, source=source, manager=manager, automatic=automatic)
     except ValueError:
         return False
     return run(argv).returncode == 0
@@ -115,6 +187,26 @@ def install_flatpaks(app_ids) -> bool:
 
 # --- Dependency Detection Probe ---
 
+_REPO_INDEX = None
+
+
+def repo_packages() -> set:
+    """Names the host repository offers; one query per process."""
+    global _REPO_INDEX
+    if _REPO_INDEX is not None:
+        return _REPO_INDEX
+    if backend.family() == backend.FEDORA:
+        argv = ["dnf", "-q", "repoquery", "--available", "--qf", "%{name}\n"]
+    else:
+        argv = ["pacman", "-Slq"]
+    if not shutil.which(argv[0]):
+        return set()
+    result = timed_run(argv, 120, capture_output=True, text=True, check=False,
+                       env={**os.environ, "LC_ALL": "C"})
+    _REPO_INDEX = set(result.stdout.split()) if result is not None and result.returncode == 0 else set()
+    return _REPO_INDEX
+
+
 class DependencyProbe:
     def _query(self, executable, args, timeout):
         if not shutil.which(executable):
@@ -125,6 +217,8 @@ class DependencyProbe:
 
     @cached_property
     def packages(self):
+        if backend.family() == backend.FEDORA:
+            return set(self._query("rpm", ["-qa", "--qf", "%{NAME}\n"], 30).split())
         return set(self._query("pacman", ["-Qq"], 30).split())
 
     @cached_property
@@ -136,7 +230,7 @@ class DependencyProbe:
         return set(self._query("flatpak", ["list", "--system", "--app", "--columns=application"], 15).split())
 
     def installed(self, name: str) -> bool:
-        if name in self.packages:
+        if backend.rename(name) in self.packages:
             return True
         if name == "inotify-tools":
             return shutil.which("inotifywait") is not None
@@ -149,6 +243,12 @@ class DependencyProbe:
         if name in patterns:
             return bool(re.search(patterns[name], self.fonts))
         return shutil.which(name) is not None
+
+    def available(self, name: str) -> bool:
+        """Whether this distribution can supply the declared name at all."""
+        if backend.family() != backend.FEDORA:
+            return True
+        return backend.rename(name) in repo_packages()
 
 
 def is_dep_installed(cmd: str) -> bool:
@@ -173,6 +273,9 @@ def ensure_aur_helper() -> Optional[str]:
     helper = aur_helper_usable()
     if helper:
         return helper
+
+    if not aur_supported():
+        return None
 
     if not prompt_confirm("aur_bootstrap_prompt", "y"):
         print(msg("aur_bootstrap_skip"))
@@ -202,7 +305,7 @@ def ensure_aur_helper() -> Optional[str]:
 
 def check_mpvpaper_leak() -> None:
     """Check mpvpaper version for the OpenGL memory leak bug (< 1.9) and offer upgrade."""
-    if not shutil.which("pacman"):
+    if not shutil.which("pacman") or not aur_supported():
         return
     res_git = run(["pacman", "-Qi", "mpvpaper-git"], capture=True, timeout=QUERY_TIMEOUT)
     if res_git.returncode == 0:
@@ -273,11 +376,14 @@ def plugin_package_installer(plugin_id: str, missing: List[str]) -> bool:
         repo = repo + ["flatpak"]
     ok = install(repo) if repo else True
     if aur:
-        helper = ensure_aur_helper()
-        if not helper:
-            print(msg("aur_skip", ", ".join(aur)), file=sys.stderr)
-            return False
-        ok = install(aur, source="aur", manager=helper) and ok
+        if not aur_supported():
+            ok = install(aur, source="aur") and ok
+        else:
+            helper = ensure_aur_helper()
+            if not helper:
+                print(msg("aur_skip", ", ".join(aur)), file=sys.stderr)
+                return False
+            ok = install(aur, source="aur", manager=helper) and ok
     if flat:
         ok = install_flatpaks(flat) and ok
     return bool(ok)
@@ -288,12 +394,15 @@ def install_selected_deps(selected_deps: List[str]) -> bool:
     aur_pkgs = [name for name in selected_deps if name in AUR_DEPS]
     ok = install(repo_pkgs)
     if aur_pkgs:
-        helper = ensure_aur_helper()
-        if helper:
-            ok = install(aur_pkgs, source="aur", manager=helper) and ok
+        if not aur_supported():
+            ok = install(aur_pkgs, source="aur") and ok
         else:
-            print(msg("aur_skip", ", ".join(aur_pkgs)))
-            ok = False
+            helper = ensure_aur_helper()
+            if helper:
+                ok = install(aur_pkgs, source="aur", manager=helper) and ok
+            else:
+                print(msg("aur_skip", ", ".join(aur_pkgs)))
+                ok = False
     if "mpvpaper" in selected_deps:
         check_mpvpaper_leak()
     return ok
@@ -360,10 +469,50 @@ def _run_groups(action, groups, manager) -> int:
     return 0
 
 
+def _fedora_search(keyword: str, source: str) -> int:
+    if source == "aur":
+        print(msg("aur_unavailable_here"), file=sys.stderr)
+        return 1
+    names = sorted(name for name in repo_packages() if keyword.casefold() in name.casefold())
+    for name in names:
+        print(f"[RPM] {name}")
+    return 0
+
+
+def _fedora_installed(operands) -> int:
+    result = run(["rpm", "-qa", "--qf", "%{NAME}\n"], capture=True, timeout=QUERY_TIMEOUT)
+    if result.returncode == 0 and operands:
+        result.stdout = "".join(name + "\n" for name in result.stdout.splitlines()
+                                if all(word.casefold() in name.casefold() for word in operands))
+    return _print_result(result)
+
+
+def _fedora_main(action: str, operands) -> int:
+    if action == "search":
+        return search(" ".join(operands))
+    if action == "installed":
+        return _fedora_installed(operands)
+    if action == "info":
+        if len(operands) != 1 or operands[0].startswith("-"):
+            return 2
+        return _print_result(run(["dnf", "info", "--", operands[0]], capture=True, timeout=QUERY_TIMEOUT))
+    if action in ("install", "remove") and (not operands or any(p.startswith("-") for p in operands)):
+        return 2
+    names = [operand.split("/", 1)[1] if operand.startswith(("aur/", "repo/")) else operand
+             for operand in operands]
+    if not all(names):
+        return 2
+    if action == "install":
+        return 0 if install(names) else 1
+    return run(command(action, list(dict.fromkeys(names)), manager="dnf")).returncode
+
+
 def search(query: str) -> int:
     parts = query.strip().split(maxsplit=1)
     source = parts[0] if parts and parts[0] in ("aur", "pac", "repo") else "repo"
     keyword = (parts[1] if len(parts) > 1 else "") if parts and parts[0] in ("aur", "pac", "repo") else query.strip()
+    if backend.family() == backend.FEDORA:
+        return _fedora_search(keyword, source)
     if source == "aur":
         if not keyword:
             return 0
@@ -407,6 +556,8 @@ def main(args: list[str]) -> int:
         print("pkg: expected install, upgrade, remove, search, info or installed", file=sys.stderr)
         return 2
     action, *operands = args
+    if backend.family() == backend.FEDORA:
+        return _fedora_main(action, operands)
     if action == "search":
         return search(" ".join(operands))
     if action == "installed":

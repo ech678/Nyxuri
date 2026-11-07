@@ -100,6 +100,30 @@ git clone https://aur.archlinux.org/nyxuri-git.git
 cd nyxuri-git && makepkg -si
 ```
 
+### Fedora 与容器
+
+Fedora 是正式支持的第二个包后端（走 `dnf`，没有 AUR）：包名由引擎翻译，Fedora 源里
+没有的包会明确提示并跳过，不会卡住部署。root 只在容器里放行（docker/podman/proot），
+所以 proot-distro 容器里可以直接跑：
+
+```bash
+git clone --depth 1 https://github.com/ech678/Nyxuri.git ~/Nyxuri
+cd ~/Nyxuri && ./install.sh
+```
+
+能用到什么：配置部署、`list`/`on`/`off`、`doctor`、`pkg`、`clean` 与快照在容器里都能正常
+工作。合成器（niri）仍然要吃 GPU/DRM，容器给不了；但 Nyxuri Shell 本身只要有 Wayland
+会话就能跑——嵌套的 wlroots 合成器 + 一个 VNC 服务就够了（需要 quickshell 0.3.2 或更新，
+发行版自带的旧版本会把 shell 的表面编译成空）：
+
+```bash
+sudo dnf install -y sway wayvnc        # 嵌套合成器 + VNC 端点
+sway & export WAYLAND_DISPLAY=wayland-1
+wayvnc 127.0.0.1 5900 &                # 用 VNC 客户端连 localhost:5900
+nyxuri-shell                           # Nyxuri Shell 画进这个会话
+nyxuri shell status                    # Active Shell / Running Instance / Ready
+```
+
 ## 目录结构
 
 ```text

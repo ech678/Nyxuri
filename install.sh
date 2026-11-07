@@ -147,13 +147,32 @@ exec_launcher() {
     exec "$launcher"
 }
 
+in_container() {
+    if [ "${NYXURI_ALLOW_ROOT:-}" = "1" ]; then
+        return 0
+    fi
+    if [ -n "${container:-}" ] || [ -n "${PROOT_L2S_DIR:-}" ] || [ -n "${PROOT_TMP_DIR:-}" ]; then
+        return 0
+    fi
+    if [ -f /.dockerenv ] || [ -f /run/.containerenv ] || [ -d /.singularity.d ]; then
+        return 0
+    fi
+    return 1
+}
+
 main() {
     # 1. Prevent running as root
     if [ "$(id -u)" -eq 0 ]; then
-        printf '\n%s[✗] %s%s\n\n' "$RED" \
-            "$(say "请勿以 root 运行，使用普通用户重新执行: ./install.sh" "Do not run as root. Re-run as normal user: ./install.sh")" \
-            "$OFF" >&2
-        exit 1
+        if in_container; then
+            printf '%s[!] %s%s\n\n' "$YEL" \
+                "$(say "检测到容器环境，继续以 root 运行。" "Container detected; continuing as root.")" \
+                "$OFF" >&2
+        else
+            printf '\n%s[✗] %s%s\n\n' "$RED" \
+                "$(say "请勿以 root 运行，使用普通用户重新执行: ./install.sh" "Do not run as root. Re-run as normal user: ./install.sh")" \
+                "$OFF" >&2
+            exit 1
+        fi
     fi
 
     # 2. One-time bootstrap takes no arguments (KM5: arg passthrough retired;
