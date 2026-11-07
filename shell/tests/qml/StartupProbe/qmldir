@@ -1,0 +1,2 @@
+module StartupProbe
+singleton ShellStartupService 1.0 ../../../services/ShellStartupService.qml
