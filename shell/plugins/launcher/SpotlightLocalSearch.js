@@ -1,5 +1,5 @@
 .pragma library
-.import "SpotlightAppOrder.js" as AppOrder
+.import "SpotlightAppRanking.js" as AppRanking
 
 function normalized(value) {
     return String(value || "").trim().toLocaleLowerCase();
@@ -17,63 +17,8 @@ function isWordStart(text, query) {
     return false;
 }
 
-function subsequencePenalty(text, query) {
-    let queryIndex = 0;
-    let firstIndex = -1;
-    let lastIndex = -1;
-    for (let index = 0; index < text.length && queryIndex < query.length; index += 1) {
-        if (text.charAt(index) !== query.charAt(queryIndex))
-            continue;
-        if (firstIndex < 0)
-            firstIndex = index;
-        lastIndex = index;
-        queryIndex += 1;
-    }
-    if (queryIndex !== query.length)
-        return -1;
-    return Math.max(0, lastIndex - firstIndex - query.length + 1);
-}
-
-function fieldScore(value, needle, weight) {
-    const text = normalized(value);
-    if (text === "" || needle === "")
-        return needle === "" ? weight : -1;
-    if (text === needle)
-        return 5000 + weight;
-    if (text.startsWith(needle))
-        return 4000 + weight - Math.min(99, text.length - needle.length);
-    if (isWordStart(text, needle))
-        return 3000 + weight;
-    const substringIndex = text.indexOf(needle);
-    if (substringIndex >= 0)
-        return 2000 + weight - Math.min(99, substringIndex);
-    const penalty = subsequencePenalty(text, needle);
-    return penalty >= 0 ? 1000 + weight - Math.min(99, penalty) : -1;
-}
-
-function appScore(app, needle) {
-    if (needle === "")
-        return 0;
-    let best = -1;
-    best = Math.max(best, fieldScore(app.name, needle, 80));
-    best = Math.max(best, fieldScore(app.genericName, needle, 60));
-    best = Math.max(best, fieldScore(Array.from(app.keywords || []).join(" "), needle, 40));
-    best = Math.max(best, fieldScore(app.id, needle, 20));
-    return best;
-}
-
-function appResults(source, query, order, history, now) {
-    const needle = normalized(query);
-    const next = [];
-    source.forEach(app => {
-        if (!app) return;
-        const score = appScore(app, needle);
-        if (score < 0) return;
-        next.push({provider: "apps", id: String(app.id), title: String(app.name || app.id),
-            subtitle: String(app.genericName || app.comment || app.id || ""),
-            icon: String(app.icon || ""), symbol: String(app.symbol || ""), score: score, appObject: app, actions: app.dragOnly ? [] : ["launch"]});
-    });
-    return AppOrder.sortedResults(next, order, history, now);
+function appResults(source, query, options) {
+    return AppRanking.appResults(source, query, options);
 }
 
 function wallpaperPaths(source, query, basename) {
