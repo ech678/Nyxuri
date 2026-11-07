@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import pwd
 import shutil
 import signal
 import subprocess
@@ -53,6 +54,18 @@ def _result(case_id: str, status: str, *, reason: str = "", **extra: Any) -> dic
         row["reason"] = reason
     row.update(extra)
     return row
+
+
+def _report(rows: list[dict[str, Any]], runtime: dict[str, Any] | None = None) -> dict[str, Any]:
+    counts = {status: sum(row["status"] == status for row in rows) for status in STATUS}
+    overall = "PASS" if rows and counts["PARTIAL"] == counts["UNAVAILABLE"] == 0 else (
+        "UNAVAILABLE" if counts["PASS"] == counts["PARTIAL"] == 0 else "PARTIAL"
+    )
+    report: dict[str, Any] = {"schema": 1, "runner": "feature_matrix", "container_only": True,
+                              "status": overall, "summary": {"total": len(rows), "counts": counts}, "rows": rows}
+    if runtime is not None:
+        report["runtime"] = runtime
+    return report
 
 
 def _matches(value: str, expected: str) -> bool:
@@ -116,6 +129,167 @@ def _wait_marker(log: Path, process: subprocess.Popen[str], marker: str = "IPC_R
     return False
 
 
+def _qml_units(qs: str, shell_dir: str, env: dict[str, str]) -> set[str] | None:
+    try:
+        result, _ = _ipc(qs, shell_dir, "shell", "metrics", (), env)
+        payload = json.loads(result.stdout)
+        unit_census = payload.get("qml_census", {}).get("units", {})
+        units = unit_census.get("loaded_ids", unit_census.get("ids"))
+        return set(units) if result.returncode == 0 and isinstance(units, list) else None
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        return None
+
+
+def _wait_unit_state(qs: str, shell_dir: str, env: dict[str, str], unit_id: str, enabled: bool,
+                     timeout: float = 8.0) -> bool:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        units = _qml_units(qs, shell_dir, env)
+        if units is not None and ((unit_id in units) is enabled):
+            return True
+        time.sleep(0.1)
+    return False
+
+
+def _run_unit_transition(repo: Path, verb: str, env: dict[str, str], uid: int, gid: int) -> subprocess.CompletedProcess[str]:
+    """Run the real CLI as an unprivileged container user, preserving its root guard."""
+    def drop_privileges() -> None:
+        os.setgroups([])
+        os.setgid(gid)
+        os.setuid(uid)
+
+    return subprocess.run([str(repo / "nyxuri/launcher.sh"), verb, "shell.bar"], env=env,
+                          capture_output=True, text=True, check=False, timeout=20,
+                          preexec_fn=drop_privileges)
+
+
+def _write_projection_ledger(state_home: Path, enabled: bool) -> None:
+    ledger = state_home / "nyxuri" / "state.json"
+    ledger.parent.mkdir(parents=True, exist_ok=True)
+    ledger.write_text(json.dumps({"plugins": {"shell.bar": {"state": "enabled" if enabled else "disabled"}}}) + "\n",
+                      encoding="utf-8")
+
+
+def _projection_lifecycle_rows(qs: str, shell_dir: str, env: dict[str, str], ready: bool) -> list[dict[str, Any]]:
+    """Verify unit off/on projection without pretending it is a kernel transaction."""
+    if not ready:
+        return [_result(f"lifecycle.projection_{verb}", "UNAVAILABLE", reason="shell not ready") for verb in ("off", "on")]
+    state_home = Path(env["XDG_STATE_HOME"])
+    rows: list[dict[str, Any]] = []
+    for verb, enabled in (("off", False), ("on", True)):
+        reload_returncode: int | None = None
+        try:
+            _write_projection_ledger(state_home, enabled)
+            reload_result, _ = _ipc(qs, shell_dir, "unit", "reload", (), env)
+            reload_returncode = reload_result.returncode
+            delivered = reload_result.returncode == 0 and reload_result.stdout.strip() in ("OK", "DEGRADED")
+            projected = delivered and _wait_unit_state(qs, shell_dir, env, "shell.bar", enabled)
+        except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
+            delivered = False
+            projected = False
+            error = str(exc)
+        else:
+            error = ""
+        passed = delivered and projected
+        rows.append(_result(f"lifecycle.projection_{verb}", "PASS" if passed else "PARTIAL",
+                            reason=error or ("unit reload did not converge" if not passed else ""),
+                            reload_returncode=reload_returncode,
+                            qml_unit_present=enabled if projected else None))
+    return rows
+
+
+def _unit_lifecycle_rows(repo: Path, qs: str, shell_dir: str, env: dict[str, str], ready: bool) -> list[dict[str, Any]]:
+    if not ready:
+        return [_result(f"lifecycle.unit_{verb}", "UNAVAILABLE", reason="shell not ready") for verb in ("off", "on")]
+    try:
+        account = pwd.getpwnam("nobody")
+    except KeyError:
+        return [_result(f"lifecycle.unit_{verb}", "UNAVAILABLE", reason="container has no nobody account") for verb in ("off", "on")]
+    if not hasattr(os, "setuid") or not hasattr(os, "setgroups"):
+        return [_result(f"lifecycle.unit_{verb}", "UNAVAILABLE", reason="unprivileged subprocess is unsupported") for verb in ("off", "on")]
+    if not (repo / "nyxuri/launcher.sh").is_file():
+        return [_result(f"lifecycle.unit_{verb}", "UNAVAILABLE", reason="Nyxuri CLI launcher is missing") for verb in ("off", "on")]
+
+    home = Path(env["HOME"])
+    state_home = Path(env["XDG_STATE_HOME"])
+    if not state_home.is_relative_to(home):
+        return [_result(f"lifecycle.unit_{verb}", "UNAVAILABLE", reason="XDG state path escapes the private HOME") for verb in ("off", "on")]
+    try:
+        os.chown(home, account.pw_uid, account.pw_gid)
+        if (home / ".local").is_dir():
+            os.chown(home / ".local", account.pw_uid, account.pw_gid)
+        state_home.mkdir(parents=True, exist_ok=True)
+        os.chown(state_home, account.pw_uid, account.pw_gid)
+        ledger_dir = state_home / "nyxuri"
+        if ledger_dir.exists():
+            os.chown(ledger_dir, account.pw_uid, account.pw_gid)
+        user_env = dict(env)
+        user_env.update({"HOME": str(home), "XDG_STATE_HOME": str(state_home),
+                         "XDG_CONFIG_HOME": env["XDG_CONFIG_HOME"], "XDG_DATA_HOME": env["XDG_DATA_HOME"],
+                         "XDG_CACHE_HOME": str(home / ".cache")})
+        for key in ("XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME"):
+            Path(user_env[key]).mkdir(parents=True, exist_ok=True)
+            os.chown(user_env[key], account.pw_uid, account.pw_gid)
+    except (OSError, KeyError) as exc:
+        return [_result(f"lifecycle.unit_{verb}", "UNAVAILABLE", reason=f"cannot prepare unprivileged XDG tree: {exc}") for verb in ("off", "on")]
+
+    def attempt(verb: str, enabled: bool) -> tuple[bool, dict[str, Any]]:
+        try:
+            result = _run_unit_transition(repo, verb, user_env, account.pw_uid, account.pw_gid)
+        except (OSError, subprocess.TimeoutExpired, subprocess.SubprocessError) as exc:
+            return False, {"reason": f"Nyxuri {verb} invocation failed: {exc}"}
+        if result.returncode != 0:
+            lock_path = state_home / "nyxuri" / "nyxuri.lock"
+            try:
+                lock_diagnostics = {
+                    "path": str(lock_path),
+                    "state_dir_mode": oct((state_home / "nyxuri").stat().st_mode & 0o777),
+                    "state_dir_uid": (state_home / "nyxuri").stat().st_uid,
+                    "lock_exists": lock_path.exists(),
+                    "lock_mode": oct(lock_path.stat().st_mode & 0o777) if lock_path.exists() else None,
+                    "lock_uid": lock_path.stat().st_uid if lock_path.exists() else None,
+                    "lock_contents": lock_path.read_text(encoding="utf-8").strip() if lock_path.exists() else None,
+                }
+            except OSError as exc:
+                lock_diagnostics = {"inspection_error": str(exc)}
+            return False, {"reason": "Nyxuri transaction failed", "returncode": result.returncode,
+                           "stdout": result.stdout.strip(), "stderr": result.stderr.strip(),
+                           "lock_diagnostics": lock_diagnostics}
+        try:
+            reload_result, _ = _ipc(qs, shell_dir, "unit", "reload", (), env)
+            delivered = reload_result.returncode == 0 and reload_result.stdout.strip() in ("OK", "DEGRADED")
+        except (OSError, subprocess.TimeoutExpired):
+            delivered = False
+        projected = delivered and _wait_unit_state(qs, shell_dir, env, "shell.bar", enabled)
+        try:
+            ledger = json.loads((state_home / "nyxuri" / "state.json").read_text(encoding="utf-8"))
+            actual = ledger.get("plugins", {}).get("shell.bar", {}).get("state") == ("enabled" if enabled else "disabled")
+        except (OSError, ValueError, AttributeError):
+            actual = False
+        return delivered and projected and actual, {
+            "reason": "transaction, IPC projection, or ledger state did not converge" if not (delivered and projected and actual) else "",
+            "returncode": result.returncode, "ledger_state": "enabled" if actual and enabled else "disabled" if actual else None,
+            "qml_unit_present": enabled if projected else None,
+            "stdout": result.stdout.strip(), "stderr": result.stderr.strip(),
+        }
+
+    rows: list[dict[str, Any]] = []
+    off_ok, off_details = attempt("off", False)
+    rows.append(_result("lifecycle.unit_off", "PASS" if off_ok else "PARTIAL", **off_details))
+    if not off_ok:
+        rows.append(_result("lifecycle.unit_on", "UNAVAILABLE", reason="unit off did not complete; on transition not run"))
+        return rows
+    on_ok, on_details = attempt("on", True)
+    if on_ok:
+        rows.append(_result("lifecycle.unit_on", "PASS", **on_details))
+    else:
+        restored, restore_details = attempt("on", True)
+        rows.append(_result("lifecycle.unit_on", "PARTIAL", reason=on_details.get("reason", "unit on did not converge"),
+                            **{key: value for key, value in on_details.items() if key != "reason"},
+                            recovery={"status": "PASS" if restored else "PARTIAL", **restore_details}))
+    return rows
+
+
 def _start_weston(env: dict[str, str], root: Path) -> subprocess.Popen[str] | None:
     runtime = Path(env["XDG_RUNTIME_DIR"])
     display = env["WAYLAND_DISPLAY"]
@@ -169,28 +343,29 @@ def run_matrix(args: argparse.Namespace) -> dict[str, Any]:
                      _result("lifecycle.unit_on", "UNAVAILABLE", reason="container runtime not started"),
                      _result("negative.missing_optional_commands", "UNAVAILABLE", reason="container runtime not started"),
                      _result("negative.unknown_ipc_target", "UNAVAILABLE", reason="container runtime not started")])
-        return {"schema": 1, "runner": "feature_matrix", "container_only": True, "status": "UNAVAILABLE", "rows": rows}
+        return _report(rows)
     if any(item is None for item in required):
         reason = "missing runtime command: " + ", ".join(name for name, value in zip(("qs", "weston"), required) if value is None)
         rows.extend(_result(case[0], "UNAVAILABLE", reason=reason) for case in STANDARD_CASES)
         rows.extend([_result("lifecycle.unit_off", "UNAVAILABLE", reason=reason), _result("lifecycle.unit_on", "UNAVAILABLE", reason=reason),
                      _result("negative.missing_optional_commands", "UNAVAILABLE", reason=reason), _result("negative.unknown_ipc_target", "UNAVAILABLE", reason=reason)])
-        return {"schema": 1, "runner": "feature_matrix", "container_only": True, "status": "UNAVAILABLE", "rows": rows}
+        return _report(rows)
 
     qs = str(required[0])
+    root = Path(tempfile.mkdtemp(prefix="nyxuri-feature-matrix-"))
     env = dict(os.environ)
-    env.update({"HOME": "/tmp/nyxuri-home", "XDG_RUNTIME_DIR": "/tmp/nyxuri-runtime",
-                "XDG_CACHE_HOME": "/tmp/nyxuri-cache", "XDG_CONFIG_HOME": "/tmp/nyxuri-config",
-                "XDG_DATA_HOME": "/tmp/nyxuri-data", "XDG_STATE_HOME": "/tmp/nyxuri-state",
+    env.update({"HOME": str(root / "home"), "XDG_RUNTIME_DIR": str(root / "runtime"),
+                "XDG_CACHE_HOME": str(root / "home" / ".cache"), "XDG_CONFIG_HOME": str(root / "home" / ".config"),
+                "XDG_DATA_HOME": str(root / "home" / ".local/share"), "XDG_STATE_HOME": str(root / "home" / ".local/state"),
                 "WAYLAND_DISPLAY": "nyxuri-feature-wayland", "QT_QPA_PLATFORM": "wayland",
                 "QT_QUICK_BACKEND": "software", "QSG_RHI_BACKEND": "software"})
     for key in ("HOME", "XDG_RUNTIME_DIR", "XDG_CACHE_HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME"):
         Path(env[key]).mkdir(parents=True, exist_ok=True)
-    root = Path(tempfile.mkdtemp(prefix="nyxuri-feature-matrix-"))
+    os.chmod(root, 0o755)
     weston = _start_weston(env, root)
     if weston is None:
         rows.extend(_result(case[0], "UNAVAILABLE", reason="private Weston did not start") for case in STANDARD_CASES)
-        return {"schema": 1, "runner": "feature_matrix", "container_only": True, "status": "UNAVAILABLE", "rows": rows}
+        return _report(rows)
     shell_dir = str(args.shell)
     log = root / "shell.log"
     shell = subprocess.Popen([shell_dir + "/nyxuri-shell", "-v"], env=env, stdout=log.open("w"), stderr=subprocess.STDOUT,
@@ -230,17 +405,8 @@ def run_matrix(args: argparse.Namespace) -> dict[str, Any]:
                     rows.append(classify_ipc(case_id, result, expected, elapsed))
                 except (OSError, subprocess.TimeoutExpired) as exc:
                     rows.append(_result(case_id, "PARTIAL", reason=f"IPC invocation failed: {exc}"))
-            # Unit off/on is owned by the Nyxuri transaction CLI, not the shell IPC target.
-            if os.geteuid() == 0 or not (repo / "nyxuri/launcher.sh").is_file():
-                rows.extend([_result("lifecycle.unit_off", "UNAVAILABLE", reason="Nyxuri CLI refuses root or launcher is missing"),
-                             _result("lifecycle.unit_on", "UNAVAILABLE", reason="Nyxuri CLI refuses root or launcher is missing")])
-            else:
-                for verb in ("off", "on"):
-                    result = subprocess.run([str(repo / "nyxuri/launcher.sh"), verb, "shell.bar"], env=env,
-                                            capture_output=True, text=True, check=False, timeout=20)
-                    rows.append(_result(f"lifecycle.unit_{verb}", "PASS" if result.returncode == 0 else "PARTIAL",
-                                        reason="transaction failed" if result.returncode else "",
-                                        returncode=result.returncode, stderr=result.stderr.strip()))
+            rows.extend(_projection_lifecycle_rows(qs, shell_dir, env, ready))
+            rows.extend(_unit_lifecycle_rows(repo, qs, shell_dir, env, ready))
             optional_bin = Path(tempfile.mkdtemp(prefix="nyxuri-no-optional-"))
             try:
                 missing_env = dict(env); missing_env["PATH"] = str(optional_bin)
@@ -265,10 +431,7 @@ def run_matrix(args: argparse.Namespace) -> dict[str, Any]:
         except (ProcessLookupError, subprocess.TimeoutExpired):
             weston.kill()
         shutil.rmtree(root, ignore_errors=True)
-    statuses = [row["status"] for row in rows]
-    overall = "PASS" if statuses and all(value == "PASS" for value in statuses) else "PARTIAL"
-    return {"schema": 1, "runner": "feature_matrix", "container_only": True, "status": overall,
-            "rows": rows, "runtime": {"shell": shell_dir, "optional_commands": OPTIONAL_COMMANDS}}
+    return _report(rows, {"shell": shell_dir, "optional_commands": OPTIONAL_COMMANDS})
 
 
 def main() -> int:

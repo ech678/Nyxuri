@@ -54,6 +54,7 @@ def main() -> int:
             # ownership and mode bits. Keep the default-deny profile and add
             # only the capabilities needed for that bootstrap operation.
             "--cap-add=CHOWN", "--cap-add=FOWNER", "--cap-add=DAC_OVERRIDE",
+            "--cap-add=SETUID", "--cap-add=SETGID",
             "--tmpfs", "/tmp", "--tmpfs", "/run", "--tmpfs", "/root",
             "-e", f"NYXURI_BENCHMARK_GIT_SHA={git_sha}",
             "-e", f"NYXURI_BENCHMARK_GIT_DIRTY={'1' if git_dirty else '0'}",
