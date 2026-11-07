@@ -18,7 +18,7 @@ import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Final, Literal
+from typing import Callable, Final, Literal
 
 IPC_METHODS: Final[tuple[str, ...]] = ("stage", "isReady", "status", "metrics")
 IPC_MARKER: Final[re.Pattern[str]] = re.compile(
@@ -44,6 +44,94 @@ class ProcessStartFailure:
     command: str | None
     category: Literal["optional", "required", "unattributed"]
     reason: str
+
+
+@dataclass(frozen=True, slots=True)
+class ProcessObservation:
+    pid: int
+    start_ticks: int
+    command: str
+
+
+@dataclass(slots=True)
+class _ObservedProcess:
+    pid: int
+    start_ticks: int
+    command: str
+    first_seen_ms: int
+    last_seen_ms: int
+    observations: int = 1
+
+
+class ProcessLifecycleTracker:
+    """Aggregate sampled process-tree sightings without claiming complete events."""
+
+    def __init__(self) -> None:
+        self._processes: dict[tuple[int, int], _ObservedProcess] = {}
+        self._command_launches: dict[str, int] = {}
+        self._restarts = 0
+        self._sample_count = 0
+
+    def observe(self, observations: tuple[ProcessObservation, ...], elapsed_ms: int) -> None:
+        for row in observations:
+            key = (row.pid, row.start_ticks)
+            existing = self._processes.get(key)
+            if existing is None:
+                self._processes[key] = _ObservedProcess(
+                    pid=row.pid,
+                    start_ticks=row.start_ticks,
+                    command=row.command,
+                    first_seen_ms=elapsed_ms,
+                    last_seen_ms=elapsed_ms,
+                )
+                launches = self._command_launches.get(row.command, 0)
+                if launches:
+                    self._restarts += 1
+                self._command_launches[row.command] = launches + 1
+            else:
+                existing.last_seen_ms = elapsed_ms
+                existing.observations += 1
+        self._sample_count += 1
+
+    def report(self, failures: tuple[ProcessStartFailure, ...]) -> dict[str, object]:
+        """Return sampled lifetimes and explicitly separate failed launch evidence."""
+        processes = [
+            {
+                "pid": row.pid,
+                "start_ticks": row.start_ticks,
+                "command": row.command,
+                "owner": None,
+                "category": f"command:{row.command}",
+                "first_seen_ms": row.first_seen_ms,
+                "last_seen_ms": row.last_seen_ms,
+                "observed_duration_ms": row.last_seen_ms - row.first_seen_ms,
+                "observation_count": row.observations,
+                "duration_is_lower_bound": True,
+            }
+            for row in sorted(self._processes.values(), key=lambda item: (item.first_seen_ms, item.pid))
+        ]
+        return {
+            "schema": 1,
+            "status": "partial",
+            "source": "sampled_proc_process_tree_and_benchmark_log",
+            "sample_interval_ms": 50,
+            "sample_count": self._sample_count,
+            "launch_count": len(processes),
+            "restart_count": self._restarts,
+            "failed_launch_count": len(failures),
+            "processes": processes,
+            "failed_launches": [
+                {"command": failure.command, "category": failure.category, "reason": failure.reason}
+                for failure in failures
+            ],
+            "limitations": [
+                "sampled_processes_only_short_lived_children_may_be_missed",
+                "duration_is_observed_lower_bound_not_kernel_exit_time",
+                "restart_count_means_repeated_observed_executable_not_confirmed_restart_chain",
+                "owner_unavailable_without_stable_qml_process_mapping",
+                "cpu_and_output_bytes_are_not_attributed_per_process",
+            ],
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,6 +188,7 @@ class RunResult:
     required_process_start_failures: int
     unattributed_process_start_failures: int
     process_start_failure_details: tuple[ProcessStartFailure, ...]
+    process_lifecycle: dict[str, object]
     live_telemetry: dict[str, object] | None
     exit_code: int | None
     startup_valid: bool
@@ -281,8 +370,12 @@ def _cgroup_memory(proc: Path) -> tuple[int, int]:
         return (0, 0)
 
 
-def _process_tree(root_pid: int) -> ProcessSample | None:
+def _process_tree(
+    root_pid: int,
+    on_processes: Callable[[tuple[ProcessObservation, ...]], None] | None = None,
+) -> ProcessSample | None:
     parents: dict[int, int] = {}
+    start_ticks: dict[int, int] = {}
     records: dict[int, tuple[int, ...]] = {}
     for proc in Path("/proc").glob("[0-9]*"):
         try:
@@ -295,6 +388,7 @@ def _process_tree(root_pid: int) -> ProcessSample | None:
             threads = _read_int(proc / "status", "Threads:")
             stat = (proc / "stat").read_text(errors="replace")
             fields = stat[stat.rfind(") ") + 2 :].split()
+            start_ticks[pid] = int(fields[19])
             user_ticks = int(fields[11])
             system_ticks = int(fields[12])
             ticks = user_ticks + system_ticks
@@ -342,6 +436,19 @@ def _process_tree(root_pid: int) -> ProcessSample | None:
             if parent in members and pid not in members:
                 members.add(pid)
                 changed = True
+    if on_processes is not None:
+        observations: list[ProcessObservation] = []
+        for pid in members:
+            if pid == root_pid or pid not in start_ticks:
+                continue
+            proc = Path("/proc") / str(pid)
+            try:
+                command = proc.joinpath("cmdline").read_bytes().split(b"\0", 1)[0].decode(errors="replace")
+                command = Path(command).name if command else proc.joinpath("comm").read_text().strip()
+                observations.append(ProcessObservation(pid, start_ticks[pid], command))
+            except (FileNotFoundError, PermissionError, ProcessLookupError):
+                continue
+        on_processes(tuple(observations))
     rows = [records[pid] for pid in members if pid in records]
     if not rows:
         return None
@@ -483,10 +590,15 @@ def _run_process(
         internal: dict[str, float] = {}
         samples: list[ProcessSample] = []
         steady_samples: list[ProcessSample] = []
+        process_tracker = ProcessLifecycleTracker()
         deadline = started + 15
         while time.monotonic() < deadline:
             now = time.monotonic()
-            snapshot = _process_tree(process.pid)
+            now_elapsed_ms = int((now - started) * 1000)
+            snapshot = _process_tree(
+                process.pid,
+                lambda observations: process_tracker.observe(observations, now_elapsed_ms),
+            )
             if snapshot is not None:
                 samples.append(snapshot)
                 if marker_time is not None:
@@ -565,6 +677,7 @@ def _run_process(
             required_process_start_failures=failure_counts["required_process_start_failures"],
             unattributed_process_start_failures=failure_counts["unattributed_process_start_failures"],
             process_start_failure_details=process_failures,
+            process_lifecycle=process_tracker.report(process_failures),
             live_telemetry=live_telemetry,
             exit_code=exit_code,
             startup_valid=startup_valid,

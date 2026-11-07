@@ -118,6 +118,31 @@ class BenchmarkRuntimeTests(unittest.TestCase):
 
         self.assertFalse(runtime.has_required_process_failures(optional))
 
+    def test_process_lifecycle_aggregates_observed_duration_relaunches_and_failures(self):
+        with TempEnv():
+            tracker = runtime.ProcessLifecycleTracker()
+            tracker.observe((
+                runtime.ProcessObservation(41, 100, "niri"),
+                runtime.ProcessObservation(42, 200, "niri"),
+            ), 50)
+            tracker.observe((runtime.ProcessObservation(41, 100, "niri"),), 150)
+            failures = (runtime.ProcessStartFailure(
+                command="niri", category="required", reason="required_process_unavailable"
+            ),)
+            telemetry = tracker.report(failures)
+
+        self.assertEqual(telemetry["launch_count"], 2)
+        self.assertEqual(telemetry["restart_count"], 1)
+        self.assertEqual(telemetry["failed_launch_count"], 1)
+        processes = telemetry["processes"]
+        self.assertEqual(
+            [(row["pid"], row["observed_duration_ms"]) for row in processes],
+            [(41, 100), (42, 0)],
+        )
+        self.assertTrue(all(row["duration_is_lower_bound"] for row in processes))
+        self.assertTrue(all(row["owner"] is None for row in processes))
+        self.assertEqual(telemetry["failed_launches"][0]["reason"], "required_process_unavailable")
+
     def test_live_telemetry_uses_the_private_shell_metrics_ipc_target(self):
         result = Mock(returncode=0, stdout='{"stage":"IPC_READY"}', stderr="")
         with TempEnv(), patch.object(runtime.subprocess, "run", return_value=result) as run:
