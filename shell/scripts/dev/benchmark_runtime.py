@@ -164,8 +164,8 @@ class ProcessSample:
     process_count: int
     fd_count: int
     thread_count: int
-    cgroup_memory_current_kb: int
-    cgroup_memory_peak_kb: int
+    cgroup_memory_current_kb: int | None
+    cgroup_memory_peak_kb: int | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -361,13 +361,21 @@ def _read_int(path: Path, key: str) -> int:
     return 0
 
 
-def _cgroup_memory(proc: Path) -> tuple[int, int]:
+def _cgroup_memory_value(path: Path) -> int | None:
+    value = _read_int(path, "")
+    return value // 1024 if value >= 1024 else None
+
+
+def _cgroup_memory(
+    proc: Path,
+    cgroup_root: Path = Path("/sys/fs/cgroup"),
+) -> tuple[int | None, int | None]:
     try:
         line = next(line for line in (proc / "cgroup").read_text().splitlines() if line.startswith("0::"))
-        root = Path("/sys/fs/cgroup") / line[3:]
-        return (_read_int(root / "memory.current", "") // 1024, _read_int(root / "memory.peak", "") // 1024)
-    except (FileNotFoundError, PermissionError, StopIteration):
-        return (0, 0)
+        root = cgroup_root / line[3:].lstrip("/")
+        return (_cgroup_memory_value(root / "memory.current"), _cgroup_memory_value(root / "memory.peak"))
+    except (FileNotFoundError, PermissionError, ProcessLookupError, StopIteration):
+        return (None, None)
 
 
 def _process_tree(
@@ -377,6 +385,7 @@ def _process_tree(
     parents: dict[int, int] = {}
     start_ticks: dict[int, int] = {}
     records: dict[int, tuple[int, ...]] = {}
+    cgroup_records: dict[int, tuple[int | None, int | None]] = {}
     for proc in Path("/proc").glob("[0-9]*"):
         try:
             pid = int(proc.name)
@@ -424,7 +433,8 @@ def _process_tree(
             records[pid] = (rss, pss, private, ticks, user_ticks, system_ticks, context, voluntary,
                             involuntary, faults, minor_faults, major_faults, read_bytes, write_bytes,
                             rchar, wchar, syscr, syscw, cancelled, vm_peak, vm_hwm, vm_swap, rss_anon,
-                            rss_file, rss_shmem, fd_count, threads, cgroup_current, cgroup_peak)
+                            rss_file, rss_shmem, fd_count, threads)
+            cgroup_records[pid] = (cgroup_current, cgroup_peak)
         except (FileNotFoundError, PermissionError, ProcessLookupError, ValueError, IndexError):
             continue
 
@@ -450,6 +460,7 @@ def _process_tree(
                 continue
         on_processes(tuple(observations))
     rows = [records[pid] for pid in members if pid in records]
+    cgroup_rows = [cgroup_records[pid] for pid in members if pid in cgroup_records]
     if not rows:
         return None
     return ProcessSample(
@@ -470,8 +481,21 @@ def _process_tree(
         rss_shmem_kb=sum(row[24] for row in rows),
         process_count=len(rows),
         fd_count=sum(row[25] for row in rows), thread_count=sum(row[26] for row in rows),
-        cgroup_memory_current_kb=max(row[27] for row in rows), cgroup_memory_peak_kb=max(row[28] for row in rows),
+        cgroup_memory_current_kb=max((current for current, _ in cgroup_rows if current is not None), default=None),
+        cgroup_memory_peak_kb=max((peak for _, peak in cgroup_rows if peak is not None), default=None),
     )
+
+
+def _optional_median(samples: list[ProcessSample], field: str) -> int | None:
+    values = [getattr(sample, field) for sample in samples]
+    present = [value for value in values if value is not None]
+    return int(statistics.median(present)) if present else None
+
+
+def _optional_max(samples: list[ProcessSample], field: str) -> int | None:
+    values = [getattr(sample, field) for sample in samples]
+    present = [value for value in values if value is not None]
+    return max(present) if present else None
 
 
 def _sample_stat(samples: list[ProcessSample]) -> ProcessSample | None:
@@ -499,8 +523,8 @@ def _sample_stat(samples: list[ProcessSample]) -> ProcessSample | None:
         rss_anon_kb=median("rss_anon_kb"), rss_file_kb=median("rss_file_kb"), rss_shmem_kb=median("rss_shmem_kb"),
         process_count=median("process_count"),
         fd_count=median("fd_count"),
-        thread_count=median("thread_count"), cgroup_memory_current_kb=median("cgroup_memory_current_kb"),
-        cgroup_memory_peak_kb=median("cgroup_memory_peak_kb"),
+        thread_count=median("thread_count"), cgroup_memory_current_kb=_optional_median(samples, "cgroup_memory_current_kb"),
+        cgroup_memory_peak_kb=_optional_median(samples, "cgroup_memory_peak_kb"),
     )
 
 
@@ -525,8 +549,8 @@ def _sample_peak(samples: list[ProcessSample]) -> ProcessSample | None:
         rss_anon_kb=max(sample.rss_anon_kb for sample in samples), rss_file_kb=max(sample.rss_file_kb for sample in samples), rss_shmem_kb=max(sample.rss_shmem_kb for sample in samples),
         process_count=max(sample.process_count for sample in samples),
         fd_count=max(sample.fd_count for sample in samples),
-        thread_count=max(sample.thread_count for sample in samples), cgroup_memory_current_kb=max(sample.cgroup_memory_current_kb for sample in samples),
-        cgroup_memory_peak_kb=max(sample.cgroup_memory_peak_kb for sample in samples),
+        thread_count=max(sample.thread_count for sample in samples), cgroup_memory_current_kb=_optional_max(samples, "cgroup_memory_current_kb"),
+        cgroup_memory_peak_kb=_optional_max(samples, "cgroup_memory_peak_kb"),
     )
 
 

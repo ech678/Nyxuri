@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -39,6 +40,64 @@ _SCENARIOS_SPEC.loader.exec_module(scenarios)
 
 
 class BenchmarkRuntimeTests(unittest.TestCase):
+    def test_cgroup_memory_zero_missing_and_positive_values(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            proc = root / "proc" / "123"
+            cgroup = root / "cgroup"
+            proc.mkdir(parents=True)
+            cgroup.mkdir()
+            (proc / "cgroup").write_text("0::/scope\n", encoding="utf-8")
+            group = cgroup / "scope"
+            group.mkdir()
+            (group / "memory.current").write_text("0\n", encoding="utf-8")
+            (group / "memory.peak").write_text("8192\n", encoding="utf-8")
+
+            current, peak = runtime._cgroup_memory(proc, cgroup)
+
+        self.assertIsNone(current)
+        self.assertEqual(peak, 8)
+
+    def test_cgroup_memory_missing_files_are_unavailable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            proc = root / "proc" / "123"
+            cgroup = root / "cgroup"
+            proc.mkdir(parents=True)
+            cgroup.mkdir()
+            (proc / "cgroup").write_text("0::scope\n", encoding="utf-8")
+            (cgroup / "scope").mkdir()
+
+            current, peak = runtime._cgroup_memory(proc, cgroup)
+
+        self.assertIsNone(current)
+        self.assertIsNone(peak)
+
+    def test_cgroup_memory_aggregation_ignores_none_and_keeps_all_none(self):
+        def sample(current, peak):
+            return runtime.ProcessSample(*([1] * 28), current, peak)
+
+        mixed = [sample(None, None), sample(12, 20)]
+        summary = runtime._sample_stat(mixed)
+        peak = runtime._sample_peak(mixed)
+        self.assertIsNotNone(summary)
+        self.assertIsNotNone(peak)
+        assert summary is not None
+        assert peak is not None
+        self.assertEqual(summary.cgroup_memory_current_kb, 12)
+        self.assertEqual(summary.cgroup_memory_peak_kb, 20)
+        self.assertEqual(peak.cgroup_memory_current_kb, 12)
+        self.assertEqual(peak.cgroup_memory_peak_kb, 20)
+
+        unavailable = runtime._sample_stat([sample(None, None)])
+        unavailable_peak = runtime._sample_peak([sample(None, None)])
+        assert unavailable is not None
+        assert unavailable_peak is not None
+        self.assertIsNone(unavailable.cgroup_memory_current_kb)
+        self.assertIsNone(unavailable.cgroup_memory_peak_kb)
+        self.assertIsNone(unavailable_peak.cgroup_memory_current_kb)
+        self.assertIsNone(unavailable_peak.cgroup_memory_peak_kb)
+
     def test_frame_profile_payload_accepts_qt_prefixed_debug_log(self):
         log = '\x1b[34m DEBUG\\x1b[97m qml\\x1b[0m: FRAME_PROFILE {"status":"available","frames":301}'
 
