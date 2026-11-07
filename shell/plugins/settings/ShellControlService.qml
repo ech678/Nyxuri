@@ -233,14 +233,6 @@ Singleton {
                                                              "id": "hyprpicker",
                                                              "available": ColorPickerService.available,
                                                              "probed": ColorPickerService.probeFinished
-                                                         },
-                                                         {
-                                                             "id": "key-cli",
-                                                             "available": SystemMonitorService.ready,
-                                                             "probed": SystemMonitorService.hasData
-                                                                       || SystemMonitorService.state
-                                                                       !== "idle"
-                                                         }
                                                      ],
                                                      "errors": [
                                                          {

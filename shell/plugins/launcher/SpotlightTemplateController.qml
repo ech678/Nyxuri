@@ -158,7 +158,7 @@ QtObject {
     }
     onCurrentResultChanged: Qt.callLater(resolveLocalZone)
     function resolveLocalZone() {
-        // An omitted source lets key-cli use the system's full transition rules.
+        // An omitted source lets the backend use the system's full transition rules.
         // Adopt its resolved IANA name for subsequent reverse conversions.
         if (currentResult && !nowTemplate && driverSide === 0 && !sourceZone) {
             const source = SpotlightToolService.result.source;

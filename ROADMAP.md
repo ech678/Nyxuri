@@ -108,7 +108,7 @@
 - **T0 终端体验**：复制粘贴终审落地（`Ctrl+Shift+C/V` 唯一路径，回归护栏在测试）；
   终端桥系统侧已修（`xdg-terminal-exec` 入位）。Shell 侧失败通知转 T4。
 - **T1 上架 AUR**：`nyxuri-git` 上架（PKGBUILD 重构、依赖策略翻转、实机冒烟全过）；
-  key-cli 暂缓，登记见 [shell-known-issues](llms-wiki/shell/known-issues.md)。
+  key-cli 彻底废弃移除，登记见 [shell-known-issues](llms-wiki/shell/known-issues.md)。
 - **T3 设置界面替换**：Caelestia 原子套件 M0–M2 完成；M3 待验收；M4 批 A–F 已落地
   （状态对账见 [shell/ROADMAP.md](shell/ROADMAP.md)）。剩余验收与资产收编随 S0 兑现。
 

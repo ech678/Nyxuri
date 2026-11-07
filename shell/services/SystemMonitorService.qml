@@ -339,7 +339,7 @@ Singleton {
 
         if (reason === "failed_to_start" || exitCode === 127) {
             root.errorMessage = I18n.tr("The system monitor backend could not be started");
-            root.errorDetails = I18n.tr("Install key-cli with its native system monitor and try again.");
+            root.errorDetails = I18n.tr("The system monitor backend is not available on this system.");
         } else if (reason === "data_timeout") {
             root.errorMessage = I18n.tr("System monitor data has not updated for a long time");
             root.errorDetails = I18n.tr(
@@ -592,7 +592,7 @@ Singleton {
             root.schemaMismatchCount += 1;
             root._fatalError = true;
             root.errorMessage = I18n.tr("System monitoring data schema is incompatible");
-            root.errorDetails = I18n.tr("Rebuild key-cli (schema v%1).").arg(root.supportedSchemaVersion);
+            root.errorDetails = I18n.tr("Unsupported system monitor schema v%1.").arg(root.supportedSchemaVersion);
             root.state = "error";
             root._terminateStream("schema_mismatch");
             return;

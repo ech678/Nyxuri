@@ -84,7 +84,7 @@ Singleton {
         if (capabilityKnown && (!capabilities || capabilities[tool] !== true)) {
             state = "unavailable";
             error = capabilities ? I18n.tr("This tool's dependency is unavailable") : I18n.tr(
-                                       "Update key-cli to enable this tool");
+                                       "This tool is unavailable");
             return;
         }
         if (action === tool && !query.trim()) {

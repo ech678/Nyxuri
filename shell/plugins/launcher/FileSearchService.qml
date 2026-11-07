@@ -42,7 +42,7 @@ Singleton {
     function failure(code) {
         const messages = {
             fd_unavailable: I18n.tr("Install fd to search files"),
-            file_capability_missing: I18n.tr("Update key-cli to enable file search"),
+            file_capability_missing: I18n.tr("File search capability is unavailable"),
             invalid_file_response: I18n.tr("The file service returned invalid data"),
             file_missing: I18n.tr("The file or link target no longer exists"),
             directory_missing: I18n.tr("The containing folder no longer exists"),

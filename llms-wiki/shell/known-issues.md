@@ -10,17 +10,13 @@
 
 ## 基础设施缺口（快速上线时跳过，回来先做这些）
 
-- [ ] **key-cli 依赖未登记**（2026-10-18，T1 定案暂缓）：Shell 系统监视
-  （`SystemMonitorService` spawn `key sysmon stream`）与 Spotlight 文件搜索/
-  工具能力依赖 Clavis 上游作者的独立 AUR 包 key-cli（github.com/StatIndet/key-cli，
-  本体不在本仓库——仓库里只有 spawn 命令与缺席降级文案）。缺席时相应卡片与
-  工具明示报错降级，不影响启动与其余单元。暂不登记 PKGBUILD optdepends：
-  计划由作者收回仓库内化自维护，届时再落依赖关系（gen-deps.py
-  `ENGINE_OPTDEPENDS` 准入注释已留位）。
 - [ ] **TUI 未接入**：`menus.py` 无 shell 切换菜单，`translations.toml` 无桌面外壳词条；目前只有 CLI `nyxuri shell` 一条路
 
 ## 已修复
 
+- [x] **key-cli 依赖彻底废弃与清理**（2026-11-07）：确认并执行纯减法，废弃外部
+  AUR 包 key-cli；清理控制面探活诊断与面向用户的安装提示，宿主机卸载后 Shell 各单元
+  100% 正常稳定运行，无额外残留。
 - [x] **settings 开关全部无反应**（2026-10-17，同日复核发现）：开关派发本身正常
   （状态落记录、`unit switch done`），但桌面纹丝不动——`nyxuri/system/
   shell.py` 的 `probe_running_shells()` 把 `os.getppid()` 一并排除，

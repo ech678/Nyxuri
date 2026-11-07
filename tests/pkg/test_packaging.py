@@ -80,8 +80,7 @@ class TestGenDeps(unittest.TestCase):
         # 31 shell QML files import Qt5Compat.GraphicalEffects and quickshell
         # does not depend on qt6-5compat — the chroot build's namcap found it.
         self.assertIn("qt6-5compat", self.opt_names)
-        # key-cli is a deliberate known gap (Clavis upstream backend, planned
-        # to be brought in-repo): it must NOT silently appear here.
+        # key-cli is external and deprecated: it must NOT appear here.
         self.assertNotIn("key-cli", self.opt_names)
 
     def test_optional_unit_packages_stay_optdepends(self):
