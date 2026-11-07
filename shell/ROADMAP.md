@@ -7,8 +7,8 @@
 > [shell-roadmap-ledger](../llms-wiki/archive/shell-roadmap-ledger.md)。
 > 当前整体处于**实验性阶段**（BUG 多、外观未开发、暂不推荐日常使用）；
 > 已知 BUG 与暂缓的基础设施缺口见 [KNOWN-ISSUES.md](KNOWN-ISSUES.md)。
-> 下一卷跨域骨架演进（Omarchy 插件协议整抄、小写五件套、设置去中心化）归根
-> [ROADMAP](../ROADMAP.md) 的 S0/S1 管；本页 T3 剩余验收与资产收编随其迁移一并走。
+> 下一卷跨域骨架与架构重塑演进（S0/S1 插件生命周期，以及 P0~P4 架构散文化与优雅化专项）归根
+> [ROADMAP](../ROADMAP.md) 管；包含消解 shell/app/ 恢复纯正 5 层、切除跨插件静态引用、独立 PluginsPage 插件管理与 TOML 统一配置。本页 T3 剩余验收与资产收编随其一并走。
 
 ## 目标与边界
 
