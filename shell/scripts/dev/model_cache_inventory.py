@@ -39,7 +39,7 @@ SIGNAL_RE: Final[re.Pattern[str]] = re.compile(
     r"\b(?P<name>(?:[A-Za-z_]*(?:max(?:imum)?|limit|capacity)[A-Za-z_]*|"
     r"capacity[A-Za-z_]\w*|cache(?:Size|Limit|Capacity|Count|Entries)?|"
     r"evict[A-Za-z_]\w*|eviction[A-Za-z_]\w*|prune[A-Za-z_]\w*|"
-    r"removeAt|clear))\b", re.IGNORECASE
+    r"removeAt|clear|[A-Za-z_]\w*Limit))\b", re.IGNORECASE
 )
 
 CACHE_HINT_NAMES: Final[frozenset[str]] = frozenset({
