@@ -130,6 +130,8 @@ Singleton {
     function available(entry) {
         if (!entry)
             return false;
+        if (entry.pluginId && !StateProjection.isEnabledUnit(entry.pluginId))
+            return false;
         switch (entry.availability || "always") {
         case "always":
             return true;
@@ -158,6 +160,12 @@ Singleton {
             ActionGateway.execute(["notify-send", "-a", "Nyxuri Shell", I18n.tr("Action unavailable"),
                                    root.title(id)], "spotlight:catalog-action");
         return accepted;
+    }
+    Connections {
+        target: StateProjection
+        function onUnitsChanged() {
+            root.availabilityChanged();
+        }
     }
     Connections {
         target: PluginRegistry

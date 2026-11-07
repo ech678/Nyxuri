@@ -45,6 +45,25 @@ Singleton {
         root.save();
     }
 
+    function resetPlugin(pluginId) {
+        if (!pluginId)
+            return;
+        const prefix = pluginId + ".";
+        let changed = false;
+        const next = Object.assign({}, root.values);
+        for (const k in next) {
+            if (k.indexOf(prefix) === 0) {
+                delete next[k];
+                changed = true;
+                root.valueChanged(k);
+            }
+        }
+        if (changed) {
+            root.values = next;
+            root.save();
+        }
+    }
+
     function save() {
         if (!root.storeReady) {
             root.savePending = true;

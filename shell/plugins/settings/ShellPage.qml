@@ -70,28 +70,6 @@ NexusPageBase {
             }
         }
 
-        // The Shell plugins, projected straight off the ledger
-        // (plugin-model.md §6). Flipping dispatches `nyxuri on/off shell.<id>`
-        // via UnitControlService; this page mirrors nothing.
-        Repeater {
-            model: PluginRegistry.toggles
-
-            delegate: PreferenceToggle {
-                id: unitToggle
-
-                required property var modelData
-
-                readonly property bool pending: UnitControlService.pendingUnitId
-                                                === unitToggle.modelData.unitId
-
-                text: I18n.tr(unitToggle.modelData.label)
-                subtext: unitToggle.pending ? I18n.tr("Applying…") : ""
-                checked: StateProjection.isEnabledUnit(unitToggle.modelData.unitId)
-                enabled: !unitToggle.pending && UnitControlService.canToggle(unitToggle.modelData.unitId)
-                onToggled: UnitControlService.setUnit(unitToggle.modelData.unitId, checked)
-            }
-        }
-
         PreferenceToggle {
             text: I18n.tr("Overview wallpaper")
             checked: PersonalizationConfig.overviewEnabled

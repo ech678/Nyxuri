@@ -32,7 +32,7 @@ NAV_ORDER = [
     "bar", "dock", "sidebar", "keystone",
     "network", "connected-devices",
     "spotlight",
-    "language-region", "shell",
+    "language-region", "plugins", "shell",
     "about",
 ]
 

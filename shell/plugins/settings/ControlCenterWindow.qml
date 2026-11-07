@@ -24,7 +24,8 @@ FloatingWindow {
     property int _lastPage: 0
     property real _animOffset: 0
     property string pendingPageSection: ""
-    readonly property var pages: SpotlightCatalog.routes.filter(entry => entry.path.length === 1).map(entry
+    readonly property var pages: SpotlightCatalog.routes.filter(entry => entry.path.length === 1
+                                                                      && (!entry.pluginId || StateProjection.isEnabledUnit(entry.pluginId))).map(entry
                                                                                                       => Object.assign(
                                                                                                              {}, entry,
                                                                                                              {
@@ -37,6 +38,11 @@ FloatingWindow {
                                                                                                                      entry.id)
                                                                                                              }))
     readonly property string currentRouteId: pages && pages[currentPage] ? pages[currentPage].id : ""
+    onPagesChanged: {
+        if (pages && pages.length > 0 && currentPage >= pages.length) {
+            currentPage = Math.max(0, pages.length - 1);
+        }
+    }
     property int searchRequestSerial: -1
     property var searchLeaf: null
     readonly property var searchPageAnchor: pageSearchAnchor

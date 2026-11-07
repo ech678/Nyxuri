@@ -159,6 +159,14 @@ class TestWindowShellIsReskinnedNotRewired(unittest.TestCase):
         self.assertIn("SpotlightCatalog.description(", source,
                       "subtitles must use the translated catalog bridge, not raw JSON")
 
+    def test_pages_dynamically_filter_by_state_projection(self):
+        source = _read("ControlCenterWindow.qml")
+        self.assertIn("StateProjection.isEnabledUnit(entry.pluginId)", source,
+                      "disabled plugins must have their settings tabs dynamically filtered")
+        self.assertIn("onPagesChanged", source)
+        self.assertIn("currentPage = Math.max(0, pages.length - 1)", source,
+                      "current page must clamp when tabs shrink")
+
     def test_pane_stays_presentation_only(self):
         pane = _read("NexusNavPane.qml")
         self.assertNotIn("SettingsBackend", pane,

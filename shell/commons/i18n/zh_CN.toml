@@ -1880,7 +1880,6 @@
 "Unfinished" = "未完成"
 "Unhealthy" = "不健康"
 "Unhealthy for sensitive groups" = "轻度污染"
-"Unit toggles and diagnostics" = "单元开关与诊断"
 "Units" = "单位"
 "Units for CPU and GPU temperatures" = "CPU 与 GPU 温度的显示单位"
 "Units for weather temperatures" = "天气温度的显示单位"
@@ -2038,6 +2037,35 @@
 "☕ Break: %1 minutes" = "☕ 休息：%1 分钟"
 "🌿 Long break: %1 minutes" = "🌿 长休息：%1 分钟"
 "🔴 Focus: %1 minutes" = "🔴 专注：%1 分钟"
+"Plugins" = "插件管理"
+"Manage built-in and third-party plugins" = "管理内置与第三方插件"
+"Built-in plugins" = "内置插件"
+"Third-party plugins" = "第三方插件"
+"System built-in plugins provide core desktop capabilities. They can be disabled but cannot be uninstalled." = "系统内置插件提供核心桌面能力，可停用但无法彻底删除。"
+"Reset to default configuration" = "重置为默认配置"
+"Confirm reset to default configuration?" = "确认重置为默认配置？"
+"Click again to clear custom options and revert to upstream defaults" = "再次点击以清除自定义选项并还原上游默认值"
+"Built-in system plugin · Cannot be uninstalled" = "系统内置插件 · 无法物理删除"
+"Install" = "安装"
+"Install plugin" = "安装插件"
+"Install plugin from Git URL" = "从 Git URL 安装插件"
+"Enter repository Git URL or local directory below" = "在下方输入代码仓库 Git URL 或本地目录路径"
+"Clone and register a community plugin" = "克隆并注册社区扩展插件"
+"Git repository URL or local directory path:" = "Git 代码仓库 URL 或本地目录路径："
+"Enable on install" = "安装后立即启用"
+"Installing…" = "安装中…"
+"No third-party plugins installed yet" = "暂未安装第三方插件"
+"Plugins installed from Git or data directory will appear here." = "从 Git 或数据目录安装的插件将显示在此处。"
+"Check for updates" = "检查更新"
+"Pull fast-forward updates from origin Git repository" = "从源 Git 仓库拉取快进更新"
+"Open source directory" = "打开源码目录"
+"Uninstall plugin" = "彻底卸载"
+"Confirm permanent uninstallation?" = "确认彻底卸载该插件？"
+"Click again to remove plugin files from disk and erase from ledger" = "再次点击将从磁盘物理移除插件并从账本注销"
+"Safely disable and remove this third-party plugin" = "安全停用并从系统移除此第三方插件"
+"System Status & Diagnostics" = "系统运行状态与诊断"
+"Session log, resource sampling, and Niri connection" = "会话日志、资源采样与 Niri 连接"
+
 [AudioStopButton]
 "Stop recording" = "停止录音"
 
@@ -2054,6 +2082,10 @@
 [ControlCenterWindow]
 # 生成的 SearchCatalog.js 以此上下文查设置首页标题（专有名词，双语文本一致）。
 "Nyxuri Shell" = "Nyxuri Shell"
+"Plugins" = "插件管理"
+"Manage built-in and third-party plugins" = "管理内置与第三方插件"
+"System Status & Diagnostics" = "系统运行状态与诊断"
+"Session log, resource sampling, and Niri connection" = "会话日志、资源采样与 Niri 连接"
 
 [DefaultLockStatus]
 "Connected" = "网络已连接"
@@ -2166,9 +2198,16 @@
 "Drag widgets between lanes to arrange the bar" = "在三条泳道之间拖动部件以排列状态栏"
 
 
+[PluginsPage]
+"Built-in plugins" = "内置插件"
+"Third-party plugins" = "第三方插件"
+"Install plugin from Git URL" = "从 Git URL 安装插件"
+"System built-in plugins provide core desktop capabilities. They can be disabled but cannot be uninstalled." = "系统内置插件提供核心桌面能力，可停用但无法彻底删除。"
+
 [ShellPage]
 # Niri 集成行的连接状态；全局 "Disconnected" 是网络语境（"网络未连接"）。
 "Disconnected" = "未连接"
 "Diagnostics & paths" = "诊断与路径"
 "Modules & dependencies" = "模块与依赖"
 "Resource sampling" = "资源采样"
+"Session log" = "会话日志"

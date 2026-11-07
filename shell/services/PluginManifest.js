@@ -533,6 +533,7 @@ function validate(raw, expectedId, sourceDir) {
         dir: String(sourceDir).replace(/\/$/, ""),
         label: label,
         kinds: kinds,
+        category: raw.category || "",
         order: order,
         entryPoints: entryPoints,
         entryUrls: entryUrls,

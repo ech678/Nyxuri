@@ -114,11 +114,16 @@ Singleton {
         const acts = [];
         for (let i = 0; i < records.length; i++) {
             const record = records[i];
+            const isThirdParty = record.dir.indexOf(registry.pluginsDir) === 0;
             toggleRows.push({
                                 unitId: record.id,
                                 id: record.domain,
                                 label: record.label,
-                                order: record.order
+                                order: record.order,
+                                dir: record.dir,
+                                isThirdParty: isThirdParty,
+                                kinds: record.kinds,
+                                category: record.category || ""
                             });
             for (let k = 0; k < record.kinds.length; k++) {
                 const kind = record.kinds[k];

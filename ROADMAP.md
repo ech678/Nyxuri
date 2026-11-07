@@ -18,7 +18,7 @@
 | 站 | 交付 | 状态 |
 | --- | --- | --- |
 | P0 | 空间纯度大一统：根目录纯化 + PKGBUILD 修复 + 单测重心合一 + 消解 `shell/app/`（纯正 5 层） | 已完成 |
-| P1 | 插件专属控制面与动态导航：独立 `PluginsPage` 插件管理 + 切除设置中心幽灵 Tab 根因 + Spotlight 联动 | 待开始 |
+| P1 | 插件专属控制面与动态导航：独立 `PluginsPage` 插件管理 + 切除设置中心幽灵 Tab 根因 + Spotlight 联动 | 已完成 |
 | P2 | 真 Omarchy 解耦与容错：切除 70 处跨插件静态引用 + 焚毁伪合规白名单 + 拔插容错（任意删插件宿主不崩） | 待开始 |
 | P3 | 统一配置 TOML 化：升级 `Toml.js` 导出 `stringify` + 废除 7 个碎片 JSON，归拢为带注释的单一 `config.toml` | 待开始 |
 | P4 | 引擎散文化与去企味重塑：处决 `ledger.py`/`transaction.py` 银行黑话 + 解构 913 行 `core.py`，消除 `kernel/core` 分裂人格 | 待开始 |
@@ -36,7 +36,7 @@
   - **清理根面瑕疵**：修复 `packaging/PKGBUILD:89` 中早该进历史的 `cp -a units catalog.toml` 遗留死指令；正式设计笔记收入 `notes/`；
   - **测试单重心**：将 `shell/tests/` 11 个文件（含 fixtures 与 sh 脚本）全量并入根 `tests/shell/`，全库只有唯一单测入口 `python3 -m unittest discover -s tests`（补齐 3 处未定义 i18n 词条）；
   - **消解 `shell/app/`**：将 `AppShell.qml` 并入 `shell.qml`（恢复 Omarchy 纯正宿主骨架），单例移入 `services/`，静态资产移入 `commons/assets/`，物理删除 `shell/app/`，严格呈现 Omarchy 纯正 5 层结构（`shell.qml`, `commons/`, `ui/`, `services/`, `plugins/`，全库切除 115 处 `import qs.app`）。
-- **P1 插件专属控制面与动态导航 (Plugins Control Plane & Dynamic Nav)**：
+- **P1 插件专属控制面与动态导航 (Plugins Control Plane & Dynamic Nav) · 已完成**：
   - **切除幽灵 Tab 根因**：在 `ControlCenterWindow.qml:28-40` 注入 `StateProjection.isEnabledUnit(entry.pluginId)` 动态过滤；停用插件时，其设置 Tab 即刻从导航栏消失；
   - **独立“插件 (Plugins)”页面**：新增 `PluginsPage.qml`（`group = "system"`, `order = 125`，保持几何连续性），构建完整生命周期：
     - 内置插件：支持开/关切换、重置为默认配置（停用即移出视觉空间，明示不可物理删除）；

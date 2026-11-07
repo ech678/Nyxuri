@@ -62,6 +62,11 @@ ANCHOR_IDS = {
         "shell.section.sampling",
         "shell.section.diagnostics",
     ),
+    "PluginsPage.qml": (
+        "plugins.section.builtin",
+        "plugins.section.thirdparty",
+        "plugins.section.install",
+    ),
     "GeneralBarPage.qml": (
         "bar.section.position",
         "bar.section.components",
@@ -513,10 +518,6 @@ class TestShellPageRebuild(unittest.TestCase):
             "ShellControlService.setPageMounted(true)",
             "ShellControlService.setPageMounted(false)",
             "ShellControlService.exportDiagnostics()",
-            "UnitControlService.setUnit(",
-            "UnitControlService.canToggle(",
-            "UnitControlService.pendingUnitId",
-            "StateProjection.isEnabledUnit(",
             "CompositorDriver.reconnect()",
             "PersonalizationConfig.setOverviewEnabled(",
             "UiPreferences.setControlPlaneResourceSampling(",
@@ -530,6 +531,57 @@ class TestShellPageRebuild(unittest.TestCase):
         source = _read("ShellPage.qml")
         for token in LEGACY_VOCABULARY + ("SettingsSection", "SettingsRow", "GridLayout"):
             self.assertNotIn(token, source, f"legacy token re-entered ShellPage: {token}")
+
+
+class TestPluginsPageRebuild(unittest.TestCase):
+    """Plugins control plane: built-in and third-party lifecycle."""
+
+    def test_nexus_scaffold_with_self_rendered_title(self):
+        source = _read("PluginsPage.qml")
+        self.assertIn("NexusPageBase {", source)
+        self.assertIn('title: SpotlightCatalog.title("plugins")', source)
+        for key in ("Built-in plugins", "Third-party plugins", "Install plugin from Git URL"):
+            call = "I18n." + "tr(" + '"' + key + '", "PluginsPage")'
+            self.assertIn(call, source, f"PluginsPage header lost its translation context: {key}")
+
+    def test_window_contract_surface_survives(self):
+        source = _read("PluginsPage.qml")
+        for token in (
+            "property var parentModal: null",
+            "property bool presentationActive: false",
+            "property Item searchLeaf",
+        ):
+            self.assertIn(token, source, f"PluginsPage lost window contract token: {token}")
+
+    def test_search_anchor_ids_are_stable(self):
+        source = _read("PluginsPage.qml")
+        for anchor_id in ANCHOR_IDS["PluginsPage.qml"]:
+            self.assertIn(f'anchorId: "{anchor_id}"', source,
+                          f"anchor missing or rewritten: {anchor_id}")
+
+    def test_atom_groups_present(self):
+        source = _read("PluginsPage.qml")
+        for atom in ("PreferenceHeader", "PreferenceInfo", "PreferenceToggle", "PreferenceAction", "PreferenceInput"):
+            self.assertIn(atom, source, f"PluginsPage must use the atom: {atom}")
+
+    def test_business_owners_present(self):
+        source = _read("PluginsPage.qml")
+        for owner in (
+            "UnitControlService.setUnit(",
+            "UnitControlService.canToggle(",
+            "StateProjection.isEnabledUnit(",
+            "PluginManagerService.installPlugin(",
+            "PluginManagerService.updatePlugin(",
+            "PluginManagerService.removePlugin(",
+            "PluginManagerService.resetPlugin(",
+            "PluginManagerService.openPluginDir(",
+        ):
+            self.assertIn(owner, source, f"business owner dropped: {owner}")
+
+    def test_legacy_chrome_stays_out(self):
+        source = _read("PluginsPage.qml")
+        for token in LEGACY_VOCABULARY + ("SettingsSection", "SettingsRow", "GridLayout"):
+            self.assertNotIn(token, source, f"legacy token re-entered PluginsPage: {token}")
 
 
 class TestGeneralBarPageRebuild(unittest.TestCase):
