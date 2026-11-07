@@ -13,16 +13,26 @@
 > 600.167 秒稳态（596 样本）、100 次回收和 0.1/1/2/5 秒窗口；它是后续优化的比较基线，
 > 不代表优化后的当前实现。
 >
-> 当前实现 SHA `e671bedcaa3edd2151b20771894883b0ba097dd9` 的短容器 smoke 位于
-> `.omo/evidence/performance-plan-current-e671bed-smoke/`：Quickshell 0.3.2 启动、采样和
-> 受控关闭均成功，帧探针观测到 301 帧（p50/p95/p99 为 17/18/19 ms），cgroup memory
-> current/peak 有效返回 490756/611240 KiB。功能矩阵为 21 PASS、10 UNAVAILABLE；真实
-> `shell.bar` off/on 行为通过，键鼠与未装载的可选 IPC target 仍不可用。
+> 当前整合实现的完整容器报告位于 `.omo/evidence/performance-plan-current-full-9b7f2/`。
+> 报告 Git SHA 为 `9b7f2e2a759b732789bcc9c5e78f19f323997fb3`；该 SHA 与代码提交
+> `e671bed` 之间只有本计划与 `llms-wiki/llms.txt` 的文档改动。Quickshell 0.3.2 下
+> 10 次冷启动 p50/p95 为 221.634/236.917 ms，RSS/PSS/Private p50 为
+> 194244/185580/182788 KiB；600.326 秒稳态采样 596 次，100/100 回收成功。首个
+> 稳态样本在 0.008 秒为 90772 KiB RSS，延迟启动任务执行后约 1 秒升至约 174 MiB，
+> 之后至 600 秒保持平稳；这部分是计划中的 BACKGROUND 初始化，不计作持续增长泄漏。
+> 帧探针观测 301 帧，p50/p95/p99 为 17/18/18 ms；准确 compositor drop、texture 和
+> offscreen 指标仍不可用。功能矩阵为 21 PASS、10 UNAVAILABLE，真实 `shell.bar` off/on
+> 通过；键鼠与未加载的可选 IPC target 仍未验证。
+>
+> 与预优化 baseline 同口径比较：冷启动 p50/p95 为 221.634/236.917 ms，对比
+> 220.429/223.636 ms（+0.55%/+5.94%）；RSS/PSS/Private p50 为 194244/185580/182788 KiB，
+> 对比 194956/186350/183504 KiB（-0.37%/-0.41%/-0.39%）。目前只可判为没有明显启动或
+> 内存回退，差值小且可能在噪声内，不能宣称已获得显著收益。
 >
 > 当前已合入功能矩阵的真实 CLI unit off/on、隐藏波形停止 Canvas/离屏 layer、启动后台任务
 > 去重/失败重试，以及 cgroup memory 缺失值修正。Canvas/layer 全量 census、Process owner/
-> CPU/output 归因、所有功能和交互矩阵、多屏/GPU 渲染、性能预算与优化后完整 10 分钟报告
-> 尚未完成；本计划仍进行中。真实桌面运行只在隔离容器内执行；宿主 Quickshell、Weston、
+> CPU/output 归因、所有功能和交互矩阵、多屏/GPU 渲染及预算门禁尚未完成；本计划仍进行中。
+> 真实桌面运行只在隔离容器内执行；宿主 Quickshell、Weston、
 > Niri 和 Wayland 未启动。旧 `.omo` 报告不作为当前实现的结论或失败依据。
 
 ## 0. 硬约束
