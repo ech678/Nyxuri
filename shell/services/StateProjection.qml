@@ -85,5 +85,12 @@ Singleton {
         }
     }
 
-    Component.onCompleted: root.reload()
+    Component.onCompleted: {
+        ShellStartupService.registerQmlResource("StateProjection", "fileview", configFile);
+        root.reload();
+    }
+
+    Component.onDestruction: {
+        ShellStartupService.unregisterQmlResource("StateProjection", "fileview", configFile);
+    }
 }

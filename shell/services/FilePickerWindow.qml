@@ -100,9 +100,14 @@ FloatingWindow {
         rejected();
     }
     Component.onCompleted: {
+        ShellStartupService.registerQmlResource("FilePickerWindow", "window", root);
         currentPath = normalizePath(currentPath) || normalizePath(picturesDir) || "/";
         pathDraft = currentPath;
         refreshBreadcrumbs();
+    }
+
+    Component.onDestruction: {
+        ShellStartupService.unregisterQmlResource("FilePickerWindow", "window", root);
     }
 
     function encodeFileUrl(path) {

@@ -91,5 +91,12 @@ Singleton {
         onTriggered: storeFile.reload()
     }
 
-    Component.onCompleted: storeFile.reload()
+    Component.onCompleted: {
+        ShellStartupService.registerQmlResource("PluginSettings", "fileview", storeFile);
+        storeFile.reload();
+    }
+
+    Component.onDestruction: {
+        ShellStartupService.unregisterQmlResource("PluginSettings", "fileview", storeFile);
+    }
 }

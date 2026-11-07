@@ -133,12 +133,12 @@ Singleton {
             "delegates": loaded.length,
             "canvas": null,
             "layers": null,
-            "windows": null
+            "windows": resourceCounts.window || 0
         };
         return {
             "schema": 1,
             "status": "partial",
-            "reason": "SlotHost and explicitly registered service resources are live; Canvas/layer/window categories remain unsupported",
+            "reason": "SlotHost and explicitly registered service resources are live; Canvas/layer remain unsupported",
             "loaders": {
                 "declared": records.length,
                 "active": active.length,
@@ -157,7 +157,7 @@ Singleton {
             "resources": counts,
             "qml_resources": {
                 "status": "partial",
-                "reason": "loaders plus explicitly registered service resources; Canvas/layer/window are unsupported",
+                "reason": "loaders plus explicitly registered service resources; Canvas/layer remain unsupported",
                 "counts": counts
             }
         };

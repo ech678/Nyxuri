@@ -40,6 +40,36 @@ class BenchmarkRuntimeTests(unittest.TestCase):
         self.assertIn("Component.onDestruction: ShellStartupService.unregisterQmlLoader", slot)
         self.assertIn("onItemChanged: ShellStartupService.updateQmlLoader", slot)
 
+    def test_qml_census_registers_central_fileviews_and_picker_windows(self):
+        startup = (ROOT / "services" / "ShellStartupService.qml").read_text(encoding="utf-8")
+        state_projection = (ROOT / "services" / "StateProjection.qml").read_text(encoding="utf-8")
+        plugin_settings = (ROOT / "services" / "PluginSettings.qml").read_text(encoding="utf-8")
+        file_picker = (ROOT / "services" / "FilePickerWindow.qml").read_text(encoding="utf-8")
+
+        self.assertIn('"windows": resourceCounts.window || 0', startup)
+        self.assertIn('"fileviews": resourceCounts.fileview || 0', startup)
+        for source, owner, object_name in (
+            (state_projection, "StateProjection", "configFile"),
+            (plugin_settings, "PluginSettings", "storeFile"),
+        ):
+            self.assertIn(
+                f'ShellStartupService.registerQmlResource("{owner}", "fileview", {object_name})',
+                source,
+            )
+            self.assertIn(
+                f'ShellStartupService.unregisterQmlResource("{owner}", "fileview", {object_name})',
+                source,
+            )
+
+        self.assertIn(
+            'ShellStartupService.registerQmlResource("FilePickerWindow", "window", root)',
+            file_picker,
+        )
+        self.assertIn(
+            'ShellStartupService.unregisterQmlResource("FilePickerWindow", "window", root)',
+            file_picker,
+        )
+
     def test_live_telemetry_marks_unexposed_qml_counts_unavailable(self):
         with TempEnv():
             snapshot = runtime.parse_live_telemetry(
