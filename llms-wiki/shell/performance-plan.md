@@ -24,6 +24,9 @@
 > 环境/工具链原因记录跳过。Loader/unit live census 已接入，其他 QML 资源类别仍以
 > partial/null 明示。
 >
+> 旧 channel 后续已补齐：独立 pinned Qt 6.8.3/Nixpkgs toolchain 下 Quickshell 0.2.1
+> 容器构建 991/991 成功，runtime 与 Loader/IPC/qmlcache compatibility probe 均成功。
+>
 > 进程采样已增加 lower-bound lifecycle 聚合（PID/starttime/command/首次与末次观测、
 > launch/restart 估计和失败启动分类），owner 与真实 kernel exit 仍明确标为不可得。
 
@@ -93,7 +96,7 @@
 - [x] 对当前契约要求的 Quickshell 0.3.2 行为做兼容性矩阵：`qmldir`、动态
   `Loader`、`file://` source、`qs.*` 预热 import、QML disk cache、`IpcHandler`、
   `FloatingWindow.minimumSize`、`HoverHandler` 和 `TapHandler`。
-- [ ] 在容器中分别测试旧锁定版本和更新版本：冷编译、重复启动、Loader 单元装载、
+- [x] 在容器中分别测试旧锁定版本和更新版本：冷编译、重复启动、Loader 单元装载、
   单元 off/on、IPC 注册、SIGTERM、崩溃恢复和 qmlcache 命中/失效。
 - [ ] 只有当更新版本通过全部行为矩阵并且性能不引入功能回归时，才把容器默认版本
   更新为新版本；失败时保留旧版本作为对照，不修改用户环境。
