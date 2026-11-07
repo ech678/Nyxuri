@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | P4 | 主题契约、模板兼容与取色引擎分阶 | 待验收（契约测试全绿；实机行为与视觉证据待作者） |
 | T3 | 设置界面替换：Caelestia 安卓风味 | M3/M4 待验收（机器证据齐；视觉过目待作者） |
-| B | Bar & Island 统一（keystone 并入 bar） | 规划定案，B0 待开工 |
+| B | Bar & Island 统一（keystone 并入 bar） | B0 待验收（整抄基线入库、豁免登记；运行零变化证据齐，待作者复核） |
 | P6 | 整体验收与未来移植 | 排队（前置主线 KM5） |
 
 ## 已交付基线台账
@@ -106,7 +106,7 @@ hooks 的实机行为证据与视觉验收待作者确认。镜像色板是否�
 **待验收**：M3 核心四页与 M4 全页面覆盖的实机视觉过目。fidelity 三轮修订与
 S0-4 资产收编明细见台账 T3 实施记录。
 
-## B 卷：Bar & Island 统一（keystone 并入 bar，规划定案未开工）
+## B 卷：Bar & Island 统一（keystone 并入 bar，B0 已入库待验收）
 
 > 起因（2026-11-07 定案）：bar 与 keystone 实为同一形态的两个单元——账本双开、同抢顶边，
 > bar 中段布局靠人工清空给岛腾位，属结构性重复。本卷把岛降格为 bar 的布局部件，
@@ -153,7 +153,7 @@ CompositorDriver / 树内效果件）；② 配色与尺寸接 ThemeTokens/Sizes
 
 | 阶段 | 交付目标 | 状态 |
 | --- | --- | --- |
-| B0 | 契约定案 + 整抄基线：end4 皮肤件与 dux 机制件全量 `cp` 入 `plugins/bar/` 目标位（inert、带来源标注），裁剪清单成文；shell 运行零变化，`tests/shell/` 全绿，git 检查点可回滚 | 待开始 |
+| B0 | 契约定案 + 整抄基线：end4 皮肤件与 dux 机制件全量 `cp` 入 `plugins/bar/` 目标位（inert、带来源标注），裁剪清单成文；shell 运行零变化，`tests/shell/` 全绿，git 检查点可回滚 | 待验收（基线 14 件 + README 入 `plugins/bar/vendor/`；裁剪清单落 [bar-island](../llms-wiki/shell/bar-island.md)；tests/shell 全绿 + 沙箱部署零 diff） |
 | B1 | 合并与正名（行为等价）：`plugins/keystone/` → `plugins/bar/island/`，`Keystone*` → `Island*`；manifest 合并、账本迁移（disabled keystone → `islandEnabled=false`）、配置键 `keystone*` → `island*`（long 系冻结除外）；IPC/动作/`keystoneHost`/niri-actions.json 正名；插槽 6→5（manifest.py 枚举、PluginRegistry、manifest-schema、AGENTS、architecture-matrix、popup:notification 仲裁键改绑 bar）。岛此阶段仍独立窗口居顶（过渡态）。验收：bangs 视觉逐像素等价、`off shell.bar` 连带岛消失、全库无 keystone 残留 | 待开始 |
 | B2 | 拓扑手术：岛 inline 进 bar。bar 画布下探 + 输入遮罩机制；IslandSurface 宿主改写为 inline 部件，morph 引擎（弹簧/provider/形态面）原样保留；键盘焦点与预约窗路径改道；大面板整抄 `QuickSettings.qml` 范式转锚定弹窗 + 生长入场；布局表注册 island 部件。风险探针：画布下探若在 niri/Quickshell 实测有输入遮罩或层级缺陷，中变形降级为锚定弹窗，不阻塞主线。竖排 bar × 岛单独裁决（初案：竖排禁入布局表，转角部按钮 + 弹窗）。验收：作者实机验收 morph 手感等价、透明区点击穿透、多屏热插拔、锁屏不降级 | 待开始 |
 | B3 | bar 换皮（end4 皮肤）：B0 基线件定向裁剪四类后上岗——cornerStyle 体系、BarGroup/Divisor/材质胶囊、屏幕圆角衔接；弹窗（托盘菜单/快捷面板）同语言重皮；竖排同步换装。验收：作者实机视觉验收、部件功能零回退、无裁切错位（红线 3）、60fps。**本阶段通过 = D4 处死闸门放行** | 待开始 |

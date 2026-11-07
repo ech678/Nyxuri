@@ -74,6 +74,11 @@ def _corpus() -> str:
             for path in directory.rglob(f"*{suffix}"):
                 if "__pycache__" in path.parts or "references" in path.parts:
                     continue
+                # Vendored upstream baselines (B0) are inert: their literal
+                # I18n.tr keys are not ours to catalog, and their text is not
+                # a live consumer of our keys. Gates resume on promotion (B5).
+                if "vendor" in path.parts:
+                    continue
                 # The dictionaries themselves are not corpus: a key matching
                 # itself would void the dead-key contract. (manifest.toml IS
                 # corpus — labels/titles are i18n keys living in manifests.)

@@ -967,3 +967,41 @@ KM4 合并进行。
   开关无反应同场根治——`probe_running_shells` 误排 `getppid()`，shell 派生的
   nyxuri 探测不到自己的 qs 父进程，bridge 静默丢 unit-changed；修为只排除
   自身，真实进程拓扑回归测试坐实（tests/test_bugfix_regressions）。
+
+## B 卷实施记录（追加式，2026-11-07）
+
+### B0 整抄基线入库（待验收，2026-11-07）
+
+**入库**：三能力源之二物理 `cp` 入 `shell/plugins/bar/vendor/`（保源相对
+子路径，inert、无消费者、不进装载闭包）——end4 皮肤件 8 件（Bar/
+BarContent/BarGroup/BarGroupStylePopup/Divisor/StyledPopupHeaderRow/
+StyledPopupValueRow + common 的 RoundCorner，B3 消费）、dux 机制件 6 件
+（WidgetModel.js + SurfaceWidgetFactory/Host/Context + BarWidgetDefaults/
+DensityPresets，B4 消费）；各带 README（来源、inert 状态、消费者计划、
+B5 清算条款）。第三源（树内 QuickSettings.qml 范式 + keystone morph 引擎）
+为保护对象无需拷贝。裁剪清单成文：[bar-island](../shell/bar-island.md)
+（四类裁剪逐件过堂 + 不抄清单 8 项裁决 + 晋升/豁免机制），llms.txt 已索引。
+
+**verbatim 偏离登记**：仅 end4 Bar.qml/BarContent.qml 剥离行尾空白共 9 行
+（git whitespace 门禁），其余 12 件与源逐字节一致（cmp 核验）。
+
+**豁免登记（B0 起 B5 止）**：① files.sh `nyxuri_qml_files` 跳过 `*/vendor/*`
+（qmlformat/qmllint 不吃基线原格式）；② test_qml_structure 单例 import 扫描
+排除 `vendor` 路径段（上游自带 import 形态，如 dux `qs.Common` 读 `I18n.tr`）；
+③ test_i18n_catalog 语料排除 `vendor`（基线字面量 `I18n.tr` 非我方词典义务、
+基线文本不算真实消费者）；④ test_shell_architecture 三处树级扫描排除
+`vendor`（plugins 目录小写卫牛——基线保源相对布局含 `Modules/` 驼峰、
+废弃 import 禁令——基线上游词表 `qs.Common`/`qs.Services`/`qs.modules.*`、
+`Quickshell.execDetached` 禁令——dux factory 内 exec 属④类裁剪目标）；
+⑤ audit-lifecycle 本就按 `vendor` 路径段排除，零改动；⑥ 消费者门禁扫描池
+（ui/ 平面池、plugins/settings 根）本不含 plugins/bar/，零改动——B5 结账
+统一清算。许可证附录 provenance 两节挂起（作者自领，verbatim 文本已在
+shell/LICENSE 附录：end-4 GPL-3 / DankMaterialShell MIT）。
+
+**验证**：tests/shell 全量绿（405 测试、11 跳过=基线，含
+test_qml_structure/test_plugin_decoupling/test_plugin_manifests/
+test_asset_placement/test_i18n_catalog/test_shell_architecture 门禁面）+
+test_ai_specs 绿 + check.sh 绿（changed scope：whitespace/qml-format/
+shell-lint/qml-lint/lifecycle-audit 五步）+ `HOME=$(mktemp -d) python3 -m
+nyxuri test` 沙箱部署绿。运行零变化论证：零 manifest/entryPoint/SlotHost
+预热/引用改动，vendor/ 文件惰性，PluginRegistry/装载闭包不触及。

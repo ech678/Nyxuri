@@ -30,6 +30,7 @@
 - [shell-development](shell/development.md): 纯 QML 调试循环、双 Shell 热切换与分类测试验证
 - [shell-references](shell/references.md): 上游参考树（Clavis / iNiR / Caelestia / Omarchy / end-4）说明与重现指令
 - [shell-omarchy-parity](shell/omarchy-parity.md): Omarchy 资产逐项过堂台账（照抄/改造/拒绝三栏裁决，S1 整抄执行清单）
+- [shell-bar-island](shell/bar-island.md): B 卷 Bar & Island 统一——整抄基线清单、四类裁剪逐件过堂、不抄清单与晋升/豁免记录
 - [orbit-launcher](shell/orbit-launcher.md): 星环启动器设计规格（快捷键、状态机、极坐标防抖、弹簧参数、flick 判定）
 - [orbit-translate](shell/orbit-translate.md): 划词翻译外迁边界（上游自持、用户自装、S1 `add` 接管、Nyxuri 保留接线清单）
 

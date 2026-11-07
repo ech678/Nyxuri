@@ -199,7 +199,10 @@ class TestShellManagement(unittest.TestCase):
                 f"Unit blueprint missing manifest.toml: shell/plugins/{mod}"
             )
         # Assert no PascalCase/uppercase directories anywhere in plugins/ (strictly all lowercase)
+        # vendor/ exempts inert upstream baselines (B0): they keep their
+        # source-relative layout; the layout gate resumes once promoted (B5).
         for root_path, dirs, _ in os.walk(os.path.join(shell_dir, "plugins")):
+            dirs[:] = [d for d in dirs if d != "vendor"]
             for entry in dirs:
                 self.assertEqual(
                     entry, entry.lower(),
@@ -212,6 +215,10 @@ class TestShellManagement(unittest.TestCase):
         for root_path, dirs, files in os.walk(shell_dir):
             if root_path == shell_dir:
                 dirs[:] = [entry for entry in dirs if entry not in ("references", "archive")]
+            # vendor/: inert upstream baselines (B0) carry their own upstream
+            # import vocabulary (qs.Common / qs.modules.* etc.); the obsolete-
+            # import gate resumes once a file is promoted out of vendor/ (B5).
+            dirs[:] = [entry for entry in dirs if entry != "vendor"]
             for file in files:
                 if file.endswith((".qml", ".js")):
                     full_path = os.path.join(root_path, file)
@@ -689,7 +696,10 @@ class TestShellManagement(unittest.TestCase):
         service_dir = os.path.join(shell_dir, "services")
 
         for scan_root in [modules_dir, service_dir] + display_dirs:
-            for root, _, files in os.walk(scan_root):
+            for root, dirs, files in os.walk(scan_root):
+                # vendor/: inert upstream baselines (B0) keep their upstream
+                # exec patterns; the gateway gate resumes on promotion (B5).
+                dirs[:] = [d for d in dirs if d != "vendor"]
                 for file in files:
                     if file.endswith((".qml", ".js")):
                         full_p = os.path.join(root, file)

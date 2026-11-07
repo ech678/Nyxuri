@@ -202,11 +202,18 @@ class TestQmlSingletonImports(unittest.TestCase):
     def _shell(self):
         return Path(__file__).resolve().parents[2] / "shell"
 
+    @staticmethod
+    def _is_upstream(relative):
+        # references/archive: gitignored snapshots / frozen history.
+        # vendor: inert upstream baselines (B0) keep their own import shape;
+        # the check resumes once a file is promoted out of vendor/ (B5).
+        return bool({"references", "archive", "vendor"} & set(relative.parts))
+
     def _singletons(self, shell):
         found = {}
         for path in shell.rglob("*.qml"):
             relative = path.relative_to(shell)
-            if "references" in relative.parts or "archive" in relative.parts:
+            if self._is_upstream(relative):
                 continue  # gitignored upstream snapshots / frozen history, not shipped QML
             head = path.read_text(encoding="utf-8", errors="ignore").splitlines()[:4]
             if not any("pragma Singleton" in line for line in head):
@@ -222,7 +229,7 @@ class TestQmlSingletonImports(unittest.TestCase):
         offenders = []
         for path in sorted(shell.rglob("*.qml")):
             relative = path.relative_to(shell)
-            if "references" in relative.parts or "archive" in relative.parts:
+            if self._is_upstream(relative):
                 continue  # gitignored upstream snapshots / frozen history, not shipped QML
             source = path.read_text(encoding="utf-8", errors="ignore")
             code = "\n".join(line.split("//", 1)[0] for line in source.splitlines())
