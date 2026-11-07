@@ -950,8 +950,18 @@ Singleton {
         ApplicationService.openUrl("https://nmcheck.gnome.org/");
     }
 
-    Component.onCompleted: root._applyScanning()
+    Component.onCompleted: {
+        root._applyScanning();
+        ShellStartupService.registerQmlResource("NetworkService", "timer", profileWriteTimeout);
+        ShellStartupService.registerQmlResource("NetworkService", "timer", profileForgetTimeout);
+        ShellStartupService.registerQmlResource("NetworkService", "timer", manualScanReleaseTimer);
+        ShellStartupService.registerQmlResource("NetworkService", "timer", operationTimeout);
+    }
     Component.onDestruction: {
+        ShellStartupService.unregisterQmlResources("NetworkService", [
+            {"object": profileWriteTimeout}, {"object": profileForgetTimeout},
+            {"object": manualScanReleaseTimer}, {"object": operationTimeout}
+        ]);
         profileWriteTimeout.stop();
         profileForgetTimeout.stop();
         manualScanReleaseTimer.stop();

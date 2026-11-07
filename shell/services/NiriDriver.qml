@@ -860,7 +860,19 @@ Singleton {
     }
 
     // Explicit Teardown (Lifecycle contract)
+    Component.onCompleted: {
+        ShellStartupService.registerQmlResource("NiriDriver", "timer", reconnectTimer);
+        ShellStartupService.registerQmlResource("NiriDriver", "timer", fetchOutputsDebounce);
+        ShellStartupService.registerQmlResource("NiriDriver", "timer", windowsUpdateTimer);
+        ShellStartupService.registerQmlResource("NiriDriver", "process", fetchOutputsProcess);
+        ShellStartupService.registerQmlResource("NiriDriver", "process", monitorsPowerProcess);
+        ShellStartupService.registerQmlResource("NiriDriver", "process", versionProcess);
+    }
     Component.onDestruction: {
+        ShellStartupService.unregisterQmlResources("NiriDriver", [
+            {"object": reconnectTimer}, {"object": fetchOutputsDebounce}, {"object": windowsUpdateTimer},
+            {"object": fetchOutputsProcess}, {"object": monitorsPowerProcess}, {"object": versionProcess}
+        ]);
         windowsUpdateTimer.stop();
         fetchOutputsDebounce.stop();
         reconnectTimer.stop();

@@ -649,6 +649,7 @@ Singleton {
     onConfiguredIntervalMsChanged: root._applyConfiguredInterval()
 
     Connections {
+        id: gpuPreferenceConnection
         target: UiPreferences
 
         function onSystemMonitorGpuIdChanged() {
@@ -667,6 +668,7 @@ Singleton {
     }
 
     Timer {
+        id: sampleWatchdogTimer
         interval: 1000
         repeat: true
         running: root.active
@@ -722,6 +724,7 @@ Singleton {
     }
 
     Timer {
+        id: replacementWatchdogTimer
         interval: 1000
         repeat: true
         running: root._replacementProcess !== null
@@ -810,6 +813,13 @@ Singleton {
         }
     }
 
+    Component.onCompleted: {
+        ShellStartupService.registerQmlResource("SystemMonitorService", "connections", gpuPreferenceConnection);
+        ShellStartupService.registerQmlResource("SystemMonitorService", "timer", reconnectTimer);
+        ShellStartupService.registerQmlResource("SystemMonitorService", "timer", sampleWatchdogTimer);
+        ShellStartupService.registerQmlResource("SystemMonitorService", "timer", forceStopTimer);
+        ShellStartupService.registerQmlResource("SystemMonitorService", "timer", replacementWatchdogTimer);
+    }
     MonitorStream {
         id: firstStream
     }
@@ -818,6 +828,11 @@ Singleton {
     }
 
     Component.onDestruction: {
+        ShellStartupService.unregisterQmlResources("SystemMonitorService", [
+            {"object": gpuPreferenceConnection}, {"object": reconnectTimer},
+            {"object": sampleWatchdogTimer}, {"object": forceStopTimer},
+            {"object": replacementWatchdogTimer}
+        ]);
         reconnectTimer.stop();
         forceStopTimer.stop();
         if (firstStream) {

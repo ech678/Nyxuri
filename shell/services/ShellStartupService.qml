@@ -34,6 +34,7 @@ Singleton {
     // records are removed when the delegate is destroyed so the snapshot
     // reflects the current object tree rather than a startup estimate.
     property var _qmlLoaderRecords: ({})
+    property var _qmlResourceRecords: []
 
     function _loaderKey(unitId, kind) {
         return String(unitId || "") + "::" + String(kind || "");
@@ -81,6 +82,32 @@ Singleton {
         root._qmlLoaderRecords = next;
     }
 
+    // Resource records hold the QObject reference so a service can unregister
+    // exactly the instance it registered. This avoids static estimates while
+    // keeping the census safe for singleton teardown.
+    function registerQmlResource(owner, kind, object) {
+        if (!object)
+            return;
+        const next = root._qmlResourceRecords.filter(record => record.object !== object);
+        next.push({"owner": String(owner || "unknown"), "kind": String(kind || "unknown"), "object": object});
+        root._qmlResourceRecords = next;
+    }
+
+    function unregisterQmlResource(owner, kind, object) {
+        root._qmlResourceRecords = root._qmlResourceRecords.filter(record => {
+            return record.object !== object || record.owner !== String(owner || "unknown")
+                    || record.kind !== String(kind || "unknown");
+        });
+    }
+
+    function unregisterQmlResources(owner, entries) {
+        const name = String(owner || "unknown");
+        const objects = (entries || []).map(entry => entry.object);
+        root._qmlResourceRecords = root._qmlResourceRecords.filter(record => {
+            return record.owner !== name || objects.indexOf(record.object) < 0;
+        });
+    }
+
     function qmlCensus(): var {
         const records = Object.keys(root._qmlLoaderRecords).map(key => root._qmlLoaderRecords[key]);
         const active = records.filter(record => record.active);
@@ -93,12 +120,16 @@ Singleton {
         loaded.forEach(record => loadedUnits[record.unit] = true);
         const unitIds = Object.keys(units).sort();
         const loadedUnitIds = Object.keys(loadedUnits).sort();
+        const resourceCounts = {};
+        root._qmlResourceRecords.forEach(record => {
+            resourceCounts[record.kind] = (resourceCounts[record.kind] || 0) + 1;
+        });
         const counts = {
             "loaders": records.length,
-            "timers": null,
-            "processes": null,
-            "fileviews": null,
-            "connections": null,
+            "timers": resourceCounts.timer || 0,
+            "processes": resourceCounts.process || 0,
+            "fileviews": resourceCounts.fileview || 0,
+            "connections": resourceCounts.connections || 0,
             "delegates": loaded.length,
             "canvas": null,
             "layers": null,
@@ -107,7 +138,7 @@ Singleton {
         return {
             "schema": 1,
             "status": "partial",
-            "reason": "SlotHost loader and unit census is live; other QML resource categories are not centrally instrumented",
+            "reason": "SlotHost and explicitly registered service resources are live; Canvas/layer/window categories remain unsupported",
             "loaders": {
                 "declared": records.length,
                 "active": active.length,
@@ -126,7 +157,7 @@ Singleton {
             "resources": counts,
             "qml_resources": {
                 "status": "partial",
-                "reason": "only loaders and delegates are instrumented",
+                "reason": "loaders plus explicitly registered service resources; Canvas/layer/window are unsupported",
                 "counts": counts
             }
         };
