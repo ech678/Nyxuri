@@ -40,9 +40,9 @@
 > Canvas/layer 与未注册服务仍明确 partial。
 
 > 证据对账（2026-11-07）：new channel 的完整报告为
-> `.omo/evidence/benchmark-current-full-report.json`（报告 SHA
+> `.omo/evidence/benchmark-current-full-report.json`（报告记录的 Git SHA
 > `6c0ea1c1db311c3b567e85db76c09a313779c912`）和
-> `.omo/evidence/benchmark-current-final-report.json`（报告 SHA
+> `.omo/evidence/benchmark-current-final-report.json`（报告记录的 Git SHA
 > `bb974f21f716d3d9cdc3081f8efbdbf61b7d7ad7`）；两者均标记 `git_dirty=true`，且
 > 当前 HEAD 已继续前进到 `e542f697927ecab6f8295d69b162551fc9cfb837`，因此它们只能作为
 > 已验证容器基线，不能宣称覆盖当前 HEAD 的全部后续改动。old channel 的
@@ -126,7 +126,7 @@
   更新为新版本；失败时保留旧版本作为对照，不修改用户环境。
 - [x] 把 Quickshell 版本选择写入容器锁定文件和 benchmark 报告，禁止使用浮动的
   `latest` 作为可交付基准。
-- [x] 重新验证 `shell/nyxuri-shell` 的 qmlcache 清理策略。若新版本可靠失效缓存，
+- [ ] 重新验证 `shell/nyxuri-shell` 的 qmlcache 清理策略。若新版本可靠失效缓存，
   改为按源码/版本指纹清理；若仍需冷编译，保留清理并把成本单独记录。
 
 ## 3. 基准工具修正与测量契约
