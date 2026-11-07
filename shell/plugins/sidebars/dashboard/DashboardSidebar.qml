@@ -1,5 +1,5 @@
 import QtQuick
-import "../../wallpaper"
+import "../../../commons/WallpaperSource.js" as WallpaperSource
 import qs.commons
 import qs.services
 import qs.ui
@@ -141,10 +141,9 @@ Item {
             // Capture the output rather than follow subsequent sidebar moves.
             targetScreen = root.panelScreen;
             WidgetState.closeAllPopups();
-            const banner = WallpaperPaletteSession.previewForScreen("banner", "")
-                  || PersonalizationConfig.bannerSource || WallpaperService.currentWallpaper;
-            openAt(avatar ? picturesDir : WallpaperService.isImagePath(banner) ? WallpaperService.parentFolder(
-                                                                                     banner) : PersonalizationConfig.wallpaperFolder);
+            const banner = PersonalizationConfig.bannerSource || (ActionGateway.wallpaperHost ? ActionGateway.wallpaperHost.currentWallpaper : "");
+            const parentFolder = banner.substring(0, banner.lastIndexOf("/"));
+            openAt(avatar ? picturesDir : (WallpaperSource.isImage(banner) ? parentFolder : PersonalizationConfig.wallpaperFolder));
         }
 
         onAccepted: (path, isDirectory) => {
@@ -158,9 +157,14 @@ Item {
     }
 
     // The palette session must survive unloading the information page as well.
-    WallpaperColorPicker {
-        id: bannerColorPicker
-        requiresParentWindow: false
+    Loader {
+        id: bannerColorPickerLoader
+        active: StateProjection.isEnabled("wallpaper")
+        source: Qt.resolvedUrl("../../wallpaper/WallpaperColorPicker.qml")
+        onLoaded: {
+            if (item)
+                item.requiresParentWindow = false;
+        }
     }
 
     Component {
@@ -172,7 +176,8 @@ Item {
             onImageSelectionRequested: forAvatar => profileImagePicker.chooseImage(forAvatar)
             onBannerColorRequested: {
                 WidgetState.closeAllPopups();
-                bannerColorPicker.showFor("banner", "");
+                if (bannerColorPickerLoader.item)
+                    bannerColorPickerLoader.item.showFor("banner", "");
             }
             weatherSourceOverride: root.weatherSourceOverride
             foreground: root.contentOperational

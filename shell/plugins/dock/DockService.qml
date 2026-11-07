@@ -5,8 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.commons
 import qs.services
-import "../plugins/dock/DockModel.js" as DockModel
-import "../plugins/dock"
+import "./DockModel.js" as DockModel
 import qs.commons.i18n
 
 Singleton {
@@ -87,9 +86,14 @@ Singleton {
     readonly property bool showIndicators: root._options.showIndicators
     readonly property bool showRecent: root._options.showRecent
     readonly property bool contextPinning: root._options.contextPinning
-    property bool externalDragActive: false
+    property bool externalDragActive: ActionGateway.externalDragActive
+    onExternalDragActiveChanged: {
+        if (ActionGateway.externalDragActive !== externalDragActive)
+            ActionGateway.externalDragActive = externalDragActive;
+    }
     property bool fileDragActive: false
     function finishFileDrag(operation) {
+        ActionGateway.externalDragActive = false;
         root.externalDragActive = false;
         root.fileDragActive = false;
         if (operation)
@@ -552,9 +556,14 @@ Singleton {
         }
     }
 
-    Component.onCompleted: root.rebuild()
+    Component.onCompleted: {
+        ActionGateway.dockHost = root;
+        root.rebuild();
+    }
 
     Component.onDestruction: {
+        if (ActionGateway.dockHost === root)
+            ActionGateway.dockHost = null;
         launchTimeout.stop();
         if (ensureConfigDir)
             ensureConfigDir.running = false;

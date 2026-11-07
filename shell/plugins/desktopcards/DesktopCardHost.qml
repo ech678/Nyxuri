@@ -5,7 +5,7 @@ import qs.commons
 import qs.services
 import qs.ui
 import qs.commons.cards
-import "../wallpaper"
+import "../../commons/WallpaperSource.js" as WallpaperSource
 import "./DesktopCardLayout.js" as DesktopCardLayout
 import "../../commons/cards/SystemCardPlacement.js" as Placement
 
@@ -90,7 +90,7 @@ Variants {
             window.requestedAnalysisKey = window.analysisKey;
             window.analysisGeneration += 1;
             wallpaperAnalyzer.request(window.analysisRequestKey, window.analysisGeneration, (
-                                          WallpaperService.isImagePath(window.scene.sourcePath)
+                                          WallpaperSource.isImage(window.scene.sourcePath)
                                           ? window.scene.sourcePath : ""), Math.round(
                                           window.scene.canvasWidth), Math.round(window.scene.canvasHeight),
                                       window.scene.panoramaSelected ? "panorama" : window.scene.fillModeName,

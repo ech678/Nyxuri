@@ -8,7 +8,6 @@ import Quickshell
 import qs.commons
 import qs.ui
 import qs.services
-import "../wallpaper"
 import qs.commons.i18n
 
 Item {
@@ -284,7 +283,7 @@ Item {
                 currentIndex: root.selectedIndex
                 boundsBehavior: Flickable.StopAtBounds
                 keyNavigationEnabled: false
-                interactive: !DockService.externalDragActive
+                interactive: !ActionGateway.externalDragActive
                 highlight: Item {}
                 highlightMoveDuration: root.style.resultScrollDuration
                 highlightMoveVelocity: -1
@@ -468,11 +467,15 @@ Item {
                 required property int index
                 required property string wallpaperPath
                 readonly property var entry: root.results[wallpaperDelegate.index] || ({})
-                readonly property bool isCurrentWallpaper: WallpaperService.normalizedPath(
-                                                               wallpaperDelegate.entry.path)
-                                                           === WallpaperService.normalizedPath(
-                                                               WallpaperService.currentWallpaper
-                                                               || WallpaperService.wallpaperForScreen(""))
+                readonly property bool isCurrentWallpaper: {
+                    const wp = ActionGateway.wallpaperHost;
+                    if (!wp)
+                        return false;
+                    const cur = wp.currentWallpaper || (wp.wallpaperForScreen ? wp.wallpaperForScreen("") : "");
+                    if (wp.normalizedPath)
+                        return wp.normalizedPath(wallpaperDelegate.entry.path) === wp.normalizedPath(cur);
+                    return String(wallpaperDelegate.entry.path || "").trim() === String(cur || "").trim();
+                }
                 property bool appeared: false
                 readonly property real initialX: ((index * 37) % 3 - 1) * 24
                 readonly property real initialY: ((index * 53) % 5 - 2) * 10

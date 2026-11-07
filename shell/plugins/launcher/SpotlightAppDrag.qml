@@ -23,7 +23,7 @@ Item {
     }
 
     anchors.fill: parent
-    enabled: desktopId !== "" && DockService.enabled
+    enabled: desktopId !== "" && StateProjection.isEnabled("dock")
 
     function resetGesture() {
         dragged = false;
@@ -46,7 +46,7 @@ Item {
         }
         capturedImage = null;
         holdsDrag = false;
-        DockService.externalDragActive = false;
+        ActionGateway.externalDragActive = false;
     }
 
     Drag.dragType: Drag.Automatic
@@ -74,7 +74,7 @@ Item {
                 root.dragged = true;
                 root.preparing = true;
                 root.holdsDrag = true;
-                DockService.externalDragActive = true;
+                ActionGateway.externalDragActive = true;
                 const captured = root.iconItem.grabToImage(result => {
                     if (!gesture.active || !root.preparing)
                         return;
@@ -97,6 +97,6 @@ Item {
         if (root.dockHandoffTarget)
             root.dockHandoffTarget.cancelExternalHandoff(root.dockHandoffSerial);
         if (root.holdsDrag)
-            DockService.externalDragActive = false;
+            ActionGateway.externalDragActive = false;
     }
 }

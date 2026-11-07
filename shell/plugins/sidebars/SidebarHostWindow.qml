@@ -6,7 +6,6 @@ import qs.commons
 import "../../commons/SidebarPolicy.js" as SidebarPolicy
 import "dashboard"
 import "quicksettings"
-import "../desktopcards"
 import qs.services
 import qs.ui
 

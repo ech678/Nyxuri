@@ -19,7 +19,7 @@
 | --- | --- | --- |
 | P0 | 空间纯度大一统：根目录纯化 + PKGBUILD 修复 + 单测重心合一 + 消解 `shell/app/`（纯正 5 层） | 已完成 |
 | P1 | 插件专属控制面与动态导航：独立 `PluginsPage` 插件管理 + 切除设置中心幽灵 Tab 根因 + Spotlight 联动 | 已完成 |
-| P2 | 真 Omarchy 解耦与容错：切除 70 处跨插件静态引用 + 焚毁伪合规白名单 + 拔插容错（任意删插件宿主不崩） | 待开始 |
+| P2 | 真 Omarchy 解耦与容错：切除 70 处跨插件静态引用 + 焚毁伪合规白名单 + 拔插容错（任意删插件宿主不崩） | 已完成 |
 | P3 | 统一配置 TOML 化：升级 `Toml.js` 导出 `stringify` + 废除 7 个碎片 JSON，归拢为带注释的单一 `config.toml` | 待开始 |
 | P4 | 引擎散文化与去企味重塑：处决 `ledger.py`/`transaction.py` 银行黑话 + 解构 913 行 `core.py`，消除 `kernel/core` 分裂人格 | 待开始 |
 | P5 | **Sub-agents 全景深度审查与巡检验收（作为本卷最终检查任务，就像启动并发审查一样）** | 待开始 |
@@ -42,11 +42,14 @@
     - 内置插件：支持开/关切换、重置为默认配置（停用即移出视觉空间，明示不可物理删除）；
     - 第三方插件：支持 Git URL 安装（带 `--enable`）、在线检查更新、彻底卸载与打开源码目录；
   - **纯化 Shell 页面**：移除 `ShellPage.qml` 中的开关列表，正名为“系统运行状态与诊断”，专注 CPU/RSS 采样、日志、Niri 会话连接与诊断导出。
-- **P2 真 Omarchy 解耦与容错 (True Decoupling & Fault Isolation)**：
-  - **切除跨插件静态引用**：清除 `AppShell.qml`、`ThemeService.qml`、`SpotlightCatalog.qml` 对 `wallpaper` 和 `launcher` 的静态依赖；壁纸取色通过数据 Token 解耦；
-  - **专属逻辑归位**：将 `DockService.qml` 移入 `plugins/dock/`，wallpaper 色彩算法移回 `plugins/wallpaper/`；
-  - **焚毁伪白名单**：物理删除 `audit-lifecycle.py:74-82` 中的 `ALLOWED_MODULE_CROSS_IMPORTS` 白名单，将“零跨插件静态导入”设立为不可越过的 CI 铁律；
-  - **热拔插容错验收**：单测断言任意物理删除/改名 `shell/plugins/` 下任一插件，Shell 宿主依然能够优雅自愈启动，主界面绝不发生 QML 编译报错。
+- **P2 真 Omarchy 解耦与容错 (True Decoupling & Fault Isolation) · 已完成**：
+  - **切除 34 处跨插件/跨层静态引用（70+ 符号依赖全部解耦）**：`shell.qml`、`ThemeService.qml`、`SpotlightCatalog.qml`、`LauncherWindow.qml` 等切断对 `plugins/wallpaper`、`plugins/dock`、`plugins/settings` 的静态导入；
+  - **领域专属与共享组件归位**：
+    - `DockService.qml` 移入 `plugins/dock/`，拖拽状态与 `Launcher` 彻底通过 `ActionGateway.externalDragActive` 解耦，`DockService` 仅在运行时作为 `ActionGateway.dockHost` 注册；
+    - Wallpaper 领域色彩算法移回 `plugins/wallpaper/`，色彩 Token 提取与静态判定抽取为无副作用的 `shell/commons/WallpaperSource.js`，动态宿主调用走 `ActionGateway.wallpaperHost`；
+    - 共享工具提取至 `commons/`（`SpotlightCommands.js`, `SpotlightAppOrder.js`, `SpotlightSearch.js`, `cards/SystemCardDragState.js`）；跨域 UI 与呈现组件归位至 `services/`（`MediaPalette.qml`, `SystemCardDragSession.qml`, `NotificationContent.qml`）；
+  - **焚毁伪合规白名单**：物理删除 `shell/scripts/dev/audit-lifecycle.py` 中 `ALLOWED_MODULE_CROSS_IMPORTS` 白名单（ARCH001 跨域导入零容忍），静态检查全库 542 个文件零违规；
+  - **热拔插容错与契约测试**：新增 `tests/shell/test_plugin_decoupling.py`，断言全部 12 个插件 domain 零跨插件静态导入、宿主及共享层零插件引用，并实测热拔插遍历 12 个插件 domain 任意物理移出时其余全模块与静态检查依然 100% 干净；定向单测（96 项）全绿。
 - **P3 统一配置 TOML 化 (Unified Config Purity)**：
   - **赋予 QML 原生写 TOML 能力**：升级 `shell/commons/Toml.js`，导出内置 `smol-toml` 的 `stringify()` 方法；
   - **配置大一统**：在 `~/.config/nyxuri/` 废除 7 个碎片化 JSON，统一由单个 `config.toml` 管理主题、Dock、Bar、Idle 与显示配置；

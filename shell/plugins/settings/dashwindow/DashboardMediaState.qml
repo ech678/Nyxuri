@@ -2,7 +2,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.services
-import "../../keystone/media"
 import qs.commons
 
 // Cover-art state for the dashboard's media page: which artwork to show, and

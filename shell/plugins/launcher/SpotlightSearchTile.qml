@@ -135,7 +135,7 @@ Item {
             extraVisibleCondition: false
             alternativeVisibleCondition: mouse.containsMouse && (title.truncated || !!root.result.appObject
                                                                  ?.dragOnly) &&
-                                         !DockService.externalDragActive
+                                         !ActionGateway.externalDragActive
             text: root.result.appObject?.dragOnly ? root.result.subtitle : root.result.title
             textFormat: Text.PlainText
         }

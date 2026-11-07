@@ -22,10 +22,6 @@ import qs.commons.i18n
 import qs.services
 import qs.ui
 
-import "plugins/settings"
-import "plugins/sidebars/dashboard/infotools"
-import "plugins/wallpaper"
-
 // ShellRoot — the Omarchy microkernel host skeleton (P0 / lain-connect).
 // It owns assembly (slot Repeater), host-level intent sources (corner gestures),
 // generic IPC surfaces (unit / shell / theme / shortcut-map / wallpaper) and
@@ -43,7 +39,7 @@ ShellRoot {
         function executeSearchAction(action) {
             switch (action.target) {
             case "wallpaper":
-                return WallpaperService.runCatalogAction(action.method);
+                return ActionGateway.wallpaperHost ? ActionGateway.wallpaperHost.runCatalogAction(action.method) : false;
             case "shortcut-map":
                 ShortcutMapService.open();
                 return true;
@@ -328,35 +324,43 @@ ShellRoot {
             target: "wallpaper"
 
             function set(path: string): string {
-                return WallpaperService.setWallpaper(path || "", "") ? "OK" : "INVALID";
+                const host = ActionGateway.wallpaperHost;
+                return host ? (host.setWallpaper(path || "", "") ? "OK" : "INVALID") : "NOT_AVAILABLE";
             }
 
             function setForScreen(path: string, screenName: string): string {
-                return WallpaperService.setWallpaper(path || "", screenName || "") ? "OK" : "INVALID";
+                const host = ActionGateway.wallpaperHost;
+                return host ? (host.setWallpaper(path || "", screenName || "") ? "OK" : "INVALID") : "NOT_AVAILABLE";
             }
 
             function clear(): string {
-                return WallpaperService.clearWallpaper("") ? "OK" : "INVALID";
+                const host = ActionGateway.wallpaperHost;
+                return host ? (host.clearWallpaper("") ? "OK" : "INVALID") : "NOT_AVAILABLE";
             }
 
             function clearForScreen(screenName: string): string {
-                return WallpaperService.clearWallpaper(screenName || "") ? "OK" : "INVALID";
+                const host = ActionGateway.wallpaperHost;
+                return host ? (host.clearWallpaper(screenName || "") ? "OK" : "INVALID") : "NOT_AVAILABLE";
             }
 
             function previous(): string {
-                return WallpaperService.cyclePrevious() ? "OK" : "PENDING";
+                const host = ActionGateway.wallpaperHost;
+                return host ? (host.cyclePrevious() ? "OK" : "PENDING") : "NOT_AVAILABLE";
             }
 
             function next(): string {
-                return WallpaperService.cycleNext() ? "OK" : "PENDING";
+                const host = ActionGateway.wallpaperHost;
+                return host ? (host.cycleNext() ? "OK" : "PENDING") : "NOT_AVAILABLE";
             }
 
             function random(): string {
-                return WallpaperService.cycleRandom() ? "OK" : "PENDING";
+                const host = ActionGateway.wallpaperHost;
+                return host ? (host.cycleRandom() ? "OK" : "PENDING") : "NOT_AVAILABLE";
             }
 
             function setFolder(path: string): string {
-                return WallpaperService.setWallpaperFolder(path || "") ? "OK" : "INVALID";
+                const host = ActionGateway.wallpaperHost;
+                return host ? (host.setWallpaperFolder(path || "") ? "OK" : "INVALID") : "NOT_AVAILABLE";
             }
         }
     }

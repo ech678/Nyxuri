@@ -2,9 +2,8 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import qs.services
-import "../plugins/wallpaper"
 import qs.commons
-import "../plugins/launcher/SpotlightCommands.js" as Commands
+import "../commons/SpotlightCommands.js" as Commands
 import qs.commons.i18n
 
 // The spotlight search index over the runtime plugin registry (S0-2): routes,
@@ -140,7 +139,7 @@ Singleton {
         case "nyxuri-wallpaper":
             return PersonalizationConfig.desktopWallpaperBackend !== "awww";
         case "wallpaper-idle":
-            return !WallpaperService.busy;
+            return ActionGateway.wallpaperHost ? !ActionGateway.wallpaperHost.busy : true;
         case "keystone":
             return keystoneAvailable;
         case "keyboard-lock":

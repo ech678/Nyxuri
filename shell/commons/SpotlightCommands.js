@@ -1,4 +1,4 @@
-.import "../../commons/i18n/Translations.js" as I18n
+.import "i18n/Translations.js" as I18n
 // One whitelist for palette navigation and slash dispatch. Existing settings and
 // IPC catalogs remain the owners of their own search results and activation.
 var entries = [

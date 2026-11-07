@@ -1,5 +1,4 @@
 import QtQuick
-import "../../wallpaper"
 import "../../../commons/WallpaperSource.js" as WallpaperSource
 import qs.commons
 import qs.services
@@ -8,9 +7,18 @@ import qs.ui
 AccountProfileHeader {
     id: root
     wallpaperIsImage: WallpaperSource.isImage(wallpaperPath)
-    wallpaperComponent: ProfileWallpaper {
-        sourcePath: root.wallpaperPath
-        previewPath: root.previewWallpaperPath
+    wallpaperComponent: Component {
+        Item {
+            id: pwRoot
+            property string sourcePath: ""
+            property string previewPath: ""
+            Image {
+                anchors.fill: parent
+                source: WallpaperSource.isImage(pwRoot.sourcePath) ? Paths.fileUrl(pwRoot.sourcePath) : ""
+                fillMode: Image.PreserveAspectCrop
+                visible: source !== ""
+            }
+        }
     }
 
     signal imageSelectionRequested(bool forAvatar)
@@ -20,9 +28,9 @@ AccountProfileHeader {
     coverHeight: Math.round(width / 2.5)
     profileAreaHeight: 112
     avatarSize: 96
-    wallpaperPath: PersonalizationConfig.bannerSource || WallpaperService.currentWallpaper
-    previewWallpaperPath: WallpaperPaletteSession.previewForScreen("banner", "")
-    colorWallpaper: WallpaperService.isColorSource(wallpaperPath)
+    wallpaperPath: PersonalizationConfig.bannerSource || (ActionGateway.wallpaperHost ? ActionGateway.wallpaperHost.currentWallpaper : "")
+    previewWallpaperPath: ""
+    colorWallpaper: WallpaperSource.isSolid(wallpaperPath)
     avatarUrl: AvatarService.avatarUrl
     fallbackAvatarUrl: Paths.fileUrl(Paths.defaultAvatar)
     accountIdentity: SystemIdentityService.accountIdentity

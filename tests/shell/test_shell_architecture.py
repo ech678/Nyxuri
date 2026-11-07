@@ -254,7 +254,7 @@ class TestShellManagement(unittest.TestCase):
 
         # 2. NotificationContent and KeystoneSurface exist for native notification chain
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "keystone", "styles", "shared", "KeystoneSurface.qml")))
-        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "notifications", "NotificationContent.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "services", "NotificationContent.qml")))
 
         # 3. Bar quicksettings controls exist
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "bar", "quickpanel", "Volume.qml")))
@@ -483,7 +483,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("NotificationService.hasNotifs", surface_content)
 
         # 2. NotificationContent provides ListView, sanitizedBody, normalActions, dismiss
-        notif_content = os.path.join(shell_dir, "plugins", "notifications", "NotificationContent.qml")
+        notif_content = os.path.join(shell_dir, "services", "NotificationContent.qml")
         with open(notif_content, "r", encoding="utf-8") as f:
             nc_content = f.read()
         self.assertIn("StyledListView {", nc_content)
@@ -1105,12 +1105,8 @@ class TestShellManagement(unittest.TestCase):
         dashboard_file = os.path.join(shell_dir, "plugins", "sidebars", "dashboard", "DashboardSidebar.qml")
         with open(dashboard_file, "r", encoding="utf-8") as f:
             sidebar_content = f.read()
-            # DashboardSidebar legitimately requires the app services pool for
-            # FilePickerWindow (KM4.5: picker lives in app/services) and the
-            # wallpaper plugin for WallpaperColorPicker (S0-3a: the picker moved
-            # to its owning domain plugin; the settings import died with it).
-            # S0-2: plugin trees speak relative directory imports (loader-form rule 2).
-            self.assertIn('import "../../wallpaper"', sidebar_content, "DashboardSidebar needs wallpaper for WallpaperColorPicker")
+            # P2: DashboardSidebar severs static import of wallpaper, using dynamic Loader
+            self.assertNotIn('import "../../wallpaper"', sidebar_content, "DashboardSidebar must not statically import wallpaper")
             self.assertNotIn('import "../../settings"', sidebar_content, "DashboardSidebar must not import the settings aggregator")
             self.assertIn("import qs.services", sidebar_content, "DashboardSidebar needs app services for FilePickerWindow")
             self.assertNotIn("import qs.plugins.keystone", sidebar_content, "DashboardSidebar must not import keystone")
@@ -1136,9 +1132,8 @@ class TestShellManagement(unittest.TestCase):
         keystone_surface = os.path.join(shell_dir, "plugins", "keystone", "styles", "shared", "KeystoneSurface.qml")
         with open(keystone_surface, "r", encoding="utf-8") as f:
             keystone_content = f.read()
-            # S0-2: relative directory import into the notifications plugin
-            # (loader-form rule 2; the old module form is retired).
-            self.assertIn('import "../../../notifications"', keystone_content, "KeystoneSurface must import from the notifications plugin")
+            # P2: KeystoneSurface uses shared services/NotificationContent, severs cross-plugin import
+            self.assertNotIn('import "../../../notifications"', keystone_content, "KeystoneSurface must not statically import notifications")
             self.assertNotIn("import qs.plugins.keystone.notifications", keystone_content, "Legacy keystone.notifications import must be gone")
 
         # Keystone notifications directory must be removed to avoid duplication
@@ -1152,9 +1147,9 @@ class TestShellManagement(unittest.TestCase):
             btn_content = f.read()
             self.assertNotIn("import qs.services", btn_content, "ui/SplitMenuButton must be pure")
 
-        # 5. NotificationContent is in plugins/notifications/
-        notif_content = os.path.join(shell_dir, "plugins", "notifications", "NotificationContent.qml")
-        self.assertTrue(os.path.isfile(notif_content), "NotificationContent must exist in plugins/notifications")
+        # 5. NotificationContent is in services/
+        notif_content = os.path.join(shell_dir, "services", "NotificationContent.qml")
+        self.assertTrue(os.path.isfile(notif_content), "NotificationContent must exist in services/")
 
         # 6. Static audit tool passes with zero violations across entire tree
         import subprocess
@@ -1173,14 +1168,14 @@ class TestShellManagement(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "wiki")), "shell/wiki must stay dissolved")
         self.assertFalse(os.path.exists(os.path.join(repo_root, "shell", "scripts", "dev", "generate-tree-inventory.py")))
 
-        # 2. Assert 12 single-module services relocated into their functional domains
+        # 2. Assert single-module services relocated into their functional domains / shared services
         migrated_services = [
             "plugins/launcher/FileSearchService.qml",
             "plugins/launcher/SpotlightSearchService.qml",
             "plugins/launcher/SpotlightToolService.qml",
             "plugins/keystone/tools/AudioRecordingService.qml",
             "plugins/keystone/tools/RecordingService.qml",
-            "plugins/keystone/media/MediaPalette.qml",
+            "services/MediaPalette.qml",
             "plugins/bar/tray/TrayService.qml",
             "plugins/sidebars/quicksettings/QuickToggleConfig.qml",
             "plugins/sidebars/dashboard/infotools/TodoService.qml",
@@ -1197,14 +1192,12 @@ class TestShellManagement(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "services", "NetworkInterfaceHistoryService.qml")),
                         "NetworkInterfaceHistoryService must live in app/services after KM4.5")
 
-        # 3. Assert old app/services/ locations no longer exist
+        # 3. Assert old app/services/ locations no longer exist (excluding shared services)
         old_service_names = [
             "FileSearchService.qml",
-            "SpotlightSearchService.qml",
             "SpotlightToolService.qml",
             "AudioRecordingService.qml",
             "RecordingService.qml",
-            "MediaPalette.qml",
             "TrayService.qml",
             "QuickToggleConfig.qml",
             "TodoService.qml",
@@ -1322,14 +1315,14 @@ class TestShellManagement(unittest.TestCase):
         shell_dir = os.path.join(repo_root, "shell")
         services_dir = os.path.join(shell_dir, "services")
 
-        # 1. Assert 9 domain-specific files migrated into functional domains
+        # 1. Assert domain-specific and shared files migrated appropriately
         migrated_services = [
             "plugins/wallpaper/WallpaperService.qml",
             "plugins/wallpaper/WallpaperSceneService.qml",
             "plugins/wallpaper/WallpaperPaletteSession.qml",
             "plugins/desktopcards/DesktopPresentationService.qml",
-            "plugins/desktopcards/SystemCardDragSession.qml",
-            "plugins/desktopcards/SystemCardDragState.js",
+            "services/SystemCardDragSession.qml",
+            "commons/cards/SystemCardDragState.js",
             "plugins/sidebars/dashboard/infotools/TimerService.qml",
             "plugins/sidebars/dashboard/infotools/InfoDrawerState.qml",
         ]
@@ -1347,7 +1340,6 @@ class TestShellManagement(unittest.TestCase):
             "WallpaperPaletteSession.qml",
             "AwwwWallpaperService.qml",
             "DesktopPresentationService.qml",
-            "SystemCardDragSession.qml",
             "SystemCardDragState.js",
             "TimerService.qml",
             "InfoDrawerState.qml",
@@ -1481,7 +1473,7 @@ class TestShellManagement(unittest.TestCase):
         # 4. Assert former consumers reference CompositorDriver
         consumer_samples = [
             ("shell.qml", "CompositorDriver"),
-            ("services/DockService.qml", "CompositorDriver"),
+            ("plugins/dock/DockService.qml", "CompositorDriver"),
             ("plugins/bar/workspaces/Workspaces.qml", "CompositorDriver"),
             ("plugins/bar/activewindow/ActiveWindow.qml", "CompositorDriver"),
             ("plugins/dock/DockSurface.qml", "CompositorDriver"),
@@ -1807,7 +1799,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("model: RegionSelectionService.active ? Quickshell.screens : []", rs_code)
 
         # 3. DockService guards work and connections when disabled
-        dock_path = os.path.join(shell_dir, "services", "DockService.qml")
+        dock_path = os.path.join(shell_dir, "plugins", "dock", "DockService.qml")
         with open(dock_path, "r", encoding="utf-8") as f:
             dock_code = f.read()
         self.assertIn("if (!root.enabled) {", dock_code)
@@ -1885,10 +1877,12 @@ class TestShellManagement(unittest.TestCase):
         # targets (lock / spotlight / power-menu / control-center / settings)
         # moved into their unit roots; the kernel's unit-changed event lands
         # on the host's `unit` target. Gateway-owned search intents delegate
-        # to ActionGateway.executeIntent.
+        # to ActionGateway.executeIntent. Wallpaper catalog intents delegate via
+        # ActionGateway.wallpaperHost without static cross-plugin coupling.
         app = read("shell.qml")
         self.assertNotIn("pendingCycleAction", app)
-        self.assertIn("WallpaperService.runCatalogAction(action.method)", app)
+        self.assertIn("ActionGateway.wallpaperHost.runCatalogAction(action.method)", app)
+        self.assertNotIn('import "plugins/wallpaper"', app)
         self.assertIn("ActionGateway.executeIntent(action)", app)
         self.assertIn("ActionGateway.requestSidebarOpenOnScreen", app)
         self.assertNotIn('target: "lock"', app)
@@ -1944,8 +1938,7 @@ class TestShellManagement(unittest.TestCase):
         # 6. LIFE008 registered with allowlist; auditor stays green.
         audit_src = read("scripts/dev/audit-lifecycle.py")
         self.assertIn("LIFE008", audit_src)
-        for allowlisted in ("plugins/lock/Lock.qml", "plugins/lock/PreLockCapture.qml",
-                            "plugins/keystone/media/MediaPalette.qml"):
+        for allowlisted in ("plugins/lock/Lock.qml", "plugins/lock/PreLockCapture.qml"):
             self.assertIn(allowlisted, audit_src)
 
         # 7. Dock force-quit is a gateway action, not a popup-owned Process.

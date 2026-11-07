@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Layouts
 import qs.commons
 import qs.services
-import "../keystone/tools"
 import qs.ui
 import qs.commons.i18n
 import qs.ui
@@ -125,13 +124,6 @@ NexusPageBase {
             visible: CompositorDriver.configLoadFailed && CompositorDriver.configError.length > 0
             tone: "error"
             message: CompositorDriver.configError
-        }
-
-        InlineStatusBanner {
-            Layout.fillWidth: true
-            visible: DockService.configError.length > 0
-            tone: "error"
-            message: DockService.configError
         }
 
         InlineStatusBanner {

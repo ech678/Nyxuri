@@ -3,7 +3,6 @@ import QtQuick.Layouts
 import qs.commons
 import qs.ui
 import qs.services
-import "../../sidebars/dashboard/infotools"
 import qs.commons.i18n
 
 Item {

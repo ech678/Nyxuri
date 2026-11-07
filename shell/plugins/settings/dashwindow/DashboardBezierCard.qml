@@ -6,7 +6,6 @@ import qs.commons
 import qs.ui
 import ".."
 import qs.services
-import "../../wallpaper"
 import qs.commons.i18n
 
 // Interactive easing-curve tile. Reuses BezierCurveEditor from the flat
@@ -67,24 +66,26 @@ DashboardCard {
             Layout.fillHeight: true
             clip: true
 
-            BezierCurveEditor {
-                id: editor
-
+            Loader {
+                id: editorLoader
                 anchors.centerIn: parent
-                chartSize: root.chartSide
-                curve: PersonalizationConfig.transitionBezierCurve
-                easingMode: root.easingMode
-                playDurationMs: Math.max(200, PersonalizationConfig.transitionDurationMs)
-                // Editor defaults draw on m3surfaceContainerLowest, a near-black
-                // that reads as a hole on the container tile; re-seat the chart
-                // on this card's own palette.
-                chartSurfaceColor: Appearance.applyAlpha(Appearance.colors.colTertiary, 0.10)
-                chartAxisColor: Appearance.applyAlpha(Appearance.colors.colOnLayer1, 0.38)
-                chartPrimaryColor: Appearance.colors.colTertiary
-                chartSecondaryColor: Appearance.colors.colOnLayer1
-                chartTertiaryColor: Appearance.colors.colOnLayer1
-                onControlsEdited: nextCurve => WallpaperService.setTransitionBezierCurve(nextCurve)
-                onEditRequested: root.openEditor()
+                active: StateProjection.isEnabled("wallpaper")
+                source: Qt.resolvedUrl("../../wallpaper/BezierCurveEditor.qml")
+                onLoaded: {
+                    if (item) {
+                        item.chartSize = root.chartSide;
+                        item.curve = Qt.binding(() => PersonalizationConfig.transitionBezierCurve);
+                        item.easingMode = Qt.binding(() => root.easingMode);
+                        item.playDurationMs = Qt.binding(() => Math.max(200, PersonalizationConfig.transitionDurationMs));
+                        item.chartSurfaceColor = Appearance.applyAlpha(Appearance.colors.colTertiary, 0.10);
+                        item.chartAxisColor = Appearance.applyAlpha(Appearance.colors.colOnLayer1, 0.38);
+                        item.chartPrimaryColor = Appearance.colors.colTertiary;
+                        item.chartSecondaryColor = Appearance.colors.colOnLayer1;
+                        item.chartTertiaryColor = Appearance.colors.colOnLayer1;
+                        item.controlsEdited.connect(nextCurve => PersonalizationConfig.setTransitionBezierCurve(nextCurve));
+                        item.editRequested.connect(root.openEditor);
+                    }
+                }
             }
         }
 
@@ -147,11 +148,11 @@ DashboardCard {
 
         active: false
         asynchronous: true
-
-        sourceComponent: Component {
-            BezierCurveLayerEditor {
-                parentModal: root.Window.window
-                onCurveEdited: nextCurve => WallpaperService.setTransitionBezierCurve(nextCurve)
+        source: StateProjection.isEnabled("wallpaper") ? Qt.resolvedUrl("../../wallpaper/BezierCurveLayerEditor.qml") : ""
+        onLoaded: {
+            if (item) {
+                item.parentModal = root.Window.window;
+                item.curveEdited.connect(nextCurve => PersonalizationConfig.setTransitionBezierCurve(nextCurve));
             }
         }
     }

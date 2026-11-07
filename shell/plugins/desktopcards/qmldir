@@ -1,2 +1,1 @@
 singleton DesktopPresentationService 1.0 DesktopPresentationService.qml
-singleton SystemCardDragSession 1.0 SystemCardDragSession.qml

@@ -11,7 +11,6 @@ import qs.commons
 import qs.ui
 import "../../clock"
 import "../../media"
-import "../../../notifications"
 import "../../volume"
 import "../../hub"
 import "../../tools"

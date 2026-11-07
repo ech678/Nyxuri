@@ -4,10 +4,6 @@ import QtQuick
 import QtQuick.Layouts
 import qs.services
 import "../../clock"
-import "../../../bar/workspaces"
-import "../../../bar/tray"
-import "../../../bar/media"
-import "../../../bar/sysmonitor"
 
 Item {
     id: root
@@ -92,51 +88,46 @@ Item {
                     required property string modelData
                     Layout.alignment: Qt.AlignCenter
                     Layout.preferredWidth: root.vertical ? root.width : implicitWidth
-                    sourceComponent: modelData === "tray" ? tray : modelData === "workspaces" ? workspaces : modelData
-                                                                                                === "media"
-                                                                                                ? media : modelData
-                                                                                                  === "systemMonitor"
-                                                                                                  ? systemMonitor :
-                                                                                                    status
 
-                    Component {
-                        id: workspaces
-                        Workspaces {
-                            screenName: root.screen ? root.screen.name : ""
-                            vertical: root.vertical
-                            backgroundVisible: false
-                        }
+                    source: {
+                        if (!StateProjection.isEnabled("bar"))
+                            return "";
+                        if (modelData === "tray")
+                            return Qt.resolvedUrl("../../../bar/tray/Tray.qml");
+                        if (modelData === "workspaces")
+                            return Qt.resolvedUrl("../../../bar/workspaces/Workspaces.qml");
+                        if (modelData === "media")
+                            return Qt.resolvedUrl("../../../bar/media/MediaBar.qml");
+                        if (modelData === "systemMonitor")
+                            return Qt.resolvedUrl("../../../bar/sysmonitor/SysMonitor.qml");
+                        return "";
                     }
+                    sourceComponent: source === "" && modelData !== "tray" && modelData !== "workspaces" && modelData !== "media" && modelData !== "systemMonitor" ? status : null
 
-                    Component {
-                        id: tray
-                        Tray {
-                            screen: root.screen
-                            edge: root.edge
-                            vertical: root.vertical
-                            barVisualItem: root
-                            backgroundVisible: false
-                        }
-                    }
-
-                    Component {
-                        id: media
-                        MediaBar {
-                            vertical: root.vertical
-                            edge: root.edge
-                            maximumTitleWidth: root.vertical ? 120 : 180
-                            backgroundVisible: false
-                        }
-                    }
-
-                    Component {
-                        id: systemMonitor
-                        SysMonitor {
-                            showValues: PersonalizationConfig.keystoneLongShowMonitorValues
-                            vertical: root.vertical
-                            ownerId: "keystone-long:" + String(root.screen ? root.screen.name : "default") + (
-                                         lane.trailing ? ":trailing" : ":leading")
-                            backgroundVisible: false
+                    onLoaded: {
+                        if (!item)
+                            return;
+                        if (modelData === "workspaces") {
+                            item.screenName = root.screen ? root.screen.name : "";
+                            item.vertical = root.vertical;
+                            item.backgroundVisible = false;
+                        } else if (modelData === "tray") {
+                            item.screen = root.screen;
+                            item.edge = root.edge;
+                            item.vertical = root.vertical;
+                            item.barVisualItem = root;
+                            item.backgroundVisible = false;
+                        } else if (modelData === "media") {
+                            item.vertical = root.vertical;
+                            item.edge = root.edge;
+                            item.maximumTitleWidth = root.vertical ? 120 : 180;
+                            item.backgroundVisible = false;
+                        } else if (modelData === "systemMonitor") {
+                            item.showValues = PersonalizationConfig.keystoneLongShowMonitorValues;
+                            item.vertical = root.vertical;
+                            item.ownerId = "keystone-long:" + String(root.screen ? root.screen.name : "default") + (
+                                         lane.trailing ? ":trailing" : ":leading");
+                            item.backgroundVisible = false;
                         }
                     }
 

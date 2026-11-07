@@ -2,7 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
-import "./SystemCardDragState.js" as DragState
+import "../commons/cards/SystemCardDragState.js" as DragState
 
 Singleton {
     id: root

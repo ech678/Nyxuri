@@ -1,7 +1,6 @@
 import QtQuick
 import qs.commons
 import qs.services
-import "../wallpaper"
 import "./SpotlightLocalSearch.js" as LocalSearch
 
 Item {
@@ -21,12 +20,14 @@ Item {
     readonly property bool hasMore: root.loadedCount < root.filteredPaths.length
 
     function resultForPath(path, needle) {
-        const title = WallpaperService.basename(path);
+        const wp = ActionGateway.wallpaperHost;
+        const title = (wp && wp.basename) ? wp.basename(path) : path.split("/").pop();
+        const subtitle = (wp && wp.parentFolder) ? wp.parentFolder(path) : path.substring(0, path.lastIndexOf("/"));
         return {
             provider: "wallpapers",
             id: path,
             title: title,
-            subtitle: WallpaperService.parentFolder(path),
+            subtitle: subtitle,
             icon: "",
             preview: Paths.fileUrl(path),
             score: needle === "" ? 0 : (title.toLocaleLowerCase().startsWith(needle) ? 2 : 1),
@@ -38,8 +39,16 @@ Item {
     function rebuild() {
         if (!active)
             return;
-        const next = LocalSearch.wallpaperPaths(WallpaperService.wallpapers || [], query,
-                                                WallpaperService.basename);
+        const wp = ActionGateway.wallpaperHost;
+        if (!wp || !StateProjection.isEnabled("wallpaper")) {
+            root.filteredPaths = [];
+            root.loadedCount = 0;
+            root.results = [];
+            wallpaperResultModel.clear();
+            return;
+        }
+        const basenameFn = (wp && wp.basename) ? wp.basename : (p => p.split("/").pop());
+        const next = LocalSearch.wallpaperPaths(wp.wallpapers || [], query, basenameFn);
         root.filteredPaths = next;
         root.loadedCount = 0;
         root.results = [];
@@ -71,15 +80,17 @@ Item {
     }
 
     function refresh() {
-        if (active && !WallpaperService.scanning)
-            WallpaperService.scan();
+        const wp = ActionGateway.wallpaperHost;
+        if (active && wp && !wp.scanning && wp.scan)
+            wp.scan();
     }
 
     function execute(index) {
         const result = root.results[index];
-        if (!result || WallpaperService.busy)
+        const wp = ActionGateway.wallpaperHost;
+        if (!result || !wp || wp.busy)
             return false;
-        return WallpaperService.setWallpaper(result.path);
+        return wp.setWallpaper(result.path);
     }
 
     onQueryChanged: rebuild()
@@ -90,7 +101,7 @@ Item {
     }
 
     Connections {
-        target: WallpaperService
+        target: ActionGateway.wallpaperHost
 
         function onWallpapersChanged() {
             root.rebuild();

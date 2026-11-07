@@ -1,40 +1,51 @@
 import QtQuick
+import qs.commons
 import qs.services
-import "../wallpaper"
+import "../../commons/WallpaperSource.js" as WallpaperSource
 import qs.commons.i18n
 
 Item {
     id: root
     property var parentModal: null
-    readonly property string previewSource: WallpaperPaletteSession.previewForScreen("banner", "")
-    readonly property string source: PersonalizationConfig.bannerSource || WallpaperService.currentWallpaper
+    readonly property string previewSource: ""
+    readonly property string source: PersonalizationConfig.bannerSource || (ActionGateway.wallpaperHost ? ActionGateway.wallpaperHost.currentWallpaper : "")
 
     function chooseFile() {
-        filePicker.openAt(WallpaperService.isImagePath(root.source) ? WallpaperService.parentFolder(
-                                                                          root.source) :
-                                                                      PersonalizationConfig.wallpaperFolder);
+        const parentFolder = root.source.substring(0, root.source.lastIndexOf("/"));
+        filePicker.openAt(WallpaperSource.isImage(root.source) ? parentFolder : PersonalizationConfig.wallpaperFolder);
     }
     function chooseColor() {
-        colorPicker.showFor("banner", "");
+        if (colorPickerLoader.item)
+            colorPickerLoader.item.showFor("banner", "");
     }
     function clear() {
         PersonalizationConfig.setBannerSource("");
     }
     function close() {
         filePicker.dismiss();
-        colorPicker.close();
+        if (colorPickerLoader.item)
+            colorPickerLoader.item.close();
     }
-    WallpaperFileBrowser {
+    FilePickerWindow {
         id: filePicker
-        parentModal: root.parentModal
+        parentWindow: root.parentModal
+        requiresParentWindow: true
         selectionMode: FilePickerWindow.Files
         dialogTitle: I18n.tr("Choose banner image", "AccountProfileHeader")
         description: ""
         selectionPrompt: dialogTitle
-        onFileSelected: path => PersonalizationConfig.setBannerSource(path)
+        onAccepted: (path, isDirectory) => {
+            if (!isDirectory)
+                PersonalizationConfig.setBannerSource(path);
+        }
     }
-    WallpaperColorPicker {
-        id: colorPicker
-        parentModal: root.parentModal
+    Loader {
+        id: colorPickerLoader
+        active: StateProjection.isEnabled("wallpaper")
+        source: Qt.resolvedUrl("../wallpaper/WallpaperColorPicker.qml")
+        onLoaded: {
+            if (item)
+                item.parentModal = root.parentModal;
+        }
     }
 }

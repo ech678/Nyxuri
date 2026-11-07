@@ -4,7 +4,6 @@ import Quickshell
 import Quickshell.Io
 import qs.services
 import qs.commons.i18n
-import "../keystone/tools"
 import "ShellDiagnostics.js" as ShellDiagnostics
 import "ShellSamplerMath.js" as SamplerMath
 
@@ -247,10 +246,6 @@ Singleton {
                                                          {
                                                              "source": "compositor",
                                                              "message": CompositorDriver.configError
-                                                         },
-                                                         {
-                                                             "source": "dock",
-                                                             "message": DockService.configError
                                                          },
                                                          {
                                                              "source": "system-monitor",

@@ -1,5 +1,5 @@
 .pragma library
-.import "SpotlightAppOrder.js" as AppOrder
+.import "../../commons/SpotlightAppOrder.js" as AppOrder
 
 function normalized(value) {
     return String(value || "").trim().toLocaleLowerCase();

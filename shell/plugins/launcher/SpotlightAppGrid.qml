@@ -24,7 +24,7 @@ GridView {
     clip: true
     boundsBehavior: Flickable.StopAtBounds
     keyNavigationEnabled: false
-    interactive: !DockService.externalDragActive
+    interactive: !ActionGateway.externalDragActive
     // A nonvisual highlight lets the view animate scrolling to the current
     // item, including retargeting while an earlier movement is still running.
     highlight: Item {}
@@ -166,7 +166,7 @@ GridView {
         }
 
         ToolTip.visible: tileMouse.containsMouse && (appName.truncated || !!tile.modelData.appObject
-                                                     ?.dragOnly) && !DockService.externalDragActive
+                                                     ?.dragOnly) && !ActionGateway.externalDragActive
         ToolTip.delay: 600
         ToolTip.text: tile.modelData.appObject?.dragOnly ? tile.modelData.subtitle : tile.modelData.title
     }

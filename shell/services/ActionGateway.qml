@@ -11,6 +11,9 @@ Singleton {
     property var settingsHost: null
     property var sidebarHost: null
     property var keystoneHost: null
+    property var wallpaperHost: null
+    property var dockHost: null
+    property bool externalDragActive: false
 
     // Safety fact owned by the lock unit: true while a session lock is
     // held. The slot host refuses to tear shell.lock down mid-lock, and

@@ -6,7 +6,6 @@ import qs.commons
 import "../commons/SidebarPolicy.js" as SidebarPolicy
 import "../commons/WallpaperSource.js" as WallpaperSource
 import qs.services
-import "../plugins/wallpaper"
 import qs.commons.i18n
 
 Singleton {

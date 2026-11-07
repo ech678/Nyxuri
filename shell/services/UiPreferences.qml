@@ -1,11 +1,11 @@
 pragma Singleton
 import QtCore
 import QtQuick
-import "../plugins/launcher/SpotlightAppOrder.js" as AppOrder
+import "../commons/SpotlightAppOrder.js" as AppOrder
 import Quickshell
 import Quickshell.Io
 import qs.commons
-import "../plugins/launcher/SpotlightSearch.js" as SpotlightSearch
+import "../commons/SpotlightSearch.js" as SpotlightSearch
 import qs.commons.i18n
 
 Singleton {

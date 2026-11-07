@@ -1,7 +1,7 @@
 import QtQuick
 import qs.services
 import "./SpotlightSession.js" as Session
-import "./SpotlightCommands.js" as Commands
+import "../../commons/SpotlightCommands.js" as Commands
 import qs.commons.i18n
 
 QtObject {

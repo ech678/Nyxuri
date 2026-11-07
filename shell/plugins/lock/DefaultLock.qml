@@ -3,7 +3,6 @@ import QtQuick.Effects
 import Quickshell.Wayland
 import qs.commons
 import qs.services
-import "../wallpaper"
 
 Item {
     id: root
@@ -118,14 +117,26 @@ Item {
             color: "#15191D"
         }
 
-        WallpaperImageViewport {
+        Loader {
             id: wallpaper
-            onReadyChanged: Qt.callLater(root.startReveal)
-            onImageStatusChanged: Qt.callLater(root.startReveal)
             anchors.fill: parent
-            sourcePath: WallpaperService.wallpaperForScreen(root.screenName)
-            imageFillMode: WallpaperService.qtFillMode(WallpaperService.fillModeForScreen(root.screenName))
-            panoramaEnabled: WallpaperService.fillModeForScreen(root.screenName) === "panorama"
+            active: StateProjection.isEnabled("wallpaper")
+            source: Qt.resolvedUrl("../wallpaper/WallpaperImageViewport.qml")
+            readonly property bool ready: item ? item.ready : true
+            readonly property int imageStatus: item ? item.imageStatus : Image.Ready
+            onLoaded: {
+                if (item) {
+                    const wp = ActionGateway.wallpaperHost;
+                    item.sourcePath = wp ? wp.wallpaperForScreen(root.screenName) : "";
+                    item.imageFillMode = wp ? wp.qtFillMode(wp.fillModeForScreen(root.screenName)) : Image.PreserveAspectCrop;
+                    item.panoramaEnabled = wp ? wp.fillModeForScreen(root.screenName) === "panorama" : false;
+                }
+            }
+            Connections {
+                target: wallpaper.item
+                function onReadyChanged() { Qt.callLater(root.startReveal); }
+                function onImageStatusChanged() { Qt.callLater(root.startReveal); }
+            }
             layer.enabled: true
             layer.effect: MultiEffect {
                 autoPaddingEnabled: false
