@@ -12,8 +12,6 @@ import qs.ui
 import "../../clock"
 import "../../media"
 import "../../volume"
-import "../../hub"
-import "../../tools"
 import "../recording"
 import "../long"
 import "../.."
@@ -160,8 +158,7 @@ Variants {
         WlrLayershell.exclusionMode: ExclusionMode.Ignore
         // On-demand focus lets desktop clicks leave the island and clicks on
         // the island focus it again. Hover previews never request keyboard input.
-        WlrLayershell.keyboardFocus: root.keyboardInteractionActive && !islandWindow.sidebarHasPriority
-                                     ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+        WlrLayershell.keyboardFocus: root.keyboardInteractionActive && !islandWindow.sidebarHasPriority ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
         // The interactive surface spans the screen for expansion and animations.
         // Reserve only the resting island thickness on a separately edge-anchored
@@ -169,12 +166,7 @@ Variants {
         PanelWindow {
             visible: !PersonalizationConfig.islandOverlay
             screen: islandWindow.screen
-            readonly property real reservedThickness: styleSurface.edgeMargin + (styleSurface.elongated
-                                                                                 && longFrame.item
-                                                                                 ? longFrame.item.thickness :
-                                                                                   islandWindow.horizontalEdge
-                                                                                   ? horizontalLayout.collapsedHeight :
-                                                                                     verticalLayout.collapsedWidth)
+            readonly property real reservedThickness: styleSurface.edgeMargin + (styleSurface.elongated && longFrame.item ? longFrame.item.thickness : islandWindow.horizontalEdge ? horizontalLayout.collapsedHeight : verticalLayout.collapsedWidth)
             implicitWidth: islandWindow.horizontalEdge ? 1 : reservedThickness
             implicitHeight: islandWindow.horizontalEdge ? reservedThickness : 1
             color: "transparent"
@@ -215,21 +207,11 @@ Variants {
             Item {
                 anchors.fill: parent
                 focus: true
-                Keys.forwardTo: root.isToolsMode ? [toolsWidget, root] : [root]
 
-                // Shortcuts belong to their receiving window. Mouse interaction
-                // focuses the visible island, where HubContent handles them.
-                Shortcut {
-                    enabled: root.isHubMode
-                    sequence: "Tab"
-                    onActivated: hub.cycleTab(1)
-                }
-
-                Shortcut {
-                    enabled: root.isHubMode
-                    sequence: "Shift+Tab"
-                    onActivated: hub.cycleTab(-1)
-                }
+                // Panel keyboards (hub tabs, tool selection) live in the
+                // anchored panel popup now; this proxy only forwards Escape
+                // and the inline keys to the island surface.
+                Keys.forwardTo: [root]
             }
         }
 
@@ -252,8 +234,7 @@ Variants {
 
             Item {
                 id: backgroundVisual
-                visible: !styleSurface.elongated && !(styleSurface.splitRecording
-                                                      && root.recordingPresentationActive)
+                visible: !styleSurface.elongated && !(styleSurface.splitRecording && root.recordingPresentationActive)
                 // Give the compositing layer real shadow margins. Enlarging only
                 // layer.sourceRect would rescale the island into its original bounds.
                 x: -32
@@ -287,13 +268,9 @@ Variants {
                             fillColor: "black"
 
                             anchors {
-                                right: islandWindow.horizontalEdge ? rootShadow.left :
-                                                                       islandWindow.rightEdge
-                                                                       ? rootShadow.right : undefined
+                                right: islandWindow.horizontalEdge ? rootShadow.left : islandWindow.rightEdge ? rootShadow.right : undefined
                                 left: islandWindow.leftEdge ? rootShadow.left : undefined
-                                bottom: !islandWindow.horizontalEdge ? rootShadow.top :
-                                                                         islandWindow.bottomEdge
-                                                                         ? rootShadow.bottom : undefined
+                                bottom: !islandWindow.horizontalEdge ? rootShadow.top : islandWindow.bottomEdge ? rootShadow.bottom : undefined
                                 top: islandWindow.topEdge ? rootShadow.top : undefined
                             }
                         }
@@ -365,12 +342,6 @@ Variants {
                                 topRightRadius: rootSurface.topRightRadius
                                 bottomRightRadius: rootSurface.bottomRightRadius
                                 bottomLeftRadius: rootSurface.bottomLeftRadius
-                                cutoutVisible: rootSurface.cutoutVisible
-                                cutoutX: rootSurface.cutoutX
-                                cutoutY: rootSurface.cutoutY
-                                cutoutWidth: rootSurface.cutoutWidth
-                                cutoutHeight: rootSurface.cutoutHeight
-                                cutoutRadius: rootSurface.cutoutRadius
                             }
                         }
 
@@ -387,13 +358,9 @@ Variants {
                             fillColor: "black"
 
                             anchors {
-                                left: islandWindow.leftEdge ? rootShadow.left : (
-                                                                    islandWindow.horizontalEdge
-                                                                    ? rootShadow.right : undefined)
+                                left: islandWindow.leftEdge ? rootShadow.left : (islandWindow.horizontalEdge ? rootShadow.right : undefined)
                                 right: islandWindow.rightEdge ? rootShadow.right : undefined
-                                top: islandWindow.topEdge ? rootShadow.top : (
-                                                                  !islandWindow.horizontalEdge
-                                                                  ? rootShadow.bottom : undefined)
+                                top: islandWindow.topEdge ? rootShadow.top : (!islandWindow.horizontalEdge ? rootShadow.bottom : undefined)
                                 bottom: islandWindow.bottomEdge ? rootShadow.bottom : undefined
                             }
                         }
@@ -433,14 +400,10 @@ Variants {
                         fillColor: backgroundVisual.surfaceColor
 
                         anchors {
-                            right: islandWindow.horizontalEdge ? rootSurface.left :
-                                                                   islandWindow.rightEdge
-                                                                   ? rootSurface.right : undefined
+                            right: islandWindow.horizontalEdge ? rootSurface.left : islandWindow.rightEdge ? rootSurface.right : undefined
 
                             left: islandWindow.leftEdge ? rootSurface.left : undefined
-                            bottom: !islandWindow.horizontalEdge ? rootSurface.top :
-                                                                     islandWindow.bottomEdge
-                                                                     ? rootSurface.bottom : undefined
+                            bottom: !islandWindow.horizontalEdge ? rootSurface.top : islandWindow.bottomEdge ? rootSurface.bottom : undefined
                             top: islandWindow.topEdge ? rootSurface.top : undefined
                         }
 
@@ -462,22 +425,10 @@ Variants {
                         width: root.width
                         height: root.height
                         surfaceColor: backgroundVisual.surfaceColor
-                        topLeftRadius: styleSurface.detached || (!islandWindow.topEdge &&
-                                                                 !islandWindow.leftEdge) ? root.radius : 0
-                        topRightRadius: styleSurface.detached || (!islandWindow.topEdge &&
-                                                                  !islandWindow.rightEdge) ? root.radius : 0
-                        bottomRightRadius: styleSurface.detached || (!islandWindow.bottomEdge &&
-                                                                     !islandWindow.rightEdge) ? root.radius :
-                                                                                                  0
-                        bottomLeftRadius: styleSurface.detached || (!islandWindow.bottomEdge &&
-                                                                    !islandWindow.leftEdge) ? root.radius :
-                                                                                                0
-                        cutoutVisible: root.showDashboardKeyhole
-                        cutoutX: dashboardKeyholeCutout.x
-                        cutoutY: dashboardKeyholeCutout.y
-                        cutoutWidth: dashboardKeyholeCutout.width
-                        cutoutHeight: dashboardKeyholeCutout.height
-                        cutoutRadius: dashboardKeyholeCutout.radius
+                        topLeftRadius: styleSurface.detached || (!islandWindow.topEdge && !islandWindow.leftEdge) ? root.radius : 0
+                        topRightRadius: styleSurface.detached || (!islandWindow.topEdge && !islandWindow.rightEdge) ? root.radius : 0
+                        bottomRightRadius: styleSurface.detached || (!islandWindow.bottomEdge && !islandWindow.rightEdge) ? root.radius : 0
+                        bottomLeftRadius: styleSurface.detached || (!islandWindow.bottomEdge && !islandWindow.leftEdge) ? root.radius : 0
                     }
                     AttachedEdgeCurve {
                         id: rightTopCurve
@@ -494,13 +445,10 @@ Variants {
                         fillColor: backgroundVisual.surfaceColor
 
                         anchors {
-                            left: islandWindow.leftEdge ? rootSurface.left : (islandWindow.horizontalEdge
-                                                                                ? rootSurface.right :
-                                                                                  undefined)
+                            left: islandWindow.leftEdge ? rootSurface.left : (islandWindow.horizontalEdge ? rootSurface.right : undefined)
 
                             right: islandWindow.rightEdge ? rootSurface.right : undefined
-                            top: islandWindow.topEdge ? rootSurface.top : (!islandWindow.horizontalEdge
-                                                                             ? rootSurface.bottom : undefined)
+                            top: islandWindow.topEdge ? rootSurface.top : (!islandWindow.horizontalEdge ? rootSurface.bottom : undefined)
                             bottom: islandWindow.bottomEdge ? rootSurface.bottom : undefined
                         }
 
@@ -519,12 +467,8 @@ Variants {
             anchors.bottomMargin: islandWindow.bottomEdge ? styleSurface.edgeMargin : 0
             anchors.leftMargin: islandWindow.leftEdge ? styleSurface.edgeMargin : 0
             anchors.rightMargin: islandWindow.rightEdge ? styleSurface.edgeMargin : 0
-            width: styleSurface.elongated && longFrame.item ? longFrame.item.implicitWidth : root.width + (
-                                                                  islandWindow.horizontalEdge
-                                                                  ? islandWindow.edgeCurveAlong * 2 : 0)
-            height: styleSurface.elongated && longFrame.item ? longFrame.item.implicitHeight : root.height + (
-                                                                   !islandWindow.horizontalEdge
-                                                                   ? islandWindow.edgeCurveAlong * 2 : 0)
+            width: styleSurface.elongated && longFrame.item ? longFrame.item.implicitWidth : root.width + (islandWindow.horizontalEdge ? islandWindow.edgeCurveAlong * 2 : 0)
+            height: styleSurface.elongated && longFrame.item ? longFrame.item.implicitHeight : root.height + (!islandWindow.horizontalEdge ? islandWindow.edgeCurveAlong * 2 : 0)
             state: islandWindow.edge
             states: [
                 State {
@@ -593,22 +537,17 @@ Variants {
                     targetHeight: root.targetH
                     childItem: root
                     cutoutItem: dashboardKeyholeCutout
-                    cutoutVisible: root.showDashboardKeyhole
+                    cutoutVisible: false
                     surfaceColor: root.color
-                    onClockClicked: button => root.activateMouseAction(button === Qt.MiddleButton
-                                                                       ? PersonalizationConfig.islandMiddleClickAction :
-                                                                         PersonalizationConfig.islandLeftClickAction,
-                                                                       true)
+                    onClockClicked: button => root.activateMouseAction(button === Qt.MiddleButton ? PersonalizationConfig.islandMiddleClickAction : PersonalizationConfig.islandLeftClickAction, true)
                     onMediaRequested: root.activateMouseAction("media", true)
                 }
             }
 
             IslandHoverController {
                 id: hoverIntent
-                triggerHovered: styleSurface.elongated ? !!longFrame.item && longFrame.item.clockHovered :
-                                                         surfaceHover.hovered
-                surfaceHovered: surfaceHover.hovered || (styleSurface.elongated && !!longFrame.item
-                                                         && longFrame.item.mainHovered)
+                triggerHovered: styleSurface.elongated ? !!longFrame.item && longFrame.item.clockHovered : surfaceHover.hovered
+                surfaceHovered: surfaceHover.hovered || (styleSurface.elongated && !!longFrame.item && longFrame.item.mainHovered)
                 canOpen: root.isCollapsedMode && PersonalizationConfig.effectiveIslandHoverAction !== "none"
                 previewOpen: root.hoverOpened
                 openDelay: PersonalizationConfig.islandHoverOpenDelay
@@ -621,24 +560,50 @@ Variants {
                 onCloseRequested: islandWindow.closeAllOthers()
             }
 
+            // B2-1: the hub and tools panels live in an edge-anchored popup
+            // that grows from the capsule bounds; the island surface keeps
+            // owning the show flags and the exclusive-open semantics.
+            Loader {
+                id: panelPopupLoader
+
+                active: root.panelActive
+                sourceComponent: IslandPanelPopup {
+                    anchorItem: root
+                    screen: islandWindow.screen
+                    edge: islandWindow.edge
+                    hubOpen: root.showHub
+                    toolsOpen: root.showTools
+                    suppressed: root.contentPresentationActive
+                    retainForRecording: styleSurface.elongated
+                    recordingLaunchPending: root.recordingLaunchPending
+                    hubTabIndex: root.hubTabIndex
+                    onCloseRequested: islandWindow.closeAllOthers()
+                    onHubTabRequested: index => {
+                        if (root.hubTabIndex !== index)
+                            root.hubTabIndex = index;
+                    }
+                    onAvatarEditRequested: screen => styleSurface.avatarEditRequested(screen)
+                    onRecordingRequested: {
+                        root.hoverOpened = false;
+                        hoverIntent.cancel();
+                    }
+                }
+            }
+
             Item {
                 id: root
 
                 property bool hoverOpened: false
 
                 function activateMouseAction(action, toggle, fromHover = false) {
-                    if (action === "none" || action === "peak" || root.contentPresentationActive
-                            || root.isNotifMode || root.isVolumeMode)
+                    if (action === "none" || action === "peak" || root.contentPresentationActive || root.isNotifMode || root.isVolumeMode)
                         return;
                     const tabs = {
                         dashboard: 0,
                         weather: 1
                     };
                     const isTab = Object.prototype.hasOwnProperty.call(tabs, action);
-                    const alreadyOpen = action === "media" ? root.expanded : action === "lyrics"
-                                                             ? root.showLyrics : action === "tools"
-                                                               ? root.showTools : isTab && root.showHub
-                                                                 && root.hubTabIndex === tabs[action];
+                    const alreadyOpen = action === "media" ? root.expanded : action === "lyrics" ? root.showLyrics : action === "tools" ? root.showTools : isTab && root.showHub && root.hubTabIndex === tabs[action];
                     if (toggle && alreadyOpen && root.hoverOpened) {
                         root.hoverOpened = false;
                         hoverIntent.cancel();
@@ -678,68 +643,43 @@ Variants {
                 property bool showVolume: false
                 property bool showHub: false
                 property bool showTools: false
-                readonly property bool recordingLaunchPending: styleSurface.elongated && showTools && (
-                                                                   RecordingService.isSelecting
-                                                                   || RecordingService.isStarting
-                                                                   || AudioRecordingService.isStarting)
+                readonly property bool recordingLaunchPending: styleSurface.elongated && showTools && (RecordingService.isSelecting || RecordingService.isStarting || AudioRecordingService.isStarting)
                 property int hubTabIndex: 0
                 property bool componentReady: false
                 property bool pillStopFusionMinimumActive: false
                 readonly property bool backendFinalizing: RecordingService.isFinalizing
                 readonly property bool gifRecording: RecordingService.recordingType === "gif"
-                readonly property bool stopPresentationActive: RecordingService.isStopPending || (
-                                                                   styleSurface.splitRecording
-                                                                   && pillStopFusionMinimumActive)
-                readonly property bool isRecording: (RecordingService.isRecording || RecordingService.state
-                                                     === "paused") && !stopPresentationActive
+                readonly property bool stopPresentationActive: RecordingService.isStopPending || (styleSurface.splitRecording && pillStopFusionMinimumActive)
+                readonly property bool isRecording: (RecordingService.isRecording || RecordingService.state === "paused") && !stopPresentationActive
                 readonly property bool isFinalizing: backendFinalizing || stopPresentationActive
                 readonly property bool isRecordingMode: isRecording || isFinalizing
                 property bool recordingExitActive: false
-                readonly property bool recordingPresentationActive: isRecordingMode || recordingExitActive
-                                                                    || recordingInfoProgress > 0.01
-                                                                    || recordingActionProgress > 0.01
-                                                                    || processingContentProgress > 0.01
+                readonly property bool recordingPresentationActive: isRecordingMode || recordingExitActive || recordingInfoProgress > 0.01 || recordingActionProgress > 0.01 || processingContentProgress > 0.01
                 readonly property int audioPhaseHidden: 0
                 readonly property int audioPhaseExpanded: 1
                 readonly property int audioPhaseCollapsing: 2
                 property int audioPresentationPhase: audioPhaseHidden
                 readonly property bool audioSessionActive: AudioRecordingService.isActive
-                readonly property bool audioPresentationActive: audioSessionActive || audioPresentationPhase
-                                                                !== audioPhaseHidden
-                readonly property bool audioGeometryActive: audioSessionActive || audioPresentationPhase
-                                                            === audioPhaseExpanded
-                readonly property bool contentPresentationActive: recordingPresentationActive
-                                                                  || audioPresentationActive
+                readonly property bool audioPresentationActive: audioSessionActive || audioPresentationPhase !== audioPhaseHidden
+                readonly property bool audioGeometryActive: audioSessionActive || audioPresentationPhase === audioPhaseExpanded
+                readonly property bool contentPresentationActive: recordingPresentationActive || audioPresentationActive
+                // B2-1: hub/tools left the island surface as an anchored
+                // panel popup; panelActive only gates the inline faces now,
+                // it is no longer a morph target of the island.
+                readonly property bool panelActive: root.showHub || root.showTools
                 property bool isLyricsMode: showLyrics && !contentPresentationActive
-                property bool isToolsMode: !contentPresentationActive && showTools && !isLyricsMode
-                property bool isHubMode: !contentPresentationActive && showHub && !isToolsMode &&
-                                         !isLyricsMode
-                property bool isVolumeMode: !contentPresentationActive && showVolume && !expanded &&
-                                            !isHubMode && !isToolsMode && !isLyricsMode
-                property bool isNotifMode: !contentPresentationActive && NotificationService.hasNotifs &&
-                                           !expanded && !showVolume && !isHubMode && !isToolsMode &&
-                                           !isLyricsMode
-                property bool isCollapsedMode: !contentPresentationActive && !expanded && !isNotifMode &&
-                                               !isVolumeMode && !isLyricsMode && !isHubMode && !isToolsMode
-                property bool isCollapsedHovered: PersonalizationConfig.effectiveIslandHoverAction
-                                                  === "peak" && isCollapsedMode && root.hoverOpened
-                readonly property bool escapeDismissActive: !contentPresentationActive && (expanded
-                                                                                           || isLyricsMode
-                                                                                           || isHubMode
-                                                                                           || isToolsMode
-                                                                                           || isCollapsedHovered)
-                readonly property bool keyboardInteractionActive: escapeDismissActive && !hoverOpened &&
-                                                                  !isCollapsedMode && !recordingLaunchPending
+                property bool isVolumeMode: !contentPresentationActive && !root.panelActive && showVolume && !expanded && !isLyricsMode
+                property bool isNotifMode: !contentPresentationActive && NotificationService.hasNotifs && !root.panelActive && !expanded && !showVolume && !isLyricsMode
+                property bool isCollapsedMode: !contentPresentationActive && !root.panelActive && !expanded && !isNotifMode && !isVolumeMode && !isLyricsMode
+                property bool isCollapsedHovered: PersonalizationConfig.effectiveIslandHoverAction === "peak" && isCollapsedMode && root.hoverOpened
+                readonly property bool escapeDismissActive: !contentPresentationActive && !root.panelActive && (expanded || isLyricsMode || isCollapsedHovered)
+                readonly property bool keyboardInteractionActive: escapeDismissActive && !hoverOpened && !isCollapsedMode && !recordingLaunchPending
                 onKeyboardInteractionActiveChanged: {
                     if (keyboardInteractionActive)
                         root.requestKeyboardFocus();
                 }
-                readonly property bool dashboardTabActive: isHubMode && hubTabIndex === 0
-                readonly property string dashboardUptimeOwner: "island-dashboard:" + String(
-                                                                   islandWindow.modelData.name || "default")
-                // The hub remains visible while fading out after its mode is dismissed.
-                // Keep its cutout and blur subtraction until the card is hidden too.
-                readonly property bool showDashboardKeyhole: hub.currentIndex === 0 && hub.visible
+                readonly property bool dashboardTabActive: root.showHub && !contentPresentationActive && hubTabIndex === 0
+                readonly property string dashboardUptimeOwner: "island-dashboard:" + String(islandWindow.modelData.name || "default")
                 property real pillMorphProgress: 0
                 property real recordingInfoProgress: 0
                 property real recordingActionProgress: 0
@@ -751,32 +691,15 @@ Variants {
                 property int notifH: 20 + NotificationService.popupList.reduce((height, notif) => {
                     return height + (NotificationService.normalActions(notif).length > 0 ? 104 : 64);
                 }, 0) + Math.max(0, NotificationService.popupList.length - 1) * 10
-                property color color: BlurService.backgroundColor(mediaWidget.visible
-                                                                  && mediaWidget.coverColors
-                                                                  ? mediaWidget.surfaceColor :
-                                                                    Appearance.colors.colLayer0)
-                readonly property QtObject activeLayout: islandWindow.horizontalEdge ? horizontalLayout :
-                                                                                         verticalLayout
-                readonly property real recordingVisualWidth: styleSurface.splitRecording
-                                                             && pillRecordingPresenter.item
-                                                             ? pillRecordingPresenter.item.implicitWidth :
-                                                               activeLayout.attachedRecordingWidth
-                readonly property real recordingVisualHeight: styleSurface.splitRecording
-                                                              && pillRecordingPresenter.item
-                                                              ? pillRecordingPresenter.item.implicitHeight :
-                                                                activeLayout.attachedRecordingHeight
-                readonly property bool useRecordingBlurRegions: styleSurface.splitRecording
-                                                                && root.recordingPresentationActive
-                                                                && pillRecordingPresenter.item !== null
-                readonly property var recordingBlurBackgroundItems: useRecordingBlurRegions
-                                                                    ? pillRecordingPresenter.item.blurBackgroundItems :
-                                                                      []
-                property real targetW: isVolumeMode && keyboardOsd ? (islandWindow.horizontalEdge ? 260 :
-                                                                                                      112) : activeLayout.targetWidth
-                property real targetH: isVolumeMode && keyboardOsd ? (islandWindow.horizontalEdge ? 64 :
-                                                                                                      144) : activeLayout.targetHeight
-                property int targetR: styleSurface.detached ? Math.min(Math.min(targetW, targetH) / 2, styleSurface.maxPillRadius) :
-                                                              12
+                property color color: BlurService.backgroundColor(mediaWidget.visible && mediaWidget.coverColors ? mediaWidget.surfaceColor : Appearance.colors.colLayer0)
+                readonly property QtObject activeLayout: islandWindow.horizontalEdge ? horizontalLayout : verticalLayout
+                readonly property real recordingVisualWidth: styleSurface.splitRecording && pillRecordingPresenter.item ? pillRecordingPresenter.item.implicitWidth : activeLayout.attachedRecordingWidth
+                readonly property real recordingVisualHeight: styleSurface.splitRecording && pillRecordingPresenter.item ? pillRecordingPresenter.item.implicitHeight : activeLayout.attachedRecordingHeight
+                readonly property bool useRecordingBlurRegions: styleSurface.splitRecording && root.recordingPresentationActive && pillRecordingPresenter.item !== null
+                readonly property var recordingBlurBackgroundItems: useRecordingBlurRegions ? pillRecordingPresenter.item.blurBackgroundItems : []
+                property real targetW: isVolumeMode && keyboardOsd ? (islandWindow.horizontalEdge ? 260 : 112) : activeLayout.targetWidth
+                property real targetH: isVolumeMode && keyboardOsd ? (islandWindow.horizontalEdge ? 64 : 144) : activeLayout.targetHeight
+                property int targetR: styleSurface.detached ? Math.min(Math.min(targetW, targetH) / 2, styleSurface.maxPillRadius) : 12
                 property int wDuration: IslandMotion.expandingDuration
                 property int hDuration: IslandMotion.expandingDuration
                 property int rDuration: IslandMotion.radiusDuration
@@ -785,8 +708,7 @@ Variants {
                 property var rBezier: IslandMotion.radiusBezier
                 property real radius: targetR
                 property var audioNode: Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.audio : null
-                property var sourceAudioNode: Pipewire.defaultAudioSource ? Pipewire.defaultAudioSource.audio :
-                                                                            null
+                property var sourceAudioNode: Pipewire.defaultAudioSource ? Pipewire.defaultAudioSource.audio : null
                 readonly property var sinkNode: Pipewire.defaultAudioSink
                 readonly property var sourceNode: Pipewire.defaultAudioSource
                 property real lastSinkVolume: -1
@@ -939,8 +861,7 @@ Variants {
                 }
 
                 function triggerSliderOSD(mode) {
-                    if (root.contentPresentationActive || root.showHub || root.showTools || root.expanded
-                            || root.showLyrics)
+                    if (root.contentPresentationActive || root.showHub || root.showTools || root.expanded || root.showLyrics)
                         return;
 
                     root.sliderMode = mode;
@@ -957,35 +878,18 @@ Variants {
                         if (!root.keyboardInteractionActive)
                             return;
 
-                        if (root.isToolsMode)
-                            toolsWidget.forceActiveFocus();
-                        else
-                            root.forceActiveFocus();
+                        root.forceActiveFocus();
                     });
                 }
 
-                onIsToolsModeChanged: {
-                    if (root.isToolsMode)
-                        root.requestKeyboardFocus();
-                }
-                onDashboardTabActiveChanged: SystemIdentityService.setUptimeConsumer(root.dashboardUptimeOwner,
-                                                                                     root.dashboardTabActive)
-                Component.onDestruction: SystemIdentityService.setUptimeConsumer(root.dashboardUptimeOwner,
-                                                                                 false)
+                onDashboardTabActiveChanged: SystemIdentityService.setUptimeConsumer(root.dashboardUptimeOwner, root.dashboardTabActive)
+                Component.onDestruction: SystemIdentityService.setUptimeConsumer(root.dashboardUptimeOwner, false)
                 focus: root.keyboardInteractionActive
                 Keys.onEscapePressed: event => {
                     WidgetState.closeAllPopups();
                     event.accepted = true;
                 }
                 state: islandWindow.edge
-                // HubContent changes its own currentIndex when a tab is
-                // clicked. Keep the two pieces of state synchronized
-                // explicitly; a child assignment would otherwise break a
-                // binding installed on HubContent.currentIndex.
-                onHubTabIndexChanged: {
-                    if (hub.currentIndex !== root.hubTabIndex)
-                        hub.currentIndex = root.hubTabIndex;
-                }
                 clip: true
                 z: 100
                 width: styleSurface.elongated && longFrame.item ? longFrame.item.childWidth : targetW
@@ -993,14 +897,10 @@ Variants {
                 opacity: styleSurface.elongated ? (longFrame.item ? longFrame.item.contentOpacity : 0) : 1
                 visible: !styleSurface.elongated || (!!longFrame.item && longFrame.item.progress > 0)
                 enabled: !styleSurface.elongated || (!!longFrame.item && longFrame.item.progress > 0.02)
-                anchors.topMargin: styleSurface.elongated && islandWindow.topEdge && longFrame.item
-                                   ? longFrame.item.childOffset : 0
-                anchors.bottomMargin: styleSurface.elongated && islandWindow.bottomEdge && longFrame.item
-                                      ? longFrame.item.childOffset : 0
-                anchors.leftMargin: styleSurface.elongated && islandWindow.leftEdge && longFrame.item
-                                    ? longFrame.item.childOffset : 0
-                anchors.rightMargin: styleSurface.elongated && islandWindow.rightEdge && longFrame.item
-                                     ? longFrame.item.childOffset : 0
+                anchors.topMargin: styleSurface.elongated && islandWindow.topEdge && longFrame.item ? longFrame.item.childOffset : 0
+                anchors.bottomMargin: styleSurface.elongated && islandWindow.bottomEdge && longFrame.item ? longFrame.item.childOffset : 0
+                anchors.leftMargin: styleSurface.elongated && islandWindow.leftEdge && longFrame.item ? longFrame.item.childOffset : 0
+                anchors.rightMargin: styleSurface.elongated && islandWindow.rightEdge && longFrame.item ? longFrame.item.childOffset : 0
                 onAudioSessionActiveChanged: {
                     if (root.audioSessionActive) {
                         if (styleSurface.elongated) {
@@ -1058,8 +958,7 @@ Variants {
                     recordingActionOut.restart();
                     if (styleSurface.splitRecording) {
                         pillGeometryEntry.stop();
-                        root.pillActiveFusionDuration = Math.max(220, Math.round(root.pillFusionDuration
-                                                                                 * root.pillMorphProgress));
+                        root.pillActiveFusionDuration = Math.max(220, Math.round(root.pillFusionDuration * root.pillMorphProgress));
                         pillRecordingInfoOut.restart();
                         pillGeometryExit.restart();
                     } else if (root.gifRecording) {
@@ -1068,9 +967,7 @@ Variants {
                     }
                 }
                 onBackendFinalizingChanged: {
-                    if (root.gifRecording && root.backendFinalizing && (!styleSurface.splitRecording
-                                                                        || root.pillMorphProgress <= 0.01)
-                            && root.processingContentProgress < 0.99)
+                    if (root.gifRecording && root.backendFinalizing && (!styleSurface.splitRecording || root.pillMorphProgress <= 0.01) && root.processingContentProgress < 0.99)
                         processingContentIn.restart();
                 }
                 onIsRecordingModeChanged: {
@@ -1100,8 +997,7 @@ Variants {
                     root.updateKeyboardLocks();
                     root.syncSinkState();
                     root.syncSourceState();
-                    SystemIdentityService.setUptimeConsumer(root.dashboardUptimeOwner,
-                                                            root.dashboardTabActive);
+                    SystemIdentityService.setUptimeConsumer(root.dashboardUptimeOwner, root.dashboardTabActive);
                     root.componentReady = true;
                     recordingContentIn.stop();
                     recordingPresentationOut.stop();
@@ -1113,13 +1009,10 @@ Variants {
                     pillGeometryExit.stop();
                     root.recordingExitActive = false;
                     root.pillMorphProgress = styleSurface.splitRecording && root.isRecording ? 1 : 0;
-                    root.recordingInfoProgress = root.isRecording || (!styleSurface.splitRecording
-                                                                      && root.isFinalizing &&
-                                                                      !root.gifRecording) ? 1 : 0;
+                    root.recordingInfoProgress = root.isRecording || (!styleSurface.splitRecording && root.isFinalizing && !root.gifRecording) ? 1 : 0;
                     root.recordingActionProgress = root.isRecording ? 1 : 0;
                     root.processingContentProgress = root.gifRecording && root.isFinalizing ? 1 : 0;
-                    root.audioPresentationPhase = root.audioSessionActive ? root.audioPhaseExpanded :
-                                                                            root.audioPhaseHidden;
+                    root.audioPresentationPhase = root.audioSessionActive ? root.audioPhaseExpanded : root.audioPhaseHidden;
                     if (root.audioSessionActive)
                         audioRecordingVisual.beginEntry();
                 }
@@ -1140,8 +1033,7 @@ Variants {
                         return;
                     }
                     const isExpanding = targetW > width;
-                    wDuration = isExpanding ? IslandMotion.expandingDuration :
-                                              IslandMotion.shrinkingDuration;
+                    wDuration = isExpanding ? IslandMotion.expandingDuration : IslandMotion.shrinkingDuration;
                     wBezier = isExpanding ? IslandMotion.expandingBezier : IslandMotion.shrinkingBezier;
                 }
                 onTargetHChanged: {
@@ -1161,8 +1053,7 @@ Variants {
                         return;
                     }
                     const isExpanding = targetH > height;
-                    hDuration = isExpanding ? IslandMotion.expandingDuration :
-                                              IslandMotion.shrinkingDuration;
+                    hDuration = isExpanding ? IslandMotion.expandingDuration : IslandMotion.shrinkingDuration;
                     hBezier = isExpanding ? IslandMotion.expandingBezier : IslandMotion.shrinkingBezier;
                 }
                 onTargetRChanged: {
@@ -1234,8 +1125,6 @@ Variants {
 
                     recordingActive: root.recordingPresentationActive
                     audioActive: root.audioGeometryActive
-                    toolsActive: root.isToolsMode
-                    hubActive: root.isHubMode
                     lyricsActive: root.isLyricsMode
                     expandedActive: root.expanded
                     expandedWidth: mediaWidget.panelWidth
@@ -1245,10 +1134,6 @@ Variants {
                     collapsedHovered: root.isCollapsedHovered
                     recordingWidth: root.recordingVisualWidth
                     recordingHeight: root.recordingVisualHeight
-                    toolsWidth: toolsWidget.implicitWidth
-                    toolsHeight: toolsWidget.implicitHeight
-                    hubWidth: hub.implicitWidth
-                    hubHeight: hub.implicitHeight
                     lyricsWidth: lyricsWidget.implicitWidth
                     lyricsHeight: lyricsWidget.implicitHeight
                     notificationsWidth: root.notifW
@@ -1260,8 +1145,6 @@ Variants {
 
                     recordingActive: root.recordingPresentationActive
                     audioActive: root.audioGeometryActive
-                    toolsActive: root.isToolsMode
-                    hubActive: root.isHubMode
                     lyricsActive: root.isLyricsMode
                     expandedActive: root.expanded
                     expandedWidth: mediaWidget.panelWidth
@@ -1271,10 +1154,6 @@ Variants {
                     collapsedHovered: root.isCollapsedHovered
                     recordingWidth: root.recordingVisualWidth
                     recordingHeight: root.recordingVisualHeight
-                    toolsWidth: toolsWidget.implicitWidth
-                    toolsHeight: toolsWidget.implicitHeight
-                    hubWidth: hub.implicitWidth
-                    hubHeight: hub.implicitHeight
                     lyricsWidth: lyricsWidget.implicitWidth
                     lyricsHeight: lyricsWidget.implicitHeight
                     notificationsWidth: root.notifW
@@ -1345,8 +1224,7 @@ Variants {
                     id: pillRecordingInfoOut
 
                     PauseAnimation {
-                        duration: Math.max(0, root.pillActiveFusionDuration
-                                           - Appearance.animation.expressiveSlowEffects.duration)
+                        duration: Math.max(0, root.pillActiveFusionDuration - Appearance.animation.expressiveSlowEffects.duration)
                     }
 
                     NumberAnimation {
@@ -1379,8 +1257,7 @@ Variants {
                     duration: root.pillActiveFusionDuration
                     easing.type: Easing.Linear
                     onFinished: {
-                        const shouldShowProcessing = root.gifRecording && (root.backendFinalizing
-                                                                           || RecordingService.isStopPending);
+                        const shouldShowProcessing = root.gifRecording && (root.backendFinalizing || RecordingService.isStopPending);
                         root.pillStopFusionMinimumActive = false;
                         if (shouldShowProcessing)
                             processingContentIn.restart();
@@ -1457,18 +1334,17 @@ Variants {
                     }
                 }
 
+                // Inert geometry marker: the long frame still requires a
+                // cutoutItem; the keyhole itself moved into the panel popup
+                // (B2-1). Dies with the long style at B5.
                 Rectangle {
                     id: dashboardKeyholeCutout
 
+                    visible: false
                     width: 340
                     height: 456
-                    anchors.left: parent.horizontalCenter
-                    anchors.leftMargin: hub.dashboardKeyholeCenterOffset + contentParallax.x
-                    anchors.top: parent.top
-                    anchors.topMargin: 132 + contentParallax.y
                     radius: 24
                     color: "transparent"
-                    visible: root.showDashboardKeyhole
                 }
 
                 Loader {
@@ -1477,17 +1353,11 @@ Variants {
                     opacity: mediaWidget.opacity
                     sourceComponent: MediaBackdrop {
                         artUrl: mediaWidget.artUrl
-                        sourceSize: Qt.size(Math.ceil(Math.min(mediaWidget.panelWidth,
-                                                               mediaWidget.panelHeight * 1.5) * 2), Math.ceil(
-                                                mediaWidget.panelHeight * 2))
-                        topLeftRadius: styleSurface.elongated && longFrame.item ? longFrame.item.childRadius :
-                                                                                  rootSurface.topLeftRadius
-                        topRightRadius: styleSurface.elongated && longFrame.item ? longFrame.item.childRadius :
-                                                                                   rootSurface.topRightRadius
-                        bottomLeftRadius: styleSurface.elongated && longFrame.item
-                                          ? longFrame.item.childRadius : rootSurface.bottomLeftRadius
-                        bottomRightRadius: styleSurface.elongated && longFrame.item
-                                           ? longFrame.item.childRadius : rootSurface.bottomRightRadius
+                        sourceSize: Qt.size(Math.ceil(Math.min(mediaWidget.panelWidth, mediaWidget.panelHeight * 1.5) * 2), Math.ceil(mediaWidget.panelHeight * 2))
+                        topLeftRadius: styleSurface.elongated && longFrame.item ? longFrame.item.childRadius : rootSurface.topLeftRadius
+                        topRightRadius: styleSurface.elongated && longFrame.item ? longFrame.item.childRadius : rootSurface.topRightRadius
+                        bottomLeftRadius: styleSurface.elongated && longFrame.item ? longFrame.item.childRadius : rootSurface.bottomLeftRadius
+                        bottomRightRadius: styleSurface.elongated && longFrame.item ? longFrame.item.childRadius : rootSurface.bottomRightRadius
                     }
                 }
 
@@ -1600,9 +1470,7 @@ Variants {
                     enabled: !root.contentPresentationActive && !root.isNotifMode && !root.isVolumeMode
                     acceptedButtons: Qt.LeftButton | Qt.MiddleButton
                     onClicked: mouse => {
-                        root.activateMouseAction(mouse.button === Qt.MiddleButton
-                                                 ? PersonalizationConfig.islandMiddleClickAction :
-                                                   PersonalizationConfig.islandLeftClickAction, true);
+                        root.activateMouseAction(mouse.button === Qt.MiddleButton ? PersonalizationConfig.islandMiddleClickAction : PersonalizationConfig.islandLeftClickAction, true);
                         mouse.accepted = true;
                     }
                 }
@@ -1613,14 +1481,8 @@ Variants {
                     transform: Translate {
                         id: contentParallax
 
-                        x: styleSurface.elongated && longFrame.item ? (islandWindow.leftEdge ? -1 :
-                                                                                                 islandWindow.rightEdge
-                                                                                                 ? 1 : 0)
-                                                                      * longFrame.item.contentOffset : 0
-                        y: styleSurface.elongated && longFrame.item ? (islandWindow.topEdge ? -1 :
-                                                                                                islandWindow.bottomEdge
-                                                                                                ? 1 : 0)
-                                                                      * longFrame.item.contentOffset : 0
+                        x: styleSurface.elongated && longFrame.item ? (islandWindow.leftEdge ? -1 : islandWindow.rightEdge ? 1 : 0) * longFrame.item.contentOffset : 0
+                        y: styleSurface.elongated && longFrame.item ? (islandWindow.topEdge ? -1 : islandWindow.bottomEdge ? 1 : 0) * longFrame.item.contentOffset : 0
                     }
                     enabled: !styleSurface.elongated || root.opacity > 0.1
                     anchors.top: parent.top
@@ -1648,8 +1510,7 @@ Variants {
                         height: root.activeLayout.volumeHeight
                         vertical: !islandWindow.horizontalEdge
                         mode: root.sliderMode
-                        audioNode: root.sliderMode === "volume" ? root.audioNode : root.sliderMode === "mic"
-                                                                  ? root.sourceAudioNode : null
+                        audioNode: root.sliderMode === "volume" ? root.audioNode : root.sliderMode === "mic" ? root.sourceAudioNode : null
                         externalValue: BrightnessService.brightnessValue
                         iconName: root.sliderMode === "brightness" ? "brightness_medium" : ""
                         opacity: root.isVolumeMode && !root.keyboardOsd ? 1 : 0
@@ -1696,82 +1557,15 @@ Variants {
 
                     MediaContent {
                         id: mediaWidget
-                        surfaceTopRightRadius: styleSurface.elongated && longFrame.item
-                                               ? longFrame.item.childRadius : rootSurface.topRightRadius
+                        surfaceTopRightRadius: styleSurface.elongated && longFrame.item ? longFrame.item.childRadius : rootSurface.topRightRadius
 
                         anchors.top: parent.top
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.topMargin: 20
                         width: root.activeLayout.expandedWidth - 40
                         height: root.activeLayout.expandedHeight - 40
-                        opacity: (!root.contentPresentationActive && root.expanded && !root.isLyricsMode &&
-                                  !root.isHubMode) ? 1 : 0
+                        opacity: (!root.contentPresentationActive && root.expanded && !root.isLyricsMode) ? 1 : 0
                         visible: opacity > 0.01
-
-                        Behavior on opacity {
-                            NumberAnimation {
-                                duration: Appearance.animation.expressiveEffects.duration
-                                easing.type: Appearance.animation.expressiveEffects.type
-                                easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
-                            }
-                        }
-                    }
-
-                    HubContent {
-                        id: hub
-
-                        anchors.top: parent.top
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        width: implicitWidth
-                        height: implicitHeight
-                        screen: islandWindow.screen
-                        onCurrentIndexChanged: {
-                            if (root.hubTabIndex !== currentIndex)
-                                root.hubTabIndex = currentIndex;
-                        }
-                        Component.onCompleted: {
-                            if (currentIndex !== root.hubTabIndex)
-                                currentIndex = root.hubTabIndex;
-                        }
-                        onCloseRequested: root.showHub = false
-                        onAvatarEditRequested: {
-                            root.showHub = false;
-                            styleSurface.avatarEditRequested(islandWindow.screen);
-                        }
-                        opacity: root.isHubMode ? 1 : 0
-                        visible: opacity > 0.01
-
-                        Behavior on opacity {
-                            NumberAnimation {
-                                duration: Appearance.animation.expressiveEffects.duration
-                                easing.type: Appearance.animation.expressiveEffects.type
-                                easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
-                            }
-                        }
-                    }
-
-                    ToolsContent {
-                        id: toolsWidget
-
-                        keyboardActive: root.isToolsMode && !root.recordingLaunchPending
-                        retainForRecording: styleSurface.elongated
-                        anchors.top: parent.top
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        width: implicitWidth
-                        height: implicitHeight
-                        vertical: !islandWindow.horizontalEdge
-                        edge: islandWindow.edge
-                        opacity: root.isToolsMode ? 1 : 0
-                        visible: opacity > 0.01
-                        onRequestHideIsland: {
-                            root.showTools = false;
-                        }
-                        onRecordingRequested: {
-                            // Keep the current child alive through selection
-                            // and startup; cancellation leaves Tools usable.
-                            root.hoverOpened = false;
-                            hoverIntent.cancel();
-                        }
 
                         Behavior on opacity {
                             NumberAnimation {
@@ -1801,17 +1595,13 @@ Variants {
                     cursorShape: Qt.PointingHandCursor
                     acceptedButtons: Qt.LeftButton | Qt.MiddleButton
                     onClicked: mouse => {
-                        root.activateMouseAction(mouse.button === Qt.MiddleButton
-                                                 ? PersonalizationConfig.islandMiddleClickAction :
-                                                   PersonalizationConfig.islandLeftClickAction, true);
+                        root.activateMouseAction(mouse.button === Qt.MiddleButton ? PersonalizationConfig.islandMiddleClickAction : PersonalizationConfig.islandLeftClickAction, true);
                         mouse.accepted = true;
                     }
                 }
 
                 Behavior on width {
-                    enabled: !styleSurface.elongated && !(styleSurface.splitRecording
-                                                          && root.recordingPresentationActive
-                                                          && islandWindow.horizontalEdge)
+                    enabled: !styleSurface.elongated && !(styleSurface.splitRecording && root.recordingPresentationActive && islandWindow.horizontalEdge)
 
                     NumberAnimation {
                         duration: root.wDuration
@@ -1821,9 +1611,7 @@ Variants {
                 }
 
                 Behavior on height {
-                    enabled: !styleSurface.elongated && !(styleSurface.splitRecording
-                                                          && root.recordingPresentationActive &&
-                                                          !islandWindow.horizontalEdge)
+                    enabled: !styleSurface.elongated && !(styleSurface.splitRecording && root.recordingPresentationActive && !islandWindow.horizontalEdge)
 
                     NumberAnimation {
                         duration: root.hDuration
@@ -1865,8 +1653,7 @@ Variants {
                         root.audioPresentationPhase = root.audioPhaseCollapsing;
                 }
                 onExitFinished: {
-                    root.audioPresentationPhase = root.audioSessionActive ? root.audioPhaseExpanded :
-                                                                            root.audioPhaseHidden;
+                    root.audioPresentationPhase = root.audioSessionActive ? root.audioPhaseExpanded : root.audioPhaseHidden;
                 }
             }
 
@@ -1887,13 +1674,9 @@ Variants {
 
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: root.isCollapsedMode ? Appearance.animation.expressiveSlowEffects.duration :
-                                                         Appearance.animation.expressiveFastEffects.duration
-                        easing.type: root.isCollapsedMode ? Appearance.animation.expressiveSlowEffects.type :
-                                                            Appearance.animation.expressiveFastEffects.type
-                        easing.bezierCurve: root.isCollapsedMode
-                                            ? Appearance.animation.expressiveSlowEffects.bezierCurve :
-                                              Appearance.animation.expressiveFastEffects.bezierCurve
+                        duration: root.isCollapsedMode ? Appearance.animation.expressiveSlowEffects.duration : Appearance.animation.expressiveFastEffects.duration
+                        easing.type: root.isCollapsedMode ? Appearance.animation.expressiveSlowEffects.type : Appearance.animation.expressiveFastEffects.type
+                        easing.bezierCurve: root.isCollapsedMode ? Appearance.animation.expressiveSlowEffects.bezierCurve : Appearance.animation.expressiveFastEffects.bezierCurve
                     }
                 }
             }
@@ -1903,8 +1686,7 @@ Variants {
 
                 anchors.fill: root
                 visible: styleSurface.splitRecording && root.recordingPresentationActive
-                sourceComponent: islandWindow.horizontalEdge ? horizontalPillRecordingComponent :
-                                                                 verticalPillRecordingComponent
+                sourceComponent: islandWindow.horizontalEdge ? horizontalPillRecordingComponent : verticalPillRecordingComponent
                 z: root.z + 2
             }
 
@@ -1983,25 +1765,14 @@ Variants {
             CompositorBlurRegion {
                 targetWindow: islandWindow
                 backgroundItem: styleSurface.elongated || root.useRecordingBlurRegions ? null : root
-                additionalBackgroundItems: styleSurface.elongated && longFrame.item
-                                           ? longFrame.item.blurItems : root.recordingBlurBackgroundItems
-                subtractedBackgroundItems: !root.showDashboardKeyhole ? [] : styleSurface.elongated
-                                                                        && longFrame.item
-                                                                        ? [longFrame.item.cutoutBlurItem] :
-                                                                          [dashboardKeyholeCutout]
-                postSubtractionBackgroundItems: root.showDashboardKeyhole && root.visible && root.opacity
-                                                > 0.01 && hub.opacity > 0.01 ? hub.dashboardKeyholeGlassItems :
-                                                                               []
-                postSubtractionClipItem: styleSurface.elongated && longFrame.item
-                                         ? longFrame.item.childBlurItem : root
+                additionalBackgroundItems: styleSurface.elongated && longFrame.item ? longFrame.item.blurItems : root.recordingBlurBackgroundItems
                 radius: root.radius
             }
         }
 
         mask: Region {
             Region {
-                item: styleSurface.elongated ? (longFrame.item ? longFrame.item.mainItem : null) :
-                                               maskContainer
+                item: styleSurface.elongated ? (longFrame.item ? longFrame.item.mainItem : null) : maskContainer
 
                 radius: styleSurface.elongated ? 21 : 0
             }
@@ -2017,72 +1788,5 @@ Variants {
                 surfaceHeight: islandWindow.height
             }
         }
-    }
-
-    component SurfaceShape: Canvas {
-
-        required property color surfaceColor
-        required property real topLeftRadius
-        required property real topRightRadius
-        required property real bottomRightRadius
-        required property real bottomLeftRadius
-        required property bool cutoutVisible
-        required property real cutoutX
-        required property real cutoutY
-        required property real cutoutWidth
-        required property real cutoutHeight
-        required property real cutoutRadius
-
-        function addRoundedRect(context, x, y, width, height, topLeft, topRight, bottomRight, bottomLeft) {
-            const maxRadius = Math.min(width / 2, height / 2);
-            const tl = Math.min(topLeft, maxRadius);
-            const tr = Math.min(topRight, maxRadius);
-            const br = Math.min(bottomRight, maxRadius);
-            const bl = Math.min(bottomLeft, maxRadius);
-            context.beginPath();
-            context.moveTo(x + tl, y);
-            context.lineTo(x + width - tr, y);
-            context.quadraticCurveTo(x + width, y, x + width, y + tr);
-            context.lineTo(x + width, y + height - br);
-            context.quadraticCurveTo(x + width, y + height, x + width - br, y + height);
-            context.lineTo(x + bl, y + height);
-            context.quadraticCurveTo(x, y + height, x, y + height - bl);
-            context.lineTo(x, y + tl);
-            context.quadraticCurveTo(x, y, x + tl, y);
-            context.closePath();
-        }
-
-        anchors.fill: parent
-        antialiasing: true
-        onPaint: {
-            const context = getContext("2d");
-            context.reset();
-            context.clearRect(0, 0, width, height);
-            addRoundedRect(context, 0, 0, width, height, topLeftRadius, topRightRadius, bottomRightRadius,
-                           bottomLeftRadius);
-            context.fillStyle = surfaceColor;
-            context.fill();
-            if (cutoutVisible) {
-                context.globalCompositeOperation = "destination-out";
-                addRoundedRect(context, cutoutX, cutoutY, cutoutWidth, cutoutHeight, cutoutRadius,
-                               cutoutRadius, cutoutRadius, cutoutRadius);
-                context.fillStyle = "white";
-                context.fill();
-                context.globalCompositeOperation = "source-over";
-            }
-        }
-        onWidthChanged: requestPaint()
-        onHeightChanged: requestPaint()
-        onSurfaceColorChanged: requestPaint()
-        onTopLeftRadiusChanged: requestPaint()
-        onTopRightRadiusChanged: requestPaint()
-        onBottomRightRadiusChanged: requestPaint()
-        onBottomLeftRadiusChanged: requestPaint()
-        onCutoutVisibleChanged: requestPaint()
-        onCutoutXChanged: requestPaint()
-        onCutoutYChanged: requestPaint()
-        onCutoutWidthChanged: requestPaint()
-        onCutoutHeightChanged: requestPaint()
-        onCutoutRadiusChanged: requestPaint()
     }
 }
