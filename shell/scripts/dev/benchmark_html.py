@@ -130,6 +130,7 @@ def render_html(raw: Mapping[str, object], report: Mapping[str, object]) -> str:
         _table("动作测量明细", raw.get("actions", {}), "全部动作延迟、错误数和资源峰值。"),
         _table("长稳态明细", raw.get("long_steady_state", {}), "容器内连续运行期间的逐样本进程树采样。"),
         _table("回收循环明细", raw.get("reclamation", {}), "容器内显式 open/close 循环及关闭后资源观察。"),
+        _table("渲染帧探针", raw.get("frame_profile", {}), "容器内 Qt QQuickWindow.frameSwapped；Weston presentation feedback、纹理和离屏目标计数若不可用会明确保留为 partial/null。"),
         _score_table("冷启动归一化分数", scores, normalized.get("ratios_shell_over_baseline", {})),
         _score_table("暖启动归一化分数", normalized.get("warm_scores_0_100", {}), normalized.get("warm_ratios_shell_over_baseline", {})),
         _table("Shell 内部时间点", normalized.get("internal_shell_ms", {})),

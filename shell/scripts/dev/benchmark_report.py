@@ -199,6 +199,7 @@ def build_report(raw: dict[str, object]) -> dict[str, object]:
             "actions": raw.get("actions", {}),
             "long_steady_state": raw.get("long_steady_state", {}),
             "reclamation": raw.get("reclamation", {}),
+            "frame_profile": raw.get("frame_profile", {}),
             "source_profile": raw.get("source_profile", {}),
         },
         "normalized": {

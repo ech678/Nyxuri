@@ -258,6 +258,197 @@ def reclamation_benchmark(
     }
 
 
+def _frame_probe_source(duration_seconds: float, target_fps: float) -> str:
+    """Return a self-contained Qt Quick frame-swap probe.
+
+    This deliberately uses only QQuickWindow's public ``frameSwapped`` signal.
+    Weston presentation feedback and scene-graph texture counters are not
+    available through the pinned headless/pixman stack, so the caller reports
+    those fields as partial instead of inferring them from CPU samples.
+    """
+    duration_ms = max(100, int(duration_seconds * 1000))
+    return f'''import QtQuick
+import QtQuick.Window
+import Quickshell
+
+ShellRoot {{
+    Window {{
+        id: probe
+        visible: true
+        width: 1280
+        height: 720
+        color: "#18212b"
+        property double startedMs: Date.now()
+        property double lastFrameMs: 0
+        property var intervals: []
+        property int frames: 0
+        property int droppedFrames: 0
+        property double targetFps: {target_fps:.6f}
+
+        Rectangle {{
+            id: canvas
+            anchors.fill: parent
+            color: probe.frames % 2 ? "#243746" : "#18212b"
+            opacity: 0.98
+        }}
+        NumberAnimation {{
+            target: canvas
+            property: "rotation"
+            from: 0
+            to: 360
+            duration: 1000
+            loops: Animation.Infinite
+            running: true
+        }}
+
+        function quantile(values, probability) {{
+            if (!values.length)
+                return null;
+            const sorted = values.slice().sort((a, b) => a - b);
+            const position = (sorted.length - 1) * probability;
+            const low = Math.floor(position);
+            const high = Math.min(low + 1, sorted.length - 1);
+            return sorted[low] + (sorted[high] - sorted[low]) * (position - low);
+        }}
+
+        function finish() {{
+            const now = Date.now();
+            const elapsed = Math.max(now - startedMs, 1);
+            const payload = {{
+                "schema": 1,
+                "status": frames > 0 ? "available" : "partial",
+                "source": "Qt QQuickWindow.frameSwapped",
+                "elapsed_ms": elapsed,
+                "frames": frames,
+                "dropped_frames": droppedFrames,
+                "estimated_fps": frames * 1000 / elapsed,
+                "target_fps": targetFps,
+                "frame_interval_ms": {{
+                    "n": intervals.length,
+                    "p50": quantile(intervals, 0.50),
+                    "p95": quantile(intervals, 0.95),
+                    "p99": quantile(intervals, 0.99),
+                    "min": intervals.length ? Math.min.apply(null, intervals) : null,
+                    "max": intervals.length ? Math.max.apply(null, intervals) : null
+                }},
+                "unsupported": [
+                    "weston_presentation_feedback",
+                    "texture_count",
+                    "offscreen_target_count"
+                ]
+            }};
+            console.log("FRAME_PROFILE " + JSON.stringify(payload));
+            Qt.quit();
+        }}
+
+        onFrameSwapped: {{
+            const now = Date.now();
+            if (lastFrameMs > 0) {{
+                const interval = now - lastFrameMs;
+                if (intervals.length < 10000)
+                    intervals.push(interval);
+                droppedFrames += Math.max(0, Math.ceil(interval / (1000 / targetFps)) - 1);
+            }}
+            lastFrameMs = now;
+            frames += 1;
+        }}
+
+        Timer {{
+            interval: {duration_ms}
+            running: true
+            repeat: false
+            onTriggered: probe.finish()
+        }}
+    }}
+}}
+'''
+
+
+def _renderer_profile(log_text: str, environment: dict[str, str]) -> dict[str, object]:
+    """Extract only renderer facts emitted by Qt/Weston, preserving limits."""
+    scenegraph_lines = [
+        line.strip() for line in log_text.splitlines()
+        if any(token in line.lower() for token in ("scenegraph", "rhi", "renderer", "graphics api"))
+    ]
+    return {
+        "status": "partial",
+        "source": ["benchmark-lock.json", "Qt scenegraph log"],
+        "qt_quick_backend": environment.get("QT_QUICK_BACKEND"),
+        "qsg_rhi_backend": environment.get("QSG_RHI_BACKEND"),
+        "weston_renderer": "pixman",
+        "scenegraph_log_lines": scenegraph_lines[-40:],
+        "reason": "Qt frameSwapped is observable; Weston presentation feedback and texture/offscreen counters are not exposed by this headless pixman probe",
+    }
+
+
+def frame_profile_benchmark(
+    environment: dict[str, str], log_dir: Path, duration_seconds: float = 5.0,
+    target_fps: float = 60.0,
+) -> dict[str, object]:
+    """Profile Qt frame swaps in the isolated Weston session.
+
+    This is intentionally a separate probe rather than a host-run or an
+    inferred process metric. Missing frame callbacks remain a valid partial
+    result and retain the raw log for diagnosis.
+    """
+    if duration_seconds <= 0 or target_fps <= 0:
+        raise ValueError("duration and target fps must be positive")
+    root = log_dir / "frame-profile"
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "shell.qml").write_text(
+        _frame_probe_source(duration_seconds, target_fps), encoding="utf-8"
+    )
+    log_path = root / "probe.log"
+    probe_env = dict(environment)
+    probe_env.update({
+        "QSG_INFO": "1",
+        "QT_LOGGING_RULES": "qt.scenegraph.general=true;qt.rhi.*=true",
+    })
+    payload: dict[str, object] | None = None
+    with log_path.open("w+", encoding="utf-8") as log:
+        process = subprocess.Popen(
+            ["qs", "-p", str(root), "--no-duplicate", "-v"],
+            env=probe_env, stdout=log, stderr=subprocess.STDOUT,
+            start_new_session=True, text=True,
+        )
+        deadline = time.monotonic() + duration_seconds + 15
+        while time.monotonic() < deadline:
+            log.flush()
+            text = log_path.read_text(errors="replace")
+            for line in reversed(text.splitlines()):
+                if line.startswith("FRAME_PROFILE "):
+                    try:
+                        parsed = json.loads(line.removeprefix("FRAME_PROFILE "))
+                    except json.JSONDecodeError:
+                        continue
+                    if isinstance(parsed, dict):
+                        payload = parsed
+                        break
+            if payload is not None or process.poll() is not None:
+                break
+            time.sleep(0.05)
+        _terminate(process)
+        text = log_path.read_text(errors="replace")
+    result: dict[str, object] = {
+        "scenario": "frame_profile",
+        "requested_seconds": duration_seconds,
+        "target_fps": target_fps,
+        "probe": payload or {
+            "schema": 1,
+            "status": "partial",
+            "source": "Qt QQuickWindow.frameSwapped",
+            "reason": "frame profile marker was not emitted",
+            "frames": 0,
+            "dropped_frames": None,
+            "frame_interval_ms": None,
+        },
+        "renderer": _renderer_profile(text, probe_env),
+        "controlled_shutdown": process.returncode in (0, -15),
+        "log_path": str(log_path),
+    }
+    return result
+
+
 def environment() -> dict[str, str]:
     runtime = Path("/tmp/nyxuri-runtime")
     runtime.mkdir(parents=True, exist_ok=True)
@@ -288,6 +479,7 @@ def main() -> int:
     parser.add_argument("--steady-seconds", type=float, default=600.0)
     parser.add_argument("--reclaim-cycles", type=int, default=100)
     parser.add_argument("--reclaim-close-wait", type=float, default=0.1)
+    parser.add_argument("--frame-seconds", type=float, default=5.0)
     args = parser.parse_args()
     if args.steady_seconds <= 0:
         parser.error("--steady-seconds must be > 0")
@@ -295,6 +487,8 @@ def main() -> int:
         parser.error("--reclaim-cycles must be >= 1")
     if args.reclaim_close_wait < 0:
         parser.error("--reclaim-close-wait must be >= 0")
+    if args.frame_seconds <= 0:
+        parser.error("--frame-seconds must be > 0")
     output = args.output; output.parent.mkdir(parents=True, exist_ok=True)
     log_dir = output.parent / "logs"; log_dir.mkdir(exist_ok=True)
     env = environment(); weston_log = (log_dir / "weston.log").open("w")
@@ -330,6 +524,7 @@ def main() -> int:
         actions = action_benchmark(env, log_dir, max(5, args.ipc_runs // 3))
         steady_state = steady_state_benchmark(env, log_dir, args.steady_seconds)
         reclamation = reclamation_benchmark(env, log_dir, args.reclaim_cycles, args.reclaim_close_wait)
+        frame_profile = frame_profile_benchmark(env, log_dir, args.frame_seconds)
     finally:
         _terminate(weston); weston_log.close()
         shutil.rmtree(baseline_dir, ignore_errors=True)
@@ -375,6 +570,7 @@ def main() -> int:
             "steady_seconds": args.steady_seconds,
             "reclaim_cycles": args.reclaim_cycles,
             "reclaim_close_wait": args.reclaim_close_wait,
+            "frame_seconds": args.frame_seconds,
             "optional_process_commands": ["key", "lspci", "inotifywait", "ddcutil"],
         },
         "baseline": [numeric_run(run) for run in baseline], "cold_start": [numeric_run(run) for run in cold],
@@ -383,6 +579,7 @@ def main() -> int:
         "actions": actions,
         "long_steady_state": steady_state,
         "reclamation": reclamation,
+        "frame_profile": frame_profile,
         "source_profile": source_profile(),
     }
     output.write_text(json.dumps(result, ensure_ascii=True, indent=2), encoding="utf-8")

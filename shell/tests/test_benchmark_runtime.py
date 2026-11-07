@@ -31,6 +31,18 @@ _REPORT_SPEC.loader.exec_module(report)
 
 
 class BenchmarkRuntimeTests(unittest.TestCase):
+    def test_frame_profile_probe_is_container_only_and_declares_partial_metrics(self):
+        scenarios = (ROOT / "scripts" / "dev" / "benchmark_scenarios.py").read_text(encoding="utf-8")
+        self.assertIn("def frame_profile_benchmark", scenarios)
+        self.assertIn("Qt QQuickWindow.frameSwapped", scenarios)
+        self.assertIn("weston_presentation_feedback", scenarios)
+        self.assertIn('"status": "partial"', scenarios)
+        self.assertNotIn('os.environ["DISPLAY"]', scenarios)
+
+    def test_report_preserves_frame_profile_evidence(self):
+        built = report.build_report({"frame_profile": {"probe": {"status": "partial"}}})
+        self.assertEqual(built["raw"]["frame_profile"]["probe"]["status"], "partial")
+
     def test_qml_census_contract_is_live_and_tears_down_loader_records(self):
         startup = (ROOT / "services" / "ShellStartupService.qml").read_text(encoding="utf-8")
         slot = (ROOT / "app" / "SlotHost.qml").read_text(encoding="utf-8")
