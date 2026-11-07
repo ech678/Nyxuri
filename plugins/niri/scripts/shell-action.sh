@@ -47,6 +47,64 @@ if [ "$active_shell" = "nyxuri-shell" ] || [ "$active_shell" = "custom" ]; then
     fi
 fi
 
+is_plugin_enabled() {
+    local pid="$1"
+    [ -r "$state_file" ] || return 0
+    if command -v jq >/dev/null 2>&1; then
+        local st
+        st=$(jq -r --arg p "$pid" '.plugins[$p].state // empty' "$state_file" 2>/dev/null)
+        [ "$st" != "disabled" ] && return 0
+        return 1
+    fi
+    python3 -c "import json, sys; d=json.load(open('$state_file')).get('plugins', {}).get('$pid', {}); sys.exit(1 if d.get('state') == 'disabled' else 0)" 2>/dev/null
+}
+
+find_action_tool() {
+    local target_act="$1"
+    local data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
+    local config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
+
+    # 1. Search living and data paths for third-party Nyxuri plugins
+    local dir
+    for dir in "$config_home/nyxuri/plugins" "$data_home/nyxuri/plugins"; do
+        [ -d "$dir" ] || continue
+        for p in "$dir"/*; do
+            [ -d "$p" ] || continue
+            is_plugin_enabled "${p##*/}" || continue
+            for exe in "$p"/*"$target_act"* "$p"/tools/*"$target_act"*; do
+                [ -f "$exe" ] || continue
+                case "$exe" in *.toml|*.json|*.txt|*.md|*.bak|*.backup*|*~) continue ;; esac
+                if [ -x "$exe" ] || [[ "$exe" == *.py || "$exe" == *.sh ]]; then
+                    printf "%s" "$exe"
+                    return 0
+                fi
+            done
+        done
+    done
+
+    # 2. Legacy Noctalia tools (only if noctalia is enabled)
+    if is_plugin_enabled "noctalia" && [ -d "$config_home/noctalia/tools" ]; then
+        for exe in "$config_home/noctalia/tools"/*"$target_act"*; do
+            [ -f "$exe" ] || continue
+            case "$exe" in *.toml|*.json|*.txt|*.md|*.bak|*.backup*|*~) continue ;; esac
+            if [ -x "$exe" ] || [[ "$exe" == *.py || "$exe" == *.sh ]]; then
+                local base="${exe##*/}"
+                local stem="${base%.*}"
+                is_plugin_enabled "$stem" || continue
+                printf "%s" "$exe"
+                return 0
+            fi
+        done
+    fi
+
+    # 3. Command on PATH
+    if command -v "$target_act" >/dev/null 2>&1; then
+        command -v "$target_act"
+        return 0
+    fi
+    return 1
+}
+
 case "$action" in
     launcher)
         exec noctalia msg panel-toggle launcher
@@ -67,25 +125,34 @@ case "$action" in
         exec noctalia msg wallpaper-random
         ;;
     wallpaper-picker)
-        tools_dir="$HOME/.config/noctalia/tools"
-        if [ -x "$tools_dir/wallpaper-picker.py" ]; then
-            exec "$tools_dir/wallpaper-picker.py"
+        tool="$(find_action_tool "wallpaper-picker")" || {
+            echo "Wallpaper picker tool not found or disabled." >&2
+            exit 1
+        }
+        if [ -x "$tool" ]; then
+            exec "$tool"
         fi
-        exec python3 "$tools_dir/wallpaper-picker.py"
+        exec python3 "$tool"
         ;;
     radial-launcher)
-        tools_dir="$HOME/.config/noctalia/tools"
-        if [ -x "$tools_dir/orbit-launcher.py" ]; then
-            exec "$tools_dir/orbit-launcher.py"
+        tool="$(find_action_tool "launcher")" || {
+            echo "Launcher tool not found or disabled." >&2
+            exit 1
+        }
+        if [ -x "$tool" ]; then
+            exec "$tool"
         fi
-        exec python3 "$tools_dir/orbit-launcher.py"
+        exec python3 "$tool"
         ;;
     translate)
-        tools_dir="$HOME/.config/noctalia/tools"
-        if [ -x "$tools_dir/orbit-translate.py" ]; then
-            exec "$tools_dir/orbit-translate.py"
+        tool="$(find_action_tool "translate")" || {
+            echo "Translate tool not found or disabled." >&2
+            exit 1
+        }
+        if [ -x "$tool" ]; then
+            exec "$tool"
         fi
-        exec python3 "$tools_dir/orbit-translate.py"
+        exec python3 "$tool"
         ;;
     *)
         echo "Unknown shell action: $action" >&2

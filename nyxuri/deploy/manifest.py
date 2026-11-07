@@ -170,6 +170,7 @@ class ModuleManifest:
     form_exclude: List[str] = field(default_factory=list)
     form_reload: List[str] = field(default_factory=list)
     forms: Dict[str, dict] = field(default_factory=dict)
+    origin: str = "official"
 
     @property
     def is_runtime(self) -> bool:
@@ -537,13 +538,14 @@ def living_path(m: ModuleManifest, config_dir: Path) -> Path:
     outside ``~/.config`` — expanded against ``$HOME``. An ``xdg:<KIND>/<rest>``
     target resolves through the XDG user dirs (R0-4 generalises the map).
     A bare ``target`` is the single-file exception under ``~/.config``; no
-    target means ``~/.config/<plugin>``.
+    target means ``~/.config/<plugin>`` (or ``~/.config/nyxuri/plugins/<plugin>``
+    for third-party plugins).
     """
     if m.target.startswith(_XDG_PREFIX):
         return _resolve_xdg_target(m.target)
     if m.target.startswith(("~", "/")):
         return Path(os.path.expanduser(m.target))
-    raw = m.target or m.id
+    raw = m.target or (f"nyxuri/plugins/{m.id}" if m.origin == "third-party" else m.id)
     parts = [p for p in raw.replace("\\", "/").split("/") if p]
     from nyxuri.core import is_safe_leaf_name, assert_contained
     if not parts or not all(is_safe_leaf_name(p) for p in parts):
@@ -552,13 +554,26 @@ def living_path(m: ModuleManifest, config_dir: Path) -> Path:
     return assert_contained(candidate, config_dir)
 
 
-def load_manifest(app_src: Path, *, namespace: str = "") -> ModuleManifest:
+def load_manifest(
+    app_src: Path, *, namespace: str = "", origin: str = ""
+) -> ModuleManifest:
     """Load a manifest for a plugin directory; defaults derived from the id.
 
     A present manifest must be new-form (closed vocabulary, ``schemaVersion``
     1, ``id`` == ``<namespace><directory>``); a missing manifest is the full
     default: ``kinds = ["config"]`` and every other default applies.
     """
+    if not origin:
+        try:
+            from nyxuri.core import get_env
+            data_dir = get_env().data_dir
+            if app_src.is_relative_to(data_dir / "plugins"):
+                origin = "third-party"
+            else:
+                origin = "official"
+        except Exception:
+            origin = "official"
+
     expected_id = namespace + app_src.name
     mpath = app_src / _MANIFEST_NAME
     data = {}
@@ -698,6 +713,7 @@ def load_manifest(app_src: Path, *, namespace: str = "") -> ModuleManifest:
         form_exclude=_as_str_list(forms.get("exclude")),
         form_reload=_as_str_list(forms.get("reload")),
         forms=manifest_forms,
+        origin=origin,
     )
 
 

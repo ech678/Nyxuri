@@ -141,6 +141,23 @@ def _check_scripts(env) -> None:
         else:
             print(msg("doctor_warn", text(f"脚本缺失，未部署: {name}", f"Script is missing (not deployed): {name}")))
 
+    plugins_data = env.data_dir / "plugins"
+    if plugins_data.is_dir():
+        for p in plugins_data.iterdir():
+            if not p.is_dir() or p.name.startswith("."):
+                continue
+            for item in p.iterdir():
+                if item.is_file() and (item.suffix in (".py", ".sh") or os.access(item, os.X_OK)):
+                    if os.access(item, os.X_OK):
+                        print(msg("doctor_ok", text(f"插件脚本可执行: {p.name}/{item.name}", f"Plugin script is executable: {p.name}/{item.name}")))
+                    else:
+                        print(msg("doctor_warn", text(f"插件脚本缺少执行权限，正在修复: {p.name}/{item.name}", f"Plugin script was not executable; fixing: {p.name}/{item.name}")))
+                        try:
+                            item.chmod(0o755)
+                        except OSError as exc:
+                            print(msg("doctor_warn", text(f"无法修复执行权限: {item.name} ({exc})",
+                                                         f"Could not fix execute permission: {item.name} ({exc})")))
+
 def _check_eyecare(env) -> None:
     if shutil.which("wlsunset"):
         print(msg("doctor_ok", text("护眼模式: wlsunset 已安装", "Eye Care: wlsunset is installed")))
@@ -154,12 +171,28 @@ def _check_scratchpad(env) -> None:
         print(msg("doctor_warn", text("Scratchpad: 缺少 tmux", "Scratchpad: tmux is missing")))
 
 def _check_orbit(env) -> None:
-    from nyxuri.kernel.ledger import active_shell
-    if active_shell() != "noctalia":
-        return
+    # Check if Orbit tools are present (either first-party in noctalia or installed plugins)
     launcher = env.config_dir / THEME_ENGINE / "tools" / "orbit-launcher.py"
     src_launcher = env.plugins_src / THEME_ENGINE / "tools" / "orbit-launcher.py"
-    if not launcher.is_file() and not src_launcher.is_file():
+    has_launcher = launcher.is_file() or src_launcher.is_file()
+
+    has_orbit_plugin = False
+    plugins_data = env.data_dir / "plugins"
+    if plugins_data.is_dir():
+        for p in plugins_data.iterdir():
+            if not p.is_dir():
+                continue
+            if (p / "manifest.toml").is_file():
+                try:
+                    from nyxuri.deploy.manifest import load_manifest
+                    m = load_manifest(p)
+                    if "gtk-layer-shell" in (m.packages_repo + m.packages_aur):
+                        has_orbit_plugin = True
+                        break
+                except Exception:
+                    pass
+
+    if not has_launcher and not has_orbit_plugin:
         return
     try:
         res = timed_run(

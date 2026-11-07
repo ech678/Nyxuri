@@ -37,14 +37,18 @@ _TRASH_NAME = "trash"
 # --- shape checks -------------------------------------------------------------
 
 
-def is_reverse_dns(name: str) -> bool:
-    """True iff ``name`` is a plausible reverse-DNS id (≥2 clean labels)."""
-    if not name or name != name.strip() or name.startswith(("shell.", "nyxuri.")):
+def is_valid_plugin_id(name: str) -> bool:
+    """True iff ``name`` is a safe, non-reserved plugin id (bare or dotted)."""
+    if not isinstance(name, str) or not name or name != name.strip():
         return False
-    labels = name.split(".")
-    if len(labels) < _REVERSE_DNS_MIN_LABELS:
+    if name.startswith("shell."):
         return False
-    return all(label and not label.startswith("-") for label in labels)
+    from nyxuri.core import is_safe_leaf_name
+    return is_safe_leaf_name(name)
+
+
+# Backward compatibility alias
+is_reverse_dns = is_valid_plugin_id
 
 
 def _git(dir_: Path, *args: str, timeout: float = 60):
@@ -107,10 +111,10 @@ def _read_manifest_id(src: Path) -> str:
         raise ValueError("manifest must declare a non-empty string id")
     if data.get("schemaVersion") != 1:
         raise ValueError("manifest must declare schemaVersion = 1 (new-form only)")
-    if not is_reverse_dns(pid):
+    if not is_valid_plugin_id(pid):
         raise ValueError(
-            f"third-party id '{pid}' is not reverse-DNS shaped "
-            "(≥2 dot labels; 'shell.' / 'nyxuri.' prefixes are reserved)"
+            f"plugin id '{pid}' is not a valid safe name "
+            "('shell.' prefix is reserved)"
         )
     return pid
 

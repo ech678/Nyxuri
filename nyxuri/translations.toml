@@ -1146,8 +1146,8 @@ zh = "来源不明（插件未登记；`nyxuri on <plugin>` 收编后恢复模�
 en = "Unresolved origin (plugin not registered; `nyxuri on <plugin>` restores template updates)"
 
 [log_deploy_config_item]
-zh = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 安装配置: ~/.config/{0}"
-en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Installed config: ~/.config/{0}"
+zh = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 安装配置: {0}"
+en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Installed config: {0}"
 
 [log_gtk_theme_init]
 zh = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 初始化主题与 GTK 同步"

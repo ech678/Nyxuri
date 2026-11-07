@@ -122,7 +122,7 @@ def _phase_atomic_deployment(
             # atomic call below bound (a stale loop iteration must never leak).
             result = FormSrcResult(src=src, reset_form=None)
         else:
-            dest = config_dir / item
+            dest = living_path(manifest, config_dir)
 
             # Resolve which source tree to deploy: default config, an official
             # form, or a user form — based on the plugin's ledger record.
@@ -194,7 +194,11 @@ def _phase_atomic_deployment(
             failed_items.append(item)
             print(msg("log_form_replay_failed", item, ", ".join(replay_failures)), file=sys.stderr)
 
-        print(msg("log_deploy_config_item", item))
+        if dest.is_relative_to(env.home):
+            disp_dest = f"~/{dest.relative_to(env.home).as_posix()}"
+        else:
+            disp_dest = str(dest)
+        print(msg("log_deploy_config_item", disp_dest))
         log_msg("INFO", f"Deployed config {dest.relative_to(config_dir).as_posix()} (plugin {item})")
 
     return failed_items

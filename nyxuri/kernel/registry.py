@@ -141,7 +141,8 @@ def load_plugin(plugin_id: str) -> ModuleManifest:
     for root, prefix in _decisive_roots(plugin_id):
         src = safe_child(root, plugin_id[len(prefix):])
         if src is not None and src.is_dir():
-            m = load_manifest(src, namespace=prefix)
+            origin = "third-party" if root == get_env().data_dir / "plugins" else "official"
+            m = load_manifest(src, namespace=prefix, origin=origin)
             if root == get_env().data_dir / "plugins" and (m.post_install or m.post_remove):
                 raise ValueError(
                     f"third-party plugin '{plugin_id}' declares lifecycle hooks "

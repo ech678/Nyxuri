@@ -12,7 +12,7 @@
 | 字段 | 默认 | 作用 |
 |---|---|---|
 | `schemaVersion` | 无 | 必须为 `1`。缺或异 → 解析报错（旧形态的判别式） |
-| `id` | 无 | 插件 id，必须等于 **所在根的前缀 + 目录名**（`plugins/` 根无前缀：`kitty`；`shell/plugins/` 根前缀 `shell.`：`shell.bar`；第三方根无前缀、目录名 = id 全名：`io.github.upstream.orbit-translate`）。漂移即报错。官方保留裸名、`shell.` 与 `nyxuri.` 前缀；第三方必须 reverse-DNS。账本键 = 此 id |
+| `id` | 无 | 插件 id，必须等于 **所在根的前缀 + 目录名**（`plugins/` 根无前缀：`kitty`；`shell/plugins/` 根前缀 `shell.`：`shell.bar`；第三方根无前缀、目录名 = id 全名：简洁裸名如 `orbit-translate` 或 reverse-DNS）。漂移即报错。官方保留 `shell.` 前缀。账本键 = 此 id |
 | `kinds` | 无 | 非空数组，枚举封闭：`config`（引擎部署的配置插件）+ 六几何插槽 `edge` / `island` / `overlay` / `drawer` / `surface:desktop` / `popup:notification`（壳装载，见 [plugin-model](plugin-model.md) §6）+ `service`（保留位，暂无消费者）。**消费路由**：引擎消费 config 类，壳注册表消费插槽类 |
 | `label` | `<id>` | 展示名（PKGBUILD optdepends 标签 + 插件详情视图 + 壳设置/开关页） |
 | `order` | `0` | ui 堆叠序（bottom → top），替代手写镜像里的数组序 |
@@ -232,14 +232,13 @@ system_paths = ["/etc/greetd/config.toml", "/etc/polkit-1/rules.d/50-noctalia-gr
 - id 由蓝图根前缀派生（不从目录名字面猜命名空间）：`plugins/<id>/` 出裸 id，
   `shell/plugins/<domain>/` 出 `shell.<domain>`；
 - 第三方根 `~/.local/share/nyxuri/plugins/`（S1）：只认一级目录，目录名 = manifest
-  id 全名（reverse-DNS，无前缀派生）；软链拒绝统一在扫描层，与 manifest 校验同一套
+  id 全名（支持纯裸名如 `orbit-translate` 或 reverse-DNS，无前缀派生）；软链拒绝统一在扫描层，与 manifest 校验同一套
   检查。落位与生命周期语义见下节。
 
 ## 第三方插件（S1 生命周期）
 
 第三方插件不住仓库蓝图，物理落位数据域（H4）：`~/.local/share/nyxuri/plugins/<id>/`
-（复制不软链，H8；`<id>` = manifest id 全名 reverse-DNS，官方保留裸名、`shell.` 与
-`nyxuri.` 前缀）。一个位置一份 manifest，两个注册表各取所需——引擎消费 config 类、
+（复制不软链，H8；`<id>` = manifest id 全名，官方保留 `shell.` 前缀）。一个位置一份 manifest，两个注册表各取所需——引擎消费 config 类、
 壳注册表消费插槽类（消费路由见身份字段 `kinds` 行）。
 
 - **安装**：`nyxuri add <git-url>`（本地目录顺带）——clone 到 staging、校验（与加载

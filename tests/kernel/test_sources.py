@@ -133,13 +133,20 @@ class TestAdd(SourceFixtureMixin, unittest.TestCase):
 
     def test_add_shape_refusals(self):
         with TempEnv() as ctx:
-            for bad in ("nodot", "shell.evil", "nyxuri.evil"):
+            for bad in ("shell.evil", "../evil", "bad/slash"):
                 src = self._make_upstream(ctx, pid=bad)
-                with self.assertRaisesRegex(ValueError, "reverse-DNS"):
+                with self.assertRaises(ValueError):
                     self._add_git(ctx, src)
             self.assertEqual(
                 [i for i in registry.plugin_ids() if i.startswith("shell.evil")], []
             )
+
+    def test_add_bare_name_accepted(self):
+        with TempEnv() as ctx:
+            src = self._make_upstream(ctx, pid="cool-tool")
+            res = self._add_git(ctx, src)
+            self.assertEqual(res["id"], "cool-tool")
+            self.assertIn("cool-tool", registry.plugin_ids())
 
     def test_add_hook_declaration_refused_and_rolled_back(self):
         """v1 三方拒钩子: the loader gate fires and the landing is undone."""
@@ -235,7 +242,8 @@ class TestUpdate(SourceFixtureMixin, unittest.TestCase):
             self._add_git(ctx, upstream)
             steps = transaction.plugin_on("io.github.test.cool", install_packages=None)
             self.assertTrue(steps and all(s.ok for s in steps))
-            living = get_env().config_dir / "io.github.test.cool"
+            from nyxuri.deploy.deploy import config_item_dest
+            living = config_item_dest("io.github.test.cool")
             self.assertTrue(living.is_dir(), "baseline deploy must exist first")
             self._commit_upstream(upstream, "extra.txt", "v2\n")
             preview = sources.update("io.github.test.cool")

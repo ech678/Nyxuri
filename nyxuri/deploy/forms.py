@@ -258,7 +258,11 @@ def resolve_form_src(app: str, active: str, dest: Path) -> FormSrcResult:
     app_root = _plugin_root(app)
     repo_forms = _find_official_forms_dir(app_root)
     user_forms = _safe_child(env.forms_dir, app)
-    expected_dest = _safe_child(env.config_dir, app)
+    try:
+        from nyxuri.deploy.manifest import load_manifest_for, living_path
+        expected_dest = living_path(load_manifest_for(app), env.config_dir)
+    except Exception:
+        expected_dest = _safe_child(env.config_dir, app)
     if (
         not _is_deployable_app(app)
         or not _is_safe_component(active)
