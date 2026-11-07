@@ -227,6 +227,9 @@
 
 - [ ] 对 114 个 Timer 生成清单：owner、interval、repeat、默认 running、消费者、关闭
   条件、唤醒次数和单次回调耗时。
+- [x] 静态 QML resource inventory 已生成器化，输出 Timer/Process/FileView/Connections
+  的 file/line/owner/id/default running/interval/repeat；该工件明确标注
+  `runtime_claims=false`，不替代 live telemetry。
 - [ ] 对 16/33/50/100/250 ms 等高频 Timer 逐个确认是否真正需要；优先使用事件驱动、
   frame callback 或消费者活跃状态，不粗暴统一延长间隔。
 - [ ] 将同一领域多个周期采样合并为一个调度点；时钟、系统指标、网络状态、Niri 状态
