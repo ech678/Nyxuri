@@ -82,6 +82,7 @@ Item {
             duration: root.phaseDuration
             easing.type: Easing.Linear
             running: root.isPlaying
+            paused: !waveCanvas.visible
         }
 
         onPhaseChanged: requestPaint()
