@@ -13,25 +13,34 @@
 > 600.167 秒稳态（596 样本）、100 次回收和 0.1/1/2/5 秒窗口；它是后续优化的比较基线，
 > 不代表优化后的当前实现。
 >
-> 当前整合实现的完整容器报告位于 `.omo/evidence/performance-plan-current-full-9b7f2/`。
-> 报告 Git SHA 为 `9b7f2e2a759b732789bcc9c5e78f19f323997fb3`；该 SHA 与代码提交
-> `e671bed` 之间只有本计划与 `llms-wiki/llms.txt` 的文档改动。Quickshell 0.3.2 下
-> 10 次冷启动 p50/p95 为 221.634/236.917 ms，RSS/PSS/Private p50 为
-> 194244/185580/182788 KiB；600.326 秒稳态采样 596 次，100/100 回收成功。首个
-> 稳态样本在 0.008 秒为 90772 KiB RSS，延迟启动任务执行后约 1 秒升至约 174 MiB，
-> 之后至 600 秒保持平稳；这部分是计划中的 BACKGROUND 初始化，不计作持续增长泄漏。
-> 帧探针观测 301 帧，p50/p95/p99 为 17/18/18 ms；准确 compositor drop、texture 和
+> 当前整合实现的完整容器报告位于 `.omo/evidence/performance-plan-current-full-3f1f405/`。
+> 报告 Git SHA 为 `3f1f405ae95983e26297e77530ec96e4d55ef1f8`；Quickshell 0.3.2 下
+> 10 次冷启动 p50/p95 为 222.031/227.567 ms，RSS/PSS/Private p50 为
+> 194256/185534/182812 KiB；600.455 秒稳态采样 596 次，100/100 回收成功。首个
+> 稳态样本为 89836 KiB RSS，约 1 秒后升至 174 MiB 附近，之后至 600 秒保持平稳；
+> 这是延迟 BACKGROUND 初始化，不是持续增长。
+> 帧探针观测 301 帧，p50/p95/p99 为 17/17/18 ms；准确 compositor drop、texture 和
 > offscreen 指标仍不可用。功能矩阵为 21 PASS、10 UNAVAILABLE，真实 `shell.bar` off/on
 > 通过；键鼠与未加载的可选 IPC target 仍未验证。
+> 已登记 Timer/Process 运行态为 Timer 2 running/9 stopped、Process 0 running/3 stopped；
+> 这是显式注册对象，不代表全树 census。独立容器 probe 还验证了 12,000 项 Spotlight 搜索
+> 的 top-K 排序等价与选中项保留（UI 结果记录 12,000 降到 7，比较 190,908 降到 12,127）、
+> 隐藏 wave 不再绘制并恢复时继续绘制，以及 theme poll 延迟到 IPC_READY 且保持外部变更和
+> 写入 debounce 语义。具体日志见同目录 `probes/`。
 >
-> 与预优化 baseline 同口径比较：冷启动 p50/p95 为 221.634/236.917 ms，对比
-> 220.429/223.636 ms（+0.55%/+5.94%）；RSS/PSS/Private p50 为 194244/185580/182788 KiB，
-> 对比 194956/186350/183504 KiB（-0.37%/-0.41%/-0.39%）。目前只可判为没有明显启动或
-> 内存回退，差值小且可能在噪声内，不能宣称已获得显著收益。
+> 与预优化 baseline SHA `46161836cc45ea0ba4eb8b5417a725179f1c32dd` 同口径比较：冷启动
+> p50/p95 为 222.031/227.567 ms，对比 220.429/223.636 ms（+0.73%/+1.76%）；
+> RSS/PSS/Private p50 为 194256/185534/182812 KiB，对比 194956/186350/183504 KiB
+>（-0.36%/-0.44%/-0.38%）。启动差值小且可能在噪声内，没有宣称显著收益；内存也只有
+> 小幅下降。
 >
 > 当前已合入功能矩阵的真实 CLI unit off/on、隐藏波形停止 Canvas/离屏 layer、启动后台任务
-> 去重/失败重试，以及 cgroup memory 缺失值修正。Canvas/layer 全量 census、Process owner/
-> CPU/output 归因、所有功能和交互矩阵、多屏/GPU 渲染及预算门禁尚未完成；本计划仍进行中。
+> 去重/失败重试、IPC_READY 后延迟系统主题轮询、Spotlight 有界 top-K 排序、cgroup memory
+> 缺失值修正，以及已登记 Timer/Process 的 live running/stopped/unknown census。spotlight 排名
+> 仍对每项应用评分（O(n)），只将全量排序改为 O(n log K) bounded heap 并限制 UI 结果对象。
+> Canvas/layer 全量 census、Process owner/CPU/output 归因、所有功能和交互矩阵、多屏/GPU
+> 渲染及预算门禁尚未完成；
+> 本计划仍进行中。
 > 真实桌面运行只在隔离容器内执行；宿主 Quickshell、Weston、
 > Niri 和 Wayland 未启动。旧 `.omo` 报告不作为当前实现的结论或失败依据。
 
@@ -149,8 +158,9 @@
 - [x] I/O：read/write bytes、read/write syscall 数、日志字节数、配置和缓存读写。
 - [ ] QML live census：Loader 状态、已实例化单元、singleton 触发列表、活跃 Timer、
   活跃 Process、FileView、Connections、Repeater/ListView/GridView delegate、Canvas、
-  layer 和窗口计数。Loader/unit/delegate 已有真实运行值；Timer、Process、FileView、
-  Connections、Canvas、layer、window 仍未集中 instrument。
+  layer 和窗口计数。Loader/unit/delegate、已登记 Timer/Process 当前 running/stopped/unknown
+  及 owner 已有真实运行值；Timer/Process 全量、FileView、Connections、Canvas、layer、
+  Repeater/ListView/GridView delegate 总量和未登记 owner 仍未集中 instrument。
 - [x] 容器 runner 在进程树性能采样结束后读取 `shell metrics`，把 startup metrics 与
   `qml_resources` 分开写入每次运行记录。计数缺失时输出 `null` 和 `unavailable`；只有
   IPC payload 提供完整的非负整数计数时才标为 `available`。源码计数仍归 `static_qml`，
