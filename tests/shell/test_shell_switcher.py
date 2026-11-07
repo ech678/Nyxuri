@@ -203,3 +203,65 @@ class TestRuntimeHomeContract(unittest.TestCase):
             self.assertEqual(python.returncode, 0, python.stderr)
         self.assertEqual(shell.stdout, python.stdout)
         self.assertTrue(shell.stdout.endswith("/nyxuri/runtime/nyxuri"), shell.stdout)
+
+class TestCheckoutShellDiscovery(unittest.TestCase):
+    """Regression (2026-11-07): repo-relative discovery looked one level too
+    deep (`<repo>/nyxuri/shell/nyxuri-shell`), so a fresh checkout with no
+    `nyxuri-shell` on PATH had an empty binary resolution and the running
+    instance was never classified — `nyxuri shell status` said "none",
+    `nyxuri shell switch` refused to preflight."""
+
+    @staticmethod
+    def _repo_root() -> Path:
+        from nyxuri.system import shell as shell_switcher
+        return Path(shell_switcher.__file__).resolve().parents[2]
+
+    def test_repo_shell_dir_points_at_the_checkout(self):
+        from nyxuri.system import shell as shell_switcher
+        self.assertEqual(shell_switcher.repo_shell_dir(), self._repo_root() / "shell")
+
+    def test_default_custom_bin_is_the_checkout_launcher(self):
+        from nyxuri.system import shell as shell_switcher
+        with TempEnv():
+            found = shell_switcher.find_default_custom_bin()
+        self.assertTrue(found, "checkout launcher was not discovered")
+        self.assertEqual(Path(found).resolve(),
+                         (self._repo_root() / "shell" / "nyxuri-shell").resolve())
+
+    def test_probe_classifies_a_checkout_profile_instance(self):
+        from nyxuri.system import shell as shell_switcher
+        repo = self._repo_root()
+        with TempEnv() as ctx:
+            prober = ctx.home / "prober.py"
+            prober.write_text(
+                "import json\n"
+                "from nyxuri.system import shell as shell_switcher\n"
+                "print(json.dumps(shell_switcher.probe_running_shells()))\n",
+                encoding="utf-8")
+            out_path = ctx.home / "probe-out.json"
+            driver = (
+                "import json, os, subprocess\n"
+                "r = subprocess.run([os.environ['PROBE_PY'], os.environ['PROBER']],\n"
+                "                   capture_output=True, text=True, timeout=25)\n"
+                "with open(os.environ['PROBE_OUT'], 'w', encoding='utf-8') as fh:\n"
+                "    fh.write(json.dumps({'out': r.stdout, 'err': r.stderr}))\n"
+            )
+            env = dict(os.environ,
+                       PROBE_PY=sys.executable, PROBER=str(prober), PROBE_OUT=str(out_path),
+                       PYTHONPATH=str(repo) + os.pathsep + os.environ.get("PYTHONPATH", ""))
+            env.pop("NYXURI_CUSTOM_SHELL_BIN", None)
+            fakeqs = subprocess.Popen(
+                ["qs", "-c", driver, "-p", str(repo / "shell"), "--no-duplicate"],
+                executable=sys.executable, env=env,
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            try:
+                fakeqs.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                fakeqs.kill()
+                self.fail("fake qs instance did not exit")
+            self.assertTrue(out_path.exists(), "prober driver wrote nothing")
+            payload = json.loads(out_path.read_text(encoding="utf-8"))
+            self.assertTrue(payload["out"].strip(),
+                            f"prober produced no output; stderr: {payload['err']}")
+            result = [tuple(item) for item in json.loads(payload["out"])]
+            self.assertIn(("nyxuri-shell", fakeqs.pid), result)

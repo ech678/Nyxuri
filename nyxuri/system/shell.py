@@ -31,14 +31,18 @@ def normalize_shell_name(name: str) -> str:
     return s
 
 
+def repo_shell_dir() -> Path:
+    """The checkout's shell/ directory; this module sits two levels below the repo root."""
+    return Path(__file__).resolve().parent.parent.parent / "shell"
+
+
 def find_default_custom_bin() -> str:
     """Discover default nyxuri-shell binary from repo or PATH."""
-    repo_root = Path(__file__).resolve().parent.parent
-    local_script = repo_root / "shell" / "nyxuri-shell"
+    local_script = repo_shell_dir() / "nyxuri-shell"
     if local_script.is_file() and os.access(local_script, os.X_OK):
         return str(local_script)
 
-    legacy_script = repo_root / "shell" / "bin" / "nyxuri-shell"
+    legacy_script = repo_shell_dir() / "bin" / "nyxuri-shell"
     if legacy_script.is_file() and os.access(legacy_script, os.X_OK):
         return str(legacy_script)
 
@@ -158,7 +162,7 @@ def probe_running_shells() -> "list[Tuple[str, int]]":
 
     def nyxuri_shell_dirs() -> "set[Path]":
         dirs: "set[Path]" = set()
-        for raw in (resolve_custom_bin(), str(Path(__file__).resolve().parent.parent / "shell")):
+        for raw in (resolve_custom_bin(), str(repo_shell_dir())):
             if not raw:
                 continue
             path = Path(raw)

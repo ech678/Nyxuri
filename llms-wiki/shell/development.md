@@ -67,6 +67,28 @@ nyxuri-shell --action lock           # 锁屏
 nyxuri shell switch noctalia
 ```
 
+### 4. 无 DRM/GPU 环境（容器、CI）里的可视验证
+
+容器里没有 DRM 设备，niri 起不来，但 Shell 只要求一个 Wayland 会话：嵌套 wlroots
+合成器 sway（headless 或 X11 后端）+ wayvnc 就能看到并驱动真实界面。前置条件是
+quickshell ≥ 0.3.2——老版本没有 `Region.radius` / `Region.intersection`，
+`CompositorBlurRegion` 整条链编译失败，bar/dock/lock/sidebar 全部 "Type unavailable"。
+软件渲染（`QT_QUICK_BACKEND=software` + `WLR_RENDERER=pixman`）下首次绘制约 30–45 秒，
+之后稳定；`grim` 可直接取合成器输出做像素级断言，不需要显示器。
+
+```bash
+export XDG_RUNTIME_DIR=/tmp/qs-rt; mkdir -p "$XDG_RUNTIME_DIR"; chmod 700 "$XDG_RUNTIME_DIR"
+WLR_BACKENDS=headless WLR_RENDERER=pixman sway -c /dev/null &
+sleep 3; export WAYLAND_DISPLAY=$(ls "$XDG_RUNTIME_DIR" | grep -m1 '^wayland-')
+wayvnc 127.0.0.1 5900 &            # VNC 客户端连 localhost:5900 即可见
+QT_QUICK_BACKEND=software nyxuri-shell &
+sleep 45 && grim /tmp/shell.png    # 像素证据；IPC 同理走 qs -p shell ipc
+```
+
+该环境里 `nyxuri shell status` 必须报出 `Running Instance: nyxuri-shell`，否则说明
+`repo_shell_dir()` / `resolve_custom_bin()` 的仓库相对定位坏了（2026-11-07 修过一次：
+路径少算一级，找的是 `<repo>/nyxuri/shell/`，检出目录直接失明）。
+
 ## 日常开发循环
 
 每轮回答：现在什么能用，这一轮证明什么，失败回到哪里。
