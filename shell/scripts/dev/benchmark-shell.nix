@@ -4,7 +4,16 @@ let
     url = "https://github.com/NixOS/nixpkgs/archive/6dadaf4375be35033e1c84395adbd53ff5fded96.tar.gz";
     sha256 = "sha256-D5H7H+qMoTGI/jJtxKP4u7BdjkFnUyhOovTrf3pTOr0=";
   };
+  # Quickshell 0.2.1 predates the Qt 6.12 API changes in the current
+  # benchmark channel. Keep its toolchain isolated to a Qt 6.8 evaluator;
+  # only the protocol/GBM inputs are overridden from the current channel to
+  # satisfy the old source's newer Wayland protocol floor.
+  oldNixpkgsSrc = builtins.fetchTarball {
+    url = "https://github.com/NixOS/nixpkgs/archive/50ab793786d9de88ee30ec4e4c24fb4236fc2674.tar.gz";
+    sha256 = "sha256-/bVBlRpECLVzjV19t5KMdMFWSwKLtb5RyXdjz3LJT+g=";
+  };
   pkgs = import nixpkgsSrc { config.allowUnfree = false; };
+  oldPkgs = import oldNixpkgsSrc { config.allowUnfree = false; };
   # This revision contains the package file but does not expose a top-level
   # `quickshell` attribute in every evaluator. Call the pinned package file
   # directly so the runtime version is independent of generated attrsets.
@@ -13,7 +22,7 @@ let
   # Keep the historical 0.2.1 package in the same pinned evaluator.  This is
   # only used for the compatibility matrix; the benchmark default remains the
   # newer locked package above.
-  quickshellOld = pkgs.callPackage ({ lib, stdenv, fetchFromGitea,
+  quickshellOld = oldPkgs.callPackage ({ lib, stdenv, fetchFromGitea,
     pkg-config, cmake, ninja, spirv-tools, qt6, breakpad, jemalloc, cli11,
     wayland, wayland-protocols, wayland-scanner, xorg, libdrm, libgbm, pipewire, pam,
   }:
@@ -39,7 +48,10 @@ let
       separateDebugInfo = true;
       dontStrip = false;
     }
-  ) {};
+  ) {
+    wayland-protocols = pkgs.wayland-protocols;
+    libgbm = pkgs.libgbm;
+  };
 in
 
 pkgs.stdenv.mkDerivation {

@@ -4,6 +4,8 @@
   "container_digest": "sha256:d078d7153763895fce17c5fbbdeb86fcfcac414ca0ba875d413c1df57be19931",
   "nixpkgs_revision": "6dadaf4375be35033e1c84395adbd53ff5fded96",
   "nixpkgs_tarball_sha256": "sha256-D5H7H+qMoTGI/jJtxKP4u7BdjkFnUyhOovTrf3pTOr0=",
+  "quickshell_old_nixpkgs_revision": "50ab793786d9de88ee30ec4e4c24fb4236fc2674",
+  "quickshell_old_nixpkgs_tarball_sha256": "sha256-/bVBlRpECLVzjV19t5KMdMFWSwKLtb5RyXdjz3LJT+g=",
   "quickshell_package": "pkgs/by-name/qu/quickshell/package.nix",
   "quickshell_channel_default": "new",
   "quickshell_old": {
