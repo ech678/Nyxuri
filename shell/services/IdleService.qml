@@ -32,9 +32,9 @@ Singleton {
     property bool suspendRespectInhibitors: true
 
     readonly property string policyConfigDir: Paths.configHome
-    readonly property string policyConfigPath: policyConfigDir + "/idle-policy.json"
+    readonly property string policyConfigPath: ConfigService.filePath
     readonly property bool policyReady: policyStoreReady && !policyLoading
-    property bool policyStoreReady: false
+    readonly property bool policyStoreReady: ConfigService.storeReady
     property bool policyLoading: true
 
     property bool inhibited: false
@@ -234,7 +234,26 @@ Singleton {
     function savePolicy() {
         if (!root.policyStoreReady || root.policyLoading)
             return;
-        policyFile.setText(JSON.stringify(root.policyJson(), null, 2));
+        ConfigService.updateSection("idle", root.policyJson());
+    }
+
+    function loadFromConfigStore() {
+        const idleData = ConfigService.getSection("idle", null);
+        if (idleData)
+            root.loadPolicy(idleData);
+        else
+            root.loadPolicy({});
+    }
+
+    Connections {
+        target: ConfigService
+        function onConfigLoaded() {
+            root.loadFromConfigStore();
+        }
+        function onSectionChanged(path, data) {
+            if (path === "idle")
+                root.loadFromConfigStore();
+        }
     }
 
     function _monitorEnabled(stageEnabled, timeout, respectInhibitors) {
@@ -397,50 +416,9 @@ Singleton {
         }
     }
 
-    Process {
-        id: ensurePolicyStore
-
-        command: ["mkdir", "-p", root.policyConfigDir]
-        running: true
-        onExited: {
-            root.policyStoreReady = true;
-            policyFile.reload();
-        }
-    }
-
-    FileView {
-        id: policyFile
-
-        path: root.policyConfigPath
-        blockLoading: true
-        blockWrites: true
-        atomicWrites: true
-
-        onLoaded: {
-            let repair = false;
-            try {
-                const parsed = JSON.parse(policyFile.text().trim() || "{}");
-                repair = root.needsPolicyMigration(parsed);
-                root.loadPolicy(parsed);
-            } catch (error) {
-                console.warn("IdleService failed to load policy; leaving the existing file untouched:",
-                             error);
-                root.loadPolicy({});
-                repair = false;
-            }
-            if (repair)
-                root.savePolicy();
-        }
-
-        onLoadFailed: error => {
-            root.loadPolicy({});
-            if (error === FileViewError.FileNotFound)
-                root.savePolicy();
-            else
-                console.warn("IdleService could not read the policy; leaving the existing file untouched:",
-                             error);
-        }
-        onSaveFailed: error => console.warn("IdleService could not save the policy:", error)
+    Component.onCompleted: {
+        if (ConfigService.storeReady)
+            root.loadFromConfigStore();
     }
 
     onInhibitedChanged: {

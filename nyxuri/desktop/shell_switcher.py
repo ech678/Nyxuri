@@ -460,14 +460,23 @@ def capture_active_theme_state(current_name: str) -> Tuple[Optional[str], Option
     if mode is None:
         try:
             from nyxuri.core import get_env
-            cfg_file = get_env().config_dir / "nyxuri" / "config.json"
-            if cfg_file.is_file():
-                import json
-                with cfg_file.open("r", encoding="utf-8") as f:
-                    data = json.load(f)
+            cfg_toml = get_env().config_dir / "nyxuri" / "config.toml"
+            if cfg_toml.is_file():
+                import tomllib
+                with cfg_toml.open("rb") as f:
+                    data = tomllib.load(f)
                     val = data.get("theme", {}).get("mode")
                     if val in ("dark", "light"):
                         mode = val
+            if mode is None:
+                cfg_file = get_env().config_dir / "nyxuri" / "config.json"
+                if cfg_file.is_file():
+                    import json
+                    with cfg_file.open("r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        val = data.get("theme", {}).get("mode")
+                        if val in ("dark", "light"):
+                            mode = val
         except Exception:
             pass
 
@@ -491,21 +500,29 @@ def capture_active_theme_state(current_name: str) -> Tuple[Optional[str], Option
     elif norm == "nyxuri-shell":
         try:
             from nyxuri.core import get_env
-            cfg_file = get_env().config_dir / "nyxuri" / "config.json"
-            if cfg_file.is_file():
-                import json
-                with cfg_file.open("r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    wp_data = data.get("wallpaper", {})
-                    wp = ""
-                    if mode == "dark":
-                        wp = wp_data.get("pathDark") or wp_data.get("path")
-                    elif mode == "light":
-                        wp = wp_data.get("pathLight") or wp_data.get("path")
-                    else:
-                        wp = wp_data.get("path")
-                    if wp and os.path.exists(wp):
-                        wallpaper = wp
+            data = None
+            cfg_toml = get_env().config_dir / "nyxuri" / "config.toml"
+            if cfg_toml.is_file():
+                import tomllib
+                with cfg_toml.open("rb") as f:
+                    data = tomllib.load(f)
+            if data is None:
+                cfg_file = get_env().config_dir / "nyxuri" / "config.json"
+                if cfg_file.is_file():
+                    import json
+                    with cfg_file.open("r", encoding="utf-8") as f:
+                        data = json.load(f)
+            if data:
+                wp_data = data.get("wallpaper", {})
+                wp = ""
+                if mode == "dark":
+                    wp = wp_data.get("pathDark") or wp_data.get("path")
+                elif mode == "light":
+                    wp = wp_data.get("pathLight") or wp_data.get("path")
+                else:
+                    wp = wp_data.get("path")
+                if wp and os.path.exists(wp):
+                    wallpaper = wp
         except Exception:
             pass
 

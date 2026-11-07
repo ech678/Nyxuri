@@ -12,8 +12,7 @@ Singleton {
     id: root
 
     readonly property string configOverride: Quickshell.env("NYXURI_PERSONALIZATION_CONFIG") || ""
-    readonly property string filePath: root.configOverride !== "" ? root.configOverride : Paths.configHome
-                                                                    + "/config.json"
+    readonly property string filePath: root.configOverride !== "" ? root.configOverride : ConfigService.filePath
 
     readonly property string configDir: {
         const separator = root.filePath.lastIndexOf("/");
@@ -166,7 +165,7 @@ Singleton {
                                                               "label": I18n.tr("Right"),
                                                               "icon": "arrow_forward"
                                                           })]
-    property bool storeReady: false
+    readonly property bool storeReady: ConfigService.storeReady
     property bool loading: false
     property bool loaded: false
     readonly property bool ready: root.storeReady && root.loaded && !root.loading
@@ -2175,20 +2174,9 @@ Singleton {
         const seed = WallpaperSource.primary(source);
         candidate.wallpaper.recentColors = root.normalizedRecentColors([seed].concat(
                                                                            root.recentWallpaperColors));
-        // FileView suppresses identical setText() calls even after failure.
-        // A fresh writer makes the same draft retryable without reloading or
-        // mutating the formal configuration on a failed Save.
-        const writer = paletteWriterComponent.createObject(root, {
-                                                               path: root.filePath
-                                                           });
-        if (!writer)
-            return false;
-        writer.setText(JSON.stringify(candidate, null, 2));
-        writer.waitForJob();
-        const saved = writer.succeeded;
-        writer.destroy();
-        if (!saved)
-            return false;
+        ConfigService.updateSections(candidate);
+        ConfigService.saveNow();
+
         // Publish only after the atomic write succeeded. No normal setters,
         // extra writes, or theme generation are involved in this operation.
         if (scope.target === "banner") {
@@ -2211,97 +2199,31 @@ Singleton {
         return true;
     }
 
-    Component {
-        id: paletteWriterComponent
-        FileView {
-            property bool succeeded: false
-            blockWrites: true
-            atomicWrites: true
-            onSaved: succeeded = true
-        }
-    }
-
     function save() {
         if (!root.storeReady || root.loading)
             return;
 
-        configFile.setText(JSON.stringify(root.toJson(), null, 2));
+        ConfigService.updateSections(root.toJson());
     }
 
-    Process {
-        id: ensureStoreDir
-
-        command: ["mkdir", "-p", root.configDir]
-        running: true
-        onExited: {
-            root.storeReady = true;
-            configFile.reload();
-        }
-    }
-
-    Timer {
-        id: configReloadDebounce
-
-        interval: 50
-        repeat: false
-        onTriggered: configFile.reload()
-    }
-
-    FileView {
-        id: configFile
-
-        path: root.filePath
-        blockLoading: true
-        blockWrites: true
-        atomicWrites: true
-        watchChanges: true
-        onFileChanged: configReloadDebounce.restart()
-        onLoaded: {
-            let shouldRepair = false;
-            let parsed = {};
+    Connections {
+        target: ConfigService
+        function onConfigLoaded() {
             root.loading = true;
-            try {
-                parsed = JSON.parse(configFile.text().trim() || "{}");
-                shouldRepair = root.needsWallpaperMigration(parsed) || root.needsEffectsMigration(parsed)
-                        || root.needsThemeMigration(parsed) || root.needsEdgePositionMigration(parsed)
-                        || root.needsScrollingMigration(parsed);
-                root.loadFromObject(parsed);
-                shouldRepair = shouldRepair || JSON.stringify(parsed.wallpaper || {}) !== JSON.stringify(
-                            root.toJson().wallpaper) || JSON.stringify(parsed.effects || {})
-                        !== JSON.stringify(root.toJson().effects) || JSON.stringify(parsed.theme || {})
-                        !== JSON.stringify(root.toJson().theme) || JSON.stringify(parsed.bar || {}) !== JSON.stringify(
-                            root.toJson().bar) || JSON.stringify(parsed.keystone || {}) !== JSON.stringify(
-                            root.toJson().keystone) || JSON.stringify(parsed.desktopCards || {})
-                        !== JSON.stringify(root.toJson().desktopCards);
-            } catch (error) {
-                console.warn("PersonalizationConfig failed to load; leaving the existing config untouched:",
-                             error);
-                shouldRepair = false;
-            }
+            root.loadFromObject(ConfigService.rawConfig);
             root.loading = false;
             root.loaded = true;
             root.settingsLoaded();
-            if (shouldRepair)
-                root.save();
         }
-        onLoadFailed: error => {
+    }
+
+    Component.onCompleted: {
+        if (ConfigService.storeReady) {
             root.loading = true;
-            root.loadFromObject({});
+            root.loadFromObject(ConfigService.rawConfig);
             root.loading = false;
             root.loaded = true;
             root.settingsLoaded();
-            if (error === FileViewError.FileNotFound)
-                root.save();
-            else
-                console.warn("PersonalizationConfig could not be read; leaving the existing config untouched:",
-                             error);
         }
-        onSaveFailed: error => console.warn("PersonalizationConfig could not be saved:", error)
-    }
-
-    Component.onDestruction: {
-        configReloadDebounce.stop();
-        if (ensureStoreDir)
-            ensureStoreDir.running = false;
     }
 }

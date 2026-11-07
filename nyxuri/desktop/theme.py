@@ -31,6 +31,14 @@ def _mode_from_system() -> str:
         if res in ("dark", "light"):
             return res
         try:
+            cfg_toml = get_env().config_dir / "nyxuri" / "config.toml"
+            if cfg_toml.is_file():
+                import tomllib
+                with cfg_toml.open("rb") as f:
+                    data = tomllib.load(f)
+                    mode = data.get("theme", {}).get("mode")
+                    if mode in ("dark", "light"):
+                        return mode
             cfg_file = get_env().config_dir / "nyxuri" / "config.json"
             if cfg_file.is_file():
                 import json

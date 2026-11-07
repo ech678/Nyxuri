@@ -12,9 +12,9 @@ Singleton {
     id: root
 
     readonly property string configDir: Paths.configHome
-    readonly property string filePath: configDir + "/tray.json"
+    readonly property string filePath: ConfigService.filePath
 
-    property bool storeReady: false
+    readonly property bool storeReady: ConfigService.storeReady
     property bool showItemId: false
     property bool invertPinnedItems: true
     property bool filterPassive: true
@@ -60,12 +60,31 @@ Singleton {
         if (!root.storeReady)
             return;
 
-        configFile.setText(JSON.stringify({
-                                              "showItemId": root.showItemId,
-                                              "invertPinnedItems": root.invertPinnedItems,
-                                              "pinnedItems": root.pinnedItemIds,
-                                              "filterPassive": root.filterPassive
-                                          }, null, 2));
+        ConfigService.updateSection("bar.tray", {
+            "showItemId": root.showItemId,
+            "invertPinnedItems": root.invertPinnedItems,
+            "pinnedItems": root.pinnedItemIds,
+            "filterPassive": root.filterPassive
+        });
+    }
+
+    function loadFromConfigStore() {
+        const trayData = ConfigService.getSection("bar.tray", null);
+        if (trayData)
+            root.loadFromObject(trayData);
+        else
+            root.loadFromObject(root.defaultConfig());
+    }
+
+    Connections {
+        target: ConfigService
+        function onConfigLoaded() {
+            root.loadFromConfigStore();
+        }
+        function onSectionChanged(path, data) {
+            if (path === "bar.tray" || path === "bar")
+                root.loadFromConfigStore();
+        }
     }
 
     function getTooltipForItem(item) {
@@ -107,42 +126,8 @@ Singleton {
         root.save();
     }
 
-    Process {
-        id: ensureStoreDir
-        command: ["mkdir", "-p", root.configDir]
-        running: true
-        onExited: {
-            root.storeReady = true;
-            configFile.reload();
-        }
-    }
-
-    FileView {
-        id: configFile
-        path: root.filePath
-
-        onLoaded: {
-            try {
-                root.loadFromObject(JSON.parse(configFile.text().trim() || "{}"));
-            } catch (error) {
-                console.warn("TrayService failed to load; leaving the existing config untouched:", error);
-                root.loadFromObject(root.defaultConfig());
-            }
-        }
-
-        onLoadFailed: error => {
-            root.loadFromObject(root.defaultConfig());
-            if (error === FileViewError.FileNotFound)
-                root.save();
-            else
-                console.warn("TrayService could not read the config; leaving the existing config untouched:",
-                             error);
-        }
-        onSaveFailed: error => console.warn("TrayService could not save the config:", error)
-    }
-
-    Component.onDestruction: {
-        if (ensureStoreDir)
-            ensureStoreDir.running = false;
+    Component.onCompleted: {
+        if (ConfigService.storeReady)
+            root.loadFromConfigStore();
     }
 }

@@ -20,7 +20,7 @@
 | P0 | 空间纯度大一统：根目录纯化 + PKGBUILD 修复 + 单测重心合一 + 消解 `shell/app/`（纯正 5 层） | 已完成 |
 | P1 | 插件专属控制面与动态导航：独立 `PluginsPage` 插件管理 + 切除设置中心幽灵 Tab 根因 + Spotlight 联动 | 已完成 |
 | P2 | 真 Omarchy 解耦与容错：切除 70 处跨插件静态引用 + 焚毁伪合规白名单 + 拔插容错（任意删插件宿主不崩） | 已完成 |
-| P3 | 统一配置 TOML 化：升级 `Toml.js` 导出 `stringify` + 废除 7 个碎片 JSON，归拢为带注释的单一 `config.toml` | 待开始 |
+| P3 | 统一配置 TOML 化：升级 `Toml.js` 导出 `stringify` + 废除 7 个碎片 JSON，归拢为带注释的单一 `config.toml` | 已完成 |
 | P4 | 引擎散文化与去企味重塑：处决 `ledger.py`/`transaction.py` 银行黑话 + 解构 913 行 `core.py`，消除 `kernel/core` 分裂人格 | 待开始 |
 | P5 | **Sub-agents 全景深度审查与巡检验收（作为本卷最终检查任务，就像启动并发审查一样）** | 待开始 |
 | T4 | Shell 可控性与透明化（开工时立细则） | 待开始 |
@@ -50,10 +50,12 @@
     - 共享工具提取至 `commons/`（`SpotlightCommands.js`, `SpotlightAppOrder.js`, `SpotlightSearch.js`, `cards/SystemCardDragState.js`）；跨域 UI 与呈现组件归位至 `services/`（`MediaPalette.qml`, `SystemCardDragSession.qml`, `NotificationContent.qml`）；
   - **焚毁伪合规白名单**：物理删除 `shell/scripts/dev/audit-lifecycle.py` 中 `ALLOWED_MODULE_CROSS_IMPORTS` 白名单（ARCH001 跨域导入零容忍），静态检查全库 542 个文件零违规；
   - **热拔插容错与契约测试**：新增 `tests/shell/test_plugin_decoupling.py`，断言全部 12 个插件 domain 零跨插件静态导入、宿主及共享层零插件引用，并实测热拔插遍历 12 个插件 domain 任意物理移出时其余全模块与静态检查依然 100% 干净；定向单测（96 项）全绿。
-- **P3 统一配置 TOML 化 (Unified Config Purity)**：
-  - **赋予 QML 原生写 TOML 能力**：升级 `shell/commons/Toml.js`，导出内置 `smol-toml` 的 `stringify()` 方法；
-  - **配置大一统**：在 `~/.config/nyxuri/` 废除 7 个碎片化 JSON，统一由单个 `config.toml` 管理主题、Dock、Bar、Idle 与显示配置；
-  - **旧配置吸收**：首次启动自动吸收遗留 JSON 配置生成规整的 `config.toml` 并自动清理废弃 JSON。
+- **P3 统一配置 TOML 化 (Unified Config Purity) · 已完成**：
+  - **赋予 QML 原生读写 TOML 全量能力**：升级 `shell/commons/Toml.js`，基于官方规范重导出 `smol-toml@1.9.1`（TOML v1.1.0 标准），完整导出 `parse()` 与 `stringify()`，零运行时外部依赖；
+  - **单一物理重心与配置大一统**：实现 `shell/services/ConfigService.qml`，以单个原子 `FileView` 管理 `~/.config/nyxuri/config.toml`；废除 7 个碎片化 JSON（`config.json`, `dock.json`, `tray.json`, `quick-toggles.json`, `display-color.json`, `idle-policy.json`, `ui-preferences.json`）；
+  - **领域服务全面解耦与收口**：`PersonalizationConfig`, `DockService`, `TrayService`, `QuickToggleConfig`, `DisplayColor`, `IdleService`, `UiPreferences` 彻底剥离独立 FileView 与散乱写回，通过 `ConfigService` 统一分发与防抖落盘；
+  - **无感迁移与零残留**：通过 `shell/scripts/system/migrate_config.py` 在首次加载时自动吸收遗留 JSON 配置归拢入 `config.toml` 并安全解链清理旧文件；双语 i18n 词条同步净化死键；
+  - **桌面 Python 生态无缝对接**：`nyxuri/desktop/theme.py` 与 `shell_switcher.py` 优先使用 Python 3.11+ 标准库 `tomllib` 读取 `config.toml`（保留 `config.json` 降级兜底）。
 - **P4 引擎散文化与去企味重塑 (Prose Architecture & De-Enterprization)**：
   - **处决过度工程命名**：
     - `nyxuri/kernel/ledger.py` → `nyxuri/state/store.py`；

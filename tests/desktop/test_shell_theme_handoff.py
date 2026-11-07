@@ -59,6 +59,22 @@ class TestShellThemeHandoff(unittest.TestCase):
 
         self.assertEqual(mode, "light")
 
+    def test_capture_from_nyxuri_shell_via_config_toml(self):
+        from nyxuri.desktop.shell_switcher import capture_active_theme_state
+
+        wp_dark = str(self.ctx.home / "Pictures" / "dark.png")
+        Path(wp_dark).touch()
+
+        nyx_cfg = self.ctx.home / ".config" / "nyxuri" / "config.toml"
+        nyx_cfg.parent.mkdir(parents=True, exist_ok=True)
+        nyx_cfg.write_text(f'[theme]\nmode = "dark"\n\n[wallpaper]\npathDark = "{wp_dark}"\n')
+
+        with patch("nyxuri.desktop.theme._nyxuri_shell_ipc", return_value=None):
+            mode, wallpaper = capture_active_theme_state("nyxuri-shell")
+
+        self.assertEqual(mode, "dark")
+        self.assertEqual(wallpaper, wp_dark)
+
     def test_capture_from_nyxuri_shell_via_config_json(self):
         from nyxuri.desktop.shell_switcher import capture_active_theme_state
 

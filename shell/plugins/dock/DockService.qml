@@ -11,7 +11,7 @@ import qs.commons.i18n
 Singleton {
     id: root
 
-    readonly property string filePath: Paths.configHome + "/dock.json"
+    readonly property string filePath: ConfigService.filePath
     readonly property string dragMimeType: "application/x-nyxuri-dock"
     readonly property bool supportsThumbnails: false
     readonly property bool showThumbnails: root._options.showThumbnails
@@ -442,11 +442,32 @@ Singleton {
     function save() {
         if (!root.ready || !root.writable)
             return;
-        configFile.setText(JSON.stringify({
-                                              schemaVersion: 1,
-                                              options: root._options,
-                                              pinned: root._pinned
-                                          }, null, 2));
+        ConfigService.updateSection("dock", {
+            "schemaVersion": 1,
+            "options": root._options,
+            "pinned": root._pinned
+        });
+    }
+
+    function loadFromConfigStore() {
+        const dockData = ConfigService.getSection("dock", null);
+        if (dockData) {
+            const config = DockModel.decodeConfig(dockData);
+            root.loaded(config, true, "");
+        } else {
+            root.loaded(null, true, "");
+        }
+    }
+
+    Connections {
+        target: ConfigService
+        function onConfigLoaded() {
+            root.loadFromConfigStore();
+        }
+        function onSectionChanged(path, data) {
+            if (path === "dock")
+                root.loadFromConfigStore();
+        }
     }
 
     function loaded(config, canWrite, error) {
@@ -478,50 +499,6 @@ Singleton {
                             "\n");
         }
     }
-    Process {
-        id: ensureConfigDir
-        command: ["mkdir", "-p", Paths.configHome]
-        running: true
-        onExited: exitCode => {
-            if (exitCode === 0)
-                root._storeReady = true;
-            else
-                root.loaded(null, false, I18n.tr(
-                                "Dock settings cannot be saved because the configuration directory is unavailable."));
-        }
-    }
-
-    FileView {
-        id: configFile
-        path: root._storeReady ? root.filePath : ""
-        blockWrites: true
-        atomicWrites: true
-        watchChanges: true
-        onFileChanged: {
-            root.writable = false;
-            configFile.reload();
-        }
-        onLoaded: {
-            const config = DockModel.decodeConfig(configFile.text());
-            root.loaded(config, config !== null, config === null ? I18n.tr(
-                                                                       "Dock settings could not be read. The existing file is preserved; changes apply to this session only.") :
-                                                                   "");
-        }
-        onLoadFailed: error => {
-            if (!root._storeReady)
-                return;
-            const missing = error === FileViewError.FileNotFound;
-            root.loaded(null, missing, missing ? "" : I18n.tr(
-                                                     "Dock settings could not be opened. Changes apply to this session only."));
-        }
-        onSaveFailed: error => {
-            root.writable = false;
-            root.configError = I18n.tr(
-                        "Dock settings could not be saved. Changes apply to this session only.");
-            console.warn("DockService: cannot save settings:", error);
-        }
-    }
-
     Timer {
         id: launchTimeout
         interval: 500
@@ -558,6 +535,8 @@ Singleton {
 
     Component.onCompleted: {
         ActionGateway.dockHost = root;
+        if (ConfigService.storeReady)
+            root.loadFromConfigStore();
         root.rebuild();
     }
 
@@ -565,7 +544,5 @@ Singleton {
         if (ActionGateway.dockHost === root)
             ActionGateway.dockHost = null;
         launchTimeout.stop();
-        if (ensureConfigDir)
-            ensureConfigDir.running = false;
     }
 }
