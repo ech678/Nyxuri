@@ -39,6 +39,21 @@
 > SystemMonitorService/NetworkService 的 owner 分类和资源计数可从容器 IPC 读取；
 > Canvas/layer 与未注册服务仍明确 partial。
 
+> 证据对账（2026-11-07）：new channel 的完整报告为
+> `.omo/evidence/benchmark-current-full-report.json`（报告 SHA
+> `6c0ea1c1db311c3b567e85db76c09a313779c912`）和
+> `.omo/evidence/benchmark-current-final-report.json`（报告 SHA
+> `bb974f21f716d3d9cdc3081f8efbdbf61b7d7ad7`）；两者均标记 `git_dirty=true`，且
+> 当前 HEAD 已继续前进到 `e542f697927ecab6f8295d69b162551fc9cfb837`，因此它们只能作为
+> 已验证容器基线，不能宣称覆盖当前 HEAD 的全部后续改动。old channel 的
+> `.omo/evidence/container-old-quickshell-compatibility-20261107.json` 在独立 pinned
+> Qt 6.8.3 toolchain 下通过 0.2.1 Loader/IPC/qmlcache compatibility，但没有 old
+> channel 的完整性能预算报告。资源 owner smoke 仍只覆盖已注册对象；Canvas/layer、未注册
+> QML 类别以及逐进程 owner、精确退出、CPU/output 归因保持 partial/不可得。帧探针只能
+> 提供 `frameSwapped` 间隔；Weston presentation feedback、掉帧精确值、纹理和离屏目标
+> 仍为 partial/null。所有运行均在隔离容器内，宿主 Quickshell/Weston/Niri/Wayland 未启动；
+> 宿主 Qt 5.15 `qmllint` 对 `qs.*` 导入不具备有效验证能力，不能替代容器运行证据。
+
 ## 0. 硬约束
 
 - 禁止在宿主机真实启动 Nyxuri Shell、Quickshell、Weston、Niri 或任何会创建桌面
@@ -66,7 +81,7 @@
 
 ## 1. 交付物清单
 
-- [ ] `llms-wiki/shell/performance-plan.md`（本计划，作为实施入口）。
+- [x] `llms-wiki/shell/performance-plan.md`（本计划，作为实施入口）。
 - [x] 容器构建定义与锁定的 Quickshell/Qt/Nixpkgs 版本记录。
 - [x] 容器内可重复执行的 benchmark runner，支持基线、冷启动、热启动、交互、
   长稳态、资源回收、渲染和失败场景。
@@ -111,7 +126,7 @@
   更新为新版本；失败时保留旧版本作为对照，不修改用户环境。
 - [x] 把 Quickshell 版本选择写入容器锁定文件和 benchmark 报告，禁止使用浮动的
   `latest` 作为可交付基准。
-- [ ] 重新验证 `shell/nyxuri-shell` 的 qmlcache 清理策略。若新版本可靠失效缓存，
+- [x] 重新验证 `shell/nyxuri-shell` 的 qmlcache 清理策略。若新版本可靠失效缓存，
   改为按源码/版本指纹清理；若仍需冷编译，保留清理并把成本单独记录。
 
 ## 3. 基准工具修正与测量契约
@@ -370,7 +385,7 @@ Quickshell 版本的重新测量结果校准；不得拿历史 `.omo/` 数字直
 
 - [ ] 每个功能域优化保留独立、可回滚的提交边界；不覆盖用户已有修改，不提交 `.omo/`
   或测试产物。
-- [ ] 任何配置/缓存/生成物改变只发生在容器 XDG 目录；容器销毁后宿主配置不变。
+- [x] 任何配置/缓存/生成物改变只发生在容器 XDG 目录；容器销毁后宿主配置不变。
 - [ ] 每个优化项保存：修改前后 diff、测试命令、容器镜像信息、原始 JSON、汇总报告、
   失败日志、回收采样和功能结果。
 - [ ] 发现性能变好但体验变差时，回滚该项并保留证据，不降低验收条件。
@@ -381,9 +396,9 @@ Quickshell 版本的重新测量结果校准；不得拿历史 `.omo/` 数字直
 
 ## 15. 计划完成标准
 
-- [ ] 没有任何宿主机真实启动测试。
+- [x] 没有任何宿主机真实启动测试。
 - [ ] 没有把 `.omo/` 历史报告当作当前结论。
-- [ ] Quickshell 更新已经在容器中完成版本锁定和兼容性矩阵。
+- [x] Quickshell 更新已经在容器中完成版本锁定和兼容性矩阵。
 - [ ] 性能报告来自当前代码、当前容器、当前 Git SHA，且可重复生成。
 - [ ] 启动、内存、CPU、I/O、渲染、回收和长稳态均有真实容器证据。
 - [ ] 所有用户功能和异常降级路径均通过容器内行为测试。
