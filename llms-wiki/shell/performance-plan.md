@@ -233,7 +233,7 @@
 
 ## 7. Timer、事件循环和 Process 治理
 
-- [ ] 对 114 个 Timer 生成清单：owner、interval、repeat、默认 running、消费者、关闭
+- [ ] 对 115 个 Timer 生成清单：owner、interval、repeat、默认 running、消费者、关闭
   条件、唤醒次数和单次回调耗时。
 - [x] 静态 QML resource inventory 已生成器化，输出 Timer/Process/FileView/Connections
   的 file/line/owner/id/default running/interval/repeat；该工件明确标注
