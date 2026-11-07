@@ -14,9 +14,9 @@ class TestThemeSync(unittest.TestCase):
         self.ctx.__exit__()
 
     def test_sync_writes_both_gtk_settings_files(self):
-        from nyxuri.desktop.theme import sync
+        from nyxuri.system.theme import sync
 
-        with patch("nyxuri.desktop.theme.shutil.which", return_value=None):
+        with patch("nyxuri.system.theme.shutil.which", return_value=None):
             self.assertEqual(sync("light"), 0)
         for version in ("gtk-3.0", "gtk-4.0"):
             parser = configparser.ConfigParser()
@@ -25,14 +25,14 @@ class TestThemeSync(unittest.TestCase):
             self.assertEqual(parser["Settings"]["gtk-theme-name"], "adw-gtk3")
 
     def test_toggle_follows_daemon_mode_instead_of_inverting_it_again(self):
-        from nyxuri.desktop.theme import sync
+        from nyxuri.system.theme import sync
 
         for daemon_mode in ("dark", "light"):
-            with patch("nyxuri.desktop.theme._propagate", return_value="noctalia"), \
-                 patch("nyxuri.desktop.theme._mode_from_system", return_value=daemon_mode), \
-                 patch("nyxuri.desktop.theme._nyxuri_shell_ipc", return_value=None), \
-                 patch("nyxuri.desktop.theme.shutil.which", return_value=None), \
-                 patch("nyxuri.desktop.theme._sync_glow_layout") as glow:
+            with patch("nyxuri.system.theme._propagate", return_value="noctalia"), \
+                 patch("nyxuri.system.theme._mode_from_system", return_value=daemon_mode), \
+                 patch("nyxuri.system.theme._nyxuri_shell_ipc", return_value=None), \
+                 patch("nyxuri.system.theme.shutil.which", return_value=None), \
+                 patch("nyxuri.system.theme._sync_glow_layout") as glow:
                 self.assertEqual(sync("toggle"), 0)
             glow.assert_called_once_with(daemon_mode)
             parser = configparser.ConfigParser()
@@ -41,31 +41,31 @@ class TestThemeSync(unittest.TestCase):
             self.assertEqual(parser["Settings"]["gtk-application-prefer-dark-theme"], expected)
 
     def test_toggle_inverts_locally_when_no_channel_handles_it(self):
-        from nyxuri.desktop.theme import sync
+        from nyxuri.system.theme import sync
 
-        with patch("nyxuri.desktop.theme._propagate", return_value="none"), \
-             patch("nyxuri.desktop.theme._mode_from_system", return_value="dark"), \
-             patch("nyxuri.desktop.theme._nyxuri_shell_ipc", return_value=None), \
-             patch("nyxuri.desktop.theme.shutil.which", return_value=None), \
-             patch("nyxuri.desktop.theme._sync_glow_layout") as glow:
+        with patch("nyxuri.system.theme._propagate", return_value="none"), \
+             patch("nyxuri.system.theme._mode_from_system", return_value="dark"), \
+             patch("nyxuri.system.theme._nyxuri_shell_ipc", return_value=None), \
+             patch("nyxuri.system.theme.shutil.which", return_value=None), \
+             patch("nyxuri.system.theme._sync_glow_layout") as glow:
             self.assertEqual(sync("toggle"), 0)
         glow.assert_called_once_with("light")
 
     def test_status_returns_zero(self):
-        from nyxuri.desktop.theme import status
+        from nyxuri.system.theme import status
 
-        with patch("nyxuri.desktop.theme.shutil.which", return_value=None):
+        with patch("nyxuri.system.theme.shutil.which", return_value=None):
             self.assertEqual(status(), 0)
 
     def test_sync_respects_nyxuri_gtk_theme_env_precedence(self):
-        from nyxuri.desktop.theme import sync
+        from nyxuri.system.theme import sync
         import os
 
         env_vars = {
             "NYXURI_GTK_THEME_LIGHT": "custom-nyxuri-light",
         }
         with patch.dict(os.environ, env_vars, clear=False), \
-             patch("nyxuri.desktop.theme.shutil.which", return_value=None):
+             patch("nyxuri.system.theme.shutil.which", return_value=None):
             self.assertEqual(sync("light"), 0)
             parser = configparser.ConfigParser()
             parser.read(self.ctx.home / ".config" / "gtk-3.0" / "settings.ini")
@@ -74,7 +74,7 @@ class TestThemeSync(unittest.TestCase):
     def test_sync_propagates_to_nyxuri_shell_ipc(self):
         """R10: explicit mode rides the shell theme IPC when Noctalia is gone."""
         from unittest.mock import MagicMock
-        from nyxuri.desktop.theme import sync
+        from nyxuri.system.theme import sync
 
         calls = []
 
@@ -89,17 +89,17 @@ class TestThemeSync(unittest.TestCase):
         shell_dir = self.ctx.home / "shelltree"
         shell_dir.mkdir()
         (shell_dir / "shell.qml").write_text("// fixture\n")
-        with patch("nyxuri.desktop.theme.shutil.which", side_effect=which), \
-             patch("nyxuri.desktop.theme._nyxuri_shell_dir", return_value=shell_dir), \
-             patch("nyxuri.desktop.theme._nyxuri_shell_ipc", side_effect=fake_ipc):
+        with patch("nyxuri.system.theme.shutil.which", side_effect=which), \
+             patch("nyxuri.system.theme._nyxuri_shell_dir", return_value=shell_dir), \
+             patch("nyxuri.system.theme._nyxuri_shell_ipc", side_effect=fake_ipc):
             self.assertEqual(sync("dark"), 0)
         self.assertIn(["theme", "set", "dark"], calls)
 
     def test_sync_toggle_falls_back_to_system_flip_without_shells(self):
-        from nyxuri.desktop.theme import sync
+        from nyxuri.system.theme import sync
 
-        with patch("nyxuri.desktop.theme.shutil.which", return_value=None), \
-             patch("nyxuri.desktop.theme._nyxuri_shell_ipc", return_value=None):
+        with patch("nyxuri.system.theme.shutil.which", return_value=None), \
+             patch("nyxuri.system.theme._nyxuri_shell_ipc", return_value=None):
             self.assertEqual(sync("toggle"), 0)
         # DEFAULT_MODE default is dark, so the flip lands on light.
         parser = configparser.ConfigParser()
@@ -108,44 +108,44 @@ class TestThemeSync(unittest.TestCase):
         self.assertEqual(parser["Settings"]["gtk-theme-name"], "adw-gtk3")
 
     def test_sync_writes_kvantum_only_when_theme_installed(self):
-        from nyxuri.desktop.theme import sync
+        from nyxuri.system.theme import sync
 
         kvantum_dir = self.ctx.home / ".config" / "Kvantum" / "KvLibadwaitaDark"
         kvantum_dir.mkdir(parents=True)
-        with patch("nyxuri.desktop.theme.shutil.which", return_value=None):
+        with patch("nyxuri.system.theme.shutil.which", return_value=None):
             self.assertEqual(sync("dark"), 0)
         parser = configparser.ConfigParser()
         parser.read(self.ctx.home / ".config" / "Kvantum" / "kvantum.kvconfig")
         self.assertEqual(parser["Settings"]["theme"], "KvLibadwaitaDark")
 
     def test_sync_swaps_glow_layout_and_reload_guards_on_niri(self):
-        from nyxuri.desktop.theme import sync
-        from nyxuri.kernel.ledger import set_plugin
+        from nyxuri.system.theme import sync
+        from nyxuri.state.store import set_plugin
 
         config = self.ctx.home / ".config"
         set_plugin("niri", state="disabled", form="glow")
         (config / "niri").mkdir()
         (config / "niri" / "layout-dark.kdl").write_text("// dark layout\n")
         (config / "niri" / "layout.kdl").write_text("// stale light layout\n")
-        with patch("nyxuri.desktop.theme.shutil.which", return_value=None):
+        with patch("nyxuri.system.theme.shutil.which", return_value=None):
             self.assertEqual(sync("dark"), 0)
         self.assertEqual((config / "niri" / "layout.kdl").read_text(), "// dark layout\n")
 
         # Identical bytes must be a no-op (mtime-only churn avoided).
         before = (config / "niri" / "layout.kdl").stat().st_mtime_ns
-        with patch("nyxuri.desktop.theme.shutil.which", return_value=None):
+        with patch("nyxuri.system.theme.shutil.which", return_value=None):
             self.assertEqual(sync("dark"), 0)
         self.assertEqual((config / "niri" / "layout.kdl").stat().st_mtime_ns, before)
 
     def test_sync_skips_glow_layout_when_form_inactive(self):
-        from nyxuri.desktop.theme import sync
-        from nyxuri.kernel.ledger import set_plugin
+        from nyxuri.system.theme import sync
+        from nyxuri.state.store import set_plugin
 
         config = self.ctx.home / ".config"
         set_plugin("niri", state="disabled", form="plain")
         (config / "niri").mkdir()
         (config / "niri" / "layout-dark.kdl").write_text("// dark layout\n")
-        with patch("nyxuri.desktop.theme.shutil.which", return_value=None):
+        with patch("nyxuri.system.theme.shutil.which", return_value=None):
             self.assertEqual(sync("dark"), 0)
         self.assertFalse((config / "niri" / "layout.kdl").exists())
 

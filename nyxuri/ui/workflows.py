@@ -5,8 +5,8 @@ import subprocess
 import sys
 from typing import Dict, List
 
-from nyxuri.compositors import COMPOSITORS, detect_preferred_wm
-from nyxuri.core import get_env, log_msg
+from nyxuri.system.compositors import COMPOSITORS, detect_preferred_wm
+from nyxuri.system.env import get_env, log_msg
 from nyxuri.deploy import (
     config_item_dest,
     config_item_src,
@@ -20,11 +20,11 @@ from nyxuri.deploy.deploy import (
     enable_wallpapers_plugin as _enable_wallpapers,
     wallpapers_pack_present,
 )
-from nyxuri.pkg.deps import get_missing_deps, install_selected_deps, plugin_package_installer
-from nyxuri.kernel import transaction
-from nyxuri.core import msg
-from nyxuri.tui import MenuItem, Menu, format_steps, prompt_confirm
-from nyxuri.installer.menus import run_master_component_menu
+from nyxuri.system.pkg import get_missing_deps, install_selected_deps, plugin_package_installer
+from nyxuri.deploy import catalog, engine
+from nyxuri.system.i18n import msg
+from nyxuri.ui.tui import MenuItem, Menu, format_steps, prompt_confirm
+from nyxuri.ui.menus import run_master_component_menu
 from nyxuri.deploy.atomic import CarryPolicy
 
 def _phase_preflight_check(
@@ -69,26 +69,26 @@ def _finish_successful_deploy(mode: str, **completion_args) -> None:
 
 
 def _update_carry_policy(items: List[str]) -> "CarryPolicy":
-    """Update-grade ownership carry (#139): ledger baselines, 宁可错保.
+    """Update-grade ownership carry (#139): state baselines, 宁可错保.
 
     ``unknown=True``: a plugin without an enabled record (Ghost) has every
     dest entry carried — the update must never guess wrong about files it
     cannot attribute. Adoption paths (install/``on``) use ``unknown=False``.
     """
-    return CarryPolicy(baselines=transaction.carry_baselines(items), unknown=True)
+    return CarryPolicy(baselines=engine.carry_baselines(items), unknown=True)
 
 
 def _resnapshot_after_deploy(items: List[str], policy: Optional[CarryPolicy]) -> None:
     """Re-baseline enabled plugins after an out-of-band deploy + hook replay."""
     if policy is None:
-        transaction.resnapshot_plugins(items, carried={})
+        engine.resnapshot_plugins(items, carried={})
     else:
-        transaction.resnapshot_plugins(items, carried=policy.carried)
+        engine.resnapshot_plugins(items, carried=policy.carried)
 
 
 def _ghost_notices(items: List[str], policy: Optional[CarryPolicy]) -> List[str]:
     """Per-plugin notices for deployed-but-unregistered (Ghost) plugins (#139)."""
-    baselines = policy.baselines if policy is not None else transaction.carry_baselines(items)
+    baselines = policy.baselines if policy is not None else engine.carry_baselines(items)
     notices = []
     for item in items:
         if baselines.get(item) is not None:
@@ -162,7 +162,7 @@ def install_configs_workflow(mode: str = "full") -> bool:
     steps = 1
     if mode == "full":
         steps += 1  # deps
-    steps += 1  # component transactions
+    steps += 1  # component deployment
     cur_step = 0
 
     # 1. Deps
@@ -173,14 +173,14 @@ def install_configs_workflow(mode: str = "full") -> bool:
         if missing and not install_selected_deps(missing):
             return False
 
-    # 2. Component transactions (single activation pipeline)
+    # 2. Deploy plugins (single activation pipeline)
     cur_step += 1
     print(msg("install_step_configs", f"{cur_step}/{steps}"))
     if do_backup:
         from nyxuri.state.backup import backup_configs
         backup_configs(note="auto_snapshot_before_deploy", interactive=False)
 
-    known_plugins = set(transaction.registry.plugin_ids())
+    known_plugins = set(catalog.plugin_ids())
     plugins_to_enable = [uid for uid in chosen_configs if uid in known_plugins]
     for uid in chosen_configs:
         if uid not in known_plugins:
@@ -195,7 +195,7 @@ def install_configs_workflow(mode: str = "full") -> bool:
     failed_items: List[str] = []
     wallpaper_ok: Optional[bool] = None
     for uid in plugins_to_enable:
-        steps_res = transaction.plugin_on(uid, install_packages=plugin_package_installer)
+        steps_res = engine.plugin_on(uid, install_packages=plugin_package_installer)
         if not steps_res or not all(s.ok for s in steps_res):
             failed_items.append(uid)
         for line in format_steps(steps_res):
@@ -229,7 +229,7 @@ def offer_overwrite_upgrade(flag: str = "") -> bool:
     Every deploy path rides the ownership carry (#139): user-modified and
     user-placed files are carried, never clobbered. ``--force`` is the one
     template-wins verb for DRIFT — the template claims its payload names and
-    re-baselines the ledger ("I reviewed the drift, adopt the template side")
+    re-baselines state ("I reviewed the drift, adopt the template side")
     — but it is not a purge: user-placed extras are still carried.
     """
     if flag in ("--force", "--deploy"):
@@ -244,7 +244,7 @@ def offer_overwrite_upgrade(flag: str = "") -> bool:
             return False
         wallpaper_ok = _enable_wallpapers()
         _enable_theme()
-        transaction.replay_enabled_hooks()
+        engine.replay_enabled_hooks()
         # Re-baseline every deployed plugin so the drift the user just
         # reviewed clears instead of haunting doctor forever.
         _resnapshot_after_deploy(items, force_policy)
@@ -267,7 +267,7 @@ def offer_overwrite_upgrade(flag: str = "") -> bool:
             return False
         wallpaper_ok = _enable_wallpapers()
         _enable_theme()
-        transaction.replay_enabled_hooks()
+        engine.replay_enabled_hooks()
         _resnapshot_after_deploy(items, carry_policy)
         _finish_successful_deploy(
             "update",
@@ -309,7 +309,7 @@ def offer_overwrite_upgrade(flag: str = "") -> bool:
             wallpaper_ok = None
             if chosen["wallpapers"]:
                 wallpaper_ok = _enable_wallpapers()
-            transaction.replay_enabled_hooks()
+            engine.replay_enabled_hooks()
             _resnapshot_after_deploy(chosen["configs"], carry_policy)
             _finish_successful_deploy(
                 "update",

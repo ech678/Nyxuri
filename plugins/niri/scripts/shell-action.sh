@@ -62,7 +62,7 @@ is_plugin_enabled() {
 find_action_tool() {
     local target_act="$1"
     local data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
-    local config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
+    local config_home="$HOME/.config"
 
     # 1. Search living and data paths for third-party Nyxuri plugins
     local dir

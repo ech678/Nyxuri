@@ -1,3 +1,20 @@
+def classify_gpu_devices(lspci_text: str) -> str:
+    """Describe listed GPU vendors, without inferring the active renderer."""
+    vendors = set()
+    for raw in lspci_text.splitlines():
+        line = raw.lower()
+        if any(kind in line for kind in (
+            "vga compatible controller:", "display controller:", "3d controller:",
+        )):
+            vendors.add("nvidia" if "nvidia" in line else "other")
+    if vendors == {"nvidia", "other"}:
+        return "NVIDIA + other GPU devices"
+    if vendors == {"nvidia"}:
+        return "NVIDIA GPU devices only"
+    if vendors == {"other"}:
+        return "Other GPU devices only"
+    return "Unknown"
+
 """System health diagnostics (System Doctor) and diagnostic report exporter."""
 
 import concurrent.futures
@@ -11,15 +28,15 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-from nyxuri.core import (
+from nyxuri.system.env import (
     FCITX_THEME,
     PROJECT_NAME,
     THEME_ENGINE,
     get_env_var,
 )
-from nyxuri.compositors import COMPOSITORS, MAIN_WM, portal_conf_name, session_wm
-from nyxuri.core import get_env, get_pics_dir, log_msg, timed_run
-from nyxuri.core import msg, text
+from nyxuri.system.compositors import COMPOSITORS, MAIN_WM, portal_conf_name, session_wm
+from nyxuri.system.env import get_env, get_pics_dir, log_msg, timed_run
+from nyxuri.system.i18n import msg, text
 
 
 def _check_compositor(env) -> None:
@@ -43,7 +60,7 @@ def _check_wayland_session(env) -> None:
         print(msg("doctor_warn", text(f"会话: 缺少 {sess_file}", f"Session: {sess_file} is missing")))
 
 def _check_shell_provider(env) -> None:
-    from nyxuri.kernel.ledger import active_shell, nyxuri_shell_bin
+    from nyxuri.state.store import active_shell, nyxuri_shell_bin
     current = active_shell()
     if current == "noctalia":
         if shutil.which(THEME_ENGINE):
@@ -61,7 +78,7 @@ def _check_shell_provider(env) -> None:
             )))
 
 def _check_noctalia(env) -> None:
-    from nyxuri.kernel.ledger import active_shell
+    from nyxuri.state.store import active_shell
     if active_shell() != "noctalia":
         return
     if not shutil.which(THEME_ENGINE):
@@ -305,9 +322,9 @@ def _check_disk_space(env) -> None:
         pass
 
 def _plugin_state(uid: str) -> str:
-    """Ledger state of one plugin ('enabled' / 'disabled' / '' when never switched)."""
-    from nyxuri.kernel import ledger
-    rec = ledger.get_plugin(uid)
+    """State of one plugin ('enabled' / 'disabled' / '' when never switched)."""
+    from nyxuri.state import store
+    rec = store.get_plugin(uid)
     return (rec or {}).get("state", "")
 
 
@@ -375,7 +392,7 @@ def _check_vm(env) -> None:
 
 def _check_greeter(env) -> None:
     """Greeter state: session binary + /etc/greetd usage + service enabled."""
-    from nyxuri.core import GREETER_ETC_CFG, GREETER_PKG, GREETER_SESSION_BIN
+    from nyxuri.system.env import GREETER_ETC_CFG, GREETER_PKG, GREETER_SESSION_BIN
     if shutil.which(GREETER_SESSION_BIN):
         print(msg("doctor_ok", text(f"{GREETER_PKG}: 已安装", f"{GREETER_PKG}: installed")))
     else:
@@ -405,7 +422,7 @@ def _check_greeter(env) -> None:
 
 def _check_path_occlusion(env) -> None:
     """System mode only: warn if a user-territory link shadows the package."""
-    from nyxuri.core import check_path_occlusion
+    from nyxuri.system.env import check_path_occlusion
     if env.run_mode == "system":
         check_path_occlusion()
 
@@ -578,7 +595,7 @@ def generate_bug_report() -> Optional[Path]:
     shell = os.environ.get("SHELL", "Unknown")
 
     # GPU
-    from nyxuri.deploy.hardware import classify_gpu_devices
+    # classify_gpu_devices inlined
 
     gpu_info = "Unknown"
     gpu_devices = "Unknown"

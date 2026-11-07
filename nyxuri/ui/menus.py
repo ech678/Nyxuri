@@ -4,18 +4,19 @@ import os
 import sys
 from typing import List, Optional
 
-from nyxuri.core import (
+from nyxuri.system.env import (
     PENDING_UPGRADE_ENV,
     PENDING_UPGRADE_MENU_ENV,
+    exec_cli,
+    get_env,
 )
-from nyxuri.compositors import COMPOSITORS, detect_preferred_wm
-from nyxuri.core import exec_cli, get_env
+from nyxuri.system.compositors import COMPOSITORS, detect_preferred_wm
 from nyxuri.deploy import (
     discover_config_items,
     discover_manifest_apps,
     discover_optional_apps,
 )
-from nyxuri.desktop.forms import (
+from nyxuri.deploy.forms import (
     apply_form,
     collect_forms,
     delete_form,
@@ -23,8 +24,8 @@ from nyxuri.desktop.forms import (
     save_form,
 )
 from nyxuri.deploy.deploy import wallpapers_pack_present
-from nyxuri.pkg.deps import is_dep_installed, run_dep_menu_loop
-from nyxuri.sysdoctor import generate_bug_report, run_doctor
+from nyxuri.system.pkg import is_dep_installed, run_dep_menu_loop
+from nyxuri.system.doctor import generate_bug_report, run_doctor
 from nyxuri.state import (
     backup_configs,
     delete_backup,
@@ -32,9 +33,9 @@ from nyxuri.state import (
     rollback_configs,
     uninstall_nyxuri,
 )
-from nyxuri.core import msg
-from nyxuri.pkg.net import safe_git_pull
-from nyxuri.tui import (
+from nyxuri.system.i18n import msg
+from nyxuri.system.net import safe_git_pull
+from nyxuri.ui.tui import (
     CheckboxEntry,
     CheckboxList,
     MenuItem,
@@ -166,7 +167,7 @@ def form_switcher_loop() -> None:
         print(msg("interactive_terminal_required"), file=sys.stderr)
         return
 
-    from nyxuri.desktop.forms import get_form_info
+    from nyxuri.deploy.forms import get_form_info
     from nyxuri.deploy.forms import list_slots, get_active_slot, use_form
 
     apps = discover_config_items()
@@ -202,7 +203,7 @@ def form_switcher_loop() -> None:
 
 def main_menu_loop() -> None:
     """Main Nyxuri control panel interactive loop."""
-    from nyxuri.installer.workflows import install_configs_workflow
+    from nyxuri.ui.workflows import install_configs_workflow
 
     env = get_env()
     while True:
@@ -257,7 +258,7 @@ def main_menu_loop() -> None:
             generate_bug_report()
             press_any_key()
         elif choice == 8:
-            from nyxuri.tui import PluginWorkshop
+            from nyxuri.ui.tui import PluginWorkshop
             PluginWorkshop().run()
         elif choice == 9:
             sys.exit(0)

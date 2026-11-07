@@ -29,11 +29,11 @@ class TestSafeGitCheckoutRef(unittest.TestCase):
         self._ctx.__exit__()
 
     def _run_mode(self):
-        from nyxuri.core import get_env
+        from nyxuri.system.env import get_env
         return get_env()
 
     def test_git_missing_returns_false_not_crash(self):
-        from nyxuri.pkg.net import safe_git_checkout_ref
+        from nyxuri.system.net import safe_git_checkout_ref
 
         with patch("shutil.which", return_value=None):
             with redirect_stdout(io.StringIO()):
@@ -43,7 +43,7 @@ class TestSafeGitCheckoutRef(unittest.TestCase):
 
     def test_dirty_tree_refused_returns_false(self):
         """Pinned reset is destructive: dirty tree must fail (False), never skip (None)."""
-        from nyxuri.pkg.net import safe_git_checkout_ref
+        from nyxuri.system.net import safe_git_checkout_ref
 
         env = self._run_mode()
         env.run_mode = "repo"
@@ -67,7 +67,7 @@ class TestSafeGitCheckoutRef(unittest.TestCase):
         self.assertEqual(result, False, "Dirty tree must be refused with False")
 
     def test_clean_tree_fetches_ref_with_timeouts_then_resets_to_fetch_head(self):
-        from nyxuri.pkg.net import safe_git_checkout_ref
+        from nyxuri.system.net import safe_git_checkout_ref
 
         env = self._run_mode()
         env.run_mode = "repo"
@@ -101,7 +101,7 @@ class TestSafeGitCheckoutRef(unittest.TestCase):
         self.assertIn("FETCH_HEAD", reset_cmds[0], "Reset must target FETCH_HEAD")
 
     def test_system_mode_skips_returns_none(self):
-        from nyxuri.pkg.net import safe_git_checkout_ref
+        from nyxuri.system.net import safe_git_checkout_ref
 
         env = self._run_mode()
         env.run_mode = "system"
@@ -145,14 +145,14 @@ class TestIssue139UpdateNeverClobbersUserFiles(unittest.TestCase):
         return plugin
 
     def _run_update(self, flag=""):
-        from nyxuri.installer.workflows import offer_overwrite_upgrade
+        from nyxuri.ui.workflows import offer_overwrite_upgrade
 
         captured = {}
         with patch("sys.stdin.isatty", return_value=False), \
-             patch("nyxuri.installer.workflows._enable_wallpapers", return_value=True), \
-             patch("nyxuri.installer.workflows._enable_theme", return_value=True), \
-             patch("nyxuri.installer.workflows.run_user_hooks", return_value=[]), \
-             patch("nyxuri.installer.workflows.render_completion_screen") as screen:
+             patch("nyxuri.ui.workflows._enable_wallpapers", return_value=True), \
+             patch("nyxuri.ui.workflows._enable_theme", return_value=True), \
+             patch("nyxuri.ui.workflows.run_user_hooks", return_value=[]), \
+             patch("nyxuri.ui.workflows.render_completion_screen") as screen:
             ok = offer_overwrite_upgrade(flag)
         if screen.call_args:
             captured["preserved"] = screen.call_args.kwargs.get("preserved_lines") or []
@@ -161,11 +161,12 @@ class TestIssue139UpdateNeverClobbersUserFiles(unittest.TestCase):
         return ok, captured
 
     def test_update_carries_edits_and_extra_files_then_force_adopts(self):
-        from nyxuri.kernel import ledger, transaction
+        from nyxuri.state import store
+        from nyxuri.deploy import engine
 
         with TempEnv() as ctx:
             plugin = self._stage_unit(ctx)
-            self.assertTrue(transaction.plugin_on("app")[0].ok)
+            self.assertTrue(engine.plugin_on("app")[0].ok)
             dest = ctx.home / ".config/app"
             # The user's two fatal moves from the issue: editing a managed
             # file and dropping a personal file next to it.
@@ -182,10 +183,10 @@ class TestIssue139UpdateNeverClobbersUserFiles(unittest.TestCase):
                              "user-placed files must never be deleted by an update")
             self.assertEqual(captured["groups"].get("modified"), ["~/.config/app/a.conf"])
             self.assertTrue(any("zz-tools.fish" in line for line in captured["preserved"]))
-            rec = ledger.get_plugin("app")
+            rec = store.get_plugin("app")
             self.assertNotIn("a.conf", rec["files"],
                              "a carried file must never read as engine-laid")
-            self.assertEqual(transaction.audit_plugins("app"), {"app": "Synced"})
+            self.assertEqual(engine.audit_plugins("app"), {"app": "Synced"})
 
             # --force is the adopt verb: template side wins, baseline clears.
             ok, _ = _quiet(self._run_update, "--force")
@@ -194,20 +195,21 @@ class TestIssue139UpdateNeverClobbersUserFiles(unittest.TestCase):
             self.assertEqual((dest / "zz-tools.fish").read_text(), "atuin init\n",
                              "force adopts the template, it is not a purge")
             self.assertEqual(
-                ledger.get_plugin("app")["files"]["a.conf"],
+                store.get_plugin("app")["files"]["a.conf"],
                 __import__("hashlib").sha256((dest / "a.conf").read_bytes()).hexdigest(),
             )
-            self.assertEqual(transaction.audit_plugins("app"), {"app": "Synced"})
+            self.assertEqual(engine.audit_plugins("app"), {"app": "Synced"})
 
     def test_ghost_unit_update_freezes_and_hints_adoption(self):
-        from nyxuri.kernel import ledger, transaction
+        from nyxuri.state import store
+        from nyxuri.deploy import engine
 
         with TempEnv() as ctx:
             plugin = self._stage_unit(ctx)
             dest = ctx.home / ".config/app"
             dest.mkdir(parents=True)
             (dest / "a.conf").write_text("v3-era\n", encoding="utf-8")
-            self.assertIsNone(ledger.get_plugin("app"), "precondition: Ghost")
+            self.assertIsNone(store.get_plugin("app"), "precondition: Ghost")
 
             ok, captured = _quiet(self._run_update, "")
             self.assertTrue(ok)
@@ -215,7 +217,7 @@ class TestIssue139UpdateNeverClobbersUserFiles(unittest.TestCase):
                              "an unregistered plugin's content is never overwritten")
             self.assertTrue(any("app" in line for line in captured["notices"]),
                              "the update must point at `nyxuri on` adoption")
-            self.assertIsNone(ledger.get_plugin("app"),
+            self.assertIsNone(store.get_plugin("app"),
                               "the installer never invents switch state")
 
             # Adoption is the explicit way out: template claims its names.

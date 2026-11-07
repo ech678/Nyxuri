@@ -1,7 +1,7 @@
 # Overview — 一页仓库地图
 
 > Nyxuri 是精选桌面配置的原子部署引擎，收敛为「桌面插件引擎」：
-> 插件（plugins/）× 内核（kernel/）× 插件界面（动词面 + TUI 面板）。
+> 插件（plugins/）× 执行与状态（deploy/ · state/ · system/）× 插件界面（动词面 + TUI 面板）。
 > 本页是文件树与分层的一页地图；插件模型契约见 [plugin-model](plugin-model.md)。
 
 ## 精神
@@ -9,26 +9,25 @@
 三条原则（详见 [vision](vision.md)）：**秩序**（每层职责明确）、**做减法**
 （一个机制能覆盖两处就用一个）、**无熵**（零 pip 依赖，纯标库，3.11+ 因 tomllib）。
 
-## 仓库地图（KM3.5 终态，文件树即架构）
+## 仓库地图（P4 终态，散文化与去企味架构）
 
 ```
 Nyxuri/
-├─ nyxuri/            引擎 · 11 项
-│   ├─ kernel/        registry（蓝图唯一读者）· resolver（纯依赖计算）·
-│   │                 ledger（state.json 唯一写者）· transaction（唯一副作用编排）
-│   ├─ deploy/        atomic（原子置换+Dunder）· manifest · templates ·
-│   │                 forms（引擎半：账本真相/槽位轴/继承/fd 安全）· hardware · deploy
-│   ├─ pkg/           包管理抽象（pacman/paru/shelly）+ 供给收编：deps · net ·
-│   │                 fzf · detection
-│   ├─ state/         backup（30 滚动快照）· uninstall（勾选式清理）
-│   ├─ desktop/       theme（深浅轴）· shell_switcher · clean · forms（流程半，渲染归 UI）
-│   ├─ installer/     workflows + menus（交互式主菜单与整装/更新编排，作者裁决保留为常驻产品面）
-│   └─ cli.py · core.py（环境+锁+日志+i18n 地基）· sysdoctor.py（系统体检）·
-│       tui.py · translations.toml（双语文案）
-├─ plugins/             蓝图 · 13 目录 = 13 真插件（KM4 + theme 共享模板池；wallpapers/theme 为 merge 共享生活区）
+├─ nyxuri/            引擎（分工正交的 4 大目录）
+│   ├─ deploy/        部署与蓝图：atomic（原子置换+Dunder）· catalog（蓝图发现与依赖排序）·
+│   │                 engine（部署执行流与安全网）· forms（形态机制）·
+│   │                 manifest · templates · sources · deploy
+│   ├─ state/         状态与快照：store（state.json 状态存储）· backup（快照）· uninstall（清理）
+│   ├─ system/        系统与桌面集成：env（环境+进程锁+日志）· i18n（双语引擎）·
+│   │                 pkg（包管理器与依赖检测）· net（网络与镜像下载）·
+│   │                 compositors（合成器契约）· theme（深浅主题）· shell（切壳网关）·
+│   │                 doctor（体检诊断）· clean（缓存清理）
+│   ├─ ui/            终端交互：tui（交互组件与样式）· menus（菜单路由）· workflows（整装编排）
+│   └─ cli.py · translations.toml（双语文案）· launcher.sh
+├─ plugins/           蓝图 · 13 目录 = 13 真插件（KM4 + theme 共享模板池；wallpapers/theme 为 merge 共享生活区）
 ├─ shell/             自研 Quickshell 桌面（契约见 shell/AGENTS.md；`shell/plugins/` 为
 │                     shell 命名空间蓝图，12 个 runtime 插件，KM4）
-├─ tests/             镜像源码树：kernel/ deploy/ pkg/ state/ desktop/ installer/
+├─ tests/             镜像源码树：deploy/ pkg/ state/ desktop/ installer/
 │                     tools/{orbit,wallpaper_picker}/ shell/ + 契约测试置顶
 ├─ packaging/         AUR PKGBUILD + gen-deps.py（单包全量：引擎+插件+Shell；
 │                     depends=引擎运行时，optdepends 自动汇聚）+ .install 提示
@@ -36,9 +35,9 @@ Nyxuri/
 └─ install.sh         一次性引导（KM5：无参数透传；常驻入口 = nyxuri/launcher.sh）
 ```
 
-每个目录一行「为什么在这」：kernel 是不可开关的底座；deploy 只管文件机械；
-pkg 管包与供给；state 管账本外的状态副本；desktop 管活桌面副作用；installer 是
-交互菜单与整装编排（作者裁决常驻）；packaging 是开发者工具不进运行时。
+每个目录一行「为什么在这」：deploy 管文件置换与部署执行；state 管状态记录与快照；
+system 管进程环境、包供给、双语、合成器与桌面副作用；ui 是终端交互与整装编排；
+packaging 是开发者工具不进运行时。
 常用推荐软件供给面（catalog.toml → 18 个仅包声明插件 → `deps apps` 菜单）已随
 R0-2 步 5 处决：插件装包统一走 `nyxuri on <plugin>`。
 
@@ -57,7 +56,7 @@ R0-2 步 5 处决：插件装包统一走 `nyxuri on <plugin>`。
 ## 生命周期动词与新旧命令的分界
 
 `list / on / off / use / doctor` 是已落地的插件动词面（语义等价长动词
-enable/disable），任何开关只走 `transaction` 一条事务路径落账本；`add / remove /
+enable/disable），任何开关只走 `engine` 一条部署管线记录状态 (`state.json`)；`add / remove /
 update`（第三方生命周期）随 S1 落地，契约已定稿（[plugin-model](plugin-model.md)
 §5 终态八条）。install/update（引擎自更新）/theme 等是过渡期的领域动词（退役清单见
 [plugin-model](plugin-model.md) §7）。全部命令表见 [operation-map](operation-map.md)。
@@ -72,7 +71,7 @@ update`（第三方生命周期）随 S1 落地，契约已定稿（[plugin-mode
   上游（S1 起经 `nyxuri add` 以第三方插件回归）。
 - **主题调度**：`nyxuri theme` 单一实现——gsettings（portal→GTK4/Brave）、
   settings.ini、Noctalia IPC、Kitty SIGUSR1 四路同步，flock 排他。
-- **Shell 事件**：事务落账后发一次 `plugin-changed` 事件（`quickshell ipc unit reload`，
+- **Shell 事件**：状态记录后发一次 `plugin-changed` 事件（`quickshell ipc unit reload`，
   外层注入，内核不认识投递实现），见 [plugin-model](plugin-model.md) §6。
 
 ## 真值分工

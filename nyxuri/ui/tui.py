@@ -15,9 +15,8 @@ from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
-from nyxuri.core import Colors, get_env_var
-from nyxuri.core import Environment, get_env
-from nyxuri.core import msg, text
+from nyxuri.system.env import Colors, get_env_var, Environment, get_env
+from nyxuri.system.i18n import msg, text
 
 ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 
@@ -1339,7 +1338,7 @@ class FormSwitcher:
 # --- Component: Plugin Workshop (KM3 dual-pane parts bench) --------------------
 
 def format_steps(steps) -> List[str]:
-    """Transaction Steps → bilingual prose lines (shared by CLI and TUI)."""
+    """Execution Steps → bilingual prose lines (shared by CLI and TUI)."""
     out: List[str] = []
     for step in steps:
         head, *extra = step.detail.split("; ")
@@ -1378,9 +1377,9 @@ def format_steps(steps) -> List[str]:
 
 
 class PluginWorkshop:
-    """Dual-pane parts bench (KM3): left = the plugin ledger, right = one plugin's
-    declarations + reconciliation. Every switch routes through the same
-    transaction path as the CLI verbs — the bench is only a projection."""
+    """Dual-pane parts bench: left = plugin list, right = one plugin's
+    declarations + status. Every switch routes through the same
+    engine path as the CLI verbs — the bench is only a projection."""
 
     def __init__(self):
         self.focus = 0
@@ -1390,23 +1389,24 @@ class PluginWorkshop:
     # -- data ---------------------------------------------------------
 
     def _rows(self):
-        from nyxuri.kernel import ledger, registry
+        from nyxuri.state import store
+        from nyxuri.deploy import catalog
 
-        recs = ledger.all_plugins()
-        return sorted(set(registry.plugin_ids()) | set(recs)), recs
+        recs = store.all_plugins()
+        return sorted(set(catalog.plugin_ids()) | set(recs)), recs
 
     def _audit_for(self, uid: str) -> str:
-        from nyxuri.kernel import transaction
+        from nyxuri.deploy import engine
 
         if uid not in self._audit:
             try:
-                self._audit.update(transaction.audit_plugins(uid))
+                self._audit.update(engine.audit_plugins(uid))
             except Exception:
                 self._audit[uid] = ""
         return self._audit.get(uid, "")
 
     def _detail_lines(self, uid: str, recs: dict, width: int):
-        from nyxuri.kernel import registry
+        from nyxuri.deploy import catalog
 
         lines = []
         rec = recs.get(uid) or {}
@@ -1417,8 +1417,8 @@ class PluginWorkshop:
         )
         lines.append((msg("cli_detail_state"), f"{state_color}{state}{Colors.RESET}"))
         lines.append((msg("cli_detail_form"), rec.get("form") or "-"))
-        if uid in registry.plugin_ids():
-            m = registry.load_plugin(uid)
+        if uid in catalog.plugin_ids():
+            m = catalog.load_plugin(uid)
             if m.label:
                 lines.append((msg("cli_detail_label"), truncate_display(m.label, width)))
             if m.category:
@@ -1444,14 +1444,14 @@ class PluginWorkshop:
     # -- actions ------------------------------------------------------
 
     def _switch(self, uid: str, on: bool) -> None:
-        from nyxuri.kernel import transaction
-        from nyxuri.pkg.deps import plugin_package_installer
+        from nyxuri.deploy import engine
+        from nyxuri.system.pkg import plugin_package_installer
 
         self._audit.clear()
         if on:
-            steps = transaction.plugin_on(uid, install_packages=plugin_package_installer)
+            steps = engine.plugin_on(uid, install_packages=plugin_package_installer)
         else:
-            steps = transaction.plugin_off(uid, cascade=False)
+            steps = engine.plugin_off(uid, cascade=False)
         self._report = format_steps(steps)
 
     # -- rendering ------------------------------------------------------
@@ -1548,10 +1548,10 @@ class PluginWorkshop:
 def select_language() -> str:
     """Prompt user to select language mode with smooth arrow keys."""
     if not sys.stdin.isatty():
-        from nyxuri.core import get_lang
+        from nyxuri.system.i18n import get_lang
         return get_lang()
 
-    from nyxuri.core import set_lang
+    from nyxuri.system.i18n import set_lang
     env = get_env()
     focus = 1  # Default to Simplified Chinese
 

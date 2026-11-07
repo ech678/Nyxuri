@@ -26,7 +26,7 @@ class TestMpvpaperDetection(unittest.TestCase):
 
     def test_uses_pacman_qi_not_binary_version(self):
         """check_mpvpaper_leak should use pacman -Qi, not mpvpaper --version."""
-        from nyxuri.pkg.deps import check_mpvpaper_leak
+        from nyxuri.system.pkg import check_mpvpaper_leak
 
         captured_cmds = []
 
@@ -45,7 +45,7 @@ class TestMpvpaperDetection(unittest.TestCase):
 
         with patch("shutil.which", side_effect=lambda x: f"/usr/bin/{x}" if x in ("pacman", "mpvpaper") else None):
             with patch("subprocess.run", side_effect=fake_run):
-                with patch("nyxuri.pkg.deps.prompt_confirm", return_value=False):
+                with patch("nyxuri.system.pkg.prompt_confirm", return_value=False):
                     with patch("builtins.print"):
                         check_mpvpaper_leak()
 
@@ -61,7 +61,7 @@ class TestMpvpaperDetection(unittest.TestCase):
 
     def test_git_version_short_circuits(self):
         """If mpvpaper-git is installed, should report OK and not check regular version."""
-        from nyxuri.pkg.deps import check_mpvpaper_leak
+        from nyxuri.system.pkg import check_mpvpaper_leak
 
         captured_cmds = []
 
@@ -110,8 +110,8 @@ class TestFlatpakApps(unittest.TestCase):
 
     def test_flatpak_ids_never_leak_into_pacman(self):
         """pacman gets only 'flatpak'; the ID goes to the flatpak CLI."""
-        from nyxuri.pkg import FLATHUB_REMOTE_URL
-        from nyxuri.pkg.deps import plugin_package_installer
+        from nyxuri.system.pkg import FLATHUB_REMOTE_URL
+        from nyxuri.system.pkg import plugin_package_installer
 
         captured_cmds = []
 
@@ -120,9 +120,9 @@ class TestFlatpakApps(unittest.TestCase):
             return MagicMock(returncode=0)
 
         with patch("subprocess.run", side_effect=fake_run):
-            with patch("nyxuri.pkg.preferred_manager", return_value="pacman"):
-                with patch("nyxuri.pkg.deps.aur_helper_usable", return_value=None):
-                    with patch("nyxuri.pkg.deps.ensure_aur_helper", return_value=None):
+            with patch("nyxuri.system.pkg.preferred_manager", return_value="pacman"):
+                with patch("nyxuri.system.pkg.aur_helper_usable", return_value=None):
+                    with patch("nyxuri.system.pkg.ensure_aur_helper", return_value=None):
                         with patch("shutil.which", side_effect=lambda x: "/usr/bin/flatpak" if x == "flatpak" else None):
                             with patch("builtins.print"):
                                 plugin_package_installer("someflatpak", ["com.example.App"])
@@ -144,12 +144,12 @@ class TestFlatpakApps(unittest.TestCase):
             [["flatpak", "install", "--system", "--noninteractive", "flathub", "com.example.App"]],
         )
 
-        import nyxuri.pkg as pkg_mod
+        import nyxuri.system.pkg as pkg_mod
         self.assertFalse(hasattr(pkg_mod, "_FLATPAK_LIST_CACHE"))
 
     def test_missing_flatpak_binary_skips_flatpak_cli(self):
         """Without the flatpak binary the runtime is still provisioned, but no CLI call."""
-        from nyxuri.pkg.deps import plugin_package_installer
+        from nyxuri.system.pkg import plugin_package_installer
 
         captured_cmds = []
 
@@ -158,9 +158,9 @@ class TestFlatpakApps(unittest.TestCase):
             return MagicMock(returncode=0)
 
         with patch("subprocess.run", side_effect=fake_run):
-            with patch("nyxuri.pkg.preferred_manager", return_value="pacman"):
-                with patch("nyxuri.pkg.deps.aur_helper_usable", return_value=None):
-                    with patch("nyxuri.pkg.deps.ensure_aur_helper", return_value=None):
+            with patch("nyxuri.system.pkg.preferred_manager", return_value="pacman"):
+                with patch("nyxuri.system.pkg.aur_helper_usable", return_value=None):
+                    with patch("nyxuri.system.pkg.ensure_aur_helper", return_value=None):
                         with patch("shutil.which", return_value=None):
                             with patch("builtins.print"):
                                 plugin_package_installer("someflatpak", ["com.example.App"])
@@ -174,7 +174,7 @@ class TestFlatpakApps(unittest.TestCase):
 
     def test_flatpak_detection_uses_list_columns(self):
         """Detection probes `flatpak list --system --app --columns=application` with LC_ALL=C."""
-        from nyxuri.pkg.detection import DependencyProbe
+        from nyxuri.system.pkg import DependencyProbe
         probe = DependencyProbe()
 
         captured_cmds = []
@@ -186,7 +186,7 @@ class TestFlatpakApps(unittest.TestCase):
             return result
 
         with patch("shutil.which", return_value="/usr/bin/flatpak"):
-            with patch("nyxuri.pkg.detection.timed_run", side_effect=fake_timed_run):
+            with patch("nyxuri.system.pkg.timed_run", side_effect=fake_timed_run):
                 self.assertTrue("com.qq.QQ" in probe.flatpaks)
                 self.assertFalse("com.tencent.WeChat" in probe.flatpaks)
 
@@ -207,7 +207,7 @@ class TestAurBootstrapFailsClosed(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_missing_repo_package_never_builds_from_aur(self):
-        from nyxuri.pkg.deps import ensure_aur_helper
+        from nyxuri.system.pkg import ensure_aur_helper
 
         commands = []
 
@@ -219,8 +219,8 @@ class TestAurBootstrapFailsClosed(unittest.TestCase):
             return result
 
         with patch("subprocess.run", side_effect=fake_run), \
-             patch("nyxuri.pkg.deps.aur_helper_usable", return_value=None), \
-             patch("nyxuri.pkg.deps.prompt_confirm", return_value=True), \
+             patch("nyxuri.system.pkg.aur_helper_usable", return_value=None), \
+             patch("nyxuri.system.pkg.prompt_confirm", return_value=True), \
              patch("shutil.which", side_effect=lambda name: "/usr/bin/pacman" if name == "pacman" else None), \
              patch("builtins.print"):
             self.assertIsNone(ensure_aur_helper())
@@ -237,15 +237,15 @@ class TestAurHelperCacheInvalidation(unittest.TestCase):
     def setUp(self):
         self._ctx = TempEnv()
         self._ctx.__enter__()
-        import nyxuri.pkg.deps as deps_mod
+        import nyxuri.system.pkg as deps_mod
 
     def tearDown(self):
-        import nyxuri.pkg.deps as deps_mod
+        import nyxuri.system.pkg as deps_mod
         self._ctx.__exit__()
 
     def test_freshly_installed_paru_is_rediscovered_not_uninstalled(self):
-        import nyxuri.pkg.deps as deps_mod
-        from nyxuri.pkg.deps import ensure_aur_helper
+        import nyxuri.system.pkg as deps_mod
+        from nyxuri.system.pkg import ensure_aur_helper
 
         state = {"installed": False}
         removed = []
@@ -271,8 +271,8 @@ class TestAurHelperCacheInvalidation(unittest.TestCase):
             return result
 
         with patch("shutil.which", side_effect=fake_which), \
-             patch("nyxuri.pkg.subprocess.run", side_effect=fake_run), \
-             patch("nyxuri.pkg.deps.prompt_confirm", return_value=True), \
+             patch("nyxuri.system.pkg.subprocess.run", side_effect=fake_run), \
+             patch("nyxuri.system.pkg.prompt_confirm", return_value=True), \
              patch("builtins.print"):
             self.assertEqual(ensure_aur_helper(), "paru")
 
@@ -291,7 +291,7 @@ def _quiet(fn, *args, **kwargs):
 class TestDepsMenuReportsFailure(unittest.TestCase):
 
     def test_failed_install_propagates(self):
-        import nyxuri.pkg.deps as deps
+        import nyxuri.system.pkg as deps
         with TempEnv():
             with patch.object(deps.CheckboxList, "run", return_value=["fish"]), \
                  patch.object(deps, "install_selected_deps", return_value=False), \
@@ -299,7 +299,7 @@ class TestDepsMenuReportsFailure(unittest.TestCase):
                 self.assertFalse(_quiet(deps.run_dep_menu_loop))
 
     def test_empty_selection_is_success(self):
-        import nyxuri.pkg.deps as deps
+        import nyxuri.system.pkg as deps
         with TempEnv():
             with patch.object(deps.CheckboxList, "run", return_value=[]), \
                  patch.object(deps.sys.stdin, "isatty", return_value=True):

@@ -44,11 +44,11 @@ class TestUninstallPluginVisibility(unittest.TestCase):
         self._ctx.__exit__()
 
     def _stage_enabled(self, uid: str):
-        from nyxuri.kernel import ledger
+        from nyxuri.state import store
         dest = self.env.config_dir / uid
         dest.mkdir(parents=True, exist_ok=True)
         (dest / "marker.conf").write_text("x", encoding="utf-8")
-        ledger.set_plugin(uid, state="enabled", files={}, vault=None)
+        store.set_plugin(uid, state="enabled", files={}, vault=None)
 
     def test_only_enabled_units_are_switched_off(self):
         from nyxuri.state.uninstall import uninstall_nyxuri
@@ -58,7 +58,7 @@ class TestUninstallPluginVisibility(unittest.TestCase):
         with patch("sys.stdin.isatty", return_value=False), patch("builtins.print"), \
              patch("nyxuri.state.uninstall.copy_path"), patch("nyxuri.state.uninstall.remove_path"), \
              patch("nyxuri.state.uninstall.get_pics_dir", return_value=self.env.home / "Pictures"), \
-             patch("nyxuri.kernel.transaction.plugin_off", side_effect=off):
+             patch("nyxuri.deploy.engine.plugin_off", side_effect=off):
             result = uninstall_nyxuri("")
 
         self.assertTrue(result)
@@ -73,7 +73,7 @@ class TestUninstallPluginVisibility(unittest.TestCase):
         with patch("sys.stdin.isatty", return_value=False), patch("builtins.print"), \
              patch("nyxuri.state.uninstall.copy_path"), patch("nyxuri.state.uninstall.remove_path"), \
              patch("nyxuri.state.uninstall.get_pics_dir", return_value=self.env.home / "Pictures"), \
-             patch("nyxuri.kernel.transaction.plugin_off",
+             patch("nyxuri.deploy.engine.plugin_off",
                    return_value=[MagicMock(ok=False, plugin="greeter", detail="boom")]):
             result = uninstall_nyxuri("")
 
@@ -95,11 +95,11 @@ class TestUninstallExecutionOrder(unittest.TestCase):
 
     def test_unit_off_runs_before_state_dir_deleted(self):
         from nyxuri.state.uninstall import uninstall_nyxuri
-        from nyxuri.kernel import ledger
+        from nyxuri.state import store
 
         dest = self.env.config_dir / "fish"
         dest.mkdir(parents=True, exist_ok=True)
-        ledger.set_plugin("fish", state="enabled", files={}, vault=None)
+        store.set_plugin("fish", state="enabled", files={}, vault=None)
 
         state_at_off = {}
 
@@ -110,7 +110,7 @@ class TestUninstallExecutionOrder(unittest.TestCase):
         with patch("sys.stdin.isatty", return_value=False), patch("builtins.print"), \
              patch("nyxuri.state.uninstall.copy_path"), \
              patch("nyxuri.state.uninstall.get_pics_dir", return_value=self.env.home / "Pictures"), \
-             patch("nyxuri.kernel.transaction.plugin_off", side_effect=off_side):
+             patch("nyxuri.deploy.engine.plugin_off", side_effect=off_side):
             uninstall_nyxuri("")
 
         self.assertTrue(state_at_off.get("exists"), "state_dir must outlive plugin offs")
@@ -129,7 +129,7 @@ class TestUninstallArchiveGlob(unittest.TestCase):
 
     def test_old_archives_cleaned_new_archive_preserved(self):
         from nyxuri.state.uninstall import uninstall_nyxuri
-        from nyxuri.core import PROJECT_NAME
+        from nyxuri.system.env import PROJECT_NAME
 
         old = self.env.config_dir / f"{PROJECT_NAME}_archive_20250101_000000"
         old.mkdir(parents=True)

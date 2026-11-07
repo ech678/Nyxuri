@@ -343,12 +343,18 @@ class TestAISpecs(unittest.TestCase):
         self.assertFalse((root / "nyxuri" / "deps.py").exists(), "supply must live in pkg/")
         self.assertFalse((root / "nyxuri" / "network.py").exists())
         self.assertFalse((root / "nyxuri" / "doctor.py").exists())
-        self.assertTrue((root / "nyxuri" / "sysdoctor.py").is_file())
-        self.assertTrue((root / "nyxuri" / "core.py").is_file())
+        self.assertFalse((root / "nyxuri" / "sysdoctor.py").exists(), "moved to system/doctor.py")
+        self.assertFalse((root / "nyxuri" / "compositors.py").exists(), "moved to system/compositors.py")
+        self.assertFalse((root / "nyxuri" / "sources.py").exists(), "moved to deploy/sources.py")
+        self.assertFalse((root / "nyxuri" / "tui.py").exists(), "moved to installer/tui.py")
+        self.assertFalse((root / "nyxuri" / "kernel").exists(), "P4: kernel liquidated")
+        self.assertFalse((root / "nyxuri" / "core.py").exists(), "4-pillar: core.py liquidated")
         self.assertFalse((root / "nyxuri" / "constants.py").exists(), "merged into core")
-        self.assertFalse((root / "nyxuri" / "i18n.py").exists(), "merged into core")
-        for sub in ("kernel", "desktop", "installer"):
+        self.assertFalse((root / "nyxuri" / "i18n.py").exists(), "merged into system/i18n.py")
+        for sub in ("deploy", "state", "system", "ui"):
             self.assertTrue((root / "nyxuri" / sub).is_dir(), sub)
+        for dead in ("desktop", "installer", "pkg", "kernel", "core.py"):
+            self.assertFalse((root / "nyxuri" / dead).exists())
         self.assertTrue((root / "packaging" / "gen-deps.py").is_file())
         self.assertFalse((root / "nyxuri" / "packaging").exists())
         self.assertFalse((root / "catalog.toml").exists(),
@@ -380,7 +386,10 @@ class TestAISpecs(unittest.TestCase):
             for dead in ("template_registry", "nyxuri.constants", "nyxuri.i18n",
                          "nyxuri.deps", "nyxuri.network", "deploy_wallpapers",
                          "pkg.catalog", "install_optional_apps",
-                         "run_optional_apps_menu_loop", "deploy_declared"):
+                         "run_optional_apps_menu_loop", "deploy_declared",
+                         "nyxuri.kernel", "nyxuri.sysdoctor", "nyxuri.compositors",
+                         "nyxuri.sources", "nyxuri.tui", "nyxuri.core",
+                         "nyxuri.desktop", "nyxuri.installer", "nyxuri.pkg"):
                 self.assertNotIn(dead, text, f"{py.relative_to(root)} still references {dead}")
             # R0-2 步 5 追加：退役字段可能只剩「属性访问」消费者（字符串扫描
             # 抓不到）——`m.detect` 漏网曾让组件菜单在真实运行中直接崩溃。
@@ -516,7 +525,7 @@ class TestAISpecs(unittest.TestCase):
 
     def test_documented_forms_contract(self):
         """Whole-axis forms and slot axes must adhere to the documented contract."""
-        from nyxuri.desktop.forms import collect_forms
+        from nyxuri.deploy.forms import collect_forms
         from nyxuri.deploy.forms import list_slots
 
         kitty_forms = [name for name, _, _ in collect_forms("kitty")]

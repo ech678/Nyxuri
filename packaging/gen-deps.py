@@ -58,7 +58,7 @@ def compute_depends(repo_root: Path):
     """
     sys.path.insert(0, str(repo_root))
     from nyxuri.deploy.manifest import discover_manifest_apps
-    from nyxuri.core import AUR_DEPS, CORE_DEPS
+    from nyxuri.system.env import AUR_DEPS, CORE_DEPS
 
     depends = set(ENGINE_DEPENDS)
     optdepends = []

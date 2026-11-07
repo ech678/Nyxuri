@@ -1,30 +1,20 @@
-"""PluginTransaction — the kernel's only side-effect orchestration layer.
+"""Engine — deployment pipeline and plugin lifecycle orchestration.
 
-The star layering (plugin-model.md §2) freezes this module as the ONLY one
-that composes registry + resolver + ledger with the deploy machinery, the
-Vault and the ``plugin-changed`` event port. Every interface (CLI verb, TUI,
-Shell settings) must route switch flips through :func:`plugin_on` /
-:func:`plugin_off` — they are the single transaction path that lands
-``state.json``.
+Composes catalog discovery with the deploy machinery, state store,
+Vault archives, and the plugin-changed event port. Every interface
+(CLI verbs, TUI, Shell settings) routes activation state through
+:func:`plugin_on` / :func:`plugin_off`.
 
-Transaction shape (plugin-model.md §3)::
+Activation shape:
+    resolve order → preflight packages → vault restore → atomic swap
+    → persist record in state.json → dispatch event
 
-    resolve (resolver) → preflight (declared packages) → vault restore
-    → atomic swap (deploy) → ledger five-field record → one event
+Deactivation reverses it:
+    reverse-dependency guard → vault archive → managed wipe to white living area
+    → update state.json → dispatch event.
 
-Disable reverses it: reverse-dependency guard → vault archive → managed
-wipe to a white living area → ledger record → event. Package management is
-asymmetric (§7.1): ``off`` only reports the packages it leaves behind.
-
-Runtime plugins (KM4, §6) are the third shape: ``runtime = true`` in the
-manifest declares a payload-less existence — no living area, no vault
-in/out, no wipe, empty ``files`` snapshot. The ledger record plus one
-``plugin-changed`` event IS the whole transaction; the running host (the
-Shell) reacts by unloading or loading the domain.
-
-The event sink is injected via :func:`set_event_sink`; the kernel never
-imports or subprocesses a delivery — naming and wiring it is the outer
-layer's job. Without a subscriber events are no-ops.
+Runtime plugins declare payload-less existence (living area absent, no vault):
+    update state.json → dispatch event (host loads/unloads domain).
 """
 
 import hashlib
@@ -34,14 +24,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
-from nyxuri.kernel import ledger, registry
-from nyxuri.core import get_env, log_msg, remove_path
+from nyxuri.state import store
+from nyxuri.deploy import catalog
+from nyxuri.deploy.catalog import resolve_order
+from nyxuri.system.env import get_env, log_msg, remove_path
 from nyxuri.deploy.atomic import CarryPolicy
 from nyxuri.deploy.deploy import _phase_atomic_deployment, merge_deploy_plugin
 from nyxuri.deploy.manifest import ModuleManifest, living_path
 from nyxuri.deploy.forms import write_active_form
 from nyxuri.deploy.templates import _phase_render_templates
-from nyxuri.kernel.resolver import resolve_order
 
 STATE_SYNCED = "Synced"
 STATE_DRIFTED = "Drifted"
@@ -53,7 +44,7 @@ _event_sink: Optional[EventSink] = None
 
 @dataclass(frozen=True)
 class Step:
-    """One plugin's transaction outcome; KM3 CLI turns these into prose."""
+    """One plugin's activation outcome; CLI turns these into prose."""
 
     plugin: str
     ok: bool
@@ -84,7 +75,7 @@ def _emit(plugin_id: str, state: str) -> None:
 
 def vault_dir(plugin_id: str) -> Path:
     """Flat file-mirror archive root for one plugin (plugin-model.md §7.3)."""
-    from nyxuri.core import is_safe_leaf_name, assert_contained
+    from nyxuri.system.env import is_safe_leaf_name, assert_contained
 
     parts = plugin_id.split(".")
     if not all(is_safe_leaf_name(p) for p in parts):
@@ -114,7 +105,7 @@ def _blueprint_rels(manifest: ModuleManifest) -> List[str]:
     For merge plugins these names ARE ownership: whatever matches them in the
     shared living area is ours to withdraw, nothing else.
     """
-    root = registry.plugin_dir(manifest.id)
+    root = catalog.plugin_dir(manifest.id)
     if root is None:
         return []
     out: List[str] = []
@@ -141,7 +132,7 @@ def _merge_managed_view(dest: Path, manifest: ModuleManifest) -> Dict[str, str]:
 
 
 def _enabled_set() -> set:
-    return {uid for uid, rec in ledger.all_plugins().items() if rec.get("state") == "enabled"}
+    return {uid for uid, rec in store.all_plugins().items() if rec.get("state") == "enabled"}
 
 
 def _is_user_owned(rel: str, manifest: ModuleManifest) -> bool:
@@ -160,7 +151,7 @@ def _is_user_owned(rel: str, manifest: ModuleManifest) -> bool:
 
 
 def carry_baselines(plugin_ids: List[str]) -> Dict[str, Optional[Dict[str, str]]]:
-    """Ledger ``files`` maps for enabled plugins among ``plugin_ids`` (#139).
+    """State ``files`` maps for enabled plugins among ``plugin_ids`` (#139).
 
     The baseline is what the engine last laid: a dest file hashing equal to
     its baseline entry is untouched and follows the new template; anything
@@ -169,7 +160,7 @@ def carry_baselines(plugin_ids: List[str]) -> Dict[str, Optional[Dict[str, str]]
     """
     out: Dict[str, Optional[Dict[str, str]]] = {}
     for uid in plugin_ids:
-        rec = ledger.get_plugin(uid)
+        rec = store.get_plugin(uid)
         files = (rec or {}).get("files")
         out[uid] = dict(files) if rec and rec.get("state") == "enabled" and isinstance(files, dict) else None
     return out
@@ -177,9 +168,9 @@ def carry_baselines(plugin_ids: List[str]) -> Dict[str, Optional[Dict[str, str]]
 
 def resnapshot_plugins(plugin_ids: List[str],
                      carried: Optional[Dict[str, Dict[str, str]]] = None) -> None:
-    """Re-baseline ledger snapshots after an out-of-band deploy (update path).
+    """Re-baseline state snapshots after an out-of-band deploy (update path).
 
-    The ledger means "hashes of what the engine last laid". After an update
+    The store record means "hashes of what the engine last laid". After an update
     the laid truth changed under the enabled records, so every deployed
     enabled plugin is re-recorded from its living area — minus the files the
     swap carried as user-owned. A carried file must never enter the
@@ -189,11 +180,11 @@ def resnapshot_plugins(plugin_ids: List[str],
     """
     carried = carried or {}
     for uid in plugin_ids:
-        rec = ledger.get_plugin(uid)
+        rec = store.get_plugin(uid)
         if not rec or rec.get("state") != "enabled":
             continue
         try:
-            manifest = registry.load_plugin(uid)
+            manifest = catalog.load_plugin(uid)
         except KeyError:
             continue
         if _is_runtime(manifest) or _is_declaration_only(manifest) or manifest.merge:
@@ -204,7 +195,7 @@ def resnapshot_plugins(plugin_ids: List[str],
         files = snapshot_files(dest, manifest)
         for rel in carried.get(uid, {}):
             files.pop(rel, None)
-        ledger.set_plugin(
+        store.set_plugin(
             uid,
             state="enabled",
             form=(rec.get("form") or "default"),
@@ -226,7 +217,7 @@ def snapshot_files(dest: Path, manifest: ModuleManifest) -> Dict[str, str]:
 
     Symlinks are recorded as ``link:<target>`` — their identity is the link
     itself (e.g. a slot axis whose target encodes the active variant), not
-    the linked content. The result feeds both the ledger ``files`` snapshot
+    the linked content. The result feeds both the store ``files`` snapshot
     and the ``Drifted`` half of :func:`audit_plugins`.
     """
     if dest.is_symlink():
@@ -251,7 +242,7 @@ def snapshot_files(dest: Path, manifest: ModuleManifest) -> Dict[str, str]:
 def missing_packages(manifest: ModuleManifest) -> List[str]:
     """Declared system packages absent from the machine (repo+AUR via the
     pacman database, Flatpak via its app list). Empty = preflight green."""
-    from nyxuri.pkg.detection import DependencyProbe
+    from nyxuri.system.pkg import DependencyProbe
 
     probe = DependencyProbe()
     missing = [
@@ -272,12 +263,12 @@ def _active_form_name(plugin_id: str) -> str:
         return "default"
 
 
-# --- dependency plans (pure composition of registry + resolver) -------------
+# --- dependency plans (catalog resolution) -----------------------------------
 
 
 def _enable_closure(plugin_id: str) -> List[str]:
     """The plugin plus its transitive dependencies, dependency-first order."""
-    graph = registry.dependency_graph()
+    graph = catalog.dependency_graph()
     if plugin_id not in graph:
         raise KeyError(f"unknown plugin: {plugin_id}")
     wanted = set()
@@ -298,7 +289,7 @@ def _disable_plan(plugin_id: str) -> List[str]:
     The target always comes last: flipping it off is only safe once
     everything that declares it as a dependency has been switched off.
     """
-    graph = registry.dependency_graph()
+    graph = catalog.dependency_graph()
     if plugin_id not in graph:
         raise KeyError(f"unknown plugin: {plugin_id}")
     reverse: Dict[str, set] = {}
@@ -323,18 +314,18 @@ def _disable_plan(plugin_id: str) -> List[str]:
 
 
 def replay_enabled_hooks() -> List[Step]:
-    """Re-run the on-side hooks of every ledger-enabled plugin.
+    """Re-run the on-side hooks of every enabled plugin.
 
     Deploy pipelines use this after a base deploy: hook products inside a
     living area re-enter that plugin's snapshot when the plugin is next switched,
     and side-domain effects (skins, renders) are replayed idempotently.
-    Fresh machines with an empty ledger get a no-op — activation belongs to
+    Fresh machines with an empty state store get a no-op — activation belongs to
     an explicit ``on``.
     """
     results: List[Step] = []
     for uid in sorted(_enabled_set()):
         try:
-            manifest = registry.load_plugin(uid)
+            manifest = catalog.load_plugin(uid)
         except KeyError:
             continue
         if not manifest.post_install:
@@ -356,8 +347,8 @@ def plan_on(plugin_id: str) -> List[str]:
 def plan_off(plugin_id: str) -> List[str]:
     """The disable plan: the plugin plus its ENABLED dependents (they first).
 
-    Every member besides ``plugin_id`` is a dependent that would block the
-    transaction unless the caller opts into ``cascade``.
+    Every member besides ``plugin_id`` is a dependent that would block
+    deactivation unless the caller opts into ``cascade``.
     """
     return _disable_plan(plugin_id)
 
@@ -456,10 +447,10 @@ def _wipe_plugin(plugin_id: str, dest: Path, rec: Optional[dict],
     they survive and are reported (doctor flags the plugin Ghost).
 
     Merge plugins (shared living areas) never remove the directory itself:
-    ownership = exactly the files the transaction laid (the ledger
+    ownership = exactly the files the engine deployed (the state
     snapshot). Without a snapshot, ownership falls back to blueprint names:
     engine payload files are withdrawn, everything else survives and is
-    reported — a pre-ledger (v3-era) dest never loses personal files to an
+    reported — an untracked dest never loses personal files to an
     ``off`` (#139).
     """
     if not (dest.exists() or dest.is_symlink()):
@@ -490,7 +481,7 @@ def _wipe_plugin(plugin_id: str, dest: Path, rec: Optional[dict],
         }
         return sorted(remaining - managed)
     if rec is None or not (rec.get("files") or {}):
-        # No managed snapshot (never switched through the transaction, or
+        # No managed snapshot (never switched through the engine, or
         # already-off): ownership falls back to blueprint names — engine-laid
         # payload files are withdrawn, anything else is the user's and
         # survives, reported as foreign (#139: a v3-era dest must not lose
@@ -539,9 +530,9 @@ def _wipe_plugin(plugin_id: str, dest: Path, rec: Optional[dict],
 
 def _hook_script(plugin_id: str, spec: str):
     """Resolve ``<blueprint>/<plugin>/hooks/<spec>``; None when absent/malformed."""
-    from nyxuri.core import safe_child
+    from nyxuri.system.env import safe_child
 
-    root = registry.plugin_dir(plugin_id)
+    root = catalog.plugin_dir(plugin_id)
     if root is None or not spec:
         return None
     script = safe_child(root / "hooks", spec)
@@ -552,8 +543,8 @@ def _run_plugin_hook(plugin_id: str, manifest: ModuleManifest, spec: str) -> boo
     """Execute a declared plugin hook: ``<plugin>/hooks/<spec>`` in its blueprint.
 
     Hooks are the plugin's own behavior (KM3 contract, plugin-model.md §4) —
-    executable files living in the blueprint, never kernel business code.
-    The transaction injects identity context (``NYXURI_UNIT`` / ``_SRC`` /
+    executable files living in the blueprint, never engine business code.
+    The engine injects identity context (``NYXURI_UNIT`` / ``_SRC`` /
     ``_DEST``) and never interprets the hook's internals; a failing hook
     degrades to WARN and the caller surfaces it in the step detail.
     """
@@ -566,7 +557,7 @@ def _run_plugin_hook(plugin_id: str, manifest: ModuleManifest, spec: str) -> boo
         return False
     import subprocess
 
-    plugin_src = registry.plugin_dir(plugin_id)
+    plugin_src = catalog.plugin_dir(plugin_id)
     hook_env = {
         **os.environ,
         # Blueprint is source-absolute read-only: hooks importing engine code
@@ -592,7 +583,7 @@ def _run_plugin_hook(plugin_id: str, manifest: ModuleManifest, spec: str) -> boo
         return False
 
 
-# --- the two verbs of the transaction path -----------------------------------
+# --- lifecycle verbs (plugin_on / plugin_off) ---------------------------------
 
 
 def plugin_on(
@@ -601,14 +592,14 @@ def plugin_on(
     form: Optional[str] = None,
     install_packages: Optional[Callable[[str, List[str]], bool]] = None,
 ) -> List[Step]:
-    """Enable a plugin: resolve → preflight → vault out → swap → ledger → event.
+    """Enable a plugin: resolve → preflight → vault out → swap → store → event.
 
     The dependency closure is enabled in resolver order; a plugin missing
-    declared packages aborts the transaction with the missing list disclosed
+    declared packages aborts the deployment with the missing list disclosed
     (nothing has been touched beyond earlier closure members). Installation
     itself is injected as ``installer(plugin_id, missing)`` — the outer layer
     owns the package-manager call (it also owns the manifest context needed
-    to split repo / AUR / Flatpak names); the kernel never shells out.
+    to split repo / AUR / Flatpak names); the engine never shells out.
     """
     plan = _enable_closure(plugin_id)
     enabled = _enabled_set()
@@ -618,7 +609,7 @@ def plugin_on(
     for uid in plan:
         if uid in enabled and uid != plugin_id:
             continue
-        manifest = registry.load_plugin(uid)
+        manifest = catalog.load_plugin(uid)
         missing = missing_packages(manifest)
         if missing:
             installed = False
@@ -637,8 +628,8 @@ def plugin_on(
         carried_rels: List[str] = []
         if runtime or declaration_only:
             # Runtime (§6) and declaration-only units: no living area, no
-            # vault, no deploy. The ledger record plus the event below is
-            # the whole transaction.
+            # vault, no deploy. The state record plus the event below is
+            # the whole activation.
             pass
         else:
             if not manifest.target and not manifest.merge:
@@ -661,7 +652,7 @@ def plugin_on(
                 # (carry_unknown=False), user-placed extras are carried and
                 # stay user-owned (#139). A previously-enabled record acts as
                 # the drift baseline so a form switch never eats edits.
-                rec = ledger.get_plugin(uid)
+                rec = store.get_plugin(uid)
                 baseline = None
                 if rec and rec.get("state") == "enabled" and isinstance(rec.get("files"), dict):
                     baseline = dict(rec["files"])
@@ -680,8 +671,8 @@ def plugin_on(
                 carried_rels = list(policy.carried.get(uid, {}))
         hook_note = ""
         if manifest.post_install:
-            # Runs BEFORE the ledger snapshot: a hook that lands files inside
-            # the plugin's own living area makes them transaction-managed, so
+            # Runs BEFORE the state snapshot: a hook that lands files inside
+            # the plugin's own living area makes them engine-managed, so
             # ``off`` wipes them through the normal white-paper path (KM3).
             if not _run_plugin_hook(uid, manifest, manifest.post_install):
                 hook_note = f"; hook-failed: {manifest.post_install}"
@@ -691,7 +682,7 @@ def plugin_on(
             files = snapshot_files(dest, manifest)
             for rel in carried_rels:
                 files.pop(rel, None)
-        ledger.set_plugin(
+        store.set_plugin(
             uid,
             state="enabled",
             form=_active_form_name(uid),
@@ -709,14 +700,14 @@ def plugin_on(
 
 
 def plugin_off(plugin_id: str, *, cascade: bool = False) -> List[Step]:
-    """Disable a plugin: guard → vault in → managed wipe → post_remove → ledger.
+    """Disable a plugin: guard → vault in → managed wipe → post_remove → store.
 
-    Enabled dependents block the transaction unless ``cascade`` is set, in
+    Enabled dependents block deactivation unless ``cascade`` is set, in
     which case they are switched off first (dependents-first order). The
     report keeps the package asymmetry honest: declared packages stay on
     the machine, only the plugin's config presence is withdrawn. A declared
     ``post_remove`` hook cleans effects that live outside the living area
-    (running after the wipe, before the ledger lands).
+    (running after the wipe, before state is updated).
     """
     plan = _disable_plan(plugin_id)
     dependents = [uid for uid in plan if uid != plugin_id]
@@ -726,8 +717,8 @@ def plugin_off(plugin_id: str, *, cascade: bool = False) -> List[Step]:
         ]
     results: List[Step] = []
     for uid in plan:
-        rec = ledger.get_plugin(uid)
-        manifest = registry.load_plugin(uid)
+        rec = store.get_plugin(uid)
+        manifest = catalog.load_plugin(uid)
         dest = _plugin_dest(uid, manifest)
         runtime = _is_runtime(manifest)
         declaration_only = _is_declaration_only(manifest)
@@ -735,7 +726,7 @@ def plugin_off(plugin_id: str, *, cascade: bool = False) -> List[Step]:
             results.append(Step(uid, True, "already-disabled"))
             continue
         # Runtime and declaration-only units have no living area: nothing to
-        # archive, nothing to wipe — disabling is landing the ledger record
+        # archive, nothing to wipe — disabling is recording state in state.json
         # and firing the event the running host reacts to (§6).
         archived = [] if (manifest.merge or runtime or declaration_only) else _vault_archive(uid, dest, manifest)
         foreign = [] if (runtime or declaration_only) else _wipe_plugin(uid, dest, rec, manifest)
@@ -753,7 +744,7 @@ def plugin_off(plugin_id: str, *, cascade: bool = False) -> List[Step]:
         )
         if pkgs:
             detail += "; packages-left: " + ", ".join(pkgs)
-        ledger.set_plugin(
+        store.set_plugin(
             uid,
             state="disabled",
             form=(rec or {}).get("form") or "default",
@@ -774,28 +765,28 @@ def audit_plugins(plugin_id: Optional[str] = None) -> Dict[str, str]:
     """Reconcile declarations vs the living machine: ``Synced`` / ``Drifted``
     / ``Ghost`` per plugin (plugin-model.md §3). Read-only, never writes.
 
-    Only plugins with something to reconcile are reported: a ledger record or
+    Only plugins with something to reconcile are reported: a state record or
     living files. Never-switched white plugins are absent from the report.
     """
-    known = registry.plugin_ids()
+    known = catalog.plugin_ids()
     if plugin_id is not None:
-        if plugin_id not in known and plugin_id not in ledger.all_plugins():
+        if plugin_id not in known and plugin_id not in store.all_plugins():
             raise KeyError(f"unknown plugin: {plugin_id}")
         candidates = [plugin_id]
     else:
-        candidates = sorted(set(known) | set(ledger.all_plugins()))
+        candidates = sorted(set(known) | set(store.all_plugins()))
     report: Dict[str, str] = {}
     for uid in candidates:
-        if registry.plugin_dir(uid) is None:
-            # Ledger residue whose declaration is gone from the blueprint:
+        if catalog.plugin_dir(uid) is None:
+            # Store residue whose declaration is gone from the blueprint:
             # nothing to reconcile — the record itself is the ghost.
             report[uid] = STATE_GHOST
             continue
-        manifest = registry.load_plugin(uid)
-        rec = ledger.get_plugin(uid)
+        manifest = catalog.load_plugin(uid)
+        rec = store.get_plugin(uid)
         if _is_runtime(manifest) or _is_declaration_only(manifest):
             # Nothing on disk belongs to a runtime or declaration-only unit —
-            # the ledger record is the whole existence, so there is nothing
+            # the state record is the whole existence, so there is nothing
             # to drift or ghost.
             if rec is not None:
                 report[uid] = STATE_SYNCED
@@ -827,5 +818,5 @@ def audit_plugins(plugin_id: Optional[str] = None) -> Dict[str, str]:
     return report
 
 
-# (contract self-checks live in tests/test_transaction.py — the kernel
+# (contract self-checks live in tests/kernel/test_transaction.py — engine
 #  carries no test helpers of its own)

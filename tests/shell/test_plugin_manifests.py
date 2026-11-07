@@ -168,7 +168,7 @@ class TestEventLoop(unittest.TestCase):
     """One event, one channel, one projection."""
 
     def test_bridge_delivers_over_quickshell_ipc(self):
-        bridge = os.path.join(REPO_ROOT, "nyxuri", "desktop", "bridge.py")
+        bridge = os.path.join(REPO_ROOT, "nyxuri", "system", "shell.py")
         with open(bridge, "r", encoding="utf-8") as f:
             content = f.read()
         self.assertIn('"ipc", "call", "unit", "reload"', content)
@@ -319,7 +319,7 @@ class TestThirdPartyHeart(unittest.TestCase):
         host-file knowledge behind."""
         import shutil
 
-        from nyxuri.kernel import registry as kernel_registry
+        from nyxuri.deploy import catalog as kernel_registry
         from tests.utils import TempEnv
 
         for pid in ("probe-bare-plugin", "zz.adversarial.probe"):

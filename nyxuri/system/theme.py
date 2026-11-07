@@ -15,13 +15,12 @@ import sys
 import time
 from pathlib import Path
 
-from nyxuri.core import get_env_var
-from nyxuri.core import get_env, timed_run
+from nyxuri.system.env import get_env, get_env_var, timed_run
 
 
 def _mode_from_system() -> str:
     try:
-        from nyxuri.kernel.ledger import active_shell
+        from nyxuri.state.store import active_shell
         current_shell = active_shell()
     except Exception:
         current_shell = "noctalia"
@@ -99,7 +98,7 @@ def _noctalia_available() -> bool:
 def _nyxuri_shell_dir() -> Path | None:
     """Resolve the running Nyxuri Shell tree from its recorded binary."""
     try:
-        from nyxuri.desktop.shell_switcher import resolve_custom_bin
+        from nyxuri.system.shell import resolve_custom_bin
     except Exception:
         return None
     try:
@@ -136,7 +135,7 @@ def _propagate(mode: str, toggle: bool) -> str:
     "none". Toggle callers may read back the resulting mode afterwards.
     """
     try:
-        from nyxuri.kernel.ledger import active_shell
+        from nyxuri.state.store import active_shell
         current_shell = active_shell()
     except Exception:
         current_shell = "noctalia"
@@ -178,7 +177,7 @@ def _propagate(mode: str, toggle: bool) -> str:
 def _sync_glow_layout(current: str) -> None:
     """Swap the fixed-glow niri layout for the active mode, then reload niri.
 
-    Only runs when the glow form is active (ledger truth) and the per-mode
+    Only runs when the glow form is active (state truth) and the per-mode
     layout file exists; identical bytes are a no-op.
     """
     env = get_env()
@@ -199,8 +198,8 @@ def _sync_glow_layout(current: str) -> None:
     tmp.write_bytes(source.read_bytes())
     os.replace(tmp, dest)
     # Reload argv is the compositor registry's truth (S0-5), not a local
-    # literal; this glow-layout path is niri-specific by ledger form.
-    from nyxuri.compositors import COMPOSITORS
+    # literal; this glow-layout path is niri-specific by state form.
+    from nyxuri.system.compositors import COMPOSITORS
     argv = COMPOSITORS["niri"].reload_argv
     if shutil.which(argv[0]):
         timed_run(list(argv), 3, capture_output=True, text=True, check=False)

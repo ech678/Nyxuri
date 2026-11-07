@@ -13,7 +13,7 @@ from tests.utils import TempEnv
 
 _LOCK_CHILD = """
 import os
-from nyxuri.core import acquire_lock
+from nyxuri.system.env import acquire_lock
 
 acquire_lock()
 ready_fd = os.environ.get("READY_FD")
@@ -120,12 +120,12 @@ class TestCliLock(unittest.TestCase):
         self.assertTrue(lock_path.is_file(), "normal release must keep lock path")
 
     def test_release_closes_fd_if_unlock_fails(self):
-        import nyxuri.core as core
+        import nyxuri.system.env as core
 
         core.acquire_lock()
         held_fd = core._LOCK_FD
-        with patch("nyxuri.core.fcntl.flock", side_effect=OSError), \
-             patch("nyxuri.core.os.close", wraps=os.close) as close:
+        with patch("nyxuri.system.env.fcntl.flock", side_effect=OSError), \
+             patch("nyxuri.system.env.os.close", wraps=os.close) as close:
             core.release_lock()
         close.assert_called_once_with(held_fd)
         self.assertIsNone(core._LOCK_FD)
@@ -134,12 +134,12 @@ class TestCliLock(unittest.TestCase):
         self.assertIsNotNone(held_fd)
 
     def test_failed_acquire_closes_fd_and_clears_state(self):
-        import nyxuri.core as core
+        import nyxuri.system.env as core
 
-        with patch("nyxuri.core.os.open", return_value=17), \
-             patch("nyxuri.core.fcntl.flock", side_effect=BlockingIOError), \
-             patch("nyxuri.core.os.close") as close, \
-             patch("nyxuri.core.sys.exit", side_effect=SystemExit(1)):
+        with patch("nyxuri.system.env.os.open", return_value=17), \
+             patch("nyxuri.system.env.fcntl.flock", side_effect=BlockingIOError), \
+             patch("nyxuri.system.env.os.close") as close, \
+             patch("nyxuri.system.env.sys.exit", side_effect=SystemExit(1)):
             with self.assertRaises(SystemExit):
                 core.acquire_lock()
         close.assert_called_once_with(17)

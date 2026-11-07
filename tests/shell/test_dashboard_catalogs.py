@@ -12,7 +12,7 @@ import unittest
 from contextlib import redirect_stdout
 from unittest.mock import patch, MagicMock
 
-from nyxuri.kernel.ledger import active_shell, custom_shell_bin, set_shell
+from nyxuri.state.store import active_shell, custom_shell_bin, set_shell
 from nyxuri.cli import _cmd_shell
 from tests.utils import TempEnv
 # Imports consolidated from the dissolved bugfix ledger.

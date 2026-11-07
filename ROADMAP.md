@@ -56,15 +56,16 @@
   - **领域服务全面解耦与收口**：`PersonalizationConfig`, `DockService`, `TrayService`, `QuickToggleConfig`, `DisplayColor`, `IdleService`, `UiPreferences` 彻底剥离独立 FileView 与散乱写回，通过 `ConfigService` 统一分发与防抖落盘；
   - **无感迁移与零残留**：通过 `shell/scripts/system/migrate_config.py` 在首次加载时自动吸收遗留 JSON 配置归拢入 `config.toml` 并安全解链清理旧文件；双语 i18n 词条同步净化死键；
   - **桌面 Python 生态无缝对接**：`nyxuri/desktop/theme.py` 与 `shell_switcher.py` 优先使用 Python 3.11+ 标准库 `tomllib` 读取 `config.toml`（保留 `config.json` 降级兜底）。
-- **P4 引擎散文化与去企味重塑 (Prose Architecture & De-Enterprization)**：
-  - **处决过度工程命名**：
+- **P4 引擎散文化与去企味重塑 (Prose Architecture & De-Enterprization)** [已完成]：
+  - **处决过度工程命名与银行黑话**：
     - `nyxuri/kernel/ledger.py` → `nyxuri/state/store.py`；
     - `nyxuri/kernel/transaction.py` → `nyxuri/deploy/engine.py`；
-    - 彻底从代码、注释与双语文案中清除“账本”、“事务”、“对账”等银行黑话；
-  - **消灭双重人格**：
-    - 彻底解散 `nyxuri/kernel/` 目录，引擎核心收敛为 `deploy/`、`state/`、`system/` 三大干净领域；
-    - 解构 913 行的 `nyxuri/core.py`，清除根部平铺的 8 个散落脚本；
-  - **散文化审美审查**：代码行文遵循散文韵律与左对齐扁平几何（Guard Clauses Over Pyramids）。
+    - `nyxuri/kernel/registry.py` + `resolver.py` → `nyxuri/deploy/catalog.py`；
+    - 彻底从代码、注释、别名导入与双语文案中清除“账本”、“事务”、“对账”、“ledger”、“transaction”等企业黑话；
+  - **消灭双重人格与分工正交重塑**：
+    - 彻底解散 `nyxuri/kernel/`、`pkg/`、`desktop/`、`installer/` 与伪代理 `nyxuri/core.py`；
+    - 引擎核心收敛为 4 个职责正交的清晰领域：`deploy/`（部署与蓝图）、`state/`（状态与快照）、`system/`（环境、包供给、桌面集成）、`ui/`（终端 UI 与整装交互）；根目录净空仅保留主入口与文案资源；
+  - **散文化审美审查与机器状态纯化**：代码行文遵循散文韵律与左对齐扁平几何（Guard Clauses Over Pyramids），彻底清理 `state.json` 历史死键（`modules`/`shell_package`/`units` 等）与冗余元数据，收敛纯粹机器状态。
 - **P5 Sub-agents 全景深度审查与巡检验收 (Final Deep Verification Task)**：
   - **整卷最终检查任务**：由 4 个并发 Sub-agent 进行深度穿透交叉审计（非单一 AI 转述），全员出具无保留合格结论并附原始输出作证：
     - **Agent 1（空间纯度与根面）**：检查根目录与包目录有无散落实现脚本、死代码或未被隔离的巨型杂物；

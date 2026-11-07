@@ -1,15 +1,7 @@
-"""PluginLedger — the state domain's single entry (plugin-model.md §2).
+"""StateStore — single entry point for persistent runtime state (state.json).
 
-The only kernel module that reads or writes ``state.json``. Generic
-key/value selections (active shell, migration level) and plugin records
-share one atomic write path: flock, merge, tmp file, ``os.replace``.
-
-Plugin records live under the top-level ``plugins`` key, keyed by plugin id.
-Each record carries exactly five frozen fields (plugin-model.md §3):
-``state`` / ``form`` / ``files`` / ``vault`` / ``updated``. Kernel code must
-not invent a sixth. ``form`` is the plugin's whole-config axis choice; slot
-axis choices live under the top-level ``forms`` key (``{plugin: {slot:
-value}}``).
+Reads and updates ~/.local/state/nyxuri/state.json with atomic flock protection.
+Manages enabled plugin records, form slots, active shell choice, and third-party origins.
 """
 
 import fcntl
@@ -20,39 +12,35 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from nyxuri.core import get_env
+from nyxuri.system.env import get_env
 
 PLUGIN_STATES = ("enabled", "disabled")
 
-# Top-level key holding plugin records.
 PLUGINS_KEY = "plugins"
-
-# Top-level key holding slot-axis choices: {plugin: {slot: value}}.
 FORMS_KEY = "forms"
+SOURCES_KEY = "sources"
 _FORM_FIELD = "form"
 
-# Top-level key holding third-party origin records (S1):
-# {plugin: {url, ref, commit, added}} — the origin truth, never a sidecar
-# inside the plugin directory (manifest-schema.md 第三方章).
-SOURCES_KEY = "sources"
 
-# --- generic ledger primitives -------------------------------------------
-
-
-def ledger_path() -> Path:
+def store_path() -> Path:
     return get_env().state_dir / "state.json"
 
 
 def _read_raw() -> dict[str, Any]:
     try:
-        data = json.loads(ledger_path().read_text(encoding="utf-8"))
-        return data if isinstance(data, dict) else {}
+        data = json.loads(store_path().read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            return {}
+        # Clean legacy ghost keys if present
+        for legacy_key in ("modules", "shell_package"):
+            data.pop(legacy_key, None)
+        return data
     except (OSError, ValueError, TypeError):
         return {}
 
 
 @contextmanager
-def _ledger_lock(path: Path):
+def _store_lock(path: Path):
     """Hold the advisory flock; degrades to no-op when unopenable."""
     lock_handle = None
     try:
@@ -70,21 +58,20 @@ def _ledger_lock(path: Path):
 
 
 def _write_locked(path: Path, data: dict[str, Any]) -> None:
-    """Tmp file + ``os.replace``; caller must already hold the flock."""
     tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     os.replace(tmp, path)
 
 
-def read_ledger() -> dict[str, Any]:
-    """Read state.json (single-truth ledger)."""
+def read_state() -> dict[str, Any]:
+    """Read state.json (single truth for runtime state)."""
     return _read_raw()
 
 
-def update_ledger(**changes: Any) -> dict[str, Any]:
-    path = ledger_path()
+def update_state(**changes: Any) -> dict[str, Any]:
+    path = store_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    with _ledger_lock(path):
+    with _store_lock(path):
         data = _read_raw()
         for key, value in changes.items():
             if isinstance(value, dict) and isinstance(data.get(key), dict):
@@ -95,11 +82,11 @@ def update_ledger(**changes: Any) -> dict[str, Any]:
     return data
 
 
-# --- shell selection ------------------------------------------------------
+# --- Shell Selection ---
 
 
 def active_shell(default: str = "noctalia") -> str:
-    value = read_ledger().get("active_shell", default)
+    value = read_state().get("active_shell", default)
     if not isinstance(value, str):
         return default
     if value in {"nyxuri-shell", "nyxuri", "custom"}:
@@ -110,8 +97,8 @@ def active_shell(default: str = "noctalia") -> str:
 
 
 def custom_shell_bin() -> str:
-    ledger = read_ledger()
-    val = ledger.get("custom_shell_bin") or ledger.get("nyxuri_shell_bin", "")
+    state = read_state()
+    val = state.get("custom_shell_bin") or state.get("nyxuri_shell_bin", "")
     return str(val) if isinstance(val, str) else ""
 
 
@@ -130,22 +117,21 @@ def set_shell(shell_name: str, bin_path: str | None = None) -> dict[str, Any]:
     changes: dict[str, Any] = {"active_shell": canonical}
     if bin_path is not None:
         changes["custom_shell_bin"] = bin_path
-    return update_ledger(**changes)
+    return update_state(**changes)
 
 
-# --- plugin records (KM0 frozen five-field shape) ---------------------------
+# --- Plugin Records ---
 
 
 def all_plugins() -> dict[str, dict[str, Any]]:
-    """Every plugin record in the ledger, keyed by plugin id."""
-    plugins = read_ledger().get(PLUGINS_KEY)
+    """Every plugin record in the store, keyed by plugin id."""
+    plugins = read_state().get(PLUGINS_KEY)
     if not isinstance(plugins, dict):
         return {}
     return {uid: dict(rec) for uid, rec in plugins.items() if isinstance(rec, dict)}
 
 
 def get_plugin(plugin_id: str) -> dict[str, Any] | None:
-    """One plugin record, or None when the plugin was never switched."""
     return all_plugins().get(plugin_id)
 
 
@@ -158,14 +144,6 @@ def set_plugin(
     vault: str | None = None,
     updated: str | None = None,
 ) -> dict[str, Any]:
-    """Upsert one plugin record, enforcing the frozen five-field shape.
-
-    ``state``: ``enabled`` / ``disabled`` (the only switch axis).
-    ``form``: whole-config axis choice. ``files``: ``{relpath: sha256}``
-    snapshot of managed files. ``vault``: archive location of the user's
-    custom files (null is honest when nothing was ever archived — a
-    ``use``-only record). ``updated``: ISO timestamp, defaulted to now (UTC).
-    """
     if state not in PLUGIN_STATES:
         raise ValueError(f"invalid plugin state '{state}' (must be 'enabled' or 'disabled')")
     if not isinstance(form, str) or not form:
@@ -187,16 +165,15 @@ def set_plugin(
         "vault": vault,
         "updated": updated,
     }
-    data = update_ledger(**{PLUGINS_KEY: {plugin_id: record}})
+    data = update_state(**{PLUGINS_KEY: {plugin_id: record}})
     return dict(data[PLUGINS_KEY][plugin_id])
 
 
-# --- slot-axis choices (R0-2 杀词并轨) ---------------------------------------
+# --- Form Slots ---
 
 
 def get_form_slots(plugin_id: str) -> dict[str, str]:
-    """The plugin's recorded slot-axis choices, ``{slot: value}``."""
-    forms = read_ledger().get(FORMS_KEY)
+    forms = read_state().get(FORMS_KEY)
     if not isinstance(forms, dict):
         return {}
     slot_map = forms.get(plugin_id)
@@ -206,26 +183,20 @@ def get_form_slots(plugin_id: str) -> dict[str, str]:
 
 
 def set_form_slot(plugin_id: str, slot: str, value: str) -> None:
-    """Record one slot-axis choice under the top-level ``forms`` key."""
     if not slot or not isinstance(slot, str):
         raise ValueError("slot must be a non-empty string")
     if not value or not isinstance(value, str):
         raise ValueError("value must be a non-empty string")
     slot_map = get_form_slots(plugin_id)
     slot_map[slot] = value
-    update_ledger(**{FORMS_KEY: {plugin_id: slot_map}})
+    update_state(**{FORMS_KEY: {plugin_id: slot_map}})
 
 
-# --- third-party origin records (S1) -----------------------------------------
+# --- Third-Party Plugin Sources ---
 
 
 def get_source(plugin_id: str) -> dict[str, Any] | None:
-    """The plugin's origin record (``{url, ref, commit, added}``), or None.
-
-    Official blueprint plugins never have one; a third-party plugin without
-    one was installed from a local directory (git-transport verbs refuse).
-    """
-    sources = read_ledger().get(SOURCES_KEY)
+    sources = read_state().get(SOURCES_KEY)
     if not isinstance(sources, dict):
         return None
     rec = sources.get(plugin_id)
@@ -233,7 +204,6 @@ def get_source(plugin_id: str) -> dict[str, Any] | None:
 
 
 def set_source(plugin_id: str, *, url: str, ref: str, commit: str) -> dict[str, Any]:
-    """Upsert one origin record; ``added`` stamps only the first install."""
     if not plugin_id or not isinstance(plugin_id, str):
         raise ValueError("plugin id must be a non-empty string")
     for field, val in (("url", url), ("ref", ref), ("commit", commit)):
@@ -247,20 +217,15 @@ def set_source(plugin_id: str, *, url: str, ref: str, commit: str) -> dict[str, 
         "added": existing.get("added")
         or datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
-    data = update_ledger(**{SOURCES_KEY: {plugin_id: rec}})
+    data = update_state(**{SOURCES_KEY: {plugin_id: rec}})
     return dict(data[SOURCES_KEY][plugin_id])
 
 
 def forget_plugin(plugin_id: str) -> None:
-    """Erase every ledger trace of a third-party plugin.
-
-    ``remove`` 专属清扫：插件记录、来源记录与形态槽位选择一并抹除——
-    移除即无痕，不留下需要供养的残骸。官方插件永不进入此路径
-    （uninstall 只停用不抹账，remove 才是存在的反面）。
-    """
-    path = ledger_path()
+    """Erase every trace of a third-party plugin from state."""
+    path = store_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    with _ledger_lock(path):
+    with _store_lock(path):
         data = _read_raw()
         changed = False
         for key in (PLUGINS_KEY, SOURCES_KEY, FORMS_KEY):

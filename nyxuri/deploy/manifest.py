@@ -22,7 +22,7 @@ Schema (``schemaVersion = 1``)::
     morphology = "atomic"    # config plugins only: atomic | merge | hook-only.
                                    # default = hook-only without payload/target,
                                    # otherwise atomic. Ui kinds carry no
-                                   # morphology — their form is the ledger form.
+                                   # morphology — their form is the state-only form.
     target = "starship.toml"   # single-file plugin: lands at ~/.config/<target>
     target = "xdg:PICTURES/Wallpapers"  # shared living area (morphology = merge)
     packages        = ["mangowm"]       # default = [<plugin name>] (config kinds)
@@ -64,7 +64,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from nyxuri.core import get_env, log_msg
+from nyxuri.system.env import get_env, log_msg
 
 _MANIFEST_NAME = "manifest.toml"
 _METADATA_NAMES = frozenset({"__pycache__"})
@@ -82,7 +82,7 @@ MORPHOLOGIES = (
     MORPHOLOGY_ATOMIC,
 )
 # Morphology is expressible in the manifest only for config plugins; the ui
-# kinds carry their form in the kinds themselves (ledger-only existence).
+# kinds carry their form in the kinds themselves (state-only existence).
 _MORPHOLOGY_KEYS = (MORPHOLOGY_MERGE, MORPHOLOGY_HOOK_ONLY, MORPHOLOGY_ATOMIC)
 
 KIND_CONFIG = "config"
@@ -110,7 +110,7 @@ _TOP_KEYS = frozenset({
 _RETIRED_KEYS = {
     "deploy": "retired and must be removed (executed with the optional-apps supply surface)",
     "detect": "retired and must be removed (executed with the optional-apps supply surface)",
-    "runtime": "retired: the form is now declared by kinds (ui kinds = ledger form)",
+    "runtime": "retired: the form is now declared by kinds (ui kinds = state form)",
     "merge": "retired: use morphology = \"merge\"",
 }
 
@@ -160,7 +160,7 @@ class ModuleManifest:
     system_paths: List[str] = field(default_factory=list)  # declared /etc etc. touchpoints
     target: str = ""           # Single-file plugin: deployed file name under ~/.config
     merge: bool = False        # Shared living area: no-clobber deploy, snapshot = laid files
-    runtime: bool = False      # Ledger-only plugin (shell.*): no living area, the
+    runtime: bool = False      # Runtime plugin (shell.*): no living area, the
                                # running host reacts to the plugin-changed event
     morphology: str = MORPHOLOGY_ATOMIC
     form_inherit: bool = False
@@ -256,7 +256,7 @@ def _require_stable_id(value, field: str) -> str:
 
 def _safe_rel_parts(value: str, field: str) -> List[str]:
     """Relative path safety: inside the plugin dir, no escape, no absolute."""
-    from nyxuri.core import is_safe_leaf_name
+    from nyxuri.system.env import is_safe_leaf_name
 
     parts = [part for part in value.replace("\\", "/").split("/") if part]
     if not parts or value.startswith("/") or not all(is_safe_leaf_name(p) for p in parts):
@@ -517,7 +517,7 @@ _XDG_PREFIX = "xdg:"
 
 def _resolve_xdg_target(target: str) -> Path:
     """Resolve ``xdg:<KIND>/<rest>`` against the XDG user dirs."""
-    from nyxuri.core import get_pics_dir, get_xdg_user_dir, is_safe_leaf_name, assert_contained
+    from nyxuri.system.env import get_pics_dir, get_xdg_user_dir, is_safe_leaf_name, assert_contained
 
     kind, _, rest = target[len(_XDG_PREFIX):].partition("/")
     kind = kind.upper()
@@ -547,7 +547,7 @@ def living_path(m: ModuleManifest, config_dir: Path) -> Path:
         return Path(os.path.expanduser(m.target))
     raw = m.target or (f"nyxuri/plugins/{m.id}" if m.origin == "third-party" else m.id)
     parts = [p for p in raw.replace("\\", "/").split("/") if p]
-    from nyxuri.core import is_safe_leaf_name, assert_contained
+    from nyxuri.system.env import is_safe_leaf_name, assert_contained
     if not parts or not all(is_safe_leaf_name(p) for p in parts):
         raise ValueError(f"unsafe plugin target '{raw}'")
     candidate = config_dir.joinpath(*parts)
@@ -565,7 +565,7 @@ def load_manifest(
     """
     if not origin:
         try:
-            from nyxuri.core import get_env
+            from nyxuri.system.env import get_env
             data_dir = get_env().data_dir
             if app_src.is_relative_to(data_dir / "plugins"):
                 origin = "third-party"
@@ -625,7 +625,7 @@ def load_manifest(
             if target and target not in manifest_preserve:
                 manifest_preserve.append(target)
 
-    from nyxuri.core import is_safe_leaf_name
+    from nyxuri.system.env import is_safe_leaf_name
 
     for p in manifest_preserve:
         parts = [part for part in p.replace("\\", "/").split("/") if part]
@@ -662,7 +662,7 @@ def load_manifest(
         if raw_morphology is not None:
             raise ValueError(
                 "morphology is declared but kinds carry no 'config' — "
-                "ui kinds are ledger-form by definition"
+                "ui kinds are state-form by definition"
             )
         morphology = MORPHOLOGY_RUNTIME
     elif raw_morphology is not None:
@@ -720,10 +720,10 @@ def load_manifest(
 def _app_src(app_name: str) -> Path:
     """Resolve the on-disk source path for a plugin name: official root
     first, then the third-party data root (S1). Root ownership lives in
-    the registry; manifest loading only needs the resolved path."""
-    from nyxuri.kernel import registry
+    the catalog; manifest loading only needs the resolved path."""
+    from nyxuri.deploy import catalog
 
-    src = registry.plugin_dir(app_name)
+    src = catalog.plugin_dir(app_name)
     if src is not None:
         return src
     return get_env().plugins_src / app_name
@@ -750,7 +750,7 @@ def discover_manifest_apps() -> List[Tuple[str, ModuleManifest]]:
     """Scan every plugin directory under configs/.
 
     Every subdirectory is a plugin shipping real config (or a runtime
-    ledger-only unit). Sorted by name for deterministic output. Result is
+    unit). Sorted by name for deterministic output. Result is
     cached per process (manifest files cannot change under a running engine).
     """
     global _MANIFEST_CACHE
@@ -780,7 +780,7 @@ def discover_deployable_apps() -> List[str]:
     """Names of plugins that ship real config AND go through the atomic swap.
 
     Merge plugins (declared shared living areas) deploy only through the
-    transaction's no-clobber path — they never join the atomic batch,
+    engine's no-clobber path — they never join the atomic batch,
     where a swap would clobber user content.
     """
     return [name for name, m in discover_manifest_apps() if m.is_deployable and not m.merge]

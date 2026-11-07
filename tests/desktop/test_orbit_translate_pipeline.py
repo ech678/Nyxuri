@@ -2,7 +2,7 @@
 
 Exercises the full pipeline:
 1. `sources.add(repo)` with bare id ("orbit-translate")
-2. `transaction.plugin_on("orbit-translate")`
+2. `engine.plugin_on("orbit-translate")`
 3. `shell-action.sh translate` dynamically discovers and executes the tool from Nyxuri plugins
 4. `niri-scratch-toggle.sh translate` dynamically passes the tool to scratchpad kitty
 5. `sysdoctor` inspects scripts and orbit runtime
@@ -14,10 +14,11 @@ import subprocess
 import unittest
 from pathlib import Path
 
-from nyxuri.core import get_env
-from nyxuri.kernel import ledger, registry, transaction
-from nyxuri import sources
-from nyxuri import sysdoctor
+from nyxuri.system.env import get_env
+from nyxuri.state import store
+from nyxuri.deploy import catalog, engine
+from nyxuri.deploy import sources
+from nyxuri.system import doctor as sysdoctor
 from tests.utils import TempEnv
 
 
@@ -71,16 +72,16 @@ class TestOrbitTranslatePipeline(unittest.TestCase):
             self.assertEqual(result["id"], "orbit-translate")
             landed = env.data_dir / "plugins" / "orbit-translate"
             self.assertTrue(landed.is_dir())
-            self.assertIn("orbit-translate", registry.plugin_ids())
-            self.assertEqual(registry.plugin_origin("orbit-translate"), "third-party")
+            self.assertIn("orbit-translate", catalog.plugin_ids())
+            self.assertEqual(catalog.plugin_origin("orbit-translate"), "third-party")
 
             # Default state is OFF
-            self.assertIsNone(ledger.get_plugin("orbit-translate"))
+            self.assertIsNone(store.get_plugin("orbit-translate"))
 
             # 3. Enable plugin
-            steps = transaction.plugin_on("orbit-translate", install_packages=None)
+            steps = engine.plugin_on("orbit-translate", install_packages=None)
             self.assertTrue(steps and all(s.ok for s in steps))
-            rec = ledger.get_plugin("orbit-translate")
+            rec = store.get_plugin("orbit-translate")
             self.assertIsNotNone(rec)
             self.assertEqual(rec["state"], "enabled")
 
@@ -132,10 +133,10 @@ class TestOrbitTranslatePipeline(unittest.TestCase):
             sysdoctor._check_scripts(env)
             sysdoctor._check_orbit(env)
 
-            # 7. Test plugin_off blocks execution via ledger gate
-            steps_off = transaction.plugin_off("orbit-translate")
+            # 7. Test plugin_off blocks execution via store gate
+            steps_off = engine.plugin_off("orbit-translate")
             self.assertTrue(steps_off and all(s.ok for s in steps_off))
-            rec_off = ledger.get_plugin("orbit-translate")
+            rec_off = store.get_plugin("orbit-translate")
             self.assertIsNotNone(rec_off)
             self.assertEqual(rec_off["state"], "disabled")
 
@@ -170,9 +171,9 @@ class TestOrbitTranslatePipeline(unittest.TestCase):
             rm_res = sources.remove("orbit-translate")
             self.assertFalse(rm_res["off_failed"])
             self.assertFalse(landed.exists())
-            self.assertNotIn("orbit-translate", registry.plugin_ids())
-            self.assertIsNone(ledger.get_plugin("orbit-translate"))
-            self.assertIsNone(ledger.get_source("orbit-translate"))
+            self.assertNotIn("orbit-translate", catalog.plugin_ids())
+            self.assertIsNone(store.get_plugin("orbit-translate"))
+            self.assertIsNone(store.get_source("orbit-translate"))
 
 
 if __name__ == "__main__":

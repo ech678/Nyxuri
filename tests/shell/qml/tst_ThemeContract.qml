@@ -1,8 +1,8 @@
 import QtQuick 2.15
 import QtTest 1.3
-import "../../commons/ThemeColor.js" as ThemeColor
-import "../../commons/ThemePalette.js" as ThemePalette
-import "../../commons/TemplateExpr.js" as TemplateExpr
+import "../../../shell/commons/ThemeColor.js" as ThemeColor
+import "../../../shell/commons/ThemePalette.js" as ThemePalette
+import "../../../shell/commons/TemplateExpr.js" as TemplateExpr
 
 // P4 theme-contract golden master. Fixtures under tests/fixtures/theme are
 // deterministic ffmpeg images plus Noctalia 5.2.1 (MIT) reference outputs;

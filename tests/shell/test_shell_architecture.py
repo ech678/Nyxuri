@@ -18,7 +18,7 @@ import unittest
 from contextlib import redirect_stdout
 from unittest.mock import patch, MagicMock
 
-from nyxuri.kernel.ledger import active_shell, custom_shell_bin, set_shell
+from nyxuri.state.store import active_shell, custom_shell_bin, set_shell
 from nyxuri.cli import _cmd_shell
 from tests.utils import TempEnv
 # Imports consolidated from the dissolved bugfix ledger.
@@ -558,9 +558,9 @@ class TestShellManagement(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(cards_dir, card)), f"Lock card missing: {card}")
 
         # 3. Hot switch refuses to switch when screen is locked (K06 invariant)
-        from nyxuri.desktop.shell_switcher import hot_switch_shell, is_shell_locked
-        with patch("nyxuri.desktop.shell_switcher.is_shell_locked", return_value=True), \
-             patch("nyxuri.desktop.shell_switcher.probe_running_shells", return_value=[("nyxuri-shell", 9999)]), \
+        from nyxuri.system.shell import hot_switch_shell, is_shell_locked
+        with patch("nyxuri.system.shell.is_shell_locked", return_value=True), \
+             patch("nyxuri.system.shell.probe_running_shells", return_value=[("nyxuri-shell", 9999)]), \
              patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-test"}):
             ok, msg = hot_switch_shell("noctalia")
             self.assertFalse(ok)
@@ -942,7 +942,7 @@ class TestShellManagement(unittest.TestCase):
     def test_r2_lifecycle_exit_sigterm_and_crash_recovery(self):
         """R2-03 Contract: SIGTERM exit bounding, early crash detection, and rollback safety."""
         from unittest.mock import MagicMock, patch
-        from nyxuri.desktop.shell_switcher import wait_shell_ready, stop_shell_process, hot_switch_shell
+        from nyxuri.system.shell import wait_shell_ready, stop_shell_process, hot_switch_shell
 
         # 1. Early crash detection in wait_shell_ready: exits immediately if proc.poll() is not None
         mock_dead_proc = MagicMock()
@@ -962,11 +962,11 @@ class TestShellManagement(unittest.TestCase):
             mock_kill.assert_any_call(12345, signal.SIGTERM)
 
         # 3. Crash recovery rolls back ledger and restores old shell
-        with patch("nyxuri.desktop.shell_switcher.probe_running_shells", return_value=[("noctalia", 1111)]), \
-             patch("nyxuri.desktop.shell_switcher.stop_all_shell_instances", return_value=True), \
-             patch("nyxuri.desktop.shell_switcher.stop_shell_process", return_value=True), \
-             patch("nyxuri.desktop.shell_switcher.spawn_shell") as mock_spawn, \
-             patch("nyxuri.desktop.shell_switcher.wait_shell_ready") as mock_wait, \
+        with patch("nyxuri.system.shell.probe_running_shells", return_value=[("noctalia", 1111)]), \
+             patch("nyxuri.system.shell.stop_all_shell_instances", return_value=True), \
+             patch("nyxuri.system.shell.stop_shell_process", return_value=True), \
+             patch("nyxuri.system.shell.spawn_shell") as mock_spawn, \
+             patch("nyxuri.system.shell.wait_shell_ready") as mock_wait, \
              patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-test"}):
             # Target shell fails to become ready; rollback restores noctalia
             mock_crashed = MagicMock()

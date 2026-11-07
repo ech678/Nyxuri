@@ -8,9 +8,8 @@ on already-deployed config files.
 import re
 from typing import Optional
 
-from nyxuri.compositors import MAIN_WM
-from nyxuri.core import THEME_ENGINE
-from nyxuri.core import get_env, get_pics_dir
+from nyxuri.system.compositors import MAIN_WM
+from nyxuri.system.env import THEME_ENGINE, get_env, get_pics_dir
 
 
 def _phase_render_templates(only_app: Optional[str] = None) -> None:

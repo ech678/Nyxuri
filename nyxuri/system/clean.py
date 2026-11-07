@@ -16,8 +16,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-from nyxuri.core import CLI_CMD, Colors, PROJECT_NAME, text
-from nyxuri.tui import CheckboxEntry, CheckboxList, display_width, pad_display, stdin_fd
+from nyxuri.system.env import CLI_CMD, Colors, PROJECT_NAME
+from nyxuri.system.i18n import text
+from nyxuri.ui.tui import CheckboxEntry, CheckboxList, display_width, pad_display, stdin_fd
 
 VERSION = "4.1"
 

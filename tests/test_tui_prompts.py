@@ -31,7 +31,7 @@ class TestMultibyteInput(unittest.TestCase):
         import pty
         import threading
         import time
-        from nyxuri import tui
+        from nyxuri.ui import tui
         for text in ("中", "é", "😀", "日"):
             master, slave = pty.openpty()
             saved = sys.stdin
@@ -73,7 +73,7 @@ class TestEndOfInputCancelsPrompts(unittest.TestCase):
         return calls
 
     def test_menu_run_returns_on_end_of_input(self):
-        from nyxuri import tui
+        from nyxuri.ui import tui
         calls = self._stub(tui)
         menu = tui.Menu("rollback_select_title", [tui.MenuItem(label="a"), tui.MenuItem(label="b")],
                         hint_key="rollback_select_hint", compact=True)
@@ -81,7 +81,7 @@ class TestEndOfInputCancelsPrompts(unittest.TestCase):
         self.assertEqual(calls["count"], 1)
 
     def test_checkbox_list_run_cancels_on_end_of_input(self):
-        from nyxuri import tui
+        from nyxuri.ui import tui
         calls = self._stub(tui)
         checklist = tui.CheckboxList("master_title", [
             tui.CheckboxEntry(key="k1", label="a"),
@@ -91,14 +91,14 @@ class TestEndOfInputCancelsPrompts(unittest.TestCase):
         self.assertEqual(calls["count"], 1)
 
     def test_raw_line_reader_cancels_on_end_of_input(self):
-        from nyxuri import tui
+        from nyxuri.ui import tui
         calls = self._stub(tui)
         switcher = tui.FormSwitcher.__new__(tui.FormSwitcher)
         self.assertIsNone(tui.FormSwitcher._read_line_raw(switcher, "prompt: "))
         self.assertEqual(calls["count"], 1)
 
     def test_every_prompt_loop_matches_end_of_input(self):
-        source = (Path(__file__).resolve().parent.parent / "nyxuri" / "tui.py").read_text(encoding="utf-8")
+        source = (Path(__file__).resolve().parent.parent / "nyxuri" / "ui" / "tui.py").read_text(encoding="utf-8")
         for branch in (
             'elif key in ("ESC", "EXIT", "EOF"):',
             'elif key in ("0", "q", "Q", "ESC", "EXIT", "EOF"):',
@@ -121,21 +121,21 @@ class TestMouseEventsDoNotBreakTextPrompts(unittest.TestCase):
         return tui.FormSwitcher.__new__(tui.FormSwitcher)
 
     def test_mouse_events_are_ignored_while_typing(self):
-        from nyxuri import tui
+        from nyxuri.ui import tui
         switcher = self._switcher(tui, ["a", tui.MouseEvent("PRESS", 10, 5), "b", "ENTER"])
         self.assertEqual(tui.FormSwitcher._read_line_raw(switcher, "name> "), "ab")
 
     def test_wheel_events_are_ignored_while_typing(self):
-        from nyxuri import tui
+        from nyxuri.ui import tui
         switcher = self._switcher(tui, [tui.MouseEvent("WHEEL_UP", 3, 3), "c", "ENTER"])
         self.assertEqual(tui.FormSwitcher._read_line_raw(switcher, "name> "), "c")
 
     def test_mouse_event_before_escape_still_cancels(self):
-        from nyxuri import tui
+        from nyxuri.ui import tui
         switcher = self._switcher(tui, [tui.MouseEvent("PRESS", 1, 1), "ESC"])
         self.assertIsNone(tui.FormSwitcher._read_line_raw(switcher, "name> "))
 
     def test_only_string_keys_reach_the_printable_branch(self):
-        source = (Path(__file__).resolve().parent.parent / "nyxuri" / "tui.py").read_text(encoding="utf-8")
+        source = (Path(__file__).resolve().parent.parent / "nyxuri" / "ui" / "tui.py").read_text(encoding="utf-8")
         self.assertIn("elif isinstance(k, str) and len(k) == 1 and k.isprintable():", source)
         self.assertNotIn("elif len(k) == 1 and k.isprintable():", source)

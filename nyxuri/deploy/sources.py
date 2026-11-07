@@ -1,20 +1,10 @@
-"""Third-party plugin lifecycle (S1): add / remove / update.
+"""Third-party plugin lifecycle: add / remove / update.
 
-Contract: plugin-model.md §5 + manifest-schema.md 第三方章. The engine is
-its own plugin manager — git is mere transport, the ledger's ``sources``
+Contract: plugin-model.md §5 + manifest-schema.md. The engine is
+its own plugin manager — git is mere transport, the state store's ``sources``
 key is the origin truth (never a sidecar inside the plugin directory), and
-validation is literally the loader (``registry.load_plugin``), so add and
-update can never drift from what the running engine accepts.
-
-This module lives OUTSIDE ``nyxuri/kernel/`` on purpose: the kernel stays
-four modules (transaction is the only orchestrator there); lifecycle verbs
-are a command-flow domain like installer/theme, consuming the kernel from
-above. Argument parsing and bilingual prose belong to the CLI layer.
-
-Safety stance (ROADMAP S1): plugins are user-trusted code — no sandboxing,
-no security theater. But installing never executes anything from the
-package: no install hook, no sudo, and hooks are refused for third-party
-plugins in v1 (the gate lives in ``registry.load_plugin``).
+validation uses ``catalog.load_plugin``, so add and update stay consistent
+with what the running engine accepts.
 """
 
 import shutil
@@ -23,8 +13,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from nyxuri.core import get_env, log_msg, timed_run
-from nyxuri.kernel import ledger, registry, transaction
+from nyxuri.system.env import get_env, log_msg, timed_run
+from nyxuri.state import store
+from nyxuri.deploy import catalog, engine
 
 # One level of dot-separated labels minimum on each side: reverse-DNS shape
 # (manifest-schema.md 身份字段 id 行). Official bare names stay unclaimable
@@ -43,7 +34,7 @@ def is_valid_plugin_id(name: str) -> bool:
         return False
     if name.startswith("shell."):
         return False
-    from nyxuri.core import is_safe_leaf_name
+    from nyxuri.system.env import is_safe_leaf_name
     return is_safe_leaf_name(name)
 
 
@@ -74,10 +65,10 @@ def _git_out(dir_: Path, *args: str, timeout: float = 60) -> str:
 
 def require_third_party(plugin_id: str) -> Path:
     """Resolve a third-party plugin dir or raise ValueError with the reason."""
-    src = registry.plugin_dir(plugin_id)
+    src = catalog.plugin_dir(plugin_id)
     if src is None:
         raise KeyError(plugin_id)
-    if registry.plugin_origin(plugin_id) != "third-party":
+    if catalog.plugin_origin(plugin_id) != "third-party":
         raise ValueError(f"'{plugin_id}' is not a third-party plugin")
     return src
 
@@ -171,7 +162,7 @@ def add(source: str) -> dict[str, str]:
             origin_src = staged
 
         pid = _read_manifest_id(origin_src)
-        if pid in registry.plugin_ids():
+        if pid in catalog.plugin_ids():
             raise ValueError(
                 f"plugin id '{pid}' already exists — third-party conflicts are "
                 "refused, official plugins are never shadowed by install"
@@ -189,12 +180,12 @@ def add(source: str) -> dict[str, str]:
                 ignore=shutil.ignore_patterns(".git", "__pycache__"),
             )
         try:
-            registry.load_plugin(pid)
+            catalog.load_plugin(pid)
         except Exception as exc:
             shutil.rmtree(target, ignore_errors=True)
             raise ValueError(f"validation failed (the loader refused): {exc}") from exc
         ref, commit = _origin_probe(target)
-        ledger.set_source(pid, url=origin_url, ref=ref, commit=commit)
+        store.set_source(pid, url=origin_url, ref=ref, commit=commit)
         _invalidate()
         return {"id": pid, "dir": str(target)}
     finally:
@@ -208,16 +199,16 @@ def add(source: str) -> dict[str, str]:
 def remove(plugin_id: str) -> dict[str, Any]:
     """Remove a third-party plugin: off → withdraw → timestamp backup.
 
-    The off transaction withdraws exactly the files the ownership ledger
+    The off operation withdraws exactly the files the state store
     recorded (living area back to white, customs to Vault). The plugin tree
     itself goes to a timestamped backup when it is not pristine git content
-    (local install, or dirty worktree) — pristine trees just die. Ledger
+    (local install, or dirty worktree) — pristine trees just die. State
     traces (record, origin, form slots) are erased: removal leaves no debris.
     """
     src = require_third_party(plugin_id)
-    rec = ledger.get_plugin(plugin_id)
+    rec = store.get_plugin(plugin_id)
     if rec and rec.get("state") == "enabled":
-        steps = transaction.plugin_off(plugin_id, cascade=False)
+        steps = engine.plugin_off(plugin_id, cascade=False)
         if steps and not all(s.ok for s in steps):
             return {"id": plugin_id, "dir": None, "backup": None,
                     "off_failed": True}
@@ -232,7 +223,7 @@ def remove(plugin_id: str) -> dict[str, Any]:
         log_msg("WARN", f"non-pristine plugin tree backed up: {backup}")
     else:
         shutil.rmtree(src)
-    ledger.forget_plugin(plugin_id)
+    store.forget_plugin(plugin_id)
     _invalidate()
     return {"id": plugin_id, "dir": str(src),
             "backup": str(backup) if backup else None, "off_failed": False}
@@ -254,9 +245,9 @@ def update(plugin_id: str) -> dict[str, Any]:
             f"'{plugin_id}' was installed from a local directory (no git "
             "transport) — remove and re-add to refresh it"
         )
-    origin = ledger.get_source(plugin_id)
+    origin = store.get_source(plugin_id)
     if not origin:
-        raise ValueError(f"no origin record for '{plugin_id}' in the ledger")
+        raise ValueError(f"no origin record for '{plugin_id}' in state.json")
     ref = origin.get("ref") or _git_out(src, "rev-parse", "--abbrev-ref", "HEAD")
     if not ref:
         raise ValueError(f"cannot determine the update ref for '{plugin_id}'")
@@ -285,7 +276,7 @@ def update_apply(plugin_id: str, preview: dict[str, Any]) -> dict[str, Any]:
     if not _git_ok(src, "merge", "--ff-only", "--quiet", remote):
         raise ValueError(f"fast-forward merge failed for '{plugin_id}'")
     try:
-        registry.load_plugin(plugin_id)
+        catalog.load_plugin(plugin_id)
     except Exception as exc:
         if not _git_ok(src, "reset", "--hard", old_commit):
             log_msg("ERROR", f"rollback also failed for '{plugin_id}'; manual fix needed")
@@ -293,22 +284,22 @@ def update_apply(plugin_id: str, preview: dict[str, Any]) -> dict[str, Any]:
         raise ValueError(
             f"validation failed — rolled back to {old_commit[:8]}: {exc}"
         ) from exc
-    origin = ledger.get_source(plugin_id) or {}
-    ledger.set_source(
+    origin = store.get_source(plugin_id) or {}
+    store.set_source(
         plugin_id, url=str(origin.get("url", "")),
         ref=str(preview["ref"]), commit=_git_out(src, "rev-parse", "HEAD"),
     )
     _invalidate()
     redeployed = False
-    rec = ledger.get_plugin(plugin_id)
+    rec = store.get_plugin(plugin_id)
     if rec and rec.get("state") == "enabled":
-        from nyxuri.pkg.deps import plugin_package_installer
+        from nyxuri.system.pkg import plugin_package_installer
 
         # form=None short-circuits at "already-enabled"; re-apply means
-        # replaying the transaction with the CURRENT form choice — the
+        # re-applying with the CURRENT form choice — the
         # single activation pipeline, never a private redeploy path.
         form = rec.get("form") or "default"
-        transaction.plugin_on(
+        engine.plugin_on(
             plugin_id, form=form, install_packages=plugin_package_installer
         )
         redeployed = True

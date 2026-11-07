@@ -14,13 +14,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Optional, Tuple
 
-from nyxuri.core import (
-    Colors,
-    RAW_MIRROR_TEMPLATES,
-)
-from nyxuri.core import get_env, log_msg, register_temp_path, timed_run
-from nyxuri.core import msg
-from nyxuri.tui import prompt_confirm
+from nyxuri.system.env import Colors, RAW_MIRROR_TEMPLATES, get_env, log_msg, register_temp_path, timed_run
+from nyxuri.system.i18n import msg
+from nyxuri.ui.tui import prompt_confirm
 
 _GIT_NET = ["-c", "http.lowSpeedLimit=1000", "-c", "http.lowSpeedTime=15", "-c", "http.connectTimeout=10", "-c", "http.timeout=20"]
 

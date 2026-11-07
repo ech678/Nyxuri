@@ -29,7 +29,7 @@ class TestUninstallNonInteractive(unittest.TestCase):
     def test_non_interactive_uninstall_uses_standard_scope_and_archives(self):
         """Non-interactive uninstall archives configs without removing user data."""
         from nyxuri.state.uninstall import uninstall_nyxuri
-        from nyxuri.core import PROJECT_NAME
+        from nyxuri.system.env import PROJECT_NAME
 
         with patch("sys.stdin.isatty", return_value=False), patch("builtins.print"):
             result = uninstall_nyxuri("")

@@ -6,9 +6,9 @@ The atomic_replace_item swap-then-preserve is the heart of Nyxuri's deploy
 snapshot (files referenced by name, e.g. niri/monitor.kdl), and the ownership
 carry (#139): dest entries the engine cannot explain as its own template
 output are carried into the new directory verbatim — a swap never destroys
-what it cannot account for. The carry verdict is judged against the ledger
-baseline injected by the caller; this module never reads the ledger itself
-(star layering, plugin-model.md §2).
+what it cannot account for. The carry verdict is judged against the state
+baseline injected by the caller; this module never reads the state store itself
+(plugin-model.md §2).
 """
 
 import fnmatch
@@ -20,15 +20,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Iterator, List, Optional, Tuple
 
-from nyxuri.core import get_env, log_msg, register_temp_path, remove_path
-from nyxuri.core import msg
+from nyxuri.system.env import get_env, log_msg, register_temp_path, remove_path
+from nyxuri.system.i18n import msg
 
 
 @dataclass(frozen=True)
 class CarryPolicy:
-    """Ownership-carry directive threaded from the transaction layer (#139).
+    """Ownership-carry directive threaded from the engine layer (#139).
 
-    ``baselines`` maps plugin id → the ledger ``files`` snapshot (hashes of what
+    ``baselines`` maps plugin id → the state ``files`` snapshot (hashes of what
     the engine last laid) or None for plugins with no record (Ghost). ``unknown``
     decides the baseline-absent case: True = carry (update — 宁可错保), False =
     the engine claims its payload names (install/``on`` adoption). ``carried``
@@ -192,7 +192,7 @@ def _deploy_ignore_factory(root_src: Path):
 
     - manifest.toml: self-describing manifest (Nyxuri metadata, §10.4 boundary)
     - __pycache__: bytecode cache, never user config
-    - hooks/: plugin lifecycle hooks (declared side effects, run by transaction only)
+    - hooks/: plugin lifecycle hooks (declared side effects, run by engine only)
     - __forms__/: top-level variant source tree (only at app root, not nested)
     """
     root = root_src
@@ -208,10 +208,10 @@ def _deploy_ignore_factory(root_src: Path):
 
 
 def _path_identity(path: Path) -> str:
-    """Content identity in the ledger snapshot's encoding (symlink → ``link:``).
+    """Content identity in the state snapshot's encoding (symlink → ``link:``).
 
-    Must stay byte-compatible with ``transaction._hash_file`` so carried
-    verdicts compare equal against ledger baselines.
+    Must stay byte-compatible with ``engine._hash_file`` so carried
+    verdicts compare equal against state baselines.
     """
     try:
         if path.is_symlink():
@@ -282,7 +282,7 @@ def atomic_replace_item(
 
     Ownership carry (#139): with ``carry=True``, dest entries outside the
     dunder/preserve/preserve_values sets are judged against ``carry_baseline``
-    (the plugin's ledger ``files`` map — hashes of what the engine last laid).
+    (the plugin's state ``files`` map — hashes of what the engine last laid).
     Untouched engine-laid files follow the new template; untouched engine-laid
     files this deploy no longer lays (hook products) retire with the swap and
     are re-laid by the hook replay; user-modified and user-placed files are
@@ -486,7 +486,7 @@ def atomic_replace_item(
         # Ownership carry (#139): a swap never destroys what the engine cannot
         # explain as its own output. Dunder / preserve / preserve_values
         # entries are exempt (their own mechanisms own them). The TENancy
-        # boundary is the LEDGER, not the payload: a baseline path the engine
+        # boundary is the state baseline, not the payload: a baseline path the engine
         # laid and the user never touched is engine-owned even when this
         # deploy no longer lays it (hook products) — it vanishes with the
         # swap and the hook replay re-lays it (KM3 restored).

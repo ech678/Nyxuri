@@ -16,7 +16,7 @@ from tests.utils import TempEnv
 
 _REPO = Path(__file__).resolve().parents[2]
 _TOGGLE = _REPO / "plugins" / "niri" / "scripts" / "niri-scratch-toggle.sh"
-_CLEAN_CACHE = _REPO / "nyxuri" / "desktop" / "clean.py"
+_CLEAN_CACHE = _REPO / "nyxuri" / "system" / "clean.py"
 _START_NOCTALIA = _REPO / "plugins" / "niri" / "scripts" / "session-shell.sh"
 _SESSION_SHELL = _REPO / "plugins" / "niri" / "scripts" / "session-shell.sh"
 _SHELL_ACTION = _REPO / "plugins" / "niri" / "scripts" / "shell-action.sh"
@@ -389,7 +389,7 @@ class TestCleanCache(unittest.TestCase):
 
     def _run(self, *args):
         return subprocess.run(
-            [sys.executable, "-m", "nyxuri.desktop.clean", *args],
+            [sys.executable, "-m", "nyxuri.system.clean", *args],
             capture_output=True, text=True, timeout=120,
             env=self._env(), stdin=subprocess.DEVNULL, cwd=_REPO,
         )
@@ -607,7 +607,7 @@ class TestCleanCache(unittest.TestCase):
     def test_scc_skips_download_cleanup_when_locked(self):
         """当 db.lck 存在（pacman 正在运行）时，跳过 download-* 目录清理。(#141)"""
         from unittest.mock import patch
-        import nyxuri.desktop.clean as clean
+        import nyxuri.system.clean as clean
 
         called_cmds = []
         with patch.object(clean, "act", side_effect=lambda cmd, **kw: called_cmds.append((cmd, kw))):
@@ -624,7 +624,7 @@ class TestCleanCache(unittest.TestCase):
     def test_scc_runs_download_cleanup_when_unlocked(self):
         """当 db.lck 不存在时，先 find 清理 download-* 再调用 pacman -Scc。(#141)"""
         from unittest.mock import patch
-        import nyxuri.desktop.clean as clean
+        import nyxuri.system.clean as clean
 
         called_cmds = []
         with patch.object(clean, "act", side_effect=lambda cmd, **kw: called_cmds.append((cmd, kw))):

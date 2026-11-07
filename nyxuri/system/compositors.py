@@ -1,13 +1,4 @@
-"""Compositor registry — the Python-side compositor driver surface (S0-5).
-
-One declarative entry per supported compositor. The installer's WM
-radio special-case, the doctor's session/portal literals and the theme
-reload argv all read this single registry instead of scattering
-``("mango", "niri")`` tuples. A third compositor means a new entry here,
-not a new literal (T5 debt, collected with S0-5).
-
-Pure standard library; imports nothing from the engine.
-"""
+"""Compositor definitions and driver surface: niri, mango."""
 
 from __future__ import annotations
 
@@ -22,9 +13,7 @@ class Compositor:
     """Static facts about one supported compositor."""
 
     id: str
-    # Ask the running compositor to reload its config (theme/layout pushes).
     reload_argv: tuple[str, ...]
-    # xdg-desktop-portal routing file this compositor's session expects.
     portal_conf: str
 
 

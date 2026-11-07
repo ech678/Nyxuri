@@ -18,7 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))  # standalone runs
 
-from nyxuri.core import (  # noqa: E402
+from nyxuri.system.env import (  # noqa: E402
     GREETER_DM_STATE,
     GREETER_ETC_CFG,
     GREETER_PKG,
@@ -28,7 +28,7 @@ from nyxuri.core import (  # noqa: E402
     MAIN_WM,
     THEME_ENGINE,
 )
-from nyxuri.core import msg  # noqa: E402
+from nyxuri.system.i18n import msg  # noqa: E402
 
 CONFLICT_DMS = ["sddm", "lightdm", "gdm", "ly"]
 TRUSTED_EXEC_DIRS = (Path("/usr/bin"), Path("/usr/local/bin"))

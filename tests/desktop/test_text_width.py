@@ -8,8 +8,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from nyxuri.core import Colors
-from nyxuri.tui import display_width, render_check_row, render_menu_item, truncate_display
+from nyxuri.system.env import Colors
+from nyxuri.ui.tui import display_width, render_check_row, render_menu_item, truncate_display
 
 
 def _reference_width(text: str) -> int:
@@ -74,7 +74,7 @@ class TestRowRendering(unittest.TestCase):
 
 class TestCleanHelpers(unittest.TestCase):
     def test_tilde_only_shortens_paths_actually_below_home(self):
-        import nyxuri.desktop.clean as clean
+        import nyxuri.system.clean as clean
 
         with patch.object(clean, "HOME", Path("/home/user")):
             self.assertEqual(clean.tilde("/home/user/.cache"), "~/.cache")
@@ -84,7 +84,7 @@ class TestCleanHelpers(unittest.TestCase):
             self.assertEqual(clean.tilde("/home/users/data"), "/home/users/data")
 
     def test_interactive_helpers_survive_stdin_without_fileno(self):
-        import nyxuri.desktop.clean as clean
+        import nyxuri.system.clean as clean
 
         class NoFileno:
             def isatty(self):

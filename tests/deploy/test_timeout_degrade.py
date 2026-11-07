@@ -30,17 +30,17 @@ def _cp(returncode=0, stdout=""):
 class TestTimedRun(unittest.TestCase):
 
     def test_timeout_degrades_to_none(self):
-        from nyxuri.core import timed_run
+        from nyxuri.system.env import timed_run
 
-        with patch("nyxuri.core.subprocess.run", side_effect=subprocess.TimeoutExpired(cmd=["x"], timeout=5)):
+        with patch("nyxuri.system.env.subprocess.run", side_effect=subprocess.TimeoutExpired(cmd=["x"], timeout=5)):
             self.assertIsNone(timed_run(["x"], 5, check=False))
 
     def test_passes_through_args_and_result(self):
         import os
 
-        from nyxuri.core import timed_run
+        from nyxuri.system.env import timed_run
 
-        with patch("nyxuri.core.subprocess.run", return_value=_cp(0)) as m:
+        with patch("nyxuri.system.env.subprocess.run", return_value=_cp(0)) as m:
             r = timed_run(["x"], 7, check=False, capture_output=True)
         m.assert_called_once_with(["x"], timeout=7, check=False, capture_output=True,
                                   env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"})
@@ -50,33 +50,33 @@ class TestTimedRun(unittest.TestCase):
         """Blueprint-tree hook execution must not litter __pycache__ (plugin-model §1)."""
         import os
 
-        from nyxuri.core import timed_run
+        from nyxuri.system.env import timed_run
 
         clean_env = {"PATH": "/usr/bin", "HOME": "/tmp"}
-        with patch("nyxuri.core.subprocess.run", return_value=_cp(0)) as m:
+        with patch("nyxuri.system.env.subprocess.run", return_value=_cp(0)) as m:
             timed_run(["x"], 5, check=False, env=clean_env)
         (env,) = (call.kwargs["env"] for call in m.call_args_list)
         self.assertEqual(env["PYTHONDONTWRITEBYTECODE"], "1")
         self.assertEqual(env["PATH"], "/usr/bin")
 
     def test_missing_binary_degrades_to_none(self):
-        from nyxuri.core import timed_run
+        from nyxuri.system.env import timed_run
 
-        with patch("nyxuri.core.subprocess.run", side_effect=FileNotFoundError("missing")):
+        with patch("nyxuri.system.env.subprocess.run", side_effect=FileNotFoundError("missing")):
             self.assertIsNone(timed_run(["nonexistent-bin"], 5, check=False))
 
     def test_oserror_degrades_to_none(self):
-        from nyxuri.core import timed_run
+        from nyxuri.system.env import timed_run
 
-        with patch("nyxuri.core.subprocess.run", side_effect=OSError("permission denied")):
+        with patch("nyxuri.system.env.subprocess.run", side_effect=OSError("permission denied")):
             self.assertIsNone(timed_run(["inaccessible-bin"], 5, check=False))
 
     def test_empty_cmd_does_not_raise(self):
-        from nyxuri.core import timed_run
+        from nyxuri.system.env import timed_run
 
-        with patch("nyxuri.core.subprocess.run", side_effect=FileNotFoundError()):
+        with patch("nyxuri.system.env.subprocess.run", side_effect=FileNotFoundError()):
             self.assertIsNone(timed_run([], 5, check=False))
-        with patch("nyxuri.core.subprocess.run", side_effect=subprocess.TimeoutExpired(cmd=[], timeout=5)):
+        with patch("nyxuri.system.env.subprocess.run", side_effect=subprocess.TimeoutExpired(cmd=[], timeout=5)):
             self.assertIsNone(timed_run([], 5, check=False))
 
 
@@ -93,7 +93,7 @@ class TestPostInstallHooksIndependence(unittest.TestCase):
     def test_sync_timeout_does_not_block_deploy_services(self):
         from nyxuri.deploy.deploy import _phase_post_install_services
 
-        with patch("nyxuri.desktop.theme.sync", side_effect=RuntimeError("theme failure")), \
+        with patch("nyxuri.system.theme.sync", side_effect=RuntimeError("theme failure")), \
              patch("builtins.print"):
             result = _phase_post_install_services()
         self.assertIsNone(result, "a failing theme sync is absorbed, not propagated")
@@ -174,18 +174,18 @@ class TestDepsTimeout(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_pacman_timeout_degrades_to_empty_set(self):
-        from nyxuri.pkg.detection import DependencyProbe
-        with patch("nyxuri.pkg.detection.timed_run", return_value=None):
+        from nyxuri.system.pkg import DependencyProbe
+        with patch("nyxuri.system.pkg.timed_run", return_value=None):
             self.assertEqual(DependencyProbe().packages, set())
 
     def test_fc_list_timeout_degrades_to_empty(self):
-        from nyxuri.pkg.detection import DependencyProbe
-        with patch("nyxuri.pkg.detection.timed_run", return_value=None):
+        from nyxuri.system.pkg import DependencyProbe
+        with patch("nyxuri.system.pkg.timed_run", return_value=None):
             self.assertEqual(DependencyProbe().fonts, "")
 
     def test_gi_probe_timeout_reports_missing(self):
-        from nyxuri.pkg.detection import DependencyProbe
-        with patch("nyxuri.pkg.detection.timed_run", return_value=None):
+        from nyxuri.system.pkg import DependencyProbe
+        with patch("nyxuri.system.pkg.timed_run", return_value=None):
             self.assertFalse(DependencyProbe().installed("python-gobject"))
 
 
@@ -200,12 +200,12 @@ class TestDoctorTimeout(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_check_timeout_does_not_abort_run_doctor(self):
-        from nyxuri.sysdoctor import run_doctor
+        from nyxuri.system.doctor import run_doctor
 
         def boom(env):
             raise subprocess.TimeoutExpired(cmd="probe", timeout=1)
 
-        with patch("nyxuri.sysdoctor.DOCTOR_SECTIONS", [("doctor_sec_x", [boom])]), \
+        with patch("nyxuri.system.doctor.DOCTOR_SECTIONS", [("doctor_sec_x", [boom])]), \
              patch("builtins.print"):
             self.assertTrue(run_doctor())
 
@@ -225,14 +225,14 @@ class TestGitTimeout(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_reset_timeout_returns_false(self):
-        from nyxuri.pkg.net import safe_git_pull
+        from nyxuri.system.net import safe_git_pull
 
         fake_env = type("E", (), {"run_mode": "cache"})()
-        with patch("nyxuri.pkg.net.get_env", return_value=fake_env), \
-             patch("nyxuri.pkg.net.shutil.which", return_value=True), \
-             patch("nyxuri.pkg.net.subprocess.run", return_value=_cp(0, "")), \
-             patch("nyxuri.pkg.net._run_git_transfer", side_effect=[_cp(1), _cp(0)]), \
-             patch("nyxuri.pkg.net.timed_run", return_value=None):
+        with patch("nyxuri.system.net.get_env", return_value=fake_env), \
+             patch("nyxuri.system.net.shutil.which", return_value=True), \
+             patch("nyxuri.system.net.subprocess.run", return_value=_cp(0, "")), \
+             patch("nyxuri.system.net._run_git_transfer", side_effect=[_cp(1), _cp(0)]), \
+             patch("nyxuri.system.net.timed_run", return_value=None):
             self.assertIs(safe_git_pull(self._ctx.env.repo_dir), False)
 
 
@@ -264,7 +264,7 @@ class TestGitTimeoutDegrades(unittest.TestCase):
         return repo
 
     def test_safe_git_pull_timeout_returns_falsy(self):
-        import nyxuri.pkg.net as net
+        import nyxuri.system.net as net
         with TempEnv() as ctx:
             repo = self._repo(ctx)
 
@@ -278,7 +278,7 @@ class TestGitTimeoutDegrades(unittest.TestCase):
                 self.assertFalse(_quiet(net.safe_git_pull, repo))
 
     def test_safe_git_checkout_ref_timeout_returns_falsy(self):
-        import nyxuri.pkg.net as net
+        import nyxuri.system.net as net
         with TempEnv() as ctx:
             repo = self._repo(ctx)
 

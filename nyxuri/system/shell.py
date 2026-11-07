@@ -7,7 +7,7 @@ Strictly follows the P0-06 state machine:
 3. Graceful stop of old instance (bounded 2.5s)
 4. Background spawn of new instance
 5. Bounded readiness probe (3.0s)
-6. Commit ledger on success; rollback and restore old shell on failure.
+6. Commit state on success; rollback and restore old shell on failure.
 """
 
 import os
@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 from typing import Optional, Tuple
 
-from nyxuri.kernel.ledger import active_shell, custom_shell_bin, set_shell
+from nyxuri.state.store import active_shell, custom_shell_bin, set_shell
 
 
 def normalize_shell_name(name: str) -> str:
@@ -150,7 +150,7 @@ def probe_running_shells() -> "list[Tuple[str, int]]":
     # dispatches a plugin switch (PluginControlService), this CLI's parent IS
     # the qs instance the bridge must notify; excluding getppid() turned
     # every shell-originated plugin-changed delivery into a silent no-op
-    # (2026-10-17 acceptance regression: toggles landed the ledger but the
+    # (2026-10-17 acceptance regression: toggles landed the state store but the
     # desktop never re-projected). The wrapper exec's into qs, so a parent
     # is never a lingering wrapper script, and non-shell parents (terminals,
     # test runners) are filtered by classify() anyway.
@@ -397,7 +397,7 @@ def is_shell_locked(shell_name: str, bin_path: str = "") -> bool:
 
 def ensure_compositor_gateway_scripts() -> None:
     """Ensure compositor gateway scripts in niri/scripts match the repository source."""
-    from nyxuri.core import get_env
+    from nyxuri.system.env import get_env
     env = get_env()
     dest_dir = env.config_dir / "niri" / "scripts"
     src_dir = env.plugins_src / "niri" / "scripts"
@@ -428,7 +428,7 @@ def ensure_compositor_gateway_scripts() -> None:
             dest.chmod(0o755)
 
     try:
-        from nyxuri.core import ensure_nyxuri_shell_symlink
+        from nyxuri.system.env import ensure_nyxuri_shell_symlink
         ensure_nyxuri_shell_symlink()
     except Exception:
         pass
@@ -450,7 +450,7 @@ def capture_active_theme_state(current_name: str) -> Tuple[Optional[str], Option
             pass
     elif norm == "nyxuri-shell":
         try:
-            from nyxuri.desktop.theme import _nyxuri_shell_ipc
+            from nyxuri.system.theme import _nyxuri_shell_ipc
             val = _nyxuri_shell_ipc(["theme", "status"], timeout=1.0)
             if val in ("dark", "light"):
                 mode = val
@@ -459,7 +459,7 @@ def capture_active_theme_state(current_name: str) -> Tuple[Optional[str], Option
 
     if mode is None:
         try:
-            from nyxuri.core import get_env
+            from nyxuri.system.env import get_env
             cfg_toml = get_env().config_dir / "nyxuri" / "config.toml"
             if cfg_toml.is_file():
                 import tomllib
@@ -482,7 +482,7 @@ def capture_active_theme_state(current_name: str) -> Tuple[Optional[str], Option
 
     if mode is None:
         try:
-            from nyxuri.desktop.theme import _mode_from_system
+            from nyxuri.system.theme import _mode_from_system
             mode = _mode_from_system()
         except Exception:
             mode = "dark"
@@ -499,7 +499,7 @@ def capture_active_theme_state(current_name: str) -> Tuple[Optional[str], Option
             pass
     elif norm == "nyxuri-shell":
         try:
-            from nyxuri.core import get_env
+            from nyxuri.system.env import get_env
             data = None
             cfg_toml = get_env().config_dir / "nyxuri" / "config.toml"
             if cfg_toml.is_file():
@@ -528,7 +528,7 @@ def capture_active_theme_state(current_name: str) -> Tuple[Optional[str], Option
 
     if not wallpaper:
         try:
-            from nyxuri.core import get_env
+            from nyxuri.system.env import get_env
             env = get_env()
             for candidate in (env.state_dir / "current_wallpaper",
                               env.config_dir / "nyxuri" / "current_wallpaper",
@@ -549,7 +549,7 @@ def handoff_theme_state(target: str, mode: Optional[str], wallpaper: Optional[st
     norm = normalize_shell_name(target)
     if norm == "nyxuri-shell":
         try:
-            from nyxuri.desktop.theme import _nyxuri_shell_ipc
+            from nyxuri.system.theme import _nyxuri_shell_ipc
             if mode in ("dark", "light"):
                 _nyxuri_shell_ipc(["theme", "set", mode], timeout=2.0)
             if wallpaper and os.path.exists(wallpaper):
@@ -566,7 +566,7 @@ def handoff_theme_state(target: str, mode: Optional[str], wallpaper: Optional[st
             pass
 
     try:
-        from nyxuri.desktop.theme import sync
+        from nyxuri.system.theme import sync
         sync(mode or "sync")
     except Exception:
         pass
@@ -699,7 +699,51 @@ def hot_switch_shell(target: str, custom_bin_override: Optional[str] = None) -> 
             fail_msg += f" Critical: Failed to restore previous shell {current_name}!"
         return False, fail_msg
 
-    # Successfully verified: commit ledger state and hand off theme state
+    # Successfully verified: commit state and hand off theme state
     set_shell(target, target_bin if target == "nyxuri-shell" else None)
     handoff_theme_state(target, captured_mode, captured_wallpaper)
     return True, f"Successfully switched to {target} (PID: {new_proc.pid})"
+
+
+# --- Shell Event Bridge ---
+
+def _shell_ipc_dir() -> Optional[Path]:
+    """The shell config dir a Quickshell IPC call must target (marker: shell.qml)."""
+    bin_path = resolve_custom_bin()
+    if not bin_path:
+        return None
+    try:
+        resolved = Path(bin_path).resolve()
+    except OSError:
+        return None
+    for candidate in (resolved.parent, resolved.parent.parent):
+        if (candidate / "shell.qml").is_file():
+            return candidate
+    return None
+
+
+def notify_plugin_changed(plugin_id: str, state: str) -> None:
+    """Deliver one plugin-changed event; best-effort by contract (§6).
+
+    The event carries no payload — the Shell re-reads the state store as the
+    single source of truth and projects it. Without a running nyxuri-shell
+    this is a no-op returning before any subprocess is spawned.
+    """
+    from nyxuri.system.env import log_msg
+    running = [pid for name, pid in probe_running_shells() if name == "nyxuri-shell"]
+    if not running:
+        return
+    shell_dir = _shell_ipc_dir()
+    if shell_dir is None:
+        log_msg("WARN", f"plugin-changed for {plugin_id}: shell dir not resolvable")
+        return
+    subprocess.run(
+        ["qs", "-p", str(shell_dir), "ipc", "call", "unit", "reload"],
+        timeout=1.5, capture_output=True, check=False,
+    )
+
+
+def wire() -> None:
+    """Inject the delivery into the engine's event port."""
+    from nyxuri.deploy import engine
+    engine.set_event_sink(notify_plugin_changed)
