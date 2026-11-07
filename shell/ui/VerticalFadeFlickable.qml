@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Effects
 import qs.commons
-import qs.services
 
 // Vertical flickable whose content fades out at the top and bottom edges
 // (Caelestia VerticalFadeFlickable): a gradient mask layered over the whole
@@ -84,7 +83,4 @@ StyledFlickable {
             easing.bezierCurve: Appearance.animation.expressiveSlowEffects.bezierCurve
         }
     }
-
-    Component.onCompleted: ShellStartupService.registerQmlResource("VerticalFadeFlickable", "layer", root)
-    Component.onDestruction: ShellStartupService.unregisterQmlResource("VerticalFadeFlickable", "layer", root)
 }

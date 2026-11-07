@@ -2,7 +2,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.commons
-import qs.services
 
 Item {
     id: root
@@ -213,7 +212,6 @@ Item {
     onSubmittedRegionChanged: publish()
 
     Component.onCompleted: {
-        ShellStartupService.registerQmlResource("CompositorBlurRegion", "layer", root)
         root.surfaceReady = !!root.targetWindow && root.targetWindow.visible;
         root.rebuildRegions();
     }
@@ -223,7 +221,6 @@ Item {
         root.publishPending = false;
         if (root.targetWindow)
             root.targetWindow.BackgroundEffect.blurRegion = null;
-        ShellStartupService.unregisterQmlResource("CompositorBlurRegion", "layer", root);
     }
 
     Connections {

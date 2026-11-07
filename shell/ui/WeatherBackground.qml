@@ -1,5 +1,4 @@
 import QtQuick
-import qs.services
 
 Item {
     id: root
@@ -1171,12 +1170,10 @@ Item {
     }
 
     Component.onCompleted: {
-        ShellStartupService.registerQmlResource("WeatherBackground", "canvas", canvas)
         updateWeatherClassification()
         componentReady = true
         resetVisualScenes()
     }
-    Component.onDestruction: ShellStartupService.unregisterQmlResource("WeatherBackground", "canvas", canvas)
     onWidthChanged: {
         initCloudBands()
         resetRainScene()

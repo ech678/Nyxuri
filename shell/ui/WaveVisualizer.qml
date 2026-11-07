@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Effects
 import qs.commons
-import qs.services
 
 // Canvas-based audio visualizer fed by cava's raw stdout ("1;2;3" frames).
 // Frames arrive far faster than a repaint can afford, so pointsChanged
@@ -84,14 +83,5 @@ Canvas {
         blurEnabled: true
         blurMax: 7
         blur: 1
-    }
-
-    Component.onCompleted: {
-        ShellStartupService.registerQmlResource("WaveVisualizer", "canvas", root)
-        ShellStartupService.registerQmlResource("WaveVisualizer", "layer", root)
-    }
-    Component.onDestruction: {
-        ShellStartupService.unregisterQmlResource("WaveVisualizer", "canvas", root)
-        ShellStartupService.unregisterQmlResource("WaveVisualizer", "layer", root)
     }
 }

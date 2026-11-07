@@ -1,6 +1,5 @@
 import QtQuick
 import "shapes/Morph.js" as Morph
-import qs.services
 
 Canvas {
     id: root
@@ -111,7 +110,4 @@ Canvas {
 
         ctx.restore();
     }
-
-    Component.onCompleted: ShellStartupService.registerQmlResource("ShapeCanvas", "canvas", root)
-    Component.onDestruction: ShellStartupService.unregisterQmlResource("ShapeCanvas", "canvas", root)
 }
