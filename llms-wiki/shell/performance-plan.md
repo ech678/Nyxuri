@@ -27,6 +27,11 @@
 > 旧 channel 后续已补齐：独立 pinned Qt 6.8.3/Nixpkgs toolchain 下 Quickshell 0.2.1
 > 容器构建 991/991 成功，runtime 与 Loader/IPC/qmlcache compatibility probe 均成功。
 >
+> 最新资源 smoke（当前代码）真实返回 loaders=12、timers=11、processes=3、fileviews=1、
+> connections=1、windows=1、delegates=11；Canvas/layer 仍为 null。进程 lifecycle 已
+> 提供 PID/starttime/command/观测时长下界/launch 与 restart 估计；owner、精确 kernel
+> exit、逐进程 CPU/output 归因仍不可得。两项限制均保留为 partial，不作为完成证据。
+>
 > 进程采样已增加 lower-bound lifecycle 聚合（PID/starttime/command/首次与末次观测、
 > launch/restart 估计和失败启动分类），owner 与真实 kernel exit 仍明确标为不可得。
 
