@@ -133,10 +133,17 @@ def _cgroup_values(proc_path: Path, cgroup_root: Path) -> tuple[int | None, int 
     except (FileNotFoundError, PermissionError, ProcessLookupError, StopIteration):
         return None, None
     group = cgroup_root / line[3:].lstrip("/")
-    current = _int_file(group / "memory.current")
-    peak = _int_file(group / "memory.peak")
-    return (current // 1024 if current is not None else None,
-            peak // 1024 if peak is not None else None)
+    current = _memory_kb(group / "memory.current")
+    peak = _memory_kb(group / "memory.peak")
+    return current, peak
+
+
+def _memory_kb(path: Path) -> int | None:
+    """Return cgroup memory in KiB, or None when it rounds below one KiB."""
+    value = _int_file(path)
+    if value is None or value < 1024:
+        return None
+    return value // 1024
 
 
 def _descendants(root_pid: int, proc_root: Path) -> list[Path]:

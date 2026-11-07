@@ -58,6 +58,39 @@ class ResourceProbeTests(unittest.TestCase):
         self.assertGreaterEqual(snapshot.rss_kb, 1)
         self.assertGreaterEqual(snapshot.user_cpu_ticks + snapshot.system_cpu_ticks, 0)
 
+    def test_cgroup_memory_zero_is_unavailable_but_positive_values_are_reported(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            proc = root / "proc" / "123"
+            cgroup = root / "cgroup"
+            proc.mkdir(parents=True)
+            cgroup.mkdir()
+            (proc / "cgroup").write_text("0::scope\n", encoding="utf-8")
+            group = cgroup / "scope"
+            group.mkdir()
+            (group / "memory.current").write_text("0\n", encoding="utf-8")
+            (group / "memory.peak").write_text("8192\n", encoding="utf-8")
+
+            current, peak = probe._cgroup_values(proc, cgroup)
+
+        self.assertIsNone(current)
+        self.assertEqual(peak, 8)
+
+    def test_cgroup_memory_missing_files_remain_unavailable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            proc = root / "proc" / "123"
+            cgroup = root / "cgroup"
+            proc.mkdir(parents=True)
+            cgroup.mkdir()
+            (proc / "cgroup").write_text("0::scope\n", encoding="utf-8")
+            (cgroup / "scope").mkdir()
+
+            current, peak = probe._cgroup_values(proc, cgroup)
+
+        self.assertIsNone(current)
+        self.assertIsNone(peak)
+
     def test_report_preserves_missing_values_and_computes_growth(self):
         summary = report.summarize({
             "schema": 1,
