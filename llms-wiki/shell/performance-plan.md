@@ -17,6 +17,12 @@
 > 和 live telemetry 已合并；最新短 smoke 曾因合并时参数/生命周期冲突失败，修复已
 > 提交但尚未生成新的完整 raw/report。旧 channel、10 分钟稳态、100-cycle 回收和
 > QML live census 仍不得标记为已验证。
+>
+> 2026-11-07 完整 new-channel 容器报告已生成：10 冷启动、5 warm、600.179 秒稳态
+>（596 样本）、100/100 回收、0.1/1/2/5 秒窗口和兼容性矩阵成功。old 0.2.1 已按
+> 五种 rootless/privileged 变体重试，均在 Qt 6.12 头文件兼容性错误处失败，已按
+> 环境/工具链原因记录跳过。Loader/unit live census 已接入，其他 QML 资源类别仍以
+> partial/null 明示。
 
 ## 0. 硬约束
 
@@ -132,7 +138,8 @@
 - [x] I/O：read/write bytes、read/write syscall 数、日志字节数、配置和缓存读写。
 - [ ] QML live census：Loader 状态、已实例化单元、singleton 触发列表、活跃 Timer、
   活跃 Process、FileView、Connections、Repeater/ListView/GridView delegate、Canvas、
-  layer 和窗口计数。当前 Shell IPC 不暴露 QML 对象树，这些计数仍未取得真实运行值。
+  layer 和窗口计数。Loader/unit/delegate 已有真实运行值；Timer、Process、FileView、
+  Connections、Canvas、layer、window 仍未集中 instrument。
 - [x] 容器 runner 在进程树性能采样结束后读取 `shell metrics`，把 startup metrics 与
   `qml_resources` 分开写入每次运行记录。计数缺失时输出 `null` 和 `unavailable`；只有
   IPC payload 提供完整的非负整数计数时才标为 `available`。源码计数仍归 `static_qml`，
