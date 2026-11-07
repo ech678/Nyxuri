@@ -26,7 +26,7 @@ Singleton {
     readonly property real verticalBarWidth: barVisualThickness
     readonly property real sidebarScrollableListMaxHeight: 224 * scale
     // Concave transitions the notch surface style grows into the screen edge.
-    // Tuned to sit alongside the Keystone tray curves (8/14 unscaled there).
+    // Tuned to sit alongside the Island tray curves (8/14 unscaled there).
     readonly property real notchCurveAlong: 10 * scale
     readonly property real notchCurveDepth: 16 * scale
     readonly property real lockHeightMult: 0.7

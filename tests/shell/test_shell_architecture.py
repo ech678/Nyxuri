@@ -175,7 +175,7 @@ class TestShellManagement(unittest.TestCase):
         # 4. Units unified under plugins/ in uniform lowercase with all functional code preserved
         # KM4.5: plugins/<domain>/ = manifest.toml + code (one domain, one directory).
         expected_units = [
-            "bar", "desktopcards", "dock", "keystone", "launcher", "lock",
+            "bar", "desktopcards", "dock", "launcher", "lock",
             "notifications", "regionselector", "session", "settings",
             "sidebars", "wallpaper"
         ]
@@ -249,7 +249,7 @@ class TestShellManagement(unittest.TestCase):
         shell_dir = os.path.join(repo_root, "shell")
 
         # 1. Base hosts exist in plugins/
-        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "keystone", "Keystone.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "bar", "island", "Island.qml")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "wallpaper", "WallpaperBackground.qml")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "desktopcards", "DesktopCardHost.qml")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "dock", "DockHost.qml")))
@@ -259,8 +259,8 @@ class TestShellManagement(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(archive_dir, "settings", "displays", "DisplayOverlays.qml")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "sidebars", "SidebarHostWindow.qml")))
 
-        # 2. NotificationContent and KeystoneSurface exist for native notification chain
-        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "keystone", "styles", "shared", "KeystoneSurface.qml")))
+        # 2. NotificationContent and IslandSurface exist for native notification chain
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "bar", "island", "styles", "shared", "IslandSurface.qml")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "services", "NotificationContent.qml")))
 
         # 3. Bar quicksettings controls exist
@@ -384,7 +384,7 @@ class TestShellManagement(unittest.TestCase):
         shell_dir = os.path.join(repo_root, "shell")
 
         # 1. Pruned Cava: AudioRecordingVisual provides local fallback levelProvider without Clavis.Cava
-        arv_path = os.path.join(shell_dir, "plugins", "keystone", "styles", "recording", "AudioRecordingVisual.qml")
+        arv_path = os.path.join(shell_dir, "plugins", "bar", "island", "styles", "recording", "AudioRecordingVisual.qml")
         with open(arv_path, "r", encoding="utf-8") as f:
             arv_content = f.read()
         self.assertNotIn("Clavis.Cava", arv_content)
@@ -443,7 +443,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("0.05", br_content)
 
         # 5. LongStatusItem handles onWheel with pixelDelta/angleDelta support
-        long_item = os.path.join(shell_dir, "plugins", "keystone", "styles", "long", "LongStatusItem.qml")
+        long_item = os.path.join(shell_dir, "plugins", "bar", "island", "styles", "long", "LongStatusItem.qml")
         with open(long_item, "r", encoding="utf-8") as f:
             long_content = f.read()
         self.assertIn("onWheel: wheel =>", long_content)
@@ -477,12 +477,12 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("model: PersonalizationConfig.barLayoutRight", bc_content)
         self.assertIn("delegate: BarComponentLoader {", bc_content)
 
-    def test_p3_notification_keystone_chain_contracts(self):
+    def test_p3_notification_island_chain_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         shell_dir = os.path.join(repo_root, "shell")
 
-        # 1. KeystoneSurface embeds NotificationContent with isNotifMode binding
-        surface_path = os.path.join(shell_dir, "plugins", "keystone", "styles", "shared", "KeystoneSurface.qml")
+        # 1. IslandSurface embeds NotificationContent with isNotifMode binding
+        surface_path = os.path.join(shell_dir, "plugins", "bar", "island", "styles", "shared", "IslandSurface.qml")
         with open(surface_path, "r", encoding="utf-8") as f:
             surface_content = f.read()
         self.assertIn("NotificationContent {", surface_content)
@@ -512,10 +512,10 @@ class TestShellManagement(unittest.TestCase):
         hist_list = os.path.join(shell_dir, "plugins", "sidebars", "dashboard", "notifications", "NotificationList.qml")
         self.assertTrue(os.path.isfile(hist_list))
 
-    def test_keystone_audio_osd_startup_suppression_contracts(self):
+    def test_island_audio_osd_startup_suppression_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         shell_dir = os.path.join(repo_root, "shell")
-        surface_path = os.path.join(shell_dir, "plugins", "keystone", "styles", "shared", "KeystoneSurface.qml")
+        surface_path = os.path.join(shell_dir, "plugins", "bar", "island", "styles", "shared", "IslandSurface.qml")
         with open(surface_path, "r", encoding="utf-8") as f:
             surface_content = f.read()
 
@@ -664,15 +664,18 @@ class TestShellManagement(unittest.TestCase):
         # 5. Non-intrusive: does not steal keyboard focus
         self.assertIn("WlrLayershell.keyboardFocus: WlrKeyboardFocus.None", host_content)
 
-        # 6. The popup:notification slot arbitrates keystone vs the standalone
+        # 6. The popup:notification slot arbitrates the island vs the standalone
         # popup host in the slot host (plugin-model.md §6, host-owned rule) —
-        # not a private config conditional. The rule is kind-keyed
-        # (S1-3): a third-party popup host yields exactly the same way.
+        # not a private config conditional. B1: the island rides the bar unit,
+        # so the rule keys on the bar unit plus the islandEnabled config gate.
+        # It stays kind-keyed (S1-3): a third-party popup host yields exactly
+        # the same way.
         slot_path = os.path.join(shell_dir, "shell.qml")
         with open(slot_path, "r", encoding="utf-8") as f:
             slot_content = f.read()
         self.assertIn('unit.kind === "popup:notification"', slot_content)
-        self.assertIn('StateProjection.isEnabled("keystone")', slot_content)
+        self.assertIn('StateProjection.isEnabled("bar")', slot_content)
+        self.assertIn("PersonalizationConfig.islandEnabled", slot_content)
 
     def test_p3_r10_lifecycle_and_sideeffect_contracts(self):
         """P3-R10 lifecycle & side-effect governance contract checks."""
@@ -723,8 +726,8 @@ class TestShellManagement(unittest.TestCase):
         high_risk_files = [
             "services/SystemMonitorService.qml",
             "services/KeyboardLockService.qml",
-            "plugins/keystone/tools/AudioRecordingService.qml",
-            "plugins/keystone/tools/RecordingService.qml",
+            "plugins/bar/island/tools/AudioRecordingService.qml",
+            "plugins/bar/island/tools/RecordingService.qml",
             "services/NetworkService.qml",
             "services/NetworkManagerExtras.qml",
             "services/BluetoothService.qml",
@@ -864,7 +867,7 @@ class TestShellManagement(unittest.TestCase):
         with open(app_file, "r", encoding="utf-8") as f:
             app_content = f.read()
         for unit_component in ("LauncherHost {", "Lock {", "SessionHost {", "SettingsHost {",
-                               "Keystone {", "RegionSelector {", "SidebarHostWindow {",
+                               "Island {", "RegionSelector {", "SidebarHostWindow {",
                                "WallpaperBackground {", "NotificationPopupHost {",
                                "DesktopCardHost {", "Bar {", "DockHost {"):
             self.assertNotIn(unit_component, app_content,
@@ -918,8 +921,8 @@ class TestShellManagement(unittest.TestCase):
             sb_content = f.read()
         self.assertIn("root.anySidebarOpen || dashboardSidebar.panelPresented || quickSettingsSidebar.panelPresented", sb_content)
 
-        # 8. Keystone avatar file picker is lazy loaded
-        ks_file = os.path.join(shell_dir, "plugins", "keystone", "Keystone.qml")
+        # 8. Island avatar file picker is lazy loaded
+        ks_file = os.path.join(shell_dir, "plugins", "bar", "island", "Island.qml")
         with open(ks_file, "r", encoding="utf-8") as f:
             ks_content = f.read()
         self.assertIn("id: avatarFilePickerLoader", ks_content)
@@ -944,7 +947,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("ipc call shell isReady", runner_content)
 
         # 11. ClockContent defines font.weight: Font.Black fallback for rolling digits
-        clock_file = os.path.join(shell_dir, "plugins", "keystone", "clock", "ClockContent.qml")
+        clock_file = os.path.join(shell_dir, "plugins", "bar", "island", "clock", "ClockContent.qml")
         with open(clock_file, "r", encoding="utf-8") as f:
             clock_content = f.read()
         self.assertIn("font.weight: Font.Black", clock_content)
@@ -1119,7 +1122,7 @@ class TestShellManagement(unittest.TestCase):
             self.assertNotIn('import "../../wallpaper"', sidebar_content, "DashboardSidebar must not statically import wallpaper")
             self.assertNotIn('import "../../settings"', sidebar_content, "DashboardSidebar must not import the settings aggregator")
             self.assertIn("import qs.services", sidebar_content, "DashboardSidebar needs app services for FilePickerWindow")
-            self.assertNotIn("import qs.plugins.keystone", sidebar_content, "DashboardSidebar must not import keystone")
+            self.assertNotIn("import qs.plugins.bar.island", sidebar_content, "DashboardSidebar must not import island")
             self.assertNotIn("import qs.plugins.launcher", sidebar_content, "DashboardSidebar must not import launcher")
             self.assertNotIn("import qs.plugins.bar", sidebar_content, "DashboardSidebar must not import bar")
 
@@ -1137,18 +1140,18 @@ class TestShellManagement(unittest.TestCase):
 
         notif_host = os.path.join(shell_dir, "plugins", "notifications", "NotificationPopupHost.qml")
         with open(notif_host, "r", encoding="utf-8") as f:
-            self.assertNotIn("import qs.plugins.keystone.notifications", f.read(), "NotificationPopupHost must not import keystone")
+            self.assertNotIn("import qs.plugins.bar.island.notifications", f.read(), "NotificationPopupHost must not import island")
 
-        keystone_surface = os.path.join(shell_dir, "plugins", "keystone", "styles", "shared", "KeystoneSurface.qml")
-        with open(keystone_surface, "r", encoding="utf-8") as f:
-            keystone_content = f.read()
-            # P2: KeystoneSurface uses shared services/NotificationContent, severs cross-plugin import
-            self.assertNotIn('import "../../../notifications"', keystone_content, "KeystoneSurface must not statically import notifications")
-            self.assertNotIn("import qs.plugins.keystone.notifications", keystone_content, "Legacy keystone.notifications import must be gone")
+        island_surface = os.path.join(shell_dir, "plugins", "bar", "island", "styles", "shared", "IslandSurface.qml")
+        with open(island_surface, "r", encoding="utf-8") as f:
+            island_content = f.read()
+            # P2: IslandSurface uses shared services/NotificationContent, severs cross-plugin import
+            self.assertNotIn('import "../../../notifications"', island_content, "IslandSurface must not statically import notifications")
+            self.assertNotIn("import qs.plugins.bar.island.notifications", island_content, "Legacy island.notifications import must be gone")
 
-        # Keystone notifications directory must be removed to avoid duplication
-        keystone_notif_dir = os.path.join(shell_dir, "plugins", "keystone", "notifications")
-        self.assertFalse(os.path.exists(keystone_notif_dir), "keystone/notifications directory must be removed to avoid duplication")
+        # Island notifications directory must be removed to avoid duplication
+        island_notif_dir = os.path.join(shell_dir, "plugins", "bar", "island", "notifications")
+        self.assertFalse(os.path.exists(island_notif_dir), "island/notifications directory must be removed to avoid duplication")
 
         # 4. SplitMenuButton is in ui/ as a pure UI control
         split_btn = os.path.join(shell_dir, "ui", "SplitMenuButton.qml")
@@ -1183,8 +1186,8 @@ class TestShellManagement(unittest.TestCase):
             "plugins/launcher/FileSearchService.qml",
             "plugins/launcher/SpotlightSearchService.qml",
             "plugins/launcher/SpotlightToolService.qml",
-            "plugins/keystone/tools/AudioRecordingService.qml",
-            "plugins/keystone/tools/RecordingService.qml",
+            "plugins/bar/island/tools/AudioRecordingService.qml",
+            "plugins/bar/island/tools/RecordingService.qml",
             "services/MediaPalette.qml",
             "plugins/bar/tray/TrayService.qml",
             "plugins/sidebars/quicksettings/QuickToggleConfig.qml",
@@ -1219,7 +1222,7 @@ class TestShellManagement(unittest.TestCase):
             self.assertFalse(os.path.exists(old_file), f"Old service duplicate must not exist in app/services: {old_file}")
 
         # 4. Redundant forwarders and duplicate wrappers physically deleted
-        self.assertFalse(os.path.exists(os.path.join(shell_dir, "plugins", "keystone", "tools", "ToolsBackend.qml")),
+        self.assertFalse(os.path.exists(os.path.join(shell_dir, "plugins", "bar", "island", "tools", "ToolsBackend.qml")),
                          "Redundant ToolsBackend.qml must be deleted")
         self.assertFalse(os.path.exists(os.path.join(shell_dir, "plugins", "settings", "SplitMenuButton.qml")),
                          "Duplicate settings/SplitMenuButton.qml must be deleted")
@@ -1241,9 +1244,9 @@ class TestShellManagement(unittest.TestCase):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         shell_dir = os.path.join(repo_root, "shell")
 
-        # 1. Keystone lyrics directory and files physically deleted
-        lyrics_dir = os.path.join(shell_dir, "plugins", "keystone", "lyrics")
-        self.assertFalse(os.path.exists(lyrics_dir), "Keystone lyrics directory must be deleted")
+        # 1. Island lyrics directory and files physically deleted
+        lyrics_dir = os.path.join(shell_dir, "plugins", "bar", "island", "lyrics")
+        self.assertFalse(os.path.exists(lyrics_dir), "Island lyrics directory must be deleted")
 
         # 2. Dock preview fake capture image physically deleted
         dock_preview_dir = os.path.join(shell_dir, "plugins", "dock", "preview")
@@ -1574,10 +1577,11 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("property var windows:", ns_content)
         self.assertIn("property string currentOutput:", ns_content)
 
-        # 2. Units tier self-containment: expected domains exist (KM4.5: 12 units)
+        # 2. Units tier self-containment: expected domains exist (B1: 11 units
+        # — the island merged into plugins/bar/island as a layout part)
         units_dir = os.path.join(shell_dir, "plugins")
         expected_domains = [
-            "bar", "desktopcards", "dock", "keystone", "launcher", "lock",
+            "bar", "desktopcards", "dock", "launcher", "lock",
             "notifications", "regionselector", "session", "settings",
             "sidebars", "wallpaper"
         ]
@@ -1695,7 +1699,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertNotIn("player.positionChanged()", ms_code)
         self.assertIn("onObjectRemovedPost", ms_code)
 
-        media_content_path = os.path.join(shell_dir, "plugins", "keystone", "media", "MediaContent.qml")
+        media_content_path = os.path.join(shell_dir, "plugins", "bar", "island", "media", "MediaContent.qml")
         with open(media_content_path, "r", encoding="utf-8") as f:
             mc_code = f.read()
         self.assertIn("MediaService.acquirePositionTracking()", mc_code)
@@ -1725,7 +1729,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertNotIn("interval: 10", ts_code)
 
         # ClockContent clockTimer.running is bound to root.visible
-        clock_content_path = os.path.join(shell_dir, "plugins", "keystone", "clock", "ClockContent.qml")
+        clock_content_path = os.path.join(shell_dir, "plugins", "bar", "island", "clock", "ClockContent.qml")
         with open(clock_content_path, "r", encoding="utf-8") as f:
             cc_code = f.read()
         self.assertIn("running: root.visible", cc_code)
@@ -1777,7 +1781,10 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("active: ShortcutMapService.visible", app_code)
         self.assertNotIn("PersonalizationConfig.barEnabled", app_code)
         self.assertNotIn("DockService.enabled", app_code)
-        self.assertNotIn("keystoneEnabled", app_code)
+        # B1: the island is a bar layout part, never a ledger unit — the host
+        # must not address it by unit id (its gate is the islandEnabled key,
+        # pinned by the popup arbitration contract).
+        self.assertNotIn('StateProjection.isEnabled("island")', app_code)
         slot_path = os.path.join(shell_dir, "shell.qml")
         with open(slot_path, "r", encoding="utf-8") as f:
             slot_code = f.read()
@@ -1958,11 +1965,11 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn('"dock:force-quit"', popup)
 
         # 8. Color picker degrades explicitly through its domain service.
-        tools = read("plugins/keystone/tools/ToolsContent.qml")
+        tools = read("plugins/bar/island/tools/ToolsContent.qml")
         self.assertNotIn("hyprpicker", tools)
         self.assertIn("ColorPickerService.launch()", tools)
-        picker = read("plugins/keystone/tools/ColorPickerService.qml")
-        self.assertIn('"keystone:color-picker"', picker)
+        picker = read("plugins/bar/island/tools/ColorPickerService.qml")
+        self.assertIn('"island:color-picker"', picker)
         self.assertIn("hyprpicker is missing", picker)
         probe_script = os.path.join(shell_dir, "scripts", "theme", "probe-tool.sh")
         self.assertTrue(os.path.isfile(probe_script) and os.access(probe_script, os.X_OK),

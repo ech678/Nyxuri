@@ -3,7 +3,8 @@
 
 Detects, absorbs, and consolidates the 7 legacy JSON configuration files
 into a unified dictionary for config.toml generation, then cleans up legacy
-files to enforce zero-residue hygiene.
+files to enforce zero-residue hygiene. Also carries the one-way in-place
+config.toml renames (B1: [keystone] → [island] with the ledger verdict).
 """
 
 import argparse
@@ -40,7 +41,7 @@ def load_json_safely(path: Path) -> dict | list | None:
 def merge_legacy_configs(config_dir: Path) -> dict:
     merged: dict = {}
 
-    # 1. config.json (theme, wallpaper, effects, keystone, bar, sidebar, desktopCards, hotCorners)
+    # 1. config.json (theme, wallpaper, effects, island, bar, sidebar, desktopCards, hotCorners)
     main_cfg = load_json_safely(config_dir / "config.json")
     if isinstance(main_cfg, dict):
         merged.update(main_cfg)
@@ -159,9 +160,84 @@ def cleanup_legacy_files(config_dir: Path) -> list[str]:
     return removed
 
 
+def keystone_unit_disabled(state_file: Path | None) -> bool:
+    """B1 ledger verdict: the retired shell.keystone unit's disabled state.
+
+    Reads the engine ledger (state.json) without writing it; the engine's own
+    store drops the dead key on its next write. Absent or unreadable ledger
+    means "was not disabled" — the island stays on (ledger default).
+    """
+    if state_file is None or not state_file.is_file():
+        return False
+    try:
+        with open(state_file, "r", encoding="utf-8") as f:
+            state = json.load(f)
+    except Exception as e:
+        sys.stderr.write(f"[migrate_config] Warning reading {state_file.name}: {e}\n")
+        return False
+    plugins = state.get("plugins") if isinstance(state, dict) else None
+    if not isinstance(plugins, dict):
+        return False
+    return plugins.get("shell.keystone") == "disabled"
+
+
+def migrate_island_section(config_file: Path, state_file: Path | None) -> bool:
+    """B1 rename: config.toml [keystone] → [island], one-way and idempotent.
+
+    Inner keys (including the D4-frozen long* series) move with the section
+    untouched. A disabled shell.keystone ledger entry maps to
+    [island] enabled = false, preserving the user's "island off" intent now
+    that the island is a bar component gated by config, not a ledger unit.
+    """
+    if not config_file.is_file():
+        return False
+    try:
+        text = config_file.read_text(encoding="utf-8")
+    except Exception as e:
+        sys.stderr.write(f"[migrate_config] Warning reading {config_file.name}: {e}\n")
+        return False
+    if "[keystone]" not in text:
+        return False
+    lines = text.split("\n")
+    island_absent = not any(line.strip() == "[island]" for line in lines)
+    if not island_absent:
+        # Both sections present (downgrade interleave): never emit duplicate
+        # TOML sections — leave the file for the load-time failure banner.
+        sys.stderr.write("[migrate_config] [island] already present; skipping keystone rename\n")
+        return False
+    disabled = keystone_unit_disabled(state_file)
+    out = []
+    past_island_header = False
+    inserted_enabled = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped == "[keystone]":
+            out.append("[island]")
+            past_island_header = True
+            if disabled:
+                out.append("enabled = false")
+                inserted_enabled = True
+            continue
+        if stripped.startswith("[keystone."):
+            out.append("[island" + stripped[len("[keystone"):])
+            continue
+        if past_island_header and not inserted_enabled and disabled and stripped and not stripped.startswith("["):
+            # First key inside the migrated section: the enabled gate lands
+            # ahead of it so the verdict is set exactly once.
+            out.append("enabled = false")
+            inserted_enabled = True
+        out.append(line)
+    tmp = config_file.with_name(f".{config_file.name}.{os.getpid()}.tmp")
+    tmp.write_text("\n".join(out), encoding="utf-8")
+    os.replace(tmp, config_file)
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(description="Absorb legacy JSON config into unified structure")
     parser.add_argument("--config-dir", required=True, help="Nyxuri config directory")
+    parser.add_argument("--state-file", default=None,
+                        help="Engine ledger (state.json) path for unit-state migrations")
     parser.add_argument("--cleanup", action="store_true", help="Delete legacy JSON files")
     parser.add_argument("--check", action="store_true", help="Check if legacy files exist")
     args = parser.parse_args()
@@ -169,6 +245,9 @@ def main():
     config_dir = Path(args.config_dir).expanduser().resolve()
     if not config_dir.is_dir():
         sys.exit(0)
+
+    state_file = Path(args.state_file).expanduser() if args.state_file else None
+    migrate_island_section(config_dir / "config.toml", state_file)
 
     legacy_exist = any((config_dir / f).is_file() for f in LEGACY_FILES)
 

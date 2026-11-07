@@ -15,8 +15,8 @@ class TestResourceIntegrity(unittest.TestCase):
     def test_all_shader_binaries_exist(self):
         """Assert all required GLSL fragment shaders have precompiled .qsb assets."""
         required_qsbs = [
-            SHELL_DIR / "plugins" / "keystone" / "shaders" / "qsb" / "long_split.frag.qsb",
-            SHELL_DIR / "plugins" / "keystone" / "shaders" / "qsb" / "pill_morph.frag.qsb",
+            SHELL_DIR / "plugins" / "bar" / "island" / "shaders" / "qsb" / "long_split.frag.qsb",
+            SHELL_DIR / "plugins" / "bar" / "island" / "shaders" / "qsb" / "pill_morph.frag.qsb",
             SHELL_DIR / "plugins" / "launcher" / "shaders" / "qsb" / "spotlight_mode_field.frag.qsb",
             SHELL_DIR / "plugins" / "wallpaper" / "shaders" / "qsb" / "wp_disc.frag.qsb",
             SHELL_DIR / "plugins" / "wallpaper" / "shaders" / "qsb" / "wp_fade.frag.qsb",

@@ -71,7 +71,7 @@ NiriDriver 首驱动**(`services/CompositorDriver.qml` 单例投影 +
 | bar `KeyboardLayout(.qml/Model)` | 本站无键盘布局 widget | 不适用(事件链零消费,随 S0-5 处决) |
 | dock `Dock` `DockWindow` | `DockService`/`DockSurface` → 驱动 windows/searchWindows | **覆盖**;minimize 走能力位**降级**(`supportsMinimize: false`,上游 niri 无此 IPC) |
 | lock `LockView` `Service` | session-lock Wayland 协议,不经合成器 IPC;idle 电源走 `setMonitorsPower` | **覆盖**(电源路径) |
-| menu `MenuModel` | 全局菜单走 niri binds(`niri-actions.json`)与 keystone | 不适用 |
+| menu `MenuModel` | 全局菜单走 niri binds(`niri-actions.json`)与 island | 不适用 |
 | notifications `Service` | Wayland notification 协议 | 不适用 |
 | panels/monitor `Panel` | 驱动 `outputs` / `outputSnapshot()` | **覆盖** |
 | services `media` `nightlight` `remote-session` | MPRIS / wlr-gamma / 无此功能 | 不适用(非合成器协议) |

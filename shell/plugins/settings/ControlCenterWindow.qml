@@ -145,6 +145,13 @@ FloatingWindow {
             for (let index = 0; index < pages.length; ++index) {
                 if (pages[index].id === topId) {
                     currentPage = index;
+                    // B1 tab merge: a dotted route (bar.island, bar.island-clock)
+                    // addresses a subpage — push it through the section hook
+                    // so IPC opens land on the subpage, not just the tab.
+                    if (targetRoute.path.length > 1 && typeof targetRoute.path[1] === "string") {
+                        root.pendingPageSection = targetRoute.path[1];
+                        root.applyPendingPageSection();
+                    }
                     return true;
                 }
             }

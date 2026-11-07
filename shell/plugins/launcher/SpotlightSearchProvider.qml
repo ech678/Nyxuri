@@ -186,7 +186,7 @@ Item {
         function onActionsChanged() {
             root.rebuild();
         }
-        function onKeystoneAvailableChanged() {
+        function onIslandAvailableChanged() {
             root.rebuild();
         }
     }

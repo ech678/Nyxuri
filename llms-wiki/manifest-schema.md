@@ -13,7 +13,7 @@
 |---|---|---|
 | `schemaVersion` | 无 | 必须为 `1`。缺或异 → 解析报错（旧形态的判别式） |
 | `id` | 无 | 插件 id，必须等于 **所在根的前缀 + 目录名**（`plugins/` 根无前缀：`kitty`；`shell/plugins/` 根前缀 `shell.`：`shell.bar`；第三方根无前缀、目录名 = id 全名：简洁裸名如 `orbit-translate` 或 reverse-DNS）。漂移即报错。官方保留 `shell.` 前缀。状态键 = 此 id |
-| `kinds` | 无 | 非空数组，枚举封闭：`config`（引擎部署的配置插件）+ 六几何插槽 `edge` / `island` / `overlay` / `drawer` / `surface:desktop` / `popup:notification`（壳装载，见 [plugin-model](plugin-model.md) §6）+ `service`（保留位，暂无消费者）。**消费路由**：引擎消费 config 类，壳注册表消费插槽类 |
+| `kinds` | 无 | 非空数组，枚举封闭：`config`（引擎部署的配置插件）+ 五几何插槽 `edge` / `overlay` / `drawer` / `surface:desktop` / `popup:notification`（壳装载，见 [plugin-model](plugin-model.md) §6；B1 起 `island` 种类随 keystone 并入 bar 而删除，岛是 bar 单元的布局部件）+ `service`（保留位，暂无消费者）。**消费路由**：引擎消费 config 类，壳注册表消费插槽类 |
 | `label` | `<id>` | 展示名（PKGBUILD optdepends 标签 + 插件详情视图 + 壳设置/开关页） |
 | `order` | `0` | ui 堆叠序（bottom → top），替代手写镜像里的数组序 |
 
@@ -56,7 +56,7 @@
 - **panel 路由条目**（有 `source`）：`source` 为插件内相对 QML 页面文件（存在性校验）；
   `description`、`group`（导航几何分组键）必填，`order`（导航序，默认 0）可选。
   路由路径由 `id` 派生（`id.split('.')`，`path` 字段已删——恒等冗余）；
-  嵌套路由（`keystone.horizontal-clock`）只许一层，父路由必须同 manifest 存在。
+  嵌套路由（`bar.island-clock`）只许一层，父路由必须同 manifest 存在。
 - **schema 路由条目**（有 `controls`，S0-3b）：无页面文件——宿主用 ui/ 原子
   （Preference 五件套）按控件描述通用渲染，值存宿主 `PluginSettings` 存储
   （键 `<pluginId>.<key>`）。`description` / `group` / `order` 语义同 panel 路由。
@@ -88,7 +88,7 @@ path 不进 v1 词表）：
   单元 IPC 面；`args` 为固定参数（缺省 `[]`）；
 - `confirmation` ∈ `none` / `power-menu`——`power-menu` 目标必须开既有确认 UI；
 - `availability` ∈ `always` / `awww` / `nyxuri-wallpaper` / `wallpaper-idle` /
-  `keystone` / `keyboard-lock` / `dock-previews`（能见度枚举，词表封闭）；
+  `island` / `keyboard-lock` / `dock-previews`（能见度枚举，词表封闭）；
 - `[actions.search]`：`title` / `description` / `context` / `icon` 必填，
   `aliases` 可选。`[[actions]]` 即搜索 include 全集：与
   `scripts/system/niri-actions.json` 的 binds 真值按 id 一一焊接（argv 形状

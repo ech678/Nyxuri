@@ -10,7 +10,7 @@ Singleton {
     property var sessionLocker: null
     property var settingsHost: null
     property var sidebarHost: null
-    property var keystoneHost: null
+    property var islandHost: null
     property var wallpaperHost: null
     property var dockHost: null
     property bool externalDragActive: false
@@ -123,8 +123,8 @@ Singleton {
         switch (action.target) {
         case "lock":
             return root.powerAction("lock", "launcher:search");
-        case "keystone":
-            return root.keystoneHost ? (root.keystoneHost.invoke(action.method) !== "KEYSTONE_UNAVAILABLE") :
+        case "island":
+            return root.islandHost ? (root.islandHost.invoke(action.method) !== "ISLAND_UNAVAILABLE") :
                                        false;
         case "sidebar":
             return root.requestSidebarToggle(action.argument || "dashboard");

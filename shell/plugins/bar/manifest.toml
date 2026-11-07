@@ -39,3 +39,150 @@ title = "Position"
 context = "GeneralBarPage"
 icon = "dock_to_bottom"
 aliases = ["general.bar.section.position"]
+
+# ── Island (B1: merged from the retired island unit; one plugin, one bar) ────
+# The island is a bar layout part, so its settings live INSIDE the Bar tab:
+# bar.island is a routed subpage of bar (context GeneralBarPage), and the
+# horizontal-clock editor nests one level under bar as bar.island-clock
+# (manifest-schema nesting rule: dotted routes go one level deep only).
+
+[[settings]]
+id = "bar.island"
+source = "island/IslandPage.qml"
+title = "Island"
+description = "Style, clock, and media controls"
+context = "GeneralBarPage"
+icon = "toggle_off"
+group = "surfaces"
+order = 70
+
+[[settings]]
+id = "bar.island-clock"
+source = "island/HorizontalClockPage.qml"
+title = "Horizontal clock style"
+description = "Horizontal clock appearance"
+context = "IslandPage"
+icon = "schedule"
+group = "surfaces"
+order = 71
+
+[[settings]]
+id = "bar.island.section.horizontal-clock"
+route = "bar.island"
+title = "Horizontal clock"
+context = "IslandPage"
+icon = "toggle_off"
+
+[[settings]]
+id = "bar.island.section.keyboard-indicators"
+route = "bar.island"
+title = "Keyboard indicators"
+context = "IslandPage"
+icon = "settings"
+
+[[settings]]
+id = "bar.island.section.keyhole"
+route = "bar.island"
+title = "Keyhole"
+context = "IslandPage"
+icon = "settings"
+
+[[settings]]
+id = "bar.island.section.island-style"
+route = "bar.island"
+title = "Island style"
+context = "IslandPage"
+icon = "toggle_off"
+
+[[settings]]
+id = "bar.island.section.media-controls"
+route = "bar.island"
+title = "Media controls"
+context = "IslandPage"
+icon = "music_note"
+
+[[settings]]
+id = "bar.island.section.mouse-actions"
+route = "bar.island"
+title = "Mouse actions"
+context = "IslandPage"
+icon = "toggle_off"
+
+[[settings]]
+id = "bar.island.section.recording"
+route = "bar.island"
+title = "Recording"
+context = "IslandPage"
+icon = "toggle_off"
+
+[[settings]]
+id = "bar.island-clock.section.horizontal-clock-style"
+route = "bar.island-clock"
+title = "Horizontal clock style"
+context = "HorizontalClockPage"
+icon = "schedule"
+
+# Island IPC face: searchable fixed actions (manifest-schema.md). The IPC
+# target and availability keyword renamed keystone → island (B1 clean break).
+
+[[actions]]
+id = "nyxuri:island:closeAllOthers"
+target = "island"
+method = "closeAllOthers"
+availability = "island"
+
+[actions.search]
+title = "Close Island panels"
+description = "Dismiss open Island panels"
+context = "SpotlightActions"
+icon = "close"
+
+[[actions]]
+id = "nyxuri:island:dashboard"
+target = "island"
+method = "dashboard"
+availability = "island"
+
+[actions.search]
+title = "Island dashboard"
+description = "Toggle the Island dashboard"
+context = "SpotlightActions"
+icon = "dashboard"
+
+[[actions]]
+id = "nyxuri:island:hub"
+target = "island"
+method = "hub"
+availability = "island"
+
+[actions.search]
+title = "Island hub"
+description = "Toggle the Island hub"
+context = "SpotlightActions"
+icon = "hub"
+
+[[actions]]
+id = "nyxuri:island:lyrics"
+target = "island"
+method = "lyrics"
+availability = "island"
+
+[actions.search]
+title = "Lyrics"
+description = "Toggle Island lyrics"
+context = "SpotlightActions"
+icon = "lyrics"
+aliases = ["music"]
+
+[[actions]]
+id = "nyxuri:island:tools"
+target = "island"
+method = "tools"
+availability = "island"
+
+[actions.search]
+title = "Island tools"
+description = "Toggle the Island tools panel"
+context = "SpotlightActions"
+icon = "handyman"
+aliases = ["record", "timer"]

@@ -115,12 +115,12 @@ Item {
                   }
               ];
         // Rail labels are deliberately shorter than the group ids: a 70px rail
-        // cannot hold "Keystone & media" at a readable size, and the rail is a
+        // cannot hold "Bar & dock" at a readable size, and the rail is a
         // glance target, not a heading.
         const labels = ({
                             "Interface": I18n.tr("Interface"),
                             "Bar & dock": I18n.tr("Bar"),
-                            "Keystone & media": I18n.tr("Media"),
+                            "Media": I18n.tr("Media"),
                             "Desktop": I18n.tr("Desktop"),
                             "Clocks": I18n.tr("Clocks"),
                             "Display": I18n.tr("Display")
@@ -128,7 +128,7 @@ Item {
         const icons = ({
                            "Interface": "bottom_app_bar",
                            "Bar & dock": "toast",
-                           "Keystone & media": "music_note",
+                           "Media": "music_note",
                            "Desktop": "texture",
                            "Clocks": "schedule",
                            "Display": "contrast"

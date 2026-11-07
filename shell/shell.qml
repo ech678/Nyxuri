@@ -50,8 +50,8 @@ ShellRoot {
 
         Component.onCompleted: {
             SpotlightCatalog.actionExecutor = root.executeSearchAction;
-            SpotlightCatalog.keystoneAvailable = Qt.binding(() => ActionGateway.keystoneHost
-                                                                  ? ActionGateway.keystoneHost.searchActionsAvailable :
+            SpotlightCatalog.islandAvailable = Qt.binding(() => ActionGateway.islandHost
+                                                                  ? ActionGateway.islandHost.searchActionsAvailable :
                                                                     false);
             ThemeService.reloadColors();
             FontService.refresh();
@@ -74,10 +74,13 @@ ShellRoot {
             if (!StateProjection.isEnabledUnit(unit.unitId)) {
                 return unit.id === "lock" && ActionGateway.lockEngaged;
             }
-            // Slot contract: keystone owns popup:notification while enabled.
-            // The rule is kind-keyed, so a third-party popup host yields exactly
-            // like the first-party one (S1-3 seating rule).
-            if (unit.kind === "popup:notification" && StateProjection.isEnabled("keystone"))
+            // Slot contract: the island owns popup:notification while the bar
+            // unit is on and the island gate is open (B1: the island rides the
+            // bar unit; its switch is the islandEnabled config key). The rule
+            // is kind-keyed, so a third-party popup host yields exactly like
+            // the first-party one (S1-3 seating rule).
+            if (unit.kind === "popup:notification" && StateProjection.isEnabled("bar")
+                    && PersonalizationConfig.islandEnabled)
                 return false;
             return true;
         }

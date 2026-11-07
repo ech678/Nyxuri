@@ -89,7 +89,6 @@ KIND_CONFIG = "config"
 KINDS = (
     KIND_CONFIG,
     "edge",
-    "island",
     "overlay",
     "drawer",
     "surface:desktop",
@@ -130,7 +129,7 @@ _SETTING_CONTROL_KEYS = {"key", "type", "title", "description", "icon", "default
 _SETTING_CONTROL_OPTION_KEYS = {"value", "label", "icon"}
 _CONFIRMATIONS = ("none", "power-menu")
 AVAILABILITY = ("always", "awww", "nyxuri-wallpaper", "wallpaper-idle",
-                "keystone", "keyboard-lock", "dock-previews")
+                "island", "keyboard-lock", "dock-previews")
 
 
 @dataclass(frozen=True)

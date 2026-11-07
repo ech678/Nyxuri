@@ -167,13 +167,13 @@ function translated(name) {
     case "Control center: open": return I18n.tr("Control center: open", "NiriActions");
     case "Control center: close": return I18n.tr("Control center: close", "NiriActions");
     case "Control center: toggle": return I18n.tr("Control center: toggle", "NiriActions");
-    case "Keystone: cancel record": return I18n.tr("Keystone: cancel record", "NiriActions");
-    case "Keystone: close all others": return I18n.tr("Keystone: close all others", "NiriActions");
-    case "Keystone: current style": return I18n.tr("Keystone: current style", "NiriActions");
-    case "Keystone: dashboard": return I18n.tr("Keystone: dashboard", "NiriActions");
-    case "Keystone: hub": return I18n.tr("Keystone: hub", "NiriActions");
-    case "Keystone: lyrics": return I18n.tr("Keystone: lyrics", "NiriActions");
-    case "Keystone: tools": return I18n.tr("Keystone: tools", "NiriActions");
+    case "Island: cancel record": return I18n.tr("Island: cancel record", "NiriActions");
+    case "Island: close all others": return I18n.tr("Island: close all others", "NiriActions");
+    case "Island: current style": return I18n.tr("Island: current style", "NiriActions");
+    case "Island: dashboard": return I18n.tr("Island: dashboard", "NiriActions");
+    case "Island: hub": return I18n.tr("Island: hub", "NiriActions");
+    case "Island: lyrics": return I18n.tr("Island: lyrics", "NiriActions");
+    case "Island: tools": return I18n.tr("Island: tools", "NiriActions");
     case "Sidebar: open": return I18n.tr("Sidebar: open", "NiriActions");
     case "Sidebar: close": return I18n.tr("Sidebar: close", "NiriActions");
     case "Sidebar: toggle": return I18n.tr("Sidebar: toggle", "NiriActions");
@@ -186,7 +186,7 @@ function translated(name) {
     case "Control center: open General": return I18n.tr("Control center: open General", "NiriActions");
     case "Control center: open Wallpaper": return I18n.tr("Control center: open Wallpaper", "NiriActions");
     case "Control center: open Theme": return I18n.tr("Control center: open Theme", "NiriActions");
-    case "Control center: open Keystone": return I18n.tr("Control center: open Keystone", "NiriActions");
+    case "Control center: open Island": return I18n.tr("Control center: open Island", "NiriActions");
     case "Control center: open Advanced": return I18n.tr("Control center: open Advanced", "NiriActions");
     case "Control center: open Language & region": return I18n.tr("Control center: open Language & region", "NiriActions");
     case "Control center: open current page": return I18n.tr("Control center: open current page", "NiriActions");
@@ -194,7 +194,7 @@ function translated(name) {
     case "Control center: toggle General": return I18n.tr("Control center: toggle General", "NiriActions");
     case "Control center: toggle Wallpaper": return I18n.tr("Control center: toggle Wallpaper", "NiriActions");
     case "Control center: toggle Theme": return I18n.tr("Control center: toggle Theme", "NiriActions");
-    case "Control center: toggle Keystone": return I18n.tr("Control center: toggle Keystone", "NiriActions");
+    case "Control center: toggle Island": return I18n.tr("Control center: toggle Island", "NiriActions");
     case "Control center: toggle Advanced": return I18n.tr("Control center: toggle Advanced", "NiriActions");
     case "Control center: toggle Language & region": return I18n.tr("Control center: toggle Language & region", "NiriActions");
     case "Control center: toggle current page": return I18n.tr("Control center: toggle current page", "NiriActions");

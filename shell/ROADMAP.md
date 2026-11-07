@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | P4 | 主题契约、模板兼容与取色引擎分阶 | 待验收（契约测试全绿；实机行为与视觉证据待作者） |
 | T3 | 设置界面替换：Caelestia 安卓风味 | M3/M4 待验收（机器证据齐；视觉过目待作者） |
-| B | Bar & Island 统一（keystone 并入 bar） | B0 待验收（整抄基线入库、豁免登记；运行零变化证据齐，待作者复核） |
+| B | Bar & Island 统一（keystone 并入 bar） | B1 待验收（合并与正名已执法；机器证据齐，实机过目待作者） |
 | P6 | 整体验收与未来移植 | 排队（前置主线 KM5） |
 
 ## 已交付基线台账
@@ -106,7 +106,7 @@ hooks 的实机行为证据与视觉验收待作者确认。镜像色板是否�
 **待验收**：M3 核心四页与 M4 全页面覆盖的实机视觉过目。fidelity 三轮修订与
 S0-4 资产收编明细见台账 T3 实施记录。
 
-## B 卷：Bar & Island 统一（keystone 并入 bar，B0 已入库待验收）
+## B 卷：Bar & Island 统一（keystone 并入 bar，B1 合并与正名待验收）
 
 > 起因（2026-11-07 定案）：bar 与 keystone 实为同一形态的两个单元——账本双开、同抢顶边，
 > bar 中段布局靠人工清空给岛腾位，属结构性重复。本卷把岛降格为 bar 的布局部件，
@@ -153,18 +153,23 @@ CompositorDriver / 树内效果件）；② 配色与尺寸接 ThemeTokens/Sizes
 
 | 阶段 | 交付目标 | 状态 |
 | --- | --- | --- |
-| B0 | 契约定案 + 整抄基线：end4 皮肤件与 dux 机制件全量 `cp` 入 `plugins/bar/` 目标位（inert、带来源标注），裁剪清单成文；shell 运行零变化，`tests/shell/` 全绿，git 检查点可回滚 | 待验收（基线 14 件 + README 入 `plugins/bar/vendor/`；裁剪清单落 [bar-island](../llms-wiki/shell/bar-island.md)；tests/shell 全绿 + 沙箱部署零 diff） |
-| B1 | 合并与正名（行为等价）：`plugins/keystone/` → `plugins/bar/island/`，`Keystone*` → `Island*`；manifest 合并、账本迁移（disabled keystone → `islandEnabled=false`）、配置键 `keystone*` → `island*`（long 系冻结除外）；IPC/动作/`keystoneHost`/niri-actions.json 正名；插槽 6→5（manifest.py 枚举、PluginRegistry、manifest-schema、AGENTS、architecture-matrix、popup:notification 仲裁键改绑 bar）。岛此阶段仍独立窗口居顶（过渡态）。验收：bangs 视觉逐像素等价、`off shell.bar` 连带岛消失、全库无 keystone 残留 | 待开始 |
-| B2 | 拓扑手术：岛 inline 进 bar。bar 画布下探 + 输入遮罩机制；IslandSurface 宿主改写为 inline 部件，morph 引擎（弹簧/provider/形态面）原样保留；键盘焦点与预约窗路径改道；大面板整抄 `QuickSettings.qml` 范式转锚定弹窗 + 生长入场；布局表注册 island 部件。风险探针：画布下探若在 niri/Quickshell 实测有输入遮罩或层级缺陷，中变形降级为锚定弹窗，不阻塞主线。竖排 bar × 岛单独裁决（初案：竖排禁入布局表，转角部按钮 + 弹窗）。验收：作者实机验收 morph 手感等价、透明区点击穿透、多屏热插拔、锁屏不降级 | 待开始 |
+| B0 | 契约定案 + 整抄基线：end4 皮肤件与 dux 机制件全量 `cp` 入 `plugins/bar/` 目标位（inert、带来源标注），裁剪清单成文；shell 运行零变化，`tests/shell/` 全绿，git 检查点可回滚 | 已完成（基线 14 件 + README 入 `plugins/bar/vendor/`；裁剪清单落 [bar-island](../llms-wiki/shell/bar-island.md)；tests/shell 全绿 + 沙箱部署零 diff；作者已验收） |
+| B1 | 合并与正名（行为等价）：`plugins/keystone/` → `plugins/bar/island/`，`Keystone*` → `Island*`；manifest 合并、账本迁移（disabled keystone → `islandEnabled=false`）、配置键 `keystone*` → `island*`（long 系冻结除外）；IPC/动作/`keystoneHost`/niri-actions.json 正名；插槽 6→5（manifest.py 枚举、PluginRegistry、manifest-schema、AGENTS、architecture-matrix、popup:notification 仲裁键改绑 bar）；**设置合卡**（NAV 顶层只剩 bar，屿为 `bar.island` 子页、横时钟改宗 `bar.island-clock`，Dashboard 侧屿节并入 Bar & dock 页）。岛此阶段仍独立窗口居顶（过渡态）。验收：bangs 视觉逐像素等价、`off shell.bar` 连带岛消失、全库无 keystone 残留 | 待验收（已执法：全链路正名 + 合卡 + migrate_config 幂等迁移 + store.py 账本死键清理，中文定名「屿/一览」；tests/shell 414 绿 + 引擎/状态定向绿 + 沙箱部署零 diff；待作者实机三件 + 设置合卡过目） |
+| B2 | 拓扑手术：岛 inline 进 bar。bar 画布下探 + 输入遮罩机制；IslandSurface 宿主改写为 inline 部件，morph 引擎（弹簧/provider/形态面）原样保留；键盘焦点与预约窗路径改道；大面板整抄 `QuickSettings.qml` 范式转锚定弹窗 + 生长入场；布局表注册 island 部件。**结构红线：样式必须保持 styleLoader 可选组件形态（bangs/pill/long 现行模式），后续换皮 = 新增样式条目，不许焊死进宿主。**风险探针：画布下探若在 niri/Quickshell 实测有输入遮罩或层级缺陷，中变形降级为锚定弹窗，不阻塞主线。竖排 bar × 岛单独裁决（初案：竖排禁入布局表，转角部按钮 + 弹窗）。验收：作者实机验收 morph 手感等价、透明区点击穿透、多屏热插拔、锁屏不降级 | 待开始 |
 | B3 | bar 换皮（end4 皮肤）：B0 基线件定向裁剪四类后上岗——cornerStyle 体系、BarGroup/Divisor/材质胶囊、屏幕圆角衔接；弹窗（托盘菜单/快捷面板）同语言重皮；竖排同步换装。验收：作者实机视觉验收、部件功能零回退、无裁切错位（红线 3）、60fps。**本阶段通过 = D4 处死闸门放行** | 待开始 |
 | B4 | 高度与自由度（dux 机制）：B0 机制件上岗——厚度可调键 + 设置页滑杆；密度预设 4 级 + 自定义（含 transition() 语义：切预设不覆盖用户已自定的键）；switch → widget 注册表（含 island 条目）。验收：高度实时生效、预设切换保留自定义值、新部件零宿主改动接入有实测 | 待开始 |
 | B5 | 清偿收尾：处死 long（文件/冻结键/设置段/i18n/测试全链路）；删被替代路径（旧 bar 外壳、KeystoneSurface 死窗口路径、deprecated 别名）；文档同步（architecture-matrix/plugin-model/manifest-schema/operation-map）+ CHANGELOG；消费者门禁统一清算。验收：audit-lifecycle clean、无 keystone/long 残留字符串、全量回归 + 沙箱部署 + 能耗 sanity（无多余 Timer/订阅） | 待开始 |
 
 **停车场**（明确不承诺，触发条件到了再立项）：溢出滚动（dux OverflowLayout）、
-每部件深度设置全集、岛卫星与自由悬浮模式（dux DIsland）、end4 Di* provider 扩展。
+每部件深度设置全集、岛卫星与自由悬浮模式（dux DIsland）；
+**岛换皮**（整抄上游岛皮肤——首选 BarContent 材质胶囊体系，end4 `DynamicIsland/Di*`
+孤儿件族仅作设计参考，整抄前考据其未接线原因；morph 引擎为机制层保护对象，
+换皮 = styleLoader 新增样式条目）。
 
-**用户侧断裂提醒**：B1 后 niri 配置中绑定 `--ipc keystone` 的快捷键需改 `island`
-（实验期干净断裂，不留别名）。
+**用户侧断裂提醒**（B1 已执法，升级后生效）：niri 配置中绑定 `--ipc keystone`
+的快捷键需改 `island`，`--ipc control-center open/toggle island` 改 `bar.island`
+（实验期干净断裂，不留别名）；config.toml `[keystone]` 段与
+disabled `shell.keystone` 账本由迁移自动折算，无需手工处理。
 
 ## 后续阶段
 

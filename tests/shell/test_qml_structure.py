@@ -245,7 +245,7 @@ class TestQmlSingletonImports(unittest.TestCase):
                     relative_dirs.add(resolved)
             for name in sorted(set(re.findall(r"\b([A-Z][A-Za-z0-9_]*)\.", code))):
                 if (relative.as_posix(), name) in {
-                    ("plugins/keystone/dashboard/DashboardPomodoroCard.qml", "TimerService"),
+                    ("plugins/bar/island/dashboard/DashboardPomodoroCard.qml", "TimerService"),
                     ("plugins/settings/ShellControlService.qml", "ColorPickerService"),
                     ("plugins/settings/ShellPage.qml", "ColorPickerService"),
                     ("shell.qml", "ShellControlService"),

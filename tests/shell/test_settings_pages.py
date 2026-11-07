@@ -82,17 +82,17 @@ ANCHOR_IDS = {
         "sidebar.section.clock-style",
         "sidebar.section.system-cards",
     ),
-    "KeystonePage.qml": (
-        "keystone.section.keystone-style",
-        "keystone.section.mouse-actions",
-        "keystone.section.media-controls",
-        "keystone.section.keyboard-indicators",
-        "keystone.section.keyhole",
-        "keystone.section.horizontal-clock",
-        "keystone.section.recording",
+    "IslandPage.qml": (
+        "bar.island.section.island-style",
+        "bar.island.section.mouse-actions",
+        "bar.island.section.media-controls",
+        "bar.island.section.keyboard-indicators",
+        "bar.island.section.keyhole",
+        "bar.island.section.horizontal-clock",
+        "bar.island.section.recording",
     ),
     "HorizontalClockPage.qml": (
-        "keystone.horizontal-clock.section.horizontal-clock-style",
+        "bar.island-clock.section.horizontal-clock-style",
     ),
     "NetworkPage.qml": (
         "network.section.wired-connections",
@@ -597,7 +597,9 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
         for token in (
             "property var parentModal: null",
             "property bool presentationActive: false",
-            "property Item searchLeaf",
+            # B1 tab merge: the page is a section switcher now, so searchLeaf
+            # is the conditional var shape (like the island page's own).
+            "readonly property var searchLeaf",
         ):
             self.assertIn(token, source, f"GeneralBarPage lost window contract token: {token}")
 
@@ -656,6 +658,18 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
         for token in LEGACY_VOCABULARY + ("SettingsSection", "SettingsRow", "StyledSwitch",
                                           "EdgePositionSelector"):
             self.assertNotIn(token, source, f"legacy token re-entered GeneralBarPage: {token}")
+
+    def test_island_subpage_rides_the_bar_tab(self):
+        """B1 tab merge: the island is a bar layout part, so its settings ride
+        the Bar tab as the bar.island routed subpage — one nav entry, the
+        deep-link path forwards through the page's openSearchPath."""
+        source = _read("GeneralBarPage.qml")
+        self.assertIn('root.openSection("island")', source,
+                      "the bar page must carry the island entry row")
+        self.assertIn('SpotlightCatalog.route("bar.island")', source,
+                      "the island subpage must load through the registry route")
+        self.assertIn("typeof islandLoader.item.openSearchPath", source,
+                      "search deep links must forward into the island subpage")
 
 
 class TestDockPageRebuild(unittest.TestCase):
@@ -810,12 +824,12 @@ class TestGeneralSidebarPageRebuild(unittest.TestCase):
             self.assertNotIn(token, source, f"legacy token re-entered GeneralSidebarPage: {token}")
 
 
-class TestKeystonePageRebuild(unittest.TestCase):
-    """Keystone: overview on the Nexus scaffold, routed subpage kept, drag
+class TestIslandPageRebuild(unittest.TestCase):
+    """Island: overview on the Nexus scaffold, routed subpage kept, drag
     fields and directory pickers preserved as custom shapes."""
 
     def test_shell_routing_survives(self):
-        source = _read("KeystonePage.qml")
+        source = _read("IslandPage.qml")
         self.assertIn("readonly property bool rendersPageTitle: true", source)
         self.assertIn("function openSearchPath(path, serial)", source)
         self.assertIn("currentSection === \"overview\" ? overviewPage.flickable", source)
@@ -823,26 +837,26 @@ class TestKeystonePageRebuild(unittest.TestCase):
         self.assertIn("directoryPicker.dismiss()", source)
 
     def test_overview_is_a_nexus_page(self):
-        source = _read("KeystonePage.qml")
+        source = _read("IslandPage.qml")
         self.assertIn("NexusPageBase {", source)
-        self.assertIn('title: SpotlightCatalog.title("keystone")', source)
+        self.assertIn('title: SpotlightCatalog.title("bar.island")', source)
 
     def test_search_anchor_ids_are_stable(self):
-        source = _read("KeystonePage.qml")
-        for anchor_id in ANCHOR_IDS["KeystonePage.qml"]:
+        source = _read("IslandPage.qml")
+        for anchor_id in ANCHOR_IDS["IslandPage.qml"]:
             self.assertIn('anchorId: "%s"' % anchor_id, source,
                           f"anchor missing or rewritten: {anchor_id}")
 
     def test_atom_groups_present(self):
-        source = _read("KeystonePage.qml")
+        source = _read("IslandPage.qml")
         for atom in ("PreferenceHeader", "PreferenceToggle", "PreferenceSelect",
                      "PreferenceSlider", "PreferenceAction", "ConnectedRect"):
-            self.assertIn(atom, source, f"KeystonePage must use the atom: {atom}")
+            self.assertIn(atom, source, f"IslandPage must use the atom: {atom}")
         self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 9,
                          "nine select rows must register the popup input region")
 
     def test_drag_fields_and_directory_pickers_survive(self):
-        source = _read("KeystonePage.qml")
+        source = _read("IslandPage.qml")
         self.assertEqual(source.count("SortableMultiSelectField {"), 2,
                          "long-bar leading/trailing zones stay drag-enabled")
         self.assertIn("fields: [longLeadingField, longTrailingField]", source)
@@ -858,46 +872,46 @@ class TestKeystonePageRebuild(unittest.TestCase):
         self.assertIn("RecordingDirectoryField", source)
 
     def test_subpage_chrome_moves_into_the_subpage(self):
-        source = _read("KeystonePage.qml")
+        source = _read("IslandPage.qml")
         self.assertNotIn("GeneralSubpageHeader", source,
                          "the subpage renders its own NexusPageBase back header")
         self.assertIn("backRequested.connect(root.showOverview)", source,
                       "the shell wires the subpage back arrow to the overview")
-        self.assertIn('root.openSection("horizontal-clock")', source)
+        self.assertIn('root.openSection("island-clock")', source)
 
     def test_business_owners_unchanged(self):
-        source = _read("KeystonePage.qml")
+        source = _read("IslandPage.qml")
         for owner in (
-            'PersonalizationConfig.setValue("keystoneOverlay"',
-            "PersonalizationConfig.setKeystoneStyle(",
-            "PersonalizationConfig.setKeystonePosition(",
-            'PersonalizationConfig.setKeystoneAction("hover"',
-            'PersonalizationConfig.setKeystoneAction("left"',
-            'PersonalizationConfig.setKeystoneAction("middle"',
-            "PersonalizationConfig.setKeystoneHoverOpenDelay(",
-            "PersonalizationConfig.setKeystoneHoverCloseDelay(",
-            "PersonalizationConfig.setKeystoneMediaProgressStyle(",
-            "PersonalizationConfig.setKeystoneMediaCoverStyle(",
-            "PersonalizationConfig.setKeystoneMediaColorStyle(",
+            'PersonalizationConfig.setValue("islandOverlay"',
+            "PersonalizationConfig.setIslandStyle(",
+            "PersonalizationConfig.setIslandPosition(",
+            'PersonalizationConfig.setIslandAction("hover"',
+            'PersonalizationConfig.setIslandAction("left"',
+            'PersonalizationConfig.setIslandAction("middle"',
+            "PersonalizationConfig.setIslandHoverOpenDelay(",
+            "PersonalizationConfig.setIslandHoverCloseDelay(",
+            "PersonalizationConfig.setIslandMediaProgressStyle(",
+            "PersonalizationConfig.setIslandMediaCoverStyle(",
+            "PersonalizationConfig.setIslandMediaColorStyle(",
             "PersonalizationConfig.setKeystoneLongShowNames(",
             "PersonalizationConfig.setKeystoneLongShowMonitorValues(",
             "PersonalizationConfig.setKeystoneLongShowValues(",
             "PersonalizationConfig.toggleKeystoneLongItem(",
             "PersonalizationConfig.removeKeystoneLongItem(",
-            "PersonalizationConfig.setKeystoneCapsLockOsd(",
-            "PersonalizationConfig.setKeystoneNumLockOsd(",
-            "PersonalizationConfig.setKeystoneKeyholeCard(",
-            "PersonalizationConfig.setKeystoneHideDate(",
+            "PersonalizationConfig.setIslandCapsLockOsd(",
+            "PersonalizationConfig.setIslandNumLockOsd(",
+            "PersonalizationConfig.setIslandKeyholeCard(",
+            "PersonalizationConfig.setIslandHideDate(",
             "KeyboardLockService.available",
         ):
             self.assertIn(owner, source, f"business owner dropped: {owner}")
 
     def test_legacy_chrome_stays_out(self):
-        source = _read("KeystonePage.qml")
+        source = _read("IslandPage.qml")
         for token in LEGACY_VOCABULARY + ("SettingsSection", "SettingsRow", "StyledSwitch",
-                                          "KeystoneSection", "SearchSelectSettingRow",
+                                          "IslandSection", "SearchSelectSettingRow",
                                           "GeneralSliderSetting", "EdgePositionSelector"):
-            self.assertNotIn(token, source, f"legacy token re-entered KeystonePage: {token}")
+            self.assertNotIn(token, source, f"legacy token re-entered IslandPage: {token}")
 
 
 class TestHorizontalClockPageRebuild(unittest.TestCase):
@@ -907,7 +921,7 @@ class TestHorizontalClockPageRebuild(unittest.TestCase):
     def test_nexus_subpage_scaffold(self):
         source = _read("HorizontalClockPage.qml")
         self.assertIn("NexusPageBase {", source)
-        self.assertIn('title: SpotlightCatalog.title("keystone.horizontal-clock")', source)
+        self.assertIn('title: SpotlightCatalog.title("bar.island-clock")', source)
         self.assertIn("isSubPage: true", source)
         self.assertIn("property Item searchLeaf", source)
 
@@ -943,7 +957,7 @@ class TestHorizontalClockPageRebuild(unittest.TestCase):
             'PersonalizationConfig.setHorizontalClockAxis("slnt"',
             "PersonalizationConfig.setHorizontalClockDigitColor(",
             "PersonalizationConfig.setHorizontalClockDigitValue(",
-            "PersonalizationConfig.setKeystoneHideDate(",
+            "PersonalizationConfig.setIslandHideDate(",
             "PersonalizationConfig.horizontalClockAxes",
         ):
             self.assertIn(owner, source, f"business owner dropped: {owner}")
@@ -951,7 +965,7 @@ class TestHorizontalClockPageRebuild(unittest.TestCase):
     def test_legacy_chrome_stays_out(self):
         source = _read("HorizontalClockPage.qml")
         for token in LEGACY_VOCABULARY + ("SettingsSection", "SettingsRow", "StyledSwitch",
-                                          "KeystoneSection", "ClockSliderSetting"):
+                                          "IslandSection", "ClockSliderSetting"):
             self.assertNotIn(token, source, f"legacy token re-entered HorizontalClockPage: {token}")
 
 

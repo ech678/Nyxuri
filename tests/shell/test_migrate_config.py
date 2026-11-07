@@ -112,6 +112,90 @@ class TestMigrateConfig(unittest.TestCase):
             self.assertFalse((self.config_dir / filename).exists(), f"{filename} must be cleaned up")
 
 
+class TestIslandSectionMigration(unittest.TestCase):
+    """B1: config.toml [keystone] → [island], one-way and idempotent.
+
+    The long* keys ride along untouched (D4 freeze); a disabled shell.keystone
+    ledger entry folds into [island] enabled = false."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.config_dir = Path(self.temp_dir.name)
+        self.config_file = self.config_dir / "config.toml"
+        self.state_file = self.config_dir / "state.json"
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def _write_config(self, enabled_key: str = ""):
+        self.config_file.write_text(
+            "[theme]\nmode = \"dark\"\n\n"
+            "[keystone]\n"
+            + (f"{enabled_key}\n" if enabled_key else "")
+            + "style = \"bangs\"\n"
+            "longShowNames = false\n"
+            "longLeading = [ \"workspaces\" ]\n\n"
+            "[keystone.media]\nprogressStyle = \"material\"\n\n"
+            "[bar]\nposition = \"top\"\n",
+            encoding="utf-8",
+        )
+
+    def _run(self):
+        return subprocess.run(
+            [str(MIGRATE_SCRIPT), "--config-dir", str(self.config_dir),
+             "--state-file", str(self.state_file), "--cleanup"],
+            capture_output=True, text=True, check=True,
+        )
+
+    def _island_body(self):
+        text = self.config_file.read_text(encoding="utf-8")
+        start = text.index("[island]")
+        end = text.index("\n[", start + 1) if "\n[" in text[start + 1:] else len(text)
+        return text[start:end]
+
+    def test_renames_section_and_preserves_frozen_long_keys(self):
+        self._write_config()
+        self.state_file.write_text("{}", encoding="utf-8")
+        self._run()
+        body = self._island_body()
+        self.assertIn("style = \"bangs\"", body)
+        self.assertIn("longShowNames = false", body)
+        self.assertIn("longLeading = [ \"workspaces\" ]", body)
+        self.assertIn("[island.media]", self.config_file.read_text(encoding="utf-8"))
+        self.assertNotIn("[keystone", self.config_file.read_text(encoding="utf-8"))
+        # No verdict without a disabled ledger entry: enabled stays unset
+        # (defaults to true at load).
+        self.assertNotIn("enabled", body)
+
+    def test_disabled_ledger_entry_folds_into_enabled_false(self):
+        self._write_config()
+        self.state_file.write_text(
+            json.dumps({"plugins": {"shell.keystone": "disabled"}}), encoding="utf-8")
+        self._run()
+        self.assertIn("enabled = false", self._island_body())
+        # The physical ledger file is never written by the shell side.
+        self.assertIn("shell.keystone",
+                      json.loads(self.state_file.read_text(encoding="utf-8"))["plugins"])
+
+    def test_idempotent_second_run_is_a_noop(self):
+        self._write_config()
+        self.state_file.write_text(
+            json.dumps({"plugins": {"shell.keystone": "disabled"}}), encoding="utf-8")
+        self._run()
+        after_first = self.config_file.read_text(encoding="utf-8")
+        self._run()
+        self.assertEqual(after_first, self.config_file.read_text(encoding="utf-8"))
+
+    def test_existing_island_section_blocks_the_rename(self):
+        # A downgrade interleave must never produce duplicate TOML sections.
+        self._write_config(enabled_key="enabled = true")
+        text = self.config_file.read_text(encoding="utf-8")
+        self.config_file.write_text(text + "\n[island]\nenabled = true\n", encoding="utf-8")
+        self._run()
+        # [keystone] left as-is; the load-time failure path owns the verdict.
+        self.assertIn("[keystone]", self.config_file.read_text(encoding="utf-8"))
+
+
 import os
 
 if __name__ == "__main__":

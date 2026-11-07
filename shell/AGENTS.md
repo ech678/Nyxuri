@@ -82,11 +82,13 @@ Shell 是极致精简的**微内核宿主**：宿主只保留装配（`SlotHost`
 主题代币（`ThemeTokens`/ThemeService）与账本投影（`StateProjection`）。内核侧
 三条（同一账本、单一事件通道、点分 ID）冻结在 plugin-model §6，此处承载实现契约。
 
-- **六大几何插槽**：所有 Shell 插件（一方 `shell/plugins/<domain>/`，三方
-  `~/.local/share/nyxuri/plugins/<id>/`——S1-3 起二根扫描）向唯一的 6 种几何插槽
-  声明挂载——`edge`（bar/dock）、`island`（keystone）、
+- **五大几何插槽**：所有 Shell 插件（一方 `shell/plugins/<domain>/`，三方
+  `~/.local/share/nyxuri/plugins/<id>/`——S1-3 起二根扫描）向唯一的 5 种几何插槽
+  声明挂载——`edge`（bar/dock）、
   `overlay`（launcher/lock/session/settings/regionselector）、`drawer`（sidebars）、
   `surface:desktop`（desktopcards/wallpaper）、`popup:notification`（notifications）。
+  B1 起 `island` 种类删除：岛（island，旧 keystone）并入 `shell.bar` 成为布局部件
+  （`plugins/bar/island/`，门控 `islandEnabled` 配置键），不再是独立单元。
   插槽归属数据在插件自己的 `manifest.toml`（kinds + `[entryPoints]`），由
   `services/PluginRegistry.qml` 运行时读取聚合（S1-3 心脏 = Omarchy 806 行
   `PluginRegistry.qml` 物理整抄后定向剪裁，基线 commit `c91fc6a`：守护三件套与
@@ -99,7 +101,8 @@ Shell 是极致精简的**微内核宿主**：宿主只保留装配（`SlotHost`
   探针撞出的竞态）。单元 `disabled`
   即 `Loader.active = false`：实例销毁，Process/Timer/Socket/回调全部注销；冷启动
   未启用域零读文件、零实例化。槽仲裁归宿主且按 kind 判定：lock 持有期间禁卸载
-  （延迟至解锁）；keystone 在场时独占 `popup:notification` 槽——任意非 keystone 的
+  （延迟至解锁）；岛在场时独占 `popup:notification` 槽——bar 单元开启且
+  `islandEnabled` 打开期间，任意非岛的
   popup:notification 行（三方同规）让位。
 - **单一开关真相**：Shell 永不直写账本。开关只经 `UnitControlService` 派发
   `nyxuri on/off <unitId>`（完整账本键：一方 `shell.<domain>`，三方 id
@@ -108,10 +111,10 @@ Shell 是极致精简的**微内核宿主**：宿主只保留装配（`SlotHost`
   `StateProjection` 重投影（读账本顶层 `plugins` 键）。账本无记录 = 默认启用；账本损坏 = 全启用降级 + 诊断
   横幅。外观轴（位置/样式/覆盖等）仍归 PersonalizationConfig，与开关轴正交。
 - **单元自有 IPC**：单元的 IPC surface 属单元（lock/spotlight/power-menu/
-  control-center/settings/keystone），随单元装载生死；宿主只保留通用面
+  control-center/settings/island——island 面随 bar 单元装载生死），宿主只保留通用面
   （unit/shell/theme/shortcut-map/wallpaper）。单元 off 时其 IPC 目标消失，
   六动作经 `nyxuri-shell --action` 得到真实失败而非假成功；任意单元 IPC 面
-  （`niri-actions.json` 目录 207 条）经 `nyxuri-shell --ipc <target> <method>
+  （`niri-actions.json` 目录 206 条）经 `nyxuri-shell --ipc <target> <method>
   [args…]` PATH 稳定网关分发，合成器 binds 不再引用 quickshell 配置名。
 - **Quickshell 0.3.2 运行时约束**（KM4 实测，quickshell 升级后重估）：
   ① Loader 动态装载的组件解析 qs.* import 必挂——qmldir 只为启动扫描闭包

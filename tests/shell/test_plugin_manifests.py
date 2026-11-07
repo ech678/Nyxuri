@@ -25,11 +25,11 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 SHELL_DIR = os.path.join(REPO_ROOT, "shell")
 PLUGINS_DIR = os.path.join(SHELL_DIR, "plugins")
 
-SIX_SLOTS = {"edge", "island", "overlay", "drawer", "surface:desktop", "popup:notification"}
-SHELL_KINDS = SIX_SLOTS | {"service"}
+FIVE_SLOTS = {"edge", "overlay", "drawer", "surface:desktop", "popup:notification"}
+SHELL_KINDS = FIVE_SLOTS | {"service"}
 
 UNIT_COMPONENTS = [
-    "Bar {", "DockHost {", "Keystone {", "NotificationPopupHost {", "LauncherHost {",
+    "Bar {", "DockHost {", "Island {", "NotificationPopupHost {", "LauncherHost {",
     "Lock {", "SessionHost {", "SettingsHost {", "SidebarHostWindow {",
     "RegionSelector {", "WallpaperBackground {", "DesktopCardHost {",
 ]
@@ -106,7 +106,7 @@ class TestHostClosure(unittest.TestCase):
         # The safety rule: a held session lock is never torn down mid-lock.
         self.assertIn('unit.id === "lock" && ActionGateway.lockEngaged', slot)
         # Slot arbitration is kind-keyed (S1-3 seating rule): a third-party
-        # popup:notification host yields to keystone exactly like the
+        # popup:notification host yields to island exactly like the
         # first-party one.
         self.assertIn('unit.kind === "popup:notification"', slot)
 
@@ -156,8 +156,8 @@ class TestHostClosure(unittest.TestCase):
             os.path.join("plugins", "lock", "Lock.qml"): "ActionGateway.sessionLocker = root",
             os.path.join("plugins", "settings", "SettingsHost.qml"):
                 "ActionGateway.settingsHost = root",
-            os.path.join("plugins", "keystone", "Keystone.qml"):
-                "ActionGateway.keystoneHost = root",
+            os.path.join("plugins", "bar", "island", "Island.qml"):
+                "ActionGateway.islandHost = root",
         }
         for rel, marker in expectations.items():
             self.assertIn(marker, read(*rel.split(os.sep)),
@@ -462,6 +462,46 @@ icon = "network_ping"
                     ("services", "PluginRegistry.qml"), ("services", "PluginManifest.js")):
             self.assertNotIn(self.TEMP_DOMAIN, read(*rel),
                              f"host file knows the temp plugin: {'/'.join(rel)}")
+
+
+class TestIslandMergeContracts(unittest.TestCase):
+    """B1: the island is a bar layout part — one plugin, one manifest.
+
+    Pins the merge shape: island routes/actions ride the bar manifest, the
+    island kind is retired from the closed vocabulary, and the island subtree
+    carries no manifest of its own."""
+
+    def test_bar_manifest_carries_the_island_face(self):
+        manifest = read("plugins", "bar", "manifest.toml")
+        for route_id in ("bar.island", "bar.island-clock",
+                         "bar.island.section.island-style", "bar.island.section.keyhole"):
+            self.assertIn(f'id = "{route_id}"', manifest)
+        for action_id in ("nyxuri:island:dashboard", "nyxuri:island:hub",
+                          "nyxuri:island:lyrics", "nyxuri:island:tools",
+                          "nyxuri:island:closeAllOthers"):
+            self.assertIn(f'id = "{action_id}"', manifest)
+        self.assertIn('target = "island"', manifest)
+        self.assertIn('availability = "island"', manifest)
+        # Sources resolve inside the bar plugin's own subtree.
+        self.assertIn('source = "island/IslandPage.qml"', manifest)
+
+    def test_island_kind_is_retired_tree_wide(self):
+        for manifest_path in Path(SHELL_DIR, "plugins").glob("*/manifest.toml"):
+            with open(manifest_path, encoding="utf-8") as f:
+                self.assertNotIn('"island"', f.read().split("kinds")[1].split("]")[0],
+                                 f"{manifest_path} must not mount the retired island kind")
+
+    def test_island_subtree_is_not_a_unit(self):
+        self.assertFalse(os.path.isfile(os.path.join(SHELL_DIR, "plugins", "bar", "island",
+                                                    "manifest.toml")),
+                         "the island is a bar layout part, never its own unit")
+        self.assertTrue(os.path.isfile(os.path.join(SHELL_DIR, "plugins", "bar", "island",
+                                                   "Island.qml")))
+
+    def test_bar_root_hosts_the_island_loader(self):
+        bar = read("plugins", "bar", "Bar.qml")
+        self.assertIn('source: Qt.resolvedUrl("island/Island.qml")', bar)
+        self.assertIn("PersonalizationConfig.islandEnabled", bar)
 
 
 if __name__ == "__main__":

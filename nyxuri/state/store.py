@@ -31,9 +31,17 @@ def _read_raw() -> dict[str, Any]:
         data = json.loads(store_path().read_text(encoding="utf-8"))
         if not isinstance(data, dict):
             return {}
-        # Clean legacy ghost keys if present
+        # Clean legacy ghost keys if present. update_state() writes back from
+        # this dict, so an in-memory drop is also the physical cleanup on the
+        # engine's next ledger write.
         for legacy_key in ("modules", "shell_package", "units"):
             data.pop(legacy_key, None)
+        plugins = data.get(PLUGINS_KEY)
+        if isinstance(plugins, dict):
+            # B1: shell.keystone merged into shell.bar (the island is a bar
+            # layout part now). The disabled verdict was already folded into
+            # the islandEnabled config gate by the shell's config migration.
+            plugins.pop("shell.keystone", None)
         return data
     except (OSError, ValueError, TypeError):
         return {}

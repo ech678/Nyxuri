@@ -49,8 +49,8 @@ class TestConfigSectionHardening(unittest.TestCase):
             "const wallpaper = configSection(source.wallpaper)",
             "const theme = configSection(source.theme)",
             "const effects = configSection(source.effects)",
-            "const keystone = configSection(source.keystone)",
-            "const media = configSection(keystone.media)",
+            "const island = configSection(source.island)",
+            "const media = configSection(island.media)",
             "const bar = configSection(source.bar)",
             "const sidebar = configSection(source.sidebar)",
             "const desktopCards = configSection(source.desktopCards)",
@@ -59,14 +59,14 @@ class TestConfigSectionHardening(unittest.TestCase):
             "const parallax = configSection(wallpaper.parallax)",
             "const autoCycle = configSection(wallpaper.autoCycle)",
             "const fonts = configSection(theme.fonts)",
-            "const horizontalClock = configSection(keystone.horizontalClock)",
-            "const keyhole = configSection(keystone.keyhole)",
+            "const horizontalClock = configSection(island.horizontalClock)",
+            "const keyhole = configSection(island.keyhole)",
         ):
             self.assertIn(declaration, loader)
 
     def test_no_section_keeps_a_truthy_non_object(self):
         loader = self._loader()
-        for section in ("wallpaper", "theme", "effects", "keystone", "bar", "sidebar",
+        for section in ("wallpaper", "theme", "effects", "island", "bar", "sidebar",
                         "desktopCards", "hotCorners"):
             self.assertNotIn("parsed.%s || {}" % section, loader)
 

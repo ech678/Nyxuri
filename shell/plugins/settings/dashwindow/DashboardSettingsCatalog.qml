@@ -202,123 +202,123 @@ QtObject {
             ]
         },
         {
-            "title": I18n.tr("Keystone"),
-            "page": I18n.tr("Keystone & media"),
+            "title": I18n.tr("Island"),
+            "page": I18n.tr("Bar & dock"),
             "icon": "toggle_off",
             "cards": [
                 {
                     "type": "toggle",
-                    "key": "keystone:Enabled",
-                    "title": I18n.tr("Show Keystone"),
+                    "key": "island:Enabled",
+                    "title": I18n.tr("Show Island"),
                     "icon": "toggle_off"
                 },
                 {
                     "type": "combo",
-                    "key": "keystone:Style",
+                    "key": "island:Style",
                     "title": I18n.tr("Style"),
                     "icon": "style",
                     "w": 2
                 },
                 {
                     "type": "select",
-                    "key": "keystone:Position",
+                    "key": "island:Position",
                     "title": I18n.tr("Position"),
                     "icon": "swap_horiz",
                     "w": 2
                 },
                 {
                     "type": "combo",
-                    "key": "keystone:Hover action",
+                    "key": "island:Hover action",
                     "title": I18n.tr("Hover action"),
                     "icon": "mouse"
                 },
                 {
                     "type": "combo",
-                    "key": "keystone:Left click action",
+                    "key": "island:Left click action",
                     "title": I18n.tr("Left click action"),
                     "icon": "ads_click"
                 },
                 {
                     "type": "combo",
-                    "key": "keystone:Middle click action",
+                    "key": "island:Middle click action",
                     "title": I18n.tr("Middle click action"),
                     "icon": "ads_click"
                 },
                 {
                     "type": "combo",
-                    "key": "keystone:Keyhole card",
+                    "key": "island:Keyhole card",
                     "title": I18n.tr("Keyhole card"),
                     "icon": "door_front"
                 },
                 {
                     "type": "combo",
-                    "key": "keystone:Media progress style",
+                    "key": "island:Media progress style",
                     "title": I18n.tr("Media progress style"),
                     "icon": "linear_scale"
                 },
                 {
                     "type": "combo",
-                    "key": "keystone:Media cover style",
+                    "key": "island:Media cover style",
                     "title": I18n.tr("Media cover style"),
                     "icon": "album"
                 },
                 {
                     "type": "combo",
-                    "key": "keystone:Media color style",
+                    "key": "island:Media color style",
                     "title": I18n.tr("Media color style"),
                     "icon": "palette"
                 },
                 {
                     "type": "spin",
-                    "key": "keystone:Hover open delay (ms)",
+                    "key": "island:Hover open delay (ms)",
                     "title": I18n.tr("Hover open delay"),
                     "icon": "timer"
                 },
                 {
                     "type": "spin",
-                    "key": "keystone:Hover close delay (ms)",
+                    "key": "island:Hover close delay (ms)",
                     "title": I18n.tr("Hover close delay"),
                     "icon": "timer_off"
                 },
                 {
                     "type": "toggle",
-                    "key": "keystone:Overlay",
+                    "key": "island:Overlay",
                     "title": I18n.tr("Overlay"),
                     "icon": "layers"
                 },
                 {
                     "type": "toggle",
-                    "key": "keystone:Show date",
+                    "key": "island:Show date",
                     "title": I18n.tr("Show date"),
                     "icon": "calendar_today"
                 },
                 {
                     "type": "toggle",
-                    "key": "keystone:Caps lock OSD",
+                    "key": "island:Caps lock OSD",
                     "title": I18n.tr("Caps lock OSD"),
                     "icon": "keyboard_capslock"
                 },
                 {
                     "type": "toggle",
-                    "key": "keystone:Num lock OSD",
+                    "key": "island:Num lock OSD",
                     "title": I18n.tr("Num lock OSD"),
                     "icon": "keyboard"
                 },
                 {
                     "type": "toggle",
-                    "key": "keystone:Show names in long form",
+                    "key": "island:Show names in long form",
                     "title": I18n.tr("Long form names"),
                     "icon": "short_text"
                 },
                 {
                     "type": "toggle",
-                    "key": "keystone:Show values in long form",
+                    "key": "island:Show values in long form",
                     "title": I18n.tr("Long form values"),
                     "icon": "numbers"
                 },
                 {
                     "type": "toggle",
-                    "key": "keystone:Show monitor values in long form",
+                    "key": "island:Show monitor values in long form",
                     "title": I18n.tr("Long form monitor values"),
                     "icon": "monitor"
                 }
@@ -326,7 +326,7 @@ QtObject {
         },
         {
             "title": I18n.tr("Media"),
-            "page": I18n.tr("Keystone & media"),
+            "page": I18n.tr("Media"),
             "icon": "lyrics",
             "cards": [
                 {

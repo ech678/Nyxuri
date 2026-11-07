@@ -107,7 +107,7 @@ Singleton {
 
     Process {
         id: initProcess
-        command: ["python3", Paths.systemScriptsDir + "/migrate_config.py", "--config-dir", Paths.configHome, "--cleanup"]
+        command: ["python3", Paths.systemScriptsDir + "/migrate_config.py", "--config-dir", Paths.configHome, "--state-file", Paths.stateHome + "/state.json", "--cleanup"]
         running: true
         stdout: StdioCollector {
             id: migrationStdout

@@ -262,89 +262,89 @@ Singleton {
                                                                         value => PersonalizationConfig.setBarShowValues(
                                                                                      value)),
 
-                                         // ── Keystone ─────────────────────────────────────────────────
-                                         // Unit existence routes through the kernel verb, not a
-                                         // private config field (unit-model.md §6).
-                                         "keystone:Enabled": root.toggle(() => StateProjection.isEnabled(
-                                                                                   "keystone"), value
-                                         => UnitControlService.setUnit("shell.keystone", value)),
-                                         "keystone:Style": root.select(()
-                                                                       => PersonalizationConfig.keystoneStyle,
-                                                                       value => PersonalizationConfig.setKeystoneStyle(
-                                                                                    value), PersonalizationConfig.keystoneStyles),
-                                         "keystone:Overlay": root.toggle(()
-                                                                         => PersonalizationConfig.keystoneOverlay,
+                                         // ── Island ─────────────────────────────────────────────────
+                                         // B1: the island is a bar layout part, not a unit — its
+                                         // switch is the islandEnabled config gate; the bar unit's
+                                         // existence stays the ledger's alone (unit-model.md §6).
+                                         "island:Enabled": root.toggle(() => PersonalizationConfig.islandEnabled,
+                                         value => PersonalizationConfig.setIslandEnabled(value)),
+                                         "island:Style": root.select(()
+                                                                       => PersonalizationConfig.islandStyle,
+                                                                       value => PersonalizationConfig.setIslandStyle(
+                                                                                    value), PersonalizationConfig.islandStyles),
+                                         "island:Overlay": root.toggle(()
+                                                                         => PersonalizationConfig.islandOverlay,
                                                                          value => PersonalizationConfig.setValue(
-                                                                                      "keystoneOverlay",
+                                                                                      "islandOverlay",
                                                                                       value)),
-                                         "keystone:Position": root.select(()
-                                                                          => PersonalizationConfig.keystonePosition,
-                                                                          value => PersonalizationConfig.setKeystonePosition(
+                                         "island:Position": root.select(()
+                                                                          => PersonalizationConfig.islandPosition,
+                                                                          value => PersonalizationConfig.setIslandPosition(
                                                                                        value), PersonalizationConfig.edgePositions),
-                                         "keystone:Hover action": root.select(()
-                                                                              => PersonalizationConfig.keystoneHoverAction,
+                                         "island:Hover action": root.select(()
+                                                                              => PersonalizationConfig.islandHoverAction,
                                                                               value => PersonalizationConfig.setValue(
-                                                                                           "keystoneHoverAction",
-                                                                                           value), PersonalizationConfig.availableKeystoneHoverActionOptions),
-                                         "keystone:Left click action": root.select(()
-                                                                                   => PersonalizationConfig.keystoneLeftClickAction,
-                                                                                   value => PersonalizationConfig.setKeystoneAction(
+                                                                                           "islandHoverAction",
+                                                                                           value), PersonalizationConfig.availableIslandHoverActionOptions),
+                                         "island:Left click action": root.select(()
+                                                                                   => PersonalizationConfig.islandLeftClickAction,
+                                                                                   value => PersonalizationConfig.setIslandAction(
                                                                                                 "leftClick",
-                                                                                                value), PersonalizationConfig.keystoneActionOptions),
-                                         "keystone:Middle click action": root.select(()
-                                                                                     => PersonalizationConfig.keystoneMiddleClickAction,
-                                                                                     value => PersonalizationConfig.setKeystoneAction(
+                                                                                                value), PersonalizationConfig.islandActionOptions),
+                                         "island:Middle click action": root.select(()
+                                                                                     => PersonalizationConfig.islandMiddleClickAction,
+                                                                                     value => PersonalizationConfig.setIslandAction(
                                                                                                   "middleClick",
-                                                                                                  value), PersonalizationConfig.keystoneActionOptions),
-                                         "keystone:Media progress style": root.select(()
-                                                                                      => PersonalizationConfig.keystoneMediaProgressStyle,
-                                                                                      value => PersonalizationConfig.setKeystoneMediaProgressStyle(
-                                                                                                   value), PersonalizationConfig.keystoneMediaProgressOptions),
-                                         "keystone:Media cover style": root.select(()
-                                                                                   => PersonalizationConfig.keystoneMediaCoverStyle,
-                                                                                   value => PersonalizationConfig.setKeystoneMediaCoverStyle(
-                                                                                                value), PersonalizationConfig.keystoneMediaCoverOptions),
-                                         "keystone:Media color style": root.select(()
-                                                                                   => PersonalizationConfig.keystoneMediaColorStyle,
-                                                                                   value => PersonalizationConfig.setKeystoneMediaColorStyle(
-                                                                                                value), PersonalizationConfig.keystoneMediaColorOptions),
-                                         "keystone:Hover open delay (ms)": root.spin(()
-                                                                                     => PersonalizationConfig.keystoneHoverOpenDelay,
-                                                                                     value => PersonalizationConfig.setKeystoneHoverOpenDelay(
+                                                                                                  value), PersonalizationConfig.islandActionOptions),
+                                         "island:Media progress style": root.select(()
+                                                                                      => PersonalizationConfig.islandMediaProgressStyle,
+                                                                                      value => PersonalizationConfig.setIslandMediaProgressStyle(
+                                                                                                   value), PersonalizationConfig.islandMediaProgressOptions),
+                                         "island:Media cover style": root.select(()
+                                                                                   => PersonalizationConfig.islandMediaCoverStyle,
+                                                                                   value => PersonalizationConfig.setIslandMediaCoverStyle(
+                                                                                                value), PersonalizationConfig.islandMediaCoverOptions),
+                                         "island:Media color style": root.select(()
+                                                                                   => PersonalizationConfig.islandMediaColorStyle,
+                                                                                   value => PersonalizationConfig.setIslandMediaColorStyle(
+                                                                                                value), PersonalizationConfig.islandMediaColorOptions),
+                                         "island:Hover open delay (ms)": root.spin(()
+                                                                                     => PersonalizationConfig.islandHoverOpenDelay,
+                                                                                     value => PersonalizationConfig.setIslandHoverOpenDelay(
                                                                                                   value), 0,
                                                                                      2000, 25),
-                                         "keystone:Hover close delay (ms)": root.spin(()
-                                                                                      => PersonalizationConfig.keystoneHoverCloseDelay,
-                                                                                      value => PersonalizationConfig.setKeystoneHoverCloseDelay(
+                                         "island:Hover close delay (ms)": root.spin(()
+                                                                                      => PersonalizationConfig.islandHoverCloseDelay,
+                                                                                      value => PersonalizationConfig.setIslandHoverCloseDelay(
                                                                                                    value), 0,
                                                                                       2000, 25),
-                                         "keystone:Show date": root.toggle(() =>
-                                         !PersonalizationConfig.keystoneHideDate, value
-                                         => PersonalizationConfig.setKeystoneHideDate(!value)),
-                                         "keystone:Show names in long form": root.toggle(()
+                                         "island:Show date": root.toggle(() =>
+                                         !PersonalizationConfig.islandHideDate, value
+                                         => PersonalizationConfig.setIslandHideDate(!value)),
+                                         "island:Show names in long form": root.toggle(()
                                                                                          => PersonalizationConfig.keystoneLongShowNames,
                                                                                          value => PersonalizationConfig.setKeystoneLongShowNames(
                                                                                                       value)),
-                                         "keystone:Show values in long form": root.toggle(()
+                                         "island:Show values in long form": root.toggle(()
                                                                                           => PersonalizationConfig.keystoneLongShowValues,
                                                                                           value => PersonalizationConfig.setKeystoneLongShowValues(
                                                                                                        value)),
-                                         "keystone:Show monitor values in long form": root.toggle(()
+                                         "island:Show monitor values in long form": root.toggle(()
                                                                                                   => PersonalizationConfig.keystoneLongShowMonitorValues,
                                                                                                   value => PersonalizationConfig.setKeystoneLongShowMonitorValues(
                                                                                                                value)),
-                                         "keystone:Caps lock OSD": root.toggle(()
-                                                                               => PersonalizationConfig.keystoneCapsLockOsd,
-                                                                               value => PersonalizationConfig.setKeystoneCapsLockOsd(
+                                         "island:Caps lock OSD": root.toggle(()
+                                                                               => PersonalizationConfig.islandCapsLockOsd,
+                                                                               value => PersonalizationConfig.setIslandCapsLockOsd(
                                                                                             value)),
-                                         "keystone:Num lock OSD": root.toggle(()
-                                                                              => PersonalizationConfig.keystoneNumLockOsd,
-                                                                              value => PersonalizationConfig.setKeystoneNumLockOsd(
+                                         "island:Num lock OSD": root.toggle(()
+                                                                              => PersonalizationConfig.islandNumLockOsd,
+                                                                              value => PersonalizationConfig.setIslandNumLockOsd(
                                                                                            value)),
-                                         "keystone:Keyhole card": root.select(()
-                                                                              => PersonalizationConfig.keystoneKeyholeCard,
-                                                                              value => PersonalizationConfig.setKeystoneKeyholeCard(
-                                                                                           value), PersonalizationConfig.keystoneKeyholeCardOptions),
+                                         "island:Keyhole card": root.select(()
+                                                                              => PersonalizationConfig.islandKeyholeCard,
+                                                                              value => PersonalizationConfig.setIslandKeyholeCard(
+                                                                                           value), PersonalizationConfig.islandKeyholeCardOptions),
 
                                          // ── Wallpaper ────────────────────────────────────────────────
                                          "wallpaper:Fill mode": root.select(()

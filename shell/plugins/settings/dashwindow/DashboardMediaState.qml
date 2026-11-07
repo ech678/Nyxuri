@@ -28,7 +28,7 @@ Item {
 
     // The active player, as resolved by MediaService. Going through the service
     // rather than Mpris directly is what keeps this consistent with every other
-    // media surface in the shell (the bar, the keystone panel) when several
+    // media surface in the shell (the bar, the island panel) when several
     // players are open.
     readonly property var player: MediaService.active
     readonly property string artUrl: root.player ? String(root.player.trackArtUrl ?? "") : ""
@@ -119,7 +119,7 @@ Item {
         target: Appearance.colors
     }
     // Deliberately no Component.onDestruction that clears the palette.
-    // MediaPalette is a singleton shared with the keystone media panel, which
+    // MediaPalette is a singleton shared with the island media panel, which
     // reads the same extraction; clearing it here would blank that panel's
     // colours whenever the dashboard closed, and it would not recover until the
     // next track change. Re-entering the dashboard re-runs refresh() above, so

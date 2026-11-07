@@ -1251,10 +1251,10 @@
     "method": "open"
   },
   {
-    "id": "nyxuri:control-center:open:keystone",
+    "id": "nyxuri:control-center:open:bar.island",
     "category": "nyxuri",
-    "name": "Control center: open Keystone",
-    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"open\" \"keystone\"",
+    "name": "Control center: open Island",
+    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"open\" \"bar.island\"",
     "parameters": false,
     "target": "control-center",
     "method": "open"
@@ -1341,10 +1341,10 @@
     "method": "toggle"
   },
   {
-    "id": "nyxuri:control-center:toggle:keystone",
+    "id": "nyxuri:control-center:toggle:bar.island",
     "category": "nyxuri",
-    "name": "Control center: toggle Keystone",
-    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"toggle\" \"keystone\"",
+    "name": "Control center: toggle Island",
+    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"control-center\" \"toggle\" \"bar.island\"",
     "parameters": false,
     "target": "control-center",
     "method": "toggle"
@@ -1377,66 +1377,66 @@
     "method": "toggle"
   },
   {
-    "id": "nyxuri:keystone:cancelRecord",
+    "id": "nyxuri:island:cancelRecord",
     "category": "nyxuri",
-    "name": "Keystone: cancel record",
-    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"keystone\" \"cancelRecord\"",
+    "name": "Island: cancel record",
+    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"island\" \"cancelRecord\"",
     "parameters": false,
-    "target": "keystone",
+    "target": "island",
     "method": "cancelRecord"
   },
   {
-    "id": "nyxuri:keystone:closeAllOthers",
+    "id": "nyxuri:island:closeAllOthers",
     "category": "nyxuri",
-    "name": "Keystone: close all others",
-    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"keystone\" \"closeAllOthers\"",
+    "name": "Island: close all others",
+    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"island\" \"closeAllOthers\"",
     "parameters": false,
-    "target": "keystone",
+    "target": "island",
     "method": "closeAllOthers"
   },
   {
-    "id": "nyxuri:keystone:currentStyle",
+    "id": "nyxuri:island:currentStyle",
     "category": "nyxuri",
-    "name": "Keystone: current style",
-    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"keystone\" \"currentStyle\"",
+    "name": "Island: current style",
+    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"island\" \"currentStyle\"",
     "parameters": false,
-    "target": "keystone",
+    "target": "island",
     "method": "currentStyle"
   },
   {
-    "id": "nyxuri:keystone:dashboard",
+    "id": "nyxuri:island:dashboard",
     "category": "nyxuri",
-    "name": "Keystone: dashboard",
-    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"keystone\" \"dashboard\"",
+    "name": "Island: dashboard",
+    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"island\" \"dashboard\"",
     "parameters": false,
-    "target": "keystone",
+    "target": "island",
     "method": "dashboard"
   },
   {
-    "id": "nyxuri:keystone:hub",
+    "id": "nyxuri:island:hub",
     "category": "nyxuri",
-    "name": "Keystone: hub",
-    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"keystone\" \"hub\"",
+    "name": "Island: hub",
+    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"island\" \"hub\"",
     "parameters": false,
-    "target": "keystone",
+    "target": "island",
     "method": "hub"
   },
   {
-    "id": "nyxuri:keystone:lyrics",
+    "id": "nyxuri:island:lyrics",
     "category": "nyxuri",
-    "name": "Keystone: lyrics",
-    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"keystone\" \"lyrics\"",
+    "name": "Island: lyrics",
+    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"island\" \"lyrics\"",
     "parameters": false,
-    "target": "keystone",
+    "target": "island",
     "method": "lyrics"
   },
   {
-    "id": "nyxuri:keystone:tools",
+    "id": "nyxuri:island:tools",
     "category": "nyxuri",
-    "name": "Keystone: tools",
-    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"keystone\" \"tools\"",
+    "name": "Island: tools",
+    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"island\" \"tools\"",
     "parameters": false,
-    "target": "keystone",
+    "target": "island",
     "method": "tools"
   },
   {

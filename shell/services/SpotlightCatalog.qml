@@ -18,7 +18,7 @@ Singleton {
     property var actions: []
     readonly property string language: Qt.uiLanguage
     property var actionExecutor: null
-    property bool keystoneAvailable: false
+    property bool islandAvailable: false
     readonly property bool keyboardLockAvailable: KeyboardLockService.available
     readonly property bool dockPreviewsAvailable: false
 
@@ -140,8 +140,8 @@ Singleton {
             return PersonalizationConfig.desktopWallpaperBackend !== "awww";
         case "wallpaper-idle":
             return ActionGateway.wallpaperHost ? !ActionGateway.wallpaperHost.busy : true;
-        case "keystone":
-            return keystoneAvailable;
+        case "island":
+            return islandAvailable;
         case "keyboard-lock":
             return keyboardLockAvailable;
         case "dock-previews":

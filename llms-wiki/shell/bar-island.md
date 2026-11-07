@@ -4,6 +4,8 @@
 > 分期目标与验收标准以 [shell/ROADMAP](../../shell/ROADMAP.md) §B 为准，本页
 > 不重复；本页回答：基线抄了什么、每件怎么裁、什么不抄为什么、豁免到几时。
 > 状态随分期推进更新，B5 结账后本页归档。
+> B1 已执法（正名后全库称 island/屿）：岛并入 `plugins/bar/island/` 成为 bar
+> 布局部件，本页下文以旧名 keystone 指称的引擎与部件即今 island 侧同名件。
 
 ## 基线清单（B0 入库，inert）
 
@@ -42,7 +44,7 @@
 | 基线件 | ① 外部依赖桥接 | ② 接 ThemeTokens/Sizes | ③ 接 I18n | ④ 砍上游死路径 |
 | --- | --- | --- | --- | --- |
 | end4 `Bar.qml` | `Quickshell.Hyprland`（HyprlandData 全屏/special 判定）→ CompositorDriver 等价投影或降级；`CompositorGlobalShortcut` → 树内 shortcut 意图面 | `Appearance.sizes.*`/`Appearance.rounding.*` → Sizes/ThemeTokens | IPC 无文案 | autohide 三 Timer、super 显示、死像素 workaround、cornerOpen 挖洞 mask、bar IPC/快捷键（开关真相在引擎账本） |
-| end4 `BarContent.qml` | —（纯 QtQuick） | `Appearance.colors.*` → ThemeTokens；`hyprlandGapsOut` → Sizes 常量 | — | UPower/SystemTray/Mpris import（数据部件走树内服务）；`dynamicIsland` 分支（岛=keystone morph，B2 接管）；borderless 特例值待 B3 裁决 |
+| end4 `BarContent.qml` | —（纯 QtQuick） | `Appearance.colors.*` → ThemeTokens；`hyprlandGapsOut` → Sizes 常量 | — | UPower/SystemTray/Mpris import（数据部件走树内服务）；`dynamicIsland` 分支（岛=island morph 引擎，B2 接管）；borderless 特例值待 B3 裁决 |
 | end4 `BarGroup.qml` | — | `Appearance.rounding.*`、groupColor 解析 → ThemeTokens | — | `Config.options.bar.widgetStyles` 右键样式编辑器通路（B3 决定去留，砍则连带 StylePopup） |
 | end4 `BarGroupStylePopup.qml` | `Qt5Compat.GraphicalEffects` → 树内效果件或 blur 近似 | 同上 | 弹窗文案 qsTr → I18n 词典 | 随 BarGroup 裁决连坐 |
 | end4 `Divisor.qml` | — | `Config.options.bar.divider.*` → bar 配置键 | — | — |
@@ -59,7 +61,7 @@
 
 | 上游件 | 不抄理由 |
 | --- | --- |
-| end4 `DynamicIsland.qml` + `Di*.qml` | 岛本体 = keystone morph 引擎（B 卷保护对象，D2/D5），只换外壳不换引擎 |
+| end4 `DynamicIsland.qml` + `Di*.qml` | 上游孤儿件（全树零消费者，未接线实验）。morph 引擎仍是 B 卷机制层保护对象（抄我们的活引擎优于抄上游死件）；但岛的**样式层保留 Fork & Trim 抄袭权**——该族可作为设计参考源（provider 注册形态与 dux 注册表同构），整抄前须先考据其未接线原因 |
 | end4/dux 全部数据部件（Workspaces、ClockWidget、SysTray*、Media、Resources、Weather*、Battery*、Network*、Widgets/* 等） | D5：数据部件保留 Nyxuri niri 原生实现，只换外壳 |
 | end4 `ScrollHint.qml`、dux `OverflowLayout.js`/`SectionOverflow.qml` | 溢出滚动在停车场（明确不承诺，触发再立项） |
 | dux `BarMetrics.qml` | dux Theme 代币派生表；D6 已定 Sizes 降为默认值层，厚度键走 Sizes+密度预设。且 `pragma Singleton` 与 inert 基线互斥（qmldir 登记门禁） |

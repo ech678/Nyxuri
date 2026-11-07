@@ -127,7 +127,7 @@ Item {
                                             "account": "settings",
                                             "general": "settings",
                                             "theme": "themes",
-                                            "keystone": "settings",
+                                            "bar.island": "settings",
                                             "advanced": "settings",
                                             "shell": "settings"
                                         })
