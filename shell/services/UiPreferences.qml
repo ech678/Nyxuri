@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Io
 import qs.commons
 import qs.app
+import qs.services
 import "../plugins/launcher/SpotlightSearch.js" as SpotlightSearch
 import qs.commons.i18n
 
@@ -27,6 +28,14 @@ Singleton {
 
         function onThemeModeChanged() {
             root.darkMode = PersonalizationConfig.themeMode === "dark";
+        }
+    }
+
+    Connections {
+        target: ShellStartupService
+
+        function onStageChanged() {
+            root.armThemePolling();
         }
     }
 
@@ -368,6 +377,19 @@ Singleton {
         root.writeSystemColorScheme();
     }
 
+    function armThemePolling() {
+        if (ShellStartupService.firstFrameTimestampMs === 0
+                || ShellStartupService.ipcReadyTimestampMs === 0)
+            return;
+
+        ShellStartupService.scheduleBackground("ui-theme-poll", () => {
+                                                   themePollTimer.start();
+                                                   themePoller.running = true;
+                                               });
+    }
+
+    Component.onCompleted: root.armThemePolling()
+
     function toggleDarkMode() {
         root.setDarkMode(!root.darkMode);
     }
@@ -634,7 +656,7 @@ Singleton {
         id: themePoller
 
         command: ["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"]
-        running: true
+        running: false
 
         stdout: StdioCollector {
             onStreamFinished: {
@@ -687,7 +709,7 @@ Singleton {
     Timer {
         id: themePollTimer
         interval: 60000
-        running: true
+        running: false
         repeat: true
         onTriggered: {
             if (!systemThemeWriter.running && !root.systemThemeWriteQueued)
