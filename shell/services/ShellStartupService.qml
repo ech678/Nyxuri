@@ -88,8 +88,12 @@ Singleton {
     function registerQmlResource(owner, kind, object) {
         if (!object)
             return;
-        const next = root._qmlResourceRecords.filter(record => record.object !== object);
-        next.push({"owner": String(owner || "unknown"), "kind": String(kind || "unknown"), "object": object});
+        const resourceOwner = String(owner || "unknown");
+        const resourceKind = String(kind || "unknown");
+        const next = root._qmlResourceRecords.filter(record => {
+            return record.object !== object || record.owner !== resourceOwner || record.kind !== resourceKind;
+        });
+        next.push({"owner": resourceOwner, "kind": resourceKind, "object": object});
         root._qmlResourceRecords = next;
     }
 
@@ -136,14 +140,14 @@ Singleton {
             "fileviews": resourceCounts.fileview || 0,
             "connections": resourceCounts.connections || 0,
             "delegates": loaded.length,
-            "canvas": null,
-            "layers": null,
+            "canvas": resourceCounts.canvas || 0,
+            "layers": resourceCounts.layer || 0,
             "windows": resourceCounts.window || 0
         };
         return {
             "schema": 1,
             "status": "partial",
-            "reason": "SlotHost and explicitly registered service resources are live; Canvas/layer remain unsupported",
+            "reason": "SlotHost and explicitly registered QML resources are live; unregistered resource classes remain out of scope",
             "loaders": {
                 "declared": records.length,
                 "active": active.length,
@@ -163,7 +167,7 @@ Singleton {
             "resource_owners": resourceOwners,
             "qml_resources": {
                 "status": "partial",
-                "reason": "loaders plus explicitly registered service resources; Canvas/layer remain unsupported",
+                "reason": "loaders plus explicitly registered QML resources; unregistered resource classes remain out of scope",
                 "counts": counts,
                 "owners": resourceOwners
             }

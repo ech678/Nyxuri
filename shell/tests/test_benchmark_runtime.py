@@ -70,6 +70,32 @@ class BenchmarkRuntimeTests(unittest.TestCase):
             file_picker,
         )
 
+    def test_qml_census_registers_central_canvas_and_layer_components(self):
+        startup = (ROOT / "services" / "ShellStartupService.qml").read_text(encoding="utf-8")
+        self.assertIn('"canvas": resourceCounts.canvas || 0', startup)
+        self.assertIn('"layers": resourceCounts.layer || 0', startup)
+        self.assertIn("record.owner !== resourceOwner || record.kind !== resourceKind", startup)
+
+        contracts = (
+            ("ui/WeatherBackground.qml", "WeatherBackground", "canvas", "canvas"),
+            ("ui/WaveVisualizer.qml", "WaveVisualizer", "canvas", "root"),
+            ("ui/WaveVisualizer.qml", "WaveVisualizer", "layer", "root"),
+            ("ui/WaveProgressBar.qml", "WaveProgressBar", "canvas", "waveCanvas"),
+            ("ui/shapes/ShapeCanvas.qml", "ShapeCanvas", "canvas", "root"),
+            ("ui/VerticalFadeFlickable.qml", "VerticalFadeFlickable", "layer", "root"),
+            ("ui/CompositorBlurRegion.qml", "CompositorBlurRegion", "layer", "root"),
+        )
+        for relative_path, owner, kind, object_name in contracts:
+            source = (ROOT / relative_path).read_text(encoding="utf-8")
+            self.assertIn(
+                f'ShellStartupService.registerQmlResource("{owner}", "{kind}", {object_name})',
+                source,
+            )
+            self.assertIn(
+                f'ShellStartupService.unregisterQmlResource("{owner}", "{kind}", {object_name})',
+                source,
+            )
+
     def test_live_telemetry_marks_unexposed_qml_counts_unavailable(self):
         with TempEnv():
             snapshot = runtime.parse_live_telemetry(

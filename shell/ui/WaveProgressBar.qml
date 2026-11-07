@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services
 
 Item {
     id: root
@@ -186,4 +187,7 @@ Item {
             root.seekRequested(clampedX / root.width);
         }
     }
+
+    Component.onCompleted: ShellStartupService.registerQmlResource("WaveProgressBar", "canvas", waveCanvas)
+    Component.onDestruction: ShellStartupService.unregisterQmlResource("WaveProgressBar", "canvas", waveCanvas)
 }
