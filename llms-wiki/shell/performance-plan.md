@@ -7,52 +7,23 @@
 > 降低冷启动时间、稳态内存、事件循环负载、渲染成本、外部进程开销和长时间运行
 > 后的资源漂移。
 
-> 当前执行记录（2026-11-07）：容器 benchmark runner、资源探针和启动生命周期改造
-> 已落地；固定 Quickshell 0.3.2/Weston/D-Bus 容器已真实运行并生成报告。当前报告
-> 的 `startup_valid`、`sample_valid`、`controlled_shutdown` 均为 100%，但因容器内
-> 若干可选外部命令缺失，`process_start_failures=9`，兼容性矩阵和失败日志归因仍未
-> 完成，因此本计划整体仍未完成。
+> 当前执行记录（2026-11-07）：完整的预优化 baseline 在 SHA
+> `46161836cc45ea0ba4eb8b5417a725179f1c32dd` 生成，工件位于
+> `.omo/evidence/performance-plan-current-4616183/`。该报告覆盖 10 次冷启动、5 次热启动、
+> 600.167 秒稳态（596 样本）、100 次回收和 0.1/1/2/5 秒窗口；它是后续优化的比较基线，
+> 不代表优化后的当前实现。
 >
-> 后续执行记录：兼容性探针已改为自带隔离 Weston，长稳态/回收参数、old/new channel
-> 和 live telemetry 已合并；最新短 smoke 曾因合并时参数/生命周期冲突失败，修复已
-> 提交但尚未生成新的完整 raw/report。旧 channel、10 分钟稳态、100-cycle 回收和
-> QML live census 仍不得标记为已验证。
+> 当前实现 SHA `e671bedcaa3edd2151b20771894883b0ba097dd9` 的短容器 smoke 位于
+> `.omo/evidence/performance-plan-current-e671bed-smoke/`：Quickshell 0.3.2 启动、采样和
+> 受控关闭均成功，帧探针观测到 301 帧（p50/p95/p99 为 17/18/19 ms），cgroup memory
+> current/peak 有效返回 490756/611240 KiB。功能矩阵为 21 PASS、10 UNAVAILABLE；真实
+> `shell.bar` off/on 行为通过，键鼠与未装载的可选 IPC target 仍不可用。
 >
-> 2026-11-07 完整 new-channel 容器报告已生成：10 冷启动、5 warm、600.179 秒稳态
->（596 样本）、100/100 回收、0.1/1/2/5 秒窗口和兼容性矩阵成功。old 0.2.1 已按
-> 五种 rootless/privileged 变体重试，均在 Qt 6.12 头文件兼容性错误处失败，已按
-> 环境/工具链原因记录跳过。Loader/unit live census 已接入，其他 QML 资源类别仍以
-> partial/null 明示。
->
-> 旧 channel 后续已补齐：独立 pinned Qt 6.8.3/Nixpkgs toolchain 下 Quickshell 0.2.1
-> 容器构建 991/991 成功，runtime 与 Loader/IPC/qmlcache compatibility probe 均成功。
->
-> 最新资源 smoke（当前代码）真实返回 loaders=12、timers=11、processes=3、fileviews=1、
-> connections=1、windows=1、delegates=11；Canvas/layer 仍为 null。进程 lifecycle 已
-> 提供 PID/starttime/command/观测时长下界/launch 与 restart 估计；owner、精确 kernel
-> exit、逐进程 CPU/output 归因仍不可得。两项限制均保留为 partial，不作为完成证据。
->
-> 进程采样已增加 lower-bound lifecycle 聚合（PID/starttime/command/首次与末次观测、
-> launch/restart 估计和失败启动分类），owner 与真实 kernel exit 仍明确标为不可得。
-
-> 最新 owner smoke 已在当前代码中确认：StateProjection/FilePickerWindow/NiriDriver/
-> SystemMonitorService/NetworkService 的 owner 分类和资源计数可从容器 IPC 读取；
-> Canvas/layer 与未注册服务仍明确 partial。
-
-> 证据对账（2026-11-07）：new channel 的完整报告为
-> `.omo/evidence/benchmark-current-full-report.json`（报告记录的 Git SHA
-> `6c0ea1c1db311c3b567e85db76c09a313779c912`）和
-> `.omo/evidence/benchmark-current-final-report.json`（报告记录的 Git SHA
-> `bb974f21f716d3d9cdc3081f8efbdbf61b7d7ad7`）；两者均标记 `git_dirty=true`，且
-> 当前 HEAD 已继续前进到 `e542f697927ecab6f8295d69b162551fc9cfb837`，因此它们只能作为
-> 已验证容器基线，不能宣称覆盖当前 HEAD 的全部后续改动。old channel 的
-> `.omo/evidence/container-old-quickshell-compatibility-20261107.json` 在独立 pinned
-> Qt 6.8.3 toolchain 下通过 0.2.1 Loader/IPC/qmlcache compatibility，但没有 old
-> channel 的完整性能预算报告。资源 owner smoke 仍只覆盖已注册对象；Canvas/layer、未注册
-> QML 类别以及逐进程 owner、精确退出、CPU/output 归因保持 partial/不可得。帧探针只能
-> 提供 `frameSwapped` 间隔；Weston presentation feedback、掉帧精确值、纹理和离屏目标
-> 仍为 partial/null。所有运行均在隔离容器内，宿主 Quickshell/Weston/Niri/Wayland 未启动；
-> 宿主 Qt 5.15 `qmllint` 对 `qs.*` 导入不具备有效验证能力，不能替代容器运行证据。
+> 当前已合入功能矩阵的真实 CLI unit off/on、隐藏波形停止 Canvas/离屏 layer、启动后台任务
+> 去重/失败重试，以及 cgroup memory 缺失值修正。Canvas/layer 全量 census、Process owner/
+> CPU/output 归因、所有功能和交互矩阵、多屏/GPU 渲染、性能预算与优化后完整 10 分钟报告
+> 尚未完成；本计划仍进行中。真实桌面运行只在隔离容器内执行；宿主 Quickshell、Weston、
+> Niri 和 Wayland 未启动。旧 `.omo` 报告不作为当前实现的结论或失败依据。
 
 ## 0. 硬约束
 
@@ -120,7 +91,7 @@
 - [x] 对当前契约要求的 Quickshell 0.3.2 行为做兼容性矩阵：`qmldir`、动态
   `Loader`、`file://` source、`qs.*` 预热 import、QML disk cache、`IpcHandler`、
   `FloatingWindow.minimumSize`、`HoverHandler` 和 `TapHandler`。
-- [x] 在容器中分别测试旧锁定版本和更新版本：冷编译、重复启动、Loader 单元装载、
+- [ ] 在容器中分别测试旧锁定版本和更新版本：冷编译、重复启动、Loader 单元装载、
   单元 off/on、IPC 注册、SIGTERM、崩溃恢复和 qmlcache 命中/失效。
 - [ ] 只有当更新版本通过全部行为矩阵并且性能不引入功能回归时，才把容器默认版本
   更新为新版本；失败时保留旧版本作为对照，不修改用户环境。
@@ -148,12 +119,12 @@
 
 ### 3.2 基线与重复次数
 
-- [x] 同一个容器镜像内运行空 `ShellRoot` 基线、最小 Nyxuri 配置、默认全功能配置。
+- [ ] 同一个容器镜像内运行空 `ShellRoot` 基线、最小 Nyxuri 配置、默认全功能配置。
 - [x] 冷启动每个场景至少 10 次，先丢弃一次预热结果，再报告 p50/p95/p99、min/max、
   标准差和失败次数。
-- [x] 热启动明确缓存状态：qmlcache 命中、qmlcache 清空、XDG 缓存保留和完整 sandbox
+- [ ] 热启动明确缓存状态：qmlcache 命中、qmlcache 清空、XDG 缓存保留和完整 sandbox
   重建必须分别测试，不能把它们统称为 warm。
-- [x] 每个长稳态场景至少运行 10 分钟；高频打开/关闭场景至少循环 100 次；通知、
+- [ ] 每个长稳态场景至少运行 10 分钟；高频打开/关闭场景至少循环 100 次；通知、
   搜索、网络设备等数据量场景至少覆盖 1、10、100、1000 条记录。
 - [x] 每次报告保存原始采样，而不是只保存最终平均值；异常运行保留日志和退出原因。
 
@@ -397,7 +368,7 @@ Quickshell 版本的重新测量结果校准；不得拿历史 `.omo/` 数字直
 ## 15. 计划完成标准
 
 - [x] 没有任何宿主机真实启动测试。
-- [ ] 没有把 `.omo/` 历史报告当作当前结论。
+- [x] 没有把 `.omo/` 历史报告当作当前结论。
 - [x] Quickshell 更新已经在容器中完成版本锁定和兼容性矩阵。
 - [ ] 性能报告来自当前代码、当前容器、当前 Git SHA，且可重复生成。
 - [ ] 启动、内存、CPU、I/O、渲染、回收和长稳态均有真实容器证据。
