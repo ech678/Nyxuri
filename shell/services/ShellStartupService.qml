@@ -25,6 +25,7 @@ Singleton {
     // event-loop turn at a time.  The queue is also the cancellation boundary
     // used during teardown or a failed startup.
     property var _backgroundQueue: []
+    property var _backgroundTaskStates: ({})
     property bool backgroundRunning: false
     property var backgroundMetrics: []
     property bool _backgroundPumpScheduled: false
@@ -172,17 +173,25 @@ Singleton {
 
     signal stageChanged(string stage)
 
-    function scheduleBackground(name, callback): void {
+    function scheduleBackground(name, callback): bool {
         const taskName = String(name || "background");
         if (typeof callback !== "function")
-            return;
+            return false;
+        const state = root._backgroundTaskStates[taskName];
+        if (state === "queued" || state === "running" || state === "completed")
+            return false;
+
+        const states = Object.assign({}, root._backgroundTaskStates);
+        states[taskName] = "queued";
+        root._backgroundTaskStates = states;
         const queue = root._backgroundQueue.slice();
         queue.push({"name": taskName, "callback": callback});
         root._backgroundQueue = queue;
-        if (root.backgroundRunning)
-            return;
-        root.backgroundRunning = true;
-        root._scheduleBackgroundPump();
+        if (!root.backgroundRunning) {
+            root.backgroundRunning = true;
+            root._scheduleBackgroundPump();
+        }
+        return true;
     }
 
     function cancelBackground(): void {
@@ -213,6 +222,9 @@ Singleton {
         const queue = root._backgroundQueue.slice();
         const task = queue.shift();
         root._backgroundQueue = queue;
+        const states = Object.assign({}, root._backgroundTaskStates);
+        states[task.name] = "running";
+        root._backgroundTaskStates = states;
         const started = Date.now();
         let error = "";
         try {
@@ -221,6 +233,9 @@ Singleton {
             error = String(exception);
             console.warn("[ShellStartup] background task failed", task.name, error);
         }
+        const completedStates = Object.assign({}, root._backgroundTaskStates);
+        completedStates[task.name] = error ? "failed" : "completed";
+        root._backgroundTaskStates = completedStates;
         const metrics = root.backgroundMetrics.slice();
         metrics.push({
                            "name": task.name,
