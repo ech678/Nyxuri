@@ -6,7 +6,6 @@ import Quickshell
 import Quickshell.Io
 import qs.commons
 import qs.app
-import qs.services
 import "../plugins/launcher/SpotlightSearch.js" as SpotlightSearch
 import qs.commons.i18n
 
@@ -28,14 +27,6 @@ Singleton {
 
         function onThemeModeChanged() {
             root.darkMode = PersonalizationConfig.themeMode === "dark";
-        }
-    }
-
-    Connections {
-        target: ShellStartupService
-
-        function onStageChanged() {
-            root.armThemePolling();
         }
     }
 
@@ -68,6 +59,7 @@ Singleton {
     property string sidebarCookieDateStyle: "bubble"
     property bool storeReady: false
     property bool preferencesReady: false
+    property bool _systemThemePollingRequested: false
     property bool savePending: false
     property bool systemThemeWriteQueued: false
     property bool requestedDarkMode: false
@@ -377,18 +369,20 @@ Singleton {
         root.writeSystemColorScheme();
     }
 
-    function armThemePolling() {
-        if (ShellStartupService.firstFrameTimestampMs === 0
-                || ShellStartupService.ipcReadyTimestampMs === 0)
-            return;
-
-        ShellStartupService.scheduleBackground("ui-theme-poll", () => {
-                                                   themePollTimer.start();
-                                                   themePoller.running = true;
-                                               });
+    function startSystemThemePolling() {
+        root._systemThemePollingRequested = true;
+        root._startSystemThemePollingIfReady();
     }
 
-    Component.onCompleted: root.armThemePolling()
+    function _startSystemThemePollingIfReady() {
+        if (!root._systemThemePollingRequested || !root.preferencesReady)
+            return;
+        root._systemThemePollingRequested = false;
+        themePollTimer.start();
+        themePoller.running = true;
+    }
+
+    onPreferencesReadyChanged: root._startSystemThemePollingIfReady()
 
     function toggleDarkMode() {
         root.setDarkMode(!root.darkMode);

@@ -26,6 +26,7 @@ ShellRoot {
         if (root.late) {
             ShellStartupService.recordFirstFrame();
             ShellStartupService.recordIpcReady();
+            ShellStartupService.scheduleBackground("ui-theme-poll", () => UiPreferences.startSystemThemePolling());
         }
         root.startPreferences = true;
         console.log("THEME_POLL_INITIAL", UiPreferences.darkMode,
@@ -109,6 +110,7 @@ ShellRoot {
                 console.log("THEME_POLL_FIRST_FRAME polls=0");
                 ShellStartupService.recordIpcReady();
                 ShellStartupService.recordCoreReady();
+                ShellStartupService.scheduleBackground("ui-theme-poll", () => UiPreferences.startSystemThemePolling());
                 root.phase = 2;
             }
         }

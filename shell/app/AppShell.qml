@@ -51,6 +51,7 @@ Item {
             ShellStartupService.scheduleBackground("fonts", () => FontService.refresh());
             ShellStartupService.scheduleBackground("i18n", () => I18nService.initialize());
             ShellStartupService.scheduleBackground("system-identity", () => SystemIdentityService.initialize());
+            ShellStartupService.scheduleBackground("ui-theme-poll", () => UiPreferences.startSystemThemePolling());
         });
     }
 
