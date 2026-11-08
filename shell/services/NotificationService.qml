@@ -59,35 +59,17 @@ Singleton {
         property string filePath: ""
         property Timer timer: null
         property var urgency: NotificationUrgency.Normal
-        property var closeConnection: null
-
-        onNotificationChanged: {
-            if (notification) {
-                if (!closeConnection)
-                    closeConnection = notificationCloseConnectionComponent.createObject(wrapper, {
-                                                                                           "notificationObject": wrapper
-                                                                                       });
-            } else {
-                if (closeConnection) {
-                    closeConnection.destroy();
-                    closeConnection = null;
-                }
-            }
-            if (notification === null && serverNotificationId !== -1)
-                root.detachNotification(notificationId);
-        }
-    }
-
-    Component {
-        id: notificationCloseConnectionComponent
-
-        Connections {
-            required property var notificationObject
-            target: notificationObject.notification
+        property Connections closeConnection: Connections {
+            target: wrapper.notification
 
             function onClosed(reason) {
-                root.handleNativeClosed(notificationObject.notificationId, reason);
+                root.handleNativeClosed(wrapper.notificationId, reason);
             }
+        }
+
+        onNotificationChanged: {
+            if (notification === null && serverNotificationId !== -1)
+                root.detachNotification(notificationId);
         }
     }
 
