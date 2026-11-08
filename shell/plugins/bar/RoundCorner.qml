@@ -1,18 +1,11 @@
-// Fork & Trim: end4-pC modules/common/widgets/RoundCorner.qml (GPL-3, see
-// shell/LICENSE appendix end-4-dots-hyprland-GPL-3.0.txt). B4 reskin promotes
-// this component to plugins/bar/.
 import QtQuick
 import QtQuick.Shapes
+import qs.modules.common
 
 Item {
     id: root
 
-    enum CornerEnum {
-        TopLeft,
-        TopRight,
-        BottomLeft,
-        BottomRight
-    }
+    enum CornerEnum { TopLeft, TopRight, BottomLeft, BottomRight }
     property var corner: RoundCorner.CornerEnum.TopLeft
     property alias leftVisualMargin: shape.anchors.leftMargin
     property alias topVisualMargin: shape.anchors.topMargin
@@ -53,20 +46,16 @@ Item {
             pathHints: ShapePath.PathSolid & ShapePath.PathNonIntersecting
 
             startX: switch (root.corner) {
-            case RoundCorner.CornerEnum.TopLeft:
-            case RoundCorner.CornerEnum.BottomLeft:
-                return 0;
-            case RoundCorner.CornerEnum.TopRight:
-            case RoundCorner.CornerEnum.BottomRight:
-                return root.implicitSize;
+                case RoundCorner.CornerEnum.TopLeft:
+                case RoundCorner.CornerEnum.BottomLeft: return 0;
+                case RoundCorner.CornerEnum.TopRight:
+                case RoundCorner.CornerEnum.BottomRight: return root.implicitSize;
             }
             startY: switch (root.corner) {
-            case RoundCorner.CornerEnum.TopLeft:
-            case RoundCorner.CornerEnum.TopRight:
-                return 0;
-            case RoundCorner.CornerEnum.BottomLeft:
-            case RoundCorner.CornerEnum.BottomRight:
-                return root.implicitSize;
+                case RoundCorner.CornerEnum.TopLeft:
+                case RoundCorner.CornerEnum.TopRight: return 0;
+                case RoundCorner.CornerEnum.BottomLeft:
+                case RoundCorner.CornerEnum.BottomRight: return root.implicitSize;
             }
             PathAngleArc {
                 moveToStart: false
@@ -75,14 +64,10 @@ Item {
                 radiusX: root.implicitSize
                 radiusY: root.implicitSize
                 startAngle: switch (root.corner) {
-                case RoundCorner.CornerEnum.TopLeft:
-                    return 180;
-                case RoundCorner.CornerEnum.TopRight:
-                    return -90;
-                case RoundCorner.CornerEnum.BottomLeft:
-                    return 90;
-                case RoundCorner.CornerEnum.BottomRight:
-                    return 0;
+                    case RoundCorner.CornerEnum.TopLeft: return 180;
+                    case RoundCorner.CornerEnum.TopRight: return -90;
+                    case RoundCorner.CornerEnum.BottomLeft: return 90;
+                    case RoundCorner.CornerEnum.BottomRight: return 0;
                 }
                 sweepAngle: 90
             }
@@ -92,4 +77,5 @@ Item {
             }
         }
     }
+
 }

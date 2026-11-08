@@ -1,14 +1,10 @@
-// Fork & Trim: end4-pC modules/ii/bar/StyledPopupHeaderRow.qml (GPL-3, see
-// shell/LICENSE appendix end-4-dots-hyprland-GPL-3.0.txt). B4 reskin promotes
-// this component to plugins/bar/.
 import QtQuick
 import QtQuick.Layouts
-import qs.commons
-import qs.ui
+import qs.modules.common
+import qs.modules.common.widgets
 
 Row {
     id: root
-
     required property var icon
     required property var label
     spacing: 5
@@ -18,7 +14,7 @@ Row {
         fill: 0
         font.weight: Font.DemiBold
         text: root.icon
-        iconSize: 18
+        iconSize: Appearance.font.pixelSize.large
         color: Appearance.colors.colOnSurfaceVariant
     }
 
@@ -27,7 +23,7 @@ Row {
         text: root.label
         font {
             weight: Font.DemiBold
-            pixelSize: 13
+            pixelSize: Appearance.font.pixelSize.normal
         }
         color: Appearance.colors.colOnSurfaceVariant
     }

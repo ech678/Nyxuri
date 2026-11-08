@@ -1,3 +1,0 @@
-import qs.ui
-
-BrailleSpinner {}

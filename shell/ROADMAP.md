@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | P4 | 主题契约、模板兼容与取色引擎分阶 | 待验收（契约测试全绿；实机行为与视觉证据待作者） |
 | T3 | 设置界面替换：Caelestia 安卓风味 | M3/M4 待验收（机器证据齐；视觉过目待作者） |
-| B | Bar & Island 统一（双源整抄：iNiR 原生 Material Bar + end4 灵动岛） | 方案重塑定案；B0 物理清盘与基线入库进行中（增设 Sub-agents 独立审计任务） |
+| B | Bar & Island 统一（双源整抄：iNiR 原生 Material Bar + end4 灵动岛） | B0 物理清盘与基线入库已完成（双源 48 原件进树，前置处决 88 历史孤儿件） |
 | P6 | 整体验收与未来移植 | 排队（前置主线 KM5） |
 
 ## 已交付基线台账
@@ -170,7 +170,7 @@ S0-4 资产收编明细见台账 T3 实施记录。
 
 | 阶段 | 交付目标 | 状态 |
 | :--- | :--- | :--- |
-| B0 | 物理清盘与双源基线入库 (Fork)：物理 `rm` 处决 60+ 历史孤儿件与自研假胶水；全量 `cp` iNiR `barM3`（40 件）与 end4 `DynamicIsland`/`Di*`/`BarGroupStylePopup`（8 件）至目标位（inert、带来源标注）；建立 1:1 纯净基线 | 进行中 |
+| B0 | 物理清盘与双源基线入库 (Fork)：物理 `rm` 处决 88 个历史孤儿件与自研假胶水；全量 `cp` iNiR `barM3`（40 件）与 end4 `DynamicIsland`/`Di*`/`BarGroupStylePopup`（8 件）至目标位（inert、带来源标注）；建立 1:1 纯净基线 | 已完成 |
 | B1 | 核心依赖剪裁与桥接 (Trim & Bridge)：剔除外部未声明依赖；桥接 `Appearance` / `ThemeTokens`（对接 `M3Palette`）；桥接 `PersonalizationConfig` 与 I18n；清理配置幽灵键；保证 QML 解析不报错 | 待开始 |
 | B2 | 控制通信闭环与通知仲裁 (Control Loop)：补齐 Bar IPC（`toggle/open/close`）；修复主屏 Island IPC 注册（消除多屏冲突），绑定 `ActionGateway.islandHost`（复活 Spotlight 岛通信）；仲裁通知所有权：岛开启时静默右上角弹窗，杜绝双重弹窗 | 待开始 |
 | B3 | 灵动岛微交互与状态机闭环 (Dynamic Island Flow)：100% 对齐 end4-pC：DynamicIsland 嵌入 Material Bar 中段；接入 7 大 Provider（Media/OSD/Notif/Session/Timer/Recording/Idle）与 Badges Row 侧栏徽章；处决 IslandPanelPopup 等孤儿大面板；点击头像呼出右侧边栏 | 待开始 |

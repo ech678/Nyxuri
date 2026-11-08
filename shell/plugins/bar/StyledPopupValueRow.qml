@@ -1,42 +1,30 @@
-// Fork & Trim: end4-pC modules/ii/bar/StyledPopupValueRow.qml (GPL-3, see
-// shell/LICENSE appendix end-4-dots-hyprland-GPL-3.0.txt). B4 reskin promotes
-// this component to plugins/bar/.
 import QtQuick
 import QtQuick.Layouts
-import qs.commons
-import qs.ui
+import qs.modules.ii.barM3
+import qs.modules.common
+import qs.modules.common.widgets
 
-Row {
+RowLayout {
     id: root
-
-    required property var icon
-    required property var label
-    required property var value
-    spacing: 5
+    required property string icon
+    required property string label
+    required property string value
+    spacing: 4
 
     MaterialSymbol {
-        anchors.verticalCenter: parent.verticalCenter
-        fill: 0
         text: root.icon
-        iconSize: 16
         color: Appearance.colors.colOnSurfaceVariant
+        iconSize: Appearance.font.pixelSize.large
     }
-
     StyledText {
-        anchors.verticalCenter: parent.verticalCenter
         text: root.label
-        font.pixelSize: 12
         color: Appearance.colors.colOnSurfaceVariant
     }
-
-    Item {
-        Layout.fillWidth: true
-    }
-
     StyledText {
-        anchors.verticalCenter: parent.verticalCenter
+        Layout.fillWidth: true
+        horizontalAlignment: Text.AlignRight
+        visible: root.value !== ""
+        color: Appearance.colors.colOnSurfaceVariant
         text: root.value
-        font.pixelSize: 12
-        color: Appearance.colors.colOnSurface
     }
 }

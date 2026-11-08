@@ -1,93 +1,99 @@
-// Fork & Trim: end4-pC modules/ii/bar/BarGroup.qml (GPL-3, see
-// shell/LICENSE appendix end-4-dots-hyprland-GPL-3.0.txt). B4 reskin promotes
-// this component to plugins/bar/.
+import qs.modules.ii.barM3
+import qs.modules.common
+import qs.modules.common.widgets
+import qs.modules.common.m3
 import QtQuick
 import QtQuick.Layouts
-import qs.commons
-import qs.services
 
 Item {
     id: root
-
     property bool vertical: false
     property int currentIndex: 0
     property int totalCount: 0
-    readonly property bool isMaterial: PersonalizationConfig.barCornerStyle === 3 || PersonalizationConfig.barCornerStyle === 4
+    property bool isMaterial: Config.options.bar.m3.cornerStyle === 3
     property bool paintMaterialPill: false
-    property bool paintBackground: true
-    property color bgColor: Appearance.colors.colPrimaryContainer
-    property string widgetName: ""
+    property real padding: (root.isMaterial && !root.paintMaterialPill) ? 0 : 5
+    property color bgColor: M3Palette.primaryContainer
+    readonly property bool empty: root.vertical
+        ? gridLayout.implicitHeight < 1
+        : gridLayout.implicitWidth < 1
+    readonly property Item spectrumClipItem: background
+    readonly property var spectrumClipRadii: [
+        background.topLeftRadius, background.topRightRadius,
+        background.bottomRightRadius, background.bottomLeftRadius
+    ]
 
-    readonly property string borderlessMode: PersonalizationConfig.barBorderless ?? "pills"
-    readonly property bool isSegmented: root.borderlessMode === "segmented"
-    readonly property bool isPanel: PersonalizationConfig.barCornerStyle === 5
-    readonly property real panelRadius: 14
-
-    readonly property color resolvedGroupColor: Appearance.colors.colLayer1
-
-    readonly property real fullRadius: root.isPanel ? root.panelRadius : (root.vertical ? (width / 2) : (height / 2))
-    readonly property real midRadius: root.isPanel ? root.panelRadius : root.isSegmented ? 0 : (PersonalizationConfig.barCornerStyle === 2 ? 6 : 10)
-
+    readonly property real fullRadius: height / 2
+    readonly property real midRadius: Config.options.bar.m3.cornerStyle === 2 ? Appearance.rounding.unsharpenmore + 2 : Appearance.rounding.unsharpenmore
     property real startRadius: {
-        if (totalCount <= 1)
-            return fullRadius;
-        if (currentIndex === 0)
-            return fullRadius;
+        if (totalCount <= 1) return fullRadius;
+        if (currentIndex === 0) return fullRadius;
         return midRadius;
     }
     property real endRadius: {
-        if (totalCount <= 1)
-            return fullRadius;
-        if (currentIndex === totalCount - 1)
-            return fullRadius;
+        if (totalCount <= 1) return fullRadius;
+        if (currentIndex === totalCount - 1) return fullRadius;
         return midRadius;
     }
 
-    property real padding: (root.isMaterial && !root.paintMaterialPill) ? 0 : 4
-
-    implicitWidth: vertical && root.isMaterial ? 40 : (gridLayout.implicitWidth + padding * 2)
-    implicitHeight: vertical ? (gridLayout.implicitHeight + padding * 2) : 32
+    visible: !root.empty
+    implicitWidth: root.empty ? 0
+        : vertical && root.isMaterial
+            ? Appearance.sizes.baseVerticalBarWidth - 6
+            : (gridLayout.implicitWidth + padding * 2)
+    implicitHeight: root.empty ? 0
+        : vertical
+            ? (gridLayout.implicitHeight + padding * 2)
+            : Appearance.sizes.baseBarHeight
 
     default property alias items: gridLayout.children
 
-    readonly property Item loadedWidget: gridLayout.children.length > 0 ? (gridLayout.children[0]?.item ?? gridLayout.children[0]) : null
-
-    Binding {
-        target: root.loadedWidget && "backgroundVisible" in root.loadedWidget ? root.loadedWidget : null
-        property: "backgroundVisible"
-        value: false
-    }
-
     Rectangle {
         id: background
-
         anchors {
             fill: parent
-            topMargin: root.vertical ? 0 : 2
-            bottomMargin: root.vertical ? 0 : 2
-            leftMargin: root.vertical ? 2 : 0
-            rightMargin: root.vertical ? 2 : 0
+            topMargin: root.vertical ? 0 : 4
+            bottomMargin: root.vertical ? 0 : 4
+            leftMargin: root.vertical ? 4 : 0
+            rightMargin: root.vertical ? 4 : 0
         }
-        color: !root.paintBackground ? "transparent" : (root.isMaterial && !root.paintMaterialPill) ? "transparent" : (root.isMaterial && root.paintMaterialPill) ? root.bgColor : (root.borderlessMode === "transparent" ? "transparent" : PersonalizationConfig.barCornerStyle === 2 ? Appearance.colors.colLayer0 : root.resolvedGroupColor)
+        color: !(Config.options?.bar?.m3?.showBackground ?? true)
+            ? "transparent"
+            : (root.isMaterial && !root.paintMaterialPill)
+                ? "transparent"
+                : (root.isMaterial && root.paintMaterialPill)
+                    ? root.bgColor
+                    : (Config.options?.bar.m3.borderless === "transparent"
+                        ? "transparent"
+                        : Config.options.bar.m3.cornerStyle === 2
+                        ? M3Palette.surface
+                        : M3Palette.surfaceContainerLow)
+        border.width: root.isMaterial && root.paintMaterialPill
+            && (Config.options?.bar?.m3?.borderless ?? "pills") === "separated" ? 1 : 0
+        border.color: M3Palette.outlineVariant
 
-        border.width: (root.paintBackground && root.isSegmented && !root.isMaterial) ? 1 : 0
-        border.color: Appearance.colors.colLayer0Border
+        topLeftRadius: (root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.m3.borderless === "separated" ? root.fullRadius : root.startRadius)
+        bottomLeftRadius: (root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.m3.borderless === "separated" ? root.fullRadius : root.vertical ? root.endRadius : root.startRadius)
+        topRightRadius: (root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.m3.borderless === "separated" ? root.fullRadius : root.vertical ? root.startRadius : root.endRadius)
+        bottomRightRadius: (root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.m3.borderless === "separated" ? root.fullRadius : root.endRadius)
 
-        topLeftRadius: (root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (root.borderlessMode === "separated" ? root.fullRadius : root.startRadius)
-        bottomLeftRadius: (root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (root.borderlessMode === "separated" ? root.fullRadius : root.vertical ? root.endRadius : root.startRadius)
-        topRightRadius: (root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (root.borderlessMode === "separated" ? root.fullRadius : root.vertical ? root.startRadius : root.endRadius)
-        bottomRightRadius: (root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (root.borderlessMode === "separated" ? root.fullRadius : root.endRadius)
+        EditorialPaperStack {
+            anchors.fill: parent
+            visible: Appearance.editorialEverywhere && Appearance.editorial.paperStack && background.color.a > 0
+            faceColor: background.color
+            topLeftRadius: background.topLeftRadius
+            topRightRadius: background.topRightRadius
+            bottomLeftRadius: background.bottomLeftRadius
+            bottomRightRadius: background.bottomRightRadius
+        }
 
         Behavior on color {
-            NumberAnimation {
-                duration: Appearance.animation.elementMoveFast.duration
-            }
+            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
         }
     }
 
     GridLayout {
         id: gridLayout
-
         columns: root.vertical ? 1 : -1
         anchors.centerIn: parent
         columnSpacing: 0
