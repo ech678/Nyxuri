@@ -137,12 +137,15 @@ Singleton {
                                                                                                      "Rainbow")
                                                                                     })]
     readonly property var islandStyles: [({
-                                                "value": "bangs",
-                                                "label": I18n.tr("Bangs")
+                                                "value": "end4",
+                                                "label": I18n.tr("Capsule")
                                             }), ({
-                                                     "value": "pill",
-                                                     "label": I18n.tr("Pill")
-                                                 }),
+                                                     "value": "bangs",
+                                                     "label": I18n.tr("Bangs")
+                                                 }), ({
+                                                          "value": "pill",
+                                                          "label": I18n.tr("Pill")
+                                                      }),
         {
             value: "long",
             label: I18n.tr("Long")
@@ -302,7 +305,15 @@ Singleton {
     // key while the bar unit's existence remains the ledger's alone.
     property bool islandEnabled: true
     property bool islandOverlay: false
-    property string islandStyle: "bangs"
+    // B3-1: the island body is the end4-pC capsule; bangs/pill/long stay
+    // selectable as the escape hatch until B4 retires them (D4 freeze).
+    property string islandStyle: "end4"
+    // B3-1 one-shot markers. Two separate flags on purpose: the layout seed and
+    // the style seed shipped in the same phase but must be able to land
+    // independently (a config that already consumed the layout seed still needs
+    // the style seed).
+    property bool islandLayoutMigrated: false
+    property bool islandStyleMigrated: false
     readonly property var islandKeyholeCardIds: ["weather", "pomodoro"]
     readonly property var islandKeyholeCardOptions: [
         {
@@ -320,7 +331,7 @@ Singleton {
     property bool barOverlay: false
     property string barPosition: "top"
     readonly property var barComponentIds: ["workspaces", "information", "activeWindow", "media", "tray",
-        "systemMonitor", "quickSettings", "clock"]
+        "systemMonitor", "quickSettings", "clock", "island"]
     readonly property var defaultBarLeadingComponents: ["workspaces", "information", "activeWindow"]
     readonly property var defaultBarTrailingComponents: ["tray", "systemMonitor", "quickSettings"]
     readonly property var barComponentOptions: [({
@@ -403,7 +414,8 @@ Singleton {
     // across three lanes. An empty array means "show nothing in that lane", so
     // fresh configs fall back to a sensible default instead of a blank bar.
     readonly property var defaultBarLayoutLeft: ["workspaces", "information", "activeWindow"]
-    readonly property var defaultBarLayoutMiddle: []
+    // B3-1: the island is a first-class middle widget, not a reserved gap.
+    readonly property var defaultBarLayoutMiddle: ["island"]
     readonly property var defaultBarLayoutRight: ["tray", "systemMonitor", "quickSettings"]
     property var barLayoutLeft: root.defaultBarLayoutLeft.slice()
     property var barLayoutMiddle: root.defaultBarLayoutMiddle.slice()
@@ -1895,6 +1907,8 @@ Singleton {
                 "overlay": root.islandOverlay,
                 "style": root.islandStyle,
                 "position": root.islandPosition,
+                "layoutMigrated": root.islandLayoutMigrated,
+                "styleMigrated": root.islandStyleMigrated,
                 "capsLockOsd": root.islandCapsLockOsd,
                 "numLockOsd": root.islandNumLockOsd,
                 "hideDate": root.islandHideDate,
@@ -2052,6 +2066,8 @@ Singleton {
         root.islandEnabled = typeof island.enabled === "boolean" ? island.enabled : true;
         root.islandOverlay = typeof island.overlay === "boolean" ? island.overlay : false;
         root.islandStyle = normalizedOption(root.islandStyles, island.style, "bangs");
+        root.islandLayoutMigrated = island.layoutMigrated === true;
+        root.islandStyleMigrated = island.styleMigrated === true;
         root.islandPosition = normalizedEdgePosition(island.position);
         root.islandCapsLockOsd = typeof island.capsLockOsd === "boolean" ? island.capsLockOsd : true;
         root.islandNumLockOsd = typeof island.numLockOsd === "boolean" ? island.numLockOsd : true;
@@ -2098,11 +2114,20 @@ Singleton {
         root.barLeadingComponents = barLayout.leading;
         root.barTrailingComponents = barLayout.trailing;
         const hasBarLayouts = "barLayoutLeft" in bar || "barLayoutMiddle" in bar || "barLayoutRight" in bar;
+        // B3-1 one-shot migration. Before the island was a layout part it was a
+        // standalone layer window: the middle lane never hosted it, and the
+        // style was whatever escape hatch (bangs/pill/long) the user last
+        // picked. Both are seeded exactly once here, then the user's own
+        // choices win. Runs before either branch so both shapes get it.
+        const islandMigrated = island.islandLayoutMigrated === true;
         if (hasBarLayouts) {
             root.barLayoutLeft = root.normalizedBarLayoutIds(bar.barLayoutLeft);
             root.barLayoutMiddle = root.normalizedBarLayoutIds(bar.barLayoutMiddle).filter(id => id
                                                                                                  !== "clock");
             root.barLayoutRight = root.normalizedBarLayoutIds(bar.barLayoutRight);
+            if (!islandMigrated && root.barLayoutMiddle.length === 0) {
+                root.barLayoutMiddle = ["island"];
+            }
             if (!root.arraysEqual(root.barLeadingComponents, root.barLayoutLeft) && hasBarLayout) {
                 root.barLayoutLeft = root.normalizedBarLayoutIds(root.barLeadingComponents);
                 root.barLayoutRight = root.normalizedBarLayoutIds(root.barTrailingComponents);
@@ -2118,11 +2143,23 @@ Singleton {
             }
         } else {
             // Legacy configs only had leading/trailing zones; map them 1:1 so an
-            // upgrade does not reshuffle the user's bar. middle starts empty.
+            // upgrade does not reshuffle the user's bar. The middle lane keeps
+            // its default (B3-1: the island), otherwise an upgrade silently
+            // drops the island out of the layout.
             root.barLayoutLeft = root.normalizedBarLayoutIds(root.barLeadingComponents);
-            root.barLayoutMiddle = [];
+            root.barLayoutMiddle = root.defaultBarLayoutMiddle.slice();
             root.barLayoutRight = root.normalizedBarLayoutIds(root.barTrailingComponents);
         }
+        // The style side of the same one-shot, tracked separately: a saved
+        // bangs/pill/long means "the user picked an escape hatch before the
+        // capsule existed", not a deliberate rejection of it. Seed end4 once;
+        // the escape hatches stay selectable until B4 retires them.
+        if (island.styleMigrated !== true)
+            root.islandStyle = "end4";
+        if (typeof island.styleMigrated !== "boolean")
+            root.islandStyleMigrated = true;
+        if (typeof island.islandLayoutMigrated !== "boolean")
+            root.islandLayoutMigrated = true;
         root.barTrailingComponents = root.barTrailingComponents.filter(id => id !== "clock");
         root.quickSettingsComponents = root.normalizedQuickSettingsComponents(bar.quickSettingsComponents);
         root.keepSidebarsLoaded = sidebar.keepLoaded === undefined ? true : !!sidebar.keepLoaded;

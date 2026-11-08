@@ -8,6 +8,7 @@ import "sysmonitor"
 import "media"
 import "quickpanel"
 import "clock"
+import "."
 
 Loader {
     id: root
@@ -36,6 +37,8 @@ Loader {
             return quickSettingsComponent;
         case "clock":
             return clockComponent;
+        case "island":
+            return islandComponent;
         default:
             return null;
         }
@@ -113,6 +116,17 @@ Loader {
         id: clockComponent
 
         Clock {
+            vertical: root.vertical
+        }
+    }
+
+    // B3-1: the island rides the bar canvas as a layout part. Only the end4
+    // capsule is hostable here; legacy styles keep their own layer window
+    // (plugins/bar/Bar.qml) until B4 retires them.
+    Component {
+        id: islandComponent
+
+        Island {
             vertical: root.vertical
         }
     }
