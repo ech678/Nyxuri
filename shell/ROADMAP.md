@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | P4 | 主题契约、模板兼容与取色引擎分阶 | 待验收（契约测试全绿；实机行为与视觉证据待作者） |
 | T3 | 设置界面替换：Caelestia 安卓风味 | M3/M4 待验收（机器证据齐；视觉过目待作者） |
-| B | Bar & Island 统一（岛本体整抄 end4） | B1 已完成；B2-1 待验收；B3-1 待验收；B3-2 待验收；B4 待验收（换皮骨架与 cornerStyle 体系已就绪） |
+| B | Bar & Island 统一（双源整抄：iNiR 原生 Material Bar + end4 灵动岛） | 方案重塑定案；B0 物理清盘与基线入库进行中（增设 Sub-agents 独立审计任务） |
 | P6 | 整体验收与未来移植 | 排队（前置主线 KM5） |
 
 ## 已交付基线台账
@@ -106,43 +106,43 @@ hooks 的实机行为证据与视觉验收待作者确认。镜像色板是否�
 **待验收**：M3 核心四页与 M4 全页面覆盖的实机视觉过目。fidelity 三轮修订与
 S0-4 资产收编明细见台账 T3 实施记录。
 
-## B 卷：Bar & Island 统一（keystone 并入 bar，B1 合并与正名待验收）
+## B 卷：Bar & Island 统一（双源整抄：iNiR 原生 Material Bar + end4 灵动岛）
 
-> 起因（2026-11-07 定案）：bar 与 keystone 实为同一形态的两个单元——账本双开、同抢顶边，
-> bar 中段布局靠人工清空给岛腾位，属结构性重复。本卷把岛降格为 bar 的布局部件，
-> bar 换 end4 视觉语言，自由度对齐 dux-shell。**2026-11-08 增补：岛本体也整抄 end4
-> `DynamicIsland` + `Di*` 族**（见 D7/D8），现岛外观终局由 end4 形态语言决定。
-> 开工不依赖 P4 验收（不同域），但 B1 的 manifest 契约改动不与 P4 收尾并线。
+> 起因与重塑（2026-11-08 独立 Sub-agents 深度审查）：审查证实前期 B1–B4 所谓“完成/待验收”
+> 充斥着严重的自研脑补与脱节幻觉（设置页两段/三段割裂、无 middle 栏导致岛不可控、BarComponentLoader
+> 搞硬编码 switch 违背整抄、`islandHost` 悬空导致 Spotlight 失联、通知双重并发弹窗、单测全为静态正则 Grep 假覆盖）。
+> 经比对用户实机截图与最新 `references/iNiR` 源码，本卷全面重塑路线：
+> **以 `references/iNiR/modules/ii/barM3/` 为 Niri 原生 Bar 与 Material 部件基线（免除 Hyprland 翻译），
+> 以 `references/end4-pC/modules/ii/bar/` 为居中灵动岛本体基线；前置物理清除 60+ 孤儿件与死配置；
+> 并专门增设 Sub-agents 独立实机审查任务，对执行与运行态实施防幻觉审计**。
 
-### 0. 方法论红线：先物理整抄，再定向裁剪（No picking）
+### 0. 方法论红线：先物理清盘，再双源整抄入库（Fork & Trim）
 
 本卷一切上游能力一律走 Fork & Trim：**全量 `cp` 原件进树建立基线 → 保留原版防崩溃、
-动画与几何细节 → 定向剪裁适配**。严禁从零手写极简残卷冒充整抄，严禁打散东拼西凑。
-四个能力源：
+动画与几何细节 → 定向剪裁适配**。严禁自研拼凑残卷冒充整抄。三个能力源与前置清盘：
 
-- **岛本体源** `references/end4-pC/modules/ii/bar/DynamicIsland.qml` 与 `Di*.qml`
-  （DiIdle/DiMedia/DiNotifs/DiOsd/DiSession/DiTimers）加
-  `modules/common/widgets/Visualizer.qml`/`WaveVisualizer.qml`：岛胶囊本体与
-  provider 形态面注册表（`contentProviders` 七面、`alwaysWinIds` 抢占、badge 横排、
-  350ms ExpressiveDefaultSpatial 尺寸过渡、dots/wave 可视化）。B0 曾以「孤儿件」
-  判为不抄，现改为**整抄**（2026-11-08 定案）。
-- **皮肤源** `references/end4-pC/modules/ii/bar/`：cornerStyle 体系（平面/浮动/材质/
-  材质贴合/面板）、BarGroup/Divisor、材质胶囊、center-only 模式、屏幕圆角衔接。
-- **机制源** `references/dux-shell/quickshell/Modules/DBar/` 与
-  `Common/settings/`：WidgetModel 注册表、DensityPresets 密度预设、每部件默认值模式。
-- **树内范式**：`plugins/bar/quickpanel/QuickSettings.qml`（锚定弹窗）与 keystone
-  morph 引擎（本卷**保护对象**，不是砍的对象——换皮后仍以机制层身份保留）。
+- **Bar 底座与 Material 部件源** `references/iNiR/modules/ii/barM3/`（40 件）：
+  天然原生针对 Niri 混成器（无 Hyprland 依赖、天然适配 Overview 避让、专属区控制）；
+  实现 Material 3 嵌套药丸（`barM3/Media.qml` 内嵌实心播放药丸、`ClockWidget.qml` 内嵌时间实心药丸、
+  `WeatherBar.qml`、`SystemIcons.qml`）、独立大圆角胶囊（`borderless === "separated"`）、纸材质阴影。
+- **居中灵动岛源** `references/end4-pC/modules/ii/bar/DynamicIsland.qml` 与 `Di*.qml`（7 件）：
+  成熟的 7 大 Provider 优先级队列、`alwaysWinIds` 强占、Badges 侧栏横排（32×32 几何花瓣图标与点击变轨）、
+  350ms ExpressiveDefaultSpatial 尺寸过渡、dots/wave 可视化。
+- **就地样式微调源** `references/end4-pC/modules/ii/bar/BarGroupStylePopup.qml`：
+  右键点击任一部件就地弹出小弹窗，实时修改并持久化单部件的背景色、边框、圆角与内边距。
+- **前置死代码物理清盘（B0 阶段一次性处决）**：
+  拒绝将死代码留到最后当包袱。B0 建立基线前，物理清除 60+ 历史遗留件（Keystone 旧样式 `styles/long/`、
+  `bangs/`、`pill/`、旧变形录音 `recording/`、旧表面变形引擎 `shared/`、旧大媒体卡 `media/`、旧钥匙孔卡片等
+  `dashboard/`、旧天气 `weather/`、旧 QSB 着色器资产 `shaders/`，以及旧碎片化部件目录 `activewindow/`、
+  `clock/`、`media/`、`sysmonitor/`、`tray/`、`workspaces/` 和自研过渡假胶水 `BarComponentLoader.qml`、
+  `Horizontal/VerticalBarWindow.qml`、`island/end4/`），全库零熵增起步。
+- **Sub-agents 独立审查任务（独立专项设立）**：
+  在代码推进过程中适时启动独立的 Sub-agent 对进度、执行情况及代码真实运行态开展“反幻觉审计”，
+  以 QML 实际加载、IPC 真实响应、无重复弹窗为唯一准绳，严禁静态正则 Grep 充当绿灯。
 
-裁剪只做四类，超出即为私改：① 外部依赖桥接（Hyprland/Qt5Compat →
-CompositorDriver / 树内效果件）；② 配色与尺寸接 ThemeTokens/Sizes；③ 文案接 I18n；
-④ 砍上游死路径。整抄件文件头保留来源与许可证标注。B0 入库基线件的消费者由后继
-阶段接续，「每文件有真实消费者」门禁统一挪到 B5 结账清算——这是本卷显式豁免，
-不是默认口径。
-
-end4 岛数据全部绑上游单例（`Notifications`/`TimerService`/`Battery`/
-`MprisController`/`GlobalStates`/`Session`），一律不抄：改接树内
-`NotificationService`/`MediaService`/`BrightnessService`/Pipewire，跨域动作
-（锁屏/睡眠/重启/关机）只经 Action Gateway 意图，面板层不得直调。
+裁剪只做四类：① 外部依赖桥接（M3Palette → ThemeTokens / Appearance；树内效果件）；
+② 数据与服务桥接（树内 NotificationService / MediaService / VolumeFeedbackService / Pipewire）；
+③ 文案接 I18n；④ 砍上游死路径。整抄件文件头保留来源与许可证标注。
 
 ### 1. 决策记录（已与作者定案，不再重开）
 
@@ -150,31 +150,33 @@ end4 岛数据全部绑上游单例（`Notifications`/`TimerService`/`Battery`/
 | --- | --- | --- |
 | D1 | 单元归属 | `shell.keystone` 退场，岛并入 `shell.bar` 成为布局部件（`componentId: "island"`）；插槽 6 → 5，`island` 种类删除（唯一消费者合并后空置即熵增） |
 | D2 | 命名 | keystone → **island**：IPC target、`nyxuri:keystone:*` 动作、`islandHost`、配置键、文件名全链路；Keyhole 系命名随迁审计 |
-| D3 | 岛拓扑 | **inline 进 bar 窗口**，三档：小变形（胶囊↔媒体↔通知，end4 岛尺度 130~220px 宽 × 32px 高）inline；中变形（录音/音量 OSD 等 ≤~200px 高）走 bar 画布下探 + 输入遮罩仍 inline；大面板（hub/tools）锚定弹窗 + 从胶囊 bounds 生长的入场动画。bangs 贴顶形态保留（bar 背景挖洞让位）；bar 悬浮/贴底/竖排时岛语义改为「从 bar 带长出」 |
-| D4 | long 样式 | 换皮实机验收（B3）通过后处死；B1 起冻结（配置键不迁移、标记 deprecated、保持可用作逃生通道） |
-| D5 | Fork 来源 | 即 §0 四源；数据部件（workspaces/clock/tray/media/sysmonitor/quickpanel）保留 Nyxuri niri 原生实现，只换外壳 |
-| D6 | 高度与自由度 | `barThickness`/`islandThickness` 可调键（Sizes 降为默认值）；4 级密度预设 + 自定义；封闭 switch → widget 注册表 |
-| D7 | 岛本体换皮（2026-11-08 定案） | 岛胶囊外观与形态面**整抄 end4 `DynamicIsland` + `Di*` 族**（provider 注册表、badge 横排、dots/wave 可视化、350ms 尺寸过渡）。代价：现有 540×210 媒体大卡退役，媒体形态改 end4 胶囊横条（hover 展开、220px 宽封顶）。morph 引擎降为机制层（弹簧/尺寸补间）保留，外观归 end4 |
-| D8 | 形态面取舍（2026-11-08 定案） | **hub 暂时不要**（B2-1 已转锚定弹窗，默认不开放、留代码不勾选）；**lyrics 以后做**（现为空壳占位，不进本轮，B5 前保留占位不处死）；tools 维持弹窗；session 面**不抄 DiSession**，改由既有 `power-menu` / Action Gateway 打开既有 session 面板；battery/timer 两面待 `BatteryService` 与定时器域能力到位后再接（先留骨架置空） |
+| D3 | 岛拓扑 | 100% 对齐 end4-pC：纯内联微交互胶囊（高度恒定 32px，宽度 130~220px 贝塞尔弹性形变），不设下拉大面板；点击头像直接呼出既有右侧边栏（SidebarRight）；复杂控制由独立部件弹窗与 QuickPanel 承载 |
+| D4 | 历史债务处死 | 不再设长期逃生通道。B0 阶段前置物理删除 `styles/long/`、`styles/bangs/`、`styles/pill/`、旧变形录音、旧大面板（`HubContent`/`ToolsContent`/`IslandPanelPopup`）与着色器全集；清理 `PersonalizationConfig` 中的幽灵键 |
+| D5 | 双源整抄基线 | Bar 底座与部件源采用 **iNiR `modules/ii/barM3/`**（Niri 原生、M3 嵌套药丸美学）；灵动岛本体采用 **end4-pC `DynamicIsland` + `Di*` 族**；微调源采用 `BarGroupStylePopup` |
+| D6 | 高度与自由度 | 彻底废除 `barLeadingComponents` / `barTrailingComponents` 双轨制，收敛为真 3-lane（`left/middle/right`）；设置页提供三段拖拽；增加 `barThickness` 滑杆与部件就地调色 |
+| D7 | 灵动岛联动 | 100% 完整复刻 end4-pC：7 大 Provider（Media/Notif/OSD/Session/Timer/Recording/Idle）真实流转；Badges 32×32 几何花瓣横排点击无缝切换 manualFocusId；切歌 hover 展开；彻底放弃 IslandPanelPopup 孤儿大面板 |
+| D8 | 形态面取舍 | 彻底处决 hub 与 tools 大面板历史包袱；lyrics 以后做（保留占位）；session 面整抄 end4 DiSession 微型 4 键条；battery/timer/recording/osd/notif/media 全面接入对应树内真实服务 |
+| D9 | 死代码清盘台账 | 60+ 孤儿件（含旧面板/旧着色器/旧自研假胶水）与 10+ 幽灵配置键列入 B0 处决清单，前置一次性物理 `rm`，坚守减法秩序感 |
+| D10| 通知所有权单一仲裁 | 开启灵动岛时，由岛唯一接管弹窗通知，宿主右上角 `NotificationPopupHost` 自动静默，彻底消灭双重并发弹窗 |
+| D11| Sub-agents 独立审查 | 独立设立实机审查任务，对执行情况与运行真值进行防幻觉代码审计，拒绝形式主义假单测 |
 
 ### 2. 目标终态
 
-一个单元 `shell.bar`（edge 槽）：岛是布局表一等部件（默认中段、可拖拽移动），
-左右清空即 center-only 纯岛形态，完整继承「只要岛不要 bar」场景；高度/密度自由
-调节；加部件 = 注册表加一行；keystone 名字从全库消失（归档与 CHANGELOG 历史除外）。
+一个单元 `shell.bar`（edge 槽）：以 iNiR Material 3 原生药丸美学呈现全宽顶栏；
+灵动岛是三段式布局的一等部件（默认中段、可拖拽移动），左右清空即 center-only 纯岛形态；
+高度/边距自由调节，右键部件就地微调；keystone 与 long 名字从全库消失（归档与 CHANGELOG 历史除外）。
 
 ### 3. 分期台账（B0–B6）
 
 | 阶段 | 交付目标 | 状态 |
-| --- | --- | --- |
-| B0 | 契约定案 + 整抄基线：end4 皮肤件与 dux 机制件全量 `cp` 入 `plugins/bar/` 目标位（inert、带来源标注），裁剪清单成文；shell 运行零变化，`tests/shell/` 全绿，git 检查点可回滚 | 已完成（基线 14 件 + README 入 `plugins/bar/vendor/`；裁剪清单落 [bar-island](../llms-wiki/shell/bar-island.md)；tests/shell 全绿 + 沙箱部署零 diff；作者已验收） |
-| B1 | 合并与正名（行为等价）：`plugins/keystone/` → `plugins/bar/island/`，`Keystone*` → `Island*`；manifest 合并、账本迁移（disabled keystone → `islandEnabled=false`）、配置键 `keystone*` → `island*`（long 系冻结除外）；IPC/动作/`keystoneHost`/niri-actions.json 正名；插槽 6→5（manifest.py 枚举、PluginRegistry、manifest-schema、AGENTS、architecture-matrix、popup:notification 仲裁键改绑 bar）；**设置合卡**（NAV 顶层只剩 bar，屿为 `bar.island` 子页、横时钟改宗 `bar.island-clock`，Dashboard 侧屿节并入 Bar & dock 页）。岛此阶段仍独立窗口居顶（过渡态）。验收：bangs 视觉逐像素等价、`off shell.bar` 连带岛消失、全库无 keystone 残留 | 已完成（2026-11-08 作者实机验收通过；全链路正名 + 合卡 + migrate_config 幂等迁移 + store.py 账本死键清理，中文定名「屿/一览」；tests/shell 414 绿 + 引擎/状态定向绿 + 沙箱部署零 diff） |
-| B2 | hub/tools 大面板转锚定弹窗（B2-1，已执法）：`IslandPanelPopup` 整抄 `TrayMenu.qml` PopupWindow 范式——`anchor.item` 钉胶囊、按边映射 edges/gravity/adjustment、backdrop 点击即关、FocusScope 承接 Escape、`grabFocus` 收键盘、keyhole 挖洞背景 + blur 抽除、入场 scale+fade 从胶囊生长；`IslandSurface` 摘除内联 HubContent/ToolsContent 与 keyhole 挖洞，状态机 `isHubMode`/`isToolsMode` → `panelActive`；布局引擎摘工具/中心两档 morph 目标；键盘代理窗收窄为 Escape 转发 | 待验收（机器证据齐：check.sh 绿、tests/shell 415 绿、沙箱部署零 diff；待作者实机开合/键盘/多屏过目） |
-| B3-1 | 岛本体整抄（皮肤骨架）：end4 `DynamicIsland` + `DiIdle` + `DiMedia` 与 `Revealer`/`Visualizer` 物理 `cp` 入树后定向裁剪四类（上游单例 → 树内服务、`Config.options` → `PersonalizationConfig`、cava 改 `IslandVisualizerService` 租约、D8 形态面取舍）；岛 inline 进 bar 中段（`barComponentIds` 增 `island`、`BarComponentLoader` 增分支、`plugins/bar/Island.qml` 部件壳 + IPC 面）；旧 bangs/pill/long 保持独立窗（D4 冻结）；配置一次性迁移（`layoutMigrated`/`styleMigrated` 双标记独立） | 待验收（机器证据：tests/shell 415 绿、lifecycle clean、沙箱部署零 diff；qs 真实装载探针 `currentStyle=end4` 零编译错误；实机视觉过目待作者） |
-| B3-2 | 形态面接续：`DiNotifs`/`DiOsd` 整抄上岗，`NotificationPopupHost` 与 `VolumeContent` 退役（右键动作/超时/DND 抑制能力先搬迁，不得功能回退）；recording 面接 `RecordingService`；battery/timer 留空骨架 | 待验收（机器证据：test_island_end4 6 绿、check.sh 绿、shell 架构单测绿、qs 探针零编译报错；实机视觉过目待作者） |
-| B4 | bar 换皮（end4 皮肤）：B0 基线件定向裁剪四类后上岗——cornerStyle 体系（含接管岛胶囊底色/圆角）、BarGroup/Divisor/材质胶囊、屏幕圆角衔接；弹窗（托盘菜单/快捷面板）同语言重皮；竖排同步换装；bangs/pill/long 与旧媒体大卡随之处死。验收：作者实机视觉验收、部件功能零回退、无裁切错位（红线 3）、60fps。**本阶段通过 = D4 处死闸门放行** | 待验收（机器证据：test_bar_end4 10 绿、check.sh 绿、shell 431 绿、沙箱部署零 diff；实机视觉过目待作者） |
-| B5 | 高度与自由度（dux 机制）：B0 机制件上岗——厚度可调键 + 设置页滑杆；密度预设 4 级 + 自定义（含 transition() 语义：切预设不覆盖用户已自定的键）；switch → widget 注册表（含 island 条目）。验收：高度实时生效、预设切换保留自定义值、新部件零宿主改动接入有实测 | 待开始 |
-| B6 | 清偿收尾：处死 long（文件/冻结键/设置段/i18n/测试全链路）；删被替代路径（旧 bar 外壳、旧媒体大卡路径、deprecated 别名）；lyrics 若已实现则接线，未实现则保留占位并记明；文档同步（architecture-matrix/plugin-model/manifest-schema/operation-map）+ CHANGELOG；消费者门禁统一清算。验收：audit-lifecycle clean、无 keystone/long 残留字符串、全量回归 + 沙箱部署 + 能耗 sanity（无多余 Timer/订阅） | 待开始 |
+| :--- | :--- | :--- |
+| B0 | 物理清盘与双源基线入库 (Fork)：物理 `rm` 处决 60+ 历史孤儿件与自研假胶水；全量 `cp` iNiR `barM3`（40 件）与 end4 `DynamicIsland`/`Di*`/`BarGroupStylePopup`（8 件）至目标位（inert、带来源标注）；建立 1:1 纯净基线 | 进行中 |
+| B1 | 核心依赖剪裁与桥接 (Trim & Bridge)：剔除外部未声明依赖；桥接 `Appearance` / `ThemeTokens`（对接 `M3Palette`）；桥接 `PersonalizationConfig` 与 I18n；清理配置幽灵键；保证 QML 解析不报错 | 待开始 |
+| B2 | 控制通信闭环与通知仲裁 (Control Loop)：补齐 Bar IPC（`toggle/open/close`）；修复主屏 Island IPC 注册（消除多屏冲突），绑定 `ActionGateway.islandHost`（复活 Spotlight 岛通信）；仲裁通知所有权：岛开启时静默右上角弹窗，杜绝双重弹窗 | 待开始 |
+| B3 | 灵动岛微交互与状态机闭环 (Dynamic Island Flow)：100% 对齐 end4-pC：DynamicIsland 嵌入 Material Bar 中段；接入 7 大 Provider（Media/OSD/Notif/Session/Timer/Recording/Idle）与 Badges Row 侧栏徽章；处决 IslandPanelPopup 等孤儿大面板；点击头像呼出右侧边栏 | 待开始 |
+| B4 | 3-Lane 自由度与设置重构 (Freedom & Settings)：彻底处决 leading/trailing 双轨制，统一为 3-lane（`left/middle/right`）；翻新 `GeneralBarPage.qml`，提供真三段式拖拽与居中纯岛（Center-only）；接入高度滑杆（`barThickness`）与 `BarGroupStylePopup` 部件就地调色 | 待开始 |
+| B5 | **Sub-agents 独立实机审查与防幻觉审计 (Sub-agents Reality Audit)**：**专设独立任务**：启动独立 Sub-agents 深入代码树与运行链路，对 B0~B4 的执行情况展开反幻觉深度审计：① 验证 IPC 真实响应（绝不留空 stub）；② 验证 ActionGateway 与 Spotlight 岛动作实际通达；③ 验证多屏无注册冲突；④ 验证通知单点触发与 OSD 抢占；⑤ 验证设置页拖拽真实生效；⑥ 彻底拔除静态正则 Grep 假测试 | 待开始 |
+| B6 | 台账、文档与全量真实验收 (Verification & Ship)：清理 `IslandPage.qml` 废弃配置，接入 end4 原生选项；同步更新台账与架构契约；真实 QML 编译检查（`quickshell --check`），真实 IPC 行为单测，沙箱部署零 diff 验收 | 待开始 |
 
 **停车场**（明确不承诺，触发条件到了再立项）：溢出滚动（dux OverflowLayout）、
 每部件深度设置全集、岛卫星与自由悬浮模式（dux DIsland）、竖排 bar 岛角部按钮
@@ -182,7 +184,7 @@ end4 岛数据全部绑上游单例（`Notifications`/`TimerService`/`Battery`/
 **battery/timer 岛面**（依赖新增 `BatteryService` 与定时器域能力，能力到位再接，
 本卷只留空骨架）。
 
-**用户侧断裂提醒**（B1 已执法，升级后生效）：niri 配置中绑定 `--ipc keystone`
+**用户侧断裂提醒**（升级后生效）：niri 配置中绑定 `--ipc keystone`
 的快捷键需改 `island`，`--ipc control-center open/toggle island` 改 `bar.island`
 （实验期干净断裂，不留别名）；config.toml `[keystone]` 段与
 disabled `shell.keystone` 账本由迁移自动折算，无需手工处理。
