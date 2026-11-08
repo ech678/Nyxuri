@@ -1,7 +1,8 @@
 // Fork & Trim: end4-pC modules/ii/bar/DynamicIsland.qml (GPL-3, see
 // shell/LICENSE appendix end-4-dots-hyprland-GPL-3.0.txt). B3-1 copies the
-// capsule body and the idle/media faces; the remaining provider faces land in
-// B3-2. Four trim classes only: (1) upstream singletons -> tree services,
+// capsule body and the idle/media faces; B3-2 wires DiNotifs, DiOsd,
+// RecordingService / AudioRecordingService, and battery/timer skeletons.
+// Four trim classes only: (1) upstream singletons -> tree services,
 // (2) colors/sizes -> Appearance/Sizes, (3) copy -> I18n, (4) dead upstream
 // paths dropped.
 import QtQuick
@@ -11,6 +12,7 @@ import Quickshell.Services.Mpris
 import qs.services
 import qs.commons
 import qs.ui
+import "../tools"
 
 Item {
     id: root
@@ -33,6 +35,7 @@ Item {
     readonly property real osdWidth: 132
     readonly property real notificationWidth: 220
     readonly property real batteryWidth: 170
+    readonly property real recordingWidth: 150
     readonly property real badgeSize: 32
     readonly property real badgeSpacing: 6
     // B3-1 island side only: the bar shell keeps its own surface until B4
@@ -55,24 +58,116 @@ Item {
     readonly property MprisPlayer activePlayer: MediaService.active
     readonly property bool hasMedia: root.activePlayer !== null && ((root.activePlayer.trackTitle ?? "") !== "" || root.activePlayer.isPlaying)
     readonly property var latestNotification: NotificationService.popupList.length > 0 ? NotificationService.popupList[NotificationService.popupList.length - 1] : null
-    // Recording face lands in B3-2 (RecordingService bridge).
-    readonly property bool isRecording: false
-    property int recordingElapsedSeconds: 0
 
-    onIsRecordingChanged: {
-        if (!isRecording)
-            recordingElapsedSeconds = 0;
-    }
+    // Recording face (B3-2: RecordingService & AudioRecordingService bridge).
+    readonly property bool isRecording: (RecordingService.isRecording || RecordingService.state === "paused") || AudioRecordingService.isRecording
+    readonly property int recordingElapsedSeconds: Math.floor((AudioRecordingService.isRecording ? AudioRecordingService.elapsedMs : RecordingService.elapsedMs) / 1000)
 
     function formatRecordingTime(s) {
         return Math.floor(s / 60).toString().padStart(2, '0') + ":" + (s % 60).toString().padStart(2, '0');
     }
 
+    function stopRecording() {
+        if (AudioRecordingService.isRecording)
+            AudioRecordingService.stop();
+        else
+            RecordingService.stop();
+    }
+
+    // OSD face (B3-2: VolumeService, BrightnessService, KeyboardLockService).
+    readonly property bool osdActive: osdTimeoutTimer.running
+    property string osdType: "volume"
+
     Timer {
-        interval: 1000
-        repeat: true
-        running: root.isRecording
-        onTriggered: root.recordingElapsedSeconds++
+        id: osdTimeoutTimer
+        interval: 1800
+        repeat: false
+    }
+
+    function triggerOsd(type) {
+        root.osdType = type;
+        osdTimeoutTimer.restart();
+    }
+
+    function osdValueText() {
+        switch (root.osdType) {
+        case "brightness":
+            return `${Math.round(BrightnessService.brightnessValue * 100)}`;
+        case "mic":
+            return `${Math.round((VolumeService.sourceVolume ?? 0) * 100)}`;
+        case "capslock":
+            return KeyboardLockService.capsLock ? "ON" : "OFF";
+        case "numlock":
+            return KeyboardLockService.numLock ? "ON" : "OFF";
+        default:
+            return `${Math.round((VolumeService.sinkVolume ?? 0) * 100)}`;
+        }
+    }
+
+    property real lastSinkVolume: VolumeService.sinkVolume
+    property bool lastSinkMuted: VolumeService.sinkMuted
+    property bool sinkTrackingInitialized: false
+
+    Connections {
+        target: VolumeService
+        function onSinkVolumeChanged() {
+            if (!root.sinkTrackingInitialized) {
+                root.sinkTrackingInitialized = true;
+                root.lastSinkVolume = VolumeService.sinkVolume;
+                return;
+            }
+            if (Math.abs(VolumeService.sinkVolume - root.lastSinkVolume) > 0.0001) {
+                root.lastSinkVolume = VolumeService.sinkVolume;
+                root.triggerOsd("volume");
+            }
+        }
+        function onSinkMutedChanged() {
+            if (!root.sinkTrackingInitialized) {
+                root.sinkTrackingInitialized = true;
+                root.lastSinkMuted = VolumeService.sinkMuted;
+                return;
+            }
+            if (VolumeService.sinkMuted !== root.lastSinkMuted) {
+                root.lastSinkMuted = VolumeService.sinkMuted;
+                root.triggerOsd("volume");
+            }
+        }
+        function onSourceVolumeChanged() {
+            root.triggerOsd("mic");
+        }
+        function onSourceMutedChanged() {
+            root.triggerOsd("mic");
+        }
+    }
+
+    Connections {
+        target: BrightnessService
+        function onBrightnessChanged() {
+            root.triggerOsd("brightness");
+        }
+    }
+
+    property var previousCapsLock: null
+    property var previousNumLock: null
+    property bool locksInitialized: false
+
+    Connections {
+        target: KeyboardLockService
+        function onLockStateChanged() {
+            const caps = KeyboardLockService.capsLock;
+            const num = KeyboardLockService.numLock;
+            if (root.locksInitialized) {
+                if (caps !== root.previousCapsLock && PersonalizationConfig.islandCapsLockOsd) {
+                    root.triggerOsd("capslock");
+                }
+                if (num !== root.previousNumLock && PersonalizationConfig.islandNumLockOsd) {
+                    root.triggerOsd("numlock");
+                }
+            }
+            root.previousCapsLock = caps;
+            root.previousNumLock = num;
+            root.locksInitialized = true;
+        }
     }
 
     // D8: battery and timer faces stay empty skeletons until BatteryService
@@ -128,9 +223,40 @@ Item {
         }
     }
 
-    // D8: session is not ported — the power-menu unit owns it. osd/notifs/
-    // recording providers land in B3-2.
+    // D8: session is not ported — the power-menu unit owns it.
+    // Provider precedence: osd -> notification -> battery in alwaysWinIds;
+    // recording -> timer -> media in activeOthers.
     readonly property var contentProviders: [
+        {
+            id: "osd",
+            active: root.osdActive,
+            component: osdComponent,
+            width: root.osdWidth
+        },
+        {
+            id: "notification",
+            active: root.latestNotification !== null,
+            component: notificationComponent,
+            width: root.notificationWidth
+        },
+        {
+            id: "battery",
+            active: root.batteryAlertActive,
+            component: batteryComponent,
+            width: root.batteryWidth
+        },
+        {
+            id: "recording",
+            active: root.isRecording,
+            component: recordingComponent,
+            width: root.recordingWidth
+        },
+        {
+            id: "timer",
+            active: root.hasActiveTimer,
+            component: timerComponent,
+            width: root.timerWidth
+        },
         {
             id: "media",
             active: root.hasMedia,
@@ -139,7 +265,7 @@ Item {
         },
     ]
 
-    readonly property var alwaysWinIds: []
+    readonly property var alwaysWinIds: ["osd", "notification", "battery"]
 
     readonly property var activeOthers: root.contentProviders.filter(p => !root.alwaysWinIds.includes(p.id) && p.active)
 
@@ -165,6 +291,27 @@ Item {
         switch (id) {
         case "media":
             return "music_note";
+        case "recording":
+            return AudioRecordingService.isRecording ? "mic" : "screen_record";
+        case "notification":
+            return "notifications";
+        case "timer":
+            return root.timerIcon();
+        case "battery":
+            return root.batteryIcon();
+        case "osd":
+            switch (root.osdType) {
+            case "brightness":
+                return "light_mode";
+            case "mic":
+                return VolumeService.sourceMuted ? "mic_off" : "mic";
+            case "capslock":
+                return "keyboard_capslock";
+            case "numlock":
+                return "pin";
+            default:
+                return VolumeService.sinkMuted ? "volume_off" : VolumeService.isHeadphone ? "headphones" : "volume_up";
+            }
         default:
             return "circle";
         }
@@ -249,6 +396,121 @@ Item {
             id: mediaComponent
             DiMedia {
                 di: root
+            }
+        }
+
+        Component {
+            id: osdComponent
+            DiOsd {
+                di: root
+            }
+        }
+
+        Component {
+            id: notificationComponent
+            DiNotifs {
+                di: root
+            }
+        }
+
+        Component {
+            id: recordingComponent
+            RowLayout {
+                anchors {
+                    fill: parent
+                    leftMargin: root.isMaterial ? 4 : 8
+                    rightMargin: 10
+                }
+                spacing: 6
+
+                Item {
+                    id: stopButton
+                    Layout.alignment: Qt.AlignVCenter
+                    implicitWidth: 16
+                    implicitHeight: 16
+
+                    MaterialSymbol {
+                        anchors.fill: parent
+                        text: "stop_circle"
+                        fill: 1
+                        iconSize: root.isMaterial ? 26 : 16
+                        color: Appearance.colors.colError
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.stopRecording()
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                StyledText {
+                    Layout.alignment: Qt.AlignVCenter
+                    text: root.formatRecordingTime(root.recordingElapsedSeconds)
+                    font.pixelSize: Appearance.font.pixelSize.small
+                    font.features: {
+                        "tnum": 1
+                    }
+                    color: Appearance.colors.colOnLayer0
+                }
+            }
+        }
+
+        Component {
+            id: batteryComponent
+            RowLayout {
+                anchors {
+                    fill: parent
+                    leftMargin: 10
+                    rightMargin: 10
+                }
+                spacing: 6
+
+                StyledText {
+                    Layout.alignment: Qt.AlignVCenter
+                    text: root.batteryStatusText()
+                    font.pixelSize: Appearance.font.pixelSize.small
+                    font.weight: Font.DemiBold
+                    color: root.batteryAlertColor()
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                MaterialSymbol {
+                    Layout.alignment: Qt.AlignVCenter
+                    text: root.batteryIcon()
+                    fill: 1
+                    iconSize: 16
+                    color: root.batteryAlertColor()
+                }
+            }
+        }
+
+        Component {
+            id: timerComponent
+            RowLayout {
+                anchors {
+                    fill: parent
+                    leftMargin: root.isMaterial ? 4 : 8
+                    rightMargin: 10
+                }
+                spacing: 6
+
+                StyledText {
+                    Layout.alignment: Qt.AlignVCenter
+                    text: root.timerValueText()
+                    font.pixelSize: Appearance.font.pixelSize.small
+                    font.features: {
+                        "tnum": 1
+                    }
+                    color: Appearance.colors.colOnLayer0
+                }
             }
         }
     }
