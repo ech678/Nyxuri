@@ -25,8 +25,11 @@ function layout(kinds, preferredSize, available, magnification, sectionSpacing, 
     // Fade the wave without changing the space reserved for its full size.
     // Its centre follows input directly; only its amplitude is animated.
     const amplitude = Math.max(0, Math.min(1, strength));
-    const boundaries = (Array.isArray(sectionBoundary) ? sectionBoundary : [sectionBoundary])
-        .filter((v, i, list) => v > 0 && v < count && list.indexOf(v) === i);
+    // sectionBoundaries() returns a canonical, model-derived array. Keep the
+    // fallback for the legacy single-boundary caller without allocating on the
+    // pointer/magnification hot path.
+    const boundaries = Array.isArray(sectionBoundary) ? sectionBoundary
+        : sectionBoundary > 0 && sectionBoundary < count ? [sectionBoundary] : [];
     const sectionGap = sectionSpacing + gap;
     const fixed = count * gap + padding * 2 + sectionGap * boundaries.length;
     const reserve = Math.min(apps, 5) * (maximum - 1);

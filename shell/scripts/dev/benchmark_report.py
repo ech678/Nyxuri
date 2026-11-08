@@ -86,6 +86,103 @@ def score(overhead: float | None) -> float | None:
     return min(100.0, 100.0 / overhead)
 
 
+def _records_value(value: object) -> list[dict[str, object]]:
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, dict)]
+
+
+def _profile_metric(
+    profile_id: str, profile: dict[str, object], raw: dict[str, object], name: str,
+) -> dict[str, object]:
+    value = raw.get(name) if profile_id == "default-full" else profile.get(name)
+    if isinstance(value, dict) and value.get("status") in {
+        "available", "partial", "unavailable", "invalid", "not_applicable",
+    }:
+        return value
+    if value is None:
+        identity = profile.get("identity")
+        reason_key = "ipc_unavailable_reason" if name == "ipc" else "unit_actions_unavailable_reason"
+        reason = identity.get(reason_key) if isinstance(identity, dict) else None
+        return {"status": "unavailable", "reason": reason or f"{name}_not_recorded_for_profile"}
+    return {"status": "available", "data": value}
+
+
+def summarize_profiles(raw: dict[str, object]) -> dict[str, dict[str, object]]:
+    """Preserve each selected profile's summaries and metric availability."""
+    raw_profiles = raw.get("profiles")
+    if not isinstance(raw_profiles, dict):
+        return {}
+
+    summaries: dict[str, dict[str, object]] = {}
+    for profile_id, raw_profile in raw_profiles.items():
+        if not isinstance(profile_id, str) or not isinstance(raw_profile, dict):
+            continue
+        startup = raw_profile.get("startup")
+        if profile_id == "default-full":
+            baseline = _records_value(raw.get("baseline"))
+            cold = _records_value(raw.get("cold_start"))
+            warm = _records_value(raw.get("warm_start"))
+        elif isinstance(startup, dict):
+            baseline = []
+            cold = _records_value(startup.get("cold_start"))
+            warm = _records_value(startup.get("warm_start"))
+        else:
+            baseline = []
+            cold = []
+            warm = []
+
+        baseline_reference = raw_profile.get("baseline_reference")
+        if baseline:
+            baseline_summary: dict[str, object] = {
+                "status": "available",
+                "profile_id": (
+                    baseline_reference.get("profile_id")
+                    if isinstance(baseline_reference, dict) else "empty-shellroot"
+                ),
+                "runs": len(baseline),
+                "summary": summarize(baseline),
+            }
+            if isinstance(baseline_reference, dict):
+                baseline_summary["identity"] = baseline_reference.get("identity")
+        elif profile_id == "empty-shellroot":
+            baseline_summary = {
+                "status": "not_applicable",
+                "reason": "empty_shellroot_is_the_startup_reference",
+            }
+        else:
+            baseline_summary = {
+                "status": "unavailable",
+                "reason": "no_startup_baseline_recorded_for_profile",
+            }
+
+        summaries[profile_id] = {
+            "identity": raw_profile.get("identity", {}),
+            "source_profile": raw_profile.get("source_profile", raw.get("source_profile")),
+            "baseline_reference": baseline_reference,
+            "ipc_reference": raw_profile.get("ipc_reference"),
+            "startup": {
+                "baseline": baseline_summary,
+                "cold_start": {
+                    "status": "available" if cold else "unavailable",
+                    "runs": len(cold),
+                    "summary": summarize(cold),
+                },
+                "warm_start": {
+                    "status": "available" if warm else "unavailable",
+                    "runs": len(warm),
+                    "summary": summarize(warm),
+                },
+            },
+            "ipc": _profile_metric(profile_id, raw_profile, raw, "ipc"),
+            "actions": _profile_metric(profile_id, raw_profile, raw, "actions"),
+            "long_steady_state": _profile_metric(profile_id, raw_profile, raw, "long_steady_state"),
+            "reclamation": _profile_metric(profile_id, raw_profile, raw, "reclamation"),
+            "frame_profile": _profile_metric(profile_id, raw_profile, raw, "frame_profile"),
+        }
+    return summaries
+
+
 def build_report(raw: dict[str, object]) -> dict[str, object]:
     def records(name: str) -> list[dict[str, object]]:
         value = raw.get(name, [])
@@ -188,6 +285,33 @@ def build_report(raw: dict[str, object]) -> dict[str, object]:
                 action_ratios[f"action.{name}"] = overhead
                 action_scores[f"action.{name}"] = score(overhead)
     ratios.update(action_ratios)
+    profile_summaries = summarize_profiles(raw)
+    profile_scores: dict[str, dict[str, object]] = {}
+    for profile_id, profile in profile_summaries.items():
+        if profile_id == "default-full":
+            profile_scores[profile_id] = {
+                "status": "available",
+                "reason": "",
+                "composite_score_0_100": composite,
+                "ratios_shell_over_baseline": ratios,
+                "scores_0_100": {**scores, **ipc_scores, **action_scores},
+            }
+        elif profile_id == "empty-shellroot":
+            profile_scores[profile_id] = {
+                "status": "not_applicable",
+                "reason": "empty_shellroot_is_a_reference_profile_not_a_shell_comparison",
+                "composite_score_0_100": None,
+                "ratios_shell_over_baseline": {},
+                "scores_0_100": {},
+            }
+        else:
+            profile_scores[profile_id] = {
+                "status": "unavailable",
+                "reason": "no_startup_baseline_recorded_for_profile",
+                "composite_score_0_100": None,
+                "ratios_shell_over_baseline": {},
+                "scores_0_100": {},
+            }
     return {
         "schema": 2,
         "runtime": raw.get("runtime", {}),
@@ -201,6 +325,7 @@ def build_report(raw: dict[str, object]) -> dict[str, object]:
             "reclamation": raw.get("reclamation", {}),
             "frame_profile": raw.get("frame_profile", {}),
             "source_profile": raw.get("source_profile", {}),
+            "profiles": profile_summaries,
         },
         "normalized": {
             "baseline_reference": "Empty ShellRoot in the same container/runtime",
@@ -214,6 +339,7 @@ def build_report(raw: dict[str, object]) -> dict[str, object]:
                 "first_frame": median_internal(cold, "first_frame_ms"),
                 "ipc_ready": median_internal(cold, "ipc_ready_ms"),
             },
+            "profiles": profile_scores,
         },
     }
 
@@ -238,6 +364,45 @@ def markdown(report: dict[str, object]) -> str:
     assert isinstance(ratios, dict) and isinstance(scores, dict)
     for name in sorted(scores):
         lines.append(f"| `{name}` | {ratios.get(name, '-') } | {scores[name]} |")
+    profiles = raw.get("profiles", {})
+    if isinstance(profiles, dict) and profiles:
+        lines += [
+            "", "## Profile summaries", "",
+            "| Profile | Cold p50 (ms) | Warm p50 (ms) | Baseline | IPC | Actions |",
+            "|---|---:|---:|---|---|---|",
+        ]
+
+        def status_label(value: object) -> str:
+            if not isinstance(value, dict):
+                return "N/A"
+            status = str(value.get("status", "unavailable"))
+            reason = value.get("reason")
+            return f"{status}: {reason}" if reason else status
+
+        for profile_id, profile in profiles.items():
+            if not isinstance(profile, dict):
+                continue
+            startup = profile.get("startup", {})
+            identity = profile.get("identity", {})
+            cold_start = startup.get("cold_start", {}) if isinstance(startup, dict) else {}
+            warm_start = startup.get("warm_start", {}) if isinstance(startup, dict) else {}
+            cold_summary = cold_start.get("summary", {}) if isinstance(cold_start, dict) else {}
+            warm_summary = warm_start.get("summary", {}) if isinstance(warm_start, dict) else {}
+            cold_p50 = cold_summary.get("startup_ms", {}).get("p50") if isinstance(cold_summary, dict) else None
+            warm_p50 = warm_summary.get("startup_ms", {}).get("p50") if isinstance(warm_summary, dict) else None
+            baseline = startup.get("baseline", {}) if isinstance(startup, dict) else {}
+            baseline_label = status_label(baseline)
+            if isinstance(baseline, dict) and baseline.get("status") == "available":
+                baseline_label = str(baseline.get("profile_id", "available"))
+            identity_meaning = identity.get("meaning", "") if isinstance(identity, dict) else ""
+            lines.append(
+                f"| `{profile_id}` {identity_meaning} | {cold_p50 if cold_p50 is not None else 'N/A'} "
+                f"| {warm_p50 if warm_p50 is not None else 'N/A'} | {baseline_label} "
+                f"| {status_label(profile.get('ipc'))} | {status_label(profile.get('actions'))} |"
+            )
+    composite = normalized.get("composite_score_0_100")
+    if composite is None and profiles:
+        lines[2] = "Composite score: **N/A** (selected profiles have no comparable aggregate)."
     return "\n".join(lines) + "\n"
 
 

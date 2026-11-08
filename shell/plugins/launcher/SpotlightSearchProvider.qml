@@ -167,6 +167,7 @@ Item {
     Connections {
         target: ApplicationService
         function onLauncherApplicationsChanged() {
+            LocalSearch.clearAppSearchCache();
             root.rebuild();
         }
     }

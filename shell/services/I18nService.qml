@@ -69,6 +69,9 @@ Singleton {
 
     function initialize() {
         const lang = root.language || "en_US";
+        // Keep locale initialization visible in startup logs so unexpected
+        // re-entry is diagnosable without adding a test-only control surface.
+        console.log("[I18nService] initialize language=" + lang);
         root.ready = true;
         root.lastError = "";
         I18n.setLanguage(lang);

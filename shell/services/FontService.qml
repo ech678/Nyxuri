@@ -20,6 +20,9 @@ Singleton {
     property string configuredMono: ""
     property string configuredNumeric: ""
     property string configuredExpressive: ""
+    property var _initialFamilyList: Qt.fontFamilies()
+    property var _familySet: new Set(root._initialFamilyList)
+    property bool _initialRefreshPending: true
     // Candidate fallback families to ensure smooth rendering across varied environments
     // LXGW fonts register their Chinese family name first in fontconfig and
     // Qt6 only reads FC_FAMILY[0], so the English aliases alone never resolve.
@@ -50,7 +53,7 @@ Singleton {
         if (value === "")
             return false;
 
-        return Qt.fontFamilies().indexOf(value) !== -1;
+        return root._familySet.has(value);
     }
 
     function resolveFamily(preferred, fallback, genericFallback) {
@@ -149,18 +152,27 @@ Singleton {
     }
 
     function refresh() {
+        // Keep the expensive enumeration visible in startup logs so repeated
+        // cold-start work can be diagnosed from a real shell process.
+        console.log("[FontService] refresh");
         const result = [];
-        const source = Qt.fontFamilies();
+        const firstRefresh = root._initialRefreshPending;
+        const source = firstRefresh ? root._initialFamilyList : Qt.fontFamilies();
+        root._initialRefreshPending = false;
+        if (!firstRefresh)
+            root._familySet = new Set(source);
+        const seenFamilies = new Set();
         for (let i = 0; i < source.length; i += 1) {
             const family = String(source[i] || "").trim();
-            if (family === "" || family.startsWith(".") || root.isTechnicalFamily(family) || result.indexOf(
-                        family) !== -1)
+            if (family === "" || family.startsWith(".") || root.isTechnicalFamily(family)
+                    || seenFamilies.has(family))
                 continue;
 
+            seenFamilies.add(family);
             result.push(family);
         }
-        if (root.familyAvailable(root.bundledExpressiveFamily) && result.indexOf(
-                    root.bundledExpressiveFamily) === -1)
+        if (root.familyAvailable(root.bundledExpressiveFamily)
+                && !seenFamilies.has(root.bundledExpressiveFamily))
             result.push(root.bundledExpressiveFamily);
 
         result.sort();

@@ -21,6 +21,10 @@ function appResults(source, query, options) {
     return AppRanking.appResults(source, query, options);
 }
 
+function clearAppSearchCache() {
+    AppRanking.clearAppSearchCache();
+}
+
 function wallpaperPaths(source, query, basename) {
     const needle = normalized(query);
     return source.filter(path => path && normalized(basename(path)).indexOf(needle) >= 0).slice().sort((a,b) => {

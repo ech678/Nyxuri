@@ -819,7 +819,6 @@ Item {
         ctx.fill()
 
         ctx.fillStyle = alphaColor("#6a7078", cloudMaskOpacity)
-        drawCloudBandShape(ctx, offset, bandHeight, archHeight)
         ctx.fill()
     }
 

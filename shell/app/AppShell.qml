@@ -45,11 +45,11 @@ Item {
             ShellStartupService.recordIpcReady();
             // These services are useful immediately after the first frame,
             // but none is part of CORE or the IPC gate.  Serialize them so a
-            // slow font scan, translation parse, or identity probe cannot
-            // monopolize the first event-loop batch.
+            // slow palette reload, identity probe, or system poll cannot
+            // monopolize the first event-loop batch.  FontService and
+            // I18nService initialize from their singleton completion handlers;
+            // scheduling them here would repeat the same cold-start work.
             ShellStartupService.scheduleBackground("theme-colors", () => ThemeService.reloadColors());
-            ShellStartupService.scheduleBackground("fonts", () => FontService.refresh());
-            ShellStartupService.scheduleBackground("i18n", () => I18nService.initialize());
             ShellStartupService.scheduleBackground("system-identity", () => SystemIdentityService.initialize());
             ShellStartupService.scheduleBackground("ui-theme-poll", () => UiPreferences.startSystemThemePolling());
         });

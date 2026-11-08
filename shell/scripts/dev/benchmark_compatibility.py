@@ -117,6 +117,8 @@ def main() -> int:
     parser.add_argument("--runs", type=int, default=1)
     parser.add_argument("--channel", choices=("old", "new"), default=os.environ.get("NYXURI_QUICKSHELL_CHANNEL", "new"))
     args = parser.parse_args()
+    if os.environ.get("NYXURI_CONTAINER") != "1":
+        parser.error("compatibility probes may only run inside benchmark-shell.py's private container")
     if args.runs < 1:
         parser.error("--runs must be >= 1")
     qs = shutil.which("qs")

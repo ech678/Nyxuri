@@ -12,8 +12,10 @@ import tempfile
 import uuid
 from pathlib import Path
 
+from benchmark_scenarios import PROFILE_CHOICES
 
-def main() -> int:
+
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--runs", type=int, default=10)
@@ -22,9 +24,26 @@ def main() -> int:
     parser.add_argument("--reclaim-cycles", type=int, default=100)
     parser.add_argument("--reclaim-close-wait", type=float, default=0.1)
     parser.add_argument("--quickshell-channel", choices=("old", "new"), default="new")
+    parser.add_argument(
+        "--profile", choices=PROFILE_CHOICES, action="append", dest="profiles",
+        help="Benchmark profile; repeat to select several (default: default-full).",
+    )
     parser.add_argument("--keep-volume", action="store_true")
     parser.add_argument("--nix-volume")
-    args = parser.parse_args()
+    return parser
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    args.profiles = args.profiles or ["default-full"]
+    if len(set(args.profiles)) != len(args.profiles):
+        parser.error("--profile cannot be repeated with the same value")
+    return args
+
+
+def main() -> int:
+    args = parse_args()
     if args.runs < 2 or args.ipc_runs < 1:
         raise SystemExit("--runs must be >= 2 and --ipc-runs must be >= 1")
     if shutil.which("podman") is None:
@@ -49,6 +68,7 @@ def main() -> int:
     try:
         command = [
             "podman", "run", "--rm", "--name", "nyxuri-shell-benchmark",
+            "--pid=private", "--ipc=private", "--uts=private",
             "--security-opt=no-new-privileges", "--cap-drop=all",
             # Rootless Nix populates the persistent /nix volume by changing
             # ownership and mode bits. Keep the default-deny profile and add
@@ -67,12 +87,14 @@ def main() -> int:
             f"--argstr quickshellChannel {args.quickshell_channel} "
             "--run 'mkdir -p /tmp/nyxuri-runtime && chmod 700 /tmp/nyxuri-runtime && "
             "export XDG_RUNTIME_DIR=/tmp/nyxuri-runtime && "
-            "dbus-run-session --config-file=/workspace/shell/scripts/dev/benchmark-dbus-session.conf -- "
+            "NYXURI_CONTAINER=1 dbus-run-session "
+            "--config-file=/workspace/shell/scripts/dev/benchmark-dbus-session.conf -- "
             "python3 /workspace/shell/scripts/dev/benchmark_scenarios.py "
+            + " ".join(f"--profile {profile}" for profile in args.profiles) + " "
             f"--output /results/raw.json --runs {args.runs} --ipc-runs {args.ipc_runs} "
             f"--steady-seconds {args.steady_seconds} --reclaim-cycles {args.reclaim_cycles} "
             f"--reclaim-close-wait {args.reclaim_close_wait} && "
-            "python3 /workspace/shell/scripts/dev/benchmark_compatibility.py "
+            "NYXURI_CONTAINER=1 python3 /workspace/shell/scripts/dev/benchmark_compatibility.py "
             f"--output /results/compatibility-{args.quickshell_channel}.json "
             f"--channel {args.quickshell_channel} --runs 1 && "
             "NYXURI_CONTAINER=1 python3 /workspace/shell/scripts/dev/feature_matrix.py "
@@ -99,8 +121,10 @@ def main() -> int:
         normalized = {}
     print(json.dumps({
         "output": str(output),
+        "profiles": args.profiles,
         "composite_score_0_100": normalized.get("composite_score_0_100"),
         "scores_0_100": normalized.get("scores_0_100", {}),
+        "profile_summaries": normalized.get("profiles", {}),
     }, ensure_ascii=True, indent=2))
     return 0
 

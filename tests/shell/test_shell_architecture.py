@@ -938,6 +938,27 @@ class TestShellManagement(unittest.TestCase):
             clock_content = f.read()
         self.assertIn("font.weight: Font.Black", clock_content)
 
+    def test_r11_font_and_i18n_startup_dedup_contract(self):
+        """Font and locale singletons own their one cold-start initialization."""
+        repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        app_content = Path(repo_root, "shell", "app", "AppShell.qml").read_text(encoding="utf-8")
+        font_content = Path(repo_root, "shell", "services", "FontService.qml").read_text(encoding="utf-8")
+        i18n_content = Path(repo_root, "shell", "services", "I18nService.qml").read_text(encoding="utf-8")
+
+        # AppShell keeps the post-gate queue for services without a completion
+        # initializer; these two services must not be queued a second time.
+        self.assertNotIn('scheduleBackground("fonts"', app_content)
+        self.assertNotIn('scheduleBackground("i18n"', app_content)
+        self.assertIn("Component.onCompleted: root.refresh()", font_content)
+        self.assertIn("Component.onCompleted: initialize()", i18n_content)
+        self.assertEqual(font_content.count("Component.onCompleted"), 1)
+        self.assertEqual(i18n_content.count("Component.onCompleted"), 1)
+
+        # The markers are operational logs used by the container startup probe
+        # to count real invocations without exposing a test-only QML property.
+        self.assertIn("[FontService] refresh", font_content)
+        self.assertIn("[I18nService] initialize language=", i18n_content)
+
     def test_r2_lifecycle_exit_sigterm_and_crash_recovery(self):
         """R2-03 Contract: SIGTERM exit bounding, early crash detection, and rollback safety."""
         from unittest.mock import MagicMock, patch

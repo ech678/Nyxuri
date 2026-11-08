@@ -221,7 +221,7 @@ Singleton {
 
     Timer {
         id: pomodoroTimer
-        interval: 200
+        interval: 1000
         running: root.pomodoroRunning
         repeat: true
         onTriggered: root.refreshPomodoro()
@@ -229,7 +229,7 @@ Singleton {
 
     Timer {
         id: stopwatchTimer
-        interval: 50
+        interval: 100
         running: root.stopwatchRunning
         repeat: true
         onTriggered: root.refreshStopwatch()

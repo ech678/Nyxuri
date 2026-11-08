@@ -1,8 +1,36 @@
 .pragma library
 .import "SpotlightAppOrder.js" as AppOrder
 
+var normalizedAppFields = new WeakMap();
+
 function normalized(value) {
     return String(value || "").trim().toLocaleLowerCase();
+}
+
+function clearAppSearchCache() {
+    normalizedAppFields = new WeakMap();
+}
+
+function searchFields(app, stats) {
+    const cached = normalizedAppFields.get(app);
+    if (cached) {
+        if (stats) stats.fieldCacheHits += 1;
+        return cached;
+    }
+
+    if (stats) {
+        stats.fieldCacheMisses += 1;
+        stats.fieldNormalizations += 4;
+        stats.keywordListsJoined += 1;
+    }
+    const fields = {
+        name: normalized(app.name),
+        genericName: normalized(app.genericName),
+        keywords: normalized(Array.from(app.keywords || []).join(" ")),
+        id: normalized(app.id)
+    };
+    normalizedAppFields.set(app, fields);
+    return fields;
 }
 
 function isWordStart(text, query) {
@@ -34,8 +62,7 @@ function subsequencePenalty(text, query) {
     return Math.max(0, lastIndex - firstIndex - query.length + 1);
 }
 
-function fieldScore(value, needle, weight) {
-    const text = normalized(value);
+function fieldScore(text, needle, weight) {
     if (text === "" || needle === "")
         return needle === "" ? weight : -1;
     if (text === needle)
@@ -51,14 +78,15 @@ function fieldScore(value, needle, weight) {
     return penalty >= 0 ? 1000 + weight - Math.min(99, penalty) : -1;
 }
 
-function appScore(app, needle) {
+function appScore(app, needle, stats) {
     if (needle === "")
         return 0;
+    const fields = searchFields(app, stats);
     let best = -1;
-    best = Math.max(best, fieldScore(app.name, needle, 80));
-    best = Math.max(best, fieldScore(app.genericName, needle, 60));
-    best = Math.max(best, fieldScore(Array.from(app.keywords || []).join(" "), needle, 40));
-    best = Math.max(best, fieldScore(app.id, needle, 20));
+    best = Math.max(best, fieldScore(fields.name, needle, 80));
+    best = Math.max(best, fieldScore(fields.genericName, needle, 60));
+    best = Math.max(best, fieldScore(fields.keywords, needle, 40));
+    best = Math.max(best, fieldScore(fields.id, needle, 20));
     return best;
 }
 
@@ -132,6 +160,10 @@ function appResults(source, query, options) {
         stats.orderComparisons = 0;
         stats.rankingRecordsBuilt = 0;
         stats.uiResultRecordsBuilt = 0;
+        stats.fieldCacheHits = 0;
+        stats.fieldCacheMisses = 0;
+        stats.fieldNormalizations = 0;
+        stats.keywordListsJoined = 0;
     }
     if (bounded && capacity < source.length) {
         // Reuse one probe while the max-heap retains only the visible slice.
@@ -142,7 +174,7 @@ function appResults(source, query, options) {
         source.forEach((app, sourceIndex) => {
             if (!app) return;
             if (stats) stats.appScoreCalls += 1;
-            const score = appScore(app, needle);
+            const score = appScore(app, needle, stats);
             if (score < 0) return;
             const id = String(app.id);
             probe.app = app;
@@ -181,7 +213,7 @@ function appResults(source, query, options) {
     source.forEach((app, sourceIndex) => {
         if (!app) return;
         if (stats) stats.appScoreCalls += 1;
-        const score = appScore(app, needle);
+        const score = appScore(app, needle, stats);
         if (score < 0) return;
         next.push({provider: "apps", id: String(app.id), title: String(app.name || app.id),
             subtitle: String(app.genericName || app.comment || app.id || ""),

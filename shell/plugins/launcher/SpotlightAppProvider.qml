@@ -60,6 +60,7 @@ Item {
         target: ApplicationService
 
         function onLauncherApplicationsChanged() {
+            LocalSearch.clearAppSearchCache();
             root.rebuild();
         }
     }

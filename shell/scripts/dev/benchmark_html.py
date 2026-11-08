@@ -115,6 +115,8 @@ def render_html(raw: Mapping[str, object], report: Mapping[str, object]) -> str:
         normalized = {}
     runtime = raw.get("runtime", {})
     scores = normalized.get("scores_0_100", {})
+    raw_report = report.get("raw", {})
+    profile_summaries = raw_report.get("profiles", {}) if isinstance(raw_report, Mapping) else {}
     runs = runtime.get("runs") if isinstance(runtime, Mapping) else None
     ipc_runs = runtime.get("ipc_runs") if isinstance(runtime, Mapping) else None
     composite = normalized.get("composite_score_0_100")
@@ -135,8 +137,14 @@ def render_html(raw: Mapping[str, object], report: Mapping[str, object]) -> str:
         _score_table("暖启动归一化分数", normalized.get("warm_scores_0_100", {}), normalized.get("warm_ratios_shell_over_baseline", {})),
         _table("Shell 内部时间点", normalized.get("internal_shell_ms", {})),
     ]
+    if profile_summaries:
+        sections.insert(
+            2,
+            _table("Profile summaries", profile_summaries,
+                   "按 profile 保留启动数据与指标可用性；N/A 不参与综合评分。"),
+        )
     body = "".join(sections)
-    composite_text = _text(composite)
+    composite_text = "N/A" if composite is None and profile_summaries else _text(composite)
     return f'''<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Nyxuri Shell Benchmark</title>

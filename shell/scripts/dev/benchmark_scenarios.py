@@ -4,18 +4,66 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
 import shutil
 import subprocess
 import time
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Final, Literal, TypedDict
 
 from benchmark_runtime import IPC_METHODS, ProcessSample, RunResult, _process_tree, _quantile, _run_process, _terminate
 
 LOCK_PATH = Path(__file__).with_name("benchmark-lock.json")
+WORKSPACE_SHELL_ROOT: Final[Path] = Path("/workspace/shell")
+PROFILE_CHOICES: Final[tuple[str, ...]] = (
+    "empty-shellroot", "minimal-nyxuri", "default-full",
+)
+EMPTY_SHELLROOT_SOURCE: Final[str] = "import Quickshell\nShellRoot {}\n"
+BENCHMARK_IPC_REFERENCE_SOURCE: Final[str] = (
+    "import QtQuick\nimport Quickshell\nimport Quickshell.Io\n"
+    "ShellRoot { IpcHandler { target: \"benchmark\"; function ping(): string { return \"pong\" } } }\n"
+)
+INHERITED_ENVIRONMENT: Final[tuple[str, ...]] = (
+    "PATH", "NIX_PATH", "NIX_PROFILES", "NIX_SSL_CERT_FILE", "SSL_CERT_FILE",
+    "TERM",
+)
+FIXED_ENVIRONMENT: Final[dict[str, str]] = {
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "LC_CTYPE": "C.UTF-8",
+    "LANGUAGE": "C",
+    "TZ": "UTC",
+    "PYTHONHASHSEED": "0",
+    "QT_HASH_SEED": "0",
+    "SOURCE_DATE_EPOCH": "0",
+    "QT_SCALE_FACTOR": "1",
+    "QT_AUTO_SCREEN_SCALE_FACTOR": "0",
+}
+
+
+class ProfileMetadata(TypedDict):
+    profile_id: str
+    meaning: str
+    config_path: str
+    config_kind: str
+    config_sha256: str
+    ipc_status: Literal["available", "unavailable"]
+    ipc_unavailable_reason: str | None
+    unit_actions_status: Literal["available", "unavailable"]
+    unit_actions_unavailable_reason: str | None
+    disabled_unit_ids: list[str]
+    state_ledger_sha256: str | None
+
+
+class IpcReferenceMetadata(TypedDict):
+    profile_id: str
+    config_path: str
+    config_sha256: str
+    meaning: str
 
 ACTION_CASES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("spotlight_toggle", ("spotlight", "toggle")),
@@ -72,8 +120,7 @@ def ipc_benchmark(
             _terminate(process)
 
 
-def source_profile() -> dict[str, int]:
-    root = Path("/workspace/shell")
+def source_profile(root: Path = Path("/workspace/shell")) -> dict[str, int]:
     files = [path for path in root.rglob("*") if path.is_file() and path.suffix in {".qml", ".js"}]
     contents = [path.read_text(errors="replace") for path in files]
     joined = "\n".join(contents)
@@ -93,10 +140,140 @@ def source_profile() -> dict[str, int]:
     }
 
 
-def numeric_run(run: RunResult) -> dict[str, object]:
+def numeric_run(run: RunResult, profile_id: str | None = None) -> dict[str, object]:
     data = asdict(run)
     data["log_path"] = str(Path(str(data["log_path"])).relative_to(Path("/results")))
+    if profile_id is not None:
+        data["profile_id"] = profile_id
     return data
+
+
+def first_party_unit_ids(shell_root: Path) -> tuple[str, ...]:
+    """Derive production unit IDs using PluginRegistry's directory contract."""
+    return tuple(sorted(
+        f"shell.{plugin.name}"
+        for plugin in (shell_root / "plugins").iterdir()
+        if plugin.is_dir() and (plugin / "manifest.toml").is_file()
+    ))
+
+
+def _disabled_ledger(unit_ids: tuple[str, ...]) -> dict[str, dict[str, dict[str, str]]]:
+    return {"plugins": {unit_id: {"state": "disabled"} for unit_id in unit_ids}}
+
+
+def write_disabled_unit_ledger(state_home: Path, unit_ids: tuple[str, ...]) -> Path:
+    """Write StateProjection's all-first-party-units-disabled state fixture."""
+    ledger_path = state_home / "nyxuri" / "state.json"
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    ledger_path.write_text(
+        json.dumps(_disabled_ledger(unit_ids), ensure_ascii=True, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return ledger_path
+
+
+def profile_metadata(
+    profile_id: str, shell_root: Path, profile_root: Path,
+) -> ProfileMetadata:
+    """Materialize isolated config when needed and return the raw profile contract."""
+    if profile_id not in PROFILE_CHOICES:
+        raise ValueError(f"unknown benchmark profile: {profile_id}")
+
+    shell_config = shell_root / "shell.qml"
+    if profile_id == "empty-shellroot":
+        profile_root.mkdir(parents=True, exist_ok=True)
+        config_path = profile_root
+        config_kind = "generated_shellroot_without_handlers"
+        config_bytes = EMPTY_SHELLROOT_SOURCE.encode("utf-8")
+        (profile_root / "shell.qml").write_bytes(config_bytes)
+        meaning = "One generated Quickshell ShellRoot with no QML children or IPC handlers."
+        unit_ids: tuple[str, ...] = ()
+        ipc_status = "unavailable"
+        ipc_reason: str | None = "empty_shellroot_declares_no_ipc_handler"
+        actions_status = "unavailable"
+        actions_reason: str | None = "profile_has_no_shell_ipc_or_units"
+        ledger_sha256 = None
+    else:
+        config_path = shell_root
+        config_kind = "checked_in_production_shell_root"
+        config_bytes = shell_config.read_bytes()
+        unit_ids = first_party_unit_ids(shell_root) if profile_id == "minimal-nyxuri" else ()
+        ledger_sha256 = None
+        if profile_id == "minimal-nyxuri":
+            if not unit_ids:
+                raise RuntimeError(f"no checked-in first-party unit manifests found under {shell_root}")
+            ledger_bytes = (
+                json.dumps(_disabled_ledger(unit_ids), ensure_ascii=True, sort_keys=True, indent=2) + "\n"
+            ).encode("utf-8")
+            ledger_sha256 = hashlib.sha256(ledger_bytes).hexdigest()
+            meaning = (
+                "Checked-in Nyxuri production root and host services with every first-party unit disabled "
+                "through StateProjection's isolated state ledger; core shell IPC remains available."
+            )
+            ipc_status = "available"
+            ipc_reason = None
+            actions_status = "unavailable"
+            actions_reason = "all_first_party_units_disabled_by_profile"
+        else:
+            meaning = (
+                "Checked-in Nyxuri production root with no state ledger; StateProjection's documented "
+                "missing-ledger default enables all first-party units."
+            )
+            ipc_status = "available"
+            ipc_reason = None
+            actions_status = "available"
+            actions_reason = None
+
+    return {
+        "profile_id": profile_id,
+        "meaning": meaning,
+        "config_path": str(config_path),
+        "config_kind": config_kind,
+        "config_sha256": hashlib.sha256(config_bytes).hexdigest(),
+        "ipc_status": ipc_status,
+        "ipc_unavailable_reason": ipc_reason,
+        "unit_actions_status": actions_status,
+        "unit_actions_unavailable_reason": actions_reason,
+        "disabled_unit_ids": list(unit_ids),
+        "state_ledger_sha256": ledger_sha256,
+    }
+
+
+def ipc_reference_metadata(config_path: Path) -> IpcReferenceMetadata:
+    """Describe the handler-only reference used for IPC latency calibration."""
+    return {
+        "profile_id": "benchmark-ipc-reference",
+        "config_path": str(config_path),
+        "config_sha256": hashlib.sha256(BENCHMARK_IPC_REFERENCE_SOURCE.encode("utf-8")).hexdigest(),
+        "meaning": "Single ping handler used only to calibrate IPC latency; not an empty ShellRoot baseline.",
+    }
+
+
+def default_full_profile_contract(
+    identity: ProfileMetadata,
+    startup_baseline: ProfileMetadata,
+    ipc_reference: IpcReferenceMetadata,
+) -> dict[str, object]:
+    """Keep the startup baseline and IPC-only reference distinct in raw output."""
+    return {
+        "identity": identity,
+        "baseline_reference": {
+            "profile_id": startup_baseline["profile_id"],
+            "identity": startup_baseline,
+            "meaning": "Generated ShellRoot with no children or IPC handlers; startup comparison only.",
+        },
+        "ipc_reference": ipc_reference,
+        "raw_paths": {
+            "baseline": "$.baseline",
+            "cold_start": "$.cold_start",
+            "warm_start": "$.warm_start",
+            "ipc": "$.ipc",
+            "actions": "$.actions",
+            "long_steady_state": "$.long_steady_state",
+            "reclamation": "$.reclamation",
+            "frame_profile": "$.frame_profile",
+        },
+    }
 
 
 def action_benchmark(environment: dict[str, str], log_dir: Path, count: int) -> dict[str, dict[str, float | int]]:
@@ -459,7 +636,7 @@ def frame_profile_benchmark(
     return result
 
 
-def environment() -> dict[str, str]:
+def environment(*, qml_root: Path | None = None) -> dict[str, str]:
     runtime = Path("/tmp/nyxuri-runtime")
     runtime.mkdir(parents=True, exist_ok=True)
     os.chmod(runtime, 0o700)
@@ -470,19 +647,107 @@ def environment() -> dict[str, str]:
         "WAYLAND_DISPLAY": "nyxuri-benchmark-wayland", "QT_QPA_PLATFORM": "wayland",
         "QT_QUICK_BACKEND": "software", "QSG_RHI_BACKEND": "software",
     }
-    qml_path = next(Path("/nix/store").glob("*qt5compat-*/lib/qt-6/qml"), None)
+    qml_path = qml_root or next(Path("/nix/store").glob("*qt5compat-*/lib/qt-6/qml"), None)
     if qml_path is None:
         raise RuntimeError("qt5compat QML import path is unavailable in the Nix environment")
     values["QML2_IMPORT_PATH"] = str(qml_path) + ":/workspace/shell/ui/shapes"
     values["QML_IMPORT_PATH"] = values["QML2_IMPORT_PATH"]
-    result = dict(os.environ); result.update(values)
+    result = {
+        key: os.environ[key]
+        for key in INHERITED_ENVIRONMENT
+        if os.environ.get(key)
+    }
+    result.update(FIXED_ENVIRONMENT)
+    dbus_address = os.environ.get("DBUS_SESSION_BUS_ADDRESS", "")
+    if dbus_address.startswith(("unix:path=/tmp/", "unix:abstract=")):
+        result["DBUS_SESSION_BUS_ADDRESS"] = dbus_address
+    result.update(values)
     for key in ("HOME", "XDG_CACHE_HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME"):
         Path(result[key]).mkdir(parents=True, exist_ok=True)
     return result
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
+def _namespace_link(name: str) -> str | None:
+    try:
+        return os.readlink(f"/proc/self/ns/{name}")
+    except OSError:
+        return None
+
+
+def _private_container_scope() -> bool:
+    """Detect Podman/Nix containers without relying on an image marker file."""
+    if any(Path(path).exists() for path in ("/.dockerenv", "/run/.containerenv")):
+        return True
+    try:
+        cgroup = Path("/proc/1/cgroup").read_text(encoding="utf-8").splitlines()
+        pid1 = Path("/proc/1/cmdline").read_bytes().replace(b"\0", b" ").decode(errors="replace")
+    except (OSError, UnicodeError):
+        return False
+    return "0::/" in cgroup and "systemd" not in pid1
+
+
+def container_environment_fingerprint(
+    environment: dict[str, str], lock: dict[str, object],
+) -> dict[str, object]:
+    """Describe only the private container namespace and deterministic inputs."""
+    affinity = None
+    try:
+        affinity = sorted(os.sched_getaffinity(0))
+    except (AttributeError, OSError):
+        pass
+    marker_paths = [path for path in ("/.dockerenv", "/run/.containerenv") if Path(path).exists()]
+    dbus_address = environment.get("DBUS_SESSION_BUS_ADDRESS")
+    return {
+        "scope": "container-process-tree",
+        "container_markers": marker_paths,
+        "pid_namespace": _namespace_link("pid"),
+        "mount_namespace": _namespace_link("mnt"),
+        "proc_root": "/proc",
+        "proc_scope": "private-pid-namespace",
+        "host_proc_access": "not_configured",
+        "host_user_directory_access": "not_configured",
+        "host_socket_access": "not_configured",
+        "cpu_affinity": affinity if affinity is not None else {"status": "unavailable", "reason": "sched_getaffinity_unavailable"},
+        "locale": {key: environment.get(key) for key in ("LANG", "LC_ALL", "LC_CTYPE", "LANGUAGE")},
+        "timezone": environment.get("TZ") or {"status": "unavailable", "reason": "TZ_not_set"},
+        "screen": {
+            "status": "unavailable",
+            "reason": "headless_weston_mode_not_exported_by_runner",
+            "width_px": None,
+            "height_px": None,
+            "refresh_hz": None,
+        },
+        "renderer": {
+            "weston": lock.get("renderer"),
+            "qt_quick_backend": environment.get("QT_QUICK_BACKEND"),
+            "qsg_rhi_backend": environment.get("QSG_RHI_BACKEND"),
+        },
+        "wayland": {
+            "display": environment.get("WAYLAND_DISPLAY"),
+            "socket": f"{environment.get('XDG_RUNTIME_DIR', '')}/{environment.get('WAYLAND_DISPLAY', '')}",
+            "backend": lock.get("weston_backend"),
+        },
+        "dbus": {
+            "status": "available" if dbus_address else "unavailable",
+            "scope": "session",
+            "address": dbus_address,
+        },
+        "xdg": {key: environment.get(key) for key in (
+            "XDG_RUNTIME_DIR", "XDG_CACHE_HOME", "XDG_CONFIG_HOME",
+            "XDG_DATA_HOME", "XDG_STATE_HOME",
+        )},
+        "home": environment.get("HOME"),
+        "random_seed": {
+            "PYTHONHASHSEED": environment.get("PYTHONHASHSEED"),
+            "QT_HASH_SEED": environment.get("QT_HASH_SEED"),
+            "SOURCE_DATE_EPOCH": environment.get("SOURCE_DATE_EPOCH"),
+        },
+        "container_digest": lock.get("container_digest"),
+    }
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--runs", type=int, default=6)
     parser.add_argument("--ipc-runs", type=int, default=20)
@@ -490,7 +755,140 @@ def main() -> int:
     parser.add_argument("--reclaim-cycles", type=int, default=100)
     parser.add_argument("--reclaim-close-wait", type=float, default=0.1)
     parser.add_argument("--frame-seconds", type=float, default=5.0)
-    args = parser.parse_args()
+    parser.add_argument(
+        "--profile", choices=PROFILE_CHOICES, action="append", dest="profiles",
+        help="Benchmark profile; repeat to select several (default: default-full).",
+    )
+    return parser
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    args.profiles = args.profiles or ["default-full"]
+    if len(set(args.profiles)) != len(args.profiles):
+        parser.error("--profile cannot be repeated with the same value")
+    return args
+
+
+@dataclass(frozen=True, slots=True)
+class StartupTarget:
+    profile_id: str
+    config_root: Path
+    run_kind: str
+    environment: dict[str, str]
+    log_dir: Path
+
+
+def startup_samples(target: StartupTarget, count: int) -> dict[str, list[dict[str, object]]]:
+    """Run isolated cold and warm startup samples for one profile root."""
+    _run_process(
+        kind=target.run_kind, run_number=0, environment=target.environment,
+        baseline_dir=target.config_root, log_dir=target.log_dir,
+    )
+    cold = [
+        numeric_run(
+            _run_process(
+                kind=target.run_kind, run_number=number, environment=target.environment,
+                baseline_dir=target.config_root, log_dir=target.log_dir,
+            ),
+            target.profile_id,
+        )
+        for number in range(1, count + 1)
+    ]
+    warm = [
+        numeric_run(
+            _run_process(
+                kind=target.run_kind, run_number=number, environment=target.environment,
+                baseline_dir=target.config_root, log_dir=target.log_dir, warm=True,
+            ),
+            target.profile_id,
+        )
+        for number in range(1, max(2, count // 2) + 1)
+    ]
+    return {"cold_start": cold, "warm_start": warm}
+
+
+def isolated_profile_environment(base_environment: dict[str, str], profile_id: str) -> dict[str, str]:
+    """Give a production profile separate XDG state without changing its runtime."""
+    profile_environment = dict(base_environment)
+    profile_environment["HOME"] += f"/{profile_id}"
+    for key in ("XDG_CACHE_HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME"):
+        profile_environment[key] += f"/{profile_id}"
+        Path(profile_environment[key]).mkdir(parents=True, exist_ok=True)
+    Path(profile_environment["HOME"]).mkdir(parents=True, exist_ok=True)
+    return profile_environment
+
+
+def prepare_minimal_ledgers(
+    state_home: Path, unit_ids: tuple[str, ...], cold_runs: int,
+) -> None:
+    """Seed the isolated ledger used by each cold run and the shared warm run."""
+    for suffix in ("", *(f"-{number}" for number in range(cold_runs + 1))):
+        write_disabled_unit_ledger(Path(f"{state_home}{suffix}"), unit_ids)
+
+
+def run_isolated_profile(
+    profile_id: str, args: argparse.Namespace, base_environment: dict[str, str], output_root: Path,
+) -> dict[str, object]:
+    """Run a profile that does not use the legacy default-full report path."""
+    shell_root = WORKSPACE_SHELL_ROOT
+    profile_root = output_root / profile_id / "config"
+    identity = profile_metadata(profile_id, shell_root, profile_root)
+    profile_logs = output_root / profile_id / "logs"
+    profile_logs.mkdir(parents=True, exist_ok=True)
+    profile_env = isolated_profile_environment(base_environment, profile_id)
+    run_kind = "baseline" if profile_id == "empty-shellroot" else "shell"
+    if profile_id == "minimal-nyxuri":
+        prepare_minimal_ledgers(
+            Path(profile_env["XDG_STATE_HOME"]), first_party_unit_ids(shell_root), args.runs,
+        )
+
+    startup = startup_samples(
+        StartupTarget(profile_id, profile_root if run_kind == "baseline" else shell_root,
+                      run_kind, profile_env, profile_logs),
+        args.runs,
+    )
+    not_profile_bound = {
+        "status": "unavailable",
+        "reason": "standalone_frame_probe_does_not_execute_this_profile",
+    }
+    result: dict[str, object] = {
+        "identity": identity,
+        "source_profile": source_profile(profile_root if profile_id == "empty-shellroot" else shell_root),
+        "startup": startup,
+        "ipc": {"status": "unavailable", "reason": identity["ipc_unavailable_reason"]},
+        "actions": {"status": "unavailable", "reason": identity["unit_actions_unavailable_reason"]},
+        "long_steady_state": {
+            "status": "unavailable",
+            "reason": "steady_state_runner_requires_shell_ipc_ready",
+        },
+        "reclamation": {
+            "status": "unavailable",
+            "reason": identity["unit_actions_unavailable_reason"],
+        },
+        "frame_profile": not_profile_bound,
+    }
+    if profile_id == "minimal-nyxuri":
+        result["ipc"] = {
+            "status": "available",
+            "shell": ipc_benchmark(
+                profile_env, profile_logs, args.ipc_runs, str(shell_root), "shell", IPC_METHODS,
+                "IPC_READY", ["/workspace/shell/nyxuri-shell", "-v"],
+            ),
+        }
+        result["long_steady_state"] = steady_state_benchmark(
+            profile_env, profile_logs, args.steady_seconds,
+        )
+    return result
+
+
+def main() -> int:
+    parser = build_parser()
+    args = parse_args()
+    profile_names: list[str] = args.profiles or ["default-full"]
+    if os.environ.get("NYXURI_CONTAINER") != "1" or not _private_container_scope():
+        parser.error("benchmark runtime may only run inside benchmark-shell.py's private container")
     if args.steady_seconds <= 0:
         parser.error("--steady-seconds must be > 0")
     if args.reclaim_cycles < 1:
@@ -501,43 +899,86 @@ def main() -> int:
         parser.error("--frame-seconds must be > 0")
     output = args.output; output.parent.mkdir(parents=True, exist_ok=True)
     log_dir = output.parent / "logs"; log_dir.mkdir(exist_ok=True)
+    profile_root = output.parent / "profiles"
+    profile_root.mkdir(exist_ok=True)
     env = environment(); weston_log = (log_dir / "weston.log").open("w")
     weston = subprocess.Popen(
         ["weston", "--backend=headless", "--renderer=pixman", "--no-config",
          "--socket=" + env["WAYLAND_DISPLAY"], "--idle-time=0"], env=env,
         stdout=weston_log, stderr=subprocess.STDOUT, start_new_session=True, text=True,
     )
-    baseline_dir = output.parent / "baseline"; baseline_dir.mkdir(exist_ok=True)
-    (baseline_dir / "shell.qml").write_text(
-        "import QtQuick\nimport Quickshell\nimport Quickshell.Io\n"
-        "ShellRoot { IpcHandler { target: \"benchmark\"; function ping(): string { return \"pong\" } } }\n"
-    )
+    baseline: list[dict[str, object]] = []
+    cold: list[dict[str, object]] = []
+    warm: list[dict[str, object]] = []
+    ipc_baseline: dict[str, dict[str, float | int]] = {}
+    ipc_shell: dict[str, dict[str, float | int]] = {}
+    actions: dict[str, dict[str, float | int]] = {}
+    steady_state: dict[str, object] = {"status": "unavailable", "reason": "default_full_not_selected"}
+    reclamation: dict[str, object] = {"status": "unavailable", "reason": "default_full_not_selected"}
+    frame_profile: dict[str, object] = {"status": "unavailable", "reason": "default_full_not_selected"}
+    source_profile_summary: dict[str, int] | None = None
+    profiles: dict[str, dict[str, object]] = {}
     try:
         socket = Path(env["XDG_RUNTIME_DIR"]) / env["WAYLAND_DISPLAY"]
         for _ in range(200):
             if socket.exists(): break
             time.sleep(0.05)
         if not socket.exists(): raise RuntimeError("private Weston socket did not appear")
-        _run_process(kind="baseline", run_number=0, environment=env, baseline_dir=baseline_dir, log_dir=log_dir)
-        _run_process(kind="shell", run_number=0, environment=env, baseline_dir=baseline_dir, log_dir=log_dir)
-        baseline = [_run_process(kind="baseline", run_number=i, environment=env, baseline_dir=baseline_dir, log_dir=log_dir) for i in range(1, args.runs + 1)]
-        cold = [_run_process(kind="shell", run_number=i, environment=env, baseline_dir=baseline_dir, log_dir=log_dir) for i in range(1, args.runs + 1)]
-        warm = [_run_process(kind="shell", run_number=i, environment=env, baseline_dir=baseline_dir, log_dir=log_dir, warm=True) for i in range(1, max(2, args.runs // 2) + 1)]
-        ipc_baseline = ipc_benchmark(
-            env, log_dir, args.ipc_runs, str(baseline_dir), "benchmark", ("ping",),
-            "Configuration Loaded", ["qs", "-p", str(baseline_dir), "--no-duplicate", "-v"]
-        )
-        ipc_shell = ipc_benchmark(
-            env, log_dir, args.ipc_runs, "/workspace/shell", "shell", IPC_METHODS,
-            "IPC_READY", ["/workspace/shell/nyxuri-shell", "-v"]
-        )
-        actions = action_benchmark(env, log_dir, max(5, args.ipc_runs // 3))
-        steady_state = steady_state_benchmark(env, log_dir, args.steady_seconds)
-        reclamation = reclamation_benchmark(env, log_dir, args.reclaim_cycles, args.reclaim_close_wait)
-        frame_profile = frame_profile_benchmark(env, log_dir, args.frame_seconds)
+        if "default-full" in profile_names:
+            startup_baseline_dir = profile_root / "empty-shellroot" / "config"
+            startup_baseline_identity = profile_metadata(
+                "empty-shellroot", WORKSPACE_SHELL_ROOT, startup_baseline_dir,
+            )
+            ipc_reference_dir = output.parent / "ipc-reference"
+            ipc_reference_dir.mkdir(exist_ok=True)
+            (ipc_reference_dir / "shell.qml").write_text(
+                BENCHMARK_IPC_REFERENCE_SOURCE, encoding="utf-8",
+            )
+            _run_process(kind="baseline", run_number=0, environment=env,
+                         baseline_dir=startup_baseline_dir, log_dir=log_dir)
+            _run_process(kind="shell", run_number=0, environment=env,
+                         baseline_dir=startup_baseline_dir, log_dir=log_dir)
+            baseline = [numeric_run(
+                _run_process(kind="baseline", run_number=i, environment=env,
+                             baseline_dir=startup_baseline_dir, log_dir=log_dir),
+                "empty-shellroot",
+            ) for i in range(1, args.runs + 1)]
+            cold = [numeric_run(
+                _run_process(kind="shell", run_number=i, environment=env,
+                             baseline_dir=startup_baseline_dir, log_dir=log_dir),
+                "default-full",
+            ) for i in range(1, args.runs + 1)]
+            warm = [numeric_run(
+                _run_process(kind="shell", run_number=i, environment=env,
+                             baseline_dir=startup_baseline_dir, log_dir=log_dir, warm=True),
+                "default-full",
+            ) for i in range(1, max(2, args.runs // 2) + 1)]
+            ipc_baseline = ipc_benchmark(
+                env, log_dir, args.ipc_runs, str(ipc_reference_dir), "benchmark", ("ping",),
+                "Configuration Loaded", ["qs", "-p", str(ipc_reference_dir), "--no-duplicate", "-v"]
+            )
+            ipc_shell = ipc_benchmark(
+                env, log_dir, args.ipc_runs, "/workspace/shell", "shell", IPC_METHODS,
+                "IPC_READY", ["/workspace/shell/nyxuri-shell", "-v"]
+            )
+            actions = action_benchmark(env, log_dir, max(5, args.ipc_runs // 3))
+            steady_state = steady_state_benchmark(env, log_dir, args.steady_seconds)
+            reclamation = reclamation_benchmark(env, log_dir, args.reclaim_cycles, args.reclaim_close_wait)
+            frame_profile = frame_profile_benchmark(env, log_dir, args.frame_seconds)
+            source_profile_summary = source_profile()
+            profiles["default-full"] = default_full_profile_contract(
+                profile_metadata("default-full", WORKSPACE_SHELL_ROOT, profile_root),
+                startup_baseline_identity,
+                ipc_reference_metadata(ipc_reference_dir),
+            )
+        for profile_id in profile_names:
+            if profile_id == "default-full":
+                continue
+            profiles[profile_id] = run_isolated_profile(profile_id, args, env, profile_root)
     finally:
         _terminate(weston); weston_log.close()
-        shutil.rmtree(baseline_dir, ignore_errors=True)
+        if "default-full" in profile_names:
+            shutil.rmtree(output.parent / "ipc-reference", ignore_errors=True)
 
     def command_output(*command: str) -> str:
         result = subprocess.run(command, capture_output=True, text=True, check=False)
@@ -560,7 +1001,9 @@ def main() -> int:
         )
     }
     result = {
-        "schema": 2,
+        "schema": 3,
+        "selected_profiles": profile_names,
+        "profiles": profiles,
         "runtime": {
             "quickshell": command_output("qs", "--version"),
             "qt": command_output("qtpaths", "--qt-version"),
@@ -574,6 +1017,7 @@ def main() -> int:
             "git_sha": git_sha or None,
             "git_dirty": git_dirty,
             "environment": environment_summary,
+            "environment_fingerprint": container_environment_fingerprint(env, lock),
             "runs": args.runs,
             "warmup_discarded": 1,
             "ipc_runs": args.ipc_runs,
@@ -581,16 +1025,17 @@ def main() -> int:
             "reclaim_cycles": args.reclaim_cycles,
             "reclaim_close_wait": args.reclaim_close_wait,
             "frame_seconds": args.frame_seconds,
+            "selected_profiles": profile_names,
             "optional_process_commands": ["key", "lspci", "inotifywait", "ddcutil"],
         },
-        "baseline": [numeric_run(run) for run in baseline], "cold_start": [numeric_run(run) for run in cold],
-        "warm_start": [numeric_run(run) for run in warm],
+        "baseline": baseline, "cold_start": cold,
+        "warm_start": warm,
         "ipc": {"baseline": ipc_baseline, "shell": ipc_shell},
         "actions": actions,
         "long_steady_state": steady_state,
         "reclamation": reclamation,
         "frame_profile": frame_profile,
-        "source_profile": source_profile(),
+        "source_profile": source_profile_summary,
     }
     output.write_text(json.dumps(result, ensure_ascii=True, indent=2), encoding="utf-8")
     return 0

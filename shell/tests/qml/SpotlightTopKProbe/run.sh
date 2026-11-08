@@ -29,7 +29,19 @@ chmod 700 "$XDG_RUNTIME_DIR"
 weston --backend=headless --renderer=pixman --no-config --socket="$WAYLAND_DISPLAY" --idle-time=0 \
     > "$output/weston.log" 2>&1 &
 weston_pid=$!
-trap 'kill "$weston_pid" 2>/dev/null || true' EXIT
+preserve_runtime_logs() {
+    if test -d "$probe_root/runtime/quickshell"; then
+        cp -R "$probe_root/runtime/quickshell" "$output/quickshell-logs"
+    fi
+    if test -d "$probe_root/cache/quickshell/crashes"; then
+        cp -R "$probe_root/cache/quickshell/crashes" "$output/quickshell-crashes"
+    fi
+}
+cleanup() {
+    preserve_runtime_logs
+    kill "$weston_pid" 2>/dev/null || true
+}
+trap cleanup EXIT
 for _ in $(seq 1 200); do
     test -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" && break
     sleep 0.05

@@ -895,6 +895,8 @@ FloatingWindow {
                                             source: !fileItem.fileIsDir && root.isImageName(
                                                         fileItem.fileName) ? root.encodeFileUrl(
                                                                                  fileItem.filePath) : ""
+                                            sourceSize: Qt.size(Math.max(1, Math.ceil(width * Screen.devicePixelRatio)),
+                                                                Math.max(1, Math.ceil(height * Screen.devicePixelRatio)))
                                             fillMode: Image.PreserveAspectCrop
                                             asynchronous: true
                                             cache: true

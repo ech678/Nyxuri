@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import importlib.util
+import io
+import json
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -37,9 +40,179 @@ if _SCENARIOS_SPEC is None or _SCENARIOS_SPEC.loader is None:
 scenarios = importlib.util.module_from_spec(_SCENARIOS_SPEC)
 sys.modules["benchmark_scenarios"] = scenarios
 _SCENARIOS_SPEC.loader.exec_module(scenarios)
+_RUNNER_SPEC = importlib.util.spec_from_file_location(
+    "benchmark_shell", ROOT / "scripts" / "dev" / "benchmark-shell.py"
+)
+if _RUNNER_SPEC is None or _RUNNER_SPEC.loader is None:
+    raise RuntimeError("cannot load benchmark-shell")
+runner = importlib.util.module_from_spec(_RUNNER_SPEC)
+sys.modules["benchmark_shell"] = runner
+_RUNNER_SPEC.loader.exec_module(runner)
+_COMPATIBILITY_SPEC = importlib.util.spec_from_file_location(
+    "benchmark_compatibility", ROOT / "scripts" / "dev" / "benchmark_compatibility.py"
+)
+if _COMPATIBILITY_SPEC is None or _COMPATIBILITY_SPEC.loader is None:
+    raise RuntimeError("cannot load benchmark_compatibility")
+compatibility = importlib.util.module_from_spec(_COMPATIBILITY_SPEC)
+sys.modules["benchmark_compatibility"] = compatibility
+_COMPATIBILITY_SPEC.loader.exec_module(compatibility)
 
 
 class BenchmarkRuntimeTests(unittest.TestCase):
+    def test_profile_cli_defaults_to_full_and_accepts_each_named_profile(self):
+        help_text = runner.build_parser().format_help()
+        for profile in ("empty-shellroot", "minimal-nyxuri", "default-full"):
+            self.assertIn(profile, help_text)
+
+        defaults = runner.parse_args([])
+        self.assertEqual(defaults.profiles, ["default-full"])
+        selected = runner.parse_args([
+            "--profile", "empty-shellroot", "--profile", "minimal-nyxuri",
+        ])
+        self.assertEqual(selected.profiles, ["empty-shellroot", "minimal-nyxuri"])
+
+        scenario_help = scenarios.build_parser().format_help()
+        for profile in ("empty-shellroot", "minimal-nyxuri", "default-full"):
+            self.assertIn(profile, scenario_help)
+        scenario_defaults = scenarios.parse_args(["--output", "/tmp/benchmark-raw.json"])
+        self.assertEqual(scenario_defaults.profiles, ["default-full"])
+
+    def test_profile_cli_rejects_unknown_and_duplicate_profiles(self):
+        for argv in (
+            ["--profile", "not-a-profile"],
+            ["--profile", "default-full", "--profile", "default-full"],
+        ):
+            with self.subTest(argv=argv), redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as raised:
+                    runner.parse_args(argv)
+            self.assertEqual(raised.exception.code, 2)
+
+        with redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit) as raised:
+                scenarios.parse_args(["--output", "/tmp/benchmark-raw.json", "--profile", "not-a-profile"])
+        self.assertEqual(raised.exception.code, 2)
+        with redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit) as raised:
+                scenarios.parse_args([
+                    "--output", "/tmp/benchmark-raw.json",
+                    "--profile", "empty-shellroot", "--profile", "empty-shellroot",
+                ])
+        self.assertEqual(raised.exception.code, 2)
+
+    def test_profile_metadata_records_empty_and_minimal_runtime_contracts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            shell_root = root / "shell"
+            shell_root.mkdir()
+            (shell_root / "shell.qml").write_text(
+                "import Quickshell\nShellRoot {}\n", encoding="utf-8"
+            )
+            for name in ("bar", "dock"):
+                plugin = shell_root / "plugins" / name
+                plugin.mkdir(parents=True)
+                (plugin / "manifest.toml").write_text("name = 'fixture'\n", encoding="utf-8")
+            profiles = root / "profiles"
+
+            empty = scenarios.profile_metadata("empty-shellroot", shell_root, profiles)
+            minimal = scenarios.profile_metadata("minimal-nyxuri", shell_root, profiles)
+            full = scenarios.profile_metadata("default-full", shell_root, profiles)
+
+            empty_source = Path(str(empty["config_path"])) / "shell.qml"
+            self.assertEqual(empty_source.read_text(encoding="utf-8"), "import Quickshell\nShellRoot {}\n")
+            self.assertNotIn("IpcHandler", empty_source.read_text(encoding="utf-8"))
+            self.assertEqual(empty["ipc_status"], "unavailable")
+            self.assertEqual(empty["unit_actions_status"], "unavailable")
+            self.assertEqual(minimal["profile_id"], "minimal-nyxuri")
+            self.assertEqual(minimal["config_path"], str(shell_root))
+            self.assertEqual(minimal["disabled_unit_ids"], ["shell.bar", "shell.dock"])
+            self.assertEqual(minimal["ipc_status"], "available")
+            self.assertEqual(minimal["unit_actions_status"], "unavailable")
+            self.assertEqual(full["profile_id"], "default-full")
+            self.assertEqual(full["config_path"], str(shell_root))
+            self.assertEqual(full["disabled_unit_ids"], [])
+            self.assertEqual(full["unit_actions_status"], "available")
+            full_contract = scenarios.default_full_profile_contract(
+                full, empty, scenarios.ipc_reference_metadata(root / "ipc-reference")
+            )
+            raw_full = json.loads(json.dumps(full_contract))
+            self.assertEqual(raw_full["baseline_reference"]["profile_id"], "empty-shellroot")
+            self.assertEqual(
+                raw_full["ipc_reference"]["profile_id"], "benchmark-ipc-reference"
+            )
+            self.assertEqual(
+                raw_full["baseline_reference"]["identity"]["config_kind"],
+                "generated_shellroot_without_handlers",
+            )
+            self.assertNotEqual(
+                raw_full["ipc_reference"]["profile_id"],
+                raw_full["baseline_reference"]["profile_id"],
+            )
+
+            ledger = scenarios.write_disabled_unit_ledger(
+                root / "state", tuple(minimal["disabled_unit_ids"])
+            )
+            payload = json.loads(ledger.read_text(encoding="utf-8"))
+            self.assertEqual(payload, {
+                "plugins": {
+                    "shell.bar": {"state": "disabled"},
+                    "shell.dock": {"state": "disabled"},
+                }
+            })
+
+            scenario_args = scenarios.parse_args([
+                "--output", str(root / "raw.json"), "--runs", "2",
+            ])
+            base_environment = {
+                "HOME": str(root / "home"),
+                "XDG_CACHE_HOME": str(root / "cache"),
+                "XDG_CONFIG_HOME": str(root / "config"),
+                "XDG_DATA_HOME": str(root / "data"),
+                "XDG_STATE_HOME": str(root / "state-base"),
+            }
+            with (
+                patch.object(scenarios, "WORKSPACE_SHELL_ROOT", shell_root),
+                patch.object(scenarios, "startup_samples", return_value={"cold_start": [], "warm_start": []}),
+            ):
+                empty_record = scenarios.run_isolated_profile(
+                    "empty-shellroot", scenario_args, base_environment, root / "profiles",
+                )
+            raw_profile = json.loads(json.dumps({"profiles": {"empty-shellroot": empty_record}}))
+            self.assertEqual(
+                raw_profile["profiles"]["empty-shellroot"]["identity"]["profile_id"],
+                "empty-shellroot",
+            )
+            self.assertEqual(
+                raw_profile["profiles"]["empty-shellroot"]["ipc"],
+                {"status": "unavailable", "reason": "empty_shellroot_declares_no_ipc_handler"},
+            )
+
+            with (
+                patch.object(scenarios, "WORKSPACE_SHELL_ROOT", shell_root),
+                patch.object(scenarios, "startup_samples", return_value={"cold_start": [], "warm_start": []}),
+                patch.object(scenarios, "ipc_benchmark", return_value={"metrics": {"errors": 0}}),
+                patch.object(scenarios, "steady_state_benchmark", return_value={"status": "available"}),
+            ):
+                minimal_record = scenarios.run_isolated_profile(
+                    "minimal-nyxuri", scenario_args, base_environment, root / "profiles",
+                )
+            raw_minimal = json.loads(json.dumps({"profiles": {"minimal-nyxuri": minimal_record}}))
+            self.assertEqual(
+                raw_minimal["profiles"]["minimal-nyxuri"]["identity"]["disabled_unit_ids"],
+                ["shell.bar", "shell.dock"],
+            )
+            self.assertEqual(raw_minimal["profiles"]["minimal-nyxuri"]["ipc"]["status"], "available")
+            self.assertEqual(
+                raw_minimal["profiles"]["minimal-nyxuri"]["actions"],
+                {"status": "unavailable", "reason": "all_first_party_units_disabled_by_profile"},
+            )
+            state_home = root / "state-base" / "minimal-nyxuri"
+            for suffix in ("", "-0", "-1", "-2"):
+                isolated_ledger = Path(f"{state_home}{suffix}") / "nyxuri" / "state.json"
+                self.assertEqual(
+                    json.loads(isolated_ledger.read_text(encoding="utf-8")),
+                    payload,
+                )
+
     def test_cgroup_memory_zero_missing_and_positive_values(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -117,6 +290,179 @@ class BenchmarkRuntimeTests(unittest.TestCase):
     def test_report_preserves_frame_profile_evidence(self):
         built = report.build_report({"frame_profile": {"probe": {"status": "partial"}}})
         self.assertEqual(built["raw"]["frame_profile"]["probe"]["status"], "partial")
+
+    def test_report_preserves_profile_only_data_and_explicit_unavailable_metrics(self):
+        raw = {
+            "schema": 3,
+            "selected_profiles": ["minimal-nyxuri"],
+            "runtime": {"runs": 2, "ipc_runs": 1},
+            "profiles": {
+                "minimal-nyxuri": {
+                    "identity": {
+                        "profile_id": "minimal-nyxuri",
+                        "meaning": "Production host with all first-party units disabled.",
+                        "ipc_status": "available",
+                        "unit_actions_unavailable_reason": "all_first_party_units_disabled_by_profile",
+                    },
+                    "startup": {
+                        "cold_start": [{
+                            "startup_ms": 245.5,
+                            "internal_ms": {"first_frame_ms": 190.0},
+                            "success": True,
+                        }],
+                        "warm_start": [],
+                    },
+                    "ipc": {"status": "available", "shell": {"stage": {"p50_ms": 1.2}}},
+                    "actions": {
+                        "status": "unavailable",
+                        "reason": "all_first_party_units_disabled_by_profile",
+                    },
+                    "long_steady_state": {
+                        "status": "unavailable",
+                        "reason": "not_requested",
+                    },
+                    "reclamation": {
+                        "status": "unavailable",
+                        "reason": "all_first_party_units_disabled_by_profile",
+                    },
+                    "frame_profile": {
+                        "status": "unavailable",
+                        "reason": "standalone_frame_probe_does_not_execute_this_profile",
+                    },
+                }
+            },
+        }
+
+        built = report.build_report(raw)
+        profile = built["raw"]["profiles"]["minimal-nyxuri"]
+        normalized = built["normalized"]["profiles"]["minimal-nyxuri"]
+
+        self.assertEqual(profile["startup"]["cold_start"]["summary"]["startup_ms"]["p50"], 245.5)
+        self.assertEqual(profile["startup"]["cold_start"]["runs"], 1)
+        self.assertEqual(profile["startup"]["warm_start"]["status"], "unavailable")
+        self.assertEqual(profile["ipc"]["status"], "available")
+        self.assertEqual(profile["actions"]["status"], "unavailable")
+        self.assertEqual(
+            profile["actions"]["reason"], "all_first_party_units_disabled_by_profile"
+        )
+        self.assertIsNone(normalized["composite_score_0_100"])
+        self.assertEqual(normalized["status"], "unavailable")
+        self.assertIn("minimal-nyxuri", report.markdown(built))
+        html = report.render_html(raw, built)
+        self.assertIn("Profile summaries", html)
+        self.assertIn("all_first_party_units_disabled_by_profile", html)
+        self.assertIn(">N/A</strong>", html)
+
+    def test_report_keeps_empty_startup_baseline_separate_from_ipc_reference(self):
+        raw = {
+            "selected_profiles": ["default-full"],
+            "baseline": [{"startup_ms": 30.0}],
+            "cold_start": [{"startup_ms": 60.0}],
+            "warm_start": [],
+            "ipc": {"baseline": {"ping": {"p50_ms": 1.0}}, "shell": {}},
+            "profiles": {
+                "default-full": {
+                    "identity": {"profile_id": "default-full"},
+                    "baseline_reference": {
+                        "profile_id": "empty-shellroot",
+                        "identity": {"config_kind": "generated_shellroot_without_handlers"},
+                    },
+                    "ipc_reference": {
+                        "profile_id": "benchmark-ipc-reference",
+                        "meaning": "Single handler for IPC calibration only.",
+                    },
+                    "raw_paths": {"baseline": "$.baseline", "cold_start": "$.cold_start"},
+                }
+            },
+        }
+
+        profile = report.build_report(raw)["raw"]["profiles"]["default-full"]
+
+        self.assertEqual(profile["startup"]["baseline"]["profile_id"], "empty-shellroot")
+        self.assertEqual(
+            profile["startup"]["baseline"]["identity"]["config_kind"],
+            "generated_shellroot_without_handlers",
+        )
+        self.assertEqual(profile["ipc_reference"]["profile_id"], "benchmark-ipc-reference")
+        self.assertNotEqual(
+            profile["startup"]["baseline"]["profile_id"],
+            profile["ipc_reference"]["profile_id"],
+        )
+
+    def test_compatibility_cli_rejects_direct_host_invocation_before_qs_lookup(self):
+        stderr = io.StringIO()
+        with (
+            patch.dict("os.environ", {"NYXURI_CONTAINER": "0"}),
+            patch.object(sys, "argv", ["benchmark_compatibility.py", "--output", "/tmp/compat.json"]),
+            patch.object(
+                compatibility.shutil, "which", side_effect=AssertionError("qs lookup bypassed container gate")
+            ) as which,
+            redirect_stderr(stderr),
+        ):
+            with self.assertRaises(SystemExit) as raised:
+                compatibility.main()
+
+        self.assertEqual(raised.exception.code, 2)
+        self.assertIn("private container", stderr.getvalue())
+        which.assert_not_called()
+
+    def test_benchmark_environment_is_allowlisted_and_deterministic(self):
+        with tempfile.TemporaryDirectory() as directory:
+            qml_root = Path(directory) / "qt-qml"
+            qml_root.mkdir()
+            with patch.dict(
+                "os.environ",
+                {
+                    "PATH": "/nix/var/nix/profiles/default/bin",
+                    "HOME": "/host/home",
+                    "DISPLAY": ":99",
+                    "SSH_AUTH_SOCK": "/host/agent.sock",
+                    "WAYLAND_DISPLAY": "host-wayland",
+                    "DBUS_SESSION_BUS_ADDRESS": "unix:path=/run/user/1000/bus",
+                },
+                clear=True,
+            ):
+                isolated = scenarios.environment(qml_root=qml_root)
+
+        self.assertEqual(isolated["HOME"], "/tmp/nyxuri-home")
+        self.assertNotIn("DISPLAY", isolated)
+        self.assertNotIn("SSH_AUTH_SOCK", isolated)
+        self.assertEqual(isolated["WAYLAND_DISPLAY"], "nyxuri-benchmark-wayland")
+        self.assertNotIn("DBUS_SESSION_BUS_ADDRESS", isolated)
+        self.assertEqual(isolated["LANG"], "C.UTF-8")
+        self.assertEqual(isolated["TZ"], "UTC")
+        self.assertEqual(isolated["PYTHONHASHSEED"], "0")
+        self.assertEqual(isolated["QT_HASH_SEED"], "0")
+
+    def test_environment_fingerprint_declares_container_scope_and_unavailable_display_mode(self):
+        fingerprint = scenarios.container_environment_fingerprint(
+            {
+                "HOME": "/tmp/nyxuri-home",
+                "XDG_RUNTIME_DIR": "/tmp/nyxuri-runtime",
+                "XDG_CACHE_HOME": "/tmp/nyxuri-cache",
+                "XDG_CONFIG_HOME": "/tmp/nyxuri-config",
+                "XDG_DATA_HOME": "/tmp/nyxuri-data",
+                "XDG_STATE_HOME": "/tmp/nyxuri-state",
+                "WAYLAND_DISPLAY": "nyxuri-benchmark-wayland",
+                "QT_QUICK_BACKEND": "software",
+                "QSG_RHI_BACKEND": "software",
+                "LANG": "C.UTF-8",
+                "LC_ALL": "C.UTF-8",
+                "LC_CTYPE": "C.UTF-8",
+                "LANGUAGE": "C",
+                "TZ": "UTC",
+                "PYTHONHASHSEED": "0",
+                "QT_HASH_SEED": "0",
+                "SOURCE_DATE_EPOCH": "0",
+            },
+            {"container_digest": "sha256:test", "weston_backend": "headless", "renderer": "pixman"},
+        )
+        self.assertEqual(fingerprint["scope"], "container-process-tree")
+        self.assertEqual(fingerprint["proc_scope"], "private-pid-namespace")
+        self.assertEqual(fingerprint["screen"]["status"], "unavailable")
+        self.assertEqual(fingerprint["timezone"], "UTC")
+        self.assertEqual(fingerprint["random_seed"]["QT_HASH_SEED"], "0")
+        self.assertEqual(fingerprint["container_digest"], "sha256:test")
 
     def test_qml_census_contract_is_live_and_tears_down_loader_records(self):
         startup = (ROOT / "services" / "ShellStartupService.qml").read_text(encoding="utf-8")
