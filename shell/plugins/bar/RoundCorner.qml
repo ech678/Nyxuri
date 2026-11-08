@@ -1,6 +1,11 @@
+// Fork & Trim: end4-pC modules/ii/bar/RoundCorner.qml
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import QtQuick
 import QtQuick.Shapes
-import qs.modules.common
+import qs.commons
+import qs.ui
+import qs.services
 
 Item {
     id: root

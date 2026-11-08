@@ -1,13 +1,11 @@
 pragma ComponentBehavior: Bound
 
-import qs
 import qs.services
-import qs.modules.common
-import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
+import qs.commons
+import qs.ui
 
 PopupWindow {
     id: root
@@ -55,11 +53,6 @@ PopupWindow {
             : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
     }
 
-    HyprlandFocusGrab {
-        active: root.visible
-        windows: [root]
-        onCleared: root.close()
-    }
 
     Item {
         id: inputArea

@@ -1,0 +1,127 @@
+pragma Singleton
+
+import QtQuick
+import Quickshell
+import qs.services
+
+// Bridge singleton adapting upstream iNiR/end4 Config.options queries to PersonalizationConfig
+Singleton {
+    id: root
+
+    readonly property QtObject options: QtObject {
+        id: optionsRoot
+
+        readonly property QtObject interactions: QtObject {
+            readonly property QtObject deadPixelWorkaround: QtObject {
+                readonly property bool enable: false
+            }
+        }
+
+        readonly property QtObject battery: QtObject {
+            readonly property int low: 20
+            readonly property int critical: 10
+        }
+
+        readonly property QtObject resources: QtObject {
+            readonly property int updateInterval: 1000
+        }
+
+        readonly property QtObject profile: QtObject {
+            readonly property string avatarPath: ""
+            readonly property string avatarPicture: ""
+        }
+
+        readonly property QtObject bar: QtObject {
+            id: barOptions
+
+            readonly property bool bottom: PersonalizationConfig.barPosition === "bottom"
+            readonly property bool vertical: PersonalizationConfig.barPosition === "left" || PersonalizationConfig.barPosition === "right"
+            readonly property bool showBackground: PersonalizationConfig.barShowBackground ?? true
+            readonly property int cornerStyle: PersonalizationConfig.barCornerStyle ?? 3
+            readonly property string borderless: PersonalizationConfig.barBorderless ?? "separated"
+            readonly property bool showScrollHints: true
+            readonly property bool followFrameColor: false
+            readonly property string frameColor: ""
+            readonly property var screenList: []
+            property var widgetStyles: []
+            readonly property alias layouts: m3Options.layouts
+
+            readonly property QtObject divider: QtObject {
+                readonly property string style: PersonalizationConfig.barDividerStyle ?? "rect"
+                readonly property int spacing: PersonalizationConfig.barDividerSpacing ?? 4
+            }
+
+            readonly property QtObject autoHide: QtObject {
+                readonly property bool enable: false
+                readonly property bool pushWindows: false
+                readonly property int hoverRegionWidth: 2
+                readonly property QtObject showWhenPressingSuper: QtObject {
+                    readonly property bool enable: false
+                    readonly property int delay: 100
+                }
+            }
+
+            readonly property QtObject m3: QtObject {
+                id: m3Options
+                readonly property bool showBackground: PersonalizationConfig.barShowBackground ?? true
+                readonly property int cornerStyle: PersonalizationConfig.barCornerStyle ?? 3
+                readonly property string borderless: PersonalizationConfig.barBorderless ?? "separated"
+                readonly property real gapsOut: 5
+
+                readonly property QtObject layouts: QtObject {
+                    readonly property var leftLayout: PersonalizationConfig.barLayoutLeft
+                    readonly property var middleLayout: PersonalizationConfig.barLayoutMiddle
+                    readonly property var rightLayout: PersonalizationConfig.barLayoutRight
+                }
+
+                readonly property QtObject tooltips: QtObject {
+                    readonly property bool clickToShow: false
+                }
+
+                readonly property QtObject media: QtObject {
+                    readonly property string preferredPlayer: ""
+                    readonly property int minWidth: 160
+                    readonly property int maxWidth: 300
+                    readonly property bool alwaysVisible: false
+                    readonly property int updateInterval: 1000
+                    readonly property bool onlyTitle: false
+                }
+
+                readonly property QtObject utilButtons: QtObject {
+                    readonly property bool showScreenSnip: true
+                    readonly property bool showColorPicker: true
+                    readonly property bool showScreenRecord: true
+                    readonly property bool showKeyboardToggle: false
+                    readonly property bool showWallpaperToggle: false
+                    readonly property bool showMicToggle: false
+                    readonly property bool showDarkModeToggle: true
+                    readonly property bool showPerformanceProfileToggle: false
+                }
+
+                readonly property QtObject workspaces: QtObject {
+                    readonly property bool showAppIcons: true
+                    readonly property bool alwaysShowNumbers: false
+                    readonly property bool useNerdFont: false
+                    readonly property bool monochromeIcons: false
+                    readonly property string indicatorStyle: "pill"
+                    readonly property var numberMap: ({})
+                }
+            }
+
+            readonly property QtObject dynamicIsland: QtObject {
+                readonly property bool enable: PersonalizationConfig.islandEnabled
+                readonly property string leftWidget: "clockWidget"
+                readonly property string rightWidget: "none"
+                readonly property bool showMediaControls: true
+                readonly property string visualizerStyle: "dots"
+            }
+
+            readonly property QtObject visualizer: QtObject {
+                readonly property bool enable: true
+                readonly property string type: "bars"
+                readonly property string organicFit: "auto"
+                readonly property string multiMonitorMode: "primary"
+            }
+        }
+    }
+}

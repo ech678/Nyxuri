@@ -50,9 +50,7 @@ ShellRoot {
 
         Component.onCompleted: {
             SpotlightCatalog.actionExecutor = root.executeSearchAction;
-            SpotlightCatalog.islandAvailable = Qt.binding(() => ActionGateway.islandHost
-                                                                  ? ActionGateway.islandHost.searchActionsAvailable :
-                                                                    false);
+            SpotlightCatalog.islandAvailable = Qt.binding(() => Boolean(ActionGateway.islandHost && ActionGateway.islandHost.searchActionsAvailable));
             ThemeService.reloadColors();
             FontService.refresh();
             I18nService.initialize();
@@ -108,7 +106,7 @@ ShellRoot {
                     failedHeals = 0;
                     if (item) {
                         if (modelData.id === "settings")
-                            item.todoService = TodoService;
+                            item.todoService = typeof TodoService !== "undefined" ? TodoService : null;
                         if (modelData.id === "sidebars")
                             ActionGateway.sidebarHost = item;
                     }

@@ -2,11 +2,9 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell.Io
 import Quickshell.Services.Mpris
-import qs
 import qs.services
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
+import qs.commons
+import qs.ui
 
 Item {
     id: root
@@ -33,6 +31,10 @@ Item {
         id: localCava
         active: root.isPlaying && root.sharedPoints === null
         sampleCount: root.barCount
+    }
+
+    Component.onDestruction: {
+        localCava.active = false;
     }
     property real dotSize: 3
     property real dotSpacing: 3

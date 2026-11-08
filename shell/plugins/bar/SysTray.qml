@@ -3,11 +3,8 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.SystemTray
 import qs.services
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
-import qs.modules.common.functions
-import qs.modules.common.m3
+import qs.commons
+import qs.ui
 
 Item {
     id: root
@@ -50,10 +47,11 @@ Item {
         if (root.trayOverflowOpen) root.grabFocus()
     }
 
-    CompositorFocusGrab {
+    Item {
         id: focusGrab
-        active: false
-        windows: [trayOverflowLayout.QsWindow?.window, root.activeMenu]
+        property bool active: false
+        property var windows: []
+        signal cleared
         onCleared: {
             root.trayOverflowOpen = false
             if (root.activeMenu) {

@@ -14,7 +14,7 @@ import os
 import unittest
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-END4_DIR = os.path.join(REPO_ROOT, "shell", "plugins", "bar", "island", "end4")
+END4_DIR = os.path.join(REPO_ROOT, "shell", "plugins", "bar")
 
 
 def read_end4(filename):

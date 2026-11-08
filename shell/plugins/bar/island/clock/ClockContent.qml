@@ -2,6 +2,7 @@ import QtQuick
 import qs.commons
 import qs.services
 import "../../../../commons/DateFormat.js" as DateFormat
+import qs.ui
 
 Item {
     id: root

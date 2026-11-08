@@ -1,10 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
-import Quickshell.Io
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
 import qs.services
+import qs.commons
+import qs.ui
 
 StyledPopup {
     id: root
@@ -13,48 +11,15 @@ StyledPopup {
     property real uploadSpeed: 0
     property real downloadedBytes: 0
     property real uploadedBytes: 0
-    property string interfaceName: ""
-    property string localAddress: ""
-    property string gatewayAddress: ""
-    property string macAddress: ""
+
+    readonly property var activeNet: NetworkService.activeNetwork
+    property string interfaceName: activeNet?.deviceName || ""
+    property string localAddress: activeNet?.address || ""
+    property string gatewayAddress: activeNet?.gateway || ""
+    property string macAddress: activeNet?.deviceAddress || ""
 
     readonly property bool hasInterfaceDetails: interfaceName.length > 0
         || localAddress.length > 0 || gatewayAddress.length > 0 || macAddress.length > 0
-
-    onActiveChanged: {
-        if (active)
-            interfaceDetailsProcess.running = true
-    }
-
-    // StyledPopup's default property accepts one visual content item. Keep the
-    // non-visual probe in an explicit property so it is not assigned as popup
-    // content during construction.
-    property Process interfaceDetailsProcess: Process {
-        id: interfaceDetailsProcess
-        running: false
-        command: [
-            "/usr/bin/bash", "-c",
-            "iface=$(/usr/bin/ip route show default | /usr/bin/awk 'NR==1 {print $5}'); "
-                + "gateway=$(/usr/bin/ip route show default | /usr/bin/awk 'NR==1 {print $3}'); "
-                + "local_ip=$(/usr/bin/ip -4 addr show dev \"$iface\" 2>/dev/null | /usr/bin/awk '/inet / {sub(/\\/.*/,\"\",$2); print $2; exit}'); "
-                + "mac=$(/usr/bin/cat /sys/class/net/$iface/address 2>/dev/null); "
-                + "/usr/bin/printf 'interface=%s\\nlocal=%s\\ngateway=%s\\nmac=%s\\n' \"$iface\" \"$local_ip\" \"$gateway\" \"$mac\""
-        ]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const values = {}
-                for (const line of text.trim().split("\n")) {
-                    const separator = line.indexOf("=")
-                    if (separator > 0)
-                        values[line.slice(0, separator)] = line.slice(separator + 1)
-                }
-                root.interfaceName = values.interface ?? ""
-                root.localAddress = values.local ?? ""
-                root.gatewayAddress = values.gateway ?? ""
-                root.macAddress = values.mac ?? ""
-            }
-        }
-    }
 
     readonly property bool wifiConnected: Network.wifiStatus === "connected"
     readonly property string connectionName: {

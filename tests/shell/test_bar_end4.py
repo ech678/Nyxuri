@@ -76,18 +76,14 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("vertical", content)
 
     def test_component_loader_registrations(self):
-        content = read_bar_file("BarComponentLoader.qml")
-        self.assertIn('case "divisor":', content)
-        self.assertIn('divisorComponent', content)
-        self.assertIn('case "island":', content)
-        self.assertIn('islandComponent', content)
+        content = read_bar_file("BarContent.qml")
+        self.assertIn('"divisor": "./Divisor.qml"', content)
+        self.assertIn('"island": "./DynamicIsland.qml"', content)
 
     def test_dynamic_island_is_material_binding(self):
-        path = os.path.join(BAR_DIR, "island", "end4", "DynamicIsland.qml")
-        with open(path, "r", encoding="utf-8") as f:
-            content = f.read()
-        self.assertIn("PersonalizationConfig.barCornerStyle === 3", content)
-        self.assertIn("PersonalizationConfig.barCornerStyle === 4", content)
+        content = read_bar_file("DynamicIsland.qml")
+        self.assertIn("Config.options.bar.cornerStyle === 3", content)
+        self.assertIn("Config.options.bar.cornerStyle === 4", content)
 
     def test_personalization_config_bar_keys(self):
         content = read_services_file("PersonalizationConfig.qml")
@@ -113,11 +109,19 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("BarGroup", content)
 
     def test_bar_windows_screen_corners_and_exclusive_zone(self):
-        for name in ["HorizontalBarWindow.qml", "VerticalBarWindow.qml"]:
-            content = read_bar_file(name)
-            self.assertIn("hasScreenCorners", content, f"{name} missing hasScreenCorners")
-            self.assertIn("roundDecorators", content, f"{name} missing roundDecorators")
-            self.assertIn("exclusiveThickness", content, f"{name} missing exclusiveThickness")
+        content = read_bar_file("Bar.qml")
+        self.assertIn("roundDecorators", content)
+        self.assertIn("shownExclusiveZone", content)
+
+    def test_bar_and_island_ipc_handlers(self):
+        content = read_bar_file("Bar.qml")
+        self.assertIn('target: "bar"', content)
+        self.assertIn("function toggle(): string", content)
+        self.assertIn("function open(): string", content)
+        self.assertIn("function close(): string", content)
+        self.assertIn('target: "island"', content)
+        self.assertIn("function state(): string", content)
+        self.assertIn("function stopRecording(): string", content)
 
 
 if __name__ == "__main__":

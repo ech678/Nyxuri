@@ -1,10 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
-import qs
 import qs.services
-import qs.modules.common
-import qs.modules.common.widgets
-import qs.modules.common.functions
+import qs.commons
+import qs.ui
 
 Item {
     id: diSessionRoot
@@ -12,10 +10,10 @@ Item {
     anchors.fill: parent
     
     readonly property var actions: [
-        { icon: "lock",              label: Translation.tr("Lock"),     action: () => Session.lock() },
-        { icon: "dark_mode",         label: Translation.tr("Sleep"),    action: () => Session.suspend() },
-        { icon: "restart_alt",       label: Translation.tr("Reboot"),   action: () => Session.reboot() },
-        { icon: "power_settings_new", label: Translation.tr("Shutdown"), action: () => Session.poweroff() }
+        { icon: "lock",              label: Translation.tr("Lock"),     action: () => ActionGateway.powerAction("lock", "island:session") },
+        { icon: "dark_mode",         label: Translation.tr("Sleep"),    action: () => ActionGateway.powerAction("suspend", "island:session") },
+        { icon: "restart_alt",       label: Translation.tr("Reboot"),   action: () => ActionGateway.powerAction("reboot", "island:session") },
+        { icon: "power_settings_new", label: Translation.tr("Shutdown"), action: () => ActionGateway.powerAction("poweroff", "island:session") }
     ]
 
     property int focusedIndex: 0
@@ -49,7 +47,7 @@ Item {
 
                 MaterialShapeWrappedMaterialSymbol {
                     anchors.fill: parent
-                    wrappedShape: MaterialShape.Shape.Cookie12Sided
+                    wrappedShape: MaterialShapeCanvas.Shape.Cookie12Sided
                     text: actionDelegate.modelData.icon
                     iconSize: 18
                     fill: actionDelegate.isFocused ? 1 : 0

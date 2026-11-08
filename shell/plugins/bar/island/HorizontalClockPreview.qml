@@ -3,6 +3,7 @@ import Qt5Compat.GraphicalEffects
 import qs.commons
 import qs.services
 import "clock"
+import qs.ui
 
 Item {
     id: root

@@ -1,9 +1,11 @@
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
-import qs.modules.common.m3
+// Fork & Trim: end4-pC modules/ii/bar/BarGroup.qml
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import QtQuick
 import QtQuick.Layouts
+import qs.commons
+import qs.ui
+import qs.services
 
 Item {
     id: root
@@ -12,6 +14,8 @@ Item {
     property int totalCount: 0
     property bool isMaterial: Config.options.bar.m3.cornerStyle === 3
     property bool paintMaterialPill: false
+    property bool backgroundVisible: background.color.a > 0
+    property string widgetName: ""
     property real padding: (root.isMaterial && !root.paintMaterialPill) ? 0 : 5
     property color bgColor: M3Palette.primaryContainer
     readonly property bool empty: root.vertical
@@ -76,16 +80,6 @@ Item {
         bottomLeftRadius: (root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.m3.borderless === "separated" ? root.fullRadius : root.vertical ? root.endRadius : root.startRadius)
         topRightRadius: (root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.m3.borderless === "separated" ? root.fullRadius : root.vertical ? root.startRadius : root.endRadius)
         bottomRightRadius: (root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.m3.borderless === "separated" ? root.fullRadius : root.endRadius)
-
-        EditorialPaperStack {
-            anchors.fill: parent
-            visible: Appearance.editorialEverywhere && Appearance.editorial.paperStack && background.color.a > 0
-            faceColor: background.color
-            topLeftRadius: background.topLeftRadius
-            topRightRadius: background.topRightRadius
-            bottomLeftRadius: background.bottomLeftRadius
-            bottomRightRadius: background.bottomRightRadius
-        }
 
         Behavior on color {
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)

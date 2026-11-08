@@ -1,15 +1,16 @@
+// Fork & Trim: end4-pC modules/ii/bar/DynamicIsland.qml
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Wayland
 import Quickshell.Services.Mpris
 import Qt5Compat.GraphicalEffects
 import QtQuick.Controls
-import qs
 import qs.services
-import qs.modules.common
-import qs.modules.common.widgets
+import qs.commons
+import qs.ui
 
 Item {
     id: root
@@ -47,14 +48,61 @@ Item {
         }
     }
 
-    readonly property MprisPlayer activePlayer: MprisController.activePlayer
+    readonly property bool isPrimaryScreen: {
+        const winScreen = root.QsWindow.window?.screen;
+        const primary = Quickshell.screens[0];
+        return !winScreen || winScreen === primary;
+    }
+
+    Component.onCompleted: {
+        if (root.isPrimaryScreen) {
+            ActionGateway.islandHost = root;
+        }
+    }
+
+    Component.onDestruction: {
+        if (ActionGateway.islandHost === root) {
+            ActionGateway.islandHost = null;
+        }
+    }
+
+    function invoke(method) {
+        if (!method) return "ISLAND_UNAVAILABLE";
+        if (method === "toggle") {
+            root.forceIdle = !root.forceIdle;
+            return true;
+        } else if (method === "open") {
+            root.forceIdle = false;
+            return true;
+        } else if (method === "close") {
+            root.forceIdle = true;
+            return true;
+        }
+        return true;
+    }
+
+    readonly property var activePlayer: MediaService.primaryPlayer ?? null
     readonly property bool hasMedia: root.activePlayer !== null
         && ((root.activePlayer.trackTitle ?? "") !== "" || root.activePlayer.isPlaying)
-    readonly property var latestNotification: Notifications.popupList.length > 0
-        ? Notifications.popupList[Notifications.popupList.length - 1]
+    readonly property var latestNotification: NotificationService.popupList.length > 0
+        ? NotificationService.popupList[NotificationService.popupList.length - 1]
         : null
-    readonly property bool isRecording: Persistent.states.record.enable
+    readonly property bool isRecording: false
     property int recordingElapsedSeconds: 0
+
+    function stopRecording() {
+        if (typeof AudioRecordingService !== "undefined" && AudioRecordingService?.isRecording)
+            AudioRecordingService.stop();
+        else if (typeof RecordingService !== "undefined" && RecordingService?.stop)
+            RecordingService.stop();
+    }
+
+    // Service bindings
+    readonly property var _recordingService: typeof RecordingService !== "undefined" ? RecordingService : null
+    readonly property var _audioRecordingService: typeof AudioRecordingService !== "undefined" ? AudioRecordingService : null
+    readonly property var _volumeService: typeof VolumeService !== "undefined" ? VolumeService : null
+    readonly property var _brightnessService: typeof BrightnessService !== "undefined" ? BrightnessService : null
+    readonly property var _keyboardLockService: typeof KeyboardLockService !== "undefined" ? KeyboardLockService : null
 
     onIsRecordingChanged: {
         if (!isRecording) recordingElapsedSeconds = 0
@@ -72,57 +120,25 @@ Item {
     }
 
     property string engagedTimerKind: ""
-    readonly property bool hasActiveTimer: root.engagedTimerKind !== ""
-
-    Connections {
-        target: TimerService
-        function onPomodoroRunningChanged() { if (TimerService.pomodoroRunning) root.engagedTimerKind = "pomodoro" }
-        function onCountdownRunningChanged() { if (TimerService.countdownRunning) root.engagedTimerKind = "countdown" }
-        function onStopwatchRunningChanged() { if (TimerService.stopwatchRunning) root.engagedTimerKind = "stopwatch" }
-    }
+    readonly property bool hasActiveTimer: false
 
     function timerIcon() {
-        switch (root.engagedTimerKind) {
-            case "pomodoro":  return TimerService.pomodoroBreak ? "coffee" : "visibility"
-            case "countdown": return "hourglass_top"
-            case "stopwatch": return "timer"
-            default:          return "timer"
-        }
+        return "timer";
     }
 
     function timerValueText() {
-        switch (root.engagedTimerKind) {
-            case "pomodoro":  return TimerService.formatSeconds(TimerService.pomodoroSecondsLeft)
-            case "countdown": return TimerService.formatSeconds(TimerService.countdownSecondsLeft)
-            case "stopwatch": return TimerService.formatSeconds(TimerService.stopwatchTime / 100)
-            default:          return ""
-        }
+        return "00:00";
     }
 
     function timerRunning() {
-        switch (root.engagedTimerKind) {
-            case "pomodoro":  return TimerService.pomodoroRunning
-            case "countdown": return TimerService.countdownRunning
-            case "stopwatch": return TimerService.stopwatchRunning
-            default:          return false
-        }
+        return false;
     }
 
     function toggleActiveTimer() {
-        switch (root.engagedTimerKind) {
-            case "pomodoro":  TimerService.togglePomodoro(); break
-            case "countdown": TimerService.toggleCountdown(); break
-            case "stopwatch": TimerService.toggleStopwatch(); break
-        }
     }
 
     function resetActiveTimer() {
-        switch (root.engagedTimerKind) {
-            case "pomodoro":  TimerService.resetPomodoro(); break
-            case "countdown": TimerService.resetCountdown(); break
-            case "stopwatch": TimerService.stopwatchReset(); break
-        }
-        root.engagedTimerKind = ""
+        root.engagedTimerKind = "";
     }
 
     property bool batteryAlertActive: false
@@ -228,7 +244,7 @@ Item {
             case "battery":   return root.batteryIcon()
             case "osd":
                 switch (GlobalStates.osdIndicatorType) {
-                    case "brightness": return Hyprsunset.temperatureActive ? "routine" : "light_mode"
+                    case "brightness": return "light_mode"
                     case "gamma":      return "wb_twilight"
                     default:           return "volume_up"
                 }
@@ -366,7 +382,7 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: Quickshell.execDetached([Directories.recordScriptPath])
+                        onClicked: root.stopRecording()
                     }
                 }
 

@@ -1,7 +1,10 @@
+// Fork & Trim: end4-pC modules/ii/bar/Divisor.qml
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import QtQuick
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
+import qs.commons
+import qs.ui
+import qs.services
 
 Item {
     id: root
@@ -9,7 +12,7 @@ Item {
     property real btnSize: 40
     property real btnSpacing: 2
     property bool isMaterial: Config.options.bar.m3.cornerStyle === 3
-    property string style: Config.options.bar.m3.divider.style // "rect" - "dot" - "space"
+    property string style: PersonalizationConfig.barDividerStyle ?? Config.options.bar.m3.divider.style // "rect" - "dot" - "space"
     property int dividerSpacing: Config.options.bar.m3.divider.spacing
 
     width:  vertical ? btnSize : (root.style === "space" ? root.dividerSpacing : (1 + btnSpacing * 3))

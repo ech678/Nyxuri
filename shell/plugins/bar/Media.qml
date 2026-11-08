@@ -1,13 +1,5 @@
 pragma ComponentBehavior: Bound
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
-import qs.modules.common.functions
-import qs.modules.shared.mediaControls
 import qs.services
-import qs.modules.common.models
-import qs
-import qs.modules.common.m3
 import Qt5Compat.GraphicalEffects
 import QtQuick
 import QtQuick.Effects
@@ -15,6 +7,8 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.Mpris
 import Quickshell.Wayland
+import qs.commons
+import qs.ui
 
 Item {
     id: root
@@ -33,7 +27,7 @@ Item {
         return MprisController.activePlayer
     }
 
-    readonly property string cleanedTitle: StringUtils.cleanMusicTitle(root.trackTitle) || Translation.tr("No media")
+    readonly property string cleanedTitle: root.trackTitle.length > 0 ? root.trackTitle : Translation.tr("No media")
     readonly property string popupMode: Config.options?.media?.popupMode ?? "dock"
     property bool barMediaPopupVisible: false
 
@@ -84,7 +78,7 @@ Item {
 
     Timer {
         running: activePlayer?.playbackState == MprisPlaybackState.Playing
-        interval: Config.options.resources.updateInterval
+        interval: Config.options?.resources?.updateInterval ?? 1000
         repeat: true
         onTriggered: activePlayer.positionChanged()
     }
@@ -202,7 +196,7 @@ Item {
         active: root.vertical && !root.isMaterial
         visible: active
         anchors.centerIn: parent
-        sourceComponent: ClippedFilledCircularProgress {
+        sourceComponent: CircularProgress {
             implicitSize: 20
             lineWidth: Appearance.rounding.unsharpen
             value: MprisController.lengthOf(root.activePlayer) > 0 ? MprisController.positionOf(root.activePlayer) / MprisController.lengthOf(root.activePlayer) : 0
@@ -249,7 +243,7 @@ Item {
         anchors.fill: parent
         sourceComponent: RowLayout {
             spacing: 4
-            ClippedFilledCircularProgress {
+            CircularProgress {
                 Layout.alignment: Qt.AlignVCenter
                 Layout.leftMargin: 3
                 implicitSize: 20
@@ -326,7 +320,7 @@ Item {
                             // Upstream hardcoded ~/.face. iNiR already resolves
                             // the avatar across AccountsService and the two
                             // ricer paths, so use its primary source.
-                            source: Directories.userAvatarSourcePrimary
+                            source: AvatarService.avatarUrl
                             sourceSize.width: avatarRect.width * 2
                             sourceSize.height: avatarRect.height * 2
                             fillMode: Image.PreserveAspectCrop
@@ -351,7 +345,7 @@ Item {
                         Layout.topMargin: 2
 
                         StyledText {
-                            text: SystemInfo.username
+                            text: SystemIdentityService.accountName
                             font.pixelSize: Appearance.font.pixelSize.smaller
                             color: root.mediaInk
                             elide: Text.ElideRight
@@ -366,7 +360,7 @@ Item {
                             elide: Text.ElideRight
                             Layout.rightMargin: 8
                             Layout.maximumWidth: 120
-                            text: SystemInfo.distroName
+                            text: SystemIdentityService.distroName
                         }
                     }
                 }
@@ -422,7 +416,7 @@ Item {
                             id: titleText
                             readonly property bool titleOnly: Config.options?.bar?.m3?.media?.onlyTitle ?? false
                             Layout.topMargin: 0
-                            text: StringUtils.cleanMusicTitle(root.trackTitle) || Translation.tr("No media")
+                            text: root.trackTitle.length > 0 ? root.trackTitle : Translation.tr("No media")
                             font.pixelSize: titleOnly
                                 ? Appearance.font.pixelSize.small
                                 : Appearance.font.pixelSize.smallie

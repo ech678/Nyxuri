@@ -1,14 +1,13 @@
 pragma ComponentBehavior: Bound
 
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
-import qs.modules.common.functions
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
+import qs.commons
+import qs.ui
+import qs.services
 
 RippleButton {
     id: root
@@ -86,10 +85,9 @@ RippleButton {
                 anchors.fill: parent
                 active: root.menuEntry.buttonType === QsMenuButtonType.RadioButton
 
-                sourceComponent: StyledRadioButton {
-                    enabled: false
-                    padding: 0
-                    checked: root.menuEntry.checkState === Qt.Checked
+                sourceComponent: MaterialSymbol {
+                    text: root.menuEntry.checkState === Qt.Checked ? "radio_button_checked" : "radio_button_unchecked"
+                    iconSize: 20
                 }
             }
 

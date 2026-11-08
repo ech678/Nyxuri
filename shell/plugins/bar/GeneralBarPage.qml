@@ -145,12 +145,22 @@ Item {
                 }
 
                 PreferenceSelect {
-                    last: true
                     label: I18n.tr("Divider style")
                     model: PersonalizationConfig.barDividerStyles
                     currentValue: PersonalizationConfig.barDividerStyle
                     inputRegionService: PopupInputRegionService
                     onSelected: value => PersonalizationConfig.setBarDividerStyle(String(value))
+                }
+
+                PreferenceSlider {
+                    last: true
+                    label: I18n.tr("Bar thickness")
+                    value: PersonalizationConfig.barThickness
+                    valueLabel: Math.round(PersonalizationConfig.barThickness) + " px"
+                    from: 28
+                    to: 56
+                    stepSize: 2
+                    onMoved: value => PersonalizationConfig.setBarThickness(Math.round(value))
                 }
 
                 // Components
@@ -163,7 +173,7 @@ Item {
                     Layout.leftMargin: NexusStyle.padding.extraSmall
                     Layout.rightMargin: NexusStyle.padding.extraSmall
                     Layout.bottomMargin: NexusStyle.padding.extraSmall
-                    text: I18n.tr("Drag components to reorder them or move them to the other side.")
+                    text: I18n.tr("Drag widgets between lanes to arrange the bar")
                     color: Appearance.m3colors.m3onSurfaceVariant
                     font.pixelSize: NexusStyle.font.bodySmall
                     wrapMode: Text.Wrap
@@ -216,9 +226,45 @@ Item {
                             id: leadingField
 
                             Layout.fillWidth: true
-                            values: PersonalizationConfig.barLeadingComponents
+                            values: PersonalizationConfig.barLayoutLeft
                             options: PersonalizationConfig.barComponentOptions
-                            zone: "leading"
+                            zone: "left"
+                            dragCoordinator: dragCoordinator
+                            onToggled: componentId => PersonalizationConfig.toggleBarComponent(componentId, zone)
+                            onRemoved: componentId => PersonalizationConfig.removeBarComponent(componentId)
+                        }
+                    }
+                }
+
+                ConnectedRect {
+                    id: middleZoneRow
+
+                    Layout.fillWidth: true
+                    implicitHeight: Math.max(zoneMiddleLabel.implicitHeight, middleField.implicitHeight) + NexusStyle.padding.medium * 2
+
+                    RowLayout {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.leftMargin: NexusStyle.padding.largeIncreased
+                        anchors.rightMargin: NexusStyle.padding.largeIncreased
+                        spacing: NexusStyle.padding.small
+
+                        StyledText {
+                            id: zoneMiddleLabel
+
+                            text: I18n.tr("Center")
+                            color: Appearance.m3colors.m3onSurface
+                            font.pixelSize: NexusStyle.font.bodyMedium
+                        }
+
+                        SortableMultiSelectField {
+                            id: middleField
+
+                            Layout.fillWidth: true
+                            values: PersonalizationConfig.barLayoutMiddle
+                            options: PersonalizationConfig.barComponentOptions
+                            zone: "middle"
                             dragCoordinator: dragCoordinator
                             onToggled: componentId => PersonalizationConfig.toggleBarComponent(componentId, zone)
                             onRemoved: componentId => PersonalizationConfig.removeBarComponent(componentId)
@@ -252,9 +298,9 @@ Item {
                             id: trailingField
 
                             Layout.fillWidth: true
-                            values: PersonalizationConfig.barTrailingComponents
+                            values: PersonalizationConfig.barLayoutRight
                             options: PersonalizationConfig.barComponentOptions
-                            zone: "trailing"
+                            zone: "right"
                             dragCoordinator: dragCoordinator
                             onToggled: componentId => PersonalizationConfig.toggleBarComponent(componentId, zone)
                             onRemoved: componentId => PersonalizationConfig.removeBarComponent(componentId)
@@ -319,7 +365,7 @@ Item {
 
                 anchors.fill: parent
                 z: 1000
-                fields: [leadingField, trailingField]
+                fields: [leadingField, middleField, trailingField]
                 onDropped: (componentId, targetZone, targetIndex) => PersonalizationConfig.moveBarComponent(componentId, targetZone, targetIndex)
             }
 

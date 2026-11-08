@@ -1,6 +1,8 @@
-import qs.modules.common
 import QtQuick
 import QtQuick.Layouts
+import qs.commons
+import qs.ui
+import qs.services
 
 Item {
     id: root

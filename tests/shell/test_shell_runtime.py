@@ -407,7 +407,6 @@ ShellRoot {
         }
         HotCornerExclusionRegion { surfaceWidth: 100; surfaceHeight: 100 }
         MaterialDialog { visible: false }
-        MediaSourceIcon {}
         NotificationVisual {}
         FileThemeIcon { resolvedSources: [] }
         AccountProfileHeader {

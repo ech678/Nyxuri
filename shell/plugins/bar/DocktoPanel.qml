@@ -1,9 +1,4 @@
-import qs
 import qs.services
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
-import qs.modules.common.functions
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Effects
@@ -12,6 +7,8 @@ import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Widgets
+import qs.commons
+import qs.ui
 
 Item {
     id: root
@@ -47,11 +44,7 @@ Item {
     property var  _workOrder:            pinnedApps.slice()
     property int  activeDragVisualIndex: -1
     property bool _dragging:             false
-    readonly property var focusedWindow: CompositorService.isNiri
-        ? (NiriService.windows?.find(window => window.is_focused)
-            ?? NiriService.activeWindow
-            ?? null)
-        : null
+    readonly property var focusedWindow: CompositorDriver.focusedWindow
     readonly property int focusedWindowId:
         Number(root.focusedWindow?.id ?? -1)
 

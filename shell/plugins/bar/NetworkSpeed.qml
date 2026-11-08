@@ -1,21 +1,25 @@
 import QtQuick
 import QtQuick.Layouts
-import Quickshell.Io
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
+import qs.commons
+import qs.ui
+import qs.services
 
 MouseArea {
     id: root
 
     property bool vertical: false
-    property real downloadBytesPerSecond: 0
-    property real uploadBytesPerSecond: 0
-    property real downloadedBytes: 0
-    property real uploadedBytes: 0
-    property real previousReceivedBytes: -1
-    property real previousTransmittedBytes: -1
-    property double previousSampleTime: 0
+    property real downloadBytesPerSecond: SystemMonitorService.network?.downloadBytesPerSecond ?? 0
+    property real uploadBytesPerSecond: SystemMonitorService.network?.uploadBytesPerSecond ?? 0
+    property real downloadedBytes: SystemMonitorService.network?.receivedBytes ?? 0
+    property real uploadedBytes: SystemMonitorService.network?.transmittedBytes ?? 0
+
+    Component.onCompleted: {
+        SystemMonitorService.setConsumerModules("bar-network-speed", ["network"]);
+    }
+
+    Component.onDestruction: {
+        SystemMonitorService.clearConsumer("bar-network-speed");
+    }
 
     implicitWidth: vertical ? 36 : speedColumn.implicitWidth + 8
     implicitHeight: vertical ? speedColumn.implicitHeight + 6 : 32
@@ -42,64 +46,6 @@ MouseArea {
 
         const precision = unitIndex > 0 && value < 100 ? 1 : 0
         return `${value.toFixed(precision)}${compact ? "" : " "}${units[unitIndex]}`
-    }
-
-    function updateRate(contents) {
-        let receivedBytes = 0
-        let transmittedBytes = 0
-        const lines = contents.split("\n")
-
-        for (const line of lines) {
-            const separator = line.indexOf(":")
-            if (separator < 0) continue
-
-            const interfaceName = line.slice(0, separator).trim()
-            if (!interfaceName || interfaceName === "lo") continue
-
-            const fields = line.slice(separator + 1).trim().split(/\s+/)
-            if (fields.length < 9) continue
-
-            const received = Number(fields[0])
-            const transmitted = Number(fields[8])
-            if (!Number.isFinite(received) || !Number.isFinite(transmitted)) continue
-
-            receivedBytes += received
-            transmittedBytes += transmitted
-        }
-
-        const sampleTime = Date.now()
-        if (previousSampleTime > 0 && sampleTime > previousSampleTime) {
-            const elapsedMilliseconds = sampleTime - previousSampleTime
-            const receivedDelta = receivedBytes >= previousReceivedBytes
-                ? receivedBytes - previousReceivedBytes
-                : 0
-            const transmittedDelta = transmittedBytes >= previousTransmittedBytes
-                ? transmittedBytes - previousTransmittedBytes
-                : 0
-
-            downloadBytesPerSecond = receivedDelta * 1000 / elapsedMilliseconds
-            uploadBytesPerSecond = transmittedDelta * 1000 / elapsedMilliseconds
-            downloadedBytes += receivedDelta
-            uploadedBytes += transmittedDelta
-        }
-
-        previousReceivedBytes = receivedBytes
-        previousTransmittedBytes = transmittedBytes
-        previousSampleTime = sampleTime
-    }
-
-    FileView {
-        id: networkStats
-        path: "/proc/net/dev"
-        printErrors: false
-        onLoaded: root.updateRate(text())
-    }
-
-    Timer {
-        interval: 1000
-        repeat: true
-        running: root.visible
-        onTriggered: networkStats.reload()
     }
 
     TextMetrics {

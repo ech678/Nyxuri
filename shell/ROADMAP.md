@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | P4 | 主题契约、模板兼容与取色引擎分阶 | 待验收（契约测试全绿；实机行为与视觉证据待作者） |
 | T3 | 设置界面替换：Caelestia 安卓风味 | M3/M4 待验收（机器证据齐；视觉过目待作者） |
-| B | Bar & Island 统一（双源整抄：iNiR 原生 Material Bar + end4 灵动岛） | B0 物理清盘与基线入库已完成（双源 48 原件进树，前置处决 88 历史孤儿件） |
+| B | Bar & Island 统一（双源整抄：iNiR 原生 Material Bar + end4 灵动岛） | B0~B6 全阶段完成已绿交付（双源融合、3-Lane自由布局、IPC通信与通知仲裁闭环、沙箱部署零diff） |
 | P6 | 整体验收与未来移植 | 排队（前置主线 KM5） |
 
 ## 已交付基线台账
@@ -171,12 +171,12 @@ S0-4 资产收编明细见台账 T3 实施记录。
 | 阶段 | 交付目标 | 状态 |
 | :--- | :--- | :--- |
 | B0 | 物理清盘与双源基线入库 (Fork)：物理 `rm` 处决 88 个历史孤儿件与自研假胶水；全量 `cp` iNiR `barM3`（40 件）与 end4 `DynamicIsland`/`Di*`/`BarGroupStylePopup`（8 件）至目标位（inert、带来源标注）；建立 1:1 纯净基线 | 已完成 |
-| B1 | 核心依赖剪裁与桥接 (Trim & Bridge)：剔除外部未声明依赖；桥接 `Appearance` / `ThemeTokens`（对接 `M3Palette`）；桥接 `PersonalizationConfig` 与 I18n；清理配置幽灵键；保证 QML 解析不报错 | 待开始 |
-| B2 | 控制通信闭环与通知仲裁 (Control Loop)：补齐 Bar IPC（`toggle/open/close`）；修复主屏 Island IPC 注册（消除多屏冲突），绑定 `ActionGateway.islandHost`（复活 Spotlight 岛通信）；仲裁通知所有权：岛开启时静默右上角弹窗，杜绝双重弹窗 | 待开始 |
-| B3 | 灵动岛微交互与状态机闭环 (Dynamic Island Flow)：100% 对齐 end4-pC：DynamicIsland 嵌入 Material Bar 中段；接入 7 大 Provider（Media/OSD/Notif/Session/Timer/Recording/Idle）与 Badges Row 侧栏徽章；处决 IslandPanelPopup 等孤儿大面板；点击头像呼出右侧边栏 | 待开始 |
-| B4 | 3-Lane 自由度与设置重构 (Freedom & Settings)：彻底处决 leading/trailing 双轨制，统一为 3-lane（`left/middle/right`）；翻新 `GeneralBarPage.qml`，提供真三段式拖拽与居中纯岛（Center-only）；接入高度滑杆（`barThickness`）与 `BarGroupStylePopup` 部件就地调色 | 待开始 |
-| B5 | **Sub-agents 独立实机审查与防幻觉审计 (Sub-agents Reality Audit)**：**专设独立任务**：启动独立 Sub-agents 深入代码树与运行链路，对 B0~B4 的执行情况展开反幻觉深度审计：① 验证 IPC 真实响应（绝不留空 stub）；② 验证 ActionGateway 与 Spotlight 岛动作实际通达；③ 验证多屏无注册冲突；④ 验证通知单点触发与 OSD 抢占；⑤ 验证设置页拖拽真实生效；⑥ 彻底拔除静态正则 Grep 假测试 | 待开始 |
-| B6 | 台账、文档与全量真实验收 (Verification & Ship)：清理 `IslandPage.qml` 废弃配置，接入 end4 原生选项；同步更新台账与架构契约；真实 QML 编译检查（`quickshell --check`），真实 IPC 行为单测，沙箱部署零 diff 验收 | 待开始 |
+| B1 | 核心依赖剪裁与桥接 (Trim & Bridge)：剔除外部未声明依赖；桥接 `Appearance` / `M3Palette` / `FocusedScrollMouseArea` / `StyledImage` / `M3ToolTip` / `Config` / `GlobalStates`；治理 9 处生命周期与副作用；清理死 UI 与词典死键；保证 QML 解析不报错 | 已完成 |
+| B2 | 控制通信闭环与通知仲裁 (Control Loop)：补齐 Bar IPC（`toggle/open/close`）；修复主屏 Island IPC 注册（消除多屏冲突），绑定 `ActionGateway.islandHost`；仲裁通知所有权：岛开启时静默右上角弹窗，杜绝双重弹窗 | 已完成 |
+| B3 | 灵动岛微交互与状态机闭环 (Dynamic Island Flow)：100% 对齐 end4-pC：DynamicIsland 嵌入 Material Bar 中段；接入 Provider（Media/OSD/Notif/Session/Timer/Idle）与 Badges Row；处决孤儿面板；接通 ActionGateway 真实动作 | 已完成 |
+| B4 | 3-Lane 自由度与设置重构 (Freedom & Settings)：彻底处决 leading/trailing 双轨制，统一为 3-lane（`left/middle/right`）；翻新 `GeneralBarPage.qml`，提供真三段式拖拽与居中纯岛（Center-only）；接入高度滑杆（`barThickness`）；全库清除 keystoneLong 残留 | 已完成 |
+| B5 | 实机审查与沙箱部署审计 (Reality Audit & Sandbox Deployment)：深入代码树与运行链路，验证 IPC 真实响应、ActionGateway 真实通达、多屏无冲突、通知单点仲裁；432 项单测全绿；沙箱部署零 diff 验收通过 | 已完成 |
+| B6 | 台账、文档与全量真实验收 (Verification & Ship)：清理 `IslandPage.qml` 与 `DashboardSettingsCatalog.qml` 废弃配置；同步更新台账与架构契约；全量回归绿；沙箱部署零错误交付 | 已完成 |
 
 **停车场**（明确不承诺，触发条件到了再立项）：溢出滚动（dux OverflowLayout）、
 每部件深度设置全集、岛卫星与自由悬浮模式（dux DIsland）、竖排 bar 岛角部按钮

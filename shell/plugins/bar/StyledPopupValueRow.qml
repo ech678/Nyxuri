@@ -1,8 +1,11 @@
+// Fork & Trim: end4-pC modules/ii/bar/StyledPopupValueRow.qml
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import QtQuick
 import QtQuick.Layouts
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
+import qs.commons
+import qs.ui
+import qs.services
 
 RowLayout {
     id: root

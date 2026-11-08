@@ -4,10 +4,9 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
-import qs
 import qs.services
-import qs.modules.common
-import qs.modules.common.widgets
+import qs.commons
+import qs.ui
 
 // Separate Material 3 bar selected by `bar.appearanceStyle === "m3"`.
 // It replaces modules/ii/bar/Bar.qml entirely while active (see ShellIiPanelsImpl),
@@ -17,6 +16,37 @@ import qs.modules.common.widgets
 Scope {
     id: bar
     property bool showBarBackground: Config.options.bar.m3.showBackground
+
+    IpcHandler {
+        target: "bar"
+
+        function toggle(): string {
+            GlobalStates.barOpen = !GlobalStates.barOpen;
+            return GlobalStates.barOpen ? "OPEN" : "CLOSED";
+        }
+
+        function close(): string {
+            GlobalStates.barOpen = false;
+            return "CLOSED";
+        }
+
+        function open(): string {
+            GlobalStates.barOpen = true;
+            return "OPEN";
+        }
+    }
+
+    IpcHandler {
+        target: "island"
+
+        function state(): string {
+            return ActionGateway.islandHost ? ActionGateway.islandHost.invoke("state") : "UNAVAILABLE";
+        }
+
+        function stopRecording(): string {
+            return ActionGateway.islandHost ? ActionGateway.islandHost.invoke("stop-recording") : "UNAVAILABLE";
+        }
+    }
 
     Variants {
         // For each monitor
@@ -62,7 +92,7 @@ Scope {
                 readonly property bool autoHideEnabled: Config.options?.bar?.autoHide?.enable ?? false
                 readonly property bool pushWindowsWhenShown: Config.options?.bar?.autoHide?.pushWindows ?? false
                 readonly property bool overviewOwnsEdge: GlobalStates.overviewOpen
-                    || (CompositorService.isNiri && NiriService.inOverview)
+                    || CompositorDriver.inOverview
                 readonly property string outputName: barRoot.screen?.name ?? ""
                 readonly property real layerGap: Config.options.bar.m3.cornerStyle === 3
                     ? Config.options.bar.m3.gapsOut : 0
@@ -144,9 +174,7 @@ Scope {
                         return 0
                     const corner = edgeCornerName(left)
                     let reserve = 0
-                    if (CompositorService.isNiri && NiriService.isOverviewHotCornerActive(outputName, corner))
-                        reserve = Math.max(reserve, 12)
-                    const orbitEnabled = CompositorService.isNiri
+                    const orbitEnabled = CompositorDriver.available
                         && (Config.options?.panelFamily ?? "ii") === "ii"
                         && (Config.options?.orbit?.enable ?? true)
                         && (Config.options?.orbit?.hotCornerEnable ?? true)

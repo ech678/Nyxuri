@@ -1,9 +1,8 @@
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
 import qs.services
 import QtQuick
 import QtQuick.Layouts
+import qs.commons
+import qs.ui
 
 StyledPopup {
     id: root

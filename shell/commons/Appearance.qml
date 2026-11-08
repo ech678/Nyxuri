@@ -261,6 +261,7 @@ Singleton {
 
     rounding: QtObject {
         property int extraSmall: 4
+        property int unsharpenmore: 10
         property int small: 12
         property int medium: 16
         property int normal: 17
@@ -289,5 +290,18 @@ Singleton {
         property real activeOpacity: 0.5
         property real inactiveOpacity: 0
         property color thumbColor: root.colors.colOnSurfaceVariant
+    }
+
+    property real barThickness: 36
+
+    readonly property QtObject sizes: QtObject {
+        readonly property real baseBarHeight: root.barThickness > 0 ? root.barThickness : 36
+        readonly property real barHeight: baseBarHeight
+        readonly property real baseVerticalBarWidth: root.barThickness > 0 ? root.barThickness : 44
+        readonly property real verticalBarWidth: baseVerticalBarWidth
+        readonly property real elevationMargin: 10
+        readonly property real spacingSmall: 6
+        readonly property real spacingLarge: 12
+        readonly property real hyprlandGapsOut: 5
     }
 }

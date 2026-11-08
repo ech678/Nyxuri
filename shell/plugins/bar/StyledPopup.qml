@@ -1,11 +1,10 @@
 pragma ComponentBehavior: Bound
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
-import qs.modules.common.m3
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import qs.commons
+import qs.ui
+import qs.services
 
 LazyLoader {
     id: root

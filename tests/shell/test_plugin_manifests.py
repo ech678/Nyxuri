@@ -156,7 +156,7 @@ class TestHostClosure(unittest.TestCase):
             os.path.join("plugins", "lock", "Lock.qml"): "ActionGateway.sessionLocker = root",
             os.path.join("plugins", "settings", "SettingsHost.qml"):
                 "ActionGateway.settingsHost = root",
-            os.path.join("plugins", "bar", "island", "Island.qml"):
+            os.path.join("plugins", "bar", "DynamicIsland.qml"):
                 "ActionGateway.islandHost = root",
         }
         for rel, marker in expectations.items():
@@ -495,13 +495,12 @@ class TestIslandMergeContracts(unittest.TestCase):
         self.assertFalse(os.path.isfile(os.path.join(SHELL_DIR, "plugins", "bar", "island",
                                                     "manifest.toml")),
                          "the island is a bar layout part, never its own unit")
-        self.assertTrue(os.path.isfile(os.path.join(SHELL_DIR, "plugins", "bar", "island",
-                                                   "Island.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(SHELL_DIR, "plugins", "bar",
+                                                   "DynamicIsland.qml")))
 
     def test_bar_root_hosts_the_island_loader(self):
-        bar = read("plugins", "bar", "Bar.qml")
-        self.assertIn('source: Qt.resolvedUrl("island/Island.qml")', bar)
-        self.assertIn("PersonalizationConfig.islandEnabled", bar)
+        bar_content = read("plugins", "bar", "BarContent.qml")
+        self.assertIn('"island": "./DynamicIsland.qml"', bar_content)
 
 
 if __name__ == "__main__":

@@ -1,14 +1,11 @@
 pragma ComponentBehavior: Bound
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
 import qs.services
-import qs
-import qs.modules.common.m3
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
+import qs.commons
+import qs.ui
 
 MouseArea {
     id: root
@@ -30,11 +27,11 @@ MouseArea {
     onClicked: mouse => {
         Updates.refresh()
         if (mouse.button === Qt.LeftButton || mouse.button === Qt.RightButton) {
-            Quickshell.execDetached(["notify-send",
+            ActionGateway.execute(["notify-send",
                 Translation.tr("Updates"),
                 Translation.tr("Checking for updates..."),
                 "-a", "Shell"
-            ])
+            ], "bar.updates")
         }
     }
 

@@ -1,14 +1,12 @@
-import qs
 import qs.services
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
+import qs.commons
+import qs.ui
 
 Item {
     id: root
@@ -250,13 +248,13 @@ Item {
             UtilButton {
                 toolTipText: Appearance.m3colors.darkmode ? Translation.tr("Use light mode") : Translation.tr("Use dark mode")
                 iconText: Appearance.m3colors.darkmode ? "light_mode" : "dark_mode"
-                onClicked: MaterialThemeLoader.setDarkMode(!Appearance.m3colors.darkmode)
+                onClicked: ThemeService.toggleThemeMode()
             }
         }
         Component {
             id: legacyDarkMode
             CircleUtilButton {
-                onClicked: MaterialThemeLoader.setDarkMode(!Appearance.m3colors.darkmode)
+                onClicked: ThemeService.toggleThemeMode()
                 MaterialSymbol {
                     horizontalAlignment: Qt.AlignHCenter
                     fill: 0

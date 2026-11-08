@@ -1,8 +1,7 @@
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
-import qs.modules.common.m3
 import QtQuick
+import qs.commons
+import qs.ui
+import qs.services
 
 Revealer { // Scroll hint
     id: root

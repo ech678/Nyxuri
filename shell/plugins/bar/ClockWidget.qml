@@ -1,10 +1,8 @@
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
 import qs.services
-import qs.modules.common.m3
 import QtQuick
 import QtQuick.Layouts
+import qs.commons
+import qs.ui
 
 BarWidgetSwitcher {
     id: root
@@ -18,10 +16,15 @@ BarWidgetSwitcher {
     readonly property int _datePixelSize: Config.options?.bar?.m3?.clock?.datePixelSize ?? 0
 
     Timer {
+        id: clockTicker
         interval: 60000
         running: true
         repeat: true
         onTriggered: root.today = new Date()
+    }
+
+    Component.onDestruction: {
+        clockTicker.stop();
     }
 
     colDefault: Component {

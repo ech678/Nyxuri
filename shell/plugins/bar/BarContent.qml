@@ -3,14 +3,10 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.UPower
 import Quickshell.Services.SystemTray
-import Quickshell.Hyprland
-import qs
 import qs.services
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
-import qs.modules.common.functions
-import qs.modules.common.m3
+import qs.commons
+import qs.commons.i18n
+import qs.ui
 
 Item {
     id: root
@@ -80,6 +76,24 @@ Item {
 
     function getWidgetUrl(name) {
         if (!name) return "";
+        const map = {
+            "island": "./DynamicIsland.qml",
+            "clock": "./ClockWidget.qml",
+            "clockWidget": "./ClockWidget.qml",
+            "tray": "./SysTray.qml",
+            "sysTray": "./SysTray.qml",
+            "systemMonitor": "./Resources.qml",
+            "resources": "./Resources.qml",
+            "weather": "./WeatherBar.qml",
+            "battery": "./BatteryIndicator.qml",
+            "systemIcons": "./SystemIcons.qml",
+            "quickSettings": "./UtilButtons.qml",
+            "utilButtons": "./UtilButtons.qml",
+            "divisor": "./Divisor.qml",
+            "information": "./ActiveWindow.qml",
+            "activeWindow": "./ActiveWindow.qml"
+        };
+        if (map[name]) return Qt.resolvedUrl(map[name]);
         let formattedName = name.charAt(0).toUpperCase() + name.slice(1);
         return Qt.resolvedUrl("./" + formattedName + ".qml");
     }
@@ -100,7 +114,7 @@ Item {
         && (Config.options?.bar?.m3?.showBackground ?? true)
         && root.spectrumOutputEnabled
         && root.visible
-    readonly property bool audioPlaying: MprisController.isPlaying || YtMusic.isPlaying
+    readonly property bool audioPlaying: MediaService.active ? MediaService.active.isPlaying : false
     readonly property real spectrumFillRatio: Math.max(0.1,
         Math.min(1, Config.options?.bar?.visualizer?.height ?? 0.6))
     readonly property real spectrumOpacity: Math.max(0,
@@ -161,32 +175,20 @@ Item {
     }
     readonly property bool spectrumSignalActive: barCava.audioSignalActive
 
-    component SurfaceSpectrum: AudioVisualizerLayer {
-        threadedRendering: true
-        points: active ? barCava.points : []
-        normalizationCeiling: active ? barCava.normalizationCeiling : 100
-        visualizerType: root.spectrumType
-        spectrumOpacity: root.spectrumOpacity
-        fillRatio: root.spectrumFillRatio
-        spectrumColor: Appearance.colors.colPrimary
-        barsOrigin: root.spectrumBarsOrigin
-        pixelsPerBar: root.spectrumDensity
-        barSpacing: root.spectrumGap
-        smoothing: root.spectrumSmoothing
-        waveMode: root.spectrumWaveMode
-        lineWidth: root.spectrumLineWidth
-        edgeInset: root.spectrumEdgeInset
-        edgeSoftness: root.spectrumEdgeSoftness
-        frequencyProfile: root.spectrumFrequencyProfile
-        accentStrength: root.spectrumAccentStrength
-        organicSensitivity: root.spectrumOrganicSensitivity
-        organicPulse: root.spectrumOrganicPulse
-        organicMotionSpeed: root.spectrumOrganicMotionSpeed
-        organicIdleMotion: root.spectrumOrganicIdleMotion
-        organicGlow: root.spectrumOrganicGlow
-        organicOpacity: root.spectrumOpacity
-        organicEdgeAura: root.spectrumOrganicEdgeAura
-        organicBaseRadius: root.spectrumOrganicBaseRadius
+    Component.onDestruction: {
+        barCava.active = false;
+    }
+
+    component SurfaceSpectrum: Item {
+        property bool active: false
+        property real sampleStartRatio: 0
+        property real sampleEndRatio: 1
+        property var clipSegments: []
+        property real topLeftRadius: 0
+        property real topRightRadius: 0
+        property real bottomLeftRadius: 0
+        property real bottomRightRadius: 0
+        visible: false
     }
 
     // Every widget is loaded through a URL, so its optional inputs are wired
@@ -276,12 +278,8 @@ Item {
             let up = isUp;
             if (Config.options?.bar?.workspaces?.invertScroll ?? false) up = !up;
 
-            if (CompositorService.isNiri) {
-                if (up) NiriService.focusWorkspaceUp();
-                else NiriService.focusWorkspaceDown();
-            } else if (CompositorService.isHyprland) {
-                Hyprland.dispatch(up ? "workspace r-1" : "workspace r+1");
-            }
+            if (up) CompositorDriver.focusWorkspaceUp();
+            else CompositorDriver.focusWorkspaceDown();
         }
     }
 
@@ -298,9 +296,9 @@ Item {
     }
 
     function getScrollTooltip(action: string): string {
-        if (action === "brightness") return Translation.tr("Scroll to change brightness");
-        if (action === "volume") return Translation.tr("Scroll to change volume");
-        if (action === "workspace") return Translation.tr("Scroll to switch workspaces");
+        if (action === "brightness") return I18n.tr("Scroll to change brightness");
+        if (action === "volume") return I18n.tr("Scroll to change volume");
+        if (action === "workspace") return I18n.tr("Scroll to switch workspaces");
         return "";
     }
 
@@ -475,6 +473,7 @@ Item {
                             Layout.fillHeight: true
                             currentIndex: index
                             totalCount: root.effectiveLeftLayout.length
+                            widgetName: modelData
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData)
                             bgColor: root.getMaterialPillColor(modelData)
                             Loader {
@@ -505,10 +504,11 @@ Item {
                     Component {
                         id: leftBarGroupDelegate
                         BarGroup {
-                        Layout.fillHeight: true
-                        currentIndex: index
-                        totalCount: root.effectiveLeftLayout.length
-                        Loader {
+                            Layout.fillHeight: true
+                            currentIndex: index
+                            totalCount: root.effectiveLeftLayout.length
+                            widgetName: modelData
+                            Loader {
                             Layout.fillHeight: true
                             source: root.getWidgetUrl(modelData)
                             onLoaded: {
@@ -593,6 +593,7 @@ Item {
                             Layout.fillHeight: true
                             currentIndex: index
                             totalCount: root.effectiveMiddleLayout.length
+                            widgetName: modelData
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData)
                             bgColor: root.getMaterialPillColor(modelData)
                             Loader {
@@ -623,10 +624,11 @@ Item {
                     Component {
                         id: middleBarGroupDelegate
                         BarGroup {
-                        Layout.fillHeight: true
-                        currentIndex: index
-                        totalCount: root.effectiveMiddleLayout.length
-                        Loader {
+                            Layout.fillHeight: true
+                            currentIndex: index
+                            totalCount: root.effectiveMiddleLayout.length
+                            widgetName: modelData
+                            Loader {
                             Layout.fillHeight: true
                             source: root.getWidgetUrl(modelData)
                             onLoaded: {
@@ -711,6 +713,7 @@ Item {
                             Layout.fillHeight: true
                             currentIndex: index
                             totalCount: root.effectiveRightLayout.length
+                            widgetName: modelData
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData)
                             bgColor: root.getMaterialPillColor(modelData)
                             Loader {
@@ -741,10 +744,11 @@ Item {
                     Component {
                         id: rightBarGroupDelegate
                         BarGroup {
-                        Layout.fillHeight: true
-                        currentIndex: index
-                        totalCount: root.effectiveRightLayout.length
-                        Loader {
+                            Layout.fillHeight: true
+                            currentIndex: index
+                            totalCount: root.effectiveRightLayout.length
+                            widgetName: modelData
+                            Loader {
                             Layout.fillHeight: true
                             source: root.getWidgetUrl(modelData)
                             onLoaded: {

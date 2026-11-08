@@ -19,6 +19,12 @@ Button {
     property var wheelAction
     property color containerColor: "transparent"
     property color rippleColor: Appearance.colors.colOnSurface
+    property alias colBackground: root.containerColor
+    property alias colRipple: root.rippleColor
+    property alias colBackgroundHover: root.hoverStateLayerColor
+    property color colBackgroundToggled: root.containerColor
+    property color colBackgroundToggledHover: root.hoverStateLayerColor
+    property color colRippleToggled: root.rippleColor
     property bool stateLayerEnabled: true
     property color stateLayerColor: Appearance.colors.colOnSurface
     property color hoverStateLayerColor: root.stateLayerColor

@@ -1,63 +1,82 @@
+// Fork & Trim: end4-pC modules/ii/bar/DiNotifs.qml
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import qs.services
-import qs.modules.common
-import qs.modules.common.widgets
+import qs.commons
+import qs.ui
 
 Item {
     id: diNotifsRoot
     required property Item di
     anchors.fill: parent
 
-    readonly property var notif: root.latestNotification
+    readonly property var notif: di.latestNotification
 
-    Image {
-        id: notifIcon
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        cursorShape: Qt.PointingHandCursor
+        onClicked: mouse => {
+            if (!diNotifsRoot.notif)
+                return;
+            if (mouse.button === Qt.RightButton) {
+                NotificationService.dismissPopup(diNotifsRoot.notif.notificationId);
+            } else {
+                NotificationService.invokeDefaultAction(diNotifsRoot.notif.notificationId);
+            }
+        }
+    }
+
+    Item {
+        id: iconWrapper
         width: 20
         height: 20
         anchors {
             left: parent.left
-            leftMargin: root.isMaterial ? 4 : 12
+            leftMargin: di.isMaterial ? 4 : 8
             verticalCenter: parent.verticalCenter
         }
-        source: SystemAppearance.iconPath(notif?.appIcon ?? "", "notification-symbolic")
-        visible: (notif?.appIcon ?? "") !== ""
-        fillMode: Image.PreserveAspectFit
-        asynchronous: true
-    }
 
-    MaterialShapeWrappedMaterialSymbol {
-        id: notifMaterialIcon
-        anchors {
-            left: parent.left
-            leftMargin: root.isMaterial ? 0 : 4
-            verticalCenter: parent.verticalCenter
+        Image {
+            id: notifIcon
+            anchors.fill: parent
+            source: ThemeService.resolveIcon(diNotifsRoot.notif?.appIcon ?? "")
+            visible: (diNotifsRoot.notif?.appIcon ?? "") !== "" && status !== Image.Error
+            fillMode: Image.PreserveAspectFit
+            asynchronous: true
         }
-        wrappedShape: MaterialShape.Shape.Cookie12Sided
-        color: Appearance.colors.colPrimary
-        colSymbol: Appearance.colors.colOnPrimary
-        text: "notifications"
-        iconSize: root.isMaterial ? 20 : 14
-        fill: 1
-        padding: 4
-        visible: (notif?.appIcon ?? "") === ""
+
+        MaterialShapeWrappedMaterialSymbol {
+            id: notifMaterialIcon
+            anchors.fill: parent
+            wrappedShape: MaterialShapeCanvas.Shape.Cookie12Sided
+            color: Appearance.colors.colPrimary
+            colSymbol: Appearance.colors.colOnPrimary
+            text: "notifications"
+            iconSize: di.isMaterial ? 20 : 14
+            fill: 1
+            padding: 2
+            visible: !notifIcon.visible
+        }
     }
 
     ColumnLayout {
         id: notifTextColumn
         anchors {
-            left: notifIcon.right
-            leftMargin: root.isMaterial ? 14 : 2
+            left: iconWrapper.right
+            leftMargin: di.isMaterial ? 10 : 8
             verticalCenter: parent.verticalCenter
             right: nowLabel.left
             rightMargin: 8
         }
-        spacing: root.isMaterial ? -2 : -4
+        spacing: di.isMaterial ? -2 : -4
 
         StyledText {
             Layout.fillWidth: true
-            text: (notif?.summary ?? "").replace(/\n/g, " ")
+            text: (diNotifsRoot.notif?.summary ?? "").replace(/\n/g, " ")
             font.pixelSize: Appearance.font.pixelSize.smaller
             font.weight: Font.DemiBold
             color: Appearance.colors.colOnLayer0
@@ -67,7 +86,7 @@ Item {
         }
         StyledText {
             Layout.fillWidth: true
-            text: (notif?.body ?? "").replace(/\n/g, " ")
+            text: (diNotifsRoot.notif?.body ?? "").replace(/\n/g, " ")
             font.pixelSize: Appearance.font.pixelSize.smallest
             color: Appearance.colors.colOnLayer0
             opacity: 0.7
@@ -85,7 +104,7 @@ Item {
             rightMargin: 10
             topMargin: 8
         }
-        text: DateTime.time
+        text: TimeService.hours + ":" + TimeService.minutes
         font.pixelSize: Appearance.font.pixelSize.small - 2
         color: Appearance.colors.colOnLayer0
         opacity: 0.8

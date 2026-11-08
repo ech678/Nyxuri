@@ -321,18 +321,6 @@ Singleton {
                                          "island:Show date": root.toggle(() =>
                                          !PersonalizationConfig.islandHideDate, value
                                          => PersonalizationConfig.setIslandHideDate(!value)),
-                                         "island:Show names in long form": root.toggle(()
-                                                                                         => PersonalizationConfig.keystoneLongShowNames,
-                                                                                         value => PersonalizationConfig.setKeystoneLongShowNames(
-                                                                                                      value)),
-                                         "island:Show values in long form": root.toggle(()
-                                                                                          => PersonalizationConfig.keystoneLongShowValues,
-                                                                                          value => PersonalizationConfig.setKeystoneLongShowValues(
-                                                                                                       value)),
-                                         "island:Show monitor values in long form": root.toggle(()
-                                                                                                  => PersonalizationConfig.keystoneLongShowMonitorValues,
-                                                                                                  value => PersonalizationConfig.setKeystoneLongShowMonitorValues(
-                                                                                                               value)),
                                          "island:Caps lock OSD": root.toggle(()
                                                                                => PersonalizationConfig.islandCapsLockOsd,
                                                                                value => PersonalizationConfig.setIslandCapsLockOsd(

@@ -457,6 +457,9 @@ Singleton {
     property var barLeadingComponents: root.defaultBarLeadingComponents.slice()
     property var barTrailingComponents: root.defaultBarTrailingComponents.slice()
     property var quickSettingsComponents: root.defaultQuickSettingsComponents.slice()
+    readonly property int defaultBarThickness: 36
+    property int barThickness: root.defaultBarThickness
+    onBarThicknessChanged: Appearance.barThickness = root.barThickness
 
     // Three-lane drag layout for the status bar (left / middle / right). These
     // mirror the leading/trailing model but let the user place widgets freely
@@ -475,13 +478,6 @@ Singleton {
     property bool islandHideDate: false
     property bool barShowValues: true
     property bool barShowNames: false
-    // ── Long style (D4 frozen at B1) ────────────────────────────────────────
-    // The keystoneLong* names stay un-renamed on purpose: the long style is a
-    // frozen escape hatch until the B3 reskin verdict; B5 retires the whole
-    // series (config keys, properties, functions) in one sweep.
-    property bool keystoneLongShowNames: true
-    property bool keystoneLongShowMonitorValues: true
-    property bool keystoneLongShowValues: true
     property string islandHoverAction: "peak"
     property string islandLeftClickAction: "media"
     property string islandMiddleClickAction: "lyrics"
@@ -537,68 +533,6 @@ Singleton {
 
     property int islandHoverOpenDelay: 150
     property int islandHoverCloseDelay: 250
-    readonly property var keystoneLongItemIds: ["workspaces", "media", "systemMonitor", "tray", "network", "bluetooth", "brightness", "volume", "microphone", "battery", "weather"]
-    readonly property var defaultKeystoneLongLeading: ["workspaces", "media", "systemMonitor"]
-    readonly property var defaultKeystoneLongTrailing: ["network", "bluetooth", "brightness", "volume", "microphone", "battery"]
-    property var keystoneLongLeading: defaultKeystoneLongLeading.slice()
-    property var keystoneLongTrailing: defaultKeystoneLongTrailing.slice()
-    readonly property var keystoneLongItemOptions: [
-        {
-            value: "tray",
-            label: I18n.tr("System tray"),
-            icon: "apps"
-        },
-        {
-            value: "workspaces",
-            label: I18n.tr("Workspaces"),
-            icon: "view_week"
-        },
-        {
-            value: "media",
-            label: I18n.tr("Media"),
-            icon: "music_note"
-        },
-        {
-            value: "systemMonitor",
-            label: I18n.tr("System monitor"),
-            icon: "monitor_heart"
-        },
-        {
-            value: "weather",
-            label: I18n.tr("Weather"),
-            icon: "partly_cloudy_day"
-        },
-        {
-            value: "network",
-            label: I18n.tr("Network"),
-            icon: "wifi"
-        },
-        {
-            value: "bluetooth",
-            label: I18n.tr("Bluetooth"),
-            icon: "bluetooth"
-        },
-        {
-            value: "brightness",
-            label: I18n.tr("Brightness"),
-            icon: "brightness_medium"
-        },
-        {
-            value: "volume",
-            label: I18n.tr("Volume"),
-            icon: "volume_up"
-        },
-        {
-            value: "microphone",
-            label: I18n.tr("Microphone"),
-            icon: "mic"
-        },
-        {
-            value: "battery",
-            label: I18n.tr("Battery"),
-            icon: "battery_full"
-        }
-    ]
 
     function setIslandHoverOpenDelay(value) {
         setValue("islandHoverOpenDelay", normalizedBoundedInt(value, 150, 0, 500));
@@ -608,41 +542,6 @@ Singleton {
         setValue("islandHoverCloseDelay", normalizedBoundedInt(value, 250, 0, 600));
     }
 
-    function normalizedKeystoneLongItems(raw, excluded) {
-        const result = [];
-        for (const value of Array.isArray(raw) ? raw : []) {
-            if (root.keystoneLongItemIds.indexOf(value) >= 0 && excluded.indexOf(value) < 0 && result.indexOf(value) < 0)
-                result.push(value);
-        }
-        return result;
-    }
-
-    function moveKeystoneLongItem(id, zone, index) {
-        if (root.keystoneLongItemIds.indexOf(id) < 0 || (zone !== "leading" && zone !== "trailing"))
-            return;
-        const leading = root.keystoneLongLeading.filter(value => value !== id);
-        const trailing = root.keystoneLongTrailing.filter(value => value !== id);
-        const target = zone === "leading" ? leading : trailing;
-        const position = Number(index);
-        target.splice(isFinite(position) ? Math.max(0, Math.min(target.length, Math.round(position))) : target.length, 0, id);
-        root.keystoneLongLeading = leading;
-        root.keystoneLongTrailing = trailing;
-        root.save();
-    }
-
-    function removeKeystoneLongItem(id) {
-        root.keystoneLongLeading = root.keystoneLongLeading.filter(value => value !== id);
-        root.keystoneLongTrailing = root.keystoneLongTrailing.filter(value => value !== id);
-        root.save();
-    }
-
-    function toggleKeystoneLongItem(id, zone) {
-        const target = zone === "leading" ? root.keystoneLongLeading : root.keystoneLongTrailing;
-        if (target.indexOf(id) >= 0)
-            root.removeKeystoneLongItem(id);
-        else
-            root.moveKeystoneLongItem(id, zone, target.length);
-    }
 
     readonly property var islandActionOptions: [
         {
@@ -1533,31 +1432,33 @@ Singleton {
     }
 
     function barZoneComponents(zone) {
-        return zone === "leading" ? root.barLeadingComponents : zone === "trailing" ? root.barTrailingComponents : [];
+        if (zone === "left" || zone === "leading") return root.barLayoutLeft;
+        if (zone === "middle" || zone === "center") return root.barLayoutMiddle;
+        if (zone === "right" || zone === "trailing") return root.barLayoutRight;
+        return [];
     }
 
     function moveBarComponent(componentId, targetZone, targetIndex) {
         const id = String(componentId || "");
-        if (root.barComponentIds.indexOf(id) === -1 || (targetZone !== "leading" && targetZone !== "trailing"))
+        if (root.barComponentIds.indexOf(id) === -1)
             return false;
 
-        const leading = root.normalizedBarComponents(root.barLeadingComponents, []).filter(value => {
-            return value !== id;
-        });
-        const trailing = root.normalizedBarComponents(root.barTrailingComponents, leading).filter(value => {
-            return value !== id;
-        });
-        const target = targetZone === "leading" ? leading : trailing;
+        const leading = root.barLayoutLeft.filter(value => value !== id);
+        const middle = root.barLayoutMiddle.filter(value => value !== id);
+        const trailing = root.barLayoutRight.filter(value => value !== id);
+
+        const target = (targetZone === "middle" || targetZone === "center") ? middle
+            : (targetZone === "right" || targetZone === "trailing") ? trailing : leading;
+
         const numericIndex = Number(targetIndex);
         const insertionIndex = isFinite(numericIndex) ? Math.max(0, Math.min(target.length, Math.round(numericIndex))) : target.length;
         target.splice(insertionIndex, 0, id);
-        root.barLeadingComponents = leading;
-        root.barTrailingComponents = trailing;
+
         root.barLayoutLeft = root.normalizedBarLayoutIds(leading);
+        root.barLayoutMiddle = middle;
         root.barLayoutRight = root.normalizedBarLayoutIds(trailing);
-        if (root.barLayoutMiddle.indexOf(id) !== -1) {
-            root.barLayoutMiddle = root.barLayoutMiddle.filter(item => item !== id);
-        }
+        root.barLeadingComponents = root.barLayoutLeft.slice();
+        root.barTrailingComponents = root.barLayoutRight.slice();
         root.save();
         return true;
     }
@@ -1567,35 +1468,28 @@ Singleton {
         if (root.barComponentIds.indexOf(id) === -1)
             return false;
 
-        const leading = root.barLeadingComponents.filter(value => {
-            return value !== id;
-        });
-        const trailing = root.barTrailingComponents.filter(value => {
-            return value !== id;
-        });
-        const inMiddle = root.barLayoutMiddle.indexOf(id) !== -1;
-        if (leading.length === root.barLeadingComponents.length && trailing.length === root.barTrailingComponents.length && !inMiddle)
+        const prevLen = root.barLayoutLeft.length + root.barLayoutMiddle.length + root.barLayoutRight.length;
+        root.barLayoutLeft = root.barLayoutLeft.filter(value => value !== id);
+        root.barLayoutMiddle = root.barLayoutMiddle.filter(value => value !== id);
+        root.barLayoutRight = root.barLayoutRight.filter(value => value !== id);
+        const nextLen = root.barLayoutLeft.length + root.barLayoutMiddle.length + root.barLayoutRight.length;
+        if (prevLen === nextLen)
             return false;
 
-        root.barLeadingComponents = root.normalizedBarComponents(leading, []);
-        root.barTrailingComponents = root.normalizedBarComponents(trailing, root.barLeadingComponents);
-        root.barLayoutLeft = root.normalizedBarLayoutIds(root.barLeadingComponents);
-        root.barLayoutRight = root.normalizedBarLayoutIds(root.barTrailingComponents);
-        if (inMiddle) {
-            root.barLayoutMiddle = root.barLayoutMiddle.filter(item => item !== id);
-        }
+        root.barLeadingComponents = root.barLayoutLeft.slice();
+        root.barTrailingComponents = root.barLayoutRight.slice();
         root.save();
         return true;
     }
 
     function toggleBarComponent(componentId, zone) {
-        if (zone !== "leading" && zone !== "trailing")
-            return false;
+        const target = (zone === "middle" || zone === "center") ? root.barLayoutMiddle
+            : (zone === "right" || zone === "trailing") ? root.barLayoutRight : root.barLayoutLeft;
 
-        if (root.barZoneComponents(zone).indexOf(componentId) !== -1)
+        if (target.indexOf(componentId) !== -1)
             return root.removeBarComponent(componentId);
 
-        return root.moveBarComponent(componentId, zone, root.barZoneComponents(zone).length);
+        return root.moveBarComponent(componentId, zone, target.length);
     }
 
     // The drag layout only accepts widgets the bar actually renders. The set is
@@ -1634,6 +1528,15 @@ Singleton {
     // Orchestrated write for the three-lane bar layout. The UI calls this instead
     // of assigning the properties directly, so the schema change goes through the
     // settings backend and only persists when an array actually changed.
+    function setBarThickness(value) {
+        const numeric = Number(value);
+        const clamped = isFinite(numeric) ? Math.max(28, Math.min(64, Math.round(numeric))) : root.defaultBarThickness;
+        if (root.barThickness !== clamped) {
+            root.barThickness = clamped;
+            root.save();
+        }
+    }
+
     function setBarLayouts(left, middle, right) {
         const nextLeft = root.normalizedBarLayoutIds(left);
         const nextMiddle = root.normalizedBarLayoutIds(middle);
@@ -1745,24 +1648,12 @@ Singleton {
         setValue("islandNumLockOsd", !!value);
     }
 
-    function setKeystoneLongShowNames(value) {
-        setValue("keystoneLongShowNames", !!value);
-    }
-
-    function setKeystoneLongShowMonitorValues(value) {
-        setValue("keystoneLongShowMonitorValues", !!value);
-    }
-
     function setBarShowNames(value) {
         setValue("barShowNames", !!value);
     }
 
     function setBarShowValues(value) {
         setValue("barShowValues", !!value);
-    }
-
-    function setKeystoneLongShowValues(value) {
-        setValue("keystoneLongShowValues", !!value);
     }
 
     function setIslandHideDate(value) {
@@ -1936,14 +1827,9 @@ Singleton {
                 "capsLockOsd": root.islandCapsLockOsd,
                 "numLockOsd": root.islandNumLockOsd,
                 "hideDate": root.islandHideDate,
-                "longShowNames": root.keystoneLongShowNames,
-                "longShowMonitorValues": root.keystoneLongShowMonitorValues,
-                "longShowValues": root.keystoneLongShowValues,
                 "hoverAction": root.islandHoverAction,
                 "hoverOpenDelay": root.islandHoverOpenDelay,
                 "hoverCloseDelay": root.islandHoverCloseDelay,
-                "longLeading": root.keystoneLongLeading.slice(),
-                "longTrailing": root.keystoneLongTrailing.slice(),
                 "leftClickAction": root.islandLeftClickAction,
                 "middleClickAction": root.islandMiddleClickAction,
                 "media": {
@@ -1974,6 +1860,7 @@ Singleton {
                 "barLayoutLeft": root.barLayoutLeft.slice(),
                 "barLayoutMiddle": root.barLayoutMiddle.slice(),
                 "barLayoutRight": root.barLayoutRight.slice(),
+                "barThickness": root.barThickness,
                 "quickSettingsComponents": root.quickSettingsComponents.slice()
             },
             "sidebar": {
@@ -2085,15 +1972,10 @@ Singleton {
         root.islandPosition = normalizedEdgePosition(island.position);
         root.islandCapsLockOsd = typeof island.capsLockOsd === "boolean" ? island.capsLockOsd : true;
         root.islandNumLockOsd = typeof island.numLockOsd === "boolean" ? island.numLockOsd : true;
-        root.keystoneLongShowValues = typeof island.longShowValues === "boolean" ? island.longShowValues : true;
-        root.keystoneLongShowNames = typeof island.longShowNames === "boolean" ? island.longShowNames : true;
-        root.keystoneLongShowMonitorValues = typeof island.longShowMonitorValues === "boolean" ? island.longShowMonitorValues : true;
         root.islandHideDate = typeof island.hideDate === "boolean" ? island.hideDate : false;
         root.islandHoverAction = normalizedOption(root.islandHoverActionOptions, island.hoverAction === "library" ? "media" : island.hoverAction, "peak");
         root.islandHoverOpenDelay = normalizedBoundedInt(island.hoverOpenDelay, 150, 0, 500);
         root.islandHoverCloseDelay = normalizedBoundedInt(island.hoverCloseDelay, 250, 0, 600);
-        root.keystoneLongLeading = root.normalizedKeystoneLongItems(Array.isArray(island.longLeading) ? island.longLeading : root.defaultKeystoneLongLeading, []);
-        root.keystoneLongTrailing = root.normalizedKeystoneLongItems(Array.isArray(island.longTrailing) ? island.longTrailing : root.defaultKeystoneLongTrailing, root.keystoneLongLeading);
         root.islandLeftClickAction = normalizedOption(root.islandActionOptions, island.leftClickAction === "library" ? "media" : island.leftClickAction, "media");
         root.islandMiddleClickAction = normalizedOption(root.islandActionOptions, island.middleClickAction === "library" ? "media" : island.middleClickAction, "lyrics");
         root.islandKeyholeCard = root.normalizedIslandKeyholeCard(keyhole.card !== undefined ? keyhole.card : keyhole.cards);
@@ -2108,6 +1990,9 @@ Singleton {
         root.barBorderless = root.normalizedOption(root.barBorderlessModes, bar.borderless, "pills");
         root.barGroupColor = typeof bar.groupColor === "string" ? bar.groupColor : "layer1";
         root.barDividerStyle = root.normalizedOption(root.barDividerStyles, bar.dividerStyle, "rect");
+        root.barThickness = typeof bar.barThickness === "number"
+            ? Math.max(28, Math.min(64, Math.round(bar.barThickness)))
+            : root.defaultBarThickness;
         const hasBarLayout = Array.isArray(bar.barLeadingComponents) || Array.isArray(bar.barTrailingComponents);
         const barLayout = root.normalizedBarLayout(bar.barLeadingComponents, bar.barTrailingComponents, !hasBarLayout);
         root.barLeadingComponents = barLayout.leading;

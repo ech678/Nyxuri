@@ -1,12 +1,9 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
-import qs.modules.common.models
-import qs.modules.common.functions
-import qs.modules.common.m3
+import qs.commons
+import qs.ui
+import qs.services
 
 Item {
     id: root

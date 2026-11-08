@@ -5,11 +5,8 @@ import Quickshell.Services.SystemTray
 import Quickshell.Widgets
 import Qt5Compat.GraphicalEffects
 import qs.services
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
-import qs.modules.common.functions
-import qs.modules.common.m3
+import qs.commons
+import qs.ui
 
 MouseArea {
     id: root

@@ -1,12 +1,10 @@
 pragma ComponentBehavior: Bound
-import qs.modules.ii.barM3
-import qs.modules.common
-import qs.modules.common.widgets
 import qs.services
-import qs.modules.common.m3
 import Quickshell
 import QtQuick
 import QtQuick.Layouts
+import qs.commons
+import qs.ui
 
 MouseArea {
     id: root
@@ -29,11 +27,11 @@ MouseArea {
     onPressed: mouse => {
         if (mouse.button === Qt.RightButton) {
             Weather.getData();
-            Quickshell.execDetached(["notify-send",
+            ActionGateway.execute(["notify-send",
                 Translation.tr("Weather"),
                 Translation.tr("Refreshing (manually triggered)"),
                 "-a", "Shell"
-            ])
+            ], "bar.weather")
             mouse.accepted = false
         }
     }

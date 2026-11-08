@@ -1,11 +1,13 @@
+// Fork & Trim: end4-pC modules/ii/bar/DiIdle.qml
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import Quickshell
-import qs
 import qs.services
-import qs.modules.common
-import qs.modules.common.widgets
+import qs.commons
+import qs.ui
 
 Item {
     id: diIdleRoot
@@ -33,7 +35,7 @@ Item {
             anchors.fill: parent
             source: Config.options.profile.avatarPath !== ""
                 ? "file://" + Config.options.profile.avatarPicture
-                : "file:///home/" + (Quickshell.env("USER") ?? "user") + "/.face"
+                : "file://" + Paths.profileAvatar
             sourceSize.width: avatarImage.width * 2
             sourceSize.height: avatarImage.height * 2
             fillMode: Image.PreserveAspectCrop
@@ -67,7 +69,7 @@ Item {
             spacing: 4
 
             Revealer {
-                reveal: !diIdleRoot.systemIconsElsewhere && (Audio.source?.audio?.muted ?? false)
+                reveal: !diIdleRoot.systemIconsElsewhere && VolumeService.sourceMuted
                 MaterialSymbol {
                     text: "mic_off"
                     iconSize: Appearance.font.pixelSize.normal
@@ -76,7 +78,7 @@ Item {
             }
 
             Revealer {
-                reveal: !diIdleRoot.systemIconsElsewhere && (Audio.sink?.audio?.muted ?? false)
+                reveal: !diIdleRoot.systemIconsElsewhere && VolumeService.sinkMuted
                 MaterialSymbol {
                     text: "volume_off"
                     iconSize: Appearance.font.pixelSize.normal
@@ -85,9 +87,7 @@ Item {
             }
 
             Revealer {
-                reveal: !diIdleRoot.systemIconsElsewhere
-                    && !Network.ethernet
-                    && (Network.wifiStatus === "disconnected" || Network.wifiStatus === "disabled")
+                reveal: !diIdleRoot.systemIconsElsewhere && !NetworkService.connected
                 MaterialSymbol {
                     text: "wifi_off"
                     iconSize: Appearance.font.pixelSize.normal
@@ -96,7 +96,7 @@ Item {
             }
 
             Revealer {
-                reveal: (Notifications.unread ?? 0) > 0
+                reveal: (NotificationService.unreadCount ?? 0) > 0
                 Item {
                     implicitWidth: notifRow.implicitWidth
                     implicitHeight: notifRow.implicitHeight
@@ -110,7 +110,7 @@ Item {
                             color: Appearance.colors.colOnLayer0
                         }
                         StyledText {
-                            text: `${Notifications.unread}`
+                            text: `${NotificationService.unreadCount}`
                             font.pixelSize: Appearance.font.pixelSize.smallest
                             font.features: { "tnum": 1 }
                             color: Appearance.colors.colOnLayer0
@@ -120,7 +120,7 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: GlobalStates.sidebarRightOpen = !GlobalStates.sidebarRightOpen
+                        onClicked: ActionGateway.requestSidebarToggle("dashboard")
                     }
                 }
             }
@@ -147,7 +147,7 @@ Item {
 
                     MaterialSymbol {
                         fill: 0
-                        text: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
+                        text: "cloud"
                         iconSize: Appearance.font.pixelSize.normal
                         color: Appearance.colors.colOnLayer0
                         Layout.alignment: Qt.AlignVCenter
@@ -157,7 +157,7 @@ Item {
                         font.pixelSize: di.isMaterial ? Appearance.font.pixelSize.normal : Appearance.font.pixelSize.small
                         font.features: { "tnum": 1 }
                         color: Appearance.colors.colOnLayer0
-                        text: Weather.data?.temp ?? "--°"
+                        text: WeatherService.hasValidData ? (Math.round(WeatherService.currentTemperatureC) + "°") : "--°"
                         Layout.alignment: Qt.AlignVCenter
                     }
                 }

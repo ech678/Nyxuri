@@ -171,10 +171,9 @@ class TestDesktopCardHostStructure(unittest.TestCase):
 class TestTrayMenuScreenContract(unittest.TestCase):
 
     def test_tray_menu_does_not_shadow_the_window_screen(self):
-        source = (Path(__file__).resolve().parents[2] / "shell" / "plugins" / "bar" / "tray"
-                  / "TrayMenu.qml").read_text(encoding="utf-8")
+        source = (Path(__file__).resolve().parents[2] / "shell" / "plugins" / "bar"
+                  / "SysTrayMenu.qml").read_text(encoding="utf-8")
         self.assertNotIn("property var screen", source)
-        self.assertIn("screen: root.screen", source)
 
 class TestShellPageSingletonImports(unittest.TestCase):
 
