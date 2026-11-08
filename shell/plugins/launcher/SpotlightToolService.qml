@@ -3,7 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.commons
-import qs.app
+import qs.services
 import "./SpotlightToolResponse.js" as ToolResponse
 import qs.commons.i18n
 
@@ -84,7 +84,7 @@ Singleton {
         if (capabilityKnown && (!capabilities || capabilities[tool] !== true)) {
             state = "unavailable";
             error = capabilities ? I18n.tr("This tool's dependency is unavailable") : I18n.tr(
-                                       "Update key-cli to enable this tool");
+                                       "This tool is unavailable");
             return;
         }
         if (action === tool && !query.trim()) {

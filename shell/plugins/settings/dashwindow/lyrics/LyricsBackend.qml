@@ -1,6 +1,5 @@
 import QtQuick
 import Quickshell.Io
-import qs.app
 import qs.services
 import qs.commons.i18n
 
@@ -57,7 +56,7 @@ Item {
         // Argument order is fixed by the script's CLI: title, artist, duration.
         // Duration is passed as "0" rather than omitted so the positional
         // contract stays stable; the script reads it as "unknown".
-        const argv = [title, artist, durationSeconds > 0 ? String(durationSeconds) : "0"];
+        const argv = [title, artist, durationSeconds > 0 ? String(Math.round(durationSeconds)) : "0"];
         // Only forwarded when it differs from the script's own default, so the
         // cache key and behaviour for the common case stay byte-identical to
         // what earlier versions produced.
@@ -167,6 +166,7 @@ Item {
     function _reportFailure(message) {
         if (root._settled)
             return;
+        LogService.warn("lyrics", "fetch failed: " + message);
         root._settled = true;
         root.fetchFailed(root._generation, message);
     }

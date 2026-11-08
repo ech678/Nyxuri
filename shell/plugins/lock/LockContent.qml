@@ -4,7 +4,6 @@ import Qt5Compat.GraphicalEffects
 import qs.commons
 import qs.services
 import "cards"
-import qs.app
 import qs.commons.i18n
 
 Item {

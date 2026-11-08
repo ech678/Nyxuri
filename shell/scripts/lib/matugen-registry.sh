@@ -7,7 +7,7 @@ matugen_registry_init() {
     # shellcheck source=scripts/lib/nyxuri-paths.sh
     source "$library_dir/nyxuri-paths.sh"
     nyxuri_paths_init
-    matugen_builtin_dir=$(cd -- "$library_dir/../.." && pwd)/app/templates
+    matugen_builtin_dir=$(cd -- "$library_dir/../.." && pwd)/commons/assets/templates
     matugen_user_dir="$NYXURI_SHELL_CONFIG_HOME/matugen"
     matugen_parser="$library_dir/../theme/matugen-registry.jq"
 }

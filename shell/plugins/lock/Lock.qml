@@ -5,7 +5,6 @@ import Quickshell.Services.Pam
 import Quickshell.Wayland
 import qs.commons
 import qs.services
-import qs.app
 
 Scope {
     id: root

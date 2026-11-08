@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 import Quickshell
-import qs.app
+import qs.services
 import qs.commons
 import qs.ui
 import qs.commons.i18n

@@ -773,7 +773,7 @@ zh = """{0} 桌面插件引擎 ({1})
   add <git-url|本地目录> [--enable]  安装第三方插件（绝不执行包内代码，默认停用）
   remove <插件> [-y]                 移除第三方插件（停用 → 撤回 → 时间戳备份）
   update <插件> [-y]                 更新第三方插件（diff 预览，拒绝非快进）
-  doctor [插件]                      三态对账（Synced/Drifted/Ghost）+ 系统体检
+  doctor [插件]                      状态校验（Synced/Drifted/Ghost）+ 系统体检
 
 系统与领域:
   install [full|config]              应用配置（full = 含壁纸与钩子重放）
@@ -802,7 +802,7 @@ Plugin verbs (a plugin = any independently switchable desktop capability):
   add <git-url|local-dir> [--enable]   Install a third-party plugin (never runs package code, stays off by default)
   remove <plugin> [-y]                 Remove a third-party plugin (off → withdraw → timestamped backup)
   update <plugin> [-y]                 Update a third-party plugin (diff preview, refuses non-fast-forward)
-  doctor [plugin]                      Three-state audit (Synced/Drifted/Ghost) + system checkup
+  doctor [plugin]                      Status check (Synced/Drifted/Ghost) + system checkup
 
 System & Domains:
   install [full|config]              Apply configs (full = wallpapers + hook replay)
@@ -914,8 +914,8 @@ zh = "{Colors.BOLD_GREEN}[✓]{Colors.RESET} 已更新: {0}"
 en = "{Colors.BOLD_GREEN}[✓]{Colors.RESET} Updated: {0}"
 
 [cli_update_redeployed]
-zh = "插件处于启用状态，已通过事务重新应用"
-en = "Plugin was enabled; re-applied through the transaction"
+zh = "插件处于启用状态，已重新应用配置"
+en = "Plugin was enabled; re-applied configuration"
 
 [cli_update_disabled_hint]
 zh = "插件处于停用状态，下次 {CLI_CMD} on {0} 时生效"
@@ -938,8 +938,8 @@ zh = "{0}: 本已停用，无动作"
 en = "{0}: already disabled, no-op"
 
 [cli_step_failed]
-zh = "{0}: 事务失败"
-en = "{0}: transaction failed"
+zh = "{0}: 操作失败"
+en = "{0}: operation failed"
 
 [cli_step_deploy_failed]
 zh = "{0}: 部署失败"
@@ -986,8 +986,8 @@ zh = "部署目标"
 en = "Target"
 
 [cli_detail_runtime]
-zh = "运行态插件：开关落在账本，由运行中的 Shell 投影，无部署目标"
-en = "Runtime plugin: the switch lives in the ledger, projected by the running shell — no deploy target"
+zh = "运行态插件：开关保存在 state.json，由运行中的 Shell 动态加载，无部署目标"
+en = "Runtime plugin: switch stored in state.json, loaded dynamically by the running shell — no deploy target"
 
 [cli_detail_dependencies]
 zh = "依赖插件"
@@ -1014,24 +1014,24 @@ zh = "归档"
 en = "Archive"
 
 [cli_detail_updated]
-zh = "最近事务"
+zh = "最近更新"
 en = "Updated"
 
 [cli_detail_never_switched]
-zh = "从未开关：实机白纸，无账本记录"
-en = "Never switched: white paper, no ledger record"
+zh = "从未开关：实机白纸，无记录"
+en = "Never switched: white paper, no records"
 
 [cli_detail_audit]
-zh = "对账"
-en = "Audit"
+zh = "状态"
+en = "Status"
 
 [cli_audit_header]
-zh = "{Colors.BOLD}插件对账（声明 vs 实机）:{Colors.RESET}"
-en = "{Colors.BOLD}Plugin audit (declared vs living):{Colors.RESET}"
+zh = "{Colors.BOLD}插件状态（声明 vs 实机）:{Colors.RESET}"
+en = "{Colors.BOLD}Plugin status (declared vs living):{Colors.RESET}"
 
 [cli_audit_clean]
-zh = "{Colors.BOLD_GREEN}[✓]{Colors.RESET} 对账干净：无漂移、无幽灵。"
-en = "{Colors.BOLD_GREEN}[✓]{Colors.RESET} Audit clean: no drift, no ghosts."
+zh = "{Colors.BOLD_GREEN}[✓]{Colors.RESET} 状态一致：无漂移、无幽灵。"
+en = "{Colors.BOLD_GREEN}[✓]{Colors.RESET} Status clean: no drift, no ghosts."
 
 [cli_audit_drifted_hint]
 zh = "{Colors.BOLD_YELLOW}[!]{Colors.RESET} Drifted = 存在你的改动，更新会原样保留；`nyxuri update --force` 可采纳模板版"
@@ -1039,7 +1039,7 @@ en = "{Colors.BOLD_YELLOW}[!]{Colors.RESET} Drifted = your changes are present; 
 
 [cli_audit_ghost_hint]
 zh = "{Colors.BOLD_RED}[✗]{Colors.RESET} Ghost = 目录存在但未登记：更新不会覆盖它；`nyxuri on <plugin>` 收编并开始追踪"
-en = "{Colors.BOLD_RED}[✗]{Colors.RESET} Ghost = living files without a ledger record: updates never clobber them — `nyxuri on <plugin>` adopts and starts tracking"
+en = "{Colors.BOLD_RED}[✗]{Colors.RESET} Ghost = living files without a record: updates never clobber them — `nyxuri on <plugin>` adopts and starts tracking"
 
 [preflight_express_summary]
 zh = """\n{Colors.BOLD_BLUE}:: 即将执行以下更改:{Colors.RESET}"""
@@ -1146,8 +1146,8 @@ zh = "来源不明（插件未登记；`nyxuri on <plugin>` 收编后恢复模�
 en = "Unresolved origin (plugin not registered; `nyxuri on <plugin>` restores template updates)"
 
 [log_deploy_config_item]
-zh = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 安装配置: ~/.config/{0}"
-en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Installed config: ~/.config/{0}"
+zh = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 安装配置: {0}"
+en = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} Installed config: {0}"
 
 [log_gtk_theme_init]
 zh = "  {Colors.BOLD_GREEN}[✓]{Colors.RESET} 初始化主题与 GTK 同步"
@@ -1464,16 +1464,16 @@ zh = "未生效"
 en = "Inactive"
 
 [menu_opt_workshop]
-zh = "插件（开关 / 对账）"
-en = "Plugins (switch / audit)"
+zh = "插件（开关 / 状态）"
+en = "Plugins (switch / status)"
 
 [menu_group_plugins]
 zh = "── 插件 ──"
 en = "── Plugins ──"
 
 [workshop_title]
-zh = "插件 — 账本投影 · 单一事务路径"
-en = "Plugins — ledger projection · single transaction path"
+zh = "插件 — 状态与独立开关"
+en = "Plugins — status & toggles"
 
 [workshop_left_header]
 zh = "插件 (状态)"
@@ -1484,8 +1484,8 @@ zh = "详情"
 en = "Details"
 
 [workshop_hint]
-zh = "[↑/↓] 选择  [o] 启用  [f] 停用  [r] 刷新对账  [q] 返回"
-en = "[↑/↓] Select  [o] On  [f] Off  [r] Refresh audit  [q] Back"
+zh = "[↑/↓] 选择  [o] 启用  [f] 停用  [r] 刷新状态  [q] 返回"
+en = "[↑/↓] Select  [o] On  [f] Off  [r] Refresh status  [q] Back"
 
 [workshop_back_hint]
 zh = "按任意键返回插件"

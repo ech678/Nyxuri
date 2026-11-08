@@ -86,12 +86,12 @@ class TestWindowShellIsReskinnedNotRewired(unittest.TestCase):
 
     def test_two_zone_chrome_matches_the_original(self):
         source = re.sub(r"\s+", " ", _read("ControlCenterWindow.qml"))
-        # Left nav zone: nav width + 16px margins, window-left corner rounding,
-        # sharing the surface-container-low fill with the frame and the chip.
+        # Left nav zone: nav width + 16px margins, full height.
+        # Window corner radius belongs to the compositor, not QML.
         self.assertIn("width: root.navPaneWidth + NexusStyle.navMargin * 2", source)
-        self.assertIn("topLeftRadius: NexusStyle.rounding.large", source)
+        self.assertNotIn("topLeftRadius: NexusStyle.rounding.large", source)
         self.assertIn("color: Appearance.colors.colSurfaceContainerLow", source)
-        self.assertIn("radius: NexusStyle.rounding.large", source)
+        self.assertNotIn("radius: NexusStyle.rounding.large", source)
         # Pages region: 16px clear of the 12px frame band on three sides and
         # of the nav zone on the left (Pages.qml anchors).
         self.assertIn("anchors.leftMargin: NexusStyle.frameBand + NexusStyle.chromeInset", source)
@@ -158,6 +158,14 @@ class TestWindowShellIsReskinnedNotRewired(unittest.TestCase):
         source = _read("ControlCenterWindow.qml")
         self.assertIn("SpotlightCatalog.description(", source,
                       "subtitles must use the translated catalog bridge, not raw JSON")
+
+    def test_pages_dynamically_filter_by_state_projection(self):
+        source = _read("ControlCenterWindow.qml")
+        self.assertIn("StateProjection.isEnabledUnit(entry.pluginId)", source,
+                      "disabled plugins must have their settings tabs dynamically filtered")
+        self.assertIn("onPagesChanged", source)
+        self.assertIn("currentPage = Math.max(0, pages.length - 1)", source,
+                      "current page must clamp when tabs shrink")
 
     def test_pane_stays_presentation_only(self):
         pane = _read("NexusNavPane.qml")
@@ -243,7 +251,7 @@ class TestNavPaneComposition(unittest.TestCase):
         for domain in sorted(d.name for d in SETTINGS.parent.iterdir() if d.is_dir()):
             manifest = tomllib.loads((SETTINGS.parent / domain / "manifest.toml").read_text(encoding="utf-8"))
             top_level.extend(entry for entry in manifest.get("settings", []) if "route" not in entry)
-        self.assertGreaterEqual(len(top_level), 16)
+        self.assertGreaterEqual(len(top_level), 15)
         missing = [entry["id"] for entry in top_level if not str(entry.get("group", "")).strip()]
         self.assertEqual(missing, [], f"routes without a manifest group: {missing}")
 

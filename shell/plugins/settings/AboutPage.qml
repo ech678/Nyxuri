@@ -6,7 +6,6 @@ import Quickshell
 import qs.commons
 import qs.ui
 import qs.commons.i18n
-import qs.app
 import qs.services
 import qs.ui
 

@@ -16,7 +16,7 @@ class TestFormDrift(unittest.TestCase):
         self._ctx.__exit__()
 
     def _run_drift(self):
-        from nyxuri.sysdoctor import _check_form_drift
+        from nyxuri.system.doctor import _check_form_drift
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             _check_form_drift(self._ctx.env)

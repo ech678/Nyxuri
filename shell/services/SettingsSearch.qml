@@ -2,7 +2,6 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
-import qs.app
 import qs.commons.i18n
 
 // SettingsSearch — the settings deep-search state machine (S0-3a): the

@@ -13,8 +13,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import nyxuri.core as core
-import nyxuri.tui as tui
+import nyxuri.system.env as core
+import nyxuri.ui.tui as tui
 from tests.utils import TempEnv
 
 
@@ -251,7 +251,7 @@ class TestCliLinkOwnership(unittest.TestCase):
 
     def test_xdg_state_home_outside_home_is_isolated(self):
         import os
-        from nyxuri.core import Environment
+        from nyxuri.system.env import Environment
         with patch.dict(os.environ, {"XDG_STATE_HOME": "/some/foreign/home/.local/state"}):
             env = Environment()
             self.assertEqual(
@@ -282,15 +282,15 @@ class TestSafeGitPullSystemBranch(unittest.TestCase):
         self._ctx.__exit__()
 
     def test_system_mode_returns_none_without_git_dir(self):
-        from nyxuri.pkg.net import safe_git_pull
-        with patch("nyxuri.pkg.net.shutil.which", return_value="/usr/bin/git"), \
+        from nyxuri.system.net import safe_git_pull
+        with patch("nyxuri.system.net.shutil.which", return_value="/usr/bin/git"), \
              patch("builtins.print"):
             result = safe_git_pull(self._ctx.env.repo_dir)
         self.assertIsNone(result, "system mode must skip git pull (return None)")
 
     def test_system_mode_pinned_checkout_returns_none_without_git_dir(self):
-        from nyxuri.pkg.net import safe_git_checkout_ref
-        with patch("nyxuri.pkg.net.shutil.which", return_value="/usr/bin/git"), \
+        from nyxuri.system.net import safe_git_checkout_ref
+        with patch("nyxuri.system.net.shutil.which", return_value="/usr/bin/git"), \
              patch("builtins.print"):
             result = safe_git_checkout_ref(self._ctx.env.repo_dir, "v1.2.3")
         self.assertIsNone(result, "system mode must skip pinned checkout (return None)")

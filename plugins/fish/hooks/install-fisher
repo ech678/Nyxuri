@@ -17,7 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))  # standalone runs
 
-from nyxuri.pkg.net import fetch_raw_with_fallback  # noqa: E402
+from nyxuri.system.net import fetch_raw_with_fallback  # noqa: E402
 
 BOOTSTRAP_COMMIT = "791da644d33d392216f6b1a9b5fc1e470db6d7f2"
 BOOTSTRAP_SHA256 = "0fb6c81ae3003e95b5671766fa6c25c3597066e29965b7772f6c1b007387356d"

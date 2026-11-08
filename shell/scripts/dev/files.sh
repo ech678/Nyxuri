@@ -17,7 +17,9 @@ nyxuri_qml_files() {
     local scope=$1 file
     while IFS= read -r -d '' file; do
         case ${file} in
-            build/*|generated/*|third-party/*|vendor/*) continue ;;
+            # */vendor/*: vendored upstream baselines (B0) keep their original
+            # formatting; gates resume once promoted out of vendor/ (B5).
+            build/*|generated/*|third-party/*|vendor/*|*/vendor/*) continue ;;
             *.qml) [[ ! -f ${file} ]] || printf '%s\0' "${file}" ;;
         esac
     done < <(nyxuri_files "${scope}")

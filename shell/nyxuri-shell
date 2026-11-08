@@ -30,6 +30,7 @@ fi
 export NYXURI_ORIGINAL_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 export XDG_CACHE_HOME="${NYXURI_ORIGINAL_CACHE_HOME}/nyxuri-shell"
 rm -rf "${XDG_CACHE_HOME}/quickshell/qmlcache"
+rm -f "${SHELL_DIR}/.qmlls.ini"
 
 # The generated palette has to be written where the shell reads it. The two sides
 # defaulted to different places: scripts/lib/nyxuri-paths.sh resolves to
@@ -86,6 +87,66 @@ while [ $# -gt 0 ]; do
     esac
 done
 
+is_plugin_enabled() {
+    local pid="$1"
+    local state_file="${XDG_STATE_HOME:-$HOME/.local/state}/nyxuri/state.json"
+    [ ! -r "$state_file" ] && [ -r "${XDG_STATE_HOME:-$HOME/.local/state}/NyxNiri/state.json" ] && state_file="${XDG_STATE_HOME:-$HOME/.local/state}/NyxNiri/state.json"
+    [ -r "$state_file" ] || return 0
+    if command -v jq >/dev/null 2>&1; then
+        local st
+        st=$(jq -r --arg p "$pid" '.plugins[$p].state // empty' "$state_file" 2>/dev/null)
+        [ "$st" != "disabled" ] && return 0
+        return 1
+    fi
+    python3 -c "import json, sys; d=json.load(open('$state_file')).get('plugins', {}).get('$pid', {}); sys.exit(1 if d.get('state') == 'disabled' else 0)" 2>/dev/null
+}
+
+find_action_tool() {
+    local target_act="$1"
+    local data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
+    local cfg_dir="${HOME}/.config"
+
+    # 1. Search living and data paths for third-party Nyxuri plugins
+    local dir
+    for dir in "$cfg_dir/nyxuri/plugins" "$data_home/nyxuri/plugins"; do
+        [ -d "$dir" ] || continue
+        for p in "$dir"/*; do
+            [ -d "$p" ] || continue
+            is_plugin_enabled "${p##*/}" || continue
+            for exe in "$p"/*"$target_act"* "$p"/tools/*"$target_act"*; do
+                [ -f "$exe" ] || continue
+                case "$exe" in *.toml|*.json|*.txt|*.md|*.bak|*.backup*|*~) continue ;; esac
+                if [ -x "$exe" ] || [[ "$exe" == *.py || "$exe" == *.sh ]]; then
+                    printf "%s" "$exe"
+                    return 0
+                fi
+            done
+        done
+    done
+
+    # 2. Legacy Noctalia tools (only if noctalia is enabled)
+    if is_plugin_enabled "noctalia" && [ -d "$cfg_dir/noctalia/tools" ]; then
+        for exe in "$cfg_dir/noctalia/tools"/*"$target_act"*; do
+            [ -f "$exe" ] || continue
+            case "$exe" in *.toml|*.json|*.txt|*.md|*.bak|*.backup*|*~) continue ;; esac
+            if [ -x "$exe" ] || [[ "$exe" == *.py || "$exe" == *.sh ]]; then
+                local base="${exe##*/}"
+                local stem="${base%.*}"
+                is_plugin_enabled "$stem" || continue
+                printf "%s" "$exe"
+                return 0
+            fi
+        done
+    fi
+
+    # 3. Command on PATH
+    if command -v "$target_act" >/dev/null 2>&1; then
+        command -v "$target_act"
+        return 0
+    fi
+    return 1
+}
+
 if [ -n "$IPC_CALL" ]; then
     # Generic unit-IPC passthrough for compositor bindings: binds reference
     # this PATH-stable gateway instead of a quickshell config name.
@@ -126,24 +187,24 @@ if [ -n "$ACTION" ]; then
             exec qs -p "${SHELL_DIR}" ipc call control-center toggle "wallpaper"
             ;;
         radial-launcher)
-            tools_dir="${HOME}/.config/noctalia/tools"
-            if [ -x "$tools_dir/orbit-launcher.py" ]; then
-                exec "$tools_dir/orbit-launcher.py"
+            tool="$(find_action_tool "launcher")" || {
+                echo "Launcher tool not found or disabled." >&2
+                exit 1
+            }
+            if [ -x "$tool" ]; then
+                exec "$tool"
             fi
-            if [ -f "$tools_dir/orbit-launcher.py" ]; then
-                exec python3 "$tools_dir/orbit-launcher.py"
-            fi
-            exit 0
+            exec python3 "$tool"
             ;;
         translate)
-            tools_dir="${HOME}/.config/noctalia/tools"
-            if [ -x "$tools_dir/orbit-translate.py" ]; then
-                exec "$tools_dir/orbit-translate.py"
+            tool="$(find_action_tool "translate")" || {
+                echo "Translate tool not found or disabled." >&2
+                exit 1
+            }
+            if [ -x "$tool" ]; then
+                exec "$tool"
             fi
-            if [ -f "$tools_dir/orbit-translate.py" ]; then
-                exec python3 "$tools_dir/orbit-translate.py"
-            fi
-            exit 0
+            exec python3 "$tool"
             ;;
         stage)
             exec qs -p "${SHELL_DIR}" ipc call shell stage

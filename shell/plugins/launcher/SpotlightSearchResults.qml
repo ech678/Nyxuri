@@ -66,7 +66,7 @@ Item {
         currentIndex: root.currentRow
         boundsBehavior: Flickable.StopAtBounds
         keyNavigationEnabled: false
-        interactive: !DockService.externalDragActive
+        interactive: !ActionGateway.externalDragActive
         highlight: Item {}
         highlightMoveDuration: root.style.resultScrollDuration
         highlightMoveVelocity: -1

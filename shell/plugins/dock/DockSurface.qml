@@ -6,7 +6,6 @@ import Quickshell.Wayland
 import qs.commons
 import qs.ui
 import qs.services
-import qs.app
 import "./DockLayout.js" as DockLayout
 import "./DockMotion.js" as DockMotion
 import qs.commons.i18n
@@ -60,7 +59,7 @@ PanelWindow {
     readonly property real axisLength: horizontal ? width : height
     readonly property real availableLength: Math.max(80, axisLength - 32)
     readonly property real edgeOffset: root.notchSurface ? 0 : 8
-    // Notch style reuses the Keystone tray look: the surface hugs the screen
+    // Notch style reuses the Island tray look: the surface hugs the screen
     // edge instead of floating with a gap, and grows concave transitions into
     // that edge. Kept as a view-level flag so layout maths stay shared.
     readonly property bool notchSurface: DockService.surfaceStyle === "notch"
@@ -823,7 +822,7 @@ PanelWindow {
                 }
             }
 
-            // Keystone notch decor. Sits above the glass but below the icon
+            // Island notch decor. Sits above the glass but below the icon
             // tray: it squares off the edge-facing corners and grows the two
             // concave curves that make the tray read as attached to the screen
             // edge rather than floating above it.

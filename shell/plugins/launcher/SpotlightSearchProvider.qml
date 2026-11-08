@@ -1,9 +1,7 @@
 import QtQuick
 import qs.commons
 import qs.services
-import "../wallpaper"
 import "./SpotlightLocalSearch.js" as LocalSearch
-import qs.app
 import qs.commons.i18n
 
 Item {
@@ -25,7 +23,7 @@ Item {
     signal closeRequested
 
     function rebuild() {
-        if (!active || DockService.externalDragActive)
+        if (!active || ActionGateway.externalDragActive)
             return;
         if (filter === "settings" || filter === "actions") {
             const catalog = filter === "settings" ? SpotlightCatalog.settings : SpotlightCatalog.actions;
@@ -78,15 +76,16 @@ Item {
             symbol: entry.icon,
             available: SpotlightCatalog.available(entry)
         }));
-        const wallpapers = LocalSearch.wallpaperPaths(WallpaperService.wallpapers, query,
-                                                      WallpaperService.basename).map(path => ({
+        const wpHost = ActionGateway.wallpaperHost;
+        const wallpapers = (wpHost && StateProjection.isEnabled("wallpaper")) ? LocalSearch.wallpaperPaths(wpHost.wallpapers || [], query,
+                                                      wpHost.basename).map(path => ({
                                                           id: path,
-                                                          title: WallpaperService.basename(path),
-                                                          subtitle: WallpaperService.parentFolder(path),
+                                                          title: wpHost.basename(path),
+                                                          subtitle: wpHost.parentFolder(path),
                                                           iconKind: "wallpaper",
                                                           previewUrl: Paths.fileUrl(path),
                                                           symbol: "image"
-                                                      }));
+                                                      })) : [];
         results = LocalSearch.groupedResults({
                                                  apps: apps,
                                                  settings: settings,
@@ -124,7 +123,8 @@ Item {
             }
             break;
         case "wallpapers":
-            if (!WallpaperService.busy && WallpaperService.wallpapers.indexOf(request.sourceId) >= 0 && WallpaperService.setWallpaper(
+            const wp = ActionGateway.wallpaperHost;
+            if (wp && !wp.busy && (wp.wallpapers || []).indexOf(request.sourceId) >= 0 && wp.setWallpaper(
                         request.sourceId)) {
                 closeRequested();
                 return true;
@@ -158,9 +158,9 @@ Item {
     onLanguageChanged: rebuild()
     onCapacitiesChanged: rebuild()
     Connections {
-        target: DockService
+        target: ActionGateway
         function onExternalDragActiveChanged() {
-            if (!DockService.externalDragActive)
+            if (!ActionGateway.externalDragActive)
                 root.rebuild();
         }
     }
@@ -191,7 +191,7 @@ Item {
         function onActionsChanged() {
             root.rebuild();
         }
-        function onKeystoneAvailableChanged() {
+        function onIslandAvailableChanged() {
             root.rebuild();
         }
     }

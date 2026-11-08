@@ -5,7 +5,6 @@ import Quickshell
 import Quickshell.Io
 import qs.commons
 import qs.services
-import qs.app
 import qs.commons.i18n
 import "../commons/ThemePalette.js" as ThemePalette
 import "../commons/TemplateExpr.js" as TemplateExpr

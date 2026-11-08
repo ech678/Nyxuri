@@ -134,7 +134,7 @@ Source: [Noctalia](https://noctalia.dev) 5.2.1, MIT © noctalia-dev
 | `assets/templates/starship/starship.toml` | `shell/assets/templates/starship/starship.toml`: palette name `noctalia` → `nyxuri`, header comment |
 | `assets/templates/starship/apply.sh` | `shell/assets/templates/starship/starship-apply.sh`: cache path and markers renamed to nyxuri; also strips a previous Noctalia block so the co-managed `starship.toml` keeps a single palette block |
 
-The golden reference fixtures under `shell/tests/fixtures/theme/golden/` are
+The golden reference fixtures under `tests/shell/fixtures/theme/golden/` are
 unmodified `noctalia theme` outputs and remain covered by the same MIT notice.
 `undo.sh` scripts were not vendored: the P4 registry has no undo semantics yet.
 

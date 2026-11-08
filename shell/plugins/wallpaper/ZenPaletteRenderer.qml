@@ -14,7 +14,6 @@
 * with this program. If not, see https://www.gnu.org/licenses/.
 */
 import QtQuick
-import qs.app
 import qs.services
 import "../../commons/ZenPalette.js" as Zen
 

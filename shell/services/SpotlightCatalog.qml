@@ -1,11 +1,9 @@
 pragma Singleton
 import QtQuick
 import Quickshell
-import qs.app
 import qs.services
-import "../plugins/wallpaper"
 import qs.commons
-import "../plugins/launcher/SpotlightCommands.js" as Commands
+import "../commons/SpotlightCommands.js" as Commands
 import qs.commons.i18n
 
 // The spotlight search index over the runtime plugin registry (S0-2): routes,
@@ -20,7 +18,7 @@ Singleton {
     property var actions: []
     readonly property string language: Qt.uiLanguage
     property var actionExecutor: null
-    property bool keystoneAvailable: false
+    property bool islandAvailable: false
     readonly property bool keyboardLockAvailable: KeyboardLockService.available
     readonly property bool dockPreviewsAvailable: false
 
@@ -131,6 +129,8 @@ Singleton {
     function available(entry) {
         if (!entry)
             return false;
+        if (entry.pluginId && !StateProjection.isEnabledUnit(entry.pluginId))
+            return false;
         switch (entry.availability || "always") {
         case "always":
             return true;
@@ -139,9 +139,9 @@ Singleton {
         case "nyxuri-wallpaper":
             return PersonalizationConfig.desktopWallpaperBackend !== "awww";
         case "wallpaper-idle":
-            return !WallpaperService.busy;
-        case "keystone":
-            return keystoneAvailable;
+            return ActionGateway.wallpaperHost ? !ActionGateway.wallpaperHost.busy : true;
+        case "island":
+            return islandAvailable;
         case "keyboard-lock":
             return keyboardLockAvailable;
         case "dock-previews":
@@ -159,6 +159,12 @@ Singleton {
             ActionGateway.execute(["notify-send", "-a", "Nyxuri Shell", I18n.tr("Action unavailable"),
                                    root.title(id)], "spotlight:catalog-action");
         return accepted;
+    }
+    Connections {
+        target: StateProjection
+        function onUnitsChanged() {
+            root.availabilityChanged();
+        }
     }
     Connections {
         target: PluginRegistry

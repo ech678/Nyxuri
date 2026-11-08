@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-import nyxuri.core as core
+import nyxuri.system.env as core
 
 
 class TempEnv:
@@ -51,7 +51,7 @@ class TempEnv:
         # Default sandbox protections: intercept external host-mutating runners
         import subprocess
         self._theme_run_patcher = patch(
-            "nyxuri.desktop.theme.timed_run",
+            "nyxuri.system.theme.timed_run",
             return_value=subprocess.CompletedProcess([], 0, "", "")
         )
         self._theme_run_patcher.start()

@@ -4,7 +4,7 @@
 > Nyxuri 自研桌面 Shell，基于 Quickshell、QML 与 Qt 6 构建，采用 100% 纯 QML/JS 架构。
 > 上游母体为 [StatIndet/quickshell](https://github.com/StatIndet/quickshell)（Clavis，commit `91cdecb`）。
 
-> ⚠️ **实验性功能**：完全处于开发阶段，已知问题较多，外观尚未开发，暂不推荐日常使用。默认外壳仍为 Noctalia；当前清单见 [KNOWN-ISSUES.md](KNOWN-ISSUES.md)。
+> ⚠️ **实验性功能**：完全处于开发阶段，已知问题较多，外观尚未开发，暂不推荐日常使用。默认外壳仍为 Noctalia；当前清单见 [known-issues](../llms-wiki/shell/known-issues.md)。
 
 ---
 
@@ -12,7 +12,7 @@
 
 - **开发契约与红线**：[AGENTS.md](AGENTS.md)
 - **阶段台账与当前阶段**：[ROADMAP.md](ROADMAP.md)
-- **已知问题与暂缓缺口**：[KNOWN-ISSUES.md](KNOWN-ISSUES.md)
+- **已知问题与暂缓缺口**：[known-issues](../llms-wiki/shell/known-issues.md)
 - **知识库索引**（全项目唯一）：[../llms-wiki/llms.txt](../llms-wiki/llms.txt)
   - 架构矩阵：[../llms-wiki/shell/architecture-matrix.md](../llms-wiki/shell/architecture-matrix.md)
   - 开发调试指南：[../llms-wiki/shell/development.md](../llms-wiki/shell/development.md)

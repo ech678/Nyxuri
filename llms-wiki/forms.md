@@ -1,9 +1,8 @@
-# Form Mechanism — 形态轴、use 动词、账本真相、写时序、原子写、同步语义
+# Form Mechanism — 形态轴、use 动词、状态真相、写时序、原子写、同步语义
 
-> 形态机制的核心：活动选择存账本（整型轴在插件记录的 `form` 字段，槽位轴在顶层
+> 形态机制的核心：活动选择存状态记录（整型轴在插件记录的 `form` 字段，槽位轴在顶层
 > `forms` 字典），deploy 时读它决定 src 是哪个目录。写时序铁律 + 原子写堵死所有
-> 「半途崩溃留下错乱态」的故障路径。源码：`nyxuri/deploy/forms.py`（底层引擎）+
-> `nyxuri/desktop/forms.py`（工作流动词）。唯一动词：`nyxuri use`。
+> 「半途崩溃留下错乱态」的故障路径。源码：`nyxuri/deploy/forms.py`。唯一动词：`nyxuri use`。
 
 ## 两根形态轴（R0-2 杀词并轨）
 

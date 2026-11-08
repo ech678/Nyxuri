@@ -21,7 +21,7 @@
 ┌────────────────────────────────┐       停用归档 (Vault In)       ┌─────────────────────────────────┐
 │   空间 B：实机生活区 (Living)   │ ──────────────────────────────► │   空间 C：状态与保险域 (State)   │
 │   路径：~/.config/<target>/    │ ◄────────────────────────────── │   路径：~/.local/state/nyxuri/  │
-│   （用户的日常桌面生活环境）    │       启用恢复 (Vault Out)      │   - state.json (单一真相账本)    │
+│   （用户的日常桌面生活环境）    │       启用恢复 (Vault Out)      │   - state.json (运行时状态真相)    │
 └────────────────────────────────┘                                 │   - vault/<plugin>/ (自定义备份)  │
                                                                    │   - backups/ (30 个滚动快照)    │
                                                                    └─────────────────────────────────┘
@@ -41,7 +41,7 @@
 | 术语 | 英文 | 本质定义 | 物理承载 | 行为边界 |
 |---|---|---|---|---|
 | **插件** | `Plugin` | 桌面上**一切可独立开关**的原子能力实体。 | `plugins/<plugin>/` 目录 | 拥有独立的生命周期与状态，可声明依赖、文件与形态。 |
-| **内核** | `Kernel` | Nyxuri 常驻骨架，负责编排与记账（纯 Python 标库）。 | `nyxuri/kernel/{registry, resolver, transaction, ledger}` | **内核不是插件**，不可插件化、不可开关，是承载一切的物理底座。 |
+| **引擎** | `Engine` | Nyxuri 常驻骨架，负责部署、状态与环境（纯 Python 标库）。 | `nyxuri/{deploy, state, system, ui}` | **引擎不是插件**，不可插件化、不可开关，是承载一切的物理底座。 |
 | **manifest** | `Manifest` | 插件的自描述规格书。全库统称 `manifest.toml`。 | `plugins/<plugin>/manifest.toml` | 纯声明式静态元数据，**全字段可选，无文件 = 全默认**。 |
 
 「源（Source）」概念已随 R0-2 删除——git URL 即源（S1 落地时兑现），引擎不设供给方抽象。
@@ -50,29 +50,28 @@
 * **系统软件包（pacman / AUR / Flatpak 包）**：不是插件！它们只是插件声明书里写的 `dependencies`。
 * **仅声明单元（declaration-only，greeter 形态）**：是插件！`greeter` 这类
   「只声明副作用、无生活区」的可选单元（optional + packages + hooks + [privilege]，
-  磁盘上只有 manifest 与 hooks/）；`on` = 装包 + hooks + 落账，`off` = 纯落账，
+  磁盘上只有 manifest 与 hooks/）；`on` = 装包 + hooks + 落状态，`off` = 纯落状态，
   doctor 恒 `Synced`。R0-2 的 packages-only 供给面（`deploy = false` × 18 个推荐软件
   插件 + `deps apps` 菜单）已随 R0-2 步 5 处决：插件装包统一走 `nyxuri on <plugin>`
-  事务单路径；退役键 `deploy` / `detect` 在 manifest 解析层即报错（见 §7 死刑清单）。
+  部署单路径；退役键 `deploy` / `detect` 在 manifest 解析层即报错（见 §7 死刑清单）。
 
-### 内核分层契约（依赖方向冻结）
+### 引擎分层契约（依赖方向冻结）
 
-四个内核模块呈星形单向分层，物理承载 `nyxuri/kernel/`（KM3.5 正名）：**transaction 是唯一允许多依赖的编排层，其余三件互不认识**。
+P4 架构下，引擎收敛至 `deploy/`、`state/`、`system/`、`ui/` 四大清晰领域（过度工程的 `kernel/` 目录彻底解散）：**engine 是执行流编排，其余模块互不认识**。
 
 ```
-transaction（编排：唯一可触碰副作用的模块）
- ├─► registry   唯一扫描插件蓝图与 manifest 的模块（蓝图域唯一入口；
- │              蓝图根：`plugins/` → 裸 ID，`shell/plugins/` → `shell.` 前缀，KM4）
- ├─► resolver   纯函数：依赖图进，拓扑序出（零 I/O、零状态，表驱动可测）
- └─► ledger     唯一读写 state.json 的模块（状态域唯一入口）
+engine（部署执行流：原子置换、快照收存与安全网）
+ ├─► catalog   唯一扫描插件蓝图与 manifest 的模块，内置拓扑依赖排序（Kahn 纯函数）；
+ │             蓝图根：`plugins/` → 裸 ID，`shell/plugins/` → `shell.` 前缀
+ └─► store     唯一读写 state.json 的模块（纯净状态域，纯标库 json）
 ```
 
-* 禁止绕过 ledger 直写账本，禁止绕过 registry 直读蓝图；
-* `resolver` 不 import 任何内核兄弟模块，只做纯计算；
+* 禁止绕过 store 直写 state.json，禁止绕过 catalog 直读蓝图；
+* `catalog` 保持纯粹，内置轻量拓扑排序（无外部依赖）；
 * deploy.atomic、Vault、事件通知、插件生命周期钩子（`post_install` / `post_remove`，
-  执行插件目录内 `hooks/<名字>` 脚本，注入 `PYTHONDONTWRITEBYTECODE=1`）只允许 transaction 触碰；
-* doctor 三态对账（`audit_plugins`：`Synced` / `Drifted` / `Ghost`）是只读能力，
-  同样收敛在 transaction（受管文件与哈希知识只此一家），内核保持四模块不变。
+  执行插件目录内 `hooks/<名字>` 脚本，注入 `PYTHONDONTWRITEBYTECODE=1`）只允许 engine 触碰；
+* doctor 三态状态校验（`audit_plugins`：`Synced` / `Drifted` / `Ghost`）是只读能力，
+  收敛在 engine（受管文件元数据知识只此一家）。
 
 ---
 
@@ -93,26 +92,26 @@ transaction（编排：唯一可触碰副作用的模块）
                      └── 内部形态切换：use（不改变 Enabled 状态）
 ```
 
-### 迁移事务规则
+### 插件状态机规则
 1. **启用动作 (`on` / `enable`)**：
    - 依赖解析器遍历依赖链：若下游依赖未启用，一同列入启用预检清单；
-   - 检查外部包：若缺少 pacman/AUR 包，调用 `nyxuri.pkg` 提示安装；
+   - 检查外部包：若缺少 pacman/AUR 包，调用 `nyxuri.system.pkg` 提示安装；
    - 从 `vault/<plugin>/` 捞回自定义文件与最新蓝图合并（捞回即消费：归档移入实机后
      Vault 清空，用户已删除的自定义不会被下次启用复活）；
    - 原子置换进 `~/.config/<target>` 并完成模板渲染；
-   - 状态经 ledger 落账 `state.json`，随后发出一次 `plugin-changed` 事件（见 §6，尽力而为，无订阅者即 no-op）；
+   - 状态经 store 写入 `state.json`，随后发出一次 `plugin-changed` 事件（见 §6，尽力而为，无订阅者即 no-op）；
 2. **停用动作 (`off` / `disable`)**：
    - 反向依赖检查：若有其他已启用插件依赖它且未带 `--cascade`，强行阻断并报警；
    - 将 `~/.config/<target>` 中的 `__custom__` 与 `preserve` 文件原子移入 `vault/<plugin>/`；
    - 彻底删除受管文件，空目录删除，实机恢复纯白；非受管的外来文件不吞——
      幸存并在报告中列明（doctor 记 `Ghost`），绝不背地里吃掉用户文件；
-   - 状态经 ledger 落账 `state.json`；
+   - 状态经 store 写入 `state.json`；
    - 真诚报告交底：明确告知配置已归档，二进制包保留在系统（不背着用户 sudo 卸包）；
    - 发出同一 `plugin-changed` 事件，Shell 据此摘除挂件。
 
-### 账本记录形状（KM0 冻结）
+### 状态记录形状（KM0 冻结）
 
-`state.json` 中每条插件记录只含五个字段。KM2 的事务与 doctor 对账全部建立在其上，实现不得私加：
+`state.json` 中每条插件记录只含五个字段。状态校验与 doctor 全部建立在其上，实现不得私加：
 
 | 字段 | 类型 | 含义 |
 |---|---|---|
@@ -120,11 +119,10 @@ transaction（编排：唯一可触碰副作用的模块）
 | `form` | `string` | 整型形态轴当前选择（R0-2 由 `preset` 改名迁移） |
 | `files` | `map<相对路径, sha256>` | 受管文件哈希快照，`Drifted` 判定依据 |
 | `vault` | `路径?` | 停用时自定义文件的归档位置；有归档物才落路径（R0-2 修订：`use`-only 记录为 null） |
-| `updated` | `ISO 时间戳` | 最近一次事务落账时间 |
+| `updated` | `ISO 时间戳` | 最近一次状态更新时间 |
 
-插件记录统一挂在 `state.json` 顶层的 `plugins` 键下，以插件 ID 为键（R0-1 前的老账本
-键名为 `plugins`，首次读取时一次性迁移改写）；`updated` 为带时区的
-ISO 8601 时间戳。插件记录的读写只经 `nyxuri.ledger`，任何内核模块不得绕过。
+插件记录统一挂在 `state.json` 顶层的 `plugins` 键下，以插件 ID 为键；`updated` 为带时区的
+ISO 8601 时间戳。插件记录的读写只经 `nyxuri.state.store`，任何模块不得绕过。
 
 `files` 快照口径（KM2 落地，KM3 扩展，#139 收敛）：只记**引擎铺设的模板产物**——
 `__custom__` 与 manifest `preserve` 文件属用户心血，不入快照、不参与 `Drifted` 判定；
@@ -132,17 +130,17 @@ ISO 8601 时间戳。插件记录的读写只经 `nyxuri.ledger`，任何内核�
 运行，钩子落进插件自身生活区的产物自动入快照、`off` 走正常抹白（钩子落生活区外的产物由
 `post_remove` 自清，见 [manifest-schema](manifest-schema.md) 钩子契约）。
 
-**carry 不变式（#139）**：部署时按基线判定搬入的用户文件（改动文件与自放文件）**永不入账**
-——若入账，下次部署会把它当作"引擎铺设过且未被动过"的文件用新模板覆盖，账本自吞用户数据。
+**carry 不变式（#139）**：部署时按基线判定搬入的用户文件（改动文件与自放文件）**永不入受管记录**
+——若计入受管，下次部署会把它当作"引擎铺设过且未被动过"的文件用新模板覆盖，导致自吞用户数据。
 推论：所有权只经 `on`（收编）增长，`update` 永不把新路径登记为受管。`update`/install 在
-部署 + 钩子重放之后经 `resnapshot_plugins` 重登记受启用插件（搬入文件剔除），使账本始终
-等于"引擎上次铺设的内容"；`on` 的快照同样剔除搬入文件。doctor 对账按账本条目逐文件
+部署 + 钩子重放之后经 `resnapshot_plugins` 重登记受启用插件（搬入文件剔除），使受管快照始终
+等于"引擎上次铺设的内容"；`on` 的快照同样剔除搬入文件。doctor 状态校验按受管条目逐文件
 比对（缺文件、内容漂移各自成立），搬入的用户文件不构成 Drifted 噪音。
-领地按账本划：基线里有、用户没动过、这次 payload 不再含的路径（钩子产物）随 swap
-退场、由钩子重放重铺、resnapshot 重新入账——KM3「产物受管、off 抹白」在 carry 下
+领地按受管基线划：基线里有、用户没动过、这次 payload 不再含的路径（钩子产物）随 swap
+退场、由钩子重放重铺、resnapshot 重新登记——KM3「产物受管、off 抹白」在 carry 下
 依然成立，且不进搬运报告。`__pycache__`/`*.pyc` 两侧 walk 剪除，永不搬入或报告。
 
-停用时无受管快照（`files` 空：从未经事务开关，或停用后再现内容）的插件按**蓝图具名**
+停用时无受管快照（`files` 空：从未经状态开关，或停用后再现内容）的插件按**蓝图具名**
 撤回——引擎 payload 文件回收，其余内容原地幸存并报 `foreign-left`（#139：v3 时代
 未登记的实机目录不得被 `off` 整域吞掉）；单文件插件（`target=`）无 Vault 进出，
 其唯一实机文件若不在受管快照内同样幸存并上报。
@@ -247,7 +245,7 @@ nyxuri doctor [plugin]
 staging、校验（与加载同一套检查）、id 冲突检查、落位第三方根
 `~/.local/share/nyxuri/plugins/<id>/`、来源记账（账本顶层 `sources` 键），默认
 off（`--enable` 顺带启用）。`remove` 撤回只认所有权记录；非管辖区（用户自有、
-来源不明）内容时间戳备份，绝不抹白。第三方落位、reverse-DNS id 与禁软链词表见
+来源不明）内容时间戳备份，绝不抹白。第三方落位、id 规则（简洁裸名或 reverse-DNS）与禁软链词表见
 [manifest-schema](manifest-schema.md) 第三方章。
 
 单源阶段**不设独立 `refresh` 动词**：账本即真相，无缓存可刷。
@@ -264,12 +262,12 @@ off（`--enable` 顺带启用）。`remove` 撤回只认所有权记录；非管
 Nyxuri Shell 绝非特权单体，其内部亦彻底插件化（宿主侧契约见 Shell AGENTS）。
 内核只冻结以下三条：
 
-1. **同一账本**：Shell 设置面板拨动开关仅派发 `nyxuri on/off shell.<domain>` 调用
-   内核事务；Shell 永远只是 `state.json` 在屏幕上的**只读投影**，不持有私有开关
+1. **单一状态源**：Shell 设置面板拨动开关仅派发 `nyxuri on/off shell.<domain>` 调用
+   部署引擎；Shell 永远只是 `state.json` 在屏幕上的**只读投影**，不持有私有开关
    状态（Shell 私有开关字段已随 KM4 处决，见 §7）。
-2. **单一事件通道**：事务落账后只发一次 `plugin-changed` 事件。这是抽象端口，不是
-   内核命令——当前唯一投递实现是 `quickshell ipc unit reload`，由外层注入
-   （`nyxuri/desktop/bridge.py`，CLI 入口 `bridge.wire()` 统一接线），内核不
+2. **单一事件通道**：状态更新后只发一次 `plugin-changed` 事件。这是抽象端口，不是
+   引擎命令——当前唯一投递实现是 `quickshell ipc unit reload`，由外层注入
+   （`nyxuri/system/shell.py`，CLI 入口 `wire()` 统一接线），引擎不
    import、不 subprocess quickshell；无订阅者时为 no-op（测试与无 Shell 环境
    零负担）。
 3. **点分 ID 约定**：Shell 域插件以 `shell.<domain>` 命名（如 `nyxuri off
@@ -324,14 +322,14 @@ deploy/deps 的包世界（`discover_manifest_apps`）只扫 `plugins/`，Shell 
 
 ## 8. 路径与环境术语表（原 concept-glossary，KM3.5 并入）
 
-路径在 `nyxuri/core.py` 的 `Environment` 定义（`configs_src` → `units_src` → `plugins_src`，两级正名）：
+路径在 `nyxuri/system/env.py` 的 `Environment` 定义（`configs_src` → `units_src` → `plugins_src`，两级正名）：
 
 | 术语 | 定义 | 实际路径 |
 |---|---|---|
 | `repo_dir` | 源码所在地（cache / clone / system 三选一，谁被跑谁赢） | `~/.cache/nyxuri` / clone 路径 / `/usr/share/nyxuri` |
 | `config_dir` | 部署目标，恒定 | `~/.config` |
 | `nyx_dir` | Nyxuri 自己的家：backups / 用户形态 / hooks | `~/.config/nyxuri` |
-| `state_dir` | 运行时状态账本（`state.json`）与瞬态（lock + log） | `~/.local/state/nyxuri`（XDG_STATE_HOME） |
+| `state_dir` | 运行时状态存储（`state.json`）与瞬态（lock + log） | `~/.local/state/nyxuri`（XDG_STATE_HOME） |
 | `data_dir` | 第三方插件物理落位根（数据域，H4；复制不软链，H8） | `~/.local/share/nyxuri`（XDG_DATA_HOME）；插件住 `data_dir/plugins/<id>/` |
 | `plugins_src` | 仓库插件蓝图源（原 `configs_src`） | `repo_dir/plugins` |
 | `forms_dir` | 用户私有形态存储 | `nyx_dir/forms`（R0-2 从 `nyx_dir/presets` 一次性迁移） |

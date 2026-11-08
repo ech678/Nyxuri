@@ -4,7 +4,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.commons
-import qs.app
 import "../commons/DisplaySchedule.js" as Schedule
 import qs.commons.i18n
 
@@ -50,7 +49,7 @@ Singleton {
         preferences = Schedule.normalize(Object.assign({}, preferences, {
                                                            [key]: value
                                                        }));
-        config.setText(JSON.stringify(preferences, null, 2));
+        ConfigService.updateSection("display", preferences);
 
         if (key === "nightEnabled" && oldNightEnabled !== value) {
             eyecareToggleProc.command = [Paths.xdgConfigHome + "/niri/scripts/toggle-eyecare.sh", value
@@ -85,7 +84,7 @@ Singleton {
                                                            latitude: WeatherService.latitude,
                                                            longitude: WeatherService.longitude
                                                        }));
-        config.setText(JSON.stringify(preferences, null, 2));
+        ConfigService.updateSection("display", preferences);
         evaluate();
     }
 
@@ -197,52 +196,38 @@ Singleton {
         onDateChanged: root.evaluate()
     }
 
-    Process {
-        id: ensureConfigDir
-        command: ["mkdir", "-p", Paths.configHome]
-        running: true
-        onExited: code => {
-            if (code !== 0) {
-                root.error = I18n.tr("Unable to open display preferences");
-                return;
-            }
-            config.reload();
+    function loadFromConfigStore() {
+        const dcData = ConfigService.getSection("display", null);
+        if (dcData) {
+            root.preferences = Schedule.normalize(dcData);
+        } else {
+            root.preferences = Schedule.normalize({});
+        }
+        root.ready = true;
+        root.error = "";
+        root.evaluate();
+        root.checkSystemEyecareSync();
+    }
+
+    Connections {
+        target: ConfigService
+        function onConfigLoaded() {
+            root.loadFromConfigStore();
+        }
+        function onSectionChanged(path, data) {
+            if (path === "display")
+                root.loadFromConfigStore();
         }
     }
 
-    FileView {
-        id: config
-        path: Paths.configHome + "/display-color.json"
-        atomicWrites: true
-        watchChanges: true
-        onFileChanged: reload()
-        onLoaded: {
-            try {
-                root.preferences = Schedule.normalize(JSON.parse(text()));
-                root.ready = true;
-                root.error = "";
-                root.evaluate();
-                root.checkSystemEyecareSync();
-            } catch (e) {
-                root.error = I18n.tr("Invalid display preferences: %1").arg(String(e));
-            }
-        }
-        onLoadFailed: error => {
-            if (error === FileViewError.FileNotFound) {
-                root.ready = true;
-                root.evaluate();
-                root.checkSystemEyecareSync();
-            } else
-                root.error = I18n.tr("Unable to read display preferences");
-        }
-        onSaveFailed: root.error = I18n.tr("Unable to save display preferences")
+    Component.onCompleted: {
+        if (ConfigService.storeReady)
+            root.loadFromConfigStore();
     }
 
     Component.onDestruction: {
         deadline.stop();
         eyecarePollTimer.stop();
-        if (ensureConfigDir)
-            ensureConfigDir.running = false;
         if (effectsCheckProc)
             effectsCheckProc.running = false;
         if (eyecareToggleProc)

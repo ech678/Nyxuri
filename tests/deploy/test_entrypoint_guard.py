@@ -95,7 +95,7 @@ class TestEntryPointImportGuard(unittest.TestCase):
         root = Path(tempfile.mkdtemp()) / "tree"
         shutil.copytree(Path(__file__).resolve().parents[2] / "nyxuri", root / "nyxuri")
         cli = root / "nyxuri" / "cli.py"
-        cli.write_text("from nyxuri.core import NYXURI_MISSING_SYMBOL\n" + cli.read_text(encoding="utf-8"),
+        cli.write_text("from nyxuri.system.env import NYXURI_MISSING_SYMBOL\n" + cli.read_text(encoding="utf-8"),
                        encoding="utf-8")
         try:
             result = subprocess.run(

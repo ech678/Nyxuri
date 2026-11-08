@@ -3,7 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Effects
 import qs.commons
-import qs.app
+import qs.services
 
 Item {
     id: root

@@ -1,4 +1,4 @@
-"""Third-party plugin lifecycle (S1): sources ledger + add / remove / update.
+"""Third-party plugin lifecycle (S1): sources store + add / remove / update.
 
 The engine is its own plugin manager (plugin-model.md §5). Everything here
 runs offline: git transport is exercised against plain local paths and
@@ -9,9 +9,10 @@ the code under test.
 import unittest
 from pathlib import Path
 
-from nyxuri.core import get_env
-from nyxuri.kernel import ledger, registry, transaction
-from nyxuri import sources
+from nyxuri.system.env import get_env
+from nyxuri.state import store
+from nyxuri.deploy import catalog, engine
+from nyxuri.deploy import sources
 from tests.utils import TempEnv
 
 
@@ -55,18 +56,18 @@ class SourceFixtureMixin:
         return ctx.env.data_dir / "plugins" / pid
 
 
-class TestSourcesLedger(unittest.TestCase):
-    """``sources`` top-level key + forget_plugin (账本唯一真相, no sidecar)."""
+class TestSourcesStore(unittest.TestCase):
+    """``sources`` top-level key + forget_plugin (store single truth, no sidecar)."""
 
     def test_source_roundtrip_and_added_stamp(self):
         with TempEnv() as ctx:
-            self.assertIsNone(ledger.get_source("io.github.test.cool"))
-            first = ledger.set_source(
+            self.assertIsNone(store.get_source("io.github.test.cool"))
+            first = store.set_source(
                 "io.github.test.cool", url="file:///x", ref="main", commit="abc"
             )
             self.assertEqual(first["url"], "file:///x")
             added = first["added"]
-            second = ledger.set_source(
+            second = store.set_source(
                 "io.github.test.cool", url="file:///y", ref="main", commit="def"
             )
             self.assertEqual(second["url"], "file:///y")
@@ -74,17 +75,17 @@ class TestSourcesLedger(unittest.TestCase):
 
     def test_forget_plugin_erases_every_trace(self):
         with TempEnv() as ctx:
-            ledger.set_plugin(
+            store.set_plugin(
                 "io.github.test.cool", state="disabled", vault=None
             )
-            ledger.set_source(
+            store.set_source(
                 "io.github.test.cool", url="u", ref="main", commit="c"
             )
-            ledger.set_form_slot("io.github.test.cool", "glow", "off")
-            ledger.forget_plugin("io.github.test.cool")
-            self.assertIsNone(ledger.get_plugin("io.github.test.cool"))
-            self.assertIsNone(ledger.get_source("io.github.test.cool"))
-            self.assertEqual(ledger.get_form_slots("io.github.test.cool"), {})
+            store.set_form_slot("io.github.test.cool", "glow", "off")
+            store.forget_plugin("io.github.test.cool")
+            self.assertIsNone(store.get_plugin("io.github.test.cool"))
+            self.assertIsNone(store.get_source("io.github.test.cool"))
+            self.assertEqual(store.get_form_slots("io.github.test.cool"), {})
 
 
 class TestAdd(SourceFixtureMixin, unittest.TestCase):
@@ -98,9 +99,9 @@ class TestAdd(SourceFixtureMixin, unittest.TestCase):
             self.assertEqual(result["id"], pid)
             landed = self._landed(ctx, pid)
             self.assertTrue(landed.is_dir())
-            self.assertIn(pid, registry.plugin_ids())
-            self.assertEqual(registry.plugin_origin(pid), "third-party")
-            origin = ledger.get_source(pid)
+            self.assertIn(pid, catalog.plugin_ids())
+            self.assertEqual(catalog.plugin_origin(pid), "third-party")
+            origin = store.get_source(pid)
             self.assertEqual(origin["url"], f"file://{upstream}")
             upstream_ref = _git(upstream, "rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
             self.assertEqual(origin["ref"], upstream_ref)
@@ -108,7 +109,7 @@ class TestAdd(SourceFixtureMixin, unittest.TestCase):
                 origin["commit"], _git(upstream, "rev-parse", "HEAD").stdout.strip()
             )
             # Default OFF: installing never switches anything on.
-            self.assertIsNone(ledger.get_plugin(pid))
+            self.assertIsNone(store.get_plugin(pid))
             # A git-routed install keeps its transport.
             self.assertTrue((landed / ".git").exists())
 
@@ -120,7 +121,7 @@ class TestAdd(SourceFixtureMixin, unittest.TestCase):
             landed = self._landed(ctx, pid)
             self.assertTrue(landed.is_dir())
             self.assertFalse((landed / ".git").exists(), "local install strips transport")
-            self.assertEqual(ledger.get_source(pid)["ref"], "")
+            self.assertEqual(store.get_source(pid)["ref"], "")
 
     def test_add_conflict_refused(self):
         with TempEnv() as ctx:
@@ -129,17 +130,24 @@ class TestAdd(SourceFixtureMixin, unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "already exists"):
                 self._add_git(ctx, upstream)
             # The original install is untouched.
-            self.assertIn("io.github.test.cool", registry.plugin_ids())
+            self.assertIn("io.github.test.cool", catalog.plugin_ids())
 
     def test_add_shape_refusals(self):
         with TempEnv() as ctx:
-            for bad in ("nodot", "shell.evil", "nyxuri.evil"):
+            for bad in ("shell.evil", "../evil", "bad/slash"):
                 src = self._make_upstream(ctx, pid=bad)
-                with self.assertRaisesRegex(ValueError, "reverse-DNS"):
+                with self.assertRaises(ValueError):
                     self._add_git(ctx, src)
             self.assertEqual(
-                [i for i in registry.plugin_ids() if i.startswith("shell.evil")], []
+                [i for i in catalog.plugin_ids() if i.startswith("shell.evil")], []
             )
+
+    def test_add_bare_name_accepted(self):
+        with TempEnv() as ctx:
+            src = self._make_upstream(ctx, pid="cool-tool")
+            res = self._add_git(ctx, src)
+            self.assertEqual(res["id"], "cool-tool")
+            self.assertIn("cool-tool", catalog.plugin_ids())
 
     def test_add_hook_declaration_refused_and_rolled_back(self):
         """v1 三方拒钩子: the loader gate fires and the landing is undone."""
@@ -153,9 +161,9 @@ class TestAdd(SourceFixtureMixin, unittest.TestCase):
                 self._landed(ctx, "io.github.test.cool").exists(),
                 "a refused plugin must not leave a half-installed tree",
             )
-            self.assertNotIn("io.github.test.cool", registry.plugin_ids())
+            self.assertNotIn("io.github.test.cool", catalog.plugin_ids())
 
-    def test_add_staging_never_leaks_into_registry(self):
+    def test_add_staging_never_leaks_into_catalog(self):
         with TempEnv() as ctx:
             upstream = self._make_upstream(ctx)
             self._add_git(ctx, upstream)
@@ -175,8 +183,8 @@ class TestRemove(SourceFixtureMixin, unittest.TestCase):
             result = sources.remove("io.github.test.cool")
             self.assertIsNone(result["backup"])
             self.assertFalse(self._landed(ctx, "io.github.test.cool").exists())
-            self.assertNotIn("io.github.test.cool", registry.plugin_ids())
-            self.assertIsNone(ledger.get_source("io.github.test.cool"))
+            self.assertNotIn("io.github.test.cool", catalog.plugin_ids())
+            self.assertIsNone(store.get_source("io.github.test.cool"))
 
     def test_remove_dirty_git_tree_timestamp_backup(self):
         with TempEnv() as ctx:
@@ -206,10 +214,10 @@ class TestRemove(SourceFixtureMixin, unittest.TestCase):
         with TempEnv() as ctx:
             upstream = self._make_upstream(ctx, toml_body="packages = []\n")
             self._add_git(ctx, upstream)
-            ledger.set_plugin("io.github.test.cool", state="enabled")
+            store.set_plugin("io.github.test.cool", state="enabled")
             result = sources.remove("io.github.test.cool")
             self.assertFalse(result["off_failed"])
-            self.assertIsNone(ledger.get_plugin("io.github.test.cool"))
+            self.assertIsNone(store.get_plugin("io.github.test.cool"))
             self.assertFalse(self._landed(ctx, "io.github.test.cool").exists())
 
 
@@ -227,15 +235,17 @@ class TestUpdate(SourceFixtureMixin, unittest.TestCase):
             self.assertFalse(applied["redeployed"], "disabled plugins are not redeployed")
             landed = self._landed(ctx, "io.github.test.cool")
             self.assertTrue((landed / "extra.txt").exists())
-            self.assertEqual(ledger.get_source("io.github.test.cool")["commit"], new_commit)
+            self.assertEqual(store.get_source("io.github.test.cool")["commit"], new_commit)
 
-    def test_update_enabled_plugin_redeploys_through_transaction(self):
+    def test_update_enabled_plugin_redeploys_through_engine(self):
         with TempEnv() as ctx:
             upstream = self._make_upstream(ctx, toml_body="packages = []\n")
             self._add_git(ctx, upstream)
-            steps = transaction.plugin_on("io.github.test.cool", install_packages=None)
+            steps = engine.plugin_on("io.github.test.cool", install_packages=None)
             self.assertTrue(steps and all(s.ok for s in steps))
-            living = get_env().config_dir / "io.github.test.cool"
+            self.assertTrue(steps and all(s.ok for s in steps))
+            from nyxuri.deploy.deploy import config_item_dest
+            living = config_item_dest("io.github.test.cool")
             self.assertTrue(living.is_dir(), "baseline deploy must exist first")
             self._commit_upstream(upstream, "extra.txt", "v2\n")
             preview = sources.update("io.github.test.cool")

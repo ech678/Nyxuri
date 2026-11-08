@@ -14,7 +14,7 @@ def _run() -> int:
         if not (getattr(e, "name", "") or "").startswith("nyxuri"):
             raise
         try:
-            from nyxuri.core import msg
+            from nyxuri.system.i18n import msg
             text = msg("err_engine_incomplete")
         except Exception:
             text = ("[✗] 引擎文件不完整或更新中途被打断。重新运行 install.sh 即可恢复。\n"

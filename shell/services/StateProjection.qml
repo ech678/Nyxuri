@@ -3,7 +3,6 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.app
 
 // StateProjection — the running shell is a read-only projection of the unit
 // ledger (unit-model.md §6). state.json is the single switch truth; the
@@ -30,11 +29,15 @@ Singleton {
     // (冷启动未启用域零实例化, shell AGENTS).
     property bool primed: false
 
+    signal unitsChanged()
+
     property var _units: ({})
 
     // Full-ledger-key lookup: first-party units key as "shell.<domain>",
     // third-party plugins key as their reverse-DNS id (S1-3).
     function isEnabledUnit(unitId) {
+        if (!unitId)
+            return true;
         const record = root._units[unitId];
         if (!record)
             return true;
@@ -63,6 +66,7 @@ Singleton {
             console.warn("[StateProjection] ledger unreadable; projecting every unit as enabled:", error);
         }
         root.primed = true;
+        root.unitsChanged();
     }
 
     FileView {

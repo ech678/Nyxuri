@@ -3,7 +3,6 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import qs.services
-import qs.app
 import qs.commons.i18n
 
 Singleton {

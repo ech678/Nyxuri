@@ -8,7 +8,6 @@ import Quickshell.Wayland
 import qs.commons
 import qs.services
 import qs.ui
-import qs.app
 
 // Caelestia-flavoured master-detail shell (Nexus.qml, window mode): a
 // two-zone frame — the left nav panel plus a 12px frame band share the
@@ -25,7 +24,8 @@ FloatingWindow {
     property int _lastPage: 0
     property real _animOffset: 0
     property string pendingPageSection: ""
-    readonly property var pages: SpotlightCatalog.routes.filter(entry => entry.path.length === 1).map(entry
+    readonly property var pages: SpotlightCatalog.routes.filter(entry => entry.path.length === 1
+                                                                      && (!entry.pluginId || StateProjection.isEnabledUnit(entry.pluginId))).map(entry
                                                                                                       => Object.assign(
                                                                                                              {}, entry,
                                                                                                              {
@@ -38,6 +38,11 @@ FloatingWindow {
                                                                                                                      entry.id)
                                                                                                              }))
     readonly property string currentRouteId: pages && pages[currentPage] ? pages[currentPage].id : ""
+    onPagesChanged: {
+        if (pages && pages.length > 0 && currentPage >= pages.length) {
+            currentPage = Math.max(0, pages.length - 1);
+        }
+    }
     property int searchRequestSerial: -1
     property var searchLeaf: null
     readonly property var searchPageAnchor: pageSearchAnchor
@@ -140,6 +145,13 @@ FloatingWindow {
             for (let index = 0; index < pages.length; ++index) {
                 if (pages[index].id === topId) {
                     currentPage = index;
+                    // B1 tab merge: a dotted route (bar.island, bar.island-clock)
+                    // addresses a subpage — push it through the section hook
+                    // so IPC opens land on the subpage, not just the tab.
+                    if (targetRoute.path.length > 1 && typeof targetRoute.path[1] === "string") {
+                        root.pendingPageSection = targetRoute.path[1];
+                        root.applyPendingPageSection();
+                    }
                     return true;
                 }
             }
@@ -228,14 +240,12 @@ FloatingWindow {
         id: outerBackground
 
         anchors.fill: parent
-        radius: NexusStyle.rounding.large
         color: BlurService.backgroundColor(Appearance.m3colors.m3background)
     }
 
     CompositorBlurRegion {
         targetWindow: root
         backgroundItem: outerBackground
-        radius: outerBackground.radius
     }
 
     Item {
@@ -267,10 +277,9 @@ FloatingWindow {
             onWheel: wheel => wheel.accepted = false
         }
 
-        // Left nav zone: nav pane width plus its 16px margins, full height,
-        // sharing the window's left corner rounding. Same fill as the frame
-        // band and the close chip — the original fuses all three from one
-        // blob colour.
+        // Left nav zone: nav pane width plus its 16px margins, full height.
+        // Same fill as the frame band and the close chip — the original fuses
+        // all three from one blob colour.
         Rectangle {
             id: navZone
 
@@ -278,8 +287,6 @@ FloatingWindow {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             width: root.navPaneWidth + NexusStyle.navMargin * 2
-            topLeftRadius: NexusStyle.rounding.large
-            bottomLeftRadius: NexusStyle.rounding.large
             color: Appearance.colors.colSurfaceContainerLow
 
             DragHandler {

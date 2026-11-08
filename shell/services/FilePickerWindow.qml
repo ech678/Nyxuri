@@ -395,7 +395,6 @@ FloatingWindow {
 
             anchors.fill: parent
             z: -2
-            radius: Appearance.rounding.veryLarge
             color: BlurService.backgroundColor(Appearance.m3colors.m3surface)
         }
 
@@ -404,7 +403,6 @@ FloatingWindow {
 
             targetWindow: root
             backgroundItem: outerBackground
-            radius: outerBackground.radius
         }
 
         MouseArea {

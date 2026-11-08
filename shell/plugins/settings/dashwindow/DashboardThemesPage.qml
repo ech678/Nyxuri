@@ -134,9 +134,13 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 200
-            Layout.minimumHeight: 200
-            Layout.maximumHeight: 200
+            // Height follows the template list, which grows with the registry.
+            // Pinned all three ways: a preferred-only height still gets
+            // stretched by the ColumnLayout when the page has slack.
+            readonly property real rowHeight: Math.max(200, templatesCard.implicitContentHeight + 28)
+            Layout.preferredHeight: rowHeight
+            Layout.minimumHeight: rowHeight
+            Layout.maximumHeight: rowHeight
             spacing: 12
 
             DashboardCard {
@@ -237,11 +241,18 @@ Item {
             }
 
             DashboardCard {
+                id: templatesCard
+
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1
                 Layout.horizontalStretchFactor: 10
                 Layout.fillHeight: true
-                tint: Appearance.colors.colSecondaryContainer
+                // Header row plus one 26px button per template, four pixels
+                // apart, with the card's own 14px margins on both sides.
+                readonly property real implicitContentHeight: 56 + root.templates.length * 26 + Math.max(0,
+                                                                                                         root.templates.length
+                                                                                                         - 1) * 4
+                tint: Appearance.colors.colLayer1
                 pager: root.pager
                 staggerMs: root.staggerMs
                 animIndex: 1
@@ -272,17 +283,14 @@ Item {
                             text: I18n.tr("Matugen templates")
                             font.pixelSize: Typography.bodyLarge.pixelSize
                             font.weight: Font.DemiBold
-                            color: Appearance.colors.colOnSecondaryContainer
+                            color: Appearance.colors.colOnLayer1
                             elide: Text.ElideRight
                         }
                     }
 
-                    Item {
-                        Layout.fillHeight: true
-                    }
-
                     ColumnLayout {
                         Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignTop
                         spacing: 4
 
                         Repeater {
@@ -303,11 +311,16 @@ Item {
                                 leftPadding: 8
                                 rightPadding: 8
                                 buttonRadius: 13
+                                // Off state uses a theme surface rather than a
+                                // white wash: on a light palette the wash reads
+                                // as the same tone as the label and the button
+                                // looks empty.
                                 containerColor: PersonalizationConfig.isMatugenTemplateEnabled(
                                                     templateToggle.modelData.id)
-                                                ? Appearance.colors.colSecondary : Qt.rgba(1, 1, 1, 0.12)
-                                rippleColor: Appearance.colors.colOnSecondary
-                                stateLayerColor: Appearance.colors.colOnSecondary
+                                                ? Appearance.colors.colSecondary :
+                                                  Appearance.colors.colSurfaceContainerHigh
+                                rippleColor: Appearance.colors.colOnLayer1
+                                stateLayerColor: Appearance.colors.colOnLayer1
                                 stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                 hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                 pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
@@ -332,17 +345,26 @@ Item {
                                         spacing: 6
 
                                         MaterialSymbol {
+                                            readonly property bool on:
+                                                PersonalizationConfig.isMatugenTemplateEnabled(
+                                                    templateToggle.modelData.id)
                                             text: templateToggle.modelData.icon
                                             iconSize: 16
-                                            fill: PersonalizationConfig.isMatugenTemplateEnabled(
-                                                      templateToggle.modelData.id) ? 1 : 0
-                                            color: Appearance.colors.colOnSecondaryContainer
+                                            fill: on ? 1 : 0
+                                            // On-state sits on colSecondary, so its
+                                            // label has to be colOnSecondary — the
+                                            // layer colour is near-white and vanishes.
+                                            color: on ? Appearance.colors.colOnSecondary :
+                                                        Appearance.colors.colOnLayer1
                                         }
 
                                         StyledText {
                                             Layout.fillWidth: true
                                             text: templateToggle.modelData.label
-                                            color: Appearance.colors.colOnSecondaryContainer
+                                            color: PersonalizationConfig.isMatugenTemplateEnabled(
+                                                       templateToggle.modelData.id)
+                                                   ? Appearance.colors.colOnSecondary :
+                                                     Appearance.colors.colOnLayer1
                                             elide: Text.ElideRight
                                         }
                                     }
@@ -365,7 +387,9 @@ Item {
         // the page switch read as a hitch.
         DashboardCard {
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            Layout.preferredHeight: 230
+            Layout.minimumHeight: 230
+            Layout.maximumHeight: 230
             tint: Appearance.colors.colLayer1
             pager: root.pager
             staggerMs: root.staggerMs
@@ -422,7 +446,10 @@ Item {
                         id: schemeRow
 
                         spacing: 10
-                        height: schemeScroller.height
+                        // Fixed working height. Tying this to the scroller made
+                        // every tile as tall as the page.
+                        height: 170
+                        anchors.verticalCenter: parent.verticalCenter
 
                         Repeater {
                             model: root.schemes
@@ -436,7 +463,7 @@ Item {
                                                                  === tileRoot.modelData.value
 
                                 width: 118
-                                height: schemeScroller.height
+                                height: schemeRow.height
 
                                 RippleButton {
                                     id: tile
@@ -486,9 +513,13 @@ Item {
                                                         required property var modelData
 
                                                         Layout.fillWidth: true
-                                                        Layout.fillHeight: true
+                                                        // Height comes from the
+                                                        // strip row. A fillHeight
+                                                        // here lets the strips grow
+                                                        // to the card instead.
                                                         Layout.preferredWidth: 1
-                                                        radius: 11
+                                                        Layout.preferredHeight: 28
+                                                        radius: 8
                                                         color: modelData
                                                     }
                                                 }

@@ -5,8 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.commons
 import qs.services
-import "../plugins/wallpaper"
-import qs.app
+import "../commons/WallpaperSource.js" as WallpaperSource
 import qs.commons.i18n
 
 Singleton {
@@ -402,11 +401,12 @@ Singleton {
     }
 
     function regenerateFromCurrentWallpaper(templateId) {
-        const path = WallpaperService.currentWallpaper || PersonalizationConfig.wallpaperPath;
-        if (path && path !== "" && WallpaperService.isImagePath(path))
+        const wpHost = ActionGateway.wallpaperHost;
+        const path = (wpHost ? wpHost.currentWallpaper : "") || PersonalizationConfig.wallpaperPath;
+        if (path && path !== "" && WallpaperSource.isImage(path))
             root.generateFromWallpaper(path, templateId);
-        else if (WallpaperService.primaryColor(path))
-            root.generateFromColor(WallpaperService.primaryColor(path), templateId);
+        else if (path && WallpaperSource.primary(path))
+            root.generateFromColor(WallpaperSource.primary(path), templateId);
     }
 
     Component.onCompleted: {

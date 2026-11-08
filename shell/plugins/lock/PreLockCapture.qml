@@ -2,7 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.commons
-import qs.app
+import qs.services
 
 Scope {
     id: root

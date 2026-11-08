@@ -413,42 +413,44 @@ class TestWallpapersUnit(unittest.TestCase):
     def _wp_dest(self):
         return self.env.home / "Pictures" / "Wallpapers"
 
-    def test_on_lays_fallback_and_records_ledger(self):
-        from nyxuri.kernel import ledger, transaction
+    def test_on_lays_fallback_and_records_state(self):
+        from nyxuri.state import store
+        from nyxuri.deploy import engine
 
-        steps = transaction.plugin_on("wallpapers")
+        steps = engine.plugin_on("wallpapers")
         self.assertTrue(all(s.ok for s in steps), steps)
         dest = self._wp_dest()
         self.assertTrue((dest / "lawson_fuji.webp").is_file())
-        rec = ledger.get_plugin("wallpapers")
+        rec = store.get_plugin("wallpapers")
         self.assertEqual(rec["state"], "enabled")
         self.assertIn("lawson_fuji.webp", rec["files"])
 
     def test_on_never_clobbers_user_content(self):
-        from nyxuri.kernel import ledger, transaction
+        from nyxuri.state import store
+        from nyxuri.deploy import engine
 
         dest = self._wp_dest()
         dest.mkdir(parents=True, exist_ok=True)
         user_wp = dest / "lawson_fuji.webp"
         user_wp.write_bytes(b"USER OWN IMAGE")
 
-        steps = transaction.plugin_on("wallpapers")
+        steps = engine.plugin_on("wallpapers")
         self.assertTrue(all(s.ok for s in steps), steps)
         self.assertEqual(user_wp.read_bytes(), b"USER OWN IMAGE",
                          "merge deploy must never overwrite existing files")
         # The blocked file is not ours: not in the laid snapshot.
-        self.assertNotIn("lawson_fuji.webp", ledger.get_plugin("wallpapers")["files"])
+        self.assertNotIn("lawson_fuji.webp", store.get_plugin("wallpapers")["files"])
 
     def test_off_withdraws_only_laid_files(self):
-        from nyxuri.kernel import transaction
+        from nyxuri.deploy import engine
 
         dest = self._wp_dest()
         dest.mkdir(parents=True, exist_ok=True)
         (dest / "my_own.webp").write_bytes(b"USER")
-        transaction.plugin_on("wallpapers")
+        engine.plugin_on("wallpapers")
         (dest / "pack_video.mp4").write_bytes(b"PACK")  # arrives after on
 
-        steps = transaction.plugin_off("wallpapers")
+        steps = engine.plugin_off("wallpapers")
         self.assertTrue(all(s.ok for s in steps), steps)
         self.assertFalse((dest / "lawson_fuji.webp").exists(),
                          "laid fallback must be withdrawn")
@@ -459,27 +461,27 @@ class TestWallpapersUnit(unittest.TestCase):
                       "foreign survivors must be reported")
 
     def test_disabled_shared_area_is_not_ghost(self):
-        from nyxuri.kernel import transaction
+        from nyxuri.deploy import engine
 
         dest = self._wp_dest()
         dest.mkdir(parents=True, exist_ok=True)
         (dest / "my_own.webp").write_bytes(b"USER")
-        transaction.plugin_on("wallpapers")
-        transaction.plugin_off("wallpapers")
+        engine.plugin_on("wallpapers")
+        engine.plugin_off("wallpapers")
 
-        report = transaction.audit_plugins("wallpapers")
-        self.assertEqual(report.get("wallpapers"), transaction.STATE_SYNCED,
+        report = engine.audit_plugins("wallpapers")
+        self.assertEqual(report.get("wallpapers"), engine.STATE_SYNCED,
                          "user content in a shared area is not residue")
 
     def test_blueprint_named_residue_is_ghost(self):
-        from nyxuri.kernel import transaction
+        from nyxuri.deploy import engine
 
         dest = self._wp_dest()
         dest.mkdir(parents=True, exist_ok=True)
         (dest / "lawson_fuji.webp").write_bytes(b"OLD FALLBACK RESIDUE")
 
-        report = transaction.audit_plugins("wallpapers")
-        self.assertEqual(report.get("wallpapers"), transaction.STATE_GHOST)
+        report = engine.audit_plugins("wallpapers")
+        self.assertEqual(report.get("wallpapers"), engine.STATE_GHOST)
 
 
 class TestOwnershipCarry(unittest.TestCase):
@@ -807,18 +809,19 @@ class TestWallpaperPackProbe(unittest.TestCase):
             self.assertTrue(wallpapers_pack_present())
 
     def test_existing_user_wallpaper_is_never_clobbered_or_tracked(self):
-        from nyxuri.kernel import ledger, transaction
+        from nyxuri.state import store
+        from nyxuri.deploy import engine
         with TempEnv() as ctx:
             wp = ctx.home / "Pictures" / "Wallpapers"
             wp.mkdir(parents=True)
             user_file = wp / "lawson_fuji.webp"
             user_file.write_text("USER", encoding="utf-8")
-            _quiet(transaction.plugin_on, "wallpapers")
+            _quiet(engine.plugin_on, "wallpapers")
             # No tracking marker exists at all — the pack era is over.
             self.assertFalse((wp / ".nyxuri-managed.json").exists())
             self.assertEqual(user_file.read_text(encoding="utf-8"), "USER")
             # The user's same-named file blocked the layout: not ours.
-            self.assertNotIn("lawson_fuji.webp", ledger.get_plugin("wallpapers")["files"])
+            self.assertNotIn("lawson_fuji.webp", store.get_plugin("wallpapers")["files"])
 
 class TestDeployRobustness(unittest.TestCase):
 
@@ -842,7 +845,7 @@ class TestDeployRobustness(unittest.TestCase):
 
     def test_unrealizable_part_variant_is_reported(self):
         import nyxuri.deploy.deploy as deploy
-        from nyxuri.kernel.ledger import update_ledger
+        from nyxuri.state.store import update_state
         with TempEnv() as ctx:
             src = self._sandbox(ctx)
             root = self._app(
@@ -854,7 +857,7 @@ class TestDeployRobustness(unittest.TestCase):
             slot = root / "__forms__" / "effects"
             slot.mkdir(parents=True)
             (slot / "default.kdl").write_text("// default-part\n", encoding="utf-8")
-            update_ledger(forms={"demo": {"effects": "ghost"}})
+            update_state(forms={"demo": {"effects": "ghost"}})
             with patch.object(deploy, "_phase_post_install_services"):
                 failed = _quiet(deploy.deploy_selected_configs, items_to_deploy=["demo"], preserved_log=[])
             self.assertEqual(failed, ["demo"])

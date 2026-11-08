@@ -4,12 +4,10 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Layouts
 import QtQuick.Window
-import "../wallpaper"
 import "../../commons/WallpaperSource.js" as WallpaperSource
 import qs.commons
 import qs.ui
 import qs.services
-import qs.app
 import qs.commons.i18n
 import qs.ui
 
@@ -82,10 +80,12 @@ NexusPageBase {
     }
     readonly property var wallpaperChoices: {
         const values = [];
-        const current = WallpaperService.currentWallpaper;
+        const wp = ActionGateway.wallpaperHost;
+        const current = wp ? wp.currentWallpaper : "";
         if (current)
             values.push(current);
-        for (const path of WallpaperService.wallpapers) {
+        const wps = wp ? (wp.wallpapers || []) : [];
+        for (const path of wps) {
             if (values.indexOf(path) < 0)
                 values.push(path);
             if (values.length >= 6)
@@ -252,8 +252,9 @@ NexusPageBase {
 
     Component.onCompleted: {
         SystemIdentityService.setUptimeConsumer("account-page", root.presentationActive);
-        if (WallpaperService.wallpapers.length === 0 && !WallpaperService.scanning)
-            WallpaperService.scan();
+        const wp = ActionGateway.wallpaperHost;
+        if (wp && (wp.wallpapers || []).length === 0 && !wp.scanning && wp.scan)
+            wp.scan();
     }
 
     ColumnLayout {
@@ -268,13 +269,22 @@ NexusPageBase {
 
             Layout.fillWidth: true
             wallpaperIsImage: WallpaperSource.isImage(wallpaperPath)
-            wallpaperComponent: ProfileWallpaper {
-                sourcePath: accountHeader.wallpaperPath
-                previewPath: accountHeader.previewWallpaperPath
+            wallpaperComponent: Component {
+                Item {
+                    id: pwRoot
+                    property string sourcePath: ""
+                    property string previewPath: ""
+                    Image {
+                        anchors.fill: parent
+                        source: WallpaperSource.isImage(pwRoot.sourcePath) ? Paths.fileUrl(pwRoot.sourcePath) : ""
+                        fillMode: Image.PreserveAspectCrop
+                        visible: source !== ""
+                    }
+                }
             }
             wallpaperPath: bannerEditor.source
             previewWallpaperPath: bannerEditor.previewSource
-            colorWallpaper: WallpaperService.isColorSource(wallpaperPath)
+            colorWallpaper: WallpaperSource.isSolid(wallpaperPath)
             avatarUrl: AvatarService.avatarUrl
             fallbackAvatarUrl: Paths.fileUrl(Paths.defaultAvatar)
             accountIdentity: SystemIdentityService.accountIdentity
@@ -373,20 +383,15 @@ NexusPageBase {
             id: shortcutsRow
 
             first: true
-            text: I18n.tr("Configure shortcuts")
-            onClicked: root.navigateRequested("shortcuts")
+            last: true
+            text: I18n.tr("Shortcut map")
+            trailingIcon: "open_in_new"
+            onClicked: ShortcutMapService.open(root.parentModal ? root.parentModal.screen : null)
 
             SettingsSearchAnchor {
                 target: shortcutsRow
                 anchorId: "account.section.keyboard-shortcuts"
             }
-        }
-
-        PreferenceAction {
-            last: true
-            text: I18n.tr("Shortcut map")
-            trailingIcon: "open_in_new"
-            onClicked: ShortcutMapService.open(root.parentModal ? root.parentModal.screen : null)
         }
 
         // Personalization
@@ -434,20 +439,24 @@ NexusPageBase {
                         hoverStateLayerOpacity: 0
                         pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                         rippleColor: Appearance.m3colors.m3onSurface
-                        Accessible.name: I18n.tr("Use wallpaper %1").arg(WallpaperService.basename(modelData))
-                        onClicked: WallpaperService.setWallpaper(modelData)
+                        Accessible.name: I18n.tr("Use wallpaper %1").arg(modelData.split("/").pop())
+                        onClicked: {
+                            const wp = ActionGateway.wallpaperHost;
+                            if (wp)
+                                wp.setWallpaper(modelData);
+                        }
 
                         backgroundContent: Rectangle {
                             anchors.fill: parent
                             radius: NexusStyle.rounding.medium
-                            color: WallpaperService.isColorSource(wallpaperChoice.modelData)
+                            color: WallpaperSource.isSolid(wallpaperChoice.modelData)
                                    ? wallpaperChoice.modelData : Appearance.m3colors.m3surfaceContainer
 
                             Image {
                                 id: wallpaperImage
 
                                 anchors.fill: parent
-                                source: WallpaperService.isImagePath(wallpaperChoice.modelData)
+                                source: WallpaperSource.isImage(wallpaperChoice.modelData)
                                         ? Paths.fileUrl(wallpaperChoice.modelData) : ""
                                 sourceSize: Qt.size(Math.max(1, Math.ceil(width * Screen.devicePixelRatio * 2)),
                                                     Math.max(1, Math.ceil(height * Screen.devicePixelRatio
@@ -485,7 +494,7 @@ NexusPageBase {
                                 color: "transparent"
                                 border.width: 2
                                 border.color: Appearance.m3colors.m3primary
-                                visible: WallpaperService.currentWallpaper === wallpaperChoice.modelData
+                                visible: (ActionGateway.wallpaperHost ? ActionGateway.wallpaperHost.currentWallpaper : "") === wallpaperChoice.modelData
                             }
                         }
 
@@ -503,7 +512,7 @@ NexusPageBase {
 
                     MaterialSymbol {
                         anchors.centerIn: parent
-                        text: WallpaperService.scanning ? "progress_activity" : "wallpaper"
+                        text: (ActionGateway.wallpaperHost && ActionGateway.wallpaperHost.scanning) ? "progress_activity" : "wallpaper"
                         iconSize: NexusStyle.icon.medium
                         color: Appearance.m3colors.m3onSurfaceVariant
                     }

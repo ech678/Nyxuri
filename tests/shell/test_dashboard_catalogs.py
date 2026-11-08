@@ -12,7 +12,7 @@ import unittest
 from contextlib import redirect_stdout
 from unittest.mock import patch, MagicMock
 
-from nyxuri.kernel.ledger import active_shell, custom_shell_bin, set_shell
+from nyxuri.state.store import active_shell, custom_shell_bin, set_shell
 from nyxuri.cli import _cmd_shell
 from tests.utils import TempEnv
 # Imports consolidated from the dissolved bugfix ledger.
@@ -57,7 +57,7 @@ class TestDashboardTransitionCatalogContract(unittest.TestCase):
 
         # Desktop transition must use native transitionTypes
         self.assertIn('"wallpaper:Desktop transition"', control_content)
-        self.assertIn("WallpaperService.setWallpaperTransitionType", control_content)
+        self.assertIn("PersonalizationConfig.setWallpaperTransitionType", control_content)
         self.assertNotIn("awwwTransitionTypes", control_content)
 
         # 3. DashboardSelectCard hides MaterialSymbol when no icon is present

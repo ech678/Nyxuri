@@ -4,7 +4,6 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import Quickshell
-import qs.app
 import qs.commons
 import qs.ui
 import qs.services
@@ -488,7 +487,6 @@ FloatingWindow {
             id: dialogBackground
 
             anchors.fill: parent
-            radius: Appearance.rounding.normal
             color: BlurService.backgroundColor(Appearance.m3colors.m3surfaceContainerLow)
             antialiasing: true
         }

@@ -398,7 +398,7 @@ class TestManifestOverrides(unittest.TestCase):
             'target = "xdg:PICTURES/Wallpapers"\nmorphology = "merge"\n'))
         m = manifest.load_manifest(plugin)
         pics = self.root / "MyPictures"
-        with unittest.mock.patch("nyxuri.core.get_pics_dir", return_value=pics):
+        with unittest.mock.patch("nyxuri.system.env.get_pics_dir", return_value=pics):
             resolved = manifest.living_path(m, Path("/sandbox/.config"))
         self.assertEqual(resolved, pics / "Wallpapers")
 
@@ -409,7 +409,7 @@ class TestManifestOverrides(unittest.TestCase):
         (plugin / "manifest.toml").write_text(_newform("media", 'target = "xdg:MUSIC/Playlists"\n'))
         m = manifest.load_manifest(plugin)
         music = self.root / "MyMusic"
-        with unittest.mock.patch("nyxuri.core.get_xdg_user_dir", return_value=music):
+        with unittest.mock.patch("nyxuri.system.env.get_xdg_user_dir", return_value=music):
             resolved = manifest.living_path(m, Path("/sandbox/.config"))
         self.assertEqual(resolved, music / "Playlists")
 

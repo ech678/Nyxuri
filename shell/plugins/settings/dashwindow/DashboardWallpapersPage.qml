@@ -4,10 +4,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell.Widgets
 import qs.commons
-import qs.app
 import qs.ui
 import qs.services
-import "../../wallpaper"
 import ".."
 import qs.commons.i18n
 
@@ -30,11 +28,16 @@ Item {
 
     readonly property string query: pager.searchQuery ?? ""
     readonly property var paths: {
-        const all = WallpaperService.wallpapers;
+        const wp = ActionGateway.wallpaperHost;
+        const all = wp ? (wp.wallpapers || []) : [];
         const needle = query.trim().toLowerCase();
         return needle === "" ? all : all.filter(path => String(path).toLowerCase().indexOf(needle) >= 0);
     }
-    readonly property string desktopPath: WallpaperService.normalizedPath(PersonalizationConfig.wallpaperPath)
+    readonly property string desktopPath: {
+        const wp = ActionGateway.wallpaperHost;
+        const p = PersonalizationConfig.wallpaperPath;
+        return wp && wp.normalizedPath ? wp.normalizedPath(p) : p;
+    }
     readonly property int columns: Math.max(2, Math.round(width / 270))
     readonly property int tileWidth: Math.max(1, Math.floor(width / columns) - 12)
     readonly property int tileHeight: Math.max(1, Math.round(Math.floor(width / columns) * 0.64) - 12)
@@ -44,7 +47,9 @@ Item {
     function applyTo(path) {
         if (!path)
             return;
-        WallpaperService.setWallpaper(path, "");
+        const wp = ActionGateway.wallpaperHost;
+        if (wp)
+            wp.setWallpaper(path, "");
     }
 
     function activate() {
@@ -54,7 +59,9 @@ Item {
     }
 
     function randomWallpaper() {
-        WallpaperService.cycleRandom();
+        const wp = ActionGateway.wallpaperHost;
+        if (wp)
+            wp.cycleRandom();
     }
 
     function moveSelection(dx, dy) {
@@ -75,7 +82,11 @@ Item {
 
     Component.onDestruction: readyTimer.stop()
 
-    Component.onCompleted: WallpaperService.scan()
+    Component.onCompleted: {
+        const wp = ActionGateway.wallpaperHost;
+        if (wp && wp.scan)
+            wp.scan();
+    }
 
     onPathsChanged: root.selectedIndex = Math.min(root.selectedIndex, Math.max(0, root.paths.length - 1))
 
@@ -180,8 +191,9 @@ Item {
                 required property var modelData
 
                 readonly property bool selected: root.selectedIndex === cell.index
-                readonly property bool isDesktop: WallpaperService.normalizedPath(cell.modelData)
-                                                  === root.desktopPath
+                readonly property bool isDesktop: (ActionGateway.wallpaperHost && ActionGateway.wallpaperHost.normalizedPath
+                                                  ? ActionGateway.wallpaperHost.normalizedPath(cell.modelData)
+                                                  : cell.modelData) === root.desktopPath
 
                 width: grid.cellWidth
                 height: grid.cellHeight
@@ -289,12 +301,28 @@ Item {
         }
     }
 
-    WallpaperFileBrowser {
+    FilePickerWindow {
         id: wallpaperBrowser
 
-        parentModal: root.pager
+        parentWindow: root.pager
+        requiresParentWindow: true
+        selectionMode: FilePickerWindow.FilesAndFolders
+        dialogTitle: I18n.tr("Select wallpaper or folder")
+        selectionPrompt: I18n.tr("Select a wallpaper or folder")
         startPath: PersonalizationConfig.wallpaperFolder
-        onFolderSelected: path => WallpaperService.setWallpaperFolder(path)
-        onFileSelected: path => WallpaperService.setWallpaperFromFile(path, "")
+        onAccepted: (path, isDirectory) => {
+            const wp = ActionGateway.wallpaperHost;
+            if (isDirectory) {
+                if (wp && wp.setWallpaperFolder)
+                    wp.setWallpaperFolder(path);
+                else
+                    PersonalizationConfig.setWallpaperFolder(path);
+            } else {
+                if (wp && wp.setWallpaperFromFile)
+                    wp.setWallpaperFromFile(path, "");
+                else if (wp)
+                    wp.setWallpaper(path, "");
+            }
+        }
     }
 }

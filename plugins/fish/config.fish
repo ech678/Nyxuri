@@ -105,8 +105,8 @@ function nyxhelp --description "Nyxuri Cheatsheet速查手册"
             set_color -o yellow; echo -n "    nyxuri                  "; set_color green; echo "-> 打开控制面板主菜单"; set_color normal
             set_color -o yellow; echo -n "    nyxuri install config   "; set_color green; echo "-> 只部署配置，不安装依赖或壁纸"; set_color normal
             set_color -o yellow; echo -n "    nyxuri update           "; set_color green; echo "-> 更新源码并选择是否部署配置"; set_color normal
-            set_color -o yellow; echo -n "    nyxuri doctor           "; set_color green; echo "-> 单元三态对账与系统体检"; set_color normal
-            set_color -o yellow; echo -n "    nyxuri list [单元]      "; set_color green; echo "-> 查看所有桌面能力单元及其开关状态"; set_color normal
+            set_color -o yellow; echo -n "    nyxuri doctor           "; set_color green; echo "-> 插件状态校验与系统体检"; set_color normal
+            set_color -o yellow; echo -n "    nyxuri list [插件]      "; set_color green; echo "-> 查看所有插件及其开关状态"; set_color normal
             set_color -o yellow; echo -n "    nyxuri deps apps        "; set_color green; echo "-> 常用软件菜单：Brave、Steam、微信、QQ 等"; set_color normal
             set_color -o yellow; echo -n "    nyxuri snapshot [备注]  "; set_color green; echo "-> 创建配置快照"; set_color normal
             set_color -o yellow; echo -n "    nyxuri snapshot list    "; set_color green; echo "-> 查看所有历史配置快照"; set_color normal

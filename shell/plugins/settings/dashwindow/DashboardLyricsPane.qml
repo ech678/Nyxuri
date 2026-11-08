@@ -8,6 +8,11 @@ import "lyrics" as Lyrics
 import "lyrics/LyricsParser.js" as LyricsParser
 import qs.commons.i18n
 
+// Lyric transcript. Follows dux-shell's LyricsOverlay: the whole song is a
+// scrolling ListView with a third-of-viewport header and footer so the first
+// and last lines can still reach the centre, rather than a fixed window of
+// seven rows. Rows scale and dim by distance from the active line, and clicking
+// one seeks there.
 Item {
     id: root
 
@@ -16,8 +21,6 @@ Item {
         active: root.visible
     }
 
-    // Cover-derived palette, or null to use the theme. Same contract as
-    // DashboardMediaPage: both expose the same colour names.
     property var colors: null
     readonly property var scheme: root.colors ?? Appearance.colors
 
@@ -25,70 +28,76 @@ Item {
     readonly property color textColor: root.scheme.colOnLayer0
     readonly property color dimColor: root.scheme.colSubtext
 
-    // Half the window. Seven slots total (three either side of the active one),
-    // which is what fits at the sizes below without the outermost lines landing
-    // under the transport controls.
-    readonly property int radius: 3
-    readonly property int slotCount: root.radius * 2 + 1
+    readonly property real nearOpacity: 0.55
+    readonly property real farOpacity: 0.3
+    readonly property real lineHeight: 1.25
+
+    readonly property bool showTranslation: PersonalizationConfig.lyricShowTranslation
 
     readonly property var lines: lyricsService.lines
     readonly property int currentIndex: lyricsService.currentLineIndex
     readonly property bool ready: lyricsService.state === "ready" && lyricsService.hasLyrics
-                                  && root.currentIndex >= 0
 
-    readonly property real baseFontSize: Math.max(14, Math.min(22, root.height * 0.055))
-
-    // Position of the lyric line shown in a given slot, or -1 when the slot
-    // falls outside the song. Returned rather than computed inline so the
-    // delegate can test one value instead of repeating the arithmetic.
-    function lineIndexFor(slot) {
-        const index = root.currentIndex + (slot - root.radius);
-        return index >= 0 && index < root.lines.length ? index : -1;
-    }
-
-    function lineText(slot) {
-        const index = root.lineIndexFor(slot);
-        return index >= 0 ? root.lines[index].text : "";
-    }
-
-    function distanceFor(slot) {
-        return Math.abs(slot - root.radius);
-    }
-
-    function fontSizeFor(slot) {
-        const distance = root.distanceFor(slot);
-        if (distance === 0)
-            return root.baseFontSize * 1.5;
-        if (distance === 1)
-            return root.baseFontSize * 1.05;
-        if (distance === 2)
-            return root.baseFontSize * 0.92;
-        return root.baseFontSize * 0.82;
-    }
-
-    function opacityFor(slot) {
-        const distance = root.distanceFor(slot);
-        if (distance === 0)
+    // Distance by list position. Safe only because `active` is decided from
+    // startMs below: a reused delegate's index always matches its slot, so the
+    // scale is right even though the row it renders may have changed.
+    function scaleFor(index) {
+        const d = root.distanceFor(index);
+        if (d === 0)
             return 1;
-        if (distance === 1)
-            return 0.62;
-        if (distance === 2)
-            return 0.36;
-        return 0.16;
+        if (d === 1)
+            return 0.68;
+        return 0.56;
     }
 
-    // Rich text for the active line: sung words in the accent, unsung in the
-    // body colour, and the word being sung blended between the two by how far
-    // playback has reached into it. The blend is what produces a sweep — a
-    // binary on/off highlight snaps from word to word, which at KRC's 300-500ms
-    // word lengths reads as a stutter.
-    readonly property string richLine: {
-        if (!root.ready)
-            return "";
+    function distanceFor(index) {
+        return root.currentIndex < 0 ? 99 : Math.abs(index - root.currentIndex);
+    }
+
+    function opacityFor(index) {
+        const d = root.distanceFor(index);
+        if (d === 0)
+            return 1;
+        if (d === 1)
+            return root.nearOpacity;
+        return root.farOpacity;
+    }
+
+    readonly property real leadFontSize: Math.round(Math.max(15, Math.min(36, Math.min(root.height / 12,
+                                                                                       root.width / 11))))
+
+    // Word boundary for the sweep. wordIndexAt returns -1 in the gaps between
+    // words, and a -1 here would make the overlay fully transparent mid-line —
+    // the active line would read as dimmer than its neighbours. Fall back to the
+    // last word that has already started, so the highlight holds through gaps.
+    readonly property int activeWordIndex: {
+        if (!root.ready || root.currentIndex < 0)
+            return -1;
         const line = root.lines[root.currentIndex];
         if (!line || !line.words || line.words.length === 0)
-            return "";
+            return -1;
+        const direct = LyricsParser.wordIndexAt(line, lyricsService.positionMs);
+        if (direct >= 0)
+            return direct;
+        const position = lyricsService.positionMs;
+        let last = -1;
+        for (let i = 0; i < line.words.length; i++) {
+            if (line.words[i].startMs <= position)
+                last = i;
+            else
+                break;
+        }
+        return last;
+    }
 
+    // Overlay text for the active line: words already finished take the accent,
+    // the word under the playhead blends from body colour toward accent by its
+    // own progress, and the rest stay in the layout but transparent. Omitting
+    // the tail would let the overlay re-wrap from the line start and collide
+    // with the base layer.
+    function sungText(line, uptoWord) {
+        if (!line || !line.words || line.words.length === 0)
+            return "";
         const accentHex = String(root.accent);
         const baseHex = String(root.textColor);
         const position = lyricsService.positionMs;
@@ -96,98 +105,211 @@ Item {
         for (let i = 0; i < line.words.length; i++) {
             const word = line.words[i];
             const text = String(word.text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            const progress = LyricsParser.wordProgress(word, position);
-            if (progress >= 1)
+            if (i < uptoWord) {
                 html += '<font color="' + accentHex + '">' + text + "</font>";
-            else if (progress <= 0)
-                html += text;
-            else
-                html += '<font color="' + LyricsParser.blendHex(baseHex, accentHex, progress) + '">' + text
-                        + "</font>";
+            } else if (i === uptoWord) {
+                const progress = LyricsParser.wordProgress(word, position);
+                const colour = progress >= 1 ? accentHex : progress <= 0 ? baseHex : LyricsParser.blendHex(
+                                                                               baseHex, accentHex, progress);
+                html += '<font color="' + colour + '">' + text + "</font>";
+            } else {
+                html += '<font color="transparent">' + text + "</font>";
+            }
         }
         return html;
     }
 
-    ColumnLayout {
+    readonly property real wordProgress: {
+        if (!root.ready || root.activeWordIndex < 0)
+            return 0;
+        const line = root.lines[root.currentIndex];
+        if (!line || !line.words || line.words.length === 0)
+            return 0;
+        return LyricsParser.wordProgress(line.words[root.activeWordIndex], lyricsService.positionMs);
+    }
+
+    // Follow the active line while playing. `following` turns off as soon as the
+    // reader scrolls, so the list does not yank itself back mid-read.
+    property bool following: true
+
+    function scrollToCurrent() {
+        if (root.currentIndex >= 0)
+            transcript.positionViewAtIndex(root.currentIndex, ListView.Center);
+    }
+
+    onCurrentIndexChanged: {
+        if (root.following)
+            root.scrollToCurrent();
+    }
+
+    onReadyChanged: {
+        if (root.ready)
+            Qt.callLater(() => root.scrollToCurrent());
+    }
+
+    Component.onCompleted: {
+        if (root.ready)
+            Qt.callLater(() => root.scrollToCurrent());
+    }
+
+    ListView {
+        id: transcript
+
         anchors.fill: parent
-        spacing: 4
+        clip: true
         visible: root.ready
+        model: root.lines
+        spacing: 4
+        reuseItems: true
+        boundsBehavior: Flickable.StopAtBounds
+        // A third of the viewport at each end lets the first and last lines
+        // reach the centre instead of stopping at the edge.
+        header: Item {
+            width: transcript.width
+            height: transcript.height / 3
+        }
+        footer: Item {
+            width: transcript.width
+            height: transcript.height / 3
+        }
 
-        Repeater {
-            model: root.slotCount
+        onMovementEnded: root.following = false
+        onDraggingChanged: {
+            if (transcript.dragging)
+                root.following = false;
+        }
 
-            delegate: Item {
-                id: slotRoot
+        delegate: Item {
+            id: lyricRow
 
-                required property int index
+            required property int index
+            required property var modelData
 
-                readonly property real distance: root.distanceFor(slotRoot.index)
+            width: transcript.width
+            height: column.implicitHeight + 10
 
-                Layout.fillWidth: true
-                Layout.fillHeight: true
+            // Identity comes from the line's own start time, not the delegate
+            // index: ListView reuses delegates, so `index` follows the slot while
+            // `modelData` still points at whatever row it was created for. Using
+            // `index` here highlighted the wrong row after a scroll.
+            readonly property var activeLine: root.currentIndex >= 0 ? root.lines[root.currentIndex] : null
+            readonly property bool active: index === root.currentIndex
+            readonly property bool timed: !!(root.ready && modelData && modelData.words
+                                             && modelData.words.length > 0)
+            readonly property string translation: modelData ? (modelData.translation ?? "") : ""
+            readonly property int distance: root.distanceFor(index)
 
-                // Word-timed path (KRC): only the active line has word runs.
-                Text {
-                    anchors.fill: parent
-                    visible: slotRoot.distance === 0 && root.richLine !== ""
-                    textFormat: Text.RichText
-                    text: slotRoot.distance === 0 ? root.richLine : ""
-                    wrapMode: Text.WordWrap
-                    maximumLineCount: 3
-                    elide: Text.ElideRight
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    font.family: Fonts.ui
-                    font.pixelSize: root.fontSizeFor(slotRoot.index)
-                    font.weight: slotRoot.distance === 0 ? Font.Bold : Font.Medium
-                    color: root.textColor
-                    opacity: root.opacityFor(slotRoot.index)
+            Column {
+                id: column
+
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 2
+
+                Item {
+                    id: textSlot
+
+                    width: parent.width
+                    height: baseLine.implicitHeight
+                    scale: root.scaleFor(lyricRow.index)
+                    opacity: root.opacityFor(lyricRow.index)
+                    transformOrigin: Item.Center
+
+                    Behavior on scale {
+                        NumberAnimation {
+                            duration: 500
+                            easing.type: Easing.BezierSpline
+                            // M3 expressive default-spatial: overshoots, which
+                            // is what makes the lead line settle into place.
+                            easing.bezierCurve: [0.38, 1.21, 0.22, 1, 1, 1]
+                        }
+                    }
 
                     Behavior on opacity {
                         NumberAnimation {
-                            duration: 250
-                            easing.type: Easing.OutCubic
+                            duration: 200
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: [0.34, 0.8, 0.34, 1, 1, 1]
                         }
+                    }
+
+                    StyledText {
+                        id: baseLine
+
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        text: lyricRow.modelData ? (lyricRow.modelData.text ?? "") : ""
+                        wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+                        maximumLineCount: 3
+                        elide: Text.ElideRight
+                        horizontalAlignment: Text.AlignHCenter
+                        font.pixelSize: root.leadFontSize
+                        font.weight: lyricRow.active ? Font.Bold : Font.Medium
+                        color: root.textColor
+                        lineHeight: root.lineHeight
+                    }
+
+                    StyledText {
+                        anchors.fill: baseLine
+                        visible: lyricRow.timed
+                        textFormat: Text.RichText
+                        text: lyricRow.timed ? root.sungText(root.activeLine, root.activeWordIndex) : ""
+                        wrapMode: baseLine.wrapMode
+                        maximumLineCount: 3
+                        elide: Text.ElideRight
+                        horizontalAlignment: Text.AlignHCenter
+                        font: baseLine.font
+                        lineHeight: baseLine.lineHeight
+                        // Colours come from the inline <font> tags in sungText;
+                        // tinting the whole layer would wash out the per-word
+                        // boundary the sweep depends on.
+                        color: root.accent
                     }
                 }
 
-                // Line-timed path: everything without word runs, including the
-                // neighbours of a KRC line.
                 StyledText {
-                    anchors.fill: parent
-                    visible: !(slotRoot.distance === 0 && root.richLine !== "")
-                    text: root.lineText(slotRoot.index)
-                    wrapMode: Text.WordWrap
-                    maximumLineCount: 3
+                    width: parent.width
+                    visible: root.showTranslation && lyricRow.translation.trim() !== ""
+                    text: lyricRow.translation
+                    wrapMode: Text.Wrap
+                    maximumLineCount: 2
                     elide: Text.ElideRight
                     horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    font.pixelSize: root.fontSizeFor(slotRoot.index)
-                    font.weight: slotRoot.distance === 0 ? Font.Bold : Font.Medium
-                    color: slotRoot.distance === 0 ? root.accent : root.textColor
-                    opacity: root.opacityFor(slotRoot.index)
+                    font.pixelSize: Math.max(10, root.leadFontSize * (lyricRow.active ? 0.48 : 0.38))
+                    font.weight: lyricRow.active ? Font.Medium : Font.Normal
+                    color: root.dimColor
+                    // Dim the translation with its line so a wall of translated
+                    // neighbours does not compete with the lyric being sung.
+                    opacity: lyricRow.active ? 0.9 : root.opacityFor(lyricRow.index) * 0.8
 
                     Behavior on opacity {
                         NumberAnimation {
-                            duration: 250
-                            easing.type: Easing.OutCubic
+                            duration: 200
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: [0.34, 0.8, 0.34, 1, 1, 1]
                         }
                     }
+                }
+            }
 
-                    Behavior on font.pixelSize {
-                        NumberAnimation {
-                            duration: 300
-                            easing.type: Easing.OutCubic
-                        }
-                    }
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                enabled: root.ready
+                onClicked: {
+                    const line = root.lines[lyricRow.index];
+                    if (!line)
+                        return;
+                    root.following = true;
+                    const player = MediaService.active;
+                    if (player && player.position !== undefined)
+                        player.position = line.startMs / 1000;
                 }
             }
         }
     }
 
-    // Status block, shown instead of the lines whenever there is nothing to
-    // sing along to. Centred as one unit so the icon and the message stay
-    // together at any pane height.
     ColumnLayout {
         anchors.centerIn: parent
         width: Math.min(parent.width * 0.8, 320)

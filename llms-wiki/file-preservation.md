@@ -1,8 +1,8 @@
-# File Preservation — 判定权归账本，三层机制各司其职
+# File Preservation — 判定权归状态基线，三层机制各司其职
 
 > 跨部署保留用户文件 = **一条判定规则**（#139，所有权 carry）+ **三层实现机制**
 > （Dunder / manifest preserve / preserve_values，刻意不合并）。规则的判定权在
-> 账本基线，机制的实现各守其位——后人勿把三者"统一"进任何一方。
+> 状态基线，机制的实现各守其位——后人勿把三者"统一"进任何一方。
 > 源码：`nyxuri/deploy/atomic.py`（`atomic_replace_item`）。
 
 ## 判定规则（#139）：swap 永不销毁引擎解释不了的文件
@@ -11,8 +11,8 @@
 
 1. **名字含 `__custom__`** → 用户的（Dunder walk，机制 1）
 2. **在 manifest `preserve` 列表** → 运行时管的（机制 2）
-3. **其余文件对照账本基线**（该插件 ledger `files`，即引擎上次铺设的哈希）——
-   **领地按账本划，不按 payload 划**：
+3. **其余文件对照状态基线**（该插件 state `files`，即引擎上次铺设的哈希）——
+   **领地按状态基线划，不按 payload 划**：
    - 基线有此路径 + dest == 基线 + 这次 payload 也不含 → 引擎这次不再铺设
      （钩子产物正是此类）→ **随 swap 消失，钩子重放重铺**（KM3 语义恢复：
      产物受管、off 抹白）
@@ -20,15 +20,15 @@
    - dest == 新模板内容 → 已是目标态，无事可做
    - 基线有此路径但 dest != 基线 → **用户改过 → 原样搬入**（报"你的改动"）
    - 基线没有此路径 → 用户自放 → **原样搬入**（报"用户文件"）
-   - 整插件无账本记录（Ghost）→ 来源不明 → update 立场**原样搬入**
+   - 整插件无状态记录（Ghost）→ 来源不明 → update 立场**原样搬入**
      （报"来源不明"，宁可错保）；install/`on` 是收编立场，payload 名字归引擎
 
 `__pycache__` 与 `*.pyc` 在两侧 walk 一律剪除——字节码缓存既非模板产物亦非用户
 内容，不搬、不进报告（#139 实机报告定案）。
 
 两条不变式：
-- **账本只记引擎铺设的模板产物**，搬入的文件永不入账——否则下次部署会把它当
-  "引擎铺设过且未被动过"的文件覆盖掉，账本自吞用户数据（详见 plugin-model.md §3）。
+- **状态只记引擎铺设的模板产物**，搬入的文件永不入状态——否则下次部署会把它当
+  "引擎铺设过且未被动过"的文件覆盖掉，破坏用户数据（详见 plugin-model.md §3）。
 - **所有权只经 `on` 增长**。`update` 永不把新路径登记为受管；`update --force`
   是唯一的"模板优先"动词（payload 名字全部采纳 + 重登记清账），但它不是清剿——
   用户自放文件在 force 下照样搬入。
@@ -46,7 +46,7 @@ update 报告逐插件提示 `nyxuri on <plugin>` 收编。
 
 Dunder 的新定位（#139 之后）：**只有模板 include 链按名引用的槽位才需要它**
 （如 `input__custom__.kdl` 被 `config.kdl` 引用）。用户**自放的文件不再需要任何后缀**——
-账本自动认领为未登记内容。保留与加载解耦不变：引擎只管"保留"，应用各自"加载"
+状态基线自动认领为未登记内容。保留与加载解耦不变：引擎只管"保留"，应用各自"加载"
 （多文件模块化在主自定义文件里再 `include` 即可）。
 
 test_mode 下跳过 `scratchpad-items__custom__.toml` 和 `orbit-items__custom__.toml`
@@ -55,7 +55,7 @@ test_mode 下跳过 `scratchpad-items__custom__.toml` 和 `orbit-items__custom__
 ## 机制 2：manifest preserve（运行时状态豁免）
 
 `preserve` 的真实语义不是"保留用户文件"，而是**drift 信号豁免**：声明"这个路径的内容
-变化不由模板/用户负责，由运行时（脚本、应用自己）管理"——不进账本快照、swap 时从
+变化不由模板/用户负责，由运行时（脚本、应用自己）管理"——不进状态快照、swap 时从
 dest 原样注入（rename 前，inotify 看到的就是最终态，无半态窗口）。典型：
 `effects.kdl → effects_normal.kdl/effects_eyecare.kdl` 脚本软链（链接本身保留不解引用）。
 
@@ -67,7 +67,7 @@ off 进 Vault、目录下所有文件经前缀匹配不入账、不参与 Drifte
 preserve，其中 Fisher 的文件继续按 carry 用户文件处理：保护正确，标注近似）。
 
 niri 的 `monitor.kdl` 曾因"被 `config.kdl` 按名引用、不能改名"而走 preserve；
-#139 之后它由账本基线判定（没动过 → 跟随模板更新，修掉了 preserve 永久冻结模板
+#139 之后它由状态基线判定（没动过 → 跟随模板更新，修掉了 preserve 永久冻结模板
 改进的暗病；动过 → gate 提示）。按名引用不再是 preserve 的理由，只有**运行时写它**
 才是。例外靠 manifest 声明，不散落代码。
 
@@ -84,7 +84,7 @@ niri 的 `monitor.kdl` 曾因"被 `config.kdl` 按名引用、不能改名"而�
 
 | | Dunder | preserve | carry 判定 |
 |---|---|---|---|
-| 触发 | 魔法文件名 | 显式声明 | 账本基线比对 |
+| 触发 | 魔法文件名 | 显式声明 | 状态基线比对 |
 | 谁的 | 设计预期用户填的槽位 | 运行时（脚本/应用）写的 | 引擎铺设之外的一切 |
 | 入账 | 否 | 否 | 只记引擎铺设侧 |
 
@@ -110,10 +110,10 @@ Nyxuri 元数据只许在 `~/.config/nyxuri/`（backups、用户形态、hooks�
 
 | 调用方 | carry | 基线 | unknown 立场 | Dunder 保留 (`preserve_custom`) |
 |---|---|---|---|---|
-| `update`（普通） | ✓ | 账本 | True（宁可错保，Ghost 冻结 + 提示） | ✓ |
+| `update`（普通） | ✓ | 状态 | True（宁可错保，Ghost 冻结 + 提示） | ✓ |
 | `update --force` | ✓ | 无 | False（模板认领 payload 名，自放文件仍搬入） | ✓ |
-| `install` / `on` | ✓ | 账本 | False（收编：payload 名归引擎，自放文件搬入） | ✓ |
-| `nyxuri test` | ✓ | 账本 | False（"对齐仓库"语义，含硬件中立清洗） | ✓ |
+| `install` / `on` | ✓ | 状态 | False（收编：payload 名归引擎，自放文件搬入） | ✓ |
+| `nyxuri test` | ✓ | 状态 | False（"对齐仓库"语义，含硬件中立清洗） | ✓ |
 | `rollback`（默认精确恢复，#56） | ✗ | — | 纯快照还原 | ✗（历史快照覆盖实机，零穿透） |
 | `rollback --keep-custom`（显式保留，#56） | ✗ | — | 快照还原 + 显式保留 | ✓（当前 `__custom__` 搬入新树并报告） |
 | 形态切换（整型轴 / 槽位轴） | ✗ | — | 原样模板替换（显式选择形态） | ✓ |

@@ -72,17 +72,6 @@ order = 91
 aliases = ["general.bluetooth-pairing"]
 
 [[settings]]
-id = "shortcuts"
-source = "ShortcutsPage.qml"
-title = "Keyboard shortcuts"
-description = "Global shortcuts and actions"
-context = "ControlCenterWindow"
-icon = "keyboard"
-group = "keyboard"
-order = 100
-aliases = ["general.shortcuts"]
-
-[[settings]]
 id = "language-region"
 source = "LanguageAndRegionPage.qml"
 title = "Language & region"
@@ -94,15 +83,26 @@ order = 120
 aliases = ["general.language-region"]
 
 [[settings]]
+id = "plugins"
+source = "PluginsPage.qml"
+title = "Plugins"
+description = "Manage built-in and third-party plugins"
+context = "ControlCenterWindow"
+icon = "extension"
+group = "system"
+order = 125
+aliases = ["manage-plugins", "marketplace"]
+
+[[settings]]
 id = "shell"
 source = "ShellPage.qml"
-title = "Nyxuri Shell"
-description = "Unit toggles and diagnostics"
+title = "System Status & Diagnostics"
+description = "Session log, resource sampling, and Niri connection"
 context = "ControlCenterWindow"
 icon = "monitor_heart"
 group = "system"
 order = 130
-aliases = ["control-plane", "diagnostics"]
+aliases = ["control-plane", "diagnostics", "system-status"]
 
 [[settings]]
 id = "about"
@@ -272,6 +272,30 @@ title = "Resource sampling"
 context = "ShellPage"
 icon = "speed"
 aliases = ["sampling", "cpu", "memory", "resource", "rss"]
+
+[[settings]]
+id = "plugins.section.builtin"
+route = "plugins"
+title = "Built-in plugins"
+context = "PluginsPage"
+icon = "widgets"
+aliases = ["builtin", "official", "toggle"]
+
+[[settings]]
+id = "plugins.section.thirdparty"
+route = "plugins"
+title = "Third-party plugins"
+context = "PluginsPage"
+icon = "extension"
+aliases = ["third-party", "community", "git"]
+
+[[settings]]
+id = "plugins.section.install"
+route = "plugins"
+title = "Install plugin"
+context = "PluginsPage"
+icon = "add"
+aliases = ["install", "add", "git clone"]
 
 [[settings]]
 id = "theme.section.cursor-theme"

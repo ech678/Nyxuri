@@ -1,4 +1,4 @@
-import qs.app
+import qs.services
 import qs.commons
 import qs.ui
 

@@ -16,11 +16,11 @@ from pathlib import Path
 from unittest.mock import patch
 
 import nyxuri.deploy.forms as forms
-import nyxuri.desktop.forms as desktop_forms
+import nyxuri.deploy.forms as desktop_forms
 import nyxuri.deploy.manifest as manifest
 from nyxuri.deploy.atomic import atomic_replace_item
-from nyxuri.tui import FormSwitcher
-from nyxuri.core import msg
+from nyxuri.ui.tui import FormSwitcher
+from nyxuri.system.i18n import msg
 from tests.utils import TempEnv
 import contextlib
 import io
@@ -45,7 +45,7 @@ class TestActiveFormLedger(unittest.TestCase):
         self.assertEqual(forms.read_active_form("kitty"), "transparent")
 
     def test_write_lands_in_ledger_record(self):
-        from nyxuri.kernel.ledger import get_plugin
+        from nyxuri.state.store import get_plugin
         forms.write_active_form("kitty", "transparent")
         self.assertEqual(get_plugin("kitty")["form"], "transparent")
         # never-switched choice: a disabled record, nothing archived
@@ -54,7 +54,7 @@ class TestActiveFormLedger(unittest.TestCase):
         self.assertIsNone(rec["vault"])
 
     def test_write_preserves_existing_record(self):
-        from nyxuri.kernel.ledger import set_plugin, get_plugin
+        from nyxuri.state.store import set_plugin, get_plugin
         set_plugin("kitty", state="enabled", files={"k.conf": "h1"})
         forms.write_active_form("kitty", "transparent")
         rec = get_plugin("kitty")
@@ -69,7 +69,7 @@ class TestActiveFormLedger(unittest.TestCase):
         marker.write_text("transparent\n", encoding="utf-8")
         # Ledger has no record: read_active_form defaults to "default", not "transparent"
         self.assertEqual(forms.read_active_form("kitty"), "default")
-        from nyxuri.kernel.ledger import get_plugin
+        from nyxuri.state.store import get_plugin
         self.assertIsNone(get_plugin("kitty"), "legacy marker must not be adopted into ledger")
 
     def test_invalid_legacy_marker_is_ignored_not_fatal(self):
@@ -685,7 +685,7 @@ class TestFormPathBoundary(unittest.TestCase):
                 swapped = True
             return real_open(path, flags, *args, **kwargs)
 
-        with patch("nyxuri.desktop.forms.os.open", side_effect=open_then_swap):
+        with patch("nyxuri.deploy.forms.os.open", side_effect=open_then_swap):
             self.assertFalse(desktop_forms.delete_form("kitty", "mine"))
 
         self.assertTrue(swapped)
@@ -697,7 +697,7 @@ class TestFormSwitcher(unittest.TestCase):
 
     def _run_keys(self, switcher, keys):
         with patch("sys.stdin.isatty", return_value=True), \
-             patch("nyxuri.tui.read_key", side_effect=keys), \
+             patch("nyxuri.ui.tui.read_key", side_effect=keys), \
              patch("sys.stdout", new_callable=StringIO):
             return switcher.run()
 
@@ -807,20 +807,20 @@ class TestFormSwitcherMouse(unittest.TestCase):
 
     def _run_keys(self, switcher, keys):
         import os
-        import nyxuri.tui as tui
+        import nyxuri.ui.tui as tui
         fake_size = os.terminal_size((80, 24))
         with patch("sys.stdin.isatty", return_value=True), \
-             patch("nyxuri.tui.read_key", side_effect=keys), \
+             patch("nyxuri.ui.tui.read_key", side_effect=keys), \
              patch.object(tui.shutil, "get_terminal_size", return_value=fake_size), \
              patch("sys.stdout", new_callable=StringIO):
             return switcher.run()
 
     def _click(self, col, row):
-        from nyxuri.tui import MouseEvent
+        from nyxuri.ui.tui import MouseEvent
         return MouseEvent(kind="PRESS", col=col, row=row)
 
     def _wheel(self, kind, col=3, row=15):
-        from nyxuri.tui import MouseEvent
+        from nyxuri.ui.tui import MouseEvent
         return MouseEvent(kind=kind, col=col, row=row)
 
     def test_click_app_applies_active_form_in_standalone_mode(self):
@@ -967,7 +967,7 @@ class TestFormStudioActions(unittest.TestCase):
     def _run_keys(self, switcher, keys):
         fake_size = os.terminal_size((80, 24))
         with patch("sys.stdin.isatty", return_value=True), \
-             patch("nyxuri.tui.read_key", side_effect=keys), \
+             patch("nyxuri.ui.tui.read_key", side_effect=keys), \
              patch("shutil.get_terminal_size", return_value=fake_size), \
              patch("sys.stdout", new_callable=StringIO):
             return switcher.run()
@@ -1255,7 +1255,7 @@ default = "default"
         self.assertEqual(sorted(eff["variants"]), ["default", "xray"])
 
     def test_apply_slot_success(self):
-        from nyxuri.kernel.ledger import get_form_slots
+        from nyxuri.state.store import get_form_slots
         target_file = self.dest / "effects_normal.kdl"
         target_file.write_text("// initial")
 
@@ -1279,11 +1279,11 @@ default = "default"
         self.assertEqual(forms.get_active_slot(self.app, "effects"), "xray")
 
     def test_form_switcher_loop_wires_slots_and_on_action(self):
-        from nyxuri.installer.menus import form_switcher_loop
+        from nyxuri.ui.menus import form_switcher_loop
         with patch("sys.stdin.isatty", return_value=True), \
-             patch("nyxuri.installer.menus.discover_config_items", return_value=["niri"]), \
+             patch("nyxuri.ui.menus.discover_config_items", return_value=["niri"]), \
              patch("nyxuri.deploy.forms.use_form", return_value=True) as mock_apply, \
-             patch("nyxuri.installer.menus.FormSwitcher") as mock_switcher_cls:
+             patch("nyxuri.ui.menus.FormSwitcher") as mock_switcher_cls:
             form_switcher_loop()
             mock_switcher_cls.assert_called_once()
             _, kwargs = mock_switcher_cls.call_args

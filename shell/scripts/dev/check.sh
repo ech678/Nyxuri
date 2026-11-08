@@ -86,15 +86,16 @@ if (( ${#python_files[@]} )); then
     step python-syntax python3 -c 'import pathlib, sys; [compile(pathlib.Path(p).read_bytes(), p, "exec") for p in sys.argv[1:]]' "${python_files[@]}"
 fi
 # Existing black-box script tests need no CMake/native build.
+tests_dir="${repo_root}/../tests/shell"
 for test_name in niri_cursor_config manage_niri_effects matugen_registry; do
     run_test=false
     [[ ${scope} != all ]] || run_test=true
     for file in "${files[@]}"; do
         case "${test_name}:${file}" in
-            niri_cursor_config:scripts/theme/write-niri-cursor-config.sh|niri_cursor_config:tests/test_niri_cursor_config.sh|\
-            manage_niri_effects:scripts/system/manage-niri-effects.sh|manage_niri_effects:tests/test_manage_niri_effects.sh|\
-            matugen_registry:scripts/theme/*|matugen_registry:scripts/lib/matugen-registry.sh|matugen_registry:tests/test_matugen_registry.sh|\
-            *:tests/fixtures/mock-niri) run_test=true ;;
+            niri_cursor_config:scripts/theme/write-niri-cursor-config.sh|niri_cursor_config:../tests/shell/test_niri_cursor_config.sh|\
+            manage_niri_effects:scripts/system/manage-niri-effects.sh|manage_niri_effects:../tests/shell/test_manage_niri_effects.sh|\
+            matugen_registry:scripts/theme/*|matugen_registry:scripts/lib/matugen-registry.sh|matugen_registry:../tests/shell/test_matugen_registry.sh|\
+            *:../tests/shell/fixtures/mock-niri) run_test=true ;;
         esac
     done
     if ${run_test}; then
@@ -102,11 +103,11 @@ for test_name in niri_cursor_config manage_niri_effects matugen_registry; do
             require matugen matugen
             require jq jq
         fi
-        step "${test_name}" bash "tests/test_${test_name}.sh"
+        step "${test_name}" bash "${tests_dir}/test_${test_name}.sh"
     fi
 done
 if ${catalog}; then
-    step settings-schema python3 tests/test_search_catalog.py
+    step settings-schema python3 "${tests_dir}/test_search_catalog.py"
 fi
 if ${qml}; then
     lint_args=()
@@ -116,7 +117,7 @@ if ${qml}; then
     step lifecycle-audit python3 "${script_dir}/audit-lifecycle.py" "${audit_args[@]}"
 fi
 if [[ ${scope} == all ]] || [[ " ${python_files[*]:-} " =~ audit-lifecycle.py ]]; then
-    step lifecycle-audit-tests python3 -m unittest tests/test_lifecycle_audit.py
+    step lifecycle-audit-tests env PYTHONPATH="${repo_root}/.." python3 -m unittest tests.shell.test_lifecycle_audit
 fi
 if [[ ${scope} == all ]]; then
     step categorized-tests python3 "${script_dir}/run-tests.py" --all

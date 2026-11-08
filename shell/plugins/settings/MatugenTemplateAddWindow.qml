@@ -6,7 +6,6 @@ import Quickshell
 import qs.commons
 import qs.ui
 import qs.services
-import qs.app
 import qs.commons.i18n
 
 FloatingWindow {
@@ -51,13 +50,11 @@ FloatingWindow {
     Rectangle {
         id: background
         anchors.fill: parent
-        radius: Appearance.rounding.extraLarge
         color: BlurService.backgroundColor(Appearance.m3colors.m3surfaceContainerHigh)
     }
     CompositorBlurRegion {
         targetWindow: root
         backgroundItem: background
-        radius: background.radius
     }
     FocusScope {
         anchors.fill: parent

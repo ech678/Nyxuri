@@ -49,8 +49,8 @@ class TestConfigSectionHardening(unittest.TestCase):
             "const wallpaper = configSection(source.wallpaper)",
             "const theme = configSection(source.theme)",
             "const effects = configSection(source.effects)",
-            "const keystone = configSection(source.keystone)",
-            "const media = configSection(keystone.media)",
+            "const island = configSection(source.island)",
+            "const media = configSection(island.media)",
             "const bar = configSection(source.bar)",
             "const sidebar = configSection(source.sidebar)",
             "const desktopCards = configSection(source.desktopCards)",
@@ -59,14 +59,14 @@ class TestConfigSectionHardening(unittest.TestCase):
             "const parallax = configSection(wallpaper.parallax)",
             "const autoCycle = configSection(wallpaper.autoCycle)",
             "const fonts = configSection(theme.fonts)",
-            "const horizontalClock = configSection(keystone.horizontalClock)",
-            "const keyhole = configSection(keystone.keyhole)",
+            "const horizontalClock = configSection(island.horizontalClock)",
+            "const keyhole = configSection(island.keyhole)",
         ):
             self.assertIn(declaration, loader)
 
     def test_no_section_keeps_a_truthy_non_object(self):
         loader = self._loader()
-        for section in ("wallpaper", "theme", "effects", "keystone", "bar", "sidebar",
+        for section in ("wallpaper", "theme", "effects", "island", "bar", "sidebar",
                         "desktopCards", "hotCorners"):
             self.assertNotIn("parsed.%s || {}" % section, loader)
 
@@ -95,10 +95,10 @@ class TestConfigSectionHardening(unittest.TestCase):
 class TestConfigStoreFailureHandling(unittest.TestCase):
     """An unreadable store must be reported, never repaired by overwriting it.
 
-    The catch-all in onLoaded used to set shouldRepair, and onLoadFailed reset
-    every field to its default before saving, so one syntax error replaced the
-    whole user config with defaults. Both handlers now consult the FileViewError
-    the way DockService, DisplayColor and NotificationService already do.
+    Under P3 unified config, ConfigService is the single center of gravity
+    managing config.toml. A syntax or parse error must preserve the user's
+    existing file instead of overwriting it with defaults. Domain stores
+    delegate persistence to ConfigService rather than hosting separate FileViews.
     """
 
     def _source(self, name="PersonalizationConfig.qml"):
@@ -109,72 +109,41 @@ class TestConfigStoreFailureHandling(unittest.TestCase):
         start = source.index(signal)
         return source[start:source.index(following, start)]
 
-    def test_personalization_keeps_the_file_when_parsing_fails(self):
-        source = self._source()
+    def _relative(self, relative):
+        return (Path(__file__).resolve().parents[2] / "shell" / relative).read_text(encoding="utf-8")
+
+    def test_config_service_keeps_the_file_when_parsing_fails(self):
+        source = self._source("ConfigService.qml")
         catch = source[source.index("} catch (error) {", source.index("onLoaded:")):]
-        self.assertIn("shouldRepair = false;", catch[:catch.index("onLoadFailed")])
-        self.assertNotIn("shouldRepair = true;", catch[:catch.index("onLoadFailed")])
+        self.assertIn("leaving existing config untouched", catch)
+        self.assertNotIn("root.save();", catch[:catch.index("onLoadFailed")])
 
-    def test_personalization_only_seeds_a_missing_store(self):
-        handler = self._handler(self._source(), "onLoadFailed:", "onSaveFailed:")
+    def test_config_service_only_seeds_a_missing_store(self):
+        handler = self._handler(self._source("ConfigService.qml"), "onLoadFailed:", "onSaveFailed:")
         self.assertIn("error === FileViewError.FileNotFound", handler)
-        self.assertIn("root.save();", handler)
+        self.assertIn("root.saveNow();", handler)
         self.assertIn("console.warn", handler)
 
-    def test_personalization_reports_save_failures(self):
-        handler = self._handler(self._source(), "onSaveFailed:", "Component.onDestruction")
+    def test_config_service_reports_save_failures(self):
+        handler = self._handler(self._source("ConfigService.qml"), "onSaveFailed:", "Component.onDestruction")
         self.assertIn("console.warn", handler)
 
-    def test_ui_preferences_only_seeds_a_missing_store(self):
-        handler = self._handler(self._source("UiPreferences.qml"), "onLoadFailed:", "onSaveFailed:")
-        self.assertIn("error === FileViewError.FileNotFound", handler)
-        self.assertIn("root.save();", handler)
-        self.assertIn("console.warn", handler)
-
-    def test_ui_preferences_reports_save_failures(self):
-        handler = self._handler(self._source("UiPreferences.qml"), "onSaveFailed:", "Timer {")
-        self.assertIn("console.warn", handler)
-
-    AUXILIARY_STORES = (
+    DOMAIN_STORES = (
+        "services/PersonalizationConfig.qml",
+        "services/UiPreferences.qml",
         "services/IdleService.qml",
+        "services/DisplayColor.qml",
+        "plugins/dock/DockService.qml",
         "plugins/bar/tray/TrayService.qml",
         "plugins/sidebars/quicksettings/QuickToggleConfig.qml",
     )
 
-    def _relative(self, relative):
-        return (Path(__file__).resolve().parents[2] / "shell" / relative).read_text(encoding="utf-8")
-
-    @staticmethod
-    def _catch_block(source):
-        marker = "} catch (error) {"
-        start = source.index(marker)
-        depth = 0
-        for index in range(start + len(marker) - 1, len(source)):
-            if source[index] == "{":
-                depth += 1
-            elif source[index] == "}":
-                depth -= 1
-                if depth == 0:
-                    return source[start:index + 1]
-        raise AssertionError("unterminated catch block")
-
-    def test_auxiliary_stores_keep_the_file_when_parsing_fails(self):
-        for relative in self.AUXILIARY_STORES:
-            block = self._catch_block(self._relative(relative))
-            self.assertNotIn("root.save", block, relative)
-            self.assertIn("leaving the existing", block, relative)
-
-    def test_auxiliary_stores_only_seed_a_missing_file(self):
-        for relative in self.AUXILIARY_STORES:
+    def test_domain_stores_delegate_to_config_service(self):
+        """Domain stores must not maintain separate FileViews; they delegate to ConfigService."""
+        for relative in self.DOMAIN_STORES:
             source = self._relative(relative)
-            handler = self._handler(source, "onLoadFailed:", "onSaveFailed:")
-            self.assertIn("error === FileViewError.FileNotFound", handler, relative)
-            self.assertIn("console.warn", handler, relative)
-
-    def test_auxiliary_stores_report_save_failures(self):
-        for relative in self.AUXILIARY_STORES:
-            source = self._relative(relative)
-            self.assertIn("onSaveFailed", source, relative)
+            self.assertNotIn("FileView {", source, f"{relative} should not have an independent FileView")
+            self.assertIn("ConfigService", source, f"{relative} should connect to ConfigService")
 
     STATEFUL_STORES = (
         "plugins/sidebars/dashboard/infotools/InfoDrawerState.qml",

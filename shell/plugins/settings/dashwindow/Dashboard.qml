@@ -4,7 +4,6 @@ import QtQuick.Controls.Material
 import Quickshell
 import qs.commons
 import qs.ui
-import qs.app
 import qs.services
 
 // Dashboard-style settings window. Ported from end4-pC's

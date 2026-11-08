@@ -5,13 +5,13 @@ Two axes, one verb (R0-2 杀词并轨：预设 + 零件并轨为形态轴)::
     整型形态轴 (whole axis)   默认 config  ←  官方 __forms__/<名>/  ←  __custom__ 文件
     槽位形态轴 (slot axes)    [forms.<slot>] 声明的单文件热插拔（如 niri effects / glow）
 
-The whole-axis choice lives in the plugin's ledger record (``form`` field,
-single truth); slot choices live under the ledger's top-level ``forms`` key.
+The whole-axis choice lives in the plugin's state record (``form`` field,
+single truth); slot choices live under the state store's top-level ``forms`` key.
 The retired ``~/.config/nyxuri/forms/<app>.active`` marker files were read-only
-compat swept at R0-3 (the ledger is the single truth).
+compat swept at R0-3 (state.json is the single truth).
 
-Write timing (iron law): apply flows deploy first, then land the ledger
-choice. The dest-missing reset is the only sanctioned write-before-deploy
+Write timing (iron law): apply flows deploy first, then record state.
+The dest-missing reset is the only sanctioned write-before-deploy
 (dest is empty, so a half-written state self-heals next run).
 
 One apply path serves both axes (:func:`use_form`) — the preset/part dual
@@ -21,6 +21,9 @@ active slots through the same function (:func:`replay_active_forms`).
 
 import fnmatch
 import os
+import sys
+import shutil
+from contextlib import ExitStack
 import secrets
 import stat
 import subprocess
@@ -29,9 +32,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
 
-from nyxuri.core import STORAGE_NAME
-from nyxuri.core import get_env, is_safe_leaf_name, log_msg, safe_child, timed_run
-from nyxuri.core import msg
+from nyxuri.system.env import STORAGE_NAME, Colors, get_env, is_safe_leaf_name, log_msg, safe_child, timed_run
+from nyxuri.system.i18n import msg
 
 
 _DIR_FLAGS = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
@@ -55,7 +57,7 @@ def _is_deployable_app(app: str) -> bool:
     if not _is_safe_component(app):
         return False
     from nyxuri.deploy.manifest import KIND_CONFIG, discover_deployable_apps
-    from nyxuri.kernel import registry
+    from nyxuri.deploy import catalog
 
     source = _safe_child(get_env().plugins_src, app)
     try:
@@ -67,22 +69,22 @@ def _is_deployable_app(app: str) -> bool:
         return False
     # S1: a third-party plugin is form-deployable when it ships config
     # payload — the same payload rule as the official root, resolved
-    # through the registry instead of discovery (package-world stays
+    # through catalog instead of discovery (package-world stays
     # official-only, plugin-model.md §6).
     try:
-        m = registry.load_plugin(app)
+        m = catalog.load_plugin(app)
     except Exception:
         return False
-    return registry.plugin_origin(app) == "third-party" and KIND_CONFIG in m.kinds
+    return catalog.plugin_origin(app) == "third-party" and KIND_CONFIG in m.kinds
 
 
 def _plugin_root(app: str) -> Optional[Path]:
     """Blueprint root for a plugin id: official root first, then the
-    third-party data root (S1). Resolution belongs to the registry; forms
+    third-party data root (S1). Resolution belongs to the catalog; forms
     only ever need the resolved path."""
-    from nyxuri.kernel import registry
+    from nyxuri.deploy import catalog
 
-    src = registry.plugin_dir(app)
+    src = catalog.plugin_dir(app)
     if src is not None:
         return src
     return _safe_child(get_env().plugins_src, app)
@@ -147,11 +149,11 @@ def _remove_tree_at(parent_fd: int, name: str) -> None:
 def read_active_form(app: str) -> str:
     """Return the active whole-axis form, or ``"default"`` when unrecorded.
 
-    The ledger record is the single truth.
+    The state record is the single truth.
     """
     if not _is_deployable_app(app):
         raise InvalidActiveFormError("invalid form app")
-    from nyxuri.kernel.ledger import get_plugin
+    from nyxuri.state.store import get_plugin
 
     rec = get_plugin(app)
     if rec and isinstance(rec.get("form"), str) and rec["form"]:
@@ -160,7 +162,7 @@ def read_active_form(app: str) -> str:
 
 
 def write_active_form(app: str, name: str) -> None:
-    """Land the whole-axis choice in the ledger record.
+    """Land the whole-axis choice in the state record.
 
     An existing record keeps its state/files/vault; a never-switched plugin
     gets a ``disabled`` record (nothing archived, so ``vault`` stays null —
@@ -170,7 +172,7 @@ def write_active_form(app: str, name: str) -> None:
         raise ValueError("invalid form app")
     if not _is_safe_component(name):
         raise ValueError("invalid form name")
-    from nyxuri.kernel.ledger import get_plugin, set_plugin
+    from nyxuri.state.store import get_plugin, set_plugin
 
     rec = get_plugin(app)
     if rec:
@@ -258,7 +260,11 @@ def resolve_form_src(app: str, active: str, dest: Path) -> FormSrcResult:
     app_root = _plugin_root(app)
     repo_forms = _find_official_forms_dir(app_root)
     user_forms = _safe_child(env.forms_dir, app)
-    expected_dest = _safe_child(env.config_dir, app)
+    try:
+        from nyxuri.deploy.manifest import load_manifest_for, living_path
+        expected_dest = living_path(load_manifest_for(app), env.config_dir)
+    except Exception:
+        expected_dest = _safe_child(env.config_dir, app)
     if (
         not _is_deployable_app(app)
         or not _is_safe_component(active)
@@ -360,7 +366,7 @@ def list_slots(app: str) -> dict:
 
 def get_active_slot(app: str, slot: str) -> str:
     """Return the currently active variant for a plugin's slot axis."""
-    from nyxuri.kernel.ledger import get_form_slots
+    from nyxuri.state.store import get_form_slots
     value = get_form_slots(app).get(slot)
     if value:
         return value
@@ -375,10 +381,10 @@ def get_active_slot(app: str, slot: str) -> str:
 
 
 def _apply_slot(app: str, slot: str, variant: str) -> bool:
-    """Hot-swap one declared slot axis (single-file atomic swap + ledger)."""
+    """Hot-swap one declared slot axis (single-file atomic swap + state)."""
     from nyxuri.deploy.manifest import load_manifest_for
     from nyxuri.deploy.atomic import atomic_replace_item
-    from nyxuri.kernel.ledger import set_form_slot
+    from nyxuri.state.store import set_form_slot
 
     try:
         manifest = load_manifest_for(app)
@@ -433,10 +439,10 @@ def use_form(app: str, axis: Optional[str], value: str,
     """The single form-switch path (R0-2): whole axis when ``axis`` is None.
 
     Whole axis: narrow deploy (atomic swap + template render for this app,
-    no post-install services) then the ledger record — switching kitty must
+    no post-install services) then the state record — switching kitty must
     not rerun fisher, and the manifest ``preserve`` list is honoured exactly
-    like the full deploy. Slot axis: single-file swap + slot ledger entry.
-    Both land the ledger choice only after their deploy succeeded (iron law).
+    like the full deploy. Slot axis: single-file swap + slot state entry.
+    Both land the state choice only after their deploy succeeded (iron law).
     ``preserved_log`` collects the swap's preserved-file lines for callers
     that render a report.
     """
@@ -488,7 +494,7 @@ def use_form(app: str, axis: Optional[str], value: str,
                     except OSError:
                         pass
         # The swap just reset every slot target to the new variant's template:
-        # replay ledger-recorded slot choices on top through the same path.
+        # replay state-recorded slot choices on top through the same path.
         try:
             m = load_manifest_for(app)
             for failure in replay_active_forms(app, m):
@@ -546,7 +552,7 @@ def _find_form_src(app: str, name: str) -> Optional[Path]:
 
 
 def replay_active_forms(app: str, manifest) -> List[str]:
-    """Ensure ledger-recorded slot choices are realized in dest.
+    """Ensure state-recorded slot choices are realized in dest.
 
     The deploy pipeline's replay of active slot axes — the retired
     ``_reconcile_active_parts`` bypass now runs through the same apply path
@@ -554,7 +560,7 @@ def replay_active_forms(app: str, manifest) -> List[str]:
     """
     if not manifest.forms:
         return []
-    from nyxuri.kernel.ledger import get_form_slots
+    from nyxuri.state.store import get_form_slots
     slot_state = get_form_slots(app)
     if not slot_state:
         return []
@@ -565,3 +571,339 @@ def replay_active_forms(app: str, manifest) -> List[str]:
             if not _apply_slot(app, slot, value):
                 failures.append(f"{app}:{slot}={value}")
     return failures
+
+
+# --- User-facing Form Flows (merged from desktop/forms.py) ---
+
+@dataclass
+class FormInfo:
+    """Metadata inspection for a plugin's whole-axis form."""
+    app: str
+    name: str
+    source: str          # 'official' | 'user'
+    is_active: bool
+    path: str
+    files: List[str]
+    preserve: List[str]
+    is_editable: bool
+    is_deletable: bool
+
+
+def get_form_info(app: str, name: str) -> FormInfo:
+    """Inspect detailed metadata and key files for a plugin's form."""
+    from nyxuri.deploy.manifest import load_manifest_for
+
+    valid = _is_deployable_app(app) and _is_safe_component(name)
+    try:
+        active = read_active_form(app) if valid else None
+    except InvalidActiveFormError:
+        active = None
+    is_active = active == name
+    app_root = _safe_child(get_env().plugins_src, app) if valid else None
+    official_dir = _find_official_forms_dir(app_root)
+    official = _safe_child(official_dir, name) if official_dir else None
+    user_src = _safe_child(get_env().forms_dir, app, name)
+    source = "official"
+    is_editable = False
+    is_deletable = False
+    if not valid:
+        src = None
+        rel_path = "(invalid)"
+    elif name == "default":
+        src = None
+        rel_path = f"configs/{app}"
+    elif official is not None and official.is_dir() and not official.is_symlink():
+        src = official
+        rel_path = f"configs/{app}/__forms__/{name}"
+    elif user_src is not None and user_src.is_dir() and not user_src.is_symlink():
+        src = user_src
+        source = "user"
+        is_editable = True
+        is_deletable = True
+        rel_path = f"~/.config/{STORAGE_NAME}/forms/{app}/{name}"
+    else:
+        src = None
+        rel_path = f"configs/{app}/__forms__/{name} (not found)"
+
+    files: List[str] = []
+    if src and src.is_dir():
+        for p in sorted(src.rglob("*")):
+            if p.is_file() and not p.name.startswith(".") and "__custom__" not in p.name:
+                if name == "default" and any(part in ("forms", "__forms__") for part in p.parts):
+                    continue
+                try:
+                    rel = str(p.relative_to(src))
+                    files.append(rel)
+                except ValueError:
+                    pass
+
+    preserve: List[str] = []
+    if valid:
+        try:
+            manifest = load_manifest_for(app)
+            preserve = manifest.preserve or []
+        except Exception:
+            pass
+
+    return FormInfo(
+        app=app,
+        name=name,
+        source=source,
+        is_active=is_active,
+        path=rel_path,
+        files=files,
+        preserve=preserve,
+        is_editable=is_editable,
+        is_deletable=is_deletable,
+    )
+
+
+def collect_forms(app: str) -> List[Tuple[str, str, bool]]:
+    """Return (name, source, is_active) for every whole-axis form of a plugin.
+
+    source is 'official' (shipped in repo) or 'user' (saved under nyx_dir).
+    'default' is always first. Used by list_forms (printing) and the TUI
+    switcher. Slot-axis source trees under ``__forms__/`` never appear here.
+    """
+    if not _is_deployable_app(app):
+        return []
+    active = read_active_form(app)
+    slot_source_dirs: set[str] = set()
+    try:
+        from nyxuri.deploy.manifest import load_manifest_for
+        manifest = load_manifest_for(app)
+        if manifest.forms:
+            slot_source_dirs = {cfg.get("source_dir", slot) for slot, cfg in manifest.forms.items()}
+    except Exception:
+        pass
+
+    entries: List[Tuple[str, str, bool]] = [("default", "official", active == "default")]
+
+    env = get_env()
+    app_root = _safe_child(env.plugins_src, app)
+    official_dir = _find_official_forms_dir(app_root)
+    if official_dir is not None and official_dir.is_dir() and not official_dir.is_symlink():
+        for p in sorted(official_dir.iterdir(), key=lambda x: x.name):
+            if p.name in slot_source_dirs:
+                continue
+            if _is_safe_component(p.name) and p.is_dir() and not p.is_symlink():
+                entries.append((p.name, "official", active == p.name))
+    user_dir = _safe_child(env.forms_dir, app)
+    if user_dir is not None and user_dir.is_dir() and not user_dir.is_symlink():
+        for p in sorted(user_dir.iterdir(), key=lambda x: x.name):
+            if _is_safe_component(p.name) and p.is_dir() and not p.is_symlink():
+                entries.append((p.name, "user", active == p.name))
+    return entries
+
+
+def list_forms(app: str) -> List[Tuple[str, str, bool]]:
+    """List whole-axis forms for a plugin; the active one is marked.
+
+    ``use <app> list``-grade status surface: prints a numbered list with the
+    active entry prefixed by ``*``.
+    """
+    entries = collect_forms(app)
+    print(msg("preset_list_title", app))
+    for i, (name, source, is_active) in enumerate(entries, 1):
+        marker = "*" if is_active else " "
+        tag = msg(f"preset_src_{source}")
+        print(f"  {marker} [{i}] {name}  {Colors.DIM}{tag}{Colors.RESET}")
+    return entries
+
+
+def _render_form_result(app: str, name: str, preserved_lines: List[str], failed: bool = False) -> None:
+    """Lightweight feedback reusing the completion screen's preserved section."""
+    if failed:
+        print(msg("preset_apply_failed", app, name))
+        return
+    print(msg("preset_applied", app, name))
+    if preserved_lines:
+        print(f"\n  {Colors.BOLD_WHITE}{msg('summary_section_preserved')}{Colors.RESET}")
+        for pline in sorted(set(preserved_lines)):
+            print(f"    {pline}")
+
+
+def apply_form(app: str, name: str) -> bool:
+    """Switch a plugin to a named whole-axis form (prose over the engine path).
+
+    The engine's :func:`use_form` owns the narrow deploy and the state
+    write (deploy-then-write iron law); this wrapper only validates loudly
+    and renders the result, including the preserved-file section.
+    """
+    from nyxuri.deploy.forms import _find_form_src
+
+    if not _is_deployable_app(app) or not _is_safe_component(name):
+        print(msg("preset_not_found", app, name))
+        return False
+    if _find_form_src(app, name) is None:
+        print(msg("preset_not_found", app, name))
+        return False
+    preserved_log: List[str] = []
+    if not use_form(app, None, name, preserved_log=preserved_log):
+        _render_form_result(app, name, preserved_log, failed=True)
+        return False
+    _render_form_result(app, name, preserved_log)
+    return True
+
+
+def _ignore_custom_and_manifest(_src_dir, names):
+    """copytree ignore: drop __custom__ entries (any depth) and manifest.toml."""
+    return {n for n in names if "__custom__" in n or n == "manifest.toml"}
+
+
+def _discard_staging_form(app: str, staging: str) -> None:
+    try:
+        forms_fd = _open_forms_dir()
+        try:
+            user_fd = _open_child_dir(forms_fd, app)
+            try:
+                _remove_tree_at(user_fd, staging)
+            finally:
+                os.close(user_fd)
+        finally:
+            os.close(forms_fd)
+    except OSError:
+        pass
+
+
+def save_form(app: str, name: str) -> bool:
+    """Snapshot current ~/.config/<app>/ into a user form, minus __custom__.
+
+    'default' is reserved (use default = reset). Official-name collisions
+    are rejected (official forms win on name).
+    """
+    if name == "default":
+        print(msg("preset_name_reserved", name))
+        return False
+    if not _is_deployable_app(app) or not _is_safe_component(name):
+        print(msg("preset_not_found", app, name))
+        return False
+    env = get_env()
+    dest = _safe_child(env.config_dir, app)
+    if dest is None or not dest.is_dir() or dest.is_symlink():
+        print(msg("preset_nothing_to_save", app))
+        return False
+    official_dir = _find_official_forms_dir(_safe_child(env.plugins_src, app))
+    official = _safe_child(official_dir, name) if official_dir else None
+    if official is not None and official.is_dir() and not official.is_symlink():
+        print(msg("preset_official_name_collision", name))
+        return False
+
+    staging = f".{name}.{secrets.token_hex(8)}"
+    try:
+        with ExitStack() as stack:
+            src_fd = os.open(dest, _DIR_FLAGS)
+            stack.callback(os.close, src_fd)
+            forms_fd = _open_forms_dir(create=True)
+            stack.callback(os.close, forms_fd)
+            user_fd = _open_child_dir(forms_fd, app, create=True)
+            stack.callback(os.close, user_fd)
+            try:
+                _remove_tree_at(user_fd, staging)
+            except FileNotFoundError:
+                pass
+            os.mkdir(staging, mode=0o700, dir_fd=user_fd)
+            target_fd = os.open(staging, _DIR_FLAGS, dir_fd=user_fd)
+            stack.callback(os.close, target_fd)
+            shutil.copytree(
+                f"/proc/self/fd/{src_fd}",
+                f"/proc/self/fd/{target_fd}",
+                symlinks=True,
+                ignore=_ignore_custom_and_manifest,
+                dirs_exist_ok=True,
+            )
+            current = os.stat(staging, dir_fd=user_fd, follow_symlinks=False)
+            bound = os.fstat(target_fd)
+            if (current.st_dev, current.st_ino) != (bound.st_dev, bound.st_ino):
+                raise OSError("form target changed while saving")
+            try:
+                _remove_tree_at(user_fd, name)
+            except FileNotFoundError:
+                pass
+            os.rename(staging, name, src_dir_fd=user_fd, dst_dir_fd=user_fd)
+    except OSError as e:
+        _discard_staging_form(app, staging)
+        print(msg("preset_save_failed", app, name))
+        log_msg("ERROR", f"Failed to save form '{name}' for {app}: {e}")
+        return False
+    print(msg("preset_saved", app, name))
+    return True
+
+
+def delete_form(app: str, name: str) -> bool:
+    """Delete a user form. Official forms cannot be deleted."""
+    if name == "default":
+        print(msg("preset_name_reserved", name))
+        return False
+    if not _is_deployable_app(app) or not _is_safe_component(name):
+        print(msg("preset_not_found", app, name))
+        return False
+    env = get_env()
+    official_dir = _find_official_forms_dir(_safe_child(env.plugins_src, app))
+    official = _safe_child(official_dir, name) if official_dir else None
+    if official is not None and official.is_dir() and not official.is_symlink():
+        print(msg("preset_delete_official_denied", name))
+        return False
+    try:
+        forms_fd = _open_forms_dir()
+        try:
+            user_fd = _open_child_dir(forms_fd, app)
+            try:
+                _remove_tree_at(user_fd, name)
+            finally:
+                os.close(user_fd)
+        finally:
+            os.close(forms_fd)
+    except OSError:
+        print(msg("preset_not_found", app, name))
+        return False
+    try:
+        if read_active_form(app) == name:
+            from nyxuri.deploy.forms import write_active_form
+            write_active_form(app, "default")
+    except (OSError, ValueError):
+        pass
+    print(msg("preset_deleted", app, name))
+    return True
+
+def edit_form(app: str, name: str) -> bool:
+    """Open a user form's directory in $EDITOR (rejects default + official).
+
+    Default is reserved; official forms are repo-owned read-only. Only user
+    forms under ~/.config/nyxuri/forms/<app>/<name>/ are editable in place;
+    re-running ``use <app> <name>`` deploys the edits. Non-interactive → hint path.
+    """
+    if name == "default":
+        print(msg("preset_name_reserved", name))
+        return False
+    if not _is_deployable_app(app) or not _is_safe_component(name):
+        print(msg("preset_not_found", app, name))
+        return False
+    env = get_env()
+    official_dir = _find_official_forms_dir(_safe_child(env.plugins_src, app))
+    official = _safe_child(official_dir, name) if official_dir else None
+    if official is not None and official.is_dir() and not official.is_symlink():
+        print(msg("preset_edit_official_denied", name))
+        return False
+    try:
+        with ExitStack() as stack:
+            forms_fd = _open_forms_dir()
+            stack.callback(os.close, forms_fd)
+            user_parent_fd = _open_child_dir(forms_fd, app)
+            stack.callback(os.close, user_parent_fd)
+            target_fd = os.open(name, _DIR_FLAGS, dir_fd=user_parent_fd)
+            stack.callback(os.close, target_fd)
+            if not sys.stdin.isatty():
+                print(msg("preset_edit_notty", env.forms_dir / app / name))
+                return False
+            editor = os.environ.get("EDITOR") or os.environ.get("VISUAL") or "nano"
+            subprocess.run(
+                [editor, f"/proc/self/fd/{target_fd}"],
+                check=False,
+                pass_fds=(target_fd,),
+            )
+    except OSError:
+        print(msg("preset_not_found", app, name))
+        return False
+    print(msg("preset_edit_opened", app, name))
+    return True

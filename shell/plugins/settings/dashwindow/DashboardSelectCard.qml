@@ -17,7 +17,7 @@ DashboardCard {
     readonly property var control: root.override ?? SettingsControlCatalog.controlFor(root.controlKey)
     readonly property var currentValue: root.control ? root.control.get() : null
 
-    tint: Appearance.colors.colTertiaryContainer
+    tint: Appearance.colors.colLayer1
 
     ColumnLayout {
         anchors.fill: parent
@@ -43,7 +43,7 @@ DashboardCard {
                 text: root.title
                 font.pixelSize: Typography.titleLarge.pixelSize
                 font.weight: Font.DemiBold
-                color: Appearance.colors.colOnTertiaryContainer
+                color: Appearance.colors.colOnLayer1
                 elide: Text.ElideRight
             }
         }
@@ -72,7 +72,8 @@ DashboardCard {
                     leftPadding: 16
                     rightPadding: 16
                     buttonRadius: 22
-                    containerColor: option.selected ? Appearance.colors.colTertiary : Qt.rgba(1, 1, 1, 0.12)
+                    containerColor: option.selected ? Appearance.colors.colTertiary :
+                                                      Appearance.colors.colSurfaceContainerHigh
                     rippleColor: Appearance.colors.colOnTertiary
                     stateLayerColor: Appearance.colors.colOnTertiary
                     stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
@@ -106,7 +107,7 @@ DashboardCard {
                                 iconSize: 18
                                 fill: option.selected ? 1 : 0
                                 color: option.selected ? Appearance.colors.colOnTertiary :
-                                                         Appearance.colors.colOnTertiaryContainer
+                                                         Appearance.colors.colOnLayer1
                             }
 
                             StyledText {
@@ -114,7 +115,7 @@ DashboardCard {
                                 text: option.modelData.label ?? ""
                                 font.weight: Font.Medium
                                 color: option.selected ? Appearance.colors.colOnTertiary :
-                                                         Appearance.colors.colOnTertiaryContainer
+                                                         Appearance.colors.colOnLayer1
                                 elide: Text.ElideRight
                                 horizontalAlignment: Text.AlignHCenter
                             }

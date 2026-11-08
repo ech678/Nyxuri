@@ -26,7 +26,7 @@ S1 开工执行以本页裁决为机器验收基准（全局门禁 4）。
 
 | 资产 | 规模 | 内容 | 服务站点 | 裁决 | 理由与落地动作 |
 | --- | --- | --- | --- | --- | --- |
-| `services/PluginRegistry.qml` | 806 行 | 三方目录扫描、enable/disable 经 shell.json、trust/capabilities、clone/卸载、本地变更热重载（inotifywait + 150ms timer）、`pluginLoadFailed` 信号、`watcherReaper` | S1 核心中枢 | **已落地（S1-3，改造）** | 基线 commit `c91fc6a` 纯拷贝（cmp 字节一致），剪裁后 429 行。保留原样：守护三件套、`parseScanOutput` 分段流解析、`ensureUserDir`、`localPluginIdForPath`、启动链、四信号。实况剪裁：shell.json 开关与 bar 布局机器按 D 节预裁决删除（开关真相 = 账本，`UnitControlService → nyxuri on/off`）；**能力标记随门面一并推迟**（2026-11-01 作者拍板，见裁决登记补遗）；containment 安全检查单实现化迁入 `PluginManifest.js`，registry 层新增 reverse-DNS + 保留命名空间拒绝（镜像引擎 `sources.py`）。二根扫描（`shareRoot/plugins` + `dataHome/plugins`，find 不跟软链 = 禁软链扫描层形态）；S0-2 五视图并轨回植，行增 `unitId` 完整账本键；热重扫 150ms 去抖入心脏（原版接线在宿主注入工厂）。整抄护栏 = `tests/test_plugin_manifests.py:TestThirdPartyHeart`（器官必在 / 疤疤零命中）。实机证据：探针冷启动零实例化 → on 挂载 → off 析构 → 热改 manifest 重扫重挂 → `shell.evil` 拒绝 → 移除零残留，全程零宿主文件改动、零 ERROR。 |
+| `services/PluginRegistry.qml` | 806 行 | 三方目录扫描、enable/disable 经 shell.json、trust/capabilities、clone/卸载、本地变更热重载（inotifywait + 150ms timer）、`pluginLoadFailed` 信号、`watcherReaper` | S1 核心中枢 | **已落地（S1-3，改造）** | 基线 commit `c91fc6a` 纯拷贝（cmp 字节一致），剪裁后 429 行。保留原样：守护三件套、`parseScanOutput` 分段流解析、`ensureUserDir`、`localPluginIdForPath`、启动链、四信号。实况剪裁：shell.json 开关与 bar 布局机器按 D 节预裁决删除（开关真相 = 账本，`UnitControlService → nyxuri on/off`）；**能力标记随门面一并推迟**（2026-11-01 作者拍板，见裁决登记补遗）；containment 安全检查单实现化迁入 `PluginManifest.js`，registry 层新增安全叶名（简洁裸名或 reverse-DNS）+ 保留命名空间拒绝（镜像引擎 sources.py，S1-4 对齐）。二根扫描（`shareRoot/plugins` + `dataHome/plugins`，find 不跟软链 = 禁软链扫描层形态）；S0-2 五视图并轨回植，行增 `unitId` 完整账本键；热重扫 150ms 去抖入心脏（原版接线在宿主注入工厂）。整抄护栏 = `tests/test_plugin_manifests.py:TestThirdPartyHeart`（器官必在 / 疤疤零命中）。实机证据：探针冷启动零实例化 → on 挂载 → off 析构 → 热改 manifest 重扫重挂 → `shell.evil` 拒绝 → 移除零残留，全程零宿主文件改动、零 ERROR。 |
 | `services/PluginRegistryApi.qml` | 32 行 | 注册表暴露给插件的 API 面（installedPlugins、entryPointUrl） | S1 门面 | **推迟（S1-0 改裁）** | 消费者 = 三方 ui 插件本体；v1 零三方 ui 插件，抄入即死代码。触发条件见节尾裁决变更登记。 |
 | `services/PluginShellApi.qml` | 70 行 | 宿主 API（summon / hide / toggle / isPluginOpen 等） | S1 门面 | **推迟（S1-0 改裁）** | 同上；宿主侧注入工厂（参考树 `shell.qml` L432–818 约 390 行）随门面同批，不提前搬。 |
 | `services/PluginBarStateApi.qml` | 23 行 | bar 状态 API（只读状态投影） | S1 门面 | **推迟（S1-0 改裁）** | 同上。 |
@@ -71,7 +71,7 @@ NiriDriver 首驱动**(`services/CompositorDriver.qml` 单例投影 +
 | bar `KeyboardLayout(.qml/Model)` | 本站无键盘布局 widget | 不适用(事件链零消费,随 S0-5 处决) |
 | dock `Dock` `DockWindow` | `DockService`/`DockSurface` → 驱动 windows/searchWindows | **覆盖**;minimize 走能力位**降级**(`supportsMinimize: false`,上游 niri 无此 IPC) |
 | lock `LockView` `Service` | session-lock Wayland 协议,不经合成器 IPC;idle 电源走 `setMonitorsPower` | **覆盖**(电源路径) |
-| menu `MenuModel` | 全局菜单走 niri binds(`niri-actions.json`)与 keystone | 不适用 |
+| menu `MenuModel` | 全局菜单走 niri binds(`niri-actions.json`)与 island | 不适用 |
 | notifications `Service` | Wayland notification 协议 | 不适用 |
 | panels/monitor `Panel` | 驱动 `outputs` / `outputSnapshot()` | **覆盖** |
 | services `media` `nightlight` `remote-session` | MPRIS / wlr-gamma / 无此功能 | 不适用(非合成器协议) |

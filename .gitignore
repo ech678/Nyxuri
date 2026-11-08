@@ -26,6 +26,7 @@ build-*/
 local/
 
 # Local, pinned upstream reference (recreate from the commit in llms-wiki/shell/references.md)
+/references/
 /shell/references/
 
 # devtools chroot 构建产物（build 在 packaging/ 内进行）

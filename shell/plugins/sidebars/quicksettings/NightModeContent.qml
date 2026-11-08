@@ -1,5 +1,5 @@
 import QtQuick
-import qs.app
+import qs.services
 import QtQuick.Layouts
 import qs.commons
 import qs.ui

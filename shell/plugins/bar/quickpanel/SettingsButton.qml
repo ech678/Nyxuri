@@ -2,7 +2,6 @@ import QtQuick
 import qs.commons
 import qs.services
 import qs.ui
-import qs.app
 import qs.commons.i18n
 
 BarCircularButton {

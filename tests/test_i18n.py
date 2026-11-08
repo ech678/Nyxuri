@@ -143,7 +143,7 @@ class TestTemplateSubstitution(unittest.TestCase):
         self.addCleanup(self.env.__exit__, None, None, None)
 
     def test_catalog_languages_and_arguments(self):
-        from nyxuri.core import TRANSLATIONS
+        from nyxuri.system.i18n import TRANSLATIONS
         formatter = string.Formatter()
         self.assertTrue(TRANSLATIONS)
         for key, entry in TRANSLATIONS.items():
@@ -158,7 +158,7 @@ class TestTemplateSubstitution(unittest.TestCase):
                 self.assertEqual(*fields)
 
     def test_language_switch_and_fallback(self):
-        from nyxuri import core as i18n
+        from nyxuri.system import i18n
         self.addCleanup(i18n.set_lang, i18n.get_lang())
         for language in ("zh", "en", "zh"):
             i18n.set_lang(language)
@@ -168,7 +168,7 @@ class TestTemplateSubstitution(unittest.TestCase):
         self.assertEqual(i18n.msg("unknown_key", "sample"), "unknown_key (sample)")
 
     def test_no_double_brace_residual(self):
-        from nyxuri.core import TRANSLATIONS
+        from nyxuri.system.i18n import TRANSLATIONS
         offenders = []
         for key, entry in TRANSLATIONS.items():
             for lang, val in entry.items():

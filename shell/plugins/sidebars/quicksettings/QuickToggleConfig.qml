@@ -4,15 +4,15 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.commons
-import qs.app
+import qs.services
 
 Singleton {
     id: root
 
     readonly property string configDir: Paths.configHome
-    readonly property string filePath: configDir + "/quick-toggles.json"
+    readonly property string filePath: ConfigService.filePath
 
-    property bool storeReady: false
+    readonly property bool storeReady: ConfigService.storeReady
     property var toggles: defaultToggles()
 
     function defaultToggles() {
@@ -117,50 +117,31 @@ Singleton {
         if (!root.storeReady)
             return;
 
-        configFile.setText(JSON.stringify({
-                                              "toggles": root.toggles
-                                          }, null, 2));
+        ConfigService.updateSection("bar.quickToggles", root.toggles);
     }
 
-    Process {
-        id: ensureStoreDir
-        command: ["mkdir", "-p", root.configDir]
-        running: true
-        onExited: {
-            root.storeReady = true;
-            configFile.reload();
-        }
-    }
-
-    FileView {
-        id: configFile
-        path: root.filePath
-
-        onLoaded: {
-            try {
-                const parsed = JSON.parse(configFile.text().trim() || "{}");
-                root.toggles = root.normalizeToggles(parsed.toggles);
-            } catch (error) {
-                console.warn("QuickToggleConfig failed to load; leaving the existing config untouched:",
-                             error);
-                root.toggles = root.defaultToggles();
-            }
-        }
-
-        onLoadFailed: error => {
+    function loadFromConfigStore() {
+        const qtData = ConfigService.getSection("bar.quickToggles", null);
+        if (qtData)
+            root.toggles = root.normalizeToggles(qtData);
+        else
             root.toggles = root.defaultToggles();
-            if (error === FileViewError.FileNotFound)
-                root.save();
-            else
-                console.warn(
-                            "QuickToggleConfig could not read the config; leaving the existing config untouched:",
-                            error);
-        }
-        onSaveFailed: error => console.warn("QuickToggleConfig could not save the config:", error)
+        root.refreshBindings();
     }
 
-    Component.onDestruction: {
-        if (ensureStoreDir)
-            ensureStoreDir.running = false;
+    Connections {
+        target: ConfigService
+        function onConfigLoaded() {
+            root.loadFromConfigStore();
+        }
+        function onSectionChanged(path, data) {
+            if (path === "bar.quickToggles" || path === "bar")
+                root.loadFromConfigStore();
+        }
+    }
+
+    Component.onCompleted: {
+        if (ConfigService.storeReady)
+            root.loadFromConfigStore();
     }
 }

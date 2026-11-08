@@ -6,7 +6,6 @@ import Quickshell
 import qs.ui
 import qs.commons
 import qs.services
-import qs.app
 import "./DockLayout.js" as DockLayout
 import "./DockBubble.js" as DockBubble
 import "./DockMedia.js" as DockMedia

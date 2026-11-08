@@ -34,7 +34,7 @@ class TestP4ThemeEngineContract(unittest.TestCase):
     def setUpClass(cls):
         cls.repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         cls.shell_dir = os.path.join(cls.repo_root, "shell")
-        cls.fixtures = os.path.join(cls.shell_dir, "tests", "fixtures", "theme")
+        cls.fixtures = os.path.join(cls.repo_root, "tests", "shell", "fixtures", "theme")
 
     def setUp(self):
         self._ctx = TempEnv()
@@ -63,7 +63,7 @@ class TestP4ThemeEngineContract(unittest.TestCase):
         })
         import subprocess
         res = subprocess.run(
-            [runner, "-input", os.path.join(self.shell_dir, "tests", "qml", "tst_ThemeContract.qml")],
+            [runner, "-input", os.path.join(self.repo_root, "tests", "shell", "qml", "tst_ThemeContract.qml")],
             capture_output=True, text=True, timeout=120, env=env)
         self.assertIn("Totals:", res.stdout + res.stderr, res.stderr[-2000:])
         totals = self._totals_line(res.stdout)
@@ -150,13 +150,14 @@ class TestP4ThemeEngineContract(unittest.TestCase):
 
     def test_theme_contract_files_exist(self):
         for rel in ("commons/ThemeColor.js", "commons/ThemePalette.js",
-                    "commons/TemplateExpr.js",
-                    "tests/qml/tst_ThemeContract.qml",
-                    "tests/fixtures/theme/README.md"):
+                    "commons/TemplateExpr.js"):
             self.assertTrue(os.path.isfile(os.path.join(self.shell_dir, rel)), rel)
+        for rel in ("tests/shell/qml/tst_ThemeContract.qml",
+                    "tests/shell/fixtures/theme/README.md"):
+            self.assertTrue(os.path.isfile(os.path.join(self.repo_root, rel)), rel)
 
     def test_builtin_templates_include_fcitx5(self):
-        config_path = os.path.join(self.shell_dir, "app", "templates", "config.toml")
+        config_path = os.path.join(self.shell_dir, "commons", "assets", "templates", "config.toml")
         with open(config_path, "r", encoding="utf-8") as f:
             content = f.read()
         self.assertIn("[templates.fcitx5_theme]", content)
@@ -200,7 +201,7 @@ class TestP4ThemeEngineContract(unittest.TestCase):
             conf_path = kitty_dir / "kitty.conf"
             conf_path.write_text(dirty_conf, encoding="utf-8")
 
-            hook_script = os.path.join(self.shell_dir, "app", "templates", "kitty", "kitty-apply.sh")
+            hook_script = os.path.join(self.shell_dir, "commons", "assets", "templates", "kitty", "kitty-apply.sh")
             res = subprocess.run(["bash", hook_script], capture_output=True, text=True,
                                  env=dict(os.environ, XDG_CONFIG_HOME=str(env.home / ".config")))
             self.assertEqual(res.returncode, 0, f"kitty-apply failed: {res.stderr}")
@@ -264,7 +265,7 @@ class TestP4ThemeEngineContract(unittest.TestCase):
         self.assertIn("hookStderr", content)
         self.assertRegex(content, r"onThemeModeChanged\(\)\s*\{[^}]*root\.renderAll\(\)")
 
-        paths_qml = os.path.join(self.shell_dir, "app", "Paths.qml")
+        paths_qml = os.path.join(self.shell_dir, "services", "Paths.qml")
         with open(paths_qml, "r", encoding="utf-8") as f:
             paths_content = f.read()
         self.assertIn("readonly property string xdgCacheHome:", paths_content)
@@ -297,7 +298,7 @@ class TestP4ThemeEngineContract(unittest.TestCase):
                 encoding="utf-8"
             )
 
-            hook_script = os.path.join(self.shell_dir, "app", "templates", "starship", "starship-apply.sh")
+            hook_script = os.path.join(self.shell_dir, "commons", "assets", "templates", "starship", "starship-apply.sh")
 
             # Even if XDG_CACHE_HOME points to private /nyxuri-shell namespace, the hook must succeed
             isolated_cache = env.home / ".cache" / "nyxuri-shell"

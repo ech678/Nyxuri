@@ -28,7 +28,7 @@ def _quiet(fn, *args, **kwargs):
 class TestShellSwitcherClassification(unittest.TestCase):
 
     def test_third_party_quickshell_is_not_nyxuri_shell(self):
-        from nyxuri.desktop import shell_switcher
+        from nyxuri.system import shell as shell_switcher
         with TempEnv():
             cmdline = b"quickshell\x00-p\x00/home/u/.config/quickshell\x00"
             real_read = Path.read_bytes
@@ -39,8 +39,8 @@ class TestShellSwitcherClassification(unittest.TestCase):
                 self.assertEqual(shell_switcher.probe_running_shells(), [])
 
     def test_already_active_keeps_the_running_bin(self):
-        from nyxuri.desktop import shell_switcher
-        from nyxuri.kernel.ledger import custom_shell_bin, set_shell
+        from nyxuri.system import shell as shell_switcher
+        from nyxuri.state.store import custom_shell_bin, set_shell
         with TempEnv():
             old_bin = str(Path(tempfile.mkdtemp()) / "old-shell")
             new_bin = str(Path(tempfile.mkdtemp()) / "new-shell")
@@ -59,7 +59,7 @@ class TestShellSwitcherClassification(unittest.TestCase):
             self.assertEqual(custom_shell_bin(), old_bin)
 
     def test_failed_restore_returns_tuple_instead_of_raising(self):
-        from nyxuri.desktop import shell_switcher
+        from nyxuri.system import shell as shell_switcher
         with TempEnv():
             attempts = {"n": 0}
 
@@ -92,7 +92,7 @@ class TestShellSwitcherClassification(unittest.TestCase):
         # re-projected). Reproduces the exact topology: a fake qs process
         # (binary exec, argv preserved verbatim in /proc) → child prober
         # whose getppid() is that qs.
-        from nyxuri.desktop import shell_switcher
+        from nyxuri.system import shell as shell_switcher
         repo = Path(shell_switcher.__file__).resolve().parents[2]
         with TempEnv() as ctx:
             fake_wrapper = ctx.home / "nyxuri-shell"
@@ -103,7 +103,7 @@ class TestShellSwitcherClassification(unittest.TestCase):
             prober = ctx.home / "prober.py"
             prober.write_text(
                 "import json\n"
-                "from nyxuri.desktop import shell_switcher\n"
+                "from nyxuri.system import shell as shell_switcher\n"
                 "print(json.dumps(shell_switcher.probe_running_shells()))\n",
                 encoding="utf-8")
             out_path = ctx.home / "probe-out.json"

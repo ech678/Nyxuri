@@ -15,7 +15,7 @@
 | `on <plugin> [--form <name>]`（等价 `enable`） | 启用插件：依赖闭包披露 → 缺失包披露确认（repo/AUR/Flatpak 按 manifest 三方分流）→ 事务落账 + `plugin-changed` 事件 |
 | `off <plugin> [--cascade]`（等价 `disable`） | 停用插件：反向依赖强阻断（显式 `--cascade` 才级联）→ 自定义入 Vault → 实机抹白；报告列明幸存外部文件与保留的包 |
 | `use <plugin> [list\|<name>\|save <name>\|edit <name>\|delete <name>\|slots\|slot <axis> <name>]` | 形态动词（R0-2 杀词并轨）：整型形态轴裸值直切，`slot` 子动作切槽位轴，`save`/`edit`/`delete` 管用户私有形态 |
-| `add <git-url\|local-dir> [--enable]` | 安装第三方插件（S1）：clone/copy → staging → 预读 id（reverse-DNS + 保留前缀拒绝）→ id 冲突拒绝 → 落位 `~/.local/share/nyxuri/plugins/<id>/` → **校验即加载**（loader 拒绝即整体回滚）→ 来源记账（账本 `sources` 键）；默认停用，`--enable` 顺带走 `on`；绝不执行包内代码、无 hook、无 sudo |
+| `add <git-url\|local-dir> [--enable]` | 安装第三方插件（S1）：clone/copy → staging → 预读 id（简洁裸名或 reverse-DNS，保留前缀拒绝）→ id 冲突拒绝 → 落位 `~/.local/share/nyxuri/plugins/<id>/` → **校验即加载**（loader 拒绝即整体回滚）→ 来源记账（账本 `sources` 键）；默认停用，`--enable` 顺带走 `on`；绝不执行包内代码、无 hook、无 sudo |
 | `remove <plugin> [-y]` | 移除第三方插件（仅第三方，官方拒绝）：停用（按所有权账本撤回生活区）→ 非原始目录（本地安装 / 脏工作树）时间戳备份到 `data_dir/trash/`、纯净 git 树直接删除 → 账本痕迹全抹（记录 / 来源 / 形态槽位） |
 | `update <plugin> [-y]` | 更新第三方插件（仅带 git 来源者）：fetch → 拒绝非 fast-forward → diff 预览确认 → ff-only 合并 → **校验即加载**（失败自动回退到原 commit）→ 来源 commit 更新 → 启用中插件经唯一事务管线重新应用 |
 | `doctor [plugin]` | 插件三态对账（`Synced` / `Drifted` / `Ghost`）；无参时在对账表后附加系统体检段（`sysdoctor`） |

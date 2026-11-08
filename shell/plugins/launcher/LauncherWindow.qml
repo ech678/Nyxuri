@@ -7,8 +7,7 @@ import Quickshell.Wayland
 import qs.commons
 import qs.services
 import qs.ui
-import qs.app
-import "./SpotlightCommands.js" as Commands
+import "../../commons/SpotlightCommands.js" as Commands
 import qs.commons.i18n
 
 PanelWindow {
@@ -103,16 +102,16 @@ PanelWindow {
     // The source stays mapped during a platform drag; let the pointer reach
     // the Dock's separate layer surface outside the launcher card.
     mask: Region {
-        x: DockService.externalDragActive ? spotlightRoot.x : 0
-        y: DockService.externalDragActive ? spotlightRoot.y : 0
-        width: DockService.externalDragActive ? spotlightRoot.width : root.width
-        height: DockService.externalDragActive ? spotlightRoot.height : root.height
+        x: ActionGateway.externalDragActive ? spotlightRoot.x : 0
+        y: ActionGateway.externalDragActive ? spotlightRoot.y : 0
+        width: ActionGateway.externalDragActive ? spotlightRoot.width : root.width
+        height: ActionGateway.externalDragActive ? spotlightRoot.height : root.height
     }
 
     Connections {
-        target: DockService
+        target: ActionGateway
         function onExternalDragActiveChanged() {
-            if (DockService.externalDragActive)
+            if (ActionGateway.externalDragActive)
                 return;
             if (root.closeAfterDrag) {
                 root.closeAfterDrag = false;
@@ -375,7 +374,7 @@ PanelWindow {
     }
 
     function openSpotlight(requestedMode) {
-        if (DockService.externalDragActive)
+        if (ActionGateway.externalDragActive)
             return false;
         root.pendingWebUrl = "";
         root.pendingSearchActivation = null;
@@ -406,16 +405,16 @@ PanelWindow {
     }
 
     function focusSpotlight() {
-        if (!root.showing || root.spotlightModalActive || DockService.externalDragActive)
+        if (!root.showing || root.spotlightModalActive || ActionGateway.externalDragActive)
             return;
         Qt.callLater(() => {
-            if (root.showing && !root.spotlightModalActive && !DockService.externalDragActive)
+            if (root.showing && !root.spotlightModalActive && !ActionGateway.externalDragActive)
                 searchBar.focusInput();
         });
     }
 
     function requestClose() {
-        if (DockService.externalDragActive) {
+        if (ActionGateway.externalDragActive) {
             root.closeAfterDrag = true;
             return true;
         }
@@ -450,7 +449,7 @@ PanelWindow {
     }
 
     function setLocalMode(requestedMode) {
-        if (DockService.externalDragActive)
+        if (ActionGateway.externalDragActive)
             return false;
         const localMode = normalizedMode(requestedMode);
         if (!localMode)
@@ -464,7 +463,7 @@ PanelWindow {
     }
 
     function runCommand(name) {
-        if (DockService.externalDragActive)
+        if (ActionGateway.externalDragActive)
             return "BUSY";
         const entry = Commands.exact(name);
         if (!entry || entry.kind === "override")
@@ -664,7 +663,7 @@ PanelWindow {
     }
 
     function activateResult(index, keepClipboardOpen) {
-        if (DockService.externalDragActive)
+        if (ActionGateway.externalDragActive)
             return false;
         if (!root.selectResult(index))
             return false;
@@ -824,7 +823,7 @@ PanelWindow {
     }
 
     function handleKey(event, fromSearch) {
-        if (DockService.externalDragActive) {
+        if (ActionGateway.externalDragActive) {
             event.accepted = true;
             return;
         }

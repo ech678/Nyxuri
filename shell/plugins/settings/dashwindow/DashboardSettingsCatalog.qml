@@ -16,6 +16,7 @@ QtObject {
     readonly property var sections: [
         {
             "title": I18n.tr("Interface"),
+            "page": I18n.tr("Interface"),
             "icon": "palette",
             "cards": [
                 {
@@ -157,6 +158,7 @@ QtObject {
         },
         {
             "title": I18n.tr("Bar"),
+            "page": I18n.tr("Bar & dock"),
             "icon": "toolbar",
             "cards": [
                 {
@@ -200,122 +202,123 @@ QtObject {
             ]
         },
         {
-            "title": I18n.tr("Keystone"),
+            "title": I18n.tr("Island"),
+            "page": I18n.tr("Bar & dock"),
             "icon": "toggle_off",
             "cards": [
                 {
                     "type": "toggle",
-                    "key": "keystone:Enabled",
-                    "title": I18n.tr("Show Keystone"),
+                    "key": "island:Enabled",
+                    "title": I18n.tr("Show Island"),
                     "icon": "toggle_off"
                 },
                 {
                     "type": "combo",
-                    "key": "keystone:Style",
+                    "key": "island:Style",
                     "title": I18n.tr("Style"),
                     "icon": "style",
                     "w": 2
                 },
                 {
                     "type": "select",
-                    "key": "keystone:Position",
+                    "key": "island:Position",
                     "title": I18n.tr("Position"),
                     "icon": "swap_horiz",
                     "w": 2
                 },
                 {
                     "type": "combo",
-                    "key": "keystone:Hover action",
+                    "key": "island:Hover action",
                     "title": I18n.tr("Hover action"),
                     "icon": "mouse"
                 },
                 {
                     "type": "combo",
-                    "key": "keystone:Left click action",
+                    "key": "island:Left click action",
                     "title": I18n.tr("Left click action"),
                     "icon": "ads_click"
                 },
                 {
                     "type": "combo",
-                    "key": "keystone:Middle click action",
+                    "key": "island:Middle click action",
                     "title": I18n.tr("Middle click action"),
                     "icon": "ads_click"
                 },
                 {
                     "type": "combo",
-                    "key": "keystone:Keyhole card",
+                    "key": "island:Keyhole card",
                     "title": I18n.tr("Keyhole card"),
                     "icon": "door_front"
                 },
                 {
                     "type": "combo",
-                    "key": "keystone:Media progress style",
+                    "key": "island:Media progress style",
                     "title": I18n.tr("Media progress style"),
                     "icon": "linear_scale"
                 },
                 {
                     "type": "combo",
-                    "key": "keystone:Media cover style",
+                    "key": "island:Media cover style",
                     "title": I18n.tr("Media cover style"),
                     "icon": "album"
                 },
                 {
                     "type": "combo",
-                    "key": "keystone:Media color style",
+                    "key": "island:Media color style",
                     "title": I18n.tr("Media color style"),
                     "icon": "palette"
                 },
                 {
                     "type": "spin",
-                    "key": "keystone:Hover open delay (ms)",
+                    "key": "island:Hover open delay (ms)",
                     "title": I18n.tr("Hover open delay"),
                     "icon": "timer"
                 },
                 {
                     "type": "spin",
-                    "key": "keystone:Hover close delay (ms)",
+                    "key": "island:Hover close delay (ms)",
                     "title": I18n.tr("Hover close delay"),
                     "icon": "timer_off"
                 },
                 {
                     "type": "toggle",
-                    "key": "keystone:Overlay",
+                    "key": "island:Overlay",
                     "title": I18n.tr("Overlay"),
                     "icon": "layers"
                 },
                 {
                     "type": "toggle",
-                    "key": "keystone:Show date",
+                    "key": "island:Show date",
                     "title": I18n.tr("Show date"),
                     "icon": "calendar_today"
                 },
                 {
                     "type": "toggle",
-                    "key": "keystone:Caps lock OSD",
+                    "key": "island:Caps lock OSD",
                     "title": I18n.tr("Caps lock OSD"),
                     "icon": "keyboard_capslock"
                 },
                 {
                     "type": "toggle",
-                    "key": "keystone:Num lock OSD",
+                    "key": "island:Num lock OSD",
                     "title": I18n.tr("Num lock OSD"),
                     "icon": "keyboard"
                 },
                 {
                     "type": "toggle",
-                    "key": "keystone:Show names in long form",
+                    "key": "island:Show names in long form",
                     "title": I18n.tr("Long form names"),
                     "icon": "short_text"
                 },
                 {
                     "type": "toggle",
-                    "key": "keystone:Show values in long form",
+                    "key": "island:Show values in long form",
                     "title": I18n.tr("Long form values"),
                     "icon": "numbers"
                 },
                 {
                     "type": "toggle",
-                    "key": "keystone:Show monitor values in long form",
+                    "key": "island:Show monitor values in long form",
                     "title": I18n.tr("Long form monitor values"),
                     "icon": "monitor"
                 }
@@ -323,6 +326,7 @@ QtObject {
         },
         {
             "title": I18n.tr("Media"),
+            "page": I18n.tr("Media"),
             "icon": "lyrics",
             "cards": [
                 {
@@ -353,11 +357,19 @@ QtObject {
                     "title": I18n.tr("Tint from album art"),
                     "icon": "palette",
                     "kw": "lyrics album art colour color palette extract 歌词 封面 取色"
+                },
+                {
+                    "type": "toggle",
+                    "key": "lyrics:Show translation",
+                    "title": I18n.tr("Show translation"),
+                    "icon": "translate",
+                    "kw": "lyrics translation translate subtitle 歌词 翻译 译文"
                 }
             ]
         },
         {
             "title": I18n.tr("Wallpaper"),
+            "page": I18n.tr("Desktop"),
             "icon": "wallpaper",
             "cards": [
                 {
@@ -523,6 +535,7 @@ QtObject {
         },
         {
             "title": I18n.tr("Desktop"),
+            "page": I18n.tr("Desktop"),
             "icon": "desktop_windows",
             "cards": [
                 {
@@ -541,6 +554,7 @@ QtObject {
         },
         {
             "title": I18n.tr("Dock"),
+            "page": I18n.tr("Bar & dock"),
             "icon": "dock",
             "cards": [
                 {
@@ -628,6 +642,7 @@ QtObject {
         },
         {
             "title": I18n.tr("Spotlight"),
+            "page": I18n.tr("Bar & dock"),
             "icon": "search",
             "cards": [
                 {
@@ -658,6 +673,7 @@ QtObject {
         },
         {
             "title": I18n.tr("Language & region"),
+            "page": I18n.tr("Interface"),
             "icon": "translate",
             "cards": [
                 {
@@ -688,6 +704,7 @@ QtObject {
         },
         {
             "title": I18n.tr("Sidebar clock"),
+            "page": I18n.tr("Clocks"),
             "icon": "schedule",
             "cards": [
                 {
@@ -724,6 +741,7 @@ QtObject {
         },
         {
             "title": I18n.tr("Horizontal clock"),
+            "page": I18n.tr("Clocks"),
             "icon": "schedule",
             "cards": [
                 {
@@ -772,6 +790,7 @@ QtObject {
         },
         {
             "title": I18n.tr("Display colour"),
+            "page": I18n.tr("Display"),
             "icon": "brightness_6",
             "cards": [
                 {

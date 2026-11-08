@@ -25,7 +25,7 @@
    通用语言。落到机制：动词是通用词，元数据是通用 TOML，插件协议采纳业界最流通的
    现成形状（Omarchy：目录 + manifest + kinds + entryPoints）。术语纪律
    （2026-10-31 架构重塑卷定案）：全库三词术语——**插件**（可开关项）、
-   **manifest**（插件声明书）、**账本**（单一开关真相）；用户词表只剩两个名词
+   **manifest**（插件声明书）、**状态记录**（单一开关真相）；用户词表只剩两个名词
    （**插件、快照**）；动词八条一轴一词（on / off / use / add / remove / update /
    doctor / list）；机制不起名——机制是内部细节，不进用户词表。
    和谐不是起更好的名字，是把撞名的物删掉。
@@ -34,10 +34,10 @@
 
 Nyxuri 是桌面插件引擎，不是安装器；安装器只是它的一次性引导。
 
-**一份 manifest 声明一切，一本账记录一切，一条事务改变一切。**
+**一份 manifest 声明一切，一份状态记录一切，一条执行流改变一切。**
 
 ```
-Nyxuri = 内核（registry · resolver · transaction · ledger）
+Nyxuri = 引擎（catalog · engine · store）
        + 目录（万物皆插件，manifest 全量声明）
        + 界面（CLI / TUI / 自研 Shell，等价动词）
 
@@ -53,7 +53,7 @@ Nyxuri = 内核（registry · resolver · transaction · ledger）
   内部回溯（`state`）各司其职，消除缝合怪与特判特例。
 - **形态与槽位正交**：形态字段（`use`）管「长什么样」，`__custom__` 是冻结的
   模板槽位协议（实现细节，不进用户词表）；插件间是开关关系，两层正交。
-- **内核边界钉死**：`deploy.atomic`、i18n、registry、ledger 是骨架，不是插件——
+- **引擎边界钉死**：`deploy.atomic`、i18n、catalog、store 是骨架，不是插件——
   内核自身插件化是过度间接，骨架反而碎。
 - **Shell 是完整宿主**：内核（装配 / 生命周期 / Action Gateway / IPC）零业务，
   一切功能域是插件；一方插件与第三方插件同契约，没有特权公民。宿主桥接

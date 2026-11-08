@@ -34,8 +34,8 @@ DEFAULT_BINDINGS = (
     ('Mod+N', 'sidebar', 'toggle', 'dashboard'),
     ('Mod+A', 'sidebar', 'toggle', 'quicksettings'),
     ('Mod+Ctrl+Comma', 'control-center', 'toggle', 'general'),
-    ('Mod+Shift+W', 'keystone', 'hub'),
-    ('Mod+Shift+T', 'keystone', 'tools'),
+    ('Mod+Shift+W', 'island', 'hub'),
+    ('Mod+Shift+T', 'island', 'tools'),
     ('Alt+Shift+L', 'lock', 'open'),
 )
 
@@ -330,7 +330,7 @@ def action_identity(action):
             action.args = ['nyxuri-shell', '--ipc'] + action.args[3:]
     if (action.name == 'spawn' and len(action.args) >= 7
             and action.args[:5] == ['qs', '-c', 'clavis', 'ipc', 'call']
-            and action.args[5] in ('sidebar', 'spotlight', 'control-center', 'keystone', 'lock', 'power-menu', 'shortcut-map', 'wallpaper')):
+            and action.args[5] in ('sidebar', 'spotlight', 'control-center', 'island', 'lock', 'power-menu', 'shortcut-map', 'wallpaper')):
         action.args = ['nyxuri-shell', '--ipc'] + action.args[5:]
     if (action.name == 'spawn' and len(action.args) == 5
             and action.args[:3] == ['nyxuri-shell', '--ipc', 'sidebar']

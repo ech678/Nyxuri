@@ -1,14 +1,14 @@
 # packaging — AUR 上架手册
 
-单包全量 `nyxuri-git`：引擎 + `units/` + `shell/` 同船，`.system-install` 标记
+单包全量 `nyxuri-git`：引擎 + `plugins/` + `shell/` 同船，`.system-install` 标记
 驱动系统包模式（更新交给 pacman，引擎不越权 git pull）。
 
 ## 内容物
 
 | 文件 | 职责 |
 | --- | --- |
-| `PKGBUILD` | 包配方。`depends` 只有引擎运行时（`python`）；每个单元的包都在 `optdepends`——`nyxuri on <unit>` 披露并代装，pacman 不强塞桌面 |
-| `gen-deps.py` | 依赖数组自动汇聚：加单元只动 `units/*/manifest.toml`，跑 `python3 packaging/gen-deps.py --update` 重写生成块。`ENGINE_OPTDEPENDS` 准入标准：仓库代码直接 spawn 它 |
+| `PKGBUILD` | 包配方。`depends` 只有引擎运行时（`python`）；每个插件的包都在 `optdepends`——`nyxuri on <plugin>` 披露并代装，pacman 不强塞桌面 |
+| `gen-deps.py` | 依赖数组自动汇聚：加插件只动 `plugins/*/manifest.toml`，跑 `python3 packaging/gen-deps.py --update` 重写生成块。`ENGINE_OPTDEPENDS` 准入标准：仓库代码直接 spawn 它 |
 | `nyxuri-git.install` | libalpm 提示钩子：升级只换 `/usr/share/nyxuri` 蓝图，永不自动重部署用户配置 |
 
 ## 发布流程（nyxuri-git 已上架；以下为更新推送流程）
@@ -33,10 +33,10 @@
    ````markdown
    ### 从 AUR 安装（Arch / CachyOS 推荐）
    ```bash
-   paru -S nyxuri-git        # 管理引擎 + 配置单元 + Nyxuri Shell，一包全量
-   nyxuri install full       # 或按单元自由组装桌面：nyxuri on <单元>
+   paru -S nyxuri-git        # 管理引擎 + 插件蓝图 + Nyxuri Shell，一包全量
+   nyxuri install full       # 或按插件自由组装桌面：nyxuri on <插件>
    ```
-   > 安装即进入系统包模式：更新交给 pacman。桌面软件不捆绑——启用哪个单元才装它需要的软件。
+   > 安装即进入系统包模式：更新交给 pacman。桌面软件不捆绑——启用哪个插件才装它需要的软件。
    ````
 
    回填位置：`README.md` / `README.zh-CN.md` 的 Install 段置顶（Git 仓库段降级为
@@ -51,5 +51,5 @@
 | --- | --- |
 | `glib2 detected and not included` | `gi.repository` 经 `python-gobject` 传递（noctalia 单元声明链覆盖）；namcap 不解析依赖树 |
 | `python-typing_extensions detected` | vendor kdl 的 `if TYPE_CHECKING:` 块内兼容 fallback，运行时不触达（引擎要求 3.11+） |
-| `QML module 'qs.units.*' is an uninstalled dependency` | quickshell root-relative import 语义，不是 QML 包 |
+| `QML module 'qs.plugins.*' is an uninstalled dependency` | quickshell root-relative import 语义，不是 QML 包 |
 | `Dependency bash detected and implicitly satisfied` | bash 由 base 保证 |

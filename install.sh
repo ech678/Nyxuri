@@ -97,10 +97,8 @@ engine_is_complete() {
     # Sentinels: launcher + engine top files + one file per package + blueprint probes.
     [ -f "$target_dir/nyxuri/launcher.sh" ] || return 1
     [ -f "$target_dir/nyxuri/translations.toml" ] || return 1
-    for module in cli core sysdoctor tui; do
-        [ -f "$target_dir/nyxuri/$module.py" ] || return 1
-    done
-    for sentinel in kernel/transaction deploy/atomic deploy/forms pkg/deps state/backup desktop/theme installer/menus; do
+    [ -f "$target_dir/nyxuri/cli.py" ] || return 1
+    for sentinel in deploy/atomic state/backup system/theme ui/tui; do
         [ -f "$target_dir/nyxuri/$sentinel.py" ] || return 1
     done
     # 蓝图探测: fish 主配置 + 壁纸 merge hook + 一个 packages-only 插件声明

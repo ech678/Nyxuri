@@ -36,9 +36,6 @@ ENGINE_DEPENDS = ["python"]
 
 # Runtime bases the shipped code directly spawns (optdepends: optional
 # functionality degrades with an explicit message when absent).
-# key-cli (Clavis upstream system monitor / Spotlight backend) is a known
-# gap — see shell/KNOWN-ISSUES.md; register here only after it is brought
-# in-repo or formally adopted.
 ENGINE_OPTDEPENDS = [
     ("quickshell", "Nyxuri Shell runtime"),
     # 31 shell QML files import Qt5Compat.GraphicalEffects unconditionally and
@@ -58,7 +55,7 @@ def compute_depends(repo_root: Path):
     """
     sys.path.insert(0, str(repo_root))
     from nyxuri.deploy.manifest import discover_manifest_apps
-    from nyxuri.core import AUR_DEPS, CORE_DEPS
+    from nyxuri.system.env import AUR_DEPS, CORE_DEPS
 
     depends = set(ENGINE_DEPENDS)
     optdepends = []

@@ -2,10 +2,8 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.app
 import qs.services
 import qs.commons.i18n
-import "../keystone/tools"
 import "ShellDiagnostics.js" as ShellDiagnostics
 import "ShellSamplerMath.js" as SamplerMath
 
@@ -235,23 +233,12 @@ Singleton {
                                                              "id": "hyprpicker",
                                                              "available": ColorPickerService.available,
                                                              "probed": ColorPickerService.probeFinished
-                                                         },
-                                                         {
-                                                             "id": "key-cli",
-                                                             "available": SystemMonitorService.ready,
-                                                             "probed": SystemMonitorService.hasData
-                                                                       || SystemMonitorService.state
-                                                                       !== "idle"
                                                          }
                                                      ],
                                                      "errors": [
                                                          {
                                                              "source": "compositor",
                                                              "message": CompositorDriver.configError
-                                                         },
-                                                         {
-                                                             "source": "dock",
-                                                             "message": DockService.configError
                                                          },
                                                          {
                                                              "source": "system-monitor",

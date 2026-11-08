@@ -314,7 +314,9 @@ def _start_weston(env: dict[str, str], root: Path) -> subprocess.Popen[str] | No
 
 def _fixture_probe(repo: Path) -> list[dict[str, Any]]:
     """Exercise the checked-in mock-niri fixture with valid and malformed data."""
-    fixture = repo / "shell/tests/fixtures/mock-niri"
+    fixture = repo / "tests/shell/fixtures/mock-niri"
+    if not fixture.is_file():
+        fixture = repo / "shell/tests/fixtures/mock-niri"
     if not fixture.is_file():
         return [_result("negative.mock_niri_fixture", "UNAVAILABLE", reason="fixture missing")]
     with tempfile.TemporaryDirectory(prefix="nyxuri-feature-matrix-") as directory:

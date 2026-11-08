@@ -4,7 +4,7 @@
  * 16-role palette JSON. Pure computation: no I/O, no environment access.
  *
  * Derivation rules were reverse-engineered against Noctalia 5.2.1 golden
- * outputs (shell/tests/fixtures/theme/golden) and hold for tonal-spot,
+ * outputs (tests/shell/fixtures/theme/golden) and hold for tonal-spot,
  * fruit-salad, rainbow and monochrome schemes; m3-content diverges on the
  * three on_*_container keys (engine-internal post-processing, measured in
  * the color-diff harness). The two computed light-mode terminal variants

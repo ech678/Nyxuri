@@ -5,14 +5,12 @@ import subprocess
 import sys
 from typing import List
 
-from nyxuri.core import (
+from nyxuri.system.env import (
     CLI_CMD,
     Colors,
     PENDING_UPGRADE_ENV,
     PENDING_UPGRADE_MENU_ENV,
     PROJECT_NAME,
-)
-from nyxuri.core import (
     acquire_lock,
     check_path_occlusion,
     ensure_nyxuri_symlink,
@@ -20,19 +18,20 @@ from nyxuri.core import (
     get_env,
     init_logger,
 )
-
+from nyxuri.system.i18n import msg
 from nyxuri.deploy import test_deploy
-from nyxuri.desktop.forms import (
+from nyxuri.deploy.forms import (
     apply_form,
     delete_form,
     edit_form,
     list_forms,
     save_form,
 )
-from nyxuri import sources as lifecycle
-from nyxuri.pkg.deps import run_dep_menu_loop
-from nyxuri.sysdoctor import generate_bug_report, run_doctor
-from nyxuri.kernel import ledger, registry, transaction
+from nyxuri.deploy import sources as lifecycle
+from nyxuri.system.pkg import run_dep_menu_loop
+from nyxuri.system.doctor import generate_bug_report, run_doctor
+from nyxuri.state import store
+from nyxuri.deploy import catalog, engine
 from nyxuri.state import (
     backup_configs,
     delete_backup,
@@ -40,12 +39,11 @@ from nyxuri.state import (
     rollback_configs,
     uninstall_nyxuri,
 )
-from nyxuri.core import msg
-from nyxuri.desktop import bridge
-from nyxuri.pkg.net import safe_git_checkout_ref, safe_git_pull
-from nyxuri.tui import press_any_key, prompt_confirm, select_language
-from nyxuri.installer.menus import main_menu_loop
-from nyxuri.installer.workflows import (
+from nyxuri.system import shell as bridge
+from nyxuri.system.net import safe_git_checkout_ref, safe_git_pull
+from nyxuri.ui.tui import press_any_key, prompt_confirm, select_language
+from nyxuri.ui.menus import main_menu_loop
+from nyxuri.ui.workflows import (
     check_new_deps_post_update,
     install_configs_workflow,
     offer_overwrite_upgrade,
@@ -67,22 +65,22 @@ def exit_usage(usage: str) -> None:
 # --- KM3 core verbs (plugin-model.md §5) ----------------------------------------
 #
 # Four canonical verbs — list / on / off / doctor — are the market-facing
-# surface; every switch flip routes through nyxuri.transaction, and this
+# surface; every switch flip routes through engine, and this
 # layer only adds disclosure, prose and exit codes. The legacy alias table
 # was executed at KM3.5: old names are plain unknown commands.
 
 
 def _package_installer(plugin_id: str, missing: List[str]) -> bool:
-    """Thin alias: the shared transaction installer lives in deps (CLI and
+    """Thin alias: the shared package installer lives in pkg (CLI and
     TUI must inject the exact same package-manager behavior)."""
-    from nyxuri.pkg.deps import plugin_package_installer
+    from nyxuri.system.pkg import plugin_package_installer
 
     return plugin_package_installer(plugin_id, missing)
 
 
 def _report_steps(steps) -> int:
-    """Turn transaction Steps into bilingual prose; 0 only if every plugin won."""
-    from nyxuri.tui import format_steps
+    """Turn execution Steps into bilingual prose; 0 only if every plugin won."""
+    from nyxuri.ui.tui import format_steps
 
     lines = format_steps(steps)
     for line in lines:
@@ -91,7 +89,7 @@ def _report_steps(steps) -> int:
 
 
 def _cmd_on(sub_args: List[str]) -> int:
-    """nyxuri on <plugin> [--form <name>] — disclose, then transact."""
+    """nyxuri on <plugin> [--form <name>] — disclose, then apply."""
     usage = f"{CLI_CMD} on <plugin> [--form <name>]"
     rest = list(sub_args)
     plugin = rest.pop(0) if rest and not rest[0].startswith("-") else ""
@@ -107,17 +105,17 @@ def _cmd_on(sub_args: List[str]) -> int:
         else:
             exit_usage(usage)
     try:
-        plan = transaction.plan_on(plugin)
+        plan = engine.plan_on(plugin)
     except KeyError:
         print(msg("cli_unknown_plugin", plugin), file=sys.stderr)
         return 2
-    enabled = {u for u, rec in ledger.all_plugins().items() if rec.get("state") == "enabled"}
+    enabled = {u for u, rec in store.all_plugins().items() if rec.get("state") == "enabled"}
     incoming = [u for u in plan if u not in enabled]
     if incoming:
         print(msg("cli_plan_on", " → ".join(incoming)))
     need_install: List[str] = []
     for uid in incoming:
-        missing = transaction.missing_packages(registry.load_plugin(uid))
+        missing = engine.missing_packages(catalog.load_plugin(uid))
         if missing:
             need_install.extend(missing)
             print(msg("cli_plan_packages", uid, ", ".join(missing)))
@@ -125,12 +123,12 @@ def _cmd_on(sub_args: List[str]) -> int:
         print(msg("cli_aborted"), file=sys.stderr)
         return 1
     return _report_steps(
-        transaction.plugin_on(plugin, form=form, install_packages=_package_installer)
+        engine.plugin_on(plugin, form=form, install_packages=_package_installer)
     )
 
 
 def _cmd_off(sub_args: List[str]) -> int:
-    """nyxuri off <plugin> [--cascade] — guard, disclose, then transact."""
+    """nyxuri off <plugin> [--cascade] — guard, disclose, then deactivate."""
     usage = f"{CLI_CMD} off <plugin> [--cascade]"
     rest = list(sub_args)
     plugin = rest.pop(0) if rest and not rest[0].startswith("-") else ""
@@ -144,7 +142,7 @@ def _cmd_off(sub_args: List[str]) -> int:
         else:
             exit_usage(usage)
     try:
-        plan = transaction.plan_off(plugin)
+        plan = engine.plan_off(plugin)
     except KeyError:
         print(msg("cli_unknown_plugin", plugin), file=sys.stderr)
         return 2
@@ -154,7 +152,7 @@ def _cmd_off(sub_args: List[str]) -> int:
         return 1
     if dependents:
         print(msg("cli_plan_off_cascade", ", ".join(dependents)))
-    return _report_steps(transaction.plugin_off(plugin, cascade=cascade))
+    return _report_steps(engine.plugin_off(plugin, cascade=cascade))
 
 
 def _cmd_add(sub_args: List[str]) -> int:
@@ -221,7 +219,7 @@ def _cmd_remove(sub_args: List[str]) -> int:
 
 
 def _state_cell(state: str, width: int) -> str:
-    """Ledger state as a width-fixed colored cell."""
+    """Plugin state as a width-fixed colored cell."""
     if state == "enabled":
         text, color = state, Colors.BOLD_GREEN
     elif state == "disabled":
@@ -237,8 +235,8 @@ def _cmd_list(sub_args: List[str]) -> int:
         exit_usage(f"{CLI_CMD} list [plugin]")
     if sub_args:
         return _show_plugin_detail(sub_args[0])
-    recs = ledger.all_plugins()
-    ids = sorted(set(registry.plugin_ids()) | set(recs))
+    recs = store.all_plugins()
+    ids = sorted(set(catalog.plugin_ids()) | set(recs))
     if not ids:
         print(msg("cli_list_none"))
         return 0
@@ -250,14 +248,14 @@ def _cmd_list(sub_args: List[str]) -> int:
 
 
 def _show_plugin_detail(plugin: str) -> int:
-    """One plugin: manifest declarations joined with its ledger record."""
-    known = plugin in registry.plugin_ids()
-    if not known and plugin not in ledger.all_plugins():
+    """One plugin: manifest declarations joined with its state record."""
+    known = plugin in catalog.plugin_ids()
+    if not known and plugin not in store.all_plugins():
         print(msg("cli_unknown_plugin", plugin), file=sys.stderr)
         return 2
     print(f"{Colors.BOLD}{plugin}{Colors.RESET}")
     if known:
-        m = registry.load_plugin(plugin)
+        m = catalog.load_plugin(plugin)
         if m.label:
             print(f"  {msg('cli_detail_label')}: {m.label}")
         if m.category:
@@ -274,7 +272,7 @@ def _show_plugin_detail(plugin: str) -> int:
         if m.requires_root or m.system_paths:
             paths = f" ({', '.join(m.system_paths)})" if m.system_paths else ""
             print(f"  {msg('cli_detail_privilege')}: root{paths}")
-    rec = ledger.get_plugin(plugin)
+    rec = store.get_plugin(plugin)
     if rec:
         print(f"  {msg('cli_detail_state')}: {rec.get('state', '-')}")
         print(f"  {msg('cli_detail_form')}: {rec.get('form', '-')}")
@@ -285,7 +283,7 @@ def _show_plugin_detail(plugin: str) -> int:
     else:
         print(f"  {msg('cli_detail_never_switched')}")
     try:
-        audit = transaction.audit_plugins(plugin)
+        audit = engine.audit_plugins(plugin)
     except KeyError:
         audit = {}
     if audit.get(plugin):
@@ -294,34 +292,34 @@ def _show_plugin_detail(plugin: str) -> int:
 
 
 def _print_audit(report: dict) -> None:
-    """Three-state reconciliation table (Synced / Drifted / Ghost)."""
+    """Three-state status table (Synced / Drifted / Ghost)."""
     if not report:
         print(msg("cli_audit_clean"))
         return
     print(msg("cli_audit_header"))
     marks = {
-        transaction.STATE_SYNCED: (Colors.BOLD_GREEN, "[✓]"),
-        transaction.STATE_DRIFTED: (Colors.BOLD_YELLOW, "[!]"),
-        transaction.STATE_GHOST: (Colors.BOLD_RED, "[✗]"),
+        engine.STATE_SYNCED: (Colors.BOLD_GREEN, "[✓]"),
+        engine.STATE_DRIFTED: (Colors.BOLD_YELLOW, "[!]"),
+        engine.STATE_GHOST: (Colors.BOLD_RED, "[✗]"),
     }
     for uid in sorted(report):
         color, mark = marks.get(report[uid], (Colors.DIM, "[•]"))
         print(f"  {color}{mark}{Colors.RESET} {uid:<24}{report[uid]}")
     # The three states are verdicts with an action now (#139): drift is a
     # protected user change, a ghost is an adoptable plugin — say so.
-    if transaction.STATE_DRIFTED in report.values():
+    if engine.STATE_DRIFTED in report.values():
         print(msg("cli_audit_drifted_hint"))
-    if transaction.STATE_GHOST in report.values():
+    if engine.STATE_GHOST in report.values():
         print(msg("cli_audit_ghost_hint"))
 
 
 def _cmd_doctor(sub_args: List[str]) -> int:
-    """nyxuri doctor [plugin] — audit first, system checkup as the annex."""
+    """nyxuri doctor [plugin] — status check first, system checkup as the annex."""
     if len(sub_args) > 1:
         exit_usage(f"{CLI_CMD} doctor [plugin]")
     plugin = sub_args[0] if sub_args else None
     try:
-        report = transaction.audit_plugins(plugin)
+        report = engine.audit_plugins(plugin)
     except KeyError:
         print(msg("cli_unknown_plugin", plugin), file=sys.stderr)
         return 2
@@ -416,7 +414,7 @@ def _cmd_use(sub_args: List[str]) -> int:
         if len(sub_args) > 2:
             exit_usage(f"{CLI_CMD} use {app} slots")
         from nyxuri.deploy.forms import list_slots
-        from nyxuri.kernel.ledger import get_form_slots
+        from nyxuri.state.store import get_form_slots
         slots = list_slots(app)
         if not slots:
             print(f"[!] {app} 暂无可用槽位轴")
@@ -463,7 +461,7 @@ def _cmd_theme(sub_args: List[str]) -> int:
     sub = sub_args[0] if sub_args else "toggle"
     if len(sub_args) > 1 or sub not in ("toggle", "dark", "light", "sync", "status"):
         exit_usage(f"{CLI_CMD} theme [toggle|dark|light|sync|status]")
-    from nyxuri.desktop.theme import status, sync
+    from nyxuri.system.theme import status, sync
     if sub == "status":
         return status()
     return sync(sub)
@@ -478,8 +476,8 @@ _SHELL_EXPERIMENTAL_NOTE = (
 def _cmd_shell(sub_args: List[str]) -> int:
     sub = sub_args[0] if sub_args else "status"
     usage = f"{CLI_CMD} shell [get|set <noctalia|nyxuri-shell> [bin_path]|switch [<noctalia|nyxuri-shell> [bin_path]]|status] [EXPERIMENTAL]"
-    from nyxuri.kernel.ledger import active_shell, nyxuri_shell_bin
-    from nyxuri.desktop.shell_switcher import normalize_shell_name, probe_running_shell, resolve_custom_bin, hot_switch_shell
+    from nyxuri.state.store import active_shell, nyxuri_shell_bin
+    from nyxuri.system.shell import normalize_shell_name, probe_running_shell, resolve_custom_bin, hot_switch_shell
     if sub == "get":
         if len(sub_args) > 1:
             exit_usage(usage)
@@ -592,7 +590,7 @@ def _cmd_update(sub_args: List[str]) -> int:
         if cur == "--to":
             skip_next = True
             continue
-        if not cur.startswith("-") and registry.plugin_dir(cur) is not None:
+        if not cur.startswith("-") and catalog.plugin_dir(cur) is not None:
             return _cmd_update_plugin(sub_args)
     usage = f"{CLI_CMD} update [--force|--no-deploy] [--to <tag|commit>]"
     flag = ""
@@ -621,9 +619,9 @@ def _cmd_update(sub_args: List[str]) -> int:
             capture_output=True, text=True, check=False,
         )
         if head.returncode == 0 and head.stdout.strip():
-            from nyxuri.kernel.ledger import update_ledger
-            update_ledger(last_update_head=head.stdout.strip())
-        # KM5: the linear migrations module was liquidated — the ledger is the
+            from nyxuri.state.store import update_state
+            update_state(last_update_head=head.stdout.strip())
+        # KM5: the linear migrations module was liquidated — state.json is the
         # only truth and the nyxniri-era tombstones are years past their sweep.
         # Hand the deploy over to a fresh process so it runs on the updated
         # engine code instead of the modules loaded before the pull.
@@ -636,12 +634,12 @@ def _cmd_update(sub_args: List[str]) -> int:
 
 
 def _cmd_clean(sub_args: List[str]) -> int:
-    from nyxuri.desktop.clean import main as clean
+    from nyxuri.system.clean import main as clean
     return clean(sub_args)
 
 
 def _cmd_pkg(sub_args: List[str]) -> int:
-    from nyxuri.pkg.fzf import main as packages
+    from nyxuri.system.pkg import main as packages
     return packages(sub_args)
 
 
@@ -694,7 +692,7 @@ def main() -> None:
     get_env()
     # The event delivery is the outer layer's job (plugin-model.md §6): wire
     # the Shell bridge once so every verb (CLI, TUI, installer menus) that
-    # lands a plugin transaction notifies the running shell over its own IPC.
+    # lands a plugin update notifies the running shell over its own IPC.
     bridge.wire()
     ensure_nyxuri_symlink()
 

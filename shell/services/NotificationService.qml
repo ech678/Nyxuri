@@ -6,7 +6,6 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Notifications
 import qs.commons
-import qs.app
 import qs.ui
 import qs.commons.i18n
 

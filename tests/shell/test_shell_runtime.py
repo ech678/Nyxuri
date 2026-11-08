@@ -216,7 +216,7 @@ class ShellPresentationTests(unittest.TestCase):
             # stalled render.
             trace = self.ctx.home / "hook-trace"
             for hook in ["kitty-apply.sh", "btop-apply.sh", "starship-apply.sh"]:
-                path = self.shell / "app/templates" / hook.split("-")[0] / hook
+                path = self.shell / "commons/assets/templates" / hook.split("-")[0] / hook
                 path.write_text('printf "%s\\n" "$0" >> "' + str(trace) + '"\n' + path.read_text(
                     encoding="utf-8"))
             # Trace FileView operation internals: a lost saved()/loaded() emit
@@ -829,7 +829,7 @@ ShellRoot {
 class ShellConfigStoreTests(unittest.TestCase):
     """A config store that cannot be read must survive, and a first run must create it."""
 
-    CONFIG_RELATIVE = ".config/nyxuri/config.json"
+    CONFIG_RELATIVE = ".config/nyxuri/config.toml"
 
     def setUp(self):
         self.ctx = TempEnv()
@@ -948,22 +948,23 @@ ShellRoot {
     def test_corrupt_config_is_left_untouched(self):
         """A parse failure must be reported, not repaired by overwriting the user's file."""
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
-        corrupt = '{"theme":{"mode":"light"},"sidebar":{"keepLoaded":false},"pad":"'
+        corrupt = '[theme]\nmode = "light"\nbroken = "'
         self.config_path.write_text(corrupt, encoding="utf-8")
         self.wait_until_ready()
         time.sleep(25)
         self.assertEqual(self.config_path.read_text(encoding="utf-8"), corrupt)
-        self.assertIn("leaving the existing config untouched", self.log_text())
+        self.assertIn("leaving existing config untouched", self.log_text())
 
     def test_missing_config_is_created_with_defaults(self):
         """The first run still has to materialise the store."""
+        import tomllib
         self.assertFalse(self.config_path.exists())
         self.wait_until_ready()
         deadline = time.monotonic() + 60
         while time.monotonic() < deadline and not self.config_path.exists():
             time.sleep(0.5)
         self.assertTrue(self.config_path.exists(), "the store was never created")
-        parsed = json.loads(self.config_path.read_text(encoding="utf-8"))
+        parsed = tomllib.loads(self.config_path.read_text(encoding="utf-8"))
         self.assertIn("theme", parsed)
         self.assertIn(parsed["theme"]["mode"], ("dark", "light"))
 

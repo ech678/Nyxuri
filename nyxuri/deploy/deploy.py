@@ -13,10 +13,9 @@ import time
 from contextlib import ExitStack
 from typing import List, Optional
 
-from nyxuri.core import Colors, REPO_URL, THEME_ENGINE
-from nyxuri.core import get_env, log_msg, timed_run
-from nyxuri.core import msg
-from nyxuri.tui import read_key, responsive_hint, show_logo, raw_input_mode, _drain_pending
+from nyxuri.system.env import Colors, REPO_URL, THEME_ENGINE, get_env, log_msg, timed_run
+from nyxuri.system.i18n import msg
+from nyxuri.ui.tui import read_key, responsive_hint, show_logo, raw_input_mode, _drain_pending
 
 from nyxuri.deploy.atomic import (
     CarryPolicy,
@@ -54,11 +53,11 @@ def discover_config_items() -> List[str]:
 
 def _item_src(item: str) -> Path:
     """Blueprint source for a plugin id: official root first, then the
-    third-party data root (S1). Root ownership lives in the registry;
+    third-party data root (S1). Root ownership lives in the catalog;
     deployment only ever needs the resolved path."""
-    from nyxuri.kernel import registry
+    from nyxuri.deploy import catalog
 
-    src = registry.plugin_dir(item)
+    src = catalog.plugin_dir(item)
     if src is not None:
         return src
     return get_env().plugins_src / item
@@ -67,7 +66,7 @@ def _item_src(item: str) -> Path:
 def config_item_dest(item: str) -> Path:
     """Living-space path for a plugin: ``~/.config/<target>`` for single-file
     plugins, else ``~/.config/<item>`` (plugin-model.md §4 target exception)."""
-    from nyxuri.core import get_env
+    from nyxuri.system.env import get_env
     m = load_manifest(_item_src(item))
     return living_path(m, get_env().config_dir)
 
@@ -75,7 +74,7 @@ def config_item_dest(item: str) -> Path:
 def config_item_src(item: str) -> Path:
     """Blueprint payload path for a plugin: the target file itself for
     single-file plugins, else the plugin directory."""
-    from nyxuri.core import get_env
+    from nyxuri.system.env import get_env
     src = _item_src(item)
     m = load_manifest(src)
     return src / m.target if m.target else src
@@ -93,8 +92,8 @@ def _phase_atomic_deployment(
     e.g. niri/monitor.kdl), and the chmod globs (executable scripts). The
     Dunder __custom__ walk inside atomic_replace_item is untouched.
 
-    ``carry_policy`` (issue #139) threads the transaction layer's ownership
-    verdict per plugin: baselines from the ledger, the unknown-provenance
+    ``carry_policy`` (issue #139) threads the engine layer's ownership
+    verdict per plugin: baselines from the state store, the unknown-provenance
     stance, and the out-map of carried files. None = plain template swap.
     """
     env = get_env()
@@ -122,10 +121,10 @@ def _phase_atomic_deployment(
             # atomic call below bound (a stale loop iteration must never leak).
             result = FormSrcResult(src=src, reset_form=None)
         else:
-            dest = config_dir / item
+            dest = living_path(manifest, config_dir)
 
             # Resolve which source tree to deploy: default config, an official
-            # form, or a user form — based on the plugin's ledger record.
+            # form, or a user form — based on the plugin's state record.
             active = read_active_form(item)
             result = resolve_form_src(item, active, dest)
             for w in result.warnings:
@@ -194,7 +193,11 @@ def _phase_atomic_deployment(
             failed_items.append(item)
             print(msg("log_form_replay_failed", item, ", ".join(replay_failures)), file=sys.stderr)
 
-        print(msg("log_deploy_config_item", item))
+        if dest.is_relative_to(env.home):
+            disp_dest = f"~/{dest.relative_to(env.home).as_posix()}"
+        else:
+            disp_dest = str(dest)
+        print(msg("log_deploy_config_item", disp_dest))
         log_msg("INFO", f"Deployed config {dest.relative_to(config_dir).as_posix()} (plugin {item})")
 
     return failed_items
@@ -207,7 +210,7 @@ def merge_deploy_plugin(item: str, manifest: ModuleManifest) -> Optional[List[st
     files (the user's own content, an external pack) are never touched and
     nothing is ever deleted. Returns the laid relative paths, or None on
     failure. Form axes and Vault semantics do not apply to merge
-    plugins; the transaction snapshots exactly these laid files.
+    plugins; the engine snapshots exactly these laid files.
     """
     import shutil
 
@@ -249,9 +252,9 @@ def wallpapers_pack_present() -> bool:
 
     Validated by requiring at least one deployed video file. The pack is
     user-domain content (installed via the plugin's ``install-pack`` script),
-    never ledger-tracked.
+    never state-tracked.
     """
-    from nyxuri.core import get_pics_dir
+    from nyxuri.system.env import get_pics_dir
 
     video_dir = get_pics_dir() / "Wallpapers" / "video"
     try:
@@ -293,11 +296,11 @@ def _phase_post_install_services() -> None:
     """Run built-in post-deployment work (theme sync).
 
     Plugin activation is user policy, not a deploy side effect: enabled plugins
-    replay their declared hooks via ``transaction.replay_enabled_hooks()``
+    replay their declared hooks via ``engine.replay_enabled_hooks()``
     in the workflow; the retired module direct-calls are gone (KM3).
     """
     try:
-        from nyxuri.desktop.theme import sync
+        from nyxuri.system.theme import sync
         sync()
         print(msg("log_gtk_theme_init"))
     except Exception as e:
@@ -333,7 +336,7 @@ def render_completion_screen(
     if carried_groups is None:
         carried_groups = {}
 
-    from nyxuri.pkg.deps import get_missing_deps
+    from nyxuri.system.pkg import get_missing_deps
 
     title_key = "summary_title_failed" if failed_items else ("summary_title_update" if mode == "update" else ("summary_title_test" if mode == "test" else "summary_title_install"))
     missing_deps = get_missing_deps() if mode == "full" else []
@@ -420,7 +423,7 @@ def render_completion_screen(
             _render_body()
 
             sys.stdout.write(msg("summary_action_title"))
-            from nyxuri.tui import render_menu_item
+            from nyxuri.ui.tui import render_menu_item
             render_menu_item(0, msg("summary_action_star"), focus)
             render_menu_item(1, msg("summary_action_exit"), focus, style="subtle")
 
@@ -487,10 +490,10 @@ def deploy_selected_configs(
 def enable_wallpapers_plugin() -> Optional[bool]:
     """Best-effort ``on wallpapers`` for deploy flows: True / False / None
     (skipped). The pack itself is user-domain (install-pack script); only
-    the blueprint fallback goes through the transaction."""
+    the blueprint fallback goes through the engine."""
     try:
-        from nyxuri.kernel import transaction
-        steps = transaction.plugin_on("wallpapers")
+        from nyxuri.deploy import engine
+        steps = engine.plugin_on("wallpapers")
         return bool(steps) and all(s.ok for s in steps)
     except Exception as exc:
         log_msg("WARN", f"wallpapers plugin enable failed: {exc}")
@@ -502,8 +505,8 @@ def enable_theme_plugin() -> Optional[bool]:
     load-bearing for both shells' gtk/niri/palette renders (KM4/P5 neutral
     pool). No-clobber merge — user-edited templates survive redeploys."""
     try:
-        from nyxuri.kernel import transaction
-        steps = transaction.plugin_on("theme")
+        from nyxuri.deploy import engine
+        steps = engine.plugin_on("theme")
         return bool(steps) and all(s.ok for s in steps)
     except Exception as exc:
         log_msg("WARN", f"theme plugin enable failed: {exc}")
@@ -511,10 +514,10 @@ def enable_theme_plugin() -> Optional[bool]:
 
 
 def _carry_baselines(items: List[str]) -> Dict[str, Optional[Dict[str, str]]]:
-    """Ledger baselines for ``nyxuri test``'s update-grade carry (lazy kernel read)."""
+    """State baselines for ``nyxuri test``'s update-grade carry."""
     try:
-        from nyxuri.kernel import transaction
-        return transaction.carry_baselines(items)
+        from nyxuri.deploy import engine
+        return engine.carry_baselines(items)
     except Exception:
         return {}
 

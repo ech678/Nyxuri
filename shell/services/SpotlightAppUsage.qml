@@ -5,8 +5,7 @@ import qs.services
 import Quickshell
 import Quickshell.Io
 import qs.commons
-import "../plugins/launcher/SpotlightAppOrder.js" as AppOrder
-import qs.app
+import "../commons/SpotlightAppOrder.js" as AppOrder
 
 Singleton {
     id: root

@@ -893,3 +893,115 @@ FilePickerWindow buildBreadcrumbItems）与 HEAD 干净副本对照实例逐条�
 
 **待办归位**：M3/M4 视觉过目归作者（过目后 shell/ROADMAP M3/M4 转已完成）；
 dashwindow 手写目录接不接 PluginRegistry 随 S0-3 设计定夺。
+
+## KM4.5 拆迁与正名（追加式，2026-10-17；2026-11-07 自 shell/ROADMAP.md 迁入归档，正文逐字保留）
+
+### KM4.5 拆迁与正名（2026-10-17，随主线 KM4.5）
+
+> 起因：`modules/`（16 域，混居 4 个非单元支撑目录）与 `units/`（12 个纯 manifest
+> 存根）两棵树表达同一概念且数目对不上，"bar 在哪"要查三处——文件树不表达架构，
+> KM3.5 的成果在 Shell 侧未兑现。本阶段模仿 KM3.5：先处决、再正名、一次契约同步。
+> 单元 ID（`shell.<domain>`）不变，ledger/state/IPC 零影响；实机验收与 KM4 合并。
+
+**处决清单（全部落地）**：
+`hotcorners/` → `app/services/HotCorners.qml`（唯一消费者 AppShell，宿主能力面）；
+`filepicker/` → `app/services/FilePickerWindow.qml`（keystone + settings 共用对话框
+能力）；`quicksettings/` → 并入 `sidebars/quicksettings/`（唯一消费者）；`systemcards/`
+拆分——纯展示 27 文件 → `shared/cards/`，直读 app 单例的 6 文件
+（SystemCardContent、SystemWeatherCard、SystemBatteryTank、SystemClockCard、
+SidebarCookieClock、NetworkInterfaceHistoryService）→ `app/services/`，其中两时钟卡
+按 LIFE002 服务层规则补齐 `Component.onDestruction` teardown；SlotHost 重复注释块、
+全树 `__pycache__` 清除。
+
+**正名**：`modules/<12 域>` 物理并入 `units/<域>/`，manifest.toml 与代码同目录——
+目录即单元，兑现内核「Adding a unit = adding a directory」承诺；顶层目录 10 → 8，
+`shell/modules/` 消失；`qs.modules.*` → `qs.units.*` 全量正名（实树 96 行 import +
+SlotHost 预热 12 行 + UnitCatalog source ×12 + 工具链与测试）。
+
+**契约同步**：shell/AGENTS 三层边界重写（app/units/shared + 支撑代码归宿规则）；
+architecture-matrix 重写（12 单元矩阵）；plugin-model §6 承载修订；shell/development
+分层词表；audit-lifecycle / generate-search-catalog / run-tests / check.sh /
+test_unit_catalog 路径改判；契约测试改测新真相（test_shell 61 绿、
+test_bugfix_regressions 109 绿，含 app/ 56 文件收敛断言与 units/ 死刑断言：
+`shell/modules/` 必须不存在、4 个已处决支撑目录不得复辟）。
+
+**验证**：全量引擎 970 测试绿（14 跳过 = 基线）+ Shell 分类 118 测试绿 +
+audit-lifecycle clean（560 文件）+ 单例纯度扫描零 offender。实机行为/视觉验收与
+KM4 合并进行。
+- **KM4.6 Shell 结构微整**（2026-10-17，结构层不碰行为；先行提交 KM4.5 后开工）：
+  处决——`packaging/`（死独立发行管线：release.py 已不存在，gen-deps 只写仓库根
+  packaging/，dependencies.json 引用旧 modules 树）整目录处决；`fallback/` 解散
+  （lottieqt 桩零消费者删除；M3Shapes 具名模块桩以真身份迁
+  `shared/controls/shapes/M3Shapes/`，wrapper `FALLBACK_QML_PATH` →
+  `SHAPES_QML_PATH` 指向 shapes 目录——桩紧邻其未来要吸收的 vendored 数学）；
+  `assets/` Junk Drawer 解散——shaders 按域归 `units/{keystone,launcher,wallpaper}/
+  shaders/`（frag+qsb 同迁，消费改 unit 相对 `Qt.resolvedUrl`），i18n 词典 →
+  `app/i18n/`，icons → `app/icons/`，内置模板注册表 → `app/templates/`
+  （matugen-registry.sh builtin 根同步），第三方许可证 12 件折入 `LICENSE`
+  第三方附录（逐字保留）；Paths 死属性清算（builtinMatugenDir/audioScriptsDir/
+  weatherIconsDir/weatherScriptsDir/scriptsDir 旁挂）。
+  分池——`app/cards/` 新建：SystemCardContent/SystemWeatherCard/SystemBatteryTank/
+  SystemClockCard/SidebarCookieClock 5 个直读单例的 UI 渲染件出 `services/`
+  （services 50 → 45 只剩服务+配置+能力面；NetworkInterfaceHistoryService 留列）。
+  scripts 收拢 9 → 5（dev/lib/media/system/theme）：build→dev、lyrics+cava→media、
+  capture 解散（LockSnapshot.qml + lock-snapshot.sh 一体归 `units/lock/`——
+  QML 混居 scripts 的错位纠正）。
+  正名——`settings/dashboard` → `settings/dashwindow`（语义钉死：它是
+  settingsPanelStyle==="dashboard" 的卡片窗变体，非页面）；`bar/quicksettings` →
+  `bar/quickpanel`；`sidebars/{dashboard,quicksettings}` 保留（对齐
+  `WidgetState.dashboardSidebarView` 的运行时 view id）。
+  验证：全量引擎 970 + Shell 分类 118 + audit-lifecycle clean（562 文件）+
+  单例纯度零 offender + check.sh + 沙箱部署绿。终态顶层：app/units/shared/scripts/
+  tests 五目录 + 8 根文件。
+  实机验收修正（同日）：settings 窗口 on/off 实测暴露 `shell.desktopcards`
+  永久 compiled empty 刷屏——`qs.app.cards` 新池无顶层 import、首次解析落在
+  Loader 内（0.3.2 约束①），SlotHost 预热名单补行；顺带坐实自愈上限（原 "/2"
+  为写死字符串，无限重试刷到 pass 11/2）——per-unit `failedHeals` 计数、超限
+  给决断性日志、unit-changed 清零重新武装。登记 KNOWN-ISSUES 已修复段；
+  AGENTS 约束①增补推广条款：新 qs.* 池必须进预热名单。
+  同日复核：上述修正未根治 compiled empty——真因是重构残留的失效相对 import
+  （DesktopCardCanvas import `../systemcards/…`、SystemCardContent import
+  `../shared/cards/…` 少一级 `../`，SystemCards 模块解散后真身在 `shared/cards/`），
+  文件不存在属硬错误；两处正名后恢复，settings ShellPage 误引 `UnitControl`
+  一并正名 `UnitControlService`（预热与自愈上限修正独立成立，保留）。
+  开关无反应同场根治——`probe_running_shells` 误排 `getppid()`，shell 派生的
+  nyxuri 探测不到自己的 qs 父进程，bridge 静默丢 unit-changed；修为只排除
+  自身，真实进程拓扑回归测试坐实（tests/test_bugfix_regressions）。
+
+## B 卷实施记录（追加式，2026-11-07）
+
+### B0 整抄基线入库（待验收，2026-11-07）
+
+**入库**：三能力源之二物理 `cp` 入 `shell/plugins/bar/vendor/`（保源相对
+子路径，inert、无消费者、不进装载闭包）——end4 皮肤件 8 件（Bar/
+BarContent/BarGroup/BarGroupStylePopup/Divisor/StyledPopupHeaderRow/
+StyledPopupValueRow + common 的 RoundCorner，B3 消费）、dux 机制件 6 件
+（WidgetModel.js + SurfaceWidgetFactory/Host/Context + BarWidgetDefaults/
+DensityPresets，B4 消费）；各带 README（来源、inert 状态、消费者计划、
+B5 清算条款）。第三源（树内 QuickSettings.qml 范式 + keystone morph 引擎）
+为保护对象无需拷贝。裁剪清单成文：[bar-island](../shell/bar-island.md)
+（四类裁剪逐件过堂 + 不抄清单 8 项裁决 + 晋升/豁免机制），llms.txt 已索引。
+
+**verbatim 偏离登记**：仅 end4 Bar.qml/BarContent.qml 剥离行尾空白共 9 行
+（git whitespace 门禁），其余 12 件与源逐字节一致（cmp 核验）。
+
+**豁免登记（B0 起 B5 止）**：① files.sh `nyxuri_qml_files` 跳过 `*/vendor/*`
+（qmlformat/qmllint 不吃基线原格式）；② test_qml_structure 单例 import 扫描
+排除 `vendor` 路径段（上游自带 import 形态，如 dux `qs.Common` 读 `I18n.tr`）；
+③ test_i18n_catalog 语料排除 `vendor`（基线字面量 `I18n.tr` 非我方词典义务、
+基线文本不算真实消费者）；④ test_shell_architecture 三处树级扫描排除
+`vendor`（plugins 目录小写卫牛——基线保源相对布局含 `Modules/` 驼峰、
+废弃 import 禁令——基线上游词表 `qs.Common`/`qs.Services`/`qs.modules.*`、
+`Quickshell.execDetached` 禁令——dux factory 内 exec 属④类裁剪目标）；
+⑤ audit-lifecycle 本就按 `vendor` 路径段排除，零改动；⑥ 消费者门禁扫描池
+（ui/ 平面池、plugins/settings 根）本不含 plugins/bar/，零改动——B5 结账
+统一清算。许可证附录 provenance 两节挂起（作者自领，verbatim 文本已在
+shell/LICENSE 附录：end-4 GPL-3 / DankMaterialShell MIT）。
+
+**验证**：tests/shell 全量绿（405 测试、11 跳过=基线，含
+test_qml_structure/test_plugin_decoupling/test_plugin_manifests/
+test_asset_placement/test_i18n_catalog/test_shell_architecture 门禁面）+
+test_ai_specs 绿 + check.sh 绿（changed scope：whitespace/qml-format/
+shell-lint/qml-lint/lifecycle-audit 五步）+ `HOME=$(mktemp -d) python3 -m
+nyxuri test` 沙箱部署绿。运行零变化论证：零 manifest/entryPoint/SlotHost
+预热/引用改动，vendor/ 文件惰性，PluginRegistry/装载闭包不触及。

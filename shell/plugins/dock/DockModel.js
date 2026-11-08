@@ -44,7 +44,7 @@ function option(name, value) {
 
 function decodeConfig(text) {
     try {
-        const value = JSON.parse(text);
+        const value = typeof text === "string" ? JSON.parse(text) : text;
         if (!value || value.schemaVersion !== 1 || !Array.isArray(value.pinned)
                 || value.pinned.length > 128 || !value.options || typeof value.options !== "object"
                 || Array.isArray(value.options)) return null;

@@ -6,16 +6,13 @@ import qs.commons
 import "../commons/SidebarPolicy.js" as SidebarPolicy
 import "../commons/WallpaperSource.js" as WallpaperSource
 import qs.services
-import "../plugins/wallpaper"
-import qs.app
 import qs.commons.i18n
 
 Singleton {
     id: root
 
     readonly property string configOverride: Quickshell.env("NYXURI_PERSONALIZATION_CONFIG") || ""
-    readonly property string filePath: root.configOverride !== "" ? root.configOverride : Paths.configHome
-                                                                    + "/config.json"
+    readonly property string filePath: root.configOverride !== "" ? root.configOverride : ConfigService.filePath
 
     readonly property string configDir: {
         const separator = root.filePath.lastIndexOf("/");
@@ -139,7 +136,7 @@ Singleton {
                                                                                         "label": I18n.tr(
                                                                                                      "Rainbow")
                                                                                     })]
-    readonly property var keystoneStyles: [({
+    readonly property var islandStyles: [({
                                                 "value": "bangs",
                                                 "label": I18n.tr("Bangs")
                                             }), ({
@@ -168,7 +165,7 @@ Singleton {
                                                               "label": I18n.tr("Right"),
                                                               "icon": "arrow_forward"
                                                           })]
-    property bool storeReady: false
+    readonly property bool storeReady: ConfigService.storeReady
     property bool loading: false
     property bool loaded: false
     readonly property bool ready: root.storeReady && root.loaded && !root.loading
@@ -259,8 +256,14 @@ Singleton {
 
     property bool lyricAlbumArtTint: true
 
+    property bool lyricShowTranslation: true
+
     function setLyricSource(value) {
         setValue("lyricSource", normalizedOption(root.lyricSources, value, "kugou"));
+    }
+
+    function setLyricShowTranslation(value) {
+        setValue("lyricShowTranslation", value === true);
     }
 
     function setLyricOffsetMs(value) {
@@ -284,56 +287,8 @@ Singleton {
             "label": "Super"
         },
         {
-            "value": "windows",
-            "label": "Windows"
-        },
-        {
-            "value": "arch",
-            "label": "Arch"
-        },
-        {
-            "value": "linux",
-            "label": "Linux"
-        },
-        {
-            "value": "ubuntu",
-            "label": "Ubuntu"
-        },
-        {
-            "value": "debian",
-            "label": "Debian"
-        },
-        {
-            "value": "fedora",
-            "label": "Fedora"
-        },
-        {
-            "value": "nixos",
-            "label": "NixOS"
-        },
-        {
-            "value": "linuxmint",
-            "label": "Linux Mint"
-        },
-        {
-            "value": "gentoo",
-            "label": "Gentoo"
-        },
-        {
-            "value": "steam",
-            "label": "Steam"
-        },
-        {
-            "value": "apple",
-            "label": "Apple"
-        },
-        {
-            "value": "googlechrome",
-            "label": "Chrome"
-        },
-        {
             "value": "command",
-            "label": "Command"
+            "label": "⌘ Command"
         }
     ]
     property string cursorTheme: ""
@@ -341,13 +296,15 @@ Singleton {
     property bool cursorHideWhenTyping: false
     property int cursorHideAfterInactiveMs: 0
     property string iconTheme: ""
-    // keystoneEnabled / barEnabled retired at KM4: unit existence is the
-    // ledger's alone (StateProjection); this file only owns the appearance
-    // axis (unit-model.md §3 orthogonal axes).
-    property bool keystoneOverlay: false
-    property string keystoneStyle: "bangs"
-    readonly property var keystoneKeyholeCardIds: ["weather", "pomodoro"]
-    readonly property var keystoneKeyholeCardOptions: [
+    // barEnabled stayed retired at KM4 (unit existence is the ledger's alone);
+    // B1 reintroduces islandEnabled as the island's component gate — the
+    // island is a bar layout part now, not a unit, so its switch is a config
+    // key while the bar unit's existence remains the ledger's alone.
+    property bool islandEnabled: true
+    property bool islandOverlay: false
+    property string islandStyle: "bangs"
+    readonly property var islandKeyholeCardIds: ["weather", "pomodoro"]
+    readonly property var islandKeyholeCardOptions: [
         {
             "value": "weather",
             "label": I18n.tr("Weather"),
@@ -359,7 +316,7 @@ Singleton {
             "icon": "timer"
         }
     ]
-    property string keystoneKeyholeCard: "weather"
+    property string islandKeyholeCard: "weather"
     property bool barOverlay: false
     property string barPosition: "top"
     readonly property var barComponentIds: ["workspaces", "information", "activeWindow", "media", "tray",
@@ -451,22 +408,26 @@ Singleton {
     property var barLayoutLeft: root.defaultBarLayoutLeft.slice()
     property var barLayoutMiddle: root.defaultBarLayoutMiddle.slice()
     property var barLayoutRight: root.defaultBarLayoutRight.slice()
-    property string keystonePosition: "top"
-    property bool keystoneCapsLockOsd: true
-    property bool keystoneNumLockOsd: true
-    property bool keystoneHideDate: false
-    property bool keystoneLongShowNames: true
-    property bool keystoneLongShowMonitorValues: true
+    property string islandPosition: "top"
+    property bool islandCapsLockOsd: true
+    property bool islandNumLockOsd: true
+    property bool islandHideDate: false
     property bool barShowValues: true
     property bool barShowNames: false
+    // ── Long style (D4 frozen at B1) ────────────────────────────────────────
+    // The keystoneLong* names stay un-renamed on purpose: the long style is a
+    // frozen escape hatch until the B3 reskin verdict; B5 retires the whole
+    // series (config keys, properties, functions) in one sweep.
+    property bool keystoneLongShowNames: true
+    property bool keystoneLongShowMonitorValues: true
     property bool keystoneLongShowValues: true
-    property string keystoneHoverAction: "peak"
-    property string keystoneLeftClickAction: "media"
-    property string keystoneMiddleClickAction: "lyrics"
-    property string keystoneMediaProgressStyle: "wave"
-    property string keystoneMediaCoverStyle: "rounded"
-    property string keystoneMediaColorStyle: "theme"
-    readonly property var keystoneMediaProgressOptions: [
+    property string islandHoverAction: "peak"
+    property string islandLeftClickAction: "media"
+    property string islandMiddleClickAction: "lyrics"
+    property string islandMediaProgressStyle: "wave"
+    property string islandMediaCoverStyle: "rounded"
+    property string islandMediaColorStyle: "theme"
+    readonly property var islandMediaProgressOptions: [
         {
             value: "wave",
             label: I18n.tr("Sine wave")
@@ -476,7 +437,7 @@ Singleton {
             label: I18n.tr("Material wave")
         }
     ]
-    readonly property var keystoneMediaCoverOptions: [
+    readonly property var islandMediaCoverOptions: [
         {
             value: "rounded",
             label: I18n.tr("Rounded cover")
@@ -490,7 +451,7 @@ Singleton {
             label: I18n.tr("Cover background")
         }
     ]
-    readonly property var keystoneMediaColorOptions: [
+    readonly property var islandMediaColorOptions: [
         {
             value: "theme",
             label: I18n.tr("Theme colors")
@@ -501,22 +462,22 @@ Singleton {
         }
     ]
 
-    function setKeystoneMediaProgressStyle(value) {
-        setValue("keystoneMediaProgressStyle", normalizedOption(root.keystoneMediaProgressOptions, value,
+    function setIslandMediaProgressStyle(value) {
+        setValue("islandMediaProgressStyle", normalizedOption(root.islandMediaProgressOptions, value,
                                                                 "wave"));
     }
 
-    function setKeystoneMediaCoverStyle(value) {
-        setValue("keystoneMediaCoverStyle", normalizedOption(root.keystoneMediaCoverOptions, value,
+    function setIslandMediaCoverStyle(value) {
+        setValue("islandMediaCoverStyle", normalizedOption(root.islandMediaCoverOptions, value,
                                                              "rounded"));
     }
 
-    function setKeystoneMediaColorStyle(value) {
-        setValue("keystoneMediaColorStyle", normalizedOption(root.keystoneMediaColorOptions, value, "theme"));
+    function setIslandMediaColorStyle(value) {
+        setValue("islandMediaColorStyle", normalizedOption(root.islandMediaColorOptions, value, "theme"));
     }
 
-    property int keystoneHoverOpenDelay: 150
-    property int keystoneHoverCloseDelay: 250
+    property int islandHoverOpenDelay: 150
+    property int islandHoverCloseDelay: 250
     readonly property var keystoneLongItemIds: ["workspaces", "media", "systemMonitor", "tray", "network",
         "bluetooth", "brightness", "volume", "microphone", "battery", "weather"]
     readonly property var defaultKeystoneLongLeading: ["workspaces", "media", "systemMonitor"]
@@ -582,12 +543,12 @@ Singleton {
         }
     ]
 
-    function setKeystoneHoverOpenDelay(value) {
-        setValue("keystoneHoverOpenDelay", normalizedBoundedInt(value, 150, 0, 500));
+    function setIslandHoverOpenDelay(value) {
+        setValue("islandHoverOpenDelay", normalizedBoundedInt(value, 150, 0, 500));
     }
 
-    function setKeystoneHoverCloseDelay(value) {
-        setValue("keystoneHoverCloseDelay", normalizedBoundedInt(value, 250, 0, 600));
+    function setIslandHoverCloseDelay(value) {
+        setValue("islandHoverCloseDelay", normalizedBoundedInt(value, 250, 0, 600));
     }
 
     function normalizedKeystoneLongItems(raw, excluded) {
@@ -628,7 +589,7 @@ Singleton {
             root.moveKeystoneLongItem(id, zone, target.length);
     }
 
-    readonly property var keystoneActionOptions: [
+    readonly property var islandActionOptions: [
         {
             value: "none",
             label: I18n.tr("Do not open")
@@ -643,7 +604,7 @@ Singleton {
         },
         {
             value: "dashboard",
-            label: I18n.tr("Dashboard")
+            label: I18n.tr("Dashboard", "HubContent")
         },
         {
             value: "upload",
@@ -659,34 +620,34 @@ Singleton {
         }
     ]
 
-    readonly property var keystoneHoverActionOptions: [
+    readonly property var islandHoverActionOptions: [
         {
             value: "peak",
             label: I18n.tr("Peak")
         }
-    ].concat(root.keystoneActionOptions)
+    ].concat(root.islandActionOptions)
 
-    readonly property var availableKeystoneHoverActionOptions: keystoneStyle === "long"
-                                                               ? keystoneActionOptions :
-                                                                 keystoneHoverActionOptions
+    readonly property var availableIslandHoverActionOptions: islandStyle === "long"
+                                                               ? islandActionOptions :
+                                                                 islandHoverActionOptions
 
     // Older saved configurations can still request peak. Long has no peak
     // state; retain the preference for other styles but resolve it to none.
-    readonly property string effectiveKeystoneHoverAction: keystoneStyle === "long" && keystoneHoverAction
-                                                           === "peak" ? "none" : keystoneHoverAction
+    readonly property string effectiveIslandHoverAction: islandStyle === "long" && islandHoverAction
+                                                           === "peak" ? "none" : islandHoverAction
 
-    function setKeystoneAction(gesture, action) {
+    function setIslandAction(gesture, action) {
         const properties = {
-            hover: "keystoneHoverAction",
-            left: "keystoneLeftClickAction",
-            middle: "keystoneMiddleClickAction"
+            hover: "islandHoverAction",
+            left: "islandLeftClickAction",
+            middle: "islandMiddleClickAction"
         };
         if (!Object.prototype.hasOwnProperty.call(properties, gesture))
             return;
         setValue(properties[gesture], normalizedOption(gesture === "hover"
-                                                       ? root.availableKeystoneHoverActionOptions :
-                                                         root.keystoneActionOptions, action, gesture
-                                                       === "hover" && root.keystoneStyle !== "long" ? "peak" :
+                                                       ? root.availableIslandHoverActionOptions :
+                                                         root.islandActionOptions, action, gesture
+                                                       === "hover" && root.islandStyle !== "long" ? "peak" :
                                                                                                       "none"));
     }
 
@@ -1404,8 +1365,12 @@ Singleton {
         setValue("settingsPanelStyle", normalizedOption(root.settingsPanelStyles, value, "default"));
     }
 
-    function setKeystoneStyle(value) {
-        setValue("keystoneStyle", normalizedOption(root.keystoneStyles, value, "bangs"));
+    function setIslandEnabled(value) {
+        setValue("islandEnabled", value === true);
+    }
+
+    function setIslandStyle(value) {
+        setValue("islandStyle", normalizedOption(root.islandStyles, value, "bangs"));
     }
 
     function setFontFamily(role, family) {
@@ -1716,30 +1681,30 @@ Singleton {
         return root.moveQuickSettingsComponent(id, root.quickSettingsComponents.length);
     }
 
-    function setKeystonePosition(value) {
-        setValue("keystonePosition", normalizedEdgePosition(value));
+    function setIslandPosition(value) {
+        setValue("islandPosition", normalizedEdgePosition(value));
     }
 
-    function normalizedKeystoneKeyholeCard(raw) {
+    function normalizedIslandKeyholeCard(raw) {
         // Migrate the old ordered selection, skipping the removed quick-settings card.
         const candidates = Array.isArray(raw) ? raw : [raw];
         for (const candidate of candidates) {
-            if (root.keystoneKeyholeCardIds.indexOf(candidate) !== -1)
+            if (root.islandKeyholeCardIds.indexOf(candidate) !== -1)
                 return candidate;
         }
         return "weather";
     }
 
-    function setKeystoneKeyholeCard(value) {
-        setValue("keystoneKeyholeCard", root.normalizedKeystoneKeyholeCard(value));
+    function setIslandKeyholeCard(value) {
+        setValue("islandKeyholeCard", root.normalizedIslandKeyholeCard(value));
     }
 
-    function setKeystoneCapsLockOsd(value) {
-        setValue("keystoneCapsLockOsd", !!value);
+    function setIslandCapsLockOsd(value) {
+        setValue("islandCapsLockOsd", !!value);
     }
 
-    function setKeystoneNumLockOsd(value) {
-        setValue("keystoneNumLockOsd", !!value);
+    function setIslandNumLockOsd(value) {
+        setValue("islandNumLockOsd", !!value);
     }
 
     function setKeystoneLongShowNames(value) {
@@ -1762,8 +1727,8 @@ Singleton {
         setValue("keystoneLongShowValues", !!value);
     }
 
-    function setKeystoneHideDate(value) {
-        setValue("keystoneHideDate", !!value);
+    function setIslandHideDate(value) {
+        setValue("islandHideDate", !!value);
     }
 
     function setHorizontalClockFontSize(value, persist) {
@@ -1907,6 +1872,7 @@ Singleton {
                 "lyricOffsetMs": root.lyricOffsetMs,
                 "lyricFontSize": root.lyricFontSize,
                 "lyricAlbumArtTint": root.lyricAlbumArtTint,
+                "lyricShowTranslation": root.lyricShowTranslation,
                 "cursorTheme": root.cursorTheme,
                 "cursorSize": root.cursorSize,
                 "cursorHideWhenTyping": root.cursorHideWhenTyping,
@@ -1924,30 +1890,31 @@ Singleton {
                 "shellBlurEnabled": root.shellBlurEnabled,
                 "shellBlurXray": root.shellBlurXray
             },
-            "keystone": {
-                "overlay": root.keystoneOverlay,
-                "style": root.keystoneStyle,
-                "position": root.keystonePosition,
-                "capsLockOsd": root.keystoneCapsLockOsd,
-                "numLockOsd": root.keystoneNumLockOsd,
-                "hideDate": root.keystoneHideDate,
+            "island": {
+                "enabled": root.islandEnabled,
+                "overlay": root.islandOverlay,
+                "style": root.islandStyle,
+                "position": root.islandPosition,
+                "capsLockOsd": root.islandCapsLockOsd,
+                "numLockOsd": root.islandNumLockOsd,
+                "hideDate": root.islandHideDate,
                 "longShowNames": root.keystoneLongShowNames,
                 "longShowMonitorValues": root.keystoneLongShowMonitorValues,
                 "longShowValues": root.keystoneLongShowValues,
-                "hoverAction": root.keystoneHoverAction,
-                "hoverOpenDelay": root.keystoneHoverOpenDelay,
-                "hoverCloseDelay": root.keystoneHoverCloseDelay,
+                "hoverAction": root.islandHoverAction,
+                "hoverOpenDelay": root.islandHoverOpenDelay,
+                "hoverCloseDelay": root.islandHoverCloseDelay,
                 "longLeading": root.keystoneLongLeading.slice(),
                 "longTrailing": root.keystoneLongTrailing.slice(),
-                "leftClickAction": root.keystoneLeftClickAction,
-                "middleClickAction": root.keystoneMiddleClickAction,
+                "leftClickAction": root.islandLeftClickAction,
+                "middleClickAction": root.islandMiddleClickAction,
                 "media": {
-                    "progressStyle": root.keystoneMediaProgressStyle,
-                    "coverStyle": root.keystoneMediaCoverStyle,
-                    "colorStyle": root.keystoneMediaColorStyle
+                    "progressStyle": root.islandMediaProgressStyle,
+                    "coverStyle": root.islandMediaCoverStyle,
+                    "colorStyle": root.islandMediaColorStyle
                 },
                 "keyhole": {
-                    "card": root.keystoneKeyholeCard
+                    "card": root.islandKeyholeCard
                 },
                 "horizontalClock": {
                     "fontSize": root.horizontalClockFontSize,
@@ -1989,8 +1956,8 @@ Singleton {
         const wallpaper = configSection(source.wallpaper);
         const theme = configSection(source.theme);
         const effects = configSection(source.effects);
-        const keystone = configSection(source.keystone);
-        const media = configSection(keystone.media);
+        const island = configSection(source.island);
+        const media = configSection(island.media);
         const bar = configSection(source.bar);
         const sidebar = configSection(source.sidebar);
         const desktopCards = configSection(source.desktopCards);
@@ -1999,8 +1966,8 @@ Singleton {
         const parallax = configSection(wallpaper.parallax);
         const autoCycle = configSection(wallpaper.autoCycle);
         const fonts = configSection(theme.fonts);
-        const horizontalClock = configSection(keystone.horizontalClock);
-        const keyhole = configSection(keystone.keyhole);
+        const horizontalClock = configSection(island.horizontalClock);
+        const keyhole = configSection(island.keyhole);
         root.bannerSource = typeof wallpaper.bannerSource === "string" ? wallpaper.bannerSource : "";
         root.wallpaperFolder = typeof wallpaper.folder === "string" && wallpaper.folder !== ""
                 ? wallpaper.folder : Paths.dataHome + "/wallpapers";
@@ -2057,6 +2024,9 @@ Singleton {
         root.lyricFontSize = normalizedBoundedInt(theme.lyricFontSize, 26, root.lyricFontSizeMin,
                                                   root.lyricFontSizeMax);
         root.lyricAlbumArtTint = theme.lyricAlbumArtTint === true;
+        // Absent in older configs; default to on rather than mirroring the
+        // `=== true` pattern used above, which would read a missing key as off.
+        root.lyricShowTranslation = theme.lyricShowTranslation !== false;
         root.themeMode = theme.mode === "light" ? "light" : "dark";
         root.superKeyStyle = root.superKeyStyles.some(style => style.value === theme.superKeyStyle)
                 ? theme.superKeyStyle : "text";
@@ -2072,44 +2042,45 @@ Singleton {
         root.shellBlurEnabled = typeof effects.shellBlurEnabled === "boolean" ? effects.shellBlurEnabled :
                                                                                 false;
         root.shellBlurXray = typeof effects.shellBlurXray === "boolean" ? effects.shellBlurXray : true;
-        root.keystoneMediaProgressStyle = normalizedOption(root.keystoneMediaProgressOptions,
+        root.islandMediaProgressStyle = normalizedOption(root.islandMediaProgressOptions,
                                                            media.progressStyle, "wave");
-        root.keystoneMediaCoverStyle = normalizedOption(root.keystoneMediaCoverOptions, media.coverStyle
+        root.islandMediaCoverStyle = normalizedOption(root.islandMediaCoverOptions, media.coverStyle
                                                         === "spectrum" ? "caelestia" : media.coverStyle,
                                                         "rounded");
-        root.keystoneMediaColorStyle = normalizedOption(root.keystoneMediaColorOptions, media.colorStyle,
+        root.islandMediaColorStyle = normalizedOption(root.islandMediaColorOptions, media.colorStyle,
                                                         "theme");
-        root.keystoneOverlay = typeof keystone.overlay === "boolean" ? keystone.overlay : false;
-        root.keystoneStyle = normalizedOption(root.keystoneStyles, keystone.style, "bangs");
-        root.keystonePosition = normalizedEdgePosition(keystone.position);
-        root.keystoneCapsLockOsd = typeof keystone.capsLockOsd === "boolean" ? keystone.capsLockOsd : true;
-        root.keystoneNumLockOsd = typeof keystone.numLockOsd === "boolean" ? keystone.numLockOsd : true;
-        root.keystoneLongShowValues = typeof keystone.longShowValues === "boolean" ? keystone.longShowValues :
+        root.islandEnabled = typeof island.enabled === "boolean" ? island.enabled : true;
+        root.islandOverlay = typeof island.overlay === "boolean" ? island.overlay : false;
+        root.islandStyle = normalizedOption(root.islandStyles, island.style, "bangs");
+        root.islandPosition = normalizedEdgePosition(island.position);
+        root.islandCapsLockOsd = typeof island.capsLockOsd === "boolean" ? island.capsLockOsd : true;
+        root.islandNumLockOsd = typeof island.numLockOsd === "boolean" ? island.numLockOsd : true;
+        root.keystoneLongShowValues = typeof island.longShowValues === "boolean" ? island.longShowValues :
                                                                                      true;
-        root.keystoneLongShowNames = typeof keystone.longShowNames === "boolean" ? keystone.longShowNames :
+        root.keystoneLongShowNames = typeof island.longShowNames === "boolean" ? island.longShowNames :
                                                                                    true;
-        root.keystoneLongShowMonitorValues = typeof keystone.longShowMonitorValues === "boolean"
-                ? keystone.longShowMonitorValues : true;
-        root.keystoneHideDate = typeof keystone.hideDate === "boolean" ? keystone.hideDate : false;
-        root.keystoneHoverAction = normalizedOption(root.keystoneHoverActionOptions, keystone.hoverAction
-                                                    === "library" ? "media" : keystone.hoverAction, "peak");
-        root.keystoneHoverOpenDelay = normalizedBoundedInt(keystone.hoverOpenDelay, 150, 0, 500);
-        root.keystoneHoverCloseDelay = normalizedBoundedInt(keystone.hoverCloseDelay, 250, 0, 600);
-        root.keystoneLongLeading = root.normalizedKeystoneLongItems(Array.isArray(keystone.longLeading)
-                                                                    ? keystone.longLeading :
+        root.keystoneLongShowMonitorValues = typeof island.longShowMonitorValues === "boolean"
+                ? island.longShowMonitorValues : true;
+        root.islandHideDate = typeof island.hideDate === "boolean" ? island.hideDate : false;
+        root.islandHoverAction = normalizedOption(root.islandHoverActionOptions, island.hoverAction
+                                                    === "library" ? "media" : island.hoverAction, "peak");
+        root.islandHoverOpenDelay = normalizedBoundedInt(island.hoverOpenDelay, 150, 0, 500);
+        root.islandHoverCloseDelay = normalizedBoundedInt(island.hoverCloseDelay, 250, 0, 600);
+        root.keystoneLongLeading = root.normalizedKeystoneLongItems(Array.isArray(island.longLeading)
+                                                                    ? island.longLeading :
                                                                       root.defaultKeystoneLongLeading, []);
-        root.keystoneLongTrailing = root.normalizedKeystoneLongItems(Array.isArray(keystone.longTrailing)
-                                                                     ? keystone.longTrailing :
+        root.keystoneLongTrailing = root.normalizedKeystoneLongItems(Array.isArray(island.longTrailing)
+                                                                     ? island.longTrailing :
                                                                        root.defaultKeystoneLongTrailing,
                                                                      root.keystoneLongLeading);
-        root.keystoneLeftClickAction = normalizedOption(root.keystoneActionOptions, keystone.leftClickAction
-                                                        === "library" ? "media" : keystone.leftClickAction,
+        root.islandLeftClickAction = normalizedOption(root.islandActionOptions, island.leftClickAction
+                                                        === "library" ? "media" : island.leftClickAction,
                                                         "media");
-        root.keystoneMiddleClickAction = normalizedOption(root.keystoneActionOptions,
-                                                          keystone.middleClickAction === "library" ? "media" :
-                                                                                                     keystone.middleClickAction,
+        root.islandMiddleClickAction = normalizedOption(root.islandActionOptions,
+                                                          island.middleClickAction === "library" ? "media" :
+                                                                                                     island.middleClickAction,
                                                           "lyrics");
-        root.keystoneKeyholeCard = root.normalizedKeystoneKeyholeCard(keyhole.card !== undefined
+        root.islandKeyholeCard = root.normalizedIslandKeyholeCard(keyhole.card !== undefined
                                                                       ? keyhole.card : keyhole.cards);
         root.horizontalClockFontSize = root.normalizedBoundedInt(horizontalClock.fontSize, 22, 16, 28);
         root.horizontalClockAxes = root.normalizedHorizontalClockAxes(horizontalClock.axes);
@@ -2192,11 +2163,11 @@ Singleton {
 
     function needsEdgePositionMigration(parsed) {
         const bar = parsed && parsed.bar;
-        const keystone = parsed && parsed.keystone;
+        const island = parsed && parsed.island;
         return !bar || typeof bar !== "object" || Array.isArray(bar) || bar.position
-                !== root.normalizedEdgePosition(bar.position) || !keystone || typeof keystone !== "object"
-                || Array.isArray(keystone) || keystone.position !== root.normalizedEdgePosition(
-                    keystone.position);
+                !== root.normalizedEdgePosition(bar.position) || !island || typeof island !== "object"
+                || Array.isArray(island) || island.position !== root.normalizedEdgePosition(
+                    island.position);
     }
 
     function commitPalette(scope, source) {
@@ -2215,20 +2186,9 @@ Singleton {
         const seed = WallpaperSource.primary(source);
         candidate.wallpaper.recentColors = root.normalizedRecentColors([seed].concat(
                                                                            root.recentWallpaperColors));
-        // FileView suppresses identical setText() calls even after failure.
-        // A fresh writer makes the same draft retryable without reloading or
-        // mutating the formal configuration on a failed Save.
-        const writer = paletteWriterComponent.createObject(root, {
-                                                               path: root.filePath
-                                                           });
-        if (!writer)
-            return false;
-        writer.setText(JSON.stringify(candidate, null, 2));
-        writer.waitForJob();
-        const saved = writer.succeeded;
-        writer.destroy();
-        if (!saved)
-            return false;
+        ConfigService.updateSections(candidate);
+        ConfigService.saveNow();
+
         // Publish only after the atomic write succeeded. No normal setters,
         // extra writes, or theme generation are involved in this operation.
         if (scope.target === "banner") {
@@ -2251,97 +2211,31 @@ Singleton {
         return true;
     }
 
-    Component {
-        id: paletteWriterComponent
-        FileView {
-            property bool succeeded: false
-            blockWrites: true
-            atomicWrites: true
-            onSaved: succeeded = true
-        }
-    }
-
     function save() {
         if (!root.storeReady || root.loading)
             return;
 
-        configFile.setText(JSON.stringify(root.toJson(), null, 2));
+        ConfigService.updateSections(root.toJson());
     }
 
-    Process {
-        id: ensureStoreDir
-
-        command: ["mkdir", "-p", root.configDir]
-        running: true
-        onExited: {
-            root.storeReady = true;
-            configFile.reload();
-        }
-    }
-
-    Timer {
-        id: configReloadDebounce
-
-        interval: 50
-        repeat: false
-        onTriggered: configFile.reload()
-    }
-
-    FileView {
-        id: configFile
-
-        path: root.filePath
-        blockLoading: true
-        blockWrites: true
-        atomicWrites: true
-        watchChanges: true
-        onFileChanged: configReloadDebounce.restart()
-        onLoaded: {
-            let shouldRepair = false;
-            let parsed = {};
+    Connections {
+        target: ConfigService
+        function onConfigLoaded() {
             root.loading = true;
-            try {
-                parsed = JSON.parse(configFile.text().trim() || "{}");
-                shouldRepair = root.needsWallpaperMigration(parsed) || root.needsEffectsMigration(parsed)
-                        || root.needsThemeMigration(parsed) || root.needsEdgePositionMigration(parsed)
-                        || root.needsScrollingMigration(parsed);
-                root.loadFromObject(parsed);
-                shouldRepair = shouldRepair || JSON.stringify(parsed.wallpaper || {}) !== JSON.stringify(
-                            root.toJson().wallpaper) || JSON.stringify(parsed.effects || {})
-                        !== JSON.stringify(root.toJson().effects) || JSON.stringify(parsed.theme || {})
-                        !== JSON.stringify(root.toJson().theme) || JSON.stringify(parsed.bar || {}) !== JSON.stringify(
-                            root.toJson().bar) || JSON.stringify(parsed.keystone || {}) !== JSON.stringify(
-                            root.toJson().keystone) || JSON.stringify(parsed.desktopCards || {})
-                        !== JSON.stringify(root.toJson().desktopCards);
-            } catch (error) {
-                console.warn("PersonalizationConfig failed to load; leaving the existing config untouched:",
-                             error);
-                shouldRepair = false;
-            }
+            root.loadFromObject(ConfigService.rawConfig);
             root.loading = false;
             root.loaded = true;
             root.settingsLoaded();
-            if (shouldRepair)
-                root.save();
         }
-        onLoadFailed: error => {
+    }
+
+    Component.onCompleted: {
+        if (ConfigService.storeReady) {
             root.loading = true;
-            root.loadFromObject({});
+            root.loadFromObject(ConfigService.rawConfig);
             root.loading = false;
             root.loaded = true;
             root.settingsLoaded();
-            if (error === FileViewError.FileNotFound)
-                root.save();
-            else
-                console.warn("PersonalizationConfig could not be read; leaving the existing config untouched:",
-                             error);
         }
-        onSaveFailed: error => console.warn("PersonalizationConfig could not be saved:", error)
-    }
-
-    Component.onDestruction: {
-        configReloadDebounce.stop();
-        if (ensureStoreDir)
-            ensureStoreDir.running = false;
     }
 }

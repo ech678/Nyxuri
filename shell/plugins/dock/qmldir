@@ -1,1 +1,2 @@
 singleton DesktopFiles 1.0 DesktopFiles.qml
+singleton DockService 1.0 DockService.qml

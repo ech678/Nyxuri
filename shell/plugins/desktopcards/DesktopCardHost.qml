@@ -5,7 +5,7 @@ import qs.commons
 import qs.services
 import qs.ui
 import qs.commons.cards
-import "../wallpaper"
+import "../../commons/WallpaperSource.js" as WallpaperSource
 import "./DesktopCardLayout.js" as DesktopCardLayout
 import "../../commons/cards/SystemCardPlacement.js" as Placement
 
@@ -51,7 +51,8 @@ Variants {
         // Read the cache from a binding.  sceneFor() mutates the cache, so
         // calling it from this binding creates a self-invalidating binding
         // loop and can leave the canvas with a null/one-pixel scene.
-        readonly property var scene: WallpaperSceneService.scenes[window.screenKey] || null
+        readonly property var scene: (ActionGateway.wallpaperHost && ActionGateway.wallpaperHost.scenes)
+                ? (ActionGateway.wallpaperHost.scenes[window.screenKey] || null) : null
         readonly property var screenNames: cardCanvas.screenNames
         readonly property var desktopIds: {
             // Read the state property directly so this binding is
@@ -90,7 +91,7 @@ Variants {
             window.requestedAnalysisKey = window.analysisKey;
             window.analysisGeneration += 1;
             wallpaperAnalyzer.request(window.analysisRequestKey, window.analysisGeneration, (
-                                          WallpaperService.isImagePath(window.scene.sourcePath)
+                                          WallpaperSource.isImage(window.scene.sourcePath)
                                           ? window.scene.sourcePath : ""), Math.round(
                                           window.scene.canvasWidth), Math.round(window.scene.canvasHeight),
                                       window.scene.panoramaSelected ? "panorama" : window.scene.fillModeName,
@@ -275,7 +276,8 @@ Variants {
             window.scheduleDesktopLayout("mode-changed");
         }
         Component.onCompleted: {
-            WallpaperSceneService.sceneFor(window.screenKey);
+            if (ActionGateway.wallpaperHost && ActionGateway.wallpaperHost.sceneFor)
+                ActionGateway.wallpaperHost.sceneFor(window.screenKey);
             DesktopPresentationService.registerHost(window.screenKey, viewport);
             Qt.callLater(function () {
                 window.lastLayoutMode = window.layoutMode;

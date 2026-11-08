@@ -10,7 +10,7 @@
 
 var SCHEMA_VERSION = 1;
 
-var KINDS = ["config", "edge", "island", "overlay", "drawer",
+var KINDS = ["config", "edge", "overlay", "drawer",
              "surface:desktop", "popup:notification", "service"];
 var UI_KINDS = KINDS.filter(function (kind) {
     return kind !== "config";
@@ -29,7 +29,7 @@ var CONTROL_KEYS = ["key", "type", "title", "description", "icon", "default",
 var CONTROL_OPTION_KEYS = ["value", "label", "icon"];
 var CONFIRMATIONS = ["none", "power-menu"];
 var AVAILABILITY = ["always", "awww", "nyxuri-wallpaper", "wallpaper-idle",
-                    "keystone", "keyboard-lock", "dock-previews"];
+                    "island", "keyboard-lock", "dock-previews"];
 
 var _ID_RE = /^[a-zA-Z0-9][a-zA-Z0-9.:-]*$/;
 
@@ -533,6 +533,7 @@ function validate(raw, expectedId, sourceDir) {
         dir: String(sourceDir).replace(/\/$/, ""),
         label: label,
         kinds: kinds,
+        category: raw.category || "",
         order: order,
         entryPoints: entryPoints,
         entryUrls: entryUrls,

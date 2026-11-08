@@ -3,7 +3,6 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.app
 
 // PluginSettings — the host-owned value store for schema-declared settings
 // controls (S0-3b). A route that declares `controls` instead of `source`
@@ -44,6 +43,25 @@ Singleton {
         root.values = next;
         root.valueChanged(id);
         root.save();
+    }
+
+    function resetPlugin(pluginId) {
+        if (!pluginId)
+            return;
+        const prefix = pluginId + ".";
+        let changed = false;
+        const next = Object.assign({}, root.values);
+        for (const k in next) {
+            if (k.indexOf(prefix) === 0) {
+                delete next[k];
+                changed = true;
+                root.valueChanged(k);
+            }
+        }
+        if (changed) {
+            root.values = next;
+            root.save();
+        }
     }
 
     function save() {

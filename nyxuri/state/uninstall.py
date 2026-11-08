@@ -12,8 +12,10 @@ import json
 import sys
 from pathlib import Path
 
-from nyxuri.core import CLI_CMD, PROJECT_NAME, STORAGE_NAME
-from nyxuri.core import (
+from nyxuri.system.env import (
+    CLI_CMD,
+    PROJECT_NAME,
+    STORAGE_NAME,
     get_env,
     get_pics_dir,
     log_msg,
@@ -22,8 +24,8 @@ from nyxuri.core import (
     is_nyxuri_cli_symlink,
     clear_nyxuri_cli_symlink_marker,
 )
-from nyxuri.core import msg
-from nyxuri.tui import CheckboxEntry, CheckboxList, drain_stdin, prompt_confirm
+from nyxuri.system.i18n import msg
+from nyxuri.ui.tui import CheckboxEntry, CheckboxList, drain_stdin, prompt_confirm
 from nyxuri.state.backup import get_all_backups, rollback_configs
 
 
@@ -45,7 +47,8 @@ def uninstall_nyxuri(mode: str = "") -> bool:
     snapshot (folded into `nyxuri rollback`).
     """
     from nyxuri.deploy.deploy import config_item_dest, discover_config_items
-    from nyxuri.kernel import ledger, registry, transaction
+    from nyxuri.state import store
+    from nyxuri.deploy import catalog, engine
 
     env = get_env()
     items = discover_config_items()
@@ -72,8 +75,8 @@ def uninstall_nyxuri(mode: str = "") -> bool:
     HOOK_PLUGINS = ("fcitx5-rime", "fish", "greeter", "noctalia")
     enabled_hooked = [
         uid for uid in HOOK_PLUGINS
-        if uid in registry.plugin_ids()
-        and (ledger.get_plugin(uid) or {}).get("state") == "enabled"
+        if uid in catalog.plugin_ids()
+        and (store.get_plugin(uid) or {}).get("state") == "enabled"
     ]
 
     # --- Build checkbox entries (defaults = standard scope) ---
@@ -145,7 +148,7 @@ def uninstall_nyxuri(mode: str = "") -> bool:
     for uid in enabled_hooked:
         if f"plugin:{uid}" in selected:
             try:
-                steps = transaction.plugin_off(uid, cascade=True)
+                steps = engine.plugin_off(uid, cascade=True)
                 if not all(s.ok for s in steps):
                     log_msg("WARN", f"plugin off reported failure: {uid}")
                     print(msg("uninstall_failed", uid))
