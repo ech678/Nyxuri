@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | P4 | 主题契约、模板兼容与取色引擎分阶 | 待验收（契约测试全绿；实机行为与视觉证据待作者） |
 | T3 | 设置界面替换：Caelestia 安卓风味 | M3/M4 待验收（机器证据齐；视觉过目待作者） |
-| B | Bar & Island 统一（岛本体整抄 end4） | B1 已完成；B2-1 待验收；B3-1 待验收；B3-2 待验收（形态面整抄与服务接入已就绪） |
+| B | Bar & Island 统一（岛本体整抄 end4） | B1 已完成；B2-1 待验收；B3-1 待验收；B3-2 待验收；B4 待验收（换皮骨架与 cornerStyle 体系已就绪） |
 | P6 | 整体验收与未来移植 | 排队（前置主线 KM5） |
 
 ## 已交付基线台账
@@ -172,7 +172,7 @@ end4 岛数据全部绑上游单例（`Notifications`/`TimerService`/`Battery`/
 | B2 | hub/tools 大面板转锚定弹窗（B2-1，已执法）：`IslandPanelPopup` 整抄 `TrayMenu.qml` PopupWindow 范式——`anchor.item` 钉胶囊、按边映射 edges/gravity/adjustment、backdrop 点击即关、FocusScope 承接 Escape、`grabFocus` 收键盘、keyhole 挖洞背景 + blur 抽除、入场 scale+fade 从胶囊生长；`IslandSurface` 摘除内联 HubContent/ToolsContent 与 keyhole 挖洞，状态机 `isHubMode`/`isToolsMode` → `panelActive`；布局引擎摘工具/中心两档 morph 目标；键盘代理窗收窄为 Escape 转发 | 待验收（机器证据齐：check.sh 绿、tests/shell 415 绿、沙箱部署零 diff；待作者实机开合/键盘/多屏过目） |
 | B3-1 | 岛本体整抄（皮肤骨架）：end4 `DynamicIsland` + `DiIdle` + `DiMedia` 与 `Revealer`/`Visualizer` 物理 `cp` 入树后定向裁剪四类（上游单例 → 树内服务、`Config.options` → `PersonalizationConfig`、cava 改 `IslandVisualizerService` 租约、D8 形态面取舍）；岛 inline 进 bar 中段（`barComponentIds` 增 `island`、`BarComponentLoader` 增分支、`plugins/bar/Island.qml` 部件壳 + IPC 面）；旧 bangs/pill/long 保持独立窗（D4 冻结）；配置一次性迁移（`layoutMigrated`/`styleMigrated` 双标记独立） | 待验收（机器证据：tests/shell 415 绿、lifecycle clean、沙箱部署零 diff；qs 真实装载探针 `currentStyle=end4` 零编译错误；实机视觉过目待作者） |
 | B3-2 | 形态面接续：`DiNotifs`/`DiOsd` 整抄上岗，`NotificationPopupHost` 与 `VolumeContent` 退役（右键动作/超时/DND 抑制能力先搬迁，不得功能回退）；recording 面接 `RecordingService`；battery/timer 留空骨架 | 待验收（机器证据：test_island_end4 6 绿、check.sh 绿、shell 架构单测绿、qs 探针零编译报错；实机视觉过目待作者） |
-| B4 | bar 换皮（end4 皮肤）：B0 基线件定向裁剪四类后上岗——cornerStyle 体系（含接管岛胶囊底色/圆角）、BarGroup/Divisor/材质胶囊、屏幕圆角衔接；弹窗（托盘菜单/快捷面板）同语言重皮；竖排同步换装；bangs/pill/long 与旧媒体大卡随之处死。验收：作者实机视觉验收、部件功能零回退、无裁切错位（红线 3）、60fps。**本阶段通过 = D4 处死闸门放行** | 待开始 |
+| B4 | bar 换皮（end4 皮肤）：B0 基线件定向裁剪四类后上岗——cornerStyle 体系（含接管岛胶囊底色/圆角）、BarGroup/Divisor/材质胶囊、屏幕圆角衔接；弹窗（托盘菜单/快捷面板）同语言重皮；竖排同步换装；bangs/pill/long 与旧媒体大卡随之处死。验收：作者实机视觉验收、部件功能零回退、无裁切错位（红线 3）、60fps。**本阶段通过 = D4 处死闸门放行** | 待验收（机器证据：test_bar_end4 10 绿、check.sh 绿、shell 431 绿、沙箱部署零 diff；实机视觉过目待作者） |
 | B5 | 高度与自由度（dux 机制）：B0 机制件上岗——厚度可调键 + 设置页滑杆；密度预设 4 级 + 自定义（含 transition() 语义：切预设不覆盖用户已自定的键）；switch → widget 注册表（含 island 条目）。验收：高度实时生效、预设切换保留自定义值、新部件零宿主改动接入有实测 | 待开始 |
 | B6 | 清偿收尾：处死 long（文件/冻结键/设置段/i18n/测试全链路）；删被替代路径（旧 bar 外壳、旧媒体大卡路径、deprecated 别名）；lyrics 若已实现则接线，未实现则保留占位并记明；文档同步（architecture-matrix/plugin-model/manifest-schema/operation-map）+ CHANGELOG；消费者门禁统一清算。验收：audit-lifecycle clean、无 keystone/long 残留字符串、全量回归 + 沙箱部署 + 能耗 sanity（无多余 Timer/订阅） | 待开始 |
 

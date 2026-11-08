@@ -18,11 +18,7 @@ Item {
     readonly property bool rendersPageTitle: true
 
     property int searchRequestSerial: -1
-    readonly property var searchLeaf: currentSection === "overview" ? barPage.flickable :
-                                                                      islandLoader.item ? (
-                                                                                            islandLoader.item.searchLeaf
-                                                                                            || islandLoader.item) :
-                                                                                        root
+    readonly property var searchLeaf: currentSection === "overview" ? barPage.flickable : islandLoader.item ? (islandLoader.item.searchLeaf || islandLoader.item) : root
 
     property var parentModal: null
     property bool presentationActive: false
@@ -32,8 +28,7 @@ Item {
         const target = String(section || "overview");
         if (target === "island" || target === "island-clock") {
             root.currentSection = "island";
-            if (target === "island-clock" && islandLoader.item
-                    && typeof islandLoader.item.openSection === "function")
+            if (target === "island-clock" && islandLoader.item && typeof islandLoader.item.openSection === "function")
                 islandLoader.item.openSection("island-clock");
         } else {
             root.currentSection = "overview";
@@ -55,9 +50,7 @@ Item {
             return "ready";
         if (!(islandLoader.status === Loader.Ready) || !islandLoader.item)
             return "loading";
-        return typeof islandLoader.item.openSearchPath === "function"
-                ? islandLoader.item.openSearchPath(section === "island-clock" ? ["island-clock"] : [],
-                                                   serial) : "ready";
+        return typeof islandLoader.item.openSearchPath === "function" ? islandLoader.item.openSearchPath(section === "island-clock" ? ["island-clock"] : [], serial) : "ready";
     }
 
     function showOverview() {
@@ -71,14 +64,12 @@ Item {
     }
 
     onCurrentSectionChanged: {
-        if (SettingsSearch.searchTarget && !SettingsSearch.applyingSearch && searchRequestSerial
-                === SettingsSearch.searchSerial)
+        if (SettingsSearch.searchTarget && !SettingsSearch.applyingSearch && searchRequestSerial === SettingsSearch.searchSerial)
             SettingsSearch.cancelSearch();
         SettingsSearch.retrySearch();
     }
 
-    readonly property bool horizontalBar: PersonalizationConfig.barPosition === "top"
-                                          || PersonalizationConfig.barPosition === "bottom"
+    readonly property bool horizontalBar: PersonalizationConfig.barPosition === "top" || PersonalizationConfig.barPosition === "bottom"
 
     NexusPageBase {
         id: barPage
@@ -131,6 +122,37 @@ Item {
                     onSelected: value => PersonalizationConfig.setBarPosition(String(value))
                 }
 
+                // Style & Corner
+                PreferenceHeader {
+                    text: I18n.tr("Style")
+                }
+
+                PreferenceSelect {
+                    first: true
+                    label: I18n.tr("Corner style")
+                    model: PersonalizationConfig.barCornerStyles
+                    currentValue: PersonalizationConfig.barCornerStyle
+                    inputRegionService: PopupInputRegionService
+                    onSelected: value => PersonalizationConfig.setBarCornerStyle(Number(value))
+                }
+
+                PreferenceSelect {
+                    label: I18n.tr("Borderless mode")
+                    model: PersonalizationConfig.barBorderlessModes
+                    currentValue: PersonalizationConfig.barBorderless
+                    inputRegionService: PopupInputRegionService
+                    onSelected: value => PersonalizationConfig.setBarBorderless(String(value))
+                }
+
+                PreferenceSelect {
+                    last: true
+                    label: I18n.tr("Divider style")
+                    model: PersonalizationConfig.barDividerStyles
+                    currentValue: PersonalizationConfig.barDividerStyle
+                    inputRegionService: PopupInputRegionService
+                    onSelected: value => PersonalizationConfig.setBarDividerStyle(String(value))
+                }
+
                 // Components
                 PreferenceHeader {
                     text: I18n.tr("Components")
@@ -172,8 +194,7 @@ Item {
                     id: leadingZoneRow
 
                     Layout.fillWidth: true
-                    implicitHeight: Math.max(zoneLeadingLabel.implicitHeight, leadingField.implicitHeight)
-                                    + NexusStyle.padding.medium * 2
+                    implicitHeight: Math.max(zoneLeadingLabel.implicitHeight, leadingField.implicitHeight) + NexusStyle.padding.medium * 2
 
                     RowLayout {
                         anchors.left: parent.left
@@ -209,8 +230,7 @@ Item {
                     id: trailingZoneRow
 
                     Layout.fillWidth: true
-                    implicitHeight: Math.max(zoneTrailingLabel.implicitHeight, trailingField.implicitHeight)
-                                    + NexusStyle.padding.medium * 2
+                    implicitHeight: Math.max(zoneTrailingLabel.implicitHeight, trailingField.implicitHeight) + NexusStyle.padding.medium * 2
 
                     RowLayout {
                         anchors.left: parent.left
@@ -274,10 +294,8 @@ Item {
                             options: PersonalizationConfig.quickSettingsComponentOptions
                             zone: "quickSettings"
                             dragCoordinator: quickSettingsDragCoordinator
-                            onToggled: componentId => PersonalizationConfig.toggleQuickSettingsComponent(
-                                                          componentId)
-                            onRemoved: componentId => PersonalizationConfig.removeQuickSettingsComponent(
-                                                          componentId)
+                            onToggled: componentId => PersonalizationConfig.toggleQuickSettingsComponent(componentId)
+                            onRemoved: componentId => PersonalizationConfig.removeQuickSettingsComponent(componentId)
                         }
                     }
                 }
@@ -302,8 +320,7 @@ Item {
                 anchors.fill: parent
                 z: 1000
                 fields: [leadingField, trailingField]
-                onDropped: (componentId, targetZone, targetIndex) => PersonalizationConfig.moveBarComponent(
-                                                                     componentId, targetZone, targetIndex)
+                onDropped: (componentId, targetZone, targetIndex) => PersonalizationConfig.moveBarComponent(componentId, targetZone, targetIndex)
             }
 
             LayoutDragCoordinator {
@@ -312,8 +329,7 @@ Item {
                 anchors.fill: parent
                 z: 1001
                 fields: [quickSettingsField]
-                onDropped: (componentId, targetZone, targetIndex)
-                           => PersonalizationConfig.moveQuickSettingsComponent(componentId, targetIndex)
+                onDropped: (componentId, targetZone, targetIndex) => PersonalizationConfig.moveQuickSettingsComponent(componentId, targetIndex)
             }
         }
     }

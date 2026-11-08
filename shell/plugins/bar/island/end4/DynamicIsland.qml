@@ -38,9 +38,10 @@ Item {
     readonly property real recordingWidth: 150
     readonly property real badgeSize: 32
     readonly property real badgeSpacing: 6
-    // B3-1 island side only: the bar shell keeps its own surface until B4
-    // wires the full cornerStyle system.
-    readonly property bool isMaterial: false
+    // B4: the bar shell wires the cornerStyle system. In material modes
+    // (styles 3 and 4), the island body drops its pill color and blends
+    // seamlessly into the centerMaterialPill.
+    readonly property bool isMaterial: PersonalizationConfig.barCornerStyle === 3 || PersonalizationConfig.barCornerStyle === 4
     property bool vertical: PersonalizationConfig.barPosition === "left" || PersonalizationConfig.barPosition === "right"
 
     property string manualFocusId: ""

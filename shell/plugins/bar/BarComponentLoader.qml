@@ -1,6 +1,7 @@
 import QtQuick
-import qs.services
 import QtQuick.Layouts
+import qs.commons
+import qs.services
 import "workspaces"
 import "activewindow"
 import "tray"
@@ -10,7 +11,7 @@ import "quickpanel"
 import "clock"
 import "."
 
-Loader {
+Item {
     id: root
 
     required property string componentId
@@ -18,9 +19,16 @@ Loader {
     required property var axis
     required property Item barVisualItem
     property bool vertical: false
+    property int currentIndex: 0
+    property int totalCount: 0
 
-    sourceComponent: {
-        switch (root.componentId) {
+    implicitWidth: barGroup.implicitWidth
+    implicitHeight: barGroup.implicitHeight
+
+    readonly property Item item: widgetLoader.item
+
+    function sourceComponentFor(id) {
+        switch (id) {
         case "workspaces":
             return workspacesComponent;
         case "information":
@@ -39,8 +47,31 @@ Loader {
             return clockComponent;
         case "island":
             return islandComponent;
+        case "divisor":
+            return divisorComponent;
         default:
             return null;
+        }
+    }
+
+    BarGroup {
+        id: barGroup
+
+        anchors.fill: parent
+        vertical: root.vertical
+        currentIndex: root.currentIndex
+        totalCount: root.totalCount
+        widgetName: root.componentId
+        paintBackground: root.componentId !== "island"
+        paintMaterialPill: root.barVisualItem && typeof root.barVisualItem.shouldPaintMaterialPill === "function" ? root.barVisualItem.shouldPaintMaterialPill(root.componentId) : false
+        bgColor: root.barVisualItem && typeof root.barVisualItem.getMaterialPillColor === "function" ? root.barVisualItem.getMaterialPillColor(root.componentId) : Appearance.colors.colPrimaryContainer
+
+        Loader {
+            id: widgetLoader
+
+            Layout.fillHeight: !root.vertical
+            Layout.fillWidth: root.vertical
+            sourceComponent: root.sourceComponentFor(root.componentId)
         }
     }
 
@@ -65,8 +96,7 @@ Loader {
         id: activeWindowComponent
 
         ActiveWindow {
-            maximumTitleWidth: root.vertical ? 250 : Math.max(48, Math.min(250, root.barVisualItem.width
-                                                                           * 0.18))
+            maximumTitleWidth: root.vertical ? 250 : Math.max(48, Math.min(250, root.barVisualItem.width * 0.18))
             vertical: root.vertical
         }
     }
@@ -75,8 +105,7 @@ Loader {
         id: mediaComponent
 
         MediaBar {
-            maximumTitleWidth: Math.max(48, Math.min(180, (root.vertical ? root.barVisualItem.height :
-                                                                           root.barVisualItem.width) * 0.12))
+            maximumTitleWidth: Math.max(48, Math.min(180, (root.vertical ? root.barVisualItem.height : root.barVisualItem.width) * 0.12))
             vertical: root.vertical
         }
     }
@@ -120,13 +149,18 @@ Loader {
         }
     }
 
-    // B3-1: the island rides the bar canvas as a layout part. Only the end4
-    // capsule is hostable here; legacy styles keep their own layer window
-    // (plugins/bar/Bar.qml) until B4 retires them.
     Component {
         id: islandComponent
 
         Island {
+            vertical: root.vertical
+        }
+    }
+
+    Component {
+        id: divisorComponent
+
+        Divisor {
             vertical: root.vertical
         }
     }

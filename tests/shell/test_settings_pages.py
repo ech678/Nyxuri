@@ -613,8 +613,8 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
         source = _read("GeneralBarPage.qml")
         for atom in ("PreferenceHeader", "PreferenceToggle", "PreferenceSelect", "ConnectedRect"):
             self.assertIn(atom, source, f"GeneralBarPage must use the atom: {atom}")
-        self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 1,
-                         "the screen-edge select must register the popup input region")
+        self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 4,
+                         "the screen-edge and style selects must register the popup input region")
 
     def test_drag_fields_and_coordinators_survive(self):
         source = _read("GeneralBarPage.qml")

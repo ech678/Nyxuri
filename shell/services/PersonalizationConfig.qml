@@ -19,155 +19,148 @@ Singleton {
         return separator > 0 ? root.filePath.slice(0, separator) : Paths.configHome;
     }
     readonly property var fillModes: [({
-                                           "value": "Stretch",
-                                           "label": I18n.tr("Stretch")
-                                       }), ({
-                                                "value": "Fit",
-                                                "label": I18n.tr("Fit")
-                                            }), ({
-                                                     "value": "Fill",
-                                                     "label": I18n.tr("Fill")
-                                                 }), ({
-                                                          "value": "Tile",
-                                                          "label": I18n.tr("Tile")
-                                                      }), ({
-                                                               "value": "TileVertically",
-                                                               "label": I18n.tr("Tile vertically")
-                                                           }), ({
-                                                                    "value": "TileHorizontally",
-                                                                    "label": I18n.tr("Tile horizontally")
-                                                                }), ({
-                                                                         "value": "Pad",
-                                                                         "label": I18n.tr("Cover")
-                                                                     })]
+                "value": "Stretch",
+                "label": I18n.tr("Stretch")
+            }), ({
+                "value": "Fit",
+                "label": I18n.tr("Fit")
+            }), ({
+                "value": "Fill",
+                "label": I18n.tr("Fill")
+            }), ({
+                "value": "Tile",
+                "label": I18n.tr("Tile")
+            }), ({
+                "value": "TileVertically",
+                "label": I18n.tr("Tile vertically")
+            }), ({
+                "value": "TileHorizontally",
+                "label": I18n.tr("Tile horizontally")
+            }), ({
+                "value": "Pad",
+                "label": I18n.tr("Cover")
+            })]
     readonly property var desktopFillModes: root.fillModes.concat([({
-                                                                        "value": "panorama",
-                                                                        "label": I18n.tr("Panorama")
-                                                                    })])
+                "value": "panorama",
+                "label": I18n.tr("Panorama")
+            })])
     readonly property var transitionTypes: [({
-                                                 "value": "random",
-                                                 "label": I18n.tr("Random")
-                                             }), ({
-                                                      "value": "none",
-                                                      "label": I18n.tr("None")
-                                                  }), ({
-                                                           "value": "fade",
-                                                           "label": I18n.tr("Crossfade")
-                                                       }), ({
-                                                                "value": "wipe",
-                                                                "label": I18n.tr("Wipe")
-                                                            }), ({
-                                                                     "value": "disc",
-                                                                     "label": I18n.tr("Disc")
-                                                                 }), ({
-                                                                          "value": "stripes",
-                                                                          "label": I18n.tr("Stripes")
-                                                                      }), ({
-                                                                               "value": "iris bloom",
-                                                                               "label": I18n.tr("Iris bloom")
-                                                                           }), ({
-                                                                                    "value": "pixelate",
-                                                                                    "label": I18n.tr(
-                                                                                                 "Pixelate")
-                                                                                }), ({
-                                                                                         "value": "portal",
-                                                                                         "label": I18n.tr(
-                                                                                                      "Portal")
-                                                                                     })]
+                "value": "random",
+                "label": I18n.tr("Random")
+            }), ({
+                "value": "none",
+                "label": I18n.tr("None")
+            }), ({
+                "value": "fade",
+                "label": I18n.tr("Crossfade")
+            }), ({
+                "value": "wipe",
+                "label": I18n.tr("Wipe")
+            }), ({
+                "value": "disc",
+                "label": I18n.tr("Disc")
+            }), ({
+                "value": "stripes",
+                "label": I18n.tr("Stripes")
+            }), ({
+                "value": "iris bloom",
+                "label": I18n.tr("Iris bloom")
+            }), ({
+                "value": "pixelate",
+                "label": I18n.tr("Pixelate")
+            }), ({
+                "value": "portal",
+                "label": I18n.tr("Portal")
+            })]
     readonly property var transitionEasingModes: [({
-                                                       "value": "linear",
-                                                       "label": I18n.tr("Linear")
-                                                   }), ({
-                                                            "value": "quad",
-                                                            "label": I18n.tr("Quadratic")
-                                                        }), ({
-                                                                 "value": "cubic",
-                                                                 "label": I18n.tr("Cubic")
-                                                             }), ({
-                                                                      "value": "quart",
-                                                                      "label": I18n.tr("Quartic")
-                                                                  }), ({
-                                                                           "value": "quint",
-                                                                           "label": I18n.tr("Quintic")
-                                                                       }), ({
-                                                                                "value": "sine",
-                                                                                "label": I18n.tr("Sine")
-                                                                            }), ({
-                                                                                     "value": "expo",
-                                                                                     "label": I18n.tr(
-                                                                                                  "Exponential")
-                                                                                 }), ({
-                                                                                          "value": "circ",
-                                                                                          "label": I18n.tr(
-                                                                                                       "Circular")
-                                                                                      }), ({
-                                                                                               "value": "customBezier",
-                                                                                               "label": I18n.tr(
-                                                                                                            "Custom Bézier")
-                                                                                           })]
-    readonly property var baseTransitions: ["fade", "wipe", "disc", "stripes", "iris bloom", "pixelate",
-        "portal"]
+                "value": "linear",
+                "label": I18n.tr("Linear")
+            }), ({
+                "value": "quad",
+                "label": I18n.tr("Quadratic")
+            }), ({
+                "value": "cubic",
+                "label": I18n.tr("Cubic")
+            }), ({
+                "value": "quart",
+                "label": I18n.tr("Quartic")
+            }), ({
+                "value": "quint",
+                "label": I18n.tr("Quintic")
+            }), ({
+                "value": "sine",
+                "label": I18n.tr("Sine")
+            }), ({
+                "value": "expo",
+                "label": I18n.tr("Exponential")
+            }), ({
+                "value": "circ",
+                "label": I18n.tr("Circular")
+            }), ({
+                "value": "customBezier",
+                "label": I18n.tr("Custom Bézier")
+            })]
+    readonly property var baseTransitions: ["fade", "wipe", "disc", "stripes", "iris bloom", "pixelate", "portal"]
     readonly property var matugenSchemes: [({
-                                                "value": "scheme-tonal-spot",
-                                                "label": I18n.tr("Tonal spot")
-                                            }), ({
-                                                     "value": "scheme-vibrant",
-                                                     "label": I18n.tr("Vibrant")
-                                                 }), ({
-                                                          "value": "scheme-content",
-                                                          "label": I18n.tr("Content")
-                                                      }), ({
-                                                               "value": "scheme-expressive",
-                                                               "label": I18n.tr("Expressive")
-                                                           }), ({
-                                                                    "value": "scheme-fidelity",
-                                                                    "label": I18n.tr("Fidelity")
-                                                                }), ({
-                                                                         "value": "scheme-fruit-salad",
-                                                                         "label": I18n.tr("Fruit salad")
-                                                                     }), ({
-                                                                              "value": "scheme-monochrome",
-                                                                              "label": I18n.tr("Monochrome")
-                                                                          }), ({
-                                                                                   "value": "scheme-neutral",
-                                                                                   "label": I18n.tr("Neutral")
-                                                                               }), ({
-                                                                                        "value": "scheme-rainbow",
-                                                                                        "label": I18n.tr(
-                                                                                                     "Rainbow")
-                                                                                    })]
+                "value": "scheme-tonal-spot",
+                "label": I18n.tr("Tonal spot")
+            }), ({
+                "value": "scheme-vibrant",
+                "label": I18n.tr("Vibrant")
+            }), ({
+                "value": "scheme-content",
+                "label": I18n.tr("Content")
+            }), ({
+                "value": "scheme-expressive",
+                "label": I18n.tr("Expressive")
+            }), ({
+                "value": "scheme-fidelity",
+                "label": I18n.tr("Fidelity")
+            }), ({
+                "value": "scheme-fruit-salad",
+                "label": I18n.tr("Fruit salad")
+            }), ({
+                "value": "scheme-monochrome",
+                "label": I18n.tr("Monochrome")
+            }), ({
+                "value": "scheme-neutral",
+                "label": I18n.tr("Neutral")
+            }), ({
+                "value": "scheme-rainbow",
+                "label": I18n.tr("Rainbow")
+            })]
     readonly property var islandStyles: [({
-                                                "value": "end4",
-                                                "label": I18n.tr("Capsule")
-                                            }), ({
-                                                     "value": "bangs",
-                                                     "label": I18n.tr("Bangs")
-                                                 }), ({
-                                                          "value": "pill",
-                                                          "label": I18n.tr("Pill")
-                                                      }),
+                "value": "end4",
+                "label": I18n.tr("Capsule")
+            }), ({
+                "value": "bangs",
+                "label": I18n.tr("Bangs")
+            }), ({
+                "value": "pill",
+                "label": I18n.tr("Pill")
+            }),
         {
             value: "long",
             label: I18n.tr("Long")
         }
     ]
     readonly property var edgePositions: [({
-                                               "value": "top",
-                                               "label": I18n.tr("Top"),
-                                               "icon": "arrow_upward"
-                                           }), ({
-                                                    "value": "left",
-                                                    "label": I18n.tr("Left"),
-                                                    "icon": "arrow_back"
-                                                }), ({
-                                                         "value": "bottom",
-                                                         "label": I18n.tr("Bottom"),
-                                                         "icon": "arrow_downward"
-                                                     }), ({
-                                                              "value": "right",
-                                                              "label": I18n.tr("Right"),
-                                                              "icon": "arrow_forward"
-                                                          })]
+                "value": "top",
+                "label": I18n.tr("Top"),
+                "icon": "arrow_upward"
+            }), ({
+                "value": "left",
+                "label": I18n.tr("Left"),
+                "icon": "arrow_back"
+            }), ({
+                "value": "bottom",
+                "label": I18n.tr("Bottom"),
+                "icon": "arrow_downward"
+            }), ({
+                "value": "right",
+                "label": I18n.tr("Right"),
+                "icon": "arrow_forward"
+            })]
     readonly property bool storeReady: ConfigService.storeReady
     property bool loading: false
     property bool loaded: false
@@ -270,13 +263,11 @@ Singleton {
     }
 
     function setLyricOffsetMs(value) {
-        setValue("lyricOffsetMs", normalizedBoundedInt(value, 0, root.lyricOffsetMinMs,
-                                                       root.lyricOffsetMaxMs));
+        setValue("lyricOffsetMs", normalizedBoundedInt(value, 0, root.lyricOffsetMinMs, root.lyricOffsetMaxMs));
     }
 
     function setLyricFontSize(value) {
-        setValue("lyricFontSize", normalizedBoundedInt(value, 26, root.lyricFontSizeMin,
-                                                       root.lyricFontSizeMax));
+        setValue("lyricFontSize", normalizedBoundedInt(value, 26, root.lyricFontSizeMin, root.lyricFontSizeMax));
     }
 
     function setLyricAlbumArtTint(value) {
@@ -330,81 +321,139 @@ Singleton {
     property string islandKeyholeCard: "weather"
     property bool barOverlay: false
     property string barPosition: "top"
-    readonly property var barComponentIds: ["workspaces", "information", "activeWindow", "media", "tray",
-        "systemMonitor", "quickSettings", "clock", "island"]
+    readonly property var barCornerStyles: [
+        {
+            value: 0,
+            label: I18n.tr("Hug")
+        },
+        {
+            value: 1,
+            label: I18n.tr("Floating")
+        },
+        {
+            value: 2,
+            label: I18n.tr("Plain")
+        },
+        {
+            value: 3,
+            label: I18n.tr("Material")
+        },
+        {
+            value: 4,
+            label: I18n.tr("Material hug")
+        },
+        {
+            value: 5,
+            label: I18n.tr("Panel")
+        }
+    ]
+    property int barCornerStyle: 1
+    readonly property var barBorderlessModes: [
+        {
+            value: "pills",
+            label: I18n.tr("Pills")
+        },
+        {
+            value: "separated",
+            label: I18n.tr("Separated")
+        },
+        {
+            value: "segmented",
+            label: I18n.tr("Segmented")
+        },
+        {
+            value: "transparent",
+            label: I18n.tr("Transparent")
+        }
+    ]
+    property string barBorderless: "pills"
+    property string barGroupColor: "layer1"
+    readonly property var barDividerStyles: [
+        {
+            value: "rect",
+            label: I18n.tr("Line")
+        },
+        {
+            value: "dot",
+            label: I18n.tr("Dot")
+        },
+        {
+            value: "space",
+            label: I18n.tr("Space")
+        }
+    ]
+    property string barDividerStyle: "rect"
+    readonly property var barComponentIds: ["workspaces", "information", "activeWindow", "media", "tray", "systemMonitor", "quickSettings", "clock", "island", "divisor"]
     readonly property var defaultBarLeadingComponents: ["workspaces", "information", "activeWindow"]
     readonly property var defaultBarTrailingComponents: ["tray", "systemMonitor", "quickSettings"]
     readonly property var barComponentOptions: [({
-                                                     "value": "media",
-                                                     "label": I18n.tr("Media"),
-                                                     "icon": "music_note"
-                                                 }), ({
-                                                          "value": "workspaces",
-                                                          "label": I18n.tr("Workspaces"),
-                                                          "icon": "grid_view"
-                                                      }), ({
-                                                               "value": "information",
-                                                               "label": I18n.tr("Information"),
-                                                               "icon": "info"
-                                                           }), ({
-                                                                    "value": "activeWindow",
-                                                                    "label": I18n.tr("Active Window"),
-                                                                    "icon": "web_asset"
-                                                                }), ({
-                                                                         "value": "tray",
-                                                                         "label": I18n.tr("Tray"),
-                                                                         "icon": "inbox"
-                                                                     }), ({
-                                                                              "value": "systemMonitor",
-                                                                              "label": I18n.tr(
-                                                                                           "System Monitor"),
-                                                                              "icon": "monitoring"
-                                                                          }), ({
-                                                                                   "value": "quickSettings",
-                                                                                   "label": I18n.tr(
-                                                                                                "Quick Settings"),
-                                                                                   "icon": "tune"
-                                                                               })]
-    readonly property var quickSettingsComponentIds: ["network", "bluetooth", "brightness", "volume",
-        "microphone", "battery", "settings", "power"]
+                "value": "media",
+                "label": I18n.tr("Media"),
+                "icon": "music_note"
+            }), ({
+                "value": "workspaces",
+                "label": I18n.tr("Workspaces"),
+                "icon": "grid_view"
+            }), ({
+                "value": "information",
+                "label": I18n.tr("Information"),
+                "icon": "info"
+            }), ({
+                "value": "activeWindow",
+                "label": I18n.tr("Active Window"),
+                "icon": "web_asset"
+            }), ({
+                "value": "tray",
+                "label": I18n.tr("Tray"),
+                "icon": "inbox"
+            }), ({
+                "value": "systemMonitor",
+                "label": I18n.tr("System Monitor"),
+                "icon": "monitoring"
+            }), ({
+                "value": "quickSettings",
+                "label": I18n.tr("Quick Settings"),
+                "icon": "tune"
+            }), ({
+                "value": "divisor",
+                "label": I18n.tr("Divider"),
+                "icon": "more_vert"
+            })]
+    readonly property var quickSettingsComponentIds: ["network", "bluetooth", "brightness", "volume", "microphone", "battery", "settings", "power"]
     readonly property var defaultQuickSettingsComponents: root.quickSettingsComponentIds.slice()
     readonly property var quickSettingsComponentOptions: [({
-                                                               "value": "network",
-                                                               "label": I18n.tr("Network"),
-                                                               "icon": "wifi"
-                                                           }), ({
-                                                                    "value": "bluetooth",
-                                                                    "label": I18n.tr("Bluetooth"),
-                                                                    "icon": "bluetooth"
-                                                                }), ({
-                                                                         "value": "brightness",
-                                                                         "label": I18n.tr("Brightness"),
-                                                                         "icon": "brightness_6"
-                                                                     }), ({
-                                                                              "value": "volume",
-                                                                              "label": I18n.tr("Volume"),
-                                                                              "icon": "volume_up"
-                                                                          }), ({
-                                                                                   "value": "microphone",
-                                                                                   "label": I18n.tr(
-                                                                                                "Microphone"),
-                                                                                   "icon": "mic"
-                                                                               }), ({
-                                                                                        "value": "battery",
-                                                                                        "label": I18n.tr(
-                                                                                                     "Battery"),
-                                                                                        "icon": "battery_full"
-                                                                                    }), ({
-                                                                                             "value": "settings",
-                                                                                             "label": I18n.tr(
-                                                                                                          "Settings"),
-                                                                                             "icon": "settings"
-                                                                                         }), ({
-                                                                                                  "value": "power",
-                                                                                                  "label": I18n.tr(
-                                                                                                               "Power"),
-                                                                                                  "icon": "power_settings_new"
-                                                                                              })]
+                "value": "network",
+                "label": I18n.tr("Network"),
+                "icon": "wifi"
+            }), ({
+                "value": "bluetooth",
+                "label": I18n.tr("Bluetooth"),
+                "icon": "bluetooth"
+            }), ({
+                "value": "brightness",
+                "label": I18n.tr("Brightness"),
+                "icon": "brightness_6"
+            }), ({
+                "value": "volume",
+                "label": I18n.tr("Volume"),
+                "icon": "volume_up"
+            }), ({
+                "value": "microphone",
+                "label": I18n.tr("Microphone"),
+                "icon": "mic"
+            }), ({
+                "value": "battery",
+                "label": I18n.tr("Battery"),
+                "icon": "battery_full"
+            }), ({
+                "value": "settings",
+                "label": I18n.tr("Settings"),
+                "icon": "settings"
+            }), ({
+                "value": "power",
+                "label": I18n.tr("Power"),
+                "icon": "power_settings_new"
+            })]
     property var barLeadingComponents: root.defaultBarLeadingComponents.slice()
     property var barTrailingComponents: root.defaultBarTrailingComponents.slice()
     property var quickSettingsComponents: root.defaultQuickSettingsComponents.slice()
@@ -475,13 +524,11 @@ Singleton {
     ]
 
     function setIslandMediaProgressStyle(value) {
-        setValue("islandMediaProgressStyle", normalizedOption(root.islandMediaProgressOptions, value,
-                                                                "wave"));
+        setValue("islandMediaProgressStyle", normalizedOption(root.islandMediaProgressOptions, value, "wave"));
     }
 
     function setIslandMediaCoverStyle(value) {
-        setValue("islandMediaCoverStyle", normalizedOption(root.islandMediaCoverOptions, value,
-                                                             "rounded"));
+        setValue("islandMediaCoverStyle", normalizedOption(root.islandMediaCoverOptions, value, "rounded"));
     }
 
     function setIslandMediaColorStyle(value) {
@@ -490,11 +537,9 @@ Singleton {
 
     property int islandHoverOpenDelay: 150
     property int islandHoverCloseDelay: 250
-    readonly property var keystoneLongItemIds: ["workspaces", "media", "systemMonitor", "tray", "network",
-        "bluetooth", "brightness", "volume", "microphone", "battery", "weather"]
+    readonly property var keystoneLongItemIds: ["workspaces", "media", "systemMonitor", "tray", "network", "bluetooth", "brightness", "volume", "microphone", "battery", "weather"]
     readonly property var defaultKeystoneLongLeading: ["workspaces", "media", "systemMonitor"]
-    readonly property var defaultKeystoneLongTrailing: ["network", "bluetooth", "brightness", "volume",
-        "microphone", "battery"]
+    readonly property var defaultKeystoneLongTrailing: ["network", "bluetooth", "brightness", "volume", "microphone", "battery"]
     property var keystoneLongLeading: defaultKeystoneLongLeading.slice()
     property var keystoneLongTrailing: defaultKeystoneLongTrailing.slice()
     readonly property var keystoneLongItemOptions: [
@@ -566,8 +611,7 @@ Singleton {
     function normalizedKeystoneLongItems(raw, excluded) {
         const result = [];
         for (const value of Array.isArray(raw) ? raw : []) {
-            if (root.keystoneLongItemIds.indexOf(value) >= 0 && excluded.indexOf(value) < 0 && result.indexOf(value)
-                    < 0)
+            if (root.keystoneLongItemIds.indexOf(value) >= 0 && excluded.indexOf(value) < 0 && result.indexOf(value) < 0)
                 result.push(value);
         }
         return result;
@@ -580,8 +624,7 @@ Singleton {
         const trailing = root.keystoneLongTrailing.filter(value => value !== id);
         const target = zone === "leading" ? leading : trailing;
         const position = Number(index);
-        target.splice(isFinite(position) ? Math.max(0, Math.min(target.length, Math.round(position))) :
-                                           target.length, 0, id);
+        target.splice(isFinite(position) ? Math.max(0, Math.min(target.length, Math.round(position))) : target.length, 0, id);
         root.keystoneLongLeading = leading;
         root.keystoneLongTrailing = trailing;
         root.save();
@@ -639,14 +682,11 @@ Singleton {
         }
     ].concat(root.islandActionOptions)
 
-    readonly property var availableIslandHoverActionOptions: islandStyle === "long"
-                                                               ? islandActionOptions :
-                                                                 islandHoverActionOptions
+    readonly property var availableIslandHoverActionOptions: islandStyle === "long" ? islandActionOptions : islandHoverActionOptions
 
     // Older saved configurations can still request peak. Long has no peak
     // state; retain the preference for other styles but resolve it to none.
-    readonly property string effectiveIslandHoverAction: islandStyle === "long" && islandHoverAction
-                                                           === "peak" ? "none" : islandHoverAction
+    readonly property string effectiveIslandHoverAction: islandStyle === "long" && islandHoverAction === "peak" ? "none" : islandHoverAction
 
     function setIslandAction(gesture, action) {
         const properties = {
@@ -656,148 +696,144 @@ Singleton {
         };
         if (!Object.prototype.hasOwnProperty.call(properties, gesture))
             return;
-        setValue(properties[gesture], normalizedOption(gesture === "hover"
-                                                       ? root.availableIslandHoverActionOptions :
-                                                         root.islandActionOptions, action, gesture
-                                                       === "hover" && root.islandStyle !== "long" ? "peak" :
-                                                                                                      "none"));
+        setValue(properties[gesture], normalizedOption(gesture === "hover" ? root.availableIslandHoverActionOptions : root.islandActionOptions, action, gesture === "hover" && root.islandStyle !== "long" ? "peak" : "none"));
     }
 
     readonly property var horizontalClockAxisDefaults: ({
-                                                            "wght": 900,
-                                                            "wdth": 85,
-                                                            "opsz": 18,
-                                                            "GRAD": 0,
-                                                            "ROND": 25,
-                                                            "slnt": 0
-                                                        })
+            "wght": 900,
+            "wdth": 85,
+            "opsz": 18,
+            "GRAD": 0,
+            "ROND": 25,
+            "slnt": 0
+        })
     readonly property var horizontalClockAxisMinimums: ({
-                                                            "wght": 1,
-                                                            "wdth": 25,
-                                                            "opsz": 6,
-                                                            "GRAD": 0,
-                                                            "ROND": 0,
-                                                            "slnt": -10
-                                                        })
+            "wght": 1,
+            "wdth": 25,
+            "opsz": 6,
+            "GRAD": 0,
+            "ROND": 0,
+            "slnt": -10
+        })
     readonly property var horizontalClockAxisMaximums: ({
-                                                            "wght": 1000,
-                                                            "wdth": 151,
-                                                            "opsz": 144,
-                                                            "GRAD": 100,
-                                                            "ROND": 100,
-                                                            "slnt": 0
-                                                        })
+            "wght": 1000,
+            "wdth": 151,
+            "opsz": 144,
+            "GRAD": 100,
+            "ROND": 100,
+            "slnt": 0
+        })
     readonly property var horizontalClockDigitDefaults: ({
-                                                             "separator": ({
-                                                                               "x": 0,
-                                                                               "y": 0,
-                                                                               "rotation": 0,
-                                                                               "colorRole": "primary",
-                                                                               "customColor": ""
-                                                                           }),
-                                                             "h0": ({
-                                                                        "x": 0,
-                                                                        "y": -2,
-                                                                        "rotation": -3,
-                                                                        "colorRole": "inversePrimary",
-                                                                        "customColor": ""
-                                                                    }),
-                                                             "h1": ({
-                                                                        "x": 0,
-                                                                        "y": 1,
-                                                                        "rotation": 3,
-                                                                        "colorRole": "primary",
-                                                                        "customColor": ""
-                                                                    }),
-                                                             "m0": ({
-                                                                        "x": 0,
-                                                                        "y": -1,
-                                                                        "rotation": -2,
-                                                                        "colorRole": "inversePrimary",
-                                                                        "customColor": ""
-                                                                    }),
-                                                             "m1": ({
-                                                                        "x": 0,
-                                                                        "y": 1,
-                                                                        "rotation": 2,
-                                                                        "colorRole": "primary",
-                                                                        "customColor": ""
-                                                                    }),
-                                                             "ap": ({
-                                                                        "x": 1,
-                                                                        "y": -2,
-                                                                        "rotation": -2,
-                                                                        "colorRole": "inversePrimary",
-                                                                        "customColor": ""
-                                                                    }),
-                                                             "periodM": ({
-                                                                             "x": 1,
-                                                                             "y": 1,
-                                                                             "rotation": 2,
-                                                                             "colorRole": "primary",
-                                                                             "customColor": ""
-                                                                         })
-                                                         })
+            "separator": ({
+                    "x": 0,
+                    "y": 0,
+                    "rotation": 0,
+                    "colorRole": "primary",
+                    "customColor": ""
+                }),
+            "h0": ({
+                    "x": 0,
+                    "y": -2,
+                    "rotation": -3,
+                    "colorRole": "inversePrimary",
+                    "customColor": ""
+                }),
+            "h1": ({
+                    "x": 0,
+                    "y": 1,
+                    "rotation": 3,
+                    "colorRole": "primary",
+                    "customColor": ""
+                }),
+            "m0": ({
+                    "x": 0,
+                    "y": -1,
+                    "rotation": -2,
+                    "colorRole": "inversePrimary",
+                    "customColor": ""
+                }),
+            "m1": ({
+                    "x": 0,
+                    "y": 1,
+                    "rotation": 2,
+                    "colorRole": "primary",
+                    "customColor": ""
+                }),
+            "ap": ({
+                    "x": 1,
+                    "y": -2,
+                    "rotation": -2,
+                    "colorRole": "inversePrimary",
+                    "customColor": ""
+                }),
+            "periodM": ({
+                    "x": 1,
+                    "y": 1,
+                    "rotation": 2,
+                    "colorRole": "primary",
+                    "customColor": ""
+                })
+        })
     property int horizontalClockFontSize: 22
     property var horizontalClockAxes: ({
-                                           "wght": 900,
-                                           "wdth": 85,
-                                           "opsz": 18,
-                                           "GRAD": 0,
-                                           "ROND": 25,
-                                           "slnt": 0
-                                       })
+            "wght": 900,
+            "wdth": 85,
+            "opsz": 18,
+            "GRAD": 0,
+            "ROND": 25,
+            "slnt": 0
+        })
     property var horizontalClockDigits: ({
-                                             "separator": ({
-                                                               "x": 0,
-                                                               "y": 0,
-                                                               "rotation": 0,
-                                                               "colorRole": "primary",
-                                                               "customColor": ""
-                                                           }),
-                                             "h0": ({
-                                                        "x": 0,
-                                                        "y": -2,
-                                                        "rotation": -3,
-                                                        "colorRole": "inversePrimary",
-                                                        "customColor": ""
-                                                    }),
-                                             "h1": ({
-                                                        "x": 0,
-                                                        "y": 1,
-                                                        "rotation": 3,
-                                                        "colorRole": "primary",
-                                                        "customColor": ""
-                                                    }),
-                                             "m0": ({
-                                                        "x": 0,
-                                                        "y": -1,
-                                                        "rotation": -2,
-                                                        "colorRole": "inversePrimary",
-                                                        "customColor": ""
-                                                    }),
-                                             "m1": ({
-                                                        "x": 0,
-                                                        "y": 1,
-                                                        "rotation": 2,
-                                                        "colorRole": "primary",
-                                                        "customColor": ""
-                                                    }),
-                                             "ap": ({
-                                                        "x": 1,
-                                                        "y": -2,
-                                                        "rotation": -2,
-                                                        "colorRole": "inversePrimary",
-                                                        "customColor": ""
-                                                    }),
-                                             "periodM": ({
-                                                             "x": 1,
-                                                             "y": 1,
-                                                             "rotation": 2,
-                                                             "colorRole": "primary",
-                                                             "customColor": ""
-                                                         })
-                                         })
+            "separator": ({
+                    "x": 0,
+                    "y": 0,
+                    "rotation": 0,
+                    "colorRole": "primary",
+                    "customColor": ""
+                }),
+            "h0": ({
+                    "x": 0,
+                    "y": -2,
+                    "rotation": -3,
+                    "colorRole": "inversePrimary",
+                    "customColor": ""
+                }),
+            "h1": ({
+                    "x": 0,
+                    "y": 1,
+                    "rotation": 3,
+                    "colorRole": "primary",
+                    "customColor": ""
+                }),
+            "m0": ({
+                    "x": 0,
+                    "y": -1,
+                    "rotation": -2,
+                    "colorRole": "inversePrimary",
+                    "customColor": ""
+                }),
+            "m1": ({
+                    "x": 0,
+                    "y": 1,
+                    "rotation": 2,
+                    "colorRole": "primary",
+                    "customColor": ""
+                }),
+            "ap": ({
+                    "x": 1,
+                    "y": -2,
+                    "rotation": -2,
+                    "colorRole": "inversePrimary",
+                    "customColor": ""
+                }),
+            "periodM": ({
+                    "x": 1,
+                    "y": 1,
+                    "rotation": 2,
+                    "colorRole": "primary",
+                    "customColor": ""
+                })
+        })
     readonly property string uiFontFamily: FontService.configuredUi || FontService.defaultUi
     readonly property string monoFontFamily: FontService.configuredMono || FontService.defaultMono
     readonly property string numericFontFamily: FontService.configuredNumeric || FontService.defaultNumeric
@@ -807,21 +843,19 @@ Singleton {
     property bool shellBlurXray: true
     property bool keepSidebarsLoaded: true
     property var sidebarPositions: ({
-                                        dashboard: "left",
-                                        quickSettings: "right"
-                                    })
+            dashboard: "left",
+            quickSettings: "right"
+        })
     readonly property string dashboardSidebarSide: sidebarPositions.dashboard
     readonly property string quickSettingsSidebarSide: sidebarPositions.quickSettings
     readonly property var hotCornerIds: ["top-left", "top-right", "bottom-left", "bottom-right"]
-    readonly property var hotCornerActionIds: ["disabled", "overview", "dashboard:info", "dashboard:drawer",
-        "dashboard:weather", "quicksettings:settings", "quicksettings:network", "quicksettings:bluetooth",
-        "quicksettings:audio", "quicksettings:microphone", "quicksettings:idle", "quicksettings:night"]
+    readonly property var hotCornerActionIds: ["disabled", "overview", "dashboard:info", "dashboard:drawer", "dashboard:weather", "quicksettings:settings", "quicksettings:network", "quicksettings:bluetooth", "quicksettings:audio", "quicksettings:microphone", "quicksettings:idle", "quicksettings:night"]
     property var hotCornerActions: ({
-                                        "top-left": "overview",
-                                        "top-right": "disabled",
-                                        "bottom-left": "disabled",
-                                        "bottom-right": "disabled"
-                                    })
+            "top-left": "overview",
+            "top-right": "disabled",
+            "bottom-left": "disabled",
+            "bottom-right": "disabled"
+        })
     property bool desktopCardGridSnapEnabled: true
     property bool desktopCardGridVisibleWhileDragging: true
 
@@ -913,9 +947,7 @@ Singleton {
         const source = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
         const result = Object.create(null);
         for (const id of Object.keys(source)) {
-            if (/^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*$/.test(id) && id !== "quickshell" && typeof source[id]
-                    === "boolean")
-
+            if (/^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*$/.test(id) && id !== "quickshell" && typeof source[id] === "boolean")
                 result[id] = source[id];
         }
         return result;
@@ -1131,9 +1163,7 @@ Singleton {
         const names = ["wght", "wdth", "opsz", "GRAD", "ROND", "slnt"];
         for (let i = 0; i < names.length; i += 1) {
             const name = names[i];
-            result[name] = root.normalizedBoundedReal(source[name], root.horizontalClockAxisDefaults[name],
-                                                      root.horizontalClockAxisMinimums[name],
-                                                      root.horizontalClockAxisMaximums[name]);
+            result[name] = root.normalizedBoundedReal(source[name], root.horizontalClockAxisDefaults[name], root.horizontalClockAxisMinimums[name], root.horizontalClockAxisMaximums[name]);
         }
         return result;
     }
@@ -1146,12 +1176,10 @@ Singleton {
         for (let i = 0; i < ids.length; i += 1) {
             const id = ids[i];
             const fallback = root.horizontalClockDigitDefaults[id];
-            const candidate = source[id] && typeof source[id] === "object" && !Array.isArray(source[id])
-                  ? source[id] : {};
+            const candidate = source[id] && typeof source[id] === "object" && !Array.isArray(source[id]) ? source[id] : {};
             const candidateColor = String(candidate.customColor || "").trim().toLowerCase();
             const hasCustomColor = /^#([0-9a-f]{6}|[0-9a-f]{8})$/.test(candidateColor);
-            let colorRole = colorRoles.indexOf(candidate.colorRole) !== -1 ? candidate.colorRole :
-                                                                             fallback.colorRole;
+            let colorRole = colorRoles.indexOf(candidate.colorRole) !== -1 ? candidate.colorRole : fallback.colorRole;
             if (colorRole === "custom" && !hasCustomColor)
                 colorRole = fallback.colorRole;
 
@@ -1174,12 +1202,10 @@ Singleton {
 
     function horizontalClockDigitColor(id) {
         const digit = root.horizontalClockDigit(id);
-        if (digit.colorRole === "custom" && /^#([0-9a-f]{6}|[0-9a-f]{8})$/i.test(String(digit.customColor
-                                                                                        || "")))
+        if (digit.colorRole === "custom" && /^#([0-9a-f]{6}|[0-9a-f]{8})$/i.test(String(digit.customColor || "")))
             return digit.customColor;
 
-        return digit.colorRole === "inversePrimary" ? Appearance.colors.colInversePrimary :
-                                                      Appearance.colors.colPrimary;
+        return digit.colorRole === "inversePrimary" ? Appearance.colors.colInversePrimary : Appearance.colors.colPrimary;
     }
 
     function setOverviewEnabled(value) {
@@ -1289,8 +1315,7 @@ Singleton {
             const t = TemplateService.templateById("fcitx5_theme");
             if (!t || !t.valid)
                 return false;
-            return root.isMatugenTemplateEnabled("fcitx5_theme") && root.isMatugenTemplateEnabled(
-                        "fcitx5_panel") && root.isMatugenTemplateEnabled("fcitx5_highlight");
+            return root.isMatugenTemplateEnabled("fcitx5_theme") && root.isMatugenTemplateEnabled("fcitx5_panel") && root.isMatugenTemplateEnabled("fcitx5_highlight");
         }
         const template = TemplateService.templateById(id);
         if (!template || !template.valid)
@@ -1420,18 +1445,18 @@ Singleton {
         const side = SidebarPolicy.normalizeSide(value, "left");
         if (side !== root.dashboardSidebarSide)
             setValue("sidebarPositions", {
-                         dashboard: side,
-                         quickSettings: root.quickSettingsSidebarSide
-                     });
+                dashboard: side,
+                quickSettings: root.quickSettingsSidebarSide
+            });
     }
 
     function setQuickSettingsSidebarSide(value) {
         const side = SidebarPolicy.normalizeSide(value, "right");
         if (side !== root.quickSettingsSidebarSide)
             setValue("sidebarPositions", {
-                         dashboard: root.dashboardSidebarSide,
-                         quickSettings: side
-                     });
+                dashboard: root.dashboardSidebarSide,
+                quickSettings: side
+            });
     }
 
     function setKeepSidebarsLoaded(value) {
@@ -1443,8 +1468,7 @@ Singleton {
         const result = {};
         for (const corner of root.hotCornerIds) {
             const action = source[corner];
-            result[corner] = root.hotCornerActionIds.indexOf(action) >= 0 ? action : corner === "top-left"
-                                                                            ? "overview" : "disabled";
+            result[corner] = root.hotCornerActionIds.indexOf(action) >= 0 ? action : corner === "top-left" ? "overview" : "disabled";
         }
         return result;
     }
@@ -1469,14 +1493,29 @@ Singleton {
         setValue("barPosition", normalizedEdgePosition(value));
     }
 
+    function setBarCornerStyle(value) {
+        setValue("barCornerStyle", normalizedBoundedInt(value, 1, 0, 5));
+    }
+
+    function setBarBorderless(value) {
+        setValue("barBorderless", normalizedOption(root.barBorderlessModes, value, "pills"));
+    }
+
+    function setBarGroupColor(value) {
+        setValue("barGroupColor", typeof value === "string" ? value : "layer1");
+    }
+
+    function setBarDividerStyle(value) {
+        setValue("barDividerStyle", normalizedOption(root.barDividerStyles, value, "rect"));
+    }
+
     function normalizedBarComponents(raw, excluded) {
         const source = Array.isArray(raw) ? raw : [];
         const blocked = excluded || [];
         const result = [];
         for (let index = 0; index < source.length; index += 1) {
             const componentId = String(source[index] || "");
-            if (root.barComponentIds.indexOf(componentId) === -1 || blocked.indexOf(componentId) !== -1
-                    || result.indexOf(componentId) !== -1)
+            if (root.barComponentIds.indexOf(componentId) === -1 || blocked.indexOf(componentId) !== -1 || result.indexOf(componentId) !== -1)
                 continue;
 
             result.push(componentId);
@@ -1485,11 +1524,8 @@ Singleton {
     }
 
     function normalizedBarLayout(leading, trailing, useDefaults) {
-        const normalizedLeading = root.normalizedBarComponents(useDefaults ? root.defaultBarLeadingComponents :
-                                                                             leading, []);
-        const normalizedTrailing = root.normalizedBarComponents(useDefaults
-                                                                ? root.defaultBarTrailingComponents : trailing,
-                                                                normalizedLeading);
+        const normalizedLeading = root.normalizedBarComponents(useDefaults ? root.defaultBarLeadingComponents : leading, []);
+        const normalizedTrailing = root.normalizedBarComponents(useDefaults ? root.defaultBarTrailingComponents : trailing, normalizedLeading);
         return {
             "leading": normalizedLeading,
             "trailing": normalizedTrailing
@@ -1497,14 +1533,12 @@ Singleton {
     }
 
     function barZoneComponents(zone) {
-        return zone === "leading" ? root.barLeadingComponents : zone === "trailing"
-                                    ? root.barTrailingComponents : [];
+        return zone === "leading" ? root.barLeadingComponents : zone === "trailing" ? root.barTrailingComponents : [];
     }
 
     function moveBarComponent(componentId, targetZone, targetIndex) {
         const id = String(componentId || "");
-        if (root.barComponentIds.indexOf(id) === -1 || (targetZone !== "leading" && targetZone
-                                                        !== "trailing"))
+        if (root.barComponentIds.indexOf(id) === -1 || (targetZone !== "leading" && targetZone !== "trailing"))
             return false;
 
         const leading = root.normalizedBarComponents(root.barLeadingComponents, []).filter(value => {
@@ -1515,9 +1549,7 @@ Singleton {
         });
         const target = targetZone === "leading" ? leading : trailing;
         const numericIndex = Number(targetIndex);
-        const insertionIndex = isFinite(numericIndex) ? Math.max(0, Math.min(target.length, Math.round(
-                                                                                 numericIndex))) :
-                                                        target.length;
+        const insertionIndex = isFinite(numericIndex) ? Math.max(0, Math.min(target.length, Math.round(numericIndex))) : target.length;
         target.splice(insertionIndex, 0, id);
         root.barLeadingComponents = leading;
         root.barTrailingComponents = trailing;
@@ -1542,8 +1574,7 @@ Singleton {
             return value !== id;
         });
         const inMiddle = root.barLayoutMiddle.indexOf(id) !== -1;
-        if (leading.length === root.barLeadingComponents.length && trailing.length
-                === root.barTrailingComponents.length && !inMiddle)
+        if (leading.length === root.barLeadingComponents.length && trailing.length === root.barTrailingComponents.length && !inMiddle)
             return false;
 
         root.barLeadingComponents = root.normalizedBarComponents(leading, []);
@@ -1643,8 +1674,7 @@ Singleton {
         const result = [];
         for (let index = 0; index < source.length; index += 1) {
             const componentId = String(source[index] || "");
-            if (root.quickSettingsComponentIds.indexOf(componentId) === -1 || result.indexOf(componentId) !==
-                    -1)
+            if (root.quickSettingsComponentIds.indexOf(componentId) === -1 || result.indexOf(componentId) !== -1)
                 continue;
 
             result.push(componentId);
@@ -1657,15 +1687,11 @@ Singleton {
         if (root.quickSettingsComponentIds.indexOf(id) === -1)
             return false;
 
-        const components = root.normalizedQuickSettingsComponents(root.quickSettingsComponents).filter(value
-                                                                                                       => {
-                                                                                                           return value
-                                                                                                                   !== id;
-                                                                                                       });
+        const components = root.normalizedQuickSettingsComponents(root.quickSettingsComponents).filter(value => {
+            return value !== id;
+        });
         const numericIndex = Number(targetIndex);
-        const insertionIndex = isFinite(numericIndex) ? Math.max(0, Math.min(components.length, Math.round(
-                                                                                 numericIndex))) :
-                                                        components.length;
+        const insertionIndex = isFinite(numericIndex) ? Math.max(0, Math.min(components.length, Math.round(numericIndex))) : components.length;
         components.splice(insertionIndex, 0, id);
         root.quickSettingsComponents = components;
         root.save();
@@ -1761,9 +1787,7 @@ Singleton {
         if (root.horizontalClockAxisDefaults[name] === undefined)
             return;
 
-        const next = root.normalizedBoundedReal(value, root.horizontalClockAxisDefaults[name],
-                                                root.horizontalClockAxisMinimums[name],
-                                                root.horizontalClockAxisMaximums[name]);
+        const next = root.normalizedBoundedReal(value, root.horizontalClockAxisDefaults[name], root.horizontalClockAxisMinimums[name], root.horizontalClockAxisMaximums[name]);
         const current = root.horizontalClockAxes[name];
         if (current === next) {
             if (persist !== false)
@@ -1939,6 +1963,10 @@ Singleton {
             "bar": {
                 "overlay": root.barOverlay,
                 "position": root.barPosition,
+                "cornerStyle": root.barCornerStyle,
+                "borderless": root.barBorderless,
+                "groupColor": root.barGroupColor,
+                "dividerStyle": root.barDividerStyle,
                 "showValues": root.barShowValues,
                 "showNames": root.barShowNames,
                 "barLeadingComponents": root.barLeadingComponents.slice(),
@@ -1983,8 +2011,7 @@ Singleton {
         const horizontalClock = configSection(island.horizontalClock);
         const keyhole = configSection(island.keyhole);
         root.bannerSource = typeof wallpaper.bannerSource === "string" ? wallpaper.bannerSource : "";
-        root.wallpaperFolder = typeof wallpaper.folder === "string" && wallpaper.folder !== ""
-                ? wallpaper.folder : Paths.dataHome + "/wallpapers";
+        root.wallpaperFolder = typeof wallpaper.folder === "string" && wallpaper.folder !== "" ? wallpaper.folder : Paths.dataHome + "/wallpapers";
         const wallpaperPath = typeof wallpaper.path === "string" ? wallpaper.path : "";
         root.wallpaperPath = wallpaperPath === Paths.currentWallpaper ? "" : wallpaperPath;
         root.wallpaperPathLight = typeof wallpaper.pathLight === "string" ? wallpaper.pathLight : "";
@@ -2008,8 +2035,7 @@ Singleton {
         root.transitionEasingMode = normalizedEasingMode(transition.easingMode || "customBezier");
         root.transitionBezierCurve = normalizedBezier(transition.bezierCurve);
         root.overviewEnabled = overview.enabled === undefined ? true : !!overview.enabled;
-        root.overviewUseDesktopWallpaper = overview.useDesktopWallpaper === undefined ? true : !
-                                                                                        !overview.useDesktopWallpaper;
+        root.overviewUseDesktopWallpaper = overview.useDesktopWallpaper === undefined ? true : !!overview.useDesktopWallpaper;
         root.overviewWallpaperPath = String(overview.path || "");
         root.overviewWallpaperFillMode = normalizedOption(root.fillModes, overview.fillMode, "Fill");
         root.overviewPerMonitorWallpaper = !!overview.perMonitor;
@@ -2021,8 +2047,7 @@ Singleton {
         root.overviewSaturation = normalizedBoundedReal(overview.saturation, 1, 0, 2);
         root.overviewContrast = normalizedBoundedReal(overview.contrast, 1, 0.5, 2);
         root.parallaxVerticalEnabled = !!parallax.verticalEnabled;
-        root.parallaxFollowWorkspaces = parallax.followWorkspaces === undefined ? true : !
-                                                                                  !parallax.followWorkspaces;
+        root.parallaxFollowWorkspaces = parallax.followWorkspaces === undefined ? true : !!parallax.followWorkspaces;
         root.parallaxFollowSidebars = !!parallax.followSidebars;
         root.parallaxFollowTiledColumns = !!parallax.followTiledColumns;
         root.parallaxPreferredScale = normalizedBoundedReal(parallax.preferredScale, 1.1, 1, 1.35);
@@ -2030,39 +2055,28 @@ Singleton {
         root.matugenScheme = normalizedOption(root.matugenSchemes, theme.matugenScheme, "scheme-tonal-spot");
         root.matugenTemplates = normalizedMatugenTemplates(theme.matugenTemplates);
         root.lockScreenStyle = normalizedOption(root.lockScreenStyles, theme.lockScreenStyle, "default");
-        root.settingsPanelStyle = normalizedOption(root.settingsPanelStyles, theme.settingsPanelStyle,
-                                                   "default");
+        root.settingsPanelStyle = normalizedOption(root.settingsPanelStyles, theme.settingsPanelStyle, "default");
         root.lyricSource = normalizedOption(root.lyricSources, theme.lyricSource, "kugou");
-        root.lyricOffsetMs = normalizedBoundedInt(theme.lyricOffsetMs, 0, root.lyricOffsetMinMs,
-                                                  root.lyricOffsetMaxMs);
-        root.lyricFontSize = normalizedBoundedInt(theme.lyricFontSize, 26, root.lyricFontSizeMin,
-                                                  root.lyricFontSizeMax);
+        root.lyricOffsetMs = normalizedBoundedInt(theme.lyricOffsetMs, 0, root.lyricOffsetMinMs, root.lyricOffsetMaxMs);
+        root.lyricFontSize = normalizedBoundedInt(theme.lyricFontSize, 26, root.lyricFontSizeMin, root.lyricFontSizeMax);
         root.lyricAlbumArtTint = theme.lyricAlbumArtTint === true;
         // Absent in older configs; default to on rather than mirroring the
         // `=== true` pattern used above, which would read a missing key as off.
         root.lyricShowTranslation = theme.lyricShowTranslation !== false;
         root.themeMode = theme.mode === "light" ? "light" : "dark";
-        root.superKeyStyle = root.superKeyStyles.some(style => style.value === theme.superKeyStyle)
-                ? theme.superKeyStyle : "text";
+        root.superKeyStyle = root.superKeyStyles.some(style => style.value === theme.superKeyStyle) ? theme.superKeyStyle : "text";
         root.cursorTheme = root.normalizedCursorTheme(theme.cursorTheme);
         root.cursorSize = root.normalizedBoundedInt(theme.cursorSize, 24, 12, 128);
-        root.cursorHideWhenTyping = typeof theme.cursorHideWhenTyping === "boolean"
-                ? theme.cursorHideWhenTyping : false;
-        root.cursorHideAfterInactiveMs = root.normalizedBoundedInt(theme.cursorHideAfterInactiveMs, 0, 0,
-                                                                   5000);
+        root.cursorHideWhenTyping = typeof theme.cursorHideWhenTyping === "boolean" ? theme.cursorHideWhenTyping : false;
+        root.cursorHideAfterInactiveMs = root.normalizedBoundedInt(theme.cursorHideAfterInactiveMs, 0, 0, 5000);
         root.iconTheme = typeof theme.iconTheme === "string" ? theme.iconTheme : "";
         FontService.setConfiguredFamilies(fonts.ui, fonts.mono, fonts.numeric, fonts.expressive);
         root.shellBackgroundOpacity = normalizedBoundedReal(effects.shellBackgroundOpacity, 1, 0, 1);
-        root.shellBlurEnabled = typeof effects.shellBlurEnabled === "boolean" ? effects.shellBlurEnabled :
-                                                                                false;
+        root.shellBlurEnabled = typeof effects.shellBlurEnabled === "boolean" ? effects.shellBlurEnabled : false;
         root.shellBlurXray = typeof effects.shellBlurXray === "boolean" ? effects.shellBlurXray : true;
-        root.islandMediaProgressStyle = normalizedOption(root.islandMediaProgressOptions,
-                                                           media.progressStyle, "wave");
-        root.islandMediaCoverStyle = normalizedOption(root.islandMediaCoverOptions, media.coverStyle
-                                                        === "spectrum" ? "caelestia" : media.coverStyle,
-                                                        "rounded");
-        root.islandMediaColorStyle = normalizedOption(root.islandMediaColorOptions, media.colorStyle,
-                                                        "theme");
+        root.islandMediaProgressStyle = normalizedOption(root.islandMediaProgressOptions, media.progressStyle, "wave");
+        root.islandMediaCoverStyle = normalizedOption(root.islandMediaCoverOptions, media.coverStyle === "spectrum" ? "caelestia" : media.coverStyle, "rounded");
+        root.islandMediaColorStyle = normalizedOption(root.islandMediaColorOptions, media.colorStyle, "theme");
         root.islandEnabled = typeof island.enabled === "boolean" ? island.enabled : true;
         root.islandOverlay = typeof island.overlay === "boolean" ? island.overlay : false;
         root.islandStyle = normalizedOption(root.islandStyles, island.style, "bangs");
@@ -2071,46 +2085,31 @@ Singleton {
         root.islandPosition = normalizedEdgePosition(island.position);
         root.islandCapsLockOsd = typeof island.capsLockOsd === "boolean" ? island.capsLockOsd : true;
         root.islandNumLockOsd = typeof island.numLockOsd === "boolean" ? island.numLockOsd : true;
-        root.keystoneLongShowValues = typeof island.longShowValues === "boolean" ? island.longShowValues :
-                                                                                     true;
-        root.keystoneLongShowNames = typeof island.longShowNames === "boolean" ? island.longShowNames :
-                                                                                   true;
-        root.keystoneLongShowMonitorValues = typeof island.longShowMonitorValues === "boolean"
-                ? island.longShowMonitorValues : true;
+        root.keystoneLongShowValues = typeof island.longShowValues === "boolean" ? island.longShowValues : true;
+        root.keystoneLongShowNames = typeof island.longShowNames === "boolean" ? island.longShowNames : true;
+        root.keystoneLongShowMonitorValues = typeof island.longShowMonitorValues === "boolean" ? island.longShowMonitorValues : true;
         root.islandHideDate = typeof island.hideDate === "boolean" ? island.hideDate : false;
-        root.islandHoverAction = normalizedOption(root.islandHoverActionOptions, island.hoverAction
-                                                    === "library" ? "media" : island.hoverAction, "peak");
+        root.islandHoverAction = normalizedOption(root.islandHoverActionOptions, island.hoverAction === "library" ? "media" : island.hoverAction, "peak");
         root.islandHoverOpenDelay = normalizedBoundedInt(island.hoverOpenDelay, 150, 0, 500);
         root.islandHoverCloseDelay = normalizedBoundedInt(island.hoverCloseDelay, 250, 0, 600);
-        root.keystoneLongLeading = root.normalizedKeystoneLongItems(Array.isArray(island.longLeading)
-                                                                    ? island.longLeading :
-                                                                      root.defaultKeystoneLongLeading, []);
-        root.keystoneLongTrailing = root.normalizedKeystoneLongItems(Array.isArray(island.longTrailing)
-                                                                     ? island.longTrailing :
-                                                                       root.defaultKeystoneLongTrailing,
-                                                                     root.keystoneLongLeading);
-        root.islandLeftClickAction = normalizedOption(root.islandActionOptions, island.leftClickAction
-                                                        === "library" ? "media" : island.leftClickAction,
-                                                        "media");
-        root.islandMiddleClickAction = normalizedOption(root.islandActionOptions,
-                                                          island.middleClickAction === "library" ? "media" :
-                                                                                                     island.middleClickAction,
-                                                          "lyrics");
-        root.islandKeyholeCard = root.normalizedIslandKeyholeCard(keyhole.card !== undefined
-                                                                      ? keyhole.card : keyhole.cards);
+        root.keystoneLongLeading = root.normalizedKeystoneLongItems(Array.isArray(island.longLeading) ? island.longLeading : root.defaultKeystoneLongLeading, []);
+        root.keystoneLongTrailing = root.normalizedKeystoneLongItems(Array.isArray(island.longTrailing) ? island.longTrailing : root.defaultKeystoneLongTrailing, root.keystoneLongLeading);
+        root.islandLeftClickAction = normalizedOption(root.islandActionOptions, island.leftClickAction === "library" ? "media" : island.leftClickAction, "media");
+        root.islandMiddleClickAction = normalizedOption(root.islandActionOptions, island.middleClickAction === "library" ? "media" : island.middleClickAction, "lyrics");
+        root.islandKeyholeCard = root.normalizedIslandKeyholeCard(keyhole.card !== undefined ? keyhole.card : keyhole.cards);
         root.horizontalClockFontSize = root.normalizedBoundedInt(horizontalClock.fontSize, 22, 16, 28);
         root.horizontalClockAxes = root.normalizedHorizontalClockAxes(horizontalClock.axes);
         root.horizontalClockDigits = root.normalizedHorizontalClockDigits(horizontalClock.digits);
-        root.barShowValues = typeof bar.showValues === "boolean" ? bar.showValues :
-                                                                   typeof bar.showMonitorValues === "boolean"
-                                                                   ? bar.showMonitorValues : true;
+        root.barShowValues = typeof bar.showValues === "boolean" ? bar.showValues : typeof bar.showMonitorValues === "boolean" ? bar.showMonitorValues : true;
         root.barShowNames = typeof bar.showNames === "boolean" ? bar.showNames : false;
         root.barOverlay = typeof bar.overlay === "boolean" ? bar.overlay : false;
         root.barPosition = normalizedEdgePosition(bar.position);
-        const hasBarLayout = Array.isArray(bar.barLeadingComponents) || Array.isArray(
-                  bar.barTrailingComponents);
-        const barLayout = root.normalizedBarLayout(bar.barLeadingComponents, bar.barTrailingComponents,
-                                                   !hasBarLayout);
+        root.barCornerStyle = root.normalizedBoundedInt(bar.cornerStyle, 1, 0, 5);
+        root.barBorderless = root.normalizedOption(root.barBorderlessModes, bar.borderless, "pills");
+        root.barGroupColor = typeof bar.groupColor === "string" ? bar.groupColor : "layer1";
+        root.barDividerStyle = root.normalizedOption(root.barDividerStyles, bar.dividerStyle, "rect");
+        const hasBarLayout = Array.isArray(bar.barLeadingComponents) || Array.isArray(bar.barTrailingComponents);
+        const barLayout = root.normalizedBarLayout(bar.barLeadingComponents, bar.barTrailingComponents, !hasBarLayout);
         root.barLeadingComponents = barLayout.leading;
         root.barTrailingComponents = barLayout.trailing;
         const hasBarLayouts = "barLayoutLeft" in bar || "barLayoutMiddle" in bar || "barLayoutRight" in bar;
@@ -2122,8 +2121,7 @@ Singleton {
         const islandMigrated = island.islandLayoutMigrated === true;
         if (hasBarLayouts) {
             root.barLayoutLeft = root.normalizedBarLayoutIds(bar.barLayoutLeft);
-            root.barLayoutMiddle = root.normalizedBarLayoutIds(bar.barLayoutMiddle).filter(id => id
-                                                                                                 !== "clock");
+            root.barLayoutMiddle = root.normalizedBarLayoutIds(bar.barLayoutMiddle).filter(id => id !== "clock");
             root.barLayoutRight = root.normalizedBarLayoutIds(bar.barLayoutRight);
             if (!islandMigrated && root.barLayoutMiddle.length === 0) {
                 root.barLayoutMiddle = ["island"];
@@ -2132,8 +2130,7 @@ Singleton {
                 root.barLayoutLeft = root.normalizedBarLayoutIds(root.barLeadingComponents);
                 root.barLayoutRight = root.normalizedBarLayoutIds(root.barTrailingComponents);
             }
-            if (root.barLayoutLeft.indexOf("information") < 0 && root.barLayoutMiddle.indexOf("information")
-                    < 0 && root.barLayoutRight.indexOf("information") < 0) {
+            if (root.barLayoutLeft.indexOf("information") < 0 && root.barLayoutMiddle.indexOf("information") < 0 && root.barLayoutRight.indexOf("information") < 0) {
                 const wsIndex = root.barLayoutLeft.indexOf("workspaces");
                 if (wsIndex >= 0) {
                     root.barLayoutLeft.splice(wsIndex + 1, 0, "information");
@@ -2165,10 +2162,8 @@ Singleton {
         root.keepSidebarsLoaded = sidebar.keepLoaded === undefined ? true : !!sidebar.keepLoaded;
         root.sidebarPositions = SidebarPolicy.restoredPositions(sidebar);
         root.hotCornerActions = root.normalizedHotCornerActions(source.hotCorners);
-        root.desktopCardGridSnapEnabled = desktopCards.gridSnapEnabled === undefined ? true : !
-                                                                                       !desktopCards.gridSnapEnabled;
-        root.desktopCardGridVisibleWhileDragging = desktopCards.gridVisibleWhileDragging === undefined ? true :
-                                                                                                         !!desktopCards.gridVisibleWhileDragging;
+        root.desktopCardGridSnapEnabled = desktopCards.gridSnapEnabled === undefined ? true : !!desktopCards.gridSnapEnabled;
+        root.desktopCardGridVisibleWhileDragging = desktopCards.gridVisibleWhileDragging === undefined ? true : !!desktopCards.gridVisibleWhileDragging;
     }
 
     function needsScrollingMigration(parsed) {
@@ -2188,29 +2183,22 @@ Singleton {
         if (!effects || typeof effects !== "object" || Array.isArray(effects))
             return true;
 
-        return effects.shellBackgroundOpacity === undefined || effects.shellBlurEnabled === undefined
-                || effects.shellBlurXray === undefined;
+        return effects.shellBackgroundOpacity === undefined || effects.shellBlurEnabled === undefined || effects.shellBlurXray === undefined;
     }
 
     function needsThemeMigration(parsed) {
         const theme = parsed && parsed.theme;
-        return !theme || typeof theme !== "object" || Array.isArray(theme) || theme.matugenTemplates
-                === undefined || theme.fonts === undefined;
+        return !theme || typeof theme !== "object" || Array.isArray(theme) || theme.matugenTemplates === undefined || theme.fonts === undefined;
     }
 
     function needsEdgePositionMigration(parsed) {
         const bar = parsed && parsed.bar;
         const island = parsed && parsed.island;
-        return !bar || typeof bar !== "object" || Array.isArray(bar) || bar.position
-                !== root.normalizedEdgePosition(bar.position) || !island || typeof island !== "object"
-                || Array.isArray(island) || island.position !== root.normalizedEdgePosition(
-                    island.position);
+        return !bar || typeof bar !== "object" || Array.isArray(bar) || bar.position !== root.normalizedEdgePosition(bar.position) || !island || typeof island !== "object" || Array.isArray(island) || island.position !== root.normalizedEdgePosition(island.position);
     }
 
     function commitPalette(scope, source) {
-        if (!scope || ["desktop", "overview", "banner"].indexOf(scope.target) < 0 || ["path", "pathLight",
-                                                                                      "pathDark"].indexOf(
-                    scope.field) < 0 || !root.storeReady || root.loading || !WallpaperSource.decode(source))
+        if (!scope || ["desktop", "overview", "banner"].indexOf(scope.target) < 0 || ["path", "pathLight", "pathDark"].indexOf(scope.field) < 0 || !root.storeReady || root.loading || !WallpaperSource.decode(source))
             return false;
         const candidate = JSON.parse(JSON.stringify(root.toJson()));
         const section = scope.target === "overview" ? candidate.wallpaper.overview : candidate.wallpaper;
@@ -2221,8 +2209,7 @@ Singleton {
         else
             section[scope.field] = source;
         const seed = WallpaperSource.primary(source);
-        candidate.wallpaper.recentColors = root.normalizedRecentColors([seed].concat(
-                                                                           root.recentWallpaperColors));
+        candidate.wallpaper.recentColors = root.normalizedRecentColors([seed].concat(root.recentWallpaperColors));
         ConfigService.updateSections(candidate);
         ConfigService.saveNow();
 
@@ -2231,17 +2218,12 @@ Singleton {
         if (scope.target === "banner") {
             root.bannerSource = source;
         } else if (scope.monitor) {
-            const propertyName = scope.target === "overview" ? "overviewMonitorWallpapers" :
-                                                               "monitorWallpapers";
+            const propertyName = scope.target === "overview" ? "overviewMonitorWallpapers" : "monitorWallpapers";
             const next = root.cloneMap(root[propertyName]);
             next[scope.monitor] = source;
             root[propertyName] = next;
         } else {
-            const propertyName = scope.target === "overview" ? "overviewWallpaperPath" : scope.field
-                                                               === "pathLight" ? "wallpaperPathLight" :
-                                                                                 scope.field === "pathDark"
-                                                                                 ? "wallpaperPathDark" :
-                                                                                   "wallpaperPath";
+            const propertyName = scope.target === "overview" ? "overviewWallpaperPath" : scope.field === "pathLight" ? "wallpaperPathLight" : scope.field === "pathDark" ? "wallpaperPathDark" : "wallpaperPath";
             root[propertyName] = source;
         }
         root.recentWallpaperColors = candidate.wallpaper.recentColors;
