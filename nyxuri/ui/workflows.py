@@ -3,7 +3,7 @@
 import shutil
 import subprocess
 import sys
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from nyxuri.system.compositors import COMPOSITORS, detect_preferred_wm
 from nyxuri.system.env import get_env, log_msg

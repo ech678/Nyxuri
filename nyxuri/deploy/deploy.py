@@ -11,7 +11,8 @@ import shutil
 import sys
 import time
 from contextlib import ExitStack
-from typing import List, Optional
+from pathlib import Path
+from typing import Dict, List, Optional
 
 from nyxuri.system.env import Colors, REPO_URL, THEME_ENGINE, get_env, log_msg, timed_run
 from nyxuri.system.i18n import msg

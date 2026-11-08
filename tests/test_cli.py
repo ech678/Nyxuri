@@ -632,5 +632,27 @@ class TestCoreVerbs(unittest.TestCase):
         self.assertEqual(code, 0)
 
 
+class TestTypeAnnotationsIntegrity(unittest.TestCase):
+    """PEP 649 (Python 3.14) defers annotations, which can hide NameError until Python <=3.13.
+    Force evaluation of __annotations__ across all nyxuri symbols."""
+
+    def test_all_nyxuri_type_annotations_resolve(self):
+        import importlib
+        import inspect
+        import pkgutil
+        import nyxuri
+
+        errors = []
+        for _, modname, _ in pkgutil.walk_packages(nyxuri.__path__, prefix="nyxuri."):
+            mod = importlib.import_module(modname)
+            for name, obj in inspect.getmembers(mod):
+                if (inspect.isfunction(obj) or inspect.isclass(obj)) and getattr(obj, "__module__", "") == modname:
+                    try:
+                        getattr(obj, "__annotations__", {})
+                    except Exception as e:
+                        errors.append(f"{modname}.{name}: {e}")
+        self.assertEqual(errors, [])
+
+
 if __name__ == "__main__":
     unittest.main()
