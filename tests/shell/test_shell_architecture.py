@@ -249,7 +249,8 @@ class TestShellManagement(unittest.TestCase):
         shell_dir = os.path.join(repo_root, "shell")
 
         # 1. Base hosts exist in plugins/
-        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "bar", "island", "Island.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "bar", "Bar.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "bar", "DynamicIsland.qml")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "wallpaper", "WallpaperBackground.qml")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "desktopcards", "DesktopCardHost.qml")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "dock", "DockHost.qml")))
@@ -259,14 +260,14 @@ class TestShellManagement(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(archive_dir, "settings", "displays", "DisplayOverlays.qml")))
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "sidebars", "SidebarHostWindow.qml")))
 
-        # 2. NotificationContent and IslandSurface exist for native notification chain
-        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "bar", "island", "styles", "shared", "IslandSurface.qml")))
+        # 2. NotificationContent and DynamicIsland exist for native notification chain
         self.assertTrue(os.path.isfile(os.path.join(shell_dir, "services", "NotificationContent.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "bar", "DynamicIsland.qml")))
 
-        # 3. Bar quicksettings controls exist
-        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "bar", "quickpanel", "Volume.qml")))
-        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "bar", "quickpanel", "Microphone.qml")))
-        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "bar", "quickpanel", "BrightnessButton.qml")))
+        # 3. Bar components exist
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "bar", "BarContent.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "bar", "ClockWidget.qml")))
+        self.assertTrue(os.path.isfile(os.path.join(shell_dir, "plugins", "bar", "BatteryIndicator.qml")))
 
     def test_r4c_c05_cpp_toolchain_elimination(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -383,13 +384,12 @@ class TestShellManagement(unittest.TestCase):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         shell_dir = os.path.join(repo_root, "shell")
 
-        # 1. Pruned Cava: AudioRecordingVisual provides local fallback levelProvider without Clavis.Cava
-        arv_path = os.path.join(shell_dir, "plugins", "bar", "island", "styles", "recording", "AudioRecordingVisual.qml")
-        with open(arv_path, "r", encoding="utf-8") as f:
-            arv_content = f.read()
-        self.assertNotIn("Clavis.Cava", arv_content)
-        self.assertIn("id: levelProvider", arv_content)
-        self.assertIn("readonly property bool available: false", arv_content)
+        # 1. Pruned Cava: Visualizer provides spectrum without Clavis.Cava
+        vis_path = os.path.join(shell_dir, "plugins", "bar", "Visualizer.qml")
+        with open(vis_path, "r", encoding="utf-8") as f:
+            vis_content = f.read()
+        self.assertNotIn("Clavis.Cava", vis_content)
+        self.assertIn("CavaProcess {", vis_content)
 
         # AudioSpectrum is physically deleted (R4-C-02)
         asp_path = os.path.join(shell_dir, "services", "AudioSpectrum.qml")
@@ -418,39 +418,13 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("property var wheelAction", rb_content)
         self.assertIn("root.wheelAction(wheel)", rb_content)
 
-        # 2. Volume.qml handles wheelAction with 0.05 step
-        vol_path = os.path.join(shell_dir, "plugins", "bar", "quickpanel", "Volume.qml")
-        with open(vol_path, "r", encoding="utf-8") as f:
-            vol_content = f.read()
-        self.assertIn("wheelAction: wheel =>", vol_content)
-        self.assertIn("VolumeService.setSinkVolume(VolumeService.sinkVolume + step)", vol_content)
-        self.assertIn("0.05", vol_content)
-
-        # 3. Microphone.qml handles wheelAction with 0.05 step
-        mic_path = os.path.join(shell_dir, "plugins", "bar", "quickpanel", "Microphone.qml")
-        with open(mic_path, "r", encoding="utf-8") as f:
-            mic_content = f.read()
-        self.assertIn("wheelAction: wheel =>", mic_content)
-        self.assertIn("VolumeService.setSourceVolume(VolumeService.sourceVolume + step)", mic_content)
-        self.assertIn("0.05", mic_content)
-
-        # 4. BrightnessButton.qml handles wheelAction with 0.05 step
-        br_path = os.path.join(shell_dir, "plugins", "bar", "quickpanel", "BrightnessButton.qml")
-        with open(br_path, "r", encoding="utf-8") as f:
-            br_content = f.read()
-        self.assertIn("wheelAction: wheel =>", br_content)
-        self.assertIn("BrightnessService.setBrightnessForScreen", br_content)
-        self.assertIn("0.05", br_content)
-
-        # 5. LongStatusItem handles onWheel with pixelDelta/angleDelta support
-        long_item = os.path.join(shell_dir, "plugins", "bar", "island", "styles", "long", "LongStatusItem.qml")
-        with open(long_item, "r", encoding="utf-8") as f:
-            long_content = f.read()
-        self.assertIn("onWheel: wheel =>", long_content)
-        self.assertIn("pixelDelta", long_content)
-        self.assertIn("VolumeService.setSinkVolume", long_content)
-        self.assertIn("VolumeService.setSourceVolume", long_content)
-        self.assertIn("BrightnessService.setBrightnessForScreen", long_content)
+        # 2. BarContent handles scroll actions with step brightness and volume
+        bc_path = os.path.join(shell_dir, "plugins", "bar", "BarContent.qml")
+        with open(bc_path, "r", encoding="utf-8") as f:
+            bc_content = f.read()
+        self.assertIn("function performScrollAction", bc_content)
+        self.assertIn("Brightness.stepBrightness", bc_content)
+        self.assertIn("Audio.incrementVolume", bc_content)
 
     def test_bar_layout_two_way_synchronization_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -468,26 +442,25 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("root.barTrailingComponents = combinedTrailing", pc_content)
         self.assertIn("!root.arraysEqual(root.barLeadingComponents, root.barLayoutLeft)", pc_content)
 
-        # 2. BarContent delegates 3 lanes to Repeaters with BarComponentLoader
+        # 2. BarContent delegates 3 lanes to Repeaters
         bc_path = os.path.join(shell_dir, "plugins", "bar", "BarContent.qml")
         with open(bc_path, "r", encoding="utf-8") as f:
             bc_content = f.read()
-        self.assertIn("model: PersonalizationConfig.barLayoutLeft", bc_content)
-        self.assertIn("model: PersonalizationConfig.barLayoutMiddle", bc_content)
-        self.assertIn("model: PersonalizationConfig.barLayoutRight", bc_content)
-        self.assertIn("delegate: BarComponentLoader {", bc_content)
+        self.assertIn("effectiveLeftLayout", bc_content)
+        self.assertIn("effectiveMiddleLayout", bc_content)
+        self.assertIn("effectiveRightLayout", bc_content)
+        self.assertIn("source: root.getWidgetUrl(modelData)", bc_content)
 
     def test_p3_notification_island_chain_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         shell_dir = os.path.join(repo_root, "shell")
 
-        # 1. IslandSurface embeds NotificationContent with isNotifMode binding
-        surface_path = os.path.join(shell_dir, "plugins", "bar", "island", "styles", "shared", "IslandSurface.qml")
+        # 1. DiNotifs embeds NotificationService actions
+        surface_path = os.path.join(shell_dir, "plugins", "bar", "DiNotifs.qml")
         with open(surface_path, "r", encoding="utf-8") as f:
             surface_content = f.read()
-        self.assertIn("NotificationContent {", surface_content)
-        self.assertIn("property bool isNotifMode:", surface_content)
-        self.assertIn("NotificationService.hasNotifs", surface_content)
+        self.assertIn("NotificationService.dismissPopup", surface_content)
+        self.assertIn("NotificationService.invokeDefaultAction", surface_content)
 
         # 2. NotificationContent provides ListView, sanitizedBody, normalActions, dismiss
         notif_content = os.path.join(shell_dir, "services", "NotificationContent.qml")
@@ -515,35 +488,20 @@ class TestShellManagement(unittest.TestCase):
     def test_island_audio_osd_startup_suppression_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         shell_dir = os.path.join(repo_root, "shell")
-        surface_path = os.path.join(shell_dir, "plugins", "bar", "island", "styles", "shared", "IslandSurface.qml")
+        surface_path = os.path.join(shell_dir, "plugins", "bar", "DiOsd.qml")
         with open(surface_path, "r", encoding="utf-8") as f:
             surface_content = f.read()
 
-        # 1. State properties exist for baseline tracking
-        self.assertIn("readonly property var sinkNode: Pipewire.defaultAudioSink", surface_content)
-        self.assertIn("readonly property var sourceNode: Pipewire.defaultAudioSource", surface_content)
-        self.assertIn("property bool sinkInitialized:", surface_content)
-        self.assertIn("property bool sourceInitialized:", surface_content)
+        # 1. DiOsd binds to di provider
+        self.assertIn("di.iconForProviderId", surface_content)
+        self.assertIn("di.osdValueText", surface_content)
 
-        # 2. Handlers guard against unready state and verify value delta before triggering OSD
-        self.assertIn("function syncSinkState()", surface_content)
-        self.assertIn("function handleSinkVolumeChanged()", surface_content)
-        self.assertIn("function handleSinkMutedChanged()", surface_content)
-        self.assertIn("function syncSourceState()", surface_content)
-        self.assertIn("function handleSourceVolumeChanged()", surface_content)
-        self.assertIn("function handleSourceMutedChanged()", surface_content)
-
-        self.assertIn("!sinkNode || !sinkNode.ready || !audioNode", surface_content)
-        self.assertIn("Math.abs(currentVol - lastSinkVolume) > 0.0001", surface_content)
-        self.assertIn("currentMuted !== lastSinkMuted", surface_content)
-
-        # 3. Component.onCompleted initializes baseline state
-        self.assertIn("root.syncSinkState();", surface_content)
-        self.assertIn("root.syncSourceState();", surface_content)
-
-        # 4. Raw unshielded calls are replaced
-        self.assertNotIn('function onVolumeChanged() {\n                        root.triggerSliderOSD("volume");', surface_content)
-        self.assertNotIn('function onVolumeChanged() {\n                        root.triggerSliderOSD("mic");', surface_content)
+        # 2. DynamicIsland manages osd indicator state
+        di_main_path = os.path.join(shell_dir, "plugins", "bar", "DynamicIsland.qml")
+        with open(di_main_path, "r", encoding="utf-8") as f:
+            di_content = f.read()
+        self.assertIn("GlobalStates.osdVolumeOpen", di_content)
+        self.assertIn("GlobalStates.osdIndicatorType", di_content)
 
     def test_p3_lock_screen_and_safety_switch_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -726,8 +684,8 @@ class TestShellManagement(unittest.TestCase):
         high_risk_files = [
             "services/SystemMonitorService.qml",
             "services/KeyboardLockService.qml",
-            "plugins/bar/island/tools/AudioRecordingService.qml",
-            "plugins/bar/island/tools/RecordingService.qml",
+            "plugins/bar/BarContent.qml",
+            "plugins/bar/DynamicIsland.qml",
             "services/NetworkService.qml",
             "services/NetworkManagerExtras.qml",
             "services/BluetoothService.qml",
@@ -921,12 +879,11 @@ class TestShellManagement(unittest.TestCase):
             sb_content = f.read()
         self.assertIn("root.anySidebarOpen || dashboardSidebar.panelPresented || quickSettingsSidebar.panelPresented", sb_content)
 
-        # 8. Island avatar file picker is lazy loaded
-        ks_file = os.path.join(shell_dir, "plugins", "bar", "island", "Island.qml")
+        # 8. DynamicIsland exists and registers on gateway
+        ks_file = os.path.join(shell_dir, "plugins", "bar", "DynamicIsland.qml")
         with open(ks_file, "r", encoding="utf-8") as f:
             ks_content = f.read()
-        self.assertIn("id: avatarFilePickerLoader", ks_content)
-        self.assertIn("active: false", ks_content)
+        self.assertIn("ActionGateway.islandHost = root", ks_content)
 
         # 9. ShellStartupService defines valid stages
         sss_file = os.path.join(shell_dir, "services", "ShellStartupService.qml")
@@ -946,11 +903,11 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("--status", runner_content)
         self.assertIn("ipc call shell isReady", runner_content)
 
-        # 11. ClockContent defines font.weight: Font.Black fallback for rolling digits
-        clock_file = os.path.join(shell_dir, "plugins", "bar", "island", "clock", "ClockContent.qml")
+        # 11. ClockWidget defines time rendering
+        clock_file = os.path.join(shell_dir, "plugins", "bar", "ClockWidget.qml")
         with open(clock_file, "r", encoding="utf-8") as f:
             clock_content = f.read()
-        self.assertIn("font.weight: Font.Black", clock_content)
+        self.assertIn("DateTime.time", clock_content)
 
     def test_r11_font_and_i18n_startup_dedup_contract(self):
         """Font and locale singletons own their one cold-start initialization."""
@@ -1163,13 +1120,6 @@ class TestShellManagement(unittest.TestCase):
         with open(notif_host, "r", encoding="utf-8") as f:
             self.assertNotIn("import qs.plugins.bar.island.notifications", f.read(), "NotificationPopupHost must not import island")
 
-        island_surface = os.path.join(shell_dir, "plugins", "bar", "island", "styles", "shared", "IslandSurface.qml")
-        with open(island_surface, "r", encoding="utf-8") as f:
-            island_content = f.read()
-            # P2: IslandSurface uses shared services/NotificationContent, severs cross-plugin import
-            self.assertNotIn('import "../../../notifications"', island_content, "IslandSurface must not statically import notifications")
-            self.assertNotIn("import qs.plugins.bar.island.notifications", island_content, "Legacy island.notifications import must be gone")
-
         # Island notifications directory must be removed to avoid duplication
         island_notif_dir = os.path.join(shell_dir, "plugins", "bar", "island", "notifications")
         self.assertFalse(os.path.exists(island_notif_dir), "island/notifications directory must be removed to avoid duplication")
@@ -1207,10 +1157,7 @@ class TestShellManagement(unittest.TestCase):
             "plugins/launcher/FileSearchService.qml",
             "plugins/launcher/SpotlightSearchService.qml",
             "plugins/launcher/SpotlightToolService.qml",
-            "plugins/bar/island/tools/AudioRecordingService.qml",
-            "plugins/bar/island/tools/RecordingService.qml",
             "services/MediaPalette.qml",
-            "plugins/bar/tray/TrayService.qml",
             "plugins/sidebars/quicksettings/QuickToggleConfig.qml",
             "plugins/sidebars/dashboard/infotools/TodoService.qml",
             "archive/settings/autostart/AutostartService.qml",
@@ -1508,8 +1455,8 @@ class TestShellManagement(unittest.TestCase):
         consumer_samples = [
             ("shell.qml", "CompositorDriver"),
             ("plugins/dock/DockService.qml", "CompositorDriver"),
-            ("plugins/bar/workspaces/Workspaces.qml", "CompositorDriver"),
-            ("plugins/bar/activewindow/ActiveWindow.qml", "CompositorDriver"),
+            ("plugins/bar/Workspaces.qml", "CompositorDriver"),
+            ("plugins/bar/ActiveWindow.qml", "CompositorDriver"),
             ("plugins/dock/DockSurface.qml", "CompositorDriver"),
             ("services/HotCorners.qml", "CompositorDriver"),
             ("archive/settings/displays/DisplayConfigService.qml", "CompositorDriver"),
@@ -1720,12 +1667,6 @@ class TestShellManagement(unittest.TestCase):
         self.assertNotIn("player.positionChanged()", ms_code)
         self.assertIn("onObjectRemovedPost", ms_code)
 
-        media_content_path = os.path.join(shell_dir, "plugins", "bar", "island", "media", "MediaContent.qml")
-        with open(media_content_path, "r", encoding="utf-8") as f:
-            mc_code = f.read()
-        self.assertIn("MediaService.acquirePositionTracking()", mc_code)
-        self.assertIn("MediaService.releasePositionTracking()", mc_code)
-
         # 3. Timer Governance & Zero-Interval Prohibition (R6-03):
         # Assert zero occurrences of `interval: 0` across shell/ QML files
         zero_interval_regex = re.compile(r"\binterval:\s*0\b")
@@ -1749,11 +1690,11 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("interval: 100", ts_code)
         self.assertNotIn("interval: 10\n", ts_code)
 
-        # ClockContent clockTimer.running is bound to root.visible
-        clock_content_path = os.path.join(shell_dir, "plugins", "bar", "island", "clock", "ClockContent.qml")
+        # ClockWidget ticker lifecycle
+        clock_content_path = os.path.join(shell_dir, "plugins", "bar", "ClockWidget.qml")
         with open(clock_content_path, "r", encoding="utf-8") as f:
             cc_code = f.read()
-        self.assertIn("running: root.visible", cc_code)
+        self.assertIn("Component.onDestruction", cc_code)
 
         # LIFE007 and LIFE008 rules exist in audit-lifecycle.py
         audit_py_path = os.path.join(shell_dir, "scripts", "dev", "audit-lifecycle.py")
@@ -1761,11 +1702,6 @@ class TestShellManagement(unittest.TestCase):
             audit_code = f.read()
         self.assertIn("LIFE007", audit_code)
         self.assertIn("LIFE008", audit_code)
-
-        # MediaContent.qml has exactly one Component.onCompleted and no duplicate handlers
-        with open(media_content_path, "r", encoding="utf-8") as f:
-            mc_code = f.read()
-        self.assertEqual(mc_code.count("Component.onCompleted"), 1, "MediaContent.qml must have exactly one onCompleted")
 
         # Zero duplicate Component.onCompleted or Component.onDestruction across shell
         for root_dir, dirs, files in os.walk(shell_dir):
@@ -1985,13 +1921,12 @@ class TestShellManagement(unittest.TestCase):
         self.assertNotIn("property Process", popup)
         self.assertIn('"dock:force-quit"', popup)
 
-        # 8. Color picker degrades explicitly through its domain service.
-        tools = read("plugins/bar/island/tools/ToolsContent.qml")
-        self.assertNotIn("hyprpicker", tools)
-        self.assertIn("ColorPickerService.launch()", tools)
-        picker = read("plugins/bar/island/tools/ColorPickerService.qml")
-        self.assertIn('"island:color-picker"', picker)
-        self.assertIn("hyprpicker is missing", picker)
+        # 8. Color picker and screenshot actions route via GlobalActions / ActionGateway.
+        util_path = os.path.join(shell_dir, "plugins", "bar", "UtilButtons.qml")
+        with open(util_path, "r", encoding="utf-8") as f:
+            util_code = f.read()
+        self.assertIn('GlobalActions.runById("color-picker"', util_code)
+        self.assertIn('GlobalActions.runById("screenshot"', util_code)
         probe_script = os.path.join(shell_dir, "scripts", "theme", "probe-tool.sh")
         self.assertTrue(os.path.isfile(probe_script) and os.access(probe_script, os.X_OK),
                         "probe-tool.sh missing or not executable")

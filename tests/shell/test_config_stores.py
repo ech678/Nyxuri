@@ -134,7 +134,6 @@ class TestConfigStoreFailureHandling(unittest.TestCase):
         "services/IdleService.qml",
         "services/DisplayColor.qml",
         "plugins/dock/DockService.qml",
-        "plugins/bar/tray/TrayService.qml",
         "plugins/sidebars/quicksettings/QuickToggleConfig.qml",
     )
 

@@ -248,117 +248,6 @@ Item {
                     onSelected: value => PersonalizationConfig.setIslandMediaColorStyle(value)
                 }
 
-                // Status items (long bar only)
-                PreferenceHeader {
-                    visible: PersonalizationConfig.islandStyle === "long"
-                    text: I18n.tr("Status items")
-                }
-
-                PreferenceToggle {
-                    id: longNamesToggle
-
-                    visible: PersonalizationConfig.islandStyle === "long"
-                    first: true
-                    text: I18n.tr("Show device names")
-                    checked: PersonalizationConfig.keystoneLongShowNames
-                    onToggled: PersonalizationConfig.setKeystoneLongShowNames(checked)
-                }
-
-                PreferenceToggle {
-                    visible: PersonalizationConfig.islandStyle === "long"
-                    text: I18n.tr("Show system monitor values")
-                    checked: PersonalizationConfig.keystoneLongShowMonitorValues
-                    onToggled: PersonalizationConfig.setKeystoneLongShowMonitorValues(checked)
-                }
-
-                PreferenceToggle {
-                    visible: PersonalizationConfig.islandStyle === "long"
-                    text: I18n.tr("Show numeric values")
-                    checked: PersonalizationConfig.keystoneLongShowValues
-                    onToggled: PersonalizationConfig.setKeystoneLongShowValues(checked)
-                }
-
-                ConnectedRect {
-                    id: longLeadingZoneRow
-
-                    visible: PersonalizationConfig.islandStyle === "long"
-                    Layout.fillWidth: true
-                    implicitHeight: Math.max(longLeadingLabel.implicitHeight,
-                                             longLeadingField.implicitHeight) + NexusStyle.padding.medium * 2
-
-                    RowLayout {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.leftMargin: NexusStyle.padding.largeIncreased
-                        anchors.rightMargin: NexusStyle.padding.largeIncreased
-                        spacing: NexusStyle.padding.small
-
-                        StyledText {
-                            id: longLeadingLabel
-
-                            text: PersonalizationConfig.islandPosition === "top"
-                                  || PersonalizationConfig.islandPosition === "bottom" ? I18n.tr("Left") :
-                                                                                           I18n.tr("Top")
-                            color: Appearance.m3colors.m3onSurface
-                            font.pixelSize: NexusStyle.font.bodyMedium
-                        }
-
-                        SortableMultiSelectField {
-                            id: longLeadingField
-
-                            Layout.fillWidth: true
-                            values: PersonalizationConfig.keystoneLongLeading
-                            options: PersonalizationConfig.keystoneLongItemOptions
-                            zone: "leading"
-                            dragCoordinator: longDragCoordinator
-                            onToggled: itemId => PersonalizationConfig.toggleKeystoneLongItem(itemId, zone)
-                            onRemoved: itemId => PersonalizationConfig.removeKeystoneLongItem(itemId)
-                        }
-                    }
-                }
-
-                ConnectedRect {
-                    id: longTrailingZoneRow
-
-                    visible: PersonalizationConfig.islandStyle === "long"
-                    last: true
-                    Layout.fillWidth: true
-                    implicitHeight: Math.max(longTrailingLabel.implicitHeight,
-                                             longTrailingField.implicitHeight) + NexusStyle.padding.medium * 2
-
-                    RowLayout {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.leftMargin: NexusStyle.padding.largeIncreased
-                        anchors.rightMargin: NexusStyle.padding.largeIncreased
-                        spacing: NexusStyle.padding.small
-
-                        StyledText {
-                            id: longTrailingLabel
-
-                            text: PersonalizationConfig.islandPosition === "top"
-                                  || PersonalizationConfig.islandPosition === "bottom" ? I18n.tr("Right") :
-                                                                                           I18n.tr("Bottom")
-                            color: Appearance.m3colors.m3onSurface
-                            font.pixelSize: NexusStyle.font.bodyMedium
-                        }
-
-                        SortableMultiSelectField {
-                            id: longTrailingField
-
-                            Layout.fillWidth: true
-                            values: PersonalizationConfig.keystoneLongTrailing
-                            options: PersonalizationConfig.keystoneLongItemOptions
-                            zone: "trailing"
-                            dragCoordinator: longDragCoordinator
-                            onToggled: itemId => PersonalizationConfig.toggleKeystoneLongItem(itemId, zone)
-                            onRemoved: itemId => PersonalizationConfig.removeKeystoneLongItem(itemId)
-                        }
-                    }
-                }
-
                 // Keyboard indicators
                 PreferenceHeader {
                     visible: KeyboardLockService.available
@@ -510,16 +399,6 @@ Item {
                         anchorId: "bar.island.section.recording"
                     }
                 }
-            }
-
-            LayoutDragCoordinator {
-                id: longDragCoordinator
-
-                anchors.fill: parent
-                z: 1001
-                fields: [longLeadingField, longTrailingField]
-                onDropped: (itemId, targetZone, targetIndex) => PersonalizationConfig.moveKeystoneLongItem(
-                                                                    itemId, targetZone, targetIndex)
             }
         }
     }

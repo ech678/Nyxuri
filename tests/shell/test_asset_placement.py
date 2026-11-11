@@ -26,6 +26,10 @@ EXECUTED = (
     "ui/SidebarStagger.qml",  # last consumer died with the drawer demolition
     # autostart page companion; archived beside its only consumer
     "plugins/settings/AppBrowserPopup.qml",
+    "ui/MaterialWaveProgressBar.qml",
+    "ui/MediaControlBar.qml",
+    "ui/MediaSourceIcon.qml",
+    "ui/WaveProgressBar.qml",
 )
 
 _CANDIDATE_DIRS = ("ui", "plugins/settings")

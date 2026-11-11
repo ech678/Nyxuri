@@ -303,24 +303,6 @@ QtObject {
                     "key": "island:Num lock OSD",
                     "title": I18n.tr("Num lock OSD"),
                     "icon": "keyboard"
-                },
-                {
-                    "type": "toggle",
-                    "key": "island:Show names in long form",
-                    "title": I18n.tr("Long form names"),
-                    "icon": "short_text"
-                },
-                {
-                    "type": "toggle",
-                    "key": "island:Show values in long form",
-                    "title": I18n.tr("Long form values"),
-                    "icon": "numbers"
-                },
-                {
-                    "type": "toggle",
-                    "key": "island:Show monitor values in long form",
-                    "title": I18n.tr("Long form monitor values"),
-                    "icon": "monitor"
                 }
             ]
         },

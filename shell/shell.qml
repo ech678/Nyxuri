@@ -50,9 +50,7 @@ ShellRoot {
 
         Component.onCompleted: {
             SpotlightCatalog.actionExecutor = root.executeSearchAction;
-            SpotlightCatalog.islandAvailable = Qt.binding(() => ActionGateway.islandHost
-                                                                  ? ActionGateway.islandHost.searchActionsAvailable :
-                                                                    false);
+            SpotlightCatalog.islandAvailable = Qt.binding(() => Boolean(ActionGateway.islandHost && ActionGateway.islandHost.searchActionsAvailable));
             // These services initialize themselves when their singleton is first
             // instantiated. Calling them here used to duplicate work: FontService
             // performed a second full font enumeration, I18nService reparsed its
@@ -110,8 +108,8 @@ ShellRoot {
                 onLoaded: {
                     failedHeals = 0;
                     if (item) {
-                        if (modelData.id === "settings" && typeof TodoService !== "undefined")
-                            item.todoService = TodoService;
+                        if (modelData.id === "settings")
+                            item.todoService = typeof TodoService !== "undefined" ? TodoService : null;
                         if (modelData.id === "sidebars")
                             ActionGateway.sidebarHost = item;
                     }

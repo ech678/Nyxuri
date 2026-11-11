@@ -815,6 +815,22 @@ Singleton {
                     });
     }
 
+    function focusWorkspaceUp() {
+        return send({
+                        "Action": {
+                            "FocusWorkspaceUp": {}
+                        }
+                    });
+    }
+
+    function focusWorkspaceDown() {
+        return send({
+                        "Action": {
+                            "FocusWorkspaceDown": {}
+                        }
+                    });
+    }
+
     function focusWindow(windowId) {
         return send({
                         "Action": {

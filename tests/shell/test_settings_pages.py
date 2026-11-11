@@ -613,16 +613,16 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
         source = _read("GeneralBarPage.qml")
         for atom in ("PreferenceHeader", "PreferenceToggle", "PreferenceSelect", "ConnectedRect"):
             self.assertIn(atom, source, f"GeneralBarPage must use the atom: {atom}")
-        self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 1,
-                         "the screen-edge select must register the popup input region")
+        self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 4,
+                         "the screen-edge and style selects must register the popup input region")
 
     def test_drag_fields_and_coordinators_survive(self):
         source = _read("GeneralBarPage.qml")
-        self.assertEqual(source.count("SortableMultiSelectField {"), 3,
-                         "two bar zones + the quick settings field stay drag-enabled")
+        self.assertEqual(source.count("SortableMultiSelectField {"), 4,
+                         "three bar zones + the quick settings field stay drag-enabled")
         self.assertEqual(source.count("LayoutDragCoordinator {"), 2,
                          "one coordinator per drag surface (zones / quick settings)")
-        self.assertIn("fields: [leadingField, trailingField]", source)
+        self.assertIn("fields: [leadingField, middleField, trailingField]", source)
         self.assertIn("fields: [quickSettingsField]", source)
         # The overlay must not be a root child: NexusPageBase takes exactly
         # one content child, so both coordinators ride inside the content
@@ -647,8 +647,9 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
             "PersonalizationConfig.toggleQuickSettingsComponent(",
             "PersonalizationConfig.removeQuickSettingsComponent(",
             "PersonalizationConfig.edgePositions",
-            "PersonalizationConfig.barLeadingComponents",
-            "PersonalizationConfig.barTrailingComponents",
+            "PersonalizationConfig.barLayoutLeft",
+            "PersonalizationConfig.barLayoutMiddle",
+            "PersonalizationConfig.barLayoutRight",
             "PersonalizationConfig.quickSettingsComponents",
         ):
             self.assertIn(owner, source, f"business owner dropped: {owner}")
@@ -867,15 +868,6 @@ class TestIslandPageRebuild(unittest.TestCase):
 
     def test_drag_fields_and_directory_pickers_survive(self):
         source = _read("IslandPage.qml")
-        self.assertEqual(source.count("SortableMultiSelectField {"), 2,
-                         "long-bar leading/trailing zones stay drag-enabled")
-        self.assertIn("fields: [longLeadingField, longTrailingField]", source)
-        self.assertIn("moveKeystoneLongItem(", source)
-        # The coordinator must ride inside the overview content wrapper, not
-        # on the shell root.
-        wrapper = source.index("implicitHeight: overviewColumn.implicitHeight")
-        self.assertGreater(source.index("LayoutDragCoordinator {"), wrapper,
-                           "the drag overlay must live inside the content wrapper")
         self.assertIn("FilePickerWindow {", source)
         self.assertIn("openDirectoryPicker(", source)
         self.assertIn("UiPreferences.setRecordingDirectory(", source)
@@ -903,11 +895,6 @@ class TestIslandPageRebuild(unittest.TestCase):
             "PersonalizationConfig.setIslandMediaProgressStyle(",
             "PersonalizationConfig.setIslandMediaCoverStyle(",
             "PersonalizationConfig.setIslandMediaColorStyle(",
-            "PersonalizationConfig.setKeystoneLongShowNames(",
-            "PersonalizationConfig.setKeystoneLongShowMonitorValues(",
-            "PersonalizationConfig.setKeystoneLongShowValues(",
-            "PersonalizationConfig.toggleKeystoneLongItem(",
-            "PersonalizationConfig.removeKeystoneLongItem(",
             "PersonalizationConfig.setIslandCapsLockOsd(",
             "PersonalizationConfig.setIslandNumLockOsd(",
             "PersonalizationConfig.setIslandKeyholeCard(",

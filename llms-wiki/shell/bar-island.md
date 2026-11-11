@@ -73,8 +73,10 @@
 ## 晋升与豁免
 
 - **晋升**：B3/B4 从 vendor/ 将目标件 `cp` 至 `plugins/bar/` 活跃位后定向
-  裁剪（四类清单逐项执行）；晋升件脱离 vendor/ 路径即恢复 format/lint/
-  audit/单例全部门禁。vendor/ 内原件保留至 B5 对账后处决。
+  裁剪（四类清单逐项执行；B4 已晋升 `BarContent.qml`、`BarGroup.qml`、`Divisor.qml`、
+  `RoundCorner.qml`、`StyledPopupHeaderRow.qml`、`StyledPopupValueRow.qml`，
+  并按 ④ 类裁剪处死 `BarGroupStylePopup` 与 `widgetStyles` 死路径）；晋升件脱离
+  vendor/ 路径即恢复 format/lint/audit/单例全部门禁。vendor/ 内原件保留至 B5 对账后处决。
 - **豁免登记（B0 起，B5 止）**——所有豁免都以 `vendor` 路径段为界，文件
   晋升脱离 vendor/ 即自动恢复受检：
   - `shell/scripts/dev/files.sh`：`nyxuri_qml_files` 跳过 `*/vendor/*`

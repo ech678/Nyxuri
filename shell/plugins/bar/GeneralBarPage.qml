@@ -18,11 +18,7 @@ Item {
     readonly property bool rendersPageTitle: true
 
     property int searchRequestSerial: -1
-    readonly property var searchLeaf: currentSection === "overview" ? barPage.flickable :
-                                                                      islandLoader.item ? (
-                                                                                            islandLoader.item.searchLeaf
-                                                                                            || islandLoader.item) :
-                                                                                        root
+    readonly property var searchLeaf: currentSection === "overview" ? barPage.flickable : islandLoader.item ? (islandLoader.item.searchLeaf || islandLoader.item) : root
 
     property var parentModal: null
     property bool presentationActive: false
@@ -32,8 +28,7 @@ Item {
         const target = String(section || "overview");
         if (target === "island" || target === "island-clock") {
             root.currentSection = "island";
-            if (target === "island-clock" && islandLoader.item
-                    && typeof islandLoader.item.openSection === "function")
+            if (target === "island-clock" && islandLoader.item && typeof islandLoader.item.openSection === "function")
                 islandLoader.item.openSection("island-clock");
         } else {
             root.currentSection = "overview";
@@ -55,9 +50,7 @@ Item {
             return "ready";
         if (!(islandLoader.status === Loader.Ready) || !islandLoader.item)
             return "loading";
-        return typeof islandLoader.item.openSearchPath === "function"
-                ? islandLoader.item.openSearchPath(section === "island-clock" ? ["island-clock"] : [],
-                                                   serial) : "ready";
+        return typeof islandLoader.item.openSearchPath === "function" ? islandLoader.item.openSearchPath(section === "island-clock" ? ["island-clock"] : [], serial) : "ready";
     }
 
     function showOverview() {
@@ -71,14 +64,12 @@ Item {
     }
 
     onCurrentSectionChanged: {
-        if (SettingsSearch.searchTarget && !SettingsSearch.applyingSearch && searchRequestSerial
-                === SettingsSearch.searchSerial)
+        if (SettingsSearch.searchTarget && !SettingsSearch.applyingSearch && searchRequestSerial === SettingsSearch.searchSerial)
             SettingsSearch.cancelSearch();
         SettingsSearch.retrySearch();
     }
 
-    readonly property bool horizontalBar: PersonalizationConfig.barPosition === "top"
-                                          || PersonalizationConfig.barPosition === "bottom"
+    readonly property bool horizontalBar: PersonalizationConfig.barPosition === "top" || PersonalizationConfig.barPosition === "bottom"
 
     NexusPageBase {
         id: barPage
@@ -131,6 +122,47 @@ Item {
                     onSelected: value => PersonalizationConfig.setBarPosition(String(value))
                 }
 
+                // Style & Corner
+                PreferenceHeader {
+                    text: I18n.tr("Style")
+                }
+
+                PreferenceSelect {
+                    first: true
+                    label: I18n.tr("Corner style")
+                    model: PersonalizationConfig.barCornerStyles
+                    currentValue: PersonalizationConfig.barCornerStyle
+                    inputRegionService: PopupInputRegionService
+                    onSelected: value => PersonalizationConfig.setBarCornerStyle(Number(value))
+                }
+
+                PreferenceSelect {
+                    label: I18n.tr("Borderless mode")
+                    model: PersonalizationConfig.barBorderlessModes
+                    currentValue: PersonalizationConfig.barBorderless
+                    inputRegionService: PopupInputRegionService
+                    onSelected: value => PersonalizationConfig.setBarBorderless(String(value))
+                }
+
+                PreferenceSelect {
+                    label: I18n.tr("Divider style")
+                    model: PersonalizationConfig.barDividerStyles
+                    currentValue: PersonalizationConfig.barDividerStyle
+                    inputRegionService: PopupInputRegionService
+                    onSelected: value => PersonalizationConfig.setBarDividerStyle(String(value))
+                }
+
+                PreferenceSlider {
+                    last: true
+                    label: I18n.tr("Bar thickness")
+                    value: PersonalizationConfig.barThickness
+                    valueLabel: Math.round(PersonalizationConfig.barThickness) + " px"
+                    from: 28
+                    to: 56
+                    stepSize: 2
+                    onMoved: value => PersonalizationConfig.setBarThickness(Math.round(value))
+                }
+
                 // Components
                 PreferenceHeader {
                     text: I18n.tr("Components")
@@ -141,7 +173,7 @@ Item {
                     Layout.leftMargin: NexusStyle.padding.extraSmall
                     Layout.rightMargin: NexusStyle.padding.extraSmall
                     Layout.bottomMargin: NexusStyle.padding.extraSmall
-                    text: I18n.tr("Drag components to reorder them or move them to the other side.")
+                    text: I18n.tr("Drag widgets between lanes to arrange the bar")
                     color: Appearance.m3colors.m3onSurfaceVariant
                     font.pixelSize: NexusStyle.font.bodySmall
                     wrapMode: Text.Wrap
@@ -172,8 +204,7 @@ Item {
                     id: leadingZoneRow
 
                     Layout.fillWidth: true
-                    implicitHeight: Math.max(zoneLeadingLabel.implicitHeight, leadingField.implicitHeight)
-                                    + NexusStyle.padding.medium * 2
+                    implicitHeight: Math.max(zoneLeadingLabel.implicitHeight, leadingField.implicitHeight) + NexusStyle.padding.medium * 2
 
                     RowLayout {
                         anchors.left: parent.left
@@ -195,9 +226,45 @@ Item {
                             id: leadingField
 
                             Layout.fillWidth: true
-                            values: PersonalizationConfig.barLeadingComponents
+                            values: PersonalizationConfig.barLayoutLeft
                             options: PersonalizationConfig.barComponentOptions
-                            zone: "leading"
+                            zone: "left"
+                            dragCoordinator: dragCoordinator
+                            onToggled: componentId => PersonalizationConfig.toggleBarComponent(componentId, zone)
+                            onRemoved: componentId => PersonalizationConfig.removeBarComponent(componentId)
+                        }
+                    }
+                }
+
+                ConnectedRect {
+                    id: middleZoneRow
+
+                    Layout.fillWidth: true
+                    implicitHeight: Math.max(zoneMiddleLabel.implicitHeight, middleField.implicitHeight) + NexusStyle.padding.medium * 2
+
+                    RowLayout {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.leftMargin: NexusStyle.padding.largeIncreased
+                        anchors.rightMargin: NexusStyle.padding.largeIncreased
+                        spacing: NexusStyle.padding.small
+
+                        StyledText {
+                            id: zoneMiddleLabel
+
+                            text: I18n.tr("Center")
+                            color: Appearance.m3colors.m3onSurface
+                            font.pixelSize: NexusStyle.font.bodyMedium
+                        }
+
+                        SortableMultiSelectField {
+                            id: middleField
+
+                            Layout.fillWidth: true
+                            values: PersonalizationConfig.barLayoutMiddle
+                            options: PersonalizationConfig.barComponentOptions
+                            zone: "middle"
                             dragCoordinator: dragCoordinator
                             onToggled: componentId => PersonalizationConfig.toggleBarComponent(componentId, zone)
                             onRemoved: componentId => PersonalizationConfig.removeBarComponent(componentId)
@@ -209,8 +276,7 @@ Item {
                     id: trailingZoneRow
 
                     Layout.fillWidth: true
-                    implicitHeight: Math.max(zoneTrailingLabel.implicitHeight, trailingField.implicitHeight)
-                                    + NexusStyle.padding.medium * 2
+                    implicitHeight: Math.max(zoneTrailingLabel.implicitHeight, trailingField.implicitHeight) + NexusStyle.padding.medium * 2
 
                     RowLayout {
                         anchors.left: parent.left
@@ -232,9 +298,9 @@ Item {
                             id: trailingField
 
                             Layout.fillWidth: true
-                            values: PersonalizationConfig.barTrailingComponents
+                            values: PersonalizationConfig.barLayoutRight
                             options: PersonalizationConfig.barComponentOptions
-                            zone: "trailing"
+                            zone: "right"
                             dragCoordinator: dragCoordinator
                             onToggled: componentId => PersonalizationConfig.toggleBarComponent(componentId, zone)
                             onRemoved: componentId => PersonalizationConfig.removeBarComponent(componentId)
@@ -274,10 +340,8 @@ Item {
                             options: PersonalizationConfig.quickSettingsComponentOptions
                             zone: "quickSettings"
                             dragCoordinator: quickSettingsDragCoordinator
-                            onToggled: componentId => PersonalizationConfig.toggleQuickSettingsComponent(
-                                                          componentId)
-                            onRemoved: componentId => PersonalizationConfig.removeQuickSettingsComponent(
-                                                          componentId)
+                            onToggled: componentId => PersonalizationConfig.toggleQuickSettingsComponent(componentId)
+                            onRemoved: componentId => PersonalizationConfig.removeQuickSettingsComponent(componentId)
                         }
                     }
                 }
@@ -301,9 +365,8 @@ Item {
 
                 anchors.fill: parent
                 z: 1000
-                fields: [leadingField, trailingField]
-                onDropped: (componentId, targetZone, targetIndex) => PersonalizationConfig.moveBarComponent(
-                                                                     componentId, targetZone, targetIndex)
+                fields: [leadingField, middleField, trailingField]
+                onDropped: (componentId, targetZone, targetIndex) => PersonalizationConfig.moveBarComponent(componentId, targetZone, targetIndex)
             }
 
             LayoutDragCoordinator {
@@ -312,8 +375,7 @@ Item {
                 anchors.fill: parent
                 z: 1001
                 fields: [quickSettingsField]
-                onDropped: (componentId, targetZone, targetIndex)
-                           => PersonalizationConfig.moveQuickSettingsComponent(componentId, targetIndex)
+                onDropped: (componentId, targetZone, targetIndex) => PersonalizationConfig.moveQuickSettingsComponent(componentId, targetIndex)
             }
         }
     }
