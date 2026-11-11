@@ -53,10 +53,13 @@ ShellRoot {
             SpotlightCatalog.islandAvailable = Qt.binding(() => ActionGateway.islandHost
                                                                   ? ActionGateway.islandHost.searchActionsAvailable :
                                                                     false);
-            ThemeService.reloadColors();
-            FontService.refresh();
-            I18nService.initialize();
-            SystemIdentityService.initialize();
+            // These services initialize themselves when their singleton is first
+            // instantiated. Calling them here used to duplicate work: FontService
+            // performed a second full font enumeration, I18nService reparsed its
+            // catalog, SystemIdentityService re-entered its guarded probes, and
+            // ThemeService reloaded the palette a second time. Keep the host's
+            // completion path limited to wiring and stage markers; service-owned
+            // initialization remains lazy and preserves the same public state.
             ShellStartupService.recordCoreReady();
             Qt.callLater(() => {
                 ShellStartupService.recordFirstFrame();
@@ -107,7 +110,7 @@ ShellRoot {
                 onLoaded: {
                     failedHeals = 0;
                     if (item) {
-                        if (modelData.id === "settings")
+                        if (modelData.id === "settings" && typeof TodoService !== "undefined")
                             item.todoService = TodoService;
                         if (modelData.id === "sidebars")
                             ActionGateway.sidebarHost = item;

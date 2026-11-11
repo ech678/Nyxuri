@@ -102,7 +102,14 @@ Singleton {
         root._initializationStarted = true;
         identityProcess.command = [root.commandName, "sysmon", "system", "--format", "json"];
         identityProcess.running = true;
-        gpuProcess.running = true;
+    }
+
+    // GPU enumeration is only needed by the Dashboard system-information card.
+    // Keep it out of the core identity startup path; the result remains cached
+    // for every later consumer and the public gpuModelName API is unchanged.
+    function ensureGpuModel() {
+        if (!gpuProcess.running && root.gpuModelName === "")
+            gpuProcess.running = true;
     }
 
     // On-demand runtime version probe (About page): spawns once, caches.

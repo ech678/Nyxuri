@@ -955,12 +955,12 @@ class TestShellManagement(unittest.TestCase):
     def test_r11_font_and_i18n_startup_dedup_contract(self):
         """Font and locale singletons own their one cold-start initialization."""
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        app_content = Path(repo_root, "shell", "app", "AppShell.qml").read_text(encoding="utf-8")
+        app_content = Path(repo_root, "shell", "shell.qml").read_text(encoding="utf-8")
         font_content = Path(repo_root, "shell", "services", "FontService.qml").read_text(encoding="utf-8")
         i18n_content = Path(repo_root, "shell", "services", "I18nService.qml").read_text(encoding="utf-8")
 
-        # AppShell keeps the post-gate queue for services without a completion
-        # initializer; these two services must not be queued a second time.
+        # The microkernel host must not queue these services a second time;
+        # each singleton owns its own completion initializer.
         self.assertNotIn('scheduleBackground("fonts"', app_content)
         self.assertNotIn('scheduleBackground("i18n"', app_content)
         self.assertIn("Component.onCompleted: root.refresh()", font_content)
@@ -1742,12 +1742,12 @@ class TestShellManagement(unittest.TestCase):
                         f"Found interval: 0 in {full_p} - must use Qt.callLater or non-zero interval",
                     )
 
-        # TimerService stopwatchTimer interval is 50ms (not 10ms)
+        # TimerService stopwatchTimer interval is 100ms (not 10ms)
         timer_service_path = os.path.join(shell_dir, "plugins", "sidebars", "dashboard", "infotools", "TimerService.qml")
         with open(timer_service_path, "r", encoding="utf-8") as f:
             ts_code = f.read()
-        self.assertIn("interval: 50", ts_code)
-        self.assertNotIn("interval: 10", ts_code)
+        self.assertIn("interval: 100", ts_code)
+        self.assertNotIn("interval: 10\n", ts_code)
 
         # ClockContent clockTimer.running is bound to root.visible
         clock_content_path = os.path.join(shell_dir, "plugins", "bar", "island", "clock", "ClockContent.qml")

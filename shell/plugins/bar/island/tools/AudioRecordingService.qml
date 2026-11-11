@@ -35,6 +35,7 @@ Singleton {
     property int lastExitCode: 0
     property double _nowMs: Date.now()
     property string _lastErrorKey: ""
+    property var _consumers: ({})
     readonly property bool isStarting: state === "starting"
     readonly property bool isRecording: state === "recording"
     readonly property bool isStopping: state === "stopping"
@@ -148,7 +149,7 @@ Singleton {
                                                                          I18n.tr("Microphone recording saved"),
                                           response.outputPath);
         }
-        if (root.backendActive && !watchProcess.running && !reconnect.running) {
+        if (Object.keys(root._consumers).length > 0 && root.backendActive && !watchProcess.running && !reconnect.running) {
             root._reconnectAttempts = 0;
             watchProcess.running = true;
         }
@@ -233,7 +234,35 @@ Singleton {
         }
     }
 
-    Component.onCompleted: initialStatus.running = true
+    function acquireConsumer(owner) {
+        const key = String(owner || "").trim();
+        if (key === "")
+            return;
+        const next = Object.assign({}, root._consumers);
+        next[key] = true;
+        root._consumers = next;
+        root.ensureStatus();
+    }
+
+    function releaseConsumer(owner) {
+        const key = String(owner || "").trim();
+        if (key === "")
+            return;
+        const next = Object.assign({}, root._consumers);
+        delete next[key];
+        root._consumers = next;
+        if (Object.keys(next).length === 0) {
+            watchProcess.running = false;
+            reconnect.stop();
+        }
+    }
+
+    function ensureStatus() {
+        if (Object.keys(root._consumers).length === 0)
+            return;
+        if (!initialStatus.running && !watchProcess.running && !root.backendActive)
+            initialStatus.running = true;
+    }
 
     Process {
         id: initialStatus
@@ -268,7 +297,7 @@ Singleton {
         id: reconnect
         interval: 1000 * root._reconnectAttempts
         onTriggered: {
-            if (root.backendActive)
+            if (Object.keys(root._consumers).length > 0 && root.backendActive)
                 watchProcess.running = true;
         }
     }

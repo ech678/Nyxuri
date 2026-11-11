@@ -801,6 +801,11 @@ FloatingWindow {
                             anchors.fill: parent
                             anchors.margins: 10
                             clip: true
+                            // Keep the file picker virtualized tightly around the
+                            // viewport. Large folders may expose thousands of
+                            // entries; the delegate already owns its thumbnail
+                            // and must not be retained in an off-screen buffer.
+                            cacheBuffer: 0
                             cellWidth: width > 0 ? width / Math.max(1, Math.floor(width / 146)) : 146
                             cellHeight: 142
                             model: root._folderModelAttached ? folderModel : null

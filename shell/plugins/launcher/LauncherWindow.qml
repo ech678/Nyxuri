@@ -229,7 +229,9 @@ PanelWindow {
         active: root.showing && root.windowPhase !== "closing" && root.mode === "apps"
         query: active ? root.contentQuery : ""
         order: session.appsOrder
-        limit: session.appsLayout === "grid" ? 0 : 50
+        // Keep the grid bounded even when the app catalog has many matches.
+        // The visible viewport remains scrollable and currentIndex stays stable.
+        limit: session.appsLayout === "grid" ? 120 : 50
     }
 
     SpotlightWallpaperProvider {

@@ -381,13 +381,8 @@ Rectangle {
         }
     }
 
-    Timer {
-        id: weatherRefreshTimer
-        running: true
-        repeat: true
-        interval: 900000
-        onTriggered: WeatherService.refresh()
-    }
+    // WeatherBackend owns the single 15-minute refresh schedule. The lock
+    // card is only a consumer and must not create a second poller.
 
     SequentialAnimation on skeletonPulse {
         running: root.loadingState

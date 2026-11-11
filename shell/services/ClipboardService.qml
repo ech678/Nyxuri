@@ -41,6 +41,7 @@ Singleton {
     property var detailsById: ({})
     property var error: null
     property var lastActionError: null
+    property string _watchdogKind: ""
     property int lastActionExitCode: -1
     property string lastActionStderr: ""
     property int _historyGeneration: 0
@@ -116,7 +117,12 @@ Singleton {
 
     function parseResponse(text) {
         try {
-            const parsed = JSON.parse(String(text || "").trim() || "{}");
+            const raw = String(text || "");
+            if (raw.length > 1048576) {
+                console.warn("ClipboardService: response exceeded 1 MiB");
+                return null;
+            }
+            const parsed = JSON.parse(raw.trim() || "{}");
             return parsed && typeof parsed === "object" ? parsed : null;
         } catch (parseError) {
             return null;
@@ -239,6 +245,18 @@ Singleton {
         return requestHistoryConfig(value);
     }
 
+    function startProcessWatchdog(kind) {
+        root._watchdogKind = kind;
+        processWatchdog.restart();
+    }
+
+    function stopProcessWatchdog(kind) {
+        if (root._watchdogKind === kind) {
+            root._watchdogKind = "";
+            processWatchdog.stop();
+        }
+    }
+
     function requestHistoryConfig(value) {
         if (root.historyConfigBusy)
             return false;
@@ -255,6 +273,7 @@ Singleton {
             root.historyConfigLoaded = false;
         configProcess.command = command;
         configProcess.running = true;
+        root.startProcessWatchdog("config");
         return true;
     }
 
@@ -274,6 +293,7 @@ Singleton {
                                                                "The clipboard service returned invalid data"));
         }
         root.historyConfigBusy = false;
+        root.stopProcessWatchdog("config");
     }
 
     function refresh(limit) {
@@ -290,6 +310,7 @@ Singleton {
         listProcess.command = [root.commandName, "clipboard", "list", "--format", "json", "--limit", String(
                                    safeLimit)];
         listProcess.running = true;
+        root.startProcessWatchdog("list");
         return true;
     }
 
@@ -297,6 +318,7 @@ Singleton {
         if (!root._listExited || !root._listStdoutFinished)
             return;
         root.loading = false;
+        root.stopProcessWatchdog("list");
         if (root._listGeneration !== root._historyGeneration) {
             Qt.callLater(() => root.refresh(750));
             return;
@@ -329,6 +351,7 @@ Singleton {
         root._actionExitCode = -1;
         actionProcess.command = command;
         actionProcess.running = true;
+        root.startProcessWatchdog("action");
         return true;
     }
 
@@ -348,6 +371,7 @@ Singleton {
         if (!root._actionExited || !root._actionStdoutFinished)
             return;
         root.actionRunning = false;
+        root.stopProcessWatchdog("action");
         root.lastActionExitCode = root._actionExitCode;
         root.lastActionStderr = String(root._actionErrorOutput || "").slice(0, 512);
         const response = root.parseResponse(root._actionOutput);
@@ -461,6 +485,7 @@ Singleton {
         inspectProcess.command = [root.commandName, "clipboard", "inspect", root._inspectId, "--format",
                                   "json"];
         inspectProcess.running = true;
+        root.startProcessWatchdog("inspect");
     }
 
     function finalizeInspectIfReady() {
@@ -485,6 +510,7 @@ Singleton {
             root.inspectFailed(id, failure.code, failure.message);
         }
         root._inspectId = "";
+        root.stopProcessWatchdog("inspect");
         root.inspecting = root._priorityInspectId !== "" || root._inspectQueue.length > 0;
         Qt.callLater(root.startNextInspect);
     }
@@ -579,7 +605,47 @@ Singleton {
         }
     }
 
+    Timer {
+        id: processWatchdog
+        interval: 10000
+        repeat: false
+        onTriggered: {
+            const kind = root._watchdogKind;
+            root._watchdogKind = "";
+            if (kind === "config") {
+                configProcess.running = false;
+                root._configOutput = "";
+                root._configExitCode = -1;
+                root._configExited = true;
+                root._configStdoutFinished = true;
+                root.finalizeConfigIfReady();
+            } else if (kind === "list") {
+                listProcess.running = false;
+                root._listOutput = "";
+                root._listExitCode = -1;
+                root._listExited = true;
+                root._listStdoutFinished = true;
+                root.finalizeListIfReady();
+            } else if (kind === "action") {
+                actionProcess.running = false;
+                root._actionOutput = "";
+                root._actionExitCode = -1;
+                root._actionExited = true;
+                root._actionStdoutFinished = true;
+                root.finalizeActionIfReady();
+            } else if (kind === "inspect") {
+                inspectProcess.running = false;
+                root._inspectOutput = "";
+                root._inspectExitCode = -1;
+                root._inspectExited = true;
+                root._inspectStdoutFinished = true;
+                root.finalizeInspectIfReady();
+            }
+        }
+    }
+
     Component.onDestruction: {
+        processWatchdog.stop();
         if (configProcess)
             configProcess.running = false;
         if (listProcess)

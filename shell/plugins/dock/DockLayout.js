@@ -19,14 +19,19 @@ function layout(kinds, preferredSize, available, magnification, sectionSpacing, 
     const gap = 8;
     const padding = 12;
     const count = kinds.length;
-    const weights = kinds.map(kind => kind === "small-spacer" ? 0.5 : 1);
-    const apps = weights.reduce((sum, weight) => sum + weight, 0);
+    // This function is on the pointer/magnification hot path. Callers pass
+    // canonical section-boundary arrays, so do not filter/deduplicate them on
+    // every frame. Keep the scalar fallback for the legacy single-boundary
+    // caller without allocating or invoking Array#filter.
+    let apps = 0;
+    for (let index = 0; index < count; ++index)
+        apps += kinds[index] === "small-spacer" ? 0.5 : 1;
     const maximum = Math.max(1, Math.min(2, magnification));
     // Fade the wave without changing the space reserved for its full size.
     // Its centre follows input directly; only its amplitude is animated.
     const amplitude = Math.max(0, Math.min(1, strength));
-    const boundaries = (Array.isArray(sectionBoundary) ? sectionBoundary : [sectionBoundary])
-        .filter((v, i, list) => v > 0 && v < count && list.indexOf(v) === i);
+    const boundaries = Array.isArray(sectionBoundary) ? sectionBoundary
+        : sectionBoundary > 0 && sectionBoundary < count ? [sectionBoundary] : [];
     const sectionGap = sectionSpacing + gap;
     const fixed = count * gap + padding * 2 + sectionGap * boundaries.length;
     const reserve = Math.min(apps, 5) * (maximum - 1);
@@ -35,20 +40,25 @@ function layout(kinds, preferredSize, available, magnification, sectionSpacing, 
     let baseCursor = padding;
     let cursor = padding;
     let divider = -1;
+    let boundaryCursor = 0;
     const dividers = [];
     const slots = [];
     for (let index = 0; index < count; ++index) {
-        if (boundaries.indexOf(index) >= 0) {
+        // sectionBoundaries() returns sorted, unique model boundaries. Walk
+        // them once instead of doing an indexOf scan for every slot.
+        if (boundaryCursor < boundaries.length && boundaries[boundaryCursor] === index) {
             divider = cursor + sectionGap / 2;
             dividers.push(divider);
             baseCursor += sectionGap;
             cursor += sectionGap;
+            boundaryCursor += 1;
         }
-        const baseSpan = size * weights[index] + gap;
+        const weight = kinds[index] === "small-spacer" ? 0.5 : 1;
+        const baseSpan = size * weight + gap;
         const center = baseCursor + baseSpan / 2;
         const distance = (pointer - center) / (size + gap);
         const scale = !isFinite(pointer) ? 1 : 1 + amplitude * (maximum - 1) * Math.exp(-distance * distance / 2);
-        const span = size * weights[index] * scale + gap;
+        const span = size * weight * scale + gap;
         slots.push({ center: center, start: cursor, span: span, size: size * scale });
         baseCursor += baseSpan;
         cursor += span;
@@ -110,7 +120,8 @@ function sectionBoundaries(kinds, pinnedAppCount, order) {
     let hasApp = false;
     for (let i = 0; i < kinds.length; ++i) {
         const source = order ? order[i] : i;
-        const group = ["file", "folder", "trash"].indexOf(kinds[i]) >= 0 ? "files"
+        const kind = kinds[i];
+        const group = kind === "file" || kind === "folder" || kind === "trash" ? "files"
             : source < pinnedAppCount ? "pinned" : "running";
         if (i > 0 && group !== previous && (group === "files" || hasApp)) result.push(i);
         previous = group;

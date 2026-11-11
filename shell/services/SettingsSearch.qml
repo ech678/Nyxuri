@@ -24,6 +24,7 @@ Singleton {
     property var searchTarget: null
     property string searchError: ""
     property string settledGeometry: ""
+    property bool _retryQueued: false
 
     function registerSearchAnchor(anchor) {
         const next = Object.assign({}, searchAnchors);
@@ -45,6 +46,7 @@ Singleton {
         searchTarget = null;
         settledGeometry = "";
         searchDeadline.stop();
+        root._retryQueued = false;
     }
 
     function reportSearchError(message) {
@@ -64,8 +66,15 @@ Singleton {
     }
 
     function retrySearch() {
-        if (searchTarget)
-            Qt.callLater(trySearch);
+        if (!searchTarget || _retryQueued)
+            return;
+        _retryQueued = true;
+        const serial = searchSerial;
+        Qt.callLater(() => {
+            _retryQueued = false;
+            if (serial === root.searchSerial)
+                root.trySearch();
+        });
     }
 
     function trySearch() {
@@ -90,7 +99,7 @@ Singleton {
                           anchor.target.height].join(":");
         if (settledGeometry !== geometry) {
             settledGeometry = geometry;
-            Qt.callLater(trySearch);
+            retrySearch();
             return;
         }
         if (anchor.reveal(searchSerial)) {

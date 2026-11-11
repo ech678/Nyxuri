@@ -27,17 +27,6 @@ Singleton {
         id: clock
 
         precision: SystemClock.Minutes
-    }
-
-    Timer {
-        id: refreshTimer
-        interval: 30000
-        running: true
-        repeat: true
-        onTriggered: root.refreshNow()
-    }
-
-    Component.onDestruction: {
-        refreshTimer.stop();
+        onDateChanged: root.refreshNow()
     }
 }

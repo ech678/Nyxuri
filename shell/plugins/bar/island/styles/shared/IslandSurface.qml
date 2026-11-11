@@ -964,14 +964,38 @@ Variants {
                     });
                 }
 
+                readonly property string recordingConsumerOwner: "island-recording:" + String(
+                                                                         islandWindow.screen ? islandWindow.screen.name : "default")
+                readonly property string audioConsumerOwner: "island-audio:" + String(
+                                                                    islandWindow.screen ? islandWindow.screen.name : "default")
+                function syncRecordingConsumer() {
+                    if (root.isToolsMode || RecordingService.isActive || root.recordingPresentationActive)
+                        RecordingService.acquireConsumer(recordingConsumerOwner);
+                    else
+                        RecordingService.releaseConsumer(recordingConsumerOwner);
+                }
+                function syncAudioConsumer() {
+                    if (root.isToolsMode || AudioRecordingService.isActive || root.audioPresentationActive)
+                        AudioRecordingService.acquireConsumer(audioConsumerOwner);
+                    else
+                        AudioRecordingService.releaseConsumer(audioConsumerOwner);
+                }
                 onIsToolsModeChanged: {
+                    root.syncRecordingConsumer();
+                    root.syncAudioConsumer();
                     if (root.isToolsMode)
                         root.requestKeyboardFocus();
                 }
+                onRecordingPresentationActiveChanged: root.syncRecordingConsumer()
+                onAudioPresentationActiveChanged: root.syncAudioConsumer()
                 onDashboardTabActiveChanged: SystemIdentityService.setUptimeConsumer(root.dashboardUptimeOwner,
                                                                                      root.dashboardTabActive)
-                Component.onDestruction: SystemIdentityService.setUptimeConsumer(root.dashboardUptimeOwner,
-                                                                                 false)
+                Component.onDestruction: {
+                    RecordingService.releaseConsumer(recordingConsumerOwner);
+                    AudioRecordingService.releaseConsumer(audioConsumerOwner);
+                    SystemIdentityService.setUptimeConsumer(root.dashboardUptimeOwner, false);
+                }
+
                 focus: root.keyboardInteractionActive
                 Keys.onEscapePressed: event => {
                     WidgetState.closeAllPopups();
@@ -1002,6 +1026,7 @@ Variants {
                 anchors.rightMargin: styleSurface.elongated && islandWindow.rightEdge && longFrame.item
                                      ? longFrame.item.childOffset : 0
                 onAudioSessionActiveChanged: {
+                    root.syncAudioConsumer();
                     if (root.audioSessionActive) {
                         if (styleSurface.elongated) {
                             root.hoverOpened = false;
@@ -1014,14 +1039,15 @@ Variants {
                         root.showHub = false;
                         root.showTools = false;
                         if (root.componentReady)
-                            audioRecordingVisual.beginEntry();
+                            audioRecordingHost.beginEntry();
 
                         return;
                     }
                     if (root.audioPresentationPhase === root.audioPhaseExpanded)
-                        audioRecordingVisual.beginExit();
+                        audioRecordingHost.beginExit();
                 }
                 onIsRecordingChanged: {
+                    root.syncRecordingConsumer();
                     if (!root.isRecording)
                         return;
 
@@ -1097,6 +1123,8 @@ Variants {
                     recordingPresentationOut.restart();
                 }
                 Component.onCompleted: {
+                    root.syncRecordingConsumer();
+                    root.syncAudioConsumer();
                     root.updateKeyboardLocks();
                     root.syncSinkState();
                     root.syncSourceState();
@@ -1121,7 +1149,7 @@ Variants {
                     root.audioPresentationPhase = root.audioSessionActive ? root.audioPhaseExpanded :
                                                                             root.audioPhaseHidden;
                     if (root.audioSessionActive)
-                        audioRecordingVisual.beginEntry();
+                        audioRecordingHost.beginEntry();
                 }
                 onTargetWChanged: {
                     if (root.audioPresentationPhase === root.audioPhaseCollapsing) {
@@ -1694,25 +1722,98 @@ Variants {
                         visible: false
                     }
 
-                    MediaContent {
+                    // Keep the media surface alive for its exit fade, but do not
+                    // construct MediaContent (and its position tracking) until it is
+                    // actually wanted.  In particular, active must not be bound to
+                    // wanted: that would destroy the item at the first frame of the
+                    // fade-out.
+                    Item {
                         id: mediaWidget
-                        surfaceTopRightRadius: styleSurface.elongated && longFrame.item
-                                               ? longFrame.item.childRadius : rootSurface.topRightRadius
+
+                        readonly property bool wanted: !root.contentPresentationActive && root.expanded
+                                                       && !root.isLyricsMode && !root.isHubMode
+                        property bool fadeHeld: false
+                        property int lifecycleGeneration: 0
+                        property int releaseGeneration: 0
+                        readonly property bool loaded: mediaLoader.status === Loader.Ready
+                        readonly property bool coverColors: loaded && mediaLoader.item.coverColors
+                        readonly property bool backgroundCover: loaded && mediaLoader.item.backgroundCover
+                        readonly property string artUrl: loaded ? mediaLoader.item.artUrl : ""
+                        readonly property color surfaceColor: loaded ? mediaLoader.item.surfaceColor :
+                                                                      Appearance.colors.colLayer0
+                        readonly property real panelWidth: loaded ? mediaLoader.item.panelWidth :
+                                                                    (backgroundCover ? 640 : 540)
+                        readonly property real panelHeight: loaded ? mediaLoader.item.panelHeight :
+                                                                     (backgroundCover ? 240 : 210)
 
                         anchors.top: parent.top
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.topMargin: 20
                         width: root.activeLayout.expandedWidth - 40
                         height: root.activeLayout.expandedHeight - 40
-                        opacity: (!root.contentPresentationActive && root.expanded && !root.isLyricsMode &&
-                                  !root.isHubMode) ? 1 : 0
-                        visible: opacity > 0.01
+                        opacity: wanted && loaded ? 1 : 0
+                        visible: fadeHeld && opacity > 0.01
+
+                        onWantedChanged: {
+                            lifecycleGeneration++;
+                            if (wanted) {
+                                releaseTimer.stop();
+                                fadeHeld = true;
+                            } else if (!loaded) {
+                                // Abort a load that lost its consumer.  A late
+                                // onLoaded must not resurrect this proxy.
+                                releaseTimer.stop();
+                                fadeHeld = false;
+                            } else {
+                                // Keep the loaded child for the exit fade, but
+                                // bound its lifetime even if the animation is
+                                // interrupted before onStopped runs.
+                                releaseGeneration = lifecycleGeneration;
+                                releaseTimer.restart();
+                            }
+                        }
+
+                        Timer {
+                            id: releaseTimer
+                            interval: Appearance.animation.expressiveEffects.duration + 50
+                            repeat: false
+                            onTriggered: {
+                                if (!mediaWidget.wanted && mediaWidget.opacity <= 0.01
+                                        && mediaWidget.releaseGeneration === mediaWidget.lifecycleGeneration)
+                                    mediaWidget.fadeHeld = false;
+                            }
+                        }
 
                         Behavior on opacity {
                             NumberAnimation {
                                 duration: Appearance.animation.expressiveEffects.duration
                                 easing.type: Appearance.animation.expressiveEffects.type
                                 easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
+                                onStopped: {
+                                    if (!mediaWidget.wanted && mediaWidget.opacity <= 0.01)
+                                        mediaWidget.fadeHeld = false;
+                                }
+                            }
+                        }
+
+                        Loader {
+                            id: mediaLoader
+                            anchors.fill: parent
+                            active: mediaWidget.fadeHeld
+                            sourceComponent: MediaContent {
+                                visible: mediaWidget.visible
+                                opacity: mediaWidget.opacity
+                                surfaceTopRightRadius: styleSurface.elongated && longFrame.item
+                                                       ? longFrame.item.childRadius : rootSurface.topRightRadius
+                            }
+                            onLoaded: {
+                                // A load can finish after wanted became false.
+                                // Only a current consumer or an existing fade may
+                                // enter; never re-arm a released proxy.
+                                if (mediaWidget.wanted || mediaWidget.fadeHeld)
+                                    mediaWidget.fadeHeld = true;
+                                else
+                                    mediaWidget.fadeHeld = false;
                             }
                         }
                     }
@@ -1750,34 +1851,74 @@ Variants {
                         }
                     }
 
-                    ToolsContent {
+                    // Keep the public geometry/focus target stable while the tools
+                    // subtree is absent. Backend sessions outlive this visual child.
+                    FocusScope {
                         id: toolsWidget
 
-                        keyboardActive: root.isToolsMode && !root.recordingLaunchPending
-                        retainForRecording: styleSurface.elongated
+                        readonly property bool wanted: root.isToolsMode || RecordingService.isActive
+                                                       || AudioRecordingService.isActive
+                        property bool fadeHeld: false
+                        readonly property bool loaded: toolsLoader.status === Loader.Ready
+                                                       && toolsLoader.item !== null
+                        readonly property bool keyboardActive: root.isToolsMode && !root.recordingLaunchPending
+                        readonly property bool vertical: !islandWindow.horizontalEdge
+                        implicitWidth: loaded ? toolsLoader.item.implicitWidth : (vertical ? 72 : 480)
+                        implicitHeight: loaded ? toolsLoader.item.implicitHeight : (vertical ? 480 : 72)
                         anchors.top: parent.top
                         anchors.horizontalCenter: parent.horizontalCenter
                         width: implicitWidth
                         height: implicitHeight
-                        vertical: !islandWindow.horizontalEdge
-                        edge: islandWindow.edge
-                        opacity: root.isToolsMode ? 1 : 0
+                        opacity: root.isToolsMode && loaded ? 1 : 0
                         visible: opacity > 0.01
-                        onRequestHideIsland: {
-                            root.showTools = false;
-                        }
-                        onRecordingRequested: {
-                            // Keep the current child alive through selection
-                            // and startup; cancellation leaves Tools usable.
-                            root.hoverOpened = false;
-                            hoverIntent.cancel();
+                        focus: keyboardActive
+
+                        onWantedChanged: {
+                            if (wanted)
+                                fadeHeld = true;
+                            else if (opacity === 0 && !toolsFade.running)
+                                fadeHeld = false;
                         }
 
                         Behavior on opacity {
                             NumberAnimation {
+                                id: toolsFade
                                 duration: Appearance.animation.expressiveEffects.duration
                                 easing.type: Appearance.animation.expressiveEffects.type
                                 easing.bezierCurve: Appearance.animation.expressiveEffects.bezierCurve
+                                onStopped: {
+                                    if (!toolsWidget.wanted && toolsWidget.opacity === 0)
+                                        toolsWidget.fadeHeld = false;
+                                }
+                            }
+                        }
+
+                        Loader {
+                            id: toolsLoader
+
+                            anchors.fill: parent
+                            active: toolsWidget.wanted || toolsWidget.fadeHeld
+                            focus: toolsWidget.keyboardActive
+                            sourceComponent: ToolsContent {
+                                keyboardActive: toolsWidget.keyboardActive
+                                retainForRecording: styleSurface.elongated
+                                vertical: toolsWidget.vertical
+                                edge: islandWindow.edge
+                                onRequestHideIsland: root.showTools = false
+                                onRecordingRequested: {
+                                    // Selection/startup keep the backend and tools alive;
+                                    // cancellation leaves the existing selection usable.
+                                    root.hoverOpened = false;
+                                    hoverIntent.cancel();
+                                }
+                            }
+                            onLoaded: {
+                                // State/focus signals may have arrived before creation.
+                                // Replay only UI consumer state, never stop a session.
+                                root.syncRecordingConsumer();
+                                root.syncAudioConsumer();
+                                if (toolsWidget.keyboardActive)
+                                    root.requestKeyboardFocus();
                             }
                         }
                     }
@@ -1841,32 +1982,92 @@ Variants {
                 }
             }
 
-            AudioRecordingVisual {
-                id: audioRecordingVisual
+            // The audio visual is a session-owned child, not a permanently resident
+            // shell object. Keep its host (and therefore geometry) stable while the
+            // visual fades, then let the Loader destroy it after the exit sequence.
+            Item {
+                id: audioRecordingHost
 
                 parent: styleSurface.elongated ? root : maskContainer
                 anchors.centerIn: root
                 width: root.width
                 height: root.height
-                sessionActive: root.audioPresentationActive
-                recording: AudioRecordingService.isRecording
-                stopping: AudioRecordingService.isStopPending
-                sourceNodeName: AudioRecordingService.sourceNodeName
-                captureSink: AudioRecordingService.captureSink
-                elapsedMs: AudioRecordingService.elapsedMs
-                vertical: !islandWindow.horizontalEdge
-                edge: islandWindow.edge
-                visible: root.audioPresentationActive || contentProgress > 0.01
-                opacity: 1
                 z: root.z + 3
-                onStopRequested: AudioRecordingService.stop()
-                onCollapseRequested: {
-                    if (!root.audioSessionActive)
-                        root.audioPresentationPhase = root.audioPhaseCollapsing;
+                property bool fadeHeld: false
+                readonly property bool wanted: root.audioPresentationActive || AudioRecordingService.isActive
+                readonly property bool loaded: audioRecordingLoader.status === Loader.Ready
+                                               && audioRecordingLoader.item !== null
+
+                function isCurrent(instance) {
+                    return instance !== null && audioRecordingLoader.item === instance;
                 }
-                onExitFinished: {
-                    root.audioPresentationPhase = root.audioSessionActive ? root.audioPhaseExpanded :
-                                                                            root.audioPhaseHidden;
+
+                function beginEntry() {
+                    fadeHeld = true;
+                    if (loaded && root.audioPresentationActive)
+                        audioRecordingLoader.item.beginEntry();
+                }
+
+                function beginExit() {
+                    if (loaded && isCurrent(audioRecordingLoader.item))
+                        audioRecordingLoader.item.beginExit();
+                }
+
+                function finishExit(instance) {
+                    if (!isCurrent(instance) || root.audioSessionActive)
+                        return;
+                    root.audioPresentationPhase = root.audioPhaseHidden;
+                    fadeHeld = false;
+                }
+
+                visible: loaded && (root.audioPresentationActive || fadeHeld
+                                    || audioRecordingLoader.item.contentProgress > 0.01)
+                opacity: 1
+
+                onWantedChanged: {
+                    if (wanted)
+                        fadeHeld = true;
+                    else if (!loaded || audioRecordingLoader.item.contentProgress <= 0.01)
+                        fadeHeld = false;
+                }
+
+                Loader {
+                    id: audioRecordingLoader
+
+                    anchors.fill: parent
+                    active: audioRecordingHost.wanted || audioRecordingHost.fadeHeld
+                    sourceComponent: AudioRecordingVisual {
+                        id: audioVisual
+
+                        sessionActive: root.audioPresentationActive
+                        recording: AudioRecordingService.isRecording
+                        stopping: AudioRecordingService.isStopPending
+                        sourceNodeName: AudioRecordingService.sourceNodeName
+                        captureSink: AudioRecordingService.captureSink
+                        elapsedMs: AudioRecordingService.elapsedMs
+                        vertical: !islandWindow.horizontalEdge
+                        edge: islandWindow.edge
+                        visible: root.audioPresentationActive || contentProgress > 0.01
+                        opacity: 1
+                        onStopRequested: AudioRecordingService.stop()
+                        onCollapseRequested: {
+                            if (audioRecordingHost.isCurrent(audioVisual) && !root.audioSessionActive)
+                                root.audioPresentationPhase = root.audioPhaseCollapsing;
+                        }
+                        onExitFinished: audioRecordingHost.finishExit(audioVisual)
+                    }
+                    onLoaded: {
+                        // The service can change while QML is compiling the child.
+                        // Never replay an obsolete load into a newer session.
+                        if (!audioRecordingHost.wanted) {
+                            // Keep the active binding intact so a later session can
+                            // create a fresh child after this one is released.
+                            audioRecordingHost.fadeHeld = false;
+                            return;
+                        }
+                        if (root.audioPresentationActive)
+                            item.beginEntry();
+                    }
                 }
             }
 
@@ -1902,7 +2103,8 @@ Variants {
                 id: pillRecordingPresenter
 
                 anchors.fill: root
-                visible: styleSurface.splitRecording && root.recordingPresentationActive
+                active: styleSurface.splitRecording && root.recordingPresentationActive
+                visible: active
                 sourceComponent: islandWindow.horizontalEdge ? horizontalPillRecordingComponent :
                                                                  verticalPillRecordingComponent
                 z: root.z + 2

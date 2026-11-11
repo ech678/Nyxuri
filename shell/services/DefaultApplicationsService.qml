@@ -485,6 +485,7 @@ Singleton {
             root.handleProcessExit(request, 1, "", I18n.tr("Could not start the system command"));
             return false;
         }
+        request.process = process;
         process.command = request.argv;
         process.running = true;
         return true;
@@ -805,7 +806,29 @@ Singleton {
         id: commandProcessComponent
 
         Process {
+            id: process
             required property var request
+            property bool finished: false
+            property Timer watchdog: Timer {
+                interval: 10000
+                repeat: false
+                onTriggered: {
+                    if (finished || !process.running)
+                        return;
+                    finished = true;
+                    process.running = false;
+                    root._activeCommand = null;
+                    root.handleProcessExit(request, -1, "", I18n.tr("System command timed out"));
+                    process.destroy();
+                }
+            }
+
+            onRunningChanged: {
+                if (running)
+                    watchdog.restart();
+                else
+                    watchdog.stop();
+            }
 
             stdout: StdioCollector {
                 id: output
@@ -815,6 +838,10 @@ Singleton {
             }
 
             onExited: exitCode => {
+                if (finished)
+                    return;
+                finished = true;
+                watchdog.stop();
                 const currentRequest = request;
                 const stdoutText = output.text;
                 const stderrText = errorOutput.text;
@@ -829,6 +856,7 @@ Singleton {
         if (root._activeCommand && root._activeCommand.process)
             root._activeCommand.process.running = false;
         root._activeCommand = null;
-        root._queue = [];
+        root._refreshQueue = [];
+        root._refreshPending = 0;
     }
 }

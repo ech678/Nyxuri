@@ -833,6 +833,8 @@ Singleton {
             {"object": replacementWatchdogTimer}
         ]);
         reconnectTimer.stop();
+        sampleWatchdogTimer.stop();
+        replacementWatchdogTimer.stop();
         forceStopTimer.stop();
         if (firstStream) {
             firstStream.running = false;

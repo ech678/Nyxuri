@@ -39,6 +39,7 @@ Item {
     readonly property bool viewingCurrentMonth: viewMonth.getFullYear() === root.now.getFullYear()
                                                 && viewMonth.getMonth() === root.now.getMonth()
     property var todoService: null
+
     readonly property var todoList: root.todoService ? root.todoService.list : []
     readonly property int pendingTasks: root.todoList.filter(t => !t.done).length
     // lspci supplies the marketing name ("Navi 33 [Radeon RX 7600/…]"); the
@@ -147,6 +148,7 @@ Item {
     Component.onCompleted: {
         SystemMonitorService.setConsumerModules("dashboard-home", ["cpu", "memory", "disk", "network"]);
         SystemIdentityService.setUptimeConsumer("dashboard-home", true);
+        SystemIdentityService.ensureGpuModel();
     }
 
     function shiftMonth(delta) {

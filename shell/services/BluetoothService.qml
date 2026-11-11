@@ -31,16 +31,14 @@ Singleton {
     readonly property var adapters: _nativeAdapters.map(candidate => {
         return root._describeAdapter(candidate);
     })
-    readonly property var devices: root._deduplicatedDeviceDescriptors()
-    readonly property var connectedDevices: devices.filter(device => {
-        return device.connected;
-    })
-    readonly property var pairedDevices: devices.filter(device => {
-        return !device.connected && (device.paired || device.bonded || device.trusted);
-    })
-    readonly property var availableDevices: devices.filter(device => {
-        return !device.connected && !device.paired && !device.bonded && !device.trusted;
-    })
+    // Build one canonical descriptor set and project each view from that same snapshot.
+    // The function reads every native property while this binding is evaluated, so nested
+    // device changes still invalidate the snapshot (not only Bluetooth.devices.values).
+    readonly property var _deviceSnapshot: root._buildDeviceSnapshot()
+    readonly property var devices: _deviceSnapshot.devices
+    readonly property var connectedDevices: _deviceSnapshot.connectedDevices
+    readonly property var pairedDevices: _deviceSnapshot.pairedDevices
+    readonly property var availableDevices: _deviceSnapshot.availableDevices
     property string lastError: ""
     property var _discoveryOwners: ({})
     property bool _manualDiscoveryActive: false
@@ -108,7 +106,7 @@ Singleton {
         };
     }
 
-    function _deduplicatedDeviceDescriptors() {
+    function _buildDeviceSnapshot() {
         const byAddress = {};
         for (const device of root._nativeDevices) {
             if (!device)
@@ -122,7 +120,8 @@ Singleton {
                                                                              !current.paired))
                 byAddress[key] = descriptor;
         }
-        return Object.keys(byAddress).map(key => {
+
+        const devices = Object.keys(byAddress).map(key => {
             return byAddress[key];
         }).sort((a, b) => {
             if (a.connected !== b.connected)
@@ -133,6 +132,23 @@ Singleton {
 
             return a.name.localeCompare(b.name);
         });
+        const connectedDevices = [];
+        const pairedDevices = [];
+        const availableDevices = [];
+        for (const device of devices) {
+            if (device.connected)
+                connectedDevices.push(device);
+            else if (device.paired || device.bonded || device.trusted)
+                pairedDevices.push(device);
+            else
+                availableDevices.push(device);
+        }
+        return {
+            "devices": devices,
+            "connectedDevices": connectedDevices,
+            "pairedDevices": pairedDevices,
+            "availableDevices": availableDevices
+        };
     }
 
     function _resolveAdapter(adapterLike) {

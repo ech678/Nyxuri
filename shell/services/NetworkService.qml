@@ -84,23 +84,15 @@ Singleton {
     // same SSID across multiple Wi-Fi adapters.
     readonly property var accessPoints: {
         const bySsid = {};
-        for (const device of root._nativeWifiDevices) {
-            const networks = device && device.networks ? device.networks.values : [];
-            for (const network of networks) {
-                if (!network)
-                    continue;
+        for (const candidate of root.allWifiNetworks) {
+            const ssid = String(candidate.ssid || candidate.name || "");
+            if (ssid.length === 0)
+                continue;
 
-                const ssid = String(network.name || "");
-                if (ssid.length === 0)
-                    continue;
-
-                const candidate = root._describeWifiNetwork(device, network);
-                const current = bySsid[ssid];
-                if (!current || (candidate.active && !current.active) || (candidate.active === current.active
-                                                                          && candidate.strength
-                                                                          > current.strength))
-                    bySsid[ssid] = candidate;
-            }
+            const current = bySsid[ssid];
+            if (!current || (candidate.active && !current.active) || (candidate.active === current.active
+                                                                      && candidate.strength > current.strength))
+                bySsid[ssid] = candidate;
         }
         return Object.keys(bySsid).map(ssid => {
             return bySsid[ssid];
@@ -204,6 +196,7 @@ Singleton {
     property var _scanOwners: ({})
     property bool _manualScanActive: false
     property string _pendingOperation: ""
+    property int _operationGeneration: 0
     property string _pendingSsid: ""
     property bool _pendingWithPsk: false
     property var _pendingConnectSettings: null
@@ -344,6 +337,7 @@ Singleton {
             return false;
         }
         root.lastError = "";
+        root._operationGeneration += 1;
         root._pendingOperation = operation;
         root._pendingNetwork = network;
         root._pendingSsid = ssid || "";
@@ -376,6 +370,7 @@ Singleton {
     }
 
     function _clearPendingOperation() {
+        root._operationGeneration += 1;
         root._pendingOperation = "";
         root._pendingNetwork = null;
         root._pendingSsid = "";
@@ -1073,8 +1068,9 @@ Singleton {
             if (root._pendingOperation === "connect" && root._pendingConnectPhase === "disconnecting") {
                 if (root._pendingNetwork.state === ConnectionState.Disconnected) {
                     root._pendingConnectPhase = "waiting";
+                    const generation = root._operationGeneration;
                     Qt.callLater(() => {
-                        if (root._pendingOperation !== "connect" || root._pendingConnectPhase !== "waiting"
+                        if (generation !== root._operationGeneration || root._pendingOperation !== "connect" || root._pendingConnectPhase !== "waiting"
                                 || !root._pendingNetwork || !root._pendingConnectSettings)
                             return;
 
