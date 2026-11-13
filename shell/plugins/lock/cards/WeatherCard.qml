@@ -89,6 +89,7 @@ Rectangle {
     radius: Metrics.lockCardRadius
     clip: true
     Component.onCompleted: {
+        WeatherService.acquire("lock-weather-card");
         if (!WeatherService.hasValidData)
             WeatherService.refresh();
     }
@@ -413,5 +414,6 @@ Rectangle {
 
     Component.onDestruction: {
         weatherRefreshTimer.stop();
+        WeatherService.release("lock-weather-card");
     }
 }

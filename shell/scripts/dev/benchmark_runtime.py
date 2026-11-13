@@ -24,6 +24,11 @@ IPC_METHODS: Final[tuple[str, ...]] = ("stage", "isReady", "status", "metrics")
 IPC_MARKER: Final[re.Pattern[str]] = re.compile(
     r"Stage transition -> IPC_READY .*elapsed:\s*(\d+)ms"
 )
+REAL_FIRST_FRAME_MARKER: Final[re.Pattern[str]] = re.compile(
+    r"\[ShellStartup\]\s+REAL_FIRST_FRAME\s+source:\s*"
+    r"(?P<source>[^\r\n]*?)\s*(?:\(\s*elapsed:|$)",
+    re.IGNORECASE,
+)
 PROCESS_FAILURE_MARKER: Final[re.Pattern[str]] = re.compile(
     r"Process failed to start", re.IGNORECASE
 )
@@ -174,8 +179,12 @@ class ProcessSample:
 
 @dataclass(frozen=True, slots=True)
 class RunResult:
+    """Runner observations; wall time is first 50 ms-poll observation, not presentation time."""
     marker: bool
     startup_ms: float | None
+    real_first_frame_wall_ms: float | None
+    real_first_frame_source: str | None
+    real_first_frame_status: Literal["available", "unavailable", "observed_after_exit"]
     internal_ms: dict[str, float]
     steady: ProcessSample | None
     peak: ProcessSample | None
@@ -638,6 +647,35 @@ def _sample_peak(samples: list[ProcessSample]) -> ProcessSample | None:
     )
 
 
+def start_compositor(environment: dict[str, str], log_dir: Path) -> subprocess.Popen[str]:
+    """Start a private layer-shell compositor, never a host Wayland session."""
+    if os.environ.get("NYXURI_CONTAINER") != "1":
+        raise RuntimeError("compositor probes require NYXURI_CONTAINER=1")
+    runtime = Path(environment["XDG_RUNTIME_DIR"])
+    previous = set(runtime.glob("wayland-*"))
+    config = log_dir / "sway.conf"
+    config.write_text("output * mode 1280x720@60Hz\nseat * hide_cursor 1000\n", encoding="utf-8")
+    child_env = dict(environment)
+    child_env.update(WLR_BACKENDS="headless", WLR_RENDERER="pixman", WLR_LIBINPUT_NO_DEVICES="1")
+    with (log_dir / "sway.log").open("w", encoding="utf-8") as log:
+        process = subprocess.Popen(
+            ["sway", "--unsupported-gpu", "-c", str(config)], env=child_env,
+            stdout=log, stderr=subprocess.STDOUT, start_new_session=True, text=True,
+        )
+    for _ in range(200):
+        sockets = sorted(path for path in runtime.glob("wayland-*")
+                         if path not in previous and not path.name.endswith(".lock"))
+        if sockets:
+            environment["WAYLAND_DISPLAY"] = sockets[0].name
+            return process
+        if process.poll() is not None:
+            break
+        time.sleep(0.05)
+    _terminate(process)
+    detail = (log_dir / "sway.log").read_text(errors="replace")[-2000:]
+    raise RuntimeError("private Sway layer-shell socket did not appear: " + detail.strip())
+
+
 def _terminate(process: subprocess.Popen[str]) -> None:
     try:
         os.killpg(process.pid, signal.SIGTERM)
@@ -669,15 +707,15 @@ def _run_process(
     warm: bool = False,
 ) -> RunResult:
     if kind == "shell":
-        command = ["/workspace/shell/nyxuri-shell", "-v"] if not warm else [
-            "qs", "-p", "/workspace/shell", "--no-duplicate", "-v"
-        ]
+        command = ["/workspace/shell/nyxuri-shell", "-v"]
         marker = IPC_MARKER
         child_env = dict(environment)
-        if not warm:
-            for key in ("XDG_CACHE_HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME"):
-                child_env[key] = f"{child_env[key]}-{run_number}"
-                Path(child_env[key]).mkdir(parents=True, exist_ok=True)
+        # Warm launches reuse the run-0 priming namespace through the same
+        # production wrapper; bypassing it silently measures a different cache.
+        namespace = 0 if warm else run_number
+        for key in ("XDG_CACHE_HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME"):
+            child_env[key] = f"{child_env[key]}-{namespace}"
+            Path(child_env[key]).mkdir(parents=True, exist_ok=True)
     else:
         command = ["qs", "-p", str(baseline_dir), "--no-duplicate", "-v"]
         marker = re.compile(r"Configuration Loaded")
@@ -686,6 +724,7 @@ def _run_process(
     log_path = log_dir / f"{kind}-{'warm-' if warm else ''}{run_number}.log"
     with log_path.open("w+", encoding="utf-8") as log:
         started = time.monotonic()
+        started_ns = time.monotonic_ns()
         process = subprocess.Popen(
             command,
             env=child_env,
@@ -695,6 +734,9 @@ def _run_process(
             text=True,
         )
         marker_time: float | None = None
+        real_first_frame_wall_ms: float | None = None
+        real_first_frame_source: str | None = None
+        real_first_frame_observed_after_exit = False
         internal: dict[str, float] = {}
         samples: list[ProcessSample] = []
         steady_samples: list[ProcessSample] = []
@@ -713,6 +755,16 @@ def _run_process(
                     steady_samples.append(snapshot)
             log.flush()
             text = log_path.read_text(errors="replace")
+            if process.poll() is None and real_first_frame_wall_ms is None:
+                real_frame = REAL_FIRST_FRAME_MARKER.search(text)
+                if real_frame is not None:
+                    # stdout/stderr are merged into the log file. Record the
+                    # monotonic time when polling first observes the event;
+                    # this avoids blocking pipe reads and their deadlock risk.
+                    real_first_frame_wall_ms = (
+                        time.monotonic_ns() - started_ns
+                    ) / 1_000_000
+                    real_first_frame_source = real_frame.group("source").strip() or "unknown"
             if marker_time is None:
                 found = marker.search(text)
                 if found:
@@ -749,6 +801,11 @@ def _run_process(
             elapsed_ms = max((time.monotonic() - started) * 1000, 1)
             cpu_util_percent = cpu_ms / elapsed_ms * 100
         text = log_path.read_text(errors="replace")
+        if real_first_frame_wall_ms is None:
+            real_frame = REAL_FIRST_FRAME_MARKER.search(text)
+            if real_frame is not None:
+                real_first_frame_source = real_frame.group("source").strip() or "unknown"
+                real_first_frame_observed_after_exit = True
         exit_code = process.returncode
         # SIGTERM is the runner's normal teardown request. Some Quickshell builds
         # handle it and return zero, so success must not depend on one exit code.
@@ -769,6 +826,13 @@ def _run_process(
         return RunResult(
             marker=marker_time is not None,
             startup_ms=(marker_time - started) * 1000 if marker_time is not None else None,
+            real_first_frame_wall_ms=real_first_frame_wall_ms,
+            real_first_frame_source=real_first_frame_source,
+            real_first_frame_status=(
+                "available" if real_first_frame_wall_ms is not None
+                else "observed_after_exit" if real_first_frame_observed_after_exit
+                else "unavailable"
+            ),
             internal_ms=internal,
             steady=_sample_stat(steady_samples),
             peak=_sample_peak(samples),

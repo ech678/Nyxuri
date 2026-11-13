@@ -5,9 +5,15 @@ from __future__ import annotations
 import importlib.util
 import io
 import json
+import os
+import signal
+import subprocess
 import sys
 import tempfile
+import time as wallclock
 import unittest
+
+_REAL_SLEEP = wallclock.sleep
 from contextlib import redirect_stderr
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -56,6 +62,26 @@ if _COMPATIBILITY_SPEC is None or _COMPATIBILITY_SPEC.loader is None:
 compatibility = importlib.util.module_from_spec(_COMPATIBILITY_SPEC)
 sys.modules["benchmark_compatibility"] = compatibility
 _COMPATIBILITY_SPEC.loader.exec_module(compatibility)
+
+
+class CompositorStartupTests(unittest.TestCase):
+    def test_layer_shell_compositor_uses_private_socket_and_fixed_mode(self):
+        with TempEnv() as isolated:
+            env = {"XDG_RUNTIME_DIR": str(isolated.home), "WAYLAND_DISPLAY": "unused"}
+            process = Mock()
+            def launch(*args, **kwargs):
+                (isolated.home / "wayland-7").touch()
+                return process
+            with patch.dict(os.environ, {"NYXURI_CONTAINER": "1"}), patch.object(
+                runtime.subprocess, "Popen", side_effect=launch
+            ) as popen:
+                self.assertIs(runtime.start_compositor(env, isolated.home), process)
+            self.assertEqual(popen.call_args.args[0],
+                             ["sway", "--unsupported-gpu", "-c", str(isolated.home / "sway.conf")])
+            self.assertNotIn("shell", popen.call_args.kwargs)
+            self.assertEqual(popen.call_args.kwargs["env"]["WLR_BACKENDS"], "headless")
+            self.assertEqual(env["WAYLAND_DISPLAY"], "wayland-7")
+            self.assertIn("1280x720@60Hz", (isolated.home / "sway.conf").read_text())
 
 
 class BenchmarkRuntimeTests(unittest.TestCase):
@@ -270,6 +296,325 @@ class BenchmarkRuntimeTests(unittest.TestCase):
         self.assertIsNone(unavailable.cgroup_memory_peak_kb)
         self.assertIsNone(unavailable_peak.cgroup_memory_current_kb)
         self.assertIsNone(unavailable_peak.cgroup_memory_peak_kb)
+
+    def _run_baseline_with_log(self, log_text):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            log_dir = root / "logs"
+            log_dir.mkdir()
+
+            class FakeProcess:
+                pid = 12345
+                returncode = None
+
+                def poll(self):
+                    return self.returncode
+
+            def start_process(*_args, stdout, **_kwargs):
+                stdout.write(log_text)
+                stdout.flush()
+                return FakeProcess()
+
+            monotonic_ns = [1_000_000_000]
+            if "REAL_FIRST_FRAME" in log_text:
+                monotonic_ns.append(1_045_000_000)
+            with (
+                TempEnv(),
+                patch.object(runtime.subprocess, "Popen", side_effect=start_process),
+                patch.object(runtime, "_process_tree", return_value=None),
+                patch.object(
+                    runtime, "_terminate",
+                    side_effect=lambda process: setattr(process, "returncode", 0),
+                ),
+                patch.object(runtime.time, "monotonic", side_effect=[0.0, 0.1, 0.2, 2.3, 2.4]),
+                patch.object(runtime.time, "monotonic_ns", side_effect=monotonic_ns),
+                patch.object(runtime.time, "sleep"),
+            ):
+                return runtime._run_process(
+                    kind="baseline", run_number=1, environment={},
+                    baseline_dir=root, log_dir=log_dir,
+                )
+
+    def _run_live_marker_script(self, body, *, release_partial=False):
+        """Run the real polling loop against a short, independently scheduled child."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            log_dir = root / "logs"
+            log_dir.mkdir()
+            original_popen = runtime.subprocess.Popen
+            log_path = log_dir / "baseline-1.log"
+            child_holder = {}
+
+            class PartialGate:
+                def __init__(self, process):
+                    self.process = process
+                    self.released = False
+
+                def poll(self):
+                    if release_partial and not self.released and log_path.exists():
+                        if log_path.read_text(encoding="utf-8", errors="replace") == "Configuration Loaded":
+                            assert self.process.stdin is not None
+                            self.process.stdin.write("\\n")
+                            self.process.stdin.flush()
+                            self.released = True
+                    return self.process.poll()
+
+                def __getattr__(self, name):
+                    return getattr(self.process, name)
+
+            def start_process(_command, *, stdout, stderr, start_new_session, text, **_kwargs):
+                process = original_popen(
+                    [sys.executable, "-u", "-c", body],
+                    stdin=subprocess.PIPE,
+                    stdout=stdout,
+                    stderr=stderr,
+                    start_new_session=start_new_session,
+                    text=text,
+                )
+                child_holder["process"] = process
+                return PartialGate(process)
+
+            virtual_time = [0.0]
+            monotonic_ns = [1_000_000_000]
+
+            def monotonic():
+                virtual_time[0] += 0.1
+                return virtual_time[0]
+
+            def monotonic_clock_ns():
+                monotonic_ns[0] += 45_000_000
+                return monotonic_ns[0]
+
+            with (
+                patch.object(runtime.subprocess, "Popen", side_effect=start_process),
+                patch.object(runtime, "_process_tree", return_value=None),
+                patch.object(runtime.time, "monotonic", side_effect=monotonic),
+                patch.object(runtime.time, "monotonic_ns", side_effect=monotonic_clock_ns),
+                patch.object(runtime.time, "sleep", side_effect=lambda seconds: _REAL_SLEEP(0.001)),
+            ):
+                result = runtime._run_process(
+                    kind="baseline", run_number=1, environment={},
+                    baseline_dir=root, log_dir=log_dir,
+                )
+                child = child_holder.get("process")
+                if child is not None and child.stdin is not None:
+                    child.stdin.close()
+                return result
+
+    def test_live_child_marker_is_observed_while_process_is_running(self):
+        result = self._run_live_marker_script(
+            "import os, sys\nos.write(1, b'Configuration Loaded\\n')\n"
+            "os.write(1, b'[ShellStartup] REAL_FIRST_FRAME source: live\\n')\n"
+            "sys.stdin.buffer.read(1)\n"
+        )
+        self.assertIsNotNone(result.real_first_frame_wall_ms)
+        self.assertEqual(result.real_first_frame_source, "live")
+        self.assertEqual(result.real_first_frame_status, "available")
+
+    def test_live_child_marker_first_visible_only_after_exit_has_null_wall_time(self):
+        result = self._run_live_marker_script(
+            "import os, signal, sys\n"
+            "os.write(1, b'Configuration Loaded\\n')\n"
+            "def done(_signum, _frame):\n"
+            "    os.write(1, b'[ShellStartup] REAL_FIRST_FRAME source: exit\\n')\n"
+            "    os._exit(0)\n"
+            "signal.signal(signal.SIGTERM, done)\n"
+            "sys.stdin.buffer.read(1)\n"
+        )
+        self.assertIsNone(result.real_first_frame_wall_ms)
+        self.assertEqual(result.real_first_frame_source, "exit")
+        self.assertEqual(result.real_first_frame_status, "observed_after_exit")
+
+    def test_live_child_incomplete_line_is_recognized_after_newline(self):
+        result = self._run_live_marker_script(
+            "import os, sys\n"
+            "os.write(1, b'Configuration Loaded')\n"
+            "sys.stdin.buffer.read(1)\n"
+            "os.write(1, b'\\n')\n"
+            "os.write(1, b'[ShellStartup] REAL_FIRST_FRAME source: completed\\n')\n"
+            "sys.stdin.buffer.read(1)\n",
+            release_partial=True,
+        )
+        self.assertTrue(result.marker)
+        self.assertEqual(result.real_first_frame_source, "completed")
+        self.assertEqual(result.real_first_frame_status, "available")
+
+    def test_live_child_without_or_with_legacy_marker_is_unavailable(self):
+        for marker in (b"", b"[ShellStartup] Stage transition -> FIRST_FRAME (elapsed: 1ms)\n"):
+            with self.subTest(marker=marker):
+                result = self._run_live_marker_script(
+                    "import os, sys\n"
+                    f"os.write(1, {marker!r})\n"
+                    "sys.stdin.buffer.read(1)\n"
+                )
+                self.assertIsNone(result.real_first_frame_wall_ms)
+                self.assertIsNone(result.real_first_frame_source)
+                self.assertEqual(result.real_first_frame_status, "unavailable")
+
+    def test_run_process_records_first_real_frame_with_runner_monotonic_clock(self):
+        result = self._run_baseline_with_log(
+            "Configuration Loaded\n"
+            "[ShellStartup] REAL_FIRST_FRAME source: QQuickWindow.frameSwapped "
+            "(elapsed: 27ms)\n"
+        )
+
+        self.assertEqual(result.real_first_frame_wall_ms, 45.0)
+        self.assertEqual(result.real_first_frame_source, "QQuickWindow.frameSwapped")
+        self.assertEqual(result.real_first_frame_status, "available")
+        self.assertIsNone(result.internal_ms.get("real_first_frame_ms"))
+
+    def test_run_process_marks_missing_real_first_frame_unavailable(self):
+        result = self._run_baseline_with_log("Configuration Loaded\n")
+
+        self.assertIsNone(result.real_first_frame_wall_ms)
+        self.assertIsNone(result.real_first_frame_source)
+        self.assertEqual(result.real_first_frame_status, "unavailable")
+
+    def test_run_process_ignores_legacy_first_frame_marker(self):
+        result = self._run_baseline_with_log(
+            "Configuration Loaded\n"
+            "[ShellStartup] Stage transition -> FIRST_FRAME (elapsed: 11ms)\n"
+        )
+
+        self.assertIsNone(result.real_first_frame_wall_ms)
+        self.assertIsNone(result.real_first_frame_source)
+        self.assertEqual(result.real_first_frame_status, "unavailable")
+
+    def test_real_first_frame_parser_uses_explicit_event_and_keeps_legacy_separate(self):
+        log = (
+            "[ShellStartup] Stage transition -> FIRST_FRAME (elapsed: 11ms)\\n"
+            "[ShellStartup] REAL_FIRST_FRAME source: QQuickWindow.frameSwapped "
+            "(elapsed: 27ms)\\n"
+        )
+        parsed = scenarios.parse_real_first_frame(log)
+        self.assertEqual(parsed["real_first_frame_ms"], 27.0)
+        self.assertEqual(parsed["real_first_frame_source"], "QQuickWindow.frameSwapped")
+        self.assertNotIn("real_first_frame_status", parsed)
+        self.assertNotIn("real_first_frame_wall_status", parsed)
+
+    def test_real_first_frame_parser_marks_missing_event_unavailable(self):
+        parsed = scenarios.parse_real_first_frame(
+            "[ShellStartup] Stage transition -> FIRST_FRAME (elapsed: 11ms)\\n"
+        )
+        self.assertIsNone(parsed["real_first_frame_ms"])
+        self.assertIsNone(parsed["real_first_frame_source"])
+        self.assertNotIn("real_first_frame_status", parsed)
+
+    def _startup_record_fixture(self, log_text, *, wall_ms, source, status):
+        run = runtime.RunResult(
+            marker=True, startup_ms=10.0,
+            real_first_frame_wall_ms=wall_ms,
+            real_first_frame_source=source, real_first_frame_status=status,
+            internal_ms={"first_frame_ms": 11.0}, steady=None, peak=None,
+            cpu_ms=None, user_cpu_ms=None, system_cpu_ms=None, cpu_util_percent=None,
+            log_errors=0, log_warnings=0, fatal_log_count=0, compiled_empty=0,
+            process_start_failures=0, optional_process_start_failures=0,
+            required_process_start_failures=0, unattributed_process_start_failures=0,
+            process_start_failure_details=(), process_lifecycle={}, live_telemetry=None,
+            exit_code=0, startup_valid=True, sample_valid=True,
+            controlled_shutdown=True, success=True, log_path="/results/startup.log",
+        )
+        with TempEnv(), patch.object(Path, "read_text", autospec=True, return_value=log_text) as read:
+            record = scenarios._startup_record(run, "empty-shellroot")
+            read.assert_called_once_with(Path("/results/startup.log"), errors="replace")
+        self.assertEqual(record["profile_id"], "empty-shellroot")
+        self.assertEqual(record["log_path"], "startup.log")
+        return record
+
+    def test_startup_record_keeps_post_exit_wall_status_with_qml_marker(self):
+        record = self._startup_record_fixture(
+            "[ShellStartup] REAL_FIRST_FRAME source: qml-frame (elapsed: 27ms)\n",
+            wall_ms=None, source="runner-post-exit", status="observed_after_exit",
+        )
+        self.assertEqual(record["real_first_frame_ms"], 27.0)
+        self.assertEqual(record["real_first_frame_source"], "qml-frame")
+        self.assertIsNone(record["real_first_frame_wall_ms"])
+        self.assertEqual(record["real_first_frame_wall_source"], "runner-post-exit")
+        self.assertEqual(record["real_first_frame_wall_status"], "observed_after_exit")
+        self.assertEqual(record["real_first_frame_status"], "observed_after_exit")
+
+    def test_startup_record_keeps_live_wall_observation_separate_from_qml(self):
+        for log_text, qml_ms, qml_source in (
+            ("[ShellStartup] REAL_FIRST_FRAME source: qml-frame (elapsed: 27ms)\n", 27.0, "qml-frame"),
+            ("Configuration Loaded\n", None, None),
+        ):
+            with self.subTest(log_text=log_text):
+                record = self._startup_record_fixture(
+                    log_text, wall_ms=45.0, source="runner-live", status="available",
+                )
+                self.assertEqual(record["real_first_frame_ms"], qml_ms)
+                self.assertEqual(record["real_first_frame_source"], qml_source)
+                self.assertEqual(record["real_first_frame_wall_ms"], 45.0)
+                self.assertEqual(record["real_first_frame_wall_source"], "runner-live")
+                self.assertEqual(record["real_first_frame_wall_status"], "available")
+                self.assertEqual(record["real_first_frame_status"], "available")
+
+    def test_startup_record_without_baseline_marker_is_unavailable(self):
+        record = self._startup_record_fixture(
+            "Configuration Loaded\n"
+            "[ShellStartup] Stage transition -> FIRST_FRAME (elapsed: 11ms)\n",
+            wall_ms=None, source=None, status="unavailable",
+        )
+        for field in ("real_first_frame_ms", "real_first_frame_source",
+                      "real_first_frame_wall_ms", "real_first_frame_wall_source"):
+            self.assertIsNone(record[field])
+        self.assertEqual(record["real_first_frame_wall_status"], "unavailable")
+        self.assertEqual(record["real_first_frame_status"], "unavailable")
+
+    def test_report_excludes_post_exit_and_nonavailable_wall_values(self):
+        with TempEnv():
+            built = report.build_report({
+                "baseline": [{"real_first_frame_wall_status": "unavailable"}],
+                "cold_start": [
+                    {"real_first_frame_wall_ms": 45.0, "real_first_frame_wall_status": "available"},
+                    {"real_first_frame_ms": 27.0, "real_first_frame_wall_ms": None,
+                     "real_first_frame_wall_status": "observed_after_exit"},
+                    {"real_first_frame_wall_ms": 999.0,
+                     "real_first_frame_wall_status": "observed_after_exit"},
+                    {"real_first_frame_wall_ms": 888.0, "real_first_frame_wall_status": "unavailable"},
+                    {"real_first_frame_wall_ms": 777.0},
+                    {"real_first_frame_wall_ms": None, "real_first_frame_wall_status": "available"},
+                ],
+                "warm_start": [{"real_first_frame_wall_status": "observed_after_exit"}],
+            })
+        summary = built["raw"]["cold_start"]
+        self.assertEqual(summary["real_first_frame_wall_ms"], {
+            "n": 1, "p50": 45.0, "p95": 45.0, "p99": 45.0, "min": 45.0, "max": 45.0,
+        })
+        self.assertEqual(summary["real_first_frame_wall_observations"], {
+            "available": 2, "unavailable": 1, "observed_after_exit": 2,
+        })
+        self.assertEqual(summary["real_first_frame_ms"]["p50"], 27.0)
+        self.assertEqual(built["normalized"]["internal_shell_ms"]["real_first_frame_wall"], 45.0)
+        self.assertEqual(built["raw"]["warm_start"]["real_first_frame_wall_ms"]["n"], 0)
+        self.assertIsNone(built["raw"]["baseline"]["real_first_frame_wall_ms"]["p50"])
+
+    def test_report_summarizes_real_first_frame_without_replacing_legacy_field(self):
+        built = report.build_report({
+            "baseline": [],
+            "cold_start": [{
+                "real_first_frame_ms": 27.0,
+                "real_first_frame_wall_ms": 45.0,
+                "real_first_frame_wall_status": "available",
+                "internal_ms": {"first_frame_ms": 11.0},
+            }],
+            "warm_start": [],
+        })
+        self.assertEqual(
+            built["raw"]["cold_start"]["real_first_frame_ms"]["p50"], 27.0
+        )
+        self.assertEqual(
+            built["normalized"]["internal_shell_ms"]["first_frame"], 11.0
+        )
+        self.assertEqual(
+            built["normalized"]["internal_shell_ms"]["real_first_frame"], 27.0
+        )
+        self.assertEqual(
+            built["raw"]["cold_start"]["real_first_frame_wall_ms"]["p50"], 45.0
+        )
+        self.assertEqual(
+            built["normalized"]["internal_shell_ms"]["real_first_frame_wall"], 45.0
+        )
 
     def test_frame_profile_payload_accepts_qt_prefixed_debug_log(self):
         log = '\x1b[34m DEBUG\\x1b[97m qml\\x1b[0m: FRAME_PROFILE {"status":"available","frames":301}'

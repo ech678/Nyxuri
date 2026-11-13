@@ -131,10 +131,12 @@ Shell 是极致精简的**微内核宿主**：宿主只保留装配（`SlotHost`
   顶层文件 import 它时，首次解析必然发生在 Loader 内，单元确定性 compiled
   empty；宿主自愈重试两次后放弃并在日志明示，unit-changed 重新武装。
   ② QML 磁盘缓存会供应陈旧编译产物——源码改动后新旧代码混跑（表现为「改了没
-  生效」「部分单元是新逻辑部分是旧逻辑」）。对策：nyxuri-shell wrapper 每次
-  启动清空 qmlcache（永远冷编译，预热 import 已证冷编译干净）。注意不可用
-  `QML_DISABLE_DISK_CACHE=1` 替代——没有缓存写入时每次 Loader 装载都会重新
-  踩中 ① 的 import 缺陷。
+  生效」「部分单元是新逻辑部分是旧逻辑」）。对策：nyxuri-shell wrapper 按
+  QML/JS/qmldir/manifest.toml 内容和 qs identity 建隔离缓存指纹；源码树不变时复用
+  编译产物，内容变化时切换缓存目录，不向 Loader 提供旧编译结果。不要使用
+  `QML_DISABLE_DISK_CACHE=1`：没有缓存写入时每次 Loader 装载都会重新踩中 ① 的
+  import 缺陷。容器测量显示复用缓存降低真实 Bar 首帧和进程树 CPU 时间；实测细节
+  见 [性能计划](../llms-wiki/shell/performance-plan.md)。
   ③ `IpcHandler` 类型挂在 `Quickshell.Io` 模块下——单元根新增 handler 时必须
   `import Quickshell.Io`（仅 import Quickshell 不够，报「IpcHandler is not a
   type」且目标静默消失）。

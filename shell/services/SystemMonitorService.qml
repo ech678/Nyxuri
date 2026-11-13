@@ -20,6 +20,7 @@ Singleton {
     property double sourceIntervalMs: 0
     readonly property int intervalMs: configuredIntervalMs
     property var _consumerModules: ({})
+    property int _consumerSequence: 0
     property var effectiveModules: []
     property var _streamModules: []
     property bool _reconcilePending: false
@@ -33,6 +34,11 @@ Singleton {
 
     property var cpu: ({})
     property var memory: ({})
+    // Swap is sampled from the same Linux meminfo source only while the memory
+    // module has a consumer; the bar shares this service instead of spawning a
+    // second independent resource poller.
+    property double swapTotalBytes: 0
+    property double swapUsedBytes: 0
     property var gpus: []
     property var disks: []
     property var network: ({})
@@ -96,6 +102,12 @@ Singleton {
         default:
             return I18n.tr("Paused");
         }
+    }
+
+    // Each visual instance owns a distinct lease, including bars on multiple outputs.
+    function allocateConsumerId(prefix) {
+        root._consumerSequence += 1;
+        return String(prefix || "consumer") + ":" + root._consumerSequence;
     }
 
     function setConsumerModules(owner, modules) {
@@ -493,6 +505,13 @@ Singleton {
             root._stopStream();
     }
 
+    function _readSwapMeminfo(textMeminfo: string): void {
+        const totalKb = Number(textMeminfo.match(/^SwapTotal:\s*(\d+)/m)?.[1] ?? 0);
+        const freeKb = Number(textMeminfo.match(/^SwapFree:\s*(\d+)/m)?.[1] ?? 0);
+        root.swapTotalBytes = Math.max(0, totalKb) * 1024;
+        root.swapUsedBytes = Math.max(0, totalKb - freeKb) * 1024;
+    }
+
     function _commitSnapshot(snapshot) {
         const requested = root.effectiveModules;
         snapshot = Object.assign({}, snapshot);
@@ -514,8 +533,14 @@ Singleton {
         root._effectiveGpuId = nextSelectedGpuId;
         if (snapshot.cpu)
             root.cpu = snapshot.cpu;
-        if (snapshot.memory)
+        if (snapshot.memory) {
             root.memory = snapshot.memory;
+            // sysmon v1's memory object does not guarantee swap fields, so read
+            // the kernel's authoritative SwapTotal/SwapFree alongside demanded
+            // memory snapshots. This is one FileView read, not another timer or
+            // process.
+            swapMeminfo.reload();
+        }
         if (Array.isArray(snapshot.gpus))
             root.gpus = snapshot.gpus.slice();
         if (Array.isArray(snapshot.disks)) {
@@ -810,6 +835,14 @@ Singleton {
                                                        "failed_to_start", -1);
             });
         }
+    }
+
+    FileView {
+        id: swapMeminfo
+        path: "/proc/meminfo"
+        preload: false
+        printErrors: false
+        onLoaded: root._readSwapMeminfo(text())
     }
 
     Component.onCompleted: {

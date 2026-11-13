@@ -21,5 +21,14 @@
   "qt_major": 6,
   "weston_backend": "headless",
   "renderer": "pixman",
-  "qt_quick_backend": "software"
+  "qt_quick_backend": "software",
+  "compositor": {
+    "name": "sway",
+    "backend": "headless",
+    "renderer": "pixman",
+    "requested_width_px": 1280,
+    "requested_height_px": 720,
+    "requested_refresh_hz": 60,
+    "layer_shell_required": true
+  }
 }

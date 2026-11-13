@@ -17,6 +17,11 @@ Singleton {
     property double firstFrameTimestampMs: 0
     property double readyTimestampMs: 0
     property double ipcReadyTimestampMs: 0
+    // Real first frame: stamped by the first window that actually commits a
+    // frame (frameSwapped). firstFrameTimestampMs above is the legacy
+    // Qt.callLater marker and is kept only as a comparison baseline.
+    property double realFirstFrameTimestampMs: 0
+    property string realFirstFrameSource: ""
     property string failureReason: ""
 
     // Background startup work is deliberately serialized.  A singleton's
@@ -29,7 +34,9 @@ Singleton {
     property bool backgroundRunning: false
     property var backgroundMetrics: []
     property bool _backgroundPumpScheduled: false
+    property bool _backgroundTaskRunning: false
     property bool _destroyed: false
+    property bool _realFirstFrameRecorded: false
 
     // Live QML census.  The host registers one record per Loader/delegate;
     // records are removed when the delegate is destroyed so the snapshot
@@ -203,7 +210,7 @@ Singleton {
 
     function scheduleBackground(name, callback): bool {
         const taskName = String(name || "background");
-        if (typeof callback !== "function")
+        if (root._destroyed || typeof callback !== "function")
             return false;
         const state = root._backgroundTaskStates[taskName];
         if (state === "queued" || state === "running" || state === "completed")
@@ -213,16 +220,38 @@ Singleton {
         states[taskName] = "queued";
         root._backgroundTaskStates = states;
         const queue = root._backgroundQueue.slice();
-        queue.push({"name": taskName, "callback": callback});
+        // Diagnostic wall-clock offsets only, not a monotonic performance clock.
+        const metrics = root.backgroundMetrics.slice();
+        const metricIndex = metrics.length;
+        metrics.push({
+            "name": taskName, "status": "scheduled",
+            "queued_ms": Date.now() - root.initTimestampMs,
+            "started_ms": null, "finished_ms": null,
+            "elapsed_ms": null, "error": "", "reason": ""
+        });
+        root.backgroundMetrics = metrics;
+        queue.push({"name": taskName, "callback": callback, "metricIndex": metricIndex});
         root._backgroundQueue = queue;
         if (!root.backgroundRunning) {
             root.backgroundRunning = true;
-            root._scheduleBackgroundPump();
+            if (root._realFirstFrameRecorded)
+                root._scheduleBackgroundPump();
         }
         return true;
     }
 
-    function cancelBackground(): void {
+    function cancelBackground(reason: string): void {
+        const why = String(reason || "service destroyed");
+        const states = Object.assign({}, root._backgroundTaskStates);
+        root._backgroundQueue.forEach(task => {
+            if (states[task.name] === "queued") {
+                states[task.name] = "cancelled: " + why;
+                const finished = Date.now() - root.initTimestampMs;
+                root._updateBackgroundMetric(task, {"status": "cancelled", "finished_ms": finished, "reason": why});
+                root._logBackgroundTask("cancelled", task.name, finished, why);
+            }
+        });
+        root._backgroundTaskStates = states;
         root._backgroundQueue = [];
         root.backgroundRunning = false;
         root._backgroundPumpScheduled = false;
@@ -230,7 +259,7 @@ Singleton {
     }
 
     function _scheduleBackgroundPump(): void {
-        if (root._destroyed || root._backgroundPumpScheduled)
+        if (root._destroyed || !root._realFirstFrameRecorded || root._backgroundPumpScheduled)
             return;
         root._backgroundPumpScheduled = true;
         Qt.callLater(() => {
@@ -239,8 +268,21 @@ Singleton {
         });
     }
 
+    function _updateBackgroundMetric(task, changes): void {
+        const metrics = root.backgroundMetrics.slice();
+        metrics[task.metricIndex] = Object.assign({}, metrics[task.metricIndex], changes);
+        root.backgroundMetrics = metrics;
+    }
+
+    function _logBackgroundTask(status, name, elapsed, reason): void {
+        // JSON quoting keeps task names and exception/cancellation reasons on one line.
+        console.log("[ShellStartup] background-task " + status
+                    + " name=" + JSON.stringify(name) + " elapsed_ms=" + elapsed
+                    + (reason ? " reason=" + JSON.stringify(reason) : ""));
+    }
+
     function _runBackgroundTask(): void {
-        if (root._destroyed)
+        if (root._destroyed || !root._realFirstFrameRecorded || root._backgroundTaskRunning)
             return;
         if (root._backgroundQueue.length === 0) {
             root.backgroundRunning = false;
@@ -250,27 +292,32 @@ Singleton {
         const queue = root._backgroundQueue.slice();
         const task = queue.shift();
         root._backgroundQueue = queue;
+        root._backgroundTaskRunning = true;
         const states = Object.assign({}, root._backgroundTaskStates);
         states[task.name] = "running";
         root._backgroundTaskStates = states;
-        const started = Date.now();
+        const started = Date.now() - root.initTimestampMs;
+        root._updateBackgroundMetric(task, {"status": "running", "started_ms": started});
+        root._logBackgroundTask("started", task.name, started, "");
         let error = "";
+        let failed = false;
         try {
             task.callback();
         } catch (exception) {
+            failed = true;
             error = String(exception);
-            console.warn("[ShellStartup] background task failed", task.name, error);
         }
+        const finished = Date.now() - root.initTimestampMs;
+        const status = failed ? "failed" : "completed";
         const completedStates = Object.assign({}, root._backgroundTaskStates);
-        completedStates[task.name] = error ? "failed" : "completed";
+        completedStates[task.name] = status;
         root._backgroundTaskStates = completedStates;
-        const metrics = root.backgroundMetrics.slice();
-        metrics.push({
-                           "name": task.name,
-                           "elapsed_ms": Date.now() - started,
-                           "error": error
-                       });
-        root.backgroundMetrics = metrics;
+        root._updateBackgroundMetric(task, {
+            "status": status, "finished_ms": finished,
+            "elapsed_ms": finished - started, "error": error
+        });
+        root._logBackgroundTask(status, task.name, finished, error);
+        root._backgroundTaskRunning = false;
         root._scheduleBackgroundPump();
     }
 
@@ -279,6 +326,18 @@ Singleton {
             root.firstFrameTimestampMs = Date.now();
             root.setStage(stageFirstFrame);
         }
+    }
+
+    function recordRealFirstFrame(source: string): void {
+        if (root._realFirstFrameRecorded)
+            return;
+        root._realFirstFrameRecorded = true;
+        root.realFirstFrameTimestampMs = Date.now();
+        root.realFirstFrameSource = String(source || "unknown");
+        console.log("[ShellStartup] REAL_FIRST_FRAME source:", root.realFirstFrameSource,
+                    "(elapsed:", (root.realFirstFrameTimestampMs - root.initTimestampMs) + "ms)");
+        if (root.backgroundRunning)
+            root._scheduleBackgroundPump();
     }
 
     function recordCoreReady(): void {
@@ -316,6 +375,8 @@ Singleton {
             "first_frame_ms": root.firstFrameTimestampMs > 0 ? (root.firstFrameTimestampMs - root.initTimestampMs) : -1,
             "ready_ms": root.readyTimestampMs > 0 ? (root.readyTimestampMs - root.initTimestampMs) : -1,
             "ipc_ready_ms": root.ipcReadyTimestampMs > 0 ? (root.ipcReadyTimestampMs - root.initTimestampMs) : -1,
+            "real_first_frame_ms": root.realFirstFrameTimestampMs > 0 ? (root.realFirstFrameTimestampMs - root.initTimestampMs) : -1,
+            "real_first_frame_source": root.realFirstFrameSource,
             "failure_reason": root.failureReason,
             "background_running": root.backgroundRunning,
             "background_queue": root._backgroundQueue.length,
@@ -325,5 +386,5 @@ Singleton {
         };
     }
 
-    Component.onDestruction: root.cancelBackground()
+    Component.onDestruction: root.cancelBackground("service destroyed")
 }

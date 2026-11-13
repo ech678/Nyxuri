@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Container-only feature and negative scenario matrix for the shell.
 
-The runner deliberately exercises only the IPC/process boundary.  It does not
-claim keyboard or mouse behaviour; those rows remain ``UNAVAILABLE`` until a
-browser or compositor input harness is available.
+The runner exercises the IPC/process boundary and attempts a private Sway
+Qt input fixture. A fixture marker is required for PASS; failure remains
+explicitly PARTIAL and is never upgraded from process startup alone.
 """
 
 from __future__ import annotations
@@ -39,10 +39,10 @@ STANDARD_CASES = (
     ("shortcut_map.toggle", "shortcut-map", "toggle", (), "any"),
     ("spotlight.open", "spotlight", "open", (), "any"),
     ("spotlight.close", "spotlight", "close", (), "any"),
-    ("control_center.open", "control-center", "open", (), "OK"),
+    ("control_center.open", "control-center", "open", ("shell",), "OK"),
     ("control_center.close", "control-center", "close", (), "one_of:CLOSED,OK"),
     ("sidebar.dashboard_toggle", "sidebar", "toggle", ("dashboard",), "one_of:DASHBOARD_OPEN,DASHBOARD_CLOSED"),
-    ("keystone.dashboard", "keystone", "dashboard", (), "any"),
+    ("island.state", "island", "state", (), "any"),
 )
 
 
@@ -290,26 +290,59 @@ def _unit_lifecycle_rows(repo: Path, qs: str, shell_dir: str, env: dict[str, str
     return rows
 
 
-def _start_weston(env: dict[str, str], root: Path) -> subprocess.Popen[str] | None:
-    runtime = Path(env["XDG_RUNTIME_DIR"])
-    display = env["WAYLAND_DISPLAY"]
-    process = subprocess.Popen(["weston", "--backend=headless", "--renderer=pixman", "--no-config",
-                                "--socket=" + display, "--idle-time=0"], env=env,
-                               stdout=(root / "weston.log").open("w"), stderr=subprocess.STDOUT,
-                               start_new_session=True, text=True)
-    socket = runtime / display
-    for _ in range(200):
-        if socket.exists():
-            return process
-        if process.poll() is not None:
-            break
-        time.sleep(0.05)
+def _input_probe(qs: str, env: dict[str, str], root: Path) -> list[dict[str, Any]]:
+    """Deliver real compositor input to a private Qt fixture, not the host seat."""
+    writer = shutil.which("wtype")
+    sockets = sorted(Path(env["XDG_RUNTIME_DIR"]).glob("sway-ipc.*.sock"))
+    if not writer or not sockets:
+        return [_result("interaction." + name, "UNAVAILABLE", reason="private input tools unavailable")
+                for name in ("keyboard", "mouse")]
+    fixture = root / "input-fixture"
+    fixture.mkdir()
+    (fixture / "shell.qml").write_text('''import QtQuick
+import Quickshell
+ShellRoot {
+    FloatingWindow {
+        width: 400; height: 240; visible: true
+        TextInput {
+            id: field; anchors.centerIn: parent; focus: true
+            onTextChanged: if (text === "input-check") console.log("INPUT_KEYBOARD_OK")
+        }
+        MouseArea {
+            anchors.fill: parent
+            onClicked: { console.log("INPUT_MOUSE_OK"); field.forceActiveFocus(); }
+        }
+    }
+}
+''', encoding="utf-8")
+    log = root / "input-fixture.log"
+    from benchmark_runtime import _terminate
+    with log.open("w") as output:
+        process = subprocess.Popen([qs, "-p", str(fixture), "--no-duplicate"], env=env,
+                                   stdout=output, stderr=subprocess.STDOUT, start_new_session=True, text=True)
     try:
-        os.killpg(process.pid, signal.SIGTERM)
-    except ProcessLookupError:
-        pass
-    process.wait(timeout=3)
-    return None
+        time.sleep(1)
+        pointer_results = []
+        for action in ("set 640 360", "press button1", "release button1"):
+            pointer_results.append(subprocess.run(
+                ["swaymsg", "-s", str(sockets[0]), "seat seat0 cursor " + action],
+                env=env, capture_output=True, text=True, check=False, timeout=3,
+            ))
+        keyboard_result = subprocess.run([writer, "input-check"], env=env,
+                                         capture_output=True, text=True, check=False, timeout=5)
+        time.sleep(0.5)
+        text = log.read_text(errors="replace")
+        pointer_errors = [result.stderr.strip() or result.stdout.strip()
+                          for result in pointer_results if result.returncode != 0]
+        return [_result("interaction." + name, "PASS" if marker in text else "PARTIAL",
+                        reason="private Qt input fixture; not a full production UI interaction test",
+                        evidence={"observed": marker in text, "fixture_log": text[-1200:],
+                                  "pointer_errors": pointer_errors,
+                                  "keyboard_returncode": keyboard_result.returncode,
+                                  "keyboard_stderr": keyboard_result.stderr[-500:]})
+                for name, marker in (("keyboard", "INPUT_KEYBOARD_OK"), ("mouse", "INPUT_MOUSE_OK"))]
+    finally:
+        _terminate(process)
 
 
 def _fixture_probe(repo: Path) -> list[dict[str, Any]]:
@@ -335,10 +368,9 @@ def run_matrix(args: argparse.Namespace) -> dict[str, Any]:
     repo = Path(args.repo).resolve()
     rows: list[dict[str, Any]] = []
     rows.extend(_fixture_probe(repo))
-    rows.extend([_result("interaction.keyboard", "UNAVAILABLE", reason="requires browser/input harness"),
-                 _result("interaction.mouse", "UNAVAILABLE", reason="requires browser/input harness")])
+
     container_ok = os.environ.get("NYXURI_CONTAINER") == "1" or Path("/.dockerenv").exists()
-    required = [shutil.which("qs"), shutil.which("weston")]
+    required = [shutil.which("qs"), shutil.which("sway")]
     if not container_ok:
         rows.extend(_result(case[0], "UNAVAILABLE", reason="container-only runner; set NYXURI_CONTAINER=1") for case in STANDARD_CASES)
         rows.extend([_result("lifecycle.unit_off", "UNAVAILABLE", reason="container runtime not started"),
@@ -347,7 +379,7 @@ def run_matrix(args: argparse.Namespace) -> dict[str, Any]:
                      _result("negative.unknown_ipc_target", "UNAVAILABLE", reason="container runtime not started")])
         return _report(rows)
     if any(item is None for item in required):
-        reason = "missing runtime command: " + ", ".join(name for name, value in zip(("qs", "weston"), required) if value is None)
+        reason = "missing runtime command: " + ", ".join(name for name, value in zip(("qs", "sway"), required) if value is None)
         rows.extend(_result(case[0], "UNAVAILABLE", reason=reason) for case in STANDARD_CASES)
         rows.extend([_result("lifecycle.unit_off", "UNAVAILABLE", reason=reason), _result("lifecycle.unit_on", "UNAVAILABLE", reason=reason),
                      _result("negative.missing_optional_commands", "UNAVAILABLE", reason=reason), _result("negative.unknown_ipc_target", "UNAVAILABLE", reason=reason)])
@@ -360,14 +392,24 @@ def run_matrix(args: argparse.Namespace) -> dict[str, Any]:
                 "XDG_CACHE_HOME": str(root / "home" / ".cache"), "XDG_CONFIG_HOME": str(root / "home" / ".config"),
                 "XDG_DATA_HOME": str(root / "home" / ".local/share"), "XDG_STATE_HOME": str(root / "home" / ".local/state"),
                 "WAYLAND_DISPLAY": "nyxuri-feature-wayland", "QT_QPA_PLATFORM": "wayland",
-                "QT_QUICK_BACKEND": "software", "QSG_RHI_BACKEND": "software"})
+                "QT_QUICK_BACKEND": "software"})
     for key in ("HOME", "XDG_RUNTIME_DIR", "XDG_CACHE_HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME"):
         Path(env[key]).mkdir(parents=True, exist_ok=True)
     os.chmod(root, 0o755)
-    weston = _start_weston(env, root)
-    if weston is None:
-        rows.extend(_result(case[0], "UNAVAILABLE", reason="private Weston did not start") for case in STANDARD_CASES)
+    os.chmod(env["XDG_RUNTIME_DIR"], 0o700)
+    qml_root = next(Path("/nix/store").glob("*qt5compat-6.12.0/lib/qt-6/qml"), None)
+    if qml_root is None:
+        qml_root = next(Path("/nix/store").glob("*qt5compat-*/lib/qt-6/qml"), None)
+    if qml_root is not None:
+        env["QML_IMPORT_PATH"] = str(qml_root) + ":" + str(args.shell / "ui/shapes")
+        env["QML2_IMPORT_PATH"] = env["QML_IMPORT_PATH"]
+    from benchmark_runtime import start_compositor
+    try:
+        weston = start_compositor(env, root)
+    except RuntimeError as error:
+        rows.extend(_result(case[0], "UNAVAILABLE", reason=str(error)) for case in STANDARD_CASES)
         return _report(rows)
+    rows.extend(_input_probe(qs, env, root))
     shell_dir = str(args.shell)
     log = root / "shell.log"
     shell = subprocess.Popen([shell_dir + "/nyxuri-shell", "-v"], env=env, stdout=log.open("w"), stderr=subprocess.STDOUT,

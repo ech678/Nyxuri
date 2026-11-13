@@ -9,6 +9,16 @@ import qs.commons.i18n
 Item {
     id: root
 
+    property string weatherLeaseId: ""
+    Component.onCompleted: {
+        weatherLeaseId = WeatherService.allocateLeaseId("system-weather-card");
+        WeatherService.acquire(weatherLeaseId);
+    }
+    Component.onDestruction: {
+        if (weatherLeaseId !== "")
+            WeatherService.release(weatherLeaseId);
+    }
+
     readonly property bool dataAvailable: WeatherService.hasValidData
     readonly property string temperature: root.dataAvailable && isFinite(Number(
                                                                              WeatherService.currentTemperatureC))

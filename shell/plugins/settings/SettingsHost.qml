@@ -132,6 +132,10 @@ Scope {
             ActionGateway.settingsHost = null;
     }
 
+    function diagnosticsJson(): string {
+        return ShellControlService.diagnosticsJson();
+    }
+
     IpcHandler {
         target: "control-center"
 

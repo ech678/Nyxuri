@@ -141,6 +141,7 @@ Item {
         // Without a registered consumer the uptime reader never starts and the
         // header would show "0 minutes" forever.
         SystemIdentityService.setUptimeConsumer("dashboard-home", false);
+        WeatherService.release("dashboard-home");
     }
 
     // Subscribe to the shared sysmon stream so the status card has live data;
@@ -149,6 +150,7 @@ Item {
         SystemMonitorService.setConsumerModules("dashboard-home", ["cpu", "memory", "disk", "network"]);
         SystemIdentityService.setUptimeConsumer("dashboard-home", true);
         SystemIdentityService.ensureGpuModel();
+        WeatherService.acquire("dashboard-home");
     }
 
     function shiftMonth(delta) {

@@ -74,6 +74,20 @@ Singleton {
                     readonly property var rightLayout: PersonalizationConfig.barLayoutRight
                 }
 
+                // end4-pC Config.qml b881970b defaults for the ported resource widgets.
+                readonly property QtObject resources: QtObject {
+                    readonly property string style: "filled"
+                    readonly property bool showValue: false
+                    readonly property bool alwaysShowSwap: false
+                    readonly property bool alwaysShowCpu: true
+                    readonly property bool alwaysShowCpuTemp: false
+                    readonly property bool alwaysShowDisk: false
+                    readonly property bool alwaysShowRam: true
+                    readonly property int memoryWarningThreshold: 95
+                    readonly property int swapWarningThreshold: 85
+                    readonly property int cpuWarningThreshold: 90
+                }
+
                 readonly property QtObject tooltips: QtObject {
                     readonly property bool clickToShow: false
                 }

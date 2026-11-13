@@ -81,8 +81,43 @@ Item {
         return backend ? backend.normalNighttimeTemperatureC(month) : 0.0;
     }
 
+    // Consumer leases: the backend (15-minute refresh timer, network requests,
+    // forecast models) exists only while at least one consumer holds a lease.
+    // Owners are string ids, so a repeated acquire is idempotent and a
+    // release of an unknown owner is a no-op. Dropping the last lease destroys
+    // the backend; the next acquire rebuilds it and refreshes.
+    property var _leaseOwners: ({})
+    property int leaseCount: 0
+    property int _leaseSequence: 0
+
+    function allocateLeaseId(prefix) {
+        root._leaseSequence += 1;
+        return String(prefix || "weather") + ":" + root._leaseSequence;
+    }
+
+    function acquire(owner) {
+        const key = String(owner || "");
+        if (key === "" || root._leaseOwners[key] === true)
+            return;
+        const next = Object.assign({}, root._leaseOwners);
+        next[key] = true;
+        root._leaseOwners = next;
+        root.leaseCount = Object.keys(next).length;
+    }
+
+    function release(owner) {
+        const key = String(owner || "");
+        if (root._leaseOwners[key] !== true)
+            return;
+        const next = Object.assign({}, root._leaseOwners);
+        delete next[key];
+        root._leaseOwners = next;
+        root.leaseCount = Object.keys(next).length;
+    }
+
     Loader {
         id: backendLoader
+        active: root.leaseCount > 0
         source: "weather/WeatherBackend.qml"
     }
 }

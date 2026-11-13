@@ -41,9 +41,9 @@ python3 /workspace/shell/scripts/dev/resource_report.py \
 增量，缺失值为 `null`，不会伪装成零；`resource-summary.md` 供人工审阅。长稳态和
 100 次开关循环应在同一容器中多次调用探针，并保留原始 JSON 与日志。
 
-### 2. 隔离进程预览与 IPC 交互（不影响当前运行的桌面会话）
+### 2. 容器内启动与 IPC 交互
 
-当前运行 Noctalia 时，无需关闭桌面，可直接拉起独立 Nyxuri Shell 进程进行预览：
+性能调查期间不在宿主桌面启动调试实例。以下命令仅在私有 Wayland/D-Bus 容器会话内执行：
 
 ```bash
 # 隔离前台启动（详细日志流，自动挂载 fallback QML 桩）
@@ -64,9 +64,9 @@ qs ipc --path ./shell call lock open
 qs kill --path ./shell
 ```
 
-### 3. 真实会话双 Shell 平滑热切换（全桌面接管与即时切回）
+### 3. 用户实机验收：双 Shell 切换
 
-通过 Python 状态机实现有界探测与自动回滚安全接管：
+以下操作改变当前桌面，仅供用户主动验收时执行。自动性能调查不得在宿主执行：
 
 ```bash
 # 检查当前双轨状态
@@ -85,13 +85,25 @@ nyxuri-shell --action lock           # 锁屏
 nyxuri shell switch noctalia
 ```
 
+## 性能基准
+
+宿主只编排 Podman，不启动图形进程：
+
+```bash
+python3 shell/scripts/dev/benchmark-shell.py \
+  --runs 10 --ipc-runs 20 --steady-seconds 600 --reclaim-cycles 100 \
+  --profile default-full --output /tmp/nyxuri-benchmark
+```
+
+runner 使用 Sway headless/pixman；默认 Bar 需要 layer-shell，Weston headless 不能代替这项验证。代码只读挂载，HOME、XDG、Wayland 和 D-Bus 均在容器内隔离。热启动仍经过生产 wrapper，并复用 run-0 的预热缓存；不再绕过 wrapper 直接调用 `qs`。源码静态计数、已登记对象的 live census 和 `/proc` 采样必须分开报告。
+
 ## 日常开发循环
 
 每轮回答：现在什么能用，这一轮证明什么，失败回到哪里。
 
 1. 查看工作区与 `git status`，确认基线绿再动工。
-2. 选择一个功能域，遵守 `app/`、`units/`、`shared/` 三层分层契约（一单元一目录，`manifest.toml` 与代码同目录）（参见 [架构边界矩阵](architecture-matrix.md)）。
-3. 修改 QML/JS，通过 `run-tests.py` 本地验证；必要时拉起 Tier 2 隔离进程预览视觉。
+2. 选择一个功能域，遵守 `shell.qml`、`commons/`、`ui/`、`services/`、`plugins/` 五层结构；插件的 `manifest.toml` 与代码同目录（参见 [架构边界矩阵](architecture-matrix.md)）。
+3. 修改 QML/JS，按影响选择定向测试；真实启动和预览仅在第 2 节的隔离容器中进行。
 4. 维护全树清晰度，更新 ROADMAP 与对应 Wiki。
 
 ## 国际化与字典更新
@@ -101,7 +113,7 @@ Nyxuri Shell 采用纯净 TOML 字典组织多语言文案，免去臃肿 XML �
 ```bash
 # 扫描源码并生成语言包（TS 输出仅作审阅，运行时只读 TOML 词典）
 python3 shell/scripts/dev/compile-i18n.py \
-  --input-dir shell/app/i18n --output-dir /tmp/nyxuri-i18n
+  --input-dir shell/commons/i18n --output-dir /tmp/nyxuri-i18n
 ```
 
 ## 调试层次与检查

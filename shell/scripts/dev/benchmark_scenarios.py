@@ -15,7 +15,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Final, Literal, TypedDict
 
-from benchmark_runtime import IPC_METHODS, ProcessSample, RunResult, _process_tree, _quantile, _run_process, _terminate
+from benchmark_runtime import IPC_METHODS, ProcessSample, RunResult, _process_tree, _quantile, _run_process, _terminate, start_compositor
 
 LOCK_PATH = Path(__file__).with_name("benchmark-lock.json")
 WORKSPACE_SHELL_ROOT: Final[Path] = Path("/workspace/shell")
@@ -138,6 +138,58 @@ def source_profile(root: Path = Path("/workspace/shell")) -> dict[str, int]:
         "repeaters": len(re.findall(r"^\s*Repeater\s*\{", joined, re.MULTILINE)),
         "destruction_hooks": len(re.findall(r"Component\.onDestruction", joined)),
     }
+
+
+_REAL_FIRST_FRAME_RE: Final[re.Pattern[str]] = re.compile(
+    r"\[ShellStartup\]\s+REAL_FIRST_FRAME\s+source:\s*(?P<source>.*?)"
+    r"\s+\(?(?:elapsed:\s*)?(?P<elapsed>[-+]?\d+(?:\.\d+)?)\s*ms\)?",
+    re.IGNORECASE,
+)
+
+
+def parse_real_first_frame(log_text: str) -> dict[str, object]:
+    """Parse the first real frame event without treating the legacy marker as truth.
+
+    ``first_frame_ms`` is emitted by the old Qt.callLater path.  Only the explicit
+    REAL_FIRST_FRAME event is accepted here; malformed or absent events have
+    null values. This QML elapsed/source layer cannot set runner wall status.
+    """
+    for line in log_text.splitlines():
+        match = _REAL_FIRST_FRAME_RE.search(line)
+        if not match:
+            continue
+        try:
+            elapsed = float(match.group("elapsed"))
+        except ValueError:
+            continue
+        if elapsed < 0:
+            continue
+        source = match.group("source").strip().rstrip("(").strip()
+        if not source:
+            source = "unknown"
+        return {
+            "real_first_frame_ms": elapsed,
+            "real_first_frame_source": source,
+        }
+    return {
+        "real_first_frame_ms": None,
+        "real_first_frame_source": None,
+    }
+
+
+def _startup_record(run: RunResult, profile_id: str | None = None) -> dict[str, object]:
+    data = numeric_run(run, profile_id)
+    # Keep runner observations separate from QML elapsed/source parsed below.
+    # real_first_frame_status remains a compatibility alias for runner status.
+    data["real_first_frame_wall_source"] = run.real_first_frame_source
+    data["real_first_frame_wall_status"] = run.real_first_frame_status
+    log_path = Path(str(run.log_path))
+    try:
+        log_text = log_path.read_text(errors="replace")
+    except OSError:
+        log_text = ""
+    data.update(parse_real_first_frame(log_text))
+    return data
 
 
 def numeric_run(run: RunResult, profile_id: str | None = None) -> dict[str, object]:
@@ -385,6 +437,24 @@ def steady_state_benchmark(
     }
 
 
+def _wait_spotlight_phase(environment: dict[str, str], expected: str, timeout: float = 3.0) -> dict[str, object]:
+    deadline = time.monotonic() + timeout
+    last: dict[str, object] = {}
+    while time.monotonic() < deadline:
+        reply = subprocess.run(
+            ["qs", "-p", "/workspace/shell", "ipc", "call", "spotlight", "lifecycle"],
+            env=environment, capture_output=True, text=True, check=False, timeout=2,
+        )
+        try:
+            last = json.loads(reply.stdout)
+        except (ValueError, TypeError):
+            last = {}
+        if last.get("phase") == expected:
+            return {"status": "available", **last}
+        time.sleep(0.05)
+    return {"status": "unavailable", "reason": "spotlight_phase_timeout", "expected": expected, "last": last}
+
+
 def reclamation_benchmark(
     environment: dict[str, str], log_dir: Path, cycles: int, close_wait_seconds: float = 0.1,
 ) -> dict[str, object]:
@@ -409,14 +479,17 @@ def reclamation_benchmark(
                 ["qs", "-p", "/workspace/shell", "ipc", "call", "spotlight", "open"],
                 env=environment, capture_output=True, text=True, check=False,
             )
+            opened_state = _wait_spotlight_phase(environment, "open")
             closed = subprocess.run(
                 ["qs", "-p", "/workspace/shell", "ipc", "call", "spotlight", "close"],
                 env=environment, capture_output=True, text=True, check=False,
             )
+            closed_state = _wait_spotlight_phase(environment, "hidden")
             time.sleep(close_wait_seconds)
             sample = _process_tree(process.pid)
             rows.append({
                 "cycle": cycle, "open_returncode": opened.returncode, "close_returncode": closed.returncode,
+                "opened_lifecycle": opened_state, "closed_lifecycle": closed_state,
                 "open_value": opened.stdout.strip(), "close_value": closed.stdout.strip(),
                 "sample_after_close": _sample_dict(sample),
             })
@@ -425,10 +498,13 @@ def reclamation_benchmark(
             time.sleep(delay if delay == 0.1 else delay - (0.1 if delay > 0.1 else 0))
             horizon[str(delay)] = _sample_dict(_process_tree(process.pid))
         _terminate(process)
-    successful = [row for row in rows if row["open_returncode"] == 0 and row["close_returncode"] == 0]
+    successful = [row for row in rows if row["open_returncode"] == 0 and row["close_returncode"] == 0
+                  and row["opened_lifecycle"].get("results_loaded") is True
+                  and row["closed_lifecycle"].get("status") == "available"
+                  and row["closed_lifecycle"].get("results_loaded") is False]
     return {
         "scenario": "reclamation", "requested_cycles": cycles, "completed_cycles": len(rows),
-        "successful_cycles": len(successful), "startup_valid": True, "sample_valid": any(
+        "successful_cycles": len(successful), "startup_valid": True, "sample_valid": len(successful) == cycles and all(
             row["sample_after_close"] is not None for row in rows),
         "controlled_shutdown": process.returncode in (0, -15), "cycles": rows,
         "horizon_samples": horizon, "log_path": str(log_path),
@@ -554,7 +630,8 @@ def _renderer_profile(log_text: str, environment: dict[str, str]) -> dict[str, o
         "source": ["benchmark-lock.json", "Qt scenegraph log"],
         "qt_quick_backend": environment.get("QT_QUICK_BACKEND"),
         "qsg_rhi_backend": environment.get("QSG_RHI_BACKEND"),
-        "weston_renderer": "pixman",
+        "compositor": "sway",
+        "compositor_renderer": "pixman",
         "scenegraph_log_lines": scenegraph_lines[-40:],
         "reason": "Qt frameSwapped is observable; Weston presentation feedback and texture/offscreen counters are not exposed by this headless pixman probe",
     }
@@ -645,7 +722,7 @@ def environment(*, qml_root: Path | None = None) -> dict[str, str]:
         "XDG_CACHE_HOME": "/tmp/nyxuri-cache", "XDG_CONFIG_HOME": "/tmp/nyxuri-config",
         "XDG_DATA_HOME": "/tmp/nyxuri-data", "XDG_STATE_HOME": "/tmp/nyxuri-state",
         "WAYLAND_DISPLAY": "nyxuri-benchmark-wayland", "QT_QPA_PLATFORM": "wayland",
-        "QT_QUICK_BACKEND": "software", "QSG_RHI_BACKEND": "software",
+        "QT_QUICK_BACKEND": "software",
     }
     qml_path = qml_root or next(Path("/nix/store").glob("*qt5compat-*/lib/qt-6/qml"), None)
     if qml_path is None:
@@ -712,13 +789,17 @@ def container_environment_fingerprint(
         "timezone": environment.get("TZ") or {"status": "unavailable", "reason": "TZ_not_set"},
         "screen": {
             "status": "unavailable",
-            "reason": "headless_weston_mode_not_exported_by_runner",
+            "reason": "requested_sway_mode_not_independently_observed",
+            "requested_width_px": 1280,
+            "requested_height_px": 720,
+            "requested_refresh_hz": 60,
             "width_px": None,
             "height_px": None,
             "refresh_hz": None,
         },
         "renderer": {
-            "weston": lock.get("renderer"),
+            "compositor": "sway",
+            "compositor_renderer": lock.get("renderer"),
             "qt_quick_backend": environment.get("QT_QUICK_BACKEND"),
             "qsg_rhi_backend": environment.get("QSG_RHI_BACKEND"),
         },
@@ -787,7 +868,7 @@ def startup_samples(target: StartupTarget, count: int) -> dict[str, list[dict[st
         baseline_dir=target.config_root, log_dir=target.log_dir,
     )
     cold = [
-        numeric_run(
+        _startup_record(
             _run_process(
                 kind=target.run_kind, run_number=number, environment=target.environment,
                 baseline_dir=target.config_root, log_dir=target.log_dir,
@@ -797,7 +878,7 @@ def startup_samples(target: StartupTarget, count: int) -> dict[str, list[dict[st
         for number in range(1, count + 1)
     ]
     warm = [
-        numeric_run(
+        _startup_record(
             _run_process(
                 kind=target.run_kind, run_number=number, environment=target.environment,
                 baseline_dir=target.config_root, log_dir=target.log_dir, warm=True,
@@ -901,12 +982,8 @@ def main() -> int:
     log_dir = output.parent / "logs"; log_dir.mkdir(exist_ok=True)
     profile_root = output.parent / "profiles"
     profile_root.mkdir(exist_ok=True)
-    env = environment(); weston_log = (log_dir / "weston.log").open("w")
-    weston = subprocess.Popen(
-        ["weston", "--backend=headless", "--renderer=pixman", "--no-config",
-         "--socket=" + env["WAYLAND_DISPLAY"], "--idle-time=0"], env=env,
-        stdout=weston_log, stderr=subprocess.STDOUT, start_new_session=True, text=True,
-    )
+    env = environment()
+    weston = start_compositor(env, log_dir)
     baseline: list[dict[str, object]] = []
     cold: list[dict[str, object]] = []
     warm: list[dict[str, object]] = []
@@ -938,17 +1015,17 @@ def main() -> int:
                          baseline_dir=startup_baseline_dir, log_dir=log_dir)
             _run_process(kind="shell", run_number=0, environment=env,
                          baseline_dir=startup_baseline_dir, log_dir=log_dir)
-            baseline = [numeric_run(
+            baseline = [_startup_record(
                 _run_process(kind="baseline", run_number=i, environment=env,
                              baseline_dir=startup_baseline_dir, log_dir=log_dir),
                 "empty-shellroot",
             ) for i in range(1, args.runs + 1)]
-            cold = [numeric_run(
+            cold = [_startup_record(
                 _run_process(kind="shell", run_number=i, environment=env,
                              baseline_dir=startup_baseline_dir, log_dir=log_dir),
                 "default-full",
             ) for i in range(1, args.runs + 1)]
-            warm = [numeric_run(
+            warm = [_startup_record(
                 _run_process(kind="shell", run_number=i, environment=env,
                              baseline_dir=startup_baseline_dir, log_dir=log_dir, warm=True),
                 "default-full",
@@ -976,7 +1053,7 @@ def main() -> int:
                 continue
             profiles[profile_id] = run_isolated_profile(profile_id, args, env, profile_root)
     finally:
-        _terminate(weston); weston_log.close()
+        _terminate(weston)
         if "default-full" in profile_names:
             shutil.rmtree(output.parent / "ipc-reference", ignore_errors=True)
 
@@ -1007,6 +1084,7 @@ def main() -> int:
         "runtime": {
             "quickshell": command_output("qs", "--version"),
             "qt": command_output("qtpaths", "--qt-version"),
+            "compositor": command_output("sway", "--version"),
             "weston": command_output("weston", "--version"),
             "wayland_backend": lock.get("weston_backend"),
             "renderer": lock.get("renderer"),

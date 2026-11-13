@@ -38,6 +38,13 @@ PanelWindow {
     property string pendingWebUrl: ""
     property string windowPhase: "hidden"
     property bool closeAfterDrag: false
+    // Keep delegates/previews alive through the entire exit animation and cleanup.
+    // The window and IPC host stay resident; only the heavy results subtree dies.
+    property bool resultsRetained: false
+    readonly property var resultsPanel: resultsLoader.item
+    readonly property bool resultsLoaded: resultsLoader.item !== null
+    // Component-root properties shadow outer ids; inject the existing style object.
+    readonly property alias launcherStyle: style
     readonly property string mode: session.viewMode
     // Keep the content query while the input is used for a slash command.
     property string contentQuery: ""
@@ -78,7 +85,7 @@ PanelWindow {
                                                                                                     [])))
     readonly property bool clipboardDetailsMode: mode === "clipboard" && session.clipboardLayout === "details"
     readonly property bool clipboardMode: mode === "clipboard"
-    readonly property bool spotlightModalActive: resultsPanel.modalActive
+    readonly property bool spotlightModalActive: (resultsPanel ? resultsPanel.modalActive : false)
     readonly property bool clipboardCanRestore: clipboardProvider.canRestore
     readonly property bool wallpaperMode: mode === "wallpapers"
     readonly property bool appGridMode: mode === "apps" && session.appsLayout === "grid"
@@ -93,10 +100,10 @@ PanelWindow {
     readonly property real webPressScaleY: searchBar.pressScaleY
     readonly property real searchShadowBlur: searchBar.pressShadowBlur
     readonly property real searchShadowVerticalOffset: searchBar.pressShadowVerticalOffset
-    readonly property real resultsPanelWidth: resultsPanel.width
-    readonly property real resultsPanelHeight: resultsPanel.height
-    readonly property int wallpaperGridColumns: resultsPanel.wallpaperColumnCount
-    readonly property real wallpaperPreviewWidth: resultsPanel.wallpaperPreviewWidth
+    readonly property real resultsPanelWidth: (resultsPanel ? resultsPanel.width : 0)
+    readonly property real resultsPanelHeight: (resultsPanel ? resultsPanel.height : 0)
+    readonly property int wallpaperGridColumns: (resultsPanel ? resultsPanel.wallpaperColumnCount : 1)
+    readonly property real wallpaperPreviewWidth: (resultsPanel ? resultsPanel.wallpaperPreviewWidth : 0)
     readonly property int blurRegionCount: spotlightBlur.regionObjects.length
 
     // The source stays mapped during a platform drag; let the pointer reach
@@ -254,7 +261,7 @@ PanelWindow {
                     root.mode)
         filter: ["settings", "actions"].includes(root.mode) ? root.mode : ""
         query: active ? root.contentQuery : ""
-        capacities: resultsPanel.searchCapacities
+        capacities: (resultsPanel ? resultsPanel.searchCapacities : ({apps: 6, wallpapers: 4}))
         retainedResultId: root.mode === "search" && !root.queryUpdating ? root.selectedResultId : ""
         onModeRequested: (mode, query) => {
             root.query = query;
@@ -378,6 +385,8 @@ PanelWindow {
     function openSpotlight(requestedMode) {
         if (ActionGateway.externalDragActive)
             return false;
+        // Synchronous Loader creation restores geometry/delegates before focus.
+        root.resultsRetained = true;
         root.pendingWebUrl = "";
         root.pendingSearchActivation = null;
         SpotlightSearchService.cancelActivation();
@@ -564,7 +573,7 @@ PanelWindow {
     }
 
     function moveSelection(direction) {
-        root.moveSelectionByOffset(resultsPanel.navigationStep(direction));
+        root.moveSelectionByOffset((resultsPanel ? resultsPanel.navigationStep(direction) : 0));
     }
 
     function reconcileSelection() {
@@ -775,15 +784,15 @@ PanelWindow {
     }
 
     function resultNavigationStep(direction) {
-        return resultsPanel.navigationStep(direction);
+        return (resultsPanel ? resultsPanel.navigationStep(direction) : 0);
     }
 
     function clipboardActivationAreaAt(index) {
-        return resultsPanel.clipboardActivationAreaAt(index);
+        return resultsPanel ? resultsPanel.clipboardActivationAreaAt(index) : null;
     }
 
     function clipboardLayoutAt(index) {
-        return resultsPanel.clipboardLayoutAt(index);
+        return resultsPanel ? resultsPanel.clipboardLayoutAt(index) : null;
     }
 
     function webPressDepthAt(progress) {
@@ -924,14 +933,14 @@ PanelWindow {
             return;
         }
         if (root.mode === "search" && !root.modeRailExpanded && plainArrow
-                && resultsPanel.searchHorizontalSelection && (event.key === Qt.Key_Left || event.key
+                && resultsPanel && resultsPanel.searchHorizontalSelection && (event.key === Qt.Key_Left || event.key
                                                               === Qt.Key_Right)) {
             root.selectResult(resultsPanel.searchNavigationIndex(event.key === Qt.Key_Left ? "left" :
                                                                                              "right"));
             event.accepted = true;
             return;
         }
-        const gridNavigation = (root.mode === "wallpapers" || resultsPanel.appGridActive) && !control &&
+        const gridNavigation = (root.mode === "wallpapers" || (resultsPanel && resultsPanel.appGridActive)) && !control &&
               !shift;
         if (gridNavigation && event.key === Qt.Key_Left) {
             root.moveSelectionByOffset(-1);
@@ -1020,6 +1029,9 @@ PanelWindow {
             root.webProgress = 0;
             root.resetClipboardAction();
             root.executeSearchActivation(activation);
+            // An activation may have reopened the window. Never unload that session.
+            if (root.windowPhase === "hidden")
+                root.resultsRetained = false;
         }
     }
 
@@ -1051,9 +1063,9 @@ PanelWindow {
 
         targetWindow: root
         backgroundItem: searchBar.blurRegionItems[0]
-        additionalBackgroundItems: searchBar.blurRegionItems.slice(1).concat([resultsPanel.blurRegionItem,
-                                                                              resultsPanel.modalBlurRegionItem,
-                                                                              toolPanel])
+        additionalBackgroundItems: searchBar.blurRegionItems.slice(1).concat(resultsPanel
+                ? [resultsPanel.blurRegionItem, resultsPanel.modalBlurRegionItem, toolPanel]
+                : [toolPanel])
         blurEnabled: root.showing
     }
 
@@ -1089,7 +1101,7 @@ PanelWindow {
                                                                                                          style.windowHorizontalMargin,
                                                                                                          Metrics.popupMargin)
                                                                                                      * 2))
-        height: searchBar.height + style.resultGap + Math.max(resultsPanel.height, toolPanel.height)
+        height: searchBar.height + style.resultGap + Math.max((resultsPanel ? resultsPanel.height : 0), toolPanel.height)
         anchors.horizontalCenter: parent.horizontalCenter
         y: baseY + style.initialYOffset * (1 - root.windowProgress)
         opacity: root.windowProgress
@@ -1171,78 +1183,84 @@ PanelWindow {
             onWheel: event => root.syncControlHeld()
         }
 
-        SpotlightResultsPanel {
-            id: resultsPanel
+        Loader {
+            id: resultsLoader
 
-            onPreviewKey: event => root.handleKey(event, false)
-            previewActive: root.windowPhase === "open" || root.windowPhase === "opening"
-            selectedClipboardId: root.selectedResultId
-            targetWidth: root.clipboardDetailsMode ? Math.min(style.clipboardDetailsWidth,
-                                                              spotlightRoot.width) : root.wallpaperMode
-                                                     ? Math.min(style.wallpaperPanelWidth,
-                                                                spotlightRoot.width) : (root.appGridMode
-                                                                                        ? Math.min(
-                                                                                              style.appGridPanelWidth,
-                                                                                              spotlightRoot.width) :
-                                                                                          searchBar.requestedMainWidth)
-            width: targetWidth
-            // Opening already animates the whole surface. Apply restored
-            // window geometry immediately before animating mode changes.
-            animationsEnabled: root.windowPhase === "open"
-
+            active: root.resultsRetained
+            asynchronous: false
             anchors.top: searchBar.bottom
             anchors.topMargin: style.resultGap
             anchors.horizontalCenter: parent.horizontalCenter
-            style: style
-            mode: root.mode
-            enabled: !session.slashDraft
-            appsLayout: session.appsLayout
-            clipboardLayout: session.clipboardLayout
-            expanded: !root.toolMode && root.mode !== "web" && (root.mode !== "search"
-                                                                || root.contentQuery.trim() !== "")
 
-            searchError: searchProvider.error
-            results: root.activeResults
-            query: root.contentQuery
-            wallpaperModel: wallpaperProvider.resultModel
-            clipboardModel: clipboardProvider.resultModel
-            selectedIndex: session.slashDraft ? -1 : root.selectedResultIndex
-            controlHeld: root.controlHeld
-            fileState: fileProvider.searchState
-            fileError: fileProvider.error
-            onRevealRequested: index => fileProvider.execute(index, true)
-            loading: root.mode === "files" ? fileProvider.searchState === "loading" : root.clipboardMode
-                                             && clipboardProvider.loading
-            providerAvailable: root.mode === "files" ? fileProvider.searchState !== "unavailable" :
-                                                       !root.clipboardMode || clipboardProvider.available
-            canRestore: !root.clipboardMode || clipboardProvider.canRestore
-            providerError: root.mode === "files" ? fileProvider.error : root.clipboardMode
-                                                   ? clipboardProvider.error : null
-            clipboardActionState: root.clipboardActionState
-            clipboardActionEntryId: root.clipboardActionEntryId
-            clipboardActionError: root.clipboardActionError
-            clipboardActionRunning: clipboardProvider.actionRunning || root.clipboardActionState
-                                    === "copying" || root.clipboardActionState === "copied"
-            wallpaperHasMore: wallpaperProvider.hasMore
-            availableHeight: Math.max(0, root.height - spotlightRoot.baseY - searchBar.height
-                                      - style.resultGap - style.windowBottomMargin)
+            sourceComponent: SpotlightResultsPanel {
 
-            onSearchActivationRequested: id => {
-                if (root.windowPhase !== "closing" && !root.queryUpdating)
-                    searchProvider.activate(id);
+                onPreviewKey: event => root.handleKey(event, false)
+                previewActive: root.windowPhase === "open" || root.windowPhase === "opening"
+                selectedClipboardId: root.selectedResultId
+                targetWidth: root.clipboardDetailsMode ? Math.min(style.clipboardDetailsWidth,
+                                                                  spotlightRoot.width) : root.wallpaperMode
+                                                         ? Math.min(style.wallpaperPanelWidth,
+                                                                    spotlightRoot.width) : (root.appGridMode
+                                                                                            ? Math.min(
+                                                                                                  style.appGridPanelWidth,
+                                                                                                  spotlightRoot.width) :
+                                                                                              searchBar.requestedMainWidth)
+                width: targetWidth
+                // Opening already animates the whole surface. Apply restored
+                // window geometry immediately before animating mode changes.
+                animationsEnabled: root.windowPhase === "open"
+
+                style: root.launcherStyle
+                mode: root.mode
+                enabled: !session.slashDraft
+                appsLayout: session.appsLayout
+                clipboardLayout: session.clipboardLayout
+                expanded: !root.toolMode && root.mode !== "web" && (root.mode !== "search"
+                                                                    || root.contentQuery.trim() !== "")
+
+                searchError: searchProvider.error
+                results: root.activeResults
+                query: root.contentQuery
+                wallpaperModel: wallpaperProvider.resultModel
+                clipboardModel: clipboardProvider.resultModel
+                selectedIndex: session.slashDraft ? -1 : root.selectedResultIndex
+                controlHeld: root.controlHeld
+                fileState: fileProvider.searchState
+                fileError: fileProvider.error
+                onRevealRequested: index => fileProvider.execute(index, true)
+                loading: root.mode === "files" ? fileProvider.searchState === "loading" : root.clipboardMode
+                                                 && clipboardProvider.loading
+                providerAvailable: root.mode === "files" ? fileProvider.searchState !== "unavailable" :
+                                                           !root.clipboardMode || clipboardProvider.available
+                canRestore: !root.clipboardMode || clipboardProvider.canRestore
+                providerError: root.mode === "files" ? fileProvider.error : root.clipboardMode
+                                                       ? clipboardProvider.error : null
+                clipboardActionState: root.clipboardActionState
+                clipboardActionEntryId: root.clipboardActionEntryId
+                clipboardActionError: root.clipboardActionError
+                clipboardActionRunning: clipboardProvider.actionRunning || root.clipboardActionState
+                                        === "copying" || root.clipboardActionState === "copied"
+                wallpaperHasMore: wallpaperProvider.hasMore
+                availableHeight: Math.max(0, root.height - spotlightRoot.baseY - searchBar.height
+                                          - style.resultGap - style.windowBottomMargin)
+
+                onSearchActivationRequested: id => {
+                    if (root.windowPhase !== "closing" && !root.queryUpdating)
+                        searchProvider.activate(id);
+                }
+                onSelectionRequested: index => {
+                    root.selectResult(index);
+                }
+                onActivationRequested: (index, keepOpen) => {
+                    root.activateResult(index, keepOpen);
+                }
+                onDeleteRequested: index => root.deleteClipboardEntry(index)
+                onClearRequested: clipboardProvider.clear()
+                onInspectionRequested: id => clipboardProvider.requestDetails(id)
+                onInspectionReleased: id => clipboardProvider.releaseDetails(id)
+                onModalClosed: root.focusSpotlight()
+                onWallpaperMoreRequested: minimumCount => wallpaperProvider.loadMore(minimumCount)
             }
-            onSelectionRequested: index => {
-                root.selectResult(index);
-            }
-            onActivationRequested: (index, keepOpen) => {
-                root.activateResult(index, keepOpen);
-            }
-            onDeleteRequested: index => root.deleteClipboardEntry(index)
-            onClearRequested: clipboardProvider.clear()
-            onInspectionRequested: id => clipboardProvider.requestDetails(id)
-            onInspectionReleased: id => clipboardProvider.releaseDetails(id)
-            onModalClosed: root.focusSpotlight()
-            onWallpaperMoreRequested: minimumCount => wallpaperProvider.loadMore(minimumCount)
         }
     }
 }

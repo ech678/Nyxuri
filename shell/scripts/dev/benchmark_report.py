@@ -13,7 +13,8 @@ from typing import Final
 from benchmark_html import render_html
 
 FIELDS: Final[tuple[str, ...]] = (
-    "startup_ms", "cpu_ms", "user_cpu_ms", "system_cpu_ms", "cpu_util_percent",
+    "startup_ms", "real_first_frame_ms", "real_first_frame_wall_ms",
+    "cpu_ms", "user_cpu_ms", "system_cpu_ms", "cpu_util_percent",
     "steady.rss_kb", "steady.pss_kb", "steady.private_kb", "steady.vm_peak_kb",
     "steady.vm_hwm_kb", "steady.vm_swap_kb", "steady.rss_anon_kb", "steady.rss_file_kb",
     "steady.rss_shmem_kb", "steady.cgroup_memory_current_kb", "steady.cgroup_memory_peak_kb",
@@ -53,7 +54,12 @@ def read_path(record: dict[str, object], path: str) -> float | None:
 def summarize(records: list[dict[str, object]]) -> dict[str, dict[str, float | int | None]]:
     output: dict[str, dict[str, float | int | None]] = {}
     for field in FIELDS:
-        values = [value for record in records if (value := read_path(record, field)) is not None]
+        values = [
+            value for record in records
+            if (field != "real_first_frame_wall_ms"
+                or record.get("real_first_frame_wall_status") == "available")
+            and (value := read_path(record, field)) is not None
+        ]
         output[field] = {
             "n": len(values),
             "p50": quantile(values, 0.50),
@@ -62,6 +68,12 @@ def summarize(records: list[dict[str, object]]) -> dict[str, dict[str, float | i
             "min": min(values) if values else None,
             "max": max(values) if values else None,
         }
+    # Post-exit markers provide no live wall latency, even if malformed input
+    # carries a numeric wall value. Count them separately from distributions.
+    output["real_first_frame_wall_observations"] = {
+        status: sum(record.get("real_first_frame_wall_status") == status for record in records)
+        for status in ("available", "unavailable", "observed_after_exit")
+    }
     return output
 
 
@@ -337,6 +349,8 @@ def build_report(raw: dict[str, object]) -> dict[str, object]:
             "internal_shell_ms": {
                 "ready": median_internal(cold, "ready_ms"),
                 "first_frame": median_internal(cold, "first_frame_ms"),
+                "real_first_frame": cold_summary["real_first_frame_ms"]["p50"],
+                "real_first_frame_wall": cold_summary["real_first_frame_wall_ms"]["p50"],
                 "ipc_ready": median_internal(cold, "ipc_ready_ms"),
             },
             "profiles": profile_scores,

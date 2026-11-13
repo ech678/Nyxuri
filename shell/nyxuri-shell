@@ -22,15 +22,47 @@ fi
 # The Quickshell QML disk cache lives in a nyxuri-shell-private cache
 # namespace: 0.3.2 serves stale compilation units after source edits, and
 # multiple quickshell instances share (and stomp) the default cache dir.
-# It is cleared on every launch — a cold compile with the unit warm-up
-# imports is verified clean, and freshness beats cold-start milliseconds.
+# It lives in a fingerprint subdirectory (normalized source-content hash + qs
+# identity) selected through QML_DISK_CACHE_PATH on the launch paths only: any
+# source edit changes the fingerprint, so stale units are never served, and
+# only superseded fingerprint directories are pruned.
 # Do NOT set QML_DISABLE_DISK_CACHE instead: without the cache write, every
 # Loader load re-hits the 0.3.2 qs-import defect and units die at cold
 # compile.
 export NYXURI_ORIGINAL_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 export XDG_CACHE_HOME="${NYXURI_ORIGINAL_CACHE_HOME}/nyxuri-shell"
-rm -rf "${XDG_CACHE_HOME}/quickshell/qmlcache"
 rm -f "${SHELL_DIR}/.qmlls.ini"
+
+# The tree part hashes a normalized GNU-tar stream of the contents of every
+# qml/js/qmldir/manifest.toml. Paths are NUL-delimited and sorted bytewise;
+# tar metadata is fixed so mtimes, ownership, and permissions do not affect the
+# result. This is intentionally content-sensitive: restoring the old bytes
+# restores the tree fingerprint even if the file's mtime is different. The
+# pipeline is protected by pipefail, so a read/find/tar failure never reuses a
+# cache fingerprint. The qs identity includes its executable bytes, resolved
+# path, and stat data. Hashing the executable avoids starting a second Qt
+# process just to print its version on every launch.
+qml_cache_fingerprint() {
+    local qs_bin qs_content qs_stat tree qs_id
+    qs_bin="$(command -v qs)" || return 1
+    qs_bin="$(readlink -f -- "${qs_bin}")" || return 1
+    qs_content="$(sha256sum -- "${qs_bin}")" || return 1
+    qs_stat="$(stat -L -c '%s:%i:%Y:%Z' -- "${qs_bin}")" || return 1
+    tree="$(cd -- "${SHELL_DIR}" && find . -type f \( -name '*.qml' -o -name '*.js' -o -name qmldir -o -name manifest.toml \) -print0 | LC_ALL=C sort -z | tar --null --no-recursion --files-from=- --sort=name --format=gnu --mtime=@0 --owner=0 --group=0 --numeric-owner --mode=0644 -cf - | sha256sum)" || return 1
+    qs_id="$(printf '%s\n%s\n%s\n%s' "${SHELL_DIR}" "${qs_bin}" "${qs_stat}" "${qs_content%% *}" | sha256sum)" || return 1
+    printf '%s|%s' "${qs_id%% *}" "${tree%% *}" | sha256sum | cut -c1-16
+}
+
+prepare_qml_cache() {
+    local root="${XDG_CACHE_HOME}/quickshell/qmlcache" fp
+    if fp="$(qml_cache_fingerprint)" && [ -n "${fp}" ]; then
+        mkdir -p -- "${root}/${fp}"
+        find "${root}" -mindepth 1 -maxdepth 1 ! -name "${fp}" -exec rm -rf -- {} + 2>/dev/null || true
+        export QML_DISK_CACHE_PATH="${root}/${fp}"
+    else
+        rm -rf -- "${root}"
+    fi
+}
 
 # The generated palette has to be written where the shell reads it. The two sides
 # defaulted to different places: scripts/lib/nyxuri-paths.sh resolves to
@@ -169,6 +201,7 @@ if [ -n "$ACTION" ]; then
             ;;
         lock)
             if ! qs -p "${SHELL_DIR}" ipc call lock open 2>/dev/null; then
+                prepare_qml_cache
                 qs -p "${SHELL_DIR}" --no-duplicate >/dev/null 2>&1 &
                 for _ in $(seq 1 30); do
                     sleep 0.1
@@ -236,4 +269,5 @@ if [ -n "$ACTION" ]; then
 fi
 
 # Default: start Nyxuri Shell via quickshell
+prepare_qml_cache
 exec qs -p "${SHELL_DIR}" --no-duplicate "$@"

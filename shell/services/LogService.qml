@@ -82,15 +82,17 @@ Singleton {
         if (!root._firstFlush)
             return;
         root._firstFlush = false;
-        rotatePrevious.running = true;
+        ensureDir.running = true;
     }
 
-    // Runs at construction, long before the first debounced flush.
+    // Lazy: the log directory is created by the same one-shot process that
+    // rotates the previous session, right before the first write. No process
+    // is spawned at construction. Two chained argv-array processes, no shell.
     Process {
         id: ensureDir
 
         command: ["mkdir", "-p", root.logDir]
-        running: true
+        onExited: rotatePrevious.running = true
     }
 
     Process {
@@ -112,7 +114,7 @@ Singleton {
             // The previous session's log must be rotated out BEFORE the
             // first write of this one, or the mv races the fresh file.
             if (root._firstFlush)
-                rotatePrevious.running = true;
+                ensureDir.running = true;
             else
                 root._write();
         }

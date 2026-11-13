@@ -6,10 +6,18 @@ import qs.ui
 
 StyledPopup {
     id: root
-    property QtObject resourceMonitor: ResourceUsageMonitor { active: root.active }
+    readonly property var memorySnapshot: SystemMonitorService.memory || ({})
+    readonly property var cpuSnapshot: SystemMonitorService.cpu || ({})
+    readonly property var rootDisk: SystemMonitorService.disks.length > 0 ? SystemMonitorService.disks[0] : ({})
 
-    function formatKB(kb) {
-        return (kb / (1024 * 1024)).toFixed(1) + " GB"
+    property QtObject resourceMonitor: ResourceUsageMonitor {
+        active: root.active
+        ownerId: "shell.bar.resources-popup"
+        modules: ["cpu", "memory", "disk"]
+    }
+
+    function formatBytes(bytes) {
+        return (Number(bytes || 0) / (1024 * 1024 * 1024)).toFixed(1) + " GB"
     }
 
     Row {
@@ -21,19 +29,24 @@ StyledPopup {
             ResourceCard {
                 label: "RAM"
                 iconText: "memory"
-                iconShape: MaterialShape.Shape.Clover4Leaf
-                value: ResourceUsage.memoryUsed / ResourceUsage.memoryTotal
-                sublabel: root.formatKB(ResourceUsage.memoryUsed) + " / " + root.formatKB(ResourceUsage.memoryTotal)
+                iconShape: MaterialShapeCanvas.Shape.Clover4Leaf
+                value: Number(root.memorySnapshot.usagePercent || 0) / 100
+                available: root.memorySnapshot.usagePercent !== undefined
+                sublabel: root.formatBytes(root.memorySnapshot.usedBytes) + " / " + root.formatBytes(root.memorySnapshot.totalBytes)
             }
 
             ResourceCard {
                 label: "CPU"
                 iconText: "planner_review"
-                iconShape: MaterialShape.Shape.Gem
-                value: ResourceUsage.cpuUsage
-                sublabel: `${Math.round(ResourceUsage.cpuTemp)}°C`
-                sublabelColor: ResourceUsage.cpuTemp > 80 ? Appearance.colors.colError
-                    : ResourceUsage.cpuTemp > 60 ? Appearance.m3colors.m3tertiary
+                iconShape: MaterialShapeCanvas.Shape.Gem
+                value: Number(root.cpuSnapshot.usagePercent || 0) / 100
+                available: root.cpuSnapshot.usagePercent !== undefined
+                sublabel: `${Math.round(Number(root.cpuSnapshot.packageTemperatureCelsius
+                                            ?? root.cpuSnapshot.temperatureCelsius ?? 0))}°C`
+                sublabelColor: Number(root.cpuSnapshot.packageTemperatureCelsius
+                                      ?? root.cpuSnapshot.temperatureCelsius ?? 0) > 80 ? Appearance.colors.colError
+                    : Number(root.cpuSnapshot.packageTemperatureCelsius
+                             ?? root.cpuSnapshot.temperatureCelsius ?? 0) > 60 ? Appearance.m3colors.m3tertiary
                     : Appearance.colors.colOnLayer1
             }
         }
@@ -44,17 +57,21 @@ StyledPopup {
             ResourceCard {
                 label: "Swap"
                 iconText: "swap_horiz"
-                iconShape: MaterialShape.Shape.Bun
-                value: ResourceUsage.swapUsedPercentage
-                sublabel: root.formatKB(ResourceUsage.swapUsed) + " / " + root.formatKB(ResourceUsage.swapTotal)
+                iconShape: MaterialShapeCanvas.Shape.Bun
+                value: SystemMonitorService.swapTotalBytes > 0
+                       ? SystemMonitorService.swapUsedBytes / SystemMonitorService.swapTotalBytes : 0
+                available: root.memorySnapshot.totalBytes !== undefined
+                sublabel: root.formatBytes(SystemMonitorService.swapUsedBytes) + " / "
+                          + root.formatBytes(SystemMonitorService.swapTotalBytes)
             }
 
             ResourceCard {
                 label: "Disk"
                 iconText: "hard_drive"
-                iconShape: MaterialShape.Shape.Circle
-                value: ResourceUsage.diskUsedPercentage
-                sublabel: root.formatKB(ResourceUsage.diskUsed) + " / " + root.formatKB(ResourceUsage.diskTotal)
+                iconShape: MaterialShapeCanvas.Shape.Circle
+                value: Number(root.rootDisk.usagePercent || 0) / 100
+                available: root.rootDisk.usagePercent !== undefined
+                sublabel: root.formatBytes(root.rootDisk.usedBytes) + " / " + root.formatBytes(root.rootDisk.totalBytes)
             }
         }
     }

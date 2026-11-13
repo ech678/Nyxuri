@@ -112,7 +112,7 @@ Rectangle {
                     easing.bezierCurve: Appearance.animation.expressiveDefaultEffects.bezierCurve
                 }
             }
-            readonly property bool ready: coverLoader.item !== null && coverLoader.item.ready
+            readonly property bool ready: coverLoader.item !== null && coverLoader.item.ready === true
 
             Loader {
                 id: coverLoader

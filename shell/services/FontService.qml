@@ -179,8 +179,17 @@ Singleton {
     }
 
     function containsFamily(family) {
+        // A programmatic font change can arrive before the queued settings
+        // model is ready. Preserve validation without delaying that action.
+        if (root._initialRefreshPending)
+            root.refresh();
         return root.availableFamilies.indexOf(String(family || "").trim()) !== -1;
     }
 
-    Component.onCompleted: root.refresh()
+    Component.onCompleted: ShellStartupService.scheduleBackground("font-options", () => {
+        // An early explicit refresh/selection may already have built the model.
+        // Family enumeration and the rendering roles above stay synchronous.
+        if (root._initialRefreshPending)
+            root.refresh();
+    })
 }

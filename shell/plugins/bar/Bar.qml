@@ -69,6 +69,19 @@ Scope {
                 id: barRoot
                 screen: barLoader.modelData
 
+                // PanelWindow is not itself a QQuickWindow signal surface in
+                // Quickshell 0.3.2. Observe its associated Qt window instead;
+                // this is the first frame actually submitted by this bar.
+                Connections {
+                    id: realFrameConnection
+                    target: barRoot.contentItem ? barRoot.contentItem.Window.window : null
+
+                    function onFrameSwapped(): void {
+                        realFrameConnection.enabled = false
+                        ShellStartupService.recordRealFirstFrame("bar")
+                    }
+                }
+
                 Timer {
                     id: showBarTimer
                     interval: (Config?.options.bar.autoHide.showWhenPressingSuper.delay ?? 100)

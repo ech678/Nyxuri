@@ -185,7 +185,7 @@ class TestShellPageSingletonImports(unittest.TestCase):
         source = self._page()
         self.assertIn("Paths.configHome", source)
         self.assertIn("Paths.fileUrl", source)
-        self.assertIn("ColorPickerService.probeFinished", source)
+        self.assertIn("Availability not checked", source)
         imports = [line.strip() for line in source.splitlines() if line.startswith("import ")]
         self.assertIn("import qs.services", imports)
 
@@ -245,8 +245,6 @@ class TestQmlSingletonImports(unittest.TestCase):
             for name in sorted(set(re.findall(r"\b([A-Z][A-Za-z0-9_]*)\.", code))):
                 if (relative.as_posix(), name) in {
                     ("plugins/bar/island/dashboard/DashboardPomodoroCard.qml", "TimerService"),
-                    ("plugins/settings/ShellControlService.qml", "ColorPickerService"),
-                    ("plugins/settings/ShellPage.qml", "ColorPickerService"),
                     ("shell.qml", "ShellControlService"),
                 }:
                     continue

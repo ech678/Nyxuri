@@ -9,6 +9,8 @@ Item {
     required property string iconName
     required property double percentage
     property bool vertical: false
+    property bool available: true
+    opacity: available ? 1 : 0.4
     property int warningThreshold: 100
     property bool shown: true
     readonly property color foregroundColor: M3Palette.pillInk("resources")
@@ -104,7 +106,7 @@ Item {
                 anchors.centerIn: parent
                 color: root.foregroundColor
                 font.pixelSize: Appearance.font.pixelSize.small
-                text: `${Math.round(root.percentage * 100).toString()}`
+                text: root.available ? `${Math.round(root.percentage * 100).toString()}` : "—"
             }
         }
 

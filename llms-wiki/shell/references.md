@@ -2,7 +2,11 @@
 
 > 本页说明本地参考树的来源、重现命令与检索方式；运行契约以源码与测试为准。
 
-本工程在演进过程中参考了以下上游参考树。参考树保持在本地 `shell/references/`（由根目录 `.gitignore` 排除，不污染 Git 主分支）：
+本工程在演进过程中参考了以下上游参考树。`shell/references/` 是可选本地检出位置（由根目录 `.gitignore` 排除），新环境中未必存在；缺少时须按固定上游提交获取，不凭本地搜索结果判断上游是否包含某个控件。
+
+Bar 资源控件的补齐版本为 `pctrade/end4-pC` 提交 `b881970bfc25ff92b0f72b751c810a178c5fc677`（GPL-3.0-or-later）：`BarWidgetSwitcherArea`、`ClippedOutlineCircularProgress`、`ClippedFilledCircularProgress`、`ResourceCard`、`StyledProgressBar` 均先复制完整原件，再适配导入路径。颜色和动画仍使用本项目 Token；常用采样与显示默认值采用该版 Config 的 resources 字段。
+
+其余参考：
 
 ## 1. 母体参考：Clavis (`clavis-15403b9`)
 - **上游来源**：[StatIndet/quickshell](https://github.com/StatIndet/quickshell)
@@ -19,7 +23,7 @@
 
 ## 2. 纯逻辑架构参考：iNiR
 - **设计启发**：按功能域组织模块、Niri IPC 集中式单一状态源服务（`app/services/NiriService.qml`）、去 C++ 化纯 QML 取向。
-- **现行状态**：Nyxuri 已完全实现自主设计与独立单测，无任何外部代码直接拷贝。
+- **现行状态**：部分纯逻辑工具与资源消费者采用 Fork & Trim，文件头保留来源；`plugins/bar/ResourceUsageMonitor.qml` 基于 `snowarch/iNiR` 的 `28365436c2a00d083d29503aacfc0b5b321d67c6`（GPL-3.0），适配现有 SystemMonitorService 租约，不另起采样后端。
 
 ## 3. 设置界面与安卓视觉范式参考：Caelestia Shell (`caelestia`)
 - **上游来源**：[caelestia-dots/shell](https://github.com/caelestia-dots/shell)

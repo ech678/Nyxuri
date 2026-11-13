@@ -11,8 +11,8 @@ import "PluginManifest.js" as Manifest
 // is the untouched baseline) and trimmed in place (Fork & Trim). The trim
 // map, auditable against the baseline diff:
 //
-//   KEPT verbatim — the process-guard trio (scanProcess / initProcess /
-//     watcherReaper with its orphaned-inotifywait reaping / localPluginWatcher
+//   KEPT verbatim — the process-guard trio (scanProcess /
+//     watcherReaper, which now also creates the user dir, with its orphaned-inotifywait reaping / localPluginWatcher
 //     inotify hot watch + restart timer), the segmented stream parser
 //     (parseScanOutput), ensureUserDir, localPluginIdForPath, the scan →
 //     reap → watch → rescan startup chain, the four signals and the
@@ -284,12 +284,6 @@ Singleton {
         }
     }
 
-    property Process initProcess: Process {
-        onExited: {
-            registry.reapOrphanedPluginWatchers();
-        }
-    }
-
     // Quickshell does not take its Process children with it when it stops, so
     // every shell restart leaves this watcher running, reparented to init
     // (63 of them on one long-lived machine). Before starting our own, stop
@@ -299,13 +293,12 @@ Singleton {
     property Process watcherReaper: Process {
         onExited: {
             localPluginWatcher.running = true;
-            registry.rescan();
         }
     }
 
     function reapOrphanedPluginWatchers() {
         watcherReaper.command = ["bash", "-c",
-                                 "for p in $(pgrep -f '[i]notifywait -m -r -q -e close_write,create,delete,move' || true); do "
+                                 "mkdir -p \"$1\" 2>/dev/null; for p in $(pgrep -f '[i]notifywait -m -r -q -e close_write,create,delete,move' || true); do "
                                  + "tr '\\0' '\\n' < \"/proc/$p/cmdline\" 2>/dev/null | grep -Fxq \"$1\" || continue; "
                                  + "parent=$(ps -o ppid= -p \"$p\" 2>/dev/null | tr -d ' '); "
                                  + "[[ $parent =~ ^[0-9]+$ ]] || continue; "
@@ -385,8 +378,10 @@ Singleton {
     }
 
     function ensureUserDir() {
-        initProcess.command = ["bash", "-c", "mkdir -p \"$0\"", registry.pluginsDir];
-        initProcess.running = true;
+        // One reaper script now also creates the user dir, and the first scan
+        // no longer waits behind it: the first-party scan is the critical path.
+        registry.reapOrphanedPluginWatchers();
+        registry.rescan();
     }
 
     function localPluginIdForPath(filePath) {
@@ -411,7 +406,6 @@ Singleton {
     Component.onDestruction: {
         scanTimeout.stop();
         scanProcess.running = false;
-        initProcess.running = false;
         watcherReaper.running = false;
         localPluginWatcherRestart.stop();
         localPluginReload.stop();

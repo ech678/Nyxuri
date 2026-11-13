@@ -269,7 +269,7 @@ class TestThirdPartyHeart(unittest.TestCase):
     """
 
     ORGANS = [
-        "scanProcess", "initProcess", "watcherReaper", "localPluginWatcher",
+        "scanProcess", "watcherReaper", "localPluginWatcher",
         "localPluginWatcherRestart", "parseScanOutput", "ensureUserDir",
         "reapOrphanedPluginWatchers", "localPluginIdForPath", "localPluginChanged",
         "pluginsChanged", "scanFinished", "pluginLoadFailed", "rescan",

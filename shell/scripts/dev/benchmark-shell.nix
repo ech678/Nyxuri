@@ -62,6 +62,8 @@ pkgs.stdenv.mkDerivation {
   buildInputs = [
     (if quickshellChannel == "old" then quickshellOld else quickshell)
     pkgs.weston
+    pkgs.sway
+    pkgs.wtype
     pkgs.dbus
     pkgs.qt6Packages.qt5compat
     pkgs.python3

@@ -745,7 +745,10 @@ Singleton {
     Process {
         id: versionProcess
         command: ["niri", "--version"]
-        running: root.isNiri
+        // Armed one event-loop turn after assembly so the probe does not compete
+        // with the first-frame path; consumers gate on compositorVersionReady.
+        property bool armed: false
+        running: root.isNiri && armed
         onRunningChanged: {
             if (running)
                 versionWatchdog.restart();
@@ -937,6 +940,9 @@ Singleton {
         ShellStartupService.registerQmlResource("NiriDriver", "process", monitorsPowerProcess);
         ShellStartupService.registerQmlResource("NiriDriver", "process", versionProcess);
         ShellStartupService.registerQmlResource("NiriDriver", "timer", versionWatchdog);
+        Qt.callLater(() => {
+            versionProcess.armed = true;
+        });
     }
     Component.onDestruction: {
         ShellStartupService.unregisterQmlResources("NiriDriver", [

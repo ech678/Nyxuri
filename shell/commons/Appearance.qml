@@ -260,6 +260,7 @@ Singleton {
     }
 
     rounding: QtObject {
+        property int unsharpen: 2
         property int extraSmall: 4
         property int unsharpenmore: 10
         property int small: 12

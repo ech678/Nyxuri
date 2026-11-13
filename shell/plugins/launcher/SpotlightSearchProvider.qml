@@ -159,6 +159,9 @@ Item {
     onCapacitiesChanged: rebuild()
     Connections {
         target: ActionGateway
+        function onWallpaperHostChanged() {
+            root.rebuild();
+        }
         function onExternalDragActiveChanged() {
             if (!ActionGateway.externalDragActive)
                 root.rebuild();
@@ -172,7 +175,7 @@ Item {
         }
     }
     Connections {
-        target: WallpaperService
+        target: ActionGateway.wallpaperHost
         function onWallpapersChanged() {
             root.rebuild();
         }

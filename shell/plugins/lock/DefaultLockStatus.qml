@@ -8,6 +8,16 @@ import qs.commons.i18n
 Item {
     id: root
 
+    property string weatherLeaseId: ""
+    Component.onCompleted: {
+        weatherLeaseId = WeatherService.allocateLeaseId("lock-status");
+        WeatherService.acquire(weatherLeaseId);
+    }
+    Component.onDestruction: {
+        if (weatherLeaseId !== "")
+            WeatherService.release(weatherLeaseId);
+    }
+
     readonly property var player: MediaService.active
     readonly property string title: player && player.trackTitle ? player.trackTitle : I18n.tr("No media")
     readonly property real batteryPercent: Math.max(0, Math.min(100, PowerService.percentage * 100))

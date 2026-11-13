@@ -49,9 +49,19 @@ Item {
 
         interval: 1000
         repeat: true
-        running: root.active
+        // The cookie clock already owns a second-hand ticker. Reuse its date
+        // below instead of waking a second timer for the parent label.
+        running: root.active && !cookieClock.active
         triggeredOnStart: true
         onTriggered: root.currentTime = new Date()
+    }
+
+    Connections {
+        target: cookieClock
+        function onCurrentTimeChanged() {
+            if (cookieClock.active)
+                root.currentTime = cookieClock.currentTime;
+        }
     }
 
     // Service-tier teardown (LIFE002): stop the ticker explicitly so a
@@ -59,6 +69,8 @@ Item {
     Component.onDestruction: clockTicker.stop()
 
     SidebarCookieClock {
+        id: cookieClock
+
         anchors.fill: parent
         visible: UiPreferences.sidebarClockStyle === "cookie"
         active: root.active && visible
