@@ -29,7 +29,7 @@ by name (like `~/.config/niri/monitor.kdl`) are preserved automatically.
 
 ## Hooks Architecture
 
-Nyxuri separates finishing automation into two isolated layers:
+There are two kinds of hooks, stored and run separately:
 
 ### 1. User Post-Deploy Hooks (`~/.config/nyxuri/hooks/`)
 Put personal finishing scripts in `~/.config/nyxuri/hooks/`. Any script ending in `.sh` runs in alphanumeric filename order after normal config deployments (`nyxuri install` or updates) with a 30-second timeout. A failed or timed-out script prints a diagnostic warning without interrupting the rest. `nyxuri test` skips user hooks, and uninstallation preserves them.

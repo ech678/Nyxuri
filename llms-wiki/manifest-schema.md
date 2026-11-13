@@ -1,6 +1,6 @@
-# Manifest Schema — `manifest.toml`
+# Manifest schema — `manifest.toml`
 
-> 一个插件一个 manifest。**无文件 = 全默认；有文件必须新形态**（S0-2 协议定稿）：
+> 一个插件一个 manifest。**没有文件时使用默认值；有文件时必须符合当前形态**（S0-2 协议定稿）：
 > `schemaVersion` 起步、词表封闭——退役键或未声明键出现即解析报错，不设兼容期、
 > 不做只读采纳、无迁移 shim。引擎（`nyxuri/deploy/manifest.py`）与壳 PluginRegistry
 > 读同一份文件、执行同一套检查（契约见 [plugin-model](plugin-model.md)）。

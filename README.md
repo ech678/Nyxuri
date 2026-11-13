@@ -30,7 +30,7 @@
 
 </div>
 
-> **Things to note**: The `main` branch is under heavy, fast-moving development right now. If you want something stable — please stick to the latest Release~ (Also, our own Shell is nowhere near finished yet; both its look and structure will change a lot, so it's not recommended for daily use yet)
+> **Development status:** `main` changes frequently. For a stable setup, use the latest release. Nyxuri Shell is still experimental; its interface and structure may change, so it is not recommended for daily use.
 
 ### The Little Secret Behind the Name
 
@@ -43,18 +43,18 @@ Pronounced `/nɪkˈsuːri/`, the name is a mashup of a few things I really like:
 
 ## What is Nyxuri
 
-Simply put, **Nyxuri is a plugin-based desktop config system for Arch-based distros**.
-Our philosophy is to be as transparent as possible and give users full control and choice. And since I love tinkering, I packed in a bunch of fun features while keeping things as clean and simple as I could:
+**Nyxuri is a plugin-based desktop config system for Arch-based distros**.
+You choose which components to enable. I like tinkering, so it also includes a few things I wanted on my own desktop:
 
-- **Multi-WM Support**: Right now we support Niri and MangoWM (and maybe Hyprland later!?). We built a small bridge for keybind actions between different WMs and Shells, making it super easy to switch between them!
+- **Multi-WM Support**: Right now we support Niri and MangoWM (and maybe Hyprland later!?). A shared keybind-action bridge lets you keep the same shortcuts when switching WMs or Shells.
 - **Multi-Shell Support**: Currently we actively maintain configs for Noctalia V5 alongside our own custom Shell.
-- **Nyxuri Shell**: Our own Shell (built on Quickshell), currently in development. It uses a plugin-based design, so it definitely won't get bloated like other Quickshell setups.
+- **Nyxuri Shell**: Our own Shell (built on Quickshell), currently in development. Its components are organized as plugins.
 - **Global Monet Color Generation**: Generates Monet (Material You) color schemes from both static and live video wallpapers across almost your whole system (Shell, GTK themes, kitty, fcitx5... and lots more). Plus, Nyxuri Shell can directly use Noctalia V5's third-party app color templates!
-- **Rich Plugins (Dotfiles)**: NyxMellow (fcitx5 input method theme), Fastfetch dashboard, Kitty, Starship, Noctalia Greeter login screen, Zed editor, wallpaper packs... When disabled, nothing runs in the background — zero overhead.
-- **Good User Experience**
-  - **Never overwrites your custom changes**: Any file with `__custom__` in its name (like `__custom__.kdl`, `__custom__.conf`) or your display config `monitor.kdl` is automatically kept safe across updates and preset switches!
-  - **Easy preset switching**: Switch between presets (like Kitty transparency levels) in one command, or write your own presets to play around with.
-  - **Clean with no leftover junk**: The management tool is written purely with Python's standard library — no need to install a pile of pip dependencies. Turning off a plugin cleans up its configs neatly, plus you get 30 rolling backup snapshots and a `nyxuri doctor` checkup tool.
+- **Rich Plugins (Dotfiles)**: NyxMellow (fcitx5 input method theme), Fastfetch dashboard, Kitty, Starship, Noctalia Greeter login screen, Zed editor, wallpaper packs... Disabled plugins do not run their plugin-owned background tasks.
+- **Updates and customization**
+  - **Keeps personal files:** files named with `__custom__` (for example, `__custom__.kdl`) and Niri's `monitor.kdl` are preserved across updates and form switches.
+  - **Switch forms:** change a preset such as Kitty transparency with one command, or create a private form.
+  - **Dependencies and recovery**: The management tool is written purely with Python's standard library — no need to install a pile of pip dependencies. Turning off a plugin cleans up its configs neatly, plus you get 30 rolling backup snapshots and a `nyxuri doctor` checkup tool.
 
 <details>
 <summary>Also made some extra little tools for Noctalia~</summary>

@@ -1,6 +1,6 @@
-# Nyxuri Shell 五层纯净架构与边界矩阵
+# Nyxuri Shell 五层架构与依赖边界
 
-本文件是 Nyxuri Shell 的架构契约与分层依赖真值表。在 R4-C-05/06 全面去 C++ 收口后，原生 `native/` 层与 CMake 构建链已彻底注销与物理移除；KM4.5 拆迁正名后曾确立三层模型（`app/`、`units/`、`shared/`），S0-1 五件套迁移（Omarchy 骨架对位）定形为 `app/`（纯装配）、`commons/`、`ui/`、`services/`、`plugins/` 五层纯净模型——插件代码与 `manifest.toml` 同目录（目录即插件，内核 registry 以目录名派生 `shell.<domain>` id），规范其职责、文件所有者、允许的导入规则（Import Whitelist）、输入输出契约与副作用边界。
+本页规定 Nyxuri Shell 各层的职责、文件归属、导入规则和副作用边界。R4-C-05/06 移除了 `native/` 和 CMake 构建链；KM4.5 曾采用 `app/`、`units/`、`shared/` 三层结构，S0-1 按 Omarchy 骨架迁为 `app/`（纯装配）、`commons/`、`ui/`、`services/`、`plugins/` 五层。插件代码与 `manifest.toml` 放在同一目录，内核 registry 以目录名派生 `shell.<domain>` id。
 
 ---
 
@@ -73,7 +73,7 @@
 3. **参数数组执行（Argv Execution）**：
    - 所有外部进程派发必须通过 `ActionGateway.execute(args, owner)`，使用严格的参数数组（`["cmd", "arg1", ...]`），禁止拼接 Shell 字符串，禁止未经 Gateway 直接调用 `execDetached`。
    - `execute` 的布尔返回值语义是「已受理派发」，不代表命令完成；需要向用户呈现结果的调用点自行反馈（notify-send 等）。
-4. **共享层无菌（Shared Layer Hygiene）**：
+4. **共享层不持有副作用（Shared Layer Hygiene）**：
    - `commons/` 与 `ui/` 仅接收外部传入的数据、几何尺寸与颜色 Tokens；任何共享控件不得自行发起文件读写或读取宿主环境变量。
 5. **UI 层无直接 I/O（LIFE008，R10）**：
    - `plugins/` 视图与 `app/` 顶层装配禁止持有 `FileView`/`Process`；文件 I/O 与子进程归 `*Service/*Config/*Backend/*State/*Catalog` 域文件或显式 allowlist（lock 会话标记、PreLockCapture、MediaPalette）。

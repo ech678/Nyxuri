@@ -2,12 +2,12 @@
 
 ## 当前架构与调试入口
 
-Nyxuri Shell 现已完成全面去 C++ 化与架构收敛（R4-C），整体为 **纯 QML / JavaScript / 外部轻量脚本** 架构，零 CMake / 零 C++ 编译依赖，启动与开发极小、极快、可解释。
+Nyxuri Shell 在 R4-C 阶段移除了自有 C++ 代码和 CMake 构建链，目前使用 **QML、JavaScript 和外部脚本**。
 统一运行入口位于 `shell/nyxuri-shell`（与 `shell.qml` 并列位于根目录）。
 
-日常调试支持三层递进方式，兼顾极速验证与真实会话测试：
+按改动选择下面的检查方式：
 
-### 1. 自动化秒级校验（无图形会话，零副作用）
+### 1. 静态检查与测试（无图形会话）
 
 ```bash
 # 语法与编译检查
@@ -104,11 +104,11 @@ runner 使用 Sway headless/pixman；默认 Bar 需要 layer-shell，Weston head
 1. 查看工作区与 `git status`，确认基线绿再动工。
 2. 选择一个功能域，遵守 `shell.qml`、`commons/`、`ui/`、`services/`、`plugins/` 五层结构；插件的 `manifest.toml` 与代码同目录（参见 [架构边界矩阵](architecture-matrix.md)）。
 3. 修改 QML/JS，按影响选择定向测试；真实启动和预览仅在第 2 节的隔离容器中进行。
-4. 维护全树清晰度，更新 ROADMAP 与对应 Wiki。
+4. 更新 ROADMAP 与受影响的 Wiki 页面。
 
 ## 国际化与字典更新
 
-Nyxuri Shell 采用纯净 TOML 字典组织多语言文案，免去臃肿 XML 困扰：
+Nyxuri Shell 使用 TOML 字典保存多语言文案：
 
 ```bash
 # 扫描源码并生成语言包（TS 输出仅作审阅，运行时只读 TOML 词典）
@@ -129,7 +129,7 @@ python3 shell/scripts/dev/compile-i18n.py \
 
 ## 生命周期与副作用治理规范
 
-为保障 Shell 在长时间运行和高频开关下的秩序感与整洁度，所有 QML/JS 资源必须遵守生命周期与副作用治理契约：
+持有后台任务的 QML/JS 组件须遵守以下创建、运行和释放规则：
 
 | 代号 | 检查项 | 治理契约与修复要求 |
 |---|---|---|

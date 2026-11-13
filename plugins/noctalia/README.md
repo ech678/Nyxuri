@@ -438,7 +438,7 @@ M3 配色后，Qt 应用自动跟随，不需要 Kvantum（Kvantum 仅给走 Kva
   会重新部署并自动重渲染。`nyxuri gtk uninstall` 从已部署的 toml 删除注册
   并删 gtk.css，但下次 install 会完全恢复
 - **对比**：fcitx/greeter 在安装时动态写入 toml，卸载是持久的
-- **状态**：可接受。核心特性定位下不影响功能
+- **状态**：可接受。不影响核心功能
 
 ### Problem 9: `gtk-3.0.css` 含 GTK4 专有属性 `transform`
 

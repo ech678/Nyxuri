@@ -1,5 +1,5 @@
 Nyxuri is a Material You desktop suite and management engine for Arch Linux / CachyOS.
-The root README serves as a minimal storefront and bootstrap entrypoint. This Wiki houses the full configuration layout, form mechanics, complete keybindings, CLI tooling matrix, and troubleshooting guides.
+Start with the root README to install Nyxuri. This Wiki covers configuration, forms, keybindings, CLI commands, and troubleshooting.
 
 ### Install from the AUR (Arch / CachyOS, recommended)
 
@@ -18,5 +18,5 @@ nyxuri install full       # or assemble the desktop per plugin: nyxuri on <plugi
 | Plugins, Configs & Customization | Directory tree, personal-change preservation, hooks architecture | [Read guide](Configuration) |
 | Forms & Slot Axes | Official Kitty/Niri forms, slot axes, private forms | [Read guide](Forms) |
 | Complete Keybindings | Window & column navigation, shell action gateway, nyxhelp | [Read guide](Keybindings) |
-| CLI Reference Manual | Plugins, install, update, snapshot rollback, doctor, uninstall matrix | [Read guide](CLI-Reference) |
+| CLI Reference Manual | Plugins, install, update, snapshot rollback, doctor, uninstall commands | [Read guide](CLI-Reference) |
 | Troubleshooting Guide | DDC bus conflict, hybrid GPU video artifacts, CSS cleanups | [Read guide](Troubleshooting) |

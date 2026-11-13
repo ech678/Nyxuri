@@ -11,9 +11,9 @@ TempEnv 把 HOME 指向 tmpdir、建目录骨架、override `XDG_*` 环境变量
 manifest 的 `_MANIFEST_CACHE`、deps 的 pacman/fc-list/GI/AUR 助手缓存、greeter 状态缓存）
 防止跨测试泄漏。反例：早期测试把实仓库 `plugins/niri/config.kdl` 写成桩文件——已修。
 
-## 验证哲学：纯本地秒级收归，零云端 CI 依赖
+## 本地测试，不依赖云端 CI
 
-commit `b470af0` 彻底移除了 GitHub Actions 工作流。Nyxuri 的所有契约测试与静态检查**纯粹收归本地**：
+commit `b470af0` 移除了 GitHub Actions 工作流。契约测试与静态检查在本地执行：
 - **零网络秒级测试**：纯 Python 标准库 + 离线 unittest，400+ 项测试在普通笔记本上 10 秒内跑完。
 - **免非 Arch 杂音**：避免了在非 Arch 环境（如 Ubuntu Actions Runner）上因依赖缺失和包管理器模拟产生的虚假报错与调试熵增。
 - **改动必测门禁**：所有提交必须通过本地 `compileall` + `unittest` + 沙箱隔离部署。
@@ -52,7 +52,7 @@ argv[0]（shebang 直启下是解释器名，不是脚本名），验证恒假�
 | 包管理抽象与 Shelly 适配 | 后端分流、超时控制、取消不重试、Shelly 解析 | `tests/pkg/test_pkg.py`, `tests/pkg/test_deps.py` |
 | 网络弹性 | HTTP 超时、多镜像回退、网络中断软降级 | `tests/pkg/test_network.py` |
 
-## 验证分级（按需测试，拒绝无谓浪费）
+## 按改动选择测试
 
 **严禁一刀切乱跑全量测试，禁止无谓耗时**：
 - **纯文档 / 文本 / 规划改动**：免跑引擎测试；涉及相对链接或索引时仅需 `python3 -m unittest tests/test_ai_specs.py`（0.06s）。

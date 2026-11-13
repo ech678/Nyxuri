@@ -8,7 +8,7 @@
 
 ---
 
-## 核心导航与真值体系
+## 文档导航
 
 - **开发契约与红线**：[AGENTS.md](AGENTS.md)
 - **阶段台账与当前阶段**：[ROADMAP.md](ROADMAP.md)
@@ -40,7 +40,7 @@
 
 ## Acknowledgements
 
-Nyxuri Shell takes inspiration from and integrates ideas or components from projects including:
+Nyxuri Shell uses ideas or components from these projects:
 
 - [end-4/dots-hyprland](https://github.com/end-4/dots-hyprland)
 - [Zen Browser](https://github.com/zen-browser/desktop) — palette algorithms and editor; see the third-party appendix in [LICENSE](LICENSE).

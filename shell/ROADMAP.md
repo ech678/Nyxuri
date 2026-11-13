@@ -7,7 +7,7 @@
 > [shell-roadmap-ledger](../llms-wiki/archive/shell-roadmap-ledger.md)。
 > 当前整体处于**实验性阶段**（BUG 多、外观未开发、暂不推荐日常使用）；
 > 已知 BUG 与暂缓的基础设施缺口见 [known-issues](../llms-wiki/shell/known-issues.md)。
-> 跨域骨架与架构重塑演进（S0/S1 插件生命周期，以及 P0~P4 架构散文化与优雅化专项）归根
+> 跨域骨架与架构重塑演进（S0/S1 插件生命周期，以及 P0~P4 架构整理专项）归根
 > [ROADMAP](../ROADMAP.md) 管。本页承载 P4/T3 收尾验收与 B 卷（Bar & Island 统一）计划。
 
 ## 目标与边界
@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | P4 | 主题契约、模板兼容与取色引擎分阶 | 待验收（契约测试全绿；实机行为与视觉证据待作者） |
 | T3 | 设置界面替换：Caelestia 安卓风味 | M3/M4 待验收（机器证据齐；视觉过目待作者） |
-| B | Bar & Island 统一（双源整抄：iNiR 原生 Material Bar + end4 灵动岛） | B0~B6 全阶段完成已绿交付（双源融合、3-Lane自由布局、IPC通信与通知仲裁闭环、沙箱部署零diff） |
+| B | Bar & Island 统一（双源整抄：iNiR 原生 Material Bar + end4 灵动岛） | B0~B6 已完成（双源融合、3-Lane自由布局、IPC通信与通知仲裁闭环、沙箱部署零diff） |
 | P6 | 整体验收与未来移植 | 排队（前置主线 KM5） |
 
 ## 已交付基线台账

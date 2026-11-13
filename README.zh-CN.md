@@ -30,7 +30,7 @@
 
 </div>
 
-> **要注意的事**：当前 `main` 主分支激进开发中。想要稳定的话——建议使用最新Release哦~ (同时我们的Shell也完全没有完工,外观和架构都有待大改,暂不推荐日用)
+> **开发状态：** `main` 更新较频繁，想要稳定使用请选最新 Release。Nyxuri Shell 仍处于实验阶段，界面和结构可能变化，暂不建议日用。
 
 ### 名字的小秘密
 
@@ -43,18 +43,18 @@
 
 ## Nyxuri 是什么
 
-简单来说，**Nyxuri 是一个Arch系发行版上的插件化桌面配置系统**。
-哲学是变得最透明、给用户最大的知情权和选择权。然后因为作者喜欢折腾，所以在尽量保持简洁的同时，整了很多有意思的功能:
+**Nyxuri 是 Arch 系发行版上的插件化桌面配置系统**。
+想用哪些组件，由你自己选。作者喜欢折腾，也把一些自己想用的功能放了进来：
 
-- **多 WM 支持** 现在我们支持Niri和MangoWM哦(也许还会有Hyprland!?)。给不同的WM和Shell间的快捷键动作做了一层转接，让无缝切换WM和Shell很方便!
+- **多 WM 支持** 现在我们支持Niri和MangoWM哦(也许还会有Hyprland!?)。给不同 WM 和 Shell 的快捷键动作做了一层转接，切换时可以沿用同一套按键。
 - **多桌面 Shell 支持** 目前持续更新的有 Noctalia V5 和我们自己的Shell配置啦
-- **Nyxuri Shell** 我们自己的Shell(基于Quickshell),处于开发中,采用插件化设计,一定不会像其他Quickshell一样臃肿啦
+- **Nyxuri Shell** 我们自己的Shell(基于Quickshell),处于开发中,各个组件按插件组织
 - **全局的 Monet 取色** 从静态和动态壁纸生成覆盖几乎全局(Shell、GTK主题、kitty、fcitx5...好多好多)的Monet(Material You)风格配色.并且Nyxuri Shell也支持直接用 Noctalia v5 的第三方应用配色模板!
-- **丰富的插件(Dotfiles)** NyxMellow(fcitx5输入法皮肤)、Fastfetch 看板、Kitty、Starship、Noctalia Greeter 登录界面、Zed 编辑器与壁纸包... 未启用时不常驻，零开销。
-- **良好的用户体验**
-  - **不会弄丢你的自定义**：只要文件名里带 `__custom__`（比如 `__custom__.kdl`、`__custom__.conf`）或者显示器配置 `monitor.kdl`，更新和切预设时都会自动保留，不会覆盖你改过的东西!
-  - **预设随便切**：支持像 Kitty 透明度这样的预设一键切换，也能自己写预设玩。
-  - **干净不留垃圾**：管理工具只用 Python 自带的标准库，不需要装一堆 pip 依赖；关掉插件就会把配置清理干净，还带 30 次自动备份快照和 `nyxuri doctor` 检查工具。
+- **丰富的插件(Dotfiles)** NyxMellow(fcitx5输入法皮肤)、Fastfetch 看板、Kitty、Starship、Noctalia Greeter 登录界面、Zed 编辑器与壁纸包... 未启用的插件不会运行其自有后台任务。
+- **更新与自定义**
+  - **保留个人文件**：文件名带 `__custom__`（如 `__custom__.kdl`）以及 Niri 的 `monitor.kdl`，更新和切换形态时都会保留。
+  - **切换形态**：可以用一条命令切换 Kitty 透明度等形态，也可以创建自己的形态。
+  - **依赖与恢复**：管理工具只用 Python 自带的标准库，不需要装一堆 pip 依赖；关掉插件就会把配置清理干净，还带 30 次自动备份快照和 `nyxuri doctor` 检查工具。
 
 <details>
 <summary>也做了一些对于Noctalia的补充工具~</summary>
