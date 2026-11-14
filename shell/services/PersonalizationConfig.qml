@@ -522,8 +522,18 @@ Singleton {
     property var barLayoutLeft: root.defaultBarLayoutLeft.slice()
     property var barLayoutMiddle: root.defaultBarLayoutMiddle.slice()
     property var barLayoutRight: root.defaultBarLayoutRight.slice()
-    property bool islandCapsLockOsd: true
-    property bool islandNumLockOsd: true
+
+    // iNiR keyboardIndicators semantics: the persistent panel (SystemIcons)
+    // and the transient popup (island OSD) are independent axes.
+    property bool keyboardShowPopup: true
+    property bool keyboardShowPanel: true
+    property bool keyboardPopupLayout: true
+    property bool keyboardPopupCaps: true
+    property bool keyboardPopupNum: false
+    property bool keyboardPanelLayout: true
+    property bool keyboardPanelCaps: true
+    property bool keyboardPanelNum: false
+
     property bool islandHideDate: false
     property bool barShowValues: true
     property bool barShowNames: false
@@ -1632,12 +1642,70 @@ Singleton {
         return root.moveQuickSettingsComponent(id, root.quickSettingsComponents.length);
     }
 
-    function setIslandCapsLockOsd(value) {
-        setValue("islandCapsLockOsd", !!value);
+    function setKeyboardIndicators(patch) {
+        const allowed = {
+            "showPopup": "keyboardShowPopup",
+            "showPanel": "keyboardShowPanel",
+            "popup.layout": "keyboardPopupLayout",
+            "popup.caps": "keyboardPopupCaps",
+            "popup.num": "keyboardPopupNum",
+            "panel.layout": "keyboardPanelLayout",
+            "panel.caps": "keyboardPanelCaps",
+            "panel.num": "keyboardPanelNum"
+        };
+        for (const key in patch) {
+            if (Object.prototype.hasOwnProperty.call(allowed, key))
+                root[allowed[key]] = !!patch[key];
+        }
+        root.save();
     }
 
-    function setIslandNumLockOsd(value) {
-        setValue("islandNumLockOsd", !!value);
+    function setKeyboardShowPopup(value) {
+        root.setKeyboardIndicators({
+            "showPopup": value
+        });
+    }
+
+    function setKeyboardShowPanel(value) {
+        root.setKeyboardIndicators({
+            "showPanel": value
+        });
+    }
+
+    function setKeyboardPopupLayout(value) {
+        root.setKeyboardIndicators({
+            "popup.layout": value
+        });
+    }
+
+    function setKeyboardPopupCaps(value) {
+        root.setKeyboardIndicators({
+            "popup.caps": value
+        });
+    }
+
+    function setKeyboardPopupNum(value) {
+        root.setKeyboardIndicators({
+            "popup.num": value
+        });
+    }
+
+    function setKeyboardPanelLayout(value) {
+        root.setKeyboardIndicators({
+            "panel.layout": value
+        });
+    }
+
+    function setKeyboardPanelCaps(value) {
+        root.setKeyboardIndicators({
+            "panel.caps": value
+        });
+    }
+
+    function setKeyboardPanelNum(value) {
+        root.setKeyboardIndicators({
+            "panel.num": value
+        });
     }
 
     function setBarShowNames(value) {
@@ -1809,12 +1877,24 @@ Singleton {
                 "shellBlurEnabled": root.shellBlurEnabled,
                 "shellBlurXray": root.shellBlurXray
             },
+            "keyboardIndicators": {
+                "showPopup": root.keyboardShowPopup,
+                "showPanel": root.keyboardShowPanel,
+                "popup": {
+                    "layout": root.keyboardPopupLayout,
+                    "caps": root.keyboardPopupCaps,
+                    "num": root.keyboardPopupNum
+                },
+                "panel": {
+                    "layout": root.keyboardPanelLayout,
+                    "caps": root.keyboardPanelCaps,
+                    "num": root.keyboardPanelNum
+                }
+            },
             "island": {
                 "enabled": root.islandEnabled,
                 "satellite": root.islandSatellite,
                 "layoutMigrated": root.islandLayoutMigrated,
-                "capsLockOsd": root.islandCapsLockOsd,
-                "numLockOsd": root.islandNumLockOsd,
                 "hideDate": root.islandHideDate,
                 "horizontalClock": {
                     "fontSize": root.horizontalClockFontSize,
@@ -1866,6 +1946,9 @@ Singleton {
         const theme = configSection(source.theme);
         const effects = configSection(source.effects);
         const island = configSection(source.island);
+        const keyboard = configSection(source.keyboardIndicators);
+        const keyboardPopup = configSection(keyboard.popup);
+        const keyboardPanel = configSection(keyboard.panel);
         const bar = configSection(source.bar);
         const sidebar = configSection(source.sidebar);
         const desktopCards = configSection(source.desktopCards);
@@ -1942,9 +2025,17 @@ Singleton {
         root.islandEnabled = typeof island.enabled === "boolean" ? island.enabled : true;
         root.islandSatellite = normalizedOption(root.islandSatelliteOptions, island.satellite, "clock");
         root.islandLayoutMigrated = island.layoutMigrated === true;
-        root.islandCapsLockOsd = typeof island.capsLockOsd === "boolean" ? island.capsLockOsd : true;
-        root.islandNumLockOsd = typeof island.numLockOsd === "boolean" ? island.numLockOsd : true;
         root.islandHideDate = typeof island.hideDate === "boolean" ? island.hideDate : false;
+        // iNiR keyboardIndicators block; the old island.capsLockOsd/numLockOsd
+        // pair migrates to popup.caps/num so an existing choice is not lost.
+        root.keyboardShowPopup = typeof keyboard.showPopup === "boolean" ? keyboard.showPopup : true;
+        root.keyboardShowPanel = typeof keyboard.showPanel === "boolean" ? keyboard.showPanel : true;
+        root.keyboardPopupLayout = typeof keyboardPopup.layout === "boolean" ? keyboardPopup.layout : true;
+        root.keyboardPopupCaps = typeof keyboardPopup.caps === "boolean" ? keyboardPopup.caps : (typeof island.capsLockOsd === "boolean" ? island.capsLockOsd : true);
+        root.keyboardPopupNum = typeof keyboardPopup.num === "boolean" ? keyboardPopup.num : (typeof island.numLockOsd === "boolean" ? island.numLockOsd : false);
+        root.keyboardPanelLayout = typeof keyboardPanel.layout === "boolean" ? keyboardPanel.layout : true;
+        root.keyboardPanelCaps = typeof keyboardPanel.caps === "boolean" ? keyboardPanel.caps : true;
+        root.keyboardPanelNum = typeof keyboardPanel.num === "boolean" ? keyboardPanel.num : false;
         root.horizontalClockFontSize = root.normalizedBoundedInt(horizontalClock.fontSize, 22, 16, 28);
         root.horizontalClockAxes = root.normalizedHorizontalClockAxes(horizontalClock.axes);
         root.horizontalClockDigits = root.normalizedHorizontalClockDigits(horizontalClock.digits);

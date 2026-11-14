@@ -100,6 +100,16 @@ class BarEnd4ContractTest(unittest.TestCase):
             self.assertIn("PersonalizationConfig.barIsMaterial", content, name)
             self.assertNotIn("cornerStyle === 3", content, f"{name} re-derives material")
 
+    def test_system_icons_are_the_inir_fork(self):
+        content = read_bar_file("SystemIcons.qml")
+        self.assertIn("KeyboardIndicators", content)
+        self.assertIn("HyprlandXkbIndicator.qml", content)
+        self.assertIn("Appearance.sizes.barIconSize", content)
+        self.assertIn("Appearance.sizes.barUtilIconSize", read_bar_file("UtilButton.qml"))
+        self.assertIn("Appearance.sizes.barPowerButtonSize", read_bar_file("PowerButton.qml"))
+        # The util hover expansion is end4 behaviour and stays.
+        self.assertIn("hovered ? 54 : 26", read_bar_file("UtilButton.qml"))
+
     def test_active_window_is_an_end4_fork(self):
         content = read_bar_file("ActiveWindow.qml")
         self.assertIn("Fork & Trim: end4-pC", content)

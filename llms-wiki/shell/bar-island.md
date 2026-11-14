@@ -33,8 +33,10 @@
   `ActionGateway.islandHost`。
 - 窗口层：3 档用 `layerGap`，4/5 档 exclusive zone 额外 +4；4 档挂左右圆角装饰，
   按 lane 是否为空显示。
-- 岛 OSD 是岛内生产：监听 `VolumeService`/`BrightnessService`/`KeyboardLockService`，
-  写入 `GlobalStates.osdKind`，仅主屏岛发布；`DiOsd` 只读该状态。
+- 岛 OSD 是岛内生产：监听 `VolumeService`/`BrightnessService`/`KeyboardIndicators`
+  （iNiR 整抄的 panel/popup 服务），写入 `GlobalStates.osdKind`，仅主屏岛发布；
+  `DiOsd` 只读该状态。键盘布局由 `KeyboardLayoutService` 从
+  `niri msg -j keyboard-layouts` + 事件流投影。
 - 岛 idle 卫星由 `islandSatellite`（clock/weather/none）控制，默认时钟；
   不是 end4 `leftWidget` 的硬编码。
 

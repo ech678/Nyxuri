@@ -19,7 +19,7 @@ RippleButton {
     property bool vertical: Config.options.bar.vertical
     property real buttonPadding: 5
 
-    implicitWidth: isMaterial ? 32 : 22
+    implicitWidth: isMaterial ? Appearance.sizes.barPowerButtonSize : 22
     implicitHeight: implicitWidth
 
     buttonRadius: Appearance.rounding.full

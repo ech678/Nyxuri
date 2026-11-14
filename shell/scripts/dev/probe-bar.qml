@@ -106,9 +106,9 @@ ShellRoot {
             "geometry": geometry,
             "island": island,
             "keyboard": {
-                "available": KeyboardLockService.available,
-                "caps": KeyboardLockService.capsLock,
-                "num": KeyboardLockService.numLock
+                "available": KeyboardIndicators.available,
+                "caps": KeyboardIndicators.capsLock,
+                "num": KeyboardIndicators.numLock
             },
             "islandState": host ? String(host.invoke("state")) : "UNAVAILABLE",
             "loaders": loaders,
@@ -140,9 +140,11 @@ ShellRoot {
         }
 
         function keyboardFlip(): string {
-            KeyboardLockService.capsLock = !KeyboardLockService.capsLock;
-            KeyboardLockService.lockStateChanged();
-            return String(KeyboardLockService.capsLock);
+            KeyboardIndicators.popupKind = "caps";
+            KeyboardIndicators.popupActive = true;
+            KeyboardIndicators.popupText = "Caps Lock on";
+            KeyboardIndicators.popupSequence += 1;
+            return "OK";
         }
 
         function islandEnabled(value: bool): string {

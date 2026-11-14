@@ -40,6 +40,9 @@ Singleton {
     readonly property var outputs: NiriDriver.outputs
     readonly property var windows: NiriDriver.windows
     readonly property var focusedWindow: NiriDriver.focusedWindow
+    readonly property var keyboardLayoutNames: NiriDriver.keyboardLayoutNames
+    readonly property int currentKeyboardLayoutIndex: NiriDriver.currentKeyboardLayoutIndex
+    readonly property string currentKeyboardLayoutName: NiriDriver.currentKeyboardLayoutName
     readonly property bool inOverview: NiriDriver.inOverview
     readonly property bool configLoadFailed: NiriDriver.configLoadFailed
     readonly property string configError: NiriDriver.configError

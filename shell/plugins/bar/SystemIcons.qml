@@ -1,12 +1,15 @@
-// Fork & Trim: end4-pC modules/ii/bar/SystemIcons.qml
+// Fork & Trim: iNiR modules/ii/barM3/SystemIcons.qml
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-// Trimmed for Nyxuri: the upstream singletons (Audio, Network,
-// BluetoothStatus, Notifications, KeyboardIndicators, PeripheralBattery) do
-// not exist here. Each icon now reads its owning Nyxuri service directly —
-// no forwarding aliases, no eval fallbacks. The peripheral-battery block is
-// dropped (no UPower peripheral source in this tree) and the island-specific
-// colour branch is gone because the island is a middle-lane widget now.
+// Trimmed for Nyxuri:
+//   - Audio/Network/BluetoothStatus/Notifications become the owning Nyxuri
+//     services (VolumeService/NetworkService/BluetoothService/NotificationService);
+//   - KeyboardIndicators is the ported iNiR service in this tree;
+//   - the 22px Nyxuri `larger` token is replaced by the end4/iNiR 19px bar
+//     baseline (`Appearance.sizes.barIconSize`) so the cluster matches the
+//     util buttons and resource rings;
+//   - contentColor/contentColorOverridden stay for BarGroup's per-widget style
+//     override.
 
 import QtQuick
 import QtQuick.Layouts
@@ -17,12 +20,13 @@ import qs.ui
 
 Item {
     id: root
+
     property color contentColor: Appearance.colors.colOnLayer1
     property bool contentColorOverridden: false
     property bool vertical: Config.options.bar.vertical
     property bool isMaterial: PersonalizationConfig.barIsMaterial
 
-    readonly property color iconColor: root.contentColorOverridden ? root.contentColor : (root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1)
+    readonly property color iconColor: root.contentColorOverridden ? root.contentColor : (root.isMaterial ? M3Palette.pillInk("systemIcons") : Appearance.colors.colOnLayer1)
 
     function wifiIcon(): string {
         if (!NetworkService.available)
@@ -41,63 +45,95 @@ Item {
         return "signal_wifi_1_bar";
     }
 
-    implicitWidth: root.vertical ? 32 : flow.implicitWidth + (root.isMaterial ? 12 : 4)
+    implicitWidth: root.vertical ? 32 : flow.implicitWidth + 4
     implicitHeight: root.vertical ? flow.implicitHeight + 4 : 32
 
     MouseArea {
         anchors.fill: parent
-        onPressed: ActionGateway.requestSidebarToggle("quicksettings")
+        acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+        onPressed: mouse => {
+            if (mouse.button === Qt.MiddleButton) {
+                if (VolumeService.sink?.audio)
+                    VolumeService.sink.audio.muted = !VolumeService.sink.audio.muted;
+            } else {
+                ActionGateway.requestSidebarToggle("quicksettings");
+            }
+        }
+
+        property real wheelAccum: 0
+        onWheel: event => {
+            wheelAccum += event.angleDelta.y;
+            while (wheelAccum >= 120) {
+                wheelAccum -= 120;
+                VolumeService.setSinkVolume(VolumeService.sinkVolume + 0.05);
+            }
+            while (wheelAccum <= -120) {
+                wheelAccum += 120;
+                VolumeService.setSinkVolume(VolumeService.sinkVolume - 0.05);
+            }
+            event.accepted = true;
+        }
     }
 
     Flow {
         id: flow
+
         anchors.centerIn: parent
         flow: root.vertical ? Flow.TopToBottom : Flow.LeftToRight
-        spacing: isMaterial ? 2 : root.vertical ? 6 : 10
+        spacing: root.isMaterial ? 2 : 10
 
         Revealer {
             reveal: true
+
             MaterialSymbol {
                 text: VolumeService.sinkMuted ? "volume_off" : "volume_up"
-                iconSize: Appearance.font.pixelSize.larger
+                iconSize: Appearance.sizes.barIconSize
                 color: root.iconColor
             }
         }
+
         Revealer {
             reveal: VolumeService.sourceMuted
+
             MaterialSymbol {
                 text: "mic_off"
-                iconSize: Appearance.font.pixelSize.larger
+                iconSize: Appearance.sizes.barIconSize
                 color: root.iconColor
             }
         }
-        MaterialSymbol {
-            visible: KeyboardLockService.available && (KeyboardLockService.capsLock ?? false)
-            text: "keyboard_capslock"
-            iconSize: Appearance.font.pixelSize.larger
-            fill: 1
-            color: root.iconColor
+
+        Loader {
+            id: xkbLoader
+
+            // Inside a Flow the nested indicator's Layout.preferredWidth does
+            // nothing, so the loader owns the released width.
+            active: KeyboardIndicators.hasPanelIndicators
+            visible: active
+            width: active ? item?.implicitWidth ?? 0 : 0
+            height: active ? item?.implicitHeight ?? 0 : 0
+            source: "HyprlandXkbIndicator.qml"
+            onLoaded: {
+                if (item)
+                    item.color = Qt.binding(() => root.iconColor);
+            }
         }
-        MaterialSymbol {
-            visible: KeyboardLockService.available && (KeyboardLockService.numLock ?? false)
-            text: "numbers"
-            iconSize: Appearance.font.pixelSize.larger
-            fill: 1
-            color: root.iconColor
-        }
+
         MaterialSymbol {
             text: root.wifiIcon()
-            iconSize: Appearance.font.pixelSize.larger
+            iconSize: Appearance.sizes.barIconSize
             color: root.iconColor
         }
+
         MaterialSymbol {
             visible: BluetoothService.available
             text: BluetoothService.connected ? "bluetooth_connected" : BluetoothService.enabled ? "bluetooth" : "bluetooth_disabled"
-            iconSize: Appearance.font.pixelSize.larger
+            iconSize: Appearance.sizes.barIconSize
             color: root.iconColor
         }
+
         Loader {
             id: notifLoader
+
             active: NotificationService.silent || NotificationService.unread > 0
             visible: active
             width: active ? item?.implicitWidth ?? 0 : 0
@@ -107,15 +143,6 @@ Item {
                 if (item)
                     item.embeddedInSystemIcons = true;
             }
-        }
-    }
-
-    // Wheel over the icon cluster steps the sink volume. The bar's own edge
-    // scroll only covers the bare bar around the lanes.
-    WheelHandler {
-        onWheel: event => {
-            const step = event.angleDelta.y > 0 ? 0.05 : -0.05;
-            VolumeService.setSinkVolume(VolumeService.sinkVolume + step);
         }
     }
 }

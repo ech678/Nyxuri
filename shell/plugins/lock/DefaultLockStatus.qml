@@ -17,10 +17,7 @@ Item {
         if (NetworkService.ethernetConnected)
             return "settings_ethernet";
         const strength = Number(NetworkService.signalStrength || 0);
-        return strength >= 80 ? "signal_wifi_4_bar" : strength >= 60 ? "network_wifi_3_bar" : strength >= 40
-                                                                       ? "network_wifi_2_bar" : strength
-                                                                         >= 20 ? "network_wifi_1_bar" :
-                                                                                 "signal_wifi_0_bar";
+        return strength >= 80 ? "signal_wifi_4_bar" : strength >= 60 ? "network_wifi_3_bar" : strength >= 40 ? "network_wifi_2_bar" : strength >= 20 ? "network_wifi_1_bar" : "signal_wifi_0_bar";
     }
 
     implicitWidth: statusRow.width
@@ -113,15 +110,12 @@ Item {
             spacing: 4
             StatusIcon {
                 symbol: WeatherService.hasValidData ? WeatherService.currentIconName || "cloud" : "cloud_off"
-                description: WeatherService.hasValidData ? WeatherService.currentWeatherText : I18n.tr(
-                                                               "Weather unavailable")
+                description: WeatherService.hasValidData ? WeatherService.currentWeatherText : I18n.tr("Weather unavailable")
             }
             Text {
                 height: 40
                 verticalAlignment: Text.AlignVCenter
-                text: WeatherService.hasValidData ? Math.round(UiPreferences.weatherTemperature(
-                                                                   WeatherService.currentTemperatureC))
-                                                    + UiPreferences.weatherTemperatureSymbol() : "—"
+                text: WeatherService.hasValidData ? Math.round(UiPreferences.weatherTemperature(WeatherService.currentTemperatureC)) + UiPreferences.weatherTemperatureSymbol() : "—"
                 font.family: Fonts.numeric
                 font.pixelSize: 16
                 color: "#F5F7FA"
@@ -131,40 +125,26 @@ Item {
         StatusIcon {
             symbol: root.networkIcon
             active: NetworkService.connected
-            description: !NetworkService.available ? I18n.tr("Network unavailable") :
-                                                     NetworkService.connected
-                                                     ? NetworkService.activeConnection || I18n.tr(
-                                                           "Connected") : I18n.tr("Disconnected")
+            description: !NetworkService.available ? I18n.tr("Network unavailable") : NetworkService.connected ? NetworkService.activeConnection || I18n.tr("Connected") : I18n.tr("Disconnected")
         }
         StatusIcon {
-            visible: KeyboardLockService.available
+            visible: KeyboardIndicators.available
             symbol: "keyboard_capslock"
-            active: KeyboardLockService.available && KeyboardLockService.capsLock
+            active: KeyboardIndicators.available && KeyboardIndicators.capsLock
             description: active ? I18n.tr("Caps Lock on") : I18n.tr("Caps Lock off")
         }
         StatusIcon {
-            visible: KeyboardLockService.available
+            visible: KeyboardIndicators.available
             symbol: "pin"
-            active: KeyboardLockService.available && KeyboardLockService.numLock
+            active: KeyboardIndicators.available && KeyboardIndicators.numLock
             description: active ? I18n.tr("Num Lock on") : I18n.tr("Num Lock off")
         }
         Row {
             visible: PowerService.present
             spacing: 4
             StatusIcon {
-                symbol: PowerService.charging ? "battery_android_bolt" : !isFinite(root.batteryPercent)
-                                                ? "battery_android_question" : root.batteryPercent >= 95
-                                                  ? "battery_android_full" : "battery_android_" + Math.max(0,
-                                                                                                           Math.min(6,
-                                                                                                                    Math.floor(
-                                                                                                                        root.batteryPercent
-                                                                                                                        / 15)))
-                description: PowerService.full ? I18n.tr("Fully charged") : PowerService.charging ? I18n.tr(
-                                                                                                        "Charging") :
-                                                                                                    PowerService.powerConnected
-                                                                                                    ? I18n.tr(
-                                                                                                          "Plugged in") :
-                                                                                                      I18n.tr("On battery")
+                symbol: PowerService.charging ? "battery_android_bolt" : !isFinite(root.batteryPercent) ? "battery_android_question" : root.batteryPercent >= 95 ? "battery_android_full" : "battery_android_" + Math.max(0, Math.min(6, Math.floor(root.batteryPercent / 15)))
+                description: PowerService.full ? I18n.tr("Fully charged") : PowerService.charging ? I18n.tr("Charging") : PowerService.powerConnected ? I18n.tr("Plugged in") : I18n.tr("On battery")
             }
             Text {
                 height: 40

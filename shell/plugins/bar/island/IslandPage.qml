@@ -12,7 +12,7 @@ import qs.commons.i18n
 // Loader and renders its own subpage title + back arrow. B8.4 retired the
 // zero-consumer style/overlay/position/mouse/media/keyhole controls; what is
 // left is the component gate, the optional idle satellite, the keyboard OSD
-// toggles (now wired to KeyboardLockService) and the horizontal clock editor.
+// toggles (now wired to KeyboardIndicators) and the horizontal clock editor.
 Item {
     id: root
 
@@ -113,34 +113,82 @@ Item {
                     onSelected: value => PersonalizationConfig.setIslandSatellite(String(value))
                 }
 
-                // Keyboard indicators
+                // Keyboard indicators (iNiR panel/popup split)
                 PreferenceHeader {
-                    visible: KeyboardLockService.available
+                    visible: KeyboardIndicators.ready
                     text: I18n.tr("Keyboard indicators")
                 }
 
                 PreferenceToggle {
-                    id: capsLockToggle
+                    id: panelMasterToggle
 
-                    visible: KeyboardLockService.available
+                    visible: KeyboardIndicators.ready
                     first: true
-                    text: I18n.tr("Caps Lock changes")
-                    checked: PersonalizationConfig.islandCapsLockOsd
-                    onToggled: PersonalizationConfig.setIslandCapsLockOsd(checked)
+                    text: I18n.tr("Show panel indicators")
+                    checked: PersonalizationConfig.keyboardShowPanel
+                    onToggled: PersonalizationConfig.setKeyboardShowPanel(checked)
 
                     SettingsSearchAnchor {
                         id: searchAnchor1
-                        target: capsLockToggle
+                        target: panelMasterToggle
                         anchorId: "bar.island.section.keyboard-indicators"
                     }
                 }
 
                 PreferenceToggle {
-                    visible: KeyboardLockService.available
+                    visible: KeyboardIndicators.ready
+                    enabled: PersonalizationConfig.keyboardShowPanel
+                    text: I18n.tr("Show layout")
+                    checked: PersonalizationConfig.keyboardPanelLayout
+                    onToggled: PersonalizationConfig.setKeyboardPanelLayout(checked)
+                }
+
+                PreferenceToggle {
+                    visible: KeyboardIndicators.ready
+                    enabled: PersonalizationConfig.keyboardShowPanel
+                    text: I18n.tr("Show Caps Lock")
+                    checked: PersonalizationConfig.keyboardPanelCaps
+                    onToggled: PersonalizationConfig.setKeyboardPanelCaps(checked)
+                }
+
+                PreferenceToggle {
+                    visible: KeyboardIndicators.ready
+                    enabled: PersonalizationConfig.keyboardShowPanel
+                    text: I18n.tr("Show Num Lock")
+                    checked: PersonalizationConfig.keyboardPanelNum
+                    onToggled: PersonalizationConfig.setKeyboardPanelNum(checked)
+                }
+
+                PreferenceToggle {
+                    visible: KeyboardIndicators.ready
+                    text: I18n.tr("Show popup notifications")
+                    checked: PersonalizationConfig.keyboardShowPopup
+                    onToggled: PersonalizationConfig.setKeyboardShowPopup(checked)
+                }
+
+                PreferenceToggle {
+                    visible: KeyboardIndicators.ready
+                    enabled: PersonalizationConfig.keyboardShowPopup
+                    text: I18n.tr("Layout changes")
+                    checked: PersonalizationConfig.keyboardPopupLayout
+                    onToggled: PersonalizationConfig.setKeyboardPopupLayout(checked)
+                }
+
+                PreferenceToggle {
+                    visible: KeyboardIndicators.ready
+                    enabled: PersonalizationConfig.keyboardShowPopup
+                    text: I18n.tr("Caps Lock changes")
+                    checked: PersonalizationConfig.keyboardPopupCaps
+                    onToggled: PersonalizationConfig.setKeyboardPopupCaps(checked)
+                }
+
+                PreferenceToggle {
+                    visible: KeyboardIndicators.ready
+                    enabled: PersonalizationConfig.keyboardShowPopup
                     last: true
                     text: I18n.tr("Num Lock changes")
-                    checked: PersonalizationConfig.islandNumLockOsd
-                    onToggled: PersonalizationConfig.setIslandNumLockOsd(checked)
+                    checked: PersonalizationConfig.keyboardPopupNum
+                    onToggled: PersonalizationConfig.setKeyboardPopupNum(checked)
                 }
 
                 // Horizontal clock

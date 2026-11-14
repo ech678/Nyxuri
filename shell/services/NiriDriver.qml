@@ -45,6 +45,12 @@ Singleton {
     property var activeWindow: null
     readonly property alias focusedWindow: root.activeWindow
 
+    // Keyboard layouts (niri IPC projection; the sole dialect stays here)
+    property var keyboardLayoutNames: []
+    property int currentKeyboardLayoutIndex: 0
+    readonly property string currentKeyboardLayoutName: (root.keyboardLayoutNames[root.currentKeyboardLayoutIndex] ?? "")
+    signal keyboardLayoutsChanged
+
     // Overview & capabilities (upstream niri: no minimize, no animation hooks)
     property bool inOverview: false
     readonly property bool supportsMinimize: false
@@ -78,6 +84,7 @@ Singleton {
                 root._reconnectAttempt = 0;
                 root._sendRaw(eventStreamSocket, '"EventStream"');
                 root.fetchOutputs();
+                root.fetchKeyboardLayouts();
             } else if (root.isNiri) {
                 root._scheduleReconnect();
             }
@@ -214,6 +221,41 @@ Singleton {
         if (!root.isNiri)
             return;
         fetchOutputsDebounce.restart();
+    }
+
+    function fetchKeyboardLayouts() {
+        if (!root.isNiri || fetchKeyboardLayoutsProcess.running)
+            return;
+        fetchKeyboardLayoutsProcess.running = true;
+    }
+
+    Process {
+        id: fetchKeyboardLayoutsProcess
+
+        command: ["niri", "msg", "-j", "keyboard-layouts"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const data = JSON.parse(this.text);
+                    root.applyKeyboardLayouts(data);
+                } catch (e) {
+                    // The event stream still carries later changes.
+                }
+            }
+        }
+    }
+
+    function applyKeyboardLayouts(data) {
+        if (!data || typeof data !== "object")
+            return;
+        const names = Array.isArray(data.names) ? data.names.slice() : [];
+        const index = Number(data.current_idx);
+        const nextIndex = isFinite(index) && index >= 0 && index < names.length ? index : 0;
+        if (names.length === root.keyboardLayoutNames.length && names.every((name, i) => name === root.keyboardLayoutNames[i]) && nextIndex === root.currentKeyboardLayoutIndex)
+            return;
+        root.keyboardLayoutNames = names;
+        root.currentKeyboardLayoutIndex = nextIndex;
+        root.keyboardLayoutsChanged();
     }
 
     function refreshOutputs() {
@@ -450,6 +492,18 @@ Singleton {
         case 'OutputsChanged':
             handleOutputsChanged(event.OutputsChanged);
             break;
+        case 'KeyboardLayoutsChanged':
+            root.applyKeyboardLayouts(event.KeyboardLayoutsChanged?.keyboard_layouts ?? event.KeyboardLayoutsChanged);
+            break;
+        case 'KeyboardLayoutSwitched':
+            {
+                const idx = Number(event.KeyboardLayoutSwitched?.idx);
+                if (isFinite(idx) && idx !== root.currentKeyboardLayoutIndex) {
+                    root.currentKeyboardLayoutIndex = idx;
+                    root.keyboardLayoutsChanged();
+                }
+                break;
+            }
         case 'OverviewOpenedOrClosed':
             handleOverviewChanged(event.OverviewOpenedOrClosed);
             break;

@@ -6,7 +6,7 @@ Verifies:
   - DiOsd connects to dynamic island OSD bindings and VolumeService
   - DynamicIsland.qml contentProviders registers all 6 faces and alwaysWinIds
   - DynamicIsland.qml connects to RecordingService, AudioRecordingService,
-    VolumeService, BrightnessService, KeyboardLockService
+    VolumeService, BrightnessService, KeyboardIndicators
   - No bare import qs statements in the end4 bundle
 """
 
@@ -90,7 +90,7 @@ class IslandEnd4FacesContractTest(unittest.TestCase):
         self.assertIn("function osdValueText()", content)
         self.assertIn("VolumeService", content)
         self.assertIn("BrightnessService", content)
-        self.assertIn("KeyboardLockService", content)
+        self.assertIn("KeyboardIndicators", content)
         # Recording is parked; no dead service bridge may lurk.
         self.assertNotIn("RecordingService", content)
         self.assertNotIn("stopRecording", content)

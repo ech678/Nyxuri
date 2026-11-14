@@ -132,7 +132,7 @@ S0-4 资产收编明细见台账 T3 实施记录。
 | --- | --- | --- |
 | 三段布局 / 拖拽 / 高度滑杆 | ✅ 可用 | 中段改显式 `x:(parent.width-width)/2`，压缩钳制整段删除；`probe-bar.sh` 在 1/3/4/5 四档实测中段 `centerX` 与光学中心误差 ≤1px |
 | 分组胶囊 / Divisor / 分隔 | ✅ 已按 end4 重对齐 | `groupColor` 接通、`paintBackground`、`segmented`、material 黑名单含 `island`；隐藏样式分支的 Loader 为 `active:false`，不再双开部件 |
-| 岛（Notif/Battery/OSD/Media/Session） | ✅ 可用 | 岛自画胶囊；OSD 由岛监听 `VolumeService`/`BrightnessService`/`KeyboardLockService` 产生，`--ipc island state` 返回 `idle` |
+| 岛（Notif/Battery/OSD/Media/Session） | ✅ 可用 | 岛自画胶囊；OSD 由岛监听 `VolumeService`/`BrightnessService`/`KeyboardIndicators` 产生，`--ipc island state` 返回 `idle` |
 | 岛显示开关 / 卫星 | ✅ 已接线 | `islandEnabled` 经 `filterLayout` 真正隐藏岛；`islandSatellite`（none/clock/weather）驱动 idle 卫星，不再是反掉的 `leftWidget` 硬编码 |
 | 岛 Timer / Recording | ⛔ 已下架 | B-4 |
 | workspaces | ✅ end4 视觉真体 | iNiR 876 行原件剪裁：dots/数字/`numberMap`/占用态/应用图标，默认 `indicatorStyle="dot"` |
@@ -182,7 +182,7 @@ S0-4 资产收编明细见台账 T3 实施记录。
 - **BarGroup / BarContent 重做整抄**：`cp` end4 原件后剪裁；删除 hostScale/`centerHostX` 压缩链（NaN 温床）、DI 左右卫星、重复 pill 圆角；`groupColor`/`paintBackground`/`segmented`/4-5 档随原件落地。
 - **右键调色接线**：`BarGroupStylePopup` 恢复消费者，`barWidgetStyles` 落 `PersonalizationConfig`（TOML 读写 + 归一化）；补 `ColorSelectionArray`/`ContentSubsectionLabel`/`DialogButton` 原子（end4 整抄，弹层不再 `ConfigSlider not a type`）。
 - **部件池解冻**：整抄 `BarWidgetSwitcher`/`BarWidgetSwitcherArea`/`ClippedProgressBar`/`Clipped*CircularProgress`/`StyledProgressBar`/`ResourceCard`/`ResourceUsage`/`ResourceUsageMonitor`，`clock`/`systemMonitor`/`battery` 回选装集。
-- **DateTime / launcher / systemIcons**：`DateTime` 剪裁为 `UiPreferences` + `Qt.locale`；launcherButton 经 `ActionGateway.launcherHost` 开启动器；systemIcons 直连 `VolumeService`/`NetworkService`/`BluetoothService`/`NotificationService`/`KeyboardLockService`，不建转发单例。
+- **DateTime / launcher / systemIcons**：`DateTime` 剪裁为 `UiPreferences` + `Qt.locale`；launcherButton 经 `ActionGateway.launcherHost` 开启动器；systemIcons 直连 `VolumeService`/`NetworkService`/`BluetoothService`/`NotificationService`/`KeyboardIndicators`，不建转发单例。
 - **workspaces 真体**：iNiR 876 行原件剪裁为 Niri-only，end4 dots+数字+应用图标+占用态保留；新增 `CompositorDriver.workspaceList` 数组投影。
 - **假部件清理**：`information` 从选装集/默认布局/迁移中删除（它从来不是部件 id，映射到不存在的 `Information.qml`）。
 - **视觉对齐补丁**：工作区默认值改回 end4（`showAppIcons=false` / `alwaysShowNumbers=true`），默认显示数字、当前工作区粉色胶囊；设置页新增 Workspaces 段（显示应用图标 / 始终显示数字 / 指示器样式），值持久化到 `[bar]`。媒体专辑封面补 `OpacityMask` 圆角遮罩（`MediaCrossSlideImage` 只做矩形裁剪，之前封面是方的）。
@@ -190,11 +190,12 @@ S0-4 资产收编明细见台账 T3 实施记录。
 
 ### 4c. 2026-11-14 B8.4–B8.6 收口（机器证据齐）
 
-- **岛 OSD 生产者**：`GlobalStates.osdKind` 单通道（volume/brightness/caps/num）；
-  `DynamicIsland` 监听 `VolumeService` / `BrightnessService` / `KeyboardLockService`，
+- **岛 OSD 生产者**：`GlobalStates.osdKind` 单通道（volume/brightness/keyboard）；
+  `DynamicIsland` 监听 `VolumeService` / `BrightnessService` / `KeyboardIndicators`，
   1.4s 自动收起，仅主屏岛发布；`DiOsd` 改用 `di.osdKind` 与真实 `osdValueText()`。
-  `KeyboardLockService` 改读 `/sys/class/leds/*::capslock|numlock/brightness`（key-cli
-  已于 2026-11-07 退役，原 backend 让 caps/num 永远不可用）。
+  `KeyboardIndicators` 为 iNiR 服务 Fork & Trim（sysfs LED 聚合 + panel/popup 分离），
+  `KeyboardLayoutService` 从 `niri msg -j keyboard-layouts` + 事件流投影布局；
+  key-cli 已于 2026-11-07 退役，原 backend 让 caps/num 永远不可用。
   `BrightnessService` 补 `/sys/class/backlight/<dev>/brightness` FileView watch，
   外部 `brightnessctl` 改亮度也能触发（通知走 Noctalia 时由该侧负责）。
 - **岛开关与卫星**：`filterLayout()` 在 `islandEnabled=false` 时移除 `island`，不再是只让
@@ -223,6 +224,22 @@ S0-4 资产收编明细见台账 T3 实施记录。
   1/3/4/5，断言所有 active `Loader.Ready`、无 pending/failed、几何有限且中段居中、
   岛可见且宽高非零，并扫描日志中的 TypeError/ReferenceError/compiled empty；
   `tests/shell/test_bar_runtime.py` 消费该 JSON，无 Wayland 时显式跳过。
+
+### 4d. 2026-11-14 B8.4 修订（键盘指示归还 iNiR）
+
+- **SystemIcons / XkbIndicator 整抄**：`cp` iNiR `barM3` 原件后剪裁；
+  `KeyboardIndicators` 以其 431 行服务为基线（sysfs 聚合、panel/popup 分离、
+  多键盘状态、popup sequence），裁掉 evdev 分支；`KeyboardLayoutService` 从
+  `niri msg -j keyboard-layouts` + 事件流投影布局码。
+- **配置**：`[keyboardIndicators]` 的 showPopup/showPanel + popup/panel ×
+  layout/caps/num 落地；旧 `island.capsLockOsd/numLockOsd` 加载时折算为 popup。
+  caps 默认开、num 默认关。
+- **OSD**：`KeyboardIndicators.popupSequence` 驱动岛 OSD（`osdKind="keyboard"`），
+  文本/图标来自服务；音量/亮度通道不变。
+- **尺寸与动效**：`barIconSize=19` / `barUtilIconSize=17` / `barPowerButtonSize=28`；
+  `UtilButton` 恢复 end4 hover 26→54 扩大动画。未读/锁状态的 Flow 宽度变化保留
+  （iNiR 上游行为）。
+- **验证**：302 tests、probe 四档 + OSD/keyboard/islandOff、`check.sh` 全绿。
 
 ### 5. 待拍板 / 停车场
 

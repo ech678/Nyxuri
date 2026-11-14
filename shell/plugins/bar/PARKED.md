@@ -41,7 +41,6 @@ Timer/Recording 的配置键与 i18n 词条一并清空；恢复时按 end4 原�
 
 | 文件 | 状况 |
 | --- | --- |
-| `HyprlandXkbIndicator.qml` | 依赖 iNiR `KeyboardIndicators`；当前键盘锁指示由 `SystemIcons` 直连 `KeyboardLockService` 承担 |
 | `NetworkSpeed.qml` / `NetworkSpeedPopup.qml` | 依赖 iNiR `Network` 单例名；接线前先映射 `NetworkService`，不建转发别名 |
 | `WeatherBar.qml` / `WeatherPopup.qml` / `WeatherCard.qml` | 依赖 iNiR `Weather`；`WeatherService` 已有，待 B8.5 复核后接线 |
 | `DocktoPanel.qml` / `LeftSidebarButton.qml` / `RightSidebarButton.qml` | 依赖树内没有的 `ShellLayoutController` / 侧栏宿主直连；接线前先走 `ActionGateway` |

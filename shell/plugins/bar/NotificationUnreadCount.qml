@@ -20,7 +20,7 @@ Item {
         anchors.centerIn: parent
         visible: root.embeddedInSystemIcons
         text: root.iconName
-        iconSize: Appearance.font.pixelSize.larger
+        iconSize: Appearance.sizes.barIconSize
         color: root.isMaterial ? M3Palette.pillInk("systemIcons") : Appearance.colors.colOnLayer1
     }
 

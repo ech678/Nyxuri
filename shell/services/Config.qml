@@ -145,6 +145,23 @@ Singleton {
                     readonly property string indicatorStyle: PersonalizationConfig.barWorkspaceIndicatorStyle
                     readonly property var numberMap: []
                 }
+
+                readonly property QtObject keyboardIndicators: QtObject {
+                    readonly property bool showPopup: PersonalizationConfig.keyboardShowPopup
+                    readonly property bool showPanel: PersonalizationConfig.keyboardShowPanel
+
+                    readonly property QtObject popup: QtObject {
+                        readonly property bool layout: PersonalizationConfig.keyboardPopupLayout
+                        readonly property bool caps: PersonalizationConfig.keyboardPopupCaps
+                        readonly property bool num: PersonalizationConfig.keyboardPopupNum
+                    }
+
+                    readonly property QtObject panel: QtObject {
+                        readonly property bool layout: PersonalizationConfig.keyboardPanelLayout
+                        readonly property bool caps: PersonalizationConfig.keyboardPanelCaps
+                        readonly property bool num: PersonalizationConfig.keyboardPanelNum
+                    }
+                }
             }
         }
     }

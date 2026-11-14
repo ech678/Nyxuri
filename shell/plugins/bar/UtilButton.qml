@@ -56,7 +56,7 @@ Item {
         MaterialSymbol {
             id: symbol
             anchors.centerIn: parent
-            iconSize: Appearance.font.pixelSize.large
+            iconSize: Appearance.sizes.barUtilIconSize
             color: root.hovered ? M3Palette.primaryForeground : root.isMaterial ? M3Palette.pillInk("utilButtons") : Appearance.colors.colPrimary
 
             Behavior on color {

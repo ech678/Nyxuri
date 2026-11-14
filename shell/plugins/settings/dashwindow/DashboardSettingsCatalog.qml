@@ -227,13 +227,37 @@ QtObject {
                 },
                 {
                     "type": "toggle",
-                    "key": "island:Caps lock OSD",
+                    "key": "keyboard:Show panel",
+                    "title": I18n.tr("Show panel indicators"),
+                    "icon": "keyboard"
+                },
+                {
+                    "type": "toggle",
+                    "key": "keyboard:Show Caps Lock",
+                    "title": I18n.tr("Show Caps Lock"),
+                    "icon": "keyboard_capslock"
+                },
+                {
+                    "type": "toggle",
+                    "key": "keyboard:Show Num Lock",
+                    "title": I18n.tr("Show Num Lock"),
+                    "icon": "dialpad"
+                },
+                {
+                    "type": "toggle",
+                    "key": "keyboard:Show popup",
+                    "title": I18n.tr("Show popup notifications"),
+                    "icon": "notifications"
+                },
+                {
+                    "type": "toggle",
+                    "key": "keyboard:Caps lock OSD",
                     "title": I18n.tr("Caps lock OSD"),
                     "icon": "keyboard_capslock"
                 },
                 {
                     "type": "toggle",
-                    "key": "island:Num lock OSD",
+                    "key": "keyboard:Num lock OSD",
                     "title": I18n.tr("Num lock OSD"),
                     "icon": "keyboard"
                 }

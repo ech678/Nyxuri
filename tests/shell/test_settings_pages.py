@@ -882,10 +882,16 @@ class TestIslandPageRebuild(unittest.TestCase):
         for owner in (
             "PersonalizationConfig.setIslandEnabled(",
             "PersonalizationConfig.setIslandSatellite(",
-            "PersonalizationConfig.setIslandCapsLockOsd(",
-            "PersonalizationConfig.setIslandNumLockOsd(",
+            "PersonalizationConfig.setKeyboardShowPanel(",
+            "PersonalizationConfig.setKeyboardPanelLayout(",
+            "PersonalizationConfig.setKeyboardPanelCaps(",
+            "PersonalizationConfig.setKeyboardPanelNum(",
+            "PersonalizationConfig.setKeyboardShowPopup(",
+            "PersonalizationConfig.setKeyboardPopupLayout(",
+            "PersonalizationConfig.setKeyboardPopupCaps(",
+            "PersonalizationConfig.setKeyboardPopupNum(",
             "PersonalizationConfig.setIslandHideDate(",
-            "KeyboardLockService.available",
+            "KeyboardIndicators.ready",
         ):
             self.assertIn(owner, source, f"business owner dropped: {owner}")
 

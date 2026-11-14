@@ -19,7 +19,7 @@ Singleton {
     readonly property string language: Qt.uiLanguage
     property var actionExecutor: null
     property bool islandAvailable: false
-    readonly property bool keyboardLockAvailable: KeyboardLockService.available
+    readonly property bool keyboardLockAvailable: KeyboardIndicators.available
     readonly property bool dockPreviewsAvailable: false
 
     // id -> {title, description, context}: the translated lookup surface.

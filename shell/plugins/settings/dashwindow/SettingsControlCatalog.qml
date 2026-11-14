@@ -146,11 +146,14 @@ Singleton {
             // switch is the islandEnabled config gate; the bar unit's
             // existence stays the ledger's alone (unit-model.md §6).
             "island:Enabled": root.toggle(() => PersonalizationConfig.islandEnabled, value => PersonalizationConfig.setIslandEnabled(value)),
-            "island:Enabled": root.toggle(() => PersonalizationConfig.islandEnabled, value => PersonalizationConfig.setIslandEnabled(value)),
             "island:Satellite": root.select(() => PersonalizationConfig.islandSatellite, value => PersonalizationConfig.setIslandSatellite(value), PersonalizationConfig.islandSatelliteOptions),
             "island:Show date": root.toggle(() => !PersonalizationConfig.islandHideDate, value => PersonalizationConfig.setIslandHideDate(!value)),
-            "island:Caps lock OSD": root.toggle(() => PersonalizationConfig.islandCapsLockOsd, value => PersonalizationConfig.setIslandCapsLockOsd(value)),
-            "island:Num lock OSD": root.toggle(() => PersonalizationConfig.islandNumLockOsd, value => PersonalizationConfig.setIslandNumLockOsd(value)),
+            "keyboard:Show panel": root.toggle(() => PersonalizationConfig.keyboardShowPanel, value => PersonalizationConfig.setKeyboardShowPanel(value)),
+            "keyboard:Show Caps Lock": root.toggle(() => PersonalizationConfig.keyboardPanelCaps, value => PersonalizationConfig.setKeyboardPanelCaps(value)),
+            "keyboard:Show Num Lock": root.toggle(() => PersonalizationConfig.keyboardPanelNum, value => PersonalizationConfig.setKeyboardPanelNum(value)),
+            "keyboard:Show popup": root.toggle(() => PersonalizationConfig.keyboardShowPopup, value => PersonalizationConfig.setKeyboardShowPopup(value)),
+            "keyboard:Caps lock OSD": root.toggle(() => PersonalizationConfig.keyboardPopupCaps, value => PersonalizationConfig.setKeyboardPopupCaps(value)),
+            "keyboard:Num lock OSD": root.toggle(() => PersonalizationConfig.keyboardPopupNum, value => PersonalizationConfig.setKeyboardPopupNum(value)),
 
             // ── Wallpaper ────────────────────────────────────────────────
             "wallpaper:Fill mode": root.select(() => PersonalizationConfig.wallpaperFillMode, value => PersonalizationConfig.setWallpaperFillMode(value), PersonalizationConfig.fillModes),

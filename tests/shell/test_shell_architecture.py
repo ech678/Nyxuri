@@ -689,7 +689,7 @@ class TestShellManagement(unittest.TestCase):
         # its cava Process) was retired, so the component only lays out lanes.
         high_risk_files = [
             "services/SystemMonitorService.qml",
-            "services/KeyboardLockService.qml",
+            "services/KeyboardIndicators.qml",
             "plugins/bar/DynamicIsland.qml",
             "services/NetworkService.qml",
             "services/NetworkManagerExtras.qml",

@@ -28,7 +28,7 @@ Item {
     property bool mediaTrackInfoVisible: mediaHoverHandler.hovered || mediaTrackChangeTimer.running
     readonly property real mediaExpandedWidth: Math.min(root.mediaExpandedWidthCap, root.mediaTextContentWidth)
     readonly property real mediaWidth: root.mediaTrackInfoVisible ? root.mediaExpandedWidth : root.mediaCollapsedWidth
-    readonly property real osdWidth: 132
+    readonly property real osdWidth: root.osdKind === "keyboard" ? 200 : 132
     readonly property real notificationWidth: 220
     readonly property real batteryWidth: 170
     readonly property real badgeSize: 32
@@ -47,8 +47,6 @@ Item {
     property bool _osdReady: false
     property real _lastVolume: -1
     property real _lastBrightness: -1
-    property bool _lastCaps: false
-    property bool _lastNum: false
 
     readonly property string osdKind: GlobalStates.osdKind
 
@@ -72,8 +70,6 @@ Item {
             Qt.callLater(function () {
                 root._lastVolume = VolumeService.sinkVolume;
                 root._lastBrightness = BrightnessService.brightnessValue;
-                root._lastCaps = KeyboardLockService.capsLock === true;
-                root._lastNum = KeyboardLockService.numLock === true;
                 root._osdReady = true;
             });
         }
@@ -208,10 +204,8 @@ Item {
         switch (root.osdKind) {
         case "brightness":
             return `${Math.round(root.osdBrightnessValue() * 100)}`;
-        case "caps":
-            return Translation.tr("Caps Lock");
-        case "num":
-            return Translation.tr("Num Lock");
+        case "keyboard":
+            return KeyboardIndicators.popupText;
         default:
             return `${Math.round(VolumeService.sinkVolume * 100)}`;
         }
@@ -221,10 +215,8 @@ Item {
         switch (root.osdKind) {
         case "brightness":
             return "light_mode";
-        case "caps":
-            return "keyboard_capslock";
-        case "num":
-            return "keyboard";
+        case "keyboard":
+            return KeyboardIndicators.popupMaterialIcon;
         default:
             return VolumeService.sinkMuted ? "volume_off" : "volume_up";
         }
@@ -271,21 +263,13 @@ Item {
     }
 
     Connections {
-        target: KeyboardLockService
+        target: KeyboardIndicators
 
-        function onLockStateChanged() {
-            if (!root._osdReady || !KeyboardLockService.available)
+        function onPopupSequenceChanged() {
+            if (!root.isPrimaryScreen || !KeyboardIndicators.popupActive)
                 return;
-            const caps = KeyboardLockService.capsLock === true;
-            const num = KeyboardLockService.numLock === true;
-            const capsChanged = caps !== root._lastCaps;
-            const numChanged = num !== root._lastNum;
-            root._lastCaps = caps;
-            root._lastNum = num;
-            if (capsChanged && PersonalizationConfig.islandCapsLockOsd)
-                root.showOsd("caps");
-            else if (numChanged && PersonalizationConfig.islandNumLockOsd)
-                root.showOsd("num");
+            GlobalStates.osdKind = "keyboard";
+            osdHideTimer.restart();
         }
     }
 

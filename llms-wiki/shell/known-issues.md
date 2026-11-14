@@ -18,9 +18,11 @@
 ## 已修复
 
 - [x] **岛收口与设置空承诺（B8.4/B8.5，2026-11-14）**：OSD 生产者接线（音量/亮度/
-  caps/num 走 `GlobalStates.osdKind`，`DiOsd` 不再调用不存在的值方法）；
-  `KeyboardLockService` 改读 `/sys/class/leds/*::capslock|numlock/brightness`
-  （key-cli 退役后原 backend 永远不可用，这是 caps/num OSD 消失的根因）；
+  caps/num/布局走 `GlobalStates.osdKind`，`DiOsd` 不再调用不存在的值方法）；
+  `KeyboardLockService` 换成 iNiR `KeyboardIndicators` 的 Fork & Trim
+  （sysfs LED 聚合 + panel/popup 分离），并新增 `KeyboardLayoutService` 读
+  `niri msg -j keyboard-layouts`；SystemIcons/XkbIndicator 整抄 iNiR barM3 版。
+  key-cli 退役后原 backend 永远不可用，这是 caps/num OSD 消失的根因。
   `islandEnabled` 真正隐藏岛；`islandSatellite` 替换反掉的 `leftWidget` 天气硬编码；
   媒体面改 end4 点阵；`islandStyle/overlay/position/hoverAction/click*/media*Style/
   keyhole` 全链路退役。`ActiveWindow` 按 end4 重抄（Niri 数据面 + `contentColor`），

@@ -1147,3 +1147,24 @@ test_bar_runtime`（380 通过，runtime 实跑）；`shell/scripts/dev/check.sh
 （whitespace/qml-format/shell-lint/python-syntax/settings-schema/qml-lint/lifecycle-audit；
 qml-lint 629 条 advisory 警告为既有 qs.* 成员解析噪声）。`probe-bar.sh --session --json`
 四档 `ok:true`、`logErrors:[]`。视觉过目与截图待作者。
+
+### B8.4 修订（2026-11-14，键盘指示与 SystemIcons 归还 iNiR）
+
+- **整抄回退**：放弃自研固定槽位 SystemIcons，`cp` iNiR `barM3/SystemIcons.qml` +
+  `barM3/HyprlandXkbIndicator.qml` 后剪裁；服务层以 iNiR `KeyboardIndicators.qml` 为
+  基线 Fork & Trim（sysfs LED 聚合、panel/popup 分离、多键盘状态、popup sequence），
+  裁掉 evdev 分支（Nyxuri 无 accel-run keyboard-lock daemon）。
+- **布局数据面**：新增 `KeyboardLayoutService.qml`，从 `niri msg -j keyboard-layouts` +
+  `NiriDriver` 事件流 `KeyboardLayoutsChanged` / `KeyboardLayoutSwitched` 投影
+  `currentLayoutName/Code`；`CompositorDriver` 仍是唯一对外面。
+- **配置语义**：`PersonalizationConfig` 新增 `[keyboardIndicators]`
+  showPopup/showPanel + popup/panel × layout/caps/num；旧 `[island] capsLockOsd/
+  numLockOsd` 在加载时折算到 popup.caps/num；默认 caps 开、num 关（iNiR 同值）。
+- **OSD**：`KeyboardIndicators.popupSequence` 触发岛 OSD，`osdKind="keyboard"`，
+  文本/图标取 `popupText/popupMaterialIcon`；音量/亮度通道不变。
+- **尺寸**：新增 `Appearance.sizes.barIconSize=19` / `barUtilIconSize=17` /
+  `barPowerButtonSize=28`；SystemIcons 的 `larger`（22）与 UtilButton 的 `large`（16）
+  改为基线值。`UtilButton` 恢复 end4 hover 26→54 扩大动画；未读/锁状态的 Flow
+  宽度变化保留（上游行为）。
+- **验证**：302 tests OK；probe-bar 四档 `ok=true`，OSD/keyboard/islandOff 全绿；
+  `check.sh` 绿。实机键位与视觉过目待作者。
