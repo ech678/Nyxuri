@@ -1241,3 +1241,44 @@ qml-lint 629 条 advisory 警告为既有 qs.* 成员解析噪声）。`probe-ba
   `tray.ok=true`、`logErrors: []`；`check.sh` 绿。
 - **未验证**：真实托盘项（FlClash、arch-update-tray 等）的实机右键菜单、
   overflow 弹层位置与视觉过目（作者）。
+
+### B9.2 实施记录（2026-11-14，状态图标固定槽与外设电池）
+
+- **服务**：`services/PeripheralBattery.qml` 从 end4 原件物理整抄后剪裁——翻译改
+  `I18n.tr`，`notify-send` 经 `ActionGateway.execute(args, "bar:peripheral-battery")`，
+  新增 `deviceSource` 注入点；`Config.options.battery` 补
+  `peripheralLow=20 / peripheralCritical=5 / peripheralNotify=true`；`zh_CN` 补低电文案。
+- **视图**：新增 `SystemIconSlot.qml`（`UtilButton` 整抄剪裁）：固定 26×26、17px 图标、
+  hover 胶囊、`M3ToolTip`、`clicked/wheeled`、`contentColor` 覆盖、默认子项槽。
+  `SystemIcons.qml` 重写为七个固定槽，独立点击打开 quick settings 对应页；音量槽
+  中键静音 + 滚轮 ±5%；外设低电由 `PeripheralBattery.lowDevices` 驱动、危险档用
+  `colError`；`NotificationUnreadCount.qml` 并入通知槽后删除。
+- **护栏**：probe 新增 `systemIcons` / `systemIconsFakeDevices` / `systemIconsResetDevices`
+  IPC 与 `systemIcons` 报告；断言槽宽恒 26、可见槽 tooltip 非空、组宽公式、
+  假外设（mouse 15% / headset 3%）两槽且恰一个 critical、reset 清空。
+- **验证**：`tests/shell` 457 tests OK（11 skipped）；`probe-bar.sh --session --json`
+  `systemIcons.ok=true`、`logErrors: []`；`check.sh` 绿。
+- **未验证**：真实外设低电通知、SystemIcons 点击手感与 material/非 material 视觉效果（作者）。
+
+### B9.3 实施记录（2026-11-14，岛真相与横向时钟接线）
+
+- **单一真相**：`PersonalizationConfig.islandInLayout` + `setIslandInLayout()`；
+  `islandEnabled` 降为加载期 legacy 读取，序列化不再写 `enabled`；
+  `BarContent.filterLayout` 去掉岛门，`shell.qml` 通知槽仲裁改看布局成员；
+  `IslandPage` / `SettingsControlCatalog` 的 Show Island 改接布局成员开关。
+- **迁移键**：加载改为 `island.layoutMigrated`；播种/迁移收敛为纯函数
+  `resolveBarLayouts(bar, island, legacyIslandEnabled)`，一次播种、空 lane 不复活、
+  legacy `enabled=false` 摘岛。
+- **idle 面**：头像改吃 `AvatarService.avatarUrl` + `person` 兜底；`ClockContent` 补
+  `implicitWidth/Height` 后接管 clock satellite（日期 + 风格化数字），`islandHideDate`
+  成为真实开关；顺带修正 `NotificationService.unreadCount` 误读；删除
+  `Config.options.profile` 死桥。
+- **护栏**：probe 新增 `islandInLayout` / `islandLayoutMigration` / `idleFace` IPC 与
+  `islandRestored`、`islandMigration`、`idleFace` 报告；断言删岛后中段为空、
+  重新加入恢复 `islandHost`、`layoutMigrated=true` 不复活、legacy 关闭摘岛、
+  idle 宽 185 + 时钟可见 + 无头像时 fallback 可见。
+- **验证**：`tests/shell` 457 tests OK（11 skipped）；`probe-bar.sh --session --json`
+  `islandOff/islandRestored/islandMigration/idleFace` 全绿、`logErrors: []`；
+  `check.sh` 绿。
+- **未验证**：idle 横向时钟的实机视觉（宽度/字号/日期默认值）、通知弹窗宿主整壳恢复、
+  多屏与竖排下的岛表现（作者）。

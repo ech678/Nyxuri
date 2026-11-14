@@ -6,7 +6,7 @@
 
 ## 未修复 BUG
 
-- [ ] **下架件与孤儿**：`HyprlandXkbIndicator`/`NetworkSpeed*`/`Weather*`/`DocktoPanel`/
+- [ ] **下架件与孤儿**：`NetworkSpeed*`/`Weather*`/`DocktoPanel`/
   `LeftSidebarButton` 等依赖 iNiR 单例名的部件仍未接线；`Resources`/`ClockWidget`/
   `BatteryIndicator` 已随 B8.2 基件整抄解冻并进选装集。清单见
   [shell/plugins/bar/PARKED.md](../../shell/plugins/bar/PARKED.md)。
@@ -16,6 +16,15 @@
 - [ ] **TUI 未接入**：`menus.py` 无 shell 切换菜单，`translations.toml` 无桌面外壳词条；目前只有 CLI `nyxuri shell` 一条路
 
 ## 已修复
+
+- [x] **状态图标与外设电池（B9.2，2026-11-14）**：SystemIcons 从裸 Flow 改为七个固定
+  26px 槽（hover 胶囊、17px 图标、tooltip、独立点击）；新增 end4 `PeripheralBattery`
+  整抄服务与 `Config` 外设阈值；未读徽标并入通知槽。运行态由 `systemIcons` 探针
+  断言槽宽/组宽/假外设低电。
+- [x] **岛真相与横向时钟（B9.3，2026-11-14）**：`islandInLayout` 取代第二开关，
+  `layoutMigrated` 读键修正，通知槽仲裁改看布局成员；idle 头像接 `AvatarService` 并
+  加 `person` 兜底；横向时钟 `ClockContent` 接入 idle 面（`islandHideDate` 落地）。
+  运行态由 `islandOff/islandRestored/islandMigration/idleFace` 探针覆盖。
 
 - [x] **无媒体时 Media 组残留空胶囊 + 探针矩阵缺口（2026-11-14）**：Media 隐藏时
   `BarGroup` 仍按 padding 画 10px 空胶囊，lane 的 material/hug/中段胶囊也留 padding。

@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | P4 | 主题契约、模板兼容与取色引擎分阶 | 待验收（契约测试全绿；实机行为与视觉证据待作者） |
 | T3 | 设置界面替换：Caelestia 安卓风味 | M3/M4 待验收（机器证据齐；视觉过目待作者） |
-| B | Bar & Island（布局自由 + end4 视觉基线） | B9.0/B9.1 待验收（机器证据齐；截图与实机托盘过目待作者）；B8 旧验收作废，仅保留结构回归证据 |
+| B | Bar & Island（布局自由 + end4 视觉基线） | B9.0/B9.1/B9.2/B9.3 待验收（机器证据齐；截图、实机托盘与视觉过目待作者）；B8 旧验收作废，仅保留结构回归证据 |
 | P6 | 整体验收与未来移植 | 排队（前置主线 KM5） |
 
 ## 已交付基线台账
@@ -181,7 +181,7 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 | --- | --- |
 | Workspaces | end4 material 按钮宽 30，Nyxuri 固定 26；end4 固定 `shown` 槽位（默认 10），Nyxuri 只画已存在工作区，宽度会跳；end4 有 default/gnome/dots/ticks 四样式与 active Colorizer，Nyxuri 只剩 dots/icon + 数字；end4 右键开 overview，Nyxuri 没有 |
 | Media | 非 material 文字固定 `colOnLayer1`，忽略右键改色；标题 `smallie 13 ➔ 10`、副标题 `12 ➔ 10`；无 artist 时 end4 用 `topMargin:-13` 收紧，Nyxuri 固定 0；播放/下一首的 hover 色与右 margin 有差 |
-| SystemIcons | 裸 Flow，图标宽度随条件项跳变；19px 图标 + 0.85 字号；无单图标 hover/tooltip；material padding 4（end4 12）；缺 `PeripheralBattery` 外设低电；缺 `isDi` 语义；整块一个 MouseArea |
+| SystemIcons | B9.2 已重做：七个固定 26px 槽 + hover 胶囊 + 17px 图标 + tooltip + 独立点击；`PeripheralBattery` 低电/危险双档；旧账：裸 Flow 宽度跳变、19px、整块 MouseArea、无外设电池 |
 | SysTray | B9.1 已重做：iNiR `TrayService` 剪裁整抄 + `bar.tray` 持久化；下箭头随 unpinned 出现；tint/filter/id 三项真实可调；overflow 点击外部关闭。旧账：`unpinnedItems` 恒空、`togglePin()` 空实现、无存储、tint 读不存在属性 |
 | ClockWidget | 忽略 `contentColor`；有 AM/PM 时强制 `HH:MM` 补零；AM/PM 徽标色是 `tertiaryContainerForeground`（end4 是 `colPrimary`） |
 | Resources | `Resource` ink 固定 `pillInk("resources")`，不跟随 group/右键色；非 material 自定义底色下对比度可能不够 |
@@ -194,13 +194,14 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 #### 1.5 岛（Dynamic Island）
 
 **默认显示**：idle 面左侧头像圆（material 32px 贴左；非 material 24px + 4px 左边距），
-右侧状态图标（mic/音量/WiFi/未读）与时钟，默认宽 144；**默认不显示日期**。
-`~/.face` 不存在时头像只剩 primaryContainer 色圆，没有账号图标兜底（Media 无媒体面有）。
+右侧状态图标（mic/音量/WiFi/未读）与时钟。B9.3 起右侧时钟是横向时钟 `ClockContent`
+（日期 + 风格化数字，`islandHideDate` 为真实开关），宽度按内容增长，探针基线 185。
+`~/.face` 不存在时显示 `person` 兜底图标，不再留空色圆。
 
 | 项 | end4 | Nyxuri 现状 |
 | --- | --- | --- |
 | 左右卫星 | `dynamicIsland.leftWidget/rightWidget` 在岛两侧渲染 | 已删除，改成 `islandSatellite` 只在 idle 面内部显示 clock/weather |
-| 日期 | idle 不显示；水平时钟是 Nyxuri 自加 | `islandHideDate` 只作用于设置预览，真实岛无日期 |
+| 日期 | idle 不显示 | B9.3 接线：idle 横向时钟渲染日期，`islandHideDate` 是真实开关（Nyxuri 有意差异） |
 | 岛胶囊 | material/centerOnly 时透明，可跟随 frame 色 | 永远 `colLayer0`；`showBackground=false` 时仍有胶囊 |
 | 媒体面 | 可配媒体按钮 + dots/wave | 只有 dots；按钮与 wave 已下架（有意） |
 | Timer/Recording | 有 | 已下架（有意） |
@@ -222,10 +223,10 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 | --- | --- |
 | `Floating`（`barOverlay`） | 死键，全仓库无运行时消费者 |
 | `Screen edge` left/right | 死键，没有竖向 bar 实现 |
-| `Show Island` / 布局成员 | 两套真相；布局里删掉岛后设置开关无法恢复，且启动会被重新播种 |
-| `islandLayoutMigrated` | 加载局部变量读错键（`islandLayoutMigrated` vs `layoutMigrated`），且从未置 true → 中段为空就回填岛 |
-| `islandHideDate` / 水平时钟 | 只有设置预览消费者（`ClockContent` 仅被 `HorizontalClockPreview` 使用） |
-| 通知槽仲裁 | `shell.qml:80` 用 `islandEnabled`，岛不在布局里时仍抑制通知弹窗 |
+| `Show Island` / 布局成员 | B9.3 已收口：布局成员是唯一真相；设置开关改走 `setIslandInLayout`，删掉岛后不会被重新播种 |
+| `islandLayoutMigrated` | B9.3 已修：加载改读 `layoutMigrated`；纯函数 `resolveBarLayouts` 由探针验证「空中段 + 已迁移」不复活 |
+| `islandHideDate` / 水平时钟 | B9.3 已接线：`ClockContent` 进入 idle 面，日期开关与水平时钟编辑页都有真实消费者 |
+| 通知槽仲裁 | B9.3 已修：`shell.qml` 改看 `islandInLayout`，岛不在布局里时通知宿主恢复 |
 | tray 配置 | 迁移写 `bar.tray`，`PersonalizationConfig` 不读也不回写，保存即丢 |
 | `barShowBackground` | Config 桥引用不存在的属性，`?? true` 兜底；无 UI |
 | `barDividerSpacing` | Config 桥引用不存在的属性；无 UI；`space` 永远 4 |
@@ -239,8 +240,8 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 | --- | --- | --- | --- |
 | B9.0 | 审计基线与 token 冻结：本页差异矩阵、设置真伪清单、bar 厚度自由、Typography 1.0、6/23/18 基线 | 无 | 待验收（实现与 probe 证据齐；视觉过目待作者） |
 | B9.1 | SysTray：可见区 + 下箭头 overflow + 隐藏/固定持久化 + 外部点击关闭 + Tray 设置 | `references/iNiR/services/TrayService.qml`、`references/end4-pC/services/TrayService.qml`、`references/iNiR/modules/ii/barM3/SysTray.qml`、`references/iNiR/modules/common/widgets/CompositorFocusGrab.qml` | 待验收（probe 覆盖 pin/overflow/落盘；实机托盘过目待作者）；XEmbed 代理明确不做 |
-| B9.2 | SystemIcons：抄快捷设置按钮语言（26px 槽、hover 胶囊、17px 图标、tooltip、独立点击），补外设电池与固定布局 | `UtilButtons.qml` / `UtilButton.qml`（本树已 fork），`references/iNiR/modules/ii/barM3/SystemIcons.qml`、`references/end4-pC/services/PeripheralBattery.qml` | 待开始 |
-| B9.3 | 岛真相：布局成员唯一、修迁移键、通知槽仲裁、idle 头像 fallback、卫星语义、日期/水平时钟接线或退役 | 无（现有岛原件） | 待开始 |
+| B9.2 | SystemIcons：抄快捷设置按钮语言（26px 槽、hover 胶囊、17px 图标、tooltip、独立点击），补外设电池与固定布局 | `UtilButtons.qml` / `UtilButton.qml`（本树已 fork），`references/iNiR/modules/ii/barM3/SystemIcons.qml`、`references/end4-pC/services/PeripheralBattery.qml` | 待验收（探针覆盖槽宽/组宽/假外设低电；实机视觉与真实外设待作者） |
+| B9.3 | 岛真相：布局成员唯一、修迁移键、通知槽仲裁、idle 头像 fallback、卫星语义、日期/水平时钟接线 | 无（现有岛原件） | 待验收（探针覆盖增删/reload、迁移键、idle 宽度/时钟/头像；通知宿主恢复待实机） |
 | B9.4 | 竖向 bar：left/right 真正可用；竖向宽度独立可调；窗口、lane、弹层、通知避让全链路 | `references/end4-pC/modules/ii/verticalBar/VerticalBar.qml`、`VerticalBarContent.qml`（先 `cp` 再剪裁） | 待开始 |
 | B9.5 | 外边距：`barEdgeMargin` / `barSideMargin` + 设置页 + exclusiveZone + 弹层 + probe | 无 | 待开始 |
 | B9.6 | 表现基线归零：bar 厚度保持用户可调；补齐 contentColor 覆盖、Workspaces 固定槽位与四样式、Media/Clock/Notif 几何、角落出现动画与中段岛宽分支（字号/圆角/高度加成/laneMargin/Islands 正名已在 B9.0 落地） | end4 原始 token 与部件 | 待开始 |
@@ -268,6 +269,34 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
   + **tray**（fake SNI 三项 → unpin 出箭头 → 外部关闭 → config.toml 落盘 → reset）全绿，
   `logErrors: []`；`scripts/dev/check.sh` 绿。视觉截图、实机托盘点击与右键菜单待作者。
 
+### 2.2 B9.2 / B9.3 实施记录（2026-11-14）
+
+- **B9.2 SystemIcons**：`PeripheralBattery` 自 end4 物理整抄后剪裁（`I18n.tr`、
+  `ActionGateway.execute(args, "bar:peripheral-battery")`、`deviceSource` 探针注入）；
+  `Config.options.battery` 增 `peripheralLow=20`/`peripheralCritical=5`/`peripheralNotify`。
+  `SystemIconSlot` 由 `UtilButton` 整抄剪裁：固定 26×26（不做 54px hover 扩张）、
+  17px 图标、hover 胶囊、tooltip、click/wheel 信号、默认子项槽（xkb/未读徽标）。
+  `SystemIcons` 改为七个固定槽（音量/麦克风/键盘/WiFi/蓝牙/外设/通知），独立点击
+  走 `ActionGateway.requestSidebarOpenOnScreen`（audio/network/bluetooth/settings），
+  音量槽中键静音、滚轮 ±5%；`NotificationUnreadCount.qml` 的 embedded 分支并入
+  通知槽后删除。
+- **B9.3 岛真相**：新增 `PersonalizationConfig.islandInLayout`（三 lane 任一含岛）与
+  `setIslandInLayout()`；`islandEnabled` 只作加载期 legacy 读取，序列化只写
+  `layoutMigrated`；`BarContent.filterLayout` 与 `shell.qml` 通知槽仲裁改看布局成员。
+  加载期的播种/迁移收敛为纯函数 `resolveBarLayouts(bar, island, legacyIslandEnabled)`，
+  迁移键修正为 `island.layoutMigrated`。`DiIdle` 头像改吃 `AvatarService.avatarUrl`
+  并加 `person` 兜底（顺带修掉 `NotificationService.unreadCount` 误读）；clock
+  satellite 改渲染 `ClockContent`（补 `implicitWidth/Height`），`islandHideDate`
+  成为真实开关；`Config.options.profile` 死桥删除。
+- **证据**：`python3 -m unittest discover -s tests/shell -q`（457 tests，11 skipped）；
+  `probe-bar.sh --session --json` 六档 + borderless + mediaHidden + OSD/keyboard +
+  tray + **systemIcons**（槽宽恒 26、组宽公式、假外设 mouse/headphones 一低一危、
+  reset 清空）+ **islandOff/islandRestored/islandMigration/idleFace**（删岛后中段为空、
+  重新加入恢复、`layoutMigrated=true` 不复活、legacy `enabled=false` 摘岛、idle 185px
+  + 横向时钟 + 头像兜底）全绿，`logErrors: []`；`check.sh` 绿。
+- **未验证**：idle 横向时钟的实机视觉（宽度/字号/日期取舍）、通知弹窗宿主的整壳切换、
+  真实外设低电通知与 SystemIcons 点击手感，均留作者验收。
+
 ### 3. 验收
 
 - **B9.1**：至少两个托盘项；右键 Unpin 后出现下箭头；箭头打开小菜单；点击外部关闭；
@@ -286,7 +315,8 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 
 - 自有 C++ 构建链已移除；运行实现收敛为纯 QML/JS/脚本，公开标识统一为 `nyxuri`。
 - Timer/Recording 下架；Cava 与歌词以按需消费者形态保留。
-- 岛是 bar 的中段部件，不是独立单元；`islandEnabled` 的历史语义由 B9.3 清算。
+- 岛是 bar 的中段部件，不是独立单元；`islandEnabled` 的历史语义已由 B9.3 清算，
+  布局成员是唯一开关。
 - end4 为主视觉基线，iNiR 只提供 Niri 数据面与窗口壳。
 - `SysTray` 的 overflow、`SystemIcons` 的快捷设置同款按钮语言、竖向 bar 的
   Fork & Trim 来源均已在本页 B9.1/B9.2/B9.4 固定，不再重新讨论要不要做。
