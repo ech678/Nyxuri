@@ -94,8 +94,8 @@ Item {
 
                     first: true
                     text: I18n.tr("Show Island")
-                    checked: PersonalizationConfig.islandEnabled
-                    onToggled: PersonalizationConfig.setIslandEnabled(checked)
+                    checked: PersonalizationConfig.islandInLayout
+                    onToggled: PersonalizationConfig.setIslandInLayout(checked)
 
                     SettingsSearchAnchor {
                         id: searchAnchor0

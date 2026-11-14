@@ -51,10 +51,7 @@ Item {
 
     function filterLayout(layout) {
         let filtered = Array.from(layout ?? []);
-        // B8.4: islandEnabled is the island's component gate. It has to hide
-        // the widget, not just release the popup slot.
-        if (!PersonalizationConfig.islandEnabled)
-            filtered = filtered.filter(name => name !== "island");
+        // B9.3: the island is a layout member, not a second config gate.
         if (!root.trayHasItems)
             filtered = filtered.filter(name => name !== "sysTray" && name !== "tray");
         if (!root.batteryAvailable)

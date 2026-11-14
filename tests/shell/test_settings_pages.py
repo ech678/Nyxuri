@@ -881,7 +881,7 @@ class TestIslandPageRebuild(unittest.TestCase):
     def test_business_owners_unchanged(self):
         source = _read("IslandPage.qml")
         for owner in (
-            "PersonalizationConfig.setIslandEnabled(",
+            "PersonalizationConfig.setIslandInLayout(",
             "PersonalizationConfig.setIslandSatellite(",
             "PersonalizationConfig.setKeyboardShowPanel(",
             "PersonalizationConfig.setKeyboardPanelLayout(",

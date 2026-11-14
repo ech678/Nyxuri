@@ -33,11 +33,6 @@ Singleton {
             readonly property bool monitorGpu: true
         }
 
-        readonly property QtObject profile: QtObject {
-            readonly property string avatarPath: ""
-            readonly property string avatarPicture: ""
-        }
-
         readonly property QtObject bar: QtObject {
             id: barOptions
 

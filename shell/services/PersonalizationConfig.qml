@@ -275,11 +275,9 @@ Singleton {
     property bool cursorHideWhenTyping: false
     property int cursorHideAfterInactiveMs: 0
     property string iconTheme: ""
-    // barEnabled stayed retired at KM4 (unit existence is the ledger's alone);
-    // B1 reintroduces islandEnabled as the island's component gate — the
-    // island is a bar layout part now, not a unit, so its switch is a config
-    // key while the bar unit's existence remains the ledger's alone.
-    property bool islandEnabled: true
+    // B9.3: layout membership is the island's only switch. The old
+    // `islandEnabled` gate is read once during load (legacy migration) and is
+    // never serialized again.
     // B8.4: idle-face satellite is an explicit optional part, not the iNiR
     // leftWidget hardcode that rendered weather under a "clockWidget" value.
     property string islandSatellite: "clock"
@@ -543,6 +541,11 @@ Singleton {
     property var barLayoutLeft: root.defaultBarLayoutLeft.slice()
     property var barLayoutMiddle: root.defaultBarLayoutMiddle.slice()
     property var barLayoutRight: root.defaultBarLayoutRight.slice()
+
+    // B9.3 single truth: the island exists exactly when it is a member of any
+    // bar lane. Notification-slot arbitration and the bar widget filter both
+    // read this instead of a second config switch.
+    readonly property bool islandInLayout: root.barLayoutLeft.indexOf("island") !== -1 || root.barLayoutMiddle.indexOf("island") !== -1 || root.barLayoutRight.indexOf("island") !== -1
 
     // iNiR keyboardIndicators semantics: the persistent panel (SystemIcons)
     // and the transient popup (island OSD) are independent axes.
@@ -1262,8 +1265,12 @@ Singleton {
         setValue("settingsPanelStyle", normalizedOption(root.settingsPanelStyles, value, "default"));
     }
 
-    function setIslandEnabled(value) {
-        setValue("islandEnabled", value === true);
+    // B9.3: "Show island" is a layout edit, not a separate gate. Adding puts
+    // it back into the middle lane; removing drops it from every lane.
+    function setIslandInLayout(value) {
+        if (value === true)
+            return root.islandInLayout || root.moveBarComponent("island", "middle", root.barLayoutMiddle.length);
+        return root.removeBarComponent("island");
     }
 
     function setIslandSatellite(value) {
@@ -1941,7 +1948,6 @@ Singleton {
                 }
             },
             "island": {
-                "enabled": root.islandEnabled,
                 "satellite": root.islandSatellite,
                 "layoutMigrated": root.islandLayoutMigrated,
                 "hideDate": root.islandHideDate,
@@ -1994,6 +2000,50 @@ Singleton {
 
     function configSection(value) {
         return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    }
+
+    // B9.3: pure layout resolution (one-shot seed + legacy island gate).
+    // Kept side-effect free so scripts/dev/probe-bar.sh can prove the
+    // migration keys without mutating the live store.
+    function resolveBarLayouts(bar, island, legacyIslandEnabled) {
+        const hasBarLayout = Array.isArray(bar.barLeadingComponents) || Array.isArray(bar.barTrailingComponents);
+        const hasBarLayouts = "barLayoutLeft" in bar || "barLayoutMiddle" in bar || "barLayoutRight" in bar;
+        const islandMigrated = island.layoutMigrated === true;
+        let left;
+        let middle;
+        let right;
+        if (hasBarLayouts) {
+            left = root.normalizedBarLayoutIds(bar.barLayoutLeft);
+            middle = root.normalizedBarLayoutIds(bar.barLayoutMiddle);
+            right = root.normalizedBarLayoutIds(bar.barLayoutRight);
+            // B3-1 one-shot seed: seed the island exactly once, then the user's
+            // own choices win (B9.3 fixed the key this reads).
+            if (!islandMigrated && middle.length === 0)
+                middle = ["island"];
+            const leading = root.normalizedBarLayoutIds(bar.barLeadingComponents);
+            const trailing = root.normalizedBarLayoutIds(bar.barTrailingComponents);
+            if (!root.arraysEqual(leading, left) && hasBarLayout) {
+                left = leading;
+                right = trailing;
+            }
+        } else {
+            // Legacy configs only had leading/trailing zones; map them 1:1 so
+            // an upgrade does not reshuffle the user's bar.
+            left = root.normalizedBarLayoutIds(bar.barLeadingComponents);
+            middle = root.defaultBarLayoutMiddle.slice();
+            right = root.normalizedBarLayoutIds(bar.barTrailingComponents);
+        }
+        if (!legacyIslandEnabled) {
+            left = left.filter(id => id !== "island");
+            middle = middle.filter(id => id !== "island");
+            right = right.filter(id => id !== "island");
+        }
+        return {
+            "left": left,
+            "middle": middle,
+            "right": right,
+            "migrated": islandMigrated || !legacyIslandEnabled
+        };
     }
 
     function loadFromObject(parsed) {
@@ -2079,7 +2129,10 @@ Singleton {
         root.shellBackgroundOpacity = normalizedBoundedReal(effects.shellBackgroundOpacity, 1, 0, 1);
         root.shellBlurEnabled = typeof effects.shellBlurEnabled === "boolean" ? effects.shellBlurEnabled : false;
         root.shellBlurXray = typeof effects.shellBlurXray === "boolean" ? effects.shellBlurXray : true;
-        root.islandEnabled = typeof island.enabled === "boolean" ? island.enabled : true;
+        // B9.3 legacy read: `enabled=false` used to hide the island while the
+        // layout still listed it. It is applied once after layout resolution;
+        // membership is the only truth from then on.
+        const legacyIslandEnabled = typeof island.enabled === "boolean" ? island.enabled : true;
         root.islandSatellite = normalizedOption(root.islandSatelliteOptions, island.satellite, "clock");
         root.islandLayoutMigrated = island.layoutMigrated === true;
         root.islandHideDate = typeof island.hideDate === "boolean" ? island.hideDate : false;
@@ -2120,34 +2173,13 @@ Singleton {
         const barLayout = root.normalizedBarLayout(bar.barLeadingComponents, bar.barTrailingComponents, !hasBarLayout);
         root.barLeadingComponents = barLayout.leading;
         root.barTrailingComponents = barLayout.trailing;
-        const hasBarLayouts = "barLayoutLeft" in bar || "barLayoutMiddle" in bar || "barLayoutRight" in bar;
-        // B3-1 one-shot layout seed: before the island was a layout part it was
-        // a standalone layer window, so the middle lane never hosted it. Seed it
-        // exactly once, then the user's own choices win.
-        const islandMigrated = island.islandLayoutMigrated === true;
-        if (hasBarLayouts) {
-            root.barLayoutLeft = root.normalizedBarLayoutIds(bar.barLayoutLeft);
-            root.barLayoutMiddle = root.normalizedBarLayoutIds(bar.barLayoutMiddle);
-            root.barLayoutRight = root.normalizedBarLayoutIds(bar.barLayoutRight);
-            if (!islandMigrated && root.barLayoutMiddle.length === 0) {
-                root.barLayoutMiddle = ["island"];
-            }
-            if (!root.arraysEqual(root.barLeadingComponents, root.barLayoutLeft) && hasBarLayout) {
-                root.barLayoutLeft = root.normalizedBarLayoutIds(root.barLeadingComponents);
-                root.barLayoutRight = root.normalizedBarLayoutIds(root.barTrailingComponents);
-            }
-        } else {
-            // Legacy configs only had leading/trailing zones; map them 1:1 so an
-            // upgrade does not reshuffle the user's bar. The middle lane keeps
-            // its default (B3-1: the island), otherwise an upgrade silently
-            // drops the island out of the layout.
-            root.barLayoutLeft = root.normalizedBarLayoutIds(root.barLeadingComponents);
-            root.barLayoutMiddle = root.defaultBarLayoutMiddle.slice();
-            root.barLayoutRight = root.normalizedBarLayoutIds(root.barTrailingComponents);
-        }
-        // The style side of the same one-shot is gone: B8.4 retires the
-        // bangs/pill/long escape hatches, so there is nothing to seed.
-        if (typeof island.islandLayoutMigrated !== "boolean")
+        const barLayouts = root.resolveBarLayouts(bar, island, legacyIslandEnabled);
+        root.barLayoutLeft = barLayouts.left;
+        root.barLayoutMiddle = barLayouts.middle;
+        root.barLayoutRight = barLayouts.right;
+        // The one-shot marker keeps a deliberately empty middle lane empty; a
+        // fresh/legacy config without the key arms it after this load.
+        if (barLayouts.migrated || typeof island.layoutMigrated !== "boolean")
             root.islandLayoutMigrated = true;
         root.quickSettingsComponents = root.normalizedQuickSettingsComponents(bar.quickSettingsComponents);
         root.keepSidebarsLoaded = sidebar.keepLoaded === undefined ? true : !!sidebar.keepLoaded;

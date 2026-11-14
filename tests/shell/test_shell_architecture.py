@@ -442,7 +442,10 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("root.barLayoutRight = root.normalizedBarLayoutIds(trailing)", pc_content)
         self.assertIn("root.barLeadingComponents = nextLeft.slice()", pc_content)
         self.assertIn("root.barTrailingComponents = combinedTrailing", pc_content)
-        self.assertIn("!root.arraysEqual(root.barLeadingComponents, root.barLayoutLeft)", pc_content)
+        # B9.3: the seed/migration decision is a pure helper, and the 2-zone
+        # resync compares the same normalized arrays.
+        self.assertIn("root.resolveBarLayouts(bar, island, legacyIslandEnabled)", pc_content)
+        self.assertIn("!root.arraysEqual(leading, left)", pc_content)
 
         # 2. BarContent delegates 3 lanes to Repeaters
         bc_path = os.path.join(shell_dir, "plugins", "bar", "BarContent.qml")
@@ -628,16 +631,16 @@ class TestShellManagement(unittest.TestCase):
 
         # 6. The popup:notification slot arbitrates the island vs the standalone
         # popup host in the slot host (plugin-model.md §6, host-owned rule) —
-        # not a private config conditional. B1: the island rides the bar unit,
-        # so the rule keys on the bar unit plus the islandEnabled config gate.
-        # It stays kind-keyed (S1-3): a third-party popup host yields exactly
-        # the same way.
+        # not a private config conditional. B9.3: the island rides the bar unit
+        # and owns the slot while it is a layout member; the retired
+        # islandEnabled key is not a second gate.
         slot_path = os.path.join(shell_dir, "shell.qml")
         with open(slot_path, "r", encoding="utf-8") as f:
             slot_content = f.read()
         self.assertIn('unit.kind === "popup:notification"', slot_content)
         self.assertIn('StateProjection.isEnabled("bar")', slot_content)
-        self.assertIn("PersonalizationConfig.islandEnabled", slot_content)
+        self.assertIn("PersonalizationConfig.islandInLayout", slot_content)
+        self.assertNotIn("PersonalizationConfig.islandEnabled", slot_content)
 
     def test_p3_r10_lifecycle_and_sideeffect_contracts(self):
         """P3-R10 lifecycle & side-effect governance contract checks."""
@@ -1723,7 +1726,7 @@ class TestShellManagement(unittest.TestCase):
         self.assertNotIn("PersonalizationConfig.barEnabled", app_code)
         self.assertNotIn("DockService.enabled", app_code)
         # B1: the island is a bar layout part, never a ledger unit — the host
-        # must not address it by unit id (its gate is the islandEnabled key,
+        # must not address it by unit id (its gate is layout membership,
         # pinned by the popup arbitration contract).
         self.assertNotIn('StateProjection.isEnabled("island")', app_code)
         slot_path = os.path.join(shell_dir, "shell.qml")

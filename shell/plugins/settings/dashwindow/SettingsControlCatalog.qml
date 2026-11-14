@@ -142,10 +142,10 @@ Singleton {
             "bar:Show values": root.toggle(() => PersonalizationConfig.barShowValues, value => PersonalizationConfig.setBarShowValues(value)),
 
             // ── Island ─────────────────────────────────────────────────
-            // B1: the island is a bar layout part, not a unit — its
-            // switch is the islandEnabled config gate; the bar unit's
-            // existence stays the ledger's alone (unit-model.md §6).
-            "island:Enabled": root.toggle(() => PersonalizationConfig.islandEnabled, value => PersonalizationConfig.setIslandEnabled(value)),
+            // B9.3: the island is a bar layout part, not a unit — its
+            // switch is layout membership; the bar unit's existence stays
+            // the ledger's alone (unit-model.md §6).
+            "island:Enabled": root.toggle(() => PersonalizationConfig.islandInLayout, value => PersonalizationConfig.setIslandInLayout(value)),
             "island:Satellite": root.select(() => PersonalizationConfig.islandSatellite, value => PersonalizationConfig.setIslandSatellite(value), PersonalizationConfig.islandSatelliteOptions),
             "island:Show date": root.toggle(() => !PersonalizationConfig.islandHideDate, value => PersonalizationConfig.setIslandHideDate(!value)),
             "keyboard:Show panel": root.toggle(() => PersonalizationConfig.keyboardShowPanel, value => PersonalizationConfig.setKeyboardShowPanel(value)),

@@ -76,6 +76,20 @@ ShellRoot {
         return null;
     }
 
+    function findIdleFace(node): var {
+        if (!node)
+            return null;
+        if (node.probeClockFace !== undefined)
+            return node;
+        const kids = node.children ?? [];
+        for (let i = 0; i < kids.length; i += 1) {
+            const found = probeRoot.findIdleFace(kids[i]);
+            if (found)
+                return found;
+        }
+        return null;
+    }
+
     function systemIconsReport(): string {
         const widget = probeRoot.findSystemIconsWidget(barLoader.item);
         if (!widget)
@@ -149,7 +163,10 @@ ShellRoot {
                 "y": point.y,
                 "width": host.implicitWidth,
                 "height": host.implicitHeight,
-                "visible": host.visible
+                "visible": host.visible,
+                "idleWidth": host.idleWidth,
+                "idleTextContentWidth": host.idleTextContentWidth,
+                "activeContent": String(host.activeContentId ?? "")
             };
         }
         const geometry = {
@@ -176,6 +193,7 @@ ShellRoot {
             },
             "geometry": geometry,
             "island": island,
+            "islandInLayout": PersonalizationConfig.islandInLayout,
             "keyboard": {
                 "available": KeyboardIndicators.available,
                 "caps": KeyboardIndicators.capsLock,
@@ -242,9 +260,54 @@ ShellRoot {
             return "OK";
         }
 
-        function islandEnabled(value: bool): string {
-            PersonalizationConfig.setIslandEnabled(value);
-            return "OK";
+        function islandInLayout(value: bool): string {
+            PersonalizationConfig.setIslandInLayout(value);
+            return JSON.stringify({
+                "islandInLayout": PersonalizationConfig.islandInLayout,
+                "middle": Array.from(PersonalizationConfig.barLayoutMiddle)
+            });
+        }
+
+        // B9.3 migration: pure layout resolution with a saved config that has
+        // an empty middle lane. `layoutMigrated=true` must not re-seed the
+        // island; a config missing the key seeds it once; a legacy
+        // `enabled=false` drops it.
+        function islandLayoutMigration(): string {
+            const base = {
+                "barLayoutLeft": [],
+                "barLayoutMiddle": [],
+                "barLayoutRight": []
+            };
+            return JSON.stringify({
+                "seeded": PersonalizationConfig.resolveBarLayouts(base, {}, true),
+                "keptEmpty": PersonalizationConfig.resolveBarLayouts(base, {
+                    "layoutMigrated": true
+                }, true),
+                "legacyOff": PersonalizationConfig.resolveBarLayouts({
+                    "barLayoutLeft": [],
+                    "barLayoutMiddle": ["island"],
+                    "barLayoutRight": []
+                }, {
+                    "layoutMigrated": true
+                }, false)
+            });
+        }
+
+        function idleFace(): string {
+            const face = probeRoot.findIdleFace(barLoader.item);
+            const host = ActionGateway.islandHost;
+            return JSON.stringify({
+                "found": face !== null,
+                "islandState": host ? String(host.invoke("state")) : "UNAVAILABLE",
+                "idleWidth": host ? host.idleWidth : null,
+                "idleTextContentWidth": host ? host.idleTextContentWidth : null,
+                "satellite": PersonalizationConfig.islandSatellite,
+                "clockVisible": face ? face.probeClockFace !== null && face.probeClockFace.visible : false,
+                "clockWidth": face && face.probeClockFace ? face.probeClockFace.implicitWidth : 0,
+                "clockHeight": face && face.probeClockFace ? face.probeClockFace.implicitHeight : 0,
+                "avatarReady": face ? face.probeAvatarReady : false,
+                "avatarFallback": face ? face.probeAvatarFallback : false
+            });
         }
 
         // B9.2 status cluster: read the fixed slot geometry, then swap two fake

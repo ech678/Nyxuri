@@ -82,9 +82,9 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertNotIn("centerHostX", content, "the iNiR compression clamp is retired (NaN source)")
         self.assertIn('"island"', content, "island must be in the material-pill blacklist")
         self.assertIn("bar.m3.layouts", content)
-        # B8.4: islandEnabled has to hide the widget, not just release the
-        # popup:notification slot.
-        self.assertIn("PersonalizationConfig.islandEnabled", content)
+        # B9.3: the island is a layout member, not a second config gate.
+        self.assertNotIn("PersonalizationConfig.islandEnabled", content)
+        self.assertNotIn("filtered.filter(name => name !== \"island\")", content)
         # Only the active style branch instantiates widgets.
         self.assertIn("active: root.isMaterial", content)
         self.assertIn("active: !root.isMaterial", content)

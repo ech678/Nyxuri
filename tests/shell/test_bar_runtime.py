@@ -41,7 +41,21 @@ class BarRuntimeProbeTest(unittest.TestCase):
         self.assertEqual(report["osd"]["islandState"], "osd",
                          "the island OSD producer/provider chain did not engage")
         self.assertTrue(report["islandOff"]["ok"],
-                        "islandEnabled=false did not remove the island from the middle lane")
+                        "removing the island from the layout did not empty the middle lane")
+        self.assertTrue(report["islandRestored"]["ok"],
+                        "re-adding the island to the layout did not restore it")
+        self.assertTrue(report["islandMigration"]["ok"], report["islandMigration"])
+        self.assertEqual(report["islandMigration"]["seeded"], ["island"])
+        self.assertEqual(report["islandMigration"]["keptEmpty"], [])
+        self.assertEqual(report["islandMigration"]["legacyOff"], [])
+        self.assertTrue(report["idleFace"]["ok"], report["idleFace"])
+        self.assertGreater(report["idleFace"]["idleWidth"], 0)
+        if report["idleFace"]["satellite"] == "clock":
+            self.assertTrue(report["idleFace"]["clockVisible"],
+                            "the horizontal clock satellite did not render")
+            self.assertGreater(report["idleFace"]["clockWidth"], 0)
+        self.assertTrue(report["idleFace"]["avatarReady"] or report["idleFace"]["avatarFallback"],
+                        "idle avatar has neither an image nor the fallback glyph")
         self.assertEqual(report["keyboardOsd"]["islandState"], "osd",
                          "caps/num lock changes did not reach the island OSD")
         keyboard = report["styles"][-1].get("keyboard") or {}

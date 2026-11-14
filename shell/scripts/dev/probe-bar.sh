@@ -242,13 +242,23 @@ if ipc keyboardFlip >/dev/null 2>&1; then
 fi
 
 island_off_state=""
-if ipc islandEnabled false >/dev/null 2>&1; then
+island_restored_state=""
+island_migration=""
+idle_face_state=""
+if ipc islandInLayout false >/dev/null 2>&1; then
     ipc reload >/dev/null 2>&1 || true
     sleep 0.5
     island_off_state=$(ipc layout 2>/dev/null || true)
-    ipc islandEnabled true >/dev/null 2>&1 || true
+    island_migration=$(ipc islandLayoutMigration 2>/dev/null || true)
+    ipc islandInLayout true >/dev/null 2>&1 || true
     ipc reload >/dev/null 2>&1 || true
-    sleep 0.5
+    sleep 0.8
+    island_restored_state=$(ipc layout 2>/dev/null || true)
+    for _ in $(seq 1 20); do
+        idle_face_state=$(ipc idleFace 2>/dev/null || true)
+        [[ ${idle_face_state} == *'"found":true'* ]] && break
+        sleep 0.1
+    done
 fi
 
 # B9.2 status cluster: fixed 26px slots, then two fake peripherals (one low,
@@ -320,7 +330,7 @@ else
     tray_skip_reason="fake-sni.py could not be launched"
 fi
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" <<'PY'
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" <<'PY'
 import json
 import re
 import sys
@@ -328,7 +338,8 @@ import sys
 (layouts_path, borderless_path, media_hidden_path, log_path, json_mode, mode,
  osd_state, keyboard_osd_state, island_off_state, tray_initial, tray_hidden,
  tray_closed, tray_reset, tray_persisted, tray_skip_reason, system_icons_state,
- system_icons_fake, system_icons_reset) = sys.argv[1:19]
+ system_icons_fake, system_icons_reset, island_restored_state, island_migration,
+ idle_face_state) = sys.argv[1:22]
 
 
 def load_tsv(path):
@@ -375,7 +386,34 @@ osd_ok = osd.get("islandState") == "osd" and (osd.get("island") or {}).get("widt
 keyboard_osd = json.loads(keyboard_osd_state) if keyboard_osd_state.strip() else {}
 keyboard_osd_ok = keyboard_osd.get("islandState") == "osd"
 island_off = json.loads(island_off_state) if island_off_state.strip() else {}
-island_off_ok = bool(island_off) and island_off.get("island") is None and not island_off.get("lanes", {}).get("middle")
+island_off_ok = bool(island_off) and island_off.get("island") is None and not island_off.get("lanes", {}).get("middle") and island_off.get("islandInLayout") is False
+island_restored = json.loads(island_restored_state) if island_restored_state.strip() else {}
+island_restored_ok = bool(
+    island_restored
+    and island_restored.get("island") is not None
+    and "island" in island_restored.get("lanes", {}).get("middle", [])
+    and island_restored.get("islandInLayout") is True
+)
+island_migration_state = json.loads(island_migration) if island_migration.strip() else {}
+seeded = island_migration_state.get("seeded", {})
+kept_empty = island_migration_state.get("keptEmpty", {})
+legacy_off = island_migration_state.get("legacyOff", {})
+island_migration_ok = bool(
+    seeded.get("middle") == ["island"]
+    and kept_empty.get("middle") == []
+    and legacy_off.get("middle") == []
+)
+idle_face = json.loads(idle_face_state) if idle_face_state.strip() else {}
+idle_face_ok = bool(
+    idle_face.get("found") is True
+    and idle_face.get("islandState") == "idle"
+    and isinstance(idle_face.get("idleWidth"), (int, float))
+    and idle_face.get("idleWidth") > 0
+    and not (idle_face.get("avatarReady") and idle_face.get("avatarFallback"))
+    and (idle_face.get("avatarReady") or idle_face.get("avatarFallback"))
+)
+if idle_face.get("satellite") == "clock":
+    idle_face_ok = idle_face_ok and idle_face.get("clockVisible") is True and idle_face.get("clockWidth", 0) > 0 and idle_face.get("clockHeight", 0) > 0
 
 # A media-only lane whose widget reports barWidgetVisible=false must evaluate
 # to zero width. Non-zero means the old 10px capsule padding came back.
@@ -512,6 +550,7 @@ system_icons_report = {
 
 ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
       and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok
+      and island_restored_ok and island_migration_ok and idle_face_ok
       and tray_ok and peripheral_ok)
 report = {
     "ok": ok,
@@ -536,6 +575,25 @@ report = {
     "islandOff": {
         "ok": island_off_ok,
         "middle": island_off.get("lanes", {}).get("middle", []),
+    },
+    "islandRestored": {
+        "ok": island_restored_ok,
+        "middle": island_restored.get("lanes", {}).get("middle", []),
+    },
+    "islandMigration": {
+        "ok": island_migration_ok,
+        "seeded": seeded.get("middle", []),
+        "keptEmpty": kept_empty.get("middle", []),
+        "legacyOff": legacy_off.get("middle", []),
+    },
+    "idleFace": {
+        "ok": idle_face_ok,
+        "satellite": idle_face.get("satellite", ""),
+        "idleWidth": idle_face.get("idleWidth"),
+        "clockVisible": idle_face.get("clockVisible"),
+        "clockWidth": idle_face.get("clockWidth"),
+        "avatarReady": idle_face.get("avatarReady"),
+        "avatarFallback": idle_face.get("avatarFallback"),
     },
     "tray": tray_report,
     "systemIcons": system_icons_report,
