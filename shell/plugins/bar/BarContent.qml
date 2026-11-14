@@ -36,6 +36,10 @@ Item {
     // without duplicating the layout math.
     readonly property real laneCenterX: absoluteCenter.x + contentContainer.x
     readonly property real laneCenterWidth: absoluteCenter.width
+    // A lane whose only widgets hide themselves (Media with no track) must
+    // evaluate to 0, not to its capsule padding. The probe asserts this.
+    readonly property real laneLeftWidth: leftLane.width
+    readonly property real laneRightWidth: rightLane.width
     readonly property bool trayHasItems: SystemTray.items.values.length > 0
     readonly property bool batteryAvailable: Battery.available
 

@@ -1168,3 +1168,22 @@ qml-lint 629 条 advisory 警告为既有 qs.* 成员解析噪声）。`probe-ba
   宽度变化保留（上游行为）。
 - **验证**：302 tests OK；probe-bar 四档 `ok=true`，OSD/keyboard/islandOff 全绿；
   `check.sh` 绿。实机键位与视觉过目待作者。
+
+### B8.6 补档：媒体空胶囊与探针矩阵（2026-11-14）
+
+- **媒体空胶囊修复**（`14a56e1`）：`BarGroup` 新增 `barWidgetVisible` 契约
+  （缺省视为可见）与 `hasContent`，`implicitWidth/visible` 随内容收缩；内容宽度用
+  `loadedWidget.implicitWidth` 兜底 GridLayout 的 stale 值。`Media` 以独立属性暴露
+  自隐状态——`Item.visible` 是有效可见性，父级隐藏后无法恢复。`BarContent` 三条 lane
+  的 material 胶囊、hug 外角与 center-only pill 按 lane 内容宽度收缩。
+- **探针矩阵扩展**：`probe-bar.sh` 的 cornerStyle 循环从 1/3/4/5 扩到 0–5；
+  新增 `borderless` 四模式（pills/separated/segmented/transparent，固定在非材质档跑
+  segmented 分支）与 `scene mediaOnly`（左 lane 仅 `media`、中右清空）；
+  `layout` IPC 输出 `leftWidth/rightWidth/borderless`。`BarContent` 新增
+  `laneLeftWidth/laneRightWidth` 观测属性。
+- **断言**：六档全部 `Loader.Ready`、无 failed/pending、几何有限且中段居中、岛可见；
+  四个 borderless 模式 `ok` 且回读一致；媒体隐藏场景在 cornerStyle 1（plain capsule）
+  与 3（material capsule）下左 lane 与中段宽度都必须为 0、无岛宿主。
+- **验证**：`probe-bar.sh --json` 本机 session 模式全绿（`styles` 0–5，
+  `borderless.modes` 四模式，`mediaHidden.cases` 2 例，`logErrors: []`）；
+  `python3 -m unittest tests.shell.test_bar_runtime tests.shell.test_bar_end4` 18 tests OK。

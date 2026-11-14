@@ -17,6 +17,11 @@
 
 ## 已修复
 
+- [x] **无媒体时 Media 组残留空胶囊 + 探针矩阵缺口（2026-11-14）**：Media 隐藏时
+  `BarGroup` 仍按 padding 画 10px 空胶囊，lane 的 material/hug/中段胶囊也留 padding。
+  新增 `barWidgetVisible` 契约（缺省视为可见），组与三条 lane 胶囊按内容宽度收缩；
+  运行态由 `probe-bar.sh` 的 `mediaOnly` 场景在非材质/material 两条路径断言宽度为 0。
+  同轮探针从 cornerStyle 1/3/4/5 扩到 0–5，并新增 borderless 四模式覆盖。
 - [x] **岛收口与设置空承诺（B8.4/B8.5，2026-11-14）**：OSD 生产者接线（音量/亮度/
   caps/num/布局走 `GlobalStates.osdKind`，`DiOsd` 不再调用不存在的值方法）；
   `KeyboardLockService` 换成 iNiR `KeyboardIndicators` 的 Fork & Trim

@@ -4,7 +4,9 @@
 # Loads plugins/bar/BarContent.qml in an isolated temp shell and reports the
 # evaluated lane geometry plus every active Loader's status. This is the
 # runtime evidence the string-assertion tests cannot give: NaN layout chains,
-# compiled-empty widgets and TypeError storms all show up here.
+# compiled-empty widgets and TypeError storms all show up here. It walks all
+# six corner styles, the four borderless modes and the self-hiding widget lane
+# (Media with no track) in both capsule paths.
 #
 # Usage:
 #   probe-bar.sh [--json] [--session|--weston]
@@ -143,7 +145,11 @@ if [[ ${ready} != true ]]; then
 fi
 
 layouts="${tmp}/layouts.jsonl"
+borderless="${tmp}/borderless.tsv"
+media_hidden="${tmp}/media-hidden.tsv"
 : >"${layouts}"
+: >"${borderless}"
+: >"${media_hidden}"
 # Wait until the harness has loaded BarContent against a ready settings store.
 for _ in $(seq 1 150); do
     if ipc layout 2>/dev/null | grep -q '"ready":true'; then
@@ -151,7 +157,7 @@ for _ in $(seq 1 150); do
     fi
     sleep 0.1
 done
-for style in 1 3 4 5; do
+for style in 0 1 2 3 4 5; do
     if ! ipc cornerStyle "${style}" >/dev/null; then
         printf 'error: could not set cornerStyle %s\n' "${style}" >&2
         exit 3
@@ -167,6 +173,38 @@ for style in 1 3 4 5; do
     fi
     printf '\n' >>"${layouts}"
 done
+
+# Borderless modes share the group chrome. Exercise them on a non-material
+# style so the segmented 1px border and transparent branch actually render.
+ipc cornerStyle 1 >/dev/null || true
+for border_mode in pills separated segmented transparent; do
+    if ! ipc borderless "${border_mode}" >/dev/null; then
+        printf 'error: could not set borderless %s\n' "${border_mode}" >&2
+        exit 3
+    fi
+    ipc reload >/dev/null || true
+    sleep 0.5
+    printf '%s\t%s\n' "${border_mode}" "$(ipc layout)" >>"${borderless}"
+done
+ipc borderless pills >/dev/null || true
+
+# Self-hiding widget contract: a lane whose only widget reports
+# barWidgetVisible=false must collapse to zero in both the plain and material
+# capsule paths (commit 14a56e1).
+for style in 1 3; do
+    ipc cornerStyle "${style}" >/dev/null || true
+    if ! ipc scene mediaOnly >/dev/null; then
+        printf 'error: could not switch to the media-only layout\n' >&2
+        exit 3
+    fi
+    ipc reload >/dev/null || true
+    sleep 0.6
+    printf '%s\t%s\n' "${style}" "$(ipc layout)" >>"${media_hidden}"
+done
+ipc cornerStyle 1 >/dev/null || true
+ipc scene default >/dev/null || true
+ipc reload >/dev/null || true
+sleep 0.5
 
 osd_state=""
 if ipc osd volume >/dev/null 2>&1; then
@@ -191,14 +229,35 @@ if ipc islandEnabled false >/dev/null 2>&1; then
     sleep 0.5
 fi
 
-python3 - "${layouts}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" <<'PY'
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" <<'PY'
 import json
 import re
 import sys
 
-layouts_path, log_path, json_mode, mode, osd_state, keyboard_osd_state, island_off_state = sys.argv[1:8]
-with open(layouts_path, encoding="utf-8") as handle:
-    layouts = [json.loads(line) for line in handle if line.strip()]
+(layouts_path, borderless_path, media_hidden_path, log_path, json_mode, mode,
+ osd_state, keyboard_osd_state, island_off_state) = sys.argv[1:10]
+
+
+def load_tsv(path):
+    rows = []
+    with open(path, encoding="utf-8") as handle:
+        for line in handle:
+            line = line.rstrip("\n")
+            if not line.strip():
+                continue
+            key, _, payload = line.partition("\t")
+            rows.append((key, json.loads(payload)))
+    return rows
+
+
+def load_layouts(path):
+    with open(path, encoding="utf-8") as handle:
+        return [json.loads(line) for line in handle if line.strip()]
+
+
+layouts = load_layouts(layouts_path)
+borderless = load_tsv(borderless_path)
+media_hidden = load_tsv(media_hidden_path)
 try:
     with open(log_path, encoding="utf-8", errors="replace") as handle:
         log = handle.read()
@@ -224,12 +283,46 @@ keyboard_osd = json.loads(keyboard_osd_state) if keyboard_osd_state.strip() else
 keyboard_osd_ok = keyboard_osd.get("islandState") == "osd"
 island_off = json.loads(island_off_state) if island_off_state.strip() else {}
 island_off_ok = bool(island_off) and island_off.get("island") is None and not island_off.get("lanes", {}).get("middle")
-ok = (len(layouts) == 4 and all(entry.get("ok") for entry in layouts) and not hits
-      and osd_ok and keyboard_osd_ok and island_off_ok)
+
+# A media-only lane whose widget reports barWidgetVisible=false must evaluate
+# to zero width. Non-zero means the old 10px capsule padding came back.
+media_cases = []
+media_ok = len(media_hidden) == 2
+for style, entry in media_hidden:
+    geometry = entry.get("geometry", {})
+    left_width = geometry.get("leftWidth")
+    center_width = geometry.get("centerWidth")
+    lane_ok = (entry.get("ok") is True
+               and isinstance(left_width, (int, float)) and abs(left_width) <= 0.5
+               and isinstance(center_width, (int, float)) and abs(center_width) <= 0.5
+               and entry.get("island") is None)
+    media_cases.append({
+        "cornerStyle": style,
+        "leftWidth": left_width,
+        "centerWidth": center_width,
+        "ok": lane_ok,
+    })
+    media_ok = media_ok and lane_ok
+
+borderless_modes = [key for key, _ in borderless]
+borderless_ok = (borderless_modes == ["pills", "separated", "segmented", "transparent"]
+                 and all(entry.get("ok") and entry.get("borderless") == key
+                         for key, entry in borderless))
+
+ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
+      and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok)
 report = {
     "ok": ok,
     "mode": mode,
     "styles": layouts,
+    "borderless": {
+        "ok": borderless_ok,
+        "modes": borderless_modes,
+    },
+    "mediaHidden": {
+        "ok": media_ok,
+        "cases": media_cases,
+    },
     "osd": {
         "ok": osd_ok,
         "islandState": osd.get("islandState", ""),

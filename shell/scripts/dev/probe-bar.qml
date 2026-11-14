@@ -89,6 +89,8 @@ ShellRoot {
             "height": barContent.height,
             "centerX": barContent.laneCenterX,
             "centerWidth": barContent.laneCenterWidth,
+            "leftWidth": barContent.laneLeftWidth,
+            "rightWidth": barContent.laneRightWidth,
             "centerPillX": barContent.centerPillX,
             "centerPillWidth": barContent.centerPillWidth
         };
@@ -98,6 +100,7 @@ ShellRoot {
         return JSON.stringify({
             "ready": barLoader.status === Loader.Ready,
             "cornerStyle": PersonalizationConfig.barCornerStyle,
+            "borderless": PersonalizationConfig.barBorderless,
             "lanes": {
                 "left": Array.from(barContent.effectiveLeftLayout || []),
                 "middle": Array.from(barContent.effectiveMiddleLayout || []),
@@ -132,6 +135,30 @@ ShellRoot {
         function cornerStyle(value: int): string {
             PersonalizationConfig.setBarCornerStyle(value);
             return String(PersonalizationConfig.barCornerStyle);
+        }
+
+        function borderless(value: string): string {
+            PersonalizationConfig.setBarBorderless(value);
+            return String(PersonalizationConfig.barBorderless);
+        }
+
+        // Layout scenes: "mediaOnly" is the self-hiding-widget contract (an
+        // empty lane must collapse to zero instead of keeping capsule
+        // padding); "default" restores the shipped three-lane layout.
+        function scene(name: string): string {
+            if (name === "mediaOnly") {
+                PersonalizationConfig.setBarLayouts(["media"], [], []);
+            } else {
+                const left = PersonalizationConfig.defaultBarLayoutLeft.slice();
+                const middle = PersonalizationConfig.defaultBarLayoutMiddle.slice();
+                const right = PersonalizationConfig.defaultBarLayoutRight.slice();
+                PersonalizationConfig.setBarLayouts(left, middle, right);
+            }
+            return JSON.stringify({
+                "left": Array.from(PersonalizationConfig.barLayoutLeft),
+                "middle": Array.from(PersonalizationConfig.barLayoutMiddle),
+                "right": Array.from(PersonalizationConfig.barLayoutRight)
+            });
         }
 
         function osd(kind: string): string {

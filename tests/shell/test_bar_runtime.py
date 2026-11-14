@@ -3,7 +3,8 @@
 The string-assertion suites cannot catch a NaN layout chain, a compiled-empty
 widget or a Type/Reference storm. This test drives scripts/dev/probe-bar.sh,
 which loads BarContent in an isolated shell and reports every active Loader
-status plus the evaluated lane geometry for cornerStyle 1/3/4/5.
+status plus the evaluated lane geometry for all six corner styles, the four
+borderless modes and the self-hiding widget lane (Media with no track).
 
 No Wayland compositor -> explicit skip (the probe exits 2). Weston, when
 installed, runs headless; otherwise the probe uses the current session with a
@@ -54,8 +55,9 @@ class BarRuntimeProbeTest(unittest.TestCase):
             # iNiR deliberately keeps Num unreliable until its first transition,
             # so only require a boolean here.
             self.assertIsInstance(keyboard.get("num"), bool)
-        self.assertEqual(len(report["styles"]), 4)
-        self.assertEqual([entry["cornerStyle"] for entry in report["styles"]], [1, 3, 4, 5])
+        self.assertEqual(len(report["styles"]), 6)
+        self.assertEqual([entry["cornerStyle"] for entry in report["styles"]],
+                         [0, 1, 2, 3, 4, 5])
         for entry in report["styles"]:
             with self.subTest(cornerStyle=entry["cornerStyle"]):
                 self.assertTrue(entry["ready"])
@@ -73,6 +75,19 @@ class BarRuntimeProbeTest(unittest.TestCase):
                 self.assertIsNotNone(island, "island host never registered")
                 self.assertGreater(island["width"], 0)
                 self.assertTrue(island["visible"])
+
+        self.assertTrue(report["borderless"]["ok"], report["borderless"])
+        self.assertEqual(report["borderless"]["modes"],
+                         ["pills", "separated", "segmented", "transparent"])
+
+        self.assertTrue(report["mediaHidden"]["ok"], report["mediaHidden"])
+        cases = report["mediaHidden"]["cases"]
+        self.assertEqual([case["cornerStyle"] for case in cases], ["1", "3"])
+        for case in cases:
+            with self.subTest(mediaHiddenStyle=case["cornerStyle"]):
+                self.assertLessEqual(abs(case["leftWidth"]), 0.5,
+                                     "a lane whose only widget is hidden kept capsule padding")
+                self.assertLessEqual(abs(case["centerWidth"]), 0.5)
 
 
 if __name__ == "__main__":
