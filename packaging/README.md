@@ -1,9 +1,9 @@
 # packaging — AUR 上架手册
 
-`nyxuri-git` 包含引擎、`plugins/` 和 `shell/`。安装后的 `.system-install` 标记
-启用系统包模式：由 pacman 更新，引擎不运行 git pull。
+单包全量 `nyxuri-git`：引擎 + `plugins/` + `shell/` 同船，`.system-install` 标记
+驱动系统包模式（更新交给 pacman，引擎不越权 git pull）。
 
-## 文件
+## 内容物
 
 | 文件 | 职责 |
 | --- | --- |
@@ -27,7 +27,7 @@
    git add PKGBUILD .SRCINFO nyxuri-git.install && git commit -m "initial import" && git push
    ```
 
-4. **安装文档核对**（本地面板内容，双语各一份；README 已回填，
+4. **门面回填核对**（本地面板内容，双语各一份；README 已回填，
    humans-wiki Home 顶部待补）：
 
    ````markdown
@@ -42,7 +42,7 @@
    回填位置：`README.md` / `README.zh-CN.md` 的 Install 段置顶（Git 仓库段降级为
    「开发」），`humans-wiki/Home.md` / `Home-zh.md` 顶部补 Install 块。
 
-5. **日常更新**：GitHub push main 即新版，AUR 侧零操作；只有依赖数组变化时
+5. **日常维护成本**：GitHub push main 即新版，AUR 侧零操作；只有依赖数组变化时
    重跑 `gen-deps.py --update` 再推一次。
 
 ## namcap 已定性假阳性（勿"修复"）
