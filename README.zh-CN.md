@@ -161,7 +161,7 @@ Nyxuri
 
 **感谢：**
 
-* [@zhuhuaian](https://github.com/zhuhuaian) · [@Krits03](https://github.com/Krits03) · [@TyhLxxxhLrqTq](https://github.com/TyhLxxxhLrqTq) · [@Yulljie](https://github.com/Yulljie) — 帮我做了很多杂活呢~❤️
+* [@zhuhuaian](https://github.com/zhuhuaian) · [@Krits03](https://github.com/Krits03) · [@TyhLxxxhLrqTq](https://github.com/TyhLxxxhLrqTq) · [@Yulljie](https://github.com/Yulljie) · [@StarWhiteIsBusy](https://github.com/StarWhiteIsBusy) — 帮我做了很多杂活呢~❤️
 * [RanXOM/glassy-niri](https://github.com/RanXOM/glassy-niri) — blur 效果参考
 * [SHORiN-KiWATA/shorin-niri](https://github.com/SHORiN-KiWATA/shorin-niri) — 抄了很多！
 * [sanweiya/fcitx5-mellow-themes](https://github.com/sanweiya/fcitx5-mellow-themes) — NyxMellow 皮肤圆角形状来源

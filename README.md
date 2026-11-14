@@ -161,7 +161,7 @@ For common issues and fixes, check the [Troubleshooting Guide (Wiki)](https://gi
 
 **Thanks:**
 
-* [@zhuhuaian](https://github.com/zhuhuaian) · [@Krits03](https://github.com/Krits03) · [@TyhLxxxhLrqTq](https://github.com/TyhLxxxhLrqTq) · [@Yulljie](https://github.com/Yulljie) — Helped me out with so much odd work~❤️
+* [@zhuhuaian](https://github.com/zhuhuaian) · [@Krits03](https://github.com/Krits03) · [@TyhLxxxhLrqTq](https://github.com/TyhLxxxhLrqTq) · [@Yulljie](https://github.com/Yulljie) · [@StarWhiteIsBusy](https://github.com/StarWhiteIsBusy) — Helped me out with so much odd work~❤️
 * [RanXOM/glassy-niri](https://github.com/RanXOM/glassy-niri) — Reference for blur effects
 * [SHORiN-KiWATA/shorin-niri](https://github.com/SHORiN-KiWATA/shorin-niri) — Copied a ton from here!
 * [sanweiya/fcitx5-mellow-themes](https://github.com/sanweiya/fcitx5-mellow-themes) — Rounded corner shapes for the NyxMellow skin
