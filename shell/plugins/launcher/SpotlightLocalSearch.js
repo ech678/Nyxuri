@@ -1,5 +1,5 @@
 .pragma library
-.import "../../commons/SpotlightAppOrder.js" as AppOrder
+.import "SpotlightAppRanking.js" as AppRanking
 
 function normalized(value) {
     return String(value || "").trim().toLocaleLowerCase();
@@ -17,68 +17,19 @@ function isWordStart(text, query) {
     return false;
 }
 
-function subsequencePenalty(text, query) {
-    let queryIndex = 0;
-    let firstIndex = -1;
-    let lastIndex = -1;
-    for (let index = 0; index < text.length && queryIndex < query.length; index += 1) {
-        if (text.charAt(index) !== query.charAt(queryIndex))
-            continue;
-        if (firstIndex < 0)
-            firstIndex = index;
-        lastIndex = index;
-        queryIndex += 1;
-    }
-    if (queryIndex !== query.length)
-        return -1;
-    return Math.max(0, lastIndex - firstIndex - query.length + 1);
+function appResults(source, query, options) {
+    return AppRanking.appResults(source, query, options);
 }
 
-function fieldScore(value, needle, weight) {
-    const text = normalized(value);
-    if (text === "" || needle === "")
-        return needle === "" ? weight : -1;
-    if (text === needle)
-        return 5000 + weight;
-    if (text.startsWith(needle))
-        return 4000 + weight - Math.min(99, text.length - needle.length);
-    if (isWordStart(text, needle))
-        return 3000 + weight;
-    const substringIndex = text.indexOf(needle);
-    if (substringIndex >= 0)
-        return 2000 + weight - Math.min(99, substringIndex);
-    const penalty = subsequencePenalty(text, needle);
-    return penalty >= 0 ? 1000 + weight - Math.min(99, penalty) : -1;
-}
-
-function appScore(app, needle) {
-    if (needle === "")
-        return 0;
-    let best = -1;
-    best = Math.max(best, fieldScore(app.name, needle, 80));
-    best = Math.max(best, fieldScore(app.genericName, needle, 60));
-    best = Math.max(best, fieldScore(Array.from(app.keywords || []).join(" "), needle, 40));
-    best = Math.max(best, fieldScore(app.id, needle, 20));
-    return best;
-}
-
-function appResults(source, query, order, history, now) {
-    const needle = normalized(query);
-    const next = [];
-    source.forEach(app => {
-        if (!app) return;
-        const score = appScore(app, needle);
-        if (score < 0) return;
-        next.push({provider: "apps", id: String(app.id), title: String(app.name || app.id),
-            subtitle: String(app.genericName || app.comment || app.id || ""),
-            icon: String(app.icon || ""), symbol: String(app.symbol || ""), score: score, appObject: app, actions: app.dragOnly ? [] : ["launch"]});
-    });
-    return AppOrder.sortedResults(next, order, history, now);
+function clearAppSearchCache() {
+    AppRanking.clearAppSearchCache();
 }
 
 function wallpaperPaths(source, query, basename) {
     const needle = normalized(query);
-    return source.filter(path => path && normalized(basename(path)).indexOf(needle) >= 0).slice().sort((a,b) => {
+    // filter() already returns a fresh array; the extra slice() used to
+    // duplicate the entire candidate list on every wallpaper query.
+    return source.filter(path => path && normalized(basename(path)).indexOf(needle) >= 0).sort((a,b) => {
         const left = basename(a), right = basename(b);
         if (needle) {
             const difference = Number(normalized(right).startsWith(needle)) - Number(normalized(left).startsWith(needle));
@@ -89,20 +40,39 @@ function wallpaperPaths(source, query, basename) {
 }
 
 function catalogScore(entry, needle) {
-    const titles = [entry.title, entry.sourceTitle].map(normalized);
-    if (titles.some(title => title === needle)) return 4;
-    if (titles.some(title => title.startsWith(needle))) return 3;
-    const aliases = (entry.aliases || []).map(normalized);
-    if (titles.concat(aliases).some(title => isWordStart(title, needle))) return 2;
-    return titles.concat(aliases).some(title => title.indexOf(needle) >= 0) ? 1 : -1;
+    const title = normalized(entry.title);
+    const sourceTitle = normalized(entry.sourceTitle);
+    if (title === needle || sourceTitle === needle) return 4;
+    if (title.startsWith(needle) || sourceTitle.startsWith(needle)) return 3;
+
+    const aliases = entry.aliases || [];
+    if (isWordStart(title, needle) || isWordStart(sourceTitle, needle))
+        return 2;
+    for (let index = 0; index < aliases.length; ++index) {
+        if (isWordStart(normalized(aliases[index]), needle))
+            return 2;
+    }
+    if (title.indexOf(needle) >= 0 || sourceTitle.indexOf(needle) >= 0)
+        return 1;
+    for (let index = 0; index < aliases.length; ++index) {
+        if (normalized(aliases[index]).indexOf(needle) >= 0)
+            return 1;
+    }
+    return -1;
 }
 function matchCatalog(entries, query) {
     const needle = normalized(query);
     if (!needle) return [];
-    return entries.map(entry => ({entry: entry, score: catalogScore(entry, needle)}))
-        .filter(item => item.score >= 0)
-        .sort((a,b) => b.score - a.score || a.entry.title.localeCompare(b.entry.title) || a.entry.id.localeCompare(b.entry.id))
-        .map(item => item.entry);
+    const matches = [];
+    for (let index = 0; index < entries.length; ++index) {
+        const entry = entries[index];
+        const score = catalogScore(entry, needle);
+        if (score >= 0)
+            matches.push({entry: entry, score: score});
+    }
+    matches.sort((a,b) => b.score - a.score || a.entry.title.localeCompare(b.entry.title)
+                       || a.entry.id.localeCompare(b.entry.id));
+    return matches.map(item => item.entry);
 }
 
 var budgets = {apps: 6, settings: 2, actions: 2, wallpapers: 4};

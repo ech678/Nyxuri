@@ -17,6 +17,9 @@ Canvas {
 
     property bool paintPending: false
     onPointsChanged: {
+        if (!root.visible)
+            return;
+
         if (!paintThrottle.running) {
             paintThrottle.start();
             root.requestPaint();
@@ -30,11 +33,25 @@ Canvas {
 
         interval: 33
         onTriggered: {
+            if (!root.visible) {
+                root.paintPending = false;
+                return;
+            }
+
             if (root.paintPending) {
                 root.paintPending = false;
                 root.requestPaint();
                 paintThrottle.start();
             }
+        }
+    }
+
+    onVisibleChanged: {
+        if (visible) {
+            root.requestPaint();
+        } else {
+            paintThrottle.stop();
+            root.paintPending = false;
         }
     }
 
@@ -77,7 +94,7 @@ Canvas {
         ctx.fill();
     }
 
-    layer.enabled: true
+    layer.enabled: root.visible
     layer.effect: MultiEffect {
         saturation: 0.2
         blurEnabled: true

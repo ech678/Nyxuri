@@ -89,6 +89,7 @@ Rectangle {
     radius: Metrics.lockCardRadius
     clip: true
     Component.onCompleted: {
+        WeatherService.acquire("lock-weather-card");
         if (!WeatherService.hasValidData)
             WeatherService.refresh();
     }
@@ -381,13 +382,8 @@ Rectangle {
         }
     }
 
-    Timer {
-        id: weatherRefreshTimer
-        running: true
-        repeat: true
-        interval: 900000
-        onTriggered: WeatherService.refresh()
-    }
+    // WeatherBackend owns the single 15-minute refresh schedule. The lock
+    // card is only a consumer and must not create a second poller.
 
     SequentialAnimation on skeletonPulse {
         running: root.loadingState
@@ -418,5 +414,6 @@ Rectangle {
 
     Component.onDestruction: {
         weatherRefreshTimer.stop();
+        WeatherService.release("lock-weather-card");
     }
 }

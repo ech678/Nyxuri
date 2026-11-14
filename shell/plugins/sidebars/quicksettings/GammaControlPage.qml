@@ -23,6 +23,9 @@ NexusPageBase {
 
     readonly property Item searchLeaf: root.flickable
 
+    Component.onCompleted: DisplayColor.setConsumer("gamma-control-page", true)
+    Component.onDestruction: DisplayColor.setConsumer("gamma-control-page", false)
+
     readonly property var preferences: DisplayColor.preferences
     readonly property var timePattern: /^([01][0-9]|2[0-3]):[0-5][0-9]$/
 

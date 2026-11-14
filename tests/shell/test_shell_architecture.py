@@ -30,6 +30,40 @@ from pathlib import Path
 
 
 
+class TestCacheFingerprint(unittest.TestCase):
+    def test_source_and_executable_bytes_invalidate_even_with_restored_mtime(self):
+        wrapper = (Path(__file__).resolve().parents[2] / "shell/nyxuri-shell").read_text()
+        start = wrapper.index("qml_cache_fingerprint() {")
+        function = wrapper[start:wrapper.index("\n}\n", start) + 3]
+        with TempEnv() as isolated:
+            tree = isolated.home / "source"
+            tree.mkdir()
+            source = tree / "A.qml"
+            source.write_text("Item { property int value: 1 }\n")
+            binary = isolated.home / "qs"
+            binary.write_text("#!/bin/sh\nexit 99\n")
+            binary.chmod(0o755)
+            env = dict(os.environ, PATH=str(isolated.home) + os.pathsep + os.environ["PATH"])
+            command = ["bash", "-c", "set -euo pipefail\nSHELL_DIR=\"$1\"\n" + function + "\nqml_cache_fingerprint", "fingerprint", str(tree)]
+            def fingerprint():
+                with patch("subprocess.run", wraps=subprocess.run) as run:
+                    result = subprocess.run(command, env=env, capture_output=True, text=True, timeout=10)
+                self.assertEqual(run.call_args.args[0], command)
+                self.assertNotIn("shell", run.call_args.kwargs)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                return result.stdout.strip()
+            first = fingerprint()
+            self.assertEqual(first, fingerprint())
+            timestamp = source.stat().st_mtime_ns
+            source.write_text("Item { property int value: 2 }\n")
+            os.utime(source, ns=(timestamp, timestamp))
+            self.assertNotEqual(first, fingerprint())
+            source.write_text("Item { property int value: 1 }\n")
+            self.assertEqual(first, fingerprint())
+            binary.write_text("#!/bin/sh\nexit 98\n")
+            self.assertNotEqual(first, fingerprint())
+
+
 class TestShellManagement(unittest.TestCase):
     def setUp(self):
         self._ctx = TempEnv()
@@ -921,6 +955,29 @@ class TestShellManagement(unittest.TestCase):
             clock_content = f.read()
         self.assertIn("DateTime.time", clock_content)
 
+    def test_r11_font_and_i18n_startup_dedup_contract(self):
+        """Font and locale singletons own their one cold-start initialization."""
+        repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        app_content = Path(repo_root, "shell", "shell.qml").read_text(encoding="utf-8")
+        font_content = Path(repo_root, "shell", "services", "FontService.qml").read_text(encoding="utf-8")
+        i18n_content = Path(repo_root, "shell", "services", "I18nService.qml").read_text(encoding="utf-8")
+
+        # The microkernel host must not queue these services a second time;
+        # each singleton owns its own completion initializer.
+        self.assertNotIn('scheduleBackground("fonts"', app_content)
+        self.assertNotIn('scheduleBackground("i18n"', app_content)
+        # The settings-only font model joins the shared queue; rendering
+        # families remain synchronous (behavior covered by test_font_startup).
+        self.assertIn('Component.onCompleted: ShellStartupService.scheduleBackground("font-options"', font_content)
+        self.assertIn("Component.onCompleted: initialize()", i18n_content)
+        self.assertEqual(font_content.count("Component.onCompleted"), 1)
+        self.assertEqual(i18n_content.count("Component.onCompleted"), 1)
+
+        # The markers are operational logs used by the container startup probe
+        # to count real invocations without exposing a test-only QML property.
+        self.assertIn("[FontService] refresh", font_content)
+        self.assertIn("[I18nService] initialize language=", i18n_content)
+
     def test_r2_lifecycle_exit_sigterm_and_crash_recovery(self):
         """R2-03 Contract: SIGTERM exit bounding, early crash detection, and rollback safety."""
         from unittest.mock import MagicMock, patch
@@ -1674,12 +1731,12 @@ class TestShellManagement(unittest.TestCase):
                         f"Found interval: 0 in {full_p} - must use Qt.callLater or non-zero interval",
                     )
 
-        # TimerService stopwatchTimer interval is 50ms (not 10ms)
+        # TimerService stopwatchTimer interval is 100ms (not 10ms)
         timer_service_path = os.path.join(shell_dir, "plugins", "sidebars", "dashboard", "infotools", "TimerService.qml")
         with open(timer_service_path, "r", encoding="utf-8") as f:
             ts_code = f.read()
-        self.assertIn("interval: 50", ts_code)
-        self.assertNotIn("interval: 10", ts_code)
+        self.assertIn("interval: 100", ts_code)
+        self.assertNotIn("interval: 10\n", ts_code)
 
         # ClockWidget ticker lifecycle
         clock_content_path = os.path.join(shell_dir, "plugins", "bar", "ClockWidget.qml")
@@ -2017,7 +2074,8 @@ class TestShellManagement(unittest.TestCase):
         # 7. IPC diagnostics() delegates; shell.qml stays a thin assembler.
         app = read("shell.qml")
         self.assertIn("function diagnostics(): string", app)
-        self.assertIn("return ShellControlService.diagnosticsJson();", app)
+        self.assertIn("const host = ActionGateway.settingsHost;", app)
+        self.assertIn("host.diagnosticsJson()", app)
         self.assertNotIn("JSON.stringify(ShellControlService.buildDiagnostics()", app)
 
         # 8. Dashboard-style routes land somewhere sensible.

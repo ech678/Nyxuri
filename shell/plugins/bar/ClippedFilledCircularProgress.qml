@@ -1,8 +1,8 @@
-// Fork & Trim: end4-pC modules/common/widgets/ClippedFilledCircularProgress.qml
-// SPDX-License-Identifier: GPL-3.0-or-later
-
-import qs.commons
+// Forked from pctrade/end4-pC modules/common/widgets/ClippedFilledCircularProgress.qml
+// at b881970bfc25ff92b0f72b751c810a178c5fc677 (GPL-3.0-or-later).
+// Nyxuri adaptation: shell commons/ui import paths.
 import qs.ui
+import qs.commons
 import QtQuick
 import QtQuick.Shapes
 import Qt5Compat.GraphicalEffects
@@ -48,6 +48,7 @@ Item {
             duration: root.animationDuration
             easing.type: root.easingType
         }
+
     }
 
     Rectangle {

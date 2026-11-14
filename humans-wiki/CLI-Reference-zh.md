@@ -4,14 +4,14 @@
 
 ---
 
-## 插件动词
+## 插件管理
 
 | 指令 | 作用 |
 | :--- | :--- |
-| `nyxuri list [插件]` | 插件全景（开关状态 × 当前形态），或单个插件详情 |
-| `nyxuri on <插件> [--form <形态>]` | 启用插件（先披露依赖与缺失包），等价 `enable`；`--preset` 为 deprecated 别名 |
+| `nyxuri list [插件]` | 列出插件的开关状态和当前形态，或查看单个插件详情 |
+| `nyxuri on <插件> [--form <形态>]` | 启用插件（先披露依赖与缺失包），等价 `enable`；`--preset` 为已弃用别名 |
 | `nyxuri off <插件> [--cascade]` | 停用插件——自定义文件收存、受管文件抹净，等价 `disable` |
-| `nyxuri use <插件> [list\|<形态>\|save\|edit\|delete\|slots\|slot <轴> <变体>]` | 切换 / 管理形态（详见 [形态与槽位轴](Forms-zh)）；`preset` 命令为 deprecated 别名 |
+| `nyxuri use <插件> [list\|<形态>\|save\|edit\|delete\|slots\|slot <轴> <变体>]` | 切换 / 管理形态（详见 [形态与槽位轴](Forms-zh)）；`preset` 命令为已弃用别名 |
 | `nyxuri doctor [插件]` | 插件三态对账（`Synced` / `Drifted` / `Ghost`）+ 系统体检 |
 
 桌面上一切皆插件——壁纸也是：`nyxuri on wallpapers` 部署内置 fallback 到
@@ -63,7 +63,7 @@
 
 ---
 
-## 已处决的旧名（KM3.5）
+## 已移除的旧命令（KM3.5）
 
 `deploy` `backup` `restore` `remove` `purge` `recommended` `apps` `wp` `wallpapers`
 `report` 与模块动词 `greeter` `fcitx` `gtk` `fisher` 已全部退役——调用即未知命令。

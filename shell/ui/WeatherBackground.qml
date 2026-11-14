@@ -42,6 +42,34 @@ Item {
     readonly property bool animationTimerRunning: sceneTimer.running
     property int simulationFrameCount: 0
     property int paintCount: 0
+    property bool _paintQueued: false
+    property bool _geometryResetQueued: false
+
+    function scheduleCanvasPaint() {
+        if (_paintQueued)
+            return
+        _paintQueued = true
+        Qt.callLater(() => {
+            _paintQueued = false
+            if (canvas)
+                canvas.requestPaint()
+        })
+    }
+
+    function scheduleGeometryReset() {
+        if (_geometryResetQueued)
+            return
+        _geometryResetQueued = true
+        Qt.callLater(() => {
+            _geometryResetQueued = false
+            initCloudBands()
+            resetRainScene()
+            resetLightningScene()
+            resetMeteorScene()
+            resetSnowScene()
+            resetLeafScene()
+        })
+    }
 
     function classifyWeatherType() {
         const name = (root.iconName || "").toLowerCase()
@@ -253,7 +281,7 @@ Item {
     function resetRainScene() {
         rainLayers = makeEmptyRainLayers()
         splashes = []
-        canvas.requestPaint()
+        scheduleCanvasPaint()
     }
 
     function randomLightningDelay() {
@@ -263,7 +291,7 @@ Item {
     function resetLightningScene() {
         lightningStrikes = []
         lightningCooldown = randomLightningDelay()
-        canvas.requestPaint()
+        scheduleCanvasPaint()
     }
 
     function visualWeatherType() {
@@ -499,7 +527,7 @@ Item {
                 slots.push(makeMeteorState(meteorRespawnDelay(true)))
             meteors = slots
         }
-        canvas.requestPaint()
+        scheduleCanvasPaint()
     }
 
     function updateMeteors(dt) {
@@ -819,7 +847,6 @@ Item {
         ctx.fill()
 
         ctx.fillStyle = alphaColor("#6a7078", cloudMaskOpacity)
-        drawCloudBandShape(ctx, offset, bandHeight, archHeight)
         ctx.fill()
     }
 
@@ -1174,29 +1201,15 @@ Item {
         componentReady = true
         resetVisualScenes()
     }
-    onWidthChanged: {
-        initCloudBands()
-        resetRainScene()
-        resetLightningScene()
-        resetMeteorScene()
-        resetSnowScene()
-        resetLeafScene()
-    }
-    onHeightChanged: {
-        initCloudBands()
-        resetRainScene()
-        resetLightningScene()
-        resetMeteorScene()
-        resetSnowScene()
-        resetLeafScene()
-    }
+    onWidthChanged: scheduleGeometryReset()
+    onHeightChanged: scheduleGeometryReset()
     onWeatherCodeChanged: updateWeatherClassification()
     onIconNameChanged: updateWeatherClassification()
     onWindSpeedMsChanged: updateWeatherClassification()
     onWindGustsMsChanged: updateWeatherClassification()
     onNightChanged: {
         resetMeteorScene()
-        canvas.requestPaint()
+        scheduleCanvasPaint()
     }
     onAnimateChanged: {
         if (animate) {
@@ -1207,6 +1220,15 @@ Item {
             ensureLeafPopulation()
         } else {
             leafSpawnTimer.stop()
+            // Animation can be disabled while the item remains alive. Clear
+            // transient particle state as well as stopping the frame timer so
+            // hidden/paused weather does not retain a growing scene graph.
+            resetRainScene()
+            resetLightningScene()
+            resetMeteorScene()
+            resetSnowScene()
+            resetLeafScene()
+            scheduleCanvasPaint()
         }
     }
     onRainBounceYChanged: {

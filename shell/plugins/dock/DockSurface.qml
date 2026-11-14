@@ -71,9 +71,12 @@ PanelWindow {
         return result;
     }
     readonly property real magnification: DockService.magnification ? DockService.magnificationScale : 1
+    // Section membership changes only when the model/order changes, not on
+    // pointer movement or magnification. Keep the canonical boundaries out of
+    // the per-frame layout binding.
+    readonly property var baseSectionBoundaries: DockLayout.sectionBoundaries(kinds, DockService.pinnedAppCount)
     readonly property var baseLayout: DockLayout.layout(kinds, DockService.iconSize, availableLength,
-                                                        magnification, 16, NaN, DockLayout.sectionBoundaries(
-                                                            kinds, DockService.pinnedAppCount))
+                                                        magnification, 16, NaN, baseSectionBoundaries)
     readonly property real scrollOffset: horizontal ? icons.contentX - icons.originX : icons.contentY
                                                       - icons.originY
     readonly property real pointerInBase: pointerAxis - (axisLength - Math.min(baseLayout.baseLength,
@@ -102,11 +105,12 @@ PanelWindow {
         }
     }
     readonly property bool directMagnification: magnificationRequested || magnificationProgress > 0
+    readonly property var previewSectionBoundaries: DockLayout.sectionBoundaries(preview.kinds,
+                                                                                 DockService.pinnedAppCount,
+                                                                                 preview.order)
     readonly property var layout: DockLayout.layout(preview.kinds, baseLayout.size, availableLength,
                                                     magnification, 16, pointerInBase,
-                                                    DockLayout.sectionBoundaries(preview.kinds,
-                                                                                 DockService.pinnedAppCount,
-                                                                                 preview.order),
+                                                    previewSectionBoundaries,
                                                     magnificationProgress)
     readonly property var slotsByIndex: {
         const result = [];

@@ -192,16 +192,42 @@ Singleton {
         id: fetchOutputsProcess
         command: ["niri", "msg", "-j", "outputs"]
 
+        onRunningChanged: {
+            if (running)
+                fetchOutputsWatchdog.restart();
+            else
+                fetchOutputsWatchdog.stop();
+        }
+
         stdout: StdioCollector {
             id: fetchOutputsCollector
             onStreamFinished: {
+                const text = String(fetchOutputsCollector.text || "");
+                if (text.length > 262144) {
+                    console.warn("NiriDriver: outputs response exceeded 256 KiB");
+                    root.compositorVersionError = "outputs response too large";
+                    return;
+                }
                 try {
-                    const data = JSON.parse(fetchOutputsCollector.text);
+                    const data = JSON.parse(text);
                     root._applyOutputs(data);
                 } catch (e) {
                     console.warn("NiriDriver: Failed to parse outputs JSON:", e);
                 }
             }
+        }
+    }
+
+    Timer {
+        id: fetchOutputsWatchdog
+        interval: 3000
+        repeat: false
+        onTriggered: {
+            if (!fetchOutputsProcess.running)
+                return;
+            console.warn("NiriDriver: outputs query timed out");
+            fetchOutputsProcess.running = false;
+            root.fetchOutputs();
         }
     }
 
@@ -772,7 +798,16 @@ Singleton {
     Process {
         id: versionProcess
         command: ["niri", "--version"]
-        running: root.isNiri
+        // Armed one event-loop turn after assembly so the probe does not compete
+        // with the first-frame path; consumers gate on compositorVersionReady.
+        property bool armed: false
+        running: root.isNiri && armed
+        onRunningChanged: {
+            if (running)
+                versionWatchdog.restart();
+            else
+                versionWatchdog.stop();
+        }
 
         stdout: StdioCollector {
             id: versionOutput
@@ -783,6 +818,12 @@ Singleton {
         }
 
         onExited: exitCode => {
+            if (exitCode === 0 && String(versionOutput.text || "").length > 4096) {
+                root.compositorVersion = "";
+                root.compositorVersionError = "version response too large";
+                root.compositorVersionReady = true;
+                return;
+            }
             if (exitCode === 0) {
                 root.compositorVersion = versionOutput.text.trim();
                 root.compositorVersionError = "";
@@ -790,6 +831,20 @@ Singleton {
                 root.compositorVersion = "";
                 root.compositorVersionError = versionError.text.trim();
             }
+            root.compositorVersionReady = true;
+        }
+    }
+
+    Timer {
+        id: versionWatchdog
+        interval: 3000
+        repeat: false
+        onTriggered: {
+            if (!versionProcess.running)
+                return;
+            versionProcess.running = false;
+            root.compositorVersion = "";
+            root.compositorVersionError = "version probe timed out";
             root.compositorVersionReady = true;
         }
     }
@@ -924,10 +979,30 @@ Singleton {
     }
 
     // Explicit Teardown (Lifecycle contract)
+    Component.onCompleted: {
+        ShellStartupService.registerQmlResource("NiriDriver", "timer", reconnectTimer);
+        ShellStartupService.registerQmlResource("NiriDriver", "timer", fetchOutputsDebounce);
+        ShellStartupService.registerQmlResource("NiriDriver", "timer", fetchOutputsWatchdog);
+        ShellStartupService.registerQmlResource("NiriDriver", "timer", windowsUpdateTimer);
+        ShellStartupService.registerQmlResource("NiriDriver", "process", fetchOutputsProcess);
+        ShellStartupService.registerQmlResource("NiriDriver", "process", monitorsPowerProcess);
+        ShellStartupService.registerQmlResource("NiriDriver", "process", versionProcess);
+        ShellStartupService.registerQmlResource("NiriDriver", "timer", versionWatchdog);
+        Qt.callLater(() => {
+            versionProcess.armed = true;
+        });
+    }
     Component.onDestruction: {
+        ShellStartupService.unregisterQmlResources("NiriDriver", [
+            {"object": reconnectTimer}, {"object": fetchOutputsDebounce}, {"object": fetchOutputsWatchdog}, {"object": windowsUpdateTimer},
+            {"object": fetchOutputsProcess}, {"object": monitorsPowerProcess}, {"object": versionProcess},
+            {"object": versionWatchdog}
+        ]);
         windowsUpdateTimer.stop();
         fetchOutputsDebounce.stop();
+        fetchOutputsWatchdog.stop();
         reconnectTimer.stop();
+        versionWatchdog.stop();
         eventStreamSocket.connected = false;
         requestSocket.connected = false;
         if (fetchOutputsProcess.running) {

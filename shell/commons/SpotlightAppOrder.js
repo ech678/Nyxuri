@@ -83,6 +83,8 @@ function sortedResults(results, order, history, now) {
                     - usageScore(selectedOrder, history[left.id], now);
         if (usage !== 0) return usage;
         const byName = left.title.localeCompare(right.title);
-        return byName !== 0 ? byName : left.id.localeCompare(right.id);
+        if (byName !== 0) return byName;
+        const byId = left.id.localeCompare(right.id);
+        return byId !== 0 ? byId : (left.sourceIndex || 0) - (right.sourceIndex || 0);
     });
 }

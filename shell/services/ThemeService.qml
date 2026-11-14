@@ -127,6 +127,7 @@ Singleton {
     }
 
     property string generationError: ""
+    property bool themesDetected: false
     property string generationTemplateId: ""
     property string pendingGenerationTemplateId: ""
     property var pendingGeneration: null
@@ -295,7 +296,14 @@ Singleton {
         return options;
     }
 
+    function ensureAvailableThemes() {
+        if (root.themesDetected || detectIconThemesProcess.running || detectCursorThemesProcess.running)
+            return;
+        root.detectAvailableThemes();
+    }
+
     function detectAvailableThemes() {
+        root.themesDetected = true;
         const paths = root.dataDirs().map(dir => dir + "/icons").concat([Paths.homeDir + "/.icons"]);
         const script = Paths.scriptPath("theme", "list-cursor-icon-themes.sh");
         detectIconThemesProcess.command = ["bash", script, "icon", ...paths];
@@ -412,14 +420,14 @@ Singleton {
     Component.onCompleted: {
         root.applyIconTheme();
         root.applyConfigToAppearance();
-        root.detectAvailableThemes();
         root.applyCursorSettings();
         // The palette is generated, not read from config. If config.json says
         // light while colors.json was last written for dark — or is missing on a
         // fresh install — the shell renders the stale palette and switching the
-        // theme looks like it did nothing. Regenerate on startup so the two
-        // cannot drift apart.
-        root.regenerateFromCurrentWallpaper();
+        // theme looks like it did nothing. Preserve the regeneration, but
+        // dispatch it after the current assembly turn so starting matugen does
+        // not compete with the first-frame path.
+        Qt.callLater(root.regenerateFromCurrentWallpaper);
         // UiPreferences reads the system scheme on startup. The Matugen mode
         // is generation configuration, not a request to change the system theme.
     }

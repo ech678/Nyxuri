@@ -103,8 +103,7 @@ NexusPageBase {
         PreferenceInfo {
             icon: "colorize"
             label: I18n.tr("Color picker")
-            subtext: !ColorPickerService.probeFinished ? I18n.tr("Checking…") : ColorPickerService.available
-                                                         ? "hyprpicker ✓" : I18n.tr("hyprpicker is missing")
+            subtext: I18n.tr("Availability not checked")
         }
 
         PreferenceAction {

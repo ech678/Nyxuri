@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+test "$#" = 3 -o "$#" = 4
+test "$2" = org.gnome.desktop.interface
+test "$3" = color-scheme
+case "$1" in
+    get)
+        test "$#" = 3
+        printf '%s get\n' "$(date +%s%N)" >> "$THEME_POLL_CALLS"
+        cat "$THEME_POLL_SETTING"
+        ;;
+    set)
+        test "$#" = 4
+        test "$4" = prefer-dark
+        printf '%s set\n' "$(date +%s%N)" >> "$THEME_POLL_CALLS"
+        printf '%s\n' "$4" > "$THEME_POLL_SETTING"
+        ;;
+    *) exit 2 ;;
+esac

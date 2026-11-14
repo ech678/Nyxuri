@@ -1,11 +1,12 @@
-// Fork & Trim: end4-pC modules/common/widgets/StyledProgressBar.qml
-// SPDX-License-Identifier: GPL-3.0-or-later
-
+// Forked from pctrade/end4-pC modules/common/widgets/StyledProgressBar.qml
+// at b881970bfc25ff92b0f72b751c810a178c5fc677 (GPL-3.0-or-later).
+// Nyxuri adaptation: shell commons/ui import paths.
 pragma ComponentBehavior: Bound
 import qs.commons
 import qs.ui
 import QtQuick
 import QtQuick.Controls
+
 
 /**
  * Material 3 progress bar. See https://m3.material.io/components/progress-indicators/overview
@@ -30,7 +31,7 @@ ProgressBar {
     Behavior on value {
         animation: Appearance?.animation.elementMoveEnter.numberAnimation.createObject(this)
     }
-
+    
     background: Item {
         implicitHeight: valueBarHeight
         implicitWidth: valueBarWidth
@@ -57,17 +58,13 @@ ProgressBar {
                 fullLength: root.width
                 Connections {
                     target: root
-                    function onValueChanged() {
-                        wavyFill.requestPaint();
-                    }
-                    function onHighlightColorChanged() {
-                        wavyFill.requestPaint();
-                    }
+                    function onValueChanged() { wavyFill.requestPaint(); }
+                    function onHighlightColorChanged() { wavyFill.requestPaint(); }
                 }
                 FrameAnimation {
                     running: root.animateWave
                     onTriggered: {
-                        wavyFill.requestPaint();
+                        wavyFill.requestPaint()
                     }
                 }
             }
@@ -83,7 +80,7 @@ ProgressBar {
                 color: root.highlightColor
             }
         }
-
+        
         Rectangle { // Right remaining part fill
             anchors.right: parent.right
             width: (1 - root.visualPosition) * parent.width - valueBarGap
@@ -91,7 +88,7 @@ ProgressBar {
             radius: height / 2
             color: root.trackColor
         }
-
+        
         Rectangle { // Stop point
             anchors.right: parent.right
             width: valueBarGap

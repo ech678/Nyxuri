@@ -10,6 +10,10 @@ WidgetPanel {
     id: root
 
     property var screen: null
+
+    Component.onCompleted: DisplayColor.setConsumer("quicksettings." + String(root.screen ? root.screen.name : "default"), true)
+    Component.onDestruction: DisplayColor.setConsumer("quicksettings." + String(root.screen ? root.screen.name : "default"), false)
+
     title: I18n.tr("Quick Settings")
     icon: "settings"
 

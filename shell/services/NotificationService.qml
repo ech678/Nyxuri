@@ -13,6 +13,7 @@ Singleton {
     id: root
 
     readonly property int defaultPopupTimeoutMs: 7000
+    readonly property int maxHistoryCount: 500
     readonly property string notificationsDir: Paths.stateHome + "/notifications"
     readonly property string filePath: notificationsDir + "/notifications.json"
     readonly property bool silent: UiPreferences.dndEnabled
@@ -25,12 +26,16 @@ Singleton {
     property int unread: 0
     property int idOffset: 0
     property list<Notif> list: []
-    property var popupList: list.filter(notif => notif.popup).sort((a, b) => b.receivedAt - a.receivedAt)
+    // Keep the public projections, but refresh them as one derived-index pass.  The
+    // previous bindings independently walked and sorted the history for each
+    // projection, which made every list replacement more expensive than needed.
+    property var popupList: []
     property var latestTimeForApp: ({})
-    property var groupsByAppName: groupsForList(root.list)
-    property var popupGroupsByAppName: groupsForList(root.popupList)
-    property list<string> appNameList: appNameListForGroups(root.groupsByAppName)
-    property list<string> popupAppNameList: appNameListForGroups(root.popupGroupsByAppName)
+    property var groupsByAppName: ({})
+    property var popupGroupsByAppName: ({})
+    property list<string> appNameList: []
+    property list<string> popupAppNameList: []
+    property var notificationIndex: ({})
 
     signal notify(notification: var)
     signal discard(id: int)
@@ -96,7 +101,10 @@ Singleton {
         NotifTimer {}
     }
 
-    Component.onCompleted: ensureStoreDir.running = true
+    Component.onCompleted: {
+        root.rebuildDerivedIndexes();
+        ensureStoreDir.running = true;
+    }
 
     onInitDone: {
         root.historyReady = true;
@@ -158,18 +166,12 @@ Singleton {
         if (notif.popup)
             root.unread++;
         root.trimPopupList(3);
+        root.trimHistory();
         root.saveNotifications();
         root.notify(notif);
     }
 
-    onListChanged: {
-        const nextLatest = {};
-        root.list.forEach(notif => {
-            if (!nextLatest[notif.appName] || notif.receivedAt > nextLatest[notif.appName])
-                nextLatest[notif.appName] = notif.receivedAt;
-        });
-        root.latestTimeForApp = nextLatest;
-    }
+    onListChanged: root.rebuildDerivedIndexes()
 
     Process {
         id: ensureStoreDir
@@ -240,6 +242,7 @@ Singleton {
                          newNotifObject,];
             replaced.forEach(notif => Qt.callLater(() => notif.destroy()));
             root.trimPopupList(3);
+            root.trimHistory();
             root.saveNotifications();
             root.notify(newNotifObject);
         }
@@ -248,6 +251,7 @@ Singleton {
     FileView {
         id: notifFileView
         path: root.filePath
+        atomicWrites: true
 
         onLoaded: {
             try {
@@ -286,6 +290,7 @@ Singleton {
                                                        });
                 });
                 root.idOffset = maxId;
+                root.trimHistory();
                 root.saveNotifications();
                 root.initDone();
             } catch (error) {
@@ -311,7 +316,63 @@ Singleton {
     }
 
     function notificationById(id) {
-        return root.list.find(notif => notif.notificationId === id) || null;
+        return root.notificationIndex[String(id)] || null;
+    }
+
+    function rebuildDerivedIndexes() {
+        const nextLatest = {};
+        const nextNotificationIndex = {};
+        const nextPopupList = [];
+        const nextGroups = {};
+        const nextPopupGroups = {};
+        const appendGroup = (groups, notif) => {
+            const appName = notif.appName || I18n.tr("System");
+            if (!groups[appName]) {
+                groups[appName] = {
+                    appName,
+                    appIcon: notif.appIcon,
+                    notifications: [],
+                    receivedAt: notif.receivedAt
+                };
+            }
+            groups[appName].notifications.push(notif);
+            // Preserve groupsForList's fallback: when latestTimeForApp has no
+            // matching (display) key, the last notification wins.
+            groups[appName].receivedAt = notif.receivedAt;
+            if (!groups[appName].appIcon && notif.appIcon)
+                groups[appName].appIcon = notif.appIcon;
+        };
+
+        // Build both group projections from this same traversal.  Popup groups are
+        // sorted below because popupList has the public receivedAt ordering.
+        root.list.forEach(notif => {
+            nextNotificationIndex[String(notif.notificationId)] = notif;
+            if (!nextLatest[notif.appName] || notif.receivedAt > nextLatest[notif.appName])
+                nextLatest[notif.appName] = notif.receivedAt;
+            appendGroup(nextGroups, notif);
+            if (notif.popup) {
+                nextPopupList.push(notif);
+                appendGroup(nextPopupGroups, notif);
+            }
+        });
+        Object.keys(nextGroups).forEach(appName => {
+            nextGroups[appName].receivedAt = nextLatest[appName] || nextGroups[appName].receivedAt;
+        });
+        Object.keys(nextPopupGroups).forEach(appName => {
+            nextPopupGroups[appName].receivedAt = nextLatest[appName]
+                    || nextPopupGroups[appName].receivedAt;
+            nextPopupGroups[appName].notifications.sort((a, b) => b.receivedAt - a.receivedAt);
+        });
+        nextPopupList.sort((a, b) => b.receivedAt - a.receivedAt);
+
+        // Publish the projections after deriving them from the same list snapshot.
+        root.notificationIndex = nextNotificationIndex;
+        root.latestTimeForApp = nextLatest;
+        root.popupList = nextPopupList;
+        root.groupsByAppName = nextGroups;
+        root.popupGroupsByAppName = nextPopupGroups;
+        root.appNameList = root.appNameListForGroups(nextGroups);
+        root.popupAppNameList = root.appNameListForGroups(nextPopupGroups);
     }
 
     function popupTimeoutMs(expireTimeoutSeconds) {
@@ -386,8 +447,29 @@ Singleton {
         notifFileView.reload();
     }
 
+    function trimHistory() {
+        const durable = root.list.filter(notif => !notif.isTransient).sort((a, b) => b.receivedAt - a.receivedAt);
+        if (durable.length <= root.maxHistoryCount)
+            return;
+
+        const retained = new Set(durable.slice(0, root.maxHistoryCount));
+        const removed = root.list.filter(notif => !notif.isTransient && !retained.has(notif));
+        root.list = root.list.filter(notif => notif.isTransient || retained.has(notif));
+        removed.forEach(notif => {
+            root.stopPopupTimer(notif);
+            Qt.callLater(() => notif.destroy());
+        });
+    }
+
     function saveNotifications() {
-        notifFileView.setText(root.stringifyList(root.list));
+        saveDebounce.restart();
+    }
+
+    Timer {
+        id: saveDebounce
+        interval: 100
+        repeat: false
+        onTriggered: notifFileView.setText(root.stringifyList(root.list))
     }
 
     function appNameListForGroups(groups) {
@@ -564,6 +646,7 @@ Singleton {
     }
 
     Component.onDestruction: {
+        saveDebounce.stop();
         if (ensureStoreDir)
             ensureStoreDir.running = false;
         root.list.forEach(notif => root.stopPopupTimer(notif));

@@ -100,9 +100,14 @@ FloatingWindow {
         rejected();
     }
     Component.onCompleted: {
+        ShellStartupService.registerQmlResource("FilePickerWindow", "window", root);
         currentPath = normalizePath(currentPath) || normalizePath(picturesDir) || "/";
         pathDraft = currentPath;
         refreshBreadcrumbs();
+    }
+
+    Component.onDestruction: {
+        ShellStartupService.unregisterQmlResource("FilePickerWindow", "window", root);
     }
 
     function encodeFileUrl(path) {
@@ -796,6 +801,11 @@ FloatingWindow {
                             anchors.fill: parent
                             anchors.margins: 10
                             clip: true
+                            // Keep the file picker virtualized tightly around the
+                            // viewport. Large folders may expose thousands of
+                            // entries; the delegate already owns its thumbnail
+                            // and must not be retained in an off-screen buffer.
+                            cacheBuffer: 0
                             cellWidth: width > 0 ? width / Math.max(1, Math.floor(width / 146)) : 146
                             cellHeight: 142
                             model: root._folderModelAttached ? folderModel : null
@@ -888,6 +898,8 @@ FloatingWindow {
                                             source: !fileItem.fileIsDir && root.isImageName(
                                                         fileItem.fileName) ? root.encodeFileUrl(
                                                                                  fileItem.filePath) : ""
+                                            sourceSize: Qt.size(Math.max(1, Math.ceil(width * Screen.devicePixelRatio)),
+                                                                Math.max(1, Math.ceil(height * Screen.devicePixelRatio)))
                                             fillMode: Image.PreserveAspectCrop
                                             asynchronous: true
                                             cache: true

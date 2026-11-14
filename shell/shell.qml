@@ -51,10 +51,13 @@ ShellRoot {
         Component.onCompleted: {
             SpotlightCatalog.actionExecutor = root.executeSearchAction;
             SpotlightCatalog.islandAvailable = Qt.binding(() => Boolean(ActionGateway.islandHost));
-            ThemeService.reloadColors();
-            FontService.refresh();
-            I18nService.initialize();
-            SystemIdentityService.initialize();
+            // These services initialize themselves when their singleton is first
+            // instantiated. Calling them here used to duplicate work: FontService
+            // performed a second full font enumeration, I18nService reparsed its
+            // catalog, SystemIdentityService re-entered its guarded probes, and
+            // ThemeService reloaded the palette a second time. Keep the host's
+            // completion path limited to wiring and stage markers; service-owned
+            // initialization remains lazy and preserves the same public state.
             ShellStartupService.recordCoreReady();
             Qt.callLater(() => {
                 ShellStartupService.recordFirstFrame();
@@ -65,6 +68,23 @@ ShellRoot {
         Component.onDestruction: {
             healTimer.stop();
             releaseSuppressed.stop();
+        }
+
+        // Real first-frame probe: one-shot listener on the first window that
+        // commits a frame. Only units whose entry root is itself a window
+        // (exposes contentItem) can be watched from here; the legacy
+        // Qt.callLater marker stays as the comparison baseline.
+        function watchFirstFrame(item, source) {
+            if (!item || !item.contentItem)
+                return;
+            const win = item.contentItem.Window.window;
+            if (!win)
+                return;
+            const handler = () => {
+                win.frameSwapped.disconnect(handler);
+                ShellStartupService.recordRealFirstFrame(source);
+            };
+            win.frameSwapped.connect(handler);
         }
 
         // ------------------------------------------------------------- Slot assembly
@@ -104,9 +124,14 @@ ShellRoot {
 
                 active: StateProjection.primed && root.slotActive(modelData) && !suppressed
                 source: modelData.entryUrl
+                onActiveChanged: ShellStartupService.updateQmlLoader(modelData.unitId, modelData.id, delegate)
+                onStatusChanged: ShellStartupService.updateQmlLoader(modelData.unitId, modelData.id, delegate)
+                Component.onCompleted: ShellStartupService.registerQmlLoader(modelData.unitId, modelData.id, delegate)
+                Component.onDestruction: ShellStartupService.unregisterQmlLoader(modelData.unitId, modelData.id)
                 onLoaded: {
                     failedHeals = 0;
                     if (item) {
+                        root.watchFirstFrame(item, modelData.id);
                         if (modelData.id === "settings")
                             item.todoService = typeof TodoService !== "undefined" ? TodoService : null;
                         if (modelData.id === "sidebars")
@@ -309,7 +334,12 @@ ShellRoot {
 
             // Sanitized diagnostics (no env, no config contents, home paths masked)
             function diagnostics(): string {
-                return ShellControlService.diagnosticsJson();
+                const host = ActionGateway.settingsHost;
+                if (!host)
+                    return JSON.stringify({status: "unavailable", reason: "settings host is not loaded"});
+                const payload = host.diagnosticsJson();
+                return typeof payload === "string" && payload.length > 0
+                    ? payload : JSON.stringify({status: "unavailable", reason: "diagnostics payload empty"});
             }
 
             // Structured session log (LogService ring)

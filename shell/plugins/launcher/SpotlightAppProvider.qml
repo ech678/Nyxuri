@@ -15,9 +15,9 @@ Item {
     function rebuild() {
         if (!active || ActionGateway.externalDragActive)
             return;
-        const ordered = LocalSearch.appResults(ApplicationService.launcherApplications, query, root.order,
-                                               SpotlightAppUsage.records, Date.now());
-        root.results = root.limit > 0 ? ordered.slice(0, root.limit) : ordered;
+        root.results = LocalSearch.appResults(ApplicationService.launcherApplications, query,
+                                              {order: root.order, history: SpotlightAppUsage.records,
+                                               now: Date.now(), limit: root.limit});
     }
 
     function execute(index) {
@@ -60,6 +60,7 @@ Item {
         target: ApplicationService
 
         function onLauncherApplicationsChanged() {
+            LocalSearch.clearAppSearchCache();
             root.rebuild();
         }
     }

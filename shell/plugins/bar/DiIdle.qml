@@ -12,6 +12,16 @@ import "island/clock"
 Item {
     id: diIdleRoot
     required property Item di
+
+    property string weatherLeaseId: ""
+    Component.onCompleted: {
+        weatherLeaseId = WeatherService.allocateLeaseId("di-idle");
+        WeatherService.acquire(weatherLeaseId);
+    }
+    Component.onDestruction: {
+        if (weatherLeaseId !== "")
+            WeatherService.release(weatherLeaseId);
+    }
     anchors.fill: parent
 
     readonly property bool systemIconsElsewhere: Config.options.bar.layouts.leftLayout.includes("systemIcons") || Config.options.bar.layouts.rightLayout.includes("systemIcons")

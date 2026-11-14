@@ -46,9 +46,13 @@ Item {
             results = [];
             return;
         }
+        const appCapacity = LocalSearch.groupCapacity("apps", capacities);
+        const retainedAppId = retainedResultId.indexOf("apps:") === 0 ? retainedResultId.slice(5) : "";
         const apps = LocalSearch.appResults(ApplicationService.launcherApplications, query,
-                                            UiPreferences.spotlightAppOrder, SpotlightAppUsage.records,
-                                            Date.now()).map(entry => Object.assign({}, entry, {
+                                            {order: UiPreferences.spotlightAppOrder,
+                                             history: SpotlightAppUsage.records,
+                                             now: Date.now(), limit: appCapacity,
+                                             retainedId: retainedAppId}).map(entry => Object.assign({}, entry, {
                                                                                        iconKind: entry.symbol
                                                                                                  ? "symbol" :
                                                                                                    "app",
@@ -155,6 +159,9 @@ Item {
     onCapacitiesChanged: rebuild()
     Connections {
         target: ActionGateway
+        function onWallpaperHostChanged() {
+            root.rebuild();
+        }
         function onExternalDragActiveChanged() {
             if (!ActionGateway.externalDragActive)
                 root.rebuild();
@@ -163,11 +170,12 @@ Item {
     Connections {
         target: ApplicationService
         function onLauncherApplicationsChanged() {
+            LocalSearch.clearAppSearchCache();
             root.rebuild();
         }
     }
     Connections {
-        target: WallpaperService
+        target: ActionGateway.wallpaperHost
         function onWallpapersChanged() {
             root.rebuild();
         }

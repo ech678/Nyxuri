@@ -1,0 +1,34 @@
+{
+  "schema": 2,
+  "container_image": "docker.io/nixos/nix:2.28.3",
+  "container_digest": "sha256:d078d7153763895fce17c5fbbdeb86fcfcac414ca0ba875d413c1df57be19931",
+  "nixpkgs_revision": "6dadaf4375be35033e1c84395adbd53ff5fded96",
+  "nixpkgs_tarball_sha256": "sha256-D5H7H+qMoTGI/jJtxKP4u7BdjkFnUyhOovTrf3pTOr0=",
+  "quickshell_old_nixpkgs_revision": "50ab793786d9de88ee30ec4e4c24fb4236fc2674",
+  "quickshell_old_nixpkgs_tarball_sha256": "sha256-/bVBlRpECLVzjV19t5KMdMFWSwKLtb5RyXdjz3LJT+g=",
+  "quickshell_package": "pkgs/by-name/qu/quickshell/package.nix",
+  "quickshell_channel_default": "new",
+  "quickshell_old": {
+    "version": "0.2.1",
+    "source_tag": "v0.2.1",
+    "source_hash": "sha256-e++Ogy91Sv7gGLMdAqZaBzbH/UmPWZ4GAt7VDCA66aU="
+  },
+  "quickshell_new": {
+    "version": "0.3.2",
+    "source_tag": "v0.3.2",
+    "source_hash": "sha256-lPbqsyAD5ZoGFMZ1eqAlTULfeP5Nwhy+XvOowF7BE+E="
+  },
+  "qt_major": 6,
+  "weston_backend": "headless",
+  "renderer": "pixman",
+  "qt_quick_backend": "software",
+  "compositor": {
+    "name": "sway",
+    "backend": "headless",
+    "renderer": "pixman",
+    "requested_width_px": 1280,
+    "requested_height_px": 720,
+    "requested_refresh_hz": 60,
+    "layer_shell_required": true
+  }
+}

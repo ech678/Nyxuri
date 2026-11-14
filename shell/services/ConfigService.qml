@@ -81,6 +81,7 @@ Singleton {
         try {
             let tomlText = "# ====================================================================\n"
                 + "# Nyxuri Shell Unified Configuration File\n"
+                + "# nyxuri-config-schema: 2\n"
                 + "# Automatically maintained; hand-edits are preserved on file reload.\n"
                 + "# ====================================================================\n\n";
             tomlText += Toml.stringify(root.rawConfig);
@@ -108,13 +109,37 @@ Singleton {
     Process {
         id: initProcess
         command: ["python3", Paths.systemScriptsDir + "/migrate_config.py", "--config-dir", Paths.configHome, "--state-file", Paths.stateHome + "/state.json", "--cleanup"]
-        running: true
+        // Not started at construction: the probe below decides whether the
+        // migration has anything to do (legacy JSON absorption, [keystone]
+        // rename). A stamped, current config.toml skips the interpreter start.
+        running: false
         stdout: StdioCollector {
             id: migrationStdout
         }
         onExited: {
+            // Stamp the file once so the next launch takes the fast path.
+            root.savePending = true;
             root.storeReady = true;
             configFile.reload();
+        }
+    }
+
+    FileView {
+        id: configProbe
+        path: root.filePath
+        blockLoading: true
+        watchChanges: false
+        printErrors: false
+        onLoaded: {
+            const text = configProbe.text();
+            if (text.indexOf("# nyxuri-config-schema: 2") !== -1 && text.indexOf("[keystone") === -1)
+                root.storeReady = true;
+            else
+                initProcess.running = true;
+        }
+        onLoadFailed: error => {
+            // Missing file: legacy absorption may have data for the first write.
+            initProcess.running = true;
         }
     }
 

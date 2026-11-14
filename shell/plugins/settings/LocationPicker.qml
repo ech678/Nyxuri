@@ -8,6 +8,10 @@ import qs.commons.i18n
 ColumnLayout {
     id: root
 
+    readonly property string weatherLeaseId: "location-picker:" + root
+    Component.onCompleted: WeatherService.acquire(weatherLeaseId)
+    Component.onDestruction: WeatherService.release(weatherLeaseId)
+
     property var parentModal: null
     property bool active: visible
     property real candidateLatitude: Number(WeatherService.latitude)

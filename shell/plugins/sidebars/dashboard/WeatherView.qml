@@ -9,6 +9,10 @@ import qs.commons.i18n
 Item {
     id: root
 
+    readonly property string weatherLeaseId: "weather-view:" + root
+    Component.onCompleted: WeatherService.acquire(weatherLeaseId)
+    Component.onDestruction: WeatherService.release(weatherLeaseId)
+
     property bool foreground: false
     property bool presentationActive: false
     property var weatherSourceOverride: null

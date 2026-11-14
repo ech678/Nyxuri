@@ -429,10 +429,12 @@ class TestShellProcessDetection(unittest.TestCase):
             env = os.environ.copy()
             env.pop("NYXURI_ORIGINAL_CACHE_HOME", None)
             env.pop("NYXURI_SHELL_GENERATED_HOME", None)
-            proc = self._spawn_named_shell(Path(raw), "quickshell", {})
+            link = Path(raw) / "quickshell"
+            link.symlink_to(shutil.which("sleep") or "/bin/sleep")
+            proc = subprocess.Popen([str(link), "10"], env=env)
             try:
                 time.sleep(0.2)
-                self.assertFalse(self._wait_for(proc.pid, False),
+                self.assertTrue(self._wait_for(proc.pid, False),
                                  "an unrelated quickshell process was claimed as nyxuri-shell")
             finally:
                 proc.terminate()

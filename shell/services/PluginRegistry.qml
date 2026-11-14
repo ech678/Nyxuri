@@ -11,8 +11,8 @@ import "PluginManifest.js" as Manifest
 // is the untouched baseline) and trimmed in place (Fork & Trim). The trim
 // map, auditable against the baseline diff:
 //
-//   KEPT verbatim — the process-guard trio (scanProcess / initProcess /
-//     watcherReaper with its orphaned-inotifywait reaping / localPluginWatcher
+//   KEPT verbatim — the process-guard trio (scanProcess /
+//     watcherReaper, which now also creates the user dir, with its orphaned-inotifywait reaping / localPluginWatcher
 //     inotify hot watch + restart timer), the segmented stream parser
 //     (parseScanOutput), ensureUserDir, localPluginIdForPath, the scan →
 //     reap → watch → rescan startup chain, the four signals and the
@@ -258,8 +258,21 @@ Singleton {
         registry.scanFinished();
     }
 
+    property Timer scanTimeout: Timer {
+        interval: 10000
+        repeat: false
+        onTriggered: {
+            if (!scanProcess.running)
+                return;
+            scanProcess.running = false;
+            registry.scanning = false;
+            console.warn("PluginRegistry: manifest scan timed out; retaining previous registry");
+        }
+    }
+
     property Process scanProcess: Process {
         onExited: function (exitCode) {
+            scanTimeout.stop();
             // An empty registry must never look like a successful scan.
             if (exitCode !== 0)
                 console.warn("PluginRegistry: manifest scan exited with " + exitCode);
@@ -268,12 +281,6 @@ Singleton {
         stdout: StdioCollector {
             id: scanStdout
             waitForEnd: true
-        }
-    }
-
-    property Process initProcess: Process {
-        onExited: {
-            registry.reapOrphanedPluginWatchers();
         }
     }
 
@@ -286,13 +293,12 @@ Singleton {
     property Process watcherReaper: Process {
         onExited: {
             localPluginWatcher.running = true;
-            registry.rescan();
         }
     }
 
     function reapOrphanedPluginWatchers() {
         watcherReaper.command = ["bash", "-c",
-                                 "for p in $(pgrep -f '[i]notifywait -m -r -q -e close_write,create,delete,move' || true); do "
+                                 "mkdir -p \"$1\" 2>/dev/null; for p in $(pgrep -f '[i]notifywait -m -r -q -e close_write,create,delete,move' || true); do "
                                  + "tr '\\0' '\\n' < \"/proc/$p/cmdline\" 2>/dev/null | grep -Fxq \"$1\" || continue; "
                                  + "parent=$(ps -o ppid= -p \"$p\" 2>/dev/null | tr -d ' '); "
                                  + "[[ $parent =~ ^[0-9]+$ ]] || continue; "
@@ -303,15 +309,11 @@ Singleton {
 
     // A graceful stop takes the watcher with it; the reaper above covers the
     // stops that never run this (a killed or crashed shell).
-    Component.onDestruction: {
-        localPluginWatcherRestart.stop();
-        localPluginReload.stop();
-        localPluginWatcher.running = false;
-    }
-
     // Only the third-party root is a live feed; repo manifests change with
     // the shell itself, not under a running session.
     property Process localPluginWatcher: Process {
+        property bool watcherStarted: false
+        property int watcherRestartAttempts: 0
         command: ["inotifywait", "-m", "-r", "-q", "-e", "close_write,create,delete,move", "--format", "%w%f",
             registry.pluginsDir]
         stdout: SplitParser {
@@ -323,12 +325,27 @@ Singleton {
                 }
             }
         }
-        onExited: localPluginWatcherRestart.restart()
+        onStarted: watcherStarted = true
+        onExited: (exitCode, exitStatus) => {
+            // A missing optional inotifywait must not become a permanent
+            // one-second spawn loop. A healthy monitor normally stays alive;
+            // retry only after a real monitor has started and cap repeated
+            // failures so a broken optional dependency cannot churn forever.
+            if (watcherStarted && watcherRestartAttempts < 3) {
+                watcherRestartAttempts += 1;
+                localPluginWatcherRestart.restart();
+            } else {
+                console.warn("PluginRegistry: plugin watcher unavailable (exit " + exitCode + ")");
+            }
+        }
     }
 
     property Timer localPluginWatcherRestart: Timer {
         interval: 1000
-        onTriggered: localPluginWatcher.running = true
+        onTriggered: {
+            if (!localPluginWatcher.running)
+                localPluginWatcher.running = true;
+        }
     }
 
     // A burst of inotify events (a clone checkout, a manifest edit)
@@ -357,11 +374,14 @@ Singleton {
                 + "}; " + "scan_root firstparty \"$0\"; " + "scan_root thirdparty \"$1\"";
         scanProcess.command = ["bash", "-c", script, registry.firstPartyDir, registry.pluginsDir];
         scanProcess.running = true;
+        scanTimeout.restart();
     }
 
     function ensureUserDir() {
-        initProcess.command = ["bash", "-c", "mkdir -p \"$0\"", registry.pluginsDir];
-        initProcess.running = true;
+        // One reaper script now also creates the user dir, and the first scan
+        // no longer waits behind it: the first-party scan is the critical path.
+        registry.reapOrphanedPluginWatchers();
+        registry.rescan();
     }
 
     function localPluginIdForPath(filePath) {
@@ -382,4 +402,13 @@ Singleton {
     }
 
     Component.onCompleted: ensureUserDir()
+
+    Component.onDestruction: {
+        scanTimeout.stop();
+        scanProcess.running = false;
+        watcherReaper.running = false;
+        localPluginWatcherRestart.stop();
+        localPluginReload.stop();
+        localPluginWatcher.running = false;
+    }
 }

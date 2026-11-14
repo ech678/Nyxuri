@@ -4,6 +4,7 @@
 # 支持可选 [Context] 局部上下文微调
 # ==============================================================================
 
+"System command timed out" = "系统命令超时"
 
 " " = "年"
 "   •   %1 tasks" = "   •   %1 个任务"
@@ -1958,7 +1959,7 @@
 "cliphist or wl-copy is missing; clipboard history is unavailable" = "缺少 cliphist 或 wl-copy，剪贴板历史不可用"
 "config file" = "配置文件"
 "cores ·" = "核 ·"
-"hyprpicker is missing" = "缺少 hyprpicker"
+"Availability not checked" = "尚未检查可用性"
 "icon" = "图标"
 "kilometers" = "公里"
 "left" = "剩余"

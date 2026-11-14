@@ -75,6 +75,15 @@ Scope {
                         bar.windowProbe = null;
                 }
 
+                Connections {
+                    id: realFrameConnection
+                    target: barRoot.contentItem ? barRoot.contentItem.Window.window : null
+                    function onFrameSwapped(): void {
+                        realFrameConnection.enabled = false;
+                        ShellStartupService.recordRealFirstFrame("bar");
+                    }
+                }
+
                 Timer {
                     id: showBarTimer
                     interval: (Config?.options.bar.autoHide.showWhenPressingSuper.delay ?? 100)

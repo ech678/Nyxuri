@@ -10,7 +10,7 @@
 
 ## 快照存储拓扑
 
-所有状态信息严格收拢在 Nyxuri 独立状态目录内，禁止向 `~/.config/` 根目录倾倒元数据：
+所有状态信息放在 Nyxuri 自己的目录内，不在 `~/.config/` 根目录散放元数据：
 
 ```
 ~/.config/nyxuri/backups/
@@ -29,7 +29,7 @@
 - **保护机制**：支持传入 `protected_snapshot`，当前正在操作的目标快照绝不被意外 prune。
 
 ### 2. 回滚前自保 (Pre-rollback Safety)
-执行 `rollback_configs()` 从历史快照还原配置之前，引擎会**强制为当前实机配置生成一份 `pre_rollback_` 快照**。即使用户回滚错了版本，也能再次反向恢复，杜绝数据丢失。
+执行 `rollback_configs()` 从历史快照还原配置之前，引擎会**强制为当前实机配置生成一份 `pre_rollback_` 快照**。回滚错版本时，可以从这份快照恢复回滚前的配置。
 
 ### 3. 精确恢复与参数化保留模式 (Preserve Custom Contract, #56)
 调用 `atomic_replace_item` 执行回滚还原时，默认传入 `preserve_custom=False`：

@@ -35,7 +35,13 @@ NexusPageBase {
         templateDialog.close();
     }
 
-    Component.onCompleted: NiriConfigService.refresh()
+    Component.onCompleted: {
+        NiriConfigService.refresh();
+        // Theme enumeration is only useful on this page. Keep the two
+        // filesystem scans out of the shell cold path while preserving the
+        // complete picker as soon as the user opens Settings > Theme.
+        ThemeService.ensureAvailableThemes();
+    }
 
     component PreviewSegmentGroup: Item {
         id: previewGroup

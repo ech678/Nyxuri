@@ -1,5 +1,6 @@
 // Fork & Trim: end4-pC modules/common/widgets/BarWidgetSwitcherArea.qml
 // SPDX-License-Identifier: GPL-3.0-or-later
+// Local baseline: pctrade/end4-pC b881970bfc25ff92b0f72b751c810a178c5fc677.
 
 import qs.commons
 import qs.services

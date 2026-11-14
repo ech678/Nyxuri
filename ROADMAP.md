@@ -2,11 +2,11 @@
 
 > 本页只保留跨域活跃待办与长期目标；Shell 阶段台账、当前阶段与门禁见
 > [shell/ROADMAP.md](shell/ROADMAP.md)。
-> 第一卷「插件市场化改造」KM0–KM5 已全数收口，台账冻结于 [archive/roadmap-history](llms-wiki/archive/roadmap-history.md)；
-> 第二卷「架构重塑与三方插件」G0–S1 已全数收口，台账冻结于 [archive/reconstruction-history](llms-wiki/archive/reconstruction-history.md)；
+> 第一卷「插件市场化改造」KM0–KM5 已完成，台账冻结于 [archive/roadmap-history](llms-wiki/archive/roadmap-history.md)；
+> 第二卷「架构重塑与三方插件」G0–S1 已完成，台账冻结于 [archive/reconstruction-history](llms-wiki/archive/reconstruction-history.md)；
 > 设计哲学与五条简洁标准见 [vision](llms-wiki/vision.md)；
-> 本卷为**第三卷「散文化与架构优雅化卷（P0 ~ P5）」**：以 `/home/ray/docs/lain-connect.md` 为唯一美学与秩序依归，
-> 空间大一统、真·Omarchy 解耦、独立插件管理、统一 TOML 配置、引擎去企味，最后以 Sub-agents 全景深度审查作为最终检查任务收口。
+> 本卷为**第三卷「架构整理（P0 ~ P5）」**：参考 `/home/ray/docs/lain-connect.md`，
+> 整理代码布局、插件边界、配置格式和引擎模块，最后进行并发审查。
 
 ## 主线收口（前两卷地基）
 
@@ -17,20 +17,20 @@
 
 | 站 | 交付 | 状态 |
 | --- | --- | --- |
-| P0 | 空间纯度大一统：根目录纯化 + PKGBUILD 修复 + 单测重心合一 + 消解 `shell/app/`（纯正 5 层） | 已完成 |
+| P0 | 根目录整理、PKGBUILD 修复、测试合并、移除 `shell/app/`（归入五层结构） | 已完成 |
 | P1 | 插件专属控制面与动态导航：独立 `PluginsPage` 插件管理 + 切除设置中心幽灵 Tab 根因 + Spotlight 联动 | 已完成 |
-| P2 | 真 Omarchy 解耦与容错：切除 70 处跨插件静态引用 + 焚毁伪合规白名单 + 拔插容错（任意删插件宿主不崩） | 已完成 |
+| P2 | 对照 Omarchy 调整插件边界：移除 70 处跨插件静态引用、删除生命周期审计白名单、验证插件隔离 | 已完成 |
 | P3 | 统一配置 TOML 化：升级 `Toml.js` 导出 `stringify` + 废除 7 个碎片 JSON，归拢为带注释的单一 `config.toml` | 已完成 |
-| P4 | 引擎散文化与去企味重塑：处决 `ledger.py`/`transaction.py` 银行黑话 + 解构 913 行 `core.py`，消除 `kernel/core` 分裂人格 | 已完成 |
-| P5 | **Sub-agents 全景深度审查与巡检验收（作为本卷最终检查任务，就像启动并发审查一样）** | 已完成 |
+| P4 | 引擎架构整理：重命名 `ledger.py`/`transaction.py`，拆分 913 行 `core.py`，移除 `kernel/core` 双重结构 | 已完成 |
+| P5 | **并发审查与巡检验收** | 已完成 |
 | T4 | Shell 可控性与透明化（开工时立细则） | 待开始 |
 | T5 | 多合成器解耦（门禁触发） | 待开始 |
 | T2 | TUI Textual 重做（暂缓，分支备用） | 待开始 |
 
-### P0 ~ P5 · 散文化与架构优雅化专项（代码与空间大一统）
+### P0 ~ P5 · 架构整理专项（代码与空间）
 
-> **设计哲学依归**：`/home/ray/docs/lain-connect.md`（原始根面 Pristine Root、单一重心 Single Center of Gravity、散文化韵律 Prose-like Cadence、扁平几何 Flat Geometry、TOML-first、绝对解耦与极简秩序感）。
-> 本专项直面当前系统的深层隐患：切除伪解耦与 70 处跨插件静态引用、消除设置中心幽灵 Tab、升级 `Toml.js` 统一 `config.toml`，并彻底处决 `ledger.py`/`transaction.py` 银行过度工程黑话，最后由 4-Agent 并发审计出具无保留合格结论闭环。
+> **设计参考**：`/home/ray/docs/lain-connect.md`（根目录纯度、单一重心、扁平目录、TOML-first 和解耦）。
+> 本专项处理插件边界、设置中心、统一配置和引擎模块，并由 4 个并发审查任务检查。
 
 - **P0 空间纯度大一统 (Pristine Root & Workspace Purity) · 已收口**：
   - **清理根面瑕疵**：修复 `packaging/PKGBUILD:89` 中早该进历史的 `cp -a units catalog.toml` 遗留死指令；正式设计笔记收入 `notes/`；
@@ -56,24 +56,24 @@
   - **领域服务全面解耦与收口**：`PersonalizationConfig`, `DockService`, `TrayService`, `QuickToggleConfig`, `DisplayColor`, `IdleService`, `UiPreferences` 彻底剥离独立 FileView 与散乱写回，通过 `ConfigService` 统一分发与防抖落盘；
   - **无感迁移与零残留**：通过 `shell/scripts/system/migrate_config.py` 在首次加载时自动吸收遗留 JSON 配置归拢入 `config.toml` 并安全解链清理旧文件；双语 i18n 词条同步净化死键；
   - **桌面 Python 生态无缝对接**：`nyxuri/system/theme.py` 与 `nyxuri/system/shell.py` 优先使用 Python 3.11+ 标准库 `tomllib` 读取 `config.toml`（保留 `config.json` 降级兜底）。
-- **P4 引擎散文化与去企味重塑 (Prose Architecture & De-Enterprization) · 已完成**：
-  - **处决过度工程命名与银行黑话**：
+- **P4 引擎架构整理 · 已完成**：
+  - **更名并拆分引擎模块**：
     - `nyxuri/kernel/ledger.py` → `nyxuri/state/store.py`；
     - `nyxuri/kernel/transaction.py` → `nyxuri/deploy/engine.py`；
     - `nyxuri/kernel/registry.py` + `resolver.py` → `nyxuri/deploy/catalog.py`；
     - 彻底从代码、注释、别名导入与双语文案中清除“账本”、“事务”、“对账”、“ledger”、“transaction”等企业黑话；
-  - **消灭双重人格与分工正交重塑**：
+  - **调整模块职责**：
     - 彻底解散 `nyxuri/kernel/`、`pkg/`、`desktop/`、`installer/` 与伪代理 `nyxuri/core.py`；
     - 引擎核心收敛为 4 个职责正交的清晰领域：`deploy/`（部署与蓝图）、`state/`（状态与快照）、`system/`（环境、包供给、桌面集成）、`ui/`（终端 UI 与整装交互）；根目录净空仅保留主入口与文案资源；
-  - **散文化审美审查与机器状态纯化**：代码行文遵循散文韵律与左对齐扁平几何（Guard Clauses Over Pyramids），彻底清理 `state.json` 历史死键（`modules`/`shell_package`/`units` 等）与冗余元数据，收敛纯粹机器状态。
-- **P5 Sub-agents 全景深度审查与巡检验收 (Final Deep Verification Task) · 已完成**：
-  - **整卷最终检查任务**：由 5 个并发 Sub-agent 进行深度穿透交叉审计（非单一 AI 转述），全员出具无保留合格结论并附原始输出作证：
+  - **代码表达与状态数据清理**：统一代码格式，清理 `state.json` 中的历史字段（`modules`/`shell_package`/`units` 等）和冗余元数据。
+- **P5 并发审查与巡检验收 · 已完成**：
+  - 5 个并发审查任务分别检查代码布局、插件隔离、状态与视图联动、命名和文档，并保存原始结果：
     - **Agent 1（空间纯度与根面）**：工作区净空零临时垃圾，修齐 `run-tests.py` 与 `check.sh` 开发门禁，`ResourceIntegrityTests` 抽离合流至根单测；清理死文档索引与打包陈旧注释；
     - **Agent 2（解耦与真实可拔插）**：全库扫描零跨插件静态导入；`ActionGateway` 动态注册完全对称；热拔插 12 域遍历沙箱测试 100% 容错无崩溃；`audit-lifecycle.py` 伪合规白名单彻底焚毁；
     - **Agent 3（状态机与视图联动）**：验证停用插件设置 Tab 秒级动态剥除与越界保护；Spotlight 动作拦截与壁纸联动正常；TOML 单重心读写防抖落盘稳定；`state.json` 净化历史死键；
     - **Agent 4（命名去企味与散文化审美）**：核心引擎 0 银行黑话残留、0 假别名垫片；修齐 `fish` 速查手册与更新测试用例中残留字样；代码圈复杂度与 Guard Clauses 几何规整；原生 Python 3.11+ `tomllib` 纯正对接；
     - **Agent 5（全局契约与路线图一致性）**：同步更新 `ROADMAP.md`、`shell/ROADMAP.md` 与 `llms-wiki/` 活跃页面，彻底清除解散包路径；`test_ai_specs.py` 增设防复辟硬门禁；双语 i18n 349 键 100% 契约合规。
-  - **第三卷「散文化与架构优雅化卷（P0 ~ P5）」全卷正式圆满闭环收口**。
+  - 第三卷 P0–P5 审查完成。
 
 ## 分支策略（PR #148 · Ubuntu 支持）
 

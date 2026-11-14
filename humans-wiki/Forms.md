@@ -1,4 +1,4 @@
-Plugins ship flavor variants — forms layer between the defaults and your own tweaks, so switching never touches your content. One verb covers everything: `nyxuri use`.
+Plugins can include several forms. A form layers over the defaults and below your personal tweaks, so switching forms preserves your changes. Manage forms with `nyxuri use`.
 
 Built-in official forms:
 - **`kitty`**:
@@ -11,7 +11,7 @@ Built-in official forms:
 
 ## Slot axes (Niri)
 
-Beyond whole-config forms, a plugin can declare **slot axes** for granular hot-swapping of individual visual components:
+Beyond whole-config forms, a plugin can declare **slot axes** to switch individual visual components without replacing the whole form:
 
 - **`glow`** (window focus outline & diffused glow):
   - `default`: frameless minimal look without outline or glow

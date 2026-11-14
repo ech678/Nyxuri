@@ -14,8 +14,12 @@ Singleton {
     property var records: ({})
     property var pending: ({})
     property bool ready: false
-    property bool storeReady: false
+    // Reads start immediately: a missing state dir simply reads as "no history".
+    // The directory is created lazily, only when the first save needs it.
+    property bool storeReady: true
     property bool writable: false
+    property bool dirReady: false
+    property bool savePending: false
 
     function finishLoad(history, canWrite) {
         if (ready)
@@ -52,6 +56,13 @@ Singleton {
     function save() {
         if (!ready || !writable)
             return;
+        if (!dirReady) {
+            // First write: create the state dir once, then write on exit.
+            savePending = true;
+            if (!ensureStateDir.running)
+                ensureStateDir.running = true;
+            return;
+        }
         usageFile.setText(JSON.stringify({
                                              schemaVersion: 1,
                                              applications: records
@@ -61,13 +72,17 @@ Singleton {
     Process {
         id: ensureStateDir
         command: ["mkdir", "-p", Paths.stateHome]
-        running: true
         onExited: exitCode => {
-            if (exitCode === 0)
-                root.storeReady = true;
-            else {
+            if (exitCode !== 0) {
                 console.warn("SpotlightAppUsage: state directory unavailable; using session history");
-                root.finishLoad({}, false);
+                root.writable = false;
+                root.savePending = false;
+                return;
+            }
+            root.dirReady = true;
+            if (root.savePending) {
+                root.savePending = false;
+                root.save();
             }
         }
     }

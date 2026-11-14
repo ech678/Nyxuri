@@ -231,8 +231,8 @@ Singleton {
                                                          },
                                                          {
                                                              "id": "hyprpicker",
-                                                             "available": ColorPickerService.available,
-                                                             "probed": ColorPickerService.probeFinished
+                                                             "available": false,
+                                                             "probed": false
                                                          }
                                                      ],
                                                      "errors": [

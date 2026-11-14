@@ -18,6 +18,7 @@ Singleton {
     property var locationRequest: null
     property var ipLocation: null
     property bool locationAttempted: false
+    property var _consumers: ({})
     property var schedule: Schedule.evaluate(preferences, Date.now())
     readonly property bool available: true
     readonly property var outputs: []
@@ -133,6 +134,18 @@ Singleton {
         deadline.restart();
     }
 
+    function setConsumer(owner, active) {
+        const key = String(owner || "").trim();
+        if (key === "")
+            return;
+        const next = Object.assign({}, root._consumers);
+        if (active)
+            next[key] = true;
+        else
+            delete next[key];
+        root._consumers = next;
+    }
+
     function checkSystemEyecareSync() {
         if (!effectsCheckProc.running)
             effectsCheckProc.running = true;
@@ -167,7 +180,7 @@ Singleton {
     Timer {
         id: eyecarePollTimer
         interval: 2000
-        running: true
+        running: root.ready && Object.keys(root._consumers).length > 0
         repeat: true
         onTriggered: root.checkSystemEyecareSync()
     }

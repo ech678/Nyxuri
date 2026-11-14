@@ -1,6 +1,8 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import Quickshell.Io
 import qs.commons.i18n
+import qs.services
 
 Item {
     id: root
@@ -266,6 +268,11 @@ Item {
         }
 
         function refresh() {
+            // FileView loads asynchronously. Never let a caller start IP or
+            // weather requests until the disk snapshot has been considered.
+            if (!root.cacheLoadComplete) {
+                return true;
+            }
             if (loading)
                 return false;
 
@@ -304,6 +311,7 @@ Item {
         }
 
         function fetchWeather() {
+            root.cacheGuardLocation(latitude, longitude);
             loading = true;
             status = "loading";
 
@@ -332,6 +340,8 @@ Item {
                         const res = JSON.parse(xhr.responseText);
                         if (res && res.current) {
                             plugin.cachedForecastData = res;
+                            root.cacheRestored = false;
+                            cacheSaveTimer.restart();
                             plugin.processData(plugin.cachedForecastData, plugin.cachedAirData);
                         }
                     } catch (e) {
@@ -355,6 +365,7 @@ Item {
                         const airRes = JSON.parse(airXhr.responseText);
                         if (airRes) {
                             plugin.cachedAirData = airRes;
+                            cacheSaveTimer.restart();
                             if (plugin.cachedForecastData) {
                                 plugin.processData(plugin.cachedForecastData, plugin.cachedAirData);
                             }
@@ -672,21 +683,209 @@ Item {
             dataChanged();
         }
 
-        Component.onCompleted: {
-            refreshTimer.start();
-            refresh();
-        }
     }
 
     Timer {
         id: refreshTimer
         interval: 900000 // 15 mins
         repeat: true
-        running: true
+        running: false
         onTriggered: root.backend.refresh()
+    }
+
+    // Disk cache: the last successful response is kept under the XDG cache
+    // dir so a cold start paints immediately, then refreshes in the background.
+    // Raw forecast/air payloads are stored; restore replays processData.
+    readonly property string cacheDir: Paths.cacheHome + "/weather"
+    readonly property string cachePath: cacheDir + "/weather-cache.json"
+    readonly property double cacheMaxAgeMs: 6 * 3600 * 1000
+    property bool cacheDirReady: false
+    property bool cacheLoadComplete: false
+    property bool cacheRestored: false
+    property string cachedKey: ""
+    property string pendingCacheText: ""
+
+    function locationKey(lat, lon) {
+        return Number(lat).toFixed(2) + "," + Number(lon).toFixed(2);
+    }
+
+    // Schema 1 caches written before exact coordinates were recorded contain
+    // only the rounded key. Keep those readable while preferring exact coords.
+    function cacheCoordinates(data) {
+        if (!data || typeof data.locationKey !== "string")
+            return null;
+        let latitude;
+        let longitude;
+        if (data.latitude !== undefined || data.longitude !== undefined) {
+            latitude = data.latitude;
+            longitude = data.longitude;
+        } else {
+            const parts = data.locationKey.split(",");
+            if (parts.length !== 2)
+                return null;
+            latitude = Number(parts[0]);
+            longitude = Number(parts[1]);
+        }
+        if (typeof latitude !== "number" || typeof longitude !== "number"
+                || !isFinite(latitude) || !isFinite(longitude)
+                || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180
+                || root.locationKey(latitude, longitude) !== data.locationKey)
+            return null;
+        return { latitude: latitude, longitude: longitude };
+    }
+
+    // Returns a validated payload, or null for corrupt / wrong version / expired.
+    function decodeCache(text, nowMs) {
+        let data = null;
+        try {
+            data = JSON.parse(String(text || ""));
+        } catch (e) {
+            return null;
+        }
+        if (!data || typeof data !== "object" || data.schemaVersion !== 1)
+            return null;
+        if (typeof data.savedAt !== "number" || !isFinite(data.savedAt))
+            return null;
+        const age = nowMs - data.savedAt;
+        if (age < -300000 || age > root.cacheMaxAgeMs)
+            return null;
+        if (typeof data.locationKey !== "string" || data.locationKey === ""
+                || !root.cacheCoordinates(data))
+            return null;
+        if (!data.forecast || typeof data.forecast !== "object" || !data.forecast.current)
+            return null;
+        return data;
+    }
+
+    function restoreCache(text) {
+        if (plugin.hasValidData)
+            return;
+        const data = root.decodeCache(text, Date.now());
+        if (!data)
+            return;
+        const coordinates = root.cacheCoordinates(data);
+        if (!coordinates)
+            return;
+        if (plugin.hasManualLocation) {
+            if (root.locationKey(plugin.latitude, plugin.longitude) !== data.locationKey)
+                return;
+        } else if (plugin.latitude === 0.0 && plugin.longitude === 0.0) {
+            // Automatic location has not run yet. Restore the cached location
+            // before rendering and refreshing, avoiding an IP lookup race.
+            plugin.latitude = coordinates.latitude;
+            plugin.longitude = coordinates.longitude;
+        } else if (root.locationKey(plugin.latitude, plugin.longitude) !== data.locationKey) {
+            return;
+        }
+        const air = (data.air && typeof data.air === "object") ? data.air : null;
+        try {
+            plugin.cachedForecastData = data.forecast;
+            plugin.cachedAirData = air;
+            plugin.processData(data.forecast, air);
+        } catch (e) {
+            plugin.hasValidData = false;
+            plugin.cachedForecastData = null;
+            plugin.cachedAirData = null;
+            return;
+        }
+        plugin.lastUpdated = new Date(data.savedAt).toISOString();
+        plugin.status = plugin.loading ? "loading" : "stale";
+        root.cachedKey = data.locationKey;
+        root.cacheRestored = true;
+    }
+
+    // FileView completion is the startup barrier: restore (if possible), then
+    // arm periodic refresh and permit all explicit/network refresh requests.
+    function finishCacheLoad(text, loaded) {
+        if (root.cacheLoadComplete)
+            return false;
+        if (loaded)
+            root.restoreCache(text);
+        root.cacheLoadComplete = true;
+        refreshTimer.start();
+        plugin.refresh();
+        return true;
+    }
+
+    // Location changed under restored data: drop it instead of showing another place.
+    function cacheGuardLocation(lat, lon) {
+        if (!root.cacheRestored || root.locationKey(lat, lon) === root.cachedKey)
+            return;
+        root.cacheRestored = false;
+        root.cachedKey = "";
+        plugin.hasValidData = false;
+        plugin.cachedForecastData = null;
+        plugin.cachedAirData = null;
+        plugin.currentAirQuality = null;
+        plugin.hourlyForecast = plugin.makeForecastModel([]);
+        plugin.dailyForecast = plugin.makeForecastModel([]);
+        plugin.dailyTrendForecast = plugin.makeForecastModel([]);
+        plugin.dataChanged();
+    }
+
+    function writeCache() {
+        if (!plugin.hasValidData || !plugin.cachedForecastData || root.cacheRestored)
+            return;
+        const text = JSON.stringify({
+                                      schemaVersion: 1,
+                                      savedAt: Date.now(),
+                                      locationKey: root.locationKey(plugin.latitude, plugin.longitude),
+                                      latitude: plugin.latitude,
+                                      longitude: plugin.longitude,
+                                      forecast: plugin.cachedForecastData,
+                                      air: plugin.cachedAirData
+                                  });
+        if (!root.cacheDirReady) {
+            root.pendingCacheText = text;
+            if (!ensureCacheDir.running)
+                ensureCacheDir.running = true;
+            return;
+        }
+        cacheFile.setText(text);
+    }
+
+    Timer {
+        id: cacheSaveTimer
+        interval: 1500
+        repeat: false
+        onTriggered: root.writeCache()
+    }
+
+    Process {
+        id: ensureCacheDir
+        command: ["mkdir", "-p", root.cacheDir]
+        onExited: exitCode => {
+            if (exitCode !== 0) {
+                console.warn("[WeatherBackend] cache directory unavailable; running without disk cache");
+                root.pendingCacheText = "";
+                return;
+            }
+            root.cacheDirReady = true;
+            if (root.pendingCacheText !== "") {
+                const text = root.pendingCacheText;
+                root.pendingCacheText = "";
+                cacheFile.setText(text);
+            }
+        }
+    }
+
+    FileView {
+        id: cacheFile
+        path: root.cachePath
+        atomicWrites: true
+        watchChanges: false
+        printErrors: false
+        onLoaded: root.finishCacheLoad(cacheFile.text(), true)
+        onLoadFailed: error => {
+            // Missing or unreadable cache is a normal cold start.
+            root.finishCacheLoad("", false)
+        }
+        onSaveFailed: error => console.warn("[WeatherBackend] cache save failed:", error)
     }
 
     Component.onDestruction: {
         refreshTimer.stop();
+        cacheSaveTimer.stop();
+        ensureCacheDir.running = false;
     }
 }

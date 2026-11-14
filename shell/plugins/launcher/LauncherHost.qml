@@ -76,6 +76,15 @@ Scope {
     IpcHandler {
         target: "spotlight"
 
+        function lifecycle(): string {
+            return JSON.stringify({
+                phase: root.windowPhase,
+                window_loaded: root.launcherItem !== null,
+                results_loaded: root.launcherItem ? root.launcherItem.resultsLoaded : false,
+                visible: root.launcherItem ? root.launcherItem.visible : false
+            });
+        }
+
         function toggle(): string {
             root.toggleWindow();
             return root.windowPhase.toUpperCase();

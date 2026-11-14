@@ -1,6 +1,6 @@
-// Fork & Trim: end4-pC modules/common/widgets/ResourceCard.qml
-// SPDX-License-Identifier: GPL-3.0-or-later
-
+// Forked from pctrade/end4-pC modules/common/widgets/ResourceCard.qml
+// at b881970bfc25ff92b0f72b751c810a178c5fc677 (GPL-3.0-or-later).
+// Nyxuri adaptation: shell commons/ui import paths.
 import qs.commons
 import qs.ui
 import QtQuick
@@ -13,22 +13,21 @@ Rectangle {
     required property string iconText
     required property var iconShape
     required property real value
+    property bool available: true
     required property string sublabel
     property color sublabelColor: Appearance.colors.colOnSurfaceVariant
-    property int cardWidth: 150
+    property int cardWidth: 150 
 
     width: cardWidth
-    height: 96
-    radius: 16
-
+    height: 96 
+    radius: 16 
+    
     color: Appearance.colors.colSurfaceContainerLow
 
     function usageColor(v) {
-        if (v > 0.9)
-            return Appearance.colors.colError;
-        if (v > 0.6)
-            return Appearance.colors.colTertiary || Appearance.m3colors.m3tertiary;
-        return Appearance.colors.colPrimary;
+        if (v > 0.9) return Appearance.colors.colError
+        if (v > 0.6) return Appearance.colors.colTertiary || Appearance.m3colors.m3tertiary
+        return Appearance.colors.colPrimary
     }
 
     ColumnLayout {
@@ -51,17 +50,13 @@ Rectangle {
                 Layout.alignment: Qt.AlignVCenter
             }
 
-            Item {
-                Layout.fillWidth: true
-            }
+            Item { Layout.fillWidth: true }
 
             StyledText {
-                text: `${Math.round(root.value * 100)}%`
+                text: root.available ? `${Math.round(root.value * 100)}%` : "—"
                 font.pixelSize: Appearance.font.pixelSize.large || 18
                 font.weight: Font.Bold
-                font.features: {
-                    "tnum": 1
-                }
+                font.features: { "tnum": 1 }
                 color: Appearance.colors.colOnSurface
                 Layout.alignment: Qt.AlignVCenter
             }
@@ -81,12 +76,10 @@ Rectangle {
             }
 
             StyledText {
-                text: root.sublabel
+                text: root.available ? root.sublabel : qsTr("Unavailable")
                 font.pixelSize: Appearance.font.pixelSize.smallest || 10
                 color: root.sublabelColor
-                font.features: {
-                    "tnum": 1
-                }
+                font.features: { "tnum": 1 }
                 Layout.fillWidth: true
                 elide: Text.ElideRight
             }
@@ -94,9 +87,10 @@ Rectangle {
 
         StyledProgressBar {
             Layout.fillWidth: true
-            value: root.value
+            value: root.available ? root.value : 0
             highlightColor: root.usageColor(root.value)
-            valueBarHeight: 6
+            valueBarHeight: 6 
+
         }
     }
 

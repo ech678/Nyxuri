@@ -39,6 +39,7 @@ Item {
     readonly property bool viewingCurrentMonth: viewMonth.getFullYear() === root.now.getFullYear()
                                                 && viewMonth.getMonth() === root.now.getMonth()
     property var todoService: null
+
     readonly property var todoList: root.todoService ? root.todoService.list : []
     readonly property int pendingTasks: root.todoList.filter(t => !t.done).length
     // lspci supplies the marketing name ("Navi 33 [Radeon RX 7600/…]"); the
@@ -140,6 +141,7 @@ Item {
         // Without a registered consumer the uptime reader never starts and the
         // header would show "0 minutes" forever.
         SystemIdentityService.setUptimeConsumer("dashboard-home", false);
+        WeatherService.release("dashboard-home");
     }
 
     // Subscribe to the shared sysmon stream so the status card has live data;
@@ -147,6 +149,8 @@ Item {
     Component.onCompleted: {
         SystemMonitorService.setConsumerModules("dashboard-home", ["cpu", "memory", "disk", "network"]);
         SystemIdentityService.setUptimeConsumer("dashboard-home", true);
+        SystemIdentityService.ensureGpuModel();
+        WeatherService.acquire("dashboard-home");
     }
 
     function shiftMonth(delta) {

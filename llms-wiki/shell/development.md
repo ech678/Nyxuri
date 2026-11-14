@@ -2,12 +2,12 @@
 
 ## 当前架构与调试入口
 
-Nyxuri Shell 现已完成全面去 C++ 化与架构收敛（R4-C），整体为 **纯 QML / JavaScript / 外部轻量脚本** 架构，零 CMake / 零 C++ 编译依赖，启动与开发极小、极快、可解释。
+Nyxuri Shell 在 R4-C 阶段移除了自有 C++ 代码和 CMake 构建链，目前使用 **QML、JavaScript 和外部脚本**。
 统一运行入口位于 `shell/nyxuri-shell`（与 `shell.qml` 并列位于根目录）。
 
-日常调试支持三层递进方式，兼顾极速验证与真实会话测试：
+按改动选择下面的检查方式：
 
-### 1. 自动化秒级校验（无图形会话，零副作用）
+### 1. 静态检查与测试（无图形会话）
 
 ```bash
 # 语法与编译检查
@@ -23,9 +23,27 @@ python3 shell/scripts/dev/run-tests.py --all
 python3 shell/scripts/dev/audit-lifecycle.py --root shell --scope all --check
 ```
 
-### 2. 隔离进程预览与 IPC 交互（不影响当前运行的桌面会话）
+资源探针只在一次性隔离容器内运行。它把 `/proc` 进程树采样与 QML/JS 静态资源
+清单分开记录；宿主机不要直接调用 Shell、`qs`、Weston 或其它桌面入口。容器内的
+入口示例（`/workspace` 为只读仓库挂载，`/results` 为独立结果挂载）：
 
-当前运行 Noctalia 时，无需关闭桌面，可直接拉起独立 Nyxuri Shell 进程进行预览：
+```bash
+python3 /workspace/shell/scripts/dev/resource_probe.py \
+  --pid "$SHELL_PID" --qml-root /workspace/shell --samples 6 --interval 1 \
+  --output /results/resource-probe.json
+python3 /workspace/shell/scripts/dev/resource_report.py \
+  /results/resource-probe.json --output /results/resource-report
+```
+
+`resource-probe.json` 的 `runtime.samples` 是容器内实时观察（RSS/PSS/Private、进程、
+线程、fd、CPU ticks、page fault、I/O 和 cgroup memory）；`static_qml` 仅是源码计数，
+不能替代 Loader/Timer/Process 的运行态证据。`resource-summary.json` 保留首末样本与
+增量，缺失值为 `null`，不会伪装成零；`resource-summary.md` 供人工审阅。长稳态和
+100 次开关循环应在同一容器中多次调用探针，并保留原始 JSON 与日志。
+
+### 2. 容器内启动与 IPC 交互
+
+性能调查期间不在宿主桌面启动调试实例。以下命令仅在私有 Wayland/D-Bus 容器会话内执行：
 
 ```bash
 # 隔离前台启动（详细日志流，自动挂载 fallback QML 桩）
@@ -48,7 +66,7 @@ qs kill --path ./shell
 
 ### 2.5 Bar 运行态探针（布局 NaN / compiled empty 专用）
 
-字符串断言拦不住布局求值问题，Bar 改动先跑探针：
+字符串断言拦不住布局求值问题。Bar 改动须在隔离容器的 Wayland 会话内跑探针；下面的 `--session` 指容器会话，不是宿主桌面：
 
 ```bash
 shell/scripts/dev/probe-bar.sh --json                 # 自动：weston > 当前 Wayland 会话
@@ -60,9 +78,9 @@ python3 -m unittest tests.shell.test_bar_runtime             # 无 Wayland 时�
 `Loader.Ready`、无 pending/failed、几何有限且中段居中、岛可见，并扫描
 TypeError/ReferenceError/compiled empty。退出码 2 = 环境跳过，不是通过。
 
-### 3. 真实会话双 Shell 平滑热切换（全桌面接管与即时切回）
+### 3. 用户实机验收：双 Shell 切换
 
-通过 Python 状态机实现有界探测与自动回滚安全接管：
+以下操作改变当前桌面，仅供用户主动验收时执行。自动性能调查不得在宿主执行：
 
 ```bash
 # 检查当前双轨状态
@@ -85,23 +103,35 @@ nyxuri-shell --action restart        # 硬重启当前外壳（与 Mod+Alt+R 同
 nyxuri shell switch noctalia
 ```
 
+## 性能基准
+
+宿主只编排 Podman，不启动图形进程：
+
+```bash
+python3 shell/scripts/dev/benchmark-shell.py \
+  --runs 10 --ipc-runs 20 --steady-seconds 600 --reclaim-cycles 100 \
+  --profile default-full --output /tmp/nyxuri-benchmark
+```
+
+runner 使用 Sway headless/pixman；默认 Bar 需要 layer-shell，Weston headless 不能代替这项验证。代码只读挂载，HOME、XDG、Wayland 和 D-Bus 均在容器内隔离。热启动仍经过生产 wrapper，并复用 run-0 的预热缓存；不再绕过 wrapper 直接调用 `qs`。源码静态计数、已登记对象的 live census 和 `/proc` 采样必须分开报告。
+
 ## 日常开发循环
 
 每轮回答：现在什么能用，这一轮证明什么，失败回到哪里。
 
 1. 查看工作区与 `git status`，确认基线绿再动工。
-2. 选择一个功能域，遵守 `app/`、`units/`、`shared/` 三层分层契约（一单元一目录，`manifest.toml` 与代码同目录）（参见 [架构边界矩阵](architecture-matrix.md)）。
-3. 修改 QML/JS，通过 `run-tests.py` 本地验证；必要时拉起 Tier 2 隔离进程预览视觉。
-4. 维护全树清晰度，更新 ROADMAP 与对应 Wiki。
+2. 选择一个功能域，遵守 `shell.qml`、`commons/`、`ui/`、`services/`、`plugins/` 五层结构；插件的 `manifest.toml` 与代码同目录（参见 [架构边界矩阵](architecture-matrix.md)）。
+3. 修改 QML/JS，按影响选择定向测试；真实启动和预览仅在第 2 节的隔离容器中进行。
+4. 更新 ROADMAP 与受影响的 Wiki 页面。
 
 ## 国际化与字典更新
 
-Nyxuri Shell 采用纯净 TOML 字典组织多语言文案，免去臃肿 XML 困扰：
+Nyxuri Shell 使用 TOML 字典保存多语言文案：
 
 ```bash
 # 扫描源码并生成语言包（TS 输出仅作审阅，运行时只读 TOML 词典）
 python3 shell/scripts/dev/compile-i18n.py \
-  --input-dir shell/app/i18n --output-dir /tmp/nyxuri-i18n
+  --input-dir shell/commons/i18n --output-dir /tmp/nyxuri-i18n
 ```
 
 ## 调试层次与检查
@@ -117,7 +147,7 @@ python3 shell/scripts/dev/compile-i18n.py \
 
 ## 生命周期与副作用治理规范
 
-为保障 Shell 在长时间运行和高频开关下的秩序感与整洁度，所有 QML/JS 资源必须遵守生命周期与副作用治理契约：
+持有后台任务的 QML/JS 组件须遵守以下创建、运行和释放规则：
 
 | 代号 | 检查项 | 治理契约与修复要求 |
 |---|---|---|

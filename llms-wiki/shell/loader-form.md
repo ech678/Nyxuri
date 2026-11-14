@@ -67,8 +67,8 @@ Quickshell 的 `qs.` 模块 import 不是真模块系统，而是「启动时静
 
 **旧描述修正**：`shell/AGENTS.md` 约束①记录的「不确定地整单元暴毙 / run-to-run
 shifting failure sets」不准确——清缓存冷启动下失败是**确定性**的（baseline 0/20）；
-游移来自 QML 磁盘缓存与该缺陷的交互。对策（SlotHost 预热、nyxuri-shell 每次清
-qmlcache）独立成立，继续有效至 S0-2。
+游移来自 QML 磁盘缓存与该缺陷的交互。对策（SlotHost 预热、nyxuri-shell 按源码内容和 qs identity 隔离缓存
+qmlcache）独立成立。源码内容不变时可复用编译产物；源内容变化会切换缓存身份，继续有效至 S0-2。
 
 ## 形态矩阵（2026-10-31，每格 20 次清缓存冷启动）
 

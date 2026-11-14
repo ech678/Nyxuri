@@ -58,6 +58,7 @@ Singleton {
     property string sidebarCookieSecondHandStyle: "dot"
     property string sidebarCookieDateStyle: "bubble"
     property bool preferencesReady: false
+    property bool _systemThemePollingRequested: false
     property bool savePending: false
     property bool systemThemeWriteQueued: false
     property bool requestedDarkMode: false
@@ -367,6 +368,21 @@ Singleton {
         root.writeSystemColorScheme();
     }
 
+    function startSystemThemePolling() {
+        root._systemThemePollingRequested = true;
+        root._startSystemThemePollingIfReady();
+    }
+
+    function _startSystemThemePollingIfReady() {
+        if (!root._systemThemePollingRequested || !root.preferencesReady)
+            return;
+        root._systemThemePollingRequested = false;
+        themePollTimer.start();
+        themePoller.running = true;
+    }
+
+    onPreferencesReadyChanged: root._startSystemThemePollingIfReady()
+
     function toggleDarkMode() {
         root.setDarkMode(!root.darkMode);
     }
@@ -573,7 +589,7 @@ Singleton {
         id: themePoller
 
         command: ["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"]
-        running: true
+        running: false
 
         stdout: StdioCollector {
             onStreamFinished: {
@@ -626,7 +642,7 @@ Singleton {
     Timer {
         id: themePollTimer
         interval: 60000
-        running: true
+        running: false
         repeat: true
         onTriggered: {
             if (!systemThemeWriter.running && !root.systemThemeWriteQueued)
