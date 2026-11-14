@@ -46,6 +46,20 @@ qs ipc --path ./shell call lock open
 qs kill --path ./shell
 ```
 
+### 2.5 Bar 运行态探针（布局 NaN / compiled empty 专用）
+
+字符串断言拦不住布局求值问题，Bar 改动先跑探针：
+
+```bash
+shell/scripts/dev/probe-bar.sh --json                 # 自动：weston > 当前 Wayland 会话
+shell/scripts/dev/probe-bar.sh --json --session       # 现有图形会话，无窗口，私有 HOME/XDG
+python3 -m unittest tests.shell.test_bar_runtime             # 无 Wayland 时显式 SKIP
+```
+
+探针把 `BarContent` 装进隔离 shell，逐档 cornerStyle 1/3/4/5 重建，断言 active
+`Loader.Ready`、无 pending/failed、几何有限且中段居中、岛可见，并扫描
+TypeError/ReferenceError/compiled empty。退出码 2 = 环境跳过，不是通过。
+
 ### 3. 真实会话双 Shell 平滑热切换（全桌面接管与即时切回）
 
 通过 Python 状态机实现有界探测与自动回滚安全接管：

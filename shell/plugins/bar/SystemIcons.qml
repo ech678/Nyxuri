@@ -20,7 +20,7 @@ Item {
     property color contentColor: Appearance.colors.colOnLayer1
     property bool contentColorOverridden: false
     property bool vertical: Config.options.bar.vertical
-    property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
+    property bool isMaterial: PersonalizationConfig.barIsMaterial
 
     readonly property color iconColor: root.contentColorOverridden ? root.contentColor : (root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1)
 

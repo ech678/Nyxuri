@@ -146,14 +146,6 @@ Singleton {
                     readonly property var numberMap: []
                 }
             }
-
-            readonly property QtObject dynamicIsland: QtObject {
-                readonly property bool enable: PersonalizationConfig.islandEnabled
-                readonly property string leftWidget: "clockWidget"
-                readonly property string rightWidget: "none"
-                readonly property bool showMediaControls: true
-                readonly property string visualizerStyle: "dots"
-            }
         }
     }
 }

@@ -91,8 +91,12 @@ Scope {
                 readonly property bool pushWindowsWhenShown: Config.options?.bar?.autoHide?.pushWindows ?? false
                 readonly property bool overviewOwnsEdge: GlobalStates.overviewOpen || CompositorDriver.inOverview
                 readonly property string outputName: barRoot.screen?.name ?? ""
+                readonly property bool materialHug: Config.options.bar.m3.cornerStyle === 4
+                readonly property bool panelStyle: Config.options.bar.m3.cornerStyle === 5
                 readonly property real layerGap: Config.options.bar.m3.cornerStyle === 3 ? Config.options.bar.m3.gapsOut : 0
-                readonly property real shownExclusiveZone: Appearance.sizes.baseBarHeight + (Config.options.bar.m3.cornerStyle === 1 ? Config.options.bar.m3.gapsOut : 0) + (Config.options.bar.m3.cornerStyle === 2 ? -6 : 0)
+                // end4 reserves 4px of extra exclusive zone for the hug/panel
+                // styles; the round decorators (4) and the panel border need it.
+                readonly property real shownExclusiveZone: Appearance.sizes.baseBarHeight + (Config.options.bar.m3.cornerStyle === 1 ? Config.options.bar.m3.gapsOut : 0) + (Config.options.bar.m3.cornerStyle === 2 ? -6 : 0) + ((barRoot.materialHug || barRoot.panelStyle) ? 4 : 0)
                 property bool contextMenuHold: false
                 property bool leftSidebarHold: false
                 property bool rightSidebarHold: false
@@ -389,7 +393,7 @@ Scope {
                             bottom: undefined
                         }
                         height: Appearance.rounding.screenRounding
-                        active: showBarBackground && Config.options.bar.m3.cornerStyle === 0 && !barContent.centerOnly// Hug
+                        active: (showBarBackground && Config.options.bar.m3.cornerStyle === 0 && !barContent.centerOnly) || Config.options.bar.m3.cornerStyle === 4
 
                         states: State {
                             name: "bottom"
@@ -407,8 +411,11 @@ Scope {
 
                         sourceComponent: Item {
                             implicitHeight: Appearance.rounding.screenRounding
+                            readonly property color decoratorColor: (Config.options.bar.m3.cornerStyle === 4 || showBarBackground) ? Appearance.colors.colLayer0 : "transparent"
+
                             RoundCorner {
                                 id: leftCorner
+                                visible: Config.options.bar.m3.cornerStyle === 0 || barContent.effectiveLeftLayout.length > 0
                                 anchors {
                                     top: parent.top
                                     bottom: parent.bottom
@@ -416,7 +423,7 @@ Scope {
                                 }
 
                                 implicitSize: Appearance.rounding.screenRounding
-                                color: showBarBackground ? Appearance.colors.colLayer0 : "transparent"
+                                color: parent.decoratorColor
 
                                 corner: RoundCorner.CornerEnum.TopLeft
                                 states: State {
@@ -429,13 +436,14 @@ Scope {
                             }
                             RoundCorner {
                                 id: rightCorner
+                                visible: Config.options.bar.m3.cornerStyle === 0 || barContent.effectiveRightLayout.length > 0
                                 anchors {
                                     right: parent.right
                                     top: !Config.options.bar.bottom ? parent.top : undefined
                                     bottom: Config.options.bar.bottom ? parent.bottom : undefined
                                 }
                                 implicitSize: Appearance.rounding.screenRounding
-                                color: showBarBackground ? Appearance.colors.colLayer0 : "transparent"
+                                color: parent.decoratorColor
 
                                 corner: RoundCorner.CornerEnum.TopRight
                                 states: State {

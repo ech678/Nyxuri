@@ -14,7 +14,7 @@ Item {
     id: root
 
     property bool vertical: false
-    property bool isMaterial: Config.options.bar.m3.cornerStyle === 3
+    property bool isMaterial: PersonalizationConfig.barIsMaterial
     readonly property MprisPlayer activePlayer: {
         const preferred = Config.options.bar.m3.media.preferredPlayer.trim().toLowerCase();
         if (preferred.length === 0)

@@ -50,7 +50,7 @@
 
 | 单元 | 目录 | 职责与内聚内容 | 外部依赖输入 | 对外意图输出 |
 |---|---|---|---|---|
-| **bar** | `plugins/bar/` | 桌面状态栏、托盘（内聚 `TrayService`）、工作区指示、时钟、状态条快捷设置；岛 `plugins/bar/island/`（B1 起为 bar 的布局部件，门控 `islandEnabled` 配置键）：动态岛/多形态中枢、专属录制与辅助（内聚 `AudioRecordingService`、`RecordingService`） | `Quickshell.screens`、`Workspaces`、`ThemeService`、`MediaService`、`NotificationService`、`WidgetState`、`TimerService`、`MediaPalette` | 触发面板展开、窗口切换、媒体控制、快速操作、录制派发 |
+| **bar** | `plugins/bar/` | 桌面状态栏、托盘（内聚 `TrayService`）、工作区指示、时钟、状态条快捷设置、部件池；岛 `plugins/bar/island/`（B1 起为 bar 的布局部件，门控 `islandEnabled`；idle 卫星由 `islandSatellite` 选择，OSD 由岛内服务观察者发布） | `Quickshell.screens`、`Workspaces`、`ThemeService`、`MediaService`、`NotificationService`、`WidgetState`、`VolumeService`、`BrightnessService`、`KeyboardLockService`、`MediaPalette` | 触发面板展开、窗口切换、媒体控制、快速操作、OSD 展示 |
 | **dock** | `plugins/dock/` | 应用停靠栏、常驻应用、活动窗口指示 | `DockService`、`ApplicationService` | 启动应用、激活/最小化窗口 |
 | **launcher** | `plugins/launcher/` | Spotlight 聚焦启动器、专属检索与工具（内聚 `FileSearchService`、`SpotlightSearchService`、`SpotlightToolService`） | `ApplicationService`、`SearchCatalog`、`ActionGateway` | `ActionGateway.execute(args, "launcher")` |
 | **settings** | `plugins/settings/` | 设置聚合窗（S0-3a 起降级为聚合 panel 插件）：双轨窗壳（default / dashboard）+ 宿主级页面（account / theme / network / connected-devices / language-region / shortcuts / shell / about，内聚 `ShellControlService`——控制面采样与脱敏诊断唯一 I/O 归属）+ schema 通用渲染页；域设置页随各域插件 | `PersonalizationConfig`、`NiriConfigService`、`UiPreferences`、`SettingsSearch`、`PluginSettings`、`ActionGateway` | 更新用户配置、重启服务、按门控采样 Shell 自身占用 |

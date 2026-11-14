@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | P4 | 主题契约、模板兼容与取色引擎分阶 | 待验收（契约测试全绿；实机行为与视觉证据待作者） |
 | T3 | 设置界面替换：Caelestia 安卓风味 | M3/M4 待验收（机器证据齐；视觉过目待作者） |
-| B | Bar & Island（布局自由 + end4 视觉基线） | B8.1–B8.3 待验收（2026-11-14：end4 样式基线、部件池、workspaces 真体已落地并通过运行态冷启动复核；B8.4–B8.6 待做） |
+| B | Bar & Island（布局自由 + end4 视觉基线） | B8.1–B8.6 待验收（2026-11-14：样式基线、部件池、workspaces 真体、岛收口、死键清算与 `probe-bar.sh` 运行态护栏已落地；视觉过目待作者） |
 | P6 | 整体验收与未来移植 | 排队（前置主线 KM5） |
 
 ## 已交付基线台账
@@ -126,20 +126,21 @@ S0-4 资产收编明细见台账 T3 实施记录。
 | B-5 | 验收口径 | 只认运行态：`qs -p` 逐件 `Loader.Ready` + 布局求值数值 + 实机截图。静态字符串断言只作结构回归，不作为完成证据 |
 | B-6 | 整抄纪律 | 有上游源的模块一律 `cp` 原件再剪裁；禁止手写残卷冒充整抄。2026-11-14 复核：`BarWidgetSwitcher*`/`ClippedProgressBar`/`Clipped*CircularProgress`/`ResourceUsage` 在 `references/end4-pC` 与 `references/iNiR` 均有源，「快照缺源」旧判定作废，B8.2 已按整抄解冻 |
 
-### 1. 现状（2026-11-14 B8.3 收尾实测）
+### 1. 现状（2026-11-14 B8.6 收尾实测）
 
 | 能力 | 状态 | 证据 |
 | --- | --- | --- |
-| 三段布局 / 拖拽 / 高度滑杆 | ✅ 可用 | 中段回到 `anchors.centerIn`，压缩钳制整段删除；冷启动 `bar toggle` 往返 `CLOSED/OPEN`，无布局告警 |
-| 分组胶囊 / Divisor / 分隔 | ✅ 已按 end4 重对齐 | `groupColor` 接通、`paintBackground`、`segmented`、material 黑名单含 `island` |
-| 岛（Notif/Battery/OSD/Media/Session） | ✅ 可用 | 岛自画胶囊；`--ipc island state` 返回 `idle` |
+| 三段布局 / 拖拽 / 高度滑杆 | ✅ 可用 | 中段改显式 `x:(parent.width-width)/2`，压缩钳制整段删除；`probe-bar.sh` 在 1/3/4/5 四档实测中段 `centerX` 与光学中心误差 ≤1px |
+| 分组胶囊 / Divisor / 分隔 | ✅ 已按 end4 重对齐 | `groupColor` 接通、`paintBackground`、`segmented`、material 黑名单含 `island`；隐藏样式分支的 Loader 为 `active:false`，不再双开部件 |
+| 岛（Notif/Battery/OSD/Media/Session） | ✅ 可用 | 岛自画胶囊；OSD 由岛监听 `VolumeService`/`BrightnessService`/`KeyboardLockService` 产生，`--ipc island state` 返回 `idle` |
+| 岛显示开关 / 卫星 | ✅ 已接线 | `islandEnabled` 经 `filterLayout` 真正隐藏岛；`islandSatellite`（none/clock/weather）驱动 idle 卫星，不再是反掉的 `leftWidget` 硬编码 |
 | 岛 Timer / Recording | ⛔ 已下架 | B-4 |
 | workspaces | ✅ end4 视觉真体 | iNiR 876 行原件剪裁：dots/数字/`numberMap`/占用态/应用图标，默认 `indicatorStyle="dot"` |
-| media / tray / quickSettings / activeWindow | ✅ 可用 | 运行态冷启动无 TypeError |
+| media / tray / quickSettings / activeWindow | ✅ 可用 | `activeWindow` 已按 end4 重抄（双行 appId/title、Niri 数据面、contentColor）；material 判定统一 `barIsMaterial` |
 | resources（systemMonitor）/ clockWidget / batteryIndicator | ✅ 解冻 | 基件整抄入树，三件回选装集，运行态无 compiled empty |
 | launcherButton / powerButton / systemIcons | ✅ 上岗 | launcherButton 经 `ActionGateway`（`launcherHost`）开启动器；systemIcons 直连音量/网络/蓝牙/通知/键盘锁服务 |
 | `DateTime` 单例 | ✅ 已移植 | 时间/日期/uptime 供时钟、岛 idle 面、时钟弹层 |
-| 设置页 | ⚠️ 仍有死键 | 见 §5；`barGroupColor` 已接线，`information` 假部件已删除 |
+| 设置页 | ✅ 无空承诺 | `islandStyle/overlay/position/hoverAction/click*/media*Style/keyhole` 已从配置、页面、搜索与词典退役 |
 
 ### 2. 样式对齐清单（end4 是准绳；B8.1 已收口）
 
@@ -149,23 +150,24 @@ S0-4 资产收编明细见台账 T3 实施记录。
 | 岛底色 | `paintBackground: false`，岛自己画胶囊 | ✅ 黑名单含 `island`，岛恒画 `colLayer0` 胶囊 |
 | `borderless: "segmented"` | 1px 边框 + 圆角 0 | ✅ `isSegmented` 分支 |
 | 胶囊黑名单 | `workspaces/divisor/powerButton/docktoPanel/sidebarButton*/activeWindow/dynamicIsland/avatar` 不上色 | ✅ 原名单 + `island`/`rightSidebarButton` |
-| material 判定 | `cornerStyle === 3 \|\| 4` | ✅ BarGroup/BarContent/Island/未读徽标一致 |
+| material 判定 | `cornerStyle === 3 \|\| 4` | ✅ `PersonalizationConfig.barIsMaterial` 单一真值，bar 部件不再各自重算 |
 | 每部件色调 | media/sysTray→`secondaryContainer`，resources→`tertiaryContainer`，其余→`primaryContainer` | ✅ `M3Palette.pillContainer` |
 | 胶囊几何 | `padding 5`、背景上下内缩 4px、`fullRadius=height/2`、`midRadius=unsharpenmore`（Plain +2） | ✅ 原件几何保留 |
 | 每部件右键改样式 | `BarGroupStylePopup` → `bar.widgetStyles`（背景/边框/圆角/内边距） | ✅ 已接线，持久化落 `PersonalizationConfig.barWidgetStyles` |
-| 中段定位 | `anchors.centerIn: parent` | ✅ hostScale/压缩钳制已删除 |
+| 中段定位 | 光学中心 | ✅ 显式 x 绑定；`probe-bar.sh` 数值断言 |
+| cornerStyle 4/5 窗口层 | hug 保留 4px exclusive、4 档圆角装饰带；panel +4 | ✅ `Bar.qml` materialHug/panelStyle 移植 |
 | workspaces 默认 | `indicatorStyle:"dot"` + `alwaysShowNumbers` + `numberMap` + 占用态图标 | ✅ 874→剪裁件落地，`numberMap` 生效 |
 
 ### 3. 分期（B8）
 
 | 阶段 | 交付目标 | 状态 |
 | :--- | :--- | :--- |
-| B8.1 | 样式基线：BarGroup/BarContent 按 end4 重对齐（`groupColor` 接通、`paintBackground`、`segmented`、黑名单含 `island`、中段改 `anchors.centerIn`），保留 3-lane 数据与拖拽 | 待验收（机器证据齐；实机视觉待作者） |
+| B8.1 | 样式基线：BarGroup/BarContent 按 end4 重对齐（`groupColor` 接通、`paintBackground`、`segmented`、黑名单含 `island`、中段回光学中心），保留 3-lane 数据与拖拽 | 待验收（机器证据齐；实机视觉待作者） |
 | B8.2 | 部件池：`DateTime` 单例、`launcherButton` 整抄、`powerButton` 进选装集、`systemIcons` 直连服务；解冻 `clock`/`systemMonitor`/`battery` 的基件整抄 | 待验收（机器证据齐；实机视觉待作者） |
 | B8.3 | workspaces 真体：Fork iNiR 876 行原件，Niri 数据面 + end4 视觉，默认 dots+数字+`numberMap`+占用态图标 | 待验收（机器证据齐；实机视觉待作者） |
-| B8.4 | 岛收口：自画胶囊、badges 补 `import M3Shapes`、卫星时钟作可选部件、设置死键接线或下架 | 待开始（胶囊与 M3Shapes 已随 B8.1/2 顺手落地） |
-| B8.5 | 设置与形态：cornerStyle 4/5 实现或撤除；`islandStyle/islandPosition/keyhole` 等死键清算；`activeWindow`/`media` 等件与 end4 视觉对齐复核 | 待开始 |
-| B8.6 | 护栏与收口：`scripts/dev/probe-bar.sh` + 可选运行态测试（无 Wayland 时显式跳过）；ROADMAP/known-issues/PARKED 同步 | 待开始 |
+| B8.4 | 岛收口：`islandEnabled` 真正隐藏岛、OSD 生产者（音量/亮度/caps/num）、idle 卫星 `islandSatellite` 可选、媒体面 end4 点阵基线、卫星语义修正 | 待验收（机器证据 + probe 运行态；实机视觉待作者） |
+| B8.5 | 设置与形态：cornerStyle 4/5 窗口层实现；`islandStyle/islandPosition/keyhole` 等死键清算；`activeWindow` 按 end4 重抄、`media` material 对齐 | 待验收（机器证据齐；实机视觉待作者） |
+| B8.6 | 护栏与收口：`scripts/dev/probe-bar.sh` + `test_bar_runtime.py` 运行态探针（无 Wayland 显式跳过）；island 死 IPC 动作与默认键位摘除；文档同步 | 待验收（probe 四档全绿；实机视觉待作者） |
 
 ### 4. 2026-11-14 已修（P0 轮，运行态复核通过）
 
@@ -186,17 +188,61 @@ S0-4 资产收编明细见台账 T3 实施记录。
 - **视觉对齐补丁**：工作区默认值改回 end4（`showAppIcons=false` / `alwaysShowNumbers=true`），默认显示数字、当前工作区粉色胶囊；设置页新增 Workspaces 段（显示应用图标 / 始终显示数字 / 指示器样式），值持久化到 `[bar]`。媒体专辑封面补 `OpacityMask` 圆角遮罩（`MediaCrossSlideImage` 只做矩形裁剪，之前封面是方的）。
 - **运行态证据**：冷启动 `qs -p shell`（wrapper 清 qmlcache）无 compiled empty / TypeError / ReferenceError；`--ipc bar toggle` 往返 `CLOSED/OPEN`；`--ipc island state` → `idle`。
 
+### 4c. 2026-11-14 B8.4–B8.6 收口（机器证据齐）
+
+- **岛 OSD 生产者**：`GlobalStates.osdKind` 单通道（volume/brightness/caps/num）；
+  `DynamicIsland` 监听 `VolumeService` / `BrightnessService` / `KeyboardLockService`，
+  1.4s 自动收起，仅主屏岛发布；`DiOsd` 改用 `di.osdKind` 与真实 `osdValueText()`。
+  `KeyboardLockService` 改读 `/sys/class/leds/*::capslock|numlock/brightness`（key-cli
+  已于 2026-11-07 退役，原 backend 让 caps/num 永远不可用）。
+  `BrightnessService` 补 `/sys/class/backlight/<dev>/brightness` FileView watch，
+  外部 `brightnessctl` 改亮度也能触发（通知走 Noctalia 时由该侧负责）。
+- **岛开关与卫星**：`filterLayout()` 在 `islandEnabled=false` 时移除 `island`，不再是只让
+  popup 槽位的假开关；新增 `islandSatellite`（clock/weather/none，默认 clock）替换反掉的
+  `dynamicIsland.leftWidget` 硬编码；`Config.options.bar.dynamicIsland` 桥对象删除。
+- **媒体面**：DiMedia 走 end4 基线——播放时显示 cava 点阵，播放按钮/`wave` 死分支与
+  `GlobalStates.visualizerPoints` 一并删除；`Visualizer` 的 cava 租约仍是按需拉起。
+- **死键清算**：`islandStyle/overlay/position/hoverAction/click*/media*Style/keyhole`
+  从配置存储、IslandPage、两套设置 catalog、manifest 搜索路由与 `zh_CN.toml` 全部退役；
+  `islandEnabled/islandSatellite/islandHideDate/islandCapsLockOsd/islandNumLockOsd` 保留。
+- **material 单一真值**：`barIsMaterial/barIsMaterialHug/barIsPanel` 落
+  `PersonalizationConfig`，BarGroup/BarContent/Island/Media/SysTray/UtilButton(s)/
+  Divisor/Visualizer/BatteryIndicator/Launcher/Power/SystemIcons 统一消费。
+- **隐藏分支生命周期**：BarContent 的材质/非材质两套 lane 同时声明，但部件 Loader 按
+  `active: root.isMaterial` / `!root.isMaterial` 门控；此前两套都实例化，等于每屏两个岛，
+  且隐藏岛会抢 `ActionGateway.islandHost`。
+- **ActiveWindow 整抄**：end4 94 行原件剪裁为 Niri 数据面（focusedWindow /
+  activeWorkspaceForOutput / windowsForWorkspace），双行 appId/title，保留
+  `contentColor`/`contentColorOverridden`，去掉上游 console.log。
+- **island IPC 事实收口**：manifest 5 个 hub/tools/lyrics/dashboard/closeAllOthers 搜索动作
+  摘除（`Bar.qml` 只有 `state`）；`SpotlightCatalog.islandAvailable` 改绑
+  `ActionGateway.islandHost` 存在性；`niri_config.DEFAULT_BINDINGS` 移除
+  `Mod+Shift+W/T`；`niri-actions.json` 旧条目保留作老配置迁移映射。
+- **运行态护栏**：`scripts/dev/probe-bar.sh` + `scripts/dev/probe-bar.qml` 以私有
+  HOME/XDG 和隔离 shell 装载 `BarContent`，轮询 `bar-probe layout`，覆盖 cornerStyle
+  1/3/4/5，断言所有 active `Loader.Ready`、无 pending/failed、几何有限且中段居中、
+  岛可见且宽高非零，并扫描日志中的 TypeError/ReferenceError/compiled empty；
+  `tests/shell/test_bar_runtime.py` 消费该 JSON，无 Wayland 时显式跳过。
+
 ### 5. 待拍板 / 停车场
 
 - ~~右键就地改样式~~：已拍板接线（B8.1）。
 - ~~resources 缺源~~：源在 `references/end4-pC`，已整抄解冻（B8.2）。
-- **cornerStyle 4/5**（Material hug / Panel）：BarGroup/BarContent 已随整抄实现；`Bar.qml` 窗口层 gap/exclusive 语义待实机视觉确认后结案。
-- **设置死键**：`islandStyle`（bangs/pill/long 逃生档）待 B8.4 退役；`islandOverlay/islandPosition/hoverAction/click*/media*Style/keyhole/capsLockOsd/numLockOsd` 接线或下架留 B8.4/B8.5。
-- **停车场**：lyrics 面板（空壳占位）、岛卫星与悬浮模式、竖排 bar 岛角部按钮、battery 岛面（依赖 `BatteryService`）。
+- ~~设置死键~~：B8.4/B8.5 已清算；OSD、卫星、岛开关全部有真实消费者。
+- **cornerStyle 4/5**（Material hug / Panel）：窗口层 `exclusiveZone +4` 与 4 档圆角装饰已
+  按 end4 移植，probe 四档几何全绿；实机视觉（贴近屏幕边缘/圆角衔接）仍待作者过目。
+- **OSD 边界**：亮度 OSD 依赖 shell 侧亮度变化或 sysfs watch；若亮度键交给同时运行的
+  Noctalia，则由 Noctalia 自己的 OSD 负责，Nyxuri 不重复弹。
+- **停车场**：lyrics 面板（空壳占位）、岛悬浮模式、竖排 bar 岛角部按钮、battery 岛面
+  （依赖 `BatteryService`）；岛 hub/tools/dashboard 面板未复活前不再出现在搜索与默认键位。
 
 **用户侧断裂提醒**：niri 配置里 `--ipc keystone` 需改 `--ipc island`，
 `--ipc control-center open/toggle island` 改 `bar.island`（实验期干净断裂，不留别名）；
 `config.toml` 的 `[keystone]` 段与 disabled `shell.keystone` 账本由迁移自动折算。
+B8.4 起 `--ipc island hub/tools/lyrics/dashboard/closeAllOthers` 无实现，旧键位与脚本
+需删除；`Mod+Shift+W/T` 不再出现在新配置默认值里。旧 `[island]` 的
+`style/overlay/position/hoverAction/leftClickAction/middleClickAction/media/keyhole`
+字段被忽略，下次保存时自动消失（非破坏性）。
 
 ## 后续阶段
 

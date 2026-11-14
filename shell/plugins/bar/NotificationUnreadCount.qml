@@ -8,7 +8,7 @@ import M3Shapes
 Item {
     id: root
     property bool embeddedInSystemIcons: false
-    readonly property bool isMaterial: Config.options.bar.m3.cornerStyle === 3 || Config.options.bar.m3.cornerStyle === 4
+    readonly property bool isMaterial: PersonalizationConfig.barIsMaterial
     readonly property bool showUnreadCount: Config.options.bar.m3.indicators.notifications.showUnreadCount
     readonly property string iconName: NotificationService.silent ? "notifications_paused" : "notifications"
 

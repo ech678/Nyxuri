@@ -50,7 +50,7 @@ aliases = ["general.bar.section.position"]
 id = "bar.island"
 source = "island/IslandPage.qml"
 title = "Island"
-description = "Style, clock, and media controls"
+description = "Visibility, satellite, indicators, and clock"
 context = "GeneralBarPage"
 icon = "toggle_off"
 group = "surfaces"
@@ -81,30 +81,9 @@ context = "IslandPage"
 icon = "settings"
 
 [[settings]]
-id = "bar.island.section.keyhole"
-route = "bar.island"
-title = "Keyhole"
-context = "IslandPage"
-icon = "settings"
-
-[[settings]]
 id = "bar.island.section.island-style"
 route = "bar.island"
-title = "Island style"
-context = "IslandPage"
-icon = "toggle_off"
-
-[[settings]]
-id = "bar.island.section.media-controls"
-route = "bar.island"
-title = "Media controls"
-context = "IslandPage"
-icon = "music_note"
-
-[[settings]]
-id = "bar.island.section.mouse-actions"
-route = "bar.island"
-title = "Mouse actions"
+title = "Island"
 context = "IslandPage"
 icon = "toggle_off"
 
@@ -115,67 +94,7 @@ title = "Horizontal clock style"
 context = "HorizontalClockPage"
 icon = "schedule"
 
-# Island IPC face: searchable fixed actions (manifest-schema.md). The IPC
-# target and availability keyword renamed keystone → island (B1 clean break).
-
-[[actions]]
-id = "nyxuri:island:closeAllOthers"
-target = "island"
-method = "closeAllOthers"
-availability = "island"
-
-[actions.search]
-title = "Close Island panels"
-description = "Dismiss open Island panels"
-context = "SpotlightActions"
-icon = "close"
-
-[[actions]]
-id = "nyxuri:island:dashboard"
-target = "island"
-method = "dashboard"
-availability = "island"
-
-[actions.search]
-title = "Island dashboard"
-description = "Toggle the Island dashboard"
-context = "SpotlightActions"
-icon = "dashboard"
-
-[[actions]]
-id = "nyxuri:island:hub"
-target = "island"
-method = "hub"
-availability = "island"
-
-[actions.search]
-title = "Island hub"
-description = "Toggle the Island hub"
-context = "SpotlightActions"
-icon = "hub"
-
-[[actions]]
-id = "nyxuri:island:lyrics"
-target = "island"
-method = "lyrics"
-availability = "island"
-
-[actions.search]
-title = "Lyrics"
-description = "Toggle Island lyrics"
-context = "SpotlightActions"
-icon = "lyrics"
-aliases = ["music"]
-
-[[actions]]
-id = "nyxuri:island:tools"
-target = "island"
-method = "tools"
-availability = "island"
-
-[actions.search]
-title = "Island tools"
-description = "Toggle the Island tools panel"
-context = "SpotlightActions"
-icon = "handyman"
-aliases = ["record", "timer"]
+# B8.4: the old island hub/tools/lyrics/dashboard/closeAllOthers actions were
+# search promises with no IpcHandler behind them (Bar.qml only owns `state`).
+# They are removed from the search surface; niri-actions.json keeps the legacy
+# ids only so old binds keep a stable identity during migration.

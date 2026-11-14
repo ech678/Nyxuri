@@ -24,19 +24,27 @@ Item {
     implicitHeight: Appearance.sizes.barHeight
     width: parent.width
     readonly property real barPadding: 0
-    readonly property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
-    readonly property bool isMaterialHug: Config.options.bar.cornerStyle === 4
-    readonly property bool isPanel: Config.options.bar.cornerStyle === 5
+    readonly property bool isMaterial: PersonalizationConfig.barIsMaterial
+    readonly property bool isMaterialHug: PersonalizationConfig.barIsMaterialHug
+    readonly property bool isPanel: PersonalizationConfig.barIsPanel
+
     readonly property color materialPillBgColor: Appearance.colors.colLayer0
     readonly property real centerPillX: centerPill.x
     readonly property real centerPillWidth: centerPill.width
-    readonly property real laneMargin: root.isMaterial ? (Config.options?.bar?.m3?.gapsOut ?? 5) : (Config.options.bar.cornerStyle === 1 ? 4 : root.isPanel ? 4 : 8)
-
+    // Probe surface (scripts/dev/probe-bar.sh): the optical centre lane and its
+    // evaluated geometry, so a runtime probe can catch NaN / left-edge collapse
+    // without duplicating the layout math.
+    readonly property real laneCenterX: absoluteCenter.x + contentContainer.x
+    readonly property real laneCenterWidth: absoluteCenter.width
     readonly property bool trayHasItems: SystemTray.items.values.length > 0
     readonly property bool batteryAvailable: Battery.available
 
     function filterLayout(layout) {
         let filtered = Array.from(layout ?? []);
+        // B8.4: islandEnabled is the island's component gate. It has to hide
+        // the widget, not just release the popup slot.
+        if (!PersonalizationConfig.islandEnabled)
+            filtered = filtered.filter(name => name !== "island");
         if (!root.trayHasItems)
             filtered = filtered.filter(name => name !== "sysTray" && name !== "tray");
         if (!root.batteryAvailable)
@@ -121,10 +129,8 @@ Item {
     }
 
     function closeOSD(action: string): void {
-        if (action === "brightness")
-            GlobalStates.osdBrightnessOpen = false;
-        else if (action === "volume")
-            GlobalStates.osdVolumeOpen = false;
+        if (GlobalStates.osdKind !== "")
+            GlobalStates.osdKind = "";
     }
 
     function getScrollIcon(action: string): string {
@@ -287,6 +293,11 @@ Item {
                             bgColor: root.getMaterialPillColor(modelData)
                             Loader {
                                 Layout.fillHeight: true
+                                // The hidden branch keeps its (empty) groups so
+                                // RowLayout implicit sizes stay live, but must
+                                // not instantiate widgets: a second island stole
+                                // islandHost and doubled service consumers.
+                                active: root.isMaterial
                                 source: root.getWidgetUrl(modelData)
                             }
                         }
@@ -326,6 +337,7 @@ Item {
                         totalCount: root.effectiveLeftLayout.length
                         Loader {
                             Layout.fillHeight: true
+                            active: !root.isMaterial
                             source: root.getWidgetUrl(modelData)
                         }
                     }
@@ -336,7 +348,10 @@ Item {
         // Center
         Item {
             id: absoluteCenter
-            anchors.centerIn: parent
+            // Explicit x instead of anchors.centerIn: the lane width is fed by
+            // dynamically loaded widget implicit sizes, and anchors did not
+            // re-centre after the idle island narrowed (startup 164 -> 154).
+            x: (parent.width - width) / 2
             width: !root.centerLaneFilled ? 0 : root.isMaterial ? (centerMaterialPill.width + (root.isMaterialHug ? (centerLeftOutwardCorner.implicitSize + centerRightOutwardCorner.implicitSize) : 0)) : middleRow.implicitWidth
             height: parent.height
 
@@ -388,6 +403,11 @@ Item {
                             bgColor: root.getMaterialPillColor(modelData)
                             Loader {
                                 Layout.fillHeight: true
+                                // The hidden branch keeps its (empty) groups so
+                                // RowLayout implicit sizes stay live, but must
+                                // not instantiate widgets: a second island stole
+                                // islandHost and doubled service consumers.
+                                active: root.isMaterial
                                 source: root.getWidgetUrl(modelData)
                             }
                         }
@@ -428,6 +448,7 @@ Item {
                         totalCount: root.effectiveMiddleLayout.length
                         Loader {
                             Layout.fillHeight: true
+                            active: !root.isMaterial
                             source: root.getWidgetUrl(modelData)
                         }
                     }
@@ -493,6 +514,11 @@ Item {
                             bgColor: root.getMaterialPillColor(modelData)
                             Loader {
                                 Layout.fillHeight: true
+                                // The hidden branch keeps its (empty) groups so
+                                // RowLayout implicit sizes stay live, but must
+                                // not instantiate widgets: a second island stole
+                                // islandHost and doubled service consumers.
+                                active: root.isMaterial
                                 source: root.getWidgetUrl(modelData)
                             }
                         }
@@ -521,6 +547,7 @@ Item {
                         totalCount: root.effectiveRightLayout.length
                         Loader {
                             Layout.fillHeight: true
+                            active: !root.isMaterial
                             source: root.getWidgetUrl(modelData)
                         }
                     }

@@ -390,7 +390,7 @@ Item {
                     last: true
                     icon: "toggle_off"
                     text: I18n.tr("Island settings")
-                    subtext: I18n.tr("Style, clock, and media controls")
+                    subtext: I18n.tr("Visibility, satellite, indicators, and clock")
                     onClicked: root.openSection("island")
                 }
             }

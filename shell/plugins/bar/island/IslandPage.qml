@@ -6,14 +6,13 @@ import qs.commons
 import qs.services
 import qs.ui
 import qs.commons.i18n
-import qs.ui
 
-// Island page shell (T3 M4): overview renders as a NexusPageBase over the
-// M1 atom suite; the horizontal-clock subpage loads through the routed Loader
-// and renders its own subpage title + back arrow, so the pre-M4 external
-// subpage header is gone. Directory pickers and the long-bar drag overlay
-// ride inside the page content — a root-level child would break the
-// single-content-child contract of the Nexus scaffold.
+// Island page shell (T3 M4 + B8.4): overview renders as a NexusPageBase over
+// the M1 atom suite; the horizontal-clock subpage loads through the routed
+// Loader and renders its own subpage title + back arrow. B8.4 retired the
+// zero-consumer style/overlay/position/mouse/media/keyhole controls; what is
+// left is the component gate, the optional idle satellite, the keyboard OSD
+// toggles (now wired to KeyboardLockService) and the horizontal clock editor.
 Item {
     id: root
 
@@ -25,11 +24,7 @@ Item {
     signal backRequested
 
     property int searchRequestSerial: -1
-    readonly property var searchLeaf: currentSection === "overview" ? overviewPage.flickable :
-                                                                      pageLoader.item ? (
-                                                                                            pageLoader.item.searchLeaf
-                                                                                            || pageLoader.item) :
-                                                                                        root
+    readonly property var searchLeaf: currentSection === "overview" ? overviewPage.flickable : pageLoader.item ? (pageLoader.item.searchLeaf || pageLoader.item) : root
     function openSearchPath(path, serial) {
         const section = path.length ? path[0] : "overview";
         if (searchRequestSerial !== serial) {
@@ -42,14 +37,12 @@ Item {
             return "ready";
         if (!(pageLoader.status === Loader.Ready) || !pageLoader.item)
             return "loading";
-        return typeof pageLoader.item.openSearchPath === "function" ? pageLoader.item.openSearchPath(
-                                                                          path.slice(1), serial) : "ready";
+        return typeof pageLoader.item.openSearchPath === "function" ? pageLoader.item.openSearchPath(path.slice(1), serial) : "ready";
     }
 
     property var parentModal: null
     onCurrentSectionChanged: {
-        if (SettingsSearch.searchTarget && !SettingsSearch.applyingSearch && searchRequestSerial
-                === SettingsSearch.searchSerial)
+        if (SettingsSearch.searchTarget && !SettingsSearch.applyingSearch && searchRequestSerial === SettingsSearch.searchSerial)
             SettingsSearch.cancelSearch();
         SettingsSearch.retrySearch();
     }
@@ -90,142 +83,34 @@ Item {
                 width: overviewPage.cappedWidth
                 spacing: NexusStyle.padding.extraSmall / 2
 
-                // Island style
+                // Island visibility & idle satellite
                 PreferenceHeader {
                     first: true
-                    text: I18n.tr("Island style")
+                    text: I18n.tr("Island")
                 }
 
                 PreferenceToggle {
-                    id: floatingToggle
+                    id: enabledToggle
 
                     first: true
-                    text: I18n.tr("Floating")
-                    checked: PersonalizationConfig.islandOverlay
-                    onToggled: PersonalizationConfig.setValue("islandOverlay", checked)
+                    text: I18n.tr("Show Island")
+                    checked: PersonalizationConfig.islandEnabled
+                    onToggled: PersonalizationConfig.setIslandEnabled(checked)
 
                     SettingsSearchAnchor {
                         id: searchAnchor0
-                        target: floatingToggle
+                        target: enabledToggle
                         anchorId: "bar.island.section.island-style"
                     }
                 }
 
                 PreferenceSelect {
-                    label: I18n.tr("Style")
-                    model: PersonalizationConfig.islandStyles
-                    currentValue: PersonalizationConfig.islandStyle
-                    inputRegionService: PopupInputRegionService
-                    onSelected: value => PersonalizationConfig.setIslandStyle(value)
-                }
-
-                PreferenceSelect {
                     last: true
-                    label: I18n.tr("Screen edge")
-                    model: PersonalizationConfig.edgePositions
-                    currentValue: PersonalizationConfig.islandPosition
+                    label: I18n.tr("Satellite")
+                    model: PersonalizationConfig.islandSatelliteOptions
+                    currentValue: PersonalizationConfig.islandSatellite
                     inputRegionService: PopupInputRegionService
-                    onSelected: value => PersonalizationConfig.setIslandPosition(String(value))
-                }
-
-                // Mouse actions
-                PreferenceHeader {
-                    text: I18n.tr("Mouse actions")
-                }
-
-                PreferenceSelect {
-                    id: hoverSelect
-
-                    first: true
-                    label: I18n.tr("Hover")
-                    model: PersonalizationConfig.availableIslandHoverActionOptions
-                    currentValue: PersonalizationConfig.effectiveIslandHoverAction
-                    inputRegionService: PopupInputRegionService
-                    onSelected: value => PersonalizationConfig.setIslandAction("hover", value)
-
-                    SettingsSearchAnchor {
-                        id: searchAnchor1
-                        target: hoverSelect
-                        anchorId: "bar.island.section.mouse-actions"
-                    }
-                }
-
-                PreferenceSlider {
-                    label: I18n.tr("Hover open delay")
-                    enabled: PersonalizationConfig.effectiveIslandHoverAction !== "none"
-                    valueLabel: Math.round(PersonalizationConfig.islandHoverOpenDelay) + I18n.tr(" ms")
-                    value: PersonalizationConfig.islandHoverOpenDelay
-                    from: 0
-                    to: 500
-                    stepSize: 25
-                    onMoved: value => PersonalizationConfig.setIslandHoverOpenDelay(Math.round(value))
-                }
-
-                PreferenceSlider {
-                    label: I18n.tr("Hover close delay")
-                    enabled: PersonalizationConfig.effectiveIslandHoverAction !== "none"
-                    valueLabel: Math.round(PersonalizationConfig.islandHoverCloseDelay) + I18n.tr(" ms")
-                    value: PersonalizationConfig.islandHoverCloseDelay
-                    from: 0
-                    to: 600
-                    stepSize: 25
-                    onMoved: value => PersonalizationConfig.setIslandHoverCloseDelay(Math.round(value))
-                }
-
-                PreferenceSelect {
-                    label: I18n.tr("Left click")
-                    model: PersonalizationConfig.islandActionOptions
-                    currentValue: PersonalizationConfig.islandLeftClickAction
-                    inputRegionService: PopupInputRegionService
-                    onSelected: value => PersonalizationConfig.setIslandAction("left", value)
-                }
-
-                PreferenceSelect {
-                    last: true
-                    label: I18n.tr("Middle click")
-                    model: PersonalizationConfig.islandActionOptions
-                    currentValue: PersonalizationConfig.islandMiddleClickAction
-                    inputRegionService: PopupInputRegionService
-                    onSelected: value => PersonalizationConfig.setIslandAction("middle", value)
-                }
-
-                // Media controls
-                PreferenceHeader {
-                    text: I18n.tr("Media controls")
-                }
-
-                PreferenceSelect {
-                    id: progressSelect
-
-                    first: true
-                    label: I18n.tr("Progress bar")
-                    model: PersonalizationConfig.islandMediaProgressOptions
-                    currentValue: PersonalizationConfig.islandMediaProgressStyle
-                    inputRegionService: PopupInputRegionService
-                    onSelected: value => PersonalizationConfig.setIslandMediaProgressStyle(value)
-
-                    SettingsSearchAnchor {
-                        id: mediaSearchAnchor
-                        target: progressSelect
-                        anchorId: "bar.island.section.media-controls"
-                    }
-                }
-
-                PreferenceSelect {
-                    label: I18n.tr("Cover style")
-                    model: PersonalizationConfig.islandMediaCoverOptions
-                    currentValue: PersonalizationConfig.islandMediaCoverStyle
-                    inputRegionService: PopupInputRegionService
-                    onSelected: value => PersonalizationConfig.setIslandMediaCoverStyle(value)
-                }
-
-                PreferenceSelect {
-                    last: true
-                    label: I18n.tr("Colors")
-                    model: PersonalizationConfig.islandMediaColorOptions
-                    currentValue: PersonalizationConfig.islandMediaColorStyle
-                    inputRegionService: PopupInputRegionService
-                    onSelected: value => PersonalizationConfig.setIslandMediaColorStyle(value)
+                    onSelected: value => PersonalizationConfig.setIslandSatellite(String(value))
                 }
 
                 // Keyboard indicators
@@ -244,7 +129,7 @@ Item {
                     onToggled: PersonalizationConfig.setIslandCapsLockOsd(checked)
 
                     SettingsSearchAnchor {
-                        id: extraSearchAnchor0
+                        id: searchAnchor1
                         target: capsLockToggle
                         anchorId: "bar.island.section.keyboard-indicators"
                     }
@@ -256,29 +141,6 @@ Item {
                     text: I18n.tr("Num Lock changes")
                     checked: PersonalizationConfig.islandNumLockOsd
                     onToggled: PersonalizationConfig.setIslandNumLockOsd(checked)
-                }
-
-                // Keyhole
-                PreferenceHeader {
-                    text: I18n.tr("Keyhole")
-                }
-
-                PreferenceSelect {
-                    id: keyholeCardSelect
-
-                    first: true
-                    last: true
-                    label: I18n.tr("Card")
-                    model: PersonalizationConfig.islandKeyholeCardOptions
-                    currentValue: PersonalizationConfig.islandKeyholeCard
-                    inputRegionService: PopupInputRegionService
-                    onSelected: value => PersonalizationConfig.setIslandKeyholeCard(value)
-
-                    SettingsSearchAnchor {
-                        id: extraSearchAnchor1
-                        target: keyholeCardSelect
-                        anchorId: "bar.island.section.keyhole"
-                    }
                 }
 
                 // Horizontal clock

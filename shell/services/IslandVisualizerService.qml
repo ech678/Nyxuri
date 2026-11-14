@@ -5,11 +5,11 @@ import Quickshell
 import Quickshell.Io
 import qs.services
 
-// Lazy cava feed for the island's media face (B3-1). The upstream island read
-// `GlobalStates.visualizerPoints`, a singleton that owned a permanently
-// running cava process. The tree keeps cava as an on-demand consumer instead:
-// the island acquires a lease only while its media face is actually visible
-// and the track is playing, releasing it stops the process and clears points.
+// Lazy cava feed for the island's media face (B3-1). The upstream island owned
+// a permanently running cava process through `GlobalStates.visualizerPoints`;
+// the tree keeps cava as an on-demand consumer instead: the island acquires a
+// lease only while its media face is actually visible and the track is
+// playing, releasing it stops the process and clears points.
 //
 // Lease mechanics mirror MediaService.acquirePositionTracking — the same shape
 // the bar already relies on, so the island is not a special case.

@@ -14,12 +14,9 @@ Singleton {
     property real fallbackBrightnessValue: 0.5
     property var monitors: []
     readonly property string focusedScreenName: CompositorDriver.currentOutput
-    readonly property var activeScreen: root.getScreenByName(root.focusedScreenName) || (
-                                            Quickshell.screens.length > 0 ? Quickshell.screens[0] : null)
-    readonly property var activeMonitor: root.getMonitorByName(root.focusedScreenName) || (
-                                             root.monitors.length > 0 ? root.monitors[0] : null)
-    readonly property real brightnessValue: root.activeMonitor ? root.activeMonitor.brightness :
-                                                                 root.fallbackBrightnessValue
+    readonly property var activeScreen: root.getScreenByName(root.focusedScreenName) || (Quickshell.screens.length > 0 ? Quickshell.screens[0] : null)
+    readonly property var activeMonitor: root.getMonitorByName(root.focusedScreenName) || (root.monitors.length > 0 ? root.monitors[0] : null)
+    readonly property real brightnessValue: root.activeMonitor ? root.activeMonitor.brightness : root.fallbackBrightnessValue
 
     QtObject {
         id: backlightState
@@ -68,6 +65,14 @@ Singleton {
         root.rebuildMonitors();
     }
 
+    // B8.4: external brightnessctl keys write sysfs directly; without a watch
+    // the service stays stale and the island's brightness OSD never fires.
+    FileView {
+        path: backlightState.deviceName.length > 0 ? "/sys/class/backlight/" + backlightState.deviceName + "/brightness" : ""
+        watchChanges: true
+        onFileChanged: backlightState.refresh()
+    }
+
     Connections {
         target: Quickshell
 
@@ -83,8 +88,8 @@ Singleton {
         const next = [];
         for (let i = 0; i < Quickshell.screens.length; i += 1)
             next.push(monitorComponent.createObject(root, {
-                                                        screen: Quickshell.screens[i]
-                                                    }));
+                screen: Quickshell.screens[i]
+            }));
 
         root.monitors = next;
         root.rescanDdcMonitors();
@@ -130,8 +135,7 @@ Singleton {
         const normalizedName = root.normalizeConnectorName(name);
         if (normalizedName.length === 0)
             return null;
-        return Quickshell.screens.find(screen => root.normalizeConnectorName(screen.name) === normalizedName)
-                || null;
+        return Quickshell.screens.find(screen => root.normalizeConnectorName(screen.name) === normalizedName) || null;
     }
 
     function getMonitorByName(name) {
@@ -184,9 +188,9 @@ Singleton {
 
         const next = pendingDdcMonitors.slice();
         next.push({
-                      name: connector,
-                      busNum: busMatch[1]
-                  });
+            name: connector,
+            busNum: busMatch[1]
+        });
         pendingDdcMonitors = next;
     }
 
@@ -254,8 +258,7 @@ Singleton {
                 pendingSync = false;
 
                 const connectorName = root.normalizeConnectorName(screenName);
-                const match = root.ddcMonitors.find(m => root.normalizeConnectorName(m.name)
-                                                         === connectorName);
+                const match = root.ddcMonitors.find(m => root.normalizeConnectorName(m.name) === connectorName);
                 isDdc = !!match;
                 busNum = match ? match.busNum : "";
                 refresh();
@@ -264,11 +267,16 @@ Singleton {
             function applyBacklight() {
                 if (!backlightState.available)
                     return;
+                const previous = brightness;
                 reading = true;
                 rawMaxBrightness = backlightState.maxBrightness;
                 brightness = backlightState.brightness;
                 reading = false;
                 root.fallbackBrightnessValue = brightness;
+                // The reading guard above suppresses monitor.onBrightnessChanged,
+                // so an external sysfs write has to announce itself here.
+                if (Math.abs(previous - brightness) > 0.0001)
+                    root.brightnessChanged();
             }
 
             function finishRead() {

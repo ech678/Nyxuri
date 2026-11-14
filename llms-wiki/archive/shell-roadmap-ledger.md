@@ -1086,3 +1086,64 @@ test_qml_structure test_dashboard_catalogs`（214 通过）；`shell/scripts/dev
 `qs -p` 探针（`/tmp` 副本 + `QML_IMPORT_PATH=ui/shapes`、qmldir 补齐类型表）
 逐件装载 13 个部件，全部 `Loader.Ready` 并给出非负 `implicitWidth/Height`
 （BatteryIndicator 因桌面无电池为 0×0 属预期）。视觉过目与截图待作者。
+
+## B 卷实施记录（追加式，2026-11-14，B8.4–B8.6）
+
+### B8.4 岛收口（待验收）
+
+- OSD 空壳修复：`GlobalStates.osdKind` 单通道；`DynamicIsland` 监听
+  `VolumeService`/`BrightnessService`/`KeyboardLockService`，主屏岛发布、1.4s 收起；
+  `DiOsd` 改 `di.osdKind` 与真实 `osdValueText()`（此前调用不存在的方法）。
+  `KeyboardLockService` 改读 `/sys/class/leds/*::capslock|numlock/brightness`：
+  key-cli 已于 2026-11-07 退役，旧 backend 让 caps/num 永远 unavailable（Caps/Num
+  OSD 消失的根因）；现 service 以 FileView watch 免外部进程，SystemIcons 指示器同步复活。
+  `BrightnessService` 补 backlight sysfs FileView watch，外部 `brightnessctl` 变化也发
+  `brightnessChanged`。
+- `islandEnabled` 真门控：`BarContent.filterLayout()` 移除 island，不再只释放
+  popup:notification 槽；`GlobalStates.dynamicIslandEnabled` 与
+  `Config.options.bar.dynamicIsland` 桥对象删除。
+- 卫星可选：`islandSatellite`（clock/weather/none，默认 clock）+ 设置页 Select；
+  DiIdle 分支修正（旧 `leftWidget="clockWidget"` 反而显示天气），天气图标接
+  `WeatherService.currentIconName`。
+- 媒体面 end4 基线：隐藏播放按钮，播放时显示 cava 点阵；删 wave 分支与
+  `GlobalStates.visualizerPoints`，cava 仍按需租约。
+
+### B8.5 设置与形态（待验收）
+
+- 死键清算：`islandStyle/islandOverlay/islandPosition/islandHoverAction/
+  islandLeftClickAction/islandMiddleClickAction/islandMedia{Progress,Cover,Color}Style/
+  islandKeyholeCard` 从 `PersonalizationConfig`、`IslandPage`、两套 settings catalog、
+  manifest 搜索锚点/动作与 `zh_CN.toml` 全部移除；保存/加载/迁移/needsRewrite 同步。
+- material 单一真值：新增 `barIsMaterial/barIsMaterialHug/barIsPanel`，替换
+  BarGroup/BarContent/Island/Media/SysTray/UtilButton(s)/Divisor/Visualizer/
+  BatteryIndicator/Launcher/Power/SystemIcons 的 `=== 3` 自算。
+- cornerStyle 4/5 窗口层：`Bar.qml` 补 hug/panel `exclusiveZone +4`、4 档
+  `roundDecorators`（按左右 lane 是否为空显示）与 decoratorColor。
+- `ActiveWindow.qml` 按 end4 94 行原件重抄：focusedWindow/activeWorkspaceForOutput/
+  windowsForWorkspace 投影、双行 appId/title、contentColor API，去掉上游 console.log。
+- BarContent 隐藏分支生命周期：材质/非材质两套 lane 仍声明，但部件 Loader 以
+  `active` 门控，杜绝每屏两个岛与隐藏岛抢 `ActionGateway.islandHost`。
+
+### B8.6 护栏与收口（待验收）
+
+- `scripts/dev/probe-bar.sh` + `scripts/dev/probe-bar.qml`：私有 HOME/XDG、隔离 shell
+  副本、`file://` 装载（qs: 不能解析隐式同级类型）、`PersonalizationConfig.ready`
+  后再建 BarContent；IPC `bar-probe` 提供 `ping/layout/cornerStyle/reload`。逐档
+  cornerStyle 1/3/4/5 重建并断言 active Loader 全 Ready、无 pending/failed、几何有限、
+  中段居中、岛可见；另验证 OSD 通道（`islandState=osd`）与 `islandEnabled=false`
+  时中段清空。无 Wayland 退 2（显式 SKIP）。首次运行即撞出上文双岛与 material lane
+  0 宽问题。
+- `tests/shell/test_bar_runtime.py`：消费 probe JSON；无合成器时 skip。
+- island IPC 事实收口：manifest 5 个 island 搜索动作摘除，
+  `SpotlightCatalog.islandAvailable` 改看 `ActionGateway.islandHost`；
+  `DEFAULT_BINDINGS` 移除 Mod+Shift+W/T；niri-actions 旧条目保留作迁移映射。
+
+**验证**：`python3 -m unittest tests.shell.test_bar_end4 test_island_end4
+test_settings_pages test_dashboard_catalogs test_plugin_manifests test_config_stores
+test_i18n_catalog test_shell_architecture test_qml_structure test_search_catalog
+test_niri_config test_settings_navpane test_settings_shell test_shell_switcher
+test_resource_integrity test_preference_atoms test_toml test_migrate_config
+test_bar_runtime`（380 通过，runtime 实跑）；`shell/scripts/dev/check.sh` 绿
+（whitespace/qml-format/shell-lint/python-syntax/settings-schema/qml-lint/lifecycle-audit；
+qml-lint 629 条 advisory 警告为既有 qs.* 成员解析噪声）。`probe-bar.sh --session --json`
+四档 `ok:true`、`logErrors:[]`。视觉过目与截图待作者。

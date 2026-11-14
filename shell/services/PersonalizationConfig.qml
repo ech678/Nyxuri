@@ -129,21 +129,6 @@ Singleton {
                 "value": "scheme-rainbow",
                 "label": I18n.tr("Rainbow")
             })]
-    readonly property var islandStyles: [({
-                "value": "end4",
-                "label": I18n.tr("Capsule")
-            }), ({
-                "value": "bangs",
-                "label": I18n.tr("Bangs")
-            }), ({
-                "value": "pill",
-                "label": I18n.tr("Pill")
-            }),
-        {
-            value: "long",
-            label: I18n.tr("Long")
-        }
-    ]
     readonly property var edgePositions: [({
                 "value": "top",
                 "label": I18n.tr("Top"),
@@ -295,30 +280,28 @@ Singleton {
     // island is a bar layout part now, not a unit, so its switch is a config
     // key while the bar unit's existence remains the ledger's alone.
     property bool islandEnabled: true
-    property bool islandOverlay: false
-    // B3-1: the island body is the end4-pC capsule; bangs/pill/long stay
-    // selectable as the escape hatch until B4 retires them (D4 freeze).
-    property string islandStyle: "end4"
-    // B3-1 one-shot markers. Two separate flags on purpose: the layout seed and
-    // the style seed shipped in the same phase but must be able to land
-    // independently (a config that already consumed the layout seed still needs
-    // the style seed).
-    property bool islandLayoutMigrated: false
-    property bool islandStyleMigrated: false
-    readonly property var islandKeyholeCardIds: ["weather", "pomodoro"]
-    readonly property var islandKeyholeCardOptions: [
+    // B8.4: idle-face satellite is an explicit optional part, not the iNiR
+    // leftWidget hardcode that rendered weather under a "clockWidget" value.
+    property string islandSatellite: "clock"
+    readonly property var islandSatelliteOptions: [
+        {
+            "value": "clock",
+            "label": I18n.tr("Clock"),
+            "icon": "schedule"
+        },
         {
             "value": "weather",
             "label": I18n.tr("Weather"),
             "icon": "partly_cloudy_day"
         },
         {
-            "value": "pomodoro",
-            "label": I18n.tr("Pomodoro"),
-            "icon": "timer"
+            "value": "none",
+            "label": I18n.tr("None"),
+            "icon": "block"
         }
     ]
-    property string islandKeyholeCard: "weather"
+    // B3-1 one-shot marker: seed the middle lane with the island exactly once.
+    property bool islandLayoutMigrated: false
     property bool barOverlay: false
     property string barPosition: "top"
     readonly property var barCornerStyles: [
@@ -348,6 +331,12 @@ Singleton {
         }
     ]
     property int barCornerStyle: 1
+    // Single truth for the material pill treatment (end4: cornerStyle 3 or 4).
+    // Widgets bind these instead of re-deriving `=== 3`, which kept 4/5
+    // half-styled in nine files.
+    readonly property bool barIsMaterial: root.barCornerStyle === 3 || root.barCornerStyle === 4
+    readonly property bool barIsMaterialHug: root.barCornerStyle === 4
+    readonly property bool barIsPanel: root.barCornerStyle === 5
     readonly property var barBorderlessModes: [
         {
             value: "pills",
@@ -533,130 +522,11 @@ Singleton {
     property var barLayoutLeft: root.defaultBarLayoutLeft.slice()
     property var barLayoutMiddle: root.defaultBarLayoutMiddle.slice()
     property var barLayoutRight: root.defaultBarLayoutRight.slice()
-    property string islandPosition: "top"
     property bool islandCapsLockOsd: true
     property bool islandNumLockOsd: true
     property bool islandHideDate: false
     property bool barShowValues: true
     property bool barShowNames: false
-    property string islandHoverAction: "peak"
-    property string islandLeftClickAction: "media"
-    property string islandMiddleClickAction: "lyrics"
-    property string islandMediaProgressStyle: "wave"
-    property string islandMediaCoverStyle: "rounded"
-    property string islandMediaColorStyle: "theme"
-    readonly property var islandMediaProgressOptions: [
-        {
-            value: "wave",
-            label: I18n.tr("Sine wave")
-        },
-        {
-            value: "material",
-            label: I18n.tr("Material wave")
-        }
-    ]
-    readonly property var islandMediaCoverOptions: [
-        {
-            value: "rounded",
-            label: I18n.tr("Rounded cover")
-        },
-        {
-            value: "caelestia",
-            label: I18n.tr("Caelestia")
-        },
-        {
-            value: "background",
-            label: I18n.tr("Cover background")
-        }
-    ]
-    readonly property var islandMediaColorOptions: [
-        {
-            value: "theme",
-            label: I18n.tr("Theme colors")
-        },
-        {
-            value: "cover",
-            label: I18n.tr("Cover colors")
-        }
-    ]
-
-    function setIslandMediaProgressStyle(value) {
-        setValue("islandMediaProgressStyle", normalizedOption(root.islandMediaProgressOptions, value, "wave"));
-    }
-
-    function setIslandMediaCoverStyle(value) {
-        setValue("islandMediaCoverStyle", normalizedOption(root.islandMediaCoverOptions, value, "rounded"));
-    }
-
-    function setIslandMediaColorStyle(value) {
-        setValue("islandMediaColorStyle", normalizedOption(root.islandMediaColorOptions, value, "theme"));
-    }
-
-    property int islandHoverOpenDelay: 150
-    property int islandHoverCloseDelay: 250
-
-    function setIslandHoverOpenDelay(value) {
-        setValue("islandHoverOpenDelay", normalizedBoundedInt(value, 150, 0, 500));
-    }
-
-    function setIslandHoverCloseDelay(value) {
-        setValue("islandHoverCloseDelay", normalizedBoundedInt(value, 250, 0, 600));
-    }
-
-    readonly property var islandActionOptions: [
-        {
-            value: "none",
-            label: I18n.tr("Do not open")
-        },
-        {
-            value: "media",
-            label: I18n.tr("Media controls")
-        },
-        {
-            value: "lyrics",
-            label: I18n.tr("Lyrics")
-        },
-        {
-            value: "dashboard",
-            label: I18n.tr("Dashboard", "HubContent")
-        },
-        {
-            value: "upload",
-            label: I18n.tr("Upload")
-        },
-        {
-            value: "weather",
-            label: I18n.tr("Weather")
-        },
-        {
-            value: "tools",
-            label: I18n.tr("Tools")
-        }
-    ]
-
-    readonly property var islandHoverActionOptions: [
-        {
-            value: "peak",
-            label: I18n.tr("Peak")
-        }
-    ].concat(root.islandActionOptions)
-
-    readonly property var availableIslandHoverActionOptions: islandStyle === "long" ? islandActionOptions : islandHoverActionOptions
-
-    // Older saved configurations can still request peak. Long has no peak
-    // state; retain the preference for other styles but resolve it to none.
-    readonly property string effectiveIslandHoverAction: islandStyle === "long" && islandHoverAction === "peak" ? "none" : islandHoverAction
-
-    function setIslandAction(gesture, action) {
-        const properties = {
-            hover: "islandHoverAction",
-            left: "islandLeftClickAction",
-            middle: "islandMiddleClickAction"
-        };
-        if (!Object.prototype.hasOwnProperty.call(properties, gesture))
-            return;
-        setValue(properties[gesture], normalizedOption(gesture === "hover" ? root.availableIslandHoverActionOptions : root.islandActionOptions, action, gesture === "hover" && root.islandStyle !== "long" ? "peak" : "none"));
-    }
 
     readonly property var horizontalClockAxisDefaults: ({
             "wght": 900,
@@ -1365,8 +1235,8 @@ Singleton {
         setValue("islandEnabled", value === true);
     }
 
-    function setIslandStyle(value) {
-        setValue("islandStyle", normalizedOption(root.islandStyles, value, "bangs"));
+    function setIslandSatellite(value) {
+        setValue("islandSatellite", normalizedOption(root.islandSatelliteOptions, value, "clock"));
     }
 
     function setFontFamily(role, family) {
@@ -1762,24 +1632,6 @@ Singleton {
         return root.moveQuickSettingsComponent(id, root.quickSettingsComponents.length);
     }
 
-    function setIslandPosition(value) {
-        setValue("islandPosition", normalizedEdgePosition(value));
-    }
-
-    function normalizedIslandKeyholeCard(raw) {
-        // Migrate the old ordered selection, skipping the removed quick-settings card.
-        const candidates = Array.isArray(raw) ? raw : [raw];
-        for (const candidate of candidates) {
-            if (root.islandKeyholeCardIds.indexOf(candidate) !== -1)
-                return candidate;
-        }
-        return "weather";
-    }
-
-    function setIslandKeyholeCard(value) {
-        setValue("islandKeyholeCard", root.normalizedIslandKeyholeCard(value));
-    }
-
     function setIslandCapsLockOsd(value) {
         setValue("islandCapsLockOsd", !!value);
     }
@@ -1959,27 +1811,11 @@ Singleton {
             },
             "island": {
                 "enabled": root.islandEnabled,
-                "overlay": root.islandOverlay,
-                "style": root.islandStyle,
-                "position": root.islandPosition,
+                "satellite": root.islandSatellite,
                 "layoutMigrated": root.islandLayoutMigrated,
-                "styleMigrated": root.islandStyleMigrated,
                 "capsLockOsd": root.islandCapsLockOsd,
                 "numLockOsd": root.islandNumLockOsd,
                 "hideDate": root.islandHideDate,
-                "hoverAction": root.islandHoverAction,
-                "hoverOpenDelay": root.islandHoverOpenDelay,
-                "hoverCloseDelay": root.islandHoverCloseDelay,
-                "leftClickAction": root.islandLeftClickAction,
-                "middleClickAction": root.islandMiddleClickAction,
-                "media": {
-                    "progressStyle": root.islandMediaProgressStyle,
-                    "coverStyle": root.islandMediaCoverStyle,
-                    "colorStyle": root.islandMediaColorStyle
-                },
-                "keyhole": {
-                    "card": root.islandKeyholeCard
-                },
                 "horizontalClock": {
                     "fontSize": root.horizontalClockFontSize,
                     "axes": root.cloneMap(root.horizontalClockAxes),
@@ -2030,7 +1866,6 @@ Singleton {
         const theme = configSection(source.theme);
         const effects = configSection(source.effects);
         const island = configSection(source.island);
-        const media = configSection(island.media);
         const bar = configSection(source.bar);
         const sidebar = configSection(source.sidebar);
         const desktopCards = configSection(source.desktopCards);
@@ -2040,7 +1875,6 @@ Singleton {
         const autoCycle = configSection(wallpaper.autoCycle);
         const fonts = configSection(theme.fonts);
         const horizontalClock = configSection(island.horizontalClock);
-        const keyhole = configSection(island.keyhole);
         root.bannerSource = typeof wallpaper.bannerSource === "string" ? wallpaper.bannerSource : "";
         root.wallpaperFolder = typeof wallpaper.folder === "string" && wallpaper.folder !== "" ? wallpaper.folder : Paths.dataHome + "/wallpapers";
         const wallpaperPath = typeof wallpaper.path === "string" ? wallpaper.path : "";
@@ -2105,24 +1939,12 @@ Singleton {
         root.shellBackgroundOpacity = normalizedBoundedReal(effects.shellBackgroundOpacity, 1, 0, 1);
         root.shellBlurEnabled = typeof effects.shellBlurEnabled === "boolean" ? effects.shellBlurEnabled : false;
         root.shellBlurXray = typeof effects.shellBlurXray === "boolean" ? effects.shellBlurXray : true;
-        root.islandMediaProgressStyle = normalizedOption(root.islandMediaProgressOptions, media.progressStyle, "wave");
-        root.islandMediaCoverStyle = normalizedOption(root.islandMediaCoverOptions, media.coverStyle === "spectrum" ? "caelestia" : media.coverStyle, "rounded");
-        root.islandMediaColorStyle = normalizedOption(root.islandMediaColorOptions, media.colorStyle, "theme");
         root.islandEnabled = typeof island.enabled === "boolean" ? island.enabled : true;
-        root.islandOverlay = typeof island.overlay === "boolean" ? island.overlay : false;
-        root.islandStyle = normalizedOption(root.islandStyles, island.style, "bangs");
+        root.islandSatellite = normalizedOption(root.islandSatelliteOptions, island.satellite, "clock");
         root.islandLayoutMigrated = island.layoutMigrated === true;
-        root.islandStyleMigrated = island.styleMigrated === true;
-        root.islandPosition = normalizedEdgePosition(island.position);
         root.islandCapsLockOsd = typeof island.capsLockOsd === "boolean" ? island.capsLockOsd : true;
         root.islandNumLockOsd = typeof island.numLockOsd === "boolean" ? island.numLockOsd : true;
         root.islandHideDate = typeof island.hideDate === "boolean" ? island.hideDate : false;
-        root.islandHoverAction = normalizedOption(root.islandHoverActionOptions, island.hoverAction === "library" ? "media" : island.hoverAction, "peak");
-        root.islandHoverOpenDelay = normalizedBoundedInt(island.hoverOpenDelay, 150, 0, 500);
-        root.islandHoverCloseDelay = normalizedBoundedInt(island.hoverCloseDelay, 250, 0, 600);
-        root.islandLeftClickAction = normalizedOption(root.islandActionOptions, island.leftClickAction === "library" ? "media" : island.leftClickAction, "media");
-        root.islandMiddleClickAction = normalizedOption(root.islandActionOptions, island.middleClickAction === "library" ? "media" : island.middleClickAction, "lyrics");
-        root.islandKeyholeCard = root.normalizedIslandKeyholeCard(keyhole.card !== undefined ? keyhole.card : keyhole.cards);
         root.horizontalClockFontSize = root.normalizedBoundedInt(horizontalClock.fontSize, 22, 16, 28);
         root.horizontalClockAxes = root.normalizedHorizontalClockAxes(horizontalClock.axes);
         root.horizontalClockDigits = root.normalizedHorizontalClockDigits(horizontalClock.digits);
@@ -2144,11 +1966,9 @@ Singleton {
         root.barLeadingComponents = barLayout.leading;
         root.barTrailingComponents = barLayout.trailing;
         const hasBarLayouts = "barLayoutLeft" in bar || "barLayoutMiddle" in bar || "barLayoutRight" in bar;
-        // B3-1 one-shot migration. Before the island was a layout part it was a
-        // standalone layer window: the middle lane never hosted it, and the
-        // style was whatever escape hatch (bangs/pill/long) the user last
-        // picked. Both are seeded exactly once here, then the user's own
-        // choices win. Runs before either branch so both shapes get it.
+        // B3-1 one-shot layout seed: before the island was a layout part it was
+        // a standalone layer window, so the middle lane never hosted it. Seed it
+        // exactly once, then the user's own choices win.
         const islandMigrated = island.islandLayoutMigrated === true;
         if (hasBarLayouts) {
             root.barLayoutLeft = root.normalizedBarLayoutIds(bar.barLayoutLeft);
@@ -2170,14 +1990,8 @@ Singleton {
             root.barLayoutMiddle = root.defaultBarLayoutMiddle.slice();
             root.barLayoutRight = root.normalizedBarLayoutIds(root.barTrailingComponents);
         }
-        // The style side of the same one-shot, tracked separately: a saved
-        // bangs/pill/long means "the user picked an escape hatch before the
-        // capsule existed", not a deliberate rejection of it. Seed end4 once;
-        // the escape hatches stay selectable until B4 retires them.
-        if (island.styleMigrated !== true)
-            root.islandStyle = "end4";
-        if (typeof island.styleMigrated !== "boolean")
-            root.islandStyleMigrated = true;
+        // The style side of the same one-shot is gone: B8.4 retires the
+        // bangs/pill/long escape hatches, so there is nothing to seed.
         if (typeof island.islandLayoutMigrated !== "boolean")
             root.islandLayoutMigrated = true;
         root.quickSettingsComponents = root.normalizedQuickSettingsComponents(bar.quickSettingsComponents);
@@ -2216,7 +2030,7 @@ Singleton {
     function needsEdgePositionMigration(parsed) {
         const bar = parsed && parsed.bar;
         const island = parsed && parsed.island;
-        return !bar || typeof bar !== "object" || Array.isArray(bar) || bar.position !== root.normalizedEdgePosition(bar.position) || !island || typeof island !== "object" || Array.isArray(island) || island.position !== root.normalizedEdgePosition(island.position);
+        return !bar || typeof bar !== "object" || Array.isArray(bar) || bar.position !== root.normalizedEdgePosition(bar.position);
     }
 
     function commitPalette(scope, source) {

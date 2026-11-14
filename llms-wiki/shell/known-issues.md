@@ -6,15 +6,6 @@
 
 ## 未修复 BUG
 
-- [ ] **活动窗口未真整抄**（2026-11-14 审计，工作区部分已解）：`ActiveWindow.qml`（81 行）
-  是自研缩水，不是 `references/end4-pC/modules/ii/bar/ActiveWindow.qml` 原件；
-  `NetworkSpeed*` 同类。复现：活动窗口无 `contentColor` 覆盖与样式编辑信号。工作区已
-  整抄（B8.3），看得到 dots/数字/应用图标/occupancy。
-- [ ] **岛设置大半是空承诺**（2026-11-14 审计）：`islandStyle`/`islandOverlay`/
-  `islandPosition`/`islandHoverAction`/`islandLeftClickAction`/`islandMiddleClickAction`/
-  `islandMedia*Style`/`islandKeyholeCard`/`islandCapsLockOsd`/`islandNumLockOsd` 全库
-  **零运行时消费者**，只有 `islandHideDate` 生效。`BarGroupStylePopup` 已接线（B8.1），
-  这些岛键留 B8.4/B8.5 接线或下架。
 - [ ] **下架件与孤儿**：`HyprlandXkbIndicator`/`NetworkSpeed*`/`Weather*`/`DocktoPanel`/
   `LeftSidebarButton` 等依赖 iNiR 单例名的部件仍未接线；`Resources`/`ClockWidget`/
   `BatteryIndicator` 已随 B8.2 基件整抄解冻并进选装集。清单见
@@ -22,14 +13,25 @@
 
 ## 基础设施缺口（快速上线时跳过，回来先做这些）
 
-- [ ] **Bar/Island 无运行态测试**（2026-11-14）：`tests/shell/test_bar_end4.py`、
-  `test_island_end4.py` 全是 `assertIn("leftMaterialPill", source)` 这类字符串断言；
-  432 项全绿也拦不住布局 NaN 与 compiled empty。修法：`qs -p <fixture>` 逐件装载
-  断言 `Loader.Ready` + 布局求值数值，纳入 shell 测试。
 - [ ] **TUI 未接入**：`menus.py` 无 shell 切换菜单，`translations.toml` 无桌面外壳词条；目前只有 CLI `nyxuri shell` 一条路
 
 ## 已修复
 
+- [x] **岛收口与设置空承诺（B8.4/B8.5，2026-11-14）**：OSD 生产者接线（音量/亮度/
+  caps/num 走 `GlobalStates.osdKind`，`DiOsd` 不再调用不存在的值方法）；
+  `KeyboardLockService` 改读 `/sys/class/leds/*::capslock|numlock/brightness`
+  （key-cli 退役后原 backend 永远不可用，这是 caps/num OSD 消失的根因）；
+  `islandEnabled` 真正隐藏岛；`islandSatellite` 替换反掉的 `leftWidget` 天气硬编码；
+  媒体面改 end4 点阵；`islandStyle/overlay/position/hoverAction/click*/media*Style/
+  keyhole` 全链路退役。`ActiveWindow` 按 end4 重抄（Niri 数据面 + `contentColor`），
+  material 判定收敛到 `PersonalizationConfig.barIsMaterial`；cornerStyle 4/5 窗口层
+  exclusive/圆角装饰补齐。
+- [x] **Bar/Island 无运行态测试（B8.6，2026-11-14）**：新增
+  `scripts/dev/probe-bar.sh` + `probe-bar.qml`，隔离 shell 装载 `BarContent`，覆盖
+  cornerStyle 1/3/4/5，断言所有 active `Loader.Ready`、无 pending/failed、几何有限且
+  中段居中，并扫描 TypeError/ReferenceError/compiled empty；`tests/shell/test_bar_runtime.py`
+  消费 JSON，无 Wayland 显式跳过。首轮即撞出：材质/非材质两套 lane 同时实例化部件
+  （每屏两个岛、隐藏岛抢 `islandHost`），已改为按 `isMaterial` 门控 Loader。
 - [x] **Bar 整抄轮（B8.1–B8.3，2026-11-14）**：`BarGroup`/`BarContent` 重新 `cp` end4
   原件再剪裁（删除 hostScale 压缩链、DI 卫星、重复胶囊角），`groupColor`/`paintBackground`/
   `segmented`/material 4-5 档/右键调色全部接线；`DateTime`、`launcherButton`、

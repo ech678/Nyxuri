@@ -9,7 +9,7 @@ import QtQuick.Layouts
 Item {
     id: root
     property bool vertical: false
-    property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
+    property bool isMaterial: PersonalizationConfig.barIsMaterial
     property real horizontalExtraPadding: 12
 
     property Component colDefault

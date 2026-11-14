@@ -84,8 +84,14 @@ class IslandEnd4FacesContractTest(unittest.TestCase):
         self.assertIn('"notification"', content)
         self.assertIn('"battery"', content)
 
-        # Volume/brightness/keyboard bindings are declared for the parked
-        # service bridges; recording must not be.
+        # Volume/brightness/keyboard OSD producers (B8.4): the island owns the
+        # only writer of GlobalStates.osdKind, and defines what DiOsd reads.
+        self.assertIn('GlobalStates.osdKind !== ""', content)
+        self.assertIn("function osdValueText()", content)
+        self.assertIn("VolumeService", content)
+        self.assertIn("BrightnessService", content)
+        self.assertIn("KeyboardLockService", content)
+        # Recording is parked; no dead service bridge may lurk.
         self.assertNotIn("RecordingService", content)
         self.assertNotIn("stopRecording", content)
 

@@ -34,8 +34,6 @@ DEFAULT_BINDINGS = (
     ('Mod+N', 'sidebar', 'toggle', 'dashboard'),
     ('Mod+A', 'sidebar', 'toggle', 'quicksettings'),
     ('Mod+Ctrl+Comma', 'control-center', 'toggle', 'general'),
-    ('Mod+Shift+W', 'island', 'hub'),
-    ('Mod+Shift+T', 'island', 'tools'),
     ('Alt+Shift+L', 'lock', 'open'),
 )
 

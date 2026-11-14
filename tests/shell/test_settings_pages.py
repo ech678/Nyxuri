@@ -84,10 +84,7 @@ ANCHOR_IDS = {
     ),
     "IslandPage.qml": (
         "bar.island.section.island-style",
-        "bar.island.section.mouse-actions",
-        "bar.island.section.media-controls",
         "bar.island.section.keyboard-indicators",
-        "bar.island.section.keyhole",
         "bar.island.section.horizontal-clock",
     ),
     "HorizontalClockPage.qml": (
@@ -859,10 +856,10 @@ class TestIslandPageRebuild(unittest.TestCase):
     def test_atom_groups_present(self):
         source = _read("IslandPage.qml")
         for atom in ("PreferenceHeader", "PreferenceToggle", "PreferenceSelect",
-                     "PreferenceSlider", "PreferenceAction", "ConnectedRect"):
+                     "PreferenceAction", "ConnectedRect"):
             self.assertIn(atom, source, f"IslandPage must use the atom: {atom}")
-        self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 9,
-                         "nine select rows must register the popup input region")
+        self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 1,
+                         "the satellite select is the only select row left on the island page")
 
     def test_recording_surface_is_parked(self):
         """Timer/Recording are parked until their services exist. The page must
@@ -883,20 +880,10 @@ class TestIslandPageRebuild(unittest.TestCase):
     def test_business_owners_unchanged(self):
         source = _read("IslandPage.qml")
         for owner in (
-            'PersonalizationConfig.setValue("islandOverlay"',
-            "PersonalizationConfig.setIslandStyle(",
-            "PersonalizationConfig.setIslandPosition(",
-            'PersonalizationConfig.setIslandAction("hover"',
-            'PersonalizationConfig.setIslandAction("left"',
-            'PersonalizationConfig.setIslandAction("middle"',
-            "PersonalizationConfig.setIslandHoverOpenDelay(",
-            "PersonalizationConfig.setIslandHoverCloseDelay(",
-            "PersonalizationConfig.setIslandMediaProgressStyle(",
-            "PersonalizationConfig.setIslandMediaCoverStyle(",
-            "PersonalizationConfig.setIslandMediaColorStyle(",
+            "PersonalizationConfig.setIslandEnabled(",
+            "PersonalizationConfig.setIslandSatellite(",
             "PersonalizationConfig.setIslandCapsLockOsd(",
             "PersonalizationConfig.setIslandNumLockOsd(",
-            "PersonalizationConfig.setIslandKeyholeCard(",
             "PersonalizationConfig.setIslandHideDate(",
             "KeyboardLockService.available",
         ):

@@ -18,7 +18,7 @@ Item {
     property bool vertical: false
     property int currentIndex: 0
     property int totalCount: 0
-    property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
+    readonly property bool isMaterial: PersonalizationConfig.barIsMaterial
     property bool paintMaterialPill: false
     property bool paintBackground: true
     property color bgColor: Appearance.colors.colPrimaryContainer
@@ -50,6 +50,9 @@ Item {
     readonly property bool rightClickFree: !["updatesCount", "weatherBar", "bluetooth", "workspaces", "sysTray", "media", "docktoPanel"].includes(root.widgetName)
 
     readonly property Item loadedWidget: gridLayout.children[0]?.item ?? null
+    // Qt Quick Layouts can leave GridLayout.implicitWidth stale when its child
+    // Loader activates after a startup cornerStyle flip; the single widget host
+    // is authoritative, so fall back to it instead of collapsing to padding.
     readonly property bool hasContentOverride: !root.isMaterial && root.style.color !== undefined && root.style.color !== "transparent"
     readonly property color contentColor: {
         const name = root.style.color ?? "";

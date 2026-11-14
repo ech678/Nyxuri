@@ -15,7 +15,7 @@ RippleButton {
     id: root
     property color contentColor: Appearance.colors.colOnLayer0
     property bool contentColorOverridden: false
-    property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
+    property bool isMaterial: PersonalizationConfig.barIsMaterial
     property bool vertical: Config.options.bar.vertical
     property real buttonPadding: 5
 

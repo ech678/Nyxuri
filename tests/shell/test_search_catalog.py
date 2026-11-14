@@ -170,7 +170,7 @@ class CatalogTests(unittest.TestCase):
         # search metadata any more (single truth, no second vocabulary).
         self.assertFalse(any("search" in entry for entry in binds))
         actions = load_all_actions()
-        self.assertGreaterEqual(len(actions), 20)
+        self.assertGreaterEqual(len(actions), 15)
         for plugin_id, action in actions:
             with self.subTest(action=action["id"]):
                 entry = by_id.get(action["id"])

@@ -4,6 +4,11 @@
 > 分期与验收见 [ROADMAP](../../ROADMAP.md) §B，症状登记见
 > [known-issues](../../../llms-wiki/shell/known-issues.md)。
 >
+> 2026-11-14 B8.4/B8.5 复核：岛 OSD 已接线（`DynamicIsland` 监听音量/亮度/
+> 键盘锁服务，`DiOsd` 是真实消费者），`islandStyle/islandOverlay/islandPosition/
+> hoverAction/click*/media*Style/keyhole` 已从配置与设置页退役——它们不再是
+> “待接线”，而是明确删除。`DiTimers.qml` 仍按下方服务缺失口径停车。
+>
 > 2026-11-14 B8.2 复核：旧条目里「缺基件、参考树也没有」的判定是错的——
 > `BarWidgetSwitcher*`、`ClippedProgressBar`、`Clipped*CircularProgress`、
 > `StyledProgressBar`、`ResourceCard`、`ResourceUsage` 在 `references/end4-pC`

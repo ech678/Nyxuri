@@ -33,12 +33,24 @@ Item {
     readonly property real batteryWidth: 170
     readonly property real badgeSize: 32
     readonly property real badgeSpacing: 6
-    readonly property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
+    readonly property bool isMaterial: PersonalizationConfig.barIsMaterial
     property bool vertical: Config.options.bar.vertical
 
     property string manualFocusId: ""
 
     property bool forceIdle: false
+
+    // B8.4 OSD producer. end4 drove GlobalStates.osd* from its OnScreenDisplay
+    // module; Nyxuri has no such module, so the island observes the services it
+    // already consumes. Only the primary island publishes, otherwise every
+    // monitor's island would flash the same pill.
+    property bool _osdReady: false
+    property real _lastVolume: -1
+    property real _lastBrightness: -1
+    property bool _lastCaps: false
+    property bool _lastNum: false
+
+    readonly property string osdKind: GlobalStates.osdKind
 
     readonly property var displayedProvider: root.forceIdle ? null : root.activeProvider
 
@@ -57,12 +69,21 @@ Item {
     Component.onCompleted: {
         if (root.isPrimaryScreen) {
             ActionGateway.islandHost = root;
+            Qt.callLater(function () {
+                root._lastVolume = VolumeService.sinkVolume;
+                root._lastBrightness = BrightnessService.brightnessValue;
+                root._lastCaps = KeyboardLockService.capsLock === true;
+                root._lastNum = KeyboardLockService.numLock === true;
+                root._osdReady = true;
+            });
         }
     }
 
     Component.onDestruction: {
         if (ActionGateway.islandHost === root) {
             ActionGateway.islandHost = null;
+            if (GlobalStates.osdKind !== "")
+                GlobalStates.osdKind = "";
         }
     }
 
@@ -171,6 +192,103 @@ Item {
         return root.batteryAlertKind === "charging" ? Appearance.m3colors.m3success : Appearance.colors.colError;
     }
 
+    function showOsd(kind) {
+        if (!root._osdReady || !root.isPrimaryScreen)
+            return;
+        GlobalStates.osdKind = kind;
+        osdHideTimer.restart();
+    }
+
+    function osdBrightnessValue() {
+        const monitor = BrightnessService.getMonitorForScreen(root.QsWindow.window?.screen);
+        return monitor ? monitor.brightness : BrightnessService.brightnessValue;
+    }
+
+    function osdValueText() {
+        switch (root.osdKind) {
+        case "brightness":
+            return `${Math.round(root.osdBrightnessValue() * 100)}`;
+        case "caps":
+            return Translation.tr("Caps Lock");
+        case "num":
+            return Translation.tr("Num Lock");
+        default:
+            return `${Math.round(VolumeService.sinkVolume * 100)}`;
+        }
+    }
+
+    function osdIcon() {
+        switch (root.osdKind) {
+        case "brightness":
+            return "light_mode";
+        case "caps":
+            return "keyboard_capslock";
+        case "num":
+            return "keyboard";
+        default:
+            return VolumeService.sinkMuted ? "volume_off" : "volume_up";
+        }
+    }
+
+    Timer {
+        id: osdHideTimer
+        interval: 1400
+        repeat: false
+        onTriggered: GlobalStates.osdKind = ""
+    }
+
+    Connections {
+        target: VolumeService
+
+        function onSinkVolumeChanged() {
+            if (!root._osdReady)
+                return;
+            if (root._lastVolume >= 0 && Math.abs(VolumeService.sinkVolume - root._lastVolume) < 0.0001)
+                return;
+            root._lastVolume = VolumeService.sinkVolume;
+            root.showOsd("volume");
+        }
+
+        function onSinkMutedChanged() {
+            if (!root._osdReady)
+                return;
+            root.showOsd("volume");
+        }
+    }
+
+    Connections {
+        target: BrightnessService
+
+        function onBrightnessChanged() {
+            if (!root._osdReady)
+                return;
+            const value = BrightnessService.brightnessValue;
+            if (root._lastBrightness >= 0 && Math.abs(value - root._lastBrightness) < 0.005)
+                return;
+            root._lastBrightness = value;
+            root.showOsd("brightness");
+        }
+    }
+
+    Connections {
+        target: KeyboardLockService
+
+        function onLockStateChanged() {
+            if (!root._osdReady || !KeyboardLockService.available)
+                return;
+            const caps = KeyboardLockService.capsLock === true;
+            const num = KeyboardLockService.numLock === true;
+            const capsChanged = caps !== root._lastCaps;
+            const numChanged = num !== root._lastNum;
+            root._lastCaps = caps;
+            root._lastNum = num;
+            if (capsChanged && PersonalizationConfig.islandCapsLockOsd)
+                root.showOsd("caps");
+            else if (numChanged && PersonalizationConfig.islandNumLockOsd)
+                root.showOsd("num");
+        }
+    }
+
     readonly property var contentProviders: [
         {
             id: "notification",
@@ -186,7 +304,7 @@ Item {
         },
         {
             id: "osd",
-            active: GlobalStates.osdVolumeOpen,
+            active: GlobalStates.osdKind !== "",
             component: osdComponent,
             width: root.osdWidth
         },
@@ -233,14 +351,7 @@ Item {
         case "battery":
             return root.batteryIcon();
         case "osd":
-            switch (GlobalStates.osdIndicatorType) {
-            case "brightness":
-                return "light_mode";
-            case "gamma":
-                return "wb_twilight";
-            default:
-                return "volume_up";
-            }
+            return root.osdIcon();
         default:
             return "circle";
         }

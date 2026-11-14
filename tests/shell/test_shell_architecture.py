@@ -498,12 +498,14 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("di.iconForProviderId", surface_content)
         self.assertIn("di.osdValueText", surface_content)
 
-        # 2. DynamicIsland manages osd indicator state
+        # 2. DynamicIsland owns the island OSD producer (B8.4): one channel
+        # state, with the value/icon methods DiOsd actually calls.
         di_main_path = os.path.join(shell_dir, "plugins", "bar", "DynamicIsland.qml")
         with open(di_main_path, "r", encoding="utf-8") as f:
             di_content = f.read()
-        self.assertIn("GlobalStates.osdVolumeOpen", di_content)
-        self.assertIn("GlobalStates.osdIndicatorType", di_content)
+        self.assertIn("GlobalStates.osdKind", di_content)
+        self.assertIn("function osdValueText()", di_content)
+        self.assertIn("function osdIcon()", di_content)
 
     def test_p3_lock_screen_and_safety_switch_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
