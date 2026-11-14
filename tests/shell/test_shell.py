@@ -14,6 +14,7 @@ from contextlib import redirect_stdout
 from unittest.mock import patch, MagicMock
 
 from nyxuri.state.store import active_shell, custom_shell_bin, set_shell
+from nyxuri.system.shell import probe_running_shells
 from nyxuri.cli import _cmd_shell
 from tests.utils import TempEnv
 # Imports consolidated from the dissolved bugfix ledger.
@@ -375,3 +376,64 @@ class TestIssue140NoctaliaTemplatesDoNotCauseUnitDrift(unittest.TestCase):
             self.assertEqual(report.get("starship"), "Synced")
             self.assertEqual(report.get("niri"), "Synced")
             self.assertEqual(report.get("noctalia"), "Synced")
+
+
+class TestShellProcessDetection(unittest.TestCase):
+    """A running shell must be detected even when argv lost its `-p` flag.
+
+    Quickshell can surface as a bare `/usr/bin/quickshell` (crash-recovery
+    child); the plugin-changed bridge used to return early in that state, so
+    every settings toggle landed in state.json but never re-projected. The
+    wrapper's two private env markers are the identity source.
+    """
+
+    def _spawn_named_shell(self, tmp: Path, name: str, env_extra: dict) -> subprocess.Popen:
+        link = tmp / name
+        link.symlink_to(shutil.which("sleep") or "/bin/sleep")
+        env = os.environ.copy()
+        env.update(env_extra)
+        return subprocess.Popen([str(link), "10"], env=env)
+
+    def _wait_for(self, pid: int, expected: bool) -> bool:
+        deadline = time.time() + 3.0
+        while time.time() < deadline:
+            instances = probe_running_shells()
+            found = any(instance_pid == pid for _, instance_pid in instances)
+            if found == expected:
+                return True
+            time.sleep(0.05)
+        return False
+
+    def test_argvless_shell_is_identified_by_the_wrapper_env(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            proc = self._spawn_named_shell(
+                Path(raw), "qs",
+                {
+                    "NYXURI_ORIGINAL_CACHE_HOME": raw,
+                    "NYXURI_SHELL_GENERATED_HOME": raw,
+                },
+            )
+            try:
+                self.assertTrue(self._wait_for(proc.pid, True),
+                                "wrapper-marked qs process was not claimed as nyxuri-shell")
+            finally:
+                proc.terminate()
+                proc.wait()
+
+    def test_plain_quickshell_without_markers_is_not_claimed(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            env = os.environ.copy()
+            env.pop("NYXURI_ORIGINAL_CACHE_HOME", None)
+            env.pop("NYXURI_SHELL_GENERATED_HOME", None)
+            proc = self._spawn_named_shell(Path(raw), "quickshell", {})
+            try:
+                time.sleep(0.2)
+                self.assertFalse(self._wait_for(proc.pid, False),
+                                 "an unrelated quickshell process was claimed as nyxuri-shell")
+            finally:
+                proc.terminate()
+                proc.wait()

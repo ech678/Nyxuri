@@ -238,6 +238,10 @@ ShellRoot {
             target: "unit"
 
             function reload(): string {
+                // Observable trace for the single event channel: a switch that
+                // lands the ledger but never reaches this line is a delivery
+                // bug, not a UI bug.
+                LogService.info("units", "unit projection reload requested");
                 StateProjection.reload();
                 TemplateService.refresh();
                 root.noteUnitChanged();
