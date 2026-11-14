@@ -259,6 +259,13 @@ if ipc islandInLayout false >/dev/null 2>&1; then
         [[ ${idle_face_state} == *'"found":true'* ]] && break
         sleep 0.1
     done
+    idle_face_no_avatar=""
+    if ipc islandAvatar false >/dev/null 2>&1; then
+        sleep 0.4
+        idle_face_no_avatar=$(ipc idleFace 2>/dev/null || true)
+        ipc islandAvatar true >/dev/null 2>&1 || true
+        sleep 0.4
+    fi
 fi
 
 # B9.2 status cluster: fixed 26px slots, then two fake peripherals (one low,
@@ -330,7 +337,7 @@ else
     tray_skip_reason="fake-sni.py could not be launched"
 fi
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" <<'PY'
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" <<'PY'
 import json
 import re
 import sys
@@ -339,7 +346,7 @@ import sys
  osd_state, keyboard_osd_state, island_off_state, tray_initial, tray_hidden,
  tray_closed, tray_reset, tray_persisted, tray_skip_reason, system_icons_state,
  system_icons_fake, system_icons_reset, island_restored_state, island_migration,
- idle_face_state) = sys.argv[1:22]
+ idle_face_state, idle_face_no_avatar) = sys.argv[1:23]
 
 
 def load_tsv(path):
@@ -404,16 +411,25 @@ island_migration_ok = bool(
     and legacy_off.get("middle") == []
 )
 idle_face = json.loads(idle_face_state) if idle_face_state.strip() else {}
+idle_face_no_avatar = json.loads(idle_face_no_avatar) if idle_face_no_avatar.strip() else {}
 idle_face_ok = bool(
     idle_face.get("found") is True
     and idle_face.get("islandState") == "idle"
     and isinstance(idle_face.get("idleWidth"), (int, float))
     and idle_face.get("idleWidth") > 0
-    and not (idle_face.get("avatarReady") and idle_face.get("avatarFallback"))
-    and (idle_face.get("avatarReady") or idle_face.get("avatarFallback"))
 )
+if idle_face.get("showAvatar") is not False:
+    idle_face_ok = idle_face_ok and not (idle_face.get("avatarReady") and idle_face.get("avatarFallback")) and (idle_face.get("avatarReady") or idle_face.get("avatarFallback"))
 if idle_face.get("satellite") == "clock":
     idle_face_ok = idle_face_ok and idle_face.get("clockVisible") is True and idle_face.get("clockWidth", 0) > 0 and idle_face.get("clockHeight", 0) > 0
+# The avatar is optional: hiding it must drop it from the idle face and shrink
+# the pill by exactly its block.
+avatar_optional_ok = bool(
+    idle_face.get("showAvatar") is True
+    and idle_face_no_avatar.get("found") is True
+    and idle_face_no_avatar.get("showAvatar") is False
+    and idle_face_no_avatar.get("idleWidth", 0) < idle_face.get("idleWidth", 0) - 1
+)
 
 # A media-only lane whose widget reports barWidgetVisible=false must evaluate
 # to zero width. Non-zero means the old 10px capsule padding came back.
@@ -551,6 +567,7 @@ system_icons_report = {
 ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
       and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok
       and island_restored_ok and island_migration_ok and idle_face_ok
+      and avatar_optional_ok
       and tray_ok and peripheral_ok)
 report = {
     "ok": ok,
@@ -590,6 +607,9 @@ report = {
         "ok": idle_face_ok,
         "satellite": idle_face.get("satellite", ""),
         "idleWidth": idle_face.get("idleWidth"),
+        "showAvatar": idle_face.get("showAvatar"),
+        "noAvatarWidth": idle_face_no_avatar.get("idleWidth"),
+        "avatarOptional": avatar_optional_ok,
         "clockVisible": idle_face.get("clockVisible"),
         "clockWidth": idle_face.get("clockWidth"),
         "avatarReady": idle_face.get("avatarReady"),

@@ -193,10 +193,11 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 
 #### 1.5 岛（Dynamic Island）
 
-**默认显示**：idle 面左侧头像圆（material 32px 贴左；非 material 24px + 4px 左边距），
-右侧状态图标（mic/音量/WiFi/未读）与时钟。B9.3 起右侧时钟是横向时钟 `ClockContent`
-（日期 + 风格化数字，`islandHideDate` 为真实开关），宽度按内容增长，探针基线 185。
-`~/.face` 不存在时显示 `person` 兜底图标，不再留空色圆。
+**默认显示**：idle 面左侧头像圆（material 32px 贴左；非 material 24px + 4px 左边距，
+可用 `islandShowAvatar` 隐藏），右侧状态图标（mic/音量/WiFi/未读）与时钟。B9.3 起右侧
+时钟是横向时钟 `ClockContent`（日期 + 风格化数字，`islandHideDate` 为真实开关），
+宽度按内容增长，探针基线 185（隐藏头像 157）。`~/.face` 不存在时显示 `person`
+兜底图标，不再留空色圆。
 
 | 项 | end4 | Nyxuri 现状 |
 | --- | --- | --- |
@@ -287,7 +288,8 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
   迁移键修正为 `island.layoutMigrated`。`DiIdle` 头像改吃 `AvatarService.avatarUrl`
   并加 `person` 兜底（顺带修掉 `NotificationService.unreadCount` 误读）；clock
   satellite 改渲染 `ClockContent`（补 `implicitWidth/Height`），`islandHideDate`
-  成为真实开关；`Config.options.profile` 死桥删除。
+  成为真实开关；头像新增 `islandShowAvatar` 开关（默认显示，隐藏时 idle 宽按头像块
+  收缩）；`Config.options.profile` 死桥删除。
 - **证据**：`python3 -m unittest discover -s tests/shell -q`（457 tests，11 skipped）；
   `probe-bar.sh --session --json` 六档 + borderless + mediaHidden + OSD/keyboard +
   tray + **systemIcons**（槽宽恒 26、组宽公式、假外设 mouse/headphones 一低一危、

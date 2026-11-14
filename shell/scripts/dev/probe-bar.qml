@@ -293,6 +293,13 @@ ShellRoot {
             });
         }
 
+        function islandAvatar(value: bool): string {
+            PersonalizationConfig.setIslandShowAvatar(value);
+            return JSON.stringify({
+                "showAvatar": PersonalizationConfig.islandShowAvatar
+            });
+        }
+
         function idleFace(): string {
             const face = probeRoot.findIdleFace(barLoader.item);
             const host = ActionGateway.islandHost;
@@ -302,6 +309,7 @@ ShellRoot {
                 "idleWidth": host ? host.idleWidth : null,
                 "idleTextContentWidth": host ? host.idleTextContentWidth : null,
                 "satellite": PersonalizationConfig.islandSatellite,
+                "showAvatar": face ? face.probeAvatarVisible : false,
                 "clockVisible": face ? face.probeClockFace !== null && face.probeClockFace.visible : false,
                 "clockWidth": face && face.probeClockFace ? face.probeClockFace.implicitWidth : 0,
                 "clockHeight": face && face.probeClockFace ? face.probeClockFace.implicitHeight : 0,

@@ -104,6 +104,12 @@ Item {
                     }
                 }
 
+                PreferenceToggle {
+                    text: I18n.tr("Show avatar")
+                    checked: PersonalizationConfig.islandShowAvatar
+                    onToggled: PersonalizationConfig.setIslandShowAvatar(checked)
+                }
+
                 PreferenceSelect {
                     last: true
                     label: I18n.tr("Satellite")

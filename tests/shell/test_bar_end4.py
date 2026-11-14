@@ -147,6 +147,12 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertNotIn("Translation.tr", content)
         self.assertIn("I18n.tr", content)
 
+    def test_idle_avatar_is_optional(self):
+        content = read_bar_file("DiIdle.qml")
+        self.assertIn("PersonalizationConfig.islandShowAvatar", content)
+        self.assertIn("visible: diIdleRoot.showAvatar", content)
+        self.assertIn("avatarBlockWidth", content)
+
     def test_active_window_is_an_end4_fork(self):
         content = read_bar_file("ActiveWindow.qml")
         self.assertIn("Fork & Trim: end4-pC", content)

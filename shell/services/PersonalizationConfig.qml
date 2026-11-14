@@ -559,6 +559,9 @@ Singleton {
     property bool keyboardPanelNum: false
 
     property bool islandHideDate: false
+    // Idle-face avatar is optional: the identity circle can be hidden while the
+    // satellite clock/weather and status icons stay.
+    property bool islandShowAvatar: true
     property bool barShowValues: true
     property bool barShowNames: false
 
@@ -1277,6 +1280,10 @@ Singleton {
         setValue("islandSatellite", normalizedOption(root.islandSatelliteOptions, value, "clock"));
     }
 
+    function setIslandShowAvatar(value) {
+        setValue("islandShowAvatar", value === true);
+    }
+
     function setFontFamily(role, family) {
         const allowedRoles = ["ui", "mono", "numeric", "expressive"];
         if (allowedRoles.indexOf(role) === -1)
@@ -1951,6 +1958,7 @@ Singleton {
                 "satellite": root.islandSatellite,
                 "layoutMigrated": root.islandLayoutMigrated,
                 "hideDate": root.islandHideDate,
+                "showAvatar": root.islandShowAvatar,
                 "horizontalClock": {
                     "fontSize": root.horizontalClockFontSize,
                     "axes": root.cloneMap(root.horizontalClockAxes),
@@ -2136,6 +2144,7 @@ Singleton {
         root.islandSatellite = normalizedOption(root.islandSatelliteOptions, island.satellite, "clock");
         root.islandLayoutMigrated = island.layoutMigrated === true;
         root.islandHideDate = typeof island.hideDate === "boolean" ? island.hideDate : false;
+        root.islandShowAvatar = typeof island.showAvatar === "boolean" ? island.showAvatar : true;
         // iNiR keyboardIndicators block; the old island.capsLockOsd/numLockOsd
         // pair migrates to popup.caps/num so an existing choice is not lost.
         root.keyboardShowPopup = typeof keyboard.showPopup === "boolean" ? keyboard.showPopup : true;

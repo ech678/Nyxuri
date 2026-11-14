@@ -1269,7 +1269,8 @@ qml-lint 629 条 advisory 警告为既有 qs.* 成员解析噪声）。`probe-ba
 - **迁移键**：加载改为 `island.layoutMigrated`；播种/迁移收敛为纯函数
   `resolveBarLayouts(bar, island, legacyIslandEnabled)`，一次播种、空 lane 不复活、
   legacy `enabled=false` 摘岛。
-- **idle 面**：头像改吃 `AvatarService.avatarUrl` + `person` 兜底；`ClockContent` 补
+- **idle 面**：头像改吃 `AvatarService.avatarUrl` + `person` 兜底，并新增
+  `islandShowAvatar` 开关（默认显示，隐藏时 idle 宽按头像块收缩）；`ClockContent` 补
   `implicitWidth/Height` 后接管 clock satellite（日期 + 风格化数字），`islandHideDate`
   成为真实开关；顺带修正 `NotificationService.unreadCount` 误读；删除
   `Config.options.profile` 死桥。

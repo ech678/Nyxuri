@@ -23,7 +23,8 @@
   断言槽宽/组宽/假外设低电。
 - [x] **岛真相与横向时钟（B9.3，2026-11-14）**：`islandInLayout` 取代第二开关，
   `layoutMigrated` 读键修正，通知槽仲裁改看布局成员；idle 头像接 `AvatarService` 并
-  加 `person` 兜底；横向时钟 `ClockContent` 接入 idle 面（`islandHideDate` 落地）。
+  加 `person` 兜底（可用 `islandShowAvatar` 隐藏）；横向时钟 `ClockContent` 接入 idle 面
+  （`islandHideDate` 落地）。
   运行态由 `islandOff/islandRestored/islandMigration/idleFace` 探针覆盖。
 
 - [x] **无媒体时 Media 组残留空胶囊 + 探针矩阵缺口（2026-11-14）**：Media 隐藏时
