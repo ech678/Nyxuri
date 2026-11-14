@@ -102,13 +102,50 @@ class BarEnd4ContractTest(unittest.TestCase):
 
     def test_system_icons_are_the_inir_fork(self):
         content = read_bar_file("SystemIcons.qml")
+        self.assertIn("Fork & Trim: iNiR", content)
         self.assertIn("KeyboardIndicators", content)
-        self.assertIn("HyprlandXkbIndicator.qml", content)
-        self.assertIn("Appearance.sizes.barIconSize", content)
-        self.assertIn("Appearance.sizes.barUtilIconSize", read_bar_file("UtilButton.qml"))
+        self.assertIn("HyprlandXkbIndicator", content)
+        self.assertIn("contentColorOverridden", content)
+        # B9.2: every status is its own fixed 26px slot, so a conditional icon
+        # never changes its neighbours' width.
+        self.assertGreaterEqual(content.count("SystemIconSlot {"), 5)
+        self.assertIn("PeripheralBattery.lowDevices", content)
+        self.assertIn("PeripheralBattery.isCritical", content)
+        self.assertIn("root.openQuickSettings(\"audio\")", content)
+        self.assertIn("root.openQuickSettings(\"network\")", content)
+        self.assertIn("root.openQuickSettings(\"bluetooth\")", content)
+        self.assertIn("VolumeService.toggleSourceMute", content)
+        self.assertIn("Appearance.sizes.barUtilIconSize", read_bar_file("SystemIconSlot.qml"))
         self.assertIn("Appearance.sizes.barPowerButtonSize", read_bar_file("PowerButton.qml"))
-        # The util hover expansion is end4 behaviour and stays.
+        # UtilButton keeps the end4 hover expansion for the quick-settings row;
+        # the status slot deliberately does not.
         self.assertIn("hovered ? 54 : 26", read_bar_file("UtilButton.qml"))
+        slot = read_bar_file("SystemIconSlot.qml")
+        self.assertNotIn("hovered ? 54 : 26", slot)
+        self.assertIn("readonly property int slotSize: 26", slot)
+        self.assertIn("M3ToolTip {", slot)
+        self.assertIn("signal wheeled(real delta)", slot)
+        self.assertFalse(os.path.exists(os.path.join(BAR_DIR, "NotificationUnreadCount.qml")),
+                         "the embedded notification widget must fold into the status slot")
+
+    def test_peripheral_battery_service_is_the_end4_fork(self):
+        content = read_services_file("PeripheralBattery.qml")
+        self.assertIn("Fork & Trim: end4-pC", content)
+        self.assertIn("GPL-3", content)
+        self.assertIn("UPowerDeviceType.Mouse", content)
+        self.assertIn("UPowerDeviceType.Headset", content)
+        self.assertIn("Config.options.battery.peripheralLow", content)
+        self.assertIn("Config.options.battery.peripheralCritical", content)
+        self.assertIn("Config.options.battery.peripheralNotify", content)
+        # The probe swaps fake devices in through this seam.
+        self.assertIn("property var deviceSource: UPower.devices.values", content)
+        # External commands leave through the gateway with an owner, never a
+        # bare execDetached.
+        self.assertIn('ActionGateway.execute(', content)
+        self.assertIn('"bar:peripheral-battery"', content)
+        self.assertNotIn("Quickshell.execDetached(", content)
+        self.assertNotIn("Translation.tr", content)
+        self.assertIn("I18n.tr", content)
 
     def test_active_window_is_an_end4_fork(self):
         content = read_bar_file("ActiveWindow.qml")

@@ -20,6 +20,10 @@ Singleton {
         readonly property QtObject battery: QtObject {
             readonly property int low: 20
             readonly property int critical: 10
+            // Peripheral (mouse/keyboard/headset) thresholds, end4 defaults.
+            readonly property int peripheralLow: 20
+            readonly property int peripheralCritical: 5
+            readonly property bool peripheralNotify: true
         }
 
         readonly property QtObject resources: QtObject {

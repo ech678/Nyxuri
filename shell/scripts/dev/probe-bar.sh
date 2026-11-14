@@ -251,6 +251,22 @@ if ipc islandEnabled false >/dev/null 2>&1; then
     sleep 0.5
 fi
 
+# B9.2 status cluster: fixed 26px slots, then two fake peripherals (one low,
+# one critical) so the repeat slots have runtime evidence without hardware.
+system_icons_state=""
+system_icons_fake=""
+system_icons_reset=""
+if ipc systemIcons >/dev/null 2>&1; then
+    sleep 0.2
+    system_icons_state=$(ipc systemIcons 2>/dev/null || true)
+    ipc systemIconsFakeDevices >/dev/null 2>&1 || true
+    sleep 0.3
+    system_icons_fake=$(ipc systemIcons 2>/dev/null || true)
+    ipc systemIconsResetDevices >/dev/null 2>&1 || true
+    sleep 0.3
+    system_icons_reset=$(ipc systemIcons 2>/dev/null || true)
+fi
+
 # Tray surface (B9.1): publish fake StatusNotifierItems on the probe's own
 # session bus, then let the widget pin/unpin against the real store.
 tray_initial=""
@@ -304,14 +320,15 @@ else
     tray_skip_reason="fake-sni.py could not be launched"
 fi
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" <<'PY'
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" <<'PY'
 import json
 import re
 import sys
 
 (layouts_path, borderless_path, media_hidden_path, log_path, json_mode, mode,
  osd_state, keyboard_osd_state, island_off_state, tray_initial, tray_hidden,
- tray_closed, tray_reset, tray_persisted, tray_skip_reason) = sys.argv[1:16]
+ tray_closed, tray_reset, tray_persisted, tray_skip_reason, system_icons_state,
+ system_icons_fake, system_icons_reset) = sys.argv[1:19]
 
 
 def load_tsv(path):
@@ -433,9 +450,69 @@ tray_report = {
     "reset": reset_widget,
 }
 
+# B9.2: every status is a fixed 26px slot. Hidden slots keep their width, only
+# `visible` changes, so the group width is exactly slots+spacing+padding.
+system_icons = json.loads(system_icons_state) if system_icons_state.strip() else {}
+system_icons_fake_state = json.loads(system_icons_fake) if system_icons_fake.strip() else {}
+system_icons_reset_state = json.loads(system_icons_reset) if system_icons_reset.strip() else {}
+
+slots = system_icons.get("slots", [])
+visible_slots = [slot for slot in slots if slot.get("visible")]
+fixed_slots_ok = bool(slots) and all(
+    abs(slot.get("width", 0) - 26) <= 0.01 and abs(slot.get("implicitWidth", 0) - 26) <= 0.01
+    for slot in slots
+)
+tooltips_ok = bool(visible_slots) and all(slot.get("tooltip") for slot in visible_slots)
+monotonic_ok = all(
+    visible_slots[index]["x"] < visible_slots[index + 1]["x"]
+    for index in range(len(visible_slots) - 1)
+)
+spacing = 2 if system_icons.get("material") else 4
+padding = 12 if system_icons.get("material") else 4
+expected_group_width = len(visible_slots) * 26 + max(0, len(visible_slots) - 1) * spacing + padding
+group_width_ok = abs(system_icons.get("groupWidth", 0) - expected_group_width) <= 0.5
+
+fake_slots = [slot for slot in system_icons_fake_state.get("slots", []) if slot.get("visible")]
+reset_slots = [slot for slot in system_icons_reset_state.get("slots", []) if slot.get("visible")]
+probe_slots = [slot for slot in fake_slots if slot.get("key") == "peripheral"]
+peripheral_ok = bool(
+    system_icons.get("found") is True
+    and system_icons_fake_state.get("found") is True
+    and system_icons_reset_state.get("found") is True
+    and fixed_slots_ok
+    and tooltips_ok
+    and monotonic_ok
+    and group_width_ok
+    # Two injected peripherals (one low, one critical) in fixed slots with
+    # tooltips; the notification slot may also appear because the low-battery
+    # notification lands in the probe's own notification server.
+    and len(probe_slots) == 2
+    and all(slot.get("width") == 26 for slot in probe_slots)
+    and all(slot.get("tooltip") for slot in probe_slots)
+    and sum(1 for slot in probe_slots if slot.get("critical")) == 1
+    # Reset removes the injected devices again.
+    and not [slot for slot in reset_slots if slot.get("key") == "peripheral"]
+)
+system_icons_report = {
+    "ok": peripheral_ok,
+    "material": system_icons.get("material"),
+    "groupWidth": system_icons.get("groupWidth"),
+    "expectedGroupWidth": expected_group_width,
+    "visibleIcons": [slot.get("icon", "") for slot in visible_slots],
+    "slotCount": len(slots),
+    "fixedSlots": fixed_slots_ok,
+    "tooltips": tooltips_ok,
+    "monotonic": monotonic_ok,
+    "fakeIcons": [slot.get("icon", "") for slot in probe_slots],
+    "fakeCritical": sum(1 for slot in probe_slots if slot.get("critical")),
+    "fakeVisibleCount": len(fake_slots),
+    "resetVisibleCount": len(reset_slots),
+    "probeWidths": [slot.get("width") for slot in probe_slots],
+}
+
 ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
       and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok
-      and tray_ok)
+      and tray_ok and peripheral_ok)
 report = {
     "ok": ok,
     "mode": mode,
@@ -461,6 +538,7 @@ report = {
         "middle": island_off.get("lanes", {}).get("middle", []),
     },
     "tray": tray_report,
+    "systemIcons": system_icons_report,
     "logErrors": hits,
 }
 if json_mode == "true":

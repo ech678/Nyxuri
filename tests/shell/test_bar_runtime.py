@@ -108,6 +108,16 @@ class BarRuntimeProbeTest(unittest.TestCase):
         self.assertTrue(tray["persisted"], "the pin choice was not written to config.toml")
         self.assertEqual(tray["reset"]["unpinnedCount"], 0)
 
+        # B9.2 status cluster: fixed 26px slots, tooltips on every visible
+        # status, and two injected peripherals (one critical).
+        icons = report["systemIcons"]
+        self.assertTrue(icons["ok"], icons)
+        self.assertGreaterEqual(icons["slotCount"], 5)
+        self.assertLessEqual(abs(icons["groupWidth"] - icons["expectedGroupWidth"]), 0.5)
+        self.assertIn("mouse", icons["fakeIcons"])
+        self.assertIn("headphones", icons["fakeIcons"])
+        self.assertEqual(icons["fakeCritical"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

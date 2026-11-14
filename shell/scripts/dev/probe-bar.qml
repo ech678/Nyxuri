@@ -7,6 +7,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.SystemTray
+import Quickshell.Services.UPower
 import qs.commons
 import qs.commons.cards
 import qs.commons.i18n
@@ -56,6 +57,56 @@ ShellRoot {
                 return found;
         }
         return null;
+    }
+
+    // SystemIcons telemetry: every status lives in a fixed 26px slot. The
+    // widget exposes its Flow as `slotContainer`, so the probe can report the
+    // evaluated slot geometry instead of re-deriving it.
+    function findSystemIconsWidget(node): var {
+        if (!node)
+            return null;
+        if (node.slotContainer !== undefined)
+            return node;
+        const kids = node.children ?? [];
+        for (let i = 0; i < kids.length; i += 1) {
+            const found = probeRoot.findSystemIconsWidget(kids[i]);
+            if (found)
+                return found;
+        }
+        return null;
+    }
+
+    function systemIconsReport(): string {
+        const widget = probeRoot.findSystemIconsWidget(barLoader.item);
+        if (!widget)
+            return JSON.stringify({
+                "found": false
+            });
+        const flow = widget.slotContainer;
+        const slots = [];
+        for (let i = 0; i < flow.children.length; i += 1) {
+            const slot = flow.children[i];
+            if (!slot || slot.slotSize === undefined)
+                continue;
+            slots.push({
+                "key": String(slot.slotKey ?? ""),
+                "visible": slot.visible,
+                "x": slot.x,
+                "width": slot.width,
+                "implicitWidth": slot.implicitWidth,
+                "slotSize": slot.slotSize,
+                "icon": String(slot.iconText ?? ""),
+                "tooltip": String(slot.toolTipText ?? ""),
+                "critical": slot.critical === true
+            });
+        }
+        return JSON.stringify({
+            "found": true,
+            "material": widget.isMaterial,
+            "groupWidth": widget.implicitWidth,
+            "groupHeight": widget.implicitHeight,
+            "slots": slots
+        });
     }
 
     function collectLoaders(item, out) {
@@ -193,6 +244,39 @@ ShellRoot {
 
         function islandEnabled(value: bool): string {
             PersonalizationConfig.setIslandEnabled(value);
+            return "OK";
+        }
+
+        // B9.2 status cluster: read the fixed slot geometry, then swap two fake
+        // low/critical peripherals into the service to prove the repeat slots.
+        function systemIcons(): string {
+            return probeRoot.systemIconsReport();
+        }
+
+        function systemIconsFakeDevices(): string {
+            PeripheralBattery.deviceSource = [
+                {
+                    "nativePath": "/probe/mouse",
+                    "model": "Probe Mouse",
+                    "type": UPowerDeviceType.Mouse,
+                    "percentage": 0.15,
+                    "state": UPowerDeviceState.Discharging,
+                    "isPresent": true
+                },
+                {
+                    "nativePath": "/probe/headset",
+                    "model": "Probe Headset",
+                    "type": UPowerDeviceType.Headset,
+                    "percentage": 0.03,
+                    "state": UPowerDeviceState.Discharging,
+                    "isPresent": true
+                }
+            ];
+            return "OK";
+        }
+
+        function systemIconsResetDevices(): string {
+            PeripheralBattery.deviceSource = UPower.devices.values;
             return "OK";
         }
 
