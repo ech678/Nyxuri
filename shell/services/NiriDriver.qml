@@ -30,11 +30,14 @@ Singleton {
         id: workspacesModel
     }
     readonly property alias workspaces: workspacesModel
+    // Sorted snapshot of workspace records (id/idx/name/output/isActive) for
+    // consumers that filter by output or build their own slot arrays.
+    readonly property var workspaceList: Object.values(root.workspacesMap || {}).sort((a, b) => a.idx - b.idx)
 
     // Outputs
     property var outputs: ({
-                               count: 0
-                           })
+            count: 0
+        })
     property int _fetchOutputsGen: 0
 
     // Windows
@@ -263,30 +266,30 @@ Singleton {
                 curModeStr = m.width + "x" + m.height + "@" + (Number(m.refresh_rate || 0) / 1000).toFixed(3);
             }
             result.push({
-                            name: name,
-                            make: out.make || "Unknown",
-                            model: out.model || "Unknown",
-                            serial: out.serial || "Unknown",
-                            logicalX: logical.x !== undefined ? logical.x : 0,
-                            logicalY: logical.y !== undefined ? logical.y : 0,
-                            logicalWidth: logical.width !== undefined ? logical.width : 0,
-                            logicalHeight: logical.height !== undefined ? logical.height : 0,
-                            scale: logical.scale !== undefined ? logical.scale : 1.0,
-                            transform: logical.transform || "normal",
-                            currentMode: curModeStr,
-                            modes: modes.map(m => ({
-                                width: m.width,
-                                height: m.height,
-                                refreshMilliHz: m.refresh_rate,
-                                preferred: !!m.is_preferred
-                            })),
-            enabled: !!out.logical,
-            vrrSupported: !!out.vrr_supported,
-            vrrEnabled: !!out.vrr_enabled
-        });
+                name: name,
+                make: out.make || "Unknown",
+                model: out.model || "Unknown",
+                serial: out.serial || "Unknown",
+                logicalX: logical.x !== undefined ? logical.x : 0,
+                logicalY: logical.y !== undefined ? logical.y : 0,
+                logicalWidth: logical.width !== undefined ? logical.width : 0,
+                logicalHeight: logical.height !== undefined ? logical.height : 0,
+                scale: logical.scale !== undefined ? logical.scale : 1.0,
+                transform: logical.transform || "normal",
+                currentMode: curModeStr,
+                modes: modes.map(m => ({
+                            width: m.width,
+                            height: m.height,
+                            refreshMilliHz: m.refresh_rate,
+                            preferred: !!m.is_preferred
+                        })),
+                enabled: !!out.logical,
+                vrrSupported: !!out.vrr_supported,
+                vrrEnabled: !!out.vrr_enabled
+            });
+        }
+        return result;
     }
-    return result;
-}
 
     // Windows update batching
     Timer {
@@ -322,9 +325,7 @@ Singleton {
             return null;
         const appId = rawWindow.app_id || rawWindow.appId || "";
         const app = ApplicationService ? ApplicationService.findById(appId) : null;
-        const icon = app && app.icon ? ApplicationService.iconSource(app.icon) : (ApplicationService
-                                                                                  ? ApplicationService.iconSource(
-                                                                                        appId) : "");
+        const icon = app && app.icon ? ApplicationService.iconSource(app.icon) : (ApplicationService ? ApplicationService.iconSource(appId) : "");
         const appName = app ? (app.name || app.id) : (appId || rawWindow.title || "");
         const pos = rawWindow.layout?.pos_in_scrolling_layout;
         const col = (Array.isArray(pos) && pos.length >= 1) ? pos[0] : 999999;
@@ -358,8 +359,7 @@ Singleton {
 
         let changed = false;
         const normalized = windowList.map(window => {
-            const shouldBeFocused = root._latestFocusedWindowId !== null && window.id
-                  === root._latestFocusedWindowId;
+            const shouldBeFocused = root._latestFocusedWindowId !== null && window.id === root._latestFocusedWindowId;
             if (window.isFocused === shouldBeFocused)
                 return window;
             changed = true;
@@ -463,17 +463,17 @@ Singleton {
         workspacesModel.clear();
         for (const ws of list) {
             workspacesModel.append({
-                                       id: ws.id,
-                                       idx: ws.idx,
-                                       index: ws.index,
-                                       name: ws.name || "",
-                                       output: ws.output || "",
-                                       isActive: ws.isActive,
-                                       is_active: ws.is_active,
-                                       activeWindowId: ws.activeWindowId || 0,
-                                       active_window_id: ws.active_window_id || 0,
-                                       windowCount: ws.windowCount || 0
-                                   });
+                id: ws.id,
+                idx: ws.idx,
+                index: ws.index,
+                name: ws.name || "",
+                output: ws.output || "",
+                isActive: ws.isActive,
+                is_active: ws.is_active,
+                activeWindowId: ws.activeWindowId || 0,
+                active_window_id: ws.active_window_id || 0,
+                windowCount: ws.windowCount || 0
+            });
         }
     }
 
@@ -563,8 +563,7 @@ Singleton {
                 updatedWs.activeWindowId = focusedWindowId;
                 const updatedWorkspaces = {};
                 for (const id in root.workspacesMap) {
-                    updatedWorkspaces[id] = id === String(focusedWindow.workspace_id) ? updatedWs :
-                                                                                        root.workspacesMap[id];
+                    updatedWorkspaces[id] = id === String(focusedWindow.workspace_id) ? updatedWs : root.workspacesMap[id];
                 }
                 root.workspacesMap = updatedWorkspaces;
             }
@@ -745,70 +744,70 @@ Singleton {
     // compositor's own binds, not to the shell)
     function toggleOverview() {
         return send({
-                        "Action": {
-                            "ToggleOverview": {}
-                        }
-                    });
+            "Action": {
+                "ToggleOverview": {}
+            }
+        });
     }
 
     function focusWorkspaceById(workspaceId) {
         return send({
-                        "Action": {
-                            "FocusWorkspace": {
-                                "reference": {
-                                    "Id": Number(workspaceId)
-                                }
-                            }
-                        }
-                    });
+            "Action": {
+                "FocusWorkspace": {
+                    "reference": {
+                        "Id": Number(workspaceId)
+                    }
+                }
+            }
+        });
     }
 
     function focusWorkspaceUp() {
         return send({
-                        "Action": {
-                            "FocusWorkspaceUp": {}
-                        }
-                    });
+            "Action": {
+                "FocusWorkspaceUp": {}
+            }
+        });
     }
 
     function focusWorkspaceDown() {
         return send({
-                        "Action": {
-                            "FocusWorkspaceDown": {}
-                        }
-                    });
+            "Action": {
+                "FocusWorkspaceDown": {}
+            }
+        });
     }
 
     function focusWindow(windowId) {
         return send({
-                        "Action": {
-                            "FocusWindow": {
-                                "id": Number(windowId)
-                            }
-                        }
-                    });
+            "Action": {
+                "FocusWindow": {
+                    "id": Number(windowId)
+                }
+            }
+        });
     }
 
     function closeWindow(windowId) {
         return send({
-                        "Action": {
-                            "CloseWindow": {
-                                "id": Number(windowId)
-                            }
-                        }
-                    });
+            "Action": {
+                "CloseWindow": {
+                    "id": Number(windowId)
+                }
+            }
+        });
     }
 
     function minimizeWindow(windowId) {
         if (!root.supportsMinimize)
             return false;
         return send({
-                        "Action": {
-                            "MinimizeWindow": {
-                                "id": Number(windowId)
-                            }
-                        }
-                    });
+            "Action": {
+                "MinimizeWindow": {
+                    "id": Number(windowId)
+                }
+            }
+        });
     }
 
     function restoreWindow(windowId, output) {
@@ -820,10 +819,10 @@ Singleton {
         if (output)
             payload.output = String(output);
         return send({
-                        "Action": {
-                            "RestoreWindow": payload
-                        }
-                    });
+            "Action": {
+                "RestoreWindow": payload
+            }
+        });
     }
 
     // Capability stubs (upstream niri has no IPC surface for these; the
@@ -851,9 +850,7 @@ Singleton {
     }
 
     function activeWorkspaceForOutput(outputName) {
-        return Object.values(root.workspacesMap || {}).find(w => w.output === outputName && (w.isActive
-                                                                                             || w.is_active))
-                || null;
+        return Object.values(root.workspacesMap || {}).find(w => w.output === outputName && (w.isActive || w.is_active)) || null;
     }
 
     function windowsForWorkspace(wsId) {
@@ -868,10 +865,7 @@ Singleton {
             return root.windows.slice();
         const q = String(query).toLowerCase().trim();
         return root.windows.filter(w => {
-            return (w.title && w.title.toLowerCase().includes(q)) || (w.appName && w.appName.toLowerCase().includes(
-                                                                          q)) || (w.appId
-                                                                                  && w.appId.toLowerCase(
-                                                                                      ).includes(q));
+            return (w.title && w.title.toLowerCase().includes(q)) || (w.appName && w.appName.toLowerCase().includes(q)) || (w.appId && w.appId.toLowerCase().includes(q));
         });
     }
 

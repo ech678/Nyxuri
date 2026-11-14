@@ -1,23 +1,26 @@
 # 暂缓件（B 卷运行态审计下架）
 
-> 2026-11-14 实机审计后下架的部件。共同原因：它们依赖的上游基件/服务不在
-> Nyxuri 树内，本地参考树里也没有相应源文件，无法 Fork & Trim，只能先下架。
-> 恢复条件写在各条里；改代码前先读这里，别把死件重新接进选装集。
+> 2026-11-14 实机审计后下架的部件。改代码前先读这里，别把死件重新接进选装集。
 > 分期与验收见 [ROADMAP](../../ROADMAP.md) §B，症状登记见
 > [known-issues](../../../llms-wiki/shell/known-issues.md)。
+>
+> 2026-11-14 B8.2 复核：旧条目里「缺基件、参考树也没有」的判定是错的——
+> `BarWidgetSwitcher*`、`ClippedProgressBar`、`Clipped*CircularProgress`、
+> `StyledProgressBar`、`ResourceCard`、`ResourceUsage` 在 `references/end4-pC`
+> 与 `references/iNiR` 都有源，已整抄入 `shell/plugins/bar` 与 `shell/services`。
+> 下表只保留真正未接线的部分。
 
-## 不能装载（缺基件，Loader status=Error）
+## 已解冻（不再是暂缓件）
 
-| 文件 | 缺的基件 | 下架方式 |
-| --- | --- | --- |
-| `Resources.qml` / `ResourcesPopup.qml` / `Resource.qml` | `BarWidgetSwitcherArea`、`ClippedOutline/FilledCircularProgress`、`ResourceUsage` 单例 | 已从 `barComponentIds` / `barComponentOptions` 移除（`systemMonitor` 不可选）；`getWidgetUrl` 映射保留，配置里残留的 id 由 `normalizedBarLayoutIds` 过滤 |
-| `ClockWidget.qml` / `ClockWidgetPopup.qml` | `BarWidgetSwitcher` | 已从 `barComponentIds` 移除（`clock`） |
-| `BatteryIndicator.qml` / `BatteryPopup.qml` | `ClippedProgressBar` | 从未进入选装集；文件保留但无消费者 |
-
-`BarWidgetSwitcher*`、`ClippedProgressBar` 在 `references/iNiR` 里**不存在**
-（`barM3/*` 只引用它们），所以不是“忘了拷”，而是上游快照本身就缺。恢复
-前先补齐这三个基件与 `ResourceUsage` 桥（`SystemMonitorService` 派生
-cpu/memory/disk 百分比），再一次性把 id 加回选装集。
+| 文件 | 处理 |
+| --- | --- |
+| `Resources.qml` / `ResourcesPopup.qml` / `Resource.qml` | 基件整抄后进选装集（`systemMonitor`） |
+| `ClockWidget.qml` / `ClockWidgetPopup.qml` | `BarWidgetSwitcher` + `DateTime` 到位，进选装集（`clock`） |
+| `BatteryIndicator.qml` / `BatteryPopup.qml` | `ClippedProgressBar` 到位，进选装集（`battery`） |
+| `SystemIcons.qml` / `NotificationUnreadCount.qml` | 直连 Nyxuri 服务，进选装集（`systemIcons`） |
+| `PowerButton.qml` / `LauncherButton.qml` | 对齐 end4 原件，进选装集 |
+| `BarGroupStylePopup.qml` | 右键就地调色已接线，样式持久化在 `PersonalizationConfig.barWidgetStyles` |
+| `Workspaces.qml` | iNiR 876 行原件剪裁为 Niri-only end4 视觉，选装集默认部件 |
 
 ## 服务缺失（面已下架）
 
@@ -29,13 +32,15 @@ cpu/memory/disk 百分比），再一次性把 id 加回选装集。
 Timer/Recording 的配置键与 i18n 词条一并清空；恢复时按 end4 原件整抄
 （`DiTimers.qml` 仍在树上，接上真实服务即可复活）。
 
-## 未接线的孤儿
+## 未接线的孤儿（不进选装集）
 
 | 文件 | 状况 |
 | --- | --- |
-| `BarGroupStylePopup.qml` | B0 整抄件，**全库零消费者**。D5 的“右键部件就地调色”未接线；接线或删除二选一 |
-| `DocktoPanel.qml` / `NetworkSpeed.qml` / `NetworkSpeedPopup.qml` / `LeftSidebarButton.qml` / `RightSidebarButton.qml` / `UpdatesCount.qml` / `SystemIcons.qml` / `NotificationUnreadCount.qml` / `HyprlandXkbIndicator.qml` / `WeatherBar.qml` / `WeatherPopup.qml` / `WeatherCard.qml` | 依赖 iNiR 单例名（`CompositorService`、`Audio`、`Notifications`、`Network`、`BluetoothStatus`、`KeyboardIndicators`、`Weather`、`Icons`）或树内没有的 `ShellLayoutController` / `AppSearch` / `TaskbarApps`；当前不在选装集内，也未做别名桥接。接线前先做单例映射，别用 `eval` 兜底 |
-| `MediaArtworkResolver.qml` / `MediaCrossSlideImage.qml` / `CavaProcess.qml` / `TrayService.qml` | 有真实消费者的辅助件（Media / SysTray / BarContent），不属于下架范围，列在此处只为与孤儿区分 |
+| `HyprlandXkbIndicator.qml` | 依赖 iNiR `KeyboardIndicators`；当前键盘锁指示由 `SystemIcons` 直连 `KeyboardLockService` 承担 |
+| `NetworkSpeed.qml` / `NetworkSpeedPopup.qml` | 依赖 iNiR `Network` 单例名；接线前先映射 `NetworkService`，不建转发别名 |
+| `WeatherBar.qml` / `WeatherPopup.qml` / `WeatherCard.qml` | 依赖 iNiR `Weather`；`WeatherService` 已有，待 B8.5 复核后接线 |
+| `DocktoPanel.qml` / `LeftSidebarButton.qml` / `RightSidebarButton.qml` | 依赖树内没有的 `ShellLayoutController` / 侧栏宿主直连；接线前先走 `ActionGateway` |
+| `UpdatesCount.qml` | 依赖包管理器更新源；暂不引入 |
 
 ## 判定口径
 

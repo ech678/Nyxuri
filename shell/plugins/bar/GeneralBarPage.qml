@@ -152,6 +152,14 @@ Item {
                     onSelected: value => PersonalizationConfig.setBarDividerStyle(String(value))
                 }
 
+                PreferenceSelect {
+                    label: I18n.tr("Group color")
+                    model: PersonalizationConfig.barGroupColorOptions
+                    currentValue: PersonalizationConfig.barGroupColor
+                    inputRegionService: PopupInputRegionService
+                    onSelected: value => PersonalizationConfig.setBarGroupColor(String(value))
+                }
+
                 PreferenceSlider {
                     last: true
                     label: I18n.tr("Bar thickness")
@@ -161,6 +169,33 @@ Item {
                     to: 56
                     stepSize: 2
                     onMoved: value => PersonalizationConfig.setBarThickness(Math.round(value))
+                }
+
+                // Workspaces
+                PreferenceHeader {
+                    text: I18n.tr("Workspaces")
+                }
+
+                PreferenceToggle {
+                    first: true
+                    text: I18n.tr("Show app icons")
+                    checked: PersonalizationConfig.barShowAppIcons
+                    onToggled: PersonalizationConfig.setBarShowAppIcons(checked)
+                }
+
+                PreferenceToggle {
+                    text: I18n.tr("Always show numbers")
+                    checked: PersonalizationConfig.barAlwaysShowNumbers
+                    onToggled: PersonalizationConfig.setBarAlwaysShowNumbers(checked)
+                }
+
+                PreferenceSelect {
+                    last: true
+                    label: I18n.tr("Indicator style")
+                    model: PersonalizationConfig.barWorkspaceIndicatorStyles
+                    currentValue: PersonalizationConfig.barWorkspaceIndicatorStyle
+                    inputRegionService: PopupInputRegionService
+                    onSelected: value => PersonalizationConfig.setBarWorkspaceIndicatorStyle(String(value))
                 }
 
                 // Components

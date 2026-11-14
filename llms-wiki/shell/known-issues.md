@@ -6,23 +6,18 @@
 
 ## 未修复 BUG
 
-- [ ] **Bar 工作区/活动窗口未真整抄**（2026-11-14 审计）：`Workspaces.qml`（88 行）
-  与 `ActiveWindow.qml`（81 行）是自研缩水，不是 `references/iNiR/modules/ii/bar/`
-  的 876 行原件；`barM3/` 里只有转发门面。`NetworkSpeed*` 同类。复现：看工作区仍是
-  旧圆点样式，无应用图标/数字/indicatorStyle。
+- [ ] **活动窗口未真整抄**（2026-11-14 审计，工作区部分已解）：`ActiveWindow.qml`（81 行）
+  是自研缩水，不是 `references/end4-pC/modules/ii/bar/ActiveWindow.qml` 原件；
+  `NetworkSpeed*` 同类。复现：活动窗口无 `contentColor` 覆盖与样式编辑信号。工作区已
+  整抄（B8.3），看得到 dots/数字/应用图标/occupancy。
 - [ ] **岛设置大半是空承诺**（2026-11-14 审计）：`islandStyle`/`islandOverlay`/
   `islandPosition`/`islandHoverAction`/`islandLeftClickAction`/`islandMiddleClickAction`/
   `islandMedia*Style`/`islandKeyholeCard`/`islandCapsLockOsd`/`islandNumLockOsd` 全库
-  **零运行时消费者**，只有 `islandHideDate` 生效。`BarGroupStylePopup.qml` 零消费者
-  （D5 右键就地调色未接线）。
-- [ ] **cornerStyle 6 选 4 落空**：设置提供 Hug/Floating/Plain/Material/Material hug/
-  Panel，实现只覆盖 0–3；4/5 落入非 material 分支。`isMaterial` 判定也不一致
-  （`BarGroup` 只认 3，`DynamicIsland` 认 3/4）。
-- [ ] **选装集缺口**：`barComponentOptions` 无 `island`/`clock`，中段纯岛形态只能在
-  配置里手写 `["island"]`；`clock` 已于 2026-11-14 从 `barComponentIds` 移除。
-- [ ] **下架件与孤儿**：`Resources`/`ClockWidget`/`BatteryIndicator`（缺
-  `BarWidgetSwitcher*`/`ClippedProgressBar`/`ResourceUsage`，上游参考树里也没有）
-  以及一批依赖 iNiR 单例名的部件——清单与恢复条件见
+  **零运行时消费者**，只有 `islandHideDate` 生效。`BarGroupStylePopup` 已接线（B8.1），
+  这些岛键留 B8.4/B8.5 接线或下架。
+- [ ] **下架件与孤儿**：`HyprlandXkbIndicator`/`NetworkSpeed*`/`Weather*`/`DocktoPanel`/
+  `LeftSidebarButton` 等依赖 iNiR 单例名的部件仍未接线；`Resources`/`ClockWidget`/
+  `BatteryIndicator` 已随 B8.2 基件整抄解冻并进选装集。清单见
   [shell/plugins/bar/PARKED.md](../../shell/plugins/bar/PARKED.md)。
 
 ## 基础设施缺口（快速上线时跳过，回来先做这些）
@@ -34,6 +29,19 @@
 - [ ] **TUI 未接入**：`menus.py` 无 shell 切换菜单，`translations.toml` 无桌面外壳词条；目前只有 CLI `nyxuri shell` 一条路
 
 ## 已修复
+
+- [x] **Bar 整抄轮（B8.1–B8.3，2026-11-14）**：`BarGroup`/`BarContent` 重新 `cp` end4
+  原件再剪裁（删除 hostScale 压缩链、DI 卫星、重复胶囊角），`groupColor`/`paintBackground`/
+  `segmented`/material 4-5 档/右键调色全部接线；`DateTime`、`launcherButton`、
+  `powerButton`、`systemIcons` 上岗；`BarWidgetSwitcher*`/`ClippedProgressBar`/
+  `Clipped*CircularProgress`/`ResourceUsage` 基件整抄后 `clock`/`systemMonitor`/`battery`
+  解冻；`Workspaces.qml` 以 iNiR 876 行原件剪裁为 Niri-only end4 视觉；
+  `information` 假部件（映射到不存在的 `Information.qml`，导致默认左栏重复活动窗口）
+  从选装集与迁移中删除。冷启动无 compiled empty / TypeError / ReferenceError。
+- [x] **cornerStyle 判定不一致**：BarGroup/BarContent/Island/未读徽标统一按
+  `cornerStyle === 3 || 4` 走 material；4/5 的 hug/panel 几何随 end4 原件落地。
+- [x] **BarComponentLoader 不存在**：`e03c449` 之后 `BarContent` 才是唯一分发点；
+  `DashboardBarWidgets` 注释与 `getWidgetUrl` 同步。
 
 - [x] **Bar 中段贴左重叠、部件挤在一起**（2026-11-14）：`Appearance.fontSizeScale`
   未桥接，`hostGap = 6 * undefined → NaN` 污染 `minimumCenterX/maximumCenterX`，

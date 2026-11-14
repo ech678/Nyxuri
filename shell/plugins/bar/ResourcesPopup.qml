@@ -3,13 +3,16 @@ import QtQuick
 import Quickshell.Io
 import qs.commons
 import qs.ui
+import M3Shapes
 
 StyledPopup {
     id: root
-    property QtObject resourceMonitor: ResourceUsageMonitor { active: root.active }
+    property QtObject resourceMonitor: ResourceUsageMonitor {
+        active: root.active
+    }
 
     function formatKB(kb) {
-        return (kb / (1024 * 1024)).toFixed(1) + " GB"
+        return (kb / (1024 * 1024)).toFixed(1) + " GB";
     }
 
     Row {
@@ -32,9 +35,7 @@ StyledPopup {
                 iconShape: MaterialShape.Shape.Gem
                 value: ResourceUsage.cpuUsage
                 sublabel: `${Math.round(ResourceUsage.cpuTemp)}°C`
-                sublabelColor: ResourceUsage.cpuTemp > 80 ? Appearance.colors.colError
-                    : ResourceUsage.cpuTemp > 60 ? Appearance.m3colors.m3tertiary
-                    : Appearance.colors.colOnLayer1
+                sublabelColor: ResourceUsage.cpuTemp > 80 ? Appearance.colors.colError : ResourceUsage.cpuTemp > 60 ? Appearance.m3colors.m3tertiary : Appearance.colors.colOnLayer1
             }
         }
 

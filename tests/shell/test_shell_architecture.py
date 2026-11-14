@@ -423,8 +423,8 @@ class TestShellManagement(unittest.TestCase):
         with open(bc_path, "r", encoding="utf-8") as f:
             bc_content = f.read()
         self.assertIn("function performScrollAction", bc_content)
-        self.assertIn("Brightness.stepBrightness", bc_content)
-        self.assertIn("Audio.incrementVolume", bc_content)
+        self.assertIn("BrightnessService.setBrightnessForScreen", bc_content)
+        self.assertIn("VolumeService.setSinkVolume", bc_content)
 
     def test_bar_layout_two_way_synchronization_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -435,7 +435,9 @@ class TestShellManagement(unittest.TestCase):
         with open(pc_path, "r", encoding="utf-8") as f:
             pc_content = f.read()
 
-        self.assertIn('"information"', pc_content)
+        # "information" was an iNiR bar style name, never a renderable widget;
+        # it must not be re-seeded into the lane layout.
+        self.assertNotIn('"information"', pc_content)
         self.assertIn("root.barLayoutLeft = root.normalizedBarLayoutIds(leading)", pc_content)
         self.assertIn("root.barLayoutRight = root.normalizedBarLayoutIds(trailing)", pc_content)
         self.assertIn("root.barLeadingComponents = nextLeft.slice()", pc_content)
@@ -681,10 +683,11 @@ class TestShellManagement(unittest.TestCase):
                         )
 
         # 3. High-risk services teardown hooks present
+        # BarContent left this list with B8.1: the bar background spectrum (and
+        # its cava Process) was retired, so the component only lays out lanes.
         high_risk_files = [
             "services/SystemMonitorService.qml",
             "services/KeyboardLockService.qml",
-            "plugins/bar/BarContent.qml",
             "plugins/bar/DynamicIsland.qml",
             "services/NetworkService.qml",
             "services/NetworkManagerExtras.qml",

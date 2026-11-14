@@ -70,14 +70,16 @@ Scope {
                     interval: (Config?.options.bar.autoHide.showWhenPressingSuper.delay ?? 100)
                     repeat: false
                     onTriggered: {
-                        barRoot.superShow = true
+                        barRoot.superShow = true;
                     }
                 }
                 Connections {
                     target: GlobalStates
                     function onSuperDownChanged() {
-                        if (!Config?.options.bar.autoHide.showWhenPressingSuper.enable) return;
-                        if (GlobalStates.superDown) showBarTimer.restart();
+                        if (!Config?.options.bar.autoHide.showWhenPressingSuper.enable)
+                            return;
+                        if (GlobalStates.superDown)
+                            showBarTimer.restart();
                         else {
                             showBarTimer.stop();
                             barRoot.superShow = false;
@@ -87,43 +89,28 @@ Scope {
                 property bool superShow: false
                 readonly property bool autoHideEnabled: Config.options?.bar?.autoHide?.enable ?? false
                 readonly property bool pushWindowsWhenShown: Config.options?.bar?.autoHide?.pushWindows ?? false
-                readonly property bool overviewOwnsEdge: GlobalStates.overviewOpen
-                    || CompositorDriver.inOverview
+                readonly property bool overviewOwnsEdge: GlobalStates.overviewOpen || CompositorDriver.inOverview
                 readonly property string outputName: barRoot.screen?.name ?? ""
-                readonly property real layerGap: Config.options.bar.m3.cornerStyle === 3
-                    ? Config.options.bar.m3.gapsOut : 0
-                readonly property real shownExclusiveZone: Appearance.sizes.baseBarHeight
-                    + (Config.options.bar.m3.cornerStyle === 1 ? Config.options.bar.m3.gapsOut : 0)
-                    + (Config.options.bar.m3.cornerStyle === 2 ? -6 : 0)
-                // Keep Organic's exterior field inside the layer-shell buffer,
-                // while leaving shownExclusiveZone and the input mask untouched.
-                readonly property real organicAuraAllowance:
-                    (Config.options?.bar?.visualizer?.enable ?? false)
-                        && (Config.options?.bar?.visualizer?.type ?? "bars") === "organic"
-                        && (Config.options?.bar?.visualizer?.organicFit ?? "auto") === "aura"
-                    ? Math.ceil(Appearance.sizes.barHeight * 1.75) : 0
+                readonly property real layerGap: Config.options.bar.m3.cornerStyle === 3 ? Config.options.bar.m3.gapsOut : 0
+                readonly property real shownExclusiveZone: Appearance.sizes.baseBarHeight + (Config.options.bar.m3.cornerStyle === 1 ? Config.options.bar.m3.gapsOut : 0) + (Config.options.bar.m3.cornerStyle === 2 ? -6 : 0)
                 property bool contextMenuHold: false
                 property bool leftSidebarHold: false
                 property bool rightSidebarHold: false
                 property bool mediaControlsHold: false
                 property bool controlPanelHold: false
-                readonly property bool interactionHold: contextMenuHold || leftSidebarHold
-                    || rightSidebarHold || mediaControlsHold || controlPanelHold
+                readonly property bool interactionHold: contextMenuHold || leftSidebarHold || rightSidebarHold || mediaControlsHold || controlPanelHold
                 readonly property bool pointerShow: !overviewOwnsEdge && hoverRegion.containsMouse
                 property bool mustShow: pointerShow || superShow || interactionHold
                 property bool reservationActive: false
                 exclusionMode: ExclusionMode.Ignore
-                exclusiveZone: !autoHideEnabled ? shownExclusiveZone
-                    : (pushWindowsWhenShown && reservationActive ? shownExclusiveZone : 0)
+                exclusiveZone: !autoHideEnabled ? shownExclusiveZone : (pushWindowsWhenShown && reservationActive ? shownExclusiveZone : 0)
                 WlrLayershell.namespace: "quickshell:bar"
                 // Upstream raised the bar to Overlay only while a Hyprland
                 // special workspace sat over a fullscreen window. Niri has no
                 // special workspace, so the bar stays on Top and fullscreen
                 // windows cover it, which is what iNiR's own bar does too.
                 WlrLayershell.layer: WlrLayer.Top
-                implicitHeight: Appearance.sizes.barHeight + Appearance.rounding.screenRounding
-                    + (barRoot.autoHideEnabled ? barRoot.layerGap : 0)
-                    + barRoot.organicAuraAllowance
+                implicitHeight: Appearance.sizes.barHeight + Appearance.rounding.screenRounding + (barRoot.autoHideEnabled ? barRoot.layerGap : 0)
                 // When Overlay-layer, bar shares a layer with the screen-corner click zones (ScreenCorners.qml)
                 // and same-layer overlap is resolved by stacking, not layer priority - bar was winning and
                 // swallowing the tiny corner-open hit rects. Carve them out of the bar's own mask so clicks
@@ -131,8 +118,7 @@ Scope {
                 // The corner-open cutout only mattered while the bar was raised
                 // to Overlay and shared a layer with the screen-corner click
                 // zones. On Top layer the corners are already above it.
-                property int cornerOpenCutHeight: autoHideEnabled
-                    ? Math.max(1, Config.options?.bar?.autoHide?.hoverRegionWidth ?? 2) + layerGap : 0
+                property int cornerOpenCutHeight: autoHideEnabled ? Math.max(1, Config.options?.bar?.autoHide?.hoverRegionWidth ?? 2) + layerGap : 0
                 mask: Region {
                     item: hoverMaskRegion
                     // Keep a fixed screen-edge hit strip while barContent is
@@ -160,44 +146,40 @@ Scope {
                 color: "transparent"
 
                 function edgeCornerName(left: bool): string {
-                    const bottom = Config.options?.bar?.bottom ?? false
-                    return bottom ? (left ? "bottomLeft" : "bottomRight")
-                        : (left ? "topLeft" : "topRight")
+                    const bottom = Config.options?.bar?.bottom ?? false;
+                    return bottom ? (left ? "bottomLeft" : "bottomRight") : (left ? "topLeft" : "topRight");
                 }
 
                 function edgeCornerReserve(left: bool): real {
                     if (!autoHideEnabled)
-                        return 0
-                    const corner = edgeCornerName(left)
-                    let reserve = 0
-                    const orbitEnabled = CompositorDriver.available
-                        && (Config.options?.panelFamily ?? "ii") === "ii"
-                        && (Config.options?.orbit?.enable ?? true)
-                        && (Config.options?.orbit?.hotCornerEnable ?? true)
+                        return 0;
+                    const corner = edgeCornerName(left);
+                    let reserve = 0;
+                    const orbitEnabled = CompositorDriver.available && (Config.options?.panelFamily ?? "ii") === "ii" && (Config.options?.orbit?.enable ?? true) && (Config.options?.orbit?.hotCornerEnable ?? true);
                     if (orbitEnabled && String(Config.options?.orbit?.hotCorner ?? "topRight") === corner)
-                        reserve = Math.max(reserve, Config.options?.orbit?.hotCornerSize ?? 12)
-                    const sidebarCornerEnabled = Config.options?.sidebar?.cornerOpen?.enable ?? false
-                    const sidebarCornerBottom = Config.options?.sidebar?.cornerOpen?.bottom ?? false
+                        reserve = Math.max(reserve, Config.options?.orbit?.hotCornerSize ?? 12);
+                    const sidebarCornerEnabled = Config.options?.sidebar?.cornerOpen?.enable ?? false;
+                    const sidebarCornerBottom = Config.options?.sidebar?.cornerOpen?.bottom ?? false;
                     if (sidebarCornerEnabled && sidebarCornerBottom === (Config.options?.bar?.bottom ?? false))
-                        reserve = Math.max(reserve, Config.options?.sidebar?.cornerOpen?.cornerRegionWidth ?? 20)
-                    return reserve
+                        reserve = Math.max(reserve, Config.options?.sidebar?.cornerOpen?.cornerRegionWidth ?? 20);
+                    return reserve;
                 }
 
                 function syncReservation(): void {
-                    reservationShowTimer.stop()
-                    reservationHideTimer.stop()
+                    reservationShowTimer.stop();
+                    reservationHideTimer.stop();
                     if (!autoHideEnabled || !pushWindowsWhenShown) {
-                        reservationActive = false
-                        return
+                        reservationActive = false;
+                        return;
                     }
                     if (interactionHold) {
-                        reservationActive = true
-                        return
+                        reservationActive = true;
+                        return;
                     }
                     if (pointerShow)
-                        reservationShowTimer.restart()
+                        reservationShowTimer.restart();
                     else if (reservationActive)
-                        reservationHideTimer.restart()
+                        reservationHideTimer.restart();
                 }
 
                 onPointerShowChanged: syncReservation()
@@ -210,9 +192,8 @@ Scope {
                     id: reservationShowTimer
                     interval: Appearance.animationsEnabled ? Appearance.animation.elementMoveEnter.duration : 1
                     onTriggered: {
-                        if (barRoot.autoHideEnabled && barRoot.pushWindowsWhenShown
-                                && (barRoot.pointerShow || barRoot.interactionHold))
-                            barRoot.reservationActive = true
+                        if (barRoot.autoHideEnabled && barRoot.pushWindowsWhenShown && (barRoot.pointerShow || barRoot.interactionHold))
+                            barRoot.reservationActive = true;
                     }
                 }
 
@@ -221,7 +202,7 @@ Scope {
                     interval: Appearance.animationsEnabled ? Appearance.animation.elementMoveEnter.duration : 1
                     onTriggered: {
                         if (!barRoot.pointerShow && !barRoot.interactionHold)
-                            barRoot.reservationActive = false
+                            barRoot.reservationActive = false;
                     }
                 }
 
@@ -229,35 +210,33 @@ Scope {
                     target: GlobalStates
                     function onActiveContextMenuCountChanged(): void {
                         if (GlobalStates.activeContextMenuCount <= 0)
-                            barRoot.contextMenuHold = false
+                            barRoot.contextMenuHold = false;
                         else if (barRoot.pointerShow)
-                            barRoot.contextMenuHold = true
+                            barRoot.contextMenuHold = true;
                     }
                     function onSidebarLeftOpenChanged(): void {
                         if (!GlobalStates.sidebarLeftOpen)
-                            barRoot.leftSidebarHold = false
-                        else if (barRoot.pointerShow
-                                && GlobalStates.sidebarLeftPresentationOutput === barRoot.outputName)
-                            barRoot.leftSidebarHold = true
+                            barRoot.leftSidebarHold = false;
+                        else if (barRoot.pointerShow && GlobalStates.sidebarLeftPresentationOutput === barRoot.outputName)
+                            barRoot.leftSidebarHold = true;
                     }
                     function onSidebarRightOpenChanged(): void {
                         if (!GlobalStates.sidebarRightOpen)
-                            barRoot.rightSidebarHold = false
-                        else if (barRoot.pointerShow
-                                && GlobalStates.sidebarRightPresentationOutput === barRoot.outputName)
-                            barRoot.rightSidebarHold = true
+                            barRoot.rightSidebarHold = false;
+                        else if (barRoot.pointerShow && GlobalStates.sidebarRightPresentationOutput === barRoot.outputName)
+                            barRoot.rightSidebarHold = true;
                     }
                     function onMediaControlsOpenChanged(): void {
                         if (!GlobalStates.mediaControlsOpen)
-                            barRoot.mediaControlsHold = false
+                            barRoot.mediaControlsHold = false;
                         else if (barRoot.pointerShow)
-                            barRoot.mediaControlsHold = true
+                            barRoot.mediaControlsHold = true;
                     }
                     function onControlPanelOpenChanged(): void {
                         if (!GlobalStates.controlPanelOpen)
-                            barRoot.controlPanelHold = false
+                            barRoot.controlPanelHold = false;
                         else if (barRoot.pointerShow)
-                            barRoot.controlPanelHold = true
+                            barRoot.controlPanelHold = true;
                     }
                 }
 
@@ -269,8 +248,7 @@ Scope {
                         top: !Config.options.bar.bottom ? parent.top : undefined
                         bottom: Config.options.bar.bottom ? parent.bottom : undefined
                     }
-                    height: barRoot.autoHideEnabled
-                        ? Math.max(1, Config.options?.bar?.autoHide?.hoverRegionWidth ?? 2) + barRoot.layerGap : 0
+                    height: barRoot.autoHideEnabled ? Math.max(1, Config.options?.bar?.autoHide?.hoverRegionWidth ?? 2) + barRoot.layerGap : 0
                 }
 
                 // Positioning
@@ -282,16 +260,12 @@ Scope {
                 }
 
                 margins {
-                    top: barRoot.anchors.top && !barRoot.autoHideEnabled
-                        ? barRoot.layerGap : 0
+                    top: barRoot.anchors.top && !barRoot.autoHideEnabled ? barRoot.layerGap : 0
                     right: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.right) ? -1 : 0
-                    bottom: barRoot.anchors.bottom
-                        ? ((Config.options.interactions.deadPixelWorkaround.enable ? -1 : 0)
-                            + (!barRoot.autoHideEnabled ? barRoot.layerGap : 0))
-                        : 0
+                    bottom: barRoot.anchors.bottom ? ((Config.options.interactions.deadPixelWorkaround.enable ? -1 : 0) + (!barRoot.autoHideEnabled ? barRoot.layerGap : 0)) : 0
                 }
 
-                MouseArea  {
+                MouseArea {
                     id: hoverRegion
                     hoverEnabled: true
                     anchors {
@@ -346,9 +320,7 @@ Scope {
                             left: parent.left
                             top: parent.top
                             bottom: undefined
-                            topMargin: barRoot.autoHideEnabled
-                                ? (!mustShow ? -Appearance.sizes.barHeight : barRoot.layerGap)
-                                : 0
+                            topMargin: barRoot.autoHideEnabled ? (!mustShow ? -Appearance.sizes.barHeight : barRoot.layerGap) : 0
                             bottomMargin: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.bottom) * -1
                             rightMargin: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.right) * -1
                         }
@@ -374,9 +346,7 @@ Scope {
                             PropertyChanges {
                                 target: barContent
                                 anchors.topMargin: 0
-                                anchors.bottomMargin: barRoot.autoHideEnabled
-                                    ? (!mustShow ? -Appearance.sizes.barHeight : barRoot.layerGap)
-                                    : 0
+                                anchors.bottomMargin: barRoot.autoHideEnabled ? (!mustShow ? -Appearance.sizes.barHeight : barRoot.layerGap) : 0
                             }
                         }
                     }
@@ -482,5 +452,4 @@ Scope {
             }
         }
     }
-
 }

@@ -1,7 +1,18 @@
+// Fork & Trim: end4-pC modules/ii/bar/BarContent.qml
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Trimmed for Nyxuri:
+//   - Dynamic-island satellite loaders removed: the island is a middle-lane
+//     widget (componentId "island"), not a reserved gap (ROADMAP B-3).
+//   - hyprland.general.gapsOut -> bar.m3.gapsOut; followFrameColor dropped.
+//   - left/right pill corner decorators stay in Bar.qml (window layer), so the
+//     copies inside the upstream file are trimmed here.
+//   - lane widths collapse to 0 when the lane has no widgets (no phantom host).
+//   - background spectrum (CavaProcess/SurfaceSpectrum) retired with B8.1.
+
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Services.UPower
 import Quickshell.Services.SystemTray
 import qs.services
 import qs.commons
@@ -12,90 +23,37 @@ Item {
     id: root
     implicitHeight: Appearance.sizes.barHeight
     width: parent.width
-    property var screen: root.QsWindow.window?.screen
     readonly property real barPadding: 0
-    readonly property bool isMaterial: Config.options.bar.m3.cornerStyle === 3
+    readonly property bool isMaterial: Config.options.bar.cornerStyle === 3 || Config.options.bar.cornerStyle === 4
+    readonly property bool isMaterialHug: Config.options.bar.cornerStyle === 4
+    readonly property bool isPanel: Config.options.bar.cornerStyle === 5
+    readonly property color materialPillBgColor: Appearance.colors.colLayer0
     readonly property real centerPillX: centerPill.x
     readonly property real centerPillWidth: centerPill.width
-    readonly property real sectionOuterMargin: root.isMaterial
-        ? (Config.options?.bar?.m3?.gapsOut ?? 5)
-        : (Config.options?.bar?.m3?.cornerStyle === 1 ? 4 : 10)
-    // Lane presence is decided by the layout contents, not by the section's
-    // implicit width: an empty Material pill still measures 10px (row + 10) and
-    // used to look like a real host, which added a phantom gap and a phantom
-    // 10px reservation on an otherwise empty edge.
+    readonly property real laneMargin: root.isMaterial ? (Config.options?.bar?.m3?.gapsOut ?? 5) : (Config.options.bar.cornerStyle === 1 ? 4 : root.isPanel ? 4 : 8)
+
+    readonly property bool trayHasItems: SystemTray.items.values.length > 0
+    readonly property bool batteryAvailable: Battery.available
+
+    function filterLayout(layout) {
+        let filtered = Array.from(layout ?? []);
+        if (!root.trayHasItems)
+            filtered = filtered.filter(name => name !== "sysTray" && name !== "tray");
+        if (!root.batteryAvailable)
+            filtered = filtered.filter(name => name !== "battery" && name !== "batteryIndicator");
+        return filtered;
+    }
+
+    readonly property var effectiveLeftLayout: filterLayout(Config.options.bar.m3.layouts.leftLayout)
+    readonly property var effectiveMiddleLayout: filterLayout(Config.options.bar.m3.layouts.middleLayout)
+    readonly property var effectiveRightLayout: filterLayout(Config.options.bar.m3.layouts.rightLayout)
     readonly property bool leftLaneFilled: root.effectiveLeftLayout.length > 0
     readonly property bool centerLaneFilled: root.effectiveMiddleLayout.length > 0
     readonly property bool rightLaneFilled: root.effectiveRightLayout.length > 0
-    readonly property real leftHostDemand: root.leftLaneFilled
-        ? (root.isMaterial ? leftMaterialPill.implicitWidth : leftRow.implicitWidth) : 0
-    readonly property real centerHostDemand: root.centerLaneFilled
-        ? (root.isMaterial ? centerMaterialPill.implicitWidth : middleRow.implicitWidth) : 0
-    readonly property real rightHostDemand: root.rightLaneFilled
-        ? (root.isMaterial ? rightMaterialPill.implicitWidth : rightRow.implicitWidth) : 0
-    readonly property real availableHostWidth: Math.max(0, root.width - root.sectionOuterMargin * 2)
-    // Appearance.fontSizeScale is a plain factor; the guard keeps a future
-    // "unset scale" from turning the whole geometry chain into NaN, which used
-    // to pin the middle lane to x=0 and stack it on top of the left lane.
-    readonly property real hostGap: 6 * (Number.isFinite(Appearance.fontSizeScale)
-        && Appearance.fontSizeScale > 0 ? Appearance.fontSizeScale : 1)
-    readonly property bool hasLeftHost: root.leftHostDemand > 0.5
-    readonly property bool hasCenterHost: root.centerHostDemand > 0.5
-    readonly property bool hasRightHost: root.rightHostDemand > 0.5
-    readonly property real leftCenterGap: root.hasLeftHost && root.hasCenterHost ? root.hostGap : 0
-    readonly property real centerRightGap: root.hasCenterHost && root.hasRightHost ? root.hostGap : 0
-    readonly property real sideOnlyGap: !root.hasCenterHost && root.hasLeftHost && root.hasRightHost ? root.hostGap : 0
-    readonly property real totalHostGap: root.leftCenterGap + root.centerRightGap + root.sideOnlyGap
-    readonly property real naturalHostWidth: root.leftHostDemand + root.centerHostDemand
-        + root.rightHostDemand + root.totalHostGap
-    readonly property real hostScale: root.naturalHostWidth > root.totalHostGap
-        ? Math.min(1, Math.max(0, root.availableHostWidth - root.totalHostGap)
-            / Math.max(1, root.naturalHostWidth - root.totalHostGap))
-        : 1
-    readonly property bool layoutCompressionActive: root.hostScale < 0.999
-    readonly property real leftHostWidth: root.leftHostDemand * root.hostScale
-    readonly property real centerHostWidth: root.centerHostDemand * root.hostScale
-    readonly property real rightHostWidth: root.rightHostDemand * root.hostScale
-    readonly property real preferredCenterX: (root.width - root.centerHostWidth) / 2
-    readonly property real minimumCenterX: root.sectionOuterMargin + root.leftHostWidth + root.leftCenterGap
-    readonly property real maximumCenterX: root.width - root.sectionOuterMargin - root.rightHostWidth
-        - root.centerRightGap - root.centerHostWidth
-    // When the lanes genuinely overflow, the middle stays as close to the
-    // optical centre as the clamp allows instead of being flung to the left
-    // edge; the section itself is clipped and scaled by hostScale.
-    readonly property real centerHostX: {
-        if (!root.centerLaneFilled)
-            return root.preferredCenterX;
-        const preferred = Number.isFinite(root.preferredCenterX) ? root.preferredCenterX : 0;
-        const minimum = Number.isFinite(root.minimumCenterX) ? root.minimumCenterX : 0;
-        const maximum = Number.isFinite(root.maximumCenterX) ? root.maximumCenterX : preferred;
-        const clamped = Math.max(minimum, Math.min(preferred, maximum));
-        return root.layoutCompressionActive ? Math.max(minimum, Math.min(clamped, maximum)) : clamped;
-    }
-
-    readonly property bool trayHasItems: SystemTray.items.values.length > 0
-    readonly property bool spectrumOutputEnabled:
-        (Config.options?.bar?.visualizer?.multiMonitorMode ?? "primary") === "all"
-        || Quickshell.screens.length <= 1
-        || String(root.screen?.name ?? "") === String(GlobalStates.primaryScreen?.name ?? "")
-
-    function filterLayout(layout) {
-        let filtered = Array.from(layout ?? [])
-        if (!root.trayHasItems)
-            filtered = filtered.filter(name => name !== "sysTray")
-        if (!Battery.available)
-            filtered = filtered.filter(name => name !== "batteryIndicator")
-        if (!root.spectrumSignalActive)
-            filtered = filtered.filter(name => name !== "visualizer")
-        return filtered
-    }
-
-    readonly property var effectiveLeftLayout:   filterLayout(Config.options.bar.m3.layouts.leftLayout)
-    readonly property var effectiveMiddleLayout: filterLayout(Config.options.bar.m3.layouts.middleLayout)
-    readonly property var effectiveRightLayout:  filterLayout(Config.options.bar.m3.layouts.rightLayout)
 
     function getWidgetUrl(name) {
-        if (!name) return "";
+        if (!name)
+            return "";
         const map = {
             "island": "./DynamicIsland.qml",
             "clock": "./ClockWidget.qml",
@@ -106,275 +64,127 @@ Item {
             "resources": "./Resources.qml",
             "weather": "./WeatherBar.qml",
             "battery": "./BatteryIndicator.qml",
+            "batteryIndicator": "./BatteryIndicator.qml",
             "systemIcons": "./SystemIcons.qml",
             "quickSettings": "./UtilButtons.qml",
             "utilButtons": "./UtilButtons.qml",
+            "launcherButton": "./LauncherButton.qml",
+            "powerButton": "./PowerButton.qml",
             "divisor": "./Divisor.qml",
-            "information": "./ActiveWindow.qml",
-            "activeWindow": "./ActiveWindow.qml"
+            "divider": "./Divisor.qml",
+            "workspaces": "./Workspaces.qml",
+            "activeWindow": "./ActiveWindow.qml",
+            "media": "./Media.qml"
         };
-        if (map[name]) return Qt.resolvedUrl(map[name]);
+        if (map[name])
+            return Qt.resolvedUrl(map[name]);
         let formattedName = name.charAt(0).toUpperCase() + name.slice(1);
         return Qt.resolvedUrl("./" + formattedName + ".qml");
     }
 
-    function getMirroredForIndex(layout, idx) {
-        const prevCount = layout.slice(0, idx).filter(w => w === "visualizer").length
-        return prevCount % 2 === 1
-    }
-
-    // One cava process for the whole bar. The showcase layout puts a visualizer
-    // on each side of the centre, and a per-widget process would have spawned
-    // one subprocess per instance for the exact same spectrum.
-    readonly property bool wantsVisualizer: root.spectrumOutputEnabled
-        && ((Config.options?.bar?.m3?.layouts?.leftLayout ?? []).includes("visualizer")
-            || (Config.options?.bar?.m3?.layouts?.middleLayout ?? []).includes("visualizer")
-            || (Config.options?.bar?.m3?.layouts?.rightLayout ?? []).includes("visualizer"))
-    readonly property bool wantsBackgroundVisualizer: (Config.options?.bar?.visualizer?.enable ?? false)
-        && (Config.options?.bar?.m3?.showBackground ?? true)
-        && root.spectrumOutputEnabled
-        && root.visible
-    readonly property bool audioPlaying: MediaService.active ? MediaService.active.isPlaying : false
-    readonly property real spectrumFillRatio: Math.max(0.1,
-        Math.min(1, Config.options?.bar?.visualizer?.height ?? 0.6))
-    readonly property real spectrumOpacity: Math.max(0,
-        Math.min(1, Config.options?.bar?.visualizer?.opacity ?? 0.35))
-    readonly property string spectrumType: Config.options?.bar?.visualizer?.type ?? "bars"
-    readonly property string spectrumBarsOrigin: Config.options?.bar?.visualizer?.barsOrigin ?? "bottom"
-    readonly property real spectrumDensity: Math.max(4, Config.options?.bar?.visualizer?.density ?? 12)
-    readonly property real spectrumGap: Math.max(0, Config.options?.bar?.visualizer?.gap ?? 2)
-    readonly property int spectrumSmoothing: Math.max(0, Config.options?.bar?.visualizer?.smoothing ?? 2)
-    readonly property string spectrumWaveMode: Config.options?.bar?.visualizer?.waveMode ?? "fill"
-    readonly property real spectrumLineWidth: Math.max(1, Config.options?.bar?.visualizer?.lineWidth ?? 2)
-    readonly property real spectrumEdgeInset: Math.max(6, Config.options?.bar?.visualizer?.edgeInset ?? 6)
-    readonly property real spectrumEdgeSoftness: Math.max(0,
-        Math.min(1, (Config.options?.bar?.visualizer?.edgeSoftness ?? 36) / 100))
-    readonly property string spectrumFrequencyProfile: Config.options?.bar?.visualizer?.frequencyProfile ?? "flat"
-    readonly property real spectrumAccentStrength: Math.max(0,
-        Math.min(1, (Config.options?.bar?.visualizer?.accentStrength ?? 70) / 100))
-    readonly property string spectrumOrganicFit: Config.options?.bar?.visualizer?.organicFit ?? "auto"
-    readonly property real spectrumOrganicLayoutScale: spectrumOrganicFit === "aura" ? 1
-        : spectrumOrganicFit === "contained" ? 0.72 : 0.68
-    readonly property real spectrumOrganicSensitivity: Math.max(0, Math.min(1,
-        (Config.options?.bar?.visualizer?.organicSensitivity ?? 42) / 100)) * spectrumOrganicLayoutScale
-    readonly property real spectrumOrganicPulse: Math.max(0, Math.min(1,
-        (Config.options?.bar?.visualizer?.organicPulse ?? 55) / 100)) * spectrumOrganicLayoutScale
-    readonly property real spectrumOrganicMotionSpeed: Math.max(0.25, Math.min(1.5,
-        (Config.options?.bar?.visualizer?.organicMotionSpeed ?? 80) / 100))
-    readonly property real spectrumOrganicIdleMotion: Math.max(0, Math.min(1,
-        (Config.options?.bar?.visualizer?.organicIdleMotion ?? 0) / 100))
-    readonly property real spectrumOrganicGlow: Math.max(0, Math.min(1,
-        (Config.options?.bar?.visualizer?.organicGlow ?? 25) / 100)) * spectrumOrganicLayoutScale
-    readonly property real spectrumOrganicBaseRadius: Math.max(0, Math.min(1,
-        (Config.options?.bar?.visualizer?.organicBaseRadius ?? 36) / 100))
-    readonly property bool spectrumOrganicEdgeAura: spectrumOrganicFit === "aura"
-    readonly property bool materialSpectrum: root.isMaterial
-        && (Config.options?.bar?.m3?.borderless ?? "pills") !== "transparent"
-
-    function spectrumStartRatio(item): real {
-        if (!item || !(root.width > 0))
-            return 0
-        return Math.max(0, Math.min(1, item.mapToItem(root, 0, 0).x / root.width))
-    }
-
-    function spectrumEndRatio(item): real {
-        if (!item || !(root.width > 0))
-            return 1
-        const start = root.spectrumStartRatio(item)
-        return Math.max(start,
-            Math.min(1, (item.mapToItem(root, 0, 0).x + item.width) / root.width))
-    }
-
-    CavaProcess {
-        id: barCava
-        active: (root.wantsVisualizer || root.wantsBackgroundVisualizer)
-            && root.audioPlaying
-        sampleCount: root.wantsBackgroundVisualizer
-            ? Math.max(50, Math.round(Math.max(1, root.width) / root.spectrumDensity))
-            : 20
-    }
-    readonly property bool spectrumSignalActive: barCava.audioSignalActive
-
-    Component.onDestruction: {
-        barCava.active = false;
-    }
-
-    component SurfaceSpectrum: Item {
-        property bool active: false
-        property real sampleStartRatio: 0
-        property real sampleEndRatio: 1
-        property var clipSegments: []
-        property real topLeftRadius: 0
-        property real topRightRadius: 0
-        property real bottomLeftRadius: 0
-        property real bottomRightRadius: 0
-        visible: false
-    }
-
-    // Every widget is loaded through a URL, so its optional inputs are wired
-    // here rather than declared. `sharedPoints` must stay a binding: assigned
-    // by value it would freeze on the first spectrum frame.
-    function wireWidget(item, layout, idx) {
-        if (!item) return
-        if (item.hasOwnProperty("spectrumMirrored"))
-            item.spectrumMirrored = root.getMirroredForIndex(layout, idx)
-        if (item.hasOwnProperty("sharedPoints"))
-            item.sharedPoints = Qt.binding(() => barCava.points)
-        if (item.hasOwnProperty("sharedCeiling"))
-            item.sharedCeiling = Qt.binding(() => barCava.normalizationCeiling)
-        if (item.hasOwnProperty("sharedSignalActive"))
-            item.sharedSignalActive = Qt.binding(() => barCava.audioSignalActive)
-    }
-
     function shouldPaintMaterialPill(name) {
-        if (Config.options?.bar?.m3?.cornerStyle !== 3) return false
-        if (!(Config.options?.bar?.m3?.showBackground ?? true)) return false
-
-        const groupStyle = Config.options?.bar?.m3?.borderless ?? "pills"
-        if (groupStyle === "transparent") return false
-        if (groupStyle === "separated") return name !== "divisor"
-
-        // Preserve the Material hierarchy in joined mode: the section keeps
-        // its base capsule while information-rich widgets retain tonal pills.
-        const joinedBlacklist = [
-            "workspaces", "divisor", "powerButton", "docktoPanel",
-            "leftSidebarButton", "rightSidebarButton", "activeWindow", "visualizer",
-            "notificationUnreadCount"
-        ]
-        return !joinedBlacklist.includes(name)
+        if (!root.isMaterial)
+            return false;
+        // end4 baseline + "island": the island paints its own capsule
+        // (paintBackground: false) and must not eat a group tint.
+        const blacklist = ["workspaces", "divisor", "powerButton", "docktoPanel", "leftSidebarButton", "rightSidebarButton", "activeWindow", "dynamicIsland", "island", "avatar"];
+        return !blacklist.includes(name);
     }
 
     function getMaterialPillColor(name) {
-        return M3Palette.pillContainer(name)
+        return M3Palette.pillContainer(name);
     }
 
-    function appendClipSegment(segments, item, surface): void {
-        const clipItem = item?.spectrumClipItem ?? item
-        if (!clipItem || !surface || !clipItem.visible || !(clipItem.width > 0)
-                || !(clipItem.height > 0))
-            return
-        const position = clipItem.mapToItem(surface, 0, 0)
-        segments.push({
-            x: position.x,
-            y: position.y,
-            width: clipItem.width,
-            height: clipItem.height,
-            radii: item?.spectrumClipRadii ?? [
-                clipItem.topLeftRadius ?? clipItem.radius ?? 0,
-                clipItem.topRightRadius ?? clipItem.radius ?? 0,
-                clipItem.bottomRightRadius ?? clipItem.radius ?? 0,
-                clipItem.bottomLeftRadius ?? clipItem.radius ?? 0
-            ]
-        })
-    }
-
-    function appendRepeaterSegments(segments, repeater, surface): void {
-        for (let i = 0; i < repeater.count; ++i) {
-            const item = repeater.itemAt(i)
-            if (item?.paintMaterialPill ?? false)
-                root.appendClipSegment(segments, item, surface)
-        }
-    }
-
-    function materialSectionSegments(repeater, surface): var {
-        const segments = []
-        if ((Config.options?.bar?.m3?.borderless ?? "pills") === "separated")
-            root.appendRepeaterSegments(segments, repeater, surface)
-        return segments
-    }
-
-    // Edge scroll: the M3 bar honours the same keys as the classic bar, so
-    // brightness and volume stay where the user learned them.
+    // Edge scroll (iNiR behaviour kept through the B8.1 re-fork): the bare bar
+    // on either side of the middle lane steps brightness / volume. Widgets sit
+    // above these areas, so a scroll over a widget still belongs to the widget.
     readonly property string leftAction: Config.options?.bar?.leftScrollAction ?? "brightness"
     readonly property string rightAction: Config.options?.bar?.rightScrollAction ?? "volume"
 
     function performScrollAction(action: string, isUp: bool): void {
         if (action === "brightness") {
-            Brightness.stepBrightness(root.screen, isUp ? 0.05 : -0.05);
+            const monitor = BrightnessService.getMonitorForScreen(root.screen);
+            const current = monitor ? monitor.brightness : BrightnessService.brightnessValue;
+            BrightnessService.setBrightnessForScreen(root.screen, current + (isUp ? 0.05 : -0.05), false);
         } else if (action === "volume") {
-            if (isUp) Audio.incrementVolume();
-            else Audio.decrementVolume();
+            VolumeService.setSinkVolume(VolumeService.sinkVolume + (isUp ? 0.05 : -0.05));
         } else if (action === "workspace") {
             let up = isUp;
-            if (Config.options?.bar?.workspaces?.invertScroll ?? false) up = !up;
+            if (Config.options?.bar?.workspaces?.invertScroll ?? false)
+                up = !up;
 
-            if (up) CompositorDriver.focusWorkspaceUp();
-            else CompositorDriver.focusWorkspaceDown();
+            if (up)
+                CompositorDriver.focusWorkspaceUp();
+            else
+                CompositorDriver.focusWorkspaceDown();
         }
     }
 
     function closeOSD(action: string): void {
-        if (action === "brightness") GlobalStates.osdBrightnessOpen = false;
-        else if (action === "volume") GlobalStates.osdVolumeOpen = false;
+        if (action === "brightness")
+            GlobalStates.osdBrightnessOpen = false;
+        else if (action === "volume")
+            GlobalStates.osdVolumeOpen = false;
     }
 
     function getScrollIcon(action: string): string {
-        if (action === "brightness") return "light_mode";
-        if (action === "volume") return "volume_up";
-        if (action === "workspace") return "workspaces";
+        if (action === "brightness")
+            return "light_mode";
+        if (action === "volume")
+            return "volume_up";
+        if (action === "workspace")
+            return "workspaces";
         return "";
     }
 
     function getScrollTooltip(action: string): string {
-        if (action === "brightness") return I18n.tr("Scroll to change brightness");
-        if (action === "volume") return I18n.tr("Scroll to change volume");
-        if (action === "workspace") return I18n.tr("Scroll to switch workspaces");
+        if (action === "brightness")
+            return I18n.tr("Scroll to change brightness");
+        if (action === "volume")
+            return I18n.tr("Scroll to change volume");
+        if (action === "workspace")
+            return I18n.tr("Scroll to switch workspaces");
         return "";
     }
+
+    property var screen: root.QsWindow.window?.screen
 
     Rectangle {
         id: barBackground
         anchors.fill: parent
-        anchors.margins: Config.options.bar.m3.cornerStyle === 1 ? Config.options.bar.m3.gapsOut : 0
-        color: (!centerOnly && Config.options.bar.m3.showBackground && Config.options.bar.m3.cornerStyle !== 2 && !root.isMaterial)
-            ? Appearance.colors.colLayer0 : "transparent"
-        radius: Config.options.bar.m3.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
-        border.width: (!centerOnly && Config.options.bar.m3.cornerStyle === 1) ? 1 : 0
-        border.color: Appearance.colors.colLayer0Border
-
-        SurfaceSpectrum {
-            id: backgroundVisualizer
-            anchors.fill: parent
-            active: root.wantsBackgroundVisualizer && !root.isMaterial
-                && !root.centerOnly && root.spectrumSignalActive
-            topLeftRadius: barBackground.radius
-            topRightRadius: barBackground.radius
-            bottomLeftRadius: barBackground.radius
-            bottomRightRadius: barBackground.radius
-        }
+        anchors.margins: Config.options.bar.cornerStyle === 1 ? Config.options.bar.m3.gapsOut : 0
+        color: (!centerOnly && Config.options.bar.m3.showBackground && Config.options.bar.cornerStyle !== 2 && !root.isMaterial) ? Appearance.colors.colLayer0 : "transparent"
+        radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
+        border.width: (!centerOnly && Config.options.bar.cornerStyle === 1) ? 1 : 0
+        border.color: Config.options.bar.cornerStyle === 1 && !Config.options.bar.m3.showBackground ? "transparent" : ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8)
     }
 
     // center-only
-    readonly property bool centerOnly: !root.isMaterial
-        && root.effectiveLeftLayout.length === 0
-        && root.effectiveRightLayout.length === 0
+    readonly property bool centerOnly: !root.leftLaneFilled && !root.rightLaneFilled
+
+    Binding {
+        target: GlobalStates
+        property: "barCenterOnly"
+        value: root.centerOnly
+        restoreMode: Binding.RestoreBinding
+    }
 
     Rectangle {
         id: centerPill
-        visible: centerOnly && Config.options.bar.m3.showBackground && Config.options.bar.m3.cornerStyle !== 2
+        visible: root.centerOnly && Config.options.bar.m3.showBackground && Config.options.bar.cornerStyle !== 2
         anchors.verticalCenter: parent.verticalCenter
         anchors.horizontalCenter: parent.horizontalCenter
-        width: middleRow.implicitWidth + 10
-        height: parent.height - (Config.options.bar.m3.cornerStyle === 1 ? Config.options.bar.m3.gapsOut * 2 : 0)
-        color: Appearance.colors.colLayer0
-        radius: Config.options.bar.m3.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
-        border.width: Config.options.bar.m3.cornerStyle === 1 ? 1 : 0
+        width: root.centerLaneFilled ? middleRow.implicitWidth + 10 : 0
+        height: parent.height - (Config.options.bar.cornerStyle === 1 ? Config.options.bar.m3.gapsOut * 2 : 0)
+        color: root.isMaterial ? "transparent" : Appearance.colors.colLayer0
+        radius: Config.options.bar.cornerStyle === 1 || root.isMaterial ? Appearance.rounding.windowRounding : 0
+        border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
         border.color: Appearance.colors.colLayer0Border
 
-        bottomLeftRadius:  Config.options.bar.m3.cornerStyle === 0 && !Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
-        bottomRightRadius: Config.options.bar.m3.cornerStyle === 0 && !Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
-        topLeftRadius:     Config.options.bar.m3.cornerStyle === 0 && Config.options.bar.bottom  ? Appearance.rounding.screenRounding : radius
-        topRightRadius:    Config.options.bar.m3.cornerStyle === 0 && Config.options.bar.bottom  ? Appearance.rounding.screenRounding : radius
-
-        SurfaceSpectrum {
-            anchors.fill: parent
-            active: root.wantsBackgroundVisualizer && root.centerOnly
-                && root.spectrumSignalActive
-            topLeftRadius: centerPill.topLeftRadius
-            topRightRadius: centerPill.topRightRadius
-            bottomLeftRadius: centerPill.bottomLeftRadius
-            bottomRightRadius: centerPill.bottomRightRadius
-        }
+        bottomLeftRadius: Config.options.bar.cornerStyle === 0 && !Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
+        bottomRightRadius: Config.options.bar.cornerStyle === 0 && !Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
+        topLeftRadius: Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
+        topRightRadius: Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
     }
 
     Item {
@@ -382,8 +192,8 @@ Item {
         anchors.fill: barBackground
         anchors.margins: root.barPadding
 
-        // Declared before the sections so a widget always wins the click; only
-        // the bare bar around them feeds these.
+        // Declared before the lanes so a widget always wins the click; only the
+        // bare bar around them feeds these.
         FocusedScrollMouseArea {
             id: barLeftScrollArea
             anchors.top: parent.top
@@ -396,9 +206,7 @@ Item {
             onMovedAway: root.closeOSD(root.leftAction)
 
             ScrollHint {
-                reveal: barLeftScrollArea.hovered
-                    && (Config.options?.bar?.showScrollHints ?? true)
-                    && root.leftAction !== "none"
+                reveal: barLeftScrollArea.hovered && (Config.options?.bar?.showScrollHints ?? true) && root.leftAction !== "none"
                 icon: root.getScrollIcon(root.leftAction)
                 tooltipText: root.getScrollTooltip(root.leftAction)
                 side: "left"
@@ -421,9 +229,7 @@ Item {
             onMovedAway: root.closeOSD(root.rightAction)
 
             ScrollHint {
-                reveal: barRightScrollArea.hovered
-                    && (Config.options?.bar?.showScrollHints ?? true)
-                    && root.rightAction !== "none"
+                reveal: barRightScrollArea.hovered && (Config.options?.bar?.showScrollHints ?? true) && root.rightAction !== "none"
                 icon: root.getScrollIcon(root.rightAction)
                 tooltipText: root.getScrollTooltip(root.rightAction)
                 side: "right"
@@ -436,53 +242,36 @@ Item {
 
         // Left
         Item {
-            id: leftSection
             anchors.left: parent.left
-            anchors.leftMargin: root.sectionOuterMargin
+            anchors.leftMargin: root.laneMargin
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            width: root.leftHostWidth
-            clip: root.layoutCompressionActive
+            width: !root.leftLaneFilled ? 0 : root.isMaterial ? (leftMaterialPill.width + (root.isMaterialHug ? leftRightOutwardCorner.implicitSize : 0)) : leftRow.implicitWidth
 
             // Material pill wrapper
             Rectangle {
                 id: leftMaterialPill
                 visible: root.isMaterial && root.leftLaneFilled
-                anchors.centerIn: parent
-                implicitWidth: leftMaterialRow.implicitWidth + 10
-                implicitHeight: leftMaterialRow.implicitHeight
-                width: root.layoutCompressionActive ? parent.width : implicitWidth
-                clip: root.layoutCompressionActive
-                radius: Appearance.rounding.full
-                color: (Config.options?.bar?.m3?.showBackground ?? true)
-                    && (Config.options?.bar?.m3?.borderless ?? "pills") === "pills"
-                    ? Appearance.colors.colLayer0 : "transparent"
+                anchors.left: root.isMaterialHug ? parent.left : undefined
+                anchors.top: (root.isMaterialHug && !Config.options.bar.bottom) ? parent.top : undefined
+                anchors.bottom: (root.isMaterialHug && Config.options.bar.bottom) ? parent.bottom : undefined
+                anchors.centerIn: root.isMaterialHug ? undefined : parent
+                width: leftMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10)
+                height: root.isMaterialHug ? parent.height : leftMaterialRow.implicitHeight
+                radius: root.isMaterialHug ? 0 : Appearance.rounding.full
+                color: root.materialPillBgColor
 
-                SurfaceSpectrum {
-                    id: leftMaterialSpectrum
-                    anchors.fill: parent
-                    z: 2
-                    active: root.wantsBackgroundVisualizer && root.materialSpectrum
-                        && leftMaterialPill.visible && root.spectrumSignalActive
-                    sampleStartRatio: root.spectrumStartRatio(leftMaterialPill)
-                    sampleEndRatio: root.spectrumEndRatio(leftMaterialPill)
-                    clipSegments: root.materialSectionSegments(
-                        leftMaterialRepeater, leftMaterialSpectrum)
-                    topLeftRadius: leftMaterialPill.radius
-                    topRightRadius: leftMaterialPill.radius
-                    bottomLeftRadius: leftMaterialPill.radius
-                    bottomRightRadius: leftMaterialPill.radius
-                }
+                topLeftRadius: root.isMaterialHug ? 0 : radius
+                bottomLeftRadius: root.isMaterialHug ? 0 : radius
+                topRightRadius: (root.isMaterialHug && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
+                bottomRightRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
 
                 RowLayout {
                     id: leftMaterialRow
                     anchors.centerIn: parent
                     spacing: 3
-                    scale: implicitWidth > 0 ? Math.min(1, root.leftHostWidth / (implicitWidth + 10)) : 1
-                    transformOrigin: Item.Center
 
                     Repeater {
-                        id: leftMaterialRepeater
                         model: root.effectiveLeftLayout
                         delegate: leftMaterialGroupDelegate
                     }
@@ -492,21 +281,28 @@ Item {
                         BarGroup {
                             Layout.fillHeight: true
                             currentIndex: index
-                            totalCount: root.effectiveLeftLayout.length
                             widgetName: modelData
+                            totalCount: root.effectiveLeftLayout.length
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData)
                             bgColor: root.getMaterialPillColor(modelData)
                             Loader {
                                 Layout.fillHeight: true
                                 source: root.getWidgetUrl(modelData)
-                                onLoaded: {
-                                    if (item)
-                                        root.wireWidget(item, root.effectiveLeftLayout, index)
-                                }
                             }
                         }
                     }
                 }
+            }
+
+            RoundCorner {
+                id: leftRightOutwardCorner
+                visible: root.isMaterialHug && root.leftLaneFilled
+                anchors.left: leftMaterialPill.right
+                anchors.top: !Config.options.bar.bottom ? parent.top : undefined
+                anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
+                implicitSize: Appearance.rounding.screenRounding
+                color: root.materialPillBgColor
+                corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft
             }
 
             // Non-material layout
@@ -514,41 +310,23 @@ Item {
                 id: leftRow
                 visible: !root.isMaterial
                 anchors.fill: parent
-                spacing: Config.options.bar.m3.borderless === "transparent" ? -7 : 2
+                spacing: root.rowSpacing
 
                 Repeater {
                     model: root.effectiveLeftLayout
                     delegate: leftBarGroupDelegate
                 }
 
-                    Component {
-                        id: leftBarGroupDelegate
-                        BarGroup {
-                            Layout.fillHeight: true
-                            currentIndex: index
-                            totalCount: root.effectiveLeftLayout.length
-                            widgetName: modelData
-                            Loader {
+                Component {
+                    id: leftBarGroupDelegate
+                    BarGroup {
+                        Layout.fillHeight: true
+                        currentIndex: index
+                        widgetName: modelData
+                        totalCount: root.effectiveLeftLayout.length
+                        Loader {
                             Layout.fillHeight: true
                             source: root.getWidgetUrl(modelData)
-                            onLoaded: {
-                                if (item)
-                                    root.wireWidget(item, root.effectiveLeftLayout, index)
-                            }
-                        }
-                    }
-                }
-
-                Component {
-                    id: leftNoGroupDelegate
-                    Loader {
-                        Layout.fillHeight: false
-                        Layout.topMargin: Config.options.bar.bottom ? -5 : 3
-                        Layout.alignment: Qt.AlignVCenter
-                        source: root.getWidgetUrl(modelData)
-                        onLoaded: {
-                            if (item)
-                                root.wireWidget(item, root.effectiveLeftLayout, index)
                         }
                     }
                 }
@@ -558,51 +336,42 @@ Item {
         // Center
         Item {
             id: absoluteCenter
-            x: root.centerHostX
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            width: root.centerHostWidth
-            clip: root.layoutCompressionActive
+            anchors.centerIn: parent
+            width: !root.centerLaneFilled ? 0 : root.isMaterial ? (centerMaterialPill.width + (root.isMaterialHug ? (centerLeftOutwardCorner.implicitSize + centerRightOutwardCorner.implicitSize) : 0)) : middleRow.implicitWidth
+            height: parent.height
+
+            RoundCorner {
+                id: centerLeftOutwardCorner
+                visible: root.isMaterialHug && root.centerLaneFilled
+                anchors.right: centerMaterialPill.left
+                anchors.top: !Config.options.bar.bottom ? parent.top : undefined
+                anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
+                implicitSize: Appearance.rounding.screenRounding
+                color: root.materialPillBgColor
+                corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight
+            }
 
             // Material pill wrapper
             Rectangle {
                 id: centerMaterialPill
                 visible: root.isMaterial && root.centerLaneFilled
                 anchors.centerIn: parent
-                implicitWidth: centerMaterialRow.implicitWidth + 10
-                implicitHeight: centerMaterialRow.implicitHeight
-                width: root.layoutCompressionActive ? parent.width : implicitWidth
-                clip: root.layoutCompressionActive
-                radius: Appearance.rounding.full
-                color: (Config.options?.bar?.m3?.showBackground ?? true)
-                    && (Config.options?.bar?.m3?.borderless ?? "pills") === "pills"
-                    ? Appearance.colors.colLayer0 : "transparent"
+                width: centerMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10)
+                height: root.isMaterialHug ? parent.height : centerMaterialRow.implicitHeight
+                radius: root.isMaterialHug ? 0 : Appearance.rounding.full
+                color: root.materialPillBgColor
 
-                SurfaceSpectrum {
-                    id: centerMaterialSpectrum
-                    anchors.fill: parent
-                    z: 2
-                    active: root.wantsBackgroundVisualizer && root.materialSpectrum
-                        && centerMaterialPill.visible && root.spectrumSignalActive
-                    sampleStartRatio: root.spectrumStartRatio(centerMaterialPill)
-                    sampleEndRatio: root.spectrumEndRatio(centerMaterialPill)
-                    clipSegments: root.materialSectionSegments(
-                        centerMaterialRepeater, centerMaterialSpectrum)
-                    topLeftRadius: centerMaterialPill.radius
-                    topRightRadius: centerMaterialPill.radius
-                    bottomLeftRadius: centerMaterialPill.radius
-                    bottomRightRadius: centerMaterialPill.radius
-                }
+                topLeftRadius: (root.isMaterialHug && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
+                topRightRadius: (root.isMaterialHug && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
+                bottomLeftRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
+                bottomRightRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
 
                 RowLayout {
                     id: centerMaterialRow
                     anchors.centerIn: parent
                     spacing: 3
-                    scale: implicitWidth > 0 ? Math.min(1, root.centerHostWidth / (implicitWidth + 10)) : 1
-                    transformOrigin: Item.Center
 
                     Repeater {
-                        id: centerMaterialRepeater
                         model: root.effectiveMiddleLayout
                         delegate: middleMaterialGroupDelegate
                     }
@@ -612,21 +381,29 @@ Item {
                         BarGroup {
                             Layout.fillHeight: true
                             currentIndex: index
-                            totalCount: root.effectiveMiddleLayout.length
                             widgetName: modelData
+                            paintBackground: modelData !== "island"
+                            totalCount: root.effectiveMiddleLayout.length
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData)
                             bgColor: root.getMaterialPillColor(modelData)
                             Loader {
                                 Layout.fillHeight: true
                                 source: root.getWidgetUrl(modelData)
-                                onLoaded: {
-                                    if (item)
-                                        root.wireWidget(item, root.effectiveMiddleLayout, index)
-                                }
                             }
                         }
                     }
                 }
+            }
+
+            RoundCorner {
+                id: centerRightOutwardCorner
+                visible: root.isMaterialHug && root.centerLaneFilled
+                anchors.left: centerMaterialPill.right
+                anchors.top: !Config.options.bar.bottom ? parent.top : undefined
+                anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
+                implicitSize: Appearance.rounding.screenRounding
+                color: root.materialPillBgColor
+                corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft
             }
 
             // Non-material layout
@@ -634,40 +411,24 @@ Item {
                 id: middleRow
                 visible: !root.isMaterial
                 anchors.fill: parent
-                spacing: Config.options.bar.m3.borderless === "transparent" ? -7 : 2
+                spacing: root.rowSpacing
 
                 Repeater {
                     model: root.effectiveMiddleLayout
                     delegate: middleBarGroupDelegate
                 }
 
-                    Component {
-                        id: middleBarGroupDelegate
-                        BarGroup {
-                            Layout.fillHeight: true
-                            currentIndex: index
-                            totalCount: root.effectiveMiddleLayout.length
-                            widgetName: modelData
-                            Loader {
+                Component {
+                    id: middleBarGroupDelegate
+                    BarGroup {
+                        Layout.fillHeight: true
+                        currentIndex: index
+                        widgetName: modelData
+                        paintBackground: modelData !== "island"
+                        totalCount: root.effectiveMiddleLayout.length
+                        Loader {
                             Layout.fillHeight: true
                             source: root.getWidgetUrl(modelData)
-                            onLoaded: {
-                                if (item)
-                                    root.wireWidget(item, root.effectiveMiddleLayout, index)
-                            }
-                        }
-                    }
-                }
-
-                Component {
-                    id: middleNoGroupDelegate
-                    Loader {
-                        Layout.fillHeight: false
-                        Layout.topMargin: Config.options.bar.bottom ? -5 : 3
-                        source: root.getWidgetUrl(modelData)
-                        onLoaded: {
-                            if (item)
-                                root.wireWidget(item, root.effectiveMiddleLayout, index)
                         }
                     }
                 }
@@ -676,53 +437,47 @@ Item {
 
         // Right
         Item {
-            id: rightSection
             anchors.right: parent.right
-            anchors.rightMargin: root.sectionOuterMargin
+            anchors.rightMargin: root.laneMargin
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            width: root.rightHostWidth
-            clip: root.layoutCompressionActive
+            width: !root.rightLaneFilled ? 0 : root.isMaterial ? (rightMaterialPill.width + (root.isMaterialHug ? rightLeftOutwardCorner.implicitSize : 0)) : rightRow.implicitWidth
+
+            RoundCorner {
+                id: rightLeftOutwardCorner
+                visible: root.isMaterialHug && root.rightLaneFilled
+                anchors.right: rightMaterialPill.left
+                anchors.top: !Config.options.bar.bottom ? parent.top : undefined
+                anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
+                implicitSize: Appearance.rounding.screenRounding
+                color: root.materialPillBgColor
+                corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight
+            }
 
             // Material pill wrapper
             Rectangle {
                 id: rightMaterialPill
                 visible: root.isMaterial && root.rightLaneFilled
-                anchors.centerIn: parent
-                implicitWidth: rightMaterialRow.implicitWidth + 10
-                implicitHeight: rightMaterialRow.implicitHeight
-                width: root.layoutCompressionActive ? parent.width : implicitWidth
-                clip: root.layoutCompressionActive
-                radius: Appearance.rounding.full
-                color: (Config.options?.bar?.m3?.showBackground ?? true)
-                    && (Config.options?.bar?.m3?.borderless ?? "pills") === "pills"
-                    ? Appearance.colors.colLayer0 : "transparent"
+                anchors.right: root.isMaterialHug ? parent.right : undefined
+                anchors.top: (root.isMaterialHug && !Config.options.bar.bottom) ? parent.top : undefined
+                anchors.bottom: (root.isMaterialHug && Config.options.bar.bottom) ? parent.bottom : undefined
+                anchors.centerIn: root.isMaterialHug ? undefined : parent
+                width: rightMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10)
+                height: root.isMaterialHug ? parent.height : rightMaterialRow.implicitHeight
+                radius: root.isMaterialHug ? 0 : Appearance.rounding.full
+                color: root.materialPillBgColor
 
-                SurfaceSpectrum {
-                    id: rightMaterialSpectrum
-                    anchors.fill: parent
-                    z: 2
-                    active: root.wantsBackgroundVisualizer && root.materialSpectrum
-                        && rightMaterialPill.visible && root.spectrumSignalActive
-                    sampleStartRatio: root.spectrumStartRatio(rightMaterialPill)
-                    sampleEndRatio: root.spectrumEndRatio(rightMaterialPill)
-                    clipSegments: root.materialSectionSegments(
-                        rightMaterialRepeater, rightMaterialSpectrum)
-                    topLeftRadius: rightMaterialPill.radius
-                    topRightRadius: rightMaterialPill.radius
-                    bottomLeftRadius: rightMaterialPill.radius
-                    bottomRightRadius: rightMaterialPill.radius
-                }
+                topRightRadius: root.isMaterialHug ? 0 : radius
+                bottomRightRadius: root.isMaterialHug ? 0 : radius
+                topLeftRadius: (root.isMaterialHug && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
+                bottomLeftRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
 
                 RowLayout {
                     id: rightMaterialRow
                     anchors.centerIn: parent
                     spacing: 3
-                    scale: implicitWidth > 0 ? Math.min(1, root.rightHostWidth / (implicitWidth + 10)) : 1
-                    transformOrigin: Item.Center
 
                     Repeater {
-                        id: rightMaterialRepeater
                         model: root.effectiveRightLayout
                         delegate: rightMaterialGroupDelegate
                     }
@@ -732,17 +487,13 @@ Item {
                         BarGroup {
                             Layout.fillHeight: true
                             currentIndex: index
-                            totalCount: root.effectiveRightLayout.length
                             widgetName: modelData
+                            totalCount: root.effectiveRightLayout.length
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData)
                             bgColor: root.getMaterialPillColor(modelData)
                             Loader {
                                 Layout.fillHeight: true
                                 source: root.getWidgetUrl(modelData)
-                                onLoaded: {
-                                    if (item)
-                                        root.wireWidget(item, root.effectiveRightLayout, index)
-                                }
                             }
                         }
                     }
@@ -754,44 +505,31 @@ Item {
                 id: rightRow
                 visible: !root.isMaterial
                 anchors.fill: parent
-                spacing: Config.options.bar.m3.borderless === "transparent" ? -7 : 2
+                spacing: root.rowSpacing
 
                 Repeater {
                     model: root.effectiveRightLayout
                     delegate: rightBarGroupDelegate
                 }
 
-                    Component {
-                        id: rightBarGroupDelegate
-                        BarGroup {
-                            Layout.fillHeight: true
-                            currentIndex: index
-                            totalCount: root.effectiveRightLayout.length
-                            widgetName: modelData
-                            Loader {
+                Component {
+                    id: rightBarGroupDelegate
+                    BarGroup {
+                        Layout.fillHeight: true
+                        currentIndex: index
+                        widgetName: modelData
+                        totalCount: root.effectiveRightLayout.length
+                        Loader {
                             Layout.fillHeight: true
                             source: root.getWidgetUrl(modelData)
-                            onLoaded: {
-                                if (item)
-                                    root.wireWidget(item, root.effectiveRightLayout, index)
-                            }
-                        }
-                    }
-                }
-
-                Component {
-                    id: rightNoGroupDelegate
-                    Loader {
-                        Layout.fillHeight: false
-                        Layout.topMargin: Config.options.bar.bottom ? -5 : 3
-                        source: root.getWidgetUrl(modelData)
-                        onLoaded: {
-                            if (item)
-                                root.wireWidget(item, root.effectiveRightLayout, index)
                         }
                     }
                 }
             }
         }
     }
+
+    // end4's per-widget spacing: transparent pulls the groups together,
+    // segmented separates them, panel keeps a wider gap.
+    readonly property real rowSpacing: Config.options.bar.borderless === "transparent" ? -7 : (Config.options?.bar.borderless === "segmented" && root.isPanel) ? 3 : Config.options?.bar.borderless === "segmented" ? -1 : root.isPanel ? 4 : 2
 }

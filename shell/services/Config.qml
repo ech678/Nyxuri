@@ -24,6 +24,9 @@ Singleton {
 
         readonly property QtObject resources: QtObject {
             readonly property int updateInterval: 1000
+            readonly property int historyLength: 60
+            readonly property int autoStopDelay: 15000
+            readonly property bool monitorGpu: true
         }
 
         readonly property QtObject profile: QtObject {
@@ -43,7 +46,7 @@ Singleton {
             readonly property bool followFrameColor: false
             readonly property string frameColor: ""
             readonly property var screenList: []
-            property var widgetStyles: []
+            readonly property string groupColor: PersonalizationConfig.barGroupColor
             readonly property alias layouts: m3Options.layouts
 
             readonly property QtObject divider: QtObject {
@@ -135,12 +138,12 @@ Singleton {
                 }
 
                 readonly property QtObject workspaces: QtObject {
-                    readonly property bool showAppIcons: true
-                    readonly property bool alwaysShowNumbers: false
+                    readonly property bool showAppIcons: PersonalizationConfig.barShowAppIcons
+                    readonly property bool alwaysShowNumbers: PersonalizationConfig.barAlwaysShowNumbers
                     readonly property bool useNerdFont: false
                     readonly property bool monochromeIcons: false
-                    readonly property string indicatorStyle: "pill"
-                    readonly property var numberMap: ({})
+                    readonly property string indicatorStyle: PersonalizationConfig.barWorkspaceIndicatorStyle
+                    readonly property var numberMap: []
                 }
             }
 
@@ -150,13 +153,6 @@ Singleton {
                 readonly property string rightWidget: "none"
                 readonly property bool showMediaControls: true
                 readonly property string visualizerStyle: "dots"
-            }
-
-            readonly property QtObject visualizer: QtObject {
-                readonly property bool enable: true
-                readonly property string type: "bars"
-                readonly property string organicFit: "auto"
-                readonly property string multiMonitorMode: "primary"
             }
         }
     }

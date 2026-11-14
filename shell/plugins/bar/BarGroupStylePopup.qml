@@ -21,7 +21,8 @@ PopupWindow {
     property bool closing: false
 
     function close() {
-        if (root.closing) return;
+        if (root.closing)
+            return;
         root.closing = true;
         openAnim.stop();
         closeAnim.start();
@@ -45,14 +46,9 @@ PopupWindow {
     anchor {
         window: root.group.QsWindow.window
         item: root.group
-        gravity: Config.options.bar.vertical
-            ? (Config.options.bar.bottom ? Edges.Left : Edges.Right)
-            : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
-        edges: Config.options.bar.vertical
-            ? (Config.options.bar.bottom ? Edges.Left : Edges.Right)
-            : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
+        gravity: Config.options.bar.vertical ? (Config.options.bar.bottom ? Edges.Left : Edges.Right) : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
+        edges: Config.options.bar.vertical ? (Config.options.bar.bottom ? Edges.Left : Edges.Right) : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
     }
-
 
     Item {
         id: inputArea
@@ -167,47 +163,44 @@ PopupWindow {
                     onSelected: newValue => root.group.setStyle("borderColor", newValue)
                 }
 
-                ConfigSlider {
+                PreferenceSlider {
                     Layout.leftMargin: 0
                     Layout.rightMargin: 0
-                    buttonIcon: "rounded_corner"
-                    text: Translation.tr("Radius")
-                    textWidth: 90
-                    usePercentTooltip: false
+                    icon: "rounded_corner"
+                    label: Translation.tr("Radius")
                     from: 0
                     to: 30
                     stepSize: 1
                     value: root.group.currentRadius
-                    onMoved: root.group.previewStyle("radius", Math.round(value))
-                    onPressedChanged: if (!pressed) root.group.commitPreview()
+                    valueLabel: Math.round(value) + " px"
+                    onMoved: value => root.group.previewStyle("radius", Math.round(value))
+                    onCommitted: root.group.commitPreview()
                 }
-                ConfigSlider {
+                PreferenceSlider {
                     Layout.leftMargin: 0
                     Layout.rightMargin: 0
-                    buttonIcon: "padding"
-                    text: Translation.tr("Padding")
-                    textWidth: 90
-                    usePercentTooltip: false
+                    icon: "padding"
+                    label: Translation.tr("Padding")
                     from: 0
                     to: 15
                     stepSize: 1
                     value: root.group.padding
-                    onMoved: root.group.previewStyle("padding", Math.round(value))
-                    onPressedChanged: if (!pressed) root.group.commitPreview()
+                    valueLabel: Math.round(value) + " px"
+                    onMoved: value => root.group.previewStyle("padding", Math.round(value))
+                    onCommitted: root.group.commitPreview()
                 }
-                ConfigSlider {
+                PreferenceSlider {
                     Layout.leftMargin: 0
                     Layout.rightMargin: 0
-                    buttonIcon: "border_style"
-                    text: Translation.tr("Border width")
-                    textWidth: 90
-                    usePercentTooltip: false
+                    icon: "border_style"
+                    label: Translation.tr("Border width")
                     from: 0
                     to: 4
                     stepSize: 1
                     value: root.group.currentBorderWidth
-                    onMoved: root.group.previewStyle("borderWidth", Math.round(value))
-                    onPressedChanged: if (!pressed) root.group.commitPreview()
+                    valueLabel: Math.round(value) + " px"
+                    onMoved: value => root.group.previewStyle("borderWidth", Math.round(value))
+                    onCommitted: root.group.commitPreview()
                 }
 
                 DialogButton {

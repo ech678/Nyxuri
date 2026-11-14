@@ -8,6 +8,12 @@
 ## [Unreleased]
 
 ### Fixed
+- 状态栏工作区、时钟、系统监控、电池、启动器与电源按钮重新上岗：基件按上游整抄后，设置里可拖入三段布局并在运行态真实渲染
+- 状态栏中段在窄屏被压到最左、部件重叠：删除 iNiR 的压缩钳制，恢复 end4 的中心锚定
+- 状态栏右键改样式面板失效（`ConfigSlider is not a type`）：补齐缺失的控件原子并接线，样式写入个人化配置
+- 状态栏默认左栏出现两个相同的活动窗口：删除从未存在的 `information` 部件
+- 状态栏工作区默认只剩圆点、专辑封面变方：工作区默认值对齐 end4（数字 + 当前胶囊），媒体封面补圆角遮罩；工作区选项接入设置页
+- 时钟与岛闲时面不显示时间：补 `DateTime` 单例
 - 从仓库或缓存副本运行时，`nyxuri update` 重启后报 `No module named nyxuri`、更新后的部署被跳过：重启现在回到常驻入口 `launcher.sh`，不再自己拼 `python -m nyxuri`
 - `nyxuri deps apps` 菜单显示裸键名：补齐 `greeter` / `mango` / `wallpapers` / `shell-runtime` 分类缺失的双语词条，并新增目录↔词典反向校验堵住同类缺口
 - Niri 托管快捷键片段生成的 `spawn qs -c clavis …` 指向不存在的配置名：合成器快捷键统一经 `nyxuri-shell --ipc` 网关分发；layer-rule 命名空间与实际窗口对齐（overview 背景、shell 表面效果）

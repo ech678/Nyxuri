@@ -1005,3 +1005,84 @@ test_ai_specs 绿 + check.sh 绿（changed scope：whitespace/qml-format/
 shell-lint/qml-lint/lifecycle-audit 五步）+ `HOME=$(mktemp -d) python3 -m
 nyxuri test` 沙箱部署绿。运行零变化论证：零 manifest/entryPoint/SlotHost
 预热/引用改动，vendor/ 文件惰性，PluginRegistry/装载闭包不触及。
+
+## B 卷实施记录（追加式，2026-11-14，B8.1–B8.3）
+
+### B8.1 end4 样式基线整抄（待验收）
+
+**做法**：`cp references/end4-pC/modules/ii/bar/{BarGroup,BarContent}.qml` 覆盖
+目标文件后剪裁，不再手改融合体。
+
+**BarGroup**：保留 `resolvedGroupColor`（`Config.options.bar.groupColor` 桥）、
+`paintBackground`、`segmented`（1px 边框 + 圆角 0）、`isPanel`/`isMaterialHug`
+（cornerStyle 4/5）、每部件右键编辑与 `BarGroupStylePopup`。删除
+`followFrameColor`/`frameColor`（无 UI、常量 false）与频谱辅助
+`spectrumClip*`/`backgroundVisible`/`empty`（随背景频谱下架）。样式持久化改走
+`PersonalizationConfig.barWidgetStyles`（`normalizedBarWidgetStyles` 归一化，
+TOML 读写）；桥对象保持只读，不再持有可变 `widgetStyles`。
+
+**BarContent**：删除 iNiR 的 hostScale/hostGap/`centerHostX` 压缩链（NaN 温床）、
+DynamicIsland 左右卫星 Loader（岛已是 middle 部件）、BarContent 内重复的
+左右 pill 圆角（窗口层 `Bar.qml` 唯一持有）；`hyprland.general.gapsOut` →
+`bar.m3.gapsOut`，`Config.options.bar.layouts` → `bar.m3.layouts`；空 lane 宽度
+归零（无幻影 host）。保留 end4 三栏、material pill、`paintBackground`、
+`anchors.centerIn` 中段、滚动亮度/音量（改用 `BrightnessService`/`VolumeService`，
+原 `Brightness.stepBrightness`/`Audio.incrementVolume` 是不存在类型）。
+material 黑名单 = end4 原名单 + `island` + `rightSidebarButton`。背景频谱
+（`CavaProcess` + `SurfaceSpectrum`）按作者决定下架；`CavaProcess.qml` 仍被
+岛内 `Visualizer.qml` 使用，文件保留。
+
+**弹层依赖补齐**：`BarGroupStylePopup` 原先引用树内不存在的 `ConfigSlider`。
+按整抄补 `shell/ui/{ColorSelectionArray,ContentSubsectionLabel,DialogButton}.qml`，
+三个滑杆改用既有 `PreferenceSlider`（`onCommitted` 提交，避免每 tick 写盘）。
+
+**设置**：`GeneralBarPage` 增 Group color 五档；`PersonalizationConfig` 增
+`barGroupColorOptions`/`barWidgetStyles` 及 setter，读入归一化。
+
+### B8.2 部件池整抄（待验收）
+
+- `DateTime.qml`：iNiR 原件剪裁，`Config.options.time` → `UiPreferences`，
+  `Translation.locale` → `Qt.locale`，补 `longDate` 别名；供时钟/岛 idle/弹层。
+- `LauncherButton.qml`：end4 原件；按压改走 `ActionGateway.executeIntent({"target":"launcher"})`。
+  `ActionGateway.launcherHost` 由 `LauncherHost.qml` 注册/注销（同 islandHost 形态），
+  单元缺席时返回 false。
+- `PowerButton.qml`：对齐 end4（`contentColor`、`wrappedShape`、3||4 material）。
+- `SystemIcons.qml`：直接消费 `VolumeService`/`NetworkService`（`signalStrength`
+  派生 wifi 图标）/`BluetoothService`/`NotificationService`/`KeyboardLockService`，
+  不建 `Audio`/`Network`/… 转发单例（守「仅转发不留」门禁）。
+- 基件整抄：`BarWidgetSwitcher`、`BarWidgetSwitcherArea`、`ClippedProgressBar`、
+  `ClippedFilledCircularProgress`、`ClippedOutlineCircularProgress`、
+  `StyledProgressBar`、`ResourceCard` 落 `plugins/bar/`；`ResourceUsage`（iNiR
+  租约版）、`ResourceUsageMonitor` 落 `services/`。`clock`/`systemMonitor`/`battery`
+  回选装集，默认布局对齐 end4（launcher/workspaces/activeWindow + tray/quickSettings/
+  systemIcons/powerButton）。
+- `information` 删除：它是 iNiR 的 bar 样式名，不是部件；`getWidgetUrl` 回退成
+  `Information.qml` 导致默认左栏重复活动窗口与冷启动 file-not-found。
+- Config 桥补 `resources.historyLength/autoStopDelay/monitorGpu`；
+  `Appearance.animationsEnabled` 补 token（此前 5 处引用 undefined）。
+
+### B8.3 workspaces 真体（待验收）
+
+`cp references/iNiR/modules/ii/bar/Workspaces.qml` 后剪裁为 Niri-only：
+删 Hyprland monitor/分支/`HyprlandData`、`NiriService`（改 `CompositorDriver`）、
+`AppSearch`（改 `ApplicationService.iconSource`）、zzz/angel/aurora 皮肤分支、
+column 模式（无配置键选择、驱动无 column 焦点动词）；end4 视觉保留
+（占用态圆角拼接、当前指示器 `AnimatedTabIndexPair`、数字/`numberMap`、应用图标 +
+单色化叠加、dot/icon marker）。新增 `NiriDriver.workspaceList` 排序数组投影并经
+`CompositorDriver.workspaceList` 暴露（`workspaces` 仍是 ListModel）；配置直接绑定
+`Config.options.bar.m3.workspaces`，零 interval Timer（`Qt.callLater`）。
+
+**视觉补丁（同日验收）**：工作区默认值补齐 end4（`showAppIcons=false` /
+`alwaysShowNumbers=true` / `numberMap=[]`），默认渲染数字 + 当前工作区胶囊；
+三个键接入 `GeneralBarPage` 的 Workspaces 段并落 `[bar]` 持久化；
+`Media.qml` 的 `artRect` 补 `OpacityMask` 圆角遮罩，修复专辑封面方角。
+
+**验证**：`python3 -m unittest tests.shell.test_bar_end4 test_island_end4
+test_i18n_catalog test_shell_architecture test_settings_pages test_plugin_manifests
+test_qml_structure test_dashboard_catalogs`（214 通过）；`shell/scripts/dev/check.sh`
+绿（whitespace/qml-format/qml-lint/lifecycle-audit）。运行态：wrapper 冷启动
+（清 qmlcache）后 `--ipc bar toggle` 往返 `CLOSED/OPEN`、`--ipc island state` →
+`idle`，日志无 compiled empty / TypeError / ReferenceError。部件池另用独立
+`qs -p` 探针（`/tmp` 副本 + `QML_IMPORT_PATH=ui/shapes`、qmldir 补齐类型表）
+逐件装载 13 个部件，全部 `Loader.Ready` 并给出非负 `implicitWidth/Height`
+（BatteryIndicator 因桌面无电池为 0×0 属预期）。视觉过目与截图待作者。

@@ -5,7 +5,7 @@ Verifies:
   - No bare import qs statements in the promoted components
   - BarGroup.qml has trimmed dead paths (BarGroupStylePopup, widgetStyles) and manages child backgroundVisible
   - Divisor.qml supports rect/dot/space styles and connects to PersonalizationConfig
-  - BarComponentLoader.qml registers "divisor" and "island"
+  - BarContent.qml registers "divisor" and "island" in its widget URL map
   - DynamicIsland.qml wires isMaterial to PersonalizationConfig.barCornerStyle
   - PersonalizationConfig defines barCornerStyles, barBorderlessModes, barDividerStyles, and includes "divisor"
   - BarContent.qml implements 3-lane cornerStyle, centerOnly mode, and material pill wrapping
@@ -62,12 +62,25 @@ class BarEnd4ContractTest(unittest.TestCase):
 
     def test_bar_group_trims_and_bindings(self):
         content = read_bar_file("BarGroup.qml")
-        self.assertNotIn("BarGroupStylePopup", content, "BarGroup must not reference BarGroupStylePopup")
-        self.assertNotIn("widgetStyles", content, "BarGroup must not reference widgetStyles")
-        self.assertIn("backgroundVisible", content, "BarGroup must bind child backgroundVisible")
+        # B8.1: the group is a full end4 fork again — the per-widget style
+        # editor is wired, and persistence goes through PersonalizationConfig
+        # instead of the read-only Config bridge.
+        self.assertIn("BarGroupStylePopup", content, "BarGroup must wire the right-click style editor")
+        self.assertIn("PersonalizationConfig.setBarWidgetStyle", content, "widget styles must persist via PersonalizationConfig")
+        self.assertIn("resolvedGroupColor", content, "BarGroup must consume bar.groupColor")
+        self.assertIn("paintBackground", content, "BarGroup must honour paintBackground")
+        self.assertIn("isSegmented", content, "BarGroup must implement segmented borders")
         self.assertIn("isMaterial", content)
         self.assertIn("startRadius", content)
         self.assertIn("endRadius", content)
+
+    def test_bar_content_centered_lanes(self):
+        content = read_bar_file("BarContent.qml")
+        self.assertIn("anchors.centerIn: parent", content, "middle lane must be anchored to the optical centre")
+        self.assertNotIn("hostScale", content, "the iNiR compression clamp is retired (NaN source)")
+        self.assertNotIn("centerHostX", content, "the iNiR compression clamp is retired (NaN source)")
+        self.assertIn('"island"', content, "island must be in the material-pill blacklist")
+        self.assertIn("bar.m3.layouts", content)
 
     def test_divisor_contracts(self):
         content = read_bar_file("Divisor.qml")
@@ -93,10 +106,13 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("barBorderless", content)
         self.assertIn("barDividerStyles", content)
         self.assertIn("barDividerStyle", content)
+        self.assertIn("barGroupColorOptions", content)
+        self.assertIn("barWidgetStyles", content)
         self.assertIn('"divisor"', content)
         self.assertIn("setBarCornerStyle", content)
         self.assertIn("setBarBorderless", content)
         self.assertIn("setBarDividerStyle", content)
+        self.assertIn("setBarWidgetStyle", content)
 
     def test_bar_content_contracts(self):
         content = read_bar_file("BarContent.qml")

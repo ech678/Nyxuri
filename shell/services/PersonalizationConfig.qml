@@ -368,6 +368,32 @@ Singleton {
     ]
     property string barBorderless: "pills"
     property string barGroupColor: "layer1"
+    readonly property var barGroupColorOptions: [
+        {
+            "value": "primaryContainer",
+            "label": I18n.tr("Primary container")
+        },
+        {
+            "value": "secondaryContainer",
+            "label": I18n.tr("Secondary container")
+        },
+        {
+            "value": "tertiaryContainer",
+            "label": I18n.tr("Tertiary container")
+        },
+        {
+            "value": "layer1",
+            "label": I18n.tr("Surface layer")
+        },
+        {
+            "value": "layer0",
+            "label": I18n.tr("Background")
+        }
+    ]
+    // Per-widget background/border overrides from the bar's right-click style
+    // editor. Shape: { mode, widget, color?, borderColor?, radius?,
+    // borderWidth?, padding? } — normalized on load, saved with the bar block.
+    property var barWidgetStyles: []
     readonly property var barDividerStyles: [
         {
             value: "rect",
@@ -383,14 +409,28 @@ Singleton {
         }
     ]
     property string barDividerStyle: "rect"
-    // Only ids the bar can actually render. `clock`, `systemMonitor` and the
-    // battery indicator are parked until their upstream base widgets
-    // (BarWidgetSwitcher / ClippedProgressBar / ResourceUsage) exist in the
-    // reference tree; keeping them listed produced a selectable component that
-    // compiled empty. Re-add them together with the base widgets, not before.
-    readonly property var barComponentIds: ["workspaces", "information", "activeWindow", "media", "tray", "quickSettings", "island", "divisor"]
-    readonly property var defaultBarLeadingComponents: ["workspaces", "information", "activeWindow"]
-    readonly property var defaultBarTrailingComponents: ["tray", "quickSettings"]
+    // Workspace indicator shape (B8.3 parity with end4): numbers by default,
+    // optional app icons, dot/icon marker when neither is shown.
+    property bool barShowAppIcons: false
+    property bool barAlwaysShowNumbers: true
+    readonly property var barWorkspaceIndicatorStyles: [
+        {
+            value: "dot",
+            label: I18n.tr("Dot")
+        },
+        {
+            value: "icon",
+            label: I18n.tr("Icon")
+        }
+    ]
+    property string barWorkspaceIndicatorStyle: "dot"
+    // Only ids the bar can actually render. `information` was never a widget
+    // (it was an iNiR bar style name) and mapped to a missing Information.qml.
+    // B8.2 re-added the end4 base widgets (BarWidgetSwitcher/ClippedProgressBar/
+    // ResourceUsage), so clock / systemMonitor / battery are selectable again.
+    readonly property var barComponentIds: ["workspaces", "activeWindow", "media", "tray", "quickSettings", "island", "divisor", "clock", "systemMonitor", "battery", "systemIcons", "launcherButton", "powerButton"]
+    readonly property var defaultBarLeadingComponents: ["launcherButton", "workspaces", "activeWindow"]
+    readonly property var defaultBarTrailingComponents: ["tray", "quickSettings", "systemIcons", "powerButton"]
     readonly property var barComponentOptions: [({
                 "value": "media",
                 "label": I18n.tr("Media"),
@@ -399,10 +439,6 @@ Singleton {
                 "value": "workspaces",
                 "label": I18n.tr("Workspaces"),
                 "icon": "grid_view"
-            }), ({
-                "value": "information",
-                "label": I18n.tr("Information"),
-                "icon": "info"
             }), ({
                 "value": "activeWindow",
                 "label": I18n.tr("Active Window"),
@@ -419,6 +455,30 @@ Singleton {
                 "value": "divisor",
                 "label": I18n.tr("Divider"),
                 "icon": "more_vert"
+            }), ({
+                "value": "clock",
+                "label": I18n.tr("Clock"),
+                "icon": "schedule"
+            }), ({
+                "value": "systemMonitor",
+                "label": I18n.tr("System Monitor"),
+                "icon": "monitoring"
+            }), ({
+                "value": "battery",
+                "label": I18n.tr("Battery"),
+                "icon": "battery_full"
+            }), ({
+                "value": "systemIcons",
+                "label": I18n.tr("System Icons"),
+                "icon": "volume_up"
+            }), ({
+                "value": "launcherButton",
+                "label": I18n.tr("Launcher"),
+                "icon": "search"
+            }), ({
+                "value": "powerButton",
+                "label": I18n.tr("Power"),
+                "icon": "power_settings_new"
             })]
     readonly property var quickSettingsComponentIds: ["network", "bluetooth", "brightness", "volume", "microphone", "battery", "settings", "power"]
     readonly property var defaultQuickSettingsComponents: root.quickSettingsComponentIds.slice()
@@ -466,10 +526,10 @@ Singleton {
     // mirror the leading/trailing model but let the user place widgets freely
     // across three lanes. An empty array means "show nothing in that lane", so
     // fresh configs fall back to a sensible default instead of a blank bar.
-    readonly property var defaultBarLayoutLeft: ["workspaces", "information", "activeWindow"]
+    readonly property var defaultBarLayoutLeft: ["launcherButton", "workspaces", "activeWindow"]
     // B3-1: the island is a first-class middle widget, not a reserved gap.
     readonly property var defaultBarLayoutMiddle: ["island"]
-    readonly property var defaultBarLayoutRight: ["tray", "quickSettings"]
+    readonly property var defaultBarLayoutRight: ["tray", "quickSettings", "systemIcons", "powerButton"]
     property var barLayoutLeft: root.defaultBarLayoutLeft.slice()
     property var barLayoutMiddle: root.defaultBarLayoutMiddle.slice()
     property var barLayoutRight: root.defaultBarLayoutRight.slice()
@@ -542,7 +602,6 @@ Singleton {
     function setIslandHoverCloseDelay(value) {
         setValue("islandHoverCloseDelay", normalizedBoundedInt(value, 250, 0, 600));
     }
-
 
     readonly property var islandActionOptions: [
         {
@@ -1402,7 +1461,86 @@ Singleton {
     }
 
     function setBarGroupColor(value) {
-        setValue("barGroupColor", typeof value === "string" ? value : "layer1");
+        setValue("barGroupColor", normalizedOption(root.barGroupColorOptions, value, "layer1"));
+    }
+
+    function setBarShowAppIcons(value) {
+        setValue("barShowAppIcons", !!value);
+    }
+
+    function setBarAlwaysShowNumbers(value) {
+        setValue("barAlwaysShowNumbers", !!value);
+    }
+
+    function setBarWorkspaceIndicatorStyle(value) {
+        setValue("barWorkspaceIndicatorStyle", normalizedOption(root.barWorkspaceIndicatorStyles, value, "dot"));
+    }
+
+    // Right-click style editor (BarGroupStylePopup) persistence. One entry per
+    // (borderless mode, widget) pair, matching end4's `bar.widgetStyles` shape,
+    // but owned here so the config store stays the single writer.
+    function barWidgetStyleEntry(mode, widget) {
+        if (!mode || !widget)
+            return undefined;
+        return (root.barWidgetStyles ?? []).find(entry => entry.mode === mode && entry.widget === widget);
+    }
+
+    function normalizedBarWidgetStyles(raw) {
+        if (!Array.isArray(raw))
+            return [];
+        const modes = root.barBorderlessModes.map(option => option.value);
+        const numericKeys = ["radius", "borderWidth", "padding"];
+        const stringKeys = ["color", "borderColor"];
+        const result = [];
+        for (const candidate of raw) {
+            if (!candidate || typeof candidate !== "object")
+                continue;
+            const mode = String(candidate.mode ?? "");
+            const widget = String(candidate.widget ?? "");
+            if (!modes.includes(mode) || widget === "")
+                continue;
+            const entry = {
+                mode: mode,
+                widget: widget
+            };
+            for (const key of numericKeys) {
+                const value = candidate[key];
+                if (typeof value === "number" && isFinite(value) && value >= 0)
+                    entry[key] = value;
+            }
+            for (const key of stringKeys) {
+                const value = candidate[key];
+                if (typeof value === "string" && value !== "")
+                    entry[key] = value;
+            }
+            result.push(entry);
+        }
+        return result;
+    }
+
+    function setBarWidgetStyle(mode, widget, key, value) {
+        if (!mode || !widget)
+            return;
+        const styles = (root.barWidgetStyles ?? []).map(entry => Object.assign({}, entry));
+        let entry = styles.find(candidate => candidate.mode === mode && candidate.widget === widget);
+        if (!entry) {
+            entry = {
+                mode: mode,
+                widget: widget
+            };
+            styles.push(entry);
+        }
+        if (value === undefined || value === "")
+            delete entry[key];
+        else
+            entry[key] = value;
+        setValue("barWidgetStyles", styles.filter(candidate => Object.keys(candidate).length > 2));
+    }
+
+    function resetBarWidgetStyle(mode, widget) {
+        if (!mode || !widget)
+            return;
+        setValue("barWidgetStyles", (root.barWidgetStyles ?? []).filter(entry => !(entry.mode === mode && entry.widget === widget)));
     }
 
     function setBarDividerStyle(value) {
@@ -1433,9 +1571,12 @@ Singleton {
     }
 
     function barZoneComponents(zone) {
-        if (zone === "left" || zone === "leading") return root.barLayoutLeft;
-        if (zone === "middle" || zone === "center") return root.barLayoutMiddle;
-        if (zone === "right" || zone === "trailing") return root.barLayoutRight;
+        if (zone === "left" || zone === "leading")
+            return root.barLayoutLeft;
+        if (zone === "middle" || zone === "center")
+            return root.barLayoutMiddle;
+        if (zone === "right" || zone === "trailing")
+            return root.barLayoutRight;
         return [];
     }
 
@@ -1448,8 +1589,7 @@ Singleton {
         const middle = root.barLayoutMiddle.filter(value => value !== id);
         const trailing = root.barLayoutRight.filter(value => value !== id);
 
-        const target = (targetZone === "middle" || targetZone === "center") ? middle
-            : (targetZone === "right" || targetZone === "trailing") ? trailing : leading;
+        const target = (targetZone === "middle" || targetZone === "center") ? middle : (targetZone === "right" || targetZone === "trailing") ? trailing : leading;
 
         const numericIndex = Number(targetIndex);
         const insertionIndex = isFinite(numericIndex) ? Math.max(0, Math.min(target.length, Math.round(numericIndex))) : target.length;
@@ -1484,8 +1624,7 @@ Singleton {
     }
 
     function toggleBarComponent(componentId, zone) {
-        const target = (zone === "middle" || zone === "center") ? root.barLayoutMiddle
-            : (zone === "right" || zone === "trailing") ? root.barLayoutRight : root.barLayoutLeft;
+        const target = (zone === "middle" || zone === "center") ? root.barLayoutMiddle : (zone === "right" || zone === "trailing") ? root.barLayoutRight : root.barLayoutLeft;
 
         if (target.indexOf(componentId) !== -1)
             return root.removeBarComponent(componentId);
@@ -1559,7 +1698,7 @@ Singleton {
             root.barLeadingComponents = nextLeft.slice();
             const combinedTrailing = [];
             nextMiddle.forEach(id => {
-                if (id !== "clock" && combinedTrailing.indexOf(id) === -1 && nextLeft.indexOf(id) === -1)
+                if (combinedTrailing.indexOf(id) === -1 && nextLeft.indexOf(id) === -1)
                     combinedTrailing.push(id);
             });
             nextRight.forEach(id => {
@@ -1853,7 +1992,11 @@ Singleton {
                 "cornerStyle": root.barCornerStyle,
                 "borderless": root.barBorderless,
                 "groupColor": root.barGroupColor,
+                "widgetStyles": root.barWidgetStyles.map(entry => Object.assign({}, entry)),
                 "dividerStyle": root.barDividerStyle,
+                "showAppIcons": root.barShowAppIcons,
+                "alwaysShowNumbers": root.barAlwaysShowNumbers,
+                "workspaceIndicatorStyle": root.barWorkspaceIndicatorStyle,
                 "showValues": root.barShowValues,
                 "showNames": root.barShowNames,
                 "barLeadingComponents": root.barLeadingComponents.slice(),
@@ -1989,11 +2132,13 @@ Singleton {
         root.barPosition = normalizedEdgePosition(bar.position);
         root.barCornerStyle = root.normalizedBoundedInt(bar.cornerStyle, 1, 0, 5);
         root.barBorderless = root.normalizedOption(root.barBorderlessModes, bar.borderless, "pills");
-        root.barGroupColor = typeof bar.groupColor === "string" ? bar.groupColor : "layer1";
+        root.barGroupColor = normalizedOption(root.barGroupColorOptions, bar.groupColor, "layer1");
+        root.barWidgetStyles = root.normalizedBarWidgetStyles(bar.widgetStyles);
         root.barDividerStyle = root.normalizedOption(root.barDividerStyles, bar.dividerStyle, "rect");
-        root.barThickness = typeof bar.barThickness === "number"
-            ? Math.max(28, Math.min(64, Math.round(bar.barThickness)))
-            : root.defaultBarThickness;
+        root.barShowAppIcons = typeof bar.showAppIcons === "boolean" ? bar.showAppIcons : false;
+        root.barAlwaysShowNumbers = typeof bar.alwaysShowNumbers === "boolean" ? bar.alwaysShowNumbers : true;
+        root.barWorkspaceIndicatorStyle = normalizedOption(root.barWorkspaceIndicatorStyles, bar.workspaceIndicatorStyle, "dot");
+        root.barThickness = typeof bar.barThickness === "number" ? Math.max(28, Math.min(64, Math.round(bar.barThickness))) : root.defaultBarThickness;
         const hasBarLayout = Array.isArray(bar.barLeadingComponents) || Array.isArray(bar.barTrailingComponents);
         const barLayout = root.normalizedBarLayout(bar.barLeadingComponents, bar.barTrailingComponents, !hasBarLayout);
         root.barLeadingComponents = barLayout.leading;
@@ -2007,7 +2152,7 @@ Singleton {
         const islandMigrated = island.islandLayoutMigrated === true;
         if (hasBarLayouts) {
             root.barLayoutLeft = root.normalizedBarLayoutIds(bar.barLayoutLeft);
-            root.barLayoutMiddle = root.normalizedBarLayoutIds(bar.barLayoutMiddle).filter(id => id !== "clock");
+            root.barLayoutMiddle = root.normalizedBarLayoutIds(bar.barLayoutMiddle);
             root.barLayoutRight = root.normalizedBarLayoutIds(bar.barLayoutRight);
             if (!islandMigrated && root.barLayoutMiddle.length === 0) {
                 root.barLayoutMiddle = ["island"];
@@ -2015,14 +2160,6 @@ Singleton {
             if (!root.arraysEqual(root.barLeadingComponents, root.barLayoutLeft) && hasBarLayout) {
                 root.barLayoutLeft = root.normalizedBarLayoutIds(root.barLeadingComponents);
                 root.barLayoutRight = root.normalizedBarLayoutIds(root.barTrailingComponents);
-            }
-            if (root.barLayoutLeft.indexOf("information") < 0 && root.barLayoutMiddle.indexOf("information") < 0 && root.barLayoutRight.indexOf("information") < 0) {
-                const wsIndex = root.barLayoutLeft.indexOf("workspaces");
-                if (wsIndex >= 0) {
-                    root.barLayoutLeft.splice(wsIndex + 1, 0, "information");
-                } else {
-                    root.barLayoutLeft.unshift("information");
-                }
             }
         } else {
             // Legacy configs only had leading/trailing zones; map them 1:1 so an
@@ -2043,7 +2180,6 @@ Singleton {
             root.islandStyleMigrated = true;
         if (typeof island.islandLayoutMigrated !== "boolean")
             root.islandLayoutMigrated = true;
-        root.barTrailingComponents = root.barTrailingComponents.filter(id => id !== "clock");
         root.quickSettingsComponents = root.normalizedQuickSettingsComponents(bar.quickSettingsComponents);
         root.keepSidebarsLoaded = sidebar.keepLoaded === undefined ? true : !!sidebar.keepLoaded;
         root.sidebarPositions = SidebarPolicy.restoredPositions(sidebar);

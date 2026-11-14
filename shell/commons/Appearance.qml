@@ -19,6 +19,10 @@ Singleton {
     property QtObject m3colors
     property QtObject animationCurves
     property QtObject animation
+    // Motion switch for components that guard Behavior blocks. Kept as a
+    // token so a future "reduce motion" preference has one owner; always on
+    // today (the end4 bar/members sweep read this name).
+    readonly property bool animationsEnabled: true
     property QtObject colors
     property QtObject rounding
     property QtObject spacing
@@ -261,6 +265,7 @@ Singleton {
 
     rounding: QtObject {
         property int extraSmall: 4
+        property int unsharpen: 2
         property int unsharpenmore: 10
         property int small: 12
         property int medium: 16
