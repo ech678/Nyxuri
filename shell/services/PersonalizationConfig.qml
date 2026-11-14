@@ -383,9 +383,14 @@ Singleton {
         }
     ]
     property string barDividerStyle: "rect"
-    readonly property var barComponentIds: ["workspaces", "information", "activeWindow", "media", "tray", "systemMonitor", "quickSettings", "clock", "island", "divisor"]
+    // Only ids the bar can actually render. `clock`, `systemMonitor` and the
+    // battery indicator are parked until their upstream base widgets
+    // (BarWidgetSwitcher / ClippedProgressBar / ResourceUsage) exist in the
+    // reference tree; keeping them listed produced a selectable component that
+    // compiled empty. Re-add them together with the base widgets, not before.
+    readonly property var barComponentIds: ["workspaces", "information", "activeWindow", "media", "tray", "quickSettings", "island", "divisor"]
     readonly property var defaultBarLeadingComponents: ["workspaces", "information", "activeWindow"]
-    readonly property var defaultBarTrailingComponents: ["tray", "systemMonitor", "quickSettings"]
+    readonly property var defaultBarTrailingComponents: ["tray", "quickSettings"]
     readonly property var barComponentOptions: [({
                 "value": "media",
                 "label": I18n.tr("Media"),
@@ -406,10 +411,6 @@ Singleton {
                 "value": "tray",
                 "label": I18n.tr("Tray"),
                 "icon": "inbox"
-            }), ({
-                "value": "systemMonitor",
-                "label": I18n.tr("System Monitor"),
-                "icon": "monitoring"
             }), ({
                 "value": "quickSettings",
                 "label": I18n.tr("Quick Settings"),
@@ -468,7 +469,7 @@ Singleton {
     readonly property var defaultBarLayoutLeft: ["workspaces", "information", "activeWindow"]
     // B3-1: the island is a first-class middle widget, not a reserved gap.
     readonly property var defaultBarLayoutMiddle: ["island"]
-    readonly property var defaultBarLayoutRight: ["tray", "systemMonitor", "quickSettings"]
+    readonly property var defaultBarLayoutRight: ["tray", "quickSettings"]
     property var barLayoutLeft: root.defaultBarLayoutLeft.slice()
     property var barLayoutMiddle: root.defaultBarLayoutMiddle.slice()
     property var barLayoutRight: root.defaultBarLayoutRight.slice()

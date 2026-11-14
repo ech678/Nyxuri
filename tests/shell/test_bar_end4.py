@@ -121,7 +121,8 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("function close(): string", content)
         self.assertIn('target: "island"', content)
         self.assertIn("function state(): string", content)
-        self.assertIn("function stopRecording(): string", content)
+        # Recording is parked; the IPC face must not promise it.
+        self.assertNotIn("stopRecording", content)
 
 
 if __name__ == "__main__":

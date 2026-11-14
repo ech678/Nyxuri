@@ -101,7 +101,7 @@ Item {
     // Keep the same From bar contract as the stock/vertical bar. M3 owns the
     // anchor and chrome; BarMediaPopup remains the canonical player content.
     Loader {
-        active: root.barMediaPopupVisible && root.popupMode === "bar" && CompositorService.isNiri
+        active: root.barMediaPopupVisible && root.popupMode === "bar" && CompositorDriver.available
         sourceComponent: PanelWindow {
             anchors { top: true; bottom: true; left: true; right: true }
             color: "transparent"

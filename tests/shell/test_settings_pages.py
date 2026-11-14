@@ -89,7 +89,6 @@ ANCHOR_IDS = {
         "bar.island.section.keyboard-indicators",
         "bar.island.section.keyhole",
         "bar.island.section.horizontal-clock",
-        "bar.island.section.recording",
     ),
     "HorizontalClockPage.qml": (
         "bar.island-clock.section.horizontal-clock-style",
@@ -845,7 +844,6 @@ class TestIslandPageRebuild(unittest.TestCase):
         self.assertIn("isSubPage: true", source)
         self.assertIn("onBackRequested: root.backRequested()", source)
         self.assertIn("function closeChildWindows()", source)
-        self.assertIn("directoryPicker.dismiss()", source)
 
     def test_overview_is_a_nexus_page(self):
         source = _read("IslandPage.qml")
@@ -866,12 +864,13 @@ class TestIslandPageRebuild(unittest.TestCase):
         self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 9,
                          "nine select rows must register the popup input region")
 
-    def test_drag_fields_and_directory_pickers_survive(self):
+    def test_recording_surface_is_parked(self):
+        """Timer/Recording are parked until their services exist. The page must
+        not advertise a recording directory UI that nothing consumes."""
         source = _read("IslandPage.qml")
-        self.assertIn("FilePickerWindow {", source)
-        self.assertIn("openDirectoryPicker(", source)
-        self.assertIn("UiPreferences.setRecordingDirectory(", source)
-        self.assertIn("RecordingDirectoryField", source)
+        self.assertNotIn("FilePickerWindow {", source)
+        self.assertNotIn("RecordingDirectoryField", source)
+        self.assertNotIn("bar.island.section.recording", source)
 
     def test_subpage_chrome_moves_into_the_subpage(self):
         source = _read("IslandPage.qml")

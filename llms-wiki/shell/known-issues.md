@@ -6,13 +6,53 @@
 
 ## 未修复 BUG
 
-- [ ] （待登记：症状一句话 + 复现路径 + 发现日期）
+- [ ] **Bar 工作区/活动窗口未真整抄**（2026-11-14 审计）：`Workspaces.qml`（88 行）
+  与 `ActiveWindow.qml`（81 行）是自研缩水，不是 `references/iNiR/modules/ii/bar/`
+  的 876 行原件；`barM3/` 里只有转发门面。`NetworkSpeed*` 同类。复现：看工作区仍是
+  旧圆点样式，无应用图标/数字/indicatorStyle。
+- [ ] **岛设置大半是空承诺**（2026-11-14 审计）：`islandStyle`/`islandOverlay`/
+  `islandPosition`/`islandHoverAction`/`islandLeftClickAction`/`islandMiddleClickAction`/
+  `islandMedia*Style`/`islandKeyholeCard`/`islandCapsLockOsd`/`islandNumLockOsd` 全库
+  **零运行时消费者**，只有 `islandHideDate` 生效。`BarGroupStylePopup.qml` 零消费者
+  （D5 右键就地调色未接线）。
+- [ ] **cornerStyle 6 选 4 落空**：设置提供 Hug/Floating/Plain/Material/Material hug/
+  Panel，实现只覆盖 0–3；4/5 落入非 material 分支。`isMaterial` 判定也不一致
+  （`BarGroup` 只认 3，`DynamicIsland` 认 3/4）。
+- [ ] **选装集缺口**：`barComponentOptions` 无 `island`/`clock`，中段纯岛形态只能在
+  配置里手写 `["island"]`；`clock` 已于 2026-11-14 从 `barComponentIds` 移除。
+- [ ] **下架件与孤儿**：`Resources`/`ClockWidget`/`BatteryIndicator`（缺
+  `BarWidgetSwitcher*`/`ClippedProgressBar`/`ResourceUsage`，上游参考树里也没有）
+  以及一批依赖 iNiR 单例名的部件——清单与恢复条件见
+  [shell/plugins/bar/PARKED.md](../../shell/plugins/bar/PARKED.md)。
 
 ## 基础设施缺口（快速上线时跳过，回来先做这些）
 
+- [ ] **Bar/Island 无运行态测试**（2026-11-14）：`tests/shell/test_bar_end4.py`、
+  `test_island_end4.py` 全是 `assertIn("leftMaterialPill", source)` 这类字符串断言；
+  432 项全绿也拦不住布局 NaN 与 compiled empty。修法：`qs -p <fixture>` 逐件装载
+  断言 `Loader.Ready` + 布局求值数值，纳入 shell 测试。
 - [ ] **TUI 未接入**：`menus.py` 无 shell 切换菜单，`translations.toml` 无桌面外壳词条；目前只有 CLI `nyxuri shell` 一条路
 
 ## 已修复
+
+- [x] **Bar 中段贴左重叠、部件挤在一起**（2026-11-14）：`Appearance.fontSizeScale`
+  未桥接，`hostGap = 6 * undefined → NaN` 污染 `minimumCenterX/maximumCenterX`，
+  `centerHostX` 变 NaN 后 `absoluteCenter.x` 落到 0。补 `fontSizeScale=1` + 几何链
+  `Number.isFinite` 兜底，空 lane 不再计入 host/gap，压缩态不再把中段钉到最左。
+  实机探针复核：2560 屏、259 宽中段 → `centerX=1150.5`（正中）。
+- [x] **Style 下拉当前值显示成数字**（2026-11-14）：`SplitMenuButton.currentValue`
+  声明为 `string`，整型 3 被转成 `"3"`，与数字 model 值严格比较失败后回落到原值。
+  改为非类型化属性 + `String()` 归一比较，菜单勾选态同修。
+- [x] **Bar 动画每帧报 createObject of undefined**（2026-11-14）：iNiR 的
+  `animation.elementMove*.colorAnimation/numberAnimation` 是 Component 工厂，
+  Nyxuri 只留了 duration/type/curve。补齐工厂与 `elementMove`/`elementMoveEnter`
+  别名。
+- [x] **Divisor/Media/Notification 刷 TypeError**（2026-11-14）：Config 桥缺
+  `bar.m3.divider`/`resources`/`indicators`/`verbose`/`clock`，补齐；`CompositorService`
+  正名 `CompositorDriver`，删除 `SysTrayMenuEntry` 里不存在的 `buttonColor` 赋值。
+- [x] **Timer/Recording 岛面空转**（2026-11-14，按作者决定下架）：provider、
+  内联组件、`island stopRecording` IPC、`IslandPage` 录制目录 UI + `FilePickerWindow`、
+  manifest 路由与 i18n 词条一并移除；`DiTimers.qml` 留文件待接 `TimerService`。
 
 - [x] **key-cli 依赖彻底废弃与清理**（2026-11-07）：确认并执行纯减法，废弃外部
   AUR 包 key-cli；清理控制面探活诊断与面向用户的安装提示，宿主机卸载后 Shell 各单元

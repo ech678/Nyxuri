@@ -27,7 +27,6 @@ Item {
     property bool mediaTrackInfoVisible: mediaHoverHandler.hovered || mediaTrackChangeTimer.running
     readonly property real mediaExpandedWidth: Math.min(root.mediaExpandedWidthCap, root.mediaTextContentWidth)
     readonly property real mediaWidth: root.mediaTrackInfoVisible ? root.mediaExpandedWidth : root.mediaCollapsedWidth
-    readonly property real timerWidth: 130
     readonly property real osdWidth: 132
     readonly property real notificationWidth: 220
     readonly property real batteryWidth: 170
@@ -77,8 +76,10 @@ Item {
         } else if (method === "close") {
             root.forceIdle = true;
             return true;
+        } else if (method === "state") {
+            return root.activeContentId;
         }
-        return true;
+        return "UNKNOWN_METHOD";
     }
 
     readonly property var activePlayer: MediaService.primaryPlayer ?? null
@@ -87,59 +88,6 @@ Item {
     readonly property var latestNotification: NotificationService.popupList.length > 0
         ? NotificationService.popupList[NotificationService.popupList.length - 1]
         : null
-    readonly property bool isRecording: false
-    property int recordingElapsedSeconds: 0
-
-    function stopRecording() {
-        if (typeof AudioRecordingService !== "undefined" && AudioRecordingService?.isRecording)
-            AudioRecordingService.stop();
-        else if (typeof RecordingService !== "undefined" && RecordingService?.stop)
-            RecordingService.stop();
-    }
-
-    // Service bindings
-    readonly property var _recordingService: typeof RecordingService !== "undefined" ? RecordingService : null
-    readonly property var _audioRecordingService: typeof AudioRecordingService !== "undefined" ? AudioRecordingService : null
-    readonly property var _volumeService: typeof VolumeService !== "undefined" ? VolumeService : null
-    readonly property var _brightnessService: typeof BrightnessService !== "undefined" ? BrightnessService : null
-    readonly property var _keyboardLockService: typeof KeyboardLockService !== "undefined" ? KeyboardLockService : null
-
-    onIsRecordingChanged: {
-        if (!isRecording) recordingElapsedSeconds = 0
-    }
-
-    function formatRecordingTime(s) {
-        return Math.floor(s / 60).toString().padStart(2, '0') + ":" + (s % 60).toString().padStart(2, '0')
-    }
-
-    Timer {
-        interval: 1000
-        repeat: true
-        running: root.isRecording
-        onTriggered: root.recordingElapsedSeconds++
-    }
-
-    property string engagedTimerKind: ""
-    readonly property bool hasActiveTimer: false
-
-    function timerIcon() {
-        return "timer";
-    }
-
-    function timerValueText() {
-        return "00:00";
-    }
-
-    function timerRunning() {
-        return false;
-    }
-
-    function toggleActiveTimer() {
-    }
-
-    function resetActiveTimer() {
-        root.engagedTimerKind = "";
-    }
 
     property bool batteryAlertActive: false
     property string batteryAlertKind: "" 
@@ -210,8 +158,6 @@ Item {
     readonly property var contentProviders: [
         { id: "notification", active: root.latestNotification !== null, component: notificationComponent, width: root.notificationWidth },
         { id: "battery",      active: root.batteryAlertActive,          component: batteryComponent,      width: root.batteryWidth },
-        { id: "recording",    active: root.isRecording,                 component: recordingComponent,    width: root.recordingWidth },
-        { id: "timer",        active: root.hasActiveTimer,              component: timerComponent,        width: root.timerWidth },
         { id: "osd",          active: GlobalStates.osdVolumeOpen,       component: osdComponent,          width: root.osdWidth },
         { id: "media",        active: root.hasMedia,                    component: mediaComponent,        width: root.mediaWidth },
         { id: "session",      active: GlobalStates.diSessionOpen,       component: sessionComponent,      width: root.sessionWidth },
@@ -239,8 +185,6 @@ Item {
     function iconForProviderId(id) {
         switch (id) {
             case "media":     return "music_note"
-            case "recording": return "screen_record"
-            case "timer":     return root.timerIcon()
             case "battery":   return root.batteryIcon()
             case "osd":
                 switch (GlobalStates.osdIndicatorType) {
@@ -346,56 +290,8 @@ Item {
         }
 
         Component {
-            id: timerComponent
-            DiTimers { di: root }
-        }
-
-        Component {
             id: sessionComponent
             DiSession { di: root }
-        }
-
-        Component {
-            id: recordingComponent
-            RowLayout {
-                anchors {
-                    fill: parent
-                    leftMargin: root.isMaterial ? 4 : 8
-                    rightMargin: 10
-                }
-                spacing: 6
-
-                Item {
-                    id: stopButton
-                    Layout.alignment: Qt.AlignVCenter
-                    implicitWidth: 16
-                    implicitHeight: 16
-
-                    MaterialSymbol {
-                        anchors.fill: parent
-                        text: "stop_circle"
-                        fill: 1
-                        iconSize: root.isMaterial ? 26 : 16
-                        color: Appearance.colors.colError
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.stopRecording()
-                    }
-                }
-
-                Item { Layout.fillWidth: true }
-
-                StyledText {
-                    Layout.alignment: Qt.AlignVCenter
-                    text: root.formatRecordingTime(root.recordingElapsedSeconds)
-                    font.pixelSize: Appearance.font.pixelSize.small
-                    font.features: { "tnum": 1 }
-                    color: Appearance.colors.colOnLayer0
-                }
-            }
         }
 
         Component {

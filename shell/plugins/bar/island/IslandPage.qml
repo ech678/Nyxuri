@@ -54,25 +54,6 @@ Item {
         SettingsSearch.retrySearch();
     }
     property string currentSection: "overview"
-    property string editingDirectoryKey: ""
-    property var editingDirectoryField: null
-
-    function directoryValue(key) {
-        return String(UiPreferences[key] || "");
-    }
-
-    function saveDirectory(key, value, field) {
-        UiPreferences.setRecordingDirectory(key, value);
-        if (field)
-            field.text = root.directoryValue(key);
-    }
-
-    function openDirectoryPicker(key, field) {
-        root.saveDirectory(key, field.text, field);
-        root.editingDirectoryKey = key;
-        root.editingDirectoryField = field;
-        directoryPicker.openAt(root.directoryValue(key));
-    }
 
     function openSection(section) {
         root.currentSection = String(section || "overview");
@@ -84,7 +65,6 @@ Item {
 
     function closeChildWindows() {
         root.showOverview();
-        directoryPicker.dismiss();
     }
 
     NexusPageBase {
@@ -344,61 +324,6 @@ Item {
                     subtext: I18n.tr("Font, digit positions, and colors")
                     onClicked: root.openSection("island-clock")
                 }
-
-                // Recording
-                PreferenceHeader {
-                    text: I18n.tr("Recording")
-                }
-
-                ConnectedRect {
-                    id: recordingCard
-
-                    first: true
-                    last: true
-                    Layout.fillWidth: true
-                    implicitHeight: recordingColumn.implicitHeight + NexusStyle.padding.medium * 2
-
-                    ColumnLayout {
-                        id: recordingColumn
-
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.leftMargin: NexusStyle.padding.largeIncreased
-                        anchors.rightMargin: NexusStyle.padding.largeIncreased
-                        spacing: NexusStyle.padding.medium
-
-                        RecordingDirectoryField {
-                            settingTitle: I18n.tr("Video recording")
-                            settingKey: "recordingVideoDirectory"
-                            value: UiPreferences.recordingVideoDirectory
-                        }
-
-                        RecordingDirectoryField {
-                            settingTitle: I18n.tr("GIF recording")
-                            settingKey: "recordingGifDirectory"
-                            value: UiPreferences.recordingGifDirectory
-                        }
-
-                        RecordingDirectoryField {
-                            settingTitle: I18n.tr("Microphone recording")
-                            settingKey: "recordingMicrophoneDirectory"
-                            value: UiPreferences.recordingMicrophoneDirectory
-                        }
-
-                        RecordingDirectoryField {
-                            settingTitle: I18n.tr("System audio recording")
-                            settingKey: "recordingSystemAudioDirectory"
-                            value: UiPreferences.recordingSystemAudioDirectory
-                        }
-                    }
-
-                    SettingsSearchAnchor {
-                        id: searchAnchor3
-                        target: recordingCard
-                        anchorId: "bar.island.section.recording"
-                    }
-                }
             }
         }
     }
@@ -419,76 +344,6 @@ Item {
         source: {
             const route = SpotlightCatalog.route("bar." + root.currentSection);
             return route && route.sourceUrl ? route.sourceUrl : "";
-        }
-    }
-
-    FilePickerWindow {
-        id: directoryPicker
-
-        parentModal: root.parentModal
-        requiresParentWindow: true
-        selectionMode: FilePickerWindow.Folders
-        allowCurrentFolderSelection: true
-        dialogTitle: I18n.tr("Save location")
-        description: root.editingDirectoryField ? root.editingDirectoryField.settingTitle : ""
-        nameFilters: []
-        windowIconName: "folder_open"
-        emptyStateText: I18n.tr("This folder is empty")
-        selectionPrompt: I18n.tr("Choose folder")
-        acceptLabel: I18n.tr("Choose")
-        formatSummary: I18n.tr("Choose the current folder or a selected subfolder")
-        onAccepted: function (path, isDirectory) {
-            if (isDirectory && root.editingDirectoryKey !== "")
-                root.saveDirectory(root.editingDirectoryKey, path, root.editingDirectoryField);
-
-            root.editingDirectoryKey = "";
-            root.editingDirectoryField = null;
-        }
-        onRejected: {
-            root.editingDirectoryKey = "";
-            root.editingDirectoryField = null;
-        }
-    }
-
-    component RecordingDirectoryField: ColumnLayout {
-        id: directorySetting
-
-        property string settingTitle: ""
-        property string settingKey: ""
-        property string value: ""
-
-        Layout.fillWidth: true
-        spacing: NexusStyle.padding.extraSmall
-
-        StyledText {
-            Layout.fillWidth: true
-            text: directorySetting.settingTitle
-            color: Appearance.m3colors.m3onSurface
-            font.pixelSize: NexusStyle.font.bodyMedium
-            elide: Text.ElideRight
-        }
-
-        MaterialFilledTextField {
-            id: directoryField
-
-            Layout.fillWidth: true
-            labelText: I18n.tr("Save location")
-            text: directorySetting.value
-            trailingContentWidth: NexusStyle.icon.medium + NexusStyle.padding.small * 2
-            onAccepted: root.saveDirectory(directorySetting.settingKey, text, directoryField)
-            onEditingFinished: root.saveDirectory(directorySetting.settingKey, text, directoryField)
-
-            trailingContent: Component {
-                IconButton {
-                    anchors.centerIn: parent
-                    iconName: "folder_open"
-                    accessibleName: I18n.tr("Choose folder")
-                    tooltipText: I18n.tr("Choose folder")
-                    controlSize: NexusStyle.icon.medium + NexusStyle.padding.small * 2
-                    iconSize: NexusStyle.icon.medium
-                    onClicked: root.openDirectoryPicker(directorySetting.settingKey, directoryField)
-                }
-            }
         }
     }
 }

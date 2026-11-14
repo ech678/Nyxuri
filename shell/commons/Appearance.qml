@@ -293,6 +293,11 @@ Singleton {
     }
 
     property real barThickness: 36
+    // iNiR's components size popups and bar gaps with this factor. Nyxuri has no
+    // user-facing typography scale (the M3 tokens are fixed), so the ported
+    // sources get a neutral 1.0 instead of the undefined property that used to
+    // poison every `6 * fontSizeScale` gap into NaN.
+    readonly property real fontSizeScale: 1
 
     readonly property QtObject sizes: QtObject {
         readonly property real baseBarHeight: root.barThickness > 0 ? root.barThickness : 36

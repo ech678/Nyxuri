@@ -74,6 +74,42 @@ Singleton {
                     readonly property var rightLayout: PersonalizationConfig.barLayoutRight
                 }
 
+                // iNiR reads these straight off the object (no optional
+                // chaining), so a missing key is a TypeError on every binding
+                // evaluation, not a silent default.
+                readonly property bool verbose: true
+
+                readonly property QtObject divider: QtObject {
+                    readonly property string style: PersonalizationConfig.barDividerStyle ?? "rect"
+                    readonly property int spacing: 4
+                }
+
+                readonly property QtObject clock: QtObject {
+                    readonly property string timeFontFamily: ""
+                    readonly property int timePixelSize: 0
+                    readonly property string dateFontFamily: ""
+                    readonly property int datePixelSize: 0
+                }
+
+                readonly property QtObject indicators: QtObject {
+                    readonly property QtObject notifications: QtObject {
+                        readonly property bool showUnreadCount: true
+                    }
+                }
+
+                readonly property QtObject resources: QtObject {
+                    readonly property string style: "outline"
+                    readonly property bool showValue: false
+                    readonly property bool alwaysShowRam: true
+                    readonly property bool alwaysShowCpu: true
+                    readonly property bool alwaysShowCpuTemp: false
+                    readonly property bool alwaysShowDisk: false
+                    readonly property bool alwaysShowSwap: false
+                    readonly property int memoryWarningThreshold: 90
+                    readonly property int cpuWarningThreshold: 95
+                    readonly property int swapWarningThreshold: 90
+                }
+
                 readonly property QtObject tooltips: QtObject {
                     readonly property bool clickToShow: false
                 }

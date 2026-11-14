@@ -21,7 +21,7 @@ PopupWindow {
     signal menuOpened(qsWindow: var) // Correct type is QsWindow, but QML does not like that
 
     color: "transparent"
-    grabFocus: CompositorService.isNiri
+    grabFocus: CompositorDriver.available
     property real padding: Appearance.sizes.elevationMargin
     onVisibleChanged: {
         if (!visible)
@@ -76,7 +76,7 @@ PopupWindow {
     }
 
     PanelWindow {
-        visible: root.visible && CompositorService.isNiri
+        visible: root.visible && CompositorDriver.available
         color: "transparent"
         exclusiveZone: 0
         WlrLayershell.layer: WlrLayer.Top

@@ -109,13 +109,6 @@ context = "IslandPage"
 icon = "toggle_off"
 
 [[settings]]
-id = "bar.island.section.recording"
-route = "bar.island"
-title = "Recording"
-context = "IslandPage"
-icon = "toggle_off"
-
-[[settings]]
 id = "bar.island-clock.section.horizontal-clock-style"
 route = "bar.island-clock"
 title = "Horizontal clock style"

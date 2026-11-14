@@ -7,6 +7,13 @@
 > B1 已执法（正名后全库称 island/屿）：岛并入 `plugins/bar/island/` 成为 bar
 > 布局部件，本页下文以旧名 keystone 指称的引擎与部件即今 island 侧同名件。
 
+> **现状更正（2026-11-14）**：本页记录的是 B0 期的“计划裁剪”，不是现行事实。
+> 实际落地时 Bar 底座改用 `references/iNiR/modules/ii/barM3/`（`Bar.qml` 整抄自
+> `M3Bar.qml`），`vendor/end4` 只剩惰性基线；dux 注册表方案未采用；
+> `BarGroupStylePopup` 未接线。部件真值、下架清单与恢复条件以
+> [PARKED](../../shell/plugins/bar/PARKED.md) 与
+> [ROADMAP §B](../../shell/ROADMAP.md) 为准，本页待重写。
+
 ## 基线清单（B0 入库，inert）
 
 物理 `cp` 自 `references/`（仓库根、gitignored），落在

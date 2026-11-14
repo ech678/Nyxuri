@@ -20,14 +20,25 @@ Item {
     readonly property real sectionOuterMargin: root.isMaterial
         ? (Config.options?.bar?.m3?.gapsOut ?? 5)
         : (Config.options?.bar?.m3?.cornerStyle === 1 ? 4 : 10)
-    readonly property real leftHostDemand: root.isMaterial
-        ? leftMaterialPill.implicitWidth : leftRow.implicitWidth
-    readonly property real centerHostDemand: root.isMaterial
-        ? centerMaterialPill.implicitWidth : middleRow.implicitWidth
-    readonly property real rightHostDemand: root.isMaterial
-        ? rightMaterialPill.implicitWidth : rightRow.implicitWidth
+    // Lane presence is decided by the layout contents, not by the section's
+    // implicit width: an empty Material pill still measures 10px (row + 10) and
+    // used to look like a real host, which added a phantom gap and a phantom
+    // 10px reservation on an otherwise empty edge.
+    readonly property bool leftLaneFilled: root.effectiveLeftLayout.length > 0
+    readonly property bool centerLaneFilled: root.effectiveMiddleLayout.length > 0
+    readonly property bool rightLaneFilled: root.effectiveRightLayout.length > 0
+    readonly property real leftHostDemand: root.leftLaneFilled
+        ? (root.isMaterial ? leftMaterialPill.implicitWidth : leftRow.implicitWidth) : 0
+    readonly property real centerHostDemand: root.centerLaneFilled
+        ? (root.isMaterial ? centerMaterialPill.implicitWidth : middleRow.implicitWidth) : 0
+    readonly property real rightHostDemand: root.rightLaneFilled
+        ? (root.isMaterial ? rightMaterialPill.implicitWidth : rightRow.implicitWidth) : 0
     readonly property real availableHostWidth: Math.max(0, root.width - root.sectionOuterMargin * 2)
-    readonly property real hostGap: 6 * Appearance.fontSizeScale
+    // Appearance.fontSizeScale is a plain factor; the guard keeps a future
+    // "unset scale" from turning the whole geometry chain into NaN, which used
+    // to pin the middle lane to x=0 and stack it on top of the left lane.
+    readonly property real hostGap: 6 * (Number.isFinite(Appearance.fontSizeScale)
+        && Appearance.fontSizeScale > 0 ? Appearance.fontSizeScale : 1)
     readonly property bool hasLeftHost: root.leftHostDemand > 0.5
     readonly property bool hasCenterHost: root.centerHostDemand > 0.5
     readonly property bool hasRightHost: root.rightHostDemand > 0.5
@@ -49,9 +60,18 @@ Item {
     readonly property real minimumCenterX: root.sectionOuterMargin + root.leftHostWidth + root.leftCenterGap
     readonly property real maximumCenterX: root.width - root.sectionOuterMargin - root.rightHostWidth
         - root.centerRightGap - root.centerHostWidth
-    readonly property real centerHostX: root.layoutCompressionActive
-        ? root.minimumCenterX
-        : Math.max(root.minimumCenterX, Math.min(root.preferredCenterX, root.maximumCenterX))
+    // When the lanes genuinely overflow, the middle stays as close to the
+    // optical centre as the clamp allows instead of being flung to the left
+    // edge; the section itself is clipped and scaled by hostScale.
+    readonly property real centerHostX: {
+        if (!root.centerLaneFilled)
+            return root.preferredCenterX;
+        const preferred = Number.isFinite(root.preferredCenterX) ? root.preferredCenterX : 0;
+        const minimum = Number.isFinite(root.minimumCenterX) ? root.minimumCenterX : 0;
+        const maximum = Number.isFinite(root.maximumCenterX) ? root.maximumCenterX : preferred;
+        const clamped = Math.max(minimum, Math.min(preferred, maximum));
+        return root.layoutCompressionActive ? Math.max(minimum, Math.min(clamped, maximum)) : clamped;
+    }
 
     readonly property bool trayHasItems: SystemTray.items.values.length > 0
     readonly property bool spectrumOutputEnabled:
@@ -427,7 +447,7 @@ Item {
             // Material pill wrapper
             Rectangle {
                 id: leftMaterialPill
-                visible: root.isMaterial
+                visible: root.isMaterial && root.leftLaneFilled
                 anchors.centerIn: parent
                 implicitWidth: leftMaterialRow.implicitWidth + 10
                 implicitHeight: leftMaterialRow.implicitHeight
@@ -547,7 +567,7 @@ Item {
             // Material pill wrapper
             Rectangle {
                 id: centerMaterialPill
-                visible: root.isMaterial
+                visible: root.isMaterial && root.centerLaneFilled
                 anchors.centerIn: parent
                 implicitWidth: centerMaterialRow.implicitWidth + 10
                 implicitHeight: centerMaterialRow.implicitHeight
@@ -667,7 +687,7 @@ Item {
             // Material pill wrapper
             Rectangle {
                 id: rightMaterialPill
-                visible: root.isMaterial
+                visible: root.isMaterial && root.rightLaneFilled
                 anchors.centerIn: parent
                 implicitWidth: rightMaterialRow.implicitWidth + 10
                 implicitHeight: rightMaterialRow.implicitHeight

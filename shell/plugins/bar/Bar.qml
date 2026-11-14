@@ -42,10 +42,6 @@ Scope {
         function state(): string {
             return ActionGateway.islandHost ? ActionGateway.islandHost.invoke("state") : "UNAVAILABLE";
         }
-
-        function stopRecording(): string {
-            return ActionGateway.islandHost ? ActionGateway.islandHost.invoke("stop-recording") : "UNAVAILABLE";
-        }
     }
 
     Variants {

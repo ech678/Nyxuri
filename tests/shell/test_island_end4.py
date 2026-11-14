@@ -71,21 +71,23 @@ class IslandEnd4FacesContractTest(unittest.TestCase):
         content = read_end4("DynamicIsland.qml")
         # All provider IDs present in contentProviders
         for provider_id in ['id: "osd"', 'id: "notification"', 'id: "battery"',
-                            'id: "recording"', 'id: "timer"', 'id: "media"']:
+                            'id: "media"', 'id: "session"']:
             self.assertIn(provider_id, content, f"contentProviders missing {provider_id}")
+        # Timer and Recording are parked until TimerService/RecordingService
+        # exist; no dead provider rows and no dead component may remain.
+        self.assertNotIn('id: "timer"', content)
+        self.assertNotIn('id: "recording"', content)
+        self.assertNotIn("DiTimers", content)
 
         # Preemption list contains osd and notification
         self.assertIn('"osd"', content)
         self.assertIn('"notification"', content)
         self.assertIn('"battery"', content)
 
-        # Service bindings
-        self.assertIn("RecordingService", content)
-        self.assertIn("AudioRecordingService", content)
-        self.assertIn("VolumeService", content)
-        self.assertIn("BrightnessService", content)
-        self.assertIn("KeyboardLockService", content)
-        self.assertIn("stopRecording()", content)
+        # Volume/brightness/keyboard bindings are declared for the parked
+        # service bridges; recording must not be.
+        self.assertNotIn("RecordingService", content)
+        self.assertNotIn("stopRecording", content)
 
 
 if __name__ == "__main__":
