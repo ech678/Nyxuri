@@ -113,8 +113,7 @@ Item {
     }
 
     FrameAnimation {
-        running: root.dragActive && root.activeTargetField !== null
-                 && root.activeTargetField.autoScrollVelocity !== 0
+        running: root.dragActive && root.activeTargetField !== null && root.activeTargetField.autoScrollVelocity !== 0
         onTriggered: {
             if (root.activeTargetField) {
                 root.activeTargetField.stepAutoScroll();

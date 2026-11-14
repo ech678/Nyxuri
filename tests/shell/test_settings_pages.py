@@ -67,10 +67,14 @@ ANCHOR_IDS = {
         "plugins.section.thirdparty",
         "plugins.section.install",
     ),
-    "GeneralBarPage.qml": (
-        "bar.section.position",
-        "bar.section.components",
-        "bar.section.tray",
+    "BarAppearanceSection.qml": (
+        "bar.appearance.position",
+    ),
+    "BarComponentsCard.qml": (
+        "bar.modules.components",
+    ),
+    "BarModulesSection.qml": (
+        "bar.modules.tray",
     ),
     "DockPage.qml": (
         "dock.section.appearance",
@@ -582,7 +586,9 @@ class TestPluginsPageRebuild(unittest.TestCase):
 
 
 class TestGeneralBarPageRebuild(unittest.TestCase):
-    """Bar: atom rows, drag-to-reorder fields kept as the custom shape."""
+    """Bar: thin composition root (tab switcher + island subpage) over two
+    self-contained sections and the drag card; atoms per section, business
+    owners distributed with their rows."""
 
     def test_nexus_scaffold_with_self_rendered_title(self):
         source = _read("GeneralBarPage.qml")
@@ -600,63 +606,87 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
         ):
             self.assertIn(token, source, f"GeneralBarPage lost window contract token: {token}")
 
-    def test_search_anchor_ids_are_stable(self):
+    def test_tab_switcher_and_section_composition(self):
         source = _read("GeneralBarPage.qml")
-        for anchor_id in ANCHOR_IDS["GeneralBarPage.qml"]:
-            self.assertIn('anchorId: "%s"' % anchor_id, source,
-                          f"anchor missing or rewritten: {anchor_id}")
+        self.assertIn("property string barTab", source)
+        self.assertIn("StyledButtonGroup {", source,
+                      "the appearance/modules tab switcher must stay a segmented control")
+        self.assertIn("BarAppearanceSection {", source)
+        self.assertIn("BarModulesSection {", source)
+        self.assertIn("function showTab(", source)
+
+    def test_search_anchor_ids_are_stable(self):
+        for name in ("BarAppearanceSection.qml", "BarComponentsCard.qml", "BarModulesSection.qml"):
+            source = _read(name)
+            for anchor_id in ANCHOR_IDS[name]:
+                self.assertIn('anchorId: "%s"' % anchor_id, source,
+                              f"anchor missing or rewritten in {name}: {anchor_id}")
 
     def test_atom_groups_present(self):
-        source = _read("GeneralBarPage.qml")
-        for atom in ("PreferenceHeader", "PreferenceToggle", "PreferenceSelect", "ConnectedRect"):
-            self.assertIn(atom, source, f"GeneralBarPage must use the atom: {atom}")
+        appearance = _read("BarAppearanceSection.qml")
+        modules = _read("BarModulesSection.qml")
+        card = _read("BarComponentsCard.qml")
+        for atom in ("PreferenceHeader", "PreferenceToggle", "PreferenceSelect", "PreferenceSlider"):
+            self.assertIn(atom, appearance, f"BarAppearanceSection must use the atom: {atom}")
+        for atom in ("PreferenceHeader", "PreferenceToggle", "PreferenceSelect", "PreferenceAction"):
+            self.assertIn(atom, modules, f"BarModulesSection must use the atom: {atom}")
+        for atom in ("PreferenceToggle", "ConnectedRect"):
+            self.assertIn(atom, card, f"BarComponentsCard must use the atom: {atom}")
         # B9.6: the workspace style select joins the popup-input-region group.
         # B9.7: the Numbers style and Resources icon style selects join too.
-        self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 9,
-                         "the screen-edge and style selects must register the popup input region")
+        # Five selects ride the appearance tab, four the modules tab.
+        self.assertEqual(appearance.count("inputRegionService: PopupInputRegionService"), 5,
+                         "the appearance selects must register the popup input region")
+        self.assertEqual(modules.count("inputRegionService: PopupInputRegionService"), 4,
+                         "the modules selects must register the popup input region")
 
     def test_drag_fields_and_coordinators_survive(self):
-        source = _read("GeneralBarPage.qml")
-        self.assertEqual(source.count("SortableMultiSelectField {"), 4,
+        card = _read("BarComponentsCard.qml")
+        modules = _read("BarModulesSection.qml")
+        self.assertEqual(card.count("SortableMultiSelectField {"), 4,
                          "three bar zones + the quick settings field stay drag-enabled")
-        self.assertEqual(source.count("LayoutDragCoordinator {"), 2,
+        self.assertEqual(modules.count("LayoutDragCoordinator {"), 2,
                          "one coordinator per drag surface (zones / quick settings)")
-        self.assertIn("fields: [leadingField, middleField, trailingField]", source)
-        self.assertIn("fields: [quickSettingsField]", source)
-        # The overlay must not be a root child: NexusPageBase takes exactly
-        # one content child, so both coordinators ride inside the content
-        # wrapper that carries the column's implicit height.
-        wrapper = source.index("implicitHeight: contentColumn.implicitHeight")
-        self.assertIn("id: content", source[:wrapper],
-                      "the content wrapper must precede the coordinators")
-        self.assertGreater(source.index("LayoutDragCoordinator {"), wrapper,
-                           "drag coordinators must live inside the content wrapper")
+        self.assertIn("fields: [componentsCard.leadingField, componentsCard.middleField, componentsCard.trailingField]", modules)
+        self.assertIn("fields: [componentsCard.quickSettingsField]", modules)
+        # The overlays must not be children of the scrolling content column:
+        # they ride the section wrapper (the Item that carries the column's
+        # implicit height) as its last children.
+        wrapper = modules.index("implicitHeight: modulesColumn.implicitHeight")
+        self.assertGreater(modules.index("LayoutDragCoordinator {"), wrapper,
+                           "drag coordinators must live inside the section wrapper")
 
     def test_business_owners_unchanged(self):
-        source = _read("GeneralBarPage.qml")
+        appearance = _read("BarAppearanceSection.qml")
+        card = _read("BarComponentsCard.qml")
+        modules = _read("BarModulesSection.qml")
+        for owner in ("PersonalizationConfig.setBarPosition(", "PersonalizationConfig.edgePositions"):
+            self.assertIn(owner, appearance, f"business owner dropped: {owner}")
         for owner in (
-            "PersonalizationConfig.setBarPosition(",
             "PersonalizationConfig.setBarShowNames(",
             "PersonalizationConfig.setBarShowValues(",
             "PersonalizationConfig.toggleBarComponent(",
             "PersonalizationConfig.removeBarComponent(",
-            "PersonalizationConfig.moveBarComponent(",
-            "PersonalizationConfig.moveQuickSettingsComponent(",
             "PersonalizationConfig.toggleQuickSettingsComponent(",
             "PersonalizationConfig.removeQuickSettingsComponent(",
-            "PersonalizationConfig.edgePositions",
             "PersonalizationConfig.barLayoutLeft",
             "PersonalizationConfig.barLayoutMiddle",
             "PersonalizationConfig.barLayoutRight",
             "PersonalizationConfig.quickSettingsComponents",
         ):
-            self.assertIn(owner, source, f"business owner dropped: {owner}")
+            self.assertIn(owner, card, f"business owner dropped: {owner}")
+        self.assertIn("PersonalizationConfig.moveBarComponent(", modules,
+                      "business owner dropped: moveBarComponent")
+        self.assertIn("PersonalizationConfig.moveQuickSettingsComponent(", modules,
+                      "business owner dropped: moveQuickSettingsComponent")
 
     def test_legacy_chrome_stays_out(self):
-        source = _read("GeneralBarPage.qml")
-        for token in LEGACY_VOCABULARY + ("SettingsSection", "SettingsRow", "StyledSwitch",
-                                          "EdgePositionSelector"):
-            self.assertNotIn(token, source, f"legacy token re-entered GeneralBarPage: {token}")
+        for name in ("GeneralBarPage.qml", "BarAppearanceSection.qml", "BarComponentsCard.qml",
+                     "BarModulesSection.qml"):
+            source = _read(name)
+            for token in LEGACY_VOCABULARY + ("SettingsSection", "SettingsRow", "StyledSwitch",
+                                              "EdgePositionSelector"):
+                self.assertNotIn(token, source, f"legacy token re-entered {name}: {token}")
 
     def test_island_subpage_rides_the_bar_tab(self):
         """B1 tab merge: the island is a bar layout part, so its settings ride

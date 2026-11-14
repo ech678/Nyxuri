@@ -25,28 +25,28 @@ order = 40
 aliases = ["general.bar"]
 
 [[settings]]
-id = "bar.section.components"
-route = "bar"
-title = "Components"
-context = "GeneralBarPage"
-icon = "view_agenda"
-aliases = ["general.bar.section.components"]
-
-[[settings]]
-id = "bar.section.position"
+id = "bar.appearance.position"
 route = "bar"
 title = "Position"
 context = "GeneralBarPage"
 icon = "dock_to_bottom"
-aliases = ["general.bar.section.position"]
+aliases = ["general.bar.section.position", "bar.section.position"]
 
 [[settings]]
-id = "bar.section.tray"
+id = "bar.modules.components"
+route = "bar"
+title = "Components"
+context = "GeneralBarPage"
+icon = "view_agenda"
+aliases = ["general.bar.section.components", "bar.section.components"]
+
+[[settings]]
+id = "bar.modules.tray"
 route = "bar"
 title = "Tray"
 context = "GeneralBarPage"
 icon = "expand_more"
-aliases = ["general.bar.section.tray"]
+aliases = ["general.bar.section.tray", "bar.section.tray"]
 
 # ── Island (B1: merged from the retired island unit; one plugin, one bar) ────
 # The island is a bar layout part, so its settings live INSIDE the Bar tab:

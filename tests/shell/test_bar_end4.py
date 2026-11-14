@@ -260,7 +260,7 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("setBarWorkspaceShown", config)
         self.assertIn('"workspaceStyle"', config)
         self.assertIn('"workspaceShown"', config)
-        page = read_bar_file("GeneralBarPage.qml")
+        page = read_bar_file("BarModulesSection.qml")
         self.assertIn("setBarWorkspaceStyle", page)
         self.assertIn("setBarWorkspaceShown", page)
 
@@ -507,7 +507,7 @@ class TrayContractTest(unittest.TestCase):
         self.assertIn("Config.options?.bar?.m3?.tray?.monochromeIcons", item)
 
     def test_settings_page_exposes_the_tray_controls(self):
-        page = read_bar_file("GeneralBarPage.qml")
+        page = read_bar_file("BarModulesSection.qml")
         for prop in (
             "barTrayMonochromeIcons",
             "barTrayFilterPassive",
@@ -515,10 +515,10 @@ class TrayContractTest(unittest.TestCase):
             "barTrayInvertPinnedItems",
         ):
             self.assertIn(prop, page, f"tray setting has no consumer row: {prop}")
-        self.assertIn('anchorId: "bar.section.tray"', page)
+        self.assertIn('anchorId: "bar.modules.tray"', page)
         with open(os.path.join(BAR_DIR, "manifest.toml"), "r", encoding="utf-8") as f:
             manifest = f.read()
-        self.assertIn('id = "bar.section.tray"', manifest)
+        self.assertIn('id = "bar.modules.tray"', manifest)
 
 
 class BarB9_7SettingsSweepTest(unittest.TestCase):
@@ -616,27 +616,28 @@ class BarB9_7SettingsSweepTest(unittest.TestCase):
             self.assertIn(f"PersonalizationConfig.{prop}", bridge, prop)
 
     def test_settings_page_rows_and_gates(self):
-        page = read_bar_file("GeneralBarPage.qml")
+        appearance = read_bar_file("BarAppearanceSection.qml")
+        modules = read_bar_file("BarModulesSection.qml")
         # Style: end4's showBackground enable-gate (Hug/Float only) + autohide.
-        self.assertIn("enabled: PersonalizationConfig.barCornerStyle === 0 || PersonalizationConfig.barCornerStyle === 1", page)
-        self.assertIn('I18n.tr("Show background")', page)
-        self.assertIn('I18n.tr("Autohide")', page)
+        self.assertIn("enabled: PersonalizationConfig.barCornerStyle === 0 || PersonalizationConfig.barCornerStyle === 1", appearance)
+        self.assertIn('I18n.tr("Show background")', appearance)
+        self.assertIn('I18n.tr("Autohide")', appearance)
         # Divider: the space width row exists only for the space style.
-        self.assertIn('visible: PersonalizationConfig.barDividerStyle === "space"', page)
-        self.assertIn('I18n.tr("Space width")', page)
+        self.assertIn('visible: PersonalizationConfig.barDividerStyle === "space"', appearance)
+        self.assertIn('I18n.tr("Space width")', appearance)
         # Screens: end4 monitor filter with the all-collapse rule.
-        self.assertIn("function toggleBarScreen", page)
-        self.assertIn("list.length === allNames.length ? [] : list", page)
-        self.assertIn('I18n.tr("All screens")', page)
-        self.assertNotIn("barScreenList = []", page.replace('setValue("barScreenList", [])', ""),
+        self.assertIn("function toggleBarScreen", appearance)
+        self.assertIn("list.length === allNames.length ? [] : list", appearance)
+        self.assertIn('I18n.tr("All screens")', appearance)
+        self.assertNotIn("barScreenList = []", appearance.replace('setValue("barScreenList", [])', ""),
                          "writes go through setValue persistence, not raw assignment")
         # Widget-scoped rows follow end4's isUsed gate.
-        self.assertIn("function layoutUses", page)
-        self.assertEqual(page.count('root.layoutUses("utilButtons")'), 8)
-        self.assertEqual(page.count('root.layoutUses("systemMonitor")'), 8)
-        self.assertIn('I18n.tr("Numbers style")', page)
-        self.assertIn("setBarWorkspaceNumberStyle", page)
-        self.assertIn('visible: PersonalizationConfig.barWorkspaceStyle === "default"', page)
+        self.assertIn("function layoutUses", modules)
+        self.assertEqual(modules.count('root.layoutUses("utilButtons")'), 8)
+        self.assertEqual(modules.count('root.layoutUses("systemMonitor")'), 8)
+        self.assertIn('I18n.tr("Numbers style")', modules)
+        self.assertIn("setBarWorkspaceNumberStyle", modules)
+        self.assertIn('visible: PersonalizationConfig.barWorkspaceStyle === "default"', modules)
 
 
 if __name__ == "__main__":

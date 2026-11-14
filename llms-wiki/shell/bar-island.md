@@ -19,8 +19,21 @@
 - 部件池：`Workspaces`（iNiR 剪裁）、`Media`、`SysTray*`、`UtilButtons*`、
   `Resources*`、`ClockWidget*`、`BatteryIndicator`、`SystemIcons`、`LauncherButton`、
   `PowerButton`、`ActiveWindow`（end4 重抄）、`Divisor`。
-- 设置：`GeneralBarPage.qml`（位置/样式/workspaces/三段拖拽）与
-  `island/IslandPage.qml`（岛开关、卫星、键盘指示、横排时钟）。
+- 设置：`GeneralBarPage.qml` 是瘦组合根——Appearance/Modules 两 tab（`StyledButtonGroup`
+  页内切换，`barTab` 状态）+ 页尾 island 入口 + `bar.island` 路由子页；内容在
+  `BarAppearanceSection.qml`（Layout/Screens/Style，壳子属性）、
+  `BarComponentsCard.qml`（三 lane + 快捷设置拖拽卡，字段 alias 暴露）、
+  `BarModulesSection.qml`（wrapper：注入两个 `LayoutDragCoordinator` + workspaces/
+  utility/resources/tray 组）。锚点 `bar.appearance.*` / `bar.modules.*` 按归属
+  前缀判别 tab（`openSearchPath` 读 `SettingsSearch.searchTarget.id`，父路由 path
+  不带锚点段）。`SortableMultiSelectField` 与 `LayoutDragCoordinator` 是
+  bar 单消费者控件，住 `plugins/bar/`（不在 `ui/`）。
+  **tab 宿主约束**：两个 section 必须做单个常驻 `tabHost Item` 下的 visibility
+  翻转（island 翻转同构），禁止作为 ColumnLayout 子项直接 `visible` 切换——本
+  Quickshell 运行时对「首布局时隐藏、后来才显示」的 layout 子项永不补发 fill
+  宽度（实机探针定案 2026-11-15，内联翻转可复现），modules tab 会零宽塌缩。
+
+- 岛设置：`island/IslandPage.qml`（岛开关、卫星、键盘指示、横排时钟）。
 
 ## 样式与几何真值
 
