@@ -119,6 +119,16 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("contentColorOverridden", content)
         self.assertNotIn("console.log(", content)
 
+    def test_self_hiding_widgets_collapse_their_group(self):
+        group = read_bar_file("BarGroup.qml")
+        # `Item.visible` reports effective visibility, so reading it here would
+        # deadlock a group that hid once (the hidden group masks the child).
+        self.assertIn('"barWidgetVisible" in root.loadedWidget', group)
+        self.assertIn("visible: root.hasContent", group)
+        media = read_bar_file("Media.qml")
+        self.assertIn("readonly property bool barWidgetVisible: root.shouldShow", media)
+        self.assertIn("visible: root.shouldShow", media)
+
     def test_retired_island_controls_stay_out(self):
         """B8.4/B8.5: every retired key must be gone from the config store,
         the island page and both settings catalogs."""

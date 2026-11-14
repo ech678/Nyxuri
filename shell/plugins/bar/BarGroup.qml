@@ -50,9 +50,11 @@ Item {
     readonly property bool rightClickFree: !["updatesCount", "weatherBar", "bluetooth", "workspaces", "sysTray", "media", "docktoPanel"].includes(root.widgetName)
 
     readonly property Item loadedWidget: gridLayout.children[0]?.item ?? null
-    // Qt Quick Layouts can leave GridLayout.implicitWidth stale when its child
-    // Loader activates after a startup cornerStyle flip; the single widget host
-    // is authoritative, so fall back to it instead of collapsing to padding.
+    // Qt Quick Layouts can leave GridLayout.implicitWidth stale (child Loader
+    // activates after a startup cornerStyle flip, or a widget's implicit size
+    // changes while the group was hidden); the single widget host is
+    // authoritative, so never collapse below its implicit width.
+    readonly property real contentWidth: Math.max(gridLayout.implicitWidth, root.loadedWidget ? root.loadedWidget.implicitWidth : 0)
     readonly property bool hasContentOverride: !root.isMaterial && root.style.color !== undefined && root.style.color !== "transparent"
     readonly property color contentColor: {
         const name = root.style.color ?? "";
@@ -145,7 +147,20 @@ Item {
         return midRadius;
     }
 
-    implicitWidth: vertical && root.isMaterial ? Appearance.sizes.baseVerticalBarWidth - 6 : (gridLayout.implicitWidth + padding * 2)
+    // A widget may hide itself at runtime (Media with no track). The grouping
+    // chrome (padding + capsule) is BarGroup's own, so the group has to
+    // collapse with the widget instead of leaving a 10px empty capsule.
+    // Item.visible reports *effective* visibility, so reading it would deadlock:
+    // a group that hid once masks its child and could never observe the widget
+    // asking to come back. Widgets that hide themselves expose
+    // `barWidgetVisible`; anything else counts as shown. A widget that is not
+    // loaded yet also counts as content so the bar does not flicker while the
+    // Loader instantiates.
+    // qmllint disable missing-property
+    readonly property bool hasContent: root.loadedWidget === null || !("barWidgetVisible" in root.loadedWidget) || root.loadedWidget.barWidgetVisible
+    // qmllint enable missing-property
+    visible: root.hasContent
+    implicitWidth: !root.hasContent ? 0 : vertical && root.isMaterial ? Appearance.sizes.baseVerticalBarWidth - 6 : (root.contentWidth + padding * 2)
     implicitHeight: vertical ? (gridLayout.implicitHeight + padding * 2) : Appearance.sizes.baseBarHeight
 
     default property alias items: gridLayout.children

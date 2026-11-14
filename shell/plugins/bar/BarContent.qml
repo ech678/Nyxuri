@@ -180,7 +180,7 @@ Item {
         visible: root.centerOnly && Config.options.bar.m3.showBackground && Config.options.bar.cornerStyle !== 2
         anchors.verticalCenter: parent.verticalCenter
         anchors.horizontalCenter: parent.horizontalCenter
-        width: root.centerLaneFilled ? middleRow.implicitWidth + 10 : 0
+        width: absoluteCenter.hasContent ? middleRow.implicitWidth + 10 : 0
         height: parent.height - (Config.options.bar.cornerStyle === 1 ? Config.options.bar.m3.gapsOut * 2 : 0)
         color: root.isMaterial ? "transparent" : Appearance.colors.colLayer0
         radius: Config.options.bar.cornerStyle === 1 || root.isMaterial ? Appearance.rounding.windowRounding : 0
@@ -248,11 +248,17 @@ Item {
 
         // Left
         Item {
+            id: leftLane
+
+            // A lane capsule belongs to the lane, not the widgets, so a lane
+            // whose widgets have all hidden themselves (Media with no track)
+            // must collapse too instead of leaving its padding behind.
+            readonly property bool hasContent: root.leftLaneFilled && (root.isMaterial ? leftMaterialRow.implicitWidth > 0 : leftRow.implicitWidth > 0)
             anchors.left: parent.left
             anchors.leftMargin: root.laneMargin
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            width: !root.leftLaneFilled ? 0 : root.isMaterial ? (leftMaterialPill.width + (root.isMaterialHug ? leftRightOutwardCorner.implicitSize : 0)) : leftRow.implicitWidth
+            width: !leftLane.hasContent ? 0 : root.isMaterial ? (leftMaterialPill.width + (root.isMaterialHug ? leftRightOutwardCorner.implicitSize : 0)) : leftRow.implicitWidth
 
             // Material pill wrapper
             Rectangle {
@@ -262,7 +268,7 @@ Item {
                 anchors.top: (root.isMaterialHug && !Config.options.bar.bottom) ? parent.top : undefined
                 anchors.bottom: (root.isMaterialHug && Config.options.bar.bottom) ? parent.bottom : undefined
                 anchors.centerIn: root.isMaterialHug ? undefined : parent
-                width: leftMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10)
+                width: leftLane.hasContent ? leftMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10) : 0
                 height: root.isMaterialHug ? parent.height : leftMaterialRow.implicitHeight
                 radius: root.isMaterialHug ? 0 : Appearance.rounding.full
                 color: root.materialPillBgColor
@@ -307,7 +313,7 @@ Item {
 
             RoundCorner {
                 id: leftRightOutwardCorner
-                visible: root.isMaterialHug && root.leftLaneFilled
+                visible: root.isMaterialHug && leftLane.hasContent
                 anchors.left: leftMaterialPill.right
                 anchors.top: !Config.options.bar.bottom ? parent.top : undefined
                 anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
@@ -348,16 +354,19 @@ Item {
         // Center
         Item {
             id: absoluteCenter
+            // Same lane rule as the sides: hiding the last widget collapses the
+            // capsule instead of leaving its padding behind.
+            readonly property bool hasContent: root.centerLaneFilled && (root.isMaterial ? centerMaterialRow.implicitWidth > 0 : middleRow.implicitWidth > 0)
             // Explicit x instead of anchors.centerIn: the lane width is fed by
             // dynamically loaded widget implicit sizes, and anchors did not
             // re-centre after the idle island narrowed (startup 164 -> 154).
             x: (parent.width - width) / 2
-            width: !root.centerLaneFilled ? 0 : root.isMaterial ? (centerMaterialPill.width + (root.isMaterialHug ? (centerLeftOutwardCorner.implicitSize + centerRightOutwardCorner.implicitSize) : 0)) : middleRow.implicitWidth
+            width: !absoluteCenter.hasContent ? 0 : root.isMaterial ? (centerMaterialPill.width + (root.isMaterialHug ? (centerLeftOutwardCorner.implicitSize + centerRightOutwardCorner.implicitSize) : 0)) : middleRow.implicitWidth
             height: parent.height
 
             RoundCorner {
                 id: centerLeftOutwardCorner
-                visible: root.isMaterialHug && root.centerLaneFilled
+                visible: root.isMaterialHug && absoluteCenter.hasContent
                 anchors.right: centerMaterialPill.left
                 anchors.top: !Config.options.bar.bottom ? parent.top : undefined
                 anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
@@ -371,7 +380,7 @@ Item {
                 id: centerMaterialPill
                 visible: root.isMaterial && root.centerLaneFilled
                 anchors.centerIn: parent
-                width: centerMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10)
+                width: absoluteCenter.hasContent ? centerMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10) : 0
                 height: root.isMaterialHug ? parent.height : centerMaterialRow.implicitHeight
                 radius: root.isMaterialHug ? 0 : Appearance.rounding.full
                 color: root.materialPillBgColor
@@ -417,7 +426,7 @@ Item {
 
             RoundCorner {
                 id: centerRightOutwardCorner
-                visible: root.isMaterialHug && root.centerLaneFilled
+                visible: root.isMaterialHug && absoluteCenter.hasContent
                 anchors.left: centerMaterialPill.right
                 anchors.top: !Config.options.bar.bottom ? parent.top : undefined
                 anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
@@ -458,15 +467,17 @@ Item {
 
         // Right
         Item {
+            id: rightLane
+            readonly property bool hasContent: root.rightLaneFilled && (root.isMaterial ? rightMaterialRow.implicitWidth > 0 : rightRow.implicitWidth > 0)
             anchors.right: parent.right
             anchors.rightMargin: root.laneMargin
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            width: !root.rightLaneFilled ? 0 : root.isMaterial ? (rightMaterialPill.width + (root.isMaterialHug ? rightLeftOutwardCorner.implicitSize : 0)) : rightRow.implicitWidth
+            width: !rightLane.hasContent ? 0 : root.isMaterial ? (rightMaterialPill.width + (root.isMaterialHug ? rightLeftOutwardCorner.implicitSize : 0)) : rightRow.implicitWidth
 
             RoundCorner {
                 id: rightLeftOutwardCorner
-                visible: root.isMaterialHug && root.rightLaneFilled
+                visible: root.isMaterialHug && rightLane.hasContent
                 anchors.right: rightMaterialPill.left
                 anchors.top: !Config.options.bar.bottom ? parent.top : undefined
                 anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
@@ -483,7 +494,7 @@ Item {
                 anchors.top: (root.isMaterialHug && !Config.options.bar.bottom) ? parent.top : undefined
                 anchors.bottom: (root.isMaterialHug && Config.options.bar.bottom) ? parent.bottom : undefined
                 anchors.centerIn: root.isMaterialHug ? undefined : parent
-                width: rightMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10)
+                width: rightLane.hasContent ? rightMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10) : 0
                 height: root.isMaterialHug ? parent.height : rightMaterialRow.implicitHeight
                 radius: root.isMaterialHug ? 0 : Appearance.rounding.full
                 color: root.materialPillBgColor

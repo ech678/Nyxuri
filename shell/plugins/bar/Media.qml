@@ -38,6 +38,9 @@ Item {
     property bool isPlaying: activePlayer?.isPlaying ?? false
     property bool hasTrack: trackTitle.length > 0
     readonly property bool shouldShow: (Config.options?.bar?.m3?.media?.alwaysVisible ?? false) || root.hasTrack
+    // BarGroup's group chrome keys off this, not Item.visible: `visible` is
+    // effective visibility, so a collapsed group would mask the widget forever.
+    readonly property bool barWidgetVisible: root.shouldShow
     readonly property color mediaContainer: M3Palette.pillContainer("media")
     readonly property color mediaInk: M3Palette.pillInk("media")
     readonly property color playContainer: root.isPlaying ? M3Palette.primary : M3Palette.surfaceContainerLow
