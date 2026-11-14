@@ -105,7 +105,10 @@ Item {
 
     readonly property var activePlayer: MediaService.primaryPlayer ?? null
     readonly property bool hasMedia: root.activePlayer !== null && ((root.activePlayer.trackTitle ?? "") !== "" || root.activePlayer.isPlaying)
-    readonly property var latestNotification: NotificationService.popupList.length > 0 ? NotificationService.popupList[NotificationService.popupList.length - 1] : null
+    // popupList is sorted newest-first (rebuildDerivedIndexes); end4's island
+    // assumed an ascending mother list, so [length - 1] surfaced the oldest
+    // popup and froze the notification face on it.
+    readonly property var latestNotification: NotificationService.popupList.length > 0 ? NotificationService.popupList[0] : null
 
     property bool batteryAlertActive: false
     property string batteryAlertKind: ""

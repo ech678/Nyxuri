@@ -1730,7 +1730,7 @@ Instantiating or referencing `NotificationServer` claims the DBus name and begin
 | `summary` | `string` | Notification headline. |
 | `body` | `string` | Notification text body. |
 | `urgency` | `NotificationUrgency` | `Low`, `Normal`, or `Critical`. |
-| `expireTimeout` | `real` | Timeout in seconds requested by sender (-1 for default). |
+| `expireTimeout` | `real` | Timeout in **milliseconds** requested by sender (`-1` default, `0` never). Upstream docs claim seconds, but v0.3.2/master source stores the raw DBus int32 verbatim (`notification.cpp`); verified against the expiry pipeline 2026-11-15. |
 | `actions` | `list<NotificationAction>` | Action buttons attached to the notification. |
 | `image` | `string` | Preview image URL/path if provided. |
 

@@ -375,12 +375,15 @@ Singleton {
         root.popupAppNameList = root.appNameListForGroups(nextPopupGroups);
     }
 
-    function popupTimeoutMs(expireTimeoutSeconds) {
-        if (expireTimeoutSeconds === 0)
-            return 0;
-        if (expireTimeoutSeconds < 0)
+    // Quickshell passes Notification.expireTimeout through verbatim as the
+    // freedesktop expire_timeout: milliseconds, with 0 = "never expire". Its
+    // docs claim seconds, which is wrong (notification.cpp stores the raw
+    // int32). 0 is clamped to the default so a sticky notification cannot
+    // pin the island forever; the full text stays in the dashboard history.
+    function popupTimeoutMs(expireTimeout) {
+        if (expireTimeout <= 0)
             return root.defaultPopupTimeoutMs;
-        return Math.max(1, Math.round(expireTimeoutSeconds * 1000));
+        return Math.max(1, Math.round(expireTimeout));
     }
 
     function nativeActions(notifObject) {
@@ -496,8 +499,12 @@ Singleton {
         return groups;
     }
 
+    // Qt 6.12 list properties compare content on assignment: self-assigning a
+    // re-derived sequence (slice/spread of the same object pointers) does not
+    // emit listChanged, so in-place popup-flag mutations never refreshed the
+    // projections. Refresh them directly instead of round-tripping the signal.
     function triggerListChange() {
-        root.list = root.list.slice(0);
+        root.rebuildDerivedIndexes();
     }
 
     function stopPopupTimer(notifObject) {
