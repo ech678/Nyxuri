@@ -7,6 +7,7 @@ import Quickshell.Wayland
 import qs.services
 import qs.commons
 import qs.ui
+import "../../commons/BarGeometry.js" as BarGeometry
 
 // Separate Material 3 bar selected by `bar.appearanceStyle === "m3"`.
 // It replaces modules/ii/bar/Bar.qml entirely while active (see ShellIiPanelsImpl),
@@ -16,6 +17,10 @@ import qs.ui
 Scope {
     id: bar
     property bool showBarBackground: Config.options.bar.m3.showBackground
+    // Probe seam (scripts/dev/probe-bar.sh window phase): the active screen's
+    // PanelWindow registers itself here so the runtime probe can read the
+    // evaluated window/content geometry. Single instance per probe run.
+    property var windowProbe: null
 
     IpcHandler {
         target: "bar"
@@ -65,6 +70,11 @@ Scope {
                 id: barRoot
                 screen: barLoader.modelData
 
+                Component.onDestruction: {
+                    if (bar.windowProbe === barRoot)
+                        bar.windowProbe = null;
+                }
+
                 Timer {
                     id: showBarTimer
                     interval: (Config?.options.bar.autoHide.showWhenPressingSuper.delay ?? 100)
@@ -94,9 +104,38 @@ Scope {
                 readonly property bool materialHug: Config.options.bar.m3.cornerStyle === 4
                 readonly property bool panelStyle: Config.options.bar.m3.cornerStyle === 5
                 readonly property real layerGap: Config.options.bar.m3.cornerStyle === 3 ? Config.options.bar.m3.gapsOut : 0
-                // end4 reserves 4px of extra exclusive zone for the hug/panel
-                // styles; the round decorators (4) and the panel border need it.
-                readonly property real shownExclusiveZone: Appearance.sizes.baseBarHeight + (Config.options.bar.m3.cornerStyle === 1 ? Config.options.bar.m3.gapsOut : 0) + (Config.options.bar.m3.cornerStyle === 2 ? -6 : 0) + ((barRoot.materialHug || barRoot.panelStyle) ? 4 : 0)
+                // B9.4: `edge` is the window-anchor truth; `vertical` is the
+                // same fact in the form every ported widget already reads.
+                readonly property string edge: Config.options.bar.edge
+                readonly property bool vertical: Config.options.bar.vertical
+                readonly property bool deadPixel: Config.options.interactions.deadPixelWorkaround.enable
+                readonly property bool anchoredTop: barRoot.edge === "top" || barRoot.vertical
+                readonly property bool anchoredBottom: barRoot.edge === "bottom" || barRoot.vertical
+                readonly property bool anchoredLeft: barRoot.edge === "left" || !barRoot.vertical
+                readonly property bool anchoredRight: barRoot.edge === "right" || !barRoot.vertical
+                readonly property real thickness: barRoot.vertical ? Appearance.sizes.verticalBarWidth : Appearance.sizes.barHeight
+                // B9.5 outer margins: normal axis = away from the screen edge,
+                // along axis = the two ends. 0 keeps end4's edge-flush look.
+                readonly property real edgeMargin: Config.options.bar.edgeMargin
+                readonly property real sideMargin: Config.options.bar.sideMargin
+                // The margins and the reserved exclusive zone share one pure
+                // implementation (commons/BarGeometry.js) with the probe.
+                readonly property var windowMargins: BarGeometry.margins(barRoot.edge, barRoot.vertical, barRoot.edgeMargin, barRoot.sideMargin, barRoot.layerGap, barRoot.autoHideEnabled, barRoot.deadPixel)
+                readonly property real shownExclusiveZone: BarGeometry.exclusiveZone(barRoot.vertical, Appearance.sizes.baseBarHeight, Appearance.sizes.baseVerticalBarWidth, Config.options.bar.m3.cornerStyle, Config.options.bar.m3.gapsOut, barRoot.edgeMargin)
+                // The content is instantiated exactly once, by the active
+                // orientation branch (B8.6: a second copy stole islandHost and
+                // doubled every service consumer).
+                readonly property Item barContent: contentLoader.item
+                readonly property bool centerOnly: barRoot.barContent?.centerOnly ?? false
+                readonly property real centerPillX: barRoot.barContent?.centerPillX ?? 0
+                readonly property real centerPillWidth: barRoot.barContent?.centerPillWidth ?? 0
+                readonly property real centerPillY: barRoot.barContent?.centerPillY ?? 0
+                // Probe surface: where the orientation loader actually sits in
+                // the window (the item's own x/y is always 0).
+                readonly property real contentOffsetX: contentLoader.x
+                readonly property real contentOffsetY: contentLoader.y
+                readonly property int leftLaneCount: (barRoot.barContent?.effectiveLeftLayout ?? []).length
+                readonly property int rightLaneCount: (barRoot.barContent?.effectiveRightLayout ?? []).length
                 property bool contextMenuHold: false
                 property bool leftSidebarHold: false
                 property bool rightSidebarHold: false
@@ -114,7 +153,8 @@ Scope {
                 // special workspace, so the bar stays on Top and fullscreen
                 // windows cover it, which is what iNiR's own bar does too.
                 WlrLayershell.layer: WlrLayer.Top
-                implicitHeight: Appearance.sizes.barHeight + Appearance.rounding.screenRounding + (barRoot.autoHideEnabled ? barRoot.layerGap : 0)
+                implicitHeight: barRoot.vertical ? 0 : (Appearance.sizes.barHeight + Appearance.rounding.screenRounding + (barRoot.autoHideEnabled ? barRoot.layerGap : 0))
+                implicitWidth: barRoot.vertical ? (Appearance.sizes.verticalBarWidth + Appearance.rounding.screenRounding + (barRoot.autoHideEnabled ? barRoot.layerGap : 0)) : 0
                 // When Overlay-layer, bar shares a layer with the screen-corner click zones (ScreenCorners.qml)
                 // and same-layer overlap is resolved by stacking, not layer priority - bar was winning and
                 // swallowing the tiny corner-open hit rects. Carve them out of the bar's own mask so clicks
@@ -122,7 +162,7 @@ Scope {
                 // The corner-open cutout only mattered while the bar was raised
                 // to Overlay and shared a layer with the screen-corner click
                 // zones. On Top layer the corners are already above it.
-                property int cornerOpenCutHeight: autoHideEnabled ? Math.max(1, Config.options?.bar?.autoHide?.hoverRegionWidth ?? 2) + layerGap : 0
+                property int cornerOpenCutHeight: (autoHideEnabled && !barRoot.vertical) ? Math.max(1, Config.options?.bar?.autoHide?.hoverRegionWidth ?? 2) + layerGap : 0
                 mask: Region {
                     item: hoverMaskRegion
                     // Keep a fixed screen-edge hit strip while barContent is
@@ -135,14 +175,14 @@ Scope {
                     Region {
                         intersection: Intersection.Subtract
                         x: 0
-                        y: Config.options.bar.bottom ? (barRoot.height - barRoot.cornerOpenCutHeight) : 0
+                        y: barRoot.edge === "bottom" ? (barRoot.height - barRoot.cornerOpenCutHeight) : 0
                         width: barRoot.edgeCornerReserve(true)
                         height: barRoot.cornerOpenCutHeight
                     }
                     Region {
                         intersection: Intersection.Subtract
                         x: barRoot.width - barRoot.edgeCornerReserve(false)
-                        y: Config.options.bar.bottom ? (barRoot.height - barRoot.cornerOpenCutHeight) : 0
+                        y: barRoot.edge === "bottom" ? (barRoot.height - barRoot.cornerOpenCutHeight) : 0
                         width: barRoot.edgeCornerReserve(false)
                         height: barRoot.cornerOpenCutHeight
                     }
@@ -150,7 +190,7 @@ Scope {
                 color: "transparent"
 
                 function edgeCornerName(left: bool): string {
-                    const bottom = Config.options?.bar?.bottom ?? false;
+                    const bottom = barRoot.edge === "bottom";
                     return bottom ? (left ? "bottomLeft" : "bottomRight") : (left ? "topLeft" : "topRight");
                 }
 
@@ -164,7 +204,7 @@ Scope {
                         reserve = Math.max(reserve, Config.options?.orbit?.hotCornerSize ?? 12);
                     const sidebarCornerEnabled = Config.options?.sidebar?.cornerOpen?.enable ?? false;
                     const sidebarCornerBottom = Config.options?.sidebar?.cornerOpen?.bottom ?? false;
-                    if (sidebarCornerEnabled && sidebarCornerBottom === (Config.options?.bar?.bottom ?? false))
+                    if (sidebarCornerEnabled && sidebarCornerBottom === (barRoot.edge === "bottom"))
                         reserve = Math.max(reserve, Config.options?.sidebar?.cornerOpen?.cornerRegionWidth ?? 20);
                     return reserve;
                 }
@@ -190,7 +230,10 @@ Scope {
                 onInteractionHoldChanged: syncReservation()
                 onAutoHideEnabledChanged: syncReservation()
                 onPushWindowsWhenShownChanged: syncReservation()
-                Component.onCompleted: syncReservation()
+                Component.onCompleted: {
+                    bar.windowProbe = barRoot;
+                    syncReservation();
+                }
 
                 Timer {
                     id: reservationShowTimer
@@ -246,27 +289,32 @@ Scope {
 
                 Item {
                     id: autoHideEdgeRegion
-                    anchors {
-                        left: parent.left
-                        right: parent.right
-                        top: !Config.options.bar.bottom ? parent.top : undefined
-                        bottom: Config.options.bar.bottom ? parent.bottom : undefined
-                    }
-                    height: barRoot.autoHideEnabled ? Math.max(1, Config.options?.bar?.autoHide?.hoverRegionWidth ?? 2) + barRoot.layerGap : 0
+                    // A fixed screen-edge strip so a translated-away bar can
+                    // still be revealed. Horizontal bars reserve a horizontal
+                    // strip, vertical bars a vertical one.
+                    readonly property real strip: Math.max(1, Config.options?.bar?.autoHide?.hoverRegionWidth ?? 2) + barRoot.layerGap
+                    x: barRoot.vertical ? (barRoot.edge === "right" ? parent.width - width : 0) : 0
+                    y: barRoot.vertical ? 0 : (barRoot.edge === "bottom" ? parent.height - height : 0)
+                    width: barRoot.vertical ? (barRoot.autoHideEnabled ? strip : 0) : parent.width
+                    height: barRoot.vertical ? parent.height : (barRoot.autoHideEnabled ? strip : 0)
                 }
 
                 // Positioning
                 anchors {
-                    top: !Config.options.bar.bottom
-                    bottom: Config.options.bar.bottom
-                    left: true
-                    right: true
+                    top: barRoot.anchoredTop
+                    bottom: barRoot.anchoredBottom
+                    left: barRoot.anchoredLeft
+                    right: barRoot.anchoredRight
                 }
 
+                // B9.5: outer margins split into the normal axis (edgeMargin)
+                // and the along-bar axis (sideMargin). The layer gap and the
+                // dead-pixel workaround still ride on top of those.
                 margins {
-                    top: barRoot.anchors.top && !barRoot.autoHideEnabled ? barRoot.layerGap : 0
-                    right: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.right) ? -1 : 0
-                    bottom: barRoot.anchors.bottom ? ((Config.options.interactions.deadPixelWorkaround.enable ? -1 : 0) + (!barRoot.autoHideEnabled ? barRoot.layerGap : 0)) : 0
+                    top: barRoot.windowMargins.top
+                    bottom: barRoot.windowMargins.bottom
+                    left: barRoot.windowMargins.left
+                    right: barRoot.windowMargins.right
                 }
 
                 MouseArea {
@@ -274,34 +322,36 @@ Scope {
                     hoverEnabled: true
                     anchors {
                         fill: parent
-                        rightMargin: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.right) * 1
-                        bottomMargin: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.bottom) * 1
+                        rightMargin: (barRoot.deadPixel && barRoot.anchoredRight) * 1
+                        bottomMargin: (barRoot.deadPixel && barRoot.anchoredBottom) * 1
                     }
 
                     Item {
                         id: hoverMaskRegion
                         anchors {
-                            fill: barContent
-                            topMargin: -Config.options.bar.autoHide.hoverRegionWidth
-                            bottomMargin: -Config.options.bar.autoHide.hoverRegionWidth
+                            fill: contentLoader
+                            topMargin: barRoot.vertical ? 0 : -Config.options.bar.autoHide.hoverRegionWidth
+                            bottomMargin: barRoot.vertical ? 0 : -Config.options.bar.autoHide.hoverRegionWidth
+                            leftMargin: barRoot.vertical ? -Config.options.bar.autoHide.hoverRegionWidth : 0
+                            rightMargin: barRoot.vertical ? -Config.options.bar.autoHide.hoverRegionWidth : 0
                         }
                     }
 
                     RoundCorner {
                         id: leftPillCorner
-                        visible: barContent.centerOnly && showBarBackground && Config.options.bar.m3.cornerStyle === 0
-                        x: barContent.centerPillX - implicitSize
+                        visible: !barRoot.vertical && barRoot.centerOnly && showBarBackground && Config.options.bar.m3.cornerStyle === 0
+                        x: barRoot.centerPillX - implicitSize
                         implicitSize: Appearance.rounding.screenRounding
                         color: Appearance.colors.colLayer0
                         corner: RoundCorner.CornerEnum.TopRight
 
                         states: State {
                             name: "bottom"
-                            when: Config.options.bar.bottom
+                            when: barRoot.edge === "bottom"
                             AnchorChanges {
                                 target: leftPillCorner
                                 anchors.top: undefined
-                                anchors.bottom: barContent.bottom
+                                anchors.bottom: contentLoader.bottom
                             }
                             PropertyChanges {
                                 target: leftPillCorner
@@ -310,66 +360,59 @@ Scope {
                         }
                         AnchorChanges {
                             target: leftPillCorner
-                            anchors.top: barContent.top
+                            anchors.top: contentLoader.top
                             anchors.bottom: undefined
                         }
                     }
 
-                    BarContent {
-                        id: barContent
-
-                        implicitHeight: Appearance.sizes.barHeight
-                        anchors {
-                            right: parent.right
-                            left: parent.left
-                            top: parent.top
-                            bottom: undefined
-                            topMargin: barRoot.autoHideEnabled ? (!mustShow ? -Appearance.sizes.barHeight : barRoot.layerGap) : 0
-                            bottomMargin: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.bottom) * -1
-                            rightMargin: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.right) * -1
-                        }
-                        Behavior on anchors.topMargin {
+                    Loader {
+                        id: contentLoader
+                        // One content instance only: the orientation picks the
+                        // component; geometry is explicit so switching edges
+                        // cannot leave a stale anchor behind.
+                        readonly property real slideOffset: barRoot.autoHideEnabled ? (!barRoot.mustShow ? -barRoot.thickness : barRoot.layerGap) : 0
+                        // Explicit geometry, never conditional anchors: QML does
+                        // not clear an anchor when the binding yields
+                        // `undefined`, so a top->left->top switch used to leave
+                        // the content 2519 wide / 1440 tall inside the window.
+                        x: barRoot.vertical ? ((barRoot.edge === "right" ? parent.width - width + slideOffset : slideOffset) + (barRoot.edge === "right" && barRoot.deadPixel ? -1 : 0)) : 0
+                        y: barRoot.vertical ? 0 : ((barRoot.edge === "bottom" ? parent.height - height + slideOffset : slideOffset) + (barRoot.edge === "bottom" && barRoot.deadPixel ? -1 : 0))
+                        width: barRoot.vertical ? Appearance.sizes.verticalBarWidth : parent.width
+                        height: barRoot.vertical ? parent.height : Appearance.sizes.barHeight
+                        Behavior on x {
                             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                         }
-                        Behavior on anchors.bottomMargin {
+                        Behavior on y {
                             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                         }
+                        sourceComponent: barRoot.vertical ? verticalContent : horizontalContent
 
-                        states: State {
-                            name: "bottom"
-                            when: Config.options.bar.bottom
-                            AnchorChanges {
-                                target: barContent
-                                anchors {
-                                    right: parent.right
-                                    left: parent.left
-                                    top: undefined
-                                    bottom: parent.bottom
-                                }
-                            }
-                            PropertyChanges {
-                                target: barContent
-                                anchors.topMargin: 0
-                                anchors.bottomMargin: barRoot.autoHideEnabled ? (!mustShow ? -Appearance.sizes.barHeight : barRoot.layerGap) : 0
-                            }
+                        Component {
+                            id: horizontalContent
+                            BarContent {}
+                        }
+
+                        Component {
+                            id: verticalContent
+                            VerticalBarContent {}
                         }
                     }
 
                     RoundCorner {
                         id: rightPillCorner
-                        visible: barContent.centerOnly && showBarBackground && Config.options.bar.m3.cornerStyle === 0
-                        x: barContent.centerPillX + barContent.centerPillWidth
+                        visible: !barRoot.vertical && barRoot.centerOnly && showBarBackground && Config.options.bar.m3.cornerStyle === 0
+                        x: barRoot.centerPillX + barRoot.centerPillWidth
                         implicitSize: Appearance.rounding.screenRounding
                         color: Appearance.colors.colLayer0
                         corner: RoundCorner.CornerEnum.TopLeft
 
                         states: State {
                             name: "bottom"
-                            when: Config.options.bar.bottom
+                            when: barRoot.edge === "bottom"
                             AnchorChanges {
                                 target: rightPillCorner
                                 anchors.top: undefined
-                                anchors.bottom: barContent.bottom
+                                anchors.bottom: contentLoader.bottom
                             }
                             PropertyChanges {
                                 target: rightPillCorner
@@ -378,81 +421,72 @@ Scope {
                         }
                         AnchorChanges {
                             target: rightPillCorner
-                            anchors.top: barContent.top
+                            anchors.top: contentLoader.top
                             anchors.bottom: undefined
                         }
                     }
 
-                    // Round decorators
+                    // B9.4 vertical pill bridge: the Hug centre pill meets the
+                    // screen edge at the top and bottom instead of left/right.
+                    RoundCorner {
+                        id: topPillCorner
+                        visible: barRoot.vertical && barRoot.centerOnly && showBarBackground && Config.options.bar.m3.cornerStyle === 0
+                        y: barRoot.centerPillY - implicitSize
+                        x: contentLoader.x + (barRoot.edge === "right" ? -implicitSize : contentLoader.width)
+                        implicitSize: Appearance.rounding.screenRounding
+                        color: Appearance.colors.colLayer0
+                        corner: barRoot.edge === "right" ? RoundCorner.CornerEnum.BottomRight : RoundCorner.CornerEnum.BottomLeft
+                    }
+
+                    RoundCorner {
+                        id: bottomPillCorner
+                        visible: barRoot.vertical && barRoot.centerOnly && showBarBackground && Config.options.bar.m3.cornerStyle === 0
+                        y: barRoot.centerPillY + (barRoot.barContent?.centerPillHeight ?? 0)
+                        x: contentLoader.x + (barRoot.edge === "right" ? -implicitSize : contentLoader.width)
+                        implicitSize: Appearance.rounding.screenRounding
+                        color: Appearance.colors.colLayer0
+                        corner: barRoot.edge === "right" ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.TopLeft
+                    }
+
+                    // Round decorators: the strip that fuses the bar into the
+                    // screen corner. Horizontal bars keep it below/above the
+                    // bar; vertical bars place it on the interior side.
                     Loader {
                         id: roundDecorators
-                        anchors {
-                            left: parent.left
-                            right: parent.right
-                            top: barContent.bottom
-                            bottom: undefined
-                        }
-                        height: Appearance.rounding.screenRounding
-                        active: (showBarBackground && Config.options.bar.m3.cornerStyle === 0 && !barContent.centerOnly) || Config.options.bar.m3.cornerStyle === 4
-
-                        states: State {
-                            name: "bottom"
-                            when: Config.options.bar.bottom
-                            AnchorChanges {
-                                target: roundDecorators
-                                anchors {
-                                    right: parent.right
-                                    left: parent.left
-                                    top: undefined
-                                    bottom: barContent.top
-                                }
-                            }
-                        }
+                        x: barRoot.vertical ? (barRoot.edge === "right" ? contentLoader.x - width : contentLoader.x + contentLoader.width) : 0
+                        y: barRoot.vertical ? contentLoader.y : (barRoot.edge === "bottom" ? contentLoader.y - height : contentLoader.y + contentLoader.height)
+                        width: barRoot.vertical ? Appearance.rounding.screenRounding : contentLoader.width
+                        height: barRoot.vertical ? contentLoader.height : Appearance.rounding.screenRounding
+                        active: (showBarBackground && Config.options.bar.m3.cornerStyle === 0 && !barRoot.centerOnly) || Config.options.bar.m3.cornerStyle === 4
 
                         sourceComponent: Item {
+                            implicitWidth: Appearance.rounding.screenRounding
                             implicitHeight: Appearance.rounding.screenRounding
                             readonly property color decoratorColor: (Config.options.bar.m3.cornerStyle === 4 || showBarBackground) ? Appearance.colors.colLayer0 : "transparent"
 
                             RoundCorner {
-                                id: leftCorner
-                                visible: Config.options.bar.m3.cornerStyle === 0 || barContent.effectiveLeftLayout.length > 0
-                                anchors {
-                                    top: parent.top
-                                    bottom: parent.bottom
-                                    left: parent.left
-                                }
-
+                                id: startCorner
+                                visible: Config.options.bar.m3.cornerStyle === 0 || barRoot.leftLaneCount > 0
+                                x: 0
+                                y: barRoot.vertical ? 0 : (barRoot.edge === "bottom" ? parent.height - height : 0)
+                                width: implicitSize
+                                height: implicitSize
                                 implicitSize: Appearance.rounding.screenRounding
                                 color: parent.decoratorColor
 
-                                corner: RoundCorner.CornerEnum.TopLeft
-                                states: State {
-                                    name: "bottom"
-                                    when: Config.options.bar.bottom
-                                    PropertyChanges {
-                                        leftCorner.corner: RoundCorner.CornerEnum.BottomLeft
-                                    }
-                                }
+                                corner: barRoot.vertical ? (barRoot.edge === "right" ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.TopLeft) : (barRoot.edge === "bottom" ? RoundCorner.CornerEnum.BottomLeft : RoundCorner.CornerEnum.TopLeft)
                             }
                             RoundCorner {
-                                id: rightCorner
-                                visible: Config.options.bar.m3.cornerStyle === 0 || barContent.effectiveRightLayout.length > 0
-                                anchors {
-                                    right: parent.right
-                                    top: !Config.options.bar.bottom ? parent.top : undefined
-                                    bottom: Config.options.bar.bottom ? parent.bottom : undefined
-                                }
+                                id: endCorner
+                                visible: Config.options.bar.m3.cornerStyle === 0 || barRoot.rightLaneCount > 0
+                                x: barRoot.vertical ? parent.width - width : 0
+                                y: barRoot.vertical ? parent.height - height : (barRoot.edge === "bottom" ? 0 : parent.height - height)
+                                width: implicitSize
+                                height: implicitSize
                                 implicitSize: Appearance.rounding.screenRounding
                                 color: parent.decoratorColor
 
-                                corner: RoundCorner.CornerEnum.TopRight
-                                states: State {
-                                    name: "bottom"
-                                    when: Config.options.bar.bottom
-                                    PropertyChanges {
-                                        rightCorner.corner: RoundCorner.CornerEnum.BottomRight
-                                    }
-                                }
+                                corner: barRoot.vertical ? (barRoot.edge === "right" ? RoundCorner.CornerEnum.BottomRight : RoundCorner.CornerEnum.BottomLeft) : (barRoot.edge === "bottom" ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight)
                             }
                         }
                     }

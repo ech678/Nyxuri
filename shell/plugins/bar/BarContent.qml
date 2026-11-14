@@ -271,10 +271,11 @@ Item {
             Rectangle {
                 id: leftMaterialPill
                 visible: root.isMaterial && root.leftLaneFilled
-                anchors.left: root.isMaterialHug ? parent.left : undefined
-                anchors.top: (root.isMaterialHug && !Config.options.bar.bottom) ? parent.top : undefined
-                anchors.bottom: (root.isMaterialHug && Config.options.bar.bottom) ? parent.bottom : undefined
-                anchors.centerIn: root.isMaterialHug ? undefined : parent
+                // Explicit geometry on purpose: conditional anchors bound to
+                // `undefined` are never cleared, so a top<->bottom switch would
+                // leave the pill pinned to both edges.
+                x: root.isMaterialHug ? 0 : (parent.width - width) / 2
+                y: root.isMaterialHug ? 0 : (parent.height - height) / 2
                 width: leftLane.hasContent ? leftMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10) : 0
                 height: root.isMaterialHug ? parent.height : leftMaterialRow.implicitHeight
                 radius: root.isMaterialHug ? 0 : Appearance.rounding.full
@@ -321,9 +322,8 @@ Item {
             RoundCorner {
                 id: leftRightOutwardCorner
                 visible: root.isMaterialHug && leftLane.hasContent
-                anchors.left: leftMaterialPill.right
-                anchors.top: !Config.options.bar.bottom ? parent.top : undefined
-                anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
+                x: leftMaterialPill.x + leftMaterialPill.width
+                y: Config.options.bar.bottom ? parent.height - implicitSize : 0
                 implicitSize: Appearance.rounding.screenRounding
                 color: root.materialPillBgColor
                 corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft
@@ -374,9 +374,8 @@ Item {
             RoundCorner {
                 id: centerLeftOutwardCorner
                 visible: root.isMaterialHug && absoluteCenter.hasContent
-                anchors.right: centerMaterialPill.left
-                anchors.top: !Config.options.bar.bottom ? parent.top : undefined
-                anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
+                x: centerMaterialPill.x - implicitSize
+                y: Config.options.bar.bottom ? parent.height - implicitSize : 0
                 implicitSize: Appearance.rounding.screenRounding
                 color: root.materialPillBgColor
                 corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight
@@ -434,9 +433,8 @@ Item {
             RoundCorner {
                 id: centerRightOutwardCorner
                 visible: root.isMaterialHug && absoluteCenter.hasContent
-                anchors.left: centerMaterialPill.right
-                anchors.top: !Config.options.bar.bottom ? parent.top : undefined
-                anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
+                x: centerMaterialPill.x + centerMaterialPill.width
+                y: Config.options.bar.bottom ? parent.height - implicitSize : 0
                 implicitSize: Appearance.rounding.screenRounding
                 color: root.materialPillBgColor
                 corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft
@@ -485,9 +483,8 @@ Item {
             RoundCorner {
                 id: rightLeftOutwardCorner
                 visible: root.isMaterialHug && rightLane.hasContent
-                anchors.right: rightMaterialPill.left
-                anchors.top: !Config.options.bar.bottom ? parent.top : undefined
-                anchors.bottom: Config.options.bar.bottom ? parent.bottom : undefined
+                x: rightMaterialPill.x - implicitSize
+                y: Config.options.bar.bottom ? parent.height - implicitSize : 0
                 implicitSize: Appearance.rounding.screenRounding
                 color: root.materialPillBgColor
                 corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight
@@ -497,10 +494,8 @@ Item {
             Rectangle {
                 id: rightMaterialPill
                 visible: root.isMaterial && root.rightLaneFilled
-                anchors.right: root.isMaterialHug ? parent.right : undefined
-                anchors.top: (root.isMaterialHug && !Config.options.bar.bottom) ? parent.top : undefined
-                anchors.bottom: (root.isMaterialHug && Config.options.bar.bottom) ? parent.bottom : undefined
-                anchors.centerIn: root.isMaterialHug ? undefined : parent
+                x: root.isMaterialHug ? parent.width - width : (parent.width - width) / 2
+                y: root.isMaterialHug ? 0 : (parent.height - height) / 2
                 width: rightLane.hasContent ? rightMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10) : 0
                 height: root.isMaterialHug ? parent.height : rightMaterialRow.implicitHeight
                 radius: root.isMaterialHug ? 0 : Appearance.rounding.full

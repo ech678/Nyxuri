@@ -135,6 +135,57 @@ class BarRuntimeProbeTest(unittest.TestCase):
         self.assertIn("headphones", icons["fakeIcons"])
         self.assertEqual(icons["fakeCritical"], 1)
 
+        # B9.4 vertical bar: both edges evaluate real geometry with the island
+        # filtered out, and the Float style boost lands on the vertical axis.
+        vertical = report["vertical"]
+        self.assertTrue(vertical["ok"], vertical)
+        self.assertTrue(vertical["boost"], vertical)
+        self.assertEqual(len(vertical["cases"]), 6)
+        for case in vertical["cases"]:
+            with self.subTest(verticalEdge=case["edge"], scene=case["scene"]):
+                self.assertTrue(case["ok"], case)
+                self.assertGreater(case["width"], 0)
+                self.assertEqual(case["pending"], [])
+                self.assertEqual(case["failed"], [])
+                if case["scene"] == "default":
+                    self.assertEqual(case["middle"], [],
+                                     "the island must be filtered out of the vertical layout")
+                    self.assertGreater(case["topHeight"], 0)
+                    self.assertGreater(case["bottomHeight"], 0)
+                else:
+                    self.assertEqual(case["middle"], ["clock"])
+                    self.assertGreater(case["centerHeight"], 0)
+
+        # B9.5 outer margins: the same pure math the window binds, for every
+        # edge and the 0/12/24 tiers, including the reserved exclusive zone.
+        margins = report["margins"]
+        self.assertTrue(margins["ok"], margins)
+        self.assertEqual(len(margins["cases"]), 12)
+        self.assertGreater(margins["baseBarHeight"], 0)
+        self.assertGreater(margins["baseVerticalBarWidth"], 0)
+
+        # B9.4 window geometry: the real Bar.qml window, walked through every
+        # edge. The top->left->top round trip is the regression gate for the
+        # conditional-anchor bug that left the bar invisible after switching
+        # back (content kept the screen width/height).
+        window_probe = report["windowProbe"]
+        self.assertTrue(window_probe["ok"], window_probe)
+        self.assertTrue(window_probe["roundTrip"],
+                        "top -> left -> ... -> top changed the evaluated geometry")
+        cases = window_probe["cases"]
+        self.assertEqual([case["edge"] for case in cases],
+                         ["top", "left", "right", "bottom", "top"])
+        for case in cases:
+            with self.subTest(windowEdge=case["edge"]):
+                self.assertTrue(case["ok"], case)
+                self.assertGreater(case["window"]["w"], 0)
+                self.assertGreater(case["window"]["h"], 0)
+                self.assertGreater(case["content"]["w"], 0)
+                self.assertGreater(case["content"]["h"], 0)
+                if case["vertical"]:
+                    self.assertEqual(case["middle"], [],
+                                     "the vertical layout must filter the island")
+
 
 if __name__ == "__main__":
     unittest.main()

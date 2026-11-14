@@ -1283,3 +1283,57 @@ qml-lint 629 条 advisory 警告为既有 qs.* 成员解析噪声）。`probe-ba
   `check.sh` 绿。
 - **未验证**：idle 横向时钟的实机视觉（宽度/字号/日期默认值）、通知弹窗宿主整壳恢复、
   多屏与竖排下的岛表现（作者）。
+
+### B9.4 实施记录（2026-11-14，竖向 bar）
+
+- **单一真值**：`Config.options.bar.edge` 取代 `bar.bottom` 的二次推导，`bottom`/`vertical`
+  降为派生视图；`StyledPopup`、`BarGroupStylePopup`、`NotificationPopupHost` 改读 `edge`
+  （同时修掉右边缘弹层锚到左侧与通知避让用旧 0.85 `Sizes` token 的偏差）。
+- **内容层**：新增 `plugins/bar/VerticalBarContent.qml`，从
+  `references/end4-pC/modules/ii/verticalBar/VerticalBarContent.qml` 物理整抄后剪裁：
+  纵向三 lane（沿用 left/middle/right 数组）、material 竖排胶囊、centerOnly 竖向药丸、
+  自隐藏 lane 收缩、竖向 `laneMargin` 与 end4 竖向间距阶梯；岛被过滤出竖向布局。
+- **窗口层**：`Bar.qml` 单 Scope 内按 `vertical` 分支 anchors/implicitWidth/mask/auto-hide
+  滑出方向/圆角装饰/药丸上下桥接；内容由单个 `contentLoader` 在
+  `BarContent` 与 `VerticalBarContent` 间二选一，避免两套服务同时实例化。
+- **竖向厚度**：新增 `PersonalizationConfig.barVerticalThickness`（28–64，默认 36）+
+  setter + 落盘；`Appearance.verticalBarThickness` 注入，`verticalBarWidth =
+  baseVerticalBarWidth + barStyleBoost`；设置页仅左右边缘时显示该滑块，并注明竖向暂不
+  显示岛（B9.6 重排）。
+- **通知仲裁**：`shell.qml` 在 `bar.vertical` 时不再把 `popup:notification` 让给岛，
+  避免通知交给被布局过滤的部件。
+- **护栏**：probe 新增 `edge()` / `margins()` IPC、竖向 1440 高舞台；断言 left/right ×
+  style 1/3 的宽度 46/36（Float +10 加成）、默认场景中段为空、centerOnly 中段居中、
+  `logErrors` 无新增。
+
+### B9.5 实施记录（2026-11-14，外边距）
+
+- **设置**：`barEdgeMargin`（0–48，法向）与 `barSideMargin`（0–96，两端）双向落盘；
+  Bar 页新增「外边距」段（屏幕边缘边距 / 两端边距）。
+- **几何共用**：`shell/commons/BarGeometry.js` 提供纯函数 `margins()` 与
+  `exclusiveZone()`；`Bar.qml` 的 `margins` 与 `shownExclusiveZone` 直接绑定，
+  probe 评估同一实现，不做第二份算式。
+- **链路**：`StyledPopup` 的弹层起点 = 厚度 + 边距 + M3 外间距；通知宿主按真实
+  `Appearance.sizes` + 边距避让，竖向右边缘同样生效。
+- **验证**：`tests/shell` 464 tests OK（11 skipped）；`probe-bar.sh --json` 的
+  `vertical/margins` 全绿、`logErrors: []`；`check.sh` 绿。
+- **未验证**：Niri 实机左右 exclusive zone 排布、弹层/通知手感、0/12/24 与竖向
+  bar 的截图（作者）。
+
+### B9.4 修订记录（2026-11-14，条件 anchor 残留与窗口级探针）
+
+- **症状**：实机切到 left 后竖向 bar 只剩 69px 窗口里的横向内容切片（黑色胶囊 + 一段
+  media 彩虹）；切回 top 后 bar 不显示（部件垂直居中在 69px 窗口外）。
+- **根因**：内容 Loader 的方向切换用 `anchors.top: cond ? parent.top : undefined`，QML
+  不会因赋 `undefined` 清除已生效的 anchor；实测 `content.width` 残留 2519、
+  切回 top 后 `content.height` 残留 1440。`BarContent` 的 material hug 胶囊与外翻圆角
+  有同类写法（上↔下切换同样会残留）。
+- **修复**：内容 Loader 改为显式 `x/y/width/height`（含左/右、上/下边界偏移与
+  dead-pixel 补偿），滑动动画从 anchor margin 迁到 `x`/`y`；`BarContent` 胶囊与
+  外翻圆角改显式几何/满高。
+- **护栏**：`Bar.qml` 新增 `windowProbe` 接入点；`probe-bar.sh` 在内容阶段后加载真实
+  `Bar.qml`，走 `top→left→right→bottom→top`，断言窗口高度/宽度、内容两轴尺寸、
+  内容边界偏移（右 left 0 / 右边缘 23、下 23）、竖向 lane 非零、岛被过滤，并比较
+  两次 top 快照一致；`test_bar_end4` 增加「禁止条件 anchor」静态契约。
+- **验证**：`tests/shell` 465 tests OK（11 skipped）；`probe-bar.sh --json`
+  `windowProbe.ok=true`、`roundTrip=true`、`logErrors: []`；`check.sh` 绿。

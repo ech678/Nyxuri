@@ -300,6 +300,10 @@ Singleton {
     }
 
     property real barThickness: 36
+    // B9.4: the vertical bar has its own thickness. end4 ships a reference of
+    // 46 but the roadmap (B-2) keeps it user-adjustable, so this is a real
+    // user value, not a frozen constant.
+    property real verticalBarThickness: 36
     // Style-dependent height bonus injected by PersonalizationConfig. end4
     // derives barHeight from the corner style (Float adds the outer gap on
     // both edges, Material hug/Panel add 4 for the round decorators); keeping
@@ -315,8 +319,8 @@ Singleton {
     readonly property QtObject sizes: QtObject {
         readonly property real baseBarHeight: root.barThickness > 0 ? root.barThickness : 36
         readonly property real barHeight: baseBarHeight + (root.barStyleBoost > 0 ? root.barStyleBoost : 0)
-        readonly property real baseVerticalBarWidth: root.barThickness > 0 ? root.barThickness : 44
-        readonly property real verticalBarWidth: baseVerticalBarWidth
+        readonly property real baseVerticalBarWidth: root.verticalBarThickness > 0 ? root.verticalBarThickness : 36
+        readonly property real verticalBarWidth: baseVerticalBarWidth + (root.barStyleBoost > 0 ? root.barStyleBoost : 0)
         readonly property real elevationMargin: 10
         readonly property real spacingSmall: 6
         readonly property real spacingLarge: 12

@@ -17,26 +17,24 @@ LazyLoader {
     default property Item contentItem
     property real popupBackgroundMargin: 0
 
-    signal requestClose()
+    signal requestClose
 
-    readonly property bool targetHovered: hoverTarget
-        && (hoverTarget.containsMouse ?? hoverTarget.buttonHovered ?? false)
+    readonly property bool targetHovered: hoverTarget && (hoverTarget.containsMouse ?? hoverTarget.buttonHovered ?? false)
 
     // The popup stays up while the pointer is over the bar item OR over the popup
     // itself, with a grace period for the masked gap between them. Keying `active`
     // on the bar item alone made every popup close the moment you moved towards it.
-    readonly property bool hoverWanted: root.hoverActivates
-        && (root.targetHovered || root.popupHovered)
+    readonly property bool hoverWanted: root.hoverActivates && (root.targetHovered || root.popupHovered)
     property bool _hoverHold: false
 
     onHoverWantedChanged: {
         if (root.hoverWanted) {
-            root.hoverCloseTimer.stop()
+            root.hoverCloseTimer.stop();
             if (!root._hoverHold)
-                root.hoverOpenTimer.restart()
+                root.hoverOpenTimer.restart();
         } else {
-            root.hoverOpenTimer.stop()
-            root.hoverCloseTimer.restart()
+            root.hoverOpenTimer.stop();
+            root.hoverCloseTimer.restart();
         }
     }
 
@@ -45,7 +43,7 @@ LazyLoader {
         repeat: false
         onTriggered: {
             if (root.hoverWanted)
-                root._hoverHold = true
+                root._hoverHold = true;
         }
     }
 
@@ -61,21 +59,17 @@ LazyLoader {
 
     onActiveChanged: {
         if (!root.active)
-            root.popupHovered = false
+            root.popupHovered = false;
     }
 
-    readonly property bool barVertical: Config.options?.bar?.vertical ?? false
-    readonly property string barEdge: {
-        if (!root.barVertical)
-            return (Config.options?.bar?.bottom ?? false) ? "bottom" : "top"
-        return (Config.options?.bar?.bottom ?? false) ? "right" : "left"
-    }
-    readonly property real m3OuterGap: (Config.options?.bar?.m3?.cornerStyle ?? 0) === 3
-        ? (Config.options?.bar?.m3?.gapsOut ?? 0)
-        : 0
-    readonly property real barThickness: root.barVertical
-        ? Appearance.sizes.verticalBarWidth + root.m3OuterGap
-        : Appearance.sizes.barHeight + root.m3OuterGap
+    // B9.4: the bar edge is the single truth (end4 derived "right" from a
+    // bottom bool, which sent a right-edge popup to the left side).
+    readonly property string barEdge: Config.options?.bar?.edge ?? "top"
+    readonly property bool barVertical: root.barEdge === "left" || root.barEdge === "right"
+    readonly property real m3OuterGap: (Config.options?.bar?.m3?.cornerStyle ?? 0) === 3 ? (Config.options?.bar?.m3?.gapsOut ?? 0) : 0
+    // B9.5: popups start after the outer edge margin the bar itself reserves.
+    readonly property real barEdgeMargin: Config.options?.bar?.edgeMargin ?? 0
+    readonly property real barThickness: (root.barVertical ? Appearance.sizes.verticalBarWidth : Appearance.sizes.barHeight) + root.barEdgeMargin + root.m3OuterGap
 
     PanelWindow {
         id: clickOutsideBackdrop
@@ -85,7 +79,12 @@ LazyLoader {
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "quickshell:m3-popup-catcher"
         WlrLayershell.exclusionMode: ExclusionMode.Ignore
-        anchors { top: true; bottom: true; left: true; right: true }
+        anchors {
+            top: true
+            bottom: true
+            left: true
+            right: true
+        }
 
         MouseArea {
             anchors.fill: parent
@@ -105,53 +104,43 @@ LazyLoader {
         anchors.top: root.barEdge !== "bottom"
         anchors.bottom: root.barEdge === "bottom"
 
-        implicitWidth: popupBackground.implicitWidth
-            + Appearance.sizes.elevationMargin * 2
-            + root.popupBackgroundMargin
-        implicitHeight: popupBackground.implicitHeight
-            + Appearance.sizes.elevationMargin * 2
-            + root.popupBackgroundMargin
+        implicitWidth: popupBackground.implicitWidth + Appearance.sizes.elevationMargin * 2 + root.popupBackgroundMargin
+        implicitHeight: popupBackground.implicitHeight + Appearance.sizes.elevationMargin * 2 + root.popupBackgroundMargin
 
         readonly property real centerOffsetX: {
-            const base = root.QsWindow?.mapFromItem(
-                root.hoverTarget,
-                ((root.hoverTarget?.width ?? 0) - popupBackground.implicitWidth) / 2,
-                0
-            ).x ?? Appearance.sizes.elevationMargin
-            const margin = Appearance.sizes.elevationMargin
-            const maxLeft = Math.max(margin,
-                (popupWindow.screen?.width ?? popupBackground.implicitWidth)
-                - popupBackground.implicitWidth - margin)
-            return Math.max(margin, Math.min(base, maxLeft))
+            const base = root.QsWindow?.mapFromItem(root.hoverTarget, ((root.hoverTarget?.width ?? 0) - popupBackground.implicitWidth) / 2, 0).x ?? Appearance.sizes.elevationMargin;
+            const margin = Appearance.sizes.elevationMargin;
+            const maxLeft = Math.max(margin, (popupWindow.screen?.width ?? popupBackground.implicitWidth) - popupBackground.implicitWidth - margin);
+            return Math.max(margin, Math.min(base, maxLeft));
         }
 
         readonly property real centerOffsetY: {
-            const base = root.QsWindow?.mapFromItem(
-                root.hoverTarget,
-                0,
-                ((root.hoverTarget?.height ?? 0) - popupBackground.implicitHeight) / 2
-            ).y ?? Appearance.sizes.elevationMargin
-            const margin = Appearance.sizes.elevationMargin
-            const maxTop = Math.max(margin,
-                (popupWindow.screen?.height ?? popupBackground.implicitHeight)
-                - popupBackground.implicitHeight - margin)
-            return Math.max(margin, Math.min(base, maxTop))
+            const base = root.QsWindow?.mapFromItem(root.hoverTarget, 0, ((root.hoverTarget?.height ?? 0) - popupBackground.implicitHeight) / 2).y ?? Appearance.sizes.elevationMargin;
+            const margin = Appearance.sizes.elevationMargin;
+            const maxTop = Math.max(margin, (popupWindow.screen?.height ?? popupBackground.implicitHeight) - popupBackground.implicitHeight - margin);
+            return Math.max(margin, Math.min(base, maxTop));
         }
 
-        mask: Region { item: popupBackground }
+        mask: Region {
+            item: popupBackground
+        }
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
 
         margins {
             left: {
-                if (root.barEdge === "right") return 0
-                if (root.barEdge === "left") return root.barThickness
-                return popupWindow.centerOffsetX
+                if (root.barEdge === "right")
+                    return 0;
+                if (root.barEdge === "left")
+                    return root.barThickness;
+                return popupWindow.centerOffsetX;
             }
             top: {
-                if (root.barEdge === "bottom") return 0
-                if (root.barEdge === "top") return root.barThickness
-                return popupWindow.centerOffsetY
+                if (root.barEdge === "bottom")
+                    return 0;
+                if (root.barEdge === "top")
+                    return root.barThickness;
+                return popupWindow.centerOffsetY;
             }
             right: root.barEdge === "right" ? root.barThickness : 0
             bottom: root.barEdge === "bottom" ? root.barThickness : 0
@@ -175,14 +164,10 @@ LazyLoader {
 
             anchors {
                 fill: parent
-                leftMargin: Appearance.sizes.elevationMargin
-                    + root.popupBackgroundMargin * (!popupWindow.anchors.left)
-                rightMargin: Appearance.sizes.elevationMargin
-                    + root.popupBackgroundMargin * (!popupWindow.anchors.right)
-                topMargin: Appearance.sizes.elevationMargin
-                    + root.popupBackgroundMargin * (!popupWindow.anchors.top)
-                bottomMargin: Appearance.sizes.elevationMargin
-                    + root.popupBackgroundMargin * (!popupWindow.anchors.bottom)
+                leftMargin: Appearance.sizes.elevationMargin + root.popupBackgroundMargin * (!popupWindow.anchors.left)
+                rightMargin: Appearance.sizes.elevationMargin + root.popupBackgroundMargin * (!popupWindow.anchors.right)
+                topMargin: Appearance.sizes.elevationMargin + root.popupBackgroundMargin * (!popupWindow.anchors.top)
+                bottomMargin: Appearance.sizes.elevationMargin + root.popupBackgroundMargin * (!popupWindow.anchors.bottom)
             }
 
             implicitWidth: (popupWindow.innerContent?.implicitWidth ?? 0) + margin * 2
@@ -194,10 +179,7 @@ LazyLoader {
             border.color: M3Palette.outlineVariant
             opacity: shown ? 1 : 0
             scale: shown ? 1 : 0.94
-            transformOrigin: root.barEdge === "bottom" ? Item.Bottom
-                : root.barEdge === "left" ? Item.Left
-                : root.barEdge === "right" ? Item.Right
-                : Item.Top
+            transformOrigin: root.barEdge === "bottom" ? Item.Bottom : root.barEdge === "left" ? Item.Left : root.barEdge === "right" ? Item.Right : Item.Top
 
             Behavior on opacity {
                 enabled: Appearance.animationsEnabled
@@ -218,10 +200,10 @@ LazyLoader {
 
             Component.onCompleted: {
                 if (popupWindow.innerContent) {
-                    popupWindow.innerContent.parent = popupBackground
-                    popupWindow.innerContent.anchors.centerIn = popupBackground
+                    popupWindow.innerContent.parent = popupBackground;
+                    popupWindow.innerContent.anchors.centerIn = popupBackground;
                 }
-                shown = true
+                shown = true;
             }
         }
     }
