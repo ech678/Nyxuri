@@ -34,6 +34,7 @@
 - 移除引擎 TUI 幽灵兼容分支与死变量（`DOCTOR_CHECKS`、2 元组预设形状、冗余异常元组）
 
 ### Added
+- `nyxuri shell restart`：硬重启当前正在跑的外壳（自动判定 Noctalia / Nyxuri Shell，锁屏、无图形会话与双端残局拒绝，不改账本偏好）；快捷键 `Mod+Alt+R` 与 `nyxuri-shell --action restart` 共用同一条状态机
 - AUR 上架 `nyxuri-git`：`paru -S nyxuri-git` 一条命令安装完整 Nyxuri（管理引擎、全部配置单元与 Nyxuri Shell），此后更新交给 pacman
 - `nyxuri-shell --ipc <target> <method> [args…]`：PATH 稳定的单元 IPC 通用网关，供合成器绑定与外部脚本调用
 

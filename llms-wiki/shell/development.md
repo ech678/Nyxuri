@@ -68,6 +68,9 @@ TypeError/ReferenceError/compiled empty。退出码 2 = 环境跳过，不是通
 # 检查当前双轨状态
 nyxuri shell status
 
+# 硬重启当前正在跑的外壳（谁在跑重启谁；锁屏与无图形会话拒绝；快捷键 Mod+Alt+R）
+nyxuri shell restart
+
 # 平滑切换至 Nyxuri Shell（停止旧端 -> 启动新端 -> 3.0s 探测就绪 -> 失败回滚）
 nyxuri shell set custom "$PWD/shell/nyxuri-shell"
 nyxuri shell switch nyxuri-shell
@@ -76,6 +79,7 @@ nyxuri shell switch nyxuri-shell
 nyxuri-shell --action session        # 呼出会话菜单
 nyxuri-shell --action launcher       # 呼出应用搜索
 nyxuri-shell --action lock           # 锁屏
+nyxuri-shell --action restart        # 硬重启当前外壳（与 Mod+Alt+R 同一入口）
 
 # 随时一键平滑切回 Noctalia
 nyxuri shell switch noctalia

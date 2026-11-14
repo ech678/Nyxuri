@@ -2131,4 +2131,7 @@ class TestShellManagement(unittest.TestCase):
             binds_content = f.read()
         self.assertIn('Mod+L allow-when-locked=true { spawn "~/.config/niri/scripts/shell-action.sh" "lock"; }', binds_content)
 
+        # 8. Hard shell restart is bound to Mod+Alt+R (Mod+Shift+R is niri config reload)
+        self.assertIn('Mod+Alt+R repeat=false { spawn "~/.config/niri/scripts/shell-action.sh" "restart"; }', binds_content)
+
 

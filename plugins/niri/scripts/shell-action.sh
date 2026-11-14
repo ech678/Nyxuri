@@ -20,6 +20,17 @@ if [ -r "$state_file" ]; then
     fi
 fi
 
+# A hard restart is shell-agnostic: the CLI probes what is running, stops it
+# and spawns a fresh instance. Handle it before per-shell dispatch so a broken
+# custom shell binary cannot block its own recovery path.
+if [ "$action" = "restart" ]; then
+    if command -v nyxuri >/dev/null 2>&1; then
+        exec nyxuri shell restart
+    fi
+    echo "nyxuri CLI not found in PATH; cannot restart the shell." >&2
+    exit 1
+fi
+
 if [ "$active_shell" = "nyxuri-shell" ] || [ "$active_shell" = "custom" ]; then
     custom_shell_bin="${NYXURI_CUSTOM_SHELL_BIN:-}"
     if [ -z "$custom_shell_bin" ] && [ -r "$state_file" ]; then
@@ -156,7 +167,7 @@ case "$action" in
         ;;
     *)
         echo "Unknown shell action: $action" >&2
-        echo "Usage: $0 {launcher|session|settings|clipboard|lock|wallpaper-random|wallpaper-picker|radial-launcher|translate}" >&2
+        echo "Usage: $0 {launcher|session|settings|clipboard|lock|wallpaper-random|wallpaper-picker|radial-launcher|translate|restart}" >&2
         exit 1
         ;;
 esac
