@@ -381,6 +381,53 @@ Item {
                     }
                 }
 
+                // Tray (B9.1): the tray widget's own contract — pinned items
+                // keep a slot, everything else lives behind the overflow arrow.
+                PreferenceHeader {
+                    text: I18n.tr("Tray")
+                }
+
+                PreferenceToggle {
+                    id: trayTintToggle
+
+                    first: true
+                    text: I18n.tr("Tint icons")
+                    checked: PersonalizationConfig.barTrayMonochromeIcons
+                    onToggled: PersonalizationConfig.setValue("barTrayMonochromeIcons", checked)
+
+                    SettingsSearchAnchor {
+                        id: searchAnchorTray
+                        target: trayTintToggle
+                        anchorId: "bar.section.tray"
+                    }
+                }
+
+                PreferenceToggle {
+                    text: I18n.tr("Hide passive items")
+                    checked: PersonalizationConfig.barTrayFilterPassive
+                    onToggled: PersonalizationConfig.setValue("barTrayFilterPassive", checked)
+                }
+
+                PreferenceToggle {
+                    text: I18n.tr("Show item id in tooltip")
+                    checked: PersonalizationConfig.barTrayShowItemId
+                    onToggled: PersonalizationConfig.setValue("barTrayShowItemId", checked)
+                }
+
+                PreferenceToggle {
+                    text: I18n.tr("Pin new items by default")
+                    checked: PersonalizationConfig.barTrayInvertPinnedItems
+                    onToggled: PersonalizationConfig.setValue("barTrayInvertPinnedItems", checked)
+                }
+
+                PreferenceAction {
+                    last: true
+                    icon: "restart_alt"
+                    text: I18n.tr("Reset pin list")
+                    subtext: I18n.tr("Every item returns to the bar")
+                    onClicked: PersonalizationConfig.setBarTrayPinnedItems([])
+                }
+
                 // Island (B1: the island is a bar layout part — one tab)
                 PreferenceHeader {
                     text: I18n.tr("Island")

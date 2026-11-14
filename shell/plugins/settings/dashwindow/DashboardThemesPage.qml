@@ -249,9 +249,7 @@ Item {
                 Layout.fillHeight: true
                 // Header row plus one 26px button per template, four pixels
                 // apart, with the card's own 14px margins on both sides.
-                readonly property real implicitContentHeight: 56 + root.templates.length * 26 + Math.max(0,
-                                                                                                         root.templates.length
-                                                                                                         - 1) * 4
+                readonly property real implicitContentHeight: 56 + root.templates.length * 26 + Math.max(0, root.templates.length - 1) * 4
                 tint: Appearance.colors.colLayer1
                 pager: root.pager
                 staggerMs: root.staggerMs
@@ -315,10 +313,7 @@ Item {
                                 // white wash: on a light palette the wash reads
                                 // as the same tone as the label and the button
                                 // looks empty.
-                                containerColor: PersonalizationConfig.isMatugenTemplateEnabled(
-                                                    templateToggle.modelData.id)
-                                                ? Appearance.colors.colSecondary :
-                                                  Appearance.colors.colSurfaceContainerHigh
+                                containerColor: PersonalizationConfig.isMatugenTemplateEnabled(templateToggle.modelData.id) ? Appearance.colors.colSecondary : Appearance.colors.colSurfaceContainerHigh
                                 rippleColor: Appearance.colors.colOnLayer1
                                 stateLayerColor: Appearance.colors.colOnLayer1
                                 stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
@@ -345,26 +340,20 @@ Item {
                                         spacing: 6
 
                                         MaterialSymbol {
-                                            readonly property bool on:
-                                                PersonalizationConfig.isMatugenTemplateEnabled(
-                                                    templateToggle.modelData.id)
+                                            readonly property bool on: PersonalizationConfig.isMatugenTemplateEnabled(templateToggle.modelData.id)
                                             text: templateToggle.modelData.icon
                                             iconSize: 16
                                             fill: on ? 1 : 0
                                             // On-state sits on colSecondary, so its
                                             // label has to be colOnSecondary — the
                                             // layer colour is near-white and vanishes.
-                                            color: on ? Appearance.colors.colOnSecondary :
-                                                        Appearance.colors.colOnLayer1
+                                            color: on ? Appearance.colors.colOnSecondary : Appearance.colors.colOnLayer1
                                         }
 
                                         StyledText {
                                             Layout.fillWidth: true
                                             text: templateToggle.modelData.label
-                                            color: PersonalizationConfig.isMatugenTemplateEnabled(
-                                                       templateToggle.modelData.id)
-                                                   ? Appearance.colors.colOnSecondary :
-                                                     Appearance.colors.colOnLayer1
+                                            color: PersonalizationConfig.isMatugenTemplateEnabled(templateToggle.modelData.id) ? Appearance.colors.colOnSecondary : Appearance.colors.colOnLayer1
                                             elide: Text.ElideRight
                                         }
                                     }
@@ -459,8 +448,7 @@ Item {
 
                                 required property var modelData
 
-                                readonly property bool selected: root.activeScheme
-                                                                 === tileRoot.modelData.value
+                                readonly property bool selected: root.activeScheme === tileRoot.modelData.value
 
                                 width: 118
                                 height: schemeRow.height
@@ -474,9 +462,7 @@ Item {
                                     // the only honest single hue we have is the live one.
                                     containerColor: Appearance.applyAlpha(Appearance.colors.colPrimary, 0.16)
                                     stateLayerColor: Appearance.colors.colOnLayer1
-                                    hoverStateLayerColor: Qt.lighter(Appearance.applyAlpha(
-                                                                         Appearance.colors.colPrimary, 0.16),
-                                                                     1.1)
+                                    hoverStateLayerColor: Qt.lighter(Appearance.applyAlpha(Appearance.colors.colPrimary, 0.16), 1.1)
                                     hoverStateLayerOpacity: 0.5
                                     rippleColor: Appearance.colors.colOnLayer1
                                     toggled: tileRoot.selected
@@ -536,9 +522,8 @@ Item {
                                                 StyledText {
                                                     Layout.fillWidth: true
                                                     text: tileRoot.modelData.label
-                                                    font.pixelSize: Appearance.font.pixelSize.small
-                                                    font.weight: tileRoot.selected ? Font.DemiBold :
-                                                                                     Font.Normal
+                                                    font.pixelSize: Typography.bodyMedium.pixelSize
+                                                    font.weight: tileRoot.selected ? Font.DemiBold : Font.Normal
                                                     color: Appearance.colors.colOnLayer1
                                                     elide: Text.ElideRight
                                                 }
@@ -560,8 +545,7 @@ Item {
                                     radius: 18
                                     color: "transparent"
                                     border.width: 2
-                                    border.color: tileRoot.selected ? Appearance.colors.colPrimary :
-                                                                      "transparent"
+                                    border.color: tileRoot.selected ? Appearance.colors.colPrimary : "transparent"
                                     Behavior on border.color {
                                         ColorAnimation {
                                             duration: 200
@@ -621,11 +605,7 @@ Item {
                     z: 2
                     anchors.verticalCenter: parent.verticalCenter
                     color: Appearance.colors.colSecondaryContainer
-                    opacity: schemeScroller.contentX < Math.max(0, schemeScroller.contentWidth
-                                                                - schemeScroller.width) - 1 ? (
-                                                                                                  rightHover.containsMouse
-                                                                                                  ? 1 : 0.85) :
-                                                                                              0
+                    opacity: schemeScroller.contentX < Math.max(0, schemeScroller.contentWidth - schemeScroller.width) - 1 ? (rightHover.containsMouse ? 1 : 0.85) : 0
                     visible: opacity > 0.01
                     Behavior on opacity {
                         NumberAnimation {

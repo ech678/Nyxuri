@@ -40,6 +40,14 @@ context = "GeneralBarPage"
 icon = "dock_to_bottom"
 aliases = ["general.bar.section.position"]
 
+[[settings]]
+id = "bar.section.tray"
+route = "bar"
+title = "Tray"
+context = "GeneralBarPage"
+icon = "expand_more"
+aliases = ["general.bar.section.tray"]
+
 # ── Island (B1: merged from the retired island unit; one plugin, one bar) ────
 # The island is a bar layout part, so its settings live INSIDE the Bar tab:
 # bar.island is a routed subpage of bar (context GeneralBarPage), and the

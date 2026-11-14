@@ -20,6 +20,10 @@ Singleton {
         readonly property QtObject battery: QtObject {
             readonly property int low: 20
             readonly property int critical: 10
+            // Peripheral (mouse/keyboard/headset) thresholds, end4 defaults.
+            readonly property int peripheralLow: 20
+            readonly property int peripheralCritical: 5
+            readonly property bool peripheralNotify: true
         }
 
         readonly property QtObject resources: QtObject {
@@ -27,11 +31,6 @@ Singleton {
             readonly property int historyLength: 60
             readonly property int autoStopDelay: 15000
             readonly property bool monitorGpu: true
-        }
-
-        readonly property QtObject profile: QtObject {
-            readonly property string avatarPath: ""
-            readonly property string avatarPicture: ""
         }
 
         readonly property QtObject bar: QtObject {
@@ -115,6 +114,14 @@ Singleton {
 
                 readonly property QtObject tooltips: QtObject {
                     readonly property bool clickToShow: false
+                }
+
+                // B9.1 tray surface: SysTrayItem tints glyphs through this
+                // bridge (it used to read a property that never existed, so the
+                // `?? true` fallback silently forced tinting on).
+                readonly property QtObject tray: QtObject {
+                    readonly property bool monochromeIcons: PersonalizationConfig.barTrayMonochromeIcons
+                    readonly property bool filterPassive: PersonalizationConfig.barTrayFilterPassive
                 }
 
                 readonly property QtObject media: QtObject {

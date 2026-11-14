@@ -23,6 +23,12 @@ Item {
 
     property list<var> pinnedItems: TrayService.pinnedItems
     property list<var> unpinnedItems: TrayService.unpinnedItems
+    // Probe surface (scripts/dev/probe-bar.sh): the overflow decision is a
+    // runtime fact, so expose the evaluated counts instead of grepping the
+    // source for `unpinnedItems.length`.
+    readonly property int pinnedCount: pinnedItems.length
+    readonly property int unpinnedCount: unpinnedItems.length
+    readonly property bool overflowVisible: showOverflowMenu && unpinnedItems.length > 0
     onUnpinnedItemsChanged: {
         if (unpinnedItems.length == 0)
             root.closeOverflowMenu();
@@ -45,14 +51,20 @@ Item {
         focusGrab.active = false;
     }
     function closeOverflowMenu() {
+        root.trayOverflowOpen = false;
         focusGrab.active = false;
     }
 
     onTrayOverflowOpenChanged: {
         if (root.trayOverflowOpen)
             root.grabFocus();
+        else
+            focusGrab.active = false;
     }
 
+    // Focus grab state for the item menus that open from the tray. On Niri the
+    // layer-shell keyboard focus owns the grab; the overflow popup closes
+    // through StyledPopup's outside-click backdrop below, not through this Item.
     Item {
         id: focusGrab
         property bool active: false
@@ -113,7 +125,10 @@ Item {
             StyledPopup {
                 id: overflowPopup
                 hoverTarget: trayOverflowButton
+                hoverActivates: false
+                closeOnOutsideClick: true
                 active: root.trayOverflowOpen && root.unpinnedItems.length > 0
+                onRequestClose: root.closeOverflowMenu()
 
                 GridLayout {
                     id: trayOverflowLayout

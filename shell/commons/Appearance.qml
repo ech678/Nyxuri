@@ -28,21 +28,23 @@ Singleton {
     property QtObject spacing
     property QtObject scrollBar
     property QtObject interaction
-    // end4-pC sources read type through Appearance.font.pixelSize.<token>; nyxuri
-    // keeps it in Typography under Material 3 token names. Binding the upstream
-    // names here lets ported components run unmodified instead of being rewritten
-    // token by token — the names are the only difference, not the scale.
+    // end4-pC sources read type through Appearance.font.pixelSize.<token>. This
+    // is the bar/island type surface, pinned to the upstream 1.0 values
+    // (references/end4-pC/modules/common/Appearance.qml:253-263) — the M3
+    // ladder at 1.0 is close but not equal (15/16/17/19 vs 14/16/16/22), and
+    // the bar is measured against end4. Settings and other surfaces read
+    // Typography directly, so the two scales stay separable.
     readonly property QtObject font: QtObject {
         readonly property QtObject pixelSize: QtObject {
-            readonly property int smallest: Typography.labelSmall.pixelSize
-            readonly property int smaller: Typography.bodySmall.pixelSize
-            readonly property int smallie: Typography.labelMedium.pixelSize
-            readonly property int small: Typography.bodyMedium.pixelSize
-            readonly property int normal: Typography.bodyLarge.pixelSize
-            readonly property int large: Typography.titleMedium.pixelSize
-            readonly property int larger: Typography.titleLarge.pixelSize
-            readonly property int huge: Typography.headlineSmall.pixelSize
-            readonly property int title: Typography.headlineMedium.pixelSize
+            readonly property int smallest: 10
+            readonly property int smaller: 12
+            readonly property int smallie: 13
+            readonly property int small: 15
+            readonly property int normal: 16
+            readonly property int large: 17
+            readonly property int larger: 19
+            readonly property int huge: 22
+            readonly property int title: 22
         }
 
         readonly property string main: Typography.bodyLarge.family
@@ -266,7 +268,7 @@ Singleton {
     rounding: QtObject {
         property int unsharpen: 2
         property int extraSmall: 4
-        property int unsharpenmore: 10
+        property int unsharpenmore: 6
         property int small: 12
         property int medium: 16
         property int normal: 17
@@ -275,8 +277,8 @@ Singleton {
         property int veryLarge: 30
         property int extraLargeIncreased: 32
         property int full: 9999
-        property int windowRounding: 16
-        property int screenRounding: 20
+        property int windowRounding: 18
+        property int screenRounding: 23
     }
 
     spacing: QtObject {
@@ -298,6 +300,12 @@ Singleton {
     }
 
     property real barThickness: 36
+    // Style-dependent height bonus injected by PersonalizationConfig. end4
+    // derives barHeight from the corner style (Float adds the outer gap on
+    // both edges, Material hug/Panel add 4 for the round decorators); keeping
+    // that derivation out of commons preserves the layer rule while every
+    // widget still reads one evaluated barHeight.
+    property real barStyleBoost: 0
     // iNiR's components size popups and bar gaps with this factor. Nyxuri has no
     // user-facing typography scale (the M3 tokens are fixed), so the ported
     // sources get a neutral 1.0 instead of the undefined property that used to
@@ -306,7 +314,7 @@ Singleton {
 
     readonly property QtObject sizes: QtObject {
         readonly property real baseBarHeight: root.barThickness > 0 ? root.barThickness : 36
-        readonly property real barHeight: baseBarHeight
+        readonly property real barHeight: baseBarHeight + (root.barStyleBoost > 0 ? root.barStyleBoost : 0)
         readonly property real baseVerticalBarWidth: root.barThickness > 0 ? root.barThickness : 44
         readonly property real verticalBarWidth: baseVerticalBarWidth
         readonly property real elevationMargin: 10

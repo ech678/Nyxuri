@@ -275,11 +275,9 @@ Singleton {
     property bool cursorHideWhenTyping: false
     property int cursorHideAfterInactiveMs: 0
     property string iconTheme: ""
-    // barEnabled stayed retired at KM4 (unit existence is the ledger's alone);
-    // B1 reintroduces islandEnabled as the island's component gate — the
-    // island is a bar layout part now, not a unit, so its switch is a config
-    // key while the bar unit's existence remains the ledger's alone.
-    property bool islandEnabled: true
+    // B9.3: layout membership is the island's only switch. The old
+    // `islandEnabled` gate is read once during load (legacy migration) and is
+    // never serialized again.
     // B8.4: idle-face satellite is an explicit optional part, not the iNiR
     // leftWidget hardcode that rendered weather under a "clockWidget" value.
     property string islandSatellite: "clock"
@@ -315,7 +313,7 @@ Singleton {
         },
         {
             value: 2,
-            label: I18n.tr("Plain")
+            label: I18n.tr("Islands")
         },
         {
             value: 3,
@@ -337,6 +335,17 @@ Singleton {
     readonly property bool barIsMaterial: root.barCornerStyle === 3 || root.barCornerStyle === 4
     readonly property bool barIsMaterialHug: root.barCornerStyle === 4
     readonly property bool barIsPanel: root.barCornerStyle === 5
+    // end4 style heights (ROADMAP B-2): Float adds the outer gap on both edges,
+    // Material hug and Panel add 4 for their round decorators. Everything else
+    // keeps the user's thickness, and groups/OSD/popups read the evaluated
+    // height through Appearance.sizes.barHeight.
+    readonly property real barStyleHeightBoost: root.barCornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut * 2 : ((root.barIsMaterialHug || root.barIsPanel) ? 4 : 0)
+    Binding {
+        target: Appearance
+        property: "barStyleBoost"
+        value: root.barStyleHeightBoost
+        restoreMode: Binding.RestoreNone
+    }
     readonly property var barBorderlessModes: [
         {
             value: "pills",
@@ -398,6 +407,16 @@ Singleton {
         }
     ]
     property string barDividerStyle: "rect"
+    // Tray contract (ROADMAP B9.1). Pinned ids keep a permanent slot; every
+    // other visible client moves behind the overflow arrow. filterPassive hides
+    // Status.Passive clients, invertPinnedItems swaps the two groups, showItemId
+    // appends the DBus id to the tooltip, monochromeIcons tints the glyphs with
+    // the bar ink instead of the app's own colour.
+    property var barTrayPinnedItems: []
+    property bool barTrayFilterPassive: true
+    property bool barTrayInvertPinnedItems: true
+    property bool barTrayShowItemId: false
+    property bool barTrayMonochromeIcons: true
     // Workspace indicator shape (B8.3 parity with end4): numbers by default,
     // optional app icons, dot/icon marker when neither is shown.
     property bool barShowAppIcons: false
@@ -522,6 +541,11 @@ Singleton {
     property var barLayoutLeft: root.defaultBarLayoutLeft.slice()
     property var barLayoutMiddle: root.defaultBarLayoutMiddle.slice()
     property var barLayoutRight: root.defaultBarLayoutRight.slice()
+
+    // B9.3 single truth: the island exists exactly when it is a member of any
+    // bar lane. Notification-slot arbitration and the bar widget filter both
+    // read this instead of a second config switch.
+    readonly property bool islandInLayout: root.barLayoutLeft.indexOf("island") !== -1 || root.barLayoutMiddle.indexOf("island") !== -1 || root.barLayoutRight.indexOf("island") !== -1
 
     // iNiR keyboardIndicators semantics: the persistent panel (SystemIcons)
     // and the transient popup (island OSD) are independent axes.
@@ -1241,8 +1265,12 @@ Singleton {
         setValue("settingsPanelStyle", normalizedOption(root.settingsPanelStyles, value, "default"));
     }
 
-    function setIslandEnabled(value) {
-        setValue("islandEnabled", value === true);
+    // B9.3: "Show island" is a layout edit, not a separate gate. Adding puts
+    // it back into the middle lane; removing drops it from every lane.
+    function setIslandInLayout(value) {
+        if (value === true)
+            return root.islandInLayout || root.moveBarComponent("island", "middle", root.barLayoutMiddle.length);
+        return root.removeBarComponent("island");
     }
 
     function setIslandSatellite(value) {
@@ -1543,6 +1571,34 @@ Singleton {
             out.push(candidate);
         });
         return out;
+    }
+
+    // Tray pin list: ids are opaque DBus names, so only blank/duplicate entries
+    // are rejected here — validating against SystemTray.items would drop pins
+    // for clients that are not running right now.
+    function normalizedTrayPinnedItems(raw) {
+        if (!Array.isArray(raw))
+            return [];
+
+        const seen = {};
+        const out = [];
+        raw.forEach(id => {
+            const candidate = String(id || "").trim();
+            if (candidate.length === 0 || seen[candidate])
+                return;
+
+            seen[candidate] = true;
+            out.push(candidate);
+        });
+        return out;
+    }
+
+    function setBarTrayPinnedItems(value) {
+        const next = root.normalizedTrayPinnedItems(value);
+        if (root.arraysEqual(root.barTrayPinnedItems, next))
+            return;
+        root.barTrayPinnedItems = next;
+        root.save();
     }
 
     // Orchestrated write for the three-lane bar layout. The UI calls this instead
@@ -1892,7 +1948,6 @@ Singleton {
                 }
             },
             "island": {
-                "enabled": root.islandEnabled,
                 "satellite": root.islandSatellite,
                 "layoutMigrated": root.islandLayoutMigrated,
                 "hideDate": root.islandHideDate,
@@ -1921,7 +1976,14 @@ Singleton {
                 "barLayoutMiddle": root.barLayoutMiddle.slice(),
                 "barLayoutRight": root.barLayoutRight.slice(),
                 "barThickness": root.barThickness,
-                "quickSettingsComponents": root.quickSettingsComponents.slice()
+                "quickSettingsComponents": root.quickSettingsComponents.slice(),
+                "tray": {
+                    "pinnedItems": root.barTrayPinnedItems.slice(),
+                    "filterPassive": root.barTrayFilterPassive,
+                    "invertPinnedItems": root.barTrayInvertPinnedItems,
+                    "showItemId": root.barTrayShowItemId,
+                    "monochromeIcons": root.barTrayMonochromeIcons
+                }
             },
             "sidebar": {
                 "keepLoaded": root.keepSidebarsLoaded,
@@ -1940,6 +2002,50 @@ Singleton {
         return value && typeof value === "object" && !Array.isArray(value) ? value : {};
     }
 
+    // B9.3: pure layout resolution (one-shot seed + legacy island gate).
+    // Kept side-effect free so scripts/dev/probe-bar.sh can prove the
+    // migration keys without mutating the live store.
+    function resolveBarLayouts(bar, island, legacyIslandEnabled) {
+        const hasBarLayout = Array.isArray(bar.barLeadingComponents) || Array.isArray(bar.barTrailingComponents);
+        const hasBarLayouts = "barLayoutLeft" in bar || "barLayoutMiddle" in bar || "barLayoutRight" in bar;
+        const islandMigrated = island.layoutMigrated === true;
+        let left;
+        let middle;
+        let right;
+        if (hasBarLayouts) {
+            left = root.normalizedBarLayoutIds(bar.barLayoutLeft);
+            middle = root.normalizedBarLayoutIds(bar.barLayoutMiddle);
+            right = root.normalizedBarLayoutIds(bar.barLayoutRight);
+            // B3-1 one-shot seed: seed the island exactly once, then the user's
+            // own choices win (B9.3 fixed the key this reads).
+            if (!islandMigrated && middle.length === 0)
+                middle = ["island"];
+            const leading = root.normalizedBarLayoutIds(bar.barLeadingComponents);
+            const trailing = root.normalizedBarLayoutIds(bar.barTrailingComponents);
+            if (!root.arraysEqual(leading, left) && hasBarLayout) {
+                left = leading;
+                right = trailing;
+            }
+        } else {
+            // Legacy configs only had leading/trailing zones; map them 1:1 so
+            // an upgrade does not reshuffle the user's bar.
+            left = root.normalizedBarLayoutIds(bar.barLeadingComponents);
+            middle = root.defaultBarLayoutMiddle.slice();
+            right = root.normalizedBarLayoutIds(bar.barTrailingComponents);
+        }
+        if (!legacyIslandEnabled) {
+            left = left.filter(id => id !== "island");
+            middle = middle.filter(id => id !== "island");
+            right = right.filter(id => id !== "island");
+        }
+        return {
+            "left": left,
+            "middle": middle,
+            "right": right,
+            "migrated": islandMigrated || !legacyIslandEnabled
+        };
+    }
+
     function loadFromObject(parsed) {
         const source = configSection(parsed);
         const wallpaper = configSection(source.wallpaper);
@@ -1950,6 +2056,7 @@ Singleton {
         const keyboardPopup = configSection(keyboard.popup);
         const keyboardPanel = configSection(keyboard.panel);
         const bar = configSection(source.bar);
+        const tray = configSection(bar.tray);
         const sidebar = configSection(source.sidebar);
         const desktopCards = configSection(source.desktopCards);
         const transition = configSection(wallpaper.transition);
@@ -2022,7 +2129,10 @@ Singleton {
         root.shellBackgroundOpacity = normalizedBoundedReal(effects.shellBackgroundOpacity, 1, 0, 1);
         root.shellBlurEnabled = typeof effects.shellBlurEnabled === "boolean" ? effects.shellBlurEnabled : false;
         root.shellBlurXray = typeof effects.shellBlurXray === "boolean" ? effects.shellBlurXray : true;
-        root.islandEnabled = typeof island.enabled === "boolean" ? island.enabled : true;
+        // B9.3 legacy read: `enabled=false` used to hide the island while the
+        // layout still listed it. It is applied once after layout resolution;
+        // membership is the only truth from then on.
+        const legacyIslandEnabled = typeof island.enabled === "boolean" ? island.enabled : true;
         root.islandSatellite = normalizedOption(root.islandSatelliteOptions, island.satellite, "clock");
         root.islandLayoutMigrated = island.layoutMigrated === true;
         root.islandHideDate = typeof island.hideDate === "boolean" ? island.hideDate : false;
@@ -2052,38 +2162,24 @@ Singleton {
         root.barAlwaysShowNumbers = typeof bar.alwaysShowNumbers === "boolean" ? bar.alwaysShowNumbers : true;
         root.barWorkspaceIndicatorStyle = normalizedOption(root.barWorkspaceIndicatorStyles, bar.workspaceIndicatorStyle, "dot");
         root.barThickness = typeof bar.barThickness === "number" ? Math.max(28, Math.min(64, Math.round(bar.barThickness))) : root.defaultBarThickness;
+        root.barTrayPinnedItems = root.normalizedTrayPinnedItems(tray.pinnedItems);
+        root.barTrayFilterPassive = typeof tray.filterPassive === "boolean" ? tray.filterPassive : true;
+        // Absent keys must keep the shipped defaults (on, not off): `=== true`
+        // would read a fresh config as "do not pin" and "do not tint".
+        root.barTrayInvertPinnedItems = typeof tray.invertPinnedItems === "boolean" ? tray.invertPinnedItems : true;
+        root.barTrayShowItemId = tray.showItemId === true;
+        root.barTrayMonochromeIcons = typeof tray.monochromeIcons === "boolean" ? tray.monochromeIcons : true;
         const hasBarLayout = Array.isArray(bar.barLeadingComponents) || Array.isArray(bar.barTrailingComponents);
         const barLayout = root.normalizedBarLayout(bar.barLeadingComponents, bar.barTrailingComponents, !hasBarLayout);
         root.barLeadingComponents = barLayout.leading;
         root.barTrailingComponents = barLayout.trailing;
-        const hasBarLayouts = "barLayoutLeft" in bar || "barLayoutMiddle" in bar || "barLayoutRight" in bar;
-        // B3-1 one-shot layout seed: before the island was a layout part it was
-        // a standalone layer window, so the middle lane never hosted it. Seed it
-        // exactly once, then the user's own choices win.
-        const islandMigrated = island.islandLayoutMigrated === true;
-        if (hasBarLayouts) {
-            root.barLayoutLeft = root.normalizedBarLayoutIds(bar.barLayoutLeft);
-            root.barLayoutMiddle = root.normalizedBarLayoutIds(bar.barLayoutMiddle);
-            root.barLayoutRight = root.normalizedBarLayoutIds(bar.barLayoutRight);
-            if (!islandMigrated && root.barLayoutMiddle.length === 0) {
-                root.barLayoutMiddle = ["island"];
-            }
-            if (!root.arraysEqual(root.barLeadingComponents, root.barLayoutLeft) && hasBarLayout) {
-                root.barLayoutLeft = root.normalizedBarLayoutIds(root.barLeadingComponents);
-                root.barLayoutRight = root.normalizedBarLayoutIds(root.barTrailingComponents);
-            }
-        } else {
-            // Legacy configs only had leading/trailing zones; map them 1:1 so an
-            // upgrade does not reshuffle the user's bar. The middle lane keeps
-            // its default (B3-1: the island), otherwise an upgrade silently
-            // drops the island out of the layout.
-            root.barLayoutLeft = root.normalizedBarLayoutIds(root.barLeadingComponents);
-            root.barLayoutMiddle = root.defaultBarLayoutMiddle.slice();
-            root.barLayoutRight = root.normalizedBarLayoutIds(root.barTrailingComponents);
-        }
-        // The style side of the same one-shot is gone: B8.4 retires the
-        // bangs/pill/long escape hatches, so there is nothing to seed.
-        if (typeof island.islandLayoutMigrated !== "boolean")
+        const barLayouts = root.resolveBarLayouts(bar, island, legacyIslandEnabled);
+        root.barLayoutLeft = barLayouts.left;
+        root.barLayoutMiddle = barLayouts.middle;
+        root.barLayoutRight = barLayouts.right;
+        // The one-shot marker keeps a deliberately empty middle lane empty; a
+        // fresh/legacy config without the key arms it after this load.
+        if (barLayouts.migrated || typeof island.layoutMigrated !== "boolean")
             root.islandLayoutMigrated = true;
         root.quickSettingsComponents = root.normalizedQuickSettingsComponents(bar.quickSettingsComponents);
         root.keepSidebarsLoaded = sidebar.keepLoaded === undefined ? true : !!sidebar.keepLoaded;

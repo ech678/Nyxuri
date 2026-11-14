@@ -82,9 +82,9 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertNotIn("centerHostX", content, "the iNiR compression clamp is retired (NaN source)")
         self.assertIn('"island"', content, "island must be in the material-pill blacklist")
         self.assertIn("bar.m3.layouts", content)
-        # B8.4: islandEnabled has to hide the widget, not just release the
-        # popup:notification slot.
-        self.assertIn("PersonalizationConfig.islandEnabled", content)
+        # B9.3: the island is a layout member, not a second config gate.
+        self.assertNotIn("PersonalizationConfig.islandEnabled", content)
+        self.assertNotIn("filtered.filter(name => name !== \"island\")", content)
         # Only the active style branch instantiates widgets.
         self.assertIn("active: root.isMaterial", content)
         self.assertIn("active: !root.isMaterial", content)
@@ -102,13 +102,50 @@ class BarEnd4ContractTest(unittest.TestCase):
 
     def test_system_icons_are_the_inir_fork(self):
         content = read_bar_file("SystemIcons.qml")
+        self.assertIn("Fork & Trim: iNiR", content)
         self.assertIn("KeyboardIndicators", content)
-        self.assertIn("HyprlandXkbIndicator.qml", content)
-        self.assertIn("Appearance.sizes.barIconSize", content)
-        self.assertIn("Appearance.sizes.barUtilIconSize", read_bar_file("UtilButton.qml"))
+        self.assertIn("HyprlandXkbIndicator", content)
+        self.assertIn("contentColorOverridden", content)
+        # B9.2: every status is its own fixed 26px slot, so a conditional icon
+        # never changes its neighbours' width.
+        self.assertGreaterEqual(content.count("SystemIconSlot {"), 5)
+        self.assertIn("PeripheralBattery.lowDevices", content)
+        self.assertIn("PeripheralBattery.isCritical", content)
+        self.assertIn("root.openQuickSettings(\"audio\")", content)
+        self.assertIn("root.openQuickSettings(\"network\")", content)
+        self.assertIn("root.openQuickSettings(\"bluetooth\")", content)
+        self.assertIn("VolumeService.toggleSourceMute", content)
+        self.assertIn("Appearance.sizes.barUtilIconSize", read_bar_file("SystemIconSlot.qml"))
         self.assertIn("Appearance.sizes.barPowerButtonSize", read_bar_file("PowerButton.qml"))
-        # The util hover expansion is end4 behaviour and stays.
+        # UtilButton keeps the end4 hover expansion for the quick-settings row;
+        # the status slot deliberately does not.
         self.assertIn("hovered ? 54 : 26", read_bar_file("UtilButton.qml"))
+        slot = read_bar_file("SystemIconSlot.qml")
+        self.assertNotIn("hovered ? 54 : 26", slot)
+        self.assertIn("readonly property int slotSize: 26", slot)
+        self.assertIn("M3ToolTip {", slot)
+        self.assertIn("signal wheeled(real delta)", slot)
+        self.assertFalse(os.path.exists(os.path.join(BAR_DIR, "NotificationUnreadCount.qml")),
+                         "the embedded notification widget must fold into the status slot")
+
+    def test_peripheral_battery_service_is_the_end4_fork(self):
+        content = read_services_file("PeripheralBattery.qml")
+        self.assertIn("Fork & Trim: end4-pC", content)
+        self.assertIn("GPL-3", content)
+        self.assertIn("UPowerDeviceType.Mouse", content)
+        self.assertIn("UPowerDeviceType.Headset", content)
+        self.assertIn("Config.options.battery.peripheralLow", content)
+        self.assertIn("Config.options.battery.peripheralCritical", content)
+        self.assertIn("Config.options.battery.peripheralNotify", content)
+        # The probe swaps fake devices in through this seam.
+        self.assertIn("property var deviceSource: UPower.devices.values", content)
+        # External commands leave through the gateway with an owner, never a
+        # bare execDetached.
+        self.assertIn('ActionGateway.execute(', content)
+        self.assertIn('"bar:peripheral-battery"', content)
+        self.assertNotIn("Quickshell.execDetached(", content)
+        self.assertNotIn("Translation.tr", content)
+        self.assertIn("I18n.tr", content)
 
     def test_active_window_is_an_end4_fork(self):
         content = read_bar_file("ActiveWindow.qml")
@@ -205,6 +242,63 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("function state(): string", content)
         # Recording is parked; the IPC face must not promise it.
         self.assertNotIn("stopRecording", content)
+
+
+class TrayContractTest(unittest.TestCase):
+    """B9.1: the tray is a real pin/overflow surface, not the old stub."""
+
+    def test_service_persists_pins_through_the_store(self):
+        content = read_bar_file("TrayService.qml")
+        self.assertIn("Fork & Trim: iNiR", content)
+        self.assertIn("PersonalizationConfig.barTrayPinnedItems", content)
+        self.assertIn("PersonalizationConfig.setBarTrayPinnedItems", content)
+        # The stub returned an empty unpinned list and a no-op togglePin; both
+        # are what kept the overflow arrow permanently hidden.
+        self.assertNotIn("function togglePin(id) {\n    }", content)
+        # Trimmed scope: no proxy supervisor, no app launch table.
+        self.assertNotIn("Process {", content)
+        self.assertNotIn("ShellExec", content)
+        self.assertNotIn("ToplevelManager", content)
+        self.assertNotIn("function smartToggle", content)
+
+    def test_overflow_closes_on_outside_click(self):
+        content = read_bar_file("SysTray.qml")
+        self.assertIn("closeOnOutsideClick: true", content)
+        self.assertIn("onRequestClose: root.closeOverflowMenu()", content)
+        self.assertIn("root.trayOverflowOpen = false", content)
+
+    def test_store_round_trips_the_tray_block(self):
+        content = read_services_file("PersonalizationConfig.qml")
+        for token in (
+            "const tray = configSection(bar.tray)",
+            "root.barTrayPinnedItems = root.normalizedTrayPinnedItems(tray.pinnedItems)",
+            "root.barTrayFilterPassive = typeof tray.filterPassive",
+            '"pinnedItems": root.barTrayPinnedItems.slice()',
+            '"filterPassive": root.barTrayFilterPassive',
+            '"invertPinnedItems": root.barTrayInvertPinnedItems',
+            '"showItemId": root.barTrayShowItemId',
+            '"monochromeIcons": root.barTrayMonochromeIcons',
+        ):
+            self.assertIn(token, content, f"tray persistence token missing: {token}")
+
+    def test_tint_reads_a_real_config_property(self):
+        item = read_bar_file("SysTrayItem.qml")
+        self.assertIn("barTrayMonochromeIcons", read_services_file("Config.qml"))
+        self.assertIn("Config.options?.bar?.m3?.tray?.monochromeIcons", item)
+
+    def test_settings_page_exposes_the_tray_controls(self):
+        page = read_bar_file("GeneralBarPage.qml")
+        for prop in (
+            "barTrayMonochromeIcons",
+            "barTrayFilterPassive",
+            "barTrayShowItemId",
+            "barTrayInvertPinnedItems",
+        ):
+            self.assertIn(prop, page, f"tray setting has no consumer row: {prop}")
+        self.assertIn('anchorId: "bar.section.tray"', page)
+        with open(os.path.join(BAR_DIR, "manifest.toml"), "r", encoding="utf-8") as f:
+            manifest = f.read()
+        self.assertIn('id = "bar.section.tray"', manifest)
 
 
 if __name__ == "__main__":

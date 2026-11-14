@@ -93,11 +93,11 @@ ShellRoot {
                 return unit.id === "lock" && ActionGateway.lockEngaged;
             }
             // Slot contract: the island owns popup:notification while the bar
-            // unit is on and the island gate is open (B1: the island rides the
-            // bar unit; its switch is the islandEnabled config key). The rule
-            // is kind-keyed, so a third-party popup host yields exactly like
-            // the first-party one (S1-3 seating rule).
-            if (unit.kind === "popup:notification" && StateProjection.isEnabled("bar") && PersonalizationConfig.islandEnabled)
+            // unit is on and the island is a bar layout member (B9.3: layout
+            // membership is the only truth, not the retired islandEnabled
+            // key). The rule is kind-keyed, so a third-party popup host yields
+            // exactly like the first-party one (S1-3 seating rule).
+            if (unit.kind === "popup:notification" && StateProjection.isEnabled("bar") && PersonalizationConfig.islandInLayout)
                 return false;
             return true;
         }
@@ -263,6 +263,10 @@ ShellRoot {
             target: "unit"
 
             function reload(): string {
+                // Observable trace for the single event channel: a switch that
+                // lands the ledger but never reaches this line is a delivery
+                // bug, not a UI bug.
+                LogService.info("units", "unit projection reload requested");
                 StateProjection.reload();
                 TemplateService.refresh();
                 root.noteUnitChanged();

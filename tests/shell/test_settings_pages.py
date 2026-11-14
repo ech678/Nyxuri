@@ -70,6 +70,7 @@ ANCHOR_IDS = {
     "GeneralBarPage.qml": (
         "bar.section.position",
         "bar.section.components",
+        "bar.section.tray",
     ),
     "DockPage.qml": (
         "dock.section.appearance",
@@ -880,7 +881,7 @@ class TestIslandPageRebuild(unittest.TestCase):
     def test_business_owners_unchanged(self):
         source = _read("IslandPage.qml")
         for owner in (
-            "PersonalizationConfig.setIslandEnabled(",
+            "PersonalizationConfig.setIslandInLayout(",
             "PersonalizationConfig.setIslandSatellite(",
             "PersonalizationConfig.setKeyboardShowPanel(",
             "PersonalizationConfig.setKeyboardPanelLayout(",

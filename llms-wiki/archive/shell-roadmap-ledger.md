@@ -1187,3 +1187,98 @@ qml-lint 629 条 advisory 警告为既有 qs.* 成员解析噪声）。`probe-ba
 - **验证**：`probe-bar.sh --json` 本机 session 模式全绿（`styles` 0–5，
   `borderless.modes` 四模式，`mediaHidden.cases` 2 例，`logErrors: []`）；
   `python3 -m unittest tests.shell.test_bar_runtime tests.shell.test_bar_end4` 18 tests OK。
+
+### B9.0 实施记录（2026-11-14，token 冻结与样式高度）
+
+- **字号**：`commons/Typography.qml` 全局 `scale` 0.85→1.0（作者拍板：不再让全壳字体
+  整体缩水）；`commons/Appearance.qml` 的 `font.pixelSize` 不再转译 M3 token，直接钉
+  end4 的 10/12/13/15/16/17/19，`huge`/`title` 取 22。Settings/dashboard 中 4 处误读
+  `Appearance.font` 的调用点（`DashboardGroupRail` ×3、`DashboardThemesPage`、
+  `ui/ColorSelectionArray`）改回 `Typography`，把该面收敛为 bar/island 专属。
+- **圆角**：`unsharpenmore` 10→6、`screenRounding` 20→23、`windowRounding` 16→18；
+  三者在 bar 之外的消费点仅 `SysTrayMenu`，无扩散。
+- **高度**：`Appearance.sizes.barHeight = baseBarHeight + barStyleBoost`。boost 由
+  `PersonalizationConfig.barStyleHeightBoost` 经 `Binding` 注入：Float +10
+  （5×2）、M3 Hug/Panel +4、其余 0；`barThickness` 仍为用户自由可调值。
+  `exclusiveZone` 公式保持 base 厚度 + 外露 gap，改动留给 B9.5 外边距一并核对。
+- **lane inset**：`BarContent.laneMargin`（material hug 0 / material 5 /
+  Float·Panel 4 / 其余 8）落地；两处 lane 锚点此前引用未定义属性而恒为 0。
+- **正名**：cornerStyle 2 标签 “Plain”→“Islands”，`zh_CN.toml` 同步（普通直角→岛屿）。
+- **验证**：`tests/shell` 449 tests OK（11 skipped，均为既有环境跳过）；
+  `probe-bar.sh --session --json` 六档高度 36/46/40/36/40/40、island 与中段居中、
+  `logErrors: []`；`check.sh` 绿。
+- **未验证**：settings/dashboard/sidebars/dock 在 1.0 字号下的实机视觉过目（作者）。
+  静态裁切审计未发现固定高度文本行冲突。
+
+### B9.1 实施记录（2026-11-14，SysTray 真实化）
+
+- **服务层**：`plugins/bar/TrayService.qml` 以 iNiR `services/TrayService.qml` 物理
+  整抄为基线后剪裁：删 xembedsniproxy 自拉起（systemd-run/sv/pgrep）、
+  problematicApps/smartActivate/smartToggle 启动表；保留 passive 过滤、pin/unpin、
+  tooltip 拼装。`pin()/unpin()` 改为按“可见性”解析列表归属，并感知
+  `invertPinnedItems`，避免 “Pin” 反而把项目藏起来。
+- **持久化**：`PersonalizationConfig` 新增 `bar.tray` 五键
+  （pinnedItems/filterPassive/invertPinnedItems/showItemId/monochromeIcons），
+  load/serialize 双向；缺键保持出厂默认（pin-by-default 与 tint 均为 true，
+  不被 `=== true` 误读为关闭）。`setBarTrayPinnedItems()` 去重后仅在变化时落盘。
+- **视图**：`SysTray.qml` overflow 改接 `StyledPopup.closeOnOutsideClick` +
+  `onRequestClose`，`closeOverflowMenu()` 真正关闭 `trayOverflowOpen`；
+  `SysTrayItem` 的 tint 经 `Config.options.bar.m3.tray.monochromeIcons` 读真属性。
+  新增 `pinnedCount/unpinnedCount/overflowVisible` 探针面。
+- **设置**：Bar 页新增 Tray 段（tint / hide-passive / show-id / pin-by-default /
+  reset pin list），manifest 增 `bar.section.tray` 路由与搜索锚点。
+- **运行态护栏**：`scripts/dev/probe-bar.sh` 改为自建 `dbus-daemon` 会话总线
+  （原 `dbus-run-session` 包裹 qs 无法让外部客户端进入同一总线），新增
+  `scripts/dev/fake-sni.py` 三个假 StatusNotifierItem（两 active 一 passive）；
+  probe 新增 `tray/trayHide/trayReset/trayOpen/trayClose` IPC，断言
+  首批可见 2 项 → unpin 后 overflow 出现且仅 1 项 → 关闭后 `overflowOpen=false`
+  → `config.toml` 出现 pin 列表 → reset 后 overflow 消失。`fake-sni.py` 需要
+  python-dbus + PyGObject，缺失时 probe 以 exit 2 显式跳过。
+- **验证**：`tests/shell/test_bar_end4.py` 新增 TrayContractTest（剪裁边界、落盘令牌、
+  tint 真属性、设置项消费者）；`tests/shell/test_bar_runtime.py` 消费 probe 的 tray
+  报告；`test_settings_pages` 增锚点；`test_config_stores` 增 `bar.tray` 段强制
+  object 化断言。全量 `tests/shell` 449 tests OK；`probe-bar.sh --session --json`
+  `tray.ok=true`、`logErrors: []`；`check.sh` 绿。
+- **未验证**：真实托盘项（FlClash、arch-update-tray 等）的实机右键菜单、
+  overflow 弹层位置与视觉过目（作者）。
+
+### B9.2 实施记录（2026-11-14，状态图标固定槽与外设电池）
+
+- **服务**：`services/PeripheralBattery.qml` 从 end4 原件物理整抄后剪裁——翻译改
+  `I18n.tr`，`notify-send` 经 `ActionGateway.execute(args, "bar:peripheral-battery")`，
+  新增 `deviceSource` 注入点；`Config.options.battery` 补
+  `peripheralLow=20 / peripheralCritical=5 / peripheralNotify=true`；`zh_CN` 补低电文案。
+- **视图**：新增 `SystemIconSlot.qml`（`UtilButton` 整抄剪裁）：固定 26×26、17px 图标、
+  hover 胶囊、`M3ToolTip`、`clicked/wheeled`、`contentColor` 覆盖、默认子项槽。
+  `SystemIcons.qml` 重写为七个固定槽，独立点击打开 quick settings 对应页；音量槽
+  中键静音 + 滚轮 ±5%；外设低电由 `PeripheralBattery.lowDevices` 驱动、危险档用
+  `colError`；`NotificationUnreadCount.qml` 并入通知槽后删除。
+- **护栏**：probe 新增 `systemIcons` / `systemIconsFakeDevices` / `systemIconsResetDevices`
+  IPC 与 `systemIcons` 报告；断言槽宽恒 26、可见槽 tooltip 非空、组宽公式、
+  假外设（mouse 15% / headset 3%）两槽且恰一个 critical、reset 清空。
+- **验证**：`tests/shell` 457 tests OK（11 skipped）；`probe-bar.sh --session --json`
+  `systemIcons.ok=true`、`logErrors: []`；`check.sh` 绿。
+- **未验证**：真实外设低电通知、SystemIcons 点击手感与 material/非 material 视觉效果（作者）。
+
+### B9.3 实施记录（2026-11-14，岛真相与横向时钟接线）
+
+- **单一真相**：`PersonalizationConfig.islandInLayout` + `setIslandInLayout()`；
+  `islandEnabled` 降为加载期 legacy 读取，序列化不再写 `enabled`；
+  `BarContent.filterLayout` 去掉岛门，`shell.qml` 通知槽仲裁改看布局成员；
+  `IslandPage` / `SettingsControlCatalog` 的 Show Island 改接布局成员开关。
+- **迁移键**：加载改为 `island.layoutMigrated`；播种/迁移收敛为纯函数
+  `resolveBarLayouts(bar, island, legacyIslandEnabled)`，一次播种、空 lane 不复活、
+  legacy `enabled=false` 摘岛。
+- **idle 面**：头像改吃 `AvatarService.avatarUrl` + `person` 兜底；`ClockContent` 补
+  `implicitWidth/Height` 后接管 clock satellite（日期 + 风格化数字），`islandHideDate`
+  成为真实开关；顺带修正 `NotificationService.unreadCount` 误读；删除
+  `Config.options.profile` 死桥。
+- **护栏**：probe 新增 `islandInLayout` / `islandLayoutMigration` / `idleFace` IPC 与
+  `islandRestored`、`islandMigration`、`idleFace` 报告；断言删岛后中段为空、
+  重新加入恢复 `islandHost`、`layoutMigrated=true` 不复活、legacy 关闭摘岛、
+  idle 宽 185 + 时钟可见 + 无头像时 fallback 可见。
+- **验证**：`tests/shell` 457 tests OK（11 skipped）；`probe-bar.sh --session --json`
+  `islandOff/islandRestored/islandMigration/idleFace` 全绿、`logErrors: []`；
+  `check.sh` 绿。
+- **未验证**：idle 横向时钟的实机视觉（宽度/字号/日期默认值）、通知弹窗宿主整壳恢复、
+  多屏与竖排下的岛表现（作者）。

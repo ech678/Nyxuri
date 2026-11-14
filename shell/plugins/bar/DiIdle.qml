@@ -4,10 +4,10 @@
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
-import Quickshell
 import qs.services
 import qs.commons
 import qs.ui
+import "island/clock"
 
 Item {
     id: diIdleRoot
@@ -26,6 +26,13 @@ Item {
 
     readonly property bool systemIconsElsewhere: Config.options.bar.layouts.leftLayout.includes("systemIcons") || Config.options.bar.layouts.rightLayout.includes("systemIcons")
 
+    // Probe surface (scripts/dev/probe-bar.sh): the horizontal clock and the
+    // avatar fallback are the two idle-face facts that cannot be read from the
+    // bar geometry.
+    readonly property var probeClockFace: satelliteLoader.item
+    readonly property bool probeAvatarReady: avatarImage.status === Image.Ready
+    readonly property bool probeAvatarFallback: avatarFallback.visible
+
     Rectangle {
         id: avatarRect
         width: di.isMaterial ? di.pillHeight : di.pillHeight - 8
@@ -41,7 +48,7 @@ Item {
         Image {
             id: avatarImage
             anchors.fill: parent
-            source: Config.options.profile.avatarPath !== "" ? "file://" + Config.options.profile.avatarPicture : "file://" + Paths.profileAvatar
+            source: AvatarService.avatarUrl
             sourceSize.width: avatarImage.width * 2
             sourceSize.height: avatarImage.height * 2
             fillMode: Image.PreserveAspectCrop
@@ -53,10 +60,18 @@ Item {
                     radius: avatarRect.radius
                 }
             }
-            onStatusChanged: {
-                if (status === Image.Error)
-                    visible = false;
-            }
+        }
+
+        // No ~/.face (or an unreadable one) must not leave an empty tinted
+        // circle: fall back to the account glyph.
+        MaterialSymbol {
+            id: avatarFallback
+
+            anchors.centerIn: parent
+            visible: avatarImage.status !== Image.Ready
+            text: "person"
+            iconSize: di.isMaterial ? Appearance.font.pixelSize.large : Appearance.font.pixelSize.normal
+            color: Appearance.colors.colOnPrimaryContainer
         }
     }
 
@@ -102,7 +117,7 @@ Item {
             }
 
             Revealer {
-                reveal: (NotificationService.unreadCount ?? 0) > 0
+                reveal: (NotificationService.unread ?? 0) > 0
                 Item {
                     implicitWidth: notifRow.implicitWidth
                     implicitHeight: notifRow.implicitHeight
@@ -116,7 +131,7 @@ Item {
                             color: Appearance.colors.colOnLayer0
                         }
                         StyledText {
-                            text: `${NotificationService.unreadCount}`
+                            text: `${NotificationService.unread}`
                             font.pixelSize: Appearance.font.pixelSize.smallest
                             font.features: {
                                 "tnum": 1
@@ -135,18 +150,15 @@ Item {
         }
 
         Loader {
+            id: satelliteLoader
+
             Layout.alignment: Qt.AlignVCenter
             sourceComponent: PersonalizationConfig.islandSatellite === "clock" ? clockComponent : PersonalizationConfig.islandSatellite === "weather" ? weatherComponent : null
 
             Component {
                 id: clockComponent
-                StyledText {
-                    text: DateTime.time
-                    font.pixelSize: di.isMaterial ? Appearance.font.pixelSize.normal : Appearance.font.pixelSize.small
-                    font.features: {
-                        "tnum": 1
-                    }
-                    color: Appearance.colors.colOnLayer0
+                ClockContent {
+                    edge: "top"
                 }
             }
 

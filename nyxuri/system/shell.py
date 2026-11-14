@@ -183,7 +183,23 @@ def probe_running_shells() -> "list[Tuple[str, int]]":
                 return arg.split("=", 1)[1]
         return None
 
-    def classify(args: "list[str]") -> "str | None":
+    def is_nyxuri_shell_env(pid: int) -> bool:
+        """Identify a shell whose argv lost its `-p <dir>` flag.
+
+        Quickshell can end up as a bare `/usr/bin/quickshell` (crash-recovery
+        child, process-title rewrite), and argv is then useless for
+        classification. The wrapper always exports both markers, so exactly
+        those two are required to avoid mistaking an unrelated quickshell for
+        ours. Reading another same-user process's environ is allowed.
+        """
+        try:
+            raw = Path(f"/proc/{pid}/environ").read_bytes()
+        except (PermissionError, ProcessLookupError, FileNotFoundError):
+            return False
+        markers = (b"NYXURI_ORIGINAL_CACHE_HOME=", b"NYXURI_SHELL_GENERATED_HOME=")
+        return all(marker in raw for marker in markers)
+
+    def classify(pid: int, args: "list[str]") -> "str | None":
         prog = Path(args[0]).name
         cmd = " ".join(args)
         if any(bad in cmd for bad in ["nyxuri shell", "test_shell", "pytest", "shell_switcher"]):
@@ -200,6 +216,9 @@ def probe_running_shells() -> "list[Tuple[str, int]]":
                         return "nyxuri-shell"
                 except OSError:
                     pass
+            # Argv fallback: the running shell may have no `-p` left to read.
+            if is_nyxuri_shell_env(pid):
+                return "nyxuri-shell"
             return None
         if (prog == "noctalia" or args[0].endswith("/noctalia")) and "python" not in prog:
             if "greeter" not in cmd:
@@ -217,7 +236,7 @@ def probe_running_shells() -> "list[Tuple[str, int]]":
             args = [a.decode("utf-8", errors="ignore") for a in raw.split(b"\x00") if a]
             if not args:
                 continue
-            kind = classify(args)
+            kind = classify(pid, args)
             if kind:
                 instances.append((kind, pid))
         except Exception:

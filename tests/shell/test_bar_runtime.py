@@ -4,7 +4,8 @@ The string-assertion suites cannot catch a NaN layout chain, a compiled-empty
 widget or a Type/Reference storm. This test drives scripts/dev/probe-bar.sh,
 which loads BarContent in an isolated shell and reports every active Loader
 status plus the evaluated lane geometry for all six corner styles, the four
-borderless modes and the self-hiding widget lane (Media with no track).
+borderless modes, the self-hiding widget lane (Media with no track), and the
+tray surface (fake SNI items -> pin -> overflow arrow -> persisted config).
 
 No Wayland compositor -> explicit skip (the probe exits 2). Weston, when
 installed, runs headless; otherwise the probe uses the current session with a
@@ -40,7 +41,21 @@ class BarRuntimeProbeTest(unittest.TestCase):
         self.assertEqual(report["osd"]["islandState"], "osd",
                          "the island OSD producer/provider chain did not engage")
         self.assertTrue(report["islandOff"]["ok"],
-                        "islandEnabled=false did not remove the island from the middle lane")
+                        "removing the island from the layout did not empty the middle lane")
+        self.assertTrue(report["islandRestored"]["ok"],
+                        "re-adding the island to the layout did not restore it")
+        self.assertTrue(report["islandMigration"]["ok"], report["islandMigration"])
+        self.assertEqual(report["islandMigration"]["seeded"], ["island"])
+        self.assertEqual(report["islandMigration"]["keptEmpty"], [])
+        self.assertEqual(report["islandMigration"]["legacyOff"], [])
+        self.assertTrue(report["idleFace"]["ok"], report["idleFace"])
+        self.assertGreater(report["idleFace"]["idleWidth"], 0)
+        if report["idleFace"]["satellite"] == "clock":
+            self.assertTrue(report["idleFace"]["clockVisible"],
+                            "the horizontal clock satellite did not render")
+            self.assertGreater(report["idleFace"]["clockWidth"], 0)
+        self.assertTrue(report["idleFace"]["avatarReady"] or report["idleFace"]["avatarFallback"],
+                        "idle avatar has neither an image nor the fallback glyph")
         self.assertEqual(report["keyboardOsd"]["islandState"], "osd",
                          "caps/num lock changes did not reach the island OSD")
         keyboard = report["styles"][-1].get("keyboard") or {}
@@ -88,6 +103,34 @@ class BarRuntimeProbeTest(unittest.TestCase):
                 self.assertLessEqual(abs(case["leftWidth"]), 0.5,
                                      "a lane whose only widget is hidden kept capsule padding")
                 self.assertLessEqual(abs(case["centerWidth"]), 0.5)
+
+        # B9.1 tray surface: fake StatusNotifierItems prove the overflow arrow
+        # reacts to pin state and that the choice lands in config.toml. Without
+        # this the probe would still pass on a `unpinnedItems = []` stub.
+        tray = report["tray"]
+        self.assertTrue(tray["ok"], tray)
+        self.assertEqual(len(tray["items"]), 3, tray["items"])
+        self.assertEqual(tray["initial"]["unpinnedCount"], 0,
+                         "pin-by-default should leave nothing behind the arrow")
+        self.assertGreaterEqual(tray["initial"]["pinnedCount"], 2)
+        self.assertFalse(tray["initial"]["overflowVisible"])
+        self.assertEqual(len(tray["hidden"]["unpinned"]), 1,
+                         "hiding an item must move it into the overflow group")
+        self.assertTrue(tray["hidden"]["overflowVisible"],
+                        "the overflow arrow never appeared after unpin")
+        self.assertFalse(tray["closed"], "closeOverflowMenu did not close the popup")
+        self.assertTrue(tray["persisted"], "the pin choice was not written to config.toml")
+        self.assertEqual(tray["reset"]["unpinnedCount"], 0)
+
+        # B9.2 status cluster: fixed 26px slots, tooltips on every visible
+        # status, and two injected peripherals (one critical).
+        icons = report["systemIcons"]
+        self.assertTrue(icons["ok"], icons)
+        self.assertGreaterEqual(icons["slotCount"], 5)
+        self.assertLessEqual(abs(icons["groupWidth"] - icons["expectedGroupWidth"]), 0.5)
+        self.assertIn("mouse", icons["fakeIcons"])
+        self.assertIn("headphones", icons["fakeIcons"])
+        self.assertEqual(icons["fakeCritical"], 1)
 
 
 if __name__ == "__main__":
