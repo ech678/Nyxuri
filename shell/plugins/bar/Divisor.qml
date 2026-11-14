@@ -7,6 +7,7 @@
 import QtQuick
 import qs.commons
 import qs.services
+import qs.ui
 
 Item {
     id: root

@@ -300,8 +300,17 @@ Singleton {
     ]
     // B3-1 one-shot marker: seed the middle lane with the island exactly once.
     property bool islandLayoutMigrated: false
-    property bool barOverlay: false
     property string barPosition: "top"
+    // B9.7 settled keys. `barAutoHide` drives `bar.autoHide.enable` (the
+    // slide-out window); pushWindows / hoverRegionWidth / super-reveal stay
+    // internal bridge defaults — consumed, but not user-visible surface.
+    property bool barAutoHide: false
+    // Screen filter for the bar windows. Empty list = every screen (end4
+    // semantics); names come from Quickshell.screens.
+    property var barScreenList: []
+    // end4 `bar.showBackground`: the frame/pill background of non-material
+    // styles. Only Hug/Float expose it; other styles ignore it downstream.
+    property bool barShowBackground: true
     readonly property var barCornerStyles: [
         {
             value: 0,
@@ -407,6 +416,9 @@ Singleton {
         }
     ]
     property string barDividerStyle: "rect"
+    // end4 `bar.divider.spacing`: width of the "space" divider style only
+    // (line/dot dividers ignore it). end4 spinbox range 4–400 step 2.
+    property int barDividerSpacing: 4
     // Tray contract (ROADMAP B9.1). Pinned ids keep a permanent slot; every
     // other visible client moves behind the overflow arrow. filterPassive hides
     // Status.Passive clients, invertPinnedItems swaps the two groups, showItemId
@@ -417,6 +429,36 @@ Singleton {
     property bool barTrayInvertPinnedItems: true
     property bool barTrayShowItemId: false
     property bool barTrayMonochromeIcons: true
+    // end4 `bar.utilButtons` slots (B9.7): which shortcut buttons the
+    // UtilButtons widget renders. The screen-record slot was executed with the
+    // recorder domain (B-4); the remaining seven map to live actions.
+    property bool barShowScreenSnip: true
+    property bool barShowColorPicker: true
+    property bool barShowKeyboardToggle: false
+    property bool barShowMicToggle: false
+    property bool barShowWallpaperToggle: false
+    property bool barShowDarkModeToggle: true
+    property bool barShowPerformanceProfile: false
+    // end4 `bar.resources` widget surface (B9.7): which meters the
+    // Resources widget shows, its icon style, and the percentage readout.
+    // The polling service keeps its own internal defaults (not user surface).
+    property bool barShowCpu: true
+    property bool barShowCpuTemp: false
+    property bool barShowRam: true
+    property bool barShowDisk: false
+    property bool barShowSwap: false
+    readonly property var barResourceStyles: [
+        {
+            value: "filled",
+            label: I18n.tr("Filled")
+        },
+        {
+            value: "outline",
+            label: I18n.tr("Outline")
+        }
+    ]
+    property string barResourceStyle: "outline"
+    property bool barResourceShowValue: false
     // Workspace indicator shape (B8.3 parity with end4): numbers by default,
     // optional app icons, dot/icon marker when neither is shown.
     property bool barShowAppIcons: false
@@ -454,11 +496,38 @@ Singleton {
     ]
     property string barWorkspaceStyle: "default"
     property int barWorkspaceShown: 10
+    // end4 "Numbers style" (B9.7): the workspace number label preset. end4
+    // serialized the raw string array; Nyxuri stores the preset name as the
+    // single truth and derives the array — the UI only ever offered the three
+    // presets, so nothing else was representable.
+    readonly property var barWorkspaceNumberStyles: [
+        {
+            value: "normal",
+            label: I18n.tr("Normal")
+        },
+        {
+            value: "han",
+            label: I18n.tr("Han chars")
+        },
+        {
+            value: "roman",
+            label: I18n.tr("Roman")
+        }
+    ]
+    property string barWorkspaceNumberStyle: "normal"
+    readonly property var _barWorkspaceNumberHanMaps: ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十"]
+    readonly property var _barWorkspaceNumberRomanMaps: ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX"]
+    // What `bar.m3.workspaces.numberMap` feeds the Workspaces widget. Slots
+    // beyond the preset fall back to plain numbers at the consumer.
+    readonly property var barWorkspaceNumberMap: root.barWorkspaceNumberStyle === "han" ? root._barWorkspaceNumberHanMaps : root.barWorkspaceNumberStyle === "roman" ? root._barWorkspaceNumberRomanMaps : []
     // Only ids the bar can actually render. `information` was never a widget
     // (it was an iNiR bar style name) and mapped to a missing Information.qml.
     // B8.2 re-added the end4 base widgets (BarWidgetSwitcher/ClippedProgressBar/
     // ResourceUsage), so clock / systemMonitor / battery are selectable again.
-    readonly property var barComponentIds: ["workspaces", "activeWindow", "media", "tray", "quickSettings", "island", "divisor", "clock", "systemMonitor", "battery", "systemIcons", "launcherButton", "powerButton"]
+    // B9.7 re-added `utilButtons` (end4 keeps it addable; its seven slots are
+    // wired to real toggles), which had been stripped from the whitelist and
+    // made the whole widget unreachable.
+    readonly property var barComponentIds: ["workspaces", "activeWindow", "media", "tray", "quickSettings", "island", "divisor", "clock", "systemMonitor", "battery", "systemIcons", "launcherButton", "powerButton", "utilButtons"]
     readonly property var defaultBarLeadingComponents: ["launcherButton", "workspaces", "activeWindow"]
     readonly property var defaultBarTrailingComponents: ["tray", "quickSettings", "systemIcons", "powerButton"]
     readonly property var barComponentOptions: [({
@@ -509,6 +578,10 @@ Singleton {
                 "value": "powerButton",
                 "label": I18n.tr("Power"),
                 "icon": "power_settings_new"
+            }), ({
+                "value": "utilButtons",
+                "label": I18n.tr("Utility buttons"),
+                "icon": "widgets"
             })]
     readonly property var quickSettingsComponentIds: ["network", "bluetooth", "brightness", "volume", "microphone", "battery", "settings", "power"]
     readonly property var defaultQuickSettingsComponents: root.quickSettingsComponentIds.slice()
@@ -1433,6 +1506,10 @@ Singleton {
         setValue("barWorkspaceShown", isFinite(parsed) ? Math.max(1, Math.min(50, parsed)) : 10);
     }
 
+    function setBarWorkspaceNumberStyle(value) {
+        setValue("barWorkspaceNumberStyle", normalizedOption(root.barWorkspaceNumberStyles, value, "normal"));
+    }
+
     // Right-click style editor (BarGroupStylePopup) persistence. One entry per
     // (borderless mode, widget) pair, matching end4's `bar.widgetStyles` shape,
     // but owned here so the config store stays the single writer.
@@ -1625,6 +1702,26 @@ Singleton {
     // Tray pin list: ids are opaque DBus names, so only blank/duplicate entries
     // are rejected here — validating against SystemTray.items would drop pins
     // for clients that are not running right now.
+    // B9.7 screen filter: deduped non-empty monitor names. An empty array
+    // means "every screen"; unknown names simply never match at the window
+    // (Bar.qml falls back to all screens in that case).
+    function normalizedScreenList(raw) {
+        if (!Array.isArray(raw))
+            return [];
+
+        const seen = {};
+        const out = [];
+        raw.forEach(name => {
+            const candidate = String(name || "").trim();
+            if (candidate.length === 0 || seen[candidate])
+                return;
+
+            seen[candidate] = true;
+            out.push(candidate);
+        });
+        return out;
+    }
+
     function normalizedTrayPinnedItems(raw) {
         if (!Array.isArray(raw))
             return [];
@@ -2033,18 +2130,40 @@ Singleton {
                 }
             },
             "bar": {
-                "overlay": root.barOverlay,
                 "position": root.barPosition,
+                "autoHide": root.barAutoHide,
+                "screenList": root.barScreenList.slice(),
+                "showBackground": root.barShowBackground,
                 "cornerStyle": root.barCornerStyle,
                 "borderless": root.barBorderless,
                 "groupColor": root.barGroupColor,
                 "widgetStyles": root.barWidgetStyles.map(entry => Object.assign({}, entry)),
                 "dividerStyle": root.barDividerStyle,
+                "dividerSpacing": root.barDividerSpacing,
                 "showAppIcons": root.barShowAppIcons,
                 "alwaysShowNumbers": root.barAlwaysShowNumbers,
                 "workspaceIndicatorStyle": root.barWorkspaceIndicatorStyle,
                 "workspaceStyle": root.barWorkspaceStyle,
                 "workspaceShown": root.barWorkspaceShown,
+                "numberStyle": root.barWorkspaceNumberStyle,
+                "utilButtons": {
+                    "showScreenSnip": root.barShowScreenSnip,
+                    "showColorPicker": root.barShowColorPicker,
+                    "showKeyboardToggle": root.barShowKeyboardToggle,
+                    "showMicToggle": root.barShowMicToggle,
+                    "showWallpaperToggle": root.barShowWallpaperToggle,
+                    "showDarkModeToggle": root.barShowDarkModeToggle,
+                    "showPerformanceProfile": root.barShowPerformanceProfile
+                },
+                "resources": {
+                    "alwaysShowCpu": root.barShowCpu,
+                    "alwaysShowCpuTemp": root.barShowCpuTemp,
+                    "alwaysShowRam": root.barShowRam,
+                    "alwaysShowDisk": root.barShowDisk,
+                    "alwaysShowSwap": root.barShowSwap,
+                    "style": root.barResourceStyle,
+                    "showValue": root.barResourceShowValue
+                },
                 "showValues": root.barShowValues,
                 "showNames": root.barShowNames,
                 "barLeadingComponents": root.barLeadingComponents.slice(),
@@ -2232,18 +2351,38 @@ Singleton {
         root.horizontalClockDigits = root.normalizedHorizontalClockDigits(horizontalClock.digits);
         root.barShowValues = typeof bar.showValues === "boolean" ? bar.showValues : typeof bar.showMonitorValues === "boolean" ? bar.showMonitorValues : true;
         root.barShowNames = typeof bar.showNames === "boolean" ? bar.showNames : false;
-        root.barOverlay = typeof bar.overlay === "boolean" ? bar.overlay : false;
         root.barPosition = normalizedEdgePosition(bar.position);
+        root.barAutoHide = bar.autoHide === true;
+        root.barScreenList = root.normalizedScreenList(bar.screenList);
+        root.barShowBackground = typeof bar.showBackground === "boolean" ? bar.showBackground : true;
         root.barCornerStyle = root.normalizedBoundedInt(bar.cornerStyle, 1, 0, 5);
         root.barBorderless = root.normalizedOption(root.barBorderlessModes, bar.borderless, "pills");
         root.barGroupColor = normalizedOption(root.barGroupColorOptions, bar.groupColor, "layer1");
         root.barWidgetStyles = root.normalizedBarWidgetStyles(bar.widgetStyles);
         root.barDividerStyle = root.normalizedOption(root.barDividerStyles, bar.dividerStyle, "rect");
+        root.barDividerSpacing = typeof bar.dividerSpacing === "number" ? Math.max(4, Math.min(400, Math.round(bar.dividerSpacing / 2) * 2)) : 4;
         root.barShowAppIcons = typeof bar.showAppIcons === "boolean" ? bar.showAppIcons : false;
         root.barAlwaysShowNumbers = typeof bar.alwaysShowNumbers === "boolean" ? bar.alwaysShowNumbers : true;
         root.barWorkspaceIndicatorStyle = normalizedOption(root.barWorkspaceIndicatorStyles, bar.workspaceIndicatorStyle, "dot");
         root.barWorkspaceStyle = normalizedOption(root.barWorkspaceStyles, bar.workspaceStyle, "default");
         root.barWorkspaceShown = typeof bar.workspaceShown === "number" ? Math.max(1, Math.min(50, Math.round(bar.workspaceShown))) : 10;
+        root.barWorkspaceNumberStyle = normalizedOption(root.barWorkspaceNumberStyles, bar.numberStyle, "normal");
+        const utilButtons = configSection(bar.utilButtons);
+        root.barShowScreenSnip = typeof utilButtons.showScreenSnip === "boolean" ? utilButtons.showScreenSnip : true;
+        root.barShowColorPicker = typeof utilButtons.showColorPicker === "boolean" ? utilButtons.showColorPicker : true;
+        root.barShowKeyboardToggle = utilButtons.showKeyboardToggle === true;
+        root.barShowMicToggle = utilButtons.showMicToggle === true;
+        root.barShowWallpaperToggle = utilButtons.showWallpaperToggle === true;
+        root.barShowDarkModeToggle = typeof utilButtons.showDarkModeToggle === "boolean" ? utilButtons.showDarkModeToggle : true;
+        root.barShowPerformanceProfile = utilButtons.showPerformanceProfile === true;
+        const resources = configSection(bar.resources);
+        root.barShowCpu = typeof resources.alwaysShowCpu === "boolean" ? resources.alwaysShowCpu : true;
+        root.barShowCpuTemp = resources.alwaysShowCpuTemp === true;
+        root.barShowRam = typeof resources.alwaysShowRam === "boolean" ? resources.alwaysShowRam : true;
+        root.barShowDisk = resources.alwaysShowDisk === true;
+        root.barShowSwap = resources.alwaysShowSwap === true;
+        root.barResourceStyle = normalizedOption(root.barResourceStyles, resources.style, "outline");
+        root.barResourceShowValue = resources.showValue === true;
         root.barThickness = typeof bar.barThickness === "number" ? Math.max(28, Math.min(64, Math.round(bar.barThickness))) : root.defaultBarThickness;
         root.barVerticalThickness = typeof bar.verticalThickness === "number" ? Math.max(28, Math.min(64, Math.round(bar.verticalThickness))) : root.defaultBarVerticalThickness;
         root.barEdgeMargin = typeof bar.edgeMargin === "number" ? Math.max(0, Math.min(48, Math.round(bar.edgeMargin))) : 0;

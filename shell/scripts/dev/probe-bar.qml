@@ -105,6 +105,21 @@ ShellRoot {
         return null;
     }
 
+    // B9.7: generic duck-typed walk for the settled-settings consumers.
+    function findNodes(item, predicate, out): var {
+        if (!item || !item.children)
+            return out;
+        for (let i = 0; i < item.children.length; i += 1) {
+            const child = item.children[i];
+            if (!child)
+                continue;
+            if (predicate(child))
+                out.push(child);
+            probeRoot.findNodes(child, predicate, out);
+        }
+        return out;
+    }
+
     function systemIconsReport(): string {
         const widget = probeRoot.findSystemIconsWidget(barLoader.item);
         if (!widget)
@@ -312,6 +327,10 @@ ShellRoot {
                 "found": true,
                 "edge": String(window.edge),
                 "vertical": window.vertical === true,
+                // B9.7: autohide collapses the reservation to zero.
+                "exclusiveZone": Math.round(window.exclusiveZone),
+                "autoHide": window.autoHideEnabled === true,
+                "screenList": Array.from(Config.options.bar.screenList ?? []),
                 "window": {
                     "w": Math.round(window.width),
                     "h": Math.round(window.height)
@@ -366,6 +385,8 @@ ShellRoot {
         // Layout scenes: "mediaOnly" is the self-hiding-widget contract (an
         // empty lane must collapse to zero instead of keeping capsule
         // padding); "default" restores the shipped three-lane layout.
+        // B9.7 scenes single out the widgets whose settings rows need
+        // runtime evidence (util buttons, resources, the divider).
         function scene(name: string): string {
             if (name === "mediaOnly") {
                 PersonalizationConfig.setBarLayouts(["media"], [], []);
@@ -375,6 +396,12 @@ ShellRoot {
                 // B9.6: island-only middle lane in center-only mode, so the
                 // frame-hug branch (row - 4 / + 8) is observable.
                 PersonalizationConfig.setBarLayouts([], ["island"], []);
+            } else if (name === "utilOnly") {
+                PersonalizationConfig.setBarLayouts([], [], ["utilButtons"]);
+            } else if (name === "monitorOnly") {
+                PersonalizationConfig.setBarLayouts([], [], ["systemMonitor"]);
+            } else if (name === "divisorLeft") {
+                PersonalizationConfig.setBarLayouts(["divisor"], [], []);
             } else {
                 const left = PersonalizationConfig.defaultBarLayoutLeft.slice();
                 const middle = PersonalizationConfig.defaultBarLayoutMiddle.slice();
@@ -635,6 +662,90 @@ ShellRoot {
                 probeRoot.reloading = false;
             });
             return "OK";
+        }
+
+        // B9.7 settled-settings sweep: generic store passthrough (values are
+        // JSON-parsed so bools/numbers/arrays arrive typed) plus a duck-typed
+        // dump of every wired consumer.
+        function b97Set(key: string, value: string): string {
+            let parsed = value;
+            try {
+                parsed = JSON.parse(value);
+            } catch (e) {
+                parsed = value;
+            }
+            PersonalizationConfig.setValue(key, parsed);
+            return "OK";
+        }
+
+        function b97Dump(): string {
+            const content = barLoader.item;
+            if (!content)
+                return JSON.stringify({
+                    "ready": false
+                });
+            const backgrounds = probeRoot.findNodes(content, node => node.objectName === "barBackground", []);
+            const divisors = probeRoot.findNodes(content, node => node.dividerSpacing !== undefined, []);
+            const layer0 = String(Appearance.colors.colLayer0);
+            // B9.7 number presets: only the Workspaces subtree speaks the
+            // preset labels — the island clock can render its own digits.
+            const wsNode = probeRoot.findWorkspace(content);
+            const wsTexts = probeRoot.findNodes(wsNode, node => typeof node.text === "string" && node.font !== undefined, []);
+            const wsHan = [];
+            const wsRoman = [];
+            for (const node of wsTexts) {
+                const label = String(node.text);
+                if (/^[一二三四五六七八九十]{1,3}$/.test(label)) {
+                    if (!wsHan.includes(label))
+                        wsHan.push(label);
+                } else if (/^[IVXLC]{1,6}$/.test(label) && label !== "" && !/^\d+$/.test(label)) {
+                    if (!wsRoman.includes(label))
+                        wsRoman.push(label);
+                }
+            }
+            const resources = probeRoot.findNodes(content, node => node.iconName !== undefined && node.shown !== undefined, []);
+            const buttons = probeRoot.findNodes(content, node => node.toolTipText !== undefined, []);
+            const buttonIcons = probeRoot.findNodes(content, node => node.iconText !== undefined, []);
+            return JSON.stringify({
+                "ready": true,
+                "cornerStyle": PersonalizationConfig.barCornerStyle,
+                "colLayer0": layer0,
+                "bridge": {
+                    "showBackground": Config.options.bar.m3.showBackground,
+                    "autoHide": Config.options.bar.autoHide.enable,
+                    "screenList": Array.from(Config.options.bar.screenList ?? []),
+                    "dividerStyle": String(Config.options.bar.m3.divider.style),
+                    "dividerSpacing": Config.options.bar.m3.divider.spacing,
+                    "utilKeyboard": Config.options.bar.m3.utilButtons.showKeyboardToggle,
+                    "resourceSwap": Config.options.bar.m3.resources.alwaysShowSwap,
+                    "resourceStyle": String(Config.options.bar.m3.resources.style),
+                    "numberStyle": PersonalizationConfig.barWorkspaceNumberStyle,
+                    "numberMap": Array.from(Config.options.bar.m3.workspaces.numberMap ?? [])
+                },
+                "background": backgrounds.length ? {
+                    "color": String(backgrounds[0].color),
+                    "isLayer0": Qt.color(String(backgrounds[0].color)).rgba === Qt.color(String(Appearance.colors.colLayer0)).rgba
+                } : null,
+                "divisor": divisors.length ? {
+                    "spacing": divisors[0].dividerSpacing,
+                    "style": String(divisors[0].style),
+                    "width": Math.round(divisors[0].width),
+                    "height": Math.round(divisors[0].height)
+                } : null,
+                "resourceNodes": resources.map(node => ({
+                            "icon": String(node.iconName),
+                            "shown": node.shown === true,
+                            "visible": node.visible !== false
+                        })),
+                "swapNodes": resources.filter(node => String(node.iconName) === "swap_horiz").map(node => ({
+                            "shown": node.shown === true,
+                            "visible": node.visible !== false
+                        })),
+                "buttonIcons": buttonIcons.map(node => String(node.iconText)),
+                "buttons": buttons.map(node => String(node.toolTipText)),
+                "han": wsHan,
+                "roman": wsRoman
+            });
         }
     }
 }

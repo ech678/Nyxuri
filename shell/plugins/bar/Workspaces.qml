@@ -15,8 +15,8 @@
 //     toggles the compositor overview via CompositorDriver.toggleOverview(),
 //     right press-and-hold still opens the group style editor.
 //   - Config keys live in PersonalizationConfig (shown/style/showAppIcons/
-//     alwaysShowNumbers/indicatorStyle); monochromeIcons/numberMap stay on
-//     the legacy bar.m3 keys until the B9.7 settings sweep.
+//     alwaysShowNumbers/indicatorStyle, and since B9.7 the numberMap preset);
+//     monochromeIcons stays an internal bridge default.
 //   - end4's useNerdFont number-font branch is dropped (no iconNerd token).
 
 pragma ComponentBehavior: Bound

@@ -1381,3 +1381,54 @@ qml-lint 629 条 advisory 警告为既有 qs.* 成员解析噪声）。`probe-ba
 - **未验证（作者）**：四样式/Colorizer、右键 overview、改色弹层外点关闭、弹层令牌
   视觉、动态槽位日常手感。
 - **遗留登记**：`mapFromItem` stderr 噪音（gate 外）；`islandHost` 多实例清空时序。
+
+### B9.7 实施记录（2026-11-14，设置清账）
+
+§1.7 八个死键逐一「接消费者或处决」，可见设置全部拿到唯一 owner。作者两项拍板：
+`barOverlay`（Floating）**下架**，`numberMap` **接三预设**。
+
+- **处决两笔**：
+  - `barOverlay` 全链（Clavis 遗产、end4 选项面没有 overlay，重叠场景由
+    Float + autoHide 覆盖）：属性、序列化 `overlay` 键、读取行、GeneralBarPage
+    "Floating" toggle（`first` 移交 Screen edge，独行组 `first+last` 全圆角）、
+    SettingsControlCatalog `bar:Overlay`、DashboardSettingsCatalog Overlay 卡。
+  - Recorder 僵尸（B-4 没收干净的尾）：`showScreenRecord` Loader + M3/legacy
+    两组件、`RecorderStatus.qml`（恒 false 孤儿桩）、`GlobalActions` 的
+    `screen-record` 分支（指向全树不存在的 `Directories.recordScriptPath`）、
+    桥内 `showScreenRecord` 键、孤儿 i18n 词条（`Recording`/`Stop recording`/
+    `[RecordingService]`/`Overlay`；`Cancel recording` 保留——归档语料
+    ShortcutsPage.qml 有字面调用，死键门禁按语料判定存活）。
+- **接线七组**（属性 → 序列化 bar 块 → Config 桥 → 页面行，end4
+  `BarConfig.qml` 原件裁剪进 `GeneralBarPage`）：
+  `barShowBackground`（桥摘 `?? true` 兜底；UI 仅 Hug/Float 可用，end4 同款约束）、
+  `barAutoHide`（桥 `autoHide.enable`；pushWindows/hoverRegionWidth/Super 显出
+  保持内部默认——有消费者不可见不算死键）、`barScreenList`（`normalizedScreenList`
+  去重；Screens 段 >1 屏才出现，All 收拢规则 = 全选存 `[]`）、`barDividerSpacing`
+  （4–400 step 2 钳制；`bar.divider` 与 `m3.divider` 两处桥归一同一 owner；UI 仅
+  space 样式出现）、`utilButtons` 七键（tray 同款子对象序列化；行按 `layoutUses`
+  门控）、`resources` 七键（5 个 alwaysShow + Filled/Outline + Show percentage；
+  轮询服务面保持内部默认）、`numberStyle` 三预设（Normal/汉字/罗马；预设名为
+  单一真相，桥派生数组——end4 序列化裸数组但 UI 只出三预设，登记偏离）。
+- **utilButtons 部件复活**：`barComponentIds` 白名单里从来没有 `utilButtons`，
+  `normalizedBarLayoutIds` 会剥掉它——整个部件不可达。按 end4 `allWidgets` 加回
+  白名单 + 选项表（icon `widgets`）。
+- **顺手处决两颗预存暗雷**（新 scene 首次加载这两个部件时被探针炸出）：
+  - `Divisor.qml` 缺 `import qs.ui`——`StyledText` 解析失败，部件一旦真进 lane
+    即 compiled empty（默认布局无 divisor，从未暴露）。
+  - `shell/services/ResourceUsageMonitor.qml` 零消费者死重复（唯一使用方都在
+    plugins/bar 用本地 fork），同名类型在 Loader 闭包里与 services 合成池撞名，
+    令 Resources/ResourcesPopup 的 `modules` 赋值打在错误类型上。处决 services
+    副本，名字归一。
+- **探针 `b97` 阶段**：`b97Set` 通用透传（JSON 解析保类型）+ `b97Dump` 鸭子类型
+  遍历（`barBackground` objectName、Divisor、Resource 节点、UtilButton 图标、
+  工作区子树数字标签）+ windowDump 增 `exclusiveZone`/`autoHide`/`screenList`；
+  新 scene `utilOnly`/`monitorOnly`/`divisorLeft`；断言背景 colLayer0→transparent、
+  space 宽度物化 20、keyboard 槽随键消失（按 icon 匹配，避开 i18n）、swap 节点
+  `shown` 翻转、汉字/罗马预设落到工作区标签（限定工作区子树——岛时钟自带汉字
+  数字，全文扫描会假阳）、未知屏幕名回退全屏、autoHide 0↔41 reservation 往返、
+  config.toml 落盘。
+- **验证**：`tests/shell` 595 tests OK（11 skipped；新增 `BarB9_7SettingsSweepTest`
+  五组钉值 + anchors/selects 断言更新）；`probe-bar.sh --session --json` 全绿含
+  `b97`、`logErrors: []`；`check.sh` 绿。
+- **未验证（作者）**：Screens 段多屏实机选择、autoHide 滑出手感、space 分隔条
+  宽度视觉、utilButtons 七槽实机点击、Resources 五表盘视觉。

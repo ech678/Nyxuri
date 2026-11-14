@@ -13,8 +13,6 @@ Singleton {
             ActionGateway.execute(["nyxuri-screenshot"], "bar.screenshot");
         } else if (actionId === "color-picker") {
             ActionGateway.execute(["hyprpicker", "-a"], "bar.colorpicker");
-        } else if (actionId === "screen-record") {
-            ActionGateway.execute([Directories.recordScriptPath], "bar.recording");
         } else if (actionId === "toggle-mic-mute") {
             if (Pipewire.defaultAudioSource) {
                 Pipewire.defaultAudioSource.muted = !Pipewire.defaultAudioSource.muted;

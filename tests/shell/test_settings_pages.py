@@ -611,7 +611,8 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
         for atom in ("PreferenceHeader", "PreferenceToggle", "PreferenceSelect", "ConnectedRect"):
             self.assertIn(atom, source, f"GeneralBarPage must use the atom: {atom}")
         # B9.6: the workspace style select joins the popup-input-region group.
-        self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 7,
+        # B9.7: the Numbers style and Resources icon style selects join too.
+        self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 9,
                          "the screen-edge and style selects must register the popup input region")
 
     def test_drag_fields_and_coordinators_survive(self):
@@ -634,7 +635,6 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
     def test_business_owners_unchanged(self):
         source = _read("GeneralBarPage.qml")
         for owner in (
-            "PersonalizationConfig.setValue(\"barOverlay\"",
             "PersonalizationConfig.setBarPosition(",
             "PersonalizationConfig.setBarShowNames(",
             "PersonalizationConfig.setBarShowValues(",

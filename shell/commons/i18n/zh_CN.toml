@@ -4,6 +4,25 @@
 # 支持可选 [Context] 局部上下文微调
 # ==============================================================================
 
+"All screens" = "全部屏幕"
+"Autohide" = "自动隐藏"
+"CPU temperature" = "CPU 温度"
+"Dark/Light toggle" = "深浅模式切换"
+"Filled" = "填充"
+"Han chars" = "汉字数字"
+"Icon style" = "图标样式"
+"Mic toggle" = "麦克风开关"
+"Numbers style" = "数字样式"
+"On-screen keyboard" = "屏幕键盘"
+"Performance profile" = "性能模式"
+"Resources" = "资源"
+"Roman" = "罗马数字"
+"Screen snip" = "截取区域"
+"Screens" = "屏幕"
+"Show background" = "显示背景"
+"Show percentage" = "显示百分比"
+"Space width" = "间距宽度"
+"Swap" = "交换空间"
 "System command timed out" = "系统命令超时"
 
 " " = "年"
@@ -1157,7 +1176,6 @@
 "Output: %1" = "输出：%1"
 "Overall utilization" = "总体利用率"
 "Overcast" = "阴"
-"Overlay" = "浮层"
 "Overview" = "概览"
 "Overview background" = "Overview 背景"
 "Overview blur" = "overview 模糊"
@@ -1304,7 +1322,6 @@
 "Reconnecting to the system monitor data stream." = "正在重新连接系统监测数据流。"
 "Record key" = "录制按键"
 "Record lap" = "记录单圈"
-"Recording" = "录制"
 "Rect" = "矩形"
 "Reference rate" = "参考汇率"
 "Refresh" = "刷新"
@@ -1474,6 +1491,7 @@
 "Show Caps Lock" = "显示大写锁定状态"
 "Show item id in tooltip" = "在提示中显示项目 ID"
 "Show Num Lock" = "显示数字锁定状态"
+"Utility buttons" = "工具按钮"
 "Visibility, satellite, indicators, and clock" = "可见性、卫星、指示器与时钟"
 "Show date" = "显示日期"
 "Show desktop grid while dragging" = "拖动时显示桌面网格"
@@ -1592,7 +1610,6 @@
 "Status: Unknown" = "状态：未知"
 "Stop" = "停止"
 "Stop media" = "停止播放"
-"Stop recording" = "停止录制"
 "Stopwatch" = "秒表"
 "Stretch" = "拉伸"
 "Stripes" = "条纹"
@@ -1891,6 +1908,7 @@
 "Volume:" = "音量:"
 "Volume: " = "音量："
 "Volume: muted" = "音量: 静音"
+"Wallpaper toggle" = "壁纸切换"
 "WPA/WPA2 Personal" = "WPA/WPA2 Personal"
 "Wait time" = "等待时间"
 "Waiting for Bluetooth scan" = "等待蓝牙扫描"
@@ -2092,9 +2110,6 @@
 
 [QuickSettingsSurface]
 "On" = "已开启"
-
-[RecordingService]
-"Could not query recording status through key" = "无法通过 key 查询录制状态"
 
 [SpotlightClipboardDetails]
 "Preview unavailable" = "无法预览"

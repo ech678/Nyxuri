@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
 import qs.commons
 import qs.services
 import qs.ui
@@ -70,6 +71,27 @@ Item {
     }
 
     readonly property bool horizontalBar: PersonalizationConfig.barPosition === "top" || PersonalizationConfig.barPosition === "bottom"
+    readonly property var detectedScreens: Quickshell.screens
+
+    // B9.7 screen filter toggle with end4's collapse rule: when every known
+    // screen is selected, the list collapses to empty (= all screens).
+    function toggleBarScreen(screenName, on) {
+        const allNames = root.detectedScreens.map(screen => screen?.name ?? "").filter(name => name.length > 0);
+        let list = PersonalizationConfig.barScreenList.length === 0 ? allNames.slice() : PersonalizationConfig.barScreenList.slice();
+        if (on) {
+            if (!list.includes(screenName))
+                list.push(screenName);
+        } else {
+            list = list.filter(name => name !== screenName);
+        }
+        PersonalizationConfig.setValue("barScreenList", list.length === allNames.length ? [] : list);
+    }
+
+    // end4 `isUsed`: widget-scoped setting rows only render while their
+    // widget actually sits in a lane.
+    function layoutUses(componentId) {
+        return PersonalizationConfig.barLayoutLeft.includes(componentId) || PersonalizationConfig.barLayoutMiddle.includes(componentId) || PersonalizationConfig.barLayoutRight.includes(componentId);
+    }
 
     NexusPageBase {
         id: barPage
@@ -98,28 +120,22 @@ Item {
                     text: I18n.tr("Position")
                 }
 
-                PreferenceToggle {
-                    id: floatingToggle
+                PreferenceSelect {
+                    id: edgeSelect
 
                     first: true
-                    text: I18n.tr("Floating")
-                    checked: PersonalizationConfig.barOverlay
-                    onToggled: PersonalizationConfig.setValue("barOverlay", checked)
-
-                    SettingsSearchAnchor {
-                        id: searchAnchor0
-                        target: floatingToggle
-                        anchorId: "bar.section.position"
-                    }
-                }
-
-                PreferenceSelect {
                     last: true
                     label: I18n.tr("Screen edge")
                     model: PersonalizationConfig.edgePositions
                     currentValue: PersonalizationConfig.barPosition
                     inputRegionService: PopupInputRegionService
                     onSelected: value => PersonalizationConfig.setBarPosition(String(value))
+
+                    SettingsSearchAnchor {
+                        id: searchAnchor0
+                        target: edgeSelect
+                        anchorId: "bar.section.position"
+                    }
                 }
 
                 // B9.5 outer margins: separate from the internal lane inset
@@ -180,6 +196,35 @@ Item {
                     onSelected: value => PersonalizationConfig.setBarDividerStyle(String(value))
                 }
 
+                // end4 BarConfig: the space divider's width only exists for
+                // that style, so the row hides instead of idling.
+                PreferenceSlider {
+                    visible: PersonalizationConfig.barDividerStyle === "space"
+                    label: I18n.tr("Space width")
+                    value: PersonalizationConfig.barDividerSpacing
+                    valueLabel: Math.round(PersonalizationConfig.barDividerSpacing) + " px"
+                    from: 4
+                    to: 400
+                    stepSize: 2
+                    onMoved: value => PersonalizationConfig.setValue("barDividerSpacing", Math.round(value / 2) * 2)
+                }
+
+                // end4 `bar.showBackground`: the frame/pill background of
+                // Hug and Float. Other styles decide their own background
+                // downstream, so the row idles there (end4 disables it too).
+                PreferenceToggle {
+                    text: I18n.tr("Show background")
+                    enabled: PersonalizationConfig.barCornerStyle === 0 || PersonalizationConfig.barCornerStyle === 1
+                    checked: PersonalizationConfig.barShowBackground
+                    onToggled: PersonalizationConfig.setValue("barShowBackground", checked)
+                }
+
+                PreferenceToggle {
+                    text: I18n.tr("Autohide")
+                    checked: PersonalizationConfig.barAutoHide
+                    onToggled: PersonalizationConfig.setValue("barAutoHide", checked)
+                }
+
                 PreferenceSelect {
                     label: I18n.tr("Group color")
                     model: PersonalizationConfig.barGroupColorOptions
@@ -215,6 +260,40 @@ Item {
                     onMoved: value => PersonalizationConfig.setBarVerticalThickness(Math.round(value))
                 }
 
+                // B9.7 screen filter (end4 BarConfig "Screens"): an empty
+                // list means every screen; the collapse rule lives in the
+                // page because it needs the live screen set.
+                PreferenceHeader {
+                    visible: root.detectedScreens.length > 1
+                    text: I18n.tr("Screens")
+                }
+
+                PreferenceToggle {
+                    visible: root.detectedScreens.length > 1
+                    first: true
+                    text: I18n.tr("All screens")
+                    checked: PersonalizationConfig.barScreenList.length === 0
+                    onToggled: PersonalizationConfig.setValue("barScreenList", [])
+                }
+
+                Repeater {
+                    visible: root.detectedScreens.length > 1
+                    model: root.detectedScreens
+
+                    PreferenceToggle {
+                        required property var modelData
+                        required property int index
+
+                        readonly property string screenName: modelData?.name ?? ""
+
+                        visible: root.detectedScreens.length > 1 && screenName.length > 0
+                        last: index === root.detectedScreens.length - 1
+                        text: screenName
+                        checked: PersonalizationConfig.barScreenList.length === 0 || PersonalizationConfig.barScreenList.includes(screenName)
+                        onToggled: root.toggleBarScreen(screenName, !checked)
+                    }
+                }
+
                 // Workspaces
                 PreferenceHeader {
                     text: I18n.tr("Workspaces")
@@ -247,6 +326,17 @@ Item {
                     currentValue: PersonalizationConfig.barWorkspaceStyle
                     inputRegionService: PopupInputRegionService
                     onSelected: value => PersonalizationConfig.setBarWorkspaceStyle(String(value))
+                }
+
+                // end4 "Numbers style" (B9.7): only the default skin renders
+                // number labels, so the preset hides elsewhere.
+                PreferenceSelect {
+                    visible: PersonalizationConfig.barWorkspaceStyle === "default"
+                    label: I18n.tr("Numbers style")
+                    model: PersonalizationConfig.barWorkspaceNumberStyles
+                    currentValue: PersonalizationConfig.barWorkspaceNumberStyle
+                    inputRegionService: PopupInputRegionService
+                    onSelected: value => PersonalizationConfig.setBarWorkspaceNumberStyle(String(value))
                 }
 
                 PreferenceSlider {
@@ -453,6 +543,123 @@ Item {
                             onRemoved: componentId => PersonalizationConfig.removeQuickSettingsComponent(componentId)
                         }
                     }
+                }
+
+                // end4 widget-scoped sections (B9.7): the Utility buttons and
+                // Resources rows only exist while their widget is in a lane —
+                // otherwise they would be honest-looking dead switches.
+                PreferenceHeader {
+                    visible: root.layoutUses("utilButtons")
+                    text: I18n.tr("Utility buttons")
+                }
+
+                PreferenceToggle {
+                    visible: root.layoutUses("utilButtons")
+                    first: true
+                    text: I18n.tr("Screen snip")
+                    checked: PersonalizationConfig.barShowScreenSnip
+                    onToggled: PersonalizationConfig.setValue("barShowScreenSnip", checked)
+                }
+
+                PreferenceToggle {
+                    visible: root.layoutUses("utilButtons")
+                    text: I18n.tr("Color picker")
+                    checked: PersonalizationConfig.barShowColorPicker
+                    onToggled: PersonalizationConfig.setValue("barShowColorPicker", checked)
+                }
+
+                PreferenceToggle {
+                    visible: root.layoutUses("utilButtons")
+                    text: I18n.tr("On-screen keyboard")
+                    checked: PersonalizationConfig.barShowKeyboardToggle
+                    onToggled: PersonalizationConfig.setValue("barShowKeyboardToggle", checked)
+                }
+
+                PreferenceToggle {
+                    visible: root.layoutUses("utilButtons")
+                    text: I18n.tr("Mic toggle")
+                    checked: PersonalizationConfig.barShowMicToggle
+                    onToggled: PersonalizationConfig.setValue("barShowMicToggle", checked)
+                }
+
+                PreferenceToggle {
+                    visible: root.layoutUses("utilButtons")
+                    text: I18n.tr("Wallpaper toggle")
+                    checked: PersonalizationConfig.barShowWallpaperToggle
+                    onToggled: PersonalizationConfig.setValue("barShowWallpaperToggle", checked)
+                }
+
+                PreferenceToggle {
+                    visible: root.layoutUses("utilButtons")
+                    text: I18n.tr("Dark/Light toggle")
+                    checked: PersonalizationConfig.barShowDarkModeToggle
+                    onToggled: PersonalizationConfig.setValue("barShowDarkModeToggle", checked)
+                }
+
+                PreferenceToggle {
+                    visible: root.layoutUses("utilButtons")
+                    last: true
+                    text: I18n.tr("Performance profile")
+                    checked: PersonalizationConfig.barShowPerformanceProfile
+                    onToggled: PersonalizationConfig.setValue("barShowPerformanceProfile", checked)
+                }
+
+                PreferenceHeader {
+                    visible: root.layoutUses("systemMonitor")
+                    text: I18n.tr("Resources")
+                }
+
+                PreferenceToggle {
+                    visible: root.layoutUses("systemMonitor")
+                    first: true
+                    text: I18n.tr("CPU")
+                    checked: PersonalizationConfig.barShowCpu
+                    onToggled: PersonalizationConfig.setValue("barShowCpu", checked)
+                }
+
+                PreferenceToggle {
+                    visible: root.layoutUses("systemMonitor")
+                    text: I18n.tr("CPU temperature")
+                    checked: PersonalizationConfig.barShowCpuTemp
+                    onToggled: PersonalizationConfig.setValue("barShowCpuTemp", checked)
+                }
+
+                PreferenceToggle {
+                    visible: root.layoutUses("systemMonitor")
+                    text: I18n.tr("RAM")
+                    checked: PersonalizationConfig.barShowRam
+                    onToggled: PersonalizationConfig.setValue("barShowRam", checked)
+                }
+
+                PreferenceToggle {
+                    visible: root.layoutUses("systemMonitor")
+                    text: I18n.tr("Disk")
+                    checked: PersonalizationConfig.barShowDisk
+                    onToggled: PersonalizationConfig.setValue("barShowDisk", checked)
+                }
+
+                PreferenceToggle {
+                    visible: root.layoutUses("systemMonitor")
+                    text: I18n.tr("Swap")
+                    checked: PersonalizationConfig.barShowSwap
+                    onToggled: PersonalizationConfig.setValue("barShowSwap", checked)
+                }
+
+                PreferenceSelect {
+                    visible: root.layoutUses("systemMonitor")
+                    label: I18n.tr("Icon style")
+                    model: PersonalizationConfig.barResourceStyles
+                    currentValue: PersonalizationConfig.barResourceStyle
+                    inputRegionService: PopupInputRegionService
+                    onSelected: value => PersonalizationConfig.setValue("barResourceStyle", String(value))
+                }
+
+                PreferenceToggle {
+                    visible: root.layoutUses("systemMonitor")
+                    last: true
+                    text: I18n.tr("Show percentage")
+                    checked: PersonalizationConfig.barResourceShowValue
+                    onToggled: PersonalizationConfig.setValue("barResourceShowValue", checked)
                 }
 
                 // Tray (B9.1): the tray widget's own contract — pinned items

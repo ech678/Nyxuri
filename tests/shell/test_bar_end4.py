@@ -521,5 +521,123 @@ class TrayContractTest(unittest.TestCase):
         self.assertIn('id = "bar.section.tray"', manifest)
 
 
+class BarB9_7SettingsSweepTest(unittest.TestCase):
+    """B9.7 设置清账：八个死键逐一接消费者或处决，可见设置必有唯一 owner。"""
+
+    def test_bar_overlay_is_executed(self):
+        config = read_services_file("PersonalizationConfig.qml")
+        self.assertNotIn("barOverlay", config)
+        self.assertNotIn('"overlay"', config)
+        page = read_bar_file("GeneralBarPage.qml")
+        self.assertNotIn("barOverlay", page)
+        self.assertNotIn('"Floating"', page)
+        catalog_path = os.path.join(REPO_ROOT, "shell", "plugins", "settings", "dashwindow", "SettingsControlCatalog.qml")
+        with open(catalog_path, "r", encoding="utf-8") as f:
+            catalog = f.read()
+        self.assertNotIn("bar:Overlay", catalog)
+
+    def test_recorder_domain_is_executed(self):
+        # B-4 补完：Record 按钮、恒 false 孤儿桩与指向不存在脚本的 action。
+        self.assertFalse(os.path.isfile(os.path.join(SERVICES_DIR, "RecorderStatus.qml")),
+                         "RecorderStatus stub must not come back")
+        self.assertNotIn("RecorderStatus", read_bar_file("UtilButtons.qml"))
+        self.assertNotIn("showScreenRecord", read_bar_file("UtilButtons.qml"))
+        self.assertNotIn("showScreenRecord", read_services_file("Config.qml"))
+        actions = read_services_file("GlobalActions.qml")
+        self.assertNotIn("screen-record", actions)
+        self.assertNotIn("recordScriptPath", actions)
+
+    def test_utilbuttons_is_addable_again(self):
+        config = read_services_file("PersonalizationConfig.qml")
+        self.assertIn('"powerButton", "utilButtons"', config,
+                      "the widget was stripped from the whitelist and unreachable")
+        self.assertIn('"value": "utilButtons"', config)
+
+    def test_settled_keys_live_in_the_store(self):
+        config = read_services_file("PersonalizationConfig.qml")
+        for prop in (
+            "property bool barAutoHide",
+            "property var barScreenList",
+            "property bool barShowBackground",
+            "property int barDividerSpacing",
+            "property bool barShowScreenSnip",
+            "property bool barShowColorPicker",
+            "property bool barShowKeyboardToggle",
+            "property bool barShowMicToggle",
+            "property bool barShowWallpaperToggle",
+            "property bool barShowDarkModeToggle",
+            "property bool barShowPerformanceProfile",
+            "property bool barShowCpu",
+            "property bool barShowCpuTemp",
+            "property bool barShowRam",
+            "property bool barShowDisk",
+            "property bool barShowSwap",
+            "property string barResourceStyle",
+            "property bool barResourceShowValue",
+            "property string barWorkspaceNumberStyle",
+        ):
+            self.assertIn(prop, config, f"settled key missing from the store: {prop}")
+        for token in (
+            "function normalizedScreenList",
+            "function setBarWorkspaceNumberStyle",
+            '"autoHide": root.barAutoHide',
+            '"screenList": root.barScreenList.slice()',
+            '"showBackground": root.barShowBackground',
+            '"dividerSpacing": root.barDividerSpacing',
+            '"numberStyle": root.barWorkspaceNumberStyle',
+            "normalizedScreenList(bar.screenList)",
+            "configSection(bar.utilButtons)",
+            "configSection(bar.resources)",
+        ):
+            self.assertIn(token, config, f"store persistence token missing: {token}")
+        # end4 slider bounds 4–400 step 2, clamped on load.
+        self.assertIn("Math.max(4, Math.min(400, Math.round(bar.dividerSpacing / 2) * 2))", config)
+        # Preset arrays are the single truth; the bridge derives the array.
+        self.assertIn('"一"', config)
+        self.assertIn('"XX"', config)
+        self.assertIn("barWorkspaceNumberStyle === \"han\"", config)
+
+    def test_config_bridge_reads_the_store(self):
+        bridge = read_services_file("Config.qml")
+        self.assertNotIn("barShowBackground ?? true", bridge,
+                         "the bridge must stop defaulting a nonexistent property")
+        self.assertNotIn("barDividerSpacing ?? 4", bridge)
+        self.assertNotIn("readonly property var screenList: []", bridge)
+        self.assertEqual(bridge.count("PersonalizationConfig.barDividerSpacing"), 2,
+                         "bar.divider and m3.divider share one owner")
+        self.assertIn("enable: PersonalizationConfig.barAutoHide", bridge)
+        self.assertIn("screenList: PersonalizationConfig.barScreenList", bridge)
+        self.assertIn("numberMap: PersonalizationConfig.barWorkspaceNumberMap", bridge)
+        for prop in ("barShowScreenSnip", "barShowColorPicker", "barShowKeyboardToggle",
+                     "barShowMicToggle", "barShowWallpaperToggle", "barShowDarkModeToggle",
+                     "barShowPerformanceProfile", "barShowCpu", "barShowCpuTemp",
+                     "barShowRam", "barShowDisk", "barShowSwap", "barResourceStyle",
+                     "barResourceShowValue"):
+            self.assertIn(f"PersonalizationConfig.{prop}", bridge, prop)
+
+    def test_settings_page_rows_and_gates(self):
+        page = read_bar_file("GeneralBarPage.qml")
+        # Style: end4's showBackground enable-gate (Hug/Float only) + autohide.
+        self.assertIn("enabled: PersonalizationConfig.barCornerStyle === 0 || PersonalizationConfig.barCornerStyle === 1", page)
+        self.assertIn('I18n.tr("Show background")', page)
+        self.assertIn('I18n.tr("Autohide")', page)
+        # Divider: the space width row exists only for the space style.
+        self.assertIn('visible: PersonalizationConfig.barDividerStyle === "space"', page)
+        self.assertIn('I18n.tr("Space width")', page)
+        # Screens: end4 monitor filter with the all-collapse rule.
+        self.assertIn("function toggleBarScreen", page)
+        self.assertIn("list.length === allNames.length ? [] : list", page)
+        self.assertIn('I18n.tr("All screens")', page)
+        self.assertNotIn("barScreenList = []", page.replace('setValue("barScreenList", [])', ""),
+                         "writes go through setValue persistence, not raw assignment")
+        # Widget-scoped rows follow end4's isUsed gate.
+        self.assertIn("function layoutUses", page)
+        self.assertEqual(page.count('root.layoutUses("utilButtons")'), 8)
+        self.assertEqual(page.count('root.layoutUses("systemMonitor")'), 8)
+        self.assertIn('I18n.tr("Numbers style")', page)
+        self.assertIn("setBarWorkspaceNumberStyle", page)
+        self.assertIn('visible: PersonalizationConfig.barWorkspaceStyle === "default"', page)
+
+
 if __name__ == "__main__":
     unittest.main()

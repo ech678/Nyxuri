@@ -6,8 +6,10 @@
 # runtime evidence the string-assertion tests cannot give: NaN layout chains,
 # compiled-empty widgets and TypeError storms all show up here. It walks all
 # six corner styles, the four borderless modes, the self-hiding widget lane
-# (Media with no track) in both capsule paths, and the tray surface (fake
-# StatusNotifierItems -> pin/unpin -> overflow arrow -> persisted config).
+# (Media with no track) in both capsule paths, the tray surface (fake
+# StatusNotifierItems -> pin/unpin -> overflow arrow -> persisted config),
+# and the B9.7 settled-settings sweep (background/autohide/divider/util
+# buttons/resources/number presets/screen filter + reservation round trip).
 #
 # Usage:
 #   probe-bar.sh [--json] [--session|--weston]
@@ -314,6 +316,101 @@ if ipc cornerStyle 1 >/dev/null 2>&1; then
     ipc scene default >/dev/null 2>&1 || true
 fi
 
+# B9.7 settled-settings sweep: every key that left §1.7 gets one runtime
+# proof (bridge passthrough + the consumer actually reacting), then resets.
+b97_baseline=""
+b97_bg_off=""
+b97_divider=""
+b97_util_on=""
+b97_util_off=""
+b97_res_on=""
+b97_res_off=""
+b97_han=""
+b97_roman=""
+b97_screen_named=""
+b97_screen_empty=""
+b97_persisted=false
+if ipc cornerStyle 1 >/dev/null 2>&1; then
+    ipc scene default >/dev/null 2>&1 || true
+    ipc reload >/dev/null 2>&1 || true
+    sleep 0.5
+    b97_baseline=$(ipc b97Dump 2>/dev/null || true)
+    # Show background: Float + non-material paints colLayer0; off -> transparent.
+    if ipc b97Set barShowBackground false >/dev/null 2>&1; then
+        sleep 0.4
+        b97_bg_off=$(ipc b97Dump 2>/dev/null || true)
+        ipc b97Set barShowBackground true >/dev/null 2>&1 || true
+        sleep 0.3
+    fi
+    # Divider: the space style reads the settled width (end4 spinbox).
+    if ipc scene divisorLeft >/dev/null 2>&1; then
+        sleep 0.5
+        ipc b97Set barDividerStyle '"space"' >/dev/null 2>&1 || true
+        ipc b97Set barDividerSpacing 20 >/dev/null 2>&1 || true
+        sleep 0.4
+        b97_divider=$(ipc b97Dump 2>/dev/null || true)
+        ipc b97Set barDividerStyle '"rect"' >/dev/null 2>&1 || true
+        ipc b97Set barDividerSpacing 4 >/dev/null 2>&1 || true
+        ipc scene default >/dev/null 2>&1 || true
+        sleep 0.4
+    fi
+    # Util buttons: material path exposes tooltips; the keyboard slot must
+    # disappear with its settled toggle.
+    if ipc cornerStyle 3 >/dev/null 2>&1; then
+        ipc scene utilOnly >/dev/null 2>&1 || true
+        ipc reload >/dev/null 2>&1 || true
+        sleep 0.8
+        ipc b97Set barShowKeyboardToggle true >/dev/null 2>&1 || true
+        sleep 0.4
+        b97_util_on=$(ipc b97Dump 2>/dev/null || true)
+        ipc b97Set barShowKeyboardToggle false >/dev/null 2>&1 || true
+        sleep 0.4
+        b97_util_off=$(ipc b97Dump 2>/dev/null || true)
+        ipc b97Set barShowKeyboardToggle false >/dev/null 2>&1 || true
+        ipc scene default >/dev/null 2>&1 || true
+        ipc cornerStyle 1 >/dev/null 2>&1 || true
+        ipc reload >/dev/null 2>&1 || true
+        sleep 0.6
+    fi
+    # Resources: the swap meter follows its settled toggle (shipped default
+    # is off, so flip it on first and restore the default after).
+    if ipc scene monitorOnly >/dev/null 2>&1; then
+        sleep 0.8
+        ipc b97Set barShowSwap true >/dev/null 2>&1 || true
+        sleep 0.5
+        b97_res_on=$(ipc b97Dump 2>/dev/null || true)
+        ipc b97Set barShowSwap false >/dev/null 2>&1 || true
+        sleep 0.5
+        b97_res_off=$(ipc b97Dump 2>/dev/null || true)
+        ipc scene default >/dev/null 2>&1 || true
+        ipc reload >/dev/null 2>&1 || true
+        sleep 0.6
+    fi
+    # Number presets: the workspace labels re-render through the bridge.
+    if ipc b97Set barWorkspaceNumberStyle '"han"' >/dev/null 2>&1; then
+        sleep 0.5
+        b97_han=$(ipc b97Dump 2>/dev/null || true)
+        ipc b97Set barWorkspaceNumberStyle '"roman"' >/dev/null 2>&1 || true
+        sleep 0.5
+        b97_roman=$(ipc b97Dump 2>/dev/null || true)
+        ipc b97Set barWorkspaceNumberStyle '"normal"' >/dev/null 2>&1 || true
+        sleep 0.4
+    fi
+    # Screen filter: unknown name must fall back to every screen (one-screen
+    # harness proves the fallback path, not the multi-monitor filtering).
+    if ipc b97Set barScreenList '["probe-no-such-screen"]' >/dev/null 2>&1; then
+        sleep 0.4
+        b97_screen_named=$(ipc layout 2>/dev/null || true)
+        ipc b97Set barScreenList '[]' >/dev/null 2>&1 || true
+        sleep 0.4
+        b97_screen_empty=$(ipc layout 2>/dev/null || true)
+    fi
+    b97_persisted=false
+    if grep -q 'showBackground' "${tmp}/config/nyxuri/config.toml" 2>/dev/null; then
+        b97_persisted=true
+    fi
+fi
+
 # Tray surface (B9.1): publish fake StatusNotifierItems on the probe's own
 # session bus, then let the widget pin/unpin against the real store.
 tray_initial=""
@@ -421,6 +518,15 @@ if ipc windowMode true >/dev/null 2>&1; then
             sleep 0.9
             printf '%s\t%s\n' "${edge}" "$(ipc windowDump 2>/dev/null || true)" >>"${window_file}"
         done
+        # B9.7 autohide: the window reservation must collapse to zero while
+        # the toggle is on and restore after it flips back.
+        if ipc b97Set barAutoHide true >/dev/null 2>&1; then
+            sleep 0.6
+            printf 'autohide-on\t%s\n' "$(ipc windowDump 2>/dev/null || true)" >>"${window_file}"
+            ipc b97Set barAutoHide false >/dev/null 2>&1 || true
+            sleep 0.6
+            printf 'autohide-off\t%s\n' "$(ipc windowDump 2>/dev/null || true)" >>"${window_file}"
+        fi
     else
         printf 'error: bar window probe did not come up\n' >&2
         exit 3
@@ -429,7 +535,7 @@ if ipc windowMode true >/dev/null 2>&1; then
     ipc edge top >/dev/null 2>&1 || true
 fi
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" <<'PY'
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" <<'PY'
 import json
 import re
 import sys
@@ -439,7 +545,9 @@ import sys
  tray_closed, tray_reset, tray_persisted, tray_skip_reason, system_icons_state,
  system_icons_fake, system_icons_reset, island_restored_state, island_migration,
  idle_face_state, idle_face_no_avatar, vertical_path, margins_state, window_path,
- b96_override, b96_reset, b96_hug_float, b96_hug_plain) = sys.argv[1:30]
+ b96_override, b96_reset, b96_hug_float, b96_hug_plain, b97_baseline, b97_bg_off,
+ b97_divider, b97_util_on, b97_util_off, b97_res_on, b97_res_off, b97_han,
+ b97_roman, b97_screen_named, b97_screen_empty, b97_persisted) = sys.argv[1:42]
 
 
 def load_tsv(path):
@@ -748,8 +856,11 @@ system_icons_report = {
 }
 
 # B9.4 window geometry: both axes on every edge, plus the exact round trip
-# that used to leave the bar invisible after top -> left -> top.
+# that used to leave the bar invisible after top -> left -> top. B9.7 appends
+# the autohide reservation rows to the same file.
 window_rows = load_tsv_rows(window_path)
+autohide_rows = {row[0][0]: row[1] for row in window_rows if row[0] and str(row[0][0]).startswith("autohide-")}
+window_rows = [row for row in window_rows if not (row[0] and str(row[0][0]).startswith("autohide-"))]
 window_cases = []
 window_ok = len(window_rows) == 5
 top_snapshots = []
@@ -805,6 +916,20 @@ for key, entry in window_rows:
 round_trip_ok = len(top_snapshots) == 2 and top_snapshots[0] == top_snapshots[1]
 window_ok = window_ok and round_trip_ok
 
+# B9.7 autohide rows: the reservation collapses while the toggle is on and
+# restores (positive zone) after it flips back.
+autohide_on_row = autohide_rows.get("autohide-on") or {}
+autohide_off_row = autohide_rows.get("autohide-off") or {}
+autohide_ok = bool(
+    autohide_on_row.get("found") is True
+    and autohide_on_row.get("autoHide") is True
+    and autohide_on_row.get("exclusiveZone") == 0
+    and autohide_off_row.get("found") is True
+    and autohide_off_row.get("autoHide") is False
+    and (autohide_off_row.get("exclusiveZone") or 0) > 0
+)
+window_ok = window_ok and autohide_ok
+
 # B9.6: style-editor chain, fixed-slot workspaces and the island hug.
 def _b96(json_blob):
     try:
@@ -856,12 +981,108 @@ hug_plain_ok = bool(
 )
 b96_ok = override_ok and ws_ok and hug_float_ok and hug_plain_ok
 
+# B9.7 settled-settings sweep: bridge passthrough + the live consumer reacting.
+def _b97(json_blob):
+    try:
+        data = json.loads(json_blob) if json_blob else {}
+    except (ValueError, TypeError):
+        data = {}
+    return data if data.get("ready") is True else {}
+
+
+b97_baseline = _b97(b97_baseline)
+b97_bg_off = _b97(b97_bg_off)
+b97_divider = _b97(b97_divider)
+b97_util_on = _b97(b97_util_on)
+b97_util_off = _b97(b97_util_off)
+b97_res_on = _b97(b97_res_on)
+b97_res_off = _b97(b97_res_off)
+b97_han = _b97(b97_han)
+b97_roman = _b97(b97_roman)
+
+
+def _layout_ok(blob):
+    try:
+        data = json.loads(blob) if blob else {}
+    except (ValueError, TypeError):
+        return False
+    return bool(data.get("ready") is True and data.get("ok") is True and data.get("failed") == [] and data.get("pending") == [])
+
+
+b97_baseline_bridge = b97_baseline.get("bridge") or {}
+b97_bg_bridge = b97_bg_off.get("bridge") or {}
+
+
+def _rgb(hex_color):
+    """Alpha-normalized tail of '#rrggbb' / '#aarrggbb' for value comparison."""
+    digits = str(hex_color).lstrip("#")
+    return digits[-6:].lower() if len(digits) >= 6 else ""
+
+
+baseline_layer0 = _rgb(b97_baseline.get("colLayer0"))
+background_ok = bool(
+    b97_baseline_bridge.get("showBackground") is True
+    and baseline_layer0
+    and _rgb((b97_baseline.get("background") or {}).get("color")) == baseline_layer0
+    and b97_bg_bridge.get("showBackground") is False
+    and _rgb((b97_bg_off.get("background") or {}).get("color")) == "000000"
+)
+
+divider_bridge = (b97_divider.get("bridge") or {})
+divider = b97_divider.get("divisor") or {}
+divider_ok = bool(
+    divider_bridge.get("dividerStyle") == "space"
+    and divider_bridge.get("dividerSpacing") == 20
+    and divider.get("spacing") == 20
+    and divider.get("width") == 20
+    and divider.get("height", 0) > 0
+)
+
+buttons_on = set(b97_util_on.get("buttons") or [])
+buttons_off = set(b97_util_off.get("buttons") or [])
+icons_on = set(b97_util_on.get("buttonIcons") or [])
+icons_off = set(b97_util_off.get("buttonIcons") or [])
+# Locale-independent: the keyboard slot is identified by its icon, the two
+# untranslated tooltips anchor the rest of the fixed slots.
+util_ok = bool(
+    (b97_util_on.get("bridge") or {}).get("utilKeyboard") is True
+    and "keyboard" in icons_on
+    and "screenshot_region" in icons_on
+    and "Take screenshot" in buttons_on
+    and (b97_util_off.get("bridge") or {}).get("utilKeyboard") is False
+    and "keyboard" not in icons_off
+    and "screenshot_region" in icons_off
+)
+
+swap_on = b97_res_on.get("swapNodes") or []
+swap_off = b97_res_off.get("swapNodes") or []
+resources_ok = bool(
+    (b97_res_on.get("bridge") or {}).get("resourceSwap") is True
+    and len(swap_on) >= 1
+    and all(node.get("shown") is True for node in swap_on)
+    and (b97_res_off.get("bridge") or {}).get("resourceSwap") is False
+    and len(swap_off) >= 1
+    and all(node.get("shown") is False for node in swap_off)
+)
+
+number_ok = bool(
+    (b97_han.get("bridge") or {}).get("numberStyle") == "han"
+    and len(b97_han.get("han") or []) >= 1
+    and not b97_han.get("roman")
+    and (b97_roman.get("bridge") or {}).get("numberStyle") == "roman"
+    and len(b97_roman.get("roman") or []) >= 1
+    and not b97_roman.get("han")
+)
+
+screen_ok = _layout_ok(b97_screen_named) and _layout_ok(b97_screen_empty)
+b97_ok = background_ok and divider_ok and util_ok and resources_ok and number_ok and screen_ok and autohide_ok and b97_persisted == "true" and autohide_ok
+
 ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
       and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok
       and island_restored_ok and island_migration_ok and idle_face_ok
       and avatar_optional_ok
       and tray_ok and peripheral_ok and vertical_ok and margin_ok and window_ok
-      and b96_ok)
+      and b96_ok and b97_ok)
 report = {
     "ok": ok,
     "mode": mode,
@@ -947,6 +1168,48 @@ report = {
             "plainMiddleRow": hug_plain_pill.get("middleRowWidth"),
             "capsuleTransparent": (hug_plain.get("islandCapsule") or {}).get("transparent"),
             "capsuleLayer0OnFloat": (hug_float.get("islandCapsule") or {}).get("layer0"),
+        },
+    },
+    "b97": {
+        "ok": b97_ok,
+        "background": {
+            "ok": background_ok,
+            "baseline": (b97_baseline.get("background") or {}).get("color"),
+            "off": (b97_bg_off.get("background") or {}).get("color"),
+        },
+        "divider": {
+            "ok": divider_ok,
+            "style": divider.get("style"),
+            "spacing": divider.get("spacing"),
+            "width": divider.get("width"),
+        },
+        "utilButtons": {
+            "ok": util_ok,
+            "on": sorted(icons_on),
+            "off": sorted(icons_off),
+        },
+        "resources": {
+            "ok": resources_ok,
+            "bridgeOn": b97_res_on.get("bridge"),
+            "bridgeOff": b97_res_off.get("bridge"),
+            "nodesOn": b97_res_on.get("resourceNodes"),
+            "nodesOff": b97_res_off.get("resourceNodes"),
+            "swapOn": swap_on,
+            "swapOff": swap_off,
+        },
+        "numbers": {
+            "ok": number_ok,
+            "han": sorted((b97_han.get("han") or []))[:6],
+            "roman": sorted((b97_roman.get("roman") or []))[:6],
+        },
+        "screenFilter": {
+            "ok": screen_ok,
+        },
+        "persisted": b97_persisted == "true",
+        "autohide": {
+            "ok": autohide_ok,
+            "onZone": autohide_on_row.get("exclusiveZone"),
+            "offZone": autohide_off_row.get("exclusiveZone"),
         },
     },
     "logErrors": hits,

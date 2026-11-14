@@ -45,23 +45,27 @@ Singleton {
             // B9.5 outer margins.
             readonly property real edgeMargin: PersonalizationConfig.barEdgeMargin ?? 0
             readonly property real sideMargin: PersonalizationConfig.barSideMargin ?? 0
-            readonly property bool showBackground: PersonalizationConfig.barShowBackground ?? true
+            readonly property bool showBackground: PersonalizationConfig.barShowBackground
             readonly property int cornerStyle: PersonalizationConfig.barCornerStyle ?? 3
             readonly property string borderless: PersonalizationConfig.barBorderless ?? "separated"
             readonly property bool showScrollHints: true
             readonly property bool followFrameColor: false
             readonly property string frameColor: ""
-            readonly property var screenList: []
+            // B9.7: screen filter from the settings page; empty = all screens.
+            readonly property var screenList: PersonalizationConfig.barScreenList
             readonly property string groupColor: PersonalizationConfig.barGroupColor
             readonly property alias layouts: m3Options.layouts
 
             readonly property QtObject divider: QtObject {
                 readonly property string style: PersonalizationConfig.barDividerStyle ?? "rect"
-                readonly property int spacing: PersonalizationConfig.barDividerSpacing ?? 4
+                readonly property int spacing: PersonalizationConfig.barDividerSpacing
             }
 
             readonly property QtObject autoHide: QtObject {
-                readonly property bool enable: false
+                // B9.7: user-visible surface is only the slide-out switch.
+                // pushWindows / hoverRegionWidth / super-reveal stay internal
+                // defaults — they have live consumers in Bar.qml but no UI.
+                readonly property bool enable: PersonalizationConfig.barAutoHide
                 readonly property bool pushWindows: false
                 readonly property int hoverRegionWidth: 2
                 readonly property QtObject showWhenPressingSuper: QtObject {
@@ -72,7 +76,7 @@ Singleton {
 
             readonly property QtObject m3: QtObject {
                 id: m3Options
-                readonly property bool showBackground: PersonalizationConfig.barShowBackground ?? true
+                readonly property bool showBackground: PersonalizationConfig.barShowBackground
                 readonly property int cornerStyle: PersonalizationConfig.barCornerStyle ?? 3
                 readonly property string borderless: PersonalizationConfig.barBorderless ?? "separated"
                 readonly property real gapsOut: 5
@@ -90,7 +94,7 @@ Singleton {
 
                 readonly property QtObject divider: QtObject {
                     readonly property string style: PersonalizationConfig.barDividerStyle ?? "rect"
-                    readonly property int spacing: 4
+                    readonly property int spacing: PersonalizationConfig.barDividerSpacing
                 }
 
                 readonly property QtObject clock: QtObject {
@@ -106,14 +110,16 @@ Singleton {
                     }
                 }
 
+                // B9.7 widget surface: real properties instead of frozen
+                // literals, so the Bar settings page rows are honest.
                 readonly property QtObject resources: QtObject {
-                    readonly property string style: "outline"
-                    readonly property bool showValue: false
-                    readonly property bool alwaysShowRam: true
-                    readonly property bool alwaysShowCpu: true
-                    readonly property bool alwaysShowCpuTemp: false
-                    readonly property bool alwaysShowDisk: false
-                    readonly property bool alwaysShowSwap: false
+                    readonly property string style: PersonalizationConfig.barResourceStyle
+                    readonly property bool showValue: PersonalizationConfig.barResourceShowValue
+                    readonly property bool alwaysShowRam: PersonalizationConfig.barShowRam
+                    readonly property bool alwaysShowCpu: PersonalizationConfig.barShowCpu
+                    readonly property bool alwaysShowCpuTemp: PersonalizationConfig.barShowCpuTemp
+                    readonly property bool alwaysShowDisk: PersonalizationConfig.barShowDisk
+                    readonly property bool alwaysShowSwap: PersonalizationConfig.barShowSwap
                     readonly property int memoryWarningThreshold: 90
                     readonly property int cpuWarningThreshold: 95
                     readonly property int swapWarningThreshold: 90
@@ -141,14 +147,13 @@ Singleton {
                 }
 
                 readonly property QtObject utilButtons: QtObject {
-                    readonly property bool showScreenSnip: true
-                    readonly property bool showColorPicker: true
-                    readonly property bool showScreenRecord: true
-                    readonly property bool showKeyboardToggle: false
-                    readonly property bool showWallpaperToggle: false
-                    readonly property bool showMicToggle: false
-                    readonly property bool showDarkModeToggle: true
-                    readonly property bool showPerformanceProfileToggle: false
+                    readonly property bool showScreenSnip: PersonalizationConfig.barShowScreenSnip
+                    readonly property bool showColorPicker: PersonalizationConfig.barShowColorPicker
+                    readonly property bool showKeyboardToggle: PersonalizationConfig.barShowKeyboardToggle
+                    readonly property bool showMicToggle: PersonalizationConfig.barShowMicToggle
+                    readonly property bool showWallpaperToggle: PersonalizationConfig.barShowWallpaperToggle
+                    readonly property bool showDarkModeToggle: PersonalizationConfig.barShowDarkModeToggle
+                    readonly property bool showPerformanceProfileToggle: PersonalizationConfig.barShowPerformanceProfile
                 }
 
                 readonly property QtObject workspaces: QtObject {
@@ -157,7 +162,7 @@ Singleton {
                     readonly property bool useNerdFont: false
                     readonly property bool monochromeIcons: false
                     readonly property string indicatorStyle: PersonalizationConfig.barWorkspaceIndicatorStyle
-                    readonly property var numberMap: []
+                    readonly property var numberMap: PersonalizationConfig.barWorkspaceNumberMap
                 }
 
                 readonly property QtObject keyboardIndicators: QtObject {

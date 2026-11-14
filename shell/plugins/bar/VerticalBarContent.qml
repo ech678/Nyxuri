@@ -116,6 +116,7 @@ Item {
 
     Rectangle {
         id: barBackground
+        objectName: "barBackground"
         anchors.fill: parent
         anchors.margins: Config.options.bar.cornerStyle === 1 ? Config.options.bar.m3.gapsOut : 0
         color: (!root.centerOnly && Config.options.bar.m3.showBackground && Config.options.bar.cornerStyle !== 2 && !root.isMaterial) ? Appearance.colors.colLayer0 : "transparent"

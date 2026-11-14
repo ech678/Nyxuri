@@ -187,12 +187,6 @@ QtObject {
                     "icon": "123"
                 },
                 {
-                    "type": "toggle",
-                    "key": "bar:Overlay",
-                    "title": I18n.tr("Overlay"),
-                    "icon": "layers"
-                },
-                {
                     "type": "barlayout",
                     "key": "bar:Layout",
                     "title": I18n.tr("Bar layout"),

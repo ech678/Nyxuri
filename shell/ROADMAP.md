@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | P4 | 主题契约、模板兼容与取色引擎分阶 | 待验收（契约测试全绿；实机行为与视觉证据待作者） |
 | T3 | 设置界面替换：Caelestia 安卓风味 | M3/M4 待验收（机器证据齐；视觉过目待作者） |
-| B | Bar & Island（布局自由 + end4 视觉基线） | B9.0–B9.6 待验收（机器证据齐；截图、实机托盘、竖向排布与视觉过目待作者）；B8 旧验收作废，仅保留结构回归证据 |
+| B | Bar & Island（布局自由 + end4 视觉基线） | B9.0–B9.8 待验收（机器证据齐；截图、实机托盘、竖向排布与视觉过目待作者）；B8 旧验收作废，仅保留结构回归证据 |
 | P6 | 整体验收与未来移植 | 排队（前置主线 KM5） |
 
 ## 已交付基线台账
@@ -244,16 +244,20 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 
 | 设置 | 现状 |
 | --- | --- |
-| `Floating`（`barOverlay`） | 死键，全仓库无运行时消费者 |
+| `Floating`（`barOverlay`） | **B9.7 已下架**（作者拍板；Clavis 遗产，end4 选项面无 overlay） |
 | `Screen edge` left/right | B9.4 已实现：切换窗口锚点、内容层与 exclusiveZone |
 | `Show Island` / 布局成员 | B9.3 已收口：布局成员是唯一真相；设置开关改走 `setIslandInLayout`，删掉岛后不会被重新播种 |
 | `islandLayoutMigrated` | B9.3 已修：加载改读 `layoutMigrated`；纯函数 `resolveBarLayouts` 由探针验证「空中段 + 已迁移」不复活 |
 | `islandHideDate` / 水平时钟 | B9.3 已接线：`ClockContent` 进入 idle 面，日期开关与水平时钟编辑页都有真实消费者 |
 | 通知槽仲裁 | B9.3 已修：`shell.qml` 改看 `islandInLayout`，岛不在布局里时通知宿主恢复 |
 | tray 配置 | B9.1 已接线：`bar.tray` 五键双向读写并落盘 |
-| `barShowBackground` | Config 桥引用不存在的属性，`?? true` 兜底；无 UI |
-| `barDividerSpacing` | Config 桥引用不存在的属性；无 UI；`space` 永远 4 |
-| autoHide / screenList / utilButtons / resources | Config 硬编码或空数组，无 UI |
+| `barShowBackground` | **B9.7 已接线**：真属性落盘；UI 仅 Hug/Float 可用（end4 同款）；probe `b97` 断言背景色翻转 |
+| `barDividerSpacing` | **B9.7 已接线**：4–400 step 2，`bar.divider`/`m3.divider` 两处桥归一；UI 仅 space 样式出现 |
+| autoHide | **B9.7 已接线**：`enable` 落盘 + 设置页开关；pushWindows/hoverRegionWidth/Super 显出保持内部默认（有消费者不可见）；probe 断言 reservation 0↔41 往返 |
+| screenList | **B9.7 已接线**：Screens 段（>1 屏出现，All 收拢规则）+ `normalizedScreenList`；未知屏幕名回退全屏由 probe 验证 |
+| utilButtons | **B9.7 已接线**：七键真属性 + Utility buttons 段（`layoutUses` 门控）；`showScreenRecord` 处决（Recorder 僵尸：孤儿桩 + 不存在的 `recordScriptPath`）；部件加回 `barComponentIds` 白名单（此前不可达） |
+| resources | **B9.7 已接线**：5 个 alwaysShow + Filled/Outline + Show percentage；轮询服务面保持内部默认 |
+| numberMap | **B9.7 已接线**（作者拍板）：`numberStyle` 三预设（Normal/汉字/罗马）单一真相，桥派生数组（end4 存裸数组、UI 只出三预设，登记偏离） |
 | `bar.tray` 设置 | B9.1 已补 Tray 段：pin/tint/passive/id 均可调 |
 | workspaces 样式/槽位 | B9.6 已接线：`workspaceStyle` 四选 + `workspaceShown` 槽位预算（1–50）落 `workspaceStyle`/`workspaceShown` 键，Bar 设置页 Workspaces 段可调 |
 | 竖向厚度 | B9.4 新增 `barVerticalThickness`，仅左右边缘时出现，独立于水平厚度 |
@@ -270,8 +274,8 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 | B9.4 | 竖向 bar：left/right 真正可用；竖向宽度独立可调；窗口、lane、弹层、通知避让全链路 | `references/end4-pC/modules/ii/verticalBar/VerticalBar.qml`、`VerticalBarContent.qml`（先 `cp` 再剪裁） | 待验收（probe 左右两边缘 × 胶囊两路 + centerOnly；实机排布与视觉过目待作者） |
 | B9.5 | 外边距：`barEdgeMargin` / `barSideMargin` + 设置页 + exclusiveZone + 弹层 + probe | 无 | 待验收（纯几何由 probe 覆盖 0/12/24；0/12/24 实机截图待作者） |
 | B9.6 | 表现基线归零：bar 厚度保持用户可调；补齐 contentColor 覆盖、Workspaces 固定槽位与四样式、Media/Clock/Notif 几何、角落出现动画与中段岛宽分支（字号/圆角/高度加成/laneMargin/Islands 正名已在 B9.0 落地） | end4 原始 token 与部件 | 待验收（实现与 probe b96 全绿；逐项过目待作者；槽位语义按作者定案改为 iNiR dynamicCount 口径，见 §2.4） |
-| B9.7 | 设置清账：`barOverlay`、autoHide、screenList、showBackground、dividerSpacing、utilButtons、resources、numberMap 全部接消费者或下架 | 无 | 待开始 |
-| B9.8 | 护栏：probe 增加 tray overflow、SystemIcons 槽位、竖向几何、外边距、岛删除/恢复；截图验收 | 现有 `probe-bar.sh` | 待开始 |
+| B9.7 | 设置清账：`barOverlay`、autoHide、screenList、showBackground、dividerSpacing、utilButtons、resources、numberMap 全部接消费者或下架 | end4 `BarConfig.qml`（Screens/Show Background/Autohide/Divider 宽度/Utility buttons/Resources/Numbers style 各段原件裁剪） | 待验收（实现与 probe `b97` 全绿；多屏选择、autoHide 手感与各新段视觉待作者） |
+| B9.8 | 护栏：probe 增加 tray overflow、SystemIcons 槽位、竖向几何、外边距、岛删除/恢复；截图验收 | 现有 `probe-bar.sh` | 待验收（probe 护栏已随 B9.1–B9.7 各阶段全部落地并全绿；截图验收待作者） |
 
 ### 2.1 B9.0 / B9.1 实施记录（2026-11-14）
 
@@ -391,6 +395,44 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
   改色弹层外点关闭、弹层令牌视觉、动态槽位日常手感。
 - **遗留登记**：探针 `mapFromItem` stderr 噪音（gate 外，windowProbe 换边时出现，
   待查）；`ActionGateway.islandHost` 多实例接力的清空时序（探针已绕行，产品面待审）。
+
+### 2.5 B9.7 实施记录（2026-11-14）
+
+§1.7 八个死键逐一「接消费者或处决」。作者拍板：`barOverlay` **下架**、`numberMap`
+**接三预设**。UI 形状全部裁自 end4 `modules/ii/settings/pages/BarConfig.qml`。
+
+- **处决两笔**：`barOverlay` 全链（属性、序列化 `overlay` 键、GeneralBarPage
+  "Floating" toggle、SettingsControlCatalog 与 Dashboard 卡条目）；Recorder 僵尸
+  （B-4 尾巴）——`showScreenRecord` 键与按钮两组件、`RecorderStatus.qml` 恒 false
+  孤儿桩、`GlobalActions.screen-record`（指向不存在的 `Directories.recordScriptPath`）、
+  孤儿 i18n 词条（`Cancel recording` 保留：归档语料有字面调用，死键门禁判定存活）。
+- **接线七组**：`barShowBackground`（桥摘 `?? true`；UI 仅 Hug/Float 可用）、
+  `barAutoHide`（仅 `enable` 落盘，pushWindows/hoverRegionWidth/Super 显出保持
+  内部默认——有消费者不可见不算死键）、`barScreenList`（Screens 段 >1 屏出现，
+  全选收拢存 `[]`）、`barDividerSpacing`（4–400 step 2；`bar.divider`/`m3.divider`
+  两处桥归一；UI 仅 space 样式出现）、utilButtons 七键（`layoutUses` 门控段）、
+  resources 七键（5 表盘 + Filled/Outline + Show percentage；轮询服务面保持内部）、
+  `numberStyle` 三预设（预设名单一真相，桥派生数组；end4 存裸数组但 UI 只出三
+  预设，登记偏离）。
+- **部件复活**：`utilButtons` 从未在 `barComponentIds` 白名单里——
+  `normalizedBarLayoutIds` 一律剥除，整个部件不可达。按 end4 `allWidgets` 加回
+  白名单与选项表。
+- **顺手处决两颗预存暗雷**（新 scene 首次加载时被探针炸出）：`Divisor.qml` 缺
+  `import qs.ui`，真进 lane 即 compiled empty；`shell/services/ResourceUsageMonitor.qml`
+  零消费者死重复，与 plugins/bar 的同名 fork 在 Loader 闭包里撞名，处决 services
+  副本。
+- **探针 `b97` 阶段**：`b97Set`/`b97Dump`（`barBackground` objectName、Divisor、
+  Resource 节点、UtilButton 图标、工作区子树数字标签）+ windowDump 增
+  `exclusiveZone`/`autoHide`/`screenList`；新 scene `utilOnly`/`monitorOnly`/
+  `divisorLeft`；断言背景 colLayer0→transparent、space 宽度物化 20、keyboard 槽
+  按图标消失、swap 节点 `shown` 翻转、汉字/罗马预设落到工作区标签（限工作区子树，
+  岛时钟自带汉字数字会假阳）、未知屏幕名回退全屏、autoHide reservation 0↔41 往返、
+  config.toml 落盘。
+- **证据**：`tests/shell` 595 tests OK（11 skipped；新增 `BarB9_7SettingsSweepTest`
+  五组钉值）；`probe-bar.sh --session --json` 全绿含 `b97`，`logErrors: []`；
+  `check.sh` 绿。明细见台账 B9.7 实施记录。
+- **未验证（留作者）**：Screens 段多屏实机选择、autoHide 滑出手感、space 分隔条
+  宽度视觉、utilButtons 七槽实机点击、Resources 五表盘视觉。
 
 ### 3. 验收
 

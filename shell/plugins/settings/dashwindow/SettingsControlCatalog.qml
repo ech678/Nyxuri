@@ -137,7 +137,6 @@ Singleton {
             // Unit existence routes through the kernel verb (unit-model.md §6).
             "bar:Enabled": root.toggle(() => StateProjection.isEnabled("bar"), value => UnitControlService.setUnit("shell.bar", value)),
             "bar:Position": root.select(() => PersonalizationConfig.barPosition, value => PersonalizationConfig.setBarPosition(value), PersonalizationConfig.edgePositions),
-            "bar:Overlay": root.toggle(() => PersonalizationConfig.barOverlay, value => PersonalizationConfig.setValue("barOverlay", value)),
             "bar:Show names": root.toggle(() => PersonalizationConfig.barShowNames, value => PersonalizationConfig.setBarShowNames(value)),
             "bar:Show values": root.toggle(() => PersonalizationConfig.barShowValues, value => PersonalizationConfig.setBarShowValues(value)),
 
