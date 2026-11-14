@@ -656,9 +656,13 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("CompositorBlurRegion {", host_content)
         self.assertIn("StyledRectangularShadow {", host_content)
 
-        # 4. Respects Bar collision avoidance
-        self.assertIn("PersonalizationConfig.barPosition === \"top\"", host_content)
-        self.assertIn("Sizes.barVisualThickness", host_content)
+        # 4. Respects Bar collision avoidance. B9.4/B9.5: the real bar
+        # thickness and outer edge margin, not the legacy scaled Sizes tokens.
+        self.assertIn('barEdge === "top"', host_content)
+        self.assertIn('barEdge === "right"', host_content)
+        self.assertIn("Appearance.sizes.verticalBarWidth", host_content)
+        self.assertIn("Config.options?.bar?.edgeMargin", host_content)
+        self.assertNotIn("Sizes.barVisualThickness", host_content)
 
         # 5. Non-intrusive: does not steal keyboard focus
         self.assertIn("WlrLayershell.keyboardFocus: WlrKeyboardFocus.None", host_content)

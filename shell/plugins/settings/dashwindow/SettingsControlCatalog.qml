@@ -147,6 +147,7 @@ Singleton {
             // the ledger's alone (unit-model.md §6).
             "island:Enabled": root.toggle(() => PersonalizationConfig.islandInLayout, value => PersonalizationConfig.setIslandInLayout(value)),
             "island:Satellite": root.select(() => PersonalizationConfig.islandSatellite, value => PersonalizationConfig.setIslandSatellite(value), PersonalizationConfig.islandSatelliteOptions),
+            "island:Show avatar": root.toggle(() => PersonalizationConfig.islandShowAvatar, value => PersonalizationConfig.setIslandShowAvatar(value)),
             "island:Show date": root.toggle(() => !PersonalizationConfig.islandHideDate, value => PersonalizationConfig.setIslandHideDate(!value)),
             "keyboard:Show panel": root.toggle(() => PersonalizationConfig.keyboardShowPanel, value => PersonalizationConfig.setKeyboardShowPanel(value)),
             "keyboard:Show Caps Lock": root.toggle(() => PersonalizationConfig.keyboardPanelCaps, value => PersonalizationConfig.setKeyboardPanelCaps(value)),

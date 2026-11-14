@@ -25,11 +25,13 @@ Item {
     anchors.fill: parent
 
     readonly property bool systemIconsElsewhere: Config.options.bar.layouts.leftLayout.includes("systemIcons") || Config.options.bar.layouts.rightLayout.includes("systemIcons")
+    readonly property bool showAvatar: PersonalizationConfig.islandShowAvatar
 
     // Probe surface (scripts/dev/probe-bar.sh): the horizontal clock and the
     // avatar fallback are the two idle-face facts that cannot be read from the
     // bar geometry.
     readonly property var probeClockFace: satelliteLoader.item
+    readonly property bool probeAvatarVisible: diIdleRoot.showAvatar
     readonly property bool probeAvatarReady: avatarImage.status === Image.Ready
     readonly property bool probeAvatarFallback: avatarFallback.visible
 
@@ -37,6 +39,7 @@ Item {
         id: avatarRect
         width: di.isMaterial ? di.pillHeight : di.pillHeight - 8
         height: di.isMaterial ? di.pillHeight : di.pillHeight - 8
+        visible: diIdleRoot.showAvatar
         anchors {
             left: parent.left
             leftMargin: di.isMaterial ? 0 : 4
@@ -48,7 +51,7 @@ Item {
         Image {
             id: avatarImage
             anchors.fill: parent
-            source: AvatarService.avatarUrl
+            source: diIdleRoot.showAvatar ? AvatarService.avatarUrl : ""
             sourceSize.width: avatarImage.width * 2
             sourceSize.height: avatarImage.height * 2
             fillMode: Image.PreserveAspectCrop
@@ -188,7 +191,8 @@ Item {
             }
         }
 
-        readonly property real computedIdleWidth: avatarRect.width + (di.isMaterial ? 0 : 4) + 10 + rightSideRow.implicitWidth + 10
+        readonly property real avatarBlockWidth: diIdleRoot.showAvatar ? avatarRect.width + (di.isMaterial ? 0 : 4) : 0
+        readonly property real computedIdleWidth: avatarBlockWidth + 10 + rightSideRow.implicitWidth + 10
 
         onComputedIdleWidthChanged: di.idleTextContentWidth = rightSideRow.computedIdleWidth
         Component.onCompleted: di.idleTextContentWidth = rightSideRow.computedIdleWidth

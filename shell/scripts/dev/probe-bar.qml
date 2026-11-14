@@ -13,14 +13,22 @@ import qs.commons.cards
 import qs.commons.i18n
 import qs.services
 import qs.ui
+import "commons/BarGeometry.js" as BarGeometry
 
 ShellRoot {
     id: probeRoot
 
-    property int probeWidth: 2560
-    property real probeHeight: Appearance.sizes.barHeight
+    // The harness stages a 2560-wide horizontal bar or a 1440-tall vertical
+    // one, so lane geometry is evaluated against a realistic screen axis.
+    readonly property bool probeVertical: Config.options.bar.vertical
+    property int probeWidth: probeVertical ? Appearance.sizes.verticalBarWidth : 2560
+    property real probeHeight: probeVertical ? 1440 : Appearance.sizes.barHeight
     readonly property string probeShell: String(Quickshell.env("NYXURI_PROBE_SHELL") || "")
     property bool reloading: false
+    // Window phase: loads the real Bar.qml (PanelWindow + content) so the
+    // probe can assert orientation switching at the window level. The content
+    // phase must stand down first (one production instance at a time).
+    property bool windowMode: false
 
     Item {
         id: stage
@@ -38,9 +46,16 @@ ShellRoot {
             // Wait for the settings store before first load: BarContent reads
             // PersonalizationConfig and a later cornerStyle flip would leave
             // layout sizes stale in a windowless harness.
-            active: PersonalizationConfig.ready && !probeRoot.reloading
-            source: probeRoot.probeShell !== "" ? "file://" + probeRoot.probeShell + "/plugins/bar/BarContent.qml" : ""
+            active: !probeRoot.windowMode && PersonalizationConfig.ready && !probeRoot.reloading
+            source: probeRoot.probeShell !== "" ? "file://" + probeRoot.probeShell + "/plugins/bar/" + (probeRoot.probeVertical ? "VerticalBarContent.qml" : "BarContent.qml") : ""
         }
+    }
+
+    Loader {
+        id: windowLoader
+
+        active: probeRoot.windowMode && PersonalizationConfig.ready
+        source: probeRoot.probeShell !== "" ? "file://" + probeRoot.probeShell + "/plugins/bar/Bar.qml" : ""
     }
 
     // Tray telemetry needs the live SysTray widget: walk the loaded bar tree for
@@ -169,7 +184,17 @@ ShellRoot {
                 "activeContent": String(host.activeContentId ?? "")
             };
         }
-        const geometry = {
+        const vertical = barContent.vertical === true;
+        const geometry = vertical ? {
+            "width": barContent.width,
+            "height": barContent.height,
+            "centerY": barContent.laneCenterY,
+            "centerHeight": barContent.laneCenterHeight,
+            "topHeight": barContent.laneTopHeight,
+            "bottomHeight": barContent.laneBottomHeight,
+            "centerPillY": barContent.centerPillY,
+            "centerPillHeight": barContent.centerPillHeight
+        } : {
             "width": barContent.width,
             "height": barContent.height,
             "centerX": barContent.laneCenterX,
@@ -179,13 +204,15 @@ ShellRoot {
             "centerPillX": barContent.centerPillX,
             "centerPillWidth": barContent.centerPillWidth
         };
-        const values = [geometry.width, geometry.height, geometry.centerX, geometry.centerWidth];
+        const values = vertical ? [geometry.width, geometry.height, geometry.centerY, geometry.centerHeight] : [geometry.width, geometry.height, geometry.centerX, geometry.centerWidth];
         const finite = values.every(value => typeof value === "number" && isFinite(value));
-        const centered = !barContent.effectiveMiddleLayout || barContent.effectiveMiddleLayout.length === 0 || Math.abs(geometry.centerX - (geometry.width - geometry.centerWidth) / 2) <= 1;
+        const centered = !barContent.effectiveMiddleLayout || barContent.effectiveMiddleLayout.length === 0 || (vertical ? Math.abs(geometry.centerY - (geometry.height - geometry.centerHeight) / 2) <= 1 : Math.abs(geometry.centerX - (geometry.width - geometry.centerWidth) / 2) <= 1);
         return JSON.stringify({
             "ready": barLoader.status === Loader.Ready,
             "cornerStyle": PersonalizationConfig.barCornerStyle,
             "borderless": PersonalizationConfig.barBorderless,
+            "vertical": vertical,
+            "edge": PersonalizationConfig.barPosition,
             "lanes": {
                 "left": Array.from(barContent.effectiveLeftLayout || []),
                 "middle": Array.from(barContent.effectiveMiddleLayout || []),
@@ -214,6 +241,53 @@ ShellRoot {
             return "PONG";
         }
 
+        function windowMode(value: bool): string {
+            probeRoot.windowMode = value;
+            GlobalStates.barOpen = value;
+            return String(probeRoot.windowMode);
+        }
+
+        // Window-level evidence (B9.4): the real window and content geometry.
+        // Conditional anchors used to leave the content 2519 wide after a
+        // top->left switch and 1440 tall after switching back, so this probe
+        // watches both axes on every edge change.
+        function windowDump(): string {
+            const window = windowLoader.item ? windowLoader.item.windowProbe : null;
+            if (!window)
+                return JSON.stringify({
+                    "found": false
+                });
+            const content = window.barContent;
+            return JSON.stringify({
+                "found": true,
+                "edge": String(window.edge),
+                "vertical": window.vertical === true,
+                "window": {
+                    "w": Math.round(window.width),
+                    "h": Math.round(window.height)
+                },
+                "content": content ? {
+                    "w": Math.round(content.width),
+                    "h": Math.round(content.height),
+                    "x": Math.round(content.x),
+                    "y": Math.round(content.y),
+                    "offsetX": Math.round(window.contentOffsetX),
+                    "offsetY": Math.round(window.contentOffsetY)
+                } : null,
+                "lanes": content && content.vertical ? {
+                    "top": Math.round(content.laneTopHeight),
+                    "centerH": Math.round(content.laneCenterHeight),
+                    "bottom": Math.round(content.laneBottomHeight)
+                } : null,
+                "middle": content ? Array.from(content.effectiveMiddleLayout ?? []) : null,
+                "expected": {
+                    "barHeight": Appearance.sizes.barHeight,
+                    "verticalBarWidth": Appearance.sizes.verticalBarWidth,
+                    "screenRounding": Appearance.rounding.screenRounding
+                }
+            });
+        }
+
         function layout(): string {
             return probeRoot.layout();
         }
@@ -228,12 +302,25 @@ ShellRoot {
             return String(PersonalizationConfig.barBorderless);
         }
 
+        // B9.4: switching the screen edge swaps the content component, so the
+        // probe reloads after the store write.
+        function edge(value: string): string {
+            PersonalizationConfig.setBarPosition(value);
+            probeRoot.reloading = true;
+            Qt.callLater(function () {
+                probeRoot.reloading = false;
+            });
+            return String(PersonalizationConfig.barPosition);
+        }
+
         // Layout scenes: "mediaOnly" is the self-hiding-widget contract (an
         // empty lane must collapse to zero instead of keeping capsule
         // padding); "default" restores the shipped three-lane layout.
         function scene(name: string): string {
             if (name === "mediaOnly") {
                 PersonalizationConfig.setBarLayouts(["media"], [], []);
+            } else if (name === "centerOnly") {
+                PersonalizationConfig.setBarLayouts([], ["clock"], []);
             } else {
                 const left = PersonalizationConfig.defaultBarLayoutLeft.slice();
                 const middle = PersonalizationConfig.defaultBarLayoutMiddle.slice();
@@ -244,6 +331,31 @@ ShellRoot {
                 "left": Array.from(PersonalizationConfig.barLayoutLeft),
                 "middle": Array.from(PersonalizationConfig.barLayoutMiddle),
                 "right": Array.from(PersonalizationConfig.barLayoutRight)
+            });
+        }
+
+        // B9.5: the pure outer-margin / exclusive-zone math for every edge and
+        // the 0/12/24 margin tiers (Bar.qml binds the same functions).
+        function margins(): string {
+            const cases = [];
+            for (const edge of ["top", "bottom", "left", "right"]) {
+                const vertical = edge === "left" || edge === "right";
+                for (const tier of [0, 12, 24]) {
+                    cases.push({
+                        "edge": edge,
+                        "vertical": vertical,
+                        "tier": tier,
+                        "box": BarGeometry.margins(edge, vertical, tier, tier, 0, false, false),
+                        "exclusiveZone": BarGeometry.exclusiveZone(vertical, Appearance.sizes.baseBarHeight, Appearance.sizes.baseVerticalBarWidth, PersonalizationConfig.barCornerStyle, 5, tier)
+                    });
+                }
+            }
+            return JSON.stringify({
+                "baseBarHeight": Appearance.sizes.baseBarHeight,
+                "baseVerticalBarWidth": Appearance.sizes.baseVerticalBarWidth,
+                "verticalBarWidth": Appearance.sizes.verticalBarWidth,
+                "cornerStyle": PersonalizationConfig.barCornerStyle,
+                "cases": cases
             });
         }
 
@@ -293,6 +405,13 @@ ShellRoot {
             });
         }
 
+        function islandAvatar(value: bool): string {
+            PersonalizationConfig.setIslandShowAvatar(value);
+            return JSON.stringify({
+                "showAvatar": PersonalizationConfig.islandShowAvatar
+            });
+        }
+
         function idleFace(): string {
             const face = probeRoot.findIdleFace(barLoader.item);
             const host = ActionGateway.islandHost;
@@ -302,6 +421,7 @@ ShellRoot {
                 "idleWidth": host ? host.idleWidth : null,
                 "idleTextContentWidth": host ? host.idleTextContentWidth : null,
                 "satellite": PersonalizationConfig.islandSatellite,
+                "showAvatar": face ? face.probeAvatarVisible : false,
                 "clockVisible": face ? face.probeClockFace !== null && face.probeClockFace.visible : false,
                 "clockWidth": face && face.probeClockFace ? face.probeClockFace.implicitWidth : 0,
                 "clockHeight": face && face.probeClockFace ? face.probeClockFace.implicitHeight : 0,

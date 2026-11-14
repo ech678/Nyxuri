@@ -529,6 +529,17 @@ Singleton {
     readonly property int defaultBarThickness: 36
     property int barThickness: root.defaultBarThickness
     onBarThicknessChanged: Appearance.barThickness = root.barThickness
+    // B9.4: vertical thickness is a separate axis (ROADMAP B-2). It used to
+    // reuse `barThickness`, which made the left/right edges impossible to tune
+    // apart from the top/bottom one.
+    readonly property int defaultBarVerticalThickness: 36
+    property int barVerticalThickness: root.defaultBarVerticalThickness
+    onBarVerticalThicknessChanged: Appearance.verticalBarThickness = root.barVerticalThickness
+    // B9.5 outer margins: distance from the screen edge (normal axis) and the
+    // inset at both ends (along the bar). 0 keeps the end4 edge-flush baseline;
+    // they are separate from the internal lane inset.
+    property int barEdgeMargin: 0
+    property int barSideMargin: 0
 
     // Three-lane drag layout for the status bar (left / middle / right). These
     // mirror the leading/trailing model but let the user place widgets freely
@@ -559,6 +570,9 @@ Singleton {
     property bool keyboardPanelNum: false
 
     property bool islandHideDate: false
+    // Idle-face avatar is optional: the identity circle can be hidden while the
+    // satellite clock/weather and status icons stay.
+    property bool islandShowAvatar: true
     property bool barShowValues: true
     property bool barShowNames: false
 
@@ -1277,6 +1291,10 @@ Singleton {
         setValue("islandSatellite", normalizedOption(root.islandSatelliteOptions, value, "clock"));
     }
 
+    function setIslandShowAvatar(value) {
+        setValue("islandShowAvatar", value === true);
+    }
+
     function setFontFamily(role, family) {
         const allowedRoles = ["ui", "mono", "numeric", "expressive"];
         if (allowedRoles.indexOf(role) === -1)
@@ -1609,6 +1627,31 @@ Singleton {
         const clamped = isFinite(numeric) ? Math.max(28, Math.min(64, Math.round(numeric))) : root.defaultBarThickness;
         if (root.barThickness !== clamped) {
             root.barThickness = clamped;
+            root.save();
+        }
+    }
+
+    function setBarVerticalThickness(value) {
+        const numeric = Number(value);
+        const clamped = isFinite(numeric) ? Math.max(28, Math.min(64, Math.round(numeric))) : root.defaultBarVerticalThickness;
+        if (root.barVerticalThickness !== clamped) {
+            root.barVerticalThickness = clamped;
+            root.save();
+        }
+    }
+
+    function setBarEdgeMargin(value) {
+        const clamped = root.normalizedBoundedInt(value, 0, 0, 48);
+        if (root.barEdgeMargin !== clamped) {
+            root.barEdgeMargin = clamped;
+            root.save();
+        }
+    }
+
+    function setBarSideMargin(value) {
+        const clamped = root.normalizedBoundedInt(value, 0, 0, 96);
+        if (root.barSideMargin !== clamped) {
+            root.barSideMargin = clamped;
             root.save();
         }
     }
@@ -1951,6 +1994,7 @@ Singleton {
                 "satellite": root.islandSatellite,
                 "layoutMigrated": root.islandLayoutMigrated,
                 "hideDate": root.islandHideDate,
+                "showAvatar": root.islandShowAvatar,
                 "horizontalClock": {
                     "fontSize": root.horizontalClockFontSize,
                     "axes": root.cloneMap(root.horizontalClockAxes),
@@ -1976,6 +2020,9 @@ Singleton {
                 "barLayoutMiddle": root.barLayoutMiddle.slice(),
                 "barLayoutRight": root.barLayoutRight.slice(),
                 "barThickness": root.barThickness,
+                "verticalThickness": root.barVerticalThickness,
+                "edgeMargin": root.barEdgeMargin,
+                "sideMargin": root.barSideMargin,
                 "quickSettingsComponents": root.quickSettingsComponents.slice(),
                 "tray": {
                     "pinnedItems": root.barTrayPinnedItems.slice(),
@@ -2136,6 +2183,7 @@ Singleton {
         root.islandSatellite = normalizedOption(root.islandSatelliteOptions, island.satellite, "clock");
         root.islandLayoutMigrated = island.layoutMigrated === true;
         root.islandHideDate = typeof island.hideDate === "boolean" ? island.hideDate : false;
+        root.islandShowAvatar = typeof island.showAvatar === "boolean" ? island.showAvatar : true;
         // iNiR keyboardIndicators block; the old island.capsLockOsd/numLockOsd
         // pair migrates to popup.caps/num so an existing choice is not lost.
         root.keyboardShowPopup = typeof keyboard.showPopup === "boolean" ? keyboard.showPopup : true;
@@ -2162,6 +2210,9 @@ Singleton {
         root.barAlwaysShowNumbers = typeof bar.alwaysShowNumbers === "boolean" ? bar.alwaysShowNumbers : true;
         root.barWorkspaceIndicatorStyle = normalizedOption(root.barWorkspaceIndicatorStyles, bar.workspaceIndicatorStyle, "dot");
         root.barThickness = typeof bar.barThickness === "number" ? Math.max(28, Math.min(64, Math.round(bar.barThickness))) : root.defaultBarThickness;
+        root.barVerticalThickness = typeof bar.verticalThickness === "number" ? Math.max(28, Math.min(64, Math.round(bar.verticalThickness))) : root.defaultBarVerticalThickness;
+        root.barEdgeMargin = typeof bar.edgeMargin === "number" ? Math.max(0, Math.min(48, Math.round(bar.edgeMargin))) : 0;
+        root.barSideMargin = typeof bar.sideMargin === "number" ? Math.max(0, Math.min(96, Math.round(bar.sideMargin))) : 0;
         root.barTrayPinnedItems = root.normalizedTrayPinnedItems(tray.pinnedItems);
         root.barTrayFilterPassive = typeof tray.filterPassive === "boolean" ? tray.filterPassive : true;
         // Absent keys must keep the shipped defaults (on, not off): `=== true`

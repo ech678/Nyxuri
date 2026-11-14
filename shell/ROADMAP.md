@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | P4 | 主题契约、模板兼容与取色引擎分阶 | 待验收（契约测试全绿；实机行为与视觉证据待作者） |
 | T3 | 设置界面替换：Caelestia 安卓风味 | M3/M4 待验收（机器证据齐；视觉过目待作者） |
-| B | Bar & Island（布局自由 + end4 视觉基线） | B9.0/B9.1/B9.2/B9.3 待验收（机器证据齐；截图、实机托盘与视觉过目待作者）；B8 旧验收作废，仅保留结构回归证据 |
+| B | Bar & Island（布局自由 + end4 视觉基线） | B9.0–B9.5 待验收（机器证据齐；截图、实机托盘、竖向排布与视觉过目待作者）；B8 旧验收作废，仅保留结构回归证据 |
 | P6 | 整体验收与未来移植 | 排队（前置主线 KM5） |
 
 ## 已交付基线台账
@@ -155,7 +155,7 @@ S0-4 资产收编明细见台账 T3 实施记录。
 | 基础 bar 高度 | 用户自由调整 | 默认 36（`defaultBarThickness`，可改） | **不作为差异项**；部件与字号必须适配所选厚度 |
 | Float 高度 | 所选厚度 + 5×2 | 所选厚度 + 5×2 | B9.0 已对齐（`barStyleBoost`） |
 | M3 Hug / Panel | 所选厚度 + 4 | 所选厚度 + 4 | B9.0 已对齐 |
-| 竖向 bar 宽度 | 用户自由调整（end4 参考 46） | 36 且竖向未实现 | 需要独立可调，不冻结为 46 |
+| 竖向 bar 宽度 | 用户自由调整（end4 参考 46） | 独立可调（`barVerticalThickness`，默认 36） | B9.4 已对齐；不冻结为 46 |
 | `smallest` | 10 | 10 | B9.0 已对齐 |
 | `smaller` | 12 | 12 | B9.0 已对齐 |
 | `smallie` | 13 | 13 | B9.0 已对齐 |
@@ -210,10 +210,11 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 
 #### 1.5 岛（Dynamic Island）
 
-**默认显示**：idle 面左侧头像圆（material 32px 贴左；非 material 24px + 4px 左边距），
-右侧状态图标（mic/音量/WiFi/未读）与时钟。B9.3 起右侧时钟是横向时钟 `ClockContent`
-（日期 + 风格化数字，`islandHideDate` 为真实开关），宽度按内容增长，探针基线 185。
-`~/.face` 不存在时显示 `person` 兜底图标，不再留空色圆。
+**默认显示**：idle 面左侧头像圆（material 32px 贴左；非 material 24px + 4px 左边距，
+可用 `islandShowAvatar` 隐藏），右侧状态图标（mic/音量/WiFi/未读）与时钟。B9.3 起右侧
+时钟是横向时钟 `ClockContent`（日期 + 风格化数字，`islandHideDate` 为真实开关），
+宽度按内容增长，探针基线 185（隐藏头像 157）。`~/.face` 不存在时显示 `person`
+兜底图标，不再留空色圆。
 
 | 项 | end4 | Nyxuri 现状 |
 | --- | --- | --- |
@@ -224,7 +225,7 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 | Timer/Recording | 有 | 已下架（有意） |
 | 通知面 | 图标左 4/12、文字左 14/2、fallback 左 0/4 | 图标左 4/8、文字 10/8、fallback 居中 |
 | OSD | volume/brightness/gamma 三通道，132 宽 | 单通道 + keyboard，keyboard 200 宽 |
-| 竖向岛 | 不完整 | `visible: !vertical`，竖向 bar 永远没有岛 |
+| 竖向岛 | 不完整 | B9.4：竖向布局过滤岛，通知宿主回退；竖向重排留给 B9.6 |
 
 #### 1.6 弹层与 tooltip
 
@@ -239,17 +240,18 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 | 设置 | 现状 |
 | --- | --- |
 | `Floating`（`barOverlay`） | 死键，全仓库无运行时消费者 |
-| `Screen edge` left/right | 死键，没有竖向 bar 实现 |
+| `Screen edge` left/right | B9.4 已实现：切换窗口锚点、内容层与 exclusiveZone |
 | `Show Island` / 布局成员 | B9.3 已收口：布局成员是唯一真相；设置开关改走 `setIslandInLayout`，删掉岛后不会被重新播种 |
 | `islandLayoutMigrated` | B9.3 已修：加载改读 `layoutMigrated`；纯函数 `resolveBarLayouts` 由探针验证「空中段 + 已迁移」不复活 |
 | `islandHideDate` / 水平时钟 | B9.3 已接线：`ClockContent` 进入 idle 面，日期开关与水平时钟编辑页都有真实消费者 |
 | 通知槽仲裁 | B9.3 已修：`shell.qml` 改看 `islandInLayout`，岛不在布局里时通知宿主恢复 |
-| tray 配置 | 迁移写 `bar.tray`，`PersonalizationConfig` 不读也不回写，保存即丢 |
+| tray 配置 | B9.1 已接线：`bar.tray` 五键双向读写并落盘 |
 | `barShowBackground` | Config 桥引用不存在的属性，`?? true` 兜底；无 UI |
 | `barDividerSpacing` | Config 桥引用不存在的属性；无 UI；`space` 永远 4 |
 | autoHide / screenList / utilButtons / resources | Config 硬编码或空数组，无 UI |
-| `bar.tray` 设置 | 无 Tray 段；pin/tint/passive 均不可调 |
-| 外边距 | 无此设置；lane inset 又被 bug 清零 |
+| `bar.tray` 设置 | B9.1 已补 Tray 段：pin/tint/passive/id 均可调 |
+| 竖向厚度 | B9.4 新增 `barVerticalThickness`，仅左右边缘时出现，独立于水平厚度 |
+| 外边距 | B9.5 新增「屏幕边缘边距 / 两端边距」，0 = end4 贴边；exclusiveZone 与弹层同步 |
 
 ### 2. 分期（B9）
 
@@ -259,8 +261,8 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 | B9.1 | SysTray：可见区 + 下箭头 overflow + 隐藏/固定持久化 + 外部点击关闭 + Tray 设置 | `references/iNiR/services/TrayService.qml`、`references/end4-pC/services/TrayService.qml`、`references/iNiR/modules/ii/barM3/SysTray.qml`、`references/iNiR/modules/common/widgets/CompositorFocusGrab.qml` | 待验收（probe 覆盖 pin/overflow/落盘；实机托盘过目待作者）；XEmbed 代理明确不做 |
 | B9.2 | SystemIcons：抄快捷设置按钮语言（26px 槽、hover 胶囊、17px 图标、tooltip、独立点击），补外设电池与固定布局 | `UtilButtons.qml` / `UtilButton.qml`（本树已 fork），`references/iNiR/modules/ii/barM3/SystemIcons.qml`、`references/end4-pC/services/PeripheralBattery.qml` | 待验收（探针覆盖槽宽/组宽/假外设低电；实机视觉与真实外设待作者） |
 | B9.3 | 岛真相：布局成员唯一、修迁移键、通知槽仲裁、idle 头像 fallback、卫星语义、日期/水平时钟接线 | 无（现有岛原件） | 待验收（探针覆盖增删/reload、迁移键、idle 宽度/时钟/头像；通知宿主恢复待实机） |
-| B9.4 | 竖向 bar：left/right 真正可用；竖向宽度独立可调；窗口、lane、弹层、通知避让全链路 | `references/end4-pC/modules/ii/verticalBar/VerticalBar.qml`、`VerticalBarContent.qml`（先 `cp` 再剪裁） | 待开始 |
-| B9.5 | 外边距：`barEdgeMargin` / `barSideMargin` + 设置页 + exclusiveZone + 弹层 + probe | 无 | 待开始 |
+| B9.4 | 竖向 bar：left/right 真正可用；竖向宽度独立可调；窗口、lane、弹层、通知避让全链路 | `references/end4-pC/modules/ii/verticalBar/VerticalBar.qml`、`VerticalBarContent.qml`（先 `cp` 再剪裁） | 待验收（probe 左右两边缘 × 胶囊两路 + centerOnly；实机排布与视觉过目待作者） |
+| B9.5 | 外边距：`barEdgeMargin` / `barSideMargin` + 设置页 + exclusiveZone + 弹层 + probe | 无 | 待验收（纯几何由 probe 覆盖 0/12/24；0/12/24 实机截图待作者） |
 | B9.6 | 表现基线归零：bar 厚度保持用户可调；补齐 contentColor 覆盖、Workspaces 固定槽位与四样式、Media/Clock/Notif 几何、角落出现动画与中段岛宽分支（字号/圆角/高度加成/laneMargin/Islands 正名已在 B9.0 落地） | end4 原始 token 与部件 | 待开始 |
 | B9.7 | 设置清账：`barOverlay`、autoHide、screenList、showBackground、dividerSpacing、utilButtons、resources、numberMap 全部接消费者或下架 | 无 | 待开始 |
 | B9.8 | 护栏：probe 增加 tray overflow、SystemIcons 槽位、竖向几何、外边距、岛删除/恢复；截图验收 | 现有 `probe-bar.sh` | 待开始 |
@@ -304,7 +306,8 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
   迁移键修正为 `island.layoutMigrated`。`DiIdle` 头像改吃 `AvatarService.avatarUrl`
   并加 `person` 兜底（顺带修掉 `NotificationService.unreadCount` 误读）；clock
   satellite 改渲染 `ClockContent`（补 `implicitWidth/Height`），`islandHideDate`
-  成为真实开关；`Config.options.profile` 死桥删除。
+  成为真实开关；头像新增 `islandShowAvatar` 开关（默认显示，隐藏时 idle 宽按头像块
+  收缩）；`Config.options.profile` 死桥删除。
 - **证据**：`python3 -m unittest discover -s tests/shell -q`（457 tests，11 skipped）；
   `probe-bar.sh --session --json` 六档 + borderless + mediaHidden + OSD/keyboard +
   tray + **systemIcons**（槽宽恒 26、组宽公式、假外设 mouse/headphones 一低一危、
@@ -314,6 +317,35 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 - **未验证**：idle 横向时钟的实机视觉（宽度/字号/日期取舍）、通知弹窗宿主的整壳切换、
   真实外设低电通知与 SystemIcons 点击手感，均留作者验收。
 
+### 2.3 B9.4 / B9.5 实施记录（2026-11-14）
+
+- **B9.4 竖向 bar**：`bar.edge` 成为唯一真值，`bottom`/`vertical` 只是派生视图；
+  `StyledPopup`、`BarGroupStylePopup`、通知宿主改读 `edge`（顺手修掉「右边缘弹层锚到
+  左侧」）。`VerticalBarContent.qml` 自 end4 物理整抄后剪裁：纵向三 lane、material
+  竖排胶囊、centerOnly 竖向药丸、lane 自隐藏收缩、竖向 `laneMargin`；岛被过滤出竖向
+  布局，`shell.qml` 通知仲裁在竖向时回退到独立宿主。`Bar.qml` 用单个 `contentLoader`
+  在水平/竖向内容间二选一（不双开服务），窗口锚点、mask、auto-hide 滑出、圆角装饰与
+  药丸补齐上下桥接。新增 `barVerticalThickness`（28–64，独立于水平厚度），
+  `Appearance.sizes.verticalBarWidth` 跟随注入并叠加样式加成；设置页仅在左右边缘显示
+  竖向滑块，并注明竖向暂不显示岛。
+- **B9.5 外边距**：新增 `barEdgeMargin`（0–48，法向）/ `barSideMargin`（0–96，两端）。
+  窗口 margins、`exclusiveZone` 与弹层起点共用 `shell/commons/BarGeometry.js` 纯函数；
+  通知宿主改用真实 `Appearance.sizes` + 边距，不再读 0.85 缩放的旧 `Sizes` token。
+- **窗口级回归修订（作者实机发现）**：内容 Loader 原来用「条件 anchor + `undefined`」
+  切换方向，而 QML **不会**因赋 `undefined` 清除 anchor：top→left 后内容仍是
+  2519 宽（截图里被 69px 窗口裁出的黑色胶囊），切回 top 后内容仍 1440 高、部件垂直
+  居中在窗口外 → bar「消失」。改为显式 `x/y/width/height`，BarContent 的 material
+  胶囊/外翻圆角同步弃用条件 anchor；probe 新增窗口阶段 `top→left→right→bottom→top`，
+  断言窗口/内容两轴尺寸与边界偏移，并把回到 top 的几何快照作为回归门禁。
+- **证据**：`python3 -m unittest discover -s tests/shell -q`（465 tests，11 skipped）；
+  `probe-bar.sh --json` 六档 + borderless + mediaHidden + OSD/keyboard + tray +
+  systemIcons + islandOff/restored/migration/idleFace + **vertical**（left/right ×
+  style 1/3 + centerOnly）+ **margins**（四边 × 0/12/24）+ **windowProbe**（真实
+  Bar.qml 窗口五档往返，右边缘 offsetX=23、下边缘 offsetY=23、往返快照一致）
+  全绿，`logErrors: []`；`check.sh` 绿。
+- **未验证**：左右边缘在 Niri 实机的窗口重排、弹层/通知避让手感、0/12/24 边距与
+  竖向 bar 的视觉截图，均留作者验收。
+
 ### 3. 验收
 
 - **B9.1**：至少两个托盘项；右键 Unpin 后出现下箭头；箭头打开小菜单；点击外部关闭；
@@ -322,7 +354,8 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
   整组跳宽；tooltip 正常；外设低电出现；material/非 material 两种底色均可读。
 - **B9.3**：从布局删除岛后重启不复活；通知弹窗宿主恢复；重新添加岛后 `island host`
   与通知仲裁恢复；idle 无头像时不再出现空色圆。
-- **B9.4**：left/right 各跑一遍 `probe-bar`；lane 几何、边距、弹层锚点、通知避让有数值证据。
+- **B9.4**：left/right 各跑一遍 `probe-bar`；lane 几何、边距、弹层锚点、通知避让有数值证据；
+  窗口阶段必须覆盖 `top→left→top` 往返（内容尺寸回到 bar 厚度，不再留下横/竖残留）。
 - **B9.5**：`barEdgeMargin` / `barSideMargin` 0/12/24 三档运行态截图；
   exclusiveZone 与弹层跟随。
 - **B9.6/B9.7**：逐项对照本页 1.1–1.7 差异表；每个可见设置必须有唯一消费者；

@@ -18,6 +18,7 @@ import unittest
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 BAR_DIR = os.path.join(REPO_ROOT, "shell", "plugins", "bar")
 SERVICES_DIR = os.path.join(REPO_ROOT, "shell", "services")
+COMMONS_DIR = os.path.join(REPO_ROOT, "shell", "commons")
 
 
 def read_bar_file(filename):
@@ -27,6 +28,11 @@ def read_bar_file(filename):
 
 def read_services_file(filename):
     with open(os.path.join(SERVICES_DIR, filename), "r", encoding="utf-8") as f:
+        return f.read()
+
+
+def read_commons_file(filename):
+    with open(os.path.join(COMMONS_DIR, filename), "r", encoding="utf-8") as f:
         return f.read()
 
 
@@ -147,6 +153,12 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertNotIn("Translation.tr", content)
         self.assertIn("I18n.tr", content)
 
+    def test_idle_avatar_is_optional(self):
+        content = read_bar_file("DiIdle.qml")
+        self.assertIn("PersonalizationConfig.islandShowAvatar", content)
+        self.assertIn("visible: diIdleRoot.showAvatar", content)
+        self.assertIn("avatarBlockWidth", content)
+
     def test_active_window_is_an_end4_fork(self):
         content = read_bar_file("ActiveWindow.qml")
         self.assertIn("Fork & Trim: end4-pC", content)
@@ -227,10 +239,12 @@ class BarEnd4ContractTest(unittest.TestCase):
         content = read_bar_file("Bar.qml")
         self.assertIn("roundDecorators", content)
         self.assertIn("shownExclusiveZone", content)
-        # cornerStyle 4/5 reserve 4px in the window layer (end4 parity).
+        # cornerStyle 4/5 reserve 4px in the window layer (end4 parity); the
+        # formula moved to the shared BarGeometry helper in B9.5.
         self.assertIn("materialHug", content)
         self.assertIn("panelStyle", content)
-        self.assertIn("? 4 : 0", content)
+        self.assertIn("BarGeometry.exclusiveZone", content)
+        self.assertIn("? 4 : 0", read_commons_file("BarGeometry.js"))
 
     def test_bar_and_island_ipc_handlers(self):
         content = read_bar_file("Bar.qml")
@@ -242,6 +256,89 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("function state(): string", content)
         # Recording is parked; the IPC face must not promise it.
         self.assertNotIn("stopRecording", content)
+
+
+class VerticalAndMarginContractTest(unittest.TestCase):
+    """B9.4/B9.5: one edge truth, a real vertical fork, shared margin math."""
+
+    def test_config_exposes_the_edge_as_the_single_truth(self):
+        config = read_services_file("Config.qml")
+        self.assertIn("readonly property string edge", config)
+        self.assertIn('PersonalizationConfig.barPosition === "bottom"', config)
+        self.assertIn('PersonalizationConfig.barPosition === "left"', config)
+        self.assertIn("edgeMargin", config)
+        self.assertIn("sideMargin", config)
+
+    def test_popups_stop_deriving_right_from_the_bottom_bool(self):
+        popup = read_bar_file("StyledPopup.qml")
+        self.assertIn("Config.options?.bar?.edge", popup)
+        self.assertIn("root.barEdge === \"right\"", popup)
+        self.assertNotIn('Config.options?.bar?.bottom ?? false) ? "right"', popup)
+        style_popup = read_bar_file("BarGroupStylePopup.qml")
+        self.assertIn('Config.options.bar.edge === "right"', style_popup)
+
+    def test_vertical_content_is_the_end4_fork(self):
+        content = read_bar_file("VerticalBarContent.qml")
+        self.assertIn("Fork & Trim: end4-pC", content)
+        self.assertIn("GPL-3", content)
+        self.assertIn("readonly property bool vertical: true", content)
+        self.assertIn("Appearance.sizes.verticalBarWidth", content)
+        self.assertIn("laneTopHeight", content)
+        self.assertIn("laneCenterY", content)
+        # The island has no vertical shape yet (ROADMAP B9.4).
+        self.assertIn('name !== "island"', content)
+        # Only the active capsule branch instantiates widgets.
+        self.assertIn("active: root.isMaterial", content)
+        self.assertIn("active: !root.isMaterial", content)
+
+    def test_vertical_thickness_and_outer_margins_are_real_settings(self):
+        config = read_services_file("PersonalizationConfig.qml")
+        for token in (
+            "barVerticalThickness",
+            "setBarVerticalThickness",
+            "barEdgeMargin",
+            "setBarEdgeMargin",
+            "barSideMargin",
+            "setBarSideMargin",
+        ):
+            self.assertIn(token, config, f"missing setting owner: {token}")
+        appearance = read_commons_file("Appearance.qml")
+        self.assertIn("verticalBarThickness", appearance)
+        self.assertIn("baseVerticalBarWidth", appearance)
+
+    def test_bar_window_branches_on_orientation(self):
+        content = read_bar_file("Bar.qml")
+        self.assertIn("contentLoader", content)
+        self.assertIn("VerticalBarContent {}", content)
+        self.assertIn("BarContent {}", content)
+        self.assertIn("BarGeometry.margins", content)
+        self.assertIn("BarGeometry.exclusiveZone", content)
+        self.assertNotIn("barContent.centerOnly", content,
+                         "the retired content id must not leak back")
+
+    def test_orientation_switching_never_relies_on_cleared_anchors(self):
+        """QML keeps an anchor when a binding yields `undefined`, so the content
+        loader and the material pills must use explicit geometry."""
+        bar = read_bar_file("Bar.qml")
+        self.assertIn("contentOffsetX", bar)
+        self.assertIn("not clear an anchor", bar)
+        self.assertIn("width: barRoot.vertical ? Appearance.sizes.verticalBarWidth : parent.width", bar)
+        content = read_bar_file("BarContent.qml")
+        self.assertNotIn("anchors.left: root.isMaterialHug ? parent.left : undefined", content)
+        self.assertNotIn("anchors.centerIn: root.isMaterialHug ? undefined : parent", content)
+        self.assertNotIn("anchors.top: !Config.options.bar.bottom ? parent.top : undefined", content)
+
+    def test_margin_geometry_is_pure_and_probeable(self):
+        geometry = read_commons_file("BarGeometry.js")
+        self.assertIn("function margins(", geometry)
+        self.assertIn("function exclusiveZone(", geometry)
+        # The window and the probe must bind the same implementation.
+        probe = os.path.join(REPO_ROOT, "shell", "scripts", "dev", "probe-bar.qml")
+        with open(probe, "r", encoding="utf-8") as handle:
+            probe_source = handle.read()
+        self.assertIn("BarGeometry.margins(", probe_source)
+        self.assertIn("function margins(): string", probe_source)
+        self.assertIn("function edge(value: string): string", probe_source)
 
 
 class TrayContractTest(unittest.TestCase):

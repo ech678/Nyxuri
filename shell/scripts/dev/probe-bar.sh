@@ -259,6 +259,13 @@ if ipc islandInLayout false >/dev/null 2>&1; then
         [[ ${idle_face_state} == *'"found":true'* ]] && break
         sleep 0.1
     done
+    idle_face_no_avatar=""
+    if ipc islandAvatar false >/dev/null 2>&1; then
+        sleep 0.4
+        idle_face_no_avatar=$(ipc idleFace 2>/dev/null || true)
+        ipc islandAvatar true >/dev/null 2>&1 || true
+        sleep 0.4
+    fi
 fi
 
 # B9.2 status cluster: fixed 26px slots, then two fake peripherals (one low,
@@ -330,7 +337,69 @@ else
     tray_skip_reason="fake-sni.py could not be launched"
 fi
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" <<'PY'
+# B9.4 vertical bar: left and right edges, non-material and material capsule
+# paths, then a populated centre-only scene. The island is filtered out of the
+# vertical layout, so the default scene must evaluate to an empty middle lane.
+vertical_file="${tmp}/vertical.tsv"
+: >"${vertical_file}"
+margins_state=""
+for edge in left right; do
+    if ! ipc edge "${edge}" >/dev/null; then
+        printf 'error: could not switch the bar to the %s edge\n' "${edge}" >&2
+        exit 3
+    fi
+    for style in 1 3; do
+        ipc cornerStyle "${style}" >/dev/null || true
+        ipc scene default >/dev/null || true
+        ipc reload >/dev/null || true
+        sleep 0.7
+        printf '%s\t%s\tdefault\t%s\n' "${edge}" "${style}" "$(ipc layout)" >>"${vertical_file}"
+    done
+    ipc cornerStyle 1 >/dev/null || true
+    ipc scene centerOnly >/dev/null || true
+    ipc reload >/dev/null || true
+    sleep 1.4
+    printf '%s\t%s\tcenterOnly\t%s\n' "${edge}" "1" "$(ipc layout)" >>"${vertical_file}"
+done
+# B9.5 margins ride the same pure geometry the window binds.
+if ipc edge top >/dev/null 2>&1; then
+    ipc cornerStyle 1 >/dev/null 2>&1 || true
+    ipc scene default >/dev/null 2>&1 || true
+    ipc reload >/dev/null 2>&1 || true
+    sleep 0.6
+    margins_state=$(ipc margins 2>/dev/null || true)
+fi
+
+# B9.4 window phase: load the real Bar.qml (PanelWindow + content) and walk
+# top -> left -> right -> bottom -> top. The top->left->top round trip is the
+# regression gate for conditional-anchor leftovers: content must return to the
+# bar thickness instead of keeping the screen-width/height it had.
+window_file="${tmp}/window.tsv"
+: >"${window_file}"
+if ipc windowMode true >/dev/null 2>&1; then
+    window_ready=false
+    for _ in $(seq 1 80); do
+        if ipc windowDump 2>/dev/null | grep -q '"found":true'; then
+            window_ready=true
+            break
+        fi
+        sleep 0.2
+    done
+    if [[ ${window_ready} == true ]]; then
+        for edge in top left right bottom top; do
+            ipc edge "${edge}" >/dev/null 2>&1 || true
+            sleep 0.9
+            printf '%s\t%s\n' "${edge}" "$(ipc windowDump 2>/dev/null || true)" >>"${window_file}"
+        done
+    else
+        printf 'error: bar window probe did not come up\n' >&2
+        exit 3
+    fi
+    ipc windowMode false >/dev/null 2>&1 || true
+    ipc edge top >/dev/null 2>&1 || true
+fi
+
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" <<'PY'
 import json
 import re
 import sys
@@ -339,7 +408,7 @@ import sys
  osd_state, keyboard_osd_state, island_off_state, tray_initial, tray_hidden,
  tray_closed, tray_reset, tray_persisted, tray_skip_reason, system_icons_state,
  system_icons_fake, system_icons_reset, island_restored_state, island_migration,
- idle_face_state) = sys.argv[1:22]
+ idle_face_state, idle_face_no_avatar, vertical_path, margins_state, window_path) = sys.argv[1:26]
 
 
 def load_tsv(path):
@@ -404,16 +473,25 @@ island_migration_ok = bool(
     and legacy_off.get("middle") == []
 )
 idle_face = json.loads(idle_face_state) if idle_face_state.strip() else {}
+idle_face_no_avatar = json.loads(idle_face_no_avatar) if idle_face_no_avatar.strip() else {}
 idle_face_ok = bool(
     idle_face.get("found") is True
     and idle_face.get("islandState") == "idle"
     and isinstance(idle_face.get("idleWidth"), (int, float))
     and idle_face.get("idleWidth") > 0
-    and not (idle_face.get("avatarReady") and idle_face.get("avatarFallback"))
-    and (idle_face.get("avatarReady") or idle_face.get("avatarFallback"))
 )
+if idle_face.get("showAvatar") is not False:
+    idle_face_ok = idle_face_ok and not (idle_face.get("avatarReady") and idle_face.get("avatarFallback")) and (idle_face.get("avatarReady") or idle_face.get("avatarFallback"))
 if idle_face.get("satellite") == "clock":
     idle_face_ok = idle_face_ok and idle_face.get("clockVisible") is True and idle_face.get("clockWidth", 0) > 0 and idle_face.get("clockHeight", 0) > 0
+# The avatar is optional: hiding it must drop it from the idle face and shrink
+# the pill by exactly its block.
+avatar_optional_ok = bool(
+    idle_face.get("showAvatar") is True
+    and idle_face_no_avatar.get("found") is True
+    and idle_face_no_avatar.get("showAvatar") is False
+    and idle_face_no_avatar.get("idleWidth", 0) < idle_face.get("idleWidth", 0) - 1
+)
 
 # A media-only lane whose widget reports barWidgetVisible=false must evaluate
 # to zero width. Non-zero means the old 10px capsule padding came back.
@@ -434,6 +512,96 @@ for style, entry in media_hidden:
         "ok": lane_ok,
     })
     media_ok = media_ok and lane_ok
+
+def load_tsv_rows(path):
+    rows = []
+    with open(path, encoding="utf-8") as handle:
+        for line in handle:
+            line = line.rstrip("\n")
+            if not line.strip():
+                continue
+            parts = line.split("\t")
+            rows.append((parts[:-1], json.loads(parts[-1])))
+    return rows
+
+
+# B9.4: vertical bar geometry. Both edges, both capsule paths, and a populated
+# centre-only scene; the island must be filtered out of the vertical layout.
+vertical_rows = load_tsv_rows(vertical_path)
+vertical_cases = []
+vertical_ok = len(vertical_rows) == 6
+widths = {}
+for key, entry in vertical_rows:
+    if len(key) != 3:
+        vertical_ok = False
+        continue
+    edge, style, scene_name = key
+    geometry = entry.get("geometry") or {}
+    lanes = entry.get("lanes") or {}
+    row_ok = bool(
+        entry.get("ok") is True
+        and entry.get("vertical") is True
+        and entry.get("edge") == edge
+        and entry.get("island") is None
+        and isinstance(geometry.get("width"), (int, float))
+        and geometry.get("width", 0) > 0
+        and abs(geometry.get("height", 0) - 1440) <= 1
+    )
+    if scene_name == "default":
+        row_ok = row_ok and not lanes.get("middle") and geometry.get("topHeight", 0) > 0 and geometry.get("bottomHeight", 0) > 0
+        widths[(edge, style)] = geometry.get("width")
+    else:
+        row_ok = row_ok and lanes.get("middle") == ["clock"] and geometry.get("centerHeight", 0) > 0
+    vertical_cases.append({
+        "edge": edge,
+        "cornerStyle": style,
+        "scene": scene_name,
+        "width": geometry.get("width"),
+        "height": geometry.get("height"),
+        "centerY": geometry.get("centerY"),
+        "centerHeight": geometry.get("centerHeight"),
+        "topHeight": geometry.get("topHeight"),
+        "bottomHeight": geometry.get("bottomHeight"),
+        "middle": lanes.get("middle"),
+        "pending": entry.get("pending"),
+        "failed": entry.get("failed"),
+        "ok": row_ok,
+    })
+    vertical_ok = vertical_ok and row_ok
+# The style boost must reach the vertical axis too (Float adds 5x2).
+float_width = widths.get(("left", "1"))
+material_width = widths.get(("left", "3"))
+boost_ok = bool(
+    isinstance(float_width, (int, float)) and isinstance(material_width, (int, float))
+    and abs(float_width - material_width - 10) <= 0.01
+    and widths.get(("right", "1")) == float_width
+    and widths.get(("right", "3")) == material_width
+)
+vertical_ok = vertical_ok and boost_ok
+
+# B9.5: the outer-margin math every edge shares with the window binds.
+margins_report = json.loads(margins_state) if margins_state.strip() else {}
+margin_cases = margins_report.get("cases", [])
+base_bar_height = margins_report.get("baseBarHeight")
+base_vertical_width = margins_report.get("baseVerticalBarWidth")
+margin_style = margins_report.get("cornerStyle", 0)
+style_extra = 5 if margin_style == 1 else (-6 if margin_style == 2 else (4 if margin_style in (4, 5) else 0))
+margin_by_key = {(case.get("edge"), case.get("tier")): case for case in margin_cases}
+
+
+def margin_box(edge, tier):
+    return (margin_by_key.get((edge, tier)) or {}).get("box") or {}
+
+
+margin_ok = bool(
+    len(margin_cases) == 12
+    and margin_box("top", 0) == {"top": 0, "bottom": 0, "left": 0, "right": 0}
+    and margin_box("top", 12) == {"top": 12, "bottom": 0, "left": 12, "right": 12}
+    and margin_box("bottom", 12) == {"top": 0, "bottom": 12, "left": 12, "right": 12}
+    and margin_box("left", 24) == {"top": 24, "bottom": 24, "left": 24, "right": 0}
+    and margin_box("right", 24) == {"top": 24, "bottom": 24, "left": 0, "right": 24}
+    and all(abs(case.get("exclusiveZone", 0) - ((base_vertical_width if case.get("vertical") else base_bar_height) + style_extra + case.get("tier", 0))) <= 0.01 for case in margin_cases)
+)
 
 borderless_modes = [key for key, _ in borderless]
 borderless_ok = (borderless_modes == ["pills", "separated", "segmented", "transparent"]
@@ -548,10 +716,69 @@ system_icons_report = {
     "probeWidths": [slot.get("width") for slot in probe_slots],
 }
 
+# B9.4 window geometry: both axes on every edge, plus the exact round trip
+# that used to leave the bar invisible after top -> left -> top.
+window_rows = load_tsv_rows(window_path)
+window_cases = []
+window_ok = len(window_rows) == 5
+top_snapshots = []
+for key, entry in window_rows:
+    edge_name = key[0] if key else ""
+    if entry.get("found") is not True:
+        window_ok = False
+        window_cases.append({"edge": edge_name, "found": False, "ok": False})
+        continue
+    expected = entry.get("expected") or {}
+    window_box = entry.get("window") or {}
+    content_box = entry.get("content") or {}
+    vertical = entry.get("vertical") is True
+    bar_height = expected.get("barHeight", 0)
+    vertical_width = expected.get("verticalBarWidth", 0)
+    rounding = expected.get("screenRounding", 0)
+    lanes = entry.get("lanes") or {}
+    if vertical:
+        # left edge sits at x=0, right edge at the far end of the window.
+        edge_x = 0 if edge_name == "left" else window_box.get("w", 0) - content_box.get("w", 0)
+        row_ok = bool(
+            abs(window_box.get("w", 0) - (vertical_width + rounding)) <= 1
+            and abs(content_box.get("w", 0) - vertical_width) <= 1
+            and abs(content_box.get("h", 0) - window_box.get("h", 0)) <= 1
+            and abs(content_box.get("offsetX", -1) - edge_x) <= 1
+            and abs(content_box.get("offsetY", -1)) <= 1
+            and lanes.get("top", 0) > 0
+            and lanes.get("bottom", 0) > 0
+            and entry.get("middle") == []
+        )
+    else:
+        # top edge sits at y=0, bottom edge below the corner-rounding band.
+        edge_y = 0 if edge_name == "top" else window_box.get("h", 0) - content_box.get("h", 0)
+        row_ok = bool(
+            abs(window_box.get("h", 0) - (bar_height + rounding)) <= 1
+            and abs(content_box.get("h", 0) - bar_height) <= 1
+            and abs(content_box.get("w", 0) - window_box.get("w", 0)) <= 1
+            and abs(content_box.get("offsetY", -1) - edge_y) <= 1
+            and abs(content_box.get("offsetX", -1)) <= 1
+        )
+    if edge_name == "top":
+        top_snapshots.append((window_box, content_box))
+    window_cases.append({
+        "edge": edge_name,
+        "vertical": vertical,
+        "window": window_box,
+        "content": content_box,
+        "middle": entry.get("middle"),
+        "ok": row_ok,
+    })
+    window_ok = window_ok and row_ok
+
+round_trip_ok = len(top_snapshots) == 2 and top_snapshots[0] == top_snapshots[1]
+window_ok = window_ok and round_trip_ok
+
 ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
       and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok
       and island_restored_ok and island_migration_ok and idle_face_ok
-      and tray_ok and peripheral_ok)
+      and avatar_optional_ok
+      and tray_ok and peripheral_ok and vertical_ok and margin_ok and window_ok)
 report = {
     "ok": ok,
     "mode": mode,
@@ -590,10 +817,30 @@ report = {
         "ok": idle_face_ok,
         "satellite": idle_face.get("satellite", ""),
         "idleWidth": idle_face.get("idleWidth"),
+        "showAvatar": idle_face.get("showAvatar"),
+        "noAvatarWidth": idle_face_no_avatar.get("idleWidth"),
+        "avatarOptional": avatar_optional_ok,
         "clockVisible": idle_face.get("clockVisible"),
         "clockWidth": idle_face.get("clockWidth"),
         "avatarReady": idle_face.get("avatarReady"),
         "avatarFallback": idle_face.get("avatarFallback"),
+    },
+    "vertical": {
+        "ok": vertical_ok,
+        "boost": boost_ok,
+        "cases": vertical_cases,
+    },
+    "windowProbe": {
+        "ok": window_ok,
+        "roundTrip": round_trip_ok,
+        "cases": window_cases,
+    },
+    "margins": {
+        "ok": margin_ok,
+        "baseBarHeight": base_bar_height,
+        "baseVerticalBarWidth": base_vertical_width,
+        "cornerStyle": margin_style,
+        "cases": margin_cases,
     },
     "tray": tray_report,
     "systemIcons": system_icons_report,

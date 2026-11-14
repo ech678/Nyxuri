@@ -213,6 +213,12 @@ QtObject {
                     "icon": "toggle_off"
                 },
                 {
+                    "type": "toggle",
+                    "key": "island:Show avatar",
+                    "title": I18n.tr("Show avatar"),
+                    "icon": "account_circle"
+                },
+                {
                     "type": "combo",
                     "key": "island:Satellite",
                     "title": I18n.tr("Satellite"),

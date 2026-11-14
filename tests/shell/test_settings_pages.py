@@ -883,6 +883,7 @@ class TestIslandPageRebuild(unittest.TestCase):
         for owner in (
             "PersonalizationConfig.setIslandInLayout(",
             "PersonalizationConfig.setIslandSatellite(",
+            "PersonalizationConfig.setIslandShowAvatar(",
             "PersonalizationConfig.setKeyboardShowPanel(",
             "PersonalizationConfig.setKeyboardPanelLayout(",
             "PersonalizationConfig.setKeyboardPanelCaps(",

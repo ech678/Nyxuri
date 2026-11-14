@@ -17,13 +17,22 @@
 
 ## 已修复
 
+- [x] **竖向 bar 与外边距（B9.4/B9.5，2026-11-14）**：`bar.position` 的 left/right 不再是
+  死键——`bar.edge` 成为唯一真相，新增 `VerticalBarContent.qml`（end4 整抄剪裁，纵向三
+  lane）、独立 `barVerticalThickness`、`barEdgeMargin`/`barSideMargin` 外边距与纯几何
+  `BarGeometry.js`。弹层与通知宿主改读真实边缘/厚度/边距；`right` 不再被当成 `left`。
+  竖向暂不显示岛（中间 lane 过滤，通知宿主回退），重排留给 B9.6。
+  运行态由 probe 的 `vertical`（左右 × 胶囊两路 + centerOnly）、`margins`（四边 ×
+  0/12/24）与 `windowProbe`（真实窗口 top→left→right→bottom→top 往返）覆盖；后者是
+  「条件 anchor 不清除」导致切回顶部后 bar 消失的回归门禁。
 - [x] **状态图标与外设电池（B9.2，2026-11-14）**：SystemIcons 从裸 Flow 改为七个固定
   26px 槽（hover 胶囊、17px 图标、tooltip、独立点击）；新增 end4 `PeripheralBattery`
   整抄服务与 `Config` 外设阈值；未读徽标并入通知槽。运行态由 `systemIcons` 探针
   断言槽宽/组宽/假外设低电。
 - [x] **岛真相与横向时钟（B9.3，2026-11-14）**：`islandInLayout` 取代第二开关，
   `layoutMigrated` 读键修正，通知槽仲裁改看布局成员；idle 头像接 `AvatarService` 并
-  加 `person` 兜底；横向时钟 `ClockContent` 接入 idle 面（`islandHideDate` 落地）。
+  加 `person` 兜底（可用 `islandShowAvatar` 隐藏）；横向时钟 `ClockContent` 接入 idle 面
+  （`islandHideDate` 落地）。
   运行态由 `islandOff/islandRestored/islandMigration/idleFace` 探针覆盖。
 
 - [x] **无媒体时 Media 组残留空胶囊 + 探针矩阵缺口（2026-11-14）**：Media 隐藏时

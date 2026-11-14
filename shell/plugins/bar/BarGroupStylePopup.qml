@@ -16,7 +16,8 @@ PopupWindow {
     readonly property real padding: Appearance.sizes.elevationMargin
     readonly property real bounceRoom: 24
     readonly property bool barVertical: Config.options.bar.vertical
-    readonly property bool barAtEnd: Config.options.bar.bottom
+    // B9.4: "end" means bottom for a horizontal bar, right for a vertical one.
+    readonly property bool barAtEnd: Config.options.bar.edge === "bottom" || Config.options.bar.edge === "right"
     readonly property real awaySign: root.barAtEnd ? -1 : 1
     property bool closing: false
 
@@ -46,8 +47,8 @@ PopupWindow {
     anchor {
         window: root.group.QsWindow.window
         item: root.group
-        gravity: Config.options.bar.vertical ? (Config.options.bar.bottom ? Edges.Left : Edges.Right) : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
-        edges: Config.options.bar.vertical ? (Config.options.bar.bottom ? Edges.Left : Edges.Right) : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
+        gravity: root.barVertical ? (root.barAtEnd ? Edges.Left : Edges.Right) : (root.barAtEnd ? Edges.Top : Edges.Bottom)
+        edges: root.barVertical ? (root.barAtEnd ? Edges.Left : Edges.Right) : (root.barAtEnd ? Edges.Top : Edges.Bottom)
     }
 
     Item {

@@ -122,6 +122,34 @@ Item {
                     onSelected: value => PersonalizationConfig.setBarPosition(String(value))
                 }
 
+                // B9.5 outer margins: separate from the internal lane inset
+                // (ROADMAP B-9). 0 keeps end4's edge-flush baseline.
+                PreferenceHeader {
+                    text: I18n.tr("Outer margins")
+                }
+
+                PreferenceSlider {
+                    first: true
+                    label: I18n.tr("Screen edge margin")
+                    value: PersonalizationConfig.barEdgeMargin
+                    valueLabel: Math.round(PersonalizationConfig.barEdgeMargin) + " px"
+                    from: 0
+                    to: 48
+                    stepSize: 2
+                    onMoved: value => PersonalizationConfig.setBarEdgeMargin(Math.round(value))
+                }
+
+                PreferenceSlider {
+                    last: true
+                    label: I18n.tr("Bar end margin")
+                    value: PersonalizationConfig.barSideMargin
+                    valueLabel: Math.round(PersonalizationConfig.barSideMargin) + " px"
+                    from: 0
+                    to: 96
+                    stepSize: 2
+                    onMoved: value => PersonalizationConfig.setBarSideMargin(Math.round(value))
+                }
+
                 // Style & Corner
                 PreferenceHeader {
                     text: I18n.tr("Style")
@@ -162,6 +190,7 @@ Item {
 
                 PreferenceSlider {
                     last: true
+                    visible: root.horizontalBar
                     label: I18n.tr("Bar thickness")
                     value: PersonalizationConfig.barThickness
                     valueLabel: Math.round(PersonalizationConfig.barThickness) + " px"
@@ -169,6 +198,21 @@ Item {
                     to: 56
                     stepSize: 2
                     onMoved: value => PersonalizationConfig.setBarThickness(Math.round(value))
+                }
+
+                // B9.4: the vertical thickness is its own axis. Only the one
+                // that matches the active screen edge is offered, so neither
+                // slider can become a dead key.
+                PreferenceSlider {
+                    last: true
+                    visible: !root.horizontalBar
+                    label: I18n.tr("Vertical bar thickness")
+                    value: PersonalizationConfig.barVerticalThickness
+                    valueLabel: Math.round(PersonalizationConfig.barVerticalThickness) + " px"
+                    from: 28
+                    to: 64
+                    stepSize: 2
+                    onMoved: value => PersonalizationConfig.setBarVerticalThickness(Math.round(value))
                 }
 
                 // Workspaces
@@ -209,6 +253,18 @@ Item {
                     Layout.rightMargin: NexusStyle.padding.extraSmall
                     Layout.bottomMargin: NexusStyle.padding.extraSmall
                     text: I18n.tr("Drag widgets between lanes to arrange the bar")
+                    color: Appearance.m3colors.m3onSurfaceVariant
+                    font.pixelSize: NexusStyle.font.bodySmall
+                    wrapMode: Text.Wrap
+                }
+
+                StyledText {
+                    Layout.fillWidth: true
+                    Layout.leftMargin: NexusStyle.padding.extraSmall
+                    Layout.rightMargin: NexusStyle.padding.extraSmall
+                    Layout.bottomMargin: NexusStyle.padding.extraSmall
+                    visible: !root.horizontalBar
+                    text: I18n.tr("The island stays hidden on a vertical bar for now")
                     color: Appearance.m3colors.m3onSurfaceVariant
                     font.pixelSize: NexusStyle.font.bodySmall
                     wrapMode: Text.Wrap
