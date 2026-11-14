@@ -15,13 +15,13 @@ MouseArea {
     readonly property bool tintIcon: Config.options?.bar?.m3?.tray?.monochromeIcons ?? true
 
     signal menuOpened(qsWindow: var)
-    signal menuClosed()
+    signal menuClosed
 
     hoverEnabled: true
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     implicitWidth: 20
     implicitHeight: 20
-    onPressed: (event) => {
+    onPressed: event => {
         switch (event.button) {
         case Qt.LeftButton:
             item.activate();
@@ -47,23 +47,17 @@ MouseArea {
         }
         active: false
         sourceComponent: SysTrayMenu {
-            Component.onCompleted: this.open();
+            Component.onCompleted: this.open()
             trayItemMenuHandle: root.item.menu
             trayItemId: root.item.id
             anchor {
                 window: root.QsWindow.window
                 item: root
-                gravity: Config.options.bar.vertical
-                    ? (Config.options.bar.bottom ? Edges.Left : Edges.Right)
-                    : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
-                edges: Config.options.bar.vertical
-                    ? (Config.options.bar.bottom ? Edges.Left : Edges.Right)
-                    : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
-                adjustment: Config.options.bar.vertical
-                    ? PopupAdjustment.SlideY
-                    : PopupAdjustment.SlideX
+                gravity: Config.options.bar.vertical ? (Config.options.bar.bottom ? Edges.Left : Edges.Right) : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
+                edges: Config.options.bar.vertical ? (Config.options.bar.bottom ? Edges.Left : Edges.Right) : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
+                adjustment: Config.options.bar.vertical ? PopupAdjustment.SlideY : PopupAdjustment.SlideX
             }
-            onMenuOpened: (window) => root.menuOpened(window);
+            onMenuOpened: window => root.menuOpened(window)
             onMenuClosed: {
                 root.menuClosed();
                 menu.active = false;
@@ -73,7 +67,7 @@ MouseArea {
 
     IconImage {
         id: trayIcon
-        source: root.item?.icon ?? ""
+        source: TrayService.getSafeIcon(root.item)
         anchors.centerIn: parent
         width: parent.width
         height: parent.height
@@ -104,5 +98,4 @@ MouseArea {
         alternativeVisibleCondition: extraVisibleCondition
         anchorEdges: (!Config.options.bar.bottom && !Config.options.bar.vertical) ? Edges.Bottom : Edges.Top
     }
-
 }

@@ -13,8 +13,7 @@ ColumnLayout {
     property int staggerMs: 45
     readonly property int count: root.groups ? root.groups.length : 0
     readonly property int minGap: 6
-    readonly property real boxSize: Math.max(44, Math.min(64, (height - minGap * (root.count - 1)) / Math.max(
-                                                              1, root.count)))
+    readonly property real boxSize: Math.max(44, Math.min(64, (height - minGap * (root.count - 1)) / Math.max(1, root.count)))
 
     signal picked(string id)
 
@@ -146,7 +145,7 @@ ColumnLayout {
                             Layout.alignment: Qt.AlignHCenter
                             Layout.topMargin: 6
                             text: box.modelData.icon
-                            iconSize: Appearance.font.pixelSize.huge
+                            iconSize: Typography.headlineSmall.pixelSize
                             fill: box.on ? 1 : 0
                             rotation: box.modelData.rotation ?? 0
                             color: box.on ? box.modelData.onAccent : box.modelData.onContainer
@@ -175,7 +174,7 @@ ColumnLayout {
                             Layout.rightMargin: 2
                             Layout.bottomMargin: 6
                             text: box.modelData.name
-                            font.pixelSize: Appearance.font.pixelSize.smallest
+                            font.pixelSize: Typography.labelSmall.pixelSize
                             font.weight: Font.DemiBold
                             color: box.on ? box.modelData.onAccent : box.modelData.onContainer
                             horizontalAlignment: Text.AlignHCenter
@@ -219,7 +218,7 @@ ColumnLayout {
 
                         anchors.centerIn: parent
                         text: box.modelData.count
-                        font.pixelSize: Appearance.font.pixelSize.smallest
+                        font.pixelSize: Typography.labelSmall.pixelSize
                         font.weight: Font.Bold
                         color: Appearance.m3colors.m3onSurface
                     }

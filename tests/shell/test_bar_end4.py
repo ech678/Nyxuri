@@ -207,5 +207,62 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertNotIn("stopRecording", content)
 
 
+class TrayContractTest(unittest.TestCase):
+    """B9.1: the tray is a real pin/overflow surface, not the old stub."""
+
+    def test_service_persists_pins_through_the_store(self):
+        content = read_bar_file("TrayService.qml")
+        self.assertIn("Fork & Trim: iNiR", content)
+        self.assertIn("PersonalizationConfig.barTrayPinnedItems", content)
+        self.assertIn("PersonalizationConfig.setBarTrayPinnedItems", content)
+        # The stub returned an empty unpinned list and a no-op togglePin; both
+        # are what kept the overflow arrow permanently hidden.
+        self.assertNotIn("function togglePin(id) {\n    }", content)
+        # Trimmed scope: no proxy supervisor, no app launch table.
+        self.assertNotIn("Process {", content)
+        self.assertNotIn("ShellExec", content)
+        self.assertNotIn("ToplevelManager", content)
+        self.assertNotIn("function smartToggle", content)
+
+    def test_overflow_closes_on_outside_click(self):
+        content = read_bar_file("SysTray.qml")
+        self.assertIn("closeOnOutsideClick: true", content)
+        self.assertIn("onRequestClose: root.closeOverflowMenu()", content)
+        self.assertIn("root.trayOverflowOpen = false", content)
+
+    def test_store_round_trips_the_tray_block(self):
+        content = read_services_file("PersonalizationConfig.qml")
+        for token in (
+            "const tray = configSection(bar.tray)",
+            "root.barTrayPinnedItems = root.normalizedTrayPinnedItems(tray.pinnedItems)",
+            "root.barTrayFilterPassive = typeof tray.filterPassive",
+            '"pinnedItems": root.barTrayPinnedItems.slice()',
+            '"filterPassive": root.barTrayFilterPassive',
+            '"invertPinnedItems": root.barTrayInvertPinnedItems',
+            '"showItemId": root.barTrayShowItemId',
+            '"monochromeIcons": root.barTrayMonochromeIcons',
+        ):
+            self.assertIn(token, content, f"tray persistence token missing: {token}")
+
+    def test_tint_reads_a_real_config_property(self):
+        item = read_bar_file("SysTrayItem.qml")
+        self.assertIn("barTrayMonochromeIcons", read_services_file("Config.qml"))
+        self.assertIn("Config.options?.bar?.m3?.tray?.monochromeIcons", item)
+
+    def test_settings_page_exposes_the_tray_controls(self):
+        page = read_bar_file("GeneralBarPage.qml")
+        for prop in (
+            "barTrayMonochromeIcons",
+            "barTrayFilterPassive",
+            "barTrayShowItemId",
+            "barTrayInvertPinnedItems",
+        ):
+            self.assertIn(prop, page, f"tray setting has no consumer row: {prop}")
+        self.assertIn('anchorId: "bar.section.tray"', page)
+        with open(os.path.join(BAR_DIR, "manifest.toml"), "r", encoding="utf-8") as f:
+            manifest = f.read()
+        self.assertIn('id = "bar.section.tray"', manifest)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | P4 | 主题契约、模板兼容与取色引擎分阶 | 待验收（契约测试全绿；实机行为与视觉证据待作者） |
 | T3 | 设置界面替换：Caelestia 安卓风味 | M3/M4 待验收（机器证据齐；视觉过目待作者） |
-| B | Bar & Island（布局自由 + end4 视觉基线） | B9.0 审计基线（进行中）；B8 旧验收作废，仅保留结构回归证据 |
+| B | Bar & Island（布局自由 + end4 视觉基线） | B9.0/B9.1 待验收（机器证据齐；截图与实机托盘过目待作者）；B8 旧验收作废，仅保留结构回归证据 |
 | P6 | 整体验收与未来移植 | 排队（前置主线 KM5） |
 
 ## 已交付基线台账
@@ -136,32 +136,33 @@ S0-4 资产收编明细见台账 T3 实施记录。
 | 项 | end4 | Nyxuri 现状 | 结果 |
 | --- | --- | --- | --- |
 | 基础 bar 高度 | 用户自由调整 | 默认 36（`defaultBarThickness`，可改） | **不作为差异项**；部件与字号必须适配所选厚度 |
-| Float 高度 | 所选厚度 + 5×2 | 所选厚度 | 少加 10px，内容区被压缩 |
-| M3 Hug / Panel | 所选厚度 + 4 | 所选厚度 | 4/5 档没有高度加成 |
+| Float 高度 | 所选厚度 + 5×2 | 所选厚度 + 5×2 | B9.0 已对齐（`barStyleBoost`） |
+| M3 Hug / Panel | 所选厚度 + 4 | 所选厚度 + 4 | B9.0 已对齐 |
 | 竖向 bar 宽度 | 用户自由调整（end4 参考 46） | 36 且竖向未实现 | 需要独立可调，不冻结为 46 |
-| `smallest` | 10 | 9 | 通知徽标、极小字偏小 |
-| `smaller` | 12 | 10 | 岛副标题、活动窗口 appId 偏小 |
-| `smallie` | 13 | 10 | 媒体标题、时钟时间偏小 |
-| `small` | 15 | 12 | 岛时钟、窗口标题、日期偏小 |
-| `normal` | 16 | 14 | OSD、电池字偏小 |
-| `large` | 17 | 14 | 媒体圆形进度、按钮字偏小 |
-| `larger` | 19 | 19 | 图标没缩，文字缩了 → 比例更挤 |
-| `unsharpenmore` | 6 | 10 | 分组中间圆角大 4px；Islands 8 ➔ 12 |
-| `screenRounding` | 23 | 20 | Hug 角、角落装饰偏小 |
-| `windowRounding` | 18 | 16 | Float 胶囊偏小 |
+| `smallest` | 10 | 10 | B9.0 已对齐 |
+| `smaller` | 12 | 12 | B9.0 已对齐 |
+| `smallie` | 13 | 13 | B9.0 已对齐 |
+| `small` | 15 | 15 | B9.0 已对齐 |
+| `normal` | 16 | 16 | B9.0 已对齐 |
+| `large` | 17 | 17 | B9.0 已对齐 |
+| `larger` | 19 | 19 | 无差异 |
+| `unsharpenmore` | 6 | 6 | B9.0 已对齐 |
+| `screenRounding` | 23 | 23 | B9.0 已对齐 |
+| `windowRounding` | 18 | 18 | B9.0 已对齐 |
 
-证据：`shell/commons/Typography.qml:7` 全局 0.85；`shell/commons/Appearance.qml:23-45`
-把 end4 token 映射到这套 0.85 Typography；`PersonalizationConfig.qml:510` 默认 36。
-end4 基准在 `references/end4-pC/modules/common/Appearance.qml:242-262,436-438,457-458`。
+证据：B9.0 起 `shell/commons/Typography.qml` 全局 1.0，`Appearance.font.pixelSize`
+直接钉住 end4 的 10/12/13/15/16/17/19；`Appearance.sizes.barHeight` 由
+`PersonalizationConfig.barStyleHeightBoost` 注入样式加成，默认厚度 36 仍可调。
+end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438`。
 
 #### 1.2 Bar 窗口与 lane
 
 | 项 | end4 | Nyxuri 现状 |
 | --- | --- | --- |
-| 左右 lane 内缩 | material 5 / Hug 0 / Float、Panel 4 / 其余 8 | 0（`BarContent.qml:262/477` 的 `root.laneMargin` 未定义） |
-| 窗口高度 | 含 Float/Hug/Panel 修正 | 固定 `Appearance.sizes.barHeight` |
+| 左右 lane 内缩 | material 5 / Hug 0 / Float、Panel 4 / 其余 8 | 同 end4（B9.0 定义 `laneMargin`，此前引用未定义恒 0） |
+| 窗口高度 | 含 Float/Hug/Panel 修正 | 同 end4（`sizes.barHeight` 含样式加成） |
 | 角落出现动画 | `showCorners` + 65ms timer | 直接显隐 |
-| islands 样式 | cornerStyle 2，名称 “Islands” | 名称 “Plain”，分支存在但 lane 贴边 |
+| islands 样式 | cornerStyle 2，名称 “Islands” | 名称已改为 “Islands”（B9.0）；lane inset 已生效 |
 | 中段岛宽 | `dynamicIslandEnabled` 特殊分支 | 统一按 `middleRow` |
 
 #### 1.3 分组胶囊与右键改色
@@ -181,7 +182,7 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:242-262,436-438
 | Workspaces | end4 material 按钮宽 30，Nyxuri 固定 26；end4 固定 `shown` 槽位（默认 10），Nyxuri 只画已存在工作区，宽度会跳；end4 有 default/gnome/dots/ticks 四样式与 active Colorizer，Nyxuri 只剩 dots/icon + 数字；end4 右键开 overview，Nyxuri 没有 |
 | Media | 非 material 文字固定 `colOnLayer1`，忽略右键改色；标题 `smallie 13 ➔ 10`、副标题 `12 ➔ 10`；无 artist 时 end4 用 `topMargin:-13` 收紧，Nyxuri 固定 0；播放/下一首的 hover 色与右 margin 有差 |
 | SystemIcons | 裸 Flow，图标宽度随条件项跳变；19px 图标 + 0.85 字号；无单图标 hover/tooltip；material padding 4（end4 12）；缺 `PeripheralBattery` 外设低电；缺 `isDi` 语义；整块一个 MouseArea |
-| SysTray | `unpinnedItems` 恒空导致下箭头永不出现；`togglePin()` 空实现；没有存储；tint 读不存在的 `bar.m3.tray.monochromeIcons`，永远 true；tooltip 只用 `item.tooltip`；点击外部不关 overflow |
+| SysTray | B9.1 已重做：iNiR `TrayService` 剪裁整抄 + `bar.tray` 持久化；下箭头随 unpinned 出现；tint/filter/id 三项真实可调；overflow 点击外部关闭。旧账：`unpinnedItems` 恒空、`togglePin()` 空实现、无存储、tint 读不存在属性 |
 | ClockWidget | 忽略 `contentColor`；有 AM/PM 时强制 `HH:MM` 补零；AM/PM 徽标色是 `tertiaryContainerForeground`（end4 是 `colPrimary`） |
 | Resources | `Resource` ink 固定 `pillInk("resources")`，不跟随 group/右键色；非 material 自定义底色下对比度可能不够 |
 | BatteryIndicator | 固定 `pillInk("batteryIndicator")`；hover 始终开启（end4 click-to-show 模式下关闭） |
@@ -236,15 +237,36 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:242-262,436-438
 
 | 阶段 | 交付目标 | Fork & Trim 来源 | 状态 |
 | --- | --- | --- | --- |
-| B9.0 | 审计基线与 token 冻结：本页差异矩阵、设置真伪清单、bar 厚度自由、Typography 1.0、6/23/18 基线 | 无 | 进行中 |
-| B9.1 | SysTray：可见区 + 下箭头 overflow + 隐藏/固定持久化 + 外部点击关闭 + Tray 设置 | `references/iNiR/services/TrayService.qml`、`references/end4-pC/services/TrayService.qml`、`references/iNiR/modules/ii/barM3/SysTray.qml`、`references/iNiR/modules/common/widgets/CompositorFocusGrab.qml` | 待开始 |
+| B9.0 | 审计基线与 token 冻结：本页差异矩阵、设置真伪清单、bar 厚度自由、Typography 1.0、6/23/18 基线 | 无 | 待验收（实现与 probe 证据齐；视觉过目待作者） |
+| B9.1 | SysTray：可见区 + 下箭头 overflow + 隐藏/固定持久化 + 外部点击关闭 + Tray 设置 | `references/iNiR/services/TrayService.qml`、`references/end4-pC/services/TrayService.qml`、`references/iNiR/modules/ii/barM3/SysTray.qml`、`references/iNiR/modules/common/widgets/CompositorFocusGrab.qml` | 待验收（probe 覆盖 pin/overflow/落盘；实机托盘过目待作者）；XEmbed 代理明确不做 |
 | B9.2 | SystemIcons：抄快捷设置按钮语言（26px 槽、hover 胶囊、17px 图标、tooltip、独立点击），补外设电池与固定布局 | `UtilButtons.qml` / `UtilButton.qml`（本树已 fork），`references/iNiR/modules/ii/barM3/SystemIcons.qml`、`references/end4-pC/services/PeripheralBattery.qml` | 待开始 |
 | B9.3 | 岛真相：布局成员唯一、修迁移键、通知槽仲裁、idle 头像 fallback、卫星语义、日期/水平时钟接线或退役 | 无（现有岛原件） | 待开始 |
 | B9.4 | 竖向 bar：left/right 真正可用；竖向宽度独立可调；窗口、lane、弹层、通知避让全链路 | `references/end4-pC/modules/ii/verticalBar/VerticalBar.qml`、`VerticalBarContent.qml`（先 `cp` 再剪裁） | 待开始 |
 | B9.5 | 外边距：`barEdgeMargin` / `barSideMargin` + 设置页 + exclusiveZone + 弹层 + probe | 无 | 待开始 |
-| B9.6 | 表现基线归零：bar 厚度保持用户可调，只补 Float/Hug/Panel 相对加成与字号/圆角关系、laneMargin 8/5/4/0、cornerStyle 2 改名 Islands、contentColor 覆盖补齐、Workspaces 固定槽位与四样式、Media/Clock/Notif 几何 | end4 原始 token 与部件 | 待开始 |
+| B9.6 | 表现基线归零：bar 厚度保持用户可调；补齐 contentColor 覆盖、Workspaces 固定槽位与四样式、Media/Clock/Notif 几何、角落出现动画与中段岛宽分支（字号/圆角/高度加成/laneMargin/Islands 正名已在 B9.0 落地） | end4 原始 token 与部件 | 待开始 |
 | B9.7 | 设置清账：`barOverlay`、autoHide、screenList、showBackground、dividerSpacing、utilButtons、resources、numberMap 全部接消费者或下架 | 无 | 待开始 |
 | B9.8 | 护栏：probe 增加 tray overflow、SystemIcons 槽位、竖向几何、外边距、岛删除/恢复；截图验收 | 现有 `probe-bar.sh` | 待开始 |
+
+### 2.1 B9.0 / B9.1 实施记录（2026-11-14）
+
+- **B9.0**：`Typography.scale` 0.85→1.0；`Appearance.font.pixelSize` 钉 end4
+  10/12/13/15/16/17/19（`huge`/`title` 22）；`unsharpenmore` 6、`screenRounding` 23、
+  `windowRounding` 18；`Appearance.sizes.barHeight = barThickness + barStyleBoost`，
+  `PersonalizationConfig.barStyleHeightBoost` 按样式注入（Float +10、M3 Hug/Panel +4）；
+  `BarContent.laneMargin` 定义（material hug 0 / material 5 / Float·Panel 4 / 其余 8）；
+  cornerStyle 2 正名 “Islands”。Settings/dashboard 中 4 处误读 `Appearance.font`
+  的调用点改回 `Typography`，保住 bar 专属字号边界。
+- **B9.1**：`TrayService` 自 iNiR 物理整抄后剪裁（删 xembedsniproxy/systemd-run/sv、
+  problematicApps/smartActivate/smartToggle），pin/unpin 走
+  `PersonalizationConfig.setBarTrayPinnedItems`；`bar.tray` 五键双向读写
+  （pinnedItems/filterPassive/invertPinnedItems/showItemId/monochromeIcons，缺键保持
+  出厂默认 true/true）；`SysTray` overflow 接 `StyledPopup.closeOnOutsideClick`，
+  `Config.options.bar.m3.tray.monochromeIcons` 由真属性供给；Bar 设置页新增 Tray 段
+  与 `bar.section.tray` 路由。
+- **证据**：`python3 -m unittest discover -s tests/shell -q`（449 tests，11 skipped）；
+  `probe-bar.sh --session --json` 六档 + borderless + mediaHidden + OSD/keyboard/islandOff
+  + **tray**（fake SNI 三项 → unpin 出箭头 → 外部关闭 → config.toml 落盘 → reset）全绿，
+  `logErrors: []`；`scripts/dev/check.sh` 绿。视觉截图、实机托盘点击与右键菜单待作者。
 
 ### 3. 验收
 

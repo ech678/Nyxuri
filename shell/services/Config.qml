@@ -117,6 +117,14 @@ Singleton {
                     readonly property bool clickToShow: false
                 }
 
+                // B9.1 tray surface: SysTrayItem tints glyphs through this
+                // bridge (it used to read a property that never existed, so the
+                // `?? true` fallback silently forced tinting on).
+                readonly property QtObject tray: QtObject {
+                    readonly property bool monochromeIcons: PersonalizationConfig.barTrayMonochromeIcons
+                    readonly property bool filterPassive: PersonalizationConfig.barTrayFilterPassive
+                }
+
                 readonly property QtObject media: QtObject {
                     readonly property string preferredPlayer: ""
                     readonly property int minWidth: 160

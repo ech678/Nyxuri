@@ -27,6 +27,12 @@ Item {
     readonly property bool isMaterial: PersonalizationConfig.barIsMaterial
     readonly property bool isMaterialHug: PersonalizationConfig.barIsMaterialHug
     readonly property bool isPanel: PersonalizationConfig.barIsPanel
+    // end4 lane inset (references/end4-pC/modules/ii/bar/BarContent.qml:193):
+    // Material hug sits flush, the Material pill keeps its 5px outer gutter,
+    // Float and Panel inset 4, every other style 8. The property was read by
+    // both lane anchors before it existed, so the bug silently pinned them to
+    // the screen edge.
+    readonly property real laneMargin: root.isMaterialHug ? 0 : root.isMaterial ? Appearance.sizes.hyprlandGapsOut : (Config.options.bar.cornerStyle === 1 || root.isPanel) ? 4 : 8
 
     readonly property color materialPillBgColor: Appearance.colors.colLayer0
     readonly property real centerPillX: centerPill.x

@@ -51,6 +51,7 @@ class TestConfigSectionHardening(unittest.TestCase):
             "const effects = configSection(source.effects)",
             "const island = configSection(source.island)",
             "const bar = configSection(source.bar)",
+            "const tray = configSection(bar.tray)",
             "const sidebar = configSection(source.sidebar)",
             "const desktopCards = configSection(source.desktopCards)",
             "const transition = configSection(wallpaper.transition)",

@@ -70,6 +70,7 @@ ANCHOR_IDS = {
     "GeneralBarPage.qml": (
         "bar.section.position",
         "bar.section.components",
+        "bar.section.tray",
     ),
     "DockPage.qml": (
         "dock.section.appearance",

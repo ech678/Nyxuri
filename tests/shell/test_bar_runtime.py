@@ -4,7 +4,8 @@ The string-assertion suites cannot catch a NaN layout chain, a compiled-empty
 widget or a Type/Reference storm. This test drives scripts/dev/probe-bar.sh,
 which loads BarContent in an isolated shell and reports every active Loader
 status plus the evaluated lane geometry for all six corner styles, the four
-borderless modes and the self-hiding widget lane (Media with no track).
+borderless modes, the self-hiding widget lane (Media with no track), and the
+tray surface (fake SNI items -> pin -> overflow arrow -> persisted config).
 
 No Wayland compositor -> explicit skip (the probe exits 2). Weston, when
 installed, runs headless; otherwise the probe uses the current session with a
@@ -88,6 +89,24 @@ class BarRuntimeProbeTest(unittest.TestCase):
                 self.assertLessEqual(abs(case["leftWidth"]), 0.5,
                                      "a lane whose only widget is hidden kept capsule padding")
                 self.assertLessEqual(abs(case["centerWidth"]), 0.5)
+
+        # B9.1 tray surface: fake StatusNotifierItems prove the overflow arrow
+        # reacts to pin state and that the choice lands in config.toml. Without
+        # this the probe would still pass on a `unpinnedItems = []` stub.
+        tray = report["tray"]
+        self.assertTrue(tray["ok"], tray)
+        self.assertEqual(len(tray["items"]), 3, tray["items"])
+        self.assertEqual(tray["initial"]["unpinnedCount"], 0,
+                         "pin-by-default should leave nothing behind the arrow")
+        self.assertGreaterEqual(tray["initial"]["pinnedCount"], 2)
+        self.assertFalse(tray["initial"]["overflowVisible"])
+        self.assertEqual(len(tray["hidden"]["unpinned"]), 1,
+                         "hiding an item must move it into the overflow group")
+        self.assertTrue(tray["hidden"]["overflowVisible"],
+                        "the overflow arrow never appeared after unpin")
+        self.assertFalse(tray["closed"], "closeOverflowMenu did not close the popup")
+        self.assertTrue(tray["persisted"], "the pin choice was not written to config.toml")
+        self.assertEqual(tray["reset"]["unpinnedCount"], 0)
 
 
 if __name__ == "__main__":

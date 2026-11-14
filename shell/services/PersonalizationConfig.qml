@@ -315,7 +315,7 @@ Singleton {
         },
         {
             value: 2,
-            label: I18n.tr("Plain")
+            label: I18n.tr("Islands")
         },
         {
             value: 3,
@@ -337,6 +337,17 @@ Singleton {
     readonly property bool barIsMaterial: root.barCornerStyle === 3 || root.barCornerStyle === 4
     readonly property bool barIsMaterialHug: root.barCornerStyle === 4
     readonly property bool barIsPanel: root.barCornerStyle === 5
+    // end4 style heights (ROADMAP B-2): Float adds the outer gap on both edges,
+    // Material hug and Panel add 4 for their round decorators. Everything else
+    // keeps the user's thickness, and groups/OSD/popups read the evaluated
+    // height through Appearance.sizes.barHeight.
+    readonly property real barStyleHeightBoost: root.barCornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut * 2 : ((root.barIsMaterialHug || root.barIsPanel) ? 4 : 0)
+    Binding {
+        target: Appearance
+        property: "barStyleBoost"
+        value: root.barStyleHeightBoost
+        restoreMode: Binding.RestoreNone
+    }
     readonly property var barBorderlessModes: [
         {
             value: "pills",
@@ -398,6 +409,16 @@ Singleton {
         }
     ]
     property string barDividerStyle: "rect"
+    // Tray contract (ROADMAP B9.1). Pinned ids keep a permanent slot; every
+    // other visible client moves behind the overflow arrow. filterPassive hides
+    // Status.Passive clients, invertPinnedItems swaps the two groups, showItemId
+    // appends the DBus id to the tooltip, monochromeIcons tints the glyphs with
+    // the bar ink instead of the app's own colour.
+    property var barTrayPinnedItems: []
+    property bool barTrayFilterPassive: true
+    property bool barTrayInvertPinnedItems: true
+    property bool barTrayShowItemId: false
+    property bool barTrayMonochromeIcons: true
     // Workspace indicator shape (B8.3 parity with end4): numbers by default,
     // optional app icons, dot/icon marker when neither is shown.
     property bool barShowAppIcons: false
@@ -1545,6 +1566,34 @@ Singleton {
         return out;
     }
 
+    // Tray pin list: ids are opaque DBus names, so only blank/duplicate entries
+    // are rejected here — validating against SystemTray.items would drop pins
+    // for clients that are not running right now.
+    function normalizedTrayPinnedItems(raw) {
+        if (!Array.isArray(raw))
+            return [];
+
+        const seen = {};
+        const out = [];
+        raw.forEach(id => {
+            const candidate = String(id || "").trim();
+            if (candidate.length === 0 || seen[candidate])
+                return;
+
+            seen[candidate] = true;
+            out.push(candidate);
+        });
+        return out;
+    }
+
+    function setBarTrayPinnedItems(value) {
+        const next = root.normalizedTrayPinnedItems(value);
+        if (root.arraysEqual(root.barTrayPinnedItems, next))
+            return;
+        root.barTrayPinnedItems = next;
+        root.save();
+    }
+
     // Orchestrated write for the three-lane bar layout. The UI calls this instead
     // of assigning the properties directly, so the schema change goes through the
     // settings backend and only persists when an array actually changed.
@@ -1921,7 +1970,14 @@ Singleton {
                 "barLayoutMiddle": root.barLayoutMiddle.slice(),
                 "barLayoutRight": root.barLayoutRight.slice(),
                 "barThickness": root.barThickness,
-                "quickSettingsComponents": root.quickSettingsComponents.slice()
+                "quickSettingsComponents": root.quickSettingsComponents.slice(),
+                "tray": {
+                    "pinnedItems": root.barTrayPinnedItems.slice(),
+                    "filterPassive": root.barTrayFilterPassive,
+                    "invertPinnedItems": root.barTrayInvertPinnedItems,
+                    "showItemId": root.barTrayShowItemId,
+                    "monochromeIcons": root.barTrayMonochromeIcons
+                }
             },
             "sidebar": {
                 "keepLoaded": root.keepSidebarsLoaded,
@@ -1950,6 +2006,7 @@ Singleton {
         const keyboardPopup = configSection(keyboard.popup);
         const keyboardPanel = configSection(keyboard.panel);
         const bar = configSection(source.bar);
+        const tray = configSection(bar.tray);
         const sidebar = configSection(source.sidebar);
         const desktopCards = configSection(source.desktopCards);
         const transition = configSection(wallpaper.transition);
@@ -2052,6 +2109,13 @@ Singleton {
         root.barAlwaysShowNumbers = typeof bar.alwaysShowNumbers === "boolean" ? bar.alwaysShowNumbers : true;
         root.barWorkspaceIndicatorStyle = normalizedOption(root.barWorkspaceIndicatorStyles, bar.workspaceIndicatorStyle, "dot");
         root.barThickness = typeof bar.barThickness === "number" ? Math.max(28, Math.min(64, Math.round(bar.barThickness))) : root.defaultBarThickness;
+        root.barTrayPinnedItems = root.normalizedTrayPinnedItems(tray.pinnedItems);
+        root.barTrayFilterPassive = typeof tray.filterPassive === "boolean" ? tray.filterPassive : true;
+        // Absent keys must keep the shipped defaults (on, not off): `=== true`
+        // would read a fresh config as "do not pin" and "do not tint".
+        root.barTrayInvertPinnedItems = typeof tray.invertPinnedItems === "boolean" ? tray.invertPinnedItems : true;
+        root.barTrayShowItemId = tray.showItemId === true;
+        root.barTrayMonochromeIcons = typeof tray.monochromeIcons === "boolean" ? tray.monochromeIcons : true;
         const hasBarLayout = Array.isArray(bar.barLeadingComponents) || Array.isArray(bar.barTrailingComponents);
         const barLayout = root.normalizedBarLayout(bar.barLeadingComponents, bar.barTrailingComponents, !hasBarLayout);
         root.barLeadingComponents = barLayout.leading;

@@ -5,9 +5,12 @@ import QtQuick
 QtObject {
     id: root
 
-    // Global type scale. Material 3 sizes below are tuned for 1.0; lower it
-    // when the panel is already dense (2K output at scale 1.0 reads oversized).
-    readonly property real scale: 0.85
+    // Global type scale. Material 3 sizes below are the 1.0 baseline; the
+    // shell used to run them at 0.85, which shrank every label by ~15% and made
+    // the bar/island cluster visibly smaller than the end4 reference. B9.0
+    // restores 1.0 globally; surfaces that need denser type (settings) carry
+    // their own unscaled table in ui/NexusStyle.qml.
+    readonly property real scale: 1.0
 
     // Material 3 type scale. Family is bound to Fonts.ui so changing the UI
     // family immediately updates every standard style.
