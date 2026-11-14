@@ -19,8 +19,7 @@ Item {
     readonly property real centerScale: Math.min(1, root.screenHeight / 1440)
     readonly property real centerWidth: Metrics.lockCenterWidth * centerScale
     readonly property int clockHour24: clockTimer.now.getHours()
-    readonly property int clockHour: UiPreferences.useTwelveHourClock ? ((clockHour24 + 11) % 12) + 1 :
-                                                                        clockHour24
+    readonly property int clockHour: UiPreferences.useTwelveHourClock ? ((clockHour24 + 11) % 12) + 1 : clockHour24
 
     function forceAuthFocus() {
         authCard.forceActiveFocus();
@@ -196,9 +195,7 @@ Item {
                 Text {
                     id: errorMessage
 
-                    property string msg: root.context && root.context.showFailure ? I18n.tr(
-                                                                                        "Incorrect password. Try again.") :
-                                                                                    ""
+                    property string msg: root.context && root.context.showFailure ? I18n.tr("Incorrect password. Try again.") : ""
                     property string pendingText: ""
 
                     function showText(newText) {
@@ -376,18 +373,18 @@ Item {
                 Text {
                     id: stateMessage
                     // Hide immediately on loss of trust, including any fading old text.
-                    visible: KeyboardLockService.available
+                    visible: KeyboardIndicators.available
 
                     property string msg: {
-                        if (!KeyboardLockService.available)
+                        if (!KeyboardIndicators.available)
                             return "";
-                        if (KeyboardLockService.capsLock && KeyboardLockService.numLock)
+                        if (KeyboardIndicators.capsLock && KeyboardIndicators.numLock)
                             return I18n.tr("Caps Lock and Num Lock are on.");
 
-                        if (KeyboardLockService.capsLock)
+                        if (KeyboardIndicators.capsLock)
                             return I18n.tr("Caps Lock is on.");
 
-                        if (KeyboardLockService.numLock)
+                        if (KeyboardIndicators.numLock)
                             return I18n.tr("Num Lock is on.");
 
                         return "";

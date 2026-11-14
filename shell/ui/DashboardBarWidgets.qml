@@ -6,13 +6,12 @@ import qs.commons.i18n
 // no processes — so it belongs in ui under the shell's four-layer
 // boundary.
 //
-// The ids listed here are exactly the components BarComponentLoader dispatches
-// (shell/plugins/bar/BarComponentLoader.qml). Upstream end4-pC exposes a larger
-// set, but ids this project does not implement are intentionally excluded: a
-// user could otherwise drag a non-existent widget into a lane, store it, and see
-// nothing happen. Confirmed supported ids:
-//   workspaces, information, activeWindow, media, tray,
-//   systemMonitor, quickSettings, clock
+// The ids listed here are exactly the components BarContent dispatches
+// (shell/plugins/bar/BarContent.qml getWidgetUrl). Upstream end4-pC exposes a
+// larger set, but ids this project does not implement are intentionally
+// excluded: a user could otherwise drag a non-existent widget into a lane,
+// store it, and see nothing happen. Confirmed supported ids:
+//   workspaces, activeWindow, media, tray, systemMonitor, quickSettings, clock
 //
 // `label` stays an untranslated literal on purpose. Translating it here would
 // evaluate I18n.tr() while this object is being constructed — before the
@@ -30,11 +29,6 @@ QtObject {
             id: "workspaces",
             label: "Workspaces",
             icon: "grid_view"
-        },
-        {
-            id: "information",
-            label: "Information",
-            icon: "info"
         },
         {
             id: "activeWindow",

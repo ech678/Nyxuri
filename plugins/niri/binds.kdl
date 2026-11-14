@@ -21,6 +21,9 @@ binds {
     // 重新加载 Niri 配置文件 / Reload Niri configuration file
     Mod+Shift+R { spawn "niri" "msg" "action" "load-config-file"; }
 
+    // 硬重启当前桌面外壳（Noctalia / Nyxuri Shell 谁在跑就重启谁；锁屏中拒绝） / Hard-restart the running desktop shell
+    Mod+Alt+R repeat=false { spawn "~/.config/niri/scripts/shell-action.sh" "restart"; }
+
     // 锁定屏幕 (外壳网关) / Lock screen using shell gateway
     Mod+L allow-when-locked=true { spawn "~/.config/niri/scripts/shell-action.sh" "lock"; }
 

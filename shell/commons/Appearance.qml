@@ -19,6 +19,10 @@ Singleton {
     property QtObject m3colors
     property QtObject animationCurves
     property QtObject animation
+    // Motion switch for components that guard Behavior blocks. Kept as a
+    // token so a future "reduce motion" preference has one owner; always on
+    // today (the end4 bar/members sweep read this name).
+    readonly property bool animationsEnabled: true
     property QtObject colors
     property QtObject rounding
     property QtObject spacing
@@ -294,6 +298,11 @@ Singleton {
     }
 
     property real barThickness: 36
+    // iNiR's components size popups and bar gaps with this factor. Nyxuri has no
+    // user-facing typography scale (the M3 tokens are fixed), so the ported
+    // sources get a neutral 1.0 instead of the undefined property that used to
+    // poison every `6 * fontSizeScale` gap into NaN.
+    readonly property real fontSizeScale: 1
 
     readonly property QtObject sizes: QtObject {
         readonly property real baseBarHeight: root.barThickness > 0 ? root.barThickness : 36
@@ -304,5 +313,12 @@ Singleton {
         readonly property real spacingSmall: 6
         readonly property real spacingLarge: 12
         readonly property real hyprlandGapsOut: 5
+        // end4-pC bar baseline, not the MD3 typography scale: upstream used
+        // 19px cluster glyphs / 17px util glyphs. Feeding `font.pixelSize.larger`
+        // (22) into the ported widgets made the right cluster visibly larger
+        // than util buttons and the resource rings.
+        readonly property int barIconSize: 19
+        readonly property int barUtilIconSize: 17
+        readonly property int barPowerButtonSize: 28
     }
 }

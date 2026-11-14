@@ -19,17 +19,13 @@ Singleton {
     property string sidebarRightPresentationOutput: ""
     property bool mediaControlsOpen: false
     property bool controlPanelOpen: false
-    property bool osdVolumeOpen: false
-    property bool osdBrightnessOpen: false
-    property bool osdMicOpen: false
-    property bool osdMediaOpen: false
-    property string osdIndicatorType: ""
+    // Single island OSD channel (B8.4): "" | "volume" | "brightness" | "caps" | "num".
+    // The island owns the producer; the bar's scroll-away hint clears it.
+    property string osdKind: ""
     property bool diSessionOpen: false
     property bool barCenterOnly: false
-    property bool dynamicIslandEnabled: PersonalizationConfig.islandEnabled
     property bool barStyleEditorOpen: false
     property int activeContextMenuCount: 0
-    property var visualizerPoints: []
 
     readonly property ShellScreen primaryScreen: Quickshell.screens[0] ?? null
     readonly property ShellScreen focusedScreen: Quickshell.screens[0] ?? null

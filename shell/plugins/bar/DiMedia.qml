@@ -90,16 +90,17 @@ Item {
                 left: artMask.right
                 leftMargin: 8
                 verticalCenter: parent.verticalCenter
-                right: mediaControlsRow.visible ? mediaControlsRow.left
-                    : (visualizerCanvas.visible ? visualizerCanvas.left
-                    : (islandVisualizer.visible ? islandVisualizer.left : parent.right))
+                right: islandVisualizer.visible ? islandVisualizer.left : parent.right
                 rightMargin: 8
             }
             spacing: di.isMaterial ? -2 : -4
             opacity: di.mediaTrackInfoVisible ? 1 : 0
 
             Behavior on opacity {
-                NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                NumberAnimation {
+                    duration: 200
+                    easing.type: Easing.OutCubic
+                }
             }
 
             StyledText {
@@ -125,35 +126,10 @@ Item {
 
             readonly property real widestLineWidth: Math.max(trackTitleMetrics.implicitWidth, trackArtistMetrics.implicitWidth)
 
-            readonly property real computedContentWidth: artMask.width
-                + (di.isMaterial ? 14 : 8)
-                + trackInfoColumn.widestLineWidth
-                + 12
-                + (mediaControlsRow.visible ? mediaControlsRow.implicitWidth
-                    : (visualizerCanvas.visible ? visualizerCanvas.width
-                    : (islandVisualizer.visible ? islandVisualizer.width : 0)))
-                + (di.isMaterial ? 0 : 4)
-                + 10
+            readonly property real computedContentWidth: artMask.width + (di.isMaterial ? 14 : 8) + trackInfoColumn.widestLineWidth + 12 + (islandVisualizer.visible ? islandVisualizer.width : 0) + (di.isMaterial ? 0 : 4) + 10
 
             onComputedContentWidthChanged: di.mediaTextContentWidth = trackInfoColumn.computedContentWidth
             Component.onCompleted: di.mediaTextContentWidth = trackInfoColumn.computedContentWidth
-        }
-
-        WaveVisualizer {
-            id: visualizerCanvas
-            anchors {
-                right: mediaControlsRow.visible ? mediaControlsRow.left : parent.right
-                rightMargin: mediaControlsRow.visible ? 6 : 10
-                verticalCenter: parent.verticalCenter
-            }
-            width: di.isMaterial ? 60 : 50
-            height: di.isMaterial ? di.pillHeight * 1.5 : di.pillHeight * 0.85
-            live: di.activePlayer?.isPlaying
-            points: GlobalStates.visualizerPoints
-            maxVisualizerValue: 1000
-            smoothing: 2
-            color: Appearance.colors.colOnLayer0
-            visible: Config.options.bar.dynamicIsland.visualizerStyle === "wave"
         }
 
         Visualizer {
@@ -163,6 +139,7 @@ Item {
                 rightMargin: 10
                 verticalCenter: parent.verticalCenter
             }
+            width: barCount * (dotSize + dotSpacing)
             height: di.isMaterial ? di.pillHeight * 1.5 : di.pillHeight * 0.85
             vertical: false
             isMaterial: false
@@ -171,81 +148,9 @@ Item {
             dotSpacing: 3
             maxBarHeight: di.isMaterial ? di.pillHeight * 1.5 : di.pillHeight * 0.85
             barColor: Appearance.colors.colOnLayer0
-            visible: !Config.options.bar.dynamicIsland.showMediaControls
-                && Config.options.bar.dynamicIsland.visualizerStyle === "dots"
-        }
-
-        RowLayout {
-            id: mediaControlsRow
-            anchors {
-                right: parent.right
-                rightMargin: di.isMaterial ? 4 : 8
-                verticalCenter: parent.verticalCenter
-            }
-            spacing: di.isMaterial ? -2 : -4
-            visible: Config.options.bar.dynamicIsland.showMediaControls
-
-            Item {
-                Layout.alignment: Qt.AlignVCenter
-                implicitWidth: 20
-                implicitHeight: 20
-                visible: di.activePlayer?.canGoPrevious ?? false
-
-                MaterialSymbol {
-                    anchors.centerIn: parent
-                    text: "skip_previous"
-                    fill: 1
-                    iconSize: di.isMaterial ? 20 : 16
-                    color: Appearance.colors.colOnLayer0
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: di.activePlayer?.previous()
-                }
-            }
-
-            Item {
-                Layout.alignment: Qt.AlignVCenter
-                implicitWidth: 22
-                implicitHeight: 22
-
-                MaterialSymbol {
-                    anchors.centerIn: parent
-                    text: di.activePlayer?.isPlaying ? "pause" : "play_arrow"
-                    fill: 1
-                    iconSize: di.isMaterial ? 20 : 18
-                    color: Appearance.colors.colOnLayer0
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: di.activePlayer?.togglePlaying()
-                }
-            }
-
-            Item {
-                Layout.alignment: Qt.AlignVCenter
-                implicitWidth: 20
-                implicitHeight: 20
-                visible: di.activePlayer?.canGoNext ?? false
-
-                MaterialSymbol {
-                    anchors.centerIn: parent
-                    text: "skip_next"
-                    fill: 1
-                    iconSize: di.isMaterial ? 20 : 16
-                    color: Appearance.colors.colOnLayer0
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: di.activePlayer?.next()
-                }
-            }
+            // end4 baseline: dots instead of playback buttons. Cava only runs
+            // while the media face is visible AND playing (on-demand lease).
+            visible: di.activePlayer?.isPlaying ?? false
         }
     }
 }

@@ -6,7 +6,7 @@ Verifies:
   - DiOsd connects to dynamic island OSD bindings and VolumeService
   - DynamicIsland.qml contentProviders registers all 6 faces and alwaysWinIds
   - DynamicIsland.qml connects to RecordingService, AudioRecordingService,
-    VolumeService, BrightnessService, KeyboardLockService
+    VolumeService, BrightnessService, KeyboardIndicators
   - No bare import qs statements in the end4 bundle
 """
 
@@ -71,21 +71,29 @@ class IslandEnd4FacesContractTest(unittest.TestCase):
         content = read_end4("DynamicIsland.qml")
         # All provider IDs present in contentProviders
         for provider_id in ['id: "osd"', 'id: "notification"', 'id: "battery"',
-                            'id: "recording"', 'id: "timer"', 'id: "media"']:
+                            'id: "media"', 'id: "session"']:
             self.assertIn(provider_id, content, f"contentProviders missing {provider_id}")
+        # Timer and Recording are parked until TimerService/RecordingService
+        # exist; no dead provider rows and no dead component may remain.
+        self.assertNotIn('id: "timer"', content)
+        self.assertNotIn('id: "recording"', content)
+        self.assertNotIn("DiTimers", content)
 
         # Preemption list contains osd and notification
         self.assertIn('"osd"', content)
         self.assertIn('"notification"', content)
         self.assertIn('"battery"', content)
 
-        # Service bindings
-        self.assertIn("RecordingService", content)
-        self.assertIn("AudioRecordingService", content)
+        # Volume/brightness/keyboard OSD producers (B8.4): the island owns the
+        # only writer of GlobalStates.osdKind, and defines what DiOsd reads.
+        self.assertIn('GlobalStates.osdKind !== ""', content)
+        self.assertIn("function osdValueText()", content)
         self.assertIn("VolumeService", content)
         self.assertIn("BrightnessService", content)
-        self.assertIn("KeyboardLockService", content)
-        self.assertIn("stopRecording()", content)
+        self.assertIn("KeyboardIndicators", content)
+        # Recording is parked; no dead service bridge may lurk.
+        self.assertNotIn("RecordingService", content)
+        self.assertNotIn("stopRecording", content)
 
 
 if __name__ == "__main__":

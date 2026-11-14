@@ -33,10 +33,16 @@ Singleton {
 
     // --- Mirrored state ---
     readonly property var workspaces: NiriDriver.workspaces
+    // Sorted JS array (map-backed) for widgets that need filtering per output.
+    // `workspaces` is a ListModel; this one re-evaluates on every map swap.
+    readonly property var workspaceList: NiriDriver.workspaceList
     readonly property string currentOutput: NiriDriver.currentOutput
     readonly property var outputs: NiriDriver.outputs
     readonly property var windows: NiriDriver.windows
     readonly property var focusedWindow: NiriDriver.focusedWindow
+    readonly property var keyboardLayoutNames: NiriDriver.keyboardLayoutNames
+    readonly property int currentKeyboardLayoutIndex: NiriDriver.currentKeyboardLayoutIndex
+    readonly property string currentKeyboardLayoutName: NiriDriver.currentKeyboardLayoutName
     readonly property bool inOverview: NiriDriver.inOverview
     readonly property bool configLoadFailed: NiriDriver.configLoadFailed
     readonly property string configError: NiriDriver.configError

@@ -214,77 +214,10 @@ QtObject {
                 },
                 {
                     "type": "combo",
-                    "key": "island:Style",
-                    "title": I18n.tr("Style"),
-                    "icon": "style",
+                    "key": "island:Satellite",
+                    "title": I18n.tr("Satellite"),
+                    "icon": "schedule",
                     "w": 2
-                },
-                {
-                    "type": "select",
-                    "key": "island:Position",
-                    "title": I18n.tr("Position"),
-                    "icon": "swap_horiz",
-                    "w": 2
-                },
-                {
-                    "type": "combo",
-                    "key": "island:Hover action",
-                    "title": I18n.tr("Hover action"),
-                    "icon": "mouse"
-                },
-                {
-                    "type": "combo",
-                    "key": "island:Left click action",
-                    "title": I18n.tr("Left click action"),
-                    "icon": "ads_click"
-                },
-                {
-                    "type": "combo",
-                    "key": "island:Middle click action",
-                    "title": I18n.tr("Middle click action"),
-                    "icon": "ads_click"
-                },
-                {
-                    "type": "combo",
-                    "key": "island:Keyhole card",
-                    "title": I18n.tr("Keyhole card"),
-                    "icon": "door_front"
-                },
-                {
-                    "type": "combo",
-                    "key": "island:Media progress style",
-                    "title": I18n.tr("Media progress style"),
-                    "icon": "linear_scale"
-                },
-                {
-                    "type": "combo",
-                    "key": "island:Media cover style",
-                    "title": I18n.tr("Media cover style"),
-                    "icon": "album"
-                },
-                {
-                    "type": "combo",
-                    "key": "island:Media color style",
-                    "title": I18n.tr("Media color style"),
-                    "icon": "palette"
-                },
-                {
-                    "type": "spin",
-                    "key": "island:Hover open delay (ms)",
-                    "title": I18n.tr("Hover open delay"),
-                    "icon": "timer"
-                },
-                {
-                    "type": "spin",
-                    "key": "island:Hover close delay (ms)",
-                    "title": I18n.tr("Hover close delay"),
-                    "icon": "timer_off"
-                },
-                {
-                    "type": "toggle",
-                    "key": "island:Overlay",
-                    "title": I18n.tr("Overlay"),
-                    "icon": "layers"
                 },
                 {
                     "type": "toggle",
@@ -294,13 +227,37 @@ QtObject {
                 },
                 {
                     "type": "toggle",
-                    "key": "island:Caps lock OSD",
+                    "key": "keyboard:Show panel",
+                    "title": I18n.tr("Show panel indicators"),
+                    "icon": "keyboard"
+                },
+                {
+                    "type": "toggle",
+                    "key": "keyboard:Show Caps Lock",
+                    "title": I18n.tr("Show Caps Lock"),
+                    "icon": "keyboard_capslock"
+                },
+                {
+                    "type": "toggle",
+                    "key": "keyboard:Show Num Lock",
+                    "title": I18n.tr("Show Num Lock"),
+                    "icon": "dialpad"
+                },
+                {
+                    "type": "toggle",
+                    "key": "keyboard:Show popup",
+                    "title": I18n.tr("Show popup notifications"),
+                    "icon": "notifications"
+                },
+                {
+                    "type": "toggle",
+                    "key": "keyboard:Caps lock OSD",
                     "title": I18n.tr("Caps lock OSD"),
                     "icon": "keyboard_capslock"
                 },
                 {
                     "type": "toggle",
-                    "key": "island:Num lock OSD",
+                    "key": "keyboard:Num lock OSD",
                     "title": I18n.tr("Num lock OSD"),
                     "icon": "keyboard"
                 }

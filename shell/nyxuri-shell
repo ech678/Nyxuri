@@ -110,7 +110,7 @@ while [ $# -gt 0 ]; do
             shift 1
             ;;
         -h|--help)
-            echo "Usage: nyxuri-shell [--action <launcher|session|settings|clipboard|lock|wallpaper-random|wallpaper-picker|radial-launcher|translate>|--ipc <target> <method> [args...]|--check-ready|--stage|--status|--stop]"
+            echo "Usage: nyxuri-shell [--action <launcher|session|settings|clipboard|lock|wallpaper-random|wallpaper-picker|radial-launcher|translate|restart>|--ipc <target> <method> [args...]|--check-ready|--stage|--status|--stop]"
             exit 0
             ;;
         *)
@@ -257,6 +257,16 @@ if [ -n "$ACTION" ]; then
             else
                 exit 1
             fi
+            ;;
+        restart)
+            # Hard restart of whichever shell is running. The lock gate, field
+            # sweep and readiness probe live in the CLI state machine; this
+            # wrapper only supplies the PATH-stable entry a keybind can spawn.
+            if ! command -v nyxuri >/dev/null 2>&1; then
+                echo "nyxuri CLI not found in PATH; cannot restart the shell." >&2
+                exit 1
+            fi
+            exec nyxuri shell restart
             ;;
         stop)
             exec qs kill -p "${SHELL_DIR}" >/dev/null 2>&1 || true

@@ -12,7 +12,7 @@ Item {
     property bool isActive: false
     property bool forceHovered: false
     property string toolTipText: ""
-    property bool isMaterial: Config.options.bar.m3.cornerStyle === 3
+    property bool isMaterial: PersonalizationConfig.barIsMaterial
 
     implicitWidth: vertical ? 26 : (hovered ? 54 : 26)
     implicitHeight: vertical ? (hovered ? 54 : 26) : 26
@@ -43,22 +43,26 @@ Item {
         color: root.hovered ? M3Palette.primary : "transparent"
 
         Behavior on color {
-            ColorAnimation { duration: Appearance.animation.elementMoveFast.duration }
+            ColorAnimation {
+                duration: Appearance.animation.elementMoveFast.duration
+            }
         }
         Behavior on opacity {
-            NumberAnimation { duration: Appearance.animation.elementMoveFast.duration }
+            NumberAnimation {
+                duration: Appearance.animation.elementMoveFast.duration
+            }
         }
 
         MaterialSymbol {
             id: symbol
             anchors.centerIn: parent
-            iconSize: Appearance.font.pixelSize.large
-            color: root.hovered
-                ? M3Palette.primaryForeground
-                : root.isMaterial ? M3Palette.pillInk("utilButtons") : Appearance.colors.colPrimary
+            iconSize: Appearance.sizes.barUtilIconSize
+            color: root.hovered ? M3Palette.primaryForeground : root.isMaterial ? M3Palette.pillInk("utilButtons") : Appearance.colors.colPrimary
 
             Behavior on color {
-                ColorAnimation { duration: Appearance.animation.elementMoveFast.duration }
+                ColorAnimation {
+                    duration: Appearance.animation.elementMoveFast.duration
+                }
             }
         }
     }
@@ -67,7 +71,7 @@ Item {
         id: mouseArea
         anchors.fill: parent
         hoverEnabled: true
-        onClicked: (e) => root.clicked(e)
+        onClicked: e => root.clicked(e)
     }
 
     M3ToolTip {

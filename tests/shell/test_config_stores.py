@@ -50,7 +50,6 @@ class TestConfigSectionHardening(unittest.TestCase):
             "const theme = configSection(source.theme)",
             "const effects = configSection(source.effects)",
             "const island = configSection(source.island)",
-            "const media = configSection(island.media)",
             "const bar = configSection(source.bar)",
             "const sidebar = configSection(source.sidebar)",
             "const desktopCards = configSection(source.desktopCards)",
@@ -60,7 +59,6 @@ class TestConfigSectionHardening(unittest.TestCase):
             "const autoCycle = configSection(wallpaper.autoCycle)",
             "const fonts = configSection(theme.fonts)",
             "const horizontalClock = configSection(island.horizontalClock)",
-            "const keyhole = configSection(island.keyhole)",
         ):
             self.assertIn(declaration, loader)
 

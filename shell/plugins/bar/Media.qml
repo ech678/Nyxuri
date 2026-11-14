@@ -14,17 +14,17 @@ Item {
     id: root
 
     property bool vertical: false
-    property bool isMaterial: Config.options.bar.m3.cornerStyle === 3
+    property bool isMaterial: PersonalizationConfig.barIsMaterial
     readonly property MprisPlayer activePlayer: {
-        const preferred = Config.options.bar.m3.media.preferredPlayer.trim().toLowerCase()
-        if (preferred.length === 0) return MprisController.activePlayer
-        const _ = MprisController.players.length
+        const preferred = Config.options.bar.m3.media.preferredPlayer.trim().toLowerCase();
+        if (preferred.length === 0)
+            return MprisController.activePlayer;
+        const _ = MprisController.players.length;
         for (const p of MprisController.players) {
-            if ((p.identity ?? "").toLowerCase().includes(preferred) ||
-                (p.desktopEntry ?? "").toLowerCase().includes(preferred))
-                return p
+            if ((p.identity ?? "").toLowerCase().includes(preferred) || (p.desktopEntry ?? "").toLowerCase().includes(preferred))
+                return p;
         }
-        return MprisController.activePlayer
+        return MprisController.activePlayer;
     }
 
     readonly property string cleanedTitle: root.trackTitle.length > 0 ? root.trackTitle : Translation.tr("No media")
@@ -35,45 +35,35 @@ Item {
     readonly property string trackTitle: MprisController.titleOf(activePlayer) ?? ""
     readonly property string trackArtist: MprisController.artistOf(activePlayer) ?? ""
     readonly property string artworkTransitionKey: `${activePlayer?.dbusName ?? ""}\u001f${activePlayer?.uniqueId ?? 0}\u001f${root.artUrl}`
-    property bool   isPlaying:   activePlayer?.isPlaying   ?? false
-    property bool   hasTrack:    trackTitle.length > 0
+    property bool isPlaying: activePlayer?.isPlaying ?? false
+    property bool hasTrack: trackTitle.length > 0
     readonly property bool shouldShow: (Config.options?.bar?.m3?.media?.alwaysVisible ?? false) || root.hasTrack
+    // BarGroup's group chrome keys off this, not Item.visible: `visible` is
+    // effective visibility, so a collapsed group would mask the widget forever.
+    readonly property bool barWidgetVisible: root.shouldShow
     readonly property color mediaContainer: M3Palette.pillContainer("media")
     readonly property color mediaInk: M3Palette.pillInk("media")
-    readonly property color playContainer: root.isPlaying
-        ? M3Palette.primary : M3Palette.surfaceContainerLow
-    readonly property color playInk: ColorUtils.ensureReadable(
-        root.isPlaying ? M3Palette.primaryForeground : M3Palette.surfaceForeground,
-        root.playContainer, 4.5)
-    readonly property color playHover: ColorUtils.mix(
-        root.playContainer, root.playInk, 0.90)
-    readonly property color playActive: ColorUtils.mix(
-        root.playContainer, root.playInk, 0.78)
+    readonly property color playContainer: root.isPlaying ? M3Palette.primary : M3Palette.surfaceContainerLow
+    readonly property color playInk: ColorUtils.ensureReadable(root.isPlaying ? M3Palette.primaryForeground : M3Palette.surfaceForeground, root.playContainer, 4.5)
+    readonly property color playHover: ColorUtils.mix(root.playContainer, root.playInk, 0.90)
+    readonly property color playActive: ColorUtils.mix(root.playContainer, root.playInk, 0.78)
     readonly property color transparentHover: ColorUtils.applyAlpha(root.mediaInk, 0.12)
     readonly property color transparentActive: ColorUtils.applyAlpha(root.mediaInk, 0.22)
 
     visible: root.shouldShow
 
-    readonly property bool   artDownloaded:       artworkResolver.ready
+    readonly property bool artDownloaded: artworkResolver.ready
     readonly property string displayedArtFilePath: artworkResolver.ready ? artworkResolver.displaySource : ""
 
     MediaArtworkResolver {
         id: artworkResolver
         sourceUrl: root.artUrl
-        title:     root.trackTitle
-        artist:    root.trackArtist
+        title: root.trackTitle
+        artist: root.trackArtist
     }
 
     Layout.fillHeight: true
-    implicitWidth: !root.shouldShow ? 0 : vertical
-        ? Appearance.sizes.verticalBarWidth
-        : Math.max(
-            Config.options.bar.m3.media.minWidth,
-            Math.min(
-                (isMaterial ? materialRow.implicitWidth : rowLayout.implicitWidth + 8),
-                Config.options.bar.m3.media.maxWidth
-            )
-        )
+    implicitWidth: !root.shouldShow ? 0 : vertical ? Appearance.sizes.verticalBarWidth : Math.max(Config.options.bar.m3.media.minWidth, Math.min((isMaterial ? materialRow.implicitWidth : rowLayout.implicitWidth + 8), Config.options.bar.m3.media.maxWidth))
     implicitHeight: vertical ? (isMaterial ? 32 : mediaCircProg.implicitHeight) : Appearance.sizes.barHeight
 
     Timer {
@@ -85,25 +75,30 @@ Item {
 
     function toggleMediaSurface(): void {
         if (root.popupMode === "bar") {
-            GlobalStates.mediaControlsOpen = false
-            root.barMediaPopupVisible = !root.barMediaPopupVisible
+            GlobalStates.mediaControlsOpen = false;
+            root.barMediaPopupVisible = !root.barMediaPopupVisible;
         } else {
-            root.barMediaPopupVisible = false
-            GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen
+            root.barMediaPopupVisible = false;
+            GlobalStates.mediaControlsOpen = !GlobalStates.mediaControlsOpen;
         }
     }
 
     onPopupModeChanged: {
         if (root.popupMode !== "bar")
-            root.barMediaPopupVisible = false
+            root.barMediaPopupVisible = false;
     }
 
     // Keep the same From bar contract as the stock/vertical bar. M3 owns the
     // anchor and chrome; BarMediaPopup remains the canonical player content.
     Loader {
-        active: root.barMediaPopupVisible && root.popupMode === "bar" && CompositorService.isNiri
+        active: root.barMediaPopupVisible && root.popupMode === "bar" && CompositorDriver.available
         sourceComponent: PanelWindow {
-            anchors { top: true; bottom: true; left: true; right: true }
+            anchors {
+                top: true
+                bottom: true
+                left: true
+                right: true
+            }
             color: "transparent"
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Top
@@ -125,8 +120,8 @@ Item {
             target: root
             function onBarMediaPopupVisibleChanged() {
                 if (!root.barMediaPopupVisible) {
-                    barMediaPopupLoader._closing = true
-                    closeTimer.restart()
+                    barMediaPopupLoader._closing = true;
+                    closeTimer.restart();
                 }
             }
         }
@@ -155,12 +150,12 @@ Item {
                 onCloseRequested: root.barMediaPopupVisible = false
                 property bool presented: false
                 Component.onCompleted: Qt.callLater(() => {
-                    mediaPopupContent.presented = root.barMediaPopupVisible
+                    mediaPopupContent.presented = root.barMediaPopupVisible;
                 })
                 Connections {
                     target: root
                     function onBarMediaPopupVisibleChanged() {
-                        mediaPopupContent.presented = root.barMediaPopupVisible
+                        mediaPopupContent.presented = root.barMediaPopupVisible;
                     }
                 }
                 opacity: presented ? 1 : 0
@@ -168,11 +163,19 @@ Item {
                 transformOrigin: (Config.options?.bar?.bottom ?? false) ? Item.Bottom : Item.Top
                 Behavior on opacity {
                     enabled: Appearance.animationsEnabled
-                    NumberAnimation { duration: Appearance.animation.elementMoveFast.duration; easing.type: Appearance.animation.elementMoveFast.type; easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve }
+                    NumberAnimation {
+                        duration: Appearance.animation.elementMoveFast.duration
+                        easing.type: Appearance.animation.elementMoveFast.type
+                        easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
+                    }
                 }
                 Behavior on scale {
                     enabled: Appearance.animationsEnabled
-                    NumberAnimation { duration: Appearance.animation.elementMoveFast.duration; easing.type: Appearance.animation.elementMoveFast.type; easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve }
+                    NumberAnimation {
+                        duration: Appearance.animation.elementMoveFast.duration
+                        easing.type: Appearance.animation.elementMoveFast.type
+                        easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
+                    }
                 }
             }
         }
@@ -182,11 +185,15 @@ Item {
         anchors.fill: parent
         acceptedButtons: Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton | Qt.RightButton | Qt.LeftButton
         hoverEnabled: !Config.options.bar.m3.tooltips.clickToShow
-        onPressed: (event) => {
-            if (event.button === Qt.MiddleButton)      activePlayer?.togglePlaying()
-            else if (event.button === Qt.BackButton)   MprisController.previousForPlayer(activePlayer)
-            else if (event.button === Qt.ForwardButton || event.button === Qt.RightButton) MprisController.nextForPlayer(activePlayer)
-            else if (event.button === Qt.LeftButton)   root.toggleMediaSurface()
+        onPressed: event => {
+            if (event.button === Qt.MiddleButton)
+                activePlayer?.togglePlaying();
+            else if (event.button === Qt.BackButton)
+                MprisController.previousForPlayer(activePlayer);
+            else if (event.button === Qt.ForwardButton || event.button === Qt.RightButton)
+                MprisController.nextForPlayer(activePlayer);
+            else if (event.button === Qt.LeftButton)
+                root.toggleMediaSurface();
         }
     }
 
@@ -326,7 +333,7 @@ Item {
                             fillMode: Image.PreserveAspectCrop
                             onStatusChanged: {
                                 if (status === Image.Error)
-                                    visible = false
+                                    visible = false;
                             }
                         }
 
@@ -383,6 +390,18 @@ Item {
                         color: root.mediaContainer
                         Layout.alignment: Qt.AlignVCenter
 
+                        // Rounded mask for the artwork. MediaCrossSlideImage
+                        // clips its slide layers rectangle-only, so without this
+                        // the cover renders square inside a rounded placeholder.
+                        layer.enabled: true
+                        layer.effect: OpacityMask {
+                            maskSource: Rectangle {
+                                width: artRect.width
+                                height: artRect.height
+                                radius: artRect.radius
+                            }
+                        }
+
                         MediaCrossSlideImage {
                             anchors.fill: parent
                             source: root.displayedArtFilePath
@@ -403,8 +422,7 @@ Item {
 
                         StyledText {
                             id: artistText
-                            visible: !(Config.options?.bar?.m3?.media?.onlyTitle ?? false)
-                                && root.trackArtist.length > 0
+                            visible: !(Config.options?.bar?.m3?.media?.onlyTitle ?? false) && root.trackArtist.length > 0
                             text: root.trackArtist
                             font.pixelSize: Appearance.font.pixelSize.smaller
                             color: root.mediaInk
@@ -417,14 +435,9 @@ Item {
                             readonly property bool titleOnly: Config.options?.bar?.m3?.media?.onlyTitle ?? false
                             Layout.topMargin: 0
                             text: root.trackTitle.length > 0 ? root.trackTitle : Translation.tr("No media")
-                            font.pixelSize: titleOnly
-                                ? Appearance.font.pixelSize.small
-                                : Appearance.font.pixelSize.smallie
+                            font.pixelSize: titleOnly ? Appearance.font.pixelSize.small : Appearance.font.pixelSize.smallie
                             font.weight: titleOnly ? Font.Medium : Font.Normal
-                            color: titleOnly
-                                ? root.mediaInk
-                                : ColorUtils.readableSubtext(root.mediaInk,
-                                    root.mediaContainer, 0.72)
+                            color: titleOnly ? root.mediaInk : ColorUtils.readableSubtext(root.mediaInk, root.mediaContainer, 0.72)
                             elide: Text.ElideRight
                             Layout.maximumWidth: 120
                             animateChange: true

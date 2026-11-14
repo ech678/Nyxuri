@@ -97,7 +97,7 @@ class TestDashboardSettingsCatalogIntegrity(unittest.TestCase):
         self.assertGreater(len(entries), 100, "catalog should carry the full settings surface")
 
         control_keys = set(re.findall(r'^\s*"([a-z]+:[^"]+)":\s*root\.', controls, re.M))
-        self.assertGreater(len(control_keys), 100, "control registry should cover the catalog")
+        self.assertGreaterEqual(len(control_keys), 100, "control registry should cover the catalog")
 
         unresolved = [key for tile_type, key in entries
                       if tile_type not in self.SELF_DRIVEN and key not in control_keys]

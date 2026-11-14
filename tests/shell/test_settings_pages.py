@@ -84,12 +84,8 @@ ANCHOR_IDS = {
     ),
     "IslandPage.qml": (
         "bar.island.section.island-style",
-        "bar.island.section.mouse-actions",
-        "bar.island.section.media-controls",
         "bar.island.section.keyboard-indicators",
-        "bar.island.section.keyhole",
         "bar.island.section.horizontal-clock",
-        "bar.island.section.recording",
     ),
     "HorizontalClockPage.qml": (
         "bar.island-clock.section.horizontal-clock-style",
@@ -613,7 +609,7 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
         source = _read("GeneralBarPage.qml")
         for atom in ("PreferenceHeader", "PreferenceToggle", "PreferenceSelect", "ConnectedRect"):
             self.assertIn(atom, source, f"GeneralBarPage must use the atom: {atom}")
-        self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 4,
+        self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 6,
                          "the screen-edge and style selects must register the popup input region")
 
     def test_drag_fields_and_coordinators_survive(self):
@@ -845,7 +841,6 @@ class TestIslandPageRebuild(unittest.TestCase):
         self.assertIn("isSubPage: true", source)
         self.assertIn("onBackRequested: root.backRequested()", source)
         self.assertIn("function closeChildWindows()", source)
-        self.assertIn("directoryPicker.dismiss()", source)
 
     def test_overview_is_a_nexus_page(self):
         source = _read("IslandPage.qml")
@@ -861,17 +856,18 @@ class TestIslandPageRebuild(unittest.TestCase):
     def test_atom_groups_present(self):
         source = _read("IslandPage.qml")
         for atom in ("PreferenceHeader", "PreferenceToggle", "PreferenceSelect",
-                     "PreferenceSlider", "PreferenceAction", "ConnectedRect"):
+                     "PreferenceAction", "ConnectedRect"):
             self.assertIn(atom, source, f"IslandPage must use the atom: {atom}")
-        self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 9,
-                         "nine select rows must register the popup input region")
+        self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 1,
+                         "the satellite select is the only select row left on the island page")
 
-    def test_drag_fields_and_directory_pickers_survive(self):
+    def test_recording_surface_is_parked(self):
+        """Timer/Recording are parked until their services exist. The page must
+        not advertise a recording directory UI that nothing consumes."""
         source = _read("IslandPage.qml")
-        self.assertIn("FilePickerWindow {", source)
-        self.assertIn("openDirectoryPicker(", source)
-        self.assertIn("UiPreferences.setRecordingDirectory(", source)
-        self.assertIn("RecordingDirectoryField", source)
+        self.assertNotIn("FilePickerWindow {", source)
+        self.assertNotIn("RecordingDirectoryField", source)
+        self.assertNotIn("bar.island.section.recording", source)
 
     def test_subpage_chrome_moves_into_the_subpage(self):
         source = _read("IslandPage.qml")
@@ -884,22 +880,18 @@ class TestIslandPageRebuild(unittest.TestCase):
     def test_business_owners_unchanged(self):
         source = _read("IslandPage.qml")
         for owner in (
-            'PersonalizationConfig.setValue("islandOverlay"',
-            "PersonalizationConfig.setIslandStyle(",
-            "PersonalizationConfig.setIslandPosition(",
-            'PersonalizationConfig.setIslandAction("hover"',
-            'PersonalizationConfig.setIslandAction("left"',
-            'PersonalizationConfig.setIslandAction("middle"',
-            "PersonalizationConfig.setIslandHoverOpenDelay(",
-            "PersonalizationConfig.setIslandHoverCloseDelay(",
-            "PersonalizationConfig.setIslandMediaProgressStyle(",
-            "PersonalizationConfig.setIslandMediaCoverStyle(",
-            "PersonalizationConfig.setIslandMediaColorStyle(",
-            "PersonalizationConfig.setIslandCapsLockOsd(",
-            "PersonalizationConfig.setIslandNumLockOsd(",
-            "PersonalizationConfig.setIslandKeyholeCard(",
+            "PersonalizationConfig.setIslandEnabled(",
+            "PersonalizationConfig.setIslandSatellite(",
+            "PersonalizationConfig.setKeyboardShowPanel(",
+            "PersonalizationConfig.setKeyboardPanelLayout(",
+            "PersonalizationConfig.setKeyboardPanelCaps(",
+            "PersonalizationConfig.setKeyboardPanelNum(",
+            "PersonalizationConfig.setKeyboardShowPopup(",
+            "PersonalizationConfig.setKeyboardPopupLayout(",
+            "PersonalizationConfig.setKeyboardPopupCaps(",
+            "PersonalizationConfig.setKeyboardPopupNum(",
             "PersonalizationConfig.setIslandHideDate(",
-            "KeyboardLockService.available",
+            "KeyboardIndicators.ready",
         ):
             self.assertIn(owner, source, f"business owner dropped: {owner}")
 

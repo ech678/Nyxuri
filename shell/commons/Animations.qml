@@ -98,12 +98,46 @@ Singleton {
             readonly property int duration: root.durations.expressiveFastSpatial
             readonly property int type: Easing.BezierSpline
             readonly property var bezierCurve: root.curves.expressiveFastSpatial
+            // iNiR sources instantiate Behaviors from Component factories
+            // (`animation.elementMoveFast.colorAnimation.createObject(this)`).
+            // Nyxuri kept only duration/type/bezierCurve, so every ported
+            // Behavior threw "Cannot read property 'createObject' of
+            // undefined" once per frame. The factories are part of the contract
+            // now, not an optional extra.
+            readonly property Component colorAnimation: Component {
+                ColorAnimation {
+                    duration: root.animation.expressiveFastSpatial.duration
+                    easing.type: root.animation.expressiveFastSpatial.type
+                    easing.bezierCurve: root.animation.expressiveFastSpatial.bezierCurve
+                }
+            }
+            readonly property Component numberAnimation: Component {
+                NumberAnimation {
+                    duration: root.animation.expressiveFastSpatial.duration
+                    easing.type: root.animation.expressiveFastSpatial.type
+                    easing.bezierCurve: root.animation.expressiveFastSpatial.bezierCurve
+                }
+            }
         }
 
         readonly property QtObject expressiveDefaultSpatial: QtObject {
             readonly property int duration: root.durations.expressiveDefaultSpatial
             readonly property int type: Easing.BezierSpline
             readonly property var bezierCurve: root.curves.expressiveDefaultSpatial
+            readonly property Component colorAnimation: Component {
+                ColorAnimation {
+                    duration: root.animation.expressiveDefaultSpatial.duration
+                    easing.type: root.animation.expressiveDefaultSpatial.type
+                    easing.bezierCurve: root.animation.expressiveDefaultSpatial.bezierCurve
+                }
+            }
+            readonly property Component numberAnimation: Component {
+                NumberAnimation {
+                    duration: root.animation.expressiveDefaultSpatial.duration
+                    easing.type: root.animation.expressiveDefaultSpatial.type
+                    easing.bezierCurve: root.animation.expressiveDefaultSpatial.bezierCurve
+                }
+            }
         }
 
         readonly property QtObject expressiveSlowSpatial: QtObject {
@@ -144,6 +178,35 @@ Singleton {
             readonly property int duration: 300
             readonly property int type: Easing.BezierSpline
             readonly property var bezierCurve: root.curves.emphasized
+            readonly property Component numberAnimation: Component {
+                NumberAnimation {
+                    duration: root.animation.elementResize.duration
+                    easing.type: root.animation.elementResize.type
+                    easing.bezierCurve: root.animation.elementResize.bezierCurve
+                }
+            }
+        }
+        // iNiR's scalar names for the same two spatial tokens; ported bar
+        // components reference them directly.
+        readonly property QtObject elementMove: expressiveDefaultSpatial
+        readonly property QtObject elementMoveEnter: QtObject {
+            readonly property int duration: root.durations.emphasizedAccel
+            readonly property int type: Easing.BezierSpline
+            readonly property var bezierCurve: root.curves.emphasizedDecel
+            readonly property Component colorAnimation: Component {
+                ColorAnimation {
+                    duration: root.animation.elementMoveEnter.duration
+                    easing.type: root.animation.elementMoveEnter.type
+                    easing.bezierCurve: root.animation.elementMoveEnter.bezierCurve
+                }
+            }
+            readonly property Component numberAnimation: Component {
+                NumberAnimation {
+                    duration: root.animation.elementMoveEnter.duration
+                    easing.type: root.animation.elementMoveEnter.type
+                    easing.bezierCurve: root.animation.elementMoveEnter.bezierCurve
+                }
+            }
         }
         readonly property QtObject scroll: standardDecel
         readonly property QtObject clickBounce: QtObject {

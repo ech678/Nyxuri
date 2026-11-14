@@ -3,20 +3,20 @@ import QtQuick
 import QtQuick.Layouts
 import qs.commons
 import qs.ui
+import M3Shapes
 
 StyledPopup {
     id: root
 
     function formatTime(seconds) {
-        var h = Math.floor(seconds / 3600)
-        var m = Math.floor((seconds % 3600) / 60)
-        if (h > 0) return `${h}h, ${m}m`
-        return `${m}m`
+        var h = Math.floor(seconds / 3600);
+        var m = Math.floor((seconds % 3600) / 60);
+        if (h > 0)
+            return `${h}h, ${m}m`;
+        return `${m}m`;
     }
 
-    readonly property bool showTime: !(Battery.chargeState == 4
-        || (Battery.isCharging ? Battery.timeToFull : Battery.timeToEmpty) <= 0
-        || Battery.energyRate <= 0.01)
+    readonly property bool showTime: !(Battery.chargeState == 4 || (Battery.isCharging ? Battery.timeToFull : Battery.timeToEmpty) <= 0 || Battery.energyRate <= 0.01)
 
     ColumnLayout {
         spacing: 10
@@ -54,15 +54,17 @@ StyledPopup {
                     opacity: 0.6
                     text: {
                         if (Battery.chargeState == 4)
-                            return Translation.tr("Fully charged")
+                            return Translation.tr("Fully charged");
                         if (Battery.isCharging)
-                            return Translation.tr("Charging") + (root.showTime ? " · " + formatTime(Battery.timeToFull) : "")
-                        return Translation.tr("Time to empty") + (root.showTime ? " · " + formatTime(Battery.timeToEmpty) : "")
+                            return Translation.tr("Charging") + (root.showTime ? " · " + formatTime(Battery.timeToFull) : "");
+                        return Translation.tr("Time to empty") + (root.showTime ? " · " + formatTime(Battery.timeToEmpty) : "");
                     }
                 }
             }
 
-            Item { Layout.fillWidth: true }
+            Item {
+                Layout.fillWidth: true
+            }
 
             StyledText {
                 Layout.rightMargin: 8
@@ -82,23 +84,17 @@ StyledPopup {
                 iconText: "heart_check"
                 iconShape: MaterialShape.Shape.Clover4Leaf
                 value: Battery.health / 100
-                sublabel: Battery.chargeCycles > 0
-                    ? `${Battery.chargeCycles} ${Translation.tr("cycles")}`
-                    : Translation.tr("N/A")
+                sublabel: Battery.chargeCycles > 0 ? `${Battery.chargeCycles} ${Translation.tr("cycles")}` : Translation.tr("N/A")
                 sublabelColor: Appearance.colors.colOnSurfaceVariant
                 cardWidth: 160
             }
 
             ResourceCard {
-                label: Battery.isCharging
-                    ? Translation.tr("Charging")
-                    : Translation.tr("Draw")
+                label: Battery.isCharging ? Translation.tr("Charging") : Translation.tr("Draw")
                 iconText: "bolt"
                 iconShape: MaterialShape.Shape.Pentagon
                 value: Math.min(Battery.energyRate / 60, 1.0)
-                sublabel: Battery.chargeState == 4
-                    ? Translation.tr("Full")
-                    : `${Battery.energyRate.toFixed(2)}W`
+                sublabel: Battery.chargeState == 4 ? Translation.tr("Full") : `${Battery.energyRate.toFixed(2)}W`
                 sublabelColor: Appearance.colors.colOnSurfaceVariant
                 cardWidth: 160
             }

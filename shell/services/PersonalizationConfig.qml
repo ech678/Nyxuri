@@ -129,21 +129,6 @@ Singleton {
                 "value": "scheme-rainbow",
                 "label": I18n.tr("Rainbow")
             })]
-    readonly property var islandStyles: [({
-                "value": "end4",
-                "label": I18n.tr("Capsule")
-            }), ({
-                "value": "bangs",
-                "label": I18n.tr("Bangs")
-            }), ({
-                "value": "pill",
-                "label": I18n.tr("Pill")
-            }),
-        {
-            value: "long",
-            label: I18n.tr("Long")
-        }
-    ]
     readonly property var edgePositions: [({
                 "value": "top",
                 "label": I18n.tr("Top"),
@@ -295,30 +280,28 @@ Singleton {
     // island is a bar layout part now, not a unit, so its switch is a config
     // key while the bar unit's existence remains the ledger's alone.
     property bool islandEnabled: true
-    property bool islandOverlay: false
-    // B3-1: the island body is the end4-pC capsule; bangs/pill/long stay
-    // selectable as the escape hatch until B4 retires them (D4 freeze).
-    property string islandStyle: "end4"
-    // B3-1 one-shot markers. Two separate flags on purpose: the layout seed and
-    // the style seed shipped in the same phase but must be able to land
-    // independently (a config that already consumed the layout seed still needs
-    // the style seed).
-    property bool islandLayoutMigrated: false
-    property bool islandStyleMigrated: false
-    readonly property var islandKeyholeCardIds: ["weather", "pomodoro"]
-    readonly property var islandKeyholeCardOptions: [
+    // B8.4: idle-face satellite is an explicit optional part, not the iNiR
+    // leftWidget hardcode that rendered weather under a "clockWidget" value.
+    property string islandSatellite: "clock"
+    readonly property var islandSatelliteOptions: [
+        {
+            "value": "clock",
+            "label": I18n.tr("Clock"),
+            "icon": "schedule"
+        },
         {
             "value": "weather",
             "label": I18n.tr("Weather"),
             "icon": "partly_cloudy_day"
         },
         {
-            "value": "pomodoro",
-            "label": I18n.tr("Pomodoro"),
-            "icon": "timer"
+            "value": "none",
+            "label": I18n.tr("None"),
+            "icon": "block"
         }
     ]
-    property string islandKeyholeCard: "weather"
+    // B3-1 one-shot marker: seed the middle lane with the island exactly once.
+    property bool islandLayoutMigrated: false
     property bool barOverlay: false
     property string barPosition: "top"
     readonly property var barCornerStyles: [
@@ -348,6 +331,12 @@ Singleton {
         }
     ]
     property int barCornerStyle: 1
+    // Single truth for the material pill treatment (end4: cornerStyle 3 or 4).
+    // Widgets bind these instead of re-deriving `=== 3`, which kept 4/5
+    // half-styled in nine files.
+    readonly property bool barIsMaterial: root.barCornerStyle === 3 || root.barCornerStyle === 4
+    readonly property bool barIsMaterialHug: root.barCornerStyle === 4
+    readonly property bool barIsPanel: root.barCornerStyle === 5
     readonly property var barBorderlessModes: [
         {
             value: "pills",
@@ -368,6 +357,32 @@ Singleton {
     ]
     property string barBorderless: "pills"
     property string barGroupColor: "layer1"
+    readonly property var barGroupColorOptions: [
+        {
+            "value": "primaryContainer",
+            "label": I18n.tr("Primary container")
+        },
+        {
+            "value": "secondaryContainer",
+            "label": I18n.tr("Secondary container")
+        },
+        {
+            "value": "tertiaryContainer",
+            "label": I18n.tr("Tertiary container")
+        },
+        {
+            "value": "layer1",
+            "label": I18n.tr("Surface layer")
+        },
+        {
+            "value": "layer0",
+            "label": I18n.tr("Background")
+        }
+    ]
+    // Per-widget background/border overrides from the bar's right-click style
+    // editor. Shape: { mode, widget, color?, borderColor?, radius?,
+    // borderWidth?, padding? } — normalized on load, saved with the bar block.
+    property var barWidgetStyles: []
     readonly property var barDividerStyles: [
         {
             value: "rect",
@@ -383,9 +398,28 @@ Singleton {
         }
     ]
     property string barDividerStyle: "rect"
-    readonly property var barComponentIds: ["workspaces", "information", "activeWindow", "media", "tray", "systemMonitor", "quickSettings", "clock", "island", "divisor"]
-    readonly property var defaultBarLeadingComponents: ["workspaces", "information", "activeWindow"]
-    readonly property var defaultBarTrailingComponents: ["tray", "systemMonitor", "quickSettings"]
+    // Workspace indicator shape (B8.3 parity with end4): numbers by default,
+    // optional app icons, dot/icon marker when neither is shown.
+    property bool barShowAppIcons: false
+    property bool barAlwaysShowNumbers: true
+    readonly property var barWorkspaceIndicatorStyles: [
+        {
+            value: "dot",
+            label: I18n.tr("Dot")
+        },
+        {
+            value: "icon",
+            label: I18n.tr("Icon")
+        }
+    ]
+    property string barWorkspaceIndicatorStyle: "dot"
+    // Only ids the bar can actually render. `information` was never a widget
+    // (it was an iNiR bar style name) and mapped to a missing Information.qml.
+    // B8.2 re-added the end4 base widgets (BarWidgetSwitcher/ClippedProgressBar/
+    // ResourceUsage), so clock / systemMonitor / battery are selectable again.
+    readonly property var barComponentIds: ["workspaces", "activeWindow", "media", "tray", "quickSettings", "island", "divisor", "clock", "systemMonitor", "battery", "systemIcons", "launcherButton", "powerButton"]
+    readonly property var defaultBarLeadingComponents: ["launcherButton", "workspaces", "activeWindow"]
+    readonly property var defaultBarTrailingComponents: ["tray", "quickSettings", "systemIcons", "powerButton"]
     readonly property var barComponentOptions: [({
                 "value": "media",
                 "label": I18n.tr("Media"),
@@ -395,10 +429,6 @@ Singleton {
                 "label": I18n.tr("Workspaces"),
                 "icon": "grid_view"
             }), ({
-                "value": "information",
-                "label": I18n.tr("Information"),
-                "icon": "info"
-            }), ({
                 "value": "activeWindow",
                 "label": I18n.tr("Active Window"),
                 "icon": "web_asset"
@@ -407,10 +437,6 @@ Singleton {
                 "label": I18n.tr("Tray"),
                 "icon": "inbox"
             }), ({
-                "value": "systemMonitor",
-                "label": I18n.tr("System Monitor"),
-                "icon": "monitoring"
-            }), ({
                 "value": "quickSettings",
                 "label": I18n.tr("Quick Settings"),
                 "icon": "tune"
@@ -418,6 +444,30 @@ Singleton {
                 "value": "divisor",
                 "label": I18n.tr("Divider"),
                 "icon": "more_vert"
+            }), ({
+                "value": "clock",
+                "label": I18n.tr("Clock"),
+                "icon": "schedule"
+            }), ({
+                "value": "systemMonitor",
+                "label": I18n.tr("System Monitor"),
+                "icon": "monitoring"
+            }), ({
+                "value": "battery",
+                "label": I18n.tr("Battery"),
+                "icon": "battery_full"
+            }), ({
+                "value": "systemIcons",
+                "label": I18n.tr("System Icons"),
+                "icon": "volume_up"
+            }), ({
+                "value": "launcherButton",
+                "label": I18n.tr("Launcher"),
+                "icon": "search"
+            }), ({
+                "value": "powerButton",
+                "label": I18n.tr("Power"),
+                "icon": "power_settings_new"
             })]
     readonly property var quickSettingsComponentIds: ["network", "bluetooth", "brightness", "volume", "microphone", "battery", "settings", "power"]
     readonly property var defaultQuickSettingsComponents: root.quickSettingsComponentIds.slice()
@@ -465,138 +515,28 @@ Singleton {
     // mirror the leading/trailing model but let the user place widgets freely
     // across three lanes. An empty array means "show nothing in that lane", so
     // fresh configs fall back to a sensible default instead of a blank bar.
-    readonly property var defaultBarLayoutLeft: ["workspaces", "information", "activeWindow"]
+    readonly property var defaultBarLayoutLeft: ["launcherButton", "workspaces", "activeWindow"]
     // B3-1: the island is a first-class middle widget, not a reserved gap.
     readonly property var defaultBarLayoutMiddle: ["island"]
-    readonly property var defaultBarLayoutRight: ["tray", "systemMonitor", "quickSettings"]
+    readonly property var defaultBarLayoutRight: ["tray", "quickSettings", "systemIcons", "powerButton"]
     property var barLayoutLeft: root.defaultBarLayoutLeft.slice()
     property var barLayoutMiddle: root.defaultBarLayoutMiddle.slice()
     property var barLayoutRight: root.defaultBarLayoutRight.slice()
-    property string islandPosition: "top"
-    property bool islandCapsLockOsd: true
-    property bool islandNumLockOsd: true
+
+    // iNiR keyboardIndicators semantics: the persistent panel (SystemIcons)
+    // and the transient popup (island OSD) are independent axes.
+    property bool keyboardShowPopup: true
+    property bool keyboardShowPanel: true
+    property bool keyboardPopupLayout: true
+    property bool keyboardPopupCaps: true
+    property bool keyboardPopupNum: false
+    property bool keyboardPanelLayout: true
+    property bool keyboardPanelCaps: true
+    property bool keyboardPanelNum: false
+
     property bool islandHideDate: false
     property bool barShowValues: true
     property bool barShowNames: false
-    property string islandHoverAction: "peak"
-    property string islandLeftClickAction: "media"
-    property string islandMiddleClickAction: "lyrics"
-    property string islandMediaProgressStyle: "wave"
-    property string islandMediaCoverStyle: "rounded"
-    property string islandMediaColorStyle: "theme"
-    readonly property var islandMediaProgressOptions: [
-        {
-            value: "wave",
-            label: I18n.tr("Sine wave")
-        },
-        {
-            value: "material",
-            label: I18n.tr("Material wave")
-        }
-    ]
-    readonly property var islandMediaCoverOptions: [
-        {
-            value: "rounded",
-            label: I18n.tr("Rounded cover")
-        },
-        {
-            value: "caelestia",
-            label: I18n.tr("Caelestia")
-        },
-        {
-            value: "background",
-            label: I18n.tr("Cover background")
-        }
-    ]
-    readonly property var islandMediaColorOptions: [
-        {
-            value: "theme",
-            label: I18n.tr("Theme colors")
-        },
-        {
-            value: "cover",
-            label: I18n.tr("Cover colors")
-        }
-    ]
-
-    function setIslandMediaProgressStyle(value) {
-        setValue("islandMediaProgressStyle", normalizedOption(root.islandMediaProgressOptions, value, "wave"));
-    }
-
-    function setIslandMediaCoverStyle(value) {
-        setValue("islandMediaCoverStyle", normalizedOption(root.islandMediaCoverOptions, value, "rounded"));
-    }
-
-    function setIslandMediaColorStyle(value) {
-        setValue("islandMediaColorStyle", normalizedOption(root.islandMediaColorOptions, value, "theme"));
-    }
-
-    property int islandHoverOpenDelay: 150
-    property int islandHoverCloseDelay: 250
-
-    function setIslandHoverOpenDelay(value) {
-        setValue("islandHoverOpenDelay", normalizedBoundedInt(value, 150, 0, 500));
-    }
-
-    function setIslandHoverCloseDelay(value) {
-        setValue("islandHoverCloseDelay", normalizedBoundedInt(value, 250, 0, 600));
-    }
-
-
-    readonly property var islandActionOptions: [
-        {
-            value: "none",
-            label: I18n.tr("Do not open")
-        },
-        {
-            value: "media",
-            label: I18n.tr("Media controls")
-        },
-        {
-            value: "lyrics",
-            label: I18n.tr("Lyrics")
-        },
-        {
-            value: "dashboard",
-            label: I18n.tr("Dashboard", "HubContent")
-        },
-        {
-            value: "upload",
-            label: I18n.tr("Upload")
-        },
-        {
-            value: "weather",
-            label: I18n.tr("Weather")
-        },
-        {
-            value: "tools",
-            label: I18n.tr("Tools")
-        }
-    ]
-
-    readonly property var islandHoverActionOptions: [
-        {
-            value: "peak",
-            label: I18n.tr("Peak")
-        }
-    ].concat(root.islandActionOptions)
-
-    readonly property var availableIslandHoverActionOptions: islandStyle === "long" ? islandActionOptions : islandHoverActionOptions
-
-    // Older saved configurations can still request peak. Long has no peak
-    // state; retain the preference for other styles but resolve it to none.
-    readonly property string effectiveIslandHoverAction: islandStyle === "long" && islandHoverAction === "peak" ? "none" : islandHoverAction
-
-    function setIslandAction(gesture, action) {
-        const properties = {
-            hover: "islandHoverAction",
-            left: "islandLeftClickAction",
-            middle: "islandMiddleClickAction"
-        };
-        if (!Object.prototype.hasOwnProperty.call(properties, gesture))
-            return;
-        setValue(properties[gesture], normalizedOption(gesture === "hover" ? root.availableIslandHoverActionOptions : root.islandActionOptions, action, gesture === "hover" && root.islandStyle !== "long" ? "peak" : "none"));
-    }
 
     readonly property var horizontalClockAxisDefaults: ({
             "wght": 900,
@@ -1305,8 +1245,8 @@ Singleton {
         setValue("islandEnabled", value === true);
     }
 
-    function setIslandStyle(value) {
-        setValue("islandStyle", normalizedOption(root.islandStyles, value, "bangs"));
+    function setIslandSatellite(value) {
+        setValue("islandSatellite", normalizedOption(root.islandSatelliteOptions, value, "clock"));
     }
 
     function setFontFamily(role, family) {
@@ -1401,7 +1341,86 @@ Singleton {
     }
 
     function setBarGroupColor(value) {
-        setValue("barGroupColor", typeof value === "string" ? value : "layer1");
+        setValue("barGroupColor", normalizedOption(root.barGroupColorOptions, value, "layer1"));
+    }
+
+    function setBarShowAppIcons(value) {
+        setValue("barShowAppIcons", !!value);
+    }
+
+    function setBarAlwaysShowNumbers(value) {
+        setValue("barAlwaysShowNumbers", !!value);
+    }
+
+    function setBarWorkspaceIndicatorStyle(value) {
+        setValue("barWorkspaceIndicatorStyle", normalizedOption(root.barWorkspaceIndicatorStyles, value, "dot"));
+    }
+
+    // Right-click style editor (BarGroupStylePopup) persistence. One entry per
+    // (borderless mode, widget) pair, matching end4's `bar.widgetStyles` shape,
+    // but owned here so the config store stays the single writer.
+    function barWidgetStyleEntry(mode, widget) {
+        if (!mode || !widget)
+            return undefined;
+        return (root.barWidgetStyles ?? []).find(entry => entry.mode === mode && entry.widget === widget);
+    }
+
+    function normalizedBarWidgetStyles(raw) {
+        if (!Array.isArray(raw))
+            return [];
+        const modes = root.barBorderlessModes.map(option => option.value);
+        const numericKeys = ["radius", "borderWidth", "padding"];
+        const stringKeys = ["color", "borderColor"];
+        const result = [];
+        for (const candidate of raw) {
+            if (!candidate || typeof candidate !== "object")
+                continue;
+            const mode = String(candidate.mode ?? "");
+            const widget = String(candidate.widget ?? "");
+            if (!modes.includes(mode) || widget === "")
+                continue;
+            const entry = {
+                mode: mode,
+                widget: widget
+            };
+            for (const key of numericKeys) {
+                const value = candidate[key];
+                if (typeof value === "number" && isFinite(value) && value >= 0)
+                    entry[key] = value;
+            }
+            for (const key of stringKeys) {
+                const value = candidate[key];
+                if (typeof value === "string" && value !== "")
+                    entry[key] = value;
+            }
+            result.push(entry);
+        }
+        return result;
+    }
+
+    function setBarWidgetStyle(mode, widget, key, value) {
+        if (!mode || !widget)
+            return;
+        const styles = (root.barWidgetStyles ?? []).map(entry => Object.assign({}, entry));
+        let entry = styles.find(candidate => candidate.mode === mode && candidate.widget === widget);
+        if (!entry) {
+            entry = {
+                mode: mode,
+                widget: widget
+            };
+            styles.push(entry);
+        }
+        if (value === undefined || value === "")
+            delete entry[key];
+        else
+            entry[key] = value;
+        setValue("barWidgetStyles", styles.filter(candidate => Object.keys(candidate).length > 2));
+    }
+
+    function resetBarWidgetStyle(mode, widget) {
+        if (!mode || !widget)
+            return;
+        setValue("barWidgetStyles", (root.barWidgetStyles ?? []).filter(entry => !(entry.mode === mode && entry.widget === widget)));
     }
 
     function setBarDividerStyle(value) {
@@ -1432,9 +1451,12 @@ Singleton {
     }
 
     function barZoneComponents(zone) {
-        if (zone === "left" || zone === "leading") return root.barLayoutLeft;
-        if (zone === "middle" || zone === "center") return root.barLayoutMiddle;
-        if (zone === "right" || zone === "trailing") return root.barLayoutRight;
+        if (zone === "left" || zone === "leading")
+            return root.barLayoutLeft;
+        if (zone === "middle" || zone === "center")
+            return root.barLayoutMiddle;
+        if (zone === "right" || zone === "trailing")
+            return root.barLayoutRight;
         return [];
     }
 
@@ -1447,8 +1469,7 @@ Singleton {
         const middle = root.barLayoutMiddle.filter(value => value !== id);
         const trailing = root.barLayoutRight.filter(value => value !== id);
 
-        const target = (targetZone === "middle" || targetZone === "center") ? middle
-            : (targetZone === "right" || targetZone === "trailing") ? trailing : leading;
+        const target = (targetZone === "middle" || targetZone === "center") ? middle : (targetZone === "right" || targetZone === "trailing") ? trailing : leading;
 
         const numericIndex = Number(targetIndex);
         const insertionIndex = isFinite(numericIndex) ? Math.max(0, Math.min(target.length, Math.round(numericIndex))) : target.length;
@@ -1483,8 +1504,7 @@ Singleton {
     }
 
     function toggleBarComponent(componentId, zone) {
-        const target = (zone === "middle" || zone === "center") ? root.barLayoutMiddle
-            : (zone === "right" || zone === "trailing") ? root.barLayoutRight : root.barLayoutLeft;
+        const target = (zone === "middle" || zone === "center") ? root.barLayoutMiddle : (zone === "right" || zone === "trailing") ? root.barLayoutRight : root.barLayoutLeft;
 
         if (target.indexOf(componentId) !== -1)
             return root.removeBarComponent(componentId);
@@ -1558,7 +1578,7 @@ Singleton {
             root.barLeadingComponents = nextLeft.slice();
             const combinedTrailing = [];
             nextMiddle.forEach(id => {
-                if (id !== "clock" && combinedTrailing.indexOf(id) === -1 && nextLeft.indexOf(id) === -1)
+                if (combinedTrailing.indexOf(id) === -1 && nextLeft.indexOf(id) === -1)
                     combinedTrailing.push(id);
             });
             nextRight.forEach(id => {
@@ -1622,30 +1642,70 @@ Singleton {
         return root.moveQuickSettingsComponent(id, root.quickSettingsComponents.length);
     }
 
-    function setIslandPosition(value) {
-        setValue("islandPosition", normalizedEdgePosition(value));
-    }
-
-    function normalizedIslandKeyholeCard(raw) {
-        // Migrate the old ordered selection, skipping the removed quick-settings card.
-        const candidates = Array.isArray(raw) ? raw : [raw];
-        for (const candidate of candidates) {
-            if (root.islandKeyholeCardIds.indexOf(candidate) !== -1)
-                return candidate;
+    function setKeyboardIndicators(patch) {
+        const allowed = {
+            "showPopup": "keyboardShowPopup",
+            "showPanel": "keyboardShowPanel",
+            "popup.layout": "keyboardPopupLayout",
+            "popup.caps": "keyboardPopupCaps",
+            "popup.num": "keyboardPopupNum",
+            "panel.layout": "keyboardPanelLayout",
+            "panel.caps": "keyboardPanelCaps",
+            "panel.num": "keyboardPanelNum"
+        };
+        for (const key in patch) {
+            if (Object.prototype.hasOwnProperty.call(allowed, key))
+                root[allowed[key]] = !!patch[key];
         }
-        return "weather";
+        root.save();
     }
 
-    function setIslandKeyholeCard(value) {
-        setValue("islandKeyholeCard", root.normalizedIslandKeyholeCard(value));
+    function setKeyboardShowPopup(value) {
+        root.setKeyboardIndicators({
+            "showPopup": value
+        });
     }
 
-    function setIslandCapsLockOsd(value) {
-        setValue("islandCapsLockOsd", !!value);
+    function setKeyboardShowPanel(value) {
+        root.setKeyboardIndicators({
+            "showPanel": value
+        });
     }
 
-    function setIslandNumLockOsd(value) {
-        setValue("islandNumLockOsd", !!value);
+    function setKeyboardPopupLayout(value) {
+        root.setKeyboardIndicators({
+            "popup.layout": value
+        });
+    }
+
+    function setKeyboardPopupCaps(value) {
+        root.setKeyboardIndicators({
+            "popup.caps": value
+        });
+    }
+
+    function setKeyboardPopupNum(value) {
+        root.setKeyboardIndicators({
+            "popup.num": value
+        });
+    }
+
+    function setKeyboardPanelLayout(value) {
+        root.setKeyboardIndicators({
+            "panel.layout": value
+        });
+    }
+
+    function setKeyboardPanelCaps(value) {
+        root.setKeyboardIndicators({
+            "panel.caps": value
+        });
+    }
+
+    function setKeyboardPanelNum(value) {
+        root.setKeyboardIndicators({
+            "panel.num": value
+        });
     }
 
     function setBarShowNames(value) {
@@ -1817,29 +1877,25 @@ Singleton {
                 "shellBlurEnabled": root.shellBlurEnabled,
                 "shellBlurXray": root.shellBlurXray
             },
+            "keyboardIndicators": {
+                "showPopup": root.keyboardShowPopup,
+                "showPanel": root.keyboardShowPanel,
+                "popup": {
+                    "layout": root.keyboardPopupLayout,
+                    "caps": root.keyboardPopupCaps,
+                    "num": root.keyboardPopupNum
+                },
+                "panel": {
+                    "layout": root.keyboardPanelLayout,
+                    "caps": root.keyboardPanelCaps,
+                    "num": root.keyboardPanelNum
+                }
+            },
             "island": {
                 "enabled": root.islandEnabled,
-                "overlay": root.islandOverlay,
-                "style": root.islandStyle,
-                "position": root.islandPosition,
+                "satellite": root.islandSatellite,
                 "layoutMigrated": root.islandLayoutMigrated,
-                "styleMigrated": root.islandStyleMigrated,
-                "capsLockOsd": root.islandCapsLockOsd,
-                "numLockOsd": root.islandNumLockOsd,
                 "hideDate": root.islandHideDate,
-                "hoverAction": root.islandHoverAction,
-                "hoverOpenDelay": root.islandHoverOpenDelay,
-                "hoverCloseDelay": root.islandHoverCloseDelay,
-                "leftClickAction": root.islandLeftClickAction,
-                "middleClickAction": root.islandMiddleClickAction,
-                "media": {
-                    "progressStyle": root.islandMediaProgressStyle,
-                    "coverStyle": root.islandMediaCoverStyle,
-                    "colorStyle": root.islandMediaColorStyle
-                },
-                "keyhole": {
-                    "card": root.islandKeyholeCard
-                },
                 "horizontalClock": {
                     "fontSize": root.horizontalClockFontSize,
                     "axes": root.cloneMap(root.horizontalClockAxes),
@@ -1852,7 +1908,11 @@ Singleton {
                 "cornerStyle": root.barCornerStyle,
                 "borderless": root.barBorderless,
                 "groupColor": root.barGroupColor,
+                "widgetStyles": root.barWidgetStyles.map(entry => Object.assign({}, entry)),
                 "dividerStyle": root.barDividerStyle,
+                "showAppIcons": root.barShowAppIcons,
+                "alwaysShowNumbers": root.barAlwaysShowNumbers,
+                "workspaceIndicatorStyle": root.barWorkspaceIndicatorStyle,
                 "showValues": root.barShowValues,
                 "showNames": root.barShowNames,
                 "barLeadingComponents": root.barLeadingComponents.slice(),
@@ -1886,7 +1946,9 @@ Singleton {
         const theme = configSection(source.theme);
         const effects = configSection(source.effects);
         const island = configSection(source.island);
-        const media = configSection(island.media);
+        const keyboard = configSection(source.keyboardIndicators);
+        const keyboardPopup = configSection(keyboard.popup);
+        const keyboardPanel = configSection(keyboard.panel);
         const bar = configSection(source.bar);
         const sidebar = configSection(source.sidebar);
         const desktopCards = configSection(source.desktopCards);
@@ -1896,7 +1958,6 @@ Singleton {
         const autoCycle = configSection(wallpaper.autoCycle);
         const fonts = configSection(theme.fonts);
         const horizontalClock = configSection(island.horizontalClock);
-        const keyhole = configSection(island.keyhole);
         root.bannerSource = typeof wallpaper.bannerSource === "string" ? wallpaper.bannerSource : "";
         root.wallpaperFolder = typeof wallpaper.folder === "string" && wallpaper.folder !== "" ? wallpaper.folder : Paths.dataHome + "/wallpapers";
         const wallpaperPath = typeof wallpaper.path === "string" ? wallpaper.path : "";
@@ -1961,24 +2022,20 @@ Singleton {
         root.shellBackgroundOpacity = normalizedBoundedReal(effects.shellBackgroundOpacity, 1, 0, 1);
         root.shellBlurEnabled = typeof effects.shellBlurEnabled === "boolean" ? effects.shellBlurEnabled : false;
         root.shellBlurXray = typeof effects.shellBlurXray === "boolean" ? effects.shellBlurXray : true;
-        root.islandMediaProgressStyle = normalizedOption(root.islandMediaProgressOptions, media.progressStyle, "wave");
-        root.islandMediaCoverStyle = normalizedOption(root.islandMediaCoverOptions, media.coverStyle === "spectrum" ? "caelestia" : media.coverStyle, "rounded");
-        root.islandMediaColorStyle = normalizedOption(root.islandMediaColorOptions, media.colorStyle, "theme");
         root.islandEnabled = typeof island.enabled === "boolean" ? island.enabled : true;
-        root.islandOverlay = typeof island.overlay === "boolean" ? island.overlay : false;
-        root.islandStyle = normalizedOption(root.islandStyles, island.style, "bangs");
+        root.islandSatellite = normalizedOption(root.islandSatelliteOptions, island.satellite, "clock");
         root.islandLayoutMigrated = island.layoutMigrated === true;
-        root.islandStyleMigrated = island.styleMigrated === true;
-        root.islandPosition = normalizedEdgePosition(island.position);
-        root.islandCapsLockOsd = typeof island.capsLockOsd === "boolean" ? island.capsLockOsd : true;
-        root.islandNumLockOsd = typeof island.numLockOsd === "boolean" ? island.numLockOsd : true;
         root.islandHideDate = typeof island.hideDate === "boolean" ? island.hideDate : false;
-        root.islandHoverAction = normalizedOption(root.islandHoverActionOptions, island.hoverAction === "library" ? "media" : island.hoverAction, "peak");
-        root.islandHoverOpenDelay = normalizedBoundedInt(island.hoverOpenDelay, 150, 0, 500);
-        root.islandHoverCloseDelay = normalizedBoundedInt(island.hoverCloseDelay, 250, 0, 600);
-        root.islandLeftClickAction = normalizedOption(root.islandActionOptions, island.leftClickAction === "library" ? "media" : island.leftClickAction, "media");
-        root.islandMiddleClickAction = normalizedOption(root.islandActionOptions, island.middleClickAction === "library" ? "media" : island.middleClickAction, "lyrics");
-        root.islandKeyholeCard = root.normalizedIslandKeyholeCard(keyhole.card !== undefined ? keyhole.card : keyhole.cards);
+        // iNiR keyboardIndicators block; the old island.capsLockOsd/numLockOsd
+        // pair migrates to popup.caps/num so an existing choice is not lost.
+        root.keyboardShowPopup = typeof keyboard.showPopup === "boolean" ? keyboard.showPopup : true;
+        root.keyboardShowPanel = typeof keyboard.showPanel === "boolean" ? keyboard.showPanel : true;
+        root.keyboardPopupLayout = typeof keyboardPopup.layout === "boolean" ? keyboardPopup.layout : true;
+        root.keyboardPopupCaps = typeof keyboardPopup.caps === "boolean" ? keyboardPopup.caps : (typeof island.capsLockOsd === "boolean" ? island.capsLockOsd : true);
+        root.keyboardPopupNum = typeof keyboardPopup.num === "boolean" ? keyboardPopup.num : (typeof island.numLockOsd === "boolean" ? island.numLockOsd : false);
+        root.keyboardPanelLayout = typeof keyboardPanel.layout === "boolean" ? keyboardPanel.layout : true;
+        root.keyboardPanelCaps = typeof keyboardPanel.caps === "boolean" ? keyboardPanel.caps : true;
+        root.keyboardPanelNum = typeof keyboardPanel.num === "boolean" ? keyboardPanel.num : false;
         root.horizontalClockFontSize = root.normalizedBoundedInt(horizontalClock.fontSize, 22, 16, 28);
         root.horizontalClockAxes = root.normalizedHorizontalClockAxes(horizontalClock.axes);
         root.horizontalClockDigits = root.normalizedHorizontalClockDigits(horizontalClock.digits);
@@ -1988,25 +2045,25 @@ Singleton {
         root.barPosition = normalizedEdgePosition(bar.position);
         root.barCornerStyle = root.normalizedBoundedInt(bar.cornerStyle, 1, 0, 5);
         root.barBorderless = root.normalizedOption(root.barBorderlessModes, bar.borderless, "pills");
-        root.barGroupColor = typeof bar.groupColor === "string" ? bar.groupColor : "layer1";
+        root.barGroupColor = normalizedOption(root.barGroupColorOptions, bar.groupColor, "layer1");
+        root.barWidgetStyles = root.normalizedBarWidgetStyles(bar.widgetStyles);
         root.barDividerStyle = root.normalizedOption(root.barDividerStyles, bar.dividerStyle, "rect");
-        root.barThickness = typeof bar.barThickness === "number"
-            ? Math.max(28, Math.min(64, Math.round(bar.barThickness)))
-            : root.defaultBarThickness;
+        root.barShowAppIcons = typeof bar.showAppIcons === "boolean" ? bar.showAppIcons : false;
+        root.barAlwaysShowNumbers = typeof bar.alwaysShowNumbers === "boolean" ? bar.alwaysShowNumbers : true;
+        root.barWorkspaceIndicatorStyle = normalizedOption(root.barWorkspaceIndicatorStyles, bar.workspaceIndicatorStyle, "dot");
+        root.barThickness = typeof bar.barThickness === "number" ? Math.max(28, Math.min(64, Math.round(bar.barThickness))) : root.defaultBarThickness;
         const hasBarLayout = Array.isArray(bar.barLeadingComponents) || Array.isArray(bar.barTrailingComponents);
         const barLayout = root.normalizedBarLayout(bar.barLeadingComponents, bar.barTrailingComponents, !hasBarLayout);
         root.barLeadingComponents = barLayout.leading;
         root.barTrailingComponents = barLayout.trailing;
         const hasBarLayouts = "barLayoutLeft" in bar || "barLayoutMiddle" in bar || "barLayoutRight" in bar;
-        // B3-1 one-shot migration. Before the island was a layout part it was a
-        // standalone layer window: the middle lane never hosted it, and the
-        // style was whatever escape hatch (bangs/pill/long) the user last
-        // picked. Both are seeded exactly once here, then the user's own
-        // choices win. Runs before either branch so both shapes get it.
+        // B3-1 one-shot layout seed: before the island was a layout part it was
+        // a standalone layer window, so the middle lane never hosted it. Seed it
+        // exactly once, then the user's own choices win.
         const islandMigrated = island.islandLayoutMigrated === true;
         if (hasBarLayouts) {
             root.barLayoutLeft = root.normalizedBarLayoutIds(bar.barLayoutLeft);
-            root.barLayoutMiddle = root.normalizedBarLayoutIds(bar.barLayoutMiddle).filter(id => id !== "clock");
+            root.barLayoutMiddle = root.normalizedBarLayoutIds(bar.barLayoutMiddle);
             root.barLayoutRight = root.normalizedBarLayoutIds(bar.barLayoutRight);
             if (!islandMigrated && root.barLayoutMiddle.length === 0) {
                 root.barLayoutMiddle = ["island"];
@@ -2014,14 +2071,6 @@ Singleton {
             if (!root.arraysEqual(root.barLeadingComponents, root.barLayoutLeft) && hasBarLayout) {
                 root.barLayoutLeft = root.normalizedBarLayoutIds(root.barLeadingComponents);
                 root.barLayoutRight = root.normalizedBarLayoutIds(root.barTrailingComponents);
-            }
-            if (root.barLayoutLeft.indexOf("information") < 0 && root.barLayoutMiddle.indexOf("information") < 0 && root.barLayoutRight.indexOf("information") < 0) {
-                const wsIndex = root.barLayoutLeft.indexOf("workspaces");
-                if (wsIndex >= 0) {
-                    root.barLayoutLeft.splice(wsIndex + 1, 0, "information");
-                } else {
-                    root.barLayoutLeft.unshift("information");
-                }
             }
         } else {
             // Legacy configs only had leading/trailing zones; map them 1:1 so an
@@ -2032,17 +2081,10 @@ Singleton {
             root.barLayoutMiddle = root.defaultBarLayoutMiddle.slice();
             root.barLayoutRight = root.normalizedBarLayoutIds(root.barTrailingComponents);
         }
-        // The style side of the same one-shot, tracked separately: a saved
-        // bangs/pill/long means "the user picked an escape hatch before the
-        // capsule existed", not a deliberate rejection of it. Seed end4 once;
-        // the escape hatches stay selectable until B4 retires them.
-        if (island.styleMigrated !== true)
-            root.islandStyle = "end4";
-        if (typeof island.styleMigrated !== "boolean")
-            root.islandStyleMigrated = true;
+        // The style side of the same one-shot is gone: B8.4 retires the
+        // bangs/pill/long escape hatches, so there is nothing to seed.
         if (typeof island.islandLayoutMigrated !== "boolean")
             root.islandLayoutMigrated = true;
-        root.barTrailingComponents = root.barTrailingComponents.filter(id => id !== "clock");
         root.quickSettingsComponents = root.normalizedQuickSettingsComponents(bar.quickSettingsComponents);
         root.keepSidebarsLoaded = sidebar.keepLoaded === undefined ? true : !!sidebar.keepLoaded;
         root.sidebarPositions = SidebarPolicy.restoredPositions(sidebar);
@@ -2079,7 +2121,7 @@ Singleton {
     function needsEdgePositionMigration(parsed) {
         const bar = parsed && parsed.bar;
         const island = parsed && parsed.island;
-        return !bar || typeof bar !== "object" || Array.isArray(bar) || bar.position !== root.normalizedEdgePosition(bar.position) || !island || typeof island !== "object" || Array.isArray(island) || island.position !== root.normalizedEdgePosition(island.position);
+        return !bar || typeof bar !== "object" || Array.isArray(bar) || bar.position !== root.normalizedEdgePosition(bar.position);
     }
 
     function commitPalette(scope, source) {

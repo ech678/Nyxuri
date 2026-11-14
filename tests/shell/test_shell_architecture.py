@@ -457,8 +457,8 @@ class TestShellManagement(unittest.TestCase):
         with open(bc_path, "r", encoding="utf-8") as f:
             bc_content = f.read()
         self.assertIn("function performScrollAction", bc_content)
-        self.assertIn("Brightness.stepBrightness", bc_content)
-        self.assertIn("Audio.incrementVolume", bc_content)
+        self.assertIn("BrightnessService.setBrightnessForScreen", bc_content)
+        self.assertIn("VolumeService.setSinkVolume", bc_content)
 
     def test_bar_layout_two_way_synchronization_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -469,7 +469,9 @@ class TestShellManagement(unittest.TestCase):
         with open(pc_path, "r", encoding="utf-8") as f:
             pc_content = f.read()
 
-        self.assertIn('"information"', pc_content)
+        # "information" was an iNiR bar style name, never a renderable widget;
+        # it must not be re-seeded into the lane layout.
+        self.assertNotIn('"information"', pc_content)
         self.assertIn("root.barLayoutLeft = root.normalizedBarLayoutIds(leading)", pc_content)
         self.assertIn("root.barLayoutRight = root.normalizedBarLayoutIds(trailing)", pc_content)
         self.assertIn("root.barLeadingComponents = nextLeft.slice()", pc_content)
@@ -530,12 +532,14 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("di.iconForProviderId", surface_content)
         self.assertIn("di.osdValueText", surface_content)
 
-        # 2. DynamicIsland manages osd indicator state
+        # 2. DynamicIsland owns the island OSD producer (B8.4): one channel
+        # state, with the value/icon methods DiOsd actually calls.
         di_main_path = os.path.join(shell_dir, "plugins", "bar", "DynamicIsland.qml")
         with open(di_main_path, "r", encoding="utf-8") as f:
             di_content = f.read()
-        self.assertIn("GlobalStates.osdVolumeOpen", di_content)
-        self.assertIn("GlobalStates.osdIndicatorType", di_content)
+        self.assertIn("GlobalStates.osdKind", di_content)
+        self.assertIn("function osdValueText()", di_content)
+        self.assertIn("function osdIcon()", di_content)
 
     def test_p3_lock_screen_and_safety_switch_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -715,10 +719,11 @@ class TestShellManagement(unittest.TestCase):
                         )
 
         # 3. High-risk services teardown hooks present
+        # BarContent left this list with B8.1: the bar background spectrum (and
+        # its cava Process) was retired, so the component only lays out lanes.
         high_risk_files = [
             "services/SystemMonitorService.qml",
-            "services/KeyboardLockService.qml",
-            "plugins/bar/BarContent.qml",
+            "services/KeyboardIndicators.qml",
             "plugins/bar/DynamicIsland.qml",
             "services/NetworkService.qml",
             "services/NetworkManagerExtras.qml",
@@ -2183,5 +2188,8 @@ class TestShellManagement(unittest.TestCase):
         with open(binds_path, "r", encoding="utf-8") as f:
             binds_content = f.read()
         self.assertIn('Mod+L allow-when-locked=true { spawn "~/.config/niri/scripts/shell-action.sh" "lock"; }', binds_content)
+
+        # 8. Hard shell restart is bound to Mod+Alt+R (Mod+Shift+R is niri config reload)
+        self.assertIn('Mod+Alt+R repeat=false { spawn "~/.config/niri/scripts/shell-action.sh" "restart"; }', binds_content)
 
 

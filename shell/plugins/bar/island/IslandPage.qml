@@ -6,14 +6,13 @@ import qs.commons
 import qs.services
 import qs.ui
 import qs.commons.i18n
-import qs.ui
 
-// Island page shell (T3 M4): overview renders as a NexusPageBase over the
-// M1 atom suite; the horizontal-clock subpage loads through the routed Loader
-// and renders its own subpage title + back arrow, so the pre-M4 external
-// subpage header is gone. Directory pickers and the long-bar drag overlay
-// ride inside the page content — a root-level child would break the
-// single-content-child contract of the Nexus scaffold.
+// Island page shell (T3 M4 + B8.4): overview renders as a NexusPageBase over
+// the M1 atom suite; the horizontal-clock subpage loads through the routed
+// Loader and renders its own subpage title + back arrow. B8.4 retired the
+// zero-consumer style/overlay/position/mouse/media/keyhole controls; what is
+// left is the component gate, the optional idle satellite, the keyboard OSD
+// toggles (now wired to KeyboardIndicators) and the horizontal clock editor.
 Item {
     id: root
 
@@ -25,11 +24,7 @@ Item {
     signal backRequested
 
     property int searchRequestSerial: -1
-    readonly property var searchLeaf: currentSection === "overview" ? overviewPage.flickable :
-                                                                      pageLoader.item ? (
-                                                                                            pageLoader.item.searchLeaf
-                                                                                            || pageLoader.item) :
-                                                                                        root
+    readonly property var searchLeaf: currentSection === "overview" ? overviewPage.flickable : pageLoader.item ? (pageLoader.item.searchLeaf || pageLoader.item) : root
     function openSearchPath(path, serial) {
         const section = path.length ? path[0] : "overview";
         if (searchRequestSerial !== serial) {
@@ -42,37 +37,16 @@ Item {
             return "ready";
         if (!(pageLoader.status === Loader.Ready) || !pageLoader.item)
             return "loading";
-        return typeof pageLoader.item.openSearchPath === "function" ? pageLoader.item.openSearchPath(
-                                                                          path.slice(1), serial) : "ready";
+        return typeof pageLoader.item.openSearchPath === "function" ? pageLoader.item.openSearchPath(path.slice(1), serial) : "ready";
     }
 
     property var parentModal: null
     onCurrentSectionChanged: {
-        if (SettingsSearch.searchTarget && !SettingsSearch.applyingSearch && searchRequestSerial
-                === SettingsSearch.searchSerial)
+        if (SettingsSearch.searchTarget && !SettingsSearch.applyingSearch && searchRequestSerial === SettingsSearch.searchSerial)
             SettingsSearch.cancelSearch();
         SettingsSearch.retrySearch();
     }
     property string currentSection: "overview"
-    property string editingDirectoryKey: ""
-    property var editingDirectoryField: null
-
-    function directoryValue(key) {
-        return String(UiPreferences[key] || "");
-    }
-
-    function saveDirectory(key, value, field) {
-        UiPreferences.setRecordingDirectory(key, value);
-        if (field)
-            field.text = root.directoryValue(key);
-    }
-
-    function openDirectoryPicker(key, field) {
-        root.saveDirectory(key, field.text, field);
-        root.editingDirectoryKey = key;
-        root.editingDirectoryField = field;
-        directoryPicker.openAt(root.directoryValue(key));
-    }
 
     function openSection(section) {
         root.currentSection = String(section || "overview");
@@ -84,7 +58,6 @@ Item {
 
     function closeChildWindows() {
         root.showOverview();
-        directoryPicker.dismiss();
     }
 
     NexusPageBase {
@@ -110,195 +83,112 @@ Item {
                 width: overviewPage.cappedWidth
                 spacing: NexusStyle.padding.extraSmall / 2
 
-                // Island style
+                // Island visibility & idle satellite
                 PreferenceHeader {
                     first: true
-                    text: I18n.tr("Island style")
+                    text: I18n.tr("Island")
                 }
 
                 PreferenceToggle {
-                    id: floatingToggle
+                    id: enabledToggle
 
                     first: true
-                    text: I18n.tr("Floating")
-                    checked: PersonalizationConfig.islandOverlay
-                    onToggled: PersonalizationConfig.setValue("islandOverlay", checked)
+                    text: I18n.tr("Show Island")
+                    checked: PersonalizationConfig.islandEnabled
+                    onToggled: PersonalizationConfig.setIslandEnabled(checked)
 
                     SettingsSearchAnchor {
                         id: searchAnchor0
-                        target: floatingToggle
+                        target: enabledToggle
                         anchorId: "bar.island.section.island-style"
                     }
                 }
 
                 PreferenceSelect {
-                    label: I18n.tr("Style")
-                    model: PersonalizationConfig.islandStyles
-                    currentValue: PersonalizationConfig.islandStyle
-                    inputRegionService: PopupInputRegionService
-                    onSelected: value => PersonalizationConfig.setIslandStyle(value)
-                }
-
-                PreferenceSelect {
                     last: true
-                    label: I18n.tr("Screen edge")
-                    model: PersonalizationConfig.edgePositions
-                    currentValue: PersonalizationConfig.islandPosition
+                    label: I18n.tr("Satellite")
+                    model: PersonalizationConfig.islandSatelliteOptions
+                    currentValue: PersonalizationConfig.islandSatellite
                     inputRegionService: PopupInputRegionService
-                    onSelected: value => PersonalizationConfig.setIslandPosition(String(value))
+                    onSelected: value => PersonalizationConfig.setIslandSatellite(String(value))
                 }
 
-                // Mouse actions
+                // Keyboard indicators (iNiR panel/popup split)
                 PreferenceHeader {
-                    text: I18n.tr("Mouse actions")
-                }
-
-                PreferenceSelect {
-                    id: hoverSelect
-
-                    first: true
-                    label: I18n.tr("Hover")
-                    model: PersonalizationConfig.availableIslandHoverActionOptions
-                    currentValue: PersonalizationConfig.effectiveIslandHoverAction
-                    inputRegionService: PopupInputRegionService
-                    onSelected: value => PersonalizationConfig.setIslandAction("hover", value)
-
-                    SettingsSearchAnchor {
-                        id: searchAnchor1
-                        target: hoverSelect
-                        anchorId: "bar.island.section.mouse-actions"
-                    }
-                }
-
-                PreferenceSlider {
-                    label: I18n.tr("Hover open delay")
-                    enabled: PersonalizationConfig.effectiveIslandHoverAction !== "none"
-                    valueLabel: Math.round(PersonalizationConfig.islandHoverOpenDelay) + I18n.tr(" ms")
-                    value: PersonalizationConfig.islandHoverOpenDelay
-                    from: 0
-                    to: 500
-                    stepSize: 25
-                    onMoved: value => PersonalizationConfig.setIslandHoverOpenDelay(Math.round(value))
-                }
-
-                PreferenceSlider {
-                    label: I18n.tr("Hover close delay")
-                    enabled: PersonalizationConfig.effectiveIslandHoverAction !== "none"
-                    valueLabel: Math.round(PersonalizationConfig.islandHoverCloseDelay) + I18n.tr(" ms")
-                    value: PersonalizationConfig.islandHoverCloseDelay
-                    from: 0
-                    to: 600
-                    stepSize: 25
-                    onMoved: value => PersonalizationConfig.setIslandHoverCloseDelay(Math.round(value))
-                }
-
-                PreferenceSelect {
-                    label: I18n.tr("Left click")
-                    model: PersonalizationConfig.islandActionOptions
-                    currentValue: PersonalizationConfig.islandLeftClickAction
-                    inputRegionService: PopupInputRegionService
-                    onSelected: value => PersonalizationConfig.setIslandAction("left", value)
-                }
-
-                PreferenceSelect {
-                    last: true
-                    label: I18n.tr("Middle click")
-                    model: PersonalizationConfig.islandActionOptions
-                    currentValue: PersonalizationConfig.islandMiddleClickAction
-                    inputRegionService: PopupInputRegionService
-                    onSelected: value => PersonalizationConfig.setIslandAction("middle", value)
-                }
-
-                // Media controls
-                PreferenceHeader {
-                    text: I18n.tr("Media controls")
-                }
-
-                PreferenceSelect {
-                    id: progressSelect
-
-                    first: true
-                    label: I18n.tr("Progress bar")
-                    model: PersonalizationConfig.islandMediaProgressOptions
-                    currentValue: PersonalizationConfig.islandMediaProgressStyle
-                    inputRegionService: PopupInputRegionService
-                    onSelected: value => PersonalizationConfig.setIslandMediaProgressStyle(value)
-
-                    SettingsSearchAnchor {
-                        id: mediaSearchAnchor
-                        target: progressSelect
-                        anchorId: "bar.island.section.media-controls"
-                    }
-                }
-
-                PreferenceSelect {
-                    label: I18n.tr("Cover style")
-                    model: PersonalizationConfig.islandMediaCoverOptions
-                    currentValue: PersonalizationConfig.islandMediaCoverStyle
-                    inputRegionService: PopupInputRegionService
-                    onSelected: value => PersonalizationConfig.setIslandMediaCoverStyle(value)
-                }
-
-                PreferenceSelect {
-                    last: true
-                    label: I18n.tr("Colors")
-                    model: PersonalizationConfig.islandMediaColorOptions
-                    currentValue: PersonalizationConfig.islandMediaColorStyle
-                    inputRegionService: PopupInputRegionService
-                    onSelected: value => PersonalizationConfig.setIslandMediaColorStyle(value)
-                }
-
-                // Keyboard indicators
-                PreferenceHeader {
-                    visible: KeyboardLockService.available
+                    visible: KeyboardIndicators.ready
                     text: I18n.tr("Keyboard indicators")
                 }
 
                 PreferenceToggle {
-                    id: capsLockToggle
+                    id: panelMasterToggle
 
-                    visible: KeyboardLockService.available
+                    visible: KeyboardIndicators.ready
                     first: true
-                    text: I18n.tr("Caps Lock changes")
-                    checked: PersonalizationConfig.islandCapsLockOsd
-                    onToggled: PersonalizationConfig.setIslandCapsLockOsd(checked)
+                    text: I18n.tr("Show panel indicators")
+                    checked: PersonalizationConfig.keyboardShowPanel
+                    onToggled: PersonalizationConfig.setKeyboardShowPanel(checked)
 
                     SettingsSearchAnchor {
-                        id: extraSearchAnchor0
-                        target: capsLockToggle
+                        id: searchAnchor1
+                        target: panelMasterToggle
                         anchorId: "bar.island.section.keyboard-indicators"
                     }
                 }
 
                 PreferenceToggle {
-                    visible: KeyboardLockService.available
+                    visible: KeyboardIndicators.ready
+                    enabled: PersonalizationConfig.keyboardShowPanel
+                    text: I18n.tr("Show layout")
+                    checked: PersonalizationConfig.keyboardPanelLayout
+                    onToggled: PersonalizationConfig.setKeyboardPanelLayout(checked)
+                }
+
+                PreferenceToggle {
+                    visible: KeyboardIndicators.ready
+                    enabled: PersonalizationConfig.keyboardShowPanel
+                    text: I18n.tr("Show Caps Lock")
+                    checked: PersonalizationConfig.keyboardPanelCaps
+                    onToggled: PersonalizationConfig.setKeyboardPanelCaps(checked)
+                }
+
+                PreferenceToggle {
+                    visible: KeyboardIndicators.ready
+                    enabled: PersonalizationConfig.keyboardShowPanel
+                    text: I18n.tr("Show Num Lock")
+                    checked: PersonalizationConfig.keyboardPanelNum
+                    onToggled: PersonalizationConfig.setKeyboardPanelNum(checked)
+                }
+
+                PreferenceToggle {
+                    visible: KeyboardIndicators.ready
+                    text: I18n.tr("Show popup notifications")
+                    checked: PersonalizationConfig.keyboardShowPopup
+                    onToggled: PersonalizationConfig.setKeyboardShowPopup(checked)
+                }
+
+                PreferenceToggle {
+                    visible: KeyboardIndicators.ready
+                    enabled: PersonalizationConfig.keyboardShowPopup
+                    text: I18n.tr("Layout changes")
+                    checked: PersonalizationConfig.keyboardPopupLayout
+                    onToggled: PersonalizationConfig.setKeyboardPopupLayout(checked)
+                }
+
+                PreferenceToggle {
+                    visible: KeyboardIndicators.ready
+                    enabled: PersonalizationConfig.keyboardShowPopup
+                    text: I18n.tr("Caps Lock changes")
+                    checked: PersonalizationConfig.keyboardPopupCaps
+                    onToggled: PersonalizationConfig.setKeyboardPopupCaps(checked)
+                }
+
+                PreferenceToggle {
+                    visible: KeyboardIndicators.ready
+                    enabled: PersonalizationConfig.keyboardShowPopup
                     last: true
                     text: I18n.tr("Num Lock changes")
-                    checked: PersonalizationConfig.islandNumLockOsd
-                    onToggled: PersonalizationConfig.setIslandNumLockOsd(checked)
-                }
-
-                // Keyhole
-                PreferenceHeader {
-                    text: I18n.tr("Keyhole")
-                }
-
-                PreferenceSelect {
-                    id: keyholeCardSelect
-
-                    first: true
-                    last: true
-                    label: I18n.tr("Card")
-                    model: PersonalizationConfig.islandKeyholeCardOptions
-                    currentValue: PersonalizationConfig.islandKeyholeCard
-                    inputRegionService: PopupInputRegionService
-                    onSelected: value => PersonalizationConfig.setIslandKeyholeCard(value)
-
-                    SettingsSearchAnchor {
-                        id: extraSearchAnchor1
-                        target: keyholeCardSelect
-                        anchorId: "bar.island.section.keyhole"
-                    }
+                    checked: PersonalizationConfig.keyboardPopupNum
+                    onToggled: PersonalizationConfig.setKeyboardPopupNum(checked)
                 }
 
                 // Horizontal clock
@@ -344,61 +234,6 @@ Item {
                     subtext: I18n.tr("Font, digit positions, and colors")
                     onClicked: root.openSection("island-clock")
                 }
-
-                // Recording
-                PreferenceHeader {
-                    text: I18n.tr("Recording")
-                }
-
-                ConnectedRect {
-                    id: recordingCard
-
-                    first: true
-                    last: true
-                    Layout.fillWidth: true
-                    implicitHeight: recordingColumn.implicitHeight + NexusStyle.padding.medium * 2
-
-                    ColumnLayout {
-                        id: recordingColumn
-
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.leftMargin: NexusStyle.padding.largeIncreased
-                        anchors.rightMargin: NexusStyle.padding.largeIncreased
-                        spacing: NexusStyle.padding.medium
-
-                        RecordingDirectoryField {
-                            settingTitle: I18n.tr("Video recording")
-                            settingKey: "recordingVideoDirectory"
-                            value: UiPreferences.recordingVideoDirectory
-                        }
-
-                        RecordingDirectoryField {
-                            settingTitle: I18n.tr("GIF recording")
-                            settingKey: "recordingGifDirectory"
-                            value: UiPreferences.recordingGifDirectory
-                        }
-
-                        RecordingDirectoryField {
-                            settingTitle: I18n.tr("Microphone recording")
-                            settingKey: "recordingMicrophoneDirectory"
-                            value: UiPreferences.recordingMicrophoneDirectory
-                        }
-
-                        RecordingDirectoryField {
-                            settingTitle: I18n.tr("System audio recording")
-                            settingKey: "recordingSystemAudioDirectory"
-                            value: UiPreferences.recordingSystemAudioDirectory
-                        }
-                    }
-
-                    SettingsSearchAnchor {
-                        id: searchAnchor3
-                        target: recordingCard
-                        anchorId: "bar.island.section.recording"
-                    }
-                }
             }
         }
     }
@@ -419,76 +254,6 @@ Item {
         source: {
             const route = SpotlightCatalog.route("bar." + root.currentSection);
             return route && route.sourceUrl ? route.sourceUrl : "";
-        }
-    }
-
-    FilePickerWindow {
-        id: directoryPicker
-
-        parentModal: root.parentModal
-        requiresParentWindow: true
-        selectionMode: FilePickerWindow.Folders
-        allowCurrentFolderSelection: true
-        dialogTitle: I18n.tr("Save location")
-        description: root.editingDirectoryField ? root.editingDirectoryField.settingTitle : ""
-        nameFilters: []
-        windowIconName: "folder_open"
-        emptyStateText: I18n.tr("This folder is empty")
-        selectionPrompt: I18n.tr("Choose folder")
-        acceptLabel: I18n.tr("Choose")
-        formatSummary: I18n.tr("Choose the current folder or a selected subfolder")
-        onAccepted: function (path, isDirectory) {
-            if (isDirectory && root.editingDirectoryKey !== "")
-                root.saveDirectory(root.editingDirectoryKey, path, root.editingDirectoryField);
-
-            root.editingDirectoryKey = "";
-            root.editingDirectoryField = null;
-        }
-        onRejected: {
-            root.editingDirectoryKey = "";
-            root.editingDirectoryField = null;
-        }
-    }
-
-    component RecordingDirectoryField: ColumnLayout {
-        id: directorySetting
-
-        property string settingTitle: ""
-        property string settingKey: ""
-        property string value: ""
-
-        Layout.fillWidth: true
-        spacing: NexusStyle.padding.extraSmall
-
-        StyledText {
-            Layout.fillWidth: true
-            text: directorySetting.settingTitle
-            color: Appearance.m3colors.m3onSurface
-            font.pixelSize: NexusStyle.font.bodyMedium
-            elide: Text.ElideRight
-        }
-
-        MaterialFilledTextField {
-            id: directoryField
-
-            Layout.fillWidth: true
-            labelText: I18n.tr("Save location")
-            text: directorySetting.value
-            trailingContentWidth: NexusStyle.icon.medium + NexusStyle.padding.small * 2
-            onAccepted: root.saveDirectory(directorySetting.settingKey, text, directoryField)
-            onEditingFinished: root.saveDirectory(directorySetting.settingKey, text, directoryField)
-
-            trailingContent: Component {
-                IconButton {
-                    anchors.centerIn: parent
-                    iconName: "folder_open"
-                    accessibleName: I18n.tr("Choose folder")
-                    tooltipText: I18n.tr("Choose folder")
-                    controlSize: NexusStyle.icon.medium + NexusStyle.padding.small * 2
-                    iconSize: NexusStyle.icon.medium
-                    onClicked: root.openDirectoryPicker(directorySetting.settingKey, directoryField)
-                }
-            }
         }
     }
 }

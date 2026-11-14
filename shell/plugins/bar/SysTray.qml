@@ -15,7 +15,7 @@ Item {
     property bool showOverflowMenu: true
     property var activeMenu: null
     readonly property bool isOnLeft: Config.options.bar.m3.layouts.leftLayout.includes("sysTray")
-    readonly property bool isMaterial: Config.options.bar.m3.cornerStyle === 3
+    readonly property bool isMaterial: PersonalizationConfig.barIsMaterial
 
     visible: SystemTray.items.values.length > 0
     implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : (isMaterial ? pill.implicitWidth - 4 : gridLayout.implicitWidth)
@@ -24,27 +24,33 @@ Item {
     property list<var> pinnedItems: TrayService.pinnedItems
     property list<var> unpinnedItems: TrayService.unpinnedItems
     onUnpinnedItemsChanged: {
-        if (unpinnedItems.length == 0) root.closeOverflowMenu()
+        if (unpinnedItems.length == 0)
+            root.closeOverflowMenu();
     }
 
-    function grabFocus() { focusGrab.active = true }
+    function grabFocus() {
+        focusGrab.active = true;
+    }
     function setExtraWindowAndGrabFocus(window) {
         if (root.activeMenu && root.activeMenu !== window) {
             if (typeof root.activeMenu.close === "function")
-                root.activeMenu.close()
-            root.activeMenu = null
+                root.activeMenu.close();
+            root.activeMenu = null;
         }
-        root.activeMenu = window
-        root.grabFocus()
+        root.activeMenu = window;
+        root.grabFocus();
     }
     function releaseFocus() {
-        root.activeMenu = null
-        focusGrab.active = false
+        root.activeMenu = null;
+        focusGrab.active = false;
     }
-    function closeOverflowMenu() { focusGrab.active = false }
+    function closeOverflowMenu() {
+        focusGrab.active = false;
+    }
 
     onTrayOverflowOpenChanged: {
-        if (root.trayOverflowOpen) root.grabFocus()
+        if (root.trayOverflowOpen)
+            root.grabFocus();
     }
 
     Item {
@@ -53,10 +59,10 @@ Item {
         property var windows: []
         signal cleared
         onCleared: {
-            root.trayOverflowOpen = false
+            root.trayOverflowOpen = false;
             if (root.activeMenu) {
-                root.activeMenu.close()
-                root.activeMenu = null
+                root.activeMenu.close();
+                root.activeMenu = null;
             }
         }
     }
@@ -124,7 +130,7 @@ Item {
                             Layout.fillHeight: !root.vertical
                             Layout.fillWidth: root.vertical
                             onMenuClosed: root.releaseFocus()
-                            onMenuOpened: (qsWindow) => root.setExtraWindowAndGrabFocus(qsWindow)
+                            onMenuOpened: qsWindow => root.setExtraWindowAndGrabFocus(qsWindow)
                         }
                     }
                 }
@@ -132,17 +138,19 @@ Item {
         }
 
         Repeater {
-            model: ScriptModel { values: root.pinnedItems }
+            model: ScriptModel {
+                values: root.pinnedItems
+            }
             delegate: SysTrayItem {
                 required property SystemTrayItem modelData
                 item: modelData
                 Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
                 Layout.fillHeight: !root.vertical
                 Layout.fillWidth: root.vertical
-                Layout.leftMargin:  6
+                Layout.leftMargin: 6
                 Layout.rightMargin: 6
                 onMenuClosed: root.releaseFocus()
-                onMenuOpened: (qsWindow) => root.setExtraWindowAndGrabFocus(qsWindow)
+                onMenuOpened: qsWindow => root.setExtraWindowAndGrabFocus(qsWindow)
             }
         }
     }

@@ -474,14 +474,15 @@ class TestIslandMergeContracts(unittest.TestCase):
     def test_bar_manifest_carries_the_island_face(self):
         manifest = read("plugins", "bar", "manifest.toml")
         for route_id in ("bar.island", "bar.island-clock",
-                         "bar.island.section.island-style", "bar.island.section.keyhole"):
+                         "bar.island.section.island-style",
+                         "bar.island.section.keyboard-indicators",
+                         "bar.island.section.horizontal-clock"):
             self.assertIn(f'id = "{route_id}"', manifest)
-        for action_id in ("nyxuri:island:dashboard", "nyxuri:island:hub",
-                          "nyxuri:island:lyrics", "nyxuri:island:tools",
-                          "nyxuri:island:closeAllOthers"):
-            self.assertIn(f'id = "{action_id}"', manifest)
-        self.assertIn('target = "island"', manifest)
-        self.assertIn('availability = "island"', manifest)
+        # B8.4: the hub/tools/lyrics/dashboard/closeAllOthers actions had no
+        # IpcHandler behind them (Bar.qml owns `state` only), so they are gone
+        # from the search surface instead of advertising dead capability.
+        self.assertNotIn("[[actions]]", manifest)
+        self.assertNotIn('availability = "island"', manifest)
         # Sources resolve inside the bar plugin's own subtree.
         self.assertIn('source = "island/IslandPage.qml"', manifest)
 

@@ -44,16 +44,15 @@ BarWidgetSwitcher {
                         width: implicitWidth
                         horizontalAlignment: Text.AlignHCenter
                         font.letterSpacing: -0.2
-                        font.features: { "tnum": 1 }
-                        font.family: root._timeFontFamily.length > 0
-                            ? root._timeFontFamily
-                            : (/^\d+$/.test(modelData) ? Appearance.font.family.numbers : Appearance.font.family.main)
+                        font.features: {
+                            "tnum": 1
+                        }
+                        font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : (/^\d+$/.test(modelData) ? Appearance.font.main : Appearance.font.main)
                         font.pixelSize: {
                             if (modelData.match(/am|pm/i))
                                 return Appearance.font.pixelSize.smaller;
                             else
-                                return root._timePixelSize > 0
-                                    ? root._timePixelSize : Appearance.font.pixelSize.large;
+                                return root._timePixelSize > 0 ? root._timePixelSize : Appearance.font.pixelSize.large;
                         }
                         color: Appearance.colors.colOnLayer1
                         text: modelData.padStart(2, "0")
@@ -64,10 +63,8 @@ BarWidgetSwitcher {
             StyledText {
                 Layout.alignment: Qt.AlignHCenter
                 Layout.bottomMargin: 5
-                font.family: root._dateFontFamily.length > 0
-                    ? root._dateFontFamily : Appearance.font.family.main
-                font.pixelSize: root._datePixelSize > 0
-                    ? root._datePixelSize : Appearance.font.pixelSize.smallest
+                font.family: root._dateFontFamily.length > 0 ? root._dateFontFamily : Appearance.font.main
+                font.pixelSize: root._datePixelSize > 0 ? root._datePixelSize : Appearance.font.pixelSize.smallest
                 color: Appearance.colors.colOnLayer1
                 text: DateTime.shortDate
             }
@@ -92,14 +89,11 @@ BarWidgetSwitcher {
                         width: implicitWidth
                         horizontalAlignment: Text.AlignHCenter
                         font.letterSpacing: -0.2
-                        font.features: { "tnum": 1 }
-                        font.family: root._timeFontFamily.length > 0
-                            ? root._timeFontFamily
-                            : (/^\d+$/.test(modelData) ? Appearance.font.family.numbers : Appearance.font.family.main)
-                        font.pixelSize: modelData.match(/am|pm/i)
-                            ? Appearance.font.pixelSize.smallest - 2
-                            : (root._timePixelSize > 0
-                                ? root._timePixelSize : Appearance.font.pixelSize.small)
+                        font.features: {
+                            "tnum": 1
+                        }
+                        font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : (/^\d+$/.test(modelData) ? Appearance.font.main : Appearance.font.main)
+                        font.pixelSize: modelData.match(/am|pm/i) ? Appearance.font.pixelSize.smallest - 2 : (root._timePixelSize > 0 ? root._timePixelSize : Appearance.font.pixelSize.small)
                         color: Appearance.colors.colPrimary
                         text: modelData.padStart(2, "0")
                     }
@@ -129,10 +123,8 @@ BarWidgetSwitcher {
             spacing: 4
             StyledText {
                 visible: root.showDate
-                font.family: root._dateFontFamily.length > 0
-                    ? root._dateFontFamily : Appearance.font.family.main
-                font.pixelSize: root._datePixelSize > 0
-                    ? root._datePixelSize : Appearance.font.pixelSize.small
+                font.family: root._dateFontFamily.length > 0 ? root._dateFontFamily : Appearance.font.main
+                font.pixelSize: root._datePixelSize > 0 ? root._datePixelSize : Appearance.font.pixelSize.small
                 color: Appearance.colors.colOnLayer1
                 text: DateTime.longDate ?? ""
             }
@@ -143,22 +135,22 @@ BarWidgetSwitcher {
                 text: "•"
             }
             StyledText {
-                font.family: root._timeFontFamily.length > 0
-                    ? root._timeFontFamily : Appearance.font.family.main
-                font.pixelSize: root._timePixelSize > 0
-                    ? root._timePixelSize : Appearance.font.pixelSize.large
+                font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : Appearance.font.main
+                font.pixelSize: root._timePixelSize > 0 ? root._timePixelSize : Appearance.font.pixelSize.large
                 color: Appearance.colors.colOnLayer1
                 text: DateTime.time ?? ""
                 font.letterSpacing: -0.4
-                font.features: { "tnum": 1 }
+                font.features: {
+                    "tnum": 1
+                }
             }
         }
     }
 
     rowMaterial: Component {
         RowLayout {
-            spacing: 4
             id: pill
+            spacing: 4
 
             property var timeParts: DateTime.time.split(/[: ]/)
             property string hours: timeParts[0] ?? "00"
@@ -167,10 +159,8 @@ BarWidgetSwitcher {
 
             StyledText {
                 visible: root.showDate
-                font.family: root._dateFontFamily.length > 0
-                    ? root._dateFontFamily : Appearance.font.family.main
-                font.pixelSize: root._datePixelSize > 0
-                    ? root._datePixelSize : Appearance.font.pixelSize.small
+                font.family: root._dateFontFamily.length > 0 ? root._dateFontFamily : Appearance.font.main
+                font.pixelSize: root._datePixelSize > 0 ? root._datePixelSize : Appearance.font.pixelSize.small
                 color: M3Palette.pillInk("clockWidget")
                 // iNiR's DateTime exposes `date` (long form) and `shortDate`;
                 // upstream's `longDate` does not exist here.
@@ -182,21 +172,21 @@ BarWidgetSwitcher {
             Rectangle {
                 implicitWidth: timeText.implicitWidth + 16
                 implicitHeight: Math.max(24, timeText.implicitHeight + 6)
-                radius: Appearance.editorialEverywhere ? Appearance.rounding.small : Appearance.rounding.full
+                radius: Appearance.rounding.full
                 color: M3Palette.primary
 
                 StyledText {
                     id: timeText
                     anchors.centerIn: parent
-                    font.family: root._timeFontFamily.length > 0
-                        ? root._timeFontFamily : Appearance.font.family.main
-                    font.pixelSize: root._timePixelSize > 0
-                        ? root._timePixelSize : Appearance.font.pixelSize.smallie
+                    font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : Appearance.font.main
+                    font.pixelSize: root._timePixelSize > 0 ? root._timePixelSize : Appearance.font.pixelSize.smallie
                     color: M3Palette.primaryForeground
-                    font.weight: Appearance.editorialEverywhere ? Appearance.editorial.titleWeight : Font.Bold
+                    font.weight: Font.Bold
                     text: pill.ampm !== "" ? pill.hours.padStart(2, "0") + ":" + pill.minutes.padStart(2, "0") : DateTime.time
-                    font.features: { "tnum": 1 }
-                    font.letterSpacing: Appearance.editorialEverywhere ? Appearance.editorial.titleTracking : -0.4
+                    font.features: {
+                        "tnum": 1
+                    }
+                    font.letterSpacing: -0.4
                 }
             }
 
@@ -212,8 +202,7 @@ BarWidgetSwitcher {
                 StyledText {
                     id: ampmText
                     anchors.centerIn: parent
-                    font.family: root._timeFontFamily.length > 0
-                        ? root._timeFontFamily : Appearance.font.family.main
+                    font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : Appearance.font.main
                     font.pixelSize: Appearance.font.pixelSize.smaller
                     color: M3Palette.tertiaryContainerForeground
                     text: pill.ampm
@@ -229,7 +218,7 @@ BarWidgetSwitcher {
         hoverEnabled: true
         onClicked: mouse => {
             if (mouse.button === Qt.LeftButton && clickForDetails)
-                clockPopup.active = !clockPopup.active
+                clockPopup.active = !clockPopup.active;
         }
 
         ClockWidgetPopup {

@@ -6,13 +6,70 @@
 
 ## 未修复 BUG
 
-- [ ] （待登记：症状一句话 + 复现路径 + 发现日期）
+- [ ] **下架件与孤儿**：`HyprlandXkbIndicator`/`NetworkSpeed*`/`Weather*`/`DocktoPanel`/
+  `LeftSidebarButton` 等依赖 iNiR 单例名的部件仍未接线；`Resources`/`ClockWidget`/
+  `BatteryIndicator` 已随 B8.2 基件整抄解冻并进选装集。清单见
+  [shell/plugins/bar/PARKED.md](../../shell/plugins/bar/PARKED.md)。
 
 ## 基础设施缺口（快速上线时跳过，回来先做这些）
 
 - [ ] **TUI 未接入**：`menus.py` 无 shell 切换菜单，`translations.toml` 无桌面外壳词条；目前只有 CLI `nyxuri shell` 一条路
 
 ## 已修复
+
+- [x] **无媒体时 Media 组残留空胶囊 + 探针矩阵缺口（2026-11-14）**：Media 隐藏时
+  `BarGroup` 仍按 padding 画 10px 空胶囊，lane 的 material/hug/中段胶囊也留 padding。
+  新增 `barWidgetVisible` 契约（缺省视为可见），组与三条 lane 胶囊按内容宽度收缩；
+  运行态由 `probe-bar.sh` 的 `mediaOnly` 场景在非材质/material 两条路径断言宽度为 0。
+  同轮探针从 cornerStyle 1/3/4/5 扩到 0–5，并新增 borderless 四模式覆盖。
+- [x] **岛收口与设置空承诺（B8.4/B8.5，2026-11-14）**：OSD 生产者接线（音量/亮度/
+  caps/num/布局走 `GlobalStates.osdKind`，`DiOsd` 不再调用不存在的值方法）；
+  `KeyboardLockService` 换成 iNiR `KeyboardIndicators` 的 Fork & Trim
+  （sysfs LED 聚合 + panel/popup 分离），并新增 `KeyboardLayoutService` 读
+  `niri msg -j keyboard-layouts`；SystemIcons/XkbIndicator 整抄 iNiR barM3 版。
+  key-cli 退役后原 backend 永远不可用，这是 caps/num OSD 消失的根因。
+  `islandEnabled` 真正隐藏岛；`islandSatellite` 替换反掉的 `leftWidget` 天气硬编码；
+  媒体面改 end4 点阵；`islandStyle/overlay/position/hoverAction/click*/media*Style/
+  keyhole` 全链路退役。`ActiveWindow` 按 end4 重抄（Niri 数据面 + `contentColor`），
+  material 判定收敛到 `PersonalizationConfig.barIsMaterial`；cornerStyle 4/5 窗口层
+  exclusive/圆角装饰补齐。
+- [x] **Bar/Island 无运行态测试（B8.6，2026-11-14）**：新增
+  `scripts/dev/probe-bar.sh` + `probe-bar.qml`，隔离 shell 装载 `BarContent`，覆盖
+  cornerStyle 1/3/4/5，断言所有 active `Loader.Ready`、无 pending/failed、几何有限且
+  中段居中，并扫描 TypeError/ReferenceError/compiled empty；`tests/shell/test_bar_runtime.py`
+  消费 JSON，无 Wayland 显式跳过。首轮即撞出：材质/非材质两套 lane 同时实例化部件
+  （每屏两个岛、隐藏岛抢 `islandHost`），已改为按 `isMaterial` 门控 Loader。
+- [x] **Bar 整抄轮（B8.1–B8.3，2026-11-14）**：`BarGroup`/`BarContent` 重新 `cp` end4
+  原件再剪裁（删除 hostScale 压缩链、DI 卫星、重复胶囊角），`groupColor`/`paintBackground`/
+  `segmented`/material 4-5 档/右键调色全部接线；`DateTime`、`launcherButton`、
+  `powerButton`、`systemIcons` 上岗；`BarWidgetSwitcher*`/`ClippedProgressBar`/
+  `Clipped*CircularProgress`/`ResourceUsage` 基件整抄后 `clock`/`systemMonitor`/`battery`
+  解冻；`Workspaces.qml` 以 iNiR 876 行原件剪裁为 Niri-only end4 视觉；
+  `information` 假部件（映射到不存在的 `Information.qml`，导致默认左栏重复活动窗口）
+  从选装集与迁移中删除。冷启动无 compiled empty / TypeError / ReferenceError。
+- [x] **cornerStyle 判定不一致**：BarGroup/BarContent/Island/未读徽标统一按
+  `cornerStyle === 3 || 4` 走 material；4/5 的 hug/panel 几何随 end4 原件落地。
+- [x] **BarComponentLoader 不存在**：`e03c449` 之后 `BarContent` 才是唯一分发点；
+  `DashboardBarWidgets` 注释与 `getWidgetUrl` 同步。
+
+- [x] **Bar 中段贴左重叠、部件挤在一起**（2026-11-14）：`Appearance.fontSizeScale`
+  未桥接，`hostGap = 6 * undefined → NaN` 污染 `minimumCenterX/maximumCenterX`，
+  `centerHostX` 变 NaN 后 `absoluteCenter.x` 落到 0。补 `fontSizeScale=1` + 几何链
+  `Number.isFinite` 兜底，空 lane 不再计入 host/gap，压缩态不再把中段钉到最左。
+  实机探针复核：2560 屏、259 宽中段 → `centerX=1150.5`（正中）。
+- [x] **Style 下拉当前值显示成数字**（2026-11-14）：`SplitMenuButton.currentValue`
+  声明为 `string`，整型 3 被转成 `"3"`，与数字 model 值严格比较失败后回落到原值。
+  改为非类型化属性 + `String()` 归一比较，菜单勾选态同修。
+- [x] **Bar 动画每帧报 createObject of undefined**（2026-11-14）：iNiR 的
+  `animation.elementMove*.colorAnimation/numberAnimation` 是 Component 工厂，
+  Nyxuri 只留了 duration/type/curve。补齐工厂与 `elementMove`/`elementMoveEnter`
+  别名。
+- [x] **Divisor/Media/Notification 刷 TypeError**（2026-11-14）：Config 桥缺
+  `bar.m3.divider`/`resources`/`indicators`/`verbose`/`clock`，补齐；`CompositorService`
+  正名 `CompositorDriver`，删除 `SysTrayMenuEntry` 里不存在的 `buttonColor` 赋值。
+- [x] **Timer/Recording 岛面空转**（2026-11-14，按作者决定下架）：provider、
+  内联组件、`island stopRecording` IPC、`IslandPage` 录制目录 UI + `FilePickerWindow`、
+  manifest 路由与 i18n 词条一并移除；`DiTimers.qml` 留文件待接 `TimerService`。
 
 - [x] **key-cli 依赖彻底废弃与清理**（2026-11-07）：确认并执行纯减法，废弃外部
   AUR 包 key-cli；清理控制面探活诊断与面向用户的安装提示，宿主机卸载后 Shell 各单元

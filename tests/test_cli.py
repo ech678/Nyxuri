@@ -656,3 +656,47 @@ class TestTypeAnnotationsIntegrity(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestShellRestartDispatch(unittest.TestCase):
+    """`nyxuri shell restart` delegates to the shell state machine and maps its
+    tuple result onto the CLI exit code (no second implementation in cli.py)."""
+
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+
+    def tearDown(self):
+        self._ctx.__exit__()
+
+    def _run(self, *argv):
+        import contextlib
+        import io
+        from nyxuri.cli import _cmd_shell
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = _cmd_shell(list(argv))
+        return code, out.getvalue(), err.getvalue()
+
+    def test_restart_reports_success_and_keeps_the_experimental_note(self):
+        with patch("nyxuri.system.shell.probe_running_shell", return_value=("nyxuri-shell", 7)), \
+             patch("nyxuri.system.shell.restart_shell",
+                   return_value=(True, "nyxuri-shell restarted (PID: 9)")):
+            code, out, _err = self._run("restart")
+        self.assertEqual(code, 0)
+        self.assertIn("[EXPERIMENTAL]", out)
+        self.assertIn("nyxuri-shell restarted (PID: 9)", out)
+
+    def test_restart_failure_returns_1_on_stderr(self):
+        with patch("nyxuri.system.shell.probe_running_shell", return_value=("noctalia", 7)), \
+             patch("nyxuri.system.shell.restart_shell",
+                   return_value=(False, "screen is locked")):
+            code, out, err = self._run("restart")
+        self.assertEqual(code, 1)
+        self.assertIn("screen is locked", err)
+        self.assertNotIn("restarted", out)
+
+    def test_restart_rejects_extra_arguments(self):
+        with self.assertRaises(SystemExit) as caught:
+            self._run("restart", "noctalia")
+        self.assertEqual(caught.exception.code, 2)

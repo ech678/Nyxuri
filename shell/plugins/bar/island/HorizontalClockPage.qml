@@ -356,14 +356,17 @@ NexusPageBase {
                                                                                      "rotation", Math.round(
                                                                                          value), true)
         }
-    }
 
-    Connections {
-        function onHorizontalClockDigitsChanged() {
-            if (!customColorField.activeFocus)
-                root.updateCustomColorDraft();
+        // NexusPageBase takes exactly one content child, so a page-level
+        // Connections block cannot be its sibling (QQuickItem* assignment
+        // error, whole page compiled empty). It rides the content layout.
+        Connections {
+            function onHorizontalClockDigitsChanged() {
+                if (!customColorField.activeFocus)
+                    root.updateCustomColorDraft();
+            }
+
+            target: PersonalizationConfig
         }
-
-        target: PersonalizationConfig
     }
 }

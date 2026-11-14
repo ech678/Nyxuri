@@ -136,7 +136,7 @@ const win = makeWindow();
         script += "function makeHost() { let launcherItem = null; let active = false; const root = {initialMode: '', initialCommand: ''};\n"
         script += "\n".join(function(self.host, name) for name in host_methods)
         script += "\nObject.assign(root, {" + ",".join(host_methods) + "});\n"
-        script += "function complete(window) " + block(self.host, "Component.onCompleted:") + "\n"
+        script += "function complete(window) " + block(self.host.split("id: window", 1)[1], "Component.onCompleted:") + "\n"
         script += """
 Object.defineProperties(root, {
     active: {get: () => active, set(value) {

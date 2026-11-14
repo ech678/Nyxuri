@@ -34,7 +34,7 @@ transaction 是唯一编排层）；`update` 撞名裁决 = 参数分派——�
 | `update [--force\|--no-deploy] [--to <tag\|commit>]` | 拉新版本 + 重新部署（KM5：线性迁移机制已清算，账本即真相）；`--to` 锁到指定版本（system 模式 → 提示 pacman）。部署走所有权 carry（#139）：用户改动与自放文件原样搬入、Ghost 插件冻结并提示 `on` 收编；`--force` = 采纳模板侧（payload 名全部认领 + 账本重登记），不是清剿。**S1 参数分派**：带位置参数（插件 id）时此命令改走第三方插件更新，见插件动词表 |
 | `use <plugin> …` | 见上「插件动词」表（形态轴唯一入口） |
 | `theme [toggle\|dark\|light\|sync\|status]` | 原生切换/同步深浅主题（纯 Python 调度 gsettings、GTK settings.ini、Noctalia IPC 与 Kitty 信号） |
-| `shell [get\|set <noctalia\|nyxuri-shell> [bin_path]\|switch [\|bin_path]\|status]` | 查看或切换桌面外壳运行插槽。**[EXPERIMENTAL]** nyxuri-shell 开发中，输出带实验性警告 |
+| `shell [get\|set <noctalia\|nyxuri-shell> [bin_path]\|switch [\|bin_path]\|restart\|status]` | 查看或切换桌面外壳运行插槽；`restart` 硬重启当前正在跑的外壳（谁在跑重启谁，锁屏/无图形会话/双端残局拒绝，不改账本偏好）。**[EXPERIMENTAL]** nyxuri-shell 开发中，输出带实验性警告 |
 | `deps [core]` | 装软件包：核心依赖勾选单（可选软件供给面已随 R0-2 步 5 处决，插件装包走 `on <plugin>`） |
 | `pkg <install\|upgrade\|remove\|search\|info\|installed>` | 包管理直通（Fish 与安装器共用）；搜索支持 `aur` / `pac` 前缀 |
 | `clean [-n] [--only <任务>]` | 缓存清理；`-n` 只预览，Fish 的 `clean` 指向此入口 |

@@ -1005,3 +1005,185 @@ test_ai_specs 绿 + check.sh 绿（changed scope：whitespace/qml-format/
 shell-lint/qml-lint/lifecycle-audit 五步）+ `HOME=$(mktemp -d) python3 -m
 nyxuri test` 沙箱部署绿。运行零变化论证：零 manifest/entryPoint/SlotHost
 预热/引用改动，vendor/ 文件惰性，PluginRegistry/装载闭包不触及。
+
+## B 卷实施记录（追加式，2026-11-14，B8.1–B8.3）
+
+### B8.1 end4 样式基线整抄（待验收）
+
+**做法**：`cp references/end4-pC/modules/ii/bar/{BarGroup,BarContent}.qml` 覆盖
+目标文件后剪裁，不再手改融合体。
+
+**BarGroup**：保留 `resolvedGroupColor`（`Config.options.bar.groupColor` 桥）、
+`paintBackground`、`segmented`（1px 边框 + 圆角 0）、`isPanel`/`isMaterialHug`
+（cornerStyle 4/5）、每部件右键编辑与 `BarGroupStylePopup`。删除
+`followFrameColor`/`frameColor`（无 UI、常量 false）与频谱辅助
+`spectrumClip*`/`backgroundVisible`/`empty`（随背景频谱下架）。样式持久化改走
+`PersonalizationConfig.barWidgetStyles`（`normalizedBarWidgetStyles` 归一化，
+TOML 读写）；桥对象保持只读，不再持有可变 `widgetStyles`。
+
+**BarContent**：删除 iNiR 的 hostScale/hostGap/`centerHostX` 压缩链（NaN 温床）、
+DynamicIsland 左右卫星 Loader（岛已是 middle 部件）、BarContent 内重复的
+左右 pill 圆角（窗口层 `Bar.qml` 唯一持有）；`hyprland.general.gapsOut` →
+`bar.m3.gapsOut`，`Config.options.bar.layouts` → `bar.m3.layouts`；空 lane 宽度
+归零（无幻影 host）。保留 end4 三栏、material pill、`paintBackground`、
+`anchors.centerIn` 中段、滚动亮度/音量（改用 `BrightnessService`/`VolumeService`，
+原 `Brightness.stepBrightness`/`Audio.incrementVolume` 是不存在类型）。
+material 黑名单 = end4 原名单 + `island` + `rightSidebarButton`。背景频谱
+（`CavaProcess` + `SurfaceSpectrum`）按作者决定下架；`CavaProcess.qml` 仍被
+岛内 `Visualizer.qml` 使用，文件保留。
+
+**弹层依赖补齐**：`BarGroupStylePopup` 原先引用树内不存在的 `ConfigSlider`。
+按整抄补 `shell/ui/{ColorSelectionArray,ContentSubsectionLabel,DialogButton}.qml`，
+三个滑杆改用既有 `PreferenceSlider`（`onCommitted` 提交，避免每 tick 写盘）。
+
+**设置**：`GeneralBarPage` 增 Group color 五档；`PersonalizationConfig` 增
+`barGroupColorOptions`/`barWidgetStyles` 及 setter，读入归一化。
+
+### B8.2 部件池整抄（待验收）
+
+- `DateTime.qml`：iNiR 原件剪裁，`Config.options.time` → `UiPreferences`，
+  `Translation.locale` → `Qt.locale`，补 `longDate` 别名；供时钟/岛 idle/弹层。
+- `LauncherButton.qml`：end4 原件；按压改走 `ActionGateway.executeIntent({"target":"launcher"})`。
+  `ActionGateway.launcherHost` 由 `LauncherHost.qml` 注册/注销（同 islandHost 形态），
+  单元缺席时返回 false。
+- `PowerButton.qml`：对齐 end4（`contentColor`、`wrappedShape`、3||4 material）。
+- `SystemIcons.qml`：直接消费 `VolumeService`/`NetworkService`（`signalStrength`
+  派生 wifi 图标）/`BluetoothService`/`NotificationService`/`KeyboardLockService`，
+  不建 `Audio`/`Network`/… 转发单例（守「仅转发不留」门禁）。
+- 基件整抄：`BarWidgetSwitcher`、`BarWidgetSwitcherArea`、`ClippedProgressBar`、
+  `ClippedFilledCircularProgress`、`ClippedOutlineCircularProgress`、
+  `StyledProgressBar`、`ResourceCard` 落 `plugins/bar/`；`ResourceUsage`（iNiR
+  租约版）、`ResourceUsageMonitor` 落 `services/`。`clock`/`systemMonitor`/`battery`
+  回选装集，默认布局对齐 end4（launcher/workspaces/activeWindow + tray/quickSettings/
+  systemIcons/powerButton）。
+- `information` 删除：它是 iNiR 的 bar 样式名，不是部件；`getWidgetUrl` 回退成
+  `Information.qml` 导致默认左栏重复活动窗口与冷启动 file-not-found。
+- Config 桥补 `resources.historyLength/autoStopDelay/monitorGpu`；
+  `Appearance.animationsEnabled` 补 token（此前 5 处引用 undefined）。
+
+### B8.3 workspaces 真体（待验收）
+
+`cp references/iNiR/modules/ii/bar/Workspaces.qml` 后剪裁为 Niri-only：
+删 Hyprland monitor/分支/`HyprlandData`、`NiriService`（改 `CompositorDriver`）、
+`AppSearch`（改 `ApplicationService.iconSource`）、zzz/angel/aurora 皮肤分支、
+column 模式（无配置键选择、驱动无 column 焦点动词）；end4 视觉保留
+（占用态圆角拼接、当前指示器 `AnimatedTabIndexPair`、数字/`numberMap`、应用图标 +
+单色化叠加、dot/icon marker）。新增 `NiriDriver.workspaceList` 排序数组投影并经
+`CompositorDriver.workspaceList` 暴露（`workspaces` 仍是 ListModel）；配置直接绑定
+`Config.options.bar.m3.workspaces`，零 interval Timer（`Qt.callLater`）。
+
+**视觉补丁（同日验收）**：工作区默认值补齐 end4（`showAppIcons=false` /
+`alwaysShowNumbers=true` / `numberMap=[]`），默认渲染数字 + 当前工作区胶囊；
+三个键接入 `GeneralBarPage` 的 Workspaces 段并落 `[bar]` 持久化；
+`Media.qml` 的 `artRect` 补 `OpacityMask` 圆角遮罩，修复专辑封面方角。
+
+**验证**：`python3 -m unittest tests.shell.test_bar_end4 test_island_end4
+test_i18n_catalog test_shell_architecture test_settings_pages test_plugin_manifests
+test_qml_structure test_dashboard_catalogs`（214 通过）；`shell/scripts/dev/check.sh`
+绿（whitespace/qml-format/qml-lint/lifecycle-audit）。运行态：wrapper 冷启动
+（清 qmlcache）后 `--ipc bar toggle` 往返 `CLOSED/OPEN`、`--ipc island state` →
+`idle`，日志无 compiled empty / TypeError / ReferenceError。部件池另用独立
+`qs -p` 探针（`/tmp` 副本 + `QML_IMPORT_PATH=ui/shapes`、qmldir 补齐类型表）
+逐件装载 13 个部件，全部 `Loader.Ready` 并给出非负 `implicitWidth/Height`
+（BatteryIndicator 因桌面无电池为 0×0 属预期）。视觉过目与截图待作者。
+
+## B 卷实施记录（追加式，2026-11-14，B8.4–B8.6）
+
+### B8.4 岛收口（待验收）
+
+- OSD 空壳修复：`GlobalStates.osdKind` 单通道；`DynamicIsland` 监听
+  `VolumeService`/`BrightnessService`/`KeyboardLockService`，主屏岛发布、1.4s 收起；
+  `DiOsd` 改 `di.osdKind` 与真实 `osdValueText()`（此前调用不存在的方法）。
+  `KeyboardLockService` 改读 `/sys/class/leds/*::capslock|numlock/brightness`：
+  key-cli 已于 2026-11-07 退役，旧 backend 让 caps/num 永远 unavailable（Caps/Num
+  OSD 消失的根因）；现 service 以 FileView watch 免外部进程，SystemIcons 指示器同步复活。
+  `BrightnessService` 补 backlight sysfs FileView watch，外部 `brightnessctl` 变化也发
+  `brightnessChanged`。
+- `islandEnabled` 真门控：`BarContent.filterLayout()` 移除 island，不再只释放
+  popup:notification 槽；`GlobalStates.dynamicIslandEnabled` 与
+  `Config.options.bar.dynamicIsland` 桥对象删除。
+- 卫星可选：`islandSatellite`（clock/weather/none，默认 clock）+ 设置页 Select；
+  DiIdle 分支修正（旧 `leftWidget="clockWidget"` 反而显示天气），天气图标接
+  `WeatherService.currentIconName`。
+- 媒体面 end4 基线：隐藏播放按钮，播放时显示 cava 点阵；删 wave 分支与
+  `GlobalStates.visualizerPoints`，cava 仍按需租约。
+
+### B8.5 设置与形态（待验收）
+
+- 死键清算：`islandStyle/islandOverlay/islandPosition/islandHoverAction/
+  islandLeftClickAction/islandMiddleClickAction/islandMedia{Progress,Cover,Color}Style/
+  islandKeyholeCard` 从 `PersonalizationConfig`、`IslandPage`、两套 settings catalog、
+  manifest 搜索锚点/动作与 `zh_CN.toml` 全部移除；保存/加载/迁移/needsRewrite 同步。
+- material 单一真值：新增 `barIsMaterial/barIsMaterialHug/barIsPanel`，替换
+  BarGroup/BarContent/Island/Media/SysTray/UtilButton(s)/Divisor/Visualizer/
+  BatteryIndicator/Launcher/Power/SystemIcons 的 `=== 3` 自算。
+- cornerStyle 4/5 窗口层：`Bar.qml` 补 hug/panel `exclusiveZone +4`、4 档
+  `roundDecorators`（按左右 lane 是否为空显示）与 decoratorColor。
+- `ActiveWindow.qml` 按 end4 94 行原件重抄：focusedWindow/activeWorkspaceForOutput/
+  windowsForWorkspace 投影、双行 appId/title、contentColor API，去掉上游 console.log。
+- BarContent 隐藏分支生命周期：材质/非材质两套 lane 仍声明，但部件 Loader 以
+  `active` 门控，杜绝每屏两个岛与隐藏岛抢 `ActionGateway.islandHost`。
+
+### B8.6 护栏与收口（待验收）
+
+- `scripts/dev/probe-bar.sh` + `scripts/dev/probe-bar.qml`：私有 HOME/XDG、隔离 shell
+  副本、`file://` 装载（qs: 不能解析隐式同级类型）、`PersonalizationConfig.ready`
+  后再建 BarContent；IPC `bar-probe` 提供 `ping/layout/cornerStyle/reload`。逐档
+  cornerStyle 1/3/4/5 重建并断言 active Loader 全 Ready、无 pending/failed、几何有限、
+  中段居中、岛可见；另验证 OSD 通道（`islandState=osd`）与 `islandEnabled=false`
+  时中段清空。无 Wayland 退 2（显式 SKIP）。首次运行即撞出上文双岛与 material lane
+  0 宽问题。
+- `tests/shell/test_bar_runtime.py`：消费 probe JSON；无合成器时 skip。
+- island IPC 事实收口：manifest 5 个 island 搜索动作摘除，
+  `SpotlightCatalog.islandAvailable` 改看 `ActionGateway.islandHost`；
+  `DEFAULT_BINDINGS` 移除 Mod+Shift+W/T；niri-actions 旧条目保留作迁移映射。
+
+**验证**：`python3 -m unittest tests.shell.test_bar_end4 test_island_end4
+test_settings_pages test_dashboard_catalogs test_plugin_manifests test_config_stores
+test_i18n_catalog test_shell_architecture test_qml_structure test_search_catalog
+test_niri_config test_settings_navpane test_settings_shell test_shell_switcher
+test_resource_integrity test_preference_atoms test_toml test_migrate_config
+test_bar_runtime`（380 通过，runtime 实跑）；`shell/scripts/dev/check.sh` 绿
+（whitespace/qml-format/shell-lint/python-syntax/settings-schema/qml-lint/lifecycle-audit；
+qml-lint 629 条 advisory 警告为既有 qs.* 成员解析噪声）。`probe-bar.sh --session --json`
+四档 `ok:true`、`logErrors:[]`。视觉过目与截图待作者。
+
+### B8.4 修订（2026-11-14，键盘指示与 SystemIcons 归还 iNiR）
+
+- **整抄回退**：放弃自研固定槽位 SystemIcons，`cp` iNiR `barM3/SystemIcons.qml` +
+  `barM3/HyprlandXkbIndicator.qml` 后剪裁；服务层以 iNiR `KeyboardIndicators.qml` 为
+  基线 Fork & Trim（sysfs LED 聚合、panel/popup 分离、多键盘状态、popup sequence），
+  裁掉 evdev 分支（Nyxuri 无 accel-run keyboard-lock daemon）。
+- **布局数据面**：新增 `KeyboardLayoutService.qml`，从 `niri msg -j keyboard-layouts` +
+  `NiriDriver` 事件流 `KeyboardLayoutsChanged` / `KeyboardLayoutSwitched` 投影
+  `currentLayoutName/Code`；`CompositorDriver` 仍是唯一对外面。
+- **配置语义**：`PersonalizationConfig` 新增 `[keyboardIndicators]`
+  showPopup/showPanel + popup/panel × layout/caps/num；旧 `[island] capsLockOsd/
+  numLockOsd` 在加载时折算到 popup.caps/num；默认 caps 开、num 关（iNiR 同值）。
+- **OSD**：`KeyboardIndicators.popupSequence` 触发岛 OSD，`osdKind="keyboard"`，
+  文本/图标取 `popupText/popupMaterialIcon`；音量/亮度通道不变。
+- **尺寸**：新增 `Appearance.sizes.barIconSize=19` / `barUtilIconSize=17` /
+  `barPowerButtonSize=28`；SystemIcons 的 `larger`（22）与 UtilButton 的 `large`（16）
+  改为基线值。`UtilButton` 恢复 end4 hover 26→54 扩大动画；未读/锁状态的 Flow
+  宽度变化保留（上游行为）。
+- **验证**：302 tests OK；probe-bar 四档 `ok=true`，OSD/keyboard/islandOff 全绿；
+  `check.sh` 绿。实机键位与视觉过目待作者。
+
+### B8.6 补档：媒体空胶囊与探针矩阵（2026-11-14）
+
+- **媒体空胶囊修复**（`14a56e1`）：`BarGroup` 新增 `barWidgetVisible` 契约
+  （缺省视为可见）与 `hasContent`，`implicitWidth/visible` 随内容收缩；内容宽度用
+  `loadedWidget.implicitWidth` 兜底 GridLayout 的 stale 值。`Media` 以独立属性暴露
+  自隐状态——`Item.visible` 是有效可见性，父级隐藏后无法恢复。`BarContent` 三条 lane
+  的 material 胶囊、hug 外角与 center-only pill 按 lane 内容宽度收缩。
+- **探针矩阵扩展**：`probe-bar.sh` 的 cornerStyle 循环从 1/3/4/5 扩到 0–5；
+  新增 `borderless` 四模式（pills/separated/segmented/transparent，固定在非材质档跑
+  segmented 分支）与 `scene mediaOnly`（左 lane 仅 `media`、中右清空）；
+  `layout` IPC 输出 `leftWidth/rightWidth/borderless`。`BarContent` 新增
+  `laneLeftWidth/laneRightWidth` 观测属性。
+- **断言**：六档全部 `Loader.Ready`、无 failed/pending、几何有限且中段居中、岛可见；
+  四个 borderless 模式 `ok` 且回读一致；媒体隐藏场景在 cornerStyle 1（plain capsule）
+  与 3（material capsule）下左 lane 与中段宽度都必须为 0、无岛宿主。
+- **验证**：`probe-bar.sh --json` 本机 session 模式全绿（`styles` 0–5，
+  `borderless.modes` 四模式，`mediaHidden.cases` 2 例，`logErrors: []`）；
+  `python3 -m unittest tests.shell.test_bar_runtime tests.shell.test_bar_end4` 18 tests OK。

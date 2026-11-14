@@ -50,7 +50,7 @@ ShellRoot {
 
         Component.onCompleted: {
             SpotlightCatalog.actionExecutor = root.executeSearchAction;
-            SpotlightCatalog.islandAvailable = Qt.binding(() => Boolean(ActionGateway.islandHost && ActionGateway.islandHost.searchActionsAvailable));
+            SpotlightCatalog.islandAvailable = Qt.binding(() => Boolean(ActionGateway.islandHost));
             // These services initialize themselves when their singleton is first
             // instantiated. Calling them here used to duplicate work: FontService
             // performed a second full font enumeration, I18nService reparsed its
@@ -97,8 +97,7 @@ ShellRoot {
             // bar unit; its switch is the islandEnabled config key). The rule
             // is kind-keyed, so a third-party popup host yields exactly like
             // the first-party one (S1-3 seating rule).
-            if (unit.kind === "popup:notification" && StateProjection.isEnabled("bar")
-                    && PersonalizationConfig.islandEnabled)
+            if (unit.kind === "popup:notification" && StateProjection.isEnabled("bar") && PersonalizationConfig.islandEnabled)
                 return false;
             return true;
         }
@@ -181,13 +180,9 @@ ShellRoot {
                     loader.failedHeals += 1;
                     retried += 1;
                     if (loader.failedHeals >= root.healPassLimit)
-                        LogService.error("host", "unit " + unit.unitId + " still compiled empty after "
-                                         + root.healPassLimit
-                                         + " heal passes — giving up; toggle the unit to retry");
+                        LogService.error("host", "unit " + unit.unitId + " still compiled empty after " + root.healPassLimit + " heal passes — giving up; toggle the unit to retry");
                     else
-                        LogService.error("host", "unit " + unit.unitId
-                                         + " enabled but compiled empty — reloading (pass " + loader.failedHeals
-                                         + "/" + root.healPassLimit + ")");
+                        LogService.error("host", "unit " + unit.unitId + " enabled but compiled empty — reloading (pass " + loader.failedHeals + "/" + root.healPassLimit + ")");
                     loader.suppressed = true;
                 }
                 if (retried > 0) {
@@ -243,8 +238,7 @@ ShellRoot {
         Connections {
             target: IdleService
             function onLockRequested() {
-                IdleService.reportLockResult(ActionGateway.sessionLocker ? ActionGateway.sessionLocker.open() :
-                                                                           "shell.lock is off");
+                IdleService.reportLockResult(ActionGateway.sessionLocker ? ActionGateway.sessionLocker.open() : "shell.lock is off");
             }
             function onSuspendRequested() {
                 IdleService.reportSuspendResult(ActionGateway.powerAction("suspend", "idle"));
@@ -324,8 +318,7 @@ ShellRoot {
             }
 
             function isReady(): bool {
-                return ShellStartupService.currentStage === ShellStartupService.stageIpcReady
-                        || ShellStartupService.currentStage === ShellStartupService.stageReady;
+                return ShellStartupService.currentStage === ShellStartupService.stageIpcReady || ShellStartupService.currentStage === ShellStartupService.stageReady;
             }
 
             function metrics(): string {

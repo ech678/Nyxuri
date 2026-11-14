@@ -10,6 +10,14 @@ Scope {
     property string initialMode: ""
     property string initialCommand: ""
 
+    // Cross-domain handle for the gateway (bar launcher button): the unit
+    // registers itself, the gateway only knows "ask the launcher to toggle".
+    Component.onCompleted: ActionGateway.launcherHost = root
+    Component.onDestruction: {
+        if (ActionGateway.launcherHost === root)
+            ActionGateway.launcherHost = null;
+    }
+
     readonly property var launcherItem: launcherLoader.item
     readonly property string windowPhase: launcherItem ? launcherItem.windowPhase : "hidden"
 

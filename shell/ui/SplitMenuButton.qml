@@ -9,7 +9,11 @@ Item {
     id: root
 
     property var model: []
-    property string currentValue: ""
+    // Kept untyped: pages bind both string-valued keys (edge, style) and
+    // integer-valued ones (bar corner style). A `string` property coerced the
+    // integer to "3", strict equality against the numeric model value failed,
+    // and the button displayed the raw number instead of its label.
+    property var currentValue: ""
     property int buttonHeight: 36
     property int minimumWidth: 112
     property int maximumWidth: 172
@@ -46,10 +50,10 @@ Item {
 
     function labelFor(value) {
         for (let i = 0; i < model.length; i += 1) {
-            if (model[i].value === value)
+            if (String(model[i].value) === String(value))
                 return model[i].label;
         }
-        return value;
+        return String(value);
     }
 
     function longestLabel() {
@@ -388,7 +392,7 @@ Item {
                 id: option
 
                 required property var modelData
-                property bool selected: root.currentValue === modelData.value
+                property bool selected: String(root.currentValue) === String(modelData.value)
                 property bool pressed: optionMouse.pressed
                 property bool hovered: optionMouse.containsMouse
                 property color itemColor: selected ? Appearance.m3colors.m3secondaryContainer : pressed

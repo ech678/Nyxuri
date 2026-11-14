@@ -15,7 +15,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from tests.utils import TempEnv
 
@@ -203,3 +203,116 @@ class TestRuntimeHomeContract(unittest.TestCase):
             self.assertEqual(python.returncode, 0, python.stderr)
         self.assertEqual(shell.stdout, python.stdout)
         self.assertTrue(shell.stdout.endswith("/nyxuri/runtime/nyxuri"), shell.stdout)
+
+
+class TestShellRestart(unittest.TestCase):
+    """`nyxuri shell restart` restarts exactly what is running — and nothing else.
+
+    The verb is recovery, so the ledger must stay untouched and ambiguous
+    fields must be refused rather than resolved by guesswork.
+    """
+
+    def setUp(self):
+        self._ctx = TempEnv()
+        self._ctx.__enter__()
+
+    def tearDown(self):
+        self._ctx.__exit__()
+
+    def _restart(self, instances, **overrides):
+        from nyxuri.system import shell as shell_switcher
+        proc = MagicMock(pid=4321)
+        proc.poll.return_value = None
+        stub = {
+            "probe_running_shells": instances,
+            "preflight_shell": (True, "/bin/sh", ""),
+            "is_shell_locked": False,
+            "stop_all_shell_instances": True,
+            "wait_shell_ready": True,
+            "spawn_shell": proc,
+        }
+        stub.update(overrides)
+        mocks = {}
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-test"}))
+            for name, value in stub.items():
+                if isinstance(value, Exception):
+                    mocks[name] = stack.enter_context(
+                        patch.object(shell_switcher, name, side_effect=value))
+                else:
+                    mocks[name] = stack.enter_context(
+                        patch.object(shell_switcher, name, return_value=value))
+            mocks["set_shell"] = stack.enter_context(patch.object(shell_switcher, "set_shell"))
+            result = shell_switcher.restart_shell()
+        return result, mocks
+
+    def test_restarts_whatever_is_running_without_touching_the_ledger(self):
+        result, mocks = self._restart([("nyxuri-shell", 111)])
+        self.assertTrue(result[0], result[1])
+        self.assertIn("nyxuri-shell restarted (PID: 4321)", result[1])
+        mocks["stop_all_shell_instances"].assert_called_once_with(
+            "nyxuri-shell", "/bin/sh", timeout=2.5)
+        mocks["spawn_shell"].assert_called_once_with("nyxuri-shell", "/bin/sh")
+        mocks["set_shell"].assert_not_called()
+
+    def test_noctalia_is_a_valid_restart_target(self):
+        result, mocks = self._restart([("noctalia", 222)])
+        self.assertTrue(result[0], result[1])
+        mocks["spawn_shell"].assert_called_once_with("noctalia", "/bin/sh")
+        mocks["stop_all_shell_instances"].assert_called_once_with(
+            "noctalia", "/bin/sh", timeout=2.5)
+
+    def test_ambiguous_field_is_refused_instead_of_guessed(self):
+        result, mocks = self._restart([("nyxuri-shell", 1), ("noctalia", 2)])
+        self.assertFalse(result[0])
+        self.assertIn("ambiguous", result[1])
+        mocks["stop_all_shell_instances"].assert_not_called()
+        mocks["spawn_shell"].assert_not_called()
+
+    def test_empty_field_is_not_a_restart(self):
+        result, mocks = self._restart([])
+        self.assertFalse(result[0])
+        self.assertIn("No running shell", result[1])
+        mocks["spawn_shell"].assert_not_called()
+
+    def test_no_wayland_session_is_refused_before_probing(self):
+        from nyxuri.system import shell as shell_switcher
+        with patch.object(shell_switcher, "probe_running_shells") as probe, \
+             patch.object(shell_switcher, "spawn_shell") as spawn:
+            result = shell_switcher.restart_shell()
+        self.assertFalse(result[0])
+        self.assertIn("Wayland", result[1])
+        probe.assert_not_called()
+        spawn.assert_not_called()
+
+    def test_locked_screen_is_refused(self):
+        result, mocks = self._restart([("nyxuri-shell", 111)], is_shell_locked=True)
+        self.assertFalse(result[0])
+        self.assertIn("locked", result[1])
+        mocks["stop_all_shell_instances"].assert_not_called()
+        mocks["spawn_shell"].assert_not_called()
+
+    def test_failed_preflight_aborts(self):
+        result, mocks = self._restart(
+            [("nyxuri-shell", 111)], preflight_shell=(False, "", "binary missing"))
+        self.assertFalse(result[0])
+        self.assertIn("binary missing", result[1])
+        mocks["spawn_shell"].assert_not_called()
+
+    def test_stop_failure_aborts_without_spawning(self):
+        result, mocks = self._restart(
+            [("nyxuri-shell", 111)], stop_all_shell_instances=False)
+        self.assertFalse(result[0])
+        self.assertIn("Failed to stop", result[1])
+        mocks["spawn_shell"].assert_not_called()
+
+    def test_spawn_failure_is_reported(self):
+        result, _mocks = self._restart([("nyxuri-shell", 111)], spawn_shell=OSError("boom"))
+        self.assertFalse(result[0])
+        self.assertIn("boom", result[1])
+
+    def test_failed_readiness_sweeps_and_points_at_the_session_log(self):
+        result, mocks = self._restart([("nyxuri-shell", 111)], wait_shell_ready=False)
+        self.assertFalse(result[0])
+        self.assertIn("nyxuri-shell-session.log", result[1])
+        self.assertEqual(mocks["stop_all_shell_instances"].call_count, 2)

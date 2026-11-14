@@ -11,6 +11,7 @@ Singleton {
     property var settingsHost: null
     property var sidebarHost: null
     property var islandHost: null
+    property var launcherHost: null
     property var wallpaperHost: null
     property var dockHost: null
     property bool externalDragActive: false
@@ -53,8 +54,7 @@ Singleton {
         onTriggered: {
             if (root.pendingSecurePowerAction === "")
                 return;
-            console.warn("[ActionGateway] Dropped secure power action, lock never secured:",
-                         root.pendingSecurePowerAction);
+            console.warn("[ActionGateway] Dropped secure power action, lock never secured:", root.pendingSecurePowerAction);
             root.pendingSecurePowerAction = "";
         }
     }
@@ -124,10 +124,14 @@ Singleton {
         case "lock":
             return root.powerAction("lock", "launcher:search");
         case "island":
-            return root.islandHost ? (root.islandHost.invoke(action.method) !== "ISLAND_UNAVAILABLE") :
-                                       false;
+            return root.islandHost ? (root.islandHost.invoke(action.method) !== "ISLAND_UNAVAILABLE") : false;
         case "sidebar":
             return root.requestSidebarToggle(action.argument || "dashboard");
+        case "launcher":
+            if (!root.launcherHost)
+                return false;
+            root.launcherHost.toggleWindow();
+            return true;
         case "power-menu":
             return root.requestSessionOpen();
         default:
@@ -142,8 +146,7 @@ Singleton {
     // string); owner must be a non-empty identifier (audited as LIFE001).
     function execute(args, owner) {
         if (!args || !Array.isArray(args) || args.length === 0) {
-            console.warn("[ActionGateway] Invalid execution args:", JSON.stringify(args), "from owner:",
-                         owner);
+            console.warn("[ActionGateway] Invalid execution args:", JSON.stringify(args), "from owner:", owner);
             return false;
         }
 
@@ -161,8 +164,7 @@ Singleton {
             return;
 
         if (!force && root.sessionLocker && !root.sessionLocker.secure) {
-            console.warn("[ActionGateway] Waiting for session locker to secure before",
-                         root.pendingSecurePowerAction);
+            console.warn("[ActionGateway] Waiting for session locker to secure before", root.pendingSecurePowerAction);
             return;
         }
 

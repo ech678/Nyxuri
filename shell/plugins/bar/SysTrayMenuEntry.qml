@@ -45,11 +45,6 @@ RippleButton {
     Layout.bottomMargin: menuEntry.isSeparator ? 4 : 0
     Layout.fillWidth: true
 
-    Component.onCompleted: {
-        if (menuEntry.isSeparator) {
-            root.buttonColor = root.colBackground;
-        }
-    }
 
     releaseAction: () => {
         if (menuEntry.hasChildren) {

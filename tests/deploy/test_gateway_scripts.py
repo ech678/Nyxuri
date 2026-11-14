@@ -33,6 +33,11 @@ class TestScriptContracts(unittest.TestCase):
         source = script.read_text(encoding="utf-8")
         self.assertIn(".assignments // .", source)
 
+    def test_shell_action_restart_delegates_to_the_cli_state_machine(self):
+        source = (self._niri_scripts() / "shell-action.sh").read_text(encoding="utf-8")
+        self.assertIn("exec nyxuri shell restart", source)
+        self.assertIn("restart}", source)  # usage line stays in sync
+
     def test_thumbnail_temp_file_keeps_an_image_suffix(self):
         script = Path(__file__).resolve().parents[2] / "plugins" / "noctalia" / "mpvpaper-sync.sh"
         source = script.read_text(encoding="utf-8")

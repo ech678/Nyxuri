@@ -5,7 +5,7 @@ Verifies:
   - No bare import qs statements in the promoted components
   - BarGroup.qml has trimmed dead paths (BarGroupStylePopup, widgetStyles) and manages child backgroundVisible
   - Divisor.qml supports rect/dot/space styles and connects to PersonalizationConfig
-  - BarComponentLoader.qml registers "divisor" and "island"
+  - BarContent.qml registers "divisor" and "island" in its widget URL map
   - DynamicIsland.qml wires isMaterial to PersonalizationConfig.barCornerStyle
   - PersonalizationConfig defines barCornerStyles, barBorderlessModes, barDividerStyles, and includes "divisor"
   - BarContent.qml implements 3-lane cornerStyle, centerOnly mode, and material pill wrapping
@@ -62,12 +62,88 @@ class BarEnd4ContractTest(unittest.TestCase):
 
     def test_bar_group_trims_and_bindings(self):
         content = read_bar_file("BarGroup.qml")
-        self.assertNotIn("BarGroupStylePopup", content, "BarGroup must not reference BarGroupStylePopup")
-        self.assertNotIn("widgetStyles", content, "BarGroup must not reference widgetStyles")
-        self.assertIn("backgroundVisible", content, "BarGroup must bind child backgroundVisible")
+        # B8.1: the group is a full end4 fork again — the per-widget style
+        # editor is wired, and persistence goes through PersonalizationConfig
+        # instead of the read-only Config bridge.
+        self.assertIn("BarGroupStylePopup", content, "BarGroup must wire the right-click style editor")
+        self.assertIn("PersonalizationConfig.setBarWidgetStyle", content, "widget styles must persist via PersonalizationConfig")
+        self.assertIn("PersonalizationConfig.barIsMaterial", content, "material treatment comes from the single source")
+        self.assertIn("resolvedGroupColor", content, "BarGroup must consume bar.groupColor")
+        self.assertIn("paintBackground", content, "BarGroup must honour paintBackground")
+        self.assertIn("isSegmented", content, "BarGroup must implement segmented borders")
         self.assertIn("isMaterial", content)
         self.assertIn("startRadius", content)
         self.assertIn("endRadius", content)
+
+    def test_bar_content_centered_lanes(self):
+        content = read_bar_file("BarContent.qml")
+        self.assertIn("(parent.width - width) / 2", content, "middle lane must be anchored to the optical centre")
+        self.assertNotIn("hostScale", content, "the iNiR compression clamp is retired (NaN source)")
+        self.assertNotIn("centerHostX", content, "the iNiR compression clamp is retired (NaN source)")
+        self.assertIn('"island"', content, "island must be in the material-pill blacklist")
+        self.assertIn("bar.m3.layouts", content)
+        # B8.4: islandEnabled has to hide the widget, not just release the
+        # popup:notification slot.
+        self.assertIn("PersonalizationConfig.islandEnabled", content)
+        # Only the active style branch instantiates widgets.
+        self.assertIn("active: root.isMaterial", content)
+        self.assertIn("active: !root.isMaterial", content)
+
+    def test_material_helper_is_the_single_source(self):
+        config = read_services_file("PersonalizationConfig.qml")
+        self.assertIn("readonly property bool barIsMaterial", config)
+        self.assertIn("readonly property bool barIsMaterialHug", config)
+        self.assertIn("readonly property bool barIsPanel", config)
+        for name in ("Media.qml", "SysTray.qml", "UtilButton.qml", "UtilButtons.qml",
+                     "Divisor.qml", "Visualizer.qml", "BatteryIndicator.qml"):
+            content = read_bar_file(name)
+            self.assertIn("PersonalizationConfig.barIsMaterial", content, name)
+            self.assertNotIn("cornerStyle === 3", content, f"{name} re-derives material")
+
+    def test_system_icons_are_the_inir_fork(self):
+        content = read_bar_file("SystemIcons.qml")
+        self.assertIn("KeyboardIndicators", content)
+        self.assertIn("HyprlandXkbIndicator.qml", content)
+        self.assertIn("Appearance.sizes.barIconSize", content)
+        self.assertIn("Appearance.sizes.barUtilIconSize", read_bar_file("UtilButton.qml"))
+        self.assertIn("Appearance.sizes.barPowerButtonSize", read_bar_file("PowerButton.qml"))
+        # The util hover expansion is end4 behaviour and stays.
+        self.assertIn("hovered ? 54 : 26", read_bar_file("UtilButton.qml"))
+
+    def test_active_window_is_an_end4_fork(self):
+        content = read_bar_file("ActiveWindow.qml")
+        self.assertIn("Fork & Trim: end4-pC", content)
+        self.assertIn("CompositorDriver.focusedWindow", content)
+        self.assertIn("activeWorkspaceForOutput", content)
+        self.assertIn("property color contentColor", content)
+        self.assertIn("contentColorOverridden", content)
+        self.assertNotIn("console.log(", content)
+
+    def test_self_hiding_widgets_collapse_their_group(self):
+        group = read_bar_file("BarGroup.qml")
+        # `Item.visible` reports effective visibility, so reading it here would
+        # deadlock a group that hid once (the hidden group masks the child).
+        self.assertIn('"barWidgetVisible" in root.loadedWidget', group)
+        self.assertIn("visible: root.hasContent", group)
+        media = read_bar_file("Media.qml")
+        self.assertIn("readonly property bool barWidgetVisible: root.shouldShow", media)
+        self.assertIn("visible: root.shouldShow", media)
+
+    def test_retired_island_controls_stay_out(self):
+        """B8.4/B8.5: every retired key must be gone from the config store,
+        the island page and both settings catalogs."""
+        retired = (
+            "islandStyle", "islandOverlay", "islandPosition", "islandHoverAction",
+            "islandLeftClickAction", "islandMiddleClickAction", "islandMediaProgressStyle",
+            "islandMediaCoverStyle", "islandMediaColorStyle", "islandKeyholeCard",
+        )
+        sources = {
+            "PersonalizationConfig.qml": read_services_file("PersonalizationConfig.qml"),
+            "IslandPage.qml": read_bar_file("island/IslandPage.qml"),
+        }
+        for name, content in sources.items():
+            for key in retired:
+                self.assertNotIn(key, content, f"{name} still carries retired key {key}")
 
     def test_divisor_contracts(self):
         content = read_bar_file("Divisor.qml")
@@ -82,8 +158,7 @@ class BarEnd4ContractTest(unittest.TestCase):
 
     def test_dynamic_island_is_material_binding(self):
         content = read_bar_file("DynamicIsland.qml")
-        self.assertIn("Config.options.bar.cornerStyle === 3", content)
-        self.assertIn("Config.options.bar.cornerStyle === 4", content)
+        self.assertIn("PersonalizationConfig.barIsMaterial", content)
 
     def test_personalization_config_bar_keys(self):
         content = read_services_file("PersonalizationConfig.qml")
@@ -93,10 +168,13 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("barBorderless", content)
         self.assertIn("barDividerStyles", content)
         self.assertIn("barDividerStyle", content)
+        self.assertIn("barGroupColorOptions", content)
+        self.assertIn("barWidgetStyles", content)
         self.assertIn('"divisor"', content)
         self.assertIn("setBarCornerStyle", content)
         self.assertIn("setBarBorderless", content)
         self.assertIn("setBarDividerStyle", content)
+        self.assertIn("setBarWidgetStyle", content)
 
     def test_bar_content_contracts(self):
         content = read_bar_file("BarContent.qml")
@@ -112,6 +190,10 @@ class BarEnd4ContractTest(unittest.TestCase):
         content = read_bar_file("Bar.qml")
         self.assertIn("roundDecorators", content)
         self.assertIn("shownExclusiveZone", content)
+        # cornerStyle 4/5 reserve 4px in the window layer (end4 parity).
+        self.assertIn("materialHug", content)
+        self.assertIn("panelStyle", content)
+        self.assertIn("? 4 : 0", content)
 
     def test_bar_and_island_ipc_handlers(self):
         content = read_bar_file("Bar.qml")
@@ -121,7 +203,8 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("function close(): string", content)
         self.assertIn('target: "island"', content)
         self.assertIn("function state(): string", content)
-        self.assertIn("function stopRecording(): string", content)
+        # Recording is parked; the IPC face must not promise it.
+        self.assertNotIn("stopRecording", content)
 
 
 if __name__ == "__main__":

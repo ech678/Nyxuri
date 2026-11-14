@@ -705,6 +705,65 @@ def hot_switch_shell(target: str, custom_bin_override: Optional[str] = None) -> 
     return True, f"Successfully switched to {target} (PID: {new_proc.pid})"
 
 
+def restart_shell(timeout: float = 4.0) -> Tuple[bool, str]:
+    """Hard-restart the desktop shell that is currently running.
+
+    Deliberately narrower than hot_switch_shell(): this verb never rewrites
+    the ledger, and it refuses an ambiguous field instead of picking a winner.
+    Restarting is recovery, not preference management — a crashed field is
+    resolved by an explicit `nyxuri shell switch`, so the user decides which
+    shell survives.
+    """
+    if not os.environ.get("WAYLAND_DISPLAY"):
+        return False, "No graphical Wayland session active; nothing to restart"
+
+    instances = probe_running_shells()
+    kinds = sorted({name for name, _pid in instances})
+    if not kinds:
+        return False, "No running shell instance found (see `nyxuri shell status`)"
+    if len(kinds) > 1:
+        return False, (
+            f"Cannot restart an ambiguous field ({', '.join(kinds)} both running); "
+            "resolve it with `nyxuri shell switch <target>` first"
+        )
+
+    target = kinds[0]
+    ok, target_bin, err = preflight_shell(target)
+    if not ok:
+        return False, f"Preflight failed: {err}"
+
+    if is_shell_locked(target, target_bin):
+        return False, "Cannot restart the shell while screen is locked (security invariant violated)"
+
+    if not stop_all_shell_instances(target, target_bin, timeout=2.5):
+        return False, f"Failed to stop every running {target} instance; restart aborted"
+
+    try:
+        new_proc = spawn_shell(target, target_bin)
+    except Exception as exc:
+        return False, f"Failed to spawn {target}: {exc}"
+
+    if not wait_shell_ready(target, new_proc, target_bin, timeout=timeout):
+        # A shell that never reported ready did not restart. Sweep the field so
+        # the next attempt does not inherit a half-dead instance.
+        try:
+            new_proc.terminate()
+            time.sleep(0.2)
+            if new_proc.poll() is None:
+                new_proc.kill()
+        except Exception:
+            pass
+        stop_all_shell_instances(target, target_bin, timeout=1.5)
+        state_base = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local" / "state")))
+        log_path = state_base / "nyxuri" / f"{target}-session.log"
+        return False, (
+            f"{target} failed the {timeout:.1f}s readiness probe and was stopped again. "
+            f"See {log_path}"
+        )
+
+    return True, f"{target} restarted (PID: {new_proc.pid})"
+
+
 # --- Shell Event Bridge ---
 
 def _shell_ipc_dir() -> Optional[Path]:

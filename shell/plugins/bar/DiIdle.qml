@@ -24,9 +24,7 @@ Item {
     }
     anchors.fill: parent
 
-    readonly property bool systemIconsElsewhere:
-        Config.options.bar.layouts.leftLayout.includes("systemIcons")
-        || Config.options.bar.layouts.rightLayout.includes("systemIcons")
+    readonly property bool systemIconsElsewhere: Config.options.bar.layouts.leftLayout.includes("systemIcons") || Config.options.bar.layouts.rightLayout.includes("systemIcons")
 
     Rectangle {
         id: avatarRect
@@ -43,9 +41,7 @@ Item {
         Image {
             id: avatarImage
             anchors.fill: parent
-            source: Config.options.profile.avatarPath !== ""
-                ? "file://" + Config.options.profile.avatarPicture
-                : "file://" + Paths.profileAvatar
+            source: Config.options.profile.avatarPath !== "" ? "file://" + Config.options.profile.avatarPicture : "file://" + Paths.profileAvatar
             sourceSize.width: avatarImage.width * 2
             sourceSize.height: avatarImage.height * 2
             fillMode: Image.PreserveAspectCrop
@@ -59,7 +55,7 @@ Item {
             }
             onStatusChanged: {
                 if (status === Image.Error)
-                    visible = false
+                    visible = false;
             }
         }
     }
@@ -122,7 +118,9 @@ Item {
                         StyledText {
                             text: `${NotificationService.unreadCount}`
                             font.pixelSize: Appearance.font.pixelSize.smallest
-                            font.features: { "tnum": 1 }
+                            font.features: {
+                                "tnum": 1
+                            }
                             color: Appearance.colors.colOnLayer0
                         }
                     }
@@ -138,14 +136,16 @@ Item {
 
         Loader {
             Layout.alignment: Qt.AlignVCenter
-            sourceComponent: Config.options.bar.dynamicIsland.leftWidget === "clockWidget" ? weatherComponent : clockComponent
+            sourceComponent: PersonalizationConfig.islandSatellite === "clock" ? clockComponent : PersonalizationConfig.islandSatellite === "weather" ? weatherComponent : null
 
             Component {
                 id: clockComponent
                 StyledText {
                     text: DateTime.time
                     font.pixelSize: di.isMaterial ? Appearance.font.pixelSize.normal : Appearance.font.pixelSize.small
-                    font.features: { "tnum": 1 }
+                    font.features: {
+                        "tnum": 1
+                    }
                     color: Appearance.colors.colOnLayer0
                 }
             }
@@ -157,7 +157,7 @@ Item {
 
                     MaterialSymbol {
                         fill: 0
-                        text: "cloud"
+                        text: WeatherService.hasValidData ? WeatherService.currentIconName : "cloud"
                         iconSize: Appearance.font.pixelSize.normal
                         color: Appearance.colors.colOnLayer0
                         Layout.alignment: Qt.AlignVCenter
@@ -165,7 +165,9 @@ Item {
 
                     StyledText {
                         font.pixelSize: di.isMaterial ? Appearance.font.pixelSize.normal : Appearance.font.pixelSize.small
-                        font.features: { "tnum": 1 }
+                        font.features: {
+                            "tnum": 1
+                        }
                         color: Appearance.colors.colOnLayer0
                         text: WeatherService.hasValidData ? (Math.round(WeatherService.currentTemperatureC) + "°") : "--°"
                         Layout.alignment: Qt.AlignVCenter
@@ -174,11 +176,7 @@ Item {
             }
         }
 
-        readonly property real computedIdleWidth: avatarRect.width
-            + (di.isMaterial ? 0 : 4)
-            + 10
-            + rightSideRow.implicitWidth
-            + 10
+        readonly property real computedIdleWidth: avatarRect.width + (di.isMaterial ? 0 : 4) + 10 + rightSideRow.implicitWidth + 10
 
         onComputedIdleWidthChanged: di.idleTextContentWidth = rightSideRow.computedIdleWidth
         Component.onCompleted: di.idleTextContentWidth = rightSideRow.computedIdleWidth

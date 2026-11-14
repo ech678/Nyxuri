@@ -24,6 +24,9 @@ Singleton {
 
         readonly property QtObject resources: QtObject {
             readonly property int updateInterval: 1000
+            readonly property int historyLength: 60
+            readonly property int autoStopDelay: 15000
+            readonly property bool monitorGpu: true
         }
 
         readonly property QtObject profile: QtObject {
@@ -43,7 +46,7 @@ Singleton {
             readonly property bool followFrameColor: false
             readonly property string frameColor: ""
             readonly property var screenList: []
-            property var widgetStyles: []
+            readonly property string groupColor: PersonalizationConfig.barGroupColor
             readonly property alias layouts: m3Options.layouts
 
             readonly property QtObject divider: QtObject {
@@ -74,18 +77,40 @@ Singleton {
                     readonly property var rightLayout: PersonalizationConfig.barLayoutRight
                 }
 
-                // end4-pC Config.qml b881970b defaults for the ported resource widgets.
+                // iNiR reads these straight off the object (no optional
+                // chaining), so a missing key is a TypeError on every binding
+                // evaluation, not a silent default.
+                readonly property bool verbose: true
+
+                readonly property QtObject divider: QtObject {
+                    readonly property string style: PersonalizationConfig.barDividerStyle ?? "rect"
+                    readonly property int spacing: 4
+                }
+
+                readonly property QtObject clock: QtObject {
+                    readonly property string timeFontFamily: ""
+                    readonly property int timePixelSize: 0
+                    readonly property string dateFontFamily: ""
+                    readonly property int datePixelSize: 0
+                }
+
+                readonly property QtObject indicators: QtObject {
+                    readonly property QtObject notifications: QtObject {
+                        readonly property bool showUnreadCount: true
+                    }
+                }
+
                 readonly property QtObject resources: QtObject {
-                    readonly property string style: "filled"
+                    readonly property string style: "outline"
                     readonly property bool showValue: false
-                    readonly property bool alwaysShowSwap: false
+                    readonly property bool alwaysShowRam: true
                     readonly property bool alwaysShowCpu: true
                     readonly property bool alwaysShowCpuTemp: false
                     readonly property bool alwaysShowDisk: false
-                    readonly property bool alwaysShowRam: true
-                    readonly property int memoryWarningThreshold: 95
-                    readonly property int swapWarningThreshold: 85
-                    readonly property int cpuWarningThreshold: 90
+                    readonly property bool alwaysShowSwap: false
+                    readonly property int memoryWarningThreshold: 90
+                    readonly property int cpuWarningThreshold: 95
+                    readonly property int swapWarningThreshold: 90
                 }
 
                 readonly property QtObject tooltips: QtObject {
@@ -113,28 +138,30 @@ Singleton {
                 }
 
                 readonly property QtObject workspaces: QtObject {
-                    readonly property bool showAppIcons: true
-                    readonly property bool alwaysShowNumbers: false
+                    readonly property bool showAppIcons: PersonalizationConfig.barShowAppIcons
+                    readonly property bool alwaysShowNumbers: PersonalizationConfig.barAlwaysShowNumbers
                     readonly property bool useNerdFont: false
                     readonly property bool monochromeIcons: false
-                    readonly property string indicatorStyle: "pill"
-                    readonly property var numberMap: ({})
+                    readonly property string indicatorStyle: PersonalizationConfig.barWorkspaceIndicatorStyle
+                    readonly property var numberMap: []
                 }
-            }
 
-            readonly property QtObject dynamicIsland: QtObject {
-                readonly property bool enable: PersonalizationConfig.islandEnabled
-                readonly property string leftWidget: "clockWidget"
-                readonly property string rightWidget: "none"
-                readonly property bool showMediaControls: true
-                readonly property string visualizerStyle: "dots"
-            }
+                readonly property QtObject keyboardIndicators: QtObject {
+                    readonly property bool showPopup: PersonalizationConfig.keyboardShowPopup
+                    readonly property bool showPanel: PersonalizationConfig.keyboardShowPanel
 
-            readonly property QtObject visualizer: QtObject {
-                readonly property bool enable: true
-                readonly property string type: "bars"
-                readonly property string organicFit: "auto"
-                readonly property string multiMonitorMode: "primary"
+                    readonly property QtObject popup: QtObject {
+                        readonly property bool layout: PersonalizationConfig.keyboardPopupLayout
+                        readonly property bool caps: PersonalizationConfig.keyboardPopupCaps
+                        readonly property bool num: PersonalizationConfig.keyboardPopupNum
+                    }
+
+                    readonly property QtObject panel: QtObject {
+                        readonly property bool layout: PersonalizationConfig.keyboardPanelLayout
+                        readonly property bool caps: PersonalizationConfig.keyboardPanelCaps
+                        readonly property bool num: PersonalizationConfig.keyboardPanelNum
+                    }
+                }
             }
         }
     }

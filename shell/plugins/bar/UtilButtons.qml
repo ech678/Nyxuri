@@ -11,10 +11,10 @@ import qs.ui
 Item {
     id: root
     property bool vertical: Config.options.bar.vertical
-    property bool isMaterial: Config.options.bar.m3.cornerStyle === 3
+    property bool isMaterial: PersonalizationConfig.barIsMaterial
 
     implicitWidth: isMaterial && !root.vertical ? flow.implicitWidth : root.vertical ? Appearance.sizes.verticalBarWidth - 14 : flow.implicitWidth + 4
-    implicitHeight: isMaterial && root.vertical ? flow.implicitHeight: isMaterial ? 32 : root.vertical ? flow.implicitHeight + 4 : Appearance.sizes.barHeight
+    implicitHeight: isMaterial && root.vertical ? flow.implicitHeight : isMaterial ? 32 : root.vertical ? flow.implicitHeight + 4 : Appearance.sizes.barHeight
 
     Flow {
         id: flow
@@ -43,7 +43,8 @@ Item {
                 onClicked: GlobalActions.runById("screenshot", "")
                 MaterialSymbol {
                     horizontalAlignment: Qt.AlignHCenter
-                    fill: 1; text: "screenshot_region"
+                    fill: 1
+                    text: "screenshot_region"
                     iconSize: Appearance.font.pixelSize.large
                     color: Appearance.colors.colOnLayer2
                 }
@@ -69,7 +70,8 @@ Item {
                 onClicked: GlobalActions.runById("color-picker", "")
                 MaterialSymbol {
                     horizontalAlignment: Qt.AlignHCenter
-                    fill: 1; text: "colorize"
+                    fill: 1
+                    text: "colorize"
                     iconSize: Appearance.font.pixelSize.large
                     color: Appearance.colors.colOnLayer2
                 }
@@ -93,11 +95,12 @@ Item {
                 property int elapsedSeconds: 0
 
                 onIsRecordingChanged: {
-                    if (!isRecording) elapsedSeconds = 0
+                    if (!isRecording)
+                        elapsedSeconds = 0;
                 }
 
                 function formatTime(s) {
-                    return Math.floor(s / 60).toString().padStart(2, '0') + ":" + (s % 60).toString().padStart(2, '0')
+                    return Math.floor(s / 60).toString().padStart(2, '0') + ":" + (s % 60).toString().padStart(2, '0');
                 }
 
                 Timer {
@@ -115,8 +118,17 @@ Item {
                     buttonRadius: recordingItem.isRecording ? Appearance.rounding.normal : implicitHeight / 2
                     onClicked: GlobalActions.runById("screen-record", "")
 
-                    Behavior on colBackground { ColorAnimation { duration: 200 } }
-                    Behavior on buttonRadius { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                    Behavior on colBackground {
+                        ColorAnimation {
+                            duration: 200
+                        }
+                    }
+                    Behavior on buttonRadius {
+                        NumberAnimation {
+                            duration: 200
+                            easing.type: Easing.OutCubic
+                        }
+                    }
 
                     MaterialSymbol {
                         horizontalAlignment: Qt.AlignHCenter
@@ -124,7 +136,11 @@ Item {
                         text: recordingItem.isRecording ? "stop_circle" : "screen_record"
                         iconSize: Appearance.font.pixelSize.large
                         color: recordingItem.isRecording ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer2
-                        Behavior on color { ColorAnimation { duration: 200 } }
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 200
+                            }
+                        }
                     }
                 }
 
@@ -139,7 +155,9 @@ Item {
                         width: implicitWidth
                         text: recordingItem.formatTime(recordingItem.elapsedSeconds)
                         font.pixelSize: Appearance.font.pixelSize.small
-                        font.features: { "tnum": 1 }
+                        font.features: {
+                            "tnum": 1
+                        }
                         font.letterSpacing: -0.3
                         color: Appearance.colors.colOnLayer2
                         rightPadding: 8
@@ -178,7 +196,8 @@ Item {
                 onClicked: GlobalStates.oskOpen = !GlobalStates.oskOpen
                 MaterialSymbol {
                     horizontalAlignment: Qt.AlignHCenter
-                    fill: 0; text: "keyboard"
+                    fill: 0
+                    text: "keyboard"
                     iconSize: Appearance.font.pixelSize.large
                     color: Appearance.colors.colOnLayer2
                 }
@@ -204,7 +223,8 @@ Item {
                 onClicked: GlobalStates.wallpaperSelectorOpen = !GlobalStates.wallpaperSelectorOpen
                 MaterialSymbol {
                     horizontalAlignment: Qt.AlignHCenter
-                    fill: 0; text: "imagesmode"
+                    fill: 0
+                    text: "imagesmode"
                     iconSize: Appearance.font.pixelSize.large
                     color: Appearance.colors.colOnLayer2
                 }
@@ -274,20 +294,29 @@ Item {
             id: perfM3
             UtilButton {
                 toolTipText: Translation.tr("Change performance profile")
-                iconText: switch(PowerProfiles.profile) {
-                    case PowerProfile.PowerSaver: return "energy_savings_leaf"
-                    case PowerProfile.Balanced: return "airwave"
-                    case PowerProfile.Performance: return "local_fire_department"
+                iconText: switch (PowerProfiles.profile) {
+                case PowerProfile.PowerSaver:
+                    return "energy_savings_leaf";
+                case PowerProfile.Balanced:
+                    return "airwave";
+                case PowerProfile.Performance:
+                    return "local_fire_department";
                 }
-                onClicked: (e) => {
+                onClicked: e => {
                     if (PowerProfiles.hasPerformanceProfile) {
-                        switch(PowerProfiles.profile) {
-                            case PowerProfile.PowerSaver: PowerProfiles.profile = PowerProfile.Balanced; break;
-                            case PowerProfile.Balanced: PowerProfiles.profile = PowerProfile.Performance; break;
-                            case PowerProfile.Performance: PowerProfiles.profile = PowerProfile.PowerSaver; break;
+                        switch (PowerProfiles.profile) {
+                        case PowerProfile.PowerSaver:
+                            PowerProfiles.profile = PowerProfile.Balanced;
+                            break;
+                        case PowerProfile.Balanced:
+                            PowerProfiles.profile = PowerProfile.Performance;
+                            break;
+                        case PowerProfile.Performance:
+                            PowerProfiles.profile = PowerProfile.PowerSaver;
+                            break;
                         }
                     } else {
-                        PowerProfiles.profile = PowerProfiles.profile == PowerProfile.Balanced ? PowerProfile.PowerSaver : PowerProfile.Balanced
+                        PowerProfiles.profile = PowerProfiles.profile == PowerProfile.Balanced ? PowerProfile.PowerSaver : PowerProfile.Balanced;
                     }
                 }
             }
@@ -295,24 +324,33 @@ Item {
         Component {
             id: legacyPerf
             CircleUtilButton {
-                onClicked: (e) => {
+                onClicked: e => {
                     if (PowerProfiles.hasPerformanceProfile) {
-                        switch(PowerProfiles.profile) {
-                            case PowerProfile.PowerSaver: PowerProfiles.profile = PowerProfile.Balanced; break;
-                            case PowerProfile.Balanced: PowerProfiles.profile = PowerProfile.Performance; break;
-                            case PowerProfile.Performance: PowerProfiles.profile = PowerProfile.PowerSaver; break;
+                        switch (PowerProfiles.profile) {
+                        case PowerProfile.PowerSaver:
+                            PowerProfiles.profile = PowerProfile.Balanced;
+                            break;
+                        case PowerProfile.Balanced:
+                            PowerProfiles.profile = PowerProfile.Performance;
+                            break;
+                        case PowerProfile.Performance:
+                            PowerProfiles.profile = PowerProfile.PowerSaver;
+                            break;
                         }
                     } else {
-                        PowerProfiles.profile = PowerProfiles.profile == PowerProfile.Balanced ? PowerProfile.PowerSaver : PowerProfile.Balanced
+                        PowerProfiles.profile = PowerProfiles.profile == PowerProfile.Balanced ? PowerProfile.PowerSaver : PowerProfile.Balanced;
                     }
                 }
                 MaterialSymbol {
                     horizontalAlignment: Qt.AlignHCenter
                     fill: 0
-                    text: switch(PowerProfiles.profile) {
-                        case PowerProfile.PowerSaver: return "energy_savings_leaf"
-                        case PowerProfile.Balanced: return "airwave"
-                        case PowerProfile.Performance: return "local_fire_department"
+                    text: switch (PowerProfiles.profile) {
+                    case PowerProfile.PowerSaver:
+                        return "energy_savings_leaf";
+                    case PowerProfile.Balanced:
+                        return "airwave";
+                    case PowerProfile.Performance:
+                        return "local_fire_department";
                     }
                     iconSize: Appearance.font.pixelSize.large
                     color: Appearance.colors.colOnLayer2

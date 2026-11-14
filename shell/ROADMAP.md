@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | P4 | 主题契约、模板兼容与取色引擎分阶 | 待验收（契约测试全绿；实机行为与视觉证据待作者） |
 | T3 | 设置界面替换：Caelestia 安卓风味 | M3/M4 待验收（机器证据齐；视觉过目待作者） |
-| B | Bar & Island 统一（双源整抄：iNiR 原生 Material Bar + end4 灵动岛） | B0~B6 已完成（双源融合、3-Lane自由布局、IPC通信与通知仲裁闭环、沙箱部署零diff） |
+| B | Bar & Island（布局自由 + end4 视觉基线） | B9.0 审计基线（进行中）；B8 旧验收作废，仅保留结构回归证据 |
 | P6 | 整体验收与未来移植 | 排队（前置主线 KM5） |
 
 ## 已交付基线台账
@@ -123,88 +123,168 @@ hooks 的实机行为证据与视觉验收待作者确认。镜像色板是否�
 **待验收**：M3 核心四页与 M4 全页面覆盖的实机视觉过目。fidelity 三轮修订与
 S0-4 资产收编明细见台账 T3 实施记录。
 
-## B 卷：Bar & Island 统一（双源整抄：iNiR 原生 Material Bar + end4 灵动岛）
+## B 卷：Bar & Island（布局自由 + end4 视觉基线）
 
-> 起因与重塑（2026-11-08 独立 Sub-agents 深度审查）：审查证实前期 B1–B4 所谓“完成/待验收”
-> 充斥着严重的自研脑补与脱节幻觉（设置页两段/三段割裂、无 middle 栏导致岛不可控、BarComponentLoader
-> 搞硬编码 switch 违背整抄、`islandHost` 悬空导致 Spotlight 失联、通知双重并发弹窗、单测全为静态正则 Grep 假覆盖）。
-> 经比对用户实机截图与最新 `references/iNiR` 源码，本卷全面重塑路线：
-> **以 `references/iNiR/modules/ii/barM3/` 为 Niri 原生 Bar 与 Material 部件基线（免除 Hyprland 翻译），
-> 以 `references/end4-pC/modules/ii/bar/` 为居中灵动岛本体基线；前置物理清除 60+ 孤儿件与死配置；
-> 并专门增设 Sub-agents 独立实机审查任务，对执行与运行态实施防幻觉审计**。
+> **状态：2026-11-14 第二次重置。** B8.1–B8.6 的“已完成/待验收”只证明了结构存在、
+> Loader 不空、探针几何不 NaN，没有证明与 end4 的表现一致；这些阶段全部退回
+> `待开始`，历史明细继续留在台账，不再作为本页的完成依据。
+> 本页只写：**定案、全量表现差异、分期、验收方式**。
+> 症状登记见 [known-issues](../llms-wiki/shell/known-issues.md)，
+> 下架件见 [PARKED](../shell/plugins/bar/PARKED.md)。
 
-### 0. 方法论红线：先物理清盘，再双源整抄入库（Fork & Trim）
-
-本卷一切上游能力一律走 Fork & Trim：**全量 `cp` 原件进树建立基线 → 保留原版防崩溃、
-动画与几何细节 → 定向剪裁适配**。严禁自研拼凑残卷冒充整抄。三个能力源与前置清盘：
-
-- **Bar 底座与 Material 部件源** `references/iNiR/modules/ii/barM3/`（40 件）：
-  天然原生针对 Niri 混成器（无 Hyprland 依赖、天然适配 Overview 避让、专属区控制）；
-  实现 Material 3 嵌套药丸（`barM3/Media.qml` 内嵌实心播放药丸、`ClockWidget.qml` 内嵌时间实心药丸、
-  `WeatherBar.qml`、`SystemIcons.qml`）、独立大圆角胶囊（`borderless === "separated"`）、纸材质阴影。
-- **居中灵动岛源** `references/end4-pC/modules/ii/bar/DynamicIsland.qml` 与 `Di*.qml`（7 件）：
-  成熟的 7 大 Provider 优先级队列、`alwaysWinIds` 强占、Badges 侧栏横排（32×32 几何花瓣图标与点击变轨）、
-  350ms ExpressiveDefaultSpatial 尺寸过渡、dots/wave 可视化。
-- **就地样式微调源** `references/end4-pC/modules/ii/bar/BarGroupStylePopup.qml`：
-  右键点击任一部件就地弹出小弹窗，实时修改并持久化单部件的背景色、边框、圆角与内边距。
-- **前置死代码物理清盘（B0 阶段一次性处决）**：
-  拒绝将死代码留到最后当包袱。B0 建立基线前，物理清除 60+ 历史遗留件（Keystone 旧样式 `styles/long/`、
-  `bangs/`、`pill/`、旧变形录音 `recording/`、旧表面变形引擎 `shared/`、旧大媒体卡 `media/`、旧钥匙孔卡片等
-  `dashboard/`、旧天气 `weather/`、旧 QSB 着色器资产 `shaders/`，以及旧碎片化部件目录 `activewindow/`、
-  `clock/`、`media/`、`sysmonitor/`、`tray/`、`workspaces/` 和自研过渡假胶水 `BarComponentLoader.qml`、
-  `Horizontal/VerticalBarWindow.qml`、`island/end4/`），全库零熵增起步。
-- **Sub-agents 独立审查任务（独立专项设立）**：
-  在代码推进过程中适时启动独立的 Sub-agent 对进度、执行情况及代码真实运行态开展“反幻觉审计”，
-  以 QML 实际加载、IPC 真实响应、无重复弹窗为唯一准绳，严禁静态正则 Grep 充当绿灯。
-
-裁剪只做四类：① 外部依赖桥接（M3Palette → ThemeTokens / Appearance；树内效果件）；
-② 数据与服务桥接（树内 NotificationService / MediaService / VolumeFeedbackService / Pipewire）；
-③ 文案接 I18n；④ 砍上游死路径。整抄件文件头保留来源与许可证标注。
-
-### 1. 决策记录（已与作者定案，不再重开）
+### 0. 定案（2026-11-14，作者拍板）
 
 | # | 决策 | 结论 |
 | --- | --- | --- |
-| D1 | 单元归属 | `shell.keystone` 退场，岛并入 `shell.bar` 成为布局部件（`componentId: "island"`）；插槽 6 → 5，`island` 种类删除（唯一消费者合并后空置即熵增） |
-| D2 | 命名 | keystone → **island**：IPC target、`nyxuri:keystone:*` 动作、`islandHost`、配置键、文件名全链路；Keyhole 系命名随迁审计 |
-| D3 | 岛拓扑 | 100% 对齐 end4-pC：纯内联微交互胶囊（高度恒定 32px，宽度 130~220px 贝塞尔弹性形变），不设下拉大面板；点击头像直接呼出既有右侧边栏（SidebarRight）；复杂控制由独立部件弹窗与 QuickPanel 承载 |
-| D4 | 历史债务处死 | 不再设长期逃生通道。B0 阶段前置物理删除 `styles/long/`、`styles/bangs/`、`styles/pill/`、旧变形录音、旧大面板（`HubContent`/`ToolsContent`/`IslandPanelPopup`）与着色器全集；清理 `PersonalizationConfig` 中的幽灵键 |
-| D5 | 双源整抄基线 | Bar 底座与部件源采用 **iNiR `modules/ii/barM3/`**（Niri 原生、M3 嵌套药丸美学）；灵动岛本体采用 **end4-pC `DynamicIsland` + `Di*` 族**；微调源采用 `BarGroupStylePopup` |
-| D6 | 高度与自由度 | 彻底废除 `barLeadingComponents` / `barTrailingComponents` 双轨制，收敛为真 3-lane（`left/middle/right`）；设置页提供三段拖拽；增加 `barThickness` 滑杆与部件就地调色 |
-| D7 | 灵动岛联动 | 100% 完整复刻 end4-pC：7 大 Provider（Media/Notif/OSD/Session/Timer/Recording/Idle）真实流转；Badges 32×32 几何花瓣横排点击无缝切换 manualFocusId；切歌 hover 展开；彻底放弃 IslandPanelPopup 孤儿大面板 |
-| D8 | 形态面取舍 | 彻底处决 hub 与 tools 大面板历史包袱；lyrics 以后做（保留占位）；session 面整抄 end4 DiSession 微型 4 键条；battery/timer/recording/osd/notif/media 全面接入对应树内真实服务 |
-| D9 | 死代码清盘台账 | 60+ 孤儿件（含旧面板/旧着色器/旧自研假胶水）与 10+ 幽灵配置键列入 B0 处决清单，前置一次性物理 `rm`，坚守减法秩序感 |
-| D10| 通知所有权单一仲裁 | 开启灵动岛时，由岛唯一接管弹窗通知，宿主右上角 `NotificationPopupHost` 自动静默，彻底消灭双重并发弹窗 |
-| D11| Sub-agents 独立审查 | 独立设立实机审查任务，对执行情况与运行真值进行防幻觉代码审计，拒绝形式主义假单测 |
+| B-1 | 布局自由度 | 三段（`left/middle/right`）自由拖拽，不写死部件组合；空 lane 不占位、不出胶囊 |
+| B-2 | 视觉基线 | **end4-pC 的相对几何为唯一准绳**。bar 厚度与竖向宽度由用户自由调整，不冻结绝对值；Float = 所选厚度 + 5×2，M3 Hug/Panel = 所选厚度 + 4，padding/间距/圆角关系照 end4。bar/island 字体走 1.0 尺度；`unsharpenmore=6`、`screenRounding=23`、`windowRounding=18` |
+| B-3 | 岛的唯一真相 | 以“岛是否在布局里”为唯一真相；`islandEnabled` 只保留旧配置迁移读取，不再作为第二开关。通知槽仲裁必须看布局成员，不看旧开关 |
+| B-4 | Timer / Recording | 继续下架：无 `TimerService`/`RecordingService`，provider、组件、设置、IPC、i18n 一并摘除；`DiTimers.qml` 留文件待接线 |
+| B-5 | 验收口径 | 只认运行态：`qs -p` 逐件 `Loader.Ready` + 布局求值数值 + 实机截图；静态字符串断言只作结构回归 |
+| B-6 | 整抄纪律 | 有上游源的一律 `cp` 原件再剪裁；禁止手写残卷。SysTray、竖向 bar、SystemIcons、Workspaces 都按此执行 |
+| B-7 | SysTray | Windows 式“可见区 + 下箭头小菜单 + 可隐藏图标”；end4/iNiR 已有 pinned/unpinned + overflow 网格可抄，Nyxuri 补真实持久化、外部点击关闭和设置页 |
+| B-8 | SystemIcons | 抄 bar 上“快捷设置”部件（`UtilButtons.qml` / `UtilButton.qml`）的按钮语言：固定槽位、hover 胶囊、统一图标尺寸与 tooltip；不抄裸 Flow |
+| B-9 | 外边距 | 新增“上/下边界”和“左右边距”两项设置；与内部 lane inset 分离，默认 0 = end4 行为 |
 
-### 2. 目标终态
+### 1. 全量表现差异（2026-11-14 审计）
 
-一个单元 `shell.bar`（edge 槽）：以 iNiR Material 3 原生药丸美学呈现全宽顶栏；
-灵动岛是三段式布局的一等部件（默认中段、可拖拽移动），左右清空即 center-only 纯岛形态；
-高度/边距自由调节，右键部件就地微调；keystone 与 long 名字从全库消失（归档与 CHANGELOG 历史除外）。
+#### 1.1 全局尺寸、字号、圆角
 
-### 3. 分期台账（B0–B6）
+| 项 | end4 | Nyxuri 现状 | 结果 |
+| --- | --- | --- | --- |
+| 基础 bar 高度 | 用户自由调整 | 默认 36（`defaultBarThickness`，可改） | **不作为差异项**；部件与字号必须适配所选厚度 |
+| Float 高度 | 所选厚度 + 5×2 | 所选厚度 | 少加 10px，内容区被压缩 |
+| M3 Hug / Panel | 所选厚度 + 4 | 所选厚度 | 4/5 档没有高度加成 |
+| 竖向 bar 宽度 | 用户自由调整（end4 参考 46） | 36 且竖向未实现 | 需要独立可调，不冻结为 46 |
+| `smallest` | 10 | 9 | 通知徽标、极小字偏小 |
+| `smaller` | 12 | 10 | 岛副标题、活动窗口 appId 偏小 |
+| `smallie` | 13 | 10 | 媒体标题、时钟时间偏小 |
+| `small` | 15 | 12 | 岛时钟、窗口标题、日期偏小 |
+| `normal` | 16 | 14 | OSD、电池字偏小 |
+| `large` | 17 | 14 | 媒体圆形进度、按钮字偏小 |
+| `larger` | 19 | 19 | 图标没缩，文字缩了 → 比例更挤 |
+| `unsharpenmore` | 6 | 10 | 分组中间圆角大 4px；Islands 8 ➔ 12 |
+| `screenRounding` | 23 | 20 | Hug 角、角落装饰偏小 |
+| `windowRounding` | 18 | 16 | Float 胶囊偏小 |
 
-| 阶段 | 交付目标 | 状态 |
-| :--- | :--- | :--- |
-| B0 | 物理清盘与双源基线入库 (Fork)：物理 `rm` 处决 88 个历史孤儿件与自研假胶水；全量 `cp` iNiR `barM3`（40 件）与 end4 `DynamicIsland`/`Di*`/`BarGroupStylePopup`（8 件）至目标位（inert、带来源标注）；建立 1:1 纯净基线 | 已完成 |
-| B1 | 核心依赖剪裁与桥接 (Trim & Bridge)：剔除外部未声明依赖；桥接 `Appearance` / `M3Palette` / `FocusedScrollMouseArea` / `StyledImage` / `M3ToolTip` / `Config` / `GlobalStates`；治理 9 处生命周期与副作用；清理死 UI 与词典死键；保证 QML 解析不报错 | 已完成 |
-| B2 | 控制通信闭环与通知仲裁 (Control Loop)：补齐 Bar IPC（`toggle/open/close`）；修复主屏 Island IPC 注册（消除多屏冲突），绑定 `ActionGateway.islandHost`；仲裁通知所有权：岛开启时静默右上角弹窗，杜绝双重弹窗 | 已完成 |
-| B3 | 灵动岛微交互与状态机闭环 (Dynamic Island Flow)：100% 对齐 end4-pC：DynamicIsland 嵌入 Material Bar 中段；接入 Provider（Media/OSD/Notif/Session/Timer/Idle）与 Badges Row；处决孤儿面板；接通 ActionGateway 真实动作 | 已完成 |
-| B4 | 3-Lane 自由度与设置重构 (Freedom & Settings)：彻底处决 leading/trailing 双轨制，统一为 3-lane（`left/middle/right`）；翻新 `GeneralBarPage.qml`，提供真三段式拖拽与居中纯岛（Center-only）；接入高度滑杆（`barThickness`）；全库清除 keystoneLong 残留 | 已完成 |
-| B5 | 实机审查与沙箱部署审计 (Reality Audit & Sandbox Deployment)：深入代码树与运行链路，验证 IPC 真实响应、ActionGateway 真实通达、多屏无冲突、通知单点仲裁；432 项单测全绿；沙箱部署零 diff 验收通过 | 已完成 |
-| B6 | 台账、文档与全量真实验收 (Verification & Ship)：清理 `IslandPage.qml` 与 `DashboardSettingsCatalog.qml` 废弃配置；同步更新台账与架构契约；全量回归绿；沙箱部署零错误交付 | 已完成 |
+证据：`shell/commons/Typography.qml:7` 全局 0.85；`shell/commons/Appearance.qml:23-45`
+把 end4 token 映射到这套 0.85 Typography；`PersonalizationConfig.qml:510` 默认 36。
+end4 基准在 `references/end4-pC/modules/common/Appearance.qml:242-262,436-438,457-458`。
 
-**停车场**（明确不承诺，触发条件到了再立项）：溢出滚动（dux OverflowLayout）、
-每部件深度设置全集、岛卫星与自由悬浮模式（dux DIsland）、竖排 bar 岛角部按钮
-+ 弹窗；**lyrics 面板**（现为空壳占位，形态面接线留到独立立项，不进本卷）；
-**battery/timer 岛面**（依赖新增 `BatteryService` 与定时器域能力，能力到位再接，
-本卷只留空骨架）。
+#### 1.2 Bar 窗口与 lane
 
-**用户侧断裂提醒**（升级后生效）：niri 配置中绑定 `--ipc keystone`
-的快捷键需改 `island`，`--ipc control-center open/toggle island` 改 `bar.island`
-（实验期干净断裂，不留别名）；config.toml `[keystone]` 段与
-disabled `shell.keystone` 账本由迁移自动折算，无需手工处理。
+| 项 | end4 | Nyxuri 现状 |
+| --- | --- | --- |
+| 左右 lane 内缩 | material 5 / Hug 0 / Float、Panel 4 / 其余 8 | 0（`BarContent.qml:262/477` 的 `root.laneMargin` 未定义） |
+| 窗口高度 | 含 Float/Hug/Panel 修正 | 固定 `Appearance.sizes.barHeight` |
+| 角落出现动画 | `showCorners` + 65ms timer | 直接显隐 |
+| islands 样式 | cornerStyle 2，名称 “Islands” | 名称 “Plain”，分支存在但 lane 贴边 |
+| 中段岛宽 | `dynamicIslandEnabled` 特殊分支 | 统一按 `middleRow` |
+
+#### 1.3 分组胶囊与右键改色
+
+- 胶囊 padding、背景上下内缩、`fullRadius=height/2` 与 end4 相同。
+- `midRadius` 因 `unsharpenmore` 10 而整体变圆；Float 高度差又让胶囊更扁。
+- 右键样式编辑器颜色只对少数部件生效：`ClockWidget`、`Resources`、
+  `BatteryIndicator`、`Divisor`、`UtilButtons` 已丢失 `contentColor/contentColorOverridden`，
+  `BarGroup` 的 Binding 找不到属性，只改背景不改文字/图标颜色。
+- `BarGroupStylePopup` 使用 Nexus `PreferenceSlider`，与 end4 `ConfigSlider` 视觉不同；
+  且没有 Niri 可用的外部点击关闭。
+
+#### 1.4 部件差异
+
+| 部件 | 差异 |
+| --- | --- |
+| Workspaces | end4 material 按钮宽 30，Nyxuri 固定 26；end4 固定 `shown` 槽位（默认 10），Nyxuri 只画已存在工作区，宽度会跳；end4 有 default/gnome/dots/ticks 四样式与 active Colorizer，Nyxuri 只剩 dots/icon + 数字；end4 右键开 overview，Nyxuri 没有 |
+| Media | 非 material 文字固定 `colOnLayer1`，忽略右键改色；标题 `smallie 13 ➔ 10`、副标题 `12 ➔ 10`；无 artist 时 end4 用 `topMargin:-13` 收紧，Nyxuri 固定 0；播放/下一首的 hover 色与右 margin 有差 |
+| SystemIcons | 裸 Flow，图标宽度随条件项跳变；19px 图标 + 0.85 字号；无单图标 hover/tooltip；material padding 4（end4 12）；缺 `PeripheralBattery` 外设低电；缺 `isDi` 语义；整块一个 MouseArea |
+| SysTray | `unpinnedItems` 恒空导致下箭头永不出现；`togglePin()` 空实现；没有存储；tint 读不存在的 `bar.m3.tray.monochromeIcons`，永远 true；tooltip 只用 `item.tooltip`；点击外部不关 overflow |
+| ClockWidget | 忽略 `contentColor`；有 AM/PM 时强制 `HH:MM` 补零；AM/PM 徽标色是 `tertiaryContainerForeground`（end4 是 `colPrimary`） |
+| Resources | `Resource` ink 固定 `pillInk("resources")`，不跟随 group/右键色；非 material 自定义底色下对比度可能不够 |
+| BatteryIndicator | 固定 `pillInk("batteryIndicator")`；hover 始终开启（end4 click-to-show 模式下关闭） |
+| UtilButtons | 图标 17px 正确；按钮颜色固定 `colOnLayer2`，右键改色无效；tooltip 是 Nyxuri 自加 |
+| PowerButton | material 28（end4 32） |
+| ActiveWindow | 增加了右侧 6px margin，文字宽度略小；垂直 fallback 加 `desktop_windows`（end4 无） |
+| Divisor | dot 文本 `"•"`（end4 `"• "`），宽度算式不同；`space` 默认间距 4（end4 20），且无 UI |
+
+#### 1.5 岛（Dynamic Island）
+
+**默认显示**：idle 面左侧头像圆（material 32px 贴左；非 material 24px + 4px 左边距），
+右侧状态图标（mic/音量/WiFi/未读）与时钟，默认宽 144；**默认不显示日期**。
+`~/.face` 不存在时头像只剩 primaryContainer 色圆，没有账号图标兜底（Media 无媒体面有）。
+
+| 项 | end4 | Nyxuri 现状 |
+| --- | --- | --- |
+| 左右卫星 | `dynamicIsland.leftWidget/rightWidget` 在岛两侧渲染 | 已删除，改成 `islandSatellite` 只在 idle 面内部显示 clock/weather |
+| 日期 | idle 不显示；水平时钟是 Nyxuri 自加 | `islandHideDate` 只作用于设置预览，真实岛无日期 |
+| 岛胶囊 | material/centerOnly 时透明，可跟随 frame 色 | 永远 `colLayer0`；`showBackground=false` 时仍有胶囊 |
+| 媒体面 | 可配媒体按钮 + dots/wave | 只有 dots；按钮与 wave 已下架（有意） |
+| Timer/Recording | 有 | 已下架（有意） |
+| 通知面 | 图标左 4/12、文字左 14/2、fallback 左 0/4 | 图标左 4/8、文字 10/8、fallback 居中 |
+| OSD | volume/brightness/gamma 三通道，132 宽 | 单通道 + keyboard，keyboard 200 宽 |
+| 竖向岛 | 不完整 | `visible: !vertical`，竖向 bar 永远没有岛 |
+
+#### 1.6 弹层与 tooltip
+
+- `StyledPopup`：end4 `colLayer1Base` / 圆角 28 / 内边距 8；Nyxuri `surfaceContainer` /
+  圆角 21 / 内边距 10。tray overflow、时钟、电池、资源弹层都会不同。
+- `SysTrayMenu`：圆角 16（end4 18）；其余布局基本一致。
+- `M3ToolTip` 把 end4 `PopupToolTip` 的外边距改为 0。
+- `BarGroupStylePopup` 用 Nexus 滑块；无外部点击关闭。
+
+#### 1.7 设置真伪清单
+
+| 设置 | 现状 |
+| --- | --- |
+| `Floating`（`barOverlay`） | 死键，全仓库无运行时消费者 |
+| `Screen edge` left/right | 死键，没有竖向 bar 实现 |
+| `Show Island` / 布局成员 | 两套真相；布局里删掉岛后设置开关无法恢复，且启动会被重新播种 |
+| `islandLayoutMigrated` | 加载局部变量读错键（`islandLayoutMigrated` vs `layoutMigrated`），且从未置 true → 中段为空就回填岛 |
+| `islandHideDate` / 水平时钟 | 只有设置预览消费者（`ClockContent` 仅被 `HorizontalClockPreview` 使用） |
+| 通知槽仲裁 | `shell.qml:80` 用 `islandEnabled`，岛不在布局里时仍抑制通知弹窗 |
+| tray 配置 | 迁移写 `bar.tray`，`PersonalizationConfig` 不读也不回写，保存即丢 |
+| `barShowBackground` | Config 桥引用不存在的属性，`?? true` 兜底；无 UI |
+| `barDividerSpacing` | Config 桥引用不存在的属性；无 UI；`space` 永远 4 |
+| autoHide / screenList / utilButtons / resources | Config 硬编码或空数组，无 UI |
+| `bar.tray` 设置 | 无 Tray 段；pin/tint/passive 均不可调 |
+| 外边距 | 无此设置；lane inset 又被 bug 清零 |
+
+### 2. 分期（B9）
+
+| 阶段 | 交付目标 | Fork & Trim 来源 | 状态 |
+| --- | --- | --- | --- |
+| B9.0 | 审计基线与 token 冻结：本页差异矩阵、设置真伪清单、bar 厚度自由、Typography 1.0、6/23/18 基线 | 无 | 进行中 |
+| B9.1 | SysTray：可见区 + 下箭头 overflow + 隐藏/固定持久化 + 外部点击关闭 + Tray 设置 | `references/iNiR/services/TrayService.qml`、`references/end4-pC/services/TrayService.qml`、`references/iNiR/modules/ii/barM3/SysTray.qml`、`references/iNiR/modules/common/widgets/CompositorFocusGrab.qml` | 待开始 |
+| B9.2 | SystemIcons：抄快捷设置按钮语言（26px 槽、hover 胶囊、17px 图标、tooltip、独立点击），补外设电池与固定布局 | `UtilButtons.qml` / `UtilButton.qml`（本树已 fork），`references/iNiR/modules/ii/barM3/SystemIcons.qml`、`references/end4-pC/services/PeripheralBattery.qml` | 待开始 |
+| B9.3 | 岛真相：布局成员唯一、修迁移键、通知槽仲裁、idle 头像 fallback、卫星语义、日期/水平时钟接线或退役 | 无（现有岛原件） | 待开始 |
+| B9.4 | 竖向 bar：left/right 真正可用；竖向宽度独立可调；窗口、lane、弹层、通知避让全链路 | `references/end4-pC/modules/ii/verticalBar/VerticalBar.qml`、`VerticalBarContent.qml`（先 `cp` 再剪裁） | 待开始 |
+| B9.5 | 外边距：`barEdgeMargin` / `barSideMargin` + 设置页 + exclusiveZone + 弹层 + probe | 无 | 待开始 |
+| B9.6 | 表现基线归零：bar 厚度保持用户可调，只补 Float/Hug/Panel 相对加成与字号/圆角关系、laneMargin 8/5/4/0、cornerStyle 2 改名 Islands、contentColor 覆盖补齐、Workspaces 固定槽位与四样式、Media/Clock/Notif 几何 | end4 原始 token 与部件 | 待开始 |
+| B9.7 | 设置清账：`barOverlay`、autoHide、screenList、showBackground、dividerSpacing、utilButtons、resources、numberMap 全部接消费者或下架 | 无 | 待开始 |
+| B9.8 | 护栏：probe 增加 tray overflow、SystemIcons 槽位、竖向几何、外边距、岛删除/恢复；截图验收 | 现有 `probe-bar.sh` | 待开始 |
+
+### 3. 验收
+
+- **B9.1**：至少两个托盘项；右键 Unpin 后出现下箭头；箭头打开小菜单；点击外部关闭；
+  重启后隐藏状态保留；Tray 设置四项（tint / pin-by-default / filter-passive / show-id）可切换并落盘。
+- **B9.2**：SystemIcons 每个图标有独立 26px 槽位与 hover；条件图标出现/消失不导致
+  整组跳宽；tooltip 正常；外设低电出现；material/非 material 两种底色均可读。
+- **B9.3**：从布局删除岛后重启不复活；通知弹窗宿主恢复；重新添加岛后 `island host`
+  与通知仲裁恢复；idle 无头像时不再出现空色圆。
+- **B9.4**：left/right 各跑一遍 `probe-bar`；lane 几何、边距、弹层锚点、通知避让有数值证据。
+- **B9.5**：`barEdgeMargin` / `barSideMargin` 0/12/24 三档运行态截图；
+  exclusiveZone 与弹层跟随。
+- **B9.6/B9.7**：逐项对照本页 1.1–1.7 差异表；每个可见设置必须有唯一消费者；
+  `test_bar_end4`、`test_bar_runtime`、`test_settings_pages`、`test_shell_architecture` 全绿。
+
+### 4. 与 B 卷相关的已确认决策（不在本轮重开）
+
+- 自有 C++ 构建链已移除；运行实现收敛为纯 QML/JS/脚本，公开标识统一为 `nyxuri`。
+- Timer/Recording 下架；Cava 与歌词以按需消费者形态保留。
+- 岛是 bar 的中段部件，不是独立单元；`islandEnabled` 的历史语义由 B9.3 清算。
+- end4 为主视觉基线，iNiR 只提供 Niri 数据面与窗口壳。
+- `SysTray` 的 overflow、`SystemIcons` 的快捷设置同款按钮语言、竖向 bar 的
+  Fork & Trim 来源均已在本页 B9.1/B9.2/B9.4 固定，不再重新讨论要不要做。
 
 ## 后续阶段
 

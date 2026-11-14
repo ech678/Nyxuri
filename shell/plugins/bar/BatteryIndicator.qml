@@ -7,7 +7,7 @@ import qs.ui
 MouseArea {
     id: root
     property bool vertical: false
-    property bool isMaterial: Config.options.bar.m3.cornerStyle === 3
+    property bool isMaterial: PersonalizationConfig.barIsMaterial
     readonly property var chargeState: Battery.chargeState
     readonly property bool isCharging: Battery.isCharging
     readonly property bool isPluggedIn: Battery.isPluggedIn
@@ -17,7 +17,7 @@ MouseArea {
 
     visible: Battery.available
 
-    implicitWidth:  !Battery.available ? 0 : vertical ? Appearance.sizes.verticalBarWidth : batteryProgress.valueBarWidth + 8
+    implicitWidth: !Battery.available ? 0 : vertical ? Appearance.sizes.verticalBarWidth : batteryProgress.valueBarWidth + 8
     implicitHeight: !Battery.available ? 0 : vertical ? batteryProgress.valueBarWidth + 8 : Appearance.sizes.barHeight
 
     readonly property bool clickForDetails: Config.options?.bar?.m3?.tooltips?.clickToShow ?? false
@@ -25,7 +25,7 @@ MouseArea {
 
     onClicked: mouse => {
         if (mouse.button === Qt.LeftButton && root.clickForDetails)
-            batteryPopup.active = !batteryPopup.active
+            batteryPopup.active = !batteryPopup.active;
     }
 
     ClippedProgressBar {

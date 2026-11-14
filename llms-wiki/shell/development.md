@@ -64,6 +64,20 @@ qs ipc --path ./shell call lock open
 qs kill --path ./shell
 ```
 
+### 2.5 Bar 运行态探针（布局 NaN / compiled empty 专用）
+
+字符串断言拦不住布局求值问题。Bar 改动须在隔离容器的 Wayland 会话内跑探针；下面的 `--session` 指容器会话，不是宿主桌面：
+
+```bash
+shell/scripts/dev/probe-bar.sh --json                 # 自动：weston > 当前 Wayland 会话
+shell/scripts/dev/probe-bar.sh --json --session       # 现有图形会话，无窗口，私有 HOME/XDG
+python3 -m unittest tests.shell.test_bar_runtime             # 无 Wayland 时显式 SKIP
+```
+
+探针把 `BarContent` 装进隔离 shell，逐档 cornerStyle 1/3/4/5 重建，断言 active
+`Loader.Ready`、无 pending/failed、几何有限且中段居中、岛可见，并扫描
+TypeError/ReferenceError/compiled empty。退出码 2 = 环境跳过，不是通过。
+
 ### 3. 用户实机验收：双 Shell 切换
 
 以下操作改变当前桌面，仅供用户主动验收时执行。自动性能调查不得在宿主执行：
@@ -71,6 +85,9 @@ qs kill --path ./shell
 ```bash
 # 检查当前双轨状态
 nyxuri shell status
+
+# 硬重启当前正在跑的外壳（谁在跑重启谁；锁屏与无图形会话拒绝；快捷键 Mod+Alt+R）
+nyxuri shell restart
 
 # 平滑切换至 Nyxuri Shell（停止旧端 -> 启动新端 -> 3.0s 探测就绪 -> 失败回滚）
 nyxuri shell set custom "$PWD/shell/nyxuri-shell"
@@ -80,6 +97,7 @@ nyxuri shell switch nyxuri-shell
 nyxuri-shell --action session        # 呼出会话菜单
 nyxuri-shell --action launcher       # 呼出应用搜索
 nyxuri-shell --action lock           # 锁屏
+nyxuri-shell --action restart        # 硬重启当前外壳（与 Mod+Alt+R 同一入口）
 
 # 随时一键平滑切回 Noctalia
 nyxuri shell switch noctalia
