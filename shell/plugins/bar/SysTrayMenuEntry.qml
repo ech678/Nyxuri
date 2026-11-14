@@ -17,24 +17,15 @@ RippleButton {
     readonly property bool hasIcon: menuEntry.icon.length > 0
     readonly property bool hasSpecialInteraction: menuEntry.buttonType !== QsMenuButtonType.None
 
-    signal dismiss()
+    signal dismiss
     signal openSubmenu(handle: QsMenuHandle)
 
-    colBackground: menuEntry.isSeparator
-        ? (Appearance.angelEverywhere ? Appearance.angel.colBorderSubtle
-            : Appearance.inirEverywhere ? Appearance.inir.colBorderSubtle
-            : Appearance.colors.colOutlineVariant)
-        : "transparent"
-    colBackgroundHover: Appearance.angelEverywhere
-        ? Appearance.angel.colGlassPopupHover
-        : Appearance.inirEverywhere
-            ? Appearance.inir.colLayer1Hover
-            : ColorUtils.transparentize(Appearance.colors.colPrimary, 0.85)
-    colRipple: Appearance.angelEverywhere
-        ? Appearance.angel.colGlassPopupActive
-        : Appearance.inirEverywhere
-            ? Appearance.inir.colLayer1Active
-            : ColorUtils.transparentize(Appearance.colors.colPrimary, 0.7)
+    // B9.6: angel/inir skin branches read tokens that do not exist on
+    // Nyxuri's Appearance (undefined constant-false); the resolved end4
+    // defaults are the only live path.
+    colBackground: menuEntry.isSeparator ? Appearance.colors.colOutlineVariant : "transparent"
+    colBackgroundHover: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.85)
+    colRipple: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.7)
     enabled: !menuEntry.isSeparator
     opacity: 1
 
@@ -45,7 +36,6 @@ RippleButton {
     Layout.bottomMargin: menuEntry.isSeparator ? 4 : 0
     Layout.fillWidth: true
 
-
     releaseAction: () => {
         if (menuEntry.hasChildren) {
             root.openSubmenu(root.menuEntry);
@@ -54,7 +44,7 @@ RippleButton {
         menuEntry.triggered();
         root.dismiss();
     }
-    altAction: (event) => { // Not hog right-click
+    altAction: event => { // Not hog right-click
         event.accepted = false;
     }
 

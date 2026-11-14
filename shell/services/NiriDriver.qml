@@ -871,6 +871,31 @@ Singleton {
         });
     }
 
+    // Fixed-slot workspaces: clicking a slot with no real workspace yet must
+    // land on the bar's own output. Niri resolves an `Index` reference
+    // against the focused output, so the monitor is focused first; both
+    // writes queue on the same socket and are applied in order.
+    function focusWorkspaceOnOutput(outputName, index) {
+        send({
+            "Action": {
+                "FocusMonitor": {
+                    "target": {
+                        "Name": String(outputName)
+                    }
+                }
+            }
+        });
+        return send({
+            "Action": {
+                "FocusWorkspace": {
+                    "reference": {
+                        "Index": Math.max(1, Math.round(Number(index) || 1))
+                    }
+                }
+            }
+        });
+    }
+
     function focusWorkspaceUp() {
         return send({
             "Action": {

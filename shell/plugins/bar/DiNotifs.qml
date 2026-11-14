@@ -36,7 +36,9 @@ Item {
         height: 20
         anchors {
             left: parent.left
-            leftMargin: di.isMaterial ? 4 : 8
+            // end4 anchors the two icons separately (4/12 vs 0/4); the wrapper
+            // reproduces that per visible child.
+            leftMargin: notifIcon.visible ? (di.isMaterial ? 4 : 12) : (di.isMaterial ? 0 : 4)
             verticalCenter: parent.verticalCenter
         }
 
@@ -67,7 +69,7 @@ Item {
         id: notifTextColumn
         anchors {
             left: iconWrapper.right
-            leftMargin: di.isMaterial ? 10 : 8
+            leftMargin: di.isMaterial ? 14 : 2
             verticalCenter: parent.verticalCenter
             right: nowLabel.left
             rightMargin: 8

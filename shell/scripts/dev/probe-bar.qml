@@ -145,7 +145,11 @@ ShellRoot {
             const child = item.children[i];
             if (!child)
                 continue;
-            if (child.status !== undefined && child.source !== undefined && child.active === true) {
+            // B9.6: end4's FadeLoader idiom wraps an inline child Loader, so a
+            // Loader with neither `source` nor `sourceComponent` set is a fade
+            // container, not an async load. Only real loads can hang.
+            const isRealLoad = !!child.sourceComponent || String(child.source ?? "") !== "";
+            if (child.status !== undefined && isRealLoad && child.active === true) {
                 out.push({
                     "source": String(child.source || (child.sourceComponent ? "<component>" : "")),
                     "status": child.status,
@@ -156,6 +160,52 @@ ShellRoot {
                 probeRoot.collectLoaders(child, out);
         }
         return out;
+    }
+
+    // B9.6: duck-typed finds for the style-editor chain (BarGroup by widget
+    // name) and the fixed-slot workspaces model (fakeWorkspace+shownCount are
+    // unique to that widget in the bar tree). Both bar branches (material /
+    // non-material) declare groups with the same widgetName, so an unloaded
+    // twin must not shadow the live one.
+    function findGroup(item, name) {
+        let fallback = null;
+        let out = null;
+        const walk = item => {
+            if (!item || !item.children || out !== null)
+                return;
+            for (let i = 0; i < item.children.length; i += 1) {
+                const child = item.children[i];
+                if (!child)
+                    continue;
+                if (child.widgetName === name && child.loadedWidget !== undefined) {
+                    if (child.loadedWidget !== null) {
+                        out = child;
+                        return;
+                    }
+                    if (fallback === null)
+                        fallback = child;
+                }
+                walk(child);
+            }
+        };
+        walk(item);
+        return out ?? fallback;
+    }
+
+    function findWorkspace(item) {
+        if (!item || !item.children)
+            return null;
+        for (let i = 0; i < item.children.length; i += 1) {
+            const child = item.children[i];
+            if (!child)
+                continue;
+            if (child.fakeWorkspace !== undefined && child.shownCount !== undefined)
+                return child;
+            const nested = probeRoot.findWorkspace(child);
+            if (nested)
+                return nested;
+        }
+        return null;
     }
 
     function layout(): string {
@@ -321,6 +371,10 @@ ShellRoot {
                 PersonalizationConfig.setBarLayouts(["media"], [], []);
             } else if (name === "centerOnly") {
                 PersonalizationConfig.setBarLayouts([], ["clock"], []);
+            } else if (name === "centerIsland") {
+                // B9.6: island-only middle lane in center-only mode, so the
+                // frame-hug branch (row - 4 / + 8) is observable.
+                PersonalizationConfig.setBarLayouts([], ["island"], []);
             } else {
                 const left = PersonalizationConfig.defaultBarLayoutLeft.slice();
                 const middle = PersonalizationConfig.defaultBarLayoutMiddle.slice();
@@ -362,6 +416,61 @@ ShellRoot {
         function osd(kind: string): string {
             GlobalStates.osdKind = kind;
             return "OK";
+        }
+
+        // B9.6: right-click style editor chain end-to-end. The write goes
+        // through the same store setter the popup uses; the dump reads the
+        // BarGroup binding and the bound widget property.
+        function b96Style(on: bool): string {
+            if (on)
+                PersonalizationConfig.setBarWidgetStyle("pills", "workspaces", "color", "primary");
+            else
+                PersonalizationConfig.resetBarWidgetStyle("pills", "workspaces");
+            return "OK";
+        }
+
+        function b96Dump(): string {
+            const content = barLoader.item;
+            if (!content)
+                return JSON.stringify({
+                    "ready": false
+                });
+            const group = probeRoot.findGroup(content, "workspaces");
+            const ws = probeRoot.findWorkspace(content);
+            // The global island host wins when set (it is the one consuming
+            // services); otherwise resolve from the content tree — an
+            // unloaded material-branch twin must not shadow the live island.
+            const islandGroup = probeRoot.findGroup(content, "island");
+            const host = ActionGateway.islandHost ?? (islandGroup ? islandGroup.loadedWidget : null);
+            return JSON.stringify({
+                "ready": true,
+                "cornerStyle": PersonalizationConfig.barCornerStyle,
+                "centerPill": {
+                    "width": content.centerPillWidth,
+                    "middleRowWidth": content.middleRowImplicitWidth
+                },
+                "style": group ? {
+                    "hasOverride": group.hasContentOverride === true,
+                    "groupContentColor": String(group.contentColor),
+                    "expectedOnPrimary": String(Appearance.colors.colOnPrimary)
+                } : null,
+                "widget": ws ? {
+                    "hasContentColorProps": ("contentColor" in ws) && ("contentColorOverridden" in ws),
+                    "contentColorOverridden": ws.contentColorOverridden === true,
+                    "contentColor": String(ws.contentColor),
+                    "existingMaxIdx": ws.existingMaxIdx,
+                    "shown": ws.shownCount,
+                    "slotWidth": ws.workspaceButtonWidth,
+                    "implicitWidth": ws.implicitWidth,
+                    "style": String(ws.style),
+                    "slotLength": ws.slotLength,
+                    "fakeWorkspace": ws.fakeWorkspace
+                } : null,
+                "islandCapsule": host ? {
+                    "transparent": String(host.probeCapsuleColor) === "transparent" || String(host.probeCapsuleColor) === "#00000000",
+                    "layer0": String(host.probeCapsuleColor) === String(Appearance.colors.colLayer0)
+                } : null
+            });
         }
 
         function keyboardFlip(): string {

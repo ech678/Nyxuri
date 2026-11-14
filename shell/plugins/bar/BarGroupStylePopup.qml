@@ -4,6 +4,7 @@ import qs.services
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Wayland
 import qs.commons
 import qs.ui
 
@@ -54,6 +55,30 @@ PopupWindow {
     Item {
         id: inputArea
         anchors.fill: body
+    }
+
+    // Niri has no focus-grab protocol (end4 uses HyprlandFocusGrab); outside
+    // clicks close via a transparent overlay window, the same pattern as
+    // StyledPopup.closeOnOutsideClick (B9.1).
+    PanelWindow {
+        visible: root.visible && !root.closing
+        color: Qt.rgba(0, 0, 0, 1 / 255)
+        exclusiveZone: 0
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.namespace: "quickshell:bar-style-editor-catcher"
+        WlrLayershell.exclusionMode: ExclusionMode.Ignore
+        anchors {
+            top: true
+            bottom: true
+            left: true
+            right: true
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.AllButtons
+            onClicked: root.close()
+        }
     }
 
     Item {
@@ -164,44 +189,50 @@ PopupWindow {
                     onSelected: newValue => root.group.setStyle("borderColor", newValue)
                 }
 
-                PreferenceSlider {
+                ConfigSlider {
                     Layout.leftMargin: 0
                     Layout.rightMargin: 0
-                    icon: "rounded_corner"
-                    label: Translation.tr("Radius")
+                    buttonIcon: "rounded_corner"
+                    text: Translation.tr("Radius")
+                    textWidth: 90
+                    usePercentTooltip: false
                     from: 0
                     to: 30
                     stepSize: 1
                     value: root.group.currentRadius
-                    valueLabel: Math.round(value) + " px"
-                    onMoved: value => root.group.previewStyle("radius", Math.round(value))
-                    onCommitted: root.group.commitPreview()
+                    onMoved: root.group.previewStyle("radius", Math.round(value))
+                    onPressedChanged: if (!pressed)
+                        root.group.commitPreview()
                 }
-                PreferenceSlider {
+                ConfigSlider {
                     Layout.leftMargin: 0
                     Layout.rightMargin: 0
-                    icon: "padding"
-                    label: Translation.tr("Padding")
+                    buttonIcon: "padding"
+                    text: Translation.tr("Padding")
+                    textWidth: 90
+                    usePercentTooltip: false
                     from: 0
                     to: 15
                     stepSize: 1
                     value: root.group.padding
-                    valueLabel: Math.round(value) + " px"
-                    onMoved: value => root.group.previewStyle("padding", Math.round(value))
-                    onCommitted: root.group.commitPreview()
+                    onMoved: root.group.previewStyle("padding", Math.round(value))
+                    onPressedChanged: if (!pressed)
+                        root.group.commitPreview()
                 }
-                PreferenceSlider {
+                ConfigSlider {
                     Layout.leftMargin: 0
                     Layout.rightMargin: 0
-                    icon: "border_style"
-                    label: Translation.tr("Border width")
+                    buttonIcon: "border_style"
+                    text: Translation.tr("Border width")
+                    textWidth: 90
+                    usePercentTooltip: false
                     from: 0
                     to: 4
                     stepSize: 1
                     value: root.group.currentBorderWidth
-                    valueLabel: Math.round(value) + " px"
-                    onMoved: value => root.group.previewStyle("borderWidth", Math.round(value))
-                    onCommitted: root.group.commitPreview()
+                    onMoved: root.group.previewStyle("borderWidth", Math.round(value))
+                    onPressedChanged: if (!pressed)
+                        root.group.commitPreview()
                 }
 
                 DialogButton {

@@ -77,6 +77,10 @@ Singleton {
         return NiriDriver.focusWorkspaceById(workspaceId);
     }
 
+    function focusWorkspaceOnOutput(outputName, index) {
+        return NiriDriver.focusWorkspaceOnOutput(outputName, index);
+    }
+
     function focusWorkspaceUp() {
         return NiriDriver.focusWorkspaceUp();
     }

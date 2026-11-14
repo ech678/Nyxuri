@@ -6,6 +6,8 @@ import qs.ui
 
 MouseArea {
     id: root
+    property color contentColor: Appearance.colors.colOnSecondaryContainer
+    property bool contentColorOverridden: false
     property bool vertical: false
     property bool isMaterial: PersonalizationConfig.barIsMaterial
     readonly property var chargeState: Battery.chargeState
@@ -21,7 +23,7 @@ MouseArea {
     implicitHeight: !Battery.available ? 0 : vertical ? batteryProgress.valueBarWidth + 8 : Appearance.sizes.barHeight
 
     readonly property bool clickForDetails: Config.options?.bar?.m3?.tooltips?.clickToShow ?? false
-    hoverEnabled: true
+    hoverEnabled: !root.clickForDetails
 
     onClicked: mouse => {
         if (mouse.button === Qt.LeftButton && root.clickForDetails)
@@ -33,7 +35,7 @@ MouseArea {
         anchors.centerIn: parent
         value: percentage
         rotation: root.vertical ? -90 : 0
-        highlightColor: (isLow && !isCharging) ? M3Palette.error : M3Palette.pillInk("batteryIndicator")
+        highlightColor: (isLow && !isCharging) ? M3Palette.error : (root.contentColorOverridden ? root.contentColor : M3Palette.pillInk("batteryIndicator"))
         Item {
             anchors.centerIn: parent
             width: batteryProgress.valueBarWidth

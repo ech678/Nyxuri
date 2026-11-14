@@ -25,7 +25,7 @@ PopupWindow {
     property real padding: Appearance.sizes.elevationMargin
     onVisibleChanged: {
         if (!visible)
-            root.finishClose()
+            root.finishClose();
     }
 
     implicitHeight: {
@@ -81,7 +81,12 @@ PopupWindow {
         exclusiveZone: 0
         WlrLayershell.layer: WlrLayer.Top
         WlrLayershell.namespace: "quickshell:m3TrayMenuBackdrop"
-        anchors { top: true; bottom: true; left: true; right: true }
+        anchors {
+            top: true
+            bottom: true
+            left: true
+            right: true
+        }
 
         MouseArea {
             anchors.fill: parent
@@ -114,19 +119,13 @@ PopupWindow {
                 margins: root.padding
             }
 
-            color: Appearance.zzzEverywhere ? Appearance.zzz.bg1
-                : Appearance.angelEverywhere ? Appearance.angel.colGlassPopup
-                : Appearance.inirEverywhere ? Appearance.inir.colLayer1
-                : Appearance.colors.colLayer0
-            radius: Appearance.zzzEverywhere ? Appearance.zzz.cornerRadius
-                : Appearance.angelEverywhere ? Appearance.angel.roundingNormal
-                : Appearance.inirEverywhere ? Appearance.inir.roundingLarge
-                : Appearance.rounding.windowRounding
-            border.width: Appearance.zzzEverywhere ? 0 : 1
-            border.color: Appearance.zzzEverywhere ? "transparent"
-                : Appearance.angelEverywhere ? Appearance.angel.colBorder
-                : Appearance.inirEverywhere ? Appearance.inir.colBorder
-                : Appearance.colors.colLayer0Border
+            // B9.6: the zzz/angel/inir skin branches read tokens that do not
+            // exist on Nyxuri's Appearance (undefined constant-false); the
+            // resolved end4 defaults are the only live path.
+            color: Appearance.colors.colLayer0
+            radius: Appearance.rounding.windowRounding
+            border.width: 1
+            border.color: Appearance.colors.colLayer0Border
             clip: true
 
             opacity: 0
@@ -239,19 +238,11 @@ PopupWindow {
 
             visible: root.trayItemId !== undefined && root.trayItemId.length > 0 && stackView.depth === 1
             colBackground: "transparent"
-            colBackgroundHover: Appearance.angelEverywhere
-                ? Appearance.angel.colGlassPopupHover
-                : Appearance.inirEverywhere
-                    ? Appearance.inir.colLayer1Hover
-                    : ColorUtils.transparentize(Appearance.colors.colPrimary, 0.85)
-            colRipple: Appearance.angelEverywhere
-                ? Appearance.angel.colGlassPopupActive
-                : Appearance.inirEverywhere
-                    ? Appearance.inir.colLayer1Active
-                    : ColorUtils.transparentize(Appearance.colors.colPrimary, 0.7)
+            colBackgroundHover: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.85)
+            colRipple: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.7)
             releaseAction: () => {
-                TrayService.togglePin(root.trayItemId)
-                root.close()
+                TrayService.togglePin(root.trayItemId);
+                root.close();
             }
 
             contentItem: RowLayout {

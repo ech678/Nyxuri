@@ -6,6 +6,8 @@ import qs.ui
 
 BarWidgetSwitcherArea {
     id: root
+    property color contentColor: Appearance.colors.colOnSecondaryContainer
+    property bool contentColorOverridden: false
     property bool alwaysShowAllResources: false
     horizontalExtraPadding: 12
 
@@ -43,13 +45,15 @@ BarWidgetSwitcherArea {
 
     onClicked: mouse => {
         if (mouse.button === Qt.LeftButton && root.clickForDetails)
-            resourcesPopup.active = !resourcesPopup.active
+            resourcesPopup.active = !resourcesPopup.active;
     }
 
     rowDefault: Component {
         RowLayout {
             spacing: 0
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 iconName: "memory"
                 available: root.memorySnapshot.usagePercent !== undefined
                 shown: Config.options.bar.m3.resources.alwaysShowRam
@@ -57,6 +61,8 @@ BarWidgetSwitcherArea {
                 warningThreshold: Config.options.bar.m3.resources.memoryWarningThreshold
             }
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 iconName: "planner_review"
                 available: root.cpuSnapshot.usagePercent !== undefined
                 shown: Config.options.bar.m3.resources.alwaysShowCpu
@@ -65,6 +71,8 @@ BarWidgetSwitcherArea {
                 warningThreshold: Config.options.bar.m3.resources.cpuWarningThreshold
             }
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 iconName: "thermostat"
                 available: root.cpuSnapshot.packageTemperatureCelsius !== undefined || root.cpuSnapshot.temperatureCelsius !== undefined
                 shown: Config.options.bar.m3.resources.alwaysShowCpuTemp
@@ -72,6 +80,8 @@ BarWidgetSwitcherArea {
                 Layout.leftMargin: shown ? 6 : 0
             }
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 iconName: "hard_drive"
                 available: root.rootDisk.usagePercent !== undefined
                 shown: Config.options.bar.m3.resources.alwaysShowDisk
@@ -79,6 +89,8 @@ BarWidgetSwitcherArea {
                 Layout.leftMargin: shown ? 6 : 0
             }
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 iconName: "swap_horiz"
                 available: root.memorySnapshot.totalBytes !== undefined
                 shown: Config.options.bar.m3.resources.alwaysShowSwap
@@ -93,6 +105,8 @@ BarWidgetSwitcherArea {
         RowLayout {
             spacing: 0
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 iconName: "memory"
                 available: root.memorySnapshot.usagePercent !== undefined
                 shown: Config.options.bar.m3.resources.alwaysShowRam
@@ -100,6 +114,8 @@ BarWidgetSwitcherArea {
                 warningThreshold: Config.options.bar.m3.resources.memoryWarningThreshold
             }
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 iconName: "planner_review"
                 available: root.cpuSnapshot.usagePercent !== undefined
                 shown: Config.options.bar.m3.resources.alwaysShowCpu
@@ -108,6 +124,8 @@ BarWidgetSwitcherArea {
                 warningThreshold: Config.options.bar.m3.resources.cpuWarningThreshold
             }
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 iconName: "thermostat"
                 available: root.cpuSnapshot.packageTemperatureCelsius !== undefined || root.cpuSnapshot.temperatureCelsius !== undefined
                 shown: Config.options.bar.m3.resources.alwaysShowCpuTemp
@@ -115,6 +133,8 @@ BarWidgetSwitcherArea {
                 Layout.leftMargin: shown ? 6 : 0
             }
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 iconName: "hard_drive"
                 available: root.rootDisk.usagePercent !== undefined
                 shown: Config.options.bar.m3.resources.alwaysShowDisk
@@ -122,6 +142,8 @@ BarWidgetSwitcherArea {
                 Layout.leftMargin: shown ? 6 : 0
             }
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 iconName: "swap_horiz"
                 available: root.memorySnapshot.totalBytes !== undefined
                 shown: Config.options.bar.m3.resources.alwaysShowSwap
@@ -136,6 +158,8 @@ BarWidgetSwitcherArea {
         ColumnLayout {
             spacing: 7
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "memory"
                 available: root.memorySnapshot.usagePercent !== undefined
@@ -145,6 +169,8 @@ BarWidgetSwitcherArea {
                 warningThreshold: Config.options.bar.m3.resources.memoryWarningThreshold
             }
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "planner_review"
                 available: root.cpuSnapshot.usagePercent !== undefined
@@ -154,6 +180,8 @@ BarWidgetSwitcherArea {
                 warningThreshold: Config.options.bar.m3.resources.cpuWarningThreshold
             }
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "thermostat"
                 available: root.cpuSnapshot.packageTemperatureCelsius !== undefined || root.cpuSnapshot.temperatureCelsius !== undefined
@@ -162,6 +190,8 @@ BarWidgetSwitcherArea {
                 percentage: root.cpuTemperature / 100
             }
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "hard_drive"
                 available: root.rootDisk.usagePercent !== undefined
@@ -170,6 +200,8 @@ BarWidgetSwitcherArea {
                 percentage: root.diskRatio
             }
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "swap_horiz"
                 available: root.memorySnapshot.totalBytes !== undefined
@@ -185,6 +217,8 @@ BarWidgetSwitcherArea {
         ColumnLayout {
             spacing: 7
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "memory"
                 available: root.memorySnapshot.usagePercent !== undefined
@@ -194,6 +228,8 @@ BarWidgetSwitcherArea {
                 warningThreshold: Config.options.bar.m3.resources.memoryWarningThreshold
             }
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "planner_review"
                 available: root.cpuSnapshot.usagePercent !== undefined
@@ -203,6 +239,8 @@ BarWidgetSwitcherArea {
                 warningThreshold: Config.options.bar.m3.resources.cpuWarningThreshold
             }
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "thermostat"
                 available: root.cpuSnapshot.packageTemperatureCelsius !== undefined || root.cpuSnapshot.temperatureCelsius !== undefined
@@ -211,6 +249,8 @@ BarWidgetSwitcherArea {
                 percentage: root.cpuTemperature / 100
             }
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "hard_drive"
                 available: root.rootDisk.usagePercent !== undefined
@@ -219,6 +259,8 @@ BarWidgetSwitcherArea {
                 percentage: root.diskRatio
             }
             Resource {
+                contentColor: root.contentColor
+                contentColorOverridden: root.contentColorOverridden
                 Layout.alignment: Qt.AlignHCenter
                 iconName: "swap_horiz"
                 available: root.memorySnapshot.totalBytes !== undefined

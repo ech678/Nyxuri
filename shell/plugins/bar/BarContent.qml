@@ -46,6 +46,9 @@ Item {
     // evaluate to 0, not to its capsule padding. The probe asserts this.
     readonly property real laneLeftWidth: leftLane.width
     readonly property real laneRightWidth: rightLane.width
+    // B9.6 probe surface: the raw middle-row width, so the island-hug branch
+    // (frame width = row - 4, not row + 10) is assertable at runtime.
+    readonly property real middleRowImplicitWidth: middleRow.implicitWidth
     readonly property bool trayHasItems: SystemTray.items.values.length > 0
     readonly property bool batteryAvailable: Battery.available
 
@@ -187,8 +190,11 @@ Item {
         visible: root.centerOnly && Config.options.bar.m3.showBackground && Config.options.bar.cornerStyle !== 2
         anchors.verticalCenter: parent.verticalCenter
         anchors.horizontalCenter: parent.horizontalCenter
-        width: absoluteCenter.hasContent ? middleRow.implicitWidth + 10 : 0
-        height: parent.height - (Config.options.bar.cornerStyle === 1 ? Config.options.bar.m3.gapsOut * 2 : 0)
+        // end4: when the island occupies the middle lane the frame hugs it
+        // (-4/+8) at full height instead of the +10 padding and inset height.
+        readonly property bool islandInMiddle: PersonalizationConfig.islandInLayout && root.effectiveMiddleLayout.includes("island")
+        width: absoluteCenter.hasContent ? (centerPill.islandInMiddle ? (Config.options.bar.cornerStyle === 1 ? middleRow.implicitWidth + 8 : middleRow.implicitWidth - 4) : middleRow.implicitWidth + 10) : 0
+        height: parent.height - (!centerPill.islandInMiddle && Config.options.bar.cornerStyle === 1 ? Config.options.bar.m3.gapsOut * 2 : 0)
         color: root.isMaterial ? "transparent" : Appearance.colors.colLayer0
         radius: Config.options.bar.cornerStyle === 1 || root.isMaterial ? Appearance.rounding.windowRounding : 0
         border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0

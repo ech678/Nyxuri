@@ -331,6 +331,6 @@ Singleton {
         // than util buttons and the resource rings.
         readonly property int barIconSize: 19
         readonly property int barUtilIconSize: 17
-        readonly property int barPowerButtonSize: 28
+        readonly property int barPowerButtonSize: 32
     }
 }

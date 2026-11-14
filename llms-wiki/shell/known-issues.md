@@ -21,7 +21,8 @@
   死键——`bar.edge` 成为唯一真相，新增 `VerticalBarContent.qml`（end4 整抄剪裁，纵向三
   lane）、独立 `barVerticalThickness`、`barEdgeMargin`/`barSideMargin` 外边距与纯几何
   `BarGeometry.js`。弹层与通知宿主改读真实边缘/厚度/边距；`right` 不再被当成 `left`。
-  竖向暂不显示岛（中间 lane 过滤，通知宿主回退），重排留给 B9.6。
+  竖向暂不显示岛（中间 lane 过滤，通知宿主回退）；B9.6 定案挂起——end4 自身竖向岛
+  不完整、无基线可抄，重排待独立设计后再立项。
   运行态由 probe 的 `vertical`（左右 × 胶囊两路 + centerOnly）、`margins`（四边 ×
   0/12/24）与 `windowProbe`（真实窗口 top→left→right→bottom→top 往返）覆盖；后者是
   「条件 anchor 不清除」导致切回顶部后 bar 消失的回归门禁。

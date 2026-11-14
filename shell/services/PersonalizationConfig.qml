@@ -432,6 +432,28 @@ Singleton {
         }
     ]
     property string barWorkspaceIndicatorStyle: "dot"
+    // Workspace lane shape (B9.6 parity with end4): fixed slot count with
+    // group paging, and the four end4 skins (default/gnome/dots/ticks).
+    readonly property var barWorkspaceStyles: [
+        {
+            value: "default",
+            label: I18n.tr("Default")
+        },
+        {
+            value: "gnome",
+            label: I18n.tr("Gnome")
+        },
+        {
+            value: "dots",
+            label: I18n.tr("Dots")
+        },
+        {
+            value: "ticks",
+            label: I18n.tr("Ticks")
+        }
+    ]
+    property string barWorkspaceStyle: "default"
+    property int barWorkspaceShown: 10
     // Only ids the bar can actually render. `information` was never a widget
     // (it was an iNiR bar style name) and mapped to a missing Information.qml.
     // B8.2 re-added the end4 base widgets (BarWidgetSwitcher/ClippedProgressBar/
@@ -1402,6 +1424,15 @@ Singleton {
         setValue("barWorkspaceIndicatorStyle", normalizedOption(root.barWorkspaceIndicatorStyles, value, "dot"));
     }
 
+    function setBarWorkspaceStyle(value) {
+        setValue("barWorkspaceStyle", normalizedOption(root.barWorkspaceStyles, value, "default"));
+    }
+
+    function setBarWorkspaceShown(value) {
+        const parsed = Math.round(Number(value));
+        setValue("barWorkspaceShown", isFinite(parsed) ? Math.max(1, Math.min(50, parsed)) : 10);
+    }
+
     // Right-click style editor (BarGroupStylePopup) persistence. One entry per
     // (borderless mode, widget) pair, matching end4's `bar.widgetStyles` shape,
     // but owned here so the config store stays the single writer.
@@ -2012,6 +2043,8 @@ Singleton {
                 "showAppIcons": root.barShowAppIcons,
                 "alwaysShowNumbers": root.barAlwaysShowNumbers,
                 "workspaceIndicatorStyle": root.barWorkspaceIndicatorStyle,
+                "workspaceStyle": root.barWorkspaceStyle,
+                "workspaceShown": root.barWorkspaceShown,
                 "showValues": root.barShowValues,
                 "showNames": root.barShowNames,
                 "barLeadingComponents": root.barLeadingComponents.slice(),
@@ -2209,6 +2242,8 @@ Singleton {
         root.barShowAppIcons = typeof bar.showAppIcons === "boolean" ? bar.showAppIcons : false;
         root.barAlwaysShowNumbers = typeof bar.alwaysShowNumbers === "boolean" ? bar.alwaysShowNumbers : true;
         root.barWorkspaceIndicatorStyle = normalizedOption(root.barWorkspaceIndicatorStyles, bar.workspaceIndicatorStyle, "dot");
+        root.barWorkspaceStyle = normalizedOption(root.barWorkspaceStyles, bar.workspaceStyle, "default");
+        root.barWorkspaceShown = typeof bar.workspaceShown === "number" ? Math.max(1, Math.min(50, Math.round(bar.workspaceShown))) : 10;
         root.barThickness = typeof bar.barThickness === "number" ? Math.max(28, Math.min(64, Math.round(bar.barThickness))) : root.defaultBarThickness;
         root.barVerticalThickness = typeof bar.verticalThickness === "number" ? Math.max(28, Math.min(64, Math.round(bar.verticalThickness))) : root.defaultBarVerticalThickness;
         root.barEdgeMargin = typeof bar.edgeMargin === "number" ? Math.max(0, Math.min(48, Math.round(bar.edgeMargin))) : 0;

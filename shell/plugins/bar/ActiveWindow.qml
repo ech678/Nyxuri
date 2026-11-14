@@ -58,14 +58,6 @@ Item {
             implicitSize: 18
             visible: root.activeIcon !== ""
         }
-
-        MaterialSymbol {
-            anchors.centerIn: parent
-            text: "desktop_windows"
-            iconSize: 18
-            color: root.contentColor
-            visible: root.activeIcon === ""
-        }
     }
 
     // Horizontal (end4: app class on top, window title below)
@@ -77,7 +69,6 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.leftMargin: 6
-        anchors.rightMargin: 6
         spacing: -4
 
         StyledText {

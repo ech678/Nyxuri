@@ -12,6 +12,9 @@ import qs.ui
 
 Item {
     id: root
+    property color contentColor: Appearance.colors.colOnSecondaryContainer
+    property bool contentColorOverridden: false
+    signal styleEditorRequested
 
     property bool vertical: false
     property bool isMaterial: PersonalizationConfig.barIsMaterial
@@ -42,11 +45,13 @@ Item {
     // effective visibility, so a collapsed group would mask the widget forever.
     readonly property bool barWidgetVisible: root.shouldShow
     readonly property color mediaContainer: M3Palette.pillContainer("media")
-    readonly property color mediaInk: M3Palette.pillInk("media")
+    readonly property color mediaInk: root.contentColorOverridden ? root.contentColor : M3Palette.pillInk("media")
     readonly property color playContainer: root.isPlaying ? M3Palette.primary : M3Palette.surfaceContainerLow
     readonly property color playInk: ColorUtils.ensureReadable(root.isPlaying ? M3Palette.primaryForeground : M3Palette.surfaceForeground, root.playContainer, 4.5)
-    readonly property color playHover: ColorUtils.mix(root.playContainer, root.playInk, 0.90)
-    readonly property color playActive: ColorUtils.mix(root.playContainer, root.playInk, 0.78)
+    // end4 hover semantics: playing mixes toward the hover layer (0.87),
+    // paused jumps to the primary-container hover pair.
+    readonly property color playHover: root.isPlaying ? ColorUtils.mix(M3Palette.primary, Appearance.colors.colLayer1Hover, 0.87) : ColorUtils.mix(M3Palette.primaryContainer, M3Palette.onPrimaryContainer, 0.9)
+    readonly property color playActive: root.isPlaying ? ColorUtils.mix(M3Palette.primary, Appearance.colors.colLayer1Active, 0.7) : ColorUtils.mix(M3Palette.primaryContainer, M3Palette.onPrimaryContainer, 0.78)
     readonly property color transparentHover: ColorUtils.applyAlpha(root.mediaInk, 0.12)
     readonly property color transparentActive: ColorUtils.applyAlpha(root.mediaInk, 0.22)
 
@@ -195,6 +200,10 @@ Item {
             else if (event.button === Qt.LeftButton)
                 root.toggleMediaSurface();
         }
+        onPressAndHold: event => {
+            if (event.button === Qt.RightButton)
+                root.styleEditorRequested();
+        }
     }
 
     // Vertical default
@@ -207,7 +216,7 @@ Item {
             implicitSize: 20
             lineWidth: Appearance.rounding.unsharpen
             value: MprisController.lengthOf(root.activePlayer) > 0 ? MprisController.positionOf(root.activePlayer) / MprisController.lengthOf(root.activePlayer) : 0
-            colPrimary: Appearance.colors.colOnLayer1
+            colPrimary: root.contentColor
             enableAnimation: false
             Item {
                 anchors.centerIn: parent
@@ -218,7 +227,7 @@ Item {
                     fill: 1
                     text: root.activePlayer?.isPlaying ? "pause" : "music_note"
                     iconSize: Appearance.font.pixelSize.normal
-                    color: Appearance.colors.colOnLayer1
+                    color: root.contentColor
                 }
             }
         }
@@ -278,7 +287,7 @@ Item {
                 Layout.rightMargin: 0
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
-                color: Appearance.colors.colOnLayer1
+                color: root.contentColorOverridden ? root.contentColor : Appearance.colors.colOnLayer1
                 text: Config.options.bar.m3.media.onlyTitle ? root.cleanedTitle : `${root.cleanedTitle}${MprisController.artistOf(root.activePlayer) ? ' • ' + MprisController.artistOf(root.activePlayer) : ''}`
             }
         }
@@ -433,11 +442,11 @@ Item {
                         StyledText {
                             id: titleText
                             readonly property bool titleOnly: Config.options?.bar?.m3?.media?.onlyTitle ?? false
-                            Layout.topMargin: 0
+                            Layout.topMargin: (root.trackArtist.length === 0) ? -13 : 0
                             text: root.trackTitle.length > 0 ? root.trackTitle : Translation.tr("No media")
                             font.pixelSize: titleOnly ? Appearance.font.pixelSize.small : Appearance.font.pixelSize.smallie
                             font.weight: titleOnly ? Font.Medium : Font.Normal
-                            color: titleOnly ? root.mediaInk : ColorUtils.readableSubtext(root.mediaInk, root.mediaContainer, 0.72)
+                            color: titleOnly ? root.mediaInk : (root.contentColorOverridden ? Qt.alpha(root.contentColor, 0.7) : ColorUtils.readableSubtext(root.mediaInk, root.mediaContainer, 0.72))
                             elide: Text.ElideRight
                             Layout.maximumWidth: 120
                             animateChange: true
@@ -468,6 +477,7 @@ Item {
                         implicitWidth: 26
                         implicitHeight: 26
                         Layout.leftMargin: -4
+                        Layout.rightMargin: -2
                         buttonRadius: 13
                         colBackground: "transparent"
                         colBackgroundHover: root.transparentHover

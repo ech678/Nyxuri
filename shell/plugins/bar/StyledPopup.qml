@@ -159,7 +159,7 @@ LazyLoader {
 
         Rectangle {
             id: popupBackground
-            readonly property real margin: 10
+            readonly property real margin: 8
             property bool shown: false
 
             anchors {
@@ -173,10 +173,10 @@ LazyLoader {
             implicitWidth: (popupWindow.innerContent?.implicitWidth ?? 0) + margin * 2
             implicitHeight: (popupWindow.innerContent?.implicitHeight ?? 0) + margin * 2
 
-            color: M3Palette.surfaceContainer
-            radius: Appearance.rounding.normal + 4
+            color: Appearance.colors.colLayer1Base
+            radius: Appearance.rounding.large + 5
             border.width: 1
-            border.color: M3Palette.outlineVariant
+            border.color: Appearance.colors.colLayer0Border
             opacity: shown ? 1 : 0
             scale: shown ? 1 : 0.94
             transformOrigin: root.barEdge === "bottom" ? Item.Bottom : root.barEdge === "left" ? Item.Left : root.barEdge === "right" ? Item.Right : Item.Top

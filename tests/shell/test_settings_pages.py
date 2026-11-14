@@ -610,7 +610,8 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
         source = _read("GeneralBarPage.qml")
         for atom in ("PreferenceHeader", "PreferenceToggle", "PreferenceSelect", "ConnectedRect"):
             self.assertIn(atom, source, f"GeneralBarPage must use the atom: {atom}")
-        self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 6,
+        # B9.6: the workspace style select joins the popup-input-region group.
+        self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 7,
                          "the screen-edge and style selects must register the popup input region")
 
     def test_drag_fields_and_coordinators_survive(self):

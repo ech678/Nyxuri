@@ -6,6 +6,8 @@ import qs.ui
 
 BarWidgetSwitcher {
     id: root
+    property color contentColor: Appearance.colors.colOnLayer1
+    property bool contentColorOverridden: false
     property bool showDate: Config.options.bar.m3.verbose
     property var today: new Date()
     readonly property string dateTimeString: DateTime.time
@@ -43,7 +45,7 @@ BarWidgetSwitcher {
                         required property string modelData
                         width: implicitWidth
                         horizontalAlignment: Text.AlignHCenter
-                        font.letterSpacing: -0.2
+                        font.letterSpacing: -0.9
                         font.features: {
                             "tnum": 1
                         }
@@ -54,7 +56,7 @@ BarWidgetSwitcher {
                             else
                                 return root._timePixelSize > 0 ? root._timePixelSize : Appearance.font.pixelSize.large;
                         }
-                        color: Appearance.colors.colOnLayer1
+                        color: root.contentColor
                         text: modelData.padStart(2, "0")
                     }
                 }
@@ -65,7 +67,7 @@ BarWidgetSwitcher {
                 Layout.bottomMargin: 5
                 font.family: root._dateFontFamily.length > 0 ? root._dateFontFamily : Appearance.font.main
                 font.pixelSize: root._datePixelSize > 0 ? root._datePixelSize : Appearance.font.pixelSize.smallest
-                color: Appearance.colors.colOnLayer1
+                color: root.contentColor
                 text: DateTime.shortDate
             }
         }
@@ -125,19 +127,19 @@ BarWidgetSwitcher {
                 visible: root.showDate
                 font.family: root._dateFontFamily.length > 0 ? root._dateFontFamily : Appearance.font.main
                 font.pixelSize: root._datePixelSize > 0 ? root._datePixelSize : Appearance.font.pixelSize.small
-                color: Appearance.colors.colOnLayer1
+                color: root.contentColor
                 text: DateTime.longDate ?? ""
             }
             StyledText {
                 visible: root.showDate
                 font.pixelSize: Appearance.font.pixelSize.small
-                color: Appearance.colors.colOnLayer1
+                color: root.contentColor
                 text: "•"
             }
             StyledText {
                 font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : Appearance.font.main
                 font.pixelSize: root._timePixelSize > 0 ? root._timePixelSize : Appearance.font.pixelSize.large
-                color: Appearance.colors.colOnLayer1
+                color: root.contentColor
                 text: DateTime.time ?? ""
                 font.letterSpacing: -0.4
                 font.features: {
@@ -153,9 +155,8 @@ BarWidgetSwitcher {
             spacing: 4
 
             property var timeParts: DateTime.time.split(/[: ]/)
-            property string hours: timeParts[0] ?? "00"
-            property string minutes: timeParts[1] ?? "00"
-            property string ampm: timeParts[2] ?? ""
+            property string ampm: timeParts.find(part => /^(am|pm)$/i.test(part)) ?? ""
+            property string time: timeParts.filter(part => !/^(am|pm)$/i.test(part)).join(":")
 
             StyledText {
                 visible: root.showDate
@@ -182,7 +183,7 @@ BarWidgetSwitcher {
                     font.pixelSize: root._timePixelSize > 0 ? root._timePixelSize : Appearance.font.pixelSize.smallie
                     color: M3Palette.primaryForeground
                     font.weight: Font.Bold
-                    text: pill.ampm !== "" ? pill.hours.padStart(2, "0") + ":" + pill.minutes.padStart(2, "0") : DateTime.time
+                    text: pill.time
                     font.features: {
                         "tnum": 1
                     }
@@ -204,7 +205,7 @@ BarWidgetSwitcher {
                     anchors.centerIn: parent
                     font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : Appearance.font.main
                     font.pixelSize: Appearance.font.pixelSize.smaller
-                    color: M3Palette.tertiaryContainerForeground
+                    color: M3Palette.primary
                     text: pill.ampm
                 }
             }

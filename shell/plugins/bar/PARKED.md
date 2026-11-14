@@ -25,7 +25,7 @@
 | `SystemIcons.qml` | B9.2 重做为固定 26px 状态槽（`SystemIconSlot`），直连 Nyxuri 服务，进选装集（`systemIcons`） |
 | `PowerButton.qml` / `LauncherButton.qml` | 对齐 end4 原件，进选装集 |
 | `BarGroupStylePopup.qml` | 右键就地调色已接线，样式持久化在 `PersonalizationConfig.barWidgetStyles` |
-| `Workspaces.qml` | iNiR 876 行原件剪裁为 Niri-only end4 视觉，选装集默认部件 |
+| `Workspaces.qml` | B9.6 重写为 end4 骨架整抄 + iNiR `dynamicCount` 槽位口径（实机定案），选装集默认部件 |
 
 ## 服务缺失（面已下架）
 

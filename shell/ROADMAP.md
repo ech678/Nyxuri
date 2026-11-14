@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | P4 | 主题契约、模板兼容与取色引擎分阶 | 待验收（契约测试全绿；实机行为与视觉证据待作者） |
 | T3 | 设置界面替换：Caelestia 安卓风味 | M3/M4 待验收（机器证据齐；视觉过目待作者） |
-| B | Bar & Island（布局自由 + end4 视觉基线） | B9.0–B9.5 待验收（机器证据齐；截图、实机托盘、竖向排布与视觉过目待作者）；B8 旧验收作废，仅保留结构回归证据 |
+| B | Bar & Island（布局自由 + end4 视觉基线） | B9.0–B9.6 待验收（机器证据齐；截图、实机托盘、竖向排布与视觉过目待作者）；B8 旧验收作废，仅保留结构回归证据 |
 | P6 | 整体验收与未来移植 | 排队（前置主线 KM5） |
 
 ## 已交付基线台账
@@ -178,35 +178,37 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 | --- | --- | --- |
 | 左右 lane 内缩 | material 5 / Hug 0 / Float、Panel 4 / 其余 8 | 同 end4（B9.0 定义 `laneMargin`，此前引用未定义恒 0） |
 | 窗口高度 | 含 Float/Hug/Panel 修正 | 同 end4（`sizes.barHeight` 含样式加成） |
-| 角落出现动画 | `showCorners` + 65ms timer | 直接显隐 |
+| 角落出现动画 | `showCorners` + 65ms timer | **结案（B9.6）**：该属性在 end4 参考树里零消费者，是参考自身死代码；Nyxuri 直接显隐即 end4 运行态，不移植 |
 | islands 样式 | cornerStyle 2，名称 “Islands” | 名称已改为 “Islands”（B9.0）；lane inset 已生效 |
-| 中段岛宽 | `dynamicIslandEnabled` 特殊分支 | 统一按 `middleRow` |
+| 中段岛宽 | `dynamicIslandEnabled` 特殊分支 | B9.6 已对齐：岛占中段时 centerPill 走 −4/+8 满高分支（probe `b96.hug` 断言） |
 
 #### 1.3 分组胶囊与右键改色
 
 - 胶囊 padding、背景上下内缩、`fullRadius=height/2` 与 end4 相同。
-- `midRadius` 因 `unsharpenmore` 10 而整体变圆；Float 高度差又让胶囊更扁。
-- 右键样式编辑器颜色只对少数部件生效：`ClockWidget`、`Resources`、
-  `BatteryIndicator`、`Divisor`、`UtilButtons` 已丢失 `contentColor/contentColorOverridden`，
-  `BarGroup` 的 Binding 找不到属性，只改背景不改文字/图标颜色。
-- `BarGroupStylePopup` 使用 Nexus `PreferenceSlider`，与 end4 `ConfigSlider` 视觉不同；
-  且没有 Niri 可用的外部点击关闭。
+- `midRadius` 因 `unsharpenmore` 10 而整体变圆；Float 高度差又让胶囊更扁。（B9.0 后 `unsharpenmore=6`，已消）
+- 右键样式编辑器：B9.6 已补齐全链路——`ClockWidget`、`Resources`/`Resource`、
+  `BatteryIndicator`、`Divisor`、`UtilButtons`、`Media`、`Workspaces` 恢复
+  `contentColor/contentColorOverridden`，`BarGroup` 的 Binding 探测到属性即接管文字/图标
+  颜色（probe `b96.override` 端到端断言）。
+- `BarGroupStylePopup`：B9.6 换装 end4 `ConfigSlider`（整抄 `ConfigSlider`/`StyledSlider`/
+  `OptionalMaterialSymbol`），并接全屏 backdrop 外点关闭（Niri 无 focus-grab 协议，
+  同 StyledPopup B9.1 模式）。
 
 #### 1.4 部件差异
 
 | 部件 | 差异 |
 | --- | --- |
-| Workspaces | end4 material 按钮宽 30，Nyxuri 固定 26；end4 固定 `shown` 槽位（默认 10），Nyxuri 只画已存在工作区，宽度会跳；end4 有 default/gnome/dots/ticks 四样式与 active Colorizer，Nyxuri 只剩 dots/icon + 数字；end4 右键开 overview，Nyxuri 没有 |
-| Media | 非 material 文字固定 `colOnLayer1`，忽略右键改色；标题 `smallie 13 ➔ 10`、副标题 `12 ➔ 10`；无 artist 时 end4 用 `topMargin:-13` 收紧，Nyxuri 固定 0；播放/下一首的 hover 色与右 margin 有差 |
+| Workspaces | **B9.6 已重做（end4 骨架整抄）**：material 宽 30 / 其余 26；default/gnome/dots/ticks 四样式（`WorkspacesAlt` 整抄）；active Colorizer 数字着色；右键 toggleOverview、右键长按样式编辑器。**槽位语义按作者定案改用 iNiR `dynamicCount` 口径（见 §2.4）**：槽位 = 本输出实际存在的工作区（niri 保留空槽，尾巴真实且稳定），预算 `shown` 只作上限/翻页宽度——这是对 end4 固定网格的登记偏离，实机否决了虚构尾巴 |
+| Media | **B9.6 已对齐**：contentColor 链路、无 artist `topMargin:-13`、next 右 margin −2、播放/暂停 hover 走 end4 混合语义（0.87/0.9）、右键长按样式编辑器；字号已随 B9.0 Typography 1.0 成为真 13/12 |
 | SystemIcons | B9.2 已重做：七个固定 26px 槽 + hover 胶囊 + 17px 图标 + tooltip + 独立点击；`PeripheralBattery` 低电/危险双档；旧账：裸 Flow 宽度跳变、19px、整块 MouseArea、无外设电池 |
 | SysTray | B9.1 已重做：iNiR `TrayService` 剪裁整抄 + `bar.tray` 持久化；下箭头随 unpinned 出现；tint/filter/id 三项真实可调；overflow 点击外部关闭。旧账：`unpinnedItems` 恒空、`togglePin()` 空实现、无存储、tint 读不存在属性 |
-| ClockWidget | 忽略 `contentColor`；有 AM/PM 时强制 `HH:MM` 补零；AM/PM 徽标色是 `tertiaryContainerForeground`（end4 是 `colPrimary`） |
-| Resources | `Resource` ink 固定 `pillInk("resources")`，不跟随 group/右键色；非 material 自定义底色下对比度可能不够 |
-| BatteryIndicator | 固定 `pillInk("batteryIndicator")`；hover 始终开启（end4 click-to-show 模式下关闭） |
-| UtilButtons | 图标 17px 正确；按钮颜色固定 `colOnLayer2`，右键改色无效；tooltip 是 Nyxuri 自加 |
-| PowerButton | material 28（end4 32） |
-| ActiveWindow | 增加了右侧 6px margin，文字宽度略小；垂直 fallback 加 `desktop_windows`（end4 无） |
-| Divisor | dot 文本 `"•"`（end4 `"• "`），宽度算式不同；`space` 默认间距 4（end4 20），且无 UI |
+| ClockWidget | **B9.6 已对齐**：contentColor 接管 default 两味；AM/PM 不再强制补零；徽标字色 `colPrimary`；colDefault letterSpacing −0.9（Nyxuri 自加的字体覆写键保留为默认值之上的 override） |
+| Resources | **B9.6 已对齐**：`contentColor/contentColorOverridden` 全链路接管 ink 与百分比文字 |
+| BatteryIndicator | **B9.6 已对齐**：highlightColor 跟随右键色；hover 在 click-to-show 模式下关闭（同 end4） |
+| UtilButtons | **B9.6 已对齐**：contentColor 接管 legacy 图标/计时文字；`UtilButton` 回归 end4 原件（hover 底 `transparentize(colLayer0, 0.8)`、图标 primary/onPrimary，不再按皮肤分支） |
+| PowerButton | **B9.6 已对齐**：material 32（`barPowerButtonSize`） |
+| ActiveWindow | **B9.6 已对齐**：去掉右侧 6px margin；垂直 fallback `desktop_windows` 删除（end4 空着） |
+| Divisor | **B9.6 已对齐**：dot 文本 `"• "` 与宽度分支、rect 色 contentColor 化；`space` 间距读数与 UI 归 B9.7 |
 
 #### 1.5 岛（Dynamic Island）
 
@@ -220,20 +222,23 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 | --- | --- | --- |
 | 左右卫星 | `dynamicIsland.leftWidget/rightWidget` 在岛两侧渲染 | 已删除，改成 `islandSatellite` 只在 idle 面内部显示 clock/weather |
 | 日期 | idle 不显示 | B9.3 接线：idle 横向时钟渲染日期，`islandHideDate` 是真实开关（Nyxuri 有意差异） |
-| 岛胶囊 | material/centerOnly 时透明，可跟随 frame 色 | 永远 `colLayer0`；`showBackground=false` 时仍有胶囊 |
+| 岛胶囊 | material/centerOnly 时透明，可跟随 frame 色 | **B9.6 已对齐**：material 或 centerOnly（cornerStyle 0）时透明（probe `b96.hug` 断言两态）；`followFrameColor` 维持删除（无 UI 无消费者） |
 | 媒体面 | 可配媒体按钮 + dots/wave | 只有 dots；按钮与 wave 已下架（有意） |
 | Timer/Recording | 有 | 已下架（有意） |
-| 通知面 | 图标左 4/12、文字左 14/2、fallback 左 0/4 | 图标左 4/8、文字 10/8、fallback 居中 |
-| OSD | volume/brightness/gamma 三通道，132 宽 | 单通道 + keyboard，keyboard 200 宽 |
-| 竖向岛 | 不完整 | B9.4：竖向布局过滤岛，通知宿主回退；竖向重排留给 B9.6 |
+| 通知面 | 图标左 4/12、文字左 14/2、fallback 左 0/4 | **B9.6 已对齐**（wrapper 按可见子项取 end4 锚点） |
+| OSD | volume/brightness/gamma 三通道，132 宽 | **B9.6 已对齐宽度**：全通道 132（keyboard 收进）；gamma 通道为**登记有意差异**——Niri 无 gamma 服务（hyprsunset 等 Hyprland 生态件），不追 |
+| 竖向岛 | 不完整 | B9.4：竖向布局过滤岛，通知宿主回退。**B9.6 定案挂起**：end4 自身竖向岛不完整、无基线可抄，重排待独立设计，不进对照执行分期 |
 
 #### 1.6 弹层与 tooltip
 
-- `StyledPopup`：end4 `colLayer1Base` / 圆角 28 / 内边距 8；Nyxuri `surfaceContainer` /
-  圆角 21 / 内边距 10。tray overflow、时钟、电池、资源弹层都会不同。
-- `SysTrayMenu`：圆角 16（end4 18）；其余布局基本一致。
-- `M3ToolTip` 把 end4 `PopupToolTip` 的外边距改为 0。
-- `BarGroupStylePopup` 用 Nexus 滑块；无外部点击关闭。
+- `StyledPopup`：**B9.6 已对齐** end4 `colLayer1Base` / 圆角 `large+5`(=28) / 内边距 8 /
+  边框 `colLayer0Border`。tray overflow、时钟、电池、资源弹层随之统一。
+- `SysTrayMenu`：**B9.6 已对齐**——剥掉 zzz/angel/inir 死皮肤分支（引用 Nyxuri
+  `Appearance` 上不存在的 token，undefined 恒假），默认路径即 end4 `colLayer0` +
+  `windowRounding`(18)；`SysTrayMenuEntry` 同步清理。
+- `M3ToolTip`：**B9.6 已对齐**——恢复 end4 `PopupToolTip` 外边距（=padding），不再压 0。
+- `BarGroupStylePopup`：**B9.6 已对齐**——end4 `ConfigSlider` 三件套整抄替换 Nexus 滑块，
+  backdrop 外点关闭。
 
 #### 1.7 设置真伪清单
 
@@ -250,6 +255,7 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 | `barDividerSpacing` | Config 桥引用不存在的属性；无 UI；`space` 永远 4 |
 | autoHide / screenList / utilButtons / resources | Config 硬编码或空数组，无 UI |
 | `bar.tray` 设置 | B9.1 已补 Tray 段：pin/tint/passive/id 均可调 |
+| workspaces 样式/槽位 | B9.6 已接线：`workspaceStyle` 四选 + `workspaceShown` 槽位预算（1–50）落 `workspaceStyle`/`workspaceShown` 键，Bar 设置页 Workspaces 段可调 |
 | 竖向厚度 | B9.4 新增 `barVerticalThickness`，仅左右边缘时出现，独立于水平厚度 |
 | 外边距 | B9.5 新增「屏幕边缘边距 / 两端边距」，0 = end4 贴边；exclusiveZone 与弹层同步 |
 
@@ -263,7 +269,7 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 | B9.3 | 岛真相：布局成员唯一、修迁移键、通知槽仲裁、idle 头像 fallback、卫星语义、日期/水平时钟接线 | 无（现有岛原件） | 待验收（探针覆盖增删/reload、迁移键、idle 宽度/时钟/头像；通知宿主恢复待实机） |
 | B9.4 | 竖向 bar：left/right 真正可用；竖向宽度独立可调；窗口、lane、弹层、通知避让全链路 | `references/end4-pC/modules/ii/verticalBar/VerticalBar.qml`、`VerticalBarContent.qml`（先 `cp` 再剪裁） | 待验收（probe 左右两边缘 × 胶囊两路 + centerOnly；实机排布与视觉过目待作者） |
 | B9.5 | 外边距：`barEdgeMargin` / `barSideMargin` + 设置页 + exclusiveZone + 弹层 + probe | 无 | 待验收（纯几何由 probe 覆盖 0/12/24；0/12/24 实机截图待作者） |
-| B9.6 | 表现基线归零：bar 厚度保持用户可调；补齐 contentColor 覆盖、Workspaces 固定槽位与四样式、Media/Clock/Notif 几何、角落出现动画与中段岛宽分支（字号/圆角/高度加成/laneMargin/Islands 正名已在 B9.0 落地） | end4 原始 token 与部件 | 待开始 |
+| B9.6 | 表现基线归零：bar 厚度保持用户可调；补齐 contentColor 覆盖、Workspaces 固定槽位与四样式、Media/Clock/Notif 几何、角落出现动画与中段岛宽分支（字号/圆角/高度加成/laneMargin/Islands 正名已在 B9.0 落地） | end4 原始 token 与部件 | 待验收（实现与 probe b96 全绿；逐项过目待作者；槽位语义按作者定案改为 iNiR dynamicCount 口径，见 §2.4） |
 | B9.7 | 设置清账：`barOverlay`、autoHide、screenList、showBackground、dividerSpacing、utilButtons、resources、numberMap 全部接消费者或下架 | 无 | 待开始 |
 | B9.8 | 护栏：probe 增加 tray overflow、SystemIcons 槽位、竖向几何、外边距、岛删除/恢复；截图验收 | 现有 `probe-bar.sh` | 待开始 |
 
@@ -345,6 +351,46 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
   全绿，`logErrors: []`；`check.sh` 绿。
 - **未验证**：左右边缘在 Niri 实机的窗口重排、弹层/通知避让手感、0/12/24 边距与
   竖向 bar 的视觉截图，均留作者验收。
+
+### 2.4 B9.6 实施记录（2026-11-14）
+
+- **Workspaces 重做（end4 骨架整抄）**：`Workspaces.qml` 以 end4 原件为骨架重写，
+  数据面保留 end4 `WorkspaceModel` 接口（`shownCount/occupied[]/getWorkspaceIdAt/fakeWorkspace`），
+  Niri 投影直接建在 `CompositorDriver` 上；`WorkspacesAlt`（四样式）、`Colorizer`、
+  `MaskMultiEffect`、`StateOverlay`/`StateLayer`、`FadeLoader`、`StyledRectangle`、
+  `ButtonMouseArea`、`Box`、`Pill`、`Circle` 均自 end4 物理整抄后剪裁。material 槽宽 30、
+  右键 `CompositorDriver.toggleOverview()`、右键长按样式编辑器；空槽点击走
+  `focus-monitor + focus-workspace Index`（新动词收在 `NiriDriver` 单文件）。Hyprland
+  special-workspace 面（含 blur 层）与 Kirigami `AppIcon`（IconImage 顶替）、nerd-font
+  数字分支为声明剪裁。
+- **槽位语义（作者定案，偏离 end4 固定网格）**：实机否决固定 10 槽（8 个虚构尾巴），
+  也否决「active 又 +1」（切工作区时尾巴跟着长）。终局按 iNiR 原件 `dynamicCount`
+  口径（references/iNiR Workspaces.qml:176-183）：槽位 = 本输出实际工作区数
+  （niri 保留空工作区，尾巴真实且稳定，`niri msg -j workspaces` 实证）；预算
+  `workspaceShown`（1–50，默认 10）只作上限与翻页宽度。设置页新增「工作区样式」
+  四选与「显示工作区数」步进。
+- **contentColor 全链路**：`ClockWidget`（AM/PM 不补零、徽标字色 colPrimary、
+  letterSpacing −0.9）、`Resources`/`Resource`、`BatteryIndicator`（hover 让位
+  click-to-show）、`Divisor`（dot 分支 + `"• "`）、`UtilButtons`/`UtilButton`
+  （end4 hover 语言，去皮肤分支）、`Media`（topMargin −13、next 右 margin −2、
+  hover 0.87/0.9 语义、右键长按样式编辑器）。
+- **几何归零**：PowerButton 32；ActiveWindow 去 rightMargin/兜底图标；岛胶囊
+  material/centerOnly 透明；`centerPill` 岛分支（−4/+8 满高）；DiNotifs 4/12、
+  14/2、0/4；OSD 全通道 132（gamma 登记有意差异，Niri 无 gamma 服务）。
+- **弹层令牌**：StyledPopup `colLayer1Base`/28/8/`colLayer0Border`；SysTrayMenu/
+  SysTrayMenuEntry 剥 zzz/angel/inir 死分支（undefined 恒假）；M3ToolTip 恢复
+  end4 外边距；BarGroupStylePopup 换 `ConfigSlider` 三件套 + backdrop 外点关闭。
+- **结案三笔**：角落出现动画（end4 `showCorners`+65ms 参考树零消费者，死代码不移植）；
+  Media 字号 13/12（B9.0 Typography 1.0 已解，审计记录过期）；SysTrayMenu 圆角 16
+  （死皮肤分支假象，默认路径本就是 18）。
+- **证据**：`probe-bar.sh --json` 全绿（新增 `b96` 阶段：样式链端到端
+  store→BarGroup Binding→widget 属性、动态槽位、岛 hug 两态与胶囊透明；
+  `collectLoaders` 修正——end4 `FadeLoader` 包裹器是无 source 容器，不算 pending）；
+  `tests/shell` 469 tests OK（新增 `test_b9_6_*` 四组钉值）；`check.sh` 绿。
+- **未验证（留作者）**：四样式与 Colorizer 实机过目、右键 overview 手感、
+  改色弹层外点关闭、弹层令牌视觉、动态槽位日常手感。
+- **遗留登记**：探针 `mapFromItem` stderr 噪音（gate 外，windowProbe 换边时出现，
+  待查）；`ActionGateway.islandHost` 多实例接力的清空时序（探针已绕行，产品面待审）。
 
 ### 3. 验收
 

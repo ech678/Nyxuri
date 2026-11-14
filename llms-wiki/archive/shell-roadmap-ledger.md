@@ -1337,3 +1337,47 @@ qml-lint 629 条 advisory 警告为既有 qs.* 成员解析噪声）。`probe-ba
   两次 top 快照一致；`test_bar_end4` 增加「禁止条件 anchor」静态契约。
 - **验证**：`tests/shell` 465 tests OK（11 skipped）；`probe-bar.sh --json`
   `windowProbe.ok=true`、`roundTrip=true`、`logErrors: []`；`check.sh` 绿。
+
+### B9.6 实施记录（2026-11-14，表现基线归零）
+
+- **Workspaces 重做**：`Workspaces.qml` 按 end4 原件骨架重写（`ButtonMouseArea` +
+  occupied 挤压层 + `TrailingIndicator` + Colorizer 数字着色 + `WorkspacesAlt` 四样式），
+  数据面保留 end4 `WorkspaceModel` 接口、Niri 投影建于 `CompositorDriver`；
+  `Colorizer`/`MaskMultiEffect`/`StateOverlay`/`StateLayer`/`FadeLoader`/`StyledRectangle`/
+  `ButtonMouseArea`/`Box`/`Pill`/`Circle`/`WorkspacesAlt` 物理整抄入 `shell/plugins/bar/`。
+  剪裁声明：Hyprland special 面与 blur 层、Kirigami `AppIcon`（IconImage 顶替）、
+  nerd-font 数字分支。material 槽宽 30；右键 `CompositorDriver.toggleOverview()`，
+  右键长按样式编辑器；空槽点击 `focus-monitor + focus-workspace Index`
+  （`NiriDriver.focusWorkspaceOnOutput` 新动词）。
+- **槽位语义（作者实机三轮定案）**：end4 固定 `shown` 网格被否决（8 个虚构尾巴）；
+  「existing+1」「meaningful+1」两版也被否决（切工作区时尾巴跟着长 / 空存在的槽被
+  误删）。终局 = iNiR 原件 `dynamicCount` 口径（iNiR Workspaces.qml:176-183）：槽位 =
+  本输出实际工作区数（`niri msg -j workspaces` 实证空工作区持久保留，尾巴真实且在
+  移动时稳定）；`workspaceShown`（1–50，默认 10）只作上限与翻页宽度。设置页新增
+  「工作区样式」四选 + 「显示工作区数」步进（`workspaceStyle`/`workspaceShown` 双向落盘）。
+- **contentColor 全链路**：`ClockWidget`（AM/PM 不补零、徽标 colPrimary、
+  colDefault letterSpacing −0.9）、`Resources`/`Resource`、`BatteryIndicator`
+  （hover 让位 click-to-show）、`Divisor`（dot 分支 + `"• "`）、`UtilButtons`/
+  `UtilButton`（end4 hover 语言）、`Media`（topMargin −13、next 右 margin −2、
+  hover 0.87/0.9、右键长按样式编辑器）。`BarGroup` 本体未动——其
+  `"contentColor" in loadedWidget` 探测在属性补齐后自动接管。
+- **几何归零**：PowerButton 32；ActiveWindow 去 rightMargin 6 与 `desktop_windows`
+  兜底；岛胶囊 material/centerOnly 透明；`centerPill` 岛分支（−4/+8 满高，
+  `middleRowImplicitWidth` 探针面）；DiNotifs 4/12、14/2、0/4；OSD 全通道 132
+  （gamma 登记有意差异：Niri 无 gamma 服务）。
+- **弹层令牌**：StyledPopup `colLayer1Base`/`large+5`(28)/8/`colLayer0Border`；
+  SysTrayMenu/SysTrayMenuEntry 剥 zzz/angel/inir 死皮肤分支；M3ToolTip 恢复 end4
+  外边距；BarGroupStylePopup 换 `ConfigSlider`/`StyledSlider`（Wavy 分支剪裁）/
+  `OptionalMaterialSymbol` + backdrop 外点关闭。
+- **结案三笔**：角落出现动画（end4 `showCorners`+65ms 参考树零消费者——死代码，
+  不移植）；Media 字号 13/12（B9.0 Typography 1.0 已解）；SysTrayMenu 圆角 16
+  （死分支假象）。
+- **探针修正**：`collectLoaders` 不再把无 `source`/`sourceComponent` 的 Loader 计为
+  pending（end4 `FadeLoader` 包裹器惯用法）；新增 `b96` 阶段（样式链端到端、动态
+  槽位、岛 hug 两态 + 胶囊透明、`centerIsland` 场景）；`findGroup` 跳过 material
+  分支的未加载孪生组；岛宿主解析优先 `ActionGateway.islandHost`、回落内容树。
+- **验证**：`tests/shell` 469 tests OK（11 skipped；含 `test_b9_6_*` 四组钉值）；
+  `probe-bar.sh --json` 全绿含 `b96`、`logErrors: []`；`check.sh` 绿（qmlformat 已过）。
+- **未验证（作者）**：四样式/Colorizer、右键 overview、改色弹层外点关闭、弹层令牌
+  视觉、动态槽位日常手感。
+- **遗留登记**：`mapFromItem` stderr 噪音（gate 外）；`islandHost` 多实例清空时序。

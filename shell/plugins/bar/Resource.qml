@@ -6,6 +6,8 @@ import qs.services
 
 Item {
     id: root
+    property color contentColor: Appearance.colors.colOnSecondaryContainer
+    property bool contentColorOverridden: false
     required property string iconName
     required property double percentage
     property bool vertical: false
@@ -13,7 +15,7 @@ Item {
     opacity: available ? 1 : 0.4
     property int warningThreshold: 100
     property bool shown: true
-    readonly property color foregroundColor: M3Palette.pillInk("resources")
+    readonly property color foregroundColor: root.contentColorOverridden ? root.contentColor : M3Palette.pillInk("resources")
     clip: !vertical
     visible: vertical ? true : width > 0 && height > 0
     implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : (resourceRowLayout.x < 0 ? 0 : resourceRowLayout.implicitWidth)
@@ -104,7 +106,7 @@ Item {
             StyledText {
                 id: percentageText
                 anchors.centerIn: parent
-                color: root.foregroundColor
+                color: root.contentColorOverridden ? root.contentColor : Appearance.colors.colOnLayer1
                 font.pixelSize: Appearance.font.pixelSize.small
                 text: root.available ? `${Math.round(root.percentage * 100).toString()}` : "—"
             }

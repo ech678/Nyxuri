@@ -234,12 +234,30 @@ Item {
                 }
 
                 PreferenceSelect {
-                    last: true
                     label: I18n.tr("Indicator style")
                     model: PersonalizationConfig.barWorkspaceIndicatorStyles
                     currentValue: PersonalizationConfig.barWorkspaceIndicatorStyle
                     inputRegionService: PopupInputRegionService
                     onSelected: value => PersonalizationConfig.setBarWorkspaceIndicatorStyle(String(value))
+                }
+
+                PreferenceSelect {
+                    label: I18n.tr("Workspace style")
+                    model: PersonalizationConfig.barWorkspaceStyles
+                    currentValue: PersonalizationConfig.barWorkspaceStyle
+                    inputRegionService: PopupInputRegionService
+                    onSelected: value => PersonalizationConfig.setBarWorkspaceStyle(String(value))
+                }
+
+                PreferenceSlider {
+                    last: true
+                    label: I18n.tr("Shown workspaces")
+                    value: PersonalizationConfig.barWorkspaceShown
+                    valueLabel: Math.round(PersonalizationConfig.barWorkspaceShown) + ""
+                    from: 1
+                    to: 50
+                    stepSize: 1
+                    onMoved: value => PersonalizationConfig.setBarWorkspaceShown(Math.round(value))
                 }
 
                 // Components

@@ -10,6 +10,8 @@ import qs.ui
 
 Item {
     id: root
+    property color contentColor: Appearance.colors.colOnLayer2
+    property bool contentColorOverridden: false
     property bool vertical: Config.options.bar.vertical
     property bool isMaterial: PersonalizationConfig.barIsMaterial
 
@@ -46,7 +48,7 @@ Item {
                     fill: 1
                     text: "screenshot_region"
                     iconSize: Appearance.font.pixelSize.large
-                    color: Appearance.colors.colOnLayer2
+                    color: root.contentColor
                 }
             }
         }
@@ -73,7 +75,7 @@ Item {
                     fill: 1
                     text: "colorize"
                     iconSize: Appearance.font.pixelSize.large
-                    color: Appearance.colors.colOnLayer2
+                    color: root.contentColor
                 }
             }
         }
@@ -159,7 +161,7 @@ Item {
                             "tnum": 1
                         }
                         font.letterSpacing: -0.3
-                        color: Appearance.colors.colOnLayer2
+                        color: root.contentColor
                         rightPadding: 8
                         Component.onCompleted: width = implicitWidth
                     }
@@ -199,7 +201,7 @@ Item {
                     fill: 0
                     text: "keyboard"
                     iconSize: Appearance.font.pixelSize.large
-                    color: Appearance.colors.colOnLayer2
+                    color: root.contentColor
                 }
             }
         }
@@ -226,7 +228,7 @@ Item {
                     fill: 0
                     text: "imagesmode"
                     iconSize: Appearance.font.pixelSize.large
-                    color: Appearance.colors.colOnLayer2
+                    color: root.contentColor
                 }
             }
         }
@@ -253,7 +255,7 @@ Item {
                     fill: 0
                     text: Pipewire.defaultAudioSource?.audio?.muted ? "mic_off" : "mic"
                     iconSize: Appearance.font.pixelSize.large
-                    color: Appearance.colors.colOnLayer2
+                    color: root.contentColor
                 }
             }
         }
@@ -280,7 +282,7 @@ Item {
                     fill: 0
                     text: Appearance.m3colors.darkmode ? "light_mode" : "dark_mode"
                     iconSize: Appearance.font.pixelSize.large
-                    color: Appearance.colors.colOnLayer2
+                    color: root.contentColor
                 }
             }
         }
@@ -353,7 +355,7 @@ Item {
                         return "local_fire_department";
                     }
                     iconSize: Appearance.font.pixelSize.large
-                    color: Appearance.colors.colOnLayer2
+                    color: root.contentColor
                 }
             }
         }

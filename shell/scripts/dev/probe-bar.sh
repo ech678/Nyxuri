@@ -284,6 +284,36 @@ if ipc systemIcons >/dev/null 2>&1; then
     system_icons_reset=$(ipc systemIcons 2>/dev/null || true)
 fi
 
+# B9.6 visual baseline: right-click style chain (store write -> BarGroup
+# contentColor binding -> widget), the fixed-slot workspaces model, and the
+# island middle-frame hug (+8 on float, -4 on the plain style) with the
+# capsule going transparent on the plain centre-only bar.
+b96_override=""
+b96_reset=""
+b96_hug_float=""
+b96_hug_plain=""
+if ipc cornerStyle 1 >/dev/null 2>&1; then
+    sleep 0.3
+    ipc scene default >/dev/null 2>&1 || true
+    sleep 0.5
+    if ipc b96Style true >/dev/null 2>&1; then
+        sleep 0.4
+        b96_override=$(ipc b96Dump 2>/dev/null || true)
+        ipc b96Style false >/dev/null 2>&1 || true
+        sleep 0.3
+        b96_reset=$(ipc b96Dump 2>/dev/null || true)
+    fi
+    if ipc scene centerIsland >/dev/null 2>&1; then
+        sleep 0.8
+        b96_hug_float=$(ipc b96Dump 2>/dev/null || true)
+        ipc cornerStyle 0 >/dev/null 2>&1 || true
+        sleep 0.5
+        b96_hug_plain=$(ipc b96Dump 2>/dev/null || true)
+        ipc cornerStyle 1 >/dev/null 2>&1 || true
+    fi
+    ipc scene default >/dev/null 2>&1 || true
+fi
+
 # Tray surface (B9.1): publish fake StatusNotifierItems on the probe's own
 # session bus, then let the widget pin/unpin against the real store.
 tray_initial=""
@@ -399,7 +429,7 @@ if ipc windowMode true >/dev/null 2>&1; then
     ipc edge top >/dev/null 2>&1 || true
 fi
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" <<'PY'
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" <<'PY'
 import json
 import re
 import sys
@@ -408,7 +438,8 @@ import sys
  osd_state, keyboard_osd_state, island_off_state, tray_initial, tray_hidden,
  tray_closed, tray_reset, tray_persisted, tray_skip_reason, system_icons_state,
  system_icons_fake, system_icons_reset, island_restored_state, island_migration,
- idle_face_state, idle_face_no_avatar, vertical_path, margins_state, window_path) = sys.argv[1:26]
+ idle_face_state, idle_face_no_avatar, vertical_path, margins_state, window_path,
+ b96_override, b96_reset, b96_hug_float, b96_hug_plain) = sys.argv[1:30]
 
 
 def load_tsv(path):
@@ -774,11 +805,63 @@ for key, entry in window_rows:
 round_trip_ok = len(top_snapshots) == 2 and top_snapshots[0] == top_snapshots[1]
 window_ok = window_ok and round_trip_ok
 
+# B9.6: style-editor chain, fixed-slot workspaces and the island hug.
+def _b96(json_blob):
+    try:
+        data = json.loads(json_blob) if json_blob else {}
+    except (ValueError, TypeError):
+        data = {}
+    return data if data.get("ready") is True else {}
+
+override = _b96(b96_override)
+reset = _b96(b96_reset)
+hug_float = _b96(b96_hug_float)
+hug_plain = _b96(b96_hug_plain)
+override_style = override.get("style") or {}
+reset_widget = reset.get("widget") or {}
+hug_float_pill = hug_float.get("centerPill") or {}
+hug_plain_pill = hug_plain.get("centerPill") or {}
+
+override_ok = bool(
+    override_style.get("hasOverride") is True
+    and override_style.get("groupContentColor") == override_style.get("expectedOnPrimary")
+    and (override.get("widget") or {}).get("contentColorOverridden") is True
+    and (override.get("widget") or {}).get("contentColor") == override_style.get("expectedOnPrimary")
+)
+ws = reset.get("widget") or {}
+# Dynamic slots (iNiR dynamicCount semantics): the bar shows exactly the
+# workspaces niri reports on the output — with no compositor behind the
+# probe exactly one placeholder slot renders.
+ws_ok = bool(
+    ws.get("hasContentColorProps") is True
+    and ws.get("contentColorOverridden") is False
+    and ws.get("style") == "default"
+    and ws.get("slotLength") == 26
+    and ws.get("slotWidth") == 26
+    and ws.get("shown") == max((ws.get("existingMaxIdx") or 0), 1)
+    and ws.get("fakeWorkspace") == -9999
+    and abs(ws.get("implicitWidth", 0) - 26 * (ws.get("shown") or 0)) <= 0.01
+)
+hug_float_ok = bool(
+    hug_float_pill.get("middleRowWidth", 0) > 0
+    and abs(hug_float_pill.get("width", 0) - (hug_float_pill.get("middleRowWidth", 0) + 8)) <= 0.01
+    and (hug_float.get("islandCapsule") or {}).get("layer0") is True
+    and (hug_float.get("islandCapsule") or {}).get("transparent") is False
+)
+hug_plain_ok = bool(
+    hug_plain.get("cornerStyle") == 0
+    and hug_plain_pill.get("middleRowWidth", 0) > 0
+    and abs(hug_plain_pill.get("width", 0) - (hug_plain_pill.get("middleRowWidth", 0) - 4)) <= 0.01
+    and (hug_plain.get("islandCapsule") or {}).get("transparent") is True
+)
+b96_ok = override_ok and ws_ok and hug_float_ok and hug_plain_ok
+
 ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
       and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok
       and island_restored_ok and island_migration_ok and idle_face_ok
       and avatar_optional_ok
-      and tray_ok and peripheral_ok and vertical_ok and margin_ok and window_ok)
+      and tray_ok and peripheral_ok and vertical_ok and margin_ok and window_ok
+      and b96_ok)
 report = {
     "ok": ok,
     "mode": mode,
@@ -844,6 +927,28 @@ report = {
     },
     "tray": tray_report,
     "systemIcons": system_icons_report,
+    "b96": {
+        "ok": b96_ok,
+        "override": {
+            "ok": override_ok,
+            "groupContentColor": override_style.get("groupContentColor"),
+        },
+        "workspaces": {
+            "ok": ws_ok,
+            "shown": ws.get("shown"),
+            "slotWidth": ws.get("slotWidth"),
+            "implicitWidth": ws.get("implicitWidth"),
+        },
+        "hug": {
+            "ok": hug_float_ok and hug_plain_ok,
+            "floatWidth": hug_float_pill.get("width"),
+            "floatMiddleRow": hug_float_pill.get("middleRowWidth"),
+            "plainWidth": hug_plain_pill.get("width"),
+            "plainMiddleRow": hug_plain_pill.get("middleRowWidth"),
+            "capsuleTransparent": (hug_plain.get("islandCapsule") or {}).get("transparent"),
+            "capsuleLayer0OnFloat": (hug_float.get("islandCapsule") or {}).get("layer0"),
+        },
+    },
     "logErrors": hits,
 }
 if json_mode == "true":

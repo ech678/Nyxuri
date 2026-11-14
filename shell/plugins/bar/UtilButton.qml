@@ -12,7 +12,6 @@ Item {
     property bool isActive: false
     property bool forceHovered: false
     property string toolTipText: ""
-    property bool isMaterial: PersonalizationConfig.barIsMaterial
 
     implicitWidth: vertical ? 26 : (hovered ? 54 : 26)
     implicitHeight: vertical ? (hovered ? 54 : 26) : 26
@@ -40,7 +39,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: Appearance.rounding.full
-        color: root.hovered ? M3Palette.primary : "transparent"
+        color: root.hovered ? Appearance.colors.colPrimary : ColorUtils.transparentize(Appearance.colors.colLayer0, 0.8)
 
         Behavior on color {
             ColorAnimation {
@@ -57,7 +56,7 @@ Item {
             id: symbol
             anchors.centerIn: parent
             iconSize: Appearance.sizes.barUtilIconSize
-            color: root.hovered ? M3Palette.primaryForeground : root.isMaterial ? M3Palette.pillInk("utilButtons") : Appearance.colors.colPrimary
+            color: root.hovered ? Appearance.colors.colOnPrimary : Appearance.colors.colPrimary
 
             Behavior on color {
                 ColorAnimation {

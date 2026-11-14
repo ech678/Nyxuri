@@ -28,7 +28,9 @@ Item {
     property bool mediaTrackInfoVisible: mediaHoverHandler.hovered || mediaTrackChangeTimer.running
     readonly property real mediaExpandedWidth: Math.min(root.mediaExpandedWidthCap, root.mediaTextContentWidth)
     readonly property real mediaWidth: root.mediaTrackInfoVisible ? root.mediaExpandedWidth : root.mediaCollapsedWidth
-    readonly property real osdWidth: root.osdKind === "keyboard" ? 200 : 132
+    // end4 runs every island channel at 132; the keyboard face follows suit
+    // (B9.6). Gamma OSD is an intentional gap: Niri has no gamma service.
+    readonly property real osdWidth: 132
     readonly property real notificationWidth: 220
     readonly property real batteryWidth: 170
     readonly property real badgeSize: 32
@@ -354,6 +356,9 @@ Item {
         }
     }
 
+    // B9.6 probe surface: capsule transparency on material/center-only.
+    readonly property alias probeCapsuleColor: pill.color
+
     Rectangle {
         id: pill
         anchors.left: parent.left
@@ -361,7 +366,9 @@ Item {
         height: root.pillHeight
         // B-3: the island paints its own capsule (BarGroup runs it with
         // paintBackground: false and the blacklist keeps the group tint off).
-        color: Appearance.colors.colLayer0
+        // end4: material and center-only bars leave the island transparent so
+        // the frame color shows through.
+        color: root.isMaterial || (GlobalStates.barCenterOnly && Config.options.bar.cornerStyle === 0) ? "transparent" : Appearance.colors.colLayer0
         radius: height / 2
         clip: true
         visible: !root.vertical

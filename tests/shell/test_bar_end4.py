@@ -100,7 +100,9 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("readonly property bool barIsMaterial", config)
         self.assertIn("readonly property bool barIsMaterialHug", config)
         self.assertIn("readonly property bool barIsPanel", config)
-        for name in ("Media.qml", "SysTray.qml", "UtilButton.qml", "UtilButtons.qml",
+        # B9.6: UtilButton is the end4 button verbatim — it never branches on
+        # material (one hover language for both bar skins), so it left this list.
+        for name in ("Media.qml", "SysTray.qml", "UtilButtons.qml",
                      "Divisor.qml", "Visualizer.qml", "BatteryIndicator.qml"):
             content = read_bar_file(name)
             self.assertIn("PersonalizationConfig.barIsMaterial", content, name)
@@ -193,6 +195,127 @@ class BarEnd4ContractTest(unittest.TestCase):
         for name, content in sources.items():
             for key in retired:
                 self.assertNotIn(key, content, f"{name} still carries retired key {key}")
+
+    def test_divisor_contracts(self):
+        content = read_bar_file("Divisor.qml")
+        self.assertIn("PersonalizationConfig.barDividerStyle", content)
+        self.assertIn("isMaterial", content)
+        self.assertIn("vertical", content)
+
+    def test_b9_6_content_color_covers_every_styleable_widget(self):
+        """The right-click style editor drives contentColor through BarGroup's
+        Bindings; every widget that lost the properties in the Clavis purge
+        has them back per end4."""
+        for name in ("ClockWidget.qml", "Resources.qml", "Resource.qml",
+                     "BatteryIndicator.qml", "Divisor.qml", "UtilButtons.qml",
+                     "Media.qml", "Workspaces.qml"):
+            content = read_bar_file(name)
+            self.assertIn("property color contentColor", content, name)
+            self.assertIn("contentColorOverridden", content, name)
+        # BarGroup's probe-then-bind contract still finds the properties.
+        group = read_bar_file("BarGroup.qml")
+        self.assertIn('"contentColor" in root.loadedWidget', group)
+        self.assertIn('"contentColorOverridden" in root.loadedWidget', group)
+        # The end4 override semantics at the use sites.
+        self.assertIn("root.contentColorOverridden ? root.contentColor : Appearance.colors.colOnLayer1",
+                      read_bar_file("Media.qml"), "media non-material text honours the override")
+        self.assertIn('text: "• "', read_bar_file("Divisor.qml"), "end4 dot glyph")
+
+    def test_b9_6_workspaces_is_the_end4_fork_with_fixed_slots(self):
+        content = read_bar_file("Workspaces.qml")
+        self.assertIn("Fork & Trim: end4-pC", content)
+        # Slot count follows the iNiR original's dynamicCount semantics —
+        # exactly the workspaces niri reports on the output (empty ones
+        # persist), budget-capped with group paging. Not end4's fixed grid.
+        self.assertIn("barWorkspaceShown", content)
+        self.assertIn("root.group * root.shownBudget + index + 1", content)
+        self.assertIn("existingMaxIdx", content)
+        self.assertIn("Math.max(1, Math.min(root.shownBudget, root.existingMaxIdx - root.group * root.shownBudget))", content)
+        self.assertIn("(root.activeNumber - 1) % root.shownBudget", content)
+        self.assertIn("fakeWorkspace", content)
+        # end4 metrics: material slots are wider (30), default 26.
+        self.assertIn("PersonalizationConfig.barIsMaterial ? 30 : 26", content)
+        # Four styles through the verbatim WorkspacesAlt fork.
+        self.assertIn("WorkspacesAlt", content)
+        alt = read_bar_file("WorkspacesAlt.qml")
+        self.assertIn("Fork & Trim: end4-pC", alt)
+        for style in ("gnome", "dots", "ticks"):
+            self.assertIn(f'"{style}"', alt)
+        # Active-indicator tinting goes through the end4 Colorizer.
+        self.assertIn("Colorizer", content)
+        # Right-click toggles the compositor overview; empty slots focus the
+        # slot index on this output (niri creates on demand).
+        self.assertIn("CompositorDriver.toggleOverview", content)
+        self.assertIn("focusWorkspaceOnOutput", content)
+        driver = read_services_file("NiriDriver.qml")
+        self.assertIn("focusWorkspaceOnOutput", driver)
+        self.assertIn('"FocusMonitor"', driver)
+        self.assertIn('"Index"', driver)
+        self.assertIn("focusWorkspaceOnOutput", read_services_file("CompositorDriver.qml"))
+        # Settings: style select + slot count with a real store round-trip.
+        config = read_services_file("PersonalizationConfig.qml")
+        self.assertIn("property string barWorkspaceStyle", config)
+        self.assertIn("property int barWorkspaceShown", config)
+        self.assertIn("setBarWorkspaceStyle", config)
+        self.assertIn("setBarWorkspaceShown", config)
+        self.assertIn('"workspaceStyle"', config)
+        self.assertIn('"workspaceShown"', config)
+        page = read_bar_file("GeneralBarPage.qml")
+        self.assertIn("setBarWorkspaceStyle", page)
+        self.assertIn("setBarWorkspaceShown", page)
+
+    def test_b9_6_geometry_matches_end4(self):
+        # PowerButton: end4 material size 32 (was 28).
+        self.assertIn("barPowerButtonSize: 32", read_commons_file("Appearance.qml"))
+        # ActiveWindow: no right-margin squeeze, no invented fallback icon.
+        active = read_bar_file("ActiveWindow.qml")
+        self.assertNotIn("desktop_windows", active)
+        self.assertNotIn("anchors.rightMargin: 6", active)
+        # Island capsule: transparent on material / center-only like end4.
+        island = read_bar_file("DynamicIsland.qml")
+        self.assertIn('root.isMaterial || (GlobalStates.barCenterOnly && Config.options.bar.cornerStyle === 0) ? "transparent"', island)
+        # Middle frame hugs the island (-4 / +8, full height).
+        content = read_bar_file("BarContent.qml")
+        self.assertIn("middleRow.implicitWidth - 4", content)
+        self.assertIn("middleRow.implicitWidth + 8", content)
+        # Island notification face: end4 anchors (icon 4/12 + fallback 0/4, text 14/2).
+        notifs = read_bar_file("DiNotifs.qml")
+        self.assertIn("di.isMaterial ? 14 : 2", notifs)
+        self.assertIn("di.isMaterial ? 4 : 12", notifs)
+        # Every island OSD channel runs at end4's 132 (keyboard included);
+        # gamma is a registered intentional gap on Niri.
+        self.assertIn("readonly property real osdWidth: 132", island)
+
+    def test_b9_6_popup_tokens_match_end4(self):
+        popup = read_bar_file("StyledPopup.qml")
+        self.assertIn("colLayer1Base", popup)
+        self.assertIn("Appearance.rounding.large + 5", popup)
+        self.assertIn("readonly property real margin: 8", popup)
+        self.assertIn("colLayer0Border", popup)
+        # The zzz/angel/inir skin branches read tokens that do not exist on
+        # Nyxuri's Appearance; the resolved end4 defaults are the only path.
+        for name in ("SysTrayMenu.qml", "SysTrayMenuEntry.qml"):
+            menu = read_bar_file(name)
+            self.assertNotIn("zzzEverywhere", menu, name)
+            self.assertNotIn("angelEverywhere", menu, name)
+            self.assertNotIn("inirEverywhere", menu, name)
+        self.assertIn("Appearance.rounding.windowRounding", read_bar_file("SysTrayMenu.qml"))
+        # Tooltips keep end4's outer margins.
+        with open(os.path.join(REPO_ROOT, "shell", "ui", "M3ToolTip.qml"), "r", encoding="utf-8") as f:
+            tooltip = f.read()
+        self.assertNotIn("horizontalMargin: 0", tooltip)
+        self.assertNotIn("verticalMargin: 0", tooltip)
+        # The style editor speaks end4's slider language and closes on outside click.
+        style_popup = read_bar_file("BarGroupStylePopup.qml")
+        self.assertIn("ConfigSlider {", style_popup)
+        self.assertNotIn("PreferenceSlider {", style_popup)
+        self.assertIn("bar-style-editor-catcher", style_popup)
+        for name in ("ConfigSlider.qml", "StyledSlider.qml", "OptionalMaterialSymbol.qml",
+                     "WorkspacesAlt.qml", "Colorizer.qml", "StateOverlay.qml",
+                     "FadeLoader.qml", "StyledRectangle.qml", "ButtonMouseArea.qml",
+                     "Box.qml", "Pill.qml", "Circle.qml", "StateLayer.qml",
+                     "MaskMultiEffect.qml"):
+            self.assertIn("Fork & Trim: end4-pC", read_bar_file(name), f"{name} fork header")
 
     def test_divisor_contracts(self):
         content = read_bar_file("Divisor.qml")
