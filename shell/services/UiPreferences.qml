@@ -621,6 +621,12 @@ Singleton {
     Process {
         id: systemThemeWriter
 
+        // The spawning shell already applied the mode in-process; the CLI
+        // must not IPC back into us (a guaranteed same-value no-op).
+        environment: ({
+                "NYXURI_THEME_SOURCE": "shell"
+            })
+
         onExited: exitCode => {
             if (exitCode !== 0) {
                 root.systemThemeLastError = systemThemeWriteError.text.trim() || I18n.tr(

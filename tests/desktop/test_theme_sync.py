@@ -28,12 +28,12 @@ class TestThemeSync(unittest.TestCase):
         from nyxuri.system.theme import sync
 
         for daemon_mode in ("dark", "light"):
-            with patch("nyxuri.system.theme._propagate", return_value="noctalia"), \
-                 patch("nyxuri.system.theme._mode_from_system", return_value=daemon_mode), \
-                 patch("nyxuri.system.theme._nyxuri_shell_ipc", return_value=None), \
+            with patch("nyxuri.system.theme._propagate", return_value=("noctalia", daemon_mode)), \
+                 patch("nyxuri.system.theme._mode_from_system") as mode_probe, \
                  patch("nyxuri.system.theme.shutil.which", return_value=None), \
                  patch("nyxuri.system.theme._sync_glow_layout") as glow:
                 self.assertEqual(sync("toggle"), 0)
+            mode_probe.assert_not_called()
             glow.assert_called_once_with(daemon_mode)
             parser = configparser.ConfigParser()
             parser.read(self.ctx.home / ".config" / "gtk-3.0" / "settings.ini")
@@ -43,7 +43,7 @@ class TestThemeSync(unittest.TestCase):
     def test_toggle_inverts_locally_when_no_channel_handles_it(self):
         from nyxuri.system.theme import sync
 
-        with patch("nyxuri.system.theme._propagate", return_value="none"), \
+        with patch("nyxuri.system.theme._propagate", return_value=("none", None)), \
              patch("nyxuri.system.theme._mode_from_system", return_value="dark"), \
              patch("nyxuri.system.theme._nyxuri_shell_ipc", return_value=None), \
              patch("nyxuri.system.theme.shutil.which", return_value=None), \
@@ -94,6 +94,38 @@ class TestThemeSync(unittest.TestCase):
              patch("nyxuri.system.theme._nyxuri_shell_ipc", side_effect=fake_ipc):
             self.assertEqual(sync("dark"), 0)
         self.assertIn(["theme", "set", "dark"], calls)
+
+    def test_toggle_reads_inverts_and_sets_absolutely_over_ipc(self):
+        """Toggle = status read (liveness probe) + absolute set, no readback."""
+        from nyxuri.system.theme import sync
+        from nyxuri.state.store import set_shell
+
+        set_shell("nyxuri-shell")
+        calls = []
+
+        def fake_ipc(args, timeout=3.0):
+            calls.append(list(args))
+            if args == ["theme", "status"]:
+                return "dark"
+            return "OK"
+
+        with patch("nyxuri.system.theme.shutil.which", return_value=None), \
+             patch("nyxuri.system.theme._nyxuri_shell_ipc", side_effect=fake_ipc), \
+             patch("nyxuri.system.theme._sync_glow_layout"):
+            self.assertEqual(sync("toggle"), 0)
+        self.assertEqual(calls, [["theme", "status"], ["theme", "set", "light"]])
+
+    def test_shell_initiated_source_skips_shell_ipc_roundtrip(self):
+        """NYXURI_THEME_SOURCE=shell (UiPreferences.systemThemeWriter) means
+        the spawning shell already applied the mode: no IPC back into it."""
+        import os
+        from nyxuri.system.theme import sync
+
+        with patch.dict(os.environ, {"NYXURI_THEME_SOURCE": "shell"}), \
+             patch("nyxuri.system.theme.shutil.which", return_value=None), \
+             patch("nyxuri.system.theme._nyxuri_shell_ipc") as mock_ipc:
+            self.assertEqual(sync("dark"), 0)
+        mock_ipc.assert_not_called()
 
     def test_sync_toggle_falls_back_to_system_flip_without_shells(self):
         from nyxuri.system.theme import sync

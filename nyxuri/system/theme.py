@@ -2,9 +2,14 @@
 
 Propagation order: Noctalia IPC (when its daemon answers), then the Nyxuri
 Shell ``theme`` IPC (when a running instance is resolvable), then system-level
-sync only. Every child call captures stderr so a dead daemon can never leak a
-raw ``error:`` line into interactive output; the final summary line states the
-channel that received the change.
+sync only. Toggles are absolute: read the owning shell's mode once, invert
+locally, set the absolute value — never blind-toggle plus sleep-and-read-back.
+When the running shell spawned this process (``NYXURI_THEME_SOURCE=shell``,
+set by UiPreferences.systemThemeWriter) the shell IPC leg is skipped
+entirely: the initiator already applied the mode, so the round trip would be
+a guaranteed same-value no-op. Every child call captures stderr so a dead
+daemon can never leak a raw ``error:`` line into interactive output; the
+final summary line states the channel that received the change.
 """
 
 import configparser
@@ -12,7 +17,6 @@ import fcntl
 import os
 import shutil
 import sys
-import time
 from pathlib import Path
 
 from nyxuri.system.env import get_env, get_env_var, timed_run
@@ -87,12 +91,30 @@ def _write_ini(path: Path, key: str, value: str) -> None:
     os.replace(tmp, path)
 
 
-def _noctalia_available() -> bool:
-    """True only when the Noctalia daemon answers, not merely installed."""
+def _noctalia_set(mode: str) -> bool:
+    """Hand an absolute mode to Noctalia; False when it cannot answer.
+
+    A failed ``theme-mode-set`` doubles as the liveness probe — no separate
+    ``msg status`` round trip is spent before the write.
+    """
     if not shutil.which("noctalia"):
         return False
-    res = timed_run(["noctalia", "msg", "status"], 3, capture_output=True, text=True, check=False)
+    res = timed_run(["noctalia", "msg", "theme-mode-set", mode], 3, capture_output=True, text=True, check=False)
     return res is not None and res.returncode == 0
+
+
+def _noctalia_toggle() -> "str | None":
+    """Toggle Noctalia by absolute set; returns the landed mode, or None."""
+    if not shutil.which("noctalia"):
+        return None
+    res = timed_run(["noctalia", "msg", "theme-mode-get"], 3, capture_output=True, text=True, check=False)
+    if res is None or res.returncode != 0:
+        return None
+    current = res.stdout.strip()
+    if current not in ("dark", "light"):
+        return None
+    target = "light" if current == "dark" else "dark"
+    return target if _noctalia_set(target) else None
 
 
 def _nyxuri_shell_dir() -> Path | None:
@@ -128,12 +150,36 @@ def _nyxuri_shell_ipc(args: "list[str]", timeout: float = 3.0) -> "str | None":
     return None
 
 
-def _propagate(mode: str, toggle: bool) -> str:
+def _nyxuri_shell_toggle() -> "str | None":
+    """Toggle the Nyxuri Shell by absolute set; returns the landed mode.
+
+    A successful ``theme status`` read doubles as the liveness probe, so the
+    toggle costs exactly two IPC calls with no sleep-and-read-back window.
+    """
+    current = _nyxuri_shell_ipc(["theme", "status"])
+    if current not in ("dark", "light"):
+        return None
+    target = "light" if current == "dark" else "dark"
+    if _nyxuri_shell_ipc(["theme", "set", target]) is not None:
+        return target
+    return None
+
+
+def _propagate(mode: str, toggle: bool) -> "tuple[str, str | None]":
     """Hand the mode change to the shell that owns the runtime theme.
 
-    Returns the channel name for feedback: "noctalia", "nyxuri-shell" or
-    "none". Toggle callers may read back the resulting mode afterwards.
+    Returns ``(channel, landed_mode)``: the channel name for feedback
+    ("noctalia", "nyxuri-shell", "shell-initiated" or "none") and the mode
+    that channel landed on. Set callers pass ``mode`` in and get it back;
+    toggle callers get the absolute result, or None when no channel answered
+    and the caller must derive the flip locally.
     """
+    if not toggle and os.environ.get("NYXURI_THEME_SOURCE") == "shell":
+        # The running shell spawned us (UiPreferences.systemThemeWriter) and
+        # already applied the mode in-process; an IPC round trip back into it
+        # would be a guaranteed same-value no-op. System-level sync only.
+        return "shell-initiated", mode
+
     try:
         from nyxuri.state.store import active_shell
         current_shell = active_shell()
@@ -142,36 +188,31 @@ def _propagate(mode: str, toggle: bool) -> str:
 
     if current_shell == "nyxuri-shell":
         if toggle:
-            if _nyxuri_shell_ipc(["theme", "toggle"]) is not None:
-                time.sleep(0.2)
-                return "nyxuri-shell"
-            if _noctalia_available():
-                timed_run(["noctalia", "msg", "theme-mode-toggle"], 3, capture_output=True, text=True, check=False)
-                time.sleep(0.3)
-                return "noctalia"
-            return "none"
+            landed = _nyxuri_shell_toggle()
+            if landed is not None:
+                return "nyxuri-shell", landed
+            landed = _noctalia_toggle()
+            if landed is not None:
+                return "noctalia", landed
+            return "none", None
         if _nyxuri_shell_ipc(["theme", "set", mode]) is not None:
-            return "nyxuri-shell"
-        if _noctalia_available():
-            timed_run(["noctalia", "msg", "theme-mode-set", mode], 3, capture_output=True, text=True, check=False)
-            return "noctalia"
-        return "none"
-    else:
-        if toggle:
-            if _noctalia_available():
-                timed_run(["noctalia", "msg", "theme-mode-toggle"], 3, capture_output=True, text=True, check=False)
-                time.sleep(0.3)
-                return "noctalia"
-            if _nyxuri_shell_ipc(["theme", "toggle"]) is not None:
-                time.sleep(0.2)
-                return "nyxuri-shell"
-            return "none"
-        if _noctalia_available():
-            timed_run(["noctalia", "msg", "theme-mode-set", mode], 3, capture_output=True, text=True, check=False)
-            return "noctalia"
-        if _nyxuri_shell_ipc(["theme", "set", mode]) is not None:
-            return "nyxuri-shell"
-        return "none"
+            return "nyxuri-shell", mode
+        if _noctalia_set(mode):
+            return "noctalia", mode
+        return "none", mode
+    if toggle:
+        landed = _noctalia_toggle()
+        if landed is not None:
+            return "noctalia", landed
+        landed = _nyxuri_shell_toggle()
+        if landed is not None:
+            return "nyxuri-shell", landed
+        return "none", None
+    if _noctalia_set(mode):
+        return "noctalia", mode
+    if _nyxuri_shell_ipc(["theme", "set", mode]) is not None:
+        return "nyxuri-shell", mode
+    return "none", mode
 
 
 def _sync_glow_layout(current: str) -> None:
@@ -243,18 +284,15 @@ def sync(mode: str = "sync") -> int:
         channel = "none"
         current: str
         if mode == "toggle":
-            channel = _propagate("", True)
-            if channel == "noctalia":
-                current = _mode_from_system()
-            elif channel == "nyxuri-shell":
-                readback = _nyxuri_shell_ipc(["theme", "status"])
-                current = readback if readback in ("dark", "light") else _mode_from_system()
+            channel, landed = _propagate("", True)
+            if landed in ("dark", "light"):
+                current = landed
             else:
                 current = _mode_from_system()
                 current = "light" if current == "dark" else "dark"
         elif mode in ("dark", "light"):
             current = mode
-            channel = _propagate(mode, False)
+            channel, _ = _propagate(mode, False)
         else:
             current = _mode_from_system()
         current = "light" if current == "light" else "dark"
@@ -276,19 +314,21 @@ def sync(mode: str = "sync") -> int:
         if kvantum and ((Path("/usr/share/Kvantum") / kvantum).is_dir() or (env.config_dir / "Kvantum" / kvantum).is_dir()):
             _write_ini(kvantum_config, "theme", kvantum)
 
+        # Notify Kitty right after the toolkit writes so it flips in the same
+        # beat as GTK apps instead of trailing the compositor reload.
+        if shutil.which("pkill"):
+            timed_run(["pkill", "-SIGUSR1", "-x", "kitty"], 2, check=False)
+
         _sync_glow_layout(current)
 
         # Reload Mango compositor if running
         if shutil.which("mmsg"):
             timed_run(["mmsg", "dispatch", "reload_config"], 2, check=False)
 
-        # Notify Kitty terminal
-        if shutil.which("pkill"):
-            timed_run(["pkill", "-SIGUSR1", "-x", "kitty"], 2, check=False)
-
         if sys.stdout.isatty() and mode != "sync":
             channel_label = {"noctalia": "shell: noctalia",
                              "nyxuri-shell": "shell: nyxuri",
+                             "shell-initiated": "shell: nyxuri (initiator)",
                              "none": "shell: none running"}.get(channel, channel)
             print(f"Theme synced to: {current} (Scheme: {scheme_val}, GTK: {gtk}, {channel_label})")
         return 0

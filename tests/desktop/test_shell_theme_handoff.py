@@ -155,17 +155,53 @@ class TestShellThemeHandoff(unittest.TestCase):
 
         set_shell("nyxuri-shell")
         with patch("nyxuri.system.theme._nyxuri_shell_ipc", return_value="OK") as mock_ipc, \
-             patch("nyxuri.system.theme._noctalia_available", return_value=True):
-            channel = _propagate("dark", False)
+             patch("nyxuri.system.theme._noctalia_set", return_value=True):
+            channel, landed = _propagate("dark", False)
             self.assertEqual(channel, "nyxuri-shell")
+            self.assertEqual(landed, "dark")
             mock_ipc.assert_called_once_with(["theme", "set", "dark"])
 
         set_shell("noctalia")
         with patch("nyxuri.system.theme._nyxuri_shell_ipc", return_value="OK"), \
-             patch("nyxuri.system.theme._noctalia_available", return_value=True), \
-             patch("nyxuri.system.theme.timed_run", return_value=subprocess.CompletedProcess([], 0, "", "")):
-            channel = _propagate("dark", False)
+             patch("nyxuri.system.theme._noctalia_set", return_value=True) as mock_set:
+            channel, landed = _propagate("dark", False)
             self.assertEqual(channel, "noctalia")
+            self.assertEqual(landed, "dark")
+            mock_set.assert_called_once_with("dark")
+
+    def test_propagate_toggle_noctalia_reads_inverts_and_sets(self):
+        """Noctalia toggle = theme-mode-get probe + absolute set; no
+        msg-status pre-probe, no blind toggle verb."""
+        from nyxuri.system.theme import _propagate
+
+        set_shell("noctalia")
+        calls = []
+
+        def fake_run(cmd, timeout=None, capture_output=False, text=False, check=False):
+            calls.append(list(cmd))
+            if cmd == ["noctalia", "msg", "theme-mode-get"]:
+                return subprocess.CompletedProcess(cmd, 0, "light\n", "")
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+
+        with patch("nyxuri.system.theme.shutil.which", return_value="/usr/bin/noctalia"), \
+             patch("nyxuri.system.theme.timed_run", side_effect=fake_run):
+            channel, landed = _propagate("", True)
+
+        self.assertEqual((channel, landed), ("noctalia", "dark"))
+        self.assertEqual(calls, [
+            ["noctalia", "msg", "theme-mode-get"],
+            ["noctalia", "msg", "theme-mode-set", "dark"],
+        ])
+
+    def test_propagate_toggle_falls_through_when_daemons_silent(self):
+        from nyxuri.system.theme import _propagate
+
+        set_shell("noctalia")
+        silent = subprocess.CompletedProcess([], 1, "", "")
+        with patch("nyxuri.system.theme.shutil.which", return_value="/usr/bin/noctalia"), \
+             patch("nyxuri.system.theme.timed_run", return_value=silent), \
+             patch("nyxuri.system.theme._nyxuri_shell_ipc", return_value=None):
+            self.assertEqual(_propagate("", True), ("none", None))
 
 
 if __name__ == "__main__":
