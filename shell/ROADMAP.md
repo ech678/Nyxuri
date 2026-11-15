@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | P4 | 主题契约、模板兼容与取色引擎分阶 | 待验收（契约测试全绿；实机行为与视觉证据待作者） |
 | T3 | 设置界面替换：Caelestia 安卓风味 | M3/M4 待验收（机器证据齐；视觉过目待作者） |
-| B | Bar & Island（布局自由 + end4 视觉基线） | B9.0–B9.8 待验收（机器证据齐；截图、实机托盘、竖向排布与视觉过目待作者）；B8 旧验收作废，仅保留结构回归证据 |
+| B | Bar & Island（布局自由 + end4 视觉基线） | B9.0–B9.8 待验收（机器证据齐；截图、实机托盘、竖向排布与视觉过目待作者）；B9.9 截图部件清账待开始（2026-11-15 审计）；B8 旧验收作废，仅保留结构回归证据 |
 | P6 | 整体验收与未来移植 | 排队（前置主线 KM5） |
 
 ## 已交付基线台账
@@ -145,6 +145,7 @@ S0-4 资产收编明细见台账 T3 实施记录。
 | B-7 | SysTray | Windows 式“可见区 + 下箭头小菜单 + 可隐藏图标”；end4/iNiR 已有 pinned/unpinned + overflow 网格可抄，Nyxuri 补真实持久化、外部点击关闭和设置页 |
 | B-8 | SystemIcons | 抄 bar 上“快捷设置”部件（`UtilButtons.qml` / `UtilButton.qml`）的按钮语言：固定槽位、hover 胶囊、统一图标尺寸与 tooltip；不抄裸 Flow |
 | B-9 | 外边距 | 新增“上/下边界”和“左右边距”两项设置；与内部 lane inset 分离，默认 0 = end4 行为 |
+| B-10 | 岛媒体面 | 2026-11-15 作者拍板：恢复 end4-pC 原样，推翻 §1.5 原「按钮与 wave 已下架」的有意差异登记——`showMediaControls` 三按钮与 `visualizerStyle`（dots/wave/none）回归；cava 仍守按需租约（仅媒体面可见且播放时运行），不为 wave 开常驻 |
 
 ### 1. 全量表现差异（2026-11-14 审计）
 
@@ -210,6 +211,17 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 | ActiveWindow | **B9.6 已对齐**：去掉右侧 6px margin；垂直 fallback `desktop_windows` 删除（end4 空着） |
 | Divisor | **B9.6 已对齐**：dot 文本 `"• "` 与宽度分支、rect 色 contentColor 化；`space` 间距读数与 UI 归 B9.7 |
 
+##### 部件清点（2026-11-15 截图审计：end4 `allWidgets` 23 件 → Nyxuri 处置）
+
+| 处置 | 部件 |
+| --- | --- |
+| 已对齐（13，白名单成员） | workspaces、media、resources、systemIcons、clockWidget、utilButtons（白名单内 `quickSettings` 为同件双名）、sysTray、batteryIndicator、activeWindow、powerButton、divisor、launcherButton、dynamicIsland（媒体面见 §1.5 / B9.9） |
+| B9.9 接线 | weatherBar（作者 4 张截图中 3 张可见 "14°C/12°C"；fork 在树，引用不存在的 iNiR `Weather`/`Icons.getWeatherIcon`，且不在 `barComponentIds`）、visualizer（图 3 中段频谱条；文件在树，白名单缺） |
+| B9.9 核实 | hyprlandXkbIndicator（名绑 Hyprland；先查 niri 有无键盘布局数据面，有则接 `NiriDriver` 并正名，无则登记不做） |
+| 待拍板 | bluetooth、avatar 独立件（树无文件；SystemIcons 蓝牙槽与岛头像已覆盖展示，默认不做，要整抄补一句进 B9.9 即可） |
+| 维持下架 | networkSpeed（数据面 `NetworkInterfaceHistoryService` 已备，接时再立项）、updatesCount（无包管理器更新源）、leftSidebarButton / docktoPanel（PARKED：接线走 ActionGateway；dock 不在对照范围） |
+| 不做 | aiUsage（end4 AI 服务专属依赖） |
+
 #### 1.5 岛（Dynamic Island）
 
 **默认显示**：idle 面左侧头像圆（material 32px 贴左；非 material 24px + 4px 左边距，
@@ -223,7 +235,7 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 | 左右卫星 | `dynamicIsland.leftWidget/rightWidget` 在岛两侧渲染 | 已删除，改成 `islandSatellite` 只在 idle 面内部显示 clock/weather |
 | 日期 | idle 不显示 | B9.3 接线：idle 横向时钟渲染日期，`islandHideDate` 是真实开关（Nyxuri 有意差异） |
 | 岛胶囊 | material/centerOnly 时透明，可跟随 frame 色 | **B9.6 已对齐**：material 或 centerOnly（cornerStyle 0）时透明（probe `b96.hug` 断言两态）；`followFrameColor` 维持删除（无 UI 无消费者） |
-| 媒体面 | 可配媒体按钮 + dots/wave | 只有 dots；按钮与 wave 已下架（有意） |
+| 媒体面 | 可配媒体按钮 + dots/wave | **B9.9 恢复（待开始，B-10 拍板推翻原有意差异登记）**：`showMediaControls` 三按钮（skip_previous/pause/skip_next，可见性吃 canGoPrevious/canGoNext）+ `visualizerStyle` dots/wave/none 回归；wave 态 cava 仅媒体面可见且播放时拉起（`WaveVisualizer.qml` 自 end4 新 cp，end4 默认 dots/controls-off） |
 | Timer/Recording | 有 | 已下架（有意） |
 | 通知面 | 图标左 4/12、文字左 14/2、fallback 左 0/4 | **B9.6 已对齐**（wrapper 按可见子项取 end4 锚点） |
 | OSD | volume/brightness/gamma 三通道，132 宽 | **B9.6 已对齐宽度**：全通道 132（keyboard 收进）；gamma 通道为**登记有意差异**——Niri 无 gamma 服务（hyprsunset 等 Hyprland 生态件），不追 |
@@ -276,6 +288,7 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 | B9.6 | 表现基线归零：bar 厚度保持用户可调；补齐 contentColor 覆盖、Workspaces 固定槽位与四样式、Media/Clock/Notif 几何、角落出现动画与中段岛宽分支（字号/圆角/高度加成/laneMargin/Islands 正名已在 B9.0 落地） | end4 原始 token 与部件 | 待验收（实现与 probe b96 全绿；逐项过目待作者；槽位语义按作者定案改为 iNiR dynamicCount 口径，见 §2.4） |
 | B9.7 | 设置清账：`barOverlay`、autoHide、screenList、showBackground、dividerSpacing、utilButtons、resources、numberMap 全部接消费者或下架 | end4 `BarConfig.qml`（Screens/Show Background/Autohide/Divider 宽度/Utility buttons/Resources/Numbers style 各段原件裁剪） | 待验收（实现与 probe `b97` 全绿；多屏选择、autoHide 手感与各新段视觉待作者） |
 | B9.8 | 护栏：probe 增加 tray overflow、SystemIcons 槽位、竖向几何、外边距、岛删除/恢复；截图验收 | 现有 `probe-bar.sh` | 待验收（probe 护栏已随 B9.1–B9.7 各阶段全部落地并全绿；截图验收待作者） |
+| B9.9 | 截图部件清账（2026-11-15 审计）：岛媒体面解冻恢复 end4 原样（B-10）；WeatherBar/Popup/Card 剪裁接线 `WeatherService` 并进白名单；Visualizer 进白名单（cava 按需）；Xkb 的 Niri 能力核实；`time.dateFormat` 可配键。任务分解见 §2.6 | end4 `DiMedia.qml`/`WaveVisualizer.qml`/`BarConfig.qml`（Island 段）、本树 Weather 三件 fork、iNiR `DateTime.qml` | 待开始 |
 
 ### 2.1 B9.0 / B9.1 实施记录（2026-11-14）
 
@@ -434,6 +447,23 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
 - **未验证（留作者）**：Screens 段多屏实机选择、autoHide 滑出手感、space 分隔条
   宽度视觉、utilButtons 七槽实机点击、Resources 五表盘视觉。
 
+### 2.6 B9.9 任务分解（2026-11-15 截图审计，待开始）
+
+> 依据：作者提供的 4 张 end4-pC 实机截图逐件对照。布局自由度（三 lane 任意摆位，截图
+> 四种排布全部可达）与 13 个白名单部件已达标；缺口集中在天气（唯一肉眼可见缺失部件）、
+> 岛媒体面按钮（B-10 解冻）与两个树上不可达件。
+
+| 项 | 内容 | 来源 | 验收 |
+| --- | --- | --- | --- |
+| 岛媒体面解冻 | `DiMedia.qml` 按 end4 原件恢复：`showMediaControls` 三按钮 + `visualizerStyle` dots/wave/none 三态；`WaveVisualizer.qml` 新 cp 入库；两配置键与 Island 设置段回归（当年「明确删除」，非简单摘注释）；wave 态 cava 走媒体面租约，切面/暂停即释放进程 | end4 `DiMedia.qml`、`WaveVisualizer.qml`、`Config.qml:528-529`、`BarConfig.qml` Island 段 | probe：controls × visualizerStyle 六态宽度/可见性断言；cava 进程仅在媒体面可见且播放时存在；实机截图对照图 3 |
+| 天气接线 | `WeatherBar/WeatherPopup/WeatherCard` 从 iNiR `Weather`/`Icons.getWeatherIcon` 剪到 `WeatherService`（`currentTemperatureC`/`currentWeatherCode`/`currentIconName`），不建转发别名；`weather` 进 `barComponentIds` 与选装表；设置段与 A3 租约 | 本树三件 fork、`SystemWeatherCard` 图标映射 | probe：有数据渲染温度/图标、无数据优雅降级；实机对照截图 "14°C" 形态 |
+| Visualizer 接线 | `visualizer` 进白名单与选装表（文件在树、共享 CavaProcess 注释完好）；cava 进程仅部件可见时拉起 | 本树 `Visualizer.qml`/`CavaProcess.qml` | probe：进 lane 出频谱条、移出 lane 后 cava 进程归零 |
+| Xkb 核实 | 键盘布局指示：核实 niri IPC 有无布局数据面；有则接 `NiriDriver` 并去 Hyprland 名，无则本页登记不做，不悬置 | end4 `HyprlandXkbIndicator.qml` 仅作视觉参考 | 结论写回本页 |
+| 日期格式 | `time.dateFormat` 可配键（end4/iNiR 同名键；现 `DateTime.qml:36` 硬编码 `dddd, dd/MM`），截图 "Fri, 28/08" 缩写可达 | iNiR `DateTime.qml:34` | probe：改键后 ClockWidget 文案随动 |
+
+**拍板悬置**：bluetooth/avatar 独立件（见 §1.4 部件清点）——默认不做；若拍板整抄，
+并入 B9.9 追加两行即可，不开新阶段。
+
 ### 3. 验收
 
 - **B9.1**：至少两个托盘项；右键 Unpin 后出现下箭头；箭头打开小菜单；点击外部关闭；
@@ -448,6 +478,10 @@ end4 基准在 `references/end4-pC/modules/common/Appearance.qml:253-263,436-438
   exclusiveZone 与弹层跟随。
 - **B9.6/B9.7**：逐项对照本页 1.1–1.7 差异表；每个可见设置必须有唯一消费者；
   `test_bar_end4`、`test_bar_runtime`、`test_settings_pages`、`test_shell_architecture` 全绿。
+- **B9.9**：岛媒体面 controls × visualizerStyle 各态实机截图对照 end4 原图（三按钮可点、
+  canGoPrevious/canGoNext 可见性随播放器能力翻转）；天气部件有数据时温度/图标正确、
+  无数据优雅降级；Visualizer 进 lane 后 cava 进程仅可见时存在；Xkb 核实结论写回本页；
+  `time.dateFormat` 改键可达 "Fri, 28/08" 缩写。
 
 ### 4. 与 B 卷相关的已确认决策（不在本轮重开）
 
