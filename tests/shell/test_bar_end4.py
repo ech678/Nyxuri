@@ -639,6 +639,11 @@ class BarB9_7SettingsSweepTest(unittest.TestCase):
         self.assertIn("setBarWorkspaceNumberStyle", modules)
         self.assertIn('visible: PersonalizationConfig.barWorkspaceStyle === "default"', modules)
 
+    def test_power_button_toggles_session_via_action_gateway(self):
+        content = read_bar_file("PowerButton.qml")
+        self.assertIn("ActionGateway.requestSessionToggle(root.QsWindow.window?.screen)", content)
+        self.assertNotIn("GlobalStates.sessionOpen", content)
+
 
 if __name__ == "__main__":
     unittest.main()

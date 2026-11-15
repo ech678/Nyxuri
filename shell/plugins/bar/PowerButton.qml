@@ -2,10 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // Trimmed for Nyxuri: token names point at Appearance (the M3Palette bridge
-// stays only in the widgets that need pill ink). The button opens the
-// session unit through GlobalStates, same as before the re-fork.
+// stays only in the widgets that need pill ink). The button toggles the
+// session unit through ActionGateway (matching Mod+X).
 
 import QtQuick
+import Quickshell
 import qs.services
 import qs.commons
 import qs.ui
@@ -27,8 +28,8 @@ RippleButton {
     colBackgroundHover: isMaterial ? Appearance.colors.colPrimaryHover : Appearance.colors.colLayer1Hover
     colRipple: isMaterial ? Appearance.colors.colPrimaryActive : Appearance.colors.colLayer1Active
 
-    onPressed: {
-        GlobalStates.sessionOpen = !GlobalStates.sessionOpen;
+    onClicked: {
+        ActionGateway.requestSessionToggle(root.QsWindow.window?.screen);
     }
 
     MaterialSymbol {
