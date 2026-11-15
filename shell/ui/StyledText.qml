@@ -13,6 +13,16 @@ import qs.commons
 //   larger        19    -> titleLarge  22*0.85 = 19
 //   huge          22    -> headlineSmall 24*0.85 = 20
 //   smaller       12    -> bodySmall   12*0.85 = 10
+//
+// Deviation from the end4 baseline (bar media bug, 2026-11-15): the slide
+// rides on a Translate transform instead of the item's x/y. Upstream captures
+// originalX/originalY once at Component.onCompleted — before the parent
+// layout's first polish — so every later text change ends the animation on a
+// stale coordinate that overrides the layout: after a track change the bar
+// media artist/title lines settled ~6px high (or on each other's rows) until
+// an unrelated re-layout happened to fix them. x/y belong to the layout; the
+// transform always ends at 0, so residue is structurally impossible. Slide
+// distance, curve and duration are unchanged.
 Text {
     id: root
 
@@ -33,30 +43,26 @@ Text {
         family: root.defaultFont
         pixelSize: Typography.bodyLarge.pixelSize
         variableAxes: root.shouldUseNumberFont ? ({}) : ({
-                                                             "wght": 450
-                                                         })
+                "wght": 450
+            })
     }
     color: Appearance.m3colors.m3onBackground
     linkColor: Appearance.m3colors.m3primary
 
+    transform: Translate {
+        id: slideTransform
+        x: 0
+        y: 0
+    }
+
     component Anim: NumberAnimation {
-        target: root
+        target: slideTransform
         duration: 150
         easing.type: Easing.BezierSpline
         easing.bezierCurve: Appearance.animationCurves.expressiveFastEffects
     }
 
-    Component.onCompleted: {
-        textAnimationBehavior.originalX = root.x;
-        textAnimationBehavior.originalY = root.y;
-    }
-
     Behavior on text {
-        id: textAnimationBehavior
-
-        property real originalX: root.x
-        property real originalY: root.y
-
         enabled: root.animateChange
 
         SequentialAnimation {
@@ -65,15 +71,16 @@ Text {
             ParallelAnimation {
                 Anim {
                     property: "x"
-                    to: textAnimationBehavior.originalX - root.animationDistanceX
+                    to: -root.animationDistanceX
                     easing.type: Easing.InSine
                 }
                 Anim {
                     property: "y"
-                    to: textAnimationBehavior.originalY - root.animationDistanceY
+                    to: -root.animationDistanceY
                     easing.type: Easing.InSine
                 }
                 Anim {
+                    target: root
                     property: "opacity"
                     to: 0
                     easing.type: Easing.InSine
@@ -81,27 +88,28 @@ Text {
             }
             PropertyAction {} // Tie the text update to this point (we don't want it to happen during the first slide+fade)
             PropertyAction {
-                target: root
+                target: slideTransform
                 property: "x"
-                value: textAnimationBehavior.originalX + root.animationDistanceX
+                value: root.animationDistanceX
             }
             PropertyAction {
-                target: root
+                target: slideTransform
                 property: "y"
-                value: textAnimationBehavior.originalY + root.animationDistanceY
+                value: root.animationDistanceY
             }
             ParallelAnimation {
                 Anim {
                     property: "x"
-                    to: textAnimationBehavior.originalX
+                    to: 0
                     easing.type: Easing.OutSine
                 }
                 Anim {
                     property: "y"
-                    to: textAnimationBehavior.originalY
+                    to: 0
                     easing.type: Easing.OutSine
                 }
                 Anim {
+                    target: root
                     property: "opacity"
                     to: 1
                     easing.type: Easing.OutSine
