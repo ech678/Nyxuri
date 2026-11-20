@@ -107,6 +107,9 @@ def _phase_atomic_deployment(
         # preserve/chmod describe the app, independent of which variant ships.
         manifest = load_manifest(_item_src(item))
 
+        if manifest.is_hook_only or manifest.is_runtime or manifest.merge or not manifest.is_deployable:
+            continue
+
         if manifest.target:
             # Single-file plugin (§4 target exception): one file inside the
             # plugin dir lands at ~/.config/<target>. Form axes are

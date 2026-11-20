@@ -881,3 +881,50 @@ class TestDeployRobustness(unittest.TestCase):
                 failed = _quiet(deploy.deploy_selected_configs, items_to_deploy="demo", preserved_log=[])
             self.assertEqual(failed, [])
             self.assertTrue((ctx.env.config_dir / "demo" / "config.kdl").is_file())
+
+    def test_deploy_selected_configs_skips_hook_only_plugin_issue_156(self):
+        """Issue #156: deploy_selected_configs safely skips hook-only plugins without error."""
+        import nyxuri.deploy.deploy as deploy
+        with TempEnv() as ctx:
+            src = self._sandbox(ctx)
+            root = src / "greeter"
+            root.mkdir(parents=True, exist_ok=True)
+            (root / "manifest.toml").write_text(
+                'schemaVersion = 1\nid = "greeter"\nkinds = ["config"]\n'
+                'morphology = "hook-only"\noptional = true\n',
+                encoding="utf-8",
+            )
+            with patch.object(deploy, "_phase_post_install_services"):
+                failed = _quiet(deploy.deploy_selected_configs, items_to_deploy=["greeter"], preserved_log=[])
+            self.assertEqual(failed, [])
+            self.assertFalse((ctx.env.config_dir / "greeter").exists())
+
+    def test_master_component_menu_excludes_hook_only_on_update_issue_156(self):
+        """Issue #156: run_master_component_menu excludes hook-only plugins when is_update=True."""
+        from nyxuri.ui.menus import run_master_component_menu
+        from nyxuri.ui.tui import CheckboxList
+        with TempEnv() as ctx:
+            src = self._sandbox(ctx)
+            # Atomic config plugin
+            self._app(src, "app_atomic", "", {"config.kdl": "// atomic\n"})
+            # Hook-only plugin
+            hook_root = src / "app_hook"
+            hook_root.mkdir(parents=True, exist_ok=True)
+            (hook_root / "manifest.toml").write_text(
+                'schemaVersion = 1\nid = "app_hook"\nkinds = ["config"]\n'
+                'morphology = "hook-only"\n',
+                encoding="utf-8",
+            )
+
+            captured_entries = []
+
+            def fake_chk_run(self_menu, accept_defaults=False):
+                captured_entries.extend(self_menu.entries)
+                return [e.key for e in self_menu.entries if not e.is_separator and e.checked]
+
+            with patch.object(CheckboxList, "run", fake_chk_run):
+                run_master_component_menu(is_update=True)
+
+            keys = [e.key for e in captured_entries]
+            self.assertIn("config_app_atomic", keys)
+            self.assertNotIn("config_app_hook", keys)
