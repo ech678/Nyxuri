@@ -12,7 +12,7 @@ schemaVersion = 1
 id = "niri"
 category = "compositor"
 kinds = ["config"]
-preserve = ["monitor.kdl", "effects.kdl", "effects_normal.kdl", "glow.kdl", "colors.kdl", "noctalia.kdl", "eyecare_temp"]
+preserve = ["monitor.kdl", "effects.kdl", "effects_normal.kdl", "glow.kdl", "colors.kdl", "noctalia.kdl", "eyecare_temp", "layout.kdl"]
 chmod = ["scripts/*.sh", "scripts/*.py"]
 
 [forms]
@@ -27,3 +27,9 @@ default = "default"
 target = "glow.kdl"
 source_dir = "glow"
 default = "default"
+
+[forms.layout]
+target = "layout.kdl"
+source_dir = "layout"
+default = "default"
+

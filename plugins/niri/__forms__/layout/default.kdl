@@ -1,0 +1,47 @@
+window-rule {
+    // 圆角
+    geometry-corner-radius 12
+    // 去掉超出圆角的窗口内容
+    clip-to-geometry true
+    // 禁止边框画到背景里
+    draw-border-with-background false
+}
+
+layout {
+    // 从 glassy-niri 引入的平铺区深色背景，取消注释可体验：
+    // background-color "00000020"
+    background-color "transparent"
+    gaps 12
+    center-focused-column "never"
+    always-center-single-column
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+    default-column-width { proportion 0.5; }
+    focus-ring {
+        off
+        width 0
+        active-color "#b6c7e7"
+        inactive-color "#131315"
+        urgent-color "#ffb4ab"
+    }
+    shadow {
+        on
+        softness 10
+        spread 4
+        offset x=0 y=0
+        color "#00000070"
+    }
+
+    tab-indicator {
+        active-color "#b6c7e7"
+        inactive-color "#374761"
+        urgent-color "#ffb4ab"
+    }
+
+    insert-hint {
+        color "#b6c7e780"
+    }
+}
