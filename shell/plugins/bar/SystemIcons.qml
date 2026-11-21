@@ -1,10 +1,11 @@
 // Fork & Trim: iNiR modules/ii/barM3/SystemIcons.qml
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-// B9.2 trim (ROADMAP B-8):
-//   - the bare Flow is gone. Every status is a fixed 26px SystemIconSlot with
-//     its own hover capsule, tooltip and click target, so a conditional icon
-//     no longer changes its neighbours' width;
+// D2 SystemIcons QS expansion (ROADMAP D-2):
+//   - UtilButton 26↔54px hover expansion skeleton (200ms) with 150ms intent
+//     delay to prevent jitter from rapid mouse sweeps;
+//   - expanded area presents one line of status data (volume %, SSID, Bluetooth
+//     device count, peripheral battery %, etc.);
 //   - Audio/Network/Bluetooth/Notifications stay the owning Nyxuri services
 //     (VolumeService/NetworkService/BluetoothService/NotificationService);
 //     the mic route is VolumeService.toggleSourceMute();
@@ -105,6 +106,7 @@ Item {
             contentColor: root.iconColor
             contentColorOverridden: true
             iconText: VolumeService.sinkMuted ? "volume_off" : "volume_up"
+            dataText: VolumeService.sinkMuted ? I18n.tr("Muted") : `${Math.round((VolumeService.sinkVolume ?? 0) * 100)}%`
             toolTipText: VolumeService.sinkMuted ? I18n.tr("Muted") : `${I18n.tr("Volume")} ${Math.round((VolumeService.sinkVolume ?? 0) * 100)}%`
             onClicked: event => {
                 if (event.button === Qt.MiddleButton)
@@ -128,6 +130,7 @@ Item {
             contentColor: root.iconColor
             contentColorOverridden: true
             iconText: "mic_off"
+            dataText: I18n.tr("Muted")
             toolTipText: I18n.tr("Microphone is muted")
             onClicked: VolumeService.toggleSourceMute()
         }
@@ -138,6 +141,7 @@ Item {
             vertical: root.vertical
             visible: KeyboardIndicators.hasPanelIndicators
             clickable: false
+            expandable: false
             contentColor: root.iconColor
             contentColorOverridden: true
             toolTipText: KeyboardIndicators.currentLayoutName.length > 0 ? KeyboardIndicators.currentLayoutName : I18n.tr("Keyboard indicators")
@@ -155,6 +159,7 @@ Item {
             contentColor: root.iconColor
             contentColorOverridden: true
             iconText: root.wifiIcon()
+            dataText: !NetworkService.available ? I18n.tr("Off") : (NetworkService.wiredConnected ? I18n.tr("Eth") : (NetworkService.wifiConnected ? (NetworkService.activeSsid || I18n.tr("Wi-Fi")) : I18n.tr("Off")))
             toolTipText: NetworkService.connected ? (NetworkService.activeSsid || I18n.tr("Wi-Fi")) : I18n.tr("Wi-Fi")
             onClicked: root.openQuickSettings("network")
         }
@@ -167,6 +172,7 @@ Item {
             contentColor: root.iconColor
             contentColorOverridden: true
             iconText: BluetoothService.connected ? "bluetooth_connected" : BluetoothService.enabled ? "bluetooth" : "bluetooth_disabled"
+            dataText: !BluetoothService.enabled ? I18n.tr("Off") : (!BluetoothService.connected ? "0" : `${BluetoothService.connectedDevices.length}`)
             toolTipText: BluetoothService.connected ? (BluetoothService.connectedName || I18n.tr("Bluetooth")) : I18n.tr("Bluetooth")
             onClicked: root.openQuickSettings("bluetooth")
         }
@@ -185,6 +191,7 @@ Item {
                 clickable: false
                 isActive: true
                 iconText: root.peripheralIcon(modelData.type)
+                dataText: `${Math.round(modelData.percentage * 100)}%`
                 contentColor: critical ? Appearance.colors.colError : root.iconColor
                 contentColorOverridden: true
                 toolTipText: `${modelData.model || I18n.tr("Device")} • ${Math.round(modelData.percentage * 100)}%`
@@ -201,6 +208,7 @@ Item {
             visible: NotificationService.silent || NotificationService.unread > 0
             contentColor: root.iconColor
             contentColorOverridden: true
+            dataText: NotificationService.silent ? I18n.tr("DND") : `${NotificationService.unread}`
             toolTipText: I18n.tr("Notifications")
             onClicked: root.openQuickSettings("settings")
 

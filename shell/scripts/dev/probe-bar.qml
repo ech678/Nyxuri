@@ -206,7 +206,11 @@ ShellRoot {
                 "slotSize": slot.slotSize,
                 "icon": String(slot.iconText ?? ""),
                 "tooltip": String(slot.toolTipText ?? ""),
-                "critical": slot.critical === true
+                "critical": slot.critical === true,
+                "dataText": String(slot.dataText ?? ""),
+                "expanded": slot.expanded === true,
+                "intentHovered": slot.intentHovered === true,
+                "expandable": slot.expandable === true
             });
         }
         return JSON.stringify({
@@ -754,6 +758,53 @@ ShellRoot {
         function systemIconsResetDevices(): string {
             PeripheralBattery.deviceSource = UPower.devices.values;
             return "OK";
+        }
+
+        // D2 SystemIcons QS expansion probe hooks
+        function systemIconsHoverSlot(slotKey: string): string {
+            const widget = probeRoot.findSystemIconsWidget(barLoader.item);
+            if (!widget)
+                return "NOT_FOUND";
+            const flow = widget.slotContainer;
+            for (let i = 0; i < flow.children.length; i += 1) {
+                const slot = flow.children[i];
+                if (slot && String(slot.slotKey ?? "") === slotKey) {
+                    slot.forceHovered = true;
+                    return "OK";
+                }
+            }
+            return "SLOT_NOT_FOUND";
+        }
+
+        function systemIconsUnhoverSlot(slotKey: string): string {
+            const widget = probeRoot.findSystemIconsWidget(barLoader.item);
+            if (!widget)
+                return "NOT_FOUND";
+            const flow = widget.slotContainer;
+            for (let i = 0; i < flow.children.length; i += 1) {
+                const slot = flow.children[i];
+                if (slot && String(slot.slotKey ?? "") === slotKey) {
+                    slot.forceHovered = false;
+                    slot.forceExpanded = false;
+                    return "OK";
+                }
+            }
+            return "SLOT_NOT_FOUND";
+        }
+
+        function systemIconsExpandSlot(slotKey: string): string {
+            const widget = probeRoot.findSystemIconsWidget(barLoader.item);
+            if (!widget)
+                return "NOT_FOUND";
+            const flow = widget.slotContainer;
+            for (let i = 0; i < flow.children.length; i += 1) {
+                const slot = flow.children[i];
+                if (slot && String(slot.slotKey ?? "") === slotKey) {
+                    slot.forceExpanded = true;
+                    return "OK";
+                }
+            }
+            return "SLOT_NOT_FOUND";
         }
 
         // Tray surface (B9.1). The harness publishes fake StatusNotifierItems

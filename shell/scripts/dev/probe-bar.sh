@@ -286,6 +286,18 @@ if ipc systemIcons >/dev/null 2>&1; then
     system_icons_reset=$(ipc systemIcons 2>/dev/null || true)
 fi
 
+d2_immediate_state=""
+d2_settled_state=""
+d2_unhover_state=""
+if ipc systemIconsHoverSlot volume >/dev/null 2>&1; then
+    d2_immediate_state=$(ipc systemIcons 2>/dev/null || true)
+    sleep 0.4
+    d2_settled_state=$(ipc systemIcons 2>/dev/null || true)
+    ipc systemIconsUnhoverSlot volume >/dev/null 2>&1 || true
+    sleep 0.3
+    d2_unhover_state=$(ipc systemIcons 2>/dev/null || true)
+fi
+
 # B9.6 visual baseline: right-click style chain (store write -> BarGroup
 # contentColor binding -> widget), the fixed-slot workspaces model, and the
 # island middle-frame hug (+8 on float, -4 on the plain style) with the
@@ -613,7 +625,7 @@ ipc cornerStyle 1 >/dev/null 2>&1 || true
 ipc scene default >/dev/null 2>&1 || true
 ipc reload >/dev/null 2>&1 || true
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" <<'PY'
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" <<'PY'
 import json
 import re
 import sys
@@ -627,7 +639,8 @@ import sys
  b97_divider, b97_util_on, b97_util_off, b97_res_on, b97_res_off, b97_han,
  b97_roman, b97_screen_named, b97_screen_empty, b97_persisted,
  d1_island_media_path, d1_weather_on, d1_weather_off, d1_visualizer_on,
- d1_visualizer_off, d1_date_fmt, d1_date_reset, d1_media_geom) = sys.argv[1:50]
+ d1_visualizer_off, d1_date_fmt, d1_date_reset, d1_media_geom,
+ d2_immediate_state, d2_settled_state, d2_unhover_state) = sys.argv[1:53]
 
 
 def load_tsv(path):
@@ -1246,12 +1259,54 @@ media_geometry_ok = bool(
 )
 d1_ok = island_matrix_ok and weather_lease_ok and visualizer_lease_ok and date_format_ok and media_geometry_ok
 
+# D2: SystemIcons QS hover expansion (26 <-> 54px, 200ms) with 150ms intent delay
+# and status data lines (volume %, SSID, Bluetooth count).
+d2_immediate = json.loads(d2_immediate_state) if d2_immediate_state.strip() else {}
+d2_settled = json.loads(d2_settled_state) if d2_settled_state.strip() else {}
+d2_unhover = json.loads(d2_unhover_state) if d2_unhover_state.strip() else {}
+
+def find_system_slot(tree, key):
+    for s in tree.get("slots", []):
+        if s.get("key") == key:
+            return s
+    return {}
+
+d2_vol_imm = find_system_slot(d2_immediate, "volume")
+d2_vol_set = find_system_slot(d2_settled, "volume")
+d2_vol_unh = find_system_slot(d2_unhover, "volume")
+d2_wifi = find_system_slot(system_icons, "wifi")
+d2_bt = find_system_slot(system_icons, "bluetooth")
+d2_kbd = find_system_slot(system_icons, "keyboard")
+
+intent_delay_ok = bool(
+    d2_immediate.get("found") is True
+    and d2_vol_imm.get("expanded") is False
+    and d2_vol_imm.get("width", 0) <= 26.5
+)
+expansion_width_ok = bool(
+    d2_settled.get("found") is True
+    and d2_vol_set.get("expanded") is True
+    and abs(d2_vol_set.get("width", 0) - 54) <= 1.0
+)
+unhover_collapse_ok = bool(
+    d2_unhover.get("found") is True
+    and d2_vol_unh.get("expanded") is False
+    and abs(d2_vol_unh.get("width", 0) - 26) <= 0.5
+)
+data_text_ok = bool(
+    ("%" in str(d2_vol_set.get("dataText", "")) or "Muted" in str(d2_vol_set.get("dataText", "")))
+    and str(d2_wifi.get("dataText", "")).strip() != ""
+    and str(d2_bt.get("dataText", "")).strip() != ""
+    and d2_kbd.get("expandable") is False
+)
+d2_ok = intent_delay_ok and expansion_width_ok and unhover_collapse_ok and data_text_ok
+
 ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
       and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok
       and island_restored_ok and island_migration_ok and idle_face_ok
       and avatar_optional_ok
       and tray_ok and peripheral_ok and vertical_ok and margin_ok and window_ok
-      and b96_ok and b97_ok and d1_ok)
+      and b96_ok and b97_ok and d1_ok and d2_ok)
 report = {
     "ok": ok,
     "mode": mode,
@@ -1358,6 +1413,15 @@ report = {
             "rowImplicitWidth": d1_media_geom_state.get("rowImplicitWidth"),
             "overflow": d1_media_geom_state.get("overflow"),
         },
+    },
+    "d2": {
+        "ok": d2_ok,
+        "intentDelay": intent_delay_ok,
+        "expansionWidth": expansion_width_ok,
+        "unhoverCollapse": unhover_collapse_ok,
+        "dataText": data_text_ok,
+        "volumeExpandedWidth": d2_vol_set.get("width"),
+        "volumeDataText": d2_vol_set.get("dataText"),
     },
     "b96": {
         "ok": b96_ok,

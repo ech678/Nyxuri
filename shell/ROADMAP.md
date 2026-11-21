@@ -50,6 +50,7 @@
 | B9.6 表现基线归零 | 待验收 | 四工作区样式、右键改色弹层、弹层令牌逐项过目 |
 | B9.7 设置清账 | 待验收 | 多屏选择、autoHide 手感、space 分隔条、utilButtons 七槽、Resources 五表盘 |
 | D1 Bar 收尾与快修包 | 待验收 | 四快修实机过目（托盘箭头 hover 浅深两模式、DiIdle 三段几何、铃铛不复活）、岛媒体面六态截图、天气有/无数据视觉、visualizer 实机频谱、dateFormat 实机切换 |
+| D2 SystemIcons QS 化 | 待验收 | 实机 hover 手感、150ms intent 防误触体感、浅深两底色可读性 |
 | T3 M3/M4 设置页积木化 | 待验收 | 核心四页 + 全页面实机视觉过目 |
 | P4 主题契约/取色引擎 | 待验收 | 壁纸切换、深浅代调链路、模板 hooks 实机行为；镜像色板长期策略拍板 |
 | A1–A8 性能调查 | 待验收 | A6/A8 进行中；明细与各自剩余项见 [performance-plan](../llms-wiki/shell/performance-plan.md) |
@@ -119,14 +120,15 @@
 - 验收：probe（controls×visualizer 六态、天气租约、visualizer 租约、dateFormat
   随动、media 几何、DiIdle 三段几何）**全绿**；实机截图对照 end4 原图归作者。
 
-### D2 SystemIcons QS 化（hover 展开 + 数据）
+### D2 SystemIcons QS 化（hover 展开 + 数据）（2026-11-21 实现落地，机器证据齐，待作者实机验收）
 
-- 方案（D-2）：UtilButton 26↔54px hover 展开骨架（200ms）+ 展开区一行数据
-  （音量 %/SSID/蓝牙设备数）+ 150ms intent 防误触 + 点击仍开 sidebar。
+- 方案（D-2）：**已落地**——UtilButton 26↔54px hover 展开骨架（200ms）+ 展开区一行数据
+  （音量 %/SSID/蓝牙设备数/低电 %/静音/DND）+ 150ms intent 防误触 + 点击仍开 sidebar；
+  键盘指示器维持 26px 固定槽。
 - 来源：end4 `UtilButton.qml` 原件骨架 + caelestia bar popouts 数据形态 + dux
   `hoverPopoutDelay` 参数。**登记有意原创**：end4/iNiR 原版均为固定图标流，
   end4 代码中音量百分比文本是 `visible:false` 化石，无完整上游先例。
-- 验收：probe（展开态槽宽、防误触时序）；实机 hover 手感、浅深两底色可读性。
+- 验收：契约测试 `tests/shell/test_d2_system_icons.py`（14 用例全绿）；probe（展开态槽宽 54px、防误触时序、移出收回 26px）；实机 hover 手感、浅深两底色可读性待作者验收。
 
 ### D3 岛屿定案评审 + 联动机制试点
 
