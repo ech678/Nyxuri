@@ -464,7 +464,8 @@ class TestShellManagement(unittest.TestCase):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         shell_dir = os.path.join(repo_root, "shell")
 
-        # 1. PersonalizationConfig maintains bidirectional sync between 2-zone and 3-lane
+        # 1. D4a: barConfigs is the single lane truth; the 2-zone mirror
+        # properties retired. Everything else derives from the entry arrays.
         pc_path = os.path.join(shell_dir, "services", "PersonalizationConfig.qml")
         with open(pc_path, "r", encoding="utf-8") as f:
             pc_content = f.read()
@@ -472,23 +473,32 @@ class TestShellManagement(unittest.TestCase):
         # "information" was an iNiR bar style name, never a renderable widget;
         # it must not be re-seeded into the lane layout.
         self.assertNotIn('"information"', pc_content)
-        self.assertIn("root.barLayoutLeft = root.normalizedBarLayoutIds(leading)", pc_content)
-        self.assertIn("root.barLayoutRight = root.normalizedBarLayoutIds(trailing)", pc_content)
-        self.assertIn("root.barLeadingComponents = nextLeft.slice()", pc_content)
-        self.assertIn("root.barTrailingComponents = combinedTrailing", pc_content)
-        # B9.3: the seed/migration decision is a pure helper, and the 2-zone
-        # resync compares the same normalized arrays.
-        self.assertIn("root.resolveBarLayouts(bar, island, legacyIslandEnabled)", pc_content)
-        self.assertIn("!root.arraysEqual(leading, left)", pc_content)
+        self.assertIn("property var barConfigs: root.defaultBarConfigs()", pc_content)
+        self.assertIn("readonly property var barLayoutLeft: root.laneIds(\"left\")", pc_content)
+        self.assertIn("readonly property var barLayoutEntriesLeft: root.laneEntries(\"left\")", pc_content)
+        # The retired 2-zone mirrors must not come back.
+        self.assertNotIn("barLeadingComponents = ", pc_content)
+        self.assertNotIn("barTrailingComponents = ", pc_content)
+        # Mutations go through the clone-edit-reassign helper so the derived
+        # views re-evaluate off one reference change.
+        self.assertIn("function withBarConfigs(mutator)", pc_content)
+        self.assertIn("root.barConfigs = next", pc_content)
+        # B9.3: the seed/migration decision stays a pure helper; the version
+        # chain seeds pre-v3 lanes through it.
+        self.assertIn("root.resolveBarLayouts(configSection(preSource.bar)", pc_content)
+        self.assertIn("ConfigMigrations.migrateConfig(parsed,", pc_content)
 
-        # 2. BarContent delegates 3 lanes to Repeaters
+        # 2. BarContent delegates 3 lanes to Repeaters (entry model)
         bc_path = os.path.join(shell_dir, "plugins", "bar", "BarContent.qml")
         with open(bc_path, "r", encoding="utf-8") as f:
             bc_content = f.read()
         self.assertIn("effectiveLeftLayout", bc_content)
         self.assertIn("effectiveMiddleLayout", bc_content)
         self.assertIn("effectiveRightLayout", bc_content)
-        self.assertIn("source: root.getWidgetUrl(modelData)", bc_content)
+        self.assertIn("PersonalizationConfig.barLayoutEntriesLeft", bc_content)
+        self.assertIn("root.getWidgetUrl(modelData.widgetId)", bc_content)
+        self.assertIn("widgetEntry: modelData", bc_content)
+        self.assertIn("root.injectWidgetEntry(this, modelData)", bc_content)
 
     def test_p3_notification_island_chain_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

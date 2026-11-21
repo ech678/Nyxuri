@@ -7,6 +7,9 @@ Item {
 
     required property var fields
     property bool dragActive: false
+    // D4a: a chip drag carries the entry uid (duplicate widget ids are
+    // legal — spacers); menu-initiated adds have no uid and pass "".
+    property string componentUid: ""
     property string componentId: ""
     property string componentLabel: ""
     property string componentIcon: "widgets"
@@ -18,10 +21,11 @@ Item {
     property real pointerY: 0
     property var activeTargetField: null
 
-    signal dropped(string componentId, string targetZone, int targetIndex)
+    signal dropped(string componentUid, string componentId, string targetZone, int targetIndex)
 
-    function beginDrag(sourceField, id, label, icon, width, point) {
+    function beginDrag(sourceField, uid, id, label, icon, width, point) {
         root.dragActive = true;
+        root.componentUid = uid;
         root.componentId = id;
         root.componentLabel = label;
         root.componentIcon = icon;
@@ -49,8 +53,11 @@ Item {
     }
 
     function updateFieldPreviews(targetZone, targetIndex) {
+        // Chips identify by entry uid (menu adds never drag, so the key is
+        // always the dragged chip's own key).
+        const key = root.componentUid !== "" ? root.componentUid : root.componentId;
         root.forEachField(field => {
-            field.showDropPreview(root.componentId, root.sourceZone, targetZone, targetIndex);
+            field.showDropPreview(key, root.sourceZone, targetZone, targetIndex);
         });
     }
 
@@ -94,17 +101,19 @@ Item {
         if (!root.dragActive)
             return;
 
+        const uid = root.componentUid;
         const id = root.componentId;
         const zone = root.targetZone;
         const index = root.targetIndex;
         if (zone !== "" && index >= 0)
-            root.dropped(id, zone, index);
+            root.dropped(uid, id, zone, index);
 
         root.dragActive = false;
         root.forEachField(field => {
             field.clearDropPreview();
         });
         root.activeTargetField = null;
+        root.componentUid = "";
         root.componentId = "";
         root.componentIcon = "widgets";
         root.sourceZone = "";

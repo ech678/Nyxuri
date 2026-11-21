@@ -88,9 +88,13 @@ Singleton {
                 readonly property real gapsOut: 5
 
                 readonly property QtObject layouts: QtObject {
-                    readonly property var leftLayout: PersonalizationConfig.barLayoutLeft
-                    readonly property var middleLayout: PersonalizationConfig.barLayoutMiddle
-                    readonly property var rightLayout: PersonalizationConfig.barLayoutRight
+                    // D4a: derived enabled-only id views off the barConfigs
+                    // entry truth. Vendor widgets asking "is X on this side"
+                    // must not count a disabled entry, so the bridge never
+                    // serves raw membership.
+                    readonly property var leftLayout: PersonalizationConfig.barLayoutEnabledIds("left")
+                    readonly property var middleLayout: PersonalizationConfig.barLayoutEnabledIds("middle")
+                    readonly property var rightLayout: PersonalizationConfig.barLayoutEnabledIds("right")
                 }
 
                 // iNiR reads these straight off the object (no optional

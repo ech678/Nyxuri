@@ -5,6 +5,8 @@ import Quickshell.Io
 import qs.commons
 import "../commons/SidebarPolicy.js" as SidebarPolicy
 import "../commons/WallpaperSource.js" as WallpaperSource
+import "BarWidgetDefaults.js" as BarWidgetDefaults
+import "ConfigMigrations.js" as ConfigMigrations
 import qs.services
 import qs.commons.i18n
 
@@ -149,6 +151,9 @@ Singleton {
     readonly property bool storeReady: ConfigService.storeReady
     property bool loading: false
     property bool loaded: false
+    // Set when the version chain migrated the parsed file (D4a); the load
+    // completion path saves once so the stamp and the reshaped keys land.
+    property bool configVersionDirty: false
     readonly property bool ready: root.storeReady && root.loaded && !root.loading
     property string bannerSource: ""
     property string wallpaperFolder: Paths.dataHome + "/wallpapers"
@@ -542,77 +547,18 @@ Singleton {
     // What `bar.m3.workspaces.numberMap` feeds the Workspaces widget. Slots
     // beyond the preset fall back to plain numbers at the consumer.
     readonly property var barWorkspaceNumberMap: root.barWorkspaceNumberStyle === "han" ? root._barWorkspaceNumberHanMaps : root.barWorkspaceNumberStyle === "roman" ? root._barWorkspaceNumberRomanMaps : []
-    // Only ids the bar can actually render. `information` was never a widget
-    // (it was an iNiR bar style name) and mapped to a missing Information.qml.
-    // B8.2 re-added the end4 base widgets (BarWidgetSwitcher/ClippedProgressBar/
-    // ResourceUsage), so clock / systemMonitor / battery are selectable again.
-    // B9.7 re-added `utilButtons` (end4 keeps it addable; its seven slots are
-    // wired to real toggles), which had been stripped from the whitelist and
-    // made the whole widget unreachable.
-    readonly property var barComponentIds: ["workspaces", "activeWindow", "media", "tray", "quickSettings", "island", "divisor", "clock", "systemMonitor", "battery", "systemIcons", "launcherButton", "powerButton", "utilButtons", "weather", "visualizer"]
-    readonly property var defaultBarLeadingComponents: ["launcherButton", "workspaces", "activeWindow"]
-    readonly property var defaultBarTrailingComponents: ["tray", "quickSettings", "systemIcons", "powerButton"]
-    readonly property var barComponentOptions: [({
-                "value": "media",
-                "label": I18n.tr("Media"),
-                "icon": "music_note"
-            }), ({
-                "value": "workspaces",
-                "label": I18n.tr("Workspaces"),
-                "icon": "grid_view"
-            }), ({
-                "value": "activeWindow",
-                "label": I18n.tr("Active Window"),
-                "icon": "web_asset"
-            }), ({
-                "value": "tray",
-                "label": I18n.tr("Tray"),
-                "icon": "inbox"
-            }), ({
-                "value": "quickSettings",
-                "label": I18n.tr("Quick Settings"),
-                "icon": "tune"
-            }), ({
-                "value": "divisor",
-                "label": I18n.tr("Divider"),
-                "icon": "more_vert"
-            }), ({
-                "value": "clock",
-                "label": I18n.tr("Clock"),
-                "icon": "schedule"
-            }), ({
-                "value": "systemMonitor",
-                "label": I18n.tr("System Monitor"),
-                "icon": "monitoring"
-            }), ({
-                "value": "battery",
-                "label": I18n.tr("Battery"),
-                "icon": "battery_full"
-            }), ({
-                "value": "systemIcons",
-                "label": I18n.tr("System Icons"),
-                "icon": "volume_up"
-            }), ({
-                "value": "launcherButton",
-                "label": I18n.tr("Launcher"),
-                "icon": "search"
-            }), ({
-                "value": "powerButton",
-                "label": I18n.tr("Power"),
-                "icon": "power_settings_new"
-            }), ({
-                "value": "utilButtons",
-                "label": I18n.tr("Utility buttons"),
-                "icon": "widgets"
-            }), ({
-                "value": "weather",
-                "label": I18n.tr("Weather"),
-                "icon": "partly_cloudy_day"
-            }), ({
-                "value": "visualizer",
-                "label": I18n.tr("Audio visualizer"),
-                "icon": "graphic_eq"
-            })]
+    // Only ids the bar can actually render. The whitelist lives in
+    // BarWidgetDefaults.IDS (D4a registration point 1 of 3) and must match
+    // shell/ui/BarWidgetCatalog.qml and shell/plugins/bar/BarWidgetFiles.js
+    // — tests/shell/test_d4a_bar_config.py pins the equality. History:
+    // `information` was never a widget (an iNiR bar style name), B8.2
+    // re-added the end4 base widgets, B9.7 re-added `utilButtons`, D4a
+    // renamed `divisor` -> `separator` (legacy alias kept) and added
+    // `spacer`.
+    readonly property var barComponentIds: BarWidgetDefaults.IDS
+    // Labels/icons moved to shell/ui/BarWidgetCatalog.qml (D4a): the
+    // settings cards consume the shared catalog instead of a services-side
+    // option list.
     readonly property var quickSettingsComponentIds: ["network", "bluetooth", "brightness", "volume", "microphone", "battery", "settings", "power"]
     readonly property var defaultQuickSettingsComponents: root.quickSettingsComponentIds.slice()
     readonly property var quickSettingsComponentOptions: [({
@@ -648,8 +594,6 @@ Singleton {
                 "label": I18n.tr("Power"),
                 "icon": "power_settings_new"
             })]
-    property var barLeadingComponents: root.defaultBarLeadingComponents.slice()
-    property var barTrailingComponents: root.defaultBarTrailingComponents.slice()
     property var quickSettingsComponents: root.defaultQuickSettingsComponents.slice()
     readonly property int defaultBarThickness: 36
     property int barThickness: root.defaultBarThickness
@@ -666,22 +610,39 @@ Singleton {
     property int barEdgeMargin: 0
     property int barSideMargin: 0
 
-    // Three-lane drag layout for the status bar (left / middle / right). These
-    // mirror the leading/trailing model but let the user place widgets freely
-    // across three lanes. An empty array means "show nothing in that lane", so
-    // fresh configs fall back to a sensible default instead of a blank bar.
+    // D4a bar customization engine: the single truth is barConfigs (the
+    // [[bar.configs]] array — one entry today, the schema is multi-bar
+    // ready). Each lane holds entry objects {widgetId, uid, enabled,
+    // overrides}; uid is unique across the whole bar so per-entry mutation
+    // (enabled toggles, D4b per-instance axes) never touches siblings.
+    // Everything else — barLayout* id views, the bridge's enabled-id views,
+    // islandInLayout — derives from here; nothing writes those back.
+    // A lane missing from storage reads as the default lane; an explicitly
+    // empty lane stays empty (the minimal writer omits default-equal lanes
+    // only).
     readonly property var defaultBarLayoutLeft: ["launcherButton", "workspaces", "activeWindow"]
     // B3-1: the island is a first-class middle widget, not a reserved gap.
     readonly property var defaultBarLayoutMiddle: ["island"]
     readonly property var defaultBarLayoutRight: ["tray", "quickSettings", "systemIcons", "powerButton"]
-    property var barLayoutLeft: root.defaultBarLayoutLeft.slice()
-    property var barLayoutMiddle: root.defaultBarLayoutMiddle.slice()
-    property var barLayoutRight: root.defaultBarLayoutRight.slice()
+    property var barConfigs: root.defaultBarConfigs()
+
+    // Lane entry views (hosts and the settings cards consume these).
+    readonly property var barLayoutEntriesLeft: root.laneEntries("left")
+    readonly property var barLayoutEntriesMiddle: root.laneEntries("middle")
+    readonly property var barLayoutEntriesRight: root.laneEntries("right")
+
+    // Widget-id views in lane order, disabled entries included. Kept for
+    // the probe, the dashboard lane editor and other id-level consumers;
+    // replacing a lane through setBarLayouts() resets disabled/override
+    // state on the replaced entries by design.
+    readonly property var barLayoutLeft: root.laneIds("left")
+    readonly property var barLayoutMiddle: root.laneIds("middle")
+    readonly property var barLayoutRight: root.laneIds("right")
 
     // B9.3 single truth: the island exists exactly when it is a member of any
     // bar lane. Notification-slot arbitration and the bar widget filter both
     // read this instead of a second config switch.
-    readonly property bool islandInLayout: root.barLayoutLeft.indexOf("island") !== -1 || root.barLayoutMiddle.indexOf("island") !== -1 || root.barLayoutRight.indexOf("island") !== -1
+    readonly property bool islandInLayout: root.laneUsesWidget("island")
 
     // iNiR keyboardIndicators semantics: the persistent panel (SystemIcons)
     // and the transient popup (island OSD) are independent axes.
@@ -1571,7 +1532,9 @@ Singleton {
             if (!candidate || typeof candidate !== "object")
                 continue;
             const mode = String(candidate.mode ?? "");
-            const widget = String(candidate.widget ?? "");
+            // D4a: the separator rename aliases stored "divisor" styles so a
+            // pre-D4a per-widget style survives the id change.
+            const widget = BarWidgetDefaults.canonicalId(candidate.widget);
             if (!modes.includes(mode) || widget === "")
                 continue;
             const entry = {
@@ -1622,89 +1585,433 @@ Singleton {
         setValue("barDividerStyle", normalizedOption(root.barDividerStyles, value, "rect"));
     }
 
-    function normalizedBarComponents(raw, excluded) {
-        const source = Array.isArray(raw) ? raw : [];
-        const blocked = excluded || [];
-        const result = [];
-        for (let index = 0; index < source.length; index += 1) {
-            const componentId = String(source[index] || "");
-            if (root.barComponentIds.indexOf(componentId) === -1 || blocked.indexOf(componentId) !== -1 || result.indexOf(componentId) !== -1)
-                continue;
+    // ---- D4a bar lane entry machinery -----------------------------------
+    // barConfigs is the truth; every mutation clones, edits and reassigns
+    // so the derived views (barLayout*, barLayoutEntries*) re-evaluate off a
+    // single reference change. uids are session identity only — they are
+    // never persisted (the minimal writer serializes entries without them),
+    // so they only need to be unique within one bar, not stable across
+    // restarts.
 
-            result.push(componentId);
-        }
-        return result;
+    function defaultBarConfigs() {
+        return [
+            {
+                id: "default",
+                name: "Bar",
+                lanes: root.normalizeConfigLanes({})
+            }
+        ];
     }
 
-    function normalizedBarLayout(leading, trailing, useDefaults) {
-        const normalizedLeading = root.normalizedBarComponents(useDefaults ? root.defaultBarLeadingComponents : leading, []);
-        const normalizedTrailing = root.normalizedBarComponents(useDefaults ? root.defaultBarTrailingComponents : trailing, normalizedLeading);
-        return {
-            "leading": normalizedLeading,
-            "trailing": normalizedTrailing
+    // Normalizes a parsed [[bar.configs]] array. A lane missing from storage
+    // reads as the DEFAULT lane; an explicitly empty lane stays empty (the
+    // minimal writer omits default-equal lanes only). Single-bar first:
+    // extra entries are dropped on the floor (D4e lifts this).
+    function normalizeBarConfigs(rawConfigs) {
+        const source = Array.isArray(rawConfigs) && rawConfigs.length > 0 ? rawConfigs : [
+            {}
+        ];
+        const bar = source[0] && typeof source[0] === "object" && !Array.isArray(source[0]) ? source[0] : {};
+        const rawLanes = bar.lanes && typeof bar.lanes === "object" && !Array.isArray(bar.lanes) ? bar.lanes : {};
+        return [
+            {
+                id: typeof bar.id === "string" && bar.id !== "" ? bar.id : "default",
+                name: typeof bar.name === "string" && bar.name !== "" ? bar.name : "Bar",
+                lanes: root.normalizeConfigLanes(rawLanes)
+            }
+        ];
+    }
+
+    function normalizeConfigLanes(rawLanes) {
+        const usedSingletons = [];
+        const lanes = {};
+        ["left", "middle", "right"].forEach(zone => {
+            // Missing lane -> the default lane; explicit empty stays empty.
+            const defaults = {
+                left: root.defaultBarLayoutLeft,
+                middle: root.defaultBarLayoutMiddle,
+                right: root.defaultBarLayoutRight
+            };
+            const raw = rawLanes && Array.isArray(rawLanes[zone]) ? rawLanes[zone] : defaults[zone];
+            lanes[zone] = root.normalizeLaneEntries(raw, zone, usedSingletons);
+        });
+        return lanes;
+    }
+
+    // Lane entries may be plain widget-id strings or {id, enabled,
+    // ...overrides} objects (the persisted shape). Legacy ids alias to
+    // canonical ones, unknown ids drop, singleton widgets (island) dedupe.
+    function normalizeLaneEntries(rawLane, zone, usedSingletons) {
+        const source = Array.isArray(rawLane) ? rawLane : [];
+        const entries = [];
+        for (let index = 0; index < source.length; index += 1) {
+            const raw = source[index];
+            let widgetId;
+            let enabled = true;
+            let overrides = {};
+            if (raw && typeof raw === "object") {
+                widgetId = raw.widgetId !== undefined ? raw.widgetId : raw.id;
+                enabled = raw.enabled !== false;
+                const flat = {};
+                Object.keys(raw).forEach(key => {
+                    if (key !== "id" && key !== "widgetId" && key !== "enabled" && key !== "overrides" && key !== "uid")
+                        flat[key] = raw[key];
+                });
+                const enveloped = raw.overrides && typeof raw.overrides === "object" && !Array.isArray(raw.overrides) ? raw.overrides : {};
+                Object.assign(overrides, flat, enveloped);
+            } else {
+                widgetId = raw;
+            }
+            const canonical = BarWidgetDefaults.canonicalId(widgetId);
+            if (!BarWidgetDefaults.isKnownId(canonical))
+                continue;
+            if (BarWidgetDefaults.SINGLETON_IDS.indexOf(canonical) !== -1) {
+                if (usedSingletons.indexOf(canonical) !== -1)
+                    continue;
+                usedSingletons.push(canonical);
+            }
+            entries.push({
+                widgetId: canonical,
+                uid: canonical + "@" + zone + index,
+                enabled: enabled,
+                overrides: overrides
+            });
+        }
+        return entries;
+    }
+
+    // Minimal-write entry serialization: entries with no state beyond their
+    // id collapse to plain strings; override keys equal to the widget
+    // defaults drop. Keys are emitted sorted so equal content compares
+    // equal regardless of construction order.
+    function serializeBarEntry(entry) {
+        const defaults = BarWidgetDefaults.DEFAULTS[entry.widgetId] || {};
+        const keys = Object.keys(entry.overrides || {}).filter(key => entry.overrides[key] !== defaults[key]).sort();
+        if (entry.enabled !== false && keys.length === 0)
+            return entry.widgetId;
+        const out = {
+            id: entry.widgetId
         };
+        if (entry.enabled === false)
+            out.enabled = false;
+        keys.forEach(key => {
+            out[key] = entry.overrides[key];
+        });
+        return out;
+    }
+
+    function sparseBarConfigs() {
+        const truth = root.activeBarConfig();
+        const fallback = root.defaultBarConfigs()[0];
+        const lanes = {};
+        ["left", "middle", "right"].forEach(zone => {
+            const mine = truth.lanes[zone].map(root.serializeBarEntry);
+            const dflt = fallback.lanes[zone].map(root.serializeBarEntry);
+            if (JSON.stringify(mine) !== JSON.stringify(dflt))
+                lanes[zone] = mine;
+        });
+        if (Object.keys(lanes).length === 0)
+            return null;
+        const out = {
+            id: truth.id
+        };
+        if (truth.name !== fallback.name)
+            out.name = truth.name;
+        out.lanes = lanes;
+        return [out];
+    }
+
+    function activeBarConfig() {
+        if (Array.isArray(root.barConfigs) && root.barConfigs.length > 0)
+            return root.barConfigs[0];
+        return root.defaultBarConfigs()[0];
+    }
+
+    function laneEntries(zone) {
+        const config = root.activeBarConfig();
+        return config.lanes[root.canonicalZone(zone)] || [];
+    }
+
+    function laneIds(zone) {
+        return root.laneEntries(zone).map(entry => entry.widgetId);
+    }
+
+    // Enabled-only id view: what the bar actually instantiates. The Config
+    // bridge serves this so vendor widgets asking "is X on this side" never
+    // count a disabled entry.
+    function barLayoutEnabledIds(zone) {
+        return root.laneEntries(zone).filter(entry => entry.enabled !== false).map(entry => entry.widgetId);
+    }
+
+    function laneUsesWidget(widgetId) {
+        return ["left", "middle", "right"].some(zone => root.laneEntries(zone).some(entry => entry.widgetId === widgetId));
+    }
+
+    function canonicalZone(zone) {
+        if (zone === "middle" || zone === "center")
+            return "middle";
+        if (zone === "right" || zone === "trailing")
+            return "right";
+        return "left";
+    }
+
+    // Clone-edit-reassign helper: mutator returns whether anything changed;
+    // a change reassigns barConfigs (single notification) and saves.
+    function withBarConfigs(mutator) {
+        const next = JSON.parse(JSON.stringify(Array.isArray(root.barConfigs) && root.barConfigs.length > 0 ? root.barConfigs : [root.activeBarConfig()]));
+        const changed = mutator(next[0]);
+        if (changed) {
+            root.barConfigs = next;
+            root.save();
+        }
+        return changed;
+    }
+
+    function setBarLayouts(left, middle, right) {
+        const zones = {
+            left: left,
+            middle: middle,
+            right: right
+        };
+        return root.withBarConfigs(config => {
+            const usedSingletons = [];
+            let changed = false;
+            ["left", "middle", "right"].forEach(zone => {
+                const next = root.normalizeLaneEntries(Array.isArray(zones[zone]) ? zones[zone] : [], zone, usedSingletons);
+                const mine = config.lanes[zone];
+                const same = next.length === mine.length && next.every((entry, index) => entry.widgetId === mine[index].widgetId);
+                if (!same) {
+                    config.lanes[zone] = next;
+                    changed = true;
+                }
+            });
+            return changed;
+        });
+    }
+
+    // Entry-level replacement (drag reorder): entries arrive verbatim from
+    // the live views, so uids, enabled and overrides survive. Unknown ids
+    // and duplicate singletons drop.
+    function setBarLaneEntries(zone, entries) {
+        const target = root.canonicalZone(zone);
+        return root.withBarConfigs(config => {
+            const usedSingletons = [];
+            ["left", "middle", "right"].forEach(other => {
+                if (other !== target)
+                    config.lanes[other].forEach(entry => {
+                        if (BarWidgetDefaults.SINGLETON_IDS.indexOf(entry.widgetId) !== -1)
+                            usedSingletons.push(entry.widgetId);
+                    });
+            });
+            const source = Array.isArray(entries) ? entries : [];
+            const next = [];
+            for (let index = 0; index < source.length; index += 1) {
+                const entry = source[index];
+                if (!entry || typeof entry !== "object")
+                    continue;
+                const canonical = BarWidgetDefaults.canonicalId(entry.widgetId);
+                if (!BarWidgetDefaults.isKnownId(canonical))
+                    continue;
+                if (BarWidgetDefaults.SINGLETON_IDS.indexOf(canonical) !== -1) {
+                    if (usedSingletons.indexOf(canonical) !== -1)
+                        continue;
+                    usedSingletons.push(canonical);
+                }
+                const overrides = entry.overrides && typeof entry.overrides === "object" && !Array.isArray(entry.overrides) ? entry.overrides : {};
+                next.push({
+                    widgetId: canonical,
+                    uid: typeof entry.uid === "string" && entry.uid !== "" ? entry.uid : canonical + "@" + target + index + "+",
+                    enabled: entry.enabled !== false,
+                    overrides: overrides
+                });
+            }
+            const mine = config.lanes[target];
+            const same = JSON.stringify(next) === JSON.stringify(mine);
+            if (!same)
+                config.lanes[target] = next;
+            return !same;
+        });
+    }
+
+    function setBarEntryEnabled(uid, enabled) {
+        return root.withBarConfigs(config => {
+            let changed = false;
+            ["left", "middle", "right"].forEach(zone => {
+                config.lanes[zone].forEach(entry => {
+                    if (entry.uid === uid && entry.enabled !== (enabled === true)) {
+                        entry.enabled = enabled === true;
+                        changed = true;
+                    }
+                });
+            });
+            return changed;
+        });
+    }
+
+    // D4b write side of the injection protocol: an override equal to the
+    // widget default removes itself, so the file only ever carries real
+    // deviations.
+    function setBarEntryOverride(uid, key, value) {
+        return root.withBarConfigs(config => {
+            let changed = false;
+            ["left", "middle", "right"].forEach(zone => {
+                config.lanes[zone].forEach(entry => {
+                    if (entry.uid !== uid)
+                        return;
+                    const defaults = BarWidgetDefaults.DEFAULTS[entry.widgetId] || {};
+                    const next = Object.assign({}, entry.overrides);
+                    if (value === undefined || value === null || value === defaults[key])
+                        delete next[key];
+                    else
+                        next[key] = value;
+                    if (JSON.stringify(next) !== JSON.stringify(entry.overrides)) {
+                        entry.overrides = next;
+                        changed = true;
+                    }
+                });
+            });
+            return changed;
+        });
     }
 
     function barZoneComponents(zone) {
-        if (zone === "left" || zone === "leading")
-            return root.barLayoutLeft;
-        if (zone === "middle" || zone === "center")
-            return root.barLayoutMiddle;
-        if (zone === "right" || zone === "trailing")
-            return root.barLayoutRight;
-        return [];
+        return root.laneIds(zone);
     }
 
     function moveBarComponent(componentId, targetZone, targetIndex) {
-        const id = String(componentId || "");
-        if (root.barComponentIds.indexOf(id) === -1)
+        const canonical = BarWidgetDefaults.canonicalId(componentId);
+        if (!BarWidgetDefaults.isKnownId(canonical))
             return false;
-
-        const leading = root.barLayoutLeft.filter(value => value !== id);
-        const middle = root.barLayoutMiddle.filter(value => value !== id);
-        const trailing = root.barLayoutRight.filter(value => value !== id);
-
-        const target = (targetZone === "middle" || targetZone === "center") ? middle : (targetZone === "right" || targetZone === "trailing") ? trailing : leading;
-
-        const numericIndex = Number(targetIndex);
-        const insertionIndex = isFinite(numericIndex) ? Math.max(0, Math.min(target.length, Math.round(numericIndex))) : target.length;
-        target.splice(insertionIndex, 0, id);
-
-        root.barLayoutLeft = root.normalizedBarLayoutIds(leading);
-        root.barLayoutMiddle = middle;
-        root.barLayoutRight = root.normalizedBarLayoutIds(trailing);
-        root.barLeadingComponents = root.barLayoutLeft.slice();
-        root.barTrailingComponents = root.barLayoutRight.slice();
-        root.save();
-        return true;
+        const zone = root.canonicalZone(targetZone);
+        return root.withBarConfigs(config => {
+            const moving = [];
+            Object.keys(config.lanes).forEach(source => {
+                config.lanes[source] = config.lanes[source].filter(entry => {
+                    if (entry.widgetId === canonical) {
+                        moving.push(entry);
+                        return false;
+                    }
+                    return true;
+                });
+            });
+            const numericIndex = Number(targetIndex);
+            const insertionIndex = isFinite(numericIndex) ? Math.max(0, Math.min(config.lanes[zone].length, Math.round(numericIndex))) : config.lanes[zone].length;
+            if (moving.length === 0) {
+                // Not placed anywhere: move doubles as add — the island
+                // re-entry path (setIslandInLayout(true)) relies on it.
+                config.lanes[zone].splice(insertionIndex, 0, {
+                    widgetId: canonical,
+                    uid: canonical + "@" + zone + insertionIndex + "+" + Date.now(),
+                    enabled: true,
+                    overrides: {}
+                });
+                return true;
+            }
+            for (let index = 0; index < moving.length; index += 1)
+                config.lanes[zone].splice(insertionIndex + index, 0, moving[index]);
+            return true;
+        });
     }
 
     function removeBarComponent(componentId) {
-        const id = String(componentId || "");
-        if (root.barComponentIds.indexOf(id) === -1)
+        const canonical = BarWidgetDefaults.canonicalId(componentId);
+        if (!BarWidgetDefaults.isKnownId(canonical))
             return false;
-
-        const prevLen = root.barLayoutLeft.length + root.barLayoutMiddle.length + root.barLayoutRight.length;
-        root.barLayoutLeft = root.barLayoutLeft.filter(value => value !== id);
-        root.barLayoutMiddle = root.barLayoutMiddle.filter(value => value !== id);
-        root.barLayoutRight = root.barLayoutRight.filter(value => value !== id);
-        const nextLen = root.barLayoutLeft.length + root.barLayoutMiddle.length + root.barLayoutRight.length;
-        if (prevLen === nextLen)
-            return false;
-
-        root.barLeadingComponents = root.barLayoutLeft.slice();
-        root.barTrailingComponents = root.barLayoutRight.slice();
-        root.save();
-        return true;
+        return root.withBarConfigs(config => {
+            let removed = false;
+            Object.keys(config.lanes).forEach(zone => {
+                const next = config.lanes[zone].filter(entry => entry.widgetId !== canonical);
+                if (next.length !== config.lanes[zone].length)
+                    removed = true;
+                config.lanes[zone] = next;
+            });
+            return removed;
+        });
     }
 
     function toggleBarComponent(componentId, zone) {
-        const target = (zone === "middle" || zone === "center") ? root.barLayoutMiddle : (zone === "right" || zone === "trailing") ? root.barLayoutRight : root.barLayoutLeft;
+        const canonical = BarWidgetDefaults.canonicalId(componentId);
+        const target = root.canonicalZone(zone);
+        if (root.laneEntries(target).some(entry => entry.widgetId === canonical))
+            return root.removeBarComponent(canonical);
+        return root.moveBarComponent(canonical, target, root.laneEntries(target).length);
+    }
 
-        if (target.indexOf(componentId) !== -1)
-            return root.removeBarComponent(componentId);
+    // ---- entry-granular mutations (the settings card's chip operations) ---
 
-        return root.moveBarComponent(componentId, zone, target.length);
+    function addBarEntry(zone, widgetId, index) {
+        const canonical = BarWidgetDefaults.canonicalId(widgetId);
+        if (!BarWidgetDefaults.isKnownId(canonical))
+            return false;
+        const target = root.canonicalZone(zone);
+        return root.withBarConfigs(config => {
+            const usedSingletons = [];
+            config.lanes[target].forEach(entry => {
+                if (BarWidgetDefaults.SINGLETON_IDS.indexOf(entry.widgetId) !== -1)
+                    usedSingletons.push(entry.widgetId);
+            });
+            if (BarWidgetDefaults.SINGLETON_IDS.indexOf(canonical) !== -1 && usedSingletons.indexOf(canonical) !== -1)
+                return false;
+            const numericIndex = Number(index);
+            const insertionIndex = isFinite(numericIndex) ? Math.max(0, Math.min(config.lanes[target].length, Math.round(numericIndex))) : config.lanes[target].length;
+            config.lanes[target].splice(insertionIndex, 0, {
+                widgetId: canonical,
+                uid: canonical + "@" + target + insertionIndex + "+" + Date.now(),
+                enabled: true,
+                overrides: {}
+            });
+            return true;
+        });
+    }
+
+    function moveBarEntry(uid, zone, index) {
+        const target = root.canonicalZone(zone);
+        return root.withBarConfigs(config => {
+            let moving = null;
+            Object.keys(config.lanes).forEach(source => {
+                if (moving)
+                    return;
+                const at = config.lanes[source].findIndex(entry => entry.uid === uid);
+                if (at !== -1) {
+                    moving = config.lanes[source][at];
+                    config.lanes[source].splice(at, 1);
+                }
+            });
+            if (!moving)
+                return false;
+            const numericIndex = Number(index);
+            const insertionIndex = isFinite(numericIndex) ? Math.max(0, Math.min(config.lanes[target].length, Math.round(numericIndex))) : config.lanes[target].length;
+            config.lanes[target].splice(insertionIndex, 0, moving);
+            return true;
+        });
+    }
+
+    function removeBarEntry(uid) {
+        return root.withBarConfigs(config => {
+            let removed = false;
+            Object.keys(config.lanes).forEach(zone => {
+                const next = config.lanes[zone].filter(entry => entry.uid !== uid);
+                if (next.length !== config.lanes[zone].length)
+                    removed = true;
+                config.lanes[zone] = next;
+            });
+            return removed;
+        });
+    }
+
+    function toggleBarEntryEnabled(uid) {
+        return root.withBarConfigs(config => {
+            let changed = false;
+            Object.keys(config.lanes).forEach(zone => {
+                config.lanes[zone].forEach(entry => {
+                    if (entry.uid === uid) {
+                        entry.enabled = entry.enabled === false;
+                        changed = true;
+                    }
+                });
+            });
+            return changed;
+        });
     }
 
     // The drag layout only accepts widgets the bar actually renders. The set is
@@ -1723,6 +2030,10 @@ Singleton {
         return true;
     }
 
+    // Legacy lane read (pre-v3 files and hand-written configs): canonicalize
+    // aliases, drop unknown ids, dedupe. The v3 entry path
+    // (normalizeLaneEntries) is the live one; this stays for
+    // resolveBarLayouts and the migration seed.
     function normalizedBarLayoutIds(raw) {
         if (!Array.isArray(raw))
             return [];
@@ -1730,8 +2041,8 @@ Singleton {
         const seen = {};
         const out = [];
         raw.forEach(id => {
-            const candidate = String(id || "");
-            if (root.barLayoutAllowedIds.indexOf(candidate) === -1 || seen[candidate])
+            const candidate = BarWidgetDefaults.canonicalId(id);
+            if (!BarWidgetDefaults.isKnownId(candidate) || seen[candidate])
                 return;
 
             seen[candidate] = true;
@@ -1823,41 +2134,6 @@ Singleton {
             root.barSideMargin = clamped;
             root.save();
         }
-    }
-
-    function setBarLayouts(left, middle, right) {
-        const nextLeft = root.normalizedBarLayoutIds(left);
-        const nextMiddle = root.normalizedBarLayoutIds(middle);
-        const nextRight = root.normalizedBarLayoutIds(right);
-        let changed = false;
-        if (!root.arraysEqual(nextLeft, root.barLayoutLeft)) {
-            root.barLayoutLeft = nextLeft;
-            changed = true;
-        }
-        if (!root.arraysEqual(nextMiddle, root.barLayoutMiddle)) {
-            root.barLayoutMiddle = nextMiddle;
-            changed = true;
-        }
-        if (!root.arraysEqual(nextRight, root.barLayoutRight)) {
-            root.barLayoutRight = nextRight;
-            changed = true;
-        }
-        if (changed) {
-            root.barLeadingComponents = nextLeft.slice();
-            const combinedTrailing = [];
-            nextMiddle.forEach(id => {
-                if (combinedTrailing.indexOf(id) === -1 && nextLeft.indexOf(id) === -1)
-                    combinedTrailing.push(id);
-            });
-            nextRight.forEach(id => {
-                if (combinedTrailing.indexOf(id) === -1 && nextLeft.indexOf(id) === -1)
-                    combinedTrailing.push(id);
-            });
-            root.barTrailingComponents = combinedTrailing;
-            root.save();
-        }
-
-        return changed;
     }
 
     function normalizedQuickSettingsComponents(raw) {
@@ -2070,7 +2346,7 @@ Singleton {
     }
 
     function toJson() {
-        return {
+        const json = {
             "wallpaper": {
                 "bannerSource": root.bannerSource,
                 "folder": root.wallpaperFolder,
@@ -2179,61 +2455,7 @@ Singleton {
                     "digits": root.horizontalClockDigits
                 }
             },
-            "bar": {
-                "position": root.barPosition,
-                "autoHide": root.barAutoHide,
-                "screenList": root.barScreenList.slice(),
-                "showBackground": root.barShowBackground,
-                "cornerStyle": root.barCornerStyle,
-                "borderless": root.barBorderless,
-                "groupColor": root.barGroupColor,
-                "widgetStyles": root.barWidgetStyles.map(entry => Object.assign({}, entry)),
-                "dividerStyle": root.barDividerStyle,
-                "dividerSpacing": root.barDividerSpacing,
-                "showAppIcons": root.barShowAppIcons,
-                "alwaysShowNumbers": root.barAlwaysShowNumbers,
-                "workspaceIndicatorStyle": root.barWorkspaceIndicatorStyle,
-                "workspaceStyle": root.barWorkspaceStyle,
-                "workspaceShown": root.barWorkspaceShown,
-                "numberStyle": root.barWorkspaceNumberStyle,
-                "utilButtons": {
-                    "showScreenSnip": root.barShowScreenSnip,
-                    "showColorPicker": root.barShowColorPicker,
-                    "showKeyboardToggle": root.barShowKeyboardToggle,
-                    "showMicToggle": root.barShowMicToggle,
-                    "showWallpaperToggle": root.barShowWallpaperToggle,
-                    "showDarkModeToggle": root.barShowDarkModeToggle,
-                    "showPerformanceProfile": root.barShowPerformanceProfile
-                },
-                "resources": {
-                    "alwaysShowCpu": root.barShowCpu,
-                    "alwaysShowCpuTemp": root.barShowCpuTemp,
-                    "alwaysShowRam": root.barShowRam,
-                    "alwaysShowDisk": root.barShowDisk,
-                    "alwaysShowSwap": root.barShowSwap,
-                    "style": root.barResourceStyle,
-                    "showValue": root.barResourceShowValue
-                },
-                "showValues": root.barShowValues,
-                "showNames": root.barShowNames,
-                "barLeadingComponents": root.barLeadingComponents.slice(),
-                "barTrailingComponents": root.barTrailingComponents.slice(),
-                "barLayoutLeft": root.barLayoutLeft.slice(),
-                "barLayoutMiddle": root.barLayoutMiddle.slice(),
-                "barLayoutRight": root.barLayoutRight.slice(),
-                "barThickness": root.barThickness,
-                "verticalThickness": root.barVerticalThickness,
-                "edgeMargin": root.barEdgeMargin,
-                "sideMargin": root.barSideMargin,
-                "quickSettingsComponents": root.quickSettingsComponents.slice(),
-                "tray": {
-                    "pinnedItems": root.barTrayPinnedItems.slice(),
-                    "filterPassive": root.barTrayFilterPassive,
-                    "invertPinnedItems": root.barTrayInvertPinnedItems,
-                    "showItemId": root.barTrayShowItemId,
-                    "monochromeIcons": root.barTrayMonochromeIcons
-                }
-            },
+            "bar": root.barSectionJson(),
             "sidebar": {
                 "keepLoaded": root.keepSidebarsLoaded,
                 "dashboardSide": root.dashboardSidebarSide,
@@ -2243,8 +2465,153 @@ Singleton {
             "desktopCards": {
                 "gridSnapEnabled": root.desktopCardGridSnapEnabled,
                 "gridVisibleWhileDragging": root.desktopCardGridVisibleWhileDragging
+            },
+            "configVersion": ConfigMigrations.CURRENT_VERSION
+        };
+        // Minimal write: an all-default [bar] disappears entirely instead of
+        // serializing as a bare empty table header.
+        if (json.bar && Object.keys(json.bar).length === 0)
+            delete json.bar;
+        return json;
+    }
+
+    // ---- D4a [bar] minimal write -----------------------------------------
+    // The section only carries deviations from the defaults table; a fresh
+    // config writes no [bar] keys, one toggle writes exactly one key.
+    // barSectionDefaults() mirrors barSectionRaw()'s shape with the pristine
+    // property defaults — the fresh-boot empty-diff probe pins that the two
+    // never disagree.
+
+    function barSectionJson() {
+        return root.diffSparseSection(root.barSectionRaw(), root.barSectionDefaults());
+    }
+
+    function barSectionRaw() {
+        const sparseConfigs = root.sparseBarConfigs();
+        const section = {
+            "position": root.barPosition,
+            "autoHide": root.barAutoHide,
+            "screenList": root.barScreenList.slice(),
+            "showBackground": root.barShowBackground,
+            "cornerStyle": root.barCornerStyle,
+            "borderless": root.barBorderless,
+            "groupColor": root.barGroupColor,
+            "widgetStyles": root.barWidgetStyles.map(entry => Object.assign({}, entry)),
+            "dividerStyle": root.barDividerStyle,
+            "dividerSpacing": root.barDividerSpacing,
+            "showAppIcons": root.barShowAppIcons,
+            "alwaysShowNumbers": root.barAlwaysShowNumbers,
+            "workspaceIndicatorStyle": root.barWorkspaceIndicatorStyle,
+            "workspaceStyle": root.barWorkspaceStyle,
+            "workspaceShown": root.barWorkspaceShown,
+            "numberStyle": root.barWorkspaceNumberStyle,
+            "utilButtons": {
+                "showScreenSnip": root.barShowScreenSnip,
+                "showColorPicker": root.barShowColorPicker,
+                "showKeyboardToggle": root.barShowKeyboardToggle,
+                "showMicToggle": root.barShowMicToggle,
+                "showWallpaperToggle": root.barShowWallpaperToggle,
+                "showDarkModeToggle": root.barShowDarkModeToggle,
+                "showPerformanceProfile": root.barShowPerformanceProfile
+            },
+            "resources": {
+                "alwaysShowCpu": root.barShowCpu,
+                "alwaysShowCpuTemp": root.barShowCpuTemp,
+                "alwaysShowRam": root.barShowRam,
+                "alwaysShowDisk": root.barShowDisk,
+                "alwaysShowSwap": root.barShowSwap,
+                "style": root.barResourceStyle,
+                "showValue": root.barResourceShowValue
+            },
+            "showValues": root.barShowValues,
+            "showNames": root.barShowNames,
+            "barThickness": root.barThickness,
+            "verticalThickness": root.barVerticalThickness,
+            "edgeMargin": root.barEdgeMargin,
+            "sideMargin": root.barSideMargin,
+            "quickSettingsComponents": root.quickSettingsComponents.slice(),
+            "tray": {
+                "pinnedItems": root.barTrayPinnedItems.slice(),
+                "filterPassive": root.barTrayFilterPassive,
+                "invertPinnedItems": root.barTrayInvertPinnedItems,
+                "showItemId": root.barTrayShowItemId,
+                "monochromeIcons": root.barTrayMonochromeIcons
             }
         };
+        if (sparseConfigs)
+            section.configs = sparseConfigs;
+        return section;
+    }
+
+    function barSectionDefaults() {
+        return {
+            "position": "top",
+            "autoHide": false,
+            "screenList": [],
+            "showBackground": true,
+            "cornerStyle": 1,
+            "borderless": "pills",
+            "groupColor": "layer1",
+            "widgetStyles": [],
+            "dividerStyle": "rect",
+            "dividerSpacing": 4,
+            "showAppIcons": false,
+            "alwaysShowNumbers": true,
+            "workspaceIndicatorStyle": "dot",
+            "workspaceStyle": "default",
+            "workspaceShown": 10,
+            "numberStyle": "normal",
+            "utilButtons": {
+                "showScreenSnip": true,
+                "showColorPicker": true,
+                "showKeyboardToggle": false,
+                "showMicToggle": false,
+                "showWallpaperToggle": false,
+                "showDarkModeToggle": true,
+                "showPerformanceProfile": false
+            },
+            "resources": {
+                "alwaysShowCpu": true,
+                "alwaysShowCpuTemp": false,
+                "alwaysShowRam": true,
+                "alwaysShowDisk": false,
+                "alwaysShowSwap": false,
+                "style": "outline",
+                "showValue": false
+            },
+            "showValues": true,
+            "showNames": false,
+            "barThickness": root.defaultBarThickness,
+            "verticalThickness": root.defaultBarVerticalThickness,
+            "edgeMargin": 0,
+            "sideMargin": 0,
+            "quickSettingsComponents": root.defaultQuickSettingsComponents.slice(),
+            "tray": {
+                "pinnedItems": [],
+                "filterPassive": true,
+                "invertPinnedItems": true,
+                "showItemId": false,
+                "monochromeIcons": true
+            }
+        };
+    }
+
+    // Recursive default-diff: equal values drop, objects recurse, arrays
+    // compare by content. An object that diffs down to nothing becomes an
+    // empty object (the toJson wrapper deletes an all-empty [bar]).
+    function diffSparseSection(value, defaults) {
+        if (value === null || typeof value !== "object" || Array.isArray(value))
+            return JSON.stringify(value) === JSON.stringify(defaults) ? {} : value;
+        const out = {};
+        Object.keys(value).forEach(key => {
+            const diffed = root.diffSparseSection(value[key], defaults && typeof defaults === "object" ? defaults[key] : undefined);
+            if (diffed === null || diffed === undefined)
+                return;
+            if (typeof diffed === "object" && !Array.isArray(diffed) && Object.keys(diffed).length === 0)
+                return;
+            out[key] = diffed;
+        });
+        return out;
     }
 
     function configSection(value) {
@@ -2296,7 +2663,19 @@ Singleton {
     }
 
     function loadFromObject(parsed) {
-        const source = configSection(parsed);
+        // D4a version chain: runs before any section read — the v3 step
+        // reshapes the legacy [bar] layout keys into [[bar.configs]] lanes.
+        // The seed inputs (one-shot island seed, legacy island gate) are the
+        // same pure helpers the probe proves; the chain itself is idempotent
+        // and stamps configVersion.
+        const preSource = configSection(parsed);
+        const preIsland = configSection(preSource.island);
+        const migration = ConfigMigrations.migrateConfig(parsed, {
+            lanes: root.resolveBarLayouts(configSection(preSource.bar), preIsland, typeof preIsland.enabled === "boolean" ? preIsland.enabled : true)
+        });
+        root.configVersionDirty = root.configVersionDirty || migration.changed;
+
+        const source = configSection(migration.config);
         const wallpaper = configSection(source.wallpaper);
         const theme = configSection(source.theme);
         const effects = configSection(source.effects);
@@ -2379,11 +2758,9 @@ Singleton {
         root.shellBlurEnabled = typeof effects.shellBlurEnabled === "boolean" ? effects.shellBlurEnabled : false;
         root.shellBlurXray = typeof effects.shellBlurXray === "boolean" ? effects.shellBlurXray : true;
         // B9.3 legacy read: `enabled=false` used to hide the island while the
-        // layout still listed it. It is applied once after layout resolution;
-        // membership is the only truth from then on.
-        const legacyIslandEnabled = typeof island.enabled === "boolean" ? island.enabled : true;
+        // layout still listed it. The v3 migration applies it once (via
+        // resolveBarLayouts); membership is the only truth from then on.
         root.islandSatellite = normalizedOption(root.islandSatelliteOptions, island.satellite, "clock");
-        root.islandLayoutMigrated = island.layoutMigrated === true;
         root.islandHideDate = typeof island.hideDate === "boolean" ? island.hideDate : false;
         root.islandShowAvatar = typeof island.showAvatar === "boolean" ? island.showAvatar : true;
         root.islandShowMediaControls = typeof island.showMediaControls === "boolean" ? island.showMediaControls : false;
@@ -2450,18 +2827,13 @@ Singleton {
         root.barTrayInvertPinnedItems = typeof tray.invertPinnedItems === "boolean" ? tray.invertPinnedItems : true;
         root.barTrayShowItemId = tray.showItemId === true;
         root.barTrayMonochromeIcons = typeof tray.monochromeIcons === "boolean" ? tray.monochromeIcons : true;
-        const hasBarLayout = Array.isArray(bar.barLeadingComponents) || Array.isArray(bar.barTrailingComponents);
-        const barLayout = root.normalizedBarLayout(bar.barLeadingComponents, bar.barTrailingComponents, !hasBarLayout);
-        root.barLeadingComponents = barLayout.leading;
-        root.barTrailingComponents = barLayout.trailing;
-        const barLayouts = root.resolveBarLayouts(bar, island, legacyIslandEnabled);
-        root.barLayoutLeft = barLayouts.left;
-        root.barLayoutMiddle = barLayouts.middle;
-        root.barLayoutRight = barLayouts.right;
-        // The one-shot marker keeps a deliberately empty middle lane empty; a
-        // fresh/legacy config without the key arms it after this load.
-        if (barLayouts.migrated || typeof island.layoutMigrated !== "boolean")
-            root.islandLayoutMigrated = true;
+        // D4a truth: lanes live in [[bar.configs]] entries. A lane missing
+        // from storage reads as the default lane; an explicitly empty lane
+        // stays empty. The one-shot island seed spent itself in the v3
+        // migration for pre-v3 files, so the marker is always armed after
+        // this load.
+        root.barConfigs = root.normalizeBarConfigs(bar.configs);
+        root.islandLayoutMigrated = true;
         root.quickSettingsComponents = root.normalizedQuickSettingsComponents(bar.quickSettingsComponents);
         root.keepSidebarsLoaded = sidebar.keepLoaded === undefined ? true : !!sidebar.keepLoaded;
         root.sidebarPositions = SidebarPolicy.restoredPositions(sidebar);
@@ -2548,6 +2920,13 @@ Singleton {
             root.loadFromObject(ConfigService.rawConfig);
             root.loading = false;
             root.loaded = true;
+            // The version chain reshaped something: persist the migrated
+            // shape (and the configVersion stamp) once, right after the
+            // load that triggered it.
+            if (root.configVersionDirty) {
+                root.configVersionDirty = false;
+                root.save();
+            }
             root.settingsLoaded();
         }
     }
@@ -2558,6 +2937,10 @@ Singleton {
             root.loadFromObject(ConfigService.rawConfig);
             root.loading = false;
             root.loaded = true;
+            if (root.configVersionDirty) {
+                root.configVersionDirty = false;
+                root.save();
+            }
             root.settingsLoaded();
         }
     }

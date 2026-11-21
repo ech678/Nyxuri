@@ -18,7 +18,7 @@ Singleton {
     property bool loading: false
     property string lastError: ""
 
-    signal configLoaded()
+    signal configLoaded
     signal sectionChanged(string path, var data)
 
     function getSection(path, fallback) {
@@ -79,11 +79,7 @@ Singleton {
         }
         root.savePending = false;
         try {
-            let tomlText = "# ====================================================================\n"
-                + "# Nyxuri Shell Unified Configuration File\n"
-                + "# nyxuri-config-schema: 2\n"
-                + "# Automatically maintained; hand-edits are preserved on file reload.\n"
-                + "# ====================================================================\n\n";
+            let tomlText = "# ====================================================================\n" + "# Nyxuri Shell Unified Configuration File\n" + "# nyxuri-config-schema: 3\n" + "# Automatically maintained; hand-edits are preserved on file reload.\n" + "# ====================================================================\n\n";
             tomlText += Toml.stringify(root.rawConfig);
             configFile.setText(tomlText);
         } catch (e) {
@@ -132,7 +128,12 @@ Singleton {
         printErrors: false
         onLoaded: {
             const text = configProbe.text();
-            if (text.indexOf("# nyxuri-config-schema: 2") !== -1 && text.indexOf("[keystone") === -1)
+            // D4a: the stamp version tracks config.toml's configVersion key
+            // (schema 3 = [[bar.configs]]). Both 2 and 3 take the fast path —
+            // schema-2 files migrate in QML at load (ConfigMigrations), not
+            // through the legacy-JSON python helper.
+            const stamped = text.indexOf("# nyxuri-config-schema: 2") !== -1 || text.indexOf("# nyxuri-config-schema: 3") !== -1;
+            if (stamped && text.indexOf("[keystone") === -1)
                 root.storeReady = true;
             else
                 initProcess.running = true;

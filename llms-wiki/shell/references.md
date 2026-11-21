@@ -47,3 +47,14 @@ Bar 资源控件的补齐版本为 `pctrade/end4-pC` 提交 `b881970bfc25ff92b0f
 
 ## 5. 纯 QML 视觉参考：end-4 (`end4-pC`)
 - 本地已有 `shell/references/end4-pC/`（纯 QML 参考树，`.gitignore` 排除），历史上未单独立卷登记；来源与基准提交待考，检索用 `rg --no-ignore shell/references/end4-pC`。
+
+## 6. Bar 自定义引擎参考：dux-shell (`dux-shell`)
+- **上游来源**：[duxlabs-dev/dux-shell](https://github.com/duxlabs-dev/dux-shell)（DMS，MIT）
+- **基准提交**：`6933f9893334cfd742656950540aa0e6bd3940ff`（2026-11-07，本地 git 检出钉住）
+- **本地位置**：仓库根 `references/dux-shell/`（`.gitignore` 排除）；检索用 `rg --no-ignore references/dux-shell`。
+- **参考内容**（D4 卷，MIT 兼容直接 Fork & Trim）：「GUI 设置面板驱动」流派的 bar 自定义引擎——
+  `quickshell/Common/settings/SettingsSpec.js`（SPEC 表：def/coerce/onChange/persist + barConfigs 数组默认值）、
+  `quickshell/Common/settings/BarWidgetDefaults.js`（每部件默认值表 + `option()` 回退链 + `MIGRATED_GLOBALS` 显式键名映射）、
+  `quickshell/Modules/DBar/WidgetModel.js`（lane 字符串/对象混排 `normalize()` + `componentNames` 注册表）、
+  `OverflowLayout.js`/`SegmentRoles.js`/`DensityPresets.js`（D4c/D4d/D4e 来源件）。
+- **不搬清单**（ROADMAP D4 头注）：Go 后端、matugen 全量联动、插件市场与 lock、Frame、哥特切角、多合成器修补层。

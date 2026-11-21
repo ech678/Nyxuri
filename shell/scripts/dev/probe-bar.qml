@@ -14,6 +14,7 @@ import qs.commons.i18n
 import qs.services
 import qs.ui
 import "commons/BarGeometry.js" as BarGeometry
+import "services/ConfigMigrations.js" as ConfigMigrations
 
 ShellRoot {
     id: probeRoot
@@ -276,6 +277,29 @@ ShellRoot {
         return out ?? fallback;
     }
 
+    // Lane-filled probe helper: the raw lane arrays before BarContent's
+    // system filters, so a collapse failure can be attributed to the filter
+    // or to the geometry chain.
+    function rootLaneFilled(content) {
+        const lanes = {
+            "left": PersonalizationConfig.barLayoutEntriesLeft,
+            "middle": PersonalizationConfig.barLayoutEntriesMiddle,
+            "right": PersonalizationConfig.barLayoutEntriesRight
+        };
+        return {
+            "store": {
+                "left": lanes.left.map(entry => entry.widgetId + (entry.enabled === false ? ":off" : "")),
+                "middle": lanes.middle.map(entry => entry.widgetId + (entry.enabled === false ? ":off" : "")),
+                "right": lanes.right.map(entry => entry.widgetId + (entry.enabled === false ? ":off" : ""))
+            },
+            "effective": {
+                "left": (content.effectiveLeftLayout || []).map(entry => entry.widgetId),
+                "middle": (content.effectiveMiddleLayout || []).map(entry => entry.widgetId),
+                "right": (content.effectiveRightLayout || []).map(entry => entry.widgetId)
+            }
+        };
+    }
+
     function findWorkspace(item) {
         if (!item || !item.children)
             return null;
@@ -290,6 +314,26 @@ ShellRoot {
                 return nested;
         }
         return null;
+    }
+
+    // D4a: every loaded group carrying the widget name (duplicate ids are
+    // legal — spacers), in tree order.
+    function findGroups(item, name) {
+        const out = [];
+        const walk = current => {
+            if (!current || !current.children)
+                return;
+            for (let i = 0; i < current.children.length; i += 1) {
+                const child = current.children[i];
+                if (!child)
+                    continue;
+                if (child.widgetName === name && child.loadedWidget !== undefined && child.loadedWidget !== null)
+                    out.push(child);
+                walk(child);
+            }
+        };
+        walk(item);
+        return out;
     }
 
     function layout(): string {
@@ -348,9 +392,9 @@ ShellRoot {
             "vertical": vertical,
             "edge": PersonalizationConfig.barPosition,
             "lanes": {
-                "left": Array.from(barContent.effectiveLeftLayout || []),
-                "middle": Array.from(barContent.effectiveMiddleLayout || []),
-                "right": Array.from(barContent.effectiveRightLayout || [])
+                "left": (barContent.effectiveLeftLayout || []).map(entry => entry.widgetId),
+                "middle": (barContent.effectiveMiddleLayout || []).map(entry => entry.widgetId),
+                "right": (barContent.effectiveRightLayout || []).map(entry => entry.widgetId)
             },
             "geometry": geometry,
             "island": island,
@@ -373,6 +417,17 @@ ShellRoot {
 
         function ping(): string {
             return "PONG";
+        }
+
+        // D4a boot diagnostics: raw store state for fresh-file tracing.
+        function d4aBootState(): string {
+            return JSON.stringify({
+                "storeReady": ConfigService.storeReady,
+                "rawBar": ConfigService.rawConfig ? ConfigService.rawConfig.bar : null,
+                "configVersionDirty": PersonalizationConfig.configVersionDirty,
+                "barConfigs": PersonalizationConfig.barConfigs,
+                "laneViewLeft": PersonalizationConfig.barLayoutLeft
+            });
         }
 
         function windowMode(value: bool): string {
@@ -607,6 +662,131 @@ ShellRoot {
                 }, {
                     "layoutMigrated": true
                 }, false)
+            });
+        }
+
+        // D4a: the version chain on a legacy v2 shape. The legacy keys fold
+        // into [[bar.configs]], the divisor alias canonicalizes, the island
+        // seed spends itself exactly once, and a second run changes nothing.
+        function d4aMigration(): string {
+            const legacy = {
+                "bar": {
+                    "barLayoutLeft": ["launcherButton", "divisor"],
+                    "barLayoutMiddle": [],
+                    "barLayoutRight": ["clock"]
+                }
+            };
+            const seed = {
+                "lanes": PersonalizationConfig.resolveBarLayouts(legacy.bar, {}, true)
+            };
+            const first = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(legacy)), seed);
+            const second = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(first.config)), {
+                "lanes": PersonalizationConfig.resolveBarLayouts({}, {}, true)
+            });
+            const bar = first.config.bar;
+            return JSON.stringify({
+                "changed": first.changed,
+                "version": first.config.configVersion,
+                "lanes": bar.configs[0].lanes,
+                "aliasResolved": bar.configs[0].lanes.left.indexOf("separator") !== -1,
+                "islandSeeded": bar.configs[0].lanes.middle.indexOf("island") !== -1,
+                "legacyStripped": ["barLayoutLeft", "barLayoutMiddle", "barLayoutRight", "barLeadingComponents", "barTrailingComponents"].every(key => bar[key] === undefined),
+                "idempotent": second.changed === false && JSON.stringify(second.config.bar.configs) === JSON.stringify(bar.configs)
+            });
+        }
+
+        // D4a: minimal write. A defaults-equal [bar] serializes to nothing,
+        // one axis change writes exactly that key, and a disabled entry
+        // serializes as {id, enabled=false} while its default-equal sibling
+        // lane collapses to plain strings (or disappears).
+        function d4aPersistence(): string {
+            PersonalizationConfig.setBarLayouts(PersonalizationConfig.defaultBarLayoutLeft.slice(), PersonalizationConfig.defaultBarLayoutMiddle.slice(), PersonalizationConfig.defaultBarLayoutRight.slice());
+            const barDefault = PersonalizationConfig.toJson().bar;
+            PersonalizationConfig.setBarThickness(40);
+            const barOneKey = PersonalizationConfig.toJson().bar;
+            PersonalizationConfig.setBarThickness(PersonalizationConfig.defaultBarThickness);
+            const barRestored = PersonalizationConfig.toJson().bar;
+            PersonalizationConfig.setBarLayouts(["clock", "workspaces"], [], []);
+            PersonalizationConfig.toggleBarEntryEnabled(PersonalizationConfig.barLayoutEntriesLeft[0].uid);
+            const disabledSparse = PersonalizationConfig.sparseBarConfigs();
+            const disabledIds = PersonalizationConfig.barLayoutEnabledIds("left");
+            PersonalizationConfig.setBarLayouts(PersonalizationConfig.defaultBarLayoutLeft.slice(), PersonalizationConfig.defaultBarLayoutMiddle.slice(), PersonalizationConfig.defaultBarLayoutRight.slice());
+            return JSON.stringify({
+                "defaultEmpty": barDefault === undefined || Object.keys(barDefault).length === 0,
+                "singleKey": barOneKey !== undefined && Object.keys(barOneKey).length === 1 && barOneKey.barThickness === 40,
+                "restoredEmpty": barRestored === undefined || Object.keys(barRestored).length === 0,
+                "disabledSparse": disabledSparse,
+                "enabledViewDropsDisabled": JSON.stringify(disabledIds) === JSON.stringify(["workspaces"]),
+                "configVersion": PersonalizationConfig.toJson().configVersion
+            });
+        }
+
+        // D4a: entry objects drive the live bar, measured after the lane
+        // settles (set and dump are separate IPC calls — delegate rebuild
+        // must not race the measurement).
+        // Scene "spacers": disabled clock + two spacers (one with a size
+        // override). Scene "disabledOnly": a lane whose only entry is
+        // disabled must collapse like a self-hiding widget.
+        function d4aEntriesSet(scene: string): string {
+            if (scene === "disabledOnly") {
+                PersonalizationConfig.setBarLaneEntries("left", [
+                    {
+                        "widgetId": "clock",
+                        "enabled": false,
+                        "overrides": {}
+                    }
+                ]);
+            } else {
+                PersonalizationConfig.setBarLaneEntries("left", [
+                    {
+                        "widgetId": "clock",
+                        "enabled": false,
+                        "overrides": {}
+                    },
+                    {
+                        "widgetId": "spacer",
+                        "enabled": true,
+                        "overrides": {
+                            "size": 40
+                        }
+                    },
+                    {
+                        "widgetId": "spacer",
+                        "enabled": true,
+                        "overrides": {}
+                    }
+                ]);
+            }
+            PersonalizationConfig.setBarLaneEntries("middle", []);
+            PersonalizationConfig.setBarLaneEntries("right", []);
+            return "OK";
+        }
+
+        function d4aEntriesDump(): string {
+            const content = barLoader.item;
+            const clockGroups = content ? probeRoot.findGroups(content, "clock") : [];
+            const spacerGroups = content ? probeRoot.findGroups(content, "spacer") : [];
+            const spacerWidths = spacerGroups.map(group => Math.round(group.loadedWidget.width));
+            const result = JSON.stringify({
+                "disabledNotInstantiated": clockGroups.length === 0,
+                "laneCollapsed": content ? Math.round(content.laneLeftWidth) === 0 : false,
+                "laneLeftWidthRaw": content ? content.laneLeftWidth : null,
+                "laneLeftFilledRaw": content ? probeRoot.rootLaneFilled(content) : null,
+                "spacerCount": spacerGroups.length,
+                "spacerWidths": spacerWidths,
+                "overrideInjected": spacerWidths.indexOf(40) !== -1,
+                "defaultSize": spacerWidths.indexOf(20) !== -1
+            });
+            PersonalizationConfig.setBarLayouts(PersonalizationConfig.defaultBarLayoutLeft.slice(), PersonalizationConfig.defaultBarLayoutMiddle.slice(), PersonalizationConfig.defaultBarLayoutRight.slice());
+            return result;
+        }
+
+        // D4a: duplicate singleton ids drop during normalize.
+        function d4aSingletons(): string {
+            const dropped = PersonalizationConfig.setBarLayouts([], ["island", "island", "clock"], []) && PersonalizationConfig.barLayoutMiddle.filter(id => id === "island").length === 1;
+            PersonalizationConfig.setBarLayouts(PersonalizationConfig.defaultBarLayoutLeft.slice(), PersonalizationConfig.defaultBarLayoutMiddle.slice(), PersonalizationConfig.defaultBarLayoutRight.slice());
+            return JSON.stringify({
+                "singletonDropped": dropped
             });
         }
 

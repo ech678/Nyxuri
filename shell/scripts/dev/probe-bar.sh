@@ -80,6 +80,12 @@ cleanup() {
     fi
     rm -rf -- "${tmp}"
 }
+
+# NYXURI_PROBE_KEEP=1 keeps the staged tree for post-mortem inspection.
+if [[ ${NYXURI_PROBE_KEEP:-0} == 1 ]]; then
+    unset -f cleanup
+    printf 'probe tree kept at: %s\n' "${tmp}" >&2
+fi
 trap cleanup EXIT INT TERM
 
 cp -a "${shell_root}" "${tmp}/shell" || exit 3
@@ -181,6 +187,8 @@ for _ in $(seq 1 150); do
     fi
     sleep 0.1
 done
+# D4a boot evidence: the store state the first layout sweep sees.
+ipc d4aBootState >&2 2>/dev/null || true
 for style in 0 1 2 3 4 5; do
     if ! ipc cornerStyle "${style}" >/dev/null; then
         printf 'error: could not set cornerStyle %s\n' "${style}" >&2
@@ -296,6 +304,34 @@ if ipc systemIconsHoverSlot volume >/dev/null 2>&1; then
     ipc systemIconsUnhoverSlot volume >/dev/null 2>&1 || true
     sleep 0.3
     d2_unhover_state=$(ipc systemIcons 2>/dev/null || true)
+fi
+
+# D4a: entry engine (live geometry + injection), version-chain migration and
+# the minimal-write serializer, all through the same store the UI uses. Set
+# and dump are separate IPC rounds so delegate rebuild settles first.
+d4a_entries_spacers=""
+d4a_entries_disabled=""
+d4a_singletons=""
+d4a_migration_state=""
+d4a_persistence_state=""
+if ipc d4aEntriesSet spacers >/dev/null 2>&1; then
+    sleep 0.6
+    d4a_entries_spacers=$(ipc d4aEntriesDump 2>/dev/null || true)
+    sleep 0.4
+fi
+if ipc d4aEntriesSet disabledOnly >/dev/null 2>&1; then
+    sleep 0.6
+    d4a_entries_disabled=$(ipc d4aEntriesDump 2>/dev/null || true)
+    sleep 0.4
+fi
+if ipc d4aSingletons >/dev/null 2>&1; then
+    d4a_singletons=$(ipc d4aSingletons 2>/dev/null || true)
+fi
+if ipc d4aMigration >/dev/null 2>&1; then
+    d4a_migration_state=$(ipc d4aMigration 2>/dev/null || true)
+fi
+if ipc d4aPersistence >/dev/null 2>&1; then
+    d4a_persistence_state=$(ipc d4aPersistence 2>/dev/null || true)
 fi
 
 # B9.6 visual baseline: right-click style chain (store write -> BarGroup
@@ -418,9 +454,14 @@ if ipc cornerStyle 1 >/dev/null 2>&1; then
         b97_screen_empty=$(ipc layout 2>/dev/null || true)
     fi
     b97_persisted=false
-    if grep -q 'showBackground' "${tmp}/config/nyxuri/config.toml" 2>/dev/null; then
+    # Minimal write (D4a): default-equal keys no longer land in config.toml,
+    # so write-through is proven with one axis pushed off its default.
+    ipc b97Set barShowMicToggle true >/dev/null 2>&1 || true
+    sleep 0.3
+    if grep -q 'showMicToggle' "${tmp}/config/nyxuri/config.toml" 2>/dev/null; then
         b97_persisted=true
     fi
+    ipc b97Set barShowMicToggle false >/dev/null 2>&1 || true
 fi
 
 # Tray surface (B9.1): publish fake StatusNotifierItems on the probe's own
@@ -625,7 +666,7 @@ ipc cornerStyle 1 >/dev/null 2>&1 || true
 ipc scene default >/dev/null 2>&1 || true
 ipc reload >/dev/null 2>&1 || true
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" <<'PY'
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" <<'PY'
 import json
 import re
 import sys
@@ -640,7 +681,9 @@ import sys
  b97_roman, b97_screen_named, b97_screen_empty, b97_persisted,
  d1_island_media_path, d1_weather_on, d1_weather_off, d1_visualizer_on,
  d1_visualizer_off, d1_date_fmt, d1_date_reset, d1_media_geom,
- d2_immediate_state, d2_settled_state, d2_unhover_state) = sys.argv[1:53]
+ d2_immediate_state, d2_settled_state, d2_unhover_state,
+ d4a_entries_spacers, d4a_entries_disabled, d4a_singletons,
+ d4a_migration_state, d4a_persistence_state) = sys.argv[1:59]
 
 
 def load_tsv(path):
@@ -1301,12 +1344,46 @@ data_text_ok = bool(
 )
 d2_ok = intent_delay_ok and expansion_width_ok and unhover_collapse_ok and data_text_ok
 
+# D4a: entry engine + version-chain migration + minimal write.
+d4a_spacers = json.loads(d4a_entries_spacers) if d4a_entries_spacers.strip() else {}
+d4a_disabled = json.loads(d4a_entries_disabled) if d4a_entries_disabled.strip() else {}
+d4a_singleton_state = json.loads(d4a_singletons) if d4a_singletons.strip() else {}
+d4a_migration = json.loads(d4a_migration_state) if d4a_migration_state.strip() else {}
+d4a_persistence = json.loads(d4a_persistence_state) if d4a_persistence_state.strip() else {}
+d4a_entries_ok = bool(
+    d4a_spacers.get("disabledNotInstantiated") is True
+    and d4a_spacers.get("spacerCount") == 2
+    and d4a_spacers.get("overrideInjected") is True
+    and d4a_spacers.get("defaultSize") is True
+    and d4a_disabled.get("disabledNotInstantiated") is True
+    and d4a_disabled.get("laneCollapsed") is True
+    and d4a_disabled.get("spacerCount") == 0
+    and d4a_singleton_state.get("singletonDropped") is True
+)
+d4a_migration_ok = bool(
+    d4a_migration.get("changed") is True
+    and d4a_migration.get("version") == 3
+    and d4a_migration.get("aliasResolved") is True
+    and d4a_migration.get("islandSeeded") is True
+    and d4a_migration.get("legacyStripped") is True
+    and d4a_migration.get("idempotent") is True
+)
+d4a_persistence_ok = bool(
+    d4a_persistence.get("defaultEmpty") is True
+    and d4a_persistence.get("singleKey") is True
+    and d4a_persistence.get("restoredEmpty") is True
+    and d4a_persistence.get("enabledViewDropsDisabled") is True
+    and d4a_persistence.get("configVersion") == 3
+    and isinstance(d4a_persistence.get("disabledSparse"), list)
+)
+d4a_ok = d4a_entries_ok and d4a_migration_ok and d4a_persistence_ok
+
 ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
       and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok
       and island_restored_ok and island_migration_ok and idle_face_ok
       and avatar_optional_ok
       and tray_ok and peripheral_ok and vertical_ok and margin_ok and window_ok
-      and b96_ok and b97_ok and d1_ok and d2_ok)
+      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok)
 report = {
     "ok": ok,
     "mode": mode,
@@ -1422,6 +1499,36 @@ report = {
         "dataText": data_text_ok,
         "volumeExpandedWidth": d2_vol_set.get("width"),
         "volumeDataText": d2_vol_set.get("dataText"),
+    },
+    "d4a": {
+        "ok": d4a_ok,
+        "entries": {
+            "ok": d4a_entries_ok,
+            "disabledNotInstantiated": d4a_spacers.get("disabledNotInstantiated") and d4a_disabled.get("disabledNotInstantiated"),
+            "laneCollapsed": d4a_disabled.get("laneCollapsed"),
+            "laneLeftWidthRaw": d4a_disabled.get("laneLeftWidthRaw"),
+            "laneStateRaw": d4a_disabled.get("laneLeftFilledRaw"),
+            "spacerCount": d4a_spacers.get("spacerCount"),
+            "spacerWidths": d4a_spacers.get("spacerWidths"),
+            "singletonDropped": d4a_singleton_state.get("singletonDropped"),
+        },
+        "migration": {
+            "ok": d4a_migration_ok,
+            "version": d4a_migration.get("version"),
+            "aliasResolved": d4a_migration.get("aliasResolved"),
+            "islandSeeded": d4a_migration.get("islandSeeded"),
+            "legacyStripped": d4a_migration.get("legacyStripped"),
+            "idempotent": d4a_migration.get("idempotent"),
+        },
+        "persistence": {
+            "ok": d4a_persistence_ok,
+            "defaultEmpty": d4a_persistence.get("defaultEmpty"),
+            "singleKey": d4a_persistence.get("singleKey"),
+            "restoredEmpty": d4a_persistence.get("restoredEmpty"),
+            "enabledViewDropsDisabled": d4a_persistence.get("enabledViewDropsDisabled"),
+            "disabledSparse": d4a_persistence.get("disabledSparse"),
+            "configVersion": d4a_persistence.get("configVersion"),
+        },
     },
     "b96": {
         "ok": b96_ok,

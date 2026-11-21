@@ -30,6 +30,13 @@ ColumnLayout {
 
     readonly property bool horizontalBar: PersonalizationConfig.barPosition === "top" || PersonalizationConfig.barPosition === "bottom"
 
+    // D4a: the shared catalog (label/icon registration point) replaces the
+    // services-side option list; displayName resolves lazily so
+    // construction order cannot blank the labels.
+    BarWidgetCatalog {
+        id: widgetCatalog
+    }
+
     Layout.fillWidth: true
     spacing: NexusStyle.padding.extraSmall / 2
 
@@ -106,12 +113,14 @@ ColumnLayout {
                 id: leadingField
 
                 Layout.fillWidth: true
-                values: PersonalizationConfig.barLayoutLeft
-                options: PersonalizationConfig.barComponentOptions
+                values: PersonalizationConfig.barLayoutEntriesLeft
+                options: widgetCatalog.options()
+                allowDuplicates: true
                 zone: "left"
                 dragCoordinator: root.zoneCoordinator
-                onToggled: componentId => PersonalizationConfig.toggleBarComponent(componentId, zone)
-                onRemoved: componentId => PersonalizationConfig.removeBarComponent(componentId)
+                onToggled: componentId => PersonalizationConfig.addBarEntry(zone, componentId)
+                onRemoved: entryKey => PersonalizationConfig.removeBarEntry(entryKey)
+                onEnabledToggled: entryKey => PersonalizationConfig.toggleBarEntryEnabled(entryKey)
             }
         }
     }
@@ -143,12 +152,14 @@ ColumnLayout {
                 id: middleField
 
                 Layout.fillWidth: true
-                values: PersonalizationConfig.barLayoutMiddle
-                options: PersonalizationConfig.barComponentOptions
+                values: PersonalizationConfig.barLayoutEntriesMiddle
+                options: widgetCatalog.options()
+                allowDuplicates: true
                 zone: "middle"
                 dragCoordinator: root.zoneCoordinator
-                onToggled: componentId => PersonalizationConfig.toggleBarComponent(componentId, zone)
-                onRemoved: componentId => PersonalizationConfig.removeBarComponent(componentId)
+                onToggled: componentId => PersonalizationConfig.addBarEntry(zone, componentId)
+                onRemoved: entryKey => PersonalizationConfig.removeBarEntry(entryKey)
+                onEnabledToggled: entryKey => PersonalizationConfig.toggleBarEntryEnabled(entryKey)
             }
         }
     }
@@ -181,12 +192,14 @@ ColumnLayout {
                 id: trailingField
 
                 Layout.fillWidth: true
-                values: PersonalizationConfig.barLayoutRight
-                options: PersonalizationConfig.barComponentOptions
+                values: PersonalizationConfig.barLayoutEntriesRight
+                options: widgetCatalog.options()
+                allowDuplicates: true
                 zone: "right"
                 dragCoordinator: root.zoneCoordinator
-                onToggled: componentId => PersonalizationConfig.toggleBarComponent(componentId, zone)
-                onRemoved: componentId => PersonalizationConfig.removeBarComponent(componentId)
+                onToggled: componentId => PersonalizationConfig.addBarEntry(zone, componentId)
+                onRemoved: entryKey => PersonalizationConfig.removeBarEntry(entryKey)
+                onEnabledToggled: entryKey => PersonalizationConfig.toggleBarEntryEnabled(entryKey)
             }
         }
     }

@@ -23,6 +23,10 @@ Item {
     property bool paintBackground: true
     property color bgColor: Appearance.colors.colPrimaryContainer
     property string widgetName: ""
+    // D4a injection protocol: the lane entry flows through the group into
+    // the loaded widget (the Loader's onLoaded pushes it). The group itself
+    // still keys its style overrides by widgetName.
+    property var widgetEntry: null
 
     readonly property string borderlessMode: Config.options?.bar.borderless ?? "pills"
     readonly property bool styleEditable: !root.isMaterial && root.paintBackground && root.widgetName !== ""

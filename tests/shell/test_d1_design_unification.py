@@ -127,11 +127,12 @@ class D1WeatherWiringTest(unittest.TestCase):
         self.assertNotIn("Icons.getWeatherIcon(", popup)
 
     def test_weather_and_visualizer_whitelisted(self):
-        config = read(os.path.join(SHELL, "services", "PersonalizationConfig.qml"))
-        self.assertIn('"weather", "visualizer"]', config)
-        content = read(os.path.join(BAR_DIR, "BarContent.qml"))
-        self.assertIn('"weather": "./WeatherBar.qml"', content)
-        self.assertIn('"visualizer": "./Visualizer.qml"', content)
+        defaults = read(os.path.join(SHELL, "services", "BarWidgetDefaults.js"))
+        self.assertIn('"weather"', defaults)
+        self.assertIn('"visualizer"', defaults)
+        files = read(os.path.join(BAR_DIR, "BarWidgetFiles.js"))
+        self.assertIn('weather: "WeatherBar.qml"', files)
+        self.assertIn('visualizer: "Visualizer.qml"', files)
 
 
 class DateFormatKeyTest(unittest.TestCase):

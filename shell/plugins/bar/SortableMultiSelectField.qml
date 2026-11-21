@@ -9,9 +9,15 @@ FocusScope {
     id: root
 
     property var options: []
+    // Values are plain id strings OR bar lane entry objects
+    // {widgetId, uid, enabled} (D4a). Entry values render an enabled toggle
+    // and identify chips by uid so duplicate ids (spacers) stay distinct.
     property var values: []
     property string zone: ""
     property var dragCoordinator: null
+    // Bar lanes allow the same widget more than once (spacers); pools
+    // (quick settings) keep every id unique.
+    property bool allowDuplicates: false
     property int highlightedIndex: 0
     property bool expanded: false
     property real fieldHeight: 40
@@ -23,15 +29,42 @@ FocusScope {
     readonly property Item popupParentItem: root.Window.window ? root.Window.window.contentItem : null
     readonly property real menuPadding: 6
     readonly property real menuGap: 6
-    readonly property var availableOptions: options.filter(option => {
-        return values.indexOf(optionValue(option)) === -1;
+    readonly property var usedIds: {
+        const used = [];
+        const source = Array.isArray(root.values) ? root.values : [];
+        for (let index = 0; index < source.length; index += 1) {
+            const id = root.valueId(source[index]);
+            if (used.indexOf(id) === -1)
+                used.push(id);
+        }
+        return used;
+    }
+    readonly property var availableOptions: allowDuplicates ? options : options.filter(option => {
+        return root.usedIds.indexOf(root.optionValue(option)) === -1;
     })
     readonly property int visibleMenuItemCount: Math.min(Math.max(1, maxVisibleItems), Math.max(1, availableOptions.length))
     readonly property real listTargetHeight: Math.max(itemHeight + menuPadding * 2, Math.ceil(availableOptions.length / 2) * (itemHeight + menuItemSpacing) + menuPadding * 2)
     readonly property bool dragActive: dragCoordinator && dragCoordinator.dragActive
+    readonly property bool entryValues: {
+        const source = Array.isArray(root.values) ? root.values : [];
+        return source.length > 0 && source[0] && typeof source[0] === "object";
+    }
 
     signal toggled(string componentId)
-    signal removed(string componentId)
+    signal removed(string entryKey)
+    signal enabledToggled(string entryKey)
+
+    function valueId(value) {
+        return value && typeof value === "object" ? String(value.widgetId || "") : String(value || "");
+    }
+
+    function valueKey(value) {
+        return value && typeof value === "object" ? String(value.uid || value.widgetId || "") : String(value || "");
+    }
+
+    function valueEnabled(value) {
+        return !(value && typeof value === "object" && value.enabled === false);
+    }
 
     function optionValue(option) {
         return option && typeof option === "object" ? String(option.value || "") : String(option || "");
@@ -87,6 +120,7 @@ FocusScope {
                     chipModel.move(currentIndex, index, 1);
 
                 chipModel.setProperty(index, "componentId", entry.componentId);
+                chipModel.setProperty(index, "enabled", entry.enabled);
                 chipModel.setProperty(index, "placeholder", entry.placeholder);
             }
         }
@@ -100,20 +134,21 @@ FocusScope {
         const source = Array.isArray(root.values) ? root.values : [];
         for (let index = 0; index < source.length; index += 1) {
             entries.push({
-                "entryKey": source[index],
-                "componentId": source[index],
+                "entryKey": root.valueKey(source[index]),
+                "componentId": root.valueId(source[index]),
+                "enabled": root.valueEnabled(source[index]),
                 "placeholder": false
             });
         }
         root.synchronizeEntries(entries);
     }
 
-    function showDropPreview(componentId, sourceZone, targetZone, targetIndex) {
+    function showDropPreview(componentKey, sourceZone, targetZone, targetIndex) {
         const source = Array.isArray(root.values) ? root.values : [];
         const entries = [];
         for (let index = 0; index < source.length; index += 1) {
             const value = source[index];
-            const isDraggedComponent = value === componentId;
+            const isDraggedComponent = root.valueKey(value) === componentKey;
             const movingWithinThisZone = root.zone === sourceZone && root.zone === targetZone;
             if (isDraggedComponent && movingWithinThisZone)
                 continue;
@@ -122,16 +157,19 @@ FocusScope {
                 continue;
 
             entries.push({
-                "entryKey": value,
-                "componentId": value,
+                "entryKey": root.valueKey(value),
+                "componentId": root.valueId(value),
+                "enabled": root.valueEnabled(value),
                 "placeholder": false
             });
         }
         if (root.zone === targetZone) {
             const insertionIndex = Math.max(0, Math.min(entries.length, targetIndex));
+            const draggedId = root.dragCoordinator ? root.dragCoordinator.componentId : "";
             entries.splice(insertionIndex, 0, {
-                "entryKey": componentId,
-                "componentId": componentId,
+                "entryKey": "preview",
+                "componentId": draggedId,
+                "enabled": true,
                 "placeholder": true
             });
         }
@@ -354,9 +392,13 @@ FocusScope {
                     required property string entryKey
                     required property string componentId
                     required property bool placeholder
-                    readonly property bool ownsActiveDrag: root.dragActive && root.dragCoordinator && root.dragCoordinator.componentId === chipDelegate.componentId && root.dragCoordinator.sourceZone === root.zone
-                    readonly property bool isDragged: root.dragActive && root.dragCoordinator.componentId === componentId && !placeholder
-                    readonly property real naturalWidth: Math.max(88, chipLabel.implicitWidth + 70)
+                    required property bool enabled
+                    // D4a: identity is the entry uid (duplicate widget ids are
+                    // legal), so only the dragged chip hides.
+                    readonly property bool ownsActiveDrag: root.dragActive && root.dragCoordinator && root.dragCoordinator.componentUid === chipDelegate.entryKey && root.dragCoordinator.sourceZone === root.zone
+                    readonly property bool isDragged: root.dragActive && root.dragCoordinator && root.dragCoordinator.componentUid === chipDelegate.entryKey && !placeholder
+                    readonly property bool canToggleEnabled: root.entryValues && !placeholder
+                    readonly property real naturalWidth: Math.max(88, chipLabel.implicitWidth + (chipDelegate.canToggleEnabled ? 94 : 70))
 
                     width: placeholder && root.dragCoordinator ? root.dragCoordinator.dragWidth : isDragged ? 0 : naturalWidth
                     height: chipList.height
@@ -370,7 +412,9 @@ FocusScope {
                         anchors.centerIn: parent
                         radius: Appearance.rounding.small
                         color: chipDelegate.placeholder ? Appearance.colors.colLayer2Active : chipHover.hovered ? Appearance.colors.colPrimaryContainerHover : Appearance.colors.colPrimaryContainer
-                        opacity: chipDelegate.placeholder ? 0.45 : 1
+                        // A disabled entry keeps its slot and geometry, only
+                        // the surface recedes (D4a enabled axis).
+                        opacity: chipDelegate.placeholder ? 0.45 : chipDelegate.enabled ? 1 : 0.45
 
                         MaterialSymbol {
                             id: chipIcon
@@ -398,10 +442,40 @@ FocusScope {
 
                             anchors {
                                 left: chipIcon.right
-                                right: closeButton.left
+                                right: chipDelegate.canToggleEnabled ? enabledToggle.left : closeButton.left
                                 leftMargin: 6
                                 rightMargin: 4
                                 verticalCenter: parent.verticalCenter
+                            }
+                        }
+
+                        Item {
+                            id: enabledToggle
+
+                            anchors.right: closeButton.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 24
+                            height: 30
+                            visible: chipDelegate.canToggleEnabled
+
+                            MaterialSymbol {
+                                anchors.centerIn: parent
+                                text: chipDelegate.enabled ? "visibility" : "visibility_off"
+                                iconSize: 16
+                                fill: 0
+                                color: Appearance.colors.colOnPrimaryContainer
+                            }
+
+                            MouseArea {
+                                id: enabledMouse
+
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: mouse => {
+                                    mouse.accepted = true;
+                                    root.enabledToggled(chipDelegate.entryKey);
+                                }
                             }
                         }
 
@@ -429,7 +503,7 @@ FocusScope {
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: mouse => {
                                     mouse.accepted = true;
-                                    root.removed(chipDelegate.componentId);
+                                    root.removed(chipDelegate.entryKey);
                                 }
                             }
                         }
@@ -456,13 +530,13 @@ FocusScope {
                         DragHandler {
                             id: dragHandler
 
-                            enabled: root.dragCoordinator !== null && (!chipDelegate.placeholder || chipDelegate.ownsActiveDrag) && (!closeMouse.containsMouse || chipDelegate.ownsActiveDrag)
+                            enabled: root.dragCoordinator !== null && (!chipDelegate.placeholder || chipDelegate.ownsActiveDrag) && (!closeMouse.containsMouse || chipDelegate.ownsActiveDrag) && (!enabledMouse.containsMouse || chipDelegate.ownsActiveDrag)
                             target: null
                             dragThreshold: 8
                             onActiveChanged: {
                                 if (active)
-                                    root.dragCoordinator.beginDrag(root, chipDelegate.componentId, root.labelFor(chipDelegate.componentId), root.iconFor(chipDelegate.componentId), chipDelegate.naturalWidth, centroid.scenePosition);
-                                else if (root.dragCoordinator && root.dragCoordinator.dragActive && root.dragCoordinator.componentId === chipDelegate.componentId)
+                                    root.dragCoordinator.beginDrag(root, chipDelegate.entryKey, chipDelegate.componentId, root.labelFor(chipDelegate.componentId), root.iconFor(chipDelegate.componentId), chipDelegate.naturalWidth, centroid.scenePosition);
+                                else if (root.dragCoordinator && root.dragCoordinator.dragActive && root.dragCoordinator.componentUid === chipDelegate.entryKey)
                                     root.dragCoordinator.finishDrag();
                             }
                             onTranslationChanged: {

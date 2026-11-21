@@ -10,11 +10,12 @@ import qs.services
 // DashboardBarLayoutCard: three lanes (left / middle / right) plus an "available"
 // pool. Widgets are dragged between lanes or dropped on the pool to remove them.
 //
-// The widget ids come from DashboardBarWidgets, which is restricted to widgets the
-// bar actually renders (shell/plugins/bar/BarComponentLoader.qml), so a dropped id
-// always maps to a real component. The committed layout is written through
-// PersonalizationConfig.setBarLayouts — the UI never assigns the config
-// properties directly.
+// The widget ids come from the unified BarWidgetCatalog (D4a), which is
+// restricted to widgets the bar actually renders, so a dropped id always
+// maps to a real component. The committed layout is written through
+// PersonalizationConfig.setBarLayouts — the id-array replace API — so this
+// editor does not preserve per-entry enabled/override state (that lives in
+// the Bar settings page).
 DashboardCard {
     id: root
 
@@ -23,7 +24,10 @@ DashboardCard {
     property var tileShape: MaterialShapeCanvas.Shape.Gem
 
     // Static catalog of arrangeable widgets.
-    DashboardBarWidgets {
+    // D4a: the unified catalog (shell/ui/BarWidgetCatalog.qml) replaces the
+    // dashboard-private widget list; ids/labels/icons are now registered in
+    // exactly one place.
+    BarWidgetCatalog {
         id: barWidgets
     }
 
@@ -66,9 +70,9 @@ DashboardCard {
         barWidgets.all.forEach(w => {
             if (!used[w.id])
                 out.push({
-                             id: w.id,
-                             gap: false
-                         });
+                    id: w.id,
+                    gap: false
+                });
         });
         return out;
     }
@@ -80,9 +84,9 @@ DashboardCard {
         // The drop slot is drawn by each Chip instead (dropSlot below), so the
         // model stays identical to the config for the whole drag.
         return baseItems(laneId).map(id => ({
-            id: id,
-            gap: false
-        }));
+                    id: id,
+                    gap: false
+                }));
     }
 
     function refreshLanes() {
@@ -98,10 +102,10 @@ DashboardCard {
 
     function beginDrag(widgetId, lane, slot, pos, width) {
         root.drag = {
-        id: widgetId,
-        from: lane,
-        fromIndex: slot
-    };
+            id: widgetId,
+            from: lane,
+            fromIndex: slot
+        };
         root.dragWidth = width;
         root.pointerX = pos.x;
         root.pointerY = pos.y;
@@ -116,14 +120,14 @@ DashboardCard {
     function insertIndex(lane, x, y) {
         let before = 0;
         for (let i = 0; i < lane.chipRepeater.count; i += 1) {
-        const chip = lane.chipRepeater.itemAt(i);
-        if (!chip || chip.isGap || chip.beingDragged)
-        continue;
-        const c = chip.mapToItem(root, chip.width / 2, chip.height / 2);
-        const half = chip.height / 2;
-        if (c.y < y - half || (Math.abs(c.y - y) <= half && c.x < x))
-        before += 1;
-    }
+            const chip = lane.chipRepeater.itemAt(i);
+            if (!chip || chip.isGap || chip.beingDragged)
+                continue;
+            const c = chip.mapToItem(root, chip.width / 2, chip.height / 2);
+            const half = chip.height / 2;
+            if (c.y < y - half || (Math.abs(c.y - y) <= half && c.x < x))
+                before += 1;
+        }
         return before;
     }
 
@@ -131,29 +135,29 @@ DashboardCard {
         root.hoverLane = "";
         root.hoverIndex = 0;
         for (let i = 0; i < laneRepeater.count; i += 1) {
-        const lane = laneRepeater.itemAt(i);
-        if (lane && root.containsPoint(lane, root.pointerX, root.pointerY)) {
-        root.hoverLane = lane.laneId;
-        root.hoverIndex = root.insertIndex(lane, root.pointerX, root.pointerY);
-        return;
-    }
-    }
+            const lane = laneRepeater.itemAt(i);
+            if (lane && root.containsPoint(lane, root.pointerX, root.pointerY)) {
+                root.hoverLane = lane.laneId;
+                root.hoverIndex = root.insertIndex(lane, root.pointerX, root.pointerY);
+                return;
+            }
+        }
         if (root.containsPoint(poolRect, root.pointerX, root.pointerY))
-        root.hoverLane = "pool";
+            root.hoverLane = "pool";
     }
 
     function removeWidget(lane, slot) {
         if (lane === "pool" || lane === "")
-        return;
+            return;
         const cur = baseItems(lane).slice();
         if (slot < 0 || slot >= cur.length)
-        return;
+            return;
         cur.splice(slot, 1);
         const next = {
-        left: baseItems("left").slice(),
-        middle: baseItems("middle").slice(),
-        right: baseItems("right").slice()
-    };
+            left: baseItems("left").slice(),
+            middle: baseItems("middle").slice(),
+            right: baseItems("right").slice()
+        };
         next[lane] = cur;
         PersonalizationConfig.setBarLayouts(next.left, next.middle, next.right);
         root.refreshLanes();
@@ -161,7 +165,7 @@ DashboardCard {
 
     function finishDrag() {
         if (root.drag === null)
-        return;
+            return;
         const d = root.drag;
         // Capture before clearing: the callLater callback below runs after
         // hoverLane is reset, and reading root.hoverLane there always saw "".
@@ -169,29 +173,29 @@ DashboardCard {
         const dropIndex = root.hoverIndex;
         root.drag = null;
         Qt.callLater(() => {
-        const next = {
-        left: baseItems("left").slice(),
-        middle: baseItems("middle").slice(),
-        right: baseItems("right").slice()
-    };
-        if (d.from !== "pool" && next[d.from])
-        next[d.from].splice(d.fromIndex, 1);
-        if (dropLane === "pool") {
-        // Dropped on the pool: remove the widget entirely.
-    } else if (dropLane === "left" || dropLane === "middle" || dropLane === "right") {
-        next[dropLane].splice(dropIndex, 0, d.id);
-    } else {
-        // Dropped on empty space: cancel, keep the widget where it was.
-        if (d.from !== "pool" && next[d.from])
-        next[d.from].splice(d.fromIndex, 0, d.id);
-    }
-        PersonalizationConfig.setBarLayouts(next.left, next.middle, next.right);
-        root.refreshLanes();
-    });
+            const next = {
+                left: baseItems("left").slice(),
+                middle: baseItems("middle").slice(),
+                right: baseItems("right").slice()
+            };
+            if (d.from !== "pool" && next[d.from])
+                next[d.from].splice(d.fromIndex, 1);
+            if (dropLane === "pool") {
+                // Dropped on the pool: remove the widget entirely.
+            } else if (dropLane === "left" || dropLane === "middle" || dropLane === "right") {
+                next[dropLane].splice(dropIndex, 0, d.id);
+            } else {
+                // Dropped on empty space: cancel, keep the widget where it was.
+                if (d.from !== "pool" && next[d.from])
+                    next[d.from].splice(d.fromIndex, 0, d.id);
+            }
+            PersonalizationConfig.setBarLayouts(next.left, next.middle, next.right);
+            root.refreshLanes();
+        });
         root.hoverLane = "";
     }
 
-        // ---- visual primitives -------------------------------------------------
+    // ---- visual primitives -------------------------------------------------
 
     component Chip: Rectangle {
         property string widgetId: ""
@@ -207,8 +211,7 @@ DashboardCard {
         implicitHeight: 34
         implicitWidth: isGap ? root.dragWidth : Math.max(chipRow.implicitWidth, 16) + 24
         radius: height / 2
-        color: isGap ? "transparent" : (lane === "pool" ? Qt.rgba(1, 1, 1, 0.1) :
-        Appearance.colors.colSecondaryContainer)
+        color: isGap ? "transparent" : (lane === "pool" ? Qt.rgba(1, 1, 1, 0.1) : Appearance.colors.colSecondaryContainer)
 
         border.width: isGap ? 2 : 0
         border.color: Appearance.colors.colPrimary
@@ -216,85 +219,84 @@ DashboardCard {
         // reflow the lane and shift insertIndex targets mid-drag.
         opacity: beingDragged ? 0 : (isGap ? 0.7 : 1)
         Behavior on implicitWidth {
-        NumberAnimation {
-        duration: 160
-        easing.type: Easing.OutCubic
-    }
-    }
+            NumberAnimation {
+                duration: 160
+                easing.type: Easing.OutCubic
+            }
+        }
 
         // Row, not RowLayout: chip width comes from chipRow.implicitWidth, and a
         // RowLayout that is also anchored has its implicit size computed by the
         // anchor rather than by its children — that collapses the chip to the
         // icon and clips the label.
         Row {
-        id: chipRow
+            id: chipRow
 
-        visible: !isGap
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.verticalCenter: parent.verticalCenter
-        spacing: 6
+            visible: !isGap
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 6
 
-        MaterialSymbol {
-        text: info.icon
-        iconSize: 16
-        color: Appearance.colors.colOnSecondaryContainer
-    }
+            MaterialSymbol {
+                text: info.icon
+                iconSize: 16
+                color: Appearance.colors.colOnSecondaryContainer
+            }
 
-        StyledText {
-        text: barWidgets.displayName(info)
-        font.pixelSize: NexusStyle.font.bodySmall
-        color: Appearance.colors.colOnSecondaryContainer
-    }
-    }
+            StyledText {
+                text: barWidgets.displayName(info)
+                font.pixelSize: NexusStyle.font.bodySmall
+                color: Appearance.colors.colOnSecondaryContainer
+            }
+        }
 
         // Drop indicator drawn at this chip slot while the pointer hovers its
         // lane. Slot numbers here are model coordinates, which since the __gap__
         // removal are the same as config coordinates — insertIndex and
         // d.fromIndex finally live in one coordinate system.
         Rectangle {
-        visible: root.drag !== null && !ghost && !isGap && lane !== "pool" && root.laneHovered(lane) && slot
-        === root.hoverIndex
-        x: -parent.width / 2 - width / 2 - 3
-        anchors.verticalCenter: parent.verticalCenter
-        width: root.dragWidth
-        height: parent.height
-        radius: height / 2
-        color: "transparent"
-        border.width: 2
-        border.color: Appearance.colors.colPrimary
-        z: 60
-    }
+            visible: root.drag !== null && !ghost && !isGap && lane !== "pool" && root.laneHovered(lane) && slot === root.hoverIndex
+            x: -parent.width / 2 - width / 2 - 3
+            anchors.verticalCenter: parent.verticalCenter
+            width: root.dragWidth
+            height: parent.height
+            radius: height / 2
+            color: "transparent"
+            border.width: 2
+            border.color: Appearance.colors.colPrimary
+            z: 60
+        }
 
         MouseArea {
-        id: mouseArea
+            id: mouseArea
 
-        anchors.fill: parent
-        enabled: interactive && !isGap
-        preventStealing: true
-        acceptedButtons: Qt.LeftButton | Qt.RightButton
-        cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
-        onPressed: mouse => {
-        if (mouse.button === Qt.RightButton) {
-        root.removeWidget(lane, slot);
-        return;
-    }
-        const p = root.mapFromItem(mouseArea, mouse.x, mouse.y);
-        root.beginDrag(widgetId, lane, slot, p, width);
-    }
-        onPositionChanged: mouse => {
-        if (!pressed || root.drag === null || root.drag.id !== widgetId)
-        return;
-        const p = root.mapFromItem(mouseArea, mouse.x, mouse.y);
-        root.pointerX = p.x;
-        root.pointerY = p.y;
-        // No refreshLanes here: the model must stay untouched for the whole
-        // drag. Reassigning the array mid-drag re-evaluates the Repeater's
-        // model binding and can drop the delegate holding the mouse grab.
-        root.updateHover();
-    }
-        onReleased: () => root.finishDrag()
-        onCanceled: () => root.finishDrag()
-    }
+            anchors.fill: parent
+            enabled: interactive && !isGap
+            preventStealing: true
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+            onPressed: mouse => {
+                if (mouse.button === Qt.RightButton) {
+                    root.removeWidget(lane, slot);
+                    return;
+                }
+                const p = root.mapFromItem(mouseArea, mouse.x, mouse.y);
+                root.beginDrag(widgetId, lane, slot, p, width);
+            }
+            onPositionChanged: mouse => {
+                if (!pressed || root.drag === null || root.drag.id !== widgetId)
+                    return;
+                const p = root.mapFromItem(mouseArea, mouse.x, mouse.y);
+                root.pointerX = p.x;
+                root.pointerY = p.y;
+                // No refreshLanes here: the model must stay untouched for the whole
+                // drag. Reassigning the array mid-drag re-evaluates the Repeater's
+                // model binding and can drop the delegate holding the mouse grab.
+                root.updateHover();
+            }
+            onReleased: () => root.finishDrag()
+            onCanceled: () => root.finishDrag()
+        }
     }
 
     component Lane: Rectangle {
@@ -310,215 +312,214 @@ DashboardCard {
         border.width: root.laneHovered(laneId) ? 2 : 0
         border.color: Appearance.colors.colPrimary
         Behavior on color {
-        ColorAnimation {
-        duration: 150
-    }
-    }
+            ColorAnimation {
+                duration: 150
+            }
+        }
 
         ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: 12
-        spacing: 8
+            anchors.fill: parent
+            anchors.margins: 12
+            spacing: 8
 
-        StyledText {
-        text: laneLabel.toUpperCase()
-        font.pixelSize: NexusStyle.font.bodySmall
-        font.weight: Font.DemiBold
-        font.letterSpacing: 1.2
-        color: Appearance.colors.colSubtext
+            StyledText {
+                text: laneLabel.toUpperCase()
+                font.pixelSize: NexusStyle.font.bodySmall
+                font.weight: Font.DemiBold
+                font.letterSpacing: 1.2
+                color: Appearance.colors.colSubtext
+            }
+
+            Item {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                Flickable {
+                    id: laneFlick
+                    anchors.fill: parent
+                    contentWidth: flow.implicitWidth
+                    contentHeight: flow.implicitHeight
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
+
+                    Flow {
+                        id: flow
+
+                        width: parent.width
+                        spacing: 6
+                        move: Transition {
+                            NumberAnimation {
+                                properties: "x,y"
+                                duration: 200
+                                easing.type: Easing.OutBack
+                                easing.overshoot: 1.2
+                            }
+                        }
+
+                        Repeater {
+                            id: repeater
+
+                            model: laneRoot.model
+                            delegate: Chip {
+                                required property var modelData
+                                required property int index
+
+                                widgetId: modelData.id
+                                lane: laneRoot.laneId
+                                slot: index
+                                isGap: modelData.gap === true
+                            }
+                        }
+                    }
+                }
+
+                StyledText {
+                    visible: laneRoot.model && laneRoot.model.length === 0
+                    text: I18n.tr("Drop here")
+                    font.pixelSize: NexusStyle.font.bodyMedium
+                    color: Appearance.colors.colSubtext
+                    opacity: 0.6
+                    anchors.centerIn: parent
+                }
+            }
+        }
     }
 
-        Item {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
+    // ---- layout ------------------------------------------------------------
 
-        Flickable {
-        id: laneFlick
-        anchors.fill: parent
-        contentWidth: flow.implicitWidth
-        contentHeight: flow.implicitHeight
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
-
-        Flow {
-        id: flow
-
-        width: parent.width
-        spacing: 6
-        move: Transition {
-        NumberAnimation {
-        properties: "x,y"
-        duration: 200
-        easing.type: Easing.OutBack
-        easing.overshoot: 1.2
-    }
-    }
-
-        Repeater {
-        id: repeater
-
-        model: laneRoot.model
-        delegate: Chip {
-        required property var modelData
-        required property int index
-
-        widgetId: modelData.id
-        lane: laneRoot.laneId
-        slot: index
-        isGap: modelData.gap === true
-    }
-    }
-    }
-    }
-
-        StyledText {
-        visible: laneRoot.model && laneRoot.model.length === 0
-        text: I18n.tr("Drop here")
-        font.pixelSize: NexusStyle.font.bodyMedium
-        color: Appearance.colors.colSubtext
-        opacity: 0.6
-        anchors.centerIn: parent
-    }
-    }
-    }
-    }
-
-        // ---- layout ------------------------------------------------------------
-
-        ColumnLayout {
+    ColumnLayout {
         anchors.fill: parent
         anchors.margins: 16
         spacing: 12
 
         RowLayout {
-        spacing: 10
+            spacing: 10
 
-        MaterialShapeWrappedMaterialSymbol {
-        wrappedShape: root.tileShape
-        text: root.icon
-        iconSize: 24
-        fill: 1
-        padding: 10
-        color: Appearance.colors.colPrimary
-        colSymbol: Appearance.colors.colOnPrimary
-    }
+            MaterialShapeWrappedMaterialSymbol {
+                wrappedShape: root.tileShape
+                text: root.icon
+                iconSize: 24
+                fill: 1
+                padding: 10
+                color: Appearance.colors.colPrimary
+                colSymbol: Appearance.colors.colOnPrimary
+            }
 
-        ColumnLayout {
-        spacing: 2
+            ColumnLayout {
+                spacing: 2
 
-        StyledText {
-        text: root.title
-        font.pixelSize: NexusStyle.font.titleLarge
-        font.weight: Font.DemiBold
-        color: Appearance.colors.colOnLayer1
-    }
+                StyledText {
+                    text: root.title
+                    font.pixelSize: NexusStyle.font.titleLarge
+                    font.weight: Font.DemiBold
+                    color: Appearance.colors.colOnLayer1
+                }
 
-        StyledText {
-        text: I18n.tr("Drag widgets between lanes to arrange the bar")
-        font.pixelSize: NexusStyle.font.bodySmall
-        color: Appearance.colors.colSubtext
-    }
-    }
-    }
+                StyledText {
+                    text: I18n.tr("Drag widgets between lanes to arrange the bar")
+                    font.pixelSize: NexusStyle.font.bodySmall
+                    color: Appearance.colors.colSubtext
+                }
+            }
+        }
 
         RowLayout {
-        id: lanesRow
+            id: lanesRow
 
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-        spacing: 10
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            spacing: 10
 
-        Repeater {
-        id: laneRepeater
+            Repeater {
+                id: laneRepeater
 
-        model: [
-        {
-        id: "left",
-        label: I18n.tr("Left")
-    },
-        {
-        id: "middle",
-        label: I18n.tr("Middle")
-    },
-        {
-        id: "right",
-        label: I18n.tr("Right")
-    }
-        ]
+                model: [
+                    {
+                        id: "left",
+                        label: I18n.tr("Left")
+                    },
+                    {
+                        id: "middle",
+                        label: I18n.tr("Middle")
+                    },
+                    {
+                        id: "right",
+                        label: I18n.tr("Right")
+                    }
+                ]
 
-        delegate: Lane {
-        required property var modelData
-        laneId: modelData.id
-        laneLabel: modelData.label
-        model: modelData.id === "left" ? root.leftItems : modelData.id === "middle" ? root.middleItems : root.rightItems
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-    }
-    }
-    }
+                delegate: Lane {
+                    required property var modelData
+                    laneId: modelData.id
+                    laneLabel: modelData.label
+                    model: modelData.id === "left" ? root.leftItems : modelData.id === "middle" ? root.middleItems : root.rightItems
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                }
+            }
+        }
 
         Rectangle {
-        id: poolRect
+            id: poolRect
 
-        Layout.fillWidth: true
-        Layout.preferredHeight: Math.min(flowPool.implicitHeight + 48, 190)
-        radius: 20
-        color: Qt.rgba(1, 1, 1, 0.04)
-        border.width: root.drag !== null && root.hoverLane === "pool" ? 2 : 1
-        border.color: root.drag !== null && root.hoverLane === "pool" ? Appearance.colors.colError :
-        Appearance.colors.colOutlineVariant
+            Layout.fillWidth: true
+            Layout.preferredHeight: Math.min(flowPool.implicitHeight + 48, 190)
+            radius: 20
+            color: Qt.rgba(1, 1, 1, 0.04)
+            border.width: root.drag !== null && root.hoverLane === "pool" ? 2 : 1
+            border.color: root.drag !== null && root.hoverLane === "pool" ? Appearance.colors.colError : Appearance.colors.colOutlineVariant
 
-        ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: 12
-        spacing: 8
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 12
+                spacing: 8
 
-        StyledText {
-        text: I18n.tr("Available").toUpperCase()
-        font.pixelSize: NexusStyle.font.bodySmall
-        font.weight: Font.DemiBold
-        font.letterSpacing: 1.2
-        color: Appearance.colors.colSubtext
+                StyledText {
+                    text: I18n.tr("Available").toUpperCase()
+                    font.pixelSize: NexusStyle.font.bodySmall
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: 1.2
+                    color: Appearance.colors.colSubtext
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+
+                    Flickable {
+                        anchors.fill: parent
+                        contentWidth: flowPool.implicitWidth
+                        contentHeight: flowPool.implicitHeight
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
+
+                        Flow {
+                            id: flowPool
+
+                            width: parent.width
+                            spacing: 6
+
+                            Repeater {
+                                model: root.poolItems
+                                delegate: Chip {
+                                    required property var modelData
+                                    required property int index
+
+                                    widgetId: modelData.id
+                                    lane: "pool"
+                                    slot: index
+                                    isGap: false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
-        Item {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-
-        Flickable {
-        anchors.fill: parent
-        contentWidth: flowPool.implicitWidth
-        contentHeight: flowPool.implicitHeight
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
-
-        Flow {
-        id: flowPool
-
-        width: parent.width
-        spacing: 6
-
-        Repeater {
-        model: root.poolItems
-        delegate: Chip {
-        required property var modelData
-        required property int index
-
-        widgetId: modelData.id
-        lane: "pool"
-        slot: index
-        isGap: false
-    }
-    }
-    }
-    }
-    }
-    }
-    }
-    }
-
-        // Ghost chip that follows the pointer while dragging.
-        Chip {
+    // Ghost chip that follows the pointer while dragging.
+    Chip {
         visible: root.drag !== null
         ghost: true
         interactive: false
@@ -530,23 +531,23 @@ DashboardCard {
         y: root.pointerY - height / 2
     }
 
-        // Follow config edits (own writes and external ones) — refreshLanes is no
-        // longer driven solely by drag events.
-        Connections {
+    // Follow config edits (own writes and external ones) — refreshLanes is no
+    // longer driven solely by drag events.
+    Connections {
         target: PersonalizationConfig
 
-    function onBarLayoutLeftChanged() {
-        root.refreshLanes();
+        function onBarLayoutLeftChanged() {
+            root.refreshLanes();
+        }
+
+        function onBarLayoutMiddleChanged() {
+            root.refreshLanes();
+        }
+
+        function onBarLayoutRightChanged() {
+            root.refreshLanes();
+        }
     }
 
-    function onBarLayoutMiddleChanged() {
-        root.refreshLanes();
-    }
-
-    function onBarLayoutRightChanged() {
-        root.refreshLanes();
-    }
-    }
-
-        Component.onCompleted: root.refreshLanes()
-    }
+    Component.onCompleted: root.refreshLanes()
+}

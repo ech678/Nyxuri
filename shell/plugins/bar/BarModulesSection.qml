@@ -20,9 +20,10 @@ Item {
     signal islandRequested
 
     // end4 `isUsed`: widget-scoped setting rows only render while their
-    // widget actually sits in a lane.
+    // widget actually sits in a lane — a disabled entry is not instantiated,
+    // so it does not count as used (D4a).
     function layoutUses(componentId) {
-        return PersonalizationConfig.barLayoutLeft.includes(componentId) || PersonalizationConfig.barLayoutMiddle.includes(componentId) || PersonalizationConfig.barLayoutRight.includes(componentId);
+        return PersonalizationConfig.barLayoutEnabledIds("left").includes(componentId) || PersonalizationConfig.barLayoutEnabledIds("middle").includes(componentId) || PersonalizationConfig.barLayoutEnabledIds("right").includes(componentId);
     }
 
     // Above the tab-host default so the coordinator ghosts paint over the
@@ -288,7 +289,14 @@ Item {
         anchors.fill: parent
         z: 1000
         fields: [componentsCard.leadingField, componentsCard.middleField, componentsCard.trailingField]
-        onDropped: (componentId, targetZone, targetIndex) => PersonalizationConfig.moveBarComponent(componentId, targetZone, targetIndex)
+        // D4a: chip drags carry the entry uid (moves one instance with its
+        // enabled/override state); a uid-less drop is a pool add.
+        onDropped: (componentUid, componentId, targetZone, targetIndex) => {
+            if (componentUid !== "")
+                PersonalizationConfig.moveBarEntry(componentUid, targetZone, targetIndex);
+            else
+                PersonalizationConfig.addBarEntry(targetZone, componentId, targetIndex);
+        }
     }
 
     LayoutDragCoordinator {
@@ -297,6 +305,6 @@ Item {
         anchors.fill: parent
         z: 1001
         fields: [componentsCard.quickSettingsField]
-        onDropped: (componentId, targetZone, targetIndex) => PersonalizationConfig.moveQuickSettingsComponent(componentId, targetIndex)
+        onDropped: (componentUid, componentId, targetZone, targetIndex) => PersonalizationConfig.moveQuickSettingsComponent(componentId, targetIndex)
     }
 }

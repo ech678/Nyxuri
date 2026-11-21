@@ -18,6 +18,7 @@ import qs.services
 import qs.commons
 import qs.commons.i18n
 import qs.ui
+import "BarWidgetFiles.js" as BarWidgetFiles
 
 Item {
     id: root
@@ -52,61 +53,54 @@ Item {
     readonly property bool trayHasItems: SystemTray.items.values.length > 0
     readonly property bool batteryAvailable: Battery.available
 
-    function filterLayout(layout) {
-        let filtered = Array.from(layout ?? []);
+    // D4a: the lane model is normalized entry objects off the barConfigs
+    // truth. filterLayout keeps the system gates (no tray host without
+    // items, no battery widget without a battery) and now also drops
+    // entries the user disabled — a disabled widget is not instantiated,
+    // so its lane collapses like any other hidden widget.
+    function filterLayout(entries) {
+        let filtered = Array.from(entries ?? []).filter(entry => entry && entry.enabled !== false);
         // B9.3: the island is a layout member, not a second config gate.
         if (!root.trayHasItems)
-            filtered = filtered.filter(name => name !== "sysTray" && name !== "tray");
+            filtered = filtered.filter(entry => entry.widgetId !== "tray");
         if (!root.batteryAvailable)
-            filtered = filtered.filter(name => name !== "battery" && name !== "batteryIndicator");
+            filtered = filtered.filter(entry => entry.widgetId !== "battery");
         return filtered;
     }
 
-    readonly property var effectiveLeftLayout: filterLayout(Config.options.bar.m3.layouts.leftLayout)
-    readonly property var effectiveMiddleLayout: filterLayout(Config.options.bar.m3.layouts.middleLayout)
-    readonly property var effectiveRightLayout: filterLayout(Config.options.bar.m3.layouts.rightLayout)
+    readonly property var effectiveLeftLayout: filterLayout(PersonalizationConfig.barLayoutEntriesLeft)
+    readonly property var effectiveMiddleLayout: filterLayout(PersonalizationConfig.barLayoutEntriesMiddle)
+    readonly property var effectiveRightLayout: filterLayout(PersonalizationConfig.barLayoutEntriesRight)
     readonly property bool leftLaneFilled: root.effectiveLeftLayout.length > 0
     readonly property bool centerLaneFilled: root.effectiveMiddleLayout.length > 0
     readonly property bool rightLaneFilled: root.effectiveRightLayout.length > 0
 
-    function getWidgetUrl(name) {
-        if (!name)
+    function getWidgetUrl(id) {
+        const file = BarWidgetFiles.fileFor(id);
+        if (!file) {
+            // Normalization rejects unknown ids at load, so this is a
+            // registration regression, not a user-config problem.
+            console.warn("[BarContent] no component registered for widget id:", id);
             return "";
-        const map = {
-            "island": "./DynamicIsland.qml",
-            "clock": "./ClockWidget.qml",
-            "clockWidget": "./ClockWidget.qml",
-            "tray": "./SysTray.qml",
-            "sysTray": "./SysTray.qml",
-            "systemMonitor": "./Resources.qml",
-            "resources": "./Resources.qml",
-            "weather": "./WeatherBar.qml",
-            "visualizer": "./Visualizer.qml",
-            "battery": "./BatteryIndicator.qml",
-            "batteryIndicator": "./BatteryIndicator.qml",
-            "systemIcons": "./SystemIcons.qml",
-            "quickSettings": "./UtilButtons.qml",
-            "utilButtons": "./UtilButtons.qml",
-            "launcherButton": "./LauncherButton.qml",
-            "powerButton": "./PowerButton.qml",
-            "divisor": "./Divisor.qml",
-            "divider": "./Divisor.qml",
-            "workspaces": "./Workspaces.qml",
-            "activeWindow": "./ActiveWindow.qml",
-            "media": "./Media.qml"
-        };
-        if (map[name])
-            return Qt.resolvedUrl(map[name]);
-        let formattedName = name.charAt(0).toUpperCase() + name.slice(1);
-        return Qt.resolvedUrl("./" + formattedName + ".qml");
+        }
+        return Qt.resolvedUrl("./" + file);
+    }
+
+    // D4a property-injection protocol: hosts push the lane entry into
+    // widgets that declare `widgetEntry`; the widget resolves its own axes
+    // through BarWidgetDefaults.option() and never touches storage.
+    function injectWidgetEntry(loader, entry) {
+        if (loader.item && loader.item.widgetEntry !== undefined)
+            loader.item.widgetEntry = entry;
     }
 
     function shouldPaintMaterialPill(name) {
         if (!root.isMaterial)
             return false;
         // end4 baseline + "island": the island paints its own capsule
-        // (paintBackground: false) and must not eat a group tint.
-        const blacklist = ["workspaces", "divisor", "powerButton", "docktoPanel", "leftSidebarButton", "rightSidebarButton", "activeWindow", "dynamicIsland", "island", "avatar"];
+        // (paintBackground: false) and must not eat a group tint. D4a:
+        // "divisor" renamed to "separator" (canonical id).
+        const blacklist = ["workspaces", "separator", "powerButton", "docktoPanel", "leftSidebarButton", "rightSidebarButton", "activeWindow", "dynamicIsland", "island", "avatar"];
         return !blacklist.includes(name);
     }
 
@@ -194,7 +188,7 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         // end4: when the island occupies the middle lane the frame hugs it
         // (-4/+8) at full height instead of the +10 padding and inset height.
-        readonly property bool islandInMiddle: PersonalizationConfig.islandInLayout && root.effectiveMiddleLayout.includes("island")
+        readonly property bool islandInMiddle: PersonalizationConfig.islandInLayout && root.effectiveMiddleLayout.some(entry => entry.widgetId === "island")
         width: absoluteCenter.hasContent ? (centerPill.islandInMiddle ? (Config.options.bar.cornerStyle === 1 ? middleRow.implicitWidth + 8 : middleRow.implicitWidth - 4) : middleRow.implicitWidth + 10) : 0
         height: parent.height - (!centerPill.islandInMiddle && Config.options.bar.cornerStyle === 1 ? Config.options.bar.m3.gapsOut * 2 : 0)
         color: root.isMaterial ? "transparent" : Appearance.colors.colLayer0
@@ -309,10 +303,11 @@ Item {
                         BarGroup {
                             Layout.fillHeight: true
                             currentIndex: index
-                            widgetName: modelData
+                            widgetName: modelData.widgetId
+                            widgetEntry: modelData
                             totalCount: root.effectiveLeftLayout.length
-                            paintMaterialPill: root.shouldPaintMaterialPill(modelData)
-                            bgColor: root.getMaterialPillColor(modelData)
+                            paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
+                            bgColor: root.getMaterialPillColor(modelData.widgetId)
                             Loader {
                                 Layout.fillHeight: true
                                 // The hidden branch keeps its (empty) groups so
@@ -320,7 +315,8 @@ Item {
                                 // not instantiate widgets: a second island stole
                                 // islandHost and doubled service consumers.
                                 active: root.isMaterial
-                                source: root.getWidgetUrl(modelData)
+                                source: root.getWidgetUrl(modelData.widgetId)
+                                onLoaded: root.injectWidgetEntry(this, modelData)
                             }
                         }
                     }
@@ -354,12 +350,14 @@ Item {
                     BarGroup {
                         Layout.fillHeight: true
                         currentIndex: index
-                        widgetName: modelData
+                        widgetName: modelData.widgetId
+                        widgetEntry: modelData
                         totalCount: root.effectiveLeftLayout.length
                         Loader {
                             Layout.fillHeight: true
                             active: !root.isMaterial
-                            source: root.getWidgetUrl(modelData)
+                            source: root.getWidgetUrl(modelData.widgetId)
+                            onLoaded: root.injectWidgetEntry(this, modelData)
                         }
                     }
                 }
@@ -419,11 +417,12 @@ Item {
                         BarGroup {
                             Layout.fillHeight: true
                             currentIndex: index
-                            widgetName: modelData
-                            paintBackground: modelData !== "island"
+                            widgetName: modelData.widgetId
+                            widgetEntry: modelData
+                            paintBackground: modelData.widgetId !== "island"
                             totalCount: root.effectiveMiddleLayout.length
-                            paintMaterialPill: root.shouldPaintMaterialPill(modelData)
-                            bgColor: root.getMaterialPillColor(modelData)
+                            paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
+                            bgColor: root.getMaterialPillColor(modelData.widgetId)
                             Loader {
                                 Layout.fillHeight: true
                                 // The hidden branch keeps its (empty) groups so
@@ -431,7 +430,8 @@ Item {
                                 // not instantiate widgets: a second island stole
                                 // islandHost and doubled service consumers.
                                 active: root.isMaterial
-                                source: root.getWidgetUrl(modelData)
+                                source: root.getWidgetUrl(modelData.widgetId)
+                                onLoaded: root.injectWidgetEntry(this, modelData)
                             }
                         }
                     }
@@ -465,13 +465,15 @@ Item {
                     BarGroup {
                         Layout.fillHeight: true
                         currentIndex: index
-                        widgetName: modelData
-                        paintBackground: modelData !== "island"
+                        widgetName: modelData.widgetId
+                        widgetEntry: modelData
+                        paintBackground: modelData.widgetId !== "island"
                         totalCount: root.effectiveMiddleLayout.length
                         Loader {
                             Layout.fillHeight: true
                             active: !root.isMaterial
-                            source: root.getWidgetUrl(modelData)
+                            source: root.getWidgetUrl(modelData.widgetId)
+                            onLoaded: root.injectWidgetEntry(this, modelData)
                         }
                     }
                 }
@@ -529,10 +531,11 @@ Item {
                         BarGroup {
                             Layout.fillHeight: true
                             currentIndex: index
-                            widgetName: modelData
+                            widgetName: modelData.widgetId
+                            widgetEntry: modelData
                             totalCount: root.effectiveRightLayout.length
-                            paintMaterialPill: root.shouldPaintMaterialPill(modelData)
-                            bgColor: root.getMaterialPillColor(modelData)
+                            paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
+                            bgColor: root.getMaterialPillColor(modelData.widgetId)
                             Loader {
                                 Layout.fillHeight: true
                                 // The hidden branch keeps its (empty) groups so
@@ -540,7 +543,8 @@ Item {
                                 // not instantiate widgets: a second island stole
                                 // islandHost and doubled service consumers.
                                 active: root.isMaterial
-                                source: root.getWidgetUrl(modelData)
+                                source: root.getWidgetUrl(modelData.widgetId)
+                                onLoaded: root.injectWidgetEntry(this, modelData)
                             }
                         }
                     }
@@ -564,12 +568,14 @@ Item {
                     BarGroup {
                         Layout.fillHeight: true
                         currentIndex: index
-                        widgetName: modelData
+                        widgetName: modelData.widgetId
+                        widgetEntry: modelData
                         totalCount: root.effectiveRightLayout.length
                         Loader {
                             Layout.fillHeight: true
                             active: !root.isMaterial
-                            source: root.getWidgetUrl(modelData)
+                            source: root.getWidgetUrl(modelData.widgetId)
+                            onLoaded: root.injectWidgetEntry(this, modelData)
                         }
                     }
                 }

@@ -135,6 +135,30 @@ class BarRuntimeProbeTest(unittest.TestCase):
         self.assertIn("headphones", icons["fakeIcons"])
         self.assertEqual(icons["fakeCritical"], 1)
 
+        # D4a bar customization engine: entry objects drive instantiation
+        # (disabled collapses, overrides inject, duplicates coexist), the
+        # v2->v3 version chain reshapes legacy layout keys once, and the
+        # minimal writer keeps the [bar] section sparse.
+        d4a = report["d4a"]
+        self.assertTrue(d4a["ok"], d4a)
+        self.assertTrue(d4a["entries"]["disabledNotInstantiated"], d4a["entries"])
+        self.assertTrue(d4a["entries"]["laneCollapsed"], d4a["entries"])
+        self.assertEqual(d4a["entries"]["spacerCount"], 2)
+        self.assertIn(40, d4a["entries"]["spacerWidths"],
+                      "the spacer size override did not reach the widget")
+        self.assertIn(20, d4a["entries"]["spacerWidths"],
+                      "the spacer default size did not resolve")
+        self.assertTrue(d4a["entries"]["singletonDropped"],
+                        "a duplicate island entry was not dropped")
+        self.assertTrue(d4a["migration"]["aliasResolved"], d4a["migration"])
+        self.assertTrue(d4a["migration"]["islandSeeded"], d4a["migration"])
+        self.assertTrue(d4a["migration"]["legacyStripped"], d4a["migration"])
+        self.assertTrue(d4a["migration"]["idempotent"], d4a["migration"])
+        self.assertTrue(d4a["persistence"]["defaultEmpty"], d4a["persistence"])
+        self.assertTrue(d4a["persistence"]["singleKey"], d4a["persistence"])
+        self.assertTrue(d4a["persistence"]["restoredEmpty"], d4a["persistence"])
+        self.assertTrue(d4a["persistence"]["enabledViewDropsDisabled"], d4a["persistence"])
+
         # B9.4 vertical bar: both edges evaluate real geometry with the island
         # filtered out, and the Float style boost lands on the vertical axis.
         vertical = report["vertical"]

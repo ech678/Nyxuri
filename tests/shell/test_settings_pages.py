@@ -665,18 +665,21 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
         for owner in (
             "PersonalizationConfig.setBarShowNames(",
             "PersonalizationConfig.setBarShowValues(",
-            "PersonalizationConfig.toggleBarComponent(",
-            "PersonalizationConfig.removeBarComponent(",
+            "PersonalizationConfig.addBarEntry(",
+            "PersonalizationConfig.removeBarEntry(",
+            "PersonalizationConfig.toggleBarEntryEnabled(",
             "PersonalizationConfig.toggleQuickSettingsComponent(",
             "PersonalizationConfig.removeQuickSettingsComponent(",
-            "PersonalizationConfig.barLayoutLeft",
-            "PersonalizationConfig.barLayoutMiddle",
-            "PersonalizationConfig.barLayoutRight",
+            "PersonalizationConfig.barLayoutEntriesLeft",
+            "PersonalizationConfig.barLayoutEntriesMiddle",
+            "PersonalizationConfig.barLayoutEntriesRight",
             "PersonalizationConfig.quickSettingsComponents",
         ):
             self.assertIn(owner, card, f"business owner dropped: {owner}")
-        self.assertIn("PersonalizationConfig.moveBarComponent(", modules,
-                      "business owner dropped: moveBarComponent")
+        self.assertIn("PersonalizationConfig.moveBarEntry(", modules,
+                      "business owner dropped: moveBarEntry")
+        self.assertIn("PersonalizationConfig.addBarEntry(", modules,
+                      "business owner dropped: addBarEntry (uid-less pool drops)")
         self.assertIn("PersonalizationConfig.moveQuickSettingsComponent(", modules,
                       "business owner dropped: moveQuickSettingsComponent")
 

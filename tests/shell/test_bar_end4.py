@@ -5,9 +5,9 @@ Verifies:
   - No bare import qs statements in the promoted components
   - BarGroup.qml has trimmed dead paths (BarGroupStylePopup, widgetStyles) and manages child backgroundVisible
   - Divisor.qml supports rect/dot/space styles and connects to PersonalizationConfig
-  - BarContent.qml registers "divisor" and "island" in its widget URL map
+  - BarWidgetFiles.js registers "separator" (Divisor.qml), "island" and "spacer" (D4a)
   - DynamicIsland.qml wires isMaterial to PersonalizationConfig.barCornerStyle
-  - PersonalizationConfig defines barCornerStyles, barBorderlessModes, barDividerStyles, and includes "divisor"
+  - PersonalizationConfig defines barCornerStyles, barBorderlessModes, barDividerStyles, whitelist via BarWidgetDefaults.IDS
   - BarContent.qml implements 3-lane cornerStyle, centerOnly mode, and material pill wrapping
   - HorizontalBarWindow.qml and VerticalBarWindow.qml implement roundDecorators and dynamic exclusiveThickness
 """
@@ -87,10 +87,14 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertNotIn("hostScale", content, "the iNiR compression clamp is retired (NaN source)")
         self.assertNotIn("centerHostX", content, "the iNiR compression clamp is retired (NaN source)")
         self.assertIn('"island"', content, "island must be in the material-pill blacklist")
-        self.assertIn("bar.m3.layouts", content)
+        # D4a: lanes consume the entry views off PersonalizationConfig (the
+        # Config bridge still serves derived id views to vendor consumers).
+        self.assertIn("PersonalizationConfig.barLayoutEntriesLeft", content)
+        self.assertIn("PersonalizationConfig.barLayoutEntriesMiddle", content)
+        self.assertIn("PersonalizationConfig.barLayoutEntriesRight", content)
         # B9.3: the island is a layout member, not a second config gate.
         self.assertNotIn("PersonalizationConfig.islandEnabled", content)
-        self.assertNotIn("filtered.filter(name => name !== \"island\")", content)
+        self.assertNotIn('filtered.filter(name => name !== "island")', content)
         # Only the active style branch instantiates widgets.
         self.assertIn("active: root.isMaterial", content)
         self.assertIn("active: !root.isMaterial", content)
@@ -328,9 +332,19 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("vertical", content)
 
     def test_component_loader_registrations(self):
-        content = read_bar_file("BarContent.qml")
-        self.assertIn('"divisor": "./Divisor.qml"', content)
-        self.assertIn('"island": "./DynamicIsland.qml"', content)
+        # D4a: the id->file registry lives in BarWidgetFiles.js (the inline
+        # maps in BarContent/VerticalBarContent retired); unknown ids fail
+        # loud instead of falling back to a capitalized file name.
+        content = read_bar_file("BarWidgetFiles.js")
+        self.assertIn('separator: "Divisor.qml"', content)
+        self.assertIn('island: "DynamicIsland.qml"', content)
+        self.assertIn('spacer: "Spacer.qml"', content)
+        bar_content = read_bar_file("BarContent.qml")
+        self.assertIn("BarWidgetFiles.fileFor", bar_content)
+        self.assertNotIn("charAt(0).toUpperCase()", bar_content, "capitalized-name fallback must stay retired")
+        vertical_content = read_bar_file("VerticalBarContent.qml")
+        self.assertIn("BarWidgetFiles.fileFor", vertical_content)
+        self.assertNotIn("charAt(0).toUpperCase()", vertical_content, "capitalized-name fallback must stay retired")
 
     def test_dynamic_island_is_material_binding(self):
         content = read_bar_file("DynamicIsland.qml")
@@ -346,7 +360,9 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("barDividerStyle", content)
         self.assertIn("barGroupColorOptions", content)
         self.assertIn("barWidgetStyles", content)
-        self.assertIn('"divisor"', content)
+        # D4a: the widget whitelist comes from BarWidgetDefaults.IDS
+        # (canonical separator id + legacy divisor alias live there).
+        self.assertIn("BarWidgetDefaults.IDS", content)
         self.assertIn("setBarCornerStyle", content)
         self.assertIn("setBarBorderless", content)
         self.assertIn("setBarDividerStyle", content)
@@ -412,8 +428,9 @@ class VerticalAndMarginContractTest(unittest.TestCase):
         self.assertIn("Appearance.sizes.verticalBarWidth", content)
         self.assertIn("laneTopHeight", content)
         self.assertIn("laneCenterY", content)
-        # The island has no vertical shape yet (ROADMAP B9.4).
-        self.assertIn('name !== "island"', content)
+        # The island has no vertical shape yet (ROADMAP B9.4). D4a: the
+        # filter walks entry objects.
+        self.assertIn('entry.widgetId !== "island"', content)
         # Only the active capsule branch instantiates widgets.
         self.assertIn("active: root.isMaterial", content)
         self.assertIn("active: !root.isMaterial", content)
@@ -553,9 +570,15 @@ class BarB9_7SettingsSweepTest(unittest.TestCase):
 
     def test_utilbuttons_is_addable_again(self):
         config = read_services_file("PersonalizationConfig.qml")
-        self.assertIn('"powerButton", "utilButtons"', config,
-                      "the widget was stripped from the whitelist and unreachable")
-        self.assertIn('"value": "utilButtons"', config)
+        # D4a: the whitelist is BarWidgetDefaults.IDS; utilButtons stays in
+        # it and the catalog carries its option entry.
+        self.assertIn("BarWidgetDefaults.IDS", config,
+                      "the widget whitelist must derive from the defaults registry")
+        defaults = read_services_file("BarWidgetDefaults.js")
+        self.assertIn('"utilButtons"', defaults)
+        with open(os.path.join(REPO_ROOT, "shell", "ui", "BarWidgetCatalog.qml"), "r", encoding="utf-8") as f:
+            catalog = f.read()
+        self.assertIn('id: "utilButtons"', catalog)
 
     def test_settled_keys_live_in_the_store(self):
         config = read_services_file("PersonalizationConfig.qml")

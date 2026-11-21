@@ -8,8 +8,9 @@
 //   - followFrameColor / frameColor dropped (no UI, constant false).
 //   - island is filtered out of the middle lane: the horizontal island has no
 //     vertical shape yet (ROADMAP B9.4 keeps it hidden, B9.6 designs it).
-//   - widget URL map + material helpers mirror BarContent instead of importing
-//     it (one content instance per orientation, no shared mutable state).
+//   - widget URL resolution + material helpers mirror BarContent's
+//     functions; the id->file table itself is shared (BarWidgetFiles.js,
+//     D4a) so the two orientations cannot drift apart again.
 //   - lane heights collapse when the lane's widgets hide themselves, same
 //     contract as the horizontal lanes.
 //   - probe surface (laneTopHeight / laneCenterY / ...) so the runtime probe
@@ -22,6 +23,7 @@ import Quickshell.Services.SystemTray
 import qs.commons
 import qs.services
 import qs.ui
+import "BarWidgetFiles.js" as BarWidgetFiles
 
 Item {
     id: root
@@ -44,20 +46,23 @@ Item {
     readonly property bool trayHasItems: SystemTray.items.values.length > 0
     readonly property bool batteryAvailable: Battery.available
 
-    function filterLayout(layout) {
-        let filtered = Array.from(layout ?? []);
+    // D4a: same entry model as BarContent — normalized barConfigs entries,
+    // disabled widgets dropped before instantiation (they collapse the lane
+    // like any self-hiding widget).
+    function filterLayout(entries) {
+        let filtered = Array.from(entries ?? []).filter(entry => entry && entry.enabled !== false);
         if (!root.trayHasItems)
-            filtered = filtered.filter(name => name !== "sysTray" && name !== "tray");
+            filtered = filtered.filter(entry => entry.widgetId !== "tray");
         if (!root.batteryAvailable)
-            filtered = filtered.filter(name => name !== "battery" && name !== "batteryIndicator");
+            filtered = filtered.filter(entry => entry.widgetId !== "battery");
         // No vertical island shape yet.
-        filtered = filtered.filter(name => name !== "island");
+        filtered = filtered.filter(entry => entry.widgetId !== "island");
         return filtered;
     }
 
-    readonly property var effectiveLeftLayout: filterLayout(Config.options.bar.m3.layouts.leftLayout)
-    readonly property var effectiveMiddleLayout: filterLayout(Config.options.bar.m3.layouts.middleLayout)
-    readonly property var effectiveRightLayout: filterLayout(Config.options.bar.m3.layouts.rightLayout)
+    readonly property var effectiveLeftLayout: filterLayout(PersonalizationConfig.barLayoutEntriesLeft)
+    readonly property var effectiveMiddleLayout: filterLayout(PersonalizationConfig.barLayoutEntriesMiddle)
+    readonly property var effectiveRightLayout: filterLayout(PersonalizationConfig.barLayoutEntriesRight)
     readonly property bool leftLaneFilled: root.effectiveLeftLayout.length > 0
     readonly property bool centerLaneFilled: root.effectiveMiddleLayout.length > 0
     readonly property bool rightLaneFilled: root.effectiveRightLayout.length > 0
@@ -70,41 +75,25 @@ Item {
     readonly property real laneCenterY: absoluteCenter.y + contentContainer.y
     readonly property real laneCenterHeight: absoluteCenter.height
 
-    function getWidgetUrl(name) {
-        if (!name)
+    function getWidgetUrl(id) {
+        const file = BarWidgetFiles.fileFor(id);
+        if (!file) {
+            console.warn("[VerticalBarContent] no component registered for widget id:", id);
             return "";
-        const map = {
-            "island": "./DynamicIsland.qml",
-            "clock": "./ClockWidget.qml",
-            "clockWidget": "./ClockWidget.qml",
-            "tray": "./SysTray.qml",
-            "sysTray": "./SysTray.qml",
-            "systemMonitor": "./Resources.qml",
-            "resources": "./Resources.qml",
-            "weather": "./WeatherBar.qml",
-            "battery": "./BatteryIndicator.qml",
-            "batteryIndicator": "./BatteryIndicator.qml",
-            "systemIcons": "./SystemIcons.qml",
-            "quickSettings": "./UtilButtons.qml",
-            "utilButtons": "./UtilButtons.qml",
-            "launcherButton": "./LauncherButton.qml",
-            "powerButton": "./PowerButton.qml",
-            "divisor": "./Divisor.qml",
-            "divider": "./Divisor.qml",
-            "workspaces": "./Workspaces.qml",
-            "activeWindow": "./ActiveWindow.qml",
-            "media": "./Media.qml"
-        };
-        if (map[name])
-            return Qt.resolvedUrl(map[name]);
-        let formattedName = name.charAt(0).toUpperCase() + name.slice(1);
-        return Qt.resolvedUrl("./" + formattedName + ".qml");
+        }
+        return Qt.resolvedUrl("./" + file);
+    }
+
+    // D4a property-injection protocol (same as BarContent).
+    function injectWidgetEntry(loader, entry) {
+        if (loader.item && loader.item.widgetEntry !== undefined)
+            loader.item.widgetEntry = entry;
     }
 
     function shouldPaintMaterialPill(name) {
         if (!root.isMaterial)
             return false;
-        const blacklist = ["workspaces", "divisor", "powerButton", "docktoPanel", "leftSidebarButton", "rightSidebarButton", "activeWindow", "dynamicIsland", "island", "avatar"];
+        const blacklist = ["workspaces", "separator", "powerButton", "docktoPanel", "leftSidebarButton", "rightSidebarButton", "activeWindow", "dynamicIsland", "island", "avatar"];
         return !blacklist.includes(name);
     }
 
@@ -199,15 +188,17 @@ Item {
                             Layout.fillWidth: true
                             vertical: true
                             currentIndex: index
-                            widgetName: modelData
+                            widgetName: modelData.widgetId
+                            widgetEntry: modelData
                             totalCount: root.effectiveLeftLayout.length
-                            paintMaterialPill: root.shouldPaintMaterialPill(modelData)
-                            bgColor: root.getMaterialPillColor(modelData)
+                            paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
+                            bgColor: root.getMaterialPillColor(modelData.widgetId)
                             Loader {
                                 Layout.fillWidth: true
                                 active: root.isMaterial
-                                source: root.getWidgetUrl(modelData)
+                                source: root.getWidgetUrl(modelData.widgetId)
                                 onLoaded: {
+                                    root.injectWidgetEntry(this, modelData);
                                     if (item && "vertical" in item)
                                         item.vertical = true;
                                 }
@@ -245,13 +236,15 @@ Item {
                         Layout.fillWidth: true
                         vertical: true
                         currentIndex: index
-                        widgetName: modelData
+                        widgetName: modelData.widgetId
+                        widgetEntry: modelData
                         totalCount: root.effectiveLeftLayout.length
                         Loader {
                             Layout.fillWidth: true
                             active: !root.isMaterial
-                            source: root.getWidgetUrl(modelData)
+                            source: root.getWidgetUrl(modelData.widgetId)
                             onLoaded: {
+                                root.injectWidgetEntry(this, modelData);
                                 if (item && "vertical" in item)
                                     item.vertical = true;
                             }
@@ -312,15 +305,17 @@ Item {
                             Layout.fillWidth: true
                             vertical: true
                             currentIndex: index
-                            widgetName: modelData
+                            widgetName: modelData.widgetId
+                            widgetEntry: modelData
                             totalCount: root.effectiveMiddleLayout.length
-                            paintMaterialPill: root.shouldPaintMaterialPill(modelData)
-                            bgColor: root.getMaterialPillColor(modelData)
+                            paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
+                            bgColor: root.getMaterialPillColor(modelData.widgetId)
                             Loader {
                                 Layout.fillWidth: true
                                 active: root.isMaterial
-                                source: root.getWidgetUrl(modelData)
+                                source: root.getWidgetUrl(modelData.widgetId)
                                 onLoaded: {
+                                    root.injectWidgetEntry(this, modelData);
                                     if (item && "vertical" in item)
                                         item.vertical = true;
                                 }
@@ -358,14 +353,16 @@ Item {
                         Layout.fillWidth: true
                         vertical: true
                         currentIndex: index
-                        widgetName: modelData
+                        widgetName: modelData.widgetId
+                        widgetEntry: modelData
                         totalCount: root.effectiveMiddleLayout.length
-                        paintBackground: modelData !== "island"
+                        paintBackground: modelData.widgetId !== "island"
                         Loader {
                             Layout.fillWidth: true
                             active: !root.isMaterial
-                            source: root.getWidgetUrl(modelData)
+                            source: root.getWidgetUrl(modelData.widgetId)
                             onLoaded: {
+                                root.injectWidgetEntry(this, modelData);
                                 if (item && "vertical" in item)
                                     item.vertical = true;
                             }
@@ -427,15 +424,17 @@ Item {
                             Layout.fillWidth: true
                             vertical: true
                             currentIndex: index
-                            widgetName: modelData
+                            widgetName: modelData.widgetId
+                            widgetEntry: modelData
                             totalCount: root.effectiveRightLayout.length
-                            paintMaterialPill: root.shouldPaintMaterialPill(modelData)
-                            bgColor: root.getMaterialPillColor(modelData)
+                            paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
+                            bgColor: root.getMaterialPillColor(modelData.widgetId)
                             Loader {
                                 Layout.fillWidth: true
                                 active: root.isMaterial
-                                source: root.getWidgetUrl(modelData)
+                                source: root.getWidgetUrl(modelData.widgetId)
                                 onLoaded: {
+                                    root.injectWidgetEntry(this, modelData);
                                     if (item && "vertical" in item)
                                         item.vertical = true;
                                 }
@@ -462,13 +461,15 @@ Item {
                         Layout.fillWidth: true
                         vertical: true
                         currentIndex: index
-                        widgetName: modelData
+                        widgetName: modelData.widgetId
+                        widgetEntry: modelData
                         totalCount: root.effectiveRightLayout.length
                         Loader {
                             Layout.fillWidth: true
                             active: !root.isMaterial
-                            source: root.getWidgetUrl(modelData)
+                            source: root.getWidgetUrl(modelData.widgetId)
                             onLoaded: {
+                                root.injectWidgetEntry(this, modelData);
                                 if (item && "vertical" in item)
                                     item.vertical = true;
                             }

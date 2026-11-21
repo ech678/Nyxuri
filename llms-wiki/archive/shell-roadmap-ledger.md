@@ -1502,3 +1502,72 @@ qml-lint 629 条 advisory 警告为既有 qs.* 成员解析噪声）。`probe-ba
   铃铛不复活）、岛媒体面六态实机截图对照 end4 原图、天气有/无数据视觉、
   visualizer 实机频谱（本机未装 cava）、dateFormat 实机切换、预存 ColorUtils
   "undefined" 警告（Media material 无播放分支，HEAD 已有，另行立项）。
+
+## D4a 配置架构与部件目录（2026-11-21）
+
+- **dux 来源注册**：`references/dux-shell`（duxlabs-dev/dux-shell，MIT，提交
+  `6933f989` 2026-11-07 本地检出钉住）登记入 references.md 第 6 节；Fork & Trim
+  三件：`SettingsSpec.js`（SPEC 形态参考）、`BarWidgetDefaults.js`（DEFAULTS 表 +
+  `option()` 回退链 + MIGRATED_GLOBALS 显式映射模式）、`WidgetModel.js`
+  （字符串/对象混排 normalize + 注册表形状）。
+- **schema 分层**：`[[bar.configs]]` 数组真相（单条起步、多 bar 就绪）；lane 条目
+  字符串或 `{id, enabled, ...overrides}`；内存条目 `{widgetId, uid, enabled,
+  overrides}`，uid 会话身份永不落盘（`widgetId@zone序号`）；island 单例去重
+  （SINGLETON_IDS），其余部件放行多实例；缺失 lane 回退默认 lane、显式空 lane
+  保持空——**该回退是本轮最大的根因修复**：初版把缺失当空数组，全新配置经
+  `normalizeBarConfigs(undefined)` 得三条空 lane（probe styles sweep 全空坐实，
+  bootstrap d4aBootState 逐步收窄到 `normalizeConfigLanes` 的 `: []` 兜底）。
+- **默认值回退 + 注入协议**：`services/BarWidgetDefaults.js` `option()` 三层
+  （entry overrides → 类型默认 → 全局兜底）；宿主 `injectWidgetEntry(loader,
+  entry)` 向声明 `widgetEntry` 的部件注入（BarContent/VerticalBarContent 六个
+  delegate 统一）；首个消费者 `Spacer.qml`（`size` 轴，默认 20 =
+  design-system largeIncreased）。存量 16 部件的扁平轴读取按计划留 D4b 随每部件
+  配置逐个收编。
+- **最小化写入（[bar] 段）**：`barSectionJson() = diffSparseSection(barSectionRaw(),
+  barSectionDefaults())`；全默认段整段消失（toJson 删空 bar 键）；条目无偏离坍缩
+  回字符串、override 等于默认自我删除；fresh-boot 空段/单键落盘/恢复空段三态由
+  probe `d4aPersistence` 钉死。其余段维持全量写（决策 3，全文件最小化另立项）。
+- **版本链**：顶层 `configVersion` 键 + 头戳升 `nyxuri-config-schema: 3`（快路径
+  探针同时接受 2/3——v2 文件的 bar 迁移在 QML 载入期完成，不走 python
+  legacy-JSON 助手）；`ConfigMigrations.js` 逐级幂等迁移 + `LEGACY_LAYOUT_KEYS`
+  显式键名映射；迁移种子复用纯函数 `resolveBarLayouts`（岛 one-shot 种子、
+  legacy island.enabled 闸门、双区映射）——**v2→v3 else 分支曾漏调
+  stripLegacyLayoutKeys**（probe legacyStripped 坐实后补）；迁移后
+  configVersionDirty 一次落盘。
+- **部件注册三处 + 目录归一**：`BarWidgetDefaults.js`（IDS/DEFAULTS/别名/单例，
+  存储白名单 `barComponentIds` 改为派生）+ `ui/BarWidgetCatalog.qml`（label/icon
+  共享目录，label 惰性翻译沿 DashboardBarWidgets 前例）+ `plugins/bar/
+  BarWidgetFiles.js`（id→组件文件，大小写兜底处决、未知 id warn 落空）；三处 id
+  集相等由 test_d4a 钉死。退役三份分散目录：`barComponentOptions`（服务层选项
+  表）、`ui/DashboardBarWidgets.qml`（dashboard 私有 7 件目录）、
+  BarContent/VerticalBarContent 双份内联 getWidgetUrl map。
+- **id 更名与别名**：`divisor`→`separator` + 新 `spacer`；legacy 别名六组在
+  load/normalize 归一（clockWidget/sysTray/resources/batteryIndicator/divider/
+  dynamicIsland）；`normalizedBarWidgetStyles` 同步归一存量样式键。
+- **UI 升级（不重建）**：SortableMultiSelectField 支持条目值 + `enabled` 列 +
+  chip visibility 开关（禁用态 0.45 透明度保持几何）+ `allowDuplicates`（bar lane
+  开、池关）+ uid 拖拽身份（重复 chip 各自隐藏/移动，不再互吸）；/
+  LayoutDragCoordinator `dropped(uid, id, zone, index)`（uid 空 = 池新增）；
+  BarComponentsCard 接条目视图 + 共享目录；entry 级 API：addBarEntry/moveBarEntry/
+  removeBarEntry/toggleBarEntryEnabled/setBarLaneEntries/setBarEntryOverride
+  （D4b 写侧就位）。Dashboard 布局卡继续走 setBarLayouts id 替换（有意边界，
+  不感知 per-entry 状态）。
+- **根因修复两笔（probe 抓出）**：①缺失 lane 回退默认（上述）；②moveBarComponent
+  误加 `moving.length===0 → return false` 早退，杀死「不在场即添加」语义，岛
+  恢复链路（islandInLayout true → idleFace/b96/b97）全断——改为不在场时以
+  目标索引插入新条目。
+- **probe 扩展**：`d4a` 报告节（entries/migration/persistence 三组 + 全局 ok 门
+  纳入）；IPC 新增 d4aEntriesSet/d4aEntriesDump/d4aSingletons/d4aMigration/
+  d4aPersistence/d4aBootState（启动诊断）；set/dump 两相分离修 delegate 重建与
+  测量的竞态；IPC 字符串参数须裸词传参（`'"disabledOnly"'` 引号形式会带引号命中
+  else 分支——沿 `ipc scene mediaOnly` 先例）；b97_persisted 换非默认轴验证
+  写入（showMicToggle，最小化写入下 showBackground 默认值不再落盘）；
+  `NYXURI_PROBE_KEEP=1` 保留 staged 树作事后取证。
+- **验证**：`tests/shell/test_d4a_bar_config.py` 32 例全绿；定向回归 292 tests
+  全绿（test_bar_runtime 探针门 exit 0，styles 六档真实 lane、d4a 三组证据齐）；
+  test_shell_architecture 6 个 R 系失败为预存（stash 对照同名同数，非本轮引入）。
+  更新既有契约钉：test_bar_end4（url map→注册表）、test_d1（白名单字面量→
+  BarWidgetDefaults）、test_settings_pages（业务 owner 新名）、
+  test_shell_architecture（双区同步→单真相派生视图）。
+- **未验证（作者）**：实机 chip 显隐开关手感、spacer/separator 添加与拖拽、
+  设置页目录 17 项过目、真实 v2 配置升级一次迁移零感知（本机 live 配置迁移）。
