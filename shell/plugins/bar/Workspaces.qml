@@ -28,6 +28,7 @@ import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
+import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
 
 ButtonMouseArea {
     id: root
@@ -35,13 +36,35 @@ ButtonMouseArea {
     property bool contentColorOverridden: false
     signal styleEditorRequested
 
+    // ---- D4b entry axes (option() fallback, never flat storage) ----
+    property var widgetEntry: null
+    readonly property bool showAppIcons: BarWidgetDefaults.option("workspaces", root.widgetEntry, "showAppIcons")
+    readonly property bool alwaysShowNumbers: BarWidgetDefaults.option("workspaces", root.widgetEntry, "alwaysShowNumbers")
+    readonly property string indicatorStyle: BarWidgetDefaults.option("workspaces", root.widgetEntry, "indicatorStyle")
+    readonly property var numberMap: BarWidgetDefaults.workspaceNumberMap(BarWidgetDefaults.option("workspaces", root.widgetEntry, "numberStyle"))
+    // State colors (default skin): active = the trailing pill, occupied =
+    // the number/dot ink of slots holding windows. "none" renders
+    // occupied slots like empty ones.
+    readonly property string activeColorMode: BarWidgetDefaults.option("workspaces", root.widgetEntry, "activeColorMode")
+    readonly property color activeIndicatorColor: {
+        if (root.activeColorMode === "custom")
+            return BarWidgetDefaults.option("workspaces", root.widgetEntry, "activeCustomColor");
+        return Appearance.colors.colPrimary;
+    }
+    readonly property string occupiedColorMode: BarWidgetDefaults.option("workspaces", root.widgetEntry, "occupiedColorMode")
+    readonly property color occupiedContentColor: {
+        if (root.occupiedColorMode === "custom")
+            return BarWidgetDefaults.option("workspaces", root.widgetEntry, "occupiedCustomColor");
+        return Appearance.colors.colOnSecondaryContainer;
+    }
+
     // ---- Data plane: end4 WorkspaceModel interface, Niri projection ----
     readonly property string monitorName: root.QsWindow.window?.screen?.name ?? ""
 
     // Fixed slot budget with group paging: pages stay stable (1-10,
     // 11-20, …) on the budget so the active workspace always lands inside
     // the visible group. The visible tail itself is dynamic — see shownCount.
-    readonly property int shownBudget: Math.max(1, PersonalizationConfig.barWorkspaceShown)
+    readonly property int shownBudget: Math.max(1, BarWidgetDefaults.option("workspaces", root.widgetEntry, "shown"))
 
     readonly property int activeNumber: {
         const ws = (CompositorDriver.workspaceList ?? []).find(w => w.output === root.monitorName && w.isActive);
@@ -124,7 +147,7 @@ ButtonMouseArea {
     property real workspaceIconOpacityShrinked: 1
     property real workspaceIconMarginShrinked: -4
     property int workspaceIndexInGroup: (root.activeNumber - 1) % root.shownBudget
-    readonly property string style: PersonalizationConfig.barWorkspaceStyle
+    readonly property string style: BarWidgetDefaults.option("workspaces", root.widgetEntry, "style")
     readonly property bool altStyle: root.style !== "default"
     readonly property real slotLength: root.style === "gnome" ? 16 : root.style === "dots" ? 24 : root.style === "ticks" ? 16 : root.workspaceButtonWidth
 
@@ -326,7 +349,7 @@ ButtonMouseArea {
 
                     IconImage {
                         id: appIcon
-                        property real cornerMargin: (!root.superPressAndHeld && PersonalizationConfig.barShowAppIcons && wsApp.biggestWindow) ? (root.workspaceButtonWidth - root.workspaceIconSize) / 2 : root.workspaceIconMarginShrinked
+                        property real cornerMargin: (!root.superPressAndHeld && root.showAppIcons && wsApp.biggestWindow) ? (root.workspaceButtonWidth - root.workspaceIconSize) / 2 : root.workspaceIconMarginShrinked
                         anchors {
                             bottom: parent.bottom
                             right: parent.right
@@ -365,9 +388,9 @@ ButtonMouseArea {
                             brightness: 0
                             source: appIcon
 
-                            opacity: !PersonalizationConfig.barShowAppIcons ? 0 : (wsApp.biggestWindow && !root.superPressAndHeld && PersonalizationConfig.barShowAppIcons) ? 1 : wsApp.biggestWindow ? root.workspaceIconOpacityShrinked : 0
+                            opacity: !root.showAppIcons ? 0 : (wsApp.biggestWindow && !root.superPressAndHeld && root.showAppIcons) ? 1 : wsApp.biggestWindow ? root.workspaceIconOpacityShrinked : 0
                             visible: opacity > 0
-                            scale: ((!root.superPressAndHeld && PersonalizationConfig.barShowAppIcons) ? root.workspaceIconSize : root.workspaceIconSizeShrinked) / root.workspaceIconSize
+                            scale: ((!root.superPressAndHeld && root.showAppIcons) ? root.workspaceIconSize : root.workspaceIconSizeShrinked) / root.workspaceIconSize
 
                             Behavior on opacity {
                                 animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
@@ -434,13 +457,18 @@ ButtonMouseArea {
         id: wsNum
         property bool hasBiggestWindow: !!root.biggestWindow[index]
         property int wsId: root.getWorkspaceIdAt(index)
-        property color contentColor: (root.occupied[wsNum.index] && wsId !== root.fakeWorkspace) ? Appearance.colors.colOnSecondaryContainer : (root.contentColorOverridden ? Qt.alpha(root.contentColor, 0.5) : Appearance.colors.colOnLayer1Inactive)
+        property color contentColor: {
+            const occupied = root.occupied[wsNum.index] && wsId !== root.fakeWorkspace;
+            if (occupied && root.occupiedColorMode !== "none")
+                return root.occupiedContentColor;
+            return root.contentColorOverridden ? Qt.alpha(root.contentColor, 0.5) : Appearance.colors.colOnLayer1Inactive;
+        }
         property bool showingNumbers: {
             if (root.superPressAndHeld)
                 return true;
             if (GlobalStates.screenLocked)
                 return false;
-            if (PersonalizationConfig.barAlwaysShowNumbers && (!PersonalizationConfig.barShowAppIcons || !wsNum.hasBiggestWindow))
+            if (root.alwaysShowNumbers && (!root.showAppIcons || !wsNum.hasBiggestWindow))
                 return true;
             return false;
         }
@@ -450,7 +478,7 @@ ButtonMouseArea {
             anchors.centerIn: parent
             Loader {
                 anchors.centerIn: parent
-                sourceComponent: (PersonalizationConfig.barWorkspaceIndicatorStyle ?? "dot") === "icon" ? iconComponent : dotComponent
+                sourceComponent: root.indicatorStyle === "icon" ? iconComponent : dotComponent
 
                 Component {
                     id: dotComponent
@@ -504,7 +532,7 @@ ButtonMouseArea {
                 anchors.centerIn: parent
                 font.pixelSize: NexusStyle.font.bodyMedium - ((text.length - 1) * (text !== "10") * 2)
                 color: wsNum.contentColor
-                text: Config.options?.bar?.m3?.workspaces?.numberMap[wsNum.wsId - 1] || wsNum.wsId
+                text: root.numberMap[wsNum.wsId - 1] || wsNum.wsId
             }
         }
     }
@@ -535,7 +563,9 @@ ButtonMouseArea {
 
             contentLayer: StyledRectangle.ContentLayer.Group
             radius: indicatorThickness / 2
-            color: Appearance.colors.colPrimary
+            // D4b state color: the active pill follows the entry's
+            // activeColorMode (theme = the primary role).
+            color: root.activeIndicatorColor
 
             x: root.vertical ? null : indicatorPosition
             y: root.vertical ? indicatorPosition : null

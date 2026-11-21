@@ -134,27 +134,6 @@ ColumnLayout {
         onSelected: value => PersonalizationConfig.setBarBorderless(String(value))
     }
 
-    PreferenceSelect {
-        label: I18n.tr("Divider style")
-        model: PersonalizationConfig.barDividerStyles
-        currentValue: PersonalizationConfig.barDividerStyle
-        inputRegionService: PopupInputRegionService
-        onSelected: value => PersonalizationConfig.setBarDividerStyle(String(value))
-    }
-
-    // end4 BarConfig: the space divider's width only exists for
-    // that style, so the row hides instead of idling.
-    PreferenceSlider {
-        visible: PersonalizationConfig.barDividerStyle === "space"
-        label: I18n.tr("Space width")
-        value: PersonalizationConfig.barDividerSpacing
-        valueLabel: Math.round(PersonalizationConfig.barDividerSpacing) + " px"
-        from: 4
-        to: 400
-        stepSize: 2
-        onMoved: value => PersonalizationConfig.setValue("barDividerSpacing", Math.round(value / 2) * 2)
-    }
-
     // end4 `bar.showBackground`: the frame/pill background of
     // Hug and Float. Other styles decide their own background
     // downstream, so the row idles there (end4 disables it too).
@@ -206,21 +185,6 @@ ColumnLayout {
         onMoved: value => PersonalizationConfig.setBarVerticalThickness(Math.round(value))
     }
 
-    // Clock
-    PreferenceHeader {
-        text: I18n.tr("Clock")
-    }
-
-    // D1: iNiR `time.dateFormat` — a Qt format pattern for the long date
-    // form, so "Fri, 28/08" is reachable via "ddd, dd/MM". Empty keeps the
-    // stock "dddd, dd/MM" shape.
-    PreferenceInput {
-        first: true
-        last: true
-        label: I18n.tr("Date format")
-        subtext: I18n.tr("Qt date pattern, e.g. ddd, dd/MM")
-        placeholderText: "dddd, dd/MM"
-        value: PersonalizationConfig.timeDateFormat
-        onEditingFinished: value => PersonalizationConfig.setTimeDateFormat(value)
-    }
+    // D4b: the clock's Date format row moved to the clock entry's own
+    // options page (BarWidgetPage) — the pattern is a per-instance axis.
 }

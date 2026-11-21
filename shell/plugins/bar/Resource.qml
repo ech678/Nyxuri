@@ -15,6 +15,10 @@ Item {
     opacity: available ? 1 : 0.4
     property int warningThreshold: 100
     property bool shown: true
+    // D4b: icon skin / percentage readout are entry axes injected by the
+    // owning Resources widget (defaults mirror the entry defaults).
+    property string iconStyle: "outline"
+    property bool showValue: false
     readonly property color foregroundColor: root.contentColorOverridden ? root.contentColor : M3Palette.pillInk("resources")
     clip: !vertical
     visible: vertical ? true : width > 0 && height > 0
@@ -76,7 +80,7 @@ Item {
         active: root.vertical
         visible: active
         anchors.centerIn: parent
-        sourceComponent: Config.options.bar.m3.resources.style === "filled" ? filledStyle : outlineStyle
+        sourceComponent: root.iconStyle === "filled" ? filledStyle : outlineStyle
     }
 
     RowLayout {
@@ -90,12 +94,12 @@ Item {
             Layout.alignment: Qt.AlignVCenter
             active: !root.vertical
             visible: active
-            sourceComponent: Config.options.bar.m3.resources.style === "filled" ? filledStyle : outlineStyle
+            sourceComponent: root.iconStyle === "filled" ? filledStyle : outlineStyle
         }
 
         Item {
             Layout.alignment: Qt.AlignVCenter
-            visible: Config.options.bar.m3.resources.showValue
+            visible: root.showValue
             implicitWidth: visible ? fullPercentageTextMetrics.width : 0
             implicitHeight: percentageText.implicitHeight
             TextMetrics {

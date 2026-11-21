@@ -20,6 +20,9 @@ MouseArea {
     property bool hovered: false
     property bool vertical: Config.options.bar.vertical
     property bool isMaterial: PersonalizationConfig.barIsMaterial
+    // D4b click axes: "default" keeps the built-in behavior (popup on
+    // clickForDetails, right-press refresh).
+    property var widgetEntry: null
 
     property string weatherLeaseId: ""
     Component.onCompleted: {
@@ -38,11 +41,15 @@ MouseArea {
     implicitWidth: vertical ? 32 : (contentLoader.item?.implicitWidth ?? 0)
     implicitHeight: vertical ? (contentLoader.item?.implicitHeight ?? 0) : Appearance.sizes.barHeight
 
-    acceptedButtons: Qt.LeftButton | Qt.RightButton
+    acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
     readonly property bool clickForDetails: Config.options?.bar?.m3?.tooltips?.clickToShow ?? false
     hoverEnabled: true
 
     onClicked: mouse => {
+        if (BarWidgetActions.dispatchMouse("weather", root.widgetEntry, mouse.button)) {
+            mouse.accepted = true;
+            return;
+        }
         if (mouse.button === Qt.LeftButton && root.clickForDetails)
             weatherPopup.active = !weatherPopup.active;
     }

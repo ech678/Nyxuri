@@ -428,125 +428,25 @@ Singleton {
     // editor. Shape: { mode, widget, color?, borderColor?, radius?,
     // borderWidth?, padding? } — normalized on load, saved with the bar block.
     property var barWidgetStyles: []
-    readonly property var barDividerStyles: [
-        {
-            value: "rect",
-            label: I18n.tr("Line")
-        },
-        {
-            value: "dot",
-            label: I18n.tr("Dot")
-        },
-        {
-            value: "space",
-            label: I18n.tr("Space")
-        }
-    ]
-    property string barDividerStyle: "rect"
-    // end4 `bar.divider.spacing`: width of the "space" divider style only
-    // (line/dot dividers ignore it). end4 spinbox range 4–400 step 2.
-    property int barDividerSpacing: 4
-    // Tray contract (ROADMAP B9.1). Pinned ids keep a permanent slot; every
-    // other visible client moves behind the overflow arrow. filterPassive hides
-    // Status.Passive clients, invertPinnedItems swaps the two groups, showItemId
-    // appends the DBus id to the tooltip, monochromeIcons tints the glyphs with
-    // the bar ink instead of the app's own colour.
+    // Tray contract (ROADMAP B9.1). Pinning is tray-domain shared STATE, not
+    // a per-instance aesthetic: pinned ids keep a permanent slot, and
+    // invertPinnedItems swaps the two groups (the stored list is the hidden
+    // set). The per-instance tray axes (tintIcons/hidePassive/showItemId)
+    // moved to lane-entry overrides (D4b, BarWidgetDefaults.tray).
     property var barTrayPinnedItems: []
-    property bool barTrayFilterPassive: true
     property bool barTrayInvertPinnedItems: true
-    property bool barTrayShowItemId: false
-    property bool barTrayMonochromeIcons: true
-    // end4 `bar.utilButtons` slots (B9.7): which shortcut buttons the
-    // UtilButtons widget renders. The screen-record slot was executed with the
-    // recorder domain (B-4); the remaining seven map to live actions.
-    property bool barShowScreenSnip: true
-    property bool barShowColorPicker: true
-    property bool barShowKeyboardToggle: false
-    property bool barShowMicToggle: false
-    property bool barShowWallpaperToggle: false
-    property bool barShowDarkModeToggle: true
-    property bool barShowPerformanceProfile: false
-    // end4 `bar.resources` widget surface (B9.7): which meters the
-    // Resources widget shows, its icon style, and the percentage readout.
-    // The polling service keeps its own internal defaults (not user surface).
-    property bool barShowCpu: true
-    property bool barShowCpuTemp: false
-    property bool barShowRam: true
-    property bool barShowDisk: false
-    property bool barShowSwap: false
-    readonly property var barResourceStyles: [
-        {
-            value: "filled",
-            label: I18n.tr("Filled")
-        },
-        {
-            value: "outline",
-            label: I18n.tr("Outline")
-        }
-    ]
-    property string barResourceStyle: "outline"
-    property bool barResourceShowValue: false
-    // Workspace indicator shape (B8.3 parity with end4): numbers by default,
-    // optional app icons, dot/icon marker when neither is shown.
-    property bool barShowAppIcons: false
-    property bool barAlwaysShowNumbers: true
-    readonly property var barWorkspaceIndicatorStyles: [
-        {
-            value: "dot",
-            label: I18n.tr("Dot")
-        },
-        {
-            value: "icon",
-            label: I18n.tr("Icon")
-        }
-    ]
-    property string barWorkspaceIndicatorStyle: "dot"
-    // Workspace lane shape (B9.6 parity with end4): fixed slot count with
-    // group paging, and the four end4 skins (default/gnome/dots/ticks).
-    readonly property var barWorkspaceStyles: [
-        {
-            value: "default",
-            label: I18n.tr("Default")
-        },
-        {
-            value: "gnome",
-            label: I18n.tr("Gnome")
-        },
-        {
-            value: "dots",
-            label: I18n.tr("Dots")
-        },
-        {
-            value: "ticks",
-            label: I18n.tr("Ticks")
-        }
-    ]
-    property string barWorkspaceStyle: "default"
-    property int barWorkspaceShown: 10
-    // end4 "Numbers style" (B9.7): the workspace number label preset. end4
-    // serialized the raw string array; Nyxuri stores the preset name as the
-    // single truth and derives the array — the UI only ever offered the three
-    // presets, so nothing else was representable.
-    readonly property var barWorkspaceNumberStyles: [
-        {
-            value: "normal",
-            label: I18n.tr("Normal")
-        },
-        {
-            value: "han",
-            label: I18n.tr("Han chars")
-        },
-        {
-            value: "roman",
-            label: I18n.tr("Roman")
-        }
-    ]
-    property string barWorkspaceNumberStyle: "normal"
-    readonly property var _barWorkspaceNumberHanMaps: ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十"]
-    readonly property var _barWorkspaceNumberRomanMaps: ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX"]
-    // What `bar.m3.workspaces.numberMap` feeds the Workspaces widget. Slots
-    // beyond the preset fall back to plain numbers at the consumer.
-    readonly property var barWorkspaceNumberMap: root.barWorkspaceNumberStyle === "han" ? root._barWorkspaceNumberHanMaps : root.barWorkspaceNumberStyle === "roman" ? root._barWorkspaceNumberRomanMaps : []
+    // Quickpanel data rows (B9.7): the utility buttons' hover popouts show
+    // numeric values / device names. Global to the popouts (one data shape
+    // across all buttons), so they stay flat [bar] keys — the UI entry
+    // rides the utility buttons options page (D4b).
+    property bool barShowValues: true
+    property bool barShowNames: false
+    // D4b: the resources/workspace/divider/tray per-instance axes (meters,
+    // icon style, skins, indicator shape, divider style, tint...) moved to
+    // lane-entry overrides — see BarWidgetDefaults.DEFAULTS and the
+    // ConfigMigrations v4 step that folds the old flat [bar] keys onto the
+    // entries. The option vocabularies live with their options pages
+    // (plugins/bar/options/).
     // Only ids the bar can actually render. The whitelist lives in
     // BarWidgetDefaults.IDS (D4a registration point 1 of 3) and must match
     // shell/ui/BarWidgetCatalog.qml and shell/plugins/bar/BarWidgetFiles.js
@@ -659,11 +559,9 @@ Singleton {
     // Idle-face avatar is optional: the identity circle can be hidden while the
     // satellite clock/weather and status icons stay.
     property bool islandShowAvatar: true
-    // D1: iNiR `time.dateFormat` — user-owned Qt format pattern for the long
-    // date form ("Fri, 28/08" = "ddd, dd/MM"). Empty keeps the stock form.
-    property string timeDateFormat: ""
-    property bool barShowValues: true
-    property bool barShowNames: false
+    // D1's `time.dateFormat` became the clock entry's `dateFormat` axis
+    // (D4b): the Qt format pattern now lives on the lane entry and the
+    // clock widget formats it per instance.
 
     readonly property var horizontalClockAxisDefaults: ({
             "wght": 900,
@@ -1487,31 +1385,6 @@ Singleton {
         setValue("barGroupColor", normalizedOption(root.barGroupColorOptions, value, "layer1"));
     }
 
-    function setBarShowAppIcons(value) {
-        setValue("barShowAppIcons", !!value);
-    }
-
-    function setBarAlwaysShowNumbers(value) {
-        setValue("barAlwaysShowNumbers", !!value);
-    }
-
-    function setBarWorkspaceIndicatorStyle(value) {
-        setValue("barWorkspaceIndicatorStyle", normalizedOption(root.barWorkspaceIndicatorStyles, value, "dot"));
-    }
-
-    function setBarWorkspaceStyle(value) {
-        setValue("barWorkspaceStyle", normalizedOption(root.barWorkspaceStyles, value, "default"));
-    }
-
-    function setBarWorkspaceShown(value) {
-        const parsed = Math.round(Number(value));
-        setValue("barWorkspaceShown", isFinite(parsed) ? Math.max(1, Math.min(50, parsed)) : 10);
-    }
-
-    function setBarWorkspaceNumberStyle(value) {
-        setValue("barWorkspaceNumberStyle", normalizedOption(root.barWorkspaceNumberStyles, value, "normal"));
-    }
-
     // Right-click style editor (BarGroupStylePopup) persistence. One entry per
     // (borderless mode, widget) pair, matching end4's `bar.widgetStyles` shape,
     // but owned here so the config store stays the single writer.
@@ -1579,10 +1452,6 @@ Singleton {
         if (!mode || !widget)
             return;
         setValue("barWidgetStyles", (root.barWidgetStyles ?? []).filter(entry => !(entry.mode === mode && entry.widget === widget)));
-    }
-
-    function setBarDividerStyle(value) {
-        setValue("barDividerStyle", normalizedOption(root.barDividerStyles, value, "rect"));
     }
 
     // ---- D4a bar lane entry machinery -----------------------------------
@@ -1745,6 +1614,20 @@ Singleton {
 
     function laneUsesWidget(widgetId) {
         return ["left", "middle", "right"].some(zone => root.laneEntries(zone).some(entry => entry.widgetId === widgetId));
+    }
+
+    // D4b: entry lookup by uid (the settings editor and the probe address
+    // one instance — duplicate ids stay independent).
+    function barEntryByUid(uid) {
+        const zones = ["left", "middle", "right"];
+        for (let z = 0; z < zones.length; z += 1) {
+            const lane = root.laneEntries(zones[z]);
+            for (let i = 0; i < lane.length; i += 1) {
+                if (lane[i].uid === uid)
+                    return lane[i];
+            }
+        }
+        return null;
     }
 
     function canonicalZone(zone) {
@@ -2252,20 +2135,16 @@ Singleton {
         });
     }
 
+    function setIslandHideDate(value) {
+        setValue("islandHideDate", !!value);
+    }
+
     function setBarShowNames(value) {
         setValue("barShowNames", !!value);
     }
 
     function setBarShowValues(value) {
         setValue("barShowValues", !!value);
-    }
-
-    function setIslandHideDate(value) {
-        setValue("islandHideDate", !!value);
-    }
-
-    function setTimeDateFormat(value) {
-        setValue("timeDateFormat", String(value || "").trim());
     }
 
     function setHorizontalClockFontSize(value, persist) {
@@ -2396,9 +2275,6 @@ Singleton {
                     "tiledColumnSpan": root.parallaxTiledColumnSpan
                 }
             },
-            "time": {
-                "dateFormat": root.timeDateFormat
-            },
             "theme": {
                 "matugenScheme": root.matugenScheme,
                 "matugenTemplates": root.normalizedMatugenTemplates(root.matugenTemplates),
@@ -2497,45 +2373,18 @@ Singleton {
             "borderless": root.barBorderless,
             "groupColor": root.barGroupColor,
             "widgetStyles": root.barWidgetStyles.map(entry => Object.assign({}, entry)),
-            "dividerStyle": root.barDividerStyle,
-            "dividerSpacing": root.barDividerSpacing,
-            "showAppIcons": root.barShowAppIcons,
-            "alwaysShowNumbers": root.barAlwaysShowNumbers,
-            "workspaceIndicatorStyle": root.barWorkspaceIndicatorStyle,
-            "workspaceStyle": root.barWorkspaceStyle,
-            "workspaceShown": root.barWorkspaceShown,
-            "numberStyle": root.barWorkspaceNumberStyle,
-            "utilButtons": {
-                "showScreenSnip": root.barShowScreenSnip,
-                "showColorPicker": root.barShowColorPicker,
-                "showKeyboardToggle": root.barShowKeyboardToggle,
-                "showMicToggle": root.barShowMicToggle,
-                "showWallpaperToggle": root.barShowWallpaperToggle,
-                "showDarkModeToggle": root.barShowDarkModeToggle,
-                "showPerformanceProfile": root.barShowPerformanceProfile
-            },
-            "resources": {
-                "alwaysShowCpu": root.barShowCpu,
-                "alwaysShowCpuTemp": root.barShowCpuTemp,
-                "alwaysShowRam": root.barShowRam,
-                "alwaysShowDisk": root.barShowDisk,
-                "alwaysShowSwap": root.barShowSwap,
-                "style": root.barResourceStyle,
-                "showValue": root.barResourceShowValue
-            },
-            "showValues": root.barShowValues,
-            "showNames": root.barShowNames,
             "barThickness": root.barThickness,
             "verticalThickness": root.barVerticalThickness,
             "edgeMargin": root.barEdgeMargin,
             "sideMargin": root.barSideMargin,
+            "showValues": root.barShowValues,
+            "showNames": root.barShowNames,
             "quickSettingsComponents": root.quickSettingsComponents.slice(),
+            // Tray shared state only: the per-instance tray axes ride the
+            // lane entries (D4b).
             "tray": {
                 "pinnedItems": root.barTrayPinnedItems.slice(),
-                "filterPassive": root.barTrayFilterPassive,
-                "invertPinnedItems": root.barTrayInvertPinnedItems,
-                "showItemId": root.barTrayShowItemId,
-                "monochromeIcons": root.barTrayMonochromeIcons
+                "invertPinnedItems": root.barTrayInvertPinnedItems
             }
         };
         if (sparseConfigs)
@@ -2553,45 +2402,16 @@ Singleton {
             "borderless": "pills",
             "groupColor": "layer1",
             "widgetStyles": [],
-            "dividerStyle": "rect",
-            "dividerSpacing": 4,
-            "showAppIcons": false,
-            "alwaysShowNumbers": true,
-            "workspaceIndicatorStyle": "dot",
-            "workspaceStyle": "default",
-            "workspaceShown": 10,
-            "numberStyle": "normal",
-            "utilButtons": {
-                "showScreenSnip": true,
-                "showColorPicker": true,
-                "showKeyboardToggle": false,
-                "showMicToggle": false,
-                "showWallpaperToggle": false,
-                "showDarkModeToggle": true,
-                "showPerformanceProfile": false
-            },
-            "resources": {
-                "alwaysShowCpu": true,
-                "alwaysShowCpuTemp": false,
-                "alwaysShowRam": true,
-                "alwaysShowDisk": false,
-                "alwaysShowSwap": false,
-                "style": "outline",
-                "showValue": false
-            },
-            "showValues": true,
-            "showNames": false,
             "barThickness": root.defaultBarThickness,
             "verticalThickness": root.defaultBarVerticalThickness,
             "edgeMargin": 0,
             "sideMargin": 0,
+            "showValues": true,
+            "showNames": false,
             "quickSettingsComponents": root.defaultQuickSettingsComponents.slice(),
             "tray": {
                 "pinnedItems": [],
-                "filterPassive": true,
-                "invertPinnedItems": true,
-                "showItemId": false,
-                "monochromeIcons": true
+                "invertPinnedItems": true
             }
         };
     }
@@ -2671,7 +2491,8 @@ Singleton {
         const preSource = configSection(parsed);
         const preIsland = configSection(preSource.island);
         const migration = ConfigMigrations.migrateConfig(parsed, {
-            lanes: root.resolveBarLayouts(configSection(preSource.bar), preIsland, typeof preIsland.enabled === "boolean" ? preIsland.enabled : true)
+            lanes: root.resolveBarLayouts(configSection(preSource.bar), preIsland, typeof preIsland.enabled === "boolean" ? preIsland.enabled : true),
+            defaults: BarWidgetDefaults.DEFAULTS
         });
         root.configVersionDirty = root.configVersionDirty || migration.changed;
 
@@ -2767,8 +2588,6 @@ Singleton {
         root.islandVisualizerStyle = normalizedOption(root.islandVisualizerStyleOptions, island.visualizerStyle, "dots");
         // D1: `time.dateFormat` (iNiR key shape) — a Qt format pattern for the
         // long date form; empty keeps the stock "dddd, dd/MM".
-        const timeSection = configSection(source.time);
-        root.timeDateFormat = typeof timeSection.dateFormat === "string" ? timeSection.dateFormat : "";
         // iNiR keyboardIndicators block; the old island.capsLockOsd/numLockOsd
         // pair migrates to popup.caps/num so an existing choice is not lost.
         root.keyboardShowPopup = typeof keyboard.showPopup === "boolean" ? keyboard.showPopup : true;
@@ -2792,41 +2611,14 @@ Singleton {
         root.barBorderless = root.normalizedOption(root.barBorderlessModes, bar.borderless, "pills");
         root.barGroupColor = normalizedOption(root.barGroupColorOptions, bar.groupColor, "layer1");
         root.barWidgetStyles = root.normalizedBarWidgetStyles(bar.widgetStyles);
-        root.barDividerStyle = root.normalizedOption(root.barDividerStyles, bar.dividerStyle, "rect");
-        root.barDividerSpacing = typeof bar.dividerSpacing === "number" ? Math.max(4, Math.min(400, Math.round(bar.dividerSpacing / 2) * 2)) : 4;
-        root.barShowAppIcons = typeof bar.showAppIcons === "boolean" ? bar.showAppIcons : false;
-        root.barAlwaysShowNumbers = typeof bar.alwaysShowNumbers === "boolean" ? bar.alwaysShowNumbers : true;
-        root.barWorkspaceIndicatorStyle = normalizedOption(root.barWorkspaceIndicatorStyles, bar.workspaceIndicatorStyle, "dot");
-        root.barWorkspaceStyle = normalizedOption(root.barWorkspaceStyles, bar.workspaceStyle, "default");
-        root.barWorkspaceShown = typeof bar.workspaceShown === "number" ? Math.max(1, Math.min(50, Math.round(bar.workspaceShown))) : 10;
-        root.barWorkspaceNumberStyle = normalizedOption(root.barWorkspaceNumberStyles, bar.numberStyle, "normal");
-        const utilButtons = configSection(bar.utilButtons);
-        root.barShowScreenSnip = typeof utilButtons.showScreenSnip === "boolean" ? utilButtons.showScreenSnip : true;
-        root.barShowColorPicker = typeof utilButtons.showColorPicker === "boolean" ? utilButtons.showColorPicker : true;
-        root.barShowKeyboardToggle = utilButtons.showKeyboardToggle === true;
-        root.barShowMicToggle = utilButtons.showMicToggle === true;
-        root.barShowWallpaperToggle = utilButtons.showWallpaperToggle === true;
-        root.barShowDarkModeToggle = typeof utilButtons.showDarkModeToggle === "boolean" ? utilButtons.showDarkModeToggle : true;
-        root.barShowPerformanceProfile = utilButtons.showPerformanceProfile === true;
-        const resources = configSection(bar.resources);
-        root.barShowCpu = typeof resources.alwaysShowCpu === "boolean" ? resources.alwaysShowCpu : true;
-        root.barShowCpuTemp = resources.alwaysShowCpuTemp === true;
-        root.barShowRam = typeof resources.alwaysShowRam === "boolean" ? resources.alwaysShowRam : true;
-        root.barShowDisk = resources.alwaysShowDisk === true;
-        root.barShowSwap = resources.alwaysShowSwap === true;
-        root.barResourceStyle = normalizedOption(root.barResourceStyles, resources.style, "outline");
-        root.barResourceShowValue = resources.showValue === true;
         root.barThickness = typeof bar.barThickness === "number" ? Math.max(28, Math.min(64, Math.round(bar.barThickness))) : root.defaultBarThickness;
         root.barVerticalThickness = typeof bar.verticalThickness === "number" ? Math.max(28, Math.min(64, Math.round(bar.verticalThickness))) : root.defaultBarVerticalThickness;
         root.barEdgeMargin = typeof bar.edgeMargin === "number" ? Math.max(0, Math.min(48, Math.round(bar.edgeMargin))) : 0;
         root.barSideMargin = typeof bar.sideMargin === "number" ? Math.max(0, Math.min(96, Math.round(bar.sideMargin))) : 0;
         root.barTrayPinnedItems = root.normalizedTrayPinnedItems(tray.pinnedItems);
-        root.barTrayFilterPassive = typeof tray.filterPassive === "boolean" ? tray.filterPassive : true;
-        // Absent keys must keep the shipped defaults (on, not off): `=== true`
-        // would read a fresh config as "do not pin" and "do not tint".
+        // Absent keys must keep the shipped default (pin new items by
+        // default); `=== true` would read a fresh config as "do not pin".
         root.barTrayInvertPinnedItems = typeof tray.invertPinnedItems === "boolean" ? tray.invertPinnedItems : true;
-        root.barTrayShowItemId = tray.showItemId === true;
-        root.barTrayMonochromeIcons = typeof tray.monochromeIcons === "boolean" ? tray.monochromeIcons : true;
         // D4a truth: lanes live in [[bar.configs]] entries. A lane missing
         // from storage reads as the default lane; an explicitly empty lane
         // stays empty. The one-shot island seed spent itself in the v3

@@ -8,6 +8,7 @@ import QtQuick
 import qs.commons
 import qs.services
 import qs.ui
+import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
 
 Item {
     id: root
@@ -17,8 +18,10 @@ Item {
     property real btnSize: 40
     property real btnSpacing: 2
     property bool isMaterial: PersonalizationConfig.barIsMaterial
-    property string style: PersonalizationConfig.barDividerStyle ?? Config.options.bar.m3.divider.style // "rect" - "dot" - "space"
-    property int dividerSpacing: Config.options.bar.m3.divider.spacing
+    // D4b: style/spacing are entry axes (separator), not flat [bar] keys.
+    property var widgetEntry: null
+    readonly property string style: BarWidgetDefaults.option("separator", root.widgetEntry, "style")
+    readonly property int dividerSpacing: BarWidgetDefaults.option("separator", root.widgetEntry, "spacing")
 
     width: vertical ? btnSize : (root.style === "space" ? root.dividerSpacing : root.style === "dot" ? dotText.implicitWidth + 10 : (1 + btnSpacing * 3))
     height: vertical ? (root.style === "space" ? root.dividerSpacing : root.style === "dot" ? dotText.implicitHeight - 4 : (1 + btnSpacing * 3)) : btnSize

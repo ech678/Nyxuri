@@ -500,8 +500,10 @@ class TestIslandMergeContracts(unittest.TestCase):
                                                    "DynamicIsland.qml")))
 
     def test_bar_root_hosts_the_island_loader(self):
-        bar_content = read("plugins", "bar", "BarContent.qml")
-        self.assertIn('"island": "./DynamicIsland.qml"', bar_content)
+        # D4a: the id->file registry lives in BarWidgetFiles.js; the inline
+        # url maps in BarContent/VerticalBarContent retired.
+        bar_files = read("plugins", "bar", "BarWidgetFiles.js")
+        self.assertIn('island: "DynamicIsland.qml"', bar_files)
 
 
 if __name__ == "__main__":

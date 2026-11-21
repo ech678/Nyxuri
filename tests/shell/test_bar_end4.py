@@ -202,7 +202,9 @@ class BarEnd4ContractTest(unittest.TestCase):
 
     def test_divisor_contracts(self):
         content = read_bar_file("Divisor.qml")
-        self.assertIn("PersonalizationConfig.barDividerStyle", content)
+        # D4b: the divider axes are separator entry overrides.
+        self.assertIn('BarWidgetDefaults.option("separator", root.widgetEntry, "style")', content)
+        self.assertIn('BarWidgetDefaults.option("separator", root.widgetEntry, "spacing")', content)
         self.assertIn("isMaterial", content)
         self.assertIn("vertical", content)
 
@@ -231,7 +233,8 @@ class BarEnd4ContractTest(unittest.TestCase):
         # Slot count follows the iNiR original's dynamicCount semantics —
         # exactly the workspaces niri reports on the output (empty ones
         # persist), budget-capped with group paging. Not end4's fixed grid.
-        self.assertIn("barWorkspaceShown", content)
+        # D4b: the budget is the entry's `shown` axis.
+        self.assertIn('BarWidgetDefaults.option("workspaces", root.widgetEntry, "shown")', content)
         self.assertIn("root.group * root.shownBudget + index + 1", content)
         self.assertIn("existingMaxIdx", content)
         self.assertIn("Math.max(1, Math.min(root.shownBudget, root.existingMaxIdx - root.group * root.shownBudget))", content)
@@ -256,17 +259,16 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn('"FocusMonitor"', driver)
         self.assertIn('"Index"', driver)
         self.assertIn("focusWorkspaceOnOutput", read_services_file("CompositorDriver.qml"))
-        # Settings: style select + slot count with a real store round-trip.
-        config = read_services_file("PersonalizationConfig.qml")
-        self.assertIn("property string barWorkspaceStyle", config)
-        self.assertIn("property int barWorkspaceShown", config)
-        self.assertIn("setBarWorkspaceStyle", config)
-        self.assertIn("setBarWorkspaceShown", config)
-        self.assertIn('"workspaceStyle"', config)
-        self.assertIn('"workspaceShown"', config)
-        page = read_bar_file("BarModulesSection.qml")
-        self.assertIn("setBarWorkspaceStyle", page)
-        self.assertIn("setBarWorkspaceShown", page)
+        # Settings: the slot budget and skins are entry axes now (D4b) —
+        # the defaults table carries them and WorkspacesAlt reads the host
+        # entry instead of the store.
+        defaults = read_services_file("BarWidgetDefaults.js")
+        self.assertIn('shown: 10', defaults)
+        self.assertIn('style: "default"', defaults)
+        self.assertIn('root.host.style', read_bar_file("WorkspacesAlt.qml"))
+        options = read_bar_file("options/WorkspacesOptions.qml")
+        self.assertIn('root.page.set("shown"', options)
+        self.assertIn('root.page.set("style"', options)
 
     def test_b9_6_geometry_matches_end4(self):
         # PowerButton: end4 material size 32 (was 28).
@@ -327,7 +329,9 @@ class BarEnd4ContractTest(unittest.TestCase):
 
     def test_divisor_contracts(self):
         content = read_bar_file("Divisor.qml")
-        self.assertIn("PersonalizationConfig.barDividerStyle", content)
+        # D4b: the divider axes are separator entry overrides.
+        self.assertIn('BarWidgetDefaults.option("separator", root.widgetEntry, "style")', content)
+        self.assertIn('BarWidgetDefaults.option("separator", root.widgetEntry, "spacing")', content)
         self.assertIn("isMaterial", content)
         self.assertIn("vertical", content)
 
@@ -356,8 +360,6 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("barCornerStyle", content)
         self.assertIn("barBorderlessModes", content)
         self.assertIn("barBorderless", content)
-        self.assertIn("barDividerStyles", content)
-        self.assertIn("barDividerStyle", content)
         self.assertIn("barGroupColorOptions", content)
         self.assertIn("barWidgetStyles", content)
         # D4a: the widget whitelist comes from BarWidgetDefaults.IDS
@@ -365,8 +367,12 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("BarWidgetDefaults.IDS", content)
         self.assertIn("setBarCornerStyle", content)
         self.assertIn("setBarBorderless", content)
-        self.assertIn("setBarDividerStyle", content)
-        self.assertIn("setBarWidgetStyle", content)
+        # D4b: the divider style vocabulary moved to the separator options
+        # page; the store keeps no per-widget flat keys.
+        self.assertNotIn("barDividerStyles", content)
+        self.assertNotIn("setBarDividerStyle", content)
+        self.assertNotIn("setBarWorkspaceStyle", content)
+        self.assertNotIn("barWorkspaceStyles", content)
 
     def test_bar_content_contracts(self):
         content = read_bar_file("BarContent.qml")
@@ -513,29 +519,36 @@ class TrayContractTest(unittest.TestCase):
         for token in (
             "const tray = configSection(bar.tray)",
             "root.barTrayPinnedItems = root.normalizedTrayPinnedItems(tray.pinnedItems)",
-            "root.barTrayFilterPassive = typeof tray.filterPassive",
+            "root.barTrayInvertPinnedItems = typeof tray.invertPinnedItems",
             '"pinnedItems": root.barTrayPinnedItems.slice()',
-            '"filterPassive": root.barTrayFilterPassive',
             '"invertPinnedItems": root.barTrayInvertPinnedItems',
-            '"showItemId": root.barTrayShowItemId',
-            '"monochromeIcons": root.barTrayMonochromeIcons',
         ):
             self.assertIn(token, content, f"tray persistence token missing: {token}")
+        # D4b: the per-instance tray axes (tint/hidePassive/showItemId) ride
+        # the lane entries; the [bar.tray] block keeps shared state only.
+        for gone in ("filterPassive", "showItemId", "monochromeIcons"):
+            self.assertNotIn(f'"{gone}"', content,
+                             f"tray {gone} must not persist as a flat key anymore")
 
     def test_tint_reads_a_real_config_property(self):
+        # D4b: tint is a per-instance entry axis injected by the SysTray
+        # delegates (no bridge read).
         item = read_bar_file("SysTrayItem.qml")
-        self.assertIn("barTrayMonochromeIcons", read_services_file("Config.qml"))
-        self.assertIn("Config.options?.bar?.m3?.tray?.monochromeIcons", item)
+        self.assertIn("property bool tintIcon: true", item)
+        systray = read_bar_file("SysTray.qml")
+        self.assertIn('BarWidgetDefaults.option("tray", root.widgetEntry, "tintIcons")', systray)
+        self.assertIn("tintIcon: root.tintIcons", systray)
 
     def test_settings_page_exposes_the_tray_controls(self):
-        page = read_bar_file("BarModulesSection.qml")
-        for prop in (
-            "barTrayMonochromeIcons",
-            "barTrayFilterPassive",
-            "barTrayShowItemId",
-            "barTrayInvertPinnedItems",
+        # D4b: the tray rows moved to the per-instance options page.
+        page = read_bar_file("options/TrayOptions.qml")
+        for token in (
+            'root.page.value("tintIcons")',
+            'root.page.value("hidePassive")',
+            'root.page.value("showItemId")',
+            "PersonalizationConfig.barTrayInvertPinnedItems",
         ):
-            self.assertIn(prop, page, f"tray setting has no consumer row: {prop}")
+            self.assertIn(token, page, f"tray setting has no consumer row: {token}")
         self.assertIn('anchorId: "bar.modules.tray"', page)
         with open(os.path.join(BAR_DIR, "manifest.toml"), "r", encoding="utf-8") as f:
             manifest = f.read()
@@ -581,66 +594,53 @@ class BarB9_7SettingsSweepTest(unittest.TestCase):
         self.assertIn('id: "utilButtons"', catalog)
 
     def test_settled_keys_live_in_the_store(self):
+        # D4b: the per-widget settled axes moved to the entry defaults
+        # table; the store keeps the bar-frame keys.
         config = read_services_file("PersonalizationConfig.qml")
         for prop in (
             "property bool barAutoHide",
             "property var barScreenList",
             "property bool barShowBackground",
-            "property int barDividerSpacing",
-            "property bool barShowScreenSnip",
-            "property bool barShowColorPicker",
-            "property bool barShowKeyboardToggle",
-            "property bool barShowMicToggle",
-            "property bool barShowWallpaperToggle",
-            "property bool barShowDarkModeToggle",
-            "property bool barShowPerformanceProfile",
-            "property bool barShowCpu",
-            "property bool barShowCpuTemp",
-            "property bool barShowRam",
-            "property bool barShowDisk",
-            "property bool barShowSwap",
-            "property string barResourceStyle",
-            "property bool barResourceShowValue",
-            "property string barWorkspaceNumberStyle",
         ):
             self.assertIn(prop, config, f"settled key missing from the store: {prop}")
+        defaults = read_services_file("BarWidgetDefaults.js")
+        for axis in (
+            "screenSnip: true",
+            "keyboardToggle: false",
+            "cpu: true",
+            "cpuTemp: false",
+            "ram: true",
+            "disk: false",
+            "swap: false",
+            "iconStyle: \"outline\"",
+            "showValue: false",
+            "numberStyle: \"normal\"",
+        ):
+            self.assertIn(axis, defaults, f"settled axis missing from the defaults table: {axis}")
         for token in (
             "function normalizedScreenList",
-            "function setBarWorkspaceNumberStyle",
             '"autoHide": root.barAutoHide',
             '"screenList": root.barScreenList.slice()',
             '"showBackground": root.barShowBackground',
-            '"dividerSpacing": root.barDividerSpacing',
-            '"numberStyle": root.barWorkspaceNumberStyle',
-            "normalizedScreenList(bar.screenList)",
-            "configSection(bar.utilButtons)",
-            "configSection(bar.resources)",
         ):
-            self.assertIn(token, config, f"store persistence token missing: {token}")
-        # end4 slider bounds 4–400 step 2, clamped on load.
-        self.assertIn("Math.max(4, Math.min(400, Math.round(bar.dividerSpacing / 2) * 2))", config)
-        # Preset arrays are the single truth; the bridge derives the array.
-        self.assertIn('"一"', config)
-        self.assertIn('"XX"', config)
-        self.assertIn("barWorkspaceNumberStyle === \"han\"", config)
+            self.assertIn(token, config, f"settled persistence token missing: {token}")
 
     def test_config_bridge_reads_the_store(self):
         bridge = read_services_file("Config.qml")
         self.assertNotIn("barShowBackground ?? true", bridge,
                          "the bridge must stop defaulting a nonexistent property")
-        self.assertNotIn("barDividerSpacing ?? 4", bridge)
         self.assertNotIn("readonly property var screenList: []", bridge)
-        self.assertEqual(bridge.count("PersonalizationConfig.barDividerSpacing"), 2,
-                         "bar.divider and m3.divider share one owner")
         self.assertIn("enable: PersonalizationConfig.barAutoHide", bridge)
         self.assertIn("screenList: PersonalizationConfig.barScreenList", bridge)
-        self.assertIn("numberMap: PersonalizationConfig.barWorkspaceNumberMap", bridge)
+        # D4b: the migrated per-widget axes left the bridge — widgets read
+        # them through the entry chain (option()) instead.
         for prop in ("barShowScreenSnip", "barShowColorPicker", "barShowKeyboardToggle",
                      "barShowMicToggle", "barShowWallpaperToggle", "barShowDarkModeToggle",
                      "barShowPerformanceProfile", "barShowCpu", "barShowCpuTemp",
                      "barShowRam", "barShowDisk", "barShowSwap", "barResourceStyle",
-                     "barResourceShowValue"):
-            self.assertIn(f"PersonalizationConfig.{prop}", bridge, prop)
+                     "barResourceShowValue", "barWorkspaceNumberMap", "barTrayMonochromeIcons"):
+            self.assertNotIn(f"PersonalizationConfig.{prop}", bridge,
+                             f"{prop} still bridges a retired flat key")
 
     def test_settings_page_rows_and_gates(self):
         appearance = read_bar_file("BarAppearanceSection.qml")
@@ -649,22 +649,22 @@ class BarB9_7SettingsSweepTest(unittest.TestCase):
         self.assertIn("enabled: PersonalizationConfig.barCornerStyle === 0 || PersonalizationConfig.barCornerStyle === 1", appearance)
         self.assertIn('I18n.tr("Show background")', appearance)
         self.assertIn('I18n.tr("Autohide")', appearance)
-        # Divider: the space width row exists only for the space style.
-        self.assertIn('visible: PersonalizationConfig.barDividerStyle === "space"', appearance)
-        self.assertIn('I18n.tr("Space width")', appearance)
+        # D4b: the divider rows and the Numbers style gate moved to the
+        # per-instance options pages; the appearance tab keeps frame axes.
+        self.assertNotIn("barDividerStyle", appearance)
         # Screens: end4 monitor filter with the all-collapse rule.
         self.assertIn("function toggleBarScreen", appearance)
         self.assertIn("list.length === allNames.length ? [] : list", appearance)
         self.assertIn('I18n.tr("All screens")', appearance)
         self.assertNotIn("barScreenList = []", appearance.replace('setValue("barScreenList", [])', ""),
                          "writes go through setValue persistence, not raw assignment")
-        # Widget-scoped rows follow end4's isUsed gate.
-        self.assertIn("function layoutUses", modules)
-        self.assertEqual(modules.count('root.layoutUses("utilButtons")'), 8)
-        self.assertEqual(modules.count('root.layoutUses("systemMonitor")'), 8)
-        self.assertIn('I18n.tr("Numbers style")', modules)
-        self.assertIn("setBarWorkspaceNumberStyle", modules)
-        self.assertIn('visible: PersonalizationConfig.barWorkspaceStyle === "default"', modules)
+        # D4b: the widget-scoped groups retired from the modules tab — the
+        # isUsed gate retired with them (an entry's options exist exactly
+        # while the entry exists).
+        self.assertNotIn("function layoutUses", modules)
+        self.assertNotIn("PersonalizationConfig.barShowAppIcons", modules)
+        self.assertIn("signal widgetEditorRequested(string entryUid)", modules,
+                      "the chip gear routes to the per-instance editor")
 
     def test_power_button_toggles_session_via_action_gateway(self):
         content = read_bar_file("PowerButton.qml")

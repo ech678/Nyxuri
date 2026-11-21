@@ -65,8 +65,9 @@ def js_object_keys(content: str, header: str) -> set[str]:
 
 
 class RegistryAlignmentTest(unittest.TestCase):
-    """Adding a widget is exactly three registrations, and the three id sets
-    cannot drift apart."""
+    """Adding a widget is exactly three code registrations plus the D4b
+    options-page map (four id-bearing surfaces), and the id sets cannot
+    drift apart."""
 
     @classmethod
     def setUpClass(cls):
@@ -86,7 +87,10 @@ class RegistryAlignmentTest(unittest.TestCase):
                          "plugins/bar/BarWidgetFiles.js ids diverge from BarWidgetDefaults.IDS")
 
     def test_defaults_cover_every_widget(self):
-        self.assertEqual(self.ids, self.defaults_keys,
+        # quickSettings is aliased to utilButtons outside the literal (one
+        # component, one axes table — pinned by test_d4b).
+        self.assertIn("DEFAULTS.quickSettings = DEFAULTS.utilButtons", self.defaults)
+        self.assertEqual(self.ids - {"quickSettings"}, self.defaults_keys,
                          "every widget id needs a DEFAULTS entry (empty table is fine)")
 
     def test_whitelist_is_derived_not_duplicated(self):
@@ -239,7 +243,7 @@ class VersionChainTest(unittest.TestCase):
         cls.config_service = read(os.path.join(SERVICES_DIR, "ConfigService.qml"))
 
     def test_version_constants(self):
-        self.assertIn("var CURRENT_VERSION = 3", self.migrations)
+        self.assertIn("var CURRENT_VERSION = 4", self.migrations)
         self.assertIn("var LEGACY_VERSION = 2", self.migrations)
 
     def test_explicit_legacy_layout_keys(self):
@@ -258,9 +262,10 @@ class VersionChainTest(unittest.TestCase):
                         pc.index("const source = configSection(migration.config)"))
 
     def test_stamp_bumped_and_fast_path_keeps_v2(self):
-        self.assertIn("# nyxuri-config-schema: 3\\n", self.config_service)
-        self.assertIn('indexOf("# nyxuri-config-schema: 2") !== -1', self.config_service)
-        self.assertIn('indexOf("# nyxuri-config-schema: 3") !== -1', self.config_service)
+        self.assertIn("# nyxuri-config-schema: 4\\n", self.config_service)
+        self.assertIn('"# nyxuri-config-schema: 2"', self.config_service)
+        self.assertIn('"# nyxuri-config-schema: 3"', self.config_service)
+        self.assertIn('"# nyxuri-config-schema: 4"', self.config_service)
 
 
 class CatalogConsumersTest(unittest.TestCase):
@@ -319,7 +324,7 @@ class ProbeSurfaceTest(unittest.TestCase):
     def test_probe_reports_widget_ids_in_lanes(self):
         probe = read(os.path.join(SHELL, "scripts", "dev", "probe-bar.sh"))
         self.assertIn('"d4a": {', probe)
-        self.assertIn("d4a_ok)", probe, "the global ok gate must include the d4a evidence")
+        self.assertIn("d4a_ok ", probe, "the global ok gate must include the d4a evidence")
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ import Quickshell.Services.Mpris
 import Quickshell.Wayland
 import qs.commons
 import qs.ui
+import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
 
 Item {
     id: root
@@ -18,6 +19,13 @@ Item {
 
     property bool vertical: false
     property bool isMaterial: PersonalizationConfig.barIsMaterial
+    // D4b entry axes: width clamp (D1 kept 160/300), the title line and
+    // the wheel behavior (volume step like the bar edge scroll).
+    property var widgetEntry: null
+    readonly property real mediaMinWidth: BarWidgetDefaults.option("media", root.widgetEntry, "minWidth")
+    readonly property real mediaMaxWidth: BarWidgetDefaults.option("media", root.widgetEntry, "maxWidth")
+    readonly property bool showTitle: BarWidgetDefaults.option("media", root.widgetEntry, "showTitle")
+    readonly property string scrollAction: BarWidgetDefaults.option("media", root.widgetEntry, "scrollAction")
     readonly property MprisPlayer activePlayer: {
         const preferred = Config.options.bar.m3.media.preferredPlayer.trim().toLowerCase();
         if (preferred.length === 0)
@@ -80,7 +88,7 @@ Item {
     }
 
     Layout.fillHeight: true
-    implicitWidth: !root.shouldShow ? 0 : vertical ? Appearance.sizes.verticalBarWidth : Math.max(Config.options.bar.m3.media.minWidth, Math.min((isMaterial ? materialRow.implicitWidth : rowLayout.implicitWidth + 8), Config.options.bar.m3.media.maxWidth))
+    implicitWidth: !root.shouldShow ? 0 : vertical ? Appearance.sizes.verticalBarWidth : Math.max(root.mediaMinWidth, Math.min((isMaterial ? materialRow.implicitWidth : rowLayout.implicitWidth + 8), root.mediaMaxWidth))
     implicitHeight: vertical ? (isMaterial ? 32 : mediaCircProg.implicitHeight) : Appearance.sizes.barHeight
 
     Timer {
@@ -216,6 +224,16 @@ Item {
             if (event.button === Qt.RightButton)
                 root.styleEditorRequested();
         }
+        // D4b scrollAction axis: "volume" steps the default sink like the
+        // bar edge scroll; "none" leaves the wheel to the lane.
+        onWheel: wheel => {
+            if (root.scrollAction !== "volume") {
+                wheel.accepted = false;
+                return;
+            }
+            VolumeService.setSinkVolume(VolumeService.sinkVolume + (wheel.angleDelta.y > 0 ? 0.05 : -0.05));
+            wheel.accepted = true;
+        }
     }
 
     // Vertical default
@@ -293,7 +311,7 @@ Item {
                 }
             }
             StyledText {
-                visible: Config.options.bar.m3.verbose
+                visible: root.showTitle
                 Layout.alignment: Qt.AlignVCenter
                 Layout.fillWidth: true
                 Layout.rightMargin: 0

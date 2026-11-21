@@ -52,6 +52,7 @@
 | D1 Bar 收尾与快修包 | 待验收 | 四快修实机过目（托盘箭头 hover 浅深两模式、DiIdle 三段几何、铃铛不复活）、岛媒体面六态截图、天气有/无数据视觉、visualizer 实机频谱、dateFormat 实机切换 |
 | D2 SystemIcons QS 化 | 待验收 | 实机 hover 手感、150ms intent 防误触体感、浅深两底色可读性 |
 | D4a 配置架构与部件目录 | 待验收 | 实机 chip 显隐开关手感、spacer/separator 添加与拖拽、设置页目录 17 项过目、升级配置一次迁移零感知 |
+| D4b 每部件实例配置 | 待验收 | 实机 chip 齿轮进实例编辑页（13 页过目）、双实例隔离手感（两个时钟不同格式）、电池功耗行视觉、工作区状态色三模式、点击动作实跑（含自定义命令）、升级 v4 迁移零感知 |
 | T3 M3/M4 设置页积木化 | 待验收 | 核心四页 + 全页面实机视觉过目 |
 | P4 主题契约/取色引擎 | 待验收 | 壁纸切换、深浅代调链路、模板 hooks 实机行为；镜像色板长期策略拍板 |
 | A1–A8 性能调查 | 待验收 | A6/A8 进行中；明细与各自剩余项见 [performance-plan](../llms-wiki/shell/performance-plan.md) |
@@ -148,7 +149,7 @@
 - 全屏常驻窗的性能代价进 probe 度量（A 卷口径）。
 - 验收：试点实机开合流畅度、输入 mask 正确性（不挡桌面点击）、性能数据写回本页。
 
-### D4 Bar 自定义引擎（dux 程度，五期）——进行中（D4a 实现落地，2026-11-21，机器证据齐，待作者实机验收）
+### D4 Bar 自定义引擎（dux 程度，五期）——进行中（D4a/D4b 实现落地，2026-11-21，机器证据齐，待作者实机验收）
 
 > 目标定案：自定义度对齐 dux-shell（「GUI 设置面板驱动」流派的天花板），轴覆盖
 > **布局 / 几何 / 样式 / 行为 / 逐部件实例**五层。架构六件套：schema 分层、默认值
@@ -166,7 +167,7 @@
 | 期 | 交付 | dux 来源 |
 | --- | --- | --- |
 | D4a 配置架构与部件目录 | **已落地（2026-11-21）**：`[[bar.configs]]` 数组 schema（lane 混用字符串与 `{id, enabled, ...overrides}` 对象，单条起步）；三层默认回退 + `option()` 单一取值入口 + `widgetEntry` 属性注入协议（首个消费者 Spacer）；`[bar]` 段最小化写入（全默认整段消失、条目坍缩回字符串）；`configVersion` 版本链（v2→v3 + 显式键名映射表，头戳升 3）；部件注册固定三处（`BarWidgetDefaults.js` IDS/DEFAULTS + `ui/BarWidgetCatalog.qml` + `plugins/bar/BarWidgetFiles.js`，契约测试钉死三处 id 集相等）；`divisor`→`separator` 更名（legacy 别名归一）+ `spacer` 一等部件；三份分散目录（`barComponentOptions`/`DashboardBarWidgets`/内联 url map）归一退役；chip 显隐开关 + uid 拖拽身份（重复部件不互吸）。契约 `llms-wiki/shell/bar-config.md`。实现时根因修复：缺失 lane 回退默认 lane（非空数组——fresh config 曾变空 bar）、moveBarComponent 保留「不在场即添加」语义（岛恢复链路） | `SettingsSpec.js` / `BarWidgetDefaults.js` / `WidgetModel.js` |
-| D4b 每部件实例配置 | 格式串（时钟日期等）；显隐子项开关（电池 percent/time/power 各自开关那类）；点击动作（预设动作或自定义命令，左/中/右键）+ 滚轮 X/Y 行为；状态级颜色模式（主题/无/自定义 hex × 各状态）；图标模式与覆盖；尺寸/最小宽；同类型多实例多配置 | `BarWidgetDefaults.js` / `XxxOptions.qml` 每部件设置页模式 |
+| D4b 每部件实例配置 | **已落地（2026-11-21）**：`BarWidgetDefaults.DEFAULTS` 轴表填充（迁移键照搬原值、新轴默认现视觉；quickSettings/utilButtons 一组件一表按引用共享）；13 部件消费迁移到 `widgetEntry + option()`（Workspaces 六轴+状态色、systemMonitor/utilButtons/tray/separator、clock dateFormat/showDate、battery percent/power、media 宽度钳制/标题/滚轮音量、activeWindow 帽宽——`Config` 桥相应映射退役，`DateTime` 全局长格式退役）；点击动作协议 `BarWidgetActions` 单例（9 预设经 ActionGateway 分发 + `command` argv 数组**不经 sh -c**、L/M/R 三轴、`dispatchMouse` 一行接入 7 部件）；v3→v4 迁移（`MIGRATED_WIDGET_GLOBALS` 显式键名映射、逐实例复制/跳默认/幂等、`[time].dateFormat` 折叠进 clock 条目、头戳升 4 快路径收 2/3/4）；第四注册点 `BarWidgetCatalog.optionsFiles` + `BarWidgetPage` 实例编辑页（uid 定位、`value()/set()` facade、chip 齿轮入口、非 manifest 路由不进搜索）+ `plugins/bar/options/` 13 页（结构抄 dux `XxxOptions`，控件换血 Preference 原子）；tray 边界（tint/hidePassive/showItemId 逐实例 + passive 过滤移部件侧，pin 列表/invert 留域共享）；退役 `BarModulesSection` widget-scoped 组（~25 行）与 end4 `isUsed` 门、Appearance divider 三行 + Clock dateFormat 段。契约 `llms-wiki/shell/bar-config.md` D4b 节 | `BarWidgetDefaults.js` / `XxxOptions.qml` 每部件设置页模式 |
 | D4c bar 级几何与样式 | spacing/innerPadding/widgetPadding/inset；长度模式（通栏/百分比居中）；胶囊样式 pills / segments 融合 / flat + 逐部件背景开关 + 裸背景；方角开关；fontScale/iconScale；边框/描边/阴影/透明度（bar 面与部件层分调） | `SegmentRoles.js` 融合角算法 / bar config 60+ 键裁剪 |
 | D4d 行为与溢出 | autoHide（delay/strict/全屏隐藏）、点击穿透；溢出系统：每 lane 溢出按钮 + 每部件 `overflowMode`（section/auto/bar/always）+ priority；hoverPopouts（与 D2/D5a 同机制，150ms intent） | `OverflowLayout.js` / HoverController 只借 intent 语义不搬 32KB 实现 |
 | D4e 多 bar 与编辑体验 | 任意数量 bar 实例（每条独立全配置 + 屏幕集合 screenPreferences）；per-widget 设置页；行级 reset-to-default 感知（每项知道自己是不是默认态）；密度预设（只迁移用户未改过的键） | `ShellCore` Variants / `WidgetsTab` / `DensityPresets.js` |

@@ -10,6 +10,7 @@ import QtQuick
 import qs.services
 import qs.commons
 import qs.ui
+import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
 
 RippleButton {
     id: root
@@ -17,6 +18,9 @@ RippleButton {
     property bool contentColorOverridden: false
     property bool vertical: Config.options.bar.vertical
     property bool isMaterial: PersonalizationConfig.barIsMaterial
+    // D4b click axes: "default" stays the launcher toggle (the button's
+    // identity); overriding routes the buttons through the gateway.
+    property var widgetEntry: null
 
     implicitWidth: 22
     implicitHeight: 22
@@ -29,9 +33,12 @@ RippleButton {
     colBackgroundToggledHover: Appearance.colors.colSecondaryContainerHover
     colRippleToggled: Appearance.colors.colSecondaryContainerActive
 
-    onPressed: ActionGateway.executeIntent({
-        "target": "launcher"
-    })
+    onPressed: mouse => {
+        if (!BarWidgetActions.dispatchMouse("launcherButton", root.widgetEntry, mouse.button))
+            ActionGateway.executeIntent({
+                "target": "launcher"
+            });
+    }
 
     MaterialSymbol {
         anchors.centerIn: parent

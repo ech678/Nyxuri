@@ -7,6 +7,7 @@ import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
 import qs.commons
 import qs.ui
+import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
 
 Item {
     id: root
@@ -14,6 +15,17 @@ Item {
     property bool contentColorOverridden: false
     property bool vertical: Config.options.bar.vertical
     property bool isMaterial: PersonalizationConfig.barIsMaterial
+    // D4b: the seven slots are entry axes (utilButtons == quickSettings
+    // share this component and one axes table).
+    property var widgetEntry: null
+    readonly property string widgetId: root.widgetEntry && root.widgetEntry.widgetId === "quickSettings" ? "quickSettings" : "utilButtons"
+    readonly property bool showScreenSnip: BarWidgetDefaults.option(root.widgetId, root.widgetEntry, "screenSnip")
+    readonly property bool showColorPicker: BarWidgetDefaults.option(root.widgetId, root.widgetEntry, "colorPicker")
+    readonly property bool showKeyboardToggle: BarWidgetDefaults.option(root.widgetId, root.widgetEntry, "keyboardToggle")
+    readonly property bool showMicToggle: BarWidgetDefaults.option(root.widgetId, root.widgetEntry, "micToggle")
+    readonly property bool showWallpaperToggle: BarWidgetDefaults.option(root.widgetId, root.widgetEntry, "wallpaperToggle")
+    readonly property bool showDarkModeToggle: BarWidgetDefaults.option(root.widgetId, root.widgetEntry, "darkModeToggle")
+    readonly property bool showPerformanceProfile: BarWidgetDefaults.option(root.widgetId, root.widgetEntry, "performanceProfile")
 
     implicitWidth: isMaterial && !root.vertical ? flow.implicitWidth : root.vertical ? Appearance.sizes.verticalBarWidth - 14 : flow.implicitWidth + 4
     implicitHeight: isMaterial && root.vertical ? flow.implicitHeight : isMaterial ? 32 : root.vertical ? flow.implicitHeight + 4 : Appearance.sizes.barHeight
@@ -25,7 +37,7 @@ Item {
         spacing: isMaterial ? 2 : 4
 
         Loader {
-            active: Config.options.bar.m3.utilButtons.showScreenSnip
+            active: root.showScreenSnip
             visible: active
             sourceComponent: isMaterial ? screenSnipM3 : legacyScreenSnip
         }
@@ -54,7 +66,7 @@ Item {
         }
 
         Loader {
-            active: Config.options.bar.m3.utilButtons.showColorPicker
+            active: root.showColorPicker
             visible: active
             sourceComponent: isMaterial ? colorPickerM3 : legacyColorPicker
         }
@@ -81,7 +93,7 @@ Item {
         }
 
         Loader {
-            active: Config.options.bar.m3.utilButtons.showKeyboardToggle
+            active: root.showKeyboardToggle
             visible: active
             sourceComponent: isMaterial ? keyboardM3 : legacyKeyboard
         }
@@ -108,7 +120,7 @@ Item {
         }
 
         Loader {
-            active: Config.options.bar.m3.utilButtons.showWallpaperToggle
+            active: root.showWallpaperToggle
             visible: active
             sourceComponent: isMaterial ? wallpaperM3 : legacyWallpaper
         }
@@ -135,7 +147,7 @@ Item {
         }
 
         Loader {
-            active: Config.options.bar.m3.utilButtons.showMicToggle
+            active: root.showMicToggle
             visible: active
             sourceComponent: isMaterial ? micM3 : legacyMic
         }
@@ -162,7 +174,7 @@ Item {
         }
 
         Loader {
-            active: Config.options.bar.m3.utilButtons.showDarkModeToggle
+            active: root.showDarkModeToggle
             visible: active
             sourceComponent: isMaterial ? darkModeM3 : legacyDarkMode
         }
@@ -189,7 +201,7 @@ Item {
         }
 
         Loader {
-            active: Config.options.bar.m3.utilButtons.showPerformanceProfileToggle
+            active: root.showPerformanceProfile
             visible: active
             sourceComponent: isMaterial ? perfM3 : legacyPerf
         }

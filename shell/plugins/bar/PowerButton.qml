@@ -11,6 +11,7 @@ import qs.services
 import qs.commons
 import qs.ui
 import M3Shapes
+import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
 
 RippleButton {
     id: root
@@ -19,6 +20,8 @@ RippleButton {
     property bool isMaterial: PersonalizationConfig.barIsMaterial
     property bool vertical: Config.options.bar.vertical
     property real buttonPadding: 5
+    // D4b click axes: "default" stays the session toggle (Mod+X parity).
+    property var widgetEntry: null
 
     implicitWidth: isMaterial ? Appearance.sizes.barPowerButtonSize : 22
     implicitHeight: implicitWidth
@@ -28,8 +31,9 @@ RippleButton {
     colBackgroundHover: isMaterial ? Appearance.colors.colPrimaryHover : Appearance.colors.colLayer1Hover
     colRipple: isMaterial ? Appearance.colors.colPrimaryActive : Appearance.colors.colLayer1Active
 
-    onClicked: {
-        ActionGateway.requestSessionToggle(root.QsWindow.window?.screen);
+    onClicked: mouse => {
+        if (!BarWidgetActions.dispatchMouse("powerButton", root.widgetEntry, mouse.button))
+            ActionGateway.requestSessionToggle(root.QsWindow.window?.screen);
     }
 
     MaterialSymbol {

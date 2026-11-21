@@ -37,33 +37,16 @@ ColumnLayout {
         id: widgetCatalog
     }
 
+    // D4b: the chip gear targets exactly the widgets with an options page.
+    readonly property var configurableIds: Object.keys(widgetCatalog.optionsFiles)
+    signal widgetConfigureRequested(string entryUid)
+
     Layout.fillWidth: true
     spacing: NexusStyle.padding.extraSmall / 2
 
-    PreferenceToggle {
-        id: namesToggle
-
-        first: true
-        text: I18n.tr("Show device names")
-        checked: PersonalizationConfig.barShowNames
-        onToggled: PersonalizationConfig.setBarShowNames(checked)
-
-        SettingsSearchAnchor {
-            id: searchAnchorComponents
-
-            target: namesToggle
-            anchorId: "bar.modules.components"
-        }
-    }
-
-    PreferenceToggle {
-        last: true
-        text: I18n.tr("Show numeric values")
-        checked: PersonalizationConfig.barShowValues
-        onToggled: PersonalizationConfig.setBarShowValues(checked)
-    }
-
     StyledText {
+        id: componentsHint
+
         Layout.fillWidth: true
         Layout.leftMargin: NexusStyle.padding.extraSmall
         Layout.rightMargin: NexusStyle.padding.extraSmall
@@ -72,6 +55,13 @@ ColumnLayout {
         color: Appearance.m3colors.m3onSurfaceVariant
         font.pixelSize: NexusStyle.font.bodySmall
         wrapMode: Text.Wrap
+
+        // Manifest anchor (bar.modules.components) — the dead
+        // show-names/values rows that carried it were executed with D4b.
+        SettingsSearchAnchor {
+            target: componentsHint
+            anchorId: "bar.modules.components"
+        }
     }
 
     StyledText {
@@ -119,7 +109,9 @@ ColumnLayout {
                 options: widgetCatalog.options()
                 allowDuplicates: true
                 zone: "left"
+                configurableIds: root.configurableIds
                 dragCoordinator: root.zoneCoordinator
+                onConfigureRequested: entryKey => root.widgetConfigureRequested(entryKey)
                 onToggled: componentId => PersonalizationConfig.addBarEntry(zone, componentId)
                 onRemoved: entryKey => PersonalizationConfig.removeBarEntry(entryKey)
                 onEnabledToggled: entryKey => PersonalizationConfig.toggleBarEntryEnabled(entryKey)
@@ -160,7 +152,9 @@ ColumnLayout {
                 options: widgetCatalog.options()
                 allowDuplicates: true
                 zone: "middle"
+                configurableIds: root.configurableIds
                 dragCoordinator: root.zoneCoordinator
+                onConfigureRequested: entryKey => root.widgetConfigureRequested(entryKey)
                 onToggled: componentId => PersonalizationConfig.addBarEntry(zone, componentId)
                 onRemoved: entryKey => PersonalizationConfig.removeBarEntry(entryKey)
                 onEnabledToggled: entryKey => PersonalizationConfig.toggleBarEntryEnabled(entryKey)
@@ -202,7 +196,9 @@ ColumnLayout {
                 options: widgetCatalog.options()
                 allowDuplicates: true
                 zone: "right"
+                configurableIds: root.configurableIds
                 dragCoordinator: root.zoneCoordinator
+                onConfigureRequested: entryKey => root.widgetConfigureRequested(entryKey)
                 onToggled: componentId => PersonalizationConfig.addBarEntry(zone, componentId)
                 onRemoved: entryKey => PersonalizationConfig.removeBarEntry(entryKey)
                 onEnabledToggled: entryKey => PersonalizationConfig.toggleBarEntryEnabled(entryKey)

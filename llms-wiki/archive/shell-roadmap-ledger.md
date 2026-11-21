@@ -1571,3 +1571,68 @@ qml-lint 629 条 advisory 警告为既有 qs.* 成员解析噪声）。`probe-ba
   test_shell_architecture（双区同步→单真相派生视图）。
 - **未验证（作者）**：实机 chip 显隐开关手感、spacer/separator 添加与拖拽、
   设置页目录 17 项过目、真实 v2 配置升级一次迁移零感知（本机 live 配置迁移）。
+
+## D4b 每部件实例配置（2026-11-21 实现落地）
+
+- **轴表**：`BarWidgetDefaults.DEFAULTS` 填充 13 部件轴（默认值全部 = D4b 前行为：
+  迁移键照搬、新轴默认现视觉）；`workspaceNumberMap()` 纯函数承接 han/roman 字形
+  （原 PersonalizationConfig 派生属性退役）；quickSettings/utilButtons 一组件
+  （BarWidgetFiles 同映射 UtilButtons.qml）一表按引用共享
+  （`DEFAULTS.quickSettings = DEFAULTS.utilButtons`）。
+- **消费迁移**：Workspaces（shown/style/showAppIcons/alwaysShowNumbers/
+  indicatorStyle 六轴 + active/occupied 状态色，默认皮肤限定，WorkspacesAlt 改读
+  host.style）、UtilButtons 七槽、Resources/Resource 七轴（Resource 收注入
+  iconStyle/showValue）、SysTray/SysTrayItem/TrayService、Divisor、ClockWidget
+  （showDate/dateFormat 逐实例格式化，DateTime.date/longDate 全局长格式退役）、
+  BatteryIndicator（showPercent/showPower 新轴 + 功耗行 W 文本 + 光学居中偏移）、
+  Media（minWidth/maxWidth/showTitle/scrollAction 滚轮音量）、ActiveWindow
+  （maxWidth + 点击）、WeatherBar/LauncherButton/PowerButton（点击）。Config 桥
+  被取代的映射全部退役（m3.verbose/divider/resources 指针/utilButtons/tray/
+  workspaces 四键/media 宽度/time.dateFormat）。
+- **点击协议**：`plugins/bar/BarWidgetActions.qml` 单例（qmldir 登记）——9 预设
+  （default/none/dashboard/quicksettings/launcher/overview/power-menu/lock/
+  command）经 ActionGateway 分发（overview 走 CompositorDriver）；`command` 存
+  **argv 数组**、`execute` 前 Array.isArray + 非空串校验——**不存 shell 字符串、
+  不 sh -c**（红线）；`dispatchMouse(widgetId, entry, button)` 一行接入；设置页
+  输入按空白拆分、不支持引号（登记边界）。
+- **v3→v4 迁移**：`MIGRATED_WIDGET_GLOBALS` 显式键名映射（entryKey→[section,
+  flatKey]，quickSettings 按引用共享 utilButtons 映射）；dux
+  migrateBarWidgetGlobals 语义（逐实例复制/条目已有键赢/等于默认跳过/折叠后删
+  全局键/幂等）；`[time].dateFormat` 折叠进 clock 条目；头戳升 4、快路径收
+  2/3/4；seed 增 `defaults: BarWidgetDefaults.DEFAULTS`（默认值比对来源）。
+- **设置面**：第四注册点 `ui/BarWidgetCatalog.qml optionsFiles`（契约：keys ⊆
+  IDS、文件存在、quickSettings==utilButtons 页）；`BarWidgetPage` 实例编辑页
+  （uid 定位、value()/set() facade、通用卡显隐+lane、Loader 载
+  `plugins/bar/options/` 13 页并注入 page；死条目守卫回 overview）；chip 齿轮
+  （SortableMultiSelectField `configureRequested` → Card → Section →
+  GeneralBarPage.openWidgetEditor）；**非 manifest 路由**——uid 参数化页面不进
+  导航/搜索（bar.modules.tray 锚点迁 TrayOptions 页内）。
+- **tray 边界**：tintIcons/hidePassive/showItemId 逐实例（passive 过滤移 SysTray
+  部件侧——`visibleNotInList` 本地计算，TrayService 只供原始桶、isPinned 改成员
+  资格取模反转推导）；pinnedItems/invertPinnedItems 留 `[bar.tray]` 域共享
+  （pin 单事实）。
+- **退役清账**：BarModulesSection widget-scoped 组（~25 行）+ end4 isUsed 门；
+  Appearance divider 三行 + Clock dateFormat 段；`barShowValues/barShowNames`
+  **非死键**（quickpanel 弹层数据面，B9.7 落地时 UI 挂错卡片——本轮误判处决后
+  probe 对照发现，恢复属性并把入口迁 UtilButtonsOptions "Hover popouts"）。
+- **明确不迁（登记）**：island* 轴（岛页独立架构，待 D4c/D4e）、barWidgetStyles
+  （右键改色 = D4c）、quickSettingsComponents（quickpanel 域）、overflow/
+  placement/pill（D4c/D4d）。
+- **probe 扩展**：`d4b` 报告节（migration/instances/clickVocabulary 三组 + 全局
+  ok 门）；IPC 新增 d4bSet/d4bMigration/d4bInstances/d4bClickVocabulary；
+  b97 系列全部改走 d4bSet 条目路径（divider/util/resources/number/micToggle
+  持久化——后者须用 quickSettings id，默认右 lane 无 utilButtons）；dateFormat
+  probe 自带 clock 舞台（默认 lane 无 clock 条目，staged 加入/恢复）；probe 引
+  `plugins/bar` 目录 import（root 语境，qml_structure 豁免登记）。**修 probe 三
+  bug**：sparseBarConfigs 返回数组（`sparse[0].lanes`）、迁移 legacy 键名
+  （numberStyle 非 workspaceNumberStyle）、d4bInstances TypeError 抢在 lane 恢复
+  前抛出把右 lane 变 3 clock（连锁杀死 tray 探测——TypeError 修复后自愈）。
+- **验证**：`tests/shell/test_d4b_bar_config.py` 38 例全绿；probe 全绿（703 tests
+  仅剩 test_shell_architecture 6 个预存 R 系失败，stash 对照同数）；i18n 词典补
+  30 键（28 新 + D2 遗留 DND/Eth，test_i18n_catalog 回绿）；顺手修 D4a 遗留两红
+  （test_weather_lifecycle STAMP 2→4、test_plugin_manifests island_loader 内联
+  map 断言→注册表）；旧契约更新钉：test_bar_end4 7 项、test_d1 3 项、
+  test_settings_pages 3 项、test_d4a 版本钉 4。
+- **未验证（作者）**：chip 齿轮进 13 页实机过目、双实例隔离手感、电池功耗行、
+  工作区状态色三模式、点击动作实跑（含自定义命令）、v4 升级零感知（本机 live
+  配置）。

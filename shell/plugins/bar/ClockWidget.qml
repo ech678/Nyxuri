@@ -3,12 +3,19 @@ import QtQuick
 import QtQuick.Layouts
 import qs.commons
 import qs.ui
+import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
 
 BarWidgetSwitcher {
     id: root
     property color contentColor: Appearance.colors.colOnLayer1
     property bool contentColorOverridden: false
-    property bool showDate: Config.options.bar.m3.verbose
+    // D4b entry axes: showDate/dateFormat replace the old verbose bridge
+    // read and the global [time].dateFormat key; the long date formats
+    // per instance now.
+    property var widgetEntry: null
+    readonly property bool showDate: BarWidgetDefaults.option("clock", root.widgetEntry, "showDate")
+    readonly property string dateFormat: BarWidgetDefaults.option("clock", root.widgetEntry, "dateFormat")
+    readonly property string longDate: root.dateFormat !== "" ? Qt.formatDateTime(root.today, root.dateFormat) : Qt.formatDateTime(root.today, "dddd, dd/MM")
     property var today: new Date()
     readonly property string dateTimeString: DateTime.time
     readonly property bool hasAmPm: dateTimeString.toLowerCase().includes("am") || dateTimeString.toLowerCase().includes("pm")
@@ -128,7 +135,7 @@ BarWidgetSwitcher {
                 font.family: root._dateFontFamily.length > 0 ? root._dateFontFamily : Appearance.font.main
                 font.pixelSize: root._datePixelSize > 0 ? root._datePixelSize : NexusStyle.font.bodyMedium
                 color: root.contentColor
-                text: DateTime.longDate ?? ""
+                text: root.longDate
             }
             StyledText {
                 visible: root.showDate
@@ -163,9 +170,9 @@ BarWidgetSwitcher {
                 font.family: root._dateFontFamily.length > 0 ? root._dateFontFamily : Appearance.font.main
                 font.pixelSize: root._datePixelSize > 0 ? root._datePixelSize : NexusStyle.font.bodyMedium
                 color: M3Palette.pillInk("clockWidget")
-                // iNiR's DateTime exposes `date` (long form) and `shortDate`;
-                // upstream's `longDate` does not exist here.
-                text: DateTime.date
+                // The per-instance long form (dateFormat axis) keeps the
+                // stacked-pill row identical across clock skins.
+                text: root.longDate
                 Layout.alignment: Qt.AlignVCenter
                 leftPadding: 5
             }
@@ -217,8 +224,13 @@ BarWidgetSwitcher {
         anchors.fill: parent
         readonly property bool clickForDetails: Config.options?.bar?.m3?.tooltips?.clickToShow ?? false
         hoverEnabled: true
+        // D4b click axes: a consumed dispatch ends here; "default"/"none"
+        // fall through to the built-in popup behavior.
+        acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
         onClicked: mouse => {
-            if (mouse.button === Qt.LeftButton && clickForDetails)
+            if (BarWidgetActions.dispatchMouse("clock", root.widgetEntry, mouse.button))
+                mouse.accepted = true;
+            else if (mouse.button === Qt.LeftButton && clickForDetails)
                 clockPopup.active = !clockPopup.active;
         }
 

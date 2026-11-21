@@ -2,8 +2,9 @@
 
 > 本页是 bar 自定义引擎（D4 五期）的架构契约：配置 schema、默认值回退、最小化写入、
 > 版本化迁移、部件注册表与属性注入协议。分期交付与验收归
-> [shell/ROADMAP](../../shell/ROADMAP.md) D 卷；D4a 于 2026-11-21 落地，后续期次在此页
-> 增量补节。运行行为以源码与契约测试（`tests/shell/test_d4a_bar_config.py`）为准。
+> [shell/ROADMAP](../../shell/ROADMAP.md) D 卷；D4a/D4b 于 2026-11-21 落地，后续期次
+> 在此页增量补节。运行行为以源码与契约测试（`tests/shell/test_d4a_bar_config.py`、
+> `tests/shell/test_d4b_bar_config.py`）为准。
 
 ## 铁原则
 
@@ -87,7 +88,8 @@ id 视图，Config 桥对 vendor 供应这个——禁用部件不算「在场�
 | 2 | `ui/BarWidgetCatalog.qml` | id → label/icon（跨表面共享展示目录；label 惰性翻译，见 DashboardBarWidgets 前例） |
 | 3 | `plugins/bar/BarWidgetFiles.js` | id → 组件文件（实例化映射；未知 id 落空并 warn，大小写兜底已处决） |
 
-- 三处 id 集合相等由 `test_d4a_bar_config.py` 契约钉死；D4b 起 + 第四处（设置页）。
+- 三处 id 集合相等由 `test_d4a_bar_config.py` 契约钉死；**D4b 起第四注册点**（设置页
+  options 映射，见下节）由 `test_d4b_bar_config.py` 钉死。
 - 旧三份分散目录已归一退役：`PersonalizationConfig.barComponentOptions`、
   `ui/DashboardBarWidgets.qml`、BarContent/VerticalBarContent 内联 url map。
 - 形状预留三方部件：注册表是纯数据，未来三方 id → file:// URL 直接可挂。
@@ -110,9 +112,92 @@ legacy 别名在 load/normalize 期归一：`clockWidget→clock`、`sysTray→t
 - Dashboard 布局卡走 `setBarLayouts` id 替换 API（该编辑器不感知 per-entry 状态，
   属有意边界）；`setBarLayouts` 语义 = 整段替换（禁用/覆盖状态重置）。
 
+## 每部件实例轴（D4b）
+
+D4b 把 per-widget 轴从 `[bar]` 扁平键迁到 lane 条目 overrides，交付部件实例编辑页。
+**每个默认值 = D4b 前的现行行为**：迁移键照搬原值，新轴默认现视觉——引擎不另立审美。
+
+### 轴表（`BarWidgetDefaults.DEFAULTS`）
+
+| 部件 | 轴（默认值） |
+| --- | --- |
+| spacer | size(20) |
+| separator | style(rect)/spacing(4) |
+| clock | showDate(true)/dateFormat("")/click·middle·rightAction(none)/clickCommand([]) |
+| workspaces | showAppIcons(false)/alwaysShowNumbers(true)/indicatorStyle(dot)/style(default)/numberStyle(normal)/shown(10)/activeColorMode(theme)+activeCustomColor/occupiedColorMode(theme)+occupiedCustomColor |
+| systemMonitor | cpu(true)/cpuTemp(false)/ram(true)/disk(false)/swap(false)/iconStyle(outline)/showValue(false) |
+| utilButtons = quickSettings | screenSnip(true)/colorPicker(true)/keyboardToggle(false)/micToggle(false)/wallpaperToggle(false)/darkModeToggle(true)/performanceProfile(false) |
+| tray | tintIcons(true)/hidePassive(true)/showItemId(false) |
+| battery | showPercent(true)/showPower(false)/click 三键(none)/clickCommand([]) |
+| media | minWidth(160)/maxWidth(300)/showTitle(true)/scrollAction(none) |
+| activeWindow | maxWidth(280)/click 三键(none)/clickCommand([]) |
+| weather / launcherButton / powerButton | click 三键(default = 内建行为)/clickCommand([]) |
+
+- `quickSettings` 与 `utilButtons` 是同一组件（`BarWidgetFiles` 同映射
+  `UtilButtons.qml`），**表按引用共享**（`DEFAULTS.quickSettings = DEFAULTS.utilButtons`）。
+- workspaces 状态色只作用于默认皮肤（四皮肤里只有它承载状态色语义）；
+  `numberStyle` 的 han/roman 字形数组是 `BarWidgetDefaults.workspaceNumberMap()` 纯函数。
+
+### 点击与滚轮协议
+
+- 词表 `plugins/bar/BarWidgetActions.qml`（单例，qmldir 登记）：
+  `default/none/dashboard/quicksettings/launcher/overview/power-menu/lock/command`。
+  `default` 返回 false（部件落回内建行为）；`command` 执行**argv 数组**经
+  `ActionGateway.execute(args, "bar-widget:<id>")`——不存 shell 字符串、不 `sh -c`
+  （shell/AGENTS.md 红线）；设置页输入按空白拆分、不支持引号（登记边界）。
+- 消费形状：`BarWidgetActions.dispatchMouse(widgetId, entry, button)` 一行接入；
+  L/M/R 各自一轴（clickAction/middleClickAction/rightClickAction）。
+- 滚轮：`media.scrollAction`（none/volume，步进与 bar 边缘滚动一致 0.05）。
+
+### v4 迁移（`ConfigMigrations.js`）
+
+- `MIGRATED_WIDGET_GLOBALS` 显式键名映射（entryKey → [section, flatKey]，"" 段 =
+  [bar] 直键）；`quickSettings` 条目按引用共享 utilButtons 的映射（一组件一表）。
+- 唯一例外：`[time].dateFormat` 折叠进 clock 条目（该键在 [bar] 外）。
+- dux `migrateBarWidgetGlobals` 语义：逐实例复制、条目已有键赢、**等于默认值跳过**
+  （最小写入本就会删）、折叠后删全局键；幂等（跑完版本即 4）。
+- 头戳升 4；ConfigService 快路径接受 2/3/4（老文件 QML 侧迁移，不走 python helper）。
+
+### tray 边界（域共享状态 vs 逐实例轴）
+
+- 逐实例：tintIcons/hidePassive/showItemId——passive 过滤移到 `SysTray` 部件侧
+  （`TrayService` 只供原始成员桶，永不过滤 `Status.Passive`）；tint/showItemId 由
+  SysTray 委托注入 `SysTrayItem`。
+- 域共享：`pinnedItems`/`invertPinnedItems` 留在 `[bar.tray]`——pin 是托盘域单事实
+  （一份 pin 列表，多实例共享；`isPinned` 按成员资格取模反转推导）。
+
+### 第四注册点与设置面
+
+- `ui/BarWidgetCatalog.qml` 增 `optionsFiles` 映射（id → `plugins/bar/options/`
+  页面文件）；契约：keys ⊆ IDS、文件存在、quickSettings == utilButtons 页。
+- `BarWidgetPage.qml`：实例编辑页宿主——uid 定位条目、`value()/set()` facade
+  （选项页存储盲写，全走 `page.*`）、通用卡（显隐 + lane 位置）+ Loader 载选项页。
+  **不是 manifest 路由**：uid 参数化页面不进导航/搜索（登记边界；bar.modules.tray
+  搜索锚迁移到 TrayOptions 页内）。
+- 入口：chip 齿轮（`SortableMultiSelectField.configureRequested(entryKey)` →
+  `BarComponentsCard` → `BarModulesSection` → `GeneralBarPage.openWidgetEditor`）。
+- 退役：`BarModulesSection` 的 widget-scoped 组（Workspaces/Utility/Resources/Tray
+  约 25 行）与 end4 `isUsed` 门（条目的选项随条目存在而存在）、
+  `BarAppearanceSection` 的 divider 三行与 Clock dateFormat 段。
+- 共享行留存：`barShowValues`/`barShowNames` 是 **quickpanel 弹层**的数据面形状键
+  （全局一份，消费者 `plugins/bar/quickpanel/*`），入口迁 UtilButtonsOptions
+  "Hover popouts" 段，不进轴表。
+
+### 明确不迁（登记边界）
+
+- **island\* 轴**：岛设置页独立架构（D3 搁置连带），待 D4c/D4e 处置；岛条目暂无轴。
+- `barWidgetStyles`（右键改色弹层，per-(mode,widget)）= D4c 材料。
+- `quickSettingsComponents`（quickpanel 域组件集合）不在 bar 条目轴。
+- overflow/placement/pill background/密度 = D4c/D4d/D4e 材料。
+
 ## 证据
 
-probe（`scripts/dev/probe-bar.sh`）`d4a` 节：条目几何（禁用不实例化/lane 塌陷/
-spacer 注入 40 vs 默认 20/单例去重）、迁移（版本/别名/种子/剥除/幂等）、持久化
-（默认空段/单键/恢复空/configVersion=3）。契约测试
-`tests/shell/test_d4a_bar_config.py` 32 例。
+- **D4a**：probe `d4a` 节——条目几何（禁用不实例化/lane 塌陷/spacer 注入 40 vs
+  默认 20/单例去重）、迁移（版本/别名/种子/剥除/幂等）、持久化（默认空段/单键/
+  恢复空/configVersion=4）。契约测试 `tests/shell/test_d4a_bar_config.py` 32 例。
+- **D4b**：probe `d4b` 节——迁移（v4 折叠/跳默认/剥除/pin 保留/dateFormat 折叠/
+  幂等）、双实例隔离（默认态坍缩回字符串）、点击词表（闭合 id、argv 形状、未知
+  id 回退）；`d4bSet` IPC 写单轴（b97 系列部件行为随动全部改走条目路径）。
+  契约测试 `tests/shell/test_d4b_bar_config.py`（38 例）。
+
+

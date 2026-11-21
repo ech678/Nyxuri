@@ -1,11 +1,12 @@
 // Fork & Trim: end4-pC modules/ii/bar/WorkspacesAlt.qml
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-// Trimmed for Nyxuri: the style key lives in PersonalizationConfig
-// (barWorkspaceStyle); imports map to qs.commons/qs.services. The host/model
-// interface (slotLength, shownCount, occupied, getWorkspaceIdAt,
-// fakeWorkspace, workspaceIndexInGroup, hoverIndex) stays identical to
-// upstream so this file remains a verbatim fork.
+// Trimmed for Nyxuri: the style key rides the host's entry axes (D4b,
+// option("workspaces", entry, "style")); imports map to qs.commons/
+// qs.services. The host/model interface (slotLength, shownCount,
+// occupied, getWorkspaceIdAt, fakeWorkspace, workspaceIndexInGroup,
+// hoverIndex) stays identical to upstream so this file remains a
+// verbatim fork.
 
 pragma ComponentBehavior: Bound
 import qs.commons
@@ -18,7 +19,7 @@ Item {
     required property var host
     required property var model
 
-    readonly property string style: PersonalizationConfig.barWorkspaceStyle
+    readonly property string style: root.host.style
     readonly property bool vertical: root.host.vertical
     readonly property real slot: root.host.slotLength
     readonly property int count: root.model.shownCount

@@ -73,7 +73,7 @@ ANCHOR_IDS = {
     "BarComponentsCard.qml": (
         "bar.modules.components",
     ),
-    "BarModulesSection.qml": (
+    "options/TrayOptions.qml": (
         "bar.modules.tray",
     ),
     "DockPage.qml": (
@@ -616,8 +616,8 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
         self.assertIn("function showTab(", source)
 
     def test_search_anchor_ids_are_stable(self):
-        for name in ("BarAppearanceSection.qml", "BarComponentsCard.qml", "BarModulesSection.qml"):
-            source = _read(name)
+        for name in ("BarAppearanceSection.qml", "BarComponentsCard.qml", "options/TrayOptions.qml"):
+            source = _read(name.rsplit("/", 1)[-1])
             for anchor_id in ANCHOR_IDS[name]:
                 self.assertIn('anchorId: "%s"' % anchor_id, source,
                               f"anchor missing or rewritten in {name}: {anchor_id}")
@@ -628,17 +628,18 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
         card = _read("BarComponentsCard.qml")
         for atom in ("PreferenceHeader", "PreferenceToggle", "PreferenceSelect", "PreferenceSlider"):
             self.assertIn(atom, appearance, f"BarAppearanceSection must use the atom: {atom}")
-        for atom in ("PreferenceHeader", "PreferenceToggle", "PreferenceSelect", "PreferenceAction"):
+        # D4b: the widget-scoped rows retired to the per-instance options
+        # pages; the modules tab keeps the header/action shape.
+        for atom in ("PreferenceHeader", "PreferenceAction"):
             self.assertIn(atom, modules, f"BarModulesSection must use the atom: {atom}")
-        for atom in ("PreferenceToggle", "ConnectedRect"):
+        for atom in ("ConnectedRect",):
             self.assertIn(atom, card, f"BarComponentsCard must use the atom: {atom}")
-        # B9.6: the workspace style select joins the popup-input-region group.
-        # B9.7: the Numbers style and Resources icon style selects join too.
-        # Five selects ride the appearance tab, four the modules tab.
-        self.assertEqual(appearance.count("inputRegionService: PopupInputRegionService"), 5,
+        # Four selects ride the appearance tab (edge/corner/borderless/
+        # group color); the modules tab carries none anymore.
+        self.assertEqual(appearance.count("inputRegionService: PopupInputRegionService"), 4,
                          "the appearance selects must register the popup input region")
-        self.assertEqual(modules.count("inputRegionService: PopupInputRegionService"), 4,
-                         "the modules selects must register the popup input region")
+        self.assertEqual(modules.count("inputRegionService: PopupInputRegionService"), 0,
+                         "the modules selects moved to the per-widget options pages")
 
     def test_drag_fields_and_coordinators_survive(self):
         card = _read("BarComponentsCard.qml")
@@ -663,8 +664,6 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
         for owner in ("PersonalizationConfig.setBarPosition(", "PersonalizationConfig.edgePositions"):
             self.assertIn(owner, appearance, f"business owner dropped: {owner}")
         for owner in (
-            "PersonalizationConfig.setBarShowNames(",
-            "PersonalizationConfig.setBarShowValues(",
             "PersonalizationConfig.addBarEntry(",
             "PersonalizationConfig.removeBarEntry(",
             "PersonalizationConfig.toggleBarEntryEnabled(",

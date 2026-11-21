@@ -19,6 +19,7 @@ import Quickshell.Widgets
 import qs.commons
 import qs.services
 import qs.ui
+import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
 
 Item {
     id: root
@@ -26,6 +27,9 @@ Item {
     property color contentColor: Appearance.colors.colOnLayer0
     property bool contentColorOverridden: false
     property bool vertical: false
+    // D4b entry axes: the end4 280px title clamp and L/M/R click actions.
+    property var widgetEntry: null
+    readonly property real maxWidth: BarWidgetDefaults.option("activeWindow", root.widgetEntry, "maxWidth")
 
     readonly property string outputName: root.QsWindow.window?.screen?.name ?? ""
     readonly property var workspace: CompositorDriver.activeWorkspaceForOutput(root.outputName)
@@ -40,8 +44,19 @@ Item {
 
     readonly property color subtextColor: root.contentColorOverridden ? Qt.alpha(root.contentColor, 0.7) : Appearance.colors.colSubtext
 
-    implicitWidth: root.vertical ? Appearance.sizes.verticalBarWidth : Math.min(colLayout.implicitWidth + 12, 280)
+    implicitWidth: root.vertical ? Appearance.sizes.verticalBarWidth : Math.min(colLayout.implicitWidth + 12, root.maxWidth)
     implicitHeight: root.vertical ? 22 : Appearance.sizes.barHeight
+
+    // D4b click axes: transparent to the lane unless an action consumed
+    // the click ("none" default swallows nothing, the handler is inert).
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+        enabled: BarWidgetDefaults.option("activeWindow", root.widgetEntry, BarWidgetActions.axisForButton(Qt.LeftButton)) !== "none" || BarWidgetDefaults.option("activeWindow", root.widgetEntry, BarWidgetActions.axisForButton(Qt.MiddleButton)) !== "none" || BarWidgetDefaults.option("activeWindow", root.widgetEntry, BarWidgetActions.axisForButton(Qt.RightButton)) !== "none"
+        onClicked: mouse => {
+            mouse.accepted = BarWidgetActions.dispatchMouse("activeWindow", root.widgetEntry, mouse.button);
+        }
+    }
 
     // Vertical
     Item {

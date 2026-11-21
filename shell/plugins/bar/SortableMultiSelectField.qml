@@ -9,6 +9,10 @@ FocusScope {
     id: root
 
     property var options: []
+    // Ids whose chip carries the options gear (D4b). The catalog's
+    // optionsFiles keys, injected by the card; empty = no gear anywhere
+    // (the quick settings pool passes nothing).
+    property var configurableIds: []
     // Values are plain id strings OR bar lane entry objects
     // {widgetId, uid, enabled} (D4a). Entry values render an enabled toggle
     // and identify chips by uid so duplicate ids (spacers) stay distinct.
@@ -63,6 +67,9 @@ FocusScope {
     signal toggled(string componentId)
     signal removed(string entryKey)
     signal enabledToggled(string entryKey)
+    // D4b: per-instance options (chip gear). Only entry values (bar lanes)
+    // render the affordance.
+    signal configureRequested(string entryKey)
 
     function valueId(value) {
         return value && typeof value === "object" ? String(value.widgetId || "") : String(value || "");
@@ -661,7 +668,8 @@ FocusScope {
                 readonly property bool ownsActiveDrag: root.dragActive && root.dragCoordinator && root.dragCoordinator.componentUid === chipDelegate.entryKey && root.dragCoordinator.sourceZone === root.zone
                 readonly property bool isDragged: root.dragActive && root.dragCoordinator && root.dragCoordinator.componentUid === chipDelegate.entryKey && !placeholder
                 readonly property bool canToggleEnabled: root.entryValues && !placeholder
-                readonly property real naturalWidth: Math.max(88, chipLabel.implicitWidth + (chipDelegate.canToggleEnabled ? 94 : 70))
+                readonly property bool canConfigure: root.entryValues && !placeholder && root.configurableIds.indexOf(chipDelegate.componentId) !== -1
+                readonly property real naturalWidth: Math.max(88, chipLabel.implicitWidth + (chipDelegate.canToggleEnabled ? 94 : 70) + (chipDelegate.canConfigure ? 22 : 0))
 
                 width: naturalWidth
                 height: 30
@@ -706,10 +714,45 @@ FocusScope {
 
                         anchors {
                             left: chipIcon.right
-                            right: chipDelegate.canToggleEnabled ? enabledToggle.left : closeButton.left
+                            right: chipDelegate.canConfigure ? configureButton.left : chipDelegate.canToggleEnabled ? enabledToggle.left : closeButton.left
                             leftMargin: 6
                             rightMargin: 4
                             verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    // D4b: per-instance options entry (the chip gear).
+                    Item {
+                        id: configureButton
+
+                        anchors.right: chipDelegate.canToggleEnabled ? enabledToggle.left : closeButton.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 22
+                        height: 30
+                        visible: chipDelegate.canConfigure
+
+                        MaterialSymbol {
+                            anchors.centerIn: parent
+                            text: "tune"
+                            iconSize: 15
+                            fill: 0
+                            color: configureHover.hovered ? Appearance.colors.colOnPrimaryContainer : Qt.alpha(Appearance.colors.colOnPrimaryContainer, 0.75)
+                        }
+
+                        HoverHandler {
+                            id: configureHover
+                        }
+
+                        MouseArea {
+                            id: configureMouse
+
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: mouse => {
+                                mouse.accepted = true;
+                                root.configureRequested(chipDelegate.entryKey);
+                            }
                         }
                     }
 
@@ -792,7 +835,7 @@ FocusScope {
                     DragHandler {
                         id: dragHandler
 
-                        enabled: root.dragCoordinator !== null && (!closeMouse.containsMouse || chipDelegate.ownsActiveDrag) && (!enabledMouse.containsMouse || chipDelegate.ownsActiveDrag)
+                        enabled: root.dragCoordinator !== null && (!closeMouse.containsMouse || chipDelegate.ownsActiveDrag) && (!enabledMouse.containsMouse || chipDelegate.ownsActiveDrag) && (!configureMouse.containsMouse || chipDelegate.ownsActiveDrag)
                         target: null
                         dragThreshold: 8
                         onActiveChanged: {

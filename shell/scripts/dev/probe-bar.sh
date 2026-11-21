@@ -390,15 +390,16 @@ if ipc cornerStyle 1 >/dev/null 2>&1; then
         ipc b97Set barShowBackground true >/dev/null 2>&1 || true
         sleep 0.3
     fi
-    # Divider: the space style reads the settled width (end4 spinbox).
+    # Divider: the space style reads the settled width (end4 spinbox). D4b:
+    # style/spacing are separator entry axes (d4bSet), not flat keys.
     if ipc scene divisorLeft >/dev/null 2>&1; then
         sleep 0.5
-        ipc b97Set barDividerStyle '"space"' >/dev/null 2>&1 || true
-        ipc b97Set barDividerSpacing 20 >/dev/null 2>&1 || true
+        ipc d4bSet separator style '"space"' >/dev/null 2>&1 || true
+        ipc d4bSet separator spacing 20 >/dev/null 2>&1 || true
         sleep 0.4
         b97_divider=$(ipc b97Dump 2>/dev/null || true)
-        ipc b97Set barDividerStyle '"rect"' >/dev/null 2>&1 || true
-        ipc b97Set barDividerSpacing 4 >/dev/null 2>&1 || true
+        ipc d4bSet separator style '"rect"' >/dev/null 2>&1 || true
+        ipc d4bSet separator spacing 4 >/dev/null 2>&1 || true
         ipc scene default >/dev/null 2>&1 || true
         sleep 0.4
     fi
@@ -408,13 +409,13 @@ if ipc cornerStyle 1 >/dev/null 2>&1; then
         ipc scene utilOnly >/dev/null 2>&1 || true
         ipc reload >/dev/null 2>&1 || true
         sleep 0.8
-        ipc b97Set barShowKeyboardToggle true >/dev/null 2>&1 || true
+        ipc d4bSet utilButtons keyboardToggle true >/dev/null 2>&1 || true
         sleep 0.4
         b97_util_on=$(ipc b97Dump 2>/dev/null || true)
-        ipc b97Set barShowKeyboardToggle false >/dev/null 2>&1 || true
+        ipc d4bSet utilButtons keyboardToggle false >/dev/null 2>&1 || true
         sleep 0.4
         b97_util_off=$(ipc b97Dump 2>/dev/null || true)
-        ipc b97Set barShowKeyboardToggle false >/dev/null 2>&1 || true
+        ipc d4bSet utilButtons keyboardToggle false >/dev/null 2>&1 || true
         ipc scene default >/dev/null 2>&1 || true
         ipc cornerStyle 1 >/dev/null 2>&1 || true
         ipc reload >/dev/null 2>&1 || true
@@ -424,24 +425,24 @@ if ipc cornerStyle 1 >/dev/null 2>&1; then
     # is off, so flip it on first and restore the default after).
     if ipc scene monitorOnly >/dev/null 2>&1; then
         sleep 0.8
-        ipc b97Set barShowSwap true >/dev/null 2>&1 || true
+        ipc d4bSet systemMonitor swap true >/dev/null 2>&1 || true
         sleep 0.5
         b97_res_on=$(ipc b97Dump 2>/dev/null || true)
-        ipc b97Set barShowSwap false >/dev/null 2>&1 || true
+        ipc d4bSet systemMonitor swap false >/dev/null 2>&1 || true
         sleep 0.5
         b97_res_off=$(ipc b97Dump 2>/dev/null || true)
         ipc scene default >/dev/null 2>&1 || true
         ipc reload >/dev/null 2>&1 || true
         sleep 0.6
     fi
-    # Number presets: the workspace labels re-render through the bridge.
-    if ipc b97Set barWorkspaceNumberStyle '"han"' >/dev/null 2>&1; then
+    # Number presets: the workspace labels re-render through the entry.
+    if ipc d4bSet workspaces numberStyle '"han"' >/dev/null 2>&1; then
         sleep 0.5
         b97_han=$(ipc b97Dump 2>/dev/null || true)
-        ipc b97Set barWorkspaceNumberStyle '"roman"' >/dev/null 2>&1 || true
+        ipc d4bSet workspaces numberStyle '"roman"' >/dev/null 2>&1 || true
         sleep 0.5
         b97_roman=$(ipc b97Dump 2>/dev/null || true)
-        ipc b97Set barWorkspaceNumberStyle '"normal"' >/dev/null 2>&1 || true
+        ipc d4bSet workspaces numberStyle '"normal"' >/dev/null 2>&1 || true
         sleep 0.4
     fi
     # Screen filter: unknown name must fall back to every screen (one-screen
@@ -454,14 +455,32 @@ if ipc cornerStyle 1 >/dev/null 2>&1; then
         b97_screen_empty=$(ipc layout 2>/dev/null || true)
     fi
     b97_persisted=false
-    # Minimal write (D4a): default-equal keys no longer land in config.toml,
-    # so write-through is proven with one axis pushed off its default.
-    ipc b97Set barShowMicToggle true >/dev/null 2>&1 || true
+    # Minimal write (D4a/D4b): default-equal entries collapse, so
+    # write-through is proven with one axis pushed off its default (the
+    # override lands as a flat entry key in config.toml). The default lane
+    # carries the quickSettings id (same component as utilButtons).
+    ipc d4bSet quickSettings micToggle true >/dev/null 2>&1 || true
     sleep 0.3
-    if grep -q 'showMicToggle' "${tmp}/config/nyxuri/config.toml" 2>/dev/null; then
+    if grep -q 'micToggle' "${tmp}/config/nyxuri/config.toml" 2>/dev/null; then
         b97_persisted=true
     fi
-    ipc b97Set barShowMicToggle false >/dev/null 2>&1 || true
+    ipc d4bSet quickSettings micToggle false >/dev/null 2>&1 || true
+fi
+
+# D4b: per-instance engine — v4 migration (flat keys + [time].dateFormat
+# fold onto entries), duplicate-instance isolation, and the click-action
+# vocabulary (closed ids, argv-only commands).
+d4b_migration_state=""
+d4b_instances_state=""
+d4b_click_vocabulary=""
+if ipc d4bMigration >/dev/null 2>&1; then
+    d4b_migration_state=$(ipc d4bMigration 2>/dev/null || true)
+fi
+if ipc d4bInstances >/dev/null 2>&1; then
+    d4b_instances_state=$(ipc d4bInstances 2>/dev/null || true)
+fi
+if ipc d4bClickVocabulary >/dev/null 2>&1; then
+    d4b_click_vocabulary=$(ipc d4bClickVocabulary 2>/dev/null || true)
 fi
 
 # Tray surface (B9.1): publish fake StatusNotifierItems on the probe's own
@@ -666,7 +685,7 @@ ipc cornerStyle 1 >/dev/null 2>&1 || true
 ipc scene default >/dev/null 2>&1 || true
 ipc reload >/dev/null 2>&1 || true
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" <<'PY'
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" <<'PY'
 import json
 import re
 import sys
@@ -683,7 +702,8 @@ import sys
  d1_visualizer_off, d1_date_fmt, d1_date_reset, d1_media_geom,
  d2_immediate_state, d2_settled_state, d2_unhover_state,
  d4a_entries_spacers, d4a_entries_disabled, d4a_singletons,
- d4a_migration_state, d4a_persistence_state) = sys.argv[1:59]
+ d4a_migration_state, d4a_persistence_state, d4b_migration_state,
+ d4b_instances_state, d4b_click_vocabulary) = sys.argv[1:62]
 
 
 def load_tsv(path):
@@ -1362,7 +1382,7 @@ d4a_entries_ok = bool(
 )
 d4a_migration_ok = bool(
     d4a_migration.get("changed") is True
-    and d4a_migration.get("version") == 3
+    and d4a_migration.get("version") == 4
     and d4a_migration.get("aliasResolved") is True
     and d4a_migration.get("islandSeeded") is True
     and d4a_migration.get("legacyStripped") is True
@@ -1373,17 +1393,48 @@ d4a_persistence_ok = bool(
     and d4a_persistence.get("singleKey") is True
     and d4a_persistence.get("restoredEmpty") is True
     and d4a_persistence.get("enabledViewDropsDisabled") is True
-    and d4a_persistence.get("configVersion") == 3
+    and d4a_persistence.get("configVersion") == 4
     and isinstance(d4a_persistence.get("disabledSparse"), list)
 )
 d4a_ok = d4a_entries_ok and d4a_migration_ok and d4a_persistence_ok
+
+# D4b: v4 migration + duplicate-instance isolation + click vocabulary.
+d4b_migration = json.loads(d4b_migration_state) if d4b_migration_state.strip() else {}
+d4b_instances = json.loads(d4b_instances_state) if d4b_instances_state.strip() else {}
+d4b_click = json.loads(d4b_click_vocabulary) if d4b_click_vocabulary.strip() else {}
+d4b_migration_ok = bool(
+    d4b_migration.get("changed") is True
+    and d4b_migration.get("version") == 4
+    and d4b_migration.get("workspacesFolded") is True
+    and d4b_migration.get("workspacesDefaultsSkipped") is True
+    and d4b_migration.get("separatorFolded") is True
+    and d4b_migration.get("utilButtonsFolded") is True
+    and d4b_migration.get("systemMonitorFolded") is True
+    and d4b_migration.get("trayFolded") is True
+    and d4b_migration.get("trayPinListKept") is True
+    and d4b_migration.get("clockDateFormatFolded") is True
+    and d4b_migration.get("globalsStripped") is True
+    and d4b_migration.get("idempotent") is True
+)
+d4b_instances_ok = bool(
+    d4b_instances.get("isolated") is True
+    and d4b_instances.get("defaultCollapsedToString") is True
+)
+d4b_click_ok = bool(
+    d4b_click.get("closed") is True
+    and d4b_click.get("unknownFallsBack") is True
+    and d4b_click.get("noneConsumes") is True
+    and d4b_click.get("commandNeedsArgv") is True
+    and d4b_click.get("axisForButtons") == ["clickAction", "middleClickAction", "rightClickAction"]
+)
+d4b_ok = d4b_migration_ok and d4b_instances_ok and d4b_click_ok
 
 ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
       and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok
       and island_restored_ok and island_migration_ok and idle_face_ok
       and avatar_optional_ok
       and tray_ok and peripheral_ok and vertical_ok and margin_ok and window_ok
-      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok)
+      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok and d4b_ok)
 report = {
     "ok": ok,
     "mode": mode,
@@ -1528,6 +1579,33 @@ report = {
             "enabledViewDropsDisabled": d4a_persistence.get("enabledViewDropsDisabled"),
             "disabledSparse": d4a_persistence.get("disabledSparse"),
             "configVersion": d4a_persistence.get("configVersion"),
+        },
+    },
+    "d4b": {
+        "ok": d4b_ok,
+        "migration": {
+            "ok": d4b_migration_ok,
+            "version": d4b_migration.get("version"),
+            "workspacesFolded": d4b_migration.get("workspacesFolded"),
+            "separatorFolded": d4b_migration.get("separatorFolded"),
+            "utilButtonsFolded": d4b_migration.get("utilButtonsFolded"),
+            "systemMonitorFolded": d4b_migration.get("systemMonitorFolded"),
+            "trayFolded": d4b_migration.get("trayFolded"),
+            "trayPinListKept": d4b_migration.get("trayPinListKept"),
+            "clockDateFormatFolded": d4b_migration.get("clockDateFormatFolded"),
+            "globalsStripped": d4b_migration.get("globalsStripped"),
+            "idempotent": d4b_migration.get("idempotent"),
+        },
+        "instances": {
+            "ok": d4b_instances_ok,
+            "isolated": d4b_instances.get("isolated"),
+            "defaultCollapsedToString": d4b_instances.get("defaultCollapsedToString"),
+            "sparseLeft": d4b_instances.get("sparseLeft"),
+        },
+        "clickVocabulary": {
+            "ok": d4b_click_ok,
+            "ids": d4b_click.get("ids"),
+            "commandNeedsArgv": d4b_click.get("commandNeedsArgv"),
         },
     },
     "b96": {

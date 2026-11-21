@@ -17,7 +17,11 @@ import qs.services
 Singleton {
     id: root
 
-    property bool smartTray: PersonalizationConfig.barTrayFilterPassive
+    // Pin semantics are tray-domain shared state (B9.1): the stored list is
+    // the hidden set when inverted. The per-instance axes (hidePassive /
+    // tintIcons / showItemId) live on each tray entry and are applied by
+    // the widget (D4b) — the service only owns the raw buckets and the
+    // pin/unpin writes.
     property bool invertPins: PersonalizationConfig.barTrayInvertPinnedItems
 
     // Filter out invalid items (null or missing id): some clients publish a
@@ -27,11 +31,10 @@ Singleton {
     }
 
     readonly property var pinnedIds: PersonalizationConfig.barTrayPinnedItems ?? []
+    // Raw membership buckets: passive filtering is a per-instance render
+    // decision, so the service never drops Status.Passive here.
     property list<var> itemsInUserList: SystemTray.items.values.filter(i => (isValidItem(i) && pinnedIds.includes(i.id)))
-    property list<var> itemsNotInUserList: SystemTray.items.values.filter(i => (isValidItem(i) && !pinnedIds.includes(i.id) && (!smartTray || i.status !== Status.Passive)))
-
-    property list<var> pinnedItems: invertPins ? itemsNotInUserList : itemsInUserList
-    property list<var> unpinnedItems: invertPins ? itemsInUserList : itemsNotInUserList
+    property list<var> itemsNotInUserList: SystemTray.items.values.filter(i => (isValidItem(i) && !pinnedIds.includes(i.id)))
 
     function getSafeIcon(item): string {
         if (!item)
@@ -39,7 +42,7 @@ Singleton {
         return item.icon ?? "";
     }
 
-    function getTooltipForItem(item) {
+    function getTooltipForItem(item, showItemId) {
         if (!item)
             return "";
         const tooltipTitle = item.tooltipTitle ?? "";
@@ -50,7 +53,7 @@ Singleton {
         var result = tooltipTitle.length > 0 ? tooltipTitle : (title.length > 0 ? title : id);
         if (tooltipDescription.length > 0)
             result += " • " + tooltipDescription;
-        if (PersonalizationConfig.barTrayShowItemId)
+        if (showItemId === true)
             result += "\n[" + id + "]";
         return result;
     }
@@ -78,7 +81,10 @@ Singleton {
     }
 
     function isPinned(itemId) {
-        return root.pinnedItems.some(item => item.id === itemId);
+        // Visibility = list membership modulo inversion; passive state is
+        // a render concern and must not turn "pinned" into "pin me again".
+        const inList = root.pinnedIds.includes(itemId);
+        return root.invertPins ? !inList : inList;
     }
 
     function togglePin(itemId) {

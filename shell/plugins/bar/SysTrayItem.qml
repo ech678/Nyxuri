@@ -12,7 +12,9 @@ MouseArea {
     id: root
     required property SystemTrayItem item
     property bool targetMenuOpen: false
-    readonly property bool tintIcon: Config.options?.bar?.m3?.tray?.monochromeIcons ?? true
+    // Injected by the SysTray delegates (D4b entry axes).
+    property bool tintIcon: true
+    property bool showItemId: false
 
     signal menuOpened(qsWindow: var)
     signal menuClosed
@@ -37,7 +39,7 @@ MouseArea {
         event.accepted = true;
     }
     onEntered: {
-        tooltip.text = TrayService.getTooltipForItem(root.item);
+        tooltip.text = TrayService.getTooltipForItem(root.item, root.showItemId);
     }
 
     Loader {

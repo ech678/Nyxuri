@@ -26,6 +26,10 @@ Item {
     property bool presentationActive: false
     property string currentSection: "overview"
     property string barTab: "appearance"
+    // D4b: the per-instance widget editor targets one entry uid; the
+    // subpage is internal (not a manifest route — it is meaningless
+    // without a uid).
+    property string widgetEditorUid: ""
 
     function openSection(section) {
         const target = String(section || "overview");
@@ -36,6 +40,13 @@ Item {
         } else {
             root.currentSection = "overview";
         }
+    }
+
+    function openWidgetEditor(uid) {
+        if (!uid)
+            return;
+        root.widgetEditorUid = uid;
+        root.currentSection = "widget";
     }
 
     function openSearchPath(path, serial) {
@@ -153,6 +164,7 @@ Item {
                         width: parent.width
                         visible: root.barTab === "modules"
                         onIslandRequested: root.openSection("island")
+                        onWidgetEditorRequested: entryUid => root.openWidgetEditor(entryUid)
                     }
                 }
             }
@@ -178,5 +190,16 @@ Item {
             const route = SpotlightCatalog.route("bar.island");
             return root.currentSection === "island" && route && route.sourceUrl ? route.sourceUrl : "";
         }
+    }
+
+    // D4b per-instance widget editor: inline (same directory), instantiated
+    // only while its section is active.
+    BarWidgetPage {
+        id: widgetEditor
+
+        anchors.fill: parent
+        visible: root.currentSection === "widget"
+        widgetUid: root.currentSection === "widget" ? root.widgetEditorUid : ""
+        onBackRequested: root.showOverview()
     }
 }

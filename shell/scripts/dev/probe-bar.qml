@@ -15,6 +15,8 @@ import qs.services
 import qs.ui
 import "commons/BarGeometry.js" as BarGeometry
 import "services/ConfigMigrations.js" as ConfigMigrations
+import "services/BarWidgetDefaults.js" as BarWidgetDefaults
+import "plugins/bar" as BarPlugin
 
 ShellRoot {
     id: probeRoot
@@ -312,6 +314,17 @@ ShellRoot {
             const nested = probeRoot.findWorkspace(child);
             if (nested)
                 return nested;
+        }
+        return null;
+    }
+
+    // D4b: first live lane entry of a widget id (entry-override reads and
+    // writes address one instance).
+    function findWidgetEntry(widgetId): var {
+        const lanes = PersonalizationConfig.barLayoutEntriesLeft.concat(PersonalizationConfig.barLayoutEntriesMiddle, PersonalizationConfig.barLayoutEntriesRight);
+        for (let i = 0; i < lanes.length; i += 1) {
+            if (lanes[i].widgetId === widgetId)
+                return lanes[i];
         }
         return null;
     }
@@ -897,14 +910,45 @@ ShellRoot {
             }
         }
 
-        // D1: `time.dateFormat` — the long date form follows the key.
+        // D4b: dateFormat is the clock entry's axis — write an override on
+        // the live clock entry and read the effective form back through
+        // option() (the pre-D4b global [time] key is gone). The default
+        // lanes carry no clock, so the probe stages one when absent and
+        // restores the lanes afterwards.
         function dateFormatProbe(fmt: string): string {
-            PersonalizationConfig.setTimeDateFormat(String(fmt));
-            return JSON.stringify({
-                "format": PersonalizationConfig.timeDateFormat,
-                "date": DateTime.date,
+            let staged = false;
+            if (!probeRoot.findWidgetEntry("clock")) {
+                const right = PersonalizationConfig.barLayoutEntriesRight.map(entry => ({
+                            "widgetId": entry.widgetId,
+                            "uid": entry.uid,
+                            "enabled": entry.enabled,
+                            "overrides": entry.overrides
+                        }));
+                right.push({
+                    "widgetId": "clock",
+                    "enabled": true,
+                    "overrides": {}
+                });
+                PersonalizationConfig.setBarLaneEntries("right", right);
+                staged = true;
+            }
+            const entry = probeRoot.findWidgetEntry("clock");
+            if (!entry)
+                return JSON.stringify({
+                    "found": false
+                });
+            PersonalizationConfig.setBarEntryOverride(entry.uid, "dateFormat", String(fmt || "").trim() || undefined);
+            const fresh = probeRoot.findWidgetEntry("clock");
+            const pattern = BarWidgetDefaults.option("clock", fresh, "dateFormat");
+            const result = JSON.stringify({
+                "found": true,
+                "format": pattern,
+                "date": pattern !== "" ? Qt.formatDateTime(new Date(), pattern) : Qt.formatDateTime(new Date(), "dddd, dd/MM"),
                 "shortDate": DateTime.shortDate
             });
+            if (staged)
+                PersonalizationConfig.setBarLayouts(PersonalizationConfig.defaultBarLayoutLeft.slice(), PersonalizationConfig.defaultBarLayoutMiddle.slice(), PersonalizationConfig.defaultBarLayoutRight.slice());
+            return result;
         }
 
         // B9.2 status cluster: read the fixed slot geometry, then swap two fake
@@ -1002,7 +1046,7 @@ ShellRoot {
                 "items": items,
                 "stored": Array.from(PersonalizationConfig.barTrayPinnedItems),
                 "invert": PersonalizationConfig.barTrayInvertPinnedItems,
-                "filterPassive": PersonalizationConfig.barTrayFilterPassive,
+                "filterPassive": BarWidgetDefaults.option("tray", widget ? widget.widgetEntry : null, "hidePassive"),
                 "widget": widget ? {
                     "pinned": Array.from(widget.pinnedItems).map(item => String(item.id)),
                     "unpinned": Array.from(widget.unpinnedItems).map(item => String(item.id)),
@@ -1066,6 +1110,172 @@ ShellRoot {
             return "OK";
         }
 
+        // D4b: write one axis onto the first live entry of a widget (the
+        // per-instance settings path — an equal-to-default value removes
+        // the override and collapses the entry back to its id string).
+        function d4bSet(widgetId: string, key: string, value: string): string {
+            let parsed = value;
+            try {
+                parsed = JSON.parse(value);
+            } catch (e) {
+                parsed = value;
+            }
+            const entry = probeRoot.findWidgetEntry(widgetId);
+            if (!entry)
+                return "NO_ENTRY";
+            PersonalizationConfig.setBarEntryOverride(entry.uid, key, parsed === null ? undefined : parsed);
+            return "OK";
+        }
+
+        // D4b: the v4 migration on a settled v3 shape — flat [bar] keys and
+        // [time].dateFormat fold onto the entries (deviations only), the
+        // globals strip, and a second run changes nothing.
+        function d4bMigration(): string {
+            const legacy = {
+                "configVersion": 3,
+                "time": {
+                    "dateFormat": "ddd, dd/MM"
+                },
+                "bar": {
+                    "configs": [{
+                        "id": "default",
+                        "name": "Bar",
+                        "lanes": {
+                            "left": ["launcherButton", "workspaces", "activeWindow", "separator"],
+                            "middle": ["island"],
+                            "right": ["tray", "quickSettings", "systemMonitor", "systemIcons", "powerButton"]
+                        }
+                    }],
+                    "showAppIcons": true,
+                    "numberStyle": "han",
+                    "dividerStyle": "space",
+                    "dividerSpacing": 24,
+                    "utilButtons": {
+                        "showScreenSnip": false
+                    },
+                    "resources": {
+                        "alwaysShowSwap": true
+                    },
+                    "tray": {
+                        "filterPassive": false,
+                        "pinnedItems": ["probe:keep"]
+                    }
+                }
+            };
+            const seed = {
+                "defaults": BarWidgetDefaults.DEFAULTS
+            };
+            const first = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(legacy)), seed);
+            const second = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(first.config)), seed);
+            const bar = first.config.bar;
+            const left = bar.configs[0].lanes.left;
+            const workspaces = left.find(entry => typeof entry === "object" && entry.id === "workspaces") ?? {};
+            const separator = left.find(entry => typeof entry === "object" && entry.id === "separator") ?? {};
+            const right = bar.configs[0].lanes.right;
+            const quickSettings = right.find(entry => typeof entry === "object" && entry.id === "quickSettings") ?? {};
+            const tray = right.find(entry => typeof entry === "object" && entry.id === "tray") ?? {};
+            // The default bar carries no clock: the dateFormat fold needs a
+            // clock entry to prove, so run a second shape with one.
+            const clockLegacy = {
+                "configVersion": 3,
+                "time": {
+                    "dateFormat": "ddd, dd/MM"
+                },
+                "bar": {
+                    "configs": [{
+                        "id": "default",
+                        "name": "Bar",
+                        "lanes": {
+                            "left": ["clock"],
+                            "middle": [],
+                            "right": []
+                        }
+                    }]
+                }
+            };
+            const clockRun = ConfigMigrations.migrateConfig(clockLegacy, seed);
+            const clockEntry = clockRun.config.bar.configs[0].lanes.left[0];
+            return JSON.stringify({
+                "changed": first.changed,
+                "version": first.config.configVersion,
+                "workspacesFolded": workspaces.showAppIcons === true && workspaces.numberStyle === "han",
+                "workspacesDefaultsSkipped": workspaces.shown === undefined && workspaces.style === undefined,
+                "separatorFolded": separator.style === "space" && separator.spacing === 24,
+                "utilButtonsFolded": quickSettings.screenSnip === false,
+                "systemMonitorFolded": (bar.configs[0].lanes.right.find(entry => typeof entry === "object" && entry.id === "systemMonitor") ?? {}).swap === true,
+                "trayFolded": tray.hidePassive === false,
+                "trayPinListKept": JSON.stringify(bar.tray.pinnedItems) === JSON.stringify(["probe:keep"]),
+                "clockDateFormatFolded": typeof clockEntry === "object" && clockEntry.dateFormat === "ddd, dd/MM",
+                "globalsStripped": bar.showAppIcons === undefined && bar.numberStyle === undefined && bar.dividerStyle === undefined && (bar.utilButtons === undefined || bar.utilButtons.showScreenSnip === undefined) && (bar.resources === undefined || bar.resources.alwaysShowSwap === undefined) && (bar.tray === undefined || bar.tray.filterPassive === undefined) && first.config.time?.dateFormat === undefined,
+                "idempotent": second.changed === false && JSON.stringify(second.config.bar.configs) === JSON.stringify(bar.configs)
+            });
+        }
+
+        // D4b: per-instance isolation — two clock entries with different
+        // dateFormat overrides resolve independently through option(), and
+        // the minimal write only carries the deviating entry.
+        function d4bInstances(): string {
+            PersonalizationConfig.setBarLaneEntries("left", [
+                {
+                    "widgetId": "clock",
+                    "enabled": true,
+                    "overrides": {
+                        "dateFormat": "ddd"
+                    }
+                },
+                {
+                    "widgetId": "clock",
+                    "enabled": true,
+                    "overrides": {}
+                },
+                {
+                    "widgetId": "clock",
+                    "enabled": true,
+                    "overrides": {
+                        "dateFormat": "dd/MM"
+                    }
+                }
+            ]);
+            PersonalizationConfig.setBarLaneEntries("middle", []);
+            PersonalizationConfig.setBarLaneEntries("right", []);
+            const lanes = PersonalizationConfig.barLayoutEntriesLeft;
+            const first = BarWidgetDefaults.option("clock", lanes[0], "dateFormat");
+            const second = BarWidgetDefaults.option("clock", lanes[1], "dateFormat");
+            const third = BarWidgetDefaults.option("clock", lanes[2], "dateFormat");
+            const sparse = PersonalizationConfig.sparseBarConfigs();
+            const serialized = sparse ? sparse[0].lanes.left : [];
+            const result = JSON.stringify({
+                "firstFormat": first,
+                "secondFormat": second,
+                "thirdFormat": third,
+                "isolated": first === "ddd" && second === "" && third === "dd/MM",
+                "sparseLeft": serialized,
+                "defaultCollapsedToString": serialized.length === 3 && serialized[1] === "clock"
+            });
+            PersonalizationConfig.setBarLayouts(PersonalizationConfig.defaultBarLayoutLeft.slice(), PersonalizationConfig.defaultBarLayoutMiddle.slice(), PersonalizationConfig.defaultBarLayoutRight.slice());
+            return result;
+        }
+
+        // D4b: click-action vocabulary — the preset ids stay closed, the
+        // argv shape is enforced (empty arrays and blank parts are refused;
+        // no shell-string form exists to test), and an unknown id falls
+        // back to the built-in behavior.
+        function d4bClickVocabulary(): string {
+            const BarWidgetActions = BarPlugin.BarWidgetActions;
+            const ids = BarWidgetActions.ids;
+            const dispatchUnknown = BarWidgetActions.dispatch("bogus-action", [], "probe");
+            const dispatchNone = BarWidgetActions.dispatch("none", [], "probe");
+            const dispatchBadCommand = BarWidgetActions.dispatch("command", [], "probe") === false && BarWidgetActions.dispatch("command", [""], "probe") === false && BarWidgetActions.dispatch("command", "gnome-clocks", "probe") === false;
+            return JSON.stringify({
+                "ids": ids,
+                "closed": JSON.stringify(ids) === JSON.stringify(["default", "none", "dashboard", "quicksettings", "launcher", "overview", "power-menu", "lock", "command"]),
+                "unknownFallsBack": dispatchUnknown === false,
+                "noneConsumes": dispatchNone === true,
+                "commandNeedsArgv": dispatchBadCommand,
+                "axisForButtons": [BarWidgetActions.axisForButton(Qt.LeftButton), BarWidgetActions.axisForButton(Qt.MiddleButton), BarWidgetActions.axisForButton(Qt.RightButton)]
+            });
+        }
+
         function b97Dump(): string {
             const content = barLoader.item;
             if (!content)
@@ -1102,13 +1312,16 @@ ShellRoot {
                     "showBackground": Config.options.bar.m3.showBackground,
                     "autoHide": Config.options.bar.autoHide.enable,
                     "screenList": Array.from(Config.options.bar.screenList ?? []),
-                    "dividerStyle": String(Config.options.bar.m3.divider.style),
-                    "dividerSpacing": Config.options.bar.m3.divider.spacing,
-                    "utilKeyboard": Config.options.bar.m3.utilButtons.showKeyboardToggle,
-                    "resourceSwap": Config.options.bar.m3.resources.alwaysShowSwap,
-                    "resourceStyle": String(Config.options.bar.m3.resources.style),
-                    "numberStyle": PersonalizationConfig.barWorkspaceNumberStyle,
-                    "numberMap": Array.from(Config.options.bar.m3.workspaces.numberMap ?? [])
+                    // D4b: the migrated per-widget axes read through the
+                    // entry chain (option()), never the retired flat keys.
+                    "dividerStyle": String(BarWidgetDefaults.option("separator", probeRoot.findWidgetEntry("separator"), "style")),
+                    "dividerSpacing": BarWidgetDefaults.option("separator", probeRoot.findWidgetEntry("separator"), "spacing"),
+                    "utilKeyboard": BarWidgetDefaults.option("utilButtons", probeRoot.findWidgetEntry("utilButtons") || probeRoot.findWidgetEntry("quickSettings"), "keyboardToggle"),
+                    "resourceSwap": BarWidgetDefaults.option("systemMonitor", probeRoot.findWidgetEntry("systemMonitor"), "swap"),
+                    "resourceStyle": String(BarWidgetDefaults.option("systemMonitor", probeRoot.findWidgetEntry("systemMonitor"), "iconStyle")),
+                    "numberStyle": BarWidgetDefaults.option("workspaces", probeRoot.findWidgetEntry("workspaces"), "numberStyle"),
+                    "numberMap": Array.from(BarWidgetDefaults.workspaceNumberMap(BarWidgetDefaults.option("workspaces", probeRoot.findWidgetEntry("workspaces"), "numberStyle"))),
+                    "trayFilterPassive": BarWidgetDefaults.option("tray", probeRoot.findWidgetEntry("tray"), "hidePassive")
                 },
                 "background": backgrounds.length ? {
                     "color": String(backgrounds[0].color),

@@ -246,6 +246,10 @@ class TestQmlSingletonImports(unittest.TestCase):
                 if (relative.as_posix(), name) in {
                     ("plugins/bar/island/dashboard/DashboardPomodoroCard.qml", "TimerService"),
                     ("shell.qml", "ShellControlService"),
+                    # The probe stages itself as the tree-root shell.qml, so
+                    # its "plugins/bar" import is root-relative at runtime
+                    # while this scan sees the scripts/dev source location.
+                    ("scripts/dev/probe-bar.qml", "BarWidgetActions"),
                 }:
                     continue
                 entry = singletons.get(name)

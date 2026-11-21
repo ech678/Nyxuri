@@ -13,6 +13,13 @@ import qs.commons.i18n
 // BarWidgetDefaults.js, shell/plugins/bar/BarWidgetFiles.js). The id set
 // must match both — tests/shell/test_d4a_bar_config.py pins the equality.
 //
+// D4b adds the fourth registration surface here: `optionsFiles` maps a
+// widget id to its per-instance options page (resolved by BarWidgetPage
+// against plugins/bar/options/). Widgets without an entry (island has its
+// own routed page; visualizer/systemIcons carry no axes yet) render the
+// generic card only. quickSettings shares UtilButtonsOptions.qml because
+// both ids load UtilButtons.qml.
+//
 // `label` stays an untranslated literal on purpose (DashboardBarWidgets
 // precedent): translating at construction would evaluate I18n.tr() before
 // the dictionary has loaded and every label would come out empty.
@@ -110,6 +117,32 @@ QtObject {
 
     function displayName(entry) {
         return I18n.tr(entry.label);
+    }
+
+    // D4b per-instance options pages (files live in plugins/bar/options/).
+    readonly property var optionsFiles: ({
+        clock: "ClockOptions.qml",
+        workspaces: "WorkspacesOptions.qml",
+        systemMonitor: "SystemMonitorOptions.qml",
+        utilButtons: "UtilButtonsOptions.qml",
+        quickSettings: "UtilButtonsOptions.qml",
+        tray: "TrayOptions.qml",
+        battery: "BatteryOptions.qml",
+        media: "MediaOptions.qml",
+        activeWindow: "ActiveWindowOptions.qml",
+        launcherButton: "LauncherButtonOptions.qml",
+        powerButton: "PowerButtonOptions.qml",
+        weather: "WeatherOptions.qml",
+        separator: "SeparatorOptions.qml",
+        spacer: "SpacerOptions.qml"
+    })
+
+    function optionsFile(id) {
+        return root.optionsFiles[String(id || "")] ?? "";
+    }
+
+    function hasOptions(id) {
+        return root.optionsFiles[String(id || "")] !== undefined;
     }
 
     function byId(id) {

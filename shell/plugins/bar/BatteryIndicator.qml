@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Layouts
 import qs.commons
 import qs.ui
+import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
 
 MouseArea {
     id: root
@@ -10,29 +11,44 @@ MouseArea {
     property bool contentColorOverridden: false
     property bool vertical: false
     property bool isMaterial: PersonalizationConfig.barIsMaterial
+    // D4b entry axes: the percent readout and the wattage line (energyRate
+    // from UPower) plus L/M/R click actions.
+    property var widgetEntry: null
+    readonly property bool showPercent: BarWidgetDefaults.option("battery", root.widgetEntry, "showPercent")
+    readonly property bool showPower: BarWidgetDefaults.option("battery", root.widgetEntry, "showPower")
     readonly property var chargeState: Battery.chargeState
     readonly property bool isCharging: Battery.isCharging
     readonly property bool isPluggedIn: Battery.isPluggedIn
     readonly property real percentage: Battery.percentage
     readonly property bool isLow: percentage <= Config.options.battery.low / 100
-    readonly property string displayText: (root.vertical && root.percentage > 99) ? "" : batteryProgress.text
+    // Wattage line: UPower energyRate (W) while a cable is attached.
+    readonly property string powerText: root.isPluggedIn ? Math.round(Battery.energyRate) + " W" : ""
+    readonly property string displayText: (root.vertical && root.percentage > 99) || !root.showPercent ? "" : batteryProgress.text
 
     visible: Battery.available
 
-    implicitWidth: !Battery.available ? 0 : vertical ? Appearance.sizes.verticalBarWidth : batteryProgress.valueBarWidth + 8
+    implicitWidth: !Battery.available ? 0 : vertical ? Appearance.sizes.verticalBarWidth : batteryProgress.valueBarWidth + 8 + (powerLabel.visible ? powerLabel.implicitWidth + 4 : 0)
     implicitHeight: !Battery.available ? 0 : vertical ? batteryProgress.valueBarWidth + 8 : Appearance.sizes.barHeight
 
     readonly property bool clickForDetails: Config.options?.bar?.m3?.tooltips?.clickToShow ?? false
     hoverEnabled: !root.clickForDetails
 
+    // D4b click axes: a consumed dispatch ends here; "default"/"none" fall
+    // through to the built-in popup behavior.
+    acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
     onClicked: mouse => {
-        if (mouse.button === Qt.LeftButton && root.clickForDetails)
+        if (BarWidgetActions.dispatchMouse("battery", root.widgetEntry, mouse.button))
+            mouse.accepted = true;
+        else if (mouse.button === Qt.LeftButton && root.clickForDetails)
             batteryPopup.active = !batteryPopup.active;
     }
 
     ClippedProgressBar {
         id: batteryProgress
         anchors.centerIn: parent
+        // With the wattage line attached, the pill+label group stays
+        // optically centered (offset half the extra width).
+        anchors.horizontalCenterOffset: powerLabel.visible ? -(powerLabel.implicitWidth + 4) / 2 : 0
         value: percentage
         rotation: root.vertical ? -90 : 0
         highlightColor: (isLow && !isCharging) ? M3Palette.error : (root.contentColorOverridden ? root.contentColor : M3Palette.pillInk("batteryIndicator"))
@@ -101,5 +117,22 @@ MouseArea {
         hoverActivates: !root.clickForDetails
         closeOnOutsideClick: root.clickForDetails
         onRequestClose: active = false
+    }
+
+    // D4b showPower: the wattage line rides beside the pill while a cable
+    // is attached (UPower energyRate).
+    StyledText {
+        id: powerLabel
+
+        visible: !root.vertical && root.showPower && root.isPluggedIn && root.powerText !== ""
+        anchors.left: batteryProgress.right
+        anchors.leftMargin: 4
+        anchors.verticalCenter: parent.verticalCenter
+        text: root.powerText
+        color: root.contentColorOverridden ? root.contentColor : Appearance.colors.colOnLayer1
+        font.pixelSize: NexusStyle.font.bodySmall
+        font.features: ({
+            "tnum": 1
+        })
     }
 }

@@ -100,12 +100,15 @@ class MediaFillContractTest(unittest.TestCase):
 
     def test_iNir_clamp_formula_unchanged(self):
         """The width authority stays the iNiR clamp; only the inner layout
-        adapted. Defaults keep the user's chosen 160/300."""
+        adapted. Defaults keep the user's chosen 160/300 (D4b: the clamp
+        bounds are the media entry's min/maxWidth axes)."""
         content = read(os.path.join(BAR_DIR, "Media.qml"))
-        self.assertIn("Math.max(Config.options.bar.m3.media.minWidth, Math.min((isMaterial ? materialRow.implicitWidth : rowLayout.implicitWidth + 8), Config.options.bar.m3.media.maxWidth))", content)
-        config = read(os.path.join(SHELL, "services", "Config.qml"))
-        self.assertIn("readonly property int minWidth: 160", config)
-        self.assertIn("readonly property int maxWidth: 300", config)
+        self.assertIn("Math.max(root.mediaMinWidth, Math.min((isMaterial ? materialRow.implicitWidth : rowLayout.implicitWidth + 8), root.mediaMaxWidth))", content)
+        self.assertIn('BarWidgetDefaults.option("media", root.widgetEntry, "minWidth")', content)
+        self.assertIn('BarWidgetDefaults.option("media", root.widgetEntry, "maxWidth")', content)
+        defaults = read(os.path.join(SHELL, "services", "BarWidgetDefaults.js"))
+        self.assertIn("minWidth: 160", defaults)
+        self.assertIn("maxWidth: 300", defaults)
 
 
 class D1WeatherWiringTest(unittest.TestCase):
@@ -140,18 +143,24 @@ class DateFormatKeyTest(unittest.TestCase):
     date form; empty keeps the stock shape."""
 
     def test_datetime_reads_the_key(self):
+        # D4b: the long-form pattern is the clock entry's dateFormat axis —
+        # ClockWidget formats per instance; DateTime keeps only the fixed
+        # short form.
         content = read(os.path.join(SHELL, "services", "DateTime.qml"))
-        self.assertIn('Config.options?.time?.dateFormat ?? "dddd, dd/MM"', content)
-        # The short date keeps its own fixed pattern.
         self.assertIn('Qt.formatDateTime(clock.date, "dd/MM")', content)
+        self.assertNotIn("property string date:", content)
+        clock = read(os.path.join(BAR_DIR, "ClockWidget.qml"))
+        self.assertIn('BarWidgetDefaults.option("clock", root.widgetEntry, "dateFormat")', clock)
+        self.assertIn('Qt.formatDateTime(root.today, root.dateFormat)', clock)
 
     def test_key_persists_and_bridges(self):
+        # D4b: persistence is the entry override + the v4 fold of the old
+        # [time].dateFormat key; there is no global store key or bridge.
+        migrations = read(os.path.join(SHELL, "services", "ConfigMigrations.js"))
+        self.assertIn('id === "clock"', migrations)
+        self.assertIn("entry.dateFormat = legacyDateFormat", migrations)
         config = read(os.path.join(SHELL, "services", "PersonalizationConfig.qml"))
-        self.assertIn("property string timeDateFormat", config)
-        self.assertIn("function setTimeDateFormat", config)
-        self.assertIn('"dateFormat": root.timeDateFormat', config)
-        bridge = read(os.path.join(SHELL, "services", "Config.qml"))
-        self.assertIn("readonly property string dateFormat: PersonalizationConfig.timeDateFormat", bridge)
+        self.assertNotIn("timeDateFormat", config)
 
 
 if __name__ == "__main__":

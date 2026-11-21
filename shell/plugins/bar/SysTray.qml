@@ -5,6 +5,7 @@ import Quickshell.Services.SystemTray
 import qs.services
 import qs.commons
 import qs.ui
+import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
 
 Item {
     id: root
@@ -16,13 +17,22 @@ Item {
     property var activeMenu: null
     readonly property bool isOnLeft: Config.options.bar.m3.layouts.leftLayout.includes("sysTray")
     readonly property bool isMaterial: PersonalizationConfig.barIsMaterial
+    // D4b entry axes (tint/hidePassive/showItemId); pin semantics stay
+    // tray-domain shared state in TrayService.
+    property var widgetEntry: null
+    readonly property bool tintIcons: BarWidgetDefaults.option("tray", root.widgetEntry, "tintIcons")
+    readonly property bool showItemId: BarWidgetDefaults.option("tray", root.widgetEntry, "showItemId")
+    readonly property bool hidePassive: BarWidgetDefaults.option("tray", root.widgetEntry, "hidePassive")
 
     visible: SystemTray.items.values.length > 0
     implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : (isMaterial ? pill.implicitWidth - 4 : gridLayout.implicitWidth)
     implicitHeight: vertical ? gridLayout.implicitHeight + 6 : Appearance.sizes.barHeight
 
-    property list<var> pinnedItems: TrayService.pinnedItems
-    property list<var> unpinnedItems: TrayService.unpinnedItems
+    // The passive filter is a per-instance render decision over the raw
+    // membership buckets (TrayService never drops Status.Passive).
+    readonly property var visibleNotInList: root.hidePassive ? TrayService.itemsNotInUserList.filter(i => i.status !== Status.Passive) : TrayService.itemsNotInUserList
+    property list<var> pinnedItems: TrayService.invertPins ? root.visibleNotInList : TrayService.itemsInUserList
+    property list<var> unpinnedItems: TrayService.invertPins ? TrayService.itemsInUserList : root.visibleNotInList
     // Probe surface (scripts/dev/probe-bar.sh): the overflow decision is a
     // runtime fact, so expose the evaluated counts instead of grepping the
     // source for `unpinnedItems.length`.
@@ -142,6 +152,8 @@ Item {
                         delegate: SysTrayItem {
                             required property SystemTrayItem modelData
                             item: modelData
+                            tintIcon: root.tintIcons
+                            showItemId: root.showItemId
                             Layout.fillHeight: !root.vertical
                             Layout.fillWidth: root.vertical
                             onMenuClosed: root.releaseFocus()
@@ -159,6 +171,8 @@ Item {
             delegate: SysTrayItem {
                 required property SystemTrayItem modelData
                 item: modelData
+                tintIcon: root.tintIcons
+                showItemId: root.showItemId
                 Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
                 Layout.fillHeight: !root.vertical
                 Layout.fillWidth: root.vertical

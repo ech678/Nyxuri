@@ -18,9 +18,8 @@ Singleton {
         }
 
         readonly property QtObject time: QtObject {
-            // D1: iNiR `time.dateFormat` — user-owned Qt format pattern for
-            // the long date form; empty keeps the stock form.
-            readonly property string dateFormat: PersonalizationConfig.timeDateFormat
+            // D1's dateFormat became the clock entry's axis (D4b); the
+            // bridge object stays only for future time-section keys.
         }
 
         readonly property QtObject battery: QtObject {
@@ -62,11 +61,6 @@ Singleton {
             readonly property string groupColor: PersonalizationConfig.barGroupColor
             readonly property alias layouts: m3Options.layouts
 
-            readonly property QtObject divider: QtObject {
-                readonly property string style: PersonalizationConfig.barDividerStyle ?? "rect"
-                readonly property int spacing: PersonalizationConfig.barDividerSpacing
-            }
-
             readonly property QtObject autoHide: QtObject {
                 // B9.7: user-visible surface is only the slide-out switch.
                 // pushWindows / hoverRegionWidth / super-reveal stay internal
@@ -102,10 +96,10 @@ Singleton {
                 // evaluation, not a silent default.
                 readonly property bool verbose: true
 
-                readonly property QtObject divider: QtObject {
-                    readonly property string style: PersonalizationConfig.barDividerStyle ?? "rect"
-                    readonly property int spacing: PersonalizationConfig.barDividerSpacing
-                }
+                // D4b: the divider/resources/utilButtons/tray/workspaces
+                // per-widget axes moved to lane-entry overrides
+                // (BarWidgetDefaults.DEFAULTS). The bridge only keeps what is
+                // still global: internal literals with no settings surface.
 
                 readonly property QtObject clock: QtObject {
                     readonly property string timeFontFamily: ""
@@ -122,14 +116,8 @@ Singleton {
 
                 // B9.7 widget surface: real properties instead of frozen
                 // literals, so the Bar settings page rows are honest.
+                // (D4b: the resources meters moved to lane-entry overrides.)
                 readonly property QtObject resources: QtObject {
-                    readonly property string style: PersonalizationConfig.barResourceStyle
-                    readonly property bool showValue: PersonalizationConfig.barResourceShowValue
-                    readonly property bool alwaysShowRam: PersonalizationConfig.barShowRam
-                    readonly property bool alwaysShowCpu: PersonalizationConfig.barShowCpu
-                    readonly property bool alwaysShowCpuTemp: PersonalizationConfig.barShowCpuTemp
-                    readonly property bool alwaysShowDisk: PersonalizationConfig.barShowDisk
-                    readonly property bool alwaysShowSwap: PersonalizationConfig.barShowSwap
                     readonly property int memoryWarningThreshold: 90
                     readonly property int cpuWarningThreshold: 95
                     readonly property int swapWarningThreshold: 90
@@ -139,40 +127,16 @@ Singleton {
                     readonly property bool clickToShow: false
                 }
 
-                // B9.1 tray surface: SysTrayItem tints glyphs through this
-                // bridge (it used to read a property that never existed, so the
-                // `?? true` fallback silently forced tinting on).
-                readonly property QtObject tray: QtObject {
-                    readonly property bool monochromeIcons: PersonalizationConfig.barTrayMonochromeIcons
-                    readonly property bool filterPassive: PersonalizationConfig.barTrayFilterPassive
-                }
-
                 readonly property QtObject media: QtObject {
                     readonly property string preferredPlayer: ""
-                    readonly property int minWidth: 160
-                    readonly property int maxWidth: 300
                     readonly property bool alwaysVisible: false
                     readonly property int updateInterval: 1000
                     readonly property bool onlyTitle: false
                 }
 
-                readonly property QtObject utilButtons: QtObject {
-                    readonly property bool showScreenSnip: PersonalizationConfig.barShowScreenSnip
-                    readonly property bool showColorPicker: PersonalizationConfig.barShowColorPicker
-                    readonly property bool showKeyboardToggle: PersonalizationConfig.barShowKeyboardToggle
-                    readonly property bool showMicToggle: PersonalizationConfig.barShowMicToggle
-                    readonly property bool showWallpaperToggle: PersonalizationConfig.barShowWallpaperToggle
-                    readonly property bool showDarkModeToggle: PersonalizationConfig.barShowDarkModeToggle
-                    readonly property bool showPerformanceProfileToggle: PersonalizationConfig.barShowPerformanceProfile
-                }
-
                 readonly property QtObject workspaces: QtObject {
-                    readonly property bool showAppIcons: PersonalizationConfig.barShowAppIcons
-                    readonly property bool alwaysShowNumbers: PersonalizationConfig.barAlwaysShowNumbers
                     readonly property bool useNerdFont: false
                     readonly property bool monochromeIcons: false
-                    readonly property string indicatorStyle: PersonalizationConfig.barWorkspaceIndicatorStyle
-                    readonly property var numberMap: PersonalizationConfig.barWorkspaceNumberMap
                 }
 
                 readonly property QtObject keyboardIndicators: QtObject {
