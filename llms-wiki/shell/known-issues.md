@@ -6,6 +6,21 @@
 
 ## 未修复 BUG
 
+- [ ] **Media 胶囊两行文字溢出（2026-11-21 诊断，归 D1）**：material 分支
+  `materialRow/innerRow` `anchors.centerIn` 自取 implicitWidth，`Layout.maximumWidth: 120`
+  不参与布局 implicitWidth 求值（Qt 布局行为），整簇居中在超宽坐标上溢出 ≤300px 部件，
+  根 Item 无 clip。修法：宽度公式对齐 iNiR barM3 原件（clamp 对 material 生效）+ clip 兜底。
+- [ ] **岛水平时钟不居中（2026-11-21 诊断，归 D1）**：`DiIdle` 贴右排布（头像左锚 +
+  rightSideRow 右锚），时钟簇无居中约束；pill 144px 宽度下限导致内容窄时中间留洞；
+  未读 Revealer 宽度动画推移时钟。修法：三段式重排（头像左/时钟 centerIn/状态图标右）。
+- [ ] **DiIdle 通知铃铛突兀（2026-11-21 诊断，归 D1）**：与 SystemIcons 通知槽、岛通知面
+  三重职责重复；Revealer 宽度抖动；颜色硬编码不走 pill ink 体系（end4 原版 DiIdle 无此件，
+  未读默认 8px 圆点在 SystemIcons 组末尾）。修法：处决，未读归 SystemIcons 通知槽。
+- [ ] **托盘箭头 hover 浅色近黑（2026-11-21 诊断，归 D0）**：三层叠加——
+  `RippleButton.colBackgroundToggledHover` 是普通属性非别名（赋值永不到达 StateLayer，
+  死 API）；`hoverOpacity` 默认链把 StateLayer 健全默认 0.08 覆盖为 1（hover 全不透明
+  填充 `colOnSurface` = 近黑）；目标 token `secondaryContainerHover` 本身是 90% 深混语义。
+  修法：D0 状态层契约落地（死属性修复 + opacity 不覆盖 + hover=8% 浸染）。
 - [ ] **下架件与孤儿**：`NetworkSpeed*`/`Weather*`/`DocktoPanel`/
   `LeftSidebarButton` 等依赖 iNiR 单例名的部件仍未接线；`Resources`/`ClockWidget`/
   `BatteryIndicator` 已随 B8.2 基件整抄解冻并进选装集。清单见

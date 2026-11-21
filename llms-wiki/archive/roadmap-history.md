@@ -745,3 +745,35 @@ llms-wiki 根 30 → 15 ✓；测试 62 → 55 ✓（~40 为估算，translate 1
 - [ ] **TUI 视觉风格化与纯净感 (Terminal Rice)**：Alternate Screen Buffer 保护终端历史，DEC 2025 协议消除高刷频闪，单行微动 Zen Spinner 就地收拢滚屏日志。
 - [ ] **多合成器 (Multi-WM) 架构解耦**：`CompositorDriver` 驱动抽象层，热重载、浮动便签与屏幕探测跨合成器适配（Hyprland/Sway 按需扩展），`doctor` 诊断与 `greeter` 会话自适应。现状：niri + mango 双合成器已以过渡形态落地（引擎特判与收编清单见 [delayed-decisions](llms-wiki/delayed-decisions.md) 债务登记），第三个合成器接入前必须收编为驱动抽象。
 - [ ] **安全 Downdate 体系（高级储备）**：现场快照优先还原 + Git 逆向检出的安全版本回退。
+
+---
+
+## 第三卷 P0–P5 架构整理明细（2026-11-21 自根 ROADMAP 迁入冻结）
+
+> 设计参考：`/home/ray/docs/lain-connect.md`（根目录纯度、单一重心、扁平目录、TOML-first 和解耦）。
+> 全卷已完成；处理插件边界、设置中心、统一配置和引擎模块，并由 5 个并发审查任务验收。
+
+- **P0 空间纯度大一统 · 已收口**：修复 `packaging/PKGBUILD:89` 的 `cp -a units catalog.toml`
+  遗留死指令；`shell/tests/` 11 个文件全量并入根 `tests/shell/`，全库唯一单测入口
+  `python3 -m unittest discover -s tests`；消解 `shell/app/`（`AppShell.qml` 并入
+  `shell.qml`、单例入 `services/`、静态资产入 `commons/assets/`），呈现 Omarchy 纯正
+  五层结构，切除 115 处 `import qs.app`。
+- **P1 插件专属控制面与动态导航 · 已完成**：`ControlCenterWindow.qml:28-40` 注入
+  `StateProjection.isEnabledUnit` 动态过滤，停用插件的设置 Tab 即刻消失；新增
+  `PluginsPage.qml`（内置开关/重置、三方 Git 安装/更新/卸载）；`ShellPage.qml`
+  正名为系统运行状态与诊断。
+- **P2 真 Omarchy 解耦与容错 · 已完成**：切除 34 处跨插件/跨层静态引用（70+ 符号依赖解耦）；
+  `DockService` 移入 `plugins/dock/`、Wallpaper 领域算法回本域、共享工具提取至 `commons/`；
+  焚毁 `audit-lifecycle.py` 伪合规白名单（ARCH001 零容忍，542 文件零违规）；
+  `test_plugin_decoupling.py` 实测 12 域热拔插 100% 容错。
+- **P3 统一配置 TOML 化 · 已完成**：`Toml.js` 重导出 `smol-toml@1.9.1` 完整 `parse()/stringify()`；
+  `ConfigService.qml` 单原子 `FileView` 管理 `~/.config/nyxuri/config.toml`，废除 7 个碎片
+  JSON；领域服务全部经 ConfigService 统一防抖落盘；`migrate_config.py` 无感迁移清理旧文件；
+  Python 侧 `tomllib` 优先读取。
+- **P4 引擎架构整理 · 已完成**：`kernel/ledger.py→state/store.py`、`kernel/transaction.py→
+  deploy/engine.py`、`registry+resolver→deploy/catalog.py`；清除企业黑话；解散
+  `kernel/`、`pkg/`、`desktop/`、`installer/` 与伪代理 `core.py`；引擎收敛
+  `deploy/state/system/ui` 四域；`state.json` 历史死键清理。
+- **P5 并发审查与巡检验收 · 已完成**：5 个并发审查（空间纯度/解耦与拔插/状态机联动/
+  命名审美/全局契约与路线图一致性）通过；`test_ai_specs.py` 增防复辟硬门禁；
+  双语 i18n 349 键 100% 契约合规。

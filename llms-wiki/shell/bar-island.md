@@ -53,6 +53,18 @@
 - 岛 idle 卫星由 `islandSatellite`（clock/weather/none）控制，默认时钟；
   不是 end4 `leftWidget` 的硬编码。
 
+## 岛屿定案与联动试点（D-3，2026-11-21）
+
+- **终局**：end4 岛为默认形态；Clavis 撑大岛为 opt-in 可选风格，兼联动机制试点
+  （D3 阶段），不催办不关闭。定案与分期见 [shell/ROADMAP](../../shell/ROADMAP.md)。
+- **Keystone 机制摘要**（references/clavis-15403b9，整抄剪裁来源）：三窗口架构——
+  全屏交互窗（`exclusiveZone: -1`，承接展开与动画）+ 贴边细条预留窗（只预留收起态
+  厚度，桌面工作区不随展开变化）+ 1×1 键盘窗（避免重 map 掉帧）。撑大 = 窗内 Item
+  锚定屏幕边向屏内生长（width/height/radius Behavior，展开 500ms 弹性）；输入区域用
+  窗口级 `mask: Region` 限定在岛实际范围。SDF 液态融合用 `long_split.frag.qsb`
+  （纯 QML ShaderEffect，不违纯 QML 红线）。
+- 岛媒体面解冻（B-10）执行归 D1；竖向岛维持挂起（end4 自身不完整，无基线可抄）。
+
 ## 验证
 
 ```bash

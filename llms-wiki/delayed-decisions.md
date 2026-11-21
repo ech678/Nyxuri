@@ -10,6 +10,9 @@
 | **插件服务声明字段**（manifest 声明 systemd unit 等服务副作用） | 出现跨插件或系统级服务效果的真实需求 | **已部分落地（KM3）**：副作用走插件钩子（`post_install` / `post_remove`）+ `[privilege]` 声明（greeter 案例：服务启停在钩子内部，manifest 只声明事实）。独立服务字段仍不设，出现真实需求再议。详见 [plugin-model](plugin-model.md) §4 与 [manifest-schema](manifest-schema.md) |
 | **多合成器 (Multi-WM) 驱动抽象**（原 mango-adaptation 页的债务登记，KM3.5 并入） | 第三个合成器（Hyprland/Sway）接入前必须收编，禁止再往注册表外的角落塞字面量 | **前置已兑现（S0-5，2026-11-01）**：QML 侧 `CompositorDriver` 面 + `NiriDriver` 首驱动（niri 方言锁定单文件，触点核对表见 [omarchy-parity](shell/omarchy-parity.md) §C）；Python 侧 `nyxuri/compositors.py` 注册表吃掉 `SUPPORTED_WMS` 元组、`installer/menus.py` radio 特判、`sysdoctor.py` 三处 `("mango","niri")` 字面量与 `theme.py` 的 reload argv。第三合成器 = 注册表加一行 + 新 QML 驱动，消费者零改动。不属于债务：`plugins/mango/` 整目录（插件形态）、theme 的 `mmsg` 探针、`/home/user` 占位符渲染 |
 | **dashwindow 手写目录接注册表**（S0-3 拍板暂缓） | S1 第三方插件实际携带 settings schema 入场，或 schema 通用渲染器（S0-3b）验证成熟后重估收益 | dashboard 轨的 `DashboardSettingsCatalog`（版面）与 `SettingsControlCatalog`（控件 get/set 注册表）保持手写真值：它们是 dashboard 轨对 PersonalizationConfig 外观轴的**表现层编排**，与 manifest 路由表不同源不同义；在 schema 渲染器刚落地、存量零转换时先行迁移顺序颠倒。收敛方向：简单控件逐步改由 manifest `controls` 声明、dashboard 卡片从注册表取值 |
+| **媒体 marquee 循环滚动 / 锁宽**（iNiR 经典 bar `lockMediaWidth` 方案） | D1 媒体宽度钳制落地后，观感仍不满意（长歌名 elide 信息损失大）再引入 | 先按 D1 对齐 iNiR barM3 clamp + elide；marquee 是增强不是修复 |
+| **密度预设**（dux `DensityPresets` 四档，只迁移用户未改过的键） | D4b 几何轴全套落地后作为其收尾项 | 单一 spacing/padding 体系（design-system 8 档）先立，预设是几何轴之上的编排 |
+| **per-screen token 配置层**（caelestia `monitors/<name>/` 覆盖） | 真实多屏用户需求出现（不同 DPI/缩放的屏组合） | 全局 token 单层；`barScreenList` 已按屏选 bar，token 分屏另议 |
 
 ## 这次重构已落地（主动覆盖延迟）
 
