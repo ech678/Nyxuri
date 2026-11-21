@@ -323,14 +323,26 @@ class TestFormOperations(unittest.TestCase):
         with patch("shutil.which", side_effect=lambda command: f"/usr/bin/{command}"):
             self.assertTrue(forms.use_form("niri", "glow", "glow-material-you"))
 
-        mock_timed_run.assert_not_called()
+        mock_timed_run.assert_called_with(
+            ["niri", "msg", "action", "load-config-file"],
+            5,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
 
     @unittest.mock.patch("nyxuri.deploy.forms.timed_run")
     @unittest.mock.patch("shutil.which", return_value="/usr/bin/niri")
     def test_apply_form_niri_has_no_daemon_side_effect(self, mock_which, mock_timed_run):
         ok = forms.use_form("niri", "glow", "glow")
         self.assertTrue(ok)
-        mock_timed_run.assert_not_called()
+        mock_timed_run.assert_called_with(
+            ["niri", "msg", "action", "load-config-file"],
+            5,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
 
     @unittest.mock.patch("nyxuri.deploy.forms.timed_run")
     @unittest.mock.patch("shutil.which", return_value="/usr/bin/pkill")

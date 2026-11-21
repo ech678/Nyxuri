@@ -228,6 +228,10 @@ def _sync_glow_layout(current: str) -> None:
     Only runs when the glow form is active (state truth) and the per-mode
     layout file exists; identical bytes are a no-op.
     """
+    from nyxuri.system.compositors import detect_preferred_wm
+    if detect_preferred_wm() != "niri":
+        return
+
     env = get_env()
     try:
         from nyxuri.deploy.forms import read_active_form
@@ -245,10 +249,6 @@ def _sync_glow_layout(current: str) -> None:
     tmp = dest.with_name(f".layout.kdl.{os.getpid()}.tmp")
     tmp.write_bytes(source.read_bytes())
     os.replace(tmp, dest)
-    # Reload argv is the compositor registry's truth (S0-5), not a local
-    # literal; this glow-layout path is niri-specific by state form.
-    from nyxuri.system.compositors import COMPOSITORS
-    _reload_compositor(COMPOSITORS["niri"])
 
 
 def status() -> int:
@@ -326,12 +326,10 @@ def sync(mode: str = "sync") -> int:
 
         _sync_glow_layout(current)
 
-        # Reload running compositors with reload capabilities
-        from nyxuri.system.compositors import COMPOSITORS
-        for wm, comp in COMPOSITORS.items():
-            if wm == "niri":
-                continue
-            _reload_compositor(comp, timeout=2)
+        # Reload the currently active compositor
+        from nyxuri.system.compositors import detect_preferred_wm, get_compositor
+        active_comp = get_compositor(detect_preferred_wm())
+        _reload_compositor(active_comp, timeout=2)
 
         if sys.stdout.isatty() and mode != "sync":
             channel_label = {"noctalia": "shell: noctalia",

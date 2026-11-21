@@ -2204,9 +2204,9 @@ class TestShellManagement(unittest.TestCase):
         binds_path = os.path.join(repo_root, "plugins", "niri", "binds.kdl")
         with open(binds_path, "r", encoding="utf-8") as f:
             binds_content = f.read()
-        self.assertIn('Mod+L allow-when-locked=true { spawn "~/.config/niri/scripts/shell-action.sh" "lock"; }', binds_content)
+        self.assertIn('Mod+L allow-when-locked=true { spawn "~/.config/nyxuri/scripts/shell-action.sh" "lock"; }', binds_content)
 
         # 8. Hard shell restart is bound to Mod+Alt+R (Mod+Shift+R is niri config reload)
-        self.assertIn('Mod+Alt+R repeat=false { spawn "~/.config/niri/scripts/shell-action.sh" "restart"; }', binds_content)
+        self.assertIn('Mod+Alt+R repeat=false { spawn "~/.config/nyxuri/scripts/shell-action.sh" "restart"; }', binds_content)
 
 

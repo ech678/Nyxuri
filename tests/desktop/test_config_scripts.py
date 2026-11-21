@@ -17,9 +17,9 @@ from tests.utils import TempEnv
 _REPO = Path(__file__).resolve().parents[2]
 _TOGGLE = _REPO / "plugins" / "niri" / "scripts" / "niri-scratch-toggle.sh"
 _CLEAN_CACHE = _REPO / "nyxuri" / "system" / "clean.py"
-_START_NOCTALIA = _REPO / "plugins" / "niri" / "scripts" / "session-shell.sh"
-_SESSION_SHELL = _REPO / "plugins" / "niri" / "scripts" / "session-shell.sh"
-_SHELL_ACTION = _REPO / "plugins" / "niri" / "scripts" / "shell-action.sh"
+_START_NOCTALIA = _REPO / "nyxuri" / "data" / "scripts" / "session-shell.sh"
+_SESSION_SHELL = _REPO / "nyxuri" / "data" / "scripts" / "session-shell.sh"
+_SHELL_ACTION = _REPO / "nyxuri" / "data" / "scripts" / "shell-action.sh"
 _BRIGHTNESS = _REPO / "plugins" / "niri" / "scripts" / "niri-brightness.sh"
 
 
@@ -189,7 +189,7 @@ class TestNoctaliaStartup(unittest.TestCase):
         self.assertEqual(
             self.calls.read_text(encoding="utf-8").splitlines(),
             [
-                "systemctl:--user stop app-niri-noctalia-*.scope",
+                "systemctl:--user stop app-*-noctalia-*.scope",
                 "noctalia",
             ],
         )
@@ -214,7 +214,7 @@ class TestNoctaliaStartup(unittest.TestCase):
         self.assertEqual(
             self.calls.read_text(encoding="utf-8").splitlines(),
             [
-                "systemctl:--user stop app-niri-noctalia-*.scope",
+                "systemctl:--user stop app-*-noctalia-*.scope",
                 "noctalia",
             ],
         )
@@ -244,7 +244,7 @@ class TestNoctaliaStartup(unittest.TestCase):
         self.assertEqual(
             self.calls.read_text(encoding="utf-8").splitlines(),
             [
-                "systemctl:--user stop app-niri-noctalia-*.scope",
+                "systemctl:--user stop app-*-noctalia-*.scope",
                 "nyxuri-shell",
             ],
         )

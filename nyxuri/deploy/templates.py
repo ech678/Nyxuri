@@ -8,7 +8,7 @@ on already-deployed config files.
 import re
 from typing import Optional
 
-from nyxuri.system.compositors import COMPOSITORS, MAIN_WM
+from nyxuri.system.compositors import COMPOSITORS
 from nyxuri.system.env import THEME_ENGINE, get_env, get_pics_dir
 
 
@@ -38,14 +38,6 @@ def _phase_render_templates(only_app: Optional[str] = None) -> None:
             if conf_file.is_file():
                 content = conf_file.read_text(encoding="utf-8", errors="replace")
                 content = content.replace("/home/user", str(home))
-                if comp.id == MAIN_WM:
-                    pics_dir = get_pics_dir()
-                    try:
-                        rel_pics = "~/" + str(pics_dir.relative_to(home))
-                    except ValueError:
-                        rel_pics = str(pics_dir)
-                    screenshot_target = f'screenshot-path "{rel_pics}/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"'
-                    content = re.sub(r'^\s*(//)?\s*screenshot-path\s+.*', lambda _m: screenshot_target, content, flags=re.MULTILINE)
                 conf_file.write_text(content, encoding="utf-8")
 
     if only_app in (None, "fish"):

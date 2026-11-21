@@ -92,7 +92,8 @@ class TestMangoAdaptation(unittest.TestCase):
             return None
 
         with patch("nyxuri.system.theme.timed_run", side_effect=fake_timed_run), \
-             patch("nyxuri.system.theme.shutil.which", side_effect=fake_which):
+             patch("nyxuri.system.theme.shutil.which", side_effect=fake_which), \
+             patch.dict("os.environ", {"XDG_CURRENT_DESKTOP": "mango"}):
             sync("dark")
 
         self.assertIn(["mmsg", "dispatch", "reload_config"], calls)
@@ -152,8 +153,10 @@ class TestMangoAdaptation(unittest.TestCase):
         self.assertEqual(COMPOSITORS["mango"].scripts_subpath, "mango/scripts")
         self.assertTrue(COMPOSITORS["niri"].has_glow_support)
         self.assertFalse(COMPOSITORS["mango"].has_glow_support)
-        self.assertIn("session-shell.sh", COMPOSITORS["niri"].essential_scripts)
-        self.assertIn("session-shell.sh", COMPOSITORS["mango"].essential_scripts)
+        self.assertIn("toggle-eyecare.sh", COMPOSITORS["niri"].essential_scripts)
+        self.assertIn("mango-brightness.sh", COMPOSITORS["mango"].essential_scripts)
+        self.assertNotIn("session-shell.sh", COMPOSITORS["niri"].essential_scripts)
+        self.assertNotIn("session-shell.sh", COMPOSITORS["mango"].essential_scripts)
 
         # Helper lookups
         self.assertEqual(get_compositor("niri").id, "niri")

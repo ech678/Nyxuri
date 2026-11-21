@@ -22,10 +22,10 @@ binds {
     Mod+Shift+R { spawn "niri" "msg" "action" "load-config-file"; }
 
     // 硬重启当前桌面外壳（Noctalia / Nyxuri Shell 谁在跑就重启谁；锁屏中拒绝） / Hard-restart the running desktop shell
-    Mod+Alt+R repeat=false { spawn "~/.config/niri/scripts/shell-action.sh" "restart"; }
+    Mod+Alt+R repeat=false { spawn "~/.config/nyxuri/scripts/shell-action.sh" "restart"; }
 
     // 锁定屏幕 (外壳网关) / Lock screen using shell gateway
-    Mod+L allow-when-locked=true { spawn "~/.config/niri/scripts/shell-action.sh" "lock"; }
+    Mod+L allow-when-locked=true { spawn "~/.config/nyxuri/scripts/shell-action.sh" "lock"; }
 
     // 显示快捷键提示覆盖层 / Show interactive hotkey overlay
     Mod+Slash { show-hotkey-overlay; }
@@ -40,22 +40,22 @@ binds {
     Mod+E { spawn "nautilus"; }
 
     // 切换应用启动器 (外壳网关) / Toggle shell application launcher
-    Mod+R { spawn "~/.config/niri/scripts/shell-action.sh" "launcher"; }
+    Mod+R { spawn "~/.config/nyxuri/scripts/shell-action.sh" "launcher"; }
 
     // 切换电源/会话菜单 (外壳网关) / Toggle shell power/session menu
-    Mod+X { spawn "~/.config/niri/scripts/shell-action.sh" "session"; }
+    Mod+X { spawn "~/.config/nyxuri/scripts/shell-action.sh" "session"; }
 
     // 切换系统设置面板 (外壳网关) / Toggle shell system settings panel
-    Mod+I repeat=false { spawn "~/.config/niri/scripts/shell-action.sh" "settings"; }
+    Mod+I repeat=false { spawn "~/.config/nyxuri/scripts/shell-action.sh" "settings"; }
 
     // 切换剪贴板历史 (外壳网关) / Toggle shell clipboard history panel
-    Mod+V { spawn "~/.config/niri/scripts/shell-action.sh" "clipboard"; }
+    Mod+V { spawn "~/.config/nyxuri/scripts/shell-action.sh" "clipboard"; }
 
     // 呼出 M3E 原生壁纸选择器 (聚合静态/动态壁纸/搜索/分类) (外壳网关) / Open M3E wallpaper picker (Static & Live)
-    Mod+W repeat=false { spawn "~/.config/niri/scripts/shell-action.sh" "wallpaper-picker"; }
+    Mod+W repeat=false { spawn "~/.config/nyxuri/scripts/shell-action.sh" "wallpaper-picker"; }
 
     // 免打扰随机切换下一张壁纸 (外壳网关) / Switch to a random wallpaper immediately
-    Mod+Ctrl+W { spawn "~/.config/niri/scripts/shell-action.sh" "wallpaper-random"; }
+    Mod+Ctrl+W { spawn "~/.config/nyxuri/scripts/shell-action.sh" "wallpaper-random"; }
 
     // 切换护眼模式 (调暖色温并关闭透明度/毛玻璃) / Toggle eye-care mode (warmer temp & disable blur/transparency)
     Mod+N { spawn "~/.config/niri/scripts/toggle-eyecare.sh"; }
@@ -64,11 +64,11 @@ binds {
     Mod+Grave { spawn "~/.config/niri/scripts/niri-scratch-toggle.sh" "kitty"; }
 
     // 呼出 Orbit Launcher M3E 矢量星环启动器 (外壳网关) / Open Orbit Launcher M3E radial menu
-    Mod+A repeat=false { spawn "~/.config/niri/scripts/shell-action.sh" "radial-launcher"; }
-    Mod+MouseForward repeat=false { spawn "~/.config/niri/scripts/shell-action.sh" "radial-launcher"; }
+    Mod+A repeat=false { spawn "~/.config/nyxuri/scripts/shell-action.sh" "radial-launcher"; }
+    Mod+MouseForward repeat=false { spawn "~/.config/nyxuri/scripts/shell-action.sh" "radial-launcher"; }
 
     // 划词翻译 (读取 PRIMARY 选区，在指针下方弹出 M3 翻译浮窗) (外壳网关) / Translate the current selection below the pointer
-    Alt+E repeat=false cooldown-ms=500 hotkey-overlay-title="Translate selection" { spawn "~/.config/niri/scripts/shell-action.sh" "translate"; }
+    Alt+E repeat=false cooldown-ms=500 hotkey-overlay-title="Translate selection" { spawn "~/.config/nyxuri/scripts/shell-action.sh" "translate"; }
 
     // -------------------------------------------------------------------------
     // 3. 焦点导航与窗口移动 / Focus Navigation & Window Movement

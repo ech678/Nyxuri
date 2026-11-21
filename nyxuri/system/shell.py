@@ -414,42 +414,65 @@ def is_shell_locked(shell_name: str, bin_path: str = "") -> bool:
     return False
 
 
+def _atomic_sync_script(src: Path, dest: Path) -> None:
+    """Atomically copy script and ensure executable permission."""
+    if not src.is_file():
+        return
+    need_copy = False
+    if not dest.is_file():
+        need_copy = True
+    else:
+        try:
+            if src.read_bytes() != dest.read_bytes():
+                need_copy = True
+        except OSError:
+            need_copy = True
+
+    if need_copy:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        temp_dest = dest.with_name(f".{dest.name}.tmp.{os.getpid()}")
+        temp_dest.write_bytes(src.read_bytes())
+        temp_dest.chmod(0o755)
+        temp_dest.replace(dest)
+    elif not os.access(dest, os.X_OK):
+        dest.chmod(0o755)
+
+
 def ensure_compositor_gateway_scripts() -> None:
-    """Ensure compositor gateway scripts match repository sources across configured compositors."""
+    """Ensure central gateway scripts are deployed and backward-compatible across compositors."""
     from nyxuri.system.compositors import COMPOSITORS
     from nyxuri.system.env import get_env
     env = get_env()
 
+    # 1. Resolve central source scripts (nyxuri/data/scripts/)
+    data_scripts_dir = Path(__file__).resolve().parent.parent / "data" / "scripts"
+    if not data_scripts_dir.is_dir() and hasattr(env, "repo_dir"):
+        data_scripts_dir = env.repo_dir / "nyxuri" / "data" / "scripts"
+
+    central_dest_dir = env.config_dir / "nyxuri" / "scripts"
+    central_dest_dir.mkdir(parents=True, exist_ok=True)
+
+    gateway_scripts = ("session-shell.sh", "shell-action.sh")
+    for script_name in gateway_scripts:
+        src = data_scripts_dir / script_name
+        dest = central_dest_dir / script_name
+        if src.is_file():
+            _atomic_sync_script(src, dest)
+
+    # 2. Backward compatibility: if legacy compositor scripts dir exists in ~/.config,
+    # maintain compatible executable copies so old user shortcuts continue working.
     for comp in COMPOSITORS.values():
         if not comp.scripts_subpath:
             continue
-        dest_dir = env.config_dir / comp.scripts_subpath
-        src_dir = env.plugins_src / comp.scripts_subpath
-        if not dest_dir.is_dir() or not src_dir.is_dir():
+        legacy_dir = env.config_dir / comp.scripts_subpath
+        if not legacy_dir.is_dir():
             continue
 
-        for script_name in ("session-shell.sh", "shell-action.sh"):
-            src = src_dir / script_name
-            dest = dest_dir / script_name
-            if not src.is_file():
-                continue
-            need_copy = False
-            if not dest.is_file():
-                need_copy = True
-            else:
-                try:
-                    if src.read_bytes() != dest.read_bytes():
-                        need_copy = True
-                except OSError:
-                    need_copy = True
-
-            if need_copy:
-                temp_dest = dest.with_name(f".{script_name}.tmp.{os.getpid()}")
-                temp_dest.write_bytes(src.read_bytes())
-                temp_dest.chmod(0o755)
-                temp_dest.replace(dest)
-            elif not os.access(dest, os.X_OK):
-                dest.chmod(0o755)
+        for script_name in gateway_scripts:
+            central_script = central_dest_dir / script_name
+            legacy_dest = legacy_dir / script_name
+            if central_script.is_file():
+                _atomic_sync_script(central_script, legacy_dest)
 
     try:
         from nyxuri.system.env import ensure_nyxuri_shell_symlink

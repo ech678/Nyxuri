@@ -41,14 +41,19 @@ from nyxuri.system.i18n import msg, text
 
 def _check_compositor(env) -> None:
     xdg_curr = os.environ.get("XDG_CURRENT_DESKTOP", "")
-    if xdg_curr.lower() in COMPOSITORS:
+    matched_comp = None
+    for comp in COMPOSITORS.values():
+        if comp.id == xdg_curr.lower() or comp.id in xdg_curr.lower():
+            matched_comp = comp
+            break
+
+    if matched_comp:
         print(msg("doctor_ok", text(f"合成器: {xdg_curr} 正在运行", f"Compositor: {xdg_curr} is running")))
     else:
         current = xdg_curr or text("未知", "Unknown")
-        main_comp = COMPOSITORS[MAIN_WM]
         print(msg("doctor_warn", text(
-            f"合成器: 当前桌面为 {current}，{main_comp.display_name} 未运行",
-            f"Compositor: current desktop is {current}; {main_comp.display_name} is not running",
+            f"合成器: 当前桌面为 {current}，未检测到支持的合成器正在运行",
+            f"Compositor: current desktop is {current}; no supported compositor is running",
         )))
 
 def _check_wayland_session(env) -> None:
@@ -102,14 +107,29 @@ def _check_wallpapers(env) -> None:
         print(msg("doctor_err", text(f"壁纸目录不存在: {wp_dir}", f"Wallpapers directory is missing: {wp_dir}")))
 
 def _check_core_deps(env) -> None:
+    base_tools = (THEME_ENGINE, "fish", "starship")
     missing = 0
-    for cmd in (MAIN_WM, THEME_ENGINE, "fish", "starship"):
+    for cmd in base_tools:
         if not shutil.which(cmd):
             print(msg("doctor_err", text(f"依赖: PATH 中缺少 {cmd}", f"Dependency: {cmd} is missing from PATH")))
             missing += 1
     if missing == 0:
-        tools = f"{MAIN_WM}, {THEME_ENGINE}, fish, starship"
+        tools = ", ".join(base_tools)
         print(msg("doctor_ok", text(f"核心依赖已安装: {tools}", f"Core dependencies installed: {tools}")))
+
+    from nyxuri.state.store import all_plugins
+    plugins_state = all_plugins()
+    xdg_curr = os.environ.get("XDG_CURRENT_DESKTOP", "").lower()
+
+    for comp_id, comp in COMPOSITORS.items():
+        is_deployed = plugins_state.get(comp_id, {}).get("state") == "deployed"
+        is_current_desktop = comp_id == xdg_curr or comp_id in xdg_curr
+        if is_deployed or is_current_desktop:
+            bin_name = comp.reload_argv[0] if comp.reload_argv else comp_id
+            if shutil.which(bin_name):
+                print(msg("doctor_ok", text(f"合成器依赖已安装: {comp.display_name} ({bin_name})", f"Compositor dependency installed: {comp.display_name} ({bin_name})")))
+            else:
+                print(msg("doctor_err", text(f"依赖: PATH 中缺少合成器 {comp.display_name} ({bin_name})", f"Dependency: compositor {comp.display_name} ({bin_name}) is missing from PATH")))
 
 def _check_matugen(env) -> None:
     """Palette extraction engine — optional by contract, loud when absent."""
@@ -136,6 +156,8 @@ def _check_scripts(env) -> None:
         (f"{THEME_ENGINE}/mpvpaper-sync.sh", "mpvpaper-sync.sh"),
         (f"{THEME_ENGINE}/tools/orbit-launcher.py", "orbit-launcher.py"),
         (f"{THEME_ENGINE}/tools/wallpaper-picker.py", "wallpaper-picker.py"),
+        ("nyxuri/scripts/session-shell.sh", "session-shell.sh"),
+        ("nyxuri/scripts/shell-action.sh", "shell-action.sh"),
     ]
     if active_comp.scripts_subpath:
         for script_name in active_comp.essential_scripts:
@@ -145,6 +167,8 @@ def _check_scripts(env) -> None:
         full_path = config_dir / rel_path
         if not full_path.is_file() and (config_dir / active_comp.id / name).is_file():
             full_path = config_dir / active_comp.id / name
+        elif not full_path.is_file() and (config_dir / active_comp.id / "scripts" / name).is_file():
+            full_path = config_dir / active_comp.id / "scripts" / name
         if full_path.is_file():
             if os.access(full_path, os.X_OK):
                 print(msg("doctor_ok", text(f"脚本可执行: {name}", f"Script is executable: {name}")))

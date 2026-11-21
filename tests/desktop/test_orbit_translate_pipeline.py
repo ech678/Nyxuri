@@ -86,7 +86,7 @@ class TestOrbitTranslatePipeline(unittest.TestCase):
             self.assertEqual(rec["state"], "enabled")
 
             # 4. Test shell-action.sh translate dispatch
-            action_script = Path(__file__).resolve().parents[2] / "plugins" / "niri" / "scripts" / "shell-action.sh"
+            action_script = Path(__file__).resolve().parents[2] / "nyxuri" / "data" / "scripts" / "shell-action.sh"
             self.assertTrue(action_script.is_file())
 
             env_vars = {

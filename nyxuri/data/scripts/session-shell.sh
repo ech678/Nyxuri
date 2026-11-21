@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Nyxuri session shell gateway for Mango (session-shell.sh)
+# Nyxuri session shell gateway (session-shell.sh)
 # Launches desktop shell and cleans up leftover compositor session scopes.
 # ==============================================================================
 
 set -euo pipefail
 
-systemctl --user stop 'app-mango-noctalia-*.scope' >/dev/null 2>&1 || true
+systemctl --user stop 'app-*-noctalia-*.scope' >/dev/null 2>&1 || true
 
 state_root="${XDG_STATE_HOME:-$HOME/.local/state}"
 state_file="$state_root/nyxuri/state.json"

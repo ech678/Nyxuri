@@ -5,7 +5,7 @@ kinds = ["config"]
 optional = true
 packages = ["mangowm"]
 label = "Mango WM"
-category = "system"
+category = "compositor"
 preserve = ["monitors.conf", "noctalia.conf"]
 chmod = ["scripts/*.sh", "scripts/*.py"]
 

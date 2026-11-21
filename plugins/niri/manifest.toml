@@ -10,9 +10,13 @@
 # colors.kdl stores dynamic Material You palette rendered by Noctalia.
 schemaVersion = 1
 id = "niri"
+category = "compositor"
 kinds = ["config"]
 preserve = ["monitor.kdl", "effects.kdl", "effects_normal.kdl", "glow.kdl", "colors.kdl", "noctalia.kdl", "eyecare_temp"]
 chmod = ["scripts/*.sh", "scripts/*.py"]
+
+[forms]
+reload = ["niri", "msg", "action", "load-config-file"]
 
 [forms.effects]
 target = "effects_normal.kdl"

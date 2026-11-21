@@ -164,13 +164,8 @@ class TestShellManagement(unittest.TestCase):
         from nyxuri.system.env import get_env
         from nyxuri.system.shell import ensure_compositor_gateway_scripts
         env = get_env()
-        fake_configs = self._ctx.home / "fake_configs"
-        env.plugins_src = fake_configs
-        src_dir = fake_configs / "niri" / "scripts"
-        src_dir.mkdir(parents=True, exist_ok=True)
-        (src_dir / "session-shell.sh").write_text("#!/bin/sh\necho session new\n", encoding="utf-8")
-        (src_dir / "shell-action.sh").write_text("#!/bin/sh\necho action new\n", encoding="utf-8")
 
+        # Legacy compositor scripts directory before migration
         dest_dir = env.config_dir / "niri" / "scripts"
         dest_dir.mkdir(parents=True, exist_ok=True)
         (dest_dir / "session-shell.sh").write_text("#!/bin/sh\necho session old\n", encoding="utf-8")
@@ -179,8 +174,22 @@ class TestShellManagement(unittest.TestCase):
 
         ensure_compositor_gateway_scripts()
 
-        self.assertEqual((dest_dir / "session-shell.sh").read_text(encoding="utf-8"), "#!/bin/sh\necho session new\n")
-        self.assertEqual((dest_dir / "shell-action.sh").read_text(encoding="utf-8"), "#!/bin/sh\necho action new\n")
+        # Central scripts must be deployed to ~/.config/nyxuri/scripts/
+        central_dest = env.config_dir / "nyxuri" / "scripts"
+        self.assertTrue((central_dest / "session-shell.sh").is_file())
+        self.assertTrue((central_dest / "shell-action.sh").is_file())
+        self.assertTrue(os.access(central_dest / "session-shell.sh", os.X_OK))
+        self.assertTrue(os.access(central_dest / "shell-action.sh", os.X_OK))
+
+        # Legacy directory must be updated with central gateway scripts for backwards compatibility
+        self.assertEqual(
+            (dest_dir / "session-shell.sh").read_text(encoding="utf-8"),
+            (central_dest / "session-shell.sh").read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            (dest_dir / "shell-action.sh").read_text(encoding="utf-8"),
+            (central_dest / "shell-action.sh").read_text(encoding="utf-8")
+        )
         self.assertTrue(os.access(dest_dir / "session-shell.sh", os.X_OK))
         self.assertTrue(os.access(dest_dir / "shell-action.sh", os.X_OK))
 

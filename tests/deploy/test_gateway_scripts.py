@@ -23,10 +23,15 @@ class TestScriptContracts(unittest.TestCase):
     def _niri_scripts(self):
         return Path(__file__).resolve().parents[2] / "plugins" / "niri" / "scripts"
 
+    def _central_scripts(self):
+        return Path(__file__).resolve().parents[2] / "nyxuri" / "data" / "scripts"
+
     def test_scripts_read_the_config_root_the_deployer_writes(self):
-        for name in ("niri-brightness.sh", "niri-scratch-menu.py", "shell-action.sh"):
+        for name in ("niri-brightness.sh", "niri-scratch-menu.py"):
             source = (self._niri_scripts() / name).read_text(encoding="utf-8")
             self.assertNotIn("XDG_CONFIG_HOME", source, name)
+        source = (self._central_scripts() / "shell-action.sh").read_text(encoding="utf-8")
+        self.assertNotIn("XDG_CONFIG_HOME", source, "shell-action.sh")
 
     def test_mpvpaper_reads_the_assignments_envelope(self):
         script = Path(__file__).resolve().parents[2] / "plugins" / "noctalia" / "mpvpaper-sync.sh"
@@ -34,7 +39,7 @@ class TestScriptContracts(unittest.TestCase):
         self.assertIn(".assignments // .", source)
 
     def test_shell_action_restart_delegates_to_the_cli_state_machine(self):
-        source = (self._niri_scripts() / "shell-action.sh").read_text(encoding="utf-8")
+        source = (self._central_scripts() / "shell-action.sh").read_text(encoding="utf-8")
         self.assertIn("exec nyxuri shell restart", source)
         self.assertIn("restart}", source)  # usage line stays in sync
 

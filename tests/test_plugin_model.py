@@ -70,7 +70,7 @@ class TestPluginModelContract(unittest.TestCase):
         # The migrated microkernel taxonomy now lives on the shell side.
         shell_agents = (self.plugin_model_md.parent.parent / "shell" / "AGENTS.md").read_text(
             encoding="utf-8")
-        for term in ("微内核宿主", "六大几何插槽", "SlotHost", "Loader", "ActionGateway"):
+        for term in ("微内核宿主", "五大几何插槽", "SlotHost", "Loader", "ActionGateway"):
             self.assertIn(term, shell_agents,
                           f"slot taxonomy must live in shell/AGENTS.md: {term}")
 
