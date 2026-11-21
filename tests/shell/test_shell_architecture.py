@@ -1531,7 +1531,13 @@ class TestShellManagement(unittest.TestCase):
         roadmap_path = os.path.join(repo_root, "shell", "ROADMAP.md")
         with open(roadmap_path, "r", encoding="utf-8") as rf:
             roadmap_content = rf.read()
-        self.assertIn("| R4-C | 结构收敛与全面去 C++ | 已完成 |", roadmap_content)
+        # D 卷 docs-charter：实施明细只进追加式台账（ROADMAP 的 R 表已随
+        # D 卷重组退役，已交付基线一行带过）——完成证据 = 台账分节 + 基线行。
+        ledger_path = os.path.join(repo_root, "llms-wiki", "archive", "shell-roadmap-ledger.md")
+        with open(ledger_path, "r", encoding="utf-8") as lf:
+            ledger_content = lf.read()
+        self.assertIn("R1–R12", roadmap_content)
+        self.assertIn("### R4-C 结构收敛与全面去 C++", ledger_content)
 
     def test_r4c_i18n_service_and_catalog_contracts(self):
         """Assert I18nService is pure QML with zero C++ imports, preserves full public API, and catalogs are valid."""
@@ -1630,8 +1636,14 @@ class TestShellManagement(unittest.TestCase):
         roadmap_path = os.path.join(repo_root, "shell", "ROADMAP.md")
         with open(roadmap_path, "r", encoding="utf-8") as rf:
             roadmap_content = rf.read()
-        self.assertIn("| R4-C | 结构收敛与全面去 C++ | 已完成 |", roadmap_content)
-        self.assertIn("| R4 | 架构、生命周期与结构收敛 | 已完成 |", roadmap_content)
+        # D 卷 docs-charter：实施明细只进追加式台账（ROADMAP 的 R 表已随
+        # D 卷重组退役，已交付基线一行带过）——完成证据 = 台账分节 + 基线行。
+        ledger_path = os.path.join(repo_root, "llms-wiki", "archive", "shell-roadmap-ledger.md")
+        with open(ledger_path, "r", encoding="utf-8") as lf:
+            ledger_content = lf.read()
+        self.assertIn("R1–R12", roadmap_content)
+        self.assertIn("### R4-C 结构收敛与全面去 C++", ledger_content)
+        self.assertIn("### R4 架构、生命周期与结构收敛", ledger_content)
 
     def test_r5_resource_doc_and_test_closure(self):
         """R5 Contract: Resource integrity, documentation hygiene, and categorized test runner."""
@@ -1685,8 +1697,15 @@ class TestShellManagement(unittest.TestCase):
         roadmap_path = os.path.join(repo_root, "shell", "ROADMAP.md")
         with open(roadmap_path, "r", encoding="utf-8") as rf:
             roadmap_content = rf.read()
-        self.assertIn("| R5 | 资源、文档与测试收口 | 已完成 |", roadmap_content)
-        self.assertIn("| R7 | 多套设置 UI 与 PR #120 前置审查 | 已完成 |", roadmap_content)
+        # D 卷 docs-charter：实施明细只进追加式台账（ROADMAP 的 R 表已随
+        # D 卷重组退役，已交付基线一行带过）——完成证据 = 台账分节 + 基线行。
+        ledger_path = os.path.join(repo_root, "llms-wiki", "archive", "shell-roadmap-ledger.md")
+        with open(ledger_path, "r", encoding="utf-8") as lf:
+            ledger_content = lf.read()
+        self.assertIn("R1–R12", roadmap_content)
+        self.assertIn("### R4-C 结构收敛与全面去 C++", ledger_content)
+        self.assertIn("### R5 资源、文档与测试收口", ledger_content)
+        self.assertIn("### R7 多套设置 UI 与 PR #120 前置审查", ledger_content)
 
     def test_r6_performance_and_event_loop_governance(self):
         """R6 Contract: Weather icon subtraction, MPRIS DBus mitigation, and timer zero-interval prohibition."""
@@ -1779,8 +1798,15 @@ class TestShellManagement(unittest.TestCase):
         roadmap_path = os.path.join(repo_root, "shell", "ROADMAP.md")
         with open(roadmap_path, "r", encoding="utf-8") as rf:
             roadmap_content = rf.read()
-        self.assertIn("| R6 | 能耗基线、事件循环与稳态治理 | 已完成 |", roadmap_content)
-        self.assertIn("| R8 | 设置导航扁平化与 M3 信息架构 | 已完成 |", roadmap_content)
+        # D 卷 docs-charter：实施明细只进追加式台账（ROADMAP 的 R 表已随
+        # D 卷重组退役，已交付基线一行带过）——完成证据 = 台账分节 + 基线行。
+        ledger_path = os.path.join(repo_root, "llms-wiki", "archive", "shell-roadmap-ledger.md")
+        with open(ledger_path, "r", encoding="utf-8") as lf:
+            ledger_content = lf.read()
+        self.assertIn("R1–R12", roadmap_content)
+        self.assertIn("### R4-C 结构收敛与全面去 C++", ledger_content)
+        self.assertIn("### R6 能耗基线、事件循环与稳态治理", ledger_content)
+        self.assertIn("### R8 设置导航纯一级分类扁平化与 M3 信息架构", ledger_content)
 
     def test_r9_feature_toggles_and_real_lifecycle(self):
         """R9 Contract: Feature toggles control physical existence, layer-shell surfaces unmount, services guard lifecycles."""
@@ -1874,7 +1900,12 @@ class TestShellManagement(unittest.TestCase):
         roadmap_path = os.path.join(repo_root, "shell", "ROADMAP.md")
         with open(roadmap_path, "r", encoding="utf-8") as f:
             roadmap_code = f.read()
-        self.assertIn("| R9 | 功能开关与真实生命周期 | 已完成 |", roadmap_code)
+        # D 卷 docs-charter：R 表已退役，完成证据 = 台账分节 + 基线行。
+        ledger_path = os.path.join(repo_root, "llms-wiki", "archive", "shell-roadmap-ledger.md")
+        with open(ledger_path, "r", encoding="utf-8") as lf:
+            ledger_content = lf.read()
+        self.assertIn("R1–R12", roadmap_code)
+        self.assertIn("### R9 功能开关与真实生命周期", ledger_content)
 
     def test_r10_action_gateway_and_module_autonomy(self):
         """R10 Contract: unified action boundary, domain autonomy, UI free of direct I/O.
@@ -2104,7 +2135,10 @@ class TestShellManagement(unittest.TestCase):
 
         # 10. Roadmap reflects the R11 delivery state.
         roadmap = read("ROADMAP.md")
-        self.assertIn("| R11 | 控制面与透明度 | 已完成 |", roadmap)
+        # D 卷 docs-charter：R 表已退役，完成证据 = 台账分节 + 基线行。
+        ledger = read(os.path.join(repo_root, "llms-wiki", "archive", "shell-roadmap-ledger.md"))
+        self.assertIn("R1–R12", roadmap)
+        self.assertIn("### R11 Nyxuri Shell 控制面与透明度", ledger)
 
     def test_power_menu_and_secure_suspend_contracts(self):
         repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
