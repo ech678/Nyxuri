@@ -621,7 +621,7 @@ class TestRealRepoManifests(unittest.TestCase):
         self.assertIn("zed", manifest.discover_deployable_apps())
 
     def test_all_optional_units_categorized(self):
-        known = {"dev", "system"}
+        known = {"dev", "system", "compositor"}
         for _name, m in manifest.discover_manifest_apps():
             if m.is_optional:
                 self.assertIn(m.category, known, f"{_name} has unknown category")

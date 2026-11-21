@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -66,6 +67,8 @@ def discover_compositors() -> dict[str, Compositor]:
         label = data.get("label", cid.capitalize())
 
         forms_section = data.get("forms", {})
+        if not isinstance(forms_section, dict):
+            forms_section = {}
         reload_val = forms_section.get("reload", [])
         if isinstance(reload_val, list):
             reload_argv = tuple(str(x) for x in reload_val)
@@ -114,9 +117,16 @@ def discover_compositors() -> dict[str, Compositor]:
 class _CompositorsDict(dict):
     """Dynamic mapping proxy providing backward-compatible dictionary access to discovered compositors."""
 
-    def _refresh(self) -> None:
+    _last_check: float = 0.0
+    _ttl: float = 1.0  # 1 second cache to prevent thrashing during bursts
+
+    def _refresh(self, force: bool = False) -> None:
+        now = time.monotonic()
+        if not force and (now - self._last_check) < self._ttl and super().__len__() > 0:
+            return
         self.clear()
         self.update(discover_compositors())
+        self._last_check = now
 
     def __getitem__(self, key: str) -> Compositor:
         self._refresh()
@@ -184,7 +194,7 @@ def session_wm(xdg_lower: str) -> str:
 
 def portal_conf_name(xdg_lower: str) -> str:
     """Portal routing file for a session's compositor (unknown -> main)."""
-    return COMPOSITORS[session_wm(xdg_lower)].portal_conf
+    return get_compositor(xdg_lower).portal_conf
 
 
 def get_compositor(wm_id: str | None = None) -> Compositor:

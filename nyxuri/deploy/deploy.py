@@ -297,12 +297,18 @@ def run_user_hooks() -> List[str]:
 
 
 def _phase_post_install_services() -> None:
-    """Run built-in post-deployment work (theme sync).
+    """Run built-in post-deployment work (gateway scripts sync and theme sync).
 
     Plugin activation is user policy, not a deploy side effect: enabled plugins
     replay their declared hooks via ``engine.replay_enabled_hooks()``
     in the workflow; the retired module direct-calls are gone (KM3).
     """
+    try:
+        from nyxuri.system.shell import ensure_compositor_gateway_scripts
+        ensure_compositor_gateway_scripts()
+    except Exception as e:
+        log_msg("WARN", f"Gateway scripts sync failed during deploy: {e}")
+
     try:
         from nyxuri.system.theme import sync
         sync()
@@ -543,6 +549,7 @@ def test_deploy() -> bool:
         render_completion_screen(mode="test", chosen_items=items, preserved_lines=preserved_log, failed_items=failed_items)
         return False
     _phase_render_templates()
+    _phase_post_install_services()
     wallpaper_ok = enable_wallpapers_plugin()
     enable_theme_plugin()
     render_completion_screen(
